@@ -109,7 +109,13 @@ namespace Search {
 
     // get the action sequence from the test run (only run if test_only or -t or...)
     void get_test_action_sequence(vector<action>&);
-    
+
+    // get feature index mask
+	size_t get_mask();
+
+	// get stride_shift
+	size_t get_stride_shift();
+
     // internal data that you don't get to see!
     search_private* priv;
     void*           task_data;  // your task data!

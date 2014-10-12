@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 #include <math.h>
 #include "search_sequencetask.h"
 #include "search_multiclasstask.h"
+#include "search_dep_parser.h"
 #include "search_entityrelationtask.h"
 #include "search_hooktask.h"
 
@@ -32,6 +33,7 @@ namespace Search {
                                &ArgmaxTask::task,
                                &SequenceTask_DemoLDF::task,
                                &MulticlassTask::task,
+                               &DepParserTask::task,
                                &EntityRelationTask::task,
                                &HookTask::task,
                                NULL };   // must NULL terminate!
@@ -1576,7 +1578,6 @@ namespace Search {
         ("search_rollin",            po::value<string>(), "how should past trajectories be generated? [policy|oracle|*mix_per_state|mix_per_roll]")
 
         ("search_passes_per_policy", po::value<size_t>(), "number of passes per policy (only valid for search_interpolation=policy)     [def=1]")
-        ("search_exp_perturbation",  po::value<float>(),  "interpolation rate for policies in rollout (only valid for search_rollout=mix_per_state|mix_per_roll) [def=0.5]")
         ("search_beta",              po::value<float>(),  "interpolation rate for policies (only valid for search_interpolation=policy) [def=0.5]")
 
         ("search_alpha",             po::value<float>(),  "annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)     [def=1e-10]")
@@ -1618,7 +1619,6 @@ namespace Search {
                          "warning: specified --search_interpolation different than the one loaded from regressor. using loaded value of: ", "");
 
     if (vm.count("search_passes_per_policy"))       priv.passes_per_policy    = vm["search_passes_per_policy"].as<size_t>();
-    if (vm.count("search_beta"))                    priv.beta                 = vm["search_beta"             ].as<float>();
 
     if (vm.count("search_alpha"))                   priv.alpha                = vm["search_alpha"            ].as<float>();
     if (vm.count("search_beta"))                    priv.beta                 = vm["search_beta"             ].as<float>();
@@ -1843,8 +1843,9 @@ namespace Search {
   void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
   void search::add_program_options(po::variables_map& vm, po::options_description& opts) { vm = add_options( *this->priv->all, opts ); }
 
+  size_t search::get_mask() { return this->priv->all->reg.weight_mask;}
+  size_t search::get_stride_shift() { return this->priv->all->reg.stride_shift;}
   uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
-  
   
   // predictor implementation
   predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(NULL), ec_cnt(0), ec_alloced(false), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { }

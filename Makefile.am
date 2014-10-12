@@ -56,6 +56,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/search_entityrelationtask.h \
 	vowpalwabbit/search_hooktask.h \
 	vowpalwabbit/search_multiclasstask.h \
+	vowpalwabbit/search_dep_parser.h \
 	vowpalwabbit/sender.h \
 	vowpalwabbit/stagewise_poly.h \
 	vowpalwabbit/topk.h \
