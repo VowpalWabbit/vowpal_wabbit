@@ -72,7 +72,7 @@ public:
 
 	// TODO: support opaque IDs, will need to update Action class as well
 	// e.g. add GetStringID() or GetDescription() etc...
-	ActionSet(u32 count) : m_count(count)
+	ActionSet() : m_count(0)
 	{
 	}
 
@@ -85,13 +85,18 @@ public:
 		return MWTAction(id);
 	}
 
+	void Set_Count(u32 num_actions)
+	{
+		m_count = num_actions;
+	}
+
 	u32 Count()
 	{
 		return m_count;
 	}
 
 private:
-	int m_count;
+	u32 m_count;
 };
 
 class Context : public Serializable
