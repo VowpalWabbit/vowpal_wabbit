@@ -109,7 +109,7 @@ void Clock_Explore()
 	cout << "--- TOTAL TIME ---: " << (time_init + time_choose + time_serialized_log + time_typed_log) << " micro" << endl;
 }
 
-int _tmain(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
 	//Clock_Explore();
 	//return 0;

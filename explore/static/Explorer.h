@@ -301,20 +301,20 @@ public:
 		u32 bags,
 		Stateful_Policy_Func** default_policy_functions,
 		void** default_policy_args) :
+                m_bags(bags),
 		m_stateful_default_policy_funcs(default_policy_functions),
 		m_stateless_default_policy_funcs(nullptr),
-		m_default_policy_params(default_policy_args),
-		m_bags(bags)
+		m_default_policy_params(default_policy_args)
 	{
 	}
 
 	BaggingExplorer(
 		u32 bags,
 		Stateless_Policy_Func** default_policy_functions) :
+                m_bags(bags),
 		m_stateful_default_policy_funcs(nullptr),
 		m_stateless_default_policy_funcs(default_policy_functions),
-		m_default_policy_params(nullptr),
-		m_bags(bags)
+		m_default_policy_params(nullptr)
 	{
 	}
 

@@ -19,25 +19,6 @@ public:
 	virtual void Serialize(std::ostringstream&) = 0;
 };
 
-class IdGenerator
-{
-public:
-	static void Initialize()
-	{
-		g_id = 0;
-	}
-
-	static u64 Get_Id()
-	{
-		u64 return_id = g_id;
-		g_id++;
-		return return_id;
-	}
-
-private:
-	static u64 g_id;
-};
-
 class MWTAction : public Serializable
 {
 public:
@@ -185,18 +166,9 @@ private:
 class Interaction : public Serializable
 {
 public:
-	Interaction(Context* context, MWTAction action, float prob, u64 unique_id = 0, bool is_copy = false) : 
-		m_context(context), m_action(action), m_prob(prob), m_is_copy(is_copy)
+	Interaction(Context* context, MWTAction action, float prob, u64 unique_id, bool is_copy = false) : 
+  m_context(context), m_action(action), m_prob(prob), m_id(unique_id), m_is_copy(is_copy)
 	{
-		if (unique_id > 0)
-		{
-			m_id = unique_id;
-		}
-		else
-		{
-			m_id = IdGenerator::Get_Id();
-		}
-		//TODO: What's an appropriate "invalid" value? Could instead make it a pointer, but that's messy.
 		m_reward = 0.0;
 	}
 
