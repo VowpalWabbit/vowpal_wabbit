@@ -16,6 +16,8 @@ namespace MultiWorldTesting {
 	MwtExplorer::MwtExplorer()
 	{
 		m_mwt = new MWTExplorer();
+		m_bagging_funcs = nullptr;
+		m_bagging_func_params = nullptr;
 	}
 
 	MwtExplorer::~MwtExplorer()
@@ -43,6 +45,10 @@ namespace MultiWorldTesting {
 		}
 		delete m_mwt;
 		m_mwt = nullptr;
+		delete m_bagging_funcs;
+		m_bagging_funcs = nullptr;
+		delete m_bagging_func_params;
+		m_bagging_func_params = nullptr;
 	}
 
 	generic <class T>
@@ -173,26 +179,24 @@ namespace MultiWorldTesting {
 	{
 		cli::array<GCHandle>^ gcHandles = gcnew cli::array<GCHandle>(bags);
 
-		Stateful_Policy_Func** native_funcs = new Stateful_Policy_Func*[bags];
-		void** native_args = new void*[bags];
+		m_bagging_funcs = new Stateful_Policy_Func*[bags];
+		m_bagging_func_params = new void*[bags];
 
 		for (int i = 0; i < bags; i++)
 		{
 			gcHandles[i] = GCHandle::Alloc(defaultPolicyFuncs[i]);
 			IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultPolicyFuncs[i]);
 
-			native_funcs[i] = static_cast<Stateful_Policy_Func*>(ip.ToPointer());
-			native_args[i] = defaultPolicyArgs[i].ToPointer();
+			m_bagging_funcs[i] = static_cast<Stateful_Policy_Func*>(ip.ToPointer());
+			m_bagging_func_params[i] = defaultPolicyArgs[i].ToPointer();
 		}
 
-		m_mwt->Initialize_Bagging(bags, native_funcs, native_args, numActions);
+		m_mwt->Initialize_Bagging(bags, m_bagging_funcs, m_bagging_func_params, numActions);
 
 		for (int i = 0; i < bags; i++)
 		{
 			gcHandles[i].Free();
 		}
-		delete[] native_funcs;
-		delete[] native_args;
 	}
 
 	void MwtExplorer::InitializeSoftmax(float lambda, InternalStatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions)

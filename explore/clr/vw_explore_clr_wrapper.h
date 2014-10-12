@@ -129,6 +129,8 @@ namespace MultiWorldTesting {
 		cli::array<IFunctionWrapper^>^ policyWrappers;
 		GCHandle selfHandle;
 		cli::array<IntPtr>^ baggingParameters;
+		Stateful_Policy_Func** m_bagging_funcs;
+		void** m_bagging_func_params;
 
 	public:
 		MwtExplorer();

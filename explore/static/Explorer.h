@@ -14,18 +14,27 @@ public:
 };
 
 
-// TODO: This template is probably not needed any more, since we are going to convert everything to void* internally
-template <class T>
 class EpsilonGreedyExplorer : public Explorer
 {
 public:
 	EpsilonGreedyExplorer(
 		float epsilon,
-		BaseFunctionWrapper& default_policy_func_wrapper,
-		T* default_policy_params) :
+		Stateful_Policy_Func* default_policy_func,
+		void* default_policy_params) :
 		m_epsilon(epsilon),
-		m_default_policy_wrapper(default_policy_func_wrapper),
+		m_stateful_default_policy_func(default_policy_func),
+		m_stateless_default_policy_func(nullptr),
 		m_default_policy_params(default_policy_params)
+	{
+	}
+
+	EpsilonGreedyExplorer(
+		float epsilon,
+		Stateless_Policy_Func* default_policy_func) :
+		m_epsilon(epsilon),
+		m_stateful_default_policy_func(nullptr),
+		m_stateless_default_policy_func(default_policy_func),
+		m_default_policy_params(nullptr)
 	{
 	}
 
@@ -38,15 +47,13 @@ public:
 		PRG<u32> random_generator(seed);
 		// Invoke the default policy function to get the action
 		MWTAction chosen_action(0);
-		if (typeid(m_default_policy_wrapper) == typeid(StatelessFunctionWrapper))
+		if (m_stateless_default_policy_func != nullptr)
 		{
-			StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(&m_default_policy_wrapper);
-			chosen_action = MWTAction(stateless_function_wrapper->m_policy_function(context));
+			chosen_action = MWTAction(m_stateless_default_policy_func(context));
 		}
 		else
 		{
-			StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(&m_default_policy_wrapper);
-			chosen_action = MWTAction(stateful_function_wrapper->m_policy_function(m_default_policy_params, context));
+			chosen_action = MWTAction(m_stateful_default_policy_func(m_default_policy_params, context));
 		}
 
 		float action_probability = 0.f;
@@ -82,27 +89,34 @@ public:
 private:
 	float m_epsilon;
 
-	BaseFunctionWrapper& m_default_policy_wrapper;
-	T* m_default_policy_params;
+	Stateful_Policy_Func* m_stateful_default_policy_func;
+	Stateless_Policy_Func* m_stateless_default_policy_func;
+	void* m_default_policy_params;
 };
 
 
-template <class T>
 class SoftmaxExplorer : public Explorer
 {
 public:
 	SoftmaxExplorer(
 		float lambda,
-		BaseFunctionWrapper& default_scorer_func_wrapper,
-		T* default_scorer_params) :
+		Stateful_Scorer_Func* default_scorer_func,
+		void* default_scorer_params) :
 		m_lambda(lambda),
-		m_default_scorer_wrapper(default_scorer_func_wrapper),
+		m_stateful_default_scorer_func(default_scorer_func),
+		m_stateless_default_scorer_func(nullptr),
 		m_default_scorer_params(default_scorer_params)
 	{
-		if (lambda < 0)
-		{
-			throw std::invalid_argument("Lambda value must be non-negative.");
-		}
+	}
+
+	SoftmaxExplorer(
+		float lambda,
+		Stateless_Scorer_Func* default_scorer_func) :
+		m_lambda(lambda),
+		m_stateful_default_scorer_func(nullptr),
+		m_stateless_default_scorer_func(default_scorer_func),
+		m_default_scorer_params(nullptr)
+	{
 	}
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
@@ -112,15 +126,13 @@ public:
 		u32 numScores = actions.Count();
 		float* scores = new float[numScores]();
 		// Invoke the default scorer function to score each action 
-		if (typeid(m_default_scorer_wrapper) == typeid(StatelessFunctionWrapper))
+		if (m_stateless_default_scorer_func != nullptr)
 		{
-			StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(&m_default_scorer_wrapper);
-			stateless_function_wrapper->m_scorer_function(context, scores, actions.Count());
+			m_stateless_default_scorer_func(context, scores, actions.Count());
 		}
 		else
 		{
-			StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(&m_default_scorer_wrapper);
-			stateful_function_wrapper->m_scorer_function(m_default_scorer_params, context, scores, actions.Count());
+			m_stateful_default_scorer_func(m_default_scorer_params, context, scores, actions.Count());
 		}
 
 		u32 i = 0;
@@ -157,8 +169,9 @@ public:
 private:
 	float m_lambda;
 
-	BaseFunctionWrapper& m_default_scorer_wrapper;
-	T* m_default_scorer_params;
+	Stateful_Scorer_Func* m_stateful_default_scorer_func;
+	Stateless_Scorer_Func* m_stateless_default_scorer_func;
+	void* m_default_scorer_params;
 };
 
 
@@ -215,17 +228,27 @@ private:
 };
 
 
-template <class T>
 class TauFirstExplorer : public Explorer
 {
 public:
 	TauFirstExplorer(
 		u32 tau,
-		BaseFunctionWrapper& default_policy_func_wrapper,
-		T* default_policy_params) :
+		Stateful_Policy_Func* default_policy_func,
+		void* default_policy_params) :
 		m_tau(tau),
-		m_default_policy_wrapper(default_policy_func_wrapper),
+		m_stateful_default_policy_func(default_policy_func),
+		m_stateless_default_policy_func(nullptr),
 		m_default_policy_params(default_policy_params)
+	{
+	}
+
+	TauFirstExplorer(
+		u32 tau,
+		Stateless_Policy_Func* default_policy_func) :
+		m_tau(tau),
+		m_stateful_default_policy_func(nullptr),
+		m_stateless_default_policy_func(default_policy_func),
+		m_default_policy_params(nullptr)
 	{
 	}
 
@@ -246,15 +269,13 @@ public:
 		else
 		{
 			// Invoke the default policy function to get the action
-			if (typeid(m_default_policy_wrapper) == typeid(StatelessFunctionWrapper))
+			if (m_stateless_default_policy_func != nullptr)
 			{
-				StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(&m_default_policy_wrapper);
-				chosen_action = MWTAction(stateless_function_wrapper->m_policy_function(context));
+				chosen_action = MWTAction(m_stateless_default_policy_func(context));
 			}
 			else
 			{
-				StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(&m_default_policy_wrapper);
-				chosen_action = MWTAction(stateful_function_wrapper->m_policy_function(m_default_policy_params, context));
+				chosen_action = MWTAction(m_stateful_default_policy_func(m_default_policy_params, context));
 			}
 
 			action_probability = 1.f;
@@ -267,12 +288,12 @@ public:
 private:
 	u32 m_tau;
 
-	BaseFunctionWrapper& m_default_policy_wrapper;
-	T* m_default_policy_params;
+	Stateful_Policy_Func* m_stateful_default_policy_func;
+	Stateless_Policy_Func* m_stateless_default_policy_func;
+	void* m_default_policy_params;
 };
 
 
-template <class T>
 class BaggingExplorer : public Explorer
 {
 public:
@@ -280,43 +301,25 @@ public:
 		u32 bags,
 		Stateful_Policy_Func** default_policy_functions,
 		void** default_policy_args) :
+		m_stateful_default_policy_funcs(default_policy_functions),
+		m_stateless_default_policy_funcs(nullptr),
+		m_default_policy_params(default_policy_args),
 		m_bags(bags)
 	{
-		m_default_policy_funcs.clear();
-		m_default_policy_params.clear();
-
-		for (u32 i = 0; i < bags; i++){
-			StatefulFunctionWrapper<void>* func_wrapper = new StatefulFunctionWrapper<void>();
-			func_wrapper->m_policy_function = default_policy_functions[i];
-			m_default_policy_funcs.push_back(func_wrapper);
-			m_default_policy_params.push_back(default_policy_args[i]);
-		}
 	}
 
 	BaggingExplorer(
 		u32 bags,
 		Stateless_Policy_Func** default_policy_functions) :
+		m_stateful_default_policy_funcs(nullptr),
+		m_stateless_default_policy_funcs(default_policy_functions),
+		m_default_policy_params(nullptr),
 		m_bags(bags)
 	{
-		m_default_policy_funcs.clear();
-		m_default_policy_params.clear();
-
-		for (u32 i = 0; i < bags; i++){
-			StatelessFunctionWrapper* func_wrapper = new StatelessFunctionWrapper();
-			func_wrapper->m_policy_function = default_policy_functions[i];
-			m_default_policy_funcs.push_back(func_wrapper);
-		}
 	}
 
 	~BaggingExplorer()
 	{
-		for (size_t i = 0; i < m_default_policy_funcs.size(); i++)
-		{
-			delete m_default_policy_funcs[i];
-		}
-
-		m_default_policy_funcs.clear();
-		m_default_policy_params.clear();
 	}
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
@@ -335,15 +338,13 @@ public:
 		}
 		for (u32 current_bag = 0; current_bag < m_bags; current_bag++)
 		{
-			if (typeid(*m_default_policy_funcs[current_bag]) == typeid(StatelessFunctionWrapper))
+			if (m_stateless_default_policy_funcs != nullptr)
 			{
-				StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(m_default_policy_funcs[current_bag]);
-				action_from_bag = MWTAction(stateless_function_wrapper->m_policy_function(context));
+				action_from_bag = MWTAction(m_stateless_default_policy_funcs[current_bag](context));
 			}
 			else
 			{
-				StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(m_default_policy_funcs[current_bag]);
-				action_from_bag = MWTAction(stateful_function_wrapper->m_policy_function(m_default_policy_params[current_bag], context));
+				action_from_bag = MWTAction(m_stateful_default_policy_funcs[current_bag](m_default_policy_params[current_bag], context));
 			}
 
 			if (current_bag == chosen_bag)
@@ -362,6 +363,7 @@ public:
 private:
 	u32 m_bags;
 
-	std::vector<BaseFunctionWrapper*> m_default_policy_funcs;
-	std::vector<T*> m_default_policy_params;
+	Stateful_Policy_Func** m_stateful_default_policy_funcs;
+	Stateless_Policy_Func** m_stateless_default_policy_funcs;
+	void** m_default_policy_params;
 };

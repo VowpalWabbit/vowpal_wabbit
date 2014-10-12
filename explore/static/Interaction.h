@@ -25,27 +25,17 @@ public:
 	static void Initialize()
 	{
 		g_id = 0;
-		//	::InitializeCriticalSection(&g_id_mutex);
 	}
 
 	static u64 Get_Id()
 	{
-	  //		::EnterCriticalSection(&g_id_mutex);
 		u64 return_id = g_id;
 		g_id++;
-		//	::LeaveCriticalSection(&g_id_mutex);
-
 		return return_id;
-	}
-
-	static void Destroy()
-	{
-	  //	::DeleteCriticalSection(&g_id_mutex);
 	}
 
 private:
 	static u64 g_id;
-	//static CRITICAL_SECTION g_id_mutex;
 };
 
 class MWTAction : public Serializable
@@ -81,7 +71,7 @@ public:
 
 	// TODO: support opaque IDs, will need to update Action class as well
 	// e.g. add GetStringID() or GetDescription() etc...
-	ActionSet(u32 count) : m_count(count)
+	ActionSet() : m_count(0)
 	{
 	}
 
@@ -94,13 +84,18 @@ public:
 		return MWTAction(id);
 	}
 
+	void Set_Count(u32 num_actions)
+	{
+		m_count = num_actions;
+	}
+
 	u32 Count()
 	{
 		return m_count;
 	}
 
 private:
-	int m_count;
+	u32 m_count;
 };
 
 class Context : public Serializable
