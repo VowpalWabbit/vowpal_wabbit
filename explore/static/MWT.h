@@ -123,11 +123,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set = new ActionSet(num_actions);
-
-		StatefulFunctionWrapper<void>* func_Wrapper = new StatefulFunctionWrapper<void>();
-		func_Wrapper->m_policy_function = default_policy_func;
-		
-		m_explorer = new EpsilonGreedyExplorer<void>(epsilon, *func_Wrapper, default_policy_func_argument);
+		m_explorer = new EpsilonGreedyExplorer(epsilon, default_policy_func, default_policy_func_argument);
 	}
 
 	void Initialize_Epsilon_Greedy(
@@ -136,11 +132,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set = new ActionSet(num_actions);
-
-		StatelessFunctionWrapper* func_Wrapper = new StatelessFunctionWrapper();
-		func_Wrapper->m_policy_function = default_policy_func;
-		
-		m_explorer = new EpsilonGreedyExplorer<MWT_Empty>(epsilon, *func_Wrapper, nullptr);
+		m_explorer = new EpsilonGreedyExplorer(epsilon, default_policy_func);
 	}
 
 	void Initialize_Tau_First(
@@ -150,11 +142,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set = new ActionSet(num_actions);
-
-		StatefulFunctionWrapper<void>* func_wrapper = new StatefulFunctionWrapper<void>();
-		func_wrapper->m_policy_function = default_policy_func;
-		
-		m_explorer = new TauFirstExplorer<void>(tau, *func_wrapper, default_policy_func_argument);
+		m_explorer = new TauFirstExplorer(tau, default_policy_func, default_policy_func_argument);
 	}
 
 	void Initialize_Tau_First(
@@ -163,11 +151,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set = new ActionSet(num_actions);
-
-		StatelessFunctionWrapper* func_wrapper = new StatelessFunctionWrapper();
-		func_wrapper->m_policy_function = default_policy_func;
-		
-		m_explorer = new TauFirstExplorer<MWT_Empty>(tau, *func_wrapper, nullptr);
+		m_explorer = new TauFirstExplorer(tau, default_policy_func);
 	}
 
 	void Initialize_Bagging(
