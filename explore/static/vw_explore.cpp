@@ -5,4 +5,3 @@
 #include "MWT.h"
 
 u64	IdGenerator::g_id = 0;
-CRITICAL_SECTION IdGenerator::g_id_mutex;
