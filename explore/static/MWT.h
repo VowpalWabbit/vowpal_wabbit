@@ -26,8 +26,6 @@ public:
 
 	~MWTExplorer()
 	{
-		IdGenerator::Destroy();
-
 		delete m_explorer;
 		delete m_action_set;
 	}

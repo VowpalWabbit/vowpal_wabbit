@@ -35,10 +35,6 @@ public:
 		return return_id;
 	}
 
-	static void Destroy()
-	{
-	}
-
 private:
 	static u64 g_id;
 };
