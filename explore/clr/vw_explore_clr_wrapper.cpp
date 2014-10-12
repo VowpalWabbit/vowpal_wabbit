@@ -407,37 +407,94 @@ namespace MultiWorldTesting {
 
 	MwtOptimizer::MwtOptimizer(cli::array<INTERACTION^>^ interactions, UInt32 numActions)
 	{
-		// TODO: implement
-		m_mwt_optimizer = nullptr;
+		m_num_native_interactions = interactions->Length;
+		m_native_interactions = new Interaction*[m_num_native_interactions];
+		for (int i = 0; i < m_num_native_interactions; i++)
+		{
+			Context* native_context = MwtHelper::ToNativeContext(interactions[i]->ApplicationContext);
+
+			m_native_interactions[i] = new Interaction(native_context,
+				interactions[i]->ChosenAction,
+				interactions[i]->Probability,
+				interactions[i]->JoinId);
+		}
+		size_t native_num_interactions = (size_t)m_num_native_interactions;
+		m_mwt_optimizer = new MWTOptimizer(native_num_interactions, m_native_interactions, (u32)numActions);
 	}
 
 	MwtOptimizer::~MwtOptimizer()
 	{
+		this->Uninitialize();
+	}
+
+	void MwtOptimizer::Uninitialize()
+	{
+		selfHandle.Free();
+
+		for (int i = 0; i < m_num_native_interactions; i++)
+		{
+			delete m_native_interactions[i];
+		}
+		delete[] m_native_interactions;
 		delete m_mwt_optimizer;
 	}
 
 	generic <class T>
 	float MwtOptimizer::EvaluatePolicy(StatefulPolicyDelegate<T>^ policyFunc, T policyParams)
 	{
-		// TODO: implement
-		return 0.f;
+		policyWrapper = gcnew DefaultPolicyWrapper<T>(policyFunc, policyParams);
+		selfHandle = GCHandle::Alloc(this);
+		InternalStatefulPolicyDelegate^ spDelegate = gcnew InternalStatefulPolicyDelegate(&MwtOptimizer::InternalStatefulPolicy);
+
+		return this->EvaluatePolicy(spDelegate, (IntPtr)selfHandle);
 	}
 
 	float MwtOptimizer::EvaluatePolicy(StatelessPolicyDelegate^ policy_func)
 	{
-		// TODO: implement
-		return 0.f;
+		policyWrapper = gcnew DefaultPolicyWrapper<int>(policy_func);
+		selfHandle = GCHandle::Alloc(this);
+		InternalStatefulPolicyDelegate^ spDelegate = gcnew InternalStatefulPolicyDelegate(&MwtOptimizer::InternalStatefulPolicy);
+
+		return this->EvaluatePolicy(spDelegate, (IntPtr)selfHandle);
 	}
 
-	float MwtOptimizer::EvaluatePolicyOneAgainstAll(String^ model_input_file)
+	float MwtOptimizer::EvaluatePolicyVWCSOAA(String^ model_input_file)
 	{
-		// TODO: implement
-		return 0.f;
+		return m_mwt_optimizer->Evaluate_Policy_VW_CSOAA(marshal_as<std::string>(model_input_file));
 	}
 
-	void MwtOptimizer::OptimizePolicyOneAgainstAll(String^ model_output_file)
+	void MwtOptimizer::OptimizePolicyVWCSOAA(String^ model_output_file)
 	{
-		// TODO: implement
+		m_mwt_optimizer->Optimize_Policy_VW_CSOAA(marshal_as<std::string>(model_output_file));
+	}
+
+	float MwtOptimizer::EvaluatePolicy(InternalStatefulPolicyDelegate^ policyFunc, IntPtr policyParams)
+	{
+		GCHandle gch = GCHandle::Alloc(policyFunc);
+		IntPtr ip = Marshal::GetFunctionPointerForDelegate(policyFunc);
+
+		Stateful_Policy_Func* nativeFunc = static_cast<Stateful_Policy_Func*>(ip.ToPointer());
+		float value = m_mwt_optimizer->Evaluate_Policy(nativeFunc, (void*)policyParams.ToPointer());
+
+		gch.Free();
+
+		return value;
+	}
+
+	UInt32 MwtOptimizer::InvokeDefaultPolicyFunction(CONTEXT^ context)
+	{
+		return policyWrapper->InvokeFunction(context);
+	}
+
+	UInt32 MwtOptimizer::InternalStatefulPolicy(IntPtr mwtOptimizerPtr, IntPtr contextPtr)
+	{
+		GCHandle mwtHandle = (GCHandle)mwtOptimizerPtr;
+		MwtOptimizer^ mwtOpt = (MwtOptimizer^)(mwtHandle.Target);
+
+		GCHandle contextHandle = (GCHandle)contextPtr;
+		CONTEXT^ context = (CONTEXT^)(contextHandle.Target);
+
+		return mwtOpt->InvokeDefaultPolicyFunction(context);
 	}
 
 	Context* MwtHelper::ToNativeContext(CONTEXT^ context)

@@ -132,8 +132,8 @@ namespace cs_test
             
             float eval1 = mot.EvaluatePolicy(new StatefulPolicyDelegate<int>(SampleStatefulPolicyFunc), policyParams);
 
-            mot.OptimizePolicyOneAgainstAll("model_file");
-            float eval2 = mot.EvaluatePolicyOneAgainstAll("model_file");
+            mot.OptimizePolicyVWCSOAA("model_file");
+            float eval2 = mot.EvaluatePolicyVWCSOAA("model_file");
 
             Console.WriteLine(chosenAction);
             Console.WriteLine(interactions);

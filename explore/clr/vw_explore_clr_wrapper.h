@@ -202,16 +202,30 @@ namespace MultiWorldTesting {
 	{
 	private:
 		MWTOptimizer* m_mwt_optimizer;
+		Interaction** m_native_interactions;
+		int m_num_native_interactions;
+		IFunctionWrapper^ policyWrapper;
+		GCHandle selfHandle;
 
-	public:
+	public: 
 		MwtOptimizer(cli::array<INTERACTION^>^ interactions, UInt32 numActions);
 		~MwtOptimizer();
 
 		generic <class T>
 		float EvaluatePolicy(StatefulPolicyDelegate<T>^ policyFunc, T policyParams);
 		float EvaluatePolicy(StatelessPolicyDelegate^ policy_func);
-		float EvaluatePolicyOneAgainstAll(String^ model_input_file);
-		void OptimizePolicyOneAgainstAll(String^ model_output_file);
+		float EvaluatePolicyVWCSOAA(String^ model_input_file);
+		void OptimizePolicyVWCSOAA(String^ model_output_file);
+		void Uninitialize();
+
+	internal:
+		UInt32 InvokeDefaultPolicyFunction(CONTEXT^);
+
+	private:
+		float EvaluatePolicy(InternalStatefulPolicyDelegate^ policyFunc, IntPtr policyParams);
+
+	private:
+		static UInt32 InternalStatefulPolicy(IntPtr, IntPtr);
 	};
 
 	private ref class MwtHelper

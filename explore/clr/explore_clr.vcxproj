@@ -186,6 +186,9 @@
     <ClCompile Include="vw_explore_clr_wrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\vowpalwabbit\libvw.vcxproj">
+      <Project>{ea52de0d-a5be-4fb9-8c84-3a57bdfebed9}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\vowpalwabbit\vw_static.vcxproj">
       <Project>{1e205806-7f80-47dd-a38d-fc08083f3592}</Project>
     </ProjectReference>

@@ -390,18 +390,12 @@ public:
 		typename StatefulFunctionWrapper<T>::Policy_Func policy_func,
 		T* policy_params)
 	{
-		StatefulFunctionWrapper<T> func_Wrapper = StatefulFunctionWrapper<T>();
-		func_Wrapper.m_policy_function = (Stateful_Policy_Func*)policy_func;
-
-		return Evaluate_Policy<T>(func_Wrapper, policy_params);
+		this->Evaluate_Policy((Stateful_Policy_Func*)policy_func, (void*)policy_params);
 	}
 
 	float Evaluate_Policy(StatelessFunctionWrapper::Policy_Func policy_func)
 	{
-		StatelessFunctionWrapper func_Wrapper = StatelessFunctionWrapper();
-		func_Wrapper.m_policy_function = (Stateless_Policy_Func*)policy_func;
-
-		return Evaluate_Policy<MWT_Empty>(func_Wrapper, nullptr);
+		this->Evaluate_Policy((Stateless_Policy_Func*)policy_func);
 	}
 
 	float Evaluate_Policy_VW_CSOAA(std::string model_input_file)
@@ -449,6 +443,25 @@ public:
 			(void)VW_Learn(vw, example);
 		}
 		VW_Finish(vw);
+	}
+
+public:
+	float Evaluate_Policy(
+		Stateful_Policy_Func policy_func,
+		void* policy_params)
+	{
+		StatefulFunctionWrapper<void> func_Wrapper = StatefulFunctionWrapper<void>();
+		func_Wrapper.m_policy_function = (Stateful_Policy_Func*)policy_func;
+
+		return Evaluate_Policy<void>(func_Wrapper, policy_params);
+	}
+
+	float Evaluate_Policy(Stateless_Policy_Func policy_func)
+	{
+		StatelessFunctionWrapper func_Wrapper = StatelessFunctionWrapper();
+		func_Wrapper.m_policy_function = (Stateless_Policy_Func*)policy_func;
+
+		return Evaluate_Policy<MWT_Empty>(func_Wrapper, nullptr);
 	}
 
 private:
