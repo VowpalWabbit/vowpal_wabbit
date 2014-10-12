@@ -181,6 +181,25 @@ namespace ExploreTests
         }
 
         [TestMethod]
+        public void SoftmaxStatefulScores()
+        {
+            mwt.InitializeSoftmax<int>(Lambda,
+                new StatefulScorerDelegate<int>(NonUniformStatefulScorerFunc),
+                PolicyParams, NumActions);
+
+            mwt.ChooseActionAndKey(context);
+            mwt.ChooseActionAndKey(context);
+            mwt.ChooseActionAndKey(context);
+
+            INTERACTION[] interactions = mwt.GetAllInteractions();
+            for (int i = 0; i < interactions.Length; i++)
+            {
+                // Scores are not equal therefore probabilities should not be uniform
+                Assert.AreNotEqual(interactions[i].Probability, 1.0f / NumActions);
+            }
+        }
+
+        [TestMethod]
         public void SoftmaxStateless()
         {
             mwt.InitializeSoftmax(Lambda,
@@ -202,6 +221,25 @@ namespace ExploreTests
             }
 
             mwt.GetAllInteractions();
+        }
+
+        [TestMethod]
+        public void SoftmaxStatelessScores()
+        {
+            mwt.InitializeSoftmax(Lambda,
+                new StatelessScorerDelegate(NonUniformStatelessScorerFunc),
+                NumActions);
+
+            mwt.ChooseActionAndKey(context);
+            mwt.ChooseActionAndKey(context);
+            mwt.ChooseActionAndKey(context);
+
+            INTERACTION[] interactions = mwt.GetAllInteractions();
+            for (int i = 0; i < interactions.Length; i++)
+            {
+                // Scores are not equal therefore probabilities should not be uniform
+                Assert.AreNotEqual(interactions[i].Probability, 1.0f / NumActions);
+            }
         }
 
         [TestInitialize]
@@ -247,6 +285,22 @@ namespace ExploreTests
             for (uint i = 0; i < scores.Length; i++)
             {
                 scores[i] = applicationContext.Features.Length;
+            }
+        }
+
+        private static void NonUniformStatefulScorerFunc(int policyParams, CONTEXT applicationContext, float[] scores)
+        {
+            for (uint i = 0; i < scores.Length; i++)
+            {
+                scores[i] = policyParams + i;
+            }
+        }
+
+        private static void NonUniformStatelessScorerFunc(CONTEXT applicationContext, float[] scores)
+        {
+            for (uint i = 0; i < scores.Length; i++)
+            {
+                scores[i] = i;
             }
         }
 
