@@ -258,7 +258,7 @@ namespace ExploreTests
         private static readonly uint Tau = 0;
         private static readonly uint Bags = 2;
         private static readonly float Lambda = 0.5f;
-        private static readonly int PolicyParams = 7;
+        private static readonly int PolicyParams = 1003;
         private static readonly string UniqueKey = "ManagedTestId";
 
         private MwtExplorer mwt;

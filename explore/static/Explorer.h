@@ -124,10 +124,20 @@ public:
 		}
 
 		u32 i = 0;
+
+		float max_score = -FLT_MAX;
+		for (i = 0; i < numScores; i++)
+		{
+			if (max_score < scores[i])
+			{
+				max_score = scores[i];
+			}
+		}
+
 		// Create a normalized exponential distribution based on the returned scores
 		for (i = 0; i < numScores; i++)
 		{
-			scores[i] = exp(m_lambda * scores[i]);
+			scores[i] = exp(m_lambda * (scores[i] - max_score));
 		}
 		//TODO: VS2013 doesn't support the iterator based constructor of discrete_distribution
 		i = 0;
