@@ -166,10 +166,11 @@ private:
 class Interaction : public Serializable
 {
 public:
-	Interaction(Context* context, MWTAction action, float prob, u64 unique_id, bool is_copy = false) : 
+	Interaction(Context* context, MWTAction action, float prob, std::string unique_id, bool is_copy = false) : 
   m_context(context), m_action(action), m_prob(prob), m_id(unique_id), m_is_copy(is_copy)
 	{
 		m_reward = 0.0;
+		m_id_hash = Get_Id_Hash(unique_id);
 	}
 
 	~Interaction()
@@ -180,9 +181,14 @@ public:
 		}
 	}
 
-	u64 Get_Id()
+	std::string Get_Id()
 	{
 		return m_id;
+	}
+
+	u64 Get_Id_Hash()
+	{
+		return m_id_hash;
 	}
 
 	MWTAction Get_Action()
@@ -233,12 +239,20 @@ public:
 		m_context->Serialize(stream);
 	}
 
+public:
+	static u64 Get_Id_Hash(std::string unique_id)
+	{
+		// TODO: We should remove the dependence on VW's hash function, and also use something
+		// that returns >= 64 bits
+		return ::uniform_hash(unique_id.c_str(), unique_id.size(), 0);
+	}
 
 private:
 	Context* m_context;
 	MWTAction m_action;
 	float m_prob;
 	float m_reward;
-	u64 m_id;
+	std::string m_id;
+	u64 m_id_hash;
 	bool m_is_copy;
 };

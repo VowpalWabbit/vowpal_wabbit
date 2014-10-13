@@ -36,7 +36,8 @@ namespace MultiWorldTesting {
 		CONTEXT^ ApplicationContext;
 		UInt32 ChosenAction;
 		float Probability;
-		UInt64 JoinId;
+		String^ Id;
+		UInt64 IdHash;
 	};
 
 	public ref class ActionID

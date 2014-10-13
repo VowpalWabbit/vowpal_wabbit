@@ -298,7 +298,8 @@ namespace MultiWorldTesting {
 				interactions[i]->ApplicationContext = gcnew CONTEXT(features, otherContext);
 				interactions[i]->ChosenAction = native_interactions[i]->Get_Action().Get_Id();
 				interactions[i]->Probability = native_interactions[i]->Get_Prob();
-				interactions[i]->JoinId = native_interactions[i]->Get_Id();
+				interactions[i]->Id = gcnew String(native_interactions[i]->Get_Id().c_str());
+				interactions[i]->IdHash = native_interactions[i]->Get_Id_Hash();
 
 				delete native_interactions[i];
 			}
@@ -372,10 +373,11 @@ namespace MultiWorldTesting {
 		{
 			Context* native_context = MwtHelper::ToNativeContext(interactions[i]->ApplicationContext);
 			
+			String^ interaction_id = interactions[i]->Id;
 			m_native_interactions[i] = new Interaction(native_context,
 				interactions[i]->ChosenAction,
 				interactions[i]->Probability,
-				interactions[i]->JoinId);
+				marshal_as<std::string>(interaction_id));
 		}
 		size_t native_num_interactions = (size_t)m_num_native_interactions;
 		m_mwt_reward_reporter = new MWTRewardReporter(native_num_interactions, m_native_interactions);
@@ -416,11 +418,11 @@ namespace MultiWorldTesting {
 		for (int i = 0; i < m_num_native_interactions; i++)
 		{
 			Context* native_context = MwtHelper::ToNativeContext(interactions[i]->ApplicationContext);
-
+			String^ interaction_id = interactions[i]->Id;
 			m_native_interactions[i] = new Interaction(native_context,
 				interactions[i]->ChosenAction,
 				interactions[i]->Probability,
-				interactions[i]->JoinId);
+				marshal_as<std::string>(interaction_id));
 		}
 		size_t native_num_interactions = (size_t)m_num_native_interactions;
 		m_mwt_optimizer = new MWTOptimizer(native_num_interactions, m_native_interactions, (u32)numActions);

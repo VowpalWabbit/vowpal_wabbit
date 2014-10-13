@@ -200,7 +200,8 @@ public:
 	// Context& is used internally to log data only since we need to access its members for serialization.
 	u32 Choose_Action(void* context, std::string unique_id, Context& log_context)
 	{
-		u32 seed = this->Compute_Seed(const_cast<char*>(unique_id.c_str()), unique_id.size());
+		// Hash the ID of the yet-to-be-created interaction so we can seed the explorer
+		u64 seed = Interaction::Get_Id_Hash(unique_id);
 		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, m_action_set, seed);
 		
 		if (!std::get<2>(action_Probability_Log_Tuple))
@@ -208,7 +209,7 @@ public:
 			return std::get<0>(action_Probability_Log_Tuple).Get_Id();
 		}
 
-		Interaction pInteraction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), seed);
+		Interaction pInteraction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), unique_id);
 		m_logger.Store(&pInteraction);
 
 		return std::get<0>(action_Probability_Log_Tuple).Get_Id();
@@ -226,10 +227,12 @@ public:
 			// throwing away this ID, but so be it)
 			return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), NO_JOIN_KEY);
 		}
-		Interaction interaction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), id);
+		//TODO: This is roundabout for now, since we convert a u64 id to a string only to hash 
+		// it again, but this should be addressed by an open issue to remove this api entirely
+		Interaction interaction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), std::to_string(id));
 		m_logger.Store(&interaction);
 
-		return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), interaction.Get_Id());
+		return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), interaction.Get_Id_Hash());
 	}
 
 	std::string Get_All_Interactions()
@@ -240,13 +243,6 @@ public:
 	void Get_All_Interactions(size_t& num_interactions, Interaction**& interactions)
 	{
 		m_logger.Get_All_Interactions(num_interactions, interactions);
-	}
-
-private:
-	u32 Compute_Seed(char* unique_id, u32 length)
-	{
-		// TODO: change return type to u64, may need to revisit this hash function
-		return ::uniform_hash(unique_id, length, 0);
 	}
 
 private:
@@ -271,7 +267,7 @@ public:
 			// in case the user modified/mishandled the dataset. 
 			if (interactions[i])
 			{
-				m_interactions[interactions[i]->Get_Id()] = interactions[i];
+				m_interactions[interactions[i]->Get_Id_Hash()] = interactions[i];
 			}
 		}
 	}
