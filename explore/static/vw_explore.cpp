@@ -2,6 +2,3 @@
 //
 
 #include "stdafx.h"
-#include "MWT.h"
-
-u64	IdGenerator::g_id = 0;

@@ -54,16 +54,16 @@ namespace CBIFY {
   u32 explore_policy(void* context, void* application_context)
   {
 	  vw_context* ctx = (vw_context*)context;
-	  ctx->learner->predict(*ctx->example);
-	  return (u32)(((CB::label*)ctx->example->ld)->prediction);
+	  ctx->l->predict(*ctx->e);
+	  return (u32)(((CB::label*)ctx->e->ld)->prediction);
   }
 
   template <bool is_learn>
   void predict_or_learn_first(cbify& data, learner& base, example& ec)
   {//Explore tau times, then act according to optimal.
     MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
-	base.mwt_policy_context->learner = &base;
-	base.mwt_policy_context->example = &ec;
+	base.mwt_policy_context->l = &base;
+	base.mwt_policy_context->e = &ec;
 	Context dummy(nullptr, 0);
     //Use CB to find current prediction for remaining rounds.
     if (data.tau && is_learn)
@@ -102,8 +102,8 @@ namespace CBIFY {
 	// which is not available at calling time. This can be fixed if the Context object 
 	// allows for a void* data instance, then we can pass the argument in at the
 	// time of choose_action. Or if Choose_Action takes a separate parameter for this arg.
-	base.mwt_policy_context->learner = &base;
-	base.mwt_policy_context->example = &ec;
+	base.mwt_policy_context->l = &base;
+	base.mwt_policy_context->e = &ec;
 
 	Context dummy(nullptr, 0);
     base.mwt->Choose_Action_And_Key(dummy);

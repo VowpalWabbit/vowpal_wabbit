@@ -6,7 +6,6 @@
 
 #include "stdafx.h"
 #include <typeinfo>
-#include "hash.h"
 #include "Explorer.h"
 
 //

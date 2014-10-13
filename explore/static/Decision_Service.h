@@ -1,3 +1,7 @@
+#pragma once
+
+#include "stdafx.h"
+#include "vwdll.h"
 
 //
 // Top-level internal API for offline evaluation/optimization.

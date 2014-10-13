@@ -151,6 +151,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Decision_Service.h" />
     <ClInclude Include="Explorer.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="MWT.h" />

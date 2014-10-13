@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mwt.h"
+#include "Decision_Service.h"
 
 #include <msclr\marshal_cppstd.h>
 
