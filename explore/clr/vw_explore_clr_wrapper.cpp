@@ -393,17 +393,24 @@ namespace MultiWorldTesting {
 		delete m_mwt_reward_reporter;
 	}
 
-	bool MwtRewardReporter::ReportReward(UInt64 id, float reward)
+	bool MwtRewardReporter::ReportReward(String^ id, float reward)
 	{
-		return m_mwt_reward_reporter->ReportReward(id, reward);
+		return m_mwt_reward_reporter->ReportReward(marshal_as<std::string>(id), reward);
 	}
 
-	bool MwtRewardReporter::ReportReward(cli::array<UInt64>^ ids, cli::array<float>^ rewards)
+	bool MwtRewardReporter::ReportReward(cli::array<String^>^ ids, cli::array<float>^ rewards)
 	{
-		pin_ptr<UInt64> pinnedIds = &ids[0];
 		pin_ptr<float> pinnedRewards = &rewards[0];
 
-		return m_mwt_reward_reporter->ReportReward((size_t)ids->Length, (u64*)pinnedIds, (float*)pinnedRewards);
+		std::string* native_ids = new std::string[ids->Length];
+		for (int i = 0; i < ids->Length; i++)
+		{
+			String^ interaction_id = ids[i];
+			native_ids[i] = marshal_as<std::string>(interaction_id);
+		}
+		pin_ptr<std::string> pinnedIds = &native_ids[0];
+
+		return m_mwt_reward_reporter->ReportReward((size_t)ids->Length, (std::string*)pinnedIds, (float*)pinnedRewards);
 	}
 	
 	String^ MwtRewardReporter::GetAllInteractions()

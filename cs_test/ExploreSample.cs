@@ -121,7 +121,7 @@ namespace cs_test
 
             MwtRewardReporter mrr = new MwtRewardReporter(interactions);
 
-            UInt64 joinKey = 10;
+            string joinKey = "10";
             float reward = 0.5f;
             if (!mrr.ReportReward(joinKey, reward))
             {

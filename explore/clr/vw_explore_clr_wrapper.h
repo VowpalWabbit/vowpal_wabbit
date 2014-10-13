@@ -197,8 +197,8 @@ namespace MultiWorldTesting {
 		MwtRewardReporter(cli::array<INTERACTION^>^ interactions);
 		~MwtRewardReporter();
 
-		bool ReportReward(UInt64 id, float reward);
-		bool ReportReward(cli::array<UInt64>^ ids, cli::array<float>^ rewards);
+		bool ReportReward(String^ id, float reward);
+		bool ReportReward(cli::array<String^>^ ids, cli::array<float>^ rewards);
 		String^ GetAllInteractions();
 	};
 
