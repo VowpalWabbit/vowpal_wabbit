@@ -243,10 +243,16 @@ public:
 public:
 	static u64 Get_Id_Hash(std::string& unique_id)
 	{
-		// TODO: We should remove the dependence on VW's hash function, and also use something
-		// that returns >= 64 bits
 	  hash<string> foo;
-	  return foo(unique_id);
+
+	  size_t ret = 0;
+	  const char *p = unique_id.c_str();
+	  while (*p != '\0')
+	    if (*p >= '0' && *p <= '9')
+	      ret = 10*ret + *(p++) - '0';
+	    else
+	      return foo(unique_id);
+	  return ret;
 	}
 
 private:
