@@ -201,14 +201,14 @@ public:
 	u32 Choose_Action(void* context, std::string unique_id, Context& log_context)
 	{
 		// Hash the ID of the yet-to-be-created interaction so we can seed the explorer
-		u64 seed = Interaction::Get_Id_Hash(unique_id);
+		u64 seed = Interaction::Compute_Id_Hash(unique_id);
 		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, m_action_set, seed);
 		
 		if (!std::get<2>(action_Probability_Log_Tuple))
 		{
 			return std::get<0>(action_Probability_Log_Tuple).Get_Id();
 		}
-
+		// Create an interaction using the same unique_id as used in the seed above!
 		Interaction pInteraction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), unique_id);
 		m_logger.Store(&pInteraction);
 

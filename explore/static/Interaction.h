@@ -174,7 +174,7 @@ public:
   m_context(context), m_action(action), m_prob(prob), m_id(unique_id), m_is_copy(is_copy)
 	{
 		m_reward = NO_REWARD;
-		m_id_hash = Get_Id_Hash(unique_id);
+		m_id_hash = Compute_Id_Hash(unique_id);
 	}
 
 	~Interaction()
@@ -244,7 +244,7 @@ public:
 	}
 
  public:
-	static u64 Get_Id_Hash(std::string& unique_id)
+	static u64 Compute_Id_Hash(std::string& unique_id)
 	{
 	  size_t ret = 0;
 	  const char *p = unique_id.c_str();

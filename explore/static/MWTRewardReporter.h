@@ -19,10 +19,10 @@ public:
 		}
 	}
 
-	bool ReportReward(std::string unique_id, float reward)
+	bool Report_Reward(std::string unique_id, float reward)
 	{
 		bool id_present = false;
-		u64 id = Interaction::Get_Id_Hash(unique_id);
+		u64 id = Interaction::Compute_Id_Hash(unique_id);
 		if (m_interactions.find(id) != m_interactions.end())
 		{
 			id_present = true;
@@ -31,13 +31,13 @@ public:
 		return id_present;
 	}
 
-	bool ReportReward(size_t num_entries, std::string unique_ids[], float rewards[])
+	bool Report_Reward(size_t num_entries, std::string unique_ids[], float rewards[])
 	{
 		bool all_ids_present = false;
 		u64 id;
 		for (u64 i = 0; i < num_entries; i++)
 		{
-			all_ids_present &= ReportReward(unique_ids[i], rewards[i]);
+			all_ids_present &= Report_Reward(unique_ids[i], rewards[i]);
 		}
 		return all_ids_present;
 	}

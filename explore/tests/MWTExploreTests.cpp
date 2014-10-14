@@ -292,7 +292,7 @@ namespace vw_explore_tests
 			MWTRewardReporter rew = MWTRewardReporter(num_interactions, interactions);
 			float reward = 2.0;
 			// Report a single interaction's reward
-			rew.ReportReward(ids[0], reward);
+			rew.Report_Reward(ids[0], reward);
 			for (i = 0; i < num_interactions; i++)
 			{
 				// We need to find the interaction since it's not guaranteed the interactiosn are
@@ -305,7 +305,7 @@ namespace vw_explore_tests
 			float* all_rewards = new float[num_interactions];
 			// This initializes all rewards to the value above
 			std::fill_n(all_rewards, num_interactions, reward);
-			rew.ReportReward(num_decisions, ids, all_rewards);
+			rew.Report_Reward(num_decisions, ids, all_rewards);
 			for (i = 0; i < num_interactions; i++)
 			{
 				Assert::AreEqual(interactions[i]->Get_Reward(), reward);
@@ -341,7 +341,7 @@ namespace vw_explore_tests
 			u32 policy_matches = 0;
 			for (i = 0; i < num_interactions; i++)
 			{
-				rew.ReportReward(ids[i], reward);
+				rew.Report_Reward(ids[i], reward);
 				if (interactions[i]->Get_Action().Get_Id() == policy_action)
 				{
 					policy_weighted_sum += reward * (1.0 / interactions[i]->Get_Prob());
