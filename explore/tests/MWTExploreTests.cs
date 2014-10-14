@@ -27,8 +27,8 @@ namespace ExploreTests
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            Tuple<uint, ulong> chosenActionAndKey = mwt.ChooseActionAndKey(context);
-            Assert.AreEqual(expectedAction, chosenActionAndKey.Item1);
+            chosenAction = mwt.ChooseAction(context, UniqueKey);
+            Assert.AreEqual(expectedAction, chosenAction);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
@@ -49,8 +49,8 @@ namespace ExploreTests
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            Tuple<uint, ulong> chosenActionAndKey = mwt.ChooseActionAndKey(context);
-            Assert.AreEqual(expectedAction, chosenActionAndKey.Item1);
+            chosenAction = mwt.ChooseAction(context, UniqueKey);
+            Assert.AreEqual(expectedAction, chosenAction);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
@@ -74,9 +74,6 @@ namespace ExploreTests
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            Tuple<uint, ulong> chosenActionAndKey = mwt.ChooseActionAndKey(context);
-            Assert.AreEqual(expectedAction, chosenActionAndKey.Item1);
-
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(0, interactions.Length);
         }
@@ -92,9 +89,6 @@ namespace ExploreTests
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
-
-            Tuple<uint, ulong> chosenActionAndKey = mwt.ChooseActionAndKey(context);
-            Assert.AreEqual(expectedAction, chosenActionAndKey.Item1);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(0, interactions.Length);
@@ -120,8 +114,8 @@ namespace ExploreTests
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            Tuple<uint, ulong> chosenActionAndKey = mwt.ChooseActionAndKey(context);
-            Assert.AreEqual(expectedAction, chosenActionAndKey.Item1);
+            chosenAction = mwt.ChooseAction(context, UniqueKey);
+            Assert.AreEqual(expectedAction, chosenAction);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
@@ -146,8 +140,8 @@ namespace ExploreTests
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            Tuple<uint, ulong> chosenActionAndKey = mwt.ChooseActionAndKey(context);
-            Assert.AreEqual(expectedAction, chosenActionAndKey.Item1);
+            chosenAction = mwt.ChooseAction(context, UniqueKey);
+            Assert.AreEqual(expectedAction, chosenAction);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
@@ -165,11 +159,12 @@ namespace ExploreTests
 
             uint numDecisions = (uint)(NumActions * Math.Log(NumActions * 1.0) + Math.Log(NumActionsCover * 1.0 / NumActions) * C * NumActions);
             uint[] actions = new uint[NumActions];
-            
+
+            Random rand = new Random();
             for (uint i = 0; i < numDecisions; i++)
             {
-                Tuple<uint, ulong> actionAndKey = mwt.ChooseActionAndKey(context);
-                actions[ActionID.Make_ZeroBased(actionAndKey.Item1)]++;
+                uint chosenAction = mwt.ChooseAction(context, rand.NextDouble().ToString());
+                actions[ActionID.Make_ZeroBased(chosenAction)]++;
             }
             
             for (uint i = 0; i < NumActions; i++)
@@ -187,9 +182,10 @@ namespace ExploreTests
                 new StatefulScorerDelegate<int>(NonUniformStatefulScorerFunc),
                 PolicyParams, NumActions);
 
-            mwt.ChooseActionAndKey(context);
-            mwt.ChooseActionAndKey(context);
-            mwt.ChooseActionAndKey(context);
+            Random rand = new Random();
+            mwt.ChooseAction(context, rand.NextDouble().ToString());
+            mwt.ChooseAction(context, rand.NextDouble().ToString());
+            mwt.ChooseAction(context, rand.NextDouble().ToString());
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             for (int i = 0; i < interactions.Length; i++)
@@ -209,10 +205,11 @@ namespace ExploreTests
             uint numDecisions = (uint)(NumActions * Math.Log(NumActions * 1.0) + Math.Log(NumActionsCover * 1.0 / NumActions) * C * NumActions);
             uint[] actions = new uint[NumActions];
 
+            Random rand = new Random();
             for (uint i = 0; i < numDecisions; i++)
             {
-                Tuple<uint, ulong> actionAndKey = mwt.ChooseActionAndKey(context);
-                actions[ActionID.Make_ZeroBased(actionAndKey.Item1)]++;
+                uint chosenAction = mwt.ChooseAction(context, rand.NextDouble().ToString());
+                actions[ActionID.Make_ZeroBased(chosenAction)]++;
             }
 
             for (uint i = 0; i < NumActions; i++)
@@ -230,9 +227,10 @@ namespace ExploreTests
                 new StatelessScorerDelegate(NonUniformStatelessScorerFunc),
                 NumActions);
 
-            mwt.ChooseActionAndKey(context);
-            mwt.ChooseActionAndKey(context);
-            mwt.ChooseActionAndKey(context);
+            Random rand = new Random();
+            mwt.ChooseAction(context, rand.NextDouble().ToString());
+            mwt.ChooseAction(context, rand.NextDouble().ToString());
+            mwt.ChooseAction(context, rand.NextDouble().ToString());
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             for (int i = 0; i < interactions.Length; i++)

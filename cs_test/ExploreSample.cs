@@ -174,10 +174,9 @@ namespace cs_test
 
                 CONTEXT context = new CONTEXT(f, otherContext);
 
-                for (int i = 0; i < numInteractions / 2; i++)
+                for (int i = 0; i < numInteractions; i++)
                 {
                     mwt.ChooseAction(context, uniqueKey);
-                    mwt.ChooseActionAndKey(context);
                 }
 
                 timeChoose += (iter < numWarmup) ? 0 : watch.Elapsed.TotalMilliseconds;
@@ -188,10 +187,9 @@ namespace cs_test
 
                 timeSerializedLog += (iter < numWarmup) ? 0 : watch.Elapsed.TotalMilliseconds;
 
-                for (int i = 0; i < numInteractions / 2; i++)
+                for (int i = 0; i < numInteractions; i++)
                 {
                     mwt.ChooseAction(context, uniqueKey);
-                    mwt.ChooseActionAndKey(context);
                 }
 
                 watch.Restart();

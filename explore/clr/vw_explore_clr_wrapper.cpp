@@ -234,32 +234,6 @@ namespace MultiWorldTesting {
 		return chosenAction;
 	}
 
-	Tuple<UInt32, UInt64>^ MwtExplorer::ChooseActionAndKey(CONTEXT^ context)
-	{
-		GCHandle contextHandle = GCHandle::Alloc(context);
-		IntPtr contextPtr = (IntPtr)contextHandle;
-
-		cli::array<FEATURE>^ contextFeatures = context->Features;
-		String^ otherContext = context->OtherContext;
-
-		std::string* nativeOtherContext = (otherContext != nullptr) ? &marshal_as<std::string>(otherContext) : nullptr;
-
-		pin_ptr<FEATURE> pinnedContextFeatures = &context->Features[0];
-		FEATURE* nativeContextFeatures = pinnedContextFeatures;
-
-		Context log_context((feature*)nativeContextFeatures, (size_t)context->Features->Length, nativeOtherContext);
-
-		std::pair<u32, u64> actionAndKey = m_mwt->Choose_Action_And_Key(
-			contextPtr.ToPointer(),
-			log_context);
-
-		Tuple<UInt32, UInt64>^ chosenActionAndKey = gcnew Tuple<UInt32, UInt64>(actionAndKey.first, actionAndKey.second);
-
-		contextHandle.Free();
-
-		return chosenActionAndKey;
-	}
-
 	String^ MwtExplorer::GetAllInteractionsAsString()
 	{
 		std::string all_interactions = m_mwt->Get_All_Interactions();

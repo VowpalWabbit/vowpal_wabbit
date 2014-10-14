@@ -72,9 +72,8 @@ void Clock_Explore()
 
 		t1 = high_resolution_clock::now();
 		Context context(features, num_features);
-		for (int i = 0; i < num_interactions / 2; i++)
+		for (int i = 0; i < num_interactions; i++)
 		{
-			mwt.Choose_Action_And_Key(context);
 			mwt.Choose_Action(context, unique_key);
 		}
 		t2 = high_resolution_clock::now();
@@ -85,9 +84,8 @@ void Clock_Explore()
 		t2 = high_resolution_clock::now();
 		time_serialized_log += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
 
-		for (int i = 0; i < num_interactions / 2; i++)
+		for (int i = 0; i < num_interactions; i++)
 		{
-			mwt.Choose_Action_And_Key(context);
 			mwt.Choose_Action(context, unique_key);
 		}
 
@@ -159,10 +157,6 @@ int main(int argc, char* argv[])
 	Context context(features, 1);
 
 	// Now let MWT explore & choose an action
-	pair<u32, u64> action_and_key = mwt.Choose_Action_And_Key(context);
-
-	cout << "action = " << action_and_key.first << "\tkey = " << action_and_key.second << endl;
-
 	string unique_key = "1001";
 	u32 chosen_action = mwt.Choose_Action(context, unique_key);
 	
