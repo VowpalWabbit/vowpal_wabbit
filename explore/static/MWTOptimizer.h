@@ -17,9 +17,9 @@ public:
 
 		for (u64 i = 0; i < num_interactions; i++)
 		{
-			// Datasets returned by MWT apis should not contain null entries, but we check here
-			// in case the user modified/mishandled the dataset. 
-			if (interactions[i])
+			// Datasets returned by MWT apis should not contain null entries, but check for them
+			// just in case; also check for incomplete interactions (currently those without rewards)
+			if (interactions[i] && (interactions[i]->Get_Reward() != NO_REWARD))
 			{
 				m_interactions.push_back(interactions[i]);
 			}
@@ -58,7 +58,7 @@ public:
 			policy_action = MWTAction((u32)VW_Predict(vw, example));
 			// If the policy action matches the action logged in the interaction, include the
 			// (importance-weighted) reward in our average
-			MWTAction a =pInteraction->Get_Action();
+			MWTAction a = pInteraction->Get_Action();
 			if (policy_action.Match(a))
 			{
 				sum_weighted_rewards += pInteraction->Get_Reward() * (1.0 / pInteraction->Get_Prob());

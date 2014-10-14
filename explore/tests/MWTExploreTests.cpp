@@ -12,7 +12,7 @@ namespace vw_explore_tests
 	TEST_CLASS(VWExploreUnitTests)
 	{
 	public:
-		TEST_METHOD(EpsilonGreedyStateful)
+		TEST_METHOD(Epsilon_Greedy_Stateful)
 		{
 			float epsilon = 0.f; // No randomization
 			m_mwt->Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy, &m_policy_func_arg, m_num_actions);
@@ -29,7 +29,7 @@ namespace vw_explore_tests
 			this->Test_Logger(2, expected_probs);
 		}
 
-		TEST_METHOD(EpsilonGreedyStateless)
+		TEST_METHOD(Epsilon_Greedy_Stateless)
 		{
 			float epsilon = 0.f; // No randomization
 			m_mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, m_num_actions);
@@ -44,7 +44,7 @@ namespace vw_explore_tests
 			this->Test_Logger(2, expected_probs);
 		}
 
-		TEST_METHOD(EpsilonGreedyRandom)
+		TEST_METHOD(Epsilon_Greedy_Random)
 		{
 			float epsilon = 0.2f;
 			m_mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, m_num_actions);
@@ -62,7 +62,7 @@ namespace vw_explore_tests
 			this->Test_Logger(3, expected_probs);
 		}
 
-		TEST_METHOD(TauFirstStateful)
+		TEST_METHOD(Tau_First_Stateful)
 		{
 			u32 tau = 0;
 			m_mwt->Initialize_Tau_First<int>(tau, Stateful_Default_Policy, &m_policy_func_arg, m_num_actions);
@@ -79,7 +79,7 @@ namespace vw_explore_tests
 			this->Test_Logger(0, nullptr);
 		}
 
-		TEST_METHOD(TauFirstStateless)
+		TEST_METHOD(Tau_First_Stateless)
 		{
 			u32 tau = 0;
 			m_mwt->Initialize_Tau_First(tau, Stateless_Default_Policy, m_num_actions);
@@ -93,7 +93,7 @@ namespace vw_explore_tests
 			this->Test_Logger(0, nullptr);
 		}
 
-		TEST_METHOD(TauFirstRandom)
+		TEST_METHOD(Tau_First_Random)
 		{
 			u32 tau = 2;
 			m_mwt->Initialize_Tau_First(tau, Stateless_Default_Policy, m_num_actions);
@@ -113,7 +113,7 @@ namespace vw_explore_tests
 			this->Test_Logger(2, expected_probs);
 		}
 
-		TEST_METHOD(BaggingStateful)
+		TEST_METHOD(Bagging_Stateful)
 		{
 			m_mwt->Initialize_Bagging<int>(m_bags, m_policy_funcs_stateful, m_policy_params, m_num_actions);
 
@@ -131,7 +131,7 @@ namespace vw_explore_tests
 			this->Test_Logger(2, expected_probs);
 		}
 
-		TEST_METHOD(BaggingStateless)
+		TEST_METHOD(Bagging_Stateless)
 		{
 			m_mwt->Initialize_Bagging(m_bags, m_policy_funcs_stateless, m_num_actions);
 
@@ -149,7 +149,7 @@ namespace vw_explore_tests
 			this->Test_Logger(2, expected_probs);
 		}
 
-		TEST_METHOD(BaggingRandom)
+		TEST_METHOD(Bagging_Random)
 		{
 			u32 bags = 2;
 			StatefulFunctionWrapper<int>::Policy_Func* funcs[2] = { Stateful_Default_Policy, Stateful_Default_Policy2 };
@@ -168,7 +168,7 @@ namespace vw_explore_tests
 			this->Test_Logger(2, expected_probs);
 		}
 
-		TEST_METHOD(SoftmaxStateful)
+		TEST_METHOD(Softmax_Stateful)
 		{
 			m_mwt->Initialize_Softmax<int>(m_lambda, Stateful_Default_Scorer, &m_policy_scorer_arg, m_num_actions);
 			// Scale C up since we have fewer interactions
@@ -199,7 +199,7 @@ namespace vw_explore_tests
 			delete expected_probs;
 		}
 
-		TEST_METHOD(SoftmaxStateless)
+		TEST_METHOD(Softmax_Stateless)
 		{
 			m_mwt->Initialize_Softmax(m_lambda, Stateless_Default_Scorer, m_num_actions);
 			u32 num_decisions = m_num_actions * log(m_num_actions * 1.0) + log(NUM_ACTIONS_COVER * 1.0 / m_num_actions) * C * m_num_actions;
@@ -229,7 +229,7 @@ namespace vw_explore_tests
 			delete expected_probs;
 		}
 
-		TEST_METHOD(SoftmaxStatefulScores)
+		TEST_METHOD(Softmax_Stateful_Scores)
 		{
 			m_mwt->Initialize_Softmax<int>(0.5f, Non_Uniform_Stateful_Default_Scorer, &m_policy_scorer_arg, m_num_actions);
 			
@@ -250,7 +250,7 @@ namespace vw_explore_tests
 			delete[] interactions;
 		}
 
-		TEST_METHOD(SoftmaxStatelessScores)
+		TEST_METHOD(Softmax_Stateless_Scores)
 		{
 			m_mwt->Initialize_Softmax(0.5f, Non_Uniform_Stateless_Default_Scorer, m_num_actions);
 
@@ -271,7 +271,7 @@ namespace vw_explore_tests
 			delete[] interactions;
 		}
 
-		TEST_METHOD(RewardReporter)
+		TEST_METHOD(Reward_Reporter)
 		{
 			float epsilon = 0.f; // No randomization
 			m_mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, m_num_actions);
@@ -297,7 +297,7 @@ namespace vw_explore_tests
 			{
 				// We need to find the interaction since it's not guaranteed the interactiosn are
 				// returned to us in the same order we passed them in
-				float expected_reward = (interactions[i]->Get_Id() == ids[0]) ? reward : 0.0;
+				float expected_reward = (interactions[i]->Get_Id() == ids[0]) ? reward : NO_REWARD;
 				Assert::AreEqual(interactions[i]->Get_Reward(), expected_reward);
 			}
 			// Report rewards for all interactions, which should overwrite the single reward above
@@ -315,7 +315,7 @@ namespace vw_explore_tests
 			delete[] interactions;
 		}
 
-		TEST_METHOD(OfflineEvaluation)
+		TEST_METHOD(Offline_Evaluation)
 		{
 			m_mwt->Initialize_Softmax(m_lambda, Stateless_Default_Scorer, m_num_actions);
 			u32 num_decisions = m_num_actions * log(m_num_actions * 1.0) + log(NUM_ACTIONS_COVER * 1.0 / m_num_actions) * C * m_num_actions;
@@ -354,7 +354,7 @@ namespace vw_explore_tests
 			Assert::AreEqual(opt.Evaluate_Policy(Stateless_Default_Policy), policy_perf);
 		}
 
-		TEST_METHOD(OfflineOptimizationVWCSOAA)
+		TEST_METHOD(Offline_Optimization_VW_CSOAA)
 		{
 			/*
 			1:1.0 a1_expect_1 | a
@@ -367,7 +367,7 @@ namespace vw_explore_tests
 				*/
 		}
 
-		TEST_METHOD(PRGCoverage)
+		TEST_METHOD(PRG_Coverage)
 		{
 			m_mwt->Initialize_Softmax(m_lambda, Stateless_Default_Scorer, m_num_actions);
 			// We could use many fewer bits (e.g. u8) per bin since we're throwing uniformly at
@@ -388,7 +388,7 @@ namespace vw_explore_tests
 			this->Test_Logger(0, nullptr);
 		}
 
-		TEST_METHOD_INITIALIZE(TestInitialize)
+		TEST_METHOD_INITIALIZE(Test_Initialize)
 		{
 			// Constant for coverage tests: using Pr(T > nlnn + cn) < 1 - exp(-e^(-c)) for the time
 			// T of the coupon collector problem, C = 0.5 yields a failure probability of ~0.45. 
@@ -423,7 +423,7 @@ namespace vw_explore_tests
 			}
 		}
 
-		TEST_METHOD_CLEANUP(TestCleanup)
+		TEST_METHOD_CLEANUP(Test_Cleanup)
 		{
 			delete m_features;
 			delete m_context;
