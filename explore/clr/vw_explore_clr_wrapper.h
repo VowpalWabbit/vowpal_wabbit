@@ -1,7 +1,8 @@
 #pragma once
 
 #include "mwt.h"
-#include "Decision_Service.h"
+#include "MWTRewardReporter.h"
+#include "MWTOptimizer.h"
 
 #include <msclr\marshal_cppstd.h>
 
