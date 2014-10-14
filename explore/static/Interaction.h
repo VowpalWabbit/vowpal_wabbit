@@ -3,12 +3,12 @@
 //
 #pragma once
 
-#include "stdafx.h" 
-#include "example.h"
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <functional>
+#include "stdafx.h" 
+#include "example.h"
+#include "hash.h"
 
 using namespace std;
 
@@ -240,21 +240,22 @@ public:
 		m_context->Serialize(stream);
 	}
 
-public:
+ public:
 	static u64 Get_Id_Hash(std::string& unique_id)
 	{
-	  hash<string> foo;
-
 	  size_t ret = 0;
 	  const char *p = unique_id.c_str();
 	  while (*p != '\0')
 	    if (*p >= '0' && *p <= '9')
 	      ret = 10*ret + *(p++) - '0';
 	    else
-	      return foo(unique_id);
+	      {
+		murmur_hash foo;
+		return foo.uniform_hash(unique_id.c_str(),unique_id.size(),0);
+	      }
 	  return ret;
 	}
-
+	
 private:
 	Context* m_context;
 	MWTAction m_action;
