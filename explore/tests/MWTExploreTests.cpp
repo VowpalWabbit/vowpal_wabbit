@@ -353,6 +353,18 @@ namespace vw_explore_tests
 			Assert::AreEqual(opt.Evaluate_Policy(Stateless_Default_Policy), policy_perf);
 		}
 
+		TEST_METHOD(OfflineOptimizationVWCSOAA)
+		{
+			/*
+			1:1.0 a1_expect_1 | a
+				2 : 1.0 b1_expect_2 | b
+				3 : 1.0 c1_expect_3 | c
+				1 : 2.0 2 : 1.0 ab1_expect_2 | a b
+				2 : 1.0 3 : 3.0 bc1_expect_2 | b c
+				1 : 3.0 3 : 1.0 ac1_expect_3 | a c
+				2 : 3.0 d1_expect_2 | d
+				*/
+		}
 
 		TEST_METHOD(PRGCoverage)
 		{
