@@ -16,8 +16,7 @@ class MWTExplorer
 public:
 	MWTExplorer()
 	{
-	        m_id = 0;
-	  
+	    m_id = 0;
 		m_explorer = nullptr;
 	}
 
@@ -97,11 +96,6 @@ public:
 		u32 num_actions)
 	{
 		this->Initialize_Softmax(lambda, (Stateless_Scorer_Func*)default_scorer_func, num_actions);
-	}
-
-	std::pair<u32, u64> Choose_Action_And_Key(Context& context)
-	{
-		return this->Choose_Action_And_Key(&context, context);
 	}
 
 	// TODO: check whether char* could be std::string
@@ -188,7 +182,7 @@ public:
 		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func);
 	}
 
-	u32 Choose_Action(void* context, feature* context_features, size_t num_features, std::string* other_context, std::string unique_id)
+	u32 Choose_Action(void* context, MWTFeature* context_features, size_t num_features, std::string* other_context, std::string unique_id)
 	{
 		Context log_context(context_features, num_features, other_context);
 		return this->Choose_Action(context, unique_id, log_context);
@@ -213,26 +207,6 @@ public:
 		m_logger.Store(&pInteraction);
 
 		return std::get<0>(action_Probability_Log_Tuple).Get_Id();
-	}
-
-	// The parameters here look weird but are required to interface with C#
-	std::pair<u32, u64> Choose_Action_And_Key(void* context, Context& log_context)
-	{
-		// Generate an ID for this interaction and use this to seed the PRG within the explorer
-	        u64 id = m_id++;
-		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, m_action_set, (u32)id);
-		if (!std::get<2>(action_Probability_Log_Tuple))
-		{
-			// Since we aren't logging the interaction, don't return a join key (we are effectively
-			// throwing away this ID, but so be it)
-			return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), NO_JOIN_KEY);
-		}
-		//TODO: This is roundabout for now, since we convert a u64 id to a string only to hash 
-		// it again, but this should be addressed by an open issue to remove this api entirely
-		Interaction interaction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), std::to_string(id));
-		m_logger.Store(&interaction);
-
-		return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), interaction.Get_Id_Hash());
 	}
 
 	std::string Get_All_Interactions()

@@ -19,10 +19,10 @@ namespace vw_explore_tests
 
 			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, m_context);
 
-			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
-			Assert::AreEqual(expected_action, chosen_action_join_key.first);
-
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
+			Assert::AreEqual(expected_action, chosen_action);
+
+			chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
 			Assert::AreEqual(expected_action, chosen_action);
 
 			float expected_probs[2] = { 1.f, 1.f };
@@ -34,10 +34,10 @@ namespace vw_explore_tests
 			float epsilon = 0.f; // No randomization
 			m_mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, m_num_actions);
 
-			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
-			Assert::AreEqual(chosen_action_join_key.first, VWExploreUnitTests::Stateless_Default_Policy(m_context));
-
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
+			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
+
+			chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
 			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
 
 			float expected_probs[2] = { 1.f, 1.f };
@@ -69,9 +69,6 @@ namespace vw_explore_tests
 
 			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, m_context);
 
-			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
-			Assert::AreEqual(expected_action, chosen_action_join_key.first);
-
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
 			Assert::AreEqual(expected_action, chosen_action);
 
@@ -83,9 +80,6 @@ namespace vw_explore_tests
 		{
 			u32 tau = 0;
 			m_mwt->Initialize_Tau_First(tau, Stateless_Default_Policy, m_num_actions);
-
-			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
-			Assert::AreEqual(chosen_action_join_key.first, VWExploreUnitTests::Stateless_Default_Policy(m_context));
 
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
 			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
@@ -120,10 +114,10 @@ namespace vw_explore_tests
 			// Every bag uses the same default policy function so expected chosen action is its return value
 			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, m_context);
 
-			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
-			Assert::AreEqual(expected_action, chosen_action_join_key.first);
-
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
+			Assert::AreEqual(expected_action, chosen_action);
+
+			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
 			Assert::AreEqual(expected_action, chosen_action);
 			
 			// All bags choose the same action, so prob = 1
@@ -138,10 +132,10 @@ namespace vw_explore_tests
 			// Every bag uses the same default policy function so expected chosen action is its return value
 			u32 expected_action = VWExploreUnitTests::Stateless_Default_Policy(m_context);
 
-			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
-			Assert::AreEqual(expected_action, chosen_action_join_key.first);
-
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
+			Assert::AreEqual(expected_action, chosen_action);
+
+			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
 			Assert::AreEqual(expected_action, chosen_action);
 
 			// All bags choose the same action, so prob = 1
@@ -471,9 +465,9 @@ namespace vw_explore_tests
 			m_lambda = 0;
 
 			m_num_features = 1;
-			m_features = new feature[m_num_features];
-			m_features[0].weight_index = 1;
-			m_features[0].x = 0.5;
+			m_features = new MWTFeature[m_num_features];
+			m_features[0].Index = 1;
+			m_features[0].X = 0.5;
 			m_context = new Context(m_features, m_num_features);
 
 			m_unique_key = "1001";
@@ -600,7 +594,7 @@ namespace vw_explore_tests
 
 		Context* m_context;
 		int m_num_features;
-		feature* m_features;
+		MWTFeature* m_features;
 
 		static int m_num_actions;
 		string m_unique_key;

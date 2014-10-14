@@ -54,11 +54,11 @@ void Clock_Explore()
 	int num_interactions = 1;
 
 	// pre-create features
-	feature* features = new feature[num_features];
+	MWTFeature* features = new MWTFeature[num_features];
 	for (int i = 0; i < num_features; i++)
 	{
-		features[i].weight_index = i + 1;
-		features[i].x = 0.5;
+		features[i].Index = i + 1;
+		features[i].X = 0.5;
 	}
 
 	long long time_init = 0, time_choose = 0, time_serialized_log = 0, time_typed_log = 0;
@@ -72,9 +72,8 @@ void Clock_Explore()
 
 		t1 = high_resolution_clock::now();
 		Context context(features, num_features);
-		for (int i = 0; i < num_interactions / 2; i++)
+		for (int i = 0; i < num_interactions; i++)
 		{
-			mwt.Choose_Action_And_Key(context);
 			mwt.Choose_Action(context, unique_key);
 		}
 		t2 = high_resolution_clock::now();
@@ -85,9 +84,8 @@ void Clock_Explore()
 		t2 = high_resolution_clock::now();
 		time_serialized_log += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
 
-		for (int i = 0; i < num_interactions / 2; i++)
+		for (int i = 0; i < num_interactions; i++)
 		{
-			mwt.Choose_Action_And_Key(context);
 			mwt.Choose_Action(context, unique_key);
 		}
 
@@ -152,17 +150,13 @@ int main(int argc, char* argv[])
 	//mwt.Initialize_Softmax(lambda, Stateless_Default_Scorer, NUM_ACTIONS);
 
 	// Create Features & Context
-	feature features[1];
-	features[0].weight_index = 1;
-	features[0].x = 0.5;
+	MWTFeature features[1];
+	features[0].Index = 1;
+	features[0].X = 0.5;
 
 	Context context(features, 1);
 
 	// Now let MWT explore & choose an action
-	pair<u32, u64> action_and_key = mwt.Choose_Action_And_Key(context);
-
-	cout << "action = " << action_and_key.first << "\tkey = " << action_and_key.second << endl;
-
 	string unique_key = "1001";
 	u32 chosen_action = mwt.Choose_Action(context, unique_key);
 	

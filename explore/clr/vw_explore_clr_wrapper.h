@@ -158,7 +158,6 @@ namespace MultiWorldTesting {
 		void Unintialize();
 
 		UInt32 ChooseAction(CONTEXT^ context, String^ uniqueId);
-		Tuple<UInt32, UInt64>^ ChooseActionAndKey(CONTEXT^ context);
 
 		String^ GetAllInteractionsAsString();
 		cli::array<INTERACTION^>^ GetAllInteractions();
