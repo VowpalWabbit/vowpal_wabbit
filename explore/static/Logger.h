@@ -17,6 +17,12 @@ private:
     m_interactions.clear();
   }
 
+  void problem(const char* output)
+  {
+    cerr << output << endl;
+    throw exception();
+  }
+
 public:
   
   Logger() { this->Clear_Data(); }
@@ -24,23 +30,20 @@ public:
   ~Logger()
     { // If the logger is deleted while still having in-mem data then try flushing it
       if (m_interactions.size() > 0)
-	{
-	  cerr << "Logger still has data during destruction" << endl;
-	  throw std::exception();
-	}
+	problem("Logger still has data during destruction");
     }
 
   void Store(Interaction* interaction)
   {
     if (interaction == nullptr)
-      throw std::invalid_argument("Interaction to store is NULL");
+      problem("Interaction to store is NULL");
     m_interactions.push_back(interaction->Copy());
   }
     
   void Store(std::vector<Interaction*> interactions)
   {
     if (interactions.size() == 0)
-      throw std::invalid_argument("Interaction set to store is empty");
+      problem("Interaction set to store is empty");
     for (size_t i = 0; i < interactions.size(); i++)
       this->Store(interactions[i]);
   }

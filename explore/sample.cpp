@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "MWT.h"
 #include <chrono>
+#include <tuple>
 
 using namespace std;
 using namespace std::chrono;

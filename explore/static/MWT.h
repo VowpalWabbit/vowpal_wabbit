@@ -6,6 +6,7 @@
 
 #include "stdafx.h"
 #include "Explorer.h"
+#include <tuple>
 
 //
 // Top-level internal API for exploration (randomized decision making).
