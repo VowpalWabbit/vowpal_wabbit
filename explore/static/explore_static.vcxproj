@@ -152,8 +152,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Explorer.h" />
+    <ClInclude Include="hash.h" />
     <ClInclude Include="Logger.h" />
-    <ClInclude Include="MWT.h" />
+    <ClInclude Include="MWTExplorer.h" />
     <ClInclude Include="Interaction.h" />
     <ClInclude Include="MWTOptimizer.h" />
     <ClInclude Include="MWTRewardReporter.h" />
