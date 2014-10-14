@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mwt.h"
+#include "MWTExplorer.h"
 #include "MWTRewardReporter.h"
 #include "MWTOptimizer.h"
 

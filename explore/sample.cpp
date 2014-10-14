@@ -2,7 +2,7 @@
 //
 
 #include "stdafx.h"
-#include "MWT.h"
+#include "MWTExplorer.h"
 #include <chrono>
 #include <tuple>
 

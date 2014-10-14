@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "CppUnitTest.h"
-#include "MWT.h"
+#include "MWTExplorer.h"
 #include "MWTRewardReporter.h"
 #include "MWTOptimizer.h"
 #include "utility.h"
