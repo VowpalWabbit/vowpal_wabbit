@@ -4,6 +4,7 @@
 
 #pragma once
 #include <sstream>
+#include <stdexcept>
 
 // Currently based on assumption that each app stores separate files
 class Logger
@@ -17,12 +18,6 @@ private:
     m_interactions.clear();
   }
 
-  void problem(const char* output)
-  {
-    cerr << output << endl;
-    throw exception();
-  }
-
 public:
   
   Logger() { this->Clear_Data(); }
@@ -30,20 +25,20 @@ public:
   ~Logger()
     { // If the logger is deleted while still having in-mem data then try flushing it
       if (m_interactions.size() > 0)
-	problem("Logger still has data during destruction");
+	throw std::invalid_argument("Logger still has data during destruction");
     }
 
   void Store(Interaction* interaction)
   {
     if (interaction == nullptr)
-      problem("Interaction to store is NULL");
+      throw std::invalid_argument("Interaction to store is NULL");
     m_interactions.push_back(interaction->Copy());
   }
     
   void Store(std::vector<Interaction*> interactions)
   {
     if (interactions.size() == 0)
-      problem("Interaction set to store is empty");
+      throw std::invalid_argument("Interaction set to store is empty");
     for (size_t i = 0; i < interactions.size(); i++)
       this->Store(interactions[i]);
   }
