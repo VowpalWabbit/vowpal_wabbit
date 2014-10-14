@@ -54,11 +54,11 @@ void Clock_Explore()
 	int num_interactions = 1;
 
 	// pre-create features
-	feature* features = new feature[num_features];
+	MWTFeature* features = new MWTFeature[num_features];
 	for (int i = 0; i < num_features; i++)
 	{
-		features[i].weight_index = i + 1;
-		features[i].x = 0.5;
+		features[i].Index = i + 1;
+		features[i].X = 0.5;
 	}
 
 	long long time_init = 0, time_choose = 0, time_serialized_log = 0, time_typed_log = 0;
@@ -150,9 +150,9 @@ int main(int argc, char* argv[])
 	//mwt.Initialize_Softmax(lambda, Stateless_Default_Scorer, NUM_ACTIONS);
 
 	// Create Features & Context
-	feature features[1];
-	features[0].weight_index = 1;
-	features[0].x = 0.5;
+	MWTFeature features[1];
+	features[0].Index = 1;
+	features[0].X = 0.5;
 
 	Context context(features, 1);
 

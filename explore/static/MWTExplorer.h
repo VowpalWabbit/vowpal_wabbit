@@ -16,8 +16,7 @@ class MWTExplorer
 public:
 	MWTExplorer()
 	{
-	        m_id = 0;
-	  
+	    m_id = 0;
 		m_explorer = nullptr;
 	}
 
@@ -183,7 +182,7 @@ public:
 		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func);
 	}
 
-	u32 Choose_Action(void* context, feature* context_features, size_t num_features, std::string* other_context, std::string unique_id)
+	u32 Choose_Action(void* context, MWTFeature* context_features, size_t num_features, std::string* other_context, std::string unique_id)
 	{
 		Context log_context(context_features, num_features, other_context);
 		return this->Choose_Action(context, unique_id, log_context);

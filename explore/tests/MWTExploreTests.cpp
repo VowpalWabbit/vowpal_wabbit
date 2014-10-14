@@ -399,9 +399,9 @@ namespace vw_explore_tests
 			m_lambda = 0;
 
 			m_num_features = 1;
-			m_features = new feature[m_num_features];
-			m_features[0].weight_index = 1;
-			m_features[0].x = 0.5;
+			m_features = new MWTFeature[m_num_features];
+			m_features[0].Index = 1;
+			m_features[0].X = 0.5;
 			m_context = new Context(m_features, m_num_features);
 
 			m_unique_key = "1001";
@@ -528,7 +528,7 @@ namespace vw_explore_tests
 
 		Context* m_context;
 		int m_num_features;
-		feature* m_features;
+		MWTFeature* m_features;
 
 		static int m_num_actions;
 		string m_unique_key;

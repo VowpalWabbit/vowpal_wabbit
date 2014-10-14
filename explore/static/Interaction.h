@@ -12,7 +12,6 @@
 
 using namespace std;
 
-#define NO_JOIN_KEY -99999
 //TODO: Make this a static const float of the Interaction class (right now VS doesn't support
 // the C++11 constexpr keyword, which is needed to initialize such non-integer types.
 #define NO_REWARD -FLT_MAX
@@ -21,6 +20,17 @@ class Serializable
 {
 public:
 	virtual void Serialize(std::ostringstream&) = 0;
+};
+
+struct MWTFeature
+{
+	float X;
+	u32 Index;
+
+	bool operator==(MWTFeature other_feature)
+	{
+		return Index == other_feature.Index;
+	}
 };
 
 class MWTAction : public Serializable
@@ -86,7 +96,7 @@ private:
 class Context : public Serializable
 {
 public:
-	Context(feature* common_features, size_t num_features, bool is_copy = false) : 
+	Context(MWTFeature* common_features, size_t num_features, bool is_copy = false) : 
 		m_common_features(common_features), 
 		m_num_features(num_features),
 		m_other_context(nullptr),
@@ -94,7 +104,7 @@ public:
 	{
 	}
 
-	Context(feature* common_features, size_t num_features, 
+	Context(MWTFeature* common_features, size_t num_features,
 		std::string* other_context, bool is_copy = false) :
 		m_common_features(common_features), 
 		m_num_features(num_features), 
@@ -114,12 +124,12 @@ public:
 
 	Context* Copy()
 	{
-		feature* features = nullptr;
+		MWTFeature* features = nullptr;
 		std::string* other_context = nullptr;
 
 		if (m_num_features > 0 && m_common_features != nullptr)
 		{
-			features = new feature[m_num_features];
+			features = new MWTFeature[m_num_features];
 			for (size_t f = 0; f < m_num_features; f++)
 			{
 				features[f] = m_common_features[f];
@@ -140,7 +150,7 @@ public:
 		{
 			for (size_t i = 0; i < m_num_features; i++)
 			{
-				stream << m_common_features[i].weight_index << ":" << m_common_features[i].x << " ";
+				stream << m_common_features[i].Index << ":" << m_common_features[i].X << " ";
 			}
 		}
 		if (m_other_context != nullptr)
@@ -149,7 +159,7 @@ public:
 		}
 	}
 
-	void Get_Features(feature*& features, size_t& num_features)
+	void Get_Features(MWTFeature*& features, size_t& num_features)
 	{
 		features = m_common_features;
 		num_features = m_num_features;
@@ -161,7 +171,7 @@ public:
 	}
 
 private:
-	feature* m_common_features;
+	MWTFeature* m_common_features;
 	size_t m_num_features;
 	std::string* m_other_context;
 	bool m_is_copy;
