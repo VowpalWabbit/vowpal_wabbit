@@ -47,6 +47,12 @@ public:
 		double sum_weighted_rewards = 0.0;
 		u64 count = 0;
 
+		vw = VW_InitializeA("-q st --noconstant --quiet");
+		example = VW_ReadExampleA(vw, "1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
+		VW_Learn(vw, example);
+		VW_Finish(vw);
+		return 1.0;
+
 		std::string params = "-i " + model_input_file + " --noconstant --quiet";
 		vw = VW_InitializeA(params.c_str());
 		MWTAction policy_action(0);
