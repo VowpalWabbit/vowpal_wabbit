@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "CppUnitTest.h"
 #include "MWT.h"
+#include "MWTRewardReporter.h"
 #include "utility.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
