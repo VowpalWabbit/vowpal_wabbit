@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "CppUnitTest.h"
 #include "MWT.h"
+#include "Decision_Service.h"
 #include "utility.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -285,9 +286,9 @@ namespace vw_explore_tests
 			size_t num_interactions = 0;
 			Interaction** interactions = nullptr;
 			m_mwt->Get_All_Interactions(num_interactions, interactions);
+			Assert::AreEqual(num_decisions, (u32)num_interactions);
 
 			MWTRewardReporter rew = MWTRewardReporter(num_interactions, interactions);
-			Assert::AreEqual(num_decisions, (u32)num_interactions);
 			float reward = 2.0;
 			// Report a single interaction's reward
 			rew.ReportReward(ids[0], reward);
@@ -312,6 +313,46 @@ namespace vw_explore_tests
 			delete[] ids;
 			delete[] interactions;
 		}
+
+		TEST_METHOD(OfflineEvaluation)
+		{
+			m_mwt->Initialize_Softmax(m_lambda, Stateless_Default_Scorer, m_num_actions);
+			u32 num_decisions = m_num_actions * log(m_num_actions * 1.0) + log(NUM_ACTIONS_COVER * 1.0 / m_num_actions) * C * m_num_actions;
+			std::string* ids = new std::string[num_decisions];
+			u32 i;
+			for (i = 0; i < num_decisions; i++)
+			{
+				ids[i] = this->Get_Unique_Key(i + 1);
+				u32 action = m_mwt->Choose_Action(*m_context, ids[i]);
+			}
+
+			size_t num_interactions = 0;
+			Interaction** interactions = nullptr;
+			m_mwt->Get_All_Interactions(num_interactions, interactions);
+			Assert::AreEqual(num_decisions, (u32)num_interactions);
+
+			MWTRewardReporter rew = MWTRewardReporter(num_interactions, interactions);
+			float reward = 0.0;
+			// Offline evaluate the default policy; we assume it always returns the same
+			// action
+			u32 policy_action = Stateless_Default_Policy(m_context);
+			float policy_weighted_sum = 0.0;
+			u32 policy_matches = 0;
+			for (i = 0; i < num_interactions; i++)
+			{
+				rew.ReportReward(ids[i], reward);
+				if (interactions[i]->Get_Action().Get_Id() == policy_action)
+				{
+					policy_weighted_sum += reward * (1.0 / interactions[i]->Get_Prob());
+					policy_matches++;
+				}
+				reward += 0.1;
+			}
+			float policy_perf = policy_weighted_sum / policy_matches;
+			MWTOptimizer opt = MWTOptimizer(num_interactions, interactions, m_num_actions);
+			Assert::AreEqual(opt.Evaluate_Policy(Stateless_Default_Policy), policy_perf);
+		}
+
 
 		TEST_METHOD(PRGCoverage)
 		{
