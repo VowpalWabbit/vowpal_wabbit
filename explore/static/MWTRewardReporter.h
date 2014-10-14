@@ -6,7 +6,7 @@
 class MWTRewardReporter
 {
 public: 
-	MWTRewardReporter(size_t& num_interactions, Interaction* interactions[])
+	MWTRewardReporter(size_t num_interactions, Interaction* interactions[])
 	{
 		for (u64 i = 0; i < num_interactions; i++)
 		{

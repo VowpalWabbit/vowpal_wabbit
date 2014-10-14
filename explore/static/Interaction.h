@@ -244,7 +244,7 @@ public:
 	}
 
  public:
-	static u64 Compute_Id_Hash(std::string& unique_id)
+	static u64 Compute_Id_Hash(const std::string& unique_id)
 	{
 	  size_t ret = 0;
 	  const char *p = unique_id.c_str();

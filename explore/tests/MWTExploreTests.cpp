@@ -356,15 +356,81 @@ namespace vw_explore_tests
 
 		TEST_METHOD(Offline_Optimization_VW_CSOAA)
 		{
+			// Test using the example data below, which is designed to yield perfect classification
+			// when predicting on the same (elided) data. Details of this example can be found at:
+			// https://github.com/JohnLangford/vowpal_wabbit/wiki/Cost-Sensitive-One-Against-All-(csoaa)-multi-class-example
 			/*
-			1:1.0 a1_expect_1 | a
-				2 : 1.0 b1_expect_2 | b
-				3 : 1.0 c1_expect_3 | c
-				1 : 2.0 2 : 1.0 ab1_expect_2 | a b
-				2 : 1.0 3 : 3.0 bc1_expect_2 | b c
-				1 : 3.0 3 : 1.0 ac1_expect_3 | a c
-				2 : 3.0 d1_expect_2 | d
-				*/
+	  			1:1.0 a1_expect_1 | a
+				2:1.0 b1_expect_2 | b
+				3:1.0 c1_expect_3 | c
+				1:2.0 2:1.0 ab1_expect_2 | a b
+				2:1.0 3:3.0 bc1_expect_2 | b c
+				1:3.0 3:1.0 ac1_expect_3 | a c
+				2:3.0 d1_expect_2 | d
+			*/
+
+			// Create exploration data based on the cost-sensitive multi-class data above; 
+			// essentially we will only use one class-label per example (the chosen action) ]
+			Interaction* interactions[7];
+			std::string ids[7];
+			Context* context;
+			float prob = 1.0 / 3;
+			float feature_val = 1.0;
+			feature features[3];
+			u64 feature_a = Interaction::Compute_Id_Hash("a");
+			u64 feature_b = Interaction::Compute_Id_Hash("b");
+			u64 feature_c = Interaction::Compute_Id_Hash("c");
+			u64 feature_d = Interaction::Compute_Id_Hash("d");
+			// This indicates feature "a" is present (the specific value used is not important)
+			features[0].weight_index = feature_a;
+			features[0].x = feature_val; 
+			context = new Context(features, 1);
+			// Indicating this is a copy hands responsibility for freeing the context to the
+			// Interaction class
+			ids[0] = "a1_expect_1";
+			interactions[0] = new Interaction(context, MWTAction(1), prob, ids[0], true);
+			features[0].weight_index = feature_b;
+			context = new Context(features, 1);
+			ids[1] = "b1_expects_2";
+			interactions[1] = new Interaction(context, MWTAction(2), prob, ids[1], true);
+			features[0].weight_index = feature_c;
+			context = new Context(features, 1);
+			ids[2] = "c1_expects_3";
+			interactions[2] = new Interaction(context, MWTAction(3), prob, ids[2], true);
+			features[0].weight_index = feature_a;
+			features[1].weight_index = feature_b;
+			features[1].x = feature_val;
+			context = new Context(features, 2);
+			ids[3] = "ab1_expect_2";
+			interactions[3] = new Interaction(context, MWTAction(2), prob, ids[3], true);
+			features[0].weight_index = feature_b;
+			features[1].weight_index = feature_c;
+			context = new Context(features, 2);
+			ids[4] = "bc1_expect_2";
+			interactions[4] = new Interaction(context, MWTAction(2), prob, ids[4], true);
+			features[0].weight_index = feature_a;
+			context = new Context(features, 2);
+			ids[5] = "ac1_expect_3";
+			interactions[5] = new Interaction(context, MWTAction(3), prob, ids[5], true);
+			features[0].weight_index = feature_d;
+			context = new Context(features, 1);
+			ids[6] = "d1_expect_2";
+			interactions[6] = new Interaction(context, MWTAction(2), prob, ids[6], true);
+
+			// Join reward information to the dataset
+			MWTRewardReporter rew = MWTRewardReporter(7, interactions);
+			float all_rewards[7];
+			float reward = 1.0;
+			// This initializes all rewards to the value above
+			std::fill_n(all_rewards, 7, reward);
+			rew.Report_Reward(7, ids, all_rewards);
+
+			// Test VW's CSOAA offline optimization
+			MWTOptimizer opt = MWTOptimizer(7, interactions, 3);
+			opt.Optimize_Policy_VW_CSOAA("vw_csoaa.model");
+			float policy_perf = opt.Evaluate_Policy_VW_CSOAA("vw_csoaa.model");
+			// The optimized policy should yield perfect predictions in this case
+			Assert::AreEqual((double)policy_perf, (7 * reward * (1.0 / prob)) / 7);
 		}
 
 		TEST_METHOD(PRG_Coverage)

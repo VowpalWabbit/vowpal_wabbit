@@ -9,7 +9,7 @@
 class MWTOptimizer
 {
 public:
-	MWTOptimizer(size_t& num_interactions, Interaction* interactions[], u32 num_actions) 
+	MWTOptimizer(size_t num_interactions, Interaction* interactions[], u32 num_actions) 
 		: m_num_actions(num_actions)
 	{
 		//TODO: Accept an ActionSet param that we'll use to call Match()? Maybe we should just accept a 
