@@ -2,6 +2,9 @@
 
 #include "Interaction.h"
 #include <float.h>
+#include <typeinfo>
+#include <tuple>
+
 //
 // Common interface for all exploration algorithms
 //

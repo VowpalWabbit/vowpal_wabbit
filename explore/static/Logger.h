@@ -4,6 +4,7 @@
 
 #pragma once
 #include <sstream>
+#include <stdexcept>
 
 // Currently based on assumption that each app stores separate files
 class Logger
@@ -24,10 +25,7 @@ public:
   ~Logger()
     { // If the logger is deleted while still having in-mem data then try flushing it
       if (m_interactions.size() > 0)
-	{
-	  cerr << "Logger still has data during destruction" << endl;
-	  throw std::exception();
-	}
+	throw std::invalid_argument("Logger still has data during destruction");
     }
 
   void Store(Interaction* interaction)

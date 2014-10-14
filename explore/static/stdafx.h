@@ -16,7 +16,6 @@
 #include <limits.h>
 
 // TODO: reference additional headers your program requires here
-#include "vw.h"
 #include "utility.h"
 #include "Interaction.h"
 #include "Logger.h"
