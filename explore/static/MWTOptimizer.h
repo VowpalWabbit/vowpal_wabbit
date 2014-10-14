@@ -47,12 +47,6 @@ public:
 		double sum_weighted_rewards = 0.0;
 		u64 count = 0;
 
-		vw = VW_InitializeA("-q st --noconstant --quiet");
-		example = VW_ReadExampleA(vw, "1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
-		VW_Learn(vw, example);
-		VW_Finish(vw);
-		return 1.0;
-
 		std::string params = "-i " + model_input_file + " --noconstant --quiet";
 		vw = VW_InitializeA(params.c_str());
 		MWTAction policy_action(0);
@@ -72,7 +66,7 @@ public:
 			}
 		}
 		VW_Finish(vw);
-		return (sum_weighted_rewards / count);
+		return count;
 	}
 
 	void Optimize_Policy_VW_CSOAA(std::string model_output_file)
@@ -80,8 +74,7 @@ public:
 		VW_HANDLE vw;
 		VW_EXAMPLE example;
 
-		std::string params = "--csoaa " + std::to_string(m_num_actions) + "--noconstant --quiet -f " + model_output_file;
-
+		std::string params = "--csoaa " + std::to_string(m_num_actions) + " --noconstant --quiet -f " + model_output_file;
 		vw = VW_InitializeA(params.c_str());
 		for (auto pInteraction : m_interactions)
 		{
