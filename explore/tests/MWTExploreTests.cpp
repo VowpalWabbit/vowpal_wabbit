@@ -269,21 +269,49 @@ namespace vw_explore_tests
 			delete[] interactions;
 		}
 
-		/*
 		TEST_METHOD(RewardReporter)
 		{
+			float epsilon = 0.f; // No randomization
+			m_mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, m_num_actions);
+			u32 num_decisions = m_num_actions;
+			std::string* ids = new std::string[num_decisions];
+			u32 i;
+			for (i = 0; i < num_decisions; i++)
+			{
+				ids[i] = this->Get_Unique_Key(i + 1);
+				u32 action = m_mwt->Choose_Action(*m_context, ids[i]);
+			}
+
 			size_t num_interactions = 0;
 			Interaction** interactions = nullptr;
 			m_mwt->Get_All_Interactions(num_interactions, interactions);
 
-			//TODO: These are completely bogus calls for now just to force compilation of templated methods
-			MWTRewardReporter* rew = new MWTRewardReporter(num_interactions, interactions);
-			MWTOptimizer* opt = new MWTOptimizer(num_interactions, interactions);
-			rew->ReportReward(1, 2.0);
-			int temp = 5;
-			opt->Evaluate_Policy<int>(Stateful_Default_Policy, &temp);
+			MWTRewardReporter rew = MWTRewardReporter(num_interactions, interactions);
+			Assert::AreEqual(num_decisions, (u32)num_interactions);
+			float reward = 2.0;
+			// Report a single interaction's reward
+			rew.ReportReward(ids[0], reward);
+			for (i = 0; i < num_interactions; i++)
+			{
+				// We need to find the interaction since it's not guaranteed the interactiosn are
+				// returned to us in the same order we passed them in
+				float expected_reward = (interactions[i]->Get_Id() == ids[0]) ? reward : 0.0;
+				Assert::AreEqual(interactions[i]->Get_Reward(), expected_reward);
+			}
+			// Report rewards for all interactions, which should overwrite the single reward above
+			reward = 3.0;
+			float* all_rewards = new float[num_interactions];
+			// This initializes all rewards to the value above
+			std::fill_n(all_rewards, num_interactions, reward);
+			rew.ReportReward(num_decisions, ids, all_rewards);
+			for (i = 0; i < num_interactions; i++)
+			{
+				Assert::AreEqual(interactions[i]->Get_Reward(), reward);
+			}
+			delete[] all_rewards;
+			delete[] ids;
+			delete[] interactions;
 		}
-		*/
 
 		TEST_METHOD(PRGCoverage)
 		{
