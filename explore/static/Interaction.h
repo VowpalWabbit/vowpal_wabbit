@@ -13,6 +13,9 @@
 using namespace std;
 
 #define NO_JOIN_KEY -99999
+//TODO: Make this a static const float of the Interaction class (right now VS doesn't support
+// the C++11 constexpr keyword, which is needed to initialize such non-integer types.
+#define NO_REWARD -FLT_MAX
 
 class Serializable
 {
@@ -170,7 +173,7 @@ public:
 	Interaction(Context* context, MWTAction action, float prob, std::string unique_id, bool is_copy = false) : 
   m_context(context), m_action(action), m_prob(prob), m_id(unique_id), m_is_copy(is_copy)
 	{
-		m_reward = 0.0;
+		m_reward = NO_REWARD;
 		m_id_hash = Get_Id_Hash(unique_id);
 	}
 
