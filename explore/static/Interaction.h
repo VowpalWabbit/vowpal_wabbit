@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <functional>
 
 using namespace std;
 
@@ -240,11 +241,12 @@ public:
 	}
 
 public:
-	static u64 Get_Id_Hash(std::string unique_id)
+	static u64 Get_Id_Hash(std::string& unique_id)
 	{
 		// TODO: We should remove the dependence on VW's hash function, and also use something
 		// that returns >= 64 bits
-		return ::uniform_hash(unique_id.c_str(), unique_id.size(), 0);
+	  hash<string> foo;
+	  return foo(unique_id);
 	}
 
 private:
