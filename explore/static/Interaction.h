@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <float.h>
 #include "Common.h" 
 #include "example.h"
 #include "hash.h"
