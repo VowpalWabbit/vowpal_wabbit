@@ -351,7 +351,8 @@ namespace MultiWorldTesting {
 			m_native_interactions[i] = new Interaction(native_context,
 				interactions[i]->ChosenAction,
 				interactions[i]->Probability,
-				marshal_as<std::string>(interaction_id));
+				marshal_as<std::string>(interaction_id),
+				/* is_copy = */ true);
 		}
 		size_t native_num_interactions = (size_t)m_num_native_interactions;
 		m_mwt_reward_reporter = new MWTRewardReporter(native_num_interactions, m_native_interactions);
@@ -403,7 +404,8 @@ namespace MultiWorldTesting {
 			m_native_interactions[i] = new Interaction(native_context,
 				interactions[i]->ChosenAction,
 				interactions[i]->Probability,
-				marshal_as<std::string>(interaction_id));
+				marshal_as<std::string>(interaction_id),
+				/* is_copy = */ true);
 		}
 		size_t native_num_interactions = (size_t)m_num_native_interactions;
 		m_mwt_optimizer = new MWTOptimizer(native_num_interactions, m_native_interactions, (u32)numActions);
