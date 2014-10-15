@@ -47,7 +47,7 @@ public:
 		double sum_weighted_rewards = 0.0;
 		u64 count = 0;
 
-		std::string params = "-i " + model_input_file + " --noconstant --quiet";
+		std::string params = "-t -i " + model_input_file + " --noconstant --quiet";
 		vw = VW_InitializeA(params.c_str());
 		MWTAction policy_action(0);
 		for (auto pInteraction : m_interactions)
@@ -66,7 +66,9 @@ public:
 			}
 		}
 		VW_Finish(vw);
-		return count;
+
+		float expected_perf = (count > 0) ? (sum_weighted_rewards / count) : 0.0;
+		return expected_perf;
 	}
 
 	void Optimize_Policy_VW_CSOAA(std::string model_output_file)
@@ -137,7 +139,8 @@ private:
 			}
 		}
 
-		return (sum_weighted_rewards / count);
+		float expected_perf = (count > 0) ? (sum_weighted_rewards / count) : 0.0;
+		return expected_perf;
 	}
 
 
