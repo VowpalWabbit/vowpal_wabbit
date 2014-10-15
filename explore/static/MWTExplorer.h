@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "stdafx.h"
+#include "Common.h"
 #include "Explorer.h"
 #include <tuple>
 
@@ -180,12 +180,6 @@ public:
 	{
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func);
-	}
-
-	u32 Choose_Action(void* context, MWTFeature* context_features, size_t num_features, std::string* other_context, std::string unique_id)
-	{
-		Context log_context(context_features, num_features, other_context);
-		return this->Choose_Action(context, unique_id, log_context);
 	}
 
 	// The parameters here look weird but are required to interface with C#:

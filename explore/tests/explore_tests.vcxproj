@@ -68,6 +68,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(BoostLibDir);$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PreBuildEvent>
+      <Command>xcopy /c /y ..\..\vowpalwabbit\dll\x64\$(ConfigurationName)\libvw.* $(OutDir)</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -87,6 +90,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(BoostLibDir);c:\boost-trunk\stage_vc110\lib;$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PreBuildEvent>
+      <Command>xcopy /c /y ..\..\vowpalwabbit\dll\x64\$(ConfigurationName)\libvw.* $(OutDir)</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -102,12 +108,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\vowpalwabbit\libvw.vcxproj">
       <Project>{ea52de0d-a5be-4fb9-8c84-3a57bdfebed9}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\vowpalwabbit\vw_static.vcxproj">
-      <Project>{1e205806-7f80-47dd-a38d-fc08083f3592}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\static\explore_static.vcxproj">
-      <Project>{ace47e98-488c-4cdf-b9f1-36337b2855ad}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

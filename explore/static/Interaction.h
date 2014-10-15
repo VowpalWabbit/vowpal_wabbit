@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include "stdafx.h" 
+#include "Common.h" 
 #include "example.h"
 #include "hash.h"
 

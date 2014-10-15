@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stdafx.h"
+#include "Common.h"
 #include "vwdll.h"
 
 //
@@ -9,8 +9,9 @@
 class MWTOptimizer
 {
 public:
-	MWTOptimizer(size_t num_interactions, Interaction* interactions[], u32 num_actions) 
-		: m_num_actions(num_actions)
+	MWTOptimizer(size_t num_interactions, Interaction* interactions[], u32 num_actions)
+		: m_num_actions(num_actions), m_stateful_default_policy_func(nullptr),
+		m_stateless_default_policy_func(nullptr), m_default_policy_params(nullptr)
 	{
 		//TODO: Accept an ActionSet param that we'll use to call Match()? Maybe we should just accept a 
 		// Match() method
@@ -93,25 +94,23 @@ public:
 		Stateful_Policy_Func policy_func,
 		void* policy_params)
 	{
-		StatefulFunctionWrapper<void> func_Wrapper = StatefulFunctionWrapper<void>();
-		func_Wrapper.m_policy_function = (Stateful_Policy_Func*)policy_func;
+		m_stateful_default_policy_func = policy_func;
+		m_stateless_default_policy_func = nullptr;
+		m_default_policy_params = policy_params;
 
-		return Evaluate_Policy<void>(func_Wrapper, policy_params);
+		return Evaluate_Policy();
 	}
 
 	float Evaluate_Policy(Stateless_Policy_Func policy_func)
 	{
-		StatelessFunctionWrapper func_Wrapper = StatelessFunctionWrapper();
-		func_Wrapper.m_policy_function = (Stateless_Policy_Func*)policy_func;
+		m_stateful_default_policy_func = nullptr;
+		m_stateless_default_policy_func = policy_func;
 
-		return Evaluate_Policy<MWT_Empty>(func_Wrapper, nullptr);
+		return Evaluate_Policy();
 	}
 
 private:
-	template <class T>
-	float Evaluate_Policy(
-		BaseFunctionWrapper& policy_func_wrapper,
-		T* policy_params)
+	float Evaluate_Policy()
 	{
 		double sum_weighted_rewards = 0.0;
 		u64 count = 0;
@@ -119,15 +118,13 @@ private:
 		for (auto pInteraction : m_interactions)
 		{
 			MWTAction policy_action(0);
-			if (typeid(policy_func_wrapper) == typeid(StatelessFunctionWrapper))
+			if (m_stateless_default_policy_func != nullptr)
 			{
-				StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(&policy_func_wrapper);
-				policy_action = MWTAction(stateless_function_wrapper->m_policy_function(pInteraction->Get_Context()));
+				policy_action = MWTAction(m_stateless_default_policy_func(pInteraction->Get_Context()));
 			}
 			else
 			{
-				StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(&policy_func_wrapper);
-				policy_action = MWTAction(stateful_function_wrapper->m_policy_function(policy_params, pInteraction->Get_Context()));
+				policy_action = MWTAction(m_stateful_default_policy_func(m_default_policy_params, pInteraction->Get_Context()));
 			}
 			// If the policy action matches the action logged in the interaction, include the
 			// (importance-weighted) reward in our average
@@ -147,4 +144,8 @@ private:
 private:
 	std::vector<Interaction*> m_interactions;
 	u32 m_num_actions;
+
+	Stateful_Policy_Func* m_stateful_default_policy_func;
+	Stateless_Policy_Func* m_stateless_default_policy_func;
+	void* m_default_policy_params;
 };

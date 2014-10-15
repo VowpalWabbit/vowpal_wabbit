@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "Common.h"
 
 //
 // Top-level internal API for joining reward information to interaction data.
