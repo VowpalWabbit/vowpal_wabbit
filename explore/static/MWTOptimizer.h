@@ -56,7 +56,9 @@ public:
 			std::ostringstream serialized_stream;
 			pInteraction->Serialize_VW_CSOAA(serialized_stream);
 			example = VW_ReadExampleA(vw, serialized_stream.str().c_str());
-			policy_action = MWTAction((u32)VW_Predict(vw, example));
+			//BUG: Ignore the return value pending an issue with VW causing it to return garbage
+			(void)VW_Predict(vw, example);
+			policy_action = MWTAction((u32)VW_GetCostSensitivePrediction(example));
 			// If the policy action matches the action logged in the interaction, include the
 			// (importance-weighted) reward in our average
 			MWTAction a = pInteraction->Get_Action();

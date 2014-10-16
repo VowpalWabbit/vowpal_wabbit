@@ -371,66 +371,81 @@ namespace vw_explore_tests
 			Context* context;
 			float prob = 1.0 / 3;
 			float feature_val = 1.0;
-			MWTFeature* features = new MWTFeature[3];
 			u64 feature_a = Interaction::Compute_Id_Hash("a");
 			u64 feature_b = Interaction::Compute_Id_Hash("b");
 			u64 feature_c = Interaction::Compute_Id_Hash("c");
 			u64 feature_d = Interaction::Compute_Id_Hash("d");
+			u32 i;
+			// Example 1
+			i = 0;
+			MWTFeature* features = new MWTFeature[3];
 			// This indicates feature "a" is present (the specific value used is not important)
 			features[0].Index = feature_a;
 			features[0].X = feature_val; 
 			context = new Context(features, 1, true);
 			// Indicating this is a copy hands responsibility for freeing the context to the
-			// Interaction class
-			ids[0] = "a1_expect_1";
-			interactions[0] = new Interaction(context, MWTAction(1), prob, ids[0], true);
-			features = new MWTFeature[3] {features[0], features[1], features[2]};
+			// Interaction class (note: we may remove this interface later)
+			ids[i] = "a1_expect_1";
+			interactions[i] = new Interaction(context, MWTAction(1), prob, ids[i], true);
+			// Example 2
+			features = new MWTFeature[3];
 			features[0].Index = feature_b;
 			features[0].X = feature_val;
 			context = new Context(features, 1, true);
-			ids[1] = "b1_expects_2";
-			interactions[1] = new Interaction(context, MWTAction(2), prob, ids[1], true);
-			features = new MWTFeature[3] {features[0], features[1], features[2]};
+			i++;
+			ids[i] = "b1_expects_2";
+			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
+			// Example 3
+			features = new MWTFeature[3];
 			features[0].Index = feature_c;
 			features[0].X = feature_val;
 			context = new Context(features, 1, true);
-			ids[2] = "c1_expects_3";
-			interactions[2] = new Interaction(context, MWTAction(3), prob, ids[2], true);
-			features = new MWTFeature[3] {features[0], features[1], features[2]};
+			i++;
+			ids[i] = "c1_expects_3";
+			interactions[i] = new Interaction(context, MWTAction(3), prob, ids[i], true);
+			// Example 4
+			features = new MWTFeature[3];
 			features[0].Index = feature_a;
 			features[0].X = feature_val;
 			features[1].Index = feature_b;
 			features[1].X = feature_val;
 			context = new Context(features, 2, true);
-			ids[3] = "ab1_expect_2";
-			interactions[3] = new Interaction(context, MWTAction(2), prob, ids[3], true);
-			features = new MWTFeature[3] {features[0], features[1], features[2]};
+			i++;
+			ids[i] = "ab1_expect_2";
+			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
+			// Example 5
+			features = new MWTFeature[3];
 			features[0].Index = feature_b;
 			features[0].X = feature_val;
 			features[1].Index = feature_c;
 			features[1].X = feature_val;
 			context = new Context(features, 2, true);
-			ids[4] = "bc1_expect_2";
-			interactions[4] = new Interaction(context, MWTAction(2), prob, ids[4], true);
-			features = new MWTFeature[3] {features[0], features[1], features[2]};
+			i++;
+			ids[i] = "bc1_expect_2";
+			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
+			// Example 6
+			features = new MWTFeature[3];
 			features[0].Index = feature_a;
 			features[0].X = feature_val;
 			features[1].Index = feature_c;
 			features[1].X = feature_val;
 			context = new Context(features, 2, true);
-			ids[5] = "ac1_expect_3";
-			interactions[5] = new Interaction(context, MWTAction(3), prob, ids[5], true);
-			features = new MWTFeature[3] {features[0], features[1], features[2]};
+			i++;
+			ids[i] = "ac1_expect_3";
+			interactions[i] = new Interaction(context, MWTAction(3), prob, ids[i], true);
+			// Example 7
+			features = new MWTFeature[3];
 			features[0].Index = feature_d;
 			features[0].X = feature_val;
 			context = new Context(features, 1, true);
-			ids[6] = "d1_expect_2";
-			interactions[6] = new Interaction(context, MWTAction(2), prob, ids[6], true);
+			i++;
+			ids[i] = "d1_expect_2";
+			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
 
 			// Join reward information to the dataset
 			MWTRewardReporter rew = MWTRewardReporter(7, interactions);
 			float all_rewards[7];
-			float reward = -1.0 / 3;
+			float reward = 1.0;
 			// This initializes all rewards to the value above
 			std::fill_n(all_rewards, 7, reward);
 			rew.Report_Reward(7, ids, all_rewards);

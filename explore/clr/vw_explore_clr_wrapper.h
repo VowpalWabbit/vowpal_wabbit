@@ -37,6 +37,7 @@ namespace MultiWorldTesting {
 		CONTEXT^ ApplicationContext;
 		UInt32 ChosenAction;
 		float Probability;
+		float Reward;
 		String^ Id;
 		UInt64 IdHash;
 	};
@@ -199,7 +200,9 @@ namespace MultiWorldTesting {
 
 		bool ReportReward(String^ id, float reward);
 		bool ReportReward(cli::array<String^>^ ids, cli::array<float>^ rewards);
-		String^ GetAllInteractions();
+		String^ GetAllInteractionsAsString();
+		//SIDTEMP:
+		cli::array<INTERACTION^>^ GetAllInteractions();
 	};
 
 	public ref class MwtOptimizer
