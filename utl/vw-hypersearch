@@ -571,7 +571,14 @@ sub process_args {
             push(@ARGV, '-f', $ModelFile);
         }
         # Add the test command after the train command
-        push(@ARGV, '&&', $ARGV[0], '-t', '-i', $ModelFile, $opt_t);
+        push(@ARGV, '&&', $ARGV[0], '-t', '-i', $ModelFile);
+
+        # Preserve the user-specified loss function, if any
+        if ($vw_command_line =~ /(--loss_function)\s+(\S+)/) {
+            push(@ARGV, $1, $2);
+        }
+        # And finally, add the test file
+        push(@ARGV, $opt_t);
         v("New -t command line: %s\n", "@ARGV");
     }
 
