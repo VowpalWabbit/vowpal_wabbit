@@ -131,7 +131,13 @@ namespace MultiWorldTesting {
 		MWTExplorer* m_mwt;
 		IFunctionWrapper^ policyWrapper;
 		cli::array<IFunctionWrapper^>^ policyWrappers;
+
+		// Garbage-collector handles to keep alive
 		GCHandle selfHandle;
+		GCHandle policyFuncHandle;
+		cli::array<GCHandle>^ baggingFuncHandles;
+
+		// Bagging-specific
 		cli::array<IntPtr>^ baggingParameters;
 		Stateful_Policy_Func** m_bagging_funcs;
 		void** m_bagging_func_params;
