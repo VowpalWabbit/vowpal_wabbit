@@ -57,13 +57,7 @@ public class LabDemo
                     }
                     c = new CONTEXT(featureList.ToArray(), null);
                     contexts.Add(c);
-
-                    //Console.WriteLine("Printing Example Number:{0}", ++ex_num);
-                    //foreach (MyFeature f in Context)
-                    //{
-                    //    Console.Write("{0}::{1} ", f.id, f.x);
-                    //}
-                    //Console.WriteLine("");
+                    
                 }
             }
 
@@ -80,15 +74,17 @@ public class LabDemo
                 while ((line = sr.ReadLine()) != null)
                 {
                     //Console.WriteLine(line);
-                    char[] delims = { ' ', '\t' };
-                    float[] rewards = new float[numActions];
+                    char[] delims = { '\t' };
+                    float[] reward_arr = new float[numActions];
                     string[] reward_strings = line.Split(delims);
                     int i = 0;
                     foreach (string s in reward_strings)
                     {
-                        rewards[i++] = float.Parse(s);
+                        Console.WriteLine(s);
+                        reward_arr[i++] = float.Parse(s);
+                        if (i == numActions) break;
                     }
-                    rewardList.Add(rewards);
+                    rewards.Add(reward_arr);
                 }
             }
         }
@@ -100,15 +96,18 @@ public class LabDemo
             else
                 Console.WriteLine("current id = {0}, size of list = {1}", cur_id, contexts.Count);
 
-            return contexts[cur_id++];
+            if (cur_id < contexts.Count)
+                return contexts[cur_id++];
+            else
+                return null;
         }
 
         public float getReward(uint action, uint uid)
-        {
-            if (rewardList.Count == 0)
+        {            
+            if (rewards.Count == 0)
                 ParseRewards();
 
-            return rewardList[(int)uid][action];
+            return rewards[(int)(uid)][action];
         }
         
     }
@@ -134,8 +133,8 @@ public class LabDemo
         MwtExplorer mwt = new MwtExplorer();
 
         uint numActions = 8;
-        float epsilon = 0.2f;
-        float policyParams = 0.5f;
+        float epsilon = 0f;
+        float policyParams = 0.1f;
 
         mwt.InitializeEpsilonGreedy<float>(epsilon, new StatefulPolicyDelegate<float>(ScoreBasedPolicy), policyParams, numActions);
         IOUtils iou = new IOUtils(@"..\Release\speller-contexts", @"..\Release\speller-rewards");
@@ -145,7 +144,7 @@ public class LabDemo
         while ((c = iou.getContext()) != null)
         {
             uint action = mwt.ChooseAction(c, uniqueID.ToString());
-            Console.WriteLine("Taking action {0} ", action);
+            Console.WriteLine("Taking action {0} on id {1}", action,uniqueID-1);
             uniqueID++;
         }
 
@@ -153,15 +152,27 @@ public class LabDemo
 
         MwtRewardReporter rewardReporter = new MwtRewardReporter(interactions);
         for (uint iInter = 0; iInter < interactions.Length; iInter++)
-        {
-            float r = iou.getReward(interactions[iInter].ChosenAction, iInter);
+        {            
+            float r = iou.getReward(interactions[iInter].ChosenAction,iInter);
+            Console.WriteLine("Got reward on interaction {0} with Action {1} as {2}", iInter, interactions[iInter].ChosenAction,r);
             rewardReporter.ReportReward(interactions[iInter].Id, r);
         }
 
-        MwtOptimizer mwtopt = new MwtOptimizer(interactions, numActions);
-        Console.WriteLine("Value of default policy = {0} = ",mwtopt.EvaluatePolicy<float>(new StatefulPolicyDelegate<float>(ScoreBasedPolicy), 0.5f));
-        Console.WriteLine("Value of default policy and threshold 0.6 = {0} = ", mwtopt.EvaluatePolicy<float>(new StatefulPolicyDelegate<float>(ScoreBasedPolicy), 0.6f));
-        Console.WriteLine("Value of default policy and threshold 0.4 = {0} = ", mwtopt.EvaluatePolicy<float>(new StatefulPolicyDelegate<float>(ScoreBasedPolicy), 0.4f));
+        INTERACTION[] full_interactions = rewardReporter.GetAllInteractions();
+
+        for (uint iInter = 0; iInter < full_interactions.Length; iInter++)
+        {            
+            Console.WriteLine("Stored reward on interaction {0} with Action {1} as {2}", iInter, full_interactions[iInter].ChosenAction, full_interactions[iInter].Reward);
+            Console.WriteLine("Action of default policy on this context = {0}", ScoreBasedPolicy(policyParams, full_interactions[iInter].ApplicationContext));
+        }
+
+        MwtOptimizer mwtopt = new MwtOptimizer(full_interactions, numActions);
+        float val = mwtopt.EvaluatePolicy<float>(new StatefulPolicyDelegate<float>(ScoreBasedPolicy), 0.1f);
+        if (val == 0)
+            Console.WriteLine("ZERO!!");
+        Console.WriteLine("Value of default policy = {0}", val);
+        Console.WriteLine("Value of default policy and threshold 0.6 = {0} = ", mwtopt.EvaluatePolicy<float>(new StatefulPolicyDelegate<float>(ScoreBasedPolicy), 0.2f));
+        Console.WriteLine("Value of default policy and threshold 0.4 = {0} = ", mwtopt.EvaluatePolicy<float>(new StatefulPolicyDelegate<float>(ScoreBasedPolicy), 0.05f));
     }
 
     private static CONTEXT GetContext()
