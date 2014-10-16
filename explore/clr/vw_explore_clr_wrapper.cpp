@@ -444,6 +444,7 @@ namespace MultiWorldTesting {
 				interactions[i]->Probability,
 				marshal_as<std::string>(interaction_id),
 				/* is_copy = */ true);
+			m_native_interactions[i]->Set_Reward(interactions[i]->Reward);
 		}
 		size_t native_num_interactions = (size_t)m_num_native_interactions;
 		m_mwt_optimizer = new MWTOptimizer(native_num_interactions, m_native_interactions, (u32)numActions);
