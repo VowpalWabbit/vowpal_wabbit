@@ -219,7 +219,8 @@ namespace MultiWorldTesting {
 		int m_num_native_interactions;
 		IFunctionWrapper^ policyWrapper;
 		GCHandle selfHandle;
-
+		cli::array<GCHandle>^ contextHandles;
+		
 	public: 
 		MwtOptimizer(cli::array<INTERACTION^>^ interactions, UInt32 numActions);
 		~MwtOptimizer();

@@ -440,6 +440,7 @@ namespace MultiWorldTesting {
 	{
 		m_num_native_interactions = interactions->Length;
 		m_native_interactions = new Interaction*[m_num_native_interactions];
+		contextHandles = gcnew cli::array<GCHandle>(m_num_native_interactions);
 		for (int i = 0; i < m_num_native_interactions; i++)
 		{
 			Context* native_context = MwtHelper::ToNativeContext(interactions[i]->ApplicationContext);
@@ -453,12 +454,9 @@ namespace MultiWorldTesting {
 
 			//SIDTEMP: Pass in the C# pointer since this class only uses it to pass back to a default
 			//policy during offlineevaluation
-			GCHandle contextHandle = GCHandle::Alloc(interactions[i]->ApplicationContext);
-			IntPtr contextPtr = (IntPtr)contextHandle;
+			contextHandles[i] = GCHandle::Alloc(interactions[i]->ApplicationContext);
+			IntPtr contextPtr = (IntPtr)contextHandles[i];
 			m_native_interactions[i]->Set_External_Context(contextPtr.ToPointer());
-			//SIDTEMP: Louie, where's the right place to call Free? Perhaps we need to store an array
-			//of these as class state so we can free during destruction
-			//contextHandle.Free();
 		}
 		size_t native_num_interactions = (size_t)m_num_native_interactions;
 		m_mwt_optimizer = new MWTOptimizer(native_num_interactions, m_native_interactions, (u32)numActions);
@@ -472,6 +470,17 @@ namespace MultiWorldTesting {
 	void MwtOptimizer::Uninitialize()
 	{
 		selfHandle.Free();
+
+		if (contextHandles != nullptr)
+		{
+			for (int i = 0; i < contextHandles->Length; i++)
+			{
+				if (contextHandles[i].IsAllocated)
+				{
+					contextHandles[i].Free();
+				}
+			}
+		}
 
 		for (int i = 0; i < m_num_native_interactions; i++)
 		{
