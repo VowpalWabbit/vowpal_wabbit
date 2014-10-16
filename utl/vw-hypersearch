@@ -92,7 +92,10 @@ sub ExecCmd {
         } else {
             while (<$pipe>) {
                 push @result, $_;
-                print STDERR ".";
+                # User feedback on training progress: ......
+                # only on real SGD (avg loss) progress
+                # (keep 'quiet' on startup/informative lines)
+                print STDERR '.' if (/^\d/);
             }
         }
         close($pipe);
