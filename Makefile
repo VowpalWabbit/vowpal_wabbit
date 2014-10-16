@@ -59,7 +59,7 @@ else
 endif
 
 # for normal fast execution.
-FLAGS = $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -DNDEBUG $(BOOST_INCLUDE)  -fPIC #-DVW_LDA_NO_SSE
+FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -DNDEBUG $(BOOST_INCLUDE)  -fPIC #-DVW_LDA_NO_SSE
 
 # for profiling -- note that it needs to be gcc
 #FLAGS = $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -O2 -fno-strict-aliasing -ffast-math -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) -pg  -fPIC #-DVW_LDA_NO_S

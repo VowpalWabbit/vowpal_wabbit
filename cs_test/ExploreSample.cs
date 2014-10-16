@@ -70,7 +70,7 @@ namespace cs_test
             CustomParams customParams = new CustomParams() { Value1 = policyParams, Value2 = policyParams + 1 };
 
             /*** Initialize Epsilon-Greedy explore algorithm using a default policy function that accepts parameters ***/
-            //mwt.InitializeEpsilonGreedy<int>(epsilon, new StatefulPolicyDelegate<int>(SampleStatefulPolicyFunc), policyParams, numActions);
+            mwt.InitializeEpsilonGreedy<int>(epsilon, new StatefulPolicyDelegate<int>(SampleStatefulPolicyFunc), policyParams, numActions);
 
             /*** Initialize Epsilon-Greedy explore algorithm using a stateless default policy function ***/
             //mwt.InitializeEpsilonGreedy(epsilon, new StatelessPolicyDelegate(SampleStatelessPolicyFunc), numActions);
@@ -102,7 +102,7 @@ namespace cs_test
             //mwt.InitializeSoftmax<int>(lambda, new StatefulScorerDelegate<int>(SampleStatefulScorerFunc), policyParams, numActions);
 
             /*** Initialize Softmax explore algorithm using a stateless default policy function ***/
-            mwt.InitializeSoftmax(lambda, new StatelessScorerDelegate(SampleStatelessScorerFunc), numActions);
+            //mwt.InitializeSoftmax(lambda, new StatelessScorerDelegate(SampleStatelessScorerFunc), numActions);
 
             FEATURE[] f = new FEATURE[2];
             f[0].X = 0.5f;
@@ -137,6 +137,14 @@ namespace cs_test
 
             Console.WriteLine(chosenAction);
             Console.WriteLine(interactions);
+
+            string file = "serialized.txt";
+            MwtLogger logger = new MwtLogger(file);
+            logger.Initialize(interactions);
+            logger.Flush();
+
+            logger = new MwtLogger(file);
+            INTERACTION[] inters = logger.GetAllInteractions();
         }
 
         public static void Clock()

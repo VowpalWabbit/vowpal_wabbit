@@ -159,9 +159,7 @@ public:
 		std::discrete_distribution<u32> softmax_dist(numScores, 0, 1,  // 0 and 1 are nonsense parameters here
 			[scores, &i](float)
 		{
-			auto w = scores[i];
-			i++;
-			return w;
+			return scores[i++];
 		});
 		// This retrives the PRG engine by reference, so evolving it will evolve the original PRG
 		u32 action_index = softmax_dist(random_generator.Get_Engine());
@@ -215,9 +213,7 @@ public:
 		std::discrete_distribution<u32> generic_dist(numWeights, 0, 1,  // 0 and 1 are nonsense parameters here
 			[weights, &i](float)
 		{
-			auto w = weights[i];
-			i++;
-			return w;
+			return weights[i++];
 		});
 		// This retrives the PRG engine by reference, so evolving it will evolve the original PRG
 		u32 action_index = generic_dist(random_generator.Get_Engine());

@@ -211,7 +211,7 @@ public:
     finisher_fd = LEARNER::generic_func_fd;
     save_load_fd = LEARNER::generic_save_load_fd;
 
-	mwt_policy_context = nullptr;
+    mwt_policy_context = nullptr;
   }
 
   inline learner(void* dat, size_t params_per_weight)
