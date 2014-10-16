@@ -80,7 +80,6 @@ public class LabDemo
                     int i = 0;
                     foreach (string s in reward_strings)
                     {
-                        Console.WriteLine(s);
                         reward_arr[i++] = float.Parse(s);
                         if (i == numActions) break;
                     }
@@ -93,8 +92,6 @@ public class LabDemo
         {
             if (contexts.Count == 0)
                 ParseContexts();
-            else
-                Console.WriteLine("current id = {0}, size of list = {1}", cur_id, contexts.Count);
 
             if (cur_id < contexts.Count)
                 return contexts[cur_id++];
@@ -107,7 +104,12 @@ public class LabDemo
             if (rewards.Count == 0)
                 ParseRewards();
 
-            return rewards[(int)(uid)][action];
+            //Console.WriteLine("Read {0} rewards, uid = {1}, action = {2}", rewards.Count, uid, action);
+
+            if (uid >= rewards.Count)
+                Console.WriteLine("Found illegal uid {0}", uid);
+
+            return rewards[(int)(uid)][action-1];
         }
         
     }
@@ -133,7 +135,7 @@ public class LabDemo
         MwtExplorer mwt = new MwtExplorer();
 
         uint numActions = 8;
-        float epsilon = 0f;
+        float epsilon = 0.1f;
         float policyParams = 0.1f;
 
         mwt.InitializeEpsilonGreedy<float>(epsilon, new StatefulPolicyDelegate<float>(ScoreBasedPolicy), policyParams, numActions);
@@ -144,7 +146,7 @@ public class LabDemo
         while ((c = iou.getContext()) != null)
         {
             uint action = mwt.ChooseAction(c, uniqueID.ToString());
-            Console.WriteLine("Taking action {0} on id {1}", action,uniqueID-1);
+            //Console.WriteLine("Taking action {0} on id {1}", action,uniqueID-1);
             uniqueID++;
         }
 
@@ -154,25 +156,32 @@ public class LabDemo
         for (uint iInter = 0; iInter < interactions.Length; iInter++)
         {            
             float r = iou.getReward(interactions[iInter].ChosenAction,iInter);
-            Console.WriteLine("Got reward on interaction {0} with Action {1} as {2}", iInter, interactions[iInter].ChosenAction,r);
+            //Console.WriteLine("Got reward on interaction {0} with Action {1} as {2}", iInter, interactions[iInter].ChosenAction,r);
             rewardReporter.ReportReward(interactions[iInter].Id, r);
         }
 
         INTERACTION[] full_interactions = rewardReporter.GetAllInteractions();
 
-        for (uint iInter = 0; iInter < full_interactions.Length; iInter++)
-        {            
-            Console.WriteLine("Stored reward on interaction {0} with Action {1} as {2}", iInter, full_interactions[iInter].ChosenAction, full_interactions[iInter].Reward);
-            Console.WriteLine("Action of default policy on this context = {0}", ScoreBasedPolicy(policyParams, full_interactions[iInter].ApplicationContext));
-        }
+        //for (uint iInter = 0; iInter < full_interactions.Length; iInter++)
+        //{            
+        //    Console.WriteLine("Stored reward on interaction {0} with Action {1} as {2}", iInter, full_interactions[iInter].ChosenAction, full_interactions[iInter].Reward);
+        //    Console.WriteLine("Action of default policy on this context = {0}", ScoreBasedPolicy(policyParams, full_interactions[iInter].ApplicationContext));
+        //}
 
         MwtOptimizer mwtopt = new MwtOptimizer(full_interactions, numActions);
         float val = mwtopt.EvaluatePolicy<float>(new StatefulPolicyDelegate<float>(ScoreBasedPolicy), 0.1f);
         if (val == 0)
             Console.WriteLine("ZERO!!");
         Console.WriteLine("Value of default policy = {0}", val);
-        Console.WriteLine("Value of default policy and threshold 0.6 = {0} = ", mwtopt.EvaluatePolicy<float>(new StatefulPolicyDelegate<float>(ScoreBasedPolicy), 0.2f));
-        Console.WriteLine("Value of default policy and threshold 0.4 = {0} = ", mwtopt.EvaluatePolicy<float>(new StatefulPolicyDelegate<float>(ScoreBasedPolicy), 0.05f));
+        Console.WriteLine("Value of default policy and threshold 0.2 = {0}", mwtopt.EvaluatePolicy<float>(new StatefulPolicyDelegate<float>(ScoreBasedPolicy), 0.2f));
+        Console.WriteLine("Value of default policy and threshold 0.05 = {0}", mwtopt.EvaluatePolicy<float>(new StatefulPolicyDelegate<float>(ScoreBasedPolicy), 0.05f));
+        Console.WriteLine("Value of default policy and threshold 1 = {0}", mwtopt.EvaluatePolicy<float>(new StatefulPolicyDelegate<float>(ScoreBasedPolicy), 1.0f));
+
+        Console.WriteLine("Now we will optimize");
+        mwtopt.OptimizePolicyVWCSOAA("model");
+        Console.WriteLine("Done with optimization, now we will evaluate the optimized model");
+        Console.WriteLine("Value of optimized policy using VW = {0}", mwtopt.EvaluatePolicyVWCSOAA("model"));
+        Console.ReadKey();
     }
 
     private static CONTEXT GetContext()

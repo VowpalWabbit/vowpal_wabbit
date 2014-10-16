@@ -48,7 +48,7 @@ public:
 		double sum_weighted_rewards = 0.0;
 		u64 count = 0;
 
-		std::string params = "-t -i " + model_input_file + " --noconstant --quiet";
+		std::string params = "-t -i " + model_input_file + " --noconstant";
 		vw = VW_InitializeA(params.c_str());
 		MWTAction policy_action(0);
 		for (auto pInteraction : m_interactions)
@@ -67,6 +67,7 @@ public:
 				sum_weighted_rewards += pInteraction->Get_Reward() * (1.0 / pInteraction->Get_Prob());
 				count++;
 			}
+			VW_FinishExample(vw, example);
 		}
 		VW_Finish(vw);
 
@@ -79,7 +80,7 @@ public:
 		VW_HANDLE vw;
 		VW_EXAMPLE example;
 
-		std::string params = "--csoaa " + std::to_string(m_num_actions) + " --noconstant --quiet -f " + model_output_file;
+		std::string params = "--csoaa " + std::to_string(m_num_actions) + " --noconstant -f " + model_output_file;
 		vw = VW_InitializeA(params.c_str());
 		for (auto pInteraction : m_interactions)
 		{
@@ -87,6 +88,7 @@ public:
 			pInteraction->Serialize_VW_CSOAA(serialized_stream);
 			example = VW_ReadExampleA(vw, serialized_stream.str().c_str());	
 			(void)VW_Learn(vw, example);
+			VW_FinishExample(vw, example);
 		}
 		VW_Finish(vw);
 	}
