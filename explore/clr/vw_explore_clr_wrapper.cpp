@@ -387,9 +387,47 @@ namespace MultiWorldTesting {
 		return m_mwt_reward_reporter->Report_Reward((size_t)ids->Length, (std::string*)pinnedIds, (float*)pinnedRewards);
 	}
 	
-	String^ MwtRewardReporter::GetAllInteractions()
+	String^ MwtRewardReporter::GetAllInteractionsAsString()
 	{
 		return gcnew String(m_mwt_reward_reporter->Get_All_Interactions().c_str());
+	}
+
+	//SIDTEMP:
+	cli::array<INTERACTION^>^ MwtRewardReporter::GetAllInteractions()
+	{
+		cli::array<INTERACTION^>^ interactions = gcnew cli::array<INTERACTION^>((int)m_num_native_interactions);
+		if (m_num_native_interactions > 0 && m_native_interactions != nullptr)
+		{
+			for (size_t i = 0; i < m_num_native_interactions; i++)
+			{
+				interactions[i] = gcnew INTERACTION();
+
+				Context* native_context = m_native_interactions[i]->Get_Context();
+
+				MWTFeature* native_features = nullptr;
+				size_t native_num_features = 0;
+				native_context->Get_Features(native_features, native_num_features);
+				cli::array<FEATURE>^ features = gcnew cli::array<FEATURE>((int)native_num_features);
+				for (int i = 0; i < features->Length; i++)
+				{
+					features[i].X = native_features[i].X;
+					features[i].WeightIndex = native_features[i].Index;
+				}
+
+				std::string* native_other_context = nullptr;
+				native_context->Get_Other_Context(native_other_context);
+				String^ otherContext = (native_other_context == nullptr) ? nullptr : gcnew String(native_other_context->c_str());
+
+				interactions[i]->ApplicationContext = gcnew CONTEXT(features, otherContext);
+				interactions[i]->ChosenAction = m_native_interactions[i]->Get_Action().Get_Id();
+				interactions[i]->Probability = m_native_interactions[i]->Get_Prob();
+				interactions[i]->Id = gcnew String(m_native_interactions[i]->Get_Id().c_str());
+				interactions[i]->IdHash = m_native_interactions[i]->Get_Id_Hash();
+				interactions[i]->Reward = m_native_interactions[i]->Get_Reward();
+			}
+		}
+
+		return interactions;
 	}
 
 	MwtOptimizer::MwtOptimizer(cli::array<INTERACTION^>^ interactions, UInt32 numActions)
