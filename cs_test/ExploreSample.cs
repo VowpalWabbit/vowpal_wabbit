@@ -138,13 +138,22 @@ namespace cs_test
             Console.WriteLine(chosenAction);
             Console.WriteLine(interactions);
 
-            string file = "serialized.txt";
-            MwtLogger logger = new MwtLogger(file);
+            string interactionFile = "serialized.txt";
+            MwtLogger logger = new MwtLogger(interactionFile);
             logger.Initialize(interactions);
             logger.Flush();
 
-            logger = new MwtLogger(file);
+            logger = new MwtLogger(interactionFile);
             INTERACTION[] inters = logger.GetAllInteractions();
+
+            string rewardFile = "rewards.txt";
+
+            RewardStorer rewardStorer = new RewardStorer(rewardFile);
+            rewardStorer.Initialize(new float[2] { 1.0f, 0.4f });
+            rewardStorer.Flush();
+
+            rewardStorer = new RewardStorer(rewardFile);
+            float[] rewards = rewardStorer.GetAllRewards();
         }
 
         public static void Clock()

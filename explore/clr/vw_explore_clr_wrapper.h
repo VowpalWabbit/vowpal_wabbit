@@ -257,65 +257,96 @@ namespace MultiWorldTesting {
 		static Context* ToNativeContext(CONTEXT^ context);
 	};
 
-	public ref class MwtLogger
+	generic <class T>
+	public ref class MwtBaseLogger
 	{
 	public:
-		MwtLogger(String^ file)
+		MwtBaseLogger(String^ file)
 		{
 			filePath = file;
-			interactions = gcnew List<INTERACTION^>();
-		}
-
-		void Initialize(System::Collections::Generic::IEnumerable<INTERACTION^>^ inters)
-		{
-			interactions->AddRange(inters);
+			items = gcnew List<T>();
 		}
 
 		void Flush()
 		{
 			if (File::Exists(filePath))
 			{
-				List<INTERACTION^>^ savedInteractions = this->ReadFromFile();
-				if (savedInteractions != nullptr)
-				{
-					interactions->AddRange(savedInteractions);
-				}
+				List<T>^ savedItems = this->ReadFromFile();
+				items->AddRange(savedItems);
 			}
 			this->WriteToFile();
-			interactions->Clear();
+			items->Clear();
 		}
 
-		cli::array<INTERACTION^>^ GetAllInteractions()
+	protected:
+		void Initialize(System::Collections::Generic::IEnumerable<T>^ items)
 		{
-			if (interactions->Count == 0 && File::Exists(filePath))
+			this->items->AddRange(items);
+		}
+
+		cli::array<T>^ GetAllItems()
+		{
+			if (items->Count == 0 && File::Exists(filePath))
 			{
-				List<INTERACTION^>^ savedInteractions = this->ReadFromFile();
-				interactions->AddRange(savedInteractions);
+				List<T>^ savedItems = this->ReadFromFile();
+				items->AddRange(savedItems);
 			}
-			return interactions->ToArray();
+			return items->ToArray();
 		}
 
 	private:
-		List<INTERACTION^>^ ReadFromFile()
+		List<T>^ ReadFromFile()
 		{
-			XmlSerializer^ serializer = gcnew XmlSerializer(interactions->GetType());
+			XmlSerializer^ serializer = gcnew XmlSerializer(items->GetType());
 			StringReader^ reader = gcnew StringReader(File::ReadAllText(filePath));
-			return (List<INTERACTION^>^)serializer->Deserialize(reader);
+			return (List<T>^)serializer->Deserialize(reader);
 		}
 
 		void WriteToFile()
 		{
-			if (interactions->Count > 0)
+			if (items->Count > 0)
 			{
-				XmlSerializer^ serializer = gcnew XmlSerializer(interactions->GetType());
+				XmlSerializer^ serializer = gcnew XmlSerializer(items->GetType());
 				StringWriter^ writer = gcnew StringWriter();
-				serializer->Serialize(writer, interactions);
+				serializer->Serialize(writer, items);
 				File::WriteAllText(filePath, writer->ToString());
 			}
 		}
 
 	private:
 		String^ filePath;
-		List<INTERACTION^>^ interactions;
+		List<T>^ items;
+	};
+
+	public ref class MwtLogger : public MwtBaseLogger<INTERACTION^>
+	{
+	public:
+		MwtLogger(String^ file) : MwtBaseLogger<INTERACTION^>(file) { }
+
+		void Initialize(System::Collections::Generic::IEnumerable<INTERACTION^>^ interactions)
+		{
+			this->Initialize(interactions);
+		}
+
+		cli::array<INTERACTION^>^ GetAllInteractions()
+		{
+			return this->GetAllItems();
+		}
+	};
+
+	public ref class RewardStorer : public MwtBaseLogger<float>
+	{
+	public:
+		RewardStorer(String^ file) : MwtBaseLogger<float>(file) { }
+
+		void Initialize(System::Collections::Generic::IEnumerable<float>^ rewards)
+		{
+			this->Initialize(rewards);
+		}
+
+		cli::array<float>^ GetAllRewards()
+		{
+			return this->GetAllItems();
+		}
 	};
 }
