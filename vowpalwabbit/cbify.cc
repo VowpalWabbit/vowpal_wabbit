@@ -6,7 +6,7 @@
 #include "cb_algs.h"
 #include "rand48.h"
 #include "bs.h"
-#include "MWTExplorer.h"
+#include "../explore/static/MWTExplorer.h"
 
 using namespace LEARNER;
 
