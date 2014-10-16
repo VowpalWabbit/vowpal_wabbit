@@ -59,6 +59,7 @@ namespace VW {
   float get_importance(example*ec);
   float get_initial(example*ec);
   float get_prediction(example*ec);
+  float get_cost_sensitive_prediction(example*ec);
   size_t get_tag_length(example* ec);
   const char* get_tag(example* ec);
   size_t get_feature_number(example* ec);

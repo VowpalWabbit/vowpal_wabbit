@@ -55,6 +55,7 @@ namespace po = boost::program_options;
 #include "constant.h"
 #include "example.h"
 #include "simple_label.h"
+#include "cost_sensitive.h"
 #include "vw.h"
 #include "memory.h"
 
@@ -1121,6 +1122,11 @@ float get_initial(example* ec)
 float get_prediction(example* ec)
 {
 	return ((label_data*)(ec->ld))->prediction;
+}
+
+float get_cost_sensitive_prediction(example* ec)
+{
+	return ((COST_SENSITIVE::label*)(ec->ld))->prediction;
 }
 
 size_t get_tag_length(example* ec)
