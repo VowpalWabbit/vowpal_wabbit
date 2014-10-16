@@ -121,7 +121,7 @@ namespace cs_test
 
             MwtRewardReporter mrr = new MwtRewardReporter(interactions);
 
-            string joinKey = "10";
+            string joinKey = "myId";
             float reward = 0.5f;
             if (!mrr.ReportReward(joinKey, reward))
             {
@@ -206,5 +206,60 @@ namespace cs_test
             Console.WriteLine("Get Typed Log: {0} micro", timeTypedLog * 1000 / numIter);
             Console.WriteLine("--- TOTAL TIME: {0} micro", (timeInit + timeChoose + timeSerializedLog + timeTypedLog) * 1000);
         }
+
+        /************************ LAB CODE ************************/
+        private static void LabDemo()
+        {
+            MwtExplorer mwt = new MwtExplorer();
+
+            uint numActions = 10;
+            float epsilon = 0.2f;
+            int policyParams = 1003;
+
+            mwt.InitializeEpsilonGreedy<int>(epsilon, new StatefulPolicyDelegate<int>(SampleStatefulPolicyFunc), policyParams, numActions);
+
+            CONTEXT c;
+            uint uniqueID = 1;
+            while ((c = GetContext()) != null)
+            {
+                uint action = mwt.ChooseAction(c, uniqueID.ToString());
+
+                DoAction(action, uniqueID);
+
+                uniqueID++;
+            }
+
+            INTERACTION[] interactions = mwt.GetAllInteractions();
+
+            MwtRewardReporter rewardReporter = new MwtRewardReporter(interactions);
+            for (int iInter = 0; iInter < interactions.Length; iInter++)
+            {
+                //rewardReporter.ReportReward()
+            }
+        }
+
+        private static CONTEXT GetContext()
+        {
+            return null;
+        }
+
+        private static List<float[]> rewardList;
+        private float GetReward(uint action, uint uniqueID)
+        {
+            if (rewardList == null)
+            {
+                rewardList = new List<float[]>();
+                // Read reward from file and populate the list
+            }
+            // 
+            return rewardList[(int)uniqueID][action];
+        }
+
+        private static void DoAction(uint action, uint uniqueID)
+        {
+            // Performs the action
+        }
+
+        /********************** END LAB CODE **********************/
     }
 }
