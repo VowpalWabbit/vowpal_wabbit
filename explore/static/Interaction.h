@@ -186,6 +186,9 @@ public:
 	{
 		m_reward = NO_REWARD;
 		m_id_hash = Compute_Id_Hash(unique_id);
+		// By default, assume the external context is the same as the one passed in above, but 
+		// (C#) interop to work the external context should be set to a managed pointer
+		m_external_context = context;
 	}
 
 	~Interaction()
@@ -254,7 +257,19 @@ public:
 		m_context->Serialize(stream);
 	}
 
- public:
+// Required for (C#) interop
+public:
+	void* Get_External_Context()
+	{
+		return m_external_context;
+	}
+
+	void Set_External_Context(void* ext_context)
+	{
+		m_external_context = ext_context;
+	}
+
+public:
 	static u64 Compute_Id_Hash(const std::string& unique_id)
 	{
 	  size_t ret = 0;
@@ -278,4 +293,7 @@ private:
 	std::string m_id;
 	u64 m_id_hash;
 	bool m_is_copy;
+
+	// Required for (C#) interop
+	void* m_external_context;
 };
