@@ -134,6 +134,105 @@ namespace MultiWorldTesting {
 			StatelessScorerDelegate^ statelessScorer;
 	};
 
+	private ref class MwtHelper
+	{
+	public:
+		static Context* ToNativeContext(CONTEXT^ context);
+	};
+
+	generic <class T>
+	public ref class MwtBaseLogger
+	{
+	public:
+		MwtBaseLogger(String^ file)
+		{
+			filePath = file;
+			items = gcnew List<T>();
+		}
+
+		void Flush()
+		{
+			if (File::Exists(filePath))
+			{
+				List<T>^ savedItems = this->ReadFromFile();
+				items->AddRange(savedItems);
+			}
+			this->WriteToFile();
+			items->Clear();
+		}
+
+	protected:
+		void Initialize(System::Collections::Generic::IEnumerable<T>^ items)
+		{
+			this->items->AddRange(items);
+		}
+
+		cli::array<T>^ GetAllItems()
+		{
+			if (items->Count == 0 && File::Exists(filePath))
+			{
+				List<T>^ savedItems = this->ReadFromFile();
+				items->AddRange(savedItems);
+			}
+			return items->ToArray();
+		}
+
+	private:
+		List<T>^ ReadFromFile()
+		{
+			XmlSerializer^ serializer = gcnew XmlSerializer(items->GetType());
+			StringReader^ reader = gcnew StringReader(File::ReadAllText(filePath));
+			return (List<T>^)serializer->Deserialize(reader);
+		}
+
+		void WriteToFile()
+		{
+			if (items->Count > 0)
+			{
+				XmlSerializer^ serializer = gcnew XmlSerializer(items->GetType());
+				StringWriter^ writer = gcnew StringWriter();
+				serializer->Serialize(writer, items);
+				File::WriteAllText(filePath, writer->ToString());
+			}
+		}
+
+	private:
+		String^ filePath;
+		List<T>^ items;
+	};
+
+	public ref class MwtLogger : public MwtBaseLogger<INTERACTION^>
+	{
+	public:
+		MwtLogger(String^ file) : MwtBaseLogger<INTERACTION^>(file) { }
+
+		void Initialize(System::Collections::Generic::IEnumerable<INTERACTION^>^ interactions)
+		{
+			MwtBaseLogger<INTERACTION^>::Initialize(interactions);
+		}
+
+		cli::array<INTERACTION^>^ GetAllInteractions()
+		{
+			return MwtBaseLogger<INTERACTION^>::GetAllItems();
+		}
+	};
+
+	public ref class RewardStorer : public MwtBaseLogger<float>
+	{
+	public:
+		RewardStorer(String^ file) : MwtBaseLogger<float>(file) { }
+
+		void Initialize(System::Collections::Generic::IEnumerable<float>^ rewards)
+		{
+			MwtBaseLogger<float>::Initialize(rewards);
+		}
+
+		cli::array<float>^ GetAllRewards()
+		{
+			return MwtBaseLogger<float>::GetAllItems();
+		}
+	};
+
 	public ref class MwtExplorer
 	{
 	private:
@@ -151,8 +250,11 @@ namespace MultiWorldTesting {
 		Stateful_Policy_Func** m_bagging_funcs;
 		void** m_bagging_func_params;
 
+		MwtLogger^ logger;
+
 	public:
 		MwtExplorer();
+		MwtExplorer(MwtLogger^ logger);
 		~MwtExplorer();
 
 		generic <class T>
@@ -249,104 +351,5 @@ namespace MultiWorldTesting {
 
 	private:
 		static UInt32 InternalStatefulPolicy(IntPtr, IntPtr);
-	};
-
-	private ref class MwtHelper
-	{
-	public:
-		static Context* ToNativeContext(CONTEXT^ context);
-	};
-
-	generic <class T>
-	public ref class MwtBaseLogger
-	{
-	public:
-		MwtBaseLogger(String^ file)
-		{
-			filePath = file;
-			items = gcnew List<T>();
-		}
-
-		void Flush()
-		{
-			if (File::Exists(filePath))
-			{
-				List<T>^ savedItems = this->ReadFromFile();
-				items->AddRange(savedItems);
-			}
-			this->WriteToFile();
-			items->Clear();
-		}
-
-	protected:
-		void Initialize(System::Collections::Generic::IEnumerable<T>^ items)
-		{
-			this->items->AddRange(items);
-		}
-
-		cli::array<T>^ GetAllItems()
-		{
-			if (items->Count == 0 && File::Exists(filePath))
-			{
-				List<T>^ savedItems = this->ReadFromFile();
-				items->AddRange(savedItems);
-			}
-			return items->ToArray();
-		}
-
-	private:
-		List<T>^ ReadFromFile()
-		{
-			XmlSerializer^ serializer = gcnew XmlSerializer(items->GetType());
-			StringReader^ reader = gcnew StringReader(File::ReadAllText(filePath));
-			return (List<T>^)serializer->Deserialize(reader);
-		}
-
-		void WriteToFile()
-		{
-			if (items->Count > 0)
-			{
-				XmlSerializer^ serializer = gcnew XmlSerializer(items->GetType());
-				StringWriter^ writer = gcnew StringWriter();
-				serializer->Serialize(writer, items);
-				File::WriteAllText(filePath, writer->ToString());
-			}
-		}
-
-	private:
-		String^ filePath;
-		List<T>^ items;
-	};
-
-	public ref class MwtLogger : public MwtBaseLogger<INTERACTION^>
-	{
-	public:
-		MwtLogger(String^ file) : MwtBaseLogger<INTERACTION^>(file) { }
-
-		void Initialize(System::Collections::Generic::IEnumerable<INTERACTION^>^ interactions)
-		{
-			this->Initialize(interactions);
-		}
-
-		cli::array<INTERACTION^>^ GetAllInteractions()
-		{
-			return this->GetAllItems();
-		}
-	};
-
-	public ref class RewardStorer : public MwtBaseLogger<float>
-	{
-	public:
-		RewardStorer(String^ file) : MwtBaseLogger<float>(file) { }
-
-		void Initialize(System::Collections::Generic::IEnumerable<float>^ rewards)
-		{
-			this->Initialize(rewards);
-		}
-
-		cli::array<float>^ GetAllRewards()
-		{
-			return this->GetAllItems();
-		}
 	};
 }

@@ -13,11 +13,17 @@ using namespace msclr::interop;
 
 namespace MultiWorldTesting {
 
-	MwtExplorer::MwtExplorer()
+	MwtExplorer::MwtExplorer() : MwtExplorer(nullptr)
+	{
+
+	}
+
+	MwtExplorer::MwtExplorer(MwtLogger^ logger)
 	{
 		m_mwt = new MWTExplorer();
 		m_bagging_funcs = nullptr;
 		m_bagging_func_params = nullptr;
+		this->logger = logger;
 	}
 
 	MwtExplorer::~MwtExplorer()
@@ -283,6 +289,11 @@ namespace MultiWorldTesting {
 				delete native_interactions[i];
 			}
 			delete[] native_interactions;
+		}
+
+		if (logger != nullptr)
+		{
+			logger->Initialize(interactions);
 		}
 
 		return interactions;

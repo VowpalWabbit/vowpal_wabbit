@@ -57,7 +57,10 @@ namespace cs_test
 
         public static void Run()
         {
-            MwtExplorer mwt = new MwtExplorer();
+            string interactionFile = "serialized.txt";
+            MwtLogger logger = new MwtLogger(interactionFile);
+
+            MwtExplorer mwt = new MwtExplorer(logger);
 
             uint numActions = 10;
             
@@ -138,20 +141,19 @@ namespace cs_test
             Console.WriteLine(chosenAction);
             Console.WriteLine(interactions);
 
-            string interactionFile = "serialized.txt";
-            MwtLogger logger = new MwtLogger(interactionFile);
-            logger.Initialize(interactions);
             logger.Flush();
 
+            // Create a new logger to read back interaction data
             logger = new MwtLogger(interactionFile);
             INTERACTION[] inters = logger.GetAllInteractions();
 
+            // Load and save reward data to file
             string rewardFile = "rewards.txt";
-
             RewardStorer rewardStorer = new RewardStorer(rewardFile);
             rewardStorer.Initialize(new float[2] { 1.0f, 0.4f });
             rewardStorer.Flush();
 
+            // Read back reward data
             rewardStorer = new RewardStorer(rewardFile);
             float[] rewards = rewardStorer.GetAllRewards();
         }
@@ -223,9 +225,5 @@ namespace cs_test
             Console.WriteLine("Get Typed Log: {0} micro", timeTypedLog * 1000 / numIter);
             Console.WriteLine("--- TOTAL TIME: {0} micro", (timeInit + timeChoose + timeSerializedLog + timeTypedLog) * 1000);
         }
-
-        /************************ LAB CODE ************************/
-
-		
     }
 }
