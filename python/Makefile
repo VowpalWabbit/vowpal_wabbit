@@ -9,7 +9,7 @@
 #endif
 
 PYTHON_VERSION = 2.7
-PYTHON_INCLUDE = $(shell python$(PYTHON_VERSION)-config --include)
+PYTHON_INCLUDE = $(shell python$(PYTHON_VERSION)-config --includes)
 PYTHON_LDFLAGS = $(shell python$(PYTHON_VERSION)-config --ldflags)
 
 PYTHON_LIBS = -l boost_python
