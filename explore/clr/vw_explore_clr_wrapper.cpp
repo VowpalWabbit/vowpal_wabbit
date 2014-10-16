@@ -445,6 +445,13 @@ namespace MultiWorldTesting {
 				marshal_as<std::string>(interaction_id),
 				/* is_copy = */ true);
 			m_native_interactions[i]->Set_Reward(interactions[i]->Reward);
+
+			//SIDTEMP: Pass in the C# pointer since this class only uses it to pass back to a default
+			//policy during offlineevaluation
+			GCHandle contextHandle = GCHandle::Alloc(interactions[i]->ApplicationContext);
+			IntPtr contextPtr = (IntPtr)contextHandle;
+			m_native_interactions[i]->Set_External_Context(contextPtr.ToPointer());
+			contextHandle.Free();
 		}
 		size_t native_num_interactions = (size_t)m_num_native_interactions;
 		m_mwt_optimizer = new MWTOptimizer(native_num_interactions, m_native_interactions, (u32)numActions);
