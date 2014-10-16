@@ -7,7 +7,10 @@
 #include <msclr\marshal_cppstd.h>
 
 using namespace System;
+using namespace System::Collections::Generic;
+using namespace System::IO;
 using namespace System::Runtime::InteropServices;
+using namespace System::Xml::Serialization;
 
 namespace MultiWorldTesting {
 
@@ -21,6 +24,12 @@ namespace MultiWorldTesting {
 	public ref class CONTEXT
 	{
 	public:
+		CONTEXT()
+		{
+			Features = nullptr;
+			OtherContext = nullptr;
+		}
+
 		CONTEXT(cli::array<FEATURE>^ features, String^ otherContext)
 		{
 			Features = features;
@@ -246,5 +255,67 @@ namespace MultiWorldTesting {
 	{
 	public:
 		static Context* ToNativeContext(CONTEXT^ context);
+	};
+
+	public ref class MwtLogger
+	{
+	public:
+		MwtLogger(String^ file)
+		{
+			filePath = file;
+			interactions = gcnew List<INTERACTION^>();
+		}
+
+		void Initialize(System::Collections::Generic::IEnumerable<INTERACTION^>^ inters)
+		{
+			interactions->AddRange(inters);
+		}
+
+		void Flush()
+		{
+			if (File::Exists(filePath))
+			{
+				List<INTERACTION^>^ savedInteractions = this->ReadFromFile();
+				if (savedInteractions != nullptr)
+				{
+					interactions->AddRange(savedInteractions);
+				}
+			}
+			this->WriteToFile();
+			interactions->Clear();
+		}
+
+		cli::array<INTERACTION^>^ GetAllInteractions()
+		{
+			if (interactions->Count == 0 && File::Exists(filePath))
+			{
+				List<INTERACTION^>^ savedInteractions = this->ReadFromFile();
+				interactions->AddRange(savedInteractions);
+			}
+			return interactions->ToArray();
+		}
+
+	private:
+		List<INTERACTION^>^ ReadFromFile()
+		{
+			XmlSerializer^ serializer = gcnew XmlSerializer(interactions->GetType());
+			StringReader^ reader = gcnew StringReader(File::ReadAllText(filePath));
+			return (List<INTERACTION^>^)serializer->Deserialize(reader);
+		}
+
+		void WriteToFile()
+		{
+			if (interactions->Count > 0)
+			{
+				XmlSerializer^ serializer = gcnew XmlSerializer(interactions->GetType());
+				StringWriter^ writer = gcnew StringWriter();
+				serializer->Serialize(writer, interactions);
+				File::WriteAllText(filePath, writer->ToString());
+			}
+		}
+
+	private:
+		String^ filePath;
+		List<INTERACTION^>^ interactions;
 	};
 }
