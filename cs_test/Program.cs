@@ -15,7 +15,8 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
-            ExploreSample.Run();
+            LabDemo.Run();
+            //ExploreSample.Run();
             return;
             RunFeaturesTest();
             RunParserTest();
