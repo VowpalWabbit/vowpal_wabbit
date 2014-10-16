@@ -451,6 +451,8 @@ namespace MultiWorldTesting {
 			GCHandle contextHandle = GCHandle::Alloc(interactions[i]->ApplicationContext);
 			IntPtr contextPtr = (IntPtr)contextHandle;
 			m_native_interactions[i]->Set_External_Context(contextPtr.ToPointer());
+			//SIDTEMP: Louie, where's the right place to call Free? Perhaps we need to store an array
+			//of these as class state so we can free during destruction
 			//contextHandle.Free();
 		}
 		size_t native_num_interactions = (size_t)m_num_native_interactions;
