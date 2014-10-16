@@ -546,14 +546,6 @@ sub process_args {
     my ($option_before_pct) = ($vw_command_line =~ /(\S+)\s+\S*%/);
     $IntegerOpt = is_integer_option($option_before_pct);
 
-    if ($vw_command_line =~ /--passes/ and
-        $vw_command_line !~ /--holdout_off/) {
-        # Not very nice, but unfortunately, average_loss when
-        # hold-out is in effect (default), is printed as 0.
-        warn "$0: multiple passes: forcing --holdout_off\n";
-        push(@ARGV, "--holdout_off");
-    }
-
     if ($opt_t) {
         # Evaluate on test:
         #   1) Make sure we store the model after training
