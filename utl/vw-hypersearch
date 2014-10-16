@@ -537,6 +537,15 @@ sub process_args {
     usage("command: $ARGV[0]: must start with an executable")
         unless (-x $ARGV[0] || -x (fullpath($ARGV[0])));
 
+    # --- Now @ARGV contains the vw command only
+
+    # --quiet prevents progress from being detected so don't allow it
+    my @saved_argv = @ARGV; @ARGV = ();
+    foreach my $arg (@saved_argv) {
+        next if ($arg eq '--quiet');
+        push(@ARGV, $arg);
+    }
+
     my $vw_command_line = "@ARGV";
     usage("command '@ARGV': must include a '%' wildcard to optimize on")
         unless ($vw_command_line =~ /%/);
