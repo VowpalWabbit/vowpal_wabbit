@@ -451,7 +451,7 @@ namespace MultiWorldTesting {
 			GCHandle contextHandle = GCHandle::Alloc(interactions[i]->ApplicationContext);
 			IntPtr contextPtr = (IntPtr)contextHandle;
 			m_native_interactions[i]->Set_External_Context(contextPtr.ToPointer());
-			contextHandle.Free();
+			//contextHandle.Free();
 		}
 		size_t native_num_interactions = (size_t)m_num_native_interactions;
 		m_mwt_optimizer = new MWTOptimizer(native_num_interactions, m_native_interactions, (u32)numActions);
