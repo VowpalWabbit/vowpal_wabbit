@@ -2,7 +2,7 @@
 
 #include "Common.h"
 #include "vwdll.h"
-#include <fstream>
+//#include <fstream>
 
 //
 // Top-level internal API for offline evaluation/optimization.
@@ -27,21 +27,6 @@ public:
 			}
 		}
 		m_num_actions = num_actions;
-
-		//TODO: Append timestamp to filename for safety
-		std::string temp_file_name = "temp_constructor.out";
-
-		// Write exploration data to a temporary file that will be read by vw
-		ofstream myfile;
-		myfile.open(temp_file_name);
-		std::ostringstream serialized_stream;
-		for (auto pInteraction : m_interactions)
-		{
-			pInteraction->Serialize_VW_CSOAA(serialized_stream);
-			serialized_stream << "\n";
-		}
-		myfile << serialized_stream.str();
-		myfile.close();
 	}
 
 	template <class T>
@@ -137,7 +122,7 @@ public:
 		VW_HANDLE vw;
 		VW_EXAMPLE example;
 
-		std::string params = "--csoaa " + std::to_string(m_num_actions) + " --noconstant -f " + model_output_file;
+		std::string params = "--cb " + std::to_string(m_num_actions) + " --cb_type ips --noconstant -f " + model_output_file;
 		vw = VW_InitializeA(params.c_str());
 		for (auto pInteraction : m_interactions)
 		{
