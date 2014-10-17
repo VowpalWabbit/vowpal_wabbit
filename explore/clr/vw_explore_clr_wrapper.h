@@ -154,8 +154,7 @@ namespace MultiWorldTesting {
 		{
 			if (File::Exists(filePath))
 			{
-				List<T>^ savedItems = this->ReadFromFile();
-				items->AddRange(savedItems);
+				File::Delete(filePath);
 			}
 			this->WriteToFile();
 			items->Clear();
