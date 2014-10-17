@@ -23,12 +23,12 @@ public:
 
 struct MWTFeature
 {
-	float X;
-	u32 Index;
+	float Value;
+	u32 Id;
 
 	bool operator==(MWTFeature other_feature)
 	{
-		return Index == other_feature.Index;
+		return Id == other_feature.Id;
 	}
 };
 
@@ -159,7 +159,7 @@ public:
 		{
 			for (size_t i = 0; i < m_num_features; i++)
 			{
-				stream << m_common_features[i].Index << ":" << m_common_features[i].X << " ";
+				stream << m_common_features[i].Id << ":" << m_common_features[i].Value << " ";
 			}
 		}
 		if (m_other_context != nullptr)

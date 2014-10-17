@@ -56,8 +56,8 @@ void Clock_Explore()
 	MWTFeature* features = new MWTFeature[num_features];
 	for (int i = 0; i < num_features; i++)
 	{
-		features[i].Index = i + 1;
-		features[i].X = 0.5;
+		features[i].Id = i + 1;
+		features[i].Value = 0.5;
 	}
 
 	long long time_init = 0, time_choose = 0, time_serialized_log = 0, time_typed_log = 0;
@@ -73,7 +73,7 @@ void Clock_Explore()
 		Context context(features, num_features);
 		for (int i = 0; i < num_interactions; i++)
 		{
-			mwt.Choose_Action(context, unique_key);
+		  mwt.Choose_Action(unique_key, context);
 		}
 		t2 = high_resolution_clock::now();
 		time_choose += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
@@ -85,7 +85,7 @@ void Clock_Explore()
 
 		for (int i = 0; i < num_interactions; i++)
 		{
-			mwt.Choose_Action(context, unique_key);
+		  mwt.Choose_Action(unique_key, context);
 		}
 
 		t1 = high_resolution_clock::now();
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
 	}
 	      
 	//arguments for individual explorers
-	int policy_params = 101;
+	int policy_params = 101;//A more complex type in real applications.
 	u32 bag_number = 2;
 	StatefulFunctionWrapper<int>::Policy_Func* bags[] = { Stateful_Default_Policy1, Stateful_Default_Policy2 };
 	StatelessFunctionWrapper::Policy_Func* stateless_bags[] = { Stateless_Default_Policy1, Stateless_Default_Policy2 };
@@ -178,19 +178,19 @@ int main(int argc, char* argv[])
 	    cerr << "unknown exploration type: " << argv[1] << endl;
 	    exit(1);
 	  }
-	    
+	 
 	// Create Features & Context
 	int num_features = 1;
 	MWTFeature features[num_features];
 	//a sparse feature representation
-	features[0].Index = 32;
-	features[0].X = 0.5;
+	features[0].Id = 32;
+	features[0].Value = 0.5;
 
 	Context context(features, num_features);
 
 	// Now let MWT explore & choose an action
 	string unique_key = "1001";
-	u32 chosen_action = mwt.Choose_Action(context, unique_key);
+	u32 chosen_action = mwt.Choose_Action(unique_key, context);
 	
 	cout << "action = " << chosen_action << endl;
 	

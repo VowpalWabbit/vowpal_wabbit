@@ -113,10 +113,9 @@ public:
 		this->Initialize_Generic((Stateless_Scorer_Func*)default_scorer_func, num_actions);
 	}
 
-	// TODO: check whether char* could be std::string
-	u32 Choose_Action(Context& context, std::string unique_id)
+	u32 Choose_Action(std::string unique_id, Context& context)
 	{
-		return this->Choose_Action(&context, unique_id, context);
+	        return this->Choose_Action(&context, unique_id, context);
 	}
 
 // Cross-language interface
