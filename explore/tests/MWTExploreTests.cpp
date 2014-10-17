@@ -17,7 +17,7 @@ namespace vw_explore_tests
 			float epsilon = 0.f; // No randomization
 			m_mwt->Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy, &m_policy_func_arg, m_num_actions);
 
-			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, m_context);
+			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, *m_context);
 
 			u32 chosen_action = m_mwt->Choose_Action(m_unique_key, *m_context);
 			Assert::AreEqual(expected_action, chosen_action);
@@ -35,10 +35,10 @@ namespace vw_explore_tests
 			m_mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, m_num_actions);
 
 			u32 chosen_action = m_mwt->Choose_Action(m_unique_key, *m_context);
-			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
+			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(*m_context));
 
 			chosen_action = m_mwt->Choose_Action(m_unique_key, *m_context);
-			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
+			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(*m_context));
 
 			float expected_probs[2] = { 1.f, 1.f };
 			this->Test_Logger(2, expected_probs);
@@ -61,7 +61,7 @@ namespace vw_explore_tests
 			u32 tau = 0;
 			m_mwt->Initialize_Tau_First<int>(tau, Stateful_Default_Policy, &m_policy_func_arg, m_num_actions);
 
-			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, m_context);
+			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, *m_context);
 
 			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
 			Assert::AreEqual(expected_action, chosen_action);
@@ -76,7 +76,7 @@ namespace vw_explore_tests
 			m_mwt->Initialize_Tau_First(tau, Stateless_Default_Policy, m_num_actions);
 
 			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
-			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
+			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(*m_context));
 
 			this->Test_Logger(0, nullptr);
 		}
@@ -103,7 +103,7 @@ namespace vw_explore_tests
 			m_mwt->Initialize_Bagging<int>(m_bags, m_policy_funcs_stateful, m_policy_params, m_num_actions);
 
 			// Every bag uses the same default policy function so expected chosen action is its return value
-			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, m_context);
+			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, *m_context);
 
 			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
 			Assert::AreEqual(expected_action, chosen_action);
@@ -121,7 +121,7 @@ namespace vw_explore_tests
 			m_mwt->Initialize_Bagging(m_bags, m_policy_funcs_stateless, m_num_actions);
 
 			// Every bag uses the same default policy function so expected chosen action is its return value
-			u32 expected_action = VWExploreUnitTests::Stateless_Default_Policy(m_context);
+			u32 expected_action = VWExploreUnitTests::Stateless_Default_Policy(*m_context);
 
 			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
 			Assert::AreEqual(expected_action, chosen_action);
@@ -347,7 +347,7 @@ namespace vw_explore_tests
 			float reward = 0.0;
 			// Offline evaluate the default policy; we assume it always returns the same
 			// action
-			u32 policy_action = Stateless_Default_Policy(m_context);
+			u32 policy_action = Stateless_Default_Policy(*m_context);
 			float policy_weighted_sum = 0.0;
 			u32 policy_matches = 0;
 			for (i = 0; i < num_interactions; i++)
@@ -558,23 +558,23 @@ namespace vw_explore_tests
 		}
 
 	public:
-		static u32 Stateful_Default_Policy(int* policy_params, Context* applicationContext)
+		static u32 Stateful_Default_Policy(int* policy_params, Context& applicationContext)
 		{
 			return MWTAction::Make_OneBased(*policy_params % m_num_actions);
 		}
-		static u32 Stateful_Default_Policy2(int* policy_params, Context* applicationContext)
+		static u32 Stateful_Default_Policy2(int* policy_params, Context& applicationContext)
 		{
 			return MWTAction::Make_OneBased(*policy_params % m_num_actions) + 1;
 		}
 
-		static u32 Stateless_Default_Policy(Context* applicationContext)
+		static u32 Stateless_Default_Policy(Context& applicationContext)
 		{
 			return MWTAction::Make_OneBased(99 % m_num_actions);
 		}
 
 		//TODO: For now assume the size of the score array is the number of action scores to
 		// report, but we need a more general way to determine per-action features (opened github issue)
-		static void Stateful_Default_Scorer(int* policy_params, Context* applicationContext, float scores[], u32 size)
+		static void Stateful_Default_Scorer(int* policy_params, Context& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
@@ -584,7 +584,7 @@ namespace vw_explore_tests
 			}
 		}
 
-		static void Stateless_Default_Scorer(Context* applicationContext, float scores[], u32 size)
+		static void Stateless_Default_Scorer(Context& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
@@ -592,7 +592,7 @@ namespace vw_explore_tests
 			}
 		}
 
-		static void Non_Uniform_Stateful_Default_Scorer(int* policy_params, Context* applicationContext, float scores[], u32 size)
+		static void Non_Uniform_Stateful_Default_Scorer(int* policy_params, Context& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
@@ -602,7 +602,7 @@ namespace vw_explore_tests
 			}
 		}
 
-		static void Non_Uniform_Stateless_Default_Scorer(Context* applicationContext, float scores[], u32 size)
+		static void Non_Uniform_Stateless_Default_Scorer(Context& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{

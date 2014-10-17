@@ -10,15 +10,15 @@ using namespace std::chrono;
 
 const int NUM_ACTIONS = 10;
 
-u32 Stateful_Default_Policy1(int* parameters, Context* context)
+u32 Stateful_Default_Policy1(int* parameters, Context& context)
 {
 	return *parameters % NUM_ACTIONS + 1;
 }
-u32 Stateful_Default_Policy2(int* parameters, Context* context)
+u32 Stateful_Default_Policy2(int* parameters, Context& context)
 {
 	return *parameters % NUM_ACTIONS + 2;
 }
-void Stateful_Default_Scorer(int* parameters, Context* context, float scores[], u32 size)
+void Stateful_Default_Scorer(int* parameters, Context& context, float scores[], u32 size)
 {
 	for (u32 i = 0; i < size; i++)
 	{
@@ -26,15 +26,15 @@ void Stateful_Default_Scorer(int* parameters, Context* context, float scores[], 
 	}
 }
 
-u32 Stateless_Default_Policy1(Context* context)
+u32 Stateless_Default_Policy1(Context& context)
 {
 	return 99 % NUM_ACTIONS + 1;
 }
-u32 Stateless_Default_Policy2(Context* context)
+u32 Stateless_Default_Policy2(Context& context)
 {
 	return 98 % NUM_ACTIONS + 1;
 }
-void Stateless_Default_Scorer(Context* context, float scores[], u32 size)
+void Stateless_Default_Scorer(Context& context, float scores[], u32 size)
 {
 	for (u32 i = 0; i < size; i++)
 	{
