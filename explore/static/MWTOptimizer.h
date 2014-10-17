@@ -27,6 +27,21 @@ public:
 			}
 		}
 		m_num_actions = num_actions;
+
+		//TODO: Append timestamp to filename for safety
+		std::string temp_file_name = "temp_constructor.out";
+
+		// Write exploration data to a temporary file that will be read by vw
+		ofstream myfile;
+		myfile.open(temp_file_name);
+		std::ostringstream serialized_stream;
+		for (auto pInteraction : m_interactions)
+		{
+			pInteraction->Serialize_VW_CSOAA(serialized_stream);
+			serialized_stream << "\n";
+		}
+		myfile << serialized_stream.str();
+		myfile.close();
 	}
 
 	template <class T>

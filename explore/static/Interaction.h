@@ -162,10 +162,12 @@ public:
 				stream << m_common_features[i].Id << ":" << m_common_features[i].Value << " ";
 			}
 		}
+		/* TODO: How should we deal with other context?
 		if (m_other_context != nullptr)
 		{
 			stream << "| " << *m_other_context;
 		}
+		*/
 	}
 
 	void Get_Features(Feature*& features, size_t& num_features)
