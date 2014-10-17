@@ -176,15 +176,20 @@ private:
 };
 
 
-template <class T>
 class GenericExplorer : public Explorer
 {
 public:
-	GenericExplorer(
-		BaseFunctionWrapper& default_scorer_func_wrapper,
-		T* default_scorer_params) :
-		m_default_scorer_wrapper(default_scorer_func_wrapper),
+	GenericExplorer(Stateful_Scorer_Func* default_scorer_func, void* default_scorer_params) :
+		m_stateful_default_scorer_func(default_scorer_func),
+		m_stateless_default_scorer_func(nullptr),
 		m_default_scorer_params(default_scorer_params)
+	{
+	}
+
+	GenericExplorer(Stateless_Scorer_Func* default_scorer_func) :
+		m_stateful_default_scorer_func(nullptr),
+		m_stateless_default_scorer_func(default_scorer_func),
+		m_default_scorer_params(nullptr)
 	{
 	}
 
@@ -195,15 +200,13 @@ public:
 		u32 numWeights = actions.Count();
 		float* weights = new float[numWeights]();
 		// Invoke the default scorer function to get the weight of each action 
-		if (typeid(m_default_scorer_wrapper) == typeid(StatelessFunctionWrapper))
+		if (m_stateless_default_scorer_func != nullptr)
 		{
-			StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(&m_default_scorer_wrapper);
-			stateless_function_wrapper->m_scorer_function(context, weights, actions.Count());
+			m_stateless_default_scorer_func(context, weights, actions.Count());
 		}
 		else
 		{
-			StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(&m_default_scorer_wrapper);
-			stateful_function_wrapper->m_scorer_function(m_default_scorer_params, context, weights, actions.Count());
+			m_stateful_default_scorer_func(m_default_scorer_params, context, weights, actions.Count());
 		}
 
 		u32 i = 0;
@@ -222,8 +225,9 @@ public:
 	}
 
 private:
-	BaseFunctionWrapper& m_default_scorer_wrapper;
-	T* m_default_scorer_params;
+	Stateful_Scorer_Func* m_stateful_default_scorer_func;
+	Stateless_Scorer_Func* m_stateless_default_scorer_func;
+	void* m_default_scorer_params;
 };
 
 

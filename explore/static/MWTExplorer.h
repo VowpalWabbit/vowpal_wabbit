@@ -98,6 +98,21 @@ public:
 		this->Initialize_Softmax(lambda, (Stateless_Scorer_Func*)default_scorer_func, num_actions);
 	}
 
+	/* Generic initialization */
+	template <class T>
+	void Initialize_Generic(
+		typename StatefulFunctionWrapper<T>::Scorer_Func default_scorer_func,
+		T* default_scorer_params, u32 num_actions)
+	{
+		this->Initialize_Generic((Stateful_Scorer_Func*)default_scorer_func, (void*)default_scorer_params, num_actions);
+	}
+
+	void Initialize_Generic(
+		StatelessFunctionWrapper::Scorer_Func default_scorer_func, u32 num_actions)
+	{
+		this->Initialize_Generic((Stateless_Scorer_Func*)default_scorer_func, num_actions);
+	}
+
 	// TODO: check whether char* could be std::string
 	u32 Choose_Action(Context& context, std::string unique_id)
 	{
@@ -180,6 +195,23 @@ public:
 	{
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func);
+	}
+
+	void Initialize_Generic(
+		Stateful_Scorer_Func default_scorer_func,
+		void* default_scorer_func_argument,
+		u32 num_actions)
+	{
+		m_action_set.Set_Count(num_actions);
+		m_explorer = new GenericExplorer(default_scorer_func, default_scorer_func_argument);
+	}
+
+	void Initialize_Generic(
+		Stateless_Scorer_Func default_scorer_func,
+		u32 num_actions)
+	{
+		m_action_set.Set_Count(num_actions);
+		m_explorer = new GenericExplorer(default_scorer_func);
 	}
 
 	// The parameters here look weird but are required to interface with C#:
