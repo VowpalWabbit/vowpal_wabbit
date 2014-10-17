@@ -21,12 +21,12 @@ public:
 	virtual void Serialize(std::ostringstream&) = 0;
 };
 
-struct MWTFeature
+struct Feature
 {
 	float Value;
 	u32 Id;
 
-	bool operator==(MWTFeature other_feature)
+	bool operator==(Feature other_feature)
 	{
 		return Id == other_feature.Id;
 	}
@@ -95,7 +95,7 @@ private:
 class Context : public Serializable
 {
 public:
-	Context(MWTFeature* common_features, size_t num_features, bool is_copy = false) : 
+	Context(Feature* common_features, size_t num_features, bool is_copy = false) : 
 		m_common_features(common_features), 
 		m_num_features(num_features),
 		m_other_context(nullptr),
@@ -103,7 +103,7 @@ public:
 	{
 	}
 
-	Context(MWTFeature* common_features, size_t num_features,
+	Context(Feature* common_features, size_t num_features,
 		std::string* other_context, bool is_copy = false) :
 		m_common_features(common_features), 
 		m_num_features(num_features), 
@@ -112,7 +112,7 @@ public:
 	{
 	}
 
-	Context(MWTFeature* common_features, size_t num_features,
+	Context(Feature* common_features, size_t num_features,
 		std::string external_context, bool is_copy = false) :
 		m_common_features(common_features),
 		m_num_features(num_features),
@@ -133,12 +133,12 @@ public:
 
 	Context* Copy()
 	{
-		MWTFeature* features = nullptr;
+		Feature* features = nullptr;
 		std::string* other_context = nullptr;
 
 		if (m_num_features > 0 && m_common_features != nullptr)
 		{
-			features = new MWTFeature[m_num_features];
+			features = new Feature[m_num_features];
 			for (size_t f = 0; f < m_num_features; f++)
 			{
 				features[f] = m_common_features[f];
@@ -168,7 +168,7 @@ public:
 		}
 	}
 
-	void Get_Features(MWTFeature*& features, size_t& num_features)
+	void Get_Features(Feature*& features, size_t& num_features)
 	{
 		features = m_common_features;
 		num_features = m_num_features;
@@ -180,7 +180,7 @@ public:
 	}
 
 private:
-	MWTFeature* m_common_features;
+	Feature* m_common_features;
 	size_t m_num_features;
 	std::string* m_other_context;
 	std::string m_external_other_context;

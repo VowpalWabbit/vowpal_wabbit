@@ -53,7 +53,7 @@ void Clock_Explore()
 	int num_interactions = 1;
 
 	// pre-create features
-	MWTFeature* features = new MWTFeature[num_features];
+	Feature* features = new Feature[num_features];
 	for (int i = 0; i < num_features; i++)
 	{
 		features[i].Id = i + 1;
@@ -181,7 +181,7 @@ int main(int argc, char* argv[])
 	 
 	// Create Features & Context
 	int num_features = 1;
-	MWTFeature features[num_features];
+	Feature features[num_features];
 	//a sparse feature representation
 	features[0].Id = 32;
 	features[0].Value = 0.5;
