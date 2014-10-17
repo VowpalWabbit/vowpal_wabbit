@@ -162,10 +162,12 @@ public:
 				stream << m_common_features[i].Index << ":" << m_common_features[i].X << " ";
 			}
 		}
+		/* TODO: How should we deal with other context?
 		if (m_other_context != nullptr)
 		{
 			stream << "| " << *m_other_context;
 		}
+		*/
 	}
 
 	void Get_Features(MWTFeature*& features, size_t& num_features)
