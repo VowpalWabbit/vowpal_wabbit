@@ -117,37 +117,77 @@ int main(int argc, char* argv[])
 
 	int policy_params = 101;
 
-	/*** Initialize Epsilon-Greedy explore algorithm using a default policy function that accepts parameters ***/
-	//float epsilon = .2f;
-	//mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy1, &policy_params, NUM_ACTIONS);
-
-	/*** Initialize Epsilon-Greedy explore algorithm using a stateless default policy function ***/
-	//mwt.Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy1, NUM_ACTIONS);
-
+	if (argc < 1)
+	  {
+	    cerr << "arguments: {greedy,tau-first,bagging,softmax} [stateful]" << endl;
+	    exit(1);
+	  }
+	
+	bool stateful = false;
+	if (argc == 2) {
+	  if (strcmp(argv[2],"stateful")==0)
+	    stateful = true;
+	  else
+	    {
+	      cerr << "unknown policy type: " << argv[2] << endl;
+	      exit(1);
+	    }
+	}
+	      
+	if (strcmp(argv[1],"greedy") == 0)
+	  { 
+	    /*** Initialize Epsilon-Greedy explore algorithm using a default policy function that accepts parameters ***/
+	    float epsilon = .2f;
+	    if (stateful)
+	      mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy1, &policy_params, NUM_ACTIONS);
+	    
+	    /*** Initialize Epsilon-Greedy explore algorithm using a stateless default policy function ***/
+	    else
+	      mwt.Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy1, NUM_ACTIONS);
+	  }
+	else if (strcmp(argv[1],"tau-first") == 0)
+	  {	  
 	/*** Initialize Tau-First explore algorithm using a default policy function that accepts parameters ***/
-	//	u32 tau = 5;
-	//mwt.Initialize_Tau_First<int>(tau, Stateful_Default_Policy1, &policy_params, NUM_ACTIONS);
-
-	/*** Initialize Tau-First explore algorithm using a stateless default policy function ***/
-	//mwt.Initialize_Tau_First(tau, Stateless_Default_Policy1, NUM_ACTIONS);
-
-	/*** Initialize Bagging explore algorithm using a default policy function that accepts parameters ***/
-	u32 bags = 2;
-	StatefulFunctionWrapper<int>::Policy_Func* funcs[2] = { Stateful_Default_Policy1, Stateful_Default_Policy2 };
-	int* params[2] = { &policy_params, &policy_params };
-	mwt.Initialize_Bagging<int>(bags, funcs, params, NUM_ACTIONS);
-
-	/*** Initialize Bagging explore algorithm using a stateless default policy function ***/
-	//StatelessFunctionWrapper::Policy_Func* funcs[2] = { Stateless_Default_Policy1, Stateless_Default_Policy2 };
-	//mwt.Initialize_Bagging(bags, funcs, NUM_ACTIONS);
-
-	/*** Initialize Softmax explore algorithm using a default scorer function that accepts parameters ***/
-	//	float lambda = 0.5f;
-	//mwt.Initialize_Softmax<int>(lambda, Stateful_Default_Scorer, &policy_params, NUM_ACTIONS);
-
-	/*** Initialize Softmax explore algorithm using a stateless default scorer function ***/
-	//mwt.Initialize_Softmax(lambda, Stateless_Default_Scorer, NUM_ACTIONS);
-
+	    u32 tau = 5;
+	    if (stateful)
+	      mwt.Initialize_Tau_First<int>(tau, Stateful_Default_Policy1, &policy_params, NUM_ACTIONS);
+	    
+	    /*** Initialize Tau-First explore algorithm using a stateless default policy function ***/
+	    else
+	      mwt.Initialize_Tau_First(tau, Stateless_Default_Policy1, NUM_ACTIONS);
+	  }
+	else if (strcmp(argv[1],"bagging") == 0)
+	  {
+	    /*** Initialize Bagging explore algorithm using a default policy function that accepts parameters ***/
+	    u32 bags = 2;
+	    if (stateful)
+	      {
+		StatefulFunctionWrapper<int>::Policy_Func* funcs[2] = { Stateful_Default_Policy1, Stateful_Default_Policy2 };
+		int* params[2] = { &policy_params, &policy_params };
+		mwt.Initialize_Bagging<int>(bags, funcs, params, NUM_ACTIONS);
+	      }
+	    /*** Initialize Bagging explore algorithm using a stateless default policy function ***/
+	    else
+	      {
+		StatelessFunctionWrapper::Policy_Func* funcs[2] = { Stateless_Default_Policy1, Stateless_Default_Policy2 };
+		mwt.Initialize_Bagging(bags, funcs, NUM_ACTIONS);
+	      }
+	  }
+	else if (strcmp(argv[1],"softmax") == 0)
+	  {
+	    /*** Initialize Softmax explore algorithm using a default scorer function that accepts parameters ***/
+	    //	float lambda = 0.5f;
+	    //mwt.Initialize_Softmax<int>(lambda, Stateful_Default_Scorer, &policy_params, NUM_ACTIONS);
+	    
+	    /*** Initialize Softmax explore algorithm using a stateless default scorer function ***/
+	    //mwt.Initialize_Softmax(lambda, Stateless_Default_Scorer, NUM_ACTIONS);
+	  }
+	else
+	  {
+	    cerr << "unknown exploration type: " << argv[1] << endl;
+	    exit(1);
+	  }
+	    
 	// Create Features & Context
 	MWTFeature features[1];
 	features[0].Index = 1;
