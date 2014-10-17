@@ -149,13 +149,13 @@ namespace cs_test
 
             // Load and save reward data to file
             string rewardFile = "rewards.txt";
-            RewardStorer rewardStorer = new RewardStorer(rewardFile);
-            rewardStorer.Initialize(new float[2] { 1.0f, 0.4f });
-            rewardStorer.Flush();
+            RewardStore rewardStore = new RewardStore(rewardFile);
+            rewardStore.Add(new float[2] { 1.0f, 0.4f });
+            rewardStore.Flush();
 
             // Read back reward data
-            rewardStorer = new RewardStorer(rewardFile);
-            float[] rewards = rewardStorer.GetAllRewards();
+            rewardStore = new RewardStore(rewardFile);
+            float[] rewards = rewardStore.GetAllRewards();
         }
 
         public static void Clock()

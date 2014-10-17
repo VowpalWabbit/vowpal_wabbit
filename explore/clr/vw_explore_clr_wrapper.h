@@ -171,9 +171,14 @@ namespace MultiWorldTesting {
 		}
 
 	protected:
-		void Initialize(System::Collections::Generic::IEnumerable<T>^ items)
+		void Add(System::Collections::Generic::IEnumerable<T>^ items)
 		{
 			this->items->AddRange(items);
+		}
+
+		void Add(T item)
+		{
+			items->Add(item);
 		}
 
 		cli::array<T>^ GetAllItems()
@@ -215,9 +220,14 @@ namespace MultiWorldTesting {
 	public:
 		MwtLogger(String^ file) : MwtBaseLogger<INTERACTION^>(file) { }
 
-		void Initialize(System::Collections::Generic::IEnumerable<INTERACTION^>^ interactions)
+		void Add(System::Collections::Generic::IEnumerable<INTERACTION^>^ interactions)
 		{
-			MwtBaseLogger<INTERACTION^>::Initialize(interactions);
+			MwtBaseLogger<INTERACTION^>::Add(interactions);
+		}
+
+		void Add(INTERACTION^ interaction)
+		{
+			MwtBaseLogger<INTERACTION^>::Add(interaction);
 		}
 
 		cli::array<INTERACTION^>^ GetAllInteractions()
@@ -226,14 +236,19 @@ namespace MultiWorldTesting {
 		}
 	};
 
-	public ref class RewardStorer : public MwtBaseLogger<float>
+	public ref class RewardStore : public MwtBaseLogger<float>
 	{
 	public:
-		RewardStorer(String^ file) : MwtBaseLogger<float>(file) { }
+		RewardStore(String^ file) : MwtBaseLogger<float>(file) { }
 
-		void Initialize(System::Collections::Generic::IEnumerable<float>^ rewards)
+		void Add(System::Collections::Generic::IEnumerable<float>^ rewards)
 		{
-			MwtBaseLogger<float>::Initialize(rewards);
+			MwtBaseLogger<float>::Add(rewards);
+		}
+
+		void Add(float reward)
+		{
+			MwtBaseLogger<float>::Add(reward);
 		}
 
 		cli::array<float>^ GetAllRewards()

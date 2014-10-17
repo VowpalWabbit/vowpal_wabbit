@@ -293,7 +293,7 @@ namespace MultiWorldTesting {
 
 		if (logger != nullptr)
 		{
-			logger->Initialize(interactions);
+			logger->Add(interactions);
 		}
 
 		return interactions;
