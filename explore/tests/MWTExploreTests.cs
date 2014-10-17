@@ -240,6 +240,37 @@ namespace ExploreTests
             }
         }
 
+        [TestMethod]
+        public void GenericStateful()
+        {
+            mwt.InitializeGeneric<int>(
+                new StatefulScorerDelegate<int>(TestStatefulScorerFunc),
+                PolicyParams,
+                NumActions);
+
+            uint chosenAction = mwt.ChooseAction(context, UniqueKey);
+            Assert.AreEqual((uint)6, chosenAction);
+
+            INTERACTION[] interactions = mwt.GetAllInteractions();
+            Assert.AreEqual(1, interactions.Length);
+            Assert.AreEqual(1.0f / NumActions, interactions[0].Probability);
+        }
+
+        [TestMethod]
+        public void GenericStateless()
+        {
+            mwt.InitializeGeneric(
+                new StatelessScorerDelegate(TestStatelessScorerFunc),
+                NumActions);
+
+            uint chosenAction = mwt.ChooseAction(context, UniqueKey);
+            Assert.AreEqual((uint)6, chosenAction);
+
+            INTERACTION[] interactions = mwt.GetAllInteractions();
+            Assert.AreEqual(1, interactions.Length);
+            Assert.AreEqual(1.0f / NumActions, interactions[0].Probability);
+        }
+
         [TestInitialize]
         public void TestInitialize()
         {
