@@ -32,16 +32,3 @@ float frand48()
 {
 	return merand48(v);
 }
-
-/*
-//int mantissa = 128 << 15;
-
-int main(int argc, char *argv[])
-{
-  for (size_t i = 0 ; i < 100000; i++) {
-    msrand48(i);
-    cout << frand48() << endl;
-  }
-}
-
-*/

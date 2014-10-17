@@ -1,21 +1,22 @@
 #pragma once
 
-#include "Interaction.h"
 #include <float.h>
 #include <typeinfo>
 #include <tuple>
+#include <math.h>
+#include "Interaction.h"
 
 //
 // Common interface for all exploration algorithms
 //
-// TODO: for exploration budget, exploration algo should implement smth like Start & Stop Explore, Adjust epsilon
+using namespace PRG;
+
 class Explorer
 {
 public:
 	virtual std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed) = 0;
 	virtual ~Explorer() { }
 };
-
 
 class EpsilonGreedyExplorer : public Explorer
 {
@@ -47,7 +48,7 @@ public:
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
-		PRG<u32> random_generator(seed);
+		prg random_generator(seed);
 		// Invoke the default policy function to get the action
 		MWTAction chosen_action(0);
 		if (m_stateless_default_policy_func != nullptr)
@@ -124,7 +125,7 @@ public:
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
-		PRG<u32> random_generator(seed);
+		prg random_generator(seed);
 		MWTAction chosen_action(0);
 		u32 numScores = actions.Count();
 		float* scores = new float[numScores]();
@@ -154,18 +155,32 @@ public:
 		{
 			scores[i] = exp(m_lambda * (scores[i] - max_score));
 		}
-		//TODO: VS2013 doesn't support the iterator based constructor of discrete_distribution
-		i = 0;
-		std::discrete_distribution<u32> softmax_dist(numScores, 0, 1,  // 0 and 1 are nonsense parameters here
-			[scores, &i](float)
-		{
-			return scores[i++];
-		});
-		// This retrives the PRG engine by reference, so evolving it will evolve the original PRG
-		u32 action_index = softmax_dist(random_generator.Get_Engine());
 
-		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), softmax_dist.probabilities()[action_index], true);
-	}
+		// Create a discrete_distribution based on the returned weights. This class handles the
+		// case where the sum of the weights is < or > 1, by normalizing agains the sum.
+		float total = 0.f;
+		for (size_t i = 0; i < numScores; i++)
+		  total += scores[i];
+		
+		float draw = random_generator.Uniform_Unit_Interval();
+		
+		float sum = 0.f;
+		float action_probability = 0.f;
+		u32 action_index = numScores-1;
+		for (size_t i = 0; i < numScores; i++)
+		  {
+		    scores[i] = scores[i]/total;
+		    sum += scores[i];
+		    if (sum > draw)
+		      {
+			action_index = i;
+			action_probability = scores[i];
+			break;
+		      }
+		  }
+
+		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), action_probability, true);
+ 	}
 
 private:
 	float m_lambda;
@@ -195,7 +210,7 @@ public:
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
-		PRG<u32> random_generator(seed);
+	        prg random_generator(seed);
 		MWTAction chosen_action(0);
 		u32 numWeights = actions.Count();
 		float* weights = new float[numWeights]();
@@ -209,19 +224,30 @@ public:
 			m_stateful_default_scorer_func(m_default_scorer_params, context, weights, actions.Count());
 		}
 
-		u32 i = 0;
 		// Create a discrete_distribution based on the returned weights. This class handles the
 		// case where the sum of the weights is < or > 1, by normalizing agains the sum.
-		//TODO: VS2013 doesn't support the iterator based constructor of discrete_distribution
-		std::discrete_distribution<u32> generic_dist(numWeights, 0, 1,  // 0 and 1 are nonsense parameters here
-			[weights, &i](float)
-		{
-			return weights[i++];
-		});
-		// This retrives the PRG engine by reference, so evolving it will evolve the original PRG
-		u32 action_index = generic_dist(random_generator.Get_Engine());
+		float total = 0.f;
+		for (size_t i = 0; i < numWeights; i++)
+		  total += weights[i];
+		
+		float draw = random_generator.Uniform_Unit_Interval();
+		
+		float sum;
+		float action_probability = 0.f;
+		u32 action_index = numWeights-1;
+		for (size_t i = 0; i < numWeights; i++)
+		  {
+		    weights[i] = weights[i]/total;
+		    sum += weights[i];
+		    if (sum > draw)
+		      {
+			action_index = i;
+			action_probability = weights[i];
+			break;
+		      }
+		  }
 
-		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), generic_dist.probabilities()[action_index], true);
+		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), action_probability, true);
 	}
 
 private:
@@ -257,7 +283,7 @@ public:
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
-		PRG<u32> random_generator(seed);
+		prg random_generator(seed);
 		MWTAction chosen_action(0);
 		float action_probability = 0.f;
 		bool log_action;
@@ -327,7 +353,7 @@ public:
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
-		PRG<u32> random_generator(seed);
+		prg random_generator(seed);
 		// Select bag
 		u32 chosen_bag = random_generator.Uniform_Int(0, m_bags - 1);
 		// Invoke the default policy function to get the action

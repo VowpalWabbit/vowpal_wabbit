@@ -51,7 +51,7 @@ struct murmur_hash {
 	//-----------------------------------------------------------------------------
 	// Block read - if your platform needs to do endian-swapping or can only
 	// handle aligned reads, do the conversion here
-  
+private:  
   static inline uint32_t getblock(const uint32_t * p, int i)
   {
     return p[i];
@@ -72,7 +72,7 @@ struct murmur_hash {
   }
   
   //-----------------------------------------------------------------------------
-  
+public:
   uint32_t uniform_hash(const void * key, size_t len, uint32_t seed)
   {
 	const uint8_t * data = (const uint8_t*)key;
