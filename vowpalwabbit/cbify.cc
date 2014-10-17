@@ -68,7 +68,7 @@ namespace CBIFY {
     //Use CB to find current prediction for remaining rounds.
     if (data.tau && is_learn)
       {
-	ld->prediction = (uint32_t)base.mwt->Choose_Action(dummy, string("vw")); // TODO: evolve unique key?
+	ld->prediction = (uint32_t)base.mwt->Choose_Action(string("vw"), dummy); // TODO: evolve unique key?
 	ec.loss = loss(ld->label, ld->prediction);
 	data.tau--;
 	uint32_t action = ld->prediction;
