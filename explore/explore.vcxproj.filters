@@ -21,5 +21,8 @@
     <ClCompile Include="explore.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="explore_sample.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
