@@ -181,7 +181,7 @@ int main(int argc, char* argv[])
 	 
 	// Create Features & Context
 	int num_features = 1;
-	Feature features[num_features];
+	Feature features[1];//1 is the number of features.
 	//a sparse feature representation
 	features[0].Id = 32;
 	features[0].Value = 0.5;

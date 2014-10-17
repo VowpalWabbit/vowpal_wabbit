@@ -457,8 +457,8 @@ namespace MultiWorldTesting {
 				cli::array<FEATURE>^ features = gcnew cli::array<FEATURE>((int)native_num_features);
 				for (int i = 0; i < features->Length; i++)
 				{
-					features[i].Value = native_features[i].Value;
-					features[i].Id = native_features[i].Id;
+					features[i].X = native_features[i].Value;
+					features[i].Index = native_features[i].Id;
 				}
 
 				std::string* native_other_context = nullptr;
