@@ -117,14 +117,14 @@ int main(int argc, char* argv[])
 
 	int policy_params = 101;
 
-	if (argc < 1)
+	if (argc < 2)
 	  {
 	    cerr << "arguments: {greedy,tau-first,bagging,softmax} [stateful]" << endl;
 	    exit(1);
 	  }
 	
 	bool stateful = false;
-	if (argc == 2) {
+	if (argc == 3) {
 	  if (strcmp(argv[2],"stateful")==0)
 	    stateful = true;
 	  else
