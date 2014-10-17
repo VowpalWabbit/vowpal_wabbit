@@ -18,7 +18,7 @@ namespace MultiWorldTesting {
 	public value struct FEATURE
 	{
 		float X;
-		UInt32 WeightIndex;
+		UInt32 Index;
 	};
 
 	public ref class CONTEXT

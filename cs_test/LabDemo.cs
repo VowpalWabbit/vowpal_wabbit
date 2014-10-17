@@ -47,7 +47,7 @@ public class LabDemo
                         {
                             FEATURE f = new FEATURE();
                             //Console.WriteLine("{0}", words[0]);
-                            f.WeightIndex = UInt32.Parse(words[0]);
+                            f.Index = UInt32.Parse(words[0]);
                             if (words.Length == 2)
                                 f.X = float.Parse(words[1]);
                             else

@@ -247,9 +247,9 @@ namespace ExploreTests
 
             features = new FEATURE[2];
             features[0].X = 0.5f;
-            features[0].WeightIndex = 1;
+            features[0].Index = 1;
             features[1].X = 0.9f;
-            features[1].WeightIndex = 2;
+            features[1].Index = 2;
 
             context = new CONTEXT(features, "Other C# test context");
         }

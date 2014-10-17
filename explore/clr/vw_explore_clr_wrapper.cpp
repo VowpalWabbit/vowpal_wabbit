@@ -273,7 +273,7 @@ namespace MultiWorldTesting {
 				for (int i = 0; i < features->Length; i++)
 				{
 					features[i].X = native_features[i].X;
-					features[i].WeightIndex = native_features[i].Index;
+					features[i].Index = native_features[i].Index;
 				}
 
 				std::string* native_other_context = nullptr;
@@ -428,7 +428,7 @@ namespace MultiWorldTesting {
 				for (int i = 0; i < features->Length; i++)
 				{
 					features[i].X = native_features[i].X;
-					features[i].WeightIndex = native_features[i].Index;
+					features[i].Index = native_features[i].Index;
 				}
 
 				std::string* native_other_context = nullptr;

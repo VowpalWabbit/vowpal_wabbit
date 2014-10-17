@@ -109,9 +109,9 @@ namespace cs_test
 
             FEATURE[] f = new FEATURE[2];
             f[0].X = 0.5f;
-            f[0].WeightIndex = 1;
+            f[0].Index = 1;
             f[1].X = 0.9f;
-            f[1].WeightIndex = 2;
+            f[1].Index = 2;
 
             string otherContext = "Some other context data that might be helpful to log";
             CONTEXT context = new CONTEXT(f, otherContext);
@@ -185,7 +185,7 @@ namespace cs_test
                 FEATURE[] f = new FEATURE[numFeatures];
                 for (int i = 0; i < numFeatures; i++)
                 {
-                    f[i].WeightIndex = (uint)i + 1;
+                    f[i].Index = (uint)i + 1;
                     f[i].X = 0.5f;
                 }
                 
