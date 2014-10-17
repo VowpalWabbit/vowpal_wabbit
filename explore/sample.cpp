@@ -1,7 +1,6 @@
 // vw_explore.cpp : Defines the entry point for the console application.
 //
 
-#include "stdafx.h"
 #include "MWTExplorer.h"
 #include <chrono>
 #include <tuple>
