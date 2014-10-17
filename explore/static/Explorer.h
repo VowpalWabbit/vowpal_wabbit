@@ -179,6 +179,7 @@ public:
 		      }
 		  }
 
+		delete[] scores;
 		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), action_probability, true);
  	}
 
@@ -247,6 +248,7 @@ public:
 		      }
 		  }
 
+		delete[] weights;
 		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), action_probability, true);
 	}
 
@@ -384,7 +386,7 @@ public:
 			actions_selected[action_from_bag.Get_Id_ZeroBased()]++;
 		}
 		float action_probability = (float)actions_selected[chosen_action.Get_Id_ZeroBased()] / m_bags;
-		delete actions_selected;
+		delete[] actions_selected;
 
 		return std::tuple<MWTAction, float, bool>(chosen_action, action_probability, true);
 	}
