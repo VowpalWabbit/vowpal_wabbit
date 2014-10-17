@@ -115,8 +115,6 @@ int main(int argc, char* argv[])
 	// Create a new MWT instance
 	MWTExplorer mwt;
 
-	int policy_params = 101;
-
 	if (argc < 2)
 	  {
 	    cerr << "arguments: {greedy,tau-first,bagging,softmax} [stateful]" << endl;
@@ -134,6 +132,13 @@ int main(int argc, char* argv[])
 	    }
 	}
 	      
+	//arguments for individual explorers
+	int policy_params = 101;
+	StatefulFunctionWrapper<int>::Policy_Func* funcs[2] = { Stateful_Default_Policy1, Stateful_Default_Policy2 };
+	StatelessFunctionWrapper::Policy_Func* stateless_funcs[2] = { Stateless_Default_Policy1, Stateless_Default_Policy2 };
+	int* params[2] = { &policy_params, &policy_params };	
+
+	//Initialize an explorer
 	if (strcmp(argv[1],"greedy") == 0)
 	  { 
 	    float epsilon = .2f;
@@ -154,16 +159,9 @@ int main(int argc, char* argv[])
 	  {
 	    u32 bags = 2;
 	    if (stateful) // Initialize Bagging explore algorithm using a default policy function that accepts parameters
-	      {
-		StatefulFunctionWrapper<int>::Policy_Func* funcs[2] = { Stateful_Default_Policy1, Stateful_Default_Policy2 };
-		int* params[2] = { &policy_params, &policy_params };
-		mwt.Initialize_Bagging<int>(bags, funcs, params, NUM_ACTIONS);
-	      }
+	      mwt.Initialize_Bagging<int>(bags, funcs, params, NUM_ACTIONS);
 	    else //Initialize Bagging explore algorithm using a stateless default policy function 
-	      {
-		StatelessFunctionWrapper::Policy_Func* funcs[2] = { Stateless_Default_Policy1, Stateless_Default_Policy2 };
-		mwt.Initialize_Bagging(bags, funcs, NUM_ACTIONS);
-	      }
+		mwt.Initialize_Bagging(bags, stateless_funcs, NUM_ACTIONS);
 	  }
 	else if (strcmp(argv[1],"softmax") == 0)
 	  {
@@ -171,7 +169,7 @@ int main(int argc, char* argv[])
 	    if (stateful) //Initialize Softmax explore algorithm using a default scorer function that accepts parameters
 	      mwt.Initialize_Softmax<int>(lambda, Stateful_Default_Scorer, &policy_params, NUM_ACTIONS);
 	    else 	    // Initialize Softmax explore algorithm using a stateless default scorer function 
-	    mwt.Initialize_Softmax(lambda, Stateless_Default_Scorer, NUM_ACTIONS);
+	      mwt.Initialize_Softmax(lambda, Stateless_Default_Scorer, NUM_ACTIONS);
 	  }
 	else
 	  {
