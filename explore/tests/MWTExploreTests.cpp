@@ -19,10 +19,10 @@ namespace vw_explore_tests
 
 			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, m_context);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
+			u32 chosen_action = m_mwt->Choose_Action(m_unique_key, *m_context);
 			Assert::AreEqual(expected_action, chosen_action);
 
-			chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
+			chosen_action = m_mwt->Choose_Action(m_unique_key, *m_context);
 			Assert::AreEqual(expected_action, chosen_action);
 
 			float expected_probs[2] = { 1.f, 1.f };
@@ -34,10 +34,10 @@ namespace vw_explore_tests
 			float epsilon = 0.f; // No randomization
 			m_mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, m_num_actions);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
+			u32 chosen_action = m_mwt->Choose_Action(m_unique_key, *m_context);
 			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
 
-			chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
+			chosen_action = m_mwt->Choose_Action(m_unique_key, *m_context);
 			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
 
 			float expected_probs[2] = { 1.f, 1.f };
@@ -49,9 +49,9 @@ namespace vw_explore_tests
 			float epsilon = 0.2f;
 			m_mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, m_num_actions);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
-			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
-			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(70));
+			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
+			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
+			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(70), *m_context);
 
 			m_mwt->Get_All_Interactions();
 		}
@@ -63,7 +63,7 @@ namespace vw_explore_tests
 
 			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, m_context);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
+			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
 			Assert::AreEqual(expected_action, chosen_action);
 
 			// tau = 0 means no randomization and no logging
@@ -75,7 +75,7 @@ namespace vw_explore_tests
 			u32 tau = 0;
 			m_mwt->Initialize_Tau_First(tau, Stateless_Default_Policy, m_num_actions);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
+			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
 			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
 
 			this->Test_Logger(0, nullptr);
@@ -86,11 +86,11 @@ namespace vw_explore_tests
 			u32 tau = 2;
 			m_mwt->Initialize_Tau_First(tau, Stateless_Default_Policy, m_num_actions);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
-			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
+			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
+			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
 
 			// Tau expired, did not explore
-			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(3));
+			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(3), *m_context);
 			Assert::AreEqual((u32)10, chosen_action);
 
 			// Only 2 interactions logged, 3rd one should not be stored
@@ -105,10 +105,10 @@ namespace vw_explore_tests
 			// Every bag uses the same default policy function so expected chosen action is its return value
 			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, m_context);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
+			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
 			Assert::AreEqual(expected_action, chosen_action);
 
-			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
+			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
 			Assert::AreEqual(expected_action, chosen_action);
 			
 			// All bags choose the same action, so prob = 1
@@ -123,10 +123,10 @@ namespace vw_explore_tests
 			// Every bag uses the same default policy function so expected chosen action is its return value
 			u32 expected_action = VWExploreUnitTests::Stateless_Default_Policy(m_context);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
+			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
 			Assert::AreEqual(expected_action, chosen_action);
 
-			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
+			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
 			Assert::AreEqual(expected_action, chosen_action);
 
 			// All bags choose the same action, so prob = 1
@@ -142,8 +142,8 @@ namespace vw_explore_tests
 
 			m_mwt->Initialize_Bagging<int>(bags, funcs, params, m_num_actions);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
-			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
+			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
+			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
 
 			// Two bags choosing different actions so prob of each is 1/2
 			float expected_probs[2] = { .5f, .5f };
@@ -160,7 +160,7 @@ namespace vw_explore_tests
 			u32 i;
 			for (i = 0; i < num_decisions; i++)
 			{
-				u32 action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(i + 1));
+			  u32 action = m_mwt->Choose_Action(this->Get_Unique_Key(i + 1), *m_context);
 				// Action IDs are 1-based
 				actions[MWTAction::Make_ZeroBased(action)]++;
 			}
@@ -190,7 +190,7 @@ namespace vw_explore_tests
 			u32 i;
 			for (i = 0; i < num_decisions; i++)
 			{
-				u32 action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(i + 1));
+			  u32 action = m_mwt->Choose_Action(this->Get_Unique_Key(i + 1), *m_context);
 				// Action IDs are 1-based
 				actions[MWTAction::Make_ZeroBased(action)]++;
 			}
@@ -215,9 +215,9 @@ namespace vw_explore_tests
 		{
 			m_mwt->Initialize_Softmax<int>(0.5f, Non_Uniform_Stateful_Default_Scorer, &m_policy_scorer_arg, m_num_actions);
 			
-			u32 action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
-			action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
-			action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(3));
+			u32 action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
+			action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
+			action = m_mwt->Choose_Action(this->Get_Unique_Key(3), *m_context);
 
 			size_t num_interactions = 0;
 			Interaction** interactions = nullptr;
@@ -236,9 +236,9 @@ namespace vw_explore_tests
 		{
 			m_mwt->Initialize_Softmax(0.5f, Non_Uniform_Stateless_Default_Scorer, m_num_actions);
 
-			u32 action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
-			action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
-			action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(3));
+			u32 action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
+			action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
+			action = m_mwt->Choose_Action(this->Get_Unique_Key(3), *m_context);
 
 			size_t num_interactions = 0;
 			Interaction** interactions = nullptr;
@@ -257,9 +257,9 @@ namespace vw_explore_tests
 		{
 			m_mwt->Initialize_Generic<int>(Stateful_Default_Scorer, &m_policy_scorer_arg, m_num_actions);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
-			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
-			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(3));
+			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
+			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
+			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(3), *m_context);
 
 			float expected_probs[3] = { .1f, .1f, .1f };
 			this->Test_Logger(3, expected_probs);
@@ -269,9 +269,9 @@ namespace vw_explore_tests
 		{
 			m_mwt->Initialize_Generic(Non_Uniform_Stateless_Default_Scorer, m_num_actions);
 
-			u32 chosen_action1 = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
-			u32 chosen_action2 = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
-			u32 chosen_action3 = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(3));
+			u32 chosen_action1 = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
+			u32 chosen_action2 = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
+			u32 chosen_action3 = m_mwt->Choose_Action(this->Get_Unique_Key(3), *m_context);
 
 			float total_scores = m_num_actions * (m_num_actions - 1.f) / 2;
 			float expected_probs[3] = { 
@@ -292,7 +292,7 @@ namespace vw_explore_tests
 			for (i = 0; i < num_decisions; i++)
 			{
 				ids[i] = this->Get_Unique_Key(i + 1);
-				u32 action = m_mwt->Choose_Action(*m_context, ids[i]);
+				u32 action = m_mwt->Choose_Action(ids[i], *m_context);
 			}
 
 			size_t num_interactions = 0;
@@ -335,7 +335,7 @@ namespace vw_explore_tests
 			for (i = 0; i < num_decisions; i++)
 			{
 				ids[i] = this->Get_Unique_Key(i + 1);
-				u32 action = m_mwt->Choose_Action(*m_context, ids[i]);
+				u32 action = m_mwt->Choose_Action(ids[i], *m_context);
 			}
 
 			size_t num_interactions = 0;
@@ -394,65 +394,65 @@ namespace vw_explore_tests
 			u32 i;
 			// Example 1
 			i = 0;
-			MWTFeature* features = new MWTFeature[3];
+			Feature* features = new Feature[3];
 			// This indicates feature "a" is present (the specific value used is not important)
-			features[0].Index = feature_a;
-			features[0].X = feature_val; 
+			features[0].Id = feature_a;
+			features[0].Value = feature_val; 
 			context = new Context(features, 1, true);
 			// Indicating this is a copy hands responsibility for freeing the context to the
 			// Interaction class (note: we may remove this interface later)
 			ids[i] = "a1_expect_1";
 			interactions[i] = new Interaction(context, MWTAction(1), prob, ids[i], true);
 			// Example 2
-			features = new MWTFeature[3];
-			features[0].Index = feature_b;
-			features[0].X = feature_val;
+			features = new Feature[3];
+			features[0].Id = feature_b;
+			features[0].Value = feature_val;
 			context = new Context(features, 1, true);
 			i++;
 			ids[i] = "b1_expects_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
 			// Example 3
-			features = new MWTFeature[3];
-			features[0].Index = feature_c;
-			features[0].X = feature_val;
+			features = new Feature[3];
+			features[0].Id = feature_c;
+			features[0].Value = feature_val;
 			context = new Context(features, 1, true);
 			i++;
 			ids[i] = "c1_expects_3";
 			interactions[i] = new Interaction(context, MWTAction(3), prob, ids[i], true);
 			// Example 4
-			features = new MWTFeature[3];
-			features[0].Index = feature_a;
-			features[0].X = feature_val;
-			features[1].Index = feature_b;
-			features[1].X = feature_val;
+			features = new Feature[3];
+			features[0].Id = feature_a;
+			features[0].Value = feature_val;
+			features[1].Id = feature_b;
+			features[1].Value = feature_val;
 			context = new Context(features, 2, true);
 			i++;
 			ids[i] = "ab1_expect_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
 			// Example 5
-			features = new MWTFeature[3];
-			features[0].Index = feature_b;
-			features[0].X = feature_val;
-			features[1].Index = feature_c;
-			features[1].X = feature_val;
+			features = new Feature[3];
+			features[0].Id = feature_b;
+			features[0].Value = feature_val;
+			features[1].Id = feature_c;
+			features[1].Value = feature_val;
 			context = new Context(features, 2, true);
 			i++;
 			ids[i] = "bc1_expect_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
 			// Example 6
-			features = new MWTFeature[3];
-			features[0].Index = feature_a;
-			features[0].X = feature_val;
-			features[1].Index = feature_c;
-			features[1].X = feature_val;
+			features = new Feature[3];
+			features[0].Id = feature_a;
+			features[0].Value = feature_val;
+			features[1].Id = feature_c;
+			features[1].Value = feature_val;
 			context = new Context(features, 2, true);
 			i++;
 			ids[i] = "ac1_expect_3";
 			interactions[i] = new Interaction(context, MWTAction(3), prob, ids[i], true);
 			// Example 7
-			features = new MWTFeature[3];
-			features[0].Index = feature_d;
-			features[0].X = feature_val;
+			features = new Feature[3];
+			features[0].Id = feature_d;
+			features[0].Value = feature_val;
 			context = new Context(features, 1, true);
 			i++;
 			ids[i] = "d1_expect_2";
@@ -525,9 +525,9 @@ namespace vw_explore_tests
 			m_lambda = 0;
 
 			m_num_features = 1;
-			m_features = new MWTFeature[m_num_features];
-			m_features[0].Index = 1;
-			m_features[0].X = 0.5;
+			m_features = new Feature[m_num_features];
+			m_features[0].Id = 1;
+			m_features[0].Value = 0.5;
 			m_context = new Context(m_features, m_num_features);
 
 			m_unique_key = "1001";
@@ -654,7 +654,7 @@ namespace vw_explore_tests
 
 		Context* m_context;
 		int m_num_features;
-		MWTFeature* m_features;
+		Feature* m_features;
 
 		static int m_num_actions;
 		string m_unique_key;

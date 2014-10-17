@@ -26,11 +26,11 @@ public:
 		Stateful_Policy_Func* default_policy_func,
 		void* default_policy_params,
 		u64 salt) :
-		m_epsilon(epsilon),
+                m_epsilon(epsilon),
+		m_salt(salt),
 		m_stateful_default_policy_func(default_policy_func),
 		m_stateless_default_policy_func(nullptr),
-		m_default_policy_params(default_policy_params),
-		m_salt(salt)
+		m_default_policy_params(default_policy_params)
 	{
 	}
 
@@ -39,10 +39,10 @@ public:
 		Stateless_Policy_Func* default_policy_func,
 		u64 salt) :
 		m_epsilon(epsilon),
+		m_salt(salt),
 		m_stateful_default_policy_func(nullptr),
 		m_stateless_default_policy_func(default_policy_func),
-		m_default_policy_params(nullptr),
-		m_salt(salt)
+		m_default_policy_params(nullptr)
 	{
 	}
 
@@ -113,10 +113,10 @@ public:
 		void* default_scorer_params,
 		u64 salt) :
 		m_lambda(lambda),
+		m_salt(salt),
 		m_stateful_default_scorer_func(default_scorer_func),
 		m_stateless_default_scorer_func(nullptr),
-		m_default_scorer_params(default_scorer_params),
-		m_salt(salt)
+		m_default_scorer_params(default_scorer_params)
 	{
 	}
 
@@ -125,10 +125,10 @@ public:
 		Stateless_Scorer_Func* default_scorer_func,
 		u64 salt) :
 		m_lambda(lambda),
+		m_salt(salt),
 		m_stateful_default_scorer_func(nullptr),
 		m_stateless_default_scorer_func(default_scorer_func),
-		m_default_scorer_params(nullptr),
-		m_salt(salt)
+		m_default_scorer_params(nullptr)
 	{
 	}
 
@@ -209,20 +209,20 @@ public:
 		Stateful_Scorer_Func* default_scorer_func, 
 		void* default_scorer_params,
 		u64 salt) :
+                m_salt(salt),
 		m_stateful_default_scorer_func(default_scorer_func),
 		m_stateless_default_scorer_func(nullptr),
-		m_default_scorer_params(default_scorer_params),
-		m_salt(salt)
+		m_default_scorer_params(default_scorer_params)
 	{
 	}
 
 	GenericExplorer(
 		Stateless_Scorer_Func* default_scorer_func,
 		u64 salt) :
+		m_salt(salt),
 		m_stateful_default_scorer_func(nullptr),
 		m_stateless_default_scorer_func(default_scorer_func),
-		m_default_scorer_params(nullptr),
-		m_salt(salt)
+		m_default_scorer_params(nullptr)
 	{
 	}
 
@@ -287,10 +287,10 @@ public:
 		void* default_policy_params,
 		u64 salt) :
 		m_tau(tau),
+		m_salt(salt),
 		m_stateful_default_policy_func(default_policy_func),
 		m_stateless_default_policy_func(nullptr),
-		m_default_policy_params(default_policy_params),
-		m_salt(salt)
+		m_default_policy_params(default_policy_params)
 	{
 	}
 
@@ -299,10 +299,10 @@ public:
 		Stateless_Policy_Func* default_policy_func,
 		u64 salt) :
 		m_tau(tau),
+		m_salt(salt),
 		m_stateful_default_policy_func(nullptr),
 		m_stateless_default_policy_func(default_policy_func),
-		m_default_policy_params(nullptr),
-		m_salt(salt)
+		m_default_policy_params(nullptr)
 	{
 	}
 

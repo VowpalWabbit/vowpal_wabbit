@@ -25,6 +25,7 @@ typedef int8_t i8;
 typedef unsigned char    byte;
 
 #include "prg.h"
+#include <string>
 
 class HashUtils
 {

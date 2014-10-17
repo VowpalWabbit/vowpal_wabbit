@@ -68,7 +68,7 @@ namespace CBIFY {
     //Use CB to find current prediction for remaining rounds.
     if (data.tau && is_learn)
       {
-	ld->prediction = (uint32_t)base.mwt->Choose_Action(dummy, string("vw")); // TODO: evolve unique key?
+	ld->prediction = (uint32_t)base.mwt->Choose_Action(string("vw"), dummy); // TODO: evolve unique key?
 	ec.loss = loss(ld->label, ld->prediction);
 	data.tau--;
 	uint32_t action = ld->prediction;
@@ -84,7 +84,7 @@ namespace CBIFY {
       {
 	data.cb_label.costs.erase();
 	ec.ld = &(data.cb_label);
-	ld->prediction = (uint32_t)base.mwt->Choose_Action(dummy, string("vw")); // TODO: evolve unique key?
+	ld->prediction = (uint32_t)base.mwt->Choose_Action(string("vw"), dummy); // TODO: evolve unique key?
 	ec.loss = loss(ld->label, ld->prediction);
       }
     ec.ld = ld;
@@ -106,7 +106,7 @@ namespace CBIFY {
 	base.mwt_policy_context->e = &ec;
 
 	Context dummy(nullptr, 0);
-	base.mwt->Choose_Action(dummy, string("vw")); // TODO: evolve unique key?
+	base.mwt->Choose_Action(string("vw"), dummy); // TODO: evolve unique key?
 
 	size_t num_interactions = 0;
 	Interaction** interactions = nullptr;
