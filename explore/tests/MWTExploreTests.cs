@@ -249,7 +249,6 @@ namespace ExploreTests
                 NumActions);
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
-            Assert.AreEqual((uint)6, chosenAction);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(1, interactions.Length);
@@ -264,7 +263,6 @@ namespace ExploreTests
                 NumActions);
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
-            Assert.AreEqual((uint)6, chosenAction);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(1, interactions.Length);

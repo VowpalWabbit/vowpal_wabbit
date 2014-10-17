@@ -112,6 +112,16 @@ public:
 	{
 	}
 
+	Context(MWTFeature* common_features, size_t num_features,
+		std::string external_context, bool is_copy = false) :
+		m_common_features(common_features),
+		m_num_features(num_features),
+		m_external_other_context(external_context),
+		m_is_copy(is_copy)
+	{
+		m_other_context = &external_context;
+	}
+
 	~Context()
 	{
 		if (m_is_copy)
@@ -173,6 +183,7 @@ private:
 	MWTFeature* m_common_features;
 	size_t m_num_features;
 	std::string* m_other_context;
+	std::string m_external_other_context;
 	bool m_is_copy;
 };
 
