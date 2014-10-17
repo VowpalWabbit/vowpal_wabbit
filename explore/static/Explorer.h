@@ -164,6 +164,7 @@ public:
 		// This retrives the PRG engine by reference, so evolving it will evolve the original PRG
 		u32 action_index = softmax_dist(random_generator.Get_Engine());
 
+		delete[] scores;
 		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), softmax_dist.probabilities()[action_index], true);
 	}
 
@@ -221,6 +222,7 @@ public:
 		// This retrives the PRG engine by reference, so evolving it will evolve the original PRG
 		u32 action_index = generic_dist(random_generator.Get_Engine());
 
+		delete[] weights;
 		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), generic_dist.probabilities()[action_index], true);
 	}
 
@@ -358,7 +360,7 @@ public:
 			actions_selected[action_from_bag.Get_Id_ZeroBased()]++;
 		}
 		float action_probability = (float)actions_selected[chosen_action.Get_Id_ZeroBased()] / m_bags;
-		delete actions_selected;
+		delete[] actions_selected;
 
 		return std::tuple<MWTAction, float, bool>(chosen_action, action_probability, true);
 	}
