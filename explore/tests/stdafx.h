@@ -7,6 +7,7 @@
 
 #include "targetver.h"
 #include <math.h>
+#include <fstream>
 
 // Headers for CppUnitTest
 #include "CppUnitTest.h"

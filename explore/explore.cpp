@@ -10,31 +10,31 @@ using namespace std::chrono;
 
 const int NUM_ACTIONS = 10;
 
-u32 Stateful_Default_Policy1(int* policy_params, Context* applicationContext)
+u32 Stateful_Default_Policy1(int* parameters, Context* context)
 {
-	return *policy_params % NUM_ACTIONS + 1;
+	return *parameters % NUM_ACTIONS + 1;
 }
-u32 Stateful_Default_Policy2(int* policy_params, Context* applicationContext)
+u32 Stateful_Default_Policy2(int* parameters, Context* context)
 {
-	return *policy_params % NUM_ACTIONS + 2;
+	return *parameters % NUM_ACTIONS + 2;
 }
-void Stateful_Default_Scorer(int* policy_params, Context* application_Context, float scores[], u32 size)
+void Stateful_Default_Scorer(int* parameters, Context* context, float scores[], u32 size)
 {
 	for (u32 i = 0; i < size; i++)
 	{
-		scores[i] = (float) (*policy_params + i);
+		scores[i] = (float) (*parameters + i);
 	}
 }
 
-u32 Stateless_Default_Policy1(Context* applicationContext)
+u32 Stateless_Default_Policy1(Context* context)
 {
 	return 99 % NUM_ACTIONS + 1;
 }
-u32 Stateless_Default_Policy2(Context* applicationContext)
+u32 Stateless_Default_Policy2(Context* context)
 {
 	return 98 % NUM_ACTIONS + 1;
 }
-void Stateless_Default_Scorer(Context* application_Context, float scores[], u32 size)
+void Stateless_Default_Scorer(Context* context, float scores[], u32 size)
 {
 	for (u32 i = 0; i < size; i++)
 	{
@@ -64,7 +64,7 @@ void Clock_Explore()
 	for (int iter = 0; iter < num_iter + num_warmup; iter++)
 	{
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
-		MWTExplorer mwt;
+		MWTExplorer mwt("test");
 		mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy1, &policy_params, NUM_ACTIONS);
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
 		time_init += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
 	int* params[] = { &policy_params_bag_1, &policy_params_bag_2 };	
 
 	// Create a new MWT instance
-	MWTExplorer mwt;
+	MWTExplorer mwt("test");
 
 	//Initialize an explorer
 	if (strcmp(argv[1],"greedy") == 0)
@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
 	  }
 	    
 	// Create Features & Context
-	int num_features = 1
+	int num_features = 1;
 	MWTFeature features[num_features];
 	//a sparse feature representation
 	features[0].Index = 32;

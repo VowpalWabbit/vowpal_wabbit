@@ -60,7 +60,7 @@ namespace cs_test
             string interactionFile = "serialized.txt";
             MwtLogger logger = new MwtLogger(interactionFile);
 
-            MwtExplorer mwt = new MwtExplorer(logger);
+            MwtExplorer mwt = new MwtExplorer("test", logger);
 
             uint numActions = 10;
             
@@ -177,7 +177,7 @@ namespace cs_test
             {
                 watch.Restart();
                 
-                MwtExplorer mwt = new MwtExplorer();
+                MwtExplorer mwt = new MwtExplorer("test");
                 mwt.InitializeEpsilonGreedy<int>(epsilon, new StatefulPolicyDelegate<int>(SampleStatefulPolicyFunc), policyParams, numActions);
 
                 timeInit += (iter < numWarmup) ? 0 : watch.Elapsed.TotalMilliseconds;

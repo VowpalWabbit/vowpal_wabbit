@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "vwdll.h"
+#include <fstream>
 
 //
 // Top-level internal API for offline evaluation/optimization.
@@ -43,6 +44,26 @@ public:
 
 	float Evaluate_Policy_VW_CSOAA(std::string model_input_file)
 	{
+		//TODO: Append timestamp to filename for safety
+		std::string temp_file_name = "temp.out";
+
+		// Write exploration data to a temporary file that will be read by vw
+		ofstream myfile;
+		myfile.open(temp_file_name);
+		std::ostringstream serialized_stream;
+		for (auto pInteraction : m_interactions)
+		{
+			pInteraction->Serialize_VW_CSOAA(serialized_stream);
+			serialized_stream << "\n";
+		}
+		myfile << serialized_stream.str();
+		myfile.close();
+
+		std::string cmd = "vw.exe -t -d " + temp_file_name + " -i " + model_input_file;
+		system(cmd.c_str());
+		return 0.f;
+
+		/*
 		VW_HANDLE vw;
 		VW_EXAMPLE example;
 		double sum_weighted_rewards = 0.0;
@@ -73,10 +94,30 @@ public:
 
 		float expected_perf = (count > 0) ? (sum_weighted_rewards / count) : 0.0;
 		return expected_perf;
+		*/
 	}
 
 	void Optimize_Policy_VW_CSOAA(std::string model_output_file)
 	{
+		//TODO: Append timestamp to filename for safety
+		std::string temp_file_name = "temp.out";
+
+		// Write exploration data to a temporary file that will be read by vw
+		ofstream myfile;
+		myfile.open(temp_file_name);
+		std::ostringstream serialized_stream;
+		for (auto pInteraction : m_interactions)
+		{
+			pInteraction->Serialize_VW_CSOAA(serialized_stream);
+			serialized_stream << "\n";
+		}
+		myfile << serialized_stream.str();
+		myfile.close();
+
+		std::string cmd = "vw.exe -d " + temp_file_name + " --cb " + std::to_string(m_num_actions) + " --cb_type ips --noconstant -f " + model_output_file;
+		system(cmd.c_str());
+
+		/*
 		VW_HANDLE vw;
 		VW_EXAMPLE example;
 
@@ -91,6 +132,7 @@ public:
 			VW_FinishExample(vw, example);
 		}
 		VW_Finish(vw);
+		*/
 	}
 
 public:

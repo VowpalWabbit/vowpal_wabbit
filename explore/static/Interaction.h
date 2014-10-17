@@ -8,7 +8,6 @@
 #include <sstream>
 #include <float.h>
 #include "Common.h" 
-#include "hash.h"
 
 using namespace std;
 
@@ -113,6 +112,16 @@ public:
 	{
 	}
 
+	Context(MWTFeature* common_features, size_t num_features,
+		std::string external_context, bool is_copy = false) :
+		m_common_features(common_features),
+		m_num_features(num_features),
+		m_external_other_context(external_context),
+		m_is_copy(is_copy)
+	{
+		m_other_context = &external_context;
+	}
+
 	~Context()
 	{
 		if (m_is_copy)
@@ -174,6 +183,7 @@ private:
 	MWTFeature* m_common_features;
 	size_t m_num_features;
 	std::string* m_other_context;
+	std::string m_external_other_context;
 	bool m_is_copy;
 };
 
@@ -184,7 +194,7 @@ public:
   m_context(context), m_action(action), m_prob(prob), m_id(unique_id), m_is_copy(is_copy)
 	{
 		m_reward = NO_REWARD;
-		m_id_hash = Compute_Id_Hash(unique_id);
+		m_id_hash = HashUtils::Compute_Id_Hash(unique_id);
 		// By default, assume the external context is the same as the one passed in above, but 
 		// (C#) interop to work the external context should be set to a managed pointer
 		m_external_context = context;
@@ -249,10 +259,10 @@ public:
 
 	void Serialize_VW_CSOAA(std::ostringstream& stream)
 	{
-		// Format is [action]:[cost] | [features]
+		// Format is [action]:[cost]:[probability] | [features]
 		m_action.Serialize(stream);
 		// The cost is the importance-weighted reward, negated because the learner minimizes the cost
-		stream << ":" << std::fixed << std::setprecision(2) << -m_reward * (1.0 / m_prob) << " | ";
+		stream << ":" << std::fixed << std::setprecision(5) << -m_reward << ":" << m_prob << " | ";
 		m_context->Serialize(stream);
 	}
 
@@ -266,22 +276,6 @@ public:
 	void Set_External_Context(void* ext_context)
 	{
 		m_external_context = ext_context;
-	}
-
-public:
-	static u64 Compute_Id_Hash(const std::string& unique_id)
-	{
-	  size_t ret = 0;
-	  const char *p = unique_id.c_str();
-	  while (*p != '\0')
-	    if (*p >= '0' && *p <= '9')
-	      ret = 10*ret + *(p++) - '0';
-	    else
-	      {
-		murmur_hash foo;
-		return foo.uniform_hash(unique_id.c_str(),unique_id.size(),0);
-	      }
-	  return ret;
 	}
 	
 private:

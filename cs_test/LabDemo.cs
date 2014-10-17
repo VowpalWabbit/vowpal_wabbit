@@ -132,7 +132,7 @@ public class LabDemo
 
     public static void Run()
     {
-        MwtExplorer mwt = new MwtExplorer();
+        MwtExplorer mwt = new MwtExplorer("test");
 
         uint numActions = 8;
         float epsilon = 0.1f;

@@ -267,8 +267,8 @@ namespace MultiWorldTesting {
 		MwtLogger^ logger;
 
 	public:
-		MwtExplorer();
-		MwtExplorer(MwtLogger^ logger);
+		MwtExplorer(String^ app_id);
+		MwtExplorer(String^ app_id, MwtLogger^ logger);
 		~MwtExplorer();
 
 		generic <class T>

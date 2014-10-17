@@ -13,14 +13,14 @@ using namespace msclr::interop;
 
 namespace MultiWorldTesting {
 
-	MwtExplorer::MwtExplorer() : MwtExplorer(nullptr)
+	MwtExplorer::MwtExplorer(String^ app_id) : MwtExplorer(app_id, nullptr)
 	{
-
 	}
 
-	MwtExplorer::MwtExplorer(MwtLogger^ logger)
+	MwtExplorer::MwtExplorer(String^ app_id, MwtLogger^ logger)
 	{
-		m_mwt = new MWTExplorer();
+		std::string native_app_id = marshal_as<std::string>(app_id);
+		m_mwt = new MWTExplorer(native_app_id);
 		m_bagging_funcs = nullptr;
 		m_bagging_func_params = nullptr;
 		this->logger = logger;
@@ -594,11 +594,17 @@ namespace MultiWorldTesting {
 		cli::array<FEATURE>^ contextFeatures = context->Features;
 		String^ otherContext = context->OtherContext;
 
-		std::string* nativeOtherContext = (otherContext != nullptr) ? &marshal_as<std::string>(otherContext) : nullptr;
 
 		pin_ptr<FEATURE> pinnedContextFeatures = &context->Features[0];
 		FEATURE* nativeContextFeatures = pinnedContextFeatures;
 
-		return new Context((MWTFeature*)nativeContextFeatures, (size_t)context->Features->Length, nativeOtherContext);
+		if (otherContext != nullptr)
+		{
+			return new Context((MWTFeature*)nativeContextFeatures, (size_t)context->Features->Length, marshal_as<std::string>(otherContext));
+		}
+		else
+		{
+			return new Context((MWTFeature*)nativeContextFeatures, (size_t)context->Features->Length, nullptr);
+		}
 	}
 }
