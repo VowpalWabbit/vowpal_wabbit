@@ -48,7 +48,7 @@ void Clock_Explore()
 	int policy_params = 101;
 	string unique_key = "key";
 	int num_features = 1000;
-	int num_iter = 1000000;
+	int num_iter = 10000;
 	int num_warmup = 100;
 	int num_interactions = 1;
 
@@ -109,8 +109,8 @@ void Clock_Explore()
 
 int main(int argc, char* argv[])
 {
-	//Clock_Explore();
-	//return 0;
+  //	Clock_Explore();
+  //	return 0;
 
 	if (argc < 2)
 	  {
