@@ -155,7 +155,10 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="explore.cpp" />
+    <ClCompile Include="explore.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="explore_sample.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\vowpalwabbit\vw_static.vcxproj">
