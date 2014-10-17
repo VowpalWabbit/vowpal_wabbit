@@ -155,9 +155,9 @@ public class LabDemo
         MwtRewardReporter rewardReporter = new MwtRewardReporter(interactions);
         for (uint iInter = 0; iInter < interactions.Length; iInter++)
         {            
-            float r = iou.getReward(interactions[iInter].GetAction(),iInter);
+            float r = iou.getReward(interactions[iInter].ChosenAction,iInter);
             //Console.WriteLine("Got reward on interaction {0} with Action {1} as {2}", iInter, interactions[iInter].ChosenAction,r);
-            rewardReporter.ReportReward(interactions[iInter].GetId(), r);
+            rewardReporter.ReportReward(interactions[iInter].Id, r);
         }
 
         INTERACTION[] full_interactions = rewardReporter.GetAllInteractions();

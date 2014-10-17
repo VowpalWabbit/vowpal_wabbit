@@ -43,15 +43,6 @@ namespace MultiWorldTesting {
 	public ref class INTERACTION
 	{
 	public:
-		CONTEXT^ GetContext() { return ApplicationContext; }
-		UInt32 GetAction() { return ChosenAction; }
-		String^ GetId() { return Id; }
-		UInt64 GetIdHash() { return IdHash; }
-		float GetProbability() { return Probability; }
-		float GetReward() { return Reward; }
-		void SetReward(float reward) { Reward = reward; }
-
-	internal:
 		CONTEXT^ ApplicationContext;
 		UInt32 ChosenAction;
 		float Probability;
