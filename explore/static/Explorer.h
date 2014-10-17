@@ -167,7 +167,7 @@ public:
 		float sum = 0.f;
 		float action_probability = 0.f;
 		u32 action_index = numScores-1;
-		for (size_t i = 0; i < numScores; i++)
+		for (u32 i = 0; i < numScores; i++)
 		  {
 		    scores[i] = scores[i]/total;
 		    sum += scores[i];
@@ -236,7 +236,7 @@ public:
 		float sum = 0.f;
 		float action_probability = 0.f;
 		u32 action_index = numWeights-1;
-		for (size_t i = 0; i < numWeights; i++)
+		for (u32 i = 0; i < numWeights; i++)
 		  {
 		    weights[i] = weights[i]/total;
 		    sum += weights[i];

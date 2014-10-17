@@ -22,7 +22,7 @@ void Stateful_Default_Scorer(int* policy_params, Context* application_Context, f
 {
 	for (u32 i = 0; i < size; i++)
 	{
-		scores[i] = *policy_params + i;
+		scores[i] = (float) (*policy_params + i);
 	}
 }
 
