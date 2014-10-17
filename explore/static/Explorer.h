@@ -166,18 +166,18 @@ public:
 		
 		float sum = 0.f;
 		float action_probability = 0.f;
-		u32 action_index = numScores-1;
+		u32 action_index = numScores - 1;
 		for (size_t i = 0; i < numScores; i++)
-		  {
-		    scores[i] = scores[i]/total;
-		    sum += scores[i];
-		    if (sum > draw)
-		      {
-			action_index = i;
-			action_probability = scores[i];
-			break;
-		      }
-		  }
+		{
+			scores[i] = scores[i] / total;
+			sum += scores[i];
+			if (sum > draw)
+			{
+				action_index = i;
+				action_probability = scores[i];
+				break;
+			}
+		}
 
 		delete[] scores;
 		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), action_probability, true);
@@ -233,20 +233,20 @@ public:
 		
 		float draw = random_generator.Uniform_Unit_Interval();
 		
-		float sum;
+		float sum = 0.f;
 		float action_probability = 0.f;
 		u32 action_index = numWeights-1;
 		for (size_t i = 0; i < numWeights; i++)
-		  {
-		    weights[i] = weights[i]/total;
-		    sum += weights[i];
-		    if (sum > draw)
-		      {
-			action_index = i;
-			action_probability = weights[i];
-			break;
-		      }
-		  }
+		{
+			weights[i] = weights[i] / total;
+			sum += weights[i];
+			if (sum > draw)
+			{
+				action_index = i;
+				action_probability = weights[i];
+				break;
+			}
+		}
 
 		delete[] weights;
 		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), action_probability, true);

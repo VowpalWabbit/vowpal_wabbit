@@ -13,7 +13,11 @@ const int bias = 127 << 23;
    uint64_t v;
  public:
    prg() {v = c;}
-   prg(uint64_t initial) {v = initial;}
+   prg(uint64_t initial) 
+   { 
+	   v = initial; 
+	   merand48(v);
+   }
 
    float merand48(uint64_t& initial)
    {
@@ -29,9 +33,9 @@ const int bias = 127 << 23;
 
    uint32_t Uniform_Int(uint32_t low, uint32_t high)
    {
-     merand48(v);
-     uint32_t ret = low + ((v >> 25) % (high-low));
-     return ret;
+	   merand48(v);
+	   uint32_t ret = low + ((v >> 25) % (high - low + 1));
+	   return ret;
    }
  };
 }

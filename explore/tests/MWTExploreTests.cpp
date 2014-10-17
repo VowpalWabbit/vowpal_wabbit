@@ -513,11 +513,11 @@ namespace vw_explore_tests
 			// random, but this is safer in case we change things
 			u32 bins[NUM_ACTIONS_COVER] = { 0 };
 			u32 num_balls = NUM_ACTIONS_COVER * log(NUM_ACTIONS_COVER) + C * NUM_ACTIONS_COVER;
-			PRG<u32> prg;
+			PRG::prg rg;
 			u32 i;
 			for (i = 0; i < num_balls; i++)
 			{
-				bins[prg.Uniform_Int(0, NUM_ACTIONS_COVER - 1)]++;
+				bins[rg.Uniform_Int(0, NUM_ACTIONS_COVER - 1)]++;
 			}
 			// Ensure all actions are covered
 			for (i = 0; i < NUM_ACTIONS_COVER; i++)
@@ -651,10 +651,10 @@ namespace vw_explore_tests
 
 		string Get_Unique_Key(u32 seed)
 		{
-			PRG<u32> prg(seed);
+			PRG::prg rg(seed);
 
 			std::ostringstream unique_key_container;
-			unique_key_container << prg.Uniform_Unit_Interval();
+			unique_key_container << rg.Uniform_Unit_Interval();
 
 			return unique_key_container.str();
 		}

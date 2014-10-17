@@ -153,6 +153,7 @@
     <ClInclude Include="MWTRewardReporter.h" />
     <ClInclude Include="PolicyFunc.h" />
     <ClInclude Include="Common.h" />
+    <ClInclude Include="prg.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <ItemGroup>
