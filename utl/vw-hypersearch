@@ -17,12 +17,17 @@
 #       - Add '-t test-set' to optimize on test error rather than
 #         train-set error
 #       - Add integral-value option support
+#       - More reliable/informative progress indication
 #       Bug fixes:
 #           - Golden-section search bug-fix
 #           - Loss value capture bug-fix (can be in scientific notation)
+#           - Handle special cases where certain options don't make sense
 #   * Alex Hudek:
 #       - Support log-space search which seems to work better
 #         with --l1 (very small values) and/or hinge-loss
+#   * trufanov-nok (@github)
+#       - A bunch of very useful bug reports:
+#           https://github.com/JohnLangford/vowpal_wabbit/issues/406
 #
 use warnings;
 use strict;
