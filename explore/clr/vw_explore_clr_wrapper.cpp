@@ -594,17 +594,20 @@ namespace MultiWorldTesting {
 		cli::array<FEATURE>^ contextFeatures = context->Features;
 		String^ otherContext = context->OtherContext;
 
-
-		pin_ptr<FEATURE> pinnedContextFeatures = &context->Features[0];
-		FEATURE* nativeContextFeatures = pinnedContextFeatures;
+		Feature* nativeContextFeatures = new Feature[contextFeatures->Length];
+		for (int i = 0; i < contextFeatures->Length; i++)
+		{
+			nativeContextFeatures[i].Id = contextFeatures[i].Index;
+			nativeContextFeatures[i].Value = contextFeatures[i].X;
+		}
 
 		if (otherContext != nullptr)
 		{
-			return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length, marshal_as<std::string>(otherContext));
+			return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length, new std::string(marshal_as<std::string>(otherContext)), true);
 		}
 		else
 		{
-			return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length, nullptr);
+			return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length, nullptr, true);
 		}
 	}
 }

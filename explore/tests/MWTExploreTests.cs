@@ -14,7 +14,7 @@ namespace ExploreTests
         */
         [TestMethod]
         public void EpsilonGreedyStateful()
-        {
+        { 
             mwt.InitializeEpsilonGreedy<int>(Epsilon,
                 new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc),
                 PolicyParams,
