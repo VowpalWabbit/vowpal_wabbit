@@ -45,9 +45,6 @@ void Stateless_Default_Scorer(Context* appContext, float scores[], u32 size)
 
 int main(int argc, char* argv[])
 {
-  //	Clock_Explore();
-  //	return 0;
-
 	if (argc < 2)
 	  {
 	    cerr << "arguments: {greedy,tau-first,bagging,softmax} [stateful]" << endl;
