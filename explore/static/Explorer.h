@@ -233,7 +233,7 @@ public:
 		
 		float draw = random_generator.Uniform_Unit_Interval();
 		
-		float sum;
+		float sum = 0.f;
 		float action_probability = 0.f;
 		u32 action_index = numWeights-1;
 		for (size_t i = 0; i < numWeights; i++)
