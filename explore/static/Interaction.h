@@ -248,10 +248,10 @@ public:
 
 	void Serialize_VW_CSOAA(std::ostringstream& stream)
 	{
-		// Format is [action]:[cost] | [features]
+		// Format is [action]:[cost]:[probability] | [features]
 		m_action.Serialize(stream);
 		// The cost is the importance-weighted reward, negated because the learner minimizes the cost
-		stream << ":" << std::fixed << std::setprecision(2) << -m_reward * (1.0 / m_prob) << " | ";
+		stream << ":" << std::fixed << std::setprecision(5) << -m_reward << ":" << m_prob << " | ";
 		m_context->Serialize(stream);
 	}
 

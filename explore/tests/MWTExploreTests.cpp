@@ -4,7 +4,6 @@
 #include "MWTRewardReporter.h"
 #include "MWTOptimizer.h"
 #include "utility.h"
-#include <fstream>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
