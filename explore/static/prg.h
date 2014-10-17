@@ -16,7 +16,6 @@ const int bias = 127 << 23;
    prg(uint64_t initial) 
    { 
 	   v = initial; 
-	   merand48(v);
    }
 
    float merand48(uint64_t& initial)
