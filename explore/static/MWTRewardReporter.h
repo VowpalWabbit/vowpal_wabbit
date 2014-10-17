@@ -22,7 +22,7 @@ public:
 	bool Report_Reward(std::string unique_id, float reward)
 	{
 		bool id_present = false;
-		u64 id = Interaction::Compute_Id_Hash(unique_id);
+		u64 id = HashUtils::Compute_Id_Hash(unique_id);
 		if (m_interactions.find(id) != m_interactions.end())
 		{
 			id_present = true;

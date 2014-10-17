@@ -184,7 +184,7 @@ public:
   m_context(context), m_action(action), m_prob(prob), m_id(unique_id), m_is_copy(is_copy)
 	{
 		m_reward = NO_REWARD;
-		m_id_hash = Compute_Id_Hash(unique_id);
+		m_id_hash = HashUtils::Compute_Id_Hash(unique_id);
 		// By default, assume the external context is the same as the one passed in above, but 
 		// (C#) interop to work the external context should be set to a managed pointer
 		m_external_context = context;
@@ -266,22 +266,6 @@ public:
 	void Set_External_Context(void* ext_context)
 	{
 		m_external_context = ext_context;
-	}
-
-public:
-	static u64 Compute_Id_Hash(const std::string& unique_id)
-	{
-	  size_t ret = 0;
-	  const char *p = unique_id.c_str();
-	  while (*p != '\0')
-	    if (*p >= '0' && *p <= '9')
-	      ret = 10*ret + *(p++) - '0';
-	    else
-	      {
-		murmur_hash foo;
-		return foo.uniform_hash(unique_id.c_str(),unique_id.size(),0);
-	      }
-	  return ret;
 	}
 	
 private:

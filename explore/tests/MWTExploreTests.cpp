@@ -406,10 +406,10 @@ namespace vw_explore_tests
 			Context* context;
 			float prob = 1.0 / 3;
 			float feature_val = 1.0;
-			u64 feature_a = Interaction::Compute_Id_Hash("a");
-			u64 feature_b = Interaction::Compute_Id_Hash("b");
-			u64 feature_c = Interaction::Compute_Id_Hash("c");
-			u64 feature_d = Interaction::Compute_Id_Hash("d");
+			u64 feature_a = HashUtils::Compute_Id_Hash("a");
+			u64 feature_b = HashUtils::Compute_Id_Hash("b");
+			u64 feature_c = HashUtils::Compute_Id_Hash("c");
+			u64 feature_d = HashUtils::Compute_Id_Hash("d");
 			u32 i;
 			// Example 1
 			i = 0;

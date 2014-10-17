@@ -21,7 +21,25 @@ typedef int16_t i16;
 typedef int8_t i8;
 #endif
 
-
 typedef unsigned char    byte;
 
 #include "prg.h"
+
+class HashUtils
+{
+public:
+	static u64 Compute_Id_Hash(const std::string& unique_id)
+	{
+		size_t ret = 0;
+		const char *p = unique_id.c_str();
+		while (*p != '\0')
+		if (*p >= '0' && *p <= '9')
+			ret = 10 * ret + *(p++) - '0';
+		else
+		{
+			murmur_hash foo;
+			return foo.uniform_hash(unique_id.c_str(), unique_id.size(), 0);
+		}
+		return ret;
+	}
+}

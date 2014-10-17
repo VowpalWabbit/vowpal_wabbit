@@ -14,10 +14,10 @@
 class MWTExplorer
 {
 public:
-	MWTExplorer()
+	MWTExplorer(std::string app_id)
 	{
-	    m_id = 0;
 		m_explorer = nullptr;
+		m_app_id = HashUtils::Compute_Id_Hash(app_id);
 	}
 
 	~MWTExplorer()
@@ -128,7 +128,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new EpsilonGreedyExplorer(epsilon, default_policy_func, default_policy_func_argument);
+		m_explorer = new EpsilonGreedyExplorer(epsilon, default_policy_func, default_policy_func_argument, m_app_id);
 	}
 
 	void Initialize_Epsilon_Greedy(
@@ -137,7 +137,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new EpsilonGreedyExplorer(epsilon, default_policy_func);
+		m_explorer = new EpsilonGreedyExplorer(epsilon, default_policy_func, m_app_id);
 	}
 
 	void Initialize_Tau_First(
@@ -147,7 +147,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new TauFirstExplorer(tau, default_policy_func, default_policy_func_argument);
+		m_explorer = new TauFirstExplorer(tau, default_policy_func, default_policy_func_argument, m_app_id);
 	}
 
 	void Initialize_Tau_First(
@@ -156,7 +156,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new TauFirstExplorer(tau, default_policy_func);
+		m_explorer = new TauFirstExplorer(tau, default_policy_func, m_app_id);
 	}
 
 	void Initialize_Bagging(
@@ -166,7 +166,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new BaggingExplorer(bags, default_policy_functions, default_policy_args);
+		m_explorer = new BaggingExplorer(bags, default_policy_functions, default_policy_args, m_app_id);
 	}
 
 	void Initialize_Bagging(
@@ -175,7 +175,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new BaggingExplorer(bags, default_policy_functions);
+		m_explorer = new BaggingExplorer(bags, default_policy_functions, m_app_id);
 	}
 
 	void Initialize_Softmax(
@@ -185,7 +185,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func, default_scorer_func_argument);
+		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func, default_scorer_func_argument, m_app_id);
 	}
 
 	void Initialize_Softmax(
@@ -194,7 +194,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func);
+		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func, m_app_id);
 	}
 
 	void Initialize_Generic(
@@ -203,7 +203,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new GenericExplorer(default_scorer_func, default_scorer_func_argument);
+		m_explorer = new GenericExplorer(default_scorer_func, default_scorer_func_argument, m_app_id);
 	}
 
 	void Initialize_Generic(
@@ -211,7 +211,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new GenericExplorer(default_scorer_func);
+		m_explorer = new GenericExplorer(default_scorer_func, m_app_id);
 	}
 
 	// The parameters here look weird but are required to interface with C#:
@@ -221,7 +221,7 @@ public:
 	u32 Choose_Action(void* context, std::string unique_id, Context& log_context)
 	{
 		// Hash the ID of the yet-to-be-created interaction so we can seed the explorer
-		u64 seed = Interaction::Compute_Id_Hash(unique_id);
+		u64 seed = HashUtils::Compute_Id_Hash(unique_id);
 		if (m_explorer == nullptr)
 		  throw std::invalid_argument("Error: you must initialize an explorer before use");
 		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, m_action_set, seed);
@@ -251,5 +251,5 @@ private:
 	Explorer* m_explorer;
 	Logger m_logger;
 	ActionSet m_action_set;
-	u64 m_id;
+	u64 m_app_id;
 };
