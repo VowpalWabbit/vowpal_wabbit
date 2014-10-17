@@ -454,9 +454,8 @@ namespace MultiWorldTesting {
 		contextHandles = gcnew cli::array<GCHandle>(m_num_native_interactions);
 		for (int i = 0; i < m_num_native_interactions; i++)
 		{
-			Context* native_context = MwtHelper::ToNativeContext(interactions[i]->ApplicationContext);
 			String^ interaction_id = interactions[i]->Id;
-			m_native_interactions[i] = new Interaction(native_context,
+			m_native_interactions[i] = new Interaction(nullptr,
 				interactions[i]->ChosenAction,
 				interactions[i]->Probability,
 				marshal_as<std::string>(interaction_id),
