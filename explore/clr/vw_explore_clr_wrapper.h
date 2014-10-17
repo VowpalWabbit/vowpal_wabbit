@@ -287,6 +287,10 @@ namespace MultiWorldTesting {
 		void InitializeSoftmax(float lambda, StatefulScorerDelegate<T>^ defaultScorerFunc, T defaultScorerFuncParams, UInt32 numActions);
 		void InitializeSoftmax(float lambda, StatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions);
 
+		generic <class T>
+		void InitializeGeneric(StatefulScorerDelegate<T>^ defaultScorerFunc, T defaultScorerFuncParams, UInt32 numActions);
+		void InitializeGeneric(StatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions);
+
 		void Unintialize();
 
 		UInt32 ChooseAction(CONTEXT^ context, String^ uniqueId);
@@ -304,6 +308,7 @@ namespace MultiWorldTesting {
 		void InitializeTauFirst(UInt32 tau, InternalStatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
 		void InitializeBagging(UInt32 bags, cli::array<InternalStatefulPolicyDelegate^>^ defaultPolicyFuncs, cli::array<IntPtr>^ defaultPolicyArgs, UInt32 numActions);
 		void InitializeSoftmax(float lambda, InternalStatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
+		void InitializeGeneric(InternalStatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
 
 	private: // Internal Callback Methods
 		static UInt32 InternalStatefulPolicy(IntPtr, IntPtr);

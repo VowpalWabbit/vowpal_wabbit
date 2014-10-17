@@ -175,6 +175,27 @@ namespace MultiWorldTesting {
 		this->InitializeSoftmax(lambda, ssDelegate, (IntPtr)selfHandle, numActions);
 	}
 
+	generic <class T>
+	void MwtExplorer::InitializeGeneric(StatefulScorerDelegate<T>^ defaultScorerFunc, T defaultScorerFuncParams, UInt32 numActions)
+	{
+		policyWrapper = gcnew DefaultPolicyWrapper<T>(defaultScorerFunc, defaultScorerFuncParams);
+		selfHandle = GCHandle::Alloc(this);
+
+		InternalStatefulScorerDelegate^ ssDelegate = gcnew InternalStatefulScorerDelegate(&MwtExplorer::InternalScorerFunction);
+
+		this->InitializeGeneric(ssDelegate, (IntPtr)selfHandle, numActions);
+	}
+
+	void MwtExplorer::InitializeGeneric(StatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions)
+	{
+		policyWrapper = gcnew DefaultPolicyWrapper<int>(defaultScorerFunc);
+		selfHandle = GCHandle::Alloc(this);
+
+		InternalStatefulScorerDelegate^ ssDelegate = gcnew InternalStatefulScorerDelegate(&MwtExplorer::InternalScorerFunction);
+
+		this->InitializeGeneric(ssDelegate, (IntPtr)selfHandle, numActions);
+	}
+
 	void MwtExplorer::InitializeEpsilonGreedy(float epsilon, InternalStatefulPolicyDelegate^ defaultPolicyFunc, System::IntPtr defaultPolicyFuncContext, UInt32 numActions)
 	{
 		policyFuncHandle = GCHandle::Alloc(defaultPolicyFunc);
@@ -219,6 +240,15 @@ namespace MultiWorldTesting {
 
 		Stateful_Scorer_Func* nativeFunc = static_cast<Stateful_Scorer_Func*>(ip.ToPointer());
 		m_mwt->Initialize_Softmax(lambda, nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
+	}
+
+	void MwtExplorer::InitializeGeneric(InternalStatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions)
+	{
+		policyFuncHandle = GCHandle::Alloc(defaultScorerFunc);
+		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultScorerFunc);
+
+		Stateful_Scorer_Func* nativeFunc = static_cast<Stateful_Scorer_Func*>(ip.ToPointer());
+		m_mwt->Initialize_Generic(nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
 	}
 
 	UInt32 MwtExplorer::ChooseAction(CONTEXT^ context, String^ uniqueId)
