@@ -242,8 +242,8 @@ public:
 	{
 		m_action.Serialize(stream);
 		// Use 2 decimal places for reward, probability
-		stream << ":" << std::fixed << std::setprecision(2) << m_reward << ":";
-		stream << std::fixed << std::setprecision(2) << m_prob << " | "; 
+		stream << " " << m_id << " ";
+		stream << std::setprecision(5) << m_prob << " | "; 
 		m_context->Serialize(stream);
 	}
 
