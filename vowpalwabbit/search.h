@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
 */
-#ifndef SEARCH_H
-#define SEARCH_H
-
+#pragma once
 #include "global_data.h"
 
 #define cdbg clog
@@ -231,8 +229,3 @@ namespace Search {
   void search_drive(void*);
   void search_learn(void*,example*);  
 }
-
-
-
-#endif
-

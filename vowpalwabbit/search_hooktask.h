@@ -3,9 +3,7 @@ CoPyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef SEARCH_HOOKTASK_H
-#define SEARCH_HOOKTASK_H
-
+#pragma once
 #include "search.h"
 
 namespace HookTask {
@@ -25,5 +23,3 @@ namespace HookTask {
     size_t num_actions;                // cache for easy access
   };
 }
-
-#endif

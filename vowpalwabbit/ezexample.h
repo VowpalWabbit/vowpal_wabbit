@@ -1,6 +1,4 @@
-#ifndef EZEXAMPLE_H
-#define EZEXAMPLE_H
-
+#pragma once
 #include <stdio.h>
 #include "../vowpalwabbit/parser.h"
 #include "../vowpalwabbit/vw.h"
@@ -311,6 +309,3 @@ class ezexample {
 
   inline float      operator()() { return predict(); }
 };
-
-
-#endif
