@@ -394,7 +394,7 @@ namespace vw_explore_tests
 			u32 i;
 			// Example 1
 			i = 0;
-			MWTFeature* features = new MWTFeature[3];
+			Feature* features = new Feature[3];
 			// This indicates feature "a" is present (the specific value used is not important)
 			features[0].Index = feature_a;
 			features[0].X = feature_val; 
@@ -404,7 +404,7 @@ namespace vw_explore_tests
 			ids[i] = "a1_expect_1";
 			interactions[i] = new Interaction(context, MWTAction(1), prob, ids[i], true);
 			// Example 2
-			features = new MWTFeature[3];
+			features = new Feature[3];
 			features[0].Index = feature_b;
 			features[0].X = feature_val;
 			context = new Context(features, 1, true);
@@ -412,7 +412,7 @@ namespace vw_explore_tests
 			ids[i] = "b1_expects_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
 			// Example 3
-			features = new MWTFeature[3];
+			features = new Feature[3];
 			features[0].Index = feature_c;
 			features[0].X = feature_val;
 			context = new Context(features, 1, true);
@@ -420,7 +420,7 @@ namespace vw_explore_tests
 			ids[i] = "c1_expects_3";
 			interactions[i] = new Interaction(context, MWTAction(3), prob, ids[i], true);
 			// Example 4
-			features = new MWTFeature[3];
+			features = new Feature[3];
 			features[0].Index = feature_a;
 			features[0].X = feature_val;
 			features[1].Index = feature_b;
@@ -430,7 +430,7 @@ namespace vw_explore_tests
 			ids[i] = "ab1_expect_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
 			// Example 5
-			features = new MWTFeature[3];
+			features = new Feature[3];
 			features[0].Index = feature_b;
 			features[0].X = feature_val;
 			features[1].Index = feature_c;
@@ -440,7 +440,7 @@ namespace vw_explore_tests
 			ids[i] = "bc1_expect_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
 			// Example 6
-			features = new MWTFeature[3];
+			features = new Feature[3];
 			features[0].Index = feature_a;
 			features[0].X = feature_val;
 			features[1].Index = feature_c;
@@ -450,7 +450,7 @@ namespace vw_explore_tests
 			ids[i] = "ac1_expect_3";
 			interactions[i] = new Interaction(context, MWTAction(3), prob, ids[i], true);
 			// Example 7
-			features = new MWTFeature[3];
+			features = new Feature[3];
 			features[0].Index = feature_d;
 			features[0].X = feature_val;
 			context = new Context(features, 1, true);
@@ -525,7 +525,7 @@ namespace vw_explore_tests
 			m_lambda = 0;
 
 			m_num_features = 1;
-			m_features = new MWTFeature[m_num_features];
+			m_features = new Feature[m_num_features];
 			m_features[0].Index = 1;
 			m_features[0].X = 0.5;
 			m_context = new Context(m_features, m_num_features);
@@ -654,7 +654,7 @@ namespace vw_explore_tests
 
 		Context* m_context;
 		int m_num_features;
-		MWTFeature* m_features;
+		Feature* m_features;
 
 		static int m_num_actions;
 		string m_unique_key;
