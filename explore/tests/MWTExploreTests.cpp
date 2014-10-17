@@ -266,6 +266,41 @@ namespace vw_explore_tests
 			delete[] interactions;
 		}
 
+		TEST_METHOD(Generic_Stateful)
+		{
+			m_mwt->Initialize_Generic<int>(Stateful_Default_Scorer, &m_policy_scorer_arg, m_num_actions);
+
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
+			Assert::AreEqual((u32)5, chosen_action);
+
+			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
+			Assert::AreEqual((u32)8, chosen_action);
+
+			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(3));
+			Assert::AreEqual((u32)6, chosen_action);
+
+			float expected_probs[3] = { .1f, .1f, .1f };
+			this->Test_Logger(3, expected_probs);
+		}
+
+		TEST_METHOD(Generic_Stateless)
+		{
+			m_mwt->Initialize_Generic(Non_Uniform_Stateless_Default_Scorer, m_num_actions);
+
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
+			Assert::AreEqual((u32)8, chosen_action);
+
+			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
+			Assert::AreEqual((u32)9, chosen_action);
+
+			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(3));
+			Assert::AreEqual((u32)8, chosen_action);
+
+			float total_scores = m_num_actions * (m_num_actions - 1.f) / 2;
+			float expected_probs[3] = { (8.f - 1) / total_scores, (9.f - 1) / total_scores, (8.f - 1) / total_scores };
+			this->Test_Logger(3, expected_probs);
+		}
+
 		TEST_METHOD(Reward_Reporter)
 		{
 			float epsilon = 0.f; // No randomization
