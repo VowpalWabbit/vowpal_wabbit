@@ -33,8 +33,8 @@ namespace ExploreTests
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
-            Assert.AreEqual(2, interactions[0].ApplicationContext.Features.Length);
-            Assert.AreEqual(0.9f, interactions[0].ApplicationContext.Features[1].X);
+            Assert.AreEqual(2, interactions[0].GetContext().Features.Length);
+            Assert.AreEqual(0.9f, interactions[0].GetContext().Features[1].X);
         }
 
         [TestMethod]
@@ -55,8 +55,8 @@ namespace ExploreTests
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
-            Assert.AreEqual(2, interactions[0].ApplicationContext.Features.Length);
-            Assert.AreEqual(0.9f, interactions[0].ApplicationContext.Features[1].X);
+            Assert.AreEqual(2, interactions[0].GetContext().Features.Length);
+            Assert.AreEqual(0.9f, interactions[0].GetContext().Features[1].X);
         }
 
         [TestMethod]
@@ -120,8 +120,8 @@ namespace ExploreTests
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
-            Assert.AreEqual(2, interactions[0].ApplicationContext.Features.Length);
-            Assert.AreEqual(0.9f, interactions[0].ApplicationContext.Features[1].X);
+            Assert.AreEqual(2, interactions[0].GetContext().Features.Length);
+            Assert.AreEqual(0.9f, interactions[0].GetContext().Features[1].X);
         }
 
         [TestMethod]
@@ -146,8 +146,8 @@ namespace ExploreTests
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
-            Assert.AreEqual(2, interactions[0].ApplicationContext.Features.Length);
-            Assert.AreEqual(0.9f, interactions[0].ApplicationContext.Features[1].X);
+            Assert.AreEqual(2, interactions[0].GetContext().Features.Length);
+            Assert.AreEqual(0.9f, interactions[0].GetContext().Features[1].X);
         }
 
         [TestMethod]
@@ -191,7 +191,7 @@ namespace ExploreTests
             for (int i = 0; i < interactions.Length; i++)
             {
                 // Scores are not equal therefore probabilities should not be uniform
-                Assert.AreNotEqual(interactions[i].Probability, 1.0f / NumActions);
+                Assert.AreNotEqual(interactions[i].GetProbability(), 1.0f / NumActions);
             }
         }
 
@@ -236,7 +236,7 @@ namespace ExploreTests
             for (int i = 0; i < interactions.Length; i++)
             {
                 // Scores are not equal therefore probabilities should not be uniform
-                Assert.AreNotEqual(interactions[i].Probability, 1.0f / NumActions);
+                Assert.AreNotEqual(interactions[i].GetProbability(), 1.0f / NumActions);
             }
         }
 
