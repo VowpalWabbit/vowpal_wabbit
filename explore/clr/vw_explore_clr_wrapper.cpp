@@ -296,7 +296,7 @@ namespace MultiWorldTesting {
 
 				Context* native_context = native_interactions[i]->Get_Context();
 
-				MWTFeature* native_features = nullptr;
+				Feature* native_features = nullptr;
 				size_t native_num_features = 0;
 				native_context->Get_Features(native_features, native_num_features);
 				cli::array<FEATURE>^ features = gcnew cli::array<FEATURE>((int)native_num_features);
@@ -451,7 +451,7 @@ namespace MultiWorldTesting {
 
 				Context* native_context = m_native_interactions[i]->Get_Context();
 
-				MWTFeature* native_features = nullptr;
+				Feature* native_features = nullptr;
 				size_t native_num_features = 0;
 				native_context->Get_Features(native_features, native_num_features);
 				cli::array<FEATURE>^ features = gcnew cli::array<FEATURE>((int)native_num_features);
@@ -600,11 +600,11 @@ namespace MultiWorldTesting {
 
 		if (otherContext != nullptr)
 		{
-			return new Context((MWTFeature*)nativeContextFeatures, (size_t)context->Features->Length, marshal_as<std::string>(otherContext));
+			return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length, marshal_as<std::string>(otherContext));
 		}
 		else
 		{
-			return new Context((MWTFeature*)nativeContextFeatures, (size_t)context->Features->Length, nullptr);
+			return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length, nullptr);
 		}
 	}
 }
