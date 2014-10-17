@@ -136,38 +136,30 @@ int main(int argc, char* argv[])
 	      
 	if (strcmp(argv[1],"greedy") == 0)
 	  { 
-	    /*** Initialize Epsilon-Greedy explore algorithm using a default policy function that accepts parameters ***/
 	    float epsilon = .2f;
-	    if (stateful)
+	    if (stateful) //Initialize Epsilon-Greedy explore algorithm using a default policy function that accepts parameters 
 	      mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy1, &policy_params, NUM_ACTIONS);
-	    
-	    /*** Initialize Epsilon-Greedy explore algorithm using a stateless default policy function ***/
-	    else
+	    else //Initialize Epsilon-Greedy explore algorithm using a stateless default policy function 
 	      mwt.Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy1, NUM_ACTIONS);
 	  }
 	else if (strcmp(argv[1],"tau-first") == 0)
-	  {	  
-	/*** Initialize Tau-First explore algorithm using a default policy function that accepts parameters ***/
+	  {
 	    u32 tau = 5;
-	    if (stateful)
+	    if (stateful) //Initialize Tau-First explore algorithm using a default policy function that accepts parameters 
 	      mwt.Initialize_Tau_First<int>(tau, Stateful_Default_Policy1, &policy_params, NUM_ACTIONS);
-	    
-	    /*** Initialize Tau-First explore algorithm using a stateless default policy function ***/
-	    else
+	    else // Initialize Tau-First explore algorithm using a stateless default policy function 
 	      mwt.Initialize_Tau_First(tau, Stateless_Default_Policy1, NUM_ACTIONS);
 	  }
 	else if (strcmp(argv[1],"bagging") == 0)
 	  {
-	    /*** Initialize Bagging explore algorithm using a default policy function that accepts parameters ***/
 	    u32 bags = 2;
-	    if (stateful)
+	    if (stateful) // Initialize Bagging explore algorithm using a default policy function that accepts parameters
 	      {
 		StatefulFunctionWrapper<int>::Policy_Func* funcs[2] = { Stateful_Default_Policy1, Stateful_Default_Policy2 };
 		int* params[2] = { &policy_params, &policy_params };
 		mwt.Initialize_Bagging<int>(bags, funcs, params, NUM_ACTIONS);
 	      }
-	    /*** Initialize Bagging explore algorithm using a stateless default policy function ***/
-	    else
+	    else //Initialize Bagging explore algorithm using a stateless default policy function 
 	      {
 		StatelessFunctionWrapper::Policy_Func* funcs[2] = { Stateless_Default_Policy1, Stateless_Default_Policy2 };
 		mwt.Initialize_Bagging(bags, funcs, NUM_ACTIONS);
@@ -175,12 +167,11 @@ int main(int argc, char* argv[])
 	  }
 	else if (strcmp(argv[1],"softmax") == 0)
 	  {
-	    /*** Initialize Softmax explore algorithm using a default scorer function that accepts parameters ***/
-	    //	float lambda = 0.5f;
-	    //mwt.Initialize_Softmax<int>(lambda, Stateful_Default_Scorer, &policy_params, NUM_ACTIONS);
-	    
-	    /*** Initialize Softmax explore algorithm using a stateless default scorer function ***/
-	    //mwt.Initialize_Softmax(lambda, Stateless_Default_Scorer, NUM_ACTIONS);
+	    float lambda = 0.5f;
+	    if (stateful) //Initialize Softmax explore algorithm using a default scorer function that accepts parameters
+	      mwt.Initialize_Softmax<int>(lambda, Stateful_Default_Scorer, &policy_params, NUM_ACTIONS);
+	    else 	    // Initialize Softmax explore algorithm using a stateless default scorer function 
+	    mwt.Initialize_Softmax(lambda, Stateless_Default_Scorer, NUM_ACTIONS);
 	  }
 	else
 	  {

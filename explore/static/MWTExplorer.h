@@ -222,6 +222,8 @@ public:
 	{
 		// Hash the ID of the yet-to-be-created interaction so we can seed the explorer
 		u64 seed = Interaction::Compute_Id_Hash(unique_id);
+		if (m_explorer == nullptr)
+		  throw std::invalid_argument("Error: you must initialize an explorer before use");
 		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, m_action_set, seed);
 		
 		if (!std::get<2>(action_Probability_Log_Tuple))
