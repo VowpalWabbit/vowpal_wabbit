@@ -260,7 +260,7 @@ namespace MultiWorldTesting {
 
 		std::string nativeUniqueKey = marshal_as<std::string>(uniqueId);
 
-		Context* log_context = MwtHelper::ToNativeContext(context);
+		Context* log_context = MwtHelper::PinNativeContext(context);
 
 		size_t uniqueIdLength = (size_t)uniqueId->Length;
 
@@ -391,7 +391,7 @@ namespace MultiWorldTesting {
 		m_native_interactions = new Interaction*[m_num_native_interactions];
 		for (int i = 0; i < m_num_native_interactions; i++)
 		{
-			Context* native_context = MwtHelper::ToNativeContext(interactions[i]->ApplicationContext);
+			Context* native_context = MwtHelper::PinNativeContext(interactions[i]->ApplicationContext);
 			
 			String^ interaction_id = interactions[i]->Id;
 			m_native_interactions[i] = new Interaction(native_context,
@@ -484,7 +484,7 @@ namespace MultiWorldTesting {
 		contextHandles = gcnew cli::array<GCHandle>(m_num_native_interactions);
 		for (int i = 0; i < m_num_native_interactions; i++)
 		{
-			Context* native_context = MwtHelper::ToNativeContext(interactions[i]->ApplicationContext);
+			Context* native_context = MwtHelper::PinNativeContext(interactions[i]->ApplicationContext);
 			String^ interaction_id = interactions[i]->Id;
 			m_native_interactions[i] = new Interaction(native_context,
 				interactions[i]->ChosenAction,
@@ -608,6 +608,33 @@ namespace MultiWorldTesting {
 		else
 		{
 			return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length, nullptr, true);
+		}
+	}
+
+	Context* MwtHelper::PinNativeContext(CONTEXT^ context)
+	{
+		cli::array<FEATURE>^ contextFeatures = context->Features;
+		String^ otherContext = context->OtherContext;
+
+		context->FeatureHandle = GCHandle::Alloc(context->Features, GCHandleType::Pinned);
+		try
+		{
+			IntPtr featureArrayPtr = context->FeatureHandle.AddrOfPinnedObject();
+
+			Feature* nativeContextFeatures = (Feature*)featureArrayPtr.ToPointer();
+
+			if (otherContext != nullptr)
+			{
+				return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length, marshal_as<std::string>(otherContext));
+			}
+			else
+			{
+				return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length, nullptr);
+			}
+		}
+		finally
+		{
+			context->FeatureHandle.Free();
 		}
 	}
 }

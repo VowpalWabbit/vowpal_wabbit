@@ -35,9 +35,20 @@ namespace MultiWorldTesting {
 			Features = features;
 			OtherContext = otherContext;
 		}
+
+		~CONTEXT()
+		{
+			if (FeatureHandle.IsAllocated)
+			{
+				FeatureHandle.Free();
+			}
+		}
 	public:
 		cli::array<FEATURE>^ Features;
 		String^ OtherContext;
+
+	internal:
+		GCHandle FeatureHandle;
 	};
 
 	public ref class INTERACTION
@@ -138,6 +149,7 @@ namespace MultiWorldTesting {
 	{
 	public:
 		static Context* ToNativeContext(CONTEXT^ context);
+		static Context* PinNativeContext(CONTEXT^ context);
 	};
 
 	generic <class T>
