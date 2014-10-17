@@ -96,7 +96,7 @@ public:
 
 private:
 	float m_epsilon;
-	std::string m_salt;
+	u64 m_salt;
 
 	Stateful_Policy_Func* m_stateful_default_policy_func;
 	Stateless_Policy_Func* m_stateless_default_policy_func;
@@ -111,7 +111,7 @@ public:
 		float lambda,
 		Stateful_Scorer_Func* default_scorer_func,
 		void* default_scorer_params,
-		std::string salt) :
+		u64 salt) :
 		m_lambda(lambda),
 		m_stateful_default_scorer_func(default_scorer_func),
 		m_stateless_default_scorer_func(nullptr),
@@ -123,7 +123,7 @@ public:
 	SoftmaxExplorer(
 		float lambda,
 		Stateless_Scorer_Func* default_scorer_func,
-		std::string salt) :
+		u64 salt) :
 		m_lambda(lambda),
 		m_stateful_default_scorer_func(nullptr),
 		m_stateless_default_scorer_func(default_scorer_func),
@@ -194,7 +194,7 @@ public:
 
 private:
 	float m_lambda;
-	std::string m_salt;
+	u64 m_salt;
 
 	Stateful_Scorer_Func* m_stateful_default_scorer_func;
 	Stateless_Scorer_Func* m_stateless_default_scorer_func;
@@ -208,7 +208,7 @@ public:
 	GenericExplorer(
 		Stateful_Scorer_Func* default_scorer_func, 
 		void* default_scorer_params,
-		std::string salt) :
+		u64 salt) :
 		m_stateful_default_scorer_func(default_scorer_func),
 		m_stateless_default_scorer_func(nullptr),
 		m_default_scorer_params(default_scorer_params),
@@ -218,7 +218,7 @@ public:
 
 	GenericExplorer(
 		Stateless_Scorer_Func* default_scorer_func,
-		std::string salt) :
+		u64 salt) :
 		m_stateful_default_scorer_func(nullptr),
 		m_stateless_default_scorer_func(default_scorer_func),
 		m_default_scorer_params(nullptr),
@@ -270,7 +270,7 @@ public:
 	}
 
 private:
-	std::string m_salt;
+	u64 m_salt;
 
 	Stateful_Scorer_Func* m_stateful_default_scorer_func;
 	Stateless_Scorer_Func* m_stateless_default_scorer_func;
@@ -285,7 +285,7 @@ public:
 		u32 tau,
 		Stateful_Policy_Func* default_policy_func,
 		void* default_policy_params,
-		std::string salt) :
+		u64 salt) :
 		m_tau(tau),
 		m_stateful_default_policy_func(default_policy_func),
 		m_stateless_default_policy_func(nullptr),
@@ -297,7 +297,7 @@ public:
 	TauFirstExplorer(
 		u32 tau,
 		Stateless_Policy_Func* default_policy_func,
-		std::string salt) :
+		u64 salt) :
 		m_tau(tau),
 		m_stateful_default_policy_func(nullptr),
 		m_stateless_default_policy_func(default_policy_func),
@@ -341,7 +341,7 @@ public:
 
 private:
 	u32 m_tau;
-	std::string m_salt;
+	u64 m_salt;
 
 	Stateful_Policy_Func* m_stateful_default_policy_func;
 	Stateless_Policy_Func* m_stateless_default_policy_func;
@@ -356,7 +356,7 @@ public:
 		u32 bags,
 		Stateful_Policy_Func** default_policy_functions,
 		void** default_policy_args,
-		std::string salt) :
+		u64 salt) :
 		m_bags(bags),
 		m_stateful_default_policy_funcs(default_policy_functions),
 		m_stateless_default_policy_funcs(nullptr),
@@ -367,8 +367,8 @@ public:
 	BaggingExplorer(
 		u32 bags,
 		Stateless_Policy_Func** default_policy_functions,
-		std::string salt) :
-                m_bags(bags),
+		u64 salt) :
+		m_bags(bags),
 		m_stateful_default_policy_funcs(nullptr),
 		m_stateless_default_policy_funcs(default_policy_functions),
 		m_default_policy_params(nullptr)
@@ -419,7 +419,7 @@ public:
 
 private:
 	u32 m_bags;
-	std::string m_salt;
+	u64 m_salt;
 
 	Stateful_Policy_Func** m_stateful_default_policy_funcs;
 	Stateless_Policy_Func** m_stateless_default_policy_funcs;

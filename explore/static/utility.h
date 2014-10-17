@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "hash.h"
 
 #ifdef WIN32
 typedef unsigned __int64 u64;
@@ -42,4 +43,4 @@ public:
 		}
 		return ret;
 	}
-}
+};

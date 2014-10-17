@@ -64,7 +64,7 @@ void Clock_Explore()
 	for (int iter = 0; iter < num_iter + num_warmup; iter++)
 	{
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
-		MWTExplorer mwt;
+		MWTExplorer mwt("test");
 		mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy1, &policy_params, NUM_ACTIONS);
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
 		time_init += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
 	//return 0;
 
 	// Create a new MWT instance
-	MWTExplorer mwt;
+	MWTExplorer mwt("test");
 
 	if (argc < 2)
 	  {

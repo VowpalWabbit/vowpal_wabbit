@@ -8,7 +8,6 @@
 #include <sstream>
 #include <float.h>
 #include "Common.h" 
-#include "hash.h"
 
 using namespace std;
 

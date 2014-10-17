@@ -534,7 +534,7 @@ namespace vw_explore_tests
 			C = 5.0;
 
 			m_num_actions = 10;
-			m_mwt = new MWTExplorer();
+			m_mwt = new MWTExplorer("c++-test");
 
 			//TODO: We should eventually test randomization, else we are missing code paths
 			// Initialize with 0 to test deterministic result
