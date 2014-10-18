@@ -31,13 +31,13 @@ public:
 
 	template <class T>
 	float Evaluate_Policy(
-		typename StatefulFunctionWrapper<T>::Policy_Func policy_func,
+		typename Wrapper<T>::Stateful_Policy policy_func,
 		T* policy_params)
 	{
 	  return this->Evaluate_Policy((Stateful_Policy_Func*)policy_func, (void*)policy_params);
 	}
 
-	float Evaluate_Policy(StatelessFunctionWrapper::Policy_Func policy_func)
+	float Evaluate_Policy(Policy policy_func)
 	{
 	  return this->Evaluate_Policy((Stateless_Policy_Func*)policy_func);
 	}

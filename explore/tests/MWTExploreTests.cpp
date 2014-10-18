@@ -137,7 +137,7 @@ namespace vw_explore_tests
 		TEST_METHOD(Bagging_Random)
 		{
 			u32 bags = 2;
-			StatefulFunctionWrapper<int>::Policy_Func* funcs[2] = { Stateful_Default_Policy, Stateful_Default_Policy2 };
+			Wrapper<int>::Stateful_Policy* funcs[2] = { Stateful_Default_Policy, Stateful_Default_Policy2 };
 			int* params[2] = { &m_policy_func_arg, &m_policy_func_arg };
 
 			m_mwt->Initialize_Bagging<int>(bags, funcs, *params, m_num_actions);
@@ -532,8 +532,8 @@ namespace vw_explore_tests
 
 			m_unique_key = "1001";
 
-			m_policy_funcs_stateful = new StatefulFunctionWrapper<int>::Policy_Func*[m_bags];
-			m_policy_funcs_stateless = new StatelessFunctionWrapper::Policy_Func*[m_bags];
+			m_policy_funcs_stateful = new Wrapper<int>::Stateful_Policy*[m_bags];
+			m_policy_funcs_stateless = new Policy*[m_bags];
 			m_policy_params = new int*[m_bags];
 			for (u32 i = 0; i < m_bags; i++)
 			{
@@ -660,8 +660,8 @@ namespace vw_explore_tests
 		string m_unique_key;
 		int m_unique_key_length;
 
-		StatefulFunctionWrapper<int>::Policy_Func** m_policy_funcs_stateful;
-		StatelessFunctionWrapper::Policy_Func** m_policy_funcs_stateless;
+		Wrapper<int>::Stateful_Policy** m_policy_funcs_stateful;
+		Policy** m_policy_funcs_stateless;
 		int** m_policy_params;
 	};
 	// Static variables need to be initialized externally in a .cpp file for linker to work

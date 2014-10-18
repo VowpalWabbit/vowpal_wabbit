@@ -65,8 +65,8 @@ int main(int argc, char* argv[])
 	//arguments for individual explorers
 	int policy_params = 101;//A more complex type in real applications.
 	u32 num_bags = 2;
-	StatefulFunctionWrapper<int>::Policy_Func* bags[] = { Stateful_Default_Policy1, Stateful_Default_Policy2 };
-	StatelessFunctionWrapper::Policy_Func* stateless_bags[] = { Stateless_Default_Policy1, Stateless_Default_Policy2 };
+	Wrapper<int>::Stateful_Policy* bags[] = { Stateful_Default_Policy1, Stateful_Default_Policy2 };
+	Policy* stateless_bags[] = { Stateless_Default_Policy1, Stateless_Default_Policy2 };
 	int policy_params_bag_1 = 12;
 	int policy_params_bag_2 = 24;
 	int* params[] = { &policy_params_bag_1, &policy_params_bag_2 };	

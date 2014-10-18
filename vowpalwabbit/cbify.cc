@@ -384,7 +384,7 @@ namespace CBIFY {
 	l = new learner(data, all.l, 1);
 	all.l->mwt = new MWTExplorer("vw");
 	all.l->mwt_policy_context = new vw_context();
-	all.l->mwt->Initialize_Epsilon_Greedy(data->epsilon, explore_policy, all.l->mwt_policy_context, data->k);
+	all.l->mwt->Initialize_Epsilon_Greedy(data->epsilon, explore_policy, all.l->mwt_policy_context, (uint32_t)data->k);
 	l->set_learn<cbify, predict_or_learn_greedy<true> >();
 	l->set_predict<cbify, predict_or_learn_greedy<false> >();
       }

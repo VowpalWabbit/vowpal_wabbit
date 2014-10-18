@@ -28,7 +28,7 @@ public:
 	template <class T>
 	void Initialize_Epsilon_Greedy(
 		float epsilon, 
-		typename StatefulFunctionWrapper<T>::Policy_Func default_policy_func, 
+		typename Stateful<T>::Policy default_policy_func, 
 		T& default_policy_params, u32 num_actions)
 	{
 		this->Initialize_Epsilon_Greedy(epsilon, (Stateful_Policy_Func*)default_policy_func, (void*)&default_policy_params, num_actions);
@@ -36,7 +36,7 @@ public:
 
 	void Initialize_Epsilon_Greedy(
 		float epsilon, 
-		StatelessFunctionWrapper::Policy_Func default_policy_func,
+		Policy default_policy_func,
 		u32 num_actions)
 	{
 		this->Initialize_Epsilon_Greedy(epsilon, (Stateless_Policy_Func*)default_policy_func, num_actions);
@@ -46,7 +46,7 @@ public:
 	template <class T>
 	void Initialize_Tau_First(
 		u32 tau, 
-		typename StatefulFunctionWrapper<T>::Policy_Func default_policy_func, 
+		typename Stateful<T>::Policy default_policy_func, 
 		T& default_policy_params,
 		u32 num_actions)
 	{
@@ -55,7 +55,7 @@ public:
 
 	void Initialize_Tau_First(
 		u32 tau, 
-		StatelessFunctionWrapper::Policy_Func default_policy_func,
+		Policy default_policy_func,
 		u32 num_actions)
 	{
 		this->Initialize_Tau_First(tau, (Stateless_Policy_Func*)default_policy_func, num_actions);
@@ -65,7 +65,7 @@ public:
 	template <class T>
 	void Initialize_Bagging(
 		u32 bags,
-		typename StatefulFunctionWrapper<T>::Policy_Func** default_policy_functions,
+		typename Stateful<T>::Policy** default_policy_functions,
 		T*& default_policy_params,
 		u32 num_actions)
 	{
@@ -74,7 +74,7 @@ public:
 
 	void Initialize_Bagging(
 		u32 bags,
-		StatelessFunctionWrapper::Policy_Func** default_policy_functions,
+		Policy** default_policy_functions,
 		u32 num_actions)
 	{
 		this->Initialize_Bagging(bags, (Stateless_Policy_Func**)default_policy_functions, num_actions);
@@ -84,7 +84,7 @@ public:
 	template <class T>
 	void Initialize_Softmax(
 		float lambda,
-		typename StatefulFunctionWrapper<T>::Scorer_Func default_scorer_func,
+		typename Stateful<T>::Scorer default_scorer_func,
 		T& default_scorer_params, u32 num_actions)
 	{
 		this->Initialize_Softmax(lambda, (Stateful_Scorer_Func*)default_scorer_func, (void*)&default_scorer_params, num_actions);
@@ -92,7 +92,7 @@ public:
 
 	void Initialize_Softmax(
 		float lambda,
-		StatelessFunctionWrapper::Scorer_Func default_scorer_func,
+		Scorer default_scorer_func,
 		u32 num_actions)
 	{
 		this->Initialize_Softmax(lambda, (Stateless_Scorer_Func*)default_scorer_func, num_actions);
@@ -101,14 +101,14 @@ public:
 	/* Generic initialization */
 	template <class T>
 	void Initialize_Generic(
-		typename StatefulFunctionWrapper<T>::Scorer_Func default_scorer_func,
+		typename Stateful<T>::Scorer default_scorer_func,
 		T& default_scorer_params, u32 num_actions)
 	{
 		this->Initialize_Generic((Stateful_Scorer_Func*)default_scorer_func, (void*)&default_scorer_params, num_actions);
 	}
 
 	void Initialize_Generic(
-		StatelessFunctionWrapper::Scorer_Func default_scorer_func, u32 num_actions)
+		Scorer default_scorer_func, u32 num_actions)
 	{
 		this->Initialize_Generic((Stateless_Scorer_Func*)default_scorer_func, num_actions);
 	}
@@ -223,7 +223,7 @@ public:
 		u64 seed = HashUtils::Compute_Id_Hash(unique_id);
 		if (m_explorer == nullptr)
 		  throw std::invalid_argument("Error: you must initialize an explorer before use");
-		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, m_action_set, seed);
+		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, m_action_set, (u32)seed);
 		
 		if (!std::get<2>(action_Probability_Log_Tuple))
 		{
