@@ -29,9 +29,9 @@ public:
 	void Initialize_Epsilon_Greedy(
 		float epsilon, 
 		typename StatefulFunctionWrapper<T>::Policy_Func default_policy_func, 
-		T* default_policy_params, u32 num_actions)
+		T& default_policy_params, u32 num_actions)
 	{
-		this->Initialize_Epsilon_Greedy(epsilon, (Stateful_Policy_Func*)default_policy_func, (void*)default_policy_params, num_actions);
+		this->Initialize_Epsilon_Greedy(epsilon, (Stateful_Policy_Func*)default_policy_func, (void*)&default_policy_params, num_actions);
 	}
 
 	void Initialize_Epsilon_Greedy(
@@ -47,10 +47,10 @@ public:
 	void Initialize_Tau_First(
 		u32 tau, 
 		typename StatefulFunctionWrapper<T>::Policy_Func default_policy_func, 
-		T* default_policy_params,
+		T& default_policy_params,
 		u32 num_actions)
 	{
-		this->Initialize_Tau_First(tau, (Stateful_Policy_Func*)default_policy_func, (void*)default_policy_params, num_actions);
+		this->Initialize_Tau_First(tau, (Stateful_Policy_Func*)default_policy_func, (void*)&default_policy_params, num_actions);
 	}
 
 	void Initialize_Tau_First(
@@ -66,10 +66,10 @@ public:
 	void Initialize_Bagging(
 		u32 bags,
 		typename StatefulFunctionWrapper<T>::Policy_Func** default_policy_functions,
-		T** default_policy_params,
+		T*& default_policy_params,
 		u32 num_actions)
 	{
-		this->Initialize_Bagging(bags, (Stateful_Policy_Func**)default_policy_functions, (void**)default_policy_params, num_actions);
+		this->Initialize_Bagging(bags, (Stateful_Policy_Func**)default_policy_functions, (void**)&default_policy_params, num_actions);
 	}
 
 	void Initialize_Bagging(
@@ -85,9 +85,9 @@ public:
 	void Initialize_Softmax(
 		float lambda,
 		typename StatefulFunctionWrapper<T>::Scorer_Func default_scorer_func,
-		T* default_scorer_params, u32 num_actions)
+		T& default_scorer_params, u32 num_actions)
 	{
-		this->Initialize_Softmax(lambda, (Stateful_Scorer_Func*)default_scorer_func, (void*)default_scorer_params, num_actions);
+		this->Initialize_Softmax(lambda, (Stateful_Scorer_Func*)default_scorer_func, (void*)&default_scorer_params, num_actions);
 	}
 
 	void Initialize_Softmax(
@@ -102,9 +102,9 @@ public:
 	template <class T>
 	void Initialize_Generic(
 		typename StatefulFunctionWrapper<T>::Scorer_Func default_scorer_func,
-		T* default_scorer_params, u32 num_actions)
+		T& default_scorer_params, u32 num_actions)
 	{
-		this->Initialize_Generic((Stateful_Scorer_Func*)default_scorer_func, (void*)default_scorer_params, num_actions);
+		this->Initialize_Generic((Stateful_Scorer_Func*)default_scorer_func, (void*)&default_scorer_params, num_actions);
 	}
 
 	void Initialize_Generic(

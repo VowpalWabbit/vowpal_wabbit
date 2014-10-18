@@ -10,19 +10,19 @@ using namespace std::chrono;
 
 const int NUM_ACTIONS = 10;
 
-u32 Stateful_Default_Policy1(int* parameters, Context& appContext)
+u32 Stateful_Default_Policy1(int& parameters, Context& appContext)
 {
-	return *parameters % NUM_ACTIONS + 1;
+	return parameters % NUM_ACTIONS + 1;
 }
-u32 Stateful_Default_Policy2(int* parameters, Context& appContext)
+u32 Stateful_Default_Policy2(int& parameters, Context& appContext)
 {
-	return *parameters % NUM_ACTIONS + 2;
+	return parameters % NUM_ACTIONS + 2;
 }
-void Stateful_Default_Scorer(int* parameters, Context& appContext, float scores[], u32 size)
+void Stateful_Default_Scorer(int& parameters, Context& appContext, float scores[], u32 size)
 {
 	for (u32 i = 0; i < size; i++)
 	{
-		scores[i] = (float) (*parameters + i);
+		scores[i] = (float) (parameters + i);
 	}
 }
 
@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
 	  { 
 	    float epsilon = .2f;
 	    if (stateful) //Initialize Epsilon-Greedy explore algorithm using a default policy function that accepts parameters 
-	      mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy1, &policy_params, NUM_ACTIONS);
+	      mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy1, policy_params, NUM_ACTIONS);
 	    else //Initialize Epsilon-Greedy explore algorithm using a stateless default policy function 
 	      mwt.Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy1, NUM_ACTIONS);
 	  }
@@ -87,14 +87,14 @@ int main(int argc, char* argv[])
 	  {
 	    u32 tau = 5;
 	    if (stateful) //Initialize Tau-First explore algorithm using a default policy function that accepts parameters 
-	      mwt.Initialize_Tau_First<int>(tau, Stateful_Default_Policy1, &policy_params, NUM_ACTIONS);
+	      mwt.Initialize_Tau_First<int>(tau, Stateful_Default_Policy1, policy_params, NUM_ACTIONS);
 	    else // Initialize Tau-First explore algorithm using a stateless default policy function 
 	      mwt.Initialize_Tau_First(tau, Stateless_Default_Policy1, NUM_ACTIONS);
 	  }
 	else if (strcmp(argv[1],"bagging") == 0)
 	  {
 	    if (stateful) // Initialize Bagging explore algorithm using a default policy function that accepts parameters
-	      mwt.Initialize_Bagging<int>(num_bags, bags, params, NUM_ACTIONS);
+	      mwt.Initialize_Bagging<int>(num_bags, bags, *params, NUM_ACTIONS);
 	    else //Initialize Bagging explore algorithm using a stateless default policy function 
 	      mwt.Initialize_Bagging(num_bags, stateless_bags, NUM_ACTIONS);
 	  }
@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
 	  {
 	    float lambda = 0.5f;
 	    if (stateful) //Initialize Softmax explore algorithm using a default scorer function that accepts parameters
-	      mwt.Initialize_Softmax<int>(lambda, Stateful_Default_Scorer, &policy_params, NUM_ACTIONS);
+	      mwt.Initialize_Softmax<int>(lambda, Stateful_Default_Scorer, policy_params, NUM_ACTIONS);
 	    else 	    // Initialize Softmax explore algorithm using a stateless default scorer function 
 	      mwt.Initialize_Softmax(lambda, Stateless_Default_Scorer, NUM_ACTIONS);
 	  }

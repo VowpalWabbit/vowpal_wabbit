@@ -14,8 +14,8 @@ template <class T>
 class StatefulFunctionWrapper : public BaseFunctionWrapper
 {
 public:
-	typedef u32 Policy_Func(T* policy_params, Context& application_Context);
-	typedef void Scorer_Func(T* policy_params, Context& application_Context, float scores[], u32 size);
+	typedef u32 Policy_Func(T& policy_params, Context& application_Context);
+	typedef void Scorer_Func(T& policy_params, Context& application_Context, float scores[], u32 size);
 
 	Stateful_Policy_Func* m_policy_function;
 	Stateful_Scorer_Func* m_scorer_function;

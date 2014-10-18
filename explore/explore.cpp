@@ -9,19 +9,19 @@ using namespace std::chrono;
 
 const int NUM_ACTIONS = 10;
 
-u32 Stateful_Default_Policy_1(int* parameters, Context& appContext)
+u32 Stateful_Default_Policy_1(int& parameters, Context& appContext)
 {
-	return *parameters % NUM_ACTIONS + 1;
+	return parameters % NUM_ACTIONS + 1;
 }
-u32 Stateful_Default_Policy_2(int* parameters, Context& appContext)
+u32 Stateful_Default_Policy_2(int& parameters, Context& appContext)
 {
-	return *parameters % NUM_ACTIONS + 2;
+	return parameters % NUM_ACTIONS + 2;
 }
-void Stateful_Default_Scorer_1(int* parameters, Context& appContext, float scores[], u32 size)
+void Stateful_Default_Scorer_1(int& parameters, Context& appContext, float scores[], u32 size)
 {
 	for (u32 i = 0; i < size; i++)
 	{
-		scores[i] = (float) (*parameters + i);
+		scores[i] = (float) (parameters + i);
 	}
 }
 
@@ -64,7 +64,7 @@ void Clock_Explore()
 	{
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
 		MWTExplorer mwt("test");
-		mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy_1, &policy_params, NUM_ACTIONS);
+		mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy_1, policy_params, NUM_ACTIONS);
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
 		time_init += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
 

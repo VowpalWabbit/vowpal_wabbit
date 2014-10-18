@@ -15,9 +15,9 @@ namespace vw_explore_tests
 		TEST_METHOD(Epsilon_Greedy_Stateful)
 		{
 			float epsilon = 0.f; // No randomization
-			m_mwt->Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy, &m_policy_func_arg, m_num_actions);
+			m_mwt->Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy, m_policy_func_arg, m_num_actions);
 
-			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, *m_context);
+			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(m_policy_func_arg, *m_context);
 
 			u32 chosen_action = m_mwt->Choose_Action(m_unique_key, *m_context);
 			Assert::AreEqual(expected_action, chosen_action);
@@ -59,9 +59,9 @@ namespace vw_explore_tests
 		TEST_METHOD(Tau_First_Stateful)
 		{
 			u32 tau = 0;
-			m_mwt->Initialize_Tau_First<int>(tau, Stateful_Default_Policy, &m_policy_func_arg, m_num_actions);
+			m_mwt->Initialize_Tau_First<int>(tau, Stateful_Default_Policy, m_policy_func_arg, m_num_actions);
 
-			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, *m_context);
+			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(m_policy_func_arg, *m_context);
 
 			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
 			Assert::AreEqual(expected_action, chosen_action);
@@ -100,10 +100,10 @@ namespace vw_explore_tests
 
 		TEST_METHOD(Bagging_Stateful)
 		{
-			m_mwt->Initialize_Bagging<int>(m_bags, m_policy_funcs_stateful, m_policy_params, m_num_actions);
+			m_mwt->Initialize_Bagging<int>(m_bags, m_policy_funcs_stateful, *m_policy_params, m_num_actions);
 
 			// Every bag uses the same default policy function so expected chosen action is its return value
-			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, *m_context);
+			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(m_policy_func_arg, *m_context);
 
 			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
 			Assert::AreEqual(expected_action, chosen_action);
@@ -140,7 +140,7 @@ namespace vw_explore_tests
 			StatefulFunctionWrapper<int>::Policy_Func* funcs[2] = { Stateful_Default_Policy, Stateful_Default_Policy2 };
 			int* params[2] = { &m_policy_func_arg, &m_policy_func_arg };
 
-			m_mwt->Initialize_Bagging<int>(bags, funcs, params, m_num_actions);
+			m_mwt->Initialize_Bagging<int>(bags, funcs, *params, m_num_actions);
 
 			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
 			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
@@ -152,7 +152,7 @@ namespace vw_explore_tests
 
 		TEST_METHOD(Softmax_Stateful)
 		{
-			m_mwt->Initialize_Softmax<int>(m_lambda, Stateful_Default_Scorer, &m_policy_scorer_arg, m_num_actions);
+			m_mwt->Initialize_Softmax<int>(m_lambda, Stateful_Default_Scorer, m_policy_scorer_arg, m_num_actions);
 			// Scale C up since we have fewer interactions
 			u32 num_decisions = m_num_actions * log(m_num_actions * 1.0) + log(NUM_ACTIONS_COVER * 1.0 / m_num_actions) * C * m_num_actions;
 			// The () following the array should ensure zero-initialization
@@ -213,7 +213,7 @@ namespace vw_explore_tests
 
 		TEST_METHOD(Softmax_Stateful_Scores)
 		{
-			m_mwt->Initialize_Softmax<int>(0.5f, Non_Uniform_Stateful_Default_Scorer, &m_policy_scorer_arg, m_num_actions);
+			m_mwt->Initialize_Softmax<int>(0.5f, Non_Uniform_Stateful_Default_Scorer, m_policy_scorer_arg, m_num_actions);
 			
 			u32 action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
 			action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
@@ -255,7 +255,7 @@ namespace vw_explore_tests
 
 		TEST_METHOD(Generic_Stateful)
 		{
-			m_mwt->Initialize_Generic<int>(Stateful_Default_Scorer, &m_policy_scorer_arg, m_num_actions);
+			m_mwt->Initialize_Generic<int>(Stateful_Default_Scorer, m_policy_scorer_arg, m_num_actions);
 
 			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
 			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
@@ -558,13 +558,13 @@ namespace vw_explore_tests
 		}
 
 	public:
-		static u32 Stateful_Default_Policy(int* policy_params, Context& applicationContext)
+		static u32 Stateful_Default_Policy(int& policy_params, Context& applicationContext)
 		{
-			return MWTAction::Make_OneBased(*policy_params % m_num_actions);
+			return MWTAction::Make_OneBased(policy_params % m_num_actions);
 		}
-		static u32 Stateful_Default_Policy2(int* policy_params, Context& applicationContext)
+		static u32 Stateful_Default_Policy2(int& policy_params, Context& applicationContext)
 		{
-			return MWTAction::Make_OneBased(*policy_params % m_num_actions) + 1;
+			return MWTAction::Make_OneBased(policy_params % m_num_actions) + 1;
 		}
 
 		static u32 Stateless_Default_Policy(Context& applicationContext)
@@ -574,13 +574,13 @@ namespace vw_explore_tests
 
 		//TODO: For now assume the size of the score array is the number of action scores to
 		// report, but we need a more general way to determine per-action features (opened github issue)
-		static void Stateful_Default_Scorer(int* policy_params, Context& applicationContext, float scores[], u32 size)
+		static void Stateful_Default_Scorer(int& policy_params, Context& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
 				// Specify uniform weights using the app-supplied policy parameter (for testing, we
 				// could just as easily give every action a score of 1 or 0 or whatever) 
-				scores[i] = *policy_params;
+				scores[i] = policy_params;
 			}
 		}
 
@@ -592,13 +592,13 @@ namespace vw_explore_tests
 			}
 		}
 
-		static void Non_Uniform_Stateful_Default_Scorer(int* policy_params, Context& applicationContext, float scores[], u32 size)
+		static void Non_Uniform_Stateful_Default_Scorer(int& policy_params, Context& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
 				// Specify uniform weights using the app-supplied policy parameter (for testing, we
 				// could just as easily give every action a score of 1 or 0 or whatever) 
-				scores[i] = *policy_params + i;
+				scores[i] = policy_params + i;
 			}
 		}
 
