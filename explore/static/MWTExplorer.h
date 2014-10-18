@@ -225,18 +225,16 @@ public:
 		  throw std::invalid_argument("Error: you must initialize an explorer before use");
 		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, m_action_set, (u32)seed);
 		
-		if (!std::get<2>(action_Probability_Log_Tuple))
+		if (std::get<2>(action_Probability_Log_Tuple))
 		{
-			return std::get<0>(action_Probability_Log_Tuple).Get_Id();
-		}
 		// Create an interaction using the same unique_id as used in the seed above!
-		Interaction pInteraction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), unique_id);
-		m_logger.Store(&pInteraction);
-
+		  Interaction pInteraction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), unique_id);
+		  m_logger.Store(&pInteraction);
+		}
 		return std::get<0>(action_Probability_Log_Tuple).Get_Id();
 	}
 
-	std::string Get_All_Interactions()
+	inline std::string Get_All_Interactions()
 	{
 		return m_logger.Get_All_Interactions();
 	}

@@ -50,11 +50,9 @@ public:
       for (size_t i = 0; i < m_interactions.size(); i++)
 	m_interactions[i]->Serialize(serialized_stream);
       
-      std::string content = serialized_stream.str();
-      
       this->Clear_Data();
       
-      return content;
+      return serialized_stream.str();
     }
 
   void Get_All_Interactions(size_t& num_interactions, Interaction**& interactions)

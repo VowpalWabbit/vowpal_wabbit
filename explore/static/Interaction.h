@@ -139,10 +139,7 @@ public:
 		if (m_num_features > 0 && m_common_features != nullptr)
 		{
 			features = new Feature[m_num_features];
-			for (size_t f = 0; f < m_num_features; f++)
-			{
-				features[f] = m_common_features[f];
-			}
+			memcpy(features, m_common_features, sizeof(Feature)*m_num_features);
 		}
 
 		if (m_other_context != nullptr)

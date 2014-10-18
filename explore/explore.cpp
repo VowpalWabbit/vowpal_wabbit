@@ -93,9 +93,12 @@ void Clock_Explore()
 		mwt.Get_All_Interactions(n_inter, interactions);
 		t2 = high_resolution_clock::now();
 		time_typed_log += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
+		for (size_t i = 0; i < n_inter; i++)
+		  delete interactions[i];
+		delete[] interactions;
 	}
 	
-	delete features;
+	delete[] features;
 
 	cout << "# iterations: " << num_iter << ", # interactions: " << num_interactions << ", # context features: " << num_features << endl;
 	cout << "--- PER ITERATION ---" << endl;
