@@ -136,15 +136,15 @@ namespace cs_test
 
             }
             FEATURE[] f = new FEATURE[2];
-            f[0].X = 0.5f;
-            f[0].Index = 1;
-            f[1].X = 0.9f;
-            f[1].Index = 2;
+            f[0].Value = 0.5f;
+            f[0].Id = 1;
+            f[1].Value = 0.9f;
+            f[1].Id = 2;
 
             string otherContext = "Some other context data that might be helpful to log";
             CONTEXT appContext = new CONTEXT(f, otherContext);
 
-            UInt32 chosenAction = mwt.ChooseAction(appContext, "myId");
+            UInt32 chosenAction = mwt.ChooseAction("myId", appContext);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             // string interactions = mwt.GetAllInteractionsAsString();

@@ -251,7 +251,7 @@ namespace MultiWorldTesting {
 		m_mwt->Initialize_Generic(nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
 	}
 
-	UInt32 MwtExplorer::ChooseAction(CONTEXT^ context, String^ uniqueId)
+	UInt32 MwtExplorer::ChooseAction(String^ uniqueId, CONTEXT^ context)
 	{
 		UInt32 chosenAction = 0;
 
@@ -302,8 +302,8 @@ namespace MultiWorldTesting {
 				cli::array<FEATURE>^ features = gcnew cli::array<FEATURE>((int)native_num_features);
 				for (int i = 0; i < features->Length; i++)
 				{
-					features[i].X = native_features[i].Value;
-					features[i].Index = native_features[i].Id;
+					features[i].Value = native_features[i].Value;
+					features[i].Id = native_features[i].Id;
 				}
 
 				std::string* native_other_context = nullptr;
@@ -457,8 +457,8 @@ namespace MultiWorldTesting {
 				cli::array<FEATURE>^ features = gcnew cli::array<FEATURE>((int)native_num_features);
 				for (int i = 0; i < features->Length; i++)
 				{
-					features[i].X = native_features[i].Value;
-					features[i].Index = native_features[i].Id;
+					features[i].Value = native_features[i].Value;
+					features[i].Id = native_features[i].Id;
 				}
 
 				std::string* native_other_context = nullptr;
@@ -597,8 +597,8 @@ namespace MultiWorldTesting {
 		Feature* nativeContextFeatures = new Feature[contextFeatures->Length];
 		for (int i = 0; i < contextFeatures->Length; i++)
 		{
-			nativeContextFeatures[i].Id = contextFeatures[i].Index;
-			nativeContextFeatures[i].Value = contextFeatures[i].X;
+			nativeContextFeatures[i].Id = contextFeatures[i].Id;
+			nativeContextFeatures[i].Value = contextFeatures[i].Value;
 		}
 
 		if (otherContext != nullptr)

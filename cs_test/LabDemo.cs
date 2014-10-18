@@ -47,11 +47,11 @@ public class LabDemo
                         {
                             FEATURE f = new FEATURE();
                             //Console.WriteLine("{0}", words[0]);
-                            f.Index = UInt32.Parse(words[0]);
+                            f.Id = UInt32.Parse(words[0]);
                             if (words.Length == 2)
-                                f.X = float.Parse(words[1]);
+                                f.Value = float.Parse(words[1]);
                             else
-                                f.X = (float)1.0;
+                                f.Value = (float)1.0;
                             featureList.Add(f);
                         }
                     }
@@ -118,11 +118,11 @@ public class LabDemo
     {
         
         int score_begin = context.Features.Length - 4;
-        float base_val = context.Features[score_begin].X;
+        float base_val = context.Features[score_begin].Value;
         uint num_action = 1;
         for(int i = 1;i < 4;i++) 
         {
-            if (context.Features[score_begin+i].X >= base_val * threshold)
+            if (context.Features[score_begin+i].Value >= base_val * threshold)
             {
                 num_action += (uint)Math.Pow(2, i - 1);
             }
@@ -145,7 +145,7 @@ public class LabDemo
         uint uniqueID = 1;
         while ((c = iou.getContext()) != null)
         {
-            uint action = mwt.ChooseAction(c, uniqueID.ToString());
+            uint action = mwt.ChooseAction(uniqueID.ToString(), c);
             //Console.WriteLine("Taking action {0} on id {1}", action,uniqueID-1);
             uniqueID++;
         }

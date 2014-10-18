@@ -17,8 +17,8 @@ namespace MultiWorldTesting {
 	[StructLayout(LayoutKind::Sequential)]
 	public value struct FEATURE
 	{
-		float X;
-		UInt32 Index;
+		float Value;
+		UInt32 Id;
 	};
 
 	public ref class CONTEXT
@@ -305,7 +305,7 @@ namespace MultiWorldTesting {
 
 		void Unintialize();
 
-		UInt32 ChooseAction(CONTEXT^ context, String^ uniqueId);
+		UInt32 ChooseAction(String^ uniqueId, CONTEXT^ context);
 
 		String^ GetAllInteractionsAsString();
 		cli::array<INTERACTION^>^ GetAllInteractions();

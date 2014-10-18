@@ -24,17 +24,17 @@ namespace ExploreTests
                 PolicyParams,
                 context);
 
-            uint chosenAction = mwt.ChooseAction(context, UniqueKey);
+            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            chosenAction = mwt.ChooseAction(context, UniqueKey);
+            chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
             Assert.AreEqual(2, interactions[0].ApplicationContext.Features.Length);
-            Assert.AreEqual(0.9f, interactions[0].ApplicationContext.Features[1].X);
+            Assert.AreEqual(0.9f, interactions[0].ApplicationContext.Features[1].Value);
         }
 
         [TestMethod]
@@ -46,17 +46,17 @@ namespace ExploreTests
 
             uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(context);
 
-            uint chosenAction = mwt.ChooseAction(context, UniqueKey);
+            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            chosenAction = mwt.ChooseAction(context, UniqueKey);
+            chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
             Assert.AreEqual(2, interactions[0].ApplicationContext.Features.Length);
-            Assert.AreEqual(0.9f, interactions[0].ApplicationContext.Features[1].X);
+            Assert.AreEqual(0.9f, interactions[0].ApplicationContext.Features[1].Value);
         }
 
         [TestMethod]
@@ -71,7 +71,7 @@ namespace ExploreTests
                 PolicyParams,
                 context);
 
-            uint chosenAction = mwt.ChooseAction(context, UniqueKey);
+            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
@@ -87,7 +87,7 @@ namespace ExploreTests
 
             uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(context);
 
-            uint chosenAction = mwt.ChooseAction(context, UniqueKey);
+            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
@@ -111,17 +111,17 @@ namespace ExploreTests
                 PolicyParams,
                 context);
 
-            uint chosenAction = mwt.ChooseAction(context, UniqueKey);
+            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            chosenAction = mwt.ChooseAction(context, UniqueKey);
+            chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
             Assert.AreEqual(2, interactions[0].ApplicationContext.Features.Length);
-            Assert.AreEqual(0.9f, interactions[0].ApplicationContext.Features[1].X);
+            Assert.AreEqual(0.9f, interactions[0].ApplicationContext.Features[1].Value);
         }
 
         [TestMethod]
@@ -137,17 +137,17 @@ namespace ExploreTests
 
             uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(context);
 
-            uint chosenAction = mwt.ChooseAction(context, UniqueKey);
+            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            chosenAction = mwt.ChooseAction(context, UniqueKey);
+            chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
             Assert.AreEqual(2, interactions[0].ApplicationContext.Features.Length);
-            Assert.AreEqual(0.9f, interactions[0].ApplicationContext.Features[1].X);
+            Assert.AreEqual(0.9f, interactions[0].ApplicationContext.Features[1].Value);
         }
 
         [TestMethod]
@@ -163,7 +163,7 @@ namespace ExploreTests
             Random rand = new Random();
             for (uint i = 0; i < numDecisions; i++)
             {
-                uint chosenAction = mwt.ChooseAction(context, rand.NextDouble().ToString());
+                uint chosenAction = mwt.ChooseAction(rand.NextDouble().ToString(), context);
                 actions[ActionID.Make_ZeroBased(chosenAction)]++;
             }
             
@@ -183,9 +183,9 @@ namespace ExploreTests
                 PolicyParams, NumActions);
 
             Random rand = new Random();
-            mwt.ChooseAction(context, rand.NextDouble().ToString());
-            mwt.ChooseAction(context, rand.NextDouble().ToString());
-            mwt.ChooseAction(context, rand.NextDouble().ToString());
+            mwt.ChooseAction(rand.NextDouble().ToString(), context);
+            mwt.ChooseAction(rand.NextDouble().ToString(), context);
+            mwt.ChooseAction(rand.NextDouble().ToString(), context);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             for (int i = 0; i < interactions.Length; i++)
@@ -208,7 +208,7 @@ namespace ExploreTests
             Random rand = new Random();
             for (uint i = 0; i < numDecisions; i++)
             {
-                uint chosenAction = mwt.ChooseAction(context, rand.NextDouble().ToString());
+                uint chosenAction = mwt.ChooseAction(rand.NextDouble().ToString(), context);
                 actions[ActionID.Make_ZeroBased(chosenAction)]++;
             }
 
@@ -228,9 +228,9 @@ namespace ExploreTests
                 NumActions);
 
             Random rand = new Random();
-            mwt.ChooseAction(context, rand.NextDouble().ToString());
-            mwt.ChooseAction(context, rand.NextDouble().ToString());
-            mwt.ChooseAction(context, rand.NextDouble().ToString());
+            mwt.ChooseAction(rand.NextDouble().ToString(), context);
+            mwt.ChooseAction(rand.NextDouble().ToString(), context);
+            mwt.ChooseAction(rand.NextDouble().ToString(), context);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             for (int i = 0; i < interactions.Length; i++)
@@ -248,7 +248,7 @@ namespace ExploreTests
                 PolicyParams,
                 NumActions);
 
-            uint chosenAction = mwt.ChooseAction(context, UniqueKey);
+            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(1, interactions.Length);
@@ -262,7 +262,7 @@ namespace ExploreTests
                 new StatelessScorerDelegate(TestStatelessScorerFunc),
                 NumActions);
 
-            uint chosenAction = mwt.ChooseAction(context, UniqueKey);
+            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
 
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(1, interactions.Length);
@@ -275,10 +275,10 @@ namespace ExploreTests
             mwt = new MwtExplorer("test");
 
             features = new FEATURE[2];
-            features[0].X = 0.5f;
-            features[0].Index = 1;
-            features[1].X = 0.9f;
-            features[1].Index = 2;
+            features[0].Value = 0.5f;
+            features[0].Id = 1;
+            features[1].Value = 0.9f;
+            features[1].Id = 2;
 
             context = new CONTEXT(features, "Other C# test context");
         }
