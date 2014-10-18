@@ -31,7 +31,7 @@ public:
 
 	template <class T>
 	float Evaluate_Policy(
-		typename Wrapper<T>::Stateful_Policy policy_func,
+		typename Stateful<T>::Policy policy_func,
 		T* policy_params)
 	{
 		return this->Internal_Evaluate_Policy((Stateful_Policy_Func*)policy_func, (void*)policy_params);

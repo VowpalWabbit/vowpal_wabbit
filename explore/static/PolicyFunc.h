@@ -9,9 +9,8 @@ typedef void Stateful_Scorer_Func(void* policy_params, void* application_context
 typedef void Stateless_Scorer_Func(void* application_context, float scores[], u32 size);
 
 template <class T>
-class Stateful
+struct Stateful
 {
-public:
 	typedef u32 Policy(T& policy_params, Context& application_Context);
 	typedef void Scorer(T& policy_params, Context& application_Context, float scores[], u32 size);
 };
