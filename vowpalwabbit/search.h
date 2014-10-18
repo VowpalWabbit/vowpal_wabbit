@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
 */
-#ifndef SEARCH_H
-#define SEARCH_H
-
+#pragma once
 #include "global_data.h"
 
 #define cdbg clog
@@ -109,7 +107,13 @@ namespace Search {
 
     // get the action sequence from the test run (only run if test_only or -t or...)
     void get_test_action_sequence(vector<action>&);
-    
+
+    // get feature index mask
+	size_t get_mask();
+
+	// get stride_shift
+	size_t get_stride_shift();
+
     // internal data that you don't get to see!
     search_private* priv;
     void*           task_data;  // your task data!
@@ -225,8 +229,3 @@ namespace Search {
   void search_drive(void*);
   void search_learn(void*,example*);  
 }
-
-
-
-#endif
-

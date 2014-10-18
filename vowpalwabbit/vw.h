@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef VOWPAL_WABBIT_H
-#define VOWPAL_WABBIT_H
-
+#pragma once
 #include "global_data.h"
 #include "example.h"
 #include "hash.h"
@@ -125,5 +123,3 @@ namespace VW {
       }
   }
 }
-
-#endif

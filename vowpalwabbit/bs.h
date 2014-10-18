@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef BOOTSTRAP_H
-#define BOOTSTRAP_H
-
+#pragma once
 #define BS_TYPE_MEAN 0
 #define BS_TYPE_VOTE 1
 
@@ -44,5 +42,3 @@ namespace BS
     return 20;
   }
 }
-
-#endif

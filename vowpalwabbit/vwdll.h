@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef VWDLL_H
-#define VWDLL_H
-
+#pragma once
 #ifdef WIN32
 #define USE_CODECVT
 #endif
@@ -93,5 +91,3 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* VWDLL_H  */

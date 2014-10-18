@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef CACHE_H
-#define CACHE_H
-
+#pragma once
 #include "parse_example.h"
 
 const size_t int_size = 6;
@@ -20,4 +18,3 @@ void cache_features(io_buf& cache, example* ae, uint32_t mask);
 void output_byte(io_buf& cache, unsigned char s);
 void output_features(io_buf& cache, unsigned char index, feature* begin, feature* end, uint32_t mask);
 
-#endif

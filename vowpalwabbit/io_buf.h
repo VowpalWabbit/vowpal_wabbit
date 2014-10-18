@@ -3,10 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef IOBUF_H
-#define IOBUF_H
-
-
+#pragma once
 #ifndef _WIN32
 #include <sys/types.h>
 #include <unistd.h>
@@ -268,5 +265,3 @@ inline size_t bin_text_read_write_fixed(io_buf& io, char* data, uint32_t len,
   else
     return bin_text_write_fixed(io, data, len, text_data, text_len, text);
 }
-
-#endif
