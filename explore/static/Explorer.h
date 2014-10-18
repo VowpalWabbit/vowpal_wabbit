@@ -358,6 +358,7 @@ public:
 		void** default_policy_args,
 		u64 salt) :
 		m_bags(bags),
+		m_salt(salt),
 		m_stateful_default_policy_funcs(default_policy_functions),
 		m_stateless_default_policy_funcs(nullptr),
 		m_default_policy_params(default_policy_args)
@@ -369,6 +370,7 @@ public:
 		Stateless_Policy_Func** default_policy_functions,
 		u64 salt) :
 		m_bags(bags),
+		m_salt(salt),
 		m_stateful_default_policy_funcs(nullptr),
 		m_stateless_default_policy_funcs(default_policy_functions),
 		m_default_policy_params(nullptr)

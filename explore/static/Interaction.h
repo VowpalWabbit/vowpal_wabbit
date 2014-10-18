@@ -150,7 +150,7 @@ public:
 			other_context = new std::string(m_other_context->c_str());
 		}
 
-		return new Context(features, m_num_features, other_context);
+		return new Context(features, m_num_features, other_context, true);
 	}
 
 	void Serialize(std::ostringstream& stream)
