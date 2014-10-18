@@ -34,12 +34,12 @@ public:
 		typename StatefulFunctionWrapper<T>::Policy_Func policy_func,
 		T* policy_params)
 	{
-	  return this->Evaluate_Policy((Stateful_Policy_Func*)policy_func, (void*)policy_params);
+		return this->Internal_Evaluate_Policy((Stateful_Policy_Func*)policy_func, (void*)policy_params);
 	}
 
 	float Evaluate_Policy(StatelessFunctionWrapper::Policy_Func policy_func)
 	{
-	  return this->Evaluate_Policy((Stateless_Policy_Func*)policy_func);
+	  return this->Internal_Evaluate_Policy((Stateless_Policy_Func*)policy_func);
 	}
 
 	float Evaluate_Policy_VW_CSOAA(std::string model_input_file)
@@ -136,7 +136,7 @@ public:
 	}
 
 public:
-	float Evaluate_Policy(
+	float Internal_Evaluate_Policy(
 		Stateful_Policy_Func policy_func,
 		void* policy_params)
 	{
@@ -147,16 +147,13 @@ public:
 		return Evaluate_Policy();
 	}
 
-	float Evaluate_Policy(Stateless_Policy_Func policy_func)
+	float Internal_Evaluate_Policy(Stateless_Policy_Func policy_func)
 	{
 		m_stateful_default_policy_func = nullptr;
 		m_stateless_default_policy_func = policy_func;
 
 		return Evaluate_Policy();
 	}
-
-// Cross-language interface
-public:
 
 private:
 	float Evaluate_Policy()

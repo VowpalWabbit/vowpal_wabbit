@@ -566,8 +566,7 @@ namespace MultiWorldTesting {
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(policyFunc);
 
 		Stateful_Policy_Func* nativeFunc = static_cast<Stateful_Policy_Func*>(ip.ToPointer());
-		void* temp = policyParams.ToPointer();
-		float value = m_mwt_optimizer->Evaluate_Policy(nativeFunc, temp);
+		float value = m_mwt_optimizer->Internal_Evaluate_Policy(nativeFunc, policyParams.ToPointer());
 
 		gch.Free();
 
