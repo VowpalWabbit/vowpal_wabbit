@@ -74,7 +74,7 @@ class vw(pylibvw.vw):
     def __del__(self):
         self.finish()
 
-    def init_search_task(self, search_task):
+    def init_search_task(self, search_task, task_data=None):
         sch = self.get_search_ptr()
 
         def predict(examples, my_tag, oracle, condition=None, allowed=None, learner_id=0):
@@ -144,7 +144,7 @@ class vw(pylibvw.vw):
 
         sch.predict = predict
         num_actions = sch.get_num_actions()
-        return search_task(self, sch, num_actions)        
+        return search_task(self, sch, num_actions) if task_data is None else search_task(self, sch, num_actions, task_data)
 
 class namespace_id():
     """The namespace_id class is simply a wrapper to convert between
