@@ -632,9 +632,10 @@ namespace MultiWorldTesting {
 				return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length, nullptr);
 			}
 		}
-		finally
+		catch (Exception^ ex)
 		{
 			context->FeatureHandle.Free();
+			throw ex;
 		}
 	}
 }

@@ -164,12 +164,17 @@ namespace MultiWorldTesting {
 
 		void Flush()
 		{
-			if (File::Exists(filePath))
+			// Do not do anything if there's nothing to flush.
+			// This safe-guards against any unintended work in case Flush() is called twice.
+			if (items->Count > 0)
 			{
-				File::Delete(filePath);
+				if (File::Exists(filePath))
+				{
+					File::Delete(filePath);
+				}
+				this->WriteToFile();
+				items->Clear();
 			}
-			this->WriteToFile();
-			items->Clear();
 		}
 
 	protected:
@@ -203,13 +208,10 @@ namespace MultiWorldTesting {
 
 		void WriteToFile()
 		{
-			if (items->Count > 0)
-			{
-				XmlSerializer^ serializer = gcnew XmlSerializer(items->GetType());
-				StringWriter^ writer = gcnew StringWriter();
-				serializer->Serialize(writer, items);
-				File::WriteAllText(filePath, writer->ToString());
-			}
+			XmlSerializer^ serializer = gcnew XmlSerializer(items->GetType());
+			StringWriter^ writer = gcnew StringWriter();
+			serializer->Serialize(writer, items);
+			File::WriteAllText(filePath, writer->ToString());
 		}
 
 	private:
