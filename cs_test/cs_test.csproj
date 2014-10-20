@@ -122,6 +122,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ExploreClock.cs" />
     <Compile Include="ExploreOnlySample.cs" />
     <Compile Include="LabDemo.cs" />
     <Compile Include="Program.cs" />
