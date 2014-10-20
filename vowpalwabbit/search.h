@@ -84,7 +84,7 @@ namespace Search {
     //   * there are no more "allowed_actions" because that is implicit in the LDF
     //     example structure
     action predictLDF(        example* ecs
-                      ,       size_t ec_cnt
+                      ,       size_t   ec_cnt
                       ,       ptag     my_tag
                       , const action*  oracle_actions
                       ,       size_t   oracle_actions_cnt   = 1
@@ -93,6 +93,22 @@ namespace Search {
                       ,       size_t   learner_id           = 0
                       );
 
+    // some times during training, a call to "predict" doesn't
+    // actually use the example you pass (*), and for efficiency you
+    // might want to forgo the construction of examples in those
+    // cases. if a call to predictNeedsExample() returns true, then
+    // then any subsequent call to predict should be sure to include
+    // correctly processed examples. if it returns false, you can pass
+    // anything to the next call to predict.
+    //
+    // (*) the slight exception is for predictLDF. in this case, we
+    // always need to provide some examples so that we know which
+    // actions are possible. in LDF mode, if predictNeedsExample()
+    // returns false, then it's okay to just provide the labels in
+    // your subsequent call to predictLDF(), and skip the feature
+    // values.
+    bool   predictNeedsExample();
+    
     // get the value specified by --search_history_length
     uint32_t get_history_length();
 
@@ -109,10 +125,10 @@ namespace Search {
     void get_test_action_sequence(vector<action>&);
 
     // get feature index mask
-	size_t get_mask();
+    size_t get_mask();
 
-	// get stride_shift
-	size_t get_stride_shift();
+    // get stride_shift
+    size_t get_stride_shift();
 
     // internal data that you don't get to see!
     search_private* priv;
