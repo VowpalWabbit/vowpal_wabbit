@@ -135,7 +135,7 @@ public:
 		VW_Finish(vw);
 	}
 
-public:
+PORTING_INTERFACE:
 	float Internal_Evaluate_Policy(
 		Stateful_Policy_Func policy_func,
 		void* policy_params)

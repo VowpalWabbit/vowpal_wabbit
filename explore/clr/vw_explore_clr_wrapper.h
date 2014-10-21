@@ -1,5 +1,7 @@
 #pragma once
 
+#define MANAGED_CODE
+
 #include "MWTExplorer.h"
 #include "MWTRewardReporter.h"
 #include "MWTOptimizer.h"

@@ -129,7 +129,7 @@ public:
 	}
 
 // Cross-language interface
-public:
+PORTING_INTERFACE:
 	void Initialize_Epsilon_Greedy(
 		float epsilon, 
 		Stateful_Policy_Func default_policy_func, 

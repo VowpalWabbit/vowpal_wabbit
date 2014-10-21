@@ -51,11 +51,10 @@ namespace CBIFY {
       return 0.;
   }
 
-  u32 explore_policy(void* context, void* application_context)
+  u32 explore_policy(vw_context& ctx, Context& application_context)
   {
-	  vw_context* ctx = (vw_context*)context;
-	  ctx->l->predict(*ctx->e);
-	  return (u32)(((CB::label*)ctx->e->ld)->prediction);
+	  ctx.l->predict(*ctx.e);
+	  return (u32)(((CB::label*)ctx.e->ld)->prediction);
   }
 
   template <bool is_learn>
@@ -373,7 +372,7 @@ namespace CBIFY {
 	l = new learner(data, all.l, 1);
 	all.l->mwt = new MWTExplorer("vw");
 	all.l->mwt_policy_context = new vw_context();
-	all.l->mwt->Initialize_Tau_First(data->tau, explore_policy, all.l->mwt_policy_context, data->k);
+	all.l->mwt->Initialize_Tau_First<vw_context>(data->tau, explore_policy, *all.l->mwt_policy_context, data->k);
 	l->set_learn<cbify, predict_or_learn_first<true> >();
 	l->set_predict<cbify, predict_or_learn_first<false> >();
       }
@@ -384,7 +383,7 @@ namespace CBIFY {
 	l = new learner(data, all.l, 1);
 	all.l->mwt = new MWTExplorer("vw");
 	all.l->mwt_policy_context = new vw_context();
-	all.l->mwt->Initialize_Epsilon_Greedy(data->epsilon, explore_policy, all.l->mwt_policy_context, (uint32_t)data->k);
+	all.l->mwt->Initialize_Epsilon_Greedy<vw_context>(data->epsilon, explore_policy, *all.l->mwt_policy_context, (uint32_t)data->k);
 	l->set_learn<cbify, predict_or_learn_greedy<true> >();
 	l->set_predict<cbify, predict_or_learn_greedy<false> >();
       }
