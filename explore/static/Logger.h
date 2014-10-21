@@ -45,14 +45,17 @@ public:
   
   std::string Get_All_Interactions()
     {
-      std::ostringstream serialized_stream;
-      
-      for (size_t i = 0; i < m_interactions.size(); i++)
-	m_interactions[i]->Serialize(serialized_stream);
-      
-      this->Clear_Data();
-      
-      return serialized_stream.str();
+      std::string serialized_stream;
+	  if (m_interactions.size() > 0)
+	  {
+		  serialized_stream.reserve(1000);
+
+		  for (size_t i = 0; i < m_interactions.size(); i++)
+			  m_interactions[i]->Serialize(serialized_stream);
+
+		  this->Clear_Data();
+	  }
+      return serialized_stream;
     }
 
   void Get_All_Interactions(size_t& num_interactions, Interaction**& interactions)

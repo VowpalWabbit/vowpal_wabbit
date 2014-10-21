@@ -75,9 +75,9 @@ public:
 		MWTAction policy_action(0);
 		for (auto pInteraction : m_interactions)
 		{
-			std::ostringstream serialized_stream;
+			std::string serialized_stream;
 			pInteraction->Serialize_VW_CSOAA(serialized_stream);
-			example = VW_ReadExampleA(vw, serialized_stream.str().c_str());
+			example = VW_ReadExampleA(vw, serialized_stream.c_str());
 			//BUG: Ignore the return value pending an issue with VW causing it to return garbage
 			(void)VW_Predict(vw, example);
 			policy_action = MWTAction((u32)VW_GetCostSensitivePrediction(example));
@@ -126,9 +126,9 @@ public:
 		vw = VW_InitializeA(params.c_str());
 		for (auto pInteraction : m_interactions)
 		{
-			std::ostringstream serialized_stream;
+			std::string serialized_stream;
 			pInteraction->Serialize_VW_CSOAA(serialized_stream);
-			example = VW_ReadExampleA(vw, serialized_stream.str().c_str());	
+			example = VW_ReadExampleA(vw, serialized_stream.c_str());	
 			(void)VW_Learn(vw, example);
 			VW_FinishExample(vw, example);
 		}

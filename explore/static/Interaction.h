@@ -18,7 +18,7 @@ using namespace std;
 class Serializable
 {
 public:
-	virtual void Serialize(std::ostringstream&) = 0;
+	virtual void Serialize(std::string&) = 0;
 };
 
 struct Feature
@@ -50,9 +50,9 @@ public:
 		return m_id == second_action.Get_Id();
 	}
 
-	void Serialize(std::ostringstream& stream)
+	void Serialize(std::string& stream)
 	{
-		stream << m_id;
+		stream.append(to_string(m_id));
 	}
 
 private:
@@ -150,13 +150,20 @@ public:
 		return new Context(features, m_num_features, other_context, true);
 	}
 
-	void Serialize(std::ostringstream& stream)
+	void Serialize(std::string& stream)
 	{
 		if (m_common_features != nullptr)
 		{
 			for (size_t i = 0; i < m_num_features; i++)
 			{
-				stream << m_common_features[i].Id << ":" << m_common_features[i].Value << " ";
+				stream.append(to_string(m_common_features[i].Id));
+				stream.append(":", 1);
+
+				char feature_str[15] = { 0 };
+				NumberUtils::Float_To_String(m_common_features[i].Value, feature_str);
+
+				stream.append(feature_str);
+				stream.append(" ", 1);
 			}
 		}
 		/* TODO: How should we deal with other context?
@@ -247,21 +254,33 @@ public:
 		return new Interaction(m_context->Copy(), m_action, m_prob, m_id, true);
 	}
 
-	void Serialize(std::ostringstream& stream)
+	void Serialize(std::string& stream)
 	{
 		m_action.Serialize(stream);
 		// Use 2 decimal places for reward, probability
-		stream << " " << m_id << " ";
-		stream << std::setprecision(5) << m_prob << " | "; 
+		stream.append(" ", 1);
+		stream.append(m_id);
+		stream.append(" ", 1);
+		
+		char prob_str[10] = { 0 };
+		NumberUtils::Float_To_String(m_prob, prob_str);
+		stream.append(prob_str);
+
+		stream.append(" | ", 3);
 		m_context->Serialize(stream);
+		stream.append(";");
 	}
 
-	void Serialize_VW_CSOAA(std::ostringstream& stream)
+	void Serialize_VW_CSOAA(std::string& stream)
 	{
 		// Format is [action]:[cost]:[probability] | [features]
 		m_action.Serialize(stream);
 		// The cost is the importance-weighted reward, negated because the learner minimizes the cost
-		stream << ":" << std::fixed << std::setprecision(5) << -m_reward << ":" << m_prob << " | ";
+		stream.append(":");
+		stream.append(to_string(-m_reward));
+		stream.append(":");
+		stream.append(to_string(m_prob));
+		stream.append(" | ");
 		m_context->Serialize(stream);
 	}
 

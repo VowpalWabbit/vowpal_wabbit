@@ -468,13 +468,13 @@ namespace vw_explore_tests
 
 			ofstream myfile;
 			myfile.open("sidtest.out");
-			std::ostringstream serialized_stream;
+			std::string serialized_stream;
 			for (u32 i = 0; i < 7; i++)
 			{
 				interactions[i]->Serialize_VW_CSOAA(serialized_stream);
-				serialized_stream << "\n";
+				serialized_stream.append("\n");
 			}
-			myfile << serialized_stream.str();
+			myfile << serialized_stream;
 			myfile.close();
 
 			// Test VW's CSOAA offline optimization
@@ -506,6 +506,50 @@ namespace vw_explore_tests
 				Assert::IsTrue(bins[i] > 0);
 			}
 			this->Test_Logger(0, nullptr);
+		}
+
+		TEST_METHOD(Float_To_String)
+		{
+			PRG::prg rand;
+
+			for (int i = 0; i < 10000; i++)
+			{
+				float f = (rand.Uniform_Unit_Interval() - 0.5f) * rand.Uniform_Int(0, 100000);
+
+				ostringstream expected_stream;
+				expected_stream << std::fixed << std::setprecision(10) << f;
+				string expected_str = expected_stream.str();
+
+				char actual_chars[15] = { 0 };
+				NumberUtils::Float_To_String(f, actual_chars);
+				string actual_str(actual_chars);
+
+				size_t length = actual_str.length() - 1;
+				int compare_result = expected_str.compare(0, length, actual_str, 0, length);
+				Assert::AreEqual(0, compare_result);
+			}
+		}
+
+		TEST_METHOD(Serialized_String)
+		{
+			float epsilon = 0.5f; // No randomization
+			m_mwt->Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy, m_policy_func_arg, m_num_actions);
+
+			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(m_policy_func_arg, *m_context);
+
+			string unique_key1 = "key1";
+			string unique_key2 = "key2";
+			u32 chosen_action1 = m_mwt->Choose_Action(unique_key1, *m_context);
+			u32 chosen_action2 = m_mwt->Choose_Action(unique_key2, *m_context);
+
+			string actual_log = m_mwt->Get_All_Interactions();
+
+			char expected_log[100];
+			sprintf(expected_log, "%d %s %.5f | %d:%.5f ;%d %s %.5f | %d:%.5f ;",
+				chosen_action1, unique_key1, 0.55f, 1, 0.5f,
+				chosen_action2, unique_key2, 0.55f, 1, 0.5f);
+
+			Assert::AreEqual(expected_log, actual_log.c_str());
 		}
 
 		TEST_METHOD_INITIALIZE(Test_Initialize)
