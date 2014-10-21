@@ -9,7 +9,11 @@
 //
 // Common interface for all exploration algorithms
 //
-using namespace PRG;
+
+/*  TODO: clean up these comments
+	These classes are used internally within MwtExplorer.h. 
+	Behavior of independent external usage is undefined. 
+*/
 
 class Explorer
 {
@@ -52,7 +56,7 @@ public:
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
-		prg random_generator(m_salt + seed);
+		PRG::prg random_generator(m_salt + seed);
 		// Invoke the default policy function to get the action
 		MWTAction chosen_action(0);
 		if (m_stateless_default_policy_func != nullptr)
@@ -134,7 +138,7 @@ public:
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
-		prg random_generator(seed);
+		PRG::prg random_generator(seed);
 		MWTAction chosen_action(0);
 		u32 numScores = actions.Count();
 		float* scores = new float[numScores]();
@@ -228,7 +232,7 @@ public:
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
-		prg random_generator(seed);
+		PRG::prg random_generator(seed);
 		MWTAction chosen_action(0);
 		u32 numWeights = actions.Count();
 		float* weights = new float[numWeights]();
@@ -308,7 +312,7 @@ public:
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
-		prg random_generator(seed + m_salt);
+		PRG::prg random_generator(seed + m_salt);
 		MWTAction chosen_action(0);
 		float action_probability = 0.f;
 		bool log_action;
@@ -383,7 +387,7 @@ public:
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
-		prg random_generator(seed + m_salt);
+		PRG::prg random_generator(seed + m_salt);
 		// Select bag
 		u32 chosen_bag = random_generator.Uniform_Int(0, m_bags - 1);
 		// Invoke the default policy function to get the action

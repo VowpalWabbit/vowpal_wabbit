@@ -118,6 +118,16 @@ public:
 	        return this->Choose_Action(&context, unique_id, context);
 	}
 
+	inline std::string Get_All_Interactions()
+	{
+		return m_logger.Get_All_Interactions();
+	}
+
+	void Get_All_Interactions(size_t& num_interactions, Interaction**& interactions)
+	{
+		m_logger.Get_All_Interactions(num_interactions, interactions);
+	}
+
 // Cross-language interface
 public:
 	void Initialize_Epsilon_Greedy(
@@ -232,16 +242,6 @@ public:
 		  m_logger.Store(&pInteraction);
 		}
 		return std::get<0>(action_Probability_Log_Tuple).Get_Id();
-	}
-
-	inline std::string Get_All_Interactions()
-	{
-		return m_logger.Get_All_Interactions();
-	}
-
-	void Get_All_Interactions(size_t& num_interactions, Interaction**& interactions)
-	{
-		m_logger.Get_All_Interactions(num_interactions, interactions);
 	}
 
 private:
