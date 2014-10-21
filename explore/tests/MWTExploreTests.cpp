@@ -546,8 +546,8 @@ namespace vw_explore_tests
 
 			char expected_log[100];
 			sprintf(expected_log, "%d %s %.5f | %d:%.5f ;%d %s %.5f | %d:%.5f ;",
-				chosen_action1, unique_key1, 0.55f, 1, 0.5f,
-				chosen_action2, unique_key2, 0.55f, 1, 0.5f);
+				chosen_action1, unique_key1.c_str(), 0.55f, 1, 0.5f,
+				chosen_action2, unique_key2.c_str(), 0.55f, 1, 0.5f);
 
 			Assert::AreEqual(expected_log, actual_log.c_str());
 		}
