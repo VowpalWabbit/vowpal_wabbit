@@ -33,6 +33,14 @@ float frand48()
 	return merand48(v);
 }
 
+float frand48_noadvance()
+{
+  uint64_t old_v = v;
+  float ret = frand48();
+  v = old_v;
+  return ret;
+}
+
 /*
 //int mantissa = 128 << 15;
 

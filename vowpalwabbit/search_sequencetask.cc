@@ -298,20 +298,21 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
   void run(Search::search& sch, vector<example*>& ec) {
     task_data *data = sch.get_task_data<task_data>();
     
-    for (ptag i=0; i<ec.size(); i++) { //save state for optimization
-      for (size_t a=0; a<data->num_actions; a++) {
-        VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
+    for (ptag i=0; i<ec.size(); i++) {
+      if (sch.predictNeedsExample())  // we can skip this work if `predict` won't actually use the example data
+        for (size_t a=0; a<data->num_actions; a++) {
+          VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
 
-        // now, offset it appropriately for the action id
-        my_update_example_indicies(true, &data->ldf_examples[a], 28904713, 4832917 * (uint32_t)a);
+          // now, offset it appropriately for the action id
+          my_update_example_indicies(true, &data->ldf_examples[a], 28904713, 4832917 * (uint32_t)a);
         
-        // need to tell search what the action id is, so that it can add history features correctly!
-        CS::label* lab = (CS::label*)data->ldf_examples[a].ld;
-        lab->costs[0].x = 0.;
-        lab->costs[0].class_index = (uint32_t)a+1;
-        lab->costs[0].partial_prediction = 0.;
-        lab->costs[0].wap_value = 0.;
-      }
+          // need to tell search what the action id is, so that it can add history features correctly!
+          CS::label* lab = (CS::label*)data->ldf_examples[a].ld;
+          lab->costs[0].x = 0.;
+          lab->costs[0].class_index = (uint32_t)a+1;
+          lab->costs[0].partial_prediction = 0.;
+          lab->costs[0].wap_value = 0.;
+        }
 
       action oracle  = MULTICLASS::get_example_label(ec[i]) - 1;
       action pred_id = sch.predictLDF(data->ldf_examples,

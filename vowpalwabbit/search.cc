@@ -179,7 +179,7 @@ namespace Search {
   string   audit_feature_space("conditional");
   uint32_t conditional_constant = 8290743;
   
-  int random_policy(search_private& priv, bool allow_current, bool allow_optimal) {
+  int random_policy(search_private& priv, bool allow_current, bool allow_optimal, bool advance_prng=true) {
     if (priv.beta >= 1) {
       if (allow_current) return (int)priv.current_policy;
       if (priv.current_policy > 0) return (((int)priv.current_policy)-1);
@@ -197,10 +197,10 @@ namespace Search {
     } else if (num_valid_policies == 1)
       pid = 0;
     else if (num_valid_policies == 2)
-      pid = frand48() >= priv.beta;
+      pid = (advance_prng ? frand48() : frand48_noadvance()) >= priv.beta;
     else {
       // SPEEDUP this up in the case that beta is small!
-      float r = frand48();
+      float r = (advance_prng ? frand48() : frand48_noadvance());
       pid = 0;
 
       if (r > priv.beta) {
@@ -709,24 +709,24 @@ namespace Search {
     return best_action;
   }
 
-  int choose_policy(search_private& priv) {
+  int choose_policy(search_private& priv, bool advance_prng=true) {
     RollMethod method = (priv.state == INIT_TEST ) ? POLICY :
                         (priv.state == LEARN     ) ? priv.rollout_method :
                         (priv.state == INIT_TRAIN) ? priv.rollin_method :
                         NO_ROLLOUT;   // this should never happen
     switch (method) {
       case POLICY:
-        return random_policy(priv, priv.allow_current_policy || (priv.state == INIT_TEST), false);
+        return random_policy(priv, priv.allow_current_policy || (priv.state == INIT_TEST), false, advance_prng);
 
       case ORACLE:
         return -1;
 
       case MIX_PER_STATE:
-        return random_policy(priv, priv.allow_current_policy, true);
+        return random_policy(priv, priv.allow_current_policy, true, advance_prng);
 
       case MIX_PER_ROLL:
         if (priv.mix_per_roll_policy == -2) // then we have to choose one!
-          priv.mix_per_roll_policy = random_policy(priv, priv.allow_current_policy, true);
+          priv.mix_per_roll_policy = random_policy(priv, priv.allow_current_policy, true, advance_prng);
         return priv.mix_per_roll_policy;
 
       case NO_ROLLOUT:
@@ -882,6 +882,26 @@ namespace Search {
           del_example_conditioning(priv, ec);
       }
     }
+  }
+
+  bool search_predictNeedsExample(search_private& priv) {
+    // this is basically copied from the logic of search_predict()
+    switch (priv.state) {
+      case INITIALIZE: return false;
+      case GET_TRUTH_STRING: return false;
+      case INIT_TEST: return true;
+      case INIT_TRAIN:
+        break;
+      case LEARN:
+        if (priv.t+1 < priv.learn_t) return false;
+        if (priv.t+1 == priv.learn_t) return true;  // SPEEDUP: we really only need it on the last learn_a, but this is hard to know...
+        // t > priv.learn_t
+        if ((priv.rollout_num_steps > 0) && (priv.loss_declared_cnt >= priv.rollout_num_steps)) return false; // skipping
+        break;
+    }
+
+    int pol = choose_policy(priv, false); // choose a policy but don't advance prng
+    return (pol != -1);
   }
   
   // note: ec_cnt should be 1 if we are not LDF
@@ -1807,6 +1827,8 @@ namespace Search {
 
   void search::loss(float loss) { search_declare_loss(*this->priv, loss); }
 
+  bool search::predictNeedsExample() { return search_predictNeedsExample(*this->priv); }
+  
   stringstream& search::output() {
     if      (!this->priv->should_produce_string    ) return *(this->priv->bad_string_stream);
     else if ( this->priv->state == GET_TRUTH_STRING) return *(this->priv->truth_string);
@@ -1980,7 +2002,7 @@ namespace Search {
   predictor& predictor::set_learner_id(size_t id) { learner_id = id; return *this; }
 
   predictor& predictor::set_tag(ptag tag) { my_tag = tag; return *this; }
-    
+
   action predictor::predict() {
     const action* orA = oracle_actions.size() == 0 ? NULL : oracle_actions.begin;
     const ptag*   cOn = condition_on_names.size() == 0 ? NULL : condition_on_tags.begin;
