@@ -44,7 +44,6 @@ public:
 	static u32 Make_OneBased(u32 id) { return id + 1; }
 	static u32 Make_ZeroBased(u32 id) { return id - 1; }
 
-	//TODO: Consider making this virtual and extensible (depends on ActionSet and what we expose to the user)
 	bool Match(MWTAction& second_action)
 	{
 		return m_id == second_action.Get_Id();
@@ -271,7 +270,7 @@ public:
 		stream.append(";");
 	}
 
-	void Serialize_VW_CSOAA(std::string& stream)
+	void Serialize_VW(std::string& stream)
 	{
 		// Format is [action]:[cost]:[probability] | [features]
 		m_action.Serialize(stream);
