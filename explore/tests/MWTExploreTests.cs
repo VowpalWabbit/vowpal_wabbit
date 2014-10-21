@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MultiWorldTesting;
+using System.Collections.Generic;
 
 namespace ExploreTests
 {
@@ -254,7 +255,7 @@ namespace ExploreTests
             Assert.AreEqual(1, interactions.Length);
             Assert.AreEqual(1.0f / NumActions, interactions[0].GetProbability());
         }
-
+        
         [TestMethod]
         public void GenericStateless()
         {
@@ -267,6 +268,70 @@ namespace ExploreTests
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(1, interactions.Length);
             Assert.AreEqual(1.0f / NumActions, interactions[0].GetProbability());
+        }
+
+        // 3 separate passes of the end-to-end test for consistency & stability.
+        [TestMethod]
+        public void EndToEndScenario1()
+        {
+            Random rand = new Random();
+            
+            mwt.InitializeEpsilonGreedy(0.5f,
+                new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc), 10,
+                NumActions);
+
+            List<float> rewards = new List<float>();
+            for (int i = 0; i < 1000; i++)
+            {
+                FEATURE[] f = new FEATURE[rand.Next(800, 1201)];
+                for (int j = 0; j < f.Length; j++)
+                {
+                    f[j].Id = (uint)(j + 1);
+                    f[j].Value = (float)rand.NextDouble();
+                }
+
+                CONTEXT c = new CONTEXT(f, null);
+                mwt.ChooseAction(i.ToString(), c);
+
+                rewards.Add((float)rand.NextDouble());
+            }
+
+            INTERACTION[] partialInteractions = mwt.GetAllInteractions();
+
+            Assert.AreEqual(rewards.Count, partialInteractions.Length);
+
+            MwtRewardReporter mrr = new MwtRewardReporter(partialInteractions);
+            for (int i = 0; i < partialInteractions.Length; i++)
+            {
+                Assert.AreEqual(true, mrr.ReportReward(partialInteractions[i].GetId(), rewards[i]));
+            }
+
+            INTERACTION[] completeInteractions = mrr.GetAllInteractions();
+            MwtOptimizer mop = new MwtOptimizer(completeInteractions, NumActions);
+
+            string modelFile = "model";
+
+            mop.OptimizePolicyVWCSOAA(modelFile);
+
+            Assert.IsTrue(System.IO.File.Exists(modelFile));
+
+            float evaluatedValue = mop.EvaluatePolicyVWCSOAA(modelFile);
+
+            Assert.IsFalse(float.IsNaN(evaluatedValue));
+
+            System.IO.File.Delete(modelFile);
+        }
+
+        [TestMethod]
+        public void EndToEndScenario2()
+        {
+            EndToEndScenario1();
+        }
+
+        [TestMethod]
+        public void EndToEndScenario3()
+        {
+            EndToEndScenario1();
         }
 
         [TestInitialize]
