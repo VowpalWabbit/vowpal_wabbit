@@ -487,6 +487,52 @@ namespace vw_explore_tests
 			Assert::AreEqual((double)std::round(policy_perf), std::round((7 * reward * (1.0 / prob)) / 7));
 		}
 
+		TEST_METHOD(End_To_End_Epsilon_Greedy)
+		{
+			m_mwt->Initialize_Epsilon_Greedy<int>(0.5f, Stateful_Default_Policy, m_policy_func_arg, m_num_actions);
+
+			PRG::prg rand;
+
+			float rewards[10];
+			for (int i = 0; i < 10; i++)
+			{
+				Feature features[1000];
+				for (int j = 0; j < 1000; j++)
+				{
+					features[j].Id = j + 1;
+					features[j].Value = rand.Uniform_Unit_Interval();
+				}
+				Context c(features, 1000, nullptr);
+
+				m_mwt->Choose_Action(to_string(i), c);
+
+				rewards[i] = rand.Uniform_Unit_Interval();
+			}
+
+			Interaction** partial_interations = nullptr;
+			size_t num_interactions = 0;
+			m_mwt->Get_All_Interactions(num_interactions, partial_interations);
+
+			MWTRewardReporter mrr(num_interactions, partial_interations);
+			for (int i = 0; i < num_interactions; i++)
+			{
+				Assert::AreEqual(true, mrr.Report_Reward(partial_interations[i]->Get_Id(), rewards[i]));
+			}
+
+			string model_file("model");
+			MWTOptimizer mop(num_interactions, partial_interations, m_num_actions);
+			mop.Optimize_Policy_VW_CSOAA(model_file);
+
+			ifstream fs(model_file);
+			Assert::IsTrue(fs.good());
+			fs.close();
+
+			float evaluated_value = mop.Evaluate_Policy_VW_CSOAA(model_file);
+			Assert::IsTrue(evaluated_value == evaluated_value); // check for NaN values
+
+			remove(model_file.c_str());
+		}
+
 		TEST_METHOD(PRG_Coverage)
 		{
 			m_mwt->Initialize_Softmax(m_lambda, Stateless_Default_Scorer, m_num_actions);
