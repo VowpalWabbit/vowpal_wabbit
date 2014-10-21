@@ -122,7 +122,7 @@ void parse_dictionary_argument(vw&all, string str) {
     }
     v_array<feature>* arr = new v_array<feature>();
     push_many(*arr, ec->atomics[def].begin, ec->atomics[def].size());
-    map->put_after_get(ss, hash, arr);
+    map->put(ss, hash, arr);
   }
   dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);

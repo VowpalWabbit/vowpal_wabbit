@@ -206,8 +206,16 @@ public:
           feature_dict* map = namespace_dictionaries[index][dict];
           uint32_t hash = uniform_hash(feature_name.begin, feature_name.end-feature_name.begin, quadratic_constant);
           v_array<feature>* feats = map->get(feature_name, hash);
-          if (feats != NULL) {
-            cerr << "woohoO!" << endl;
+          if ((feats != NULL) && (feats->size() > 0)) {
+            if (ae->atomics[dictionary_namespace].size() == 0)
+              ae->indices.push_back(dictionary_namespace);
+            for (feature*f = feats->begin; f != feats->end; ++f) {
+              ae->atomics[dictionary_namespace].push_back(*f);
+              ae->sum_feat_sq[dictionary_namespace] += f->x * f->x;
+            }
+            if (audit) {
+              // TODO
+            }
           }
         }
       }

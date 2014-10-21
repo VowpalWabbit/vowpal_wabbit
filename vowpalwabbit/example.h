@@ -16,6 +16,7 @@ const size_t neighbor_namespace  = 131;   // this is \x83 -- to do quadratic, sa
 const size_t affix_namespace     = 132;   // this is \x84
 const size_t spelling_namespace  = 133;   // this is \x85
 const size_t conditioning_namespace = 134;
+const size_t dictionary_namespace  = 135;
 
 struct feature {
   float x;
