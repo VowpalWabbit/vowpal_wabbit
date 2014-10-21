@@ -10,27 +10,27 @@ namespace cs_test
     {
         private static UInt32 SampleStatefulPolicyFunc(int policyParams, CONTEXT appContext)
         {
-            return (uint)((policyParams + appContext.Features.Length) % 10 + 1);
+            return (uint)((policyParams + appContext.GetFeatures().Length) % 10 + 1);
         }
 
         private static UInt32 SampleStatefulPolicyFunc2(int policyParams, CONTEXT appContext)
         {
-            return (uint)((policyParams + appContext.Features.Length) % 10 + 2);
+            return (uint)((policyParams + appContext.GetFeatures().Length) % 10 + 2);
         }
 
         private static UInt32 SampleStatefulPolicyFunc(CustomParams policyParams, CONTEXT appContext)
         {
-            return (uint)((policyParams.Value1 + policyParams.Value2 + appContext.Features.Length) % 10 + 1);
+            return (uint)((policyParams.Value1 + policyParams.Value2 + appContext.GetFeatures().Length) % 10 + 1);
         }
 
         private static UInt32 SampleStatelessPolicyFunc(CONTEXT appContext)
         {
-            return (UInt32)appContext.Features.Length;
+            return (UInt32)appContext.GetFeatures().Length;
         }
 
         private static UInt32 SampleStatelessPolicyFunc2(CONTEXT appContext)
         {
-            return (UInt32)appContext.Features.Length + 1;
+            return (UInt32)appContext.GetFeatures().Length + 1;
         }
 
         private static void SampleStatefulScorerFunc(int policyParams, CONTEXT appContext, float[] scores)
@@ -45,7 +45,7 @@ namespace cs_test
         {
             for (uint i = 0; i < scores.Length; i++)
             {
-                scores[i] = appContext.Features.Length + i;
+                scores[i] = appContext.GetFeatures().Length + i;
             }
         }
 

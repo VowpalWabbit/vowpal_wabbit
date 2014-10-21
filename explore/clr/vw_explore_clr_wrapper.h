@@ -44,6 +44,10 @@ namespace MultiWorldTesting {
 			}
 		}
 	public:
+		cli::array<FEATURE>^ GetFeatures() { return Features; }
+		String^ GetOtherContext() { return OtherContext; }
+
+	internal:
 		cli::array<FEATURE>^ Features;
 		String^ OtherContext;
 

@@ -33,8 +33,8 @@ namespace ExploreTests
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
-            Assert.AreEqual(2, interactions[0].GetContext().Features.Length);
-            Assert.AreEqual(0.9f, interactions[0].GetContext().Features[1].Value);
+            Assert.AreEqual(2, interactions[0].GetContext().GetFeatures().Length);
+            Assert.AreEqual(0.9f, interactions[0].GetContext().GetFeatures()[1].Value);
         }
 
         [TestMethod]
@@ -55,8 +55,8 @@ namespace ExploreTests
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
-            Assert.AreEqual(2, interactions[0].GetContext().Features.Length);
-            Assert.AreEqual(0.9f, interactions[0].GetContext().Features[1].Value);
+            Assert.AreEqual(2, interactions[0].GetContext().GetFeatures().Length);
+            Assert.AreEqual(0.9f, interactions[0].GetContext().GetFeatures()[1].Value);
         }
 
         [TestMethod]
@@ -120,8 +120,8 @@ namespace ExploreTests
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
-            Assert.AreEqual(2, interactions[0].GetContext().Features.Length);
-            Assert.AreEqual(0.9f, interactions[0].GetContext().Features[1].Value);
+            Assert.AreEqual(2, interactions[0].GetContext().GetFeatures().Length);
+            Assert.AreEqual(0.9f, interactions[0].GetContext().GetFeatures()[1].Value);
         }
 
         [TestMethod]
@@ -146,8 +146,8 @@ namespace ExploreTests
             INTERACTION[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
-            Assert.AreEqual(2, interactions[0].GetContext().Features.Length);
-            Assert.AreEqual(0.9f, interactions[0].GetContext().Features[1].Value);
+            Assert.AreEqual(2, interactions[0].GetContext().GetFeatures().Length);
+            Assert.AreEqual(0.9f, interactions[0].GetContext().GetFeatures()[1].Value);
         }
 
         [TestMethod]
@@ -291,12 +291,12 @@ namespace ExploreTests
 
         private static UInt32 TestStatefulPolicyFunc(int policyParams, CONTEXT context)
         {
-            return ActionID.Make_OneBased((uint)(policyParams + context.Features.Length) % MWTExploreTests.NumActions);
+            return ActionID.Make_OneBased((uint)(policyParams + context.GetFeatures().Length) % MWTExploreTests.NumActions);
         }
 
         private static UInt32 TestStatelessPolicyFunc(CONTEXT context)
         {
-            return ActionID.Make_OneBased((uint)context.Features.Length % MWTExploreTests.NumActions);
+            return ActionID.Make_OneBased((uint)context.GetFeatures().Length % MWTExploreTests.NumActions);
         }
 
         private static void TestStatefulScorerFunc(int policyParams, CONTEXT applicationContext, float[] scores)
@@ -311,7 +311,7 @@ namespace ExploreTests
         {
             for (uint i = 0; i < scores.Length; i++)
             {
-                scores[i] = applicationContext.Features.Length;
+                scores[i] = applicationContext.GetFeatures().Length;
             }
         }
 

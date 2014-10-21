@@ -10,7 +10,7 @@ namespace cs_test
     {
         private static UInt32 SampleStatefulPolicyFunc(int policyParams, CONTEXT appContext)
         {
-            return (uint)((policyParams + appContext.Features.Length) % 10 + 1);
+            return (uint)((policyParams + appContext.GetFeatures().Length) % 10 + 1);
         }
         public static void Clock()
         {

@@ -116,13 +116,13 @@ public class LabDemo
 
     private static UInt32 ScoreBasedPolicy(float threshold, CONTEXT context)
     {
-        
-        int score_begin = context.Features.Length - 4;
-        float base_val = context.Features[score_begin].Value;
+
+        int score_begin = context.GetFeatures().Length - 4;
+        float base_val = context.GetFeatures()[score_begin].Value;
         uint num_action = 1;
         for(int i = 1;i < 4;i++) 
         {
-            if (context.Features[score_begin+i].Value >= base_val * threshold)
+            if (context.GetFeatures()[score_begin + i].Value >= base_val * threshold)
             {
                 num_action += (uint)Math.Pow(2, i - 1);
             }
