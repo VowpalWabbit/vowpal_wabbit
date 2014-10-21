@@ -17,12 +17,17 @@
 #       - Add '-t test-set' to optimize on test error rather than
 #         train-set error
 #       - Add integral-value option support
+#       - More reliable/informative progress indication
 #       Bug fixes:
 #           - Golden-section search bug-fix
 #           - Loss value capture bug-fix (can be in scientific notation)
+#           - Handle special cases where certain options don't make sense
 #   * Alex Hudek:
 #       - Support log-space search which seems to work better
 #         with --l1 (very small values) and/or hinge-loss
+#   * trufanov-nok (@github)
+#       - A bunch of very useful bug reports:
+#           https://github.com/JohnLangford/vowpal_wabbit/issues/406
 #
 use warnings;
 use strict;
@@ -92,7 +97,10 @@ sub ExecCmd {
         } else {
             while (<$pipe>) {
                 push @result, $_;
-                print STDERR ".";
+                # User feedback on training progress: ......
+                # only on real SGD (avg loss) progress
+                # (keep 'quiet' on startup/informative lines)
+                print STDERR '.' if (/^\d/);
             }
         }
         close($pipe);
@@ -534,6 +542,15 @@ sub process_args {
     usage("command: $ARGV[0]: must start with an executable")
         unless (-x $ARGV[0] || -x (fullpath($ARGV[0])));
 
+    # --- Now @ARGV contains the vw command only
+
+    # --quiet prevents progress from being detected so don't allow it
+    my @saved_argv = @ARGV; @ARGV = ();
+    foreach my $arg (@saved_argv) {
+        next if ($arg eq '--quiet');
+        push(@ARGV, $arg);
+    }
+
     my $vw_command_line = "@ARGV";
     usage("command '@ARGV': must include a '%' wildcard to optimize on")
         unless ($vw_command_line =~ /%/);
@@ -542,14 +559,6 @@ sub process_args {
     # optimize those, we must bisect while rounding to an integer
     my ($option_before_pct) = ($vw_command_line =~ /(\S+)\s+\S*%/);
     $IntegerOpt = is_integer_option($option_before_pct);
-
-    if ($vw_command_line =~ /--passes/ and
-        $vw_command_line !~ /--holdout_off/) {
-        # Not very nice, but unfortunately, average_loss when
-        # hold-out is in effect (default), is printed as 0.
-        warn "$0: multiple passes: forcing --holdout_off\n";
-        push(@ARGV, "--holdout_off");
-    }
 
     if ($opt_t) {
         # Evaluate on test:
@@ -567,7 +576,14 @@ sub process_args {
             push(@ARGV, '-f', $ModelFile);
         }
         # Add the test command after the train command
-        push(@ARGV, '&&', $ARGV[0], '-t', '-i', $ModelFile, $opt_t);
+        push(@ARGV, '&&', $ARGV[0], '-t', '-i', $ModelFile);
+
+        # Preserve the user-specified loss function, if any
+        if ($vw_command_line =~ /(--loss_function)\s+(\S+)/) {
+            push(@ARGV, $1, $2);
+        }
+        # And finally, add the test file
+        push(@ARGV, $opt_t);
         v("New -t command line: %s\n", "@ARGV");
     }
 
