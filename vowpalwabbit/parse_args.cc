@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 #include <stdio.h>
 #include <float.h>
 #include <sstream>
+#include <fstream>
 
 #include "cache.h"
 #include "io_buf.h"
@@ -63,6 +64,74 @@ bool valid_ns(char c)
     if (c=='|'||c==':')
         return false;
     return true;
+}
+
+bool substring_equal(substring&a, substring&b) {
+  return (a.end - a.begin == b.end - b.begin) // same length
+      && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
+}  
+
+void parse_dictionary_argument(vw&all, string str) {
+  if (str.length() == 0) return;
+  // expecting 'namespace:file', for instance 'w:foo.txt'
+  // in the case of just 'foo.txt' it's applied to the default namespace
+
+  char ns = ' ';
+  const char*s  = str.c_str();
+  if ((str.length() > 3) && (str[1] == ':')) {
+    ns = str[0];
+    s  += 2;
+  }
+
+  // see if we've already read this dictionary
+  for (size_t id=0; id<all.read_dictionaries.size(); id++)
+    if (strcmp(all.read_dictionaries[id].name, s) == 0) {
+      all.namespace_dictionaries[(size_t)ns].push_back(all.read_dictionaries[id].dict);
+      return;
+    }
+
+  feature_dict* map = new feature_dict(1023, NULL, substring_equal);
+  
+  // TODO: handle gzipped dictionaries
+  example *ec = alloc_examples(all.p->lp.label_size, 1);
+  ifstream infile(s);
+  size_t def = (size_t)' ';
+  for (string line; getline(infile, line);) {
+    char*c = (char*)line.c_str(); // we're throwing away const, which is dangerous...
+    while (*c == ' ' || *c == '\t') ++c; // skip initial whitespace
+    char*d = c;
+    while (*d != ' ' && *d != '\t' && *d != '\n' && *d != '\0') ++d; // gobble up initial word
+    if (d == c) continue; // no word
+    if (*d != ' ' && *d != '\t') continue; // reached end of line
+    char*word = (char*)calloc(d-c, sizeof(char));
+    memcpy(word, c, d-c);
+    substring ss = { word, word + (d - c) };
+    size_t hash = uniform_hash( word, d-c, quadratic_constant);
+    if (map->get(ss, hash) != NULL) { // don't overwrite old values!
+      free(word);
+      continue;
+    }
+    
+    d--;
+    *d = '|';  // set up for parser::read_line
+    read_line(all, ec, d);
+    // now we just need to grab stuff from the default namespace of ec!
+    if (ec->atomics[def].size() == 0) {
+      free(word);
+      continue;
+    }
+    v_array<feature>* arr = new v_array<feature>();
+    push_many(*arr, ec->atomics[def].begin, ec->atomics[def].size());
+    map->put_after_get(ss, hash, arr);
+  }
+  dealloc_example(all.p->lp.delete_label, *ec);
+  free(ec);
+  
+  cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
+  all.namespace_dictionaries[(size_t)ns].push_back(map);
+  dictionary_info info = { (char*)calloc(strlen(s)+1, sizeof(char)), map };
+  strcpy(info.name, s);
+  all.read_dictionaries.push_back(info);
 }
 
 void parse_affix_argument(vw&all, string str) {
@@ -257,6 +326,7 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
     ("skips", po::value< vector<string> >(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fn.")
     ("affix", po::value<string>(), "generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace")
     ("spelling", po::value< vector<string> >(), "compute spelling features for a give namespace (use '_' for default namespace)")
+    ("dictionary", po::value< vector<string> >(), "read a dictionary for additional features (arg either 'x:file' or just 'file')")
     ("quadratic,q", po::value< vector<string> > (), "Create and use quadratic features")
     ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
     ("cubic", po::value< vector<string> > (),
@@ -457,6 +527,12 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
 	}
     }
 
+  if (vm.count("dictionary")) {
+    vector<string> dictionary_ns = vm["dictionary"].as< vector<string> >();
+    for (size_t id=0; id<dictionary_ns.size(); id++)
+      parse_dictionary_argument(all, dictionary_ns[id]);
+  }
+  
   if (vm.count("noconstant"))
     all.add_constant = false;
 }
@@ -1087,6 +1163,12 @@ namespace VW {
     return all;
   }
 
+  void delete_dictionary_entry(substring ss, v_array<feature>*A) {
+    free(ss.begin);
+    A->delete_v();
+    delete A;
+  }
+  
   void finish(vw& all, bool delete_all)
   {
     finalize_regressor(all, all.final_regressor_name);
@@ -1104,6 +1186,14 @@ namespace VW {
       if (all.final_prediction_sink[i] != 1)
 	io_buf::close_file_or_socket(all.final_prediction_sink[i]);
     all.final_prediction_sink.delete_v();
+    for (size_t i=0; i<256; i++) all.namespace_dictionaries[i].delete_v();
+    for (size_t i=0; i<all.read_dictionaries.size(); i++) {
+      free(all.read_dictionaries[i].name);
+      all.read_dictionaries[i].dict->iter(delete_dictionary_entry);
+      all.read_dictionaries[i].dict->delete_v();
+      delete all.read_dictionaries[i].dict;
+    }
+    all.read_dictionaries.delete_v();
     delete all.loss;
     if (delete_all) delete &all;
   }
