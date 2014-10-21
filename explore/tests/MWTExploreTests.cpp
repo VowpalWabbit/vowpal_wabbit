@@ -471,7 +471,7 @@ namespace vw_explore_tests
 			std::ostringstream serialized_stream;
 			for (u32 i = 0; i < 7; i++)
 			{
-				interactions[i]->Serialize_VW_CSOAA(serialized_stream);
+				interactions[i]->Serialize_VW(serialized_stream);
 				serialized_stream << "\n";
 			}
 			myfile << serialized_stream.str();
