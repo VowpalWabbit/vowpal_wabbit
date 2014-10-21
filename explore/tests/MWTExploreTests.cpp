@@ -398,7 +398,7 @@ namespace vw_explore_tests
 			// This indicates feature "a" is present (the specific value used is not important)
 			features[0].Id = feature_a;
 			features[0].Value = feature_val; 
-			context = new Context(features, 1, true);
+			context = new Context(features, 1);
 			// Indicating this is a copy hands responsibility for freeing the context to the
 			// Interaction class (note: we may remove this interface later)
 			ids[i] = "a1_expect_1";
@@ -407,7 +407,7 @@ namespace vw_explore_tests
 			features = new Feature[3];
 			features[0].Id = feature_b;
 			features[0].Value = feature_val;
-			context = new Context(features, 1, true);
+			context = new Context(features, 1);
 			i++;
 			ids[i] = "b1_expects_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
@@ -415,7 +415,7 @@ namespace vw_explore_tests
 			features = new Feature[3];
 			features[0].Id = feature_c;
 			features[0].Value = feature_val;
-			context = new Context(features, 1, true);
+			context = new Context(features, 1);
 			i++;
 			ids[i] = "c1_expects_3";
 			interactions[i] = new Interaction(context, MWTAction(3), prob, ids[i], true);
@@ -425,7 +425,7 @@ namespace vw_explore_tests
 			features[0].Value = feature_val;
 			features[1].Id = feature_b;
 			features[1].Value = feature_val;
-			context = new Context(features, 2, true);
+			context = new Context(features, 2);
 			i++;
 			ids[i] = "ab1_expect_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
@@ -435,7 +435,7 @@ namespace vw_explore_tests
 			features[0].Value = feature_val;
 			features[1].Id = feature_c;
 			features[1].Value = feature_val;
-			context = new Context(features, 2, true);
+			context = new Context(features, 2);
 			i++;
 			ids[i] = "bc1_expect_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
@@ -445,7 +445,7 @@ namespace vw_explore_tests
 			features[0].Value = feature_val;
 			features[1].Id = feature_c;
 			features[1].Value = feature_val;
-			context = new Context(features, 2, true);
+			context = new Context(features, 2);
 			i++;
 			ids[i] = "ac1_expect_3";
 			interactions[i] = new Interaction(context, MWTAction(3), prob, ids[i], true);
@@ -453,7 +453,7 @@ namespace vw_explore_tests
 			features = new Feature[3];
 			features[0].Id = feature_d;
 			features[0].Value = feature_val;
-			context = new Context(features, 1, true);
+			context = new Context(features, 1);
 			i++;
 			ids[i] = "d1_expect_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
@@ -698,7 +698,7 @@ namespace vw_explore_tests
 					features[j].Id = j + 1;
 					features[j].Value = rand.Uniform_Unit_Interval();
 				}
-				Context c(features, 1000, nullptr);
+				Context c(features, 1000);
 
 				m_mwt->Choose_Action(to_string(i), c);
 

@@ -94,20 +94,19 @@ private:
 class Context : public Serializable
 {
 public:
-	Context(Feature* common_features, size_t num_features, bool is_copy = false) : 
+	Context(Feature* common_features, size_t num_features) : 
 		m_common_features(common_features), 
 		m_num_features(num_features),
 		m_other_context(""),
-		m_is_copy(is_copy)
+		m_is_copy(false)
 	{
 	}
 
-	Context(Feature* common_features, size_t num_features,
-		std::string other_context, bool is_copy = false) :
+	Context(Feature* common_features, size_t num_features, std::string other_context) :
 		m_common_features(common_features), 
 		m_num_features(num_features), 
 		m_other_context(other_context),
-		m_is_copy(is_copy)
+		m_is_copy(false)
 	{
 	}
 
@@ -155,6 +154,15 @@ public:
 	}
 
 private:
+	Context(Feature* common_features, size_t num_features,
+		std::string other_context, bool is_copy) :
+		m_common_features(common_features),
+		m_num_features(num_features),
+		m_other_context(other_context),
+		m_is_copy(is_copy)
+	{
+	}
+
 	Context* Copy()
 	{
 		Feature* features = nullptr;
