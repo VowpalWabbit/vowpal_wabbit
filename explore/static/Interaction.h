@@ -130,25 +130,6 @@ public:
 		}
 	}
 
-	Context* Copy()
-	{
-		Feature* features = nullptr;
-		std::string* other_context = nullptr;
-
-		if (m_num_features > 0 && m_common_features != nullptr)
-		{
-			features = new Feature[m_num_features];
-			memcpy(features, m_common_features, sizeof(Feature)*m_num_features);
-		}
-
-		if (m_other_context != nullptr)
-		{
-			other_context = new std::string(m_other_context->c_str());
-		}
-
-		return new Context(features, m_num_features, other_context, true);
-	}
-
 	void Serialize(std::string& stream)
 	{
 		if (m_common_features != nullptr)
@@ -185,11 +166,33 @@ public:
 	}
 
 private:
+	Context* Copy()
+	{
+		Feature* features = nullptr;
+		std::string* other_context = nullptr;
+
+		if (m_num_features > 0 && m_common_features != nullptr)
+		{
+			features = new Feature[m_num_features];
+			memcpy(features, m_common_features, sizeof(Feature)*m_num_features);
+		}
+
+		if (m_other_context != nullptr)
+		{
+			other_context = new std::string(m_other_context->c_str());
+		}
+
+		return new Context(features, m_num_features, other_context, true);
+	}
+
+private:
 	Feature* m_common_features;
 	size_t m_num_features;
 	std::string* m_other_context;
 	std::string m_external_other_context;
 	bool m_is_copy;
+
+	friend class Interaction;
 };
 
 class Interaction : public Serializable
@@ -248,11 +251,6 @@ public:
 		m_reward = reward;
 	}
 
-	Interaction* Copy()
-	{
-		return new Interaction(m_context->Copy(), m_action, m_prob, m_id, true);
-	}
-
 	void Serialize(std::string& stream)
 	{
 		m_action.Serialize(stream);
@@ -296,6 +294,12 @@ public:
 	}
 	
 private:
+	Interaction* Copy()
+	{
+		return new Interaction(m_context->Copy(), m_action, m_prob, m_id, true);
+	}
+
+private:
 	Context* m_context;
 	MWTAction m_action;
 	float m_prob;
@@ -306,4 +310,6 @@ private:
 
 	// Required for (C#) interop
 	void* m_external_context;
+
+	friend class Logger;
 };
