@@ -78,6 +78,7 @@ public:
   uint32_t* affix_features;
   bool* spelling_features;
   v_array<char> spelling;
+  v_array<feature_dict*>* namespace_dictionaries;
   
   ~TC_parser(){ }
   
@@ -200,6 +201,16 @@ public:
           ae->audit_features[spelling_namespace].push_back(ad);
         }
       }
+      if (namespace_dictionaries[index].size() > 0) {
+        for (size_t dict=0; dict<namespace_dictionaries[index].size(); dict++) {
+          feature_dict* map = namespace_dictionaries[index][dict];
+          uint32_t hash = uniform_hash(feature_name.begin, feature_name.end-feature_name.begin, quadratic_constant);
+          v_array<feature>* feats = map->get(feature_name, hash);
+          if (feats != NULL) {
+            cerr << "woohoO!" << endl;
+          }
+        }
+      }
     }
   }
   
@@ -314,6 +325,7 @@ public:
 	this->ae = ae;
 	this->affix_features = all.affix_features;
 	this->spelling_features = all.spelling_features;
+        this->namespace_dictionaries = all.namespace_dictionaries;
 	this->base = NULL;
 	listNameSpace();
 	if (base != NULL)
