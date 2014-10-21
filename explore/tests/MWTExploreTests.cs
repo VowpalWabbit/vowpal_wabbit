@@ -270,15 +270,92 @@ namespace ExploreTests
             Assert.AreEqual(1.0f / NumActions, interactions[0].GetProbability());
         }
 
-        // 3 separate passes of the end-to-end test for consistency & stability.
         [TestMethod]
-        public void EndToEndScenario1()
+        public void EndToEndEpsilonGreedy()
+        {
+            mwt.InitializeEpsilonGreedy(0.5f,
+                new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc), PolicyParams,
+                NumActions);
+
+            EndToEnd();
+        }
+
+        [TestMethod]
+        public void EndToEndTauFirst()
+        {
+            mwt.InitializeTauFirst<int>(5,
+                new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc),
+                PolicyParams,
+                NumActions);
+
+            EndToEnd();
+        }
+
+        [TestMethod]
+        public void EndToEndBagging()
+        {
+            StatefulPolicyDelegate<int>[] funcs = new StatefulPolicyDelegate<int>[Bags];
+            int[] funcParams = new int[Bags];
+            for (int i = 0; i < Bags; i++)
+            {
+                funcs[i] = new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc);
+                funcParams[i] = PolicyParams;
+            }
+
+            mwt.InitializeBagging(Bags, funcs, funcParams, NumActions);
+
+            EndToEnd();
+        }
+
+        [TestMethod]
+        public void EndToEndSoftmax()
+        {
+            mwt.InitializeSoftmax<int>(0.5f,
+                new StatefulScorerDelegate<int>(TestStatefulScorerFunc),
+                PolicyParams, NumActions);
+
+            EndToEnd();
+
+            mwt.InitializeGeneric<int>(
+                new StatefulScorerDelegate<int>(TestStatefulScorerFunc),
+                PolicyParams,
+                NumActions);
+        }
+
+        [TestMethod]
+        public void EndToEndGeneric()
+        {
+            mwt.InitializeGeneric<int>(
+                new StatefulScorerDelegate<int>(TestStatefulScorerFunc),
+                PolicyParams,
+                NumActions);
+
+            EndToEnd();
+        }
+
+        [TestInitialize]
+        public void TestInitialize()
+        {
+            mwt = new MwtExplorer("test");
+
+            features = new FEATURE[2];
+            features[0].Value = 0.5f;
+            features[0].Id = 1;
+            features[1].Value = 0.9f;
+            features[1].Id = 2;
+
+            context = new CONTEXT(features, "Other C# test context");
+        }
+
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            mwt.Unintialize();
+        }
+
+        private void EndToEnd()
         {
             Random rand = new Random();
-            
-            mwt.InitializeEpsilonGreedy(0.5f,
-                new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc), 10,
-                NumActions);
 
             List<float> rewards = new List<float>();
             for (int i = 0; i < 1000; i++)
@@ -297,8 +374,6 @@ namespace ExploreTests
             }
 
             INTERACTION[] partialInteractions = mwt.GetAllInteractions();
-
-            Assert.AreEqual(rewards.Count, partialInteractions.Length);
 
             MwtRewardReporter mrr = new MwtRewardReporter(partialInteractions);
             for (int i = 0; i < partialInteractions.Length; i++)
@@ -320,38 +395,6 @@ namespace ExploreTests
             Assert.IsFalse(float.IsNaN(evaluatedValue));
 
             System.IO.File.Delete(modelFile);
-        }
-
-        [TestMethod]
-        public void EndToEndScenario2()
-        {
-            EndToEndScenario1();
-        }
-
-        [TestMethod]
-        public void EndToEndScenario3()
-        {
-            EndToEndScenario1();
-        }
-
-        [TestInitialize]
-        public void TestInitialize()
-        {
-            mwt = new MwtExplorer("test");
-
-            features = new FEATURE[2];
-            features[0].Value = 0.5f;
-            features[0].Id = 1;
-            features[1].Value = 0.9f;
-            features[1].Id = 2;
-
-            context = new CONTEXT(features, "Other C# test context");
-        }
-
-        [TestCleanup]
-        public void TestCleanup()
-        {
-            mwt.Unintialize();
         }
 
         private static UInt32 TestStatefulPolicyFunc(int policyParams, CONTEXT context)
