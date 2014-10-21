@@ -161,7 +161,6 @@ namespace MultiWorldTesting {
 	private ref class MwtHelper
 	{
 	public:
-		static Context* ToNativeContext(CONTEXT^ context);
 		static Context* PinNativeContext(CONTEXT^ context);
 	};
 

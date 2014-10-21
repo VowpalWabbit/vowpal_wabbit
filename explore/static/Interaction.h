@@ -97,13 +97,13 @@ public:
 	Context(Feature* common_features, size_t num_features, bool is_copy = false) : 
 		m_common_features(common_features), 
 		m_num_features(num_features),
-		m_other_context(nullptr),
+		m_other_context(""),
 		m_is_copy(is_copy)
 	{
 	}
 
 	Context(Feature* common_features, size_t num_features,
-		std::string* other_context, bool is_copy = false) :
+		std::string other_context, bool is_copy = false) :
 		m_common_features(common_features), 
 		m_num_features(num_features), 
 		m_other_context(other_context),
@@ -111,22 +111,11 @@ public:
 	{
 	}
 
-	Context(Feature* common_features, size_t num_features,
-		std::string external_context, bool is_copy = false) :
-		m_common_features(common_features),
-		m_num_features(num_features),
-		m_external_other_context(external_context),
-		m_is_copy(is_copy)
-	{
-		m_other_context = &external_context;
-	}
-
 	~Context()
 	{
 		if (m_is_copy)
 		{
 			delete[] m_common_features;
-			delete m_other_context;
 		}
 	}
 
@@ -160,16 +149,15 @@ public:
 		num_features = m_num_features;
 	}
 
-	void Get_Other_Context(std::string*& other_context)
+	void Get_Other_Context(std::string& other_context)
 	{
-		m_other_context = other_context;
+		other_context = m_other_context;
 	}
 
 private:
 	Context* Copy()
 	{
 		Feature* features = nullptr;
-		std::string* other_context = nullptr;
 
 		if (m_num_features > 0 && m_common_features != nullptr)
 		{
@@ -177,18 +165,13 @@ private:
 			memcpy(features, m_common_features, sizeof(Feature)*m_num_features);
 		}
 
-		if (m_other_context != nullptr)
-		{
-			other_context = new std::string(m_other_context->c_str());
-		}
-
-		return new Context(features, m_num_features, other_context, true);
+		return new Context(features, m_num_features, m_other_context, true);
 	}
 
 private:
 	Feature* m_common_features;
 	size_t m_num_features;
-	std::string* m_other_context;
+	std::string m_other_context;
 	std::string m_external_other_context;
 	bool m_is_copy;
 

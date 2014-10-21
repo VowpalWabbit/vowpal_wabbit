@@ -301,9 +301,9 @@ namespace MultiWorldTesting {
 					features[i].Id = native_features[i].Id;
 				}
 
-				std::string* native_other_context = nullptr;
+				std::string native_other_context;
 				native_context->Get_Other_Context(native_other_context);
-				String^ otherContext = (native_other_context == nullptr) ? nullptr : gcnew String(native_other_context->c_str());
+				String^ otherContext = (native_other_context.empty()) ? nullptr : gcnew String(native_other_context.c_str());
 
 				interactions[i]->ApplicationContext = gcnew CONTEXT(features, otherContext);
 				interactions[i]->ChosenAction = native_interactions[i]->Get_Action().Get_Id();
@@ -451,9 +451,9 @@ namespace MultiWorldTesting {
 					features[i].Id = native_features[i].Id;
 				}
 
-				std::string* native_other_context = nullptr;
+				std::string native_other_context;
 				native_context->Get_Other_Context(native_other_context);
-				String^ otherContext = (native_other_context == nullptr) ? nullptr : gcnew String(native_other_context->c_str());
+				String^ otherContext = (native_other_context.empty()) ? nullptr : gcnew String(native_other_context.c_str());
 
 				interactions[i]->ApplicationContext = gcnew CONTEXT(features, otherContext);
 				interactions[i]->ChosenAction = m_native_interactions[i]->Get_Action().Get_Id();
@@ -579,28 +579,6 @@ namespace MultiWorldTesting {
 		return mwtOpt->InvokeDefaultPolicyFunction(context);
 	}
 
-	Context* MwtHelper::ToNativeContext(CONTEXT^ context)
-	{
-		cli::array<FEATURE>^ contextFeatures = context->Features;
-		String^ otherContext = context->OtherContext;
-
-		Feature* nativeContextFeatures = new Feature[contextFeatures->Length];
-		for (int i = 0; i < contextFeatures->Length; i++)
-		{
-			nativeContextFeatures[i].Id = contextFeatures[i].Id;
-			nativeContextFeatures[i].Value = contextFeatures[i].Value;
-		}
-
-		if (otherContext != nullptr)
-		{
-			return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length, new std::string(marshal_as<std::string>(otherContext)), true);
-		}
-		else
-		{
-			return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length, nullptr, true);
-		}
-	}
-
 	Context* MwtHelper::PinNativeContext(CONTEXT^ context)
 	{
 		cli::array<FEATURE>^ contextFeatures = context->Features;
@@ -619,7 +597,7 @@ namespace MultiWorldTesting {
 			}
 			else
 			{
-				return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length, nullptr);
+				return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length);
 			}
 		}
 		catch (Exception^ ex)
