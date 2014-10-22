@@ -51,13 +51,13 @@ public:
 		// Write exploration data to a temporary file that will be read by vw
 		ofstream myfile;
 		myfile.open(temp_file_name);
-		std::ostringstream serialized_stream;
+		std::ostringstream serialized_string;
 		for (auto pInteraction : m_interactions)
 		{
-			pInteraction->Serialize_VW_CSOAA(serialized_stream);
-			serialized_stream << "\n";
+			pInteraction->Serialize_VW_CSOAA(serialized_string);
+			serialized_string << "\n";
 		}
-		myfile << serialized_stream.str();
+		myfile << serialized_string.str();
 		myfile.close();
 
 		std::string cmd = "vw.exe -t -d " + temp_file_name + " -i " + model_input_file;
@@ -75,9 +75,9 @@ public:
 		MWTAction policy_action(0);
 		for (auto pInteraction : m_interactions)
 		{
-			std::string serialized_stream;
-			pInteraction->Serialize_VW(serialized_stream);
-			example = VW_ReadExampleA(vw, serialized_stream.c_str());
+			std::string serialized_string;
+			pInteraction->Serialize_VW(serialized_string);
+			example = VW_ReadExampleA(vw, serialized_string.c_str());
 			//BUG: Ignore the return value pending an issue with VW causing it to return garbage
 			(void)VW_Predict(vw, example);
 			policy_action = MWTAction((u32)VW_GetCostSensitivePrediction(example));
@@ -106,13 +106,13 @@ public:
 		// Write exploration data to a temporary file that will be read by vw
 		ofstream myfile;
 		myfile.open(temp_file_name);
-		std::ostringstream serialized_stream;
+		std::ostringstream serialized_string;
 		for (auto pInteraction : m_interactions)
 		{
-			pInteraction->Serialize_VW_CSOAA(serialized_stream);
-			serialized_stream << "\n";
+			pInteraction->Serialize_VW_CSOAA(serialized_string);
+			serialized_string << "\n";
 		}
-		myfile << serialized_stream.str();
+		myfile << serialized_string.str();
 		myfile.close();
 
 		std::string cmd = "vw.exe -d " + temp_file_name + " --cb " + std::to_string(m_num_actions) + " --cb_type ips --noconstant -f " + model_output_file;
@@ -126,9 +126,9 @@ public:
 		vw = VW_InitializeA(params.c_str());
 		for (auto pInteraction : m_interactions)
 		{
-			std::string serialized_stream;
-			pInteraction->Serialize_VW(serialized_stream);
-			example = VW_ReadExampleA(vw, serialized_stream.c_str());	
+			std::string serialized_string;
+			pInteraction->Serialize_VW(serialized_string);
+			example = VW_ReadExampleA(vw, serialized_string.c_str());	
 			(void)VW_Learn(vw, example);
 			VW_FinishExample(vw, example);
 		}

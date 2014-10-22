@@ -471,13 +471,13 @@ namespace vw_explore_tests
 
 			ofstream myfile;
 			myfile.open("sidtest.out");
-			std::string serialized_stream;
+			std::string serialized_string;
 			for (u32 i = 0; i < 7; i++)
 			{
-				interactions[i]->Serialize_VW(serialized_stream);
-				serialized_stream.append("\n");
+				interactions[i]->Serialize_VW(serialized_string);
+				serialized_string.append("\n");
 			}
-			myfile << serialized_stream;
+			myfile << serialized_string;
 			myfile.close();
 
 			// Test VW's CSOAA offline optimization
@@ -578,7 +578,7 @@ namespace vw_explore_tests
 			string actual_log = m_mwt->Get_All_Interactions();
 
 			char expected_log[100];
-			sprintf(expected_log, "%d %s %.5f | %d:%.5f ;%d %s %.5f | %d:%.5f ;",
+			sprintf(expected_log, "%d %s %.5f | %d:%.5f\n%d %s %.5f | %d:%.5f",
 				chosen_action1, unique_key1.c_str(), 0.55f, 1, 0.5f,
 				chosen_action2, unique_key2.c_str(), 0.55f, 1, 0.5f);
 

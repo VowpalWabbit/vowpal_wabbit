@@ -44,12 +44,12 @@ public:
 
 	std::string Get_All_Interactions()
 	{
-		std::string serialized_stream;
+		std::string serialized_string;
 		for (auto interaction : m_interactions)
 		{
-			interaction.second->Serialize(serialized_stream);
+			interaction.second->Serialize(serialized_string);
 		}
-		return serialized_stream;
+		return serialized_string;
 	}
 
 	//TODO: Add interface to get all interactions as array? How about get all complete interactions? 

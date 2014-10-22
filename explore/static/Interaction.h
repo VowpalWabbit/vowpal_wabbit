@@ -132,15 +132,12 @@ public:
 				NumberUtils::Float_To_String(m_common_features[i].Value, feature_str);
 
 				stream.append(feature_str);
-				stream.append(" ", 1);
+				if (i < m_num_features - 1)
+				{
+					stream.append(" ", 1);
+				}
 			}
 		}
-		/* TODO: How should we deal with other context?
-		if (m_other_context != nullptr)
-		{
-			stream << "| " << *m_other_context;
-		}
-		*/
 	}
 
 	void Get_Features(Feature*& features, size_t& num_features)
@@ -257,7 +254,6 @@ public:
 
 		stream.append(" | ", 3);
 		m_context->Serialize(stream);
-		stream.append(";");
 	}
 
 	void Serialize_VW(std::string& stream)
@@ -344,17 +340,23 @@ public:
 
 	std::string Get_All_Interactions()
 	{
-		std::string serialized_stream;
+		std::string serialized_string;
 		if (m_interactions.size() > 0)
 		{
-			serialized_stream.reserve(1000);
+			serialized_string.reserve(1000);
 
 			for (size_t i = 0; i < m_interactions.size(); i++)
-				m_interactions[i]->Serialize(serialized_stream);
+			{
+				m_interactions[i]->Serialize(serialized_string);
+				if (i < m_interactions.size() - 1)
+				{
+					serialized_string.append("\n");
+				}
+			}
 
 			this->Clear_Data();
 		}
-		return serialized_stream;
+		return serialized_string;
 	}
 
 	void Get_All_Interactions(size_t& num_interactions, Interaction**& interactions)
