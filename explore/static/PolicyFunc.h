@@ -3,6 +3,8 @@
 #include "utility.h"
 #include "Interaction.h"
 
+namespace MultiWorldTesting {
+
 typedef u32 Stateful_Policy_Func(void* policy_params, void* application_context);
 typedef u32 Stateless_Policy_Func(void* application_context);
 typedef void Stateful_Scorer_Func(void* policy_params, void* application_context, float scores[], u32 size);
@@ -17,3 +19,5 @@ struct Stateful
 
 typedef u32 Policy(Context& application_Context);
 typedef void Scorer(Context& application_Context, float scores[], u32 size);
+
+}

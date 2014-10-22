@@ -16,6 +16,8 @@ using namespace std;
 // the C++11 constexpr keyword, which is needed to initialize such non-integer types.
 #define NO_REWARD -FLT_MAX
 
+namespace MultiWorldTesting {
+
 class Serializable
 {
 public:
@@ -379,3 +381,4 @@ public:
 private:
 	std::vector<Interaction*> m_interactions;
 };
+}

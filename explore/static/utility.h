@@ -27,6 +27,8 @@ typedef unsigned char    byte;
 #include <string>
 #include <stdint.h>
 
+namespace MultiWorldTesting {
+
 class HashUtils
 {
 public:
@@ -90,4 +92,5 @@ namespace PRG {
 			return ret;
 		}
 	};
+}
 }

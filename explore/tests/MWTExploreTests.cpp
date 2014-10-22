@@ -5,6 +5,7 @@
 #include "MWTOptimizer.h"
 #include "utility.h"
 
+using namespace MultiWorldTesting;
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 #define COUNT_INVALID(block) try { block } catch (std::invalid_argument) { num_ex++; }

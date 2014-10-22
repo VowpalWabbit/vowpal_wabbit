@@ -25,7 +25,9 @@
 
 #include <sys/types.h>  /* defines size_t */
 
-// Platform-specific functions and macros
+namespace MultiWorldTesting {
+
+	// Platform-specific functions and macros
 #if defined(_MSC_VER)                       // Microsoft Visual Studio
 #   include <stdint.h>
 
@@ -116,3 +118,4 @@ public:
 	return fmix(h1);
   }
 };
+}

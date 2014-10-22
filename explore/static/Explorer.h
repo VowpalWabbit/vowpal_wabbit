@@ -14,6 +14,7 @@
 	These classes are used internally within MwtExplorer.h. 
 	Behavior of independent external usage is undefined. 
 */
+namespace MultiWorldTesting {
 
 class Explorer
 {
@@ -431,3 +432,4 @@ private:
 	Stateless_Policy_Func** m_stateless_default_policy_funcs;
 	void** m_default_policy_params;
 };
+}

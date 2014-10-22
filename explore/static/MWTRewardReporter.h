@@ -1,5 +1,6 @@
 #include "Common.h"
 
+namespace MultiWorldTesting {
 //
 // Top-level internal API for joining reward information to interaction data.
 //
@@ -58,3 +59,4 @@ public:
 private:
 	std::map<u64, Interaction*> m_interactions;
 };
+}

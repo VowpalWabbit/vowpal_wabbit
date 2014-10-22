@@ -9,6 +9,7 @@
 #include "../explore/static/MWTExplorer.h"
 
 using namespace LEARNER;
+using namespace MultiWorldTesting;
 
 namespace CBIFY {
 

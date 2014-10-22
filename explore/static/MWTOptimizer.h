@@ -4,6 +4,7 @@
 #include "vwdll.h"
 //#include <fstream>
 
+namespace MultiWorldTesting {
 //
 // Top-level internal API for offline evaluation/optimization.
 //
@@ -195,3 +196,4 @@ private:
 	Stateless_Policy_Func* m_stateless_default_policy_func;
 	void* m_default_policy_params;
 };
+}

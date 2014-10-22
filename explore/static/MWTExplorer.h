@@ -9,6 +9,7 @@
 #include <functional>
 #include <tuple>
 
+namespace MultiWorldTesting {
 //
 // Top-level internal API for exploration (randomized decision making).
 //
@@ -360,3 +361,4 @@ private:
 	ActionSet m_action_set;
 	u64 m_app_id;
 };
+}
