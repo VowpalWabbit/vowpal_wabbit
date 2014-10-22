@@ -29,7 +29,7 @@ namespace vw_explore_tests
 			Assert::AreEqual(expected_action, chosen_action);
 
 			float expected_probs[2] = { 1.f, 1.f };
-			this->Test_Logger(2, expected_probs);
+			this->Test_Interaction_Store(2, expected_probs);
 		}
 
 		TEST_METHOD(Epsilon_Greedy_Stateless)
@@ -44,7 +44,7 @@ namespace vw_explore_tests
 			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(*m_context));
 
 			float expected_probs[2] = { 1.f, 1.f };
-			this->Test_Logger(2, expected_probs);
+			this->Test_Interaction_Store(2, expected_probs);
 		}
 
 		TEST_METHOD(Epsilon_Greedy_Random)
@@ -70,7 +70,7 @@ namespace vw_explore_tests
 			Assert::AreEqual(expected_action, chosen_action);
 
 			// tau = 0 means no randomization and no logging
-			this->Test_Logger(0, nullptr);
+			this->Test_Interaction_Store(0, nullptr);
 		}
 
 		TEST_METHOD(Tau_First_Stateless)
@@ -81,7 +81,7 @@ namespace vw_explore_tests
 			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
 			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(*m_context));
 
-			this->Test_Logger(0, nullptr);
+			this->Test_Interaction_Store(0, nullptr);
 		}
 
 		TEST_METHOD(Tau_First_Random)
@@ -98,7 +98,7 @@ namespace vw_explore_tests
 
 			// Only 2 interactions logged, 3rd one should not be stored
 			float expected_probs[2] = { .1f, .1f };
-			this->Test_Logger(2, expected_probs);
+			this->Test_Interaction_Store(2, expected_probs);
 		}
 
 		TEST_METHOD(Bagging_Stateful)
@@ -116,7 +116,7 @@ namespace vw_explore_tests
 			
 			// All bags choose the same action, so prob = 1
 			float expected_probs[2] = { 1.f, 1.f };
-			this->Test_Logger(2, expected_probs);
+			this->Test_Interaction_Store(2, expected_probs);
 		}
 
 		TEST_METHOD(Bagging_Stateless)
@@ -134,7 +134,7 @@ namespace vw_explore_tests
 
 			// All bags choose the same action, so prob = 1
 			float expected_probs[2] = { 1.f, 1.f };
-			this->Test_Logger(2, expected_probs);
+			this->Test_Interaction_Store(2, expected_probs);
 		}
 
 		TEST_METHOD(Bagging_Random)
@@ -150,7 +150,7 @@ namespace vw_explore_tests
 
 			// Two bags choosing different actions so prob of each is 1/2
 			float expected_probs[2] = { .5f, .5f };
-			this->Test_Logger(2, expected_probs);
+			this->Test_Interaction_Store(2, expected_probs);
 		}
 
 		TEST_METHOD(Softmax_Stateful)
@@ -178,7 +178,7 @@ namespace vw_explore_tests
 				// Our default scorer currently assigns equal weight to each action
 				expected_probs[i] = 1.0 / m_num_actions;
 			}
-			this->Test_Logger(num_decisions, expected_probs);
+			this->Test_Interaction_Store(num_decisions, expected_probs);
 
 			delete actions;
 			delete expected_probs;
@@ -208,7 +208,7 @@ namespace vw_explore_tests
 				// Our default scorer currently assigns equal weight to each action
 				expected_probs[i] = 1.0 / m_num_actions;
 			}
-			this->Test_Logger(num_decisions, expected_probs);
+			this->Test_Interaction_Store(num_decisions, expected_probs);
 
 			delete actions;
 			delete expected_probs;
@@ -265,7 +265,7 @@ namespace vw_explore_tests
 			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(3), *m_context);
 
 			float expected_probs[3] = { .1f, .1f, .1f };
-			this->Test_Logger(3, expected_probs);
+			this->Test_Interaction_Store(3, expected_probs);
 		}
 
 		TEST_METHOD(Generic_Stateless)
@@ -282,7 +282,7 @@ namespace vw_explore_tests
 				(chosen_action2 - 1.f) / total_scores, 
 				(chosen_action3 - 1.f) / total_scores 
 			};
-			this->Test_Logger(3, expected_probs);
+			this->Test_Interaction_Store(3, expected_probs);
 		}
 
 		TEST_METHOD(Reward_Reporter)
@@ -538,7 +538,7 @@ namespace vw_explore_tests
 			{
 				Assert::IsTrue(bins[i] > 0);
 			}
-			this->Test_Logger(0, nullptr);
+			this->Test_Interaction_Store(0, nullptr);
 		}
 
 		TEST_METHOD(Float_To_String)
@@ -791,7 +791,7 @@ namespace vw_explore_tests
 			remove(model_file.c_str());
 		}
 
-		inline void Test_Logger(int num_interactions_expected, float* probs_expected)
+		inline void Test_Interaction_Store(int num_interactions_expected, float* probs_expected)
 		{
 			size_t num_interactions = 0;
 			Interaction** interactions = nullptr;

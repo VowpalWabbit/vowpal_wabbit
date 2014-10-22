@@ -121,12 +121,12 @@ public:
 
 	inline std::string Get_All_Interactions()
 	{
-		return m_logger.Get_All_Interactions();
+		return m_interaction_store.Get_All_Interactions();
 	}
 
 	void Get_All_Interactions(size_t& num_interactions, Interaction**& interactions)
 	{
-		m_logger.Get_All_Interactions(num_interactions, interactions);
+		m_interaction_store.Get_All_Interactions(num_interactions, interactions);
 	}
 
 // Cross-language interface
@@ -267,7 +267,7 @@ PORTING_INTERFACE:
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new GenericExplorer(default_scorer_func, m_app_id);
 	}
-
+	
 	// The parameters here look weird but are required to interface with C#:
 	// The void* and Context& parameters are references to the same Context object.
 	// Void* is required to pass back to the default policy function which could live in either native or managed space.
@@ -286,7 +286,7 @@ PORTING_INTERFACE:
 		{
 		// Create an interaction using the same unique_id as used in the seed above!
 		  Interaction pInteraction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), unique_id);
-		  m_logger.Store(&pInteraction);
+		  m_interaction_store.Store(&pInteraction);
 		}
 		return std::get<0>(action_Probability_Log_Tuple).Get_Id();
 	}
@@ -354,7 +354,7 @@ private:
 
 private:
 	Explorer* m_explorer;
-	Logger m_logger;
+	InteractionStore m_interaction_store;
 	ActionSet m_action_set;
 	u64 m_app_id;
 };

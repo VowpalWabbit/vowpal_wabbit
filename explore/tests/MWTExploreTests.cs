@@ -315,11 +315,6 @@ namespace ExploreTests
                 PolicyParams, NumActions);
 
             EndToEnd();
-
-            mwt.InitializeGeneric<int>(
-                new StatefulScorerDelegate<int>(TestStatefulScorerFunc),
-                PolicyParams,
-                NumActions);
         }
 
         [TestMethod]
