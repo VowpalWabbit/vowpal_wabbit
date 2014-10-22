@@ -582,6 +582,35 @@ namespace vw_explore_tests
 			Assert::AreEqual(expected_log, actual_log.c_str());
 		}
 
+		TEST_METHOD(Bad_Usage)
+		{
+			bool invalid_exception = false;
+			try
+			{
+				invalid_exception = false;
+				MWTExplorer mwt("");
+				Context context(nullptr, 0);
+				mwt.Choose_Action("test", context);
+			}
+			catch (std::invalid_argument ia_ex)
+			{
+				invalid_exception = true;
+			}
+			Assert::IsTrue(invalid_exception);
+
+			try
+			{
+				invalid_exception = false;
+				MWTExplorer mwt("");
+				mwt.Initialize_Epsilon_Greedy(0.5f, Stateless_Default_Policy, 0);
+			}
+			catch (std::invalid_argument ia_ex)
+			{
+				invalid_exception = true;
+			}
+			Assert::IsTrue(invalid_exception);
+		}
+
 		TEST_METHOD_INITIALIZE(Test_Initialize)
 		{
 			// Constant for coverage tests: using Pr(T > nlnn + cn) < 1 - exp(-e^(-c)) for the time

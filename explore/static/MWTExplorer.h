@@ -136,6 +136,8 @@ PORTING_INTERFACE:
 		void* default_policy_func_argument, 
 		u32 num_actions)
 	{
+		Validate_Epsilon(epsilon);
+		Validate_Num_Actions(num_actions);
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new EpsilonGreedyExplorer(epsilon, default_policy_func, default_policy_func_argument, m_app_id);
 	}
@@ -145,6 +147,8 @@ PORTING_INTERFACE:
 		Stateless_Policy_Func default_policy_func,
 		u32 num_actions)
 	{
+		Validate_Epsilon(epsilon);
+		Validate_Num_Actions(num_actions);
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new EpsilonGreedyExplorer(epsilon, default_policy_func, m_app_id);
 	}
@@ -155,6 +159,7 @@ PORTING_INTERFACE:
 		void* default_policy_func_argument,
 		u32 num_actions)
 	{
+		Validate_Num_Actions(num_actions);
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new TauFirstExplorer(tau, default_policy_func, default_policy_func_argument, m_app_id);
 	}
@@ -164,6 +169,7 @@ PORTING_INTERFACE:
 		Stateless_Policy_Func default_policy_func,
 		u32 num_actions)
 	{
+		Validate_Num_Actions(num_actions);
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new TauFirstExplorer(tau, default_policy_func, m_app_id);
 	}
@@ -174,6 +180,8 @@ PORTING_INTERFACE:
 		void** default_policy_args,
 		u32 num_actions)
 	{
+		Validate_Bags(bags);
+		Validate_Num_Actions(num_actions);
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new BaggingExplorer(bags, default_policy_functions, default_policy_args, m_app_id);
 	}
@@ -183,6 +191,8 @@ PORTING_INTERFACE:
 		Stateless_Policy_Func** default_policy_functions,
 		u32 num_actions)
 	{
+		Validate_Bags(bags);
+		Validate_Num_Actions(num_actions);
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new BaggingExplorer(bags, default_policy_functions, m_app_id);
 	}
@@ -193,6 +203,7 @@ PORTING_INTERFACE:
 		void* default_scorer_func_argument,
 		u32 num_actions)
 	{
+		Validate_Num_Actions(num_actions);
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func, default_scorer_func_argument, m_app_id);
 	}
@@ -202,6 +213,7 @@ PORTING_INTERFACE:
 		Stateless_Scorer_Func default_scorer_func,
 		u32 num_actions)
 	{
+		Validate_Num_Actions(num_actions);
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func, m_app_id);
 	}
@@ -211,6 +223,7 @@ PORTING_INTERFACE:
 		void* default_scorer_func_argument,
 		u32 num_actions)
 	{
+		Validate_Num_Actions(num_actions);
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new GenericExplorer(default_scorer_func, default_scorer_func_argument, m_app_id);
 	}
@@ -219,6 +232,7 @@ PORTING_INTERFACE:
 		Stateless_Scorer_Func default_scorer_func,
 		u32 num_actions)
 	{
+		Validate_Num_Actions(num_actions);
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new GenericExplorer(default_scorer_func, m_app_id);
 	}
@@ -242,6 +256,29 @@ PORTING_INTERFACE:
 		  m_logger.Store(&pInteraction);
 		}
 		return std::get<0>(action_Probability_Log_Tuple).Get_Id();
+	}
+
+private:
+	void Validate_Num_Actions(u32 num_actions)
+	{
+		if (num_actions < 1)
+		{
+			throw std::invalid_argument("Number of actions must be at least 1.");
+		}
+	}
+	void Validate_Epsilon(float epsilon)
+	{
+		if (epsilon < 0 || epsilon > 1)
+		{
+			throw std::invalid_argument("Epsilon must be between 0 and 1.");
+		}
+	}
+	void Validate_Bags(u32 bags)
+	{
+		if (bags < 1)
+		{
+			throw std::invalid_argument("Number of bags must be at least 1.");
+		}
 	}
 
 private:
