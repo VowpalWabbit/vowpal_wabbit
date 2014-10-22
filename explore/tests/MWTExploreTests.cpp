@@ -7,8 +7,10 @@
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
+#define COUNT_INVALID(block) try { block } catch (std::invalid_argument) { num_ex++; }
+
 namespace vw_explore_tests
-{		
+{
 	TEST_CLASS(VWExploreUnitTests)
 	{
 	public:
@@ -582,33 +584,52 @@ namespace vw_explore_tests
 			Assert::AreEqual(expected_log, actual_log.c_str());
 		}
 
-		TEST_METHOD(Bad_Usage)
+		TEST_METHOD(Usage_Bad_Arguments)
 		{
 			bool invalid_exception = false;
-			try
-			{
+
+			int num_ex = 0;
+			COUNT_INVALID
+			(
 				invalid_exception = false;
 				MWTExplorer mwt("");
 				Context context(nullptr, 0);
 				mwt.Choose_Action("test", context);
-			}
-			catch (std::invalid_argument ia_ex)
-			{
-				invalid_exception = true;
-			}
-			Assert::IsTrue(invalid_exception);
+			)
+			Assert::AreEqual(1, num_ex);
 
-			try
-			{
+			num_ex = 0;
+			COUNT_INVALID
+			(
 				invalid_exception = false;
 				MWTExplorer mwt("");
 				mwt.Initialize_Epsilon_Greedy(0.5f, Stateless_Default_Policy, 0);
-			}
-			catch (std::invalid_argument ia_ex)
-			{
-				invalid_exception = true;
-			}
-			Assert::IsTrue(invalid_exception);
+			)
+			Assert::AreEqual(1, num_ex);
+
+			num_ex = 0;
+			
+			Stateful<int>::Policy* stateful_funcs[2] = { Stateful_Default_Policy, nullptr };
+			Policy* stateless_funcs[2] = { nullptr, Stateless_Default_Policy };
+
+			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Epsilon_Greedy(0.5f, nullptr, m_num_actions);)
+			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Epsilon_Greedy<int>(0.5f, nullptr, m_policy_func_arg, m_num_actions);)
+			
+			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Tau_First<int>(1, nullptr, m_policy_func_arg, m_num_actions);)
+			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Tau_First(2, nullptr, m_num_actions);)
+			
+			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Bagging<int>(1, nullptr, *m_policy_params, m_num_actions);)
+			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Bagging(1, nullptr, m_num_actions);)
+			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Bagging<int>(2, stateful_funcs, *m_policy_params, m_num_actions);)
+			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Bagging(2, stateless_funcs, m_num_actions);)
+			
+			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Softmax<int>(0.5f, nullptr, m_policy_func_arg, m_num_actions);)
+			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Softmax(0.5f, nullptr, m_num_actions);)
+			
+			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Generic<int>(nullptr, m_policy_func_arg, m_num_actions);)
+			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Generic(nullptr, m_num_actions);)
+			
+			Assert::AreEqual(12, num_ex);
 		}
 
 		TEST_METHOD_INITIALIZE(Test_Initialize)
