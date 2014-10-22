@@ -197,7 +197,7 @@ namespace MultiWorldTesting {
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultPolicyFunc);
 
 		Stateful_Policy_Func* nativeFunc = static_cast<Stateful_Policy_Func*>(ip.ToPointer());
-		m_mwt->Initialize_Epsilon_Greedy(epsilon, nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
+		m_mwt->Internal_Initialize_Epsilon_Greedy(epsilon, nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
 	}
 
 	void MwtExplorer::InitializeTauFirst(UInt32 tau, InternalStatefulPolicyDelegate^ defaultPolicyFunc, System::IntPtr defaultPolicyFuncContext, UInt32 numActions)
@@ -206,7 +206,7 @@ namespace MultiWorldTesting {
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultPolicyFunc);
 
 		Stateful_Policy_Func* nativeFunc = static_cast<Stateful_Policy_Func*>(ip.ToPointer());
-		m_mwt->Initialize_Tau_First(tau, nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
+		m_mwt->Internal_Initialize_Tau_First(tau, nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
 	}
 
 	void MwtExplorer::InitializeBagging(UInt32 bags, cli::array<InternalStatefulPolicyDelegate^>^ defaultPolicyFuncs, cli::array<IntPtr>^ defaultPolicyArgs, UInt32 numActions)
@@ -225,7 +225,7 @@ namespace MultiWorldTesting {
 			m_bagging_func_params[i] = defaultPolicyArgs[i].ToPointer();
 		}
 
-		m_mwt->Initialize_Bagging(bags, m_bagging_funcs, m_bagging_func_params, numActions);
+		m_mwt->Internal_Initialize_Bagging(bags, m_bagging_funcs, m_bagging_func_params, numActions);
 	}
 
 	void MwtExplorer::InitializeSoftmax(float lambda, InternalStatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions)
@@ -234,7 +234,7 @@ namespace MultiWorldTesting {
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultScorerFunc);
 
 		Stateful_Scorer_Func* nativeFunc = static_cast<Stateful_Scorer_Func*>(ip.ToPointer());
-		m_mwt->Initialize_Softmax(lambda, nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
+		m_mwt->Internal_Initialize_Softmax(lambda, nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
 	}
 
 	void MwtExplorer::InitializeGeneric(InternalStatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions)
@@ -243,7 +243,7 @@ namespace MultiWorldTesting {
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultScorerFunc);
 
 		Stateful_Scorer_Func* nativeFunc = static_cast<Stateful_Scorer_Func*>(ip.ToPointer());
-		m_mwt->Initialize_Generic(nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
+		m_mwt->Internal_Initialize_Generic(nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
 	}
 
 	UInt32 MwtExplorer::ChooseAction(String^ uniqueId, CONTEXT^ context)
@@ -259,7 +259,7 @@ namespace MultiWorldTesting {
 
 		size_t uniqueIdLength = (size_t)uniqueId->Length;
 
-		chosenAction = m_mwt->Choose_Action(
+		chosenAction = m_mwt->Internal_Choose_Action(
 			contextPtr.ToPointer(),
 			nativeUniqueKey, 
 			*log_context);

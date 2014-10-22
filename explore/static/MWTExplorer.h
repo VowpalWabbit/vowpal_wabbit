@@ -31,7 +31,7 @@ public:
 		typename Stateful<T>::Policy default_policy_func, 
 		T& default_policy_params, u32 num_actions)
 	{
-		this->Initialize_Epsilon_Greedy(epsilon, (Stateful_Policy_Func*)default_policy_func, (void*)&default_policy_params, num_actions);
+		this->Internal_Initialize_Epsilon_Greedy(epsilon, (Stateful_Policy_Func*)default_policy_func, (void*)&default_policy_params, num_actions);
 	}
 
 	void Initialize_Epsilon_Greedy(
@@ -39,7 +39,7 @@ public:
 		Policy default_policy_func,
 		u32 num_actions)
 	{
-		this->Initialize_Epsilon_Greedy(epsilon, (Stateless_Policy_Func*)default_policy_func, num_actions);
+		this->Internal_Initialize_Epsilon_Greedy(epsilon, (Stateless_Policy_Func*)default_policy_func, num_actions);
 	}
 
 	/* Tau-first initialization */
@@ -50,7 +50,7 @@ public:
 		T& default_policy_params,
 		u32 num_actions)
 	{
-		this->Initialize_Tau_First(tau, (Stateful_Policy_Func*)default_policy_func, (void*)&default_policy_params, num_actions);
+		this->Internal_Initialize_Tau_First(tau, (Stateful_Policy_Func*)default_policy_func, (void*)&default_policy_params, num_actions);
 	}
 
 	void Initialize_Tau_First(
@@ -58,7 +58,7 @@ public:
 		Policy default_policy_func,
 		u32 num_actions)
 	{
-		this->Initialize_Tau_First(tau, (Stateless_Policy_Func*)default_policy_func, num_actions);
+		this->Internal_Initialize_Tau_First(tau, (Stateless_Policy_Func*)default_policy_func, num_actions);
 	}
 
 	/* Bagging initialization */
@@ -69,7 +69,7 @@ public:
 		T*& default_policy_params,
 		u32 num_actions)
 	{
-		this->Initialize_Bagging(bags, (Stateful_Policy_Func**)default_policy_functions, (void**)&default_policy_params, num_actions);
+		this->Internal_Initialize_Bagging(bags, (Stateful_Policy_Func**)default_policy_functions, (void**)&default_policy_params, num_actions);
 	}
 
 	void Initialize_Bagging(
@@ -77,7 +77,7 @@ public:
 		Policy** default_policy_functions,
 		u32 num_actions)
 	{
-		this->Initialize_Bagging(bags, (Stateless_Policy_Func**)default_policy_functions, num_actions);
+		this->Internal_Initialize_Bagging(bags, (Stateless_Policy_Func**)default_policy_functions, num_actions);
 	}
 
 	/* Softmax initialization */
@@ -87,7 +87,7 @@ public:
 		typename Stateful<T>::Scorer default_scorer_func,
 		T& default_scorer_params, u32 num_actions)
 	{
-		this->Initialize_Softmax(lambda, (Stateful_Scorer_Func*)default_scorer_func, (void*)&default_scorer_params, num_actions);
+		this->Internal_Initialize_Softmax(lambda, (Stateful_Scorer_Func*)default_scorer_func, (void*)&default_scorer_params, num_actions);
 	}
 
 	void Initialize_Softmax(
@@ -95,7 +95,7 @@ public:
 		Scorer default_scorer_func,
 		u32 num_actions)
 	{
-		this->Initialize_Softmax(lambda, (Stateless_Scorer_Func*)default_scorer_func, num_actions);
+		this->Internal_Initialize_Softmax(lambda, (Stateless_Scorer_Func*)default_scorer_func, num_actions);
 	}
 
 	/* Generic initialization */
@@ -104,18 +104,18 @@ public:
 		typename Stateful<T>::Scorer default_scorer_func,
 		T& default_scorer_params, u32 num_actions)
 	{
-		this->Initialize_Generic((Stateful_Scorer_Func*)default_scorer_func, (void*)&default_scorer_params, num_actions);
+		this->Internal_Initialize_Generic((Stateful_Scorer_Func*)default_scorer_func, (void*)&default_scorer_params, num_actions);
 	}
 
 	void Initialize_Generic(
 		Scorer default_scorer_func, u32 num_actions)
 	{
-		this->Initialize_Generic((Stateless_Scorer_Func*)default_scorer_func, num_actions);
+		this->Internal_Initialize_Generic((Stateless_Scorer_Func*)default_scorer_func, num_actions);
 	}
 
 	u32 Choose_Action(std::string unique_id, Context& context)
 	{
-	        return this->Choose_Action(&context, unique_id, context);
+		return this->Internal_Choose_Action(&context, unique_id, context);
 	}
 
 	inline std::string Get_All_Interactions()
@@ -130,7 +130,7 @@ public:
 
 // Cross-language interface
 PORTING_INTERFACE:
-	void Initialize_Epsilon_Greedy(
+	void Internal_Initialize_Epsilon_Greedy(
 		float epsilon, 
 		Stateful_Policy_Func default_policy_func, 
 		void* default_policy_func_argument, 
@@ -142,7 +142,7 @@ PORTING_INTERFACE:
 		m_explorer = new EpsilonGreedyExplorer(epsilon, default_policy_func, default_policy_func_argument, m_app_id);
 	}
 
-	void Initialize_Epsilon_Greedy(
+	void Internal_Initialize_Epsilon_Greedy(
 		float epsilon, 
 		Stateless_Policy_Func default_policy_func,
 		u32 num_actions)
@@ -153,7 +153,7 @@ PORTING_INTERFACE:
 		m_explorer = new EpsilonGreedyExplorer(epsilon, default_policy_func, m_app_id);
 	}
 
-	void Initialize_Tau_First(
+	void Internal_Initialize_Tau_First(
 		u32 tau, 
 		Stateful_Policy_Func default_policy_func, 
 		void* default_policy_func_argument,
@@ -164,7 +164,7 @@ PORTING_INTERFACE:
 		m_explorer = new TauFirstExplorer(tau, default_policy_func, default_policy_func_argument, m_app_id);
 	}
 
-	void Initialize_Tau_First(
+	void Internal_Initialize_Tau_First(
 		u32 tau, 
 		Stateless_Policy_Func default_policy_func,
 		u32 num_actions)
@@ -174,7 +174,7 @@ PORTING_INTERFACE:
 		m_explorer = new TauFirstExplorer(tau, default_policy_func, m_app_id);
 	}
 
-	void Initialize_Bagging(
+	void Internal_Initialize_Bagging(
 		u32 bags,
 		Stateful_Policy_Func** default_policy_functions,
 		void** default_policy_args,
@@ -186,7 +186,7 @@ PORTING_INTERFACE:
 		m_explorer = new BaggingExplorer(bags, default_policy_functions, default_policy_args, m_app_id);
 	}
 
-	void Initialize_Bagging(
+	void Internal_Initialize_Bagging(
 		u32 bags,
 		Stateless_Policy_Func** default_policy_functions,
 		u32 num_actions)
@@ -197,7 +197,7 @@ PORTING_INTERFACE:
 		m_explorer = new BaggingExplorer(bags, default_policy_functions, m_app_id);
 	}
 
-	void Initialize_Softmax(
+	void Internal_Initialize_Softmax(
 		float lambda,
 		Stateful_Scorer_Func default_scorer_func,
 		void* default_scorer_func_argument,
@@ -208,7 +208,7 @@ PORTING_INTERFACE:
 		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func, default_scorer_func_argument, m_app_id);
 	}
 
-	void Initialize_Softmax(
+	void Internal_Initialize_Softmax(
 		float lambda,
 		Stateless_Scorer_Func default_scorer_func,
 		u32 num_actions)
@@ -218,7 +218,7 @@ PORTING_INTERFACE:
 		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func, m_app_id);
 	}
 
-	void Initialize_Generic(
+	void Internal_Initialize_Generic(
 		Stateful_Scorer_Func default_scorer_func,
 		void* default_scorer_func_argument,
 		u32 num_actions)
@@ -228,7 +228,7 @@ PORTING_INTERFACE:
 		m_explorer = new GenericExplorer(default_scorer_func, default_scorer_func_argument, m_app_id);
 	}
 
-	void Initialize_Generic(
+	void Internal_Initialize_Generic(
 		Stateless_Scorer_Func default_scorer_func,
 		u32 num_actions)
 	{
@@ -241,7 +241,7 @@ PORTING_INTERFACE:
 	// The void* and Context& parameters are references to the same Context object.
 	// Void* is required to pass back to the default policy function which could live in either native or managed space.
 	// Context& is used internally to log data only since we need to access its members for serialization.
-	u32 Choose_Action(void* context, std::string unique_id, Context& log_context)
+	u32 Internal_Choose_Action(void* context, std::string unique_id, Context& log_context)
 	{
 		// Hash the ID of the yet-to-be-created interaction so we can seed the explorer
 		u64 seed = HashUtils::Compute_Id_Hash(unique_id);
