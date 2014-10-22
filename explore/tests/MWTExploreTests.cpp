@@ -8,6 +8,7 @@
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 #define COUNT_INVALID(block) try { block } catch (std::invalid_argument) { num_ex++; }
+#define COUNT_BAD_CALL(block) try { block } catch (std::bad_function_call) { num_ex++; }
 
 namespace vw_explore_tests
 {
@@ -586,24 +587,11 @@ namespace vw_explore_tests
 
 		TEST_METHOD(Usage_Bad_Arguments)
 		{
-			bool invalid_exception = false;
-
 			int num_ex = 0;
 			COUNT_INVALID
 			(
-				invalid_exception = false;
 				MWTExplorer mwt("");
-				Context context(nullptr, 0);
-				mwt.Choose_Action("test", context);
-			)
-			Assert::AreEqual(1, num_ex);
-
-			num_ex = 0;
-			COUNT_INVALID
-			(
-				invalid_exception = false;
-				MWTExplorer mwt("");
-				mwt.Initialize_Epsilon_Greedy(0.5f, Stateless_Default_Policy, 0);
+				mwt.Initialize_Epsilon_Greedy(0.5f, Stateless_Default_Policy, 0); // Invalid # actions
 			)
 			Assert::AreEqual(1, num_ex);
 
@@ -612,6 +600,7 @@ namespace vw_explore_tests
 			Stateful<int>::Policy* stateful_funcs[2] = { Stateful_Default_Policy, nullptr };
 			Policy* stateless_funcs[2] = { nullptr, Stateless_Default_Policy };
 
+			// Invalid policy functions
 			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Epsilon_Greedy(0.5f, nullptr, m_num_actions);)
 			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Epsilon_Greedy<int>(0.5f, nullptr, m_policy_func_arg, m_num_actions);)
 			
@@ -630,6 +619,29 @@ namespace vw_explore_tests
 			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Generic(nullptr, m_num_actions);)
 			
 			Assert::AreEqual(12, num_ex);
+		}
+
+		TEST_METHOD(Usage_Bad_Call)
+		{
+			int num_ex = 0;
+			// No initialization
+			COUNT_BAD_CALL
+			(
+				MWTExplorer mwt("");
+				Context context(nullptr, 0);
+				mwt.Choose_Action("test", context);
+			)
+			Assert::AreEqual(1, num_ex);
+
+			num_ex = 0;
+			// Multiple initializations
+			COUNT_BAD_CALL
+			(
+				MWTExplorer mwt("");
+				mwt.Initialize_Epsilon_Greedy(0.5f, Stateless_Default_Policy, m_num_actions);
+				mwt.Initialize_Generic(Stateless_Default_Scorer, m_num_actions);
+			)
+			Assert::AreEqual(1, num_ex);
 		}
 
 		TEST_METHOD_INITIALIZE(Test_Initialize)

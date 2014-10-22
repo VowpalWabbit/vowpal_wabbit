@@ -6,6 +6,7 @@
 
 #include "Common.h"
 #include "Explorer.h"
+#include <functional>
 #include <tuple>
 
 //
@@ -139,6 +140,8 @@ PORTING_INTERFACE:
 		Validate_Epsilon(epsilon);
 		Validate_Num_Actions(num_actions);
 		Validate_Policy(default_policy_func);
+		Validate_Explorer();
+
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new EpsilonGreedyExplorer(epsilon, default_policy_func, default_policy_func_argument, m_app_id);
 	}
@@ -151,6 +154,8 @@ PORTING_INTERFACE:
 		Validate_Epsilon(epsilon);
 		Validate_Num_Actions(num_actions);
 		Validate_Policy(default_policy_func);
+		Validate_Explorer();
+
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new EpsilonGreedyExplorer(epsilon, default_policy_func, m_app_id);
 	}
@@ -163,6 +168,8 @@ PORTING_INTERFACE:
 	{
 		Validate_Num_Actions(num_actions);
 		Validate_Policy(default_policy_func);
+		Validate_Explorer();
+
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new TauFirstExplorer(tau, default_policy_func, default_policy_func_argument, m_app_id);
 	}
@@ -174,6 +181,8 @@ PORTING_INTERFACE:
 	{
 		Validate_Num_Actions(num_actions);
 		Validate_Policy(default_policy_func);
+		Validate_Explorer();
+		
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new TauFirstExplorer(tau, default_policy_func, m_app_id);
 	}
@@ -187,6 +196,8 @@ PORTING_INTERFACE:
 		Validate_Bags(bags);
 		Validate_Num_Actions(num_actions);
 		Validate_Policy(bags, (void**)default_policy_functions);
+		Validate_Explorer();
+		
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new BaggingExplorer(bags, default_policy_functions, default_policy_args, m_app_id);
 	}
@@ -199,6 +210,8 @@ PORTING_INTERFACE:
 		Validate_Bags(bags);
 		Validate_Num_Actions(num_actions);
 		Validate_Policy(bags, (void**)default_policy_functions);
+		Validate_Explorer();
+		
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new BaggingExplorer(bags, default_policy_functions, m_app_id);
 	}
@@ -211,6 +224,8 @@ PORTING_INTERFACE:
 	{
 		Validate_Num_Actions(num_actions);
 		Validate_Policy(default_scorer_func);
+		Validate_Explorer();
+		
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func, default_scorer_func_argument, m_app_id);
 	}
@@ -222,6 +237,8 @@ PORTING_INTERFACE:
 	{
 		Validate_Num_Actions(num_actions);
 		Validate_Policy(default_scorer_func);
+		Validate_Explorer();
+		
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func, m_app_id);
 	}
@@ -233,6 +250,8 @@ PORTING_INTERFACE:
 	{
 		Validate_Num_Actions(num_actions);
 		Validate_Policy(default_scorer_func);
+		Validate_Explorer();
+		
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new GenericExplorer(default_scorer_func, default_scorer_func_argument, m_app_id);
 	}
@@ -243,6 +262,8 @@ PORTING_INTERFACE:
 	{
 		Validate_Num_Actions(num_actions);
 		Validate_Policy(default_scorer_func);
+		Validate_Explorer();
+		
 		m_action_set.Set_Count(num_actions);
 		m_explorer = new GenericExplorer(default_scorer_func, m_app_id);
 	}
@@ -256,7 +277,9 @@ PORTING_INTERFACE:
 		// Hash the ID of the yet-to-be-created interaction so we can seed the explorer
 		u64 seed = HashUtils::Compute_Id_Hash(unique_id);
 		if (m_explorer == nullptr)
-		  throw std::invalid_argument("Error: you must initialize an explorer before use");
+		{
+			throw std::bad_function_call("MWT was not initialized properly.");
+		}
 		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, m_action_set, (u32)seed);
 		
 		if (std::get<2>(action_Probability_Log_Tuple))
@@ -318,6 +341,14 @@ private:
 		if (!valid)
 		{
 			throw std::invalid_argument("Invalid default policy functions specified.");
+		}
+	}
+
+	void Validate_Explorer()
+	{
+		if (m_explorer != nullptr)
+		{
+			throw std::bad_function_call("MWT is already initialized.");
 		}
 	}
 
