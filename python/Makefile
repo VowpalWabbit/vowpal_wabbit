@@ -13,7 +13,7 @@ PYTHON_INCLUDE = $(shell python$(PYTHON_VERSION)-config --includes)
 PYTHON_LDFLAGS = $(shell python$(PYTHON_VERSION)-config --ldflags)
 
 PYTHON_LIBS = -l boost_python
-ifeq (,$(wildcard ../vowpalwabbit/vw.so))
+ifeq (,$(wildcard ../vowpalwabbit/libvw.so))
   VWLIBS = ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
 else
   VWLIBS = -L ../vowpalwabbit -l vw -l allreduce
@@ -35,8 +35,8 @@ endif
 
 STDLIBS = $(BOOST_LIBRARY) $(LIBS) $(PYTHON_LIBS)
 
-$(PYLIBVW): pylibvw.o  ../vowpalwabbit/libvw.a
-	$(CXX) -shared $(EXPORT_DYNAMIC) pylibvw.o $(BOOST_LIBRARY) $(PYTHON_LDFLAGS) $(VWLIBS) $(STDLIBS) -o $(PYLIBVW)
+$(PYLIBVW): pylibvw.o ../vowpalwabbit/libvw.so
+	$(CXX) -shared $(EXPORT_DYNAMIC) -o $@ pylibvw.o $(BOOST_LIBRARY) $(PYTHON_LDFLAGS) $(VWLIBS) $(STDLIBS)
 
 pylibvw.o: pylibvw.cc
 	$(CXX) $(PYTHON_INCLUDE) $(BOOST_INCLUDE) -fPIC -c pylibvw.cc -o pylibvw.o
