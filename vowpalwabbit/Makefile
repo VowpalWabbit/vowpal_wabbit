@@ -64,3 +64,5 @@ install: $(BINARIES)
 
 clean:
 	rm -f  *.o *.d $(BINARIES) *~ $(MANPAGES) *.a *.so
+
+.PHONY: all clean install test things

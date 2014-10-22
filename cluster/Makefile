@@ -21,10 +21,12 @@ all:	spanning_tree
 	$(CXX) $(FLAGS) -c $< -o $@
 
 spanning_tree: spanning_tree.o
-	$(CXX) $(FLAGS) -o $@ $+ 
+	$(CXX) $(FLAGS) -o $@ $+
 
 install: spanning_tree
 	cp spanning_tree /usr/local/bin
 
 clean:
 	rm -f  *.o $(BINARIES) *~ $(MANPAGES)
+
+.PHONY: clean install

@@ -109,3 +109,5 @@ clean:
 	cd cluster && $(MAKE) clean
 	cd library && $(MAKE) clean
 	cd python  && $(MAKE) clean
+
+.PHONY: all clean install
