@@ -1,4 +1,5 @@
 BINARIES = vw active_interactor
+SHARED_LIBRARIES = libvw.so liballreduce.so libvw_c_wrapper.so
 MANPAGES = vw.1
 
 VWLIBS := -L. -l vw -l allreduce
@@ -10,7 +11,7 @@ all:
 test:
 	cd ..; $(MAKE) test
 
-things:	config.h $(BINARIES)
+things:	config.h $(BINARIES) $(SHARED_LIBRARIES)
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
@@ -36,8 +37,18 @@ vw_DEPS = $(patsubst %.cc,%.d,$(vw_SOURCES))
 liballreduce.a:	allreduce.o
 	ar rcs $@ $<
 
+ifneq ($(UNAME), Darwin)
+  EXPORT_DYNAMIC = -Wl,--export-dynamic
+endif
+
+liballreduce.so: allreduce.o
+	$(CXX) $(FLAGS) -shared $(EXPORT_DYNAMIC) -o $@ $<
+
 libvw.a: $(filter-out vw.o,$(vw_OBJECTS))
 	ar rcs $@ $+
+
+libvw.so: $(filter-out vw.o,$(vw_OBJECTS)) liballreduce.so
+	$(CXX) $(FLAGS) -shared $(EXPORT_DYNAMIC) -o $@ $(filter-out liballreduce.so,$+) -L. -l allreduce $(STDLIBS)
 
 vw: main.o libvw.a liballreduce.a
 	$(CXX) $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
@@ -45,9 +56,11 @@ vw: main.o libvw.a liballreduce.a
 active_interactor: active_interactor.cc
 	$(CXX) $(FLAGS) -o $@ $+
 
+libvw_c_wrapper.so : vwdll.o libvw.so
+	$(CXX) $(FLAGS) -shared $(EXPORT_DYNAMIC) -o $@ $< $(VWLIBS)
+
 install: $(BINARIES)
 	cp $(BINARIES) /usr/local/bin; cd cluster; $(MAKE) install
 
 clean:
-	rm -f  *.o *.d $(BINARIES) *~ $(MANPAGES) libvw.a
-
+	rm -f  *.o *.d $(BINARIES) *~ $(MANPAGES) *.a *.so
