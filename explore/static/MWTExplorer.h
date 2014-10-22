@@ -114,11 +114,13 @@ public:
 		this->Internal_Initialize_Generic((Stateless_Scorer_Func*)default_scorer_func, num_actions);
 	}
 
+	//TODO: Mention that this allocates memory, so it may throw if contiguous address space is not available.
 	u32 Choose_Action(std::string unique_id, Context& context)
 	{
 		return this->Internal_Choose_Action(&context, unique_id, context);
 	}
 
+	//TODO: Mention that this will clear the interactions from our explorer's internal memory
 	inline std::string Get_All_Interactions()
 	{
 		return m_interaction_store.Get_All_Interactions();
