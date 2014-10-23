@@ -146,7 +146,7 @@ namespace cs_test
 
             UInt32 chosenAction = mwt.ChooseAction("myId", appContext);
 
-            INTERACTION[] interactions = mwt.GetAllInteractions();
+            Interaction[] interactions = mwt.GetAllInteractions();
             // string interactions = mwt.GetAllInteractionsAsString();
 
             mwt.Unintialize();

@@ -150,7 +150,7 @@ public class LabDemo
             uniqueID++;
         }
 
-        INTERACTION[] interactions = mwt.GetAllInteractions();
+        Interaction[] interactions = mwt.GetAllInteractions();
 
         MwtRewardReporter rewardReporter = new MwtRewardReporter(interactions);
         for (uint iInter = 0; iInter < interactions.Length; iInter++)
@@ -160,7 +160,7 @@ public class LabDemo
             rewardReporter.ReportReward(interactions[iInter].GetId(), r);
         }
 
-        INTERACTION[] full_interactions = rewardReporter.GetAllInteractions();
+        Interaction[] full_interactions = rewardReporter.GetAllInteractions();
 
         //for (uint iInter = 0; iInter < full_interactions.Length; iInter++)
         //{            

@@ -277,18 +277,18 @@ namespace MultiWorldTesting {
 		return gcnew String(all_interactions.c_str());
 	}
 
-	cli::array<INTERACTION^>^ MwtExplorer::GetAllInteractions()
+	cli::array<Interaction^>^ MwtExplorer::GetAllInteractions()
 	{
 		size_t num_interactions = 0;
 		NativeMultiWorldTesting::Interaction** native_interactions = nullptr;
 		m_mwt->Get_All_Interactions(num_interactions, native_interactions);
 
-		cli::array<INTERACTION^>^ interactions = gcnew cli::array<INTERACTION^>((int)num_interactions);
+		cli::array<Interaction^>^ interactions = gcnew cli::array<Interaction^>((int)num_interactions);
 		if (num_interactions > 0 && native_interactions != nullptr)
 		{
 			for (size_t i = 0; i < num_interactions; i++)
 			{
-				interactions[i] = gcnew INTERACTION();
+				interactions[i] = gcnew Interaction();
 
 				NativeMultiWorldTesting::Context* native_context = native_interactions[i]->Get_Context();
 
@@ -376,7 +376,7 @@ namespace MultiWorldTesting {
 		}
 	}
 
-	MwtRewardReporter::MwtRewardReporter(cli::array<INTERACTION^>^ interactions)
+	MwtRewardReporter::MwtRewardReporter(cli::array<Interaction^>^ interactions)
 	{
 		m_num_native_interactions = interactions->Length;
 		m_native_interactions = new NativeMultiWorldTesting::Interaction*[m_num_native_interactions];
@@ -431,14 +431,14 @@ namespace MultiWorldTesting {
 	}
 
 	//SIDTEMP:
-	cli::array<INTERACTION^>^ MwtRewardReporter::GetAllInteractions()
+	cli::array<Interaction^>^ MwtRewardReporter::GetAllInteractions()
 	{
-		cli::array<INTERACTION^>^ interactions = gcnew cli::array<INTERACTION^>((int)m_num_native_interactions);
+		cli::array<Interaction^>^ interactions = gcnew cli::array<Interaction^>((int)m_num_native_interactions);
 		if (m_num_native_interactions > 0 && m_native_interactions != nullptr)
 		{
 			for (size_t i = 0; i < m_num_native_interactions; i++)
 			{
-				interactions[i] = gcnew INTERACTION();
+				interactions[i] = gcnew Interaction();
 
 				NativeMultiWorldTesting::Context* native_context = m_native_interactions[i]->Get_Context();
 
@@ -468,7 +468,7 @@ namespace MultiWorldTesting {
 		return interactions;
 	}
 
-	MwtOptimizer::MwtOptimizer(cli::array<INTERACTION^>^ interactions, UInt32 numActions)
+	MwtOptimizer::MwtOptimizer(cli::array<Interaction^>^ interactions, UInt32 numActions)
 	{
 		m_num_native_interactions = interactions->Length;
 		m_native_interactions = new NativeMultiWorldTesting::Interaction*[m_num_native_interactions];

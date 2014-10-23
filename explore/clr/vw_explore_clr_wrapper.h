@@ -57,7 +57,7 @@ namespace MultiWorldTesting {
 		GCHandle FeatureHandle;
 	};
 
-	public ref class INTERACTION
+	public ref class Interaction
 	{
 	public:
 		String^ GetId() { return Id; }
@@ -212,7 +212,7 @@ namespace MultiWorldTesting {
 		UInt32 ChooseAction(String^ uniqueId, Context^ context);
 
 		String^ GetAllInteractionsAsString();
-		cli::array<INTERACTION^>^ GetAllInteractions();
+		cli::array<Interaction^>^ GetAllInteractions();
 
 	internal:
 		UInt32 InvokeDefaultPolicyFunction(Context^);
@@ -247,14 +247,14 @@ namespace MultiWorldTesting {
 		int m_num_native_interactions;
 
 	public:
-		MwtRewardReporter(cli::array<INTERACTION^>^ interactions);
+		MwtRewardReporter(cli::array<Interaction^>^ interactions);
 		~MwtRewardReporter();
 
 		bool ReportReward(String^ id, float reward);
 		bool ReportReward(cli::array<String^>^ ids, cli::array<float>^ rewards);
 		String^ GetAllInteractionsAsString();
 		//SIDTEMP:
-		cli::array<INTERACTION^>^ GetAllInteractions();
+		cli::array<Interaction^>^ GetAllInteractions();
 	};
 
 	public ref class MwtOptimizer
@@ -268,7 +268,7 @@ namespace MultiWorldTesting {
 		cli::array<GCHandle>^ contextHandles;
 		
 	public: 
-		MwtOptimizer(cli::array<INTERACTION^>^ interactions, UInt32 numActions);
+		MwtOptimizer(cli::array<Interaction^>^ interactions, UInt32 numActions);
 		~MwtOptimizer();
 
 		generic <class T>

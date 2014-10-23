@@ -31,7 +31,7 @@ namespace ExploreTests
             chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            INTERACTION[] interactions = mwt.GetAllInteractions();
+            Interaction[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
             Assert.AreEqual(2, interactions[0].GetContext().GetFeatures().Length);
@@ -53,7 +53,7 @@ namespace ExploreTests
             chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            INTERACTION[] interactions = mwt.GetAllInteractions();
+            Interaction[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
             Assert.AreEqual(2, interactions[0].GetContext().GetFeatures().Length);
@@ -75,7 +75,7 @@ namespace ExploreTests
             uint chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            INTERACTION[] interactions = mwt.GetAllInteractions();
+            Interaction[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(0, interactions.Length);
         }
 
@@ -91,7 +91,7 @@ namespace ExploreTests
             uint chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            INTERACTION[] interactions = mwt.GetAllInteractions();
+            Interaction[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(0, interactions.Length);
         }
 
@@ -118,7 +118,7 @@ namespace ExploreTests
             chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            INTERACTION[] interactions = mwt.GetAllInteractions();
+            Interaction[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
             Assert.AreEqual(2, interactions[0].GetContext().GetFeatures().Length);
@@ -144,7 +144,7 @@ namespace ExploreTests
             chosenAction = mwt.ChooseAction(UniqueKey, context);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            INTERACTION[] interactions = mwt.GetAllInteractions();
+            Interaction[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(2, interactions.Length);
 
             Assert.AreEqual(2, interactions[0].GetContext().GetFeatures().Length);
@@ -188,7 +188,7 @@ namespace ExploreTests
             mwt.ChooseAction(rand.NextDouble().ToString(), context);
             mwt.ChooseAction(rand.NextDouble().ToString(), context);
 
-            INTERACTION[] interactions = mwt.GetAllInteractions();
+            Interaction[] interactions = mwt.GetAllInteractions();
             for (int i = 0; i < interactions.Length; i++)
             {
                 // Scores are not equal therefore probabilities should not be uniform
@@ -233,7 +233,7 @@ namespace ExploreTests
             mwt.ChooseAction(rand.NextDouble().ToString(), context);
             mwt.ChooseAction(rand.NextDouble().ToString(), context);
 
-            INTERACTION[] interactions = mwt.GetAllInteractions();
+            Interaction[] interactions = mwt.GetAllInteractions();
             for (int i = 0; i < interactions.Length; i++)
             {
                 // Scores are not equal therefore probabilities should not be uniform
@@ -251,7 +251,7 @@ namespace ExploreTests
 
             uint chosenAction = mwt.ChooseAction(UniqueKey, context);
 
-            INTERACTION[] interactions = mwt.GetAllInteractions();
+            Interaction[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(1, interactions.Length);
             Assert.AreEqual(1.0f / NumActions, interactions[0].GetProbability());
         }
@@ -265,7 +265,7 @@ namespace ExploreTests
 
             uint chosenAction = mwt.ChooseAction(UniqueKey, context);
 
-            INTERACTION[] interactions = mwt.GetAllInteractions();
+            Interaction[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(1, interactions.Length);
             Assert.AreEqual(1.0f / NumActions, interactions[0].GetProbability());
         }
@@ -368,7 +368,7 @@ namespace ExploreTests
                 rewards.Add((float)rand.NextDouble());
             }
 
-            INTERACTION[] partialInteractions = mwt.GetAllInteractions();
+            Interaction[] partialInteractions = mwt.GetAllInteractions();
 
             MwtRewardReporter mrr = new MwtRewardReporter(partialInteractions);
             for (int i = 0; i < partialInteractions.Length; i++)
@@ -376,7 +376,7 @@ namespace ExploreTests
                 Assert.AreEqual(true, mrr.ReportReward(partialInteractions[i].GetId(), rewards[i]));
             }
 
-            INTERACTION[] completeInteractions = mrr.GetAllInteractions();
+            Interaction[] completeInteractions = mrr.GetAllInteractions();
             MwtOptimizer mop = new MwtOptimizer(completeInteractions, NumActions);
 
             string modelFile = "model";
