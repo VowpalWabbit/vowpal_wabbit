@@ -9,8 +9,10 @@
 
 #ifdef MANAGED_CODE
 #define PORTING_INTERFACE public
+#define MWT_NAMESPACE namespace NativeMultiWorldTesting
 #else
 #define PORTING_INTERFACE private
+#define MWT_NAMESPACE namespace MultiWorldTesting
 #endif
 
 // TODO: reference additional headers your program requires here

@@ -9,7 +9,7 @@
 #include <functional>
 #include <tuple>
 
-namespace MultiWorldTesting {
+MWT_NAMESPACE {
 //
 // Top-level internal API for exploration (randomized decision making).
 //

@@ -1,6 +1,6 @@
 #include "Common.h"
 
-namespace MultiWorldTesting {
+MWT_NAMESPACE {
 //
 // Top-level internal API for joining reward information to interaction data.
 //

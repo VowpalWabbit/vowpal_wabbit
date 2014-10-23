@@ -27,7 +27,7 @@ typedef unsigned char    byte;
 #include <string>
 #include <stdint.h>
 
-namespace MultiWorldTesting {
+MWT_NAMESPACE {
 
 //
 // MurmurHash3, by Austin Appleby

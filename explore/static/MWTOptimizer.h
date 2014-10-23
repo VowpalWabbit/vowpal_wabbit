@@ -4,7 +4,7 @@
 #include "vwdll.h"
 //#include <fstream>
 
-namespace MultiWorldTesting {
+MWT_NAMESPACE {
 //
 // Top-level internal API for offline evaluation/optimization.
 //

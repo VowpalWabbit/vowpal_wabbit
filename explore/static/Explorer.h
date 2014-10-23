@@ -14,7 +14,7 @@
 	These classes are used internally within MwtExplorer.h. 
 	Behavior of independent external usage is undefined. 
 */
-namespace MultiWorldTesting {
+MWT_NAMESPACE {
 
 class Explorer
 {

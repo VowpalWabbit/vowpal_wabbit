@@ -16,7 +16,7 @@ using namespace std;
 // the C++11 constexpr keyword, which is needed to initialize such non-integer types.
 #define NO_REWARD -FLT_MAX
 
-namespace MultiWorldTesting {
+MWT_NAMESPACE {
 
 class Serializable
 {

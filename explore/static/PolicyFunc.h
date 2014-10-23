@@ -3,7 +3,7 @@
 #include "utility.h"
 #include "Interaction.h"
 
-namespace MultiWorldTesting {
+MWT_NAMESPACE {
 
 typedef u32 Stateful_Policy_Func(void* policy_params, void* application_context);
 typedef u32 Stateless_Policy_Func(void* application_context);
