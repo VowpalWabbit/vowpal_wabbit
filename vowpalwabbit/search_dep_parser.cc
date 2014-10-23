@@ -256,6 +256,7 @@ namespace DepParserTask {
   // This function needs to be very fast
   void extract_features(Search::search& srn, uint32_t idx,  vector<example*> &ec) {
     task_data *data = srn.get_task_data<task_data>();
+    reset_ex(data->ex);
     size_t ss = srn.get_stride_shift();
     size_t mask = srn.get_mask();
     v_array<uint32_t> &stack = data->stack;
@@ -447,8 +448,8 @@ namespace DepParserTask {
     int count=0;
     cdep << "start decoding"<<endl;
     while(stack.size()>1 || idx <= n){
-      reset_ex(data->ex);
-      extract_features(srn, idx, ec);
+	  if(srn.predictNeedsExample())
+	      extract_features(srn, idx, ec);
       get_valid_actions(valid_actions, idx, n, stack.size());
       get_gold_actions(srn, idx, n);
 	  int gold_action = (gold_actions[0] == 1)? 1 :
