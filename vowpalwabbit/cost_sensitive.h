@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef COST_SENSITIVE_H
-#define COST_SENSITIVE_H
-
+#pragma once
 #include "io_buf.h"
 #include "parse_primitives.h"
 #include "global_data.h"
@@ -45,5 +43,3 @@ namespace CSOAA_AND_WAP_LDF {
   void global_print_newline(vw& all);
   void output_example(vw& all, example& ec, bool& hit_loss);
 }
-
-#endif

@@ -3,8 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef GLOBAL_DATA_H
-#define GLOBAL_DATA_H
+#pragma once
 #include <vector>
 #include <map>
 #include <stdint.h>
@@ -275,6 +274,3 @@ void get_prediction(int sock, float& res, float& weight);
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet);
 int print_tag(std::stringstream& ss, v_array<char> tag);
 po::variables_map add_options(vw& all, po::options_description& opts);
-
-#endif
-

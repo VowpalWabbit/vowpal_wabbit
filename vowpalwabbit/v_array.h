@@ -3,8 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef VARRAY_H
-#define VARRAY_H
+#pragma once
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>
@@ -187,5 +186,3 @@ template<class T> bool v_array_contains(v_array<T> &A, T x) {
     if (*e == x) return true;
   return false;
 }
-
-#endif  // VARRAY_H__

@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef PARSER_H
-#define PARSER_H
-
+#pragma once
 #include "io_buf.h"
 #include "parse_primitives.h"
 #include "example.h"
@@ -39,5 +37,3 @@ void set_compressed(parser* par);
 void initialize_examples(vw& all);
 void free_parser(vw& all);
 bool parse_atomic_example(vw& all, example* ae, bool do_read);
-
-#endif

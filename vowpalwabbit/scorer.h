@@ -1,7 +1,4 @@
-#ifndef SCORER_H
-#define SCORER_H
-
+#pragma once
 namespace Scorer {
   LEARNER::learner* setup(vw& all, po::variables_map& vm);
 }
-#endif

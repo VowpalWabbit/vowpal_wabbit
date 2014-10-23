@@ -3,9 +3,7 @@ CoPyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef SEARCH_MULTICLASS_H
-#define SEARCH_MULTICLASS_H
-
+#pragma once
 #include "search.h"
 
 namespace MulticlassTask {
@@ -14,5 +12,3 @@ namespace MulticlassTask {
   void run(Search::search&, vector<example*>&);
   extern Search::search_task task;
 }
-
-#endif

@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef REDUCTIONS_H
-#define REDUCTIONS_H
-
+#pragma once
 #include <boost/program_options.hpp>
 #include <boost/program_options/parsers.hpp>
 namespace po = boost::program_options;
@@ -15,5 +13,3 @@ namespace po = boost::program_options;
 #include "learner.h" // for core reduction definition
 #include "global_data.h" // for vw datastructure
 #include "memory.h"
-
-#endif

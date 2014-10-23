@@ -1,6 +1,4 @@
-#ifndef ACTIVE_H
-#define ACTIVE_H
+#pragma once
 namespace ACTIVE {
   LEARNER::learner* setup(vw& all, po::variables_map& vm);
 }
-#endif

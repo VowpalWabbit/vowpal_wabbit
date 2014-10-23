@@ -5,8 +5,7 @@ license as described in the file LICENSE.
  */
 // This implements the allreduce function of MPI.
 
-#ifndef ALLREDUCE_H
-#define ALLREDUCE_H
+#pragma once
 #include <string>
 #ifdef _WIN32
 #include <WinSock2.h>
@@ -163,9 +162,3 @@ template <class T, void (*f)(T&, const T&)> void all_reduce(T* buffer, const siz
   reduce<T, f>((char*)buffer, n*sizeof(T), socks.parent, socks.children);
   broadcast((char*)buffer, n*sizeof(T), socks.parent, socks.children);
 }
-
-
-
-
-
-#endif
