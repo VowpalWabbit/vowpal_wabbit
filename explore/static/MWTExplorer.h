@@ -8,6 +8,7 @@
 #include "Explorer.h"
 #include <functional>
 #include <tuple>
+#include <memory>
 
 MWT_NAMESPACE {
 //
@@ -18,13 +19,11 @@ class MWTExplorer
 public:
 	MWTExplorer(std::string app_id)
 	{
-		m_explorer = nullptr;
 		m_app_id = HashUtils::Compute_Id_Hash(app_id);
 	}
 
 	~MWTExplorer()
 	{
-		delete m_explorer;
 	}
 
 	template <class T>
@@ -146,7 +145,7 @@ PORTING_INTERFACE:
 		Validate_Explorer();
 
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new EpsilonGreedyExplorer(epsilon, default_policy_func, default_policy_func_argument, m_app_id);
+		m_explorer.reset(new EpsilonGreedyExplorer(epsilon, default_policy_func, default_policy_func_argument, m_app_id));
 	}
 
 	void Internal_Initialize_Epsilon_Greedy(
@@ -160,7 +159,7 @@ PORTING_INTERFACE:
 		Validate_Explorer();
 
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new EpsilonGreedyExplorer(epsilon, default_policy_func, m_app_id);
+		m_explorer.reset(new EpsilonGreedyExplorer(epsilon, default_policy_func, m_app_id));
 	}
 
 	void Internal_Initialize_Tau_First(
@@ -174,7 +173,7 @@ PORTING_INTERFACE:
 		Validate_Explorer();
 
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new TauFirstExplorer(tau, default_policy_func, default_policy_func_argument, m_app_id);
+		m_explorer.reset(new TauFirstExplorer(tau, default_policy_func, default_policy_func_argument, m_app_id));
 	}
 
 	void Internal_Initialize_Tau_First(
@@ -187,7 +186,7 @@ PORTING_INTERFACE:
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new TauFirstExplorer(tau, default_policy_func, m_app_id);
+		m_explorer.reset(new TauFirstExplorer(tau, default_policy_func, m_app_id));
 	}
 
 	void Internal_Initialize_Bagging(
@@ -202,7 +201,7 @@ PORTING_INTERFACE:
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new BaggingExplorer(bags, default_policy_functions, default_policy_args, m_app_id);
+		m_explorer.reset(new BaggingExplorer(bags, default_policy_functions, default_policy_args, m_app_id));
 	}
 
 	void Internal_Initialize_Bagging(
@@ -216,7 +215,7 @@ PORTING_INTERFACE:
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new BaggingExplorer(bags, default_policy_functions, m_app_id);
+		m_explorer.reset(new BaggingExplorer(bags, default_policy_functions, m_app_id));
 	}
 
 	void Internal_Initialize_Softmax(
@@ -230,7 +229,7 @@ PORTING_INTERFACE:
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func, default_scorer_func_argument, m_app_id);
+		m_explorer.reset(new SoftmaxExplorer(lambda, default_scorer_func, default_scorer_func_argument, m_app_id));
 	}
 
 	void Internal_Initialize_Softmax(
@@ -243,7 +242,7 @@ PORTING_INTERFACE:
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func, m_app_id);
+		m_explorer.reset(new SoftmaxExplorer(lambda, default_scorer_func, m_app_id));
 	}
 
 	void Internal_Initialize_Generic(
@@ -256,7 +255,7 @@ PORTING_INTERFACE:
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new GenericExplorer(default_scorer_func, default_scorer_func_argument, m_app_id);
+		m_explorer.reset(new GenericExplorer(default_scorer_func, default_scorer_func_argument, m_app_id));
 	}
 
 	void Internal_Initialize_Generic(
@@ -268,7 +267,7 @@ PORTING_INTERFACE:
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
-		m_explorer = new GenericExplorer(default_scorer_func, m_app_id);
+		m_explorer.reset(new GenericExplorer(default_scorer_func, m_app_id));
 	}
 	
 	// The parameters here look weird but are required to interface with C#:
@@ -279,7 +278,7 @@ PORTING_INTERFACE:
 	{
 		// Hash the ID of the yet-to-be-created interaction so we can seed the explorer
 		u64 seed = HashUtils::Compute_Id_Hash(unique_id);
-		if (m_explorer == nullptr)
+		if (m_explorer.get() == nullptr)
 		{
 			throw std::bad_function_call("MWT was not initialized properly.");
 		}
@@ -349,14 +348,14 @@ private:
 
 	void Validate_Explorer()
 	{
-		if (m_explorer != nullptr)
+		if (m_explorer.get() != nullptr)
 		{
 			throw std::bad_function_call("MWT is already initialized.");
 		}
 	}
 
 private:
-	Explorer* m_explorer;
+	unique_ptr<Explorer> m_explorer;
 	InteractionStore m_interaction_store;
 	ActionSet m_action_set;
 	u64 m_app_id;
