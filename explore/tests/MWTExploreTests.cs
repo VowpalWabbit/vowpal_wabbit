@@ -333,7 +333,7 @@ namespace ExploreTests
         {
             mwt = new MwtExplorer("test");
 
-            features = new FEATURE[2];
+            features = new Feature[2];
             features[0].Value = 0.5f;
             features[0].Id = 1;
             features[1].Value = 0.9f;
@@ -355,7 +355,7 @@ namespace ExploreTests
             List<float> rewards = new List<float>();
             for (int i = 0; i < 1000; i++)
             {
-                FEATURE[] f = new FEATURE[rand.Next(800, 1201)];
+                Feature[] f = new Feature[rand.Next(800, 1201)];
                 for (int j = 0; j < f.Length; j++)
                 {
                     f[j].Id = (uint)(j + 1);
@@ -446,7 +446,7 @@ namespace ExploreTests
         private static readonly string UniqueKey = "ManagedTestId";
 
         private MwtExplorer mwt;
-        private FEATURE[] features;
+        private Feature[] features;
         private CONTEXT context;
     }
 }

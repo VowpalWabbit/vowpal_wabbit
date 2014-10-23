@@ -10,13 +10,14 @@ using namespace System::Collections;
 using namespace System::Collections::Generic;
 using namespace System::Runtime::InteropServices;
 using namespace msclr::interop;
+using namespace NativeMultiWorldTesting;
 
 namespace MultiWorldTesting {
 
 	MwtExplorer::MwtExplorer(String^ app_id)
 	{
 		std::string native_app_id = marshal_as<std::string>(app_id);
-		m_mwt = new MWTExplorer(native_app_id);
+		m_mwt = new NativeMultiWorldTesting::MWTExplorer(native_app_id);
 		m_bagging_funcs = nullptr;
 		m_bagging_func_params = nullptr;
 	}
@@ -255,7 +256,7 @@ namespace MultiWorldTesting {
 
 		std::string nativeUniqueKey = marshal_as<std::string>(uniqueId);
 
-		Context* log_context = MwtHelper::PinNativeContext(context);
+		NativeMultiWorldTesting::Context* log_context = MwtHelper::PinNativeContext(context);
 
 		size_t uniqueIdLength = (size_t)uniqueId->Length;
 
@@ -279,7 +280,7 @@ namespace MultiWorldTesting {
 	cli::array<INTERACTION^>^ MwtExplorer::GetAllInteractions()
 	{
 		size_t num_interactions = 0;
-		Interaction** native_interactions = nullptr;
+		NativeMultiWorldTesting::Interaction** native_interactions = nullptr;
 		m_mwt->Get_All_Interactions(num_interactions, native_interactions);
 
 		cli::array<INTERACTION^>^ interactions = gcnew cli::array<INTERACTION^>((int)num_interactions);
@@ -289,12 +290,12 @@ namespace MultiWorldTesting {
 			{
 				interactions[i] = gcnew INTERACTION();
 
-				Context* native_context = native_interactions[i]->Get_Context();
+				NativeMultiWorldTesting::Context* native_context = native_interactions[i]->Get_Context();
 
-				Feature* native_features = nullptr;
+				NativeMultiWorldTesting::Feature* native_features = nullptr;
 				size_t native_num_features = 0;
 				native_context->Get_Features(native_features, native_num_features);
-				cli::array<FEATURE>^ features = gcnew cli::array<FEATURE>((int)native_num_features);
+				cli::array<Feature>^ features = gcnew cli::array<Feature>((int)native_num_features);
 				for (int i = 0; i < features->Length; i++)
 				{
 					features[i].Value = native_features[i].Value;
@@ -378,20 +379,20 @@ namespace MultiWorldTesting {
 	MwtRewardReporter::MwtRewardReporter(cli::array<INTERACTION^>^ interactions)
 	{
 		m_num_native_interactions = interactions->Length;
-		m_native_interactions = new Interaction*[m_num_native_interactions];
+		m_native_interactions = new NativeMultiWorldTesting::Interaction*[m_num_native_interactions];
 		for (int i = 0; i < m_num_native_interactions; i++)
 		{
-			Context* native_context = MwtHelper::PinNativeContext(interactions[i]->ApplicationContext);
+			NativeMultiWorldTesting::Context* native_context = MwtHelper::PinNativeContext(interactions[i]->ApplicationContext);
 			
 			String^ interaction_id = interactions[i]->Id;
-			m_native_interactions[i] = new Interaction(native_context,
+			m_native_interactions[i] = new NativeMultiWorldTesting::Interaction(native_context,
 				interactions[i]->ChosenAction,
 				interactions[i]->Probability,
 				marshal_as<std::string>(interaction_id),
 				/* is_copy = */ true);
 		}
 		size_t native_num_interactions = (size_t)m_num_native_interactions;
-		m_mwt_reward_reporter = new MWTRewardReporter(native_num_interactions, m_native_interactions);
+		m_mwt_reward_reporter = new NativeMultiWorldTesting::MWTRewardReporter(native_num_interactions, m_native_interactions);
 	}
 
 	MwtRewardReporter::~MwtRewardReporter()
@@ -439,12 +440,12 @@ namespace MultiWorldTesting {
 			{
 				interactions[i] = gcnew INTERACTION();
 
-				Context* native_context = m_native_interactions[i]->Get_Context();
+				NativeMultiWorldTesting::Context* native_context = m_native_interactions[i]->Get_Context();
 
-				Feature* native_features = nullptr;
+				NativeMultiWorldTesting::Feature* native_features = nullptr;
 				size_t native_num_features = 0;
 				native_context->Get_Features(native_features, native_num_features);
-				cli::array<FEATURE>^ features = gcnew cli::array<FEATURE>((int)native_num_features);
+				cli::array<Feature>^ features = gcnew cli::array<Feature>((int)native_num_features);
 				for (int i = 0; i < features->Length; i++)
 				{
 					features[i].Value = native_features[i].Value;
@@ -470,13 +471,13 @@ namespace MultiWorldTesting {
 	MwtOptimizer::MwtOptimizer(cli::array<INTERACTION^>^ interactions, UInt32 numActions)
 	{
 		m_num_native_interactions = interactions->Length;
-		m_native_interactions = new Interaction*[m_num_native_interactions];
+		m_native_interactions = new NativeMultiWorldTesting::Interaction*[m_num_native_interactions];
 		contextHandles = gcnew cli::array<GCHandle>(m_num_native_interactions);
 		for (int i = 0; i < m_num_native_interactions; i++)
 		{
-			Context* native_context = MwtHelper::PinNativeContext(interactions[i]->ApplicationContext);
+			NativeMultiWorldTesting::Context* native_context = MwtHelper::PinNativeContext(interactions[i]->ApplicationContext);
 			String^ interaction_id = interactions[i]->Id;
-			m_native_interactions[i] = new Interaction(native_context,
+			m_native_interactions[i] = new NativeMultiWorldTesting::Interaction(native_context,
 				interactions[i]->ChosenAction,
 				interactions[i]->Probability,
 				marshal_as<std::string>(interaction_id),
@@ -490,7 +491,7 @@ namespace MultiWorldTesting {
 			m_native_interactions[i]->Set_External_Context(contextPtr.ToPointer());
 		}
 		size_t native_num_interactions = (size_t)m_num_native_interactions;
-		m_mwt_optimizer = new MWTOptimizer(native_num_interactions, m_native_interactions, (u32)numActions);
+		m_mwt_optimizer = new NativeMultiWorldTesting::MWTOptimizer(native_num_interactions, m_native_interactions, (u32)numActions);
 	}
 
 	MwtOptimizer::~MwtOptimizer()
@@ -579,9 +580,9 @@ namespace MultiWorldTesting {
 		return mwtOpt->InvokeDefaultPolicyFunction(context);
 	}
 
-	Context* MwtHelper::PinNativeContext(CONTEXT^ context)
+	NativeMultiWorldTesting::Context* MwtHelper::PinNativeContext(CONTEXT^ context)
 	{
-		cli::array<FEATURE>^ contextFeatures = context->Features;
+		cli::array<Feature>^ contextFeatures = context->Features;
 		String^ otherContext = context->OtherContext;
 
 		context->FeatureHandle = GCHandle::Alloc(context->Features, GCHandleType::Pinned);
@@ -589,15 +590,15 @@ namespace MultiWorldTesting {
 		{
 			IntPtr featureArrayPtr = context->FeatureHandle.AddrOfPinnedObject();
 
-			Feature* nativeContextFeatures = (Feature*)featureArrayPtr.ToPointer();
+			NativeMultiWorldTesting::Feature* nativeContextFeatures = (NativeMultiWorldTesting::Feature*)featureArrayPtr.ToPointer();
 
 			if (otherContext != nullptr)
 			{
-				return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length, marshal_as<std::string>(otherContext));
+				return new NativeMultiWorldTesting::Context((NativeMultiWorldTesting::Feature*)nativeContextFeatures, (size_t)context->Features->Length, marshal_as<std::string>(otherContext));
 			}
 			else
 			{
-				return new Context((Feature*)nativeContextFeatures, (size_t)context->Features->Length);
+				return new NativeMultiWorldTesting::Context((NativeMultiWorldTesting::Feature*)nativeContextFeatures, (size_t)context->Features->Length);
 			}
 		}
 		catch (Exception^ ex)

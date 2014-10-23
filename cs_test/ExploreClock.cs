@@ -36,7 +36,7 @@ namespace cs_test
 
                 timeInit += (iter < numWarmup) ? 0 : watch.Elapsed.TotalMilliseconds;
 
-                FEATURE[] f = new FEATURE[numFeatures];
+                Feature[] f = new Feature[numFeatures];
                 for (int i = 0; i < numFeatures; i++)
                 {
                     f[i].Id = (uint)i + 1;

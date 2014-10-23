@@ -13,12 +13,11 @@ using namespace System::Collections::Generic;
 using namespace System::IO;
 using namespace System::Runtime::InteropServices;
 using namespace System::Xml::Serialization;
-using namespace NativeMultiWorldTesting;
 
 namespace MultiWorldTesting {
 
 	[StructLayout(LayoutKind::Sequential)]
-	public value struct FEATURE
+	public value struct Feature
 	{
 		float Value;
 		UInt32 Id;
@@ -33,7 +32,7 @@ namespace MultiWorldTesting {
 			OtherContext = nullptr;
 		}
 
-		CONTEXT(cli::array<FEATURE>^ features, String^ otherContext)
+		CONTEXT(cli::array<Feature>^ features, String^ otherContext)
 		{
 			Features = features;
 			OtherContext = otherContext;
@@ -47,11 +46,11 @@ namespace MultiWorldTesting {
 			}
 		}
 	public:
-		cli::array<FEATURE>^ GetFeatures() { return Features; }
+		cli::array<Feature>^ GetFeatures() { return Features; }
 		String^ GetOtherContext() { return OtherContext; }
 
 	internal:
-		cli::array<FEATURE>^ Features;
+		cli::array<Feature>^ Features;
 		String^ OtherContext;
 
 	internal:
@@ -81,8 +80,8 @@ namespace MultiWorldTesting {
 	public ref class ActionID
 	{
 	public:
-		static UInt32 Make_OneBased(UInt32 id) { return MWTAction::Make_OneBased(id); }
-		static UInt32 Make_ZeroBased(UInt32 id) { return MWTAction::Make_ZeroBased(id); }
+		static UInt32 Make_OneBased(UInt32 id) { return NativeMultiWorldTesting::MWTAction::Make_OneBased(id); }
+		static UInt32 Make_ZeroBased(UInt32 id) { return NativeMultiWorldTesting::MWTAction::Make_ZeroBased(id); }
 	};
 
 	generic <class T>
@@ -164,13 +163,13 @@ namespace MultiWorldTesting {
 	private ref class MwtHelper
 	{
 	public:
-		static Context* PinNativeContext(CONTEXT^ context);
+		static NativeMultiWorldTesting::Context* PinNativeContext(CONTEXT^ context);
 	};
 
 	public ref class MwtExplorer
 	{
 	private:
-		MWTExplorer* m_mwt;
+		NativeMultiWorldTesting::MWTExplorer* m_mwt;
 		IFunctionWrapper^ policyWrapper;
 		cli::array<IFunctionWrapper^>^ policyWrappers;
 
@@ -181,7 +180,7 @@ namespace MultiWorldTesting {
 
 		// Bagging-specific
 		cli::array<IntPtr>^ baggingParameters;
-		Stateful_Policy_Func** m_bagging_funcs;
+		NativeMultiWorldTesting::Stateful_Policy_Func** m_bagging_funcs;
 		void** m_bagging_func_params;
 
 	public:
@@ -243,8 +242,8 @@ namespace MultiWorldTesting {
 	public ref class MwtRewardReporter
 	{
 	private:
-		MWTRewardReporter* m_mwt_reward_reporter;
-		Interaction** m_native_interactions;
+		NativeMultiWorldTesting::MWTRewardReporter* m_mwt_reward_reporter;
+		NativeMultiWorldTesting::Interaction** m_native_interactions;
 		int m_num_native_interactions;
 
 	public:
@@ -261,8 +260,8 @@ namespace MultiWorldTesting {
 	public ref class MwtOptimizer
 	{
 	private:
-		MWTOptimizer* m_mwt_optimizer;
-		Interaction** m_native_interactions;
+		NativeMultiWorldTesting::MWTOptimizer* m_mwt_optimizer;
+		NativeMultiWorldTesting::Interaction** m_native_interactions;
 		int m_num_native_interactions;
 		IFunctionWrapper^ policyWrapper;
 		GCHandle selfHandle;

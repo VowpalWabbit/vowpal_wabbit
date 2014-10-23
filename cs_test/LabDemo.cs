@@ -36,7 +36,7 @@ public class LabDemo
                 {
                     //Console.WriteLine(line);
                     char[] delims = { ' ', '\t' };
-                    List<FEATURE> featureList = new List<FEATURE>();
+                    List<Feature> featureList = new List<Feature>();
                     string[] features = line.Split(delims);
                     foreach (string s in features)
                     {
@@ -45,7 +45,7 @@ public class LabDemo
                         //Console.Write("{0} ", words.Length);
                         if (words.Length >= 1 && words[0] != "")
                         {
-                            FEATURE f = new FEATURE();
+                            Feature f = new Feature();
                             //Console.WriteLine("{0}", words[0]);
                             f.Id = UInt32.Parse(words[0]);
                             if (words.Length == 2)

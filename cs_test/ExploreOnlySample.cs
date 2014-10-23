@@ -135,7 +135,7 @@ namespace cs_test
 
 
             }
-            FEATURE[] f = new FEATURE[2];
+            Feature[] f = new Feature[2];
             f[0].Value = 0.5f;
             f[0].Id = 1;
             f[1].Value = 0.9f;
