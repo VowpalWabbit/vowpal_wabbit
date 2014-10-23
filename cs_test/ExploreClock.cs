@@ -18,9 +18,9 @@ namespace cs_test
             int policyParams = 1003;
             string uniqueKey = "clock";
             int numFeatures = 1000;
-            int numIter = 10;
-            int numWarmup = 3;
-            int numInteractions = 2000;
+            int numIter = 1000;
+            int numWarmup = 100;
+            int numInteractions = 1;
             uint numActions = 10;
             string otherContext = null;
 
