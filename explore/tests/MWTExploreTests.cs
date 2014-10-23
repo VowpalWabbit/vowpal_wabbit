@@ -339,7 +339,7 @@ namespace ExploreTests
             features[1].Value = 0.9f;
             features[1].Id = 2;
 
-            context = new CONTEXT(features, "Other C# test context");
+            context = new Context(features, "Other C# test context");
         }
 
         [TestCleanup]
@@ -362,7 +362,7 @@ namespace ExploreTests
                     f[j].Value = (float)rand.NextDouble();
                 }
 
-                CONTEXT c = new CONTEXT(f, null);
+                Context c = new Context(f, null);
                 mwt.ChooseAction(i.ToString(), c);
 
                 rewards.Add((float)rand.NextDouble());
@@ -392,17 +392,17 @@ namespace ExploreTests
             System.IO.File.Delete(modelFile);
         }
 
-        private static UInt32 TestStatefulPolicyFunc(int policyParams, CONTEXT context)
+        private static UInt32 TestStatefulPolicyFunc(int policyParams, Context context)
         {
             return ActionID.Make_OneBased((uint)(policyParams + context.GetFeatures().Length) % MWTExploreTests.NumActions);
         }
 
-        private static UInt32 TestStatelessPolicyFunc(CONTEXT context)
+        private static UInt32 TestStatelessPolicyFunc(Context context)
         {
             return ActionID.Make_OneBased((uint)context.GetFeatures().Length % MWTExploreTests.NumActions);
         }
 
-        private static void TestStatefulScorerFunc(int policyParams, CONTEXT applicationContext, float[] scores)
+        private static void TestStatefulScorerFunc(int policyParams, Context applicationContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {
@@ -410,7 +410,7 @@ namespace ExploreTests
             }
         }
 
-        private static void TestStatelessScorerFunc(CONTEXT applicationContext, float[] scores)
+        private static void TestStatelessScorerFunc(Context applicationContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {
@@ -418,7 +418,7 @@ namespace ExploreTests
             }
         }
 
-        private static void NonUniformStatefulScorerFunc(int policyParams, CONTEXT applicationContext, float[] scores)
+        private static void NonUniformStatefulScorerFunc(int policyParams, Context applicationContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {
@@ -426,7 +426,7 @@ namespace ExploreTests
             }
         }
 
-        private static void NonUniformStatelessScorerFunc(CONTEXT applicationContext, float[] scores)
+        private static void NonUniformStatelessScorerFunc(Context applicationContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {
@@ -447,6 +447,6 @@ namespace ExploreTests
 
         private MwtExplorer mwt;
         private Feature[] features;
-        private CONTEXT context;
+        private Context context;
     }
 }

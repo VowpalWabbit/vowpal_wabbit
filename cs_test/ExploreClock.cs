@@ -8,7 +8,7 @@ namespace cs_test
 {
     public class ExploreClock
     {
-        private static UInt32 SampleStatefulPolicyFunc(int policyParams, CONTEXT appContext)
+        private static UInt32 SampleStatefulPolicyFunc(int policyParams, Context appContext)
         {
             return (uint)((policyParams + appContext.GetFeatures().Length) % 10 + 1);
         }
@@ -45,7 +45,7 @@ namespace cs_test
 
                 watch.Restart();
 
-                CONTEXT context = new CONTEXT(f, otherContext);
+                Context context = new Context(f, otherContext);
 
                 for (int i = 0; i < numInteractions; i++)
                 {

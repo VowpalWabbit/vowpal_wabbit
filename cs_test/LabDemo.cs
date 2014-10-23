@@ -12,7 +12,7 @@ public class LabDemo
     class IOUtils
     {
         public string contextfile, rewardfile;
-        public List<CONTEXT> contexts;
+        public List<Context> contexts;
         public List<float[]> rewards;
         private const int numActions = 8;
         private static int cur_id = 0;
@@ -20,14 +20,14 @@ public class LabDemo
         {
             contextfile = cfile;
             rewardfile = rfile;
-            contexts = new List<CONTEXT>();
+            contexts = new List<Context>();
             rewards = new List<float[]>();
         }
 
         public void ParseContexts()
         {
             Console.WriteLine("Parsing contexts");
-            CONTEXT c;
+            Context c;
             using (StreamReader sr = new StreamReader(contextfile))
             {
                 String line;
@@ -55,7 +55,7 @@ public class LabDemo
                             featureList.Add(f);
                         }
                     }
-                    c = new CONTEXT(featureList.ToArray(), null);
+                    c = new Context(featureList.ToArray(), null);
                     contexts.Add(c);
                     
                 }
@@ -88,7 +88,7 @@ public class LabDemo
             }
         }
 
-        public CONTEXT getContext()
+        public Context getContext()
         {
             if (contexts.Count == 0)
                 ParseContexts();
@@ -114,7 +114,7 @@ public class LabDemo
         
     }
 
-    private static UInt32 ScoreBasedPolicy(float threshold, CONTEXT context)
+    private static UInt32 ScoreBasedPolicy(float threshold, Context context)
     {
 
         int score_begin = context.GetFeatures().Length - 4;
@@ -141,7 +141,7 @@ public class LabDemo
         mwt.InitializeEpsilonGreedy<float>(epsilon, new StatefulPolicyDelegate<float>(ScoreBasedPolicy), policyParams, numActions);
         IOUtils iou = new IOUtils(@"..\Release\speller-contexts", @"..\Release\speller-rewards");
 
-        CONTEXT c;
+        Context c;
         uint uniqueID = 1;
         while ((c = iou.getContext()) != null)
         {
@@ -184,7 +184,7 @@ public class LabDemo
         Console.ReadKey();
     }
 
-    private static CONTEXT GetContext()
+    private static Context GetContext()
     {
         return null;
     }
