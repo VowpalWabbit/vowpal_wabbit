@@ -574,16 +574,57 @@ namespace vw_explore_tests
 			string unique_key1 = "key1";
 			string unique_key2 = "key2";
 			u32 chosen_action1 = m_mwt->Choose_Action(unique_key1, *m_context);
-			u32 chosen_action2 = m_mwt->Choose_Action(unique_key2, *m_context);
+
+			Feature features[2];
+			features[0].Id = 123456789;
+			features[0].Value = -99999.5f;
+			features[1].Id = 39;
+			features[1].Value = 1.5f;
+
+			Context context(features, 2);
+
+			u32 chosen_action2 = m_mwt->Choose_Action(unique_key2, context);
 
 			string actual_log = m_mwt->Get_All_Interactions();
 
 			char expected_log[100];
-			sprintf(expected_log, "%d %s %.5f | %d:%.5f\n%d %s %.5f | %d:%.5f",
+			sprintf(expected_log, "%d %s %.5f | %d:%.5f\n%d %s %.5f | %d:%.5f %d:%.5f",
 				chosen_action1, unique_key1.c_str(), 0.55f, 1, 0.5f,
-				chosen_action2, unique_key2.c_str(), 0.55f, 1, 0.5f);
+				chosen_action2, unique_key2.c_str(), 0.55f, 
+				features[0].Id, features[0].Value,
+				features[1].Id, features[1].Value);
 
 			Assert::AreEqual(expected_log, actual_log.c_str());
+		}
+
+		TEST_METHOD(Serialized_String_Random)
+		{
+			PRG::prg rand;
+
+			MWTExplorer mwt("");
+			mwt.Initialize_Epsilon_Greedy(0, Stateless_Default_Policy, m_num_actions);
+			Feature feature;
+			Context context(&feature, 1);
+			char expected_log[100] = { 0 };
+
+			for (int i = 0; i < 10000; i++)
+			{
+				feature.Value = (rand.Uniform_Unit_Interval() - 0.5f) * rand.Uniform_Int(0, 100000);
+				feature.Id = i;
+
+				u32 action = mwt.Choose_Action("", context);
+				string actual_log = mwt.Get_All_Interactions();
+
+				ostringstream expected_stream;
+				expected_stream << std::fixed << std::setprecision(10) << feature.Value;
+
+				sprintf(expected_log, "%d %s %.5f | %d:%s",
+					action, "", 1.f, i, expected_stream.str().c_str());
+
+				size_t length = actual_log.length() - 1;
+				int compare_result = string(expected_log).compare(0, length, actual_log, 0, length);
+				Assert::AreEqual(0, compare_result);
+			}
 		}
 
 		TEST_METHOD(Usage_Bad_Arguments)

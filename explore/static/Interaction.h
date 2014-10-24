@@ -123,22 +123,20 @@ public:
 
 	void Serialize(std::string& stream)
 	{
-		if (m_common_features != nullptr)
+		if (m_common_features != nullptr && m_num_features > 0)
 		{
+			int integral, fractional; // Float to string conversion
+			char feature_str[35] = { 0 };
+
 			for (size_t i = 0; i < m_num_features; i++)
 			{
-				stream.append(to_string(m_common_features[i].Id));
-				stream.append(":", 1);
-
-				char feature_str[15] = { 0 };
-				NumberUtils::Float_To_String(m_common_features[i].Value, feature_str);
+				integral = (int)m_common_features[i].Value;
+				fractional = (int)(abs(m_common_features[i].Value - integral) * 100000); // 5-digit precision
+				sprintf(feature_str, "%d:%d.%05d ", m_common_features[i].Id, integral, fractional);
 
 				stream.append(feature_str);
-				if (i < m_num_features - 1)
-				{
-					stream.append(" ", 1);
-				}
 			}
+			stream.pop_back(); // remove last space
 		}
 	}
 
