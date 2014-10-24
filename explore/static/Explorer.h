@@ -263,7 +263,11 @@ public:
 			}
 			total += weights[i];
 		}
-		
+		if (total == 0)
+		{
+			throw std::bad_function_call("At least one score must be positive.");
+		}
+
 		float draw = random_generator.Uniform_Unit_Interval();
 		
 		float sum = 0.f;

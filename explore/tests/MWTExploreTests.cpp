@@ -722,10 +722,16 @@ namespace vw_explore_tests
 			COUNT_BAD_CALL
 			(
 				MWTExplorer mwt("");
-				mwt.Initialize_Generic(Invalid_Stateless_Default_Scorer, m_num_actions);
+				mwt.Initialize_Generic(Negative_Stateless_Default_Scorer, m_num_actions);
 				mwt.Choose_Action("test", context);
 			)
-			Assert::AreEqual(1, num_ex);
+			COUNT_BAD_CALL
+			(
+				MWTExplorer mwt("");
+				mwt.Initialize_Generic(Zero_Stateless_Default_Scorer, m_num_actions);
+				mwt.Choose_Action("test", context);
+			)
+			Assert::AreEqual(2, num_ex);
 		}
 
 		TEST_METHOD_INITIALIZE(Test_Initialize)
@@ -830,11 +836,19 @@ namespace vw_explore_tests
 			}
 		}
 
-		static void Invalid_Stateless_Default_Scorer(Context& applicationContext, float scores[], u32 size)
+		static void Negative_Stateless_Default_Scorer(Context& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
 				scores[i] = -1;
+			}
+		}
+
+		static void Zero_Stateless_Default_Scorer(Context& applicationContext, float scores[], u32 size)
+		{
+			for (u32 i = 0; i < size; i++)
+			{
+				scores[i] = 0;
 			}
 		}
 
