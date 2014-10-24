@@ -152,13 +152,9 @@ public:
 	}
 
 private:
-	Context(Feature* common_features, size_t num_features,
-		std::string other_context, bool is_copy) :
-		m_common_features(common_features),
-		m_num_features(num_features),
-		m_other_context(other_context),
-		m_is_copy(is_copy)
+	void Set_Is_Copy(bool is_copy)
 	{
+		m_is_copy = is_copy;
 	}
 
 	Context* Copy()
@@ -171,7 +167,9 @@ private:
 			memcpy(features, m_common_features, sizeof(Feature)*m_num_features);
 		}
 
-		return new Context(features, m_num_features, m_other_context, true);
+		Context* context = new Context(features, m_num_features, m_other_context);
+		context->Set_Is_Copy(true);
+		return context;
 	}
 
 private:
