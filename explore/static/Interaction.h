@@ -121,6 +121,23 @@ public:
 		}
 	}
 
+	void Get_Features(Feature*& features, size_t& num_features)
+	{
+		features = m_common_features;
+		num_features = m_num_features;
+	}
+
+	void Get_Other_Context(std::string& other_context)
+	{
+		other_context = m_other_context;
+	}
+
+private:
+	void Set_Is_Copy(bool is_copy)
+	{
+		m_is_copy = is_copy;
+	}
+
 	void Serialize(std::string& stream)
 	{
 		if (m_common_features != nullptr && m_num_features > 0)
@@ -138,23 +155,6 @@ public:
 			}
 			stream.pop_back(); // remove last space
 		}
-	}
-
-	void Get_Features(Feature*& features, size_t& num_features)
-	{
-		features = m_common_features;
-		num_features = m_num_features;
-	}
-
-	void Get_Other_Context(std::string& other_context)
-	{
-		other_context = m_other_context;
-	}
-
-private:
-	void Set_Is_Copy(bool is_copy)
-	{
-		m_is_copy = is_copy;
 	}
 
 	Context* Copy()
@@ -238,6 +238,12 @@ public:
 		m_reward = reward;
 	}
 
+private:
+	Interaction* Copy()
+	{
+		return new Interaction(m_context->Copy(), m_action, m_prob, m_id, true);
+	}
+
 	void Serialize(std::string& stream)
 	{
 		m_action.Serialize(stream);
@@ -245,7 +251,7 @@ public:
 		stream.append(" ", 1);
 		stream.append(m_id);
 		stream.append(" ", 1);
-		
+
 		char prob_str[10] = { 0 };
 		NumberUtils::Float_To_String(m_prob, prob_str);
 		stream.append(prob_str);
@@ -254,6 +260,26 @@ public:
 		m_context->Serialize(stream);
 	}
 
+	void* Get_External_Context()
+	{
+		return m_external_context;
+	}
+
+#ifdef MANAGED_CODE
+public:
+#else
+private:
+#endif
+	void Set_External_Context(void* ext_context)
+	{
+		m_external_context = ext_context;
+	}
+
+#ifdef TEST_CPP
+public:
+#else
+private:
+#endif
 	void Serialize_VW(std::string& stream)
 	{
 		// Format is [action]:[cost]:[probability] | [features]
@@ -265,24 +291,6 @@ public:
 		stream.append(to_string(m_prob));
 		stream.append(" | ");
 		m_context->Serialize(stream);
-	}
-
-// Required for (C#) interop
-public:
-	void* Get_External_Context()
-	{
-		return m_external_context;
-	}
-
-	void Set_External_Context(void* ext_context)
-	{
-		m_external_context = ext_context;
-	}
-	
-private:
-	Interaction* Copy()
-	{
-		return new Interaction(m_context->Copy(), m_action, m_prob, m_id, true);
 	}
 
 private:
@@ -298,6 +306,8 @@ private:
 	void* m_external_context;
 
 	friend class InteractionStore;
+	friend class MWTRewardReporter;
+	friend class MWTOptimizer;
 };
 
 class InteractionStore

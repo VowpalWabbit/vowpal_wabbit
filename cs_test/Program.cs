@@ -15,7 +15,8 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
-            LabDemo.Run();
+            ExploreClock.Clock();
+            //LabDemo.Run();
             //ExploreSample.Run();
             return;
             RunFeaturesTest();

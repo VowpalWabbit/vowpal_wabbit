@@ -13,3 +13,4 @@
 #include "CppUnitTest.h"
 
 // TODO: reference additional headers your program requires here
+#define TEST_CPP
