@@ -713,6 +713,21 @@ namespace vw_explore_tests
 			Assert::AreEqual(3, num_ex);
 		}
 
+		TEST_METHOD(Usage_Bad_Scorer)
+		{
+			int num_ex = 0;
+			Context context(nullptr, 0);
+
+			// Default policy returns action outside valid range
+			COUNT_BAD_CALL
+			(
+				MWTExplorer mwt("");
+				mwt.Initialize_Generic(Invalid_Stateless_Default_Scorer, m_num_actions);
+				mwt.Choose_Action("test", context);
+			)
+			Assert::AreEqual(1, num_ex);
+		}
+
 		TEST_METHOD_INITIALIZE(Test_Initialize)
 		{
 			// Constant for coverage tests: using Pr(T > nlnn + cn) < 1 - exp(-e^(-c)) for the time
@@ -812,6 +827,14 @@ namespace vw_explore_tests
 			for (u32 i = 0; i < size; i++)
 			{
 				scores[i] = i;
+			}
+		}
+
+		static void Invalid_Stateless_Default_Scorer(Context& applicationContext, float scores[], u32 size)
+		{
+			for (u32 i = 0; i < size; i++)
+			{
+				scores[i] = -1;
 			}
 		}
 

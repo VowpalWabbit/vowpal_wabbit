@@ -256,7 +256,13 @@ public:
 		// case where the sum of the weights is < or > 1, by normalizing agains the sum.
 		float total = 0.f;
 		for (size_t i = 0; i < numWeights; i++)
-		  total += weights[i];
+		{
+			if (weights[i] < 0)
+			{
+				throw std::bad_function_call("Scores must be non-negative.");
+			}
+			total += weights[i];
+		}
 		
 		float draw = random_generator.Uniform_Unit_Interval();
 		
