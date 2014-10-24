@@ -1,7 +1,7 @@
 #pragma once
 
 #include <float.h>
-#include <typeinfo>
+#include <functional>
 #include <tuple>
 #include <math.h>
 #include "Interaction.h"
@@ -67,6 +67,11 @@ public:
 		else
 		{
 			chosen_action = MWTAction(m_stateful_default_policy_func(m_default_policy_params, context));
+		}
+
+		if (chosen_action.Get_Id() == 0 || chosen_action.Get_Id() > actions.Count())
+		{
+			throw std::bad_function_call("Action chosen by default policy is not within valid range.");
 		}
 
 		float action_probability = 0.f;
@@ -337,6 +342,11 @@ public:
 				chosen_action = MWTAction(m_stateful_default_policy_func(m_default_policy_params, context));
 			}
 
+			if (chosen_action.Get_Id() == 0 || chosen_action.Get_Id() > actions.Count())
+			{
+				throw std::bad_function_call("Action chosen by default policy is not within valid range.");
+			}
+
 			action_probability = 1.f;
 			log_action = false;
 		}
@@ -409,6 +419,11 @@ public:
 			else
 			{
 				action_from_bag = MWTAction(m_stateful_default_policy_funcs[current_bag](m_default_policy_params[current_bag], context));
+			}
+
+			if (action_from_bag.Get_Id() == 0 || action_from_bag.Get_Id() > actions.Count())
+			{
+				throw std::bad_function_call("Action chosen by default policy is not within valid range.");
 			}
 
 			if (current_bag == chosen_bag)

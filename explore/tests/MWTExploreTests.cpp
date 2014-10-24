@@ -686,6 +686,33 @@ namespace vw_explore_tests
 			Assert::AreEqual(1, num_ex);
 		}
 
+		TEST_METHOD(Usage_Bad_Policy)
+		{
+			int num_ex = 0;
+			Context context(nullptr, 0);
+
+			// Default policy returns action outside valid range
+			COUNT_BAD_CALL
+			(
+				MWTExplorer mwt("");
+				mwt.Initialize_Epsilon_Greedy(0, Stateless_Default_Policy, 1);
+				mwt.Choose_Action("test", context);
+			)
+			COUNT_BAD_CALL
+			(
+				MWTExplorer mwt("");
+				mwt.Initialize_Tau_First(0, Stateless_Default_Policy, 1);
+				mwt.Choose_Action("test", context);
+			)
+			COUNT_BAD_CALL
+			(
+				MWTExplorer mwt("");
+				mwt.Initialize_Bagging(m_bags, m_policy_funcs_stateless, 1);
+				mwt.Choose_Action("test", context);
+			)
+			Assert::AreEqual(3, num_ex);
+		}
+
 		TEST_METHOD_INITIALIZE(Test_Initialize)
 		{
 			// Constant for coverage tests: using Pr(T > nlnn + cn) < 1 - exp(-e^(-c)) for the time
