@@ -31,14 +31,15 @@ make
 make install
 ```
 
-Note that ``./autogen.sh`` requires automake.  On OSX, this implies installing
+Note that ``./autogen.sh`` requires automake.On OSX, this implies installing
 'glibtools'.
 
-For OSX if make fails with errors then try:
+For OSX: if make fails with errors then try:
 ```
 brew install libtool
 brew install boost
-``` 
+```
+This will isntall 'glibtools' and 'boost'.
 
 Options that were passed to `./configure` in 7.6 and earlier may now be passed
 to `./autogen.sh`.
