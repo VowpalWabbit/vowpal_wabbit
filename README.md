@@ -39,7 +39,7 @@ For OSX: if make fails with errors then try:
 brew install libtool
 brew install boost
 ```
-This will isntall 'glibtools' and 'boost'.
+This will install appropriate versions of 'glibtools' and 'boost' on OSX.
 
 Options that were passed to `./configure` in 7.6 and earlier may now be passed
 to `./autogen.sh`.
