@@ -895,8 +895,8 @@ namespace Search {
       case INIT_TRAIN:
         break;
       case LEARN:
-        if (priv.t+1 < priv.learn_t) return false;
-        if (priv.t+1 == priv.learn_t) return true;  // SPEEDUP: we really only need it on the last learn_a, but this is hard to know...
+        if (priv.t < priv.learn_t) return false;
+        if (priv.t == priv.learn_t) return true;  // SPEEDUP: we really only need it on the last learn_a, but this is hard to know...
         // t > priv.learn_t
         if ((priv.rollout_num_steps > 0) && (priv.loss_declared_cnt >= priv.rollout_num_steps)) return false; // skipping
         break;
