@@ -93,7 +93,7 @@ namespace CBIFY {
     float base_prob = data.epsilon / data.k;
     if (frand48() < 1. - data.epsilon)
       {
-	CB::cb_class l = {loss(ld->label, ld->prediction), 
+	CB::cb_class l = {loss(ld->label, action), 
 			  action, 1.f - data.epsilon + base_prob};
 	data.cb_label.costs.push_back(l);
       }
