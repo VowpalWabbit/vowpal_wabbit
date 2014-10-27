@@ -57,10 +57,9 @@ namespace CBIFY {
     //Use CB to find current prediction for remaining rounds.
     if (data.tau && is_learn)
       {
-	ld->prediction = (uint32_t)do_uniform(data);
-	ec.loss = loss(ld->label, ld->prediction);
+	uint32_t action = (uint32_t)do_uniform(data);
+	ec.loss = loss(ld->label, action);
 	data.tau--;
-	uint32_t action = ld->prediction;
 	CB::cb_class l = {ec.loss, action, 1.f / data.k, 0};
 	data.cb_label.costs.erase();
 	data.cb_label.costs.push_back(l);
