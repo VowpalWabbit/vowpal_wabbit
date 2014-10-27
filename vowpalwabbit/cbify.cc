@@ -300,6 +300,11 @@ namespace CBIFY {
     VW::finish_example(all, &ec);
   }
 
+  void finish(cbify& data)
+  {
+    CB::cb_label.delete_label(&data.cb_label);
+  }
+
   learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
     cbify* data = (cbify*)calloc_or_die(1, sizeof(cbify));
@@ -365,6 +370,7 @@ namespace CBIFY {
       }
 
     l->set_finish_example<cbify,finish_example>();
+    l->set_finish<cbify,finish>();
     l->set_init_driver<cbify,init_driver>();
     
     return l;
