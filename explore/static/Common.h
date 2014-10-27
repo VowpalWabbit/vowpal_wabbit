@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <utility>
+#include <memory>
 #include <limits.h>
 
 #ifdef MANAGED_CODE

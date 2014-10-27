@@ -8,7 +8,6 @@
 #include "Explorer.h"
 #include <functional>
 #include <tuple>
-#include <memory>
 
 MWT_NAMESPACE {
 //

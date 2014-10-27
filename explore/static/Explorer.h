@@ -147,15 +147,15 @@ public:
 		PRG::prg random_generator(seed);
 		MWTAction chosen_action(0);
 		u32 numScores = actions.Count();
-		float* scores = new float[numScores]();
+		std::unique_ptr<float[]> scores(new float[numScores]());
 		// Invoke the default scorer function to score each action 
 		if (m_stateless_default_scorer_func != nullptr)
 		{
-			m_stateless_default_scorer_func(context, scores, actions.Count());
+			m_stateless_default_scorer_func(context, scores.get(), actions.Count());
 		}
 		else
 		{
-			m_stateful_default_scorer_func(m_default_scorer_params, context, scores, actions.Count());
+			m_stateful_default_scorer_func(m_default_scorer_params, context, scores.get(), actions.Count());
 		}
 
 		u32 i = 0;
@@ -198,7 +198,6 @@ public:
 			}
 		}
 
-		delete[] scores;
 		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), action_probability, true);
  	}
 
@@ -241,15 +240,15 @@ public:
 		PRG::prg random_generator(seed);
 		MWTAction chosen_action(0);
 		u32 numWeights = actions.Count();
-		float* weights = new float[numWeights]();
+		std::unique_ptr<float[]> weights(new float[numWeights]());
 		// Invoke the default scorer function to get the weight of each action 
 		if (m_stateless_default_scorer_func != nullptr)
 		{
-			m_stateless_default_scorer_func(context, weights, actions.Count());
+			m_stateless_default_scorer_func(context, weights.get(), actions.Count());
 		}
 		else
 		{
-			m_stateful_default_scorer_func(m_default_scorer_params, context, weights, actions.Count());
+			m_stateful_default_scorer_func(m_default_scorer_params, context, weights.get(), actions.Count());
 		}
 
 		// Create a discrete_distribution based on the returned weights. This class handles the
@@ -285,7 +284,6 @@ public:
 			}
 		}
 
-		delete[] weights;
 		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), action_probability, true);
 	}
 
@@ -415,7 +413,7 @@ public:
 		MWTAction chosen_action(0);
 		MWTAction action_from_bag(0);
 		// Maybe be best to make this static size
-		u32* actions_selected = new u32[actions.Count()];
+		std::unique_ptr<u32[]> actions_selected(new u32[actions.Count()]);
 		for (size_t i = 0; i < actions.Count(); i++)
 		{
 			actions_selected[i] = 0;
@@ -444,7 +442,6 @@ public:
 			actions_selected[action_from_bag.Get_Id_ZeroBased()]++;
 		}
 		float action_probability = (float)actions_selected[chosen_action.Get_Id_ZeroBased()] / m_bags;
-		delete[] actions_selected;
 
 		return std::tuple<MWTAction, float, bool>(chosen_action, action_probability, true);
 	}
