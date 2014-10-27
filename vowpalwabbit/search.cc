@@ -848,7 +848,8 @@ namespace Search {
       priv.total_examples_generated++;
     } else {              // is  LDF
       assert(losses.size() == priv.learn_ec_ref_cnt);
-      bool alloced[losses.size()];
+	  size_t s = losses.size();
+	  bool* alloced = (bool*)calloc_or_die(s,sizeof(bool));
       for (action a=0; a<priv.learn_ec_ref_cnt; a++) {
         example& ec = priv.learn_ec_ref[a];
         if (ec.ld == NULL) {
@@ -881,6 +882,7 @@ namespace Search {
         if (add_conditioning) 
           del_example_conditioning(priv, ec);
       }
+	  free(alloced);
     }
   }
 
@@ -893,8 +895,8 @@ namespace Search {
       case INIT_TRAIN:
         break;
       case LEARN:
-        if (priv.t+1 < priv.learn_t) return false;
-        if (priv.t+1 == priv.learn_t) return true;  // SPEEDUP: we really only need it on the last learn_a, but this is hard to know...
+        if (priv.t < priv.learn_t) return false;
+        if (priv.t == priv.learn_t) return true;  // SPEEDUP: we really only need it on the last learn_a, but this is hard to know...
         // t > priv.learn_t
         if ((priv.rollout_num_steps > 0) && (priv.loss_declared_cnt >= priv.rollout_num_steps)) return false; // skipping
         break;
