@@ -50,7 +50,7 @@ libvw.a: $(filter-out vw.o,$(vw_OBJECTS))
 libvw.so: $(filter-out vw.o,$(vw_OBJECTS)) liballreduce.so
 	$(CXX) $(FLAGS) -shared $(EXPORT_DYNAMIC) -o $@ $(filter-out liballreduce.so,$+) -L. -l allreduce $(STDLIBS)
 
-vw: main.o libvw.a liballreduce.a
+vw: main.o libvw.a liballreduce.a libvw.so liballreduce.so
 	$(CXX) $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
 
 active_interactor: active_interactor.cc
