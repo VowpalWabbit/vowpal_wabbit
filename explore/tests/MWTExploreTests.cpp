@@ -9,7 +9,7 @@ using namespace MultiWorldTesting;
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 #define COUNT_INVALID(block) try { block } catch (std::invalid_argument) { num_ex++; }
-#define COUNT_BAD_CALL(block) try { block } catch (std::bad_function_call) { num_ex++; }
+#define COUNT_BAD_CALL(block) try { block } catch (std::invalid_argument) { num_ex++; }
 
 namespace vw_explore_tests
 {
