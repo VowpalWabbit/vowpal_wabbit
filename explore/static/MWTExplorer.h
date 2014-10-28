@@ -140,7 +140,7 @@ PORTING_INTERFACE:
 	{
 		Validate_Epsilon(epsilon);
 		Validate_Num_Actions(num_actions);
-		Validate_Policy(default_policy_func);
+		Validate_Policy((void*)default_policy_func);
 		Validate_Explorer();
 
 		m_action_set.Set_Count(num_actions);
@@ -154,7 +154,7 @@ PORTING_INTERFACE:
 	{
 		Validate_Epsilon(epsilon);
 		Validate_Num_Actions(num_actions);
-		Validate_Policy(default_policy_func);
+		Validate_Policy((void*)default_policy_func);
 		Validate_Explorer();
 
 		m_action_set.Set_Count(num_actions);
@@ -168,7 +168,7 @@ PORTING_INTERFACE:
 		u32 num_actions)
 	{
 		Validate_Num_Actions(num_actions);
-		Validate_Policy(default_policy_func);
+		Validate_Policy((void*)default_policy_func);
 		Validate_Explorer();
 
 		m_action_set.Set_Count(num_actions);
@@ -181,7 +181,7 @@ PORTING_INTERFACE:
 		u32 num_actions)
 	{
 		Validate_Num_Actions(num_actions);
-		Validate_Policy(default_policy_func);
+		Validate_Policy((void*)default_policy_func);
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
@@ -224,7 +224,7 @@ PORTING_INTERFACE:
 		u32 num_actions)
 	{
 		Validate_Num_Actions(num_actions);
-		Validate_Policy(default_scorer_func);
+		Validate_Policy((void*)default_scorer_func);
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
@@ -237,7 +237,7 @@ PORTING_INTERFACE:
 		u32 num_actions)
 	{
 		Validate_Num_Actions(num_actions);
-		Validate_Policy(default_scorer_func);
+		Validate_Policy((void*)default_scorer_func);
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
@@ -250,7 +250,7 @@ PORTING_INTERFACE:
 		u32 num_actions)
 	{
 		Validate_Num_Actions(num_actions);
-		Validate_Policy(default_scorer_func);
+		Validate_Policy((void*)default_scorer_func);
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
@@ -262,7 +262,7 @@ PORTING_INTERFACE:
 		u32 num_actions)
 	{
 		Validate_Num_Actions(num_actions);
-		Validate_Policy(default_scorer_func);
+		Validate_Policy((void*)default_scorer_func);
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
@@ -279,7 +279,7 @@ PORTING_INTERFACE:
 		u64 seed = HashUtils::Compute_Id_Hash(unique_id);
 		if (m_explorer.get() == nullptr)
 		{
-			throw std::bad_function_call("MWT was not initialized properly.");
+			throw std::invalid_argument("MWT was not initialized properly.");
 		}
 		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, m_action_set, (u32)seed);
 		
@@ -349,7 +349,7 @@ private:
 	{
 		if (m_explorer.get() != nullptr)
 		{
-			throw std::bad_function_call("MWT is already initialized.");
+			throw std::invalid_argument("MWT is already initialized.");
 		}
 	}
 

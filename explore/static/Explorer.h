@@ -71,7 +71,7 @@ public:
 
 		if (chosen_action.Get_Id() == 0 || chosen_action.Get_Id() > actions.Count())
 		{
-			throw std::bad_function_call("Action chosen by default policy is not within valid range.");
+			throw std::invalid_argument("Action chosen by default policy is not within valid range.");
 		}
 
 		float action_probability = 0.f;
@@ -258,13 +258,13 @@ public:
 		{
 			if (weights[i] < 0)
 			{
-				throw std::bad_function_call("Scores must be non-negative.");
+				throw std::invalid_argument("Scores must be non-negative.");
 			}
 			total += weights[i];
 		}
 		if (total == 0)
 		{
-			throw std::bad_function_call("At least one score must be positive.");
+			throw std::invalid_argument("At least one score must be positive.");
 		}
 
 		float draw = random_generator.Uniform_Unit_Interval();
@@ -352,7 +352,7 @@ public:
 
 			if (chosen_action.Get_Id() == 0 || chosen_action.Get_Id() > actions.Count())
 			{
-				throw std::bad_function_call("Action chosen by default policy is not within valid range.");
+				throw std::invalid_argument("Action chosen by default policy is not within valid range.");
 			}
 
 			action_probability = 1.f;
@@ -431,7 +431,7 @@ public:
 
 			if (action_from_bag.Get_Id() == 0 || action_from_bag.Get_Id() > actions.Count())
 			{
-				throw std::bad_function_call("Action chosen by default policy is not within valid range.");
+				throw std::invalid_argument("Action chosen by default policy is not within valid range.");
 			}
 
 			if (current_bag == chosen_bag)

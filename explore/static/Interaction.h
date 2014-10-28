@@ -8,6 +8,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <float.h>
+#include <math.h>
 #include "Common.h" 
 
 using namespace std;
@@ -148,12 +149,14 @@ private:
 			for (size_t i = 0; i < m_num_features; i++)
 			{
 				integral = (int)m_common_features[i].Value;
-				fractional = (int)(abs(m_common_features[i].Value - integral) * 100000); // 5-digit precision
-				sprintf(feature_str, "%d:%d.%05d ", m_common_features[i].Id, integral, fractional);
+				fractional = (int)(fabsf(m_common_features[i].Value - integral) * 100000); // 5-digit precision
+				if (i == 0)
+				  sprintf(feature_str, "%d:%d.%05d", m_common_features[i].Id, integral, fractional);
+				else
+				  sprintf(feature_str, " %d:%d.%05d", m_common_features[i].Id, integral, fractional);
 
 				stream.append(feature_str);
 			}
-			stream.pop_back(); // remove last space
 		}
 	}
 
