@@ -113,8 +113,8 @@ void Clock_Explore()
 
 int main(int argc, char* argv[])
 {
-	Clock_Explore();
-	return 0;
+  	Clock_Explore();
+  	return 0;
 
 	if (argc < 2)
 	  {
