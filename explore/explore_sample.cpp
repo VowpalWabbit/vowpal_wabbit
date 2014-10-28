@@ -43,79 +43,8 @@ void Stateless_Default_Scorer(Context& appContext, float scores[], u32 size)
 	}
 }
 
-void Clock_Explore()
-{
-	float epsilon = .2f;
-	int policy_params = 101;
-	string unique_key = "key";
-	int num_features = 1000;
-	int num_iter = 1000;
-	int num_warmup = 100;
-	int num_interactions = 1;
-
-	// pre-create features
-	Feature* features = new Feature[num_features];
-	for (int i = 0; i < num_features; i++)
-	{
-		features[i].Id = i + 1;
-		features[i].Value = 0.5;
-	}
-
-	long long time_init = 0, time_choose = 0, time_serialized_log = 0, time_typed_log = 0;
-	for (int iter = 0; iter < num_iter + num_warmup; iter++)
-	{
-		high_resolution_clock::time_point t1 = high_resolution_clock::now();
-		MWTExplorer mwt("test");
-		mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy1, policy_params, NUM_ACTIONS);
-		high_resolution_clock::time_point t2 = high_resolution_clock::now();
-		time_init += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
-
-		t1 = high_resolution_clock::now();
-		Context appContext(features, num_features);
-		for (int i = 0; i < num_interactions; i++)
-		{
-			mwt.Choose_Action(unique_key, appContext);
-		}
-		t2 = high_resolution_clock::now();
-		time_choose += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
-
-		t1 = high_resolution_clock::now();
-		string logs = mwt.Get_All_Interactions();
-		t2 = high_resolution_clock::now();
-		time_serialized_log += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
-
-		for (int i = 0; i < num_interactions; i++)
-		{
-			mwt.Choose_Action(unique_key, appContext);
-		}
-
-		t1 = high_resolution_clock::now();
-		Interaction** interactions = nullptr;
-		size_t n_inter = 0;
-		mwt.Get_All_Interactions(n_inter, interactions);
-		t2 = high_resolution_clock::now();
-		time_typed_log += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
-		for (size_t i = 0; i < n_inter; i++)
-			delete interactions[i];
-		delete[] interactions;
-	}
-
-	delete[] features;
-
-	cout << "# iterations: " << num_iter << ", # interactions: " << num_interactions << ", # context features: " << num_features << endl;
-	cout << "--- PER ITERATION ---" << endl;
-	cout << "Init: " << (double)time_init / num_iter << " micro" << endl;
-	cout << "Choose Action: " << (double)time_choose / (num_iter * num_interactions) << " micro" << endl;
-	cout << "Get Serialized Log: " << (double)time_serialized_log / num_iter << " micro" << endl;
-	cout << "Get Typed Log: " << (double)time_typed_log / num_iter << " micro" << endl;
-	cout << "--- TOTAL TIME ---: " << (time_init + time_choose + time_serialized_log + time_typed_log) << " micro" << endl;
-}
-
 int main(int argc, char* argv[])
 {
-  	Clock_Explore();
-  	return 0;
-
 	if (argc < 2)
 	  {
 	    cerr << "arguments: {greedy,tau-first,bagging,softmax} [stateful]" << endl;
