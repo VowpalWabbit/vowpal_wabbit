@@ -2,7 +2,7 @@ BINARIES = vw active_interactor
 SHARED_LIBRARIES = libvw.so liballreduce.so libvw_c_wrapper.so
 MANPAGES = vw.1
 
-VWLIBS := -L. -l vw -l allreduce
+VWLIBS := -Wl,-rpath,. -L. -l vw -l allreduce
 STDLIBS = $(BOOST_LIBRARY) $(LIBS)
 
 all:
