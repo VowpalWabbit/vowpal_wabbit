@@ -104,37 +104,37 @@ namespace vw_explore_tests
 
 		TEST_METHOD(Bagging_Stateful)
 		{
-			m_mwt->Initialize_Bagging<int>(m_bags, m_policy_funcs_stateful, *m_policy_params, m_num_actions);
+			Stateful<int>::Policy* funcs[2] = { Stateful_Default_Policy, Stateful_Default_Policy2 };
+			m_mwt->Initialize_Bagging<int>(m_bags, funcs, m_policy_params, m_num_actions);
 
-			// Every bag uses the same default policy function so expected chosen action is its return value
-			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(m_policy_func_arg, *m_context);
+			u32 expected_action1 = VWExploreUnitTests::Stateful_Default_Policy(m_policy_func_arg, *m_context);
+			u32 expected_action2 = VWExploreUnitTests::Stateful_Default_Policy2(m_policy_func_arg, *m_context);
 
 			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
-			Assert::AreEqual(expected_action, chosen_action);
+			Assert::AreEqual(expected_action2, chosen_action);
 
 			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
-			Assert::AreEqual(expected_action, chosen_action);
+			Assert::AreEqual(expected_action1, chosen_action);
 			
-			// All bags choose the same action, so prob = 1
-			float expected_probs[2] = { 1.f, 1.f };
+			float expected_probs[2] = { .5f, .5f };
 			this->Test_Interaction_Store(2, expected_probs);
 		}
 
 		TEST_METHOD(Bagging_Stateless)
 		{
-			m_mwt->Initialize_Bagging(m_bags, m_policy_funcs_stateless, m_num_actions);
+			Policy* funcs[2] = { Stateless_Default_Policy, Stateless_Default_Policy2 };
+			m_mwt->Initialize_Bagging(m_bags, funcs, m_num_actions);
 
-			// Every bag uses the same default policy function so expected chosen action is its return value
-			u32 expected_action = VWExploreUnitTests::Stateless_Default_Policy(*m_context);
+			u32 expected_action1 = VWExploreUnitTests::Stateless_Default_Policy(*m_context);
+			u32 expected_action2 = VWExploreUnitTests::Stateless_Default_Policy2(*m_context);
 
 			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
-			Assert::AreEqual(expected_action, chosen_action);
+			Assert::AreEqual(expected_action2, chosen_action);
 
 			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
-			Assert::AreEqual(expected_action, chosen_action);
+			Assert::AreEqual(expected_action1, chosen_action);
 
-			// All bags choose the same action, so prob = 1
-			float expected_probs[2] = { 1.f, 1.f };
+			float expected_probs[2] = { .5f, .5f };
 			this->Test_Interaction_Store(2, expected_probs);
 		}
 
@@ -144,7 +144,7 @@ namespace vw_explore_tests
 			Stateful<int>::Policy* funcs[2] = { Stateful_Default_Policy, Stateful_Default_Policy2 };
 			int* params[2] = { &m_policy_func_arg, &m_policy_func_arg };
 
-			m_mwt->Initialize_Bagging<int>(bags, funcs, *params, m_num_actions);
+			m_mwt->Initialize_Bagging<int>(bags, funcs, params, m_num_actions);
 
 			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
 			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
@@ -505,7 +505,8 @@ namespace vw_explore_tests
 
 		TEST_METHOD(End_To_End_Bagging)
 		{
-			m_mwt->Initialize_Bagging<int>(m_bags, m_policy_funcs_stateful, *m_policy_params, m_num_actions);
+			Stateful<int>::Policy* funcs[2] = { Stateful_Default_Policy, Stateful_Default_Policy2 };
+			m_mwt->Initialize_Bagging<int>(m_bags, funcs, m_policy_params, m_num_actions);
 			this->End_To_End();
 		}
 
@@ -649,9 +650,9 @@ namespace vw_explore_tests
 			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Tau_First<int>(1, nullptr, m_policy_func_arg, m_num_actions);)
 			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Tau_First(2, nullptr, m_num_actions);)
 			
-			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Bagging<int>(1, nullptr, *m_policy_params, m_num_actions);)
+			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Bagging<int>(1, nullptr, m_policy_params, m_num_actions);)
 			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Bagging(1, nullptr, m_num_actions);)
-			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Bagging<int>(2, stateful_funcs, *m_policy_params, m_num_actions);)
+			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Bagging<int>(2, stateful_funcs, m_policy_params, m_num_actions);)
 			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Bagging(2, stateless_funcs, m_num_actions);)
 			
 			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Softmax<int>(0.5f, nullptr, m_policy_func_arg, m_num_actions);)
@@ -690,6 +691,7 @@ namespace vw_explore_tests
 		{
 			int num_ex = 0;
 			Context context(nullptr, 0);
+			Policy* funcs[2] = { Stateless_Default_Policy, Stateless_Default_Policy2 };
 
 			// Default policy returns action outside valid range
 			COUNT_BAD_CALL
@@ -707,7 +709,7 @@ namespace vw_explore_tests
 			COUNT_BAD_CALL
 			(
 				MWTExplorer mwt("");
-				mwt.Initialize_Bagging(m_bags, m_policy_funcs_stateless, 1);
+				mwt.Initialize_Bagging(m_bags, funcs, 1);
 				mwt.Choose_Action("test", context);
 			)
 			Assert::AreEqual(3, num_ex);
@@ -758,13 +760,9 @@ namespace vw_explore_tests
 
 			m_unique_key = "1001";
 
-			m_policy_funcs_stateful = new Stateful<int>::Policy*[m_bags];
-			m_policy_funcs_stateless = new Policy*[m_bags];
 			m_policy_params = new int*[m_bags];
 			for (u32 i = 0; i < m_bags; i++)
 			{
-				m_policy_funcs_stateful[i] = Stateful_Default_Policy;
-				m_policy_funcs_stateless[i] = Stateless_Default_Policy;
 				m_policy_params[i] = &m_policy_func_arg;
 			}
 		}
@@ -779,7 +777,6 @@ namespace vw_explore_tests
 			m_context = nullptr;
 			m_mwt = nullptr;
 
-			delete[] m_policy_funcs_stateful;
 			delete[] m_policy_params;
 		}
 
@@ -796,6 +793,10 @@ namespace vw_explore_tests
 		static u32 Stateless_Default_Policy(Context& applicationContext)
 		{
 			return MWTAction::Make_OneBased(99 % m_num_actions);
+		}
+		static u32 Stateless_Default_Policy2(Context& applicationContext)
+		{
+			return MWTAction::Make_OneBased(99 % m_num_actions) - 1;
 		}
 
 		//TODO: For now assume the size of the score array is the number of action scores to
@@ -946,8 +947,6 @@ namespace vw_explore_tests
 		string m_unique_key;
 		int m_unique_key_length;
 
-		Stateful<int>::Policy** m_policy_funcs_stateful;
-		Policy** m_policy_funcs_stateless;
 		int** m_policy_params;
 	};
 	// Static variables need to be initialized externally in a .cpp file for linker to work

@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
 	else if (strcmp(argv[1],"bagging") == 0)
 	  {
 	    if (stateful) // Initialize Bagging explore algorithm using a default policy function that accepts parameters
-	      mwt.Initialize_Bagging<int>(num_bags, bags, *params, NUM_ACTIONS);
+	      mwt.Initialize_Bagging<int>(num_bags, bags, params, NUM_ACTIONS);
 	    else //Initialize Bagging explore algorithm using a stateless default policy function 
 	      mwt.Initialize_Bagging(num_bags, stateless_bags, NUM_ACTIONS);
 	  }
