@@ -98,6 +98,7 @@ private:
  const size_t max_int = 100000;
  const float max_float = max_int;
  const float min_float = 0.00001;
+ const size_t max_digits = roundf(- log(min_float) / log (10.));
 	
 class Context : public Serializable
 {
@@ -148,17 +149,20 @@ private:
 	  { // helper for print_float
 	    char values[10];
 	    size_t v = (size_t) f;
-	    int digit = 0;
-	    int first_nonzero = 0;
+	    size_t digit = 0;
+	    size_t first_nonzero = 0;
 	    for (size_t max = 1; max <= v; ++digit)
 	      {
 		size_t max_next = max*10;
 		char v_mod = v % max_next / max;
 		if (!trailing_zeros && v_mod != '\0' && first_nonzero == 0)
 		  first_nonzero = digit;
-		values[digit] = 48+v_mod;
+		values[digit] = '0'+v_mod;
 		max = max_next;
 	      }
+	    if (!trailing_zeros)
+	      for (size_t i = max_digits; i > digit; i--)
+		*begin++ = '0';
 	    while (digit > first_nonzero)
 	      *begin++ = values[--digit];
 	  }

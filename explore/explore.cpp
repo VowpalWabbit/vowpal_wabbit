@@ -7,6 +7,8 @@
 using namespace std;
 using namespace std::chrono;
 
+using namespace MultiWorldTesting;
+
 const int NUM_ACTIONS = 10;
 
 u32 Stateful_Default_Policy_1(int& parameters, Context& appContext)
