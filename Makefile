@@ -1,4 +1,4 @@
-CXX = $(shell which clang++)
+#CXX = $(shell which clang++)
 # -- if you want to test 32-bit use this instead,
 #    it sometimes reveals type portability issues
 # CXX = $(shell which clang++) -m32
