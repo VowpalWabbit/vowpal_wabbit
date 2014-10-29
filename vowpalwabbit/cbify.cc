@@ -68,10 +68,9 @@ namespace CBIFY {
     //Use CB to find current prediction for remaining rounds.
     if (data.tau && is_learn)
       {
-	ld->prediction = (uint32_t)base.mwt->Choose_Action(string("vw"), dummy); // TODO: evolve unique key?
-	ec.loss = loss(ld->label, ld->prediction);
+	uint32_t action = (uint32_t)base.mwt->Choose_Action(string("vw"), dummy); // TODO: evolve unique key?
+	ec.loss = loss(ld->label, action);
 	data.tau--;
-	uint32_t action = ld->prediction;
 	CB::cb_class l = {ec.loss, action, 1.f / data.k, 0};
 	data.cb_label.costs.erase();
 	data.cb_label.costs.push_back(l);
@@ -97,31 +96,29 @@ namespace CBIFY {
     ec.ld = &(data.cb_label);
     data.cb_label.costs.erase();
     
-	// TODO: ideally these call to modify the policy context are not needed, 
-	// however at the moment MWT::Initialize requires the policy function's argument 
-	// which is not available at calling time. This can be fixed if the Context object 
-	// allows for a void* data instance, then we can pass the argument in at the
-	// time of choose_action. Or if Choose_Action takes a separate parameter for this arg.
-	base.mwt_policy_context->l = &base;
-	base.mwt_policy_context->e = &ec;
-
-	Context dummy(nullptr, 0);
-	base.mwt->Choose_Action(string("vw"), dummy); // TODO: evolve unique key?
-
-	size_t num_interactions = 0;
-	Interaction** interactions = nullptr;
-	base.mwt->Get_All_Interactions(num_interactions, interactions);
-	
-	if (num_interactions != 1)
-	{
-		throw std::exception();
-	}
-
-	u32 action = interactions[0]->Get_Action().Get_Id();
-	float prob = interactions[0]->Get_Prob();
-
-	CB::cb_class l = { loss(ld->label, ld->prediction), action, prob };
-	data.cb_label.costs.push_back(l);
+    // TODO: ideally these call to modify the policy context are not needed, 
+    // however at the moment MWT::Initialize requires the policy function's argument 
+    // which is not available at calling time. This can be fixed if the Context object 
+    // allows for a void* data instance, then we can pass the argument in at the
+    // time of choose_action. Or if Choose_Action takes a separate parameter for this arg.
+    base.mwt_policy_context->l = &base;
+    base.mwt_policy_context->e = &ec;
+    
+    Context dummy(nullptr, 0);
+    base.mwt->Choose_Action(string("vw"), dummy); // TODO: evolve unique key?
+    
+    size_t num_interactions = 0;
+    Interaction** interactions = nullptr;
+    base.mwt->Get_All_Interactions(num_interactions, interactions);
+    
+    if (num_interactions != 1)
+      throw std::exception();
+    
+    u32 action = interactions[0]->Get_Action().Get_Id();
+    float prob = interactions[0]->Get_Prob();
+    
+    CB::cb_class l = { loss(ld->label, action), action, prob };
+    data.cb_label.costs.push_back(l);
     
     if (is_learn)
       base.learn(ec);
@@ -319,6 +316,11 @@ namespace CBIFY {
     VW::finish_example(all, &ec);
   }
 
+  void finish(cbify& data)
+  {
+    CB::cb_label.delete_label(&data.cb_label);
+  }
+
   learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
     cbify* data = (cbify*)calloc_or_die(1, sizeof(cbify));
@@ -390,6 +392,7 @@ namespace CBIFY {
       }
 
     l->set_finish_example<cbify,finish_example>();
+    l->set_finish<cbify,finish>();
     l->set_init_driver<cbify,init_driver>();
     
     return l;

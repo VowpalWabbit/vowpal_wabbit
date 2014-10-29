@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef CB_ALGS_H
-#define CB_ALGS_H
-
+#pragma once
 //TODO: extend to handle CSOAA_LDF and WAP_LDF
 namespace CB_ALGS {
 
@@ -40,5 +38,3 @@ namespace CB_ALGS {
     return simple_temp.prediction;
   }
 }
-
-#endif

@@ -23,7 +23,7 @@ vw_OBJECTS = $(patsubst %.cc,%.o,$(vw_SOURCES))
 vw_DEPS = $(patsubst %.cc,%.d,$(vw_SOURCES))
 
 %.d:	%.cc config.h
-	$(CXX) -MM $< > $@
+	$(CXX) -std=c++0x -MM $< > $@
 
 -include $(vw_DEPS)
 

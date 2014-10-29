@@ -278,6 +278,10 @@
     <ClInclude Include="scorer.h" />
     <ClInclude Include="search.h" />
     <ClInclude Include="search_sequencetask.h" />
+    <ClInclude Include="search_multiclasstask.h" />
+    <ClInclude Include="search_hooktask.h" />
+    <ClInclude Include="search_entityrelationtask.h" />
+    <ClInclude Include="search_dep_parser.h" />
     <ClInclude Include="sender.h" />
     <ClInclude Include="simple_label.h" />
     <ClInclude Include="targetver.h" />
@@ -334,6 +338,7 @@
     <ClCompile Include="search_hooktask.cc" />
     <ClCompile Include="search_sequencetask.cc" />
     <ClCompile Include="search_entityrelationtask.cc" />
+    <ClCompile Include="search_dep_parser.cc" />
     <ClCompile Include="sender.cc" />
     <ClCompile Include="simple_label.cc" />
     <ClCompile Include="stagewise_poly.cc" />

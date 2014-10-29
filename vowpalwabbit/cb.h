@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef CONTEXTUAL_BANDIT_H
-#define CONTEXTUAL_BANDIT_H
-
+#pragma once
 namespace CB {
 
   struct cb_class {
@@ -27,5 +25,3 @@ namespace CB {
 namespace CB_EVAL {
   extern label_parser cb_eval;//for evaluation of an arbitrary policy.
 }
-
-#endif

@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef COMP_IO_BUF_H_
-#define COMP_IO_BUF_H_
-
+#pragma once
 #include "io_buf.h"
 #include "v_array.h"
 #include "zlib.h"
@@ -100,5 +98,3 @@ public:
     return false;
   }
 };
-
-#endif /* COMP_IO_BUF_H_ */

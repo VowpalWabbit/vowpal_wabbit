@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef LOSSFUNCTIONS_H_
-#define LOSSFUNCTIONS_H_
-
+#pragma once
 #include <string>
 #include "parse_primitives.h"
 
@@ -35,5 +33,3 @@ public :
 };
 
 loss_function* getLossFunction(void*, string funcName, float function_parameter = 0);
-
-#endif /* LOSSFUNCTIONS_H_ */

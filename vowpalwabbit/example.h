@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef EXAMPLE_H
-#define EXAMPLE_H
-
+#pragma once
 #include <stdint.h>
 #include "v_array.h"
 
@@ -95,5 +93,3 @@ inline int example_is_newline(example& ec)
           ((ec.indices.size() == 1) &&
            (ec.indices.last() == constant_namespace)));
 }
-
-#endif

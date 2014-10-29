@@ -9,7 +9,8 @@
 #endif
 
 PYTHON_VERSION = 2.7
-PYTHON_INCLUDE = /usr/include/python$(PYTHON_VERSION)
+PYTHON_INCLUDE = $(shell python$(PYTHON_VERSION)-config --includes)
+PYTHON_LDFLAGS = $(shell python$(PYTHON_VERSION)-config --ldflags)
 
 PYTHON_LIBS = -l boost_python
 ifeq (,$(wildcard ../vowpalwabbit/vw.so))
@@ -35,10 +36,10 @@ endif
 STDLIBS = $(BOOST_LIBRARY) $(LIBS) $(PYTHON_LIBS)
 
 $(PYLIBVW): pylibvw.o  ../vowpalwabbit/libvw.a
-	$(CXX) -shared $(EXPORT_DYNAMIC) pylibvw.o $(BOOST_LIBRARY) -L/usr/lib/python$(PYTHON_VERSION)/config -lpython$(PYTHON_VERSION) $(VWLIBS) $(STDLIBS) -o $(PYLIBVW)
+	$(CXX) -shared $(EXPORT_DYNAMIC) pylibvw.o $(BOOST_LIBRARY) $(PYTHON_LDFLAGS) $(VWLIBS) $(STDLIBS) -o $(PYLIBVW)
 
 pylibvw.o: pylibvw.cc
-	$(CXX) -std=c++0x -I$(PYTHON_INCLUDE) $(BOOST_INCLUDE) -fPIC -c pylibvw.cc -o pylibvw.o
+	$(CXX) -std=c++0x $(PYTHON_INCLUDE) $(BOOST_INCLUDE) -fPIC -c pylibvw.cc -o pylibvw.o
 
 clean:
 	rm -f *.o $(PYLIBVW)

@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef SEARCH_SEQUENCETASK_H
-#define SEARCH_SEQUENCETASK_H
-
+#pragma once
 #include "search.h"
 
 namespace SequenceTask {
@@ -35,5 +33,3 @@ namespace SequenceTask_DemoLDF {
   void run(Search::search&, vector<example*>&);
   extern Search::search_task task;
 }
-
-#endif

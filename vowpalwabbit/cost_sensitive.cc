@@ -109,14 +109,16 @@ namespace COST_SENSITIVE {
   void delete_label(void* v)
   {
     label* ld = (label*)v;
-    ld->costs.delete_v();
+    if (ld) ld->costs.delete_v();
   }
 
   void copy_label(void*&dst, void*src)
   {
-    label*&ldD = (label*&)dst;
-    label* ldS = (label* )src;
-    copy_array(ldD->costs, ldS->costs);
+    if (dst && src) {
+      label*&ldD = (label*&)dst;
+      label* ldS = (label* )src;
+      copy_array(ldD->costs, ldS->costs);
+    }
   }
 
   bool substring_eq(substring ss, const char* str) {
@@ -291,6 +293,7 @@ namespace COST_SENSITIVE {
 
   bool example_is_test(example& ec)
   {
+    if (ec.ld == NULL) return false;
     v_array<COST_SENSITIVE::wclass> costs = ((label*)ec.ld)->costs;
     if (costs.size() == 0) return true;
     for (size_t j=0; j<costs.size(); j++)

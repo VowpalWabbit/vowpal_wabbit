@@ -67,13 +67,14 @@ class vw(pylibvw.vw):
             pylibvw.vw.finish(self)
             self.finished = True
 
-    def example(self, stringOrDict=None):
-        return example(self, stringOrDict)
+    def example(self, stringOrDict=None, labelType=pylibvw.vw.lDefault):
+        """TODO: document"""
+        return example(self, stringOrDict, labelType)
 
     def __del__(self):
         self.finish()
 
-    def init_search_task(self, search_task):
+    def init_search_task(self, search_task, task_data=None):
         sch = self.get_search_ptr()
 
         def predict(examples, my_tag, oracle, condition=None, allowed=None, learner_id=0):
@@ -105,13 +106,15 @@ class vw(pylibvw.vw):
 
             Returns a single prediction.
             """
-            if isinstance(examples, list):
-                raise Exception("LDF not yet supported in Python interface :(")
-            elif not (isinstance(examples, example) or isinstance(examples, pylibvw.example)):
-                raise TypeError("'examples' should be a pyvw example (or a pylibvw example)")
-            else:
+            if (isinstance(examples, list) and all([isinstance(ex, example) or isinstance(ex, pylibvw.example) for ex in examples])) or \
+               isinstance(examples, example) or isinstance(examples, pylibvw.example):
                 P = sch.get_predictor(my_tag)
-                P.set_input(examples)
+                if isinstance(examples, list): # LDF
+                    P.set_input_length(len(examples))
+                    for n in range(len(examples)):
+                        P.set_input_at(n, examples[n])
+                else: # non-LDF
+                    P.set_input(examples)
                 
                 if isinstance(oracle, list): P.set_oracles(oracle)
                 elif isinstance(oracle, int): P.set_oracle(oracle)
@@ -122,9 +125,9 @@ class vw(pylibvw.vw):
                     for c in condition:
                         if not isinstance(c, tuple): raise TypeError('item ' + str(c) + ' in condition list is malformed')
                         if   len(c) == 2 and isinstance(c[0], int) and isinstance(c[1], str) and len(c[1]) == 1:
-                            P.add_condition(c[0], c[1])
+                            P.add_condition(max(0, c[0]), c[1])
                         elif len(c) == 3 and isinstance(c[0], int) and isinstance(c[1], int) and isinstance(c[2], str) and len(c[2]) == 1:
-                            P.add_condition_range(c[0], c[1], c[2])
+                            P.add_condition_range(max(0,c[0]), max(0,c[1]), c[2])
                         else:
                             raise TypeError('item ' + str(c) + ' in condition list malformed')
 
@@ -136,10 +139,12 @@ class vw(pylibvw.vw):
                 if learner_id != 0: P.set_learner_id(learner_id)
 
                 return P.predict()
+            else:
+                raise TypeError("'examples' should be a pyvw example (or a pylibvw example), or a list of said things")
 
         sch.predict = predict
         num_actions = sch.get_num_actions()
-        return search_task(self, sch, num_actions)        
+        return search_task(self, sch, num_actions) if task_data is None else search_task(self, sch, num_actions, task_data)
 
 class namespace_id():
     """The namespace_id class is simply a wrapper to convert between
@@ -328,21 +333,21 @@ class example(pylibvw.example):
     easier to use (by making the types safer via namespace_id) and
     also with added python-specific functionality."""
     
-    def __init__(self, vw, initStringOrDict=None):
+    def __init__(self, vw, initStringOrDict=None, labelType=pylibvw.vw.lDefault):
         """Construct a new example from vw. If initString is None, you
-        get an"empty" example which you can construct by hand (see, eg,
+        get an "empty" example which you can construct by hand (see, eg,
         example.push_features). If initString is a string, then this
         string is parsed as it would be from a VW data file into an
         example (and "setup_example" is run)."""
 
         if initStringOrDict is None:
-            pylibvw.example.__init__(self, vw)
+            pylibvw.example.__init__(self, vw, labelType)
             self.setup_done = False
         elif isinstance(initStringOrDict, str):
-            pylibvw.example.__init__(self, vw, initStringOrDict)
+            pylibvw.example.__init__(self, vw, labelType, initStringOrDict)
             self.setup_done = True
         elif isinstance(initStringOrDict, dict):
-            pylibvw.example.__init__(self, vw)
+            pylibvw.example.__init__(self, vw, labelType)
             self.vw = vw
             self.stride = vw.get_stride()
             self.finished = False
@@ -356,6 +361,7 @@ class example(pylibvw.example):
         self.vw = vw
         self.stride = vw.get_stride()
         self.finished = False
+        self.labelType = labelType
 
     def __del__(self):
         self.finish()
@@ -398,7 +404,7 @@ class example(pylibvw.example):
     def set_label_string(self, string):
         """Give this example a new label, formatted as a string (ala
         the VW data file format)."""
-        pylibvw.example.set_label_string(self, self.vw, string)
+        pylibvw.example.set_label_string(self, self.vw, string, self.labelType)
 
     def setup_example(self):
         """If this example hasn't already been setup (ie, quadratic

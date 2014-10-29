@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef PARSE_PRIMITIVES_H
-#define PARSE_PRIMITIVES_H
-
+#pragma once
 #include<iostream>
 #include <stdint.h>
 #include <math.h>
@@ -220,5 +218,3 @@ inline int int_of_substring(substring s)
 
   return i;
 }
-
-#endif

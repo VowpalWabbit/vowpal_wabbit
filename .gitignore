@@ -50,6 +50,7 @@ library/ezexample_train
 library/library_example
 library/recommend
 library/gd_mf_weights
+library/test_search
 test/RunTests.last.times
 *.dSYM
 
@@ -66,3 +67,7 @@ test/RunTests.last.times
 *.suo
 *.sdf
 *.vcxproj.user
+*.so
+demo/mnist/infimnist
+demo/ocr/letter.*
+demo/ocr/run.*
