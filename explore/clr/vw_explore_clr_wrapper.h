@@ -176,12 +176,15 @@ namespace MultiWorldTesting {
 		// Garbage-collector handles to keep alive
 		GCHandle selfHandle;
 		GCHandle policyFuncHandle;
+		List<GCHandle>^ contextHandles;
 		cli::array<GCHandle>^ baggingFuncHandles;
 
 		// Bagging-specific
 		cli::array<IntPtr>^ baggingParameters;
 		NativeMultiWorldTesting::Stateful_Policy_Func** m_bagging_funcs;
 		void** m_bagging_func_params;
+
+		List<IntPtr>^ nativeContexts;
 
 	public:
 		MwtExplorer(String^ app_id);

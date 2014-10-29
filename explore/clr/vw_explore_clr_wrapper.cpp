@@ -18,6 +18,8 @@ namespace MultiWorldTesting {
 	{
 		std::string native_app_id = marshal_as<std::string>(app_id);
 		m_mwt = new NativeMultiWorldTesting::MWTExplorer(native_app_id);
+		contextHandles = gcnew List<GCHandle>();
+		nativeContexts = gcnew List<IntPtr>();
 		m_bagging_funcs = nullptr;
 		m_bagging_func_params = nullptr;
 	}
@@ -61,6 +63,22 @@ namespace MultiWorldTesting {
 			}
 			baggingParameters = nullptr;
 		}
+		for (int i = 0; i < contextHandles->Count; i++)
+		{
+			GCHandle handle = (GCHandle)contextHandles[i];
+			if (handle.IsAllocated)
+			{
+				handle.Free();
+			}
+		}
+		contextHandles->Clear();
+
+		for (int i = 0; i < nativeContexts->Count; i++)
+		{
+			delete ((NativeMultiWorldTesting::Context*)nativeContexts[i].ToPointer());
+		}
+		nativeContexts->Clear();
+
 		delete m_mwt;
 		m_mwt = nullptr;
 		delete m_bagging_funcs;
@@ -265,10 +283,9 @@ namespace MultiWorldTesting {
 			nativeUniqueKey, 
 			*log_context);
 
-		//TODO: This leaks memory. The problem is we now need contexts to stay alive for duration of MWTExplorer
-		//since we are not (deep) copying them anymore in Internal_Choose_Action.
-		//contextHandle.Free();
-		//delete log_context;
+		// Add to list of handles to be freed when MWT is destroyed
+		contextHandles->Add(contextHandle);
+		nativeContexts->Add(IntPtr(log_context));
 
 		return chosenAction;
 	}
