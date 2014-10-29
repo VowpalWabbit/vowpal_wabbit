@@ -588,12 +588,8 @@ namespace vw_explore_tests
 
 			string actual_log = m_mwt->Get_All_Interactions();
 
-			char expected_log[100];
-			sprintf(expected_log, "%d %s %.5f | %d:%.5f\n%d %s %.5f | %d:%.5f %d:%.5f",
-				chosen_action1, unique_key1.c_str(), 0.55f, 1, 0.5f,
-				chosen_action2, unique_key2.c_str(), 0.55f, 
-				features[0].Id, features[0].Value,
-				features[1].Id, features[1].Value);
+			// Use hard-coded string to be independent of sprintf
+			char* expected_log = "2 key1 0.55000 | 1:.5\n2 key2 0.55000 | 123456789:-99999.5 39:1.5";
 
 			Assert::AreEqual(expected_log, actual_log.c_str());
 		}
@@ -619,8 +615,14 @@ namespace vw_explore_tests
 				ostringstream expected_stream;
 				expected_stream << std::fixed << std::setprecision(10) << feature.Value;
 
+				string expected_str = expected_stream.str();
+				if (expected_str[0] == '0')
+				{
+					expected_str = expected_str.erase(0, 1);
+				}
+
 				sprintf(expected_log, "%d %s %.5f | %d:%s",
-					action, "", 1.f, i, expected_stream.str().c_str());
+					action, "", 1.f, i, expected_str.c_str());
 
 				size_t length = actual_log.length() - 1;
 				int compare_result = string(expected_log).compare(0, length, actual_log, 0, length);
