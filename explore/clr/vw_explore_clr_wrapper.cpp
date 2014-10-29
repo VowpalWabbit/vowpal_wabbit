@@ -294,7 +294,7 @@ namespace MultiWorldTesting {
 
 				NativeMultiWorldTesting::Feature* native_features = nullptr;
 				size_t native_num_features = 0;
-				native_context->Get_Features(native_features, native_num_features);
+				native_context->Get_Features(native_num_features, native_features);
 				cli::array<Feature>^ features = gcnew cli::array<Feature>((int)native_num_features);
 				for (int i = 0; i < features->Length; i++)
 				{
@@ -444,7 +444,7 @@ namespace MultiWorldTesting {
 
 				NativeMultiWorldTesting::Feature* native_features = nullptr;
 				size_t native_num_features = 0;
-				native_context->Get_Features(native_features, native_num_features);
+				native_context->Get_Features(native_num_features, native_features);
 				cli::array<Feature>^ features = gcnew cli::array<Feature>((int)native_num_features);
 				for (int i = 0; i < features->Length; i++)
 				{

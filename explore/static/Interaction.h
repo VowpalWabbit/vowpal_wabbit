@@ -95,7 +95,39 @@ private:
 	u32 m_count;
 };
 
-class Context : public Serializable
+class BaseContext : Serializable
+{
+private:
+	virtual void Get_Features(size_t& num_features, Feature*& features) = 0;
+
+	void Serialize(std::string& stream) final
+	{
+		Feature* features = nullptr;
+		size_t num_features;
+		Get_Features(num_features, features);
+		if ((features != nullptr) && (num_features > 0))
+		{
+			int integral, fractional; // Float to string conversion
+			char feature_str[35] = { 0 };
+
+			for (size_t i = 0; i < num_features; i++)
+			{
+				integral = (int)features[i].Value;
+				fractional = (int)(fabsf(features[i].Value - integral) * 100000); // 5-digit precision
+				if (i == 0)
+					sprintf(feature_str, "%d:%d.%05d", features[i].Id, integral, fractional);
+				else
+					sprintf(feature_str, " %d:%d.%05d", features[i].Id, integral, fractional);
+
+				stream.append(feature_str);
+			}
+		}
+	}
+
+	friend class Interaction;
+};
+
+class Context : public BaseContext
 {
 public:
 	Context(Feature* common_features, size_t num_features) : 
@@ -122,7 +154,7 @@ public:
 		}
 	}
 
-	void Get_Features(Feature*& features, size_t& num_features)
+	void Get_Features(size_t& num_features, Feature*& features)
 	{
 		features = m_common_features;
 		num_features = m_num_features;
@@ -139,6 +171,7 @@ private:
 		m_is_copy = is_copy;
 	}
 
+	/*
 	void Serialize(std::string& stream)
 	{
 		if (m_common_features != nullptr && m_num_features > 0)
@@ -159,6 +192,7 @@ private:
 			}
 		}
 	}
+	*/
 
 	Context* Copy()
 	{
