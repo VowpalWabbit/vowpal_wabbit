@@ -181,10 +181,15 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
     cerr << "cache version too long, cache file is probably invalid" << endl;
     throw exception();
   }
+  else if (v_length == 0) {
+    cerr << "cache version too short, cache file is probably invalid" << endl;
+    throw exception();
+  }
+    
   t.erase();
   if (t.size() < v_length)
     t.resize(v_length);
-  
+
   buf->read_file(filepointer,t.begin,v_length);
   version_struct v_tmp(t.begin);
   if ( v_tmp != version )

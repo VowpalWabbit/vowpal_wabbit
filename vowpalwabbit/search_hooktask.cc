@@ -15,6 +15,7 @@ namespace HookTask {
     td->run_f = NULL;
     td->run_object = NULL;
     td->delete_run_object = NULL;
+    td->delete_extra_data = NULL;
     td->var_map = new po::variables_map(vm);
     td->num_actions = num_actions;
     sch.set_task_data<task_data>(td);
@@ -23,6 +24,7 @@ namespace HookTask {
   void finish(Search::search& sch) {
     task_data *td = sch.get_task_data<task_data>();
     if (td->run_object && td->delete_run_object) td->delete_run_object(td->run_object);
+    if (td->delete_extra_data) td->delete_extra_data(*td);
     delete td->var_map;
     delete td;
   }

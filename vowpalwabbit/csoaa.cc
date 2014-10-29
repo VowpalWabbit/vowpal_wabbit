@@ -115,6 +115,7 @@ namespace LabelDict {
   
   bool ec_is_label_definition(example& ec) // label defs look like "0:___" or just "label:___"
   {
+    if (!ec.ld) return false;
     if (ec.indices.size() != 1) return false;
     if (ec.indices[0] != 'l') return false;
     v_array<COST_SENSITIVE::wclass> costs = ((COST_SENSITIVE::label*)ec.ld)->costs;
@@ -125,6 +126,7 @@ namespace LabelDict {
 
   bool ec_is_example_header(example& ec)  // example headers look like "0:-1" or just "shared"
   {
+    if (!ec.ld) return false;
     v_array<COST_SENSITIVE::wclass> costs = ((COST_SENSITIVE::label*)ec.ld)->costs;
     if (costs.size() != 1) return false;
     if (costs[0].class_index != 0) return false;
@@ -317,10 +319,9 @@ namespace LabelDict {
 
   void make_single_prediction(vw& all, ldf& l, learner& base, example& ec, uint32_t* prediction, float*min_score, float*min_cost, float*max_cost) {
     label   *ld = (label*)ec.ld;
-    v_array<COST_SENSITIVE::wclass> costs = ld->costs;
     label_data simple_label;
 
-    if (costs.size() == 0) {
+    if (!ld || ld->costs.size() == 0) {
       simple_label.initial = 0.;
       simple_label.label = FLT_MAX;
       simple_label.weight = 0.;
@@ -329,28 +330,28 @@ namespace LabelDict {
       ec.ld = &simple_label;
       base.predict(ec); // make a prediction
     } else {
-      for (size_t j=0; j<costs.size(); j++) {
+      for (size_t j=0; j<ld->costs.size(); j++) {
         simple_label.initial = 0.;
         simple_label.label = FLT_MAX;
         simple_label.weight = 0.;
         ec.partial_prediction = 0.;
 
-        LabelDict::add_example_namespace_from_memory(l, ec, costs[j].class_index);
+        LabelDict::add_example_namespace_from_memory(l, ec, ld->costs[j].class_index);
       
         ec.ld = &simple_label;
         base.predict(ec); // make a prediction
-        costs[j].partial_prediction = ec.partial_prediction;
+        ld->costs[j].partial_prediction = ec.partial_prediction;
         //cdbg << "costs[" << j << "].partial_prediction = " << ec.partial_prediction << endl;
 
         if (min_score && prediction && (ec.partial_prediction < *min_score)) {
           *min_score = ec.partial_prediction;
-          *prediction = costs[j].class_index;
+          *prediction = ld->costs[j].class_index;
         }
 
-        if (min_cost && (costs[j].x < *min_cost)) *min_cost = costs[j].x;
-        if (max_cost && (costs[j].x > *max_cost)) *max_cost = costs[j].x;
+        if (min_cost && (ld->costs[j].x < *min_cost)) *min_cost = ld->costs[j].x;
+        if (max_cost && (ld->costs[j].x > *max_cost)) *max_cost = ld->costs[j].x;
 
-        LabelDict::del_example_namespace_from_memory(l, ec, costs[j].class_index);
+        LabelDict::del_example_namespace_from_memory(l, ec, ld->costs[j].class_index);
       }
     }
     

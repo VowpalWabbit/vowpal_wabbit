@@ -265,8 +265,10 @@ namespace MultiWorldTesting {
 			nativeUniqueKey, 
 			*log_context);
 
-		contextHandle.Free();
-		delete log_context;
+		//TODO: This leaks memory. The problem is we now need contexts to stay alive for duration of MWTExplorer
+		//since we are not (deep) copying them anymore in Internal_Choose_Action.
+		//contextHandle.Free();
+		//delete log_context;
 
 		return chosenAction;
 	}

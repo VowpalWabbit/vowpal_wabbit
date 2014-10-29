@@ -1,4 +1,4 @@
-CXX = $(shell which clang++)
+#CXX = $(shell which clang++)
 # -- if you want to test 32-bit use this instead,
 #    it sometimes reveals type portability issues
 # CXX = $(shell which clang++) -m32
@@ -74,7 +74,7 @@ FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_
 BINARIES = vw active_interactor
 MANPAGES = vw.1
 
-all:	vw spanning_tree library_example python
+all:	vw spanning_tree python library_example
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@

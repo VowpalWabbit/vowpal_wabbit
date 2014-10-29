@@ -3,9 +3,7 @@
   individual contributors. All rights reserved.  Released under a BSD
   license as described in the file LICENSE.
 */
-#ifndef GRADIENT_DESCENT_H
-#define GRADIENT_DESCENT_H
-
+#pragma once
 #ifdef __FreeBSD__
 #include <sys/socket.h>
 #endif
@@ -96,5 +94,3 @@ template <class R, void (*T)(R&, float, float&)>
     return temp;
   }
 }
-
-#endif

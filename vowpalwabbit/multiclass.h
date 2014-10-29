@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef MULTICLASS_H
-#define MULTICLASS_H
-
+#pragma once
 #include "io_buf.h"
 #include "parse_primitives.h"
 #include "example.h"
@@ -32,19 +30,3 @@ namespace MULTICLASS
   inline uint32_t get_example_label(example* ec)
   { return ((multiclass*)ec->ld)->label; }
 }
-
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-

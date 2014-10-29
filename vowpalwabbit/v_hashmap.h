@@ -3,9 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef V_HASHMAP_H
-#define V_HASHMAP_H
-
+#pragma once
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
@@ -254,6 +252,3 @@ template<class K, class V> class v_hashmap{
 };
 
 void test_v_hashmap();
-
-
-#endif

@@ -3,8 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef LEARNER_H
-#define LEARNER_H
+#pragma once
 // This is the interface for a learning algorithm
 #include<iostream>
 using namespace std;
@@ -58,12 +57,11 @@ namespace LEARNER
   void generic_driver(vw* all);
   
   inline void generic_sl(void*, io_buf&, bool, bool) {}
-  inline void generic_learner(void* data, learner& base, example&)
-  { cout << "calling generic learner\n";}
+  inline void generic_learner(void* data, learner& base, example&) {}
   inline void generic_func(void* data) {}
 
   const save_load_data generic_save_load_fd = {NULL, NULL, generic_sl};
-  const learn_data generic_learn_fd = {NULL, NULL, generic_learner, NULL, NULL};
+  const learn_data generic_learn_fd = {NULL, NULL, generic_learner, generic_learner, NULL};
   const func_data generic_func_fd = {NULL, NULL, generic_func};
   
   template<class R, void (*T)(R&, learner& base, example& ec)>
@@ -256,5 +254,3 @@ public:
 };
 
 }
-
-#endif
