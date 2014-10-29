@@ -140,7 +140,7 @@ PORTING_INTERFACE:
 	{
 		Validate_Epsilon(epsilon);
 		Validate_Num_Actions(num_actions);
-		Validate_Policy((void*)default_policy_func);
+		Validate_Policy<Stateful_Policy_Func>(default_policy_func);
 		Validate_Explorer();
 
 		m_action_set.Set_Count(num_actions);
@@ -154,7 +154,7 @@ PORTING_INTERFACE:
 	{
 		Validate_Epsilon(epsilon);
 		Validate_Num_Actions(num_actions);
-		Validate_Policy((void*)default_policy_func);
+		Validate_Policy<Stateless_Policy_Func>(default_policy_func);
 		Validate_Explorer();
 
 		m_action_set.Set_Count(num_actions);
@@ -168,7 +168,7 @@ PORTING_INTERFACE:
 		u32 num_actions)
 	{
 		Validate_Num_Actions(num_actions);
-		Validate_Policy((void*)default_policy_func);
+		Validate_Policy<Stateful_Policy_Func>(default_policy_func);
 		Validate_Explorer();
 
 		m_action_set.Set_Count(num_actions);
@@ -181,7 +181,7 @@ PORTING_INTERFACE:
 		u32 num_actions)
 	{
 		Validate_Num_Actions(num_actions);
-		Validate_Policy((void*)default_policy_func);
+		Validate_Policy<Stateless_Policy_Func>(default_policy_func);
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
@@ -196,7 +196,7 @@ PORTING_INTERFACE:
 	{
 		Validate_Bags(bags);
 		Validate_Num_Actions(num_actions);
-		Validate_Policy(bags, (void**)default_policy_functions);
+		Validate_Policy<Stateful_Policy_Func>(bags, default_policy_functions);
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
@@ -210,7 +210,7 @@ PORTING_INTERFACE:
 	{
 		Validate_Bags(bags);
 		Validate_Num_Actions(num_actions);
-		Validate_Policy(bags, (void**)default_policy_functions);
+		Validate_Policy<Stateless_Policy_Func>(bags, default_policy_functions);
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
@@ -224,7 +224,7 @@ PORTING_INTERFACE:
 		u32 num_actions)
 	{
 		Validate_Num_Actions(num_actions);
-		Validate_Policy((void*)default_scorer_func);
+		Validate_Policy<Stateful_Scorer_Func>(default_scorer_func);
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
@@ -237,7 +237,7 @@ PORTING_INTERFACE:
 		u32 num_actions)
 	{
 		Validate_Num_Actions(num_actions);
-		Validate_Policy((void*)default_scorer_func);
+		Validate_Policy<Stateless_Scorer_Func>(default_scorer_func);
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
@@ -250,7 +250,7 @@ PORTING_INTERFACE:
 		u32 num_actions)
 	{
 		Validate_Num_Actions(num_actions);
-		Validate_Policy((void*)default_scorer_func);
+		Validate_Policy<Stateful_Scorer_Func>(default_scorer_func);
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
@@ -262,7 +262,7 @@ PORTING_INTERFACE:
 		u32 num_actions)
 	{
 		Validate_Num_Actions(num_actions);
-		Validate_Policy((void*)default_scorer_func);
+		Validate_Policy<Stateless_Scorer_Func>(default_scorer_func);
 		Validate_Explorer();
 		
 		m_action_set.Set_Count(num_actions);
@@ -314,14 +314,16 @@ private:
 			throw std::invalid_argument("Number of bags must be at least 1.");
 		}
 	}
-	void Validate_Policy(void* policy)
+	template <class T>
+	void Validate_Policy(T* policy)
 	{
 		if (policy == nullptr)
 		{
 			throw std::invalid_argument("A valid default policy function must be specified.");
 		}
 	}
-	void Validate_Policy(u32 num_policies, void** policies)
+	template <class T>
+	void Validate_Policy(u32 num_policies, T** policies)
 	{
 		bool valid = true;
 		if (policies == nullptr)
