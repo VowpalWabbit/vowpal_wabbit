@@ -290,7 +290,9 @@ namespace MultiWorldTesting {
 			{
 				interactions[i] = gcnew Interaction();
 
-				NativeMultiWorldTesting::Context* native_context = native_interactions[i]->Get_Context();
+				//TODO: We're casting a BaseContext object to a derived type (Context) for now, but we actually
+				//need is a definition of the BaseContext interface in C# land.
+				NativeMultiWorldTesting::Context* native_context = (NativeMultiWorldTesting::Context*)native_interactions[i]->Get_Context();
 
 				NativeMultiWorldTesting::Feature* native_features = nullptr;
 				size_t native_num_features = 0;
@@ -440,7 +442,7 @@ namespace MultiWorldTesting {
 			{
 				interactions[i] = gcnew Interaction();
 
-				NativeMultiWorldTesting::Context* native_context = m_native_interactions[i]->Get_Context();
+				NativeMultiWorldTesting::Context* native_context = (NativeMultiWorldTesting::Context*)m_native_interactions[i]->Get_Context();
 
 				NativeMultiWorldTesting::Feature* native_features = nullptr;
 				size_t native_num_features = 0;

@@ -95,11 +95,91 @@ private:
 	u32 m_count;
 };
 
- const size_t max_int = 100000;
- const float max_float = max_int;
- const float min_float = 0.00001;
+const size_t max_int = 100000;
+const float max_float = max_int;
+const float min_float = 0.00001;
 	
-class Context : public Serializable
+class BaseContext : Serializable
+{
+private:
+	virtual void Get_Features(size_t& num_features, Feature*& features) = 0;
+
+	void Serialize(std::string& stream) final
+	{
+		Feature* features = nullptr;
+		size_t num_features;
+		Get_Features(num_features, features);
+		if ((features != nullptr) && (num_features > 0))
+		{
+			char feature_str[35] = { 0 };
+
+			for (size_t i = 0; i < num_features; i++)
+			{
+				int chars = 0;
+				if (i == 0)
+					chars = sprintf(feature_str, "%d:", features[i].Id);
+				else
+					chars = sprintf(feature_str, " %d:", features[i].Id);
+
+				print_float(feature_str + chars, features[i].Value);
+				stream.append(feature_str);
+			}
+		}
+	}
+
+	//TODO: The next two functions need to be moved elsewhere, perhaps to NumberUtils in utility.h
+	template<bool trailing_zeros>
+	void print_mantissa(char*& begin, float f)
+	{ // helper for print_float
+		char values[10];
+		size_t v = (size_t)f;
+		int digit = 0;
+		int first_nonzero = 0;
+		for (size_t max = 1; max <= v; ++digit)
+		{
+			size_t max_next = max * 10;
+			char v_mod = v % max_next / max;
+			if (!trailing_zeros && v_mod != '\0' && first_nonzero == 0)
+				first_nonzero = digit;
+			values[digit] = 48 + v_mod;
+			max = max_next;
+		}
+		while (digit > first_nonzero)
+			*begin++ = values[--digit];
+	}
+
+	void print_float(char* begin, float f)
+	{ // Cover the childrens eyes, this is a custom float printer, x4 faster than sprintf.
+		bool sign = false;
+		if (f < 0.f)
+			sign = true;
+		float unsigned_f = fabsf(f);
+		if (unsigned_f < max_float && unsigned_f > min_float)
+		{
+			if (sign)
+				*begin++ = '-';
+			print_mantissa<true>(begin, unsigned_f);
+			unsigned_f -= (size_t)unsigned_f;
+			unsigned_f /= min_float;
+			if (unsigned_f >= 1.f)
+				*begin++ = '.';
+			print_mantissa<false>(begin, unsigned_f);
+		}
+		else if (unsigned_f == 0.)
+			*begin++ = '0';
+		else
+		{
+			sprintf(begin, "%f", f);
+			return;
+		}
+		*begin = '\0';
+		return;
+	}
+
+	friend class Interaction;
+};
+
+class Context : public BaseContext
 {
 public:
 	Context(Feature* common_features, size_t num_features) : 
@@ -126,7 +206,7 @@ public:
 		}
 	}
 
-	void Get_Features(Feature*& features, size_t& num_features)
+	void Get_Features(size_t& num_features, Feature*& features)
 	{
 		features = m_common_features;
 		num_features = m_num_features;
@@ -138,77 +218,10 @@ public:
 	}
 
 private:
+	//TODO: Either remove this or move it to a copy constructor that we use when storing an Interaction
 	void Set_Is_Copy(bool is_copy)
 	{
 		m_is_copy = is_copy;
-	}
-
-	template<bool trailing_zeros>
-	  void print_mantissa(char*& begin, float f)
-	  { // helper for print_float
-	    char values[10];
-	    size_t v = (size_t) f;
-	    int digit = 0;
-	    int first_nonzero = 0;
-	    for (size_t max = 1; max <= v; ++digit)
-	      {
-		size_t max_next = max*10;
-		char v_mod = v % max_next / max;
-		if (!trailing_zeros && v_mod != '\0' && first_nonzero == 0)
-		  first_nonzero = digit;
-		values[digit] = 48+v_mod;
-		max = max_next;
-	      }
-	    while (digit > first_nonzero)
-	      *begin++ = values[--digit];
-	  }
-	
-	void print_float(char* begin, float f)
-	{ // Cover the childrens eyes, this is a custom float printer, x4 faster than sprintf.
-	  bool sign = false;
-	  if (f < 0.f)
-	    sign = true;
-	  float unsigned_f = fabsf(f);
-	  if (unsigned_f < max_float && unsigned_f > min_float)
-	    {
-	      if (sign)
-		*begin++ = '-';
-	      print_mantissa<true>(begin, unsigned_f);
-	      unsigned_f -= (size_t) unsigned_f;
-	      unsigned_f /= min_float;
-	      if (unsigned_f >= 1.f)
-		*begin++ = '.';
-	      print_mantissa<false>(begin, unsigned_f);
-	    }
-	  else if (unsigned_f == 0.)
-	    *begin++ = '0';
-	  else
-	    {
-	      sprintf(begin, "%f", f);
-	      return;
-	    }
-	  *begin = '\0';
-	  return;
-	}
-
-	void Serialize(std::string& stream)
-	{
-		if (m_common_features != nullptr && m_num_features > 0)
-		{
-			char feature_str[35] = { 0 };
-
-			for (size_t i = 0; i < m_num_features; i++)
-			{
-			  int chars = 0;
-			  if (i == 0)
-			    chars = sprintf(feature_str, "%d:", m_common_features[i].Id);
-			  else
-			    chars = sprintf(feature_str, " %d:", m_common_features[i].Id);
-			  
-			  print_float(feature_str+chars, m_common_features[i].Value);
-			  stream.append(feature_str);
-			}
-		}
 	}
 
 	Context* Copy()
@@ -239,7 +252,7 @@ private:
 class Interaction : public Serializable
 {
 public:
-	Interaction(Context* context, MWTAction action, float prob, std::string unique_id, bool is_copy = false) : 
+	Interaction(BaseContext* context, MWTAction action, float prob, std::string unique_id, bool is_copy = false) : 
   m_context(context), m_action(action), m_prob(prob), m_id(unique_id), m_is_copy(is_copy)
 	{
 		m_reward = NO_REWARD;
@@ -277,7 +290,7 @@ public:
 		return m_prob;
 	}
 
-	Context* Get_Context()
+	BaseContext* Get_Context()
 	{
 		return m_context;
 	}
@@ -295,7 +308,8 @@ public:
 private:
 	Interaction* Copy()
 	{
-		return new Interaction(m_context->Copy(), m_action, m_prob, m_id, true);
+		//TODO: Set is_copy to false since we are no longer creating a copy of the context
+		return new Interaction(m_context, m_action, m_prob, m_id, false);
 	}
 
 	void Serialize(std::string& stream)
@@ -348,7 +362,7 @@ private:
 	}
 
 private:
-	Context* m_context;
+	BaseContext* m_context;
 	MWTAction m_action;
 	float m_prob;
 	float m_reward;

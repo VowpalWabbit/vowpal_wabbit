@@ -114,7 +114,7 @@ public:
 	}
 
 	//TODO: Mention that this allocates memory, so it may throw if contiguous address space is not available.
-	u32 Choose_Action(std::string unique_id, Context& context)
+	u32 Choose_Action(std::string unique_id, BaseContext& context)
 	{
 		return this->Internal_Choose_Action(&context, unique_id, context);
 	}
@@ -273,7 +273,7 @@ PORTING_INTERFACE:
 	// The void* and Context& parameters are references to the same Context object.
 	// Void* is required to pass back to the default policy function which could live in either native or managed space.
 	// Context& is used internally to log data only since we need to access its members for serialization.
-	u32 Internal_Choose_Action(void* context, std::string unique_id, Context& log_context)
+	u32 Internal_Choose_Action(void* context, std::string unique_id, BaseContext& log_context)
 	{
 		// Hash the ID of the yet-to-be-created interaction so we can seed the explorer
 		u64 seed = HashUtils::Compute_Id_Hash(unique_id);
