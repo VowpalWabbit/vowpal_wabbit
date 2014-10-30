@@ -8,32 +8,32 @@ namespace cs_test
 {
     class ExploreOnlySample
     {
-        private static UInt32 SampleStatefulPolicyFunc(int policyParams, Context appContext)
+        private static UInt32 SampleStatefulPolicyFunc(int policyParams, SimpleContext appContext)
         {
             return (uint)((policyParams + appContext.GetFeatures().Length) % 10 + 1);
         }
 
-        private static UInt32 SampleStatefulPolicyFunc2(int policyParams, Context appContext)
+        private static UInt32 SampleStatefulPolicyFunc2(int policyParams, SimpleContext appContext)
         {
             return (uint)((policyParams + appContext.GetFeatures().Length) % 10 + 2);
         }
 
-        private static UInt32 SampleStatefulPolicyFunc(CustomParams policyParams, Context appContext)
+        private static UInt32 SampleStatefulPolicyFunc(CustomParams policyParams, SimpleContext appContext)
         {
             return (uint)((policyParams.Value1 + policyParams.Value2 + appContext.GetFeatures().Length) % 10 + 1);
         }
 
-        private static UInt32 SampleStatelessPolicyFunc(Context appContext)
+        private static UInt32 SampleStatelessPolicyFunc(SimpleContext appContext)
         {
             return (UInt32)appContext.GetFeatures().Length;
         }
 
-        private static UInt32 SampleStatelessPolicyFunc2(Context appContext)
+        private static UInt32 SampleStatelessPolicyFunc2(SimpleContext appContext)
         {
             return (UInt32)appContext.GetFeatures().Length + 1;
         }
 
-        private static void SampleStatefulScorerFunc(int policyParams, Context appContext, float[] scores)
+        private static void SampleStatefulScorerFunc(int policyParams, SimpleContext appContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {
@@ -41,7 +41,7 @@ namespace cs_test
             }
         }
 
-        private static void SampleStatelessScorerFunc(Context appContext, float[] scores)
+        private static void SampleStatelessScorerFunc(SimpleContext appContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {
@@ -142,7 +142,7 @@ namespace cs_test
             f[1].Id = 2;
 
             string otherContext = "Some other context data that might be helpful to log";
-            Context appContext = new Context(f, otherContext);
+            SimpleContext appContext = new SimpleContext(f, otherContext);
 
             UInt32 chosenAction = mwt.ChooseAction("myId", appContext);
 

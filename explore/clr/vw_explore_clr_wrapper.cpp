@@ -265,7 +265,7 @@ namespace MultiWorldTesting {
 		m_mwt->Internal_Initialize_Generic(nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
 	}
 
-	UInt32 MwtExplorer::ChooseAction(String^ uniqueId, Context^ context)
+	UInt32 MwtExplorer::ChooseAction(String^ uniqueId, SimpleContext^ context)
 	{
 		UInt32 chosenAction = 0;
 
@@ -326,7 +326,7 @@ namespace MultiWorldTesting {
 				native_context->Get_Other_Context(native_other_context);
 				String^ otherContext = (native_other_context.empty()) ? nullptr : gcnew String(native_other_context.c_str());
 
-				interactions[i]->ApplicationContext = gcnew Context(features, otherContext);
+				interactions[i]->ApplicationContext = gcnew SimpleContext(features, otherContext);
 				interactions[i]->ChosenAction = native_interactions[i].Get_Action().Get_Id();
 				interactions[i]->Probability = native_interactions[i].Get_Prob();
 				interactions[i]->Id = gcnew String(native_interactions[i].Get_Id().c_str());
@@ -337,17 +337,17 @@ namespace MultiWorldTesting {
 		return interactions;
 	}
 
-	UInt32 MwtExplorer::InvokeDefaultPolicyFunction(Context^ context)
+	UInt32 MwtExplorer::InvokeDefaultPolicyFunction(SimpleContext^ context)
 	{
 		return policyWrapper->InvokeFunction(context);
 	}
 
-	UInt32 MwtExplorer::InvokeBaggingDefaultPolicyFunction(Context^ context, int bagIndex)
+	UInt32 MwtExplorer::InvokeBaggingDefaultPolicyFunction(SimpleContext^ context, int bagIndex)
 	{
 		return policyWrappers[bagIndex]->InvokeFunction(context);
 	}
 
-	void MwtExplorer::InvokeDefaultScorerFunction(Context^ context, cli::array<float>^ scores)
+	void MwtExplorer::InvokeDefaultScorerFunction(SimpleContext^ context, cli::array<float>^ scores)
 	{
 		policyWrapper->InvokeScorer(context, scores);
 	}
@@ -358,7 +358,7 @@ namespace MultiWorldTesting {
 		MwtExplorer^ mwt = (MwtExplorer^)(mwtHandle.Target);
 
 		GCHandle contextHandle = (GCHandle)contextPtr;
-		Context^ context = (Context^)(contextHandle.Target);
+		SimpleContext^ context = (SimpleContext^)(contextHandle.Target);
 
 		return mwt->InvokeDefaultPolicyFunction(context);
 	}
@@ -369,7 +369,7 @@ namespace MultiWorldTesting {
 		BaggingParameter bp = (BaggingParameter)(mwtHandle.Target);
 
 		GCHandle contextHandle = (GCHandle)contextPtr;
-		Context^ context = (Context^)(contextHandle.Target);
+		SimpleContext^ context = (SimpleContext^)(contextHandle.Target);
 
 		return bp.Mwt->InvokeBaggingDefaultPolicyFunction(context, bp.BagIndex);
 	}
@@ -380,7 +380,7 @@ namespace MultiWorldTesting {
 		MwtExplorer^ mwt = (MwtExplorer^)(mwtHandle.Target);
 
 		GCHandle contextHandle = (GCHandle)contextPtr;
-		Context^ context = (Context^)(contextHandle.Target);
+		SimpleContext^ context = (SimpleContext^)(contextHandle.Target);
 
 		cli::array<float>^ scores = gcnew cli::array<float>(numScores);
 
@@ -473,7 +473,7 @@ namespace MultiWorldTesting {
 				native_context->Get_Other_Context(native_other_context);
 				String^ otherContext = (native_other_context.empty()) ? nullptr : gcnew String(native_other_context.c_str());
 
-				interactions[i]->ApplicationContext = gcnew Context(features, otherContext);
+				interactions[i]->ApplicationContext = gcnew SimpleContext(features, otherContext);
 				interactions[i]->ChosenAction = m_native_interactions[i]->Get_Action().Get_Id();
 				interactions[i]->Probability = m_native_interactions[i]->Get_Prob();
 				interactions[i]->Id = gcnew String(m_native_interactions[i]->Get_Id().c_str());
@@ -581,7 +581,7 @@ namespace MultiWorldTesting {
 		return value;
 	}
 
-	UInt32 MwtOptimizer::InvokeDefaultPolicyFunction(Context^ context)
+	UInt32 MwtOptimizer::InvokeDefaultPolicyFunction(SimpleContext^ context)
 	{
 		return policyWrapper->InvokeFunction(context);
 	}
@@ -592,12 +592,12 @@ namespace MultiWorldTesting {
 		MwtOptimizer^ mwtOpt = (MwtOptimizer^)(mwtHandle.Target);
 
 		GCHandle contextHandle = (GCHandle)contextPtr;
-		Context^ context = (Context^)(contextHandle.Target);
+		SimpleContext^ context = (SimpleContext^)(contextHandle.Target);
 
 		return mwtOpt->InvokeDefaultPolicyFunction(context);
 	}
 
-	NativeMultiWorldTesting::SimpleContext* MwtHelper::PinNativeContext(Context^ context)
+	NativeMultiWorldTesting::SimpleContext* MwtHelper::PinNativeContext(SimpleContext^ context)
 	{
 		cli::array<Feature>^ contextFeatures = context->Features;
 		String^ otherContext = context->OtherContext;

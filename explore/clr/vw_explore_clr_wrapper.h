@@ -23,22 +23,22 @@ namespace MultiWorldTesting {
 		UInt32 Id;
 	};
 
-	public ref class Context
+	public ref class SimpleContext
 	{
 	public:
-		Context()
+		SimpleContext()
 		{
 			Features = nullptr;
 			OtherContext = nullptr;
 		}
 
-		Context(cli::array<Feature>^ features, String^ otherContext)
+		SimpleContext(cli::array<Feature>^ features, String^ otherContext)
 		{
 			Features = features;
 			OtherContext = otherContext;
 		}
 
-		~Context()
+		~SimpleContext()
 		{
 			if (FeatureHandle.IsAllocated)
 			{
@@ -64,12 +64,12 @@ namespace MultiWorldTesting {
 		UInt64^ GetIdHash() { return IdHash; }
 		UInt32 GetAction() { return ChosenAction; }
 		float GetProbability() { return Probability; }
-		Context^ GetContext() { return ApplicationContext; }
+		SimpleContext^ GetContext() { return ApplicationContext; }
 		float GetReward() { return Reward; }
 		void SetReward(float reward) { Reward = reward; }
 
 	internal:
-		Context^ ApplicationContext;
+		SimpleContext^ ApplicationContext;
 		UInt32 ChosenAction;
 		float Probability;
 		float Reward;
@@ -85,12 +85,12 @@ namespace MultiWorldTesting {
 	};
 
 	generic <class T>
-	public delegate UInt32 StatefulPolicyDelegate(T, Context^);
-	public delegate UInt32 StatelessPolicyDelegate(Context^);
+	public delegate UInt32 StatefulPolicyDelegate(T, SimpleContext^);
+	public delegate UInt32 StatelessPolicyDelegate(SimpleContext^);
 
 	generic <class T>
-	public delegate void StatefulScorerDelegate(T, Context^, cli::array<float>^ scores);
-	public delegate void StatelessScorerDelegate(Context^, cli::array<float>^ scores);
+	public delegate void StatefulScorerDelegate(T, SimpleContext^, cli::array<float>^ scores);
+	public delegate void StatelessScorerDelegate(SimpleContext^, cli::array<float>^ scores);
 
 	// Internal delegate denifition
 	private delegate UInt32 InternalStatefulPolicyDelegate(IntPtr, IntPtr);
@@ -99,8 +99,8 @@ namespace MultiWorldTesting {
 	interface class IFunctionWrapper
 	{
 		public:
-			virtual UInt32 InvokeFunction(Context^) abstract;
-			virtual void InvokeScorer(Context^, cli::array<float>^) abstract;
+			virtual UInt32 InvokeFunction(SimpleContext^) abstract;
+			virtual void InvokeScorer(SimpleContext^, cli::array<float>^) abstract;
 	};
 
 	generic <class T>
@@ -129,7 +129,7 @@ namespace MultiWorldTesting {
 				statelessScorer = scorerFunc;
 			}
 
-			virtual UInt32 InvokeFunction(Context^ c) override
+			virtual UInt32 InvokeFunction(SimpleContext^ c) override
 			{
 				if (defaultPolicy != nullptr)
 				{
@@ -141,7 +141,7 @@ namespace MultiWorldTesting {
 				}
 			}
 
-			virtual void InvokeScorer(Context^ c, cli::array<float>^ scores) override
+			virtual void InvokeScorer(SimpleContext^ c, cli::array<float>^ scores) override
 			{
 				if (defaultScorer != nullptr)
 				{
@@ -163,7 +163,7 @@ namespace MultiWorldTesting {
 	private ref class MwtHelper
 	{
 	public:
-		static NativeMultiWorldTesting::SimpleContext* PinNativeContext(Context^ context);
+		static NativeMultiWorldTesting::SimpleContext* PinNativeContext(SimpleContext^ context);
 	};
 
 	public ref class MwtExplorer
@@ -212,15 +212,15 @@ namespace MultiWorldTesting {
 
 		void Unintialize();
 
-		UInt32 ChooseAction(String^ uniqueId, Context^ context);
+		UInt32 ChooseAction(String^ uniqueId, SimpleContext^ context);
 
 		String^ GetAllInteractionsAsString();
 		cli::array<Interaction^>^ GetAllInteractions();
 
 	internal:
-		UInt32 InvokeDefaultPolicyFunction(Context^);
-		UInt32 InvokeBaggingDefaultPolicyFunction(Context^, int);
-		void InvokeDefaultScorerFunction(Context^, cli::array<float>^);
+		UInt32 InvokeDefaultPolicyFunction(SimpleContext^);
+		UInt32 InvokeBaggingDefaultPolicyFunction(SimpleContext^, int);
+		void InvokeDefaultScorerFunction(SimpleContext^, cli::array<float>^);
 
 	private: // Internal Initialize APIs
 		void InitializeEpsilonGreedy(float epsilon, InternalStatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
@@ -282,7 +282,7 @@ namespace MultiWorldTesting {
 		void Uninitialize();
 
 	internal:
-		UInt32 InvokeDefaultPolicyFunction(Context^);
+		UInt32 InvokeDefaultPolicyFunction(SimpleContext^);
 
 	private:
 		float EvaluatePolicy(InternalStatefulPolicyDelegate^ policyFunc, IntPtr policyParams);
