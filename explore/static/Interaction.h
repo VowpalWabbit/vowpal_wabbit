@@ -389,8 +389,6 @@ private:
 
 	void Clear_Data()
 	{
-		for (size_t i = 0; i < m_interactions.size(); i++)
-			delete m_interactions[i];
 		m_interactions.clear();
 	}
 
@@ -404,22 +402,12 @@ public:
 			throw std::invalid_argument("MWT still has data during destruction");
 	}
 
-	void Store(Interaction* interaction)
+	void Store(Interaction& interaction)
 	{
-		if (interaction == nullptr)
-			throw std::invalid_argument("Interaction to store is NULL");
-		m_interactions.push_back(interaction->Copy());
+		m_interactions.push_back(interaction);
 	}
 
-	void Store(std::vector<Interaction*> interactions)
-	{
-		if (interactions.size() == 0)
-			throw std::invalid_argument("Interaction set to store is empty");
-		for (size_t i = 0; i < interactions.size(); i++)
-			this->Store(interactions[i]);
-	}
-
-	std::string Get_All_Interactions()
+	std::string Get_All_Interactions_As_String()
 	{
 		std::string serialized_string;
 		if (m_interactions.size() > 0)
@@ -428,7 +416,7 @@ public:
 
 			for (size_t i = 0; i < m_interactions.size(); i++)
 			{
-				m_interactions[i]->Serialize(serialized_string);
+				m_interactions[i].Serialize(serialized_string);
 				if (i < m_interactions.size() - 1)
 				{
 					serialized_string.append("\n");
@@ -440,24 +428,16 @@ public:
 		return serialized_string;
 	}
 
-	void Get_All_Interactions(size_t& num_interactions, Interaction**& interactions)
+	std::vector<Interaction> Get_All_Interactions()
 	{
-		if (m_interactions.size() > 0)
-		{
-			num_interactions = m_interactions.size();
-			interactions = new Interaction*[num_interactions];
-			for (size_t i = 0; i < m_interactions.size(); i++)
-				interactions[i] = m_interactions[i];
-			m_interactions.clear();
-		}
-		else
-		{
-			num_interactions = 0;
-			interactions = nullptr;
-		}
+		std::vector<Interaction> interactions = m_interactions;
+
+		this->Clear_Data();
+
+		return interactions;
 	}
 
 private:
-	std::vector<Interaction*> m_interactions;
+	std::vector<Interaction> m_interactions;
 };
 }

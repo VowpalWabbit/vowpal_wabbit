@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
 	cout << "action = " << chosen_action << endl;
 	
 	// Get the logged data
-	cout << mwt.Get_All_Interactions() << endl;
+	cout << mwt.Get_All_Interactions_As_String() << endl;
 
 	return 0;
 }

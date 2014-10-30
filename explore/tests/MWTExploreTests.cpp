@@ -223,17 +223,14 @@ namespace vw_explore_tests
 			action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
 			action = m_mwt->Choose_Action(this->Get_Unique_Key(3), *m_context);
 
-			size_t num_interactions = 0;
-			Interaction** interactions = nullptr;
-			m_mwt->Get_All_Interactions(num_interactions, interactions);
+			vector<Interaction> interactions = m_mwt->Get_All_Interactions();
+			size_t num_interactions = interactions.size();
 
 			Assert::AreEqual(3, (int)num_interactions);
 			for (int i = 0; i < num_interactions; i++)
 			{
-				Assert::AreNotEqual(1.f / m_num_actions, interactions[i]->Get_Prob());
-				delete interactions[i];
+				Assert::AreNotEqual(1.f / m_num_actions, interactions[i].Get_Prob());
 			}
-			delete[] interactions;
 		}
 
 		TEST_METHOD(Softmax_Stateless_Scores)
@@ -244,17 +241,14 @@ namespace vw_explore_tests
 			action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
 			action = m_mwt->Choose_Action(this->Get_Unique_Key(3), *m_context);
 
-			size_t num_interactions = 0;
-			Interaction** interactions = nullptr;
-			m_mwt->Get_All_Interactions(num_interactions, interactions);
+			vector<Interaction> interactions = m_mwt->Get_All_Interactions();
+			size_t num_interactions = interactions.size();
 
 			Assert::AreEqual(3, (int)num_interactions);
 			for (int i = 0; i < num_interactions; i++)
 			{
-				Assert::AreNotEqual(1.f / m_num_actions, interactions[i]->Get_Prob());
-				delete interactions[i];
+				Assert::AreNotEqual(1.f / m_num_actions, interactions[i].Get_Prob());
 			}
-			delete[] interactions;
 		}
 
 		TEST_METHOD(Generic_Stateful)
@@ -299,10 +293,16 @@ namespace vw_explore_tests
 				u32 action = m_mwt->Choose_Action(ids[i], *m_context);
 			}
 
-			size_t num_interactions = 0;
-			Interaction** interactions = nullptr;
-			m_mwt->Get_All_Interactions(num_interactions, interactions);
+			vector<Interaction> vec_interactions = m_mwt->Get_All_Interactions();
+			size_t num_interactions = vec_interactions.size();
+
 			Assert::AreEqual(num_decisions, (u32)num_interactions);
+
+			Interaction** interactions = new Interaction*[num_interactions];
+			for (size_t i = 0; i < num_interactions; i++)
+			{
+				interactions[i] = &vec_interactions[i];
+			}
 
 			MWTRewardReporter rew = MWTRewardReporter(num_interactions, interactions);
 			float reward = 2.0;
@@ -342,10 +342,15 @@ namespace vw_explore_tests
 				u32 action = m_mwt->Choose_Action(ids[i], *m_context);
 			}
 
-			size_t num_interactions = 0;
-			Interaction** interactions = nullptr;
-			m_mwt->Get_All_Interactions(num_interactions, interactions);
+			vector<Interaction> vec_interactions = m_mwt->Get_All_Interactions();
+			size_t num_interactions = vec_interactions.size();
 			Assert::AreEqual(num_decisions, (u32)num_interactions);
+
+			Interaction** interactions = new Interaction*[num_interactions];
+			for (size_t i = 0; i < num_interactions; i++)
+			{
+				interactions[i] = &vec_interactions[i];
+			}
 
 			MWTRewardReporter rew = MWTRewardReporter(num_interactions, interactions);
 			float reward = 0.0;
@@ -367,6 +372,8 @@ namespace vw_explore_tests
 			float policy_perf = policy_weighted_sum / policy_matches;
 			MWTOptimizer opt = MWTOptimizer(num_interactions, interactions, m_num_actions);
 			Assert::AreEqual(opt.Evaluate_Policy(Stateless_Default_Policy), policy_perf);
+
+			delete[] interactions;
 		}
 
 		TEST_METHOD(Offline_Optimization_VW_CSOAA)
@@ -586,7 +593,7 @@ namespace vw_explore_tests
 
 			u32 chosen_action2 = m_mwt->Choose_Action(unique_key2, context);
 
-			string actual_log = m_mwt->Get_All_Interactions();
+			string actual_log = m_mwt->Get_All_Interactions_As_String();
 
 			// Use hard-coded string to be independent of sprintf
 			char* expected_log = "2 key1 0.55000 | 1:.5\n2 key2 0.55000 | 123456789:-99999.5 39:1.5";
@@ -610,7 +617,7 @@ namespace vw_explore_tests
 				feature.Id = i;
 
 				u32 action = mwt.Choose_Action("", context);
-				string actual_log = mwt.Get_All_Interactions();
+				string actual_log = mwt.Get_All_Interactions_As_String();
 
 				ostringstream expected_stream;
 				expected_stream << std::fixed << std::setprecision(10) << feature.Value;
@@ -876,9 +883,14 @@ namespace vw_explore_tests
 				rewards[i] = rand.Uniform_Unit_Interval();
 			}
 
-			Interaction** partial_interations = nullptr;
-			size_t num_interactions = 0;
-			m_mwt->Get_All_Interactions(num_interactions, partial_interations);
+			vector<Interaction> vec_interactions = m_mwt->Get_All_Interactions();
+			size_t num_interactions = vec_interactions.size();
+
+			Interaction** partial_interations = new Interaction*[num_interactions];
+			for (size_t i = 0; i < num_interactions; i++)
+			{
+				partial_interations[i] = &vec_interactions[i];
+			}
 
 			MWTRewardReporter mrr(num_interactions, partial_interations);
 			for (int i = 0; i < num_interactions; i++)
@@ -898,25 +910,20 @@ namespace vw_explore_tests
 			Assert::IsTrue(evaluated_value == evaluated_value); // check for NaN values
 
 			remove(model_file.c_str());
+
+			delete[] partial_interations;
 		}
 
 		inline void Test_Interaction_Store(int num_interactions_expected, float* probs_expected)
 		{
-			size_t num_interactions = 0;
-			Interaction** interactions = nullptr;
-			m_mwt->Get_All_Interactions(num_interactions, interactions);
+			vector<Interaction> interactions = m_mwt->Get_All_Interactions();
+			size_t num_interactions = interactions.size();
 
 			Assert::AreEqual(num_interactions_expected, (int)num_interactions);
 			for (int i = 0; i < num_interactions; i++)
 			{
-				Assert::AreEqual(probs_expected[i], interactions[i]->Get_Prob());
+				Assert::AreEqual(probs_expected[i], interactions[i].Get_Prob());
 			}
-
-			for (int i = 0; i < num_interactions_expected; i++)
-			{
-				delete interactions[i];
-			}
-			delete[] interactions;
 		}
 
 		string Get_Unique_Key(u32 seed)

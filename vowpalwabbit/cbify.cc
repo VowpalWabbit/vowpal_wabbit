@@ -107,15 +107,13 @@ namespace CBIFY {
     Context dummy(nullptr, 0);
     base.mwt->Choose_Action(string("vw"), dummy); // TODO: evolve unique key?
     
-    size_t num_interactions = 0;
-    Interaction** interactions = nullptr;
-    base.mwt->Get_All_Interactions(num_interactions, interactions);
+    vector<Interaction> interactions = base.mwt->Get_All_Interactions();
     
-    if (num_interactions != 1)
+	if (interactions.size() != 1)
       throw std::exception();
     
-    u32 action = interactions[0]->Get_Action().Get_Id();
-    float prob = interactions[0]->Get_Prob();
+    u32 action = interactions[0].Get_Action().Get_Id();
+    float prob = interactions[0].Get_Prob();
     
     CB::cb_class l = { loss(ld->label, action), action, prob };
     data.cb_label.costs.push_back(l);
@@ -126,9 +124,6 @@ namespace CBIFY {
     ld->prediction = action;
     ec.ld = ld;
     ec.loss = loss(ld->label, action);
-
-	delete interactions[0];
-	delete[] interactions;
   }
 
   template <bool is_learn>

@@ -120,14 +120,14 @@ public:
 	}
 
 	//TODO: Mention that this will clear the interactions from our explorer's internal memory
-	inline std::string Get_All_Interactions()
+	inline std::string Get_All_Interactions_As_String()
 	{
-		return m_interaction_store.Get_All_Interactions();
+		return m_interaction_store.Get_All_Interactions_As_String();
 	}
 
-	void Get_All_Interactions(size_t& num_interactions, Interaction**& interactions)
+	std::vector<Interaction> Get_All_Interactions()
 	{
-		m_interaction_store.Get_All_Interactions(num_interactions, interactions);
+		return m_interaction_store.Get_All_Interactions();
 	}
 
 // Cross-language interface
@@ -287,7 +287,7 @@ PORTING_INTERFACE:
 		{
 		// Create an interaction using the same unique_id as used in the seed above!
 		  Interaction pInteraction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), unique_id);
-		  m_interaction_store.Store(&pInteraction);
+		  m_interaction_store.Store(pInteraction);
 		}
 		return std::get<0>(action_Probability_Log_Tuple).Get_Id();
 	}

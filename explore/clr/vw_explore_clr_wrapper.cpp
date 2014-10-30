@@ -292,18 +292,17 @@ namespace MultiWorldTesting {
 
 	String^ MwtExplorer::GetAllInteractionsAsString()
 	{
-		std::string all_interactions = m_mwt->Get_All_Interactions();
+		std::string all_interactions = m_mwt->Get_All_Interactions_As_String();
 		return gcnew String(all_interactions.c_str());
 	}
 
 	cli::array<Interaction^>^ MwtExplorer::GetAllInteractions()
 	{
-		size_t num_interactions = 0;
-		NativeMultiWorldTesting::Interaction** native_interactions = nullptr;
-		m_mwt->Get_All_Interactions(num_interactions, native_interactions);
+		std::vector<NativeMultiWorldTesting::Interaction> native_interactions = m_mwt->Get_All_Interactions();
+		size_t num_interactions = native_interactions.size();
 
 		cli::array<Interaction^>^ interactions = gcnew cli::array<Interaction^>((int)num_interactions);
-		if (num_interactions > 0 && native_interactions != nullptr)
+		if (num_interactions > 0)
 		{
 			for (size_t i = 0; i < num_interactions; i++)
 			{
@@ -311,7 +310,7 @@ namespace MultiWorldTesting {
 
 				//TODO: We're casting a BaseContext object to a derived type (Context) for now, but we actually
 				//need is a definition of the BaseContext interface in C# land.
-				NativeMultiWorldTesting::Context* native_context = (NativeMultiWorldTesting::Context*)native_interactions[i]->Get_Context();
+				NativeMultiWorldTesting::Context* native_context = (NativeMultiWorldTesting::Context*)native_interactions[i].Get_Context();
 
 				NativeMultiWorldTesting::Feature* native_features = nullptr;
 				size_t native_num_features = 0;
@@ -328,14 +327,11 @@ namespace MultiWorldTesting {
 				String^ otherContext = (native_other_context.empty()) ? nullptr : gcnew String(native_other_context.c_str());
 
 				interactions[i]->ApplicationContext = gcnew Context(features, otherContext);
-				interactions[i]->ChosenAction = native_interactions[i]->Get_Action().Get_Id();
-				interactions[i]->Probability = native_interactions[i]->Get_Prob();
-				interactions[i]->Id = gcnew String(native_interactions[i]->Get_Id().c_str());
-				interactions[i]->IdHash = native_interactions[i]->Get_Id_Hash();
-
-				delete native_interactions[i];
+				interactions[i]->ChosenAction = native_interactions[i].Get_Action().Get_Id();
+				interactions[i]->Probability = native_interactions[i].Get_Prob();
+				interactions[i]->Id = gcnew String(native_interactions[i].Get_Id().c_str());
+				interactions[i]->IdHash = native_interactions[i].Get_Id_Hash();
 			}
-			delete[] native_interactions;
 		}
 
 		return interactions;
