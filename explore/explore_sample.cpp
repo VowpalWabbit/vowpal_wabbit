@@ -11,15 +11,15 @@ using namespace MultiWorldTesting;
 
 const int NUM_ACTIONS = 10;
 
-u32 Stateful_Default_Policy1(int& parameters, SimpleContext& appContext)
+u32 Stateful_Default_Policy1(int& parameters, BaseContext& appContext)
 {
 	return parameters % NUM_ACTIONS + 1;
 }
-u32 Stateful_Default_Policy2(int& parameters, SimpleContext& appContext)
+u32 Stateful_Default_Policy2(int& parameters, BaseContext& appContext)
 {
 	return parameters % NUM_ACTIONS + 2;
 }
-void Stateful_Default_Scorer(int& parameters, SimpleContext& appContext, float scores[], u32 size)
+void Stateful_Default_Scorer(int& parameters, BaseContext& appContext, float scores[], u32 size)
 {
 	for (u32 i = 0; i < size; i++)
 	{
@@ -27,15 +27,15 @@ void Stateful_Default_Scorer(int& parameters, SimpleContext& appContext, float s
 	}
 }
 
-u32 Stateless_Default_Policy1(SimpleContext& appContext)
+u32 Stateless_Default_Policy1(BaseContext& appContext)
 {
 	return 99 % NUM_ACTIONS + 1;
 }
-u32 Stateless_Default_Policy2(SimpleContext& appContext)
+u32 Stateless_Default_Policy2(BaseContext& appContext)
 {
 	return 98 % NUM_ACTIONS + 1;
 }
-void Stateless_Default_Scorer(SimpleContext& appContext, float scores[], u32 size)
+void Stateless_Default_Scorer(BaseContext& appContext, float scores[], u32 size)
 {
 	for (u32 i = 0; i < size; i++)
 	{

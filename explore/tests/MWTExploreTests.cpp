@@ -790,27 +790,27 @@ namespace vw_explore_tests
 		}
 
 	public:
-		static u32 Stateful_Default_Policy(int& policy_params, SimpleContext& applicationContext)
+		static u32 Stateful_Default_Policy(int& policy_params, BaseContext& applicationContext)
 		{
 			return MWTAction::Make_OneBased(policy_params % m_num_actions);
 		}
-		static u32 Stateful_Default_Policy2(int& policy_params, SimpleContext& applicationContext)
+		static u32 Stateful_Default_Policy2(int& policy_params, BaseContext& applicationContext)
 		{
 			return MWTAction::Make_OneBased(policy_params % m_num_actions) + 1;
 		}
 
-		static u32 Stateless_Default_Policy(SimpleContext& applicationContext)
+		static u32 Stateless_Default_Policy(BaseContext& applicationContext)
 		{
 			return MWTAction::Make_OneBased(99 % m_num_actions);
 		}
-		static u32 Stateless_Default_Policy2(SimpleContext& applicationContext)
+		static u32 Stateless_Default_Policy2(BaseContext& applicationContext)
 		{
 			return MWTAction::Make_OneBased(99 % m_num_actions) - 1;
 		}
 
 		//TODO: For now assume the size of the score array is the number of action scores to
 		// report, but we need a more general way to determine per-action features (opened github issue)
-		static void Stateful_Default_Scorer(int& policy_params, SimpleContext& applicationContext, float scores[], u32 size)
+		static void Stateful_Default_Scorer(int& policy_params, BaseContext& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
@@ -820,7 +820,7 @@ namespace vw_explore_tests
 			}
 		}
 
-		static void Stateless_Default_Scorer(SimpleContext& applicationContext, float scores[], u32 size)
+		static void Stateless_Default_Scorer(BaseContext& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
@@ -828,7 +828,7 @@ namespace vw_explore_tests
 			}
 		}
 
-		static void Non_Uniform_Stateful_Default_Scorer(int& policy_params, SimpleContext& applicationContext, float scores[], u32 size)
+		static void Non_Uniform_Stateful_Default_Scorer(int& policy_params, BaseContext& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
@@ -838,7 +838,7 @@ namespace vw_explore_tests
 			}
 		}
 
-		static void Non_Uniform_Stateless_Default_Scorer(SimpleContext& applicationContext, float scores[], u32 size)
+		static void Non_Uniform_Stateless_Default_Scorer(BaseContext& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
@@ -846,7 +846,7 @@ namespace vw_explore_tests
 			}
 		}
 
-		static void Negative_Stateless_Default_Scorer(SimpleContext& applicationContext, float scores[], u32 size)
+		static void Negative_Stateless_Default_Scorer(BaseContext& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
@@ -854,7 +854,7 @@ namespace vw_explore_tests
 			}
 		}
 
-		static void Zero_Stateless_Default_Scorer(SimpleContext& applicationContext, float scores[], u32 size)
+		static void Zero_Stateless_Default_Scorer(BaseContext& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{

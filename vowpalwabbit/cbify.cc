@@ -52,7 +52,7 @@ namespace CBIFY {
       return 0.;
   }
 
-  u32 explore_policy(vw_context& ctx, SimpleContext& application_context)
+  u32 explore_policy(vw_context& ctx, BaseContext& application_context)
   {
 	  ctx.l->predict(*ctx.e);
 	  return (u32)(((CB::label*)ctx.e->ld)->prediction);
