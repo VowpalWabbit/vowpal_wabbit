@@ -1,11 +1,7 @@
 #include "stdafx.h"
 #include "CppUnitTest.h"
-#include "MWTExplorer.h"
-#include "MWTRewardReporter.h"
-#include "MWTOptimizer.h"
-#include "utility.h"
+#include "MWTExploreTests.h"
 
-using namespace MultiWorldTesting;
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 #define COUNT_INVALID(block) try { block } catch (std::invalid_argument) { num_ex++; }
@@ -745,6 +741,37 @@ namespace vw_explore_tests
 			Assert::AreEqual(2, num_ex);
 		}
 
+		TEST_METHOD(Custom_Context)
+		{
+			m_mwt->Initialize_Epsilon_Greedy<int>(0.f, Custom_Context_Policy, m_policy_func_arg, m_num_actions);
+
+			TestContext original_context;
+			u32 chosen_action = m_mwt->Choose_Action(m_unique_key, original_context);
+			Assert::AreEqual((u32)2, chosen_action);
+
+			float expected_probs[1] = { 1.f };
+
+			vector<Interaction> interactions = m_mwt->Get_All_Interactions();
+			Assert::AreEqual(1, (int)interactions.size());
+
+			TestContext* returned_context = (TestContext*)interactions[0].Get_Context();
+
+			size_t onf;
+			Feature* of;
+			original_context.Get_Features(onf, of);
+
+			size_t rnf;
+			Feature* rf;
+			returned_context->Get_Features(rnf, rf);
+
+			Assert::AreEqual(rnf, onf);
+			for (size_t i = 0; i < rnf; i++)
+			{
+				Assert::AreEqual(of[i].Id, rf[i].Id);
+				Assert::AreEqual(of[i].Value, rf[i].Value);
+			}
+		}
+
 		TEST_METHOD_INITIALIZE(Test_Initialize)
 		{
 			// Constant for coverage tests: using Pr(T > nlnn + cn) < 1 - exp(-e^(-c)) for the time
@@ -806,6 +833,23 @@ namespace vw_explore_tests
 		static u32 Stateless_Default_Policy2(BaseContext& applicationContext)
 		{
 			return MWTAction::Make_OneBased(99 % m_num_actions) - 1;
+		}
+
+		static u32 Custom_Context_Policy(int& policy_params, BaseContext& applicationContext)
+		{
+			TestContext& tc = (TestContext&)applicationContext;
+
+			size_t num_features = 0;
+			Feature* features = nullptr;
+			tc.Get_Features(num_features, features);
+
+			u32 total_index = 0;
+			for (size_t i = 0; i < num_features; i++)
+			{
+				total_index += features[i].Id;
+			}
+
+			return MWTAction::Make_OneBased((policy_params + total_index) % m_num_actions);
 		}
 
 		//TODO: For now assume the size of the score array is the number of action scores to
