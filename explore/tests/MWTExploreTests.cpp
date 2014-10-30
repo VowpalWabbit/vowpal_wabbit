@@ -395,7 +395,7 @@ namespace vw_explore_tests
 			// essentially we will only use one class-label per example (the chosen action) ]
 			Interaction* interactions[7];
 			std::string ids[7];
-			Context* context;
+			SimpleContext* context;
 			float prob = 1.0 / 3;
 			float feature_val = 1.0;
 			u64 feature_a = HashUtils::Compute_Id_Hash("a");
@@ -409,7 +409,7 @@ namespace vw_explore_tests
 			// This indicates feature "a" is present (the specific value used is not important)
 			features[0].Id = feature_a;
 			features[0].Value = feature_val; 
-			context = new Context(features, 1);
+			context = new SimpleContext(features, 1);
 			// Indicating this is a copy hands responsibility for freeing the context to the
 			// Interaction class (note: we may remove this interface later)
 			ids[i] = "a1_expect_1";
@@ -418,7 +418,7 @@ namespace vw_explore_tests
 			features = new Feature[3];
 			features[0].Id = feature_b;
 			features[0].Value = feature_val;
-			context = new Context(features, 1);
+			context = new SimpleContext(features, 1);
 			i++;
 			ids[i] = "b1_expects_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
@@ -426,7 +426,7 @@ namespace vw_explore_tests
 			features = new Feature[3];
 			features[0].Id = feature_c;
 			features[0].Value = feature_val;
-			context = new Context(features, 1);
+			context = new SimpleContext(features, 1);
 			i++;
 			ids[i] = "c1_expects_3";
 			interactions[i] = new Interaction(context, MWTAction(3), prob, ids[i], true);
@@ -436,7 +436,7 @@ namespace vw_explore_tests
 			features[0].Value = feature_val;
 			features[1].Id = feature_b;
 			features[1].Value = feature_val;
-			context = new Context(features, 2);
+			context = new SimpleContext(features, 2);
 			i++;
 			ids[i] = "ab1_expect_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
@@ -446,7 +446,7 @@ namespace vw_explore_tests
 			features[0].Value = feature_val;
 			features[1].Id = feature_c;
 			features[1].Value = feature_val;
-			context = new Context(features, 2);
+			context = new SimpleContext(features, 2);
 			i++;
 			ids[i] = "bc1_expect_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
@@ -456,7 +456,7 @@ namespace vw_explore_tests
 			features[0].Value = feature_val;
 			features[1].Id = feature_c;
 			features[1].Value = feature_val;
-			context = new Context(features, 2);
+			context = new SimpleContext(features, 2);
 			i++;
 			ids[i] = "ac1_expect_3";
 			interactions[i] = new Interaction(context, MWTAction(3), prob, ids[i], true);
@@ -464,7 +464,7 @@ namespace vw_explore_tests
 			features = new Feature[3];
 			features[0].Id = feature_d;
 			features[0].Value = feature_val;
-			context = new Context(features, 1);
+			context = new SimpleContext(features, 1);
 			i++;
 			ids[i] = "d1_expect_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
@@ -589,7 +589,7 @@ namespace vw_explore_tests
 			features[1].Id = 39;
 			features[1].Value = 1.5f;
 
-			Context context(features, 2);
+			SimpleContext context(features, 2);
 
 			u32 chosen_action2 = m_mwt->Choose_Action(unique_key2, context);
 
@@ -608,7 +608,7 @@ namespace vw_explore_tests
 			MWTExplorer mwt("");
 			mwt.Initialize_Epsilon_Greedy(0, Stateless_Default_Policy, m_num_actions);
 			Feature feature;
-			Context context(&feature, 1);
+			SimpleContext context(&feature, 1);
 			char expected_log[100] = { 0 };
 
 			for (int i = 0; i < 10000; i++)
@@ -680,7 +680,7 @@ namespace vw_explore_tests
 			COUNT_BAD_CALL
 			(
 				MWTExplorer mwt("");
-				Context context(nullptr, 0);
+				SimpleContext context(nullptr, 0);
 				mwt.Choose_Action("test", context);
 			)
 			Assert::AreEqual(1, num_ex);
@@ -699,7 +699,7 @@ namespace vw_explore_tests
 		TEST_METHOD(Usage_Bad_Policy)
 		{
 			int num_ex = 0;
-			Context context(nullptr, 0);
+			SimpleContext context(nullptr, 0);
 			Policy* funcs[2] = { Stateless_Default_Policy, Stateless_Default_Policy2 };
 
 			// Default policy returns action outside valid range
@@ -727,7 +727,7 @@ namespace vw_explore_tests
 		TEST_METHOD(Usage_Bad_Scorer)
 		{
 			int num_ex = 0;
-			Context context(nullptr, 0);
+			SimpleContext context(nullptr, 0);
 
 			// Default policy returns action outside valid range
 			COUNT_BAD_CALL
@@ -765,7 +765,7 @@ namespace vw_explore_tests
 			m_features = new Feature[m_num_features];
 			m_features[0].Id = 1;
 			m_features[0].Value = 0.5;
-			m_context = new Context(m_features, m_num_features);
+			m_context = new SimpleContext(m_features, m_num_features);
 
 			m_unique_key = "1001";
 
@@ -790,27 +790,27 @@ namespace vw_explore_tests
 		}
 
 	public:
-		static u32 Stateful_Default_Policy(int& policy_params, Context& applicationContext)
+		static u32 Stateful_Default_Policy(int& policy_params, SimpleContext& applicationContext)
 		{
 			return MWTAction::Make_OneBased(policy_params % m_num_actions);
 		}
-		static u32 Stateful_Default_Policy2(int& policy_params, Context& applicationContext)
+		static u32 Stateful_Default_Policy2(int& policy_params, SimpleContext& applicationContext)
 		{
 			return MWTAction::Make_OneBased(policy_params % m_num_actions) + 1;
 		}
 
-		static u32 Stateless_Default_Policy(Context& applicationContext)
+		static u32 Stateless_Default_Policy(SimpleContext& applicationContext)
 		{
 			return MWTAction::Make_OneBased(99 % m_num_actions);
 		}
-		static u32 Stateless_Default_Policy2(Context& applicationContext)
+		static u32 Stateless_Default_Policy2(SimpleContext& applicationContext)
 		{
 			return MWTAction::Make_OneBased(99 % m_num_actions) - 1;
 		}
 
 		//TODO: For now assume the size of the score array is the number of action scores to
 		// report, but we need a more general way to determine per-action features (opened github issue)
-		static void Stateful_Default_Scorer(int& policy_params, Context& applicationContext, float scores[], u32 size)
+		static void Stateful_Default_Scorer(int& policy_params, SimpleContext& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
@@ -820,7 +820,7 @@ namespace vw_explore_tests
 			}
 		}
 
-		static void Stateless_Default_Scorer(Context& applicationContext, float scores[], u32 size)
+		static void Stateless_Default_Scorer(SimpleContext& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
@@ -828,7 +828,7 @@ namespace vw_explore_tests
 			}
 		}
 
-		static void Non_Uniform_Stateful_Default_Scorer(int& policy_params, Context& applicationContext, float scores[], u32 size)
+		static void Non_Uniform_Stateful_Default_Scorer(int& policy_params, SimpleContext& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
@@ -838,7 +838,7 @@ namespace vw_explore_tests
 			}
 		}
 
-		static void Non_Uniform_Stateless_Default_Scorer(Context& applicationContext, float scores[], u32 size)
+		static void Non_Uniform_Stateless_Default_Scorer(SimpleContext& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
@@ -846,7 +846,7 @@ namespace vw_explore_tests
 			}
 		}
 
-		static void Negative_Stateless_Default_Scorer(Context& applicationContext, float scores[], u32 size)
+		static void Negative_Stateless_Default_Scorer(SimpleContext& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
@@ -854,7 +854,7 @@ namespace vw_explore_tests
 			}
 		}
 
-		static void Zero_Stateless_Default_Scorer(Context& applicationContext, float scores[], u32 size)
+		static void Zero_Stateless_Default_Scorer(SimpleContext& applicationContext, float scores[], u32 size)
 		{
 			for (u32 i = 0; i < size; i++)
 			{
@@ -876,7 +876,7 @@ namespace vw_explore_tests
 					features[j].Id = j + 1;
 					features[j].Value = rand.Uniform_Unit_Interval();
 				}
-				Context c(features, 1000);
+				SimpleContext c(features, 1000);
 
 				m_mwt->Choose_Action(to_string(i), c);
 
@@ -948,7 +948,7 @@ namespace vw_explore_tests
 		int m_policy_func_arg;
 		int m_policy_scorer_arg;
 
-		Context* m_context;
+		SimpleContext* m_context;
 		int m_num_features;
 		Feature* m_features;
 

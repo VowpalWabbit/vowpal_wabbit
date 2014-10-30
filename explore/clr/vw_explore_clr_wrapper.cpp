@@ -75,7 +75,7 @@ namespace MultiWorldTesting {
 
 		for (int i = 0; i < nativeContexts->Count; i++)
 		{
-			delete ((NativeMultiWorldTesting::Context*)nativeContexts[i].ToPointer());
+			delete ((NativeMultiWorldTesting::SimpleContext*)nativeContexts[i].ToPointer());
 		}
 		nativeContexts->Clear();
 
@@ -274,7 +274,7 @@ namespace MultiWorldTesting {
 
 		std::string nativeUniqueKey = marshal_as<std::string>(uniqueId);
 
-		NativeMultiWorldTesting::Context* log_context = MwtHelper::PinNativeContext(context);
+		NativeMultiWorldTesting::SimpleContext* log_context = MwtHelper::PinNativeContext(context);
 
 		size_t uniqueIdLength = (size_t)uniqueId->Length;
 
@@ -310,7 +310,7 @@ namespace MultiWorldTesting {
 
 				//TODO: We're casting a BaseContext object to a derived type (Context) for now, but we actually
 				//need is a definition of the BaseContext interface in C# land.
-				NativeMultiWorldTesting::Context* native_context = (NativeMultiWorldTesting::Context*)native_interactions[i].Get_Context();
+				NativeMultiWorldTesting::SimpleContext* native_context = (NativeMultiWorldTesting::SimpleContext*)native_interactions[i].Get_Context();
 
 				NativeMultiWorldTesting::Feature* native_features = nullptr;
 				size_t native_num_features = 0;
@@ -399,7 +399,7 @@ namespace MultiWorldTesting {
 		m_native_interactions = new NativeMultiWorldTesting::Interaction*[m_num_native_interactions];
 		for (int i = 0; i < m_num_native_interactions; i++)
 		{
-			NativeMultiWorldTesting::Context* native_context = MwtHelper::PinNativeContext(interactions[i]->ApplicationContext);
+			NativeMultiWorldTesting::SimpleContext* native_context = MwtHelper::PinNativeContext(interactions[i]->ApplicationContext);
 			
 			String^ interaction_id = interactions[i]->Id;
 			m_native_interactions[i] = new NativeMultiWorldTesting::Interaction(native_context,
@@ -457,7 +457,7 @@ namespace MultiWorldTesting {
 			{
 				interactions[i] = gcnew Interaction();
 
-				NativeMultiWorldTesting::Context* native_context = (NativeMultiWorldTesting::Context*)m_native_interactions[i]->Get_Context();
+				NativeMultiWorldTesting::SimpleContext* native_context = (NativeMultiWorldTesting::SimpleContext*)m_native_interactions[i]->Get_Context();
 
 				NativeMultiWorldTesting::Feature* native_features = nullptr;
 				size_t native_num_features = 0;
@@ -492,7 +492,7 @@ namespace MultiWorldTesting {
 		contextHandles = gcnew cli::array<GCHandle>(m_num_native_interactions);
 		for (int i = 0; i < m_num_native_interactions; i++)
 		{
-			NativeMultiWorldTesting::Context* native_context = MwtHelper::PinNativeContext(interactions[i]->ApplicationContext);
+			NativeMultiWorldTesting::SimpleContext* native_context = MwtHelper::PinNativeContext(interactions[i]->ApplicationContext);
 			String^ interaction_id = interactions[i]->Id;
 			m_native_interactions[i] = new NativeMultiWorldTesting::Interaction(native_context,
 				interactions[i]->ChosenAction,
@@ -597,7 +597,7 @@ namespace MultiWorldTesting {
 		return mwtOpt->InvokeDefaultPolicyFunction(context);
 	}
 
-	NativeMultiWorldTesting::Context* MwtHelper::PinNativeContext(Context^ context)
+	NativeMultiWorldTesting::SimpleContext* MwtHelper::PinNativeContext(Context^ context)
 	{
 		cli::array<Feature>^ contextFeatures = context->Features;
 		String^ otherContext = context->OtherContext;
@@ -611,11 +611,11 @@ namespace MultiWorldTesting {
 
 			if (otherContext != nullptr)
 			{
-				return new NativeMultiWorldTesting::Context((NativeMultiWorldTesting::Feature*)nativeContextFeatures, (size_t)context->Features->Length, marshal_as<std::string>(otherContext));
+				return new NativeMultiWorldTesting::SimpleContext((NativeMultiWorldTesting::Feature*)nativeContextFeatures, (size_t)context->Features->Length, marshal_as<std::string>(otherContext));
 			}
 			else
 			{
-				return new NativeMultiWorldTesting::Context((NativeMultiWorldTesting::Feature*)nativeContextFeatures, (size_t)context->Features->Length);
+				return new NativeMultiWorldTesting::SimpleContext((NativeMultiWorldTesting::Feature*)nativeContextFeatures, (size_t)context->Features->Length);
 			}
 		}
 		catch (Exception^ ex)

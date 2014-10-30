@@ -163,7 +163,7 @@ namespace MultiWorldTesting {
 	private ref class MwtHelper
 	{
 	public:
-		static NativeMultiWorldTesting::Context* PinNativeContext(Context^ context);
+		static NativeMultiWorldTesting::SimpleContext* PinNativeContext(Context^ context);
 	};
 
 	public ref class MwtExplorer

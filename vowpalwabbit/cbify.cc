@@ -52,7 +52,7 @@ namespace CBIFY {
       return 0.;
   }
 
-  u32 explore_policy(vw_context& ctx, Context& application_context)
+  u32 explore_policy(vw_context& ctx, SimpleContext& application_context)
   {
 	  ctx.l->predict(*ctx.e);
 	  return (u32)(((CB::label*)ctx.e->ld)->prediction);
@@ -64,7 +64,7 @@ namespace CBIFY {
     MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
 	base.mwt_policy_context->l = &base;
 	base.mwt_policy_context->e = &ec;
-	Context dummy(nullptr, 0);
+	SimpleContext dummy(nullptr, 0);
     //Use CB to find current prediction for remaining rounds.
     if (data.tau && is_learn)
       {
@@ -104,7 +104,7 @@ namespace CBIFY {
     base.mwt_policy_context->l = &base;
     base.mwt_policy_context->e = &ec;
     
-    Context dummy(nullptr, 0);
+	SimpleContext dummy(nullptr, 0);
     base.mwt->Choose_Action(string("vw"), dummy); // TODO: evolve unique key?
     
     vector<Interaction> interactions = base.mwt->Get_All_Interactions();

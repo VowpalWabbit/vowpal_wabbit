@@ -11,15 +11,15 @@ using namespace MultiWorldTesting;
 
 const int NUM_ACTIONS = 10;
 
-u32 Stateful_Default_Policy1(int& parameters, Context& appContext)
+u32 Stateful_Default_Policy1(int& parameters, SimpleContext& appContext)
 {
 	return parameters % NUM_ACTIONS + 1;
 }
-u32 Stateful_Default_Policy2(int& parameters, Context& appContext)
+u32 Stateful_Default_Policy2(int& parameters, SimpleContext& appContext)
 {
 	return parameters % NUM_ACTIONS + 2;
 }
-void Stateful_Default_Scorer(int& parameters, Context& appContext, float scores[], u32 size)
+void Stateful_Default_Scorer(int& parameters, SimpleContext& appContext, float scores[], u32 size)
 {
 	for (u32 i = 0; i < size; i++)
 	{
@@ -27,15 +27,15 @@ void Stateful_Default_Scorer(int& parameters, Context& appContext, float scores[
 	}
 }
 
-u32 Stateless_Default_Policy1(Context& appContext)
+u32 Stateless_Default_Policy1(SimpleContext& appContext)
 {
 	return 99 % NUM_ACTIONS + 1;
 }
-u32 Stateless_Default_Policy2(Context& appContext)
+u32 Stateless_Default_Policy2(SimpleContext& appContext)
 {
 	return 98 % NUM_ACTIONS + 1;
 }
-void Stateless_Default_Scorer(Context& appContext, float scores[], u32 size)
+void Stateless_Default_Scorer(SimpleContext& appContext, float scores[], u32 size)
 {
 	for (u32 i = 0; i < size; i++)
 	{
@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 	features[0].Id = 32;
 	features[0].Value = 0.5;
 
-	Context appContext(features, num_features);
+	SimpleContext appContext(features, num_features);
 
 	// Now let MWT explore & choose an action
 	string unique_key = "1001";

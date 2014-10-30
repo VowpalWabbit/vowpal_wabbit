@@ -13,11 +13,11 @@ typedef void Stateless_Scorer_Func(void* application_context, float scores[], u3
 template <class T>
 struct Stateful
 {
-	typedef u32 Policy(T& policy_params, Context& application_Context);
-	typedef void Scorer(T& policy_params, Context& application_Context, float scores[], u32 size);
+	typedef u32 Policy(T& policy_params, SimpleContext& application_Context);
+	typedef void Scorer(T& policy_params, SimpleContext& application_Context, float scores[], u32 size);
 };
 
-typedef u32 Policy(Context& application_Context);
-typedef void Scorer(Context& application_Context, float scores[], u32 size);
+typedef u32 Policy(SimpleContext& application_Context);
+typedef void Scorer(SimpleContext& application_Context, float scores[], u32 size);
 
 }

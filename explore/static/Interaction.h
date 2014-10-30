@@ -184,10 +184,10 @@ private:
 	friend class Interaction;
 };
 
-class Context : public BaseContext
+class SimpleContext : public BaseContext
 {
 public:
-	Context(Feature* common_features, size_t num_features) : 
+	SimpleContext(Feature* common_features, size_t num_features) :
 		m_common_features(common_features), 
 		m_num_features(num_features),
 		m_other_context(""),
@@ -195,7 +195,7 @@ public:
 	{
 	}
 
-	Context(Feature* common_features, size_t num_features, std::string other_context) :
+	SimpleContext(Feature* common_features, size_t num_features, std::string other_context) :
 		m_common_features(common_features), 
 		m_num_features(num_features), 
 		m_other_context(other_context),
@@ -203,7 +203,7 @@ public:
 	{
 	}
 
-	~Context()
+	~SimpleContext()
 	{
 		if (m_is_copy)
 		{
@@ -229,7 +229,7 @@ private:
 		m_is_copy = is_copy;
 	}
 
-	Context* Copy()
+	SimpleContext* Copy()
 	{
 		Feature* features = nullptr;
 
@@ -239,7 +239,7 @@ private:
 			memcpy(features, m_common_features, sizeof(Feature)*m_num_features);
 		}
 
-		Context* context = new Context(features, m_num_features, m_other_context);
+		SimpleContext* context = new SimpleContext(features, m_num_features, m_other_context);
 		context->Set_Is_Copy(true);
 		return context;
 	}
