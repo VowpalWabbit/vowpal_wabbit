@@ -278,10 +278,11 @@ namespace MultiWorldTesting {
 
 		size_t uniqueIdLength = (size_t)uniqueId->Length;
 
-		chosenAction = m_mwt->Internal_Choose_Action(
-			contextPtr.ToPointer(),
+		chosenAction = m_mwt->Interop_Choose_Action(
+			*log_context,
 			nativeUniqueKey, 
-			*log_context);
+			contextPtr.ToPointer()
+		);
 
 		// Add to list of handles to be freed when MWT is destroyed
 		contextHandles->Add(contextHandle);
@@ -308,25 +309,10 @@ namespace MultiWorldTesting {
 			{
 				interactions[i] = gcnew Interaction();
 
-				//TODO: We're casting a BaseContext object to a derived type (Context) for now, but we actually
-				//need is a definition of the BaseContext interface in C# land.
-				NativeMultiWorldTesting::SimpleContext* native_context = (NativeMultiWorldTesting::SimpleContext*)native_interactions[i].Get_Context();
+				IntPtr contextPtr(native_interactions[i].Get_Clr_Context());
+				GCHandle contextHandle = (GCHandle)contextPtr;
 
-				NativeMultiWorldTesting::Feature* native_features = nullptr;
-				size_t native_num_features = 0;
-				native_context->Get_Features(native_num_features, native_features);
-				cli::array<Feature>^ features = gcnew cli::array<Feature>((int)native_num_features);
-				for (int i = 0; i < features->Length; i++)
-				{
-					features[i].Value = native_features[i].Value;
-					features[i].Id = native_features[i].Id;
-				}
-
-				std::string native_other_context;
-				native_context->Get_Other_Context(native_other_context);
-				String^ otherContext = (native_other_context.empty()) ? nullptr : gcnew String(native_other_context.c_str());
-
-				interactions[i]->ApplicationContext = gcnew SimpleContext(features, otherContext);
+				interactions[i]->ApplicationContext = (BaseContext^)(contextHandle.Target);
 				interactions[i]->ChosenAction = native_interactions[i].Get_Action().Get_Id();
 				interactions[i]->Probability = native_interactions[i].Get_Prob();
 				interactions[i]->Id = gcnew String(native_interactions[i].Get_Id().c_str());
@@ -369,7 +355,7 @@ namespace MultiWorldTesting {
 		BaggingParameter bp = (BaggingParameter)(mwtHandle.Target);
 
 		GCHandle contextHandle = (GCHandle)contextPtr;
-		SimpleContext^ context = (SimpleContext^)(contextHandle.Target);
+		BaseContext^ context = (BaseContext^)(contextHandle.Target);
 
 		return bp.Mwt->InvokeBaggingDefaultPolicyFunction(context, bp.BagIndex);
 	}
@@ -380,7 +366,7 @@ namespace MultiWorldTesting {
 		MwtExplorer^ mwt = (MwtExplorer^)(mwtHandle.Target);
 
 		GCHandle contextHandle = (GCHandle)contextPtr;
-		SimpleContext^ context = (SimpleContext^)(contextHandle.Target);
+		BaseContext^ context = (BaseContext^)(contextHandle.Target);
 
 		cli::array<float>^ scores = gcnew cli::array<float>(numScores);
 
@@ -505,7 +491,7 @@ namespace MultiWorldTesting {
 			//policy during offlineevaluation
 			contextHandles[i] = GCHandle::Alloc(interactions[i]->ApplicationContext);
 			IntPtr contextPtr = (IntPtr)contextHandles[i];
-			m_native_interactions[i]->Set_External_Context(contextPtr.ToPointer());
+			m_native_interactions[i]->Set_Clr_Context(contextPtr.ToPointer());
 		}
 		size_t native_num_interactions = (size_t)m_num_native_interactions;
 		m_mwt_optimizer = new NativeMultiWorldTesting::MWTOptimizer(native_num_interactions, m_native_interactions, (u32)numActions);

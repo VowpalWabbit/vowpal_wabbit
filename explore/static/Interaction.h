@@ -262,9 +262,6 @@ public:
 	{
 		m_reward = NO_REWARD;
 		m_id_hash = HashUtils::Compute_Id_Hash(unique_id);
-		// By default, assume the external context is the same as the one passed in above, but 
-		// (C#) interop to work the external context should be set to a managed pointer
-		m_external_context = context;
 	}
 
 	~Interaction()
@@ -333,17 +330,13 @@ private:
 		m_context->Serialize(stream);
 	}
 
-	void* Get_External_Context()
+PORTING_INTERFACE:
+	void* Get_Clr_Context()
 	{
 		return m_external_context;
 	}
 
-#ifdef MANAGED_CODE
-public:
-#else
-private:
-#endif
-	void Set_External_Context(void* ext_context)
+	void Set_Clr_Context(void* ext_context)
 	{
 		m_external_context = ext_context;
 	}

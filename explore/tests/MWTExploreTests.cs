@@ -349,6 +349,99 @@ namespace ExploreTests
             ExploreWithCustomContext();
         }
 
+        [TestMethod]
+        public void CustomContextTauFirstStateful()
+        {
+            mwt.InitializeTauFirst<int>(1,
+                new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc),
+                PolicyParams,
+                NumActions);
+
+            ExploreWithCustomContext();
+        }
+
+        [TestMethod]
+        public void CustomContextTauFirstStateless()
+        {
+            mwt.InitializeTauFirst(1,
+                new StatelessPolicyDelegate(TestStatelessPolicyFunc),
+                NumActions);
+
+            ExploreWithCustomContext();
+        }
+
+        [TestMethod]
+        public void CustomContextBaggingStateful()
+        {
+            uint bags = 2;
+            StatefulPolicyDelegate<int>[] funcs = new StatefulPolicyDelegate<int>[bags];
+            int[] funcParams = new int[bags];
+            for (int i = 0; i < bags; i++)
+            {
+                funcs[i] = new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc);
+                funcParams[i] = PolicyParams;
+            }
+
+            mwt.InitializeBagging(bags, funcs, funcParams, NumActions);
+            ExploreWithCustomContext();
+        }
+
+        [TestMethod]
+        public void CustomContextBaggingStateless()
+        {
+            uint bags = 2;
+            StatelessPolicyDelegate[] funcs = new StatelessPolicyDelegate[bags];
+            for (int i = 0; i < bags; i++)
+            {
+                funcs[i] = new StatelessPolicyDelegate(TestStatelessPolicyFunc);
+            }
+
+            mwt.InitializeBagging(bags, funcs, NumActions);
+            ExploreWithCustomContext();
+        }
+
+        [TestMethod]
+        public void CustomContextSoftmaxStateful()
+        {
+            mwt.InitializeSoftmax<int>(0.5f,
+                new StatefulScorerDelegate<int>(TestStatefulScorerFunc),
+                PolicyParams, NumActions);
+
+            ExploreWithCustomContext();
+
+        }
+
+        [TestMethod]
+        public void CustomContextSoftmaxStateless()
+        {
+            mwt.InitializeSoftmax(0.5f,
+                new StatelessScorerDelegate(TestStatelessScorerFunc),
+                NumActions);
+
+            ExploreWithCustomContext();
+        }
+
+        [TestMethod]
+        public void CustomContextGenericStateful()
+        {
+            mwt.InitializeGeneric<int>(
+                new StatefulScorerDelegate<int>(TestStatefulScorerFunc),
+                PolicyParams,
+                NumActions);
+
+            ExploreWithCustomContext();
+        }
+
+        [TestMethod]
+        public void CustomContextGenericStateless()
+        {
+            mwt.InitializeGeneric(
+                new StatelessScorerDelegate(TestStatelessScorerFunc),
+                NumActions);
+
+            ExploreWithCustomContext();
+        }
+
         [TestInitialize]
         public void TestInitialize()
         {
@@ -372,19 +465,22 @@ namespace ExploreTests
         private void ExploreWithCustomContext()
         {
             TestContext testContext = new TestContext();
+            testContext.SetFeatures();
+
             uint chosenAction = mwt.ChooseAction(UniqueKey, testContext);
 
             Interaction[] interactions = mwt.GetAllInteractions();
             Assert.AreEqual(1, interactions.Length);
 
             BaseContext returnedContext = interactions[0].GetContext();
-            //Assert.IsTrue(returnedContext is TestContext);
-            //Assert.AreEqual(testContext, returnedContext);
+            Assert.IsTrue(returnedContext is TestContext);
+            Assert.AreEqual(testContext, returnedContext);
 
             Feature[] originalFeatures = testContext.GetFeatures();
             Feature[] returnedFeatures = returnedContext.GetFeatures();
 
             Assert.AreEqual(originalFeatures.Length, returnedFeatures.Length);
+            Assert.AreEqual(3, returnedFeatures.Length);
             for (int i = 0; i < originalFeatures.Length; i++)
             {
                 Assert.AreEqual(originalFeatures[i].Id, returnedFeatures[i].Id);
@@ -496,13 +592,29 @@ namespace ExploreTests
 
     public class TestContext : BaseContext
     {
-        public override Feature[] GetFeatures()
+        public TestContext()
+        { 
+            features = new Feature[] 
+            { 
+                new Feature() { Id = 9999, Value = 9999f },
+            };
+        }
+
+        public void SetFeatures()
         {
-            return new Feature[] { 
+            features = new Feature[] 
+            { 
                 new Feature() { Id = 1, Value = 9.1f },
                 new Feature() { Id = 4, Value = 3.6f },
                 new Feature() { Id = 14, Value = 11.5f }
             };
         }
+
+        public override Feature[] GetFeatures()
+        {
+            return features;
+        }
+
+        private Feature[] features;
     }
 }

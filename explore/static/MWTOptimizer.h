@@ -167,11 +167,11 @@ private:
 			MWTAction policy_action(0);
 			if (m_stateless_default_policy_func != nullptr)
 			{
-				policy_action = MWTAction(m_stateless_default_policy_func(pInteraction->Get_External_Context()));
+				policy_action = MWTAction(m_stateless_default_policy_func(pInteraction->Get_Clr_Context()));
 			}
 			else
 			{
-				policy_action = MWTAction(m_stateful_default_policy_func(m_default_policy_params, pInteraction->Get_External_Context()));
+				policy_action = MWTAction(m_stateful_default_policy_func(m_default_policy_params, pInteraction->Get_Clr_Context()));
 			}
 			// If the policy action matches the action logged in the interaction, include the
 			// (importance-weighted) reward in our average

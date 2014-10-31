@@ -116,7 +116,7 @@ public:
 	//TODO: Mention that this allocates memory, so it may throw if contiguous address space is not available.
 	u32 Choose_Action(std::string unique_id, BaseContext& context)
 	{
-		return this->Internal_Choose_Action(&context, unique_id, context);
+		return this->Internal_Choose_Action(context, unique_id);
 	}
 
 	//TODO: Mention that this will clear the interactions from our explorer's internal memory
@@ -269,11 +269,7 @@ PORTING_INTERFACE:
 		m_explorer.reset(new GenericExplorer(default_scorer_func, m_app_id));
 	}
 	
-	// The parameters here look weird but are required to interface with C#:
-	// The void* and Context& parameters are references to the same Context object.
-	// Void* is required to pass back to the default policy function which could live in either native or managed space.
-	// Context& is used internally to log data only since we need to access its members for serialization.
-	u32 Internal_Choose_Action(void* context, std::string unique_id, BaseContext& log_context)
+	u32 Internal_Choose_Action(BaseContext& context, std::string unique_id)
 	{
 		// Hash the ID of the yet-to-be-created interaction so we can seed the explorer
 		u64 seed = HashUtils::Compute_Id_Hash(unique_id);
@@ -281,16 +277,38 @@ PORTING_INTERFACE:
 		{
 			throw std::invalid_argument("MWT was not initialized properly.");
 		}
-		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, m_action_set, (u32)seed);
+		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action((void*)&context, m_action_set, (u32)seed);
 		
 		if (std::get<2>(action_Probability_Log_Tuple))
 		{
-		// Create an interaction using the same unique_id as used in the seed above!
-		  Interaction pInteraction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), unique_id);
-		  m_interaction_store.Store(pInteraction);
+			// Create an interaction using the same unique_id as used in the seed above!
+			Interaction interaction(&context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), unique_id);
+			m_interaction_store.Store(interaction);
 		}
 		return std::get<0>(action_Probability_Log_Tuple).Get_Id();
 	}
+
+#ifdef MANAGED_CODE
+	u32 Interop_Choose_Action(BaseContext& log_context, std::string unique_id, void* clr_context)
+	{
+		// Hash the ID of the yet-to-be-created interaction so we can seed the explorer
+		u64 seed = HashUtils::Compute_Id_Hash(unique_id);
+		if (m_explorer.get() == nullptr)
+		{
+			throw std::invalid_argument("MWT was not initialized properly.");
+		}
+		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(clr_context, m_action_set, (u32)seed);
+
+		if (std::get<2>(action_Probability_Log_Tuple))
+		{
+			// Create an interaction using the same unique_id as used in the seed above!
+			Interaction interaction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), unique_id);
+			interaction.Set_Clr_Context(clr_context);
+			m_interaction_store.Store(interaction);
+		}
+		return std::get<0>(action_Probability_Log_Tuple).Get_Id();
+	}
+#endif
 
 private:
 	void Validate_Num_Actions(u32 num_actions)
