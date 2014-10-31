@@ -265,7 +265,7 @@ namespace MultiWorldTesting {
 		m_mwt->Internal_Initialize_Generic(nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
 	}
 
-	UInt32 MwtExplorer::ChooseAction(String^ uniqueId, SimpleContext^ context)
+	UInt32 MwtExplorer::ChooseAction(String^ uniqueId, BaseContext^ context)
 	{
 		UInt32 chosenAction = 0;
 
@@ -337,17 +337,17 @@ namespace MultiWorldTesting {
 		return interactions;
 	}
 
-	UInt32 MwtExplorer::InvokeDefaultPolicyFunction(SimpleContext^ context)
+	UInt32 MwtExplorer::InvokeDefaultPolicyFunction(BaseContext^ context)
 	{
 		return policyWrapper->InvokeFunction(context);
 	}
 
-	UInt32 MwtExplorer::InvokeBaggingDefaultPolicyFunction(SimpleContext^ context, int bagIndex)
+	UInt32 MwtExplorer::InvokeBaggingDefaultPolicyFunction(BaseContext^ context, int bagIndex)
 	{
 		return policyWrappers[bagIndex]->InvokeFunction(context);
 	}
 
-	void MwtExplorer::InvokeDefaultScorerFunction(SimpleContext^ context, cli::array<float>^ scores)
+	void MwtExplorer::InvokeDefaultScorerFunction(BaseContext^ context, cli::array<float>^ scores)
 	{
 		policyWrapper->InvokeScorer(context, scores);
 	}
@@ -358,7 +358,7 @@ namespace MultiWorldTesting {
 		MwtExplorer^ mwt = (MwtExplorer^)(mwtHandle.Target);
 
 		GCHandle contextHandle = (GCHandle)contextPtr;
-		SimpleContext^ context = (SimpleContext^)(contextHandle.Target);
+		BaseContext^ context = (BaseContext^)(contextHandle.Target);
 
 		return mwt->InvokeDefaultPolicyFunction(context);
 	}
@@ -597,26 +597,23 @@ namespace MultiWorldTesting {
 		return mwtOpt->InvokeDefaultPolicyFunction(context);
 	}
 
-	NativeMultiWorldTesting::SimpleContext* MwtHelper::PinNativeContext(SimpleContext^ context)
+	NativeMultiWorldTesting::SimpleContext* MwtHelper::PinNativeContext(BaseContext^ context)
 	{
-		cli::array<Feature>^ contextFeatures = context->Features;
-		String^ otherContext = context->OtherContext;
+		cli::array<Feature>^ contextFeatures = context->GetFeatures();
 
-		context->FeatureHandle = GCHandle::Alloc(context->Features, GCHandleType::Pinned);
+		if (contextFeatures == nullptr)
+		{
+			throw gcnew InvalidDataException("Context features cannot be null.");
+		}
+
+		context->FeatureHandle = GCHandle::Alloc(contextFeatures, GCHandleType::Pinned);
 		try
 		{
 			IntPtr featureArrayPtr = context->FeatureHandle.AddrOfPinnedObject();
 
 			NativeMultiWorldTesting::Feature* nativeContextFeatures = (NativeMultiWorldTesting::Feature*)featureArrayPtr.ToPointer();
 
-			if (otherContext != nullptr)
-			{
-				return new NativeMultiWorldTesting::SimpleContext((NativeMultiWorldTesting::Feature*)nativeContextFeatures, (size_t)context->Features->Length, marshal_as<std::string>(otherContext));
-			}
-			else
-			{
-				return new NativeMultiWorldTesting::SimpleContext((NativeMultiWorldTesting::Feature*)nativeContextFeatures, (size_t)context->Features->Length);
-			}
+			return new NativeMultiWorldTesting::SimpleContext((NativeMultiWorldTesting::Feature*)nativeContextFeatures, (size_t)contextFeatures->Length);
 		}
 		catch (Exception^ ex)
 		{

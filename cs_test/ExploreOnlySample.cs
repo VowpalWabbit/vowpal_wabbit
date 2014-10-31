@@ -8,32 +8,32 @@ namespace cs_test
 {
     class ExploreOnlySample
     {
-        private static UInt32 SampleStatefulPolicyFunc(int policyParams, SimpleContext appContext)
+        private static UInt32 SampleStatefulPolicyFunc(int policyParams, BaseContext appContext)
         {
             return (uint)((policyParams + appContext.GetFeatures().Length) % 10 + 1);
         }
 
-        private static UInt32 SampleStatefulPolicyFunc2(int policyParams, SimpleContext appContext)
+        private static UInt32 SampleStatefulPolicyFunc2(int policyParams, BaseContext appContext)
         {
             return (uint)((policyParams + appContext.GetFeatures().Length) % 10 + 2);
         }
 
-        private static UInt32 SampleStatefulPolicyFunc(CustomParams policyParams, SimpleContext appContext)
+        private static UInt32 SampleStatefulPolicyFunc(CustomParams policyParams, BaseContext appContext)
         {
             return (uint)((policyParams.Value1 + policyParams.Value2 + appContext.GetFeatures().Length) % 10 + 1);
         }
 
-        private static UInt32 SampleStatelessPolicyFunc(SimpleContext appContext)
+        private static UInt32 SampleStatelessPolicyFunc(BaseContext appContext)
         {
             return (UInt32)appContext.GetFeatures().Length;
         }
 
-        private static UInt32 SampleStatelessPolicyFunc2(SimpleContext appContext)
+        private static UInt32 SampleStatelessPolicyFunc2(BaseContext appContext)
         {
             return (UInt32)appContext.GetFeatures().Length + 1;
         }
 
-        private static void SampleStatefulScorerFunc(int policyParams, SimpleContext appContext, float[] scores)
+        private static void SampleStatefulScorerFunc(int policyParams, BaseContext appContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {
@@ -41,7 +41,7 @@ namespace cs_test
             }
         }
 
-        private static void SampleStatelessScorerFunc(SimpleContext appContext, float[] scores)
+        private static void SampleStatelessScorerFunc(BaseContext appContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {

@@ -328,6 +328,27 @@ namespace ExploreTests
             EndToEnd();
         }
 
+        [TestMethod]
+        public void CustomContextEpsilonStateful()
+        {
+            mwt.InitializeEpsilonGreedy<int>(0f,
+               new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc),
+               PolicyParams,
+               NumActions);
+
+            ExploreWithCustomContext();
+        }
+
+        [TestMethod]
+        public void CustomContextEpsilonStateless()
+        {
+            mwt.InitializeEpsilonGreedy(0f,
+                new StatelessPolicyDelegate(TestStatelessPolicyFunc),
+                NumActions);
+
+            ExploreWithCustomContext();
+        }
+
         [TestInitialize]
         public void TestInitialize()
         {
@@ -346,6 +367,29 @@ namespace ExploreTests
         public void TestCleanup()
         {
             mwt.Unintialize();
+        }
+
+        private void ExploreWithCustomContext()
+        {
+            TestContext testContext = new TestContext();
+            uint chosenAction = mwt.ChooseAction(UniqueKey, testContext);
+
+            Interaction[] interactions = mwt.GetAllInteractions();
+            Assert.AreEqual(1, interactions.Length);
+
+            BaseContext returnedContext = interactions[0].GetContext();
+            //Assert.IsTrue(returnedContext is TestContext);
+            //Assert.AreEqual(testContext, returnedContext);
+
+            Feature[] originalFeatures = testContext.GetFeatures();
+            Feature[] returnedFeatures = returnedContext.GetFeatures();
+
+            Assert.AreEqual(originalFeatures.Length, returnedFeatures.Length);
+            for (int i = 0; i < originalFeatures.Length; i++)
+            {
+                Assert.AreEqual(originalFeatures[i].Id, returnedFeatures[i].Id);
+                Assert.AreEqual(originalFeatures[i].Value, returnedFeatures[i].Value);
+            }
         }
 
         private void EndToEnd()
@@ -392,17 +436,17 @@ namespace ExploreTests
             System.IO.File.Delete(modelFile);
         }
 
-        private static UInt32 TestStatefulPolicyFunc(int policyParams, SimpleContext context)
+        private static UInt32 TestStatefulPolicyFunc(int policyParams, BaseContext context)
         {
             return ActionID.Make_OneBased((uint)(policyParams + context.GetFeatures().Length) % MWTExploreTests.NumActions);
         }
 
-        private static UInt32 TestStatelessPolicyFunc(SimpleContext context)
+        private static UInt32 TestStatelessPolicyFunc(BaseContext context)
         {
             return ActionID.Make_OneBased((uint)context.GetFeatures().Length % MWTExploreTests.NumActions);
         }
 
-        private static void TestStatefulScorerFunc(int policyParams, SimpleContext applicationContext, float[] scores)
+        private static void TestStatefulScorerFunc(int policyParams, BaseContext applicationContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {
@@ -410,7 +454,7 @@ namespace ExploreTests
             }
         }
 
-        private static void TestStatelessScorerFunc(SimpleContext applicationContext, float[] scores)
+        private static void TestStatelessScorerFunc(BaseContext applicationContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {
@@ -418,7 +462,7 @@ namespace ExploreTests
             }
         }
 
-        private static void NonUniformStatefulScorerFunc(int policyParams, SimpleContext applicationContext, float[] scores)
+        private static void NonUniformStatefulScorerFunc(int policyParams, BaseContext applicationContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {
@@ -426,7 +470,7 @@ namespace ExploreTests
             }
         }
 
-        private static void NonUniformStatelessScorerFunc(SimpleContext applicationContext, float[] scores)
+        private static void NonUniformStatelessScorerFunc(BaseContext applicationContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {
@@ -448,5 +492,17 @@ namespace ExploreTests
         private MwtExplorer mwt;
         private Feature[] features;
         private SimpleContext context;
+    }
+
+    public class TestContext : BaseContext
+    {
+        public override Feature[] GetFeatures()
+        {
+            return new Feature[] { 
+                new Feature() { Id = 1, Value = 9.1f },
+                new Feature() { Id = 4, Value = 3.6f },
+                new Feature() { Id = 14, Value = 11.5f }
+            };
+        }
     }
 }
