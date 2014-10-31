@@ -11,15 +11,15 @@ using namespace MultiWorldTesting;
 
 const int NUM_ACTIONS = 10;
 
-u32 Stateful_Default_Policy_1(int& parameters, Context& appContext)
+u32 Stateful_Default_Policy_1(int& parameters, BaseContext& appContext)
 {
 	return parameters % NUM_ACTIONS + 1;
 }
-u32 Stateful_Default_Policy_2(int& parameters, Context& appContext)
+u32 Stateful_Default_Policy_2(int& parameters, BaseContext& appContext)
 {
 	return parameters % NUM_ACTIONS + 2;
 }
-void Stateful_Default_Scorer_1(int& parameters, Context& appContext, float scores[], u32 size)
+void Stateful_Default_Scorer_1(int& parameters, BaseContext& appContext, float scores[], u32 size)
 {
 	for (u32 i = 0; i < size; i++)
 	{
@@ -27,15 +27,15 @@ void Stateful_Default_Scorer_1(int& parameters, Context& appContext, float score
 	}
 }
 
-u32 Stateless_Default_Policy_1(Context& appContext)
+u32 Stateless_Default_Policy_1(BaseContext& appContext)
 {
 	return 99 % NUM_ACTIONS + 1;
 }
-u32 Stateless_Default_Policy_2(Context& appContext)
+u32 Stateless_Default_Policy_2(BaseContext& appContext)
 {
 	return 98 % NUM_ACTIONS + 1;
 }
-void Stateless_Default_Scorer_1(Context& appContext, float scores[], u32 size)
+void Stateless_Default_Scorer_1(BaseContext& appContext, float scores[], u32 size)
 {
 	for (u32 i = 0; i < size; i++)
 	{
@@ -71,7 +71,7 @@ void Clock_Explore()
 		time_init += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
 
 		t1 = high_resolution_clock::now();
-		Context appContext(features, num_features);
+		SimpleContext appContext(features, num_features);
 		for (int i = 0; i < num_interactions; i++)
 		{
 		  mwt.Choose_Action(unique_key, appContext);
@@ -80,7 +80,7 @@ void Clock_Explore()
 		time_choose += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
 
 		t1 = high_resolution_clock::now();
-		string logs = mwt.Get_All_Interactions();
+		string logs = mwt.Get_All_Interactions_As_String();
 		t2 = high_resolution_clock::now();
 		time_serialized_log += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
 
@@ -90,14 +90,9 @@ void Clock_Explore()
 		}
 
 		t1 = high_resolution_clock::now();
-		Interaction** interactions = nullptr;
-		size_t n_inter = 0;
-		mwt.Get_All_Interactions(n_inter, interactions);
+		vector<Interaction> interactions = mwt.Get_All_Interactions();
 		t2 = high_resolution_clock::now();
 		time_typed_log += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
-		for (size_t i = 0; i < n_inter; i++)
-		  delete interactions[i];
-		delete[] interactions;
 	}
 	
 	delete[] features;
