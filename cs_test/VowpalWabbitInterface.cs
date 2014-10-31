@@ -12,6 +12,8 @@ namespace Microsoft.Research.MachineLearning
     using VwExample = IntPtr;
     using VwFeature = IntPtr;
     using BytePtr = IntPtr;
+    using VwSearchTaskHandle = IntPtr;
+    using VwAction = IntPtr;
 
     public sealed class VowpalWabbitInterface
     {
@@ -129,5 +131,11 @@ namespace Microsoft.Research.MachineLearning
 
         [DllImport(LIBVW, EntryPoint = "VW_Get_Stride")]
         public static extern SizeT Get_Stride(VwHandle vw);
+
+        [DllImport(LIBVW, EntryPoint = "VW_Initialize_Search_Hook_Task")]
+        public static extern VwSearchTaskHandle VW_Initialize_Search_Hook_Task(VwHandle vw);
+
+        [DllImport(LIBVW, EntryPoint = "VW_Get_Search_Prediction")]
+        public static extern void Get_Search_Prediction(VwSearchTaskHandle vwSearchTask, VwExample[] pEs, VwAction[] pPS, SizeT Count);
     }
 }

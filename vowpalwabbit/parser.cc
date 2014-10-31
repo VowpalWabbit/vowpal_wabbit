@@ -57,6 +57,7 @@ namespace po = boost::program_options;
 #include "simple_label.h"
 #include "vw.h"
 #include "memory.h"
+#include "search_sequencetask.h"
 
 using namespace std;
 
@@ -896,6 +897,17 @@ namespace VW{
     l->label = label;
     l->weight = weight;
     l->initial = base;
+  }
+
+  BuiltInTask* initialize_search_hook_task(vw& all)
+  {
+	  BuiltInTask* task = new BuiltInTask(all, &SequenceTask::task);
+	  return task;
+  }
+
+  void get_search_prediction(BuiltInTask& all, vector<example*> & ec, vector<uint32_t> & action)
+  {
+	  all.predict(ec, action);
   }
 
   example* import_example(vw& all, vector<feature_space> vf)

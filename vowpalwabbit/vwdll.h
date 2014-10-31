@@ -36,9 +36,13 @@ extern "C"
 	typedef void * VW_LABEL;
 	typedef void * VW_FEATURE_SPACE;
 	typedef void * VW_FEATURE;
+	typedef void * VW_ACTION;
+	typedef void * VW_SEARCH_TASK_HANDLE;
  
 	const VW_HANDLE INVALID_VW_HANDLE = NULL;
 	const VW_HANDLE INVALID_VW_EXAMPLE = NULL;
+	const VW_ACTION INVALID_VW_ACTION = NULL;
+	const VW_SEARCH_TASK_HANDLE INVALID_SEARCH_TASK_HANDLE = NULL;
 #ifdef USE_CODECVT
 	VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_Initialize(const char16_t * pstrArgs);
 #endif
@@ -87,6 +91,8 @@ extern "C"
     VW_DLL_MEMBER void VW_CALLING_CONV VW_Set_Weight(VW_HANDLE handle, size_t index, size_t offset, float value);
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_Num_Weights(VW_HANDLE handle);
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_Get_Stride(VW_HANDLE handle);
+	VW_DLL_MEMBER VW_SEARCH_TASK_HANDLE VW_CALLING_CONV VW_Initialize_Search_Hook_Task(VW_HANDLE handle);
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_Get_Search_Prediction(VW_SEARCH_TASK_HANDLE handle, VW_EXAMPLE* pEs, VW_ACTION* pPs, size_t Count);
 
 #ifdef __cplusplus
 }

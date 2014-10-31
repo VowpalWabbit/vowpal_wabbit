@@ -245,4 +245,23 @@ extern "C"
 		vw* pointer = static_cast<vw*>(handle);
 		return VW::get_stride(*pointer);
 	}
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_Get_Search_Prediction(VW_SEARCH_TASK_HANDLE handle, VW_EXAMPLE* pEs, VW_ACTION* pPs, size_t Count)
+	{
+		BuiltInTask* pointer = static_cast<BuiltInTask*>(handle);
+		example** ec = reinterpret_cast<example**>(pEs);
+		std::vector <uint32_t> action;
+		action.resize(Count);
+		vector<example*> vec(ec, ec + Count);
+		VW::get_search_prediction(*pointer, vec, action);
+		for (int i = 0; i < Count; i++)
+		{
+			pPs[i] = (VW_ACTION*)action[i];
+		}
+	}
+
+	VW_DLL_MEMBER VW_SEARCH_TASK_HANDLE VW_CALLING_CONV VW_Initialize_Search_Hook_Task(VW_HANDLE handle)
+	{
+		vw * pointer = static_cast<vw*>(handle);
+		return static_cast<VW_SEARCH_TASK_HANDLE>(VW::initialize_search_hook_task(*pointer));
+	}
 }
