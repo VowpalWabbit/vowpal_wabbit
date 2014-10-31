@@ -310,17 +310,48 @@ void search_run_fn(Search::search&sch) {
   }
 }
 
+void search_setup_fn(Search::search&sch) {
+  try {
+    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+    py::object run = *(py::object*)d->setup_object;
+    run.attr("__call__")();
+  } catch(...) {
+    PyErr_Print();
+    PyErr_Clear();
+    throw exception();
+  }
+}
+
+void search_takedown_fn(Search::search&sch) {
+  try {
+    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+    py::object run = *(py::object*)d->takedown_object;
+    run.attr("__call__")();
+  } catch(...) {
+    PyErr_Print();
+    PyErr_Clear();
+    throw exception();
+  }
+}
+
 void py_delete_run_object(void* pyobj) {
   py::object* o = (py::object*)pyobj;
   delete o;
 }
 
-void set_structured_predict_hook(search_ptr sch, py::object run_object) {
+void set_structured_predict_hook(search_ptr sch, py::object run_object, py::object setup_object, py::object takedown_object) {
   verify_search_set_properly(sch);
   HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
   d->run_f = &search_run_fn;
-  py::object* new_obj = new py::object(run_object);  // TODO: delete me!
-  d->run_object = new_obj;
+  d->run_object = new py::object(run_object);  // TODO: delete me!
+  if (setup_object.ptr() != Py_None) {
+    d->setup_object = new py::object(setup_object);
+    d->run_setup_f = &search_setup_fn;
+  }
+  if (takedown_object.ptr() != Py_None) {
+    d->takedown_object = new py::object(takedown_object);
+    d->run_takedown_f = &search_takedown_fn;
+  }
   d->delete_run_object = &py_delete_run_object;
 }
 
@@ -498,6 +529,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("get_history_length", &Search::search::get_history_length, "Get the value specified by --search_history_length")
       .def("loss", &Search::search::loss, "Declare a (possibly incremental) loss")
       .def("should_output", &search_should_output, "Check whether search wants us to output (only happens if you have -p running)")
+      .def("predict_needs_example", &Search::search::predictNeedsExample, "Check whether a subsequent call to predict is actually going to use the example you pass---i.e., can you skip feature computation?")
       .def("output", &search_output, "Add a string to the coutput (should only do if should_output returns True)")
       .def("get_num_actions", &search_get_num_actions, "Return the total number of actions search was initialized with")
       .def("set_structured_predict_hook", &set_structured_predict_hook, "Set the hook (function pointer) that search should use for structured prediction (you don't want to call this yourself!")

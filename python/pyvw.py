@@ -16,24 +16,31 @@ class SearchTask():
     def _run(self, your_own_input_example):
         pass
 
-    def _call_vw(self, fn, isTest):
+    def _call_vw(self, my_example, isTest): # run_fn, setup_fn, takedown_fn, isTest):
+        self._output = None
         self.bogus_example.set_test_only(isTest)
-        self.sch.set_structured_predict_hook(fn)
+        def run(): self._output = self._run(my_example)
+        setup = None
+        takedown = None
+        if callable(getattr(self, "_setup", None)): setup = lambda: self._setup(my_example)
+        if callable(getattr(self, "_takedown", None)): takedown = lambda: self._takedown(my_example)
+        self.sch.set_structured_predict_hook(run, setup, takedown)
         self.vw.learn(self.bogus_example)
         self.vw.learn(self.blank_line) # this will cause our ._run hook to get called
         
     def learn(self, data_iterator):
-        for my_example in data_iterator():
-            self._call_vw(lambda: self._run(my_example), isTest=False)
+        for my_example in data_iterator.__iter__():
+            self._call_vw(my_example, isTest=False);
 
+    def example(self, initStringOrDict=None, labelType=pylibvw.vw.lDefault):
+        """TODO"""
+        if self.sch.predict_needs_example():
+            return self.vw.example(initStringOrDict, labelType)
+        else:
+            return self.vw.example(None, labelType)
+            
     def predict(self, my_example):
-        self._output = None
-        def f(): self._output = self._run(my_example)
-        self._call_vw(f, isTest=True)
-        #if self._output is None:
-        #    raise Exception('structured predict hook failed to return anything')
-        # don't raise this exception because your _run code legitimately
-        # _could_ return None!
+        self._call_vw(my_example, isTest=True);
         return self._output
 
 class vw(pylibvw.vw):
@@ -338,8 +345,11 @@ class example(pylibvw.example):
         get an "empty" example which you can construct by hand (see, eg,
         example.push_features). If initString is a string, then this
         string is parsed as it would be from a VW data file into an
-        example (and "setup_example" is run)."""
+        example (and "setup_example" is run). if it is a dict, then we add all features in that dictionary. finally, if it's a function, we (repeatedly) execute it fn() until it's not a function any more (for lazy feature computation)."""
 
+        while hasattr(initStringOrDict, '__call__'):
+            initStringOrDict = initStringOrDict()
+        
         if initStringOrDict is None:
             pylibvw.example.__init__(self, vw, labelType)
             self.setup_done = False

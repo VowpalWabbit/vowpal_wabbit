@@ -209,12 +209,23 @@ public:
           if ((feats != NULL) && (feats->size() > 0)) {
             if (ae->atomics[dictionary_namespace].size() == 0)
               ae->indices.push_back(dictionary_namespace);
-            for (feature*f = feats->begin; f != feats->end; ++f) {
-              ae->atomics[dictionary_namespace].push_back(*f);
+            push_many(ae->atomics[dictionary_namespace], feats->begin, feats->size());
+            for (feature*f = feats->begin; f != feats->end; ++f)
               ae->sum_feat_sq[dictionary_namespace] += f->x * f->x;
-            }
             if (audit) {
-              // TODO
+              for (feature*f = feats->begin; f != feats->end; ++f) {
+                uint32_t id = f->weight_index;
+                size_t len = 2 + (feature_name.end-feature_name.begin) + 1 + ceil(log10(id)) + 1;
+                char* str = (char*)calloc(len, sizeof(char));
+                str[0] = index;
+                str[1] = '_';
+                char *c = str+2;
+                for (char*f=feature_name.begin; f!=feature_name.end; ++f) *(c++) = *f;
+                *(c++) = '=';
+                sprintf(c, "%d", id);
+                audit_data ad = { copy((char*)"dictionary"), str, f->weight_index, f->x, true };
+                ae->audit_features[dictionary_namespace].push_back(ad);
+              }
             }
           }
         }
