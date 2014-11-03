@@ -18,7 +18,7 @@ def recvall(s, n):
 def _find_getch():
     try:
         import Carbon    # try OS/X
-        Carbox.Evt       # unix doesn't have this
+        Carbon.Evt       # unix doesn't have this
         def _getch():
             if Carbon.Evt.EventAvail(0x0008)[0]==0: # 0x0008 is the keyDownMask
                 return ''
