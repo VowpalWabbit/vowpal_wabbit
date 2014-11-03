@@ -89,7 +89,7 @@ class vw(pylibvw.vw):
             variants are supported through this overloaded function:
             
               'examples' can be a single example (interpreted as non-LDF
-                 mode) or a list of examples (interpreted as LDF mode)
+                 mode) or a list of examples (interpreted as LDF mode).
 
               'my_tag' should be an integer id, specifying this prediction
                  
@@ -122,8 +122,10 @@ class vw(pylibvw.vw):
                         P.set_input_at(n, examples[n])
                 else: # non-LDF
                     P.set_input(examples)
-                
-                if isinstance(oracle, list): P.set_oracles(oracle)
+
+                if oracle is None: pass
+                elif isinstance(oracle, list):
+                    if len(oracle) > 0: P.set_oracles(oracle)
                 elif isinstance(oracle, int): P.set_oracle(oracle)
                 else: raise TypeError('expecting oracle to be a list or an integer')
 
@@ -349,7 +351,7 @@ class example(pylibvw.example):
 
         while hasattr(initStringOrDict, '__call__'):
             initStringOrDict = initStringOrDict()
-        
+
         if initStringOrDict is None:
             pylibvw.example.__init__(self, vw, labelType)
             self.setup_done = False
@@ -512,19 +514,20 @@ class example(pylibvw.example):
         Fails if setup has run."""
         ns = self.get_ns(ns)
         self.ensure_namespace_exists(ns)
-        ns_hash = self.vw.hash_space(ns.ns)
-        
-        for feature in featureList:
-            if isinstance(feature, int) or isinstance(feature, str):
-                f = feature
-                v = 1.
-            elif isinstance(feature, tuple) and len(feature) == 2:
-                f = feature[0]
-                v = feature[1]
-            else:
-                raise Exception('malformed feature to push of type: ' + str(type(feature)))
+        self.push_feature_list(self.vw, ns.ord_ns, featureList)
+        # ns_hash = self.vw.hash_space(ns.ns)
 
-            self.push_feature(ns, f, v, ns_hash)
+        # for feature in featureList:
+        #     if isinstance(feature, int) or isinstance(feature, str):
+        #         f = feature
+        #         v = 1.
+        #     elif isinstance(feature, tuple) and len(feature) == 2:
+        #         f = feature[0]
+        #         v = feature[1]
+        #     else:
+        #         raise Exception('malformed feature to push of type: ' + str(type(feature)))
+
+        #     self.push_feature(ns, f, v, ns_hash)
 
     def finish(self):
         """Tell VW that you're done with this example and it can

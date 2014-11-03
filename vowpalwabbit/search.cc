@@ -948,7 +948,7 @@ namespace Search {
         priv.done_with_all_actions = true;
 
         // set reference or copy example(s)
-        priv.learn_oracle_action = oracle_actions[0];
+        if (oracle_actions_cnt > 0) priv.learn_oracle_action = oracle_actions[0];
         priv.learn_ec_ref_cnt = ec_cnt;
         if (priv.examples_dont_change)
           priv.learn_ec_ref = ecs;

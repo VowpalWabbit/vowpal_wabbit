@@ -57,7 +57,7 @@ sequenceLabeler = vw.init_search_task(SequenceLabeler)
 # train it on the above dataset ten times; the my_dataset.__iter__ feeds into _run above
 print >>sys.stderr, 'training!'
 for curPass in range(10):
-    sequenceLabeler.learn(my_dataset.__iter__)
+    sequenceLabeler.learn(my_dataset)
 
 # now see the predictions on a test sentence
 print >>sys.stderr, 'predicting!'

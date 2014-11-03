@@ -165,6 +165,46 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v) {
   ec->total_sum_feat_sq += v * v;
 }
 
+void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a) {
+  // warning: assumes namespace exists!
+  char ns_str[2] = { ns, 0 };
+  uint32_t ns_hash = VW::hash_space(*vw, ns_str);
+  size_t count = 0; float sum_sq = 0.;
+  for (size_t i=0; i<len(a); i++) {
+    feature f = { 0, 0. };
+    py::object ai = a[i];
+    py::extract<py::tuple> get_tup(ai);
+    if (get_tup.check()) {
+      py::tuple fv = get_tup();
+      if (len(fv) != 2) { cerr << "warning: malformed feature in list" << endl; continue; } // TODO str(ai)
+      py::extract<float> get_val(fv[1]);
+      if (get_val.check())
+        f.x = get_val();
+      else { cerr << "warning: malformed feature in list" << endl; continue; }
+      ai = fv[0];
+    }
+    
+    bool got = false;
+    py::extract<uint32_t> get_int(ai);
+    if (get_int.check()) { f.weight_index = get_int(); got = true; }
+    else {
+      py::extract<string> get_str(ai);
+      if (get_str.check()) {
+        f.weight_index = VW::hash_feature(*vw, get_str(), ns_hash);
+        got = true;
+      } else { cerr << "warning: malformed feature in list" << endl; continue; }
+    }
+    if (got) {
+      ec->atomics[ns].push_back(f);
+      count++;
+      sum_sq += f.x * f.x;
+    }
+  }
+  ec->num_features += count;
+  ec->sum_feat_sq[ns] += sum_sq;
+  ec->total_sum_feat_sq += sum_sq;
+}
+
 bool ex_pop_feature(example_ptr ec, unsigned char ns) {
   if (ec->atomics[ns].size() == 0) return false;
   feature f = ec->atomics[ns].pop();
@@ -473,6 +513,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("feature_weight", &ex_feature_weight, "The the feature value (weight) per .feature(...)")
 
       .def("push_hashed_feature", &ex_push_feature, "Add a hashed feature to a given namespace (id=character-ord)")
+      .def("push_feature_list", &ex_push_feature_list, "Add a (Python) list of features to a given namespace")
       .def("pop_feature", &ex_pop_feature, "Remove the top feature from a given namespace; returns True iff the list was non-empty")
       .def("push_namespace", &ex_push_namespace, "Add a new namespace")
       .def("ensure_namespace_exists", &ex_ensure_namespace_exists, "Add a new namespace if it doesn't already exist")
