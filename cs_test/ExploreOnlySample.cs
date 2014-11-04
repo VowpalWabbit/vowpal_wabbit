@@ -149,7 +149,7 @@ namespace cs_test
             Interaction[] interactions = mwt.GetAllInteractions();
             // string interactions = mwt.GetAllInteractionsAsString();
 
-            mwt.Unintialize();
+            mwt.Uninitialize();
 
             Console.WriteLine(chosenAction);
             Console.WriteLine(interactions);

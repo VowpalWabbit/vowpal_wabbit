@@ -26,10 +26,10 @@ namespace MultiWorldTesting {
 
 	MwtExplorer::~MwtExplorer()
 	{
-		this->Unintialize();
+		this->Uninitialize();
 	}
 
-	void MwtExplorer::Unintialize()
+	void MwtExplorer::Uninitialize()
 	{
 		if (selfHandle.IsAllocated)
 		{

@@ -459,7 +459,7 @@ namespace ExploreTests
         [TestCleanup]
         public void TestCleanup()
         {
-            mwt.Unintialize();
+            mwt.Uninitialize();
         }
 
         private void ExploreWithCustomContext()

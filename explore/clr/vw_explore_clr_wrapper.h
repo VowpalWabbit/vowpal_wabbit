@@ -217,7 +217,7 @@ namespace MultiWorldTesting {
 		void InitializeGeneric(StatefulScorerDelegate<T>^ defaultScorerFunc, T defaultScorerFuncParams, UInt32 numActions);
 		void InitializeGeneric(StatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions);
 
-		void Unintialize();
+		void Uninitialize();
 
 		UInt32 ChooseAction(String^ uniqueId, BaseContext^ context);
 
