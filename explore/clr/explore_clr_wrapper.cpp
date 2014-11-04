@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 
-#include "vw_explore_clr_wrapper.h"
+#include "explore_clr_wrapper.h"
 
 using namespace System;
 using namespace System::Collections;
