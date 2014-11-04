@@ -129,6 +129,18 @@ namespace cs_test
                     /*** Initialize Softmax explore algorithm using a stateless default policy function ***/
                     mwt.InitializeSoftmax(lambda, new StatelessScorerDelegate(SampleStatelessScorerFunc), numActions);
                 }
+            } else if (exploration_type == "generic")
+            {
+                if (stateful)
+                {
+                    /*** Initialize Generic explore algorithm using a default policy function that accepts parameters ***/
+                    mwt.InitializeGeneric<int>(new StatefulScorerDelegate<int>(SampleStatefulScorerFunc), policyParams, numActions);
+                }
+                else
+                {
+                    /*** Initialize Generic explore algorithm using a stateless default policy function ***/
+                    mwt.InitializeGeneric(new StatelessScorerDelegate(SampleStatelessScorerFunc), numActions);
+                }
             }
             else
             {  //add error here
