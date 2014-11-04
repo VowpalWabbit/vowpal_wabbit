@@ -59,14 +59,16 @@ class vw(pylibvw.vw):
         the weight for that position in the (learned) weight vector."""
         return pylibvw.vw.get_weight(self, index, offset)
 
-    def learn(self, example):
-        """Perform an online update; example can either be an example
+    def learn(self, ec):
+        """Perform an online update; ec can either be an example
         object or a string (in which case it is parsed and then
         learned on)."""
-        if isinstance(example, str):
-            self.learn_string(example)
+        if isinstance(ec, str):
+            self.learn_string(ec)
         else:
-            pylibvw.vw.learn(self, example)
+            if hasattr(ec, 'setup_done') and not ec.setup_done:
+                ec.setup_example()
+            pylibvw.vw.learn(self, ec)
 
     def finish(self):
         """stop VW by calling finish (and, eg, write weights to disk)"""
@@ -366,7 +368,7 @@ class example(pylibvw.example):
             self.setup_done = False
             for ns_char,feats in initStringOrDict.iteritems():
                 self.push_features(ns_char, feats)
-            self.setup_example()
+            #self.setup_example()
         else:
             raise TypeError('expecting string or dict as argument for example construction')
 
@@ -514,20 +516,7 @@ class example(pylibvw.example):
         Fails if setup has run."""
         ns = self.get_ns(ns)
         self.ensure_namespace_exists(ns)
-        #self.push_feature_list(self.vw, ns.ord_ns, featureList)
-        ns_hash = self.vw.hash_space(ns.ns)
-
-        for feature in featureList:
-            if isinstance(feature, int) or isinstance(feature, str):
-                f = feature
-                v = 1.
-            elif isinstance(feature, tuple) and len(feature) == 2:
-                f = feature[0]
-                v = feature[1]
-            else:
-                raise Exception('malformed feature to push of type: ' + str(type(feature)))
-
-            self.push_feature(ns, f, v, ns_hash)
+        self.push_feature_list(self.vw, ns.ord_ns, featureList)
 
     def finish(self):
         """Tell VW that you're done with this example and it can

@@ -171,7 +171,7 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
   uint32_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0; float sum_sq = 0.;
   for (size_t i=0; i<len(a); i++) {
-    feature f = { 0, 0. };
+    feature f = { 1., 0 };
     py::object ai = a[i];
     py::extract<py::tuple> get_tup(ai);
     if (get_tup.check()) {
@@ -194,7 +194,7 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
         got = true;
       } else { cerr << "warning: malformed feature in list" << endl; continue; }
     }
-    if (got) {
+    if (got && (f.x != 0.)) {
       ec->atomics[ns].push_back(f);
       count++;
       sum_sq += f.x * f.x;
