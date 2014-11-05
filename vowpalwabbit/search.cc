@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 #include "multiclass.h"
 #include "memory.h"
 #include "constant.h"
+#include "example.h"
 #include "cb.h"
 #include "gd.h" // for GD::foreach_feature
 #include <math.h>
@@ -1876,17 +1877,27 @@ namespace Search {
   // predictor implementation
   predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(NULL), ec_cnt(0), ec_alloced(false), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { }
 
+  void predictor::free_ec() {
+    if (ec_alloced) {
+      if (is_ldf)
+        for (size_t i=0; i<ec_cnt; i++)
+          dealloc_example(CS::cs_label.delete_label, ec[i]);
+      else
+        dealloc_example(NULL, *ec);
+      free(ec);
+    }
+  }
+  
   predictor::~predictor() {
     if (! oracle_is_pointer) oracle_actions.delete_v();
     if (! allowed_is_pointer) allowed_actions.delete_v();
-    if (ec_alloced)
-      free(ec);
+    free_ec();
     condition_on_tags.delete_v();
     condition_on_names.delete_v();
   }
 
   predictor& predictor::set_input(example&input_example) {
-    if (ec_alloced) free(ec);
+    free_ec();
     is_ldf = false;
     ec = &input_example;
     ec_cnt = 1;
@@ -1895,7 +1906,7 @@ namespace Search {
   }
 
   predictor& predictor::set_input(example*input_example, size_t input_length) {
-    if (ec_alloced) free(ec);
+    free_ec();
     is_ldf = true;
     ec = input_example;
     ec_cnt = input_length;
