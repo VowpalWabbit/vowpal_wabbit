@@ -1047,3 +1047,7 @@ __DATA__
 # Test 67: classification with data from dictionaries (eg embeddings or gazetteers) -- note that this is impossible without dictionaries because --ignore w
 {VW} -k -c -d train-sets/dictionary_test.dat --binary --ignore w --holdout_off --passes 32 --dictionary w:train-sets/dictionary_test.dict
     train-sets/ref/dictionary_test.stderr
+
+# Test 68: Search for multiclass classification
+{VW} -k -c -d train-sets/multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off
+	train-sets/ref/search_multiclass.stderr

@@ -946,6 +946,7 @@ namespace Search {
       // check to see if we're done with available actions
       if (priv.learn_a_idx >= valid_action_cnt) {
         priv.done_with_all_actions = true;
+        priv.learn_learner_id = learner_id;
 
         // set reference or copy example(s)
         if (oracle_actions_cnt > 0) priv.learn_oracle_action = oracle_actions[0];
@@ -1020,6 +1021,8 @@ namespace Search {
         a = choose_oracle_action(priv, ec_cnt, oracle_actions, oracle_actions_cnt, allowed_actions, allowed_actions_cnt);
 
       if ((policy >= 0) || gte_here) {
+        int learner = select_learner(priv, policy, learner_id);
+
         ensure_size(priv.condition_on_actions, condition_on_cnt);
         for (size_t i=0; i<condition_on_cnt; i++)
           priv.condition_on_actions[i] = ((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size())) ? priv.ptag_to_action[condition_on[i]] : 0;
@@ -1033,8 +1036,8 @@ namespace Search {
               add_example_conditioning(priv, ecs[n], condition_on, condition_on_cnt, condition_on_names, priv.condition_on_actions.begin);
 
           if (policy >= 0)   // only make a prediction if we're going to use the output
-            a = priv.is_ldf ? single_prediction_LDF(priv, ecs, ec_cnt, policy)
-                            : single_prediction_notLDF(priv, *ecs, policy, allowed_actions, allowed_actions_cnt);
+            a = priv.is_ldf ? single_prediction_LDF(priv, ecs, ec_cnt, learner)
+                            : single_prediction_notLDF(priv, *ecs, learner, allowed_actions, allowed_actions_cnt);
           
           if (gte_here) {
             cdbg << "INIT_TRAIN, NO_ROLLOUT, at least one oracle_actions" << endl;
