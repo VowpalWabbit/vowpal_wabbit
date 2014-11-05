@@ -16,24 +16,31 @@ class SearchTask():
     def _run(self, your_own_input_example):
         pass
 
-    def _call_vw(self, fn, isTest):
+    def _call_vw(self, my_example, isTest): # run_fn, setup_fn, takedown_fn, isTest):
+        self._output = None
         self.bogus_example.set_test_only(isTest)
-        self.sch.set_structured_predict_hook(fn)
+        def run(): self._output = self._run(my_example)
+        setup = None
+        takedown = None
+        if callable(getattr(self, "_setup", None)): setup = lambda: self._setup(my_example)
+        if callable(getattr(self, "_takedown", None)): takedown = lambda: self._takedown(my_example)
+        self.sch.set_structured_predict_hook(run, setup, takedown)
         self.vw.learn(self.bogus_example)
         self.vw.learn(self.blank_line) # this will cause our ._run hook to get called
         
     def learn(self, data_iterator):
-        for my_example in data_iterator():
-            self._call_vw(lambda: self._run(my_example), isTest=False)
+        for my_example in data_iterator.__iter__():
+            self._call_vw(my_example, isTest=False);
 
+    def example(self, initStringOrDict=None, labelType=pylibvw.vw.lDefault):
+        """TODO"""
+        if self.sch.predict_needs_example():
+            return self.vw.example(initStringOrDict, labelType)
+        else:
+            return self.vw.example(None, labelType)
+            
     def predict(self, my_example):
-        self._output = None
-        def f(): self._output = self._run(my_example)
-        self._call_vw(f, isTest=True)
-        #if self._output is None:
-        #    raise Exception('structured predict hook failed to return anything')
-        # don't raise this exception because your _run code legitimately
-        # _could_ return None!
+        self._call_vw(my_example, isTest=True);
         return self._output
 
 class vw(pylibvw.vw):
@@ -52,14 +59,16 @@ class vw(pylibvw.vw):
         the weight for that position in the (learned) weight vector."""
         return pylibvw.vw.get_weight(self, index, offset)
 
-    def learn(self, example):
-        """Perform an online update; example can either be an example
+    def learn(self, ec):
+        """Perform an online update; ec can either be an example
         object or a string (in which case it is parsed and then
         learned on)."""
-        if isinstance(example, str):
-            self.learn_string(example)
+        if isinstance(ec, str):
+            self.learn_string(ec)
         else:
-            pylibvw.vw.learn(self, example)
+            if hasattr(ec, 'setup_done') and not ec.setup_done:
+                ec.setup_example()
+            pylibvw.vw.learn(self, ec)
 
     def finish(self):
         """stop VW by calling finish (and, eg, write weights to disk)"""
@@ -81,8 +90,13 @@ class vw(pylibvw.vw):
             """The basic (via-reduction) prediction mechanism. Several
             variants are supported through this overloaded function:
             
-              'examples' can be a single example (interpreted as non-LDF
-                 mode) or a list of examples (interpreted as LDF mode)
+              'examples' can be a single example (interpreted as
+                 non-LDF mode) or a list of examples (interpreted as
+                 LDF mode).  it can also be a lambda function that
+                 returns a single example or list of examples, and in
+                 that list, each element can also be a lambda function
+                 that returns an example. this is done for lazy
+                 example construction (aka speed).
 
               'my_tag' should be an integer id, specifying this prediction
                  
@@ -105,18 +119,42 @@ class vw(pylibvw.vw):
               'learner_id' specifies the underlying learner id
 
             Returns a single prediction.
+
             """
-            if (isinstance(examples, list) and all([isinstance(ex, example) or isinstance(ex, pylibvw.example) for ex in examples])) or \
-               isinstance(examples, example) or isinstance(examples, pylibvw.example):
-                P = sch.get_predictor(my_tag)
-                if isinstance(examples, list): # LDF
-                    P.set_input_length(len(examples))
+
+            P = sch.get_predictor(my_tag)
+            if sch.is_ldf():
+                # we need to know how many actions there are, even if we don't know their identities
+                while hasattr(examples, '__call__'): examples = examples()
+                if not isinstance(examples, list): raise TypeError('expected example _list_ in LDF mode for SearchTask.predict()')
+                P.set_input_length(len(examples))
+                if sch.predict_needs_example():
                     for n in range(len(examples)):
-                        P.set_input_at(n, examples[n])
-                else: # non-LDF
+                        ec = examples[n]
+                        while hasattr(ec, '__call__'): ec = ec()   # unfold the lambdas
+                        if not isinstance(ec, example) and not isinstance(ec, pylibvw.example): raise TypeError('non-example in LDF example list in SearchTask.predict()')
+                        P.set_input_at(n, ec)
+                else:
+                    pass # TODO: do we need to set the examples even though they're not used?
+            else:
+                if sch.predict_needs_example():
+                    while hasattr(examples, '__call__'): examples = examples()
                     P.set_input(examples)
-                
-                if isinstance(oracle, list): P.set_oracles(oracle)
+                else:
+                    pass # TODO: do we need to set the examples even though they're not used?
+            
+            # if (isinstance(examples, list) and all([isinstance(ex, example) or isinstance(ex, pylibvw.example) for ex in examples])) or \
+            #    isinstance(examples, example) or isinstance(examples, pylibvw.example):
+            #     if isinstance(examples, list): # LDF
+            #         P.set_input_length(len(examples))
+            #         for n in range(len(examples)):
+            #             P.set_input_at(n, examples[n])
+            #     else: # non-LDF
+            #         P.set_input(examples)
+            if True:   # TODO: get rid of this
+                if oracle is None: pass
+                elif isinstance(oracle, list):
+                    if len(oracle) > 0: P.set_oracles(oracle)
                 elif isinstance(oracle, int): P.set_oracle(oracle)
                 else: raise TypeError('expecting oracle to be a list or an integer')
 
@@ -338,7 +376,10 @@ class example(pylibvw.example):
         get an "empty" example which you can construct by hand (see, eg,
         example.push_features). If initString is a string, then this
         string is parsed as it would be from a VW data file into an
-        example (and "setup_example" is run)."""
+        example (and "setup_example" is run). if it is a dict, then we add all features in that dictionary. finally, if it's a function, we (repeatedly) execute it fn() until it's not a function any more (for lazy feature computation)."""
+
+        while hasattr(initStringOrDict, '__call__'):
+            initStringOrDict = initStringOrDict()
 
         if initStringOrDict is None:
             pylibvw.example.__init__(self, vw, labelType)
@@ -354,7 +395,7 @@ class example(pylibvw.example):
             self.setup_done = False
             for ns_char,feats in initStringOrDict.iteritems():
                 self.push_features(ns_char, feats)
-            self.setup_example()
+            #self.setup_example()
         else:
             raise TypeError('expecting string or dict as argument for example construction')
 
@@ -502,19 +543,7 @@ class example(pylibvw.example):
         Fails if setup has run."""
         ns = self.get_ns(ns)
         self.ensure_namespace_exists(ns)
-        ns_hash = self.vw.hash_space(ns.ns)
-        
-        for feature in featureList:
-            if isinstance(feature, int) or isinstance(feature, str):
-                f = feature
-                v = 1.
-            elif isinstance(feature, tuple) and len(feature) == 2:
-                f = feature[0]
-                v = feature[1]
-            else:
-                raise Exception('malformed feature to push of type: ' + str(type(feature)))
-
-            self.push_feature(ns, f, v, ns_hash)
+        self.push_feature_list(self.vw, ns.ord_ns, featureList)
 
     def finish(self):
         """Tell VW that you're done with this example and it can
