@@ -1821,7 +1821,8 @@ namespace Search {
   action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, size_t learner_id) {
     action a = search_predict(*this->priv, ecs, ec_cnt, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, NULL, 0, learner_id);
     if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
-    if (mytag != 0) push_at(priv->ptag_to_action, ((CS::label*)ecs[a].ld)->costs[0].class_index, mytag);
+    if ((mytag != 0) && ecs[a].ld && (((CS::label*)ecs[a].ld)->costs.size() > 0))
+      push_at(priv->ptag_to_action, ((CS::label*)ecs[a].ld)->costs[0].class_index, mytag);
     if (this->priv->auto_hamming_loss)
       loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));
     cdbg << "predict returning " << a << endl;
