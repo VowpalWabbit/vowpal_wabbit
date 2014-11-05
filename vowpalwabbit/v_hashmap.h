@@ -249,6 +249,8 @@ template<class K, class V> class v_hashmap{
     get(key, hash);
     put_after_get(key, hash, val);
   }
+
+  size_t size() { return num_occupants; }
 };
 
 void test_v_hashmap();
