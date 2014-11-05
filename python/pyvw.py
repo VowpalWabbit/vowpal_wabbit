@@ -128,7 +128,7 @@ class vw(pylibvw.vw):
                 while hasattr(examples, '__call__'): examples = examples()
                 if not isinstance(examples, list): raise TypeError('expected example _list_ in LDF mode for SearchTask.predict()')
                 P.set_input_length(len(examples))
-                if True or sch.predict_needs_example():
+                if sch.predict_needs_example():
                     for n in range(len(examples)):
                         ec = examples[n]
                         while hasattr(ec, '__call__'): ec = ec()   # unfold the lambdas
@@ -137,7 +137,7 @@ class vw(pylibvw.vw):
                 else:
                     pass # TODO: do we need to set the examples even though they're not used?
             else:
-                if True or sch.predict_needs_example():
+                if sch.predict_needs_example():
                     while hasattr(examples, '__call__'): examples = examples()
                     P.set_input(examples)
                 else:

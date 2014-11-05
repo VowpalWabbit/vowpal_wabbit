@@ -239,6 +239,7 @@ void my_setup_example(vw_ptr vw, example_ptr ec) {
 }
 
 void ex_set_label_string(example_ptr ec, vw_ptr vw, string label, size_t labelType) {
+  // SPEEDUP: if it's already set properly, don't modify
   label_parser& old_lp = vw->p->lp;
   vw->p->lp = *get_label_parser(&*vw, labelType);
   VW::parse_example_label(*vw, *ec, label);
@@ -383,6 +384,9 @@ void set_structured_predict_hook(search_ptr sch, py::object run_object, py::obje
   verify_search_set_properly(sch);
   HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
   d->run_f = &search_run_fn;
+  delete (py::object*)d->run_object; d->run_object = NULL;
+  delete (py::object*)d->setup_object; d->setup_object = NULL;
+  delete (py::object*)d->takedown_object; d->takedown_object = NULL;
   d->run_object = new py::object(run_object);  // TODO: delete me!
   if (setup_object.ptr() != Py_None) {
     d->setup_object = new py::object(setup_object);
