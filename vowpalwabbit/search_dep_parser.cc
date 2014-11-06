@@ -53,7 +53,7 @@ namespace DepParserTask {
     data->children = new v_array<uint32_t>[6]; 
 
 
-    srn.set_num_learners(1);
+    srn.set_num_learners(3);
     srn.set_task_data<task_data>(data);
     po::options_description dparser_opts("dependency parser options");
     dparser_opts.add_options()
@@ -439,9 +439,11 @@ namespace DepParserTask {
     stack.erase();
     stack.push_back(1);
     for(size_t i=0; i<6; i++){
-      data->children[i].resize(ec.size()+1, true);
+//		cerr << ec.size()<<endl;
+ //     data->children[i].resize(ec.size()+1, true);
+ 	data->children[i].erase();
       for(size_t j=0; j<ec.size()+1; j++) {
-        data->children[i][j] = 0;
+        data->children[i].push_back(0);
       }
     }
 
@@ -452,29 +454,45 @@ namespace DepParserTask {
 	      extract_features(srn, idx, ec);
       get_valid_actions(valid_actions, idx, n, stack.size());
       get_gold_actions(srn, idx, n);
-	  int gold_action = (gold_actions[0] == 1)? 1 :
-			(gold_tags[stack.last()] + ((gold_actions[0]==2)?1:13));
+//	  int gold_action = (gold_actions[0] == 1)? 1 :
+//			(gold_tags[stack.last()] + ((gold_actions[0]==2)?1:13));
 	  valid_labels.erase();
 	  if(is_valid(1, valid_actions))
 			  valid_labels.push_back(1);
 	  if(is_valid(2, valid_actions))
-		  for(size_t i=1; i<=12; i++)
-			  valid_labels.push_back(1+i);
+//		  for(size_t i=1; i<=12; i++)
+			  valid_labels.push_back(2);
 	  if(is_valid(3, valid_actions))
-		  for(size_t i=1; i<=12; i++)
-			  valid_labels.push_back(13+i);
-      uint32_t prediction = Search::predictor(srn, (ptag) 0).set_input(*(data->ex)).set_oracle(gold_action).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(0).predict();
-	  uint32_t a_id = (prediction==1)?1:((prediction>13)?3:2);
-	  uint32_t t_id = (prediction==1)?-1:((prediction>13)?prediction -13:prediction-1);
+//		  for(size_t i=1; i<=12; i++)
+			  valid_labels.push_back(3);
+//      uint32_t prediction = Search::predictor(srn, (ptag) 0).set_input(*(data->ex)).set_oracle(gold_tags[stack.last()]).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(0).predict();
+
+      uint32_t a_id= Search::predictor(srn, (ptag) count+1).set_input(*(data->ex)).set_oracle(gold_actions[0]).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(0).predict();
+	  count++;
+	  valid_labels.erase();
+	  for(int i=1; i<=12;i++)
+		  if(i!=8)
+			  valid_labels.push_back(i);
+	  uint32_t t_id = 0;
+	  if(a_id ==2){
+      	t_id= Search::predictor(srn, (ptag) count+1).set_input(*(data->ex)).set_oracle(gold_tags[stack.last()]).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(1).predict();
+		count++;
+	  }
+	  if(a_id ==3){
+      	t_id= Search::predictor(srn, (ptag) count+1).set_input(*(data->ex)).set_oracle(gold_tags[stack.last()]).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(2).predict();
+		count++;
+	  }
+      //uint32_t prediction = Search::predictor(srn, (ptag) 0).set_input(*(data->ex)).set_oracle(gold_action).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(0).predict();
+	 // uint32_t a_id = (prediction==1)?1:((prediction>13)?3:2);
+	  //uint32_t t_id = (prediction==1)?-1:((prediction>13)?prediction -13:prediction-1);
       idx = transition_hybrid(srn, a_id, idx, t_id);
-      count++;
     }
     heads[stack.last()] = 0;
 	tags[stack.last()] = 8;
     cdep << "root link to the last element in stack" <<  "root ====> " << (stack.last()) << endl;
     srn.loss((gold_heads[stack.last()] != heads[stack.last()]));
     if (srn.output().good())
-      for(size_t i=n-1; i>0; i--) {
+      for(size_t i=1; i<=n; i++) {
         cdep << heads[i] << " ";
         srn.output() << (heads[i])<<":"<<tags[i] << endl;
       }
