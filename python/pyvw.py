@@ -395,7 +395,7 @@ class example(pylibvw.example):
             self.setup_done = False
             for ns_char,feats in initStringOrDict.iteritems():
                 self.push_features(ns_char, feats)
-            #self.setup_example()
+            self.setup_example()
         else:
             raise TypeError('expecting string or dict as argument for example construction')
 
@@ -543,7 +543,20 @@ class example(pylibvw.example):
         Fails if setup has run."""
         ns = self.get_ns(ns)
         self.ensure_namespace_exists(ns)
-        self.push_feature_list(self.vw, ns.ord_ns, featureList)
+        #self.push_feature_list(self.vw, ns.ord_ns, featureList)
+        ns_hash = self.vw.hash_space( ns.ns )
+        for feature in featureList:
+            if isinstance(feature, int) or isinstance(feature, str):
+                f = feature
+                v = 1.
+            elif isinstance(feature, tuple) and len(feature) == 2:
+                f = feature[0]
+                v = feature[1]
+            else:
+                raise Exception('malformed feature to push of type: ' + str(type(feature)))
+
+            self.push_feature(ns, f, v, ns_hash)
+
 
     def finish(self):
         """Tell VW that you're done with this example and it can

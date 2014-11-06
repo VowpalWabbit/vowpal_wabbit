@@ -51,7 +51,7 @@ predictor_ptr get_predictor(search_ptr sch, ptag my_tag) {
 
 label_parser* get_label_parser(vw*all, size_t labelType) {
   switch (labelType) {
-    case lDEFAULT:           return &all->p->lp; // TODO: check null
+    case lDEFAULT:           return all ? &all->p->lp : NULL;
     case lBINARY:            return &simple_label;
     case lMULTICLASS:        return &MULTICLASS::mc_label;
     case lCOST_SENSITIVE:    return &COST_SENSITIVE::cs_label;
@@ -62,9 +62,9 @@ label_parser* get_label_parser(vw*all, size_t labelType) {
 
 void my_delete_example(void*voidec) {
   example* ec = (example*) voidec;
-  size_t labelType = ec->example_counter;
+  size_t labelType = (ec->tag.size() == 0) ? lDEFAULT : ec->tag[0];
   label_parser* lp = get_label_parser(NULL, labelType);
-  dealloc_example(lp->delete_label, *ec);
+  dealloc_example(lp ? lp->delete_label : NULL, *ec);
   free(ec);
 }
 
@@ -77,36 +77,28 @@ example* my_empty_example0(vw_ptr vw, size_t labelType) {
     COST_SENSITIVE::wclass zero = { 0., 1, 0., 0. };
     ((COST_SENSITIVE::label*)ec->ld)->costs.push_back(zero);
   }
-  ec->example_counter = labelType; // example_counter unused in our own examples, so hide labelType in it!
+  ec->tag.erase();
+  if (labelType != lDEFAULT)
+    ec->tag.push_back((char)labelType);  // hide the label type in the tag
   return ec;
 }
 
 example_ptr my_empty_example(vw_ptr vw, size_t labelType) {
-  if (labelType == lDEFAULT) {
-    example* new_ec = VW::new_unused_example(*vw);
-    return boost::shared_ptr<example>(new_ec, dont_delete_me);
-  } else {
-    example* ec = my_empty_example0(vw, labelType);
-    return boost::shared_ptr<example>(ec, my_delete_example);
-  }
+  example* ec = my_empty_example0(vw, labelType);
+  return boost::shared_ptr<example>(ec, my_delete_example);
 }  
 
 example_ptr my_read_example(vw_ptr all, size_t labelType, char*str) {
-  if (labelType == lDEFAULT) {
-    example*ec = VW::read_example(*all, str);
-    return boost::shared_ptr<example>(ec, dont_delete_me);
-  } else {
-    example*ec = my_empty_example0(all, labelType);
-    read_line(*all, ec, str);
-    parse_atomic_example(*all, ec, false);
-    VW::setup_example(*all, ec);
-    ec->example_counter = labelType;
-    return boost::shared_ptr<example>(ec, my_delete_example);
-  }
+  example*ec = my_empty_example0(all, labelType);
+  read_line(*all, ec, str);
+  parse_atomic_example(*all, ec, false);
+  VW::setup_example(*all, ec);
+  ec->example_counter = labelType;
+  return boost::shared_ptr<example>(ec, my_delete_example);
 }
 
 void my_finish_example(vw_ptr all, example_ptr ec) {
-  VW::finish_example(*all, ec.get());
+  // TODO
 }
 
 void my_learn(vw_ptr all, example_ptr ec) {
@@ -239,6 +231,7 @@ void my_setup_example(vw_ptr vw, example_ptr ec) {
 }
 
 void ex_set_label_string(example_ptr ec, vw_ptr vw, string label, size_t labelType) {
+  // SPEEDUP: if it's already set properly, don't modify
   label_parser& old_lp = vw->p->lp;
   vw->p->lp = *get_label_parser(&*vw, labelType);
   VW::parse_example_label(*vw, *ec, label);
@@ -383,7 +376,10 @@ void set_structured_predict_hook(search_ptr sch, py::object run_object, py::obje
   verify_search_set_properly(sch);
   HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
   d->run_f = &search_run_fn;
-  d->run_object = new py::object(run_object);  // TODO: delete me!
+  delete (py::object*)d->run_object; d->run_object = NULL;
+  delete (py::object*)d->setup_object; d->setup_object = NULL;
+  delete (py::object*)d->takedown_object; d->takedown_object = NULL;
+  d->run_object = new py::object(run_object);
   if (setup_object.ptr() != Py_None) {
     d->setup_object = new py::object(setup_object);
     d->run_setup_f = &search_setup_fn;
