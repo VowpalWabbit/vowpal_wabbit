@@ -26,11 +26,13 @@ struct task_data {
   bool no_cubic_features;
   bool my_init_flag;
   int nfs;
+  size_t root_label;
+  size_t num_label;
   v_array<uint32_t> valid_actions;
   v_array<uint32_t> valid_labels;
+  v_array<uint32_t> gold_action_reward;
   v_array<uint32_t> gold_heads; // gold labels
   v_array<uint32_t> gold_tags; // gold labels
-  v_array<uint32_t> gold_actions;
   v_array<uint32_t> *children; // [0]:num_left_arcs, [1]:num_right_arcs; [2]: leftmost_arc, [3]: second_leftmost_arc, [4]:rightmost_arc, [5]: second_rightmost_arc
   v_array<uint32_t> stack; // stack for transition based parser
   v_array<uint32_t> heads; // output array
@@ -50,6 +52,7 @@ namespace DepParserTask {
     data->my_init_flag = false;
     //data->ex = (example*)calloc_or_die(1, sizeof(example));
     data->ec_buf.resize(12, true);
+	data->gold_action_reward.resize(4,true);
     data->children = new v_array<uint32_t>[6]; 
 
 
@@ -58,8 +61,17 @@ namespace DepParserTask {
     po::options_description dparser_opts("dependency parser options");
     dparser_opts.add_options()
       ("dparser_no_quad", "Don't use qudaratic features")
-      ("dparser_no_cubic","Don't use cubic features");
+      ("dparser_no_cubic","Don't use cubic features")
+      ("root_label", po::value<size_t>(&(data->root_label))->default_value(8), "Ensure that there is only one root in each sentence")
+      ("num_label", po::value<size_t>(&(data->num_label))->default_value(12), "Number of arc labels");
     srn.add_program_options(vm, dparser_opts);
+
+    data->valid_labels.erase();
+    for(size_t i=1; i<=data->num_label;i++)
+      if(i!=data->root_label)
+        data->valid_labels.push_back(i);
+
+    data->ec_buf.resize(12,true);
 
     // setup entity and relation labels
     data->no_quadratic_features = (vm.count("dparser_no_quad"))?true:false;
@@ -74,12 +86,12 @@ namespace DepParserTask {
     data->valid_labels.delete_v();
     data->gold_heads.delete_v();
     data->gold_tags.delete_v();
-    data->gold_actions.delete_v();
     data->stack.delete_v();
     data->heads.delete_v();
     data->tags.delete_v();
     data->ec_buf.delete_v();
     data->temp.delete_v();
+    data->gold_action_reward.delete_v();
 
     for(size_t i=0; i<6; i++)
       data->children[i].delete_v();
@@ -154,7 +166,7 @@ namespace DepParserTask {
         children[5][stack[stack.size()-2]]=children[4][stack[stack.size()-2]];
         children[4][stack[stack.size()-2]]=stack.last();
         children[1][stack[stack.size()-2]]++;
-		tags[stack.last()] = t_id;
+        tags[stack.last()] = t_id;
         srn.loss((gold_heads[stack.last()] != heads[stack.last()]) + (gold_tags[stack.last()] != t_id));
         stack.pop();
         return idx;
@@ -166,7 +178,7 @@ namespace DepParserTask {
         children[3][idx]=children[2][idx];
         children[2][idx]=stack.last();
         children[0][idx]++;
-		tags[stack.last()] = t_id;
+        tags[stack.last()] = t_id;
         srn.loss((gold_heads[stack.last()] != heads[stack.last()]) + (gold_tags[stack.last()] != t_id));
         stack.pop();
         return idx;
@@ -268,7 +280,6 @@ namespace DepParserTask {
     // be careful: indices in ec starts from 0, but i is starts from 1
     size_t n = ec.size();
     // use this buffer to c_vw()ect the examples, default value: NULL
-    ec_buf.resize(12,true);
     for(size_t i=0; i<12; i++)
       ec_buf[i] = 0;
 
@@ -286,7 +297,8 @@ namespace DepParserTask {
     // ec_buf[6]: sl1, ec_buf[7]: sl2, ec_buf[8]: sr1, ec_buf[9]: sr2;
 
     for(size_t i=6; i<10; i++)
-      ec_buf[i] = (!stack.empty() && children[i-4][stack.last()]!=0)? ec[children[i-4][stack.last()]-1] : 0;
+      if (!stack.empty() && children[i-4][stack.last()]!=0)
+        ec_buf[i] = ec[children[i-4][stack.last()]-1];
 
     // features based on leftmost children of the top element in bufer
     // ec_buf[10]: bl1, ec_buf[11]: bl2
@@ -329,11 +341,11 @@ namespace DepParserTask {
     // #left child of rightmost item in buf
     temp[3] = idx>n? 1: 1+min(5 , children[0][idx]);
 
-    size_t additional_offset = val_namespace*offset_const;
-    for(int j=0; j< 4;j++) {
+    size_t additional_offset = val_namespace*offset_const; 
+    for(int j=0; j< 4;j++)
       add_feature(&ex, (uint32_t) temp[j]+additional_offset , val_namespace, mask, ss);
-    }
 
+    // action history
     if(!data->no_quadratic_features)
       add_quad_features(srn, data->ex);
     if(!data->no_cubic_features)
@@ -369,52 +381,54 @@ namespace DepParserTask {
     return false;
   }
 
-  bool has_dependency(uint32_t target, v_array<uint32_t> others, v_array<uint32_t> gold_heads) {
-    for(uint32_t idx = 0; idx<others.size(); idx++)
-      if(gold_heads[others[idx]] == target || gold_heads[target] == others[idx])
-        return true;
-    return false;
-  }
-
-  void get_gold_actions(Search::search &srn, uint32_t idx, uint32_t n){
+  size_t get_gold_actions(Search::search &srn, uint32_t idx, uint32_t n){
     task_data *data = srn.get_task_data<task_data>();
-    v_array<uint32_t> &gold_actions = data->gold_actions, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &temp=data->temp;
-    gold_actions.erase();
-    cdep << "valid_action=[";for(size_t i=0; i<valid_actions.size(); i++){cdep << valid_actions[i] << " ";}cdep << "]";
-    cdep << is_valid(2,valid_actions);
+    v_array<uint32_t> &gold_action_reward = data->gold_action_reward, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions;
+
     // gold = SHIFT
-    if (is_valid(1,valid_actions) && (stack.empty() || gold_heads[idx] == stack.last())) {
-      gold_actions.push_back(1);
-      return;
-    }
+    if (is_valid(1,valid_actions) &&( stack.empty() || gold_heads[idx] == stack.last()))
+		return 1;
 
     // gold = LEFT
-    if (is_valid(3,valid_actions) && gold_heads[stack.last()] == idx) {
-      gold_actions.push_back(3);
-      return;
-    }
+    if (is_valid(3,valid_actions) && gold_heads[stack.last()] == idx)
+		return 3;
 
-    // gold contains SHIFT
-    if (is_valid(1,valid_actions) && !has_dependency(idx, stack, gold_heads))
-      gold_actions.push_back(1);
+	for(size_t i = 1; i<= 3; i++)
+		gold_action_reward[i] = 500;
 
-    // gold contains LEFT or RIGHT
-    temp.erase();
-    for(uint32_t i=idx+1; i<n; i++)
-      temp.push_back(i);
+    // dependency with SHIFT
+    for(uint32_t i = 0; i<stack.size(); i++)
+   	  if(gold_heads[stack[i]] == idx || gold_heads[idx] == stack[i])
+		  gold_action_reward[1] -= 1;
 
-    if (!has_dependency(stack.last(), temp, gold_heads)) {
-      if (is_valid(2,valid_actions))
-        gold_actions.push_back(2);
-      if (is_valid(3,valid_actions) && !(stack.size()>=2 && gold_heads[stack.last()] == stack[stack.size()-2]))
-        gold_actions.push_back(3);
-    }
+    // dependency with left and right
+    for(uint32_t i = idx+1; i<=n; i++)
+   	  if(gold_heads[i] == stack.last()|| gold_heads[stack.last()] == i) {
+          gold_action_reward[2] -=1;
+		  gold_action_reward[3] -=1;
+	  }
+
+	// break the tie between left and right
+	if(stack.size()>=2 && gold_heads[stack.last()] == stack[stack.size()-2])
+		gold_action_reward[3] -= 10;
+
+	// remove invalid actions
+	for(size_t i=1; i<=3; i++)
+      if (!is_valid(i,valid_actions))
+		  gold_action_reward[i] = 0;
+
+	// return the best action
+	size_t best_action = 1;
+	for(size_t i=1; i<=3; i++)
+		if(gold_action_reward[i] >= gold_action_reward[best_action])
+			best_action= i;
+	return best_action;
   }
 
   void run(Search::search& srn, vector<example*>& ec) {
     cdep << "start structured predict"<<endl;
     task_data *data = srn.get_task_data<task_data>();
-    v_array<uint32_t> &gold_actions = data->gold_actions, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags, &valid_labels = data->valid_labels;
+    v_array<uint32_t> &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags, &valid_labels = data->valid_labels;
     uint32_t n = ec.size();
     uint32_t idx = 2;
 
@@ -428,67 +442,42 @@ namespace DepParserTask {
     gold_heads.erase();
     gold_heads.push_back(0);
     gold_tags.erase();
-	gold_tags.push_back(0);
+    gold_tags.push_back(0);
     for(size_t i=0; i<ec.size(); i++) {
       uint32_t label = (MULTICLASS::get_example_label(ec[i]));
       gold_heads.push_back((label & 255) -1);
-	  gold_tags.push_back(label >>8);
+      gold_tags.push_back(label >>8);
       heads[i+1] = 0;
-	  tags[i+1] = -1;
+      tags[i+1] = -1;
     }
     stack.erase();
     stack.push_back(1);
     for(size_t i=0; i<6; i++){
-//		cerr << ec.size()<<endl;
- //     data->children[i].resize(ec.size()+1, true);
- 	data->children[i].erase();
-      for(size_t j=0; j<ec.size()+1; j++) {
-        data->children[i].push_back(0);
-      }
+      data->children[i].resize(ec.size()+1, true);
+      for(size_t j=0; j<ec.size()+1; j++)
+        data->children[i][j] = 0;
     }
 
     int count=0;
     cdep << "start decoding"<<endl;
     while(stack.size()>1 || idx <= n){
-	  if(srn.predictNeedsExample())
-	      extract_features(srn, idx, ec);
+      if(srn.predictNeedsExample())
+        extract_features(srn, idx, ec);
       get_valid_actions(valid_actions, idx, n, stack.size());
-      get_gold_actions(srn, idx, n);
-//	  int gold_action = (gold_actions[0] == 1)? 1 :
-//			(gold_tags[stack.last()] + ((gold_actions[0]==2)?1:13));
-	  valid_labels.erase();
-	  if(is_valid(1, valid_actions))
-			  valid_labels.push_back(1);
-	  if(is_valid(2, valid_actions))
-//		  for(size_t i=1; i<=12; i++)
-			  valid_labels.push_back(2);
-	  if(is_valid(3, valid_actions))
-//		  for(size_t i=1; i<=12; i++)
-			  valid_labels.push_back(3);
-//      uint32_t prediction = Search::predictor(srn, (ptag) 0).set_input(*(data->ex)).set_oracle(gold_tags[stack.last()]).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(0).predict();
+      uint32_t gold_action = get_gold_actions(srn, idx, n);
 
-      uint32_t a_id= Search::predictor(srn, (ptag) count+1).set_input(*(data->ex)).set_oracle(gold_actions[0]).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(0).predict();
-	  count++;
-	  valid_labels.erase();
-	  for(int i=1; i<=12;i++)
-		  if(i!=8)
-			  valid_labels.push_back(i);
-	  uint32_t t_id = 0;
-	  if(a_id ==2){
-      	t_id= Search::predictor(srn, (ptag) count+1).set_input(*(data->ex)).set_oracle(gold_tags[stack.last()]).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(1).predict();
-		count++;
-	  }
-	  if(a_id ==3){
-      	t_id= Search::predictor(srn, (ptag) count+1).set_input(*(data->ex)).set_oracle(gold_tags[stack.last()]).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(2).predict();
-		count++;
-	  }
-      //uint32_t prediction = Search::predictor(srn, (ptag) 0).set_input(*(data->ex)).set_oracle(gold_action).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(0).predict();
-	 // uint32_t a_id = (prediction==1)?1:((prediction>13)?3:2);
-	  //uint32_t t_id = (prediction==1)?-1:((prediction>13)?prediction -13:prediction-1);
+      // Predict the next action {SHIFT, REDUCE_LEFT, REDUCE_RIGHT}
+      uint32_t a_id= Search::predictor(srn, (ptag) count+1).set_input(*(data->ex)).set_oracle(gold_action).set_allowed(valid_actions).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(0).predict();
+      count++;
+      uint32_t t_id = 0;
+      if(a_id ==2 || a_id == 3){
+        t_id= Search::predictor(srn, (ptag) count+1).set_input(*(data->ex)).set_oracle(gold_tags[stack.last()]).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(a_id-1).predict();
+        count++;
+      }
       idx = transition_hybrid(srn, a_id, idx, t_id);
     }
     heads[stack.last()] = 0;
-	tags[stack.last()] = 8;
+    tags[stack.last()] = data->root_label;
     cdep << "root link to the last element in stack" <<  "root ====> " << (stack.last()) << endl;
     srn.loss((gold_heads[stack.last()] != heads[stack.last()]));
     if (srn.output().good())
