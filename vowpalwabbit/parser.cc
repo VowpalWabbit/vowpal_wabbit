@@ -55,9 +55,11 @@ namespace po = boost::program_options;
 #include "constant.h"
 #include "example.h"
 #include "simple_label.h"
+#include "simple_label.h"
 #include "vw.h"
 #include "memory.h"
 #include "search_sequencetask.h"
+#include "libsearch.h"
 
 using namespace std;
 
