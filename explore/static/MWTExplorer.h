@@ -10,6 +10,42 @@
 #include <tuple>
 
 MWT_NAMESPACE {
+
+template <class Rec>
+class MWT
+{
+public:
+    MWT(std::string app_id, Rec& recorder) : m_recorder(recorder)
+    {
+		m_app_id = HashUtils::Compute_Id_Hash(app_id);
+    }
+ 
+    template <class Exp, class Ctx>
+    u32 Choose_Action(Exp& explorer, string unique_key, Ctx& context)
+    {
+		u64 seed = HashUtils::Compute_Id_Hash(unique_key);
+
+		std::tuple<MWTAction, float, bool> action_probability_log_tuple = explorer.Choose_Action(seed + m_app_id, context);
+
+		u32 action = std::get<0>(action_probability_log_tuple).Get_Id();
+		float prob = std::get<1>(action_probability_log_tuple);
+
+		if (std::get<2>(action_probability_log_tuple))
+		{
+			static_assert(std::is_base_of<IRecorder<Ctx>, Rec>::value, "The specified recorder does not implement IRecorder");
+			IRecorder<Ctx>* recorder = (IRecorder<Ctx>*)&m_recorder;
+
+			recorder->Record(context, action, prob, unique_key);
+		}
+ 
+        return action;
+    }
+ 
+private:
+    u64 m_app_id;
+    Rec& m_recorder;
+};
+
 //
 // Top-level internal API for exploration (randomized decision making).
 //
@@ -144,7 +180,7 @@ PORTING_INTERFACE:
 		Validate_Explorer_Empty();
 
 		m_action_set.Set_Count(num_actions);
-		m_explorer.reset(new EpsilonGreedyExplorer(epsilon, default_policy_func, default_policy_func_argument, m_app_id));
+		m_explorer.reset(new OldEpsilonGreedyExplorer(epsilon, default_policy_func, default_policy_func_argument, m_app_id));
 	}
 
 	void Internal_Initialize_Epsilon_Greedy(
@@ -158,7 +194,7 @@ PORTING_INTERFACE:
 		Validate_Explorer_Empty();
 
 		m_action_set.Set_Count(num_actions);
-		m_explorer.reset(new EpsilonGreedyExplorer(epsilon, default_policy_func, m_app_id));
+		m_explorer.reset(new OldEpsilonGreedyExplorer(epsilon, default_policy_func, m_app_id));
 	}
 
 	void Internal_Initialize_Tau_First(

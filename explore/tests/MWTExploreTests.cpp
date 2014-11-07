@@ -12,48 +12,55 @@ namespace vw_explore_tests
 	TEST_CLASS(VWExploreUnitTests)
 	{
 	public:
-		TEST_METHOD(Epsilon_Greedy_Stateful)
+		TEST_METHOD(Epsilon_Greedy)
 		{
+			int num_actions = 10;
 			float epsilon = 0.f; // No randomization
-			m_mwt->Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy, m_policy_func_arg, m_num_actions);
+			TestPolicy my_policy(m_policy_func_arg, num_actions);
+			TestContext my_context;
+			TestRecorder my_recorder;
 
-			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(m_policy_func_arg, *m_context);
+			MWT<TestRecorder> mwt("salt", my_recorder);
+			EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, epsilon, num_actions);
 
-			u32 chosen_action = m_mwt->Choose_Action(m_unique_key, *m_context);
+			u32 expected_action = my_policy.Choose_Action(my_context);
+
+			u32 chosen_action = mwt.Choose_Action(explorer, m_unique_key, my_context);
 			Assert::AreEqual(expected_action, chosen_action);
 
-			chosen_action = m_mwt->Choose_Action(m_unique_key, *m_context);
+			chosen_action = mwt.Choose_Action(explorer, m_unique_key, my_context);
 			Assert::AreEqual(expected_action, chosen_action);
 
 			float expected_probs[2] = { 1.f, 1.f };
-			this->Test_Interaction_Store(2, expected_probs);
-		}
-
-		TEST_METHOD(Epsilon_Greedy_Stateless)
-		{
-			float epsilon = 0.f; // No randomization
-			m_mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, m_num_actions);
-
-			u32 chosen_action = m_mwt->Choose_Action(m_unique_key, *m_context);
-			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(*m_context));
-
-			chosen_action = m_mwt->Choose_Action(m_unique_key, *m_context);
-			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(*m_context));
-
-			float expected_probs[2] = { 1.f, 1.f };
-			this->Test_Interaction_Store(2, expected_probs);
+			vector<TestInteraction> interactions = my_recorder.Get_All_Interactions();
+			this->Test_Interactions(interactions, 2, expected_probs);
 		}
 
 		TEST_METHOD(Epsilon_Greedy_Random)
 		{
-			float epsilon = 0.2f;
-			m_mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, m_num_actions);
+			int num_actions = 10;
+			float epsilon = 0.5f; // Verify that about half the time the default policy is chosen
+			TestPolicy my_policy(m_policy_func_arg, num_actions);
+			TestContext my_context;
+			TestRecorder my_recorder;
 
-			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
-			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
-			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(70), *m_context);
+			MWT<TestRecorder> mwt("salt", my_recorder);
+			EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, epsilon, num_actions);
 
-			m_mwt->Get_All_Interactions();
+			u32 policy_action = my_policy.Choose_Action(my_context);
+
+			int times_choose = 10000;
+			int times_policy_action_chosen = 0;
+			for (int i = 0; i < times_choose; i++)
+			{
+				u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(i), my_context);
+				if (chosen_action == policy_action)
+				{
+					times_policy_action_chosen++;
+				}
+			}
+
+			Assert::IsTrue(abs((double)times_policy_action_chosen / times_choose - 0.5) < 0.1);
 		}
 
 		TEST_METHOD(Tau_First_Stateful)
@@ -636,12 +643,12 @@ namespace vw_explore_tests
 		TEST_METHOD(Usage_Bad_Arguments)
 		{
 			int num_ex = 0;
-			COUNT_INVALID
-			(
-				MWTExplorer mwt("");
-				mwt.Initialize_Epsilon_Greedy(0.5f, Stateless_Default_Policy, 0); // Invalid # actions
-			)
-			Assert::AreEqual(1, num_ex);
+			TestPolicy my_policy(m_policy_func_arg, 0);
+			COUNT_INVALID(EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, .5f, 0);) // Invalid # actions, must be > 0
+			COUNT_INVALID(EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, 1.5f, 10);) // Invalid epsilon, must be in [0,1]
+			COUNT_INVALID(EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, -.5f, 10);) // Invalid epsilon, must be in [0,1]
+
+			Assert::AreEqual(3, num_ex);
 
 			num_ex = 0;
 			
@@ -649,9 +656,6 @@ namespace vw_explore_tests
 			Policy* stateless_funcs[2] = { nullptr, Stateless_Default_Policy };
 
 			// Invalid policy functions
-			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Epsilon_Greedy(0.5f, nullptr, m_num_actions);)
-			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Epsilon_Greedy<int>(0.5f, nullptr, m_policy_func_arg, m_num_actions);)
-			
 			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Tau_First<int>(1, nullptr, m_policy_func_arg, m_num_actions);)
 			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Tau_First(2, nullptr, m_num_actions);)
 			
@@ -666,7 +670,7 @@ namespace vw_explore_tests
 			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Generic<int>(nullptr, m_policy_func_arg, m_num_actions);)
 			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Generic(nullptr, m_num_actions);)
 			
-			Assert::AreEqual(12, num_ex);
+			Assert::AreEqual(10, num_ex);
 		}
 
 		TEST_METHOD(Usage_Bad_Call)
@@ -680,16 +684,6 @@ namespace vw_explore_tests
 				mwt.Choose_Action("test", context);
 			)
 			Assert::AreEqual(1, num_ex);
-
-			num_ex = 0;
-			// Multiple initializations
-			COUNT_BAD_CALL
-			(
-				MWTExplorer mwt("");
-				mwt.Initialize_Epsilon_Greedy(0.5f, Stateless_Default_Policy, m_num_actions);
-				mwt.Initialize_Generic(Stateless_Default_Scorer, m_num_actions);
-			)
-			Assert::AreEqual(1, num_ex);
 		}
 
 		TEST_METHOD(Usage_Bad_Policy)
@@ -701,9 +695,10 @@ namespace vw_explore_tests
 			// Default policy returns action outside valid range
 			COUNT_BAD_CALL
 			(
-				MWTExplorer mwt("");
-				mwt.Initialize_Epsilon_Greedy(0, Stateless_Default_Policy, 1);
-				mwt.Choose_Action("test", context);
+				MWT<TestRecorder> mwt("salt", TestRecorder());
+				EpsilonGreedyExplorer<TestBadPolicy> explorer(TestBadPolicy(), 0.f, (u32)1);
+
+				u32 expected_action = mwt.Choose_Action(explorer, m_unique_key, TestContext());
 			)
 			COUNT_BAD_CALL
 			(
@@ -745,7 +740,7 @@ namespace vw_explore_tests
 		{
 			m_mwt->Initialize_Epsilon_Greedy<int>(0.f, Custom_Context_Policy, m_policy_func_arg, m_num_actions);
 
-			TestContext original_context;
+			TestCustomContext original_context;
 			u32 chosen_action = m_mwt->Choose_Action(m_unique_key, original_context);
 			Assert::AreEqual((u32)2, chosen_action);
 
@@ -754,7 +749,7 @@ namespace vw_explore_tests
 			vector<Interaction> interactions = m_mwt->Get_All_Interactions();
 			Assert::AreEqual(1, (int)interactions.size());
 
-			TestContext* returned_context = (TestContext*)interactions[0].Get_Context();
+			TestCustomContext* returned_context = (TestCustomContext*)interactions[0].Get_Context();
 
 			size_t onf;
 			Feature* of;
@@ -837,7 +832,7 @@ namespace vw_explore_tests
 
 		static u32 Custom_Context_Policy(int& policy_params, BaseContext& applicationContext)
 		{
-			TestContext& tc = (TestContext&)applicationContext;
+			TestCustomContext& tc = (TestCustomContext&)applicationContext;
 
 			size_t num_features = 0;
 			Feature* features = nullptr;
@@ -967,6 +962,17 @@ namespace vw_explore_tests
 			for (int i = 0; i < num_interactions; i++)
 			{
 				Assert::AreEqual(probs_expected[i], interactions[i].Get_Prob());
+			}
+		}
+
+		inline void Test_Interactions(vector<TestInteraction> interactions, int num_interactions_expected, float* probs_expected)
+		{
+			size_t num_interactions = interactions.size();
+
+			Assert::AreEqual(num_interactions_expected, (int)num_interactions);
+			for (int i = 0; i < num_interactions; i++)
+			{
+				Assert::AreEqual(probs_expected[i], interactions[i].Probability);
 			}
 		}
 

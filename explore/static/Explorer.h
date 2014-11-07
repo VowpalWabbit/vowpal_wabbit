@@ -16,6 +16,23 @@
 */
 MWT_NAMESPACE {
 
+template <class Rec>
+class MWT;
+
+template <class Ctx>
+class IRecorder
+{
+public:
+	virtual void Record(Ctx& context, u32 action, float probability, string unique_key) = 0;
+};
+
+template <class Ctx>
+class IPolicy
+{
+public:
+	virtual u32 Choose_Action(Ctx& context) = 0;
+};
+
 class Explorer
 {
 public:
@@ -23,10 +40,92 @@ public:
 	virtual ~Explorer() { }
 };
 
-class EpsilonGreedyExplorer : public Explorer
+template <class Plc>
+class EpsilonGreedyExplorer
 {
 public:
-	EpsilonGreedyExplorer(
+	EpsilonGreedyExplorer(Plc& default_policy, float epsilon, u32 num_actions) :
+		m_default_policy(default_policy), m_epsilon(epsilon), m_num_actions(num_actions)
+	{
+		if (m_num_actions < 1)
+		{
+			throw std::invalid_argument("Number of actions must be at least 1.");
+		}
+
+		if (m_epsilon < 0 || m_epsilon > 1)
+		{
+			throw std::invalid_argument("Epsilon must be between 0 and 1.");
+		}
+	}
+
+	~EpsilonGreedyExplorer()
+	{
+	}
+
+private:
+	template <class Ctx>
+	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
+	{
+		ActionSet actions;
+		actions.Set_Count(m_num_actions);
+
+		PRG::prg random_generator(salted_seed);
+
+		// Invoke the default policy function to get the action
+		static_assert(std::is_base_of<IPolicy<Ctx>, Plc>::value, "The specified policy does not implement IPolicy");
+		IPolicy<Ctx>* policy = (IPolicy<Ctx>*)&m_default_policy;
+
+		MWTAction chosen_action = MWTAction(policy->Choose_Action(context));
+
+		if (chosen_action.Get_Id() == 0 || chosen_action.Get_Id() > actions.Count())
+		{
+			throw std::invalid_argument("Action chosen by default policy is not within valid range.");
+		}
+
+		float action_probability = 0.f;
+		float base_probability = m_epsilon / actions.Count(); // uniform probability
+
+		// TODO: check this random generation
+		if (random_generator.Uniform_Unit_Interval() < 1.f - m_epsilon)
+		{
+			action_probability = 1.f - m_epsilon + base_probability;
+		}
+		else
+		{
+			// Get uniform random action ID
+			u32 actionId = random_generator.Uniform_Int(1, actions.Count());
+
+			if (actionId == chosen_action.Get_Id())
+			{
+				// IF it matches the one chosen by the default policy
+				// then increase the probability
+				action_probability = 1.f - m_epsilon + base_probability;
+			}
+			else
+			{
+				// Otherwise it's just the uniform probability
+				action_probability = base_probability;
+			}
+			chosen_action = actions.Get(actionId);
+		}
+
+		return std::tuple<MWTAction, float, bool>(chosen_action, action_probability, true);
+	}
+
+private:
+	Plc& m_default_policy;
+	float m_epsilon;
+	u32 m_num_actions;
+
+private:
+	template <class Rec>
+	friend class MWT;
+};
+
+class OldEpsilonGreedyExplorer : public Explorer
+{
+public:
+	OldEpsilonGreedyExplorer(
 		float epsilon,
 		Stateful_Policy_Func* default_policy_func,
 		void* default_policy_params,
@@ -39,7 +138,7 @@ public:
 	{
 	}
 
-	EpsilonGreedyExplorer(
+	OldEpsilonGreedyExplorer(
 		float epsilon,
 		Stateless_Policy_Func* default_policy_func,
 		u64 salt) :
@@ -51,7 +150,7 @@ public:
 	{
 	}
 
-	~EpsilonGreedyExplorer()
+	~OldEpsilonGreedyExplorer()
 	{
 	}
 

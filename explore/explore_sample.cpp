@@ -43,6 +43,30 @@ void Stateless_Default_Scorer(BaseContext& appContext, float scores[], u32 size)
 	}
 }
 
+class MyContext
+{
+
+};
+
+class MyPolicy : public IPolicy<MyContext>
+{
+public:
+	MyPolicy() { }
+	u32 Choose_Action(MyContext& context)
+	{
+		return (u32)1;
+	}
+};
+
+class MyRecorder : public IRecorder<MyContext>
+{
+public:
+	virtual void Record(MyContext& context, u32 action, float probability, string unique_key)
+	{
+
+	}
+};
+
 int main(int argc, char* argv[])
 {
 	if (argc < 2)
@@ -74,14 +98,20 @@ int main(int argc, char* argv[])
 	// Create a new MWT instance
 	MWTExplorer mwt("test");
 
+	MyPolicy my_policy;
+
 	//Initialize an explorer
 	if (strcmp(argv[1],"greedy") == 0)
 	  { 
 	    float epsilon = .2f;
-	    if (stateful) //Initialize Epsilon-Greedy explore algorithm using a default policy function that accepts parameters 
-	      mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy1, policy_params, NUM_ACTIONS);
-	    else //Initialize Epsilon-Greedy explore algorithm using a stateless default policy function 
-	      mwt.Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy1, NUM_ACTIONS);
+		string unique_key = "sample";
+
+		//Initialize Epsilon-Greedy explore algorithm using MyPolicy
+		MWT<MyRecorder> mwt("salt", MyRecorder());
+		EpsilonGreedyExplorer<MyPolicy> explorer(MyPolicy(), epsilon, NUM_ACTIONS);
+		u32 action = mwt.Choose_Action(explorer, unique_key, MyContext());
+
+		return 0;
 	  }
 	else if (strcmp(argv[1],"tau-first") == 0)
 	  {
