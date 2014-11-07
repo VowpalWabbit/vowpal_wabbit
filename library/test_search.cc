@@ -3,7 +3,7 @@
 #include "../vowpalwabbit/vw.h"
 #include "../vowpalwabbit/ezexample.h"
 #include "../vowpalwabbit/search_sequencetask.h"
-#include "libsearch.h"
+#include "../vowpalwabbit/libsearch.h"
 
 struct wt {
   string word;
