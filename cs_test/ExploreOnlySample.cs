@@ -154,7 +154,7 @@ namespace cs_test
             f[1].Id = 2;
 
             string otherContext = "Some other context data that might be helpful to log";
-            SimpleContext appContext = new SimpleContext(f, otherContext);
+            OldSimpleContext appContext = new OldSimpleContext(f, otherContext);
 
             UInt32 chosenAction = mwt.ChooseAction("myId", appContext);
 

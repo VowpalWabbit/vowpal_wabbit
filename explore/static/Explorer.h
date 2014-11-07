@@ -40,6 +40,68 @@ public:
 	virtual ~Explorer() { }
 };
 
+// Default Recorder that converts tuple into string format.
+template <class Ctx>
+struct StringRecorder : public IRecorder<Ctx>
+{
+	void Record(Ctx& context, u32 action, float probability, string unique_key)
+	{
+		// Implicitly enforce To_String() API on the context
+		m_recording.append(to_string(action));
+		m_recording.append(" ", 1);
+		m_recording.append(unique_key);
+		m_recording.append(" ", 1);
+
+		char prob_str[10] = { 0 };
+		NumberUtils::Float_To_String(probability, prob_str);
+		m_recording.append(prob_str);
+
+		m_recording.append(" | ", 3);
+		m_recording.append(context.To_String());
+		m_recording.append("\n");
+	}
+
+	string Get_Recording()
+	{
+		return m_recording;
+	}
+
+private:
+	string m_recording;
+};
+
+class SimpleContext
+{
+public:
+	SimpleContext(vector<Feature>& common_features) :
+		m_common_features(common_features)
+	{ }
+
+	string To_String()
+	{
+		string out_string;
+		char feature_str[35] = { 0 };
+		for (size_t i = 0; i < m_common_features.size(); i++)
+		{
+			int chars;
+			if (i == 0)
+			{
+				chars = sprintf(feature_str, "%d:", m_common_features[i].Id);
+			}
+			else
+			{
+				chars = sprintf(feature_str, " %d:", m_common_features[i].Id);
+			}
+			NumberUtils::print_float(feature_str + chars, m_common_features[i].Value);
+			out_string.append(feature_str);
+		}
+		return out_string;
+	}
+
+private:
+	vector<Feature>& m_common_features;
+};
+
 template <class Plc>
 class EpsilonGreedyExplorer
 {

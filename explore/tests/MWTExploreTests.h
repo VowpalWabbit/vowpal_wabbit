@@ -33,6 +33,19 @@ private:
 	int m_num_actions;
 };
 
+class TestSimplePolicy : public IPolicy<SimpleContext>
+{
+public:
+	TestSimplePolicy(int params, int num_actions) : m_params(params), m_num_actions(num_actions) { }
+	u32 Choose_Action(SimpleContext& context)
+	{
+		return MWTAction::Make_OneBased(m_params % m_num_actions);
+	}
+private:
+	int m_params;
+	int m_num_actions;
+};
+
 // Return action outside valid range
 class TestBadPolicy : public IPolicy<TestContext>
 {

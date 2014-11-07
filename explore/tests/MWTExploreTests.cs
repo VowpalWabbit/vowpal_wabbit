@@ -453,7 +453,7 @@ namespace ExploreTests
             features[1].Value = 0.9f;
             features[1].Id = 2;
 
-            context = new SimpleContext(features, "Other C# test context");
+            context = new OldSimpleContext(features, "Other C# test context");
         }
 
         [TestCleanup]
@@ -502,7 +502,7 @@ namespace ExploreTests
                     f[j].Value = (float)rand.NextDouble();
                 }
 
-                SimpleContext c = new SimpleContext(f, null);
+                OldSimpleContext c = new OldSimpleContext(f, null);
                 mwt.ChooseAction(i.ToString(), c);
 
                 rewards.Add((float)rand.NextDouble());
@@ -587,7 +587,7 @@ namespace ExploreTests
 
         private MwtExplorer mwt;
         private Feature[] features;
-        private SimpleContext context;
+        private OldSimpleContext context;
     }
 
     public class TestContext : BaseContext

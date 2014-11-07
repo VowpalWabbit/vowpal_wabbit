@@ -75,7 +75,7 @@ namespace MultiWorldTesting {
 
 		for (int i = 0; i < nativeContexts->Count; i++)
 		{
-			delete ((NativeMultiWorldTesting::SimpleContext*)nativeContexts[i].ToPointer());
+			delete ((NativeMultiWorldTesting::OldSimpleContext*)nativeContexts[i].ToPointer());
 		}
 		nativeContexts->Clear();
 
@@ -274,7 +274,7 @@ namespace MultiWorldTesting {
 
 		std::string nativeUniqueKey = marshal_as<std::string>(uniqueId);
 
-		NativeMultiWorldTesting::SimpleContext* log_context = MwtHelper::PinNativeContext(context);
+		NativeMultiWorldTesting::OldSimpleContext* log_context = MwtHelper::PinNativeContext(context);
 
 		size_t uniqueIdLength = (size_t)uniqueId->Length;
 
@@ -385,7 +385,7 @@ namespace MultiWorldTesting {
 		m_native_interactions = new NativeMultiWorldTesting::Interaction*[m_num_native_interactions];
 		for (int i = 0; i < m_num_native_interactions; i++)
 		{
-			NativeMultiWorldTesting::SimpleContext* native_context = MwtHelper::PinNativeContext(interactions[i]->ApplicationContext);
+			NativeMultiWorldTesting::OldSimpleContext* native_context = MwtHelper::PinNativeContext(interactions[i]->ApplicationContext);
 			
 			String^ interaction_id = interactions[i]->Id;
 			m_native_interactions[i] = new NativeMultiWorldTesting::Interaction(native_context,
@@ -443,7 +443,7 @@ namespace MultiWorldTesting {
 			{
 				interactions[i] = gcnew Interaction();
 
-				NativeMultiWorldTesting::SimpleContext* native_context = (NativeMultiWorldTesting::SimpleContext*)m_native_interactions[i]->Get_Context();
+				NativeMultiWorldTesting::OldSimpleContext* native_context = (NativeMultiWorldTesting::OldSimpleContext*)m_native_interactions[i]->Get_Context();
 
 				NativeMultiWorldTesting::Feature* native_features = nullptr;
 				size_t native_num_features = 0;
@@ -459,7 +459,7 @@ namespace MultiWorldTesting {
 				native_context->Get_Other_Context(native_other_context);
 				String^ otherContext = (native_other_context.empty()) ? nullptr : gcnew String(native_other_context.c_str());
 
-				interactions[i]->ApplicationContext = gcnew SimpleContext(features, otherContext);
+				interactions[i]->ApplicationContext = gcnew OldSimpleContext(features, otherContext);
 				interactions[i]->ChosenAction = m_native_interactions[i]->Get_Action().Get_Id();
 				interactions[i]->Probability = m_native_interactions[i]->Get_Prob();
 				interactions[i]->Id = gcnew String(m_native_interactions[i]->Get_Id().c_str());
@@ -478,7 +478,7 @@ namespace MultiWorldTesting {
 		contextHandles = gcnew cli::array<GCHandle>(m_num_native_interactions);
 		for (int i = 0; i < m_num_native_interactions; i++)
 		{
-			NativeMultiWorldTesting::SimpleContext* native_context = MwtHelper::PinNativeContext(interactions[i]->ApplicationContext);
+			NativeMultiWorldTesting::OldSimpleContext* native_context = MwtHelper::PinNativeContext(interactions[i]->ApplicationContext);
 			String^ interaction_id = interactions[i]->Id;
 			m_native_interactions[i] = new NativeMultiWorldTesting::Interaction(native_context,
 				interactions[i]->ChosenAction,
@@ -567,7 +567,7 @@ namespace MultiWorldTesting {
 		return value;
 	}
 
-	UInt32 MwtOptimizer::InvokeDefaultPolicyFunction(SimpleContext^ context)
+	UInt32 MwtOptimizer::InvokeDefaultPolicyFunction(OldSimpleContext^ context)
 	{
 		return policyWrapper->InvokeFunction(context);
 	}
@@ -578,12 +578,12 @@ namespace MultiWorldTesting {
 		MwtOptimizer^ mwtOpt = (MwtOptimizer^)(mwtHandle.Target);
 
 		GCHandle contextHandle = (GCHandle)contextPtr;
-		SimpleContext^ context = (SimpleContext^)(contextHandle.Target);
+		OldSimpleContext^ context = (OldSimpleContext^)(contextHandle.Target);
 
 		return mwtOpt->InvokeDefaultPolicyFunction(context);
 	}
 
-	NativeMultiWorldTesting::SimpleContext* MwtHelper::PinNativeContext(BaseContext^ context)
+	NativeMultiWorldTesting::OldSimpleContext* MwtHelper::PinNativeContext(BaseContext^ context)
 	{
 		cli::array<Feature>^ contextFeatures = context->GetFeatures();
 
@@ -599,7 +599,7 @@ namespace MultiWorldTesting {
 
 			NativeMultiWorldTesting::Feature* nativeContextFeatures = (NativeMultiWorldTesting::Feature*)featureArrayPtr.ToPointer();
 
-			return new NativeMultiWorldTesting::SimpleContext((NativeMultiWorldTesting::Feature*)nativeContextFeatures, (size_t)contextFeatures->Length);
+			return new NativeMultiWorldTesting::OldSimpleContext((NativeMultiWorldTesting::Feature*)nativeContextFeatures, (size_t)contextFeatures->Length);
 		}
 		catch (Exception^ ex)
 		{

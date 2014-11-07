@@ -40,16 +40,16 @@ namespace MultiWorldTesting {
 		GCHandle FeatureHandle;
 	};
 
-	public ref class SimpleContext : public BaseContext
+	public ref class OldSimpleContext : public BaseContext
 	{
 	public:
-		SimpleContext()
+		OldSimpleContext()
 		{
 			Features = nullptr;
 			OtherContext = nullptr;
 		}
 
-		SimpleContext(cli::array<Feature>^ features, String^ otherContext)
+		OldSimpleContext(cli::array<Feature>^ features, String^ otherContext)
 		{
 			Features = features;
 			OtherContext = otherContext;
@@ -170,7 +170,7 @@ namespace MultiWorldTesting {
 	private ref class MwtHelper
 	{
 	public:
-		static NativeMultiWorldTesting::SimpleContext* PinNativeContext(BaseContext^ context);
+		static NativeMultiWorldTesting::OldSimpleContext* PinNativeContext(BaseContext^ context);
 	};
 
 	public ref class MwtExplorer
@@ -289,7 +289,7 @@ namespace MultiWorldTesting {
 		void Uninitialize();
 
 	internal:
-		UInt32 InvokeDefaultPolicyFunction(SimpleContext^);
+		UInt32 InvokeDefaultPolicyFunction(OldSimpleContext^);
 
 	private:
 		float EvaluatePolicy(InternalStatefulPolicyDelegate^ policyFunc, IntPtr policyParams);

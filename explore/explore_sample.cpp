@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
 	features[0].Id = 32;
 	features[0].Value = 0.5;
 
-	SimpleContext appContext(features, num_features);
+	OldSimpleContext appContext(features, num_features);
 
 	// Now let MWT explore & choose an action
 	string unique_key = "1001";

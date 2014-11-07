@@ -64,7 +64,7 @@ namespace CBIFY {
     MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
 	base.mwt_policy_context->l = &base;
 	base.mwt_policy_context->e = &ec;
-	SimpleContext dummy(nullptr, 0);
+	OldSimpleContext dummy(nullptr, 0);
     //Use CB to find current prediction for remaining rounds.
     if (data.tau && is_learn)
       {
@@ -104,7 +104,7 @@ namespace CBIFY {
     base.mwt_policy_context->l = &base;
     base.mwt_policy_context->e = &ec;
     
-	SimpleContext dummy(nullptr, 0);
+	OldSimpleContext dummy(nullptr, 0);
     base.mwt->Choose_Action(string("vw"), dummy); // TODO: evolve unique key?
     
     vector<Interaction> interactions = base.mwt->Get_All_Interactions();

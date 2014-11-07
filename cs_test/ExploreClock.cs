@@ -45,7 +45,7 @@ namespace cs_test
 
                 watch.Restart();
 
-                SimpleContext context = new SimpleContext(f, otherContext);
+                OldSimpleContext context = new OldSimpleContext(f, otherContext);
 
                 for (int i = 0; i < numInteractions; i++)
                 {

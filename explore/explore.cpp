@@ -71,7 +71,7 @@ void Clock_Explore()
 		time_init += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
 
 		t1 = high_resolution_clock::now();
-		SimpleContext appContext(features, num_features);
+		OldSimpleContext appContext(features, num_features);
 		for (int i = 0; i < num_interactions; i++)
 		{
 		  mwt.Choose_Action(unique_key, appContext);

@@ -398,7 +398,7 @@ namespace vw_explore_tests
 			// essentially we will only use one class-label per example (the chosen action) ]
 			Interaction* interactions[7];
 			std::string ids[7];
-			SimpleContext* context;
+			OldSimpleContext* context;
 			float prob = 1.0 / 3;
 			float feature_val = 1.0;
 			u64 feature_a = HashUtils::Compute_Id_Hash("a");
@@ -412,7 +412,7 @@ namespace vw_explore_tests
 			// This indicates feature "a" is present (the specific value used is not important)
 			features[0].Id = feature_a;
 			features[0].Value = feature_val; 
-			context = new SimpleContext(features, 1);
+			context = new OldSimpleContext(features, 1);
 			// Indicating this is a copy hands responsibility for freeing the context to the
 			// Interaction class (note: we may remove this interface later)
 			ids[i] = "a1_expect_1";
@@ -421,7 +421,7 @@ namespace vw_explore_tests
 			features = new Feature[3];
 			features[0].Id = feature_b;
 			features[0].Value = feature_val;
-			context = new SimpleContext(features, 1);
+			context = new OldSimpleContext(features, 1);
 			i++;
 			ids[i] = "b1_expects_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
@@ -429,7 +429,7 @@ namespace vw_explore_tests
 			features = new Feature[3];
 			features[0].Id = feature_c;
 			features[0].Value = feature_val;
-			context = new SimpleContext(features, 1);
+			context = new OldSimpleContext(features, 1);
 			i++;
 			ids[i] = "c1_expects_3";
 			interactions[i] = new Interaction(context, MWTAction(3), prob, ids[i], true);
@@ -439,7 +439,7 @@ namespace vw_explore_tests
 			features[0].Value = feature_val;
 			features[1].Id = feature_b;
 			features[1].Value = feature_val;
-			context = new SimpleContext(features, 2);
+			context = new OldSimpleContext(features, 2);
 			i++;
 			ids[i] = "ab1_expect_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
@@ -449,7 +449,7 @@ namespace vw_explore_tests
 			features[0].Value = feature_val;
 			features[1].Id = feature_c;
 			features[1].Value = feature_val;
-			context = new SimpleContext(features, 2);
+			context = new OldSimpleContext(features, 2);
 			i++;
 			ids[i] = "bc1_expect_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
@@ -459,7 +459,7 @@ namespace vw_explore_tests
 			features[0].Value = feature_val;
 			features[1].Id = feature_c;
 			features[1].Value = feature_val;
-			context = new SimpleContext(features, 2);
+			context = new OldSimpleContext(features, 2);
 			i++;
 			ids[i] = "ac1_expect_3";
 			interactions[i] = new Interaction(context, MWTAction(3), prob, ids[i], true);
@@ -467,7 +467,7 @@ namespace vw_explore_tests
 			features = new Feature[3];
 			features[0].Id = feature_d;
 			features[0].Value = feature_val;
-			context = new SimpleContext(features, 1);
+			context = new OldSimpleContext(features, 1);
 			i++;
 			ids[i] = "d1_expect_2";
 			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
@@ -577,29 +577,36 @@ namespace vw_explore_tests
 
 		TEST_METHOD(Serialized_String)
 		{
-			float epsilon = 0.5f; // No randomization
-			m_mwt->Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy, m_policy_func_arg, m_num_actions);
+			int num_actions = 10;
+			float epsilon = 0.5f;
+			TestSimplePolicy my_policy(m_policy_func_arg, num_actions);
 
-			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(m_policy_func_arg, *m_context);
+			StringRecorder<SimpleContext> my_recorder;
+			MWT<StringRecorder<SimpleContext>> mwt("c++-test", my_recorder);
+			EpsilonGreedyExplorer<TestSimplePolicy> explorer(my_policy, epsilon, num_actions);
+
+			vector<Feature> features1;
+			features1.push_back({ 0.5f, 1 });
+			SimpleContext context1(features1);
+
+			u32 expected_action = my_policy.Choose_Action(context1);
 
 			string unique_key1 = "key1";
+			u32 chosen_action1 = mwt.Choose_Action(explorer, unique_key1, context1);
+
+			vector<Feature> features2;
+			features2.push_back({ -99999.5f, 123456789 });
+			features2.push_back({ 1.5f, 39 });
+
+			SimpleContext context2(features2);
+
 			string unique_key2 = "key2";
-			u32 chosen_action1 = m_mwt->Choose_Action(unique_key1, *m_context);
+			u32 chosen_action2 = mwt.Choose_Action(explorer, unique_key2, context2);
 
-			Feature features[2];
-			features[0].Id = 123456789;
-			features[0].Value = -99999.5f;
-			features[1].Id = 39;
-			features[1].Value = 1.5f;
-
-			SimpleContext context(features, 2);
-
-			u32 chosen_action2 = m_mwt->Choose_Action(unique_key2, context);
-
-			string actual_log = m_mwt->Get_All_Interactions_As_String();
+			string actual_log = my_recorder.Get_Recording();
 
 			// Use hard-coded string to be independent of sprintf
-			char* expected_log = "2 key1 0.55000 | 1:.5\n2 key2 0.55000 | 123456789:-99999.5 39:1.5";
+			char* expected_log = "2 key1 0.55000 | 1:.5\n2 key2 0.55000 | 123456789:-99999.5 39:1.5\n";
 
 			Assert::AreEqual(expected_log, actual_log.c_str());
 		}
@@ -608,19 +615,26 @@ namespace vw_explore_tests
 		{
 			PRG::prg rand;
 
-			MWTExplorer mwt("");
-			mwt.Initialize_Epsilon_Greedy(0, Stateless_Default_Policy, m_num_actions);
-			Feature feature;
-			SimpleContext context(&feature, 1);
+			int num_actions = 10;
+			TestSimplePolicy my_policy(m_policy_func_arg, num_actions);
+
 			char expected_log[100] = { 0 };
 
 			for (int i = 0; i < 10000; i++)
 			{
+				StringRecorder<SimpleContext> my_recorder;
+				MWT<StringRecorder<SimpleContext>> mwt("c++-test", my_recorder);
+				EpsilonGreedyExplorer<TestSimplePolicy> explorer(my_policy, 0.f, num_actions);
+
+				Feature feature;
 				feature.Value = (rand.Uniform_Unit_Interval() - 0.5f) * rand.Uniform_Int(0, 100000);
 				feature.Id = i;
+				vector<Feature> features;
+				features.push_back(feature);
+				SimpleContext my_context(features);
 
-				u32 action = mwt.Choose_Action("", context);
-				string actual_log = mwt.Get_All_Interactions_As_String();
+				u32 action = mwt.Choose_Action(explorer, "", my_context);
+				string actual_log = my_recorder.Get_Recording();
 
 				ostringstream expected_stream;
 				expected_stream << std::fixed << std::setprecision(10) << feature.Value;
@@ -680,7 +694,7 @@ namespace vw_explore_tests
 			COUNT_BAD_CALL
 			(
 				MWTExplorer mwt("");
-				SimpleContext context(nullptr, 0);
+				OldSimpleContext context(nullptr, 0);
 				mwt.Choose_Action("test", context);
 			)
 			Assert::AreEqual(1, num_ex);
@@ -689,7 +703,7 @@ namespace vw_explore_tests
 		TEST_METHOD(Usage_Bad_Policy)
 		{
 			int num_ex = 0;
-			SimpleContext context(nullptr, 0);
+			OldSimpleContext context(nullptr, 0);
 			Policy* funcs[2] = { Stateless_Default_Policy, Stateless_Default_Policy2 };
 
 			// Default policy returns action outside valid range
@@ -718,7 +732,7 @@ namespace vw_explore_tests
 		TEST_METHOD(Usage_Bad_Scorer)
 		{
 			int num_ex = 0;
-			SimpleContext context(nullptr, 0);
+			OldSimpleContext context(nullptr, 0);
 
 			// Default policy returns action outside valid range
 			COUNT_BAD_CALL
@@ -787,7 +801,7 @@ namespace vw_explore_tests
 			m_features = new Feature[m_num_features];
 			m_features[0].Id = 1;
 			m_features[0].Value = 0.5;
-			m_context = new SimpleContext(m_features, m_num_features);
+			m_context = new OldSimpleContext(m_features, m_num_features);
 
 			m_unique_key = "1001";
 
@@ -915,7 +929,7 @@ namespace vw_explore_tests
 					features[j].Id = j + 1;
 					features[j].Value = rand.Uniform_Unit_Interval();
 				}
-				SimpleContext c(features, 1000);
+				OldSimpleContext c(features, 1000);
 
 				m_mwt->Choose_Action(to_string(i), c);
 
@@ -998,7 +1012,7 @@ namespace vw_explore_tests
 		int m_policy_func_arg;
 		int m_policy_scorer_arg;
 
-		SimpleContext* m_context;
+		OldSimpleContext* m_context;
 		int m_num_features;
 		Feature* m_features;
 
