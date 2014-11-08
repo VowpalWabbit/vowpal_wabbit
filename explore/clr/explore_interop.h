@@ -21,6 +21,10 @@ namespace MultiWorldTesting {
 private delegate UInt32 ClrPolicyCallback(IntPtr explorerPtr, IntPtr contextPtr);
 typedef u32 Native_Policy_Callback(void* explorer, void* context);
 
+// Scorer callback
+private delegate void ClrScorerCallback(IntPtr explorerPtr, IntPtr contextPtr, IntPtr scores, IntPtr size);
+typedef void Native_Scorer_Callback(void* explorer, void* context, float* scores[], u32* size);
+
 // Recorder callback
 private delegate void ClrRecorderCallback(IntPtr mwtPtr, IntPtr contextPtr, UInt32 action, float probability, IntPtr uniqueKey);
 typedef void Native_Recorder_Callback(void* mwt, void* context, u32 action, float probability, void* unique_key);
@@ -96,6 +100,27 @@ public:
 
 private:
 	Native_Policy_Callback* m_func;
+};
+
+class NativeScorer : public NativeMultiWorldTesting::IScorer<NativeContext>
+{
+public:
+	NativeScorer(Native_Scorer_Callback* func)
+	{
+		m_func = func;
+	}
+
+	vector<float> Score_Actions(NativeContext& context)
+	{
+		float* scores = nullptr;
+		u32 num_scores = 0;
+		m_func(context.Get_Clr_Explorer(), context.Get_Clr_Context(), &scores, &num_scores);
+
+		// It's ok if scores is null, vector will be empty
+		return vector<float>(scores, scores + num_scores);
+	}
+private:
+	Native_Scorer_Callback* m_func;
 };
 
 // Triggers callback to the Policy instance to choose an action
@@ -179,6 +204,63 @@ internal:
 
 private:
 	NativeRecorder* m_native_recorder;
+};
+
+// Triggers callback to the Recorder instance to record interaction data
+generic <class Ctx>
+public ref class ScorerCallback
+{
+internal:
+	virtual List<float>^ InvokeScorerCallback(Ctx context) = 0;
+
+	ScorerCallback()
+	{
+		ClrScorerCallback^ scorerCallback = gcnew ClrScorerCallback(&ScorerCallback<Ctx>::InteropInvoke);
+		IntPtr scorerCallbackPtr = Marshal::GetFunctionPointerForDelegate(scorerCallback);
+		Native_Scorer_Callback* callback = static_cast<Native_Scorer_Callback*>(scorerCallbackPtr.ToPointer());
+		m_native_scorer = new NativeScorer(callback);
+	}
+
+	~ScorerCallback()
+	{
+		delete m_native_scorer;
+	}
+
+	NativeScorer* GetNativeScorer()
+	{
+		return m_native_scorer;
+	}
+
+	static void InteropInvoke(IntPtr callbackPtr, IntPtr contextPtr, IntPtr scoresPtr, IntPtr sizePtr)
+	{
+		GCHandle callbackHandle = (GCHandle)callbackPtr;
+		ScorerCallback<Ctx>^ callback = (ScorerCallback<Ctx>^)callbackHandle.Target;
+
+		GCHandle contextHandle = (GCHandle)contextPtr;
+		Ctx context = (Ctx)contextHandle.Target;
+
+		List<float>^ scoreList = callback->InvokeScorerCallback(context);
+		
+		if (scoreList == nullptr || scoreList->Count == 0)
+		{
+			return;
+		}
+
+		u32* num_scores = (u32*)sizePtr.ToPointer();
+		*num_scores = (u32)scoreList->Count;
+
+		float* scores = new float[*num_scores];
+		for (u32 i = 0; i < *num_scores; i++)
+		{
+			scores[i] = scoreList[i];
+		}
+
+		float** native_scores = (float**)scoresPtr.ToPointer();
+		*native_scores = scores;
+	}
+
+private:
+	NativeScorer* m_native_scorer;
 };
 
 }

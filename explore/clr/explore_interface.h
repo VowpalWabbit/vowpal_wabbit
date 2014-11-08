@@ -23,7 +23,7 @@ generic <class Ctx>
 public interface class IScorer
 {
 public:
-	virtual List<float> ScoreActions(Ctx context) = 0;
+	virtual List<float>^ ScoreActions(Ctx context) = 0;
 };
 
 generic <class Ctx>

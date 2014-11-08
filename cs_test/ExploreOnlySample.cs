@@ -72,9 +72,22 @@ namespace cs_test
             }
         }
 
+        class MyScorer : IScorer<MyContext>
+        {
+            public MyScorer(uint numActions)
+            {
+                this.numActions = numActions;
+            }
+            public List<float> ScoreActions(MyContext context)
+            {
+                return Enumerable.Repeat<float>(1.0f / numActions, (int)numActions).ToList();
+            }
+            private uint numActions;
+        }
+
         public static void Run()
         {
-            string exploration_type = "greedy";
+            string exploration_type = "softmax";
             bool stateful = true;
 
             MwtExplorer mwt = new MwtExplorer("test");
@@ -103,10 +116,11 @@ namespace cs_test
 
             if (exploration_type == "greedy")
             {
+                // Initialize Epsilon-Greedy explore algorithm using custom Recorder, Policy & Context types
                 MyRecorder mc = new MyRecorder();
                 MyPolicy mp = new MyPolicy();
                 MWT<MyContext> mwtt = new MWT<MyContext>("mwt", mc);
-                mwtt.Choose_Action(new EpsilonGreedyExplorer<MyContext>(mp, epsilon, numActions), "key", new MyContext());
+                uint action = mwtt.Choose_Action(new EpsilonGreedyExplorer<MyContext>(mp, epsilon, numActions), "key", new MyContext());
                 return;
             }
             else if (exploration_type == "tau-first")
@@ -138,16 +152,13 @@ namespace cs_test
             }
             else if (exploration_type == "softmax")
             {
-                if (stateful)
-                {
-                    /*** Initialize Softmax explore algorithm using a default policy function that accepts parameters ***/
-                    mwt.InitializeSoftmax<int>(lambda, new StatefulScorerDelegate<int>(SampleStatefulScorerFunc), policyParams, numActions);
-                }
-                else
-                {
-                    /*** Initialize Softmax explore algorithm using a stateless default policy function ***/
-                    mwt.InitializeSoftmax(lambda, new StatelessScorerDelegate(SampleStatelessScorerFunc), numActions);
-                }
+                // Initialize Softmax explore algorithm using custom Recorder, Scorer & Context types
+                MyRecorder mc = new MyRecorder();
+                MyScorer ms = new MyScorer(numActions);
+
+                MWT<MyContext> mwtt = new MWT<MyContext>("mwt", mc);
+                uint action = mwtt.Choose_Action(new SoftmaxExplorer<MyContext>(ms, lambda, numActions), "key", new MyContext());
+                return;
             }
             else if (exploration_type == "generic")
             {

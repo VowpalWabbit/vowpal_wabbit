@@ -36,6 +36,37 @@ namespace MultiWorldTesting {
 	};
 
 	generic <class Ctx>
+	public ref class SoftmaxExplorer : public IExplorer<Ctx>, public ScorerCallback<Ctx>
+	{
+	public:
+		SoftmaxExplorer(IScorer<Ctx>^ defaultScorer, float lambda, UInt32 numActions)
+		{
+			this->defaultScorer = defaultScorer;
+			m_explorer = new NativeMultiWorldTesting::SoftmaxExplorer<NativeScorer>(*GetNativeScorer(), lambda, (u32)numActions);
+		}
+
+		~SoftmaxExplorer()
+		{
+			delete m_explorer;
+		}
+
+	internal:
+		virtual List<float>^ InvokeScorerCallback(Ctx context) override
+		{
+			return defaultScorer->ScoreActions(context);
+		}
+
+		NativeMultiWorldTesting::SoftmaxExplorer<NativeScorer>* Get()
+		{
+			return m_explorer;
+		}
+
+	private:
+		IScorer<Ctx>^ defaultScorer;
+		NativeMultiWorldTesting::SoftmaxExplorer<NativeScorer>* m_explorer;
+	};
+
+	generic <class Ctx>
 	public ref class MWT : public RecorderCallback<Ctx>
 	{
 	public:
@@ -67,6 +98,11 @@ namespace MultiWorldTesting {
 			{
 				EpsilonGreedyExplorer<Ctx>^ epsilonGreedyExplorer = (EpsilonGreedyExplorer<Ctx>^)explorer;
 				action = m_mwt->Choose_Action(*epsilonGreedyExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+			}
+			else if (explorer->GetType() == SoftmaxExplorer<Ctx>::typeid)
+			{
+				SoftmaxExplorer<Ctx>^ softmaxExplorer = (SoftmaxExplorer<Ctx>^)explorer;
+				action = m_mwt->Choose_Action(*softmaxExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
 			}
 
 			explorerHandle.Free();
