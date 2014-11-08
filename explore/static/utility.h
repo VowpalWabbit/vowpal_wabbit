@@ -26,6 +26,7 @@ typedef unsigned char    byte;
 
 #include <string>
 #include <stdint.h>
+#include <math.h>
 
 MWT_NAMESPACE {
 
