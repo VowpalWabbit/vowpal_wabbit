@@ -407,6 +407,74 @@ private:
 	friend class MWT;
 };
 
+template <class Plc>
+class BaggingExplorer
+{
+public:
+	BaggingExplorer(vector<Plc>& default_policy_functions, u32 bags, u32 num_actions) :
+		m_default_policy_functions(default_policy_functions),
+		m_bags(bags),
+		m_num_actions(num_actions)
+	{
+	}
+
+	template <class Ctx>
+	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
+	{
+		ActionSet actions;
+		actions.Set_Count(m_num_actions);
+
+		PRG::prg random_generator(salted_seed);
+
+		// Select bag
+		u32 chosen_bag = random_generator.Uniform_Int(0, m_bags - 1);
+
+		// Invoke the default policy function to get the action
+		MWTAction chosen_action(0);
+		MWTAction action_from_bag(0);
+		vector<u32> actions_selected;
+		for (size_t i = 0; i < actions.Count(); i++)
+		{
+			actions_selected.push_back(0);
+		}
+		for (u32 current_bag = 0; current_bag < m_bags; current_bag++)
+		{
+			if (m_stateless_default_policy_funcs != nullptr)
+			{
+				action_from_bag = MWTAction(m_stateless_default_policy_funcs[current_bag](context));
+			}
+			else
+			{
+				action_from_bag = MWTAction(m_stateful_default_policy_funcs[current_bag](m_default_policy_params[current_bag], context));
+			}
+
+			if (action_from_bag.Get_Id() == 0 || action_from_bag.Get_Id() > actions.Count())
+			{
+				throw std::invalid_argument("Action chosen by default policy is not within valid range.");
+			}
+
+			if (current_bag == chosen_bag)
+			{
+				chosen_action = action_from_bag;
+			}
+			//this won't work if actions aren't 0 to Count
+			actions_selected[action_from_bag.Get_Id_ZeroBased()]++;
+		}
+		float action_probability = (float)actions_selected[chosen_action.Get_Id_ZeroBased()] / m_bags;
+
+		return std::tuple<MWTAction, float, bool>(chosen_action, action_probability, true);
+	}
+
+private:
+	vector<Plc>& m_default_policy_functions;
+	u32 m_bags;
+	u32 m_num_actions;
+
+private:
+	template <class Rec>
+	friend class MWT;
+};
+
 class OldEpsilonGreedyExplorer : public Explorer
 {
 public:
@@ -756,10 +824,10 @@ private:
 };
 
 
-class BaggingExplorer : public Explorer
+class OldBaggingExplorer : public Explorer
 {
 public:
-	BaggingExplorer(
+	OldBaggingExplorer(
 		u32 bags,
 		Stateful_Policy_Func** default_policy_functions,
 		void** default_policy_args,
@@ -772,7 +840,7 @@ public:
 	{
 	}
 
-	BaggingExplorer(
+	OldBaggingExplorer(
 		u32 bags,
 		Stateless_Policy_Func** default_policy_functions,
 		u64 salt) :
@@ -784,7 +852,7 @@ public:
 	{
 	}
 
-	~BaggingExplorer()
+	~OldBaggingExplorer()
 	{
 	}
 

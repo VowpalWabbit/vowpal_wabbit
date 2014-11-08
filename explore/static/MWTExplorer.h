@@ -236,7 +236,7 @@ PORTING_INTERFACE:
 		Validate_Explorer_Empty();
 		
 		m_action_set.Set_Count(num_actions);
-		m_explorer.reset(new BaggingExplorer(bags, default_policy_functions, default_policy_args, m_app_id));
+		m_explorer.reset(new OldBaggingExplorer(bags, default_policy_functions, default_policy_args, m_app_id));
 	}
 
 	void Internal_Initialize_Bagging(
@@ -250,7 +250,7 @@ PORTING_INTERFACE:
 		Validate_Explorer_Empty();
 		
 		m_action_set.Set_Count(num_actions);
-		m_explorer.reset(new BaggingExplorer(bags, default_policy_functions, m_app_id));
+		m_explorer.reset(new OldBaggingExplorer(bags, default_policy_functions, m_app_id));
 	}
 
 	void Internal_Initialize_Softmax(
