@@ -251,7 +251,7 @@ namespace PRG {
 		{
 			initial = a * initial + c;
 			int32_t temp = ((initial >> 25) & 0x7FFFFF) | bias;
-			return *(float *)&temp - 1;
+			return *((float *)&temp) - 1;
 		}
 
 		float Uniform_Unit_Interval()
