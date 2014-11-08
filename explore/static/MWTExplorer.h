@@ -208,7 +208,7 @@ PORTING_INTERFACE:
 		Validate_Explorer_Empty();
 
 		m_action_set.Set_Count(num_actions);
-		m_explorer.reset(new TauFirstExplorer(tau, default_policy_func, default_policy_func_argument, m_app_id));
+		m_explorer.reset(new OldTauFirstExplorer(tau, default_policy_func, default_policy_func_argument, m_app_id));
 	}
 
 	void Internal_Initialize_Tau_First(
@@ -221,7 +221,7 @@ PORTING_INTERFACE:
 		Validate_Explorer_Empty();
 		
 		m_action_set.Set_Count(num_actions);
-		m_explorer.reset(new TauFirstExplorer(tau, default_policy_func, m_app_id));
+		m_explorer.reset(new OldTauFirstExplorer(tau, default_policy_func, m_app_id));
 	}
 
 	void Internal_Initialize_Bagging(

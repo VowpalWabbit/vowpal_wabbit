@@ -349,6 +349,64 @@ private:
 	friend class MWT;
 };
 
+template <class Plc>
+class TauFirstExplorer
+{
+public:
+	TauFirstExplorer(Plc& default_policy, u32 tau, u32 num_actions) :
+		m_default_policy(default_policy), m_tau(tau), m_num_actions(num_actions)
+	{
+	}
+
+	template <class Ctx>
+	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
+	{
+		ActionSet actions;
+		actions.Set_Count(m_num_actions);
+
+		PRG::prg random_generator(salted_seed);
+
+		MWTAction chosen_action(0);
+		float action_probability = 0.f;
+		bool log_action;
+		if (m_tau)
+		{
+			m_tau--;
+			u32 actionId = random_generator.Uniform_Int(1, actions.Count());
+			action_probability = 1.f / actions.Count();
+			chosen_action = actions.Get(actionId);
+			log_action = true;
+		}
+		else
+		{
+			// Invoke the default policy function to get the action
+			static_assert(std::is_base_of<IPolicy<Ctx>, Plc>::value, "The specified policy does not implement IPolicy");
+			IPolicy<Ctx>* policy = (IPolicy<Ctx>*)&m_default_policy;
+
+			MWTAction chosen_action = MWTAction(policy->Choose_Action(context));
+
+			if (chosen_action.Get_Id() == 0 || chosen_action.Get_Id() > actions.Count())
+			{
+				throw std::invalid_argument("Action chosen by default policy is not within valid range.");
+			}
+
+			action_probability = 1.f;
+			log_action = false;
+		}
+
+		return std::tuple<MWTAction, float, bool>(chosen_action, action_probability, log_action);
+	}
+
+private:
+	Plc& m_default_policy;
+	u32 m_tau;
+	u32 m_num_actions;
+
+private:
+	template <class Rec>
+	friend class MWT;
+};
+
 class OldEpsilonGreedyExplorer : public Explorer
 {
 public:
@@ -622,10 +680,10 @@ private:
 };
 
 
-class TauFirstExplorer : public Explorer
+class OldTauFirstExplorer : public Explorer
 {
 public:
-	TauFirstExplorer(
+	OldTauFirstExplorer(
 		u32 tau,
 		Stateful_Policy_Func* default_policy_func,
 		void* default_policy_params,
@@ -638,7 +696,7 @@ public:
 	{
 	}
 
-	TauFirstExplorer(
+	OldTauFirstExplorer(
 		u32 tau,
 		Stateless_Policy_Func* default_policy_func,
 		u64 salt) :

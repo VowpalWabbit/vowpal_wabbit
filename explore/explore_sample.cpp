@@ -135,10 +135,14 @@ int main(int argc, char* argv[])
 	else if (strcmp(argv[1],"tau-first") == 0)
 	  {
 	    u32 tau = 5;
-	    if (stateful) //Initialize Tau-First explore algorithm using a default policy function that accepts parameters 
-	      mwt.Initialize_Tau_First<int>(tau, Stateful_Default_Policy1, policy_params, NUM_ACTIONS);
-	    else // Initialize Tau-First explore algorithm using a stateless default policy function 
-	      mwt.Initialize_Tau_First(tau, Stateless_Default_Policy1, NUM_ACTIONS);
+		string unique_key = "sample";
+
+		//Initialize Tau-First explore algorithm using MyPolicy
+		MWT<MyRecorder> mwt("salt", MyRecorder());
+		TauFirstExplorer<MyPolicy> explorer(MyPolicy(), tau, NUM_ACTIONS);
+		u32 action = mwt.Choose_Action(explorer, unique_key, MyContext());
+
+		return 0;
 	  }
 	else if (strcmp(argv[1],"bagging") == 0)
 	  {
