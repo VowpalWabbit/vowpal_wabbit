@@ -23,6 +23,15 @@ public:
 	}
 };
 
+class MySimplePolicy : public IPolicy<SimpleContext>
+{
+public:
+	u32 Choose_Action(SimpleContext& context)
+	{
+		return (u32)1;
+	}
+};
+
 class MyScorer : public IScorer<MyContext>
 {
 public:
@@ -82,9 +91,18 @@ int main(int argc, char* argv[])
 		string unique_key = "sample";
 
 		//Initialize Epsilon-Greedy explore algorithm using MyPolicy
-		MWT<MyRecorder> mwt("salt", MyRecorder());
-		EpsilonGreedyExplorer<MyPolicy> explorer(MyPolicy(), epsilon, num_actions);
-		u32 action = mwt.Choose_Action(explorer, unique_key, MyContext());
+		vector<Feature> features;
+		features.push_back({ 0.5f, 1 });
+		features.push_back({ 1.3f, 11 });
+		features.push_back({ -.95f, 413 });
+		SimpleContext context(features);
+
+		StringRecorder<SimpleContext> recorder;
+		MWT<StringRecorder<SimpleContext>> mwt("salt", recorder);
+		EpsilonGreedyExplorer<MySimplePolicy> explorer(MySimplePolicy(), epsilon, num_actions);
+		u32 action = mwt.Choose_Action(explorer, unique_key, context);
+
+		cout << recorder.Get_Recording() << endl;
 	}
 	else if (strcmp(argv[1], "tau-first") == 0)
 	{
@@ -96,6 +114,8 @@ int main(int argc, char* argv[])
 		MWT<MyRecorder> mwt("salt", MyRecorder());
 		TauFirstExplorer<MyPolicy> explorer(MyPolicy(), tau, num_actions);
 		u32 action = mwt.Choose_Action(explorer, unique_key, MyContext());
+
+		// Get data from recorder for logging purposes
 	}
 	else if (strcmp(argv[1], "bagging") == 0)
 	{
@@ -112,6 +132,8 @@ int main(int argc, char* argv[])
 		}
 		BaggingExplorer<MyPolicy> explorer(policy_functions, num_bags, num_actions);
 		u32 action = mwt.Choose_Action(explorer, unique_key, MyContext());
+
+		// Get data from recorder for logging purposes
 	}
 	else if (strcmp(argv[1], "softmax") == 0)
 	{
@@ -123,6 +145,8 @@ int main(int argc, char* argv[])
 		MWT<MyRecorder> mwt("salt", MyRecorder());
 		SoftmaxExplorer<MyScorer> explorer(MyScorer(num_actions), lambda, num_actions);
 		u32 action = mwt.Choose_Action(explorer, unique_key, MyContext());
+
+		// Get data from recorder for logging purposes
 	}
 	else if (strcmp(argv[1], "generic") == 0)
 	{
@@ -133,6 +157,8 @@ int main(int argc, char* argv[])
 		MWT<MyRecorder> mwt("salt", MyRecorder());
 		GenericExplorer<MyScorer> explorer(MyScorer(num_actions), num_actions);
 		u32 action = mwt.Choose_Action(explorer, unique_key, MyContext());
+
+		// Get data from recorder for logging purposes
 	}
 	else
 	{
