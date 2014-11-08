@@ -36,6 +36,37 @@ namespace MultiWorldTesting {
 	};
 
 	generic <class Ctx>
+	public ref class TauFirstExplorer : public IExplorer<Ctx>, public PolicyCallback<Ctx>
+	{
+	public:
+		TauFirstExplorer(IPolicy<Ctx>^ defaultPolicy, UInt32 tau, UInt32 numActions)
+		{
+			this->defaultPolicy = defaultPolicy;
+			m_explorer = new NativeMultiWorldTesting::TauFirstExplorer<NativePolicy>(*GetNativePolicy(), tau, (u32)numActions);
+		}
+
+		~TauFirstExplorer()
+		{
+			delete m_explorer;
+		}
+
+	internal:
+		virtual UInt32 InvokePolicyCallback(Ctx context, int index) override
+		{
+			return defaultPolicy->ChooseAction(context);
+		}
+
+		NativeMultiWorldTesting::TauFirstExplorer<NativePolicy>* Get()
+		{
+			return m_explorer;
+		}
+
+	private:
+		IPolicy<Ctx>^ defaultPolicy;
+		NativeMultiWorldTesting::TauFirstExplorer<NativePolicy>* m_explorer;
+	};
+
+	generic <class Ctx>
 	public ref class SoftmaxExplorer : public IExplorer<Ctx>, public ScorerCallback<Ctx>
 	{
 	public:
@@ -64,6 +95,37 @@ namespace MultiWorldTesting {
 	private:
 		IScorer<Ctx>^ defaultScorer;
 		NativeMultiWorldTesting::SoftmaxExplorer<NativeScorer>* m_explorer;
+	};
+
+	generic <class Ctx>
+	public ref class GenericExplorer : public IExplorer<Ctx>, public ScorerCallback<Ctx>
+	{
+	public:
+		GenericExplorer(IScorer<Ctx>^ defaultScorer, UInt32 numActions)
+		{
+			this->defaultScorer = defaultScorer;
+			m_explorer = new NativeMultiWorldTesting::GenericExplorer<NativeScorer>(*GetNativeScorer(), (u32)numActions);
+		}
+
+		~GenericExplorer()
+		{
+			delete m_explorer;
+		}
+
+	internal:
+		virtual List<float>^ InvokeScorerCallback(Ctx context) override
+		{
+			return defaultScorer->ScoreActions(context);
+		}
+
+		NativeMultiWorldTesting::GenericExplorer<NativeScorer>* Get()
+		{
+			return m_explorer;
+		}
+
+	private:
+		IScorer<Ctx>^ defaultScorer;
+		NativeMultiWorldTesting::GenericExplorer<NativeScorer>* m_explorer;
 	};
 
 	generic <class Ctx>
@@ -134,10 +196,20 @@ namespace MultiWorldTesting {
 				EpsilonGreedyExplorer<Ctx>^ epsilonGreedyExplorer = (EpsilonGreedyExplorer<Ctx>^)explorer;
 				action = m_mwt->Choose_Action(*epsilonGreedyExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
 			}
+			else if (explorer->GetType() == TauFirstExplorer<Ctx>::typeid)
+			{
+				TauFirstExplorer<Ctx>^ tauFirstExplorer = (TauFirstExplorer<Ctx>^)explorer;
+				action = m_mwt->Choose_Action(*tauFirstExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+			}
 			else if (explorer->GetType() == SoftmaxExplorer<Ctx>::typeid)
 			{
 				SoftmaxExplorer<Ctx>^ softmaxExplorer = (SoftmaxExplorer<Ctx>^)explorer;
 				action = m_mwt->Choose_Action(*softmaxExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+			}
+			else if (explorer->GetType() == GenericExplorer<Ctx>::typeid)
+			{
+				GenericExplorer<Ctx>^ genericExplorer = (GenericExplorer<Ctx>^)explorer;
+				action = m_mwt->Choose_Action(*genericExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
 			}
 			else if (explorer->GetType() == BaggingExplorer<Ctx>::typeid)
 			{

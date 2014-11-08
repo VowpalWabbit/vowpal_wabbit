@@ -9,40 +9,6 @@ using namespace std;
 using namespace std::chrono;
 using namespace MultiWorldTesting;
 
-const int NUM_ACTIONS = 10;
-
-u32 Stateful_Default_Policy1(int& parameters, BaseContext& appContext)
-{
-	return parameters % NUM_ACTIONS + 1;
-}
-u32 Stateful_Default_Policy2(int& parameters, BaseContext& appContext)
-{
-	return parameters % NUM_ACTIONS + 2;
-}
-void Stateful_Default_Scorer(int& parameters, BaseContext& appContext, float scores[], u32 size)
-{
-	for (u32 i = 0; i < size; i++)
-	{
-		scores[i] = (float) (parameters + i);
-	}
-}
-
-u32 Stateless_Default_Policy1(BaseContext& appContext)
-{
-	return 99 % NUM_ACTIONS + 1;
-}
-u32 Stateless_Default_Policy2(BaseContext& appContext)
-{
-	return 98 % NUM_ACTIONS + 1;
-}
-void Stateless_Default_Scorer(BaseContext& appContext, float scores[], u32 size)
-{
-	for (u32 i = 0; i < size; i++)
-	{
-		scores[i] = 97 + i;
-	}
-}
-
 class MyContext
 {
 
@@ -111,26 +77,29 @@ int main(int argc, char* argv[])
 	//arguments for individual explorers
 	if (strcmp(argv[1], "greedy") == 0)
 	{
+		int num_actions = 10;
 		float epsilon = .2f;
 		string unique_key = "sample";
 
 		//Initialize Epsilon-Greedy explore algorithm using MyPolicy
 		MWT<MyRecorder> mwt("salt", MyRecorder());
-		EpsilonGreedyExplorer<MyPolicy> explorer(MyPolicy(), epsilon, NUM_ACTIONS);
+		EpsilonGreedyExplorer<MyPolicy> explorer(MyPolicy(), epsilon, num_actions);
 		u32 action = mwt.Choose_Action(explorer, unique_key, MyContext());
 	}
 	else if (strcmp(argv[1], "tau-first") == 0)
 	{
+		int num_actions = 10;
 		u32 tau = 5;
 		string unique_key = "sample";
 
 		//Initialize Tau-First explore algorithm using MyPolicy
 		MWT<MyRecorder> mwt("salt", MyRecorder());
-		TauFirstExplorer<MyPolicy> explorer(MyPolicy(), tau, NUM_ACTIONS);
+		TauFirstExplorer<MyPolicy> explorer(MyPolicy(), tau, num_actions);
 		u32 action = mwt.Choose_Action(explorer, unique_key, MyContext());
 	}
 	else if (strcmp(argv[1], "bagging") == 0)
 	{
+		int num_actions = 10;
 		u32 num_bags = 2;
 		string unique_key = "sample";
 
@@ -141,26 +110,28 @@ int main(int argc, char* argv[])
 		{
 			policy_functions.push_back(MyPolicy());
 		}
-		BaggingExplorer<MyPolicy> explorer(policy_functions, num_bags, NUM_ACTIONS);
+		BaggingExplorer<MyPolicy> explorer(policy_functions, num_bags, num_actions);
 		u32 action = mwt.Choose_Action(explorer, unique_key, MyContext());
 	}
 	else if (strcmp(argv[1], "softmax") == 0)
 	{
+		int num_actions = 10;
 		float lambda = 0.5f;
 		string unique_key = "sample";
 
 		//Initialize Softmax explore algorithm using MyScorer 
 		MWT<MyRecorder> mwt("salt", MyRecorder());
-		SoftmaxExplorer<MyScorer> explorer(MyScorer(NUM_ACTIONS), lambda, NUM_ACTIONS);
+		SoftmaxExplorer<MyScorer> explorer(MyScorer(num_actions), lambda, num_actions);
 		u32 action = mwt.Choose_Action(explorer, unique_key, MyContext());
 	}
 	else if (strcmp(argv[1], "generic") == 0)
 	{
+		int num_actions = 10;
 		string unique_key = "sample";
 
 		//Initialize Generic explore algorithm using MyScorer 
 		MWT<MyRecorder> mwt("salt", MyRecorder());
-		GenericExplorer<MyScorer> explorer(MyScorer(NUM_ACTIONS), NUM_ACTIONS);
+		GenericExplorer<MyScorer> explorer(MyScorer(num_actions), num_actions);
 		u32 action = mwt.Choose_Action(explorer, unique_key, MyContext());
 	}
 	else
