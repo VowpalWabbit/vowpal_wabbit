@@ -66,10 +66,19 @@ namespace cs_test
         }
         class MyPolicy : IPolicy<MyContext>
         {
+            public MyPolicy() : this(-1) { }
+
+            public MyPolicy(int index)
+            {
+                this.index = index;
+            }
+
             public uint ChooseAction(MyContext context)
             {
                 return 5;
             }
+
+            private int index;
         }
 
         class MyScorer : IScorer<MyContext>
@@ -87,7 +96,7 @@ namespace cs_test
 
         public static void Run()
         {
-            string exploration_type = "softmax";
+            string exploration_type = "greedy";
             bool stateful = true;
 
             MwtExplorer mwt = new MwtExplorer("test");
@@ -138,17 +147,17 @@ namespace cs_test
             }
             else if (exploration_type == "bagging")
             {
-                if (stateful)
+                // Initialize Bagging explore algorithm using custom Recorder, Policy & Context types
+                MyRecorder mc = new MyRecorder();
+                MyPolicy[] mps = new MyPolicy[numbags];
+                for (int i = 0; i < numbags; i++)
                 {
-                    /*** Initialize Bagging explore algorithm using a default policy function that accepts parameters ***/
-                    mwt.InitializeBagging<int>(numbags, bags, parameters, numActions);
+                    mps[i] = new MyPolicy(i * 2);
                 }
-                else
-                {
 
-                    /*** Initialize Bagging explore algorithm using a stateless default policy function ***/
-                    mwt.InitializeBagging(numbags, statelessbags, numActions);
-                }
+                MWT<MyContext> mwtt = new MWT<MyContext>("mwt", mc);
+                uint action = mwtt.Choose_Action(new BaggingExplorer<MyContext>(mps, numbags, numActions), "key", new MyContext());
+                return;
             }
             else if (exploration_type == "softmax")
             {

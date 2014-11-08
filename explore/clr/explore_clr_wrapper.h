@@ -20,7 +20,7 @@ namespace MultiWorldTesting {
 		}
 
 	internal:
-		virtual UInt32 InvokePolicyCallback(Ctx context) override
+		virtual UInt32 InvokePolicyCallback(Ctx context, int index) override
 		{
 			return defaultPolicy->ChooseAction(context);
 		}
@@ -67,6 +67,41 @@ namespace MultiWorldTesting {
 	};
 
 	generic <class Ctx>
+	public ref class BaggingExplorer : public IExplorer<Ctx>, public PolicyCallback<Ctx>
+	{
+	public:
+		BaggingExplorer(cli::array<IPolicy<Ctx>^>^ defaultPolicies, UInt32 numBags, UInt32 numActions)
+		{
+			this->defaultPolicies = defaultPolicies;
+			m_explorer = new NativeMultiWorldTesting::BaggingExplorer<NativePolicy>(*GetNativePolicies(numBags), (u32)numBags, (u32)numActions);
+		}
+
+		~BaggingExplorer()
+		{
+			delete m_explorer;
+		}
+
+	internal:
+		virtual UInt32 InvokePolicyCallback(Ctx context, int index) override
+		{
+			if (index < 0 || index >= defaultPolicies->Length)
+			{
+				throw gcnew InvalidDataException("Internal error: Index of interop bag is out of range.");
+			}
+			return defaultPolicies[index]->ChooseAction(context);
+		}
+
+		NativeMultiWorldTesting::BaggingExplorer<NativePolicy>* Get()
+		{
+			return m_explorer;
+		}
+
+	private:
+		cli::array<IPolicy<Ctx>^>^ defaultPolicies;
+		NativeMultiWorldTesting::BaggingExplorer<NativePolicy>* m_explorer;
+	};
+
+	generic <class Ctx>
 	public ref class MWT : public RecorderCallback<Ctx>
 	{
 	public:
@@ -103,6 +138,11 @@ namespace MultiWorldTesting {
 			{
 				SoftmaxExplorer<Ctx>^ softmaxExplorer = (SoftmaxExplorer<Ctx>^)explorer;
 				action = m_mwt->Choose_Action(*softmaxExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+			}
+			else if (explorer->GetType() == BaggingExplorer<Ctx>::typeid)
+			{
+				BaggingExplorer<Ctx>^ baggingExplorer = (BaggingExplorer<Ctx>^)explorer;
+				action = m_mwt->Choose_Action(*baggingExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
 			}
 
 			explorerHandle.Free();

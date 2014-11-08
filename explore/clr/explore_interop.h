@@ -18,8 +18,8 @@ using namespace msclr::interop;
 namespace MultiWorldTesting {
 
 // Policy callback
-private delegate UInt32 ClrPolicyCallback(IntPtr explorerPtr, IntPtr contextPtr);
-typedef u32 Native_Policy_Callback(void* explorer, void* context);
+private delegate UInt32 ClrPolicyCallback(IntPtr explorerPtr, IntPtr contextPtr, int index);
+typedef u32 Native_Policy_Callback(void* explorer, void* context, int index);
 
 // Scorer callback
 private delegate void ClrScorerCallback(IntPtr explorerPtr, IntPtr contextPtr, IntPtr scores, IntPtr size);
@@ -88,18 +88,20 @@ private:
 class NativePolicy : public NativeMultiWorldTesting::IPolicy<NativeContext>
 {
 public:
-	NativePolicy(Native_Policy_Callback* func)
+	NativePolicy(Native_Policy_Callback* func, int index = -1)
 	{
 		m_func = func;
+		m_index = index;
 	}
 
 	u32 Choose_Action(NativeContext& context)
 	{
-		return m_func(context.Get_Clr_Explorer(), context.Get_Clr_Context());
+		return m_func(context.Get_Clr_Explorer(), context.Get_Clr_Context(), m_index);
 	}
 
 private:
 	Native_Policy_Callback* m_func;
+	int m_index;
 };
 
 class NativeScorer : public NativeMultiWorldTesting::IScorer<NativeContext>
@@ -117,7 +119,10 @@ public:
 		m_func(context.Get_Clr_Explorer(), context.Get_Clr_Context(), &scores, &num_scores);
 
 		// It's ok if scores is null, vector will be empty
-		return vector<float>(scores, scores + num_scores);
+		vector<float> scores_vector(scores, scores + num_scores);
+		delete[] scores;
+
+		return scores_vector;
 	}
 private:
 	Native_Scorer_Callback* m_func;
@@ -128,27 +133,47 @@ generic <class Ctx>
 public ref class PolicyCallback
 {
 internal:
-	virtual UInt32 InvokePolicyCallback(Ctx context) = 0;
+	virtual UInt32 InvokePolicyCallback(Ctx context, int index) = 0;
 
 	PolicyCallback()
 	{
 		ClrPolicyCallback^ policyCallback = gcnew ClrPolicyCallback(&PolicyCallback<Ctx>::InteropInvoke);
 		IntPtr policyCallbackPtr = Marshal::GetFunctionPointerForDelegate(policyCallback);
-		Native_Policy_Callback* callback = static_cast<Native_Policy_Callback*>(policyCallbackPtr.ToPointer());
-		m_native_policy = new NativePolicy(callback);
+		m_callback = static_cast<Native_Policy_Callback*>(policyCallbackPtr.ToPointer());
+		m_native_policy = nullptr;
+		m_native_policies = nullptr;
 	}
 
 	~PolicyCallback()
 	{
 		delete m_native_policy;
+		delete m_native_policies;
 	}
 
 	NativePolicy* GetNativePolicy()
 	{
+		if (m_native_policy == nullptr)
+		{
+			m_native_policy = new NativePolicy(m_callback);
+		}
 		return m_native_policy;
 	}
 
-	static UInt32 InteropInvoke(IntPtr callbackPtr, IntPtr contextPtr)
+	vector<NativePolicy>* GetNativePolicies(int count)
+	{
+		if (m_native_policies == nullptr)
+		{
+			m_native_policies = new vector<NativePolicy>();
+			for (int i = 0; i < count; i++)
+			{
+				m_native_policies->push_back(NativePolicy(m_callback, i));
+			}
+		}
+
+		return m_native_policies;
+	}
+
+	static UInt32 InteropInvoke(IntPtr callbackPtr, IntPtr contextPtr, int index)
 	{
 		GCHandle callbackHandle = (GCHandle)callbackPtr;
 		PolicyCallback<Ctx>^ callback = (PolicyCallback<Ctx>^)callbackHandle.Target;
@@ -156,11 +181,13 @@ internal:
 		GCHandle contextHandle = (GCHandle)contextPtr;
 		Ctx context = (Ctx)contextHandle.Target;
 
-		return callback->InvokePolicyCallback(context);
+		return callback->InvokePolicyCallback(context, index);
 	}
 
 private:
 	NativePolicy* m_native_policy;
+	vector<NativePolicy>* m_native_policies;
+	Native_Policy_Callback* m_callback;
 };
 
 // Triggers callback to the Recorder instance to record interaction data
