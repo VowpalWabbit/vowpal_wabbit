@@ -2,6 +2,7 @@
 
 #define MANAGED_CODE
 
+#include "explore_interface.h"
 #include "MWTExplorer.h"
 #include "MWTRewardReporter.h"
 #include "MWTOptimizer.h"
@@ -28,6 +29,10 @@ typedef void Native_Scorer_Callback(void* explorer, void* context, float* scores
 // Recorder callback
 private delegate void ClrRecorderCallback(IntPtr mwtPtr, IntPtr contextPtr, UInt32 action, float probability, IntPtr uniqueKey);
 typedef void Native_Recorder_Callback(void* mwt, void* context, u32 action, float probability, void* unique_key);
+
+// ToString callback
+private delegate void ClrToStringCallback(IntPtr contextPtr, IntPtr stringValue);
+typedef void Native_To_String_Callback(void* explorer, void* string_value);
 
 // NativeContext travels through interop space and contains instances of Mwt, Explorer, Context
 // used for triggering callback for Policy, Scorer, Recorder
@@ -60,6 +65,26 @@ private:
 	void* m_clr_mwt;
 	void* m_clr_context;
 	void* m_clr_explorer;
+};
+
+class NativeStringContext
+{
+public:
+	NativeStringContext(void* clr_context, Native_To_String_Callback* func)
+	{
+		m_clr_context = clr_context;
+		m_func = func;
+	}
+
+	string To_String()
+	{
+		string value;
+		m_func(m_clr_context, &value);
+		return value;
+	}
+private:
+	void* m_clr_context;
+	Native_To_String_Callback* m_func;
 };
 
 // NativeRecorder listens to callback event and reroute it to the managed Recorder instance
@@ -288,6 +313,36 @@ internal:
 
 private:
 	NativeScorer* m_native_scorer;
+};
+
+// Triggers callback to the Context instance to perform ToString() operation
+generic <class Ctx> where Ctx : IStringContext
+public ref class ToStringCallback
+{
+internal:
+	ToStringCallback()
+	{
+		ClrToStringCallback^ toStringCallback = gcnew ClrToStringCallback(&ToStringCallback<Ctx>::InteropInvoke);
+		IntPtr toStringCallbackPtr = Marshal::GetFunctionPointerForDelegate(toStringCallback);
+		m_callback = static_cast<Native_To_String_Callback*>(toStringCallbackPtr.ToPointer());
+	}
+
+	Native_To_String_Callback* GetCallback()
+	{
+		return m_callback;
+	}
+
+	static void InteropInvoke(IntPtr contextPtr, IntPtr stringPtr)
+	{
+		GCHandle contextHandle = (GCHandle)contextPtr;
+		Ctx context = (Ctx)contextHandle.Target;
+
+		string* out_string = (string*)stringPtr.ToPointer();
+		*out_string = marshal_as<string>(context->ToString());
+	}
+
+private:
+	Native_To_String_Callback* m_callback;
 };
 
 }

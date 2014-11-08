@@ -1,6 +1,5 @@
 #pragma once
 #include "explore_interop.h"
-#include "explore_interface.h"
 
 namespace MultiWorldTesting {
 
@@ -240,6 +239,76 @@ namespace MultiWorldTesting {
 	{
 		float Value;
 		UInt32 Id;
+	};
+
+	generic <class Ctx> where Ctx : IStringContext
+	public ref class StringRecorder : public IRecorder<Ctx>, public ToStringCallback<Ctx>
+	{
+	public:
+		StringRecorder()
+		{
+			m_string_recorder = new NativeMultiWorldTesting::StringRecorder<NativeStringContext>();
+		}
+
+		~StringRecorder()
+		{
+			delete m_string_recorder;
+		}
+
+		virtual void Record(Ctx context, UInt32 action, float probability, String^ uniqueKey) override
+		{
+			GCHandle contextHandle = GCHandle::Alloc(context);
+			IntPtr contextPtr = (IntPtr)contextHandle;
+
+			NativeStringContext native_context(contextPtr.ToPointer(), GetCallback());
+			m_string_recorder->Record(native_context, (u32)action, probability, marshal_as<string>(uniqueKey));
+		}
+
+		String^ GetRecording()
+		{
+			return gcnew String(m_string_recorder->Get_Recording().c_str());
+		}
+
+	private:
+		NativeMultiWorldTesting::StringRecorder<NativeStringContext>* m_string_recorder;
+	};
+
+	public ref class SimpleContext : public IStringContext
+	{
+	public:
+		SimpleContext(cli::array<Feature>^ features)
+		{
+			Features = features;
+
+			// TODO: add another constructor overload for native SimpleContext to avoid copying feature values
+			m_features = new vector<NativeMultiWorldTesting::Feature>();
+			for (int i = 0; i < features->Length; i++)
+			{
+				m_features->push_back({ features[i].Value, features[i].Id });
+			}
+
+			m_native_context = new NativeMultiWorldTesting::SimpleContext(*m_features);
+		}
+
+		String^ ToString() override
+		{
+			return gcnew String(m_native_context->To_String().c_str());
+		}
+
+		~SimpleContext()
+		{
+			delete m_native_context;
+		}
+
+	public:
+		cli::array<Feature>^ GetFeatures() { return Features; }
+
+	internal:
+		cli::array<Feature>^ Features;
+
+	private:
+		vector<NativeMultiWorldTesting::Feature>* m_features;
+		NativeMultiWorldTesting::SimpleContext* m_native_context;
 	};
 
 	public ref class BaseContext

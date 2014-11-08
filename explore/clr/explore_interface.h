@@ -31,4 +31,10 @@ public interface class IExplorer
 {
 };
 
+public interface class IStringContext
+{
+public:
+	virtual String^ ToString() = 0;
+};
+
 }
