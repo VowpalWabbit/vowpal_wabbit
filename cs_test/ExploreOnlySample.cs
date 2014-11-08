@@ -55,13 +55,32 @@ namespace cs_test
             public int Value2;
         }
 
-        public static void Run(string exploration_type, bool stateful)
+        class MyContext { }
+        class MyRecorder : IRecorder<MyContext>
         {
+            public void Record(MyContext context, UInt32 action, float probability, string uniqueKey)
+            {
+                actions.Add(action);
+            }
+            private List<uint> actions = new List<uint>();
+        }
+        class MyPolicy : IPolicy<MyContext>
+        {
+            public uint Choose_Action(MyContext context)
+            {
+                return 5;
+            }
+        }
+
+        public static void Run()
+        {
+            string exploration_type = "greedy";
+            bool stateful = true;
 
             MwtExplorer mwt = new MwtExplorer("test");
 
             uint numActions = 10;
-            
+
             float epsilon = 0.2f;
             uint tau = 0;
             uint numbags = 2;
@@ -69,7 +88,7 @@ namespace cs_test
 
             int policyParams = 1003;
             int policyParams2 = 1004;
-            CustomParams customParams = new CustomParams() { Value1 = policyParams, Value2 = policyParams2};
+            CustomParams customParams = new CustomParams() { Value1 = policyParams, Value2 = policyParams2 };
             StatefulPolicyDelegate<int>[] bags = 
             {
                   new StatefulPolicyDelegate<int>(SampleStatefulPolicyFunc), 
@@ -84,17 +103,13 @@ namespace cs_test
 
             if (exploration_type == "greedy")
             {
-                if (stateful)
-                {
-                    /*** Initialize Epsilon-Greedy explore algorithm using a default policy function that accepts parameters ***/
-                    mwt.InitializeEpsilonGreedy<int>(epsilon, new StatefulPolicyDelegate<int>(SampleStatefulPolicyFunc), policyParams, numActions);
-                }
-                else
-                {
-                    /*** Initialize Epsilon-Greedy explore algorithm using a stateless default policy function ***/
-                    mwt.InitializeEpsilonGreedy(epsilon, new StatelessPolicyDelegate(SampleStatelessPolicyFunc), numActions);
-                }
-            } else if(exploration_type == "tau-first")
+                MyRecorder mc = new MyRecorder();
+                MyPolicy mp = new MyPolicy();
+                MWT<MyContext> mwtt = new MWT<MyContext>("mwt", mc);
+                mwtt.Choose_Action(new EpsilonGreedyExplorer<MyContext>(mp, epsilon, numActions), "key", new MyContext());
+                return;
+            }
+            else if (exploration_type == "tau-first")
             {
                 if (stateful)
                 {
@@ -106,7 +121,9 @@ namespace cs_test
                     /*** Initialize Tau-First explore algorithm using a stateless default policy function ***/
                     mwt.InitializeTauFirst(tau, new StatelessPolicyDelegate(SampleStatelessPolicyFunc), numActions);
                 }
-            } else if (exploration_type == "bagging") {
+            }
+            else if (exploration_type == "bagging")
+            {
                 if (stateful)
                 {
                     /*** Initialize Bagging explore algorithm using a default policy function that accepts parameters ***/
@@ -118,7 +135,9 @@ namespace cs_test
                     /*** Initialize Bagging explore algorithm using a stateless default policy function ***/
                     mwt.InitializeBagging(numbags, statelessbags, numActions);
                 }
-            } else if (exploration_type == "softmax") {
+            }
+            else if (exploration_type == "softmax")
+            {
                 if (stateful)
                 {
                     /*** Initialize Softmax explore algorithm using a default policy function that accepts parameters ***/
@@ -129,7 +148,8 @@ namespace cs_test
                     /*** Initialize Softmax explore algorithm using a stateless default policy function ***/
                     mwt.InitializeSoftmax(lambda, new StatelessScorerDelegate(SampleStatelessScorerFunc), numActions);
                 }
-            } else if (exploration_type == "generic")
+            }
+            else if (exploration_type == "generic")
             {
                 if (stateful)
                 {

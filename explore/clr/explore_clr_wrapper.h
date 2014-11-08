@@ -1,20 +1,91 @@
 #pragma once
-
-#define MANAGED_CODE
-
-#include "MWTExplorer.h"
-#include "MWTRewardReporter.h"
-#include "MWTOptimizer.h"
-
-#include <msclr\marshal_cppstd.h>
-
-using namespace System;
-using namespace System::Collections::Generic;
-using namespace System::IO;
-using namespace System::Runtime::InteropServices;
-using namespace System::Xml::Serialization;
+#include "explore_interop.h"
+#include "explore_interface.h"
 
 namespace MultiWorldTesting {
+
+	generic <class Ctx>
+	public ref class EpsilonGreedyExplorer : public IExplorer<Ctx>, public PolicyCallback<Ctx>
+	{
+	public:
+		EpsilonGreedyExplorer(IPolicy<Ctx>^ defaultPolicy, float epsilon, UInt32 numActions)
+		{
+			this->defaultPolicy = defaultPolicy;
+			m_explorer = new NativeMultiWorldTesting::EpsilonGreedyExplorer<NativePolicy>(*GetNativePolicy(), epsilon, (u32)numActions);
+		}
+
+		~EpsilonGreedyExplorer()
+		{
+			delete m_explorer;
+		}
+
+	internal:
+		virtual UInt32 InvokePolicyCallback(Ctx context) override
+		{
+			return defaultPolicy->Choose_Action(context);
+		}
+
+		NativeMultiWorldTesting::EpsilonGreedyExplorer<NativePolicy>* Get()
+		{
+			return m_explorer;
+		}
+
+	private:
+		IPolicy<Ctx>^ defaultPolicy;
+		NativeMultiWorldTesting::EpsilonGreedyExplorer<NativePolicy>* m_explorer;
+	};
+
+	generic <class Ctx>
+	public ref class MWT : public RecorderCallback<Ctx>
+	{
+	public:
+		MWT(String^ appId, IRecorder<Ctx>^ recorder)
+		{
+			this->recorder = recorder;
+			m_mwt = new NativeMultiWorldTesting::MWT<NativeRecorder>(marshal_as<std::string>(appId), *GetNativeRecorder());
+		}
+
+		~MWT()
+		{
+			delete m_mwt;
+		}
+
+		UInt32 Choose_Action(IExplorer<Ctx>^ explorer, String^ unique_key, Ctx context)
+		{
+			GCHandle selfHandle = GCHandle::Alloc(this);
+			IntPtr selfPtr = (IntPtr)selfHandle;
+
+			GCHandle contextHandle = GCHandle::Alloc(context);
+			IntPtr contextPtr = (IntPtr)contextHandle;
+
+			GCHandle explorerHandle = GCHandle::Alloc(explorer);
+			IntPtr explorerPtr = (IntPtr)explorerHandle;
+
+			NativeContext native_context(selfPtr.ToPointer(), explorerPtr.ToPointer(), contextPtr.ToPointer());
+			u32 action = 0;
+			if (explorer->GetType() == EpsilonGreedyExplorer<Ctx>::typeid)
+			{
+				EpsilonGreedyExplorer<Ctx>^ epsilonGreedyExplorer = (EpsilonGreedyExplorer<Ctx>^)explorer;
+				action = m_mwt->Choose_Action(*epsilonGreedyExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+			}
+
+			explorerHandle.Free();
+			contextHandle.Free();
+			selfHandle.Free();
+
+			return action;
+		}
+
+	internal:
+		virtual void InvokeRecorderCallback(Ctx context, UInt32 action, float probability, String^ unique_key) override
+		{
+			recorder->Record(context, action, probability, unique_key);
+		}
+
+	private:
+		IRecorder<Ctx>^ recorder;
+		NativeMultiWorldTesting::MWT<NativeRecorder>* m_mwt;
+	};
 
 	[StructLayout(LayoutKind::Sequential)]
 	public value struct Feature
