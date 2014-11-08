@@ -437,16 +437,14 @@ public:
 		{
 			actions_selected.push_back(0);
 		}
+
+		// Invoke the default policy function to get the action
+		static_assert(std::is_base_of<IPolicy<Ctx>, Plc>::value, "The specified policy does not implement IPolicy");
+
 		for (u32 current_bag = 0; current_bag < m_bags; current_bag++)
 		{
-			if (m_stateless_default_policy_funcs != nullptr)
-			{
-				action_from_bag = MWTAction(m_stateless_default_policy_funcs[current_bag](context));
-			}
-			else
-			{
-				action_from_bag = MWTAction(m_stateful_default_policy_funcs[current_bag](m_default_policy_params[current_bag], context));
-			}
+			IPolicy<Ctx>* policy = (IPolicy<Ctx>*)&m_default_policy_functions[current_bag];
+			action_from_bag = MWTAction(policy->Choose_Action(context));
 
 			if (action_from_bag.Get_Id() == 0 || action_from_bag.Get_Id() > actions.Count())
 			{
