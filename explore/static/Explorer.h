@@ -33,6 +33,13 @@ public:
 	virtual u32 Choose_Action(Ctx& context) = 0;
 };
 
+template <class Ctx>
+class IScorer
+{
+public:
+	virtual vector<float> Score_Actions(Ctx& context) = 0;
+};
+
 class Explorer
 {
 public:
@@ -184,6 +191,164 @@ private:
 	friend class MWT;
 };
 
+template <class Scr>
+class SoftmaxExplorer
+{
+public:
+	SoftmaxExplorer(Scr& default_scorer, float lambda, u32 num_actions) :
+		m_default_scorer(default_scorer), m_lambda(lambda), m_num_actions(num_actions)
+	{
+	}
+
+private:
+	template <class Ctx>
+	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
+	{
+		ActionSet actions;
+		actions.Set_Count(m_num_actions);
+		PRG::prg random_generator(salted_seed);
+
+		// Invoke the default scorer function
+		static_assert(std::is_base_of<IScorer<Ctx>, Scr>::value, "The specified scorer does not implement IScorer");
+		IScorer<Ctx>* scorer = (IScorer<Ctx>*)&m_default_scorer;
+
+		vector<float> scores = scorer->Score_Actions(context);
+		u32 num_scores = (u32)scores.size();
+		if (num_scores != m_num_actions)
+		{
+			throw std::invalid_argument("The number of scores returned by the scorer must equal number of actions");
+		}
+
+		MWTAction chosen_action(0);
+
+		u32 i = 0;
+
+		float max_score = -FLT_MAX;
+		for (i = 0; i < num_scores; i++)
+		{
+			if (max_score < scores[i])
+			{
+				max_score = scores[i];
+			}
+		}
+
+		// Create a normalized exponential distribution based on the returned scores
+		for (i = 0; i < num_scores; i++)
+		{
+			scores[i] = exp(m_lambda * (scores[i] - max_score));
+		}
+
+		// Create a discrete_distribution based on the returned weights. This class handles the
+		// case where the sum of the weights is < or > 1, by normalizing agains the sum.
+		float total = 0.f;
+		for (size_t i = 0; i < num_scores; i++)
+			total += scores[i];
+
+		float draw = random_generator.Uniform_Unit_Interval();
+
+		float sum = 0.f;
+		float action_probability = 0.f;
+		u32 action_index = num_scores - 1;
+		for (u32 i = 0; i < num_scores; i++)
+		{
+			scores[i] = scores[i] / total;
+			sum += scores[i];
+			if (sum > draw)
+			{
+				action_index = i;
+				action_probability = scores[i];
+				break;
+			}
+		}
+
+		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), action_probability, true);
+	}
+
+private:
+	Scr& m_default_scorer;
+	float m_lambda;
+	u32 m_num_actions;
+
+private:
+	template <class Rec>
+	friend class MWT;
+};
+
+template <class Scr>
+class GenericExplorer
+{
+public:
+	GenericExplorer(Scr& default_scorer, u32 num_actions) : 
+		m_default_scorer(default_scorer), m_num_actions(num_actions)
+	{
+	}
+
+private:
+	template <class Ctx>
+	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
+	{
+		ActionSet actions;
+		actions.Set_Count(m_num_actions);
+		PRG::prg random_generator(salted_seed);
+
+		// Invoke the default scorer function
+		static_assert(std::is_base_of<IScorer<Ctx>, Scr>::value, "The specified scorer does not implement IScorer");
+		IScorer<Ctx>* scorer = (IScorer<Ctx>*)&m_default_scorer;
+
+		vector<float> weights = scorer->Score_Actions(context);
+		u32 num_weights = (u32)weights.size();
+		if (num_weights != m_num_actions)
+		{
+			throw std::invalid_argument("The number of weights returned by the scorer must equal number of actions");
+		}
+
+		MWTAction chosen_action(0);
+
+		// Create a discrete_distribution based on the returned weights. This class handles the
+		// case where the sum of the weights is < or > 1, by normalizing agains the sum.
+		float total = 0.f;
+		for (size_t i = 0; i < num_weights; i++)
+		{
+			if (weights[i] < 0)
+			{
+				throw std::invalid_argument("Scores must be non-negative.");
+			}
+			total += weights[i];
+		}
+		if (total == 0)
+		{
+			throw std::invalid_argument("At least one score must be positive.");
+		}
+
+		float draw = random_generator.Uniform_Unit_Interval();
+
+		float sum = 0.f;
+		float action_probability = 0.f;
+		u32 action_index = num_weights - 1;
+		for (u32 i = 0; i < num_weights; i++)
+		{
+			weights[i] = weights[i] / total;
+			sum += weights[i];
+			if (sum > draw)
+			{
+				action_index = i;
+				action_probability = weights[i];
+				break;
+			}
+		}
+
+		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), action_probability, true);
+	}
+
+private:
+	Scr& m_default_scorer;
+	u32 m_num_actions;
+
+private:
+	template <class Rec>
+	friend class MWT;
+};
+
 class OldEpsilonGreedyExplorer : public Explorer
 {
 public:
@@ -275,10 +440,10 @@ private:
 };
 
 
-class SoftmaxExplorer : public Explorer
+class OldSoftmaxExplorer : public Explorer
 {
 public:
-	SoftmaxExplorer(
+	OldSoftmaxExplorer(
 		float lambda,
 		Stateful_Scorer_Func* default_scorer_func,
 		void* default_scorer_params,
@@ -291,7 +456,7 @@ public:
 	{
 	}
 
-	SoftmaxExplorer(
+	OldSoftmaxExplorer(
 		float lambda,
 		Stateless_Scorer_Func* default_scorer_func,
 		u64 salt) :
@@ -372,10 +537,10 @@ private:
 };
 
 
-class GenericExplorer : public Explorer
+class OldGenericExplorer : public Explorer
 {
 public:
-	GenericExplorer(
+	OldGenericExplorer(
 		Stateful_Scorer_Func* default_scorer_func, 
 		void* default_scorer_params,
 		u64 salt) :
@@ -386,7 +551,7 @@ public:
 	{
 	}
 
-	GenericExplorer(
+	OldGenericExplorer(
 		Stateless_Scorer_Func* default_scorer_func,
 		u64 salt) :
 		m_salt(salt),

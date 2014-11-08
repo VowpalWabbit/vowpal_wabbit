@@ -264,7 +264,7 @@ PORTING_INTERFACE:
 		Validate_Explorer_Empty();
 		
 		m_action_set.Set_Count(num_actions);
-		m_explorer.reset(new SoftmaxExplorer(lambda, default_scorer_func, default_scorer_func_argument, m_app_id));
+		m_explorer.reset(new OldSoftmaxExplorer(lambda, default_scorer_func, default_scorer_func_argument, m_app_id));
 	}
 
 	void Internal_Initialize_Softmax(
@@ -277,7 +277,7 @@ PORTING_INTERFACE:
 		Validate_Explorer_Empty();
 		
 		m_action_set.Set_Count(num_actions);
-		m_explorer.reset(new SoftmaxExplorer(lambda, default_scorer_func, m_app_id));
+		m_explorer.reset(new OldSoftmaxExplorer(lambda, default_scorer_func, m_app_id));
 	}
 
 	void Internal_Initialize_Generic(
@@ -290,7 +290,7 @@ PORTING_INTERFACE:
 		Validate_Explorer_Empty();
 		
 		m_action_set.Set_Count(num_actions);
-		m_explorer.reset(new GenericExplorer(default_scorer_func, default_scorer_func_argument, m_app_id));
+		m_explorer.reset(new OldGenericExplorer(default_scorer_func, default_scorer_func_argument, m_app_id));
 	}
 
 	void Internal_Initialize_Generic(
@@ -302,7 +302,7 @@ PORTING_INTERFACE:
 		Validate_Explorer_Empty();
 		
 		m_action_set.Set_Count(num_actions);
-		m_explorer.reset(new GenericExplorer(default_scorer_func, m_app_id));
+		m_explorer.reset(new OldGenericExplorer(default_scorer_func, m_app_id));
 	}
 	
 	u32 Internal_Choose_Action(BaseContext& context, std::string unique_id)

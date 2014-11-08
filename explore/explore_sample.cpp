@@ -51,11 +51,30 @@ class MyContext
 class MyPolicy : public IPolicy<MyContext>
 {
 public:
-	MyPolicy() { }
 	u32 Choose_Action(MyContext& context)
 	{
 		return (u32)1;
 	}
+};
+
+class MyScorer : public IScorer<MyContext>
+{
+public:
+	MyScorer(u32 num_actions) : m_num_actions(num_actions)
+	{
+	
+	}
+	vector<float> Score_Actions(MyContext& context)
+	{
+		vector<float> scores;
+		for (size_t i = 0; i < m_num_actions; i++)
+		{
+			scores.push_back(.1f);
+		}
+		return scores;
+	}
+private:
+	u32 m_num_actions;
 };
 
 class MyRecorder : public IRecorder<MyContext>
@@ -71,7 +90,7 @@ int main(int argc, char* argv[])
 {
 	if (argc < 2)
 	  {
-	    cerr << "arguments: {greedy,tau-first,bagging,softmax} [stateful]" << endl;
+	    cerr << "arguments: {greedy,tau-first,bagging,softmax,generic} [stateful]" << endl;
 	    exit(1);
 	  }
 	
@@ -130,12 +149,27 @@ int main(int argc, char* argv[])
 	  }
 	else if (strcmp(argv[1],"softmax") == 0)
 	  {
-	    float lambda = 0.5f;
-	    if (stateful) //Initialize Softmax explore algorithm using a default scorer function that accepts parameters
-	      mwt.Initialize_Softmax<int>(lambda, Stateful_Default_Scorer, policy_params, NUM_ACTIONS);
-	    else 	    // Initialize Softmax explore algorithm using a stateless default scorer function 
-	      mwt.Initialize_Softmax(lambda, Stateless_Default_Scorer, NUM_ACTIONS);
+		float lambda = 0.5f;
+		string unique_key = "sample";
+
+		//Initialize Softmax explore algorithm using MyScorer 
+		MWT<MyRecorder> mwt("salt", MyRecorder());
+		SoftmaxExplorer<MyScorer> explorer(MyScorer(NUM_ACTIONS), lambda, NUM_ACTIONS);
+		u32 action = mwt.Choose_Action(explorer, unique_key, MyContext());
+
+		return 0;
 	  }
+	else if (strcmp(argv[1], "generic") == 0)
+	{
+		string unique_key = "sample";
+
+		//Initialize Generic explore algorithm using MyScorer 
+		MWT<MyRecorder> mwt("salt", MyRecorder());
+		GenericExplorer<MyScorer> explorer(MyScorer(NUM_ACTIONS), NUM_ACTIONS);
+		u32 action = mwt.Choose_Action(explorer, unique_key, MyContext());
+
+		return 0;
+	}
 	else
 	  {
 	    cerr << "unknown exploration type: " << argv[1] << endl;
