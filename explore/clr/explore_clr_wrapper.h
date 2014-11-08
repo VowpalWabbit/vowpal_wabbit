@@ -22,7 +22,7 @@ namespace MultiWorldTesting {
 	internal:
 		virtual UInt32 InvokePolicyCallback(Ctx context) override
 		{
-			return defaultPolicy->Choose_Action(context);
+			return defaultPolicy->ChooseAction(context);
 		}
 
 		NativeMultiWorldTesting::EpsilonGreedyExplorer<NativePolicy>* Get()

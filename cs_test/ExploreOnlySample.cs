@@ -66,7 +66,7 @@ namespace cs_test
         }
         class MyPolicy : IPolicy<MyContext>
         {
-            public uint Choose_Action(MyContext context)
+            public uint ChooseAction(MyContext context)
             {
                 return 5;
             }
