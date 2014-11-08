@@ -19,18 +19,19 @@ using namespace std;
 
 namespace Beam {
 
-struct beam_element {
+template <class T> struct beam_element {
   uint32_t hash;   // a cached hash value -- if a ~= b then h(a) must== h(b)
   float    cost;   // cost of this element
-  void*    data;   // pointer to element data -- rarely accessed!
+  T*       data;   // pointer to element data -- rarely accessed!
   bool     active; // is this currently active
   //  bool     recombined;                 // if we're not the BEST then we've been recombined
-  //  v_array<void*> * recomb_friends;   // if we're the BEST (among ~= elements), then recomb_friends is everything that's equivalent to us but worse... NOT USED if we're not doing k-best predictions
+  //  v_array<T*> * recomb_friends;   // if we're the BEST (among ~= elements), then recomb_friends is everything that's equivalent to us but worse... NOT USED if we're not doing k-best predictions
 };
 
-inline int compare_on_cost(const void *void_a, const void *void_b) {
-  const beam_element *a = (const beam_element*) void_a;
-  const beam_element *b = (const beam_element*) void_b;
+template<class T> inline int compare_on_cost(const void *void_a, const void *void_b) {
+  if (void_a == void_b) return 0;
+  const beam_element<T> *a = (const beam_element<T>*) void_a;
+  const beam_element<T> *b = (const beam_element<T>*) void_b;
   if      ( a->active && !b->active) return -1;   // active things come before inactive things
   else if (!a->active &&  b->active) return  1;
   else if (!a->active && !b->active) return  0;
@@ -39,9 +40,10 @@ inline int compare_on_cost(const void *void_a, const void *void_b) {
   else return 0;
 }
 
-inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
-  const beam_element *a = (const beam_element*) void_a;
-  const beam_element *b = (const beam_element*) void_b;
+template<class T> inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
+  if (void_a == void_b) return 0;
+  const beam_element<T> *a = (const beam_element<T>*) void_a;
+  const beam_element<T> *b = (const beam_element<T>*) void_b;
   if      ( a->active && !b->active) return -1;   // active things come before inactive things
   else if (!a->active &&  b->active) return  1;
   else if (!a->active && !b->active) return  0;
@@ -52,7 +54,7 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
   else return 0;
 }
 
-class beam {
+ template<class T> class beam {
  private:
   size_t beam_size;   // the beam size -- how many active elements can we have
   size_t count;       // how many elements do we have currently -- should be == to A.size()
@@ -60,17 +62,17 @@ class beam {
   float  worst_cost;  // what is the cost of the worst (highest cost) item in the beam
   float  best_cost;   // what is the cost of the best (lowest cost) item in the beam
   float  prune_if_gt; // prune any element with cost greater than this
-  void*  best_cost_data;  // easy access to best-cost item
+  T*     best_cost_data;  // easy access to best-cost item
   bool   do_kbest;
-  v_array<beam_element> A; // the actual data
-  //  v_array<v_array<beam_element*>> recomb_buckets;
+  v_array< beam_element<T> > A; // the actual data
+  //  v_array<v_array<beam_element<T>*>> recomb_buckets;
 
   //  static size_t NUM_RECOMB_BUCKETS = 10231;
   
-  bool (*is_equivalent)(void*,void*);  // test if two items are equivalent; NULL means don't do hypothesis recombination
+  bool (*is_equivalent)(T*,T*);  // test if two items are equivalent; NULL means don't do hypothesis recombination
   
  public:
-  beam(size_t beam_size, float prune_coeff=FLT_MAX, bool (*test_equiv)(void*,void*)=NULL, bool kbest=false)
+  beam(size_t beam_size, float prune_coeff=FLT_MAX, bool (*test_equiv)(T*,T*)=NULL, bool kbest=false)
       : beam_size(beam_size)
       , pruning_coefficient(prune_coeff)
       , do_kbest(kbest)
@@ -88,7 +90,7 @@ class beam {
     if (beam_size == 1) do_kbest = false;  // automatically turn of kbest
   }
 
-  bool insert(void*data, float cost, uint32_t hash) { // returns TRUE iff element was actually added
+  bool insert(T*data, float cost, uint32_t hash) { // returns TRUE iff element was actually added
     bool should_add = false;
 
     if (count < beam_size) should_add = true;
@@ -108,7 +110,7 @@ class beam {
     //     if (cost >= recomb_buckets[i][equiv_pos].cost) {
     //       // we are more expensive, so ignore
     //       we_were_worse = true;
-    //       beam_element * be = new beam_element;
+    //       beam_element<T> * be = new beam_element<T>;
     //       be->hash = hash; be->cost = cost; be->data = data; be->active = true; be->recombined = false; be->recomb_friends = NULL;
     //       add_recomb_friend(recomb_buckets[i][equiv_pos], be);
     //   }
@@ -136,7 +138,7 @@ class beam {
       // A[worst_idx].recomb_friends = NULL;  // TODO: free it if it isn't NULL
       worst_cost = cost;
     } else {
-      beam_element be;
+      beam_element<T> be;
       be.hash = hash;
       be.cost = cost;
       be.data = data;
@@ -161,7 +163,7 @@ class beam {
   }
 
   void do_recombination() {
-    qsort(A.begin, A.size(), sizeof(beam_element), compare_on_hash_then_cost);
+    qsort(A.begin, A.size(), sizeof(beam_element<T>), compare_on_hash_then_cost);
     size_t start = 0;
     while (start < A.size() - 1) {
       size_t end = start+1;
@@ -187,9 +189,9 @@ class beam {
     }
   }
   
-  void compact(void (*free_data)(void*)=NULL) {
+  void compact(void (*free_data)(T*)=NULL) {
     if (is_equivalent) do_recombination();
-    qsort(A.begin, A.size(), sizeof(beam_element), compare_on_cost); // TODO: quick select
+    qsort(A.begin, A.size(), sizeof(beam_element<T>), compare_on_cost); // TODO: quick select
 
     if (count <= beam_size) return;
 
@@ -198,7 +200,7 @@ class beam {
       while ((count > 1) && !A[count-1].active) count--;
 
     if (free_data)
-      for (beam_element * be = A.begin+count; be != A.end; ++be)
+      for (beam_element<T> * be = A.begin+count; be != A.end; ++be)
         free_data(be->data);
 
     A.end = A.begin + count;
@@ -209,14 +211,14 @@ class beam {
     best_cost_data = A[0].data;
   }
 
-  void maybe_compact(void (*free_data)(void*)=NULL) {
+  void maybe_compact(void (*free_data)(T*)=NULL) {
     if (count >= beam_size * 10)
       compact(free_data);
   }
 
-  void erase(void (*free_data)(void*)=NULL) {
+  void erase(void (*free_data)(T*)=NULL) {
     if (free_data)
-      for (beam_element * be = A.begin; be != A.end; ++be)
+      for (beam_element<T> * be = A.begin; be != A.end; ++be)
         free_data(be->data);
     A.erase();
     count = 0;
@@ -231,20 +233,20 @@ class beam {
     A.delete_v();
   }
   
-  beam_element * begin() { return A.begin; }
-  beam_element * end()   { return A.end; }
+  beam_element<T> * begin() { return A.begin; }
+  beam_element<T> * end()   { return A.end; }
   size_t         size()  { return count; }
   bool           empty() { return A.empty(); }
 
  private:
-  // void add_recomb_friend(beam_element *better, beam_element *worse) {
+  // void add_recomb_friend(beam_element<T> *better, beam_element<T> *worse) {
   //   assert( better->cost <= worse->cost );
   //   if (better->recomb_friends == NULL) {
   //     if (worse->recomb_friends != NULL) {
   //       better->recomb_friends = worse->recomb_friends;
   //       worse->recomb_friends = NULL;
   //     } else
-  //       better->recomb_friends = new vector<beam_element*>;
+  //       better->recomb_friends = new vector<beam_element<T>*>;
   //   } else {
   //     assert(worse->recomb_friends == NULL);
   //   }

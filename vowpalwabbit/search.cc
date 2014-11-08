@@ -23,6 +23,7 @@ license as described in the file LICENSE.
 #include "search_entityrelationtask.h"
 #include "search_hooktask.h"
 #include "csoaa.h"
+#include "beam.h"
 
 using namespace LEARNER;
 using namespace std;
@@ -175,6 +176,8 @@ namespace Search {
 
     example*empty_example;
 
+    Beam::beam<int> *beam;
+    
     search_task* task;    // your task!
   };
 
