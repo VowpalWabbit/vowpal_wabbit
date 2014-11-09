@@ -445,7 +445,7 @@ namespace ExploreTests
         [TestInitialize]
         public void TestInitialize()
         {
-            mwt = new MwtExplorer("test");
+            mwt = new OldMwtExplorer("test");
 
             features = new Feature[2];
             features[0].Value = 0.5f;
@@ -585,7 +585,7 @@ namespace ExploreTests
         private static readonly int PolicyParams = 1003;
         private static readonly string UniqueKey = "ManagedTestId";
 
-        private MwtExplorer mwt;
+        private OldMwtExplorer mwt;
         private Feature[] features;
         private OldSimpleContext context;
     }

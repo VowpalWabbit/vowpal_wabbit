@@ -31,7 +31,7 @@ namespace cs_test
             {
                 watch.Restart();
 
-                MwtExplorer mwt = new MwtExplorer("test");
+                OldMwtExplorer mwt = new OldMwtExplorer("test");
                 mwt.InitializeEpsilonGreedy<int>(epsilon, new StatefulPolicyDelegate<int>(SampleStatefulPolicyFunc), policyParams, numActions);
 
                 timeInit += (iter < numWarmup) ? 0 : watch.Elapsed.TotalMilliseconds;

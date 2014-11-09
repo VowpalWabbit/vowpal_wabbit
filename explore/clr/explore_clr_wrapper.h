@@ -459,7 +459,7 @@ namespace MultiWorldTesting {
 		static NativeMultiWorldTesting::OldSimpleContext* PinNativeContext(BaseContext^ context);
 	};
 
-	public ref class MwtExplorer
+	public ref class OldMwtExplorer
 	{
 	private:
 		NativeMultiWorldTesting::MWTExplorer* m_mwt;
@@ -480,8 +480,8 @@ namespace MultiWorldTesting {
 		List<IntPtr>^ nativeContexts;
 
 	public:
-		MwtExplorer(String^ app_id);
-		~MwtExplorer();
+		OldMwtExplorer(String^ app_id);
+		~OldMwtExplorer();
 
 		generic <class T>
 		void InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions);
@@ -531,7 +531,7 @@ namespace MultiWorldTesting {
 	private value struct BaggingParameter
 	{
 	public:
-		MwtExplorer^ Mwt;
+		OldMwtExplorer^ Mwt;
 		int BagIndex;
 	};
 

@@ -11,7 +11,7 @@
 //
 
 /*  TODO: clean up these comments
-	These classes are used internally within MwtExplorer.h. 
+	These classes are used internally within OldMwtExplorer.h. 
 	Behavior of independent external usage is undefined. 
 */
 MWT_NAMESPACE {
