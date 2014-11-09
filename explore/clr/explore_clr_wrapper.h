@@ -168,17 +168,15 @@ namespace MultiWorldTesting {
 	public:
 		MWT(String^ appId, IRecorder<Ctx>^ recorder)
 		{
+			this->appId = appId;
 			this->recorder = recorder;
-			m_mwt = new NativeMultiWorldTesting::MWT<NativeRecorder>(marshal_as<std::string>(appId), *GetNativeRecorder());
-		}
-
-		~MWT()
-		{
-			delete m_mwt;
 		}
 
 		UInt32 Choose_Action(IExplorer<Ctx>^ explorer, String^ unique_key, Ctx context)
 		{
+			String^ salt = this->appId;
+			NativeMultiWorldTesting::MWT<NativeRecorder> mwt(marshal_as<std::string>(salt), *GetNativeRecorder());
+
 			GCHandle selfHandle = GCHandle::Alloc(this);
 			IntPtr selfPtr = (IntPtr)selfHandle;
 
@@ -193,27 +191,27 @@ namespace MultiWorldTesting {
 			if (explorer->GetType() == EpsilonGreedyExplorer<Ctx>::typeid)
 			{
 				EpsilonGreedyExplorer<Ctx>^ epsilonGreedyExplorer = (EpsilonGreedyExplorer<Ctx>^)explorer;
-				action = m_mwt->Choose_Action(*epsilonGreedyExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+				action = mwt.Choose_Action(*epsilonGreedyExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
 			}
 			else if (explorer->GetType() == TauFirstExplorer<Ctx>::typeid)
 			{
 				TauFirstExplorer<Ctx>^ tauFirstExplorer = (TauFirstExplorer<Ctx>^)explorer;
-				action = m_mwt->Choose_Action(*tauFirstExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+				action = mwt.Choose_Action(*tauFirstExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
 			}
 			else if (explorer->GetType() == SoftmaxExplorer<Ctx>::typeid)
 			{
 				SoftmaxExplorer<Ctx>^ softmaxExplorer = (SoftmaxExplorer<Ctx>^)explorer;
-				action = m_mwt->Choose_Action(*softmaxExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+				action = mwt.Choose_Action(*softmaxExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
 			}
 			else if (explorer->GetType() == GenericExplorer<Ctx>::typeid)
 			{
 				GenericExplorer<Ctx>^ genericExplorer = (GenericExplorer<Ctx>^)explorer;
-				action = m_mwt->Choose_Action(*genericExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+				action = mwt.Choose_Action(*genericExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
 			}
 			else if (explorer->GetType() == BaggingExplorer<Ctx>::typeid)
 			{
 				BaggingExplorer<Ctx>^ baggingExplorer = (BaggingExplorer<Ctx>^)explorer;
-				action = m_mwt->Choose_Action(*baggingExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+				action = mwt.Choose_Action(*baggingExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
 			}
 
 			explorerHandle.Free();
@@ -231,7 +229,7 @@ namespace MultiWorldTesting {
 
 	private:
 		IRecorder<Ctx>^ recorder;
-		NativeMultiWorldTesting::MWT<NativeRecorder>* m_mwt;
+		String^ appId;
 	};
 
 	[StructLayout(LayoutKind::Sequential)]
