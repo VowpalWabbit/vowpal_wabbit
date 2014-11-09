@@ -163,10 +163,10 @@ namespace MultiWorldTesting {
 	};
 
 	generic <class Ctx>
-	public ref class MWT : public RecorderCallback<Ctx>
+	public ref class MwtExplorer : public RecorderCallback<Ctx>
 	{
 	public:
-		MWT(String^ appId, IRecorder<Ctx>^ recorder)
+		MwtExplorer(String^ appId, IRecorder<Ctx>^ recorder)
 		{
 			this->appId = appId;
 			this->recorder = recorder;
@@ -175,7 +175,7 @@ namespace MultiWorldTesting {
 		UInt32 Choose_Action(IExplorer<Ctx>^ explorer, String^ unique_key, Ctx context)
 		{
 			String^ salt = this->appId;
-			NativeMultiWorldTesting::MWT<NativeRecorder> mwt(marshal_as<std::string>(salt), *GetNativeRecorder());
+			NativeMultiWorldTesting::MwtExplorer<NativeRecorder> mwt(marshal_as<std::string>(salt), *GetNativeRecorder());
 
 			GCHandle selfHandle = GCHandle::Alloc(this);
 			IntPtr selfPtr = (IntPtr)selfHandle;

@@ -17,7 +17,7 @@
 MWT_NAMESPACE {
 
 template <class Rec>
-class MWT;
+class MwtExplorer;
 
 template <class Ctx>
 class IRecorder
@@ -188,7 +188,7 @@ private:
 
 private:
 	template <class Rec>
-	friend class MWT;
+	friend class MwtExplorer;
 };
 
 template <class Scr>
@@ -271,7 +271,7 @@ private:
 
 private:
 	template <class Rec>
-	friend class MWT;
+	friend class MwtExplorer;
 };
 
 template <class Scr>
@@ -346,7 +346,7 @@ private:
 
 private:
 	template <class Rec>
-	friend class MWT;
+	friend class MwtExplorer;
 };
 
 template <class Plc>
@@ -404,7 +404,7 @@ private:
 
 private:
 	template <class Rec>
-	friend class MWT;
+	friend class MwtExplorer;
 };
 
 template <class Plc>
@@ -470,7 +470,7 @@ private:
 
 private:
 	template <class Rec>
-	friend class MWT;
+	friend class MwtExplorer;
 };
 
 class OldEpsilonGreedyExplorer : public Explorer

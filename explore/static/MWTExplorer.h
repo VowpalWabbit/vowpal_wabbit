@@ -12,10 +12,10 @@
 MWT_NAMESPACE {
 
 template <class Rec>
-class MWT
+class MwtExplorer
 {
 public:
-    MWT(std::string app_id, Rec& recorder) : m_recorder(recorder)
+	MwtExplorer(std::string app_id, Rec& recorder) : m_recorder(recorder)
     {
 		m_app_id = HashUtils::Compute_Id_Hash(app_id);
     }

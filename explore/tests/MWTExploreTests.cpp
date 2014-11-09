@@ -20,7 +20,7 @@ namespace vw_explore_tests
 			TestContext my_context;
 			TestRecorder my_recorder;
 
-			MWT<TestRecorder> mwt("salt", my_recorder);
+			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
 			EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, epsilon, num_actions);
 
 			u32 expected_action = my_policy.Choose_Action(my_context);
@@ -44,7 +44,7 @@ namespace vw_explore_tests
 			TestContext my_context;
 			TestRecorder my_recorder;
 
-			MWT<TestRecorder> mwt("salt", my_recorder);
+			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
 			EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, epsilon, num_actions);
 
 			u32 policy_action = my_policy.Choose_Action(my_context);
@@ -582,7 +582,7 @@ namespace vw_explore_tests
 			TestSimplePolicy my_policy(m_policy_func_arg, num_actions);
 
 			StringRecorder<SimpleContext> my_recorder;
-			MWT<StringRecorder<SimpleContext>> mwt("c++-test", my_recorder);
+			MwtExplorer<StringRecorder<SimpleContext>> mwt("c++-test", my_recorder);
 			EpsilonGreedyExplorer<TestSimplePolicy> explorer(my_policy, epsilon, num_actions);
 
 			vector<Feature> features1;
@@ -623,7 +623,7 @@ namespace vw_explore_tests
 			for (int i = 0; i < 10000; i++)
 			{
 				StringRecorder<SimpleContext> my_recorder;
-				MWT<StringRecorder<SimpleContext>> mwt("c++-test", my_recorder);
+				MwtExplorer<StringRecorder<SimpleContext>> mwt("c++-test", my_recorder);
 				EpsilonGreedyExplorer<TestSimplePolicy> explorer(my_policy, 0.f, num_actions);
 
 				Feature feature;
@@ -709,7 +709,7 @@ namespace vw_explore_tests
 			// Default policy returns action outside valid range
 			COUNT_BAD_CALL
 			(
-				MWT<TestRecorder> mwt("salt", TestRecorder());
+				MwtExplorer<TestRecorder> mwt("salt", TestRecorder());
 				EpsilonGreedyExplorer<TestBadPolicy> explorer(TestBadPolicy(), 0.f, (u32)1);
 
 				u32 expected_action = mwt.Choose_Action(explorer, m_unique_key, TestContext());
