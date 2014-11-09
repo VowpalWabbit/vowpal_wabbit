@@ -49,15 +49,15 @@ private:
 //
 // Top-level internal API for exploration (randomized decision making).
 //
-class MWTExplorer
+class OldMWTExplorer
 {
 public:
-	MWTExplorer(std::string app_id)
+	OldMWTExplorer(std::string app_id)
 	{
 		m_app_id = HashUtils::Compute_Id_Hash(app_id);
 	}
 
-	~MWTExplorer()
+	~OldMWTExplorer()
 	{
 	}
 

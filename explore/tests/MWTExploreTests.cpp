@@ -670,19 +670,19 @@ namespace vw_explore_tests
 			Policy* stateless_funcs[2] = { nullptr, Stateless_Default_Policy };
 
 			// Invalid policy functions
-			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Tau_First<int>(1, nullptr, m_policy_func_arg, m_num_actions);)
-			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Tau_First(2, nullptr, m_num_actions);)
+			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Tau_First<int>(1, nullptr, m_policy_func_arg, m_num_actions);)
+			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Tau_First(2, nullptr, m_num_actions);)
 			
-			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Bagging<int>(1, nullptr, m_policy_params, m_num_actions);)
-			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Bagging(1, nullptr, m_num_actions);)
-			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Bagging<int>(2, stateful_funcs, m_policy_params, m_num_actions);)
-			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Bagging(2, stateless_funcs, m_num_actions);)
+			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Bagging<int>(1, nullptr, m_policy_params, m_num_actions);)
+			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Bagging(1, nullptr, m_num_actions);)
+			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Bagging<int>(2, stateful_funcs, m_policy_params, m_num_actions);)
+			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Bagging(2, stateless_funcs, m_num_actions);)
 			
-			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Softmax<int>(0.5f, nullptr, m_policy_func_arg, m_num_actions);)
-			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Softmax(0.5f, nullptr, m_num_actions);)
+			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Softmax<int>(0.5f, nullptr, m_policy_func_arg, m_num_actions);)
+			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Softmax(0.5f, nullptr, m_num_actions);)
 			
-			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Generic<int>(nullptr, m_policy_func_arg, m_num_actions);)
-			COUNT_INVALID(MWTExplorer mwt(""); mwt.Initialize_Generic(nullptr, m_num_actions);)
+			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Generic<int>(nullptr, m_policy_func_arg, m_num_actions);)
+			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Generic(nullptr, m_num_actions);)
 			
 			Assert::AreEqual(10, num_ex);
 		}
@@ -693,7 +693,7 @@ namespace vw_explore_tests
 			// No initialization
 			COUNT_BAD_CALL
 			(
-				MWTExplorer mwt("");
+				OldMWTExplorer mwt("");
 				OldSimpleContext context(nullptr, 0);
 				mwt.Choose_Action("test", context);
 			)
@@ -716,13 +716,13 @@ namespace vw_explore_tests
 			)
 			COUNT_BAD_CALL
 			(
-				MWTExplorer mwt("");
+				OldMWTExplorer mwt("");
 				mwt.Initialize_Tau_First(0, Stateless_Default_Policy, 1);
 				mwt.Choose_Action("test", context);
 			)
 			COUNT_BAD_CALL
 			(
-				MWTExplorer mwt("");
+				OldMWTExplorer mwt("");
 				mwt.Initialize_Bagging(m_bags, funcs, 1);
 				mwt.Choose_Action("test", context);
 			)
@@ -737,13 +737,13 @@ namespace vw_explore_tests
 			// Default policy returns action outside valid range
 			COUNT_BAD_CALL
 			(
-				MWTExplorer mwt("");
+				OldMWTExplorer mwt("");
 				mwt.Initialize_Generic(Negative_Stateless_Default_Scorer, m_num_actions);
 				mwt.Choose_Action("test", context);
 			)
 			COUNT_BAD_CALL
 			(
-				MWTExplorer mwt("");
+				OldMWTExplorer mwt("");
 				mwt.Initialize_Generic(Zero_Stateless_Default_Scorer, m_num_actions);
 				mwt.Choose_Action("test", context);
 			)
@@ -788,7 +788,7 @@ namespace vw_explore_tests
 			C = 5.0;
 
 			m_num_actions = 10;
-			m_mwt = new MWTExplorer("c++-test");
+			m_mwt = new OldMWTExplorer("c++-test");
 
 			//TODO: We should eventually test randomization, else we are missing code paths
 			// Initialize with 0 to test deterministic result
@@ -1005,7 +1005,7 @@ namespace vw_explore_tests
 		static const u32 NUM_ACTIONS_COVER = 100;
 		float C;
 
-		MWTExplorer* m_mwt;
+		OldMWTExplorer* m_mwt;
 
 		u32 m_bags;
 		float m_lambda;

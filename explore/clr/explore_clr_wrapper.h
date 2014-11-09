@@ -462,7 +462,7 @@ namespace MultiWorldTesting {
 	public ref class OldMwtExplorer
 	{
 	private:
-		NativeMultiWorldTesting::MWTExplorer* m_mwt;
+		NativeMultiWorldTesting::OldMWTExplorer* m_mwt;
 		IFunctionWrapper^ policyWrapper;
 		cli::array<IFunctionWrapper^>^ policyWrappers;
 

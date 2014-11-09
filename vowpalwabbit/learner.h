@@ -12,7 +12,7 @@ struct vw;
 void return_simple_example(vw& all, void*, example& ec);  
 
 namespace MultiWorldTesting {
-	class MWTExplorer;
+	class OldMWTExplorer;
 }
 
 namespace LEARNER
@@ -108,7 +108,7 @@ private:
 public:
   size_t weights; //this stores the number of "weight vectors" required by the learner.
   size_t increment;
-  MultiWorldTesting::MWTExplorer* mwt;
+  MultiWorldTesting::OldMWTExplorer* mwt;
   vw_context* mwt_policy_context;
 
   //called once for each example.  Must work under reduction.

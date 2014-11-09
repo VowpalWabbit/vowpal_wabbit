@@ -17,7 +17,7 @@ namespace MultiWorldTesting {
 	OldMwtExplorer::OldMwtExplorer(String^ app_id)
 	{
 		std::string native_app_id = marshal_as<std::string>(app_id);
-		m_mwt = new NativeMultiWorldTesting::MWTExplorer(native_app_id);
+		m_mwt = new NativeMultiWorldTesting::OldMWTExplorer(native_app_id);
 		contextHandles = gcnew List<GCHandle>();
 		nativeContexts = gcnew List<IntPtr>();
 		m_bagging_funcs = nullptr;
