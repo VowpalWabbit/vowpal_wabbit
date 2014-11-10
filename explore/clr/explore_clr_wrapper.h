@@ -10,7 +10,7 @@ namespace MultiWorldTesting {
 		EpsilonGreedyExplorer(IPolicy<Ctx>^ defaultPolicy, float epsilon, UInt32 numActions)
 		{
 			this->defaultPolicy = defaultPolicy;
-			m_explorer = new NativeMultiWorldTesting::EpsilonGreedyExplorer<NativePolicy>(*GetNativePolicy(), epsilon, (u32)numActions);
+			m_explorer = new NativeMultiWorldTesting::EpsilonGreedyExplorer<NativeContext>(*GetNativePolicy(), epsilon, (u32)numActions);
 		}
 
 		~EpsilonGreedyExplorer()
@@ -24,14 +24,14 @@ namespace MultiWorldTesting {
 			return defaultPolicy->ChooseAction(context);
 		}
 
-		NativeMultiWorldTesting::EpsilonGreedyExplorer<NativePolicy>* Get()
+		NativeMultiWorldTesting::EpsilonGreedyExplorer<NativeContext>* Get()
 		{
 			return m_explorer;
 		}
 
 	private:
 		IPolicy<Ctx>^ defaultPolicy;
-		NativeMultiWorldTesting::EpsilonGreedyExplorer<NativePolicy>* m_explorer;
+		NativeMultiWorldTesting::EpsilonGreedyExplorer<NativeContext>* m_explorer;
 	};
 
 	generic <class Ctx>

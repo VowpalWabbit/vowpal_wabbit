@@ -114,11 +114,11 @@ private:
 	vector<Feature>& m_features;
 };
 
-template <class Plc>
+template <class Ctx>
 class EpsilonGreedyExplorer
 {
 public:
-	EpsilonGreedyExplorer(Plc& default_policy, float epsilon, u32 num_actions) :
+	EpsilonGreedyExplorer(IPolicy<Ctx>& default_policy, float epsilon, u32 num_actions) :
 		m_default_policy(default_policy), m_epsilon(epsilon), m_num_actions(num_actions)
 	{
 		if (m_num_actions < 1)
@@ -146,10 +146,7 @@ private:
 		PRG::prg random_generator(salted_seed);
 
 		// Invoke the default policy function to get the action
-		static_assert(std::is_base_of<IPolicy<Ctx>, Plc>::value, "The specified policy does not implement IPolicy");
-		IPolicy<Ctx>* policy = (IPolicy<Ctx>*)&m_default_policy;
-
-		MWTAction chosen_action = MWTAction(policy->Choose_Action(context));
+		MWTAction chosen_action = MWTAction(m_default_policy.Choose_Action(context));
 
 		if (chosen_action.Get_Id() == 0 || chosen_action.Get_Id() > actions.Count())
 		{
@@ -187,7 +184,7 @@ private:
 	}
 
 private:
-	Plc& m_default_policy;
+	IPolicy<Ctx>& m_default_policy;
 	float m_epsilon;
 	u32 m_num_actions;
 

@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
 		StringRecorder<SimpleContext> recorder;
 	    MySimplePolicy default_policy; 
 		MwtExplorer<SimpleContext> mwt("salt", recorder);
-		EpsilonGreedyExplorer<MySimplePolicy> explorer(default_policy, epsilon, num_actions);
+		EpsilonGreedyExplorer<SimpleContext> explorer(default_policy, epsilon, num_actions);
 		u32 action = mwt.Choose_Action(explorer, unique_key, context);
 
 		cout << "action = " << action << " recorder = " << recorder.Get_Recording() << endl;

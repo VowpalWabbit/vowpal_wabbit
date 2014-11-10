@@ -24,7 +24,7 @@ namespace vw_explore_tests
 			TestRecorder my_recorder;
 
 			MwtExplorer<TestContext> mwt("salt", my_recorder);
-			EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, epsilon, num_actions);
+			EpsilonGreedyExplorer<TestContext> explorer(my_policy, epsilon, num_actions);
 
 			u32 expected_action = my_policy.Choose_Action(my_context);
 
@@ -50,7 +50,7 @@ namespace vw_explore_tests
 			TestRecorder my_recorder;
 
 			MwtExplorer<TestContext> mwt("salt", my_recorder);
-			EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, epsilon, num_actions);
+			EpsilonGreedyExplorer<TestContext> explorer(my_policy, epsilon, num_actions);
 
 			u32 policy_action = my_policy.Choose_Action(my_context);
 
@@ -268,7 +268,7 @@ namespace vw_explore_tests
 			TestRecorder my_recorder;
 
 			MwtExplorer<TestContext> mwt("salt", my_recorder);
-			EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, epsilon, num_actions);
+			EpsilonGreedyExplorer<TestContext> explorer(my_policy, epsilon, num_actions);
 
 			u32 num_decisions = num_actions;
 			std::string* ids = new std::string[num_decisions];
@@ -331,7 +331,7 @@ namespace vw_explore_tests
 			StringRecorder<SimpleContext> my_recorder;
 
 			MwtExplorer<SimpleContext> mwt("salt", my_recorder);
-			EpsilonGreedyExplorer<TestSimplePolicy> explorer(my_policy, epsilon, num_actions);
+			EpsilonGreedyExplorer<SimpleContext> explorer(my_policy, epsilon, num_actions);
 
 			this->End_To_End(mwt, explorer, my_recorder);
 		}
@@ -449,7 +449,7 @@ namespace vw_explore_tests
 
 			StringRecorder<SimpleContext> my_recorder;
 			MwtExplorer<SimpleContext> mwt("c++-test", my_recorder);
-			EpsilonGreedyExplorer<TestSimplePolicy> explorer(my_policy, epsilon, num_actions);
+			EpsilonGreedyExplorer<SimpleContext> explorer(my_policy, epsilon, num_actions);
 
 			vector<Feature> features1;
 			features1.push_back({ 0.5f, 1 });
@@ -492,7 +492,7 @@ namespace vw_explore_tests
 			{
 				StringRecorder<SimpleContext> my_recorder;
 				MwtExplorer<SimpleContext> mwt("c++-test", my_recorder);
-				EpsilonGreedyExplorer<TestSimplePolicy> explorer(my_policy, 0.f, num_actions);
+				EpsilonGreedyExplorer<SimpleContext> explorer(my_policy, 0.f, num_actions);
 
 				Feature feature;
 				feature.Value = (rand.Uniform_Unit_Interval() - 0.5f) * rand.Uniform_Int(0, 100000);
@@ -530,9 +530,9 @@ namespace vw_explore_tests
 			TestScorer my_scorer(params, 0);
 			vector<TestPolicy> policies;
 
-			COUNT_INVALID(EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, .5f, 0);) // Invalid # actions, must be > 0
-			COUNT_INVALID(EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, 1.5f, 10);) // Invalid epsilon, must be in [0,1]
-			COUNT_INVALID(EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, -.5f, 10);) // Invalid epsilon, must be in [0,1]
+			COUNT_INVALID(EpsilonGreedyExplorer<TestContext> explorer(my_policy, .5f, 0);) // Invalid # actions, must be > 0
+			COUNT_INVALID(EpsilonGreedyExplorer<TestContext> explorer(my_policy, 1.5f, 10);) // Invalid epsilon, must be in [0,1]
+			COUNT_INVALID(EpsilonGreedyExplorer<TestContext> explorer(my_policy, -.5f, 10);) // Invalid epsilon, must be in [0,1]
 
 			COUNT_INVALID(BaggingExplorer<TestPolicy> explorer(policies, 1, 0);) // Invalid # actions, must be > 0
 			COUNT_INVALID(BaggingExplorer<TestPolicy> explorer(policies, 0, 1);) // Invalid # bags, must be > 0
@@ -553,7 +553,7 @@ namespace vw_explore_tests
 			COUNT_BAD_CALL
 			(
 				MwtExplorer<TestContext> mwt("salt", TestRecorder());
-				EpsilonGreedyExplorer<TestBadPolicy> explorer(TestBadPolicy(), 0.f, (u32)1);
+				EpsilonGreedyExplorer<TestContext> explorer(TestBadPolicy(), 0.f, (u32)1);
 
 				u32 expected_action = mwt.Choose_Action(explorer, "1001", TestContext());
 			)
@@ -615,7 +615,7 @@ namespace vw_explore_tests
 			features.push_back({ -5.3f, 13 });
 			SimpleContext custom_context(features);
 
-			EpsilonGreedyExplorer<TestSimplePolicy> explorer(my_policy, epsilon, num_actions);
+			EpsilonGreedyExplorer<SimpleContext> explorer(my_policy, epsilon, num_actions);
 
 			u32 chosen_action = mwt.Choose_Action(explorer, unique_key, custom_context);
 			Assert::AreEqual((u32)1, chosen_action);
