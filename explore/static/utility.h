@@ -1,3 +1,7 @@
+/*******************************************************************/
+// Classes declared in this file are intended for internal use only. 
+/*******************************************************************/
+
 #pragma once
 #include <stdint.h>
 #include <sys/types.h>  /* defines size_t */
