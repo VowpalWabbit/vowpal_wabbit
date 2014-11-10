@@ -51,7 +51,7 @@ predictor_ptr get_predictor(search_ptr sch, ptag my_tag) {
 
 label_parser* get_label_parser(vw*all, size_t labelType) {
   switch (labelType) {
-    case lDEFAULT:           return &all->p->lp; // TODO: check null
+    case lDEFAULT:           return all ? &all->p->lp : NULL;
     case lBINARY:            return &simple_label;
     case lMULTICLASS:        return &MULTICLASS::mc_label;
     case lCOST_SENSITIVE:    return &COST_SENSITIVE::cs_label;
@@ -62,9 +62,9 @@ label_parser* get_label_parser(vw*all, size_t labelType) {
 
 void my_delete_example(void*voidec) {
   example* ec = (example*) voidec;
-  size_t labelType = ec->example_counter;
+  size_t labelType = (ec->tag.size() == 0) ? lDEFAULT : ec->tag[0];
   label_parser* lp = get_label_parser(NULL, labelType);
-  dealloc_example(lp->delete_label, *ec);
+  dealloc_example(lp ? lp->delete_label : NULL, *ec);
   free(ec);
 }
 
@@ -77,36 +77,28 @@ example* my_empty_example0(vw_ptr vw, size_t labelType) {
     COST_SENSITIVE::wclass zero = { 0., 1, 0., 0. };
     ((COST_SENSITIVE::label*)ec->ld)->costs.push_back(zero);
   }
-  ec->example_counter = labelType; // example_counter unused in our own examples, so hide labelType in it!
+  ec->tag.erase();
+  if (labelType != lDEFAULT)
+    ec->tag.push_back((char)labelType);  // hide the label type in the tag
   return ec;
 }
 
 example_ptr my_empty_example(vw_ptr vw, size_t labelType) {
-  if (labelType == lDEFAULT) {
-    example* new_ec = VW::new_unused_example(*vw);
-    return boost::shared_ptr<example>(new_ec, dont_delete_me);
-  } else {
-    example* ec = my_empty_example0(vw, labelType);
-    return boost::shared_ptr<example>(ec, my_delete_example);
-  }
+  example* ec = my_empty_example0(vw, labelType);
+  return boost::shared_ptr<example>(ec, my_delete_example);
 }  
 
 example_ptr my_read_example(vw_ptr all, size_t labelType, char*str) {
-  if (labelType == lDEFAULT) {
-    example*ec = VW::read_example(*all, str);
-    return boost::shared_ptr<example>(ec, dont_delete_me);
-  } else {
-    example*ec = my_empty_example0(all, labelType);
-    read_line(*all, ec, str);
-    parse_atomic_example(*all, ec, false);
-    VW::setup_example(*all, ec);
-    ec->example_counter = labelType;
-    return boost::shared_ptr<example>(ec, my_delete_example);
-  }
+  example*ec = my_empty_example0(all, labelType);
+  read_line(*all, ec, str);
+  parse_atomic_example(*all, ec, false);
+  VW::setup_example(*all, ec);
+  ec->example_counter = labelType;
+  return boost::shared_ptr<example>(ec, my_delete_example);
 }
 
 void my_finish_example(vw_ptr all, example_ptr ec) {
-  VW::finish_example(*all, ec.get());
+  // TODO
 }
 
 void my_learn(vw_ptr all, example_ptr ec) {
@@ -165,6 +157,46 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v) {
   ec->total_sum_feat_sq += v * v;
 }
 
+void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a) {
+  // warning: assumes namespace exists!
+  char ns_str[2] = { ns, 0 };
+  uint32_t ns_hash = VW::hash_space(*vw, ns_str);
+  size_t count = 0; float sum_sq = 0.;
+  for (size_t i=0; i<len(a); i++) {
+    feature f = { 1., 0 };
+    py::object ai = a[i];
+    py::extract<py::tuple> get_tup(ai);
+    if (get_tup.check()) {
+      py::tuple fv = get_tup();
+      if (len(fv) != 2) { cerr << "warning: malformed feature in list" << endl; continue; } // TODO str(ai)
+      py::extract<float> get_val(fv[1]);
+      if (get_val.check())
+        f.x = get_val();
+      else { cerr << "warning: malformed feature in list" << endl; continue; }
+      ai = fv[0];
+    }
+    
+    bool got = false;
+    py::extract<uint32_t> get_int(ai);
+    if (get_int.check()) { f.weight_index = get_int(); got = true; }
+    else {
+      py::extract<string> get_str(ai);
+      if (get_str.check()) {
+        f.weight_index = VW::hash_feature(*vw, get_str(), ns_hash);
+        got = true;
+      } else { cerr << "warning: malformed feature in list" << endl; continue; }
+    }
+    if (got && (f.x != 0.)) {
+      ec->atomics[ns].push_back(f);
+      count++;
+      sum_sq += f.x * f.x;
+    }
+  }
+  ec->num_features += count;
+  ec->sum_feat_sq[ns] += sum_sq;
+  ec->total_sum_feat_sq += sum_sq;
+}
+
 bool ex_pop_feature(example_ptr ec, unsigned char ns) {
   if (ec->atomics[ns].size() == 0) return false;
   feature f = ec->atomics[ns].pop();
@@ -199,6 +231,7 @@ void my_setup_example(vw_ptr vw, example_ptr ec) {
 }
 
 void ex_set_label_string(example_ptr ec, vw_ptr vw, string label, size_t labelType) {
+  // SPEEDUP: if it's already set properly, don't modify
   label_parser& old_lp = vw->p->lp;
   vw->p->lp = *get_label_parser(&*vw, labelType);
   VW::parse_example_label(*vw, *ec, label);
@@ -310,17 +343,51 @@ void search_run_fn(Search::search&sch) {
   }
 }
 
+void search_setup_fn(Search::search&sch) {
+  try {
+    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+    py::object run = *(py::object*)d->setup_object;
+    run.attr("__call__")();
+  } catch(...) {
+    PyErr_Print();
+    PyErr_Clear();
+    throw exception();
+  }
+}
+
+void search_takedown_fn(Search::search&sch) {
+  try {
+    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+    py::object run = *(py::object*)d->takedown_object;
+    run.attr("__call__")();
+  } catch(...) {
+    PyErr_Print();
+    PyErr_Clear();
+    throw exception();
+  }
+}
+
 void py_delete_run_object(void* pyobj) {
   py::object* o = (py::object*)pyobj;
   delete o;
 }
 
-void set_structured_predict_hook(search_ptr sch, py::object run_object) {
+void set_structured_predict_hook(search_ptr sch, py::object run_object, py::object setup_object, py::object takedown_object) {
   verify_search_set_properly(sch);
   HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
   d->run_f = &search_run_fn;
-  py::object* new_obj = new py::object(run_object);  // TODO: delete me!
-  d->run_object = new_obj;
+  delete (py::object*)d->run_object; d->run_object = NULL;
+  delete (py::object*)d->setup_object; d->setup_object = NULL;
+  delete (py::object*)d->takedown_object; d->takedown_object = NULL;
+  d->run_object = new py::object(run_object);
+  if (setup_object.ptr() != Py_None) {
+    d->setup_object = new py::object(setup_object);
+    d->run_setup_f = &search_setup_fn;
+  }
+  if (takedown_object.ptr() != Py_None) {
+    d->takedown_object = new py::object(takedown_object);
+    d->run_takedown_f = &search_takedown_fn;
+  }
   d->delete_run_object = &py_delete_run_object;
 }
 
@@ -442,6 +509,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("feature_weight", &ex_feature_weight, "The the feature value (weight) per .feature(...)")
 
       .def("push_hashed_feature", &ex_push_feature, "Add a hashed feature to a given namespace (id=character-ord)")
+      .def("push_feature_list", &ex_push_feature_list, "Add a (Python) list of features to a given namespace")
       .def("pop_feature", &ex_pop_feature, "Remove the top feature from a given namespace; returns True iff the list was non-empty")
       .def("push_namespace", &ex_push_namespace, "Add a new namespace")
       .def("ensure_namespace_exists", &ex_ensure_namespace_exists, "Add a new namespace if it doesn't already exist")
@@ -498,9 +566,11 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("get_history_length", &Search::search::get_history_length, "Get the value specified by --search_history_length")
       .def("loss", &Search::search::loss, "Declare a (possibly incremental) loss")
       .def("should_output", &search_should_output, "Check whether search wants us to output (only happens if you have -p running)")
+      .def("predict_needs_example", &Search::search::predictNeedsExample, "Check whether a subsequent call to predict is actually going to use the example you pass---i.e., can you skip feature computation?")
       .def("output", &search_output, "Add a string to the coutput (should only do if should_output returns True)")
       .def("get_num_actions", &search_get_num_actions, "Return the total number of actions search was initialized with")
       .def("set_structured_predict_hook", &set_structured_predict_hook, "Set the hook (function pointer) that search should use for structured prediction (you don't want to call this yourself!")
+      .def("is_ldf", &Search::search::is_ldf, "check whether this search task is running in LDF mode")
 
       .def("po_exists", &po_exists, "For program (cmd line) options, check to see if a given option was specified; eg sch.po_exists(\"search\") should be True")
       .def("po_get", &po_get, "For program (cmd line) options, if an option was specified, get its value; eg sch.po_get(\"search\") should return the # of actions (returns either int or string)")

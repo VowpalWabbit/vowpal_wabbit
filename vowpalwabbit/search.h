@@ -225,7 +225,8 @@ namespace Search {
     void make_new_pointer(v_array<action>& A, size_t new_size);
     predictor& add_to(v_array<action>& A, bool& A_is_ptr, action a, bool clear_first);
     predictor& add_to(v_array<action>&A, bool& A_is_ptr, action*a, size_t action_count, bool clear_first);
-
+    void free_ec();
+    
     // prevent the user from doing something stupid :) ... ugh needed to turn this off for python :(
     //predictor(const predictor&P);
     //predictor&operator=(const predictor&P);

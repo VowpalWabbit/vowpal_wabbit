@@ -213,7 +213,7 @@ void audit_quad(vw& all, feature& left_feature, audit_data* left_audit, v_array<
     ns_pre = ns_pre + '^' + left_audit->feature + '^';
   }
  
-  audit_features(all, right_features, audit_right, results, prepend, ns_pre, halfhash + offset, left_audit->x);
+  audit_features(all, right_features, audit_right, results, prepend, ns_pre, halfhash + offset, left_audit ? left_audit->x : 1);
 }
 
 void audit_triple(vw& all, feature& f0, audit_data* f0_audit, feature& f1, audit_data* f1_audit, 

@@ -240,6 +240,11 @@ namespace PRG {
 
 	const int bias = 127 << 23;
 
+	union int_float {
+	  int32_t i;
+	  float f;
+	};
+
 	struct prg {
 	private:
 		uint64_t v;
@@ -250,8 +255,9 @@ namespace PRG {
 		float merand48(uint64_t& initial)
 		{
 			initial = a * initial + c;
-			int32_t temp = ((initial >> 25) & 0x7FFFFF) | bias;
-			return *((float *)&temp) - 1;
+			int_float temp;
+			temp.i = ((initial >> 25) & 0x7FFFFF) | bias;
+			return temp.f - 1;
 		}
 
 		float Uniform_Unit_Interval()

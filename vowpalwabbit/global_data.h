@@ -19,6 +19,7 @@ namespace po = boost::program_options;
 #include "config.h"
 #include "learner.h"
 #include "allreduce.h"
+#include "v_hashmap.h"
 
 struct version_struct {
   int major;
@@ -117,6 +118,12 @@ struct regressor {
   uint32_t stride_shift;
 };
 
+typedef v_hashmap< substring, v_array<feature>* > feature_dict;
+struct dictionary_info {
+  char* name;
+  feature_dict* dict;
+};
+
 struct vw {
   shared_data* sd;
 
@@ -195,6 +202,9 @@ struct vw {
   uint32_t skips[256];//skips in ngrams.
   uint32_t affix_features[256]; // affixes to generate (up to 8 per namespace)
   bool     spelling_features[256]; // generate spelling features for which namespace
+  v_array<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
+  v_array<dictionary_info> read_dictionaries; // which dictionaries have we read?
+  
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress progress-printing of updates?
   bool training;//Should I train if lable data is available?

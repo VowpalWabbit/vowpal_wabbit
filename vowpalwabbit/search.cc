@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 #include "multiclass.h"
 #include "memory.h"
 #include "constant.h"
+#include "example.h"
 #include "cb.h"
 #include "gd.h" // for GD::foreach_feature
 #include <math.h>
@@ -21,6 +22,7 @@ license as described in the file LICENSE.
 #include "search_dep_parser.h"
 #include "search_entityrelationtask.h"
 #include "search_hooktask.h"
+#include "csoaa.h"
 
 using namespace LEARNER;
 using namespace std;
@@ -687,12 +689,16 @@ namespace Search {
     float  best_prediction = 0.;
     action best_action = 0;
 
-    for (action a=0; a<ec_cnt; a++) {
+    size_t start_K = CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(ecs[0]) ? 1 : 0;
+    
+    for (action a=start_K; a<ec_cnt; a++) {
       cdbg << "== single_prediction_LDF a=" << a << "==" << endl;
+      if (start_K > 0)
+        CSOAA_AND_WAP_LDF::LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]);
+        
       void* old_label = ecs[a].ld;
       ecs[a].ld = &priv.ldf_test_label;
       priv.base_learner->predict(ecs[a], policy);
-      ecs[a].ld = old_label;
 
       priv.empty_example->in_use = true;
       priv.base_learner->predict(*priv.empty_example);
@@ -703,6 +709,9 @@ namespace Search {
       }
       
       priv.num_features += ecs[a].num_features;
+      ecs[a].ld = old_label;
+      if (start_K > 0)
+        CSOAA_AND_WAP_LDF::LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0]);
     }
     
     priv.total_predictions_made++;
@@ -782,11 +791,11 @@ namespace Search {
   }
   
   // returns true if found and do_store is false. if do_store is true, always returns true.
-  bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on, const char* condition_on_names, const action* condition_on_actions, size_t condition_on_cnt, int policy, action &a, bool do_store) {
+  bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on, const char* condition_on_names, const action* condition_on_actions, size_t condition_on_cnt, int policy, size_t learner_id, action &a, bool do_store) {
     if (priv.no_caching) return do_store;
     if (mytag == 0) return do_store; // don't attempt to cache when tag is zero
 
-    size_t sz  = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(char));
+    size_t sz  = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + sizeof(size_t) + condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(char));
     if (sz % 4 != 0) sz = 4 * (sz / 4 + 1); // make sure sz aligns to 4 so that uniform_hash does the right thing
 
     unsigned char* item = (unsigned char*)calloc(sz, 1);
@@ -794,6 +803,7 @@ namespace Search {
     *here = (unsigned char)sz;                here += (unsigned char)sizeof(size_t);
     *here = mytag;             here += (unsigned char)sizeof(ptag);
     *here = policy;            here += (unsigned char)sizeof(int);
+    *here = learner_id;        here += (unsigned char)sizeof(size_t);
     *here = (unsigned char)condition_on_cnt;  here += (unsigned char)sizeof(size_t);
     for (size_t i=0; i<condition_on_cnt; i++) {
       *here = condition_on[i];         here += sizeof(ptag);
@@ -850,9 +860,10 @@ namespace Search {
       priv.total_examples_generated++;
     } else {              // is  LDF
       assert(losses.size() == priv.learn_ec_ref_cnt);
-	  size_t s = losses.size();
-	  bool* alloced = (bool*)calloc_or_die(s,sizeof(bool));
-      for (action a=0; a<priv.learn_ec_ref_cnt; a++) {
+      size_t s = losses.size();
+      bool* alloced = (bool*)calloc_or_die(s,sizeof(bool));
+      size_t start_K = CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(priv.learn_ec_ref[0]) ? 1 : 0;
+      for (action a=start_K; a<priv.learn_ec_ref_cnt; a++) {
         example& ec = priv.learn_ec_ref[a];
         if (ec.ld == NULL) {
           ec.ld = new CS::label;
@@ -873,7 +884,7 @@ namespace Search {
       priv.base_learner->learn(*priv.empty_example, learner);
       cdbg << "generate_training_example called learn on empty_example" << endl;
 
-      for (action a=0; a<priv.learn_ec_ref_cnt; a++) {
+      for (action a=start_K; a<priv.learn_ec_ref_cnt; a++) {
         example& ec = priv.learn_ec_ref[a];
         if (alloced[a]) {
           CS::label* lab = (CS::label*)ec.ld;
@@ -947,9 +958,10 @@ namespace Search {
       // check to see if we're done with available actions
       if (priv.learn_a_idx >= valid_action_cnt) {
         priv.done_with_all_actions = true;
+        priv.learn_learner_id = learner_id;
 
         // set reference or copy example(s)
-        priv.learn_oracle_action = oracle_actions[0];
+        if (oracle_actions_cnt > 0) priv.learn_oracle_action = oracle_actions[0];
         priv.learn_ec_ref_cnt = ec_cnt;
         if (priv.examples_dont_change)
           priv.learn_ec_ref = ecs;
@@ -1021,21 +1033,24 @@ namespace Search {
         a = choose_oracle_action(priv, ec_cnt, oracle_actions, oracle_actions_cnt, allowed_actions, allowed_actions_cnt);
 
       if ((policy >= 0) || gte_here) {
+        int learner = select_learner(priv, policy, learner_id);
+
         ensure_size(priv.condition_on_actions, condition_on_cnt);
         for (size_t i=0; i<condition_on_cnt; i++)
           priv.condition_on_actions[i] = ((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size())) ? priv.ptag_to_action[condition_on[i]] : 0;
 
-        if (cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, a, false))
+        if (cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, learner_id, a, false))
           // if this succeeded, 'a' has the right action
           priv.total_cache_hits++;
         else { // we need to predict, and then cache
+          size_t start_K = CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(ecs[0]) ? 1 : 0;
           if (priv.auto_condition_features)
-            for (size_t n=0; n<ec_cnt; n++)
+            for (size_t n=start_K; n<ec_cnt; n++)
               add_example_conditioning(priv, ecs[n], condition_on, condition_on_cnt, condition_on_names, priv.condition_on_actions.begin);
 
           if (policy >= 0)   // only make a prediction if we're going to use the output
-            a = priv.is_ldf ? single_prediction_LDF(priv, ecs, ec_cnt, policy)
-                            : single_prediction_notLDF(priv, *ecs, policy, allowed_actions, allowed_actions_cnt);
+            a = priv.is_ldf ? single_prediction_LDF(priv, ecs, ec_cnt, learner)
+                            : single_prediction_notLDF(priv, *ecs, learner, allowed_actions, allowed_actions_cnt);
           
           if (gte_here) {
             cdbg << "INIT_TRAIN, NO_ROLLOUT, at least one oracle_actions" << endl;
@@ -1052,10 +1067,10 @@ namespace Search {
           }
           
           if (priv.auto_condition_features)
-            for (size_t n=0; n<ec_cnt; n++)
+            for (size_t n=start_K; n<ec_cnt; n++)
               del_example_conditioning(priv, ecs[n]);
 
-          cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, a, true);
+          cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, learner_id, a, true);
         }
       }
 
@@ -1822,7 +1837,8 @@ namespace Search {
   action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, size_t learner_id) {
     action a = search_predict(*this->priv, ecs, ec_cnt, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, NULL, 0, learner_id);
     if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
-    if (mytag != 0) push_at(priv->ptag_to_action, ((CS::label*)ecs[a].ld)->costs[0].class_index, mytag);
+    if ((mytag != 0) && ecs[a].ld && (((CS::label*)ecs[a].ld)->costs.size() > 0))
+      push_at(priv->ptag_to_action, ((CS::label*)ecs[a].ld)->costs[0].class_index, mytag);
     if (this->priv->auto_hamming_loss)
       loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));
     cdbg << "predict returning " << a << endl;
@@ -1876,17 +1892,27 @@ namespace Search {
   // predictor implementation
   predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(NULL), ec_cnt(0), ec_alloced(false), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { }
 
+  void predictor::free_ec() {
+    if (ec_alloced) {
+      if (is_ldf)
+        for (size_t i=0; i<ec_cnt; i++)
+          dealloc_example(CS::cs_label.delete_label, ec[i]);
+      else
+        dealloc_example(NULL, *ec);
+      free(ec);
+    }
+  }
+  
   predictor::~predictor() {
     if (! oracle_is_pointer) oracle_actions.delete_v();
     if (! allowed_is_pointer) allowed_actions.delete_v();
-    if (ec_alloced)
-      free(ec);
+    free_ec();
     condition_on_tags.delete_v();
     condition_on_names.delete_v();
   }
 
   predictor& predictor::set_input(example&input_example) {
-    if (ec_alloced) free(ec);
+    free_ec();
     is_ldf = false;
     ec = &input_example;
     ec_cnt = 1;
@@ -1895,7 +1921,7 @@ namespace Search {
   }
 
   predictor& predictor::set_input(example*input_example, size_t input_length) {
-    if (ec_alloced) free(ec);
+    free_ec();
     is_ldf = true;
     ec = input_example;
     ec_cnt = input_length;

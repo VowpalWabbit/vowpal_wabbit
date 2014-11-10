@@ -72,10 +72,6 @@ int main(int argc, char* argv[])
 	//arguments for individual explorers
 	if (strcmp(argv[1], "greedy") == 0)
 	{
-		u32 num_actions = 10;
-		float epsilon = .2f;
-		string unique_key = "sample";
-
 		//Initialize Epsilon-Greedy explore algorithm using MyPolicy
 		vector<Feature> features;
 		features.push_back({ 0.5f, 1 });
@@ -84,76 +80,82 @@ int main(int argc, char* argv[])
 		SimpleContext context(features);
 
 		StringRecorder<SimpleContext> recorder;
-	    MySimplePolicy default_policy; 
-		MwtExplorer<SimpleContext> mwt("salt", recorder);
+		MySimplePolicy default_policy; 
+		MwtExplorer<SimpleContext> mwt("appid", recorder);
+
+		u32 num_actions = 10;
+		float epsilon = .2f;
 		EpsilonGreedyExplorer<SimpleContext> explorer(default_policy, epsilon, num_actions);
+
+		string unique_key = "eventid";
 		u32 action = mwt.Choose_Action(explorer, unique_key, context);
 
-		cout << "action = " << action << " recorder = " << recorder.Get_Recording() << endl;
+		cout << "action = " << action << " recorder = " << recorder.Get_Recording();
 	}
 	else if (strcmp(argv[1], "tau-first") == 0)
 	{
-		int num_actions = 10;
-		u32 tau = 5;
-		string unique_key = "sample";
-
 		//Initialize Tau-First explore algorithm using MyPolicy
 		MyRecorder recorder;
-		MwtExplorer<MyContext> mwt("salt", recorder);
+		MwtExplorer<MyContext> mwt("appid", recorder);
+
+		int num_actions = 10;
+		u32 tau = 5;
 		MyPolicy default_policy;
 		TauFirstExplorer<MyContext> explorer(default_policy, tau, num_actions);
 		MyContext ctx;
+		string unique_key = "eventid";
 		u32 action = mwt.Choose_Action(explorer, unique_key, ctx);
 
 		cout << "action = " << action << endl;
 	}
 	else if (strcmp(argv[1], "bagging") == 0)
 	{
-		int num_actions = 10;
-		u32 num_bags = 2;
-		string unique_key = "sample";
-
 		//Initialize Bagging explore algorithm using MyPolicy
 		MyRecorder recorder;
-		MwtExplorer<MyContext> mwt("salt", recorder);
+		MwtExplorer<MyContext> mwt("appid", recorder);
+
+		u32 num_bags = 2;
 		vector<unique_ptr<IPolicy<MyContext>>> policy_functions;
 		for (size_t i = 0; i < num_bags; i++)
 		{
 			policy_functions.push_back(unique_ptr<IPolicy<MyContext>>(new MyPolicy()));
 		}
+		int num_actions = 10;
 		BaggingExplorer<MyContext> explorer(policy_functions, num_bags, num_actions);
 		MyContext ctx;
+		string unique_key = "eventid";
 		u32 action = mwt.Choose_Action(explorer, unique_key, ctx);
 
 		cout << "action = " << action << endl;
 	}
 	else if (strcmp(argv[1], "softmax") == 0)
 	{
-		u32 num_actions = 10;
-		float lambda = 0.5f;
-		string unique_key = "sample";
-
 		//Initialize Softmax explore algorithm using MyScorer 
 		MyRecorder recorder;
 		MwtExplorer<MyContext> mwt("salt", recorder);
+
+		u32 num_actions = 10;
 		MyScorer scorer(num_actions);
+		float lambda = 0.5f;
 		SoftmaxExplorer<MyContext> explorer(scorer, lambda, num_actions);
+
 		MyContext ctx;
+		string unique_key = "eventid";
 		u32 action = mwt.Choose_Action(explorer, unique_key, ctx);
 
 		cout << "action = " << action << endl;
 	}
 	else if (strcmp(argv[1], "generic") == 0)
 	{
-		int num_actions = 10;
-		string unique_key = "sample";
-
 		//Initialize Generic explore algorithm using MyScorer 
 		MyRecorder recorder;
-		MwtExplorer<MyContext> mwt("salt", recorder);
+		MwtExplorer<MyContext> mwt("appid", recorder);
+
+		int num_actions = 10;
 		MyScorer scorer(num_actions);
 		GenericExplorer<MyContext> explorer(scorer, num_actions);
 		MyContext ctx;
+		string unique_key = "eventid";
 		u32 action = mwt.Choose_Action(explorer, unique_key, ctx);
 
 		cout << "action = " << action << endl;
