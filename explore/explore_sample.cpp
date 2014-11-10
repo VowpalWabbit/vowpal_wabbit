@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
 
 		StringRecorder<SimpleContext> recorder;
 	    MySimplePolicy default_policy; 
-		MwtExplorer<StringRecorder<SimpleContext>> mwt("salt", recorder);
+		MwtExplorer<SimpleContext> mwt("salt", recorder);
 		EpsilonGreedyExplorer<MySimplePolicy> explorer(default_policy, epsilon, num_actions);
 		u32 action = mwt.Choose_Action(explorer, unique_key, context);
 
@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
 
 		//Initialize Tau-First explore algorithm using MyPolicy
 		MyRecorder recorder;
-		MwtExplorer<MyRecorder> mwt("salt", recorder);
+		MwtExplorer<MyContext> mwt("salt", recorder);
 		MyPolicy default_policy;
 		TauFirstExplorer<MyPolicy> explorer(default_policy, tau, num_actions);
 		MyContext ctx;
@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
 
 		//Initialize Bagging explore algorithm using MyPolicy
 		MyRecorder recorder;
-		MwtExplorer<MyRecorder> mwt("salt", recorder);
+		MwtExplorer<MyContext> mwt("salt", recorder);
 		vector<MyPolicy> policy_functions;
 		for (size_t i = 0; i < num_bags; i++)
 		{
@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
 
 		//Initialize Softmax explore algorithm using MyScorer 
 		MyRecorder recorder;
-		MwtExplorer<MyRecorder> mwt("salt", recorder);
+		MwtExplorer<MyContext> mwt("salt", recorder);
 		MyScorer scorer(num_actions);
 		SoftmaxExplorer<MyScorer> explorer(scorer, lambda, num_actions);
 		MyContext ctx;
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
 
 		//Initialize Generic explore algorithm using MyScorer 
 		MyRecorder recorder;
-		MwtExplorer<MyRecorder> mwt("salt", recorder);
+		MwtExplorer<MyContext> mwt("salt", recorder);
 		MyScorer scorer(num_actions);
 		GenericExplorer<MyScorer> explorer(scorer, num_actions);
 		MyContext ctx;

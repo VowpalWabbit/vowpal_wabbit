@@ -11,16 +11,16 @@
 
 MWT_NAMESPACE {
 
-template <class Rec>
+template <class Ctx>
 class MwtExplorer
 {
 public:
-	MwtExplorer(std::string app_id, Rec& recorder) : m_recorder(recorder)
+	MwtExplorer(std::string app_id, IRecorder<Ctx>& recorder) : m_recorder(recorder)
     {
 		m_app_id = HashUtils::Compute_Id_Hash(app_id);
     }
  
-    template <class Exp, class Ctx>
+    template <class Exp>
     u32 Choose_Action(Exp& explorer, string unique_key, Ctx& context)
     {
 		u64 seed = HashUtils::Compute_Id_Hash(unique_key);
@@ -32,10 +32,7 @@ public:
 
 		if (std::get<2>(action_probability_log_tuple))
 		{
-			static_assert(std::is_base_of<IRecorder<Ctx>, Rec>::value, "The specified recorder does not implement IRecorder");
-			IRecorder<Ctx>* recorder = (IRecorder<Ctx>*)&m_recorder;
-
-			recorder->Record(context, action, prob, unique_key);
+			m_recorder.Record(context, action, prob, unique_key);
 		}
  
         return action;
@@ -43,7 +40,7 @@ public:
  
 private:
     u64 m_app_id;
-    Rec& m_recorder;
+	IRecorder<Ctx>& m_recorder;
 };
 
 //

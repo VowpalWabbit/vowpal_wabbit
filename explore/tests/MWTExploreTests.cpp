@@ -23,7 +23,7 @@ namespace vw_explore_tests
 			TestContext my_context;
 			TestRecorder my_recorder;
 
-			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
+			MwtExplorer<TestContext> mwt("salt", my_recorder);
 			EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, epsilon, num_actions);
 
 			u32 expected_action = my_policy.Choose_Action(my_context);
@@ -49,7 +49,7 @@ namespace vw_explore_tests
 			TestContext my_context;
 			TestRecorder my_recorder;
 
-			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
+			MwtExplorer<TestContext> mwt("salt", my_recorder);
 			EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, epsilon, num_actions);
 
 			u32 policy_action = my_policy.Choose_Action(my_context);
@@ -78,7 +78,7 @@ namespace vw_explore_tests
 			TestRecorder my_recorder;
 			TestContext my_context;
 
-			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
+			MwtExplorer<TestContext> mwt("salt", my_recorder);
 			TauFirstExplorer<TestPolicy> explorer(my_policy, tau, num_actions);
 
 			u32 expected_action = my_policy.Choose_Action(my_context);
@@ -99,7 +99,7 @@ namespace vw_explore_tests
 			TestRecorder my_recorder;
 			TestContext my_context;
 
-			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
+			MwtExplorer<TestContext> mwt("salt", my_recorder);
 			TauFirstExplorer<TestPolicy> explorer(my_policy, tau, num_actions);
 
 			u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
@@ -127,7 +127,7 @@ namespace vw_explore_tests
 
 			TestContext my_context;
 
-			MwtExplorer<TestRecorder> mwt("c++-test", my_recorder);
+			MwtExplorer<TestContext> mwt("c++-test", my_recorder);
 			BaggingExplorer<TestPolicy> explorer(policies, (u32)policies.size(), num_actions);
 
 			u32 expected_action1 = policies[0].Choose_Action(my_context);
@@ -156,7 +156,7 @@ namespace vw_explore_tests
 
 			TestContext my_context;
 
-			MwtExplorer<TestRecorder> mwt("c++-test", my_recorder);
+			MwtExplorer<TestContext> mwt("c++-test", my_recorder);
 			BaggingExplorer<TestPolicy> explorer(policies, (u32)policies.size(), num_actions);
 
 			u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
@@ -180,7 +180,7 @@ namespace vw_explore_tests
 			TestRecorder my_recorder;
 			TestContext my_context;
 
-			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
+			MwtExplorer<TestContext> mwt("salt", my_recorder);
 			SoftmaxExplorer<TestScorer> explorer(my_scorer, lambda, num_actions);
 
 			// Scale C up since we have fewer interactions
@@ -221,7 +221,7 @@ namespace vw_explore_tests
 			TestRecorder my_recorder;
 			TestContext my_context;
 
-			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
+			MwtExplorer<TestContext> mwt("salt", my_recorder);
 			SoftmaxExplorer<TestScorer> explorer(my_scorer, lambda, num_actions);
 
 			u32 action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
@@ -246,7 +246,7 @@ namespace vw_explore_tests
 			TestRecorder my_recorder;
 			TestContext my_context;
 
-			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
+			MwtExplorer<TestContext> mwt("salt", my_recorder);
 			GenericExplorer<TestScorer> explorer(my_scorer, num_actions);
 
 			u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
@@ -267,7 +267,7 @@ namespace vw_explore_tests
 			TestContext my_context;
 			TestRecorder my_recorder;
 
-			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
+			MwtExplorer<TestContext> mwt("salt", my_recorder);
 			EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, epsilon, num_actions);
 
 			u32 num_decisions = num_actions;
@@ -330,7 +330,7 @@ namespace vw_explore_tests
 			TestSimplePolicy my_policy(params, num_actions);
 			StringRecorder<SimpleContext> my_recorder;
 
-			MwtExplorer<StringRecorder<SimpleContext>> mwt("salt", my_recorder);
+			MwtExplorer<SimpleContext> mwt("salt", my_recorder);
 			EpsilonGreedyExplorer<TestSimplePolicy> explorer(my_policy, epsilon, num_actions);
 
 			this->End_To_End(mwt, explorer, my_recorder);
@@ -345,7 +345,7 @@ namespace vw_explore_tests
 			TestSimplePolicy my_policy(params, num_actions);
 			StringRecorder<SimpleContext> my_recorder;
 
-			MwtExplorer<StringRecorder<SimpleContext>> mwt("salt", my_recorder);
+			MwtExplorer<SimpleContext> mwt("salt", my_recorder);
 			TauFirstExplorer<TestSimplePolicy> explorer(my_policy, tau, num_actions);
 
 			this->End_To_End(mwt, explorer, my_recorder);
@@ -362,7 +362,7 @@ namespace vw_explore_tests
 			policies.push_back(TestSimplePolicy(params, num_actions));
 			policies.push_back(TestSimplePolicy(params, num_actions));
 
-			MwtExplorer<StringRecorder<SimpleContext>> mwt("salt", my_recorder);
+			MwtExplorer<SimpleContext> mwt("salt", my_recorder);
 			BaggingExplorer<TestSimplePolicy> explorer(policies, bags, num_actions);
 
 			this->End_To_End(mwt, explorer, my_recorder);
@@ -376,7 +376,7 @@ namespace vw_explore_tests
 			TestSimpleScorer my_scorer(scorer_arg, num_actions);
 			StringRecorder<SimpleContext> my_recorder;
 
-			MwtExplorer<StringRecorder<SimpleContext>> mwt("salt", my_recorder);
+			MwtExplorer<SimpleContext> mwt("salt", my_recorder);
 			SoftmaxExplorer<TestSimpleScorer> explorer(my_scorer, lambda, num_actions);
 
 			this->End_To_End(mwt, explorer, my_recorder);
@@ -389,7 +389,7 @@ namespace vw_explore_tests
 			TestSimpleScorer my_scorer(scorer_arg, num_actions);
 			StringRecorder<SimpleContext> my_recorder;
 
-			MwtExplorer<StringRecorder<SimpleContext>> mwt("salt", my_recorder);
+			MwtExplorer<SimpleContext> mwt("salt", my_recorder);
 			GenericExplorer<TestSimpleScorer> explorer(my_scorer, num_actions);
 
 			this->End_To_End(mwt, explorer, my_recorder);
@@ -448,7 +448,7 @@ namespace vw_explore_tests
 			TestSimplePolicy my_policy(params, num_actions);
 
 			StringRecorder<SimpleContext> my_recorder;
-			MwtExplorer<StringRecorder<SimpleContext>> mwt("c++-test", my_recorder);
+			MwtExplorer<SimpleContext> mwt("c++-test", my_recorder);
 			EpsilonGreedyExplorer<TestSimplePolicy> explorer(my_policy, epsilon, num_actions);
 
 			vector<Feature> features1;
@@ -491,7 +491,7 @@ namespace vw_explore_tests
 			for (int i = 0; i < 10000; i++)
 			{
 				StringRecorder<SimpleContext> my_recorder;
-				MwtExplorer<StringRecorder<SimpleContext>> mwt("c++-test", my_recorder);
+				MwtExplorer<SimpleContext> mwt("c++-test", my_recorder);
 				EpsilonGreedyExplorer<TestSimplePolicy> explorer(my_policy, 0.f, num_actions);
 
 				Feature feature;
@@ -552,14 +552,14 @@ namespace vw_explore_tests
 			// Default policy returns action outside valid range
 			COUNT_BAD_CALL
 			(
-				MwtExplorer<TestRecorder> mwt("salt", TestRecorder());
+				MwtExplorer<TestContext> mwt("salt", TestRecorder());
 				EpsilonGreedyExplorer<TestBadPolicy> explorer(TestBadPolicy(), 0.f, (u32)1);
 
 				u32 expected_action = mwt.Choose_Action(explorer, "1001", TestContext());
 			)
 			COUNT_BAD_CALL
 			(
-				MwtExplorer<TestRecorder> mwt("salt", TestRecorder());
+				MwtExplorer<TestContext> mwt("salt", TestRecorder());
 				TauFirstExplorer<TestBadPolicy> explorer(TestBadPolicy(), (u32)0, (u32)1);
 				mwt.Choose_Action(explorer, "test", TestContext());
 			)
@@ -567,7 +567,7 @@ namespace vw_explore_tests
 			(
 				vector<TestBadPolicy> policies;
 				policies.push_back(TestBadPolicy());
-				MwtExplorer<TestRecorder> mwt("salt", TestRecorder());
+				MwtExplorer<TestContext> mwt("salt", TestRecorder());
 				BaggingExplorer<TestBadPolicy> explorer(policies, (u32)policies.size(), (u32)1);
 				mwt.Choose_Action(explorer, "test", TestContext());
 			)
@@ -583,7 +583,7 @@ namespace vw_explore_tests
 			(
 				u32 num_actions = 1;
 				FixedScorer scorer(num_actions, -1);
-				MwtExplorer<TestRecorder> mwt("salt", TestRecorder());
+				MwtExplorer<TestContext> mwt("salt", TestRecorder());
 				GenericExplorer<FixedScorer> explorer(scorer, num_actions);
 				mwt.Choose_Action(explorer, "test", TestContext());
 			)
@@ -591,7 +591,7 @@ namespace vw_explore_tests
 			(
 				u32 num_actions = 1;
 				FixedScorer scorer(num_actions, 0);
-				MwtExplorer<TestRecorder> mwt("salt", TestRecorder());
+				MwtExplorer<TestContext> mwt("salt", TestRecorder());
 				GenericExplorer<FixedScorer> explorer(scorer, num_actions);
 				mwt.Choose_Action(explorer, "test", TestContext());
 			)
@@ -607,7 +607,7 @@ namespace vw_explore_tests
 			TestSimplePolicy my_policy(0, num_actions);
 
 			TestSimpleRecorder my_recorder;
-			MwtExplorer<TestSimpleRecorder> mwt("salt", my_recorder);
+			MwtExplorer<SimpleContext> mwt("salt", my_recorder);
 
 			vector<Feature> features;
 			features.push_back({ 0.5f, 1 });
@@ -653,7 +653,7 @@ namespace vw_explore_tests
 	private: 
 		// Test end-to-end using StringRecorder with no crash
 		template <class Exp>
-		void End_To_End(MwtExplorer<StringRecorder<SimpleContext>>& mwt, Exp& explorer, StringRecorder<SimpleContext>& recorder)
+		void End_To_End(MwtExplorer<SimpleContext>& mwt, Exp& explorer, StringRecorder<SimpleContext>& recorder)
 		{
 			PRG::prg rand;
 
