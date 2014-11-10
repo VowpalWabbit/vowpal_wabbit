@@ -732,7 +732,7 @@ namespace Search {
     action best_action = 0;
 
     size_t start_K = (priv.is_ldf && CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
-    
+
     for (action a=start_K; a<ec_cnt; a++) {
       cdbg << "== single_prediction_LDF a=" << a << "==" << endl;
       if (start_K > 0)
@@ -745,7 +745,7 @@ namespace Search {
       priv.empty_example->in_use = true;
       priv.base_learner->predict(*priv.empty_example);
 
-      if ((a == 0) || (ecs[a].partial_prediction < best_prediction)) {
+      if ((a == start_K) || (ecs[a].partial_prediction < best_prediction)) {
         best_prediction = ecs[a].partial_prediction;
         best_action     = a;
       }
@@ -754,6 +754,25 @@ namespace Search {
       ecs[a].ld = old_label;
       if (start_K > 0)
         CSOAA_AND_WAP_LDF::LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0]);
+    }
+
+    if (priv.beam) {
+      priv.beam_total_cost += best_prediction;
+      size_t new_len = priv.current_trajectory.size() + 1;
+      for (size_t k=start_K; k<ec_cnt; k++) {
+        if (k == best_action) continue;
+        float delta_cost = ecs[k].partial_prediction - best_prediction + priv.beam_initial_cost;
+        action_prefix* px = new v_array<action>;
+        px->resize(new_len);
+        px->end = px->begin + new_len;
+        memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
+        px->begin[new_len-1] = k;  // TODO: k or ld[k]?
+        uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
+        if (! priv.beam->insert(px, delta_cost, px_hash)) {
+          px->delete_v();  // SPEEDUP: could be more efficient by reusing for next action
+          delete px;
+        }
+      }
     }
     
     priv.total_predictions_made++;
@@ -1588,7 +1607,8 @@ namespace Search {
     priv.learn_losses.delete_v();
     priv.condition_on_actions.delete_v();
     priv.learn_allowed_actions.delete_v();
-
+    priv.ldf_test_label.costs.delete_v();
+    
     if (priv.beam) {
       priv.beam->erase(free_action_prefix);
       delete priv.beam;
@@ -2231,3 +2251,8 @@ namespace Search {
 // ./vw --search 5 -k -c --search_task sequence -d test_seq --passes 10 -f test_seq.model --holdout_off
 // ./vw -i test_seq.model -t -d test_seq --search_beam 2 -p /dev/stdout -r /dev/stdout
 
+// ./vw --search 5 --csoaa_ldf m -k -c --search_task sequence_demoldf -d test_seq --passes 10 -f test_seq.model --holdout_off --search_history_length 0
+// ./vw -i test_seq.model -t -d test_seq -p /dev/stdout -r /dev/stdout
+
+
+// TODO: raw predictions in LDF mode

@@ -1056,3 +1056,8 @@ __DATA__
 {VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data_beam.predict --search_beam 10 --search_kbest 10
     train-sets/ref/sequence_data.nonldf.beam.test.stderr
     train-sets/ref/sequence_data.nonldf.beam.test.predict
+
+# Test 70: (see Test 46/47) search sequence labeling, ldf test, with beam
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data_beam.predict --search_beam 10 --search_kbest 10
+    train-sets/ref/sequence_data.ldf.beam.test.stderr
+    train-sets/ref/sequence_data.ldf.beam.test.predict
