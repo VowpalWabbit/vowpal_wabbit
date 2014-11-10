@@ -203,8 +203,7 @@ private:
 	u32 m_num_actions;
 
 private:
-	template <class Ctx>
-	friend class MwtExplorer;
+	friend class MwtExplorer<Ctx>;
 };
 
 template <class Ctx>
@@ -283,8 +282,7 @@ private:
 	u32 m_num_actions;
 
 private:
-	template <class Ctx>
-	friend class MwtExplorer;
+	friend class MwtExplorer<Ctx>;
 };
 
 template <class Ctx>
@@ -312,8 +310,6 @@ private:
 		{
 			throw std::invalid_argument("The number of weights returned by the scorer must equal number of actions");
 		}
-
-		u32 chosen_action = 0;
 
 		// Create a discrete_distribution based on the returned weights. This class handles the
 		// case where the sum of the weights is < or > 1, by normalizing agains the sum.
@@ -357,8 +353,7 @@ private:
 	u32 m_num_actions;
 
 private:
-	template <class Ctx>
-	friend class MwtExplorer;
+	friend class MwtExplorer<Ctx>;
 };
 
 template <class Ctx>
@@ -413,8 +408,7 @@ private:
 	u32 m_num_actions;
 
 private:
-	template <class Ctx>
-	friend class MwtExplorer;
+	friend class MwtExplorer<Ctx>;
 };
 
 template <class Ctx>
@@ -482,8 +476,7 @@ private:
 	u32 m_num_actions;
 
 private:
-	template <class Ctx>
-	friend class MwtExplorer;
+	friend class MwtExplorer<Ctx>;
 };
 
 template <class Ctx>
