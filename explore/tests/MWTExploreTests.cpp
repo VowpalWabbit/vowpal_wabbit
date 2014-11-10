@@ -16,7 +16,10 @@ namespace vw_explore_tests
 		{
 			int num_actions = 10;
 			float epsilon = 0.f; // No randomization
-			TestPolicy my_policy(m_policy_func_arg, num_actions);
+			string unique_key = "1001";
+			int params = 101;
+
+			TestPolicy my_policy(params, num_actions);
 			TestContext my_context;
 			TestRecorder my_recorder;
 
@@ -25,10 +28,10 @@ namespace vw_explore_tests
 
 			u32 expected_action = my_policy.Choose_Action(my_context);
 
-			u32 chosen_action = mwt.Choose_Action(explorer, m_unique_key, my_context);
+			u32 chosen_action = mwt.Choose_Action(explorer, unique_key, my_context);
 			Assert::AreEqual(expected_action, chosen_action);
 
-			chosen_action = mwt.Choose_Action(explorer, m_unique_key, my_context);
+			chosen_action = mwt.Choose_Action(explorer, unique_key, my_context);
 			Assert::AreEqual(expected_action, chosen_action);
 
 			float expected_probs[2] = { 1.f, 1.f };
@@ -40,7 +43,9 @@ namespace vw_explore_tests
 		{
 			int num_actions = 10;
 			float epsilon = 0.5f; // Verify that about half the time the default policy is chosen
-			TestPolicy my_policy(m_policy_func_arg, num_actions);
+			int params = 101;
+
+			TestPolicy my_policy(params, num_actions);
 			TestContext my_context;
 			TestRecorder my_recorder;
 
@@ -67,7 +72,9 @@ namespace vw_explore_tests
 		{
 			int num_actions = 10;
 			u32 tau = 0;
-			TestPolicy my_policy(m_policy_func_arg, num_actions);
+			int params = 101;
+
+			TestPolicy my_policy(params, num_actions);
 			TestRecorder my_recorder;
 			TestContext my_context;
 
@@ -111,11 +118,12 @@ namespace vw_explore_tests
 		TEST_METHOD(Bagging)
 		{
 			int num_actions = 10;
+			int params = 101;
 			TestRecorder my_recorder;
 
 			vector<TestPolicy> policies;
-			policies.push_back(TestPolicy(m_policy_func_arg, num_actions));
-			policies.push_back(TestPolicy(m_policy_func_arg + 1, num_actions));
+			policies.push_back(TestPolicy(params, num_actions));
+			policies.push_back(TestPolicy(params + 1, num_actions));
 
 			TestContext my_context;
 
@@ -139,11 +147,12 @@ namespace vw_explore_tests
 		TEST_METHOD(Bagging_Random)
 		{
 			int num_actions = 10;
+			int params = 101;
 			TestRecorder my_recorder;
 
 			vector<TestPolicy> policies;
-			policies.push_back(TestPolicy(m_policy_func_arg, num_actions));
-			policies.push_back(TestPolicy(m_policy_func_arg + 1, num_actions));
+			policies.push_back(TestPolicy(params, num_actions));
+			policies.push_back(TestPolicy(params + 1, num_actions));
 
 			TestContext my_context;
 
@@ -164,6 +173,9 @@ namespace vw_explore_tests
 			int num_actions = 10;
 			float lambda = 0.f;
 			int scorer_arg = 7;
+			u32 NUM_ACTIONS_COVER = 100;
+			float C = 5.0f;
+
 			TestScorer my_scorer(scorer_arg, num_actions);
 			TestRecorder my_recorder;
 			TestContext my_context;
@@ -222,7 +234,7 @@ namespace vw_explore_tests
 			Assert::AreEqual(3, (int)num_interactions);
 			for (int i = 0; i < num_interactions; i++)
 			{
-				Assert::AreNotEqual(1.f / m_num_actions, interactions[i].Probability);
+				Assert::AreNotEqual(1.f / num_actions, interactions[i].Probability);
 			}
 		}
 
@@ -258,7 +270,7 @@ namespace vw_explore_tests
 			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
 			EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, epsilon, num_actions);
 
-			u32 num_decisions = m_num_actions;
+			u32 num_decisions = num_actions;
 			std::string* ids = new std::string[num_decisions];
 			u32 i;
 			for (i = 0; i < num_decisions; i++)
@@ -309,179 +321,13 @@ namespace vw_explore_tests
 			delete[] interactions;
 		}
 
-		TEST_METHOD(Offline_Evaluation)
-		{
-			m_mwt->Initialize_Softmax(m_lambda, Stateless_Default_Scorer, m_num_actions);
-			u32 num_decisions = m_num_actions * log(m_num_actions * 1.0) + log(NUM_ACTIONS_COVER * 1.0 / m_num_actions) * C * m_num_actions;
-			std::string* ids = new std::string[num_decisions];
-			u32 i;
-			for (i = 0; i < num_decisions; i++)
-			{
-				ids[i] = this->Get_Unique_Key(i + 1);
-				u32 action = m_mwt->Choose_Action(ids[i], *m_context);
-			}
-
-			vector<Interaction> vec_interactions = m_mwt->Get_All_Interactions();
-			size_t num_interactions = vec_interactions.size();
-			Assert::AreEqual(num_decisions, (u32)num_interactions);
-
-			Interaction** interactions = new Interaction*[num_interactions];
-			for (size_t i = 0; i < num_interactions; i++)
-			{
-				interactions[i] = &vec_interactions[i];
-			}
-
-			MWTRewardReporter rew = MWTRewardReporter(num_interactions, interactions);
-			float reward = 0.0;
-			// Offline evaluate the default policy; we assume it always returns the same
-			// action
-			u32 policy_action = Stateless_Default_Policy(*m_context);
-			float policy_weighted_sum = 0.0;
-			u32 policy_matches = 0;
-			for (i = 0; i < num_interactions; i++)
-			{
-				rew.Report_Reward(ids[i], reward);
-				if (interactions[i]->Get_Action().Get_Id() == policy_action)
-				{
-					policy_weighted_sum += reward * (1.0 / interactions[i]->Get_Prob());
-					policy_matches++;
-				}
-				reward += 0.1;
-			}
-			float policy_perf = policy_weighted_sum / policy_matches;
-			MWTOptimizer opt = MWTOptimizer(num_interactions, interactions, m_num_actions);
-			Assert::AreEqual(opt.Evaluate_Policy(Stateless_Default_Policy), policy_perf);
-
-			delete[] interactions;
-		}
-
-		TEST_METHOD(Offline_Optimization_VW_CSOAA)
-		{
-			// Test using the example data below, which is designed to yield perfect classification
-			// when predicting on the same (elided) data. Details of this example can be found at:
-			// https://github.com/JohnLangford/vowpal_wabbit/wiki/Cost-Sensitive-One-Against-All-(csoaa)-multi-class-example
-			/*
-	  			1:1.0 a1_expect_1 | a
-				2:1.0 b1_expect_2 | b
-				3:1.0 c1_expect_3 | c
-				1:2.0 2:1.0 ab1_expect_2 | a b
-				2:1.0 3:3.0 bc1_expect_2 | b c
-				1:3.0 3:1.0 ac1_expect_3 | a c
-				2:3.0 d1_expect_2 | d
-			*/
-
-			// Create exploration data based on the cost-sensitive multi-class data above; 
-			// essentially we will only use one class-label per example (the chosen action) ]
-			Interaction* interactions[7];
-			std::string ids[7];
-			OldSimpleContext* context;
-			float prob = 1.0 / 3;
-			float feature_val = 1.0;
-			u64 feature_a = HashUtils::Compute_Id_Hash("a");
-			u64 feature_b = HashUtils::Compute_Id_Hash("b");
-			u64 feature_c = HashUtils::Compute_Id_Hash("c");
-			u64 feature_d = HashUtils::Compute_Id_Hash("d");
-			u32 i;
-			// Example 1
-			i = 0;
-			Feature* features = new Feature[3];
-			// This indicates feature "a" is present (the specific value used is not important)
-			features[0].Id = feature_a;
-			features[0].Value = feature_val; 
-			context = new OldSimpleContext(features, 1);
-			// Indicating this is a copy hands responsibility for freeing the context to the
-			// Interaction class (note: we may remove this interface later)
-			ids[i] = "a1_expect_1";
-			interactions[i] = new Interaction(context, MWTAction(1), prob, ids[i], true);
-			// Example 2
-			features = new Feature[3];
-			features[0].Id = feature_b;
-			features[0].Value = feature_val;
-			context = new OldSimpleContext(features, 1);
-			i++;
-			ids[i] = "b1_expects_2";
-			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
-			// Example 3
-			features = new Feature[3];
-			features[0].Id = feature_c;
-			features[0].Value = feature_val;
-			context = new OldSimpleContext(features, 1);
-			i++;
-			ids[i] = "c1_expects_3";
-			interactions[i] = new Interaction(context, MWTAction(3), prob, ids[i], true);
-			// Example 4
-			features = new Feature[3];
-			features[0].Id = feature_a;
-			features[0].Value = feature_val;
-			features[1].Id = feature_b;
-			features[1].Value = feature_val;
-			context = new OldSimpleContext(features, 2);
-			i++;
-			ids[i] = "ab1_expect_2";
-			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
-			// Example 5
-			features = new Feature[3];
-			features[0].Id = feature_b;
-			features[0].Value = feature_val;
-			features[1].Id = feature_c;
-			features[1].Value = feature_val;
-			context = new OldSimpleContext(features, 2);
-			i++;
-			ids[i] = "bc1_expect_2";
-			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
-			// Example 6
-			features = new Feature[3];
-			features[0].Id = feature_a;
-			features[0].Value = feature_val;
-			features[1].Id = feature_c;
-			features[1].Value = feature_val;
-			context = new OldSimpleContext(features, 2);
-			i++;
-			ids[i] = "ac1_expect_3";
-			interactions[i] = new Interaction(context, MWTAction(3), prob, ids[i], true);
-			// Example 7
-			features = new Feature[3];
-			features[0].Id = feature_d;
-			features[0].Value = feature_val;
-			context = new OldSimpleContext(features, 1);
-			i++;
-			ids[i] = "d1_expect_2";
-			interactions[i] = new Interaction(context, MWTAction(2), prob, ids[i], true);
-
-			// Join reward information to the dataset
-			MWTRewardReporter rew = MWTRewardReporter(7, interactions);
-			float all_rewards[7];
-			float reward = 1.0;
-			// This initializes all rewards to the value above
-			std::fill_n(all_rewards, 7, reward);
-			rew.Report_Reward(7, ids, all_rewards);
-
-			ofstream myfile;
-			myfile.open("sidtest.out");
-			std::string serialized_string;
-			for (u32 i = 0; i < 7; i++)
-			{
-				interactions[i]->Serialize_VW(serialized_string);
-				serialized_string.append("\n");
-			}
-			myfile << serialized_string;
-			myfile.close();
-
-			// Test VW's CSOAA offline optimization
-			MWTOptimizer opt = MWTOptimizer(7, interactions, 3);
-			opt.Optimize_Policy_VW_CSOAA("vw_csoaa.model");
-			float policy_perf = opt.Evaluate_Policy_VW_CSOAA("vw_csoaa.model");
-			// The optimized policy should yield perfect predictions in this case
-			//TODO: We are encountering floating precision issues, converting to int for now since
-			//the expected answers are whole numbers
-			Assert::AreEqual((double)std::round(policy_perf), std::round((7 * reward * (1.0 / prob)) / 7));
-		}
-
 		TEST_METHOD(End_To_End_Epsilon_Greedy)
 		{
 			int num_actions = 10;
 			float epsilon = 0.5f;
-			TestSimplePolicy my_policy(m_policy_func_arg, num_actions);
+			int params = 101;
+
+			TestSimplePolicy my_policy(params, num_actions);
 			StringRecorder<SimpleContext> my_recorder;
 
 			MwtExplorer<StringRecorder<SimpleContext>> mwt("salt", my_recorder);
@@ -494,7 +340,9 @@ namespace vw_explore_tests
 		{
 			int num_actions = 10;
 			u32 tau = 5;
-			TestSimplePolicy my_policy(m_policy_func_arg, num_actions);
+			int params = 101;
+
+			TestSimplePolicy my_policy(params, num_actions);
 			StringRecorder<SimpleContext> my_recorder;
 
 			MwtExplorer<StringRecorder<SimpleContext>> mwt("salt", my_recorder);
@@ -507,11 +355,12 @@ namespace vw_explore_tests
 		{
 			int num_actions = 10;
 			u32 bags = 2;
+			int params = 101;
 			StringRecorder<SimpleContext> my_recorder;
 
 			vector<TestSimplePolicy> policies;
-			policies.push_back(TestSimplePolicy(m_policy_func_arg, num_actions));
-			policies.push_back(TestSimplePolicy(m_policy_func_arg, num_actions));
+			policies.push_back(TestSimplePolicy(params, num_actions));
+			policies.push_back(TestSimplePolicy(params, num_actions));
 
 			MwtExplorer<StringRecorder<SimpleContext>> mwt("salt", my_recorder);
 			BaggingExplorer<TestSimplePolicy> explorer(policies, bags, num_actions);
@@ -548,6 +397,9 @@ namespace vw_explore_tests
 
 		TEST_METHOD(PRG_Coverage)
 		{
+			const u32 NUM_ACTIONS_COVER = 100;
+			float C = 5.0f;
+
 			// We could use many fewer bits (e.g. u8) per bin since we're throwing uniformly at
 			// random, but this is safer in case we change things
 			u32 bins[NUM_ACTIONS_COVER] = { 0 };
@@ -591,7 +443,9 @@ namespace vw_explore_tests
 		{
 			int num_actions = 10;
 			float epsilon = 0.5f;
-			TestSimplePolicy my_policy(m_policy_func_arg, num_actions);
+			int params = 101;
+
+			TestSimplePolicy my_policy(params, num_actions);
 
 			StringRecorder<SimpleContext> my_recorder;
 			MwtExplorer<StringRecorder<SimpleContext>> mwt("c++-test", my_recorder);
@@ -628,7 +482,9 @@ namespace vw_explore_tests
 			PRG::prg rand;
 
 			int num_actions = 10;
-			TestSimplePolicy my_policy(m_policy_func_arg, num_actions);
+			int params = 101;
+
+			TestSimplePolicy my_policy(params, num_actions);
 
 			char expected_log[100] = { 0 };
 
@@ -669,8 +525,9 @@ namespace vw_explore_tests
 		TEST_METHOD(Usage_Bad_Arguments)
 		{
 			int num_ex = 0;
-			TestPolicy my_policy(m_policy_func_arg, 0);
-			TestScorer my_scorer(m_policy_func_arg, 0);
+			int params = 101;
+			TestPolicy my_policy(params, 0);
+			TestScorer my_scorer(params, 0);
 			vector<TestPolicy> policies;
 
 			COUNT_INVALID(EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, .5f, 0);) // Invalid # actions, must be > 0
@@ -698,7 +555,7 @@ namespace vw_explore_tests
 				MwtExplorer<TestRecorder> mwt("salt", TestRecorder());
 				EpsilonGreedyExplorer<TestBadPolicy> explorer(TestBadPolicy(), 0.f, (u32)1);
 
-				u32 expected_action = mwt.Choose_Action(explorer, m_unique_key, TestContext());
+				u32 expected_action = mwt.Choose_Action(explorer, "1001", TestContext());
 			)
 			COUNT_BAD_CALL
 			(
@@ -745,6 +602,7 @@ namespace vw_explore_tests
 		{
 			int num_actions = 10;
 			float epsilon = 0.f; // No randomization
+			string unique_key = "1001";
 
 			TestSimplePolicy my_policy(0, num_actions);
 
@@ -759,7 +617,7 @@ namespace vw_explore_tests
 
 			EpsilonGreedyExplorer<TestSimplePolicy> explorer(my_policy, epsilon, num_actions);
 
-			u32 chosen_action = mwt.Choose_Action(explorer, m_unique_key, custom_context);
+			u32 chosen_action = mwt.Choose_Action(explorer, unique_key, custom_context);
 			Assert::AreEqual((u32)1, chosen_action);
 
 			float expected_probs[1] = { 1.f };
@@ -786,60 +644,10 @@ namespace vw_explore_tests
 
 		TEST_METHOD_INITIALIZE(Test_Initialize)
 		{
-			// Constant for coverage tests: using Pr(T > nlnn + cn) < 1 - exp(-e^(-c)) for the time
-			// T of the coupon collector problem, C = 0.5 yields a failure probability of ~0.45. 
-			C = 5.0;
-
-			m_num_actions = 10;
-			m_mwt = new OldMWTExplorer("c++-test");
-
-			//TODO: We should eventually test randomization, else we are missing code paths
-			// Initialize with 0 to test deterministic result
-			m_bags = 2;
-			m_policy_func_arg = 101;
-			m_policy_scorer_arg = 7;
-			m_lambda = 0;
-
-			m_num_features = 1;
-			m_features = new Feature[m_num_features];
-			m_features[0].Id = 1;
-			m_features[0].Value = 0.5;
-			m_context = new OldSimpleContext(m_features, m_num_features);
-
-			m_unique_key = "1001";
-
-			m_policy_params = new int*[m_bags];
-			for (u32 i = 0; i < m_bags; i++)
-			{
-				m_policy_params[i] = &m_policy_func_arg;
-			}
 		}
 
 		TEST_METHOD_CLEANUP(Test_Cleanup)
 		{
-			delete m_features;
-			delete m_context;
-			delete m_mwt;
-
-			m_features = nullptr;
-			m_context = nullptr;
-			m_mwt = nullptr;
-
-			delete[] m_policy_params;
-		}
-
-	public:
-		static u32 Stateless_Default_Policy(BaseContext& applicationContext)
-		{
-			return MWTAction::Make_OneBased(99 % m_num_actions);
-		}
-
-		static void Stateless_Default_Scorer(BaseContext& applicationContext, float scores[], u32 size)
-		{
-			for (u32 i = 0; i < size; i++)
-			{
-				scores[i] = 1;
-			}
 		}
 
 	private: 
@@ -888,29 +696,5 @@ namespace vw_explore_tests
 
 			return unique_key_container.str();
 		}
-
-	private:
-		// Constants for action space coverage tests (balls-in-bins)
-		static const u32 NUM_ACTIONS_COVER = 100;
-		float C;
-
-		OldMWTExplorer* m_mwt;
-
-		u32 m_bags;
-		float m_lambda;
-		int m_policy_func_arg;
-		int m_policy_scorer_arg;
-
-		OldSimpleContext* m_context;
-		int m_num_features;
-		Feature* m_features;
-
-		static int m_num_actions;
-		string m_unique_key;
-		int m_unique_key_length;
-
-		int** m_policy_params;
 	};
-	// Static variables need to be initialized externally in a .cpp file for linker to work
-	int VWExploreUnitTests::m_num_actions = 0;
 }

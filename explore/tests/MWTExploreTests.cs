@@ -105,14 +105,17 @@ namespace ExploreTests
         {
             uint numActions = 10;
             float lambda = 0.5f;
+            uint numActionsCover = 100;
+            float C = 5;
+
             TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
             TestScorer<TestContext> scorer = new TestScorer<TestContext>(numActions);
 
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
             var explorer = new SoftmaxExplorer<TestContext>(scorer, lambda, numActions);
 
-            uint numDecisions = (uint)(NumActions * Math.Log(NumActions * 1.0) + Math.Log(NumActionsCover * 1.0 / NumActions) * C * NumActions);
-            uint[] actions = new uint[NumActions];
+            uint numDecisions = (uint)(numActions * Math.Log(numActions * 1.0) + Math.Log(numActionsCover * 1.0 / numActions) * C * numActions);
+            uint[] actions = new uint[numActions];
 
             Random rand = new Random();
             for (uint i = 0; i < numDecisions; i++)
@@ -120,8 +123,8 @@ namespace ExploreTests
                 uint chosenAction = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = (int)i });
                 actions[ActionID.Make_ZeroBased(chosenAction)]++;
             }
-            
-            for (uint i = 0; i < NumActions; i++)
+
+            for (uint i = 0; i < numActions; i++)
             {
                 Assert.IsTrue(actions[i] > 0);
             }
@@ -158,7 +161,7 @@ namespace ExploreTests
             for (int i = 0; i < interactions.Count; i++)
             {
                 // Scores are not equal therefore probabilities should not be uniform
-                Assert.AreNotEqual(interactions[i].Probability, 1.0f / NumActions);
+                Assert.AreNotEqual(interactions[i].Probability, 1.0f / numActions);
                 Assert.AreEqual(100 + i, interactions[i].Context.Id);
             }
         }
@@ -261,25 +264,17 @@ namespace ExploreTests
         [TestInitialize]
         public void TestInitialize()
         {
-            mwt = new OldMwtExplorer("test");
-
-            features = new Feature[2];
-            features[0].Value = 0.5f;
-            features[0].Id = 1;
-            features[1].Value = 0.9f;
-            features[1].Id = 2;
-
-            context = new OldSimpleContext(features, "Other C# test context");
         }
 
         [TestCleanup]
         public void TestCleanup()
         {
-            mwt.Uninitialize();
         }
 
         private void EndToEnd(MwtExplorer<SimpleContext> mwtt, IExplorer<SimpleContext> explorer, TestRecorder<SimpleContext> recorder)
         {
+            uint numActions = 10;
+
             Random rand = new Random();
 
             List<float> rewards = new List<float>();
@@ -317,7 +312,7 @@ namespace ExploreTests
             }
 
             Interaction[] completeInteractions = mrr.GetAllInteractions();
-            MwtOptimizer mop = new MwtOptimizer(completeInteractions, NumActions);
+            MwtOptimizer mop = new MwtOptimizer(completeInteractions, numActions);
 
             string modelFile = "model";
 
@@ -331,91 +326,6 @@ namespace ExploreTests
 
             System.IO.File.Delete(modelFile);
         }
-
-        private static UInt32 TestStatefulPolicyFunc(int policyParams, BaseContext context)
-        {
-            return ActionID.Make_OneBased((uint)(policyParams + context.GetFeatures().Length) % MWTExploreTests.NumActions);
-        }
-
-        private static UInt32 TestStatelessPolicyFunc(BaseContext context)
-        {
-            return ActionID.Make_OneBased((uint)context.GetFeatures().Length % MWTExploreTests.NumActions);
-        }
-
-        private static void TestStatefulScorerFunc(int policyParams, BaseContext applicationContext, float[] scores)
-        {
-            for (uint i = 0; i < scores.Length; i++)
-            {
-                scores[i] = policyParams;
-            }
-        }
-
-        private static void TestStatelessScorerFunc(BaseContext applicationContext, float[] scores)
-        {
-            for (uint i = 0; i < scores.Length; i++)
-            {
-                scores[i] = applicationContext.GetFeatures().Length;
-            }
-        }
-
-        private static void NonUniformStatefulScorerFunc(int policyParams, BaseContext applicationContext, float[] scores)
-        {
-            for (uint i = 0; i < scores.Length; i++)
-            {
-                scores[i] = policyParams + i;
-            }
-        }
-
-        private static void NonUniformStatelessScorerFunc(BaseContext applicationContext, float[] scores)
-        {
-            for (uint i = 0; i < scores.Length; i++)
-            {
-                scores[i] = i;
-            }
-        }
-
-        private static readonly uint NumActionsCover = 100;
-        private static readonly float C = 5;
-
-        private static readonly uint NumActions = 10;
-        private static readonly float Epsilon = 0;
-        private static readonly uint Tau = 0;
-        private static readonly uint Bags = 2;
-        private static readonly float Lambda = 0.5f;
-        private static readonly int PolicyParams = 1003;
-        private static readonly string UniqueKey = "ManagedTestId";
-
-        private OldMwtExplorer mwt;
-        private Feature[] features;
-        private OldSimpleContext context;
-    }
-
-    public class OldTestContext : BaseContext
-    {
-        public OldTestContext()
-        { 
-            features = new Feature[] 
-            { 
-                new Feature() { Id = 9999, Value = 9999f },
-            };
-        }
-
-        public void SetFeatures()
-        {
-            features = new Feature[] 
-            { 
-                new Feature() { Id = 1, Value = 9.1f },
-                new Feature() { Id = 4, Value = 3.6f },
-                new Feature() { Id = 14, Value = 11.5f }
-            };
-        }
-
-        public override Feature[] GetFeatures()
-        {
-            return features;
-        }
-
-        private Feature[] features;
     }
 
     struct TestInteraction<Ctx>
