@@ -25,7 +25,7 @@ public:
 	TestPolicy(int params, int num_actions) : m_params(params), m_num_actions(num_actions) { }
 	u32 Choose_Action(TestContext& context)
 	{
-		return MWTAction::Make_OneBased(m_params % m_num_actions);
+		return m_params % m_num_actions + 1; // action id is one-based
 	}
 private:
 	int m_params;
@@ -109,7 +109,7 @@ public:
 	TestSimplePolicy(int params, int num_actions) : m_params(params), m_num_actions(num_actions) { }
 	u32 Choose_Action(SimpleContext& context)
 	{
-		return MWTAction::Make_OneBased(m_params % m_num_actions);
+		return m_params % m_num_actions + 1; // action id is one-based
 	}
 private:
 	int m_params;

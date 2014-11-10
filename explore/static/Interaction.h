@@ -35,30 +35,4 @@ struct Feature
 		return Id == other_feature.Id;
 	}
 };
-
-class MWTAction : public Serializable
-{
-public:
-	MWTAction(u32 id) : m_id(id)
-	{
-	}
-	u32 Get_Id() const { return m_id; }
-	u32 Get_Id_ZeroBased() const { return m_id - 1; }
-
-	static u32 Make_OneBased(u32 id) { return id + 1; }
-	static u32 Make_ZeroBased(u32 id) { return id - 1; }
-
-	bool Match(MWTAction& second_action)
-	{
-		return m_id == second_action.Get_Id();
-	}
-
-	void Serialize(std::string& stream)
-	{
-		stream.append(to_string(m_id));
-	}
-
-private:
-	u32 m_id;
-};
 }

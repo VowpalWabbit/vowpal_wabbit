@@ -130,14 +130,14 @@ public:
 	}
 
 private:
-	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
+	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
 		PRG::prg random_generator(salted_seed);
 
 		// Invoke the default policy function to get the action
-		MWTAction chosen_action = MWTAction(m_default_policy.Choose_Action(context));
+		u32 chosen_action = m_default_policy.Choose_Action(context);
 
-		if (chosen_action.Get_Id() == 0 || chosen_action.Get_Id() > m_num_actions)
+		if (chosen_action == 0 || chosen_action > m_num_actions)
 		{
 			throw std::invalid_argument("Action chosen by default policy is not within valid range.");
 		}
@@ -155,7 +155,7 @@ private:
 			// Get uniform random action ID
 			u32 actionId = random_generator.Uniform_Int(1, m_num_actions);
 
-			if (actionId == chosen_action.Get_Id())
+			if (actionId == chosen_action)
 			{
 				// IF it matches the one chosen by the default policy
 				// then increase the probability
@@ -166,10 +166,10 @@ private:
 				// Otherwise it's just the uniform probability
 				action_probability = base_probability;
 			}
-			chosen_action = MWTAction(actionId);
+			chosen_action = actionId;
 		}
 
-		return std::tuple<MWTAction, float, bool>(chosen_action, action_probability, true);
+		return std::tuple<u32, float, bool>(chosen_action, action_probability, true);
 	}
 
 private:
@@ -196,7 +196,7 @@ public:
 	}
 
 private:
-	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
+	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
 		PRG::prg random_generator(salted_seed);
 
@@ -207,8 +207,6 @@ private:
 		{
 			throw std::invalid_argument("The number of scores returned by the scorer must equal number of actions");
 		}
-
-		MWTAction chosen_action(0);
 
 		u32 i = 0;
 
@@ -251,7 +249,7 @@ private:
 		}
 
 		// action id is one-based
-		return std::tuple<MWTAction, float, bool>(MWTAction(action_index + 1), action_probability, true);
+		return std::tuple<u32, float, bool>(action_index + 1, action_probability, true);
 	}
 
 private:
@@ -278,7 +276,7 @@ public:
 	}
 
 private:
-	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
+	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
 		PRG::prg random_generator(salted_seed);
 
@@ -290,7 +288,7 @@ private:
 			throw std::invalid_argument("The number of weights returned by the scorer must equal number of actions");
 		}
 
-		MWTAction chosen_action(0);
+		u32 chosen_action = 0;
 
 		// Create a discrete_distribution based on the returned weights. This class handles the
 		// case where the sum of the weights is < or > 1, by normalizing agains the sum.
@@ -326,7 +324,7 @@ private:
 		}
 
 		// action id is one-based
-		return std::tuple<MWTAction, float, bool>(MWTAction(action_index + 1), action_probability, true);
+		return std::tuple<u32, float, bool>(action_index + 1, action_probability, true);
 	}
 
 private:
@@ -352,11 +350,11 @@ public:
 	}
 
 private:
-	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
+	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
 		PRG::prg random_generator(salted_seed);
 
-		MWTAction chosen_action(0);
+		u32 chosen_action = 0;
 		float action_probability = 0.f;
 		bool log_action;
 		if (m_tau)
@@ -364,15 +362,15 @@ private:
 			m_tau--;
 			u32 actionId = random_generator.Uniform_Int(1, m_num_actions);
 			action_probability = 1.f / m_num_actions;
-			chosen_action = MWTAction(actionId);
+			chosen_action = actionId;
 			log_action = true;
 		}
 		else
 		{
 			// Invoke the default policy function to get the action
-			chosen_action = MWTAction(m_default_policy.Choose_Action(context));
+			chosen_action = m_default_policy.Choose_Action(context);
 
-			if (chosen_action.Get_Id() == 0 || chosen_action.Get_Id() > m_num_actions)
+			if (chosen_action == 0 || chosen_action > m_num_actions)
 			{
 				throw std::invalid_argument("Action chosen by default policy is not within valid range.");
 			}
@@ -381,7 +379,7 @@ private:
 			log_action = false;
 		}
 
-		return std::tuple<MWTAction, float, bool>(chosen_action, action_probability, log_action);
+		return std::tuple<u32, float, bool>(chosen_action, action_probability, log_action);
 	}
 
 private:
@@ -415,7 +413,7 @@ public:
 	}
 
 private:
-	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
+	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
 		PRG::prg random_generator(salted_seed);
 
@@ -423,8 +421,8 @@ private:
 		u32 chosen_bag = random_generator.Uniform_Int(0, m_bags - 1);
 
 		// Invoke the default policy function to get the action
-		MWTAction chosen_action(0);
-		MWTAction action_from_bag(0);
+		u32 chosen_action = 0;
+		u32 action_from_bag = 0;
 		vector<u32> actions_selected;
 		for (size_t i = 0; i < m_num_actions; i++)
 		{
@@ -434,9 +432,9 @@ private:
 		// Invoke the default policy function to get the action
 		for (u32 current_bag = 0; current_bag < m_bags; current_bag++)
 		{
-			action_from_bag = MWTAction(m_default_policy_functions[current_bag]->Choose_Action(context));
+			action_from_bag = m_default_policy_functions[current_bag]->Choose_Action(context);
 
-			if (action_from_bag.Get_Id() == 0 || action_from_bag.Get_Id() > m_num_actions)
+			if (action_from_bag == 0 || action_from_bag > m_num_actions)
 			{
 				throw std::invalid_argument("Action chosen by default policy is not within valid range.");
 			}
@@ -446,11 +444,11 @@ private:
 				chosen_action = action_from_bag;
 			}
 			//this won't work if actions aren't 0 to Count
-			actions_selected[action_from_bag.Get_Id_ZeroBased()]++;
+			actions_selected[action_from_bag - 1]++; // action id is one-based
 		}
-		float action_probability = (float)actions_selected[chosen_action.Get_Id_ZeroBased()] / m_bags;
+		float action_probability = (float)actions_selected[chosen_action - 1] / m_bags; // action id is one-based
 
-		return std::tuple<MWTAction, float, bool>(chosen_action, action_probability, true);
+		return std::tuple<u32, float, bool>(chosen_action, action_probability, true);
 	}
 
 private:

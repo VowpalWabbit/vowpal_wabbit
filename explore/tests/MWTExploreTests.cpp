@@ -191,7 +191,7 @@ namespace vw_explore_tests
 			{
 				u32 action = mwt.Choose_Action(explorer, this->Get_Unique_Key(i + 1), my_context);
 				// Action IDs are 1-based
-				actions[MWTAction::Make_ZeroBased(action)]++;
+				actions[action - 1]++;
 			}
 			// Ensure all actions are covered
 			for (i = 0; i < num_actions; i++)
