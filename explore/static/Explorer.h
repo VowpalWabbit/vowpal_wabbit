@@ -203,6 +203,10 @@ public:
 	SoftmaxExplorer(Scr& default_scorer, float lambda, u32 num_actions) :
 		m_default_scorer(default_scorer), m_lambda(lambda), m_num_actions(num_actions)
 	{
+		if (m_num_actions < 1)
+		{
+			throw std::invalid_argument("Number of actions must be at least 1.");
+		}
 	}
 
 private:
@@ -286,6 +290,10 @@ public:
 	GenericExplorer(Scr& default_scorer, u32 num_actions) : 
 		m_default_scorer(default_scorer), m_num_actions(num_actions)
 	{
+		if (m_num_actions < 1)
+		{
+			throw std::invalid_argument("Number of actions must be at least 1.");
+		}
 	}
 
 private:
@@ -361,6 +369,10 @@ public:
 	TauFirstExplorer(Plc& default_policy, u32 tau, u32 num_actions) :
 		m_default_policy(default_policy), m_tau(tau), m_num_actions(num_actions)
 	{
+		if (m_num_actions < 1)
+		{
+			throw std::invalid_argument("Number of actions must be at least 1.");
+		}
 	}
 
 	template <class Ctx>
@@ -421,6 +433,15 @@ public:
 		m_bags(bags),
 		m_num_actions(num_actions)
 	{
+		if (m_num_actions < 1)
+		{
+			throw std::invalid_argument("Number of actions must be at least 1.");
+		}
+
+		if (bags < 1)
+		{
+			throw std::invalid_argument("Number of bags must be at least 1.");
+		}
 	}
 
 	template <class Ctx>

@@ -66,6 +66,27 @@ private:
 	bool m_uniform;
 };
 
+class FixedScorer : public IScorer<TestContext>
+{
+public:
+	FixedScorer(int num_actions, int value) :
+		m_num_actions(num_actions), m_value(value)
+	{ }
+
+	vector<float> Score_Actions(TestContext& context)
+	{
+		vector<float> scores;
+		for (u32 i = 0; i < m_num_actions; i++)
+		{
+			scores.push_back((float)m_value);
+		}
+		return scores;
+	}
+private:
+	int m_num_actions;
+	int m_value;
+};
+
 class TestSimpleScorer : public IScorer<SimpleContext>
 {
 public:

@@ -672,46 +672,22 @@ namespace vw_explore_tests
 		{
 			int num_ex = 0;
 			TestPolicy my_policy(m_policy_func_arg, 0);
+			TestScorer my_scorer(m_policy_func_arg, 0);
+			vector<TestPolicy> policies;
+
 			COUNT_INVALID(EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, .5f, 0);) // Invalid # actions, must be > 0
 			COUNT_INVALID(EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, 1.5f, 10);) // Invalid epsilon, must be in [0,1]
 			COUNT_INVALID(EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, -.5f, 10);) // Invalid epsilon, must be in [0,1]
 
-			Assert::AreEqual(3, num_ex);
+			COUNT_INVALID(BaggingExplorer<TestPolicy> explorer(policies, 1, 0);) // Invalid # actions, must be > 0
+			COUNT_INVALID(BaggingExplorer<TestPolicy> explorer(policies, 0, 1);) // Invalid # bags, must be > 0
 
-			num_ex = 0;
-			
-			Stateful<int>::Policy* stateful_funcs[2] = { Stateful_Default_Policy, nullptr };
-			Policy* stateless_funcs[2] = { nullptr, Stateless_Default_Policy };
+			COUNT_INVALID(TauFirstExplorer<TestPolicy> explorer(my_policy, 1, 0);) // Invalid # actions, must be > 0
+			COUNT_INVALID(SoftmaxExplorer<TestScorer> explorer(my_scorer, .5f, 0);) // Invalid # actions, must be > 0
+			COUNT_INVALID(GenericExplorer<TestScorer> explorer(my_scorer, 0);) // Invalid # actions, must be > 0
 
-			// Invalid policy functions
-			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Tau_First<int>(1, nullptr, m_policy_func_arg, m_num_actions);)
-			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Tau_First(2, nullptr, m_num_actions);)
-			
-			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Bagging<int>(1, nullptr, m_policy_params, m_num_actions);)
-			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Bagging(1, nullptr, m_num_actions);)
-			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Bagging<int>(2, stateful_funcs, m_policy_params, m_num_actions);)
-			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Bagging(2, stateless_funcs, m_num_actions);)
-			
-			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Softmax<int>(0.5f, nullptr, m_policy_func_arg, m_num_actions);)
-			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Softmax(0.5f, nullptr, m_num_actions);)
-			
-			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Generic<int>(nullptr, m_policy_func_arg, m_num_actions);)
-			COUNT_INVALID(OldMWTExplorer mwt(""); mwt.Initialize_Generic(nullptr, m_num_actions);)
-			
-			Assert::AreEqual(10, num_ex);
-		}
 
-		TEST_METHOD(Usage_Bad_Call)
-		{
-			int num_ex = 0;
-			// No initialization
-			COUNT_BAD_CALL
-			(
-				OldMWTExplorer mwt("");
-				OldSimpleContext context(nullptr, 0);
-				mwt.Choose_Action("test", context);
-			)
-			Assert::AreEqual(1, num_ex);
+			Assert::AreEqual(8, num_ex);
 		}
 
 		TEST_METHOD(Usage_Bad_Policy)
@@ -730,15 +706,17 @@ namespace vw_explore_tests
 			)
 			COUNT_BAD_CALL
 			(
-				OldMWTExplorer mwt("");
-				mwt.Initialize_Tau_First(0, Stateless_Default_Policy, 1);
-				mwt.Choose_Action("test", context);
+				MwtExplorer<TestRecorder> mwt("salt", TestRecorder());
+				TauFirstExplorer<TestBadPolicy> explorer(TestBadPolicy(), (u32)0, (u32)1);
+				mwt.Choose_Action(explorer, "test", TestContext());
 			)
 			COUNT_BAD_CALL
 			(
-				OldMWTExplorer mwt("");
-				mwt.Initialize_Bagging(m_bags, funcs, 1);
-				mwt.Choose_Action("test", context);
+				vector<TestBadPolicy> policies;
+				policies.push_back(TestBadPolicy());
+				MwtExplorer<TestRecorder> mwt("salt", TestRecorder());
+				BaggingExplorer<TestBadPolicy> explorer(policies, (u32)policies.size(), (u32)1);
+				mwt.Choose_Action(explorer, "test", TestContext());
 			)
 			Assert::AreEqual(3, num_ex);
 		}
@@ -746,20 +724,21 @@ namespace vw_explore_tests
 		TEST_METHOD(Usage_Bad_Scorer)
 		{
 			int num_ex = 0;
-			OldSimpleContext context(nullptr, 0);
 
 			// Default policy returns action outside valid range
 			COUNT_BAD_CALL
 			(
-				OldMWTExplorer mwt("");
-				mwt.Initialize_Generic(Negative_Stateless_Default_Scorer, m_num_actions);
-				mwt.Choose_Action("test", context);
+				u32 num_actions = 1;
+				MwtExplorer<TestRecorder> mwt("salt", TestRecorder());
+				GenericExplorer<FixedScorer> explorer(FixedScorer(num_actions, -1), num_actions);
+				mwt.Choose_Action(explorer, "test", TestContext());
 			)
 			COUNT_BAD_CALL
 			(
-				OldMWTExplorer mwt("");
-				mwt.Initialize_Generic(Zero_Stateless_Default_Scorer, m_num_actions);
-				mwt.Choose_Action("test", context);
+				u32 num_actions = 1;
+				MwtExplorer<TestRecorder> mwt("salt", TestRecorder());
+				GenericExplorer<FixedScorer> explorer(FixedScorer(num_actions, 0), num_actions);
+				mwt.Choose_Action(explorer, "test", TestContext());
 			)
 			Assert::AreEqual(2, num_ex);
 		}
