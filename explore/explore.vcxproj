@@ -105,12 +105,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>static;..\vowpalwabbit;$(BoostIncludeDir);$(ZlibIncludeDir);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>static;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(BoostLibDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -141,14 +140,13 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>static;..\vowpalwabbit;c:\boost-trunk;$(BoostIncludeDir);$(ZlibIncludeDir);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>static;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(BoostLibDir);c:\boost-trunk\stage_vc110\lib;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -162,9 +160,6 @@
     <ClCompile Include="explore_sample.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\vowpalwabbit\vw_static.vcxproj">
-      <Project>{1e205806-7f80-47dd-a38d-fc08083f3592}</Project>
-    </ProjectReference>
     <ProjectReference Include="static\explore_static.vcxproj">
       <Project>{ace47e98-488c-4cdf-b9f1-36337b2855ad}</Project>
     </ProjectReference>

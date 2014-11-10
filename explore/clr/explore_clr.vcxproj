@@ -108,13 +108,11 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;VW_EXPLORE_CLR_WRAPPER_EXPORTS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\vowpalwabbit;..\static;$(BoostIncludeDir);$(ZlibIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\static;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(BoostLibDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ws2_32.lib;$(ZlibLibDir)\zlibstat.lib;$(SolutionDir)$(PlatformName)\$(Configuration)\vw_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -143,15 +141,13 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;VW_EXPLORE_CLR_WRAPPER_EXPORTS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\vowpalwabbit;..\static;c:\boost-trunk;$(BoostIncludeDir);$(ZlibIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\static;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(BoostLibDir);c:\boost-trunk\stage_vc110\lib;</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ws2_32.lib;$(ZlibLibDir)\zlibstat.lib;$(SolutionDir)$(PlatformName)\$(Configuration)\vw_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -166,12 +162,6 @@
     <ClCompile Include="explore_clr_wrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\vowpalwabbit\libvw.vcxproj">
-      <Project>{ea52de0d-a5be-4fb9-8c84-3a57bdfebed9}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\vowpalwabbit\vw_static.vcxproj">
-      <Project>{1e205806-7f80-47dd-a38d-fc08083f3592}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\static\explore_static.vcxproj">
       <Project>{ace47e98-488c-4cdf-b9f1-36337b2855ad}</Project>
     </ProjectReference>
