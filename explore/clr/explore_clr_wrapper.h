@@ -172,7 +172,7 @@ namespace MultiWorldTesting {
 			this->recorder = recorder;
 		}
 
-		UInt32 Choose_Action(IExplorer<Ctx>^ explorer, String^ unique_key, Ctx context)
+		UInt32 ChooseAction(IExplorer<Ctx>^ explorer, String^ unique_key, Ctx context)
 		{
 			String^ salt = this->appId;
 			NativeMultiWorldTesting::MwtExplorer<NativeRecorder> mwt(marshal_as<std::string>(salt), *GetNativeRecorder());

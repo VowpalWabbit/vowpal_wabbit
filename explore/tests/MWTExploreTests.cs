@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MultiWorldTesting;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ExploreTests
 {
@@ -14,141 +15,90 @@ namespace ExploreTests
         ** the interactions between managed and native code are as expected.
         */
         [TestMethod]
-        public void EpsilonGreedyStateful()
-        { 
-            mwt.InitializeEpsilonGreedy<int>(Epsilon,
-                new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc),
-                PolicyParams,
-                NumActions);
+        public void EpsilonGreedy()
+        {
+            uint numActions = 10;
+            float epsilon = 0f;
+            string uniqueKey = "ManagedTestId";
 
-            uint expectedAction = MWTExploreTests.TestStatefulPolicyFunc(
-                PolicyParams,
-                context);
+            TestRecorder recorder = new TestRecorder();
+            TestPolicy policy = new TestPolicy();
+            MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
+            TestContext testContext = new TestContext();
+            testContext.Id = 100;
 
-            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
+            var explorer = new EpsilonGreedyExplorer<TestContext>(policy, epsilon, numActions);
+
+            uint expectedAction = policy.ChooseAction(testContext);
+
+            uint chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            chosenAction = mwt.ChooseAction(UniqueKey, context);
+            chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            Interaction[] interactions = mwt.GetAllInteractions();
-            Assert.AreEqual(2, interactions.Length);
+            var interactions = recorder.GetAllInteractions();
+            Assert.AreEqual(2, interactions.Count);
 
-            Assert.AreEqual(2, interactions[0].GetContext().GetFeatures().Length);
-            Assert.AreEqual(0.9f, interactions[0].GetContext().GetFeatures()[1].Value);
+            Assert.AreEqual(testContext.Id, interactions[0].Context.Id);
         }
 
         [TestMethod]
-        public void EpsilonGreedyStateless()
+        public void TauFirst()
         {
-            mwt.InitializeEpsilonGreedy(Epsilon,
-                new StatelessPolicyDelegate(TestStatelessPolicyFunc),
-                NumActions);
+            uint numActions = 10;
+            uint tau = 0;
+            string uniqueKey = "ManagedTestId";
 
-            uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(context);
+            TestRecorder recorder = new TestRecorder();
+            TestPolicy policy = new TestPolicy();
+            MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
+            TestContext testContext = new TestContext();
+            testContext.Id = 100;
 
-            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
+            var explorer = new TauFirstExplorer<TestContext>(policy, tau, numActions);
+
+            uint expectedAction = policy.ChooseAction(testContext);
+
+            uint chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            chosenAction = mwt.ChooseAction(UniqueKey, context);
-            Assert.AreEqual(expectedAction, chosenAction);
-
-            Interaction[] interactions = mwt.GetAllInteractions();
-            Assert.AreEqual(2, interactions.Length);
-
-            Assert.AreEqual(2, interactions[0].GetContext().GetFeatures().Length);
-            Assert.AreEqual(0.9f, interactions[0].GetContext().GetFeatures()[1].Value);
+            var interactions = recorder.GetAllInteractions();
+            Assert.AreEqual(0, interactions.Count);
         }
 
         [TestMethod]
-        public void TauFirstStateful()
+        public void Bagging()
         {
-            mwt.InitializeTauFirst<int>(Tau,
-                new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc),
-                PolicyParams,
-                NumActions);
+            uint numActions = 10;
+            uint numbags = 2;
+            string uniqueKey = "ManagedTestId";
 
-            uint expectedAction = MWTExploreTests.TestStatefulPolicyFunc(
-                PolicyParams,
-                context);
-
-            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
-            Assert.AreEqual(expectedAction, chosenAction);
-
-            Interaction[] interactions = mwt.GetAllInteractions();
-            Assert.AreEqual(0, interactions.Length);
-        }
-
-        [TestMethod]
-        public void TauFirstStateless()
-        {
-            mwt.InitializeTauFirst(Tau,
-                new StatelessPolicyDelegate(TestStatelessPolicyFunc),
-                NumActions);
-
-            uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(context);
-
-            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
-            Assert.AreEqual(expectedAction, chosenAction);
-
-            Interaction[] interactions = mwt.GetAllInteractions();
-            Assert.AreEqual(0, interactions.Length);
-        }
-
-        [TestMethod]
-        public void BaggingStateful()
-        {
-            StatefulPolicyDelegate<int>[] funcs = new StatefulPolicyDelegate<int>[Bags];
-            int[] funcParams = new int[Bags];
-            for (int i = 0; i < Bags; i++)
-			{
-                funcs[i] = new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc);
-                funcParams[i] = PolicyParams;
-			}
-
-            mwt.InitializeBagging(Bags, funcs, funcParams, NumActions);
-
-            uint expectedAction = MWTExploreTests.TestStatefulPolicyFunc(
-                PolicyParams,
-                context);
-
-            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
-            Assert.AreEqual(expectedAction, chosenAction);
-
-            chosenAction = mwt.ChooseAction(UniqueKey, context);
-            Assert.AreEqual(expectedAction, chosenAction);
-
-            Interaction[] interactions = mwt.GetAllInteractions();
-            Assert.AreEqual(2, interactions.Length);
-
-            Assert.AreEqual(2, interactions[0].GetContext().GetFeatures().Length);
-            Assert.AreEqual(0.9f, interactions[0].GetContext().GetFeatures()[1].Value);
-        }
-
-        [TestMethod]
-        public void BaggingStateless()
-        {
-            StatelessPolicyDelegate[] funcs = new StatelessPolicyDelegate[Bags];
-            for (int i = 0; i < Bags; i++)
+            TestRecorder recorder = new TestRecorder();
+            TestPolicy[] policies = new TestPolicy[numbags];
+            for (int i = 0; i < numbags; i++)
             {
-                funcs[i] = new StatelessPolicyDelegate(TestStatelessPolicyFunc);
+                policies[i] = new TestPolicy(i * 2);
             }
+            TestContext testContext1 = new TestContext() { Id = 99 };
+            TestContext testContext2 = new TestContext() { Id = 100 };
 
-            mwt.InitializeBagging(Bags, funcs, NumActions);
+            MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
+            var explorer = new BaggingExplorer<TestContext>(policies, numbags, numActions);
 
-            uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(context);
+            uint expectedAction = policies[0].ChooseAction(testContext1);
 
-            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
+            uint chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext1);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            chosenAction = mwt.ChooseAction(UniqueKey, context);
+            chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext2);
             Assert.AreEqual(expectedAction, chosenAction);
 
-            Interaction[] interactions = mwt.GetAllInteractions();
-            Assert.AreEqual(2, interactions.Length);
+            var interactions = recorder.GetAllInteractions();
+            Assert.AreEqual(2, interactions.Count);
 
-            Assert.AreEqual(2, interactions[0].GetContext().GetFeatures().Length);
-            Assert.AreEqual(0.9f, interactions[0].GetContext().GetFeatures()[1].Value);
+            Assert.AreEqual(testContext1.Id, interactions[0].Context.Id);
+            Assert.AreEqual(testContext2.Id, interactions[1].Context.Id);
         }
 
         [TestMethod]
@@ -464,7 +414,7 @@ namespace ExploreTests
 
         private void ExploreWithCustomContext()
         {
-            TestContext testContext = new TestContext();
+            OldTestContext testContext = new OldTestContext();
             testContext.SetFeatures();
 
             uint chosenAction = mwt.ChooseAction(UniqueKey, testContext);
@@ -473,7 +423,7 @@ namespace ExploreTests
             Assert.AreEqual(1, interactions.Length);
 
             BaseContext returnedContext = interactions[0].GetContext();
-            Assert.IsTrue(returnedContext is TestContext);
+            Assert.IsTrue(returnedContext is OldTestContext);
             Assert.AreEqual(testContext, returnedContext);
 
             Feature[] originalFeatures = testContext.GetFeatures();
@@ -590,9 +540,9 @@ namespace ExploreTests
         private OldSimpleContext context;
     }
 
-    public class TestContext : BaseContext
+    public class OldTestContext : BaseContext
     {
-        public TestContext()
+        public OldTestContext()
         { 
             features = new Feature[] 
             { 
@@ -616,5 +566,82 @@ namespace ExploreTests
         }
 
         private Feature[] features;
+    }
+
+    struct TestInteraction<Ctx>
+    { 
+        public Ctx Context; 
+        public UInt32 Action;
+        public float Probability;
+        public string UniqueKey;
+    }
+
+    class TestContext 
+    {
+        private int id;
+
+        public int Id
+        {
+            get { return id; }
+            set { id = value; }
+        }
+    }
+
+    class TestRecorder : IRecorder<TestContext>
+    {
+        public void Record(TestContext context, UInt32 action, float probability, string uniqueKey)
+        {
+            interactions.Add(new TestInteraction<TestContext>() { 
+                Context = context,
+                Action = action,
+                Probability = probability,
+                UniqueKey = uniqueKey
+            });
+        }
+
+        public List<TestInteraction<TestContext>> GetAllInteractions()
+        {
+            return interactions;
+        }
+
+        private List<TestInteraction<TestContext>> interactions = new List<TestInteraction<TestContext>>();
+    }
+
+    class TestPolicy : IPolicy<TestContext>
+    {
+        public TestPolicy() : this(-1) { }
+
+        public TestPolicy(int index)
+        {
+            this.index = index;
+        }
+
+        public uint ChooseAction(TestContext context)
+        {
+            return 5;
+        }
+
+        private int index;
+    }
+
+    class StringPolicy : IPolicy<SimpleContext>
+    {
+        public uint ChooseAction(SimpleContext context)
+        {
+            return 1;
+        }
+    }
+
+    class TestScorer : IScorer<TestContext>
+    {
+        public TestScorer(uint numActions)
+        {
+            this.numActions = numActions;
+        }
+        public List<float> ScoreActions(TestContext context)
+        {
+            return Enumerable.Repeat<float>(1.0f / numActions, (int)numActions).ToList();
+        }
+        private uint numActions;
     }
 }

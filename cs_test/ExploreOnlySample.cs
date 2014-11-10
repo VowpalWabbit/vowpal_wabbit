@@ -81,7 +81,7 @@ namespace cs_test
                 StringRecorder<SimpleContext> recorder = new StringRecorder<SimpleContext>();
                 StringPolicy policy = new StringPolicy();
                 MwtExplorer<SimpleContext> mwtt = new MwtExplorer<SimpleContext>("mwt", recorder);
-                uint action = mwtt.Choose_Action(new EpsilonGreedyExplorer<SimpleContext>(policy, epsilon, numActions), "key", context);
+                uint action = mwtt.ChooseAction(new EpsilonGreedyExplorer<SimpleContext>(policy, epsilon, numActions), "key", context);
 
                 Console.WriteLine(recorder.GetRecording());
 
@@ -95,7 +95,7 @@ namespace cs_test
                 MyRecorder recorder = new MyRecorder();
                 MyPolicy policy = new MyPolicy();
                 MwtExplorer<MyContext> mwtt = new MwtExplorer<MyContext>("mwt", recorder);
-                uint action = mwtt.Choose_Action(new TauFirstExplorer<MyContext>(policy, tau, numActions), "key", new MyContext());
+                uint action = mwtt.ChooseAction(new TauFirstExplorer<MyContext>(policy, tau, numActions), "key", new MyContext());
                 Console.WriteLine(String.Join(",", recorder.GetData()));
                 return;
             }
@@ -112,7 +112,7 @@ namespace cs_test
                 }
 
                 MwtExplorer<MyContext> mwtt = new MwtExplorer<MyContext>("mwt", recorder);
-                uint action = mwtt.Choose_Action(new BaggingExplorer<MyContext>(policies, numbags, numActions), "key", new MyContext());
+                uint action = mwtt.ChooseAction(new BaggingExplorer<MyContext>(policies, numbags, numActions), "key", new MyContext());
                 Console.WriteLine(String.Join(",", recorder.GetData()));
                 return;
             }
@@ -125,7 +125,7 @@ namespace cs_test
                 MyScorer scorer = new MyScorer(numActions);
 
                 MwtExplorer<MyContext> mwtt = new MwtExplorer<MyContext>("mwt", recorder);
-                uint action = mwtt.Choose_Action(new SoftmaxExplorer<MyContext>(scorer, lambda, numActions), "key", new MyContext());
+                uint action = mwtt.ChooseAction(new SoftmaxExplorer<MyContext>(scorer, lambda, numActions), "key", new MyContext());
                 Console.WriteLine(String.Join(",", recorder.GetData()));
                 return;
             }
@@ -137,7 +137,7 @@ namespace cs_test
                 MyScorer scorer = new MyScorer(numActions);
 
                 MwtExplorer<MyContext> mwtt = new MwtExplorer<MyContext>("mwt", recorder);
-                uint action = mwtt.Choose_Action(new GenericExplorer<MyContext>(scorer, numActions), "key", new MyContext());
+                uint action = mwtt.ChooseAction(new GenericExplorer<MyContext>(scorer, numActions), "key", new MyContext());
                 Console.WriteLine(String.Join(",", recorder.GetData()));
                 return;
             }
