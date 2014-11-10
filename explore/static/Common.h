@@ -1,5 +1,12 @@
 #pragma once
 
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <float.h>
+#include <math.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <vector>
@@ -18,4 +25,5 @@
 
 // TODO: reference additional headers your program requires here
 #include "utility.h"
-#include "Interaction.h"
+
+using namespace std;
