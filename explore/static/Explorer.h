@@ -409,11 +409,11 @@ private:
 	friend class MwtExplorer;
 };
 
-template <class Plc>
+template <class Ctx>
 class BaggingExplorer
 {
 public:
-	BaggingExplorer(vector<Plc>& default_policy_functions, u32 bags, u32 num_actions) :
+	BaggingExplorer(vector<unique_ptr<IPolicy<Ctx>>>& default_policy_functions, u32 bags, u32 num_actions) :
 		m_default_policy_functions(default_policy_functions),
 		m_bags(bags),
 		m_num_actions(num_actions)
@@ -429,7 +429,7 @@ public:
 		}
 	}
 
-	template <class Ctx>
+private:
 	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
 		ActionSet actions;
@@ -450,12 +450,9 @@ public:
 		}
 
 		// Invoke the default policy function to get the action
-		static_assert(std::is_base_of<IPolicy<Ctx>, Plc>::value, "The specified policy does not implement IPolicy");
-
 		for (u32 current_bag = 0; current_bag < m_bags; current_bag++)
 		{
-			IPolicy<Ctx>* policy = (IPolicy<Ctx>*)&m_default_policy_functions[current_bag];
-			action_from_bag = MWTAction(policy->Choose_Action(context));
+			action_from_bag = MWTAction(m_default_policy_functions[current_bag]->Choose_Action(context));
 
 			if (action_from_bag.Get_Id() == 0 || action_from_bag.Get_Id() > actions.Count())
 			{
@@ -475,7 +472,7 @@ public:
 	}
 
 private:
-	vector<Plc>& m_default_policy_functions;
+	vector<unique_ptr<IPolicy<Ctx>>>& m_default_policy_functions;
 	u32 m_bags;
 	u32 m_num_actions;
 

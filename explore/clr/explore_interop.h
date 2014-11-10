@@ -184,14 +184,14 @@ internal:
 		return m_native_policy;
 	}
 
-	vector<NativePolicy>* GetNativePolicies(int count)
+	vector<unique_ptr<NativeMultiWorldTesting::IPolicy<NativeContext>>>* GetNativePolicies(int count)
 	{
 		if (m_native_policies == nullptr)
 		{
-			m_native_policies = new vector<NativePolicy>();
+			m_native_policies = new vector<unique_ptr<NativeMultiWorldTesting::IPolicy<NativeContext>>>();
 			for (int i = 0; i < count; i++)
 			{
-				m_native_policies->push_back(NativePolicy(m_callback, i));
+				m_native_policies->push_back(unique_ptr<NativeMultiWorldTesting::IPolicy<NativeContext>>(new NativePolicy(m_callback, i)));
 			}
 		}
 
@@ -214,7 +214,7 @@ private:
 
 private:
 	NativePolicy* m_native_policy;
-	vector<NativePolicy>* m_native_policies;
+	vector<unique_ptr<NativeMultiWorldTesting::IPolicy<NativeContext>>>* m_native_policies;
 	Native_Policy_Callback* m_callback;
 };
 

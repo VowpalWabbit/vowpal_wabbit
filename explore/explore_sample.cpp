@@ -116,12 +116,12 @@ int main(int argc, char* argv[])
 		//Initialize Bagging explore algorithm using MyPolicy
 		MyRecorder recorder;
 		MwtExplorer<MyContext> mwt("salt", recorder);
-		vector<MyPolicy> policy_functions;
+		vector<unique_ptr<IPolicy<MyContext>>> policy_functions;
 		for (size_t i = 0; i < num_bags; i++)
 		{
-			policy_functions.push_back(MyPolicy());
+			policy_functions.push_back(unique_ptr<IPolicy<MyContext>>(new MyPolicy()));
 		}
-		BaggingExplorer<MyPolicy> explorer(policy_functions, num_bags, num_actions);
+		BaggingExplorer<MyContext> explorer(policy_functions, num_bags, num_actions);
 		MyContext ctx;
 		u32 action = mwt.Choose_Action(explorer, unique_key, ctx);
 

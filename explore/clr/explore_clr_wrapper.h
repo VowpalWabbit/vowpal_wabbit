@@ -134,7 +134,7 @@ namespace MultiWorldTesting {
 		BaggingExplorer(cli::array<IPolicy<Ctx>^>^ defaultPolicies, UInt32 numBags, UInt32 numActions)
 		{
 			this->defaultPolicies = defaultPolicies;
-			m_explorer = new NativeMultiWorldTesting::BaggingExplorer<NativePolicy>(*GetNativePolicies(numBags), (u32)numBags, (u32)numActions);
+			m_explorer = new NativeMultiWorldTesting::BaggingExplorer<NativeContext>(*GetNativePolicies(numBags), (u32)numBags, (u32)numActions);
 		}
 
 		~BaggingExplorer()
@@ -152,14 +152,14 @@ namespace MultiWorldTesting {
 			return defaultPolicies[index]->ChooseAction(context);
 		}
 
-		NativeMultiWorldTesting::BaggingExplorer<NativePolicy>* Get()
+		NativeMultiWorldTesting::BaggingExplorer<NativeContext>* Get()
 		{
 			return m_explorer;
 		}
 
 	private:
 		cli::array<IPolicy<Ctx>^>^ defaultPolicies;
-		NativeMultiWorldTesting::BaggingExplorer<NativePolicy>* m_explorer;
+		NativeMultiWorldTesting::BaggingExplorer<NativeContext>* m_explorer;
 	};
 
 	generic <class Ctx>
