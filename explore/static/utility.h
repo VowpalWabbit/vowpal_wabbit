@@ -166,8 +166,8 @@ public:
 
 const size_t max_int = 100000;
 const float max_float = max_int;
-const float min_float = 0.00001;
-const size_t max_digits = roundf(-log(min_float) / log(10.));
+const float min_float = 0.00001f;
+const size_t max_digits = (size_t) roundf((float) (-log(min_float) / log(10.)));
 
 class NumberUtils
 {
@@ -189,7 +189,7 @@ public:
 		for (size_t max = 1; max <= v; ++digit)
 		{
 			size_t max_next = max * 10;
-			char v_mod = v % max_next / max;
+			char v_mod = (char) (v % max_next / max);
 			if (!trailing_zeros && v_mod != '\0' && first_nonzero == 0)
 				first_nonzero = digit;
 			values[digit] = '0' + v_mod;
