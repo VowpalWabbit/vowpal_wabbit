@@ -33,7 +33,7 @@ namespace CBIFY {
     learner* cs;
     vw* all;
   };
-
+  
   uint32_t do_uniform(cbify& data)
   {  //Draw an action
     return (uint32_t)ceil(frand48() * data.k);
@@ -52,23 +52,74 @@ namespace CBIFY {
       return 0.;
   }
 
-  u32 explore_policy(vw_context& ctx, BaseContext& application_context)
+  struct vw_context {
+	  learner* l;
+	  example* e;
+  };
+  struct vw_cover_params {
+	  cbify* data;
+	  example* e;
+  };
+
+  class vw_policy : public IPolicy<vw_context>
   {
-	  ctx.l->predict(*ctx.e);
-	  return (u32)(((CB::label*)ctx.e->ld)->prediction);
-  }
+  public:
+	  vw_policy() : m_index(-1) { }
+	  vw_policy(size_t i) : m_index((int)i) { }
+
+	  u32 Choose_Action(vw_context& ctx)
+	  {
+		  if (m_index == -1)
+		  {
+			  ctx.l->predict(*ctx.e);
+		  }
+		  else
+		  {
+			  ctx.l->predict(*ctx.e, (size_t)m_index);
+		  }
+		  return (u32)(((CB::label*)ctx.e->ld)->prediction);
+	  }
+  private:
+	  int m_index;
+  };
+
+  template <class Ctx>
+  class vw_recorder : public IRecorder<Ctx>
+  {
+  public:
+	  void Record(Ctx& context, u32 action, float probability, string unique_key)
+	  {
+		  m_action = action;
+		  m_prob = probability;
+	  }
+
+	  u32 Get_Action() { return m_action; }
+	  float Get_Prob() { return m_prob; }
+
+  private:
+	  u32 m_action;
+	  float m_prob;
+  };
 
   template <bool is_learn>
   void predict_or_learn_first(cbify& data, learner& base, example& ec)
   {//Explore tau times, then act according to optimal.
     MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
-	base.mwt_policy_context->l = &base;
-	base.mwt_policy_context->e = &ec;
-	OldSimpleContext dummy(nullptr, 0);
     //Use CB to find current prediction for remaining rounds.
+
+	vw_context vwc;
+	vwc.l = &base;
+	vwc.e = &ec;
+
+	vw_recorder<vw_context> recorder;
+	MwtExplorer<vw_context> mwt("vw", recorder);
+
+	vw_policy policy;
+	TauFirstExplorer<vw_context> explorer(policy, data.tau, data.k);
+
     if (data.tau && is_learn)
       {
-	uint32_t action = (uint32_t)base.mwt->Choose_Action(string("vw"), dummy); // TODO: evolve unique key?
+	uint32_t action = mwt.Choose_Action(explorer, to_string(ec.example_counter), vwc);
 	ec.loss = loss(ld->label, action);
 	data.tau--;
 	CB::cb_class l = {ec.loss, action, 1.f / data.k, 0};
@@ -83,7 +134,7 @@ namespace CBIFY {
       {
 	data.cb_label.costs.erase();
 	ec.ld = &(data.cb_label);
-	ld->prediction = (uint32_t)base.mwt->Choose_Action(string("vw"), dummy); // TODO: evolve unique key?
+	ld->prediction = mwt.Choose_Action(explorer, to_string(ec.example_counter), vwc);
 	ec.loss = loss(ld->label, ld->prediction);
       }
     ec.ld = ld;
@@ -96,27 +147,22 @@ namespace CBIFY {
     ec.ld = &(data.cb_label);
     data.cb_label.costs.erase();
     
-    // TODO: ideally these call to modify the policy context are not needed, 
-    // however at the moment MWT::Initialize requires the policy function's argument 
-    // which is not available at calling time. This can be fixed if the Context object 
-    // allows for a void* data instance, then we can pass the argument in at the
-    // time of choose_action. Or if Choose_Action takes a separate parameter for this arg.
-    base.mwt_policy_context->l = &base;
-    base.mwt_policy_context->e = &ec;
-    
-	OldSimpleContext dummy(nullptr, 0);
-    base.mwt->Choose_Action(string("vw"), dummy); // TODO: evolve unique key?
-    
-    vector<Interaction> interactions = base.mwt->Get_All_Interactions();
-    
-	if (interactions.size() != 1)
-      throw std::exception();
-    
-    u32 action = interactions[0].Get_Action().Get_Id();
-    float prob = interactions[0].Get_Prob();
-    
-    CB::cb_class l = { loss(ld->label, action), action, prob };
-    data.cb_label.costs.push_back(l);
+	vw_recorder<vw_context> recorder;
+	MwtExplorer<vw_context> mwt("vw", recorder);
+
+	vw_policy policy;
+	EpsilonGreedyExplorer<vw_context> explorer(policy, data.epsilon, data.k);
+
+	vw_context vwc;
+	vwc.l = &base;
+	vwc.e = &ec;
+	mwt.Choose_Action(explorer, to_string(ec.example_counter), vwc);
+
+	u32 action = recorder.Get_Action();
+	float prob = recorder.Get_Prob();
+
+	CB::cb_class l = { loss(ld->label, action), action, prob };
+	data.cb_label.costs.push_back(l);
     
     if (is_learn)
       base.learn(ec);
@@ -134,22 +180,27 @@ namespace CBIFY {
     ec.ld = &(data.cb_label);
     data.cb_label.costs.erase();
 
-    for (size_t j = 1; j <= data.k; j++)
-       data.count[j] = 0;
-	 
-    size_t bag = choose_bag(data);
-    uint32_t action = 0;
-    for (size_t i = 0; i < data.bags; i++)
-      {
-	base.predict(ec,i);
-	data.count[data.cb_label.prediction]++;
-	if (i == bag)
-	  action = data.cb_label.prediction;
-      }
+	vw_recorder<vw_context> recorder;
+	MwtExplorer<vw_context> mwt("vw", recorder);
+
+	vector<unique_ptr<IPolicy<vw_context>>> policies;
+	for (size_t i = 0; i < data.bags; i++)
+	{
+		policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
+	}
+	BaggingExplorer<vw_context> explorer(policies, data.bags, data.k);
+
+	vw_context context;
+	context.l = &base;
+	context.e = &ec;
+	uint32_t action = mwt.Choose_Action(explorer, to_string(ec.example_counter), context);
+
     assert(action != 0);
     if (is_learn)
       {
-	float probability = (float)data.count[action] / (float)data.bags;
+	assert(action == recorder.Get_Action());
+	float probability = recorder.Get_Prob();
+
 	CB::cb_class l = {loss(ld->label, action), 
 			  action, probability};
 	data.cb_label.costs.push_back(l);
@@ -215,6 +266,34 @@ namespace CBIFY {
     cs_ld.costs.push_back( wc );
   }
 
+  class vw_scorer : public IScorer<vw_cover_params>
+  {
+  public:
+	  vector<float> Score_Actions(vw_cover_params& ctx)
+	  {
+		  float additive_probability = 1.f / (float)ctx.data->bags;
+		  for (size_t i = 0; i < ctx.data->bags; i++)
+		  { //get predicted cost-sensitive predictions
+			  if (i == 0)
+				  ctx.data->cs->predict(*ctx.e, i);
+			  else
+				  ctx.data->cs->predict(*ctx.e, i + 1);
+			  ctx.data->count[ctx.data->cs_label.prediction - 1] += additive_probability;
+			  ctx.data->predictions[i] = (uint32_t)ctx.data->cs_label.prediction;
+		  }
+		  float min_prob = ctx.data->epsilon * min(1.f / ctx.data->k, 1.f / (float)sqrt(ctx.data->counter * ctx.data->k));
+
+		  safety(ctx.data->count, min_prob);
+
+		  vector<float> scores;
+		  for (size_t i = 0; i < ctx.data->k; i++)
+		  {
+			  scores.push_back(ctx.data->count[i]);
+		  }
+		  return scores;
+	  }
+  };
+
   template <bool is_learn>
   void predict_or_learn_cover(cbify& data, learner& base, example& ec)
   {//Randomize over predictions from a base set of predictors
@@ -241,27 +320,24 @@ namespace CBIFY {
     float additive_probability = 1.f / (float)data.bags;
 
     ec.ld = &data.cs_label;
-    for (size_t i = 0; i < data.bags; i++)
-      { //get predicted cost-sensitive predictions
-	if (i == 0)
-	  data.cs->predict(ec, i);
-	else
-	  data.cs->predict(ec,i+1);
-	data.count[data.cs_label.prediction-1] += additive_probability;
-	data.predictions[i] = (uint32_t)data.cs_label.prediction;
-      }
 
     float min_prob = data.epsilon * min (1.f / data.k, 1.f / (float)sqrt(data.counter * data.k));
     
-    safety(data.count, min_prob);
-    
-    //compute random action
-    uint32_t action = choose_action(data.count);
-    
+	vw_recorder<vw_cover_params> recorder;
+	MwtExplorer<vw_cover_params> mwt("vw", recorder);
+
+	vw_scorer scorer;
+	GenericExplorer<vw_cover_params> explorer(scorer, data.k);
+
+	vw_cover_params cp;
+	cp.data = &data;
+	cp.e = &ec;
+	uint32_t action = mwt.Choose_Action(explorer, to_string(ec.example_counter), cp);
+	
     if (is_learn)
       {
 	data.cb_label.costs.erase();
-	float probability = (float)data.count[action-1];
+	float probability = recorder.Get_Prob();
 	CB::cb_class l = {loss(ld->label, action), 
 			  action, probability};
 	data.cb_label.costs.push_back(l);
@@ -368,9 +444,6 @@ namespace CBIFY {
       {
 	data->tau = (uint32_t)vm["first"].as<size_t>();
 	l = new learner(data, all.l, 1);
-	all.l->mwt = new OldMWTExplorer("vw");
-	all.l->mwt_policy_context = new vw_context();
-	all.l->mwt->Initialize_Tau_First<vw_context>(data->tau, explore_policy, *all.l->mwt_policy_context, data->k);
 	l->set_learn<cbify, predict_or_learn_first<true> >();
 	l->set_predict<cbify, predict_or_learn_first<false> >();
       }
@@ -379,9 +452,6 @@ namespace CBIFY {
 	if ( vm.count("epsilon") ) 
 	  data->epsilon = vm["epsilon"].as<float>();
 	l = new learner(data, all.l, 1);
-	all.l->mwt = new OldMWTExplorer("vw");
-	all.l->mwt_policy_context = new vw_context();
-	all.l->mwt->Initialize_Epsilon_Greedy<vw_context>(data->epsilon, explore_policy, *all.l->mwt_policy_context, (uint32_t)data->k);
 	l->set_learn<cbify, predict_or_learn_greedy<true> >();
 	l->set_predict<cbify, predict_or_learn_greedy<false> >();
       }
