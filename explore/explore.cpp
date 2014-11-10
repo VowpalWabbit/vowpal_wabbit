@@ -42,9 +42,9 @@ void Clock_Explore()
 	{
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
 		StringRecorder<SimpleContext> recorder;
-		MWT<StringRecorder<SimpleContext>> mwt("test", recorder);
+		MwtExplorer<SimpleContext> mwt("test", recorder);
 	        MySimplePolicy default_policy; 
-		EpsilonGreedyExplorer<MySimplePolicy> explorer(default_policy, epsilon, num_actions);
+		EpsilonGreedyExplorer<SimpleContext> explorer(default_policy, epsilon, num_actions);
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
 		time_init += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
 
