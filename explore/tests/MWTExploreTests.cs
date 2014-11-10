@@ -102,11 +102,15 @@ namespace ExploreTests
         }
 
         [TestMethod]
-        public void SoftmaxStateful()
+        public void Softmax()
         {
-            mwt.InitializeSoftmax<int>(Lambda,
-                new StatefulScorerDelegate<int>(TestStatefulScorerFunc), 
-                PolicyParams, NumActions);
+            uint numActions = 10;
+            float lambda = 0.5f;
+            TestRecorder recorder = new TestRecorder();
+            TestScorer scorer = new TestScorer(numActions);
+
+            MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
+            var explorer = new SoftmaxExplorer<TestContext>(scorer, lambda, numActions);
 
             uint numDecisions = (uint)(NumActions * Math.Log(NumActions * 1.0) + Math.Log(NumActionsCover * 1.0 / NumActions) * C * NumActions);
             uint[] actions = new uint[NumActions];
@@ -114,7 +118,7 @@ namespace ExploreTests
             Random rand = new Random();
             for (uint i = 0; i < numDecisions; i++)
             {
-                uint chosenAction = mwt.ChooseAction(rand.NextDouble().ToString(), context);
+                uint chosenAction = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = (int)i });
                 actions[ActionID.Make_ZeroBased(chosenAction)]++;
             }
             
@@ -123,101 +127,60 @@ namespace ExploreTests
                 Assert.IsTrue(actions[i] > 0);
             }
 
-            mwt.GetAllInteractions();
+            var interactions = recorder.GetAllInteractions();
+            Assert.AreEqual(numDecisions, (uint)interactions.Count);
+
+            for (int i = 0; i < numDecisions; i++)
+            {
+                Assert.AreEqual(i, interactions[i].Context.Id);
+            }
         }
 
         [TestMethod]
-        public void SoftmaxStatefulScores()
+        public void SoftmaxScores()
         {
-            mwt.InitializeSoftmax<int>(Lambda,
-                new StatefulScorerDelegate<int>(NonUniformStatefulScorerFunc),
-                PolicyParams, NumActions);
+            uint numActions = 10;
+            float lambda = 0.5f;
+            TestRecorder recorder = new TestRecorder();
+            TestScorer scorer = new TestScorer(numActions, uniform: false);
+
+            MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
+            var explorer = new SoftmaxExplorer<TestContext>(scorer, lambda, numActions);
 
             Random rand = new Random();
-            mwt.ChooseAction(rand.NextDouble().ToString(), context);
-            mwt.ChooseAction(rand.NextDouble().ToString(), context);
-            mwt.ChooseAction(rand.NextDouble().ToString(), context);
+            mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = 100 });
+            mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = 101 });
+            mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = 102 });
 
-            Interaction[] interactions = mwt.GetAllInteractions();
-            for (int i = 0; i < interactions.Length; i++)
+            var interactions = recorder.GetAllInteractions();
+            
+            Assert.AreEqual(3, interactions.Count);
+
+            for (int i = 0; i < interactions.Count; i++)
             {
                 // Scores are not equal therefore probabilities should not be uniform
-                Assert.AreNotEqual(interactions[i].GetProbability(), 1.0f / NumActions);
+                Assert.AreNotEqual(interactions[i].Probability, 1.0f / NumActions);
+                Assert.AreEqual(100 + i, interactions[i].Context.Id);
             }
         }
 
         [TestMethod]
-        public void SoftmaxStateless()
+        public void Generic()
         {
-            mwt.InitializeSoftmax(Lambda,
-                new StatelessScorerDelegate(TestStatelessScorerFunc),
-                NumActions);
+            uint numActions = 10;
+            string uniqueKey = "ManagedTestId";
+            TestRecorder recorder = new TestRecorder();
+            TestScorer scorer = new TestScorer(numActions);
 
-            uint numDecisions = (uint)(NumActions * Math.Log(NumActions * 1.0) + Math.Log(NumActionsCover * 1.0 / NumActions) * C * NumActions);
-            uint[] actions = new uint[NumActions];
+            MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
+            var explorer = new GenericExplorer<TestContext>(scorer, numActions);
 
-            Random rand = new Random();
-            for (uint i = 0; i < numDecisions; i++)
-            {
-                uint chosenAction = mwt.ChooseAction(rand.NextDouble().ToString(), context);
-                actions[ActionID.Make_ZeroBased(chosenAction)]++;
-            }
+            TestContext testContext = new TestContext() { Id = 100 };
+            uint chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext);
 
-            for (uint i = 0; i < NumActions; i++)
-            {
-                Assert.IsTrue(actions[i] > 0);
-            }
-
-            mwt.GetAllInteractions();
-        }
-
-        [TestMethod]
-        public void SoftmaxStatelessScores()
-        {
-            mwt.InitializeSoftmax(Lambda,
-                new StatelessScorerDelegate(NonUniformStatelessScorerFunc),
-                NumActions);
-
-            Random rand = new Random();
-            mwt.ChooseAction(rand.NextDouble().ToString(), context);
-            mwt.ChooseAction(rand.NextDouble().ToString(), context);
-            mwt.ChooseAction(rand.NextDouble().ToString(), context);
-
-            Interaction[] interactions = mwt.GetAllInteractions();
-            for (int i = 0; i < interactions.Length; i++)
-            {
-                // Scores are not equal therefore probabilities should not be uniform
-                Assert.AreNotEqual(interactions[i].GetProbability(), 1.0f / NumActions);
-            }
-        }
-
-        [TestMethod]
-        public void GenericStateful()
-        {
-            mwt.InitializeGeneric<int>(
-                new StatefulScorerDelegate<int>(TestStatefulScorerFunc),
-                PolicyParams,
-                NumActions);
-
-            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
-
-            Interaction[] interactions = mwt.GetAllInteractions();
-            Assert.AreEqual(1, interactions.Length);
-            Assert.AreEqual(1.0f / NumActions, interactions[0].GetProbability());
-        }
-        
-        [TestMethod]
-        public void GenericStateless()
-        {
-            mwt.InitializeGeneric(
-                new StatelessScorerDelegate(TestStatelessScorerFunc),
-                NumActions);
-
-            uint chosenAction = mwt.ChooseAction(UniqueKey, context);
-
-            Interaction[] interactions = mwt.GetAllInteractions();
-            Assert.AreEqual(1, interactions.Length);
-            Assert.AreEqual(1.0f / NumActions, interactions[0].GetProbability());
+            var interactions = recorder.GetAllInteractions();
+            Assert.AreEqual(1, interactions.Count);
+            Assert.AreEqual(testContext.Id, interactions[0].Context.Id);
         }
 
         [TestMethod]
@@ -634,14 +597,23 @@ namespace ExploreTests
 
     class TestScorer : IScorer<TestContext>
     {
-        public TestScorer(uint numActions)
+        public TestScorer(uint numActions, bool uniform = true)
         {
+            this.uniform = uniform;
             this.numActions = numActions;
         }
         public List<float> ScoreActions(TestContext context)
         {
-            return Enumerable.Repeat<float>(1.0f / numActions, (int)numActions).ToList();
+            if (uniform)
+            {
+                return Enumerable.Repeat<float>(1.0f / numActions, (int)numActions).ToList();
+            }
+            else
+            {
+                return Array.ConvertAll<int, float>(Enumerable.Range(1, (int)numActions).ToArray(), Convert.ToSingle).ToList();
+            }
         }
         private uint numActions;
+        private bool uniform;
     }
 }
