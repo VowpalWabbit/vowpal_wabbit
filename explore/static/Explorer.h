@@ -80,33 +80,38 @@ private:
 class SimpleContext
 {
 public:
-	SimpleContext(vector<Feature>& common_features) :
-		m_common_features(common_features)
+	SimpleContext(vector<Feature>& features) :
+		m_features(features)
 	{ }
+
+	vector<Feature>& Get_Features()
+	{
+		return m_features;
+	}
 
 	string To_String()
 	{
 		string out_string;
 		char feature_str[35] = { 0 };
-		for (size_t i = 0; i < m_common_features.size(); i++)
+		for (size_t i = 0; i < m_features.size(); i++)
 		{
 			int chars;
 			if (i == 0)
 			{
-				chars = sprintf(feature_str, "%d:", m_common_features[i].Id);
+				chars = sprintf(feature_str, "%d:", m_features[i].Id);
 			}
 			else
 			{
-				chars = sprintf(feature_str, " %d:", m_common_features[i].Id);
+				chars = sprintf(feature_str, " %d:", m_features[i].Id);
 			}
-			NumberUtils::print_float(feature_str + chars, m_common_features[i].Value);
+			NumberUtils::print_float(feature_str + chars, m_features[i].Value);
 			out_string.append(feature_str);
 		}
 		return out_string;
 	}
 
 private:
-	vector<Feature>& m_common_features;
+	vector<Feature>& m_features;
 };
 
 template <class Plc>

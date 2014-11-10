@@ -12,9 +12,10 @@ class TestContext
 
 };
 
+template <class Ctx>
 struct TestInteraction
 {
-	TestContext& Context;
+	Ctx& Context;
 	u32 Action;
 	float Probability;
 	string Unique_Key;
@@ -46,6 +47,23 @@ private:
 	int m_num_actions;
 };
 
+class TestSimpleRecorder : public IRecorder<SimpleContext>
+{
+public:
+	virtual void Record(SimpleContext& context, u32 action, float probability, string unique_key)
+	{
+		m_interactions.push_back({ context, action, probability, unique_key });
+	}
+
+	vector<TestInteraction<SimpleContext>> Get_All_Interactions()
+	{
+		return m_interactions;
+	}
+
+private:
+	vector<TestInteraction<SimpleContext>> m_interactions;
+};
+
 // Return action outside valid range
 class TestBadPolicy : public IPolicy<TestContext>
 {
@@ -64,13 +82,13 @@ public:
 		m_interactions.push_back({ context, action, probability, unique_key });
 	}
 
-	vector<TestInteraction> Get_All_Interactions()
+	vector<TestInteraction<TestContext>> Get_All_Interactions()
 	{
 		return m_interactions;
 	}
 
 private:
-	vector<TestInteraction> m_interactions;
+	vector<TestInteraction<TestContext>> m_interactions;
 };
 
 class TestCustomContext : public BaseContext

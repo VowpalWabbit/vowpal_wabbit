@@ -32,7 +32,7 @@ namespace vw_explore_tests
 			Assert::AreEqual(expected_action, chosen_action);
 
 			float expected_probs[2] = { 1.f, 1.f };
-			vector<TestInteraction> interactions = my_recorder.Get_All_Interactions();
+			vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
 			this->Test_Interactions(interactions, 2, expected_probs);
 		}
 
@@ -285,18 +285,26 @@ namespace vw_explore_tests
 
 		TEST_METHOD(Reward_Reporter)
 		{
+			int num_actions = 10;
 			float epsilon = 0.f; // No randomization
-			m_mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, m_num_actions);
+
+			TestPolicy my_policy(0, num_actions);
+			TestContext my_context;
+			TestRecorder my_recorder;
+
+			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
+			EpsilonGreedyExplorer<TestPolicy> explorer(my_policy, epsilon, num_actions);
+
 			u32 num_decisions = m_num_actions;
 			std::string* ids = new std::string[num_decisions];
 			u32 i;
 			for (i = 0; i < num_decisions; i++)
 			{
 				ids[i] = this->Get_Unique_Key(i + 1);
-				u32 action = m_mwt->Choose_Action(ids[i], *m_context);
+				u32 action = mwt.Choose_Action(explorer, ids[i], my_context);
 			}
 
-			vector<Interaction> vec_interactions = m_mwt->Get_All_Interactions();
+			vector<TestInteraction<TestContext>> vec_interactions = my_recorder.Get_All_Interactions();
 			size_t num_interactions = vec_interactions.size();
 
 			Assert::AreEqual(num_decisions, (u32)num_interactions);
@@ -304,7 +312,7 @@ namespace vw_explore_tests
 			Interaction** interactions = new Interaction*[num_interactions];
 			for (size_t i = 0; i < num_interactions; i++)
 			{
-				interactions[i] = &vec_interactions[i];
+				interactions[i] = new Interaction(nullptr, MWTAction(vec_interactions[i].Action), vec_interactions[i].Probability, vec_interactions[i].Unique_Key);
 			}
 
 			MWTRewardReporter rew = MWTRewardReporter(num_interactions, interactions);
@@ -330,6 +338,11 @@ namespace vw_explore_tests
 			}
 			delete[] all_rewards;
 			delete[] ids;
+
+			for (size_t i = 0; i < num_interactions; i++)
+			{
+				delete interactions[i];
+			}
 			delete[] interactions;
 		}
 
@@ -752,26 +765,38 @@ namespace vw_explore_tests
 
 		TEST_METHOD(Custom_Context)
 		{
-			m_mwt->Initialize_Epsilon_Greedy<int>(0.f, Custom_Context_Policy, m_policy_func_arg, m_num_actions);
+			int num_actions = 10;
+			float epsilon = 0.f; // No randomization
 
-			TestCustomContext original_context;
-			u32 chosen_action = m_mwt->Choose_Action(m_unique_key, original_context);
-			Assert::AreEqual((u32)2, chosen_action);
+			TestSimplePolicy my_policy(0, num_actions);
+
+			TestSimpleRecorder my_recorder;
+			MwtExplorer<TestSimpleRecorder> mwt("salt", my_recorder);
+
+			vector<Feature> features;
+			features.push_back({ 0.5f, 1 });
+			features.push_back({ 1.5f, 6 });
+			features.push_back({ -5.3f, 13 });
+			SimpleContext custom_context(features);
+
+			EpsilonGreedyExplorer<TestSimplePolicy> explorer(my_policy, epsilon, num_actions);
+
+			u32 chosen_action = mwt.Choose_Action(explorer, m_unique_key, custom_context);
+			Assert::AreEqual((u32)1, chosen_action);
 
 			float expected_probs[1] = { 1.f };
 
-			vector<Interaction> interactions = m_mwt->Get_All_Interactions();
+			vector<TestInteraction<SimpleContext>> interactions = my_recorder.Get_All_Interactions();
 			Assert::AreEqual(1, (int)interactions.size());
 
-			TestCustomContext* returned_context = (TestCustomContext*)interactions[0].Get_Context();
+			SimpleContext* returned_context = &interactions[0].Context;
 
-			size_t onf;
-			Feature* of;
-			original_context.Get_Features(onf, of);
+			size_t onf = features.size();
+			Feature* of = &features[0];
 
-			size_t rnf;
-			Feature* rf;
-			returned_context->Get_Features(rnf, rf);
+			vector<Feature>& returned_features = returned_context->Get_Features();
+			size_t rnf = returned_features.size();
+			Feature* rf = &returned_features[0];
 
 			Assert::AreEqual(rnf, onf);
 			for (size_t i = 0; i < rnf; i++)
@@ -979,7 +1004,8 @@ namespace vw_explore_tests
 			}
 		}
 
-		inline void Test_Interactions(vector<TestInteraction> interactions, int num_interactions_expected, float* probs_expected)
+		template <class Ctx>
+		inline void Test_Interactions(vector<TestInteraction<Ctx>> interactions, int num_interactions_expected, float* probs_expected)
 		{
 			size_t num_interactions = interactions.size();
 
