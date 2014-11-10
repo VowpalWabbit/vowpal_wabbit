@@ -175,7 +175,7 @@ public:
 	static void Float_To_String(float f, char* str)
 	{
 		int x = (int)f;
-		int d = (int)(abs(f - x) * 100000);
+		int d = (int)(fabs(f - x) * 100000);
 		sprintf(str, "%d.%05d", x, d);
 	}
 
