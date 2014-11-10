@@ -548,7 +548,6 @@ namespace vw_explore_tests
 
 		TEST_METHOD(PRG_Coverage)
 		{
-			m_mwt->Initialize_Softmax(m_lambda, Stateless_Default_Scorer, m_num_actions);
 			// We could use many fewer bits (e.g. u8) per bin since we're throwing uniformly at
 			// random, but this is safer in case we change things
 			u32 bins[NUM_ACTIONS_COVER] = { 0 };
@@ -564,7 +563,6 @@ namespace vw_explore_tests
 			{
 				Assert::IsTrue(bins[i] > 0);
 			}
-			this->Test_Interaction_Store(0, nullptr);
 		}
 
 		TEST_METHOD(Float_To_String)
@@ -693,8 +691,6 @@ namespace vw_explore_tests
 		TEST_METHOD(Usage_Bad_Policy)
 		{
 			int num_ex = 0;
-			OldSimpleContext context(nullptr, 0);
-			Policy* funcs[2] = { Stateless_Default_Policy, Stateless_Default_Policy2 };
 
 			// Default policy returns action outside valid range
 			COUNT_BAD_CALL
@@ -831,51 +827,9 @@ namespace vw_explore_tests
 		}
 
 	public:
-		static u32 Stateful_Default_Policy(int& policy_params, BaseContext& applicationContext)
-		{
-			return MWTAction::Make_OneBased(policy_params % m_num_actions);
-		}
-		static u32 Stateful_Default_Policy2(int& policy_params, BaseContext& applicationContext)
-		{
-			return MWTAction::Make_OneBased(policy_params % m_num_actions) + 1;
-		}
-
 		static u32 Stateless_Default_Policy(BaseContext& applicationContext)
 		{
 			return MWTAction::Make_OneBased(99 % m_num_actions);
-		}
-		static u32 Stateless_Default_Policy2(BaseContext& applicationContext)
-		{
-			return MWTAction::Make_OneBased(99 % m_num_actions) - 1;
-		}
-
-		static u32 Custom_Context_Policy(int& policy_params, BaseContext& applicationContext)
-		{
-			TestCustomContext& tc = (TestCustomContext&)applicationContext;
-
-			size_t num_features = 0;
-			Feature* features = nullptr;
-			tc.Get_Features(num_features, features);
-
-			u32 total_index = 0;
-			for (size_t i = 0; i < num_features; i++)
-			{
-				total_index += features[i].Id;
-			}
-
-			return MWTAction::Make_OneBased((policy_params + total_index) % m_num_actions);
-		}
-
-		//TODO: For now assume the size of the score array is the number of action scores to
-		// report, but we need a more general way to determine per-action features (opened github issue)
-		static void Stateful_Default_Scorer(int& policy_params, BaseContext& applicationContext, float scores[], u32 size)
-		{
-			for (u32 i = 0; i < size; i++)
-			{
-				// Specify uniform weights using the app-supplied policy parameter (for testing, we
-				// could just as easily give every action a score of 1 or 0 or whatever) 
-				scores[i] = policy_params;
-			}
 		}
 
 		static void Stateless_Default_Scorer(BaseContext& applicationContext, float scores[], u32 size)
@@ -883,40 +837,6 @@ namespace vw_explore_tests
 			for (u32 i = 0; i < size; i++)
 			{
 				scores[i] = 1;
-			}
-		}
-
-		static void Non_Uniform_Stateful_Default_Scorer(int& policy_params, BaseContext& applicationContext, float scores[], u32 size)
-		{
-			for (u32 i = 0; i < size; i++)
-			{
-				// Specify uniform weights using the app-supplied policy parameter (for testing, we
-				// could just as easily give every action a score of 1 or 0 or whatever) 
-				scores[i] = policy_params + i;
-			}
-		}
-
-		static void Non_Uniform_Stateless_Default_Scorer(BaseContext& applicationContext, float scores[], u32 size)
-		{
-			for (u32 i = 0; i < size; i++)
-			{
-				scores[i] = i;
-			}
-		}
-
-		static void Negative_Stateless_Default_Scorer(BaseContext& applicationContext, float scores[], u32 size)
-		{
-			for (u32 i = 0; i < size; i++)
-			{
-				scores[i] = -1;
-			}
-		}
-
-		static void Zero_Stateless_Default_Scorer(BaseContext& applicationContext, float scores[], u32 size)
-		{
-			for (u32 i = 0; i < size; i++)
-			{
-				scores[i] = 0;
 			}
 		}
 
@@ -943,18 +863,6 @@ namespace vw_explore_tests
 			}
 
 			recorder.Get_Recording();
-		}
-
-		inline void Test_Interaction_Store(int num_interactions_expected, float* probs_expected)
-		{
-			vector<Interaction> interactions = m_mwt->Get_All_Interactions();
-			size_t num_interactions = interactions.size();
-
-			Assert::AreEqual(num_interactions_expected, (int)num_interactions);
-			for (int i = 0; i < num_interactions; i++)
-			{
-				Assert::AreEqual(probs_expected[i], interactions[i].Get_Prob());
-			}
 		}
 
 		template <class Ctx>
