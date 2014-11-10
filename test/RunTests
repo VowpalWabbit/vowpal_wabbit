@@ -946,11 +946,11 @@ __DATA__
     train-sets/ref/search_small2.stderr
 
 # Test 46: search sequence labeling, ldf train
-{VW} -k -c -d train-sets/sequence_data --passes 20 --search_rollout oracle --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.model
+{VW} -k -c -d train-sets/sequence_data --passes 20 --search_rollout oracle --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.ldf.model
     train-sets/ref/sequence_data.ldf.train.stderr
 
 # Test 47: search sequence labeling, ldf test
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.predict
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data.predict
     train-sets/ref/sequence_data.ldf.test.stderr
     train-sets/ref/sequence_data.ldf.test.predict
 
@@ -1051,3 +1051,8 @@ __DATA__
 # Test 68: Search for multiclass classification
 {VW} -k -c -d train-sets/multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off
 	train-sets/ref/search_multiclass.stderr
+
+# Test 69: (see Test 43/Test 44): search sequence labeling, with beam
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data_beam.predict --search_beam 10 --search_kbest 10
+    train-sets/ref/sequence_data.nonldf.beam.test.stderr
+    train-sets/ref/sequence_data.nonldf.beam.test.predict

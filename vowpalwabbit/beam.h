@@ -28,10 +28,10 @@ template <class T> struct beam_element {
   //  v_array<T*> * recomb_friends;   // if we're the BEST (among ~= elements), then recomb_friends is everything that's equivalent to us but worse... NOT USED if we're not doing k-best predictions
 };
 
-template<class T> inline int compare_on_cost(const void *void_a, const void *void_b) {
+inline int compare_on_cost(const void *void_a, const void *void_b) {
   if (void_a == void_b) return 0;
-  const beam_element<T> *a = (const beam_element<T>*) void_a;
-  const beam_element<T> *b = (const beam_element<T>*) void_b;
+  const beam_element<void> *a = (const beam_element<void>*) void_a;
+  const beam_element<void> *b = (const beam_element<void>*) void_b;
   if      ( a->active && !b->active) return -1;   // active things come before inactive things
   else if (!a->active &&  b->active) return  1;
   else if (!a->active && !b->active) return  0;
@@ -40,10 +40,10 @@ template<class T> inline int compare_on_cost(const void *void_a, const void *voi
   else return 0;
 }
 
-template<class T> inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
+inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
   if (void_a == void_b) return 0;
-  const beam_element<T> *a = (const beam_element<T>*) void_a;
-  const beam_element<T> *b = (const beam_element<T>*) void_b;
+  const beam_element<void> *a = (const beam_element<void>*) void_a;
+  const beam_element<void> *b = (const beam_element<void>*) void_b;
   if      ( a->active && !b->active) return -1;   // active things come before inactive things
   else if (!a->active &&  b->active) return  1;
   else if (!a->active && !b->active) return  0;
@@ -158,10 +158,37 @@ template<class T> inline int compare_on_hash_then_cost(const void *void_a, const
       worst_cost  = cost;
       prune_if_gt = max(1.f, best_cost) * pruning_coefficient;
     }
-    
     return true;
   }
 
+  beam_element<T>* pop_best_item() {
+    if (count == 0)
+      return NULL;
+
+    beam_element<T> *ret = NULL;
+    float next_best_cost = FLT_MAX;
+    for (beam_element<T> *el = A.begin; el!=A.end; el++)
+      if ((ret == NULL) && el->active && (el->cost <= best_cost))
+        ret = el;
+      else if (el->active && (el->cost < next_best_cost)) {
+        next_best_cost = el->cost;
+        best_cost_data = el->data;
+      }
+
+    if (ret != NULL) {
+      best_cost = next_best_cost;
+      prune_if_gt = max(1.f, best_cost) * pruning_coefficient;
+      ret->active = false;
+      count--;
+    } else {
+      best_cost = FLT_MAX;
+      prune_if_gt = FLT_MAX;
+      best_cost_data = NULL;
+    }
+    
+    return ret;
+  }
+   
   void do_recombination() {
     qsort(A.begin, A.size(), sizeof(beam_element<T>), compare_on_hash_then_cost);
     size_t start = 0;
@@ -237,7 +264,8 @@ template<class T> inline int compare_on_hash_then_cost(const void *void_a, const
   beam_element<T> * end()   { return A.end; }
   size_t         size()  { return count; }
   bool           empty() { return A.empty(); }
-
+  size_t         get_beam_size() { return beam_size; }
+   
  private:
   // void add_recomb_friend(beam_element<T> *better, beam_element<T> *worse) {
   //   assert( better->cost <= worse->cost );
