@@ -40,3 +40,4 @@ gd_mf_weights: gd_mf_weights.cc ../vowpalwabbit/libvw.a
 clean:
 	rm -f *.o ezexample_predict ezexample_train library_example test_search recommend ezexample_predict_threaded
 
+.PHONY: all clean
