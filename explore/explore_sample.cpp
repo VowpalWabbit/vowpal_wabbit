@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
 		MyRecorder recorder;
 		MwtExplorer<MyContext> mwt("salt", recorder);
 		MyScorer scorer(num_actions);
-		GenericExplorer<MyScorer> explorer(scorer, num_actions);
+		GenericExplorer<MyContext> explorer(scorer, num_actions);
 		MyContext ctx;
 		u32 action = mwt.Choose_Action(explorer, unique_key, ctx);
 

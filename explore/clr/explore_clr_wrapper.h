@@ -103,7 +103,7 @@ namespace MultiWorldTesting {
 		GenericExplorer(IScorer<Ctx>^ defaultScorer, UInt32 numActions)
 		{
 			this->defaultScorer = defaultScorer;
-			m_explorer = new NativeMultiWorldTesting::GenericExplorer<NativeScorer>(*GetNativeScorer(), (u32)numActions);
+			m_explorer = new NativeMultiWorldTesting::GenericExplorer<NativeContext>(*GetNativeScorer(), (u32)numActions);
 		}
 
 		~GenericExplorer()
@@ -117,14 +117,14 @@ namespace MultiWorldTesting {
 			return defaultScorer->ScoreActions(context);
 		}
 
-		NativeMultiWorldTesting::GenericExplorer<NativeScorer>* Get()
+		NativeMultiWorldTesting::GenericExplorer<NativeContext>* Get()
 		{
 			return m_explorer;
 		}
 
 	private:
 		IScorer<Ctx>^ defaultScorer;
-		NativeMultiWorldTesting::GenericExplorer<NativeScorer>* m_explorer;
+		NativeMultiWorldTesting::GenericExplorer<NativeContext>* m_explorer;
 	};
 
 	generic <class Ctx>

@@ -247,7 +247,7 @@ namespace vw_explore_tests
 			TestContext my_context;
 
 			MwtExplorer<TestContext> mwt("salt", my_recorder);
-			GenericExplorer<TestScorer> explorer(my_scorer, num_actions);
+			GenericExplorer<TestContext> explorer(my_scorer, num_actions);
 
 			u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
 			chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
@@ -390,7 +390,7 @@ namespace vw_explore_tests
 			StringRecorder<SimpleContext> my_recorder;
 
 			MwtExplorer<SimpleContext> mwt("salt", my_recorder);
-			GenericExplorer<TestSimpleScorer> explorer(my_scorer, num_actions);
+			GenericExplorer<SimpleContext> explorer(my_scorer, num_actions);
 
 			this->End_To_End(mwt, explorer, my_recorder);
 		}
@@ -539,7 +539,7 @@ namespace vw_explore_tests
 
 			COUNT_INVALID(TauFirstExplorer<TestPolicy> explorer(my_policy, 1, 0);) // Invalid # actions, must be > 0
 			COUNT_INVALID(SoftmaxExplorer<TestContext> explorer(my_scorer, .5f, 0);) // Invalid # actions, must be > 0
-			COUNT_INVALID(GenericExplorer<TestScorer> explorer(my_scorer, 0);) // Invalid # actions, must be > 0
+			COUNT_INVALID(GenericExplorer<TestContext> explorer(my_scorer, 0);) // Invalid # actions, must be > 0
 
 
 			Assert::AreEqual(8, num_ex);
@@ -584,7 +584,7 @@ namespace vw_explore_tests
 				u32 num_actions = 1;
 				FixedScorer scorer(num_actions, -1);
 				MwtExplorer<TestContext> mwt("salt", TestRecorder());
-				GenericExplorer<FixedScorer> explorer(scorer, num_actions);
+				GenericExplorer<TestContext> explorer(scorer, num_actions);
 				mwt.Choose_Action(explorer, "test", TestContext());
 			)
 			COUNT_BAD_CALL
@@ -592,7 +592,7 @@ namespace vw_explore_tests
 				u32 num_actions = 1;
 				FixedScorer scorer(num_actions, 0);
 				MwtExplorer<TestContext> mwt("salt", TestRecorder());
-				GenericExplorer<FixedScorer> explorer(scorer, num_actions);
+				GenericExplorer<TestContext> explorer(scorer, num_actions);
 				mwt.Choose_Action(explorer, "test", TestContext());
 			)
 			Assert::AreEqual(2, num_ex);
