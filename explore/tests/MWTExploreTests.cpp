@@ -159,22 +159,31 @@ namespace vw_explore_tests
 			this->Test_Interactions(interactions, 2, expected_probs);
 		}
 
-		TEST_METHOD(Softmax_Stateful)
+		TEST_METHOD(Softmax)
 		{
-			m_mwt->Initialize_Softmax<int>(m_lambda, Stateful_Default_Scorer, m_policy_scorer_arg, m_num_actions);
+			int num_actions = 10;
+			float lambda = 0.f;
+			int scorer_arg = 7;
+			TestScorer my_scorer(scorer_arg, num_actions);
+			TestRecorder my_recorder;
+			TestContext my_context;
+
+			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
+			SoftmaxExplorer<TestScorer> explorer(my_scorer, lambda, num_actions);
+
 			// Scale C up since we have fewer interactions
-			u32 num_decisions = m_num_actions * log(m_num_actions * 1.0) + log(NUM_ACTIONS_COVER * 1.0 / m_num_actions) * C * m_num_actions;
+			u32 num_decisions = num_actions * log(num_actions * 1.0) + log(NUM_ACTIONS_COVER * 1.0 / num_actions) * C * num_actions;
 			// The () following the array should ensure zero-initialization
-			u32* actions = new u32[m_num_actions]();
+			u32* actions = new u32[num_actions]();
 			u32 i;
 			for (i = 0; i < num_decisions; i++)
 			{
-			  u32 action = m_mwt->Choose_Action(this->Get_Unique_Key(i + 1), *m_context);
+				u32 action = mwt.Choose_Action(explorer, this->Get_Unique_Key(i + 1), my_context);
 				// Action IDs are 1-based
 				actions[MWTAction::Make_ZeroBased(action)]++;
 			}
 			// Ensure all actions are covered
-			for (i = 0; i < m_num_actions; i++)
+			for (i = 0; i < num_actions; i++)
 			{
 				Assert::IsTrue(actions[i] > 0);
 			}		
@@ -182,77 +191,38 @@ namespace vw_explore_tests
 			for (i = 0; i < num_decisions; i++)
 			{
 				// Our default scorer currently assigns equal weight to each action
-				expected_probs[i] = 1.0 / m_num_actions;
+				expected_probs[i] = 1.0 / num_actions;
 			}
-			this->Test_Interaction_Store(num_decisions, expected_probs);
+			vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
+			this->Test_Interactions(interactions, num_decisions, expected_probs);
 
 			delete actions;
 			delete expected_probs;
 		}
 
-		TEST_METHOD(Softmax_Stateless)
+		TEST_METHOD(Softmax_Scores)
 		{
-			m_mwt->Initialize_Softmax(m_lambda, Stateless_Default_Scorer, m_num_actions);
-			u32 num_decisions = m_num_actions * log(m_num_actions * 1.0) + log(NUM_ACTIONS_COVER * 1.0 / m_num_actions) * C * m_num_actions;
-			// The () following the array should ensure zero-initialization
-			u32* actions = new u32[m_num_actions]();
-			u32 i;
-			for (i = 0; i < num_decisions; i++)
-			{
-			  u32 action = m_mwt->Choose_Action(this->Get_Unique_Key(i + 1), *m_context);
-				// Action IDs are 1-based
-				actions[MWTAction::Make_ZeroBased(action)]++;
-			}
-			// Ensure all actions are covered
-			for (i = 0; i < m_num_actions; i++)
-			{
-				Assert::IsTrue(actions[i] > 0);
-			}
-			float* expected_probs = new float[num_decisions];
-			for (i = 0; i < num_decisions; i++)
-			{
-				// Our default scorer currently assigns equal weight to each action
-				expected_probs[i] = 1.0 / m_num_actions;
-			}
-			this->Test_Interaction_Store(num_decisions, expected_probs);
+			int num_actions = 10;
+			float lambda = 0.5f;
+			int scorer_arg = 7;
+			TestScorer my_scorer(scorer_arg, num_actions, /* uniform = */ false);
+			TestRecorder my_recorder;
+			TestContext my_context;
 
-			delete actions;
-			delete expected_probs;
-		}
+			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
+			SoftmaxExplorer<TestScorer> explorer(my_scorer, lambda, num_actions);
 
-		TEST_METHOD(Softmax_Stateful_Scores)
-		{
-			m_mwt->Initialize_Softmax<int>(0.5f, Non_Uniform_Stateful_Default_Scorer, m_policy_scorer_arg, m_num_actions);
-			
-			u32 action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
-			action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
-			action = m_mwt->Choose_Action(this->Get_Unique_Key(3), *m_context);
+			u32 action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
+			action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
+			action = mwt.Choose_Action(explorer, this->Get_Unique_Key(3), my_context);
 
-			vector<Interaction> interactions = m_mwt->Get_All_Interactions();
+			vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
 			size_t num_interactions = interactions.size();
 
 			Assert::AreEqual(3, (int)num_interactions);
 			for (int i = 0; i < num_interactions; i++)
 			{
-				Assert::AreNotEqual(1.f / m_num_actions, interactions[i].Get_Prob());
-			}
-		}
-
-		TEST_METHOD(Softmax_Stateless_Scores)
-		{
-			m_mwt->Initialize_Softmax(0.5f, Non_Uniform_Stateless_Default_Scorer, m_num_actions);
-
-			u32 action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
-			action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
-			action = m_mwt->Choose_Action(this->Get_Unique_Key(3), *m_context);
-
-			vector<Interaction> interactions = m_mwt->Get_All_Interactions();
-			size_t num_interactions = interactions.size();
-
-			Assert::AreEqual(3, (int)num_interactions);
-			for (int i = 0; i < num_interactions; i++)
-			{
-				Assert::AreNotEqual(1.f / m_num_actions, interactions[i].Get_Prob());
+				Assert::AreNotEqual(1.f / m_num_actions, interactions[i].Probability);
 			}
 		}
 

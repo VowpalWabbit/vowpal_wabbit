@@ -37,19 +37,33 @@ private:
 class TestScorer : public IScorer<TestContext>
 {
 public:
-	TestScorer(int params, int num_actions) : m_params(params), m_num_actions(num_actions) { }
+	TestScorer(int params, int num_actions, bool uniform = true) : 
+		m_params(params), m_num_actions(num_actions), m_uniform(uniform) 
+	{ }
+
 	vector<float> Score_Actions(TestContext& context)
 	{
 		vector<float> scores;
-		for (u32 i = 0; i < m_num_actions; i++)
+		if (m_uniform)
 		{
-			scores.push_back(m_params);
+			for (u32 i = 0; i < m_num_actions; i++)
+			{
+				scores.push_back(m_params);
+			}
+		}
+		else
+		{
+			for (u32 i = 0; i < m_num_actions; i++)
+			{
+				scores.push_back(m_params + i);
+			}
 		}
 		return scores;
 	}
 private:
 	int m_params;
 	int m_num_actions;
+	bool m_uniform;
 };
 
 class TestSimpleScorer : public IScorer<SimpleContext>
