@@ -70,17 +70,17 @@ namespace cs_test
             if (exploration_type == "greedy")
             {
                 // Initialize Epsilon-Greedy explore algorithm using built-in StringRecorder and SimpleContext types
+                StringRecorder<SimpleContext> recorder = new StringRecorder<SimpleContext>();
+                MwtExplorer<SimpleContext> mwtt = new MwtExplorer<SimpleContext>("mwt", recorder);
+
                 uint numActions = 10;
                 float epsilon = 0.2f;
-
+                StringPolicy policy = new StringPolicy();
                 SimpleContext context = new SimpleContext(new Feature[] { 
                     new Feature() { Id = 1, Value = 0.5f },
                     new Feature() { Id = 4, Value = 1.3f },
                     new Feature() { Id = 9, Value = -0.5f },
                 });
-                StringRecorder<SimpleContext> recorder = new StringRecorder<SimpleContext>();
-                StringPolicy policy = new StringPolicy();
-                MwtExplorer<SimpleContext> mwtt = new MwtExplorer<SimpleContext>("mwt", recorder);
                 uint action = mwtt.ChooseAction(new EpsilonGreedyExplorer<SimpleContext>(policy, epsilon, numActions), "key", context);
 
                 Console.WriteLine(recorder.GetRecording());
@@ -90,11 +90,12 @@ namespace cs_test
             else if (exploration_type == "tau-first")
             {
                 // Initialize Tau-First explore algorithm using custom Recorder, Policy & Context types
+                MyRecorder recorder = new MyRecorder();
+                MwtExplorer<MyContext> mwtt = new MwtExplorer<MyContext>("mwt", recorder);
+
                 uint numActions = 10;
                 uint tau = 0;
-                MyRecorder recorder = new MyRecorder();
                 MyPolicy policy = new MyPolicy();
-                MwtExplorer<MyContext> mwtt = new MwtExplorer<MyContext>("mwt", recorder);
                 uint action = mwtt.ChooseAction(new TauFirstExplorer<MyContext>(policy, tau, numActions), "key", new MyContext());
                 Console.WriteLine(String.Join(",", recorder.GetData()));
                 return;
@@ -102,16 +103,16 @@ namespace cs_test
             else if (exploration_type == "bagging")
             {
                 // Initialize Bagging explore algorithm using custom Recorder, Policy & Context types
+                MyRecorder recorder = new MyRecorder();
+                MwtExplorer<MyContext> mwtt = new MwtExplorer<MyContext>("mwt", recorder);
+
                 uint numActions = 10;
                 uint numbags = 2;
-                MyRecorder recorder = new MyRecorder();
                 MyPolicy[] policies = new MyPolicy[numbags];
                 for (int i = 0; i < numbags; i++)
                 {
                     policies[i] = new MyPolicy(i * 2);
                 }
-
-                MwtExplorer<MyContext> mwtt = new MwtExplorer<MyContext>("mwt", recorder);
                 uint action = mwtt.ChooseAction(new BaggingExplorer<MyContext>(policies, numbags, numActions), "key", new MyContext());
                 Console.WriteLine(String.Join(",", recorder.GetData()));
                 return;
@@ -119,25 +120,27 @@ namespace cs_test
             else if (exploration_type == "softmax")
             {
                 // Initialize Softmax explore algorithm using custom Recorder, Scorer & Context types
+                MyRecorder recorder = new MyRecorder();
+                MwtExplorer<MyContext> mwtt = new MwtExplorer<MyContext>("mwt", recorder);
+
                 uint numActions = 10;
                 float lambda = 0.5f;
-                MyRecorder recorder = new MyRecorder();
                 MyScorer scorer = new MyScorer(numActions);
-
-                MwtExplorer<MyContext> mwtt = new MwtExplorer<MyContext>("mwt", recorder);
                 uint action = mwtt.ChooseAction(new SoftmaxExplorer<MyContext>(scorer, lambda, numActions), "key", new MyContext());
+
                 Console.WriteLine(String.Join(",", recorder.GetData()));
                 return;
             }
             else if (exploration_type == "generic")
             {
                 // Initialize Generic explore algorithm using custom Recorder, Scorer & Context types
-                uint numActions = 10;
                 MyRecorder recorder = new MyRecorder();
-                MyScorer scorer = new MyScorer(numActions);
-
                 MwtExplorer<MyContext> mwtt = new MwtExplorer<MyContext>("mwt", recorder);
+
+                uint numActions = 10;
+                MyScorer scorer = new MyScorer(numActions);
                 uint action = mwtt.ChooseAction(new GenericExplorer<MyContext>(scorer, numActions), "key", new MyContext());
+
                 Console.WriteLine(String.Join(",", recorder.GetData()));
                 return;
             }
