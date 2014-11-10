@@ -137,7 +137,6 @@ public:
 	}
 
 private:
-	template <class Ctx>
 	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
 		ActionSet actions;
