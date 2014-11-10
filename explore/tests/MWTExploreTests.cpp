@@ -516,33 +516,71 @@ namespace vw_explore_tests
 
 		TEST_METHOD(End_To_End_Epsilon_Greedy)
 		{
-			m_mwt->Initialize_Epsilon_Greedy<int>(0.5f, Stateful_Default_Policy, m_policy_func_arg, m_num_actions);
-			this->End_To_End();
+			int num_actions = 10;
+			float epsilon = 0.5f;
+			TestSimplePolicy my_policy(m_policy_func_arg, num_actions);
+			StringRecorder<SimpleContext> my_recorder;
+
+			MwtExplorer<StringRecorder<SimpleContext>> mwt("salt", my_recorder);
+			EpsilonGreedyExplorer<TestSimplePolicy> explorer(my_policy, epsilon, num_actions);
+
+			this->End_To_End(mwt, explorer, my_recorder);
 		}
 
 		TEST_METHOD(End_To_End_Tau_First)
 		{
-			m_mwt->Initialize_Tau_First<int>(5, Stateful_Default_Policy, m_policy_func_arg, m_num_actions);
-			this->End_To_End();
+			int num_actions = 10;
+			u32 tau = 5;
+			TestSimplePolicy my_policy(m_policy_func_arg, num_actions);
+			StringRecorder<SimpleContext> my_recorder;
+
+			MwtExplorer<StringRecorder<SimpleContext>> mwt("salt", my_recorder);
+			TauFirstExplorer<TestSimplePolicy> explorer(my_policy, tau, num_actions);
+
+			this->End_To_End(mwt, explorer, my_recorder);
 		}
 
 		TEST_METHOD(End_To_End_Bagging)
 		{
-			Stateful<int>::Policy* funcs[2] = { Stateful_Default_Policy, Stateful_Default_Policy2 };
-			m_mwt->Initialize_Bagging<int>(m_bags, funcs, m_policy_params, m_num_actions);
-			this->End_To_End();
+			int num_actions = 10;
+			u32 bags = 2;
+			StringRecorder<SimpleContext> my_recorder;
+
+			vector<TestSimplePolicy> policies;
+			policies.push_back(TestSimplePolicy(m_policy_func_arg, num_actions));
+			policies.push_back(TestSimplePolicy(m_policy_func_arg, num_actions));
+
+			MwtExplorer<StringRecorder<SimpleContext>> mwt("salt", my_recorder);
+			BaggingExplorer<TestSimplePolicy> explorer(policies, bags, num_actions);
+
+			this->End_To_End(mwt, explorer, my_recorder);
 		}
 
 		TEST_METHOD(End_To_End_Softmax)
 		{
-			m_mwt->Initialize_Softmax<int>(0.5f, Stateful_Default_Scorer, m_policy_scorer_arg, m_num_actions);
-			this->End_To_End();
+			int num_actions = 10;
+			float lambda = 0.5f;
+			int scorer_arg = 7;
+			TestSimpleScorer my_scorer(scorer_arg, num_actions);
+			StringRecorder<SimpleContext> my_recorder;
+
+			MwtExplorer<StringRecorder<SimpleContext>> mwt("salt", my_recorder);
+			SoftmaxExplorer<TestSimpleScorer> explorer(my_scorer, lambda, num_actions);
+
+			this->End_To_End(mwt, explorer, my_recorder);
 		}
 
 		TEST_METHOD(End_To_End_Generic)
 		{
-			m_mwt->Initialize_Generic<int>(Stateful_Default_Scorer, m_policy_scorer_arg, m_num_actions);
-			this->End_To_End();
+			int num_actions = 10;
+			int scorer_arg = 7;
+			TestSimpleScorer my_scorer(scorer_arg, num_actions);
+			StringRecorder<SimpleContext> my_recorder;
+
+			MwtExplorer<StringRecorder<SimpleContext>> mwt("salt", my_recorder);
+			GenericExplorer<TestSimpleScorer> explorer(my_scorer, num_actions);
+
+			this->End_To_End(mwt, explorer, my_recorder);
 		}
 
 		TEST_METHOD(PRG_Coverage)
@@ -941,55 +979,28 @@ namespace vw_explore_tests
 		}
 
 	private: 
-		void End_To_End()
+		// Test end-to-end using StringRecorder with no crash
+		template <class Exp>
+		void End_To_End(MwtExplorer<StringRecorder<SimpleContext>>& mwt, Exp& explorer, StringRecorder<SimpleContext>& recorder)
 		{
 			PRG::prg rand;
 
 			float rewards[10];
 			for (int i = 0; i < 10; i++)
 			{
-				Feature features[1000];
+				vector<Feature> features;
 				for (int j = 0; j < 1000; j++)
 				{
-					features[j].Id = j + 1;
-					features[j].Value = rand.Uniform_Unit_Interval();
+					features.push_back({ rand.Uniform_Unit_Interval(), j + 1 });
 				}
-				OldSimpleContext c(features, 1000);
+				SimpleContext c(features);
 
-				m_mwt->Choose_Action(to_string(i), c);
+				mwt.Choose_Action(explorer, to_string(i), c);
 
 				rewards[i] = rand.Uniform_Unit_Interval();
 			}
 
-			vector<Interaction> vec_interactions = m_mwt->Get_All_Interactions();
-			size_t num_interactions = vec_interactions.size();
-
-			Interaction** partial_interations = new Interaction*[num_interactions];
-			for (size_t i = 0; i < num_interactions; i++)
-			{
-				partial_interations[i] = &vec_interactions[i];
-			}
-
-			MWTRewardReporter mrr(num_interactions, partial_interations);
-			for (int i = 0; i < num_interactions; i++)
-			{
-				Assert::AreEqual(true, mrr.Report_Reward(partial_interations[i]->Get_Id(), rewards[i]));
-			}
-
-			string model_file("model");
-			MWTOptimizer mop(num_interactions, partial_interations, m_num_actions);
-			mop.Optimize_Policy_VW_CSOAA(model_file);
-
-			ifstream fs(model_file);
-			Assert::IsTrue(fs.good());
-			fs.close();
-
-			float evaluated_value = mop.Evaluate_Policy_VW_CSOAA(model_file);
-			Assert::IsTrue(evaluated_value == evaluated_value); // check for NaN values
-
-			remove(model_file.c_str());
-
-			delete[] partial_interations;
+			recorder.Get_Recording();
 		}
 
 		inline void Test_Interaction_Store(int num_interactions_expected, float* probs_expected)

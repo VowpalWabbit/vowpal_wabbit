@@ -34,6 +34,42 @@ private:
 	int m_num_actions;
 };
 
+class TestScorer : public IScorer<TestContext>
+{
+public:
+	TestScorer(int params, int num_actions) : m_params(params), m_num_actions(num_actions) { }
+	vector<float> Score_Actions(TestContext& context)
+	{
+		vector<float> scores;
+		for (u32 i = 0; i < m_num_actions; i++)
+		{
+			scores.push_back(m_params);
+		}
+		return scores;
+	}
+private:
+	int m_params;
+	int m_num_actions;
+};
+
+class TestSimpleScorer : public IScorer<SimpleContext>
+{
+public:
+	TestSimpleScorer(int params, int num_actions) : m_params(params), m_num_actions(num_actions) { }
+	vector<float> Score_Actions(SimpleContext& context)
+	{
+		vector<float> scores;
+		for (u32 i = 0; i < m_num_actions; i++)
+		{
+			scores.push_back(m_params);
+		}
+		return scores;
+	}
+private:
+	int m_params;
+	int m_num_actions;
+};
+
 class TestSimplePolicy : public IPolicy<SimpleContext>
 {
 public:
