@@ -226,33 +226,24 @@ namespace vw_explore_tests
 			}
 		}
 
-		TEST_METHOD(Generic_Stateful)
+		TEST_METHOD(Generic)
 		{
-			m_mwt->Initialize_Generic<int>(Stateful_Default_Scorer, m_policy_scorer_arg, m_num_actions);
+			int num_actions = 10;
+			int scorer_arg = 7;
+			TestScorer my_scorer(scorer_arg, num_actions);
+			TestRecorder my_recorder;
+			TestContext my_context;
 
-			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
-			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
-			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(3), *m_context);
+			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
+			GenericExplorer<TestScorer> explorer(my_scorer, num_actions);
 
+			u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
+			chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
+			chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(3), my_context);
+
+			vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
 			float expected_probs[3] = { .1f, .1f, .1f };
-			this->Test_Interaction_Store(3, expected_probs);
-		}
-
-		TEST_METHOD(Generic_Stateless)
-		{
-			m_mwt->Initialize_Generic(Non_Uniform_Stateless_Default_Scorer, m_num_actions);
-
-			u32 chosen_action1 = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
-			u32 chosen_action2 = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
-			u32 chosen_action3 = m_mwt->Choose_Action(this->Get_Unique_Key(3), *m_context);
-
-			float total_scores = m_num_actions * (m_num_actions - 1.f) / 2;
-			float expected_probs[3] = { 
-				(chosen_action1 - 1.f) / total_scores, 
-				(chosen_action2 - 1.f) / total_scores, 
-				(chosen_action3 - 1.f) / total_scores 
-			};
-			this->Test_Interaction_Store(3, expected_probs);
+			this->Test_Interactions(interactions, 3, expected_probs);
 		}
 
 		TEST_METHOD(Reward_Reporter)
