@@ -145,7 +145,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="MWTExplorer.h" />
-    <ClInclude Include="Common.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <ItemGroup>

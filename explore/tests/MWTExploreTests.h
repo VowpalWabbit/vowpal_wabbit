@@ -2,6 +2,9 @@
 
 #include "MWTExplorer.h"
 #include "utility.h"
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
 using namespace MultiWorldTesting;
 

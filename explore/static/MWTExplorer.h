@@ -4,13 +4,29 @@
 
 #pragma once
 
-#include "Common.h"
-#include <functional>
-#include <tuple>
+#include <stdexcept>
 #include <float.h>
-#include <functional>
-#include <tuple>
 #include <math.h>
+#include <stdio.h>
+#include <string.h>
+#include <vector>
+#include <utility>
+#include <memory>
+#include <limits.h>
+#include <tuple>
+
+#ifdef MANAGED_CODE
+#define PORTING_INTERFACE public
+#define MWT_NAMESPACE namespace NativeMultiWorldTesting
+#else
+#define PORTING_INTERFACE private
+#define MWT_NAMESPACE namespace MultiWorldTesting
+#endif
+
+using namespace std;
+
+// TODO: reference additional headers your program requires here
+#include "utility.h"
 
 MWT_NAMESPACE {
 
