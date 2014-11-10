@@ -72,7 +72,7 @@ namespace MultiWorldTesting {
 		SoftmaxExplorer(IScorer<Ctx>^ defaultScorer, float lambda, UInt32 numActions)
 		{
 			this->defaultScorer = defaultScorer;
-			m_explorer = new NativeMultiWorldTesting::SoftmaxExplorer<NativeScorer>(*GetNativeScorer(), lambda, (u32)numActions);
+			m_explorer = new NativeMultiWorldTesting::SoftmaxExplorer<NativeContext>(*GetNativeScorer(), lambda, (u32)numActions);
 		}
 
 		~SoftmaxExplorer()
@@ -86,14 +86,14 @@ namespace MultiWorldTesting {
 			return defaultScorer->ScoreActions(context);
 		}
 
-		NativeMultiWorldTesting::SoftmaxExplorer<NativeScorer>* Get()
+		NativeMultiWorldTesting::SoftmaxExplorer<NativeContext>* Get()
 		{
 			return m_explorer;
 		}
 
 	private:
 		IScorer<Ctx>^ defaultScorer;
-		NativeMultiWorldTesting::SoftmaxExplorer<NativeScorer>* m_explorer;
+		NativeMultiWorldTesting::SoftmaxExplorer<NativeContext>* m_explorer;
 	};
 
 	generic <class Ctx>

@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
 		MyRecorder recorder;
 		MwtExplorer<MyContext> mwt("salt", recorder);
 		MyScorer scorer(num_actions);
-		SoftmaxExplorer<MyScorer> explorer(scorer, lambda, num_actions);
+		SoftmaxExplorer<MyContext> explorer(scorer, lambda, num_actions);
 		MyContext ctx;
 		u32 action = mwt.Choose_Action(explorer, unique_key, ctx);
 

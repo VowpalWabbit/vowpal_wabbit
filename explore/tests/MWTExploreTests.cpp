@@ -181,7 +181,7 @@ namespace vw_explore_tests
 			TestContext my_context;
 
 			MwtExplorer<TestContext> mwt("salt", my_recorder);
-			SoftmaxExplorer<TestScorer> explorer(my_scorer, lambda, num_actions);
+			SoftmaxExplorer<TestContext> explorer(my_scorer, lambda, num_actions);
 
 			// Scale C up since we have fewer interactions
 			u32 num_decisions = num_actions * log(num_actions * 1.0) + log(NUM_ACTIONS_COVER * 1.0 / num_actions) * C * num_actions;
@@ -222,7 +222,7 @@ namespace vw_explore_tests
 			TestContext my_context;
 
 			MwtExplorer<TestContext> mwt("salt", my_recorder);
-			SoftmaxExplorer<TestScorer> explorer(my_scorer, lambda, num_actions);
+			SoftmaxExplorer<TestContext> explorer(my_scorer, lambda, num_actions);
 
 			u32 action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
 			action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
@@ -377,7 +377,7 @@ namespace vw_explore_tests
 			StringRecorder<SimpleContext> my_recorder;
 
 			MwtExplorer<SimpleContext> mwt("salt", my_recorder);
-			SoftmaxExplorer<TestSimpleScorer> explorer(my_scorer, lambda, num_actions);
+			SoftmaxExplorer<SimpleContext> explorer(my_scorer, lambda, num_actions);
 
 			this->End_To_End(mwt, explorer, my_recorder);
 		}
@@ -538,7 +538,7 @@ namespace vw_explore_tests
 			COUNT_INVALID(BaggingExplorer<TestPolicy> explorer(policies, 0, 1);) // Invalid # bags, must be > 0
 
 			COUNT_INVALID(TauFirstExplorer<TestPolicy> explorer(my_policy, 1, 0);) // Invalid # actions, must be > 0
-			COUNT_INVALID(SoftmaxExplorer<TestScorer> explorer(my_scorer, .5f, 0);) // Invalid # actions, must be > 0
+			COUNT_INVALID(SoftmaxExplorer<TestContext> explorer(my_scorer, .5f, 0);) // Invalid # actions, must be > 0
 			COUNT_INVALID(GenericExplorer<TestScorer> explorer(my_scorer, 0);) // Invalid # actions, must be > 0
 
 

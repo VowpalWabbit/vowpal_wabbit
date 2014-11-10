@@ -137,7 +137,6 @@ public:
 	}
 
 private:
-	template <class Ctx>
 	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
 		ActionSet actions;
@@ -193,11 +192,11 @@ private:
 	friend class MwtExplorer;
 };
 
-template <class Scr>
+template <class Ctx>
 class SoftmaxExplorer
 {
 public:
-	SoftmaxExplorer(Scr& default_scorer, float lambda, u32 num_actions) :
+	SoftmaxExplorer(IScorer<Ctx>& default_scorer, float lambda, u32 num_actions) :
 		m_default_scorer(default_scorer), m_lambda(lambda), m_num_actions(num_actions)
 	{
 		if (m_num_actions < 1)
@@ -207,7 +206,6 @@ public:
 	}
 
 private:
-	template <class Ctx>
 	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
 		ActionSet actions;
@@ -215,10 +213,7 @@ private:
 		PRG::prg random_generator(salted_seed);
 
 		// Invoke the default scorer function
-		static_assert(std::is_base_of<IScorer<Ctx>, Scr>::value, "The specified scorer does not implement IScorer");
-		IScorer<Ctx>* scorer = (IScorer<Ctx>*)&m_default_scorer;
-
-		vector<float> scores = scorer->Score_Actions(context);
+		vector<float> scores = m_default_scorer.Score_Actions(context);
 		u32 num_scores = (u32)scores.size();
 		if (num_scores != m_num_actions)
 		{
@@ -271,7 +266,7 @@ private:
 	}
 
 private:
-	Scr& m_default_scorer;
+	IScorer<Ctx>& m_default_scorer;
 	float m_lambda;
 	u32 m_num_actions;
 
