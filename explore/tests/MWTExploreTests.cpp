@@ -257,69 +257,6 @@ namespace vw_explore_tests
 			this->Test_Interactions(interactions, 3, expected_probs);
 		}
 
-		TEST_METHOD(Reward_Reporter)
-		{
-			int num_actions = 10;
-			float epsilon = 0.f; // No randomization
-
-			TestPolicy my_policy(0, num_actions);
-			TestContext my_context;
-			TestRecorder my_recorder;
-
-			MwtExplorer<TestContext> mwt("salt", my_recorder);
-			EpsilonGreedyExplorer<TestContext> explorer(my_policy, epsilon, num_actions);
-
-			u32 num_decisions = num_actions;
-			std::string* ids = new std::string[num_decisions];
-			u32 i;
-			for (i = 0; i < num_decisions; i++)
-			{
-				ids[i] = this->Get_Unique_Key(i + 1);
-				u32 action = mwt.Choose_Action(explorer, ids[i], my_context);
-			}
-
-			vector<TestInteraction<TestContext>> vec_interactions = my_recorder.Get_All_Interactions();
-			size_t num_interactions = vec_interactions.size();
-
-			Assert::AreEqual(num_decisions, (u32)num_interactions);
-
-			Interaction** interactions = new Interaction*[num_interactions];
-			for (size_t i = 0; i < num_interactions; i++)
-			{
-				interactions[i] = new Interaction(nullptr, MWTAction(vec_interactions[i].Action), vec_interactions[i].Probability, vec_interactions[i].Unique_Key);
-			}
-
-			MWTRewardReporter rew = MWTRewardReporter(num_interactions, interactions);
-			float reward = 2.0;
-			// Report a single interaction's reward
-			rew.Report_Reward(ids[0], reward);
-			for (i = 0; i < num_interactions; i++)
-			{
-				// We need to find the interaction since it's not guaranteed the interactiosn are
-				// returned to us in the same order we passed them in
-				float expected_reward = (interactions[i]->Get_Id() == ids[0]) ? reward : NO_REWARD;
-				Assert::AreEqual(interactions[i]->Get_Reward(), expected_reward);
-			}
-			// Report rewards for all interactions, which should overwrite the single reward above
-			reward = 3.0;
-			float* all_rewards = new float[num_interactions];
-			// This initializes all rewards to the value above
-			std::fill_n(all_rewards, num_interactions, reward);
-			rew.Report_Reward(num_decisions, ids, all_rewards);
-			for (i = 0; i < num_interactions; i++)
-			{
-				Assert::AreEqual(interactions[i]->Get_Reward(), reward);
-			}
-			delete[] all_rewards;
-			delete[] ids;
-
-			for (size_t i = 0; i < num_interactions; i++)
-			{
-				delete interactions[i];
-			}
-			delete[] interactions;
-		}
-
 		TEST_METHOD(End_To_End_Epsilon_Greedy)
 		{
 			int num_actions = 10;

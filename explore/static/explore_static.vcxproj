@@ -147,9 +147,6 @@
     <ClInclude Include="Explorer.h" />
     <ClInclude Include="MWTExplorer.h" />
     <ClInclude Include="Interaction.h" />
-    <ClInclude Include="MWTOptimizer.h" />
-    <ClInclude Include="MWTRewardReporter.h" />
-    <ClInclude Include="PolicyFunc.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>

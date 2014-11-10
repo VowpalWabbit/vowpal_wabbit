@@ -8,10 +8,6 @@ namespace cs_test
 {
     public class ExploreClock
     {
-        private static UInt32 SampleStatefulPolicyFunc(int policyParams, BaseContext appContext)
-        {
-            return (uint)((policyParams + appContext.GetFeatures().Length) % 10 + 1);
-        }
         public static void Clock()
         {
             float epsilon = .2f;
