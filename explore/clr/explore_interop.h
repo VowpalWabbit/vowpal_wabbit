@@ -162,7 +162,7 @@ internal:
 
 	PolicyCallback()
 	{
-		ClrPolicyCallback^ policyCallback = gcnew ClrPolicyCallback(&PolicyCallback<Ctx>::InteropInvoke);
+		policyCallback = gcnew ClrPolicyCallback(&PolicyCallback<Ctx>::InteropInvoke);
 		IntPtr policyCallbackPtr = Marshal::GetFunctionPointerForDelegate(policyCallback);
 		m_callback = static_cast<Native_Policy_Callback*>(policyCallbackPtr.ToPointer());
 		m_native_policy = nullptr;
@@ -210,6 +210,9 @@ internal:
 	}
 
 private:
+	ClrPolicyCallback^ policyCallback;
+
+private:
 	NativePolicy* m_native_policy;
 	vector<NativePolicy>* m_native_policies;
 	Native_Policy_Callback* m_callback;
@@ -224,7 +227,7 @@ internal:
 
 	RecorderCallback()
 	{
-		ClrRecorderCallback^ recorderCallback = gcnew ClrRecorderCallback(&RecorderCallback<Ctx>::InteropInvoke);
+		recorderCallback = gcnew ClrRecorderCallback(&RecorderCallback<Ctx>::InteropInvoke);
 		IntPtr recorderCallbackPtr = Marshal::GetFunctionPointerForDelegate(recorderCallback);
 		Native_Recorder_Callback* callback = static_cast<Native_Recorder_Callback*>(recorderCallbackPtr.ToPointer());
 		m_native_recorder = new NativeRecorder(callback);
@@ -255,6 +258,9 @@ internal:
 	}
 
 private:
+	ClrRecorderCallback^ recorderCallback;
+
+private:
 	NativeRecorder* m_native_recorder;
 };
 
@@ -267,7 +273,7 @@ internal:
 
 	ScorerCallback()
 	{
-		ClrScorerCallback^ scorerCallback = gcnew ClrScorerCallback(&ScorerCallback<Ctx>::InteropInvoke);
+		scorerCallback = gcnew ClrScorerCallback(&ScorerCallback<Ctx>::InteropInvoke);
 		IntPtr scorerCallbackPtr = Marshal::GetFunctionPointerForDelegate(scorerCallback);
 		Native_Scorer_Callback* callback = static_cast<Native_Scorer_Callback*>(scorerCallbackPtr.ToPointer());
 		m_native_scorer = new NativeScorer(callback);
@@ -312,6 +318,9 @@ internal:
 	}
 
 private:
+	ClrScorerCallback^ scorerCallback;
+
+private:
 	NativeScorer* m_native_scorer;
 };
 
@@ -322,7 +331,7 @@ public ref class ToStringCallback
 internal:
 	ToStringCallback()
 	{
-		ClrToStringCallback^ toStringCallback = gcnew ClrToStringCallback(&ToStringCallback<Ctx>::InteropInvoke);
+		toStringCallback = gcnew ClrToStringCallback(&ToStringCallback<Ctx>::InteropInvoke);
 		IntPtr toStringCallbackPtr = Marshal::GetFunctionPointerForDelegate(toStringCallback);
 		m_callback = static_cast<Native_To_String_Callback*>(toStringCallbackPtr.ToPointer());
 	}
@@ -340,6 +349,9 @@ internal:
 		string* out_string = (string*)stringPtr.ToPointer();
 		*out_string = marshal_as<string>(context->ToString());
 	}
+
+private:
+	ClrToStringCallback^ toStringCallback;
 
 private:
 	Native_To_String_Callback* m_callback;

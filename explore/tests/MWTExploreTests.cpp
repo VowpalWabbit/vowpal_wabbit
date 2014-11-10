@@ -725,15 +725,17 @@ namespace vw_explore_tests
 			COUNT_BAD_CALL
 			(
 				u32 num_actions = 1;
+				FixedScorer scorer(num_actions, -1);
 				MwtExplorer<TestRecorder> mwt("salt", TestRecorder());
-				GenericExplorer<FixedScorer> explorer(FixedScorer(num_actions, -1), num_actions);
+				GenericExplorer<FixedScorer> explorer(scorer, num_actions);
 				mwt.Choose_Action(explorer, "test", TestContext());
 			)
 			COUNT_BAD_CALL
 			(
 				u32 num_actions = 1;
+				FixedScorer scorer(num_actions, 0);
 				MwtExplorer<TestRecorder> mwt("salt", TestRecorder());
-				GenericExplorer<FixedScorer> explorer(FixedScorer(num_actions, 0), num_actions);
+				GenericExplorer<FixedScorer> explorer(scorer, num_actions);
 				mwt.Choose_Action(explorer, "test", TestContext());
 			)
 			Assert::AreEqual(2, num_ex);

@@ -361,7 +361,7 @@ namespace MultiWorldTesting {
 		float GetReward() { return Reward; }
 		void SetReward(float reward) { Reward = reward; }
 
-	internal:
+	public:
 		BaseContext^ ApplicationContext;
 		UInt32 ChosenAction;
 		float Probability;

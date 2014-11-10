@@ -21,7 +21,7 @@ namespace ExploreTests
             float epsilon = 0f;
             string uniqueKey = "ManagedTestId";
 
-            TestRecorder recorder = new TestRecorder();
+            TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
             TestPolicy policy = new TestPolicy();
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
             TestContext testContext = new TestContext();
@@ -50,11 +50,10 @@ namespace ExploreTests
             uint tau = 0;
             string uniqueKey = "ManagedTestId";
 
-            TestRecorder recorder = new TestRecorder();
+            TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
             TestPolicy policy = new TestPolicy();
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
-            TestContext testContext = new TestContext();
-            testContext.Id = 100;
+            TestContext testContext = new TestContext() { Id = 100 };
 
             var explorer = new TauFirstExplorer<TestContext>(policy, tau, numActions);
 
@@ -74,7 +73,7 @@ namespace ExploreTests
             uint numbags = 2;
             string uniqueKey = "ManagedTestId";
 
-            TestRecorder recorder = new TestRecorder();
+            TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
             TestPolicy[] policies = new TestPolicy[numbags];
             for (int i = 0; i < numbags; i++)
             {
@@ -106,8 +105,8 @@ namespace ExploreTests
         {
             uint numActions = 10;
             float lambda = 0.5f;
-            TestRecorder recorder = new TestRecorder();
-            TestScorer scorer = new TestScorer(numActions);
+            TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
+            TestScorer<TestContext> scorer = new TestScorer<TestContext>(numActions);
 
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
             var explorer = new SoftmaxExplorer<TestContext>(scorer, lambda, numActions);
@@ -141,8 +140,8 @@ namespace ExploreTests
         {
             uint numActions = 10;
             float lambda = 0.5f;
-            TestRecorder recorder = new TestRecorder();
-            TestScorer scorer = new TestScorer(numActions, uniform: false);
+            TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
+            TestScorer<TestContext> scorer = new TestScorer<TestContext>(numActions, uniform: false);
 
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
             var explorer = new SoftmaxExplorer<TestContext>(scorer, lambda, numActions);
@@ -169,8 +168,8 @@ namespace ExploreTests
         {
             uint numActions = 10;
             string uniqueKey = "ManagedTestId";
-            TestRecorder recorder = new TestRecorder();
-            TestScorer scorer = new TestScorer(numActions);
+            TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
+            TestScorer<TestContext> scorer = new TestScorer<TestContext>(numActions);
 
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
             var explorer = new GenericExplorer<TestContext>(scorer, numActions);
@@ -186,173 +185,77 @@ namespace ExploreTests
         [TestMethod]
         public void EndToEndEpsilonGreedy()
         {
-            mwt.InitializeEpsilonGreedy(0.5f,
-                new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc), PolicyParams,
-                NumActions);
+            uint numActions = 10;
+            float epsilon = 0.5f;
 
-            EndToEnd();
+            TestRecorder<SimpleContext> recorder = new TestRecorder<SimpleContext>();
+            MwtExplorer<SimpleContext> mwtt = new MwtExplorer<SimpleContext>("mwt", recorder);
+
+            TestSimplePolicy policy = new TestSimplePolicy();
+            var explorer = new EpsilonGreedyExplorer<SimpleContext>(policy, epsilon, numActions);
+
+            EndToEnd(mwtt, explorer, recorder);
         }
 
         [TestMethod]
         public void EndToEndTauFirst()
         {
-            mwt.InitializeTauFirst<int>(5,
-                new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc),
-                PolicyParams,
-                NumActions);
+            uint numActions = 10;
+            uint tau = 5;
 
-            EndToEnd();
+            TestRecorder<SimpleContext> recorder = new TestRecorder<SimpleContext>();
+            TestSimplePolicy policy = new TestSimplePolicy();
+            MwtExplorer<SimpleContext> mwtt = new MwtExplorer<SimpleContext>("mwt", recorder);
+
+            var explorer = new TauFirstExplorer<SimpleContext>(policy, tau, numActions);
+
+            EndToEnd(mwtt, explorer, recorder);
         }
 
         [TestMethod]
         public void EndToEndBagging()
         {
-            StatefulPolicyDelegate<int>[] funcs = new StatefulPolicyDelegate<int>[Bags];
-            int[] funcParams = new int[Bags];
-            for (int i = 0; i < Bags; i++)
+            uint numActions = 10;
+            uint numbags = 2;
+
+            TestRecorder<SimpleContext> recorder = new TestRecorder<SimpleContext>();
+            TestSimplePolicy[] policies = new TestSimplePolicy[numbags];
+            for (int i = 0; i < numbags; i++)
             {
-                funcs[i] = new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc);
-                funcParams[i] = PolicyParams;
+                policies[i] = new TestSimplePolicy();
             }
 
-            mwt.InitializeBagging(Bags, funcs, funcParams, NumActions);
+            MwtExplorer<SimpleContext> mwtt = new MwtExplorer<SimpleContext>("mwt", recorder);
+            var explorer = new BaggingExplorer<SimpleContext>(policies, numbags, numActions);
 
-            EndToEnd();
+            EndToEnd(mwtt, explorer, recorder);
         }
 
         [TestMethod]
         public void EndToEndSoftmax()
         {
-            mwt.InitializeSoftmax<int>(0.5f,
-                new StatefulScorerDelegate<int>(TestStatefulScorerFunc),
-                PolicyParams, NumActions);
+            uint numActions = 10;
+            float lambda = 0.5f;
+            TestRecorder<SimpleContext> recorder = new TestRecorder<SimpleContext>();
+            TestScorer<SimpleContext> scorer = new TestScorer<SimpleContext>(numActions);
 
-            EndToEnd();
+            MwtExplorer<SimpleContext> mwtt = new MwtExplorer<SimpleContext>("mwt", recorder);
+            var explorer = new SoftmaxExplorer<SimpleContext>(scorer, lambda, numActions);
+
+            EndToEnd(mwtt, explorer, recorder);
         }
 
         [TestMethod]
         public void EndToEndGeneric()
         {
-            mwt.InitializeGeneric<int>(
-                new StatefulScorerDelegate<int>(TestStatefulScorerFunc),
-                PolicyParams,
-                NumActions);
+            uint numActions = 10;
+            TestRecorder<SimpleContext> recorder = new TestRecorder<SimpleContext>();
+            TestScorer<SimpleContext> scorer = new TestScorer<SimpleContext>(numActions);
 
-            EndToEnd();
-        }
+            MwtExplorer<SimpleContext> mwtt = new MwtExplorer<SimpleContext>("mwt", recorder);
+            var explorer = new GenericExplorer<SimpleContext>(scorer, numActions);
 
-        [TestMethod]
-        public void CustomContextEpsilonStateful()
-        {
-            mwt.InitializeEpsilonGreedy<int>(0f,
-               new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc),
-               PolicyParams,
-               NumActions);
-
-            ExploreWithCustomContext();
-        }
-
-        [TestMethod]
-        public void CustomContextEpsilonStateless()
-        {
-            mwt.InitializeEpsilonGreedy(0f,
-                new StatelessPolicyDelegate(TestStatelessPolicyFunc),
-                NumActions);
-
-            ExploreWithCustomContext();
-        }
-
-        [TestMethod]
-        public void CustomContextTauFirstStateful()
-        {
-            mwt.InitializeTauFirst<int>(1,
-                new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc),
-                PolicyParams,
-                NumActions);
-
-            ExploreWithCustomContext();
-        }
-
-        [TestMethod]
-        public void CustomContextTauFirstStateless()
-        {
-            mwt.InitializeTauFirst(1,
-                new StatelessPolicyDelegate(TestStatelessPolicyFunc),
-                NumActions);
-
-            ExploreWithCustomContext();
-        }
-
-        [TestMethod]
-        public void CustomContextBaggingStateful()
-        {
-            uint bags = 2;
-            StatefulPolicyDelegate<int>[] funcs = new StatefulPolicyDelegate<int>[bags];
-            int[] funcParams = new int[bags];
-            for (int i = 0; i < bags; i++)
-            {
-                funcs[i] = new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc);
-                funcParams[i] = PolicyParams;
-            }
-
-            mwt.InitializeBagging(bags, funcs, funcParams, NumActions);
-            ExploreWithCustomContext();
-        }
-
-        [TestMethod]
-        public void CustomContextBaggingStateless()
-        {
-            uint bags = 2;
-            StatelessPolicyDelegate[] funcs = new StatelessPolicyDelegate[bags];
-            for (int i = 0; i < bags; i++)
-            {
-                funcs[i] = new StatelessPolicyDelegate(TestStatelessPolicyFunc);
-            }
-
-            mwt.InitializeBagging(bags, funcs, NumActions);
-            ExploreWithCustomContext();
-        }
-
-        [TestMethod]
-        public void CustomContextSoftmaxStateful()
-        {
-            mwt.InitializeSoftmax<int>(0.5f,
-                new StatefulScorerDelegate<int>(TestStatefulScorerFunc),
-                PolicyParams, NumActions);
-
-            ExploreWithCustomContext();
-
-        }
-
-        [TestMethod]
-        public void CustomContextSoftmaxStateless()
-        {
-            mwt.InitializeSoftmax(0.5f,
-                new StatelessScorerDelegate(TestStatelessScorerFunc),
-                NumActions);
-
-            ExploreWithCustomContext();
-        }
-
-        [TestMethod]
-        public void CustomContextGenericStateful()
-        {
-            mwt.InitializeGeneric<int>(
-                new StatefulScorerDelegate<int>(TestStatefulScorerFunc),
-                PolicyParams,
-                NumActions);
-
-            ExploreWithCustomContext();
-        }
-
-        [TestMethod]
-        public void CustomContextGenericStateless()
-        {
-            mwt.InitializeGeneric(
-                new StatelessScorerDelegate(TestStatelessScorerFunc),
-                NumActions);
-
-            ExploreWithCustomContext();
+            EndToEnd(mwtt, explorer, recorder);
         }
 
         [TestInitialize]
@@ -375,33 +278,7 @@ namespace ExploreTests
             mwt.Uninitialize();
         }
 
-        private void ExploreWithCustomContext()
-        {
-            OldTestContext testContext = new OldTestContext();
-            testContext.SetFeatures();
-
-            uint chosenAction = mwt.ChooseAction(UniqueKey, testContext);
-
-            Interaction[] interactions = mwt.GetAllInteractions();
-            Assert.AreEqual(1, interactions.Length);
-
-            BaseContext returnedContext = interactions[0].GetContext();
-            Assert.IsTrue(returnedContext is OldTestContext);
-            Assert.AreEqual(testContext, returnedContext);
-
-            Feature[] originalFeatures = testContext.GetFeatures();
-            Feature[] returnedFeatures = returnedContext.GetFeatures();
-
-            Assert.AreEqual(originalFeatures.Length, returnedFeatures.Length);
-            Assert.AreEqual(3, returnedFeatures.Length);
-            for (int i = 0; i < originalFeatures.Length; i++)
-            {
-                Assert.AreEqual(originalFeatures[i].Id, returnedFeatures[i].Id);
-                Assert.AreEqual(originalFeatures[i].Value, returnedFeatures[i].Value);
-            }
-        }
-
-        private void EndToEnd()
+        private void EndToEnd(MwtExplorer<SimpleContext> mwtt, IExplorer<SimpleContext> explorer, TestRecorder<SimpleContext> recorder)
         {
             Random rand = new Random();
 
@@ -414,14 +291,24 @@ namespace ExploreTests
                     f[j].Id = (uint)(j + 1);
                     f[j].Value = (float)rand.NextDouble();
                 }
+                SimpleContext c = new SimpleContext(f);
 
-                OldSimpleContext c = new OldSimpleContext(f, null);
-                mwt.ChooseAction(i.ToString(), c);
+                mwtt.ChooseAction(explorer, i.ToString(), c);
 
                 rewards.Add((float)rand.NextDouble());
             }
 
-            Interaction[] partialInteractions = mwt.GetAllInteractions();
+            var testInteractions = recorder.GetAllInteractions();
+            Interaction[] partialInteractions = new Interaction[testInteractions.Count];
+            for (int i = 0; i < testInteractions.Count; i++)
+            {
+                partialInteractions[i] = new Interaction() { 
+                    ApplicationContext = new OldSimpleContext(testInteractions[i].Context.GetFeatures(), null),
+                    ChosenAction = testInteractions[i].Action,
+                    Probability = testInteractions[i].Probability,
+                    Id = testInteractions[i].UniqueKey
+                };
+            }
 
             MwtRewardReporter mrr = new MwtRewardReporter(partialInteractions);
             for (int i = 0; i < partialInteractions.Length; i++)
@@ -550,11 +437,12 @@ namespace ExploreTests
         }
     }
 
-    class TestRecorder : IRecorder<TestContext>
+    class TestRecorder<Ctx> : IRecorder<Ctx>
     {
-        public void Record(TestContext context, UInt32 action, float probability, string uniqueKey)
+        public void Record(Ctx context, UInt32 action, float probability, string uniqueKey)
         {
-            interactions.Add(new TestInteraction<TestContext>() { 
+            interactions.Add(new TestInteraction<Ctx>()
+            { 
                 Context = context,
                 Action = action,
                 Probability = probability,
@@ -562,12 +450,12 @@ namespace ExploreTests
             });
         }
 
-        public List<TestInteraction<TestContext>> GetAllInteractions()
+        public List<TestInteraction<Ctx>> GetAllInteractions()
         {
             return interactions;
         }
 
-        private List<TestInteraction<TestContext>> interactions = new List<TestInteraction<TestContext>>();
+        private List<TestInteraction<Ctx>> interactions = new List<TestInteraction<Ctx>>();
     }
 
     class TestPolicy : IPolicy<TestContext>
@@ -587,6 +475,14 @@ namespace ExploreTests
         private int index;
     }
 
+    class TestSimplePolicy : IPolicy<SimpleContext>
+    {
+        public uint ChooseAction(SimpleContext context)
+        {
+            return 1;
+        }
+    }
+
     class StringPolicy : IPolicy<SimpleContext>
     {
         public uint ChooseAction(SimpleContext context)
@@ -595,14 +491,14 @@ namespace ExploreTests
         }
     }
 
-    class TestScorer : IScorer<TestContext>
+    class TestScorer<Ctx> : IScorer<Ctx>
     {
         public TestScorer(uint numActions, bool uniform = true)
         {
             this.uniform = uniform;
             this.numActions = numActions;
         }
-        public List<float> ScoreActions(TestContext context)
+        public List<float> ScoreActions(Ctx context)
         {
             if (uniform)
             {
