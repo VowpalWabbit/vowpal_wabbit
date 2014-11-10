@@ -78,6 +78,7 @@ public:
   uint32_t* affix_features;
   bool* spelling_features;
   v_array<char> spelling;
+  v_array<feature_dict*>* namespace_dictionaries;
   
   ~TC_parser(){ }
   
@@ -200,6 +201,35 @@ public:
           ae->audit_features[spelling_namespace].push_back(ad);
         }
       }
+      if (namespace_dictionaries[index].size() > 0) {
+        for (size_t dict=0; dict<namespace_dictionaries[index].size(); dict++) {
+          feature_dict* map = namespace_dictionaries[index][dict];
+          uint32_t hash = uniform_hash(feature_name.begin, feature_name.end-feature_name.begin, quadratic_constant);
+          v_array<feature>* feats = map->get(feature_name, hash);
+          if ((feats != NULL) && (feats->size() > 0)) {
+            if (ae->atomics[dictionary_namespace].size() == 0)
+              ae->indices.push_back(dictionary_namespace);
+            push_many(ae->atomics[dictionary_namespace], feats->begin, feats->size());
+            for (feature*f = feats->begin; f != feats->end; ++f)
+              ae->sum_feat_sq[dictionary_namespace] += f->x * f->x;
+            if (audit) {
+              for (feature*f = feats->begin; f != feats->end; ++f) {
+                uint32_t id = f->weight_index;
+                size_t len = 2 + (feature_name.end-feature_name.begin) + 1 + ceil(log10(id)) + 1;
+                char* str = (char*)calloc(len, sizeof(char));
+                str[0] = index;
+                str[1] = '_';
+                char *c = str+2;
+                for (char*f=feature_name.begin; f!=feature_name.end; ++f) *(c++) = *f;
+                *(c++) = '=';
+                sprintf(c, "%d", id);
+                audit_data ad = { copy((char*)"dictionary"), str, f->weight_index, f->x, true };
+                ae->audit_features[dictionary_namespace].push_back(ad);
+              }
+            }
+          }
+        }
+      }
     }
   }
   
@@ -314,6 +344,7 @@ public:
 	this->ae = ae;
 	this->affix_features = all.affix_features;
 	this->spelling_features = all.spelling_features;
+        this->namespace_dictionaries = all.namespace_dictionaries;
 	this->base = NULL;
 	listNameSpace();
 	if (base != NULL)
