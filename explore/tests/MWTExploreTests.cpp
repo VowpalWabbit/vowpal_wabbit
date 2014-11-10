@@ -79,7 +79,7 @@ namespace vw_explore_tests
 			TestContext my_context;
 
 			MwtExplorer<TestContext> mwt("salt", my_recorder);
-			TauFirstExplorer<TestPolicy> explorer(my_policy, tau, num_actions);
+			TauFirstExplorer<TestContext> explorer(my_policy, tau, num_actions);
 
 			u32 expected_action = my_policy.Choose_Action(my_context);
 
@@ -100,7 +100,7 @@ namespace vw_explore_tests
 			TestContext my_context;
 
 			MwtExplorer<TestContext> mwt("salt", my_recorder);
-			TauFirstExplorer<TestPolicy> explorer(my_policy, tau, num_actions);
+			TauFirstExplorer<TestContext> explorer(my_policy, tau, num_actions);
 
 			u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
 			chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
@@ -346,7 +346,7 @@ namespace vw_explore_tests
 			StringRecorder<SimpleContext> my_recorder;
 
 			MwtExplorer<SimpleContext> mwt("salt", my_recorder);
-			TauFirstExplorer<TestSimplePolicy> explorer(my_policy, tau, num_actions);
+			TauFirstExplorer<SimpleContext> explorer(my_policy, tau, num_actions);
 
 			this->End_To_End(mwt, explorer, my_recorder);
 		}
@@ -537,7 +537,7 @@ namespace vw_explore_tests
 			COUNT_INVALID(BaggingExplorer<TestPolicy> explorer(policies, 1, 0);) // Invalid # actions, must be > 0
 			COUNT_INVALID(BaggingExplorer<TestPolicy> explorer(policies, 0, 1);) // Invalid # bags, must be > 0
 
-			COUNT_INVALID(TauFirstExplorer<TestPolicy> explorer(my_policy, 1, 0);) // Invalid # actions, must be > 0
+			COUNT_INVALID(TauFirstExplorer<TestContext> explorer(my_policy, 1, 0);) // Invalid # actions, must be > 0
 			COUNT_INVALID(SoftmaxExplorer<TestContext> explorer(my_scorer, .5f, 0);) // Invalid # actions, must be > 0
 			COUNT_INVALID(GenericExplorer<TestContext> explorer(my_scorer, 0);) // Invalid # actions, must be > 0
 
@@ -560,7 +560,7 @@ namespace vw_explore_tests
 			COUNT_BAD_CALL
 			(
 				MwtExplorer<TestContext> mwt("salt", TestRecorder());
-				TauFirstExplorer<TestBadPolicy> explorer(TestBadPolicy(), (u32)0, (u32)1);
+				TauFirstExplorer<TestContext> explorer(TestBadPolicy(), (u32)0, (u32)1);
 				mwt.Choose_Action(explorer, "test", TestContext());
 			)
 			COUNT_BAD_CALL

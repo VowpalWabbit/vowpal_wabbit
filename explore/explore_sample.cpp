@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
 		MyRecorder recorder;
 		MwtExplorer<MyContext> mwt("salt", recorder);
 		MyPolicy default_policy;
-		TauFirstExplorer<MyPolicy> explorer(default_policy, tau, num_actions);
+		TauFirstExplorer<MyContext> explorer(default_policy, tau, num_actions);
 		MyContext ctx;
 		u32 action = mwt.Choose_Action(explorer, unique_key, ctx);
 

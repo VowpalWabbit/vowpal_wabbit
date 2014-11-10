@@ -41,7 +41,7 @@ namespace MultiWorldTesting {
 		TauFirstExplorer(IPolicy<Ctx>^ defaultPolicy, UInt32 tau, UInt32 numActions)
 		{
 			this->defaultPolicy = defaultPolicy;
-			m_explorer = new NativeMultiWorldTesting::TauFirstExplorer<NativePolicy>(*GetNativePolicy(), tau, (u32)numActions);
+			m_explorer = new NativeMultiWorldTesting::TauFirstExplorer<NativeContext>(*GetNativePolicy(), tau, (u32)numActions);
 		}
 
 		~TauFirstExplorer()
@@ -55,14 +55,14 @@ namespace MultiWorldTesting {
 			return defaultPolicy->ChooseAction(context);
 		}
 
-		NativeMultiWorldTesting::TauFirstExplorer<NativePolicy>* Get()
+		NativeMultiWorldTesting::TauFirstExplorer<NativeContext>* Get()
 		{
 			return m_explorer;
 		}
 
 	private:
 		IPolicy<Ctx>^ defaultPolicy;
-		NativeMultiWorldTesting::TauFirstExplorer<NativePolicy>* m_explorer;
+		NativeMultiWorldTesting::TauFirstExplorer<NativeContext>* m_explorer;
 	};
 
 	generic <class Ctx>
