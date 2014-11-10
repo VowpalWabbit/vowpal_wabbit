@@ -388,7 +388,7 @@ public:
 			static_assert(std::is_base_of<IPolicy<Ctx>, Plc>::value, "The specified policy does not implement IPolicy");
 			IPolicy<Ctx>* policy = (IPolicy<Ctx>*)&m_default_policy;
 
-			MWTAction chosen_action = MWTAction(policy->Choose_Action(context));
+			chosen_action = MWTAction(policy->Choose_Action(context));
 
 			if (chosen_action.Get_Id() == 0 || chosen_action.Get_Id() > actions.Count())
 			{

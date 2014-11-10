@@ -63,98 +63,100 @@ namespace vw_explore_tests
 			Assert::IsTrue(abs((double)times_policy_action_chosen / times_choose - 0.5) < 0.1);
 		}
 
-		TEST_METHOD(Tau_First_Stateful)
+		TEST_METHOD(Tau_First)
 		{
+			int num_actions = 10;
 			u32 tau = 0;
-			m_mwt->Initialize_Tau_First<int>(tau, Stateful_Default_Policy, m_policy_func_arg, m_num_actions);
+			TestPolicy my_policy(m_policy_func_arg, num_actions);
+			TestRecorder my_recorder;
+			TestContext my_context;
 
-			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(m_policy_func_arg, *m_context);
+			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
+			TauFirstExplorer<TestPolicy> explorer(my_policy, tau, num_actions);
 
-			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
+			u32 expected_action = my_policy.Choose_Action(my_context);
+
+			u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
 			Assert::AreEqual(expected_action, chosen_action);
 
 			// tau = 0 means no randomization and no logging
-			this->Test_Interaction_Store(0, nullptr);
-		}
-
-		TEST_METHOD(Tau_First_Stateless)
-		{
-			u32 tau = 0;
-			m_mwt->Initialize_Tau_First(tau, Stateless_Default_Policy, m_num_actions);
-
-			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
-			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(*m_context));
-
-			this->Test_Interaction_Store(0, nullptr);
+			vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
+			this->Test_Interactions(interactions, 0, nullptr);
 		}
 
 		TEST_METHOD(Tau_First_Random)
 		{
+			int num_actions = 10;
 			u32 tau = 2;
-			m_mwt->Initialize_Tau_First(tau, Stateless_Default_Policy, m_num_actions);
+			TestPolicy my_policy(99, num_actions);
+			TestRecorder my_recorder;
+			TestContext my_context;
 
-			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
-			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
+			MwtExplorer<TestRecorder> mwt("salt", my_recorder);
+			TauFirstExplorer<TestPolicy> explorer(my_policy, tau, num_actions);
+
+			u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
+			chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
 
 			// Tau expired, did not explore
-			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(3), *m_context);
+			chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(3), my_context);
 			Assert::AreEqual((u32)10, chosen_action);
 
 			// Only 2 interactions logged, 3rd one should not be stored
+			vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
 			float expected_probs[2] = { .1f, .1f };
-			this->Test_Interaction_Store(2, expected_probs);
+			this->Test_Interactions(interactions, 2, expected_probs);
 		}
 
-		TEST_METHOD(Bagging_Stateful)
+		TEST_METHOD(Bagging)
 		{
-			Stateful<int>::Policy* funcs[2] = { Stateful_Default_Policy, Stateful_Default_Policy2 };
-			m_mwt->Initialize_Bagging<int>(m_bags, funcs, m_policy_params, m_num_actions);
+			int num_actions = 10;
+			TestRecorder my_recorder;
 
-			u32 expected_action1 = VWExploreUnitTests::Stateful_Default_Policy(m_policy_func_arg, *m_context);
-			u32 expected_action2 = VWExploreUnitTests::Stateful_Default_Policy2(m_policy_func_arg, *m_context);
+			vector<TestPolicy> policies;
+			policies.push_back(TestPolicy(m_policy_func_arg, num_actions));
+			policies.push_back(TestPolicy(m_policy_func_arg + 1, num_actions));
 
-			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
+			TestContext my_context;
+
+			MwtExplorer<TestRecorder> mwt("c++-test", my_recorder);
+			BaggingExplorer<TestPolicy> explorer(policies, (u32)policies.size(), num_actions);
+
+			u32 expected_action1 = policies[0].Choose_Action(my_context);
+			u32 expected_action2 = policies[1].Choose_Action(my_context);
+
+			u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
 			Assert::AreEqual(expected_action2, chosen_action);
 
-			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
+			chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
 			Assert::AreEqual(expected_action1, chosen_action);
 			
+			vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
 			float expected_probs[2] = { .5f, .5f };
-			this->Test_Interaction_Store(2, expected_probs);
-		}
-
-		TEST_METHOD(Bagging_Stateless)
-		{
-			Policy* funcs[2] = { Stateless_Default_Policy, Stateless_Default_Policy2 };
-			m_mwt->Initialize_Bagging(m_bags, funcs, m_num_actions);
-
-			u32 expected_action1 = VWExploreUnitTests::Stateless_Default_Policy(*m_context);
-			u32 expected_action2 = VWExploreUnitTests::Stateless_Default_Policy2(*m_context);
-
-			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
-			Assert::AreEqual(expected_action2, chosen_action);
-
-			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
-			Assert::AreEqual(expected_action1, chosen_action);
-
-			float expected_probs[2] = { .5f, .5f };
-			this->Test_Interaction_Store(2, expected_probs);
+			this->Test_Interactions(interactions, 2, expected_probs);
 		}
 
 		TEST_METHOD(Bagging_Random)
 		{
-			u32 bags = 2;
-			Stateful<int>::Policy* funcs[2] = { Stateful_Default_Policy, Stateful_Default_Policy2 };
-			int* params[2] = { &m_policy_func_arg, &m_policy_func_arg };
+			int num_actions = 10;
+			TestRecorder my_recorder;
 
-			m_mwt->Initialize_Bagging<int>(bags, funcs, params, m_num_actions);
+			vector<TestPolicy> policies;
+			policies.push_back(TestPolicy(m_policy_func_arg, num_actions));
+			policies.push_back(TestPolicy(m_policy_func_arg + 1, num_actions));
 
-			u32 chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(1), *m_context);
-			chosen_action = m_mwt->Choose_Action(this->Get_Unique_Key(2), *m_context);
+			TestContext my_context;
+
+			MwtExplorer<TestRecorder> mwt("c++-test", my_recorder);
+			BaggingExplorer<TestPolicy> explorer(policies, (u32)policies.size(), num_actions);
+
+			u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
+			chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
 
 			// Two bags choosing different actions so prob of each is 1/2
+			vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
 			float expected_probs[2] = { .5f, .5f };
-			this->Test_Interaction_Store(2, expected_probs);
+			this->Test_Interactions(interactions, 2, expected_probs);
 		}
 
 		TEST_METHOD(Softmax_Stateful)
