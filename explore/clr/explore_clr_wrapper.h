@@ -308,11 +308,4 @@ namespace MultiWorldTesting {
 		vector<NativeMultiWorldTesting::Feature>* m_features;
 		NativeMultiWorldTesting::SimpleContext* m_native_context;
 	};
-
-	public ref class ActionID
-	{
-	public:
-		static UInt32 Make_OneBased(UInt32 id) { return NativeMultiWorldTesting::MWTAction::Make_OneBased(id); }
-		static UInt32 Make_ZeroBased(UInt32 id) { return NativeMultiWorldTesting::MWTAction::Make_ZeroBased(id); }
-	};
 }

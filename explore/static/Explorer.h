@@ -132,21 +132,18 @@ public:
 private:
 	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
-		ActionSet actions;
-		actions.Set_Count(m_num_actions);
-
 		PRG::prg random_generator(salted_seed);
 
 		// Invoke the default policy function to get the action
 		MWTAction chosen_action = MWTAction(m_default_policy.Choose_Action(context));
 
-		if (chosen_action.Get_Id() == 0 || chosen_action.Get_Id() > actions.Count())
+		if (chosen_action.Get_Id() == 0 || chosen_action.Get_Id() > m_num_actions)
 		{
 			throw std::invalid_argument("Action chosen by default policy is not within valid range.");
 		}
 
 		float action_probability = 0.f;
-		float base_probability = m_epsilon / actions.Count(); // uniform probability
+		float base_probability = m_epsilon / m_num_actions; // uniform probability
 
 		// TODO: check this random generation
 		if (random_generator.Uniform_Unit_Interval() < 1.f - m_epsilon)
@@ -156,7 +153,7 @@ private:
 		else
 		{
 			// Get uniform random action ID
-			u32 actionId = random_generator.Uniform_Int(1, actions.Count());
+			u32 actionId = random_generator.Uniform_Int(1, m_num_actions);
 
 			if (actionId == chosen_action.Get_Id())
 			{
@@ -169,7 +166,7 @@ private:
 				// Otherwise it's just the uniform probability
 				action_probability = base_probability;
 			}
-			chosen_action = actions.Get(actionId);
+			chosen_action = MWTAction(actionId);
 		}
 
 		return std::tuple<MWTAction, float, bool>(chosen_action, action_probability, true);
@@ -201,8 +198,6 @@ public:
 private:
 	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
-		ActionSet actions;
-		actions.Set_Count(m_num_actions);
 		PRG::prg random_generator(salted_seed);
 
 		// Invoke the default scorer function
@@ -255,7 +250,8 @@ private:
 			}
 		}
 
-		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), action_probability, true);
+		// action id is one-based
+		return std::tuple<MWTAction, float, bool>(MWTAction(action_index + 1), action_probability, true);
 	}
 
 private:
@@ -284,8 +280,6 @@ public:
 private:
 	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
-		ActionSet actions;
-		actions.Set_Count(m_num_actions);
 		PRG::prg random_generator(salted_seed);
 
 		// Invoke the default scorer function
@@ -331,7 +325,8 @@ private:
 			}
 		}
 
-		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), action_probability, true);
+		// action id is one-based
+		return std::tuple<MWTAction, float, bool>(MWTAction(action_index + 1), action_probability, true);
 	}
 
 private:
@@ -359,9 +354,6 @@ public:
 private:
 	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
-		ActionSet actions;
-		actions.Set_Count(m_num_actions);
-
 		PRG::prg random_generator(salted_seed);
 
 		MWTAction chosen_action(0);
@@ -370,9 +362,9 @@ private:
 		if (m_tau)
 		{
 			m_tau--;
-			u32 actionId = random_generator.Uniform_Int(1, actions.Count());
-			action_probability = 1.f / actions.Count();
-			chosen_action = actions.Get(actionId);
+			u32 actionId = random_generator.Uniform_Int(1, m_num_actions);
+			action_probability = 1.f / m_num_actions;
+			chosen_action = MWTAction(actionId);
 			log_action = true;
 		}
 		else
@@ -380,7 +372,7 @@ private:
 			// Invoke the default policy function to get the action
 			chosen_action = MWTAction(m_default_policy.Choose_Action(context));
 
-			if (chosen_action.Get_Id() == 0 || chosen_action.Get_Id() > actions.Count())
+			if (chosen_action.Get_Id() == 0 || chosen_action.Get_Id() > m_num_actions)
 			{
 				throw std::invalid_argument("Action chosen by default policy is not within valid range.");
 			}
@@ -425,9 +417,6 @@ public:
 private:
 	std::tuple<MWTAction, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
-		ActionSet actions;
-		actions.Set_Count(m_num_actions);
-
 		PRG::prg random_generator(salted_seed);
 
 		// Select bag
@@ -437,7 +426,7 @@ private:
 		MWTAction chosen_action(0);
 		MWTAction action_from_bag(0);
 		vector<u32> actions_selected;
-		for (size_t i = 0; i < actions.Count(); i++)
+		for (size_t i = 0; i < m_num_actions; i++)
 		{
 			actions_selected.push_back(0);
 		}
@@ -447,7 +436,7 @@ private:
 		{
 			action_from_bag = MWTAction(m_default_policy_functions[current_bag]->Choose_Action(context));
 
-			if (action_from_bag.Get_Id() == 0 || action_from_bag.Get_Id() > actions.Count())
+			if (action_from_bag.Get_Id() == 0 || action_from_bag.Get_Id() > m_num_actions)
 			{
 				throw std::invalid_argument("Action chosen by default policy is not within valid range.");
 			}

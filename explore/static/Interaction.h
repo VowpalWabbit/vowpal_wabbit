@@ -61,37 +61,4 @@ public:
 private:
 	u32 m_id;
 };
-
-class ActionSet
-{
-public:
-
-	// TODO: support opaque IDs, will need to update Action class as well
-	// e.g. add GetStringID() or GetDescription() etc...
-	ActionSet() : m_count(0)
-	{
-	}
-
-	~ActionSet()
-	{
-	}
-
-	MWTAction Get(u32 id)
-	{
-		return MWTAction(id);
-	}
-
-	void Set_Count(u32 num_actions)
-	{
-		m_count = num_actions;
-	}
-
-	u32 Count()
-	{
-		return m_count;
-	}
-
-private:
-	u32 m_count;
-};
 }

@@ -121,7 +121,7 @@ namespace ExploreTests
             for (uint i = 0; i < numDecisions; i++)
             {
                 uint chosenAction = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = (int)i });
-                actions[ActionID.Make_ZeroBased(chosenAction)]++;
+                actions[chosenAction - 1]++; // action id is one-based
             }
 
             for (uint i = 0; i < numActions; i++)
