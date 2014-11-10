@@ -1,7 +1,8 @@
 // vw_explore_clr_wrapper.cpp : Defines the exported functions for the DLL application.
 //
 
-#include "stdafx.h"
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
 #include "explore_clr_wrapper.h"
 
