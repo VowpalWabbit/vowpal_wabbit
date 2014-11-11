@@ -185,7 +185,7 @@ namespace CBIFY {
 	{
 		policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
 	}
-	BaggingExplorer<vw_context> explorer(policies, (u32)data.k);
+	BootstrapExplorer<vw_context> explorer(policies, (u32)data.k);
 
 	vw_context context;
 	context.l = &base;
