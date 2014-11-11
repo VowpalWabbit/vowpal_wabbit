@@ -3,6 +3,7 @@
 #include "MWTExplorer.h"
 #include <chrono>
 #include <tuple>
+#include <iostream>
 
 using namespace std;
 using namespace std::chrono;
