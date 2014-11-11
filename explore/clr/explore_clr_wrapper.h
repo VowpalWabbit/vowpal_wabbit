@@ -289,14 +289,27 @@ namespace MultiWorldTesting {
 		}
 
 		/// <summary>
-		/// Gets the content of recording so far as a string and clears internal content.
+		/// Gets the content of the recording so far as a string and clears internal content.
 		/// </summary>
 		/// <returns>
 		/// A string with recording content.
 		/// </returns>
-		String^ FlushRecording()
+		String^ GetRecording()
 		{
-			return gcnew String(m_string_recorder->Get_Recording().c_str());
+			// Workaround for C++-CLI bug which does not allow default value for parameter
+			return GetRecording(true);
+		}
+
+		/// <summary>
+		/// Gets the content of the recording so far as a string and optionally clears internal content.
+		/// </summary>
+		/// <param name="flush">A boolean value indicating whether to clear the internal content.</param>
+		/// <returns>
+		/// A string with recording content.
+		/// </returns>
+		String^ GetRecording(bool flush)
+		{
+			return gcnew String(m_string_recorder->Get_Recording(flush).c_str());
 		}
 
 	private:

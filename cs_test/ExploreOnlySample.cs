@@ -137,7 +137,7 @@ namespace cs_test
                 string uniqueKey = "eventid";
                 uint action = mwtt.ChooseAction(explorer, uniqueKey, context);
 
-                Console.WriteLine(recorder.FlushRecording());
+                Console.WriteLine(recorder.GetRecording());
 
                 return;
             }
