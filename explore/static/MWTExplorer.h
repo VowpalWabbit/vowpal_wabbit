@@ -34,7 +34,7 @@ class MwtExplorer;
 
 //
 // Exposes a method to record exploration data based on generic contexts. Exploration data
-// is specified as a set of tuples <context, action, probability> as described below. An 
+// is specified as a set of tuples <context, action, probability, key> as described below. An 
 // application passes an IRecorder object to the @MwtExplorer constructor. See 
 // @StringRecorder for a sample IRecorder object.
 //
@@ -170,10 +170,21 @@ private:
 	vector<Feature>& m_features;
 };
 
+
+//
+// The epsilon greedy exploration class.  This is a good choice if you
+// have no idea which actions should be preferred.  Epsilon greedy is also computationally cheap.
+//
+
 template <class Ctx>
 class EpsilonGreedyExplorer
 {
 public:
+  //The constructor is the only public member, because this should be used with the MwtExplorer.
+  //
+  //@param default_policy  A default function which outputs an action given a context.
+  //@param epsilon         The probability of a random exploration.
+  //@param num_actions     The number of actions to randomize over.
 	EpsilonGreedyExplorer(IPolicy<Ctx>& default_policy, float epsilon, u32 num_actions) :
 		m_default_policy(default_policy), m_epsilon(epsilon), m_num_actions(num_actions)
 	{
@@ -244,10 +255,21 @@ private:
 	friend class MwtExplorer<Ctx>;
 };
 
+//
+// In some cases, different actions have a different scores, and you
+// would prefer to choose actions with large scores.  Softmax allows 
+// you to do that.
+// 
+
 template <class Ctx>
 class SoftmaxExplorer
 {
 public:
+  //The constructor is the only public member, because this should be used with the MwtExplorer.
+  //
+  //@param default_scorer  A function which outputs a score for each action.
+  //@param lambda          lambda = 0 implies uniform distribution.  Large lambda is equivalent to a max.
+  //@param num_actions     The number of actions to randomize over.
 	SoftmaxExplorer(IScorer<Ctx>& default_scorer, float lambda, u32 num_actions) :
 		m_default_scorer(default_scorer), m_lambda(lambda), m_num_actions(num_actions)
 	{
@@ -323,10 +345,19 @@ private:
 	friend class MwtExplorer<Ctx>;
 };
 
+//
+// GenericExplorer provides complete flexibility.  You can create any
+// distribution over actions desired, and it will draw from that.
+// 
+
 template <class Ctx>
 class GenericExplorer
 {
 public:
+  //The constructor is the only public member, because this should be used with the MwtExplorer.
+  //
+  //@param default_scorer  A function which outputs the probability of each action.
+  //@param num_actions     The number of actions to randomize over.
 	GenericExplorer(IScorer<Ctx>& default_scorer, u32 num_actions) :
 		m_default_scorer(default_scorer), m_num_actions(num_actions)
 	{
@@ -394,10 +425,20 @@ private:
 	friend class MwtExplorer<Ctx>;
 };
 
+//
+// The tau-first explorer collects precisely tau uniform random
+// exploration events, and then uses the default policy.  
+// 
+
 template <class Ctx>
 class TauFirstExplorer
 {
 public:
+  //The constructor is the only public member, because this should be used with the MwtExplorer.
+  //
+  //@param default_policy  A default policy after randomization finishes.
+  //@param tau             The number of events to be uniform over.
+  //@param num_actions     The number of actions to randomize over.
 	TauFirstExplorer(IPolicy<Ctx>& default_policy, u32 tau, u32 num_actions) :
 		m_default_policy(default_policy), m_tau(tau), m_num_actions(num_actions)
 	{
@@ -449,21 +490,32 @@ private:
 	friend class MwtExplorer<Ctx>;
 };
 
+//
+// The Bagging explorer randomizes over the actions chosen by a set of
+// default policies.  This performs well statistically but can be
+// computationally expensive.
+// 
+
 template <class Ctx>
 class BaggingExplorer
 {
 public:
-	BaggingExplorer(vector<unique_ptr<IPolicy<Ctx>>>& default_policy_functions, u32 bags, u32 num_actions) :
+  //The constructor is the only public member, because this should be used with the MwtExplorer.
+  //
+  //@param default_policy_functions  A set of default policies to be uniform random over.
+  //@param num_actions               The number of actions to randomize over.
+
+	BaggingExplorer(vector<unique_ptr<IPolicy<Ctx>>>& default_policy_functions, u32 num_actions) :
 		m_default_policy_functions(default_policy_functions),
-		m_bags(bags),
 		m_num_actions(num_actions)
 	{
+	        m_bags = default_policy_functions.size();
 		if (m_num_actions < 1)
 		{
 			throw std::invalid_argument("Number of actions must be at least 1.");
 		}
 
-		if (bags < 1)
+		if (m_bags < 1)
 		{
 			throw std::invalid_argument("Number of bags must be at least 1.");
 		}
@@ -517,15 +569,30 @@ private:
 	friend class MwtExplorer<Ctx>;
 };
 
+//
+//The top level MwtExplorer class.  Using this makes sure that the
+//right bits are used recorded and good random actions are chosen.
+//
+
 template <class Ctx>
 class MwtExplorer
 {
 public:
+  // The constructor  
+  //
+  // @param appid      This should be unique to your experiment or your risk nasty correlation bugs.
+  // @param recorder   The recorder us a user-specified class for recording the appropriate bits for use in evaluation and learning.
+
 	MwtExplorer(std::string app_id, IRecorder<Ctx>& recorder) : m_recorder(recorder)
     {
 		m_app_id = HashUtils::Compute_Id_Hash(app_id);
     }
  
+  // Choose_Action should be drop-in replacement for any existing policy function.   
+  //
+  // @param explorer   An existing exploration algorithm (one of the above) which uses the default policy as a callback.
+  // @param unique_key  A unique identifier for the experimental unit.  This could be a user id, a session id, etc...
+  // @param context     The context upon which a decision is made.  See SimpleContext above for an example.
     template <class Exp>
     u32 Choose_Action(Exp& explorer, string unique_key, Ctx& context)
     {

@@ -56,7 +56,7 @@ private:
 template <class Ctx>
 struct MyInteraction
 {
-	Ctx& Context;
+	Ctx Context;
 	u32 Action;
 	float Probability;
 	string Unique_Key;
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
 			policy_functions.push_back(unique_ptr<IPolicy<MyContext>>(new MyPolicy()));
 		}
 		int num_actions = 10;
-		BaggingExplorer<MyContext> explorer(policy_functions, num_bags, num_actions);
+		BaggingExplorer<MyContext> explorer(policy_functions, num_actions);
 		MyContext ctx;
 		string unique_key = "eventid";
 		u32 action = mwt.Choose_Action(explorer, unique_key, ctx);
