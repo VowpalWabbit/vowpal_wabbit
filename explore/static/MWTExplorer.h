@@ -509,7 +509,7 @@ public:
 		m_default_policy_functions(default_policy_functions),
 		m_num_actions(num_actions)
 	{
-	        m_bags = default_policy_functions.size();
+	        m_bags = (u32)default_policy_functions.size();
 		if (m_num_actions < 1)
 		{
 			throw std::invalid_argument("Number of actions must be at least 1.");

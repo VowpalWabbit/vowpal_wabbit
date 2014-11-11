@@ -112,7 +112,7 @@ namespace CBIFY {
 	MwtExplorer<vw_context> mwt("vw", recorder);
 
 	vw_policy policy;
-	TauFirstExplorer<vw_context> explorer(policy, data.tau, data.k);
+	TauFirstExplorer<vw_context> explorer(policy, (u32)data.tau, (u32)data.k);
 
     if (data.tau && is_learn)
       {
@@ -148,7 +148,7 @@ namespace CBIFY {
 	MwtExplorer<vw_context> mwt("vw", recorder);
 
 	vw_policy policy;
-	EpsilonGreedyExplorer<vw_context> explorer(policy, data.epsilon, data.k);
+	EpsilonGreedyExplorer<vw_context> explorer(policy, data.epsilon, (u32)data.k);
 
 	vw_context vwc;
 	vwc.l = &base;
@@ -185,7 +185,7 @@ namespace CBIFY {
 	{
 		policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
 	}
-	BaggingExplorer<vw_context> explorer(policies, data.bags, data.k);
+	BaggingExplorer<vw_context> explorer(policies, (u32)data.k);
 
 	vw_context context;
 	context.l = &base;
@@ -324,7 +324,7 @@ namespace CBIFY {
 	MwtExplorer<vw_context> mwt("vw", recorder);
 
 	vw_scorer scorer;
-	GenericExplorer<vw_context> explorer(scorer, data.k);
+	GenericExplorer<vw_context> explorer(scorer, (u32)data.k);
 
 	vw_context cp;
 	cp.data = &data;
