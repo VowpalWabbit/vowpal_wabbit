@@ -127,7 +127,7 @@ namespace vw_explore_tests
 			TestContext my_context;
 
 			MwtExplorer<TestContext> mwt("c++-test", my_recorder);
-			BaggingExplorer<TestContext> explorer(policies, num_actions);
+			BootstrapExplorer<TestContext> explorer(policies, num_actions);
 
 			u32 expected_action1 = policies[0]->Choose_Action(my_context);
 			u32 expected_action2 = policies[1]->Choose_Action(my_context);
@@ -156,7 +156,7 @@ namespace vw_explore_tests
 			TestContext my_context;
 
 			MwtExplorer<TestContext> mwt("c++-test", my_recorder);
-			BaggingExplorer<TestContext> explorer(policies, num_actions);
+			BootstrapExplorer<TestContext> explorer(policies, num_actions);
 
 			u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
 			chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
@@ -299,7 +299,7 @@ namespace vw_explore_tests
 			policies.push_back(unique_ptr<IPolicy<SimpleContext>>(new TestSimplePolicy(params, num_actions)));
 
 			MwtExplorer<SimpleContext> mwt("salt", my_recorder);
-			BaggingExplorer<SimpleContext> explorer(policies, num_actions);
+			BootstrapExplorer<SimpleContext> explorer(policies, num_actions);
 
 			this->End_To_End(mwt, explorer, my_recorder);
 		}
@@ -470,8 +470,8 @@ namespace vw_explore_tests
 			COUNT_INVALID(EpsilonGreedyExplorer<TestContext> explorer(my_policy, 1.5f, 10);) // Invalid epsilon, must be in [0,1]
 			COUNT_INVALID(EpsilonGreedyExplorer<TestContext> explorer(my_policy, -.5f, 10);) // Invalid epsilon, must be in [0,1]
 
-			COUNT_INVALID(BaggingExplorer<TestContext> explorer(policies, 0);) // Invalid # actions, must be > 0
-			COUNT_INVALID(BaggingExplorer<TestContext> explorer(policies, 1);) // Invalid # bags, must be > 0
+			COUNT_INVALID(BootstrapExplorer<TestContext> explorer(policies, 0);) // Invalid # actions, must be > 0
+			COUNT_INVALID(BootstrapExplorer<TestContext> explorer(policies, 1);) // Invalid # bags, must be > 0
 
 			COUNT_INVALID(TauFirstExplorer<TestContext> explorer(my_policy, 1, 0);) // Invalid # actions, must be > 0
 			COUNT_INVALID(SoftmaxExplorer<TestContext> explorer(my_scorer, .5f, 0);) // Invalid # actions, must be > 0
@@ -504,7 +504,7 @@ namespace vw_explore_tests
 				vector<unique_ptr<IPolicy<TestContext>>> policies;
 				policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestBadPolicy()));
 				MwtExplorer<TestContext> mwt("salt", TestRecorder());
-				BaggingExplorer<TestContext> explorer(policies, (u32)1);
+				BootstrapExplorer<TestContext> explorer(policies, (u32)1);
 				mwt.Choose_Action(explorer, "test", TestContext());
 			)
 			Assert::AreEqual(3, num_ex);

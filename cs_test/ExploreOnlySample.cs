@@ -126,7 +126,7 @@ namespace cs_test
                 {
                     policies[i] = new MyPolicy(i * 2);
                 }
-                uint action = mwtt.ChooseAction(new BaggingExplorer<MyContext>(policies, numActions), "key", new MyContext());
+                uint action = mwtt.ChooseAction(new BootstrapExplorer<MyContext>(policies, numActions), "key", new MyContext());
                 Console.WriteLine(String.Join(",", recorder.GetAllInteractions().Select(it => it.Action)));
                 return;
             }

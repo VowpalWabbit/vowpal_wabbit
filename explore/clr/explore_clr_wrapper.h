@@ -128,10 +128,10 @@ namespace MultiWorldTesting {
 	};
 
 	generic <class Ctx>
-	public ref class BaggingExplorer : public IExplorer<Ctx>, public PolicyCallback<Ctx>
+	public ref class BootstrapExplorer : public IExplorer<Ctx>, public PolicyCallback<Ctx>
 	{
 	public:
-		BaggingExplorer(cli::array<IPolicy<Ctx>^>^ defaultPolicies, UInt32 numActions)
+		BootstrapExplorer(cli::array<IPolicy<Ctx>^>^ defaultPolicies, UInt32 numActions)
 		{
 			this->defaultPolicies = defaultPolicies;
 			if (this->defaultPolicies == nullptr)
@@ -139,10 +139,10 @@ namespace MultiWorldTesting {
 				throw gcnew ArgumentNullException("The specified array of default policy functions cannot be null.");
 			}
 
-			m_explorer = new NativeMultiWorldTesting::BaggingExplorer<NativeContext>(*GetNativePolicies((u32)defaultPolicies->Length), (u32)numActions);
+			m_explorer = new NativeMultiWorldTesting::BootstrapExplorer<NativeContext>(*GetNativePolicies((u32)defaultPolicies->Length), (u32)numActions);
 		}
 
-		~BaggingExplorer()
+		~BootstrapExplorer()
 		{
 			delete m_explorer;
 		}
@@ -157,14 +157,14 @@ namespace MultiWorldTesting {
 			return defaultPolicies[index]->ChooseAction(context);
 		}
 
-		NativeMultiWorldTesting::BaggingExplorer<NativeContext>* Get()
+		NativeMultiWorldTesting::BootstrapExplorer<NativeContext>* Get()
 		{
 			return m_explorer;
 		}
 
 	private:
 		cli::array<IPolicy<Ctx>^>^ defaultPolicies;
-		NativeMultiWorldTesting::BaggingExplorer<NativeContext>* m_explorer;
+		NativeMultiWorldTesting::BootstrapExplorer<NativeContext>* m_explorer;
 	};
 
 	generic <class Ctx>
@@ -213,9 +213,9 @@ namespace MultiWorldTesting {
 				GenericExplorer<Ctx>^ genericExplorer = (GenericExplorer<Ctx>^)explorer;
 				action = mwt.Choose_Action(*genericExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
 			}
-			else if (explorer->GetType() == BaggingExplorer<Ctx>::typeid)
+			else if (explorer->GetType() == BootstrapExplorer<Ctx>::typeid)
 			{
-				BaggingExplorer<Ctx>^ baggingExplorer = (BaggingExplorer<Ctx>^)explorer;
+				BootstrapExplorer<Ctx>^ baggingExplorer = (BootstrapExplorer<Ctx>^)explorer;
 				action = mwt.Choose_Action(*baggingExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
 			}
 
