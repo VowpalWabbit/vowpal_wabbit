@@ -53,20 +53,31 @@ private:
 	u32 m_num_actions;
 };
 
+template <class Ctx>
+struct MyInteraction
+{
+	Ctx& Context;
+	u32 Action;
+	float Probability;
+	string Unique_Key;
+};
+
 class MyRecorder : public IRecorder<MyContext>
 {
 public:
 	virtual void Record(MyContext& context, u32 action, float probability, string unique_key)
 	{
-
+		m_interactions.push_back({ context, action, probability, unique_key });
 	}
+private:
+	vector<MyInteraction<MyContext>> m_interactions;
 };
 
 int main(int argc, char* argv[])
 {
 	if (argc < 2)
 	{
-		cerr << "arguments: {greedy,tau-first,bagging,softmax,generic} [stateful]" << endl;
+		cerr << "arguments: {greedy,tau-first,bagging,softmax,generic}" << endl;
 		exit(1);
 	}
 	

@@ -14,15 +14,20 @@ namespace cs_test
         {
             public void Record(MyContext context, UInt32 action, float probability, string uniqueKey)
             {
-                actions.Add(action);
+                interactions.Add(new Interaction<MyContext>() {
+                    Context = context,
+                    Action = action,
+                    Probability = probability,
+                    UniqueKey = uniqueKey
+                });
             }
 
-            public List<uint> GetData()
+            public List<Interaction<MyContext>> GetAllInteractions()
             {
-                return actions;
+                return interactions;
             }
 
-            private List<uint> actions = new List<uint>();
+            private List<Interaction<MyContext>> interactions = new List<Interaction<MyContext>>();
         }
 
         class MyPolicy : IPolicy<MyContext>
@@ -63,6 +68,14 @@ namespace cs_test
             private uint numActions;
         }
 
+        struct Interaction<Ctx>
+        {
+            public Ctx Context;
+            public uint Action;
+            public float Probability;
+            public string UniqueKey;
+        }
+
         public static void Run()
         {
             string exploration_type = "greedy";
@@ -97,7 +110,7 @@ namespace cs_test
                 uint tau = 0;
                 MyPolicy policy = new MyPolicy();
                 uint action = mwtt.ChooseAction(new TauFirstExplorer<MyContext>(policy, tau, numActions), "key", new MyContext());
-                Console.WriteLine(String.Join(",", recorder.GetData()));
+                Console.WriteLine(String.Join(",", recorder.GetAllInteractions().Select(it => it.Action)));
                 return;
             }
             else if (exploration_type == "bagging")
@@ -114,7 +127,7 @@ namespace cs_test
                     policies[i] = new MyPolicy(i * 2);
                 }
                 uint action = mwtt.ChooseAction(new BaggingExplorer<MyContext>(policies, numbags, numActions), "key", new MyContext());
-                Console.WriteLine(String.Join(",", recorder.GetData()));
+                Console.WriteLine(String.Join(",", recorder.GetAllInteractions().Select(it => it.Action)));
                 return;
             }
             else if (exploration_type == "softmax")
@@ -128,7 +141,7 @@ namespace cs_test
                 MyScorer scorer = new MyScorer(numActions);
                 uint action = mwtt.ChooseAction(new SoftmaxExplorer<MyContext>(scorer, lambda, numActions), "key", new MyContext());
 
-                Console.WriteLine(String.Join(",", recorder.GetData()));
+                Console.WriteLine(String.Join(",", recorder.GetAllInteractions().Select(it => it.Action)));
                 return;
             }
             else if (exploration_type == "generic")
@@ -141,7 +154,7 @@ namespace cs_test
                 MyScorer scorer = new MyScorer(numActions);
                 uint action = mwtt.ChooseAction(new GenericExplorer<MyContext>(scorer, numActions), "key", new MyContext());
 
-                Console.WriteLine(String.Join(",", recorder.GetData()));
+                Console.WriteLine(String.Join(",", recorder.GetAllInteractions().Select(it => it.Action)));
                 return;
             }
             else
