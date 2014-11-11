@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
 {
 	if (argc < 2)
 	{
-		cerr << "arguments: {greedy,tau-first,bagging,softmax,generic}" << endl;
+		cerr << "arguments: {greedy,tau-first,bootstrap,softmax,generic}" << endl;
 		exit(1);
 	}
 	
@@ -121,9 +121,9 @@ int main(int argc, char* argv[])
 
 		cout << "action = " << action << endl;
 	}
-	else if (strcmp(argv[1], "bagging") == 0)
+	else if (strcmp(argv[1], "bootstrap") == 0)
 	{
-		//Initialize Bagging explore algorithm using MyPolicy
+		//Initialize Bootstrap explore algorithm using MyPolicy
 		MyRecorder recorder;
 		MwtExplorer<MyContext> mwt("appid", recorder);
 

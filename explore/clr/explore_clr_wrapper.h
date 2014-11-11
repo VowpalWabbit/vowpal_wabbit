@@ -215,8 +215,8 @@ namespace MultiWorldTesting {
 			}
 			else if (explorer->GetType() == BootstrapExplorer<Ctx>::typeid)
 			{
-				BootstrapExplorer<Ctx>^ baggingExplorer = (BootstrapExplorer<Ctx>^)explorer;
-				action = mwt.Choose_Action(*baggingExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+				BootstrapExplorer<Ctx>^ bootstrapExplorer = (BootstrapExplorer<Ctx>^)explorer;
+				action = mwt.Choose_Action(*bootstrapExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
 			}
 
 			explorerHandle.Free();

@@ -494,7 +494,7 @@ private:
 };
 
 //
-// The Bagging explorer randomizes over the actions chosen by a set of
+// The Bootstrap explorer randomizes over the actions chosen by a set of
 // default policies.  This performs well statistically but can be
 // computationally expensive.
 // 

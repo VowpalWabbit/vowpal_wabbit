@@ -67,7 +67,7 @@ namespace ExploreTests
         }
 
         [TestMethod]
-        public void Bagging()
+        public void Bootstrap()
         {
             uint numActions = 10;
             uint numbags = 2;

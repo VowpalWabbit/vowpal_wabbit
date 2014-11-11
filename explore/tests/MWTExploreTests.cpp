@@ -114,7 +114,7 @@ namespace vw_explore_tests
 			this->Test_Interactions(interactions, 2, expected_probs);
 		}
 
-		TEST_METHOD(Bagging)
+		TEST_METHOD(Bootstrap)
 		{
 			int num_actions = 10;
 			int params = 101;
@@ -143,7 +143,7 @@ namespace vw_explore_tests
 			this->Test_Interactions(interactions, 2, expected_probs);
 		}
 
-		TEST_METHOD(Bagging_Random)
+		TEST_METHOD(Bootstrap_Random)
 		{
 			int num_actions = 10;
 			int params = 101;
@@ -287,7 +287,7 @@ namespace vw_explore_tests
 			this->End_To_End(mwt, explorer, my_recorder);
 		}
 
-		TEST_METHOD(End_To_End_Bagging)
+		TEST_METHOD(End_To_End_Bootstrap)
 		{
 			int num_actions = 10;
 			u32 bags = 2;
