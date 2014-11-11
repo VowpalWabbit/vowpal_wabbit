@@ -55,10 +55,7 @@ namespace CBIFY {
   struct vw_context {
 	  learner* l;
 	  example* e;
-  };
-  struct vw_cover_params {
 	  cbify* data;
-	  example* e;
   };
 
   class vw_policy : public IPolicy<vw_context>
@@ -266,10 +263,10 @@ namespace CBIFY {
     cs_ld.costs.push_back( wc );
   }
 
-  class vw_scorer : public IScorer<vw_cover_params>
+  class vw_scorer : public IScorer<vw_context>
   {
   public:
-	  vector<float> Score_Actions(vw_cover_params& ctx)
+	  vector<float> Score_Actions(vw_context& ctx)
 	  {
 		  float additive_probability = 1.f / (float)ctx.data->bags;
 		  for (size_t i = 0; i < ctx.data->bags; i++)
@@ -323,13 +320,13 @@ namespace CBIFY {
 
     float min_prob = data.epsilon * min (1.f / data.k, 1.f / (float)sqrt(data.counter * data.k));
     
-	vw_recorder<vw_cover_params> recorder;
-	MwtExplorer<vw_cover_params> mwt("vw", recorder);
+	vw_recorder<vw_context> recorder;
+	MwtExplorer<vw_context> mwt("vw", recorder);
 
 	vw_scorer scorer;
-	GenericExplorer<vw_cover_params> explorer(scorer, data.k);
+	GenericExplorer<vw_context> explorer(scorer, data.k);
 
-	vw_cover_params cp;
+	vw_context cp;
 	cp.data = &data;
 	cp.e = &ec;
 	uint32_t action = mwt.Choose_Action(explorer, to_string(ec.example_counter), cp);
