@@ -267,9 +267,15 @@ namespace MultiWorldTesting {
 			m_string_recorder->Record(native_context, (u32)action, probability, marshal_as<string>(uniqueKey));
 		}
 
-		String^ GetRecording()
+		/// <summary>
+		/// Gets the content of recording so far as a string and clears internal content.
+		/// </summary>
+		/// <returns>
+		/// A string with recording content.
+		/// </returns>
+		String^ FlushRecording()
 		{
-			return gcnew String(m_string_recorder->Get_Recording().c_str());
+			return gcnew String(m_string_recorder->Flush_Recording().c_str());
 		}
 
 	private:

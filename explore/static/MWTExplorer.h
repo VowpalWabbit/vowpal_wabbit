@@ -107,9 +107,12 @@ struct StringRecorder : public IRecorder<Ctx>
 		m_recording.append("\n");
 	}
 
-	string Get_Recording()
+	// Gets the content of recording so far as a string and clears internal content.
+	string Flush_Recording()
 	{
-		return m_recording;
+		string recording = m_recording;
+		m_recording.clear();
+		return recording;
 	}
 
 private:

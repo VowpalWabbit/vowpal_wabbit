@@ -96,7 +96,7 @@ namespace cs_test
                 });
                 uint action = mwtt.ChooseAction(new EpsilonGreedyExplorer<SimpleContext>(policy, epsilon, numActions), "key", context);
 
-                Console.WriteLine(recorder.GetRecording());
+                Console.WriteLine(recorder.FlushRecording());
 
                 return;
             }

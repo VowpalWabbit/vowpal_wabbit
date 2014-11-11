@@ -5,6 +5,15 @@ using namespace System::Collections::Generic;
 
 namespace MultiWorldTesting {
 
+/// <summary>
+/// Represents a recorder that exposes a method to record exploration data based on generic contexts. 
+/// </summary>
+/// <typeparam name="Ctx">The Context type.</typeparam>
+/// <remarks>
+/// Exploration data is specified as a set of tuples <context, action, probability, key> as described below. An 
+/// application passes an IRecorder object to the @MwtExplorer constructor. See 
+/// @StringRecorder for a sample IRecorder object.
+/// </remarks>
 generic <class Ctx>
 public interface class IRecorder
 {
