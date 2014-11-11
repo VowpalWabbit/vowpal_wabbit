@@ -153,7 +153,7 @@ private:
 
 // Triggers callback to the Policy instance to choose an action
 generic <class Ctx>
-public ref class PolicyCallback
+public ref class PolicyCallback abstract
 {
 internal:
 	virtual UInt32 InvokePolicyCallback(Ctx context, int index) = 0;
@@ -218,7 +218,7 @@ private:
 
 // Triggers callback to the Recorder instance to record interaction data
 generic <class Ctx>
-public ref class RecorderCallback
+public ref class RecorderCallback abstract
 {
 internal:
 	virtual void InvokeRecorderCallback(Ctx context, UInt32 action, float probability, String^ unique_key) = 0;
@@ -264,7 +264,7 @@ private:
 
 // Triggers callback to the Recorder instance to record interaction data
 generic <class Ctx>
-public ref class ScorerCallback
+public ref class ScorerCallback abstract
 {
 internal:
 	virtual List<float>^ InvokeScorerCallback(Ctx context) = 0;

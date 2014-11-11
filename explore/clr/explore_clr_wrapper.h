@@ -258,7 +258,7 @@ namespace MultiWorldTesting {
 			delete m_string_recorder;
 		}
 
-		virtual void Record(Ctx context, UInt32 action, float probability, String^ uniqueKey) override
+		virtual void Record(Ctx context, UInt32 action, float probability, String^ uniqueKey)
 		{
 			GCHandle contextHandle = GCHandle::Alloc(context);
 			IntPtr contextPtr = (IntPtr)contextHandle;
