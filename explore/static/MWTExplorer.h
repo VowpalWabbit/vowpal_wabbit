@@ -33,17 +33,37 @@ MWT_NAMESPACE {
 template <class Ctx>
 class MwtExplorer;
 
+//
+// Exposes a method for recording exploration data involving generic contexts.
+//
 template <class Ctx>
 class IRecorder
 {
 public:
+	//
+	// Records the exploration data for a given interaction.
+	//
+	// @param context the user-defined context of the interaction
+	// @param action the action chosen by the exploration algorithm
+	// @param probability the probability with which the chosen action was selected
+	// @param unique_key the user-defined unique identifer of the interaction
+	// @see MwtExplorer::Choose_Action
+	//
 	virtual void Record(Ctx& context, u32 action, float probability, string unique_key) = 0;
 };
 
+//
+// Exposes a method for choosing an action given a generic context.
+//
 template <class Ctx>
 class IPolicy
 {
 public:
+	//
+	// Determines the action to take for a given context.
+	// @param context the user-defined context of the interaction
+	// @returns 1-based index of the action to take
+	//
 	virtual u32 Choose_Action(Ctx& context) = 0;
 };
 
