@@ -3,10 +3,24 @@
 
 namespace MultiWorldTesting {
 
+	/// <summary>
+	/// The epsilon greedy exploration class.
+	/// </summary>
+	/// <remarks>
+	/// This is a good choice if you have no idea which actions should be preferred.
+	/// Epsilon greedy is also computationally cheap.
+	/// </remarks>
+	/// <typeparam name="Ctx">The Context type.</typeparam>
 	generic <class Ctx>
 	public ref class EpsilonGreedyExplorer : public IExplorer<Ctx>, public PolicyCallback<Ctx>
 	{
 	public:
+		/// <summary>
+		/// The constructor is the only public member, because this should be used with the MwtExplorer.
+		/// </summary>
+		/// <param name="defaultPolicy">A default function which outputs an action given a context.</param>
+		/// <param name="epsilon">The probability of a random exploration.</param>
+		/// <param name="numActions">The number of actions to randomize over.</param>
 		EpsilonGreedyExplorer(IPolicy<Ctx>^ defaultPolicy, float epsilon, UInt32 numActions)
 		{
 			this->defaultPolicy = defaultPolicy;
@@ -34,10 +48,24 @@ namespace MultiWorldTesting {
 		NativeMultiWorldTesting::EpsilonGreedyExplorer<NativeContext>* m_explorer;
 	};
 
+	/// <summary>
+	/// The tau-first exploration class.
+	/// </summary>
+	/// <remarks>
+	/// The tau-first explorer collects precisely tau uniform random
+	/// exploration events, and then uses the default policy. 
+	/// </remarks>
+	/// <typeparam name="Ctx">The Context type.</typeparam>
 	generic <class Ctx>
 	public ref class TauFirstExplorer : public IExplorer<Ctx>, public PolicyCallback<Ctx>
 	{
 	public:
+		/// <summary>
+		/// The constructor is the only public member, because this should be used with the MwtExplorer.
+		/// </summary>
+		/// <param name="defaultPolicy">A default policy after randomization finishes.</param>
+		/// <param name="tau">The number of events to be uniform over.</param>
+		/// <param name="numActions">The number of actions to randomize over.</param>
 		TauFirstExplorer(IPolicy<Ctx>^ defaultPolicy, UInt32 tau, UInt32 numActions)
 		{
 			this->defaultPolicy = defaultPolicy;
@@ -65,10 +93,25 @@ namespace MultiWorldTesting {
 		NativeMultiWorldTesting::TauFirstExplorer<NativeContext>* m_explorer;
 	};
 
+	/// <summary>
+	/// The epsilon greedy exploration class.
+	/// </summary>
+	/// <remarks>
+	/// In some cases, different actions have a different scores, and you
+	/// would prefer to choose actions with large scores. Softmax allows 
+	/// you to do that.
+	/// </remarks>
+	/// <typeparam name="Ctx">The Context type.</typeparam>
 	generic <class Ctx>
 	public ref class SoftmaxExplorer : public IExplorer<Ctx>, public ScorerCallback<Ctx>
 	{
 	public:
+		/// <summary>
+		/// The constructor is the only public member, because this should be used with the MwtExplorer.
+		/// </summary>
+		/// <param name="defaultScorer">A function which outputs a score for each action.</param>
+		/// <param name="lambda">lambda = 0 implies uniform distribution. Large lambda is equivalent to a max.</param>
+		/// <param name="numActions">The number of actions to randomize over.</param>
 		SoftmaxExplorer(IScorer<Ctx>^ defaultScorer, float lambda, UInt32 numActions)
 		{
 			this->defaultScorer = defaultScorer;
@@ -96,10 +139,23 @@ namespace MultiWorldTesting {
 		NativeMultiWorldTesting::SoftmaxExplorer<NativeContext>* m_explorer;
 	};
 
+	/// <summary>
+	/// The generic exploration class.
+	/// </summary>
+	/// <remarks>
+	/// GenericExplorer provides complete flexibility.  You can create any
+	/// distribution over actions desired, and it will draw from that.
+	/// </remarks>
+	/// <typeparam name="Ctx">The Context type.</typeparam>
 	generic <class Ctx>
 	public ref class GenericExplorer : public IExplorer<Ctx>, public ScorerCallback<Ctx>
 	{
 	public:
+		/// <summary>
+		/// The constructor is the only public member, because this should be used with the MwtExplorer.
+		/// </summary>
+		/// <param name="defaultScorer">A function which outputs the probability of each action.</param>
+		/// <param name="numActions">The number of actions to randomize over.</param>
 		GenericExplorer(IScorer<Ctx>^ defaultScorer, UInt32 numActions)
 		{
 			this->defaultScorer = defaultScorer;
@@ -127,10 +183,24 @@ namespace MultiWorldTesting {
 		NativeMultiWorldTesting::GenericExplorer<NativeContext>* m_explorer;
 	};
 
+	/// <summary>
+	/// The bootstrap exploration class.
+	/// </summary>
+	/// <remarks>
+	/// The Bootstrap explorer randomizes over the actions chosen by a set of
+	/// default policies.  This performs well statistically but can be
+	/// computationally expensive.
+	/// </remarks>
+	/// <typeparam name="Ctx">The Context type.</typeparam>
 	generic <class Ctx>
 	public ref class BootstrapExplorer : public IExplorer<Ctx>, public PolicyCallback<Ctx>
 	{
 	public:
+		/// <summary>
+		/// The constructor is the only public member, because this should be used with the MwtExplorer.
+		/// </summary>
+		/// <param name="defaultPolicies">A set of default policies to be uniform random over.</param>
+		/// <param name="numActions">The number of actions to randomize over.</param>
 		BootstrapExplorer(cli::array<IPolicy<Ctx>^>^ defaultPolicies, UInt32 numActions)
 		{
 			this->defaultPolicies = defaultPolicies;
@@ -254,6 +324,9 @@ namespace MultiWorldTesting {
 		String^ appId;
 	};
 
+	/// <summary>
+	/// Represents a feature in a sparse array.
+	/// </summary>
 	[StructLayout(LayoutKind::Sequential)]
 	public value struct Feature
 	{
@@ -316,6 +389,9 @@ namespace MultiWorldTesting {
 		NativeMultiWorldTesting::StringRecorder<NativeStringContext>* m_string_recorder;
 	};
 
+	/// <summary>
+	/// A sample context class that stores a vector of Features.
+	/// </summary>
 	public ref class SimpleContext : public IStringContext
 	{
 	public:
