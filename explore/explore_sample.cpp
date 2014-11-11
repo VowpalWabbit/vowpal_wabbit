@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
 		u32 action = mwt.Choose_Action(explorer, unique_key, context);
 
 		cout << "Chosen action = " << action << endl;
-		cout << "Exploration record = " << recorder.Flush_Recording();
+		cout << "Exploration record = " << recorder.Get_Recording();
 	}
 	else if (strcmp(argv[1], "tau-first") == 0)
 	{
@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 		string unique_key = "eventid";
 		u32 action = mwt.Choose_Action(explorer, unique_key, ctx);
 
-		cout << "action = " << action << endl;
+		cout << "Chosen action = " << action << endl;
 	}
 	else if (strcmp(argv[1], "bagging") == 0)
 	{
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
 		string unique_key = "eventid";
 		u32 action = mwt.Choose_Action(explorer, unique_key, ctx);
 
-		cout << "action = " << action << endl;
+		cout << "Chosen action = " << action << endl;
 	}
 	else if (strcmp(argv[1], "softmax") == 0)
 	{
@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
 		string unique_key = "eventid";
 		u32 action = mwt.Choose_Action(explorer, unique_key, ctx);
 
-		cout << "action = " << action << endl;
+		cout << "Chosen action = " << action << endl;
 	}
 	else if (strcmp(argv[1], "generic") == 0)
 	{
@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
 		string unique_key = "eventid";
 		u32 action = mwt.Choose_Action(explorer, unique_key, ctx);
 
-		cout << "action = " << action << endl;
+		cout << "Chosen action = " << action << endl;
 	}
 	else
 	{

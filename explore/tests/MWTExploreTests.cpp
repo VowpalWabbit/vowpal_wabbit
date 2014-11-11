@@ -405,7 +405,7 @@ namespace vw_explore_tests
 			string unique_key2 = "key2";
 			u32 chosen_action2 = mwt.Choose_Action(explorer, unique_key2, context2);
 
-			string actual_log = my_recorder.Flush_Recording();
+			string actual_log = my_recorder.Get_Recording();
 
 			// Use hard-coded string to be independent of sprintf
 			char* expected_log = "2 key1 0.55000 | 1:.5\n2 key2 0.55000 | 123456789:-99999.5 39:1.5\n";
@@ -438,7 +438,7 @@ namespace vw_explore_tests
 				SimpleContext my_context(features);
 
 				u32 action = mwt.Choose_Action(explorer, "", my_context);
-				string actual_log = my_recorder.Flush_Recording();
+				string actual_log = my_recorder.Get_Recording();
 
 				ostringstream expected_stream;
 				expected_stream << std::fixed << std::setprecision(10) << feature.Value;
@@ -608,7 +608,7 @@ namespace vw_explore_tests
 				rewards[i] = rand.Uniform_Unit_Interval();
 			}
 
-			recorder.Flush_Recording();
+			recorder.Get_Recording();
 		}
 
 		template <class Ctx>

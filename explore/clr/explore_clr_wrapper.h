@@ -275,7 +275,7 @@ namespace MultiWorldTesting {
 		/// </returns>
 		String^ FlushRecording()
 		{
-			return gcnew String(m_string_recorder->Flush_Recording().c_str());
+			return gcnew String(m_string_recorder->Get_Recording().c_str());
 		}
 
 	private:
