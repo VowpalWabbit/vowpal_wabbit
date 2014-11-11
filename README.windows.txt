@@ -58,6 +58,10 @@ boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
 **************************************************************************************************************
 (5) Build zlib with Visual Studio 2013
 
+	The patched version of the sources for zlib are up on https://github.com/nicknussbaum/zlibpatched.git
+	They can also be made as follows.
+	
+
 	(a)Get the zlib 1.28.0 file from   http://zlib.net/zlib128.zip
 	(b) unzip zlib-1.2.8.zip into the c:\src\vw\zlib-1.2.8  
 
@@ -75,8 +79,13 @@ boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
 	  patch --dry-run -p0 --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
 		check output messages looks good then
 	  patch  -p0 --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
+	  
+	  
+	  
+	  
+	  
 
-	(f) Build the zlib libararies by either of the following steps. 
+	 From the patched sources build the zlib libararies by either of the following steps. 
 
 	Launch Visual Studio 2013
 	Open the solution %ROOT%/zlib-1.2.8\contrib\vstudio\vc11\zlibvc.sln
@@ -94,6 +103,9 @@ boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
         "msbuild /p:Configuration=Release;Platform=x64 zlibstat.vcxproj"
 
 	Ignore the warnings about Platform 'Itanium' referenced in the project file  since Itanium is no longer supported 
+	
+	
+	
 
 **************************************************************************************************************
 (6) Building Boost
