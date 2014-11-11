@@ -8,13 +8,22 @@ namespace cs_test
 {
     class ExploreOnlySample
     {
+        /// <summary>
+        /// Example of a custom context.
+        /// </summary>
         class MyContext { }
 
+        /// <summary>
+        /// Example of a custom recorder which implements the IRecorder<MyContext>,
+        /// declaring that this recorder only interacts with MyContext objects.
+        /// </summary>
         class MyRecorder : IRecorder<MyContext>
         {
             public void Record(MyContext context, UInt32 action, float probability, string uniqueKey)
             {
-                interactions.Add(new Interaction<MyContext>() {
+                // Stores the tuple internally in a vector that could be used later for other purposes.
+                interactions.Add(new Interaction<MyContext>()
+                {
                     Context = context,
                     Action = action,
                     Probability = probability,
@@ -30,6 +39,10 @@ namespace cs_test
             private List<Interaction<MyContext>> interactions = new List<Interaction<MyContext>>();
         }
 
+        /// <summary>
+        /// Example of a custom policy which implements the IPolicy<MyContext>,
+        /// declaring that this policy only interacts with MyContext objects.
+        /// </summary>
         class MyPolicy : IPolicy<MyContext>
         {
             public MyPolicy() : this(-1) { }
@@ -41,20 +54,30 @@ namespace cs_test
 
             public uint ChooseAction(MyContext context)
             {
+                // Always returns the same action regardless of context
                 return 5;
             }
 
             private int index;
         }
 
+        /// <summary>
+        /// Example of a custom policy which implements the IPolicy<SimpleContext>,
+        /// declaring that this policy only interacts with SimpleContext objects.
+        /// </summary>
         class StringPolicy : IPolicy<SimpleContext>
         {
             public uint ChooseAction(SimpleContext context)
             {
+                // Always returns the same action regardless of context
                 return 1;
             }
         }
 
+        /// <summary>
+        /// Example of a custom scorer which implements the IScorer<MyContext>,
+        /// declaring that this scorer only interacts with MyContext objects.
+        /// </summary>
         class MyScorer : IScorer<MyContext>
         {
             public MyScorer(uint numActions)
@@ -68,6 +91,10 @@ namespace cs_test
             private uint numActions;
         }
 
+        /// <summary>
+        /// Represents a tuple <context, action, probability, key>.
+        /// </summary>
+        /// <typeparam name="Ctx">The Context type.</typeparam>
         struct Interaction<Ctx>
         {
             public Ctx Context;
@@ -83,20 +110,34 @@ namespace cs_test
             if (exploration_type == "greedy")
             {
                 // Initialize Epsilon-Greedy explore algorithm using built-in StringRecorder and SimpleContext types
+                
+                // Creates a recorder of built-in StringRecorder type for string serialization
                 StringRecorder<SimpleContext> recorder = new StringRecorder<SimpleContext>();
+                
+                // Creates an MwtExplorer instance using the recorder above
                 MwtExplorer<SimpleContext> mwtt = new MwtExplorer<SimpleContext>("mwt", recorder);
+
+		        // Creates a policy that interacts with SimpleContext type
+                StringPolicy policy = new StringPolicy();
 
                 uint numActions = 10;
                 float epsilon = 0.2f;
-                StringPolicy policy = new StringPolicy();
+		        // Creates an Epsilon-Greedy explorer using the specified settings
+                EpsilonGreedyExplorer<SimpleContext> explorer = new EpsilonGreedyExplorer<SimpleContext>(policy, epsilon, numActions);
+
+                // Creates a context of built-in SimpleContext type
                 SimpleContext context = new SimpleContext(new Feature[] { 
                     new Feature() { Id = 1, Value = 0.5f },
                     new Feature() { Id = 4, Value = 1.3f },
                     new Feature() { Id = 9, Value = -0.5f },
                 });
-                uint action = mwtt.ChooseAction(new EpsilonGreedyExplorer<SimpleContext>(policy, epsilon, numActions), "key", context);
 
-                Console.WriteLine(recorder.FlushRecording());
+                // Performs exploration by passing an instance of the Epsilon-Greedy exploration algorithm into MwtExplorer
+                // using a sample string to uniquely identify this event
+                string uniqueKey = "eventid";
+                uint action = mwtt.ChooseAction(explorer, uniqueKey, context);
+
+                Console.WriteLine(recorder.GetRecording());
 
                 return;
             }
