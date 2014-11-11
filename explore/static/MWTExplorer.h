@@ -25,7 +25,6 @@
 
 using namespace std;
 
-// TODO: reference additional headers your program requires here
 #include "utility.h"
 
 MWT_NAMESPACE {
@@ -34,26 +33,29 @@ template <class Ctx>
 class MwtExplorer;
 
 //
-// Exposes a method for recording exploration data involving generic contexts.
+// Exposes a method to record exploration data based on generic contexts. Exploration data
+// is specified as a set of tuples <context, action, probability> as described below. An 
+// application passes an IRecorder object to the @MwtExplorer constructor. See 
+// @StringRecorder for a sample IRecorder object.
 //
 template <class Ctx>
 class IRecorder
 {
 public:
 	//
-	// Records the exploration data for a given interaction.
+	// Records the exploration data associated with a given decision.
 	//
-	// @param context the user-defined context of the interaction
-	// @param action the action chosen by the exploration algorithm
-	// @param probability the probability with which the chosen action was selected
-	// @param unique_key the user-defined unique identifer of the interaction
-	// @see MwtExplorer::Choose_Action
+	// @param context user-defined context for the decision
+	// @param action chosen by an exploration algorithm given context
+	// @param probability the exploration algorithm chose action given context
+	// @param unique_key user-defined identifer for the decision
 	//
 	virtual void Record(Ctx& context, u32 action, float probability, string unique_key) = 0;
 };
 
 //
-// Exposes a method for choosing an action given a generic context.
+// Exposes a method for choosing an action given a generic context. IPolicy objects are 
+// passed to (and invoked by) exploration algorithms to specify the default policy behavior.
 //
 template <class Ctx>
 class IPolicy
@@ -61,20 +63,30 @@ class IPolicy
 public:
 	//
 	// Determines the action to take for a given context.
-	// @param context the user-defined context of the interaction
-	// @returns 1-based index of the action to take
+	// @param context user-defined context for the decision
+	// @returns index of the action to take (1-based)
 	//
 	virtual u32 Choose_Action(Ctx& context) = 0;
 };
 
+//
+// Exposes a method for specifying a score (weight) for each action given a generic context. 
+//
 template <class Ctx>
 class IScorer
 {
 public:
+	//
+	// Determines the score of each action for a given context.
+	// @param context user-defined context for the decision 
+	// @returns vector of scores indexed by action (1-based)
+	//
 	virtual vector<float> Score_Actions(Ctx& context) = 0;
 };
 
-// Default Recorder that converts tuple into string format.
+//
+// A sample recorder class that converts the exploration tuple into string format.
+//
 template <class Ctx>
 struct StringRecorder : public IRecorder<Ctx>
 {
@@ -104,6 +116,9 @@ private:
 	string m_recording;
 };
 
+//
+// Represents a feature in a sparse array.
+//
 struct Feature
 {
 	float Value;
@@ -115,6 +130,9 @@ struct Feature
 	}
 };
 
+//
+// A sample context class that stores a vector of Features.
+//
 class SimpleContext
 {
 public:
