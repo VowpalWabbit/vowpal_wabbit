@@ -83,7 +83,7 @@ namespace ExploreTests
             TestContext testContext2 = new TestContext() { Id = 100 };
 
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
-            var explorer = new BaggingExplorer<TestContext>(policies, numbags, numActions);
+            var explorer = new BaggingExplorer<TestContext>(policies, numActions);
 
             uint expectedAction = policies[0].ChooseAction(testContext1);
 

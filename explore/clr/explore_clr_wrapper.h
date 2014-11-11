@@ -131,10 +131,15 @@ namespace MultiWorldTesting {
 	public ref class BaggingExplorer : public IExplorer<Ctx>, public PolicyCallback<Ctx>
 	{
 	public:
-		BaggingExplorer(cli::array<IPolicy<Ctx>^>^ defaultPolicies, UInt32 numBags, UInt32 numActions)
+		BaggingExplorer(cli::array<IPolicy<Ctx>^>^ defaultPolicies, UInt32 numActions)
 		{
 			this->defaultPolicies = defaultPolicies;
-			m_explorer = new NativeMultiWorldTesting::BaggingExplorer<NativeContext>(*GetNativePolicies(numBags), (u32)numActions);
+			if (this->defaultPolicies == nullptr)
+			{
+				throw gcnew ArgumentNullException("The specified array of default policy functions cannot be null.");
+			}
+
+			m_explorer = new NativeMultiWorldTesting::BaggingExplorer<NativeContext>(*GetNativePolicies((u32)defaultPolicies->Length), (u32)numActions);
 		}
 
 		~BaggingExplorer()
