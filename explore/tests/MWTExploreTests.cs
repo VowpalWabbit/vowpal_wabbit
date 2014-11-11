@@ -67,7 +67,7 @@ namespace ExploreTests
         }
 
         [TestMethod]
-        public void Bagging()
+        public void Bootstrap()
         {
             uint numActions = 10;
             uint numbags = 2;
@@ -83,7 +83,7 @@ namespace ExploreTests
             TestContext testContext2 = new TestContext() { Id = 100 };
 
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
-            var explorer = new BaggingExplorer<TestContext>(policies, numActions);
+            var explorer = new BootstrapExplorer<TestContext>(policies, numActions);
 
             uint expectedAction = policies[0].ChooseAction(testContext1);
 

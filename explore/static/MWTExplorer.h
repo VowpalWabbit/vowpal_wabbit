@@ -498,13 +498,13 @@ private:
 };
 
 //
-// The Bagging explorer randomizes over the actions chosen by a set of
+// The Bootstrap explorer randomizes over the actions chosen by a set of
 // default policies.  This performs well statistically but can be
 // computationally expensive.
 // 
 
 template <class Ctx>
-class BaggingExplorer
+class BootstrapExplorer
 {
 public:
   //The constructor is the only public member, because this should be used with the MwtExplorer.
@@ -512,7 +512,7 @@ public:
   //@param default_policy_functions  A set of default policies to be uniform random over.
   //@param num_actions               The number of actions to randomize over.
 
-	BaggingExplorer(vector<unique_ptr<IPolicy<Ctx>>>& default_policy_functions, u32 num_actions) :
+	BootstrapExplorer(vector<unique_ptr<IPolicy<Ctx>>>& default_policy_functions, u32 num_actions) :
 		m_default_policy_functions(default_policy_functions),
 		m_num_actions(num_actions)
 	{

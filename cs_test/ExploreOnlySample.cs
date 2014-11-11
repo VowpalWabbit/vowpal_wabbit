@@ -113,9 +113,9 @@ namespace cs_test
                 Console.WriteLine(String.Join(",", recorder.GetAllInteractions().Select(it => it.Action)));
                 return;
             }
-            else if (exploration_type == "bagging")
+            else if (exploration_type == "bootstrap")
             {
-                // Initialize Bagging explore algorithm using custom Recorder, Policy & Context types
+                // Initialize Bootstrap explore algorithm using custom Recorder, Policy & Context types
                 MyRecorder recorder = new MyRecorder();
                 MwtExplorer<MyContext> mwtt = new MwtExplorer<MyContext>("mwt", recorder);
 
@@ -126,7 +126,7 @@ namespace cs_test
                 {
                     policies[i] = new MyPolicy(i * 2);
                 }
-                uint action = mwtt.ChooseAction(new BaggingExplorer<MyContext>(policies, numActions), "key", new MyContext());
+                uint action = mwtt.ChooseAction(new BootstrapExplorer<MyContext>(policies, numActions), "key", new MyContext());
                 Console.WriteLine(String.Join(",", recorder.GetAllInteractions().Select(it => it.Action)));
                 return;
             }
