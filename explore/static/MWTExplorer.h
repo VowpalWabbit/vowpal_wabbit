@@ -29,8 +29,57 @@ using namespace std;
 
 MWT_NAMESPACE {
 
+template <class Ctx> 
+class IRecorder;
 template <class Ctx>
-class MwtExplorer;
+class IExplorer;
+
+//
+//The top level MwtExplorer class.  Using this makes sure that the
+//right bits are used recorded and good random actions are chosen.
+//
+
+template <class Ctx>
+class MwtExplorer
+{
+public:
+	// The constructor  
+	//
+	// @param appid      This should be unique to your experiment or your risk nasty correlation bugs.
+	// @param recorder   The recorder us a user-specified class for recording the appropriate bits for use in evaluation and learning.
+
+	MwtExplorer(std::string app_id, IRecorder<Ctx>& recorder) : m_recorder(recorder)
+	{
+		m_app_id = HashUtils::Compute_Id_Hash(app_id);
+	}
+
+	// Choose_Action should be drop-in replacement for any existing policy function.   
+	//
+	// @param explorer   An existing exploration algorithm (one of the above) which uses the default policy as a callback.
+	// @param unique_key  A unique identifier for the experimental unit.  This could be a user id, a session id, etc...
+	// @param context     The context upon which a decision is made.  See SimpleContext above for an example.
+	u32 Choose_Action(IExplorer<Ctx>& explorer, string unique_key, Ctx& context)
+	{
+		u64 seed = HashUtils::Compute_Id_Hash(unique_key);
+
+		std::tuple<u32, float, bool> action_probability_log_tuple = explorer.Choose_Action(seed + m_app_id, context);
+
+		u32 action = std::get<0>(action_probability_log_tuple);
+		float prob = std::get<1>(action_probability_log_tuple);
+
+		if (std::get<2>(action_probability_log_tuple))
+		{
+			m_recorder.Record(context, action, prob, unique_key);
+		}
+
+		return action;
+	}
+
+private:
+	u64 m_app_id;
+	IRecorder<Ctx>& m_recorder;
+};
+
 
 //
 // Exposes a method to record exploration data based on generic contexts. Exploration data
@@ -51,6 +100,13 @@ public:
 	// @param unique_key user-defined identifer for the decision
 	//
 	virtual void Record(Ctx& context, u32 action, float probability, string unique_key) = 0;
+};
+
+template <class Ctx>
+class IExplorer
+{
+public:
+	virtual std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context) = 0;
 };
 
 //
@@ -184,7 +240,7 @@ private:
 //
 
 template <class Ctx>
-class EpsilonGreedyExplorer
+class EpsilonGreedyExplorer : public IExplorer<Ctx>
 {
 public:
   //The constructor is the only public member, because this should be used with the MwtExplorer.
@@ -269,7 +325,7 @@ private:
 // 
 
 template <class Ctx>
-class SoftmaxExplorer
+class SoftmaxExplorer : public IExplorer<Ctx>
 {
 public:
   //The constructor is the only public member, because this should be used with the MwtExplorer.
@@ -358,7 +414,7 @@ private:
 // 
 
 template <class Ctx>
-class GenericExplorer
+class GenericExplorer : public IExplorer<Ctx>
 {
 public:
   //The constructor is the only public member, because this should be used with the MwtExplorer.
@@ -438,7 +494,7 @@ private:
 // 
 
 template <class Ctx>
-class TauFirstExplorer
+class TauFirstExplorer : public IExplorer<Ctx>
 {
 public:
   //The constructor is the only public member, because this should be used with the MwtExplorer.
@@ -504,7 +560,7 @@ private:
 // 
 
 template <class Ctx>
-class BootstrapExplorer
+class BootstrapExplorer : public IExplorer<Ctx>
 {
 public:
   //The constructor is the only public member, because this should be used with the MwtExplorer.
@@ -574,52 +630,5 @@ private:
 
 private:
 	friend class MwtExplorer<Ctx>;
-};
-
-//
-//The top level MwtExplorer class.  Using this makes sure that the
-//right bits are used recorded and good random actions are chosen.
-//
-
-template <class Ctx>
-class MwtExplorer
-{
-public:
-  // The constructor  
-  //
-  // @param appid      This should be unique to your experiment or your risk nasty correlation bugs.
-  // @param recorder   The recorder us a user-specified class for recording the appropriate bits for use in evaluation and learning.
-
-	MwtExplorer(std::string app_id, IRecorder<Ctx>& recorder) : m_recorder(recorder)
-    {
-		m_app_id = HashUtils::Compute_Id_Hash(app_id);
-    }
- 
-  // Choose_Action should be drop-in replacement for any existing policy function.   
-  //
-  // @param explorer   An existing exploration algorithm (one of the above) which uses the default policy as a callback.
-  // @param unique_key  A unique identifier for the experimental unit.  This could be a user id, a session id, etc...
-  // @param context     The context upon which a decision is made.  See SimpleContext above for an example.
-    template <class Exp>
-    u32 Choose_Action(Exp& explorer, string unique_key, Ctx& context)
-    {
-		u64 seed = HashUtils::Compute_Id_Hash(unique_key);
-
-		std::tuple<u32, float, bool> action_probability_log_tuple = explorer.Choose_Action(seed + m_app_id, context);
-
-		u32 action = std::get<0>(action_probability_log_tuple);
-		float prob = std::get<1>(action_probability_log_tuple);
-
-		if (std::get<2>(action_probability_log_tuple))
-		{
-			m_recorder.Record(context, action, prob, unique_key);
-		}
- 
-        return action;
-    }
- 
-private:
-    u64 m_app_id;
-	IRecorder<Ctx>& m_recorder;
 };
 }
