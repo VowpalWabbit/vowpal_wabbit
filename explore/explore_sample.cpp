@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
 		StringRecorder<SimpleContext> recorder;
 
 		// Creates a policy that interacts with SimpleContext type
-		MySimplePolicy default_policy; 
+		MySimplePolicy default_policy;
 
 		// Creates an MwtExplorer instance using the recorder above
 		MwtExplorer<SimpleContext> mwt("appid", recorder);
@@ -125,6 +125,7 @@ int main(int argc, char* argv[])
 		SimpleContext context(features);
 
 		// Performs exploration by passing an instance of the Epsilon-Greedy exploration algorithm into MwtExplorer
+		// using a sample string to uniquely identify this event
 		string unique_key = "eventid";
 		u32 action = mwt.Choose_Action(explorer, unique_key, context);
 
