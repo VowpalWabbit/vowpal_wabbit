@@ -488,24 +488,35 @@ namespace vw_explore_tests
 			// Default policy returns action outside valid range
 			COUNT_BAD_CALL
 			(
-				MwtExplorer<TestContext> mwt("salt", TestRecorder());
-				EpsilonGreedyExplorer<TestContext> explorer(TestBadPolicy(), 0.f, (u32)1);
+				TestRecorder recorder;
+				TestBadPolicy policy;
+				TestContext context;
 
-				u32 expected_action = mwt.Choose_Action(explorer, "1001", TestContext());
+				MwtExplorer<TestContext> mwt("salt", recorder);
+				EpsilonGreedyExplorer<TestContext> explorer(policy, 0.f, (u32)1);
+
+				u32 expected_action = mwt.Choose_Action(explorer, "1001", context);
 			)
 			COUNT_BAD_CALL
 			(
-				MwtExplorer<TestContext> mwt("salt", TestRecorder());
-				TauFirstExplorer<TestContext> explorer(TestBadPolicy(), (u32)0, (u32)1);
-				mwt.Choose_Action(explorer, "test", TestContext());
+				TestRecorder recorder;
+				TestBadPolicy policy;
+				TestContext context;
+
+				MwtExplorer<TestContext> mwt("salt", recorder);
+				TauFirstExplorer<TestContext> explorer(policy, (u32)0, (u32)1);
+				mwt.Choose_Action(explorer, "test", context);
 			)
 			COUNT_BAD_CALL
 			(
+				TestRecorder recorder;
+				TestContext context;
+
 				vector<unique_ptr<IPolicy<TestContext>>> policies;
 				policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestBadPolicy()));
-				MwtExplorer<TestContext> mwt("salt", TestRecorder());
+				MwtExplorer<TestContext> mwt("salt", recorder);
 				BootstrapExplorer<TestContext> explorer(policies, (u32)1);
-				mwt.Choose_Action(explorer, "test", TestContext());
+				mwt.Choose_Action(explorer, "test", context);
 			)
 			Assert::AreEqual(3, num_ex);
 		}
