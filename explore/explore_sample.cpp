@@ -10,29 +10,38 @@ using namespace std;
 using namespace std::chrono;
 using namespace MultiWorldTesting;
 
+// Example of a custom context.
 class MyContext
 {
 
 };
 
+// Example of a custom policy which implements the IPolicy<MyContext>,
+// declaring that this policy only interacts with MyContext objects.
 class MyPolicy : public IPolicy<MyContext>
 {
 public:
 	u32 Choose_Action(MyContext& context)
 	{
+		// Always returns the same action regardless of context
 		return (u32)1;
 	}
 };
 
+// Example of a custom policy which implements the IPolicy<SimpleContext>,
+// declaring that this policy only interacts with SimpleContext objects.
 class MySimplePolicy : public IPolicy<SimpleContext>
 {
 public:
 	u32 Choose_Action(SimpleContext& context)
 	{
+		// Always returns the same action regardless of context
 		return (u32)1;
 	}
 };
 
+// Example of a custom scorer which implements the IScorer<MyContext>,
+// declaring that this scorer only interacts with MyContext objects.
 class MyScorer : public IScorer<MyContext>
 {
 public:
@@ -45,6 +54,7 @@ public:
 		vector<float> scores;
 		for (size_t i = 0; i < m_num_actions; i++)
 		{
+			// Gives every action the same score (which results in a uniform distribution).
 			scores.push_back(.1f);
 		}
 		return scores;
@@ -53,6 +63,9 @@ private:
 	u32 m_num_actions;
 };
 
+//
+// Represents a tuple <context, action, probability, key>.
+//
 template <class Ctx>
 struct MyInteraction
 {
@@ -62,11 +75,14 @@ struct MyInteraction
 	string Unique_Key;
 };
 
+// Example of a custom recorder which implements the IRecorder<MyContext>,
+// declaring that this recorder only interacts with MyContext objects.
 class MyRecorder : public IRecorder<MyContext>
 {
 public:
 	virtual void Record(MyContext& context, u32 action, float probability, string unique_key)
 	{
+		// Stores the tuple internally in a vector that could be used later for other purposes.
 		m_interactions.push_back({ context, action, probability, unique_key });
 	}
 private:
@@ -85,20 +101,30 @@ int main(int argc, char* argv[])
 	if (strcmp(argv[1], "greedy") == 0)
 	{
 		//Initialize Epsilon-Greedy explore algorithm using MyPolicy
-		vector<Feature> features;
-		features.push_back({ 0.5f, 1 });
-		features.push_back({ 1.3f, 11 });
-		features.push_back({ -.95f, 413 });
-		SimpleContext context(features);
 
+		// Creates a recorder of built-in StringRecorder type for string serialization
 		StringRecorder<SimpleContext> recorder;
+
+		// Creates a policy that interacts with SimpleContext type
 		MySimplePolicy default_policy; 
+
+		// Creates an MwtExplorer instance using the recorder above
 		MwtExplorer<SimpleContext> mwt("appid", recorder);
 
 		u32 num_actions = 10;
 		float epsilon = .2f;
+		// Creates an Epsilon-Greedy explorer using the specified settings
 		EpsilonGreedyExplorer<SimpleContext> explorer(default_policy, epsilon, num_actions);
 
+		// Creates a context of built-in SimpleContext type
+		vector<Feature> features;
+		features.push_back({ 0.5f, 1 });
+		features.push_back({ 1.3f, 11 });
+		features.push_back({ -.95f, 413 });
+
+		SimpleContext context(features);
+
+		// Performs exploration by passing an instance of the Epsilon-Greedy exploration algorithm into MwtExplorer
 		string unique_key = "eventid";
 		u32 action = mwt.Choose_Action(explorer, unique_key, context);
 
