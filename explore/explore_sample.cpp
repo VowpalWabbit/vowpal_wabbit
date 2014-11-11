@@ -102,7 +102,8 @@ int main(int argc, char* argv[])
 		string unique_key = "eventid";
 		u32 action = mwt.Choose_Action(explorer, unique_key, context);
 
-		cout << "action = " << action << " recorder = " << recorder.Flush_Recording();
+		cout << "Chosen action = " << action << endl;
+		cout << "Exploration record = " << recorder.Flush_Recording();
 	}
 	else if (strcmp(argv[1], "tau-first") == 0)
 	{
