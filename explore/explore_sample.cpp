@@ -97,10 +97,10 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 	
-	//arguments for individual explorers
+	// Arguments for individual explorers
 	if (strcmp(argv[1], "greedy") == 0)
 	{
-		//Initialize Epsilon-Greedy explore algorithm using MyPolicy
+		// Initialize Epsilon-Greedy explore algorithm using MyPolicy
 
 		// Creates a recorder of built-in StringRecorder type for string serialization
 		StringRecorder<SimpleContext> recorder;
@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
 	}
 	else if (strcmp(argv[1], "tau-first") == 0)
 	{
-		//Initialize Tau-First explore algorithm using MyPolicy
+		// Initialize Tau-First explore algorithm using MyPolicy
 		MyRecorder recorder;
 		MwtExplorer<MyContext> mwt("appid", recorder);
 
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
 	}
 	else if (strcmp(argv[1], "bootstrap") == 0)
 	{
-		//Initialize Bootstrap explore algorithm using MyPolicy
+		// Initialize Bootstrap explore algorithm using MyPolicy
 		MyRecorder recorder;
 		MwtExplorer<MyContext> mwt("appid", recorder);
 
@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
 	}
 	else if (strcmp(argv[1], "softmax") == 0)
 	{
-		//Initialize Softmax explore algorithm using MyScorer 
+		// Initialize Softmax explore algorithm using MyScorer 
 		MyRecorder recorder;
 		MwtExplorer<MyContext> mwt("salt", recorder);
 
@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
 	}
 	else if (strcmp(argv[1], "generic") == 0)
 	{
-		//Initialize Generic explore algorithm using MyScorer 
+		// Initialize Generic explore algorithm using MyScorer 
 		MyRecorder recorder;
 		MwtExplorer<MyContext> mwt("appid", recorder);
 
