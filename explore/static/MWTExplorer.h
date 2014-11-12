@@ -27,6 +27,12 @@ using namespace std;
 
 #include "utility.h"
 
+/*!
+*  \addtogroup MultiWorldTestingCpp
+*  @{
+*/
+
+//! Interface for C++ version of Multiworld Testing library
 MWT_NAMESPACE {
 
 // Forward declarations
@@ -653,4 +659,5 @@ private:
 private:
 	friend class MwtExplorer<Ctx>;
 };
-}
+} // End namespace MultiWorldTestingCpp
+/*! @} End of Doxygen Groups*/

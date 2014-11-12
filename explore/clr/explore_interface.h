@@ -3,6 +3,12 @@
 using namespace System;
 using namespace System::Collections::Generic;
 
+/*!
+*  \addtogroup MultiWorldTestingCsharp
+*  @{
+*/
+
+//! Interface for C# version of Multiworld Testing library
 namespace MultiWorldTesting {
 
 /// <summary>
@@ -73,3 +79,5 @@ public:
 };
 
 }
+
+/*! @} End of Doxygen Groups*/

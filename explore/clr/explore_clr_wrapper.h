@@ -1,6 +1,10 @@
 #pragma once
 #include "explore_interop.h"
 
+/*!
+*  \addtogroup MultiWorldTestingCsharp
+*  @{
+*/
 namespace MultiWorldTesting {
 
 	/// <summary>
@@ -430,3 +434,5 @@ namespace MultiWorldTesting {
 		NativeMultiWorldTesting::SimpleContext* m_native_context;
 	};
 }
+
+/*! @} End of Doxygen Groups*/

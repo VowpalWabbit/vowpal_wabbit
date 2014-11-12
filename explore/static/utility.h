@@ -32,6 +32,11 @@ typedef unsigned char    byte;
 #include <stdint.h>
 #include <math.h>
 
+/*!
+*  \addtogroup MultiWorldTestingCpp
+*  @{
+*/
+
 MWT_NAMESPACE {
 
 //
@@ -278,3 +283,4 @@ namespace PRG {
 	};
 }
 }
+/*! @} End of Doxygen Groups*/
