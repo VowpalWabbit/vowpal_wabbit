@@ -10,14 +10,14 @@ using namespace std;
 using namespace std::chrono;
 using namespace MultiWorldTesting;
 
-// Example of a custom context.
+/// Example of a custom context.
 class MyContext
 {
 
 };
 
-// Example of a custom policy which implements the IPolicy<MyContext>,
-// declaring that this policy only interacts with MyContext objects.
+/// Example of a custom policy which implements the IPolicy<MyContext>,
+/// declaring that this policy only interacts with MyContext objects.
 class MyPolicy : public IPolicy<MyContext>
 {
 public:
@@ -28,8 +28,8 @@ public:
 	}
 };
 
-// Example of a custom policy which implements the IPolicy<SimpleContext>,
-// declaring that this policy only interacts with SimpleContext objects.
+/// Example of a custom policy which implements the IPolicy<SimpleContext>,
+/// declaring that this policy only interacts with SimpleContext objects.
 class MySimplePolicy : public IPolicy<SimpleContext>
 {
 public:
@@ -40,8 +40,8 @@ public:
 	}
 };
 
-// Example of a custom scorer which implements the IScorer<MyContext>,
-// declaring that this scorer only interacts with MyContext objects.
+/// Example of a custom scorer which implements the IScorer<MyContext>,
+/// declaring that this scorer only interacts with MyContext objects.
 class MyScorer : public IScorer<MyContext>
 {
 public:
@@ -63,9 +63,9 @@ private:
 	u32 m_num_actions;
 };
 
-//
-// Represents a tuple <context, action, probability, key>.
-//
+///
+/// Represents a tuple <context, action, probability, key>.
+///
 template <class Ctx>
 struct MyInteraction
 {
@@ -75,8 +75,8 @@ struct MyInteraction
 	string Unique_Key;
 };
 
-// Example of a custom recorder which implements the IRecorder<MyContext>,
-// declaring that this recorder only interacts with MyContext objects.
+/// Example of a custom recorder which implements the IRecorder<MyContext>,
+/// declaring that this recorder only interacts with MyContext objects.
 class MyRecorder : public IRecorder<MyContext>
 {
 public:
