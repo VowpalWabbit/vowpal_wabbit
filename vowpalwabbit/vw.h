@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 #include "example.h"
 #include "hash.h"
 #include "simple_label.h"
+#include "libsearch.h"
 
 namespace VW {
 
@@ -57,6 +58,8 @@ namespace VW {
   float get_importance(example*ec);
   float get_initial(example*ec);
   float get_prediction(example*ec);
+  BuiltInTask* initialize_search_hook_task(vw& all);
+  void get_search_prediction(BuiltInTask& all, vector<example*> & ec, vector<uint32_t> & action);
   size_t get_tag_length(example* ec);
   const char* get_tag(example* ec);
   size_t get_feature_number(example* ec);

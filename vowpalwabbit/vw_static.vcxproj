@@ -83,9 +83,6 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(BoostIncludeDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -188,14 +185,14 @@
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'">
-    <BoostIncludeDir>c:\boost\x64\include\boost-1_56</BoostIncludeDir>
-    <BoostLibDir>c:\boost\x64\lib</BoostLibDir>
+    <BoostIncludeDir>..\..\boost\x64\include\boost-1_56</BoostIncludeDir>
+    <BoostLibDir>..\..\boost\x64\lib</BoostLibDir>
     <ZlibIncludeDir>..\..\zlib-1.2.8</ZlibIncludeDir>
     <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc11\x64\ZlibStat$(Configuration)</ZlibLibDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'">
-    <BoostIncludeDir>c:\boost\x86\include\boost-1_56</BoostIncludeDir>
-    <BoostLibDir>c:\boost\x64\lib</BoostLibDir>
+    <BoostIncludeDir>..\..\boost\x86\include\boost-1_56</BoostIncludeDir>
+    <BoostLibDir>..\..\boost\x64\lib</BoostLibDir>
     <ZlibIncludeDir>..\..\zlib-1.2.8</ZlibIncludeDir>
     <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc11\x86\ZlibStat$(Configuration)</ZlibLibDir>
   </PropertyGroup>
@@ -255,6 +252,7 @@
     <ClInclude Include="cb_algs.h" />
     <ClInclude Include="mf.h" />
     <ClInclude Include="gd_mf.h" />
+	<ClInclude Include="libsearch.h" />
     <ClInclude Include="lrq.h" />
     <ClInclude Include="log_multi.h" />
     <ClInclude Include="global_data.h" />

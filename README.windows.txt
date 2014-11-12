@@ -189,9 +189,7 @@ Otherwise VS13 will complain about multiple runtime specification while trying t
 (d) Changes to VowpalWabbit
 	
 	changes vw projects and solutions to run under Visual Studio 2013 rather than Visual Studio 2012
-	change vw projects to redefine $(BoostIncludeDir) to refer to Boost 1.56.0
-	change vw projects to define $(BoostLibDir) to refer to Boost 1.56.0
-
+	
 	vowpalwabbit/vw_static.vcxproj
 		Define $(IncludePath) 
 		change 	$(ZlibDir) to use \contrib\vstudio\vc11 rather than vc10
@@ -219,4 +217,13 @@ Otherwise VS13 will complain about multiple runtime specification while trying t
 		change cs_test to use x86 and x64 rather than anycpu
 		change test file specs to reference the .../../... test directory 
 
-
+(9) For Microsoft users: 
+	(9a) If you want to check out the code without going through all previous steps, there is the version on 10/29/2014 of vw at //depot/dev/scratch/vw/
+	It has all boost and zlib setup in the folder so you can just enlist,sync then compile in VS13. Below is the directory tree:
+	//depot/dev/scratch/vw
+	|--boost
+	|--vowpal_wabbit
+	|--zlib-1.2.8
+	If there is no breaking change to the Github, you can substitute the content of vowpal_wabbit folder with the Github at any time
+	(9b) If you want to use vw dll without going through compiling steps, there is a package in Main~empty called VowpalWabbit.Library with dll compiled for amd64 and i386
+	For detail of consuming the package, see https://microsoft.sharepoint.com/teams/CosmosTeam/ResourceManagement/Wiki/Creating%20pacman%20package.aspx
