@@ -8,7 +8,8 @@ using namespace System::Collections::Generic;
 *  @{
 */
 
-//! Interface for C# version of Multiworld Testing library
+//! Interface for C# version of Multiworld Testing library.
+//! For sample usage see: https://github.com/sidsen/vowpal_wabbit/blob/v0/cs_test/ExploreOnlySample.cs
 namespace MultiWorldTesting {
 
 /// <summary>

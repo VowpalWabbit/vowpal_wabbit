@@ -32,7 +32,8 @@ using namespace std;
 *  @{
 */
 
-//! Interface for C++ version of Multiworld Testing library
+//! Interface for C++ version of Multiworld Testing library.
+//! For sample usage see: https://github.com/sidsen/vowpal_wabbit/blob/v0/explore/explore_sample.cpp
 MWT_NAMESPACE {
 
 // Forward declarations
