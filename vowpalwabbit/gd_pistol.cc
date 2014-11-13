@@ -1,3 +1,6 @@
+/*la predizione negli aggiornamenti e' diversa dalla predizione senza aggiornamenti!
+ il fattore moltiplicativo dovrebbe essere usato anche nel caso adattativo, per fare meno moltiplicazioni*/
+
 /*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
@@ -33,13 +36,10 @@ namespace GD_PISTOL {
         size_t no_win_counter;
         size_t early_stop_thres;
         float initial_constant;
-        float neg_norm_power;
-        float neg_power_t;
 
         float a;
         float b;
         float alpha_single;
-        float delta;
         float max_input;
         float norm_current_example;
         float squared_norm_current_example;
@@ -109,7 +109,6 @@ namespace GD_PISTOL {
                 accumulate_avg(all, all.span_server, all.reg, 0);
         }
 
-        all.eta *= all.eta_decay_rate;
         if (all.save_per_pass)
             save_predictor(all, all.final_regressor_name, all.current_pass);
 
@@ -319,22 +318,6 @@ namespace GD_PISTOL {
     void predict(gd& g, learner& base, example& ec) {
         vw& all = *g.all;
 
-        if (adaptive) {
-            update_struct us;
-            us.a = g.a;
-            us.b = g.b;
-            foreach_feature<update_struct, calculate_l_inf_example<feature_mask_off> >(*g.all, ec, us);
-        } else {
-            g.squared_norm_current_example = 0;
-            foreach_feature<float, calculate_squared_l2_example<feature_mask_off> >(*g.all, ec, g.squared_norm_current_example);
-            g.norm_current_example = sqrt(g.squared_norm_current_example);
-            if (g.max_input < g.norm_current_example) {
-                g.max_input = g.norm_current_example;
-                float tmp = 1.f / (g.max_input * g.a * (g.alpha_single + g.max_input));
-                g.multiplicative_factor = sqrt(2 * g.max_input * g.a * g.b) * exp(g.squared_norm_theta / 2 * tmp) * tmp;
-            }
-        }
-
         ec.partial_prediction = inline_predict(all, ec);
 
         label_data& ld = *(label_data*) ec.ld;
@@ -344,6 +327,7 @@ namespace GD_PISTOL {
             print_audit_features(all, ec);
     }
 
+    
     /* invariant: not a test label, importance weight > 0 */
     template<bool feature_mask_off, size_t adaptive>
     void update(gd& g, learner& base, example& ec) {
@@ -378,6 +362,22 @@ namespace GD_PISTOL {
         assert(ec.in_use);
         assert(((label_data*) ec.ld)->label != FLT_MAX);
         assert(((label_data*) ec.ld)->weight > 0.);
+
+        if (adaptive) {
+            update_struct us;
+            us.a = g.a;
+            us.b = g.b;
+            foreach_feature<update_struct, calculate_l_inf_example<feature_mask_off> >(*g.all, ec, us);
+        } else {
+            g.squared_norm_current_example = 0;
+            foreach_feature<float, calculate_squared_l2_example<feature_mask_off> >(*g.all, ec, g.squared_norm_current_example);
+            g.norm_current_example = sqrt(g.squared_norm_current_example);
+            if (g.max_input < g.norm_current_example) {
+                g.max_input = g.norm_current_example;
+                float tmp = 1.f / (g.max_input * g.a * (g.alpha_single + g.max_input));
+                g.multiplicative_factor = sqrt(2 * g.max_input * g.a * g.b) * exp(g.squared_norm_theta / 2 * tmp) * tmp;
+            }
+        }
 
         g.predict(g, base, ec);
 
@@ -612,8 +612,6 @@ namespace GD_PISTOL {
         g->all = &all;
         g->no_win_counter = 0;
         g->early_stop_thres = 3;
-        g->neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
-        g->neg_power_t = -all.power_t;
 
         //g->a=0.25;
         g->a = 1;
