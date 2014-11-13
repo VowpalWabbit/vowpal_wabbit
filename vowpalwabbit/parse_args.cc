@@ -33,6 +33,7 @@ license as described in the file LICENSE.
 #include "noop.h"
 #include "print.h"
 #include "gd_mf.h"
+#include "gd_pistol.h"
 #include "mf.h"
 #include "vw.h"
 #include "rand48.h"
@@ -721,6 +722,7 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
     ("invariant", "use safe/importance aware updates.")
     ("normalized", "use per feature normalized updates")
     ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule")
+    ("pistol", "use the PiSTOL algorithm")
     ("bfgs", "use bfgs optimization")
     ("lda", po::value<uint32_t>(&(all.lda)), "Run lda with <int> topics")
     ("rank", po::value<uint32_t>(&(all.rank)), "rank for matrix factorization.")
@@ -733,7 +735,10 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
 
   if (vm.count("bfgs") || vm.count("conjugate_gradient"))
     all.l = BFGS::setup(all, vm);
-  else if (vm.count("lda"))
+  else if (vm.count("pistol")) {
+    all.l = GD_PISTOL::setup(all, vm);
+    all.scorer = all.l;
+  } else if (vm.count("lda"))
     all.l = LDA::setup(all, vm);
   else if (vm.count("noop"))
     all.l = NOOP::setup(all);

@@ -1,4 +1,4 @@
-   /*
+/*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
@@ -30,8 +30,6 @@ using namespace LEARNER;
 namespace GD_PISTOL {
 
     struct gd {
-        double normalized_sum_norm_x;
-        double total_weight;
         size_t no_win_counter;
         size_t early_stop_thres;
         float initial_constant;
@@ -51,7 +49,7 @@ namespace GD_PISTOL {
 
         vw* all;
     };
-    
+
     struct update_struct {
         float weighted_deriv;
         float a;
@@ -63,15 +61,15 @@ namespace GD_PISTOL {
         if (feature_mask_off || fw != 0.) {
             weight* w = &fw;
             if (!w_only) {
-                w[1] -= x*us.weighted_deriv; //update theta
-                w[2] += fabs(x*us.weighted_deriv); //update alpha for each coordinate
+                w[1] -= x * us.weighted_deriv; //update theta
+                w[2] += fabs(x * us.weighted_deriv); //update alpha for each coordinate
             }
-            float squared_val = w[1]*w[1];
-            float tmp = 1.f / (us.a * w[3]*(w[2]+w[3]) );
-            w[0] = sqrt(2*w[3]*us.a*us.b) * w[1] * exp(squared_val / 2 * tmp) * tmp;
+            float squared_val = w[1] * w[1];
+            float tmp = 1.f / (us.a * w[3]*(w[2] + w[3]));
+            w[0] = sqrt(2 * w[3] * us.a * us.b) * w[1] * exp(squared_val / 2 * tmp) * tmp;
         }
     }
-    
+
     template<bool feature_mask_off>
     inline void update_theta_single(float& weighted_deriv, float x, float& fw) {
         if (feature_mask_off || fw != 0.) {
@@ -79,7 +77,7 @@ namespace GD_PISTOL {
             w[0] -= x*weighted_deriv; //update theta
         }
     }
-    
+
     template<bool feature_mask_off>
     inline void calculate_squared_l2_example(float& squared_norm, float x, float& fw) {
         if (feature_mask_off) {
@@ -91,36 +89,19 @@ namespace GD_PISTOL {
     inline void calculate_l_inf_example(update_struct& us, float x, float& fw) {
         if (feature_mask_off) {
             weight* w = &fw;
-            float fx=fabs(x);
-            if (fx>w[3]) {
+            float fx = fabs(x);
+            if (fx > w[3]) {
                 w[3] = fx;
-                float squared_val = w[1]*w[1];
-                float tmp = 1.f / (us.a * w[3] * (w[2]+w[3]) );
-                w[0] = sqrt(2*w[3]*us.a*us.b) * w[1] * exp(squared_val / 2 * tmp) * tmp;
+                float squared_val = w[1] * w[1];
+                float tmp = 1.f / (us.a * w[3] * (w[2] + w[3]));
+                w[0] = sqrt(2 * w[3] * us.a * us.b) * w[1] * exp(squared_val / 2 * tmp) * tmp;
             }
         }
-    }
-    
-    //this deals with few nonzero features vs. all nonzero features issues.  
-    template<bool sqrt_rate, size_t adaptive, size_t normalized>
-    float average_update(gd& g, float update) {
-        if (normalized) {
-            if (sqrt_rate) {
-                float avg_norm = (float) g.total_weight / (float) g.normalized_sum_norm_x;
-                if (adaptive)
-                    return sqrt(avg_norm);
-                else
-                    return avg_norm;
-            } else
-                return powf((float) g.normalized_sum_norm_x / (float) g.total_weight, g.neg_norm_power);
-        }
-        return 1.f;
     }
 
     void end_pass(gd& g) {
         vw& all = *g.all;
 
-        //sync_weights(all);
         if (all.span_server != "") {
             if (all.adaptive)
                 accumulate_weighted_avg(all, all.span_server, all.reg);
@@ -321,7 +302,7 @@ namespace GD_PISTOL {
         print_features(all, ec);
     }
 
-    /* Truncated the prediction between sd->min_label and sd->max_label*/
+    /* Truncate the prediction between sd->min_label and sd->max_label*/
     float finalize_prediction(shared_data* sd, float ret) {
         if (nanpattern(ret)) {
             cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing 0.0" << endl;
@@ -340,20 +321,20 @@ namespace GD_PISTOL {
 
         if (adaptive) {
             update_struct us;
-            us.a=g.a;
-            us.b=g.b;
+            us.a = g.a;
+            us.b = g.b;
             foreach_feature<update_struct, calculate_l_inf_example<feature_mask_off> >(*g.all, ec, us);
         } else {
-            g.squared_norm_current_example=0;
+            g.squared_norm_current_example = 0;
             foreach_feature<float, calculate_squared_l2_example<feature_mask_off> >(*g.all, ec, g.squared_norm_current_example);
-            g.norm_current_example=sqrt(g.squared_norm_current_example);
-            if (g.max_input<g.norm_current_example) {
-                g.max_input=g.norm_current_example;
-                float tmp = 1.f / (g.max_input * g.a * (g.alpha_single+g.max_input));
-                g.multiplicative_factor = sqrt(2*g.max_input*g.a*g.b) * exp(g.squared_norm_theta / 2 * tmp) * tmp;
-            }            
+            g.norm_current_example = sqrt(g.squared_norm_current_example);
+            if (g.max_input < g.norm_current_example) {
+                g.max_input = g.norm_current_example;
+                float tmp = 1.f / (g.max_input * g.a * (g.alpha_single + g.max_input));
+                g.multiplicative_factor = sqrt(2 * g.max_input * g.a * g.b) * exp(g.squared_norm_theta / 2 * tmp) * tmp;
+            }
         }
-        
+
         ec.partial_prediction = inline_predict(all, ec);
 
         label_data& ld = *(label_data*) ec.ld;
@@ -371,24 +352,23 @@ namespace GD_PISTOL {
 
         //float loss = all.loss->getLoss(all.sd, ld->prediction, ld->label);
         float weighted_deriv = all.loss->first_derivative(all.sd, ld->prediction, ld->label) * ld->weight;
-        //cout<<"Pred:"<<ld->prediction<<" Deriv"<<weighted_deriv<<" label"<<ld->label<<endl;
-        
+
         if (fabs(weighted_deriv) > 1e-8) {
             //g.b++;
             if (adaptive) {
                 update_struct us;
                 us.weighted_deriv = weighted_deriv;
-                us.a=g.a;
-                us.b=g.b;
-                foreach_feature<update_struct, update_theta_alpha_w_multi<feature_mask_off,false> >(*g.all, ec, us);
+                us.a = g.a;
+                us.b = g.b;
+                foreach_feature<update_struct, update_theta_alpha_w_multi<feature_mask_off, false> >(*g.all, ec, us);
             } else {
                 foreach_feature<float, update_theta_single<feature_mask_off> >(*g.all, ec, weighted_deriv);
-                g.alpha_single += g.norm_current_example*fabs(weighted_deriv);
-                g.squared_norm_theta=g.squared_norm_theta-2*weighted_deriv*ec.partial_prediction+weighted_deriv*weighted_deriv*g.squared_norm_current_example;
-                if (g.squared_norm_theta<0)
-                    g.squared_norm_theta=0; // numerical problems might happen, better be safe.
-                float tmp = 1.f / (g.max_input*g.a * (g.alpha_single+g.max_input));
-                g.multiplicative_factor = sqrt(2*g.max_input*g.a*g.b) * exp(g.squared_norm_theta / 2 * tmp) * tmp;
+                g.alpha_single += g.norm_current_example * fabs(weighted_deriv);
+                g.squared_norm_theta = g.squared_norm_theta - 2 * weighted_deriv * ec.partial_prediction + weighted_deriv * weighted_deriv * g.squared_norm_current_example;
+                if (g.squared_norm_theta < 0)
+                    g.squared_norm_theta = 0; // numerical problems might happen, better be safe.
+                float tmp = 1.f / (g.max_input * g.a * (g.alpha_single + g.max_input));
+                g.multiplicative_factor = sqrt(2 * g.max_input * g.a * g.b) * exp(g.squared_norm_theta / 2 * tmp) * tmp;
             }
         }
     }
@@ -471,11 +451,6 @@ namespace GD_PISTOL {
 
         uint32_t text_len = sprintf(buff, "initial_t %f\n", all.initial_t);
         bin_text_read_write_fixed(model_file, (char*) &all.initial_t, sizeof (all.initial_t),
-                "", read,
-                buff, text_len, text);
-
-        text_len = sprintf(buff, "norm normalizer %f\n", g.normalized_sum_norm_x);
-        bin_text_read_write_fixed(model_file, (char*) &g.normalized_sum_norm_x, sizeof (g.normalized_sum_norm_x),
                 "", read,
                 buff, text_len, text);
 
@@ -632,28 +607,20 @@ namespace GD_PISTOL {
     }
 
     learner* setup(vw& all, po::variables_map& vm) {
-        all.adaptive=false;
+        all.adaptive = false;
         gd* g = (gd*) calloc_or_die(1, sizeof (gd));
         g->all = &all;
-        g->normalized_sum_norm_x = 0;
         g->no_win_counter = 0;
-        g->total_weight = 0.;
         g->early_stop_thres = 3;
         g->neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
         g->neg_power_t = -all.power_t;
-        
+
         //g->a=0.25;
-        g->a=1;
-        g->b=1;
-        g->max_input=0;
-        g->squared_norm_theta=0;
-        g->alpha_single=0;
-        
-        if (all.initial_t > 0)//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all.initial_t) previous fake datapoints all with norm 1
-        {
-            g->normalized_sum_norm_x = all.initial_t;
-            g->total_weight = all.initial_t;
-        }
+        g->a = 1;
+        g->b = 1;
+        g->max_input = 0;
+        g->squared_norm_theta = 0;
+        g->alpha_single = 0;
 
         bool feature_mask_off = true;
         if (vm.count("feature_mask"))
@@ -669,13 +636,9 @@ namespace GD_PISTOL {
             g->initial_constant = vm["constant"].as<float>();
         }
 
-        if ( vm.count("adaptive") ) {
+        if (vm.count("adaptive")) {
             all.adaptive = true;
         }
-        
-        if (pow((double) all.eta_decay_rate, (double) all.numpasses) < 0.0001)
-            cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double) all.eta_decay_rate, (double) all.numpasses)
-            << " adjust --decay_learning_rate larger to avoid this." << endl;
 
         learner* ret = new learner(g, 1);
 
@@ -684,21 +647,21 @@ namespace GD_PISTOL {
                 ret->set_learn<gd, learn<true, true> >();
                 ret->set_update<gd, update<true, true> >();
                 if (all.audit || all.hash_inv) {
-                    ret->set_predict<gd, predict<true,true,true> >();
-                    g->predict = predict<true,true,true>;
+                    ret->set_predict<gd, predict<true, true, true> >();
+                    g->predict = predict<true, true, true>;
                 } else {
-                    ret->set_predict<gd, predict<true,true,false> >();
-                    g->predict = predict<true,true,false>;
+                    ret->set_predict<gd, predict<true, true, false> >();
+                    g->predict = predict<true, true, false>;
                 }
             } else {
                 ret->set_learn<gd, learn<false, true> >();
                 ret->set_update<gd, update<false, true> >();
                 if (all.audit || all.hash_inv) {
-                    ret->set_predict<gd, predict<false,true,true> >();
-                    g->predict = predict<false,true,true>;
+                    ret->set_predict<gd, predict<false, true, true> >();
+                    g->predict = predict<false, true, true>;
                 } else {
-                    ret->set_predict<gd, predict<false,true,false> >();
-                    g->predict = predict<false,true,false>;
+                    ret->set_predict<gd, predict<false, true, false> >();
+                    g->predict = predict<false, true, false>;
                 }
             }
         } else {
@@ -706,31 +669,29 @@ namespace GD_PISTOL {
                 ret->set_learn<gd, learn<true, false> >();
                 ret->set_update<gd, update<true, false> >();
                 if (all.audit || all.hash_inv) {
-                    ret->set_predict<gd, predict<true,false,true> >();
-                    g->predict = predict<true,false,true>;
+                    ret->set_predict<gd, predict<true, false, true> >();
+                    g->predict = predict<true, false, true>;
                 } else {
-                    ret->set_predict<gd, predict<true,false,false> >();
-                    g->predict = predict<true,false,false>;
+                    ret->set_predict<gd, predict<true, false, false> >();
+                    g->predict = predict<true, false, false>;
                 }
             } else {
                 ret->set_learn<gd, learn<false, false> >();
                 ret->set_update<gd, update<false, false> >();
                 if (all.audit || all.hash_inv) {
-                    ret->set_predict<gd, predict<false,false,true> >();
-                    g->predict = predict<false,false,true>;
+                    ret->set_predict<gd, predict<false, false, true> >();
+                    g->predict = predict<false, false, true>;
                 } else {
-                    ret->set_predict<gd, predict<false,false,false> >();
-                    g->predict = predict<false,false,false>;
+                    ret->set_predict<gd, predict<false, false, false> >();
+                    g->predict = predict<false, false, false>;
                 }
             }
         }
 
-        //g->multiplicative_factor=sqrt(2*g->a*g->b);
-        
         uint32_t stride;
         if (all.adaptive) {
             stride = 4;
-            g->multiplicative_factor=1;
+            g->multiplicative_factor = 1;
         } else
             stride = 2;
 
@@ -740,7 +701,7 @@ namespace GD_PISTOL {
         ret->set_save_load<gd, save_load>();
 
         ret->set_end_pass<gd, end_pass>();
-        
+
         return ret;
     }
 }
