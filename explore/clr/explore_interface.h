@@ -3,6 +3,10 @@
 using namespace System;
 using namespace System::Collections::Generic;
 
+/** \defgroup MultiWorldTestingCsharp
+\brief C# implementation, for sample usage see: https://github.com/sidsen/vowpal_wabbit/blob/v0/cs_test/ExploreOnlySample.cs
+*/
+
 /*!
 *  \addtogroup MultiWorldTestingCsharp
 *  @{

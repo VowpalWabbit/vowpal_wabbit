@@ -27,6 +27,10 @@ using namespace std;
 
 #include "utility.h"
 
+/** \defgroup MultiWorldTestingCpp
+\brief C++ implementation, for sample usage see: https://github.com/sidsen/vowpal_wabbit/blob/v0/explore/explore_sample.cpp
+*/
+
 /*!
 *  \addtogroup MultiWorldTestingCpp
 *  @{
