@@ -180,10 +180,10 @@ namespace CBIFY {
 	vw_recorder<vw_context> recorder;
 	MwtExplorer<vw_context> mwt("vw", recorder);
 
-	vector<unique_ptr<IPolicy<vw_context>>> policies;
+	vector<PolicyPtr<vw_context>> policies;
 	for (size_t i = 0; i < data.bags; i++)
 	{
-		policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
+		policies.push_back(PolicyPtr<vw_context>(new vw_policy(i)));
 	}
 	BootstrapExplorer<vw_context> explorer(policies, (u32)data.k);
 

@@ -155,10 +155,12 @@ int main(int argc, char* argv[])
 		MwtExplorer<MyContext> mwt("appid", recorder);
 
 		u32 num_bags = 2;
-		vector<unique_ptr<IPolicy<MyContext>>> policy_functions;
+
+		// Create a vector of smart pointers to default policies using the built-in type PolicyPtr<Context>
+		vector<PolicyPtr<MyContext>> policy_functions;
 		for (size_t i = 0; i < num_bags; i++)
 		{
-			policy_functions.push_back(unique_ptr<IPolicy<MyContext>>(new MyPolicy()));
+			policy_functions.push_back(PolicyPtr<MyContext>(new MyPolicy()));
 		}
 		int num_actions = 10;
 		BootstrapExplorer<MyContext> explorer(policy_functions, num_actions);
