@@ -13,7 +13,38 @@ using namespace MultiWorldTesting;
 
 namespace CBIFY {
 
+  struct vw_context;
+  void safety(v_array<float>& distribution, float min_prob);
+
+	class vw_policy : public IPolicy<vw_context>
+	{
+	public:
+		vw_policy() : m_index(-1) { }
+		vw_policy(size_t i) : m_index((int)i) { }
+		u32 Choose_Action(vw_context& ctx);
+	private:
+		int m_index;
+	};
+
+  class vw_scorer : public IScorer<vw_context>
+  {
+  public:
+    vector<float> Score_Actions(vw_context& ctx);
+  };
+
+  class vw_recorder : public IRecorder<vw_context>
+  {
+  public:
+    void Record(vw_context& context, u32 action, float probability, string unique_key);
+    u32 Get_Action() { return m_action; }
+    float Get_Prob() { return m_prob; }
+  private:
+    u32 m_action;
+    float m_prob;
+  };
+
   struct cbify {
+
     size_t k;
     
     size_t tau;
@@ -32,6 +63,16 @@ namespace CBIFY {
 
     learner* cs;
     vw* all;
+
+    unique_ptr<vw_policy> policy;
+    vector<PolicyPtr<vw_context>> policies;
+    unique_ptr<vw_scorer> scorer;
+    unique_ptr<vw_recorder> recorder;
+    unique_ptr<MwtExplorer<vw_context>> mwt_explorer;
+    unique_ptr<TauFirstExplorer<vw_context>> tau_explorer;
+    unique_ptr<EpsilonGreedyExplorer<vw_context>> greedy_explorer;
+    unique_ptr<BootstrapExplorer<vw_context>> bootstrap_explorer;
+    unique_ptr<GenericExplorer<vw_context>> generic_explorer;
   };
   
   uint32_t do_uniform(cbify& data)
@@ -58,45 +99,49 @@ namespace CBIFY {
 	  cbify* data;
   };
 
-  class vw_policy : public IPolicy<vw_context>
+  u32 vw_policy::Choose_Action(vw_context& ctx)
   {
-  public:
-	  vw_policy() : m_index(-1) { }
-	  vw_policy(size_t i) : m_index((int)i) { }
+    if (m_index == -1)
+    {
+      ctx.l->predict(*ctx.e);
+    }
+    else
+    {
+      ctx.l->predict(*ctx.e, (size_t)m_index);
+    }
+    return (u32)(((CB::label*)ctx.e->ld)->prediction);
+  }
 
-	  u32 Choose_Action(vw_context& ctx)
-	  {
-		  if (m_index == -1)
-		  {
-			  ctx.l->predict(*ctx.e);
-		  }
-		  else
-		  {
-			  ctx.l->predict(*ctx.e, (size_t)m_index);
-		  }
-		  return (u32)(((CB::label*)ctx.e->ld)->prediction);
-	  }
-  private:
-	  int m_index;
-  };
 
-  template <class Ctx>
-  class vw_recorder : public IRecorder<Ctx>
+  void vw_recorder::Record(vw_context& context, u32 action, float probability, string unique_key)
   {
-  public:
-	  void Record(Ctx& context, u32 action, float probability, string unique_key)
-	  {
-		  m_action = action;
-		  m_prob = probability;
-	  }
+    m_action = action;
+    m_prob = probability;
+  }
 
-	  u32 Get_Action() { return m_action; }
-	  float Get_Prob() { return m_prob; }
+  vector<float> vw_scorer::Score_Actions(vw_context& ctx)
+  {
+    float additive_probability = 1.f / (float)ctx.data->bags;
+    for (size_t i = 0; i < ctx.data->bags; i++)
+    { //get predicted cost-sensitive predictions
+      if (i == 0)
+        ctx.data->cs->predict(*ctx.e, i);
+      else
+        ctx.data->cs->predict(*ctx.e, i + 1);
+      ctx.data->count[ctx.data->cs_label.prediction - 1] += additive_probability;
+      ctx.data->predictions[i] = (uint32_t)ctx.data->cs_label.prediction;
+    }
+    float min_prob = ctx.data->epsilon * min(1.f / ctx.data->k, 1.f / (float)sqrt(ctx.data->counter * ctx.data->k));
 
-  private:
-	  u32 m_action;
-	  float m_prob;
-  };
+    safety(ctx.data->count, min_prob);
+
+    vector<float> scores;
+    for (size_t i = 0; i < ctx.data->k; i++)
+    {
+      scores.push_back(ctx.data->count[i]);
+    }
+    return scores;
+  }
 
   template <bool is_learn>
   void predict_or_learn_first(cbify& data, learner& base, example& ec)
@@ -108,15 +153,9 @@ namespace CBIFY {
 	vwc.l = &base;
 	vwc.e = &ec;
 
-	vw_recorder<vw_context> recorder;
-	MwtExplorer<vw_context> mwt("vw", recorder);
-
-	vw_policy policy;
-	TauFirstExplorer<vw_context> explorer(policy, (u32)data.tau, (u32)data.k);
-
     if (data.tau && is_learn)
       {
-	uint32_t action = mwt.Choose_Action(explorer, to_string(ec.example_counter), vwc);
+	uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer.get(), to_string(ec.example_counter), vwc);
 	ec.loss = loss(ld->label, action);
 	data.tau--;
 	CB::cb_class l = {ec.loss, action, 1.f / data.k, 0};
@@ -131,7 +170,7 @@ namespace CBIFY {
       {
 	data.cb_label.costs.erase();
 	ec.ld = &(data.cb_label);
-	ld->prediction = mwt.Choose_Action(explorer, to_string(ec.example_counter), vwc);
+  ld->prediction = data.mwt_explorer->Choose_Action(*data.tau_explorer.get(), to_string(ec.example_counter), vwc);
 	ec.loss = loss(ld->label, ld->prediction);
       }
     ec.ld = ld;
@@ -144,19 +183,13 @@ namespace CBIFY {
     ec.ld = &(data.cb_label);
     data.cb_label.costs.erase();
     
-	vw_recorder<vw_context> recorder;
-	MwtExplorer<vw_context> mwt("vw", recorder);
-
-	vw_policy policy;
-	EpsilonGreedyExplorer<vw_context> explorer(policy, data.epsilon, (u32)data.k);
-
 	vw_context vwc;
 	vwc.l = &base;
 	vwc.e = &ec;
-	mwt.Choose_Action(explorer, to_string(ec.example_counter), vwc);
+  data.mwt_explorer->Choose_Action(*data.greedy_explorer.get(), to_string(ec.example_counter), vwc);
 
-	u32 action = recorder.Get_Action();
-	float prob = recorder.Get_Prob();
+  u32 action = data.recorder->Get_Action();
+	float prob = data.recorder->Get_Prob();
 
 	CB::cb_class l = { loss(ld->label, action), action, prob };
 	data.cb_label.costs.push_back(l);
@@ -177,26 +210,16 @@ namespace CBIFY {
     ec.ld = &(data.cb_label);
     data.cb_label.costs.erase();
 
-	vw_recorder<vw_context> recorder;
-	MwtExplorer<vw_context> mwt("vw", recorder);
-
-	vector<PolicyPtr<vw_context>> policies;
-	for (size_t i = 0; i < data.bags; i++)
-	{
-		policies.push_back(PolicyPtr<vw_context>(new vw_policy(i)));
-	}
-	BootstrapExplorer<vw_context> explorer(policies, (u32)data.k);
-
 	vw_context context;
 	context.l = &base;
 	context.e = &ec;
-	uint32_t action = mwt.Choose_Action(explorer, to_string(ec.example_counter), context);
+  uint32_t action = data.mwt_explorer->Choose_Action(*data.bootstrap_explorer.get(), to_string(ec.example_counter), context);
 
     assert(action != 0);
     if (is_learn)
       {
-	assert(action == recorder.Get_Action());
-	float probability = recorder.Get_Prob();
+  assert(action == data.recorder->Get_Action());
+  float probability = data.recorder->Get_Prob();
 
 	CB::cb_class l = {loss(ld->label, action), 
 			  action, probability};
@@ -263,34 +286,6 @@ namespace CBIFY {
     cs_ld.costs.push_back( wc );
   }
 
-  class vw_scorer : public IScorer<vw_context>
-  {
-  public:
-	  vector<float> Score_Actions(vw_context& ctx)
-	  {
-		  float additive_probability = 1.f / (float)ctx.data->bags;
-		  for (size_t i = 0; i < ctx.data->bags; i++)
-		  { //get predicted cost-sensitive predictions
-			  if (i == 0)
-				  ctx.data->cs->predict(*ctx.e, i);
-			  else
-				  ctx.data->cs->predict(*ctx.e, i + 1);
-			  ctx.data->count[ctx.data->cs_label.prediction - 1] += additive_probability;
-			  ctx.data->predictions[i] = (uint32_t)ctx.data->cs_label.prediction;
-		  }
-		  float min_prob = ctx.data->epsilon * min(1.f / ctx.data->k, 1.f / (float)sqrt(ctx.data->counter * ctx.data->k));
-
-		  safety(ctx.data->count, min_prob);
-
-		  vector<float> scores;
-		  for (size_t i = 0; i < ctx.data->k; i++)
-		  {
-			  scores.push_back(ctx.data->count[i]);
-		  }
-		  return scores;
-	  }
-  };
-
   template <bool is_learn>
   void predict_or_learn_cover(cbify& data, learner& base, example& ec)
   {//Randomize over predictions from a base set of predictors
@@ -320,21 +315,15 @@ namespace CBIFY {
 
     float min_prob = data.epsilon * min (1.f / data.k, 1.f / (float)sqrt(data.counter * data.k));
     
-	vw_recorder<vw_context> recorder;
-	MwtExplorer<vw_context> mwt("vw", recorder);
-
-	vw_scorer scorer;
-	GenericExplorer<vw_context> explorer(scorer, (u32)data.k);
-
 	vw_context cp;
 	cp.data = &data;
 	cp.e = &ec;
-	uint32_t action = mwt.Choose_Action(explorer, to_string(ec.example_counter), cp);
+  uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer.get(), to_string(ec.example_counter), cp);
 	
     if (is_learn)
       {
 	data.cb_label.costs.erase();
-	float probability = recorder.Get_Prob();
+  float probability = data.recorder->Get_Prob();
 	CB::cb_class l = {loss(ld->label, action), 
 			  action, probability};
 	data.cb_label.costs.push_back(l);
@@ -415,6 +404,8 @@ namespace CBIFY {
 
     all.p->lp = MULTICLASS::mc_label;
     learner* l;
+    data->recorder.reset(new vw_recorder());
+    data->mwt_explorer.reset(new MwtExplorer<vw_context>("vw", *data->recorder.get()));
     if (vm.count("cover"))
       {
 	data->bags = (uint32_t)vm["cover"].as<size_t>();
@@ -423,9 +414,11 @@ namespace CBIFY {
 	data->predictions.resize(data->bags);
 	data->second_cs_label.costs.resize(data->k);
 	data->second_cs_label.costs.end = data->second_cs_label.costs.begin+data->k;
-	if ( vm.count("epsilon") ) 
+  if (vm.count("epsilon"))
 	  data->epsilon = vm["epsilon"].as<float>();
-	l = new learner(data, all.l, data->bags + 1);
+  data->scorer.reset(new vw_scorer());
+  data->generic_explorer.reset(new GenericExplorer<vw_context>(*data->scorer.get(), (u32)data->k));
+  l = new learner(data, all.l, data->bags + 1);
 	l->set_learn<cbify, predict_or_learn_cover<true> >();
 	l->set_predict<cbify, predict_or_learn_cover<false> >();
       }
@@ -433,6 +426,11 @@ namespace CBIFY {
       {
 	data->bags = (uint32_t)vm["bag"].as<size_t>();
 	data->count.resize(data->k+1);
+  for (size_t i = 0; i < data->bags; i++)
+  {
+    data->policies.push_back(PolicyPtr<vw_context>(new vw_policy(i)));
+  }
+  data->bootstrap_explorer.reset(new BootstrapExplorer<vw_context>(data->policies, (u32)data->k));
 	l = new learner(data, all.l, data->bags);
 	l->set_learn<cbify, predict_or_learn_bag<true> >();
 	l->set_predict<cbify, predict_or_learn_bag<false> >();
@@ -440,7 +438,9 @@ namespace CBIFY {
     else if (vm.count("first") )
       {
 	data->tau = (uint32_t)vm["first"].as<size_t>();
-	l = new learner(data, all.l, 1);
+  data->policy.reset(new vw_policy());
+  data->tau_explorer.reset(new TauFirstExplorer<vw_context>(*data->policy.get(), (u32)data->tau, (u32)data->k));
+  l = new learner(data, all.l, 1);
 	l->set_learn<cbify, predict_or_learn_first<true> >();
 	l->set_predict<cbify, predict_or_learn_first<false> >();
       }
@@ -448,6 +448,8 @@ namespace CBIFY {
       {
 	if ( vm.count("epsilon") ) 
 	  data->epsilon = vm["epsilon"].as<float>();
+  data->policy.reset(new vw_policy());
+  data->greedy_explorer.reset(new EpsilonGreedyExplorer<vw_context>(*data->policy.get(), data->epsilon, (u32)data->k));
 	l = new learner(data, all.l, 1);
 	l->set_learn<cbify, predict_or_learn_greedy<true> >();
 	l->set_predict<cbify, predict_or_learn_greedy<false> >();
