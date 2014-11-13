@@ -53,6 +53,20 @@ library/gd_mf_weights
 library/test_search
 test/RunTests.last.times
 *.dSYM
+
+# build folders
+**/x64
+**/obj
+**/Debug
+**/Release
+**/dll
+**/ipch
+
+# VS files
+*.opensdf
+*.suo
+*.sdf
+*.vcxproj.user
 *.so
 demo/mnist/infimnist
 demo/ocr/letter.*

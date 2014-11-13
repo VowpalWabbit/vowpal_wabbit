@@ -40,16 +40,3 @@ float frand48_noadvance()
   v = old_v;
   return ret;
 }
-
-/*
-//int mantissa = 128 << 15;
-
-int main(int argc, char *argv[])
-{
-  for (size_t i = 0 ; i < 100000; i++) {
-    msrand48(i);
-    cout << frand48() << endl;
-  }
-}
-
-*/

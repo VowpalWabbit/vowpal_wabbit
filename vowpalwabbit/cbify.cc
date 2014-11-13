@@ -6,8 +6,10 @@
 #include "cb_algs.h"
 #include "rand48.h"
 #include "bs.h"
+#include "../explore/static/MWTExplorer.h"
 
 using namespace LEARNER;
+using namespace MultiWorldTesting;
 
 namespace CBIFY {
 
@@ -50,14 +52,71 @@ namespace CBIFY {
       return 0.;
   }
 
+  struct vw_context {
+	  learner* l;
+	  example* e;
+	  cbify* data;
+  };
+
+  class vw_policy : public IPolicy<vw_context>
+  {
+  public:
+	  vw_policy() : m_index(-1) { }
+	  vw_policy(size_t i) : m_index((int)i) { }
+
+	  u32 Choose_Action(vw_context& ctx)
+	  {
+		  if (m_index == -1)
+		  {
+			  ctx.l->predict(*ctx.e);
+		  }
+		  else
+		  {
+			  ctx.l->predict(*ctx.e, (size_t)m_index);
+		  }
+		  return (u32)(((CB::label*)ctx.e->ld)->prediction);
+	  }
+  private:
+	  int m_index;
+  };
+
+  template <class Ctx>
+  class vw_recorder : public IRecorder<Ctx>
+  {
+  public:
+	  void Record(Ctx& context, u32 action, float probability, string unique_key)
+	  {
+		  m_action = action;
+		  m_prob = probability;
+	  }
+
+	  u32 Get_Action() { return m_action; }
+	  float Get_Prob() { return m_prob; }
+
+  private:
+	  u32 m_action;
+	  float m_prob;
+  };
+
   template <bool is_learn>
   void predict_or_learn_first(cbify& data, learner& base, example& ec)
   {//Explore tau times, then act according to optimal.
     MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
     //Use CB to find current prediction for remaining rounds.
+
+	vw_context vwc;
+	vwc.l = &base;
+	vwc.e = &ec;
+
+	vw_recorder<vw_context> recorder;
+	MwtExplorer<vw_context> mwt("vw", recorder);
+
+	vw_policy policy;
+	TauFirstExplorer<vw_context> explorer(policy, (u32)data.tau, (u32)data.k);
+
     if (data.tau && is_learn)
       {
-	uint32_t action = (uint32_t)do_uniform(data);
+	uint32_t action = mwt.Choose_Action(explorer, to_string(ec.example_counter), vwc);
 	ec.loss = loss(ld->label, action);
 	data.tau--;
 	CB::cb_class l = {ec.loss, action, 1.f / data.k, 0};
@@ -72,13 +131,12 @@ namespace CBIFY {
       {
 	data.cb_label.costs.erase();
 	ec.ld = &(data.cb_label);
-	base.predict(ec);
-	ld->prediction = data.cb_label.prediction;
+	ld->prediction = mwt.Choose_Action(explorer, to_string(ec.example_counter), vwc);
 	ec.loss = loss(ld->label, ld->prediction);
       }
     ec.ld = ld;
   }
-  
+
   template <bool is_learn>
   void predict_or_learn_greedy(cbify& data, learner& base, example& ec)
   {//Explore uniform random an epsilon fraction of the time.
@@ -86,25 +144,22 @@ namespace CBIFY {
     ec.ld = &(data.cb_label);
     data.cb_label.costs.erase();
     
-    base.predict(ec);
-    uint32_t action = data.cb_label.prediction;
+	vw_recorder<vw_context> recorder;
+	MwtExplorer<vw_context> mwt("vw", recorder);
 
-    float base_prob = data.epsilon / data.k;
-    if (frand48() < 1. - data.epsilon)
-      {
-	CB::cb_class l = {loss(ld->label, action), 
-			  action, 1.f - data.epsilon + base_prob};
+	vw_policy policy;
+	EpsilonGreedyExplorer<vw_context> explorer(policy, data.epsilon, (u32)data.k);
+
+	vw_context vwc;
+	vwc.l = &base;
+	vwc.e = &ec;
+	mwt.Choose_Action(explorer, to_string(ec.example_counter), vwc);
+
+	u32 action = recorder.Get_Action();
+	float prob = recorder.Get_Prob();
+
+	CB::cb_class l = { loss(ld->label, action), action, prob };
 	data.cb_label.costs.push_back(l);
-      }
-    else
-      {
-	action = do_uniform(data);
-	CB::cb_class l = {loss(ld->label, action), 
-			  action, base_prob};
-	if (action == data.cb_label.prediction)
-	  l.probability = 1.f - data.epsilon + base_prob;
-	data.cb_label.costs.push_back(l);
-      }
     
     if (is_learn)
       base.learn(ec);
@@ -122,22 +177,27 @@ namespace CBIFY {
     ec.ld = &(data.cb_label);
     data.cb_label.costs.erase();
 
-    for (size_t j = 1; j <= data.k; j++)
-       data.count[j] = 0;
-	 
-    size_t bag = choose_bag(data);
-    uint32_t action = 0;
-    for (size_t i = 0; i < data.bags; i++)
-      {
-	base.predict(ec,i);
-	data.count[data.cb_label.prediction]++;
-	if (i == bag)
-	  action = data.cb_label.prediction;
-      }
+	vw_recorder<vw_context> recorder;
+	MwtExplorer<vw_context> mwt("vw", recorder);
+
+	vector<unique_ptr<IPolicy<vw_context>>> policies;
+	for (size_t i = 0; i < data.bags; i++)
+	{
+		policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
+	}
+	BootstrapExplorer<vw_context> explorer(policies, (u32)data.k);
+
+	vw_context context;
+	context.l = &base;
+	context.e = &ec;
+	uint32_t action = mwt.Choose_Action(explorer, to_string(ec.example_counter), context);
+
     assert(action != 0);
     if (is_learn)
       {
-	float probability = (float)data.count[action] / (float)data.bags;
+	assert(action == recorder.Get_Action());
+	float probability = recorder.Get_Prob();
+
 	CB::cb_class l = {loss(ld->label, action), 
 			  action, probability};
 	data.cb_label.costs.push_back(l);
@@ -203,6 +263,34 @@ namespace CBIFY {
     cs_ld.costs.push_back( wc );
   }
 
+  class vw_scorer : public IScorer<vw_context>
+  {
+  public:
+	  vector<float> Score_Actions(vw_context& ctx)
+	  {
+		  float additive_probability = 1.f / (float)ctx.data->bags;
+		  for (size_t i = 0; i < ctx.data->bags; i++)
+		  { //get predicted cost-sensitive predictions
+			  if (i == 0)
+				  ctx.data->cs->predict(*ctx.e, i);
+			  else
+				  ctx.data->cs->predict(*ctx.e, i + 1);
+			  ctx.data->count[ctx.data->cs_label.prediction - 1] += additive_probability;
+			  ctx.data->predictions[i] = (uint32_t)ctx.data->cs_label.prediction;
+		  }
+		  float min_prob = ctx.data->epsilon * min(1.f / ctx.data->k, 1.f / (float)sqrt(ctx.data->counter * ctx.data->k));
+
+		  safety(ctx.data->count, min_prob);
+
+		  vector<float> scores;
+		  for (size_t i = 0; i < ctx.data->k; i++)
+		  {
+			  scores.push_back(ctx.data->count[i]);
+		  }
+		  return scores;
+	  }
+  };
+
   template <bool is_learn>
   void predict_or_learn_cover(cbify& data, learner& base, example& ec)
   {//Randomize over predictions from a base set of predictors
@@ -229,27 +317,24 @@ namespace CBIFY {
     float additive_probability = 1.f / (float)data.bags;
 
     ec.ld = &data.cs_label;
-    for (size_t i = 0; i < data.bags; i++)
-      { //get predicted cost-sensitive predictions
-	if (i == 0)
-	  data.cs->predict(ec, i);
-	else
-	  data.cs->predict(ec,i+1);
-	data.count[data.cs_label.prediction-1] += additive_probability;
-	data.predictions[i] = (uint32_t)data.cs_label.prediction;
-      }
 
     float min_prob = data.epsilon * min (1.f / data.k, 1.f / (float)sqrt(data.counter * data.k));
     
-    safety(data.count, min_prob);
-    
-    //compute random action
-    uint32_t action = choose_action(data.count);
-    
+	vw_recorder<vw_context> recorder;
+	MwtExplorer<vw_context> mwt("vw", recorder);
+
+	vw_scorer scorer;
+	GenericExplorer<vw_context> explorer(scorer, (u32)data.k);
+
+	vw_context cp;
+	cp.data = &data;
+	cp.e = &ec;
+	uint32_t action = mwt.Choose_Action(explorer, to_string(ec.example_counter), cp);
+	
     if (is_learn)
       {
 	data.cb_label.costs.erase();
-	float probability = (float)data.count[action-1];
+	float probability = recorder.Get_Prob();
 	CB::cb_class l = {loss(ld->label, action), 
 			  action, probability};
 	data.cb_label.costs.push_back(l);

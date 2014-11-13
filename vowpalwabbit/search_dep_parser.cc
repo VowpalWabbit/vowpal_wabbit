@@ -82,7 +82,7 @@ namespace DepParserTask {
   } // if we had task data, we'd want to free it here
 
   void inline add_feature(example *ex,  uint32_t idx, unsigned  char ns, size_t mask, size_t ss){
-    feature f = {1.0f, (idx<<ss)&mask};
+    feature f = {1.0f, (idx<<ss) & (uint32_t)mask};
     ex->atomics[(int)ns].push_back(f);
   }
   void add_quad_features(Search::search& srn, example *ex){

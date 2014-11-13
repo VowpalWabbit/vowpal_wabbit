@@ -810,7 +810,9 @@ namespace Search {
   
   template<class T>
   void ensure_size(v_array<T>& A, size_t sz) {
-    if (A.end_array - A.begin < sz) A.resize(sz*2+1, true);
+    T* begin = A.begin;
+    if (A.end_array - begin < sz) 
+      A.resize(sz*2+1, true);
     A.end = A.begin + sz;
   }
 
