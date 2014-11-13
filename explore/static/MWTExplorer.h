@@ -602,7 +602,8 @@ public:
 	///
 	/// The constructor is the only public member, because this should be used with the MwtExplorer.
     ///
-    /// @param default_policy_functions  A set of default policies to be uniform random over.
+    /// @param default_policy_functions  A set of default policies to be uniform random over. 
+	/// The policy pointers must be valid throughout the lifetime of this explorer.
     /// @param num_actions               The number of actions to randomize over.
 	///
 	BootstrapExplorer(vector<PolicyPtr<Ctx>>& default_policy_functions, u32 num_actions) :
