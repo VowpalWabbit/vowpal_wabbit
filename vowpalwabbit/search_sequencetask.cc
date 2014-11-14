@@ -21,7 +21,7 @@ namespace SequenceTask {
   }
 
   void run(Search::search& sch, vector<example<void>*>& ec) {
-    for (int i=0; i<ec.size(); i++) {
+    for (size_t i=0; i<ec.size(); i++) {
       action oracle     = MULTICLASS::get_example_label(ec[i]);
       size_t prediction = Search::predictor(sch, i+1).set_input(*ec[i]).set_oracle(oracle).set_condition_range(i, sch.get_history_length(), 'p').predict();
 

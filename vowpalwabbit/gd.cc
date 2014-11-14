@@ -39,7 +39,7 @@ namespace GD
     float neg_norm_power;
     float neg_power_t;
     float update_multiplier;
-    void (*predict)(gd&, learner&, example<void>&);
+    void (*predict)(gd&, learner&, example<label_data>&);
 
     vw* all;
   };
@@ -87,7 +87,7 @@ namespace GD
   }
   
   template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-  void train(gd& g, example<void>& ec, float update)
+  void train(gd& g, example<label_data>& ec, float update)
   {
     if (normalized)
       update *= g.update_multiplier;
@@ -235,7 +235,7 @@ void audit_triple(vw& all, feature& f0, audit_data* f0_audit, feature& f1, audit
   audit_features(all, right_features, audit_right, results, prepend, ns_pre, halfhash + offset);  
 }
 
-void print_features(vw& all, example<void>& ec)
+void print_features(vw& all, example<label_data>& ec)
 {
   weight* weights = all.reg.weight_vector;
   
@@ -306,7 +306,7 @@ void print_features(vw& all, example<void>& ec)
     }
 }
 
-void print_audit_features(vw& all, example<void>& ec)
+void print_audit_features(vw& all, example<label_data>& ec)
 {
   label_data& ld = *(label_data*)ec.ld;
   if(all.audit)
@@ -338,7 +338,7 @@ float finalize_prediction(shared_data* sd, float ret)
    p.prediction += trunc_weight(fw, p.gravity) * fx;
  }
 
- inline float trunc_predict(vw& all, example<void>& ec, double gravity)
+ inline float trunc_predict(vw& all, example<label_data>& ec, double gravity)
  {
    label_data* ld = (label_data*)ec.ld;
    trunc_data temp = {ld->initial, (float)gravity};
@@ -347,7 +347,7 @@ float finalize_prediction(shared_data* sd, float ret)
  }
 
 template<bool l1, bool audit>
-void predict(gd& g, learner& base, example<void>& ec)
+void predict(gd& g, learner& base, example<label_data>& ec)
 {
   vw& all = *g.all;
   
@@ -440,7 +440,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
 }
   
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-  float get_pred_per_update(gd& g, example<void>& ec)
+  float get_pred_per_update(gd& g, example<label_data>& ec)
   {//We must traverse the features in _precisely_ the same order as during training.
     label_data* ld = (label_data*)ec.ld;
     vw& all = *g.all;
@@ -463,7 +463,7 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
   }
 
 template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-float compute_update(gd& g, example<void>& ec)
+float compute_update(gd& g, example<label_data>& ec)
 {//invariant: not a test label, importance weight > 0
   label_data* ld = (label_data*)ec.ld;
   vw& all = *g.all;
@@ -506,7 +506,7 @@ float compute_update(gd& g, example<void>& ec)
 }
 
 template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-void update(gd& g, learner& base, example<void>& ec)
+void update(gd& g, learner& base, example<label_data>& ec)
 {//invariant: not a test label, importance weight > 0
   float update;
   if ( (update = compute_update<invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (g, ec)) != 0.)
@@ -517,7 +517,7 @@ void update(gd& g, learner& base, example<void>& ec)
 }
 
 template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-void learn(gd& g, learner& base, example<void>& ec)
+void learn(gd& g, learner& base, example<label_data>& ec)
 {//invariant: not a test label, importance weight > 0
   assert(ec.in_use);
   assert(((label_data*)ec.ld)->label != FLT_MAX);
@@ -791,14 +791,14 @@ uint32_t set_learn(vw& all, learner* ret, bool feature_mask_off)
   all.normalized_idx = normalized;
   if (feature_mask_off)
     {
-      ret->set_learn<gd, learn<invariant, sqrt_rate, true, adaptive, normalized, spare> >();
-      ret->set_update<gd, update<invariant, sqrt_rate, true, adaptive, normalized, spare> >();
+      ret->set_learn<gd, label_data, learn<invariant, sqrt_rate, true, adaptive, normalized, spare> >();
+      ret->set_update<gd, label_data, update<invariant, sqrt_rate, true, adaptive, normalized, spare> >();
       return next;
     }
   else
     {
-      ret->set_learn<gd, learn<invariant, sqrt_rate, false, adaptive, normalized, spare> >();
-      ret->set_update<gd, update<invariant, sqrt_rate, false, adaptive, normalized, spare> >();
+      ret->set_learn<gd, label_data, learn<invariant, sqrt_rate, false, adaptive, normalized, spare> >();
+      ret->set_update<gd, label_data, update<invariant, sqrt_rate, false, adaptive, normalized, spare> >();
       return next;
     }
 }
@@ -900,22 +900,22 @@ learner* setup(vw& all, po::variables_map& vm)
   if (all.reg_mode % 2)
     if (all.audit || all.hash_inv)
       {
-	ret->set_predict<gd, predict<true, true> >();
+	ret->set_predict<gd, label_data, predict<true, true> >();
 	g->predict = predict<true, true>;
       }
     else
       {
-	ret->set_predict<gd, predict<true, false> >();
+	ret->set_predict<gd, label_data, predict<true, false> >();
 	g->predict = predict<true, false>;
       }
   else if (all.audit || all.hash_inv)
     {
-      ret->set_predict<gd, predict<false, true> >();
+      ret->set_predict<gd, label_data, predict<false, true> >();
       g->predict = predict<false, true>;
     }
   else
     {
-      ret->set_predict<gd, predict<false, false> >();
+      ret->set_predict<gd, label_data, predict<false, false> >();
       g->predict = predict<false, false>;
     }
   

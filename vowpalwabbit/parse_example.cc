@@ -220,7 +220,8 @@ public:
                 str[0] = index;
                 str[1] = '_';
                 char *c = str+2;
-                for (char*f=feature_name.begin; f!=feature_name.end; ++f) *(c++) = *f;
+                for (char* f2=feature_name.begin; f2!=feature_name.end; ++f2) 
+		  *(c++) = *f2;
                 *(c++) = '=';
                 sprintf(c, "%d", id);
                 audit_data ad = { copy((char*)"dictionary"), str, f->weight_index, f->x, true };

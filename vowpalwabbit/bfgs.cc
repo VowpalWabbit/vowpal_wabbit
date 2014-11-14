@@ -154,7 +154,7 @@ bool test_example(example<void>& ec)
 
   float bfgs_predict(vw& all, example<void>& ec)
   {
-    ec.partial_prediction = GD::inline_predict(all,ec);
+    ec.partial_prediction = GD::inline_predict(all, (example<label_data>&)ec);
     return GD::finalize_prediction(all.sd, ec.partial_prediction);
   }
 
@@ -198,7 +198,7 @@ void update_preconditioner(vw& all, example<void>& ec)
 float dot_with_direction(vw& all, example<void>& ec)
 {
   ec.ft_offset+= W_DIR;  
-  float ret = GD::inline_predict(all, ec);
+  float ret = GD::inline_predict(all, (example<label_data>&) ec);
   ec.ft_offset-= W_DIR;
 
   return ret;

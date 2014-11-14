@@ -60,9 +60,9 @@ namespace LEARNER
   const learn_data generic_learn_fd = {NULL, NULL, generic_learner, generic_learner, NULL};
   const func_data generic_func_fd = {NULL, NULL, generic_func};
   
-  template<class R, void (*T)(R&, learner& base, example<void>& ec)>
+  template<class R, class L, void (*T)(R&, learner& base, example<L>& ec)>
     inline void tlearn(void* d, learner& base, example<void>& ec)
-    { T(*(R*)d, base, ec); }
+  { T(*(R*)d, base, (example<L>&)ec); }
 
   template<class R, void (*T)(R&, io_buf& io, bool read, bool text)>
     inline void tsl(void* d, io_buf& io, bool read, bool text)
@@ -74,17 +74,6 @@ namespace LEARNER
   template<class R, void (*T)(vw& all, R&, example<void>&)>
     inline void tend_example(vw& all, void* d, example<void>& ec)
   { T(all, *(R*)d, ec); }
-
-  template <class T, void (*learn)(T* data, learner& base, example<void>&), void (*predict)(T* data, learner& base, example<void>&)>
-    struct learn_helper {
-      void (*learn_f)(void* data, learner& base, example<void>&);
-      void (*predict_f)(void* data, learner& base, example<void>&);
-      
-      learn_helper() 
-      { learn_f = tlearn<T,learn>;
-	predict_f = tlearn<T,predict>;
-      }
-    };
 
 struct learner {
 private:
@@ -107,11 +96,17 @@ public:
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, ec);
     ec.ft_offset -= (uint32_t)(increment*i);
   }
+  template <class T, class L, void (*u)(T& data, learner& base, example<L>&)>
+  inline void set_learn()
+  {
+    learn_fd.learn_f = tlearn<T,L,u>;
+    learn_fd.update_f = tlearn<T,L,u>;
+  }
   template <class T, void (*u)(T& data, learner& base, example<void>&)>
   inline void set_learn()
   {
-    learn_fd.learn_f = tlearn<T,u>;
-    learn_fd.update_f = tlearn<T,u>;
+    learn_fd.learn_f = tlearn<T,void,u>;
+    learn_fd.update_f = tlearn<T,void,u>;
   }
 
   inline void predict(example<void>& ec, size_t i=0) 
@@ -120,10 +115,15 @@ public:
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, ec);
     ec.ft_offset -= (uint32_t)(increment*i);
   }
+  template <class T, class L, void (*u)(T& data, learner& base, example<L>&)>
+  inline void set_predict()
+  {
+    learn_fd.predict_f = tlearn<T,L,u>;
+  }
   template <class T, void (*u)(T& data, learner& base, example<void>&)>
   inline void set_predict()
   {
-    learn_fd.predict_f = tlearn<T,u>;
+    learn_fd.predict_f = tlearn<T,void,u>;
   }
 
   inline void update(example<void>& ec, size_t i=0) 
@@ -132,10 +132,15 @@ public:
     learn_fd.update_f(learn_fd.data, *learn_fd.base, ec);
     ec.ft_offset -= (uint32_t)(increment*i);
   }
+  template <class T, class L, void (*u)(T& data, learner& base, example<L>&)>
+  inline void set_update()
+  {
+    learn_fd.update_f = tlearn<T,L,u>;
+  }
   template <class T, void (*u)(T& data, learner& base, example<void>&)>
   inline void set_update()
   {
-    learn_fd.update_f = tlearn<T,u>;
+    learn_fd.update_f = tlearn<T,void,u>;
   }
 
   //called anytime saving or loading needs to happen. Autorecursive.

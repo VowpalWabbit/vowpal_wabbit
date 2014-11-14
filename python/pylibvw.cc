@@ -42,7 +42,7 @@ search_ptr get_search_ptr(vw_ptr all) {
   return boost::shared_ptr<Search::search>((Search::search*)(all->searchstr), dont_delete_me);
 }
 
-void my_audit_example(vw_ptr all, example_ptr ec) { GD::print_audit_features(*all, *ec); }
+void my_audit_example(vw_ptr all, example_ptr ec) { GD::print_audit_features(*all, (example<label_data>&)*ec); }
 
 predictor_ptr get_predictor(search_ptr sch, ptag my_tag) {
   Search::predictor* P = new Search::predictor(*sch, my_tag);
