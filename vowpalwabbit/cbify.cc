@@ -26,10 +26,10 @@ namespace CBIFY {
 		int m_index;
 	};
 
-  class vw_scorer : public IScorer<vw_context>
+  class vw_cover_scorer : public IScorer<vw_context>
   {
   public:
-    vw_scorer(float epsilon, size_t cover, u32 num_actions) : 
+    vw_cover_scorer(float epsilon, size_t cover, u32 num_actions) :
       m_epsilon(epsilon), m_cover(cover), m_num_actions(num_actions), m_counter(1)
     { 
       m_scores.resize(num_actions + 1);
@@ -85,7 +85,7 @@ namespace CBIFY {
 
     unique_ptr<vw_policy> policy;
     vector<PolicyPtr<vw_context>> policies;
-    unique_ptr<vw_scorer> scorer;
+    unique_ptr<vw_cover_scorer> scorer;
     unique_ptr<vw_recorder> recorder;
     unique_ptr<MwtExplorer<vw_context>> mwt_explorer;
     unique_ptr<TauFirstExplorer<vw_context>> tau_explorer;
@@ -131,7 +131,7 @@ namespace CBIFY {
     context.recorded = true;
   }
 
-  vector<float> vw_scorer::Score_Actions(vw_context& ctx)
+  vector<float> vw_cover_scorer::Score_Actions(vw_context& ctx)
   {
     float additive_probability = 1.f / (float)m_cover;
     for (size_t i = 0; i < m_cover; i++)
@@ -409,7 +409,7 @@ namespace CBIFY {
   float epsilon = 0.05f;
   if (vm.count("epsilon"))
     epsilon = vm["epsilon"].as<float>();
-  data->scorer.reset(new vw_scorer(epsilon, cover, (u32)data->k));
+  data->scorer.reset(new vw_cover_scorer(epsilon, cover, (u32)data->k));
   data->generic_explorer.reset(new GenericExplorer<vw_context>(*data->scorer.get(), (u32)data->k));
   l = new learner(data, all.l, cover + 1);
 	l->set_learn<cbify, predict_or_learn_cover<true> >();
