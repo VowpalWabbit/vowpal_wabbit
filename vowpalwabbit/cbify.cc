@@ -29,14 +29,34 @@ namespace CBIFY {
   class vw_scorer : public IScorer<vw_context>
   {
   public:
-    vw_scorer(float epsilon, size_t cover) : m_epsilon(epsilon), m_cover(cover) { }
+    vw_scorer(float epsilon, size_t cover, u32 num_actions) : 
+      m_epsilon(epsilon), m_cover(cover), m_num_actions(num_actions), m_counter(1)
+    { 
+      m_scores.resize(num_actions + 1);
+    }
+
     float Get_Epsilon() { return m_epsilon; }
     size_t Get_Cover() { return m_cover; }
+    size_t Get_Counter() { return m_counter; }
+    
+    v_array<float>& Get_Scores() 
+    { 
+      m_scores.erase();
+      for (size_t i = 0; i < m_num_actions; i++)
+      {
+        m_scores.push_back(0);
+      }
+      return m_scores; 
+    };
+
     vector<float> Score_Actions(vw_context& ctx);
 
   private:
     float m_epsilon;
     size_t m_cover;
+    u32 m_num_actions;
+    size_t m_counter;
+    v_array<float> m_scores;
   };
 
   class vw_recorder : public IRecorder<vw_context>
@@ -54,9 +74,6 @@ namespace CBIFY {
 
     size_t k;
     
-    size_t counter;
-
-    v_array<float> count;
     v_array<uint32_t> predictions;
     
     CB::label cb_label;
@@ -123,18 +140,21 @@ namespace CBIFY {
         ctx.data->cs->predict(*ctx.e, i);
       else
         ctx.data->cs->predict(*ctx.e, i + 1);
-      ctx.data->count[ctx.data->cs_label.prediction - 1] += additive_probability;
+      m_scores[ctx.data->cs_label.prediction - 1] += additive_probability;
       ctx.data->predictions[i] = (uint32_t)ctx.data->cs_label.prediction;
     }
-    float min_prob = m_epsilon * min(1.f / ctx.data->k, 1.f / (float)sqrt(ctx.data->counter * ctx.data->k));
+    float min_prob = m_epsilon * min(1.f / ctx.data->k, 1.f / (float)sqrt(m_counter * ctx.data->k));
 
-    safety(ctx.data->count, min_prob);
+    safety(m_scores, min_prob);
 
     vector<float> scores;
     for (size_t i = 0; i < ctx.data->k; i++)
     {
-      scores.push_back(ctx.data->count[i]);
+      scores.push_back(m_scores[i]);
     }
+
+    m_counter++;
+
     return scores;
   }
 
@@ -266,14 +286,10 @@ namespace CBIFY {
   {//Randomize over predictions from a base set of predictors
     //Use cost sensitive oracle to cover actions to form distribution.
     MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
-    data.counter++;
 
-    data.count.erase();
     data.cs_label.costs.erase();
     for (uint32_t j = 0; j < data.k; j++)
       {
-	data.count.push_back(0);
-
 	COST_SENSITIVE::wclass wc;
 	
 	//get cost prediction for this label
@@ -286,11 +302,14 @@ namespace CBIFY {
 
     float epsilon = data.scorer->Get_Epsilon();
     size_t cover = data.scorer->Get_Cover();
+    size_t counter = data.scorer->Get_Counter();
+    v_array<float>& scores = data.scorer->Get_Scores();
+
     float additive_probability = 1.f / (float)cover;
 
     ec.ld = &data.cs_label;
 
-    float min_prob = epsilon * min(1.f / data.k, 1.f / (float)sqrt(data.counter * data.k));
+    float min_prob = epsilon * min(1.f / data.k, 1.f / (float)sqrt(counter * data.k));
     
 	vw_context cp;
 	cp.data = &data;
@@ -315,7 +334,7 @@ namespace CBIFY {
 	for (uint32_t j = 0; j < data.k; j++)
 	  { //data.cs_label now contains an unbiased estimate of cost of each class.
 	    gen_cs_label(*data.all, l, ec, data.cs_label, j+1);
-	    data.count[j] = 0;
+      scores[j] = 0;
 	  }
 	
 	ec.ld = &data.second_cs_label;
@@ -324,17 +343,17 @@ namespace CBIFY {
 	  { //get predicted cost-sensitive predictions
 	    for (uint32_t j = 0; j < data.k; j++)
 	      {
-    float pseudo_cost = data.cs_label.costs[j].x - epsilon * min_prob / (max(data.count[j], min_prob) / norm) + 1;
+    float pseudo_cost = data.cs_label.costs[j].x - epsilon * min_prob / (max(scores[j], min_prob) / norm) + 1;
 		data.second_cs_label.costs[j].class_index = j+1;
 		data.second_cs_label.costs[j].x = pseudo_cost;
 	      }
 	    if (i != 0)
 	      data.cs->learn(ec,i+1);
-	    if (data.count[data.predictions[i]-1] < min_prob)
-	      norm += max(0, additive_probability - (min_prob - data.count[data.predictions[i]-1]));
+      if (scores[data.predictions[i] - 1] < min_prob)
+        norm += max(0, additive_probability - (min_prob - scores[data.predictions[i] - 1]));
 	    else
 	      norm += additive_probability;
-	    data.count[data.predictions[i]-1] += additive_probability;
+      scores[data.predictions[i] - 1] += additive_probability;
 	  }
       }
 
@@ -359,7 +378,6 @@ namespace CBIFY {
   {//parse and set arguments
     cbify* data = (cbify*)calloc_or_die(1, sizeof(cbify));
 
-    data->counter = 0;
     data->all = &all;
     po::options_description cb_opts("CBIFY options");
     cb_opts.add_options()
@@ -385,14 +403,13 @@ namespace CBIFY {
       {
 	size_t cover = (uint32_t)vm["cover"].as<size_t>();
 	data->cs = all.cost_sensitive;
-	data->count.resize(data->k+1);
   data->predictions.resize(cover);
 	data->second_cs_label.costs.resize(data->k);
 	data->second_cs_label.costs.end = data->second_cs_label.costs.begin+data->k;
   float epsilon = 0.05f;
   if (vm.count("epsilon"))
     epsilon = vm["epsilon"].as<float>();
-  data->scorer.reset(new vw_scorer(epsilon, cover));
+  data->scorer.reset(new vw_scorer(epsilon, cover, (u32)data->k));
   data->generic_explorer.reset(new GenericExplorer<vw_context>(*data->scorer.get(), (u32)data->k));
   l = new learner(data, all.l, cover + 1);
 	l->set_learn<cbify, predict_or_learn_cover<true> >();
@@ -401,7 +418,6 @@ namespace CBIFY {
     else if (vm.count("bag"))
       {
 	size_t bags = (uint32_t)vm["bag"].as<size_t>();
-	data->count.resize(data->k+1);
   for (size_t i = 0; i < bags; i++)
   {
     data->policies.push_back(PolicyPtr<vw_context>(new vw_policy(i)));
