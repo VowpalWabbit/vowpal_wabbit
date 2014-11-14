@@ -29,12 +29,14 @@ namespace CBIFY {
   class vw_scorer : public IScorer<vw_context>
   {
   public:
-    vw_scorer(float epsilon) : m_epsilon(epsilon) { }
+    vw_scorer(float epsilon, size_t cover) : m_epsilon(epsilon), m_cover(cover) { }
     float Get_Epsilon() { return m_epsilon; }
+    size_t Get_Cover() { return m_cover; }
     vector<float> Score_Actions(vw_context& ctx);
 
   private:
     float m_epsilon;
+    size_t m_cover;
   };
 
   class vw_recorder : public IRecorder<vw_context>
@@ -56,7 +58,6 @@ namespace CBIFY {
 
     size_t counter;
 
-    size_t bags;
     v_array<float> count;
     v_array<uint32_t> predictions;
     
@@ -78,16 +79,6 @@ namespace CBIFY {
     unique_ptr<GenericExplorer<vw_context>> generic_explorer;
   };
   
-  uint32_t do_uniform(cbify& data)
-  {  //Draw an action
-    return (uint32_t)ceil(frand48() * data.k);
-  }
-
-  uint32_t choose_bag(cbify& data)
-  {  //Draw an action
-    return (uint32_t)floor(frand48() * data.bags);
-  }
-
   float loss(uint32_t label, uint32_t final_prediction)
   {
     if (label != final_prediction)
@@ -124,8 +115,8 @@ namespace CBIFY {
 
   vector<float> vw_scorer::Score_Actions(vw_context& ctx)
   {
-    float additive_probability = 1.f / (float)ctx.data->bags;
-    for (size_t i = 0; i < ctx.data->bags; i++)
+    float additive_probability = 1.f / (float)m_cover;
+    for (size_t i = 0; i < m_cover; i++)
     { //get predicted cost-sensitive predictions
       if (i == 0)
         ctx.data->cs->predict(*ctx.e, i);
@@ -227,7 +218,7 @@ namespace CBIFY {
 	CB::cb_class l = {loss(ld->label, action), 
 			  action, probability};
 	data.cb_label.costs.push_back(l);
-	for (size_t i = 0; i < data.bags; i++)
+	for (size_t i = 0; i < data.policies.size(); i++)
 	  {
 	    uint32_t count = BS::weight_gen();
 	    for (uint32_t j = 0; j < count; j++)
@@ -298,8 +289,9 @@ namespace CBIFY {
 	data.cs_label.costs.push_back(wc);
       }
 
-    float additive_probability = 1.f / (float)data.bags;
     float epsilon = data.scorer->Get_Epsilon();
+    size_t cover = data.scorer->Get_Cover();
+    float additive_probability = 1.f / (float)cover;
 
     ec.ld = &data.cs_label;
 
@@ -333,7 +325,7 @@ namespace CBIFY {
 	
 	ec.ld = &data.second_cs_label;
 	//2. Update functions
-	for (size_t i = 0; i < data.bags; i++)
+  for (size_t i = 0; i < cover; i++)
 	  { //get predicted cost-sensitive predictions
 	    for (uint32_t j = 0; j < data.k; j++)
 	      {
@@ -398,30 +390,30 @@ namespace CBIFY {
     data->mwt_explorer.reset(new MwtExplorer<vw_context>("vw", *data->recorder.get()));
     if (vm.count("cover"))
       {
-	data->bags = (uint32_t)vm["cover"].as<size_t>();
+	size_t cover = (uint32_t)vm["cover"].as<size_t>();
 	data->cs = all.cost_sensitive;
 	data->count.resize(data->k+1);
-	data->predictions.resize(data->bags);
+  data->predictions.resize(cover);
 	data->second_cs_label.costs.resize(data->k);
 	data->second_cs_label.costs.end = data->second_cs_label.costs.begin+data->k;
   if (vm.count("epsilon"))
     epsilon = vm["epsilon"].as<float>();
-  data->scorer.reset(new vw_scorer(epsilon));
+  data->scorer.reset(new vw_scorer(epsilon, cover));
   data->generic_explorer.reset(new GenericExplorer<vw_context>(*data->scorer.get(), (u32)data->k));
-  l = new learner(data, all.l, data->bags + 1);
+  l = new learner(data, all.l, cover + 1);
 	l->set_learn<cbify, predict_or_learn_cover<true> >();
 	l->set_predict<cbify, predict_or_learn_cover<false> >();
       }
     else if (vm.count("bag"))
       {
-	data->bags = (uint32_t)vm["bag"].as<size_t>();
+	size_t bags = (uint32_t)vm["bag"].as<size_t>();
 	data->count.resize(data->k+1);
-  for (size_t i = 0; i < data->bags; i++)
+  for (size_t i = 0; i < bags; i++)
   {
     data->policies.push_back(PolicyPtr<vw_context>(new vw_policy(i)));
   }
   data->bootstrap_explorer.reset(new BootstrapExplorer<vw_context>(data->policies, (u32)data->k));
-	l = new learner(data, all.l, data->bags);
+  l = new learner(data, all.l, bags);
 	l->set_learn<cbify, predict_or_learn_bag<true> >();
 	l->set_predict<cbify, predict_or_learn_bag<false> >();
       }
