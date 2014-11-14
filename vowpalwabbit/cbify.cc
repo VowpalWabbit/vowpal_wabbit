@@ -54,8 +54,6 @@ namespace CBIFY {
 
     size_t k;
     
-    size_t tau;
-
     size_t counter;
 
     v_array<float> count;
@@ -91,6 +89,7 @@ namespace CBIFY {
 	  learner* l;
 	  example* e;
 	  cbify* data;
+    bool recorded;
   };
 
   u32 vw_policy::Choose_Action(vw_context& ctx)
@@ -103,6 +102,7 @@ namespace CBIFY {
     {
       ctx.l->predict(*ctx.e, (size_t)m_index);
     }
+    ctx.recorded = false;
     return (u32)(((CB::label*)ctx.e->ld)->prediction);
   }
 
@@ -111,6 +111,7 @@ namespace CBIFY {
   {
     m_action = action;
     m_prob = probability;
+    context.recorded = true;
   }
 
   vector<float> vw_scorer::Score_Actions(vw_context& ctx)
@@ -141,33 +142,27 @@ namespace CBIFY {
   void predict_or_learn_first(cbify& data, learner& base, example& ec)
   {//Explore tau times, then act according to optimal.
     MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
+    ec.ld = &(data.cb_label);
+    data.cb_label.costs.erase();
     //Use CB to find current prediction for remaining rounds.
 
 	vw_context vwc;
 	vwc.l = &base;
 	vwc.e = &ec;
 
-    if (data.tau && is_learn)
+  uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer.get(), to_string(ec.example_counter), vwc);
+  ec.loss = loss(ld->label, action);
+
+  if (vwc.recorded && is_learn)
       {
-	uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer.get(), to_string(ec.example_counter), vwc);
-	ec.loss = loss(ld->label, action);
-	data.tau--;
 	CB::cb_class l = {ec.loss, action, 1.f / data.k, 0};
-	data.cb_label.costs.erase();
 	data.cb_label.costs.push_back(l);
-	ec.ld = &(data.cb_label);
 	base.learn(ec);
-	ld->prediction = action;
-	ec.loss = l.cost;
+  ec.loss = l.cost;
       }
-    else
-      {
-	data.cb_label.costs.erase();
-	ec.ld = &(data.cb_label);
-  ld->prediction = data.mwt_explorer->Choose_Action(*data.tau_explorer.get(), to_string(ec.example_counter), vwc);
-	ec.loss = loss(ld->label, ld->prediction);
-      }
-    ec.ld = ld;
+
+  ld->prediction = action;
+  ec.ld = ld;
   }
 
   template <bool is_learn>
@@ -364,9 +359,7 @@ namespace CBIFY {
   {//parse and set arguments
     cbify* data = (cbify*)calloc_or_die(1, sizeof(cbify));
 
-    float epsilon = 0.05f;
     data->counter = 0;
-    data->tau = 1000;
     data->all = &all;
     po::options_description cb_opts("CBIFY options");
     cb_opts.add_options()
@@ -396,6 +389,7 @@ namespace CBIFY {
   data->predictions.resize(cover);
 	data->second_cs_label.costs.resize(data->k);
 	data->second_cs_label.costs.end = data->second_cs_label.costs.begin+data->k;
+  float epsilon = 0.05f;
   if (vm.count("epsilon"))
     epsilon = vm["epsilon"].as<float>();
   data->scorer.reset(new vw_scorer(epsilon, cover));
@@ -419,16 +413,17 @@ namespace CBIFY {
       }
     else if (vm.count("first") )
       {
-	data->tau = (uint32_t)vm["first"].as<size_t>();
+  uint32_t tau = (uint32_t)vm["first"].as<size_t>();
   data->policy.reset(new vw_policy());
-  data->tau_explorer.reset(new TauFirstExplorer<vw_context>(*data->policy.get(), (u32)data->tau, (u32)data->k));
+  data->tau_explorer.reset(new TauFirstExplorer<vw_context>(*data->policy.get(), (u32)tau, (u32)data->k));
   l = new learner(data, all.l, 1);
 	l->set_learn<cbify, predict_or_learn_first<true> >();
 	l->set_predict<cbify, predict_or_learn_first<false> >();
       }
     else
       {
-	if ( vm.count("epsilon") ) 
+  float epsilon = 0.05f;
+  if (vm.count("epsilon"))
     epsilon = vm["epsilon"].as<float>();
   data->policy.reset(new vw_policy());
   data->greedy_explorer.reset(new EpsilonGreedyExplorer<vw_context>(*data->policy.get(), epsilon, (u32)data->k));
