@@ -105,7 +105,7 @@ label_parser simple_label = {default_simple_label, parse_simple_label,
                                    NULL,
 				   sizeof(label_data)};
 
-void print_update(vw& all, example& ec)
+void print_update(vw& all, example<void>& ec)
 {
   if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
     {
@@ -154,7 +154,7 @@ void print_update(vw& all, example& ec)
     }
 }
 
-void output_and_account_example(vw& all, example& ec)
+void output_and_account_example(vw& all, example<void>& ec)
 {
   label_data* ld = (label_data*)ec.ld;
 
@@ -193,7 +193,7 @@ void output_and_account_example(vw& all, example& ec)
   print_update(all, ec);
 }
 
-void return_simple_example(vw& all, void*, example& ec)
+void return_simple_example(vw& all, void*, example<void>& ec)
 {
   output_and_account_example(all, ec);
   VW::finish_example(all,&ec);

@@ -25,7 +25,7 @@ namespace NN {
   struct nn {
     uint32_t k;
     loss_function* squared_loss;
-    example output_layer;
+    example<void> output_layer;
     float prediction;
     size_t increment;
     bool dropout;
@@ -96,7 +96,7 @@ namespace NN {
   }
 
   template <bool is_learn>
-  void predict_or_learn(nn& n, learner& base, example& ec)
+  void predict_or_learn(nn& n, learner& base, example<void>& ec)
   {
     bool shouldOutput = n.all->raw_prediction > 0;
 
@@ -296,7 +296,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     n.all->set_minmax (n.all->sd, sd.max_label);
   }
 
-  void finish_example(vw& all, nn&, example& ec)
+  void finish_example(vw& all, nn&, example<void>& ec)
   {
     int save_raw_prediction = all.raw_prediction;
     all.raw_prediction = -1;

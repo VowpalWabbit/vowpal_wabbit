@@ -52,7 +52,7 @@ template<class INPUT, class OUTPUT> class SearchTask {
   Search::search& sch;
   
   private:
-  example* bogus_example, *blank_line;
+  example<void>* bogus_example, *blank_line;
 
   void call_vw(INPUT& input_example, OUTPUT& output) {
     HookTask::task_data* d = sch.template get_task_data<HookTask::task_data> (); // ugly calling convention :(
@@ -92,10 +92,10 @@ template<class INPUT, class OUTPUT> class SearchTask {
 };
 
 
-class BuiltInTask : public SearchTask< vector<example*>, vector<uint32_t> > {
+class BuiltInTask : public SearchTask< vector<example<void>*>, vector<uint32_t> > {
   public:
   BuiltInTask(vw& vw_obj, Search::search_task* task)
-      : SearchTask< vector<example*>, vector<uint32_t> >(vw_obj) {
+      : SearchTask< vector<example<void>*>, vector<uint32_t> >(vw_obj) {
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     size_t num_actions = d->num_actions;
     my_task = task;
@@ -105,7 +105,7 @@ class BuiltInTask : public SearchTask< vector<example*>, vector<uint32_t> > {
 
   ~BuiltInTask() { if (my_task->finish) my_task->finish(sch); }
 
-  void _run(Search::search& sch, vector<example*> & input_example, vector<uint32_t> & output) {
+  void _run(Search::search& sch, vector<example<void>*> & input_example, vector<uint32_t> & output) {
     my_task->run(sch, input_example);
     sch.get_test_action_sequence(output);
   }

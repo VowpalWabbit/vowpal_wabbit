@@ -19,14 +19,14 @@ namespace MULTICLASS
   
   extern label_parser mc_label;
   
-  void output_example(vw& all, example& ec);
+  void output_example(vw& all, example<void>& ec);
 
   inline int label_is_test(multiclass* ld)
   { return ld->label == (uint32_t)-1; }
 
-  inline int example_is_test(example* ec)
+  inline int example_is_test(example<void>* ec)
   { return label_is_test((multiclass*)ec->ld); }
 
-  inline uint32_t get_example_label(example* ec)
+  inline uint32_t get_example_label(example<void>* ec)
   { return ((multiclass*)ec->ld)->label; }
 }

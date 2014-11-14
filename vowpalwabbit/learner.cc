@@ -4,7 +4,7 @@
 
 void save_predictor(vw& all, string reg_name, size_t current_pass);
 
-void dispatch_example(vw& all, example& ec)
+void dispatch_example(vw& all, example<void>& ec)
 {
   if (ec.test_only || !all.training)
     all.l->predict(ec);
@@ -17,7 +17,7 @@ namespace LEARNER
 {
   void generic_driver(vw* all)
   {
-    example* ec = NULL;
+    example<void>* ec = NULL;
 
     all->l->init_driver();
     while ( true )

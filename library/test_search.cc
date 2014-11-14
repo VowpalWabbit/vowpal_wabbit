@@ -24,7 +24,7 @@ class SequenceLabelerTask : public SearchTask< vector<wt>, vector<uint32_t> > {
   void _run(Search::search& sch, vector<wt> & input_example, vector<uint32_t> & output) {
     output.clear();
     for (size_t i=0; i<input_example.size(); i++) {
-      example* ex = VW::read_example(vw_obj, "1 |w " + input_example[i].word);
+      example<void>* ex = VW::read_example(vw_obj, "1 |w " + input_example[i].word);
       action p  = Search::predictor(sch, i+1).set_input(*ex).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
       VW::finish_example(vw_obj, ex);
       output.push_back(p);
@@ -91,7 +91,7 @@ void test_buildin_task() {
   vw& vw_obj = *VW::initialize("-t -i sequence.model --search_task hook");
   {  // create a new scope for the task object
     BuiltInTask task(vw_obj, &SequenceTask::task);
-    vector<example*> V;
+    vector<example<void>*> V;
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );

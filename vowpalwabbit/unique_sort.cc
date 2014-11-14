@@ -41,7 +41,7 @@ void unique_audit_features(v_array<audit_data> &features)
   features.end = ++last;
 }
 
-void unique_sort_features(bool audit, uint32_t parse_mask, example* ae)
+void unique_sort_features(bool audit, uint32_t parse_mask, example<void>* ae)
 {
   ae->sorted=true;
   for (unsigned char* b = ae->indices.begin; b != ae->indices.end; b++)

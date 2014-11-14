@@ -19,7 +19,7 @@ class ezexample {
   bool is_multiline;
 
   char str[2];
-  example*ec;
+  example<void>*ec;
   bool we_create_ec;
   vector<fid> past_seeds;
   fid current_seed;
@@ -29,13 +29,13 @@ class ezexample {
   bool ns_exists[256];
   bool example_changed_since_prediction;
 
-  v_array<example*> example_copies;
+  v_array<example<void>*> example_copies;
 
   ezexample(const ezexample & ex);
   ezexample & operator=(const ezexample & ex);
 
-  example* get_new_example() {
-    example* new_ec = VW::new_unused_example(*vw_par_ref);
+  example<void>* get_new_example() {
+    example<void>* new_ec = VW::new_unused_example(*vw_par_ref);
     vw_par_ref->p->lp.default_label(new_ec->ld);
     return new_ec;
   }
@@ -59,7 +59,7 @@ class ezexample {
 
   
   void setup_for_predict() {
-    static example* empty_example = is_multiline ? VW::read_example(*vw_par_ref, (char*)"") : NULL;
+    static example<void>* empty_example = is_multiline ? VW::read_example(*vw_par_ref, (char*)"") : NULL;
     if (example_changed_since_prediction) {
       mini_setup_example();
       vw_ref->learn(ec);
@@ -85,7 +85,7 @@ class ezexample {
   // create a new ezexample by wrapping around an already existing example
   // we do NOT copy your data, therefore, WARNING:
   //   do NOT touch the underlying example unless you really know what you're done)
-  ezexample(vw*this_vw, example*this_ec, bool multiline=false, vw*this_vw_parser=NULL) {
+  ezexample(vw*this_vw, example<void>*this_ec, bool multiline=false, vw*this_vw_parser=NULL) {
     setup_new_ezexample(this_vw, multiline, this_vw_parser);
 
     ec = this_ec;
@@ -104,7 +104,7 @@ class ezexample {
   ~ezexample() { // calls finish_example *only* if we created our own example!
     if (ec->in_use)
       VW::finish_example(*vw_par_ref, ec);
-    for (example**ecc=example_copies.begin; ecc!=example_copies.end; ecc++)
+    for (example<void>**ecc=example_copies.begin; ecc!=example_copies.end; ecc++)
       if ((*ecc)->in_use)
         VW::finish_example(*vw_par_ref, *ecc);
     example_copies.erase();
@@ -168,7 +168,7 @@ class ezexample {
   inline fid addf(fid fint, float v) { return addf(current_ns, fint, v); }
 
   // copy an entire namespace from this other example, you can even give it a new namespace name if you want!
-  void add_other_example_ns(example& other, char other_ns, char to_ns) {
+  void add_other_example_ns(example<void>& other, char other_ns, char to_ns) {
     if (ensure_ns_exists(to_ns)) return;
     for (feature*f = other.atomics[(int)other_ns].begin; f != other.atomics[(int)other_ns].end; ++f) {
       ec->atomics[(int)to_ns].push_back(*f);
@@ -178,7 +178,7 @@ class ezexample {
     }
     example_changed_since_prediction = true;
   }
-  void add_other_example_ns(example& other, char ns) {  // default to_ns to other_ns
+  void add_other_example_ns(example<void>& other, char ns) {  // default to_ns to other_ns
     add_other_example_ns(other, ns, ns);
   }
 
@@ -214,7 +214,7 @@ class ezexample {
     ec->total_sum_feat_sq += quadratic_features_sqr;
   }
 
-  example* get() {
+  example<void>* get() {
     if (example_changed_since_prediction)
       mini_setup_example();
     return ec;
@@ -240,7 +240,7 @@ class ezexample {
       vw_ref->learn(ec);
     } else {   // is multiline
       // we need to make a copy
-      example* copy = get_new_example();
+      example<void>* copy = get_new_example();
       assert(ec->in_use);
       VW::copy_example_data(vw_ref->audit, copy, ec, vw_par_ref->p->lp.label_size, vw_par_ref->p->lp.copy_label);
       assert(copy->in_use);
@@ -257,10 +257,10 @@ class ezexample {
   }
 
   void finish() {
-    static example* empty_example = is_multiline ? VW::read_example(*vw_par_ref, (char*)"") : NULL;
+    static example<void>* empty_example = is_multiline ? VW::read_example(*vw_par_ref, (char*)"") : NULL;
     if (is_multiline) {
       vw_ref->learn(empty_example);
-      for (example**ecc=example_copies.begin; ecc!=example_copies.end; ecc++)
+      for (example<void>**ecc=example_copies.begin; ecc!=example_copies.end; ecc++)
         if ((*ecc)->in_use)
           VW::finish_example(*vw_par_ref, *ecc);
       example_copies.erase();
@@ -299,8 +299,8 @@ class ezexample {
   inline ezexample& operator()(char ns, string      fstr, float val) { addf(ns, fstr, val); return *this; }
   inline ezexample& operator()(char ns, const char* fstr, float val) { addf(ns, fstr, val); return *this; }
 
-  inline ezexample& operator()(  example&other, char other_ns, char to_ns) { add_other_example_ns(other, other_ns, to_ns); return *this; }
-  inline ezexample& operator()(  example&other, char ns                  ) { add_other_example_ns(other, ns);              return *this; }
+  inline ezexample& operator()(  example<void>&other, char other_ns, char to_ns) { add_other_example_ns(other, other_ns, to_ns); return *this; }
+  inline ezexample& operator()(  example<void>&other, char ns                  ) { add_other_example_ns(other, ns);              return *this; }
   inline ezexample& operator()(ezexample&other, char other_ns, char to_ns) { add_other_example_ns(other, other_ns, to_ns); return *this; }
   inline ezexample& operator()(ezexample&other, char ns                  ) { add_other_example_ns(other, ns);              return *this; }
 

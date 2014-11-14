@@ -51,7 +51,7 @@ audit_data copy_audit_data(audit_data &src) {
 }
 
 namespace VW {
-void copy_example_label(example* dst, example* src, size_t label_size, void(*copy_label)(void*&,void*)) {
+void copy_example_label(example<void>* dst, example<void>* src, size_t label_size, void(*copy_label)(void*&,void*)) {
   if (!src->ld) {
     if (dst->ld) free(dst->ld);  // TODO: this should be a delete_label, really
     dst->ld = NULL;
@@ -68,7 +68,7 @@ void copy_example_label(example* dst, example* src, size_t label_size, void(*cop
   }
 }
 
-void copy_example_data(bool audit, example* dst, example* src)
+void copy_example_data(bool audit, example<void>* dst, example<void>* src)
 {
   //std::cerr << "copy_example_data dst = " << dst << std::endl;
   copy_array(dst->tag, src->tag);
@@ -102,7 +102,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->sorted = src->sorted;
   dst->in_use = src->in_use;}
 
-void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void(*copy_label)(void*&,void*)) {
+void copy_example_data(bool audit, example<void>* dst, example<void>* src, size_t label_size, void(*copy_label)(void*&,void*)) {
   copy_example_data(audit, dst, src);
   copy_example_label(dst, src, label_size, copy_label);
 }
@@ -123,7 +123,7 @@ void vec_store(features_and_source& p, float fx, uint32_t fi) {
 }  
 
 namespace VW {
-  feature* get_features(vw& all, example* ec, size_t& feature_map_len)
+  feature* get_features(vw& all, example<void>* ec, size_t& feature_map_len)
 {
 	features_and_source fs;
 	fs.stride_shift = all.reg.stride_shift;
@@ -142,7 +142,7 @@ void return_features(feature* f)
 }
 }
 
-flat_example* flatten_example(vw& all, example *ec) 
+flat_example* flatten_example(vw& all, example<void> *ec) 
 {
 	flat_example* fec = (flat_example*) calloc_or_die(1,sizeof(flat_example));  
 	fec->ld = (label_data*)calloc_or_die(1, sizeof(label_data));
@@ -164,7 +164,7 @@ flat_example* flatten_example(vw& all, example *ec)
 	return fec;  
 }
 
-flat_example* flatten_sort_example(vw& all, example *ec) 
+flat_example* flatten_sort_example(vw& all, example<void> *ec) 
 {
   flat_example* fec = flatten_example(all, ec);
   qsort(fec->feature_map, fec->feature_map_len, sizeof(feature), compare_feature);  
@@ -185,9 +185,9 @@ void free_flatten_example(flat_example* fec)
     }
 }
 
-example *alloc_examples(size_t label_size, size_t count=1)
+example<void> *alloc_examples(size_t label_size, size_t count=1)
 {
-  example* ec = (example*)calloc_or_die(count, sizeof(example));
+  example<void>* ec = (example<void>*)calloc_or_die(count, sizeof(example<void>));
   if (ec == NULL) return NULL;
   for (size_t i=0; i<count; i++) {
     ec[i].ld = calloc_or_die(1, label_size);
@@ -203,7 +203,7 @@ example *alloc_examples(size_t label_size, size_t count=1)
   return ec;
 }
 
-void dealloc_example(void(*delete_label)(void*), example&ec)
+void dealloc_example(void(*delete_label)(void*), example<void>&ec)
 {
   if (delete_label) {
     delete_label(ec.ld);

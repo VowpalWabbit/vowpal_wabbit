@@ -66,7 +66,7 @@ namespace Search {
     //                           NULL if everything is allowed
     //   allowed_actions_cnt   the length of allowed_actions
     //   learner_id            the id for the underlying learner to use (via set_num_learners)
-    action predict(        example& ec
+    action predict(        example<void>& ec
                    ,       ptag     my_tag
                    , const action*  oracle_actions
                    ,       size_t   oracle_actions_cnt   = 1
@@ -83,7 +83,7 @@ namespace Search {
     //     LDF example, and ec_cnt is its length
     //   * there are no more "allowed_actions" because that is implicit in the LDF
     //     example structure
-    action predictLDF(        example* ecs
+    action predictLDF(        example<void>* ecs
                       ,       size_t   ec_cnt
                       ,       ptag     my_tag
                       , const action*  oracle_actions
@@ -140,13 +140,13 @@ namespace Search {
   struct search_task {
     // required
     const char* task_name;
-    void (*run)(search&, std::vector<example*>&);
+    void (*run)(search&, std::vector<example<void>*>&);
 
     // optional
     void (*initialize)(search&,size_t&, po::variables_map&);
     void (*finish)(search&);
-    void (*run_setup)(search&, std::vector<example*>&);
-    void (*run_takedown)(search&, std::vector<example*>&);
+    void (*run_setup)(search&, std::vector<example<void>*>&);
+    void (*run_takedown)(search&, std::vector<example<void>*>&);
   };
 
   // to make calls to "predict" (and "predictLDF") cleaner when you
@@ -158,12 +158,12 @@ namespace Search {
 
     // tell the predictor what to use as input. a single example input
     // means non-LDF mode; an array of inputs means LDF mode
-    predictor& set_input(example& input_example);
-    predictor& set_input(example* input_example, size_t input_length);    // if you're lucky and have an array of examples
+    predictor& set_input(example<void>& input_example);
+    predictor& set_input(example<void>* input_example, size_t input_length);    // if you're lucky and have an array of examples
 
     // the following is mostly to make life manageable for the Python interface
     void set_input_length(size_t input_length);  // declare that we have an input_length-long LDF example
-    void set_input_at(size_t posn, example&input_example); // set the corresponding input (*after* set_input_length)
+    void set_input_at(size_t posn, example<void>&input_example); // set the corresponding input (*after* set_input_length)
 
     // different ways of adding to the list of oracle actions. you can
     // either add_ or set_; setting erases previous actions. these
@@ -212,7 +212,7 @@ namespace Search {
     private:
     bool is_ldf;
     ptag my_tag;
-    example* ec;
+    example<void>* ec;
     size_t ec_cnt;
     bool ec_alloced;
     v_array<action> oracle_actions;    bool oracle_is_pointer;   // if we're pointing to your memory TRUE; if it's our own memory FALSE
@@ -244,5 +244,5 @@ namespace Search {
   LEARNER::learner* setup(vw&, po::variables_map&);
   void search_finish(void*);
   void search_drive(void*);
-  void search_learn(void*,example*);  
+  void search_learn(void*,example<void>*);  
 }

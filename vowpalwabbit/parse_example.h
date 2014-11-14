@@ -12,8 +12,8 @@ license as described in the file LICENSE.
 
 //example processing
 
-int read_features(void* a, example* ex);// read example from  preset buffers.
-void read_line(vw& all, example* ex, char* line);//read example from the line.
+int read_features(void* a, example<void>* ex);// read example from  preset buffers.
+void read_line(vw& all, example<void>* ex, char* line);//read example from the line.
 size_t hashstring (substring s, uint32_t h);
 
 hash_func_t getHasher(const std::string& s);

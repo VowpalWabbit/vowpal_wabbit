@@ -28,7 +28,7 @@ namespace GDMF {
     vw* all;
   };
 
-void mf_print_offset_features(vw& all, example& ec, size_t offset)
+void mf_print_offset_features(vw& all, example<void>& ec, size_t offset)
 {
   weight* weights = all.reg.weight_vector;
   size_t mask = all.reg.weight_mask;
@@ -77,14 +77,14 @@ void mf_print_offset_features(vw& all, example& ec, size_t offset)
   cout << endl;
 }
 
-void mf_print_audit_features(vw& all, example& ec, size_t offset)
+void mf_print_audit_features(vw& all, example<void>& ec, size_t offset)
 {
   label_data& ld = (label_data&)ec.ld;
   print_result(all.stdout_fileno,ld.prediction,-1,ec.tag);
   mf_print_offset_features(all, ec, offset);
 }
 
-float mf_predict(vw& all, example& ec)
+float mf_predict(vw& all, example<void>& ec)
 {
   label_data* ld = (label_data*)ec.ld;
   float prediction = ld->initial;
@@ -161,7 +161,7 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
     weights[(f->weight_index + offset) & mask] += update * f->x - regularization * weights[(f->weight_index + offset) & mask];
 }
 
-void mf_train(vw& all, example& ec)
+void mf_train(vw& all, example<void>& ec)
 {
       weight* weights = all.reg.weight_vector;
       size_t mask = all.reg.weight_mask;
@@ -276,14 +276,14 @@ void mf_train(vw& all, example& ec)
     all->current_pass++;
   }
 
-  void predict(gdmf& d, learner& base, example& ec)
+  void predict(gdmf& d, learner& base, example<void>& ec)
   {
     vw* all = d.all;
  
     mf_predict(*all,ec);
   }
 
-  void learn(gdmf& d, learner& base, example& ec)
+  void learn(gdmf& d, learner& base, example<void>& ec)
   {
     vw* all = d.all;
  

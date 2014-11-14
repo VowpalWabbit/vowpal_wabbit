@@ -40,40 +40,40 @@ namespace VW {
 
   /* The simplest of two ways to create an example.  An example_line is the literal line in a VW-format datafile.
    */
-  example* read_example(vw& all, char* example_line);
-  example* read_example(vw& all, string example_line);
+  example<void>* read_example(vw& all, char* example_line);
+  example<void>* read_example(vw& all, string example_line);
 
   //The more complex way to create an example.
 
   //after you create and fill feature_spaces, get an example with everything filled in.
-  example* import_example(vw& all, primitive_feature_space* features, size_t len);
-  example* import_example(vw& all, vector< feature_space > ec_info);
-  void parse_example_label(vw&all, example&ec, string label);
-  void setup_example(vw& all, example* ae);
-  example* new_unused_example(vw& all);
-  example* get_example(parser* pf);
-  float get_topic_prediction(example*ec, size_t i);//i=0 to max topic -1
-  float get_label(example*ec);
-  float get_importance(example*ec);
-  float get_initial(example*ec);
-  float get_prediction(example*ec);
-  size_t get_tag_length(example* ec);
-  const char* get_tag(example* ec);
-  size_t get_feature_number(example* ec);
-  feature* get_features(vw& all, example* ec, size_t& feature_number);
+  example<void>* import_example(vw& all, primitive_feature_space* features, size_t len);
+  example<void>* import_example(vw& all, vector< feature_space > ec_info);
+  void parse_example_label(vw&all, example<void>&ec, string label);
+  void setup_example(vw& all, example<void>* ae);
+  example<void>* new_unused_example(vw& all);
+  example<void>* get_example(parser* pf);
+  float get_topic_prediction(example<void>* ec, size_t i);//i=0 to max topic -1
+  float get_label(example<void>* ec);
+  float get_importance(example<void>* ec);
+  float get_initial(example<void>* ec);
+  float get_prediction(example<void>* ec);
+  size_t get_tag_length(example<void>* ec);
+  const char* get_tag(example<void>* ec);
+  size_t get_feature_number(example<void>* ec);
+  feature* get_features(vw& all, example<void>* ec, size_t& feature_number);
   void return_features(feature* f);
 
-  void add_constant_feature(vw& all, example*ec);
-  void add_label(example* ec, float label, float weight = 1, float base = 0);
+  void add_constant_feature(vw& all, example<void>* ec);
+  void add_label(example<void>* ec, float label, float weight = 1, float base = 0);
 
   //notify VW that you are done with the example.
-  void finish_example(vw& all, example* ec);
+  void finish_example(vw& all, example<void>* ec);
 
-  void copy_example_data(bool audit, example*, example*, size_t, void(*copy_label)(void*&,void*));
-  void copy_example_data(bool audit, example*, example*);  // don't copy the label
+  void copy_example_data(bool audit, example<void>*, example<void>*, size_t, void(*copy_label)(void*&,void*));
+  void copy_example_data(bool audit, example<void>*, example<void>*);  // don't copy the label
 
   // after export_example, must call releaseFeatureSpace to free native memory
-  primitive_feature_space* export_example(vw& all, example* e, size_t& len);
+  primitive_feature_space* export_example(vw& all, example<void>* e, size_t& len);
   void releaseFeatureSpace(primitive_feature_space* features, size_t len);
 
   // inlines

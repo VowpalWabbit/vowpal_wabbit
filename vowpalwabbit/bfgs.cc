@@ -147,12 +147,12 @@ void reset_state(vw& all, bfgs& b, bool zero)
 // w[2] = step direction
 // w[3] = preconditioner
 
-bool test_example(example& ec)
+bool test_example(example<void>& ec)
 {
   return ((label_data*)ec.ld)->label == FLT_MAX;
 }
 
-  float bfgs_predict(vw& all, example& ec)
+  float bfgs_predict(vw& all, example<void>& ec)
   {
     ec.partial_prediction = GD::inline_predict(all,ec);
     return GD::finalize_prediction(all.sd, ec.partial_prediction);
@@ -163,7 +163,7 @@ inline void add_grad(float& d, float f, float& fw)
   fw += d * f;
 }
 
-float predict_and_gradient(vw& all, example &ec)
+float predict_and_gradient(vw& all, example<void> &ec)
 {
   float fp = bfgs_predict(all, ec);
 
@@ -184,7 +184,7 @@ inline void add_precond(float& d, float f, float& fw)
   fw += d * f * f;
 }
 
-void update_preconditioner(vw& all, example& ec)
+void update_preconditioner(vw& all, example<void>& ec)
 {
   label_data* ld = (label_data*)ec.ld;
   float curvature = all.loss->second_derivative(all.sd, ld->prediction,ld->label) * ld->weight;
@@ -195,7 +195,7 @@ void update_preconditioner(vw& all, example& ec)
 }  
 
 
-float dot_with_direction(vw& all, example& ec)
+float dot_with_direction(vw& all, example<void>& ec)
 {
   ec.ft_offset+= W_DIR;  
   float ret = GD::inline_predict(all, ec);
@@ -723,7 +723,7 @@ int process_pass(vw& all, bfgs& b) {
     return status;
 }
 
-void process_example(vw& all, bfgs& b, example& ec)
+void process_example(vw& all, bfgs& b, example<void>& ec)
  {
   label_data* ld = (label_data*)ec.ld;
   if (b.first_pass)
@@ -818,13 +818,13 @@ void end_pass(bfgs& b)
 }
 
 // placeholder
-void predict(bfgs& b, learner& base, example& ec)
+void predict(bfgs& b, learner& base, example<void>& ec)
 {
   vw* all = b.all;
   ((label_data*) ec.ld)->prediction = bfgs_predict(*all,ec);
 }
 
-void learn(bfgs& b, learner& base, example& ec)
+void learn(bfgs& b, learner& base, example<void>& ec)
 {
   vw* all = b.all;
   assert(ec.in_use);

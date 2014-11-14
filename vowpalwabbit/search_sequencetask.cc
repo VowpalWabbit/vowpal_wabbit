@@ -20,7 +20,7 @@ namespace SequenceTask {
                      0);
   }
 
-  void run(Search::search& sch, vector<example*>& ec) {
+  void run(Search::search& sch, vector<example<void>*>& ec) {
     for (int i=0; i<ec.size(); i++) {
       action oracle     = MULTICLASS::get_example_label(ec[i]);
       size_t prediction = Search::predictor(sch, i+1).set_input(*ec[i]).set_oracle(oracle).set_condition_range(i, sch.get_history_length(), 'p').predict();
@@ -63,7 +63,7 @@ namespace SequenceSpanTask {
     return y / 2 + 1;  // out -> out, {unit,begin} -> begin; {in,last} -> in
   }
 
-  void convert_bio_to_bilou(vector<example*> ec) {
+  void convert_bio_to_bilou(vector<example<void>*> ec) {
     for (size_t n=0; n<ec.size(); n++) {
       MULTICLASS::multiclass* ylab = (MULTICLASS::multiclass*)ec[n]->ld;
       action y = ylab->label;
@@ -136,13 +136,13 @@ namespace SequenceSpanTask {
     delete my_task_data;
   }
 
-  void setup(Search::search& sch, vector<example*>& ec) {
+  void setup(Search::search& sch, vector<example<void>*>& ec) {
     task_data * my_task_data = sch.get_task_data<task_data>();
     if (my_task_data->encoding == BILOU)
       convert_bio_to_bilou(ec);
   }
 
-  void takedown(Search::search& sch, vector<example*>& ec) {
+  void takedown(Search::search& sch, vector<example<void>*>& ec) {
     task_data * my_task_data = sch.get_task_data<task_data>();
 
     if (my_task_data->encoding == BILOU)
@@ -152,7 +152,7 @@ namespace SequenceSpanTask {
       }
   }
   
-  void run(Search::search& sch, vector<example*>& ec) {
+  void run(Search::search& sch, vector<example<void>*>& ec) {
     task_data * my_task_data = sch.get_task_data<task_data>();
     action last_prediction = 1;
     v_array<action> * y_allowed = &(my_task_data->allowed_actions);
@@ -219,7 +219,7 @@ namespace ArgmaxTask {
                        Search::EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
   }
 
-  void run(Search::search& sch, vector<example*>& ec) {
+  void run(Search::search& sch, vector<example<void>*>& ec) {
     task_data * my_task_data = sch.get_task_data<task_data>();
     uint32_t max_prediction = 1;
     uint32_t max_label = 1;
@@ -250,14 +250,14 @@ namespace ArgmaxTask {
 namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LDF
   namespace CS=COST_SENSITIVE;
   struct task_data {
-    example* ldf_examples;
+    example<void>* ldf_examples;
     size_t   num_actions;
   };
   
   void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
     CS::wclass default_wclass = { 0., 0, 0., 0. };
 
-    example* ldf_examples = alloc_examples(sizeof(CS::label), num_actions);
+    example<void>* ldf_examples = alloc_examples(sizeof(CS::label), num_actions);
     for (size_t a=0; a<num_actions; a++) {
       CS::label* lab = (CS::label*)ldf_examples[a].ld;
       CS::cs_label.default_label(lab);
@@ -284,7 +284,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
 
 
   // this is totally bogus for the example -- you'd never actually do this!
-  void my_update_example_indicies(Search::search& sch, bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount) {
+  void my_update_example_indicies(Search::search& sch, bool audit, example<void>* ec, uint32_t mult_amount, uint32_t plus_amount) {
     size_t ss = sch.get_stride_shift();
     for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
       for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; ++f)
@@ -296,7 +296,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
             f->weight_index = (((f->weight_index>>ss) * mult_amount) + plus_amount)<<ss;
   }
   
-  void run(Search::search& sch, vector<example*>& ec) {
+  void run(Search::search& sch, vector<example<void>*>& ec) {
     task_data *data = sch.get_task_data<task_data>();
     
     for (ptag i=0; i<ec.size(); i++) {

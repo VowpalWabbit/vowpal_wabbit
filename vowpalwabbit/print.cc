@@ -23,7 +23,7 @@ namespace PRINT
     cout << " ";
   }
 
-  void learn(print& p, learner& base, example& ec)
+  void learn(print& p, learner& base, example<void>& ec)
   {
     label_data* ld = (label_data*)ec.ld;
     if (ld->label != FLT_MAX)

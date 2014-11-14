@@ -140,7 +140,7 @@ struct vw {
   LEARNER::learner* scorer;//a scoring function
   LEARNER::learner* cost_sensitive;//a cost sensitive learning algorithm.
 
-  void learn(example*);
+  void learn(example<void>*);
 
   void (*set_minmax)(shared_data* sd, float label);
 

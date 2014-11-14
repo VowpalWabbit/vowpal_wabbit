@@ -78,7 +78,7 @@ namespace CB_ALGS
     return NULL;
   }
 
-  void gen_cs_example_ips(vw& all, cb& c, example& ec, COST_SENSITIVE::label& cs_ld)
+  void gen_cs_example_ips(vw& all, cb& c, example<void>& ec, COST_SENSITIVE::label& cs_ld)
   {//this implements the inverse propensity score method, where cost are importance weighted by the probability of the chosen action
     CB::label* ld = (CB::label*)ec.ld;
    
@@ -137,7 +137,7 @@ namespace CB_ALGS
   }
 
   template <bool is_learn>
-  void gen_cs_example_dm(vw& all, cb& c, example& ec, COST_SENSITIVE::label& cs_ld)
+  void gen_cs_example_dm(vw& all, cb& c, example<void>& ec, COST_SENSITIVE::label& cs_ld)
   {
     //this implements the direct estimation method, where costs are directly specified by the learned regressor.
     CB::label* ld = (CB::label*)ec.ld;
@@ -209,7 +209,7 @@ namespace CB_ALGS
   }
 
   template <bool is_learn>
-  void gen_cs_label(vw& all, cb& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t label)
+  void gen_cs_label(vw& all, cb& c, example<void>& ec, COST_SENSITIVE::label& cs_ld, uint32_t label)
   {
     COST_SENSITIVE::wclass wc;
     wc.wap_value = 0.;
@@ -232,7 +232,7 @@ namespace CB_ALGS
   }
 
   template <bool is_learn>
-  void gen_cs_example_dr(vw& all, cb& c, example& ec, COST_SENSITIVE::label& cs_ld)
+  void gen_cs_example_dr(vw& all, cb& c, example<void>& ec, COST_SENSITIVE::label& cs_ld)
   {//this implements the doubly robust method
     CB::label* ld = (CB::label*)ec.ld;
     
@@ -248,7 +248,7 @@ namespace CB_ALGS
 	gen_cs_label<is_learn>(all, c, ec, cs_ld, cl->action);
   }
 
-  void cb_test_to_cs_test_label(vw& all, example& ec, COST_SENSITIVE::label& cs_ld)
+  void cb_test_to_cs_test_label(vw& all, example<void>& ec, COST_SENSITIVE::label& cs_ld)
   {
     CB::label* ld = (CB::label*)ec.ld;
 
@@ -287,7 +287,7 @@ namespace CB_ALGS
   }
 
   template <bool is_learn>
-  void predict_or_learn(cb& c, learner& base, example& ec) {
+  void predict_or_learn(cb& c, learner& base, example<void>& ec) {
     vw* all = c.all;
     CB::label* ld = (CB::label*)ec.ld;
 
@@ -345,12 +345,12 @@ namespace CB_ALGS
       }
   }
 
-  void predict_eval(cb& c, learner& base, example& ec) {
+  void predict_eval(cb& c, learner& base, example<void>& ec) {
     cout << "can not use a test label for evaluation" << endl;
     throw exception();
   }
 
-  void learn_eval(cb& c, learner& base, example& ec) {
+  void learn_eval(cb& c, learner& base, example<void>& ec) {
     vw* all = c.all;
     CB::label* ld = (CB::label*)ec.ld;
     
@@ -374,7 +374,7 @@ namespace CB_ALGS
     fprintf(stderr, "*estimate* *estimate*                                                avglossreg last pred  last correct\n");
   }
 
-  void print_update(vw& all, cb& c, bool is_test, example& ec)
+  void print_update(vw& all, cb& c, bool is_test, example<void>& ec)
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
@@ -430,7 +430,7 @@ namespace CB_ALGS
       }
   }
 
-  void output_example(vw& all, cb& c, example& ec)
+  void output_example(vw& all, cb& c, example<void>& ec)
   {
     CB::label* ld = (CB::label*)ec.ld;
 
@@ -495,7 +495,7 @@ namespace CB_ALGS
     c.cb_cs_ld.costs.delete_v();
   }
 
-  void finish_example(vw& all, cb& c, example& ec)
+  void finish_example(vw& all, cb& c, example<void>& ec)
   {
     output_example(all, c, ec);
     VW::finish_example(all, &ec);

@@ -40,7 +40,7 @@ struct mf {
 };
 
 template <bool cache_sub_predictions>
-void predict(mf& data, learner& base, example& ec) {
+void predict(mf& data, learner& base, example<void>& ec) {
   vw* all = data.all;
 
   float prediction = 0;
@@ -101,7 +101,7 @@ void predict(mf& data, learner& base, example& ec) {
   ((label_data*)ec.ld)->prediction = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
 }
 
-void learn(mf& data, learner& base, example& ec) {
+void learn(mf& data, learner& base, example<void>& ec) {
   vw* all = data.all;
 
   // predict with current weights

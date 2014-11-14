@@ -10,7 +10,7 @@ namespace Scorer {
   };
 
   template <bool is_learn, float (*link)(float in)>
-  void predict_or_learn(scorer& s, learner& base, example& ec)
+  void predict_or_learn(scorer& s, learner& base, example<void>& ec)
   {
     label_data* ld = (label_data*)ec.ld;
     s.all->set_minmax(s.all->sd, ld->label);

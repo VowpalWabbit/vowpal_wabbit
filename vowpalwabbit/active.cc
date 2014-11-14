@@ -27,7 +27,7 @@ namespace ACTIVE {
       return b*rs*rs;
     }
   
-  float query_decision(active& a, example& ec, float k)
+  float query_decision(active& a, example<void>& ec, float k)
     {
       float bias, avg_loss, weighted_queries;
       if (k<=1.)
@@ -44,7 +44,7 @@ namespace ACTIVE {
     }
 
   template <bool is_learn>
-  void predict_or_learn_simulation(active& a, learner& base, example& ec) {
+  void predict_or_learn_simulation(active& a, learner& base, example<void>& ec) {
     base.predict(ec);
     
     if (is_learn)
@@ -67,7 +67,7 @@ namespace ACTIVE {
   }
   
   template <bool is_learn>
-  void predict_or_learn_active(active& a, learner& base, example& ec) {
+  void predict_or_learn_active(active& a, learner& base, example<void>& ec) {
     if (is_learn)
       base.learn(ec);
     else
@@ -106,7 +106,7 @@ namespace ACTIVE {
       }
   }
   
-  void output_and_account_example(vw& all, active& a, example& ec)
+  void output_and_account_example(vw& all, active& a, example<void>& ec)
   {
     label_data* ld = (label_data*)ec.ld;
     
@@ -146,7 +146,7 @@ namespace ACTIVE {
     print_update(all, ec);
   }
 
-  void return_active_example(vw& all, active& a, example& ec)
+  void return_active_example(vw& all, active& a, example<void>& ec)
   {
     output_and_account_example(all, a, ec);
     VW::finish_example(all,&ec);

@@ -244,7 +244,7 @@ namespace LOG_MULTI
     return b.nodes[current].internal;
   }
   
-  void train_node(log_multi& b, learner& base, example& ec, uint32_t& current, uint32_t& class_index)
+  void train_node(log_multi& b, learner& base, example<void>& ec, uint32_t& current, uint32_t& class_index)
   {
     label_data* simple_temp = (label_data*)ec.ld;
 
@@ -297,7 +297,7 @@ namespace LOG_MULTI
       return n.right;
   }
 
-  void predict(log_multi& b, learner& base, example& ec)	
+  void predict(log_multi& b, learner& base, example<void>& ec)	
   {
     MULTICLASS::multiclass* mc = (MULTICLASS::multiclass*)ec.ld;
 
@@ -316,7 +316,7 @@ namespace LOG_MULTI
     ec.ld = mc;
   }
 
-  void learn(log_multi& b, learner& base, example& ec)
+  void learn(log_multi& b, learner& base, example<void>& ec)
   {
     //    verify_min_dfs(b, b.nodes[0]);
 
@@ -496,7 +496,7 @@ namespace LOG_MULTI
       }
   }
   
-  void finish_example(vw& all, log_multi&, example& ec)
+  void finish_example(vw& all, log_multi&, example<void>& ec)
   {
     MULTICLASS::output_example(all, ec);
     VW::finish_example(all, &ec);

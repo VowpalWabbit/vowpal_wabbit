@@ -7,7 +7,7 @@ using namespace LEARNER;
 namespace BINARY {
 
   template <bool is_learn>
-  void predict_or_learn(float&, learner& base, example& ec) {
+  void predict_or_learn(float&, learner& base, example<void>& ec) {
     if (is_learn)
       base.learn(ec);
     else

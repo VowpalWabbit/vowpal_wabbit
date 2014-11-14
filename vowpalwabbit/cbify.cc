@@ -51,7 +51,7 @@ namespace CBIFY {
   }
 
   template <bool is_learn>
-  void predict_or_learn_first(cbify& data, learner& base, example& ec)
+  void predict_or_learn_first(cbify& data, learner& base, example<void>& ec)
   {//Explore tau times, then act according to optimal.
     MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
     //Use CB to find current prediction for remaining rounds.
@@ -80,7 +80,7 @@ namespace CBIFY {
   }
   
   template <bool is_learn>
-  void predict_or_learn_greedy(cbify& data, learner& base, example& ec)
+  void predict_or_learn_greedy(cbify& data, learner& base, example<void>& ec)
   {//Explore uniform random an epsilon fraction of the time.
     MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
     ec.ld = &(data.cb_label);
@@ -115,7 +115,7 @@ namespace CBIFY {
   }
 
   template <bool is_learn>
-  void predict_or_learn_bag(cbify& data, learner& base, example& ec)
+  void predict_or_learn_bag(cbify& data, learner& base, example<void>& ec)
   {//Randomize over predictions from a base set of predictors
     //Use CB to find current predictions.
     MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
@@ -186,7 +186,7 @@ namespace CBIFY {
       }
   }
 
-  void gen_cs_label(vw& all, CB::cb_class& known_cost, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t label)
+  void gen_cs_label(vw& all, CB::cb_class& known_cost, example<void>& ec, COST_SENSITIVE::label& cs_ld, uint32_t label)
   {
     COST_SENSITIVE::wclass wc;
     
@@ -204,7 +204,7 @@ namespace CBIFY {
   }
 
   template <bool is_learn>
-  void predict_or_learn_cover(cbify& data, learner& base, example& ec)
+  void predict_or_learn_cover(cbify& data, learner& base, example<void>& ec)
   {//Randomize over predictions from a base set of predictors
     //Use cost sensitive oracle to cover actions to form distribution.
     MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
@@ -293,7 +293,7 @@ namespace CBIFY {
   
   void init_driver(cbify&) {}
 
-  void finish_example(vw& all, cbify&, example& ec)
+  void finish_example(vw& all, cbify&, example<void>& ec)
   {
     MULTICLASS::output_example(all, ec);
     VW::finish_example(all, &ec);

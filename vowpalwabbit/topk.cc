@@ -64,7 +64,7 @@ namespace TOPK {
     }    
   }
 
-  void output_example(vw& all, topk& d, example& ec)
+  void output_example(vw& all, topk& d, example<void>& ec)
   {
     label_data* ld = (label_data*)ec.ld;
     
@@ -82,7 +82,7 @@ namespace TOPK {
   }
 
   template <bool is_learn>
-  void predict_or_learn(topk& d, learner& base, example& ec)
+  void predict_or_learn(topk& d, learner& base, example<void>& ec)
   {
     if (example_is_newline(ec)) return;//do not predict newline
 
@@ -103,7 +103,7 @@ namespace TOPK {
 
   }
 
-  void finish_example(vw& all, topk& d, example& ec)
+  void finish_example(vw& all, topk& d, example<void>& ec)
   {
     TOPK::output_example(all, d, ec);
     VW::finish_example(all, &ec);

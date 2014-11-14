@@ -16,10 +16,10 @@ struct label_data {
   float prediction;
 };
 
-void return_simple_example(vw& all, void*, example& ec);
+void return_simple_example(vw& all, void*, example<void>& ec);
 
 extern label_parser simple_label;
 
 bool summarize_holdout_set(vw& all, size_t& no_win_counter);
-void print_update(vw& all, example &ec);
-void output_and_account_example(vw& all, example& ec);
+void print_update(vw& all, example<void> &ec);
+void output_and_account_example(vw& all, example<void>& ec);

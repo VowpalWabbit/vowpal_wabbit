@@ -26,7 +26,7 @@ namespace OAA {
   };
 
   template <bool is_learn>
-  void predict_or_learn(oaa& o, learner& base, example& ec) {
+  void predict_or_learn(oaa& o, learner& base, example<void>& ec) {
     multiclass* mc_label_data = (multiclass*)ec.ld;
     if (mc_label_data->label == 0 || (mc_label_data->label > o.k && mc_label_data->label != (uint32_t)-1))
       cout << "label " << mc_label_data->label << " is not in {1,"<< o.k << "} This won't work right." << endl;
@@ -71,7 +71,7 @@ namespace OAA {
       o.all->print_text(o.all->raw_prediction, outputStringStream.str(), ec.tag);
   }
   
-  void finish_example(vw& all, oaa&, example& ec)
+  void finish_example(vw& all, oaa&, example<void>& ec)
   {
     MULTICLASS::output_example(all, ec);
     VW::finish_example(all, &ec);

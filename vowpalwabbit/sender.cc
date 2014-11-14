@@ -29,7 +29,7 @@ namespace SENDER {
     io_buf* buf;
     int sd;
     vw* all;
-    example** delay_ring;
+    example<void>** delay_ring;
     size_t sent_index;
     size_t received_index;
   };
@@ -41,7 +41,7 @@ namespace SENDER {
   s.buf->files.push_back(s.sd);
 }
 
-  void send_features(io_buf *b, example& ec, uint32_t mask)
+  void send_features(io_buf *b, example<void>& ec, uint32_t mask)
 {
   // note: subtracting 1 b/c not sending constant
   output_byte(*b,(unsigned char) (ec.indices.size()-1));
@@ -59,7 +59,7 @@ void receive_result(sender& s)
   float res, weight;
   get_prediction(s.sd,res,weight);
   
-  example* ec=s.delay_ring[s.received_index++ % s.all->p->ring_size];
+  example<void>* ec=s.delay_ring[s.received_index++ % s.all->p->ring_size];
   label_data* ld = (label_data*)ec->ld;
   
   ld->prediction = res;
@@ -69,7 +69,7 @@ void receive_result(sender& s)
   return_simple_example(*(s.all), NULL, *ec);  
 }
 
-  void learn(sender& s, learner& base, example& ec) 
+  void learn(sender& s, learner& base, example<void>& ec) 
   { 
     if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
       receive_result(s);
@@ -82,7 +82,7 @@ void receive_result(sender& s)
     s.delay_ring[s.sent_index++ % s.all->p->ring_size] = &ec;
   }
 
-  void finish_example(vw& all, sender&, example& ec)
+  void finish_example(vw& all, sender&, example<void>& ec)
 {}
 
 void end_examples(sender& s)
@@ -112,7 +112,7 @@ void end_examples(sender& s)
     }
 
   s->all = &all;
-  s->delay_ring = (example**) calloc_or_die(all.p->ring_size, sizeof(example*));
+  s->delay_ring = (example<void>**) calloc_or_die(all.p->ring_size, sizeof(example<void>*));
 
   learner* l = new learner(s, 1);
   l->set_learn<sender, learn>(); 

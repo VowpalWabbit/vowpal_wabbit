@@ -92,7 +92,7 @@ namespace MULTICLASS {
 				  NULL,
 				  sizeof(multiclass)};
   
-  void print_update(vw& all, example &ec)
+  void print_update(vw& all, example<void> &ec)
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
@@ -142,7 +142,7 @@ namespace MULTICLASS {
       }
   }
 
-  void output_example(vw& all, example& ec)
+  void output_example(vw& all, example<void>& ec)
   {
     multiclass* ld = (multiclass*)ec.ld;
 

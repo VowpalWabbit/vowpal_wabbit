@@ -9,6 +9,6 @@ license as described in the file LICENSE.
 namespace EntityRelationTask {
   void initialize(Search::search&, size_t&, po::variables_map&);
   void finish(Search::search&);
-  void run(Search::search&, vector<example*>&);
+  void run(Search::search&, vector<example<void>*>&);
   extern Search::search_task task;
 }

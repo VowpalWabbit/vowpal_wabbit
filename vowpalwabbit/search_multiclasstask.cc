@@ -37,7 +37,7 @@ namespace MulticlassTask {
 	delete my_task_data;
   }
 
-  void run(Search::search& sch, vector<example*>& ec) {
+  void run(Search::search& sch, vector<example<void>*>& ec) {
     task_data * my_task_data = sch.get_task_data<task_data>();
     size_t gold_label = MULTICLASS::get_example_label(ec[0]);
     size_t label = 0;

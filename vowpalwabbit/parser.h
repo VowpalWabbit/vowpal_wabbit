@@ -36,4 +36,4 @@ void finalize_source(parser* source);
 void set_compressed(parser* par);
 void initialize_examples(vw& all);
 void free_parser(vw& all);
-bool parse_atomic_example(vw& all, example* ae, bool do_read);
+bool parse_atomic_example(vw& all, example<void>* ae, bool do_read);

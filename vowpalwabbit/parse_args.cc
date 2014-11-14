@@ -93,7 +93,7 @@ void parse_dictionary_argument(vw&all, string str) {
   feature_dict* map = new feature_dict(1023, NULL, substring_equal);
   
   // TODO: handle gzipped dictionaries
-  example *ec = alloc_examples(all.p->lp.label_size, 1);
+  example<void> *ec = alloc_examples(all.p->lp.label_size, 1);
   ifstream infile(s);
   size_t def = (size_t)' ';
   for (string line; getline(infile, line);) {

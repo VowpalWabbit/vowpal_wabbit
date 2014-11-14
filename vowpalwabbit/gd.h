@@ -16,17 +16,17 @@
 
 namespace GD{
   void print_result(int f, float res, v_array<char> tag);
-  void print_audit_features(regressor &reg, example& ec, size_t offset);
+  void print_audit_features(regressor &reg, example<void>& ec, size_t offset);
   float finalize_prediction(shared_data* sd, float ret);
-  void print_audit_features(vw&, example& ec);
-  void train_one_example(regressor& r, example* ex);
-  void train_offset_example(regressor& r, example* ex, size_t offset);
-  void compute_update(example* ec);
-  void offset_train(regressor &reg, example* &ec, float update, size_t offset);
-  void train_one_example_single_thread(regressor& r, example* ex);
+  void print_audit_features(vw&, example<void>& ec);
+  void train_one_example(regressor& r, example<void>* ex);
+  void train_offset_example(regressor& r, example<void>* ex, size_t offset);
+  void compute_update(example<void>* ec);
+  void offset_train(regressor &reg, example<void>* &ec, float update, size_t offset);
+  void train_one_example_single_thread(regressor& r, example<void>* ex);
   LEARNER::learner* setup(vw& all, po::variables_map& vm);
   void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
-  void output_and_account_example(example* ec);
+  void output_and_account_example(example<void>* ec);
 
   template <class R, void (*T)(R&, const float, float&)>
   inline void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R& dat, uint32_t offset=0, float mult=1.)
@@ -43,7 +43,7 @@ namespace GD{
    }
  
  template <class R, class S, void (*T)(R&, float, S)>
-  inline void foreach_feature(vw& all, example& ec, R& dat)
+  inline void foreach_feature(vw& all, example<void>& ec, R& dat)
   {
     uint32_t offset = ec.ft_offset;
 
@@ -79,14 +79,14 @@ namespace GD{
   }
 
 template <class R, void (*T)(R&, float, float&)>
-  inline void foreach_feature(vw& all, example& ec, R& dat)
+  inline void foreach_feature(vw& all, example<void>& ec, R& dat)
   {
     foreach_feature<R,float&,T>(all, ec, dat);
   }
 
  inline void vec_add(float& p, const float fx, float& fw) { p += fw * fx; }
 
-  inline float inline_predict(vw& all, example& ec)
+  inline float inline_predict(vw& all, example<void>& ec)
   {
     label_data* ld = (label_data*)ec.ld;
     float temp = ld->initial;
