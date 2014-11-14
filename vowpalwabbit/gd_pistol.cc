@@ -1,11 +1,9 @@
-/*la predizione negli aggiornamenti e' diversa dalla predizione senza aggiornamenti!
- il fattore moltiplicativo dovrebbe essere usato anche nel caso adattativo, per fare meno moltiplicazioni*/
-
 /*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <float.h>
@@ -44,12 +42,11 @@ namespace GD_PISTOL {
         float norm_current_example;
         float squared_norm_current_example;
         float squared_norm_theta;
-        float multiplicative_factor;
         void (*predict)(gd&, learner&, example&);
 
         vw* all;
     };
-
+    
     struct update_struct {
         float weighted_deriv;
         float a;
@@ -102,6 +99,17 @@ namespace GD_PISTOL {
     void end_pass(gd& g) {
         vw& all = *g.all;
 
+        if (all.sd->contraction!=1) {
+            /* It multiplies the weight vector to the constant factor.
+             * The vector theta always contains the "true" information.
+             */
+            uint32_t length = 1 << all.num_bits;
+            size_t stride = 1 << all.reg.stride_shift;
+            for (uint32_t i = 0; i < length && all.reg_mode; i++)
+                all.reg.weight_vector[stride * i] *= (float) all.sd->contraction;
+            all.sd->contraction = 1.;
+        }
+        
         if (all.span_server != "") {
             if (all.adaptive)
                 accumulate_weighted_avg(all, all.span_server, all.reg);
@@ -130,20 +138,9 @@ namespace GD_PISTOL {
         friend bool operator<(const string_value& first, const string_value& second);
     };
 
-    inline float sign(float w) {
-        if (w < 0.) return -1.;
-        else return 1.;
-    }
-
-    inline float trunc_weight(const float w, const float gravity) {
-        return (gravity < fabsf(w)) ? w - sign(w) * gravity : 0.f;
-    }
-
     bool operator<(const string_value& first, const string_value& second) {
         return fabs(first.v) > fabs(second.v);
     }
-
-#include <algorithm>
 
     void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& results, string prepend, string& ns_pre, size_t offset = 0, float mult = 1) {
         ostringstream tempstream;
@@ -168,7 +165,7 @@ namespace GD_PISTOL {
         }
         if (all.audit) {
             tempstream << ((index >> stride_shift) & all.parse_mask) << ':' << mult * f->x;
-            tempstream << ':' << trunc_weight(weights[index], (float) all.sd->gravity) * (float) all.sd->contraction;
+            tempstream << ':' << weights[index];
         }
         if (all.current_pass == 0 && all.inv_hash_regressor_name != "") { //for invert_hash
             if (index == (((constant << stride_shift) * all.wpp + offset) & all.reg.weight_mask))
@@ -318,16 +315,15 @@ namespace GD_PISTOL {
     void predict(gd& g, learner& base, example& ec) {
         vw& all = *g.all;
 
-        ec.partial_prediction = inline_predict(all, ec);
+        ec.partial_prediction = inline_predict(all, ec) * (float)g.all->sd->contraction;
 
         label_data& ld = *(label_data*) ec.ld;
-        ld.prediction = finalize_prediction(all.sd, ec.partial_prediction * g.multiplicative_factor);
+        ld.prediction = finalize_prediction(all.sd, ec.partial_prediction);
 
         if (audit)
             print_audit_features(all, ec);
     }
 
-    
     /* invariant: not a test label, importance weight > 0 */
     template<bool feature_mask_off, size_t adaptive>
     void update(gd& g, learner& base, example& ec) {
@@ -352,7 +348,7 @@ namespace GD_PISTOL {
                 if (g.squared_norm_theta < 0)
                     g.squared_norm_theta = 0; // numerical problems might happen, better be safe.
                 float tmp = 1.f / (g.max_input * g.a * (g.alpha_single + g.max_input));
-                g.multiplicative_factor = sqrt(2 * g.max_input * g.a * g.b) * exp(g.squared_norm_theta / 2 * tmp) * tmp;
+                g.all->sd->contraction = sqrt(2 * g.max_input * g.a * g.b) * exp(g.squared_norm_theta / 2 * tmp) * tmp;
             }
         }
     }
@@ -375,7 +371,7 @@ namespace GD_PISTOL {
             if (g.max_input < g.norm_current_example) {
                 g.max_input = g.norm_current_example;
                 float tmp = 1.f / (g.max_input * g.a * (g.alpha_single + g.max_input));
-                g.multiplicative_factor = sqrt(2 * g.max_input * g.a * g.b) * exp(g.squared_norm_theta / 2 * tmp) * tmp;
+                g.all->sd->contraction = sqrt(2 * g.max_input * g.a * g.b) * exp(g.squared_norm_theta / 2 * tmp) * tmp;
             }
         }
 
@@ -401,47 +397,44 @@ namespace GD_PISTOL {
                 v = &(all.reg.weight_vector[stride * (it->second)]);
                 if (*v != 0.) {
                     text_len = sprintf(buff, "%s", (char*) it->first.c_str());
-                    brw = bin_text_write_fixed(model_file, (char*) it->first.c_str(), sizeof (*it->first.c_str()),
-                            buff, text_len, true);
+                    brw = bin_text_write_fixed(model_file, (char*) it->first.c_str(), sizeof (*it->first.c_str()), buff, text_len, true);
                     text_len = sprintf(buff, ":%f\n", *v);
-                    brw += bin_text_write_fixed(model_file, (char *) v, sizeof (*v),
-                            buff, text_len, true);
+                    brw += bin_text_write_fixed(model_file, (char *) v, sizeof (*v), buff, text_len, true);
                 }
             }
-            return;
-        }
-
-        do {
-            brw = 1;
-            weight* v;
-            if (read) {
-                c++;
-                brw = bin_read_fixed(model_file, (char*) &i, sizeof (i), "");
-                if (brw > 0) {
-                    assert(i < length);
-                    v = &(all.reg.weight_vector[stride * i]);
-                    brw += bin_read_fixed(model_file, (char*) v, sizeof (*v), "");
-                }
-            } else { // write binary or text
-                v = &(all.reg.weight_vector[stride * i]);
-                if (*v != 0.) {
+        } else {
+            do {
+                brw = 1;
+                weight* v;
+                if (read) {
                     c++;
-                    char buff[512];
-                    int text_len;
+                    brw = bin_read_fixed(model_file, (char*) &i, sizeof (i), "");
+                    if (brw > 0) {
+                        assert(i < length);
+                        v = &(all.reg.weight_vector[stride * i]);
+                        brw += bin_read_fixed(model_file, (char*) v, sizeof (*v), "");
+                    }
+                } else { // write binary or text
+                    v = &(all.reg.weight_vector[stride * i]);
+                    if (*v != 0.) {
+                        c++;
+                        char buff[512];
+                        int text_len;
 
-                    text_len = sprintf(buff, "%d", i);
-                    brw = bin_text_write_fixed(model_file, (char *) &i, sizeof (i),
-                            buff, text_len, text);
+                        text_len = sprintf(buff, "%d", i);
+                        brw = bin_text_write_fixed(model_file, (char *) &i, sizeof (i),
+                                buff, text_len, text);
 
-                    text_len = sprintf(buff, ":%f\n", *v);
-                    brw += bin_text_write_fixed(model_file, (char *) v, sizeof (*v),
-                            buff, text_len, text);
+                        text_len = sprintf(buff, ":%f\n", *v);
+                        brw += bin_text_write_fixed(model_file, (char *) v, sizeof (*v),
+                                buff, text_len, text);
+                    }
                 }
-            }
 
-            if (!read)
-                i++;
-        } while ((!read && i < length) || (read && brw > 0));
+                if (!read)
+                    i++;
+            } while ((!read && i < length) || (read && brw > 0));
+        }
     }
 
     void save_load_online_state(gd& g, io_buf& model_file, bool read, bool text) {
@@ -449,16 +442,31 @@ namespace GD_PISTOL {
 
         char buff[512];
 
-        uint32_t text_len = sprintf(buff, "initial_t %f\n", all.initial_t);
-        bin_text_read_write_fixed(model_file, (char*) &all.initial_t, sizeof (all.initial_t),
+        uint32_t text_len = sprintf(buff, "a %f\n", g.a);
+        bin_text_read_write_fixed(model_file, (char*) &(g.a), sizeof (g.a),
                 "", read,
                 buff, text_len, text);
 
-        text_len = sprintf(buff, "t %f\n", all.sd->t);
-        bin_text_read_write_fixed(model_file, (char*) &all.sd->t, sizeof (all.sd->t),
+        text_len = sprintf(buff, "b %f\n", g.b);
+        bin_text_read_write_fixed(model_file, (char*) &(g.b), sizeof (g.b),
                 "", read,
                 buff, text_len, text);
 
+        text_len = sprintf(buff, "alpha_single %f\n", g.alpha_single);
+        bin_text_read_write_fixed(model_file, (char*) &(g.alpha_single), sizeof (g.alpha_single),
+                "", read,
+                buff, text_len, text);
+        
+        text_len = sprintf(buff, "alpha_single %f\n", g.max_input);
+        bin_text_read_write_fixed(model_file, (char*) &(g.max_input), sizeof (g.max_input),
+                "", read,
+                buff, text_len, text);
+        
+        text_len = sprintf(buff, "squared_norm_theta %f\n", g.squared_norm_theta);
+        bin_text_read_write_fixed(model_file, (char*) &(g.squared_norm_theta), sizeof (g.squared_norm_theta),
+                "", read,
+                buff, text_len, text);
+        
         text_len = sprintf(buff, "sum_loss %f\n", all.sd->sum_loss);
         bin_text_read_write_fixed(model_file, (char*) &all.sd->sum_loss, sizeof (all.sd->sum_loss),
                 "", read,
@@ -508,6 +516,7 @@ namespace GD_PISTOL {
         bin_text_read_write_fixed(model_file, (char*) &all.sd->total_features, sizeof (all.sd->total_features),
                 "", read,
                 buff, text_len, text);
+        
         if (!all.training) // reset various things so that we report test set performance properly
         {
             all.sd->sum_loss = 0;
@@ -534,12 +543,9 @@ namespace GD_PISTOL {
                 if (brw > 0) {
                     assert(i < length);
                     v = &(all.reg.weight_vector[stride * i]);
-                    if (stride == 2) //either adaptive or normalized
-                        brw += bin_read_fixed(model_file, (char*) v, sizeof (*v)*2, "");
-                    else //adaptive and normalized
-                        brw += bin_read_fixed(model_file, (char*) v, sizeof (*v)*3, "");
-                    if (!all.training)
-                        v[1] = v[2] = 0.;
+                    brw += bin_read_fixed(model_file, (char*) v, sizeof (*v) * stride, "");
+                    //if (!all.training)
+                    //    v[1] = v[2] = 0.;
                 }
             } else { // write binary or text
                 v = &(all.reg.weight_vector[stride * i]);
@@ -550,15 +556,9 @@ namespace GD_PISTOL {
                     brw = bin_text_write_fixed(model_file, (char *) &i, sizeof (i),
                             buff, text_len, text);
 
-                    if (stride == 2) {//either adaptive or normalized
-                        text_len = sprintf(buff, ":%f %f\n", *v, *(v + 1));
-                        brw += bin_text_write_fixed(model_file, (char *) v, 2 * sizeof (*v),
-                                buff, text_len, text);
-                    } else {//adaptive and normalized
-                        text_len = sprintf(buff, ":%f %f %f\n", *v, *(v + 1), *(v + 2));
-                        brw += bin_text_write_fixed(model_file, (char *) v, 3 * sizeof (*v),
-                                buff, text_len, text);
-                    }
+                    text_len = sprintf(buff, ":%f %f\n", *v, *(v + 1));
+                    brw += bin_text_write_fixed(model_file, (char *) v, stride * sizeof (*v),
+                            buff, text_len, text);
                 }
             }
             if (!read)
@@ -566,20 +566,14 @@ namespace GD_PISTOL {
         } while ((!read && i < length) || (read && brw > 0));
     }
 
+    /* Main save_load function */
     void save_load(gd& g, io_buf& model_file, bool read, bool text) {
         vw& all = *g.all;
         if (read) {
             initialize_regressor(all);
 
-            if (all.adaptive) {
-                uint32_t length = 1 << all.num_bits;
-                uint32_t stride = 1 << all.reg.stride_shift;
-                for (size_t j = 2; j < stride * length; j += stride) {
-                    all.reg.weight_vector[j] = 0;
-                }
-            } else {
+            if (!all.adaptive)
                 g.alpha_single = 0;
-            }
 
             if (g.initial_constant != 0.0)
                 VW::set_weight(all, constant, 0, g.initial_constant);
@@ -589,9 +583,7 @@ namespace GD_PISTOL {
             bool resume = all.save_resume;
             char buff[512];
             uint32_t text_len = sprintf(buff, ":%d\n", resume);
-            bin_text_read_write_fixed(model_file, (char *) &resume, sizeof (resume),
-                    "", read,
-                    buff, text_len, text);
+            bin_text_read_write_fixed(model_file, (char *) &resume, sizeof (resume), "", read, buff, text_len, text);
             if (resume)
                 save_load_online_state(g, model_file, read, text);
             else
@@ -619,6 +611,7 @@ namespace GD_PISTOL {
         g->max_input = 0;
         g->squared_norm_theta = 0;
         g->alpha_single = 0;
+        g->all->sd->contraction = 1;
 
         bool feature_mask_off = true;
         if (vm.count("feature_mask"))
@@ -630,13 +623,11 @@ namespace GD_PISTOL {
                 g->early_stop_thres = vm["early_terminate"].as< size_t>();
         }
 
-        if (vm.count("constant")) {
+        if (vm.count("constant"))
             g->initial_constant = vm["constant"].as<float>();
-        }
 
-        if (vm.count("adaptive")) {
+        if (vm.count("adaptive"))
             all.adaptive = true;
-        }
 
         learner* ret = new learner(g, 1);
 
@@ -686,10 +677,9 @@ namespace GD_PISTOL {
             }
         }
 
-        uint32_t stride;
+        uint32_t stride; // number of vectors are kept in memory
         if (all.adaptive) {
             stride = 4;
-            g->multiplicative_factor = 1;
         } else
             stride = 2;
 
@@ -697,7 +687,6 @@ namespace GD_PISTOL {
         ret->increment = ((uint64_t) 1 << all.reg.stride_shift);
 
         ret->set_save_load<gd, save_load>();
-
         ret->set_end_pass<gd, end_pass>();
 
         return ret;
