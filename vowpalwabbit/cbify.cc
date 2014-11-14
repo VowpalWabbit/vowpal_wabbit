@@ -29,7 +29,12 @@ namespace CBIFY {
   class vw_scorer : public IScorer<vw_context>
   {
   public:
+    vw_scorer(float epsilon) : m_epsilon(epsilon) { }
+    float Get_Epsilon() { return m_epsilon; }
     vector<float> Score_Actions(vw_context& ctx);
+
+  private:
+    float m_epsilon;
   };
 
   class vw_recorder : public IRecorder<vw_context>
@@ -48,8 +53,6 @@ namespace CBIFY {
     size_t k;
     
     size_t tau;
-
-    float epsilon;
 
     size_t counter;
 
@@ -131,7 +134,7 @@ namespace CBIFY {
       ctx.data->count[ctx.data->cs_label.prediction - 1] += additive_probability;
       ctx.data->predictions[i] = (uint32_t)ctx.data->cs_label.prediction;
     }
-    float min_prob = ctx.data->epsilon * min(1.f / ctx.data->k, 1.f / (float)sqrt(ctx.data->counter * ctx.data->k));
+    float min_prob = m_epsilon * min(1.f / ctx.data->k, 1.f / (float)sqrt(ctx.data->counter * ctx.data->k));
 
     safety(ctx.data->count, min_prob);
 
@@ -235,20 +238,6 @@ namespace CBIFY {
     ec.ld = ld;
   }
   
-  uint32_t choose_action(v_array<float>& distribution)
-  {
-    float value = frand48();
-    for (uint32_t i = 0; i < distribution.size();i++)
-      {
-	if (value <= distribution[i])
-	  return i+1;	    
-	else
-	  value -= distribution[i];
-      }
-    //some rounding problem presumably.
-    return 1;
-  }
-  
   void safety(v_array<float>& distribution, float min_prob)
   {
     float added_mass = 0.;
@@ -310,10 +299,11 @@ namespace CBIFY {
       }
 
     float additive_probability = 1.f / (float)data.bags;
+    float epsilon = data.scorer->Get_Epsilon();
 
     ec.ld = &data.cs_label;
 
-    float min_prob = data.epsilon * min (1.f / data.k, 1.f / (float)sqrt(data.counter * data.k));
+    float min_prob = epsilon * min(1.f / data.k, 1.f / (float)sqrt(data.counter * data.k));
     
 	vw_context cp;
 	cp.data = &data;
@@ -347,7 +337,7 @@ namespace CBIFY {
 	  { //get predicted cost-sensitive predictions
 	    for (uint32_t j = 0; j < data.k; j++)
 	      {
-		float pseudo_cost = data.cs_label.costs[j].x - data.epsilon * min_prob / (max(data.count[j], min_prob) / norm) + 1;
+    float pseudo_cost = data.cs_label.costs[j].x - epsilon * min_prob / (max(data.count[j], min_prob) / norm) + 1;
 		data.second_cs_label.costs[j].class_index = j+1;
 		data.second_cs_label.costs[j].x = pseudo_cost;
 	      }
@@ -382,7 +372,7 @@ namespace CBIFY {
   {//parse and set arguments
     cbify* data = (cbify*)calloc_or_die(1, sizeof(cbify));
 
-    data->epsilon = 0.05f;
+    float epsilon = 0.05f;
     data->counter = 0;
     data->tau = 1000;
     data->all = &all;
@@ -415,8 +405,8 @@ namespace CBIFY {
 	data->second_cs_label.costs.resize(data->k);
 	data->second_cs_label.costs.end = data->second_cs_label.costs.begin+data->k;
   if (vm.count("epsilon"))
-	  data->epsilon = vm["epsilon"].as<float>();
-  data->scorer.reset(new vw_scorer());
+    epsilon = vm["epsilon"].as<float>();
+  data->scorer.reset(new vw_scorer(epsilon));
   data->generic_explorer.reset(new GenericExplorer<vw_context>(*data->scorer.get(), (u32)data->k));
   l = new learner(data, all.l, data->bags + 1);
 	l->set_learn<cbify, predict_or_learn_cover<true> >();
@@ -447,9 +437,9 @@ namespace CBIFY {
     else
       {
 	if ( vm.count("epsilon") ) 
-	  data->epsilon = vm["epsilon"].as<float>();
+    epsilon = vm["epsilon"].as<float>();
   data->policy.reset(new vw_policy());
-  data->greedy_explorer.reset(new EpsilonGreedyExplorer<vw_context>(*data->policy.get(), data->epsilon, (u32)data->k));
+  data->greedy_explorer.reset(new EpsilonGreedyExplorer<vw_context>(*data->policy.get(), epsilon, (u32)data->k));
 	l = new learner(data, all.l, 1);
 	l->set_learn<cbify, predict_or_learn_greedy<true> >();
 	l->set_predict<cbify, predict_or_learn_greedy<false> >();
