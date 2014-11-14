@@ -33,13 +33,14 @@ namespace CBIFY {
       m_epsilon(epsilon), m_cover(cover), m_num_actions(num_actions), m_counter(1)
     { 
       m_scores.resize(num_actions + 1);
+      m_predictions.resize(m_cover);
     }
 
     float Get_Epsilon() { return m_epsilon; }
     size_t Get_Cover() { return m_cover; }
     size_t Get_Counter() { return m_counter; }
-    
-    v_array<float>& Get_Scores() 
+    v_array<uint32_t>& Get_Predictions() { return m_predictions; };
+    v_array<float>& Get_Scores()
     { 
       m_scores.erase();
       for (size_t i = 0; i < m_num_actions; i++)
@@ -57,6 +58,7 @@ namespace CBIFY {
     u32 m_num_actions;
     size_t m_counter;
     v_array<float> m_scores;
+    v_array<uint32_t> m_predictions;
   };
 
   class vw_recorder : public IRecorder<vw_context>
@@ -73,8 +75,6 @@ namespace CBIFY {
   struct cbify {
 
     size_t k;
-    
-    v_array<uint32_t> predictions;
     
     CB::label cb_label;
     COST_SENSITIVE::label cs_label;
@@ -141,7 +141,7 @@ namespace CBIFY {
       else
         ctx.data->cs->predict(*ctx.e, i + 1);
       m_scores[ctx.data->cs_label.prediction - 1] += additive_probability;
-      ctx.data->predictions[i] = (uint32_t)ctx.data->cs_label.prediction;
+      m_predictions[i] = (uint32_t)ctx.data->cs_label.prediction;
     }
     float min_prob = m_epsilon * min(1.f / ctx.data->k, 1.f / (float)sqrt(m_counter * ctx.data->k));
 
@@ -304,6 +304,7 @@ namespace CBIFY {
     size_t cover = data.scorer->Get_Cover();
     size_t counter = data.scorer->Get_Counter();
     v_array<float>& scores = data.scorer->Get_Scores();
+    v_array<uint32_t>& predictions = data.scorer->Get_Predictions();
 
     float additive_probability = 1.f / (float)cover;
 
@@ -349,11 +350,11 @@ namespace CBIFY {
 	      }
 	    if (i != 0)
 	      data.cs->learn(ec,i+1);
-      if (scores[data.predictions[i] - 1] < min_prob)
-        norm += max(0, additive_probability - (min_prob - scores[data.predictions[i] - 1]));
+      if (scores[predictions[i] - 1] < min_prob)
+        norm += max(0, additive_probability - (min_prob - scores[predictions[i] - 1]));
 	    else
 	      norm += additive_probability;
-      scores[data.predictions[i] - 1] += additive_probability;
+      scores[predictions[i] - 1] += additive_probability;
 	  }
       }
 
@@ -403,7 +404,6 @@ namespace CBIFY {
       {
 	size_t cover = (uint32_t)vm["cover"].as<size_t>();
 	data->cs = all.cost_sensitive;
-  data->predictions.resize(cover);
 	data->second_cs_label.costs.resize(data->k);
 	data->second_cs_label.costs.end = data->second_cs_label.costs.begin+data->k;
   float epsilon = 0.05f;
