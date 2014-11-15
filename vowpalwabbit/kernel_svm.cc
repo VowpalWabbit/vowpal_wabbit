@@ -722,7 +722,7 @@ namespace KSVM
 	    //cerr<<"reprocess: ";
 	    int randi = 1;//rand()%2;
 	    if(randi) {
-	      size_t max_pos = suboptimality(model, subopt);
+	      int max_pos = suboptimality(model, subopt);
 	      if(subopt[max_pos] > 0) {
 		if(!overshoot && max_pos == model_pos && max_pos > 0 && j == 0) 
 		  cerr<<"Shouldn't reprocess right after process!!!\n";

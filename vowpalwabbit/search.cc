@@ -418,7 +418,7 @@ namespace Search {
     vw& all = *priv.all;
     if (priv.neighbor_features.size() == 0) return;
 
-    for (int n=0; n<priv.ec_seq.size(); n++) {  // iterate over every example in the sequence
+    for (size_t n=0; n<priv.ec_seq.size(); n++) {  // iterate over every example in the sequence
       example& me = *priv.ec_seq[n];
       for (size_t n_id=0; n_id < priv.neighbor_features.size(); n_id++) {
         int32_t offset = priv.neighbor_features[n_id] >> 24;
@@ -460,7 +460,7 @@ namespace Search {
 
   void del_neighbor_features(search_private& priv) {
     if (priv.neighbor_features.size() == 0) return;
-    for (int n=0; n<priv.ec_seq.size(); n++)
+    for (size_t n=0; n<priv.ec_seq.size(); n++)
       del_features_in_top_namespace(priv, *priv.ec_seq[n], neighbor_namespace);
   }
 
@@ -799,7 +799,8 @@ namespace Search {
           priv.mix_per_roll_policy = random_policy(priv, priv.allow_current_policy, true, advance_prng);
         return priv.mix_per_roll_policy;
 
-      case NO_ROLLOUT:
+    case NO_ROLLOUT:
+    default:
         std::cerr << "internal error (bug): trying to rollin or rollout with NO_ROLLOUT" << endl;
         throw exception();
     }
@@ -810,8 +811,7 @@ namespace Search {
   
   template<class T>
   void ensure_size(v_array<T>& A, size_t sz) {
-    T* begin = A.begin;
-    if (A.end_array - begin < sz) 
+    if ((size_t)(A.end_array - A.begin) < sz) 
       A.resize(sz*2+1, true);
     A.end = A.begin + sz;
   }
