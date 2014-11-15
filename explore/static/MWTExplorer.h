@@ -587,10 +587,6 @@ private:
 	friend class MwtExplorer<Ctx>;
 };
 
-/// Represents a smart pointer to IPolicy<Ctx>
-template <class Ctx>
-using PolicyPtr = unique_ptr<IPolicy<Ctx>>;
-
 ///
 /// The Bootstrap explorer randomizes over the actions chosen by a set of default policies. 
 /// This performs well statistically but can be computationally expensive.
@@ -606,7 +602,7 @@ public:
 	/// The policy pointers must be valid throughout the lifetime of this explorer.
     /// @param num_actions               The number of actions to randomize over.
 	///
-	BootstrapExplorer(vector<PolicyPtr<Ctx>>& default_policy_functions, u32 num_actions) :
+	BootstrapExplorer(vector<unique_ptr<IPolicy<Ctx>>>& default_policy_functions, u32 num_actions) :
 		m_default_policy_functions(default_policy_functions),
 		m_num_actions(num_actions)
 	{
@@ -662,7 +658,7 @@ private:
 	}
 
 private:
-	vector<PolicyPtr<Ctx>>& m_default_policy_functions;
+	vector<unique_ptr<IPolicy<Ctx>>>& m_default_policy_functions;
 	u32 m_bags;
 	u32 m_num_actions;
 
