@@ -98,7 +98,7 @@ void predict(mf& data, learner& base, example& ec) {
 
   // finalize prediction
   ec.partial_prediction = prediction;
-  ((label_data*)ec.ld)->prediction = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
+  ec.l.simple.prediction = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
 }
 
 void learn(mf& data, learner& base, example& ec) {

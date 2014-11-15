@@ -96,12 +96,12 @@ namespace MULTICLASS {
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
-        multiclass* ld = (multiclass*) ec.ld;
+        multiclass ld = ec.l.multi;
         char label_buf[32];
-        if (ld->label == INT_MAX)
+        if (ld.label == INT_MAX)
           strcpy(label_buf," unknown");
         else
-          sprintf(label_buf,"%8ld",(long int)ld->label);
+          sprintf(label_buf,"%8ld",(long int)ld.label);
 
         if(!all.holdout_set_off && all.current_pass >= 1)
         {
@@ -119,7 +119,7 @@ namespace MULTICLASS {
 	      (long int)all.sd->example_number,
 	      all.sd->weighted_examples,
 	      label_buf,
-	      (long int)ld->prediction,
+	      (long int)ld.prediction,
 	      (long unsigned int)ec.num_features);
 
           all.sd->weighted_holdout_examples_since_last_dump = 0;
@@ -132,7 +132,7 @@ namespace MULTICLASS {
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long int)ld->prediction,
+                (long int)ld.prediction,
                 (long unsigned int)ec.num_features);
      
         all.sd->sum_loss_since_last_dump = 0.0;
@@ -144,24 +144,24 @@ namespace MULTICLASS {
 
   void output_example(vw& all, example& ec)
   {
-    multiclass* ld = (multiclass*)ec.ld;
+    multiclass ld = ec.l.multi;
 
     size_t loss = 1;
-    if (ld->label == (uint32_t)ld->prediction)
+    if (ld.label == (uint32_t)ld.prediction)
       loss = 0;
 
     if(ec.test_only)
     {
-      all.sd->weighted_holdout_examples += ld->weight;//test weight seen
-      all.sd->weighted_holdout_examples_since_last_dump += ld->weight;
-      all.sd->weighted_holdout_examples_since_last_pass += ld->weight;
+      all.sd->weighted_holdout_examples += ld.weight;//test weight seen
+      all.sd->weighted_holdout_examples_since_last_dump += ld.weight;
+      all.sd->weighted_holdout_examples_since_last_pass += ld.weight;
       all.sd->holdout_sum_loss += loss;
       all.sd->holdout_sum_loss_since_last_dump += loss;
       all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass
     }
     else
     {
-      all.sd->weighted_examples += ld->weight;
+      all.sd->weighted_examples += ld.weight;
       all.sd->total_features += ec.num_features;
       all.sd->sum_loss += loss;
       all.sd->sum_loss_since_last_dump += loss;
@@ -169,7 +169,7 @@ namespace MULTICLASS {
     }
  
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, (float)ld->prediction, 0, ec.tag);
+      all.print(*sink, (float)ld.prediction, 0, ec.tag);
 
     MULTICLASS::print_update(all, ec);
   }

@@ -52,20 +52,7 @@ audit_data copy_audit_data(audit_data &src) {
 
 namespace VW {
 void copy_example_label(example* dst, example* src, size_t label_size, void(*copy_label)(void*&,void*)) {
-  if (!src->ld) {
-    if (dst->ld) free(dst->ld);  // TODO: this should be a delete_label, really
-    dst->ld = NULL;
-  } else {
-    if ((label_size == 0) && (copy_label == NULL)) {
-      if (dst->ld) free(dst->ld);  // TODO: this should be a delete_label, really
-      dst->ld = NULL;
-    } else if (copy_label) {
-      copy_label(dst->ld, src->ld);
-    } else {
-      //dst->ld = (void*)malloc(label_size);
-      memcpy(dst->ld, src->ld, label_size);
-    }
-  }
+  dst->l = src->l;
 }
 
 void copy_example_data(bool audit, example* dst, example* src)
@@ -145,8 +132,7 @@ void return_features(feature* f)
 flat_example* flatten_example(vw& all, example *ec) 
 {
 	flat_example* fec = (flat_example*) calloc_or_die(1,sizeof(flat_example));  
-	fec->ld = (label_data*)calloc_or_die(1, sizeof(label_data));
-	memcpy(fec->ld, ec->ld, sizeof(label_data));
+	fec->l = ec->l;
 
 	fec->tag_len = ec->tag.size();
 	if (fec->tag_len >0)
@@ -180,7 +166,6 @@ void free_flatten_example(flat_example* fec)
 	free(fec->feature_map);
       if (fec->tag_len > 0)
 	free(fec->tag);
-      free(fec->ld);
       free(fec);
     }
 }
@@ -190,12 +175,6 @@ example *alloc_examples(size_t label_size, size_t count=1)
   example* ec = (example*)calloc_or_die(count, sizeof(example));
   if (ec == NULL) return NULL;
   for (size_t i=0; i<count; i++) {
-    ec[i].ld = calloc_or_die(1, label_size);
-    if (ec[i].ld == NULL) {
-      for (size_t j=0; j<i; j++) free(ec[j].ld);
-      free(ec);
-      return NULL;
-    }
     ec[i].in_use = true;
     ec[i].ft_offset = 0;
     //  std::cerr << "  alloc_example.indices.begin=" << ec->indices.begin << " end=" << ec->indices.end << " // ld = " << ec->ld << "\t|| me = " << ec << std::endl;
@@ -205,14 +184,13 @@ example *alloc_examples(size_t label_size, size_t count=1)
 
 void dealloc_example(void(*delete_label)(void*), example&ec)
 {
-  if (delete_label) {
-    delete_label(ec.ld);
-  }
+  if (delete_label)
+    delete_label(&ec.l);
+
   ec.tag.delete_v();
       
   ec.topic_predictions.delete_v();
 
-  free(ec.ld);
   for (size_t j = 0; j < 256; j++)
     {
       ec.atomics[j].delete_v();

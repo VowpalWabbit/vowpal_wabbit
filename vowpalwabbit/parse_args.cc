@@ -45,6 +45,7 @@ license as described in the file LICENSE.
 #include "stagewise_poly.h"
 #include "active.h"
 #include "kernel_svm.h"
+#include "parse_example.h"
 
 using namespace std;
 //

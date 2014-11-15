@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include "multiclass.h"
 #include "simple_label.h"
 #include "reductions.h"
+#include "vw.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -27,12 +28,12 @@ namespace OAA {
 
   template <bool is_learn>
   void predict_or_learn(oaa& o, learner& base, example& ec) {
-    multiclass* mc_label_data = (multiclass*)ec.ld;
-    if (mc_label_data->label == 0 || (mc_label_data->label > o.k && mc_label_data->label != (uint32_t)-1))
-      cout << "label " << mc_label_data->label << " is not in {1,"<< o.k << "} This won't work right." << endl;
+    multiclass mc_label_data = ec.l.multi;
+    if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
+      cout << "label " << mc_label_data.label << " is not in {1,"<< o.k << "} This won't work right." << endl;
     
-    label_data simple_temp = {0.f, mc_label_data->weight, 0.f, 0.f};
-    ec.ld = &simple_temp;
+    label_data simple_temp = {0.f, mc_label_data.weight, 0.f, 0.f};
+    ec.l.simple = simple_temp;
 
     string outputString;
     stringstream outputStringStream(outputString);
@@ -43,7 +44,7 @@ namespace OAA {
       {
 	if (is_learn)
 	  {
-	    if (mc_label_data->label == i)
+	    if (mc_label_data.label == i)
 	      simple_temp.label = 1;
 	    else
 	      simple_temp.label = -1;
@@ -64,8 +65,8 @@ namespace OAA {
           outputStringStream << i << ':' << ec.partial_prediction;
         }
       }	
-    mc_label_data->prediction = prediction;
-    ec.ld = mc_label_data;
+    mc_label_data.prediction = prediction;
+    ec.l.multi = mc_label_data;
     
     if (o.shouldOutput) 
       o.all->print_text(o.all->raw_prediction, outputStringStream.str(), ec.tag);

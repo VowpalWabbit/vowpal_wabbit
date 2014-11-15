@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 #include "search_sequencetask.h"
 #include "multiclass.h"      // needed for non-LDF
 #include "cost_sensitive.h"  // needed for LDF
+#include "vw.h"
 
 namespace SequenceTask         { Search::search_task task = { "sequence",          run, initialize, NULL,   NULL,  NULL     }; }
 namespace SequenceSpanTask     { Search::search_task task = { "sequencespan",      run, initialize, finish, setup, takedown }; }
@@ -21,8 +22,8 @@ namespace SequenceTask {
   }
 
   void run(Search::search& sch, vector<example*>& ec) {
-    for (int i=0; i<ec.size(); i++) {
-      action oracle     = MULTICLASS::get_example_label(ec[i]);
+    for (size_t i=0; i<ec.size(); i++) {
+      action oracle     = ec[i]->l.multi.label;
       size_t prediction = Search::predictor(sch, i+1).set_input(*ec[i]).set_oracle(oracle).set_condition_range(i, sch.get_history_length(), 'p').predict();
 
       if (sch.output().good())
@@ -65,22 +66,22 @@ namespace SequenceSpanTask {
 
   void convert_bio_to_bilou(vector<example*> ec) {
     for (size_t n=0; n<ec.size(); n++) {
-      MULTICLASS::multiclass* ylab = (MULTICLASS::multiclass*)ec[n]->ld;
-      action y = ylab->label;
-      action nexty = (n == ec.size()-1) ? 0 : ((MULTICLASS::multiclass*)ec[n+1]->ld)->label;
+      MULTICLASS::multiclass ylab = ec[n]->l.multi;
+      action y = ylab.label;
+      action nexty = (n == ec.size()-1) ? 0 : ec[n+1]->l.multi.label;
       if (y == 1) { // do nothing
       } else if (y % 2 == 0) { // this is a begin-X
         if (nexty != y + 1) // should be unit
-          ylab->label = (y/2 - 1) * 4 + 2;  // from 2 to 2, 4 to 6, 6 to 10, etc.
+          ylab.label = (y/2 - 1) * 4 + 2;  // from 2 to 2, 4 to 6, 6 to 10, etc.
         else // should be begin-X
-          ylab->label = (y/2 - 1) * 4 + 3;  // from 2 to 3, 4 to 7, 6 to 11, etc.
+          ylab.label = (y/2 - 1) * 4 + 3;  // from 2 to 3, 4 to 7, 6 to 11, etc.
       } else if (y % 2 == 1) { // this is an in-X
         if (nexty != y) // should be last
-          ylab->label = (y-1) * 2 + 1;  // from 3 to 5, 5 to 9, 7 to 13, etc.
+          ylab.label = (y-1) * 2 + 1;  // from 3 to 5, 5 to 9, 7 to 13, etc.
         else // should be in-X
-          ylab->label = (y-1) * 2;      // from 3 to 4, 5 to 8, 7 to 12, etc.
+          ylab.label = (y-1) * 2;      // from 3 to 4, 5 to 8, 7 to 12, etc.
       }
-      assert( y == bilou_to_bio(ylab->label) );
+      assert( y == bilou_to_bio(ylab.label) );
     }
   }
 
@@ -147,8 +148,8 @@ namespace SequenceSpanTask {
 
     if (my_task_data->encoding == BILOU)
       for (size_t n=0; n<ec.size(); n++) {
-        MULTICLASS::multiclass* ylab = (MULTICLASS::multiclass*)ec[n]->ld;
-        ylab->label = bilou_to_bio(ylab->label);
+        MULTICLASS::multiclass ylab = ec[n]->l.multi;
+        ylab.label = bilou_to_bio(ylab.label);
       }
   }
   
@@ -158,7 +159,7 @@ namespace SequenceSpanTask {
     v_array<action> * y_allowed = &(my_task_data->allowed_actions);
     
     for (size_t i=0; i<ec.size(); i++) {
-      action oracle = MULTICLASS::get_example_label(ec[i]);
+      action oracle = ec[i]->l.multi.label;
       size_t len = y_allowed->size();
       Search::predictor P(sch, i+1);
       if (my_task_data->encoding == BIO) {
@@ -225,11 +226,11 @@ namespace ArgmaxTask {
     uint32_t max_label = 1;
 
     for(size_t i = 0; i < ec.size(); i++)
-      max_label = max(MULTICLASS::get_example_label(ec[i]), max_label);
+      max_label = max(ec[i]->l.multi.label, max_label);
         
     for (ptag i=0; i<ec.size(); i++) {
       // labels should be 1 or 2, and our output is MAX of all predicted values
-      uint32_t oracle = my_task_data->predict_max ? max_label : MULTICLASS::get_example_label(ec[i]);
+      uint32_t oracle = my_task_data->predict_max ? max_label : ec[i]->l.multi.label;
       uint32_t prediction = sch.predict(*ec[i], i+1, &oracle, 1, &i, "p");
 
       max_prediction = max(prediction, max_prediction);
@@ -259,9 +260,9 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
 
     example* ldf_examples = alloc_examples(sizeof(CS::label), num_actions);
     for (size_t a=0; a<num_actions; a++) {
-      CS::label* lab = (CS::label*)ldf_examples[a].ld;
-      CS::cs_label.default_label(lab);
-      lab->costs.push_back(default_wclass);
+      CS::label& lab = ldf_examples[a].l.cs;
+      CS::cs_label.default_label(&lab);
+      lab.costs.push_back(default_wclass);
     }
 
     task_data* data = (task_data*)calloc(1, sizeof(task_data));
@@ -308,14 +309,14 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
           my_update_example_indicies(sch, true, &data->ldf_examples[a], 28904713, 4832917 * (uint32_t)a);
         
           // need to tell search what the action id is, so that it can add history features correctly!
-          CS::label* lab = (CS::label*)data->ldf_examples[a].ld;
-          lab->costs[0].x = 0.;
-          lab->costs[0].class_index = (uint32_t)a+1;
-          lab->costs[0].partial_prediction = 0.;
-          lab->costs[0].wap_value = 0.;
+          CS::label& lab = data->ldf_examples[a].l.cs;
+          lab.costs[0].x = 0.;
+          lab.costs[0].class_index = (uint32_t)a+1;
+          lab.costs[0].partial_prediction = 0.;
+          lab.costs[0].wap_value = 0.;
         }
 
-      action oracle  = MULTICLASS::get_example_label(ec[i]) - 1;
+      action oracle  = ec[i]->l.multi.label - 1;
       action pred_id = Search::predictor(sch, i+1).set_input(data->ldf_examples, data->num_actions).set_oracle(oracle).set_condition_range(i, sch.get_history_length(), 'p').predict();
       action prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
       

@@ -5,7 +5,6 @@ license as described in the file LICENSE.
  */
 #pragma once
 #include <string>
-#include "loss_functions.h"
 #include "boost/program_options.hpp"
 #include "global_data.h"
 

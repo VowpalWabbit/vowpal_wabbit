@@ -13,16 +13,15 @@ namespace BINARY {
     else
       base.predict(ec);
 
-    label_data* ld = (label_data*)ec.ld;//New loss
-    if ( ld->prediction > 0)
-      ld->prediction = 1;
+    if ( ec.l.simple.prediction > 0)
+      ec.l.simple.prediction = 1;
     else
-      ld->prediction = -1;
+      ec.l.simple.prediction = -1;
 
-    if (ld->label == ld->prediction)
+    if (ec.l.simple.label == ec.l.simple.prediction)
       ec.loss = 0.;
     else
-      ec.loss = ld->weight;
+      ec.loss = ec.l.simple.weight;
   }
 
   learner* setup(vw& all, po::variables_map& vm)

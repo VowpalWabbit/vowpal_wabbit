@@ -4,6 +4,9 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
+
+#include "label_parser.h"
+
 namespace CB {
 
   struct cb_class {

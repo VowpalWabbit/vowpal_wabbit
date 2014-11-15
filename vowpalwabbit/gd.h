@@ -88,8 +88,7 @@ template <class R, void (*T)(R&, float, float&)>
 
   inline float inline_predict(vw& all, example& ec)
   {
-    label_data* ld = (label_data*)ec.ld;
-    float temp = ld->initial;
+    float temp = ec.l.simple.initial;
     foreach_feature<float, vec_add>(all, ec, temp);
     return temp;
   }

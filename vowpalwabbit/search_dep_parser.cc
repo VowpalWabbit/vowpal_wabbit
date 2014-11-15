@@ -173,7 +173,7 @@ namespace DepParserTask {
     task_data *data = srn.get_task_data<task_data>();
     vector<string> &newpairs = data->pairs;
     vector<string> &newtriples = data->triples;
-    data->ex = alloc_examples(sizeof(MULTICLASS::get_example_label(&base_ex[0])), 1);
+    data->ex = alloc_examples(sizeof(base_ex[0].l.multi.label), 1);
     data->nfs = base_ex->indices.size()-1; // remove constant fs
     size_t nfs = data->nfs;
 
@@ -418,7 +418,7 @@ namespace DepParserTask {
     gold_heads.erase();
     gold_heads.push_back(0);
     for(size_t i=0; i<ec.size(); i++) {
-      gold_heads.push_back(MULTICLASS::get_example_label(ec[i])-1);
+      gold_heads.push_back(ec[i]->l.multi.label-1);
       heads[i+1] = 0;
     }
     stack.erase();

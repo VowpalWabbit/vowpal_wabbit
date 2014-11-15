@@ -3,6 +3,7 @@
 #include "simple_label.h"
 #include "rand48.h"
 #include "float.h"
+#include "vw.h"
 
 using namespace LEARNER;
 
@@ -49,20 +50,19 @@ namespace ACTIVE {
     
     if (is_learn)
       {
-	label_data* ld = (label_data*)ec.ld;
 	vw& all = *a.all;
 
-	float k = ec.example_t - ld->weight;
-	ec.revert_weight = all.loss->getRevertingWeight(all.sd, ld->prediction, all.eta/powf(k,all.power_t));
+	float k = ec.example_t - ec.l.simple.weight;
+	ec.revert_weight = all.loss->getRevertingWeight(all.sd, ec.l.simple.prediction, all.eta/powf(k,all.power_t));
 	float importance = query_decision(a, ec, k);
 
 	if(importance > 0){
 	  all.sd->queries += 1;
-	  ld->weight *= importance;
+	  ec.l.simple.weight *= importance;
 	  base.learn(ec);
 	}
 	else
-	  ld->label = FLT_MAX;
+	  ec.l.simple.label = FLT_MAX;
       }
   }
   
@@ -73,13 +73,12 @@ namespace ACTIVE {
     else
       base.predict(ec);
 
-    label_data* ld = (label_data*)ec.ld;
-    
-    if (ld->label == FLT_MAX) {
+    if (ec.l.simple.label == FLT_MAX) {
       vw& all = *a.all;
       float t = (float)(ec.example_t - all.sd->weighted_holdout_examples);
       
-      ec.revert_weight = all.loss->getRevertingWeight(all.sd, ld->prediction, all.eta/powf(t,all.power_t));
+      ec.revert_weight = all.loss->getRevertingWeight(all.sd, ec.l.simple.prediction, 
+						      all.eta/powf(t,all.power_t));
     }
   }
 
@@ -108,22 +107,22 @@ namespace ACTIVE {
   
   void output_and_account_example(vw& all, active& a, example& ec)
   {
-    label_data* ld = (label_data*)ec.ld;
+    label_data& ld = ec.l.simple;
     
     if(ec.test_only)
       {
-	all.sd->weighted_holdout_examples += ld->weight;//test weight seen
-	all.sd->weighted_holdout_examples_since_last_dump += ld->weight;
-	all.sd->weighted_holdout_examples_since_last_pass += ld->weight;
+	all.sd->weighted_holdout_examples += ld.weight;//test weight seen
+	all.sd->weighted_holdout_examples_since_last_dump += ld.weight;
+	all.sd->weighted_holdout_examples_since_last_pass += ld.weight;
 	all.sd->holdout_sum_loss += ec.loss;
 	all.sd->holdout_sum_loss_since_last_dump += ec.loss;
 	all.sd->holdout_sum_loss_since_last_pass += ec.loss;//since last pass
       }
     else
       {
-	if (ld->label != FLT_MAX)
-	  all.sd->weighted_labels += ld->label * ld->weight;
-	all.sd->weighted_examples += ld->weight;
+	if (ld.label != FLT_MAX)
+	  all.sd->weighted_labels += ld.label * ld.weight;
+	all.sd->weighted_examples += ld.weight;
 	all.sd->sum_loss += ec.loss;
 	all.sd->sum_loss_since_last_dump += ec.loss;
 	all.sd->total_features += ec.num_features;
@@ -132,15 +131,15 @@ namespace ACTIVE {
     all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
     
     float ai=-1; 
-    if(ld->label == FLT_MAX)
+    if(ld.label == FLT_MAX)
       ai=query_decision(a, ec, (float)all.sd->weighted_unlabeled_examples);
     
-    all.sd->weighted_unlabeled_examples += ld->label == FLT_MAX ? ld->weight : 0;
+    all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ld.weight : 0;
     
     for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
       {
 	int f = (int)all.final_prediction_sink[i];
-	active_print_result(f, ld->prediction, ai, ec.tag);
+	active_print_result(f, ld.prediction, ai, ec.tag);
       }
     
     print_update(all, ec);

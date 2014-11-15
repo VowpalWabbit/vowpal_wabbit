@@ -7,6 +7,7 @@
 #include "rand48.h"
 #include "bs.h"
 #include "../explore/static/MWTExplorer.h"
+#include "vw.h"
 
 using namespace LEARNER;
 using namespace MultiWorldTesting;
@@ -112,17 +113,12 @@ namespace CBIFY {
   u32 vw_policy::Choose_Action(vw_context& ctx)
   {
     if (m_index == -1)
-    {
       ctx.l->predict(*ctx.e);
-    }
     else
-    {
       ctx.l->predict(*ctx.e, (size_t)m_index);
-    }
     ctx.recorded = false;
-    return (u32)(((CB::label*)ctx.e->ld)->prediction);
+    return (u32)(ctx.e->l.cb.prediction);
   }
-
 
   void vw_recorder::Record(vw_context& context, u32 action, float probability, string unique_key)
   {
@@ -161,76 +157,79 @@ namespace CBIFY {
   template <bool is_learn>
   void predict_or_learn_first(cbify& data, learner& base, example& ec)
   {//Explore tau times, then act according to optimal.
-    MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
-    ec.ld = &(data.cb_label);
+    MULTICLASS::multiclass ld = ec.l.multi;
+
     data.cb_label.costs.erase();
+    ec.l.cb = data.cb_label;
     //Use CB to find current prediction for remaining rounds.
-
-	vw_context vwc;
-	vwc.l = &base;
-	vwc.e = &ec;
-
-  uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer.get(), to_string(ec.example_counter), vwc);
-  ec.loss = loss(ld->label, action);
-
-  if (vwc.recorded && is_learn)
+    
+    vw_context vwc;
+    vwc.l = &base;
+    vwc.e = &ec;
+    
+    uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer.get(), to_string(ec.example_counter), vwc);
+    ec.loss = loss(ld.label, action);
+    
+    if (vwc.recorded && is_learn)
       {
 	CB::cb_class l = {ec.loss, action, 1.f / data.k, 0};
 	data.cb_label.costs.push_back(l);
 	base.learn(ec);
-  ec.loss = l.cost;
+	ec.loss = l.cost;
       }
-
-  ld->prediction = action;
-  ec.ld = ld;
+    
+    ld.prediction = action;
+    ec.l.multi = ld;
   }
 
   template <bool is_learn>
   void predict_or_learn_greedy(cbify& data, learner& base, example& ec)
   {//Explore uniform random an epsilon fraction of the time.
-    MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
-    ec.ld = &(data.cb_label);
+    MULTICLASS::multiclass ld = ec.l.multi;
+
     data.cb_label.costs.erase();
+    ec.l.cb = data.cb_label;
     
-	vw_context vwc;
-	vwc.l = &base;
-	vwc.e = &ec;
-  data.mwt_explorer->Choose_Action(*data.greedy_explorer.get(), to_string(ec.example_counter), vwc);
-
-  u32 action = data.recorder->Get_Action();
-	float prob = data.recorder->Get_Prob();
-
-	CB::cb_class l = { loss(ld->label, action), action, prob };
-	data.cb_label.costs.push_back(l);
+    vw_context vwc;
+    vwc.l = &base;
+    vwc.e = &ec;
+    data.mwt_explorer->Choose_Action(*data.greedy_explorer.get(), to_string(ec.example_counter), vwc);
+    
+    u32 action = data.recorder->Get_Action();
+    float prob = data.recorder->Get_Prob();
+    
+    CB::cb_class l = { loss(ld.label, action), action, prob };
+    data.cb_label.costs.push_back(l);
     
     if (is_learn)
       base.learn(ec);
     
-    ld->prediction = action;
-    ec.ld = ld;
-    ec.loss = loss(ld->label, action);
+    ld.prediction = action;
+    ec.l.multi = ld;
+    ec.loss = loss(ld.label, action);
   }
 
   template <bool is_learn>
   void predict_or_learn_bag(cbify& data, learner& base, example& ec)
   {//Randomize over predictions from a base set of predictors
     //Use CB to find current predictions.
-    MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
-    ec.ld = &(data.cb_label);
+    MULTICLASS::multiclass ld = ec.l.multi;
+
     data.cb_label.costs.erase();
+    ec.l.cb = data.cb_label;
 
-	vw_context context;
-	context.l = &base;
-	context.e = &ec;
-  uint32_t action = data.mwt_explorer->Choose_Action(*data.bootstrap_explorer.get(), to_string(ec.example_counter), context);
-
+    vw_context context;
+    context.l = &base;
+    context.e = &ec;
+    uint32_t action = data.mwt_explorer->Choose_Action(*data.bootstrap_explorer.get(), to_string(ec.example_counter), context);
+    
     assert(action != 0);
     if (is_learn)
       {
-  assert(action == data.recorder->Get_Action());
-  float probability = data.recorder->Get_Prob();
-
-	CB::cb_class l = {loss(ld->label, action), 
+	assert(action == data.recorder->Get_Action());
+	float probability = data.recorder->Get_Prob();
+	
+	CB::cb_class l = {loss(ld.label, action), 
 			  action, probability};
 	data.cb_label.costs.push_back(l);
 	for (size_t i = 0; i < data.policies.size(); i++)
@@ -240,8 +239,8 @@ namespace CBIFY {
 	      base.learn(ec,i);
 	  }
       }
-    ld->prediction = action;
-    ec.ld = ld;
+    ld.prediction = action;
+    ec.l.multi = ld;
   }
   
   void safety(v_array<float>& distribution, float min_prob)
@@ -285,7 +284,7 @@ namespace CBIFY {
   void predict_or_learn_cover(cbify& data, learner& base, example& ec)
   {//Randomize over predictions from a base set of predictors
     //Use cost sensitive oracle to cover actions to form distribution.
-    MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
+    MULTICLASS::multiclass ld = ec.l.multi;
 
     data.cs_label.costs.erase();
     for (uint32_t j = 0; j < data.k; j++)
@@ -308,23 +307,23 @@ namespace CBIFY {
 
     float additive_probability = 1.f / (float)cover;
 
-    ec.ld = &data.cs_label;
+    ec.l.cs = data.cs_label;
 
     float min_prob = epsilon * min(1.f / data.k, 1.f / (float)sqrt(counter * data.k));
     
-	vw_context cp;
-	cp.data = &data;
-	cp.e = &ec;
-  uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer.get(), to_string(ec.example_counter), cp);
-	
+    vw_context cp;
+    cp.data = &data;
+    cp.e = &ec;
+    uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer.get(), to_string(ec.example_counter), cp);
+    
     if (is_learn)
       {
 	data.cb_label.costs.erase();
   float probability = data.recorder->Get_Prob();
-	CB::cb_class l = {loss(ld->label, action), 
+	CB::cb_class l = {loss(ld.label, action), 
 			  action, probability};
 	data.cb_label.costs.push_back(l);
-	ec.ld = &(data.cb_label);
+	ec.l.cb = data.cb_label;
 	base.learn(ec);
 
 	//Now update oracles
@@ -338,7 +337,7 @@ namespace CBIFY {
       scores[j] = 0;
 	  }
 	
-	ec.ld = &data.second_cs_label;
+	ec.l.cs = data.second_cs_label;
 	//2. Update functions
   for (size_t i = 0; i < cover; i++)
 	  { //get predicted cost-sensitive predictions
@@ -358,8 +357,8 @@ namespace CBIFY {
 	  }
       }
 
-    ld->prediction = action;
-    ec.ld = ld;
+    ld.prediction = action;
+    ec.l.multi = ld;
   }
   
   void init_driver(cbify&) {}

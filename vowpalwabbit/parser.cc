@@ -741,7 +741,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
 
   if (all.p->write_cache) 
     {
-      all.p->lp.cache_label(ae->ld,*(all.p->output));
+      all.p->lp.cache_label(&ae->l,*(all.p->output));
       cache_features(*(all.p->output), ae, (uint32_t)all.parse_mask);
     }
   return true;
@@ -749,7 +749,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
 
 void end_pass_example(vw& all, example* ae)
 {
-  all.p->lp.default_label(ae->ld);
+  all.p->lp.default_label(&ae->l);
   ae->end_pass = true;
   all.p->in_pass_counter = 0;
 }
@@ -771,7 +771,7 @@ void setup_example(vw& all, example* ae)
   if (all.p->emptylines_separate_examples && example_is_newline(*ae))
     all.p->in_pass_counter++;
   
-  all.sd->t += all.p->lp.get_weight(ae->ld);
+  all.sd->t += all.p->lp.get_weight(&ae->l);
   ae->example_t = (float)all.sd->t;
 
   
@@ -863,7 +863,7 @@ void setup_example(vw& all, example* ae)
 namespace VW{
   example* new_unused_example(vw& all) { 
     example* ec = get_unused_example(all);
-    all.p->lp.default_label(ec->ld);
+    all.p->lp.default_label(&ec->l);
     all.p->begin_parsed_examples++;
     ec->example_counter = all.p->begin_parsed_examples;
     return ec;
@@ -893,16 +893,15 @@ namespace VW{
 
   void add_label(example* ec, float label, float weight, float base)
   {
-    label_data* l = (label_data*)ec->ld;
-    l->label = label;
-    l->weight = weight;
-    l->initial = base;
+    ec->l.simple.label = label;
+    ec->l.simple.weight = weight;
+    ec->l.simple.initial = base;
   }
 
   example* import_example(vw& all, vector<feature_space> vf)
   {
     example* ret = get_unused_example(all);
-    all.p->lp.default_label(ret->ld);
+    all.p->lp.default_label(&ret->l);
     for (size_t i = 0; i < vf.size();i++)
       {
 	uint32_t index = vf[i].first;
@@ -922,7 +921,7 @@ namespace VW{
   example* import_example(vw& all, primitive_feature_space* features, size_t len)
   {
     example* ret = get_unused_example(all);
-    all.p->lp.default_label(ret->ld);
+    all.p->lp.default_label(&ret->l);
     for (size_t i = 0; i < len;i++)
       {
 	uint32_t index = features[i].name;
@@ -976,7 +975,7 @@ namespace VW{
     char* cstr = (char*)label.c_str();
     substring str = { cstr, cstr+label.length() };
     words.push_back(str);
-    all.p->lp.parse_label(all.p, all.sd, ec.ld, words);
+    all.p->lp.parse_label(all.p, all.sd, &ec.l, words);
     words.erase();
     words.delete_v();
   }
@@ -1111,27 +1110,27 @@ float get_topic_prediction(example* ec, size_t i)
 
 float get_label(example* ec)
 {
-	return ((label_data*)(ec->ld))->label;
+	return ec->l.simple.label;
 }
 
 float get_importance(example* ec)
 {
-	return ((label_data*)(ec->ld))->weight;
+	return ec->l.simple.weight;
 }
 
 float get_initial(example* ec)
 {
-	return ((label_data*)(ec->ld))->initial;
+	return ec->l.simple.initial;
 }
 
 float get_prediction(example* ec)
 {
-	return ((label_data*)(ec->ld))->prediction;
+	return ec->l.simple.prediction;
 }
 
 float get_cost_sensitive_prediction(example* ec)
 {
-	return ((COST_SENSITIVE::label*)(ec->ld))->prediction;
+       return ec->l.cs.prediction;
 }
 
 size_t get_tag_length(example* ec)
@@ -1161,7 +1160,7 @@ void initialize_examples(vw& all)
 
   for (size_t i = 0; i < all.p->ring_size; i++)
     {
-      all.p->examples[i].ld = calloc_or_die(1,all.p->lp.label_size);
+      bzero(&all.p->examples[i].l, sizeof(polylabel));
       all.p->examples[i].in_use = false;
     }
 }

@@ -60,11 +60,11 @@ void receive_result(sender& s)
   get_prediction(s.sd,res,weight);
   
   example* ec=s.delay_ring[s.received_index++ % s.all->p->ring_size];
-  label_data* ld = (label_data*)ec->ld;
+  label_data& ld = ec->l.simple;
   
-  ld->prediction = res;
+  ld.prediction = res;
   
-  ec->loss = s.all->loss->getLoss(s.all->sd, ld->prediction, ld->label) * ld->weight;
+  ec->loss = s.all->loss->getLoss(s.all->sd, ld.prediction, ld.label) * ld.weight;
   
   return_simple_example(*(s.all), NULL, *ec);  
 }
@@ -74,9 +74,8 @@ void receive_result(sender& s)
     if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
       receive_result(s);
 
-    label_data* ld = (label_data*)ec.ld;
-    s.all->set_minmax(s.all->sd, ld->label);
-    s.all->p->lp.cache_label(ld, *s.buf);//send label information.
+    s.all->set_minmax(s.all->sd, ec.l.simple.label);
+    s.all->p->lp.cache_label(&ec.l, *s.buf);//send label information.
     cache_tag(*s.buf, ec.tag);
     send_features(s.buf,ec, (uint32_t)s.all->parse_mask);
     s.delay_ring[s.sent_index++ % s.all->p->ring_size] = &ec;

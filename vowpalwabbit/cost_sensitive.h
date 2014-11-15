@@ -4,12 +4,10 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
-#include "io_buf.h"
-#include "parse_primitives.h"
-#include "global_data.h"
-#include "example.h"
-#include "parser.h"
-#include "parse_args.h"
+#include "label_parser.h"
+
+struct example;
+struct vw;
 
 namespace COST_SENSITIVE {
   struct wclass {
@@ -25,7 +23,6 @@ namespace COST_SENSITIVE {
      if x > 0 then this is a label feature vector for (size_t)x
 */
 
-  
   struct label {
     v_array<wclass> costs;
     uint32_t prediction;

@@ -47,7 +47,7 @@ namespace KSVM
     v_array<float> krow;
 
     ~svm_example();
-    svm_example(flat_example *fec); 
+    void init_svm_example(flat_example *fec); 
     int compute_kernels(svm_params& params);
     int clear_kernels();
   };
@@ -95,13 +95,13 @@ namespace KSVM
   static size_t num_kernel_evals = 0;
   static size_t num_cache_evals = 0;
 
-
-  svm_example::svm_example(flat_example *fec)
+  
+  void svm_example::init_svm_example(flat_example *fec)
   {
     *(flat_example*)this = *fec;
     memset(fec, 0, sizeof(flat_example));
   }
-
+  
   svm_example::~svm_example()
   {
     krow.delete_v();
@@ -226,9 +226,6 @@ namespace KSVM
       brw = bin_read_fixed(model_file, (char*) fec, sizeof(flat_example), "");
 
       if(brw > 0) {
-	fec->ld = (label_data*) calloc(1, sizeof(label_data));
-	brw = bin_read_fixed(model_file, (char*) fec->ld, sizeof(label_data), "");
-	if(!brw) return 4;
 	if(fec->tag_len > 0) {
 	  fec->tag = (char*) calloc(fec->tag_len, sizeof(char));	
 	  brw = bin_read_fixed(model_file, (char*) fec->tag, fec->tag_len*sizeof(char), "");
@@ -245,10 +242,6 @@ namespace KSVM
       brw = bin_write_fixed(model_file, (char*) fec, sizeof(flat_example));
 
       if(brw > 0) {
-	if(fec->ld) {
-	  brw = bin_write_fixed(model_file, (char*) fec->ld, sizeof(label_data));
-	  if(!brw) return 4;
-	}
 	if(fec->tag_len > 0) {
 	  brw = bin_write_fixed(model_file, (char*) fec->tag, (uint32_t)fec->tag_len*sizeof(char));
 	  if(!brw) {
@@ -285,7 +278,9 @@ namespace KSVM
       //cerr<<"Calling save_load_flat_example\n";      
       if(read) {
 	save_load_flat_example(model_file, read, fec);
-	model->support_vec.push_back(new svm_example(fec));
+	svm_example* tmp= (svm_example*)calloc_or_die(1,sizeof(svm_example));
+	tmp->init_svm_example(fec);
+	model->support_vec.push_back(tmp);
 	free_flatten_example(fec);
 	//cerr<<model->support_vec[i]->example_counter<<" "<<fec->example_counter<<" "<<fec<<endl;
       }
@@ -409,10 +404,11 @@ namespace KSVM
   void predict(svm_params& params, learner &base, example& ec) {
     flat_example* fec = flatten_sort_example(*(params.all),&ec);    
     if(fec) {
-      svm_example* sec = new svm_example(fec);
+      svm_example* sec = (svm_example*)calloc_or_die(1, sizeof(svm_example)); 
+      sec->init_svm_example(fec);
       float score;
       predict(params, &sec, &score, 1);
-      ((label_data*) ec.ld)->prediction = score;
+      ec.l.simple.prediction = score;
     }
   }
 
@@ -423,11 +419,10 @@ namespace KSVM
     //cerr<<"Subopt ";
     double max_val = 0;
     for(size_t i = 0;i < model->num_support;i++) {
-      label_data* ld = (label_data*)(model->support_vec[i]->ld);
-      //cerr<<ld->weight<<endl;
-      double tmp = model->alpha[i]*ld->label;                  
+      label_data& ld = model->support_vec[i]->l.simple;
+      double tmp = model->alpha[i]*ld.label;                  
       
-      if((tmp < ld->weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0)) 
+      if((tmp < ld.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0)) 
 	subopt[i] = fabs(model->delta[i]);
       else
 	subopt[i] = 0;
@@ -494,25 +489,25 @@ namespace KSVM
     //cerr<<"Updating model "<<pos<<" "<<model->num_support<<" ";
     //cerr<<model->support_vec[pos]->example_counter<<endl;
     svm_example* fec = model->support_vec[pos];
-    label_data* ld = (label_data*) fec->ld;
+    label_data& ld = fec->l.simple;
     fec->compute_kernels(params);
     float *inprods = fec->krow.begin;
     float alphaKi = dense_dot(inprods, model->alpha, model->num_support);
-    model->delta[pos] = alphaKi*ld->label/params.lambda - 1;
+    model->delta[pos] = alphaKi*ld.label/params.lambda - 1;
     float alpha_old = model->alpha[pos];
     alphaKi -= model->alpha[pos]*inprods[pos];
     model->alpha[pos] = 0.;
     
-    float proj = alphaKi*ld->label;
+    float proj = alphaKi*ld.label;
     float ai = (params.lambda - proj)/inprods[pos];
     //cerr<<model->num_support<<" "<<pos<<" "<<proj<<" "<<alphaKi<<" "<<alpha_old<<" "<<ld->label<<" "<<model->delta[pos]<<" ";
 
-    if(ai > ld->weight)				
-      ai = ld->weight;
+    if(ai > ld.weight)				
+      ai = ld.weight;
     else if(ai < 0)
       ai = 0;
 
-    ai *= ld->label;
+    ai *= ld.label;
     float diff = ai - alpha_old;
 
     if(fabs(diff) > 1.0e-06) 
@@ -525,32 +520,16 @@ namespace KSVM
     }
     
     for(size_t i = 0;i < model->num_support; i++) {
-      label_data* ldi = (label_data*) model->support_vec[i]->ld;
-      model->delta[i] += diff*inprods[i]*ldi->label/params.lambda;
+      label_data& ldi = model->support_vec[i]->l.simple;
+      model->delta[i] += diff*inprods[i]*ldi.label/params.lambda;
     }
-    
-    //cerr<<model->delta[pos]<<" "<<model->delta[pos]*ai<<" "<<diff<<" ";
-    //cerr<<ai<<" "<<diff<<endl;
-    //cerr<<"Inprods: ";
-    //for(int i = 0;i < model->num_support;i++)
-    //cerr<<inprods[i]<<" ";
-    //cerr<<endl;
     
     if(fabs(ai) <= 1.0e-10)
       remove(params, pos);
-    else {
+    else 
       model->alpha[pos] = ai;
-      //cerr<<ai<<" "<<model->alpha[pos]<<endl;
-    }
-    
 
-    //double* subopt = new double[model->num_support];
-    //size_t max_pos = suboptimality(model, subopt);
-    //model->maxdelta = subopt[max_pos];
-    //delete[] subopt;
-    //delete[] inprods;
     return overshoot;
-    //cerr<<model->alpha[pos]<<" "<<subopt[pos]<<endl;
   }
 
   void copy_char(char& c1, const char& c2) {
@@ -610,7 +589,8 @@ namespace KSVM
       
       for(size_t i = 0;i < params.pool_size; i++) {	
 	if(!save_load_flat_example(*b, true, fec)) {
-	  params.pool[i] = new svm_example(fec);
+	  params.pool[i] = (svm_example*)calloc_or_die(1,sizeof(svm_example));
+	  params.pool[i]->init_svm_example(fec);
 	  train_pool[i] = true;
 	  params.pool_pos++;
 	  // for(int j = 0;j < fec->feature_map_len;j++)
@@ -676,8 +656,7 @@ namespace KSVM
 	  float queryp = 2.0/(1.0 + expf((float)params.active_c*fabs(scores[i])*pow(params.pool[i]->example_counter,0.5)));
 	  if(rand() < queryp) {
 	    svm_example* fec = params.pool[i];
-	    label_data* ld = (label_data*)fec->ld;
-	    ld->weight *= 1/queryp;
+	    fec->l.simple.weight *= 1/queryp;
 	    train_pool[i] = 1;
 	  }
 	}
@@ -765,13 +744,13 @@ namespace KSVM
     //   cout<<i<<":"<<fec->feature_map[i].x<<" "<<fec->feature_map[i].weight_index<<" ";
     // cout<<endl;
     if(fec) {
-      svm_example* sec = new svm_example(fec);
+      svm_example* sec = (svm_example*)calloc_or_die(1, sizeof(svm_example));
+      sec->init_svm_example(fec);
       free_flatten_example(fec);
       float score = 0;
       predict(params, &sec, &score, 1);
-      ((label_data*) ec.ld)->prediction = score;
-      float label = ((label_data*)ec.ld)->label;
-      ec.loss = max(0.f, 1.f - score*label);
+      ec.l.simple.prediction = score;
+      ec.loss = max(0.f, 1.f - score*ec.l.simple.label);
       params.loss_sum += ec.loss;
       if(params.all->training && ec.example_counter % 100 == 0)
 	trim_cache(params);
@@ -795,7 +774,7 @@ namespace KSVM
   void free_svm_model(svm_model* model)
   {
     for(size_t i = 0;i < model->num_support; i++) {
-      delete model->support_vec[i];
+      free(model->support_vec[i]);
       model->support_vec[i] = 0;
      }
 

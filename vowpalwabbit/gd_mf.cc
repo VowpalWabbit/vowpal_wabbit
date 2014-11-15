@@ -79,15 +79,14 @@ void mf_print_offset_features(vw& all, example& ec, size_t offset)
 
 void mf_print_audit_features(vw& all, example& ec, size_t offset)
 {
-  label_data& ld = (label_data&)ec.ld;
-  print_result(all.stdout_fileno,ld.prediction,-1,ec.tag);
+  print_result(all.stdout_fileno,ec.l.simple.prediction,-1,ec.tag);
   mf_print_offset_features(all, ec, offset);
 }
 
 float mf_predict(vw& all, example& ec)
 {
-  label_data* ld = (label_data*)ec.ld;
-  float prediction = ld->initial;
+  label_data& ld = ec.l.simple;
+  float prediction = ld.initial;
 
   // clear stored predictions
   ec.topic_predictions.erase();
@@ -139,19 +138,19 @@ float mf_predict(vw& all, example& ec)
 
   ec.partial_prediction = prediction;
 
-  all.set_minmax(all.sd, ld->label);
+  all.set_minmax(all.sd, ld.label);
 
-  ld->prediction = GD::finalize_prediction(all.sd, ec.partial_prediction);
+  ld.prediction = GD::finalize_prediction(all.sd, ec.partial_prediction);
 
-  if (ld->label != FLT_MAX)
+  if (ld.label != FLT_MAX)
     {
-      ec.loss = all.loss->getLoss(all.sd, ld->prediction, ld->label) * ld->weight;
+      ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ld.weight;
     }
 
   if (all.audit)
     mf_print_audit_features(all, ec, 0);
 
-  return ld->prediction;
+  return ld.prediction;
 }
 
 
@@ -165,12 +164,12 @@ void mf_train(vw& all, example& ec)
 {
       weight* weights = all.reg.weight_vector;
       size_t mask = all.reg.weight_mask;
-      label_data* ld = (label_data*)ec.ld;
+      label_data& ld = ec.l.simple;
 
       // use final prediction to get update size
       // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
-      float eta_t = all.eta/pow(ec.example_t,all.power_t) / 3.f * ld->weight;
-      float update = all.loss->getUpdate(ld->prediction, ld->label, eta_t, 1.); //ec.total_sum_feat_sq);
+      float eta_t = all.eta/pow(ec.example_t,all.power_t) / 3.f * ld.weight;
+      float update = all.loss->getUpdate(ld.prediction, ld.label, eta_t, 1.); //ec.total_sum_feat_sq);
 
       float regularization = eta_t * all.l2_lambda;
 
@@ -208,7 +207,6 @@ void mf_train(vw& all, example& ec)
     cerr << "cannot use triples in matrix factorization" << endl;
     throw exception();
   }
-
 }  
 
   void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
@@ -288,7 +286,7 @@ void mf_train(vw& all, example& ec)
     vw* all = d.all;
  
     predict(d, base, ec);
-    if (all->training && ((label_data*)(ec.ld))->label != FLT_MAX)
+    if (all->training && ec.l.simple.label != FLT_MAX)
       mf_train(*all, ec);
   }
 

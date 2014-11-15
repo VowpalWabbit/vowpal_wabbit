@@ -1,3 +1,6 @@
+#include <float.h>
+#include <cassert>
+
 #include "gd.h"
 #include "rand48.h"
 #include "simple_label.h"
@@ -5,11 +8,7 @@
 #include "accumulate.h"
 #include "constant.h"
 #include "memory.h"
-#include <float.h>
-
-//#undef NDEBUG
-//#define DEBUG
-#include <cassert>
+#include "vw.h"
 
 //#define MAGIC_ARGUMENT //MAY IT NEVER DIE
 
@@ -370,7 +369,7 @@ namespace StagewisePoly
 
   void synthetic_reset(stagewise_poly &poly, example &ec)
   {
-    poly.synth_ec.ld = ec.ld;
+    poly.synth_ec.l = ec.l;
     poly.synth_ec.tag = ec.tag;
     poly.synth_ec.example_counter = ec.example_counter;
 
@@ -511,7 +510,7 @@ namespace StagewisePoly
 
   void learn(stagewise_poly &poly, learner &base, example &ec)
   {
-    bool training = poly.all->training && ((label_data *) ec.ld)->label != FLT_MAX;
+    bool training = poly.all->training && ec.l.simple.label != FLT_MAX;
     poly.original_ec = &ec;
 
     if (training) {

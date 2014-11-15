@@ -9,6 +9,7 @@
 #include "example.h"
 #include "gd.h"
 #include "cost_sensitive.h"
+#include "vw.h"
 
 #define R_NONE 10 // label for NONE relation
 #define LABEL_SKIP 11 // label for SKIP
@@ -69,8 +70,7 @@ namespace EntityRelationTask {
       example* ldf_examples = alloc_examples(sizeof(CS::label), 10);
       CS::wclass default_wclass = { 0., 0, 0., 0. };
       for (size_t a=0; a<10; a++) {
-        CS::label* lab = (CS::label*)ldf_examples[a].ld;
-        lab->costs.push_back(default_wclass);
+        ldf_examples[a].l.cs.costs.push_back(default_wclass);
       }
       my_task_data->ldf_entity = ldf_examples;
       my_task_data->ldf_relation = ldf_examples+4;
@@ -131,7 +131,7 @@ namespace EntityRelationTask {
     size_t prediction;
     if(my_task_data->allow_skip){
       v_array<uint32_t> star_labels;
-      star_labels.push_back(MULTICLASS::get_example_label(ex));
+      star_labels.push_back(ex->l.multi.label);
       star_labels.push_back(LABEL_SKIP);
       my_task_data->y_allowed_entity.push_back(LABEL_SKIP);
       prediction = Search::predictor(sch, my_tag).set_input(*ex).set_oracle(star_labels).set_allowed(my_task_data->y_allowed_entity).set_learner_id(1).predict();
@@ -141,15 +141,15 @@ namespace EntityRelationTask {
         for(size_t a=0; a<4; a++){
           VW::copy_example_data(false, &my_task_data->ldf_entity[a], ex);
           update_example_indicies(true, &my_task_data->ldf_entity[a], 28904713, 4832917 * (uint32_t)(a+1));
-          CS::label* lab = (CS::label*)my_task_data->ldf_entity[a].ld;
-          lab->costs[0].x = 0.f;
-          lab->costs[0].class_index = (uint32_t)a;
-          lab->costs[0].partial_prediction = 0.f;
-          lab->costs[0].wap_value = 0.f;
+          CS::label& lab = my_task_data->ldf_entity[a].l.cs;
+          lab.costs[0].x = 0.f;
+          lab.costs[0].class_index = (uint32_t)a;
+          lab.costs[0].partial_prediction = 0.f;
+          lab.costs[0].wap_value = 0.f;
         }
-        prediction = Search::predictor(sch, my_tag).set_input(my_task_data->ldf_entity, 4).set_oracle(MULTICLASS::get_example_label(ex)-1).set_learner_id(1).predict() + 1;
+        prediction = Search::predictor(sch, my_tag).set_input(my_task_data->ldf_entity, 4).set_oracle(ex->l.multi.label-1).set_learner_id(1).predict() + 1;
       } else {
-        prediction = Search::predictor(sch, my_tag).set_input(*ex).set_oracle(MULTICLASS::get_example_label(ex)).set_allowed(my_task_data->y_allowed_entity).set_learner_id(0).predict();
+        prediction = Search::predictor(sch, my_tag).set_input(*ex).set_oracle(ex->l.multi.label).set_allowed(my_task_data->y_allowed_entity).set_learner_id(0).predict();
       }
     }
 
@@ -157,7 +157,7 @@ namespace EntityRelationTask {
     float loss = 0.0;
     if(prediction == LABEL_SKIP){
       loss = my_task_data->skip_cost;
-    } else if(prediction !=  MULTICLASS::get_example_label(ex))
+    } else if(prediction !=  ex->l.multi.label)
       loss= my_task_data->entity_cost;
     sch.loss(loss);
     return prediction;
@@ -184,7 +184,7 @@ namespace EntityRelationTask {
     size_t prediction;
     if(my_task_data->allow_skip){
       v_array<uint32_t> star_labels;
-      star_labels.push_back(MULTICLASS::get_example_label(ex));
+      star_labels.push_back(ex->l.multi.label);
       star_labels.push_back(LABEL_SKIP);
       constrained_relation_labels.push_back(LABEL_SKIP);
       prediction = Search::predictor(sch, my_tag).set_input(*ex).set_oracle(star_labels).set_allowed(constrained_relation_labels).set_learner_id(2).add_condition(id1, 'a').add_condition(id2, 'b').predict();
@@ -195,27 +195,27 @@ namespace EntityRelationTask {
         for(size_t a=0; a<constrained_relation_labels.size(); a++){
           VW::copy_example_data(false, &my_task_data->ldf_relation[a], ex);
           update_example_indicies(true, &my_task_data->ldf_relation[a], 28904713, 4832917* (uint32_t)(constrained_relation_labels[a]));
-          CS::label* lab = (CS::label*)my_task_data->ldf_relation[a].ld;
-          lab->costs[0].x = 0.f;
-          lab->costs[0].class_index = (uint32_t)constrained_relation_labels[a];
-          lab->costs[0].partial_prediction = 0.f;
-          lab->costs[0].wap_value = 0.f;
-          if(constrained_relation_labels[a] == MULTICLASS::get_example_label(ex)){
+          CS::label& lab = my_task_data->ldf_relation[a].l.cs;
+          lab.costs[0].x = 0.f;
+          lab.costs[0].class_index = (uint32_t)constrained_relation_labels[a];
+          lab.costs[0].partial_prediction = 0.f;
+          lab.costs[0].wap_value = 0.f;
+          if(constrained_relation_labels[a] == ex->l.multi.label){
             correct_label = (int)a;
           }
         }
         size_t pred_pos = Search::predictor(sch, my_tag).set_input(my_task_data->ldf_relation, constrained_relation_labels.size()).set_oracle(correct_label).set_learner_id(2).predict();
         prediction = constrained_relation_labels[pred_pos];
       } else {
-        prediction = Search::predictor(sch, my_tag).set_input(*ex).set_oracle(MULTICLASS::get_example_label(ex)).set_allowed(constrained_relation_labels).set_learner_id(1).predict();
+        prediction = Search::predictor(sch, my_tag).set_input(*ex).set_oracle(ex->l.multi.label).set_allowed(constrained_relation_labels).set_learner_id(1).predict();
       }
     }
 
     float loss = 0.0;
     if(prediction == LABEL_SKIP){
       loss = my_task_data->skip_cost;
-    } else if(prediction !=  MULTICLASS::get_example_label(ex)) {
-      if(MULTICLASS::get_example_label(ex) == R_NONE){
+    } else if(prediction !=  ex->l.multi.label) {
+      if(ex->l.multi.label == R_NONE){
         loss = my_task_data->relation_none_cost;
       } else {
         loss= my_task_data->relation_cost;

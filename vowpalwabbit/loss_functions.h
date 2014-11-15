@@ -7,6 +7,8 @@ license as described in the file LICENSE.
 #include <string>
 #include "parse_primitives.h"
 
+struct shared_data;
+
 using namespace std;
 
 class loss_function {

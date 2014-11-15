@@ -12,6 +12,7 @@ license as described in the file LICENSE.node
 #include "reductions.h"
 #include "simple_label.h"
 #include "multiclass.h"
+#include "vw.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -246,16 +247,14 @@ namespace LOG_MULTI
   
   void train_node(log_multi& b, learner& base, example& ec, uint32_t& current, uint32_t& class_index)
   {
-    label_data* simple_temp = (label_data*)ec.ld;
-
     if(b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk)
-      simple_temp->label = -1.f;
+      ec.l.simple.label = -1.f;
     else
-      simple_temp->label = 1.f;
+      ec.l.simple.label = 1.f;
     
     base.learn(ec, b.nodes[current].base_predictor);	
 
-    simple_temp->label = FLT_MAX;
+    ec.l.simple.label = FLT_MAX;
     base.predict(ec, b.nodes[current].base_predictor);
     
     b.nodes[current].Eh += (double)ec.partial_prediction;
@@ -299,43 +298,43 @@ namespace LOG_MULTI
 
   void predict(log_multi& b, learner& base, example& ec)	
   {
-    MULTICLASS::multiclass* mc = (MULTICLASS::multiclass*)ec.ld;
+    MULTICLASS::multiclass mc = ec.l.multi;
 
     label_data simple_temp;
     simple_temp.initial = 0.0;
     simple_temp.weight = 0.0;	
     simple_temp.label = FLT_MAX;
-    ec.ld = &simple_temp;
+    ec.l.simple = simple_temp;
     uint32_t cn = 0;
     while(b.nodes[cn].internal)
       {
 	base.predict(ec, b.nodes[cn].base_predictor);
 	cn = descend(b.nodes[cn], simple_temp.prediction);
       }	
-    mc->prediction = b.nodes[cn].max_count_label;
-    ec.ld = mc;
+    mc.prediction = b.nodes[cn].max_count_label;
+    ec.l.multi = mc;
   }
 
   void learn(log_multi& b, learner& base, example& ec)
   {
     //    verify_min_dfs(b, b.nodes[0]);
 
-    MULTICLASS::multiclass *mc = (MULTICLASS::multiclass*)ec.ld;
-    
-    if (mc->label == (uint32_t)-1 || !b.all->training || b.progress)
+    if (ec.l.multi.label == (uint32_t)-1 || !b.all->training || b.progress)
       predict(b,base,ec);
-
-    if(b.all->training && (mc->label != (uint32_t)-1) && !ec.test_only)	//if training the tree
+    
+    if(b.all->training && (ec.l.multi.label != (uint32_t)-1) && !ec.test_only)	//if training the tree
       {
+	MULTICLASS::multiclass mc = ec.l.multi;
+    
 	uint32_t class_index = 0;	
 	label_data simple_temp;
 	simple_temp.initial = 0.0;
-	simple_temp.weight = mc->weight;
-	ec.ld = &simple_temp;	
+	simple_temp.weight = mc.weight;
+	ec.l.simple = simple_temp;	
 
 	uint32_t cn = 0;
 
-	while(children(b, cn, class_index, mc->label))
+	while(children(b, cn, class_index, mc.label))
 	  {	    
 	    train_node(b, base, ec, cn, class_index);
 	    cn = descend(b.nodes[cn], simple_temp.prediction);
@@ -344,7 +343,7 @@ namespace LOG_MULTI
 	b.nodes[cn].min_count++;
 	update_min_count(b, cn);	
 	
-	ec.ld = mc;
+	ec.l.multi = mc;
       }
   }
   

@@ -39,11 +39,11 @@ namespace MulticlassTask {
 
   void run(Search::search& sch, vector<example*>& ec) {
     task_data * my_task_data = sch.get_task_data<task_data>();
-    size_t gold_label = MULTICLASS::get_example_label(ec[0]);
+    size_t gold_label = ec[0]->l.multi.label;
     size_t label = 0;
     size_t learner_id = 0;
 
-	for(int i=0; i<my_task_data->num_level;i++){
+	for(size_t i=0; i<my_task_data->num_level;i++){
 	  size_t mask = 1<<(my_task_data->num_level-i-1);
 	  size_t y_allowed_size = (label+mask +1 <= my_task_data->max_label)?2:1;
       action oracle = (((gold_label-1)&mask)>0)+1;

@@ -4,13 +4,13 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
-#include "io_buf.h"
-#include "parse_primitives.h"
-#include "example.h"
+#include "label_parser.h"
+
+struct example;
+struct vw;
 
 namespace MULTICLASS
 {
-
   struct multiclass {
     uint32_t label;
     float weight;
@@ -24,9 +24,9 @@ namespace MULTICLASS
   inline int label_is_test(multiclass* ld)
   { return ld->label == (uint32_t)-1; }
 
-  inline int example_is_test(example* ec)
+  /*  inline int example_is_test(example* ec)
   { return label_is_test((multiclass*)ec->ld); }
 
   inline uint32_t get_example_label(example* ec)
-  { return ((multiclass*)ec->ld)->label; }
+  { return ((multiclass*)ec->ld)->label; }*/
 }

@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include <queue>
 
 #include "reductions.h"
+#include "vw.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -66,9 +67,9 @@ namespace TOPK {
 
   void output_example(vw& all, topk& d, example& ec)
   {
-    label_data* ld = (label_data*)ec.ld;
+    label_data& ld = ec.l.simple;
     
-    all.sd->weighted_examples += ld->weight;
+    all.sd->weighted_examples += ld.weight;
     all.sd->sum_loss += ec.loss;
     all.sd->sum_loss_since_last_dump += ec.loss;
     all.sd->total_features += ec.num_features;
@@ -91,14 +92,14 @@ namespace TOPK {
     else
       base.predict(ec);
 
-    label_data* ld = (label_data*)ec.ld;
+    label_data& ld = ec.l.simple;
     if(d.pr_queue.size() < d.B)      
-      d.pr_queue.push(make_pair(ld->prediction, ec.tag));
+      d.pr_queue.push(make_pair(ld.prediction, ec.tag));
 
-    else if(d.pr_queue.top().first < ld->prediction)
+    else if(d.pr_queue.top().first < ld.prediction)
     {
       d.pr_queue.pop();
-      d.pr_queue.push(make_pair(ld->prediction, ec.tag));
+      d.pr_queue.push(make_pair(ld.prediction, ec.tag));
     }
 
   }

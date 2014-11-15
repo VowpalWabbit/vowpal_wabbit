@@ -47,9 +47,9 @@ namespace {
 
   inline bool
   example_is_test (example& ec)
-    {
-      return ((label_data*) ec.ld)->label == FLT_MAX;
-    }
+  {
+    return ec.l.simple.label == FLT_MAX;
+  }
 
   void
   reset_seed (LRQ::LRQstate& lrq)
@@ -160,16 +160,14 @@ namespace LRQ {
 	  base.predict(ec);
 
         // Restore example
-	
-	label_data* ld = (label_data*)ec.ld;
         if (iter == 0)
           {
-            first_prediction = ld->prediction;
+            first_prediction = ec.l.simple.prediction;
             first_loss = ec.loss;
           }
         else
           {
-            ld->prediction = first_prediction;
+            ec.l.simple.prediction = first_prediction;
             ec.loss = first_loss;
           }
 

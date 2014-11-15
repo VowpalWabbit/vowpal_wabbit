@@ -1,7 +1,7 @@
 #include "float.h"
 #include "cost_sensitive.h"
-#include "parse_example.h"
 #include "gd.h"
+#include "vw.h"
 
 namespace COST_SENSITIVE {
 
@@ -31,12 +31,12 @@ namespace COST_SENSITIVE {
     }
   }
 
-  bool is_test_label(label* ld)
+  bool is_test_label(label& ld)
   {
-    if (ld->costs.size() == 0)
+    if (ld.costs.size() == 0)
       return true;
-    for (unsigned int i=0; i<ld->costs.size(); i++)
-      if (FLT_MAX != ld->costs[i].x)
+    for (unsigned int i=0; i<ld.costs.size(); i++)
+      if (FLT_MAX != ld.costs[i].x)
         return false;
     return true;
   }
@@ -187,7 +187,7 @@ namespace COST_SENSITIVE {
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
-	label* ld = (label*)ec.ld;
+	label& ld = ec.l.cs;
         char label_buf[32];
         if (is_test)
           strcpy(label_buf," unknown");
@@ -210,7 +210,7 @@ namespace COST_SENSITIVE {
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long unsigned int)ld->prediction,
+                (long unsigned int)ld.prediction,
                 (long unsigned int)ec.num_features);
 
           all.sd->weighted_holdout_examples_since_last_dump = 0;
@@ -223,7 +223,7 @@ namespace COST_SENSITIVE {
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long unsigned int)ld->prediction,
+                (long unsigned int)ld.prediction,
                 (long unsigned int)ec.num_features);
      
         all.sd->sum_loss_since_last_dump = 0.0;
@@ -234,16 +234,16 @@ namespace COST_SENSITIVE {
 
   void output_example(vw& all, example& ec)
   {
-    label* ld = (label*)ec.ld;
+    label& ld = ec.l.cs;
 
     float loss = 0.;
     if (!is_test_label(ld))
       {//need to compute exact loss
-        size_t pred = (size_t)ld->prediction;
+        size_t pred = (size_t)ld.prediction;
 
         float chosen_loss = FLT_MAX;
         float min = FLT_MAX;
-        for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++) {
+        for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++) {
           if (cl->class_index == pred)
             chosen_loss = cl->x;
           if (cl->x < min)
@@ -274,13 +274,13 @@ namespace COST_SENSITIVE {
       }
 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print((int)*sink, (float)ld->prediction, 0, ec.tag);
+      all.print((int)*sink, (float)ld.prediction, 0, ec.tag);
 
     if (all.raw_prediction > 0) {
       string outputString;
       stringstream outputStringStream(outputString);
-      for (unsigned int i = 0; i < ld->costs.size(); i++) {
-        wclass cl = ld->costs[i];
+      for (unsigned int i = 0; i < ld.costs.size(); i++) {
+        wclass cl = ld.costs[i];
         if (i > 0) outputStringStream << ' ';
         outputStringStream << cl.class_index << ':' << cl.partial_prediction;
       }
@@ -288,13 +288,12 @@ namespace COST_SENSITIVE {
       all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
     }
 
-    print_update(all, is_test_label((label*)ec.ld), ec);
+    print_update(all, is_test_label(ec.l.cs), ec);
   }
 
   bool example_is_test(example& ec)
   {
-    if (ec.ld == NULL) return false;
-    v_array<COST_SENSITIVE::wclass> costs = ((label*)ec.ld)->costs;
+    v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
     if (costs.size() == 0) return true;
     for (size_t j=0; j<costs.size(); j++)
       if (costs[j].x != FLT_MAX) return false;

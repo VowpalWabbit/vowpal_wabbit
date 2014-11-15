@@ -12,18 +12,17 @@ namespace Scorer {
   template <bool is_learn, float (*link)(float in)>
   void predict_or_learn(scorer& s, learner& base, example& ec)
   {
-    label_data* ld = (label_data*)ec.ld;
-    s.all->set_minmax(s.all->sd, ld->label);
-
-    if (is_learn && ld->label != FLT_MAX && ld->weight > 0)
+    s.all->set_minmax(s.all->sd, ec.l.simple.label);
+    
+    if (is_learn && ec.l.simple.label != FLT_MAX && ec.l.simple.weight > 0)
       base.learn(ec);
     else
       base.predict(ec);
 
-    if(ld->weight > 0 && ld->label != FLT_MAX)
-      ec.loss = s.all->loss->getLoss(s.all->sd, ld->prediction, ld->label) * ld->weight;
+    if(ec.l.simple.weight > 0 && ec.l.simple.label != FLT_MAX)
+      ec.loss = s.all->loss->getLoss(s.all->sd, ec.l.simple.prediction, ec.l.simple.label) * ec.l.simple.weight;
 
-    ld->prediction = link(ld->prediction);
+    ec.l.simple.prediction = link(ec.l.simple.prediction);
   }
 
   // y = f(x) -> [0, 1]

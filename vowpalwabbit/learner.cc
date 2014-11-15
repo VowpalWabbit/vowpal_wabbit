@@ -1,6 +1,7 @@
 #include "global_data.h"
 #include "parser.h"
 #include "learner.h"
+#include "vw.h"
 
 void save_predictor(vw& all, string reg_name, size_t current_pass);
 

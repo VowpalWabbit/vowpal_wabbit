@@ -6,6 +6,10 @@ license as described in the file LICENSE.
 #pragma once
 #include <stdint.h>
 #include "v_array.h"
+#include "simple_label.h"
+#include "multiclass.h"
+#include "cost_sensitive.h"
+#include "cb.h"
 
 const size_t wap_ldf_namespace  = 126;
 const size_t history_namespace  = 127;
@@ -32,9 +36,17 @@ struct audit_data {
   bool alloced;
 };
 
+typedef union {
+  label_data simple;
+  MULTICLASS::multiclass multi;
+  COST_SENSITIVE::label cs;
+  CB::label cb;
+} polylabel;
+
 struct example // core example datatype.
 {
-  void* ld;
+  enum {SIMPLE,MULTI,CS,CB} label_type;
+  polylabel l;
 
   v_array<char> tag;//An identifier for the example.
   size_t example_counter;
@@ -65,7 +77,7 @@ struct example // core example datatype.
  
 struct flat_example 
 {
-	void* ld;  
+  polylabel l;
 
 	size_t tag_len;
 	char* tag;//An identifier for the example.  

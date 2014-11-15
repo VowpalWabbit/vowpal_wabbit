@@ -4,10 +4,10 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
-#include "io_buf.h"
-#include "parse_primitives.h"
-#include "global_data.h"
-#include "example.h"
+#include "label_parser.h"
+
+struct example;
+struct vw;
 
 struct label_data {
   float label;

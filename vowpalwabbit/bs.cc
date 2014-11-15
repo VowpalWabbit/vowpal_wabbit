@@ -10,6 +10,7 @@ license as described in the file LICENSE.
 #include <vector>
 
 #include "reductions.h"
+#include "vw.h"
 #include "simple_label.h"
 #include "rand48.h"
 #include "bs.h"
@@ -30,9 +31,8 @@ namespace BS {
 
   void bs_predict_mean(vw& all, example& ec, vector<double> &pred_vec)
   {
-    label_data& ld = *(label_data*)ec.ld;
-    ld.prediction = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
-    ec.loss = all.loss->getLoss(all.sd, ld.prediction, ((label_data*)ec.ld)->label) * ((label_data*)ec.ld)->weight;    
+    ec.l.simple.prediction = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
+    ec.loss = all.loss->getLoss(all.sd, ec.l.simple.prediction, ec.l.simple.label) * ec.l.simple.weight;    
   }
 
   void bs_predict_vote(vw& all, example& ec, vector<double> &pred_vec)
@@ -43,8 +43,6 @@ namespace BS {
     bool majority_found = false;
     bool multivote_detected = false; // distinct(votes)>2: used to skip part of the algorithm
     int* pred_vec_int = new int[pred_vec.size()];
-
-    label_data& ld = *(label_data*)ec.ld;
 
     for(unsigned int i=0; i<pred_vec.size(); i++)
     {
@@ -109,10 +107,10 @@ namespace BS {
     }
 
     // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()
-    ld.prediction = (float)current_label;
+    ec.l.simple.prediction = (float)current_label;
 
     // ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ld.weight; //replace line below for: "avg on votes" and getLoss()
-    ec.loss = ((ld.prediction == ld.label) ? 0.f : 1.f) * ld.weight;
+    ec.loss = ((ec.l.simple.prediction == ec.l.simple.label) ? 0.f : 1.f) * ec.l.simple.weight;
   }
 
   void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub)
@@ -140,20 +138,20 @@ namespace BS {
 
   void output_example(vw& all, bs& d, example& ec)
   {
-    label_data* ld = (label_data*)ec.ld;
+    label_data& ld = ec.l.simple;
     
     if(ec.test_only)
       {
-	all.sd->weighted_holdout_examples += ld->weight;//test weight seen
-	all.sd->weighted_holdout_examples_since_last_dump += ld->weight;
-	all.sd->weighted_holdout_examples_since_last_pass += ld->weight;
+	all.sd->weighted_holdout_examples += ld.weight;//test weight seen
+	all.sd->weighted_holdout_examples_since_last_dump += ld.weight;
+	all.sd->weighted_holdout_examples_since_last_pass += ld.weight;
 	all.sd->holdout_sum_loss += ec.loss;
 	all.sd->holdout_sum_loss_since_last_dump += ec.loss;
 	all.sd->holdout_sum_loss_since_last_pass += ec.loss;//since last pass
       }
     else
       {
-	all.sd->weighted_examples += ld->weight;
+	all.sd->weighted_examples += ld.weight;
 	all.sd->sum_loss += ec.loss;
 	all.sd->sum_loss_since_last_dump += ec.loss;
 	all.sd->total_features += ec.num_features;
@@ -174,7 +172,7 @@ namespace BS {
     }
 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      BS::print_result(*sink, ld->prediction, 0, ec.tag, d.lb, d.ub);
+      BS::print_result(*sink, ld.prediction, 0, ec.tag, d.lb, d.ub);
   
     print_update(all, ec);
   }
@@ -185,7 +183,7 @@ namespace BS {
     vw* all = d.all;
     bool shouldOutput = all->raw_prediction > 0;
 
-    float weight_temp = ((label_data*)ec.ld)->weight;
+    float weight_temp = ec.l.simple.weight;
   
     string outputString;
     stringstream outputStringStream(outputString);
@@ -193,23 +191,23 @@ namespace BS {
 
     for (size_t i = 1; i <= d.B; i++)
       {
-        ((label_data*)ec.ld)->weight = weight_temp * (float) weight_gen();
+        ec.l.simple.weight = weight_temp * (float) weight_gen();
 
 	if (is_learn)
 	  base.learn(ec, i-1);
 	else
 	  base.predict(ec, i-1);
-
-        d.pred_vec.push_back(((label_data*)ec.ld)->prediction);
+	
+        d.pred_vec.push_back(ec.l.simple.prediction);
 
         if (shouldOutput) {
           if (i > 1) outputStringStream << ' ';
           outputStringStream << i << ':' << ec.partial_prediction;
         }
       }	
-
-    ((label_data*)ec.ld)->weight = weight_temp;
-
+    
+    ec.l.simple.weight = weight_temp;
+    
     switch(d.bs_type)
     {
       case BS_TYPE_MEAN:

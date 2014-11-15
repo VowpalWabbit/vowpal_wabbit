@@ -108,8 +108,7 @@ namespace NN {
     shared_data* save_sd = n.all->sd;
     n.all->sd = &sd;
 
-    label_data* ld = (label_data*)ec.ld;
-    float save_label = ld->label;
+    label_data ld = ec.l.simple;
     void (*save_set_minmax) (shared_data*, float) = n.all->set_minmax;
     float save_min_label;
     float save_max_label;
@@ -128,7 +127,6 @@ namespace NN {
     n.all->sd->min_label = hidden_min_activation;
     save_max_label = n.all->sd->max_label;
     n.all->sd->max_label = hidden_max_activation;
-    //ld->label = FLT_MAX;
     for (unsigned int i = 0; i < n.k; ++i)
       {
         uint32_t biasindex = (uint32_t) constant * (n.all->wpp << n.all->reg.stride_shift) + i * (uint32_t)n.increment + ec.ft_offset;
@@ -145,7 +143,7 @@ namespace NN {
 
 	base.predict(ec, i);
 
-        hidden_units[i] = ld->prediction;
+        hidden_units[i] = ec.l.simple.prediction;
 
         dropped_out[i] = (n.dropout && merand48 (n.xsubi) < 0.5);
 
@@ -154,7 +152,6 @@ namespace NN {
           outputStringStream << i << ':' << ec.partial_prediction << ',' << fasttanh (hidden_units[i]);
         }
       }
-    //ld->label = save_label;
     n.all->loss = save_loss;
     n.all->set_minmax = save_set_minmax;
     n.all->sd->min_label = save_min_label;
@@ -216,14 +213,14 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     }
     else {
       n.output_layer.ft_offset = ec.ft_offset;
-      n.output_layer.ld = ec.ld;
+      n.output_layer.l = ec.l;
       n.output_layer.partial_prediction = 0;
       n.output_layer.example_t = ec.example_t;
       if (is_learn)
 	base.learn(n.output_layer, n.k);
       else
 	base.predict(n.output_layer, n.k);
-      n.output_layer.ld = 0;
+      ec.l = n.output_layer.l;
     }
 
     n.prediction = GD::finalize_prediction (n.all->sd, n.output_layer.partial_prediction);
@@ -232,11 +229,11 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       outputStringStream << ' ' << n.output_layer.partial_prediction;
       n.all->print_text(n.all->raw_prediction, outputStringStream.str(), ec.tag);
     }
-
-    if (is_learn && n.all->training && ld->label != FLT_MAX) {
+    
+    if (is_learn && n.all->training && ld.label != FLT_MAX) {
       float gradient = n.all->loss->first_derivative(n.all->sd, 
-                                                  n.prediction,
-                                                  ld->label);
+						     n.prediction,
+						     ld.label);
 
       if (fabs (gradient) > 0) {
         n.all->loss = n.squared_loss;
@@ -255,8 +252,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
             float nu = n.all->reg.weight_vector[nuindex & n.all->reg.weight_mask];
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
-            ld->label = GD::finalize_prediction (n.all->sd, hidden_units[i] - gradhw);
-            if (ld->label != hidden_units[i]) 
+            ec.l.simple.label = GD::finalize_prediction (n.all->sd, hidden_units[i] - gradhw);
+            if (ec.l.simple.label != hidden_units[i]) 
               base.learn(ec, i);
           }
         }
@@ -268,7 +265,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       }
     }
 
-    ld->label = save_label;
+    ec.l.simple.label = ld.label;
 
     if (! converse) {
       save_partial_prediction = n.output_layer.partial_prediction;
@@ -288,7 +285,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       }
 
     ec.partial_prediction = save_partial_prediction;
-    ld->prediction = save_final_prediction;
+    ec.l.simple.prediction = save_final_prediction;
     ec.loss = save_ec_loss;
 
     n.all->sd = save_sd;

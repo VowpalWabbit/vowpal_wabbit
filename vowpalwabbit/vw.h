@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 #include "example.h"
 #include "hash.h"
 #include "simple_label.h"
+#include "parser.h"
 
 namespace VW {
 

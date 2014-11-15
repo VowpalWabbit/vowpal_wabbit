@@ -25,15 +25,15 @@ namespace PRINT
 
   void learn(print& p, learner& base, example& ec)
   {
-    label_data* ld = (label_data*)ec.ld;
-    if (ld->label != FLT_MAX)
+    label_data& ld = ec.l.simple;
+    if (ld.label != FLT_MAX)
       {
-	cout << ld->label << " ";
-	if (ld->weight != 1 || ld->initial != 0)
+	cout << ld.label << " ";
+	if (ld.weight != 1 || ld.initial != 0)
 	  {
-	    cout << ld->weight << " ";
-	    if (ld->initial != 0)
-	      cout << ld->initial << " ";
+	    cout << ld.weight << " ";
+	    if (ld.initial != 0)
+	      cout << ld.initial << " ";
 	  }
       }
     if (ec.tag.size() > 0)

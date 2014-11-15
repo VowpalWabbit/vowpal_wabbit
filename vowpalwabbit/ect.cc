@@ -17,6 +17,7 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "multiclass.h"
 #include "simple_label.h"
+#include "vw.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -192,8 +193,7 @@ namespace ECT
     uint32_t finals_winner = 0;
     
     //Binary final elimination tournament first
-    label_data simple_temp = {FLT_MAX, 0., 0.};
-    ec.ld = & simple_temp;
+    ec.l.simple = {FLT_MAX, 0., 0.};
 
     for (size_t i = e.tree_height-1; i != (size_t)0 -1; i--)
       {
@@ -203,7 +203,7 @@ namespace ECT
 	  
             base.learn(ec, problem_number);
 	  
-	    if (simple_temp.prediction > 0.)
+	    if (ec.l.simple.prediction > 0.)
               finals_winner = finals_winner | (((size_t)1) << i);
           }
       }
@@ -213,7 +213,7 @@ namespace ECT
       {
 	base.learn(ec, id - e.k);
 
-	if (simple_temp.prediction > 0.)
+	if (ec.l.simple.prediction > 0.)
 	  id = e.directions[id].right;
 	else
 	  id = e.directions[id].left;
@@ -233,14 +233,17 @@ namespace ECT
   {
     if (e.k == 1)//nothing to do
       return;
-    MULTICLASS::multiclass * mc = (MULTICLASS::multiclass*)ec.ld;
+    MULTICLASS::multiclass mc = ec.l.multi;
   
-    label_data simple_temp = {1.,mc->weight,0.};
+    label_data simple_temp;
 
+    simple_temp.initial = 0.;
+    simple_temp.weight = mc.weight;
+    
     e.tournaments_won.erase();
 
-    uint32_t id = e.directions[mc->label - 1].winner;
-    bool left = e.directions[id].left == mc->label - 1;
+    uint32_t id = e.directions[mc.label - 1].winner;
+    bool left = e.directions[id].left == mc.label - 1;
     do
       {
 	if (left)
@@ -248,15 +251,12 @@ namespace ECT
 	else
 	  simple_temp.label = 1;
 	
-	simple_temp.weight = mc->weight;
-	ec.ld = &simple_temp;
-	
+	ec.l.simple = simple_temp;
 	base.learn(ec, id-e.k);
-	simple_temp.weight = 0.;
+	ec.l.simple.weight = 0.;
 	base.learn(ec, id-e.k);//inefficient, we should extract final prediction exactly.
-	float pred = simple_temp.prediction;
 
-	bool won = pred*simple_temp.label > 0;
+	bool won = ec.l.simple.prediction * simple_temp.label > 0;
 
 	if (won)
 	  {
@@ -295,21 +295,18 @@ namespace ECT
               e.tournaments_won[j] = left;
             else //query to do
               {
-                float label;
                 if (left) 
-                  label = -1;
+                  simple_temp.label = -1;
                 else
-                  label = 1;
-                simple_temp.label = label;
+                  simple_temp.label = 1;
 		simple_temp.weight = (float)(1 << (e.tree_height -i -1));
-                ec.ld = & simple_temp;
+                ec.l.simple = simple_temp;
 	      
                 uint32_t problem_number = e.last_pair + j*(1 << (i+1)) + (1 << i) -1;
 		
 		base.learn(ec, problem_number);
 		
-		float pred = simple_temp.prediction;
-		if (pred > 0.)
+		if (ec.l.simple.prediction > 0.)
                   e.tournaments_won[j] = right;
                 else
                   e.tournaments_won[j] = left;
@@ -324,25 +321,24 @@ namespace ECT
   void predict(ect& e, learner& base, example& ec) {
     vw* all = e.all;
 
-    MULTICLASS::multiclass* mc = (MULTICLASS::multiclass*)ec.ld;
-    if (mc->label == 0 || (mc->label > e.k && mc->label != (uint32_t)-1))
-      cout << "label " << mc->label << " is not in {1,"<< e.k << "} This won't work right." << endl;
-    mc->prediction = ect_predict(*all, e, base, ec);
-    ec.ld = mc;
+    MULTICLASS::multiclass mc = ec.l.multi;
+    if (mc.label == 0 || (mc.label > e.k && mc.label != (uint32_t)-1))
+      cout << "label " << mc.label << " is not in {1,"<< e.k << "} This won't work right." << endl;
+    mc.prediction = ect_predict(*all, e, base, ec);
+    ec.l.multi = mc;
   }
 
   void learn(ect& e, learner& base, example& ec)
   {
     vw* all = e.all;
 
-    MULTICLASS::multiclass& mc = *(MULTICLASS::multiclass*)ec.ld;
+    MULTICLASS::multiclass mc = ec.l.multi;
     predict(e, base, ec);
+    mc.prediction = ec.l.multi.prediction;
 
-    uint32_t new_label = mc.prediction;
     if (mc.label != (uint32_t)-1 && all->training)
       ect_train(*all, e, base, ec);
-    mc.prediction = new_label;
-    ec.ld = &mc;
+    ec.l.multi = mc;
   }
 
   void finish(ect& e)

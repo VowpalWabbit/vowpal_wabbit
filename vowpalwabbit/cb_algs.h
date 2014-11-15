@@ -12,7 +12,7 @@ namespace CB_ALGS {
   template <bool is_learn>
     float get_cost_pred(vw& all, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
   {
-    CB::label* ld = (CB::label*)ec.ld;
+    CB::label ld = ec.l.cb;
 
     label_data simple_temp;
     simple_temp.initial = 0.;
@@ -27,13 +27,16 @@ namespace CB_ALGS {
 	simple_temp.weight = 0.;
       }
     
-    ec.ld = &simple_temp;
+    ec.l.simple = simple_temp;
 
     if (is_learn && simple_temp.label != FLT_MAX)
       all.scorer->learn(ec, index-1+base);
     else
       all.scorer->predict(ec, index-1+base);
-    ec.ld = ld;
+    
+    simple_temp.prediction = ec.l.simple.prediction;
+    
+    ec.l.cb = ld;
 
     return simple_temp.prediction;
   }
