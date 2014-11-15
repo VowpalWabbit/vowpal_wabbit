@@ -16,9 +16,9 @@
 
 namespace GD{
   void print_result(int f, float res, v_array<char> tag);
-  void print_audit_features(regressor &reg, example<label_data>& ec, size_t offset);
+  void print_audit_features(regressor &reg, example<void>& ec, size_t offset);
   float finalize_prediction(shared_data* sd, float ret);
-  void print_audit_features(vw&, example<label_data>& ec);
+  void print_audit_features(vw&, example<void>& ec);
   void train_one_example(regressor& r, example<void>* ex);
   void train_offset_example(regressor& r, example<void>* ex, size_t offset);
   void compute_update(example<void>* ec);
@@ -42,8 +42,8 @@ namespace GD{
        T(dat, mult*f->x, f->weight_index + offset);
    }
  
- template <class R, class S, void (*T)(R&, float, S), class example>
-  inline void foreach_feature(vw& all, example& ec, R& dat)
+ template <class R, class S, void (*T)(R&, float, S)>
+  inline void foreach_feature(vw& all, example<void>& ec, R& dat)
   {
     uint32_t offset = ec.ft_offset;
 
@@ -78,18 +78,19 @@ namespace GD{
     }
   }
 
- template <class R, void (*T)(R&, float, float&), class example>
-  inline void foreach_feature(vw& all, example& ec, R& dat)
+template <class R, void (*T)(R&, float, float&)>
+  inline void foreach_feature(vw& all, example<void>& ec, R& dat)
   {
-    foreach_feature<R,float&, T, example>(all, ec, dat);
+    foreach_feature<R,float&,T>(all, ec, dat);
   }
 
  inline void vec_add(float& p, const float fx, float& fw) { p += fw * fx; }
 
-  inline float inline_predict(vw& all, example<label_data>& ec)
+  inline float inline_predict(vw& all, example<void>& ec)
   {
-    float temp = ec.ld->initial;
-    foreach_feature<float, vec_add, example<label_data> >(all, ec, temp);
+    label_data* ld = (label_data*)ec.ld;
+    float temp = ld->initial;
+    foreach_feature<float, vec_add>(all, ec, temp);
     return temp;
   }
 }

@@ -648,7 +648,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
       {
 	float score = lda_loop(*l.all, l.Elogtheta, &(l.v[d*l.all->lda]), weights, l.examples[d],l.all->power_t);
 	if (l.all->audit)
-	  GD::print_audit_features(*l.all, (example<label_data>&)*l.examples[d]);
+	  GD::print_audit_features(*l.all, *l.examples[d]);
 	// If the doc is empty, give it loss of 0.
 	if (l.doc_lengths[d] > 0) {
 	  l.all->sd->sum_loss -= score;

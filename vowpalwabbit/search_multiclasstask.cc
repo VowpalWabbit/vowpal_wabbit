@@ -43,7 +43,7 @@ namespace MulticlassTask {
     size_t label = 0;
     size_t learner_id = 0;
 
-	for(size_t i=0; i<my_task_data->num_level;i++){
+	for(int i=0; i<my_task_data->num_level;i++){
 	  size_t mask = 1<<(my_task_data->num_level-i-1);
 	  size_t y_allowed_size = (label+mask +1 <= my_task_data->max_label)?2:1;
       action oracle = (((gold_label-1)&mask)>0)+1;
