@@ -308,8 +308,9 @@ void print_features(vw& all, example<label_data>& ec)
 
 void print_audit_features(vw& all, example<label_data>& ec)
 {
+  label_data& ld = *(label_data*)ec.ld;
   if(all.audit)
-    print_result(all.stdout_fileno,ec.ld->prediction,-1,ec.tag);
+    print_result(all.stdout_fileno,ld.prediction,-1,ec.tag);
   fflush(stdout);
   print_features(all, ec);
 }
@@ -339,7 +340,8 @@ float finalize_prediction(shared_data* sd, float ret)
 
  inline float trunc_predict(vw& all, example<label_data>& ec, double gravity)
  {
-   trunc_data temp = {ec.ld->initial, (float)gravity};
+   label_data* ld = (label_data*)ec.ld;
+   trunc_data temp = {ld->initial, (float)gravity};
    foreach_feature<trunc_data, vec_add_trunc>(all, ec, temp);
    return temp.prediction;
  }
@@ -354,7 +356,8 @@ void predict(gd& g, learner& base, example<label_data>& ec)
   else
     ec.partial_prediction = inline_predict(all, ec);    
 
-  ec.ld->prediction = finalize_prediction(all.sd, ec.partial_prediction * (float)all.sd->contraction);
+  label_data& ld = *(label_data*)ec.ld;
+  ld.prediction = finalize_prediction(all.sd, ec.partial_prediction * (float)all.sd->contraction);
   
   if (audit)
     print_audit_features(all, ec);
@@ -439,7 +442,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
   float get_pred_per_update(gd& g, example<label_data>& ec)
   {//We must traverse the features in _precisely_ the same order as during training.
-    label_data* ld = ec.ld;
+    label_data* ld = (label_data*)ec.ld;
     vw& all = *g.all;
     float grad_squared = all.loss->getSquareGrad(ld->prediction, ld->label) * ld->weight;
     if (grad_squared == 0) return 1.;
@@ -462,7 +465,7 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
 template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 float compute_update(gd& g, example<label_data>& ec)
 {//invariant: not a test label, importance weight > 0
-  label_data* ld = ec.ld;
+  label_data* ld = (label_data*)ec.ld;
   vw& all = *g.all;
 
   if (all.loss->getLoss(all.sd, ld->prediction, ld->label) > 0.)
@@ -517,8 +520,8 @@ template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive,
 void learn(gd& g, learner& base, example<label_data>& ec)
 {//invariant: not a test label, importance weight > 0
   assert(ec.in_use);
-  assert((ec.ld)->label != FLT_MAX);
-  assert((ec.ld)->weight > 0.);
+  assert(((label_data*)ec.ld)->label != FLT_MAX);
+  assert(((label_data*)ec.ld)->weight > 0.);
 
   g.predict(g,base,ec);
 

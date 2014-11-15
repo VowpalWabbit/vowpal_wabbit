@@ -147,14 +147,14 @@ void reset_state(vw& all, bfgs& b, bool zero)
 // w[2] = step direction
 // w[3] = preconditioner
 
-bool test_example(example<label_data>& ec)
+bool test_example(example<void>& ec)
 {
-  return ec.ld->label == FLT_MAX;
+  return ((label_data*)ec.ld)->label == FLT_MAX;
 }
 
-  float bfgs_predict(vw& all, example<label_data>& ec)
+  float bfgs_predict(vw& all, example<void>& ec)
   {
-    ec.partial_prediction = GD::inline_predict(all, ec);
+    ec.partial_prediction = GD::inline_predict(all, (example<label_data>&)ec);
     return GD::finalize_prediction(all.sd, ec.partial_prediction);
   }
 
@@ -163,11 +163,11 @@ inline void add_grad(float& d, float f, float& fw)
   fw += d * f;
 }
 
-float predict_and_gradient(vw& all, example<label_data> &ec)
+float predict_and_gradient(vw& all, example<void> &ec)
 {
   float fp = bfgs_predict(all, ec);
 
-  label_data* ld = ec.ld;
+  label_data* ld = (label_data*)ec.ld;
   all.set_minmax(all.sd, ld->label);
 
   float loss_grad = all.loss->first_derivative(all.sd, fp,ld->label)*ld->weight;
@@ -184,9 +184,9 @@ inline void add_precond(float& d, float f, float& fw)
   fw += d * f * f;
 }
 
-void update_preconditioner(vw& all, example<label_data>& ec)
+void update_preconditioner(vw& all, example<void>& ec)
 {
-  label_data* ld = ec.ld;
+  label_data* ld = (label_data*)ec.ld;
   float curvature = all.loss->second_derivative(all.sd, ld->prediction,ld->label) * ld->weight;
   
   ec.ft_offset += W_COND;
@@ -195,7 +195,7 @@ void update_preconditioner(vw& all, example<label_data>& ec)
 }  
 
 
-float dot_with_direction(vw& all, example<label_data>& ec)
+float dot_with_direction(vw& all, example<void>& ec)
 {
   ec.ft_offset+= W_DIR;  
   float ret = GD::inline_predict(all, (example<label_data>&) ec);
@@ -723,9 +723,9 @@ int process_pass(vw& all, bfgs& b) {
     return status;
 }
 
-void process_example(vw& all, bfgs& b, example<label_data>& ec)
+void process_example(vw& all, bfgs& b, example<void>& ec)
  {
-  label_data* ld = ec.ld;
+  label_data* ld = (label_data*)ec.ld;
   if (b.first_pass)
     b.importance_weight_sum += ld->weight;
   
@@ -818,13 +818,13 @@ void end_pass(bfgs& b)
 }
 
 // placeholder
-void predict(bfgs& b, learner& base, example<label_data>& ec)
+void predict(bfgs& b, learner& base, example<void>& ec)
 {
   vw* all = b.all;
-  ec.ld->prediction = bfgs_predict(*all,ec);
+  ((label_data*) ec.ld)->prediction = bfgs_predict(*all,ec);
 }
 
-void learn(bfgs& b, learner& base, example<label_data>& ec)
+void learn(bfgs& b, learner& base, example<void>& ec)
 {
   vw* all = b.all;
   assert(ec.in_use);
@@ -1019,11 +1019,11 @@ learner* setup(vw& all, po::variables_map& vm)
   all.reg.stride_shift = 2;
 
   learner* l = new learner(b, 1 << all.reg.stride_shift);
-  l->set_learn<bfgs, label_data, learn>();
-  l->set_predict<bfgs, label_data, predict>();
-  l->set_save_load<bfgs, save_load>();
-  l->set_init_driver<bfgs, init_driver>();
-  l->set_end_pass<bfgs, end_pass>();
+  l->set_learn<bfgs, learn>();
+  l->set_predict<bfgs, predict>();
+  l->set_save_load<bfgs,save_load>();
+  l->set_init_driver<bfgs,init_driver>();
+  l->set_end_pass<bfgs,end_pass>();
   l->set_finish<bfgs,finish>();
 
   return l;
