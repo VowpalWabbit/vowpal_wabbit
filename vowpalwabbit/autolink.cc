@@ -7,7 +7,7 @@ namespace ALINK {
   const int autoconstant = 524267083;
   
   struct autolink {
-    uint32_t d;
+    uint32_t d; // degree of the polynomial
     uint32_t stride_shift;
   };
 
@@ -23,12 +23,13 @@ namespace ALINK {
     float sum_sq = 0;
     for (size_t i = 0; i < b.d; i++)
       if (base_pred != 0.)
-	{
-	  feature f = { base_pred, (uint32_t) (autoconstant + i < b.stride_shift) };
-	  ec.atomics[autolink_namespace].push_back(f);
-	  sum_sq += base_pred*base_pred;
-	  base_pred *= ld->prediction;
-	}
+        {
+          // create new feature f with value = original_prediction**i
+          feature f = { base_pred, (uint32_t) (autoconstant + (i << b.stride_shift)) };
+          ec.atomics[autolink_namespace].push_back(f);
+          sum_sq += base_pred*base_pred;
+          base_pred *= ld->prediction;
+        }
     ec.total_sum_feat_sq += sum_sq;
 
     // apply predict or learn
