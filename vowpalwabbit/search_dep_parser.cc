@@ -21,7 +21,7 @@
 namespace DepParserTask         {  Search::search_task task = { "dep_parser", run, initialize, finish, NULL, NULL};  }
 
 struct task_data {
-  example<void> *ex;
+  example *ex;
   bool no_quadratic_features;
   bool no_cubic_features;
   bool my_init_flag;
@@ -33,7 +33,7 @@ struct task_data {
   v_array<uint32_t> stack; // stack for transition based parser
   v_array<uint32_t> heads; // output array
   v_array<uint32_t> temp;
-  v_array<example<void> *> ec_buf;
+  v_array<example *> ec_buf;
   vector<string> pairs;
   vector<string> triples;
 };
@@ -81,11 +81,11 @@ namespace DepParserTask {
     delete data;
   } // if we had task data, we'd want to free it here
 
-  void inline add_feature(example<void> *ex,  uint32_t idx, unsigned  char ns, size_t mask, size_t ss){
+  void inline add_feature(example *ex,  uint32_t idx, unsigned  char ns, size_t mask, size_t ss){
     feature f = {1.0f, (idx<<ss)&mask};
     ex->atomics[(int)ns].push_back(f);
   }
-  void add_quad_features(Search::search& srn, example<void> *ex){
+  void add_quad_features(Search::search& srn, example *ex){
     size_t ss = srn.get_stride_shift();
     size_t mask = srn.get_mask();
     size_t additional_offset = quad_namespace*offset_const;
@@ -101,7 +101,7 @@ namespace DepParserTask {
       }
     }
   }
-  void add_cubic_features(Search::search& srn, example<void> *ex){
+  void add_cubic_features(Search::search& srn, example *ex){
     size_t ss = srn.get_stride_shift();
     size_t mask = srn.get_mask();
     task_data *data = srn.get_task_data<task_data>();
@@ -122,7 +122,7 @@ namespace DepParserTask {
     }
   }
 
-  void inline reset_ex(example<void> *ex){
+  void inline reset_ex(example *ex){
     ex->num_features = 0;
     ex->total_sum_feat_sq = 0;
     for(unsigned char *ns = ex->indices.begin; ns!=ex->indices.end; ns++){
@@ -169,7 +169,7 @@ namespace DepParserTask {
 
   // This function is only called once
   // We use VW's internal implementation to create second-order and third-order features
-  void my_initialize(Search::search& srn, example<void> *base_ex) {
+  void my_initialize(Search::search& srn, example *base_ex) {
     task_data *data = srn.get_task_data<task_data>();
     vector<string> &newpairs = data->pairs;
     vector<string> &newtriples = data->triples;
@@ -246,14 +246,14 @@ namespace DepParserTask {
   }
 
   // This function needs to be very fast
-  void extract_features(Search::search& srn, uint32_t idx,  vector<example<void>*> &ec) {
+  void extract_features(Search::search& srn, uint32_t idx,  vector<example*> &ec) {
     task_data *data = srn.get_task_data<task_data>();
     size_t ss = srn.get_stride_shift();
     size_t mask = srn.get_mask();
     v_array<uint32_t> &stack = data->stack;
     v_array<uint32_t> *children = data->children, &temp=data->temp;
-    v_array<example<void>*> &ec_buf = data->ec_buf;
-    example<void> &ex = *(data->ex);
+    v_array<example*> &ec_buf = data->ec_buf;
+    example &ex = *(data->ex);
     //add constant
     add_feature(&ex, (uint32_t) constant, constant_namespace, mask, ss);
     // be careful: indices in ec starts from 0, but i is starts from 1
@@ -402,7 +402,7 @@ namespace DepParserTask {
     }
   }
 
-  void run(Search::search& srn, vector<example<void>*>& ec) {
+  void run(Search::search& srn, vector<example*>& ec) {
     cdep << "start structured predict"<<endl;
     task_data *data = srn.get_task_data<task_data>();
     v_array<uint32_t> &gold_actions = data->gold_actions, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads;

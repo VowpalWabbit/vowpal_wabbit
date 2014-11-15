@@ -94,8 +94,8 @@ namespace Search {
     
     size_t t;                      // current search step
     size_t T;                      // length of root trajectory
-    v_array<example<void> > learn_ec_copy;// copy of example(s) at learn_t
-    example<void>* learn_ec_ref;         // reference to example at learn_t, when there's no example munging
+    v_array<example> learn_ec_copy;// copy of example(s) at learn_t
+    example* learn_ec_ref;         // reference to example at learn_t, when there's no example munging
     size_t learn_ec_ref_cnt;       // how many are there (for LDF mode only; otherwise 1)
     v_array<ptag> learn_condition_on;      // a copy of the tags used for conditioning at the training position
     v_array<action> learn_condition_on_act;// the actions taken
@@ -155,12 +155,12 @@ namespace Search {
     size_t total_predictions_made;
     size_t total_cache_hits;
 
-    vector<example<void>*> ec_seq;  // the collected examples
+    vector<example*> ec_seq;  // the collected examples
     v_hashmap<unsigned char*, action> cache_hash_map;
     
     // for foreach_feature temporary storage for conditioning
     uint32_t dat_new_feature_idx;
-    example<void>* dat_new_feature_ec;
+    example* dat_new_feature_ec;
     stringstream dat_new_feature_audit_ss;
     size_t dat_new_feature_namespace;
     string* dat_new_feature_feature_space;
@@ -177,7 +177,7 @@ namespace Search {
     LEARNER::learner* base_learner;
     clock_t start_clock_time;
 
-    example<void>* empty_example;
+    example*empty_example;
 
     Beam::beam< action_prefix > *beam;
     size_t kbest;            // size of kbest list; 1 just means 1best
@@ -260,7 +260,7 @@ namespace Search {
     return (all.sd->weighted_examples + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
   }
 
-  bool must_run_test(vw&all, vector<example<void>*>ec, bool is_test_ex) {
+  bool must_run_test(vw&all, vector<example*>ec, bool is_test_ex) {
     return
         (all.final_prediction_sink.size() > 0) ||   // if we have to produce output, we need to run this
         might_print_update(all) ||                  // if we have to print and update to stderr
@@ -391,7 +391,7 @@ namespace Search {
     }
   }
 
-  void del_features_in_top_namespace(search_private& priv, example<void>& ec, size_t ns) {
+  void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns) {
     if ((ec.indices.size() == 0) || (ec.indices.last() != ns)) {
       std::cerr << "internal error (bug): expecting top namespace to be '" << ns << "' but it was ";
       if (ec.indices.size() == 0) std::cerr << "empty";
@@ -418,8 +418,8 @@ namespace Search {
     vw& all = *priv.all;
     if (priv.neighbor_features.size() == 0) return;
 
-    for (size_t n=0; n<priv.ec_seq.size(); n++) {  // iterate over every example in the sequence
-      example<void>& me = *priv.ec_seq[n];
+    for (int n=0; n<priv.ec_seq.size(); n++) {  // iterate over every example in the sequence
+      example& me = *priv.ec_seq[n];
       for (size_t n_id=0; n_id < priv.neighbor_features.size(); n_id++) {
         int32_t offset = priv.neighbor_features[n_id] >> 24;
         size_t  ns     = priv.neighbor_features[n_id] & 0xFF;
@@ -441,7 +441,7 @@ namespace Search {
         else if (n + offset >= priv.ec_seq.size()) // add </s> feature
           add_new_feature(priv, 1., 3824917 << priv.all->reg.stride_shift);
         else { // this is actually a neighbor
-          example<void>& other = *priv.ec_seq[n + offset];
+          example& other = *priv.ec_seq[n + offset];
           GD::foreach_feature<search_private,add_new_feature>(all.reg.weight_vector, all.reg.weight_mask, other.atomics[ns].begin, other.atomics[ns].end, priv, me.ft_offset);
         }
       }
@@ -460,7 +460,7 @@ namespace Search {
 
   void del_neighbor_features(search_private& priv) {
     if (priv.neighbor_features.size() == 0) return;
-    for (size_t n=0; n<priv.ec_seq.size(); n++)
+    for (int n=0; n<priv.ec_seq.size(); n++)
       del_features_in_top_namespace(priv, *priv.ec_seq[n], neighbor_namespace);
   }
 
@@ -515,7 +515,7 @@ namespace Search {
            (action)random(ec_cnt);
   }
 
-  void add_example_conditioning(search_private& priv, example<void>& ec, const ptag* condition_on, size_t condition_on_cnt, const char* condition_on_names, const action* condition_on_actions) {
+  void add_example_conditioning(search_private& priv, example& ec, const ptag* condition_on, size_t condition_on_cnt, const char* condition_on_names, const action* condition_on_actions) {
     if (condition_on_cnt == 0) return;
 
     uint32_t extra_offset=0;
@@ -574,7 +574,7 @@ namespace Search {
     }
   }
 
-  void del_example_conditioning(search_private& priv, example<void>& ec) {
+  void del_example_conditioning(search_private& priv, example& ec) {
     if ((ec.indices.size() > 0) && (ec.indices.last() == conditioning_namespace))
       del_features_in_top_namespace(priv, ec, conditioning_namespace);
   }
@@ -666,7 +666,7 @@ namespace Search {
     }
   }
   
-  action single_prediction_notLDF(search_private& priv, example<void>& ec, int policy, const action* allowed_actions, size_t allowed_actions_cnt) {
+  action single_prediction_notLDF(search_private& priv, example& ec, int policy, const action* allowed_actions, size_t allowed_actions_cnt) {
     vw& all = *priv.all;
     
     void* old_label = ec.ld;
@@ -722,7 +722,7 @@ namespace Search {
     return act;
   }
 
-  action single_prediction_LDF(search_private& priv, example<void>* ecs, size_t ec_cnt, int policy) {
+  action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, int policy) {
     CS::cs_label.default_label(&priv.ldf_test_label);
     CS::wclass wc = { 0., 1, 0., 0. };
     priv.ldf_test_label.costs.push_back(wc);
@@ -802,9 +802,6 @@ namespace Search {
       case NO_ROLLOUT:
         std::cerr << "internal error (bug): trying to rollin or rollout with NO_ROLLOUT" << endl;
         throw exception();
-      default:
-	std::cerr << "internal error (bug): something is wrong" << endl;
-	throw exception();
     }
   }
 
@@ -813,7 +810,7 @@ namespace Search {
   
   template<class T>
   void ensure_size(v_array<T>& A, size_t sz) {
-    if ((size_t)(A.end_array - A.begin) < sz) A.resize(sz*2+1, true);
+    if (A.end_array - A.begin < sz) A.resize(sz*2+1, true);
     A.end = A.begin + sz;
   }
 
@@ -911,7 +908,7 @@ namespace Search {
         else                 ((CS::label*)labels)->costs[i].x    = losses[i];
       }
 
-      example<void>& ec = priv.learn_ec_ref[0];
+      example& ec = priv.learn_ec_ref[0];
       void* old_label = ec.ld;
       ec.ld = labels;
       ec.in_use = true;
@@ -926,7 +923,7 @@ namespace Search {
       bool* alloced = (bool*)calloc_or_die(s,sizeof(bool));
       size_t start_K = (priv.is_ldf && CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(priv.learn_ec_ref[0])) ? 1 : 0;
       for (action a=start_K; a<priv.learn_ec_ref_cnt; a++) {
-        example<void>& ec = priv.learn_ec_ref[a];
+        example& ec = priv.learn_ec_ref[a];
         if (ec.ld == NULL) {
           ec.ld = new CS::label;
           alloced[a] = true;
@@ -947,7 +944,7 @@ namespace Search {
       cdbg << "generate_training_example called learn on empty_example" << endl;
 
       for (action a=start_K; a<priv.learn_ec_ref_cnt; a++) {
-        example<void>& ec = priv.learn_ec_ref[a];
+        example& ec = priv.learn_ec_ref[a];
         if (alloced[a]) {
           CS::label* lab = (CS::label*)ec.ld;
           lab->costs.delete_v();
@@ -985,7 +982,7 @@ namespace Search {
   }
   
   // note: ec_cnt should be 1 if we are not LDF
-  action search_predict(search_private& priv, example<void>* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, const action* allowed_actions, size_t allowed_actions_cnt, size_t learner_id) {
+  action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, const action* allowed_actions, size_t allowed_actions_cnt, size_t learner_id) {
     size_t condition_on_cnt = condition_on_names ? strlen(condition_on_names) : 0;
     size_t t = priv.t;
     priv.t++;
@@ -1436,7 +1433,7 @@ namespace Search {
   }
 
   template <bool is_learn>
-  void search_predict_or_learn(search& sch, learner& base, example<void>& ec) {
+  void search_predict_or_learn(search& sch, learner& base, example& ec) {
     search_private& priv = *sch.priv;
     vw* all = priv.all;
     priv.base_learner = &base;
@@ -1484,7 +1481,7 @@ namespace Search {
     }
   }
 
-  void finish_example(vw& all, search& sch, example<void>& ec) {
+  void finish_example(vw& all, search& sch, example& ec) {
     if (ec.end_pass || example_is_newline(ec) || sch.priv->ec_seq.size() >= all.p->ring_size - 2) {
       print_update(*sch.priv);
       VW::finish_example(all, &ec);
@@ -1638,7 +1635,7 @@ namespace Search {
     // destroy copied examples if we needed them
     if (! priv.examples_dont_change) {
       void (*delete_label)(void*) = priv.is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
-      for(example<void>*ec = priv.learn_ec_copy.begin; ec!=priv.learn_ec_copy.end; ++ec)
+      for(example*ec = priv.learn_ec_copy.begin; ec!=priv.learn_ec_copy.end; ++ec)
         dealloc_example(delete_label, *ec);
       priv.learn_ec_copy.delete_v();
     }
@@ -2020,7 +2017,7 @@ namespace Search {
   // the interface:
   bool search::is_ldf() { return this->priv->is_ldf; }
 
-  action search::predict(example<void>& ec, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, const action* allowed_actions, size_t allowed_actions_cnt, size_t learner_id) {
+  action search::predict(example& ec, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, const action* allowed_actions, size_t allowed_actions_cnt, size_t learner_id) {
     action a = search_predict(*this->priv, &ec, 1, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, allowed_actions, allowed_actions_cnt, learner_id);
     if (priv->beam) priv->current_trajectory.push_back(a);
     if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
@@ -2031,7 +2028,7 @@ namespace Search {
     return a;
   }
 
-  action search::predictLDF(example<void>* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, size_t learner_id) {
+  action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, size_t learner_id) {
     action a = search_predict(*this->priv, ecs, ec_cnt, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, NULL, 0, learner_id);
     if (priv->beam) priv->current_trajectory.push_back(a);
     if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
@@ -2109,7 +2106,7 @@ namespace Search {
     condition_on_names.delete_v();
   }
 
-  predictor& predictor::set_input(example<void>&input_example) {
+  predictor& predictor::set_input(example&input_example) {
     free_ec();
     is_ldf = false;
     ec = &input_example;
@@ -2118,7 +2115,7 @@ namespace Search {
     return *this;
   }
 
-  predictor& predictor::set_input(example<void>*input_example, size_t input_length) {
+  predictor& predictor::set_input(example*input_example, size_t input_length) {
     free_ec();
     is_ldf = true;
     ec = input_example;
@@ -2129,14 +2126,14 @@ namespace Search {
 
   void predictor::set_input_length(size_t input_length) {
     is_ldf = true;
-    if (ec_alloced) ec = (example<void>*)realloc(ec, input_length * sizeof(example<void>));
-    else            ec = (example<void>*)calloc(input_length, sizeof(example<void>));
+    if (ec_alloced) ec = (example*)realloc(ec, input_length * sizeof(example));
+    else            ec = (example*)calloc(input_length, sizeof(example));
     for (size_t i=ec_cnt; i<input_length; i++)
       ec[i].ld = calloc(1, CS::cs_label.label_size);
     ec_cnt = input_length;
     ec_alloced = true;
   }
-  void predictor::set_input_at(size_t posn, example<void>&ex) {
+  void predictor::set_input_at(size_t posn, example&ex) {
     if (!ec_alloced) { std::cerr << "call to set_input_at without previous call to set_input_length" << endl; throw exception(); }
     if (posn >= ec_cnt) { std::cerr << "call to set_input_at with too large a position" << endl; throw exception(); }
     VW::copy_example_data(false, ec+posn, &ex, CS::cs_label.label_size, CS::cs_label.copy_label); // TODO: the false is "audit"

@@ -9,9 +9,9 @@ license as described in the file LICENSE.
 namespace HookTask {
   void initialize(Search::search&, size_t&, po::variables_map&);
   void finish(Search::search&);
-  void run(Search::search&, vector<example<void>*>&);
-  void run_setup(Search::search&, vector<example<void>*>&);
-  void run_takedown(Search::search&, vector<example<void>*>&);
+  void run(Search::search&, vector<example*>&);
+  void run_setup(Search::search&, vector<example*>&);
+  void run_takedown(Search::search&, vector<example*>&);
   extern Search::search_task task;
 
   struct task_data {

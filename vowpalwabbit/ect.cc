@@ -184,7 +184,7 @@ namespace ECT
     return e.last_pair + (eliminations-1);
   }
 
-  uint32_t ect_predict(vw& all, ect& e, learner& base, example<void>& ec)
+  uint32_t ect_predict(vw& all, ect& e, learner& base, example& ec)
   {
     if (e.k == (size_t)1)
       return 1;
@@ -229,7 +229,7 @@ namespace ECT
     return false;
   }
 
-  void ect_train(vw& all, ect& e, learner& base, example<void>& ec)
+  void ect_train(vw& all, ect& e, learner& base, example& ec)
   {
     if (e.k == 1)//nothing to do
       return;
@@ -321,7 +321,7 @@ namespace ECT
       }
   }
 
-  void predict(ect& e, learner& base, example<void>& ec) {
+  void predict(ect& e, learner& base, example& ec) {
     vw* all = e.all;
 
     MULTICLASS::multiclass* mc = (MULTICLASS::multiclass*)ec.ld;
@@ -331,7 +331,7 @@ namespace ECT
     ec.ld = mc;
   }
 
-  void learn(ect& e, learner& base, example<void>& ec)
+  void learn(ect& e, learner& base, example& ec)
   {
     vw* all = e.all;
 
@@ -364,7 +364,7 @@ namespace ECT
     e.tournaments_won.delete_v();
   }
 
-  void finish_example(vw& all, ect&, example<void>& ec)
+  void finish_example(vw& all, ect&, example& ec)
   {
     MULTICLASS::output_example(all, ec);
     VW::finish_example(all, &ec);

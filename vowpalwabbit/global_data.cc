@@ -161,7 +161,7 @@ void set_mm(shared_data* sd, float label)
 void noop_mm(shared_data* sd, float label)
 {}
 
-void vw::learn(example<void>* ec)
+void vw::learn(example* ec)
 {
   this->l->learn(*ec);
 }

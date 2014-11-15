@@ -23,7 +23,7 @@ char* run_len_decode(char *p, uint32_t& i)
 
 inline int32_t ZigZagDecode(uint32_t n) { return (n >> 1) ^ -static_cast<int32_t>(n & 1); }
 
-size_t read_cached_tag(io_buf& cache, example<void>* ae)
+size_t read_cached_tag(io_buf& cache, example* ae)
 {
   char* c;
   size_t tag_size;
@@ -48,9 +48,10 @@ __attribute__((packed))
 #endif
 	;
 
-int read_cached_features(void* in, example<void>* ae)
+int read_cached_features(void* in, example* ec)
 {
   vw* all = (vw*)in;
+  example* ae = (example*)ec;
   ae->sorted = all->p->sorted_cache;
   io_buf* input = all->p->input;
 
@@ -192,7 +193,7 @@ void cache_tag(io_buf& cache, v_array<char> tag)
   cache.set(c);
 }
 
-void cache_features(io_buf& cache, example<void>* ae, uint32_t mask)
+void cache_features(io_buf& cache, example* ae, uint32_t mask)
 {
   cache_tag(cache,ae->tag);
   output_byte(cache, (unsigned char) ae->indices.size());

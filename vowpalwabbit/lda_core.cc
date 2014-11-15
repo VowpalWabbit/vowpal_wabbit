@@ -36,7 +36,7 @@ public:
     v_array<float> Elogtheta;
     v_array<float> decay_levels;
     v_array<float> total_new;
-    v_array<example<void>* > examples;
+    v_array<example* > examples;
     v_array<float> total_lambda;
     v_array<int> doc_lengths;
     v_array<float> digammas;
@@ -444,7 +444,7 @@ v_array<float> old_gamma;
 // setting of lambda based on the document passed in. The value is
 // divided by the total number of words in the document This can be
 // used as a (possibly very noisy) estimate of held-out likelihood.
-  float lda_loop(vw& all, v_array<float>& Elogtheta, float* v,weight* weights,example<void>* ec, float power_t)
+  float lda_loop(vw& all, v_array<float>& Elogtheta, float* v,weight* weights,example* ec, float power_t)
 {
   new_gamma.erase();
   old_gamma.erase();
@@ -691,7 +691,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
     l.doc_lengths.erase();
   }
   
-  void learn(lda& l, learner& base, example<void>& ec) 
+  void learn(lda& l, learner& base, example& ec) 
   {
     size_t num_ex = l.examples.size();
     l.examples.push_back(&ec);
@@ -709,7 +709,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
   }
 
   // placeholder
-  void predict(lda& l, learner& base, example<void>& ec)
+  void predict(lda& l, learner& base, example& ec)
   {
     learn(l, base, ec);
   }
@@ -730,7 +730,7 @@ void end_examples(lda& l)
   }
 }
 
-  void finish_example(vw& all, lda&, example<void>& ec)
+  void finish_example(vw& all, lda&, example& ec)
 {}
 
   void finish(lda& ld)

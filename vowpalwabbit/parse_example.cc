@@ -74,7 +74,7 @@ public:
   unsigned char index;
   float v;
   parser* p;
-  example<void>* ae;
+  example* ae;
   uint32_t* affix_features;
   bool* spelling_features;
   v_array<char> spelling;
@@ -334,7 +334,7 @@ public:
       }
   }
 
-  TC_parser(char* reading_head, char* endLine, vw& all, example<void>* ae){
+  TC_parser(char* reading_head, char* endLine, vw& all, example* ae){
     if (endLine != reading_head)
       {
 	this->beginLine = reading_head;
@@ -353,7 +353,7 @@ public:
   }
 };
 
-void substring_to_example(vw* all, example<void>* ae, substring example)
+void substring_to_example(vw* all, example* ae, substring example)
 {
   all->p->lp.default_label(ae->ld);
   char* bar_location = safe_index(example.begin, '|', example.end);
@@ -388,10 +388,10 @@ void substring_to_example(vw* all, example<void>* ae, substring example)
     TC_parser<false> parser_line(bar_location,example.end,*all,ae);
 }
 
-int read_features(void* in, example<void>* ex)
+int read_features(void* in, example* ex)
 {
   vw* all = (vw*)in;
-  example<void>* ae = (example<void>*)ex;
+  example* ae = (example*)ex;
   char *line=NULL;
   size_t num_chars_initial = readto(*(all->p->input), line, '\n');
   if (num_chars_initial < 1)
@@ -411,7 +411,7 @@ int read_features(void* in, example<void>* ex)
   return (int)num_chars_initial;
 }
 
-void read_line(vw& all, example<void>* ex, char* line)
+void read_line(vw& all, example* ex, char* line)
 {
   substring ss = {line, line+strlen(line)};
   while ((ss.end >= ss.begin) && (*(ss.end-1) == '\n')) ss.end--;

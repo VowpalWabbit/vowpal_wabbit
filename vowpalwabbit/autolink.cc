@@ -12,7 +12,7 @@ namespace ALINK {
   };
 
   template <bool is_learn>
-  void predict_or_learn(autolink& b, learner& base, example<void>& ec)
+  void predict_or_learn(autolink& b, learner& base, example& ec)
   {
     base.predict(ec);
     label_data* ld = (label_data*)ec.ld;

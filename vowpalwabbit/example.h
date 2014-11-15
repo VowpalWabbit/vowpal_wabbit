@@ -32,10 +32,9 @@ struct audit_data {
   bool alloced;
 };
 
-template <class label>
 struct example // core example datatype.
 {
-  label* ld;
+  void* ld;
 
   v_array<char> tag;//An identifier for the example.
   size_t example_counter;
@@ -81,14 +80,14 @@ struct flat_example
 	feature* feature_map; //map to store sparse feature vectors  
 };
 
-flat_example* flatten_example(vw& all, example<void> *ec);
-flat_example* flatten_sort_example(vw& all, example<void> *ec);
+flat_example* flatten_example(vw& all, example *ec);
+flat_example* flatten_sort_example(vw& all, example *ec);
 void free_flatten_example(flat_example* fec);
 
-example<void> *alloc_examples(size_t,size_t);
-void dealloc_example(void(*delete_label)(void*), example<void>&);
+example *alloc_examples(size_t,size_t);
+void dealloc_example(void(*delete_label)(void*), example&);
 
-inline int example_is_newline(example<void>& ec)
+inline int example_is_newline(example& ec)
 {
   // if only index is constant namespace or no index
   return ((ec.indices.size() == 0) || 

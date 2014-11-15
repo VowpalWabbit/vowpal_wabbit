@@ -50,10 +50,10 @@ namespace StagewisePoly
     uint64_t sum_input_sparsity_sync;
     uint64_t num_examples_sync;
 
-    example<void> synth_ec;
+    example synth_ec;
     //following is bookkeeping in synth_ec creation (dfs)
     feature synth_rec_f;
-    example<void> *original_ec;
+    example *original_ec;
     uint32_t cur_depth;
     bool training;
     uint64_t last_example_counter;
@@ -368,7 +368,7 @@ namespace StagewisePoly
     poly.synth_ec.ft_offset = pop_ft_offset;
   }
 
-  void synthetic_reset(stagewise_poly &poly, example<void> &ec)
+  void synthetic_reset(stagewise_poly &poly, example &ec)
   {
     poly.synth_ec.ld = ec.ld;
     poly.synth_ec.tag = ec.tag;
@@ -475,7 +475,7 @@ namespace StagewisePoly
     }
   }
 
-  void synthetic_create(stagewise_poly &poly, example<void> &ec, bool training)
+  void synthetic_create(stagewise_poly &poly, example &ec, bool training)
   {
     synthetic_reset(poly, ec);
 
@@ -500,7 +500,7 @@ namespace StagewisePoly
     }
   }
 
-  void predict(stagewise_poly &poly, learner &base, example<void> &ec)
+  void predict(stagewise_poly &poly, learner &base, example &ec)
   {
     poly.original_ec = &ec;
     synthetic_create(poly, ec, false);
@@ -509,7 +509,7 @@ namespace StagewisePoly
     ec.updated_prediction = poly.synth_ec.updated_prediction;
   }
 
-  void learn(stagewise_poly &poly, learner &base, example<void> &ec)
+  void learn(stagewise_poly &poly, learner &base, example &ec)
   {
     bool training = poly.all->training && ((label_data *) ec.ld)->label != FLT_MAX;
     poly.original_ec = &ec;
@@ -618,7 +618,7 @@ namespace StagewisePoly
     }
   }
 
-  void finish_example(vw &all, stagewise_poly &poly, example<void> &ec)
+  void finish_example(vw &all, stagewise_poly &poly, example &ec)
   {
     size_t temp_num_features = ec.num_features;
     ec.num_features = poly.synth_ec.num_features;

@@ -19,7 +19,7 @@ namespace EntityRelationTask { Search::search_task task = { "entity_relation", r
 namespace EntityRelationTask {
   namespace CS = COST_SENSITIVE;
 
-  void update_example_indicies(bool audit, example<void>* ec, uint32_t mult_amount, uint32_t plus_amount);
+  void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount);
   //enum SearchOrder { EntityFirst, Mix, Skip };
 
   struct task_data {
@@ -32,8 +32,8 @@ namespace EntityRelationTask {
     v_array<uint32_t> y_allowed_entity;
     v_array<uint32_t> y_allowed_relation;
     int search_order;
-    example<void>* ldf_entity;
-    example<void>* ldf_relation;
+    example* ldf_entity;
+    example* ldf_relation;
     //SearchOrder search_order;
   };
 
@@ -66,7 +66,7 @@ namespace EntityRelationTask {
     if(my_task_data->search_order != 3 && my_task_data->search_order != 4 ) {
       sch.set_options(0);
     } else {
-      example<void>* ldf_examples = alloc_examples(sizeof(CS::label), 10);
+      example* ldf_examples = alloc_examples(sizeof(CS::label), 10);
       CS::wclass default_wclass = { 0., 0, 0., 0. };
       for (size_t a=0; a<10; a++) {
         CS::label* lab = (CS::label*)ldf_examples[a].ld;
@@ -125,7 +125,7 @@ namespace EntityRelationTask {
     }
   }
   
-  size_t predict_entity(Search::search&sch, example<void>* ex, v_array<size_t>& predictions, ptag my_tag, bool isLdf=false){
+  size_t predict_entity(Search::search&sch, example* ex, v_array<size_t>& predictions, ptag my_tag, bool isLdf=false){
 	  	
     task_data* my_task_data = sch.get_task_data<task_data>();
     size_t prediction;
@@ -162,7 +162,7 @@ namespace EntityRelationTask {
     sch.loss(loss);
     return prediction;
   }
-  size_t predict_relation(Search::search&sch, example<void>* ex, v_array<size_t>& predictions, ptag my_tag, bool isLdf=false){
+  size_t predict_relation(Search::search&sch, example* ex, v_array<size_t>& predictions, ptag my_tag, bool isLdf=false){
     char type; 
     int id1, id2;
     task_data* my_task_data = sch.get_task_data<task_data>();
@@ -226,7 +226,7 @@ namespace EntityRelationTask {
     return prediction;
   }
 
-  void entity_first_decoding(Search::search& sch, vector<example<void>*> ec, v_array<size_t>& predictions, bool isLdf=false) {
+  void entity_first_decoding(Search::search& sch, vector<example*> ec, v_array<size_t>& predictions, bool isLdf=false) {
     // ec.size = #entity + #entity*(#entity-1)/2
     size_t n_ent = (size_t)(sqrt(ec.size()*8+1)-1)/2;
     // Do entity recognition first
@@ -238,7 +238,7 @@ namespace EntityRelationTask {
     }
   }
 
-  void er_mixed_decoding(Search::search& sch, vector<example<void>*> ec, v_array<size_t>& predictions) {
+  void er_mixed_decoding(Search::search& sch, vector<example*> ec, v_array<size_t>& predictions) {
     // ec.size = #entity + #entity*(#entity-1)/2
     size_t n_ent = (size_t)(sqrt(ec.size()*8+1)-1)/2;
     for(size_t t=0; t<ec.size(); t++){
@@ -262,7 +262,7 @@ namespace EntityRelationTask {
     }
   }
 
-  void er_allow_skip_decoding(Search::search& sch, vector<example<void>*> ec, v_array<size_t>& predictions) {
+  void er_allow_skip_decoding(Search::search& sch, vector<example*> ec, v_array<size_t>& predictions) {
     task_data* my_task_data = sch.get_task_data<task_data>();
     // ec.size = #entity + #entity*(#entity-1)/2
     size_t n_ent = (size_t)(sqrt(ec.size()*8+1)-1)/2;
@@ -309,7 +309,7 @@ namespace EntityRelationTask {
     }
   }
  
-  void run(Search::search& sch, vector<example<void>*>& ec) {
+  void run(Search::search& sch, vector<example*>& ec) {
     task_data* my_task_data = sch.get_task_data<task_data>();
     
     v_array<size_t> predictions;
@@ -341,7 +341,7 @@ namespace EntityRelationTask {
     }
   }
   // this is totally bogus for the example -- you'd never actually do this!
-  void update_example_indicies(bool audit, example<void>* ec, uint32_t mult_amount, uint32_t plus_amount) {
+  void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount) {
     for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
       for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; ++f)
         f->weight_index = ((f->weight_index * mult_amount) + plus_amount);

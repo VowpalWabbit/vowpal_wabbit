@@ -28,14 +28,14 @@ namespace BS {
     vw* all;
   };
 
-  void bs_predict_mean(vw& all, example<void>& ec, vector<double> &pred_vec)
+  void bs_predict_mean(vw& all, example& ec, vector<double> &pred_vec)
   {
     label_data& ld = *(label_data*)ec.ld;
     ld.prediction = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
     ec.loss = all.loss->getLoss(all.sd, ld.prediction, ((label_data*)ec.ld)->label) * ((label_data*)ec.ld)->weight;    
   }
 
-  void bs_predict_vote(vw& all, example<void>& ec, vector<double> &pred_vec)
+  void bs_predict_vote(vw& all, example& ec, vector<double> &pred_vec)
   { //majority vote in linear time
     unsigned int counter = 0;
     int current_label = 1, init_label = 1;
@@ -138,7 +138,7 @@ namespace BS {
     }    
   }
 
-  void output_example(vw& all, bs& d, example<void>& ec)
+  void output_example(vw& all, bs& d, example& ec)
   {
     label_data* ld = (label_data*)ec.ld;
     
@@ -180,7 +180,7 @@ namespace BS {
   }
 
   template <bool is_learn>
-  void predict_or_learn(bs& d, learner& base, example<void>& ec)
+  void predict_or_learn(bs& d, learner& base, example& ec)
   {
     vw* all = d.all;
     bool shouldOutput = all->raw_prediction > 0;
@@ -228,7 +228,7 @@ namespace BS {
 
   }
 
-  void finish_example(vw& all, bs& d, example<void>& ec)
+  void finish_example(vw& all, bs& d, example& ec)
   {
     BS::output_example(all, d, ec);
     VW::finish_example(all, &ec);

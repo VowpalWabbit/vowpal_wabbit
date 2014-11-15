@@ -81,7 +81,7 @@ struct parser {
   v_array<substring> name;
 
   io_buf* input; //Input source(s)
-  int (*reader)(void*, example<void>* ae);
+  int (*reader)(void*, example* ae);
   hash_func_t hasher;
   bool resettable; //Whether or not the input can be reset.
   io_buf* output; //Where to output the cache.
@@ -94,7 +94,7 @@ struct parser {
   uint64_t end_parsed_examples; // The index of the fully parsed example.
   uint64_t local_example_number; 
   uint32_t in_pass_counter;
-  example<void>* examples;
+  example* examples;
   uint64_t used_index;
   bool emptylines_separate_examples; // true if you want to have holdout computed on a per-block basis rather than a per-line basis
   MUTEX examples_lock;

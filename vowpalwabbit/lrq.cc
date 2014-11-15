@@ -46,7 +46,7 @@ namespace {
     }
 
   inline bool
-  example_is_test (example<void>& ec)
+  example_is_test (example& ec)
     {
       return ((label_data*) ec.ld)->label == FLT_MAX;
     }
@@ -62,7 +62,7 @@ namespace {
 namespace LRQ {
 
   template <bool is_learn>
-  void predict_or_learn(LRQstate& lrq, learner& base, example<void>& ec)
+  void predict_or_learn(LRQstate& lrq, learner& base, example& ec)
   {
     vw& all = *lrq.all;
 

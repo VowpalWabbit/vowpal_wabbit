@@ -183,7 +183,7 @@ namespace COST_SENSITIVE {
 				  copy_label,
 				  sizeof(label)};
 
-  void print_update(vw& all, bool is_test, example<void>& ec)
+  void print_update(vw& all, bool is_test, example& ec)
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
@@ -232,7 +232,7 @@ namespace COST_SENSITIVE {
       }
   }
 
-  void output_example(vw& all, example<void>& ec)
+  void output_example(vw& all, example& ec)
   {
     label* ld = (label*)ec.ld;
 
@@ -291,7 +291,7 @@ namespace COST_SENSITIVE {
     print_update(all, is_test_label((label*)ec.ld), ec);
   }
 
-  bool example_is_test(example<void>& ec)
+  bool example_is_test(example& ec)
   {
     if (ec.ld == NULL) return false;
     v_array<COST_SENSITIVE::wclass> costs = ((label*)ec.ld)->costs;

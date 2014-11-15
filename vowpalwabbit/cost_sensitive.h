@@ -31,15 +31,15 @@ namespace COST_SENSITIVE {
     uint32_t prediction;
   };
   
-  void output_example(vw& all, example<void>& ec);
+  void output_example(vw& all, example& ec);
   extern label_parser cs_label;
 
-  bool example_is_test(example<void>& ec);
+  bool example_is_test(example& ec);
 
-  void print_update(vw& all, bool is_test, example<void>& ec);
+  void print_update(vw& all, bool is_test, example& ec);
 }
 
 namespace CSOAA_AND_WAP_LDF {
   void global_print_newline(vw& all);
-  void output_example(vw& all, example<void>& ec, bool& hit_loss);
+  void output_example(vw& all, example& ec, bool& hit_loss);
 }

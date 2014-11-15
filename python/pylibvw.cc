@@ -15,7 +15,7 @@ using namespace std;
 namespace py=boost::python;
 
 typedef boost::shared_ptr<vw> vw_ptr;
-typedef boost::shared_ptr<example<void> > example_ptr;
+typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
 
@@ -61,7 +61,7 @@ label_parser* get_label_parser(vw*all, size_t labelType) {
 }
 
 void my_delete_example(void*voidec) {
-  example<void>* ec = (example<void>*) voidec;
+  example* ec = (example*) voidec;
   size_t labelType = (ec->tag.size() == 0) ? lDEFAULT : ec->tag[0];
   label_parser* lp = get_label_parser(NULL, labelType);
   dealloc_example(lp ? lp->delete_label : NULL, *ec);
@@ -69,9 +69,9 @@ void my_delete_example(void*voidec) {
 }
 
 
-example<void>* my_empty_example0(vw_ptr vw, size_t labelType) {
+example* my_empty_example0(vw_ptr vw, size_t labelType) {
   label_parser* lp = get_label_parser(&*vw, labelType);
-  example<void>* ec = alloc_examples(lp->label_size, 1);
+  example* ec = alloc_examples(lp->label_size, 1);
   lp->default_label(ec->ld);
   if (labelType == lCOST_SENSITIVE) {
     COST_SENSITIVE::wclass zero = { 0., 1, 0., 0. };
@@ -84,17 +84,17 @@ example<void>* my_empty_example0(vw_ptr vw, size_t labelType) {
 }
 
 example_ptr my_empty_example(vw_ptr vw, size_t labelType) {
-  example<void>* ec = my_empty_example0(vw, labelType);
-  return boost::shared_ptr<example<void> >(ec, my_delete_example);
+  example* ec = my_empty_example0(vw, labelType);
+  return boost::shared_ptr<example>(ec, my_delete_example);
 }  
 
 example_ptr my_read_example(vw_ptr all, size_t labelType, char*str) {
-  example<void>*ec = my_empty_example0(all, labelType);
+  example*ec = my_empty_example0(all, labelType);
   read_line(*all, ec, str);
   parse_atomic_example(*all, ec, false);
   VW::setup_example(*all, ec);
   ec->example_counter = labelType;
-  return boost::shared_ptr<example<void> >(ec, my_delete_example);
+  return boost::shared_ptr<example>(ec, my_delete_example);
 }
 
 void my_finish_example(vw_ptr all, example_ptr ec) {
@@ -106,7 +106,7 @@ void my_learn(vw_ptr all, example_ptr ec) {
 }
 
 float my_learn_string(vw_ptr all, char*str) {
-  example<void>*ec = VW::read_example(*all, str);
+  example*ec = VW::read_example(*all, str);
   all->learn(ec);
   float pp = ec->partial_prediction;
   VW::finish_example(*all, ec);
@@ -483,7 +483,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
       ;
 
   // define the example class
-  py::class_<example<void>, example_ptr>("example", py::no_init)
+  py::class_<example, example_ptr>("example", py::no_init)
       .def("__init__", py::make_constructor(my_read_example), "Given a string as an argument parse that into a VW example (and run setup on it) -- default to multiclass label type")
       .def("__init__", py::make_constructor(my_empty_example), "Construct an empty (non setup) example; you must provide a label type (vw.lBinary, vw.lMulticlass, etc.)")
 

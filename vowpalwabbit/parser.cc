@@ -697,7 +697,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
  * Hash is evaluated using the principle h(a, b) = h(a)*X + h(b), where X is a random no.
  * 32 random nos. are maintained in an array and are used in the hashing.
  */
-void generateGrams(vw& all, example<void>* &ex) {
+void generateGrams(vw& all, example* &ex) {
   for(unsigned char* index = ex->indices.begin; index < ex->indices.end; index++)
     {
       size_t length = ex->atomics[*index].size();
@@ -712,14 +712,14 @@ void generateGrams(vw& all, example<void>* &ex) {
     }
 }
 
-example<void>* get_unused_example(vw& all)
+example* get_unused_example(vw& all)
 {
   while (true)
     {
       mutex_lock(&all.p->examples_lock);
       if (all.p->examples[all.p->begin_parsed_examples % all.p->ring_size].in_use == false)
 	{
-	  example<void>& ret = all.p->examples[all.p->begin_parsed_examples++ % all.p->ring_size];
+	  example& ret = all.p->examples[all.p->begin_parsed_examples++ % all.p->ring_size];
 	  ret.in_use = true;
 	  mutex_unlock(&all.p->examples_lock);
 	  return &ret;
@@ -730,7 +730,7 @@ example<void>* get_unused_example(vw& all)
     }
 }
 
-bool parse_atomic_example(vw& all, example<void>* ae, bool do_read = true)
+bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
 {
   if (do_read && all.p->reader(&all, ae) <= 0)
     return false;
@@ -746,7 +746,7 @@ bool parse_atomic_example(vw& all, example<void>* ae, bool do_read = true)
   return true;
 }
 
-void end_pass_example(vw& all, example<void>* ae)
+void end_pass_example(vw& all, example* ae)
 {
   all.p->lp.default_label(ae->ld);
   ae->end_pass = true;
@@ -754,7 +754,7 @@ void end_pass_example(vw& all, example<void>* ae)
 }
 
 namespace VW{
-void setup_example(vw& all, example<void>* ae)
+void setup_example(vw& all, example* ae)
 {
   ae->partial_prediction = 0.;
   ae->num_features = 0;
@@ -860,16 +860,16 @@ void setup_example(vw& all, example<void>* ae)
 }
 
 namespace VW{
-  example<void>* new_unused_example(vw& all) { 
-    example<void>* ec = get_unused_example(all);
+  example* new_unused_example(vw& all) { 
+    example* ec = get_unused_example(all);
     all.p->lp.default_label(ec->ld);
     all.p->begin_parsed_examples++;
     ec->example_counter = all.p->begin_parsed_examples;
     return ec;
   }
-  example<void>* read_example(vw& all, char* example_line)
+  example* read_example(vw& all, char* example_line)
   {
-    example<void>* ret = get_unused_example(all);
+    example* ret = get_unused_example(all);
 
     read_line(all, ret, example_line);
 	parse_atomic_example(all,ret,false);
@@ -879,9 +879,9 @@ namespace VW{
     return ret;
   }
 
-  example<void>* read_example(vw& all, string example_line) { return read_example(all, (char*)example_line.c_str()); }
+  example* read_example(vw& all, string example_line) { return read_example(all, (char*)example_line.c_str()); }
   
-  void add_constant_feature(vw& vw, example<void>*ec) {
+  void add_constant_feature(vw& vw, example*ec) {
     uint32_t cns = constant_namespace;
     ec->indices.push_back(cns);
     feature temp = {1,(uint32_t) constant};
@@ -890,7 +890,7 @@ namespace VW{
     ec->num_features++;
   }
 
-  void add_label(example<void>* ec, float label, float weight, float base)
+  void add_label(example* ec, float label, float weight, float base)
   {
     label_data* l = (label_data*)ec->ld;
     l->label = label;
@@ -898,9 +898,9 @@ namespace VW{
     l->initial = base;
   }
 
-  example<void>* import_example(vw& all, vector<feature_space> vf)
+  example* import_example(vw& all, vector<feature_space> vf)
   {
-    example<void>* ret = get_unused_example(all);
+    example* ret = get_unused_example(all);
     all.p->lp.default_label(ret->ld);
     for (size_t i = 0; i < vf.size();i++)
       {
@@ -918,9 +918,9 @@ namespace VW{
     return ret;
   }
 
-  example<void>* import_example(vw& all, primitive_feature_space* features, size_t len)
+  example* import_example(vw& all, primitive_feature_space* features, size_t len)
   {
-    example<void>* ret = get_unused_example(all);
+    example* ret = get_unused_example(all);
     all.p->lp.default_label(ret->ld);
     for (size_t i = 0; i < len;i++)
       {
@@ -938,7 +938,7 @@ namespace VW{
     return ret;
   }
 
-  primitive_feature_space* export_example(vw& all, example<void>* ec, size_t& len)
+  primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
   {
     len = ec->indices.size();
     primitive_feature_space* fs_ptr = new primitive_feature_space[len]; 
@@ -970,7 +970,7 @@ namespace VW{
     delete (features);
   }
 
-  void parse_example_label(vw& all, example<void>&ec, string label) {
+  void parse_example_label(vw& all, example&ec, string label) {
     v_array<substring> words;
     char* cstr = (char*)label.c_str();
     substring str = { cstr, cstr+label.length() };
@@ -980,7 +980,7 @@ namespace VW{
     words.delete_v();
   }
 
-  void empty_example(vw& all, example<void>& ec)
+  void empty_example(vw& all, example& ec)
   {
 	if (all.audit || all.hash_inv)
       for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
@@ -1011,7 +1011,7 @@ namespace VW{
     ec.end_pass = false;
   }
 
-  void finish_example(vw& all, example<void>* ec)
+  void finish_example(vw& all, example* ec)
   {
     mutex_lock(&all.p->output_lock);
     all.p->local_example_number++;
@@ -1042,7 +1042,7 @@ void *main_parse_loop(void *in)
 
 	while(!all->p->done)
 	  {
-            example<void>* ae = get_unused_example(*all);
+            example* ae = get_unused_example(*all);
 	    if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
 		   && parse_atomic_example(*all, ae) )
 	     {
@@ -1077,7 +1077,7 @@ void *main_parse_loop(void *in)
 }
 
 namespace VW{
-example<void>* get_example(parser* p)
+example* get_example(parser* p)
 {
   mutex_lock(&p->examples_lock);
   if (p->end_parsed_examples != p->used_index) {
@@ -1103,42 +1103,42 @@ example<void>* get_example(parser* p)
   }
 }
 
-float get_topic_prediction(example<void>* ec, size_t i)
+float get_topic_prediction(example* ec, size_t i)
 {
 	return ec->topic_predictions[i];
 }
 
-float get_label(example<void>* ec)
+float get_label(example* ec)
 {
 	return ((label_data*)(ec->ld))->label;
 }
 
-float get_importance(example<void>* ec)
+float get_importance(example* ec)
 {
 	return ((label_data*)(ec->ld))->weight;
 }
 
-float get_initial(example<void>* ec)
+float get_initial(example* ec)
 {
 	return ((label_data*)(ec->ld))->initial;
 }
 
-float get_prediction(example<void>* ec)
+float get_prediction(example* ec)
 {
 	return ((label_data*)(ec->ld))->prediction;
 }
 
-size_t get_tag_length(example<void>* ec)
+size_t get_tag_length(example* ec)
 {
 	return ec->tag.size();
 }
 
-const char* get_tag(example<void>* ec)
+const char* get_tag(example* ec)
 {
 	return ec->tag.begin;
 }
 
-size_t get_feature_number(example<void>* ec)
+size_t get_feature_number(example* ec)
 {
 	return ec->num_features;
 }
@@ -1151,7 +1151,7 @@ void initialize_examples(vw& all)
   all.p->end_parsed_examples = 0;
   all.p->done = false;
 
-  all.p->examples = (example<void>*)calloc_or_die(all.p->ring_size, sizeof(example<void>));
+  all.p->examples = (example*)calloc_or_die(all.p->ring_size, sizeof(example));
 
   for (size_t i = 0; i < all.p->ring_size; i++)
     {
