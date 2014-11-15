@@ -1,4 +1,4 @@
-CXX = $(shell which clang++)
+#CXX = $(shell which clang++)
 # -- if you want to test 32-bit use this instead,
 #    it sometimes reveals type portability issues
 # CXX = $(shell which clang++) -m32
@@ -15,6 +15,7 @@ ifeq ($(CXX),)
   $(warning No compiler found)
   exit 1
 endif
+
 
 UNAME := $(shell uname)
 LIBS = -l boost_program_options -l pthread -l z
@@ -58,7 +59,7 @@ else
 endif
 
 # for normal fast execution.
-FLAGS = $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -DNDEBUG $(BOOST_INCLUDE)  -fPIC #-DVW_LDA_NO_SSE
+FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -DNDEBUG $(BOOST_INCLUDE)  -fPIC #-DVW_LDA_NO_SSE
 
 # for profiling -- note that it needs to be gcc
 #FLAGS = $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -O2 -fno-strict-aliasing -ffast-math -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) -pg  -fPIC #-DVW_LDA_NO_S
