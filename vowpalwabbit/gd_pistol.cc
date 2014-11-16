@@ -63,7 +63,9 @@ namespace GD_PISTOL {
             }
             float squared_val = w[1] * w[1];
             float tmp = 1.f / (us.a * w[3]*(w[2] + w[3]));
-            w[0] = sqrt(2 * w[3] * us.a * us.b) * w[1] * exp(squared_val / 2 * tmp) * tmp;
+            //w[0] = sqrt(2 * w[3] * us.a * us.b) * w[1] * exp(squared_val / 2 * tmp) * tmp;
+            //w[0] = w[3] * us.b * w[1] * exp(squared_val / 2 * tmp) * tmp;
+            w[0] = sqrt(w[2]) * us.b * w[1] * exp(squared_val / 2 * tmp) * tmp;
         }
     }
 
@@ -91,7 +93,9 @@ namespace GD_PISTOL {
                 w[3] = fx;
                 float squared_val = w[1] * w[1];
                 float tmp = 1.f / (us.a * w[3] * (w[2] + w[3]));
-                w[0] = sqrt(2 * w[3] * us.a * us.b) * w[1] * exp(squared_val / 2 * tmp) * tmp;
+                //w[0] = sqrt(2 * w[3] * us.a * us.b) * w[1] * exp(squared_val / 2 * tmp) * tmp;
+                //w[0] = w[3] * us.b * w[1] * exp(squared_val / 2 * tmp) * tmp;
+                w[0] = sqrt(w[2]) * us.b * w[1] * exp(squared_val / 2 * tmp) * tmp;
             }
         }
     }
@@ -334,7 +338,6 @@ namespace GD_PISTOL {
         float weighted_deriv = all.loss->first_derivative(all.sd, ld->prediction, ld->label) * ld->weight;
 
         if (fabs(weighted_deriv) > 1e-8) {
-            //g.b++;
             if (adaptive) {
                 update_struct us;
                 us.weighted_deriv = weighted_deriv;
@@ -348,7 +351,8 @@ namespace GD_PISTOL {
                 if (g.squared_norm_theta < 0)
                     g.squared_norm_theta = 0; // numerical problems might happen, better be safe.
                 float tmp = 1.f / (g.max_input * g.a * (g.alpha_single + g.max_input));
-                g.all->sd->contraction = sqrt(2 * g.max_input * g.a * g.b) * exp(g.squared_norm_theta / 2 * tmp) * tmp;
+                //g.all->sd->contraction = sqrt(2 * g.max_input * g.a * g.b) * exp(g.squared_norm_theta / 2 * tmp) * tmp;
+                g.all->sd->contraction = sqrt(g.alpha_single) * g.b * exp(g.squared_norm_theta / 2 * tmp) * tmp;
             }
         }
     }
@@ -359,7 +363,8 @@ namespace GD_PISTOL {
         assert(((label_data*) ec.ld)->label != FLT_MAX);
         assert(((label_data*) ec.ld)->weight > 0.);
 
-        if (adaptive) {
+        if (adaptive) {            
+            //g.b++;
             update_struct us;
             us.a = g.a;
             us.b = g.b;
@@ -371,7 +376,8 @@ namespace GD_PISTOL {
             if (g.max_input < g.norm_current_example) {
                 g.max_input = g.norm_current_example;
                 float tmp = 1.f / (g.max_input * g.a * (g.alpha_single + g.max_input));
-                g.all->sd->contraction = sqrt(2 * g.max_input * g.a * g.b) * exp(g.squared_norm_theta / 2 * tmp) * tmp;
+                //g.all->sd->contraction = sqrt(2 * g.max_input * g.a * g.b) * exp(g.squared_norm_theta / 2 * tmp) * tmp;
+                g.all->sd->contraction = sqrt(g.alpha_single) * g.b * exp(g.squared_norm_theta / 2 * tmp) * tmp;
             }
         }
 
@@ -605,9 +611,8 @@ namespace GD_PISTOL {
         g->no_win_counter = 0;
         g->early_stop_thres = 3;
 
-        //g->a=0.25;
         g->a = 1;
-        g->b = 1;
+        g->b = .5;
         g->max_input = 0;
         g->squared_norm_theta = 0;
         g->alpha_single = 0;
