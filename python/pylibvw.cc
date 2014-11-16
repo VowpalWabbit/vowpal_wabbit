@@ -72,10 +72,10 @@ void my_delete_example(void*voidec) {
 example* my_empty_example0(vw_ptr vw, size_t labelType) {
   label_parser* lp = get_label_parser(&*vw, labelType);
   example* ec = alloc_examples(lp->label_size, 1);
-  lp->default_label(ec->ld);
+  lp->default_label(&ec->l);
   if (labelType == lCOST_SENSITIVE) {
     COST_SENSITIVE::wclass zero = { 0., 1, 0., 0. };
-    ((COST_SENSITIVE::label*)ec->ld)->costs.push_back(zero);
+    ec->l.cs.costs.push_back(zero);
   }
   ec->tag.erase();
   if (labelType != lDEFAULT)
@@ -238,28 +238,28 @@ void ex_set_label_string(example_ptr ec, vw_ptr vw, string label, size_t labelTy
   vw->p->lp = old_lp;
 }
 
-float ex_get_simplelabel_label(example_ptr ec) { return ((label_data*)ec->ld)->label; }
-float ex_get_simplelabel_weight(example_ptr ec) { return ((label_data*)ec->ld)->weight; }
-float ex_get_simplelabel_initial(example_ptr ec) { return ((label_data*)ec->ld)->initial; }
-float ex_get_simplelabel_prediction(example_ptr ec) { return ((label_data*)ec->ld)->prediction; }
+float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
+float ex_get_simplelabel_weight(example_ptr ec) { return ec->l.simple.weight; }
+float ex_get_simplelabel_initial(example_ptr ec) { return ec->l.simple.initial; }
+float ex_get_simplelabel_prediction(example_ptr ec) { return ec->l.simple.prediction; }
 
-uint32_t ex_get_multiclass_label(example_ptr ec) { return ((MULTICLASS::multiclass*)ec->ld)->label; }
-float ex_get_multiclass_weight(example_ptr ec) { return ((MULTICLASS::multiclass*)ec->ld)->weight; }
-uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ((MULTICLASS::multiclass*)ec->ld)->prediction; }
+uint32_t ex_get_multiclass_label(example_ptr ec) { return ec->l.multi.label; }
+float ex_get_multiclass_weight(example_ptr ec) { return ec->l.multi.weight; }
+uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->l.multi.prediction; }
 
-uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ((COST_SENSITIVE::label*)ec->ld)->prediction; }
-uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return ((COST_SENSITIVE::label*)ec->ld)->costs.size(); }
-float ex_get_costsensitive_cost(example_ptr ec, uint32_t i) { return ((COST_SENSITIVE::label*)ec->ld)->costs[i].x; }
-uint32_t ex_get_costsensitive_class(example_ptr ec, uint32_t i) { return ((COST_SENSITIVE::label*)ec->ld)->costs[i].class_index; }
-float ex_get_costsensitive_partial_prediction(example_ptr ec, uint32_t i) { return ((COST_SENSITIVE::label*)ec->ld)->costs[i].partial_prediction; }
-float ex_get_costsensitive_wap_value(example_ptr ec, uint32_t i) { return ((COST_SENSITIVE::label*)ec->ld)->costs[i].wap_value; }
+uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->l.cs.prediction; }
+uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return ec->l.cs.costs.size(); }
+float ex_get_costsensitive_cost(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].x; }
+uint32_t ex_get_costsensitive_class(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].class_index; }
+float ex_get_costsensitive_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].partial_prediction; }
+float ex_get_costsensitive_wap_value(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].wap_value; }
 
-uint32_t ex_get_cbandits_prediction(example_ptr ec) { return ((CB::label*)ec->ld)->prediction; }
-uint32_t ex_get_cbandits_num_costs(example_ptr ec) { return ((CB::label*)ec->ld)->costs.size(); }
-float ex_get_cbandits_cost(example_ptr ec, uint32_t i) { return ((CB::label*)ec->ld)->costs[i].cost; }
-uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ((CB::label*)ec->ld)->costs[i].action; }
-float ex_get_cbandits_probability(example_ptr ec, uint32_t i) { return ((CB::label*)ec->ld)->costs[i].probability; }
-float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ((CB::label*)ec->ld)->costs[i].partial_prediction; }
+uint32_t ex_get_cbandits_prediction(example_ptr ec) { return ec->l.cb.prediction; }
+uint32_t ex_get_cbandits_num_costs(example_ptr ec) { return ec->l.cb.costs.size(); }
+float ex_get_cbandits_cost(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].cost; }
+uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].action; }
+float ex_get_cbandits_probability(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].probability; }
+float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].partial_prediction; }
 
 size_t   get_example_counter(example_ptr ec) { return ec->example_counter; }
 uint32_t get_ft_offset(example_ptr ec) { return ec->ft_offset; }

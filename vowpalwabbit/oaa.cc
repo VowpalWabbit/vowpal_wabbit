@@ -32,8 +32,7 @@ namespace OAA {
     if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
       cout << "label " << mc_label_data.label << " is not in {1,"<< o.k << "} This won't work right." << endl;
     
-    label_data simple_temp = {0.f, mc_label_data.weight, 0.f, 0.f};
-    ec.l.simple = simple_temp;
+    ec.l.simple = {0.f, mc_label_data.weight, 0.f, 0.f};
 
     string outputString;
     stringstream outputStringStream(outputString);
@@ -45,9 +44,9 @@ namespace OAA {
 	if (is_learn)
 	  {
 	    if (mc_label_data.label == i)
-	      simple_temp.label = 1;
+	      ec.l.simple.label = 1;
 	    else
-	      simple_temp.label = -1;
+	      ec.l.simple.label = -1;
 	    
 	    base.learn(ec, i-1);
 	  }
