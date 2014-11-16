@@ -1063,6 +1063,6 @@ __DATA__
     train-sets/ref/sequence_data.ldf.beam.test.predict
 
 # Test 71: autolink
-{VW} -d train-sets/0002.dat --autolink 1 -p 0002.autolink.predict
+{VW} -d train-sets/0002.dat --autolink 1 --examples 100 -p 0002.autolink.predict
     train-sets/ref/0002.autolink.stderr
     train-sets/ref/0002.autolink.predict
