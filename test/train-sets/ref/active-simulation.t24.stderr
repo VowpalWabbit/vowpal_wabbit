@@ -20,7 +20,8 @@ passes used = 1
 weighted example sum = 17941.2
 weighted label sum = -1691.94
 average loss = 0.223426
-best constant = -0.194903
+best constant = -0.193535
+best constant's loss = 0.962544
 total feature number = 779394
 total queries = 801
 

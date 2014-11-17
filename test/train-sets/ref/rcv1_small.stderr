@@ -27,5 +27,6 @@ number of examples = 110256
 weighted example sum = 110256
 weighted label sum = -7016
 average loss = 0.343943
-best constant = -0.0636337
+best constant = -0.00254537
+best constant's loss = 0.693146
 total feature number = 8593703
