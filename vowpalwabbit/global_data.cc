@@ -190,6 +190,30 @@ void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool q
     }
 }
 
+void compile_limits(vector<string> limits, uint32_t* dest, bool quiet)
+{
+  for (size_t i = 0; i < limits.size(); i++)
+    {
+      string limit = limits[i];
+      if ( isdigit(limit[0]) )
+	{
+	  int n = atoi(limit.c_str());
+	  if (!quiet)
+	    cerr << "limiting to " << n << "features for each namespace." << endl;
+	  for (size_t j = 0; j < 256; j++)
+	    dest[j] = n;
+	}
+      else if ( limit.size() == 1)
+	cout << "You must specify the namespace index before the n" << endl;
+      else {
+	int n = atoi(limit.c_str()+1);
+	dest[(uint32_t)limit[0]] = n;
+	if (!quiet)
+	  cerr << "limiting to " << n << " for namespaces " << limit[0] << endl;
+      }
+    }
+}
+
 po::variables_map add_options(vw& all, po::options_description& opts)
 {
   all.opts.add(opts);
@@ -287,6 +311,7 @@ vw::vw()
     {
       ngram[i] = 0;
       skips[i] = 0;
+      limit[i] = INT_MAX;
       affix_features[i] = 0;
       spelling_features[i] = 0;
     }

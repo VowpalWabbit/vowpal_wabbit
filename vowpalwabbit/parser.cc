@@ -754,6 +754,19 @@ void end_pass_example(vw& all, example* ae)
   all.p->in_pass_counter = 0;
 }
 
+void feature_limit(vw& all, example* ex)
+{
+  for(unsigned char* index = ex->indices.begin; index < ex->indices.end; index++)
+    if (all.limit[*index] < ex->atomics[*index].size())
+      {
+	v_array<feature>& features = ex->atomics[*index];
+	
+	qsort(features.begin, features.size(), sizeof(feature), order_features);
+	
+	unique_features(features, all.limit[*index]);
+      }
+}
+
 namespace VW{
 void setup_example(vw& all, example* ae)
 {
@@ -802,6 +815,9 @@ void setup_example(vw& all, example* ae)
     ae->atomics[constant_namespace].push_back(temp);
     ae->total_sum_feat_sq++;
   }
+
+  if(all.limit_strings.size() > 0)
+    feature_limit(all,ae);
   
   uint32_t multiplier = all.wpp << all.reg.stride_shift;
   if(multiplier != 1) //make room for per-feature information.
