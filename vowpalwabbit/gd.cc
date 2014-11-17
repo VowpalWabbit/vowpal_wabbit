@@ -518,8 +518,8 @@ template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive,
 void learn(gd& g, learner& base, example& ec)
 {//invariant: not a test label, importance weight > 0
   assert(ec.in_use);
-  assert(((label_data*)ec.ld)->label != FLT_MAX);
-  assert(((label_data*)ec.ld)->weight > 0.);
+  assert(ec.l.simple.label != FLT_MAX);
+  assert(ec.l.simple.weight > 0.);
 
   g.predict(g,base,ec);
 

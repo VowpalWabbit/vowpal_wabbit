@@ -920,15 +920,10 @@ namespace Search {
       priv.total_examples_generated++;
     } else {              // is  LDF
       assert(losses.size() == priv.learn_ec_ref_cnt);
-      size_t s = losses.size();
-      bool* alloced = (bool*)calloc_or_die(s,sizeof(bool));
       size_t start_K = (priv.is_ldf && CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(priv.learn_ec_ref[0])) ? 1 : 0;
       for (action a=start_K; a<priv.learn_ec_ref_cnt; a++) {
         example& ec = priv.learn_ec_ref[a];
-        if (!alloced[a]) {
-          bzero(&ec.l, sizeof(ec.l));
-          alloced[a] = true;
-        }
+
         CS::label& lab = ec.l.cs;
         if (lab.costs.size() == 0) {
           CS::wclass wc = { 0., 1, 0., 0. };
@@ -946,14 +941,9 @@ namespace Search {
 
       for (action a=start_K; a<priv.learn_ec_ref_cnt; a++) {
         example& ec = priv.learn_ec_ref[a];
-        if (alloced[a]) {
-          CS::label& lab = ec.l.cs;
-          lab.costs.delete_v();
-        }
         if (add_conditioning) 
           del_example_conditioning(priv, ec);
       }
-	  free(alloced);
     }
   }
 
@@ -998,6 +988,7 @@ namespace Search {
     // if we're in LEARN mode and before learn_t, return the train action
     if ((priv.state == LEARN) && (t < priv.learn_t)) {
       assert(t < priv.train_trajectory.size());
+      cout << "in search_predict" << endl;
       return priv.train_trajectory[t];
     }
 
@@ -1007,7 +998,7 @@ namespace Search {
     // for LDF, # of valid actions is ec_cnt; otherwise it's either allowed_actions_cnt or A
     size_t valid_action_cnt = priv.is_ldf ? ec_cnt :
                               (allowed_actions_cnt > 0) ? allowed_actions_cnt : priv.A;
-    
+
     // if we're in LEARN mode and _at_ learn_t, then:
     //   - choose the next action
     //   - decide if we're done
@@ -2029,7 +2020,10 @@ namespace Search {
     if (priv->beam) priv->current_trajectory.push_back(a);
     if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
     if ((mytag != 0) && ecs[a].l.cs.costs.size() > 0)
-      push_at(priv->ptag_to_action, ecs[a].l.cs.costs[0].class_index, mytag);
+      {
+	cout << ecs[a].l.cs.costs[0].class_index << endl;
+	push_at(priv->ptag_to_action, ecs[a].l.cs.costs[0].class_index, mytag);
+      }
     if (this->priv->auto_hamming_loss)
       loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));
     cdbg << "predict returning " << a << endl;
@@ -2231,7 +2225,6 @@ namespace Search {
       cNa = condition_on_names.begin;
     }
     const action* alA = (allowed_actions.size() == 0) ? NULL : allowed_actions.begin;
-
     action p = is_ldf ? sch.predictLDF(ec, ec_cnt, my_tag, orA, oracle_actions.size(), cOn, cNa, learner_id)
                       : sch.predict(*ec, my_tag, orA, oracle_actions.size(), cOn, cNa, alA, allowed_actions.size(), learner_id);
 

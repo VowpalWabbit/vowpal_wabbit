@@ -28,8 +28,7 @@ namespace CSOAA {
     COST_SENSITIVE::label ld = ec.l.cs;
     uint32_t prediction = 1;
     float score = FLT_MAX;
-    label_data simple_temp = { 0., 0., 0. };
-    ec.l.simple = simple_temp;
+    ec.l.simple = { 0., 0., 0. };
     for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++)
       {
         uint32_t i = cl->class_index;
@@ -37,13 +36,13 @@ namespace CSOAA {
 	  {
 	    if (cl->x == FLT_MAX || !all->training)
 	      {
-		simple_temp.label = FLT_MAX;
-		simple_temp.weight = 0.;
+		ec.l.simple.label = FLT_MAX;
+		ec.l.simple.weight = 0.;
 	      }
 	    else
 	      {
-		simple_temp.label = cl->x;
-		simple_temp.weight = 1.;
+		ec.l.simple.label = cl->x;
+		ec.l.simple.weight = 1.;
 	      }
 	    base.learn(ec, i-1);
 	  }
@@ -57,6 +56,7 @@ namespace CSOAA {
         }
 	ec.partial_prediction = 0.;
       }
+
     ld.prediction = prediction;
     ec.l.cs = ld;
   }
@@ -457,7 +457,7 @@ namespace LabelDict {
     float  max_cost  = -FLT_MAX;
 
     //cdbg << "isTest=" << isTest << " start_K=" << start_K << " K=" << K << endl;
-    
+
     for (size_t k=start_K; k<K; k++) {
       example *ec = l.ec_seq.begin[k];
       if (COST_SENSITIVE::example_is_test(*ec) != isTest) {

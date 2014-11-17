@@ -340,7 +340,7 @@ namespace CB_ALGS
 	else
 	  base.predict(ec);
 
-	ld.prediction = c.cb_cs_ld.prediction;
+	ld.prediction = ec.l.cs.prediction;
         for (size_t i=0; i<ld.costs.size(); i++)
           ld.costs[i].partial_prediction = c.cb_cs_ld.costs[i].partial_prediction;
 	ec.l.cb = ld;
