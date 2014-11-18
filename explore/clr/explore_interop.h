@@ -181,15 +181,15 @@ internal:
 		}
 		return m_native_policy;
 	}
-
-	vector<NativeMultiWorldTesting::PolicyPtr<NativeContext>>* GetNativePolicies(int count)
+  
+  vector<unique_ptr<NativeMultiWorldTesting::IPolicy<NativeContext>>>* GetNativePolicies(int count)
 	{
 		if (m_native_policies == nullptr)
 		{
-			m_native_policies = new vector<NativeMultiWorldTesting::PolicyPtr<NativeContext>>();
+      m_native_policies = new vector<unique_ptr<NativeMultiWorldTesting::IPolicy<NativeContext>>>();
 			for (int i = 0; i < count; i++)
 			{
-				m_native_policies->push_back(NativeMultiWorldTesting::PolicyPtr<NativeContext>(new NativePolicy(m_callback, i)));
+        m_native_policies->push_back(unique_ptr<NativeMultiWorldTesting::IPolicy<NativeContext>>(new NativePolicy(m_callback, i)));
 			}
 		}
 
