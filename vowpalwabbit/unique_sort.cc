@@ -15,37 +15,52 @@ int order_audit_features(const void* first, const void* second)
   return (int)(((audit_data*)first)->weight_index) - (int)(((audit_data*)second)->weight_index);
 }
 
-void unique_features(v_array<feature> &features)
+void unique_features(v_array<feature>& features, int max=-1)
 {
   if (features.empty())
     return;
   feature* last = features.begin;
-  for (feature* current = features.begin+1; 
-       current != features.end; current++)
-    if (current->weight_index != last->weight_index) 
-      *(++last) = *current;
+  if (max < 0)
+    {
+      for (feature* current = features.begin+1; current != features.end; current++)
+	if (current->weight_index != last->weight_index) 
+	  *(++last) = *current;
+    }
+  else
+    for (feature* current = features.begin+1; current != features.end && last+1 < features.begin+max; current++)
+      if (current->weight_index != last->weight_index) 
+	*(++last) = *current;
+  
   features.end = ++last;
 }
 
-void unique_audit_features(v_array<audit_data> &features)
+void unique_audit_features(v_array<audit_data>& features, int max = -1)
 {
   if (features.empty())
     return;
   audit_data* last = features.begin;
-  for (audit_data* current = features.begin+1; 
-       current != features.end; current++)
-    if (current->weight_index != last->weight_index) 
-      *(++last) = *current;
+  if (max < 0)
+    {
+      for (audit_data* current = features.begin+1; 
+	   current != features.end; current++)
+	if (current->weight_index != last->weight_index) 
+	  *(++last) = *current;
+    }
+  else
+    for (audit_data* current = features.begin+1; 
+	 current != features.end && last+1 < features.begin+max; current++)
+      if (current->weight_index != last->weight_index) 
+	*(++last) = *current;
+    
   features.end = ++last;
 }
 
 void unique_sort_features(bool audit, uint32_t parse_mask, example* ae)
 {
-  ae->sorted=true;
   for (unsigned char* b = ae->indices.begin; b != ae->indices.end; b++)
     {
       v_array<feature> features = ae->atomics[*b];
-
+      
       for (size_t i = 0; i < features.size(); i++)
 	features[i].weight_index &= parse_mask;
       qsort(features.begin, features.size(), sizeof(feature), 
@@ -64,4 +79,5 @@ void unique_sort_features(bool audit, uint32_t parse_mask, example* ae)
 	  unique_audit_features(afeatures);
 	}
     }
+  ae->sorted=true;
 }
