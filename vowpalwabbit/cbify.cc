@@ -84,7 +84,7 @@ namespace CBIFY {
     vw* all;
 
     unique_ptr<vw_policy> policy;
-    vector<PolicyPtr<vw_context>> policies;
+    vector<unique_ptr<IPolicy<vw_context>>> policies;
     unique_ptr<vw_cover_scorer> scorer;
     unique_ptr<vw_recorder> recorder;
     unique_ptr<MwtExplorer<vw_context>> mwt_explorer;
@@ -420,7 +420,7 @@ namespace CBIFY {
 	size_t bags = (uint32_t)vm["bag"].as<size_t>();
   for (size_t i = 0; i < bags; i++)
   {
-    data->policies.push_back(PolicyPtr<vw_context>(new vw_policy(i)));
+    data->policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
   }
   data->bootstrap_explorer.reset(new BootstrapExplorer<vw_context>(data->policies, (u32)data->k));
   l = new learner(data, all.l, bags);

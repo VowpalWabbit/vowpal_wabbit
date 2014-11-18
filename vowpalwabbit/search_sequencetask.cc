@@ -21,7 +21,7 @@ namespace SequenceTask {
   }
 
   void run(Search::search& sch, vector<example*>& ec) {
-    for (int i=0; i<ec.size(); i++) {
+    for (size_t i=0; i<ec.size(); i++) {
       action oracle     = MULTICLASS::get_example_label(ec[i]);
       size_t prediction = Search::predictor(sch, i+1).set_input(*ec[i]).set_oracle(oracle).set_condition_range(i, sch.get_history_length(), 'p').predict();
 
@@ -284,15 +284,16 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
 
 
   // this is totally bogus for the example -- you'd never actually do this!
-  void my_update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount) {
+  void my_update_example_indicies(Search::search& sch, bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount) {
+    size_t ss = sch.get_stride_shift();
     for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
       for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; ++f)
-        f->weight_index = (f->weight_index * mult_amount) + plus_amount;
+        f->weight_index = (((f->weight_index>>ss) * mult_amount) + plus_amount)<<ss;
     if (audit)
       for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
         if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
           for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; ++f)
-            f->weight_index = (f->weight_index * mult_amount) + plus_amount;
+            f->weight_index = (((f->weight_index>>ss) * mult_amount) + plus_amount)<<ss;
   }
   
   void run(Search::search& sch, vector<example*>& ec) {
@@ -304,7 +305,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
           VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
 
           // now, offset it appropriately for the action id
-          my_update_example_indicies(true, &data->ldf_examples[a], 28904713, 4832917 * (uint32_t)a);
+          my_update_example_indicies(sch, true, &data->ldf_examples[a], 28904713, 4832917 * (uint32_t)a);
         
           // need to tell search what the action id is, so that it can add history features correctly!
           CS::label* lab = (CS::label*)data->ldf_examples[a].ld;
@@ -315,13 +316,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         }
 
       action oracle  = MULTICLASS::get_example_label(ec[i]) - 1;
-      action pred_id = sch.predictLDF(data->ldf_examples,
-                                      data->num_actions,
-                                      i+1,
-                                      &oracle,
-                                      1,
-                                      &i,
-                                      "p");
+      action pred_id = Search::predictor(sch, i+1).set_input(data->ldf_examples, data->num_actions).set_oracle(oracle).set_condition_range(i, sch.get_history_length(), 'p').predict();
       action prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
       
       if (sch.output().good())
