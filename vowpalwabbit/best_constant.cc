@@ -38,7 +38,7 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
     if(vm.count("loss_function"))
         funcName = vm["loss_function"].as<string>();
     else
-        funcName = "squaredloss";
+        funcName = "squared";
 
     if(funcName.compare("squared") == 0 || funcName.compare("Huber") == 0 || funcName.compare("classic") == 0)
     {
