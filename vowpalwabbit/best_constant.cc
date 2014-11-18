@@ -2,7 +2,7 @@
 
 bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
 {
-    if ((all.loss == NULL) || (all.sd == NULL)) return false;
+    if ((all.loss == NULL) || (all.sd == NULL)) return false;    
 
     float label1 = all.sd->min_label;
     float label2 = all.sd->max_label;
@@ -28,6 +28,11 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
 
     po::store(pos, vm);
     po::notify(vm);
+
+    if (vm.count("nn") || vm.count("new_mf") || all.rank > 0
+            || vm.count("oaa") ||   vm.count("log_multi") || vm.count("csoaa_ldf")
+            || vm.count("wap_ldf")  || vm.count("csoaa") || vm.count("ect")
+            || vm.count("cb") || vm.count("cbify") || vm.count("search")) return false;
 
     string funcName;
     if(vm.count("loss_function"))
