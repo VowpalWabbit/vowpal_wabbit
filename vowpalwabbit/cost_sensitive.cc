@@ -112,11 +112,11 @@ namespace COST_SENSITIVE {
     if (ld) ld->costs.delete_v();
   }
 
-  void copy_label(void*&dst, void*src)
+  void copy_label(void*dst, void*src)
   {
     if (dst && src) {
-      label*&ldD = (label*&)dst;
-      label* ldS = (label* )src;
+      label* ldD = (label*)dst;
+      label* ldS = (label*)src;
       copy_array(ldD->costs, ldS->costs);
     }
   }

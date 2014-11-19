@@ -51,8 +51,11 @@ audit_data copy_audit_data(audit_data &src) {
 }
 
 namespace VW {
-void copy_example_label(example* dst, example* src, size_t label_size, void(*copy_label)(void*&,void*)) {
-  dst->l = src->l;
+void copy_example_label(example* dst, example* src, size_t label_size, void(*copy_label)(void*,void*)) {
+  if (copy_label)
+    copy_label(&dst->l, &src->l);   // TODO: we really need to delete_label on dst :(
+  else
+    dst->l = src->l;
 }
 
 void copy_example_data(bool audit, example* dst, example* src)
@@ -89,7 +92,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->sorted = src->sorted;
   dst->in_use = src->in_use;}
 
-void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void(*copy_label)(void*&,void*)) {
+void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void(*copy_label)(void*,void*)) {
   copy_example_data(audit, dst, src);
   copy_example_label(dst, src, label_size, copy_label);
 }
