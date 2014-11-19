@@ -66,7 +66,7 @@ namespace SequenceSpanTask {
 
   void convert_bio_to_bilou(vector<example*> ec) {
     for (size_t n=0; n<ec.size(); n++) {
-      MULTICLASS::multiclass ylab = ec[n]->l.multi;
+      MULTICLASS::multiclass& ylab = ec[n]->l.multi;
       action y = ylab.label;
       action nexty = (n == ec.size()-1) ? 0 : ec[n+1]->l.multi.label;
       if (y == 1) { // do nothing
@@ -93,7 +93,6 @@ namespace SequenceSpanTask {
 
   void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
     task_data * my_task_data = new task_data();
-
     po::options_description sspan_opts("search sequencespan options");
     sspan_opts.add_options()("search_span_bilou", "switch to (internal) BILOU encoding instead of BIO encoding");
     sch.add_program_options(vm, sspan_opts);

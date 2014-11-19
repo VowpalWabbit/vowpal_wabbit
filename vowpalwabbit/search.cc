@@ -2226,7 +2226,6 @@ namespace Search {
 
     if (condition_on_names.size() > 0)
       condition_on_names.pop();  // un-null-terminate
-
     return p;
   }
 }
