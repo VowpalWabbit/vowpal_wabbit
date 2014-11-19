@@ -85,7 +85,8 @@ void predict() {
 
 void test_buildin_task() {
   // train a model on the command line
-  system("../vowpalwabbit/vw -k -c --holdout_off --passes 20 --search 4 --search_task sequence -d sequence.data -f sequence.model");
+  int ret = system("../vowpalwabbit/vw -k -c --holdout_off --passes 20 --search 4 --search_task sequence -d sequence.data -f sequence.model");
+  if (ret != 0) cerr << "../vowpalwabbit/vw failed" << endl;
 
   // now, load that model using the BuiltInTask library
   vw& vw_obj = *VW::initialize("-t -i sequence.model --search_task hook");
