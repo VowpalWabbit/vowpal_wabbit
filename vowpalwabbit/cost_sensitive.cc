@@ -183,11 +183,21 @@ namespace COST_SENSITIVE {
 				  copy_label,
 				  sizeof(label)};
 
-  void print_update(vw& all, bool is_test, example& ec)
+  void print_update(vw& all, bool is_test, example& ec, const v_array<example*> *ec_seq)
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
-	label* ld = (label*)ec.ld;
+        size_t num_current_features = ec.num_features;
+        // for csoaa_ldf we want features from the whole (multiline example),
+        // not only from one line (the first one) represented by ec
+        if (ec_seq != NULL)
+        {
+          num_current_features = 0;
+          for (example** ecc=ec_seq->begin; ecc!=ec_seq->end; ecc++)
+                num_current_features += (*ecc)->num_features;
+        }
+
+        label* ld = (label*)ec.ld;
         char label_buf[32];
         if (is_test)
           strcpy(label_buf," unknown");
@@ -199,19 +209,19 @@ namespace COST_SENSITIVE {
           if(all.sd->holdout_sum_loss == 0. && all.sd->weighted_holdout_examples == 0.)
             fprintf(stderr, " unknown   ");
           else
-	    fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples);
+            fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples);
 
           if(all.sd->holdout_sum_loss_since_last_dump == 0. && all.sd->weighted_holdout_examples_since_last_dump == 0.)
             fprintf(stderr, " unknown   ");
           else
-	    fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss_since_last_dump/all.sd->weighted_holdout_examples_since_last_dump);
-        
+            fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss_since_last_dump/all.sd->weighted_holdout_examples_since_last_dump);
+
           fprintf(stderr, "%8ld %8.1f   %s %8lu %8lu h\n",
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
                 (long unsigned int)ld->prediction,
-                (long unsigned int)ec.num_features);
+                (long unsigned int)num_current_features);
 
           all.sd->weighted_holdout_examples_since_last_dump = 0;
           all.sd->holdout_sum_loss_since_last_dump = 0.0;
@@ -224,7 +234,7 @@ namespace COST_SENSITIVE {
                 all.sd->weighted_examples,
                 label_buf,
                 (long unsigned int)ld->prediction,
-                (long unsigned int)ec.num_features);
+                (long unsigned int)num_current_features);
      
         all.sd->sum_loss_since_last_dump = 0.0;
         all.sd->old_weighted_examples = all.sd->weighted_examples;
@@ -288,7 +298,7 @@ namespace COST_SENSITIVE {
       all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
     }
 
-    print_update(all, is_test_label((label*)ec.ld), ec);
+    print_update(all, is_test_label((label*)ec.ld), ec, NULL);
   }
 
   bool example_is_test(example& ec)
