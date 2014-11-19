@@ -988,7 +988,6 @@ namespace Search {
     // if we're in LEARN mode and before learn_t, return the train action
     if ((priv.state == LEARN) && (t < priv.learn_t)) {
       assert(t < priv.train_trajectory.size());
-      cout << "in search_predict" << endl;
       return priv.train_trajectory[t];
     }
 
@@ -1022,7 +1021,7 @@ namespace Search {
           priv.learn_ec_ref = ecs;
         else {
           size_t label_size = priv.is_ldf ? sizeof(CS::label) : sizeof(MC::multiclass);
-          void (*label_copy_fn)(void*&,void*) = priv.is_ldf ? CS::cs_label.copy_label : NULL;
+          void (*label_copy_fn)(void*,void*) = priv.is_ldf ? CS::cs_label.copy_label : NULL;
           
           ensure_size(priv.learn_ec_copy, ec_cnt);
           for (size_t i=0; i<ec_cnt; i++) 
@@ -2020,10 +2019,7 @@ namespace Search {
     if (priv->beam) priv->current_trajectory.push_back(a);
     if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
     if ((mytag != 0) && ecs[a].l.cs.costs.size() > 0)
-      {
-	cout << ecs[a].l.cs.costs[0].class_index << endl;
-	push_at(priv->ptag_to_action, ecs[a].l.cs.costs[0].class_index, mytag);
-      }
+      push_at(priv->ptag_to_action, ecs[a].l.cs.costs[0].class_index, mytag);
     if (this->priv->auto_hamming_loss)
       loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));
     cdbg << "predict returning " << a << endl;

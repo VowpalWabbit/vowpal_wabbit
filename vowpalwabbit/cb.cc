@@ -88,10 +88,10 @@ namespace CB
     ld->costs.delete_v();
   }
 
-  void copy_label(void*&dst, void*src)
+  void copy_label(void*dst, void*src)
   {
-    CB::label*&ldD = (CB::label*&)dst;
-    CB::label* ldS = (CB::label* )src;
+    CB::label* ldD = (CB::label*)dst;
+    CB::label* ldS = (CB::label*)src;
     copy_array(ldD->costs, ldS->costs);
   }
 
