@@ -8,7 +8,9 @@ using namespace std;
 // prevent truncation of constant to (32-bit long) when compiling
 // in a 32-bit env: warning: integer constant is too large for "long" type
 //
+#ifdef __clang__
 #pragma clang diagnostic ignored "-Wc++11-long-long"
+#endif
 uint64_t a = 0xeece66d5deece66dULL;
 uint64_t c = 2147483647;
 

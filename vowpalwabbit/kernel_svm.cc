@@ -568,7 +568,7 @@ namespace KSVM
 
     size_t prev_sum = 0, total_sum = 0;
     for(size_t i = 0;i < all.total;i++) {
-      if(i <= (int)(all.node - 1))
+      if(i <= (all.node - 1))
 	prev_sum += sizes[i];
       total_sum += sizes[i];
     }

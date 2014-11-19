@@ -162,12 +162,12 @@ namespace CBIFY {
     data.cb_label.costs.erase();
     ec.l.cb = data.cb_label;
     //Use CB to find current prediction for remaining rounds.
-    
+
     vw_context vwc;
     vwc.l = &base;
     vwc.e = &ec;
     
-    uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer.get(), to_string(ec.example_counter), vwc);
+    uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer.get(), to_string((u64)ec.example_counter), vwc);
     ec.loss = loss(ld.label, action);
     
     if (vwc.recorded && is_learn)
@@ -193,7 +193,7 @@ namespace CBIFY {
     vw_context vwc;
     vwc.l = &base;
     vwc.e = &ec;
-    data.mwt_explorer->Choose_Action(*data.greedy_explorer.get(), to_string(ec.example_counter), vwc);
+    data.mwt_explorer->Choose_Action(*data.greedy_explorer.get(), to_string((u64)ec.example_counter), vwc);
     
     u32 action = data.recorder->Get_Action();
     float prob = data.recorder->Get_Prob();
@@ -221,7 +221,7 @@ namespace CBIFY {
     vw_context context;
     context.l = &base;
     context.e = &ec;
-    uint32_t action = data.mwt_explorer->Choose_Action(*data.bootstrap_explorer.get(), to_string(ec.example_counter), context);
+    uint32_t action = data.mwt_explorer->Choose_Action(*data.bootstrap_explorer.get(), to_string((u64)ec.example_counter), context);
     
     assert(action != 0);
     if (is_learn)
@@ -314,7 +314,7 @@ namespace CBIFY {
     vw_context cp;
     cp.data = &data;
     cp.e = &ec;
-    uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer.get(), to_string(ec.example_counter), cp);
+    uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer.get(), to_string((u64)ec.example_counter), cp);
     
     if (is_learn)
       {
