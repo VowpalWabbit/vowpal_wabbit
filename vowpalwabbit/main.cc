@@ -20,6 +20,7 @@ license as described in the file LICENSE.
 #include "parse_example.h"
 #include "parse_args.h"
 #include "accumulate.h"
+#include "best_constant.h"
 #include "vw.h"
 
 using namespace std;
@@ -68,10 +69,6 @@ int main(int argc, char *argv[])
         all->sd->total_features = (uint64_t)accumulate_scalar(*all, all->span_server, total_features);
     }
 
-    float weighted_labeled_examples = (float)(all->sd->weighted_examples - all->sd->weighted_unlabeled_examples);
-    float best_constant = (float)((all->sd->weighted_labels - all->initial_t) / weighted_labeled_examples);
-    float constant_loss = (best_constant*(1.0f - best_constant)*(1.0f - best_constant)
-                            + (1.0f - best_constant)*best_constant*best_constant);
     
     if (!all->quiet)
         {
@@ -93,9 +90,14 @@ int main(int argc, char *argv[])
         {
             cerr << endl << "average loss = " << all->sd->holdout_best_loss << " h";
         }
-        cerr << endl << "best constant = " << best_constant;
-        if (all->sd->min_label == 0. && all->sd->max_label == 1. && best_constant < 1. && best_constant > 0.)
-            cerr << endl << "best constant's loss = " << constant_loss;
+
+        float best_constant; float best_constant_loss;
+        if (get_best_constant(*all, best_constant, best_constant_loss))
+        {
+            cerr << endl << "best constant = " << best_constant;
+            cerr << endl << "best constant's loss = " << best_constant_loss;
+        }
+
         cerr << endl << "total feature number = " << all->sd->total_features;
         if (all->sd->queries > 0)
             cerr << endl << "total queries = " << all->sd->queries << endl;

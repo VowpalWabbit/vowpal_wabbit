@@ -28,6 +28,7 @@ weighted example sum = 250
 weighted label sum = -22
 average loss = 0.82112
 best constant = -0.088
+best constant's loss = 0.992256
 total feature number = 19870
 Num support = 247
 Number of kernel evaluations = 142949 Number of cache queries = 228978

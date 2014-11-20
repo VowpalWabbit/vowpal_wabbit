@@ -29,5 +29,6 @@ passes used = 8
 weighted example sum = 1600
 weighted label sum = 728
 average loss = 0.060063
-best constant = 1.0069
+best constant = 0.455
+best constant's loss = 0.247975
 total feature number = 717536
