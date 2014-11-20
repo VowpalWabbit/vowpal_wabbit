@@ -193,7 +193,17 @@ namespace COST_SENSITIVE {
         if (ec_seq != NULL)
         {
           num_current_features = 0;
-          for (example** ecc=ec_seq->begin; ecc!=ec_seq->end; ecc++)
+          // If the first example is "shared", don't include its features.
+          // These should be already included in each example (TODO: including quadratic and cubic).
+          // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
+          example** ecc=ec_seq->begin;
+          example first_ex = **ecc;
+          if (first_ex.ld)
+          {
+            v_array<COST_SENSITIVE::wclass> costs = ((COST_SENSITIVE::label*)first_ex.ld)->costs;
+            if (costs.size() == 1 && costs[0].class_index == 0 && costs[0].x < 0) ecc++;
+          }
+          for (; ecc!=ec_seq->end; ecc++)
                 num_current_features += (*ecc)->num_features;
         }
 

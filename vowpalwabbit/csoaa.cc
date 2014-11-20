@@ -151,7 +151,10 @@ namespace LabelDict {
 
   void del_example_namespace(example& ec, char ns, v_array<feature> features) {
     size_t numf = features.size();
-    ec.num_features -= numf;
+    // print_update is called after this del_example_namespace,
+    // so we need to keep the ec.num_features correct,
+    // so shared features are included in the reported number of "current features"
+    //ec.num_features -= numf;
 
     assert (ec.atomics[(size_t)ns].size() >= numf);
     if (ec.atomics[(size_t)ns].size() == numf) { // did NOT have ns
