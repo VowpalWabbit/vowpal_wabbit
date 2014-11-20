@@ -321,8 +321,13 @@ sub next_test() {
             next;
         }
         # if we get here it is some unrecognized pattern
-        printf STDERR "Unrecognized test spec line:\n\t%s\n", $line;
-        print STDERR "Test lines must match one of the following patterns:\n";
+        if (! -e $first_word) {
+            # 1st word must exist, either as a reference-file
+            # or some command
+            printf STDERR "$0: %s: %s\n", $first_word, $!;
+        }
+        printf STDERR "$0: failed to run test line:\n\t%s\n", $line;
+        print STDERR "$0: test lines must be one of the following:\n";
         print STDERR "\tshell command to run\n";
         print STDERR "\tvw command to run: {VW} ...\n";
         print STDERR "\tstdout reference:  *.stdout\n";
