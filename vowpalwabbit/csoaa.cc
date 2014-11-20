@@ -151,7 +151,10 @@ namespace LabelDict {
 
   void del_example_namespace(example& ec, char ns, v_array<feature> features) {
     size_t numf = features.size();
-    ec.num_features -= numf;
+    // print_update is called after this del_example_namespace,
+    // so we need to keep the ec.num_features correct,
+    // so shared features are included in the reported number of "current features"
+    //ec.num_features -= numf;
 
     assert (ec.atomics[(size_t)ns].size() >= numf);
     if (ec.atomics[(size_t)ns].size() == numf) { // did NOT have ns
@@ -575,7 +578,7 @@ namespace LabelDict {
 
   }
 
-  void output_example(vw& all, example& ec, bool& hit_loss)
+  void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_seq)
   {
     label* ld = (label*)ec.ld;
     v_array<COST_SENSITIVE::wclass> costs = ld->costs;
@@ -617,7 +620,7 @@ namespace LabelDict {
       all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
     }
     
-    COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(ec), ec);
+    COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(ec), ec, ec_seq);
   }
 
   void output_example_seq(vw& all, ldf& l)
@@ -628,7 +631,7 @@ namespace LabelDict {
 
       bool hit_loss = false;
       for (example** ecc=l.ec_seq.begin; ecc!=l.ec_seq.end; ecc++)
-        output_example(all, **ecc, hit_loss);
+        output_example(all, **ecc, hit_loss, &(l.ec_seq));
 
       if (!l.is_singleline && (all.raw_prediction > 0))
         all.print_text(all.raw_prediction, "", l.ec_seq[0]->tag);
@@ -656,7 +659,7 @@ namespace LabelDict {
       all.sd->example_number++;
     }
     bool hit_loss = false;
-    output_example(all, ec, hit_loss);
+    output_example(all, ec, hit_loss, NULL);
     VW::finish_example(all, &ec);
   }
 

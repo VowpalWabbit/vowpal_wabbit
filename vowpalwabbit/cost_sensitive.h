@@ -36,7 +36,7 @@ namespace COST_SENSITIVE {
 
   bool example_is_test(example& ec);
 
-  void print_update(vw& all, bool is_test, example& ec);
+  void print_update(vw& all, bool is_test, example& ec, const v_array<example*> *ec_seq);
 }
 
 namespace CSOAA_AND_WAP_LDF {
