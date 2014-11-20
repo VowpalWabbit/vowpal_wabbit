@@ -1,4 +1,5 @@
 #pragma once
+#include <float.h>
 #include "vw.h"
 
 extern bool  is_more_than_two_labels_observed;
