@@ -595,11 +595,7 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
   if (vm.count("min_prediction") || vm.count("max_prediction") || vm.count("testonly"))
     all.set_minmax = noop_mm;
 
-  string loss_function;
-  if(vm.count("loss_function"))
-    loss_function = vm["loss_function"].as<string>();
-  else
-    loss_function = "squaredloss";
+  string loss_function = vm["loss_function"].as<string>();
   float loss_parameter = 0.0;
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<float>();
