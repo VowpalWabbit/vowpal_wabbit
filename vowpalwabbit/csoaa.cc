@@ -512,10 +512,7 @@ namespace LabelDict {
           //cerr << "[" << ec->partial_prediction << "," << ec->done << "]";
           //ec->done = false;
           LabelDict::add_example_namespace_from_memory(l, *ec, costs[j].class_index);
-	  if (is_learn)
-	    base.learn(*ec);
-	  else
-	    base.predict(*ec);
+          base.learn(*ec);
           LabelDict::del_example_namespace_from_memory(l, *ec, costs[j].class_index);
           ec->example_t = example_t;
         }
