@@ -120,9 +120,9 @@ namespace vw_explore_tests
 			int params = 101;
 			TestRecorder my_recorder;
 
-			vector<unique_ptr<IPolicy<TestContext>>> policies;
-			policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params, num_actions)));
-			policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params + 1, num_actions)));
+			IPolicy<TestContext>::Vector policies;
+			policies.push_back(IPolicy<TestContext>::Ptr(new TestPolicy(params, num_actions)));
+			policies.push_back(IPolicy<TestContext>::Ptr(new TestPolicy(params + 1, num_actions)));
 
 			TestContext my_context;
 
@@ -149,9 +149,9 @@ namespace vw_explore_tests
 			int params = 101;
 			TestRecorder my_recorder;
 
-			vector<unique_ptr<IPolicy<TestContext>>> policies;
-			policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params, num_actions)));
-			policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params + 1, num_actions)));
+			IPolicy<TestContext>::Vector policies;
+			policies.push_back(IPolicy<TestContext>::Ptr(new TestPolicy(params, num_actions)));
+			policies.push_back(IPolicy<TestContext>::Ptr(new TestPolicy(params + 1, num_actions)));
 
 			TestContext my_context;
 
@@ -294,9 +294,9 @@ namespace vw_explore_tests
 			int params = 101;
 			StringRecorder<SimpleContext> my_recorder;
 
-			vector<unique_ptr<IPolicy<SimpleContext>>> policies;
-			policies.push_back(unique_ptr<IPolicy<SimpleContext>>(new TestSimplePolicy(params, num_actions)));
-			policies.push_back(unique_ptr<IPolicy<SimpleContext>>(new TestSimplePolicy(params, num_actions)));
+			IPolicy<SimpleContext>::Vector policies;
+			policies.push_back(IPolicy<SimpleContext>::Ptr(new TestSimplePolicy(params, num_actions)));
+			policies.push_back(IPolicy<SimpleContext>::Ptr(new TestSimplePolicy(params, num_actions)));
 
 			MwtExplorer<SimpleContext> mwt("salt", my_recorder);
 			BootstrapExplorer<SimpleContext> explorer(policies, num_actions);
@@ -464,7 +464,7 @@ namespace vw_explore_tests
 			int params = 101;
 			TestPolicy my_policy(params, 0);
 			TestScorer my_scorer(params, 0);
-			vector<unique_ptr<IPolicy<TestContext>>> policies;
+			IPolicy<TestContext>::Vector policies;
 
 			COUNT_INVALID(EpsilonGreedyExplorer<TestContext> explorer(my_policy, .5f, 0);) // Invalid # actions, must be > 0
 			COUNT_INVALID(EpsilonGreedyExplorer<TestContext> explorer(my_policy, 1.5f, 10);) // Invalid epsilon, must be in [0,1]
@@ -512,8 +512,8 @@ namespace vw_explore_tests
 				TestRecorder recorder;
 				TestContext context;
 
-				vector<unique_ptr<IPolicy<TestContext>>> policies;
-				policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestBadPolicy()));
+				IPolicy<TestContext>::Vector policies;
+				policies.push_back(IPolicy<TestContext>::Ptr(new TestBadPolicy()));
 				MwtExplorer<TestContext> mwt("salt", recorder);
 				BootstrapExplorer<TestContext> explorer(policies, (u32)1);
 				mwt.Choose_Action(explorer, "test", context);

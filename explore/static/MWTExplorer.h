@@ -153,6 +153,16 @@ public:
 	/// @returns	        The action to take (1-based index)
 	///
 	virtual u32 Choose_Action(Ctx& context) = 0;
+
+  ///
+  /// Represents a smart pointer to an IPolicy object.
+  ///
+  typedef unique_ptr<IPolicy<Ctx>> Ptr;
+
+  ///
+  /// Represents a vector of IPolicy objects that are managed via smart pointers.
+  ///
+  typedef vector<Ptr> Vector;
 };
 
 ///
@@ -602,7 +612,7 @@ public:
 	/// The policy pointers must be valid throughout the lifetime of this explorer.
     /// @param num_actions               The number of actions to randomize over.
 	///
-	BootstrapExplorer(vector<unique_ptr<IPolicy<Ctx>>>& default_policy_functions, u32 num_actions) :
+  BootstrapExplorer(typename IPolicy<Ctx>::Vector& default_policy_functions, u32 num_actions) :
 		m_default_policy_functions(default_policy_functions),
 		m_num_actions(num_actions)
 	{
@@ -658,7 +668,7 @@ private:
 	}
 
 private:
-	vector<unique_ptr<IPolicy<Ctx>>>& m_default_policy_functions;
+  typename IPolicy<Ctx>::Vector& m_default_policy_functions;
 	u32 m_bags;
 	u32 m_num_actions;
 
