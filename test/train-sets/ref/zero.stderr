@@ -19,4 +19,5 @@ weighted example sum = 25
 weighted label sum = 0
 average loss = 0
 best constant = 0
+best constant's loss = 0
 total feature number = 15005

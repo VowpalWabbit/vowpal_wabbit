@@ -7,6 +7,7 @@
 #include "rand48.h"
 #include "vw.h"
 #include "accumulate.h"
+#include "best_constant.h"
 
 using namespace std;
 
@@ -97,6 +98,8 @@ void parse_simple_label(parser* p, shared_data* sd, void* v, v_array<substring>&
   }
   if (words.size() > 0 && sd->binary_label && fabs(ld->label) != 1.f)
     cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
+
+  count_label(ld->label);
 }
 
 label_parser simple_label = {default_simple_label, parse_simple_label, 

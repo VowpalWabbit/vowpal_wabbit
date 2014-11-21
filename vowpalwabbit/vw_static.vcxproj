@@ -314,6 +314,7 @@
     <ClCompile Include="gd_mf.cc" />
     <ClCompile Include="lrq.cc" />
     <ClCompile Include="log_multi.cc" />
+    <ClCompile Include="best_constant.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="hash.cc" />
     <ClCompile Include="io_buf.cc" />
