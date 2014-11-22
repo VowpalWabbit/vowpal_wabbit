@@ -37,7 +37,7 @@ Note that ``./autogen.sh`` requires automake.On OSX, this implies installing
 For OSX: if make fails with errors then try:
 ```
 brew install libtool
-brew install boost
+brew install boost --with-python
 ```
 This will install appropriate versions of 'glibtools' and 'boost' on OSX.
 
