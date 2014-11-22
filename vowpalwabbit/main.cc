@@ -95,6 +95,7 @@ int main(int argc, char *argv[])
         if (get_best_constant(*all, best_constant, best_constant_loss))
         {
             cerr << endl << "best constant = " << best_constant;
+            if (best_constant_loss != FLT_MIN)
             cerr << endl << "best constant's loss = " << best_constant_loss;
         }
 
