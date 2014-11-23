@@ -21,6 +21,8 @@ char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
   c += sizeof(ld->weight);
   ld->initial = *(float *)c;
   c += sizeof(ld->initial);
+
+  count_label(ld->label);
   return c;
 }
 
@@ -102,7 +104,7 @@ void parse_simple_label(parser* p, shared_data* sd, void* v, v_array<substring>&
   count_label(ld->label);
 }
 
-label_parser simple_label = {default_simple_label, parse_simple_label, 
+label_parser simple_label = {default_simple_label, parse_simple_label,
 				   cache_simple_label, read_cached_simple_label, 
 				   delete_simple_label, get_weight,  
                                    NULL,
