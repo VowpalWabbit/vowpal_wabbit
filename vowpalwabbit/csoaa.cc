@@ -369,7 +369,7 @@ namespace LabelDict {
     float  min_score = FLT_MAX;
 
     for (size_t k=start_K; k<K; k++) {
-      example *ec = l.ec_seq.begin[k];
+      example *ec = l.ec_seq[k];
 
       if (COST_SENSITIVE::example_is_test(*ec) != isTest) {
         isTest = true;
@@ -387,7 +387,7 @@ namespace LabelDict {
     vector<COST_SENSITIVE::wclass*> all_costs;
     if (is_learn && !isTest) {
       for (size_t k=start_K; k<K; k++) {
-        v_array<COST_SENSITIVE::wclass> this_costs = l.ec_seq.begin[k]->l.cs.costs;
+        v_array<COST_SENSITIVE::wclass> this_costs = l.ec_seq[k]->l.cs.costs;
         for (size_t j=0; j<this_costs.size(); j++)
           all_costs.push_back(&this_costs[j]);
       }
@@ -397,7 +397,7 @@ namespace LabelDict {
     }
 
     for (size_t k1=start_K; k1<K; k1++) {
-      example *ec1 = l.ec_seq.begin[k1];
+      example *ec1 = l.ec_seq[k1];
       COST_SENSITIVE::label   ld1 = ec1->l.cs;
       v_array<COST_SENSITIVE::wclass> costs1 = ld1.costs;
       bool prediction_is_me = false;
@@ -410,7 +410,7 @@ namespace LabelDict {
           LabelDict::add_example_namespace_from_memory(l, *ec1, costs1[j1].class_index);
 
           for (size_t k2=k1+1; k2<K; k2++) {
-            example *ec2 = l.ec_seq.begin[k2];
+            example *ec2 = l.ec_seq[k2];
             v_array<COST_SENSITIVE::wclass> costs2 = ec2->l.cs.costs;
 
             for (size_t j2=0; j2<costs2.size(); j2++) {
@@ -462,7 +462,7 @@ namespace LabelDict {
     //cdbg << "isTest=" << isTest << " start_K=" << start_K << " K=" << K << endl;
 
     for (size_t k=start_K; k<K; k++) {
-      example *ec = l.ec_seq.begin[k];
+      example *ec = l.ec_seq[k];
       if (COST_SENSITIVE::example_is_test(*ec) != isTest) {
         isTest = true;
         cerr << "warning: ldf got mix of train/test data; assuming test" << endl;
@@ -479,7 +479,7 @@ namespace LabelDict {
     if (is_learn && !isTest)
       l.csoaa_example_t += 1.;
     for (size_t k=start_K; k<K; k++) {
-      example *ec = l.ec_seq.begin[k];
+      example *ec = l.ec_seq[k];
       label   ld = ec->l.cs;
       v_array<COST_SENSITIVE::wclass> costs = ld.costs;
 
