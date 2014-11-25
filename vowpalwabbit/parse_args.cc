@@ -395,9 +395,9 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
 	}
       all.default_bits = false;
       all.num_bits = new_bits;
-      if (all.num_bits > min(32, sizeof(size_t)*8 - 3))
+      if (all.num_bits > min(31, sizeof(size_t)*8 - 3))
 	{
-	  cout << "Only " << min(32, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
+	  cout << "Only " << min(31, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
 	  throw exception();
 	}
     }
