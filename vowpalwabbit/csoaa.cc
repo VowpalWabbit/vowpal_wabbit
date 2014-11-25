@@ -375,7 +375,7 @@ namespace LabelDict {
         isTest = true;
         cerr << "warning: wap_ldf got mix of train/test data; assuming test" << endl;
       }
-      if (LabelDict::ec_is_example_header(*l.ec_seq[k])) {
+      if (LabelDict::ec_is_example_header(*ec)) {
         cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
         throw exception();
       }
@@ -467,7 +467,7 @@ namespace LabelDict {
         isTest = true;
         cerr << "warning: ldf got mix of train/test data; assuming test" << endl;
       }
-      if (LabelDict::ec_is_example_header(*l.ec_seq[k])) {
+      if (LabelDict::ec_is_example_header(*ec)) {
         cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
         throw exception();
       }
