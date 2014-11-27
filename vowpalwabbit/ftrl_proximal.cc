@@ -64,10 +64,6 @@ namespace FTRL {
     }
   }
 
-  bool test_example(example& ec) {
-    return ((label_data*)ec.ld)->label == FLT_MAX;
-  }
-
   void update_accumulated_state(weight* w, float alpha) {
     double ng2 = w[W_G2] + w[W_GT]*w[W_GT];
     double sigma = (sqrt(ng2) - sqrt(w[W_G2]))/ alpha;
