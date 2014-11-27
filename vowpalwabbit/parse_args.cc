@@ -395,9 +395,9 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
 	}
       all.default_bits = false;
       all.num_bits = new_bits;
-      if (all.num_bits > min(32, sizeof(size_t)*8 - 3))
+      if (all.num_bits > min(31, sizeof(size_t)*8 - 3))
 	{
-	  cout << "Only " << min(32, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
+	  cout << "Only " << min(31, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
 	  throw exception();
 	}
     }
@@ -595,11 +595,7 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
   if (vm.count("min_prediction") || vm.count("max_prediction") || vm.count("testonly"))
     all.set_minmax = noop_mm;
 
-  string loss_function;
-  if(vm.count("loss_function"))
-    loss_function = vm["loss_function"].as<string>();
-  else
-    loss_function = "squaredloss";
+  string loss_function = vm["loss_function"].as<string>();
   float loss_parameter = 0.0;
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<float>();
@@ -747,7 +743,7 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
     all.l = NOOP::setup(all);
   else if (vm.count("print"))
     all.l = PRINT::setup(all);
-  else if (!vm.count("new_mf") && all.rank > 0)
+  else if (all.rank > 0)
     all.l = GDMF::setup(all, vm);
   else if (vm.count("sendto"))
     all.l = SENDER::setup(all, vm, all.pairs);
@@ -793,7 +789,7 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
 
   score_mod_opt.add_options()
     ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
-    ("new_mf", "use new, reduction-based matrix factorization")
+    ("new_mf", po::value<size_t>(), "rank for reduction-based matrix factorization")
     ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
     ("lrqdropout", "use dropout training for low rank quadratic features")
@@ -808,7 +804,7 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
   if(vm.count("nn"))
     all.l = NN::setup(all, vm);
   
-  if (vm.count("new_mf") && all.rank > 0)
+  if (vm.count("new_mf"))
     all.l = MF::setup(all, vm);
   
   if(vm.count("autolink"))
