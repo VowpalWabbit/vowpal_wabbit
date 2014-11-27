@@ -841,36 +841,31 @@ void setup_example(vw& all, example* ae)
     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
       {
 	ae->num_features 
-	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin)
-	  *(ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin);
+	  += ae->atomics[(int)(*i)[0]].size()
+	    *ae->atomics[(int)(*i)[1]].size();
 	ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]]*ae->sum_feat_sq[(int)(*i)[1]];
       }
 
     for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
       {
 	ae->num_features 
-	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin)
-            *(ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin)
-            *(ae->atomics[(int)(*i)[2]].end - ae->atomics[(int)(*i)[2]].begin);
+	  += ae->atomics[(int)(*i)[0]].size()
+	    *ae->atomics[(int)(*i)[1]].size()
+	    *ae->atomics[(int)(*i)[2]].size();
 	ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]] * ae->sum_feat_sq[(int)(*i)[1]] * ae->sum_feat_sq[(int)(*i)[2]];
       }
 
   } else {
     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
       {
-	ae->num_features
-	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin) * all.rank;
-	ae->num_features
-	  += (ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin) * all.rank;
+	ae->num_features += ae->atomics[(int)(*i)[0]].size() * all.rank;
+	ae->num_features += ae->atomics[(int)(*i)[1]].size() * all.rank;
       }
     for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
       {
-	ae->num_features
-	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin) * all.rank;
-	ae->num_features
-	  += (ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin) * all.rank;
-	ae->num_features
-	  += (ae->atomics[(int)(*i)[2]].end - ae->atomics[(int)(*i)[2]].begin) * all.rank;
+	ae->num_features += ae->atomics[(int)(*i)[0]].size() * all.rank;
+	ae->num_features += ae->atomics[(int)(*i)[1]].size() * all.rank;
+	ae->num_features += ae->atomics[(int)(*i)[2]].size() * all.rank;
       }
   }
 }
