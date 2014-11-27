@@ -565,7 +565,7 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
     ("l1", po::value<float>(&(all.l1_lambda)), "l_1 lambda")
-    ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda");
+    ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda")
     ("ftrl_alpha", po::value<float>(&(all.ftrl_alpha)), "learning rate for ftrl-proximal optimization")
     ("ftrl_beta", po::value<float>(&(all.ftrl_beta)), "ftrl beta")
     ("progressive_validation", po::value<string>()->default_value("ftrl.evl"), "file to record progressive validation for ftrl-proximal");
