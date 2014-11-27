@@ -45,6 +45,7 @@ typedef union {
 
 struct example // core example datatype.
 {
+  void* ld; //Used by ftrl
   polylabel l;
 
   v_array<char> tag;//An identifier for the example.
@@ -59,6 +60,7 @@ struct example // core example datatype.
   size_t num_features;//precomputed, cause it's fast&easy.
   float partial_prediction;//shared data for prediction.
   float updated_prediction;//estimated post-update prediction.
+  float final_prediction;// for FTRL
   v_array<float> topic_predictions;
   float loss;
   float example_t;//sum of importance weights so far.
