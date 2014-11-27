@@ -14,7 +14,6 @@
 #include <sys/timeb.h>
 #include "parse_example.h"
 #include "constant.h"
-#include "ftrl_proximal.h"
 #include "cache.h"
 #include "simple_label.h"
 #include "vw.h"
