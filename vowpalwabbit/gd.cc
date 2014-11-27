@@ -487,7 +487,8 @@ float compute_update(gd& g, example& ec)
       else
 	update = all.loss->getUnsafeUpdate(ld.prediction, ld.label, delta_pred, pred_per_update);
 
-      ec.updated_prediction = ec.partial_prediction + pred_per_update * update;
+      // changed from ec.partial_prediction to ld.prediction
+      ec.updated_prediction = ld.prediction + pred_per_update * update;
       
       if (all.reg_mode && fabs(update) > 1e-8) {
 	double dev1 = all.loss->first_derivative(all.sd, ld.prediction, ld.label);
@@ -499,8 +500,11 @@ float compute_update(gd& g, example& ec)
       }
       return update;
     }
-  else
+  else {
+    ec.updated_prediction = ld.prediction;
+
     return 0.;
+  }
 }
 
 template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>

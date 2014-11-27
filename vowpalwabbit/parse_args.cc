@@ -747,7 +747,7 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
     all.l = NOOP::setup(all);
   else if (vm.count("print"))
     all.l = PRINT::setup(all);
-  else if (!vm.count("new_mf") && all.rank > 0)
+  else if (all.rank > 0)
     all.l = GDMF::setup(all, vm);
   else if (vm.count("sendto"))
     all.l = SENDER::setup(all, vm, all.pairs);
@@ -793,7 +793,7 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
 
   score_mod_opt.add_options()
     ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
-    ("new_mf", "use new, reduction-based matrix factorization")
+    ("new_mf", po::value<size_t>(), "rank for reduction-based matrix factorization")
     ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
     ("lrqdropout", "use dropout training for low rank quadratic features")
@@ -808,7 +808,7 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
   if(vm.count("nn"))
     all.l = NN::setup(all, vm);
   
-  if (vm.count("new_mf") && all.rank > 0)
+  if (vm.count("new_mf"))
     all.l = MF::setup(all, vm);
   
   if(vm.count("autolink"))
