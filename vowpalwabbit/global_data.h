@@ -193,6 +193,7 @@ struct vw {
   float initial_constant;
 
   bool bfgs;
+  bool ftrl;
   bool hessian_on;
   int m;
 
@@ -214,8 +215,6 @@ struct vw {
 
   float l1_lambda; //the level of l_1 regularization to impose.
   float l2_lambda; //the level of l_2 regularization to impose.
-  float ftrl_alpha;
-  float ftrl_beta;
   float power_t;//the power on learning rate decay.
   int reg_mode;
 
@@ -236,8 +235,6 @@ struct vw {
   std::vector<std::string> skip_strings; // triples of features to cross.
   uint32_t ngram[256];//ngrams to generate.
   uint32_t skips[256];//skips in ngrams.
-  std::vector<std::string> limit_strings; // descriptor of feature limits
-  uint32_t limit[256];//count to limit features by
   uint32_t affix_features[256]; // affixes to generate (up to 8 per namespace)
   bool     spelling_features[256]; // generate spelling features for which namespace
   v_array<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
@@ -320,6 +317,5 @@ void noop_mm(shared_data*, float label);
 void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag);
 void get_prediction(int sock, float& res, float& weight);
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet);
-void compile_limits(vector<string> limits, uint32_t* dest, bool quiet);
 int print_tag(std::stringstream& ss, v_array<char> tag);
 po::variables_map add_options(vw& all, po::options_description& opts);
