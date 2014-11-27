@@ -35,6 +35,7 @@ license as described in the file LICENSE.
 #include "gd_mf.h"
 #include "mf.h"
 #include "vw.h"
+#include "ftrl_proximal.h"
 #include "rand48.h"
 #include "parse_args.h"
 #include "binary.h"
@@ -565,6 +566,9 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
     ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
     ("l1", po::value<float>(&(all.l1_lambda)), "l_1 lambda")
     ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda");
+    ("ftrl_alpha", po::value<float>(&(all.ftrl_alpha)), "learning rate for ftrl-proximal optimization")
+    ("ftrl_beta", po::value<float>(&(all.ftrl_beta)), "ftrl beta")
+    ("progressive_validation", po::value<string>()->default_value("ftrl.evl"), "file to record progressive validation for ftrl-proximal");
 
   vm = add_options(all, example_opts);
 
@@ -725,6 +729,7 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
   
   base_opt.add_options()
     ("sgd", "use regular stochastic gradient descent update.")
+    ("ftrl", "use ftrl-proximal optimization")
     ("adaptive", "use adaptive, individual learning rates.")
     ("invariant", "use safe/importance aware updates.")
     ("normalized", "use per feature normalized updates")
@@ -743,6 +748,8 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
     all.l = BFGS::setup(all, vm);
   else if (vm.count("lda"))
     all.l = LDA::setup(all, vm);
+  else if (vm.count("ftrl"))
+    all.l = FTRL::setup(all, vm);
   else if (vm.count("noop"))
     all.l = NOOP::setup(all);
   else if (vm.count("print"))
@@ -1056,6 +1063,10 @@ vw* parse_args(int argc, char *argv[])
 	cerr << "decay_learning_rate = " << all->eta_decay_rate << endl;
       if (all->rank > 0)
 	cerr << "rank = " << all->rank << endl;
+      if (all->ftrl) {
+        cerr << "ftrl_alpha = " << all->ftrl_alpha << endl;
+        cerr << "ftrl_beta = " << all->ftrl_beta << endl;
+      }
     }
 
   parse_output_preds(*all, vm);
