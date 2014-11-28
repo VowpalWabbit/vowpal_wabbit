@@ -44,8 +44,6 @@ struct mf {
 
 template <bool cache_sub_predictions>
 void predict(mf& data, learner& base, example& ec) {
-  vw* all = data.all;
-
   float prediction = 0;
   if (cache_sub_predictions)
     data.sub_predictions.resize(2*data.rank+1, true);
@@ -105,8 +103,6 @@ void predict(mf& data, learner& base, example& ec) {
 }
 
 void learn(mf& data, learner& base, example& ec) {
-  vw* all = data.all;
-
   // predict with current weights
   predict<true>(data, base, ec);
   float predicted = ec.l.simple.prediction;
