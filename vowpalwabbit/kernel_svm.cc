@@ -408,7 +408,7 @@ namespace KSVM
       sec->init_svm_example(fec);
       float score;
       predict(params, &sec, &score, 1);
-      ec.l.simple.prediction = score;
+      ec.pred.scalar = score;
     }
   }
 
@@ -749,7 +749,7 @@ namespace KSVM
       free_flatten_example(fec);
       float score = 0;
       predict(params, &sec, &score, 1);
-      ec.l.simple.prediction = score;
+      ec.pred.scalar = score;
       ec.loss = max(0.f, 1.f - score*ec.l.simple.label);
       params.loss_sum += ec.loss;
       if(params.all->training && ec.example_counter % 100 == 0)

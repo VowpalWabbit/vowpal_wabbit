@@ -222,7 +222,7 @@ class ezexample {
   
   float predict() {
     setup_for_predict();
-    return ec->l.simple.prediction;
+    return ec->pred.scalar;
   }
 
   float predict_partial() {

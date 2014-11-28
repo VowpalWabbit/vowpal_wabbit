@@ -34,10 +34,10 @@ namespace CB_ALGS {
     else
       all.scorer->predict(ec, index-1+base);
     
-    simple_temp.prediction = ec.l.simple.prediction;
+    float pred = ec.pred.scalar;
     
     ec.l.cb = ld;
 
-    return simple_temp.prediction;
+    return pred;
   }
 }

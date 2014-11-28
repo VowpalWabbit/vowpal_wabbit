@@ -143,7 +143,7 @@ namespace NN {
 
 	base.predict(ec, i);
 
-        hidden_units[i] = ec.l.simple.prediction;
+        hidden_units[i] = ec.pred.scalar;
 
         dropped_out[i] = (n.dropout && merand48 (n.xsubi) < 0.5);
 
@@ -285,7 +285,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       }
 
     ec.partial_prediction = save_partial_prediction;
-    ec.l.simple.prediction = save_final_prediction;
+    ec.pred.scalar = save_final_prediction;
     ec.loss = save_ec_loss;
 
     n.all->sd = save_sd;

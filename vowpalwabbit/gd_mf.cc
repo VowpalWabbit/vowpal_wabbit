@@ -79,7 +79,7 @@ void mf_print_offset_features(vw& all, example& ec, size_t offset)
 
 void mf_print_audit_features(vw& all, example& ec, size_t offset)
 {
-  print_result(all.stdout_fileno,ec.l.simple.prediction,-1,ec.tag);
+  print_result(all.stdout_fileno,ec.pred.scalar,-1,ec.tag);
   mf_print_offset_features(all, ec, offset);
 }
 
@@ -140,17 +140,15 @@ float mf_predict(vw& all, example& ec)
 
   all.set_minmax(all.sd, ld.label);
 
-  ld.prediction = GD::finalize_prediction(all.sd, ec.partial_prediction);
-
+  ec.pred.scalar = GD::finalize_prediction(all.sd, ec.partial_prediction);
+  
   if (ld.label != FLT_MAX)
-    {
-      ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ld.weight;
-    }
-
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ld.weight;
+  
   if (all.audit)
     mf_print_audit_features(all, ec, 0);
-
-  return ld.prediction;
+  
+  return ec.pred.scalar;
 }
 
 
@@ -169,7 +167,7 @@ void mf_train(vw& all, example& ec)
       // use final prediction to get update size
       // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
       float eta_t = all.eta/pow(ec.example_t,all.power_t) / 3.f * ld.weight;
-      float update = all.loss->getUpdate(ld.prediction, ld.label, eta_t, 1.); //ec.total_sum_feat_sq);
+      float update = all.loss->getUpdate(ec.pred.scalar, ld.label, eta_t, 1.); //ec.total_sum_feat_sq);
 
       float regularization = eta_t * all.l2_lambda;
 

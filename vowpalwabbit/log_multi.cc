@@ -309,9 +309,9 @@ namespace LOG_MULTI
     while(b.nodes[cn].internal)
       {
 	base.predict(ec, b.nodes[cn].base_predictor);
-	cn = descend(b.nodes[cn], simple_temp.prediction);
+	cn = descend(b.nodes[cn], ec.pred.scalar);
       }	
-    mc.prediction = b.nodes[cn].max_count_label;
+    ec.pred.multiclass = b.nodes[cn].max_count_label;
     ec.l.multi = mc;
   }
 
@@ -337,7 +337,7 @@ namespace LOG_MULTI
 	while(children(b, cn, class_index, mc.label))
 	  {	    
 	    train_node(b, base, ec, cn, class_index);
-	    cn = descend(b.nodes[cn], simple_temp.prediction);
+	    cn = descend(b.nodes[cn], ec.pred.scalar);
 	  }
 	
 	b.nodes[cn].min_count++;

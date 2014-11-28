@@ -13,12 +13,12 @@ namespace BINARY {
     else
       base.predict(ec);
 
-    if ( ec.l.simple.prediction > 0)
-      ec.l.simple.prediction = 1;
+    if ( ec.pred.scalar > 0)
+      ec.pred.scalar = 1;
     else
-      ec.l.simple.prediction = -1;
+      ec.pred.scalar = -1;
 
-    if (ec.l.simple.label == ec.l.simple.prediction)
+    if (ec.l.simple.label == ec.pred.scalar)
       ec.loss = 0.;
     else
       ec.loss = ec.l.simple.weight;

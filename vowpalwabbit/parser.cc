@@ -1136,12 +1136,12 @@ float get_initial(example* ec)
 
 float get_prediction(example* ec)
 {
-	return ec->l.simple.prediction;
+	return ec->pred.scalar;
 }
 
 float get_cost_sensitive_prediction(example* ec)
 {
-       return ec->l.cs.prediction;
+       return ec->pred.multiclass;
 }
 
 size_t get_tag_length(example* ec)

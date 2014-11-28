@@ -20,9 +20,9 @@ namespace Scorer {
       base.predict(ec);
 
     if(ec.l.simple.weight > 0 && ec.l.simple.label != FLT_MAX)
-      ec.loss = s.all->loss->getLoss(s.all->sd, ec.l.simple.prediction, ec.l.simple.label) * ec.l.simple.weight;
+      ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.l.simple.weight;
 
-    ec.l.simple.prediction = link(ec.l.simple.prediction);
+    ec.pred.scalar = link(ec.pred.scalar);
   }
 
   // y = f(x) -> [0, 1]

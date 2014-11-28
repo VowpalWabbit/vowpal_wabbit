@@ -13,7 +13,6 @@ struct label_data {
   float label;
   float weight;
   float initial;
-  float prediction;
 };
 
 void return_simple_example(vw& all, void*, example& ec);

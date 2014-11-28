@@ -99,17 +99,17 @@ void predict(mf& data, learner& base, example& ec) {
 
   // finalize prediction
   ec.partial_prediction = prediction;
-  ec.l.simple.prediction = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
 }
 
 void learn(mf& data, learner& base, example& ec) {
   // predict with current weights
   predict<true>(data, base, ec);
-  float predicted = ec.l.simple.prediction;
+  float predicted = ec.pred.scalar;
 
   // update linear weights
   base.update(ec);
-  ec.l.simple.prediction = ec.updated_prediction;
+  ec.pred.scalar = ec.updated_prediction;
 
   // store namespace indices
   copy_array(data.indices, ec.indices);
@@ -148,7 +148,7 @@ void learn(mf& data, learner& base, example& ec) {
 	// compute new l_k * x_l scaling factors
 	// base.predict(ec, k);
 	// data.sub_predictions[2*k-1] = ec.partial_prediction;
-	// ec.l.simple.prediction = ec.updated_prediction;
+	// ec.pred.scalar = ec.updated_prediction;
       }
 
       // set example to right namespace only
@@ -165,7 +165,7 @@ void learn(mf& data, learner& base, example& ec) {
 
 	// update r^k using base learner
 	base.update(ec, k + data.rank);
-	ec.l.simple.prediction = ec.updated_prediction;
+	ec.pred.scalar = ec.updated_prediction;
 
 	// restore right namespace features
 	copy_array(ec.atomics[right_ns], data.temp_features);
@@ -176,7 +176,7 @@ void learn(mf& data, learner& base, example& ec) {
   copy_array(ec.indices, data.indices);
 
   // restore original prediction
-  ec.l.simple.prediction = predicted;
+  ec.pred.scalar = predicted;
 }
 
 void finish(mf& o) {

@@ -31,8 +31,8 @@ namespace BS {
 
   void bs_predict_mean(vw& all, example& ec, vector<double> &pred_vec)
   {
-    ec.l.simple.prediction = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
-    ec.loss = all.loss->getLoss(all.sd, ec.l.simple.prediction, ec.l.simple.label) * ec.l.simple.weight;    
+    ec.pred.scalar = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.l.simple.weight;    
   }
 
   void bs_predict_vote(vw& all, example& ec, vector<double> &pred_vec)
@@ -107,10 +107,10 @@ namespace BS {
     }
 
     // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()
-    ec.l.simple.prediction = (float)current_label;
+    ec.pred.scalar = (float)current_label;
 
     // ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ld.weight; //replace line below for: "avg on votes" and getLoss()
-    ec.loss = ((ec.l.simple.prediction == ec.l.simple.label) ? 0.f : 1.f) * ec.l.simple.weight;
+    ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.l.simple.weight;
   }
 
   void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub)
@@ -174,7 +174,7 @@ namespace BS {
     }
 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      BS::print_result(*sink, ld.prediction, 0, ec.tag, d.lb, d.ub);
+      BS::print_result(*sink, ec.pred.scalar, 0, ec.tag, d.lb, d.ub);
   
     print_update(all, ec);
   }
@@ -200,7 +200,7 @@ namespace BS {
 	else
 	  base.predict(ec, i-1);
 	
-        d.pred_vec.push_back(ec.l.simple.prediction);
+        d.pred_vec.push_back(ec.pred.scalar);
 
         if (shouldOutput) {
           if (i > 1) outputStringStream << ' ';

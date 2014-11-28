@@ -578,11 +578,6 @@ namespace Search {
       del_features_in_top_namespace(priv, ec, conditioning_namespace);
   }
   
-  uint32_t cs_get_prediction(bool isCB, polylabel& ld) {
-    return isCB ? ld.cb.prediction
-                : ld.cs.prediction;
-  }
-  
   size_t cs_get_costs_size(bool isCB, polylabel& ld) {
     return isCB ? ld.cb.costs.size()
                 : ld.cs.costs.size();
@@ -671,7 +666,7 @@ namespace Search {
     polylabel old_label = ec.l;
     ec.l = allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt);
     priv.base_learner->predict(ec, policy);
-    uint32_t act = cs_get_prediction(priv.cb_learner, ec.l);
+    uint32_t act = ec.pred.multiclass;
 
     // in beam search mode, go through alternatives and add them as back-ups
     if (priv.beam) {
@@ -1720,7 +1715,7 @@ namespace Search {
           costs.push_back(c);
         }
 
-      CS::label ld = { costs, 0 };
+      CS::label ld = { costs };
       allowed.push_back(ld);
     }
     free(bg);

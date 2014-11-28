@@ -57,7 +57,7 @@ namespace CSOAA {
 	ec.partial_prediction = 0.;
       }
 
-    ld.prediction = prediction;
+    ec.pred.multiclass = prediction;
     ec.l.cs = ld;
   }
 
@@ -415,7 +415,7 @@ namespace LabelDict {
 
         if (prediction == costs1[j1].class_index) prediction_is_me = true;
       }
-      ld1.prediction = prediction_is_me ? prediction : 0;
+      ec1->pred.multiclass = prediction_is_me ? prediction : 0;
       ec1->l.cs = ld1;
       ec1->example_t = example_t1;
     }
@@ -493,7 +493,7 @@ namespace LabelDict {
         ec->partial_prediction = costs[j].partial_prediction;
         if (prediction == costs[j].class_index) prediction_is_me = true;
       }
-      ld.prediction = prediction_is_me ? prediction : 0;
+      ec->pred.multiclass = prediction_is_me ? prediction : 0;
 
       // restore label
       ec->l.cs = ld;
@@ -555,12 +555,11 @@ namespace LabelDict {
     all.sd->total_features += ec.num_features;
 
     float loss = 0.;
-    size_t final_pred = ld.prediction;
 
     if (!COST_SENSITIVE::example_is_test(ec)) {
       for (size_t j=0; j<costs.size(); j++) {
         if (hit_loss) break;
-        if (final_pred == costs[j].class_index) {
+        if (ec.pred.multiclass == costs[j].class_index) {
           loss = costs[j].x;
           hit_loss = true;
         }
@@ -572,7 +571,7 @@ namespace LabelDict {
     }
   
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, (float)ld.prediction, 0, ec.tag);
+      all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
 
     if (all.raw_prediction > 0) {
       string outputString;

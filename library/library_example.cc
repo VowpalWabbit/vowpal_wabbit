@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 
   example *vec2 = VW::read_example(*model, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   model->learn(vec2);
-  cerr << "p2 = " << vec2->l.simple.prediction << endl;
+  cerr << "p2 = " << vec2->pred.scalar << endl;
   VW::finish_example(*model, vec2);
 
   vector< VW::feature_space > ec_info;
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
   example* vec3 = VW::import_example(*model, ec_info);
     
   model->learn(vec3);
-  cerr << "p3 = " << vec3->l.simple.prediction << endl;
+  cerr << "p3 = " << vec3->pred.scalar << endl;
   VW::finish_example(*model, vec3);
 
   VW::finish(*model);
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
   vw* model2 = VW::initialize("--hash all -q st --noconstant -i train2.vw");
   vec2 = VW::read_example(*model2, (char*)" |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   model2->learn(vec2);
-  cerr << "p4 = " << vec2->l.simple.prediction << endl;
+  cerr << "p4 = " << vec2->pred.scalar << endl;
 
   size_t len=0;
   VW::primitive_feature_space* pfs = VW::export_example(*model2, vec2, len);

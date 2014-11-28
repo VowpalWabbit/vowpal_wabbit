@@ -523,7 +523,7 @@ namespace StagewisePoly
       base.learn(poly.synth_ec);
       ec.partial_prediction = poly.synth_ec.partial_prediction;
       ec.updated_prediction = poly.synth_ec.updated_prediction;
-      ec.l.simple.prediction = poly.synth_ec.l.simple.prediction;
+      ec.pred.scalar = poly.synth_ec.pred.scalar;
 
       if (ec.example_counter
           //following line is to avoid repeats when multiple reductions on same example.

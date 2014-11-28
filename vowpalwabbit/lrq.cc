@@ -162,12 +162,12 @@ namespace LRQ {
         // Restore example
         if (iter == 0)
           {
-            first_prediction = ec.l.simple.prediction;
+            first_prediction = ec.pred.scalar;
             first_loss = ec.loss;
           }
         else
           {
-            ec.l.simple.prediction = first_prediction;
+            ec.pred.scalar = first_prediction;
             ec.loss = first_loss;
           }
 

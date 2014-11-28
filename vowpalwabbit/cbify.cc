@@ -117,7 +117,7 @@ namespace CBIFY {
     else
       ctx.l->predict(*ctx.e, (size_t)m_index);
     ctx.recorded = false;
-    return (u32)(ctx.e->l.cb.prediction);
+    return (u32)(ctx.e->pred.multiclass);
   }
 
   void vw_recorder::Record(vw_context& context, u32 action, float probability, string unique_key)
@@ -136,8 +136,9 @@ namespace CBIFY {
         ctx.data->cs->predict(*ctx.e, i);
       else
         ctx.data->cs->predict(*ctx.e, i + 1);
-      m_scores[ctx.data->cs_label.prediction - 1] += additive_probability;
-      m_predictions[i] = (uint32_t)ctx.data->cs_label.prediction;
+      uint32_t pred = ctx.e->pred.multiclass;
+      m_scores[pred - 1] += additive_probability;
+      m_predictions[i] = (uint32_t)pred;
     }
     float min_prob = m_epsilon * min(1.f / ctx.data->k, 1.f / (float)sqrt(m_counter * ctx.data->k));
 
@@ -178,7 +179,7 @@ namespace CBIFY {
 	ec.loss = l.cost;
       }
     
-    ld.prediction = action;
+    ec.pred.multiclass = action;
     ec.l.multi = ld;
   }
 
@@ -204,7 +205,7 @@ namespace CBIFY {
     if (is_learn)
       base.learn(ec);
     
-    ld.prediction = action;
+    ec.pred.multiclass = action;
     ec.l.multi = ld;
     ec.loss = loss(ld.label, action);
   }
@@ -239,7 +240,7 @@ namespace CBIFY {
 	      base.learn(ec,i);
 	  }
       }
-    ld.prediction = action;
+    ec.pred.multiclass = action;
     ec.l.multi = ld;
   }
   
@@ -357,7 +358,7 @@ namespace CBIFY {
 	  }
       }
 
-    ld.prediction = action;
+    ec.pred.multiclass = action;
     ec.l.multi = ld;
   }
   

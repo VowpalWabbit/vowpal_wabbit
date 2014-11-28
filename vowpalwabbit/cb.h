@@ -19,12 +19,16 @@ namespace CB {
 
   struct label {
     v_array<cb_class> costs;
-    uint32_t prediction;
   };
 
   extern label_parser cb_label;//for learning
 }
 
 namespace CB_EVAL {
+  struct label {
+    uint32_t action;
+    CB::label event;
+  };
+
   extern label_parser cb_eval;//for evaluation of an arbitrary policy.
 }

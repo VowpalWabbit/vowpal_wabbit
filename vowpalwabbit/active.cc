@@ -53,7 +53,7 @@ namespace ACTIVE {
 	vw& all = *a.all;
 
 	float k = ec.example_t - ec.l.simple.weight;
-	ec.revert_weight = all.loss->getRevertingWeight(all.sd, ec.l.simple.prediction, all.eta/powf(k,all.power_t));
+	ec.revert_weight = all.loss->getRevertingWeight(all.sd, ec.pred.scalar, all.eta/powf(k,all.power_t));
 	float importance = query_decision(a, ec, k);
 
 	if(importance > 0){
@@ -77,7 +77,7 @@ namespace ACTIVE {
       vw& all = *a.all;
       float t = (float)(ec.example_t - all.sd->weighted_holdout_examples);
       
-      ec.revert_weight = all.loss->getRevertingWeight(all.sd, ec.l.simple.prediction, 
+      ec.revert_weight = all.loss->getRevertingWeight(all.sd, ec.pred.scalar, 
 						      all.eta/powf(t,all.power_t));
     }
   }
@@ -139,7 +139,7 @@ namespace ACTIVE {
     for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
       {
 	int f = (int)all.final_prediction_sink[i];
-	active_print_result(f, ld.prediction, ai, ec.tag);
+	active_print_result(f, ec.pred.scalar, ai, ec.tag);
       }
     
     print_update(all, ec);

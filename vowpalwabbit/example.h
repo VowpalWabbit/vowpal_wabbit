@@ -41,11 +41,12 @@ typedef union {
   MULTICLASS::multiclass multi;
   COST_SENSITIVE::label cs;
   CB::label cb;
+  CB_EVAL::label cb_eval;
 } polylabel;
 
 typedef union {
-  float simple;
-  uint32_t multi;
+  float scalar;
+  uint32_t multiclass;
 } polyprediction;
 
 struct example // core example datatype.

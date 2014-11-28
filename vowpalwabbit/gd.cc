@@ -310,7 +310,7 @@ void print_features(vw& all, example& ec)
 void print_audit_features(vw& all, example& ec)
 {
   if(all.audit)
-    print_result(all.stdout_fileno,ec.l.simple.prediction,-1,ec.tag);
+    print_result(all.stdout_fileno,ec.pred.scalar,-1,ec.tag);
   fflush(stdout);
   print_features(all, ec);
 }
@@ -356,7 +356,7 @@ void predict(gd& g, learner& base, example& ec)
     ec.partial_prediction = inline_predict(all, ec);    
   
   ec.partial_prediction *= (float)all.sd->contraction;
-  ec.l.simple.prediction = finalize_prediction(all.sd, ec.partial_prediction);
+  ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
   
   if (audit)
     print_audit_features(all, ec);
@@ -443,7 +443,7 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
   {//We must traverse the features in _precisely_ the same order as during training.
     label_data& ld = ec.l.simple;
     vw& all = *g.all;
-    float grad_squared = all.loss->getSquareGrad(ld.prediction, ld.label) * ld.weight;
+    float grad_squared = all.loss->getSquareGrad(ec.pred.scalar, ld.label) * ld.weight;
     if (grad_squared == 0) return 1.;
     
     norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
@@ -468,8 +468,8 @@ float compute_update(gd& g, example& ec)
   vw& all = *g.all;
   
   float ret = 0.;
-  ec.updated_prediction = ld.prediction;
-  if (all.loss->getLoss(all.sd, ld.prediction, ld.label) > 0.)
+  ec.updated_prediction = ec.pred.scalar;
+  if (all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) > 0.)
     {
       float pred_per_update;
       if(adaptive || normalized)
@@ -486,15 +486,15 @@ float compute_update(gd& g, example& ec)
       
       float update;
       if(invariant)
-	update = all.loss->getUpdate(ld.prediction, ld.label, delta_pred, pred_per_update);
+	update = all.loss->getUpdate(ec.pred.scalar, ld.label, delta_pred, pred_per_update);
       else
-	update = all.loss->getUnsafeUpdate(ld.prediction, ld.label, delta_pred, pred_per_update);
+	update = all.loss->getUnsafeUpdate(ec.pred.scalar, ld.label, delta_pred, pred_per_update);
       
       // changed from ec.partial_prediction to ld.prediction
       ec.updated_prediction += pred_per_update * update;
       
       if (all.reg_mode && fabs(update) > 1e-8) {
-	double dev1 = all.loss->first_derivative(all.sd, ld.prediction, ld.label);
+	double dev1 = all.loss->first_derivative(all.sd, ec.pred.scalar, ld.label);
 	double eta_bar = (fabs(dev1) > 1e-8) ? (-update / dev1) : 0.0;
 	if (fabs(dev1) > 1e-8)
 	  all.sd->contraction *= (1. - all.l2_lambda * eta_bar);

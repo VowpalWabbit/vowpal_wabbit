@@ -32,7 +32,7 @@ namespace OAA {
     if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
       cout << "label " << mc_label_data.label << " is not in {1,"<< o.k << "} This won't work right." << endl;
     
-    ec.l.simple = {0.f, mc_label_data.weight, 0.f, 0.f};
+    ec.l.simple = {0.f, mc_label_data.weight, 0.f};
 
     string outputString;
     stringstream outputStringStream(outputString);
@@ -64,7 +64,7 @@ namespace OAA {
           outputStringStream << i << ':' << ec.partial_prediction;
         }
       }	
-    mc_label_data.prediction = prediction;
+    ec.pred.multiclass = prediction;
     ec.l.multi = mc_label_data;
     
     if (o.shouldOutput) 

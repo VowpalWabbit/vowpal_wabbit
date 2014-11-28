@@ -25,7 +25,6 @@ namespace COST_SENSITIVE {
 
   struct label {
     v_array<wclass> costs;
-    uint32_t prediction;
   };
   
   void output_example(vw& all, example& ec);
