@@ -10,6 +10,7 @@ license as described in the file LICENSE.
 #include "simple_label.h"
 #include "v_hashmap.h"
 #include "vw.h"
+#include "gd.h" // GD::foreach_feature() needed in subtract_example()
 
 using namespace std;
 
@@ -257,22 +258,25 @@ namespace LabelDict {
       costs[i]->wap_value = costs[i-1]->wap_value + (costs[i]->x - costs[i-1]->x) / (float)i;
   }
 
+  // Substract a given feature from example ec.
+  // Rather than finding the corresponding namespace and feature in ec,
+  // add a new feature with opposite value (but same index) to ec to a special wap_ldf_namespace.
+  // This is faster and allows fast undo in unsubtract_example().
+  void subtract_feature(example& ec, float feature_value_x, uint32_t weight_index)
+  {
+    feature temp = { -feature_value_x, weight_index };
+    ec.atomics[wap_ldf_namespace].push_back(temp);
+    ec.sum_feat_sq[wap_ldf_namespace] += feature_value_x * feature_value_x;
+  }
+
+  // Iterate over all features of ecsub including quadratic and cubic features and subtract them from ec.
   void subtract_example(vw& all, example *ec, example *ecsub)
   {
-    float norm_sq = 0.;
-    size_t num_f = 0;
-    for (unsigned char* i = ecsub->indices.begin; i != ecsub->indices.end; i++) {
-      for (feature *f = ecsub->atomics[*i].begin; f != ecsub->atomics[*i].end; f++) {
-        feature temp = { -f->x, (uint32_t) (f->weight_index) };
-        ec->atomics[wap_ldf_namespace].push_back(temp);
-        norm_sq += f->x * f->x;
-        num_f ++;
-      }
-    }
+    ec->sum_feat_sq[wap_ldf_namespace] = 0;
+    GD::foreach_feature<example&, uint32_t, subtract_feature>(all, *ecsub, *ec);
     ec->indices.push_back(wap_ldf_namespace);
-    ec->sum_feat_sq[wap_ldf_namespace] = norm_sq;
-    ec->total_sum_feat_sq += norm_sq;
-    ec->num_features += num_f;
+    ec->num_features += ec->atomics[wap_ldf_namespace].size();
+    ec->total_sum_feat_sq += ec->sum_feat_sq[wap_ldf_namespace];
   }
 
   void unsubtract_example(vw& all, example *ec)
@@ -477,7 +481,7 @@ namespace LabelDict {
               simple_label.weight = costs[j].x - min_cost;
             }
           }
-          // TODO: check the example->done and ec->partial_prediction = costs[j].partial_prediciton here
+          // TODO: check the example->done and ec->partial_prediction = costs[j].partial_prediction here
           //cdbg << "k=" << k << " j=" << j << " label=" << simple_label.label << " cost=" << simple_label.weight << endl;
           ec->l.simple = simple_label;
           //ec->partial_prediction = costs[j].partial_prediction;
