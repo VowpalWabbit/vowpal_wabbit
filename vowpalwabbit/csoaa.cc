@@ -338,27 +338,37 @@ namespace LabelDict {
     ec.l.cs = ld;
   }
 
-
-  template <bool is_learn>
-  void do_actual_learning_wap(vw& all, ldf& l, learner& base, size_t start_K)
+  bool check_ldf_sequence(ldf& data, size_t start_K)
   {
-    size_t K = l.ec_seq.size();
-    bool   isTest = COST_SENSITIVE::example_is_test(*l.ec_seq[start_K]);
-    uint32_t prediction = 0;
-    float  min_score = FLT_MAX;
-
-    for (size_t k=start_K; k<K; k++) {
-      example *ec = l.ec_seq[k];
-
+    bool isTest = COST_SENSITIVE::example_is_test(*data.ec_seq[start_K]);
+    for (size_t k=start_K; k<data.ec_seq.size(); k++) {
+      example *ec = data.ec_seq[k];
+      
+      // Each sub-example must have just one cost
+      //assert(ec->l.cs.costs.size()==1);
+      
       if (COST_SENSITIVE::example_is_test(*ec) != isTest) {
         isTest = true;
-        cerr << "warning: wap_ldf got mix of train/test data; assuming test" << endl;
+        cerr << "warning: ldf example has mix of train/test data; assuming test" << endl;
       }
       if (LabelDict::ec_is_example_header(*ec)) {
         cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
         throw exception();
       }
+    }
+    return isTest;
+  }
 
+  template <bool is_learn>
+  void do_actual_learning_wap(vw& all, ldf& l, learner& base, size_t start_K)
+  {
+    size_t K = l.ec_seq.size();
+    bool   isTest = check_ldf_sequence(l, start_K);
+    uint32_t prediction = 0;
+    float  min_score = FLT_MAX;
+
+    for (size_t k=start_K; k<K; k++) {
+      example *ec = l.ec_seq[k];
       make_single_prediction(all, l, base, *ec, &prediction, &min_score, NULL, NULL);
     }
 
@@ -430,7 +440,7 @@ namespace LabelDict {
   {
     size_t K = l.ec_seq.size();
     uint32_t prediction = 0;
-    bool   isTest = COST_SENSITIVE::example_is_test(*l.ec_seq[start_K]);
+    bool   isTest = check_ldf_sequence(l, start_K);
     float  min_score = FLT_MAX;
     float  min_cost  = FLT_MAX;
     float  max_cost  = -FLT_MAX;
@@ -439,15 +449,6 @@ namespace LabelDict {
 
     for (size_t k=start_K; k<K; k++) {
       example *ec = l.ec_seq[k];
-      if (COST_SENSITIVE::example_is_test(*ec) != isTest) {
-        isTest = true;
-        cerr << "warning: ldf got mix of train/test data; assuming test" << endl;
-      }
-      if (LabelDict::ec_is_example_header(*ec)) {
-        cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
-        throw exception();
-      }
-      //cdbg << "msp k=" << k << endl;
       make_single_prediction(all, l, base, *ec, &prediction, &min_score, &min_cost, &max_cost);
     }
 
