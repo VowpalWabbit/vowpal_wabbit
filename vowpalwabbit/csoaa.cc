@@ -298,7 +298,7 @@ namespace LabelDict {
     ec->indices.decr();
   }
 
-  void make_single_prediction(vw& all, ldf& l, learner& base, example& ec, uint32_t* prediction, float*min_score, float*min_cost, float*max_cost) {
+  void make_single_prediction(ldf& l, learner& base, example& ec) {
     COST_SENSITIVE::label ld = ec.l.cs;
     label_data simple_label;
 
@@ -313,16 +313,7 @@ namespace LabelDict {
         base.predict(ec); // make a prediction
         ld.costs[0].partial_prediction = ec.partial_prediction;
 
-        if (min_score && prediction && (ec.partial_prediction < *min_score)) {
-          *min_score = ec.partial_prediction;
-          *prediction = ld.costs[0].class_index;
-        }
-
-        if (min_cost && (ld.costs[0].x < *min_cost)) *min_cost = ld.costs[0].x;
-        if (max_cost && (ld.costs[0].x > *max_cost)) *max_cost = ld.costs[0].x;
-
         LabelDict::del_example_namespace_from_memory(l, ec, ld.costs[0].class_index);
-    
     ec.l.cs = ld;
   }
 
@@ -347,39 +338,25 @@ namespace LabelDict {
     return isTest;
   }
 
-  template <bool is_learn>
   void do_actual_learning_wap(vw& all, ldf& l, learner& base, size_t start_K)
   {
     size_t K = l.ec_seq.size();
-    bool   isTest = check_ldf_sequence(l, start_K);
-    uint32_t prediction = 0;
-    float  min_score = FLT_MAX;
-
-    for (size_t k=start_K; k<K; k++) {
-      example *ec = l.ec_seq[k];
-      make_single_prediction(all, l, base, *ec, &prediction, &min_score, NULL, NULL);
-    }
-
-    // do actual learning
     vector<COST_SENSITIVE::wclass*> all_costs;
-    if (is_learn && !isTest) {
       for (size_t k=start_K; k<K; k++)
         all_costs.push_back(&l.ec_seq[k]->l.cs.costs[0]);
       compute_wap_values(all_costs);
 
       l.csoaa_example_t += 1.;
-    }
 
     for (size_t k1=start_K; k1<K; k1++) {
       example *ec1 = l.ec_seq[k1];
       COST_SENSITIVE::label   ld1 = ec1->l.cs;
       v_array<COST_SENSITIVE::wclass> costs1 = ld1.costs;
-      bool prediction_is_me = false;
       label_data& simple_label = ec1->l.simple;
       float example_t1 = ec1->example_t;
 
         if (costs1[0].class_index == (uint32_t)-1) continue;
-        if (is_learn && !isTest) {
+
           LabelDict::add_example_namespace_from_memory(l, *ec1, costs1[0].class_index);
 
           for (size_t k2=k1+1; k2<K; k2++) {
@@ -407,35 +384,26 @@ namespace LabelDict {
               LabelDict::del_example_namespace_from_memory(l, *ec2, costs2[0].class_index);
           }
           LabelDict::del_example_namespace_from_memory(l, *ec1, costs1[0].class_index);
-        }
 
-        if (prediction == costs1[0].class_index) prediction_is_me = true;
-
-      ec1->pred.multiclass = prediction_is_me ? prediction : 0;
       ec1->l.cs = ld1;
       ec1->example_t = example_t1;
     }
   }
 
-  template <bool is_learn>
   void do_actual_learning_oaa(vw& all, ldf& l, learner& base, size_t start_K)
   {
     size_t K = l.ec_seq.size();
-    uint32_t prediction = 0;
-    bool   isTest = check_ldf_sequence(l, start_K);
-    float  min_score = FLT_MAX;
     float  min_cost  = FLT_MAX;
     float  max_cost  = -FLT_MAX;
 
-    //cdbg << "isTest=" << isTest << " start_K=" << start_K << " K=" << K << endl;
-
     for (size_t k=start_K; k<K; k++) {
-      example *ec = l.ec_seq[k];
-      make_single_prediction(all, l, base, *ec, &prediction, &min_score, &min_cost, &max_cost);
+      float ec_cost = l.ec_seq[k]->l.cs.costs[0].x;
+      if (ec_cost < min_cost) min_cost = ec_cost;
+      if (ec_cost > max_cost) max_cost = ec_cost;
     }
 
     // do actual learning
-    if (is_learn && !isTest)
+
       l.csoaa_example_t += 1.;
     for (size_t k=start_K; k<K; k++) {
       example *ec = l.ec_seq[k];
@@ -444,8 +412,6 @@ namespace LabelDict {
 
       // learn
       label_data simple_label;
-      bool prediction_is_me = false;
-        if (is_learn && !isTest) {
           float example_t = ec->example_t;
           ec->example_t = l.csoaa_example_t;
 
@@ -472,12 +438,9 @@ namespace LabelDict {
           base.learn(*ec);
           LabelDict::del_example_namespace_from_memory(l, *ec, costs[0].class_index);
           ec->example_t = example_t;
-        }
 
         // fill in test predictions
         ec->partial_prediction = costs[0].partial_prediction;
-        if (prediction == costs[0].class_index) prediction_is_me = true;
-      ec->pred.multiclass = prediction_is_me ? prediction : 0;
 
       // restore label
       ec->l.cs = ld;
@@ -507,7 +470,8 @@ namespace LabelDict {
       }
       return;
     }
-    /////////////////////// check for headers
+
+    /////////////////////// add headers
     size_t K = l.ec_seq.size();
     size_t start_K = 0;
     if (LabelDict::ec_is_example_header(*l.ec_seq[0])) {
@@ -515,10 +479,30 @@ namespace LabelDict {
       for (size_t k=1; k<K; k++)
         LabelDict::add_example_namespaces_from_example(*l.ec_seq[k], *l.ec_seq[0]);
     }
+    bool isTest = check_ldf_sequence(l, start_K);
+
+    /////////////////////// do prediction
+    float  min_score = FLT_MAX;
+    size_t predicted_K = start_K;   
+    for (size_t k=start_K; k<K; k++) {
+      example *ec = l.ec_seq[k];
+      make_single_prediction(l, base, *ec);
+      if (ec->partial_prediction < min_score) {
+        min_score = ec->partial_prediction;
+        predicted_K = k;
+      }
+    }   
 
     /////////////////////// learn
-    if (l.is_wap) do_actual_learning_wap<is_learn>(all, l, base, start_K);
-    else          do_actual_learning_oaa<is_learn>(all, l, base, start_K);
+    if (is_learn && !isTest){
+      if (l.is_wap) do_actual_learning_wap(all, l, base, start_K);
+      else          do_actual_learning_oaa(all, l, base, start_K);
+    }
+    
+    // Mark the predicted subexample with its class_index, all other with 0
+    for (size_t k=start_K; k<K; k++)
+      l.ec_seq[k]->pred.multiclass = (k == predicted_K) ? l.ec_seq[k]->l.cs.costs[0].class_index : 0;
+    
     
     /////////////////////// remove header
     if (start_K > 0)
