@@ -355,7 +355,8 @@ void predict(gd& g, learner& base, example& ec)
   else
     ec.partial_prediction = inline_predict(all, ec);    
   
-  ec.l.simple.prediction = finalize_prediction(all.sd, ec.partial_prediction * (float)all.sd->contraction);
+  ec.partial_prediction *= (float)all.sd->contraction;
+  ec.l.simple.prediction = finalize_prediction(all.sd, ec.partial_prediction);
   
   if (audit)
     print_audit_features(all, ec);
@@ -465,7 +466,9 @@ float compute_update(gd& g, example& ec)
 {//invariant: not a test label, importance weight > 0
   label_data& ld = ec.l.simple;
   vw& all = *g.all;
-
+  
+  float ret = 0.;
+  ec.updated_prediction = ld.prediction;
   if (all.loss->getLoss(all.sd, ld.prediction, ld.label) > 0.)
     {
       float pred_per_update;
@@ -481,14 +484,14 @@ float compute_update(gd& g, example& ec)
 	  delta_pred *= powf(t, g.neg_power_t);
 	}
       
-      float update = 0.f;
+      float update;
       if(invariant)
 	update = all.loss->getUpdate(ld.prediction, ld.label, delta_pred, pred_per_update);
       else
 	update = all.loss->getUnsafeUpdate(ld.prediction, ld.label, delta_pred, pred_per_update);
-
+      
       // changed from ec.partial_prediction to ld.prediction
-      ec.updated_prediction = ld.prediction + pred_per_update * update;
+      ec.updated_prediction += pred_per_update * update;
       
       if (all.reg_mode && fabs(update) > 1e-8) {
 	double dev1 = all.loss->first_derivative(all.sd, ld.prediction, ld.label);
@@ -498,13 +501,10 @@ float compute_update(gd& g, example& ec)
 	update /= (float)all.sd->contraction;
 	all.sd->gravity += eta_bar * all.l1_lambda;
       }
-      return update;
+      ret = update;
     }
-  else {
-    ec.updated_prediction = ld.prediction;
-
-    return 0.;
-  }
+  
+  return ret;
 }
 
 template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
@@ -526,7 +526,6 @@ void learn(gd& g, learner& base, example& ec)
   assert(ec.l.simple.weight > 0.);
 
   g.predict(g,base,ec);
-
   update<invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,base,ec);
 }
 

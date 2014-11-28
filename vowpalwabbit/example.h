@@ -43,19 +43,25 @@ typedef union {
   CB::label cb;
 } polylabel;
 
-struct example // core example datatype.
-{
-  polylabel l;
+typedef union {
+  float simple;
+  uint32_t multi;
+} polyprediction;
 
+struct example // core example datatype.
+{//output prediction
+  polyprediction pred;
+
+  // input fields
+  polylabel l;
   v_array<char> tag;//An identifier for the example.
   size_t example_counter;
-
   v_array<unsigned char> indices;
   v_array<feature> atomics[256]; // raw parsed data
   uint32_t ft_offset;
   
-  v_array<audit_data> audit_features[256];
-  
+  //helpers
+  v_array<audit_data> audit_features[256];  
   size_t num_features;//precomputed, cause it's fast&easy.
   float partial_prediction;//shared data for prediction.
   float updated_prediction;//estimated post-update prediction.
