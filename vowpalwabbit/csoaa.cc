@@ -429,10 +429,7 @@ namespace LabelDict {
               simple_label.weight = value_diff;
               ec1->partial_prediction = 0.;
               subtract_example(all, ec1, ec2);
-	      if (is_learn)
-		base.learn(*ec1);
-	      else
-		base.predict(*ec1);
+              base.learn(*ec1);
               unsubtract_example(all, ec1);
               
               LabelDict::del_example_namespace_from_memory(l, *ec2, costs2[j2].class_index);
