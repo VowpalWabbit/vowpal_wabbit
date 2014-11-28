@@ -302,15 +302,6 @@ namespace LabelDict {
     COST_SENSITIVE::label ld = ec.l.cs;
     label_data simple_label;
 
-    if (ld.costs.size() == 0) {
-      simple_label.initial = 0.;
-      simple_label.label = FLT_MAX;
-      simple_label.weight = 0.;
-      ec.partial_prediction = 0.;
-      
-      ec.l.simple = simple_label;
-      base.predict(ec); // make a prediction
-    } else {
       for (size_t j=0; j<ld.costs.size(); j++) {
         simple_label.initial = 0.;
         simple_label.label = FLT_MAX;
@@ -332,8 +323,7 @@ namespace LabelDict {
         if (max_cost && (ld.costs[j].x > *max_cost)) *max_cost = ld.costs[j].x;
 
         LabelDict::del_example_namespace_from_memory(l, ec, ld.costs[j].class_index);
-      }
-    }
+      }    
     
     ec.l.cs = ld;
   }
@@ -345,7 +335,7 @@ namespace LabelDict {
       example *ec = data.ec_seq[k];
       
       // Each sub-example must have just one cost
-      //assert(ec->l.cs.costs.size()==1);
+      assert(ec->l.cs.costs.size()==1);
       
       if (COST_SENSITIVE::example_is_test(*ec) != isTest) {
         isTest = true;
