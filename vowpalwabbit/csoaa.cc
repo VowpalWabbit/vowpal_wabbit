@@ -262,23 +262,11 @@ namespace LabelDict {
     float norm_sq = 0.;
     size_t num_f = 0;
     for (unsigned char* i = ecsub->indices.begin; i != ecsub->indices.end; i++) {
-      size_t feature_index = 0;
       for (feature *f = ecsub->atomics[*i].begin; f != ecsub->atomics[*i].end; f++) {
         feature temp = { -f->x, (uint32_t) (f->weight_index) };
         ec->atomics[wap_ldf_namespace].push_back(temp);
         norm_sq += f->x * f->x;
         num_f ++;
-
-        if (all.audit) {
-          if (! (ecsub->audit_features[*i].size() >= feature_index)) {
-            audit_data b_feature = ecsub->audit_features[*i][feature_index];
-            audit_data a_feature = { NULL, NULL, (uint32_t) (f->weight_index), -f->x, false };
-            a_feature.space = b_feature.space;
-            a_feature.feature = b_feature.feature;
-            ec->audit_features[wap_ldf_namespace].push_back(a_feature);
-            feature_index++;
-          }
-        }
       }
     }
     ec->indices.push_back(wap_ldf_namespace);
@@ -303,19 +291,6 @@ namespace LabelDict {
     ec->total_sum_feat_sq -= ec->sum_feat_sq[wap_ldf_namespace];
     ec->sum_feat_sq[wap_ldf_namespace] = 0;
     ec->atomics[wap_ldf_namespace].erase();
-    if (all.audit) {
-      if (ec->audit_features[wap_ldf_namespace].begin != ec->audit_features[wap_ldf_namespace].end) {
-        for (audit_data *f = ec->audit_features[wap_ldf_namespace].begin; f != ec->audit_features[wap_ldf_namespace].end; f++) {
-          if (f->alloced) {
-            free(f->space);
-            free(f->feature);
-            f->alloced = false;
-          }
-        }
-      }
-
-      ec->audit_features[wap_ldf_namespace].erase();
-    }
     ec->indices.decr();
   }
 
