@@ -653,10 +653,6 @@ namespace LabelDict {
   void predict_or_learn(ldf& l, learner& base, example &ec) {
     vw* all = l.all;
     l.base = &base;
-    bool is_test = COST_SENSITIVE::example_is_test(ec) || !all->training;
-    
-    if (is_test)
-      make_single_prediction(*all, l, base, ec, NULL, NULL, NULL, NULL);
 
     bool need_to_break = l.ec_seq.size() >= all->p->ring_size - 2;
     
