@@ -241,20 +241,20 @@ void ex_set_label_string(example_ptr ec, vw_ptr vw, string label, size_t labelTy
 float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
 float ex_get_simplelabel_weight(example_ptr ec) { return ec->l.simple.weight; }
 float ex_get_simplelabel_initial(example_ptr ec) { return ec->l.simple.initial; }
-float ex_get_simplelabel_prediction(example_ptr ec) { return ec->l.simple.prediction; }
+float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar; }
 
 uint32_t ex_get_multiclass_label(example_ptr ec) { return ec->l.multi.label; }
 float ex_get_multiclass_weight(example_ptr ec) { return ec->l.multi.weight; }
-uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->l.multi.prediction; }
+uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multiclass; }
 
-uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->l.cs.prediction; }
+uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass; }
 uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return ec->l.cs.costs.size(); }
 float ex_get_costsensitive_cost(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].x; }
 uint32_t ex_get_costsensitive_class(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].class_index; }
 float ex_get_costsensitive_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].partial_prediction; }
 float ex_get_costsensitive_wap_value(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].wap_value; }
 
-uint32_t ex_get_cbandits_prediction(example_ptr ec) { return ec->l.cb.prediction; }
+uint32_t ex_get_cbandits_prediction(example_ptr ec) { return ec->pred.multiclass; }
 uint32_t ex_get_cbandits_num_costs(example_ptr ec) { return ec->l.cb.costs.size(); }
 float ex_get_cbandits_cost(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].cost; }
 uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].action; }
