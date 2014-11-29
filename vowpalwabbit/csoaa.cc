@@ -298,8 +298,6 @@ namespace LabelDict {
 
   void make_single_prediction(ldf& data, learner& base, example& ec) {
     COST_SENSITIVE::label ld = ec.l.cs;
-    if (ld.costs.size() == 0) return;
-    
     label_data simple_label;
     simple_label.initial = 0.;
     simple_label.label = FLT_MAX;
@@ -621,25 +619,23 @@ namespace LabelDict {
   void predict_or_learn(ldf& data, learner& base, example &ec) {
     vw* all = data.all;
     data.base = &base;
-
-    bool is_test = COST_SENSITIVE::example_is_test(ec) || !all->training;
-    if (is_test)
-        make_single_prediction(data, base, ec);
-    
+    bool is_test_ec = COST_SENSITIVE::example_is_test(ec);
     bool need_to_break = data.ec_seq.size() >= all->p->ring_size - 2;
-    
+
+    // singleline is used by library/ezexample_predict
     if (data.is_singleline) {
-      assert(is_test);
+      assert(is_test_ec); // Only test examples are supported with singleline
+      assert(ec.l.cs.costs.size() > 0); // headers not allowed with singleline
+      make_single_prediction(data, base, ec);
     } else if (LabelDict::ec_is_label_definition(ec)) {
       if (data.ec_seq.size() > 0) {
         cerr << "error: label definition encountered in data block" << endl;
         throw exception();
       }
-
       data.ec_seq.push_back(&ec);
       do_actual_learning<is_learn>(*all, data, base);
       data.need_to_clear = true;
-    } else if ((example_is_newline(ec) && COST_SENSITIVE::example_is_test(ec)) || need_to_break) {
+    } else if ((example_is_newline(ec) && is_test_ec) || need_to_break) {
       if (need_to_break && data.first_pass)
         cerr << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << endl;
       do_actual_learning<is_learn>(*all, data, base);
