@@ -298,6 +298,8 @@ namespace LabelDict {
 
   void make_single_prediction(ldf& data, learner& base, example& ec) {
     COST_SENSITIVE::label ld = ec.l.cs;
+    if (ld.costs.size() == 0) return;
+    
     label_data simple_label;
     simple_label.initial = 0.;
     simple_label.label = FLT_MAX;
@@ -620,6 +622,10 @@ namespace LabelDict {
     vw* all = data.all;
     data.base = &base;
 
+    bool is_test = COST_SENSITIVE::example_is_test(ec) || !all->training;
+    if (is_test)
+        make_single_prediction(data, base, ec);
+    
     bool need_to_break = data.ec_seq.size() >= all->p->ring_size - 2;
     
     if (data.is_singleline) {
