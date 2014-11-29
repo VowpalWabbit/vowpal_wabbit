@@ -309,7 +309,7 @@ namespace LabelDict {
     ec.l.simple = simple_label;
     base.predict(ec); // make a prediction
     ld.costs[0].partial_prediction = ec.partial_prediction;
-    
+
     LabelDict::del_example_namespace_from_memory(l, ec, ld.costs[0].class_index);
     ec.l.cs = ld;
   }
@@ -342,15 +342,17 @@ namespace LabelDict {
     for (size_t k=start_K; k<K; k++)
       all_costs.push_back(&l.ec_seq[k]->l.cs.costs[0]);
     compute_wap_values(all_costs);
+
     l.csoaa_example_t += 1.;
-    
     for (size_t k1=start_K; k1<K; k1++) {
       example *ec1 = l.ec_seq[k1];
-      COST_SENSITIVE::label   ld1 = ec1->l.cs;
-      v_array<COST_SENSITIVE::wclass> costs1 = ld1.costs;
+
+      // save original variables
+      COST_SENSITIVE::label   save_cs_label = ec1->l.cs;
       label_data& simple_label = ec1->l.simple;
-      float example_t1 = ec1->example_t;
-      
+      float save_example_t1 = ec1->example_t;
+
+      v_array<COST_SENSITIVE::wclass> costs1 = save_cs_label.costs;
       if (costs1[0].class_index == (uint32_t)-1) continue;
       
       LabelDict::add_example_namespace_from_memory(l, *ec1, costs1[0].class_index);
@@ -380,9 +382,11 @@ namespace LabelDict {
         LabelDict::del_example_namespace_from_memory(l, *ec2, costs2[0].class_index);
       }
       LabelDict::del_example_namespace_from_memory(l, *ec1, costs1[0].class_index);
-        
-      ec1->l.cs = ld1;
-      ec1->example_t = example_t1;
+      
+      // restore original cost-sensitive label, sum of importance weights
+      ec1->l.cs = save_cs_label;
+      ec1->example_t = save_example_t1;
+      // TODO: What about partial_prediction? See do_actual_learning_oaa.
     }
   }
 
@@ -401,12 +405,14 @@ namespace LabelDict {
     l.csoaa_example_t += 1.;
     for (size_t k=start_K; k<K; k++) {
       example *ec = l.ec_seq[k];
-      label   ld = ec->l.cs;
-      v_array<COST_SENSITIVE::wclass> costs = ld.costs;
+      
+      // save original variables
+      label save_cs_label = ec->l.cs;
+      float save_example_t = ec->example_t;
+      v_array<COST_SENSITIVE::wclass> costs = save_cs_label.costs;
 
-      // learn
+      // build example for the base learner
       label_data simple_label;
-      float example_t = ec->example_t;
       ec->example_t = l.csoaa_example_t;
       
       simple_label.initial = 0.;
@@ -422,22 +428,17 @@ namespace LabelDict {
               simple_label.weight = costs[0].x - min_cost;
             }
       }
-      // TODO: check the example->done and ec->partial_prediction = costs[0].partial_prediction here
-      //cdbg << "k=" << k << " label=" << simple_label.label << " cost=" << simple_label.weight << endl;
       ec->l.simple = simple_label;
-      //ec->partial_prediction = costs[0].partial_prediction;
-      //cerr << "[" << ec->partial_prediction << "," << ec->done << "]";
-      //ec->done = false;
+
+      // learn
       LabelDict::add_example_namespace_from_memory(l, *ec, costs[0].class_index);
       base.learn(*ec);
       LabelDict::del_example_namespace_from_memory(l, *ec, costs[0].class_index);
-      ec->example_t = example_t;
       
-      // fill in test predictions
+      // restore original cost-sensitive label, sum of importance weights and partial_prediction
+      ec->l.cs = save_cs_label;
+      ec->example_t = save_example_t;
       ec->partial_prediction = costs[0].partial_prediction;
-
-      // restore label
-      ec->l.cs = ld;
     }
   }
 
