@@ -26,6 +26,13 @@ namespace BINARY {
 
   learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
+    po::options_description binary_opts("Binary options");
+    binary_opts.add_options()
+      ("binary", "report loss as binary classification on -1,1");
+    vm = add_options(all,binary_opts); 
+    if(!vm.count("binary"))
+      return NULL;
+
     all.sd->binary_label = true;
     //Create new learner
     learner* ret = new learner(NULL, all.l);

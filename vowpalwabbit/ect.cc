@@ -369,13 +369,16 @@ namespace ECT
   
   learner* setup(vw& all, po::variables_map& vm)
   {
-    ect* data = (ect*)calloc_or_die(1, sizeof(ect));
     po::options_description ect_opts("ECT options");
     ect_opts.add_options()
+      ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
       ("error", po::value<size_t>(), "error in ECT");
-    
     vm = add_options(all, ect_opts);
+    if (!vm.count("ect")) 
+      return NULL;
 
+    ect* data = (ect*)calloc_or_die(1, sizeof(ect));
+    
     //first parse for number of actions
     data->k = (int)vm["ect"].as<size_t>();
     

@@ -498,21 +498,21 @@ namespace CB_ALGS
 
   learner* setup(vw& all, po::variables_map& vm)
   {
+    po::options_description cb_opts("CB options");
+    cb_opts.add_options()
+      ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
+      ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}")
+      ("eval", "Evaluate a policy rather than optimizing.");
+    vm = add_options(all, cb_opts);
+    if (!vm.count("cb"))
+      return NULL;
+
     cb* c = (cb*)calloc_or_die(1, sizeof(cb));
     c->all = &all;
     c->min_cost = 0.;
     c->max_cost = 1.;
 
     uint32_t nb_actions = (uint32_t)vm["cb"].as<size_t>();
-    //append cb with nb_actions to file_options so it is saved to regressor later
-
-    po::options_description cb_opts("CB options");
-    cb_opts.add_options()
-      ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}")
-      ("eval", "Evaluate a policy rather than optimizing.")
-      ;
-
-    vm = add_options(all, cb_opts);
 
     std::stringstream ss;
     ss << " --cb " << nb_actions;

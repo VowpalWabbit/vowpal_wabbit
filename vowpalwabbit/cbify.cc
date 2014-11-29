@@ -382,12 +382,16 @@ namespace CBIFY {
     data->all = &all;
     po::options_description cb_opts("CBIFY options");
     cb_opts.add_options()
+      ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve")
       ("first", po::value<size_t>(), "tau-first exploration")
       ("epsilon",po::value<float>() ,"epsilon-greedy exploration")
       ("bag",po::value<size_t>() ,"bagging-based exploration")
       ("cover",po::value<size_t>() ,"bagging-based exploration");
     
     vm = add_options(all, cb_opts);
+
+    if (!vm.count("cbify"))
+      return NULL;
     
     data->k = (uint32_t)vm["cbify"].as<size_t>();
     

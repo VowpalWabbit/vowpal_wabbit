@@ -1771,6 +1771,7 @@ namespace Search {
 
     po::options_description search_opts("Search Options");
     search_opts.add_options()
+      ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF")
         ("search_task",              po::value<string>(), "the search task (use \"--search_task list\" to get a list of available tasks)")
         ("search_interpolation",     po::value<string>(), "at what level should interpolation happen? [*data|policy]")
         ("search_rollout",           po::value<string>(), "how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_roll|none]")
@@ -1793,7 +1794,7 @@ namespace Search {
 
         ("search_no_caching",                             "turn off the built-in caching ability (makes things slower, but technically more safe)")
         ("search_beam",              po::value<size_t>(), "use beam search (arg = beam size, default 0 = no beam)")
-        ("search_kbest",             po::value<size_t>(), "size of k-best list to produce (must be <= beam size)")
+      ("search_kbest",             po::value<size_t>(), "size of k-best list to produce (must be <= beam size)")
         ;
 
     bool has_hook_task = false;
@@ -1807,6 +1808,9 @@ namespace Search {
 
     vm = add_options(all, search_opts);
  
+    if (!vm.count("search"))
+      return NULL;
+
     std::string task_string;
     std::string interpolation_string = "data";
     std::string rollout_string = "mix_per_state";

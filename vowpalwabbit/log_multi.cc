@@ -503,15 +503,17 @@ namespace LOG_MULTI
   
   learner* setup(vw& all, po::variables_map& vm)	//learner setup
   {
-    log_multi* data = (log_multi*)calloc(1, sizeof(log_multi));
-
-    po::options_description opts("TXM Online options");
+    po::options_description opts("Log Multi options");
     opts.add_options()
+      ("log_multi", po::value<size_t>(), "Use online tree for multiclass")
       ("no_progress", "disable progressive validation")
       ("swap_resistance", po::value<uint32_t>(&(data->swap_resist))->default_value(4), "higher = more resistance to swap, default=4");
-    
     vm = add_options(all, opts);
-    
+    if(!vm.count("log_multi"))
+      return NULL;
+
+    log_multi* data = (log_multi*)calloc(1, sizeof(log_multi));
+
     data->k = (uint32_t)vm["log_multi"].as<size_t>();
     
     //append log_multi with nb_actions to options_from_file so it is saved to regressor later

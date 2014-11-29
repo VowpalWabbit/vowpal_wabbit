@@ -793,7 +793,6 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
     ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
     ("lrqdropout", "use dropout training for low rank quadratic features")
-    ("stage_poly", "use stagewise polynomial feature learning")
     ("active", "enable active learning");
 
   vm = add_options(all, score_mod_opt);
@@ -813,9 +812,6 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
   if (vm.count("lrq"))
     all.l = LRQ::setup(all, vm);
 
-  if (vm.count("stage_poly"))
-    all.l = StagewisePoly::setup(all, vm);
-
   all.l = Scorer::setup(all, vm);
 }
 
@@ -826,68 +822,47 @@ LEARNER::learner* exclusive_setup(vw& all, po::variables_map& vm, bool& score_co
   return setup(all, vm);
 }
 
-void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
+void parse_reductions(vw& all, po::variables_map& vm)
 {
-  po::options_description multiclass_opt("Score user options (these are exclusive)");
-  multiclass_opt.add_options()
-    ("top", po::value<size_t>(), "top k recommendation")
-    ("binary", "report loss as binary classification on -1,1")
-    ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
-    ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
-    ("log_multi", po::value<size_t>(), "Use online tree for multiclass")
-    ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
-    ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
-    ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
-    ;
+  v_array<learner (*setup)(vw& all, po::variables_map& vm)> reduction_stack;
+  
+  reduction_stack.push_back(GD::setup);
+  reduction_stack.push_back(KSVM::setup);
+  reduction_stack.push_back(SENDER::setup);
+  reduction_stack.push_back(GDMF::setup);
+  reduction_stack.push_back(PRINT::setup);
+  reduction_stack.push_back(NOOP::setup);
+  reduction_stack.push_back(LDA::setup);
+  reduction_stack.push_back(BFGS::setup);
+  reduction_stack.push_back(ACTIVE::setup);
+  reduction_stack.push_back(NN::setup);
+  reduction_stack.push_back(MF::setup);
+  reduction_stack.push_back(ALINK::setup);
+  reduction_stack.push_back(LRQ::setup);
+  reduction_stack.push_back(StagewisePoly::setup);
+  reduction_stack.push_back(Scorer::setup);
+  reduction_stack.push_back(BINARY::setup);
+  reduction_stack.push_back(TOPK::setup);
+  reduction_stack.push_back(OAA::setup);
+  reduction_stack.push_back(ECT::setup);
+  reduction_stack.push_back(LOG_MULTI::setup);
+  reduction_stack.push_back(CSOAA::setup);
+  reduction_stack.push_back(CSOAA_AND_WAP_LDF::setup);
+  reduction_stack.push_back(CB_ALGS::setup);
+  reduction_stack.push_back(CBIFY::setup);
+  reduction_stack.push_back(Search::setup);
 
-  vm = add_options(all, multiclass_opt);
-  bool score_consumer = false;
-  
-  if(vm.count("top"))
-    all.l = exclusive_setup(all, vm, score_consumer, TOPK::setup);
-  
-  if (vm.count("binary"))
-    all.l = exclusive_setup(all, vm, score_consumer, BINARY::setup);
-  
-  if (vm.count("oaa")) 
-    all.l = exclusive_setup(all, vm, score_consumer, OAA::setup);
-  
-  if (vm.count("ect")) 
-    all.l = exclusive_setup(all, vm, score_consumer, ECT::setup);
-  
-  if(vm.count("csoaa")) {
-    all.l = exclusive_setup(all, vm, score_consumer, CSOAA::setup);
+  else if(vm.count("csoaa")) {
     all.cost_sensitive = all.l;
-    got_cs = true;
   }
   
-  if(vm.count("log_multi")){
-    all.l = exclusive_setup(all, vm, score_consumer, LOG_MULTI::setup);
-  }
-  
-  if(vm.count("csoaa_ldf") || vm.count("csoaa_ldf")) {
-    all.l = exclusive_setup(all, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
+  else if(vm.count("csoaa_ldf") || vm.count("wap_ldf")) {
     all.cost_sensitive = all.l;
-    got_cs = true;
-  }
-  
-  if(vm.count("wap_ldf") || vm.count("wap_ldf") ) {
-    all.l = exclusive_setup(all, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
-    all.cost_sensitive = all.l;
-    got_cs = true;
   }
 }
 
 void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 {
-  po::options_description cb_opts("Contextual Bandit options");
-    
-  cb_opts.add_options()
-    ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
-    ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve");
-
-  vm = add_options(all,cb_opts);
-  
   if( vm.count("cb"))
     {
       if(!got_cs) {
@@ -899,7 +874,6 @@ void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 	got_cs = true;
       }
       
-      all.l = CB_ALGS::setup(all, vm);
       got_cb = true;
     }
 
@@ -919,19 +893,11 @@ void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 	got_cb = true;
       }
 
-      all.l = CBIFY::setup(all, vm);
     }
 }
 
 void parse_search(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 {
-  po::options_description search_opts("Search");
-    
-  search_opts.add_options()
-      ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF");
-
-  vm = add_options(all,search_opts);
-
   if (vm.count("search")) {
     if (!got_cs && !got_cb) {
       if( vm.count("search") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
@@ -941,7 +907,6 @@ void parse_search(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
       all.cost_sensitive = all.l;
       got_cs = true;
     }
-    all.l = Search::setup(all, vm);
   }
 }
 
@@ -1068,7 +1033,6 @@ vw* parse_args(int argc, char *argv[])
 
   parse_search(*all, vm, got_cs, got_cb);
   
-
   if(vm.count("bootstrap"))
     all->l = BS::setup(*all, vm);
 

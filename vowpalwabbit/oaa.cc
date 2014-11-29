@@ -79,6 +79,13 @@ namespace OAA {
 
   learner* setup(vw& all, po::variables_map& vm)
   {
+    po::options_description oaa_opts("One-against-all options");
+    oaa_opts.add_options()
+      ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels");
+    vm = add_options(all,oaa_opts); 
+    if(!vm.count("oaa"))
+      return NULL;
+    
     oaa* data = (oaa*)calloc_or_die(1, sizeof(oaa));
     //first parse for number of actions
 

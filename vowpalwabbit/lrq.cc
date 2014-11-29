@@ -189,7 +189,9 @@ namespace LRQ {
 
   learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
-    LRQstate* lrq = (LRQstate*) calloc (1, sizeof (LRQstate));
+    
+
+    LRQstate* lrq = (LRQstate*)calloc(1, sizeof (LRQstate));
     unsigned int maxk = 0;
     lrq->all = &all;
 

@@ -656,14 +656,9 @@ namespace StagewisePoly
 
   learner *setup(vw &all, po::variables_map &vm)
   {
-    stagewise_poly *poly = (stagewise_poly *) calloc_or_die(1, sizeof(stagewise_poly));
-    poly->all = &all;
-
-    depthsbits_create(*poly);
-    sort_data_create(*poly);
-
     po::options_description sp_opt("Stagewise poly options");
     sp_opt.add_options()
+      ("stage_poly", "use stagewise polynomial feature learning")
       ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
       ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")
       ("batch_sz_no_doubling", "batch_sz does not double")
@@ -672,6 +667,15 @@ namespace StagewisePoly
 #endif //MAGIC_ARGUMENT
       ;
     vm = add_options(all, sp_opt);
+
+    if (vm.count("stage_poly"))
+      return NULL;
+    
+    stagewise_poly *poly = (stagewise_poly *) calloc_or_die(1, sizeof(stagewise_poly));
+    poly->all = &all;
+
+    depthsbits_create(*poly);
+    sort_data_create(*poly);
 
     poly->sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 1.f;
     poly->batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 1000;
