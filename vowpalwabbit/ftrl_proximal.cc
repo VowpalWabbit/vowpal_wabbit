@@ -260,13 +260,12 @@ namespace FTRL {
     ec.l.simple.prediction = ftrl_predict(*all,ec);
   }
 
-
   learner* setup(vw& all, po::variables_map& vm) {
 
     ftrl* b = (ftrl*)calloc_or_die(1, sizeof(ftrl));
     b->all = &all;
-    b->ftrl_beta = 0.0
-    b->ftrl_alpha = 0.1
+    b->ftrl_beta = 0.0;
+    b->ftrl_alpha = 0.1;
 
     po::options_description ftrl_opts("FTRL options");
 
