@@ -103,10 +103,11 @@ namespace FTRL {
     float fp = ftrl_predict(all, ec);
     ec.final_prediction = fp;
 
-    label_data* ld = (label_data*)ec.ld;
-    all.set_minmax(all.sd, ld->label);
+    //label_data* ld = (label_data*)ec.ld;
+    label_data& ld = ec.l.simple;
+    all.set_minmax(all.sd, ld.label);
 
-    float loss_grad = all.loss->first_derivative(all.sd, fp, ld->label) * ld->weight;
+    float loss_grad = all.loss->first_derivative(all.sd, fp, ld.label) * ld.weight;
 
     size_t mask = all.reg.weight_mask;
     weight* weights = all.reg.weight_vector;
@@ -167,11 +168,12 @@ namespace FTRL {
   }
 
   void evaluate_example(vw& all, ftrl& b , example& ec) {
-    label_data* ld = (label_data*)ec.ld;
-    ec.loss = all.loss->getLoss(all.sd, ec.final_prediction, ld->label) * ld->weight;
+    //label_data* ld = (label_data*)ec.ld;
+    label_data& ld = ec.l.simple;
+    ec.loss = all.loss->getLoss(all.sd, ec.final_prediction, ld.label) * ld.weight;
     if (b.progressive_validation) {
       float v = 1./(1 + exp(-ec.final_prediction));
-      fprintf(b.fo, "%.6f\t%d\n", v, (int)(ld->label * ld->weight));
+      fprintf(b.fo, "%.6f\t%d\n", v, (int)(ld.label * ld.weight));
     }
   }
 
@@ -267,7 +269,8 @@ namespace FTRL {
   void predict(ftrl& b, learner& base, example& ec)
   {
     vw* all = b.all;
-    ((label_data*) ec.ld)->prediction = ftrl_predict(*all,ec);
+    //((label_data*) ec.ld)->prediction = ftrl_predict(*all,ec);
+    ec.l.simple.prediction = ftrl_predict(*all,ec);
   }
 
   //void finish(void* a, void* d) {

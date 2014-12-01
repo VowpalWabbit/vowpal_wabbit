@@ -45,7 +45,6 @@ typedef union {
 
 struct example // core example datatype.
 {
-  void* ld; //Used by ftrl
   polylabel l;
 
   v_array<char> tag;//An identifier for the example.
