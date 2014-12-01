@@ -52,17 +52,6 @@ namespace FTRL {
     bool progressive_validation;
   };
   
-  void reset_state(vw& all) {
-    uint32_t length = 1 << all.num_bits;
-    size_t stride = all.reg.stride_shift;
-    weight* weights = all.reg.weight_vector;
-    for(uint32_t i = 0; i < length; i++, weights += stride) {
-      weights[W_GT] = 0;
-      weights[W_ZT] = 0;
-      weights[W_G2] = 0;
-    }
-  }
-
   void update_accumulated_state(weight* w, float alpha) {
     double ng2 = w[W_G2] + w[W_GT]*w[W_GT];
     double sigma = (sqrt(ng2) - sqrt(w[W_G2]))/ alpha;
@@ -101,7 +90,7 @@ namespace FTRL {
 
   float predict_and_gradient(vw& all, example& ec) {
     float fp = ftrl_predict(all, ec);
-    ec.final_prediction = fp;
+    ec.updated_prediction = fp;
 
     //label_data* ld = (label_data*)ec.ld;
     label_data& ld = ec.l.simple;
@@ -170,9 +159,9 @@ namespace FTRL {
   void evaluate_example(vw& all, ftrl& b , example& ec) {
     //label_data* ld = (label_data*)ec.ld;
     label_data& ld = ec.l.simple;
-    ec.loss = all.loss->getLoss(all.sd, ec.final_prediction, ld.label) * ld.weight;
+    ec.loss = all.loss->getLoss(all.sd, ec.updated_prediction, ld.label) * ld.weight;
     if (b.progressive_validation) {
-      float v = 1./(1 + exp(-ec.final_prediction));
+      float v = 1./(1 + exp(-ec.updated_prediction));
       fprintf(b.fo, "%.6f\t%d\n", v, (int)(ld.label * ld.weight));
     }
   }
