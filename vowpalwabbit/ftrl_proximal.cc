@@ -262,11 +262,7 @@ namespace FTRL {
     ec.l.simple.prediction = ftrl_predict(*all,ec);
   }
 
-  //void finish(void* a, void* d) {
-  void finish(ftrl& b) {
-  }
 
-  
   learner* setup(vw& all, po::variables_map& vm) {
     ftrl* b = (ftrl*)calloc_or_die(1, sizeof(ftrl));
     b->all = &all;
@@ -289,7 +285,6 @@ namespace FTRL {
     l->set_learn<ftrl, learn>();
     l->set_predict<ftrl, predict>();
     l->set_save_load<ftrl,save_load>();
-    l->set_finish<ftrl,finish>();
 
     return l;
   }
