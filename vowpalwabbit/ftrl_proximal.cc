@@ -179,7 +179,7 @@ namespace FTRL {
     update_weight(*all, a, ec);
   }
 
-  void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text) {
+  /*void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text) {
     char buff[512];
 
     int text_len = sprintf(buff, "sum_loss %f\n", all.sd->sum_loss);
@@ -230,7 +230,7 @@ namespace FTRL {
       
       if (!read) { i++; }
     } while ((!read && i < length) || (read && brw >0));  
-  }
+  }*/
 
   void save_load(ftrl& b, io_buf& model_file, bool read, bool text) {
     vw* all = b.all;
@@ -245,7 +245,8 @@ namespace FTRL {
       bin_text_read_write_fixed(model_file,(char *)&resume, sizeof (resume), "", read, buff, text_len, text);
 
       if (resume) {
-        save_load_online_state(*all, model_file, read, text);
+        GD::save_load_online_state(*all, model_file, read, text);
+        //save_load_online_state(*all, model_file, read, text);
       } else {
         GD::save_load_regressor(*all, model_file, read, text);
       }
