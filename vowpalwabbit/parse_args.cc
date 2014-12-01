@@ -565,10 +565,7 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
     ("l1", po::value<float>(&(all.l1_lambda)), "l_1 lambda")
-    ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda")
-    ("ftrl_alpha", po::value<float>(&(all.ftrl_alpha)), "learning rate for ftrl-proximal optimization")
-    ("ftrl_beta", po::value<float>(&(all.ftrl_beta)), "ftrl beta")
-    ("progressive_validation", po::value<string>()->default_value("ftrl.evl"), "file to record progressive validation for ftrl-proximal");
+    ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda");
 
   vm = add_options(all, example_opts);
 
@@ -1063,10 +1060,6 @@ vw* parse_args(int argc, char *argv[])
 	cerr << "decay_learning_rate = " << all->eta_decay_rate << endl;
       if (all->rank > 0)
 	cerr << "rank = " << all->rank << endl;
-      if (all->ftrl) {
-        cerr << "ftrl_alpha = " << all->ftrl_alpha << endl;
-        cerr << "ftrl_beta = " << all->ftrl_beta << endl;
-      }
     }
 
   parse_output_preds(*all, vm);

@@ -46,40 +46,42 @@ namespace FTRL {
 
     vw* all;
     // set by initializer
+    double ftrl_alpha;
+    double ftrl_beta;
 
     // evaluation file pointer
     FILE* fo;
     bool progressive_validation;
   };
   
-  void update_accumulated_state(weight* w, float alpha) {
+  void update_accumulated_state(weight* w, ftrl &b) {
     double ng2 = w[W_G2] + w[W_GT]*w[W_GT];
-    double sigma = (sqrt(ng2) - sqrt(w[W_G2]))/ alpha;
+    double sigma = (sqrt(ng2) - sqrt(w[W_G2]))/ b.ftrl_alpha;
     w[W_ZT] += w[W_GT] - sigma * w[W_XT];
     w[W_G2] = ng2;
   }
 
   // use in gradient prediction
   void quad_grad_update(weight* weights, feature& page_feature, 
-      v_array<feature> &offer_features, size_t mask, float g, float alpha) {
+      v_array<feature> &offer_features, size_t mask, float g, ftrl &b) {
     size_t halfhash = quadratic_constant * page_feature.weight_index;
     float update = g * page_feature.x;
     for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
       w[W_GT] = update * ele->x;
-      update_accumulated_state(w, alpha);
+      update_accumulated_state(w, b);
     }
   }
 
   void cubic_grad_update(weight* weights, feature& f0, feature& f1,
-      v_array<feature> &cross_features, size_t mask, float g, float alpha) {
+      v_array<feature> &cross_features, size_t mask, float g, ftrl &b) {
     size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
     float update = g * f0.x * f1.x;
     for (feature* ele = cross_features.begin; ele != cross_features.end; ele++) {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
       w[W_GT] = update * ele->x;
-      update_accumulated_state(w, alpha);
+      update_accumulated_state(w, b);
     }
   }
 
@@ -88,11 +90,10 @@ namespace FTRL {
     return GD::finalize_prediction(all.sd, ec.partial_prediction);
   }
 
-  float predict_and_gradient(vw& all, example& ec) {
+  float predict_and_gradient(vw& all, ftrl &b, example& ec) {
     float fp = ftrl_predict(all, ec);
     ec.updated_prediction = fp;
 
-    //label_data* ld = (label_data*)ec.ld;
     label_data& ld = ec.l.simple;
     all.set_minmax(all.sd, ld.label);
 
@@ -105,7 +106,7 @@ namespace FTRL {
       for (; f != ec.atomics[*i].end; f++) {
         weight* w = &weights[f->weight_index & mask];
         w[W_GT] = loss_grad * f->x; // += -> =
-        update_accumulated_state(w, all.ftrl_alpha);
+        update_accumulated_state(w, b);
       }
     }
 
@@ -114,7 +115,7 @@ namespace FTRL {
       if (ec.atomics[(int)(*i)[0]].size() > 0) {
         v_array<feature> temp = ec.atomics[(int)(*i)[0]];
         for (; temp.begin != temp.end; temp.begin++)
-          quad_grad_update(weights, *temp.begin, ec.atomics[(int)(*i)[1]], mask, loss_grad, all.ftrl_alpha);
+          quad_grad_update(weights, *temp.begin, ec.atomics[(int)(*i)[1]], mask, loss_grad, b);
       } 
     }
 
@@ -129,7 +130,7 @@ namespace FTRL {
       for (; temp1.begin != temp1.end; temp1.begin++) {
         v_array<feature> temp2 = ec.atomics[(int)(*i)[1]];
         for (; temp2.begin != temp2.end; temp2.begin++)
-          cubic_grad_update(weights, *temp1.begin, *temp2.begin, ec.atomics[(int)(*i)[2]], mask, loss_grad, all.ftrl_alpha);
+          cubic_grad_update(weights, *temp1.begin, *temp2.begin, ec.atomics[(int)(*i)[2]], mask, loss_grad, b);
       }
     }
     return fp;
@@ -137,7 +138,7 @@ namespace FTRL {
 
  inline float sign(float w){ if (w < 0.) return -1.; else  return 1.;}
 
-  void update_weight(vw& all, example& ec) {
+  void update_weight(vw& all, ftrl &b, example& ec) {
     size_t mask = all.reg.weight_mask;
     weight* weights = all.reg.weight_vector;
     for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) {
@@ -149,7 +150,7 @@ namespace FTRL {
         if (fabs_zt <= all.l1_lambda) {
           w[W_XT] = 0.;
         } else {
-          double step = 1/(all.l2_lambda + (all.ftrl_beta + sqrt(w[W_G2]))/all.ftrl_alpha);
+          double step = 1/(all.l2_lambda + (b.ftrl_beta + sqrt(w[W_G2]))/b.ftrl_alpha);
           w[W_XT] = step * flag * (all.l1_lambda - fabs_zt);
         }
       }
@@ -157,7 +158,6 @@ namespace FTRL {
   }
 
   void evaluate_example(vw& all, ftrl& b , example& ec) {
-    //label_data* ld = (label_data*)ec.ld;
     label_data& ld = ec.l.simple;
     ec.loss = all.loss->getLoss(all.sd, ec.updated_prediction, ld.label) * ld.weight;
     if (b.progressive_validation) {
@@ -172,11 +172,11 @@ namespace FTRL {
     assert(ec.in_use);
  
     // predict w*x, compute gradient, update accumulate state
-    predict_and_gradient(*all, ec);
+    predict_and_gradient(*all, a, ec);
     // evaluate, statistic
     evaluate_example(*all, a, ec);
     // update weight
-    update_weight(*all, ec);
+    update_weight(*all, a, ec);
   }
 
   void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text) {
@@ -232,7 +232,6 @@ namespace FTRL {
     } while ((!read && i < length) || (read && brw >0));  
   }
 
-  //void save_load(void* in, void* d, io_buf& model_file, bool read, bool text) {
   void save_load(ftrl& b, io_buf& model_file, bool read, bool text) {
     vw* all = b.all;
     if (read) {
@@ -258,19 +257,34 @@ namespace FTRL {
   void predict(ftrl& b, learner& base, example& ec)
   {
     vw* all = b.all;
-    //((label_data*) ec.ld)->prediction = ftrl_predict(*all,ec);
     ec.l.simple.prediction = ftrl_predict(*all,ec);
   }
 
 
   learner* setup(vw& all, po::variables_map& vm) {
+
     ftrl* b = (ftrl*)calloc_or_die(1, sizeof(ftrl));
     b->all = &all;
+    b->ftrl_beta = 0.0
+    b->ftrl_alpha = 0.1
 
     po::options_description ftrl_opts("FTRL options");
+
+    ftrl_opts.add_options()
+                ("ftrl_alpha", po::value<double>(&(all.ftrl_alpha)), "Learning rate for FTRL-proximal optimization")
+                ("ftrl_beta", po::value<double>(&(all.ftrl_beta)), "FTRL beta")
+                ("progressive_validation", po::value<string>()->default_value("ftrl.evl"), "File to record progressive validation for ftrl-proximal");
+
     vm = add_options(all, ftrl_opts);
-    
-    all.ftrl = true;
+
+    if (vm.count("ftrl_alpha")) {
+        b->ftrl_alpha = vm["ftrl_alpha"].as<double>();
+    }
+
+    if (vm.count("ftrl_beta")) {
+        b->ftrl_beta = vm["ftrl_beta"].as<double>();
+    }
+
     all.reg.stride_shift = 2; // NOTE: for more parameter storage
     
     b->progressive_validation = false;
@@ -279,6 +293,10 @@ namespace FTRL {
       b->fo = fopen(filename.c_str(), "w");
       assert(b->fo != NULL);
       b->progressive_validation = true;
+    }
+
+    if (!all.quiet) {
+        cerr << "enabling FTRL-Proximal based optimization" << endl;
     }
 
     learner* l = new learner(b, 1 << all.reg.stride_shift);

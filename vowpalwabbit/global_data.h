@@ -193,7 +193,6 @@ struct vw {
   float initial_constant;
 
   bool bfgs;
-  bool ftrl;
   bool hessian_on;
   int m;
 
@@ -215,8 +214,6 @@ struct vw {
 
   float l1_lambda; //the level of l_1 regularization to impose.
   float l2_lambda; //the level of l_2 regularization to impose.
-  float ftrl_alpha; //ftrl initial learning rate
-  float ftrl_beta;
   float power_t;//the power on learning rate decay.
   int reg_mode;
 
