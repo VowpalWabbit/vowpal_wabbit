@@ -190,6 +190,13 @@ void finish(mf& o) {
 
 
 learner* setup(vw& all, po::variables_map& vm) {
+  po::options_description MF_opts("MF options");
+  MF_opts.add_options()
+    ("new_mf", po::value<size_t>(), "rank for reduction-based matrix factorization");
+  vm = add_options(all,MF_opts); 
+  if(!vm.count("new_mf"))
+    return NULL;
+  
   mf* data = new mf;
 
   // copy global data locally

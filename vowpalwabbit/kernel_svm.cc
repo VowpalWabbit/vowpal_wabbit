@@ -813,19 +813,9 @@ namespace KSVM
 
 
   LEARNER::learner* setup(vw &all, po::variables_map& vm) {
-    svm_params* params = (svm_params*) calloc(1,sizeof(svm_params));
-    cerr<<"In setup\n";
-
-    params->model = (svm_model*) calloc(1,sizeof(svm_model));
-    params->model->num_support = 0;
-    //params->curcache = 0;
-    params->maxcache = 1024*1024*1024;
-    params->loss_sum = 0.;
-
-    //params->model->maxdelta = 0.;
-    
     po::options_description desc("KSVM options");
     desc.add_options()
+      ("ksvm", "kernel svm")
       ("reprocess", po::value<size_t>(), "number of reprocess steps for LASVM")
       ("active", "do active learning")
       ("active_c", po::value<double>(), "parameter for query prob")
@@ -837,10 +827,23 @@ namespace KSVM
       ("bandwidth", po::value<float>(), "bandwidth of rbf kernel")
       ("degree", po::value<int>(), "degree of poly kernel")
       ("lambda", po::value<double>(), "saving regularization for test time");
-
     vm = add_options(all, desc);
-    
+    if (!vm.count("ksvm"))
+      return NULL;
+    string loss_function = "hinge";
+    float loss_parameter = 0.0;
+    all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
 
+    svm_params* params = (svm_params*) calloc(1,sizeof(svm_params));
+
+    params->model = (svm_model*) calloc(1,sizeof(svm_model));
+    params->model->num_support = 0;
+    //params->curcache = 0;
+    params->maxcache = 1024*1024*1024;
+    params->loss_sum = 0.;
+
+    //params->model->maxdelta = 0.;
+    
     params->all = &all;
     
     if(vm.count("reprocess"))

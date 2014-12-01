@@ -748,6 +748,13 @@ void end_examples(lda& l)
 
 learner* setup(vw&all, po::variables_map& vm)
 {
+  po::options_description lda_opts("Lda options");
+  binary_opts.add_options()
+    ("lda", po::value<uint32_t>(&(all.lda)), "Run lda with <int> topics");
+  vm = add_options(all,lda_opts); 
+  if(!vm.count("lda"))
+    return NULL;
+
   lda* ld = (lda*)calloc_or_die(1,sizeof(lda));
   ld->sorted_features = vector<index_feature>();
   ld->total_lambda_init = 0;

@@ -716,48 +716,8 @@ void parse_output_model(vw& all, po::variables_map& vm)
 
 void parse_base_algorithm(vw& all, po::variables_map& vm)
 {
-  //base learning algorithm.
-  po::options_description base_opt("base algorithms (these are exclusive)");
-  
-  base_opt.add_options()
-    ("sgd", "use regular stochastic gradient descent update.")
-    ("adaptive", "use adaptive, individual learning rates.")
-    ("invariant", "use safe/importance aware updates.")
-    ("normalized", "use per feature normalized updates")
-    ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule")
-    ("bfgs", "use bfgs optimization")
-    ("lda", po::value<uint32_t>(&(all.lda)), "Run lda with <int> topics")
-    ("rank", po::value<uint32_t>(&(all.rank)), "rank for matrix factorization.")
-    ("noop","do no learning")
-    ("print","print examples")
-    ("ksvm", "kernel svm")
-    ("sendto", po::value< vector<string> >(), "send examples to <host>");
-
-  vm = add_options(all, base_opt);
-
-  if (vm.count("bfgs") || vm.count("conjugate_gradient"))
-    all.l = BFGS::setup(all, vm);
-  else if (vm.count("lda"))
-    all.l = LDA::setup(all, vm);
-  else if (vm.count("noop"))
-    all.l = NOOP::setup(all);
-  else if (vm.count("print"))
-    all.l = PRINT::setup(all);
-  else if (all.rank > 0)
-    all.l = GDMF::setup(all, vm);
-  else if (vm.count("sendto"))
-    all.l = SENDER::setup(all, vm, all.pairs);
-  else if (vm.count("ksvm")) {
-    string loss_function = "hinge";
-    float loss_parameter = 0.0;
-    all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
-    all.l = KSVM::setup(all, vm);
-  }
-  else
-    {
-      all.l = GD::setup(all, vm);
+  //      all.l = GD::setup(all, vm);
       all.scorer = all.l;
-    }
 }
 
 void load_input_model(vw& all, po::variables_map& vm, io_buf& io_temp)
@@ -781,45 +741,6 @@ void load_input_model(vw& all, po::variables_map& vm, io_buf& io_temp)
     all.l->save_load(io_temp, true, false);
     io_temp.close_file();
   }
-}
-
-void parse_scorer_reductions(vw& all, po::variables_map& vm)
-{
-  po::options_description score_mod_opt("Score modifying options (can be combined)");
-
-  score_mod_opt.add_options()
-    ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
-    ("new_mf", po::value<size_t>(), "rank for reduction-based matrix factorization")
-    ("autolink", po::value<size_t>(), "create link function with polynomial d")
-    ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
-    ("lrqdropout", "use dropout training for low rank quadratic features")
-    ("active", "enable active learning");
-
-  vm = add_options(all, score_mod_opt);
-
-  if (vm.count("active"))
-    all.l = ACTIVE::setup(all,vm);
-  
-  if(vm.count("nn"))
-    all.l = NN::setup(all, vm);
-  
-  if (vm.count("new_mf"))
-    all.l = MF::setup(all, vm);
-  
-  if(vm.count("autolink"))
-    all.l = ALINK::setup(all, vm);
-  
-  if (vm.count("lrq"))
-    all.l = LRQ::setup(all, vm);
-
-  all.l = Scorer::setup(all, vm);
-}
-
-LEARNER::learner* exclusive_setup(vw& all, po::variables_map& vm, bool& score_consumer, LEARNER::learner* (*setup)(vw&, po::variables_map&))
-{
-  if (score_consumer) { cerr << "error: cannot specify multiple direct score consumers" << endl; throw exception(); }
-  score_consumer = true;
-  return setup(all, vm);
 }
 
 void parse_reductions(vw& all, po::variables_map& vm)
@@ -852,13 +773,11 @@ void parse_reductions(vw& all, po::variables_map& vm)
   reduction_stack.push_back(CBIFY::setup);
   reduction_stack.push_back(Search::setup);
 
-  else if(vm.count("csoaa")) {
+  if(vm.count("csoaa")) 
     all.cost_sensitive = all.l;
-  }
   
-  else if(vm.count("csoaa_ldf") || vm.count("wap_ldf")) {
+  else if(vm.count("csoaa_ldf") || vm.count("wap_ldf")) 
     all.cost_sensitive = all.l;
-  }
 }
 
 void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)

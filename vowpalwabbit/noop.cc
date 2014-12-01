@@ -12,6 +12,13 @@ using namespace LEARNER;
 namespace NOOP {
   learner* setup(vw& all)
   {
+    po::options_description noop_opts("Noop options");
+    binary_opts.add_options()
+      ("noop","do no learning");
+    vm = add_options(all,noop_opts); 
+    if(!vm.count("noop"))
+      return NULL;
+
     return new learner();
   }
 }

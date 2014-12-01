@@ -310,6 +310,14 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
   learner* setup(vw& all, po::variables_map& vm)
   {
+    po::options_description NN_opts("NN options");
+    NN_opts.add_options()
+      ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units");
+    vm = add_options(all,NN_opts); 
+    if(!vm.count("nn"))
+      return NULL;
+    
+
     nn* n = (nn*)calloc_or_die(1,sizeof(nn));
     n->all = &all;
 

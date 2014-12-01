@@ -43,6 +43,13 @@ namespace ALINK {
 
   learner* setup(vw& all, po::variables_map& vm)
   {
+    po::options_description autolink_opts("Autolink options");
+    autolink_opts.add_options()
+      ("autolink", po::value<size_t>(), "create link function with polynomial d");
+    vm = add_options(all,autolink_opts); 
+    if(!vm.count("autolink"))
+      return NULL;
+    
     autolink* data = (autolink*)calloc_or_die(1,sizeof(autolink));
     data->d = (uint32_t)vm["autolink"].as<size_t>();
     data->stride_shift = all.reg.stride_shift;

@@ -967,6 +967,17 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
 learner* setup(vw& all, po::variables_map& vm)
 {
+  po::options_description bfgs_opts("LBFGS options");
+  bfgs_opts.add_options()
+    ("bfgs", "use bfgs optimization")
+    ("conjugate_gradient", "use conjugate gradient based optimization")
+    ("hessian_on", "use second derivative in line search")
+    ("mem", po::value<int>(&(all.m)), "memory in bfgs")
+    ("termination", po::value<float>(&(all.rel_threshold)),"Termination threshold");
+  vm = add_options(all, bfgs_opts);
+  if(!vm.count("bfgs") && !vm.count("conjugate_gradient"))
+    return NULL;
+  
   bfgs* b = (bfgs*)calloc_or_die(1,sizeof(bfgs));
   b->all = &all;
   b->wolfe1_bound = 0.01;
@@ -978,16 +989,6 @@ learner* setup(vw& all, po::variables_map& vm)
   b->final_pass=all.numpasses;  
   b->no_win_counter = 0;
   b->early_stop_thres = 3;
-
-  po::options_description bfgs_opts("LBFGS options");
-
-  bfgs_opts.add_options()
-    ("hessian_on", "use second derivative in line search")
-    ("mem", po::value<int>(&(all.m)), "memory in bfgs")
-    ("conjugate_gradient", "use conjugate gradient based optimization")
-    ("termination", po::value<float>(&(all.rel_threshold)),"Termination threshold");
-
-  vm = add_options(all, bfgs_opts);
 
   if(!all.holdout_set_off)
   {

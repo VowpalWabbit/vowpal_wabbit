@@ -48,6 +48,13 @@ namespace PRINT
   
   learner* setup(vw& all)
   {
+    po::options_description print_opts("Print options");
+    binary_opts.add_options()
+      ("print","print examples");
+    vm = add_options(all,print_opts); 
+    if(!vm.count("print"))
+      return NULL;
+
     print* p = (print*)calloc_or_die(1, sizeof(print));
     p->all = &all;
     size_t length = ((size_t)1) << all.num_bits;
