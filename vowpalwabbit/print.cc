@@ -46,10 +46,10 @@ namespace PRINT
     cout << endl;
   }
   
-  learner* setup(vw& all)
+  learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description print_opts("Print options");
-    binary_opts.add_options()
+    print_opts.add_options()
       ("print","print examples");
     vm = add_options(all,print_opts); 
     if(!vm.count("print"))

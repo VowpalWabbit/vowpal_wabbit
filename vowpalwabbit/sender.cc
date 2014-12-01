@@ -100,10 +100,10 @@ void end_examples(sender& s)
     delete s.buf;
   }
 
-learner* setup(vw& all, po::variables_map& vm, vector<string> pairs)
+learner* setup(vw& all, po::variables_map& vm)
 {
   po::options_description sendto_opts("Sender options");
-  binary_opts.add_options()
+  sendto_opts.add_options()
     ("sendto", po::value< vector<string> >(), "send examples to <host>");
   vm = add_options(all,sendto_opts); 
   if(!vm.count("sendto"))

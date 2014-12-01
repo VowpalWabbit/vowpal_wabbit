@@ -96,6 +96,7 @@ namespace CSOAA {
     l->set_learn<csoaa, predict_or_learn<true> >();
     l->set_predict<csoaa, predict_or_learn<false> >();
     l->set_finish_example<csoaa,finish_example>();
+    all.cost_sensitive = all.l;
     return l;
   }
 }
@@ -779,6 +780,7 @@ namespace LabelDict {
     l->set_finish<ldf,finish>();
     l->set_end_examples<ldf,end_examples>(); 
     l->set_end_pass<ldf,end_pass>();
+    all.cost_sensitive = all.l;
     return l;
   }
 

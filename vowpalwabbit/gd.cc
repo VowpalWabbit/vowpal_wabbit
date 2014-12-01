@@ -849,7 +849,7 @@ learner* setup(vw& all, po::variables_map& vm)
     ("invariant", "use safe/importance aware updates.")
     ("normalized", "use per feature normalized updates")
     ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule");
-  vm = add_options(all, active_opts);  
+  vm = add_options(all, gd_opts);  
 
   gd* g = (gd*)calloc_or_die(1, sizeof(gd));
   g->all = &all;

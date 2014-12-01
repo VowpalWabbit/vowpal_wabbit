@@ -291,7 +291,7 @@ void mf_train(vw& all, example& ec)
   learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description gdmf_opts("Gdmf options");
-    binary_opts.add_options()
+    gdmf_opts.add_options()
       ("rank", po::value<uint32_t>(&(all.rank)), "rank for matrix factorization.");
     vm = add_options(all,gdmf_opts); 
     if(!vm.count("gdmf"))

@@ -507,7 +507,7 @@ namespace LOG_MULTI
     opts.add_options()
       ("log_multi", po::value<size_t>(), "Use online tree for multiclass")
       ("no_progress", "disable progressive validation")
-      ("swap_resistance", po::value<uint32_t>(&(data->swap_resist))->default_value(4), "higher = more resistance to swap, default=4");
+      ("swap_resistance", po::value<uint32_t>(), "higher = more resistance to swap, default=4");
     vm = add_options(all, opts);
     if(!vm.count("log_multi"))
       return NULL;
@@ -515,6 +515,10 @@ namespace LOG_MULTI
     log_multi* data = (log_multi*)calloc(1, sizeof(log_multi));
 
     data->k = (uint32_t)vm["log_multi"].as<size_t>();
+    data->swap_resist = 4;
+
+    if (vm.count("swap_resistance"))
+      data->swap_resist = vm["swap_resistance"].as<uint32_t>();
     
     //append log_multi with nb_actions to options_from_file so it is saved to regressor later
     std::stringstream ss;

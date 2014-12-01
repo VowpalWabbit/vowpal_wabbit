@@ -5,5 +5,5 @@ license as described in the file LICENSE.
 */
 #pragma once
 namespace NOOP {
-  LEARNER::learner* setup(vw&);
+  LEARNER::learner* setup(vw& all, po::variables_map& vm);
 }

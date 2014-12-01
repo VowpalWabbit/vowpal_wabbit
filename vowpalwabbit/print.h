@@ -5,5 +5,5 @@ license as described in the file LICENSE.
  */
 #pragma once
 namespace PRINT {
-  LEARNER::learner* setup(vw& all);
+  LEARNER::learner* setup(vw& all, po::variables_map& vm);
 }

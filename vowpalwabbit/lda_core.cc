@@ -749,8 +749,13 @@ void end_examples(lda& l)
 learner* setup(vw&all, po::variables_map& vm)
 {
   po::options_description lda_opts("Lda options");
-  binary_opts.add_options()
-    ("lda", po::value<uint32_t>(&(all.lda)), "Run lda with <int> topics");
+  lda_opts.add_options()
+    ("lda", po::value<uint32_t>(&(all.lda)), "Run lda with <int> topics")
+    ("lda_alpha", po::value<float>(&all.lda_alpha), "Prior on sparsity of per-document topic weights")
+    ("lda_rho", po::value<float>(&all.lda_rho), "Prior on sparsity of topic distributions")
+    ("lda_D", po::value<float>(&all.lda_D), "Number of documents")
+    ("lda_epsilon", po::value<float>(&all.lda_epsilon), "Loop convergence threshold")
+    ("minibatch", po::value<size_t>(&all.minibatch), "Minibatch size, for LDA");
   vm = add_options(all,lda_opts); 
   if(!vm.count("lda"))
     return NULL;
@@ -760,16 +765,6 @@ learner* setup(vw&all, po::variables_map& vm)
   ld->total_lambda_init = 0;
   ld->all = &all;
   ld->example_t = all.initial_t;
-
-  po::options_description lda_opts("LDA options");
-  lda_opts.add_options()
-    ("lda_alpha", po::value<float>(&all.lda_alpha), "Prior on sparsity of per-document topic weights")
-    ("lda_rho", po::value<float>(&all.lda_rho), "Prior on sparsity of topic distributions")
-    ("lda_D", po::value<float>(&all.lda_D), "Number of documents")
-    ("lda_epsilon", po::value<float>(&all.lda_epsilon), "Loop convergence threshold")
-    ("minibatch", po::value<size_t>(&all.minibatch), "Minibatch size, for LDA");
-
-  vm = add_options(all, lda_opts);
 
   float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
   all.reg.stride_shift = (size_t)temp;

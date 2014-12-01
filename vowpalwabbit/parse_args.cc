@@ -745,8 +745,9 @@ void load_input_model(vw& all, po::variables_map& vm, io_buf& io_temp)
 
 void parse_reductions(vw& all, po::variables_map& vm)
 {
-  v_array<learner (*setup)(vw& all, po::variables_map& vm)> reduction_stack;
-  
+  v_array<LEARNER::learner* (*)(vw& all, po::variables_map& vm)> reduction_stack;
+
+  //Base algorithms
   reduction_stack.push_back(GD::setup);
   reduction_stack.push_back(KSVM::setup);
   reduction_stack.push_back(SENDER::setup);
@@ -755,6 +756,8 @@ void parse_reductions(vw& all, po::variables_map& vm)
   reduction_stack.push_back(NOOP::setup);
   reduction_stack.push_back(LDA::setup);
   reduction_stack.push_back(BFGS::setup);
+
+  //Score Users
   reduction_stack.push_back(ACTIVE::setup);
   reduction_stack.push_back(NN::setup);
   reduction_stack.push_back(MF::setup);
@@ -762,6 +765,8 @@ void parse_reductions(vw& all, po::variables_map& vm)
   reduction_stack.push_back(LRQ::setup);
   reduction_stack.push_back(StagewisePoly::setup);
   reduction_stack.push_back(Scorer::setup);
+
+  //Reductions
   reduction_stack.push_back(BINARY::setup);
   reduction_stack.push_back(TOPK::setup);
   reduction_stack.push_back(OAA::setup);
@@ -772,12 +777,6 @@ void parse_reductions(vw& all, po::variables_map& vm)
   reduction_stack.push_back(CB_ALGS::setup);
   reduction_stack.push_back(CBIFY::setup);
   reduction_stack.push_back(Search::setup);
-
-  if(vm.count("csoaa")) 
-    all.cost_sensitive = all.l;
-  
-  else if(vm.count("csoaa_ldf") || vm.count("wap_ldf")) 
-    all.cost_sensitive = all.l;
 }
 
 void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
@@ -789,7 +788,6 @@ void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
 	
 	all.l = CSOAA::setup(all, vm);  // default to CSOAA unless wap is specified
-	all.cost_sensitive = all.l;
 	got_cs = true;
       }
       
@@ -802,7 +800,6 @@ void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 	vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
 	
 	all.l = CSOAA::setup(all, vm);  // default to CSOAA unless wap is specified
-	all.cost_sensitive = all.l;
 	got_cs = true;
       }
       
@@ -811,7 +808,6 @@ void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 	all.l = CB_ALGS::setup(all, vm);
 	got_cb = true;
       }
-
     }
 }
 
@@ -823,7 +819,6 @@ void parse_search(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
       
       all.l = CSOAA::setup(all, vm);  // default to CSOAA unless others have been specified
-      all.cost_sensitive = all.l;
       got_cs = true;
     }
   }
@@ -940,12 +935,8 @@ vw* parse_args(int argc, char *argv[])
 
   parse_output_preds(*all, vm);
 
-  parse_scorer_reductions(*all, vm);
-
   bool got_cs = false;
   
-  parse_score_users(*all, vm, got_cs);
-
   bool got_cb = false;
   
   parse_cb(*all, vm, got_cs, got_cb);
