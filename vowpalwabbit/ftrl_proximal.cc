@@ -245,7 +245,7 @@ namespace FTRL {
       bin_text_read_write_fixed(model_file,(char *)&resume, sizeof (resume), "", read, buff, text_len, text);
 
       if (resume) {
-        GD::save_load_online_state(all, model_file, read, text);
+        GD::save_load_online_state(*all, model_file, read, text);
         //save_load_online_state(*all, model_file, read, text);
       } else {
         GD::save_load_regressor(*all, model_file, read, text);
