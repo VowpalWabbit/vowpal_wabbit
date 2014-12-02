@@ -271,8 +271,8 @@ namespace FTRL {
     po::options_description ftrl_opts("FTRL options");
 
     ftrl_opts.add_options()
-                ("ftrl_alpha", po::value<double>(&(all.ftrl_alpha)), "Learning rate for FTRL-proximal optimization")
-                ("ftrl_beta", po::value<double>(&(all.ftrl_beta)), "FTRL beta")
+                ("ftrl_alpha", po::value<double>(&(b->ftrl_alpha)), "Learning rate for FTRL-proximal optimization")
+                ("ftrl_beta", po::value<double>(&(b->ftrl_beta)), "FTRL beta")
                 ("progressive_validation", po::value<string>()->default_value("ftrl.evl"), "File to record progressive validation for ftrl-proximal");
 
     vm = add_options(all, ftrl_opts);
@@ -296,7 +296,9 @@ namespace FTRL {
     }
 
     if (!all.quiet) {
-        cerr << "enabling FTRL-Proximal based optimization" << endl;
+        cerr << "Enabling FTRL-Proximal based optimization" << endl;
+        cerr << "ftrl_alpha = " << b->ftrl_alpha << endl;
+        cerr << "ftrl_beta = " << b->ftrl_beta << endl;
     }
 
     learner* l = new learner(b, 1 << all.reg.stride_shift);
