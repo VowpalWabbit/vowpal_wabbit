@@ -187,17 +187,13 @@ namespace LRQ {
       }
   }
 
-  po::options_description options()
-  {
+  learner* setup(vw& all, po::variables_map& vm)
+  {//parse and set arguments
     po::options_description opts("Lrq options");
     opts.add_options()
       ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
       ("lrqdropout", "use dropout training for low rank quadratic features");
-    return opts;
-  }
-
-  learner* setup(vw& all, po::variables_map& vm)
-  {//parse and set arguments
+    vm = add_options(all, opts);
     if(!vm.count("lrq"))
       return NULL;
 

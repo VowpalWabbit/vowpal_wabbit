@@ -11,6 +11,5 @@ license as described in the file LICENSE.
 #include "gd.h"
 
 namespace GDMF{
-  po::options_description options();
   LEARNER::learner* setup(vw& all, po::variables_map& vm);
 }

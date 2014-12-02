@@ -10,16 +10,12 @@ license as described in the file LICENSE.
 using namespace LEARNER;
 
 namespace NOOP {
-  po::options_description options()
+  learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description opts("Noop options");
     opts.add_options()
       ("noop","do no learning");
-    return opts;
-  }
-
-  learner* setup(vw& all, po::variables_map& vm)
-  {
+    add_options(all, opts);
     if(!vm.count("noop"))
       return NULL;
 

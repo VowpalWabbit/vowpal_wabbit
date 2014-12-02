@@ -68,16 +68,12 @@ namespace CSOAA {
     VW::finish_example(all, &ec);
   }
 
-  po::options_description options()
+  learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description opts("CSOAA options");
     opts.add_options()
       ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs");
-    return opts;
-  }
-
-  learner* setup(vw& all, po::variables_map& vm)
-  {
+    vm = add_options(all, opts);
     if(!vm.count("csoaa"))
       return NULL;
 
@@ -706,18 +702,14 @@ namespace LabelDict {
     }
   }
 
-  po::options_description options()
+  learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description opts("LDF Options");
     opts.add_options()
       ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
       ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
       ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file");
-    return opts;
-  }
-
-  learner* setup(vw& all, po::variables_map& vm)
-  {
+    vm = add_options(all, opts);
     if(!vm.count("csoaa_ldf") && !vm.count("wap_ldf"))
       return NULL;
     

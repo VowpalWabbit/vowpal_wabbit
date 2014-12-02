@@ -811,8 +811,7 @@ namespace KSVM
     cerr<<"Done with finish \n";
   }
 
-  po::options_description options()
-  {
+  LEARNER::learner* setup(vw &all, po::variables_map& vm) {
     po::options_description opts("KSVM options");
     opts.add_options()
       ("ksvm", "kernel svm")
@@ -827,11 +826,7 @@ namespace KSVM
       ("bandwidth", po::value<float>(), "bandwidth of rbf kernel")
       ("degree", po::value<int>(), "degree of poly kernel")
       ("lambda", po::value<double>(), "saving regularization for test time");
-    return opts;
-  }
-
-
-  LEARNER::learner* setup(vw &all, po::variables_map& vm) {
+    vm = add_options(all, opts);
     if (!vm.count("ksvm"))
       return NULL;
     string loss_function = "hinge";

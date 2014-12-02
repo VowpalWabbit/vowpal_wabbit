@@ -6,8 +6,6 @@ license as described in the file LICENSE.
 #pragma once
 //TODO: extend to handle CSOAA_LDF and WAP_LDF
 namespace CB_ALGS {
-
-  po::options_description options();
   LEARNER::learner* setup(vw& all, po::variables_map& vm);
   
   template <bool is_learn>

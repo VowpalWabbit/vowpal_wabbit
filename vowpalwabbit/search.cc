@@ -1763,8 +1763,7 @@ namespace Search {
     delete[] cstr;
   }
 
-  po::options_description options()
-  {
+  learner* setup(vw&all, po::variables_map& vm) {
     po::options_description opts("Search Options");
     opts.add_options()
       ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF")
@@ -1792,11 +1791,7 @@ namespace Search {
       ("search_beam",              po::value<size_t>(), "use beam search (arg = beam size, default 0 = no beam)")
       ("search_kbest",             po::value<size_t>(), "size of k-best list to produce (must be <= beam size)")
       ;
-
-    return opts;
-  }
-  
-  learner* setup(vw&all, po::variables_map& vm) {
+    vm = add_options(all, opts);
     if (!vm.count("search"))
       return NULL;
     

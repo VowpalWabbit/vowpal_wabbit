@@ -377,6 +377,11 @@ namespace CBIFY {
 
   po::options_description options()
   {
+    return opts;
+  }
+
+  learner* setup(vw& all, po::variables_map& vm)
+  {//parse and set arguments
     po::options_description opts("CBIFY options");
     opts.add_options()
       ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve")
@@ -384,12 +389,7 @@ namespace CBIFY {
       ("epsilon",po::value<float>() ,"epsilon-greedy exploration")
       ("bag",po::value<size_t>() ,"bagging-based exploration")
       ("cover",po::value<size_t>() ,"bagging-based exploration");
-   
-    return opts;
-  }
-
-  learner* setup(vw& all, po::variables_map& vm)
-  {//parse and set arguments
+    vm = add_options(all, opts);
     if (!vm.count("cbify"))
       return NULL;
     

@@ -842,18 +842,19 @@ uint32_t ceil_log_2(uint32_t v)
 
   po::options_description options()
   {
-    po::options_description opts("Gradient Descent options");
-    opts.add_options()
-      ("sgd", "use regular stochastic gradient descent update.")
-      ("adaptive", "use adaptive, individual learning rates.")
-      ("invariant", "use safe/importance aware updates.")
-      ("normalized", "use per feature normalized updates")
-      ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule");
     return opts;
   }
 
 learner* setup(vw& all, po::variables_map& vm)
 {
+  po::options_description opts("Gradient Descent options");
+  opts.add_options()
+    ("sgd", "use regular stochastic gradient descent update.")
+    ("adaptive", "use adaptive, individual learning rates.")
+    ("invariant", "use safe/importance aware updates.")
+    ("normalized", "use per feature normalized updates")
+    ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule");
+  vm = add_options(all, opts);
   gd* g = (gd*)calloc_or_die(1, sizeof(gd));
   g->all = &all;
   g->normalized_sum_norm_x = 0;

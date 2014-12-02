@@ -10,7 +10,6 @@ namespace PRINT
 {
   struct print{
     vw* all;
-    
   };
 
   void print_feature(vw& all, float value, float& weight)
@@ -46,16 +45,12 @@ namespace PRINT
     cout << endl;
   }
 
-  po::options_description options()
+  learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description opts("Print options");
     opts.add_options()
       ("print","print examples");
-    return opts;
-  }  
-
-  learner* setup(vw& all, po::variables_map& vm)
-  {
+    vm = add_options(all, opts);
     if(!vm.count("print"))
       return NULL;
 

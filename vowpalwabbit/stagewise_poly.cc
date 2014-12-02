@@ -655,6 +655,11 @@ namespace StagewisePoly
 
   po::options_description options()
   {
+    return sp_opt;
+  }
+
+  learner *setup(vw &all, po::variables_map &vm)
+  {
     po::options_description sp_opt("Stagewise poly options");
     sp_opt.add_options()
       ("stage_poly", "use stagewise polynomial feature learning")
@@ -665,11 +670,7 @@ namespace StagewisePoly
       ("magic_argument", po::value<float>(), "magical feature flag")
 #endif //MAGIC_ARGUMENT
       ;
-    return sp_opt;
-  }
-
-  learner *setup(vw &all, po::variables_map &vm)
-  {
+    vm = add_options(all, opts);
     if (vm.count("stage_poly"))
       return NULL;
     

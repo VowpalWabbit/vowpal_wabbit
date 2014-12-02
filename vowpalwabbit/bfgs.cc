@@ -970,18 +970,19 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
   po::options_description options()
   {
-    po::options_description opts("LBFGS options");
-    opts.add_options()
-      ("bfgs", "use bfgs optimization")
-      ("conjugate_gradient", "use conjugate gradient based optimization")
-      ("hessian_on", "use second derivative in line search")
-      ("mem", po::value<uint32_t>()->default_value(15), "memory in bfgs")
-      ("termination", po::value<float>()->default_value(0.001f),"Termination threshold");
     return opts;
   }
 
 learner* setup(vw& all, po::variables_map& vm)
 {
+  po::options_description opts("LBFGS options");
+  opts.add_options()
+    ("bfgs", "use bfgs optimization")
+    ("conjugate_gradient", "use conjugate gradient based optimization")
+    ("hessian_on", "use second derivative in line search")
+    ("mem", po::value<uint32_t>()->default_value(15), "memory in bfgs")
+    ("termination", po::value<float>()->default_value(0.001f),"Termination threshold");
+  vm = add_options(all, opts);
   if(!vm.count("bfgs") && !vm.count("conjugate_gradient"))
     return NULL;
   

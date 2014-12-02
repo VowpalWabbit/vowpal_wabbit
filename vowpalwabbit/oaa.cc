@@ -76,16 +76,12 @@ namespace OAA {
     VW::finish_example(all, &ec);
   }
 
-  po::options_description options()
+  learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description opts("One-against-all options");
     opts.add_options()
       ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels");
-    return opts;
-  }
-  
-  learner* setup(vw& all, po::variables_map& vm)
-  {
+    vm = add_options(all, opts);
     if(!vm.count("oaa"))
       return NULL;
     

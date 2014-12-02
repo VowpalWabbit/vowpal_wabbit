@@ -188,15 +188,11 @@ void finish(mf& o) {
   o.sub_predictions.delete_v();
 }
 
-  po::options_description options()
-  {
+  learner* setup(vw& all, po::variables_map& vm) {
     po::options_description opts("MF options");
     opts.add_options()
       ("new_mf", po::value<size_t>(), "rank for reduction-based matrix factorization");
-    return opts;
-  }
-
-  learner* setup(vw& all, po::variables_map& vm) {
+    vm = add_options(all, opts);
     if(!vm.count("new_mf"))
       return NULL;
     

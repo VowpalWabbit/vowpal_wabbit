@@ -753,7 +753,7 @@ void end_examples(lda& l)
     ld.v.delete_v();
   }
 
-  po::options_description options()
+  learner* setup(vw&all, po::variables_map& vm)
   {
     po::options_description opts("Lda options");
     opts.add_options()
@@ -763,62 +763,58 @@ void end_examples(lda& l)
       ("lda_D", po::value<float>()->default_value(10000.), "Number of documents")
       ("lda_epsilon", po::value<float>()->default_value(0.001f), "Loop convergence threshold")
       ("minibatch", po::value<size_t>()->default_value(1), "Minibatch size, for LDA");
-    return opts;
-  }
-  
-  learner* setup(vw&all, po::variables_map& vm)
-{
-  if(!vm.count("lda"))
-    return NULL;
-  else
-    all.lda = vm["lda"].as<uint32_t>();
-
-  lda* ld = (lda*)calloc_or_die(1,sizeof(lda));
-
-  ld->lda = all.lda;
-  ld->lda_alpha = vm["lda_alpha"].as<float>();
-  ld->lda_rho = vm["lda_rho"].as<float>();
-  ld->lda_D = vm["lda_D"].as<float>();
-  ld->lda_epsilon = vm["lda_epsilon"].as<float>();
-  ld->minibatch = vm["minibatch"].as<size_t>();
-  ld->sorted_features = vector<index_feature>();
-  ld->total_lambda_init = 0;
-  ld->all = &all;
-  ld->example_t = all.initial_t;
-
-  float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
-  all.reg.stride_shift = (size_t)temp;
-  all.random_weights = true;
-  all.add_constant = false;
-
-  std::stringstream ss;
-  ss << " --lda " << all.lda;
-  all.file_options.append(ss.str());
-
-  if (all.eta > 1.)
-    {
-      cerr << "your learning rate is too high, setting it to 1" << endl;
-      all.eta = min(all.eta,1.f);
+    vm = add_options(all, opts);
+    if(!vm.count("lda"))
+      return NULL;
+    else
+      all.lda = vm["lda"].as<uint32_t>();
+    
+    lda* ld = (lda*)calloc_or_die(1,sizeof(lda));
+    
+    ld->lda = all.lda;
+    ld->lda_alpha = vm["lda_alpha"].as<float>();
+    ld->lda_rho = vm["lda_rho"].as<float>();
+    ld->lda_D = vm["lda_D"].as<float>();
+    ld->lda_epsilon = vm["lda_epsilon"].as<float>();
+    ld->minibatch = vm["minibatch"].as<size_t>();
+    ld->sorted_features = vector<index_feature>();
+    ld->total_lambda_init = 0;
+    ld->all = &all;
+    ld->example_t = all.initial_t;
+    
+    float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
+    all.reg.stride_shift = (size_t)temp;
+    all.random_weights = true;
+    all.add_constant = false;
+    
+    std::stringstream ss;
+    ss << " --lda " << all.lda;
+    all.file_options.append(ss.str());
+    
+    if (all.eta > 1.)
+      {
+	cerr << "your learning rate is too high, setting it to 1" << endl;
+	all.eta = min(all.eta,1.f);
+      }
+    
+    if (vm.count("minibatch")) {
+      size_t minibatch2 = next_pow2(ld->minibatch);
+      all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
     }
-
-  if (vm.count("minibatch")) {
-    size_t minibatch2 = next_pow2(ld->minibatch);
-    all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
+    
+    ld->v.resize(all.lda*ld->minibatch);
+    
+    ld->decay_levels.push_back(0.f);
+    
+    learner* l = new learner(ld, 1 << all.reg.stride_shift);
+    l->set_learn<lda,learn>();
+    l->set_predict<lda,predict>();
+    l->set_save_load<lda,save_load>();
+    l->set_finish_example<lda,finish_example>();
+    l->set_end_examples<lda,end_examples>();  
+    l->set_end_pass<lda,end_pass>();  
+    l->set_finish<lda,finish>();
+    
+    return l;
   }
-  
-  ld->v.resize(all.lda*ld->minibatch);
-  
-  ld->decay_levels.push_back(0.f);
-
-  learner* l = new learner(ld, 1 << all.reg.stride_shift);
-  l->set_learn<lda,learn>();
-  l->set_predict<lda,predict>();
-  l->set_save_load<lda,save_load>();
-  l->set_finish_example<lda,finish_example>();
-  l->set_end_examples<lda,end_examples>();  
-  l->set_end_pass<lda,end_pass>();  
-  l->set_finish<lda,finish>();
-  
-  return l;
-}
 }

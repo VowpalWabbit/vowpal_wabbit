@@ -41,16 +41,12 @@ namespace ALINK {
     ec.total_sum_feat_sq -= sum_sq;
   }
 
-  po::options_description options()
-  {
-    po::options_description opts("Autolink options");
-    opts.add_options()
-      ("autolink", po::value<size_t>(), "create link function with polynomial d");
-    return opts;
-  }
-  
   learner* setup(vw& all, po::variables_map& vm)
   {
+    po::options_description opts("Autolink options");
+    opts.add_options(all,opts);
+      ("autolink", po::value<size_t>(), "create link function with polynomial d");
+    vm = add_options(all,opts);
     if(!vm.count("autolink"))
       return NULL;
     
