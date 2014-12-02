@@ -547,9 +547,9 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
 
 void parse_example_tweaks(vw& all, po::variables_map& vm)
 {
-  po::options_description example_opts("Example options");
+  po::options_description opts("Example options");
   
-  example_opts.add_options()
+  opts.add_options()
     ("testonly,t", "Ignore label information and just test")
     ("holdout_off", "no holdout data in multiple passes")
     ("holdout_period", po::value<uint32_t>(&(all.holdout_period)), "holdout period for test only, default 10")
@@ -566,7 +566,7 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
     ("l1", po::value<float>(&(all.l1_lambda)), "l_1 lambda")
     ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda");
 
-  vm = add_options(all, example_opts);
+  vm = add_options(all, opts);
 
   if (vm.count("testonly") || all.eta == 0.)
     {
@@ -743,40 +743,49 @@ void load_input_model(vw& all, po::variables_map& vm, io_buf& io_temp)
   }
 }
 
+LEARNER::learner* setup_base(vw& all, po::variables_map& vm)
+{
+  LEARNER::learner* ret = all.reduction_stack.pop()(all,vm);
+  if (ret == NULL)
+    return setup_next(all,vm);
+  else 
+    return ret;
+}
+
 void parse_reductions(vw& all, po::variables_map& vm)
 {
-  v_array<LEARNER::learner* (*)(vw& all, po::variables_map& vm)> reduction_stack;
-
   //Base algorithms
-  reduction_stack.push_back(GD::setup);
-  reduction_stack.push_back(KSVM::setup);
-  reduction_stack.push_back(SENDER::setup);
-  reduction_stack.push_back(GDMF::setup);
-  reduction_stack.push_back(PRINT::setup);
-  reduction_stack.push_back(NOOP::setup);
-  reduction_stack.push_back(LDA::setup);
-  reduction_stack.push_back(BFGS::setup);
+  all.reduction_stack.push_back(GD::setup);
+  all.reduction_stack.push_back(KSVM::setup);
+  all.reduction_stack.push_back(SENDER::setup);
+  all.reduction_stack.push_back(GDMF::setup);
+  all.reduction_stack.push_back(PRINT::setup);
+  all.reduction_stack.push_back(NOOP::setup);
+  all.reduction_stack.push_back(LDA::setup);
+  all.reduction_stack.push_back(BFGS::setup);
 
   //Score Users
-  reduction_stack.push_back(ACTIVE::setup);
-  reduction_stack.push_back(NN::setup);
-  reduction_stack.push_back(MF::setup);
-  reduction_stack.push_back(ALINK::setup);
-  reduction_stack.push_back(LRQ::setup);
-  reduction_stack.push_back(StagewisePoly::setup);
-  reduction_stack.push_back(Scorer::setup);
+  all.reduction_stack.push_back(ACTIVE::setup);
+  all.reduction_stack.push_back(NN::setup);
+  all.reduction_stack.push_back(MF::setup);
+  all.reduction_stack.push_back(ALINK::setup);
+  all.reduction_stack.push_back(LRQ::setup);
+  all.reduction_stack.push_back(StagewisePoly::setup);
+  all.reduction_stack.push_back(Scorer::setup);
 
   //Reductions
-  reduction_stack.push_back(BINARY::setup);
-  reduction_stack.push_back(TOPK::setup);
-  reduction_stack.push_back(OAA::setup);
-  reduction_stack.push_back(ECT::setup);
-  reduction_stack.push_back(LOG_MULTI::setup);
-  reduction_stack.push_back(CSOAA::setup);
-  reduction_stack.push_back(CSOAA_AND_WAP_LDF::setup);
-  reduction_stack.push_back(CB_ALGS::setup);
-  reduction_stack.push_back(CBIFY::setup);
-  reduction_stack.push_back(Search::setup);
+  all.reduction_stack.push_back(BINARY::setup);
+  all.reduction_stack.push_back(TOPK::setup);
+  all.reduction_stack.push_back(OAA::setup);
+  all.reduction_stack.push_back(ECT::setup);
+  all.reduction_stack.push_back(LOG_MULTI::setup);
+  all.reduction_stack.push_back(CSOAA::setup);
+  all.reduction_stack.push_back(CSOAA_AND_WAP_LDF::setup);
+  all.reduction_stack.push_back(CB_ALGS::setup);
+  all.reduction_stack.push_back(CBIFY::setup);
+  all.reduction_stack.push_back(Search::setup);
+
+  all.l = setup_base(all,vm);
 }
 
 void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
@@ -809,19 +818,6 @@ void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 	got_cb = true;
       }
     }
-}
-
-void parse_search(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
-{
-  if (vm.count("search")) {
-    if (!got_cs && !got_cb) {
-      if( vm.count("search") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
-      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
-      
-      all.l = CSOAA::setup(all, vm);  // default to CSOAA unless others have been specified
-      got_cs = true;
-    }
-  }
 }
 
 void add_to_args(vw& all, int argc, char* argv[])
@@ -941,8 +937,6 @@ vw* parse_args(int argc, char *argv[])
   
   parse_cb(*all, vm, got_cs, got_cb);
 
-  parse_search(*all, vm, got_cs, got_cb);
-  
   if(vm.count("bootstrap"))
     all->l = BS::setup(*all, vm);
 

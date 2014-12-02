@@ -111,12 +111,16 @@ namespace TOPK {
     VW::finish_example(all, &ec);
   }
 
+  po::options_description options()
+  {
+    po::options_description opts("TOP K options");
+    opts.add_options()
+      ("top", po::value<size_t>(), "top k recommendation");
+    return opts;
+  }
+
   learner* setup(vw& all, po::variables_map& vm)
   {
-    po::options_description topk_opts("TOP K options");
-    topk_opts.add_options()
-      ("top", po::value<size_t>(), "top k recommendation");
-    vm = add_options(all,topk_opts); 
     if(!vm.count("top"))
       return NULL;
 

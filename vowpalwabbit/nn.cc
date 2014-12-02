@@ -308,26 +308,24 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     free (n.output_layer.atomics[nn_output_namespace].begin);
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
+  po::options_description options()
   {
-    po::options_description NN_opts("NN options");
-    NN_opts.add_options()
-      ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units");
-    vm = add_options(all,NN_opts); 
-    if(!vm.count("nn"))
-      return NULL;
-    
-
-    nn* n = (nn*)calloc_or_die(1,sizeof(nn));
-    n->all = &all;
-
-    po::options_description nn_opts("NN options");
-    nn_opts.add_options()
+    po::options_description opts("NN options");
+    opts.add_options()
+      ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
       ("inpass", "Train or test sigmoidal feedforward network with input passthrough.")
       ("dropout", "Train or test sigmoidal feedforward network using dropout.")
       ("meanfield", "Train or test sigmoidal feedforward network using mean field.");
+    return opts;
+  }
 
-    vm = add_options(all, nn_opts);
+  learner* setup(vw& all, po::variables_map& vm)
+  {
+    if(!vm.count("nn"))
+      return NULL;
+
+    nn* n = (nn*)calloc_or_die(1,sizeof(nn));
+    n->all = &all;
 
     //first parse for number of hidden units
     n->k = (uint32_t)vm["nn"].as<size_t>();

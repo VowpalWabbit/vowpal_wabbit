@@ -375,24 +375,26 @@ namespace CBIFY {
     CB::cb_label.delete_label(&data.cb_label);
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
-  {//parse and set arguments
-    cbify* data = (cbify*)calloc_or_die(1, sizeof(cbify));
-
-    data->all = &all;
-    po::options_description cb_opts("CBIFY options");
-    cb_opts.add_options()
+  po::options_description options()
+  {
+    po::options_description opts("CBIFY options");
+    opts.add_options()
       ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve")
       ("first", po::value<size_t>(), "tau-first exploration")
       ("epsilon",po::value<float>() ,"epsilon-greedy exploration")
       ("bag",po::value<size_t>() ,"bagging-based exploration")
       ("cover",po::value<size_t>() ,"bagging-based exploration");
-    
-    vm = add_options(all, cb_opts);
+   
+    return opts;
+  }
 
+  learner* setup(vw& all, po::variables_map& vm)
+  {//parse and set arguments
     if (!vm.count("cbify"))
       return NULL;
     
+    cbify* data = (cbify*)calloc_or_die(1, sizeof(cbify));
+    data->all = &all;    
     data->k = (uint32_t)vm["cbify"].as<size_t>();
     
     //appends nb_actions to options_from_file so it is saved to regressor later

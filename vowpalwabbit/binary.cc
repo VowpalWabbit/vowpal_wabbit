@@ -24,12 +24,16 @@ namespace BINARY {
       ec.loss = ec.l.simple.weight;
   }
 
+  po::options_description options()
+  {
+    po::options_description opts("Binary options");
+    opts.add_options()
+      ("binary", "report loss as binary classification on -1,1");
+    return opts;
+  }
+
   learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
-    po::options_description binary_opts("Binary options");
-    binary_opts.add_options()
-      ("binary", "report loss as binary classification on -1,1");
-    vm = add_options(all,binary_opts); 
     if(!vm.count("binary"))
       return NULL;
 

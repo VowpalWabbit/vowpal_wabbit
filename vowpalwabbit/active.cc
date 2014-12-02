@@ -151,14 +151,18 @@ namespace ACTIVE {
     VW::finish_example(all,&ec);
   }
   
-  learner* setup(vw& all, po::variables_map& vm)
-  {//parse and set arguments
-    po::options_description active_opts("Active Learning options");
-    active_opts.add_options()
+  po::options_description options()
+  {
+    po::options_description opts("Active Learning options");
+    opts.add_options()
       ("active", "enable active learning")
       ("simulation", "active learning simulation mode")
       ("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8");
-    vm = add_options(all, active_opts);
+    return opts;
+  }
+
+  learner* setup(vw& all, po::variables_map& vm)
+  {//parse and set arguments
     if(!vm.count("active"))
       return NULL;
     

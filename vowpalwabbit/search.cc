@@ -1763,40 +1763,43 @@ namespace Search {
     delete[] cstr;
   }
 
-  learner* setup(vw&all, po::variables_map& vm) {
-    search* sch = (search*)calloc_or_die(1,sizeof(search));
-    sch->priv = new search_private();
-    search_initialize(&all, *sch);
-    search_private& priv = *sch->priv;
-
-    po::options_description search_opts("Search Options");
-    search_opts.add_options()
+  po::options_description options()
+  {
+    po::options_description opts("Search Options");
+    opts.add_options()
       ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF")
-        ("search_task",              po::value<string>(), "the search task (use \"--search_task list\" to get a list of available tasks)")
-        ("search_interpolation",     po::value<string>(), "at what level should interpolation happen? [*data|policy]")
-        ("search_rollout",           po::value<string>(), "how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_roll|none]")
-        ("search_rollin",            po::value<string>(), "how should past trajectories be generated? [policy|oracle|*mix_per_state|mix_per_roll]")
-
-        ("search_passes_per_policy", po::value<size_t>(), "number of passes per policy (only valid for search_interpolation=policy)     [def=1]")
-        ("search_beta",              po::value<float>(),  "interpolation rate for policies (only valid for search_interpolation=policy) [def=0.5]")
-
-        ("search_alpha",             po::value<float>(),  "annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)     [def=1e-10]")
-
-        ("search_total_nb_policies", po::value<size_t>(), "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained")
-
-        ("search_trained_nb_policies", po::value<size_t>(), "the number of trained policies in a file")
-
-        ("search_allowed_transitions",po::value<string>(),"read file of allowed transitions [def: all transitions are allowed]")
-        ("search_subsample_time",    po::value<float>(),  "instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example")
-        ("search_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them")
-        ("search_rollout_num_steps", po::value<size_t>(), "how many calls of \"loss\" before we stop really predicting on rollouts and switch to oracle (def: 0 means \"infinite\")")
-        ("search_history_length",    po::value<size_t>(), "some tasks allow you to specify how much history their depend on; specify that here [def: 1]")
-
-        ("search_no_caching",                             "turn off the built-in caching ability (makes things slower, but technically more safe)")
-        ("search_beam",              po::value<size_t>(), "use beam search (arg = beam size, default 0 = no beam)")
+      ("search_task",              po::value<string>(), "the search task (use \"--search_task list\" to get a list of available tasks)")
+      ("search_interpolation",     po::value<string>(), "at what level should interpolation happen? [*data|policy]")
+      ("search_rollout",           po::value<string>(), "how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_roll|none]")
+      ("search_rollin",            po::value<string>(), "how should past trajectories be generated? [policy|oracle|*mix_per_state|mix_per_roll]")
+      
+      ("search_passes_per_policy", po::value<size_t>(), "number of passes per policy (only valid for search_interpolation=policy)     [def=1]")
+      ("search_beta",              po::value<float>(),  "interpolation rate for policies (only valid for search_interpolation=policy) [def=0.5]")
+      
+      ("search_alpha",             po::value<float>(),  "annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)     [def=1e-10]")
+      
+      ("search_total_nb_policies", po::value<size_t>(), "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained")
+      
+      ("search_trained_nb_policies", po::value<size_t>(), "the number of trained policies in a file")
+      
+      ("search_allowed_transitions",po::value<string>(),"read file of allowed transitions [def: all transitions are allowed]")
+      ("search_subsample_time",    po::value<float>(),  "instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example")
+      ("search_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them")
+      ("search_rollout_num_steps", po::value<size_t>(), "how many calls of \"loss\" before we stop really predicting on rollouts and switch to oracle (def: 0 means \"infinite\")")
+      ("search_history_length",    po::value<size_t>(), "some tasks allow you to specify how much history their depend on; specify that here [def: 1]")
+      
+      ("search_no_caching",                             "turn off the built-in caching ability (makes things slower, but technically more safe)")
+      ("search_beam",              po::value<size_t>(), "use beam search (arg = beam size, default 0 = no beam)")
       ("search_kbest",             po::value<size_t>(), "size of k-best list to produce (must be <= beam size)")
-        ;
+      ;
 
+    return opts;
+  }
+  
+  learner* setup(vw&all, po::variables_map& vm) {
+    if (!vm.count("search"))
+      return NULL;
+    
     bool has_hook_task = false;
     for (size_t i=0; i<all.args.size()-1; i++)
       if (all.args[i] == "--search_task" && all.args[i+1] == "hook")
@@ -1805,11 +1808,11 @@ namespace Search {
       for (int i = all.args.size()-2; i >= 0; i--)
         if (all.args[i] == "--search_task" && all.args[i+1] != "hook")
           all.args.erase(all.args.begin() + i, all.args.begin() + i + 2);
-
-    vm = add_options(all, search_opts);
- 
-    if (!vm.count("search"))
-      return NULL;
+    
+    search* sch = (search*)calloc_or_die(1,sizeof(search));
+    sch->priv = new search_private();
+    search_initialize(&all, *sch);
+    search_private& priv = *sch->priv;
 
     std::string task_string;
     std::string interpolation_string = "data";
@@ -1981,7 +1984,11 @@ namespace Search {
 
     priv.start_clock_time = clock();
 
-    learner* l = new learner(sch, all.l, priv.total_number_of_policies);
+    if (!vm.count("csoaa") && !vm.count("csoaa_ldf") && !vm.count("wap_ldf") && !vm.count("cb"))
+      vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
+    learner* base = setup_base(all,vm);
+    
+    learner* l = new learner(sch, base, priv.total_number_of_policies);
     l->set_learn<search, search_predict_or_learn<true> >();
     l->set_predict<search, search_predict_or_learn<false> >();
     l->set_finish_example<search,finish_example>();

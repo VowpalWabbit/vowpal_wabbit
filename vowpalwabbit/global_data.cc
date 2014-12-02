@@ -258,13 +258,7 @@ vw::vw()
   default_bits = true;
   daemon = false;
   num_children = 10;
-  lda_alpha = 0.1f;
-  lda_rho = 0.1f;
-  lda_D = 10000.;
-  lda_epsilon = 0.001f;
-  minibatch = 1;
   span_server = "";
-  m = 15;
   save_resume = false;
 
   set_minmax = set_mm;
@@ -272,7 +266,6 @@ vw::vw()
   power_t = 0.5;
   eta = 0.5; //default learning rate for normalized adaptive updates, this is switched to 10 by default for the other updates (see parse_args.cc)
   numpasses = 1;
-  rel_threshold = 0.001f;
   rank = 0;
 
   final_prediction_sink.begin = final_prediction_sink.end=final_prediction_sink.end_array = NULL;

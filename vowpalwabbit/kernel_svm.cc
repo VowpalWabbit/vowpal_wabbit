@@ -811,10 +811,10 @@ namespace KSVM
     cerr<<"Done with finish \n";
   }
 
-
-  LEARNER::learner* setup(vw &all, po::variables_map& vm) {
-    po::options_description desc("KSVM options");
-    desc.add_options()
+  po::options_description options()
+  {
+    po::options_description opts("KSVM options");
+    opts.add_options()
       ("ksvm", "kernel svm")
       ("reprocess", po::value<size_t>(), "number of reprocess steps for LASVM")
       ("active", "do active learning")
@@ -827,7 +827,11 @@ namespace KSVM
       ("bandwidth", po::value<float>(), "bandwidth of rbf kernel")
       ("degree", po::value<int>(), "degree of poly kernel")
       ("lambda", po::value<double>(), "saving regularization for test time");
-    vm = add_options(all, desc);
+    return opts;
+  }
+
+
+  LEARNER::learner* setup(vw &all, po::variables_map& vm) {
     if (!vm.count("ksvm"))
       return NULL;
     string loss_function = "hinge";

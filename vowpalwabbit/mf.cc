@@ -188,20 +188,23 @@ void finish(mf& o) {
   o.sub_predictions.delete_v();
 }
 
+  po::options_description options()
+  {
+    po::options_description opts("MF options");
+    opts.add_options()
+      ("new_mf", po::value<size_t>(), "rank for reduction-based matrix factorization");
+    return opts;
+  }
 
-learner* setup(vw& all, po::variables_map& vm) {
-  po::options_description MF_opts("MF options");
-  MF_opts.add_options()
-    ("new_mf", po::value<size_t>(), "rank for reduction-based matrix factorization");
-  vm = add_options(all,MF_opts); 
-  if(!vm.count("new_mf"))
-    return NULL;
-  
-  mf* data = new mf;
-
-  // copy global data locally
-  data->all = &all;
-  data->rank = (uint32_t)vm["new_mf"].as<size_t>();
+  learner* setup(vw& all, po::variables_map& vm) {
+    if(!vm.count("new_mf"))
+      return NULL;
+    
+    mf* data = new mf;
+    
+    // copy global data locally
+    data->all = &all;
+    data->rank = (uint32_t)vm["new_mf"].as<size_t>();
 
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner

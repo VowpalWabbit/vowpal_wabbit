@@ -194,7 +194,6 @@ struct vw {
 
   bool bfgs;
   bool hessian_on;
-  int m;
 
   bool save_resume;
 
@@ -216,10 +215,6 @@ struct vw {
   float l2_lambda; //the level of l_2 regularization to impose.
   float power_t;//the power on learning rate decay.
   int reg_mode;
-
-  size_t minibatch;
-
-  float rel_threshold; // termination threshold
 
   size_t pass_length;
   size_t numpasses;
@@ -262,19 +257,15 @@ struct vw {
   size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 
   uint32_t lda;
-  float lda_alpha;
-  float lda_rho;
-  float lda_D;
-  float lda_epsilon;
 
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;
-
   std::string span_server;
 
   size_t length () { return ((size_t)1) << num_bits; };
-
   uint32_t rank;
+
+  v_array<LEARNER::learner* (*)(vw& all, po::variables_map& vm)> reduction_stack;
 
   //Prediction output
   v_array<int> final_prediction_sink; // set to send global predictions to.

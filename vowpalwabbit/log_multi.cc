@@ -501,14 +501,18 @@ namespace LOG_MULTI
     VW::finish_example(all, &ec);
   }
   
-  learner* setup(vw& all, po::variables_map& vm)	//learner setup
+  po::options_description options()
   {
     po::options_description opts("Log Multi options");
     opts.add_options()
       ("log_multi", po::value<size_t>(), "Use online tree for multiclass")
       ("no_progress", "disable progressive validation")
       ("swap_resistance", po::value<uint32_t>(), "higher = more resistance to swap, default=4");
-    vm = add_options(all, opts);
+    return opts;
+  }
+  
+  learner* setup(vw& all, po::variables_map& vm)	//learner setup
+  {
     if(!vm.count("log_multi"))
       return NULL;
 

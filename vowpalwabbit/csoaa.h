@@ -5,10 +5,12 @@ license as described in the file LICENSE.
  */
 #pragma once
 namespace CSOAA {
+  po::options_description options();
   LEARNER::learner* setup(vw& all, po::variables_map& vm);
 }
 
 namespace CSOAA_AND_WAP_LDF {
+  po::options_description options();
   LEARNER::learner* setup(vw& all, po::variables_map& vm);
 
 namespace LabelDict { 

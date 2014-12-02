@@ -45,17 +45,18 @@ namespace Scorer {
     return in;
   }
 
+  po::options_description options()
+  {
+    po::options_description opts("Link options");
+    opts.add_options()
+      ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity, logistic or glf1");
+    return opts;
+  }
+
   learner* setup(vw& all, po::variables_map& vm)
   {
     scorer* s = (scorer*)calloc_or_die(1, sizeof(scorer));
     s->all = &all;
-
-    po::options_description link_opts("Link options");
-
-    link_opts.add_options()
-      ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity, logistic or glf1");
-
-    vm = add_options(all, link_opts);
 
     learner* l = new learner(s, all.l);
 

@@ -367,13 +367,17 @@ namespace ECT
     VW::finish_example(all, &ec);
   }
   
-  learner* setup(vw& all, po::variables_map& vm)
+  po::options_description options()
   {
-    po::options_description ect_opts("ECT options");
-    ect_opts.add_options()
+    po::options_description opts("ECT options");
+    opts.add_options()
       ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
       ("error", po::value<size_t>(), "error in ECT");
-    vm = add_options(all, ect_opts);
+    return opts;
+  }
+
+  learner* setup(vw& all, po::variables_map& vm)
+  {
     if (!vm.count("ect")) 
       return NULL;
 

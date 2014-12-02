@@ -9,5 +9,6 @@ license as described in the file LICENSE.
 
 namespace NN
 {
+  po::options_description options();
   LEARNER::learner* setup(vw& all, po::variables_map& vm);
 }

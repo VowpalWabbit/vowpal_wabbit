@@ -6,5 +6,6 @@ license as described in the file LICENSE.
 #pragma once
 namespace ECT
 {
+  po::options_description options();
   LEARNER::learner* setup(vw&, po::variables_map&);
 }

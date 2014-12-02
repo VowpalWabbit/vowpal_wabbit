@@ -45,13 +45,17 @@ namespace PRINT
     GD::foreach_feature<vw, print_feature>(*(p.all), ec, *p.all);
     cout << endl;
   }
-  
+
+  po::options_description options()
+  {
+    po::options_description opts("Print options");
+    opts.add_options()
+      ("print","print examples");
+    return opts;
+  }  
+
   learner* setup(vw& all, po::variables_map& vm)
   {
-    po::options_description print_opts("Print options");
-    print_opts.add_options()
-      ("print","print examples");
-    vm = add_options(all,print_opts); 
     if(!vm.count("print"))
       return NULL;
 

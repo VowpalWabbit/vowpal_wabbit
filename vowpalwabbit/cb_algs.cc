@@ -496,14 +496,18 @@ namespace CB_ALGS
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
+  po::options_description options()
   {
-    po::options_description cb_opts("CB options");
-    cb_opts.add_options()
+    po::options_description opts("CB options");
+    opts.add_options()
       ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
       ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}")
       ("eval", "Evaluate a policy rather than optimizing.");
-    vm = add_options(all, cb_opts);
+    return opts;
+  }
+
+  learner* setup(vw& all, po::variables_map& vm)
+  {
     if (!vm.count("cb"))
       return NULL;
 
