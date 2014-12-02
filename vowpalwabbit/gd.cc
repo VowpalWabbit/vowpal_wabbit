@@ -840,11 +840,6 @@ uint32_t ceil_log_2(uint32_t v)
     return 1 + ceil_log_2(v >> 1);
 }
 
-  po::options_description options()
-  {
-    return opts;
-  }
-
 learner* setup(vw& all, po::variables_map& vm)
 {
   po::options_description opts("Gradient Descent options");

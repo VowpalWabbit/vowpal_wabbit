@@ -44,7 +44,7 @@ namespace ALINK {
   learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description opts("Autolink options");
-    opts.add_options(all,opts);
+    opts.add_options()
       ("autolink", po::value<size_t>(), "create link function with polynomial d");
     vm = add_options(all,opts);
     if(!vm.count("autolink"))

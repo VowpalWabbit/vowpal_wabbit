@@ -501,11 +501,6 @@ namespace LOG_MULTI
     VW::finish_example(all, &ec);
   }
   
-  po::options_description options()
-  {
-    return opts;
-  }
-  
   learner* setup(vw& all, po::variables_map& vm)	//learner setup
   {
     po::options_description opts("Log Multi options");

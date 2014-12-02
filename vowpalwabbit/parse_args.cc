@@ -17,6 +17,7 @@ license as described in the file LICENSE.
 #include "network.h"
 #include "global_data.h"
 #include "nn.h"
+#include "gd.h"
 #include "cbify.h"
 #include "oaa.h"
 #include "rand48.h"

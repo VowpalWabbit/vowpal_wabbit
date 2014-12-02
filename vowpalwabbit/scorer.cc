@@ -45,11 +45,6 @@ namespace Scorer {
     return in;
   }
 
-  po::options_description options()
-  {
-    return opts;
-  }
-
   learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description opts("Link options");

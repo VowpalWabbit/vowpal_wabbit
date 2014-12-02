@@ -375,11 +375,6 @@ namespace CBIFY {
     CB::cb_label.delete_label(&data.cb_label);
   }
 
-  po::options_description options()
-  {
-    return opts;
-  }
-
   learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
     po::options_description opts("CBIFY options");

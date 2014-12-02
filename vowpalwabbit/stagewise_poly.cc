@@ -653,15 +653,10 @@ namespace StagewisePoly
     //#endif //DEBUG
   }
 
-  po::options_description options()
-  {
-    return sp_opt;
-  }
-
   learner *setup(vw &all, po::variables_map &vm)
   {
-    po::options_description sp_opt("Stagewise poly options");
-    sp_opt.add_options()
+    po::options_description opts("Stagewise poly options");
+    opts.add_options()
       ("stage_poly", "use stagewise polynomial feature learning")
       ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
       ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")

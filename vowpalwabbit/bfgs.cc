@@ -968,11 +968,6 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     b.backstep_on = true;
   }
 
-  po::options_description options()
-  {
-    return opts;
-  }
-
 learner* setup(vw& all, po::variables_map& vm)
 {
   po::options_description opts("LBFGS options");
