@@ -34,8 +34,6 @@ ifeq ($(UNAME), FreeBSD)
   LIBS = -l boost_program_options -l pthread -l z -l compat
   BOOST_INCLUDE = -I /usr/local/include
   JAVA_INCLUDE += -I $(JAVA_HOME)/include/linux
-  JAVA_LIB_PREFIX = lib
-  JAVA_LIB_EXTENSION = so
 endif
 ifeq "CYGWIN" "$(findstring CYGWIN,$(UNAME))"
   LIBS = -l boost_program_options-mt -l pthread -l z
