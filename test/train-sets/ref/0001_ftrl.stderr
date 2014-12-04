@@ -1,5 +1,5 @@
 using l1 regularization = 2
-final_regressor = models/ftrl.model
+final_regressor = models/0001_ftrl.model
 Enabling FTRL-Proximal based optimization
 ftrl_alpha = 0.01
 ftrl_beta = 0
