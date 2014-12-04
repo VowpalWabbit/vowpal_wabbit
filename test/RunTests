@@ -1077,3 +1077,12 @@ __DATA__
 {VW} -d train-sets/0002.dat --autolink 1 --examples 100 -p 0002.autolink.predict
     train-sets/ref/0002.autolink.stderr
     train-sets/ref/0002.autolink.predict
+
+# Test 72: train FTRL-Proximal
+{VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 1 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2
+    train-sets/ref/0001_ftrl.stderr
+
+# Test 73: test FTRL-Proximal
+{VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p ftrl_001.predict.tmp
+    test-sets/ref/0001_ftrl.stderr
+    pred-sets/ref/0001_ftrl.predict
