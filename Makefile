@@ -17,7 +17,7 @@ ifeq ($(CXX),)
 endif
 
 ifeq ($(JAVA_HOME),)
-  $(warning No JAVA_HOME found, JNI building will fail.  Please set JAVA_HOME for using JNI)
+  $(warning No JAVA_HOME found, JNI building will fail.  Please set JAVA_HOME when using JNI)
 endif
 
 UNAME := $(shell uname)
