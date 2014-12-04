@@ -61,6 +61,7 @@ test/RunTests.last.times
 **/Release
 **/dll
 **/ipch
+**/target
 
 # VS files
 *.opensdf
@@ -74,9 +75,6 @@ demo/ocr/run.*
 
 # JNI Library
 vw_jni.lib
-
-# Maven
-target/
 
 # IntelliJ
 *.idea

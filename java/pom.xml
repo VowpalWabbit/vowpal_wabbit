@@ -37,6 +37,14 @@
                 </includes>
             </resource>
         </resources>
+        <testResources>
+            <testResource>
+                <directory>${vw.dir}/vowpalwabbit</directory>
+                <includes>
+                    <include>vw_jni.lib</include>
+                </includes>
+            </testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
