@@ -258,7 +258,8 @@ namespace FTRL {
   void predict(ftrl& b, learner& base, example& ec)
   {
     vw* all = b.all;
-    ec.l.simple.prediction = ftrl_predict(*all,ec);
+    //ec.l.simple.prediction = ftrl_predict(*all,ec);
+    ec.pred.scalar = ftrl_predict(*all,ec);
   }
 
   learner* setup(vw& all, po::variables_map& vm) {
