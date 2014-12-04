@@ -16,22 +16,31 @@ ifeq ($(CXX),)
   exit 1
 endif
 
+ifeq ($(JAVA_HOME),)
+  $(warning No JAVA_HOME found, JNI building will fail.  Please set JAVA_HOME for using JNI)
+endif
 
 UNAME := $(shell uname)
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = -I /usr/include
 BOOST_LIBRARY = -L /usr/lib
+JAVA_INCLUDE = -I $(JAVA_HOME)/include
 
 ifeq ($(UNAME), Linux)
   BOOST_LIBRARY += -L /usr/lib/x86_64-linux-gnu
+  JAVA_INCLUDE += -I $(JAVA_HOME)/include/linux
 endif
 ifeq ($(UNAME), FreeBSD)
   LIBS = -l boost_program_options -l pthread -l z -l compat
   BOOST_INCLUDE = -I /usr/local/include
+  JAVA_INCLUDE += -I $(JAVA_HOME)/include/linux
+  JAVA_LIB_PREFIX = lib
+  JAVA_LIB_EXTENSION = so
 endif
 ifeq "CYGWIN" "$(findstring CYGWIN,$(UNAME))"
   LIBS = -l boost_program_options-mt -l pthread -l z
   BOOST_INCLUDE = -I /usr/include
+  JAVA_INCLUDE += -I $(JAVA_HOME)/include/linux
 endif
 ifeq ($(UNAME), Darwin)
   LIBS = -lboost_program_options-mt -lboost_serialization-mt -l pthread -l z
@@ -47,6 +56,7 @@ ifeq ($(UNAME), Darwin)
     BOOST_INCLUDE += -I /opt/local/include
     BOOST_LIBRARY += -L /opt/local/lib
   endif
+  JAVA_INCLUDE += -I $(JAVA_HOME)/include/darwin
 endif
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
@@ -60,6 +70,10 @@ endif
 
 # for normal fast execution.
 FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -DNDEBUG $(BOOST_INCLUDE)  -fPIC #-DVW_LDA_NO_SSE
+
+ifneq ($(JAVA_HOME),)
+  FLAGS += $(JAVA_INCLUDE)
+endif
 
 # for profiling -- note that it needs to be gcc
 #FLAGS = $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -O2 -fno-strict-aliasing -ffast-math -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) -pg  -fPIC #-DVW_LDA_NO_S

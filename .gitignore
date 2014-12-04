@@ -71,3 +71,13 @@ test/RunTests.last.times
 demo/mnist/infimnist
 demo/ocr/letter.*
 demo/ocr/run.*
+
+# JNI Library
+vw_jni.lib
+
+# Maven
+target/
+
+# IntelliJ
+*.idea
+*.iml

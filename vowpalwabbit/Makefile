@@ -39,8 +39,16 @@ liballreduce.a:	allreduce.o
 libvw.a: $(filter-out vw.o,$(vw_OBJECTS))
 	ar rcs $@ $+
 
-vw: main.o libvw.a liballreduce.a
+vw_jni.lib: vw_jni.cc main.o libvw.a liballreduce.a
+	$(CXX) -shared $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
+
+ifeq ($(JAVA_HOME),)
+  vw: main.o libvw.a liballreduce.a
 	$(CXX) $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
+else
+  vw: main.o libvw.a liballreduce.a vw_jni.lib
+	$(CXX) $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
+endif
 
 active_interactor: active_interactor.cc
 	$(CXX) $(FLAGS) -o $@ $+
