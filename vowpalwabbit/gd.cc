@@ -606,9 +606,10 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
   while ((!read && i < length) || (read && brw >0));  
 }
 
-void save_load_online_state(gd& g, io_buf& model_file, bool read, bool text)
+//void save_load_online_state(gd& g, io_buf& model_file, bool read, bool text)
+void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
 {
-  vw& all = *g.all;
+  //vw& all = *g.all;
   
   char buff[512];
   
@@ -777,7 +778,8 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 				"", read,
 				buff, text_len, text);
       if (resume)
-	save_load_online_state(g, model_file, read, text);
+	//save_load_online_state(g, model_file, read, text);
+        save_load_online_state(all, model_file, read, text);
       else
 	save_load_regressor(all, model_file, read, text);
     }
