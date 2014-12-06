@@ -166,7 +166,7 @@ namespace EntityRelationTask {
     char type; 
     int id1, id2;
     task_data* my_task_data = sch.get_task_data<task_data>();
-    uint32_t* hist = new uint32_t[2];
+    uint32_t hist[2];
     decode_tag(ex->tag, type, id1, id2);
     v_array<uint32_t> constrained_relation_labels = v_init<uint32_t>();
     if(my_task_data->constraints && predictions[id1]!=0 &&predictions[id2]!=0){
@@ -222,7 +222,6 @@ namespace EntityRelationTask {
       }
     }
     sch.loss(loss);
-    delete hist;
     return prediction;
   }
 
