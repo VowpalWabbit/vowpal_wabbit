@@ -61,6 +61,7 @@ test/RunTests.last.times
 **/Release
 **/dll
 **/ipch
+**/target
 
 # VS files
 *.opensdf
@@ -71,3 +72,7 @@ test/RunTests.last.times
 demo/mnist/infimnist
 demo/ocr/letter.*
 demo/ocr/run.*
+
+# IntelliJ
+*.idea
+*.iml
