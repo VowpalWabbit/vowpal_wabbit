@@ -43,8 +43,9 @@ namespace KSVM
 
   struct svm_params;
 
-  struct svm_example : public flat_example {
+  struct svm_example {
     v_array<float> krow;
+    flat_example ex;
 
     ~svm_example();
     void init_svm_example(flat_example *fec); 
@@ -94,20 +95,19 @@ namespace KSVM
 
   static size_t num_kernel_evals = 0;
   static size_t num_cache_evals = 0;
-
   
   void svm_example::init_svm_example(flat_example *fec)
   {
-    *(flat_example*)this = *fec;
-    memset(fec, 0, sizeof(flat_example));
+    ex = *fec;
+    free(fec);
   }
   
   svm_example::~svm_example()
   {
     krow.delete_v();
     // free flatten example contents
-    flat_example *fec = (flat_example*)malloc(sizeof(flat_example));
-    *fec = *(flat_example*)this;
+    flat_example *fec = (flat_example*)calloc_or_die(1, sizeof(flat_example));
+    *fec = ex;
     free_flatten_example(fec); // free contents of flat example and frees fec.
   }
 
@@ -133,7 +133,7 @@ namespace KSVM
 	for (size_t i=krow.size(); i<n; i++)
 	  {	    
 	    svm_example *sec = model->support_vec[i];
-	    float kv = kernel_function(this, sec, params.kernel_params, params.kernel_type);
+	    float kv = kernel_function(&ex, &(sec->ex), params.kernel_params, params.kernel_type);
 	    krow.push_back(kv);
 	    alloc += 1;
 	    //cerr<<kv<<" ";
@@ -222,17 +222,17 @@ namespace KSVM
   int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec) {
     size_t brw = 1;
     if(read) {
-      fec = (flat_example*) calloc(1, sizeof(flat_example));
+      fec = (flat_example*) calloc_or_die(1, sizeof(flat_example));
       brw = bin_read_fixed(model_file, (char*) fec, sizeof(flat_example), "");
 
       if(brw > 0) {
 	if(fec->tag_len > 0) {
-	  fec->tag = (char*) calloc(fec->tag_len, sizeof(char));	
+	  fec->tag = (char*) calloc_or_die(fec->tag_len, sizeof(char));	
 	  brw = bin_read_fixed(model_file, (char*) fec->tag, fec->tag_len*sizeof(char), "");
 	  if(!brw) return 2;
 	}
 	if(fec->feature_map_len > 0) {
-	  fec->feature_map = (feature*) calloc(fec->feature_map_len, sizeof(feature));
+	  fec->feature_map = (feature*) calloc_or_die(fec->feature_map_len, sizeof(feature));
 	  brw = bin_read_fixed(model_file, (char*) fec->feature_map, fec->feature_map_len*sizeof(feature), ""); 	  if(!brw) return 3;
 	}
       }
@@ -275,22 +275,16 @@ namespace KSVM
       model->support_vec.resize(model->num_support);
 
     for(uint32_t i = 0;i < model->num_support;i++) {
-      //cerr<<"Calling save_load_flat_example\n";      
       if(read) {
 	save_load_flat_example(model_file, read, fec);
 	svm_example* tmp= (svm_example*)calloc_or_die(1,sizeof(svm_example));
 	tmp->init_svm_example(fec);
 	model->support_vec.push_back(tmp);
-	free_flatten_example(fec);
-	//cerr<<model->support_vec[i]->example_counter<<" "<<fec->example_counter<<" "<<fec<<endl;
       }
       else {
-	fec = model->support_vec[i];
+	fec = &(model->support_vec[i]->ex);
 	save_load_flat_example(model_file, read, fec);
       }
-      //cerr<<model->support_vec[i]->example_counter<<":"<<model->support_vec[i]->feature_map[10].x<<endl;
-      //model->support_vec.push_back(fec);
-      //cerr<<ret<<" ";
     }
     //cerr<<endl;
     
@@ -419,7 +413,7 @@ namespace KSVM
     //cerr<<"Subopt ";
     double max_val = 0;
     for(size_t i = 0;i < model->num_support;i++) {
-      label_data& ld = model->support_vec[i]->l.simple;
+      label_data& ld = model->support_vec[i]->ex.l.simple;
       double tmp = model->alpha[i]*ld.label;                  
       
       if((tmp < ld.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0)) 
@@ -449,7 +443,8 @@ namespace KSVM
 	model->alpha[i] = model->alpha[i+1];
 	model->delta[i] = model->delta[i+1];
       }
-    delete svi_e;
+    svi_e->~svm_example();
+    free(svi_e);
     model->support_vec.pop();
     model->alpha.pop();
     model->delta.pop();
@@ -489,7 +484,7 @@ namespace KSVM
     //cerr<<"Updating model "<<pos<<" "<<model->num_support<<" ";
     //cerr<<model->support_vec[pos]->example_counter<<endl;
     svm_example* fec = model->support_vec[pos];
-    label_data& ld = fec->l.simple;
+    label_data& ld = fec->ex.l.simple;
     fec->compute_kernels(params);
     float *inprods = fec->krow.begin;
     float alphaKi = dense_dot(inprods, model->alpha, model->num_support);
@@ -520,7 +515,7 @@ namespace KSVM
     }
     
     for(size_t i = 0;i < model->num_support; i++) {
-      label_data& ldi = model->support_vec[i]->l.simple;
+      label_data& ldi = model->support_vec[i]->ex.l.simple;
       model->delta[i] += diff*inprods[i]*ldi.label/params.lambda;
     }
     
@@ -555,13 +550,13 @@ namespace KSVM
       if(!train_pool[i])
 	continue;
       
-      fec = params.pool[i];
+      fec = &(params.pool[i]->ex);
       save_load_flat_example(*b, false, fec);
       delete params.pool[i];
       
     }
 
-    size_t* sizes = (size_t*) calloc(all.total, sizeof(size_t));
+    size_t* sizes = (size_t*) calloc_or_die(all.total, sizeof(size_t));
     sizes[all.node] = b->space.end - b->space.begin;
     //cerr<<"Sizes = "<<sizes[all.node]<<" ";
     all_reduce<size_t, add_size_t>(sizes, all.total, all.span_server, all.unique_id, all.total, all.node, all.socks);
@@ -575,7 +570,7 @@ namespace KSVM
     
     //cerr<<total_sum<<" "<<prev_sum<<endl;
     if(total_sum > 0) {
-      queries = (char*) calloc(total_sum, sizeof(char));
+      queries = (char*) calloc_or_die(total_sum, sizeof(char));
       memcpy(queries + prev_sum, b->space.begin, b->space.end - b->space.begin);
       b->space.delete_v();
       all_reduce<char, copy_char>(queries, total_sum, all.span_server, all.unique_id, all.total, all.node, all.socks);
@@ -622,11 +617,11 @@ namespace KSVM
     
     //cerr<<"In train "<<params.all->training<<endl;
     
-    bool* train_pool = (bool*)calloc(params.pool_size, sizeof(bool));
+    bool* train_pool = (bool*)calloc_or_die(params.pool_size, sizeof(bool));
     for(size_t i = 0;i < params.pool_size;i++)
       train_pool[i] = false;
     
-    float* scores = (float*)calloc(params.pool_pos, sizeof(float));
+    float* scores = (float*)calloc_or_die(params.pool_pos, sizeof(float));
     predict(params, params.pool, scores, params.pool_pos);
     //cout<<scores[0]<<endl;
     
@@ -653,10 +648,10 @@ namespace KSVM
       else {
 
 	for(size_t i = 0;i < params.pool_pos;i++) {
-	  float queryp = 2.0/(1.0 + expf((float)params.active_c*fabs(scores[i])*pow(params.pool[i]->example_counter,0.5)));
+	  float queryp = 2.0/(1.0 + expf((float)params.active_c*fabs(scores[i])*pow(params.pool[i]->ex.example_counter,0.5)));
 	  if(rand() < queryp) {
 	    svm_example* fec = params.pool[i];
-	    fec->l.simple.weight *= 1/queryp;
+	    fec->ex.l.simple.weight *= 1/queryp;
 	    train_pool[i] = 1;
 	  }
 	}
@@ -695,7 +690,7 @@ namespace KSVM
 	  bool overshoot = update(params, model_pos);
 	  //cerr<<model_pos<<":alpha = "<<model->alpha[model_pos]<<endl;
 
-	  double* subopt = (double*)calloc(model->num_support,sizeof(double));
+	  double* subopt = (double*)calloc_or_die(model->num_support,sizeof(double));
 	  for(size_t j = 0;j < params.reprocess;j++) {
 	    if(model->num_support == 0) break;
 	    //cerr<<"reprocess: ";
@@ -746,7 +741,6 @@ namespace KSVM
     if(fec) {
       svm_example* sec = (svm_example*)calloc_or_die(1, sizeof(svm_example));
       sec->init_svm_example(fec);
-      free_flatten_example(fec);
       float score = 0;
       predict(params, &sec, &score, 1);
       ec.pred.scalar = score;
@@ -765,18 +759,16 @@ namespace KSVM
 	train(params); 
 	params.pool_pos = 0;
       }
-	
-      
     }
   }
-
 
   void free_svm_model(svm_model* model)
   {
     for(size_t i = 0;i < model->num_support; i++) {
+      model->support_vec[i]->~svm_example();
       free(model->support_vec[i]);
       model->support_vec[i] = 0;
-     }
+    }
 
     model->support_vec.delete_v();
     model->alpha.delete_v();
@@ -787,22 +779,9 @@ namespace KSVM
   void finish(svm_params& params) {
     free(params.pool);
 
-
     cerr<<"Num support = "<<params.model->num_support<<endl;
     cerr<<"Number of kernel evaluations = "<<num_kernel_evals<<" "<<"Number of cache queries = "<<num_cache_evals<<endl;
     cerr<<"Total loss = "<<params.loss_sum<<endl;
-    //double maxalpha = fabs(params->model->alpha[0]);
-    //size_t maxpos = 0;
-    
-    // for(size_t i = 1;i < params->model->num_support; i++) 
-    //   if(maxalpha < fabs(params->model->alpha[i])) {
-    // 	maxalpha = fabs(params->model->alpha[i]);
-    // 	maxpos = i;
-    //   }
-
-    //cerr<<maxalpha<<" "<<maxpos<<endl;
-
-    //cerr<<"Done freeing pool\n";
 
     free_svm_model(params.model);
     cerr<<"Done freeing model\n";
@@ -813,17 +792,6 @@ namespace KSVM
 
 
   LEARNER::learner* setup(vw &all, po::variables_map& vm) {
-    svm_params* params = (svm_params*) calloc(1,sizeof(svm_params));
-    cerr<<"In setup\n";
-
-    params->model = (svm_model*) calloc(1,sizeof(svm_model));
-    params->model->num_support = 0;
-    //params->curcache = 0;
-    params->maxcache = 1024*1024*1024;
-    params->loss_sum = 0.;
-
-    //params->model->maxdelta = 0.;
-    
     po::options_description desc("KSVM options");
     desc.add_options()
       ("reprocess", po::value<size_t>(), "number of reprocess steps for LASVM")
@@ -837,10 +805,19 @@ namespace KSVM
       ("bandwidth", po::value<float>(), "bandwidth of rbf kernel")
       ("degree", po::value<int>(), "degree of poly kernel")
       ("lambda", po::value<double>(), "saving regularization for test time");
-
     vm = add_options(all, desc);
-    
 
+    string loss_function = "hinge";
+    float loss_parameter = 0.0;
+    delete all.loss;
+    all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
+
+    svm_params* params = (svm_params*) calloc_or_die(1,sizeof(svm_params));
+    params->model = (svm_model*) calloc_or_die(1,sizeof(svm_model));
+    params->model->num_support = 0;
+    //params->curcache = 0;
+    params->maxcache = 1024*1024*1024;
+    params->loss_sum = 0.;
     params->all = &all;
     
     if(vm.count("reprocess"))
@@ -866,7 +843,7 @@ namespace KSVM
     else
       params->pool_size = 1;
     
-    params->pool = (svm_example**)calloc(params->pool_size, sizeof(svm_example*));
+    params->pool = (svm_example**)calloc_or_die(params->pool_size, sizeof(svm_example*));
     params->pool_pos = 0;
     
     if(vm.count("subsample"))
@@ -906,7 +883,7 @@ namespace KSVM
 		all.file_options.append(ss.str());
       }
       cerr<<"bandwidth = "<<bandwidth<<endl;
-      params->kernel_params = calloc(1,sizeof(double*));
+      params->kernel_params = calloc_or_die(1,sizeof(double*));
       *((float*)params->kernel_params) = bandwidth;
     }
     else if(kernel_type.compare("poly") == 0) {
@@ -919,7 +896,7 @@ namespace KSVM
 	  all.file_options.append(ss.str());
 	}
       cerr<<"degree = "<<degree<<endl;
-      params->kernel_params = calloc(1,sizeof(int*));
+      params->kernel_params = calloc_or_die(1,sizeof(int*));
       *((int*)params->kernel_params) = degree;
     }      
     else

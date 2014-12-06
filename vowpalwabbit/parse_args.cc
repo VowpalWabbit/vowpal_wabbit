@@ -749,9 +749,6 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
   else if (vm.count("sendto"))
     all.l = SENDER::setup(all, vm, all.pairs);
   else if (vm.count("ksvm")) {
-    string loss_function = "hinge";
-    float loss_parameter = 0.0;
-    all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
     all.l = KSVM::setup(all, vm);
   }
   else
