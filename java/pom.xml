@@ -11,7 +11,6 @@
     <properties>
         <slf4j.version>1.7.6</slf4j.version>
         <junit.version>4.11</junit.version>
-        <vw.dir>${project.basedir}/..</vw.dir>
     </properties>
 
     <dependencies>
@@ -31,7 +30,7 @@
     <build>
         <resources>
             <resource>
-                <directory>${vw.dir}/vowpalwabbit</directory>
+                <directory>${project.build.directory}</directory>
                 <includes>
                     <include>vw_jni.lib</include>
                 </includes>
@@ -39,7 +38,7 @@
         </resources>
         <testResources>
             <testResource>
-                <directory>${vw.dir}/vowpalwabbit</directory>
+                <directory>${project.build.directory}</directory>
                 <includes>
                     <include>vw_jni.lib</include>
                 </includes>
@@ -54,6 +53,41 @@
                     <source>1.6</source>
                     <target>1.6</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.7</version>
+                <executions>
+                    <execution>
+                        <id>Build VW</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <exportAntProperties>true</exportAntProperties>
+                            <target>
+                                <exec executable="make" failonerror="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>Clean VW</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <exportAntProperties>true</exportAntProperties>
+                            <target>
+                                <exec executable="make" failonerror="true">
+                                    <arg value="clean"/>
+                                </exec>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -26,9 +26,10 @@ all:
 test:
 	cd ..; $(MAKE) test
 	
-things: target/vw_jni.lib
+things: target/vw_jni.lib	
 
 target/vw_jni.lib: src/main/c++/vw_VWScorer.cc ../vowpalwabbit/main.o ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
+	mkdir -p target;
 	$(CXX) -shared $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS) $(JAVA_INCLUDE)
 
 clean:
