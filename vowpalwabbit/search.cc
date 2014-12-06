@@ -106,7 +106,7 @@ namespace Search {
     vector<action> test_action_sequence; // if test-mode was run, what was the corresponding action sequence; it's a vector cuz we might expose it to the library
     action learn_oracle_action;    // store an oracle action for debugging purposes
     
-    void* allowed_actions_cache;   // either a CS::label* or CB::label* depending on cb_learner
+    polylabel* allowed_actions_cache;
     
     size_t loss_declared_cnt;      // how many times did run declare any loss (implicitly or explicitly)?
     v_array<action> train_trajectory; // the training trajectory
@@ -608,9 +608,9 @@ namespace Search {
     else      { CS::wclass   cost = { value, index, 0., 0. }; ld.cs.costs.push_back(cost); }
   }
   
-  polylabel allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const action* allowed_actions, size_t allowed_actions_cnt) {
+  polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const action* allowed_actions, size_t allowed_actions_cnt) {
     bool isCB = priv.cb_learner;
-    polylabel& ld = *(polylabel*)priv.allowed_actions_cache;
+    polylabel& ld = *priv.allowed_actions_cache;
     uint32_t num_costs = (uint32_t)cs_get_costs_size(isCB, ld);
 
     if (priv.is_ldf) {  // LDF version easier
@@ -1515,7 +1515,7 @@ namespace Search {
     priv.T = 0;
     priv.learn_ec_ref = NULL;
     priv.learn_ec_ref_cnt = 0;
-    priv.allowed_actions_cache = NULL;
+    //priv.allowed_actions_cache = NULL;
     
     priv.loss_declared_cnt = 0;
     priv.learn_t = 0;
@@ -1599,13 +1599,10 @@ namespace Search {
     }
     priv.beam_actions.delete_v();
     
-    if (priv.cb_learner) {
-      ((CB::label*)priv.allowed_actions_cache)->costs.delete_v();
-      delete (CB::label*)priv.allowed_actions_cache;
-    } else {
-      ((CS::label*)priv.allowed_actions_cache)->costs.delete_v();
-      delete (CS::label*)priv.allowed_actions_cache;
-    }
+    if (priv.cb_learner)
+      priv.allowed_actions_cache->cb.costs.delete_v();
+    else
+      priv.allowed_actions_cache->cs.costs.delete_v();
 
     priv.train_trajectory.delete_v();
     priv.current_trajectory.delete_v();
@@ -1631,8 +1628,8 @@ namespace Search {
       priv.task->finish(sch);
     }
 
+    free(priv.allowed_actions_cache);
     delete priv.rawOutputStringStream;
-    
     delete sch.priv;
   }
 
@@ -1833,6 +1830,8 @@ namespace Search {
 
     if (vm.count("search_beam"))
       priv.beam = new Beam::beam<action_prefix>(vm["search_beam"].as<size_t>());  // TODO: pruning, kbest, equivalence testing
+    else
+      priv.beam = NULL;
 
     priv.kbest = 1;
     if (vm.count("search_kbest")) {
@@ -1890,12 +1889,13 @@ namespace Search {
                          "warning: you specified a different history length through --search_history_length than the one loaded from predictor. using loaded value of: ", "");
     
     //check if the base learner is contextual bandit, in which case, we dont rollout all actions.
+    priv.allowed_actions_cache = (polylabel*)calloc_or_die(1,sizeof(polylabel));
     if (vm.count("cb")) {
       priv.cb_learner = true;
-      priv.allowed_actions_cache = new CB::label();
+      CB::cb_label.default_label(priv.allowed_actions_cache);
     } else {
       priv.cb_learner = false;
-      priv.allowed_actions_cache = new CS::label();
+      CS::cs_label.default_label(priv.allowed_actions_cache);
     }
 
     //if we loaded a regressor with -i option, --search_trained_nb_policies contains the number of trained policies in the file
