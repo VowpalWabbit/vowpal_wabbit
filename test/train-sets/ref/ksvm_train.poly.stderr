@@ -1,5 +1,4 @@
 using l2 regularization = 1
-In setup
 Lambda = 1
 Kernel = poly
 degree = 2
