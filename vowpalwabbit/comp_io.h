@@ -12,12 +12,7 @@ license as described in the file LICENSE.
 class comp_io_buf : public io_buf
 {
 public:
-  v_array<gzFile> gz_files;
-
-  comp_io_buf()
-  {
-    init();
-  }
+  vector<gzFile> gz_files;
 
   virtual int open_file(const char* name, bool stdin_off, int flag=READ){
     gzFile fil=NULL;
@@ -32,13 +27,11 @@ public:
 #else
        fil = gzdopen(fileno(stdin), "rb");
 #endif
-      if(fil!=NULL){
-        gz_files.push_back(fil);
-        ret = (int)gz_files.size()-1;
-        files.push_back(ret);
-      }
-      else
-        ret = -1;
+       if(fil!=NULL){
+	 gz_files.push_back(fil);
+	 ret = (int)gz_files.size()-1;
+	 files.push_back(ret);
+       }
       break;
 
     case WRITE:
@@ -46,15 +39,12 @@ public:
       if(fil!=NULL){
         gz_files.push_back(fil);
         ret = (int)gz_files.size()-1;
-        files.push_back(ret);
+	files.push_back(ret);
       }
-      else
-        ret = -1;
       break;
 
     default:
       std::cerr << "Unknown file operation. Something other than READ/WRITE specified" << std::endl;
-      ret = -1;
     }
     return ret;
   }
@@ -73,26 +63,29 @@ public:
     return (num_read > 0) ? num_read : 0;
   }
 
-  virtual inline ssize_t write_file(int f, const void* buf, size_t nbytes)
+  virtual size_t num_files(){ return gz_files.size();}
+
+  virtual inline ssize_t write_file(int file, const void* buf, size_t nbytes)
   {
-    gzFile fil = gz_files[f];
-    int num_written = gzwrite(fil, buf, (unsigned int)nbytes);
+    int num_written = gzwrite(gz_files[file], buf, (unsigned int)nbytes);
     return (num_written > 0) ? num_written : 0;
   }
 
+  virtual bool compressed() { return true; }
+
   virtual void flush()
   {
-    if (write_file(files[0], space.begin, space.size()) != (int) ((space.size())))
+    if (write_file(0, space.begin, space.size()) != (int) ((space.size())))
       std::cerr << "error, failed to write to cache\n";
     space.end = space.begin;
   }
 
   virtual bool close_file(){
-    gzFile fil;
-    if(files.size()>0){
-      fil = gz_files[files.pop()];
-      gzclose(fil);
-      gz_files.delete_v();
+    if(gz_files.size()>0){
+      gzclose(gz_files.back());
+      gz_files.pop_back();
+      if (files.size() > 0)
+	files.pop();
       return true;
     }
     return false;

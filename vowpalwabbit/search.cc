@@ -686,6 +686,7 @@ namespace Search {
         float delta_cost = cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k) - act_cost + priv.beam_initial_cost;   // TODO: is delta_cost the right cost?
         // construct the action prefix
         action_prefix* px = new v_array<action>;
+	*px = v_init<action>();
         px->resize(new_len);
         px->end = px->begin + new_len;
         memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
@@ -757,6 +758,7 @@ namespace Search {
         if (k == best_action) continue;
         float delta_cost = ecs[k].partial_prediction - best_prediction + priv.beam_initial_cost;
         action_prefix* px = new v_array<action>;
+	*px = v_init<action>();
         px->resize(new_len);
         px->end = px->begin + new_len;
         memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
@@ -1101,7 +1103,7 @@ namespace Search {
           if (gte_here) {
             cdbg << "INIT_TRAIN, NO_ROLLOUT, at least one oracle_actions" << endl;
             // we can generate a training example _NOW_ because we're not doing rollouts
-            v_array<float> losses; // SPEEDUP: move this to data structure
+            v_array<float> losses = v_init<float>(); // SPEEDUP: move this to data structure
             allowed_actions_to_losses(priv, ec_cnt, allowed_actions, allowed_actions_cnt, oracle_actions, oracle_actions_cnt, losses);
             cdbg_print_array("losses", losses);
             priv.learn_ec_ref = ecs;
@@ -1174,6 +1176,7 @@ namespace Search {
   
   void final_beam_insert(search_private&priv, Beam::beam< pair<action_prefix*,string> >& beam, float cost, vector<action>& seq) {
     action_prefix* final = new action_prefix;  // TODO: can we memcpy/push_many?
+    *final = v_init<action>();
     for (size_t i=0; i<seq.size(); i++)
       final->push_back(seq[i]);
     pair<action_prefix*,string>* p = priv.should_produce_string ? new pair<action_prefix*,string>(final, priv.pred_string->str()) : new pair<action_prefix*,string>(final, "");
@@ -1240,12 +1243,12 @@ namespace Search {
     }
 
     if (all.final_prediction_sink.begin != all.final_prediction_sink.end) {  // need to produce prediction output
-      v_array<char> new_tag;
+      v_array<char> new_tag = v_init<char>();
       for (; best != final_beam.end(); ++best)
         if (best->active) {
           new_tag.erase();
           new_tag.resize(50, true);
-          int len = snprintf(new_tag.begin, 50, "%-10.6f\t", best->cost);
+          int len = sprintf(new_tag.begin, "%-10.6f\t", best->cost);
           new_tag.end = new_tag.begin + len;
           push_many(new_tag, priv.ec_seq[0]->tag.begin, priv.ec_seq[0]->tag.size());
           for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
@@ -1704,10 +1707,10 @@ namespace Search {
     }
     fclose(f);
 
-    v_array<CS::label> allowed;
+    v_array<CS::label> allowed = v_init<CS::label>();
 
     for (size_t from=0; from<A; from++) {
-      v_array<CS::wclass> costs;
+      v_array<CS::wclass> costs = v_init<CS::wclass>();
 
       for (size_t to=0; to<A; to++)
         if (bg[from * (A+1) + to]) {
@@ -1736,7 +1739,7 @@ namespace Search {
     strcpy(cstr, nf_string.c_str());
 
     char * p = strtok(cstr, ",");
-    v_array<substring> cmd;
+    v_array<substring> cmd = v_init<substring>();
     while (p != 0) {
       cmd.erase();
       substring me = { p, p+strlen(p) };
@@ -2066,7 +2069,12 @@ namespace Search {
   uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
   
   // predictor implementation
-  predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(NULL), ec_cnt(0), ec_alloced(false), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { }
+  predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(NULL), ec_cnt(0), ec_alloced(false), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { 
+    oracle_actions = v_init<action>(); 
+    condition_on_tags = v_init<ptag>();
+    condition_on_names = v_init<char>();
+    allowed_actions = v_init<action>();
+  }
 
   void predictor::free_ec() {
     if (ec_alloced) {

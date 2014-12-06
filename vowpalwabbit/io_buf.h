@@ -41,6 +41,10 @@ class io_buf {
   static const int WRITE = 2;
 
   void init(){
+    space = v_init<char>();
+    files = v_init<int>();
+    currentname = v_init<char>();
+    finalname = v_init<char>();
     size_t s = 1 << 16;
     space.resize(s);
     current = 0;
@@ -115,6 +119,8 @@ class io_buf {
 
   void set(char *p){space.end = p;}
 
+  virtual size_t num_files(){ return files.size();}
+
   virtual ssize_t read_file(int f, void* buf, size_t nbytes){
     return read_file_or_socket(f, buf, nbytes);
   }
@@ -156,6 +162,8 @@ class io_buf {
     }
     return false;
   }
+
+  virtual bool compressed() { return false; }
 
   static void close_file_or_socket(int f);
 

@@ -49,6 +49,17 @@ namespace DepParserTask {
     data->ec_buf.resize(12, true);
     data->children = new v_array<uint32_t>[6]; 
 
+    for(size_t i = 0; i < 6; i++)
+      data->children[i] = v_init<uint32_t>();
+
+    data->valid_actions = v_init<uint32_t>();
+    data->gold_heads = v_init<uint32_t>();
+    data->gold_actions = v_init<uint32_t>();
+    data->stack = v_init<uint32_t>();
+    data->heads = v_init<uint32_t>();
+    data->ec_buf = v_init<example*>();
+    data->temp = v_init<uint32_t>();
+
 
     srn.set_num_learners(1);
     srn.set_task_data<task_data>(data);
@@ -67,7 +78,6 @@ namespace DepParserTask {
   void finish(Search::search& srn) {
     task_data *data = srn.get_task_data<task_data>();
     //    dealloc_example(CS::cs_label.delete_label, *(data->ex));
-    data->valid_actions.delete_v();
     data->gold_heads.delete_v();
     data->gold_actions.delete_v();
     data->stack.delete_v();

@@ -33,6 +33,8 @@ namespace CBIFY {
     vw_cover_scorer(float epsilon, size_t cover, u32 num_actions) :
       m_epsilon(epsilon), m_cover(cover), m_num_actions(num_actions), m_counter(1)
     { 
+      m_scores = v_init<float>();
+      m_predictions = v_init<uint32_t>();
       m_scores.resize(num_actions + 1);
       m_predictions.resize(m_cover);
     }

@@ -99,9 +99,8 @@ namespace ECT
     if (max_label == 1)
       return 0;
 
-    v_array<v_array<uint32_t > > tournaments;
-
-    v_array<uint32_t> t;
+    v_array<v_array<uint32_t > > tournaments = v_init<v_array<uint32_t > >();
+    v_array<uint32_t> t = v_init<uint32_t>();
 
     for (uint32_t i = 0; i < max_label; i++)
       {
@@ -123,12 +122,12 @@ namespace ECT
 
     while (not_empty(e.all_levels[level]))
       {
-	v_array<v_array<uint32_t > > new_tournaments;
+	v_array<v_array<uint32_t > > new_tournaments = v_init<v_array<uint32_t>>();
 	tournaments = e.all_levels[level];
 
 	for (size_t t = 0; t < tournaments.size(); t++)
 	  {
-	    v_array<uint32_t> empty;
+	    v_array<uint32_t> empty = v_init<uint32_t>();
 	    new_tournaments.push_back(empty);
 	  }
 

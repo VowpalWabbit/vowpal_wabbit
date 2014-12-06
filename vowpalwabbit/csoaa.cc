@@ -451,7 +451,7 @@ namespace LabelDict {
     /////////////////////// handle label definitions
     if (LabelDict::ec_seq_is_label_definition(data, data.ec_seq)) {
       for (size_t i=0; i<data.ec_seq.size(); i++) {
-        v_array<feature> features;
+        v_array<feature> features = v_init<feature>();
         for (feature*f=data.ec_seq[i]->atomics[data.ec_seq[i]->indices[0]].begin; f!=data.ec_seq[i]->atomics[data.ec_seq[i]->indices[0]].end; f++) {
           feature fnew = { f->x,  f->weight_index };
           features.push_back(fnew);

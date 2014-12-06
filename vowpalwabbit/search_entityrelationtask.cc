@@ -130,7 +130,7 @@ namespace EntityRelationTask {
     task_data* my_task_data = sch.get_task_data<task_data>();
     size_t prediction;
     if(my_task_data->allow_skip){
-      v_array<uint32_t> star_labels;
+      v_array<uint32_t> star_labels = v_init<uint32_t>();
       star_labels.push_back(ex->l.multi.label);
       star_labels.push_back(LABEL_SKIP);
       my_task_data->y_allowed_entity.push_back(LABEL_SKIP);
@@ -168,7 +168,7 @@ namespace EntityRelationTask {
     task_data* my_task_data = sch.get_task_data<task_data>();
     uint32_t* hist = new uint32_t[2];
     decode_tag(ex->tag, type, id1, id2);
-    v_array<uint32_t> constrained_relation_labels;
+    v_array<uint32_t> constrained_relation_labels = v_init<uint32_t>();
     if(my_task_data->constraints && predictions[id1]!=0 &&predictions[id2]!=0){
       hist[0] = (uint32_t)predictions[id1];
       hist[1] = (uint32_t)predictions[id2];
@@ -183,7 +183,7 @@ namespace EntityRelationTask {
 
     size_t prediction;
     if(my_task_data->allow_skip){
-      v_array<uint32_t> star_labels;
+      v_array<uint32_t> star_labels = v_init<uint32_t>();
       star_labels.push_back(ex->l.multi.label);
       star_labels.push_back(LABEL_SKIP);
       constrained_relation_labels.push_back(LABEL_SKIP);
@@ -312,7 +312,7 @@ namespace EntityRelationTask {
   void run(Search::search& sch, vector<example*>& ec) {
     task_data* my_task_data = sch.get_task_data<task_data>();
     
-    v_array<size_t> predictions;
+    v_array<size_t> predictions = v_init<size_t>();
     for(size_t i=0; i<ec.size(); i++){
       predictions.push_back(0);
     }

@@ -121,7 +121,8 @@ void parse_dictionary_argument(vw&all, string str) {
       free(word);
       continue;
     }
-    v_array<feature>* arr = new v_array<feature>();
+    v_array<feature>* arr = new v_array<feature>;
+    *arr = v_init<feature>();
     push_many(*arr, ec->atomics[def].begin, ec->atomics[def].size());
     map->put(ss, hash, arr);
   }
@@ -1132,8 +1133,7 @@ namespace VW {
     c[1] = ' ';
     strcpy(c+2, s.c_str());
     substring ss = {c, c+s.length()+2};
-    v_array<substring> foo;
-    foo.end_array = foo.begin = foo.end = NULL;
+    v_array<substring> foo = v_init<substring>();
     tokenize(' ', ss, foo);
 
     char** argv = (char**)calloc_or_die(foo.size(), sizeof(char*));
@@ -1190,14 +1190,12 @@ namespace VW {
       if (all.final_prediction_sink[i] != 1)
 	io_buf::close_file_or_socket(all.final_prediction_sink[i]);
     all.final_prediction_sink.delete_v();
-    for (size_t i=0; i<256; i++) all.namespace_dictionaries[i].delete_v();
     for (size_t i=0; i<all.read_dictionaries.size(); i++) {
       free(all.read_dictionaries[i].name);
       all.read_dictionaries[i].dict->iter(delete_dictionary_entry);
       all.read_dictionaries[i].dict->delete_v();
       delete all.read_dictionaries[i].dict;
     }
-    all.read_dictionaries.delete_v();
     delete all.loss;
     if (delete_all) delete &all;
   }

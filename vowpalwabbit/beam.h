@@ -83,6 +83,7 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
     best_cost   =  FLT_MAX;
     prune_if_gt =  FLT_MAX;
     best_cost_data = NULL;
+    A = v_init<beam_element<T>>();
     if (beam_size <= BEAM_CONSTANT_SIZE)
       A.resize(beam_size, true);
     else

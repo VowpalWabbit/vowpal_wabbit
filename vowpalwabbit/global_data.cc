@@ -267,6 +267,8 @@ vw::vw()
   m = 15;
   save_resume = false;
 
+  random_positive_weights = false;
+
   set_minmax = set_mm;
 
   power_t = 0.5;
