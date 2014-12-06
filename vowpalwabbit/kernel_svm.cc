@@ -698,7 +698,7 @@ namespace KSVM
 	    if(randi) {
 	      size_t max_pos = suboptimality(model, subopt);
 	      if(subopt[max_pos] > 0) {
-		if(!overshoot && max_pos == model_pos && max_pos > 0 && j == 0) 
+		if(!overshoot && max_pos == (size_t)model_pos && max_pos > 0 && j == 0) 
 		  cerr<<"Shouldn't reprocess right after process!!!\n";
 		//cerr<<max_pos<<" "<<subopt[max_pos]<<endl;
 		// cerr<<params.model->support_vec[0]->example_counter<<endl;
@@ -912,6 +912,4 @@ namespace KSVM
     l->set_finish<svm_params, finish>();
     return l;
   }    
-
-
 }
