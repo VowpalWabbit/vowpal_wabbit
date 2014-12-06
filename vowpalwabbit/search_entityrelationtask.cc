@@ -116,13 +116,12 @@ namespace EntityRelationTask {
     }
     id1 = atoi(s1.c_str());
     idx++;
-    if(type == 'R'){
-      while(idx < tag.size() && tag[idx] != '_' && tag[idx] != '\0'){
-        s2.push_back(tag[idx]);                  
-        idx++;
-      }
-      id2 = atoi(s2.c_str());
+    assert(type == 'R');
+    while(idx < tag.size() && tag[idx] != '_' && tag[idx] != '\0'){
+      s2.push_back(tag[idx]);                  
+      idx++;
     }
+    id2 = atoi(s2.c_str());
   }
   
   size_t predict_entity(Search::search&sch, example* ex, v_array<size_t>& predictions, ptag my_tag, bool isLdf=false){
@@ -245,13 +244,13 @@ namespace EntityRelationTask {
       size_t count = 0;
       for (size_t i=0; i<n_ent; i++) {
         if(count ==t){
-          predictions[i] = predict_entity(sch, ec[i], predictions, i);
+          predictions[i] = predict_entity(sch, ec[i], predictions, (ptag)i);
           break;
         }
         count++;
         for(size_t j=0; j<i; j++) {
           if(count ==t){
-            uint32_t rel_index = n_ent + (2*n_ent-j-1)*j/2 + i-j-1;
+            uint32_t rel_index = (uint32_t) (n_ent + (2*n_ent-j-1)*j/2 + i-j-1);
             predictions[rel_index] = predict_relation(sch, ec[rel_index], predictions, rel_index);
             break;
           }
@@ -273,7 +272,7 @@ namespace EntityRelationTask {
              
     // loop until all the entity and relation types are predicted
     for(size_t t=0; ; t++){
-      uint32_t i = t % ec.size();
+      uint32_t i = (uint32_t) t % ec.size();
       if(n_predicts == ec.size())
         break;
       
