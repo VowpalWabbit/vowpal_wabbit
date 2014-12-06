@@ -16,29 +16,21 @@ ifeq ($(CXX),)
   exit 1
 endif
 
-ifeq ($(JAVA_HOME),)
-  $(warning No JAVA_HOME found, JNI building will fail.  Please set JAVA_HOME when using JNI)
-endif
-
 UNAME := $(shell uname)
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = -I /usr/include
 BOOST_LIBRARY = -L /usr/lib
-JAVA_INCLUDE = -I $(JAVA_HOME)/include
 
 ifeq ($(UNAME), Linux)
   BOOST_LIBRARY += -L /usr/lib/x86_64-linux-gnu
-  JAVA_INCLUDE += -I $(JAVA_HOME)/include/linux
 endif
 ifeq ($(UNAME), FreeBSD)
   LIBS = -l boost_program_options -l pthread -l z -l compat
   BOOST_INCLUDE = -I /usr/local/include
-  JAVA_INCLUDE += -I $(JAVA_HOME)/include/linux
 endif
 ifeq "CYGWIN" "$(findstring CYGWIN,$(UNAME))"
   LIBS = -l boost_program_options-mt -l pthread -l z
   BOOST_INCLUDE = -I /usr/include
-  JAVA_INCLUDE += -I $(JAVA_HOME)/include/linux
 endif
 ifeq ($(UNAME), Darwin)
   LIBS = -lboost_program_options-mt -lboost_serialization-mt -l pthread -l z
@@ -54,7 +46,6 @@ ifeq ($(UNAME), Darwin)
     BOOST_INCLUDE += -I /opt/local/include
     BOOST_LIBRARY += -L /opt/local/lib
   endif
-  JAVA_INCLUDE += -I $(JAVA_HOME)/include/darwin
 endif
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
@@ -69,10 +60,6 @@ endif
 # for normal fast execution.
 FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -DNDEBUG $(BOOST_INCLUDE)  -fPIC #-DVW_LDA_NO_SSE
 
-ifneq ($(JAVA_HOME),)
-  FLAGS += $(JAVA_INCLUDE)
-endif
-
 # for profiling -- note that it needs to be gcc
 #FLAGS = $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -O2 -fno-strict-aliasing -ffast-math -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) -pg  -fPIC #-DVW_LDA_NO_S
 #CXX = g++
@@ -86,7 +73,7 @@ endif
 BINARIES = vw active_interactor
 MANPAGES = vw.1
 
-all:	vw spanning_tree library_example python
+all:	vw spanning_tree library_example python java
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
@@ -107,6 +94,11 @@ library_example: vw
 
 python: vw
 	cd python; $(MAKE) things
+	
+ifneq ($(JAVA_HOME),)
+java: vw
+	cd java; $(MAKE) things
+endif
 
 .FORCE:
 
@@ -122,3 +114,6 @@ clean:
 	cd cluster && $(MAKE) clean
 	cd library && $(MAKE) clean
 	cd python  && $(MAKE) clean
+ifneq ($(JAVA_HOME),)
+	cd java    && $(MAKE) clean
+endif

@@ -17,7 +17,7 @@ public class VWScorerTest {
     public static void setup() {
         // It seems that the library loading during testing is occasionally broken
         // This makes sure the correct library is loaded
-        System.load(new File("../vowpalwabbit/vw_jni.lib").getAbsolutePath());
+        System.load(new File("target/vw_jni.lib").getAbsolutePath());
         scorer = new VWScorer("-i src/test/resources/house.model --quiet -t");
     }
 

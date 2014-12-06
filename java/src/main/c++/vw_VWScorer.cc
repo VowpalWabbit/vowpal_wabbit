@@ -1,5 +1,5 @@
-#include "parser.h"
-#include "vw.h"
+#include "../../../../vowpalwabbit/parser.h"
+#include "../../../../vowpalwabbit/vw.h"
 #include "vw_VWScorer.h"
 
 vw* vw;
