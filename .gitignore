@@ -73,9 +73,6 @@ demo/mnist/infimnist
 demo/ocr/letter.*
 demo/ocr/run.*
 
-# JNI Library
-vw_jni.lib
-
 # IntelliJ
 *.idea
 *.iml
