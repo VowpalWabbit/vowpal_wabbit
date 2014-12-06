@@ -181,12 +181,12 @@ public:
             if (audit) {
               for (feature*f = feats->begin; f != feats->end; ++f) {
                 uint32_t id = f->weight_index;
-                size_t len = 2 + (feature_name.end-feature_name.begin) + 1 + ceil(log10(id)) + 1;
+                size_t len = 2 + (feature_name.end-feature_name.begin) + 1 + (size_t)ceil(log10(id)) + 1;
                 char* str = (char*)calloc(len, sizeof(char));
                 str[0] = index;
                 str[1] = '_';
                 char *c = str+2;
-                for (char*f=feature_name.begin; f!=feature_name.end; ++f) *(c++) = *f;
+                for (char* fc=feature_name.begin; fc!=feature_name.end; ++fc) *(c++) = *fc;
                 *(c++) = '=';
                 sprintf(c, "%d", id);
                 audit_data ad = { copy((char*)"dictionary"), str, f->weight_index, f->x, true };

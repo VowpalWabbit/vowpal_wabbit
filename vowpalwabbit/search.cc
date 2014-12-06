@@ -728,7 +728,7 @@ namespace Search {
 
     size_t start_K = (priv.is_ldf && CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
 
-    for (action a=start_K; a<ec_cnt; a++) {
+    for (action a= (uint32_t)start_K; a<ec_cnt; a++) {
       cdbg << "== single_prediction_LDF a=" << a << "==" << endl;
       if (start_K > 0)
         CSOAA_AND_WAP_LDF::LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]);
@@ -762,7 +762,7 @@ namespace Search {
         px->resize(new_len);
         px->end = px->begin + new_len;
         memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
-        px->begin[new_len-1] = k;  // TODO: k or ld[k]?
+        px->begin[new_len-1] = (uint32_t)k;  // TODO: k or ld[k]?
         uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
         if (! priv.beam->insert(px, delta_cost, px_hash)) {
           px->delete_v();  // SPEEDUP: could be more efficient by reusing for next action
@@ -860,7 +860,7 @@ namespace Search {
     *here = (unsigned char)sz; here += sizeof(size_t);
     *here = mytag;             here += sizeof(ptag);
     *here = policy;            here += sizeof(int);
-    *here = learner_id;        here += sizeof(size_t);
+    *here = (unsigned char)learner_id;        here += sizeof(size_t);
     *here = (unsigned char)condition_on_cnt;  here += (unsigned char)sizeof(size_t);
     for (size_t i=0; i<condition_on_cnt; i++) {
       *here = condition_on[i];         here += sizeof(ptag);
@@ -918,7 +918,7 @@ namespace Search {
     } else {              // is  LDF
       assert(losses.size() == priv.learn_ec_ref_cnt);
       size_t start_K = (priv.is_ldf && CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(priv.learn_ec_ref[0])) ? 1 : 0;
-      for (action a=start_K; a<priv.learn_ec_ref_cnt; a++) {
+      for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
         example& ec = priv.learn_ec_ref[a];
 
         CS::label& lab = ec.l.cs;
@@ -936,7 +936,7 @@ namespace Search {
       priv.base_learner->learn(*priv.empty_example, learner);
       cdbg << "generate_training_example called learn on empty_example" << endl;
 
-      for (action a=start_K; a<priv.learn_ec_ref_cnt; a++) {
+      for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
         example& ec = priv.learn_ec_ref[a];
         if (add_conditioning) 
           del_example_conditioning(priv, ec);
@@ -1491,7 +1491,12 @@ namespace Search {
     }
   }
 
-  bool mc_label_is_test(void* lab) { return MC::label_is_test((MC::multiclass*)lab); }
+  bool mc_label_is_test(void* lab) {
+	  if (MC::label_is_test((MC::multiclass*)lab) > 0)
+		  return true;
+	  else
+		  return false;
+  }
   
   void search_initialize(vw* all, search& sch) {
     search_private& priv = *sch.priv;
@@ -1801,7 +1806,7 @@ namespace Search {
       if (all.args[i] == "--search_task" && all.args[i+1] == "hook")
         has_hook_task = true;
     if (has_hook_task)
-      for (int i = all.args.size()-2; i >= 0; i--)
+      for (int i = (int)all.args.size()-2; i >= 0; i--)
         if (all.args[i] == "--search_task" && all.args[i+1] != "hook")
           all.args.erase(all.args.begin() + i, all.args.begin() + i + 2);
 

@@ -159,7 +159,10 @@ namespace StagewisePoly
   {
     //note: intentionally leaving out ft_offset.
     assert(wid % stride_shift(poly, 1) == 0);
-    return poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & cycle_bit;
+	if ((poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & cycle_bit) > 0)
+		return true;
+	else
+		return false;
   }
 
   inline void cycle_toggle(stagewise_poly &poly, uint32_t wid)

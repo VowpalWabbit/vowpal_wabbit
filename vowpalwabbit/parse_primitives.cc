@@ -63,7 +63,7 @@ hash_func_t getHasher(const string& s){
   else if(s=="all")
     return hashall;
   else{
-    cerr << "Unknown hash function: " << s << ". Exiting " << endl;
+    cerr << "Unknown hash function: " << s.c_str() << ". Exiting " << endl;
     throw exception();
   }
 }

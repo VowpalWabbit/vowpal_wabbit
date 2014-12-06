@@ -510,7 +510,7 @@ namespace KSVM
     
     if(fabs(diff) > 1.) {
       //cerr<<"Here\n";
-      diff = (diff > 0) - (diff < 0);
+      diff = (float) (diff > 0) - (diff < 0);
       ai = alpha_old + diff;
     }
     
@@ -648,7 +648,7 @@ namespace KSVM
       else {
 
 	for(size_t i = 0;i < params.pool_pos;i++) {
-	  float queryp = 2.0/(1.0 + expf((float)params.active_c*fabs(scores[i])*pow(params.pool[i]->ex.example_counter,0.5)));
+	  float queryp = 2.0f/(1.0f + expf((float)(params.active_c*fabs(scores[i]))*pow(params.pool[i]->ex.example_counter,0.5f)));
 	  if(rand() < queryp) {
 	    svm_example* fec = params.pool[i];
 	    fec->ex.l.simple.weight *= 1/queryp;
@@ -696,7 +696,7 @@ namespace KSVM
 	    //cerr<<"reprocess: ";
 	    int randi = 1;//rand()%2;
 	    if(randi) {
-	      int max_pos = suboptimality(model, subopt);
+	      size_t max_pos = suboptimality(model, subopt);
 	      if(subopt[max_pos] > 0) {
 		if(!overshoot && max_pos == model_pos && max_pos > 0 && j == 0) 
 		  cerr<<"Shouldn't reprocess right after process!!!\n";

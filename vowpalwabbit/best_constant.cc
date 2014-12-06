@@ -19,7 +19,7 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
     if (label1 != label2)
     {
         float weighted_labeled_examples = (float)(all.sd->weighted_examples - all.sd->weighted_unlabeled_examples + all.initial_t);
-        label1_cnt = (all.sd->weighted_labels - label2*weighted_labeled_examples)/(label1 - label2);
+        label1_cnt = (float) (all.sd->weighted_labels - label2*weighted_labeled_examples)/(label1 - label2);
         label2_cnt = weighted_labeled_examples - label1_cnt;
     } else
         return false;
@@ -51,7 +51,7 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
 
     } else if(funcName.compare("hinge") == 0) {
 
-        best_constant = label2_cnt <= label1_cnt ? -1.: 1.;
+        best_constant = label2_cnt <= label1_cnt ? -1.f: 1.f;
 
     } else if(funcName.compare("logistic") == 0) {
 
