@@ -23,7 +23,7 @@ namespace MulticlassTask {
   void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
     task_data * my_task_data = new task_data();
     sch.set_options( 0 );
-    sch.set_num_learners((size_t)ceil(num_actions/2));
+    sch.set_num_learners(num_actions);
     my_task_data->max_label = num_actions;
 	my_task_data->num_level = (size_t)ceil(log(num_actions) /log(2));
 	my_task_data->y_allowed.push_back(1);
