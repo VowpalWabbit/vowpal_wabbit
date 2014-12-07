@@ -116,13 +116,12 @@ namespace EntityRelationTask {
     }
     id1 = atoi(s1.c_str());
     idx++;
-    if(type == 'R'){
-      while(idx < tag.size() && tag[idx] != '_' && tag[idx] != '\0'){
-        s2.push_back(tag[idx]);                  
-        idx++;
-      }
-      id2 = atoi(s2.c_str());
+    assert(type == 'R');
+    while(idx < tag.size() && tag[idx] != '_' && tag[idx] != '\0'){
+      s2.push_back(tag[idx]);                  
+      idx++;
     }
+    id2 = atoi(s2.c_str());
   }
   
   size_t predict_entity(Search::search&sch, example* ex, v_array<size_t>& predictions, ptag my_tag, bool isLdf=false){
