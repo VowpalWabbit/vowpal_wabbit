@@ -24,7 +24,7 @@ namespace SequenceTask {
   void run(Search::search& sch, vector<example*>& ec) {
     for (size_t i=0; i<ec.size(); i++) {
       action oracle     = ec[i]->l.multi.label;
-      size_t prediction = Search::predictor(sch, i+1).set_input(*ec[i]).set_oracle(oracle).set_condition_range(i, sch.get_history_length(), 'p').predict();
+      size_t prediction = Search::predictor(sch, (ptag)i+1).set_input(*ec[i]).set_oracle(oracle).set_condition_range((ptag)i, sch.get_history_length(), 'p').predict();
 
       if (sch.output().good())
         sch.output() << prediction << ' ';
@@ -160,7 +160,7 @@ namespace SequenceSpanTask {
     for (size_t i=0; i<ec.size(); i++) {
       action oracle = ec[i]->l.multi.label;
       size_t len = y_allowed->size();
-      Search::predictor P(sch, i+1);
+      Search::predictor P(sch, (ptag)i+1);
       if (my_task_data->encoding == BIO) {
         if      (last_prediction == 1)       P.set_allowed(y_allowed->begin, len-1);
         else if (last_prediction % 2 == 0) { (*y_allowed)[len-1] = last_prediction+1; P.set_allowed(*y_allowed); }
@@ -181,7 +181,7 @@ namespace SequenceSpanTask {
             oracle = other;
         }
       }
-      last_prediction = P.set_input(*ec[i]).set_condition_range(i, sch.get_history_length(), 'p').set_oracle(oracle).predict();
+      last_prediction = P.set_input(*ec[i]).set_condition_range((ptag)i, sch.get_history_length(), 'p').set_oracle(oracle).predict();
       
       action printed_prediction = (my_task_data->encoding == BIO) ? last_prediction : bilou_to_bio(last_prediction);
       

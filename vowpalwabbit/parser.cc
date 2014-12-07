@@ -1144,7 +1144,7 @@ float get_prediction(example* ec)
 
 float get_cost_sensitive_prediction(example* ec)
 {
-       return ec->pred.multiclass;
+       return (float)ec->pred.multiclass;
 }
 
 size_t get_tag_length(example* ec)
@@ -1174,7 +1174,7 @@ void initialize_examples(vw& all)
 
   for (size_t i = 0; i < all.p->ring_size; i++)
     {
-      bzero(&all.p->examples[i].l, sizeof(polylabel));
+      memset(&all.p->examples[i].l, 0, sizeof(polylabel));
       all.p->examples[i].in_use = false;
     }
 }

@@ -16,7 +16,6 @@ ifeq ($(CXX),)
   exit 1
 endif
 
-
 UNAME := $(shell uname)
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = -I /usr/include
@@ -74,7 +73,7 @@ FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_
 BINARIES = vw active_interactor
 MANPAGES = vw.1
 
-all:	vw spanning_tree library_example python
+all:	vw spanning_tree library_example python java
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
@@ -95,6 +94,11 @@ library_example: vw
 
 python: vw
 	cd python; $(MAKE) things
+	
+ifneq ($(JAVA_HOME),)
+java: vw
+	cd java; $(MAKE) things
+endif
 
 .FORCE:
 
@@ -110,3 +114,6 @@ clean:
 	cd cluster && $(MAKE) clean
 	cd library && $(MAKE) clean
 	cd python  && $(MAKE) clean
+ifneq ($(JAVA_HOME),)
+	cd java    && $(MAKE) clean
+endif
