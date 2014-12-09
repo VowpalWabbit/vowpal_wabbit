@@ -444,8 +444,8 @@ float find_cw(lda& l, float* u_for_w, float* v)
   return 1.f / c_w;
 }
 
-v_array<float> new_gamma;
-v_array<float> old_gamma;
+  v_array<float> new_gamma = v_init<float>();
+  v_array<float> old_gamma = v_init<float>();
 // Returns an estimate of the part of the variational bound that
 // doesn't have to do with beta for the entire corpus for the current
 // setting of lambda based on the document passed in. The value is

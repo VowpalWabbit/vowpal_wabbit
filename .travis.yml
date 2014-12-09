@@ -4,6 +4,8 @@ compiler:
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libboost-all-dev
+  - sudo apt-get install maven
 install: 
   - make
+  - cd java; mvn test
 script: make test

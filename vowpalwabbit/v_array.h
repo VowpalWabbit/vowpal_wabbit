@@ -18,7 +18,7 @@ license as described in the file LICENSE.
 
 const size_t erase_point = ~ ((1 << 10) -1);
 
-template<class T> class v_array{
+template<class T> struct v_array{
  public:
   T* begin;
   T* end;
@@ -29,7 +29,6 @@ template<class T> class v_array{
   T pop() { return *(--end);}
   bool empty() { return begin == end;}
   void decr() { end--;}
-  v_array() { begin= NULL; end = NULL; end_array=NULL; erase_count = 0;}
   T& operator[](size_t i) { return begin[i]; }
   T& get(size_t i) { return begin[i]; }
   inline size_t size(){return end-begin;}
@@ -143,6 +142,9 @@ inline size_t max(size_t a, size_t b)
 inline size_t min(size_t a, size_t b)
 { if ( a < b) return a; else return b;
 }
+
+template<class T> 
+inline v_array<T> v_init() { return {NULL, NULL, NULL, 0};}
 
 template<class T> void copy_array(v_array<T>& dst, v_array<T> src)
 {

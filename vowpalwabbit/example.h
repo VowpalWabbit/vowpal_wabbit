@@ -85,17 +85,17 @@ struct flat_example
 {
   polylabel l;
 
-	size_t tag_len;
-	char* tag;//An identifier for the example.  
-
-	size_t example_counter;  
-	uint32_t ft_offset;  
-	float global_weight;
-
-	size_t num_features;//precomputed, cause it's fast&easy.  
-        float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
-	size_t feature_map_len;
-	feature* feature_map; //map to store sparse feature vectors  
+  size_t tag_len;
+  char* tag;//An identifier for the example.  
+  
+  size_t example_counter;  
+  uint32_t ft_offset;  
+  float global_weight;
+  
+  size_t num_features;//precomputed, cause it's fast&easy.  
+  float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
+  size_t feature_map_len;
+  feature* feature_map; //map to store sparse feature vectors  
 };
 
 flat_example* flatten_example(vw& all, example *ec);

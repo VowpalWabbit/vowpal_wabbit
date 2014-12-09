@@ -829,7 +829,7 @@ __DATA__
     train-sets/ref/rcv1_small.stderr
 
 # Test 17: Run LDA with 100 topics on 1000 Wikipedia articles
-{LDA} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 --invariant train-sets/wiki1K.dat
+{LDA} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 train-sets/wiki256.dat
     train-sets/ref/wiki1K.stderr
 
 # Test 18: Run search on seq_small for 12 passes, 4 passes per policy

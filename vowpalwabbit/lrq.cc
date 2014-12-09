@@ -205,7 +205,10 @@ namespace LRQ {
     if (vm.count("random_seed")) random_seed = vm["random_seed"].as<size_t> ();
 
     lrq->initial_seed = lrq->seed = random_seed | 8675309;
-    lrq->dropout = (bool)vm.count("lrqdropout");
+	if (vm.count("lrqdropout"))
+		lrq->dropout = true;
+	else
+		lrq->dropout = false;
 
     all.file_options.append(" --lrqdropout");
     

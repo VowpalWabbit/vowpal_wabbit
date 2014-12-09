@@ -173,7 +173,7 @@ void set_compressed(parser* par){
 
 uint32_t cache_numbits(io_buf* buf, int filepointer)
 {
-  v_array<char> t;
+  v_array<char> t = v_init<char>();
 
   uint32_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
@@ -241,14 +241,17 @@ void reset_source(vw& all, size_t numbits)
       all.p->output->flush();
       all.p->write_cache = false;
       all.p->output->close_file();
-	  remove(all.p->output->finalname.begin);
+      remove(all.p->output->finalname.begin);
       rename(all.p->output->currentname.begin, all.p->output->finalname.begin);
-      while(input->files.size() > 0)
-	{
-	  int fd = input->files.pop();
-	  if (!member(all.final_prediction_sink, (size_t) fd))
-	    io_buf::close_file_or_socket(fd);
-	}
+      while(input->num_files() > 0)
+	if (input->compressed())
+	  input->close_file();
+	else
+	  {
+	    int fd = input->files.pop();
+	    if (!member(all.final_prediction_sink, (size_t) fd))
+	      io_buf::close_file_or_socket(fd);
+	  }
       input->open_file(all.p->output->finalname.begin, all.stdin_off, io_buf::READ); //pushing is merged into open_file
       all.p->reader = read_cached_features;
     }
@@ -509,7 +512,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
 
 	  // create children
 	  size_t num_children = all.num_children;
-	  v_array<int> children;
+	  v_array<int> children = v_init<int>();
 	  children.resize(num_children);
 	  for (size_t i = 0; i < num_children; i++)
 	    {
@@ -982,7 +985,7 @@ namespace VW{
   }
 
   void parse_example_label(vw& all, example&ec, string label) {
-    v_array<substring> words;
+    v_array<substring> words = v_init<substring>();
     char* cstr = (char*)label.c_str();
     substring str = { cstr, cstr+label.length() };
     words.push_back(str);
@@ -1141,7 +1144,7 @@ float get_prediction(example* ec)
 
 float get_cost_sensitive_prediction(example* ec)
 {
-       return ec->pred.multiclass;
+       return (float)ec->pred.multiclass;
 }
 
 size_t get_tag_length(example* ec)
@@ -1171,7 +1174,7 @@ void initialize_examples(vw& all)
 
   for (size_t i = 0; i < all.p->ring_size; i++)
     {
-      bzero(&all.p->examples[i].l, sizeof(polylabel));
+      memset(&all.p->examples[i].l, 0, sizeof(polylabel));
       all.p->examples[i].in_use = false;
     }
 }

@@ -49,6 +49,17 @@ namespace DepParserTask {
     data->ec_buf.resize(12, true);
     data->children = new v_array<uint32_t>[6]; 
 
+    for(size_t i = 0; i < 6; i++)
+      data->children[i] = v_init<uint32_t>();
+
+    data->valid_actions = v_init<uint32_t>();
+    data->gold_heads = v_init<uint32_t>();
+    data->gold_actions = v_init<uint32_t>();
+    data->stack = v_init<uint32_t>();
+    data->heads = v_init<uint32_t>();
+    data->ec_buf = v_init<example*>();
+    data->temp = v_init<uint32_t>();
+
 
     srn.set_num_learners(1);
     srn.set_task_data<task_data>(data);
@@ -67,7 +78,6 @@ namespace DepParserTask {
   void finish(Search::search& srn) {
     task_data *data = srn.get_task_data<task_data>();
     //    dealloc_example(CS::cs_label.delete_label, *(data->ex));
-    data->valid_actions.delete_v();
     data->gold_heads.delete_v();
     data->gold_actions.delete_v();
     data->stack.delete_v();
@@ -94,7 +104,7 @@ namespace DepParserTask {
       unsigned char ns_a = data->pairs[idx][0];
       unsigned char ns_b = data->pairs[idx][1];
       for(uint32_t i=0; i< ex->atomics[(int)ns_a].size();i++){
-        uint32_t offset = (ex->atomics[(int)ns_a][i].weight_index>>ss) *quadratic_constant+additional_offset;
+        uint32_t offset = (ex->atomics[(int)ns_a][i].weight_index>>ss) *quadratic_constant+ (uint32_t) additional_offset;
         for(uint32_t j=0; j< ex->atomics[(int)ns_b].size();j++){
           add_feature(ex,  offset+ (ex->atomics[(int)ns_b][j].weight_index>>ss) , quad_namespace, mask, ss);
         }
@@ -113,7 +123,7 @@ namespace DepParserTask {
       for(uint32_t i=0; i< ex->atomics[(int)ns_a].size();i++){
         uint32_t offset1 =  (ex->atomics[(int)ns_a][i].weight_index>>ss)*cubic_constant;
         for(uint32_t j=0; j< ex->atomics[(int)ns_b].size();j++){
-          uint32_t offset2 =  ((ex->atomics[(int)ns_b][j].weight_index>>ss)+offset1)*cubic_constant2+additional_offset;
+          uint32_t offset2 =  ((ex->atomics[(int)ns_b][j].weight_index>>ss)+offset1)*cubic_constant2+ (uint32_t)additional_offset;
           for(uint32_t k=0; k< ex->atomics[(int)ns_c].size();k++){
             add_feature(ex, offset2 + ( ex->atomics[(int)ns_c][k].weight_index>>ss) , cubic_namespace, mask, ss);
           }
@@ -174,7 +184,7 @@ namespace DepParserTask {
     vector<string> &newpairs = data->pairs;
     vector<string> &newtriples = data->triples;
     data->ex = alloc_examples(sizeof(base_ex[0].l.multi.label), 1);
-    data->nfs = base_ex->indices.size()-1; // remove constant fs
+    data->nfs = (int) base_ex->indices.size()-1; // remove constant fs
     size_t nfs = data->nfs;
 
     // setup feature template
@@ -186,7 +196,7 @@ namespace DepParserTask {
 
     data->ex->indices.push_back(val_namespace);
     for(size_t i=0; i<12*nfs; i++)
-      data->ex->indices.push_back(i);
+      data->ex->indices.push_back((unsigned char)i);
 
     size_t pos = 0;
     if(!data->no_quadratic_features){
@@ -296,13 +306,13 @@ namespace DepParserTask {
         if(*fs == constant_namespace) // ignore constant_namespace
           continue;
 
-        size_t additional_offset = (i*nfs+j)*offset_const;
+        uint32_t additional_offset = (uint32_t)((i*nfs+j)*offset_const);
         for(size_t k=0; k<ec[0]->atomics[*fs].size(); k++) {
           if(!ec_buf[i])
             v0 = affix_constant*((j+1)*quadratic_constant + k);
           else
             v0 = (ec_buf[i]->atomics[*fs][k].weight_index>>ss);
-          add_feature(&ex, (uint32_t) v0 + additional_offset, i*nfs+j, mask, ss);
+          add_feature(&ex, (uint32_t) v0 + additional_offset, (unsigned char)(i*nfs+j), mask, ss);
         }
         j++;
       }
@@ -320,9 +330,9 @@ namespace DepParserTask {
     // #left child of rightmost item in buf
     temp[3] = idx>n? 1: 1+min(5 , children[0][idx]);
 
-    size_t additional_offset = val_namespace*offset_const;
+    uint32_t additional_offset = val_namespace*offset_const;
     for(int j=0; j< 4;j++) {
-      add_feature(&ex, (uint32_t) temp[j]+additional_offset , val_namespace, mask, ss);
+      add_feature(&ex, temp[j]+ additional_offset , val_namespace, mask, ss);
     }
 
     if(!data->no_quadratic_features)
@@ -331,11 +341,11 @@ namespace DepParserTask {
       add_cubic_features(srn, data->ex);
     size_t count=0;
     for (unsigned char* ns = data->ex->indices.begin; ns != data->ex->indices.end; ns++) {
-      data->ex->sum_feat_sq[(int)*ns] = data->ex->atomics[(int)*ns].size();
+      data->ex->sum_feat_sq[(int)*ns] = (float) data->ex->atomics[(int)*ns].size();
       count+= data->ex->atomics[(int)*ns].size();
     }
     data->ex->num_features = count;
-    data->ex->total_sum_feat_sq = count;
+    data->ex->total_sum_feat_sq = (float) count;
   }
 
   void get_valid_actions(v_array<uint32_t> & valid_action, uint32_t idx, uint32_t n, uint32_t stack_depth) {
@@ -406,7 +416,7 @@ namespace DepParserTask {
     cdep << "start structured predict"<<endl;
     task_data *data = srn.get_task_data<task_data>();
     v_array<uint32_t> &gold_actions = data->gold_actions, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads;
-    uint32_t n = ec.size();
+    uint32_t n = (uint32_t) ec.size();
     uint32_t idx = 2;
 
     // initialization
@@ -435,7 +445,7 @@ namespace DepParserTask {
     while(stack.size()>1 || idx <= n){
       reset_ex(data->ex);
       extract_features(srn, idx, ec);
-      get_valid_actions(valid_actions, idx, n, stack.size());
+      get_valid_actions(valid_actions, idx, n, (uint32_t) stack.size());
       get_gold_actions(srn, idx, n);
       uint32_t prediction = Search::predictor(srn, (ptag) 0).set_input(*(data->ex)).set_oracle(gold_actions[0]).set_allowed(valid_actions).set_condition_range(count, srn.get_history_length(), 'p').predict();
       idx = transition_hybrid(srn, prediction, idx);

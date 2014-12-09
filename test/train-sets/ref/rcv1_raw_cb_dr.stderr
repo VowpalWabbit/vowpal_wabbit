@@ -20,15 +20,11 @@ loss       last          counter      weight    label  predict features
 0.258627   0.182351        128    128.0    known        2      610   0.317785   0.240497   1.000000  
 0.214591   0.170556        256    256.0    known        2      712   0.294125   0.529288   0.000000  
 0.186576   0.158562        512    512.0    known        1      424   0.265850   0.312602   1.000000  
-0.131641   0.076706       1024   1024.0    known        1      574   0.222660   0.779852   1.000000  
-0.111389   0.091137       2048   2048.0    known        2      166   0.183197   0.223786   0.000000  
-0.103284   0.095180       4096   4096.0    known        1      664   0.152655   0.350842   0.000000  
-0.088659   0.074034       8192   8192.0    known        2      598   0.126395   0.828505   0.000000  
 
 finished run
-number of examples per pass = 10000
+number of examples per pass = 1000
 passes used = 1
-weighted example sum = 10000
+weighted example sum = 1000
 weighted label sum = 0
-average loss = 0.0847158
-total feature number = 4476364
+average loss = 0.129796
+total feature number = 440020

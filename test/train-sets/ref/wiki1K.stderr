@@ -3,24 +3,23 @@ learning rate = 1
 initial_t = 0
 power_t = 0.5
 using no cache
-Reading datafile = train-sets/wiki1K.dat
+Reading datafile = train-sets/wiki256.dat
 num sources = 1
 average    since         example     example  current  current  current
 loss       last          counter      weight    label  predict features
-10.149304  10.149304           1         1.0  unknown   0.0000      732
-10.369816  10.590328           2         2.0  unknown   0.0000       27
-10.325922  10.282029           4         4.0  unknown   0.0000       53
-10.401762  10.477602           8         8.0  unknown   0.0000       60
-10.356259  10.310756          16        16.0  unknown   0.0000       26
-10.472933  10.589607          32        32.0  unknown   0.0000      125
-10.474846  10.476759          64        64.0  unknown   0.0000      313
-10.425306  10.375767         128       128.0  unknown   0.0000       50
-10.005561  9.585815          256       256.0  unknown   0.0000       33
-9.331716   8.657871          512       512.0  unknown   0.0000       26
+10.149311  10.149311           1         1.0  unknown   0.0000      732
+10.369825  10.590340           2         2.0  unknown   0.0000       27
+10.325934  10.282042           4         4.0  unknown   0.0000       53
+10.401774  10.477614           8         8.0  unknown   0.0000       60
+10.356269  10.310764          16        16.0  unknown   0.0000       26
+10.472941  10.589612          32        32.0  unknown   0.0000      125
+10.474854  10.476768          64        64.0  unknown   0.0000      313
+10.425314  10.375773         128       128.0  unknown   0.0000       50
+10.005564  9.585815          256       256.0  unknown   0.0000       33
 
 finished run
-number of examples = 1000
-weighted example sum = 1000
+number of examples = 256
+weighted example sum = 256
 weighted label sum = 0
-average loss = 8.87289
-total feature number = 86919
+average loss = 10.0056
+total feature number = 22158

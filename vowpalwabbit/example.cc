@@ -120,6 +120,7 @@ namespace VW {
 	fs.mask = (uint32_t)all.reg.weight_mask >> all.reg.stride_shift;
 	fs.base = all.reg.weight_vector;
 	fs.all = &all;
+	fs.feature_map = v_init<feature>();
 	GD::foreach_feature<features_and_source, uint32_t, vec_store>(all, *ec, fs); 		
 	feature_map_len = fs.feature_map.size();
 	return fs.feature_map.begin;

@@ -74,7 +74,7 @@ class ezexample {
   // create a new ezexample by asking the vw parser for an example
   ezexample(vw*this_vw, bool multiline=false, vw*this_vw_parser=NULL) {
     setup_new_ezexample(this_vw, multiline, this_vw_parser);
-    
+    example_copies = v_init<example*>();    
     ec = get_new_example();
     we_create_ec = true;
 

@@ -106,7 +106,7 @@ namespace Search {
     vector<action> test_action_sequence; // if test-mode was run, what was the corresponding action sequence; it's a vector cuz we might expose it to the library
     action learn_oracle_action;    // store an oracle action for debugging purposes
     
-    void* allowed_actions_cache;   // either a CS::label* or CB::label* depending on cb_learner
+    polylabel* allowed_actions_cache;
     
     size_t loss_declared_cnt;      // how many times did run declare any loss (implicitly or explicitly)?
     v_array<action> train_trajectory; // the training trajectory
@@ -608,9 +608,9 @@ namespace Search {
     else      { CS::wclass   cost = { value, index, 0., 0. }; ld.cs.costs.push_back(cost); }
   }
   
-  polylabel allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const action* allowed_actions, size_t allowed_actions_cnt) {
+  polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const action* allowed_actions, size_t allowed_actions_cnt) {
     bool isCB = priv.cb_learner;
-    polylabel& ld = *(polylabel*)priv.allowed_actions_cache;
+    polylabel& ld = *priv.allowed_actions_cache;
     uint32_t num_costs = (uint32_t)cs_get_costs_size(isCB, ld);
 
     if (priv.is_ldf) {  // LDF version easier
@@ -686,6 +686,7 @@ namespace Search {
         float delta_cost = cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k) - act_cost + priv.beam_initial_cost;   // TODO: is delta_cost the right cost?
         // construct the action prefix
         action_prefix* px = new v_array<action>;
+	*px = v_init<action>();
         px->resize(new_len);
         px->end = px->begin + new_len;
         memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
@@ -727,7 +728,7 @@ namespace Search {
 
     size_t start_K = (priv.is_ldf && CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
 
-    for (action a=start_K; a<ec_cnt; a++) {
+    for (action a= (uint32_t)start_K; a<ec_cnt; a++) {
       cdbg << "== single_prediction_LDF a=" << a << "==" << endl;
       if (start_K > 0)
         CSOAA_AND_WAP_LDF::LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]);
@@ -757,10 +758,11 @@ namespace Search {
         if (k == best_action) continue;
         float delta_cost = ecs[k].partial_prediction - best_prediction + priv.beam_initial_cost;
         action_prefix* px = new v_array<action>;
+	*px = v_init<action>();
         px->resize(new_len);
         px->end = px->begin + new_len;
         memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
-        px->begin[new_len-1] = k;  // TODO: k or ld[k]?
+        px->begin[new_len-1] = (uint32_t)k;  // TODO: k or ld[k]?
         uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
         if (! priv.beam->insert(px, delta_cost, px_hash)) {
           px->delete_v();  // SPEEDUP: could be more efficient by reusing for next action
@@ -858,7 +860,7 @@ namespace Search {
     *here = (unsigned char)sz; here += sizeof(size_t);
     *here = mytag;             here += sizeof(ptag);
     *here = policy;            here += sizeof(int);
-    *here = learner_id;        here += sizeof(size_t);
+    *here = (unsigned char)learner_id;        here += sizeof(size_t);
     *here = (unsigned char)condition_on_cnt;  here += (unsigned char)sizeof(size_t);
     for (size_t i=0; i<condition_on_cnt; i++) {
       *here = condition_on[i];         here += sizeof(ptag);
@@ -916,7 +918,7 @@ namespace Search {
     } else {              // is  LDF
       assert(losses.size() == priv.learn_ec_ref_cnt);
       size_t start_K = (priv.is_ldf && CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(priv.learn_ec_ref[0])) ? 1 : 0;
-      for (action a=start_K; a<priv.learn_ec_ref_cnt; a++) {
+      for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
         example& ec = priv.learn_ec_ref[a];
 
         CS::label& lab = ec.l.cs;
@@ -934,7 +936,7 @@ namespace Search {
       priv.base_learner->learn(*priv.empty_example, learner);
       cdbg << "generate_training_example called learn on empty_example" << endl;
 
-      for (action a=start_K; a<priv.learn_ec_ref_cnt; a++) {
+      for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
         example& ec = priv.learn_ec_ref[a];
         if (add_conditioning) 
           del_example_conditioning(priv, ec);
@@ -1101,7 +1103,7 @@ namespace Search {
           if (gte_here) {
             cdbg << "INIT_TRAIN, NO_ROLLOUT, at least one oracle_actions" << endl;
             // we can generate a training example _NOW_ because we're not doing rollouts
-            v_array<float> losses; // SPEEDUP: move this to data structure
+            v_array<float> losses = v_init<float>(); // SPEEDUP: move this to data structure
             allowed_actions_to_losses(priv, ec_cnt, allowed_actions, allowed_actions_cnt, oracle_actions, oracle_actions_cnt, losses);
             cdbg_print_array("losses", losses);
             priv.learn_ec_ref = ecs;
@@ -1174,6 +1176,7 @@ namespace Search {
   
   void final_beam_insert(search_private&priv, Beam::beam< pair<action_prefix*,string> >& beam, float cost, vector<action>& seq) {
     action_prefix* final = new action_prefix;  // TODO: can we memcpy/push_many?
+    *final = v_init<action>();
     for (size_t i=0; i<seq.size(); i++)
       final->push_back(seq[i]);
     pair<action_prefix*,string>* p = priv.should_produce_string ? new pair<action_prefix*,string>(final, priv.pred_string->str()) : new pair<action_prefix*,string>(final, "");
@@ -1240,12 +1243,12 @@ namespace Search {
     }
 
     if (all.final_prediction_sink.begin != all.final_prediction_sink.end) {  // need to produce prediction output
-      v_array<char> new_tag;
+      v_array<char> new_tag = v_init<char>();
       for (; best != final_beam.end(); ++best)
         if (best->active) {
           new_tag.erase();
           new_tag.resize(50, true);
-          int len = snprintf(new_tag.begin, 50, "%-10.6f\t", best->cost);
+          int len = sprintf(new_tag.begin, "%-10.6f\t", best->cost);
           new_tag.end = new_tag.begin + len;
           push_many(new_tag, priv.ec_seq[0]->tag.begin, priv.ec_seq[0]->tag.size());
           for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
@@ -1488,7 +1491,12 @@ namespace Search {
     }
   }
 
-  bool mc_label_is_test(void* lab) { return MC::label_is_test((MC::multiclass*)lab); }
+  bool mc_label_is_test(void* lab) {
+	  if (MC::label_is_test((MC::multiclass*)lab) > 0)
+		  return true;
+	  else
+		  return false;
+  }
   
   void search_initialize(vw* all, search& sch) {
     search_private& priv = *sch.priv;
@@ -1512,7 +1520,7 @@ namespace Search {
     priv.T = 0;
     priv.learn_ec_ref = NULL;
     priv.learn_ec_ref_cnt = 0;
-    priv.allowed_actions_cache = NULL;
+    //priv.allowed_actions_cache = NULL;
     
     priv.loss_declared_cnt = 0;
     priv.learn_t = 0;
@@ -1596,13 +1604,10 @@ namespace Search {
     }
     priv.beam_actions.delete_v();
     
-    if (priv.cb_learner) {
-      ((CB::label*)priv.allowed_actions_cache)->costs.delete_v();
-      delete (CB::label*)priv.allowed_actions_cache;
-    } else {
-      ((CS::label*)priv.allowed_actions_cache)->costs.delete_v();
-      delete (CS::label*)priv.allowed_actions_cache;
-    }
+    if (priv.cb_learner)
+      priv.allowed_actions_cache->cb.costs.delete_v();
+    else
+      priv.allowed_actions_cache->cs.costs.delete_v();
 
     priv.train_trajectory.delete_v();
     priv.current_trajectory.delete_v();
@@ -1628,8 +1633,8 @@ namespace Search {
       priv.task->finish(sch);
     }
 
+    free(priv.allowed_actions_cache);
     delete priv.rawOutputStringStream;
-    
     delete sch.priv;
   }
 
@@ -1704,10 +1709,10 @@ namespace Search {
     }
     fclose(f);
 
-    v_array<CS::label> allowed;
+    v_array<CS::label> allowed = v_init<CS::label>();
 
     for (size_t from=0; from<A; from++) {
-      v_array<CS::wclass> costs;
+      v_array<CS::wclass> costs = v_init<CS::wclass>();
 
       for (size_t to=0; to<A; to++)
         if (bg[from * (A+1) + to]) {
@@ -1736,7 +1741,7 @@ namespace Search {
     strcpy(cstr, nf_string.c_str());
 
     char * p = strtok(cstr, ",");
-    v_array<substring> cmd;
+    v_array<substring> cmd = v_init<substring>();
     while (p != 0) {
       cmd.erase();
       substring me = { p, p+strlen(p) };
@@ -1800,7 +1805,7 @@ namespace Search {
       if (all.args[i] == "--search_task" && all.args[i+1] == "hook")
         has_hook_task = true;
     if (has_hook_task)
-      for (int i = all.args.size()-2; i >= 0; i--)
+      for (int i = (int)all.args.size()-2; i >= 0; i--)
         if (all.args[i] == "--search_task" && all.args[i+1] != "hook")
           all.args.erase(all.args.begin() + i, all.args.begin() + i + 2);
     
@@ -1832,6 +1837,8 @@ namespace Search {
 
     if (vm.count("search_beam"))
       priv.beam = new Beam::beam<action_prefix>(vm["search_beam"].as<size_t>());  // TODO: pruning, kbest, equivalence testing
+    else
+      priv.beam = NULL;
 
     priv.kbest = 1;
     if (vm.count("search_kbest")) {
@@ -1889,12 +1896,13 @@ namespace Search {
                          "warning: you specified a different history length through --search_history_length than the one loaded from predictor. using loaded value of: ", "");
     
     //check if the base learner is contextual bandit, in which case, we dont rollout all actions.
+    priv.allowed_actions_cache = (polylabel*)calloc_or_die(1,sizeof(polylabel));
     if (vm.count("cb")) {
       priv.cb_learner = true;
-      priv.allowed_actions_cache = new CB::label();
+      CB::cb_label.default_label(priv.allowed_actions_cache);
     } else {
       priv.cb_learner = false;
-      priv.allowed_actions_cache = new CS::label();
+      CS::cs_label.default_label(priv.allowed_actions_cache);
     }
 
     //if we loaded a regressor with -i option, --search_trained_nb_policies contains the number of trained policies in the file
@@ -2072,7 +2080,12 @@ namespace Search {
   uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
   
   // predictor implementation
-  predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(NULL), ec_cnt(0), ec_alloced(false), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { }
+  predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(NULL), ec_cnt(0), ec_alloced(false), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { 
+    oracle_actions = v_init<action>(); 
+    condition_on_tags = v_init<ptag>();
+    condition_on_names = v_init<char>();
+    allowed_actions = v_init<action>();
+  }
 
   void predictor::free_ec() {
     if (ec_alloced) {

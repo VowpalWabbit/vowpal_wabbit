@@ -44,7 +44,7 @@ public:
   uint32_t* affix_features;
   bool* spelling_features;
   v_array<char> spelling;
-  v_array<feature_dict*>* namespace_dictionaries;
+  vector<feature_dict*>* namespace_dictionaries;
   
   ~TC_parser(){ }
   
@@ -99,7 +99,7 @@ public:
       ae->sum_feat_sq[index] += v*v;
       ae->atomics[index].push_back(f);
       if(audit){
-	v_array<char> feature_v;
+	v_array<char> feature_v = v_init<char>();
 	push_many(feature_v, feature_name.begin, feature_name.end - feature_name.begin);
 	feature_v.push_back('\0');
 	audit_data ad = {copy(base),feature_v.begin,word_hash,v,true};
@@ -124,7 +124,7 @@ public:
           ae->sum_feat_sq[affix_namespace] += v*v;
           ae->atomics[affix_namespace].push_back(f2);
           if (audit) {
-            v_array<char> affix_v;
+            v_array<char> affix_v = v_init<char>();
             if (index != ' ') affix_v.push_back(index);
             affix_v.push_back(is_prefix ? '+' : '-');
             affix_v.push_back('0' + len);
@@ -159,7 +159,7 @@ public:
         ae->sum_feat_sq[spelling_namespace] += v*v;
         ae->atomics[spelling_namespace].push_back(f2);
         if (audit) {
-          v_array<char> spelling_v;
+          v_array<char> spelling_v = v_init<char>();
           if (index != ' ') { spelling_v.push_back(index); spelling_v.push_back('_'); }
           push_many(spelling_v, spelling_ss.begin, spelling_ss.end - spelling_ss.begin);
           spelling_v.push_back('\0');
@@ -181,12 +181,12 @@ public:
             if (audit) {
               for (feature*f = feats->begin; f != feats->end; ++f) {
                 uint32_t id = f->weight_index;
-                size_t len = 2 + (feature_name.end-feature_name.begin) + 1 + ceil(log10(id)) + 1;
+                size_t len = 2 + (feature_name.end-feature_name.begin) + 1 + (size_t)ceil(log10(id)) + 1;
                 char* str = (char*)calloc(len, sizeof(char));
                 str[0] = index;
                 str[1] = '_';
                 char *c = str+2;
-                for (char*f=feature_name.begin; f!=feature_name.end; ++f) *(c++) = *f;
+                for (char* fc=feature_name.begin; fc!=feature_name.end; ++fc) *(c++) = *fc;
                 *(c++) = '=';
                 sprintf(c, "%d", id);
                 audit_data ad = { copy((char*)"dictionary"), str, f->weight_index, f->x, true };
@@ -232,7 +232,7 @@ public:
 	new_index = true;
       substring name = read_name();
       if(audit){
-	v_array<char> base_v_array;
+	v_array<char> base_v_array = v_init<char>();
 	push_many(base_v_array, name.begin, name.end - name.begin);
 	base_v_array.push_back('\0');
 	if (base != NULL)
