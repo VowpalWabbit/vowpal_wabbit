@@ -283,4 +283,10 @@ namespace PRG {
 	};
 }
 }
+inline static std::string to_string(const u64 &i) {
+	return to_string((long long unsigned int) i);
+}
+inline static std::string to_string(const u32 &i) {
+	return to_string((long unsigned int) i);
+}
 /*! @} End of Doxygen Groups*/
