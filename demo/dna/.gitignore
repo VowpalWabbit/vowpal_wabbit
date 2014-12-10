@@ -1,7 +1,0 @@
-*.gz
-*.bz2
-quaddna2vw
-*.model
-*cache*
-*.predictions
-*.pid
