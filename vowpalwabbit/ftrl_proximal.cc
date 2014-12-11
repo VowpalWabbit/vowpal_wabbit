@@ -129,7 +129,7 @@ namespace FTRL {
     label_data& ld = ec.l.simple;
     //ec.loss = all.loss->getLoss(all.sd, ec.updated_prediction, ld.label) * ld.weight;
     if (b.progressive_validation) {
-      float v = 1./(1 + exp(-ec.updated_prediction));
+      float v = 1./(1 + exp(-ec.pred.scalar));
       fprintf(b.fo, "%.6f\t%d\n", v, (int)(ld.label * ld.weight));
     }
   }
