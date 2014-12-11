@@ -64,6 +64,9 @@ namespace FTRL {
   struct update_data {
     float update;
     float ftrl_alpha;
+    float ftrl_beta;
+    float l1_lambda;
+    float l2_lambda;
    };
    
   //void update_grad(weight* weights, size_t mask, float loss_grad)
@@ -80,7 +83,7 @@ namespace FTRL {
 
   float predict_and_gradient(vw& all, ftrl &b, example& ec) {
     float fp = ftrl_predict(all, ec);
-    ec.updated_prediction = fp;
+    ec.pred.scalar = fp;
 
     label_data& ld = ec.l.simple;
     all.set_minmax(all.sd, ld.label);
@@ -97,28 +100,34 @@ namespace FTRL {
 
  inline float sign(float w){ if (w < 0.) return -1.; else  return 1.;}
 
-  void update_weight(vw& all, ftrl &b, example& ec) {
-    size_t mask = all.reg.weight_mask;
-    weight* weights = all.reg.weight_vector;
-    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) {
-      feature *f = ec.atomics[*i].begin;
-      for (; f != ec.atomics[*i].end; f++) {
-        weight* w = &weights[f->weight_index & mask];
-        float flag = sign(w[W_ZT]);
-        float fabs_zt = w[W_ZT] * flag;
-        if (fabs_zt <= all.l1_lambda) {
-          w[W_XT] = 0.;
-        } else {
-          double step = 1/(all.l2_lambda + (b.ftrl_beta + sqrt(w[W_G2]))/b.ftrl_alpha);
-          w[W_XT] = step * flag * (all.l1_lambda - fabs_zt);
-        }
-      }
+ void update_w(update_data& d, float x, float& wref) {
+    float* w = &wref;
+    float flag = sign(w[W_ZT]);
+    float fabs_zt = w[W_ZT] * flag;
+    if (fabs_zt <= d.l1_lambda) {
+      w[W_XT] = 0.;
+    } else {
+      double step = 1/(d.l2_lambda + (d.ftrl_beta + sqrt(w[W_G2]))/d.ftrl_alpha);
+      w[W_XT] = step * flag * (d.l1_lambda - fabs_zt);
     }
+ }
+ 
+  void update_weight(vw& all, ftrl &b, example& ec) {
+      
+    struct update_data data;
+    
+    data.ftrl_alpha = b.ftrl_alpha;
+    data.ftrl_beta = b.ftrl_beta;
+    data.l1_lambda = all.l1_lambda;
+    data.l2_lambda = all.l2_lambda;
+      
+    GD::foreach_feature<update_data, update_w>(all, ec, data);
+
   }
 
   void evaluate_example(vw& all, ftrl& b , example& ec) {
     label_data& ld = ec.l.simple;
-    ec.loss = all.loss->getLoss(all.sd, ec.updated_prediction, ld.label) * ld.weight;
+    //ec.loss = all.loss->getLoss(all.sd, ec.updated_prediction, ld.label) * ld.weight;
     if (b.progressive_validation) {
       float v = 1./(1 + exp(-ec.updated_prediction));
       fprintf(b.fo, "%.6f\t%d\n", v, (int)(ld.label * ld.weight));
