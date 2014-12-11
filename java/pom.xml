@@ -5,7 +5,7 @@
     <groupId>vw</groupId>
     <artifactId>vw-jni-${os.version}-${os.arch}</artifactId>
     <version>1.0</version>
-    <name>Vowpal Wabbit JNI Layer</name>Addin
+    <name>Vowpal Wabbit JNI Layer</name>
 
     <scm>
         <connection>scm:git:git@github.com:elevatedcareers/vowpal_wabbit.git</connection>
