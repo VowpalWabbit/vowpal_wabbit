@@ -32,7 +32,7 @@ using namespace LEARNER;
 namespace GD
 {
   struct gd{
-    double normalized_sum_norm_x;
+    //double normalized_sum_norm_x;
     double total_weight;
     size_t no_win_counter;
     size_t early_stop_thres;
@@ -75,14 +75,14 @@ namespace GD
     if (normalized) {
       if (sqrt_rate) 
 	{
-	  float avg_norm = (float) g.total_weight / (float) g.normalized_sum_norm_x;
+	  float avg_norm = (float) g.total_weight / (float) g.all->normalized_sum_norm_x;
 	  if (adaptive)
 	    return sqrt(avg_norm);
 	  else
 	    return avg_norm;
 	}
       else 
-	return powf( (float) g.normalized_sum_norm_x / (float) g.total_weight, g.neg_norm_power);
+	return powf( (float) g.all->normalized_sum_norm_x / (float) g.total_weight, g.neg_norm_power);
     }
     return 1.f;
   }
@@ -450,7 +450,7 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
     foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, nd);
     
     if(normalized) {
-      g.normalized_sum_norm_x += ld.weight * nd.norm_x;
+      g.all->normalized_sum_norm_x += ld.weight * nd.norm_x;
       g.total_weight += ld.weight;
 
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g, nd.pred_per_update);
@@ -618,10 +618,10 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
 			    "", read, 
 			    buff, text_len, text);
 
-  //text_len = sprintf(buff, "norm normalizer %f\n", g.normalized_sum_norm_x);
-  //bin_text_read_write_fixed(model_file,(char*)&g.normalized_sum_norm_x, sizeof(g.normalized_sum_norm_x), 
-  //			    "", read, 
-  //			    buff, text_len, text);
+  text_len = sprintf(buff, "norm normalizer %f\n", g.all->normalized_sum_norm_x);
+  bin_text_read_write_fixed(model_file,(char*)&g.all->normalized_sum_norm_x, sizeof(g.all->normalized_sum_norm_x), 
+  			    "", read, 
+  			    buff, text_len, text);
 
   text_len = sprintf(buff, "t %f\n", all.sd->t);
   bin_text_read_write_fixed(model_file,(char*)&all.sd->t, sizeof(all.sd->t), 
@@ -843,7 +843,7 @@ learner* setup(vw& all, po::variables_map& vm)
 {
   gd* g = (gd*)calloc_or_die(1, sizeof(gd));
   g->all = &all;
-  g->normalized_sum_norm_x = 0;
+  g->all->normalized_sum_norm_x = 0;
   g->no_win_counter = 0;
   g->total_weight = 0.;
   g->early_stop_thres = 3;
@@ -852,7 +852,7 @@ learner* setup(vw& all, po::variables_map& vm)
   
   if(all.initial_t > 0)//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all.initial_t) previous fake datapoints all with norm 1
     {
-      g->normalized_sum_norm_x = all.initial_t;
+      g->all->normalized_sum_norm_x = all.initial_t;
       g->total_weight = all.initial_t;
     }
 
