@@ -193,6 +193,15 @@
                             <pomFileName>java/pom.xml</pomFileName>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>default</id>
+                        <goals>
+                            <goal>prepare</goal>
+                        </goals>
+                        <configuration>
+                            <pomFileName>java/pom.xml</pomFileName>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
