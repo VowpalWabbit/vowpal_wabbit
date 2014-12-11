@@ -618,8 +618,8 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "norm normalizer %f\n", g.all->normalized_sum_norm_x);
-  bin_text_read_write_fixed(model_file,(char*)&g.all->normalized_sum_norm_x, sizeof(g.all->normalized_sum_norm_x), 
+  text_len = sprintf(buff, "norm normalizer %f\n", all->normalized_sum_norm_x);
+  bin_text_read_write_fixed(model_file,(char*)&all->normalized_sum_norm_x, sizeof(all->normalized_sum_norm_x), 
   			    "", read, 
   			    buff, text_len, text);
 
