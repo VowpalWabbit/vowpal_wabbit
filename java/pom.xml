@@ -8,7 +8,6 @@
     <artifactId>vw-jni-${os.version}-${os.arch}</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-
     <scm>
         <connection>scm:git:git@github.com:elevatedcareers/vowpal_wabbit.git</connection>
         <url>git@github.com:elevatedcareers/vowpal_wabbit.git</url>
