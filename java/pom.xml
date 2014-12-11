@@ -172,10 +172,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
-                <version>2.0</version>
-                <configuration>
-                    <pomFileName>java/pom.xml</pomFileName>
-                </configuration>
+                <version>2.4.2</version>
                 <dependencies>
                     <dependency>
                         <groupId>org.apache.maven.scm</groupId>
@@ -185,18 +182,9 @@
                 </dependencies>
                 <executions>
                     <execution>
-                        <id>perform-id</id>
+                        <id>default</id>
                         <goals>
                             <goal>perform</goal>
-                        </goals>
-                        <configuration>
-                            <pomFileName>java/pom.xml</pomFileName>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>prepare-id</id>
-                        <goals>
-                            <goal>prepare</goal>
                         </goals>
                         <configuration>
                             <pomFileName>java/pom.xml</pomFileName>
