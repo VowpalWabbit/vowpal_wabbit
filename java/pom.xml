@@ -185,7 +185,7 @@
                 </dependencies>
                 <executions>
                     <execution>
-                        <id>default</id>
+                        <id>perform-id</id>
                         <goals>
                             <goal>perform</goal>
                         </goals>
@@ -194,7 +194,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>default</id>
+                        <id>prepare-id</id>
                         <goals>
                             <goal>prepare</goal>
                         </goals>
