@@ -83,7 +83,7 @@ namespace FTRL {
 
   float predict_and_gradient(vw& all, ftrl &b, example& ec) {
     float fp = ftrl_predict(all, ec);
-    ec.pred.scalar = fp;
+    ec.updated_prediction = fp;
 
     label_data& ld = ec.l.simple;
     all.set_minmax(all.sd, ld.label);
@@ -127,9 +127,9 @@ namespace FTRL {
 
   void evaluate_example(vw& all, ftrl& b , example& ec) {
     label_data& ld = ec.l.simple;
-    //ec.loss = all.loss->getLoss(all.sd, ec.updated_prediction, ld.label) * ld.weight;
+    ec.loss = all.loss->getLoss(all.sd, ec.updated_prediction, ld.label) * ld.weight;
     if (b.progressive_validation) {
-      float v = 1./(1 + exp(-ec.pred.scalar));
+      float v = 1./(1 + exp(-ec.updated_prediction));
       fprintf(b.fo, "%.6f\t%d\n", v, (int)(ld.label * ld.weight));
     }
   }
