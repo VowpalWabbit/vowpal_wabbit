@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # -- vw daemon test
 #
 NAME='vw-daemon-test'
@@ -107,11 +107,12 @@ start_daemon
 
 # Test on train-set
 # OpenBSD netcat quits immediately after stdin EOF
-# nc.traditional does not, so let's use -q 0.
-$NETCAT -q 0 localhost $PORT < $TRAINSET > $PREDOUT
+# nc.traditional does not, so let's use -q 1.
+$NETCAT -q 1 localhost $PORT < $TRAINSET > $PREDOUT
 wait
 
-diff $PREDREF $PREDOUT
+# We should ignore small (< $Epsilon) floating-point differences (fuzzy compare)
+diff <(cut -c-5 $PREDREF) <(cut -c-5 $PREDOUT)
 case $? in
     0)  echo "$NAME: OK"
         cleanup
