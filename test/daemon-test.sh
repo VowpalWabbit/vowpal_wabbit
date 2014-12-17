@@ -32,6 +32,7 @@ MODEL=$NAME.model
 TRAINSET=$NAME.train
 PREDREF=$NAME.predref
 PREDOUT=$NAME.predict
+LOCALHOST=0
 PORT=54245
 
 # -- make sure we can find vw first
@@ -75,9 +76,9 @@ stop_daemon() {
 
 start_daemon() {
     # echo starting daemon
-    $DaemonCmd
+    $DaemonCmd </dev/null >/dev/null
     # give it time to be ready
-    wait; wait; wait
+    wait; wait
 }
 
 cleanup() {
@@ -106,8 +107,7 @@ $VW -b 10 --quiet -d $TRAINSET -f $MODEL
 start_daemon
 
 # Test on train-set
-$NETCAT localhost $PORT < $TRAINSET > $PREDOUT
-wait
+$NETCAT $LOCALHOST $PORT < $TRAINSET > $PREDOUT
 
 diff $PREDREF $PREDOUT
 case $? in
