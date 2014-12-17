@@ -33,7 +33,7 @@ TRAINSET=$NAME.train
 PREDREF=$NAME.predref
 PREDOUT=$NAME.predict
 LOCALHOST=0
-PORT=54245
+PORT=54248
 
 # -- make sure we can find vw first
 if [ -x "$VW" ]; then
@@ -61,6 +61,16 @@ else
     exit 1
 fi
 
+#
+# fractional seconds sleep
+#
+mysleep() {
+    case "$1" in
+        *[0-9]*) Seconds="$1" ;;
+        *) Seconds=0.2 ;;
+    esac
+    perl -e "select(undef,undef,undef,$Seconds)"
+}
 
 # A command and pattern that will unlikely to match anything but our own test
 DaemonCmd="$VW -t -i $MODEL --daemon --num_children 1 --quiet --port $PORT"
@@ -70,15 +80,15 @@ stop_daemon() {
     # echo stopping daemon
     $PKILL -9 -f "$DaemonCmd" 2>&1 | grep -q 'no process found'
     # relinquish CPU by forcing some conext switches to be safe
-    # (let existing vw daemon procs die)
-    wait
+    # (to let existing vw daemon procs die)
+    mysleep 0.1
 }
 
 start_daemon() {
     # echo starting daemon
-    $DaemonCmd </dev/null >/dev/null
-    # give it time to be ready
-    wait; wait
+    $DaemonCmd </dev/null >/dev/null &
+    # give vw some time to load the model and be ready
+    mysleep 0.1
 }
 
 cleanup() {
@@ -107,7 +117,7 @@ $VW -b 10 --quiet -d $TRAINSET -f $MODEL
 start_daemon
 
 # Test on train-set
-$NETCAT $LOCALHOST $PORT < $TRAINSET > $PREDOUT
+$NETCAT -n $LOCALHOST $PORT < $TRAINSET > $PREDOUT
 
 diff $PREDREF $PREDOUT
 case $? in
