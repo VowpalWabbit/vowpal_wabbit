@@ -106,7 +106,9 @@ $VW -b 10 --quiet -d $TRAINSET -f $MODEL
 start_daemon
 
 # Test on train-set
-$NETCAT localhost $PORT < $TRAINSET > $PREDOUT
+# OpenBSD netcat quits immediately after stdin EOF
+# nc.traditional does not, so let's use -q 0.
+$NETCAT -q 0 localhost $PORT < $TRAINSET > $PREDOUT
 wait
 
 diff $PREDREF $PREDOUT
