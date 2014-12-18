@@ -32,7 +32,8 @@ MODEL=$NAME.model
 TRAINSET=$NAME.train
 PREDREF=$NAME.predref
 PREDOUT=$NAME.predict
-PORT=54245
+LOCALHOST=0
+PORT=54248
 
 # -- make sure we can find vw first
 if [ -x "$VW" ]; then
@@ -60,6 +61,16 @@ else
     exit 1
 fi
 
+#
+# fractional seconds sleep
+#
+mysleep() {
+    case "$1" in
+        *[0-9]*) Seconds="$1" ;;
+        *) Seconds=0.2 ;;
+    esac
+    perl -e "select(undef,undef,undef,$Seconds)"
+}
 
 # A command and pattern that will unlikely to match anything but our own test
 DaemonCmd="$VW -t -i $MODEL --daemon --num_children 1 --quiet --port $PORT"
@@ -69,15 +80,15 @@ stop_daemon() {
     # echo stopping daemon
     $PKILL -9 -f "$DaemonCmd" 2>&1 | grep -q 'no process found'
     # relinquish CPU by forcing some conext switches to be safe
-    # (let existing vw daemon procs die)
-    wait
+    # (to let existing vw daemon procs die)
+    mysleep 0.05
 }
 
 start_daemon() {
     # echo starting daemon
-    $DaemonCmd
-    # give it time to be ready
-    wait; wait; wait
+    $DaemonCmd </dev/null >/dev/null &
+    # give vw some time to load the model and be ready
+    mysleep 0.05
 }
 
 cleanup() {
@@ -105,9 +116,16 @@ $VW -b 10 --quiet -d $TRAINSET -f $MODEL
 
 start_daemon
 
-# Test on train-set
-$NETCAT localhost $PORT < $TRAINSET > $PREDOUT
-wait
+# Test on train-set, gnu netcat returns immediately, but OpenBSD netcat
+# hangs unless we use '-q 0' (which is GNU netcat incompatible)
+# Hacky solution is to start netcat in the background and wait for
+# it to output two lines.
+touch $PREDOUT      # must exist
+$NETCAT -n $LOCALHOST $PORT < $TRAINSET >> $PREDOUT &
+
+# Wait until we recieve a prediction from the vw daemon then kill netcat
+until [ `wc -l < $PREDOUT` -eq 2 ]; do mysleep 0.05; done
+$PKILL -9 $NETCAT
 
 diff $PREDREF $PREDOUT
 case $? in
