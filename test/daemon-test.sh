@@ -3,36 +3,15 @@
 #
 NAME='vw-daemon-test'
 
-# This is a ugly hack:
-# Travis doesn't like this test, possibly because of firewall rules
-# on the travis-ci env, so don't bother running it on travis machines.
-HOSTNAME=`hostname`
-case $HOSTNAME in
-    *worker-linux*|*travis-ci.org)
-        # Don't generate anything to STDERR or it'll fail
-        : "travis host: $HOSTNAME detected, skipping test: $0"
-        echo "$NAME: OK"
-        exit 0
-        ;;
-esac
-
 export PATH="vowpalwabbit:../vowpalwabbit:${PATH}"
 # The VW under test
 VW=`which vw`
-#
-# VW=vw-7.20140627    Good
-# VW=vw-7.20140709    Bad
-#
-#   7e138ac19bb3e4be88201d521249d87f52e378f3    BAD
-#   cad00a0dd558a34f210b712b34da26e31374b8b9    GOOD
-#
-
 
 MODEL=$NAME.model
 TRAINSET=$NAME.train
 PREDREF=$NAME.predref
 PREDOUT=$NAME.predict
-PORT=54245
+PORT=54248
 
 # -- make sure we can find vw first
 if [ -x "$VW" ]; then
@@ -75,7 +54,7 @@ stop_daemon() {
 
 start_daemon() {
     # echo starting daemon
-    $DaemonCmd
+    $DaemonCmd </dev/null >/dev/null &
     # give it time to be ready
     wait; wait; wait
 }
