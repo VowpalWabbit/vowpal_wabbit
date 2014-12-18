@@ -81,14 +81,14 @@ stop_daemon() {
     $PKILL -9 -f "$DaemonCmd" 2>&1 | grep -q 'no process found'
     # relinquish CPU by forcing some conext switches to be safe
     # (to let existing vw daemon procs die)
-    mysleep 0.1
+    mysleep 0.05
 }
 
 start_daemon() {
     # echo starting daemon
     $DaemonCmd </dev/null >/dev/null &
     # give vw some time to load the model and be ready
-    mysleep 0.1
+    mysleep 0.05
 }
 
 cleanup() {
@@ -120,10 +120,11 @@ start_daemon
 # hangs unless we use '-q 0' (which is GNU netcat incompatible)
 # Hacky solution is to start netcat in the background and wait for
 # it to output two lines.
-$NETCAT -n $LOCALHOST $PORT < $TRAINSET > $PREDOUT &
+touch $PREDOUT      # must exist
+$NETCAT -n $LOCALHOST $PORT < $TRAINSET >> $PREDOUT &
 
 # Wait until we recieve a prediction from the vw daemon then kill netcat
-until [ `wc -l < $PREDOUT` -eq 2 ]; do mysleep 0.1; done
+until [ `wc -l < $PREDOUT` -eq 2 ]; do mysleep 0.05; done
 $PKILL -9 $NETCAT
 
 diff $PREDREF $PREDOUT
