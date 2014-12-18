@@ -116,8 +116,15 @@ $VW -b 10 --quiet -d $TRAINSET -f $MODEL
 
 start_daemon
 
-# Test on train-set
-$NETCAT -n $LOCALHOST $PORT < $TRAINSET > $PREDOUT
+# Test on train-set, gnu netcat returns immediately, but OpenBSD netcat
+# hangs unless we use '-q 0' (which is GNU netcat incompatible)
+# Hacky solution is to start netcat in the background and wait for
+# it to output two lines.
+$NETCAT -n $LOCALHOST $PORT < $TRAINSET > $PREDOUT &
+
+# Wait until we recieve a prediction from the vw daemon then kill netcat
+until [ `wc -l < $PREDOUT` -eq 2 ]; do mysleep 0.1; done
+$PKILL -9 $NETCAT
 
 diff $PREDREF $PREDOUT
 case $? in
