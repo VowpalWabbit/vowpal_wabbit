@@ -111,6 +111,7 @@ start_daemon
 #$NETCAT -q 1 localhost $PORT < $TRAINSET > $PREDOUT
 #wait
 # However, GNU netcat does not know -q, so let's do a work-around
+touch $PREDOUT
 $NETCAT localhost $PORT < $TRAINSET > $PREDOUT &
 # Wait until we recieve a prediction from the vw daemon then kill netcat
 until [ `wc -l < $PREDOUT` -eq 2 ]; do :; done
