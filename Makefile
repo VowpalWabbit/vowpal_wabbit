@@ -94,7 +94,7 @@ library_example: vw
 
 python: vw
 	cd python; $(MAKE) things
-	
+
 ifneq ($(JAVA_HOME),)
 java: vw
 	cd java; $(MAKE) things
