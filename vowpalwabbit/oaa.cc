@@ -19,7 +19,6 @@ using namespace LEARNER;
 using namespace MULTICLASS;
 
 namespace OAA {
-
   struct oaa{
     uint32_t k;
     bool shouldOutput;
