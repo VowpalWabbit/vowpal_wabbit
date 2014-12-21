@@ -428,6 +428,7 @@ namespace CB_ALGS
     float loss = 0.;
     if (!is_test_label(ld))
       {//need to compute exact loss
+	c.known_cost = get_observed_cost(ld);
         float chosen_loss = FLT_MAX;
         if( know_all_cost_example(ld) ) {
           for (cb_class *cl = ld.costs.begin; cl != ld.costs.end; cl ++) {
