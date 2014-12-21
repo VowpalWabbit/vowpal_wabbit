@@ -110,6 +110,7 @@ namespace LOG_MULTI
     
     node.parent = 0;
     node.min_count = 0;
+    node.preds = v_init<node_pred>();
     init_leaf(node);
 
     return node;
