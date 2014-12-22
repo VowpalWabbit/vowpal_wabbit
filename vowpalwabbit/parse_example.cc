@@ -270,7 +270,7 @@ public:
 	{
 	  if (base != NULL)
 	    free(base);
-	  base = (char *) calloc_or_die<char>(2);
+	  base = calloc_or_die<char>(2);
 	  base[0] = ' ';
 	  base[1] = '\0';
 	}
