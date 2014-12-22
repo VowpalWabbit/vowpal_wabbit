@@ -499,7 +499,7 @@ namespace CB_ALGS
 
   learner* setup(vw& all, po::variables_map& vm)
   {
-    cb* c = (cb*)calloc_or_die(1, sizeof(cb));
+    cb* c = calloc_or_die<cb>();
     c->all = &all;
     c->min_cost = 0.;
     c->max_cost = 1.;

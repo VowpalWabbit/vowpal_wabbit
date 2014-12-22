@@ -135,11 +135,11 @@ namespace LRQ {
 
                             if (iter == 0 && (all.audit || all.hash_inv))
                               {
-                                char* new_space = (char*)calloc_or_die(4, sizeof(char));
+                                char* new_space = calloc_or_die<char>(4);
                                 strcpy(new_space, "lrq");
                                 size_t n_len = strlen(i->c_str () + 4);
                                 size_t len = strlen(ra->feature) + n_len + 2;
-                                char* new_feature = (char*)calloc_or_die(len, sizeof(char));
+                                char* new_feature = calloc_or_die<char>(len);
                                 new_feature[0] = right;
                                 new_feature[1] = '^';
                                 strcat(new_feature, ra->feature);

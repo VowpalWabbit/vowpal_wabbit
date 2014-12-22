@@ -70,7 +70,7 @@ namespace CSOAA {
 
   learner* setup(vw& all, po::variables_map& vm)
   {
-    csoaa* c=(csoaa*)calloc_or_die(1,sizeof(csoaa));
+    csoaa* c = calloc_or_die<csoaa>();
     c->all = &all;
     //first parse for number of actions
     uint32_t nb_actions = 0;
@@ -658,7 +658,7 @@ namespace LabelDict {
 
     vm = add_options(all, ldf_opts);
     
-    ldf* ld = (ldf*)calloc_or_die(1, sizeof(ldf));
+    ldf* ld = calloc_or_die<ldf>();
 
     ld->all = &all;
     ld->need_to_clear = true;

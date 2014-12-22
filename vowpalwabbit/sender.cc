@@ -102,7 +102,7 @@ void end_examples(sender& s)
 
   learner* setup(vw& all, po::variables_map& vm, vector<string> pairs)
 {
-  sender* s = (sender*)calloc_or_die(1,sizeof(sender));
+  sender* s = calloc_or_die<sender>();
   s->sd = -1;
   if (vm.count("sendto"))
     {      
@@ -111,7 +111,7 @@ void end_examples(sender& s)
     }
 
   s->all = &all;
-  s->delay_ring = (example**) calloc_or_die(all.p->ring_size, sizeof(example*));
+  s->delay_ring = calloc_or_die<example*>(all.p->ring_size);
 
   learner* l = new learner(s, 1);
   l->set_learn<sender, learn>(); 

@@ -139,7 +139,7 @@ void parse_dictionary_argument(vw&all, string str) {
 
 void parse_affix_argument(vw&all, string str) {
   if (str.length() == 0) return;
-  char* cstr = (char*)calloc_or_die(str.length()+1, sizeof(char));
+  char* cstr = calloc_or_die<char>(str.length()+1);
   strcpy(cstr, str.c_str());
 
   char*p = strtok(cstr, ",");
@@ -1129,7 +1129,7 @@ namespace VW {
 
   char** get_argv_from_string(string s, int& argc)
   {
-    char* c = (char*)calloc_or_die(s.length()+3, sizeof(char));
+    char* c = calloc_or_die<char>(s.length()+3);
     c[0] = 'b';
     c[1] = ' ';
     strcpy(c+2, s.c_str());
@@ -1137,11 +1137,11 @@ namespace VW {
     v_array<substring> foo = v_init<substring>();
     tokenize(' ', ss, foo);
 
-    char** argv = (char**)calloc_or_die(foo.size(), sizeof(char*));
+    char** argv = calloc_or_die<char*>(foo.size());
     for (size_t i = 0; i < foo.size(); i++)
       {
 	*(foo[i].end) = '\0';
-	argv[i] = (char*)calloc_or_die(foo[i].end-foo[i].begin+1, sizeof(char));
+	argv[i] = calloc_or_die<char>(foo[i].end-foo[i].begin+1);
         sprintf(argv[i],"%s",foo[i].begin);
       }
 

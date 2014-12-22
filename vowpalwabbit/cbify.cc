@@ -379,7 +379,7 @@ namespace CBIFY {
 
   learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
-    cbify* data = (cbify*)calloc_or_die(1, sizeof(cbify));
+    cbify* data = calloc_or_die<cbify>();
 
     data->all = &all;
     po::options_description cb_opts("CBIFY options");

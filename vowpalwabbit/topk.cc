@@ -113,7 +113,7 @@ namespace TOPK {
 
   learner* setup(vw& all, po::variables_map& vm)
   {
-    topk* data = (topk*)calloc_or_die(1, sizeof(topk));
+    topk* data = calloc_or_die<topk>();
 
     data->B = (uint32_t)vm["top"].as<size_t>();
 

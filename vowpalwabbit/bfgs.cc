@@ -476,7 +476,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
   weight* weights = all.reg.weight_vector;
   if (b.regularizers == NULL)
     {
-      b.regularizers = (weight *)calloc_or_die(2*length, sizeof(weight));
+      b.regularizers = calloc_or_die<weight>(2*length);
       
       if (b.regularizers == NULL)
 	{
@@ -906,7 +906,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
       initialize_regressor(*all);
       if (all->per_feature_regularizer_input != "")
 	{
-	  b.regularizers = (weight *)calloc_or_die(2*length, sizeof(weight));
+	  b.regularizers = calloc_or_die<weight>(2*length);
 	  if (b.regularizers == NULL)
 	    {
 	      cerr << all->program_name << ": Failed to allocate regularizers array: try decreasing -b <bits>" << endl;
@@ -967,7 +967,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
 learner* setup(vw& all, po::variables_map& vm)
 {
-  bfgs* b = (bfgs*)calloc_or_die(1,sizeof(bfgs));
+  bfgs* b = calloc_or_die<bfgs>();
   b->all = &all;
   b->wolfe1_bound = 0.01;
   b->first_hessian_on=true;

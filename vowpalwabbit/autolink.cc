@@ -43,7 +43,7 @@ namespace ALINK {
 
   learner* setup(vw& all, po::variables_map& vm)
   {
-    autolink* data = (autolink*)calloc_or_die(1,sizeof(autolink));
+    autolink* data = calloc_or_die<autolink>();
     data->d = (uint32_t)vm["autolink"].as<size_t>();
     data->stride_shift = all.reg.stride_shift;
     

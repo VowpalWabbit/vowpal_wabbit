@@ -290,7 +290,7 @@ void mf_train(vw& all, example& ec)
 
   learner* setup(vw& all, po::variables_map& vm)
   {
-    gdmf* data = (gdmf*)calloc_or_die(1,sizeof(gdmf)); 
+    gdmf* data = calloc_or_die<gdmf>(); 
     data->all = &all;
 
     // store linear + 2*rank weights per index, round up to power of two

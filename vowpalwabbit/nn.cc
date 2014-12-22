@@ -310,7 +310,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
   learner* setup(vw& all, po::variables_map& vm)
   {
-    nn* n = (nn*)calloc_or_die(1,sizeof(nn));
+    nn* n = calloc_or_die<nn>();
     n->all = &all;
 
     po::options_description nn_opts("NN options");

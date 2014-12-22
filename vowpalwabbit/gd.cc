@@ -844,7 +844,7 @@ uint32_t ceil_log_2(uint32_t v)
 
 learner* setup(vw& all, po::variables_map& vm)
 {
-  gd* g = (gd*)calloc_or_die(1, sizeof(gd));
+  gd* g = calloc_or_die<gd>();
   g->all = &all;
   g->all->normalized_sum_norm_x = 0;
   g->no_win_counter = 0;

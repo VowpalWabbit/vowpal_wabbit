@@ -179,7 +179,7 @@ namespace FTRL {
   
   learner* setup(vw& all, po::variables_map& vm) {
 
-    ftrl* b = (ftrl*)calloc_or_die(1, sizeof(ftrl));
+    ftrl* b = calloc_or_die<ftrl>();
     b->all = &all;
     b->ftrl_beta = 0.0;
     b->ftrl_alpha = 0.1;

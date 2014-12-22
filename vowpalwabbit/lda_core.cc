@@ -748,7 +748,7 @@ void end_examples(lda& l)
 
 learner* setup(vw&all, po::variables_map& vm)
 {
-  lda* ld = (lda*)calloc_or_die(1,sizeof(lda));
+  lda* ld = calloc_or_die<lda>();
   ld->sorted_features = vector<index_feature>();
   ld->total_lambda_init = 0;
   ld->all = &all;

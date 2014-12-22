@@ -47,7 +47,7 @@ namespace Scorer {
 
   learner* setup(vw& all, po::variables_map& vm)
   {
-    scorer* s = (scorer*)calloc_or_die(1, sizeof(scorer));
+    scorer* s = calloc_or_die<scorer>();
     s->all = &all;
 
     po::options_description link_opts("Link options");

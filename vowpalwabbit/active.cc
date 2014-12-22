@@ -153,7 +153,7 @@ namespace ACTIVE {
   
   learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
-    active* data = (active*)calloc_or_die(1, sizeof(active));
+    active* data = calloc_or_die<active>();
 
     po::options_description active_opts("Active Learning options");
     active_opts.add_options()

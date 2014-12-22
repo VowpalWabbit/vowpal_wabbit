@@ -368,7 +368,7 @@ namespace ECT
   
   learner* setup(vw& all, po::variables_map& vm)
   {
-    ect* data = (ect*)calloc_or_die(1, sizeof(ect));
+    ect* data = calloc_or_die<ect>();
     po::options_description ect_opts("ECT options");
     ect_opts.add_options()
       ("error", po::value<size_t>(), "error in ECT");
