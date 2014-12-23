@@ -117,3 +117,5 @@ clean:
 ifneq ($(JAVA_HOME),)
 	cd java    && $(MAKE) clean
 endif
+
+.PHONY: all clean install

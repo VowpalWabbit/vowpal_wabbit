@@ -43,3 +43,5 @@ pylibvw.o: pylibvw.cc
 
 clean:
 	rm -f *.o $(PYLIBVW)
+
+.PHONY: all clean things
