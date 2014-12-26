@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 
     VW::start_parser(*all);
 
-    all->l->driver(all);
+    LEARNER::generic_driver(*all);
 
     VW::end_parser(*all);
 
