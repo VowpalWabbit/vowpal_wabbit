@@ -127,7 +127,8 @@ public:
   }
   
   float getLoss(shared_data*, float prediction, float label) {
-    assert(label == -1.f || label == 1.f);
+    if (label != -1.f && label != 1.f)
+      cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
     float e = 1 - label*prediction;
     return (e > 0) ? e : 0;
   }
@@ -170,7 +171,8 @@ public:
   }
   
   float getLoss(shared_data*, float prediction, float label) {
-    assert(label == -1.f || label == 1.f || label == FLT_MAX);
+    if (label != -1.f && label != 1.f)
+      cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
     return log(1 + exp(-label * prediction));
   }
   
