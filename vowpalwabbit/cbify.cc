@@ -392,11 +392,7 @@ namespace CBIFY {
     vm = add_options(all, cb_opts);
     
     data.k = (uint32_t)vm["cbify"].as<size_t>();
-    
-    //appends nb_actions to options_from_file so it is saved to regressor later
-    std::stringstream ss;
-    ss << " --cbify " << data.k;
-    all.file_options.append(ss.str());
+    all.file_options << " --cbify " << data.k;
 
     all.p->lp = MULTICLASS::mc_label;
     learner* l;

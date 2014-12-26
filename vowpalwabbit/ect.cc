@@ -379,16 +379,12 @@ namespace ECT
     data.k = (int)vm["ect"].as<size_t>();
     
     //append ect with nb_actions to options_from_file so it is saved to regressor later
-    stringstream ss;
-    ss << " --ect " << data.k;
-
     if (vm.count("error")) {
       data.errors = (uint32_t)vm["error"].as<size_t>();
     } else 
       data.errors = 0;
     //append error flag to options_from_file so it is saved in regressor file later
-    ss << " --error " << data.errors;
-    all.file_options.append(ss.str());
+    all.file_options << " --ect " << data.k << " --error " << data.errors;
     
     all.p->lp = MULTICLASS::mc_label;
     size_t wpp = create_circuit(all, data, data.k, data.errors+1);

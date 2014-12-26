@@ -20,7 +20,7 @@ using namespace MULTICLASS;
 
 namespace OAA {
   struct oaa{
-    uint32_t k;
+    size_t k;
     bool shouldOutput;
     vw* all;
   };
@@ -80,13 +80,9 @@ namespace OAA {
   {
     oaa& data = calloc_or_die<oaa>();
     //first parse for number of actions
-
-    data.k = (uint32_t)vm["oaa"].as<size_t>();
-    
+    data.k = vm["oaa"].as<size_t>();
     //append oaa with nb_actions to options_from_file so it is saved to regressor later
-    std::stringstream ss;
-    ss << " --oaa " << data.k;
-    all.file_options.append(ss.str());
+    all.file_options << " --oaa " << data.k;
 
     data.shouldOutput = all.raw_prediction > 0;
     data.all = &all;

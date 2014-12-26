@@ -47,9 +47,7 @@ namespace ALINK {
     data.d = (uint32_t)vm["autolink"].as<size_t>();
     data.stride_shift = all.reg.stride_shift;
     
-    std::stringstream ss;
-    ss << " --autolink " << data.d;
-    all.file_options = all.file_options+ss.str();
+    all.file_options << " --autolink " << data.d;
 
     learner* ret = new learner(&data, all.l);
     ret->set_learn<autolink, predict_or_learn<true> >();

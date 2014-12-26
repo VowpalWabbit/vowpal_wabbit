@@ -254,9 +254,7 @@ namespace BS {
     data.B = (uint32_t)vm["bootstrap"].as<size_t>();
 
     //append bs with number of samples to options_from_file so it is saved to regressor later
-    std::stringstream ss;
-    ss << " --bootstrap " << data.B;
-    all.file_options.append(ss.str());
+    all.file_options << " --bootstrap " << data.B;
 
     std::string type_string("mean");
 
@@ -277,8 +275,7 @@ namespace BS {
     }
     else //by default use mean
       data.bs_type = BS_TYPE_MEAN;
-    all.file_options.append(" --bs_type ");
-    all.file_options.append(type_string);
+    all.file_options << " --bs_type " << type_string;
 
     data.pred_vec.reserve(data.B);
     data.all = &all;

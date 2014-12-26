@@ -67,13 +67,13 @@ namespace Scorer {
       }
     else if (link.compare("logistic") == 0)
       {
-	all.file_options.append(" --link=logistic ");
+	all.file_options << " --link=logistic ";
 	l->set_learn<scorer, predict_or_learn<true, logistic> >();
 	l->set_predict<scorer, predict_or_learn<false, logistic> >();
       }
     else if (link.compare("glf1") == 0)
       {
-	all.file_options.append(" --link=glf1 ");
+	all.file_options << " --link=glf1 ";
 	l->set_learn<scorer, predict_or_learn<true, glf1> >();
 	l->set_predict<scorer, predict_or_learn<false, glf1> >();
       }

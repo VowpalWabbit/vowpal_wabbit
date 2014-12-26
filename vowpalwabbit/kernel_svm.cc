@@ -855,9 +855,7 @@ namespace KSVM
     
     params.lambda = all.l2_lambda;
 
-    std::stringstream ss1, ss2;
-    ss1 <<" --lambda "<< params.lambda;
-    all.file_options.append(ss1.str());
+    all.file_options <<" --lambda "<< params.lambda;
       
     cerr<<"Lambda = "<<params.lambda<<endl;
 
@@ -868,8 +866,7 @@ namespace KSVM
     else
       kernel_type = string("linear");
     
-    ss2 <<" --kernel "<< kernel_type;
-    all.file_options.append(ss2.str());
+    all.file_options <<" --kernel "<< kernel_type;
 
     cerr<<"Kernel = "<<kernel_type<<endl;
 
@@ -877,10 +874,8 @@ namespace KSVM
       params.kernel_type = SVM_KER_RBF;
       float bandwidth = 1.;
       if(vm.count("bandwidth")) {
-		std::stringstream ss;
 		bandwidth = vm["bandwidth"].as<float>();	
-		ss<<" --bandwidth "<<bandwidth;
-		all.file_options.append(ss.str());
+		all.file_options <<" --bandwidth "<<bandwidth;
       }
       cerr<<"bandwidth = "<<bandwidth<<endl;
       params.kernel_params = &calloc_or_die<double>();
@@ -890,10 +885,8 @@ namespace KSVM
       params.kernel_type = SVM_KER_POLY;
       int degree = 2;
       if(vm.count("degree")) {
-	  std::stringstream ss;
 	  degree = vm["degree"].as<int>();	
-	  ss<<" --degree "<<degree;
-	  all.file_options.append(ss.str());
+	  all.file_options <<" --degree "<<degree;
 	}
       cerr<<"degree = "<<degree<<endl;
       params.kernel_params = &calloc_or_die<int>();

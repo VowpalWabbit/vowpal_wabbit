@@ -769,9 +769,7 @@ learner* setup(vw&all, po::variables_map& vm)
   all.random_weights = true;
   all.add_constant = false;
 
-  std::stringstream ss;
-  ss << " --lda " << all.lda;
-  all.file_options.append(ss.str());
+  all.file_options << " --lda " << all.lda;
 
   if (all.eta > 1.)
     {

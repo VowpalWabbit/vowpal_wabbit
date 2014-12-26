@@ -200,7 +200,7 @@ struct vw {
   double normalized_sum_norm_x;
 
   po::options_description opts;
-  std::string file_options;
+  std::stringstream file_options;
   vector<std::string> args;
 
   void* /*Search::search*/ searchstr;

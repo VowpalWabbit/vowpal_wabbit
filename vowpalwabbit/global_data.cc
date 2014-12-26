@@ -287,8 +287,6 @@ vw::vw()
   per_feature_regularizer_output = "";
   per_feature_regularizer_text = "";
 
-  file_options = "";
-
   #ifdef _WIN32
   stdout_fileno = _fileno(stdout);
   #else

@@ -514,11 +514,7 @@ namespace LOG_MULTI
     vm = add_options(all, opts);
     
     data->k = (uint32_t)vm["log_multi"].as<size_t>();
-    
-    //append log_multi with nb_actions to options_from_file so it is saved to regressor later
-    std::stringstream ss;
-    ss << " --log_multi " << data->k;
-    all.file_options.append(ss.str());
+    all.file_options << " --log_multi " << data->k;
     
     if (vm.count("no_progress"))
       data->progress = false;
