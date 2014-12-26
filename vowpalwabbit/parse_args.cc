@@ -35,6 +35,7 @@ license as described in the file LICENSE.
 #include "gd_mf.h"
 #include "mf.h"
 #include "vw.h"
+#include "ftrl_proximal.h"
 #include "rand48.h"
 #include "parse_args.h"
 #include "binary.h"
@@ -722,6 +723,7 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
   
   base_opt.add_options()
     ("sgd", "use regular stochastic gradient descent update.")
+    ("ftrl", "use ftrl-proximal optimization")
     ("adaptive", "use adaptive, individual learning rates.")
     ("invariant", "use safe/importance aware updates.")
     ("normalized", "use per feature normalized updates")
@@ -740,6 +742,8 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
     all.l = BFGS::setup(all, vm);
   else if (vm.count("lda"))
     all.l = LDA::setup(all, vm);
+  else if (vm.count("ftrl"))
+    all.l = FTRL::setup(all, vm);
   else if (vm.count("noop"))
     all.l = NOOP::setup(all);
   else if (vm.count("print"))
