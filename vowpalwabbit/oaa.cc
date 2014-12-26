@@ -78,21 +78,21 @@ namespace OAA {
 
   learner* setup(vw& all, po::variables_map& vm)
   {
-    oaa* data = calloc_or_die<oaa>();
+    oaa& data = calloc_or_die<oaa>();
     //first parse for number of actions
 
-    data->k = (uint32_t)vm["oaa"].as<size_t>();
+    data.k = (uint32_t)vm["oaa"].as<size_t>();
     
     //append oaa with nb_actions to options_from_file so it is saved to regressor later
     std::stringstream ss;
-    ss << " --oaa " << data->k;
+    ss << " --oaa " << data.k;
     all.file_options.append(ss.str());
 
-    data->shouldOutput = all.raw_prediction > 0;
-    data->all = &all;
+    data.shouldOutput = all.raw_prediction > 0;
+    data.all = &all;
     all.p->lp = mc_label;
 
-    learner* l = new learner(data, all.l, data->k);
+    learner* l = new learner(&data, all.l, data.k);
     l->set_learn<oaa, predict_or_learn<true> >();
     l->set_predict<oaa, predict_or_learn<false> >();
     l->set_finish_example<oaa, finish_example>();

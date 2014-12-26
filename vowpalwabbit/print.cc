@@ -48,13 +48,13 @@ namespace PRINT
   
   learner* setup(vw& all)
   {
-    print* p = calloc_or_die<print>();
-    p->all = &all;
+    print& p = calloc_or_die<print>();
+    p.all = &all;
     size_t length = ((size_t)1) << all.num_bits;
     all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
     all.reg.stride_shift = 0;
 
-    learner* ret = new learner(p, 1);
+    learner* ret = new learner(&p, 1);
     ret->set_learn<print,learn>();
     ret->set_predict<print,learn>();
     return ret;

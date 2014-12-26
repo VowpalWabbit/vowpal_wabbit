@@ -43,15 +43,15 @@ namespace ALINK {
 
   learner* setup(vw& all, po::variables_map& vm)
   {
-    autolink* data = calloc_or_die<autolink>();
-    data->d = (uint32_t)vm["autolink"].as<size_t>();
-    data->stride_shift = all.reg.stride_shift;
+    autolink& data = calloc_or_die<autolink>();
+    data.d = (uint32_t)vm["autolink"].as<size_t>();
+    data.stride_shift = all.reg.stride_shift;
     
     std::stringstream ss;
-    ss << " --autolink " << data->d;
+    ss << " --autolink " << data.d;
     all.file_options = all.file_options+ss.str();
 
-    learner* ret = new learner(data, all.l);
+    learner* ret = new learner(&data, all.l);
     ret->set_learn<autolink, predict_or_learn<true> >();
     ret->set_predict<autolink, predict_or_learn<false> >();
     return ret;

@@ -70,8 +70,8 @@ namespace CSOAA {
 
   learner* setup(vw& all, po::variables_map& vm)
   {
-    csoaa* c = calloc_or_die<csoaa>();
-    c->all = &all;
+    csoaa& c = calloc_or_die<csoaa>();
+    c.all = &all;
     //first parse for number of actions
     uint32_t nb_actions = 0;
 
@@ -85,7 +85,7 @@ namespace CSOAA {
     all.p->lp = cs_label;
     all.sd->k = nb_actions;
 
-    learner* l = new learner(c, all.l, nb_actions);
+    learner* l = new learner(&c, all.l, nb_actions);
     l->set_learn<csoaa, predict_or_learn<true> >();
     l->set_predict<csoaa, predict_or_learn<false> >();
     l->set_finish_example<csoaa,finish_example>();
@@ -658,11 +658,11 @@ namespace LabelDict {
 
     vm = add_options(all, ldf_opts);
     
-    ldf* ld = calloc_or_die<ldf>();
+    ldf& ld = calloc_or_die<ldf>();
 
-    ld->all = &all;
-    ld->need_to_clear = true;
-    ld->first_pass = true;
+    ld.all = &all;
+    ld.need_to_clear = true;
+    ld.first_pass = true;
  
     string ldf_arg;
 
@@ -673,7 +673,7 @@ namespace LabelDict {
     }
     else {
       ldf_arg = vm["wap_ldf"].as<string>();
-      ld->is_wap = true;
+      ld.is_wap = true;
       all.file_options.append(" --wap_ldf ");
       all.file_options.append(ldf_arg);
     }
@@ -684,40 +684,40 @@ namespace LabelDict {
 
     all.sd->k = (uint32_t)-1;
 
-    ld->treat_as_classifier = false;
-    ld->is_singleline = false;
+    ld.treat_as_classifier = false;
+    ld.is_singleline = false;
     if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0) {
-      ld->treat_as_classifier = false;
+      ld.treat_as_classifier = false;
     } else if (ldf_arg.compare("multiline-classifier") == 0 || ldf_arg.compare("mc") == 0) {
-      ld->treat_as_classifier = true;
+      ld.treat_as_classifier = true;
     } else {
       if (all.training) {
         cerr << "ldf requires either m/multiline or mc/multiline-classifier, except in test-mode which can be s/sc/singleline/singleline-classifier" << endl;
         throw exception();
       }
       if (ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0) {
-        ld->treat_as_classifier = false;
-        ld->is_singleline = true;
+        ld.treat_as_classifier = false;
+        ld.is_singleline = true;
       } else if (ldf_arg.compare("singleline-classifier") == 0 || ldf_arg.compare("sc") == 0) {
-        ld->treat_as_classifier = true;
-        ld->is_singleline = true;
+        ld.treat_as_classifier = true;
+        ld.is_singleline = true;
       }
     }
 
-    all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld->is_singleline;
+    all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld.is_singleline;
 
     if (all.add_constant) {
       all.add_constant = false;
     }
-    ld->label_features.init(256, v_array<feature>(), LabelDict::size_t_eq);
-    ld->label_features.get(1, 94717244); // TODO: figure this out
+    ld.label_features.init(256, v_array<feature>(), LabelDict::size_t_eq);
+    ld.label_features.get(1, 94717244); // TODO: figure this out
 
-    ld->read_example_this_loop = 0;
-    ld->need_to_clear = false;
-    learner* l = new learner(ld, all.l);
+    ld.read_example_this_loop = 0;
+    ld.need_to_clear = false;
+    learner* l = new learner(&ld, all.l);
     l->set_learn<ldf, predict_or_learn<true> >();
     l->set_predict<ldf, predict_or_learn<false> >();
-    if (ld->is_singleline)
+    if (ld.is_singleline)
       l->set_finish_example<ldf,finish_singleline_example>();
     else
       l->set_finish_example<ldf,finish_multiline_example>();

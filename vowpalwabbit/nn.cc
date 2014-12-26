@@ -310,8 +310,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
   learner* setup(vw& all, po::variables_map& vm)
   {
-    nn* n = calloc_or_die<nn>();
-    n->all = &all;
+    nn& n = calloc_or_die<nn>();
+    n.all = &all;
 
     po::options_description nn_opts("NN options");
     nn_opts.add_options()
@@ -322,14 +322,14 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     vm = add_options(all, nn_opts);
 
     //first parse for number of hidden units
-    n->k = (uint32_t)vm["nn"].as<size_t>();
+    n.k = (uint32_t)vm["nn"].as<size_t>();
     
     std::stringstream ss;
-    ss << " --nn " << n->k;
+    ss << " --nn " << n.k;
     all.file_options.append(ss.str());
 
     if ( vm.count("dropout") ) {
-      n->dropout = true;
+      n.dropout = true;
       
       std::stringstream ss;
       ss << " --dropout ";
@@ -337,43 +337,43 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     }
     
     if ( vm.count("meanfield") ) {
-      n->dropout = false;
+      n.dropout = false;
       if (! all.quiet) 
         std::cerr << "using mean field for neural network " 
                   << (all.training ? "training" : "testing") 
                   << std::endl;
     }
 
-    if (n->dropout) 
+    if (n.dropout) 
       if (! all.quiet)
         std::cerr << "using dropout for neural network "
                   << (all.training ? "training" : "testing") 
                   << std::endl;
 
     if (vm.count ("inpass")) {
-      n->inpass = true;
+      n.inpass = true;
 
       std::stringstream ss;
       ss << " --inpass";
       all.file_options.append(ss.str());
     }
 
-    if (n->inpass && ! all.quiet)
+    if (n.inpass && ! all.quiet)
       std::cerr << "using input passthrough for neural network "
                 << (all.training ? "training" : "testing") 
                 << std::endl;
 
-    n->finished_setup = false;
-    n->squared_loss = getLossFunction (0, "squared", 0);
+    n.finished_setup = false;
+    n.squared_loss = getLossFunction (0, "squared", 0);
 
-    n->xsubi = 0;
+    n.xsubi = 0;
 
     if (vm.count("random_seed"))
-      n->xsubi = vm["random_seed"].as<size_t>();
+      n.xsubi = vm["random_seed"].as<size_t>();
 
-    n->save_xsubi = n->xsubi;
-    n->increment = all.l->increment;//Indexing of output layer is odd.
-    learner* l = new learner(n,  all.l, n->k+1);
+    n.save_xsubi = n.xsubi;
+    n.increment = all.l->increment;//Indexing of output layer is odd.
+    learner* l = new learner(&n,  all.l, n.k+1);
     l->set_learn<nn, predict_or_learn<true> >();
     l->set_predict<nn, predict_or_learn<false> >();
     l->set_finish<nn, finish>();

@@ -179,45 +179,45 @@ namespace FTRL {
   
   learner* setup(vw& all, po::variables_map& vm) {
 
-    ftrl* b = calloc_or_die<ftrl>();
-    b->all = &all;
-    b->ftrl_beta = 0.0;
-    b->ftrl_alpha = 0.1;
+    ftrl& b = calloc_or_die<ftrl>();
+    b.all = &all;
+    b.ftrl_beta = 0.0;
+    b.ftrl_alpha = 0.1;
 
     po::options_description ftrl_opts("FTRL options");
 
     ftrl_opts.add_options()
-                ("ftrl_alpha", po::value<float>(&(b->ftrl_alpha)), "Learning rate for FTRL-proximal optimization")
-                ("ftrl_beta", po::value<float>(&(b->ftrl_beta)), "FTRL beta")
+                ("ftrl_alpha", po::value<float>(&(b.ftrl_alpha)), "Learning rate for FTRL-proximal optimization")
+                ("ftrl_beta", po::value<float>(&(b.ftrl_beta)), "FTRL beta")
                 ("progressive_validation", po::value<string>()->default_value("ftrl.evl"), "File to record progressive validation for ftrl-proximal");
 
     vm = add_options(all, ftrl_opts);
 
     if (vm.count("ftrl_alpha")) {
-        b->ftrl_alpha = vm["ftrl_alpha"].as<float>();
+        b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
     }
 
     if (vm.count("ftrl_beta")) {
-        b->ftrl_beta = vm["ftrl_beta"].as<float>();
+        b.ftrl_beta = vm["ftrl_beta"].as<float>();
     }
 
     all.reg.stride_shift = 2; // NOTE: for more parameter storage
     
-    b->progressive_validation = false;
+    b.progressive_validation = false;
     if (vm.count("progressive_validation")) {
       std::string filename = vm["progressive_validation"].as<string>();
-      b->fo = fopen(filename.c_str(), "w");
-      assert(b->fo != NULL);
-      b->progressive_validation = true;
+      b.fo = fopen(filename.c_str(), "w");
+      assert(b.fo != NULL);
+      b.progressive_validation = true;
     }
 
     if (!all.quiet) {
         cerr << "Enabling FTRL-Proximal based optimization" << endl;
-        cerr << "ftrl_alpha = " << b->ftrl_alpha << endl;
-        cerr << "ftrl_beta = " << b->ftrl_beta << endl;
+        cerr << "ftrl_alpha = " << b.ftrl_alpha << endl;
+        cerr << "ftrl_beta = " << b.ftrl_beta << endl;
     }
 
-    learner* l = new learner(b, 1 << all.reg.stride_shift);
+    learner* l = new learner(&b, 1 << all.reg.stride_shift);
     l->set_learn<ftrl, learn>();
     l->set_predict<ftrl, predict>();
     l->set_save_load<ftrl,save_load>();

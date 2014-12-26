@@ -113,13 +113,13 @@ namespace TOPK {
 
   learner* setup(vw& all, po::variables_map& vm)
   {
-    topk* data = calloc_or_die<topk>();
+    topk& data = calloc_or_die<topk>();
 
-    data->B = (uint32_t)vm["top"].as<size_t>();
+    data.B = (uint32_t)vm["top"].as<size_t>();
 
-    data->all = &all;
+    data.all = &all;
 
-    learner* l = new learner(data, all.l);
+    learner* l = new learner(&data, all.l);
     l->set_learn<topk, predict_or_learn<true> >();
     l->set_predict<topk, predict_or_learn<false> >();
     l->set_finish_example<topk,finish_example>();

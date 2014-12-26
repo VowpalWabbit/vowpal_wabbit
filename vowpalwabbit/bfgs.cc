@@ -967,17 +967,17 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
 learner* setup(vw& all, po::variables_map& vm)
 {
-  bfgs* b = calloc_or_die<bfgs>();
-  b->all = &all;
-  b->wolfe1_bound = 0.01;
-  b->first_hessian_on=true;
-  b->first_pass = true;
-  b->gradient_pass = true;
-  b->preconditioner_pass = true;
-  b->backstep_on = false;
-  b->final_pass=all.numpasses;  
-  b->no_win_counter = 0;
-  b->early_stop_thres = 3;
+  bfgs& b = calloc_or_die<bfgs>();
+  b.all = &all;
+  b.wolfe1_bound = 0.01;
+  b.first_hessian_on=true;
+  b.first_pass = true;
+  b.gradient_pass = true;
+  b.preconditioner_pass = true;
+  b.backstep_on = false;
+  b.final_pass=all.numpasses;  
+  b.no_win_counter = 0;
+  b.early_stop_thres = 3;
 
   po::options_description bfgs_opts("LBFGS options");
 
@@ -993,7 +993,7 @@ learner* setup(vw& all, po::variables_map& vm)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     if(vm.count("early_terminate"))      
-      b->early_stop_thres = vm["early_terminate"].as< size_t>();     
+      b.early_stop_thres = vm["early_terminate"].as< size_t>();     
   }
   
   if (vm.count("hessian_on") || all.m==0) {
@@ -1018,7 +1018,7 @@ learner* setup(vw& all, po::variables_map& vm)
   all.bfgs = true;
   all.reg.stride_shift = 2;
 
-  learner* l = new learner(b, 1 << all.reg.stride_shift);
+  learner* l = new learner(&b, 1 << all.reg.stride_shift);
   l->set_learn<bfgs, learn>();
   l->set_predict<bfgs, predict>();
   l->set_save_load<bfgs,save_load>();

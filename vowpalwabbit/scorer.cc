@@ -47,8 +47,8 @@ namespace Scorer {
 
   learner* setup(vw& all, po::variables_map& vm)
   {
-    scorer* s = calloc_or_die<scorer>();
-    s->all = &all;
+    scorer& s = calloc_or_die<scorer>();
+    s.all = &all;
 
     po::options_description link_opts("Link options");
 
@@ -57,7 +57,7 @@ namespace Scorer {
 
     vm = add_options(all, link_opts);
 
-    learner* l = new learner(s, all.l);
+    learner* l = new learner(&s, all.l);
 
     string link = vm["link"].as<string>();
     if (!vm.count("link") || link.compare("identity") == 0)

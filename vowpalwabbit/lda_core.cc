@@ -748,11 +748,11 @@ void end_examples(lda& l)
 
 learner* setup(vw&all, po::variables_map& vm)
 {
-  lda* ld = calloc_or_die<lda>();
-  ld->sorted_features = vector<index_feature>();
-  ld->total_lambda_init = 0;
-  ld->all = &all;
-  ld->example_t = all.initial_t;
+  lda& ld = calloc_or_die<lda>();
+  ld.sorted_features = vector<index_feature>();
+  ld.total_lambda_init = 0;
+  ld.all = &all;
+  ld.example_t = all.initial_t;
 
   po::options_description lda_opts("LDA options");
   lda_opts.add_options()
@@ -784,11 +784,11 @@ learner* setup(vw&all, po::variables_map& vm)
     all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
   }
   
-  ld->v.resize(all.lda*all.minibatch);
+  ld.v.resize(all.lda*all.minibatch);
   
-  ld->decay_levels.push_back(0.f);
+  ld.decay_levels.push_back(0.f);
 
-  learner* l = new learner(ld, 1 << all.reg.stride_shift);
+  learner* l = new learner(&ld, 1 << all.reg.stride_shift);
   l->set_learn<lda,learn>();
   l->set_predict<lda,predict>();
   l->set_save_load<lda,save_load>();

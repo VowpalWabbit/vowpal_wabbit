@@ -241,9 +241,9 @@ namespace BS {
 
   learner* setup(vw& all, po::variables_map& vm)
   {
-    bs* data = calloc_or_die<bs>();
-    data->ub = FLT_MAX;
-    data->lb = -FLT_MAX;
+    bs& data = calloc_or_die<bs>();
+    data.ub = FLT_MAX;
+    data.lb = -FLT_MAX;
 
     po::options_description bs_options("Bootstrap options");
     bs_options.add_options()
@@ -251,11 +251,11 @@ namespace BS {
     
     vm = add_options(all, bs_options);
 
-    data->B = (uint32_t)vm["bootstrap"].as<size_t>();
+    data.B = (uint32_t)vm["bootstrap"].as<size_t>();
 
     //append bs with number of samples to options_from_file so it is saved to regressor later
     std::stringstream ss;
-    ss << " --bootstrap " << data->B;
+    ss << " --bootstrap " << data.B;
     all.file_options.append(ss.str());
 
     std::string type_string("mean");
@@ -265,25 +265,25 @@ namespace BS {
       type_string = vm["bs_type"].as<std::string>();
       
       if (type_string.compare("mean") == 0) { 
-        data->bs_type = BS_TYPE_MEAN;
+        data.bs_type = BS_TYPE_MEAN;
       }
       else if (type_string.compare("vote") == 0) {
-        data->bs_type = BS_TYPE_VOTE;
+        data.bs_type = BS_TYPE_VOTE;
       }
       else {
         std::cerr << "warning: bs_type must be in {'mean','vote'}; resetting to mean." << std::endl;
-        data->bs_type = BS_TYPE_MEAN;
+        data.bs_type = BS_TYPE_MEAN;
       }
     }
     else //by default use mean
-      data->bs_type = BS_TYPE_MEAN;
+      data.bs_type = BS_TYPE_MEAN;
     all.file_options.append(" --bs_type ");
     all.file_options.append(type_string);
 
-    data->pred_vec.reserve(data->B);
-    data->all = &all;
+    data.pred_vec.reserve(data.B);
+    data.all = &all;
 
-    learner* l = new learner(data, all.l, data->B);
+    learner* l = new learner(&data, all.l, data.B);
     l->set_learn<bs, predict_or_learn<true> >();
     l->set_predict<bs, predict_or_learn<false> >();
     l->set_finish_example<bs,finish_example>();
