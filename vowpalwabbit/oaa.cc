@@ -85,7 +85,7 @@ namespace OAA {
     if(!vm.count("oaa"))
       return NULL;
     
-    oaa* data = (oaa*)calloc_or_die(1, sizeof(oaa));
+    oaa* data = calloc_or_die<oaa>();
     //first parse for number of actions
 
     data->k = (uint32_t)vm["oaa"].as<size_t>();

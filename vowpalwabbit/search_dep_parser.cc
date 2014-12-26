@@ -45,7 +45,6 @@ namespace DepParserTask {
   void initialize(Search::search& srn, size_t& num_actions, po::variables_map& vm) {
     task_data *data = new task_data();
     data->my_init_flag = false;
-    //data->ex = (example*)calloc_or_die(1, sizeof(example));
     data->ec_buf.resize(12, true);
     data->children = new v_array<uint32_t>[6]; 
 

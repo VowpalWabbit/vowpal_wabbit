@@ -20,7 +20,7 @@ char* copy(char* base)
 {
   size_t len = 0;
   while (base[len++] != '\0');
-  char* ret = (char *)calloc_or_die(len,sizeof(char));
+  char* ret = calloc_or_die<char>(len);
   memcpy(ret,base,len);
   return ret;
 }
@@ -270,7 +270,7 @@ public:
 	{
 	  if (base != NULL)
 	    free(base);
-	  base = (char *) calloc_or_die(2,sizeof(char));
+	  base = calloc_or_die<char>(2);
 	  base[0] = ' ';
 	  base[1] = '\0';
 	}

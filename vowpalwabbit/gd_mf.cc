@@ -299,7 +299,7 @@ void mf_train(vw& all, example& ec)
     else
       all.rank = vm["gdmf"].as<uint32_t>();
 
-    gdmf* data = (gdmf*)calloc_or_die(1,sizeof(gdmf)); 
+    gdmf* data = calloc_or_die<gdmf>(); 
     data->all = &all;
 
     // store linear + 2*rank weights per index, round up to power of two

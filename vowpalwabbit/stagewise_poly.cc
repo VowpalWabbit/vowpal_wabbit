@@ -129,7 +129,7 @@ namespace StagewisePoly
 
   void depthsbits_create(stagewise_poly &poly)
   {
-    poly.depthsbits = (uint8_t *) calloc_or_die(1, depthsbits_sizeof(poly));
+    poly.depthsbits = calloc_or_die<uint8_t>(2 * poly.all->length());
     for (uint32_t i = 0; i < poly.all->length() * 2; i += 2) {
       poly.depthsbits[i] = default_depth;
       poly.depthsbits[i+1] = indicator_bit;
@@ -247,7 +247,7 @@ namespace StagewisePoly
       cout << ", new size " << poly.sd_len << endl;
 #endif //DEBUG
       free(poly.sd); //okay for null.
-      poly.sd = (sort_data *) calloc_or_die(poly.sd_len, sizeof(sort_data));
+      poly.sd = calloc_or_die<sort_data>(poly.sd_len);
     }
     assert(len <= poly.sd_len);
   }
@@ -672,7 +672,7 @@ namespace StagewisePoly
     if (vm.count("stage_poly"))
       return NULL;
     
-    stagewise_poly *poly = (stagewise_poly *) calloc_or_die(1, sizeof(stagewise_poly));
+    stagewise_poly *poly = calloc_or_die<stagewise_poly>();
     poly->all = &all;
 
     depthsbits_create(*poly);

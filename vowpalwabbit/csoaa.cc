@@ -76,8 +76,7 @@ namespace CSOAA {
     vm = add_options(all, opts);
     if(!vm.count("csoaa"))
       return NULL;
-
-    csoaa* c=(csoaa*)calloc_or_die(1,sizeof(csoaa));
+    csoaa* c = calloc_or_die<csoaa>();
     c->all = &all;
     //first parse for number of actions
     uint32_t nb_actions = 0;
@@ -668,7 +667,7 @@ namespace LabelDict {
     if(!vm.count("csoaa_ldf") && !vm.count("wap_ldf"))
       return NULL;
     
-    ldf* ld = (ldf*)calloc_or_die(1, sizeof(ldf));
+    ldf* ld = calloc_or_die<ldf>();
 
     ld->all = &all;
     ld->need_to_clear = true;

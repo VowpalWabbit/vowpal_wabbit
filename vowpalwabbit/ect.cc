@@ -375,8 +375,8 @@ namespace ECT
     vm = add_options(all, opts);
     if (!vm.count("ect")) 
       return NULL;
-
-    ect* data = (ect*)calloc_or_die(1, sizeof(ect));
+    
+    ect* data = calloc_or_die<ect>();
     
     //first parse for number of actions
     data->k = (int)vm["ect"].as<size_t>();

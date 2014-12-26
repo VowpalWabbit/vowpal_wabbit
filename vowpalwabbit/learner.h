@@ -50,7 +50,7 @@ namespace LEARNER
     void (*finish_example_f)(vw&, void* data, example&);
   };
   
-  void generic_driver(vw* all);
+  void generic_driver(vw& all);
   
   inline void generic_sl(void*, io_buf&, bool, bool) {}
   inline void generic_learner(void* data, learner& base, example&) {}
@@ -183,8 +183,6 @@ public:
   void set_finish_example()
   {finish_example_fd.data = learn_fd.data;
     finish_example_fd.finish_example_f = tend_example<T,f>;}
-
-  void driver(vw* all) {LEARNER::generic_driver(all);}
 
   inline learner()
   {

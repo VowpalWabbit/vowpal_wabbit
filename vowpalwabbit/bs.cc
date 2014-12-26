@@ -241,7 +241,7 @@ namespace BS {
 
   learner* setup(vw& all, po::variables_map& vm)
   {
-    bs* data = (bs*)calloc_or_die(1, sizeof(bs));
+    bs* data = calloc_or_die<bs>();
     data->ub = FLT_MAX;
     data->lb = -FLT_MAX;
 

@@ -54,7 +54,7 @@ namespace PRINT
     if(!vm.count("print"))
       return NULL;
 
-    print* p = (print*)calloc_or_die(1, sizeof(print));
+    print* p = calloc_or_die<print>();
     p->all = &all;
     size_t length = ((size_t)1) << all.num_bits;
     all.reg.weight_mask = (length << all.reg.stride_shift) - 1;

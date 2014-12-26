@@ -196,6 +196,7 @@ struct vw {
   bool hessian_on;
 
   bool save_resume;
+  double normalized_sum_norm_x;
 
   po::options_description opts;
   std::string file_options;

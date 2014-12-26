@@ -428,6 +428,7 @@ namespace CB_ALGS
     float loss = 0.;
     if (!is_test_label(ld))
       {//need to compute exact loss
+	c.known_cost = get_observed_cost(ld);
         float chosen_loss = FLT_MAX;
         if( know_all_cost_example(ld) ) {
           for (cb_class *cl = ld.costs.begin; cl != ld.costs.end; cl ++) {
@@ -507,7 +508,8 @@ namespace CB_ALGS
     if (!vm.count("cb"))
       return NULL;
 
-    cb* c = (cb*)calloc_or_die(1, sizeof(cb));
+    cb* c = calloc_or_die<cb>();
+
     c->all = &all;
     c->min_cost = 0.;
     c->max_cost = 1.;

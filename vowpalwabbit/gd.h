@@ -26,6 +26,7 @@ namespace GD{
   void train_one_example_single_thread(regressor& r, example* ex);
   LEARNER::learner* setup(vw& all, po::variables_map& vm);
   void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
+  void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text);
   void output_and_account_example(example* ec);
 
   // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)

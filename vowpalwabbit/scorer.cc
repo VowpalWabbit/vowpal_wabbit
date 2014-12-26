@@ -51,7 +51,7 @@ namespace Scorer {
     opts.add_options()
       ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity, logistic or glf1");
     vm = add_options(all, opts);
-    scorer* s = (scorer*)calloc_or_die(1, sizeof(scorer));
+    scorer* s = calloc_or_die<scorer>();
     s->all = &all;
 
     learner* l = new learner(s, all.l);

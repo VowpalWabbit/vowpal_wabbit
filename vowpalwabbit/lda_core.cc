@@ -753,6 +753,7 @@ void end_examples(lda& l)
     ld.v.delete_v();
   }
 
+
   learner* setup(vw&all, po::variables_map& vm)
   {
     po::options_description opts("Lda options");
@@ -769,7 +770,7 @@ void end_examples(lda& l)
     else
       all.lda = vm["lda"].as<uint32_t>();
     
-    lda* ld = (lda*)calloc_or_die(1,sizeof(lda));
+    lda* ld = calloc_or_die<lda>();
     
     ld->lda = all.lda;
     ld->lda_alpha = vm["lda_alpha"].as<float>();

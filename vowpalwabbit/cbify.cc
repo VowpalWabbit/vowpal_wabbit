@@ -170,7 +170,7 @@ namespace CBIFY {
     vwc.l = &base;
     vwc.e = &ec;
     
-    uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer.get(), to_string((u64)ec.example_counter), vwc);
+    uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer.get(), to_string((unsigned long long)ec.example_counter), vwc);
     ec.loss = loss(ld.label, action);
     
     if (vwc.recorded && is_learn)
@@ -196,7 +196,7 @@ namespace CBIFY {
     vw_context vwc;
     vwc.l = &base;
     vwc.e = &ec;
-    data.mwt_explorer->Choose_Action(*data.greedy_explorer.get(), to_string((u64)ec.example_counter), vwc);
+    data.mwt_explorer->Choose_Action(*data.greedy_explorer.get(), to_string((unsigned long long)ec.example_counter), vwc);
     
     u32 action = data.recorder->Get_Action();
     float prob = data.recorder->Get_Prob();
@@ -224,7 +224,7 @@ namespace CBIFY {
     vw_context context;
     context.l = &base;
     context.e = &ec;
-    uint32_t action = data.mwt_explorer->Choose_Action(*data.bootstrap_explorer.get(), to_string((u64)ec.example_counter), context);
+    uint32_t action = data.mwt_explorer->Choose_Action(*data.bootstrap_explorer.get(), to_string((unsigned long long)ec.example_counter), context);
     
     assert(action != 0);
     if (is_learn)
@@ -317,7 +317,7 @@ namespace CBIFY {
     vw_context cp;
     cp.data = &data;
     cp.e = &ec;
-    uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer.get(), to_string((u64)ec.example_counter), cp);
+    uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer.get(), to_string((unsigned long long)ec.example_counter), cp);
     
     if (is_learn)
       {
@@ -390,7 +390,7 @@ namespace CBIFY {
     if (!vm.count("cbify"))
       return NULL;
     
-    cbify* data = (cbify*)calloc_or_die(1, sizeof(cbify));
+    cbify* data = calloc_or_die<cbify>();
     data->all = &all;    
     data->k = (uint32_t)vm["cbify"].as<size_t>();
     

@@ -162,7 +162,7 @@ namespace ACTIVE {
     if(!vm.count("active"))
       return NULL;
     
-    active* data = (active*)calloc_or_die(1, sizeof(active));
+    active* data = calloc_or_die<active>();
 
     data->active_c0 = 8;
     data->all=&all;

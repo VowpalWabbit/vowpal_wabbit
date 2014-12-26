@@ -319,8 +319,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     vm = add_options(all, opts);
     if(!vm.count("nn"))
       return NULL;
-
-    nn* n = (nn*)calloc_or_die(1,sizeof(nn));
+    
+    nn* n = calloc_or_die<nn>();
     n->all = &all;
 
     //first parse for number of hidden units
