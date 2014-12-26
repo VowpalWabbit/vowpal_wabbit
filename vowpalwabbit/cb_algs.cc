@@ -508,17 +508,14 @@ namespace CB_ALGS
     if (!vm.count("cb"))
       return NULL;
 
-    cb* c = calloc_or_die<cb>();
-
-    c->all = &all;
-    c->min_cost = 0.;
-    c->max_cost = 1.;
+    cb& c = calloc_or_die<cb>();
+    c.all = &all;
+    c.min_cost = 0.;
+    c.max_cost = 1.;
 
     uint32_t nb_actions = (uint32_t)vm["cb"].as<size_t>();
 
-    std::stringstream ss;
-    ss << " --cb " << nb_actions;
-    all.file_options.append(ss.str());
+    all.file_options << " --cb " << nb_actions;
 
     all.sd->k = nb_actions;
 
@@ -532,12 +529,10 @@ namespace CB_ALGS
       std::string type_string;
 
       type_string = vm["cb_type"].as<std::string>();
+      all.file_options << " --cb_type " << type_string;
       
-      all.file_options.append(" --cb_type ");
-      all.file_options.append(type_string);
-
       if (type_string.compare("dr") == 0) 
-	c->cb_type = CB_TYPE_DR;
+	c.cb_type = CB_TYPE_DR;
       else if (type_string.compare("dm") == 0)
 	{
 	  if (eval)
@@ -545,23 +540,23 @@ namespace CB_ALGS
 	      cout << "direct method can not be used for evaluation --- it is biased." << endl;
 	      throw exception();
 	    }
-	  c->cb_type = CB_TYPE_DM;
+	  c.cb_type = CB_TYPE_DM;
 	  problem_multiplier = 1;
 	}
       else if (type_string.compare("ips") == 0)
 	{
-	  c->cb_type = CB_TYPE_IPS;
+	  c.cb_type = CB_TYPE_IPS;
 	  problem_multiplier = 1;
 	}
       else {
         std::cerr << "warning: cb_type must be in {'ips','dm','dr'}; resetting to dr." << std::endl;
-        c->cb_type = CB_TYPE_DR;
+        c.cb_type = CB_TYPE_DR;
       }
     }
     else {
       //by default use doubly robust
-      c->cb_type = CB_TYPE_DR;
-      all.file_options.append(" --cb_type dr");
+      c.cb_type = CB_TYPE_DR;
+      all.file_options << " --cb_type dr";
     }
 
     if (eval)
@@ -569,7 +564,7 @@ namespace CB_ALGS
     else
       all.p->lp = CB::cb_label; 
 
-    learner* l = new learner(c, all.l, problem_multiplier);
+    learner* l = new learner(&c, all.l, problem_multiplier);
     if (eval)
       {
 	l->set_learn<cb, learn_eval>();

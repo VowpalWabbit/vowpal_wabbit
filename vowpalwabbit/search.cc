@@ -1653,9 +1653,7 @@ namespace Search {
   template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) {
     if (vm.count(opt_name)) {
       ret = vm[opt_name].as<T>();
-      stringstream ss;
-      ss << " --" << opt_name << " " << ret;
-      all.file_options.append(ss.str());
+      all.file_options << " --" << opt_name << " " << ret;
     } else if (strlen(required_error_string)>0) {
       std::cerr << required_error_string << endl;
       if (! vm.count("help"))
@@ -1666,9 +1664,7 @@ namespace Search {
   void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string) {
     if (vm.count(opt_name)) {
       ret = true;
-      stringstream ss;
-      ss << " --" << opt_name;
-      all.file_options.append(ss.str());
+      all.file_options << " --" << opt_name;
     } else
       ret = false;
   }
@@ -1799,7 +1795,7 @@ namespace Search {
     vm = add_options(all, opts);
     if (!vm.count("search"))
       return NULL;
-    
+
     bool has_hook_task = false;
     for (size_t i=0; i<all.args.size()-1; i++)
       if (all.args[i] == "--search_task" && all.args[i+1] == "hook")
@@ -1809,10 +1805,10 @@ namespace Search {
         if (all.args[i] == "--search_task" && all.args[i+1] != "hook")
           all.args.erase(all.args.begin() + i, all.args.begin() + i + 2);
     
-    search* sch = calloc_or_die<search>();
-    sch->priv = new search_private();
-    search_initialize(&all, *sch);
-    search_private& priv = *sch->priv;
+    search& sch = calloc_or_die<search>();
+    sch.priv = new search_private();
+    search_initialize(&all, sch);
+    search_private& priv = *sch.priv;
 
     std::string task_string;
     std::string interpolation_string = "data";
@@ -1854,7 +1850,7 @@ namespace Search {
     string neighbor_features_string;
     check_option<string>(neighbor_features_string, all, vm, "search_neighbor_features", false, string_equal,
                          "warning: you specified a different feature structure with --search_neighbor_features than the one loaded from predictor. using loaded value of: ", "");
-    parse_neighbor_features(neighbor_features_string, *sch);
+    parse_neighbor_features(neighbor_features_string, sch);
 
     if (interpolation_string.compare("data") == 0) { // run as dagger
       priv.adaptive_beta = true;
@@ -1896,7 +1892,7 @@ namespace Search {
                          "warning: you specified a different history length through --search_history_length than the one loaded from predictor. using loaded value of: ", "");
     
     //check if the base learner is contextual bandit, in which case, we dont rollout all actions.
-    priv.allowed_actions_cache = calloc_or_die<polylabel>();
+    priv.allowed_actions_cache = &calloc_or_die<polylabel>();
     if (vm.count("cb")) {
       priv.cb_learner = true;
       CB::cb_label.default_label(priv.allowed_actions_cache);
@@ -1950,7 +1946,7 @@ namespace Search {
     for (search_task** mytask = all_tasks; *mytask != NULL; mytask++)
       if (task_string.compare((*mytask)->task_name) == 0) {
         priv.task = *mytask;
-        sch->task_name = (*mytask)->task_name;
+        sch.task_name = (*mytask)->task_name;
         break;
       }
     if (priv.task == NULL) {
@@ -1964,7 +1960,7 @@ namespace Search {
     // default to OAA labels unless the task wants to override this (which they can do in initialize)
     all.p->lp = MC::mc_label;
     if (priv.task)
-      priv.task->initialize(*sch, priv.A, vm);
+      priv.task->initialize(sch, priv.A, vm);
 
     if (vm.count("search_allowed_transitions"))     read_allowed_transitions((action)priv.A, vm["search_allowed_transitions"].as<string>().c_str());
     
@@ -1983,7 +1979,7 @@ namespace Search {
     if (!priv.allow_current_policy) // if we're not dagger
       all.check_holdout_every_n_passes = priv.passes_per_policy;
 
-    all.searchstr = sch;
+    all.searchstr = &sch;
 
     priv.start_clock_time = clock();
 
@@ -1991,7 +1987,7 @@ namespace Search {
       vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
     learner* base = setup_base(all,vm);
     
-    learner* l = new learner(sch, base, priv.total_number_of_policies);
+    learner* l = new learner(&sch, all.l, priv.total_number_of_policies);
     l->set_learn<search, search_predict_or_learn<true> >();
     l->set_predict<search, search_predict_or_learn<false> >();
     l->set_finish_example<search,finish_example>();

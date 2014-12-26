@@ -354,9 +354,7 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
 
   if (vm.count("affix")) {
     parse_affix_argument(all, vm["affix"].as<string>());
-    stringstream ss;
-    ss << " --affix " << vm["affix"].as<string>();
-    all.file_options.append(ss.str());
+    all.file_options << " --affix " << vm["affix"].as<string>();
   }
 
   if(vm.count("ngram")){
@@ -898,7 +896,7 @@ vw* parse_args(int argc, char *argv[])
   parse_regressor_args(*all, vm, io_temp);
   
   int temp_argc = 0;
-  char** temp_argv = VW::get_argv_from_string(all->file_options, temp_argc);
+  char** temp_argv = VW::get_argv_from_string(all->file_options.str(), temp_argc);
   add_to_args(*all, temp_argc, temp_argv);
   for (int i = 0; i < temp_argc; i++)
     free(temp_argv[i]);
@@ -912,7 +910,7 @@ vw* parse_args(int argc, char *argv[])
 
   po::store(pos, vm);
   po::notify(vm);
-  all->file_options = "";
+  all->file_options.str("");
 
   parse_feature_tweaks(*all, vm); //feature tweaks
 
@@ -968,16 +966,14 @@ vw* parse_args(int argc, char *argv[])
 }
 
 namespace VW {
-  void cmd_string_replace_value( string& cmd, string flag_to_replace, string new_value )
+  void cmd_string_replace_value( std::stringstream& ss, string flag_to_replace, string new_value )
   {
     flag_to_replace.append(" "); //add a space to make sure we obtain the right flag in case 2 flags start with the same set of characters
+    string cmd = ss.str();
     size_t pos = cmd.find(flag_to_replace);
-    if( pos == string::npos ) {
+    if( pos == string::npos )
       //flag currently not present in command string, so just append it to command string
-      cmd.append(" ");
-      cmd.append(flag_to_replace);
-      cmd.append(new_value);
-    }
+      ss << " " << flag_to_replace << new_value;
     else {
       //flag is present, need to replace old value with new value
 
@@ -987,14 +983,13 @@ namespace VW {
       //now pos is position where value starts
       //find position of next space
       size_t pos_after_value = cmd.find(" ",pos);
-      if(pos_after_value == string::npos) {
+      if(pos_after_value == string::npos) 
         //we reach the end of the string, so replace the all characters after pos by new_value
         cmd.replace(pos,cmd.size()-pos,new_value);
-      }
-      else {
+      else 
         //replace characters between pos and pos_after_value by new_value
         cmd.replace(pos,pos_after_value-pos,new_value);
-      }
+      ss.str(cmd);
     }
   }
 

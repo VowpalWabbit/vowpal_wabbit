@@ -162,16 +162,15 @@ namespace ACTIVE {
     if(!vm.count("active"))
       return NULL;
     
-    active* data = calloc_or_die<active>();
-
-    data->active_c0 = 8;
-    data->all=&all;
+    active& data = calloc_or_die<active>();
+    data.active_c0 = 8;
+    data.all=&all;
 
     if (vm.count("mellowness"))
-      data->active_c0 = vm["mellowness"].as<float>();
+      data.active_c0 = vm["mellowness"].as<float>();
 
     //Create new learner
-    learner* ret = new learner(data, all.l);
+    learner* ret = new learner(&data, all.l);
     if (vm.count("simulation"))
       {
 	ret->set_learn<active, predict_or_learn_simulation<true> >();

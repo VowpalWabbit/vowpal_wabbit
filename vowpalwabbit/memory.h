@@ -4,7 +4,7 @@
 #include <iostream>
 
 template<class T>
-T* calloc_or_die(size_t nmemb = 1)
+T* calloc_or_die(size_t nmemb)
 {
   if (nmemb == 0)
     return NULL;
@@ -16,5 +16,11 @@ T* calloc_or_die(size_t nmemb = 1)
   }
   return (T*)data;
 }
+
+template<class T> T& calloc_or_die()
+{
+  return *calloc_or_die<T>(1);
+}
+
 
 void free_it(void* ptr);

@@ -299,8 +299,8 @@ void mf_train(vw& all, example& ec)
     else
       all.rank = vm["gdmf"].as<uint32_t>();
 
-    gdmf* data = calloc_or_die<gdmf>(); 
-    data->all = &all;
+    gdmf& data = calloc_or_die<gdmf>(); 
+    data.all = &all;
 
     // store linear + 2*rank weights per index, round up to power of two
     float temp = ceilf(logf((float)(all.rank*2+1)) / logf (2.f));
@@ -339,7 +339,7 @@ void mf_train(vw& all, example& ec)
     }
     all.eta *= powf((float)(all.sd->t), all.power_t);
 
-    learner* l = new learner(data, 1 << all.reg.stride_shift);
+    learner* l = new learner(&data, 1 << all.reg.stride_shift);
     l->set_learn<gdmf, learn>();
     l->set_predict<gdmf, predict>();
     l->set_save_load<gdmf,save_load>();

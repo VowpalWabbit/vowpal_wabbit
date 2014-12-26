@@ -672,35 +672,34 @@ namespace StagewisePoly
     if (vm.count("stage_poly"))
       return NULL;
     
-    stagewise_poly *poly = calloc_or_die<stagewise_poly>();
-    poly->all = &all;
+    stagewise_poly& poly = calloc_or_die<stagewise_poly>();
+    poly.all = &all;
+    depthsbits_create(poly);
+    sort_data_create(poly);
 
-    depthsbits_create(*poly);
-    sort_data_create(*poly);
-
-    poly->sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 1.f;
-    poly->batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 1000;
-    poly->batch_sz_double = vm.count("batch_sz_no_doubling") ? false : true;
+    poly.sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 1.f;
+    poly.batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 1000;
+    poly.batch_sz_double = vm.count("batch_sz_no_doubling") ? false : true;
 #ifdef MAGIC_ARGUMENT
-    poly->magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;
+    poly.magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;
 #endif //MAGIC_ARGUMENT
 
-    poly->sum_sparsity = 0;
-    poly->sum_input_sparsity = 0;
-    poly->num_examples = 0;
-    poly->sum_sparsity_sync = 0;
-    poly->sum_input_sparsity_sync = 0;
-    poly->num_examples_sync = 0;
-    poly->last_example_counter = -1;
-    poly->numpasses = 1;
-    poly->update_support = false;
-    poly->original_ec = NULL;
-    poly->next_batch_sz = poly->batch_sz;
+    poly.sum_sparsity = 0;
+    poly.sum_input_sparsity = 0;
+    poly.num_examples = 0;
+    poly.sum_sparsity_sync = 0;
+    poly.sum_input_sparsity_sync = 0;
+    poly.num_examples_sync = 0;
+    poly.last_example_counter = -1;
+    poly.numpasses = 1;
+    poly.update_support = false;
+    poly.original_ec = NULL;
+    poly.next_batch_sz = poly.batch_sz;
 
     //following is so that saved models know to load us.
-    all.file_options.append(" --stage_poly");
+    all.file_options << " --stage_poly";
 
-    learner *l = new learner(poly, all.l);
+    learner *l = new learner(&poly, all.l);
     l->set_learn<stagewise_poly, learn>();
     l->set_predict<stagewise_poly, predict>();
     l->set_finish<stagewise_poly, finish>();

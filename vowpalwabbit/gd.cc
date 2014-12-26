@@ -852,20 +852,19 @@ learner* setup(vw& all, po::variables_map& vm)
     ("normalized", "use per feature normalized updates")
     ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule");
   vm = add_options(all, opts);
-  gd* g = calloc_or_die<gd>();
-
-  g->all = &all;
-  g->all->normalized_sum_norm_x = 0;
-  g->no_win_counter = 0;
-  g->total_weight = 0.;
-  g->early_stop_thres = 3;
-  g->neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
-  g->neg_power_t = - all.power_t;
+  gd& g = calloc_or_die<gd>();
+  g.all = &all;
+  g.all->normalized_sum_norm_x = 0;
+  g.no_win_counter = 0;
+  g.total_weight = 0.;
+  g.early_stop_thres = 3;
+  g.neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
+  g.neg_power_t = - all.power_t;
   
   if(all.initial_t > 0)//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all.initial_t) previous fake datapoints all with norm 1
     {
-      g->all->normalized_sum_norm_x = all.initial_t;
-      g->total_weight = all.initial_t;
+      g.all->normalized_sum_norm_x = all.initial_t;
+      g.total_weight = all.initial_t;
     }
 
   bool feature_mask_off = true;
@@ -876,11 +875,11 @@ learner* setup(vw& all, po::variables_map& vm)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     if(vm.count("early_terminate"))      
-      g->early_stop_thres = vm["early_terminate"].as< size_t>();     
+      g.early_stop_thres = vm["early_terminate"].as< size_t>();     
   }
 
   if (vm.count("constant")) {
-      g->initial_constant = vm["constant"].as<float>();     
+      g.initial_constant = vm["constant"].as<float>();     
   }
 
   if( !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
@@ -907,28 +906,28 @@ learner* setup(vw& all, po::variables_map& vm)
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
 	 << " adjust --decay_learning_rate larger to avoid this." << endl;
   
-  learner* ret = new learner(g, 1);
+  learner* ret = new learner(&g, 1);
 
   if (all.reg_mode % 2)
     if (all.audit || all.hash_inv)
       {
 	ret->set_predict<gd, predict<true, true> >();
-	g->predict = predict<true, true>;
+	g.predict = predict<true, true>;
       }
     else
       {
 	ret->set_predict<gd, predict<true, false> >();
-	g->predict = predict<true, false>;
+	g.predict = predict<true, false>;
       }
   else if (all.audit || all.hash_inv)
     {
       ret->set_predict<gd, predict<false, true> >();
-      g->predict = predict<false, true>;
+      g.predict = predict<false, true>;
     }
   else
     {
       ret->set_predict<gd, predict<false, false> >();
-      g->predict = predict<false, false>;
+      g.predict = predict<false, false>;
     }
   
   uint32_t stride;

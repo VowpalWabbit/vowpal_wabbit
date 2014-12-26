@@ -376,28 +376,24 @@ namespace ECT
     if (!vm.count("ect")) 
       return NULL;
     
-    ect* data = calloc_or_die<ect>();
+    ect& data = calloc_or_die<ect>();
     
     //first parse for number of actions
-    data->k = (int)vm["ect"].as<size_t>();
+    data.k = (int)vm["ect"].as<size_t>();
     
     //append ect with nb_actions to options_from_file so it is saved to regressor later
-    stringstream ss;
-    ss << " --ect " << data->k;
-
     if (vm.count("error")) {
-      data->errors = (uint32_t)vm["error"].as<size_t>();
+      data.errors = (uint32_t)vm["error"].as<size_t>();
     } else 
-      data->errors = 0;
+      data.errors = 0;
     //append error flag to options_from_file so it is saved in regressor file later
-    ss << " --error " << data->errors;
-    all.file_options.append(ss.str());
+    all.file_options << " --ect " << data.k << " --error " << data.errors;
     
     all.p->lp = MULTICLASS::mc_label;
-    size_t wpp = create_circuit(all, *data, data->k, data->errors+1);
-    data->all = &all;
+    size_t wpp = create_circuit(all, data, data.k, data.errors+1);
+    data.all = &all;
     
-    learner* l = new learner(data, all.l, wpp);
+    learner* l = new learner(&data, all.l, wpp);
     l->set_learn<ect, learn>();
     l->set_predict<ect, predict>();
     l->set_finish_example<ect,finish_example>();

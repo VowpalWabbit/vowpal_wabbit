@@ -135,23 +135,23 @@ void return_features(feature* f)
 
 flat_example* flatten_example(vw& all, example *ec) 
 {
-  flat_example* fec = calloc_or_die<flat_example>();  
-	fec->l = ec->l;
+  flat_example& fec = calloc_or_die<flat_example>();  
+	fec.l = ec->l;
 
-	fec->tag_len = ec->tag.size();
-	if (fec->tag_len >0)
+	fec.tag_len = ec->tag.size();
+	if (fec.tag_len >0)
 	  {
-	    fec->tag = calloc_or_die<char>(fec->tag_len+1);
-	    memcpy(fec->tag,ec->tag.begin, fec->tag_len);
+	    fec.tag = calloc_or_die<char>(fec.tag_len+1);
+	    memcpy(fec.tag,ec->tag.begin, fec.tag_len);
 	  }
 
-	fec->example_counter = ec->example_counter;  
-	fec->ft_offset = ec->ft_offset;  
-	fec->num_features = ec->num_features;  
+	fec.example_counter = ec->example_counter;  
+	fec.ft_offset = ec->ft_offset;  
+	fec.num_features = ec->num_features;  
         
-	fec->feature_map = VW::get_features(all, ec, fec->feature_map_len);
+	fec.feature_map = VW::get_features(all, ec, fec.feature_map_len);
 
-	return fec;  
+	return &fec;  
 }
 
 flat_example* flatten_sort_example(vw& all, example *ec) 

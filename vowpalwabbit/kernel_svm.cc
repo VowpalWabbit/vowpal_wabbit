@@ -106,7 +106,7 @@ namespace KSVM
   {
     krow.delete_v();
     // free flatten example contents
-    flat_example *fec = calloc_or_die<flat_example>();
+    flat_example *fec = &calloc_or_die<flat_example>();
     *fec = ex;
     free_flatten_example(fec); // free contents of flat example and frees fec.
   }
@@ -222,7 +222,7 @@ namespace KSVM
   int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec) {
     size_t brw = 1;
     if(read) {
-      fec = calloc_or_die<flat_example>();
+      fec = &calloc_or_die<flat_example>();
       brw = bin_read_fixed(model_file, (char*) fec, sizeof(flat_example), "");
 
       if(brw > 0) {
@@ -277,7 +277,7 @@ namespace KSVM
     for(uint32_t i = 0;i < model->num_support;i++) {
       if(read) {
 	save_load_flat_example(model_file, read, fec);
-	svm_example* tmp= calloc_or_die<svm_example>();
+	svm_example* tmp= &calloc_or_die<svm_example>();
 	tmp->init_svm_example(fec);
 	model->support_vec.push_back(tmp);
       }
@@ -398,7 +398,7 @@ namespace KSVM
   void predict(svm_params& params, learner &base, example& ec) {
     flat_example* fec = flatten_sort_example(*(params.all),&ec);    
     if(fec) {
-      svm_example* sec = calloc_or_die<svm_example>(); 
+      svm_example* sec = &calloc_or_die<svm_example>(); 
       sec->init_svm_example(fec);
       float score;
       predict(params, &sec, &score, 1);
@@ -584,7 +584,7 @@ namespace KSVM
       
       for(size_t i = 0;i < params.pool_size; i++) {	
 	if(!save_load_flat_example(*b, true, fec)) {
-	  params.pool[i] = calloc_or_die<svm_example>();
+	  params.pool[i] = &calloc_or_die<svm_example>();
 	  params.pool[i]->init_svm_example(fec);
 	  train_pool[i] = true;
 	  params.pool_pos++;
@@ -739,7 +739,7 @@ namespace KSVM
     //   cout<<i<<":"<<fec->feature_map[i].x<<" "<<fec->feature_map[i].weight_index<<" ";
     // cout<<endl;
     if(fec) {
-      svm_example* sec = calloc_or_die<svm_example>();
+      svm_example* sec = &calloc_or_die<svm_example>();
       sec->init_svm_example(fec);
       float score = 0;
       predict(params, &sec, &score, 1);
@@ -814,54 +814,52 @@ namespace KSVM
     delete all.loss;
     all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
 
-    svm_params* params = calloc_or_die<svm_params>();
-    params->model = calloc_or_die<svm_model>();
-    params->model->num_support = 0;
-    //params->curcache = 0;
-    params->maxcache = 1024*1024*1024;
-    params->loss_sum = 0.;
-    params->all = &all;
+    svm_params& params = calloc_or_die<svm_params>();
+    params.model = &calloc_or_die<svm_model>();
+    params.model->num_support = 0;
+    //params.curcache = 0;
+    params.maxcache = 1024*1024*1024;
+    params.loss_sum = 0.;
+    params.all = &all;
     
     if(vm.count("reprocess"))
-      params->reprocess = vm["reprocess"].as<std::size_t>();
+      params.reprocess = vm["reprocess"].as<std::size_t>();
     else 
-      params->reprocess = 1;
+      params.reprocess = 1;
 
     if(vm.count("active"))
-      params->active = true;
-    if(params->active) {
+      params.active = true;
+    if(params.active) {
       if(vm.count("active_c"))
-	params->active_c = vm["active_c"].as<double>();
+	params.active_c = vm["active_c"].as<double>();
       else
-	params->active_c = 1.;
+	params.active_c = 1.;
       if(vm.count("pool_greedy"))
-	params->active_pool_greedy = 1;
+	params.active_pool_greedy = 1;
       /*if(vm.count("para_active"))
-	params->para_active = 1;*/
+	params.para_active = 1;*/
     }
     
     if(vm.count("pool_size")) 
-      params->pool_size = vm["pool_size"].as<std::size_t>();
+      params.pool_size = vm["pool_size"].as<std::size_t>();
     else
-      params->pool_size = 1;
+      params.pool_size = 1;
     
-    params->pool = calloc_or_die<svm_example*>(params->pool_size);
-    params->pool_pos = 0;
+    params.pool = calloc_or_die<svm_example*>(params.pool_size);
+    params.pool_pos = 0;
     
     if(vm.count("subsample"))
-	params->subsample = vm["subsample"].as<std::size_t>();
-      else if(params->para_active)
-	params->subsample = (size_t)ceil(params->pool_size / all.total);
+	params.subsample = vm["subsample"].as<std::size_t>();
+      else if(params.para_active)
+	params.subsample = (size_t)ceil(params.pool_size / all.total);
       else
-	params->subsample = 1;
+	params.subsample = 1;
     
-    params->lambda = all.l2_lambda;
+    params.lambda = all.l2_lambda;
 
-    std::stringstream ss1, ss2;
-    ss1 <<" --lambda "<< params->lambda;
-    all.file_options.append(ss1.str());
+    all.file_options <<" --lambda "<< params.lambda;
       
-    cerr<<"Lambda = "<<params->lambda<<endl;
+    cerr<<"Lambda = "<<params.lambda<<endl;
 
     std::string kernel_type;
 
@@ -870,44 +868,39 @@ namespace KSVM
     else
       kernel_type = string("linear");
     
-    ss2 <<" --kernel "<< kernel_type;
-    all.file_options.append(ss2.str());
+    all.file_options <<" --kernel "<< kernel_type;
 
     cerr<<"Kernel = "<<kernel_type<<endl;
 
     if(kernel_type.compare("rbf") == 0) {
-      params->kernel_type = SVM_KER_RBF;
+      params.kernel_type = SVM_KER_RBF;
       float bandwidth = 1.;
       if(vm.count("bandwidth")) {
-		std::stringstream ss;
 		bandwidth = vm["bandwidth"].as<float>();	
-		ss<<" --bandwidth "<<bandwidth;
-		all.file_options.append(ss.str());
+		all.file_options <<" --bandwidth "<<bandwidth;
       }
       cerr<<"bandwidth = "<<bandwidth<<endl;
-      params->kernel_params = calloc_or_die<double>();
-      *((float*)params->kernel_params) = bandwidth;
+      params.kernel_params = &calloc_or_die<double>();
+      *((float*)params.kernel_params) = bandwidth;
     }
     else if(kernel_type.compare("poly") == 0) {
-      params->kernel_type = SVM_KER_POLY;
+      params.kernel_type = SVM_KER_POLY;
       int degree = 2;
       if(vm.count("degree")) {
-	  std::stringstream ss;
 	  degree = vm["degree"].as<int>();	
-	  ss<<" --degree "<<degree;
-	  all.file_options.append(ss.str());
+	  all.file_options <<" --degree "<<degree;
 	}
       cerr<<"degree = "<<degree<<endl;
-      params->kernel_params = calloc_or_die<int>();
-      *((int*)params->kernel_params) = degree;
+      params.kernel_params = &calloc_or_die<int>();
+      *((int*)params.kernel_params) = degree;
     }      
     else
-      params->kernel_type = SVM_KER_LIN;            
+      params.kernel_type = SVM_KER_LIN;            
 	
-    params->all->reg.weight_mask = (uint32_t)LONG_MAX;
-    params->all->reg.stride_shift = 0;
+    params.all->reg.weight_mask = (uint32_t)LONG_MAX;
+    params.all->reg.stride_shift = 0;
     
-    learner* l = new learner(params, 1); 
+    learner* l = new learner(&params, 1); 
     l->set_learn<svm_params, learn>();
     l->set_predict<svm_params, predict>();
     l->set_save_load<svm_params, save_load>();

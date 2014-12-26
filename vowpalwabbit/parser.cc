@@ -153,16 +153,16 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
 
 parser* new_parser()
 {
-  parser* ret = calloc_or_die<parser>();
-  ret->input = new io_buf;
-  ret->output = new io_buf;
-  ret->local_example_number = 0;
-  ret->in_pass_counter = 0;
-  ret->ring_size = 1 << 8;
-  ret->done = false;
-  ret->used_index = 0;
+  parser& ret = calloc_or_die<parser>();
+  ret.input = new io_buf;
+  ret.output = new io_buf;
+  ret.local_example_number = 0;
+  ret.in_pass_counter = 0;
+  ret.ring_size = 1 << 8;
+  ret.done = false;
+  ret.used_index = 0;
 
-  return ret;
+  return &ret;
 }
 
 void set_compressed(parser* par){

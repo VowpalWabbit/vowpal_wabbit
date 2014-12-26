@@ -51,12 +51,12 @@ namespace Scorer {
     opts.add_options()
       ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity, logistic or glf1");
     vm = add_options(all, opts);
-    scorer* s = calloc_or_die<scorer>();
-    s->all = &all;
-
-    learner* l = new learner(s, all.l);
-
     string link = vm["link"].as<string>();
+
+    scorer& s = calloc_or_die<scorer>();
+    s.all = &all;
+
+    learner* l = new learner(&s, all.l);
     if (!vm.count("link") || link.compare("identity") == 0)
       {
 	l->set_learn<scorer, predict_or_learn<true, noop> >();
@@ -64,13 +64,13 @@ namespace Scorer {
       }
     else if (link.compare("logistic") == 0)
       {
-	all.file_options.append(" --link=logistic ");
+	all.file_options << " --link=logistic ";
 	l->set_learn<scorer, predict_or_learn<true, logistic> >();
 	l->set_predict<scorer, predict_or_learn<false, logistic> >();
       }
     else if (link.compare("glf1") == 0)
       {
-	all.file_options.append(" --link=glf1 ");
+	all.file_options << " --link=glf1 ";
 	l->set_learn<scorer, predict_or_learn<true, glf1> >();
 	l->set_predict<scorer, predict_or_learn<false, glf1> >();
       }

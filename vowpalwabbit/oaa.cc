@@ -20,7 +20,7 @@ using namespace MULTICLASS;
 
 namespace OAA {
   struct oaa{
-    uint32_t k;
+    size_t k;
     bool shouldOutput;
     vw* all;
   };
@@ -33,8 +33,7 @@ namespace OAA {
     
     ec.l.simple = {0.f, mc_label_data.weight, 0.f};
 
-    string outputString;
-    stringstream outputStringStream(outputString);
+    stringstream outputStringStream;
 
     uint32_t prediction = 1;
     float score = INT_MIN;
@@ -85,21 +84,17 @@ namespace OAA {
     if(!vm.count("oaa"))
       return NULL;
     
-    oaa* data = calloc_or_die<oaa>();
+    oaa& data = calloc_or_die<oaa>();
     //first parse for number of actions
-
-    data->k = (uint32_t)vm["oaa"].as<size_t>();
-    
+    data.k = vm["oaa"].as<size_t>();
     //append oaa with nb_actions to options_from_file so it is saved to regressor later
-    std::stringstream ss;
-    ss << " --oaa " << data->k;
-    all.file_options.append(ss.str());
+    all.file_options << " --oaa " << data.k;
 
-    data->shouldOutput = all.raw_prediction > 0;
-    data->all = &all;
+    data.shouldOutput = all.raw_prediction > 0;
+    data.all = &all;
     all.p->lp = mc_label;
 
-    learner* l = new learner(data, all.l, data->k);
+    learner* l = new learner(&data, all.l, data.k);
     l->set_learn<oaa, predict_or_learn<true> >();
     l->set_predict<oaa, predict_or_learn<false> >();
     l->set_finish_example<oaa, finish_example>();

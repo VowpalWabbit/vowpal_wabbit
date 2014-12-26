@@ -770,27 +770,25 @@ void end_examples(lda& l)
     else
       all.lda = vm["lda"].as<uint32_t>();
     
-    lda* ld = calloc_or_die<lda>();
+      lda& ld = calloc_or_die<lda>();
     
-    ld->lda = all.lda;
-    ld->lda_alpha = vm["lda_alpha"].as<float>();
-    ld->lda_rho = vm["lda_rho"].as<float>();
-    ld->lda_D = vm["lda_D"].as<float>();
-    ld->lda_epsilon = vm["lda_epsilon"].as<float>();
-    ld->minibatch = vm["minibatch"].as<size_t>();
-    ld->sorted_features = vector<index_feature>();
-    ld->total_lambda_init = 0;
-    ld->all = &all;
-    ld->example_t = all.initial_t;
+    ld.lda = all.lda;
+    ld.lda_alpha = vm["lda_alpha"].as<float>();
+    ld.lda_rho = vm["lda_rho"].as<float>();
+    ld.lda_D = vm["lda_D"].as<float>();
+    ld.lda_epsilon = vm["lda_epsilon"].as<float>();
+    ld.minibatch = vm["minibatch"].as<size_t>();
+    ld.sorted_features = vector<index_feature>();
+    ld.total_lambda_init = 0;
+    ld.all = &all;
+    ld.example_t = all.initial_t;
     
     float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
     all.reg.stride_shift = (size_t)temp;
     all.random_weights = true;
     all.add_constant = false;
     
-    std::stringstream ss;
-    ss << " --lda " << all.lda;
-    all.file_options.append(ss.str());
+    all.file_options << " --lda " << all.lda;
     
     if (all.eta > 1.)
       {
@@ -799,15 +797,16 @@ void end_examples(lda& l)
       }
     
     if (vm.count("minibatch")) {
-      size_t minibatch2 = next_pow2(ld->minibatch);
+      size_t minibatch2 = next_pow2(ld.minibatch);
       all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
+
     }
     
-    ld->v.resize(all.lda*ld->minibatch);
+    ld.v.resize(all.lda*ld.minibatch);
     
-    ld->decay_levels.push_back(0.f);
+    ld.decay_levels.push_back(0.f);
     
-    learner* l = new learner(ld, 1 << all.reg.stride_shift);
+    learner* l = new learner(&ld, 1 << all.reg.stride_shift);
     l->set_learn<lda,learn>();
     l->set_predict<lda,predict>();
     l->set_save_load<lda,save_load>();
@@ -817,5 +816,6 @@ void end_examples(lda& l)
     l->set_finish<lda,finish>();
     
     return l;
+      }
+
   }
-}

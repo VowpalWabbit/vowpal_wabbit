@@ -109,18 +109,18 @@ learner* setup(vw& all, po::variables_map& vm)
   if(!vm.count("sendto"))
     return NULL;
   
-  sender* s = calloc_or_die<sender>();
-  s->sd = -1;
+  sender& s = calloc_or_die<sender>();
+  s.sd = -1;
   if (vm.count("sendto"))
     {      
       vector<string> hosts = vm["sendto"].as< vector<string> >();
-      open_sockets(*s, hosts[0]);
+      open_sockets(s, hosts[0]);
     }
 
-  s->all = &all;
-  s->delay_ring = calloc_or_die<example*>(all.p->ring_size);
+  s.all = &all;
+  s.delay_ring = calloc_or_die<example*>(all.p->ring_size);
 
-  learner* l = new learner(s, 1);
+  learner* l = new learner(&s, 1);
   l->set_learn<sender, learn>(); 
   l->set_predict<sender, learn>(); 
   l->set_finish<sender, finish>();

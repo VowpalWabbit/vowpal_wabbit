@@ -981,32 +981,32 @@ learner* setup(vw& all, po::variables_map& vm)
   if(!vm.count("bfgs") && !vm.count("conjugate_gradient"))
     return NULL;
   
-  bfgs* b = calloc_or_die<bfgs>();
-  b->all = &all;
-  b->m = vm["mem"].as<uint32_t>();
-  b->rel_threshold = vm["termination"].as<float>();
-  b->wolfe1_bound = 0.01;
-  b->first_hessian_on=true;
-  b->first_pass = true;
-  b->gradient_pass = true;
-  b->preconditioner_pass = true;
-  b->backstep_on = false;
-  b->final_pass=all.numpasses;  
-  b->no_win_counter = 0;
-  b->early_stop_thres = 3;
+  bfgs& b = calloc_or_die<bfgs>();
+  b.all = &all;
+  b.m = vm["mem"].as<uint32_t>();
+  b.rel_threshold = vm["termination"].as<float>();
+  b.wolfe1_bound = 0.01;
+  b.first_hessian_on=true;
+  b.first_pass = true;
+  b.gradient_pass = true;
+  b.preconditioner_pass = true;
+  b.backstep_on = false;
+  b.final_pass=all.numpasses;  
+  b.no_win_counter = 0;
+  b.early_stop_thres = 3;
 
   if(!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     if(vm.count("early_terminate"))      
-      b->early_stop_thres = vm["early_terminate"].as< size_t>();     
+      b.early_stop_thres = vm["early_terminate"].as< size_t>();     
   }
   
-  if (vm.count("hessian_on") || b->m==0) {
+  if (vm.count("hessian_on") || b.m==0) {
     all.hessian_on = true;
   }
   if (!all.quiet) {
-    if (b->m>0)
+    if (b.m>0)
       cerr << "enabling BFGS based optimization ";
     else
       cerr << "enabling conjugate gradient optimization via BFGS ";
@@ -1024,7 +1024,7 @@ learner* setup(vw& all, po::variables_map& vm)
   all.bfgs = true;
   all.reg.stride_shift = 2;
 
-  learner* l = new learner(b, 1 << all.reg.stride_shift);
+  learner* l = new learner(&b, 1 << all.reg.stride_shift);
   l->set_learn<bfgs, learn>();
   l->set_predict<bfgs, predict>();
   l->set_save_load<bfgs,save_load>();

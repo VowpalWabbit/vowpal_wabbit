@@ -200,29 +200,25 @@ namespace LRQ {
     LRQstate* lrq = (LRQstate*)calloc(1, sizeof (LRQstate));
     unsigned int maxk = 0;
     lrq->all = &all;
-
+    
     size_t random_seed = 0;
     if (vm.count("random_seed")) random_seed = vm["random_seed"].as<size_t> ();
-
+    
     lrq->initial_seed = lrq->seed = random_seed | 8675309;
-	if (vm.count("lrqdropout"))
-		lrq->dropout = true;
-	else
-		lrq->dropout = false;
-
-    all.file_options.append(" --lrqdropout");
+    if (vm.count("lrqdropout"))
+      lrq->dropout = true;
+    else
+      lrq->dropout = false;
+    
+    all.file_options << " --lrqdropout ";
     
     lrq->lrpairs = vm["lrq"].as<vector<string> > ();
     
-    stringstream ss;
     for (vector<string>::iterator i = lrq->lrpairs.begin (); 
 	 i != lrq->lrpairs.end (); 
 	 ++i)
-      ss << " --lrq " << *i;
+      all.file_options << " --lrq " << *i;
     
-    all.file_options.append(ss.str());
-    
-
     if (! all.quiet)
       {
         cerr << "creating low rank quadratic features for pairs: ";
