@@ -33,7 +33,7 @@ namespace OAA {
     
     ec.l.simple = {0.f, mc_label_data.weight, 0.f};
 
-    stringstream outputStringStream(outputString);
+    stringstream outputStringStream;
 
     uint32_t prediction = 1;
     float score = INT_MIN;
