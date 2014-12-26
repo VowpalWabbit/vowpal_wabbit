@@ -140,7 +140,7 @@ namespace FTRL {
     assert(ec.in_use);
  
     // predict w*x, compute gradient, update accumulate state
-    predict_and_gradient(*all, a, ec);
+    ec.pred.scalar = predict_and_gradient(*all, a, ec);
     // evaluate, statistic
     evaluate_example(*all, a, ec);
     // update weight

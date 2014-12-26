@@ -17,13 +17,13 @@ num sources = 1
  5 0.47993   	0.00007   	0.00448   	 0.617627  	0.225808  	          	          	0.71197   	1.00000   
  6 0.47794   	0.00001   	0.00174   	 0.691628  	0.377800  	          	          	0.93214   	1.00000   
  7 0.47685   	0.00001   	0.00041   	 0.606087  	0.209707  	          	          	0.18141   	1.00000   
- 8 0.47668   	0.00000   	0.00001   	 0.538841  	0.077584  	          	          	0.00292   	1.00000   
+ 8 0.47668   	0.00000   	0.00001   	 0.538842  	0.077584  	          	          	0.00292   	1.00000   
 
 finished run
-number of examples = 8256
-weighted example sum = 8256
-weighted label sum = -686
-average loss = 0.458492
-best constant = -0.166566
-best constant's loss = 0.689691
-total feature number = 649768
+number of examples = 8000
+weighted example sum = 8000
+weighted label sum = -656
+average loss = 0.461878
+best constant = -0.164369
+best constant's loss = 0.689781
+total feature number = 629912
