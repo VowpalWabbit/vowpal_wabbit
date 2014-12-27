@@ -391,10 +391,10 @@ namespace ECT
     data.all = &all;
     
     learner<ect>* l = new learner<ect>(&data, all.l, wpp);
-    l->set_learn<learn>();
-    l->set_predict<predict>();
-    l->set_finish_example<finish_example>();
-    l->set_finish<finish>();
+    l->set_learn(learn);
+    l->set_predict(predict);
+    l->set_finish_example(finish_example);
+    l->set_finish(finish);
 
     return make_base(l);
   }

@@ -114,11 +114,11 @@ void end_examples(sender& s)
   s.delay_ring = calloc_or_die<example*>(all.p->ring_size);
 
   learner<sender>* l = new learner<sender>(&s, 1);
-  l->set_learn<learn>(); 
-  l->set_predict<learn>(); 
-  l->set_finish<finish>();
-  l->set_finish_example<finish_example>(); 
-  l->set_end_examples<end_examples>();
+  l->set_learn(learn); 
+  l->set_predict(learn); 
+  l->set_finish(finish);
+  l->set_finish_example(finish_example); 
+  l->set_end_examples(end_examples);
   return make_base(l);
 }
 

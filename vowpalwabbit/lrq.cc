@@ -244,9 +244,9 @@ namespace LRQ {
         
     all.wpp = all.wpp * (1 + maxk);
     learner<LRQstate>* l = new learner<LRQstate>(&lrq, all.l, 1 + maxk);
-    l->set_learn<predict_or_learn<true> >();
-    l->set_predict<predict_or_learn<false> >();
-    l->set_end_pass<reset_seed>();
+    l->set_learn(predict_or_learn<true>);
+    l->set_predict(predict_or_learn<false>);
+    l->set_end_pass(reset_seed);
 
     // TODO: leaks memory ?
     return make_base(l);

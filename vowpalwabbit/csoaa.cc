@@ -83,9 +83,9 @@ namespace CSOAA {
     all.sd->k = nb_actions;
 
     learner<csoaa>* l = new learner<csoaa>(&c, all.l, nb_actions);
-    l->set_learn<predict_or_learn<true> >();
-    l->set_predict<predict_or_learn<false> >();
-    l->set_finish_example<finish_example>();
+    l->set_learn(predict_or_learn<true>);
+    l->set_predict(predict_or_learn<false>);
+    l->set_finish_example(finish_example);
     return make_base(l);
   }
 }
@@ -710,15 +710,15 @@ namespace LabelDict {
     ld.read_example_this_loop = 0;
     ld.need_to_clear = false;
     learner<ldf>* l = new learner<ldf>(&ld, all.l);
-    l->set_learn<predict_or_learn<true> >();
-    l->set_predict<predict_or_learn<false> >();
+    l->set_learn(predict_or_learn<true>);
+    l->set_predict(predict_or_learn<false>);
     if (ld.is_singleline)
-      l->set_finish_example<finish_singleline_example>();
+      l->set_finish_example(finish_singleline_example);
     else
-      l->set_finish_example<finish_multiline_example>();
-    l->set_finish<finish>();
-    l->set_end_examples<end_examples>(); 
-    l->set_end_pass<end_pass>();
+      l->set_finish_example(finish_multiline_example);
+    l->set_finish(finish);
+    l->set_end_examples(end_examples); 
+    l->set_end_pass(end_pass);
     return make_base(l);
   }
 

@@ -50,8 +50,8 @@ namespace ALINK {
     all.file_options << " --autolink " << data.d;
 
     learner<autolink>* ret = new learner<autolink>(&data, all.l);
-    ret->set_learn<predict_or_learn<true> >();
-    ret->set_predict<predict_or_learn<false> >();
+    ret->set_learn(predict_or_learn<true>);
+    ret->set_predict(predict_or_learn<false>);
     return make_base(ret);
   }
 }

@@ -1019,12 +1019,12 @@ base_learner* setup(vw& all, po::variables_map& vm)
   all.reg.stride_shift = 2;
 
   learner<bfgs>* l = new learner<bfgs>(&b, 1 << all.reg.stride_shift);
-  l->set_learn<learn>();
-  l->set_predict<predict>();
-  l->set_save_load<save_load>();
-  l->set_init_driver<init_driver>();
-  l->set_end_pass<end_pass>();
-  l->set_finish<finish>();
+  l->set_learn(learn);
+  l->set_predict(predict);
+  l->set_save_load(save_load);
+  l->set_init_driver(init_driver);
+  l->set_end_pass(end_pass);
+  l->set_finish(finish);
 
   return make_base(l);
 }

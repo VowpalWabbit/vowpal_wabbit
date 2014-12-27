@@ -88,9 +88,9 @@ namespace OAA {
     all.p->lp = mc_label;
 
     learner<oaa>* l = new learner<oaa>(&data, all.l, data.k);
-    l->set_learn<predict_or_learn<true> >();
-    l->set_predict<predict_or_learn<false> >();
-    l->set_finish_example<finish_example>();
+    l->set_learn(predict_or_learn<true>);
+    l->set_predict(predict_or_learn<false>);
+    l->set_finish_example(finish_example);
 
     return make_base(l);
   }

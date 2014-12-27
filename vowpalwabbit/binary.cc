@@ -29,8 +29,8 @@ namespace BINARY {
     all.sd->binary_label = true;
     //Create new learner
     learner<char>* ret = new learner<char>(NULL, all.l);
-    ret->set_learn<predict_or_learn<true> >();
-    ret->set_predict<predict_or_learn<false> >();
+    ret->set_learn(predict_or_learn<true>);
+    ret->set_predict(predict_or_learn<false>);
     return make_base(ret);
   }
 }

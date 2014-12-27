@@ -169,15 +169,15 @@ namespace ACTIVE {
     learner<active>* ret = new learner<active>(&data, all.l);
     if (vm.count("simulation"))
       {
-	ret->set_learn<predict_or_learn_simulation<true> >();
-	ret->set_predict<predict_or_learn_simulation<false> >();
+	ret->set_learn(predict_or_learn_simulation<true>);
+	ret->set_predict(predict_or_learn_simulation<false>);
       }
     else
       {
 	all.active = true;
-	ret->set_learn<predict_or_learn_active<true> >();
-	ret->set_predict<predict_or_learn_active<false> >();
-	ret->set_finish_example<return_active_example>();
+	ret->set_learn(predict_or_learn_active<true>);
+	ret->set_predict(predict_or_learn_active<false>);
+	ret->set_finish_example(return_active_example);
       }
 
     return make_base(ret);

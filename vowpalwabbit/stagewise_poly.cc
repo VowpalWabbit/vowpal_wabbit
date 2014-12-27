@@ -699,12 +699,12 @@ namespace StagewisePoly
     all.file_options << " --stage_poly";
 
     learner<stagewise_poly> *l = new learner<stagewise_poly>(&poly, all.l);
-    l->set_learn<learn>();
-    l->set_predict<predict>();
-    l->set_finish<finish>();
-    l->set_save_load<save_load>();
-    l->set_finish_example<finish_example>();
-    l->set_end_pass<end_pass>();
+    l->set_learn(learn);
+    l->set_predict(predict);
+    l->set_finish(finish);
+    l->set_save_load(save_load);
+    l->set_finish_example(finish_example);
+    l->set_end_pass(end_pass);
 
     return make_base(l);
   }

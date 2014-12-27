@@ -218,9 +218,9 @@ namespace FTRL {
     }
 
     learner<ftrl>* l = new learner<ftrl>(&b, 1 << all.reg.stride_shift);
-    l->set_learn<learn>();
-    l->set_predict<predict>();
-    l->set_save_load<save_load>();
+    l->set_learn(learn);
+    l->set_predict(predict);
+    l->set_save_load(save_load);
 
     return make_base(l);
   }

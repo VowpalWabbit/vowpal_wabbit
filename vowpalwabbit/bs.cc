@@ -281,10 +281,10 @@ namespace BS {
     data.all = &all;
 
     learner<bs>* l = new learner<bs>(&data, all.l, data.B);
-    l->set_learn<predict_or_learn<true> >();
-    l->set_predict<predict_or_learn<false> >();
-    l->set_finish_example<finish_example>();
-    l->set_finish<finish>();
+    l->set_learn(predict_or_learn<true>);
+    l->set_predict(predict_or_learn<false>);
+    l->set_finish_example(finish_example);
+    l->set_finish(finish);
 
     return make_base(l);
   }

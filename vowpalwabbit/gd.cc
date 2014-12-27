@@ -794,14 +794,14 @@ uint32_t set_learn(vw& all, learner<gd>* ret, bool feature_mask_off)
   all.normalized_idx = normalized;
   if (feature_mask_off)
     {
-      ret->set_learn<learn<invariant, sqrt_rate, true, adaptive, normalized, spare> >();
-      ret->set_update<update<invariant, sqrt_rate, true, adaptive, normalized, spare> >();
+      ret->set_learn(learn<invariant, sqrt_rate, true, adaptive, normalized, spare>);
+      ret->set_update(update<invariant, sqrt_rate, true, adaptive, normalized, spare>);
       return next;
     }
   else
     {
-      ret->set_learn<learn<invariant, sqrt_rate, false, adaptive, normalized, spare> >();
-      ret->set_update<update<invariant, sqrt_rate, false, adaptive, normalized, spare> >();
+      ret->set_learn(learn<invariant, sqrt_rate, false, adaptive, normalized, spare>);
+      ret->set_update(update<invariant, sqrt_rate, false, adaptive, normalized, spare>);
       return next;
     }
 }
@@ -902,25 +902,14 @@ base_learner* setup(vw& all, po::variables_map& vm)
 
   if (all.reg_mode % 2)
     if (all.audit || all.hash_inv)
-      {
-	ret->set_predict<predict<true, true> >();
-	g.predict = predict<true, true>;
-      }
+      g.predict = predict<true, true>;
     else
-      {
-	ret->set_predict<predict<true, false> >();
-	g.predict = predict<true, false>;
-      }
+      g.predict = predict<true, false>;
   else if (all.audit || all.hash_inv)
-    {
-      ret->set_predict<predict<false, true> >();
-      g.predict = predict<false, true>;
-    }
+    g.predict = predict<false, true>;
   else
-    {
-      ret->set_predict<predict<false, false> >();
-      g.predict = predict<false, false>;
-    }
+    g.predict = predict<false, false>;
+  ret->set_predict(g.predict);
   
   uint32_t stride;
   if (all.power_t == 0.5)
@@ -931,9 +920,8 @@ base_learner* setup(vw& all, po::variables_map& vm)
   all.reg.stride_shift = ceil_log_2(stride-1);
   ret->increment = ((uint64_t)1 << all.reg.stride_shift);
 
-  ret->set_save_load<save_load>();
-
-  ret->set_end_pass<end_pass>();
+  ret->set_save_load(save_load);
+  ret->set_end_pass(end_pass);
   return make_base(ret);
 }
 }
