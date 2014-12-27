@@ -132,7 +132,7 @@ namespace LEARNER
 	  {finisher_fd.func(finisher_fd.data); free(finisher_fd.data); } 
 	if (finisher_fd.base) { 
 	  finisher_fd.base->finish();
-	  delete finisher_fd.base;
+	  free(finisher_fd.base);
 	}
       }
       
