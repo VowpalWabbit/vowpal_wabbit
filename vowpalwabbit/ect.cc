@@ -184,7 +184,7 @@ namespace ECT
     return e.last_pair + (eliminations-1);
   }
 
-  uint32_t ect_predict(vw& all, ect& e, learner& base, example& ec)
+  uint32_t ect_predict(vw& all, ect& e, base_learner& base, example& ec)
   {
     if (e.k == (size_t)1)
       return 1;
@@ -228,7 +228,7 @@ namespace ECT
     return false;
   }
 
-  void ect_train(vw& all, ect& e, learner& base, example& ec)
+  void ect_train(vw& all, ect& e, base_learner& base, example& ec)
   {
     if (e.k == 1)//nothing to do
       return;
@@ -317,7 +317,7 @@ namespace ECT
       }
   }
 
-  void predict(ect& e, learner& base, example& ec) {
+  void predict(ect& e, base_learner& base, example& ec) {
     vw* all = e.all;
 
     MULTICLASS::multiclass mc = ec.l.multi;
@@ -327,7 +327,7 @@ namespace ECT
     ec.l.multi = mc;
   }
 
-  void learn(ect& e, learner& base, example& ec)
+  void learn(ect& e, base_learner& base, example& ec)
   {
     vw* all = e.all;
 
@@ -366,7 +366,7 @@ namespace ECT
     VW::finish_example(all, &ec);
   }
   
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description opts("ECT options");
     opts.add_options()
@@ -387,18 +387,18 @@ namespace ECT
     } else 
       data.errors = 0;
     //append error flag to options_from_file so it is saved in regressor file later
-    all.file_options << " --ect " << data.k << " --error " << data.errors;
+    *all.file_options << " --ect " << data.k << " --error " << data.errors;
     
     all.p->lp = MULTICLASS::mc_label;
     size_t wpp = create_circuit(all, data, data.k, data.errors+1);
     data.all = &all;
     
-    learner* l = new learner(&data, all.l, wpp);
-    l->set_learn<ect, learn>();
-    l->set_predict<ect, predict>();
-    l->set_finish_example<ect,finish_example>();
-    l->set_finish<ect,finish>();
+    learner<ect>& l = init_learner(&data, all.l, wpp);
+    l.set_learn(learn);
+    l.set_predict(predict);
+    l.set_finish_example(finish_example);
+    l.set_finish(finish);
 
-    return l;
+    return make_base(l);
   }
 }

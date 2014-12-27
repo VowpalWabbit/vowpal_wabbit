@@ -180,7 +180,7 @@ namespace BS {
   }
 
   template <bool is_learn>
-  void predict_or_learn(bs& d, learner& base, example& ec)
+  void predict_or_learn(bs& d, base_learner& base, example& ec)
   {
     vw* all = d.all;
     bool shouldOutput = all->raw_prediction > 0;
@@ -239,7 +239,7 @@ namespace BS {
     d.pred_vec.~vector();
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all, po::variables_map& vm)
   {
     bs& data = calloc_or_die<bs>();
     data.ub = FLT_MAX;
@@ -254,7 +254,7 @@ namespace BS {
     data.B = (uint32_t)vm["bootstrap"].as<size_t>();
 
     //append bs with number of samples to options_from_file so it is saved to regressor later
-    all.file_options << " --bootstrap " << data.B;
+    *all.file_options << " --bootstrap " << data.B;
 
     std::string type_string("mean");
 
@@ -275,17 +275,17 @@ namespace BS {
     }
     else //by default use mean
       data.bs_type = BS_TYPE_MEAN;
-    all.file_options << " --bs_type " << type_string;
+    *all.file_options << " --bs_type " << type_string;
 
     data.pred_vec.reserve(data.B);
     data.all = &all;
 
-    learner* l = new learner(&data, all.l, data.B);
-    l->set_learn<bs, predict_or_learn<true> >();
-    l->set_predict<bs, predict_or_learn<false> >();
-    l->set_finish_example<bs,finish_example>();
-    l->set_finish<bs,finish>();
+    learner<bs>& l = init_learner(&data, all.l, data.B);
+    l.set_learn(predict_or_learn<true>);
+    l.set_predict(predict_or_learn<false>);
+    l.set_finish_example(finish_example);
+    l.set_finish(finish);
 
-    return l;
+    return make_base(l);
   }
 }

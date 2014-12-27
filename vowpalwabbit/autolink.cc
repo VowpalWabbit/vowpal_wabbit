@@ -12,7 +12,7 @@ namespace ALINK {
   };
 
   template <bool is_learn>
-  void predict_or_learn(autolink& b, learner& base, example& ec)
+  void predict_or_learn(autolink& b, base_learner& base, example& ec)
   {
     base.predict(ec);
     float base_pred = ec.pred.scalar;
@@ -41,7 +41,7 @@ namespace ALINK {
     ec.total_sum_feat_sq -= sum_sq;
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description opts("Autolink options");
     opts.add_options()
@@ -54,11 +54,11 @@ namespace ALINK {
     data.d = (uint32_t)vm["autolink"].as<size_t>();
     data.stride_shift = all.reg.stride_shift;
     
-    all.file_options << " --autolink " << data.d;
+    *all.file_options << " --autolink " << data.d;
 
-    learner* ret = new learner(&data, all.l);
-    ret->set_learn<autolink, predict_or_learn<true> >();
-    ret->set_predict<autolink, predict_or_learn<false> >();
-    return ret;
+    learner<autolink>& ret = init_learner(&data, all.l);
+    ret.set_learn(predict_or_learn<true>);
+    ret.set_predict(predict_or_learn<false>);
+    return make_base(ret);
   }
 }

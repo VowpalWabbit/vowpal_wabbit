@@ -698,7 +698,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
     l.doc_lengths.erase();
   }
   
-  void learn(lda& l, learner& base, example& ec) 
+  void learn(lda& l, base_learner& base, example& ec) 
   {
     size_t num_ex = l.examples.size();
     l.examples.push_back(&ec);
@@ -716,7 +716,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
   }
 
   // placeholder
-  void predict(lda& l, learner& base, example& ec)
+  void predict(lda& l, base_learner& base, example& ec)
   {
     learn(l, base, ec);
   }
@@ -754,8 +754,8 @@ void end_examples(lda& l)
   }
 
 
-  learner* setup(vw&all, po::variables_map& vm)
-  {
+base_learner* setup(vw&all, po::variables_map& vm)
+{
     po::options_description opts("Lda options");
     opts.add_options()
       ("lda", po::value<uint32_t>(), "Run lda with <int> topics")
@@ -788,7 +788,7 @@ void end_examples(lda& l)
     all.random_weights = true;
     all.add_constant = false;
     
-    all.file_options << " --lda " << all.lda;
+  *all.file_options << " --lda " << all.lda;
     
     if (all.eta > 1.)
       {
@@ -799,23 +799,21 @@ void end_examples(lda& l)
     if (vm.count("minibatch")) {
       size_t minibatch2 = next_pow2(ld.minibatch);
       all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
-
     }
     
-    ld.v.resize(all.lda*ld.minibatch);
-    
-    ld.decay_levels.push_back(0.f);
-    
-    learner* l = new learner(&ld, 1 << all.reg.stride_shift);
-    l->set_learn<lda,learn>();
-    l->set_predict<lda,predict>();
-    l->set_save_load<lda,save_load>();
-    l->set_finish_example<lda,finish_example>();
-    l->set_end_examples<lda,end_examples>();  
-    l->set_end_pass<lda,end_pass>();  
-    l->set_finish<lda,finish>();
-    
-    return l;
-      }
+  ld.v.resize(all.lda*ld.minibatch);
+  
+  ld.decay_levels.push_back(0.f);
 
-  }
+  learner<lda>& l = init_learner(&ld, 1 << all.reg.stride_shift);
+  l.set_learn(learn);
+  l.set_predict(predict);
+  l.set_save_load(save_load);
+  l.set_finish_example(finish_example);
+  l.set_end_examples(end_examples);  
+  l.set_end_pass(end_pass);  
+  l.set_finish(finish);
+  
+  return make_base(l);
+}
+}

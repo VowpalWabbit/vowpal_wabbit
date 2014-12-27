@@ -170,9 +170,9 @@ struct vw {
 
   node_socks socks;
 
-  LEARNER::learner* l;//the top level learner
-  LEARNER::learner* scorer;//a scoring function
-  LEARNER::learner* cost_sensitive;//a cost sensitive learning algorithm.
+  LEARNER::base_learner* l;//the top level learner
+  LEARNER::base_learner* scorer;//a scoring function
+  LEARNER::base_learner* cost_sensitive;//a cost sensitive learning algorithm.
 
   void learn(example*);
 
@@ -199,7 +199,7 @@ struct vw {
   double normalized_sum_norm_x;
 
   po::options_description opts;
-  std::stringstream file_options;
+  std::stringstream* file_options;
   vector<std::string> args;
 
   void* /*Search::search*/ searchstr;
@@ -266,7 +266,7 @@ struct vw {
   size_t length () { return ((size_t)1) << num_bits; };
   uint32_t rank;
 
-  v_array<LEARNER::learner* (*)(vw& all, po::variables_map& vm)> reduction_stack;
+  v_array<LEARNER::base_learner* (*)(vw& all, po::variables_map& vm)> reduction_stack;
 
   //Prediction output
   v_array<int> final_prediction_sink; // set to send global predictions to.

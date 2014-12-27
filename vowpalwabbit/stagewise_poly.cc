@@ -502,7 +502,7 @@ namespace StagewisePoly
     }
   }
 
-  void predict(stagewise_poly &poly, learner &base, example &ec)
+  void predict(stagewise_poly &poly, base_learner &base, example &ec)
   {
     poly.original_ec = &ec;
     synthetic_create(poly, ec, false);
@@ -511,7 +511,7 @@ namespace StagewisePoly
     ec.updated_prediction = poly.synth_ec.updated_prediction;
   }
 
-  void learn(stagewise_poly &poly, learner &base, example &ec)
+  void learn(stagewise_poly &poly, base_learner &base, example &ec)
   {
     bool training = poly.all->training && ec.l.simple.label != FLT_MAX;
     poly.original_ec = &ec;
@@ -656,7 +656,7 @@ namespace StagewisePoly
     //#endif //DEBUG
   }
 
-  learner *setup(vw &all, po::variables_map &vm)
+  base_learner *setup(vw &all, po::variables_map &vm)
   {
     po::options_description opts("Stagewise poly options");
     opts.add_options()
@@ -697,16 +697,16 @@ namespace StagewisePoly
     poly.next_batch_sz = poly.batch_sz;
 
     //following is so that saved models know to load us.
-    all.file_options << " --stage_poly";
+    *all.file_options << " --stage_poly";
 
-    learner *l = new learner(&poly, all.l);
-    l->set_learn<stagewise_poly, learn>();
-    l->set_predict<stagewise_poly, predict>();
-    l->set_finish<stagewise_poly, finish>();
-    l->set_save_load<stagewise_poly, save_load>();
-    l->set_finish_example<stagewise_poly,finish_example>();
-    l->set_end_pass<stagewise_poly, end_pass>();
+    learner<stagewise_poly>& l = init_learner(&poly, all.l);
+    l.set_learn(learn);
+    l.set_predict(predict);
+    l.set_finish(finish);
+    l.set_save_load(save_load);
+    l.set_finish_example(finish_example);
+    l.set_end_pass(end_pass);
 
-    return l;
+    return make_base(l);
   }
 }

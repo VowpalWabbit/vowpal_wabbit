@@ -83,7 +83,7 @@ namespace CBIFY {
     COST_SENSITIVE::label cs_label;
     COST_SENSITIVE::label second_cs_label;
 
-    learner* cs;
+    base_learner* cs;
     vw* all;
 
     unique_ptr<vw_policy> policy;
@@ -106,7 +106,7 @@ namespace CBIFY {
   }
 
   struct vw_context {
-	  learner* l;
+	  base_learner* l;
 	  example* e;
 	  cbify* data;
     bool recorded;
@@ -158,7 +158,7 @@ namespace CBIFY {
   }
 
   template <bool is_learn>
-  void predict_or_learn_first(cbify& data, learner& base, example& ec)
+  void predict_or_learn_first(cbify& data, base_learner& base, example& ec)
   {//Explore tau times, then act according to optimal.
     MULTICLASS::multiclass ld = ec.l.multi;
 
@@ -186,7 +186,7 @@ namespace CBIFY {
   }
 
   template <bool is_learn>
-  void predict_or_learn_greedy(cbify& data, learner& base, example& ec)
+  void predict_or_learn_greedy(cbify& data, base_learner& base, example& ec)
   {//Explore uniform random an epsilon fraction of the time.
     MULTICLASS::multiclass ld = ec.l.multi;
 
@@ -213,7 +213,7 @@ namespace CBIFY {
   }
 
   template <bool is_learn>
-  void predict_or_learn_bag(cbify& data, learner& base, example& ec)
+  void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
   {//Randomize over predictions from a base set of predictors
     //Use CB to find current predictions.
     MULTICLASS::multiclass ld = ec.l.multi;
@@ -284,7 +284,7 @@ namespace CBIFY {
   }
 
   template <bool is_learn>
-  void predict_or_learn_cover(cbify& data, learner& base, example& ec)
+  void predict_or_learn_cover(cbify& data, base_learner& base, example& ec)
   {//Randomize over predictions from a base set of predictors
     //Use cost sensitive oracle to cover actions to form distribution.
     MULTICLASS::multiclass ld = ec.l.multi;
@@ -377,7 +377,7 @@ namespace CBIFY {
     CB::cb_label.delete_label(&data.cb_label);
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
     po::options_description opts("CBIFY options");
     opts.add_options()
@@ -394,10 +394,10 @@ namespace CBIFY {
 
     data.all = &all;
     data.k = (uint32_t)vm["cbify"].as<size_t>();
-    all.file_options << " --cbify " << data.k;
+    *all.file_options << " --cbify " << data.k;
 
     all.p->lp = MULTICLASS::mc_label;
-    learner* l;
+    learner<cbify>* l;
     data.recorder.reset(new vw_recorder());
     data.mwt_explorer.reset(new MwtExplorer<vw_context>("vw", *data.recorder.get()));
     if (vm.count("cover"))
@@ -406,52 +406,52 @@ namespace CBIFY {
 	data.cs = all.cost_sensitive;
 	data.second_cs_label.costs.resize(data.k);
 	data.second_cs_label.costs.end = data.second_cs_label.costs.begin+data.k;
-  float epsilon = 0.05f;
-  if (vm.count("epsilon"))
-    epsilon = vm["epsilon"].as<float>();
-  data.scorer.reset(new vw_cover_scorer(epsilon, cover, (u32)data.k));
-  data.generic_explorer.reset(new GenericExplorer<vw_context>(*data.scorer.get(), (u32)data.k));
-  l = new learner(&data, all.l, cover + 1);
-	l->set_learn<cbify, predict_or_learn_cover<true> >();
-	l->set_predict<cbify, predict_or_learn_cover<false> >();
+	float epsilon = 0.05f;
+	if (vm.count("epsilon"))
+	  epsilon = vm["epsilon"].as<float>();
+	data.scorer.reset(new vw_cover_scorer(epsilon, cover, (u32)data.k));
+	data.generic_explorer.reset(new GenericExplorer<vw_context>(*data.scorer.get(), (u32)data.k));
+	l = &init_learner(&data, all.l, cover + 1);
+	l->set_learn(predict_or_learn_cover<true>);
+	l->set_predict(predict_or_learn_cover<false>);
       }
     else if (vm.count("bag"))
       {
 	size_t bags = (uint32_t)vm["bag"].as<size_t>();
-  for (size_t i = 0; i < bags; i++)
-  {
-    data.policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
-  }
-  data.bootstrap_explorer.reset(new BootstrapExplorer<vw_context>(data.policies, (u32)data.k));
-  l = new learner(&data, all.l, bags);
-	l->set_learn<cbify, predict_or_learn_bag<true> >();
-	l->set_predict<cbify, predict_or_learn_bag<false> >();
+	for (size_t i = 0; i < bags; i++)
+	  {
+	    data.policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
+	  }
+	data.bootstrap_explorer.reset(new BootstrapExplorer<vw_context>(data.policies, (u32)data.k));
+	l = &init_learner(&data, all.l, bags);
+	l->set_learn(predict_or_learn_bag<true>);
+	l->set_predict(predict_or_learn_bag<false>);
       }
     else if (vm.count("first") )
       {
-  uint32_t tau = (uint32_t)vm["first"].as<size_t>();
-  data.policy.reset(new vw_policy());
-  data.tau_explorer.reset(new TauFirstExplorer<vw_context>(*data.policy.get(), (u32)tau, (u32)data.k));
-  l = new learner(&data, all.l, 1);
-	l->set_learn<cbify, predict_or_learn_first<true> >();
-	l->set_predict<cbify, predict_or_learn_first<false> >();
+	uint32_t tau = (uint32_t)vm["first"].as<size_t>();
+	data.policy.reset(new vw_policy());
+	data.tau_explorer.reset(new TauFirstExplorer<vw_context>(*data.policy.get(), (u32)tau, (u32)data.k));
+	l = &init_learner(&data, all.l, 1);
+	l->set_learn(predict_or_learn_first<true>);
+	l->set_predict(predict_or_learn_first<false>);
       }
     else
       {
-  float epsilon = 0.05f;
-  if (vm.count("epsilon"))
-    epsilon = vm["epsilon"].as<float>();
-  data.policy.reset(new vw_policy());
-  data.greedy_explorer.reset(new EpsilonGreedyExplorer<vw_context>(*data.policy.get(), epsilon, (u32)data.k));
-	l = new learner(&data, all.l, 1);
-	l->set_learn<cbify, predict_or_learn_greedy<true> >();
-	l->set_predict<cbify, predict_or_learn_greedy<false> >();
+	float epsilon = 0.05f;
+	if (vm.count("epsilon"))
+	  epsilon = vm["epsilon"].as<float>();
+	data.policy.reset(new vw_policy());
+	data.greedy_explorer.reset(new EpsilonGreedyExplorer<vw_context>(*data.policy.get(), epsilon, (u32)data.k));
+	l = &init_learner(&data, all.l, 1);
+	l->set_learn(predict_or_learn_greedy<true>);
+	l->set_predict(predict_or_learn_greedy<false>);
       }
-
-    l->set_finish_example<cbify,finish_example>();
-    l->set_finish<cbify,finish>();
-    l->set_init_driver<cbify,init_driver>();
     
-    return l;
+    l->set_finish_example(finish_example);
+    l->set_finish(finish);
+    l->set_init_driver(init_driver);
+    
+    return make_base(*l);
   }
 }

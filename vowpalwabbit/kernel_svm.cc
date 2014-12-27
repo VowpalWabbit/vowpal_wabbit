@@ -395,7 +395,7 @@ namespace KSVM
     }
   }
   
-  void predict(svm_params& params, learner &base, example& ec) {
+  void predict(svm_params& params, base_learner &base, example& ec) {
     flat_example* fec = flatten_sort_example(*(params.all),&ec);    
     if(fec) {
       svm_example* sec = &calloc_or_die<svm_example>(); 
@@ -733,7 +733,7 @@ namespace KSVM
     //cerr<<params.model->support_vec[0]->example_counter<<endl;
   }
 
-  void learn(svm_params& params, learner& base, example& ec) {
+  void learn(svm_params& params, base_learner& base, example& ec) {
     flat_example* fec = flatten_sort_example(*(params.all),&ec);
     // for(int i = 0;i < fec->feature_map_len;i++)
     //   cout<<i<<":"<<fec->feature_map[i].x<<" "<<fec->feature_map[i].weight_index<<" ";
@@ -790,7 +790,7 @@ namespace KSVM
     cerr<<"Done with finish \n";
   }
 
-  LEARNER::learner* setup(vw &all, po::variables_map& vm) {
+  LEARNER::base_learner* setup(vw &all, po::variables_map& vm) {
     po::options_description opts("KSVM options");
     opts.add_options()
       ("ksvm", "kernel svm")
@@ -857,7 +857,7 @@ namespace KSVM
     
     params.lambda = all.l2_lambda;
 
-    all.file_options <<" --lambda "<< params.lambda;
+    *all.file_options <<" --lambda "<< params.lambda;
       
     cerr<<"Lambda = "<<params.lambda<<endl;
 
@@ -868,7 +868,7 @@ namespace KSVM
     else
       kernel_type = string("linear");
     
-    all.file_options <<" --kernel "<< kernel_type;
+    *all.file_options <<" --kernel "<< kernel_type;
 
     cerr<<"Kernel = "<<kernel_type<<endl;
 
@@ -877,7 +877,7 @@ namespace KSVM
       float bandwidth = 1.;
       if(vm.count("bandwidth")) {
 		bandwidth = vm["bandwidth"].as<float>();	
-		all.file_options <<" --bandwidth "<<bandwidth;
+		*all.file_options <<" --bandwidth "<<bandwidth;
       }
       cerr<<"bandwidth = "<<bandwidth<<endl;
       params.kernel_params = &calloc_or_die<double>();
@@ -888,7 +888,7 @@ namespace KSVM
       int degree = 2;
       if(vm.count("degree")) {
 	  degree = vm["degree"].as<int>();	
-	  all.file_options <<" --degree "<<degree;
+	  *all.file_options <<" --degree "<<degree;
 	}
       cerr<<"degree = "<<degree<<endl;
       params.kernel_params = &calloc_or_die<int>();
@@ -900,11 +900,11 @@ namespace KSVM
     params.all->reg.weight_mask = (uint32_t)LONG_MAX;
     params.all->reg.stride_shift = 0;
     
-    learner* l = new learner(&params, 1); 
-    l->set_learn<svm_params, learn>();
-    l->set_predict<svm_params, predict>();
-    l->set_save_load<svm_params, save_load>();
-    l->set_finish<svm_params, finish>();
-    return l;
+    learner<svm_params>& l = init_learner(&params, 1); 
+    l.set_learn(learn);
+    l.set_predict(predict);
+    l.set_save_load(save_load);
+    l.set_finish(finish);
+    return make_base(l);
   }    
 }

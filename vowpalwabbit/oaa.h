@@ -5,6 +5,4 @@ license as described in the file LICENSE.
  */
 #pragma once
 namespace OAA
-{
-  LEARNER::learner* setup(vw& all, po::variables_map& vm);
-}
+{ LEARNER::base_learner* setup(vw& all, po::variables_map& vm); }

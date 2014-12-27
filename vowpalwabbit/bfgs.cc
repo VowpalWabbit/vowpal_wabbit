@@ -821,13 +821,13 @@ void end_pass(bfgs& b)
 }
 
 // placeholder
-void predict(bfgs& b, learner& base, example& ec)
+void predict(bfgs& b, base_learner& base, example& ec)
 {
   vw* all = b.all;
   ec.pred.scalar = bfgs_predict(*all,ec);
 }
 
-void learn(bfgs& b, learner& base, example& ec)
+void learn(bfgs& b, base_learner& base, example& ec)
 {
   vw* all = b.all;
   assert(ec.in_use);
@@ -968,7 +968,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     b.backstep_on = true;
   }
 
-learner* setup(vw& all, po::variables_map& vm)
+base_learner* setup(vw& all, po::variables_map& vm)
 {
   po::options_description opts("LBFGS options");
   opts.add_options()
@@ -1024,14 +1024,14 @@ learner* setup(vw& all, po::variables_map& vm)
   all.bfgs = true;
   all.reg.stride_shift = 2;
 
-  learner* l = new learner(&b, 1 << all.reg.stride_shift);
-  l->set_learn<bfgs, learn>();
-  l->set_predict<bfgs, predict>();
-  l->set_save_load<bfgs,save_load>();
-  l->set_init_driver<bfgs,init_driver>();
-  l->set_end_pass<bfgs,end_pass>();
-  l->set_finish<bfgs,finish>();
+  learner<bfgs>& l = init_learner(&b, 1 << all.reg.stride_shift);
+  l.set_learn(learn);
+  l.set_predict(predict);
+  l.set_save_load(save_load);
+  l.set_init_driver(init_driver);
+  l.set_end_pass(end_pass);
+  l.set_finish(finish);
 
-  return l;
+  return make_base(l);
 }
 }

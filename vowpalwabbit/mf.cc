@@ -22,7 +22,7 @@ namespace MF {
 struct mf {
   vector<string> pairs;
 
-  uint32_t rank;
+  size_t rank;
 
   uint32_t increment;
 
@@ -43,7 +43,7 @@ struct mf {
 };
 
 template <bool cache_sub_predictions>
-void predict(mf& data, learner& base, example& ec) {
+void predict(mf& data, base_learner& base, example& ec) {
   float prediction = 0;
   if (cache_sub_predictions)
     data.sub_predictions.resize(2*data.rank+1, true);
@@ -102,7 +102,7 @@ void predict(mf& data, learner& base, example& ec) {
   ec.pred.scalar = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
 }
 
-void learn(mf& data, learner& base, example& ec) {
+void learn(mf& data, base_learner& base, example& ec) {
   // predict with current weights
   predict<true>(data, base, ec);
   float predicted = ec.pred.scalar;
@@ -188,7 +188,7 @@ void finish(mf& o) {
   o.sub_predictions.delete_v();
 }
 
-  learner* setup(vw& all, po::variables_map& vm) {
+  base_learner* setup(vw& all, po::variables_map& vm) {
     po::options_description opts("MF options");
     opts.add_options()
       ("new_mf", po::value<size_t>(), "rank for reduction-based matrix factorization");
@@ -196,23 +196,23 @@ void finish(mf& o) {
     if(!vm.count("new_mf"))
       return NULL;
     
-    mf* data = new mf;
+    mf& data = calloc_or_die<mf>();
     
     // copy global data locally
-    data->all = &all;
-    data->rank = (uint32_t)vm["new_mf"].as<size_t>();
+    data.all = &all;
+    data.rank = (uint32_t)vm["new_mf"].as<size_t>();
 
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
-  data->pairs = all.pairs;
+  data.pairs = all.pairs;
   all.pairs.clear();
 
   all.random_positive_weights = true;
 
-  learner* l = new learner(data, all.l, 2*data->rank+1);
-  l->set_learn<mf, learn>();
-  l->set_predict<mf, predict<false> >();
-  l->set_finish<mf,finish>();
-  return l;
+  learner<mf>& l = init_learner(&data, all.l, 2*data.rank+1);
+  l.set_learn(learn);
+  l.set_predict(predict<false>);
+  l.set_finish(finish);
+  return make_base(l);
 }
 }

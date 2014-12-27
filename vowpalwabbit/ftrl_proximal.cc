@@ -135,7 +135,7 @@ namespace FTRL {
   }
 
   //void learn(void* a, void* d, example* ec) {
-  void learn(ftrl& a, learner& base, example& ec) {
+  void learn(ftrl& a, base_learner& base, example& ec) {
     vw* all = a.all;
     assert(ec.in_use);
  
@@ -170,15 +170,15 @@ namespace FTRL {
   }
   
   // placeholder
-  void predict(ftrl& b, learner& base, example& ec)
+  void predict(ftrl& b, base_learner& base, example& ec)
   {
     vw* all = b.all;
     //ec.l.simple.prediction = ftrl_predict(*all,ec);
     ec.pred.scalar = ftrl_predict(*all,ec);
   }
   
-  learner* setup(vw& all, po::variables_map& vm) {
-
+  base_learner* setup(vw& all, po::variables_map& vm) 
+  {
     ftrl& b = calloc_or_die<ftrl>();
     b.all = &all;
     b.ftrl_beta = 0.0;
@@ -217,13 +217,10 @@ namespace FTRL {
         cerr << "ftrl_beta = " << b.ftrl_beta << endl;
     }
 
-    learner* l = new learner(&b, 1 << all.reg.stride_shift);
-    l->set_learn<ftrl, learn>();
-    l->set_predict<ftrl, predict>();
-    l->set_save_load<ftrl,save_load>();
-
-    return l;
+    learner<ftrl>& l = init_learner(&b, 1 << all.reg.stride_shift);
+    l.set_learn(learn);
+    l.set_predict(predict);
+    l.set_save_load(save_load);
+    return make_base(l);
   }
-
-
 } // end namespace

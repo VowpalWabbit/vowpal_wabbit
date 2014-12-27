@@ -175,7 +175,7 @@ namespace Search {
     v_array<size_t> timesteps;
     v_array<float> learn_losses;
     
-    LEARNER::learner* base_learner;
+    LEARNER::base_learner* base_learner;
     clock_t start_clock_time;
 
     example*empty_example;
@@ -1417,7 +1417,7 @@ namespace Search {
   }
 
   template <bool is_learn>
-  void search_predict_or_learn(search& sch, learner& base, example& ec) {
+  void search_predict_or_learn(search& sch, base_learner& base, example& ec) {
     search_private& priv = *sch.priv;
     vw* all = priv.all;
     priv.base_learner = &base;
@@ -1653,7 +1653,7 @@ namespace Search {
   template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) {
     if (vm.count(opt_name)) {
       ret = vm[opt_name].as<T>();
-      all.file_options << " --" << opt_name << " " << ret;
+      *all.file_options << " --" << opt_name << " " << ret;
     } else if (strlen(required_error_string)>0) {
       std::cerr << required_error_string << endl;
       if (! vm.count("help"))
@@ -1664,7 +1664,7 @@ namespace Search {
   void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string) {
     if (vm.count(opt_name)) {
       ret = true;
-      all.file_options << " --" << opt_name;
+      *all.file_options << " --" << opt_name;
     } else
       ret = false;
   }
@@ -1764,7 +1764,7 @@ namespace Search {
     delete[] cstr;
   }
 
-  learner* setup(vw&all, po::variables_map& vm) {
+  base_learner* setup(vw&all, po::variables_map& vm) {
     po::options_description opts("Search Options");
     opts.add_options()
       ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF")
@@ -1985,17 +1985,17 @@ namespace Search {
 
     if (!vm.count("csoaa") && !vm.count("csoaa_ldf") && !vm.count("wap_ldf") && !vm.count("cb"))
       vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
-    learner* base = setup_base(all,vm);
+    base_learner* base = setup_base(all,vm);
     
-    learner* l = new learner(&sch, all.l, priv.total_number_of_policies);
-    l->set_learn<search, search_predict_or_learn<true> >();
-    l->set_predict<search, search_predict_or_learn<false> >();
-    l->set_finish_example<search,finish_example>();
-    l->set_end_examples<search,end_examples>();
-    l->set_finish<search,search_finish>();
-    l->set_end_pass<search,end_pass>();
+    learner<search>& l = init_learner(&sch, all.l, priv.total_number_of_policies);
+    l.set_learn(search_predict_or_learn<true>);
+    l.set_predict(search_predict_or_learn<false>);
+    l.set_finish_example(finish_example);
+    l.set_end_examples(end_examples);
+    l.set_finish(search_finish);
+    l.set_end_pass(end_pass);
 
-    return l;
+    return make_base(l);
   }
 
   float action_hamming_loss(action a, const action* A, size_t sz) {

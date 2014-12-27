@@ -81,8 +81,8 @@ namespace LOG_MULTI
     
     v_array<node> nodes;	
     
-    uint32_t max_predictors;
-    uint32_t predictors_used;
+    size_t max_predictors;
+    size_t predictors_used;
 
     bool progress;
     uint32_t swap_resist;
@@ -246,7 +246,7 @@ namespace LOG_MULTI
     return b.nodes[current].internal;
   }
   
-  void train_node(log_multi& b, learner& base, example& ec, uint32_t& current, uint32_t& class_index)
+  void train_node(log_multi& b, base_learner& base, example& ec, uint32_t& current, uint32_t& class_index)
   {
     if(b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk)
       ec.l.simple.label = -1.f;
@@ -297,7 +297,7 @@ namespace LOG_MULTI
       return n.right;
   }
 
-  void predict(log_multi& b, learner& base, example& ec)	
+  void predict(log_multi& b,  base_learner& base, example& ec)	
   {
     MULTICLASS::multiclass mc = ec.l.multi;
 
@@ -316,7 +316,7 @@ namespace LOG_MULTI
     ec.l.multi = mc;
   }
 
-  void learn(log_multi& b, learner& base, example& ec)
+  void learn(log_multi& b, base_learner& base, example& ec)
   {
     //    verify_min_dfs(b, b.nodes[0]);
 
@@ -413,10 +413,10 @@ namespace LOG_MULTI
 	if (read)
 	  for (uint32_t j = 1; j < temp; j++)
 	    b.nodes.push_back(init_node());
-	text_len = sprintf(buff, "max_predictors = %d ",b.max_predictors);
+	text_len = sprintf(buff, "max_predictors = %ld ",b.max_predictors);
 	bin_text_read_write_fixed(model_file,(char*)&b.max_predictors, sizeof(b.max_predictors), "", read, buff, text_len, text);
 
-	text_len = sprintf(buff, "predictors_used = %d ",b.predictors_used);
+	text_len = sprintf(buff, "predictors_used = %ld ",b.predictors_used);
 	bin_text_read_write_fixed(model_file,(char*)&b.predictors_used, sizeof(b.predictors_used), "", read, buff, text_len, text);
 
 	text_len = sprintf(buff, "progress = %d ",b.progress);
@@ -502,7 +502,7 @@ namespace LOG_MULTI
     VW::finish_example(all, &ec);
   }
   
-  learner* setup(vw& all, po::variables_map& vm)	//learner setup
+  base_learner* setup(vw& all, po::variables_map& vm)	//learner setup
   {
     po::options_description opts("Log Multi options");
     opts.add_options()
@@ -513,23 +513,23 @@ namespace LOG_MULTI
     if(!vm.count("log_multi"))
       return NULL;
 
-    log_multi* data = (log_multi*)calloc(1, sizeof(log_multi));
+      log_multi& data = calloc_or_die<log_multi>();
 
-    data->k = (uint32_t)vm["log_multi"].as<size_t>();
-    data->swap_resist = 4;
+    data.k = (uint32_t)vm["log_multi"].as<size_t>();
+    data.swap_resist = 4;
 
     if (vm.count("swap_resistance"))
-      data->swap_resist = vm["swap_resistance"].as<uint32_t>();
+      data.swap_resist = vm["swap_resistance"].as<uint32_t>();
     
     //append log_multi with nb_actions to options_from_file so it is saved to regressor later
-    all.file_options << " --log_multi " << data->k;
+    *all.file_options << " --log_multi " << data.k;
     
     if (vm.count("no_progress"))
-      data->progress = false;
+      data.progress = false;
     else
-      data->progress = true;
+      data.progress = true;
 
-    data->all = &all;
+    data.all = &all;
     (all.p->lp) = MULTICLASS::mc_label;
     
     string loss_function = "quantile"; 
@@ -537,17 +537,17 @@ namespace LOG_MULTI
     delete(all.loss);
     all.loss = getLossFunction(&all, loss_function, loss_parameter);
 
-    data->max_predictors = data->k - 1;
+    data.max_predictors = data.k - 1;
 
-    learner* l = new learner(data, all.l, data->max_predictors);
-    l->set_save_load<log_multi,save_load_tree>();
-    l->set_learn<log_multi,learn>();
-    l->set_predict<log_multi,predict>();
-    l->set_finish_example<log_multi,finish_example>();
-    l->set_finish<log_multi,finish>();
+    learner<log_multi>& l = init_learner(&data, all.l, data.max_predictors);
+    l.set_save_load(save_load_tree);
+    l.set_learn(learn);
+    l.set_predict(predict);
+    l.set_finish_example(finish_example);
+    l.set_finish(finish);
     
-    init_tree(*data);	
+    init_tree(data);	
     
-    return l;
+    return make_base(l);
   }	
 }
