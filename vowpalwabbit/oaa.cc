@@ -3,12 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include <float.h>
-#include <limits.h>
-#include <math.h>
-#include <stdio.h>
 #include <sstream>
-
 #include "multiclass.h"
 #include "simple_label.h"
 #include "reductions.h"
@@ -16,7 +11,6 @@ license as described in the file LICENSE.
 
 using namespace std;
 using namespace LEARNER;
-using namespace MULTICLASS;
 
 namespace OAA {
   struct oaa{
@@ -27,7 +21,7 @@ namespace OAA {
 
   template <bool is_learn>
   void predict_or_learn(oaa& o, base_learner& base, example& ec) {
-    multiclass mc_label_data = ec.l.multi;
+    MULTICLASS::multiclass mc_label_data = ec.l.multi;
     if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
       cout << "label " << mc_label_data.label << " is not in {1,"<< o.k << "} This won't work right." << endl;
     
@@ -84,7 +78,7 @@ namespace OAA {
     data.all = &all;
 
     *all.file_options << " --oaa " << data.k;
-    all.p->lp = mc_label;
+    all.p->lp = MULTICLASS::mc_label;
 
     learner<oaa>& l = init_learner(&data, all.l, data.k);
     l.set_learn(predict_or_learn<true>);
