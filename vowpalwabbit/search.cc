@@ -175,7 +175,7 @@ namespace Search {
     v_array<size_t> timesteps;
     v_array<float> learn_losses;
     
-    LEARNER::learner* base_learner;
+    LEARNER::base_learner* base_learner;
     clock_t start_clock_time;
 
     example*empty_example;
@@ -1417,7 +1417,7 @@ namespace Search {
   }
 
   template <bool is_learn>
-  void search_predict_or_learn(search& sch, learner& base, example& ec) {
+  void search_predict_or_learn(search& sch, base_learner& base, example& ec) {
     search_private& priv = *sch.priv;
     vw* all = priv.all;
     priv.base_learner = &base;
@@ -1764,7 +1764,7 @@ namespace Search {
     delete[] cstr;
   }
 
-  learner* setup(vw&all, po::variables_map& vm) {
+  base_learner* setup(vw&all, po::variables_map& vm) {
     search& sch = calloc_or_die<search>();
     sch.priv = new search_private();
     search_initialize(&all, sch);
@@ -1981,15 +1981,15 @@ namespace Search {
 
     priv.start_clock_time = clock();
 
-    learner* l = new learner(&sch, all.l, priv.total_number_of_policies);
-    l->set_learn<search, search_predict_or_learn<true> >();
-    l->set_predict<search, search_predict_or_learn<false> >();
-    l->set_finish_example<search,finish_example>();
-    l->set_end_examples<search,end_examples>();
-    l->set_finish<search,search_finish>();
-    l->set_end_pass<search,end_pass>();
+    learner<search>* l = new learner<search>(&sch, all.l, priv.total_number_of_policies);
+    l->set_learn<search_predict_or_learn<true> >();
+    l->set_predict<search_predict_or_learn<false> >();
+    l->set_finish_example<finish_example>();
+    l->set_end_examples<end_examples>();
+    l->set_finish<search_finish>();
+    l->set_end_pass<end_pass>();
 
-    return l;
+    return make_base(l);
   }
 
   float action_hamming_loss(action a, const action* A, size_t sz) {

@@ -7,6 +7,6 @@ license as described in the file LICENSE.
 #define FTRL_PROXIMAL_H
 
 namespace FTRL {
-  LEARNER::learner* setup(vw& all, po::variables_map& vm);
+  LEARNER::base_learner* setup(vw& all, po::variables_map& vm);
 }
 #endif

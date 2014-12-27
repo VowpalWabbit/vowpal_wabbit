@@ -246,7 +246,7 @@ namespace LOG_MULTI
     return b.nodes[current].internal;
   }
   
-  void train_node(log_multi& b, learner& base, example& ec, uint32_t& current, uint32_t& class_index)
+  void train_node(log_multi& b, base_learner& base, example& ec, uint32_t& current, uint32_t& class_index)
   {
     if(b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk)
       ec.l.simple.label = -1.f;
@@ -297,7 +297,7 @@ namespace LOG_MULTI
       return n.right;
   }
 
-  void predict(log_multi& b, learner& base, example& ec)	
+  void predict(log_multi& b,  base_learner& base, example& ec)	
   {
     MULTICLASS::multiclass mc = ec.l.multi;
 
@@ -316,7 +316,7 @@ namespace LOG_MULTI
     ec.l.multi = mc;
   }
 
-  void learn(log_multi& b, learner& base, example& ec)
+  void learn(log_multi& b, base_learner& base, example& ec)
   {
     //    verify_min_dfs(b, b.nodes[0]);
 
@@ -502,7 +502,7 @@ namespace LOG_MULTI
     VW::finish_example(all, &ec);
   }
   
-  learner* setup(vw& all, po::variables_map& vm)	//learner setup
+  base_learner* setup(vw& all, po::variables_map& vm)	//learner setup
   {
     log_multi* data = (log_multi*)calloc(1, sizeof(log_multi));
 
@@ -531,15 +531,15 @@ namespace LOG_MULTI
 
     data->max_predictors = data->k - 1;
 
-    learner* l = new learner(data, all.l, data->max_predictors);
-    l->set_save_load<log_multi,save_load_tree>();
-    l->set_learn<log_multi,learn>();
-    l->set_predict<log_multi,predict>();
-    l->set_finish_example<log_multi,finish_example>();
-    l->set_finish<log_multi,finish>();
+    learner<log_multi>* l = new learner<log_multi>(data, all.l, data->max_predictors);
+    l->set_save_load<save_load_tree>();
+    l->set_learn<learn>();
+    l->set_predict<predict>();
+    l->set_finish_example<finish_example>();
+    l->set_finish<finish>();
     
     init_tree(*data);	
     
-    return l;
+    return make_base(l);
   }	
 }

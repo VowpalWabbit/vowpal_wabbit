@@ -26,7 +26,7 @@ namespace OAA {
   };
 
   template <bool is_learn>
-  void predict_or_learn(oaa& o, learner& base, example& ec) {
+  void predict_or_learn(oaa& o, base_learner& base, example& ec) {
     multiclass mc_label_data = ec.l.multi;
     if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
       cout << "label " << mc_label_data.label << " is not in {1,"<< o.k << "} This won't work right." << endl;
@@ -75,7 +75,7 @@ namespace OAA {
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all, po::variables_map& vm)
   {
     oaa& data = calloc_or_die<oaa>();
     //first parse for number of actions
@@ -87,11 +87,11 @@ namespace OAA {
     data.all = &all;
     all.p->lp = mc_label;
 
-    learner* l = new learner(&data, all.l, data.k);
-    l->set_learn<oaa, predict_or_learn<true> >();
-    l->set_predict<oaa, predict_or_learn<false> >();
-    l->set_finish_example<oaa, finish_example>();
+    learner<oaa>* l = new learner<oaa>(&data, all.l, data.k);
+    l->set_learn<predict_or_learn<true> >();
+    l->set_predict<predict_or_learn<false> >();
+    l->set_finish_example<finish_example>();
 
-    return l;
+    return make_base(l);
   }
 }

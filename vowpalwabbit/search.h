@@ -241,7 +241,7 @@ namespace Search {
   bool size_equal(size_t a, size_t b);
   
   // our interface within VW
-  LEARNER::learner* setup(vw&, po::variables_map&);
+  LEARNER::base_learner* setup(vw&, po::variables_map&);
   void search_finish(void*);
   void search_drive(void*);
   void search_learn(void*,example*);  

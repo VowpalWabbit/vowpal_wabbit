@@ -7,7 +7,7 @@ using namespace LEARNER;
 namespace BINARY {
 
   template <bool is_learn>
-  void predict_or_learn(float&, learner& base, example& ec) {
+  void predict_or_learn(char&, base_learner& base, example& ec) {
     if (is_learn)
       base.learn(ec);
     else
@@ -24,13 +24,13 @@ namespace BINARY {
       ec.loss = ec.l.simple.weight;
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
     all.sd->binary_label = true;
     //Create new learner
-    learner* ret = new learner(NULL, all.l);
-    ret->set_learn<float, predict_or_learn<true> >();
-    ret->set_predict<float, predict_or_learn<false> >();
-    return ret;
+    learner<char>* ret = new learner<char>(NULL, all.l);
+    ret->set_learn<predict_or_learn<true> >();
+    ret->set_predict<predict_or_learn<false> >();
+    return make_base(ret);
   }
 }

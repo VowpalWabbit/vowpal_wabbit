@@ -85,7 +85,7 @@ namespace TOPK {
   }
 
   template <bool is_learn>
-  void predict_or_learn(topk& d, learner& base, example& ec)
+  void predict_or_learn(topk& d, base_learner& base, example& ec)
   {
     if (example_is_newline(ec)) return;//do not predict newline
 
@@ -111,7 +111,7 @@ namespace TOPK {
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all, po::variables_map& vm)
   {
     topk& data = calloc_or_die<topk>();
 
@@ -119,11 +119,11 @@ namespace TOPK {
 
     data.all = &all;
 
-    learner* l = new learner(&data, all.l);
-    l->set_learn<topk, predict_or_learn<true> >();
-    l->set_predict<topk, predict_or_learn<false> >();
-    l->set_finish_example<topk,finish_example>();
+    learner<topk>* l = new learner<topk>(&data, all.l);
+    l->set_learn<predict_or_learn<true> >();
+    l->set_predict<predict_or_learn<false> >();
+    l->set_finish_example<finish_example>();
 
-    return l;
+    return make_base(l);
   }
 }

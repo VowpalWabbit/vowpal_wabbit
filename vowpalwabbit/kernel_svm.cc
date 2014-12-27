@@ -395,7 +395,7 @@ namespace KSVM
     }
   }
   
-  void predict(svm_params& params, learner &base, example& ec) {
+  void predict(svm_params& params, base_learner &base, example& ec) {
     flat_example* fec = flatten_sort_example(*(params.all),&ec);    
     if(fec) {
       svm_example* sec = &calloc_or_die<svm_example>(); 
@@ -733,7 +733,7 @@ namespace KSVM
     //cerr<<params.model->support_vec[0]->example_counter<<endl;
   }
 
-  void learn(svm_params& params, learner& base, example& ec) {
+  void learn(svm_params& params, base_learner& base, example& ec) {
     flat_example* fec = flatten_sort_example(*(params.all),&ec);
     // for(int i = 0;i < fec->feature_map_len;i++)
     //   cout<<i<<":"<<fec->feature_map[i].x<<" "<<fec->feature_map[i].weight_index<<" ";
@@ -791,7 +791,7 @@ namespace KSVM
   }
 
 
-  LEARNER::learner* setup(vw &all, po::variables_map& vm) {
+  LEARNER::base_learner* setup(vw &all, po::variables_map& vm) {
     po::options_description desc("KSVM options");
     desc.add_options()
       ("reprocess", po::value<size_t>(), "number of reprocess steps for LASVM")
@@ -898,11 +898,11 @@ namespace KSVM
     params.all->reg.weight_mask = (uint32_t)LONG_MAX;
     params.all->reg.stride_shift = 0;
     
-    learner* l = new learner(&params, 1); 
-    l->set_learn<svm_params, learn>();
-    l->set_predict<svm_params, predict>();
-    l->set_save_load<svm_params, save_load>();
-    l->set_finish<svm_params, finish>();
-    return l;
+    learner<svm_params>* l = new learner<svm_params>(&params, 1); 
+    l->set_learn<learn>();
+    l->set_predict<predict>();
+    l->set_save_load<save_load>();
+    l->set_finish<finish>();
+    return make_base(l);
   }    
 }

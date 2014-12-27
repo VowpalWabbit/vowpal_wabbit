@@ -45,7 +45,7 @@ namespace ACTIVE {
     }
 
   template <bool is_learn>
-  void predict_or_learn_simulation(active& a, learner& base, example& ec) {
+  void predict_or_learn_simulation(active& a, base_learner& base, example& ec) {
     base.predict(ec);
     
     if (is_learn)
@@ -67,7 +67,7 @@ namespace ACTIVE {
   }
   
   template <bool is_learn>
-  void predict_or_learn_active(active& a, learner& base, example& ec) {
+  void predict_or_learn_active(active& a, base_learner& base, example& ec) {
     if (is_learn)
       base.learn(ec);
     else
@@ -151,7 +151,7 @@ namespace ACTIVE {
     VW::finish_example(all,&ec);
   }
   
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
     active& data = calloc_or_die<active>();
 
@@ -166,20 +166,20 @@ namespace ACTIVE {
     data.all=&all;
 
     //Create new learner
-    learner* ret = new learner(&data, all.l);
+    learner<active>* ret = new learner<active>(&data, all.l);
     if (vm.count("simulation"))
       {
-	ret->set_learn<active, predict_or_learn_simulation<true> >();
-	ret->set_predict<active, predict_or_learn_simulation<false> >();
+	ret->set_learn<predict_or_learn_simulation<true> >();
+	ret->set_predict<predict_or_learn_simulation<false> >();
       }
     else
       {
 	all.active = true;
-	ret->set_learn<active, predict_or_learn_active<true> >();
-	ret->set_predict<active, predict_or_learn_active<false> >();
-	ret->set_finish_example<active, return_active_example>();
+	ret->set_learn<predict_or_learn_active<true> >();
+	ret->set_predict<predict_or_learn_active<false> >();
+	ret->set_finish_example<return_active_example>();
       }
 
-    return ret;
+    return make_base(ret);
   }
 }

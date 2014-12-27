@@ -69,7 +69,7 @@ void receive_result(sender& s)
   return_simple_example(*(s.all), NULL, *ec);  
 }
 
-  void learn(sender& s, learner& base, example& ec) 
+  void learn(sender& s, base_learner& base, example& ec) 
   { 
     if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
       receive_result(s);
@@ -100,7 +100,7 @@ void end_examples(sender& s)
     delete s.buf;
   }
 
-  learner* setup(vw& all, po::variables_map& vm, vector<string> pairs)
+  base_learner* setup(vw& all, po::variables_map& vm, vector<string> pairs)
 {
   sender& s = calloc_or_die<sender>();
   s.sd = -1;
@@ -113,13 +113,13 @@ void end_examples(sender& s)
   s.all = &all;
   s.delay_ring = calloc_or_die<example*>(all.p->ring_size);
 
-  learner* l = new learner(&s, 1);
-  l->set_learn<sender, learn>(); 
-  l->set_predict<sender, learn>(); 
-  l->set_finish<sender, finish>();
-  l->set_finish_example<sender, finish_example>(); 
-  l->set_end_examples<sender, end_examples>();
-  return l;
+  learner<sender>* l = new learner<sender>(&s, 1);
+  l->set_learn<learn>(); 
+  l->set_predict<learn>(); 
+  l->set_finish<finish>();
+  l->set_finish_example<finish_example>(); 
+  l->set_end_examples<end_examples>();
+  return make_base(l);
 }
 
 }

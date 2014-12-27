@@ -24,7 +24,7 @@ namespace CSOAA {
   };
 
   template <bool is_learn>
-  void predict_or_learn(csoaa& c, learner& base, example& ec) {
+  void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
     vw* all = c.all;
     COST_SENSITIVE::label ld = ec.l.cs;
     uint32_t prediction = 1;
@@ -68,7 +68,7 @@ namespace CSOAA {
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all, po::variables_map& vm)
   {
     csoaa& c = calloc_or_die<csoaa>();
     c.all = &all;
@@ -82,11 +82,11 @@ namespace CSOAA {
     all.p->lp = cs_label;
     all.sd->k = nb_actions;
 
-    learner* l = new learner(&c, all.l, nb_actions);
-    l->set_learn<csoaa, predict_or_learn<true> >();
-    l->set_predict<csoaa, predict_or_learn<false> >();
-    l->set_finish_example<csoaa,finish_example>();
-    return l;
+    learner<csoaa>* l = new learner<csoaa>(&c, all.l, nb_actions);
+    l->set_learn<predict_or_learn<true> >();
+    l->set_predict<predict_or_learn<false> >();
+    l->set_finish_example<finish_example>();
+    return make_base(l);
   }
 }
 
@@ -104,7 +104,7 @@ namespace CSOAA_AND_WAP_LDF {
     float csoaa_example_t;
     vw* all;
 
-    learner* base;
+    base_learner* base;
   };
 
 namespace LabelDict { 
@@ -293,7 +293,7 @@ namespace LabelDict {
     ec->indices.decr();
   }
 
-  void make_single_prediction(ldf& data, learner& base, example& ec) {
+  void make_single_prediction(ldf& data, base_learner& base, example& ec) {
     COST_SENSITIVE::label ld = ec.l.cs;
     label_data simple_label;
     simple_label.initial = 0.;
@@ -332,7 +332,7 @@ namespace LabelDict {
     return isTest;
   }
 
-  void do_actual_learning_wap(vw& all, ldf& data, learner& base, size_t start_K)
+  void do_actual_learning_wap(vw& all, ldf& data, base_learner& base, size_t start_K)
   {
     size_t K = data.ec_seq.size();
     vector<COST_SENSITIVE::wclass*> all_costs;
@@ -387,7 +387,7 @@ namespace LabelDict {
     }
   }
 
-  void do_actual_learning_oaa(vw& all, ldf& data, learner& base, size_t start_K)
+  void do_actual_learning_oaa(vw& all, ldf& data, base_learner& base, size_t start_K)
   {
     size_t K = data.ec_seq.size();
     float  min_cost  = FLT_MAX;
@@ -440,7 +440,7 @@ namespace LabelDict {
   }
 
   template <bool is_learn>
-  void do_actual_learning(vw& all, ldf& data, learner& base)
+  void do_actual_learning(vw& all, ldf& data, base_learner& base)
   {
     //cdbg << "do_actual_learning size=" << data.ec_seq.size() << endl;
     if (data.ec_seq.size() <= 0) return;  // nothing to do
@@ -613,7 +613,7 @@ namespace LabelDict {
   }
 
   template <bool is_learn>
-  void predict_or_learn(ldf& data, learner& base, example &ec) {
+  void predict_or_learn(ldf& data, base_learner& base, example &ec) {
     vw* all = data.all;
     data.base = &base;
     bool is_test_ec = COST_SENSITIVE::example_is_test(ec);
@@ -646,7 +646,7 @@ namespace LabelDict {
     }
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description ldf_opts("LDF Options");
     ldf_opts.add_options()
@@ -709,17 +709,17 @@ namespace LabelDict {
 
     ld.read_example_this_loop = 0;
     ld.need_to_clear = false;
-    learner* l = new learner(&ld, all.l);
-    l->set_learn<ldf, predict_or_learn<true> >();
-    l->set_predict<ldf, predict_or_learn<false> >();
+    learner<ldf>* l = new learner<ldf>(&ld, all.l);
+    l->set_learn<predict_or_learn<true> >();
+    l->set_predict<predict_or_learn<false> >();
     if (ld.is_singleline)
-      l->set_finish_example<ldf,finish_singleline_example>();
+      l->set_finish_example<finish_singleline_example>();
     else
-      l->set_finish_example<ldf,finish_multiline_example>();
-    l->set_finish<ldf,finish>();
-    l->set_end_examples<ldf,end_examples>(); 
-    l->set_end_pass<ldf,end_pass>();
-    return l;
+      l->set_finish_example<finish_multiline_example>();
+    l->set_finish<finish>();
+    l->set_end_examples<end_examples>(); 
+    l->set_end_pass<end_pass>();
+    return make_base(l);
   }
 
   void global_print_newline(vw& all)

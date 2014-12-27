@@ -170,9 +170,9 @@ struct vw {
 
   node_socks socks;
 
-  LEARNER::learner* l;//the top level learner
-  LEARNER::learner* scorer;//a scoring function
-  LEARNER::learner* cost_sensitive;//a cost sensitive learning algorithm.
+  LEARNER::base_learner* l;//the top level learner
+  LEARNER::base_learner* scorer;//a scoring function
+  LEARNER::base_learner* cost_sensitive;//a cost sensitive learning algorithm.
 
   void learn(example*);
 

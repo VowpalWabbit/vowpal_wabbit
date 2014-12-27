@@ -819,7 +819,7 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
   all.l = Scorer::setup(all, vm);
 }
 
-LEARNER::learner* exclusive_setup(vw& all, po::variables_map& vm, bool& score_consumer, LEARNER::learner* (*setup)(vw&, po::variables_map&))
+LEARNER::base_learner* exclusive_setup(vw& all, po::variables_map& vm, bool& score_consumer, LEARNER::base_learner* (*setup)(vw&, po::variables_map&))
 {
   if (score_consumer) { cerr << "error: cannot specify multiple direct score consumers" << endl; throw exception(); }
   score_consumer = true;

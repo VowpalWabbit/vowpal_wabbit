@@ -62,7 +62,7 @@ namespace {
 namespace LRQ {
 
   template <bool is_learn>
-  void predict_or_learn(LRQstate& lrq, learner& base, example& ec)
+  void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
   {
     vw& all = *lrq.all;
 
@@ -187,39 +187,39 @@ namespace LRQ {
       }
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
-    LRQstate* lrq = (LRQstate*) calloc (1, sizeof (LRQstate));
-    unsigned int maxk = 0;
-    lrq->all = &all;
+    LRQstate& lrq = calloc_or_die<LRQstate>();
+    size_t maxk = 0;
+    lrq.all = &all;
     
     size_t random_seed = 0;
     if (vm.count("random_seed")) random_seed = vm["random_seed"].as<size_t> ();
     
-    lrq->initial_seed = lrq->seed = random_seed | 8675309;
+    lrq.initial_seed = lrq.seed = random_seed | 8675309;
     if (vm.count("lrqdropout"))
-      lrq->dropout = true;
+      lrq.dropout = true;
     else
-      lrq->dropout = false;
+      lrq.dropout = false;
     
     all.file_options << " --lrqdropout ";
     
-    lrq->lrpairs = vm["lrq"].as<vector<string> > ();
+    lrq.lrpairs = vm["lrq"].as<vector<string> > ();
     
-    for (vector<string>::iterator i = lrq->lrpairs.begin (); 
-	 i != lrq->lrpairs.end (); 
+    for (vector<string>::iterator i = lrq.lrpairs.begin (); 
+	 i != lrq.lrpairs.end (); 
 	 ++i)
       all.file_options << " --lrq " << *i;
     
     if (! all.quiet)
       {
         cerr << "creating low rank quadratic features for pairs: ";
-        if (lrq->dropout)
+        if (lrq.dropout)
           cerr << "(using dropout) ";
       }
 
-    for (vector<string>::iterator i = lrq->lrpairs.begin (); 
-         i != lrq->lrpairs.end (); 
+    for (vector<string>::iterator i = lrq.lrpairs.begin (); 
+         i != lrq.lrpairs.end (); 
          ++i)
       {
         if(!all.quiet){
@@ -233,8 +233,8 @@ namespace LRQ {
         
         unsigned int k = atoi (i->c_str () + 2);
 
-        lrq->lrindices[(int) (*i)[0]] = 1;
-        lrq->lrindices[(int) (*i)[1]] = 1;
+        lrq.lrindices[(int) (*i)[0]] = 1;
+        lrq.lrindices[(int) (*i)[1]] = 1;
 
         maxk = max (maxk, k);
       }
@@ -243,12 +243,12 @@ namespace LRQ {
       cerr<<endl;
         
     all.wpp = all.wpp * (1 + maxk);
-    learner* l = new learner(lrq, all.l, 1 + maxk);
-    l->set_learn<LRQstate, predict_or_learn<true> >();
-    l->set_predict<LRQstate, predict_or_learn<false> >();
-    l->set_end_pass<LRQstate,reset_seed>();
+    learner<LRQstate>* l = new learner<LRQstate>(&lrq, all.l, 1 + maxk);
+    l->set_learn<predict_or_learn<true> >();
+    l->set_predict<predict_or_learn<false> >();
+    l->set_end_pass<reset_seed>();
 
     // TODO: leaks memory ?
-    return l;
+    return make_base(l);
   }
 }
