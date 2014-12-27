@@ -583,6 +583,6 @@ namespace CB_ALGS
     // _adding_ to the number of problems rather than multiplying.
     l.increment = all.l->increment; 
 
-    return make_base(&l);
+    return make_base(l);
   }
 }

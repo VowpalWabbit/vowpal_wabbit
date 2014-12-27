@@ -249,6 +249,6 @@ namespace LRQ {
     l.set_end_pass(reset_seed);
 
     // TODO: leaks memory ?
-    return make_base(&l);
+    return make_base(l);
   }
 }

@@ -1989,7 +1989,7 @@ namespace Search {
     l.set_finish(search_finish);
     l.set_end_pass(end_pass);
 
-    return make_base(&l);
+    return make_base(l);
   }
 
   float action_hamming_loss(action a, const action* A, size_t sz) {

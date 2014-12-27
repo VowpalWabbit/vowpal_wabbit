@@ -119,7 +119,7 @@ void end_examples(sender& s)
   l.set_finish(finish);
   l.set_finish_example(finish_example); 
   l.set_end_examples(end_examples);
-  return make_base(&l);
+  return make_base(l);
 }
 
 }

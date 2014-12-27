@@ -212,6 +212,6 @@ namespace LEARNER
       return ret;
     }
   
-  template<class T> base_learner* make_base(learner<T>* base)
-    { return (base_learner*)base; }
+  template<class T> base_learner* make_base(learner<T>& base)
+    { return (base_learner*)&base; }
 }

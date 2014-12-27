@@ -52,6 +52,6 @@ namespace ALINK {
     learner<autolink>& ret = init_learner(&data, all.l);
     ret.set_learn(predict_or_learn<true>);
     ret.set_predict(predict_or_learn<false>);
-    return make_base(&ret);
+    return make_base(ret);
   }
 }

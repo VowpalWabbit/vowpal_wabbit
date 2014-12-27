@@ -57,6 +57,6 @@ namespace PRINT
     learner<print>& ret = init_learner(&p, 1);
     ret.set_learn(learn);
     ret.set_predict(learn);
-    return make_base(&ret);
+    return make_base(ret);
   } 
 }

@@ -124,6 +124,6 @@ namespace TOPK {
     l.set_predict(predict_or_learn<false>);
     l.set_finish_example(finish_example);
 
-    return make_base(&l);
+    return make_base(l);
   }
 }

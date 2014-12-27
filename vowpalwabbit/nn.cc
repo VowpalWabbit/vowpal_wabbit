@@ -372,6 +372,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     l.set_finish_example(finish_example);
     l.set_end_pass(end_pass);
 
-    return make_base(&l);
+    return make_base(l);
   }
 }

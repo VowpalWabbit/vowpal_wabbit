@@ -286,6 +286,6 @@ namespace BS {
     l.set_finish_example(finish_example);
     l.set_finish(finish);
 
-    return make_base(&l);
+    return make_base(l);
   }
 }

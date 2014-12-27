@@ -540,6 +540,6 @@ namespace LOG_MULTI
     
     init_tree(*data);	
     
-    return make_base(&l);
+    return make_base(l);
   }	
 }

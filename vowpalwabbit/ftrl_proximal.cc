@@ -221,9 +221,6 @@ namespace FTRL {
     l.set_learn(learn);
     l.set_predict(predict);
     l.set_save_load(save_load);
-
-    return make_base(&l);
+    return make_base(l);
   }
-
-
 } // end namespace

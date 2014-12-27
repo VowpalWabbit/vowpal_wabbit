@@ -336,6 +336,6 @@ void mf_train(vw& all, example& ec)
     l.set_save_load(save_load);
     l.set_end_pass(end_pass);
 
-    return make_base(&l);
+    return make_base(l);
   }
 }

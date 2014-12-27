@@ -706,6 +706,6 @@ namespace StagewisePoly
     l.set_finish_example(finish_example);
     l.set_end_pass(end_pass);
 
-    return make_base(&l);
+    return make_base(l);
   }
 }

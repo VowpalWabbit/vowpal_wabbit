@@ -450,6 +450,6 @@ namespace CBIFY {
     l->set_finish(finish);
     l->set_init_driver(init_driver);
     
-    return make_base(l);
+    return make_base(*l);
   }
 }

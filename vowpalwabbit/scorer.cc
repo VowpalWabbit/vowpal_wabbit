@@ -83,6 +83,6 @@ namespace Scorer {
 	throw exception();
       }
 
-    return make_base(&l);
+    return make_base(l);
   }
 }

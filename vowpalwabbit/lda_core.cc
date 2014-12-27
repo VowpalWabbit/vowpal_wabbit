@@ -795,6 +795,6 @@ base_learner* setup(vw&all, po::variables_map& vm)
   l.set_end_pass(end_pass);  
   l.set_finish(finish);
   
-  return make_base(&l);
+  return make_base(l);
 }
 }

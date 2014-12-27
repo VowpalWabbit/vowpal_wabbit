@@ -180,6 +180,6 @@ namespace ACTIVE {
 	ret.set_finish_example(return_active_example);
       }
 
-    return make_base(&ret);
+    return make_base(ret);
   }
 }

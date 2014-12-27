@@ -922,6 +922,6 @@ base_learner* setup(vw& all, po::variables_map& vm)
 
   ret.set_save_load(save_load);
   ret.set_end_pass(end_pass);
-  return make_base(&ret);
+  return make_base(ret);
 }
 }
