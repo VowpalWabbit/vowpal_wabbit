@@ -250,6 +250,8 @@ vw::vw()
 
   data_filename = "";
 
+  file_options = new std::stringstream;
+
   bfgs = false;
   hessian_on = false;
   active = false;

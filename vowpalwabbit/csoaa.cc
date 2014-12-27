@@ -77,7 +77,7 @@ namespace CSOAA {
 
     nb_actions = (uint32_t)vm["csoaa"].as<size_t>();
     //append csoaa with nb_actions to file_options so it is saved to regressor later
-    all.file_options << " --csoaa " << nb_actions;
+    *all.file_options << " --csoaa " << nb_actions;
 
     all.p->lp = cs_label;
     all.sd->k = nb_actions;
@@ -665,12 +665,12 @@ namespace LabelDict {
 
     if( vm.count("csoaa_ldf") ){
       ldf_arg = vm["csoaa_ldf"].as<string>();
-      all.file_options << " --csoaa_ldf " << ldf_arg;
+      *all.file_options << " --csoaa_ldf " << ldf_arg;
     }
     else {
       ldf_arg = vm["wap_ldf"].as<string>();
       ld.is_wap = true;
-      all.file_options << " --wap_ldf " << ldf_arg;
+      *all.file_options << " --wap_ldf " << ldf_arg;
     }
     if ( vm.count("ldf_override") )
       ldf_arg = vm["ldf_override"].as<string>();

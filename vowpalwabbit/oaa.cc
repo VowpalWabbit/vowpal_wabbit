@@ -78,13 +78,12 @@ namespace OAA {
   base_learner* setup(vw& all, po::variables_map& vm)
   {
     oaa& data = calloc_or_die<oaa>();
-    //first parse for number of actions
-    data.k = vm["oaa"].as<size_t>();
-    //append oaa with nb_actions to options_from_file so it is saved to regressor later
-    all.file_options << " --oaa " << data.k;
 
+    data.k = vm["oaa"].as<size_t>();
     data.shouldOutput = all.raw_prediction > 0;
     data.all = &all;
+
+    *all.file_options << " --oaa " << data.k;
     all.p->lp = mc_label;
 
     learner<oaa>& l = init_learner(&data, all.l, data.k);

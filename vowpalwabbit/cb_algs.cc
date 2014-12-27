@@ -515,7 +515,7 @@ namespace CB_ALGS
 
     vm = add_options(all, cb_opts);
 
-    all.file_options << " --cb " << nb_actions;
+    *all.file_options << " --cb " << nb_actions;
 
     all.sd->k = nb_actions;
 
@@ -529,7 +529,7 @@ namespace CB_ALGS
       std::string type_string;
 
       type_string = vm["cb_type"].as<std::string>();
-      all.file_options << " --cb_type " << type_string;
+      *all.file_options << " --cb_type " << type_string;
       
       if (type_string.compare("dr") == 0) 
 	c.cb_type = CB_TYPE_DR;
@@ -556,7 +556,7 @@ namespace CB_ALGS
     else {
       //by default use doubly robust
       c.cb_type = CB_TYPE_DR;
-      all.file_options << " --cb_type dr";
+      *all.file_options << " --cb_type dr";
     }
 
     if (eval)

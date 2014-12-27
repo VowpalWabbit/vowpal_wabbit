@@ -514,7 +514,7 @@ namespace LOG_MULTI
     vm = add_options(all, opts);
     
     data->k = (uint32_t)vm["log_multi"].as<size_t>();
-    all.file_options << " --log_multi " << data->k;
+    *all.file_options << " --log_multi " << data->k;
     
     if (vm.count("no_progress"))
       data->progress = false;

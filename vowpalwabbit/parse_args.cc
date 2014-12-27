@@ -353,7 +353,7 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
 
   if (vm.count("affix")) {
     parse_affix_argument(all, vm["affix"].as<string>());
-    all.file_options << " --affix " << vm["affix"].as<string>();
+    *all.file_options << " --affix " << vm["affix"].as<string>();
   }
 
   if(vm.count("ngram")){
@@ -1018,7 +1018,7 @@ vw* parse_args(int argc, char *argv[])
   parse_regressor_args(*all, vm, io_temp);
   
   int temp_argc = 0;
-  char** temp_argv = VW::get_argv_from_string(all->file_options.str(), temp_argc);
+  char** temp_argv = VW::get_argv_from_string(all->file_options->str(), temp_argc);
   add_to_args(*all, temp_argc, temp_argv);
   for (int i = 0; i < temp_argc; i++)
     free(temp_argv[i]);
@@ -1032,7 +1032,7 @@ vw* parse_args(int argc, char *argv[])
 
   po::store(pos, vm);
   po::notify(vm);
-  all->file_options.str("");
+  all->file_options->str("");
 
   parse_feature_tweaks(*all, vm); //feature tweaks
 
@@ -1095,14 +1095,14 @@ vw* parse_args(int argc, char *argv[])
 }
 
 namespace VW {
-  void cmd_string_replace_value( std::stringstream& ss, string flag_to_replace, string new_value )
+  void cmd_string_replace_value( std::stringstream*& ss, string flag_to_replace, string new_value )
   {
     flag_to_replace.append(" "); //add a space to make sure we obtain the right flag in case 2 flags start with the same set of characters
-    string cmd = ss.str();
+    string cmd = ss->str();
     size_t pos = cmd.find(flag_to_replace);
     if( pos == string::npos )
       //flag currently not present in command string, so just append it to command string
-      ss << " " << flag_to_replace << new_value;
+      *ss << " " << flag_to_replace << new_value;
     else {
       //flag is present, need to replace old value with new value
 
@@ -1118,7 +1118,7 @@ namespace VW {
       else 
         //replace characters between pos and pos_after_value by new_value
         cmd.replace(pos,pos_after_value-pos,new_value);
-      ss.str(cmd);
+      ss->str(cmd);
     }
   }
 
@@ -1173,7 +1173,7 @@ namespace VW {
   {
     finalize_regressor(all, all.final_regressor_name);
     all.l->finish();
-    delete all.l;
+    free_it(all.l);
     if (all.reg.weight_vector != NULL)
       free(all.reg.weight_vector);
     free_parser(all);
@@ -1182,6 +1182,7 @@ namespace VW {
     all.p->parse_name.delete_v();
     free(all.p);
     free(all.sd);
+    delete all.file_options;
     for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
       if (all.final_prediction_sink[i] != 1)
 	io_buf::close_file_or_socket(all.final_prediction_sink[i]);

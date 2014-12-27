@@ -384,7 +384,7 @@ namespace ECT
     } else 
       data.errors = 0;
     //append error flag to options_from_file so it is saved in regressor file later
-    all.file_options << " --ect " << data.k << " --error " << data.errors;
+    *all.file_options << " --ect " << data.k << " --error " << data.errors;
     
     all.p->lp = MULTICLASS::mc_label;
     size_t wpp = create_circuit(all, data, data.k, data.errors+1);

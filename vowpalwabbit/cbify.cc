@@ -392,7 +392,7 @@ namespace CBIFY {
     vm = add_options(all, cb_opts);
     
     data.k = (uint32_t)vm["cbify"].as<size_t>();
-    all.file_options << " --cbify " << data.k;
+    *all.file_options << " --cbify " << data.k;
 
     all.p->lp = MULTICLASS::mc_label;
     learner<cbify>* l;

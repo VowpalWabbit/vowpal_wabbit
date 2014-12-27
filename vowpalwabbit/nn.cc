@@ -323,11 +323,11 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     //first parse for number of hidden units
     n.k = (uint32_t)vm["nn"].as<size_t>();
-    all.file_options << " --nn " << n.k;
+    *all.file_options << " --nn " << n.k;
 
     if ( vm.count("dropout") ) {
       n.dropout = true;
-      all.file_options << " --dropout ";
+      *all.file_options << " --dropout ";
     }
     
     if ( vm.count("meanfield") ) {
@@ -346,7 +346,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     if (vm.count ("inpass")) {
       n.inpass = true;
-      all.file_options << " --inpass";
+      *all.file_options << " --inpass";
 
     }
 

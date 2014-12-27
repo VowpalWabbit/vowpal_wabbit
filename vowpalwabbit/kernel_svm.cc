@@ -855,7 +855,7 @@ namespace KSVM
     
     params.lambda = all.l2_lambda;
 
-    all.file_options <<" --lambda "<< params.lambda;
+    *all.file_options <<" --lambda "<< params.lambda;
       
     cerr<<"Lambda = "<<params.lambda<<endl;
 
@@ -866,7 +866,7 @@ namespace KSVM
     else
       kernel_type = string("linear");
     
-    all.file_options <<" --kernel "<< kernel_type;
+    *all.file_options <<" --kernel "<< kernel_type;
 
     cerr<<"Kernel = "<<kernel_type<<endl;
 
@@ -875,7 +875,7 @@ namespace KSVM
       float bandwidth = 1.;
       if(vm.count("bandwidth")) {
 		bandwidth = vm["bandwidth"].as<float>();	
-		all.file_options <<" --bandwidth "<<bandwidth;
+		*all.file_options <<" --bandwidth "<<bandwidth;
       }
       cerr<<"bandwidth = "<<bandwidth<<endl;
       params.kernel_params = &calloc_or_die<double>();
@@ -886,7 +886,7 @@ namespace KSVM
       int degree = 2;
       if(vm.count("degree")) {
 	  degree = vm["degree"].as<int>();	
-	  all.file_options <<" --degree "<<degree;
+	  *all.file_options <<" --degree "<<degree;
 	}
       cerr<<"degree = "<<degree<<endl;
       params.kernel_params = &calloc_or_die<int>();

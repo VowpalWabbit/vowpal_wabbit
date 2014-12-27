@@ -202,14 +202,14 @@ namespace LRQ {
     else
       lrq.dropout = false;
     
-    all.file_options << " --lrqdropout ";
+    *all.file_options << " --lrqdropout ";
     
     lrq.lrpairs = vm["lrq"].as<vector<string> > ();
     
     for (vector<string>::iterator i = lrq.lrpairs.begin (); 
 	 i != lrq.lrpairs.end (); 
 	 ++i)
-      all.file_options << " --lrq " << *i;
+      *all.file_options << " --lrq " << *i;
     
     if (! all.quiet)
       {

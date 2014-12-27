@@ -696,7 +696,7 @@ namespace StagewisePoly
     poly.next_batch_sz = poly.batch_sz;
 
     //following is so that saved models know to load us.
-    all.file_options << " --stage_poly";
+    *all.file_options << " --stage_poly";
 
     learner<stagewise_poly>& l = init_learner(&poly, all.l);
     l.set_learn(learn);
