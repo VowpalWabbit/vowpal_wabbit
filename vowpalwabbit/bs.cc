@@ -280,12 +280,12 @@ namespace BS {
     data.pred_vec.reserve(data.B);
     data.all = &all;
 
-    learner<bs>* l = new learner<bs>(&data, all.l, data.B);
-    l->set_learn(predict_or_learn<true>);
-    l->set_predict(predict_or_learn<false>);
-    l->set_finish_example(finish_example);
-    l->set_finish(finish);
+    learner<bs>& l = init_learner(&data, all.l, data.B);
+    l.set_learn(predict_or_learn<true>);
+    l.set_predict(predict_or_learn<false>);
+    l.set_finish_example(finish_example);
+    l.set_finish(finish);
 
-    return make_base(l);
+    return make_base(&l);
   }
 }

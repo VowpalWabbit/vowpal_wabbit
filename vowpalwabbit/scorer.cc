@@ -57,25 +57,25 @@ namespace Scorer {
 
     vm = add_options(all, link_opts);
 
-    learner<scorer>* l = new learner<scorer>(&s, all.l);
+    learner<scorer>& l = init_learner(&s, all.l);
 
     string link = vm["link"].as<string>();
     if (!vm.count("link") || link.compare("identity") == 0)
       {
-	l->set_learn(predict_or_learn<true, noop> );
-	l->set_predict(predict_or_learn<false, noop> );
+	l.set_learn(predict_or_learn<true, noop> );
+	l.set_predict(predict_or_learn<false, noop> );
       }
     else if (link.compare("logistic") == 0)
       {
 	all.file_options << " --link=logistic ";
-	l->set_learn(predict_or_learn<true, logistic> );
-	l->set_predict(predict_or_learn<false, logistic>);
+	l.set_learn(predict_or_learn<true, logistic> );
+	l.set_predict(predict_or_learn<false, logistic>);
       }
     else if (link.compare("glf1") == 0)
       {
 	all.file_options << " --link=glf1 ";
-	l->set_learn(predict_or_learn<true, glf1>);
-	l->set_predict(predict_or_learn<false, glf1>);
+	l.set_learn(predict_or_learn<true, glf1>);
+	l.set_predict(predict_or_learn<false, glf1>);
       }
     else
       {
@@ -83,6 +83,6 @@ namespace Scorer {
 	throw exception();
       }
 
-    return make_base(l);
+    return make_base(&l);
   }
 }

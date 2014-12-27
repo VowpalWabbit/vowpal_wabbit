@@ -1981,15 +1981,15 @@ namespace Search {
 
     priv.start_clock_time = clock();
 
-    learner<search>* l = new learner<search>(&sch, all.l, priv.total_number_of_policies);
-    l->set_learn(search_predict_or_learn<true>);
-    l->set_predict(search_predict_or_learn<false>);
-    l->set_finish_example(finish_example);
-    l->set_end_examples(end_examples);
-    l->set_finish(search_finish);
-    l->set_end_pass(end_pass);
+    learner<search>& l = init_learner(&sch, all.l, priv.total_number_of_policies);
+    l.set_learn(search_predict_or_learn<true>);
+    l.set_predict(search_predict_or_learn<false>);
+    l.set_finish_example(finish_example);
+    l.set_end_examples(end_examples);
+    l.set_finish(search_finish);
+    l.set_end_pass(end_pass);
 
-    return make_base(l);
+    return make_base(&l);
   }
 
   float action_hamming_loss(action a, const action* A, size_t sz) {

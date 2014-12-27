@@ -531,15 +531,15 @@ namespace LOG_MULTI
 
     data->max_predictors = data->k - 1;
 
-    learner<log_multi>* l = new learner<log_multi>(data, all.l, data->max_predictors);
-    l->set_save_load(save_load_tree);
-    l->set_learn(learn);
-    l->set_predict(predict);
-    l->set_finish_example(finish_example);
-    l->set_finish(finish);
+    learner<log_multi>& l = init_learner(data, all.l, data->max_predictors);
+    l.set_save_load(save_load_tree);
+    l.set_learn(learn);
+    l.set_predict(predict);
+    l.set_finish_example(finish_example);
+    l.set_finish(finish);
     
     init_tree(*data);	
     
-    return make_base(l);
+    return make_base(&l);
   }	
 }

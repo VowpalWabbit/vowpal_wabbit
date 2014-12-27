@@ -119,11 +119,11 @@ namespace TOPK {
 
     data.all = &all;
 
-    learner<topk>* l = new learner<topk>(&data, all.l);
-    l->set_learn(predict_or_learn<true>);
-    l->set_predict(predict_or_learn<false>);
-    l->set_finish_example(finish_example);
+    learner<topk>& l = init_learner(&data, all.l);
+    l.set_learn(predict_or_learn<true>);
+    l.set_predict(predict_or_learn<false>);
+    l.set_finish_example(finish_example);
 
-    return make_base(l);
+    return make_base(&l);
   }
 }

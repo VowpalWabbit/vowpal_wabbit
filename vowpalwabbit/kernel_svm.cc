@@ -898,11 +898,11 @@ namespace KSVM
     params.all->reg.weight_mask = (uint32_t)LONG_MAX;
     params.all->reg.stride_shift = 0;
     
-    learner<svm_params>* l = new learner<svm_params>(&params, 1); 
-    l->set_learn(learn);
-    l->set_predict(predict);
-    l->set_save_load(save_load);
-    l->set_finish(finish);
-    return make_base(l);
+    learner<svm_params>& l = init_learner(&params, 1); 
+    l.set_learn(learn);
+    l.set_predict(predict);
+    l.set_save_load(save_load);
+    l.set_finish(finish);
+    return make_base(&l);
   }    
 }

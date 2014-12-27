@@ -203,10 +203,10 @@ base_learner* setup(vw& all, po::variables_map& vm) {
 
   all.random_positive_weights = true;
 
-  learner<mf>* l = new learner<mf>(data, all.l, 2*data->rank+1);
-  l->set_learn(learn);
-  l->set_predict(predict<false>);
-  l->set_finish(finish);
-  return make_base(l);
+  learner<mf>& l = init_learner(data, all.l, 2*data->rank+1);
+  l.set_learn(learn);
+  l.set_predict(predict<false>);
+  l.set_finish(finish);
+  return make_base(&l);
 }
 }

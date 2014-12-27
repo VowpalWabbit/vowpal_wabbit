@@ -330,12 +330,12 @@ void mf_train(vw& all, example& ec)
     }
     all.eta *= powf((float)(all.sd->t), all.power_t);
 
-    learner<gdmf>* l = new learner<gdmf>(&data, 1 << all.reg.stride_shift);
-    l->set_learn(learn);
-    l->set_predict(predict);
-    l->set_save_load(save_load);
-    l->set_end_pass(end_pass);
+    learner<gdmf>& l = init_learner(&data, 1 << all.reg.stride_shift);
+    l.set_learn(learn);
+    l.set_predict(predict);
+    l.set_save_load(save_load);
+    l.set_end_pass(end_pass);
 
-    return make_base(l);
+    return make_base(&l);
   }
 }

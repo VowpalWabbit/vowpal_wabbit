@@ -409,7 +409,7 @@ namespace CBIFY {
 	  epsilon = vm["epsilon"].as<float>();
 	data.scorer.reset(new vw_cover_scorer(epsilon, cover, (u32)data.k));
 	data.generic_explorer.reset(new GenericExplorer<vw_context>(*data.scorer.get(), (u32)data.k));
-	l = new learner<cbify>(&data, all.l, cover + 1);
+	l = &init_learner(&data, all.l, cover + 1);
 	l->set_learn(predict_or_learn_cover<true>);
 	l->set_predict(predict_or_learn_cover<false>);
       }
@@ -421,7 +421,7 @@ namespace CBIFY {
 	    data.policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
 	  }
 	data.bootstrap_explorer.reset(new BootstrapExplorer<vw_context>(data.policies, (u32)data.k));
-	l = new learner<cbify>(&data, all.l, bags);
+	l = &init_learner(&data, all.l, bags);
 	l->set_learn(predict_or_learn_bag<true>);
 	l->set_predict(predict_or_learn_bag<false>);
       }
@@ -430,7 +430,7 @@ namespace CBIFY {
 	uint32_t tau = (uint32_t)vm["first"].as<size_t>();
 	data.policy.reset(new vw_policy());
 	data.tau_explorer.reset(new TauFirstExplorer<vw_context>(*data.policy.get(), (u32)tau, (u32)data.k));
-	l = new learner<cbify>(&data, all.l, 1);
+	l = &init_learner(&data, all.l, 1);
 	l->set_learn(predict_or_learn_first<true>);
 	l->set_predict(predict_or_learn_first<false>);
       }
@@ -441,7 +441,7 @@ namespace CBIFY {
 	  epsilon = vm["epsilon"].as<float>();
 	data.policy.reset(new vw_policy());
 	data.greedy_explorer.reset(new EpsilonGreedyExplorer<vw_context>(*data.policy.get(), epsilon, (u32)data.k));
-	l = new learner<cbify>(&data, all.l, 1);
+	l = &init_learner(&data, all.l, 1);
 	l->set_learn(predict_or_learn_greedy<true>);
 	l->set_predict(predict_or_learn_greedy<false>);
       }

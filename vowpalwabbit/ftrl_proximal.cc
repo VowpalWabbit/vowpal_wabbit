@@ -217,12 +217,12 @@ namespace FTRL {
         cerr << "ftrl_beta = " << b.ftrl_beta << endl;
     }
 
-    learner<ftrl>* l = new learner<ftrl>(&b, 1 << all.reg.stride_shift);
-    l->set_learn(learn);
-    l->set_predict(predict);
-    l->set_save_load(save_load);
+    learner<ftrl>& l = init_learner(&b, 1 << all.reg.stride_shift);
+    l.set_learn(learn);
+    l.set_predict(predict);
+    l.set_save_load(save_load);
 
-    return make_base(l);
+    return make_base(&l);
   }
 
 

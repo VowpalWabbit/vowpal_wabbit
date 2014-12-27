@@ -789,25 +789,25 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 }
 
 template<bool invariant, bool sqrt_rate, uint32_t adaptive, uint32_t normalized, uint32_t spare, uint32_t next>
-uint32_t set_learn(vw& all, learner<gd>* ret, bool feature_mask_off)
+uint32_t set_learn(vw& all, learner<gd>& ret, bool feature_mask_off)
 {
   all.normalized_idx = normalized;
   if (feature_mask_off)
     {
-      ret->set_learn(learn<invariant, sqrt_rate, true, adaptive, normalized, spare>);
-      ret->set_update(update<invariant, sqrt_rate, true, adaptive, normalized, spare>);
+      ret.set_learn(learn<invariant, sqrt_rate, true, adaptive, normalized, spare>);
+      ret.set_update(update<invariant, sqrt_rate, true, adaptive, normalized, spare>);
       return next;
     }
   else
     {
-      ret->set_learn(learn<invariant, sqrt_rate, false, adaptive, normalized, spare>);
-      ret->set_update(update<invariant, sqrt_rate, false, adaptive, normalized, spare>);
+      ret.set_learn(learn<invariant, sqrt_rate, false, adaptive, normalized, spare>);
+      ret.set_update(update<invariant, sqrt_rate, false, adaptive, normalized, spare>);
       return next;
     }
 }
 
 template<bool sqrt_rate, uint32_t adaptive, uint32_t normalized, uint32_t spare, uint32_t next>
-uint32_t set_learn(vw& all, learner<gd>* ret, bool feature_mask_off)
+uint32_t set_learn(vw& all, learner<gd>& ret, bool feature_mask_off)
 {
   if (all.invariant_updates)
     return set_learn<true, sqrt_rate, adaptive, normalized, spare, next>(all, ret, feature_mask_off);
@@ -816,7 +816,7 @@ uint32_t set_learn(vw& all, learner<gd>* ret, bool feature_mask_off)
 }
 
 template<bool sqrt_rate, uint32_t adaptive, uint32_t spare>
-uint32_t set_learn(vw& all, learner<gd>* ret, bool feature_mask_off)
+uint32_t set_learn(vw& all, learner<gd>& ret, bool feature_mask_off)
 {
   // select the appropriate learn function based on adaptive, normalization, and feature mask
   if (all.normalized_updates)
@@ -826,7 +826,7 @@ uint32_t set_learn(vw& all, learner<gd>* ret, bool feature_mask_off)
 }
 
 template<bool sqrt_rate>
-uint32_t set_learn(vw& all, learner<gd>* ret, bool feature_mask_off)
+uint32_t set_learn(vw& all, learner<gd>& ret, bool feature_mask_off)
 {
   if (all.adaptive)
     return set_learn<sqrt_rate, 1, 2>(all, ret, feature_mask_off);
@@ -898,7 +898,7 @@ base_learner* setup(vw& all, po::variables_map& vm)
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
 	 << " adjust --decay_learning_rate larger to avoid this." << endl;
   
-  learner<gd>* ret = new learner<gd>(&g, 1);
+  learner<gd>& ret = init_learner(&g, 1);
 
   if (all.reg_mode % 2)
     if (all.audit || all.hash_inv)
@@ -909,7 +909,7 @@ base_learner* setup(vw& all, po::variables_map& vm)
     g.predict = predict<false, true>;
   else
     g.predict = predict<false, false>;
-  ret->set_predict(g.predict);
+  ret.set_predict(g.predict);
   
   uint32_t stride;
   if (all.power_t == 0.5)
@@ -918,10 +918,10 @@ base_learner* setup(vw& all, po::variables_map& vm)
     stride = set_learn<false>(all, ret, feature_mask_off);
 
   all.reg.stride_shift = ceil_log_2(stride-1);
-  ret->increment = ((uint64_t)1 << all.reg.stride_shift);
+  ret.increment = ((uint64_t)1 << all.reg.stride_shift);
 
-  ret->set_save_load(save_load);
-  ret->set_end_pass(end_pass);
-  return make_base(ret);
+  ret.set_save_load(save_load);
+  ret.set_end_pass(end_pass);
+  return make_base(&ret);
 }
 }

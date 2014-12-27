@@ -564,25 +564,25 @@ namespace CB_ALGS
     else
       all.p->lp = CB::cb_label; 
 
-    learner<cb>* l = new learner<cb>(&c, all.l, problem_multiplier);
+    learner<cb>& l = init_learner(&c, all.l, problem_multiplier);
     if (eval)
       {
-	l->set_learn(learn_eval);
-	l->set_predict(predict_eval);
-	l->set_finish_example(eval_finish_example); 
+	l.set_learn(learn_eval);
+	l.set_predict(predict_eval);
+	l.set_finish_example(eval_finish_example); 
       }
     else
       {
-	l->set_learn(predict_or_learn<true>);
-	l->set_predict(predict_or_learn<false>);
-	l->set_finish_example(finish_example); 
+	l.set_learn(predict_or_learn<true>);
+	l.set_predict(predict_or_learn<false>);
+	l.set_finish_example(finish_example); 
       }
-    l->set_init_driver(init_driver);
-    l->set_finish(finish);
+    l.set_init_driver(init_driver);
+    l.set_finish(finish);
     // preserve the increment of the base learner since we are
     // _adding_ to the number of problems rather than multiplying.
-    l->increment = all.l->increment; 
+    l.increment = all.l->increment; 
 
-    return make_base(l);
+    return make_base(&l);
   }
 }
