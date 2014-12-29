@@ -1638,6 +1638,28 @@ namespace Search {
     delete sch.priv;
   }
 
+  void save_load(search& sch, io_buf& model_file, bool read, bool text) {
+	  search_private& priv = *sch.priv;
+	  vw* all = priv.all;
+	  if (read) {
+		  initialize_regressor(*all);
+	  }
+
+	  if (model_file.files.size() > 0) {
+		  bool resume = all->save_resume;
+		  char buff[512];
+		  uint32_t text_len = sprintf(buff, ":%d\n", resume);
+		  bin_text_read_write_fixed(model_file,(char *)&resume, sizeof (resume), "", read, buff, text_len, text);
+
+		  if (resume) {
+			  GD::save_load_online_state(*all, model_file, read, text);
+			  //save_load_online_state(*all, model_file, read, text);
+		  } else {
+			  GD::save_load_regressor(*all, model_file, read, text);
+		  }
+	  }
+  }
+
   void ensure_param(float &v, float lo, float hi, float def, const char* string) {
     if ((v < lo) || (v > hi)) {
       std::cerr << string << endl;
