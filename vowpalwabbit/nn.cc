@@ -356,7 +356,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
                 << std::endl;
 
     n.finished_setup = false;
-    n.squared_loss = getLossFunction (0, "squared", 0);
+    n.squared_loss = getLossFunction (all, "squared", 0);
 
     n.xsubi = 0;
 

@@ -600,7 +600,7 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<float>();
 
-  all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
+  all.loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
   if (all.l1_lambda < 0.) {
     cerr << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;

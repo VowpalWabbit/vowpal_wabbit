@@ -1,8 +1,6 @@
 #include "reductions.h"
 #include "simple_label.h"
 
-using namespace LEARNER;
-
 namespace ALINK {
   const int autoconstant = 524267083;
   
@@ -11,8 +9,8 @@ namespace ALINK {
     uint32_t stride_shift;
   };
 
-  template <bool is_learn>
-  void predict_or_learn(autolink& b, base_learner& base, example& ec)
+  template <bool is_learn> 
+  void predict_or_learn(autolink& b, LEARNER::base_learner& base, example& ec)
   {
     base.predict(ec);
     float base_pred = ec.pred.scalar;
@@ -30,7 +28,6 @@ namespace ALINK {
 	}
     ec.total_sum_feat_sq += sum_sq;
 
-    // apply predict or learn
     if (is_learn)
       base.learn(ec);
     else
@@ -41,7 +38,7 @@ namespace ALINK {
     ec.total_sum_feat_sq -= sum_sq;
   }
 
-  base_learner* setup(vw& all, po::variables_map& vm)
+  LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
   {
     autolink& data = calloc_or_die<autolink>();
     data.d = (uint32_t)vm["autolink"].as<size_t>();
@@ -49,7 +46,7 @@ namespace ALINK {
     
     *all.file_options << " --autolink " << data.d;
 
-    learner<autolink>& ret = init_learner(&data, all.l, predict_or_learn<true>, 
+    LEARNER::learner<autolink>& ret = init_learner(&data, all.l, predict_or_learn<true>, 
 					  predict_or_learn<false>);
     return make_base(ret);
   }

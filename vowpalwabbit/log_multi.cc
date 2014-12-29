@@ -527,7 +527,7 @@ namespace LOG_MULTI
     string loss_function = "quantile"; 
     float loss_parameter = 0.5;
     delete(all.loss);
-    all.loss = getLossFunction(&all, loss_function, loss_parameter);
+    all.loss = getLossFunction(all, loss_function, loss_parameter);
 
     data.max_predictors = data.k - 1;
 

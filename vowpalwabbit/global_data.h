@@ -154,7 +154,6 @@ struct shared_data {
   double holdout_sum_loss_since_last_pass;
   size_t holdout_best_pass; 
 
-  bool binary_label;
   uint32_t k;
 };
 

@@ -1,14 +1,11 @@
 #include <float.h>
-
 #include "reductions.h"
-
-using namespace LEARNER;
 
 namespace Scorer {
   struct scorer{ vw* all; };
 
   template <bool is_learn, float (*link)(float in)>
-  void predict_or_learn(scorer& s, base_learner& base, example& ec)
+  void predict_or_learn(scorer& s, LEARNER::base_learner& base, example& ec)
   {
     s.all->set_minmax(s.all->sd, ec.l.simple.label);
     
@@ -24,20 +21,17 @@ namespace Scorer {
   }
 
   // y = f(x) -> [0, 1]
-  float logistic(float in)
-  { return 1.f / (1.f + exp(- in)); }
+  float logistic(float in) { return 1.f / (1.f + exp(- in)); }
 
   // http://en.wikipedia.org/wiki/Generalized_logistic_curve
   // where the lower & upper asymptotes are -1 & 1 respectively
   // 'glf1' stands for 'Generalized Logistic Function with [-1,1] range'
   //    y = f(x) -> [-1, 1]
-  float glf1(float in)
-  { return 2.f / (1.f + exp(- in)) - 1.f; }
+  float glf1(float in) { return 2.f / (1.f + exp(- in)) - 1.f; }
 
-  float noop(float in)
-  { return in; }
+  float id(float in) { return in; }
 
-  base_learner* setup(vw& all, po::variables_map& vm)
+  LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
   {
     scorer& s = calloc_or_die<scorer>();
     s.all = &all;
@@ -49,11 +43,11 @@ namespace Scorer {
 
     vm = add_options(all, link_opts);
 
-    learner<scorer>* l; 
+    LEARNER::learner<scorer>* l; 
 
     string link = vm["link"].as<string>();
     if (!vm.count("link") || link.compare("identity") == 0)
-      l = &init_learner(&s, all.l, predict_or_learn<true, noop>, predict_or_learn<false, noop>);
+      l = &init_learner(&s, all.l, predict_or_learn<true, id>, predict_or_learn<false, id>);
     else if (link.compare("logistic") == 0)
       {
 	*all.file_options << " --link=logistic ";
