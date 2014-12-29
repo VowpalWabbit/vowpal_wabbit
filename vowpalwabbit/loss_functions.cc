@@ -297,21 +297,18 @@ public:
   float tau;
 };
 
-loss_function* getLossFunction(void* a, string funcName, float function_parameter) {
-  vw* all=(vw*)a;
-  if(funcName.compare("squared") == 0 || funcName.compare("Huber") == 0) {
+loss_function* getLossFunction(vw& all, string funcName, float function_parameter) {
+  if(funcName.compare("squared") == 0 || funcName.compare("Huber") == 0) 
     return new squaredloss();
-  } else if(funcName.compare("classic") == 0){
+  else if(funcName.compare("classic") == 0)
     return new classic_squaredloss();
-  } else if(funcName.compare("hinge") == 0) {
-    all->sd->binary_label = true;
+  else if(funcName.compare("hinge") == 0) 
     return new hingeloss();
-  } else if(funcName.compare("logistic") == 0) {
-    if (all->set_minmax != noop_mm)
+  else if(funcName.compare("logistic") == 0) {
+    if (all.set_minmax != noop_mm)
       {
-	all->sd->min_label = -50;
-	all->sd->max_label = 50;
-	all->sd->binary_label = true;
+	all.sd->min_label = -50;
+	all.sd->max_label = 50;
       }
     return new logloss();
   } else if(funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0) {
@@ -320,5 +317,4 @@ loss_function* getLossFunction(void* a, string funcName, float function_paramete
     cout << "Invalid loss function name: \'" << funcName << "\' Bailing!" << endl;
     throw exception();
   }
-  cout << "end getLossFunction" << endl;
 }

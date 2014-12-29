@@ -19,12 +19,6 @@ license as described in the file LICENSE.
 #include <netdb.h>
 #endif
 
-using std::cin;
-using std::endl;
-using std::cout;
-using std::cerr;
-using std::string;
-
 using namespace std;
 
 int open_socket(const char* host, unsigned short port)

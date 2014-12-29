@@ -855,7 +855,7 @@ namespace Search {
     size_t sz  = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + sizeof(size_t) + condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(char));
     if (sz % 4 != 0) sz = 4 * (sz / 4 + 1); // make sure sz aligns to 4 so that uniform_hash does the right thing
 
-    unsigned char* item = (unsigned char*)calloc(sz, 1);
+    unsigned char* item = &calloc_or_die<unsigned char>();
     unsigned char* here = item;
     *here = (unsigned char)sz; here += sizeof(size_t);
     *here = mytag;             here += sizeof(ptag);
@@ -1987,9 +1987,9 @@ namespace Search {
       vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
     base_learner* base = setup_base(all,vm);
     
-    learner<search>& l = init_learner(&sch, all.l, priv.total_number_of_policies);
-    l.set_learn(search_predict_or_learn<true>);
-    l.set_predict(search_predict_or_learn<false>);
+    learner<search>& l = init_learner(&sch, all.l, search_predict_or_learn<true>, 
+				      search_predict_or_learn<false>, 
+				      priv.total_number_of_policies);
     l.set_finish_example(finish_example);
     l.set_end_examples(end_examples);
     l.set_finish(search_finish);
@@ -2123,7 +2123,7 @@ namespace Search {
   void predictor::set_input_length(size_t input_length) {
     is_ldf = true;
     if (ec_alloced) ec = (example*)realloc(ec, input_length * sizeof(example));
-    else            ec = (example*)calloc(input_length, sizeof(example));
+    else            ec = calloc_or_die<example>(input_length);
     ec_cnt = input_length;
     ec_alloced = true;
   }

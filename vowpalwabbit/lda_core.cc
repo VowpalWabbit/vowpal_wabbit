@@ -805,8 +805,7 @@ base_learner* setup(vw&all, po::variables_map& vm)
   
   ld.decay_levels.push_back(0.f);
 
-  learner<lda>& l = init_learner(&ld, 1 << all.reg.stride_shift);
-  l.set_learn(learn);
+  learner<lda>& l = init_learner(&ld, learn, 1 << all.reg.stride_shift);
   l.set_predict(predict);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

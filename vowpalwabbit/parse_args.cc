@@ -100,13 +100,13 @@ void parse_dictionary_argument(vw&all, string str) {
   ifstream infile(s);
   size_t def = (size_t)' ';
   for (string line; getline(infile, line);) {
-    char*c = (char*)line.c_str(); // we're throwing away const, which is dangerous...
+    char* c = (char*)line.c_str(); // we're throwing away const, which is dangerous...
     while (*c == ' ' || *c == '\t') ++c; // skip initial whitespace
-    char*d = c;
+    char* d = c;
     while (*d != ' ' && *d != '\t' && *d != '\n' && *d != '\0') ++d; // gobble up initial word
     if (d == c) continue; // no word
     if (*d != ' ' && *d != '\t') continue; // reached end of line
-    char*word = (char*)calloc(d-c, sizeof(char));
+    char* word = calloc_or_die<char>(d-c);
     memcpy(word, c, d-c);
     substring ss = { word, word + (d - c) };
     uint32_t hash = uniform_hash( ss.begin, ss.end-ss.begin, quadratic_constant);
@@ -133,7 +133,7 @@ void parse_dictionary_argument(vw&all, string str) {
   
   cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
   all.namespace_dictionaries[(size_t)ns].push_back(map);
-  dictionary_info info = { (char*)calloc(strlen(s)+1, sizeof(char)), map };
+  dictionary_info info = { calloc_or_die<char>(strlen(s)+1), map };
   strcpy(info.name, s);
   all.read_dictionaries.push_back(info);
 }
@@ -601,7 +601,7 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<float>();
 
-  all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
+  all.loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
   if (all.l1_lambda < 0.) {
     cerr << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;

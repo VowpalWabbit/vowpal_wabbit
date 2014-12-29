@@ -1,16 +1,11 @@
 #include <float.h>
-
 #include "reductions.h"
 
-using namespace LEARNER;
-
 namespace Scorer {
-  struct scorer{
-    vw* all;
-  };
+  struct scorer{ vw* all; };
 
   template <bool is_learn, float (*link)(float in)>
-  void predict_or_learn(scorer& s, base_learner& base, example& ec)
+  void predict_or_learn(scorer& s, LEARNER::base_learner& base, example& ec)
   {
     s.all->set_minmax(s.all->sd, ec.l.simple.label);
     
@@ -26,60 +21,48 @@ namespace Scorer {
   }
 
   // y = f(x) -> [0, 1]
-  float logistic(float in)
-  {
-    return 1.f / (1.f + exp(- in));
-  }
+  float logistic(float in) { return 1.f / (1.f + exp(- in)); }
 
   // http://en.wikipedia.org/wiki/Generalized_logistic_curve
   // where the lower & upper asymptotes are -1 & 1 respectively
   // 'glf1' stands for 'Generalized Logistic Function with [-1,1] range'
   //    y = f(x) -> [-1, 1]
-  float glf1(float in)
-  {
-    return 2.f / (1.f + exp(- in)) - 1.f;
-  }
+  float glf1(float in) { return 2.f / (1.f + exp(- in)) - 1.f; }
 
-  float noop(float in)
-  {
-    return in;
-  }
+  float id(float in) { return in; }
 
-  base_learner* setup(vw& all, po::variables_map& vm)
+  LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description opts("Link options");
     opts.add_options()
       ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity, logistic or glf1");
     vm = add_options(all, opts);
-    string link = vm["link"].as<string>();
 
     scorer& s = calloc_or_die<scorer>();
     s.all = &all;
 
-    learner<scorer>& l = init_learner(&s, all.l);
+    LEARNER::learner<scorer>* l; 
+
+    string link = vm["link"].as<string>();
     if (!vm.count("link") || link.compare("identity") == 0)
-      {
-	l.set_learn(predict_or_learn<true, noop> );
-	l.set_predict(predict_or_learn<false, noop> );
-      }
+      l = &init_learner(&s, all.l, predict_or_learn<true, id>, predict_or_learn<false, id>);
     else if (link.compare("logistic") == 0)
       {
 	*all.file_options << " --link=logistic ";
-	l.set_learn(predict_or_learn<true, logistic> );
-	l.set_predict(predict_or_learn<false, logistic>);
+	l = &init_learner(&s, all.l, predict_or_learn<true, logistic>, 
+			  predict_or_learn<false, logistic>);
       }
     else if (link.compare("glf1") == 0)
       {
 	*all.file_options << " --link=glf1 ";
-	l.set_learn(predict_or_learn<true, glf1>);
-	l.set_predict(predict_or_learn<false, glf1>);
+	l = &init_learner(&s, all.l, predict_or_learn<true, glf1>, 
+			  predict_or_learn<false, glf1>);
       }
     else
       {
 	cerr << "Unknown link function: " << link << endl;
 	throw exception();
       }
-
-    return make_base(l);
+    return make_base(*l);
   }
 }

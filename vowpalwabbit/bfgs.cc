@@ -1024,8 +1024,7 @@ base_learner* setup(vw& all, po::variables_map& vm)
   all.bfgs = true;
   all.reg.stride_shift = 2;
 
-  learner<bfgs>& l = init_learner(&b, 1 << all.reg.stride_shift);
-  l.set_learn(learn);
+  learner<bfgs>& l = init_learner(&b, learn, 1 << all.reg.stride_shift);
   l.set_predict(predict);
   l.set_save_load(save_load);
   l.set_init_driver(init_driver);

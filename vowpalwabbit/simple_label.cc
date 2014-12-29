@@ -96,9 +96,6 @@ void parse_simple_label(parser* p, shared_data* sd, void* v, v_array<substring>&
     cerr << "malformed example!\n";
     cerr << "words.size() = " << words.size() << endl;
   }
-  if (words.size() > 0 && sd->binary_label && fabs(ld->label) != 1.f)
-    cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
-
   count_label(ld->label);
 }
 

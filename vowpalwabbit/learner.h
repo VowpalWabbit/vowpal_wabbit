@@ -54,22 +54,18 @@ namespace LEARNER
   
   void generic_driver(vw& all);
   
-  inline void generic_sl(void*, io_buf&, bool, bool) {}
-  inline void generic_learner(void* data, base_learner& base, example&) {}
-  inline void generic_func(void* data) {}
+  inline void noop_sl(void*, io_buf&, bool, bool) {}
+  inline void noop(void* data) {}
 
-  const save_load_data generic_save_load_fd = {NULL, NULL, generic_sl};
-  const learn_data generic_learn_fd = {NULL, NULL, generic_learner, generic_learner, NULL};
-  const func_data generic_func_fd = {NULL, NULL, generic_func};
-  
   typedef void (*tlearn)(void* d, base_learner& base, example& ec);
   typedef void (*tsl)(void* d, io_buf& io, bool read, bool text);
   typedef void (*tfunc)(void*d);
   typedef void (*tend_example)(vw& all, void* d, example& ec);
 
-  template<class T> learner<T>& init_learner();
-  template<class T> learner<T>& init_learner(T* dat, size_t params_per_weight);
-  template<class T> learner<T>& init_learner(T* dat, base_learner* base, size_t ws = 1);
+  template<class T> learner<T>& init_learner(T*, void (*)(T&, base_learner&, example&), size_t);
+  template<class T> 
+    learner<T>& init_learner(T*, base_learner*, void (*learn)(T&, base_learner&, example&), 
+			     void (*predict)(T&, base_learner&, example&), size_t ws = 1);
   
   template<class T>
     struct learner {
@@ -93,12 +89,6 @@ namespace LEARNER
 	learn_fd.learn_f(learn_fd.data, *learn_fd.base, ec);
 	ec.ft_offset -= (uint32_t)(increment*i);
       }
-      inline void set_learn(void (*u)(T& data, base_learner& base, example&))
-      {
-	learn_fd.learn_f = (tlearn)u;
-	learn_fd.update_f = (tlearn)u;
-      }
-      
       inline void predict(example& ec, size_t i=0) 
       { 
 	ec.ft_offset += (uint32_t)(increment*i);
@@ -118,14 +108,17 @@ namespace LEARNER
       { learn_fd.update_f = (tlearn)u; }
       
       //called anytime saving or loading needs to happen. Autorecursive.
-      inline void save_load(io_buf& io, bool read, bool text) { save_load_fd.save_load_f(save_load_fd.data, io, read, text); if (save_load_fd.base) save_load_fd.base->save_load(io, read, text); }
+      inline void save_load(io_buf& io, bool read, bool text) 
+      { save_load_fd.save_load_f(save_load_fd.data, io, read, text); 
+	if (save_load_fd.base) save_load_fd.base->save_load(io, read, text); }
       inline void set_save_load(void (*sl)(T&, io_buf&, bool, bool))
       { save_load_fd.save_load_f = (tsl)sl; 
 	save_load_fd.data = learn_fd.data; 
 	save_load_fd.base = learn_fd.base;}
       
       //called to clean up state.  Autorecursive.
-      void set_finish(void (*f)(T&)) { finisher_fd = tuple_dbf(learn_fd.data,learn_fd.base, (tfunc)f); }
+      void set_finish(void (*f)(T&)) 
+      { finisher_fd = tuple_dbf(learn_fd.data,learn_fd.base, (tfunc)f); }
       inline void finish() 
       { 
 	if (finisher_fd.data) 
@@ -155,63 +148,63 @@ namespace LEARNER
       { init_fd = tuple_dbf(learn_fd.data,learn_fd.base, (tfunc)f); }
       
       //called after learn example for each example.  Explicitly not recursive.
-      inline void finish_example(vw& all, example& ec) { finish_example_fd.finish_example_f(all, finish_example_fd.data, ec);}
+      inline void finish_example(vw& all, example& ec) 
+      { finish_example_fd.finish_example_f(all, finish_example_fd.data, ec);}
       void set_finish_example(void (*f)(vw& all, T&, example&))
       {finish_example_fd.data = learn_fd.data;
 	finish_example_fd.finish_example_f = (tend_example)f;}
       
-      friend learner<T>& init_learner<>();
-      friend learner<T>& init_learner<>(T* dat, size_t params_per_weight);
-      friend learner<T>& init_learner<>(T* dat, base_learner* base, size_t ws);
+      friend learner<T>& init_learner<>(T*, void (*learn)(T&, base_learner&, example&), size_t);
+      friend learner<T>& init_learner<>(T*, base_learner*, void (*l)(T&, base_learner&, example&), 
+					void (*pred)(T&, base_learner&, example&), size_t);
     };
   
-  template<class T> learner<T>& init_learner()
-    {
+  template<class T> 
+    learner<T>& init_learner(T* dat, void (*learn)(T&, base_learner&, example&), 
+			     size_t params_per_weight)
+    { // the constructor for all learning algorithms.
       learner<T>& ret = calloc_or_die<learner<T> >();
       ret.weights = 1;
-      ret.increment = 1;
-      ret.learn_fd = LEARNER::generic_learn_fd;
-      ret.finish_example_fd.data = NULL;
-      ret.finish_example_fd.finish_example_f = return_simple_example;
-      ret.end_pass_fd = LEARNER::generic_func_fd;
-      ret.end_examples_fd = LEARNER::generic_func_fd;
-      ret.init_fd = LEARNER::generic_func_fd;
-      ret.finisher_fd = LEARNER::generic_func_fd;
-      ret.save_load_fd = LEARNER::generic_save_load_fd;
-      return ret;
-    }
-  
-  template<class T> learner<T>& init_learner(T* dat, size_t params_per_weight)
-    { // the constructor for all learning algorithms.
-      learner<T>& ret = init_learner<T>();
+      ret.increment = params_per_weight;
+      ret.end_pass_fd.func = noop;
+      ret.end_examples_fd.func = noop;
+      ret.init_fd.func = noop;
+      ret.save_load_fd.save_load_f = noop_sl;
+      ret.finisher_fd.data = dat;
+      ret.finisher_fd.func = noop;
       
       ret.learn_fd.data = dat;
-      
-      ret.finisher_fd.data = dat;
-      ret.finisher_fd.base = NULL;
-      ret.finisher_fd.func = LEARNER::generic_func;
-      
-      ret.increment = params_per_weight;
+      ret.learn_fd.learn_f = (tlearn)learn;
+      ret.learn_fd.update_f = (tlearn)learn;
+      ret.learn_fd.predict_f = (tlearn)learn;
+      ret.finish_example_fd.data = dat;
+      ret.finish_example_fd.finish_example_f = return_simple_example;
+
       return ret;
     }
   
-  template<class T> learner<T>& init_learner(T* dat, base_learner* base, size_t ws = 1) 
+  template<class T> 
+    learner<T>& init_learner(T* dat, base_learner* base, 
+			     void (*learn)(T&, base_learner&, example&), 
+			     void (*predict)(T&, base_learner&, example&), size_t ws = 1) 
     { //the reduction constructor, with separate learn and predict functions
       learner<T>& ret = calloc_or_die<learner<T> >();
       ret = *(learner<T>*)base;
       
       ret.learn_fd.data = dat;
+      ret.learn_fd.learn_f = (tlearn)learn;
+      ret.learn_fd.update_f = (tlearn)learn;
+      ret.learn_fd.predict_f = (tlearn)predict;
       ret.learn_fd.base = base;
       
       ret.finisher_fd.data = dat;
       ret.finisher_fd.base = base;
-      ret.finisher_fd.func = LEARNER::generic_func;
+      ret.finisher_fd.func = noop;
       
       ret.weights = ws;
       ret.increment = base->increment * ret.weights;
       return ret;
     }
   
-  template<class T> base_learner* make_base(learner<T>& base)
-    { return (base_learner*)&base; }
+  template<class T> base_learner* make_base(learner<T>& base) { return (base_learner*)&base; }
 }

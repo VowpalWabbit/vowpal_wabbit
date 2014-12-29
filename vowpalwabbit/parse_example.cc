@@ -182,7 +182,7 @@ public:
               for (feature*f = feats->begin; f != feats->end; ++f) {
                 uint32_t id = f->weight_index;
                 size_t len = 2 + (feature_name.end-feature_name.begin) + 1 + (size_t)ceil(log10(id)) + 1;
-                char* str = (char*)calloc(len, sizeof(char));
+                char* str = calloc_or_die<char>(len);
                 str[0] = index;
                 str[1] = '_';
                 char *c = str+2;

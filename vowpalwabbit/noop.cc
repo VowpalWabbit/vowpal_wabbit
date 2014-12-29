@@ -7,10 +7,10 @@ license as described in the file LICENSE.
 
 #include "reductions.h"
 
-using namespace LEARNER;
-
 namespace NOOP {
-  base_learner* setup(vw& all, po::variables_map& vm)
+  void learn(char&, LEARNER::base_learner&, example&) {}
+  
+  LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description opts("Noop options");
     opts.add_options()
@@ -18,7 +18,6 @@ namespace NOOP {
     add_options(all, opts);
     if(!vm.count("noop"))
       return NULL;
-
-    return &init_learner<char>();
-  }
+    
+    return &LEARNER::init_learner<char>(NULL, learn, 1); }
 }

@@ -9,9 +9,6 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "vw.h"
 
-using namespace std;
-using namespace LEARNER;
-
 namespace OAA {
   struct oaa{
     size_t k;
@@ -20,7 +17,7 @@ namespace OAA {
   };
 
   template <bool is_learn>
-  void predict_or_learn(oaa& o, base_learner& base, example& ec) {
+  void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
     MULTICLASS::multiclass mc_label_data = ec.l.multi;
     if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
       cout << "label " << mc_label_data.label << " is not in {1,"<< o.k << "} This won't work right." << endl;
@@ -63,13 +60,9 @@ namespace OAA {
       o.all->print_text(o.all->raw_prediction, outputStringStream.str(), ec.tag);
   }
   
-  void finish_example(vw& all, oaa&, example& ec)
-  {
-    MULTICLASS::output_example(all, ec);
-    VW::finish_example(all, &ec);
-  }
+  void finish_example(vw& all, oaa&, example& ec) { MULTICLASS::finish_example(all, ec); }
 
-  base_learner* setup(vw& all, po::variables_map& vm)
+  LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description opts("One-against-all options");
     opts.add_options()
@@ -79,7 +72,6 @@ namespace OAA {
       return NULL;
     
     oaa& data = calloc_or_die<oaa>();
-
     data.k = vm["oaa"].as<size_t>();
     data.shouldOutput = all.raw_prediction > 0;
     data.all = &all;
@@ -87,11 +79,9 @@ namespace OAA {
     *all.file_options << " --oaa " << data.k;
     all.p->lp = MULTICLASS::mc_label;
 
-    learner<oaa>& l = init_learner(&data, all.l, data.k);
-    l.set_learn(predict_or_learn<true>);
-    l.set_predict(predict_or_learn<false>);
+    LEARNER::learner<oaa>& l = init_learner(&data, all.l, predict_or_learn<true>, 
+				   predict_or_learn<false>, data.k);
     l.set_finish_example(finish_example);
-
     return make_base(l);
   }
 }

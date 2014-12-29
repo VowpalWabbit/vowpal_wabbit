@@ -812,7 +812,7 @@ namespace KSVM
     string loss_function = "hinge";
     float loss_parameter = 0.0;
     delete all.loss;
-    all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
+    all.loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
     svm_params& params = calloc_or_die<svm_params>();
     params.model = &calloc_or_die<svm_model>();
@@ -900,8 +900,7 @@ namespace KSVM
     params.all->reg.weight_mask = (uint32_t)LONG_MAX;
     params.all->reg.stride_shift = 0;
     
-    learner<svm_params>& l = init_learner(&params, 1); 
-    l.set_learn(learn);
+    learner<svm_params>& l = init_learner(&params, learn, 1); 
     l.set_predict(predict);
     l.set_save_load(save_load);
     l.set_finish(finish);

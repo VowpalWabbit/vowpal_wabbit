@@ -21,9 +21,6 @@
 #include "network.h"
 #include "reductions.h"
 
-using namespace std;
-using namespace LEARNER;
-
 namespace SENDER {
   struct sender {
     io_buf* buf;
@@ -69,7 +66,7 @@ void receive_result(sender& s)
   return_simple_example(*(s.all), NULL, *ec);  
 }
 
-  void learn(sender& s, base_learner& base, example& ec) 
+  void learn(sender& s, LEARNER::base_learner& base, example& ec) 
   { 
     if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
       receive_result(s);
@@ -81,8 +78,7 @@ void receive_result(sender& s)
     s.delay_ring[s.sent_index++ % s.all->p->ring_size] = &ec;
   }
 
-  void finish_example(vw& all, sender&, example& ec)
-{}
+  void finish_example(vw& all, sender&, example& ec){}
 
 void end_examples(sender& s)
 {
@@ -100,9 +96,8 @@ void end_examples(sender& s)
     delete s.buf;
   }
 
-
-  base_learner* setup(vw& all, po::variables_map& vm)
-{
+  LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
+  {
   po::options_description opts("Sender options");
   opts.add_options()
     ("sendto", po::value< vector<string> >(), "send examples to <host>");
@@ -121,13 +116,10 @@ void end_examples(sender& s)
   s.all = &all;
   s.delay_ring = calloc_or_die<example*>(all.p->ring_size);
 
-  learner<sender>& l = init_learner(&s, 1);
-  l.set_learn(learn); 
-  l.set_predict(learn); 
+  LEARNER::learner<sender>& l = init_learner(&s, learn, 1);
   l.set_finish(finish);
   l.set_finish_example(finish_example); 
   l.set_end_examples(end_examples);
   return make_base(l);
 }
-
 }

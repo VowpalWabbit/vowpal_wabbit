@@ -18,7 +18,6 @@ license as described in the file LICENSE.
 #include <netdb.h>
 #include <strings.h>
 #endif
-#include <stdlib.h>
 #include <string.h>
 
 #include <string>

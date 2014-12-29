@@ -360,11 +360,7 @@ namespace ECT
     e.tournaments_won.delete_v();
   }
 
-  void finish_example(vw& all, ect&, example& ec)
-  {
-    MULTICLASS::output_example(all, ec);
-    VW::finish_example(all, &ec);
-  }
+  void finish_example(vw& all, ect&, example& ec) { MULTICLASS::finish_example(all, ec); }
   
   base_learner* setup(vw& all, po::variables_map& vm)
   {
@@ -393,9 +389,7 @@ namespace ECT
     size_t wpp = create_circuit(all, data, data.k, data.errors+1);
     data.all = &all;
     
-    learner<ect>& l = init_learner(&data, all.l, wpp);
-    l.set_learn(learn);
-    l.set_predict(predict);
+    learner<ect>& l = init_learner(&data, all.l, learn, predict, wpp);
     l.set_finish_example(finish_example);
     l.set_finish(finish);
 

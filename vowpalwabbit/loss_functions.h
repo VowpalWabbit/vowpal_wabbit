@@ -8,8 +8,7 @@ license as described in the file LICENSE.
 #include "parse_primitives.h"
 
 struct shared_data;
-
-using namespace std;
+struct vw;
 
 class loss_function {
 
@@ -34,4 +33,4 @@ public :
 	virtual ~loss_function() {};
 };
 
-loss_function* getLossFunction(void*, string funcName, float function_parameter = 0);
+loss_function* getLossFunction(vw&, std::string funcName, float function_parameter = 0);

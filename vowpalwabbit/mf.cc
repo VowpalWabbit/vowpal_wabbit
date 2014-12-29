@@ -209,9 +209,7 @@ void finish(mf& o) {
 
   all.random_positive_weights = true;
 
-  learner<mf>& l = init_learner(&data, all.l, 2*data.rank+1);
-  l.set_learn(learn);
-  l.set_predict(predict<false>);
+  learner<mf>& l = init_learner(&data, all.l, learn, predict<false>, 2*data.rank+1);
   l.set_finish(finish);
   return make_base(l);
 }

@@ -357,7 +357,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
                 << std::endl;
 
     n.finished_setup = false;
-    n.squared_loss = getLossFunction (0, "squared", 0);
+    n.squared_loss = getLossFunction (all, "squared", 0);
 
     n.xsubi = 0;
 
@@ -366,9 +366,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     n.save_xsubi = n.xsubi;
     n.increment = all.l->increment;//Indexing of output layer is odd.
-    learner<nn>& l = init_learner(&n,  all.l, n.k+1);
-    l.set_learn(predict_or_learn<true>);
-    l.set_predict(predict_or_learn<false>);
+    learner<nn>& l = init_learner(&n,  all.l, predict_or_learn<true>, 
+				  predict_or_learn<false>, n.k+1);
     l.set_finish(finish);
     l.set_finish_example(finish_example);
     l.set_end_pass(end_pass);
