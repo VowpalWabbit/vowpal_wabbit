@@ -56,9 +56,7 @@ namespace MULTICLASS {
     ld->weight = 1.;
   }
 
-  void delete_label(void* v)
-  {
-  }
+  void delete_label(void* v) {}
 
   void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
   {
@@ -145,32 +143,32 @@ namespace MULTICLASS {
   void output_example(vw& all, example& ec)
   {
     multiclass ld = ec.l.multi;
-
+    
     size_t loss = 1;
     if (ld.label == (uint32_t)ec.pred.multiclass)
       loss = 0;
-
+    
     if(ec.test_only)
-    {
-      all.sd->weighted_holdout_examples += ld.weight;//test weight seen
-      all.sd->weighted_holdout_examples_since_last_dump += ld.weight;
-      all.sd->weighted_holdout_examples_since_last_pass += ld.weight;
-      all.sd->holdout_sum_loss += loss;
-      all.sd->holdout_sum_loss_since_last_dump += loss;
-      all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass
-    }
+      {
+	all.sd->weighted_holdout_examples += ld.weight;//test weight seen
+	all.sd->weighted_holdout_examples_since_last_dump += ld.weight;
+	all.sd->weighted_holdout_examples_since_last_pass += ld.weight;
+	all.sd->holdout_sum_loss += loss;
+	all.sd->holdout_sum_loss_since_last_dump += loss;
+	all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass
+      }
     else
-    {
-      all.sd->weighted_examples += ld.weight;
-      all.sd->total_features += ec.num_features;
-      all.sd->sum_loss += loss;
-      all.sd->sum_loss_since_last_dump += loss;
-      all.sd->example_number++;
-    }
- 
+      {
+	all.sd->weighted_examples += ld.weight;
+	all.sd->total_features += ec.num_features;
+	all.sd->sum_loss += loss;
+	all.sd->sum_loss_since_last_dump += loss;
+	all.sd->example_number++;
+      }
+    
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
-
+    
     MULTICLASS::print_update(all, ec);
   }
 }

@@ -3,12 +3,6 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-
-#include <math.h>
-#include <iostream>
-#include <fstream>
-#include <float.h>
-#include <time.h>
 #ifdef _WIN32
 #include <WinSock2.h>
 #else
@@ -17,7 +11,6 @@ license as described in the file LICENSE.
 #endif
 #include <sys/timeb.h>
 #include "global_data.h"
-#include "parse_example.h"
 #include "parse_args.h"
 #include "accumulate.h"
 #include "best_constant.h"
@@ -44,9 +37,7 @@ int main(int argc, char *argv[])
         }
 
     VW::start_parser(*all);
-
     LEARNER::generic_driver(*all);
-
     VW::end_parser(*all);
 
     ftime(&t_end);

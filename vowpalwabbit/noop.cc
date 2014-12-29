@@ -7,11 +7,9 @@ license as described in the file LICENSE.
 
 #include "reductions.h"
 
-using namespace LEARNER;
-
 namespace NOOP {
-  void learn(char&, base_learner&, example&) {}
+  void learn(char&, LEARNER::base_learner&, example&) {}
 
-  base_learner* setup(vw& all)
-  { return &init_learner<char>(NULL, learn, 1); }
+  LEARNER::base_learner* setup(vw& all)
+  { return &LEARNER::init_learner<char>(NULL, learn, 1); }
 }

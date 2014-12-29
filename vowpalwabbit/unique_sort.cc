@@ -6,9 +6,7 @@ license as described in the file LICENSE.
 #include "global_data.h"
 
 int order_features(const void* first, const void* second)
-{
-  return ((feature*)first)->weight_index - ((feature*)second)->weight_index;
-}
+{ return ((feature*)first)->weight_index - ((feature*)second)->weight_index;}
 
 int order_audit_features(const void* first, const void* second)
 {

@@ -4,31 +4,23 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <float.h>
-#include <math.h>
-#include <stdio.h>
 #include <sstream>
-#include <numeric>
-#include <vector>
 #include <queue>
 
 #include "reductions.h"
 #include "vw.h"
 
-using namespace std;
-using namespace LEARNER;
-
-typedef pair<float, v_array<char> > scored_example;
-
-struct compare_scored_examples
-{
+namespace TOPK {
+  typedef pair<float, v_array<char> > scored_example;
+  
+  struct compare_scored_examples
+  {
     bool operator()(scored_example const& a, scored_example const& b) const
     {
-        return a.first > b.first;
+      return a.first > b.first;
     }
-};
-
-namespace TOPK {
-
+  };
+  
   struct topk{
     uint32_t B; //rec number
     priority_queue<scored_example, vector<scored_example>, compare_scored_examples > pr_queue;
@@ -85,7 +77,7 @@ namespace TOPK {
   }
 
   template <bool is_learn>
-  void predict_or_learn(topk& d, base_learner& base, example& ec)
+  void predict_or_learn(topk& d, LEARNER::base_learner& base, example& ec)
   {
     if (example_is_newline(ec)) return;//do not predict newline
 
@@ -102,7 +94,6 @@ namespace TOPK {
       d.pr_queue.pop();
       d.pr_queue.push(make_pair(ec.pred.scalar, ec.tag));
     }
-
   }
 
   void finish_example(vw& all, topk& d, example& ec)
@@ -111,16 +102,14 @@ namespace TOPK {
     VW::finish_example(all, &ec);
   }
 
-  base_learner* setup(vw& all, po::variables_map& vm)
+  LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
   {
     topk& data = calloc_or_die<topk>();
-
     data.B = (uint32_t)vm["top"].as<size_t>();
-
     data.all = &all;
 
-    learner<topk>& l = init_learner(&data, all.l, predict_or_learn<true>, 
-				    predict_or_learn<false>);
+    LEARNER::learner<topk>& l = init_learner(&data, all.l, predict_or_learn<true>, 
+					     predict_or_learn<false>);
     l.set_finish_example(finish_example);
 
     return make_base(l);

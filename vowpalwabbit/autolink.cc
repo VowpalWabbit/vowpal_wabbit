@@ -14,7 +14,6 @@ namespace ALINK {
   {
     base.predict(ec);
     float base_pred = ec.pred.scalar;
-
     // add features of label
     ec.indices.push_back(autolink_namespace);
     float sum_sq = 0;

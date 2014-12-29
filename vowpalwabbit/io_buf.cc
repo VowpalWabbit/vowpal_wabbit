@@ -3,10 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include <string.h>
-
 #include "io_buf.h"
-
 #ifdef WIN32
 #include <winsock2.h>
 #endif
@@ -110,20 +107,17 @@ void buf_write(io_buf &o, char* &pointer, size_t n)
 }
 
 bool io_buf::is_socket(int f)
-{
-  // this appears to work in practice, but could probably be done in a cleaner fashion
+{ // this appears to work in practice, but could probably be done in a cleaner fashion
   const int _nhandle = 32;
   return f >= _nhandle;
 }
 
 ssize_t io_buf::read_file_or_socket(int f, void* buf, size_t nbytes) {
 #ifdef _WIN32
-  if (is_socket(f)) {
+  if (is_socket(f)) 
     return recv(f, reinterpret_cast<char*>(buf), static_cast<int>(nbytes), 0);
-  }
-  else {
+  else 
     return _read(f, buf, (unsigned int)nbytes); 
-  }
 #else
   return read(f, buf, (unsigned int)nbytes); 
 #endif
@@ -132,12 +126,10 @@ ssize_t io_buf::read_file_or_socket(int f, void* buf, size_t nbytes) {
 ssize_t io_buf::write_file_or_socket(int f, const void* buf, size_t nbytes)
 {
 #ifdef _WIN32
-  if (is_socket(f)) {
+  if (is_socket(f)) 
     return send(f, reinterpret_cast<const char*>(buf), static_cast<int>(nbytes), 0);
-  }
-  else {
+  else 
     return _write(f, buf, (unsigned int)nbytes);
-  }
 #else
   return write(f, buf, (unsigned int)nbytes);
 #endif
@@ -146,12 +138,10 @@ ssize_t io_buf::write_file_or_socket(int f, const void* buf, size_t nbytes)
 void io_buf::close_file_or_socket(int f)
 {
 #ifdef _WIN32
-  if (io_buf::is_socket(f)) {
+  if (io_buf::is_socket(f)) 
     closesocket(f);
-  }
-  else {
+  else 
     _close(f);
-  }
 #else
   close(f);
 #endif
