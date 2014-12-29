@@ -61,10 +61,7 @@ namespace OAA {
   }
   
   void finish_example(vw& all, oaa&, example& ec)
-  {
-    MULTICLASS::output_example(all, ec);
-    VW::finish_example(all, &ec);
-  }
+  { MULTICLASS::finish_multiclass_example(all, ec); }
 
   LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
   {

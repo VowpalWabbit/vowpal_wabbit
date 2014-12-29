@@ -367,15 +367,10 @@ namespace CBIFY {
   void init_driver(cbify&) {}
 
   void finish_example(vw& all, cbify&, example& ec)
-  {
-    MULTICLASS::output_example(all, ec);
-    VW::finish_example(all, &ec);
-  }
+  { MULTICLASS::finish_multiclass_example(all, ec); }
 
   void finish(cbify& data)
-  {
-    CB::cb_label.delete_label(&data.cb_label);
-  }
+  { CB::cb_label.delete_label(&data.cb_label); }
 
   base_learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments

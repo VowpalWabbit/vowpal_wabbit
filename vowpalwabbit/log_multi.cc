@@ -497,10 +497,7 @@ namespace LOG_MULTI
   }
   
   void finish_example(vw& all, log_multi&, example& ec)
-  {
-    MULTICLASS::output_example(all, ec);
-    VW::finish_example(all, &ec);
-  }
+  { MULTICLASS::finish_multiclass_example(all, ec); }
   
   base_learner* setup(vw& all, po::variables_map& vm)	//learner setup
   {

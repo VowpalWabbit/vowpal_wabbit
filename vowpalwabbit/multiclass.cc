@@ -140,7 +140,7 @@ namespace MULTICLASS {
       }
   }
 
-  void output_example(vw& all, example& ec)
+  void finish_multiclass_example(vw& all, example& ec)
   {
     multiclass ld = ec.l.multi;
     
@@ -170,5 +170,6 @@ namespace MULTICLASS {
       all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
     
     MULTICLASS::print_update(all, ec);
+    VW::finish_example(all, &ec);
   }
 }
