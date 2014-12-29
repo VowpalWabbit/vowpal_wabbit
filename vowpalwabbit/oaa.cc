@@ -9,9 +9,6 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "vw.h"
 
-using namespace std;
-using namespace LEARNER;
-
 namespace OAA {
   struct oaa{
     size_t k;
@@ -20,7 +17,7 @@ namespace OAA {
   };
 
   template <bool is_learn>
-  void predict_or_learn(oaa& o, base_learner& base, example& ec) {
+  void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
     MULTICLASS::multiclass mc_label_data = ec.l.multi;
     if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
       cout << "label " << mc_label_data.label << " is not in {1,"<< o.k << "} This won't work right." << endl;
@@ -69,7 +66,7 @@ namespace OAA {
     VW::finish_example(all, &ec);
   }
 
-  base_learner* setup(vw& all, po::variables_map& vm)
+  LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
   {
     oaa& data = calloc_or_die<oaa>();
     data.k = vm["oaa"].as<size_t>();
@@ -79,10 +76,9 @@ namespace OAA {
     *all.file_options << " --oaa " << data.k;
     all.p->lp = MULTICLASS::mc_label;
 
-    learner<oaa>& l = init_learner(&data, all.l, predict_or_learn<true>, 
+    LEARNER::learner<oaa>& l = init_learner(&data, all.l, predict_or_learn<true>, 
 				   predict_or_learn<false>, data.k);
     l.set_finish_example(finish_example);
-
     return make_base(l);
   }
 }
