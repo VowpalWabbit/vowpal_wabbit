@@ -60,8 +60,7 @@ namespace OAA {
       o.all->print_text(o.all->raw_prediction, outputStringStream.str(), ec.tag);
   }
   
-  void finish_example(vw& all, oaa&, example& ec)
-  { MULTICLASS::finish_multiclass_example(all, ec); }
+  void finish_example(vw& all, oaa&, example& ec) { MULTICLASS::finish_example(all, ec); }
 
   LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
   {

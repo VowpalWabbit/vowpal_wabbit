@@ -366,8 +366,7 @@ namespace CBIFY {
   
   void init_driver(cbify&) {}
 
-  void finish_example(vw& all, cbify&, example& ec)
-  { MULTICLASS::finish_multiclass_example(all, ec); }
+  void finish_example(vw& all, cbify&, example& ec) { MULTICLASS::finish_example(all, ec); }
 
   void finish(cbify& data)
   { CB::cb_label.delete_label(&data.cb_label); }

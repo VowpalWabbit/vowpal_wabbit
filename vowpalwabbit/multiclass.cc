@@ -140,7 +140,7 @@ namespace MULTICLASS {
       }
   }
 
-  void finish_multiclass_example(vw& all, example& ec)
+  void finish_example(vw& all, example& ec)
   {
     multiclass ld = ec.l.multi;
     

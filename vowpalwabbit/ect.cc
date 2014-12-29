@@ -360,8 +360,7 @@ namespace ECT
     e.tournaments_won.delete_v();
   }
 
-  void finish_example(vw& all, ect&, example& ec)
-  { MULTICLASS::finish_multiclass_example(all, ec); }
+  void finish_example(vw& all, ect&, example& ec) { MULTICLASS::finish_example(all, ec); }
   
   base_learner* setup(vw& all, po::variables_map& vm)
   {
