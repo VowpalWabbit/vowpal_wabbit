@@ -72,7 +72,6 @@ namespace OAA {
   base_learner* setup(vw& all, po::variables_map& vm)
   {
     oaa& data = calloc_or_die<oaa>();
-
     data.k = vm["oaa"].as<size_t>();
     data.shouldOutput = all.raw_prediction > 0;
     data.all = &all;
