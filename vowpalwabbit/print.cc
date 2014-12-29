@@ -54,9 +54,7 @@ namespace PRINT
     all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
     all.reg.stride_shift = 0;
 
-    learner<print>& ret = init_learner(&p, 1);
-    ret.set_learn(learn);
-    ret.set_predict(learn);
+    learner<print>& ret = init_learner(&p, learn, 1);
     return make_base(ret);
   } 
 }

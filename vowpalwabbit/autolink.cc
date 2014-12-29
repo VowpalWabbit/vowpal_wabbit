@@ -49,9 +49,8 @@ namespace ALINK {
     
     *all.file_options << " --autolink " << data.d;
 
-    learner<autolink>& ret = init_learner(&data, all.l);
-    ret.set_learn(predict_or_learn<true>);
-    ret.set_predict(predict_or_learn<false>);
+    learner<autolink>& ret = init_learner(&data, all.l, predict_or_learn<true>, 
+					  predict_or_learn<false>);
     return make_base(ret);
   }
 }

@@ -119,9 +119,8 @@ namespace TOPK {
 
     data.all = &all;
 
-    learner<topk>& l = init_learner(&data, all.l);
-    l.set_learn(predict_or_learn<true>);
-    l.set_predict(predict_or_learn<false>);
+    learner<topk>& l = init_learner(&data, all.l, predict_or_learn<true>, 
+				    predict_or_learn<false>);
     l.set_finish_example(finish_example);
 
     return make_base(l);

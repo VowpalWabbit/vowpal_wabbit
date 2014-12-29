@@ -504,24 +504,24 @@ namespace LOG_MULTI
   
   base_learner* setup(vw& all, po::variables_map& vm)	//learner setup
   {
-    log_multi* data = (log_multi*)calloc(1, sizeof(log_multi));
+    log_multi& data = calloc_or_die<log_multi>();
 
     po::options_description opts("TXM Online options");
     opts.add_options()
       ("no_progress", "disable progressive validation")
-      ("swap_resistance", po::value<uint32_t>(&(data->swap_resist))->default_value(4), "higher = more resistance to swap, default=4");
+      ("swap_resistance", po::value<uint32_t>(&(data.swap_resist))->default_value(4), "higher = more resistance to swap, default=4");
     
     vm = add_options(all, opts);
     
-    data->k = (uint32_t)vm["log_multi"].as<size_t>();
-    *all.file_options << " --log_multi " << data->k;
+    data.k = (uint32_t)vm["log_multi"].as<size_t>();
+    *all.file_options << " --log_multi " << data.k;
     
     if (vm.count("no_progress"))
-      data->progress = false;
+      data.progress = false;
     else
-      data->progress = true;
+      data.progress = true;
 
-    data->all = &all;
+    data.all = &all;
     (all.p->lp) = MULTICLASS::mc_label;
     
     string loss_function = "quantile"; 
@@ -529,16 +529,14 @@ namespace LOG_MULTI
     delete(all.loss);
     all.loss = getLossFunction(&all, loss_function, loss_parameter);
 
-    data->max_predictors = data->k - 1;
+    data.max_predictors = data.k - 1;
 
-    learner<log_multi>& l = init_learner(data, all.l, data->max_predictors);
+    learner<log_multi>& l = init_learner(&data, all.l, learn, predict, data.max_predictors);
     l.set_save_load(save_load_tree);
-    l.set_learn(learn);
-    l.set_predict(predict);
     l.set_finish_example(finish_example);
     l.set_finish(finish);
     
-    init_tree(*data);	
+    init_tree(data);	
     
     return make_base(l);
   }	

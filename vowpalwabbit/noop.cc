@@ -10,8 +10,8 @@ license as described in the file LICENSE.
 using namespace LEARNER;
 
 namespace NOOP {
+  void learn(char&, base_learner&, example&) {}
+
   base_learner* setup(vw& all)
-  {
-    return new base_learner();
-  }
+  { return &init_learner<char>(NULL, learn, 1); }
 }

@@ -1981,9 +1981,9 @@ namespace Search {
 
     priv.start_clock_time = clock();
 
-    learner<search>& l = init_learner(&sch, all.l, priv.total_number_of_policies);
-    l.set_learn(search_predict_or_learn<true>);
-    l.set_predict(search_predict_or_learn<false>);
+    learner<search>& l = init_learner(&sch, all.l, search_predict_or_learn<true>, 
+				      search_predict_or_learn<false>, 
+				      priv.total_number_of_policies);
     l.set_finish_example(finish_example);
     l.set_end_examples(end_examples);
     l.set_finish(search_finish);

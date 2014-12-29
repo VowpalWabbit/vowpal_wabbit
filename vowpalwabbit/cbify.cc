@@ -409,9 +409,8 @@ namespace CBIFY {
 	  epsilon = vm["epsilon"].as<float>();
 	data.scorer.reset(new vw_cover_scorer(epsilon, cover, (u32)data.k));
 	data.generic_explorer.reset(new GenericExplorer<vw_context>(*data.scorer.get(), (u32)data.k));
-	l = &init_learner(&data, all.l, cover + 1);
-	l->set_learn(predict_or_learn_cover<true>);
-	l->set_predict(predict_or_learn_cover<false>);
+	l = &init_learner(&data, all.l, predict_or_learn_cover<true>, 
+			  predict_or_learn_cover<false>, cover + 1);
       }
     else if (vm.count("bag"))
       {
@@ -421,18 +420,16 @@ namespace CBIFY {
 	    data.policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
 	  }
 	data.bootstrap_explorer.reset(new BootstrapExplorer<vw_context>(data.policies, (u32)data.k));
-	l = &init_learner(&data, all.l, bags);
-	l->set_learn(predict_or_learn_bag<true>);
-	l->set_predict(predict_or_learn_bag<false>);
+	l = &init_learner(&data, all.l, predict_or_learn_bag<true>, 
+			  predict_or_learn_bag<false>, bags);
       }
     else if (vm.count("first") )
       {
 	uint32_t tau = (uint32_t)vm["first"].as<size_t>();
 	data.policy.reset(new vw_policy());
 	data.tau_explorer.reset(new TauFirstExplorer<vw_context>(*data.policy.get(), (u32)tau, (u32)data.k));
-	l = &init_learner(&data, all.l, 1);
-	l->set_learn(predict_or_learn_first<true>);
-	l->set_predict(predict_or_learn_first<false>);
+	l = &init_learner(&data, all.l, predict_or_learn_first<true>, 
+			  predict_or_learn_first<false>, 1);
       }
     else
       {
@@ -441,9 +438,8 @@ namespace CBIFY {
 	  epsilon = vm["epsilon"].as<float>();
 	data.policy.reset(new vw_policy());
 	data.greedy_explorer.reset(new EpsilonGreedyExplorer<vw_context>(*data.policy.get(), epsilon, (u32)data.k));
-	l = &init_learner(&data, all.l, 1);
-	l->set_learn(predict_or_learn_greedy<true>);
-	l->set_predict(predict_or_learn_greedy<false>);
+	l = &init_learner(&data, all.l, predict_or_learn_greedy<true>, 
+			  predict_or_learn_greedy<false>, 1);
       }
     
     l->set_finish_example(finish_example);

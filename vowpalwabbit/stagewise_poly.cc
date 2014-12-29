@@ -698,9 +698,7 @@ namespace StagewisePoly
     //following is so that saved models know to load us.
     *all.file_options << " --stage_poly";
 
-    learner<stagewise_poly>& l = init_learner(&poly, all.l);
-    l.set_learn(learn);
-    l.set_predict(predict);
+    learner<stagewise_poly>& l = init_learner(&poly, all.l, learn, predict);
     l.set_finish(finish);
     l.set_save_load(save_load);
     l.set_finish_example(finish_example);

@@ -280,9 +280,8 @@ namespace BS {
     data.pred_vec.reserve(data.B);
     data.all = &all;
 
-    learner<bs>& l = init_learner(&data, all.l, data.B);
-    l.set_learn(predict_or_learn<true>);
-    l.set_predict(predict_or_learn<false>);
+    learner<bs>& l = init_learner(&data, all.l, predict_or_learn<true>, 
+				  predict_or_learn<false>, data.B);
     l.set_finish_example(finish_example);
     l.set_finish(finish);
 
