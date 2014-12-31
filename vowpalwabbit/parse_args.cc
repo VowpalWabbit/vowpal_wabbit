@@ -784,38 +784,6 @@ void parse_reductions(vw& all, po::variables_map& vm)
   all.l = setup_base(all,vm);
 }
 
-void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
-{
-  if( vm.count("cb"))
-    {
-      if(!got_cs) {
-	if( vm.count("cb") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
-	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
-	
-	all.l = CSOAA::setup(all, vm);  // default to CSOAA unless wap is specified
-	got_cs = true;
-      }
-      
-      got_cb = true;
-    }
-
-  if (vm.count("cbify"))
-    {
-      if(!got_cs) {
-	vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
-	
-	all.l = CSOAA::setup(all, vm);  // default to CSOAA unless wap is specified
-	got_cs = true;
-      }
-      
-      if (!got_cb) {
-	vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
-	all.l = CB_ALGS::setup(all, vm);
-	got_cb = true;
-      }
-    }
-}
-
 void add_to_args(vw& all, int argc, char* argv[])
 {
   for (int i = 1; i < argc; i++)
@@ -924,12 +892,6 @@ vw* parse_args(int argc, char *argv[])
     }
 
   parse_output_preds(*all, vm);
-
-  bool got_cs = false;
-  
-  bool got_cb = false;
-  
-  parse_cb(*all, vm, got_cs, got_cb);
 
   if(vm.count("bootstrap"))
     all->l = BS::setup(*all, vm);

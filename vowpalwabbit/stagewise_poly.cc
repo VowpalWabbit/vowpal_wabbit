@@ -7,7 +7,7 @@
 #include "allreduce.h"
 #include "accumulate.h"
 #include "constant.h"
-#include "memory.h"
+#include "reductions.h"
 #include "vw.h"
 
 //#define MAGIC_ARGUMENT //MAY IT NEVER DIE
@@ -699,7 +699,7 @@ namespace StagewisePoly
     //following is so that saved models know to load us.
     *all.file_options << " --stage_poly";
 
-    learner<stagewise_poly>& l = init_learner(&poly, all.l, learn, predict);
+    learner<stagewise_poly>& l = init_learner(&poly, setup_base(all,vm), learn, predict);
     l.set_finish(finish);
     l.set_save_load(save_load);
     l.set_finish_example(finish_example);

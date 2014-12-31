@@ -389,7 +389,7 @@ namespace ECT
     size_t wpp = create_circuit(all, data, data.k, data.errors+1);
     data.all = &all;
     
-    learner<ect>& l = init_learner(&data, all.l, learn, predict, wpp);
+    learner<ect>& l = init_learner(&data, setup_base(all,vm), learn, predict, wpp);
     l.set_finish_example(finish_example);
     l.set_finish(finish);
 

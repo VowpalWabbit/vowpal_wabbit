@@ -169,15 +169,17 @@ namespace ACTIVE {
     if (vm.count("mellowness"))
       data.active_c0 = vm["mellowness"].as<float>();
 
+    base_learner* base = setup_base(all,vm);
+
     //Create new learner
     learner<active>* ret;
     if (vm.count("simulation"))
-      ret = &init_learner(&data, all.l, predict_or_learn_simulation<true>, 
+      ret = &init_learner(&data, base, predict_or_learn_simulation<true>, 
 			  predict_or_learn_simulation<false>);
     else
       {
 	all.active = true;
-	ret = &init_learner(&data, all.l, predict_or_learn_active<true>, 
+	ret = &init_learner(&data, base, predict_or_learn_active<true>, 
 			    predict_or_learn_active<false>);
 	ret->set_finish_example(return_active_example);
       }

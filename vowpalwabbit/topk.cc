@@ -16,9 +16,7 @@ namespace TOPK {
   struct compare_scored_examples
   {
     bool operator()(scored_example const& a, scored_example const& b) const
-    {
-      return a.first > b.first;
-    }
+    { return a.first > b.first; }
   };
   
   struct topk{
@@ -115,7 +113,7 @@ namespace TOPK {
     data.B = (uint32_t)vm["top"].as<size_t>();
     data.all = &all;
 
-    LEARNER::learner<topk>& l = init_learner(&data, all.l, predict_or_learn<true>, 
+    LEARNER::learner<topk>& l = init_learner(&data, setup_base(all,vm), predict_or_learn<true>, 
 					     predict_or_learn<false>);
     l.set_finish_example(finish_example);
 

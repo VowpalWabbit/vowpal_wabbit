@@ -52,7 +52,9 @@ namespace ALINK {
     
     *all.file_options << " --autolink " << data.d;
 
-    LEARNER::learner<autolink>& ret = init_learner(&data, all.l, predict_or_learn<true>, 
+    LEARNER::base_learner* base = setup_base(all,vm);
+
+    LEARNER::learner<autolink>& ret = init_learner(&data, base, predict_or_learn<true>, 
 					  predict_or_learn<false>);
     return make_base(ret);
   }

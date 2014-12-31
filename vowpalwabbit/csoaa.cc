@@ -86,7 +86,7 @@ namespace CSOAA {
     all.p->lp = cs_label;
     all.sd->k = nb_actions;
 
-    learner<csoaa>& l = init_learner(&c, all.l, predict_or_learn<true>, 
+    learner<csoaa>& l = init_learner(&c, setup_base(all,vm), predict_or_learn<true>, 
 				     predict_or_learn<false>, nb_actions);
     l.set_finish_example(finish_example);
     return make_base(l);
@@ -714,7 +714,7 @@ namespace LabelDict {
 
     ld.read_example_this_loop = 0;
     ld.need_to_clear = false;
-    learner<ldf>& l = init_learner(&ld, all.l, predict_or_learn<true>, predict_or_learn<false>);
+    learner<ldf>& l = init_learner(&ld, setup_base(all,vm), predict_or_learn<true>, predict_or_learn<false>);
     if (ld.is_singleline)
       l.set_finish_example(finish_singleline_example);
     else

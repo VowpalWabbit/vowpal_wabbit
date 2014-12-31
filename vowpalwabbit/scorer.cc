@@ -41,21 +41,22 @@ namespace Scorer {
     scorer& s = calloc_or_die<scorer>();
     s.all = &all;
 
+    LEARNER::base_learner* base = setup_base(all,vm);
     LEARNER::learner<scorer>* l; 
 
     string link = vm["link"].as<string>();
     if (!vm.count("link") || link.compare("identity") == 0)
-      l = &init_learner(&s, all.l, predict_or_learn<true, id>, predict_or_learn<false, id>);
+      l = &init_learner(&s, base, predict_or_learn<true, id>, predict_or_learn<false, id>);
     else if (link.compare("logistic") == 0)
       {
 	*all.file_options << " --link=logistic ";
-	l = &init_learner(&s, all.l, predict_or_learn<true, logistic>, 
+	l = &init_learner(&s, base, predict_or_learn<true, logistic>, 
 			  predict_or_learn<false, logistic>);
       }
     else if (link.compare("glf1") == 0)
       {
 	*all.file_options << " --link=glf1 ";
-	l = &init_learner(&s, all.l, predict_or_learn<true, glf1>, 
+	l = &init_learner(&s, base, predict_or_learn<true, glf1>, 
 			  predict_or_learn<false, glf1>);
       }
     else

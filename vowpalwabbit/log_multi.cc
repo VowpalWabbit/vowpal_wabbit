@@ -533,7 +533,7 @@ namespace LOG_MULTI
 
     data.max_predictors = data.k - 1;
 
-    learner<log_multi>& l = init_learner(&data, all.l, learn, predict, data.max_predictors);
+      learner<log_multi>& l = init_learner(&data, setup_base(all,vm), learn, predict, data.max_predictors);
     l.set_save_load(save_load_tree);
     l.set_finish_example(finish_example);
     l.set_finish(finish);

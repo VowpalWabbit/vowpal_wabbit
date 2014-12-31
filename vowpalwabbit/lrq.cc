@@ -251,7 +251,7 @@ namespace LRQ {
       cerr<<endl;
         
     all.wpp = all.wpp * (1 + maxk);
-    learner<LRQstate>& l = init_learner(&lrq, all.l, predict_or_learn<true>, 
+    learner<LRQstate>& l = init_learner(&lrq, setup_base(all,vm), predict_or_learn<true>, 
 					predict_or_learn<false>, 1 + maxk);
     l.set_end_pass(reset_seed);
 

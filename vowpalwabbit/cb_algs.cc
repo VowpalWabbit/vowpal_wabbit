@@ -496,6 +496,11 @@ namespace CB_ALGS
       *all.file_options << " --cb_type dr";
     }
 
+    if (!vm.count("csoaa"))
+      vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
+
+    base_learner* base = setup_base(all,vm);
+
     if (eval)
       all.p->lp = CB_EVAL::cb_eval; 
     else
@@ -504,12 +509,12 @@ namespace CB_ALGS
     learner<cb>* l;
     if (eval)
       {
-	l = &init_learner(&c, all.l, learn_eval, predict_eval, problem_multiplier);
+	l = &init_learner(&c, base, learn_eval, predict_eval, problem_multiplier);
 	l->set_finish_example(eval_finish_example); 
       }
     else
       {
-	l = &init_learner(&c, all.l, predict_or_learn<true>, predict_or_learn<false>, 
+	l = &init_learner(&c, base, predict_or_learn<true>, predict_or_learn<false>, 
 			  problem_multiplier);
 	l->set_finish_example(finish_example); 
       }

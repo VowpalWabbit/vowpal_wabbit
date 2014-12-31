@@ -39,7 +39,8 @@ LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
 
     //Create new learner
     LEARNER::learner<char>& ret = 
-      LEARNER::init_learner<char>(NULL, all.l, predict_or_learn<true>, predict_or_learn<false>);
+      LEARNER::init_learner<char>(NULL, setup_base(all,vm), 
+				  predict_or_learn<true>, predict_or_learn<false>);
     return make_base(ret);
   }
 }

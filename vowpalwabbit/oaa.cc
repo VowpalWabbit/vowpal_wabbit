@@ -79,7 +79,7 @@ namespace OAA {
     *all.file_options << " --oaa " << data.k;
     all.p->lp = MULTICLASS::mc_label;
 
-    LEARNER::learner<oaa>& l = init_learner(&data, all.l, predict_or_learn<true>, 
+    LEARNER::learner<oaa>& l = init_learner(&data, setup_base(all,vm), predict_or_learn<true>, 
 				   predict_or_learn<false>, data.k);
     l.set_finish_example(finish_example);
     return make_base(l);
