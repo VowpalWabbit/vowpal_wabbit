@@ -241,16 +241,19 @@ namespace BS {
 
   base_learner* setup(vw& all, po::variables_map& vm)
   {
+    po::options_description opts("Bootstrap options");
+    opts.add_options()
+      ("bootstrap,B", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
+      ("bs_type", po::value<string>(), "prediction type {mean,vote}");
+    
+    vm = add_options(all, opts);
+    if (!vm.count("bootstrap"))
+      return NULL;
+
+
     bs& data = calloc_or_die<bs>();
     data.ub = FLT_MAX;
     data.lb = -FLT_MAX;
-
-    po::options_description bs_options("Bootstrap options");
-    bs_options.add_options()
-      ("bs_type", po::value<string>(), "prediction type {mean,vote}");
-    
-    vm = add_options(all, bs_options);
-
     data.B = (uint32_t)vm["bootstrap"].as<size_t>();
 
     //append bs with number of samples to options_from_file so it is saved to regressor later

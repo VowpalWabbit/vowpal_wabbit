@@ -669,9 +669,10 @@ namespace StagewisePoly
 #endif //MAGIC_ARGUMENT
       ;
     vm = add_options(all, opts);
-    if (vm.count("stage_poly"))
+
+    if (!vm.count("stage_poly"))
       return NULL;
-    
+
     stagewise_poly& poly = calloc_or_die<stagewise_poly>();
     poly.all = &all;
     depthsbits_create(poly);

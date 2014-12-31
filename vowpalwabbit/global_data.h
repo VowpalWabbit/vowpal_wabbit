@@ -265,7 +265,7 @@ struct vw {
   size_t length () { return ((size_t)1) << num_bits; };
   uint32_t rank;
 
-  v_array<LEARNER::base_learner* (*)(vw& all, po::variables_map& vm)> reduction_stack;
+  v_array<LEARNER::base_learner* (*)(vw&, po::variables_map&)> reduction_stack;
 
   //Prediction output
   v_array<int> final_prediction_sink; // set to send global predictions to.

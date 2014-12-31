@@ -780,6 +780,7 @@ void parse_reductions(vw& all, po::variables_map& vm)
   all.reduction_stack.push_back(CB_ALGS::setup);
   all.reduction_stack.push_back(CBIFY::setup);
   all.reduction_stack.push_back(Search::setup);
+  all.reduction_stack.push_back(BS::setup);
 
   all.l = setup_base(all,vm);
 }
@@ -833,15 +834,9 @@ vw* parse_args(int argc, char *argv[])
     ("node", po::value<size_t>(&(all->node)),"node number in cluster parallel job")
     ;
 
-  po::options_description other_opt("Other options");
-  other_opt.add_options()
-    ("bootstrap,B", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
-    ;
-
   desc.add(update_opt)
     .add(weight_opt)
-    .add(cluster_opt)
-    .add(other_opt);
+    .add(cluster_opt);
 
   po::variables_map vm = add_options(*all, desc);
 
@@ -879,6 +874,8 @@ vw* parse_args(int argc, char *argv[])
 
   parse_output_model(*all, vm);
   
+  parse_reductions(*all, vm);
+
   if (!all->quiet)
     {
       cerr << "Num weight bits = " << all->num_bits << endl;
@@ -892,9 +889,6 @@ vw* parse_args(int argc, char *argv[])
     }
 
   parse_output_preds(*all, vm);
-
-  if(vm.count("bootstrap"))
-    all->l = BS::setup(*all, vm);
 
   load_input_model(*all, vm, io_temp);
 
@@ -1006,6 +1000,7 @@ namespace VW {
     all.p->parse_name.delete_v();
     free(all.p);
     free(all.sd);
+    all.reduction_stack.delete_v();
     delete all.file_options;
     for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
       if (all.final_prediction_sink[i] != 1)

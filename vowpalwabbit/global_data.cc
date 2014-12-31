@@ -247,6 +247,7 @@ vw::vw()
 
   reg_mode = 0;
   current_pass = 0;
+  reduction_stack=v_init<LEARNER::base_learner* (*)(vw&, po::variables_map&)>();
 
   data_filename = "";
 
