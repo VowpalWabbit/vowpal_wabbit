@@ -855,7 +855,7 @@ namespace Search {
     size_t sz  = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + sizeof(size_t) + condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(char));
     if (sz % 4 != 0) sz = 4 * (sz / 4 + 1); // make sure sz aligns to 4 so that uniform_hash does the right thing
 
-    unsigned char* item = &calloc_or_die<unsigned char>();
+    unsigned char* item = calloc_or_die<unsigned char>(sz);
     unsigned char* here = item;
     *here = (unsigned char)sz; here += sizeof(size_t);
     *here = mytag;             here += sizeof(ptag);
