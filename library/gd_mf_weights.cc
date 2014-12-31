@@ -52,12 +52,17 @@ int main(int argc, char *argv[])
   vw* model = VW::initialize(vwparams);
   model->audit = true;
 
+  string target("--rank ");
+  size_t loc = vwparams.find(target);
+  const char* location = vwparams.c_str()+loc+target.size();
+  size_t rank = atoi(location);
+  
   // global model params
   unsigned char left_ns = model->pairs[0][0];
   unsigned char right_ns = model->pairs[0][1];
   weight* weights = model->reg.weight_vector;
   size_t mask = model->reg.weight_mask;
-
+  
   // const char *filename = argv[0];
   FILE* file = fopen(infile.c_str(), "r");
   char* line = NULL;
@@ -86,7 +91,7 @@ int main(int argc, char *argv[])
 	      left_linear << f->feature << '\t' << weights[f->weight_index & mask];
 
 	      left_quadratic << f->feature;
-	      for (size_t k = 1; k <= model->rank; k++)
+	      for (size_t k = 1; k <= rank; k++)
 		left_quadratic << '\t' << weights[(f->weight_index + k) & mask];
 	    }
 	  left_linear << endl;
@@ -101,8 +106,8 @@ int main(int argc, char *argv[])
 	      right_linear << f->feature << '\t' << weights[f->weight_index & mask];
 
 	      right_quadratic << f->feature;
-	      for (size_t k = 1; k <= model->rank; k++)
-		right_quadratic << '\t' << weights[(f->weight_index + k + model->rank) & mask];
+	      for (size_t k = 1; k <= rank; k++)
+		right_quadratic << '\t' << weights[(f->weight_index + k + rank) & mask];
 	    }
 	  right_linear << endl;
 	  right_quadratic << endl;

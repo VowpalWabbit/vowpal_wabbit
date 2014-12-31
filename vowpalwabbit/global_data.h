@@ -263,7 +263,6 @@ struct vw {
   std::string span_server;
 
   size_t length () { return ((size_t)1) << num_bits; };
-  uint32_t rank;
 
   v_array<LEARNER::base_learner* (*)(vw&, po::variables_map&)> reduction_stack;
 

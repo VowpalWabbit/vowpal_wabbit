@@ -1956,7 +1956,10 @@ namespace Search {
     }
     all.p->emptylines_separate_examples = true;
 
-    if (!vm.count("csoaa") && !vm.count("csoaa_ldf") && !vm.count("wap_ldf") && !vm.count("cb"))
+    if (count(all.args.begin(), all.args.end(),"--csoaa") == 0 
+	&& count(all.args.begin(), all.args.end(),"--csoaa_ldf") == 0 
+	&& count(all.args.begin(), all.args.end(),"--wap_ldf") == 0 
+	&&  count(all.args.begin(), all.args.end(),"--cb") == 0)
       {
 	all.args.push_back("--csoaa");
 	stringstream ss;

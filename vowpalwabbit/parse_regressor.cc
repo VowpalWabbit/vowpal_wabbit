@@ -164,11 +164,6 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				"", read, 
 				"\n",1, text);
       
-      text_len = sprintf(buff, "rank:%d\n", (int)all.rank);
-      bin_text_read_write_fixed(model_file,(char*)&all.rank, sizeof(all.rank), 
-				"", read, 
-				buff,text_len, text);
-      
       text_len = sprintf(buff, "lda:%d\n", (int)all.lda);
       bin_text_read_write_fixed(model_file,(char*)&all.lda, sizeof(all.lda), 
 				"", read, 

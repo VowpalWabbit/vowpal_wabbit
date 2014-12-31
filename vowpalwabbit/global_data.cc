@@ -271,7 +271,6 @@ vw::vw()
   power_t = 0.5;
   eta = 0.5; //default learning rate for normalized adaptive updates, this is switched to 10 by default for the other updates (see parse_args.cc)
   numpasses = 1;
-  rank = 0;
 
   final_prediction_sink.begin = final_prediction_sink.end=final_prediction_sink.end_array = NULL;
   raw_prediction = -1;

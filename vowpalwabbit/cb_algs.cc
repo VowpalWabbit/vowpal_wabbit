@@ -496,7 +496,7 @@ namespace CB_ALGS
       *all.file_options << " --cb_type dr";
     }
 
-    if (!vm.count("csoaa"))
+    if (count(all.args.begin(), all.args.end(),"--csoaa") == 0)
       {
 	all.args.push_back("--csoaa");
 	stringstream ss;
@@ -524,7 +524,7 @@ namespace CB_ALGS
       }
     // preserve the increment of the base learner since we are
     // _adding_ to the number of problems rather than multiplying.
-    l->increment = all.l->increment; 
+    l->increment = base->increment; 
     
     l->set_init_driver(init_driver);
     l->set_finish(finish);

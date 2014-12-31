@@ -390,7 +390,7 @@ namespace CBIFY {
     data.k = (uint32_t)vm["cbify"].as<size_t>();
     *all.file_options << " --cbify " << data.k;
 
-    if (!vm.count("cb"))
+    if (count(all.args.begin(), all.args.end(),"--cb") == 0)
       {
 	all.args.push_back("--cb");
 	stringstream ss;

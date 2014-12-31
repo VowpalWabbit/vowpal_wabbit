@@ -884,8 +884,6 @@ vw* parse_args(int argc, char *argv[])
       cerr << "power_t = " << all->power_t << endl;
       if (all->numpasses > 1)
 	cerr << "decay_learning_rate = " << all->eta_decay_rate << endl;
-      if (all->rank > 0)
-	cerr << "rank = " << all->rank << endl;
     }
 
   parse_output_preds(*all, vm);
