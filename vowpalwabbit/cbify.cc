@@ -391,7 +391,12 @@ namespace CBIFY {
     *all.file_options << " --cbify " << data.k;
 
     if (!vm.count("cb"))
-      vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
+      {
+	all.args.push_back("--cb");
+	stringstream ss;
+	ss << vm["cbify"].as<size_t>();
+	all.args.push_back(ss.str());
+      }
     base_learner* base = setup_base(all,vm);
     
     all.p->lp = MULTICLASS::mc_label;

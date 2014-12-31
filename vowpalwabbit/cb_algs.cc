@@ -497,10 +497,14 @@ namespace CB_ALGS
     }
 
     if (!vm.count("csoaa"))
-      vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
+      {
+	all.args.push_back("--csoaa");
+	stringstream ss;
+	ss << vm["cb"].as<size_t>();
+	all.args.push_back(ss.str());
+      }
 
     base_learner* base = setup_base(all,vm);
-
     if (eval)
       all.p->lp = CB_EVAL::cb_eval; 
     else

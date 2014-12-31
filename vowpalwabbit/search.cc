@@ -1956,6 +1956,15 @@ namespace Search {
     }
     all.p->emptylines_separate_examples = true;
 
+    if (!vm.count("csoaa") && !vm.count("csoaa_ldf") && !vm.count("wap_ldf") && !vm.count("cb"))
+      {
+	all.args.push_back("--csoaa");
+	stringstream ss;
+	ss << vm["search"].as<size_t>();
+	all.args.push_back(ss.str());
+      }
+    base_learner* base = setup_base(all,vm);
+    
     // default to OAA labels unless the task wants to override this (which they can do in initialize)
     all.p->lp = MC::mc_label;
     if (priv.task)
@@ -1982,10 +1991,6 @@ namespace Search {
 
     priv.start_clock_time = clock();
 
-    if (!vm.count("csoaa") && !vm.count("csoaa_ldf") && !vm.count("wap_ldf") && !vm.count("cb"))
-      vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
-    base_learner* base = setup_base(all,vm);
-    
     learner<search>& l = init_learner(&sch, base, 
 				      search_predict_or_learn<true>, 
 				      search_predict_or_learn<false>, 
