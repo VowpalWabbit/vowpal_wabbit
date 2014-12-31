@@ -30,9 +30,6 @@ namespace CB_ALGS
     float last_pred_reg;
     float last_correct_cost;
     
-    float min_cost;
-    float max_cost;
-
     cb_class* known_cost;
     vw* all;
   };
@@ -245,70 +242,12 @@ namespace CB_ALGS
 	gen_cs_label<is_learn>(all, c, ec, cs_ld, cl->action);
   }
 
-  void cb_test_to_cs_test_label(vw& all, example& ec, COST_SENSITIVE::label& cs_ld)
-  {
-    CB::label ld = ec.l.cb;
-
-    cs_ld.costs.erase();
-    if(ld.costs.size() > 0)
-    {
-      //if this is a test example and we specified actions, this means we are only allowed to perform these actions, so copy all actions with their specified costs
-      for( cb_class* cl = ld.costs.begin; cl != ld.costs.end; cl++)
-      {
-        COST_SENSITIVE::wclass wc;
-        wc.wap_value = 0.;
-
-        wc.x = cl->cost;
-        wc.class_index = cl->action;
-        wc.partial_prediction = 0.;
-        wc.wap_value = 0.;
-        
-        cs_ld.costs.push_back(wc);
-      }
-    }
-    else
-      {
-	for (uint32_t i = 0; i < all.sd->k; i++)
-	  {
-	    COST_SENSITIVE::wclass wc;
-	    wc.wap_value = 0.;
-	    
-	    wc.x = FLT_MAX;
-	    wc.class_index = i+1;
-	    wc.partial_prediction = 0.;
-	    wc.wap_value = 0.;
-	    
-	    cs_ld.costs.push_back(wc);
-	  }
-      }
-  }
-
   template <bool is_learn>
   void predict_or_learn(cb& c, base_learner& base, example& ec) {
     vw* all = c.all;
     CB::label ld = ec.l.cb;
 
-     //check if this is a test example where we just want a prediction
-    if( !is_learn )
-    {
-      //if so just query base cost-sensitive learner
-      cb_test_to_cs_test_label(*all,ec,c.cb_cs_ld);
-
-      ec.l.cs = c.cb_cs_ld;
-      base.predict(ec);
-      for (size_t i=0; i<ld.costs.size(); i++)
-        ld.costs[i].partial_prediction = c.cb_cs_ld.costs[i].partial_prediction;
-
-      ec.l.cb = ld;
-
-      return;
-    }
-
-    //now this is a training example
-    c.known_cost = get_observed_cost(ld);
-    c.min_cost = min (c.min_cost, c.known_cost->cost);
-    c.max_cost = max (c.max_cost, c.known_cost->cost);
-    
+    c.known_cost = get_observed_cost(ld);    
     //generate a cost-sensitive example to update classifiers
     switch(c.cb_type)
     {
@@ -510,8 +449,6 @@ namespace CB_ALGS
 
     cb& c = calloc_or_die<cb>();
     c.all = &all;
-    c.min_cost = 0.;
-    c.max_cost = 1.;
 
     uint32_t nb_actions = (uint32_t)vm["cb"].as<size_t>();
 
