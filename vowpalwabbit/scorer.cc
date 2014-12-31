@@ -63,6 +63,8 @@ namespace Scorer {
 	cerr << "Unknown link function: " << link << endl;
 	throw exception();
       }
-    return make_base(*l);
+    all.scorer = make_base(*l);
+    
+    return all.scorer;
   }
 }

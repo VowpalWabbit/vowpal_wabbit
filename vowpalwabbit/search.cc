@@ -12,9 +12,8 @@ license as described in the file LICENSE.
 #include "rand48.h"
 #include "cost_sensitive.h"
 #include "multiclass.h"
-#include "memory.h"
 #include "constant.h"
-#include "example.h"
+#include "reductions.h"
 #include "cb.h"
 #include "gd.h" // for GD::foreach_feature
 #include <math.h>
@@ -1987,7 +1986,8 @@ namespace Search {
       vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
     base_learner* base = setup_base(all,vm);
     
-    learner<search>& l = init_learner(&sch, all.l, search_predict_or_learn<true>, 
+    learner<search>& l = init_learner(&sch, base, 
+				      search_predict_or_learn<true>, 
 				      search_predict_or_learn<false>, 
 				      priv.total_number_of_policies);
     l.set_finish_example(finish_example);

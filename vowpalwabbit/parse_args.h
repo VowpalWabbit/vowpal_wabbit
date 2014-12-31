@@ -7,4 +7,4 @@ license as described in the file LICENSE.
 #include "global_data.h"
 
 vw* parse_args(int argc, char *argv[]);
-LEARNER::base_learner* setup_next(vw& all, po::variables_map& vm);
+LEARNER::base_learner* setup_base(vw& all, po::variables_map& vm);

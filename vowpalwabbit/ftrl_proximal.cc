@@ -179,27 +179,21 @@ namespace FTRL {
   
   base_learner* setup(vw& all, po::variables_map& vm) 
   {
+    po::options_description opts("FTRL options");
+    opts.add_options()
+      ("ftrl", "Follow the Regularized Leader")
+      ("ftrl_alpha", po::value<float>()->default_value(0.0), "Learning rate for FTRL-proximal optimization")
+      ("ftrl_beta", po::value<float>()->default_value(0.1), "FTRL beta")
+      ("progressive_validation", po::value<string>()->default_value("ftrl.evl"), "File to record progressive validation for ftrl-proximal");
+    vm = add_options(all, opts);
+    
+    if (!vm.count("ftrl"))
+      return NULL;
+    
     ftrl& b = calloc_or_die<ftrl>();
     b.all = &all;
-    b.ftrl_beta = 0.0;
-    b.ftrl_alpha = 0.1;
-
-    po::options_description ftrl_opts("FTRL options");
-
-    ftrl_opts.add_options()
-                ("ftrl_alpha", po::value<float>(&(b.ftrl_alpha)), "Learning rate for FTRL-proximal optimization")
-                ("ftrl_beta", po::value<float>(&(b.ftrl_beta)), "FTRL beta")
-                ("progressive_validation", po::value<string>()->default_value("ftrl.evl"), "File to record progressive validation for ftrl-proximal");
-
-    vm = add_options(all, ftrl_opts);
-
-    if (vm.count("ftrl_alpha")) {
-        b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
-    }
-
-    if (vm.count("ftrl_beta")) {
-        b.ftrl_beta = vm["ftrl_beta"].as<float>();
-    }
+    b.ftrl_beta = vm["ftrl_beta"].as<float>();
+    b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
 
     all.reg.stride_shift = 2; // NOTE: for more parameter storage
     

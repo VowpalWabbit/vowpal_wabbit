@@ -715,14 +715,6 @@ void parse_output_model(vw& all, po::variables_map& vm)
     all.save_resume = true;
 }
 
-void parse_base_algorithm(vw& all, po::variables_map& vm)
-{
-  //      all.l = GD::setup(all, vm);
-  all.scorer = all.l;
-  if (vm.count("ftrl"))
-    all.l = FTRL::setup(all, vm);
-}
-
 void load_input_model(vw& all, po::variables_map& vm, io_buf& io_temp)
 {
   // Need to see if we have to load feature mask first or second.
@@ -750,7 +742,7 @@ LEARNER::base_learner* setup_base(vw& all, po::variables_map& vm)
 {
   LEARNER::base_learner* ret = all.reduction_stack.pop()(all,vm);
   if (ret == NULL)
-    return setup_next(all,vm);
+    return setup_base(all,vm);
   else 
     return ret;
 }
@@ -919,8 +911,6 @@ vw* parse_args(int argc, char *argv[])
 
   parse_output_model(*all, vm);
   
-  parse_base_algorithm(*all, vm);
-
   if (!all->quiet)
     {
       cerr << "Num weight bits = " << all->num_bits << endl;
