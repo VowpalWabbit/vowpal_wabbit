@@ -11,8 +11,6 @@ license as described in the file LICENSE.
 #include "parse_primitives.h"
 #include "hash.h"
 
-using namespace std;
-
 void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty)
 {
   ret.erase();
@@ -53,17 +51,15 @@ size_t hashstring (substring s, uint32_t h)
 }
 
 size_t hashall (substring s, uint32_t h)
-{
-  return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h);
-}
+{ return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h); }
 
-hash_func_t getHasher(const string& s){
+hash_func_t getHasher(const std::string& s){
   if (s=="strings")
     return hashstring;
   else if(s=="all")
     return hashall;
   else{
-    cerr << "Unknown hash function: " << s.c_str() << ". Exiting " << endl;
-    throw exception();
+    std::cerr << "Unknown hash function: " << s.c_str() << ". Exiting " << std::endl;
+    throw std::exception();
   }
 }

@@ -15,8 +15,6 @@ char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 {
   ld->label = *(float *)c;
   c += sizeof(ld->label);
-  if (sd->binary_label && fabs(ld->label) != 1.f && ld->label != FLT_MAX)
-    cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
   ld->weight = *(float *)c;
   c += sizeof(ld->weight);
   ld->initial = *(float *)c;
@@ -98,9 +96,6 @@ void parse_simple_label(parser* p, shared_data* sd, void* v, v_array<substring>&
     cerr << "malformed example!\n";
     cerr << "words.size() = " << words.size() << endl;
   }
-  if (words.size() > 0 && sd->binary_label && fabs(ld->label) != 1.f)
-    cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
-
   count_label(ld->label);
 }
 

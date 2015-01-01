@@ -24,7 +24,7 @@ namespace CSOAA {
   };
 
   template <bool is_learn>
-  void predict_or_learn(csoaa& c, learner& base, example& ec) {
+  void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
     vw* all = c.all;
     COST_SENSITIVE::label ld = ec.l.cs;
     uint32_t prediction = 1;
@@ -68,28 +68,24 @@ namespace CSOAA {
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all, po::variables_map& vm)
   {
-    csoaa* c=(csoaa*)calloc_or_die(1,sizeof(csoaa));
-    c->all = &all;
+    csoaa& c = calloc_or_die<csoaa>();
+    c.all = &all;
     //first parse for number of actions
     uint32_t nb_actions = 0;
 
     nb_actions = (uint32_t)vm["csoaa"].as<size_t>();
-
     //append csoaa with nb_actions to file_options so it is saved to regressor later
-    std::stringstream ss;
-    ss << " --csoaa " << nb_actions;
-    all.file_options.append(ss.str());
+    *all.file_options << " --csoaa " << nb_actions;
 
     all.p->lp = cs_label;
     all.sd->k = nb_actions;
 
-    learner* l = new learner(c, all.l, nb_actions);
-    l->set_learn<csoaa, predict_or_learn<true> >();
-    l->set_predict<csoaa, predict_or_learn<false> >();
-    l->set_finish_example<csoaa,finish_example>();
-    return l;
+    learner<csoaa>& l = init_learner(&c, all.l, predict_or_learn<true>, 
+				     predict_or_learn<false>, nb_actions);
+    l.set_finish_example(finish_example);
+    return make_base(l);
   }
 }
 
@@ -107,7 +103,7 @@ namespace CSOAA_AND_WAP_LDF {
     float csoaa_example_t;
     vw* all;
 
-    learner* base;
+    base_learner* base;
   };
 
 namespace LabelDict { 
@@ -296,7 +292,7 @@ namespace LabelDict {
     ec->indices.decr();
   }
 
-  void make_single_prediction(ldf& data, learner& base, example& ec) {
+  void make_single_prediction(ldf& data, base_learner& base, example& ec) {
     COST_SENSITIVE::label ld = ec.l.cs;
     label_data simple_label;
     simple_label.initial = 0.;
@@ -335,7 +331,7 @@ namespace LabelDict {
     return isTest;
   }
 
-  void do_actual_learning_wap(vw& all, ldf& data, learner& base, size_t start_K)
+  void do_actual_learning_wap(vw& all, ldf& data, base_learner& base, size_t start_K)
   {
     size_t K = data.ec_seq.size();
     vector<COST_SENSITIVE::wclass*> all_costs;
@@ -390,7 +386,7 @@ namespace LabelDict {
     }
   }
 
-  void do_actual_learning_oaa(vw& all, ldf& data, learner& base, size_t start_K)
+  void do_actual_learning_oaa(vw& all, ldf& data, base_learner& base, size_t start_K)
   {
     size_t K = data.ec_seq.size();
     float  min_cost  = FLT_MAX;
@@ -443,7 +439,7 @@ namespace LabelDict {
   }
 
   template <bool is_learn>
-  void do_actual_learning(vw& all, ldf& data, learner& base)
+  void do_actual_learning(vw& all, ldf& data, base_learner& base)
   {
     //cdbg << "do_actual_learning size=" << data.ec_seq.size() << endl;
     if (data.ec_seq.size() <= 0) return;  // nothing to do
@@ -616,7 +612,7 @@ namespace LabelDict {
   }
 
   template <bool is_learn>
-  void predict_or_learn(ldf& data, learner& base, example &ec) {
+  void predict_or_learn(ldf& data, base_learner& base, example &ec) {
     vw* all = data.all;
     data.base = &base;
     bool is_test_ec = COST_SENSITIVE::example_is_test(ec);
@@ -649,7 +645,7 @@ namespace LabelDict {
     }
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all, po::variables_map& vm)
   {
     po::options_description ldf_opts("LDF Options");
     ldf_opts.add_options()
@@ -658,24 +654,22 @@ namespace LabelDict {
 
     vm = add_options(all, ldf_opts);
     
-    ldf* ld = (ldf*)calloc_or_die(1, sizeof(ldf));
+    ldf& ld = calloc_or_die<ldf>();
 
-    ld->all = &all;
-    ld->need_to_clear = true;
-    ld->first_pass = true;
+    ld.all = &all;
+    ld.need_to_clear = true;
+    ld.first_pass = true;
  
     string ldf_arg;
 
     if( vm.count("csoaa_ldf") ){
       ldf_arg = vm["csoaa_ldf"].as<string>();
-      all.file_options.append(" --csoaa_ldf ");
-      all.file_options.append(ldf_arg);
+      *all.file_options << " --csoaa_ldf " << ldf_arg;
     }
     else {
       ldf_arg = vm["wap_ldf"].as<string>();
-      ld->is_wap = true;
-      all.file_options.append(" --wap_ldf ");
-      all.file_options.append(ldf_arg);
+      ld.is_wap = true;
+      *all.file_options << " --wap_ldf " << ldf_arg;
     }
     if ( vm.count("ldf_override") )
       ldf_arg = vm["ldf_override"].as<string>();
@@ -684,47 +678,45 @@ namespace LabelDict {
 
     all.sd->k = (uint32_t)-1;
 
-    ld->treat_as_classifier = false;
-    ld->is_singleline = false;
+    ld.treat_as_classifier = false;
+    ld.is_singleline = false;
     if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0) {
-      ld->treat_as_classifier = false;
+      ld.treat_as_classifier = false;
     } else if (ldf_arg.compare("multiline-classifier") == 0 || ldf_arg.compare("mc") == 0) {
-      ld->treat_as_classifier = true;
+      ld.treat_as_classifier = true;
     } else {
       if (all.training) {
         cerr << "ldf requires either m/multiline or mc/multiline-classifier, except in test-mode which can be s/sc/singleline/singleline-classifier" << endl;
         throw exception();
       }
       if (ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0) {
-        ld->treat_as_classifier = false;
-        ld->is_singleline = true;
+        ld.treat_as_classifier = false;
+        ld.is_singleline = true;
       } else if (ldf_arg.compare("singleline-classifier") == 0 || ldf_arg.compare("sc") == 0) {
-        ld->treat_as_classifier = true;
-        ld->is_singleline = true;
+        ld.treat_as_classifier = true;
+        ld.is_singleline = true;
       }
     }
 
-    all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld->is_singleline;
+    all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld.is_singleline;
 
     if (all.add_constant) {
       all.add_constant = false;
     }
-    ld->label_features.init(256, v_array<feature>(), LabelDict::size_t_eq);
-    ld->label_features.get(1, 94717244); // TODO: figure this out
+    ld.label_features.init(256, v_array<feature>(), LabelDict::size_t_eq);
+    ld.label_features.get(1, 94717244); // TODO: figure this out
 
-    ld->read_example_this_loop = 0;
-    ld->need_to_clear = false;
-    learner* l = new learner(ld, all.l);
-    l->set_learn<ldf, predict_or_learn<true> >();
-    l->set_predict<ldf, predict_or_learn<false> >();
-    if (ld->is_singleline)
-      l->set_finish_example<ldf,finish_singleline_example>();
+    ld.read_example_this_loop = 0;
+    ld.need_to_clear = false;
+    learner<ldf>& l = init_learner(&ld, all.l, predict_or_learn<true>, predict_or_learn<false>);
+    if (ld.is_singleline)
+      l.set_finish_example(finish_singleline_example);
     else
-      l->set_finish_example<ldf,finish_multiline_example>();
-    l->set_finish<ldf,finish>();
-    l->set_end_examples<ldf,end_examples>(); 
-    l->set_end_pass<ldf,end_pass>();
-    return l;
+      l.set_finish_example(finish_multiline_example);
+    l.set_finish(finish);
+    l.set_end_examples(end_examples); 
+    l.set_end_pass(end_pass);
+    return make_base(l);
   }
 
   void global_print_newline(vw& all)

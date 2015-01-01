@@ -1,38 +1,16 @@
-#!/bin/sh
+#!/bin/bash
 # -- vw daemon test
 #
 NAME='vw-daemon-test'
 
-# This is a ugly hack:
-# Travis doesn't like this test, possibly because of firewall rules
-# on the travis-ci env, so don't bother running it on travis machines.
-HOSTNAME=`hostname`
-case $HOSTNAME in
-    *worker-linux*|*travis-ci.org)
-        # Don't generate anything to STDERR or it'll fail
-        : "travis host: $HOSTNAME detected, skipping test: $0"
-        echo "$NAME: OK"
-        exit 0
-        ;;
-esac
-
 export PATH="vowpalwabbit:../vowpalwabbit:${PATH}"
 # The VW under test
 VW=`which vw`
-#
-# VW=vw-7.20140627    Good
-# VW=vw-7.20140709    Bad
-#
-#   7e138ac19bb3e4be88201d521249d87f52e378f3    BAD
-#   cad00a0dd558a34f210b712b34da26e31374b8b9    GOOD
-#
-
 
 MODEL=$NAME.model
 TRAINSET=$NAME.train
 PREDREF=$NAME.predref
 PREDOUT=$NAME.predict
-LOCALHOST=0
 PORT=54248
 
 # -- make sure we can find vw first
@@ -87,8 +65,8 @@ stop_daemon() {
 start_daemon() {
     # echo starting daemon
     $DaemonCmd </dev/null >/dev/null &
-    # give vw some time to load the model and be ready
-    mysleep 0.05
+    # give it time to be ready
+    wait; wait; wait
 }
 
 cleanup() {
@@ -116,18 +94,20 @@ $VW -b 10 --quiet -d $TRAINSET -f $MODEL
 
 start_daemon
 
-# Test on train-set, gnu netcat returns immediately, but OpenBSD netcat
-# hangs unless we use '-q 0' (which is GNU netcat incompatible)
-# Hacky solution is to start netcat in the background and wait for
-# it to output two lines.
-touch $PREDOUT      # must exist
-$NETCAT -n $LOCALHOST $PORT < $TRAINSET >> $PREDOUT &
-
+# Test on train-set
+# OpenBSD netcat quits immediately after stdin EOF
+# nc.traditional does not, so let's use -q 1.
+#$NETCAT -q 1 localhost $PORT < $TRAINSET > $PREDOUT
+#wait
+# However, GNU netcat does not know -q, so let's do a work-around
+touch $PREDOUT
+$NETCAT localhost $PORT < $TRAINSET > $PREDOUT &
 # Wait until we recieve a prediction from the vw daemon then kill netcat
-until [ `wc -l < $PREDOUT` -eq 2 ]; do mysleep 0.05; done
+until [ `wc -l < $PREDOUT` -eq 2 ]; do :; done
 $PKILL -9 $NETCAT
 
-diff $PREDREF $PREDOUT
+# We should ignore small (< $Epsilon) floating-point differences (fuzzy compare)
+diff <(cut -c-5 $PREDREF) <(cut -c-5 $PREDOUT)
 case $? in
     0)  echo "$NAME: OK"
         cleanup

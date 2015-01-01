@@ -4,14 +4,9 @@
 #include "float.h"
 #include "reductions.h"
 
-using namespace LEARNER;
-
 namespace PRINT
 {
-  struct print{
-    vw* all;
-    
-  };
+  struct print{ vw* all; };
 
   void print_feature(vw& all, float value, float& weight)
   {
@@ -23,7 +18,7 @@ namespace PRINT
     cout << " ";
   }
 
-  void learn(print& p, learner& base, example& ec)
+  void learn(print& p, LEARNER::base_learner& base, example& ec)
   {
     label_data& ld = ec.l.simple;
     if (ld.label != FLT_MAX)
@@ -46,17 +41,15 @@ namespace PRINT
     cout << endl;
   }
   
-  learner* setup(vw& all)
+  LEARNER::base_learner* setup(vw& all)
   {
-    print* p = (print*)calloc_or_die(1, sizeof(print));
-    p->all = &all;
+    print& p = calloc_or_die<print>();
+    p.all = &all;
     size_t length = ((size_t)1) << all.num_bits;
     all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
     all.reg.stride_shift = 0;
 
-    learner* ret = new learner(p, 1);
-    ret->set_learn<print,learn>();
-    ret->set_predict<print,learn>();
-    return ret;
+    LEARNER::learner<print>& ret = init_learner(&p, learn, 1);
+    return make_base(ret);
   } 
 }

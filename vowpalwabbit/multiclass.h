@@ -18,7 +18,7 @@ namespace MULTICLASS
   
   extern label_parser mc_label;
   
-  void output_example(vw& all, example& ec);
+  void finish_example(vw& all, example& ec);
 
   inline int label_is_test(multiclass* ld)
   { return ld->label == (uint32_t)-1; }

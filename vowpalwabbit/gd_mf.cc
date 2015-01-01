@@ -272,14 +272,14 @@ void mf_train(vw& all, example& ec)
     all->current_pass++;
   }
 
-  void predict(gdmf& d, learner& base, example& ec)
+  void predict(gdmf& d, base_learner& base, example& ec)
   {
     vw* all = d.all;
  
     mf_predict(*all,ec);
   }
 
-  void learn(gdmf& d, learner& base, example& ec)
+  void learn(gdmf& d, base_learner& base, example& ec)
   {
     vw* all = d.all;
  
@@ -288,10 +288,10 @@ void mf_train(vw& all, example& ec)
       mf_train(*all, ec);
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all, po::variables_map& vm)
   {
-    gdmf* data = (gdmf*)calloc_or_die(1,sizeof(gdmf)); 
-    data->all = &all;
+    gdmf& data = calloc_or_die<gdmf>(); 
+    data.all = &all;
 
     // store linear + 2*rank weights per index, round up to power of two
     float temp = ceilf(logf((float)(all.rank*2+1)) / logf (2.f));
@@ -330,12 +330,11 @@ void mf_train(vw& all, example& ec)
     }
     all.eta *= powf((float)(all.sd->t), all.power_t);
 
-    learner* l = new learner(data, 1 << all.reg.stride_shift);
-    l->set_learn<gdmf, learn>();
-    l->set_predict<gdmf, predict>();
-    l->set_save_load<gdmf,save_load>();
-    l->set_end_pass<gdmf,end_pass>();
+    learner<gdmf>& l = init_learner(&data, learn, 1 << all.reg.stride_shift);
+    l.set_predict(predict);
+    l.set_save_load(save_load);
+    l.set_end_pass(end_pass);
 
-    return l;
+    return make_base(l);
   }
 }

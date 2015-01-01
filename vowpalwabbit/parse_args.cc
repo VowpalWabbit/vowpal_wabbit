@@ -35,6 +35,7 @@ license as described in the file LICENSE.
 #include "gd_mf.h"
 #include "mf.h"
 #include "vw.h"
+#include "ftrl_proximal.h"
 #include "rand48.h"
 #include "parse_args.h"
 #include "binary.h"
@@ -98,13 +99,13 @@ void parse_dictionary_argument(vw&all, string str) {
   ifstream infile(s);
   size_t def = (size_t)' ';
   for (string line; getline(infile, line);) {
-    char*c = (char*)line.c_str(); // we're throwing away const, which is dangerous...
+    char* c = (char*)line.c_str(); // we're throwing away const, which is dangerous...
     while (*c == ' ' || *c == '\t') ++c; // skip initial whitespace
-    char*d = c;
+    char* d = c;
     while (*d != ' ' && *d != '\t' && *d != '\n' && *d != '\0') ++d; // gobble up initial word
     if (d == c) continue; // no word
     if (*d != ' ' && *d != '\t') continue; // reached end of line
-    char*word = (char*)calloc(d-c, sizeof(char));
+    char* word = calloc_or_die<char>(d-c);
     memcpy(word, c, d-c);
     substring ss = { word, word + (d - c) };
     uint32_t hash = uniform_hash( ss.begin, ss.end-ss.begin, quadratic_constant);
@@ -131,14 +132,14 @@ void parse_dictionary_argument(vw&all, string str) {
   
   cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
   all.namespace_dictionaries[(size_t)ns].push_back(map);
-  dictionary_info info = { (char*)calloc(strlen(s)+1, sizeof(char)), map };
+  dictionary_info info = { calloc_or_die<char>(strlen(s)+1), map };
   strcpy(info.name, s);
   all.read_dictionaries.push_back(info);
 }
 
 void parse_affix_argument(vw&all, string str) {
   if (str.length() == 0) return;
-  char* cstr = (char*)calloc_or_die(str.length()+1, sizeof(char));
+  char* cstr = calloc_or_die<char>(str.length()+1);
   strcpy(cstr, str.c_str());
 
   char*p = strtok(cstr, ",");
@@ -352,9 +353,7 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
 
   if (vm.count("affix")) {
     parse_affix_argument(all, vm["affix"].as<string>());
-    stringstream ss;
-    ss << " --affix " << vm["affix"].as<string>();
-    all.file_options.append(ss.str());
+    *all.file_options << " --affix " << vm["affix"].as<string>();
   }
 
   if(vm.count("ngram")){
@@ -601,7 +600,7 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<float>();
 
-  all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
+  all.loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
   if (all.l1_lambda < 0.) {
     cerr << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
@@ -722,6 +721,7 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
   
   base_opt.add_options()
     ("sgd", "use regular stochastic gradient descent update.")
+    ("ftrl", "use ftrl-proximal optimization")
     ("adaptive", "use adaptive, individual learning rates.")
     ("invariant", "use safe/importance aware updates.")
     ("normalized", "use per feature normalized updates")
@@ -740,6 +740,8 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
     all.l = BFGS::setup(all, vm);
   else if (vm.count("lda"))
     all.l = LDA::setup(all, vm);
+  else if (vm.count("ftrl"))
+    all.l = FTRL::setup(all, vm);
   else if (vm.count("noop"))
     all.l = NOOP::setup(all);
   else if (vm.count("print"))
@@ -817,7 +819,7 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
   all.l = Scorer::setup(all, vm);
 }
 
-LEARNER::learner* exclusive_setup(vw& all, po::variables_map& vm, bool& score_consumer, LEARNER::learner* (*setup)(vw&, po::variables_map&))
+LEARNER::base_learner* exclusive_setup(vw& all, po::variables_map& vm, bool& score_consumer, LEARNER::base_learner* (*setup)(vw&, po::variables_map&))
 {
   if (score_consumer) { cerr << "error: cannot specify multiple direct score consumers" << endl; throw exception(); }
   score_consumer = true;
@@ -1016,7 +1018,7 @@ vw* parse_args(int argc, char *argv[])
   parse_regressor_args(*all, vm, io_temp);
   
   int temp_argc = 0;
-  char** temp_argv = VW::get_argv_from_string(all->file_options, temp_argc);
+  char** temp_argv = VW::get_argv_from_string(all->file_options->str(), temp_argc);
   add_to_args(*all, temp_argc, temp_argv);
   for (int i = 0; i < temp_argc; i++)
     free(temp_argv[i]);
@@ -1030,7 +1032,7 @@ vw* parse_args(int argc, char *argv[])
 
   po::store(pos, vm);
   po::notify(vm);
-  all->file_options = "";
+  all->file_options->str("");
 
   parse_feature_tweaks(*all, vm); //feature tweaks
 
@@ -1093,16 +1095,14 @@ vw* parse_args(int argc, char *argv[])
 }
 
 namespace VW {
-  void cmd_string_replace_value( string& cmd, string flag_to_replace, string new_value )
+  void cmd_string_replace_value( std::stringstream*& ss, string flag_to_replace, string new_value )
   {
     flag_to_replace.append(" "); //add a space to make sure we obtain the right flag in case 2 flags start with the same set of characters
+    string cmd = ss->str();
     size_t pos = cmd.find(flag_to_replace);
-    if( pos == string::npos ) {
+    if( pos == string::npos )
       //flag currently not present in command string, so just append it to command string
-      cmd.append(" ");
-      cmd.append(flag_to_replace);
-      cmd.append(new_value);
-    }
+      *ss << " " << flag_to_replace << new_value;
     else {
       //flag is present, need to replace old value with new value
 
@@ -1112,20 +1112,19 @@ namespace VW {
       //now pos is position where value starts
       //find position of next space
       size_t pos_after_value = cmd.find(" ",pos);
-      if(pos_after_value == string::npos) {
+      if(pos_after_value == string::npos) 
         //we reach the end of the string, so replace the all characters after pos by new_value
         cmd.replace(pos,cmd.size()-pos,new_value);
-      }
-      else {
+      else 
         //replace characters between pos and pos_after_value by new_value
         cmd.replace(pos,pos_after_value-pos,new_value);
-      }
+      ss->str(cmd);
     }
   }
 
   char** get_argv_from_string(string s, int& argc)
   {
-    char* c = (char*)calloc_or_die(s.length()+3, sizeof(char));
+    char* c = calloc_or_die<char>(s.length()+3);
     c[0] = 'b';
     c[1] = ' ';
     strcpy(c+2, s.c_str());
@@ -1133,11 +1132,11 @@ namespace VW {
     v_array<substring> foo = v_init<substring>();
     tokenize(' ', ss, foo);
 
-    char** argv = (char**)calloc_or_die(foo.size(), sizeof(char*));
+    char** argv = calloc_or_die<char*>(foo.size());
     for (size_t i = 0; i < foo.size(); i++)
       {
 	*(foo[i].end) = '\0';
-	argv[i] = (char*)calloc_or_die(foo[i].end-foo[i].begin+1, sizeof(char));
+	argv[i] = calloc_or_die<char>(foo[i].end-foo[i].begin+1);
         sprintf(argv[i],"%s",foo[i].begin);
       }
 
@@ -1174,7 +1173,7 @@ namespace VW {
   {
     finalize_regressor(all, all.final_regressor_name);
     all.l->finish();
-    delete all.l;
+    free_it(all.l);
     if (all.reg.weight_vector != NULL)
       free(all.reg.weight_vector);
     free_parser(all);
@@ -1183,6 +1182,7 @@ namespace VW {
     all.p->parse_name.delete_v();
     free(all.p);
     free(all.sd);
+    delete all.file_options;
     for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
       if (all.final_prediction_sink[i] != 1)
 	io_buf::close_file_or_socket(all.final_prediction_sink[i]);

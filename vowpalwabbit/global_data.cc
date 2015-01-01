@@ -235,7 +235,7 @@ po::variables_map add_options(vw& all, po::options_description& opts)
 
 vw::vw()
 {
-  sd = (shared_data *) calloc_or_die(1, sizeof(shared_data));
+  sd = &calloc_or_die<shared_data>();
   sd->dump_interval = 1.;   // next update progress dump
   sd->contraction = 1.;
   sd->max_label = 1.;
@@ -249,6 +249,8 @@ vw::vw()
   current_pass = 0;
 
   data_filename = "";
+
+  file_options = new std::stringstream;
 
   bfgs = false;
   hessian_on = false;
@@ -286,8 +288,6 @@ vw::vw()
   per_feature_regularizer_input = "";
   per_feature_regularizer_output = "";
   per_feature_regularizer_text = "";
-
-  file_options = "";
 
   #ifdef _WIN32
   stdout_fileno = _fileno(stdout);

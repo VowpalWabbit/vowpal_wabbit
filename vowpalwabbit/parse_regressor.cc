@@ -35,7 +35,7 @@ void initialize_regressor(vw& all)
 
   size_t length = ((size_t)1) << all.num_bits;
   all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
-  all.reg.weight_vector = (weight *)calloc_or_die(length << all.reg.stride_shift, sizeof(weight));
+  all.reg.weight_vector = calloc_or_die<weight>(length << all.reg.stride_shift);
   if (all.reg.weight_vector == NULL)
     {
       cerr << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>" << endl;
@@ -229,16 +229,16 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				"", read, 
 				"\n",1, text);
       
-      text_len = sprintf(buff, "options:%s\n", all.file_options.c_str());
-      uint32_t len = (uint32_t)all.file_options.length()+1;
-      memcpy(buff2, all.file_options.c_str(),len);
+      text_len = sprintf(buff, "options:%s\n", all.file_options->str().c_str());
+      uint32_t len = (uint32_t)all.file_options->str().length()+1;
+      memcpy(buff2, all.file_options->str().c_str(),len);
       if (read)
 	len = buf_size;
       bin_text_read_write(model_file,buff2, len, 
 			  "", read,
 			  buff, text_len, text);
       if (read)
-	all.file_options.assign(buff2);
+	all.file_options->str(buff2);
     }
 
 }
@@ -348,7 +348,7 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
       }
     } else {
       // If no initial regressor, just clear out the options loaded from the header.
-      all.file_options.assign("");
+      all.file_options->str("");
     }
   }
 }

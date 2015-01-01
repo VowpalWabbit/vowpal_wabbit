@@ -691,7 +691,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
     l.doc_lengths.erase();
   }
   
-  void learn(lda& l, learner& base, example& ec) 
+  void learn(lda& l, base_learner& base, example& ec) 
   {
     size_t num_ex = l.examples.size();
     l.examples.push_back(&ec);
@@ -709,7 +709,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
   }
 
   // placeholder
-  void predict(lda& l, learner& base, example& ec)
+  void predict(lda& l, base_learner& base, example& ec)
   {
     learn(l, base, ec);
   }
@@ -746,13 +746,13 @@ void end_examples(lda& l)
     ld.v.delete_v();
   }
 
-learner* setup(vw&all, po::variables_map& vm)
+base_learner* setup(vw&all, po::variables_map& vm)
 {
-  lda* ld = (lda*)calloc_or_die(1,sizeof(lda));
-  ld->sorted_features = vector<index_feature>();
-  ld->total_lambda_init = 0;
-  ld->all = &all;
-  ld->example_t = all.initial_t;
+  lda& ld = calloc_or_die<lda>();
+  ld.sorted_features = vector<index_feature>();
+  ld.total_lambda_init = 0;
+  ld.all = &all;
+  ld.example_t = all.initial_t;
 
   po::options_description lda_opts("LDA options");
   lda_opts.add_options()
@@ -769,9 +769,7 @@ learner* setup(vw&all, po::variables_map& vm)
   all.random_weights = true;
   all.add_constant = false;
 
-  std::stringstream ss;
-  ss << " --lda " << all.lda;
-  all.file_options.append(ss.str());
+  *all.file_options << " --lda " << all.lda;
 
   if (all.eta > 1.)
     {
@@ -784,19 +782,18 @@ learner* setup(vw&all, po::variables_map& vm)
     all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
   }
   
-  ld->v.resize(all.lda*all.minibatch);
+  ld.v.resize(all.lda*all.minibatch);
   
-  ld->decay_levels.push_back(0.f);
+  ld.decay_levels.push_back(0.f);
 
-  learner* l = new learner(ld, 1 << all.reg.stride_shift);
-  l->set_learn<lda,learn>();
-  l->set_predict<lda,predict>();
-  l->set_save_load<lda,save_load>();
-  l->set_finish_example<lda,finish_example>();
-  l->set_end_examples<lda,end_examples>();  
-  l->set_end_pass<lda,end_pass>();  
-  l->set_finish<lda,finish>();
+  learner<lda>& l = init_learner(&ld, learn, 1 << all.reg.stride_shift);
+  l.set_predict(predict);
+  l.set_save_load(save_load);
+  l.set_finish_example(finish_example);
+  l.set_end_examples(end_examples);  
+  l.set_end_pass(end_pass);  
+  l.set_finish(finish);
   
-  return l;
+  return make_base(l);
 }
 }

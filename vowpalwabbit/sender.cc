@@ -21,9 +21,6 @@
 #include "network.h"
 #include "reductions.h"
 
-using namespace std;
-using namespace LEARNER;
-
 namespace SENDER {
   struct sender {
     io_buf* buf;
@@ -69,7 +66,7 @@ void receive_result(sender& s)
   return_simple_example(*(s.all), NULL, *ec);  
 }
 
-  void learn(sender& s, learner& base, example& ec) 
+  void learn(sender& s, LEARNER::base_learner& base, example& ec) 
   { 
     if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
       receive_result(s);
@@ -81,8 +78,7 @@ void receive_result(sender& s)
     s.delay_ring[s.sent_index++ % s.all->p->ring_size] = &ec;
   }
 
-  void finish_example(vw& all, sender&, example& ec)
-{}
+  void finish_example(vw& all, sender&, example& ec){}
 
 void end_examples(sender& s)
 {
@@ -100,26 +96,23 @@ void end_examples(sender& s)
     delete s.buf;
   }
 
-  learner* setup(vw& all, po::variables_map& vm, vector<string> pairs)
+  LEARNER::base_learner* setup(vw& all, po::variables_map& vm, vector<string> pairs)
 {
-  sender* s = (sender*)calloc_or_die(1,sizeof(sender));
-  s->sd = -1;
+  sender& s = calloc_or_die<sender>();
+  s.sd = -1;
   if (vm.count("sendto"))
     {      
       vector<string> hosts = vm["sendto"].as< vector<string> >();
-      open_sockets(*s, hosts[0]);
+      open_sockets(s, hosts[0]);
     }
 
-  s->all = &all;
-  s->delay_ring = (example**) calloc_or_die(all.p->ring_size, sizeof(example*));
+  s.all = &all;
+  s.delay_ring = calloc_or_die<example*>(all.p->ring_size);
 
-  learner* l = new learner(s, 1);
-  l->set_learn<sender, learn>(); 
-  l->set_predict<sender, learn>(); 
-  l->set_finish<sender, finish>();
-  l->set_finish_example<sender, finish_example>(); 
-  l->set_end_examples<sender, end_examples>();
-  return l;
+  LEARNER::learner<sender>& l = init_learner(&s, learn, 1);
+  l.set_finish(finish);
+  l.set_finish_example(finish_example); 
+  l.set_end_examples(end_examples);
+  return make_base(l);
 }
-
 }

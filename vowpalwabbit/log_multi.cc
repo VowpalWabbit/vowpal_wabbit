@@ -110,6 +110,7 @@ namespace LOG_MULTI
     
     node.parent = 0;
     node.min_count = 0;
+    node.preds = v_init<node_pred>();
     init_leaf(node);
 
     return node;
@@ -245,7 +246,7 @@ namespace LOG_MULTI
     return b.nodes[current].internal;
   }
   
-  void train_node(log_multi& b, learner& base, example& ec, uint32_t& current, uint32_t& class_index)
+  void train_node(log_multi& b, base_learner& base, example& ec, uint32_t& current, uint32_t& class_index)
   {
     if(b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk)
       ec.l.simple.label = -1.f;
@@ -296,7 +297,7 @@ namespace LOG_MULTI
       return n.right;
   }
 
-  void predict(log_multi& b, learner& base, example& ec)	
+  void predict(log_multi& b,  base_learner& base, example& ec)	
   {
     MULTICLASS::multiclass mc = ec.l.multi;
 
@@ -315,7 +316,7 @@ namespace LOG_MULTI
     ec.l.multi = mc;
   }
 
-  void learn(log_multi& b, learner& base, example& ec)
+  void learn(log_multi& b, base_learner& base, example& ec)
   {
     //    verify_min_dfs(b, b.nodes[0]);
 
@@ -495,54 +496,44 @@ namespace LOG_MULTI
       }
   }
   
-  void finish_example(vw& all, log_multi&, example& ec)
-  {
-    MULTICLASS::output_example(all, ec);
-    VW::finish_example(all, &ec);
-  }
+  void finish_example(vw& all, log_multi&, example& ec) { MULTICLASS::finish_example(all, ec); }
   
-  learner* setup(vw& all, po::variables_map& vm)	//learner setup
+  base_learner* setup(vw& all, po::variables_map& vm)	//learner setup
   {
-    log_multi* data = (log_multi*)calloc(1, sizeof(log_multi));
+    log_multi& data = calloc_or_die<log_multi>();
 
     po::options_description opts("TXM Online options");
     opts.add_options()
       ("no_progress", "disable progressive validation")
-      ("swap_resistance", po::value<uint32_t>(&(data->swap_resist))->default_value(4), "higher = more resistance to swap, default=4");
+      ("swap_resistance", po::value<uint32_t>(&(data.swap_resist))->default_value(4), "higher = more resistance to swap, default=4");
     
     vm = add_options(all, opts);
     
-    data->k = (uint32_t)vm["log_multi"].as<size_t>();
-    
-    //append log_multi with nb_actions to options_from_file so it is saved to regressor later
-    std::stringstream ss;
-    ss << " --log_multi " << data->k;
-    all.file_options.append(ss.str());
+    data.k = (uint32_t)vm["log_multi"].as<size_t>();
+    *all.file_options << " --log_multi " << data.k;
     
     if (vm.count("no_progress"))
-      data->progress = false;
+      data.progress = false;
     else
-      data->progress = true;
+      data.progress = true;
 
-    data->all = &all;
+    data.all = &all;
     (all.p->lp) = MULTICLASS::mc_label;
     
     string loss_function = "quantile"; 
     float loss_parameter = 0.5;
     delete(all.loss);
-    all.loss = getLossFunction(&all, loss_function, loss_parameter);
+    all.loss = getLossFunction(all, loss_function, loss_parameter);
 
-    data->max_predictors = data->k - 1;
+    data.max_predictors = data.k - 1;
 
-    learner* l = new learner(data, all.l, data->max_predictors);
-    l->set_save_load<log_multi,save_load_tree>();
-    l->set_learn<log_multi,learn>();
-    l->set_predict<log_multi,predict>();
-    l->set_finish_example<log_multi,finish_example>();
-    l->set_finish<log_multi,finish>();
+    learner<log_multi>& l = init_learner(&data, all.l, learn, predict, data.max_predictors);
+    l.set_save_load(save_load_tree);
+    l.set_finish_example(finish_example);
+    l.set_finish(finish);
     
-    init_tree(*data);	
+    init_tree(data);	
     
-    return l;
+    return make_base(l);
   }	
 }

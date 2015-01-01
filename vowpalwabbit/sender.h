@@ -5,5 +5,5 @@ license as described in the file LICENSE.
  */
 #pragma once
 namespace SENDER{
-  LEARNER::learner* setup(vw& all, po::variables_map& vm, vector<string> pairs);
+  LEARNER::base_learner* setup(vw& all, po::variables_map& vm, vector<string> pairs);
 }

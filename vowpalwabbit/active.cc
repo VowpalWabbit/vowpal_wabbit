@@ -45,7 +45,7 @@ namespace ACTIVE {
     }
 
   template <bool is_learn>
-  void predict_or_learn_simulation(active& a, learner& base, example& ec) {
+  void predict_or_learn_simulation(active& a, base_learner& base, example& ec) {
     base.predict(ec);
     
     if (is_learn)
@@ -67,7 +67,7 @@ namespace ACTIVE {
   }
   
   template <bool is_learn>
-  void predict_or_learn_active(active& a, learner& base, example& ec) {
+  void predict_or_learn_active(active& a, base_learner& base, example& ec) {
     if (is_learn)
       base.learn(ec);
     else
@@ -151,35 +151,31 @@ namespace ACTIVE {
     VW::finish_example(all,&ec);
   }
   
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
-    active* data = (active*)calloc_or_die(1, sizeof(active));
+    active& data = calloc_or_die<active>();
 
     po::options_description active_opts("Active Learning options");
     active_opts.add_options()
       ("simulation", "active learning simulation mode")
-      ("mellowness", po::value<float>(&(data->active_c0)), "active learning mellowness parameter c_0. Default 8")
+      ("mellowness", po::value<float>(&(data.active_c0)), "active learning mellowness parameter c_0. Default 8")
       ;
-
     vm = add_options(all, active_opts);
-
-    data->all=&all;
+    data.all=&all;
 
     //Create new learner
-    learner* ret = new learner(data, all.l);
+    learner<active>* ret;
     if (vm.count("simulation"))
-      {
-	ret->set_learn<active, predict_or_learn_simulation<true> >();
-	ret->set_predict<active, predict_or_learn_simulation<false> >();
-      }
+      ret = &init_learner(&data, all.l, predict_or_learn_simulation<true>, 
+			  predict_or_learn_simulation<false>);
     else
       {
 	all.active = true;
-	ret->set_learn<active, predict_or_learn_active<true> >();
-	ret->set_predict<active, predict_or_learn_active<false> >();
-	ret->set_finish_example<active, return_active_example>();
+	ret = &init_learner(&data, all.l, predict_or_learn_active<true>, 
+			    predict_or_learn_active<false>);
+	ret->set_finish_example(return_active_example);
       }
 
-    return ret;
+    return make_base(*ret);
   }
 }

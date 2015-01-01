@@ -175,7 +175,7 @@ namespace Search {
     v_array<size_t> timesteps;
     v_array<float> learn_losses;
     
-    LEARNER::learner* base_learner;
+    LEARNER::base_learner* base_learner;
     clock_t start_clock_time;
 
     example*empty_example;
@@ -383,8 +383,8 @@ namespace Search {
     priv.dat_new_feature_ec->sum_feat_sq[priv.dat_new_feature_namespace] += f.x * f.x;
     if (priv.all->audit) {
       audit_data a = { NULL, NULL, f.weight_index, f.x, true };
-      a.space   = (char*)calloc_or_die(priv.dat_new_feature_feature_space->length()+1, sizeof(char));
-      a.feature = (char*)calloc_or_die(priv.dat_new_feature_audit_ss.str().length() + 32, sizeof(char));
+      a.space   = calloc_or_die<char>(priv.dat_new_feature_feature_space->length()+1);
+      a.feature = calloc_or_die<char>(priv.dat_new_feature_audit_ss.str().length() + 32);
       strcpy(a.space, priv.dat_new_feature_feature_space->c_str());
       int num = sprintf(a.feature, "fid=%lu_", (idx & mask) >> ss);
       strcpy(a.feature+num, priv.dat_new_feature_audit_ss.str().c_str());
@@ -855,7 +855,7 @@ namespace Search {
     size_t sz  = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + sizeof(size_t) + condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(char));
     if (sz % 4 != 0) sz = 4 * (sz / 4 + 1); // make sure sz aligns to 4 so that uniform_hash does the right thing
 
-    unsigned char* item = (unsigned char*)calloc(sz, 1);
+    unsigned char* item = calloc_or_die<unsigned char>(sz);
     unsigned char* here = item;
     *here = (unsigned char)sz; here += sizeof(size_t);
     *here = mytag;             here += sizeof(ptag);
@@ -1417,7 +1417,7 @@ namespace Search {
   }
 
   template <bool is_learn>
-  void search_predict_or_learn(search& sch, learner& base, example& ec) {
+  void search_predict_or_learn(search& sch, base_learner& base, example& ec) {
     search_private& priv = *sch.priv;
     vw* all = priv.all;
     priv.base_learner = &base;
@@ -1653,9 +1653,7 @@ namespace Search {
   template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) {
     if (vm.count(opt_name)) {
       ret = vm[opt_name].as<T>();
-      stringstream ss;
-      ss << " --" << opt_name << " " << ret;
-      all.file_options.append(ss.str());
+      *all.file_options << " --" << opt_name << " " << ret;
     } else if (strlen(required_error_string)>0) {
       std::cerr << required_error_string << endl;
       if (! vm.count("help"))
@@ -1666,9 +1664,7 @@ namespace Search {
   void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string) {
     if (vm.count(opt_name)) {
       ret = true;
-      stringstream ss;
-      ss << " --" << opt_name;
-      all.file_options.append(ss.str());
+      *all.file_options << " --" << opt_name;
     } else
       ret = false;
   }
@@ -1768,11 +1764,11 @@ namespace Search {
     delete[] cstr;
   }
 
-  learner* setup(vw&all, po::variables_map& vm) {
-    search* sch = (search*)calloc_or_die(1,sizeof(search));
-    sch->priv = new search_private();
-    search_initialize(&all, *sch);
-    search_private& priv = *sch->priv;
+  base_learner* setup(vw&all, po::variables_map& vm) {
+    search& sch = calloc_or_die<search>();
+    sch.priv = new search_private();
+    search_initialize(&all, sch);
+    search_private& priv = *sch.priv;
 
     po::options_description search_opts("Search Options");
     search_opts.add_options()
@@ -1852,7 +1848,7 @@ namespace Search {
     string neighbor_features_string;
     check_option<string>(neighbor_features_string, all, vm, "search_neighbor_features", false, string_equal,
                          "warning: you specified a different feature structure with --search_neighbor_features than the one loaded from predictor. using loaded value of: ", "");
-    parse_neighbor_features(neighbor_features_string, *sch);
+    parse_neighbor_features(neighbor_features_string, sch);
 
     if (interpolation_string.compare("data") == 0) { // run as dagger
       priv.adaptive_beta = true;
@@ -1894,7 +1890,7 @@ namespace Search {
                          "warning: you specified a different history length through --search_history_length than the one loaded from predictor. using loaded value of: ", "");
     
     //check if the base learner is contextual bandit, in which case, we dont rollout all actions.
-    priv.allowed_actions_cache = (polylabel*)calloc_or_die(1,sizeof(polylabel));
+    priv.allowed_actions_cache = &calloc_or_die<polylabel>();
     if (vm.count("cb")) {
       priv.cb_learner = true;
       CB::cb_label.default_label(priv.allowed_actions_cache);
@@ -1948,7 +1944,7 @@ namespace Search {
     for (search_task** mytask = all_tasks; *mytask != NULL; mytask++)
       if (task_string.compare((*mytask)->task_name) == 0) {
         priv.task = *mytask;
-        sch->task_name = (*mytask)->task_name;
+        sch.task_name = (*mytask)->task_name;
         break;
       }
     if (priv.task == NULL) {
@@ -1962,7 +1958,7 @@ namespace Search {
     // default to OAA labels unless the task wants to override this (which they can do in initialize)
     all.p->lp = MC::mc_label;
     if (priv.task)
-      priv.task->initialize(*sch, priv.A, vm);
+      priv.task->initialize(sch, priv.A, vm);
 
     if (vm.count("search_allowed_transitions"))     read_allowed_transitions((action)priv.A, vm["search_allowed_transitions"].as<string>().c_str());
     
@@ -1981,19 +1977,19 @@ namespace Search {
     if (!priv.allow_current_policy) // if we're not dagger
       all.check_holdout_every_n_passes = priv.passes_per_policy;
 
-    all.searchstr = sch;
+    all.searchstr = &sch;
 
     priv.start_clock_time = clock();
 
-    learner* l = new learner(sch, all.l, priv.total_number_of_policies);
-    l->set_learn<search, search_predict_or_learn<true> >();
-    l->set_predict<search, search_predict_or_learn<false> >();
-    l->set_finish_example<search,finish_example>();
-    l->set_end_examples<search,end_examples>();
-    l->set_finish<search,search_finish>();
-    l->set_end_pass<search,end_pass>();
+    learner<search>& l = init_learner(&sch, all.l, search_predict_or_learn<true>, 
+				      search_predict_or_learn<false>, 
+				      priv.total_number_of_policies);
+    l.set_finish_example(finish_example);
+    l.set_end_examples(end_examples);
+    l.set_finish(search_finish);
+    l.set_end_pass(end_pass);
 
-    return l;
+    return make_base(l);
   }
 
   float action_hamming_loss(action a, const action* A, size_t sz) {
@@ -2121,7 +2117,7 @@ namespace Search {
   void predictor::set_input_length(size_t input_length) {
     is_ldf = true;
     if (ec_alloced) ec = (example*)realloc(ec, input_length * sizeof(example));
-    else            ec = (example*)calloc(input_length, sizeof(example));
+    else            ec = calloc_or_die<example>(input_length);
     ec_cnt = input_length;
     ec_alloced = true;
   }
@@ -2134,7 +2130,7 @@ namespace Search {
   void predictor::make_new_pointer(v_array<action>& A, size_t new_size) {
     size_t old_size      = A.size();
     action* old_pointer  = A.begin;
-    A.begin     = (action*)calloc_or_die(new_size, sizeof(action));
+    A.begin     = calloc_or_die<action>(new_size);
     A.end       = A.begin + new_size;
     A.end_array = A.end;
     memcpy(A.begin, old_pointer, old_size * sizeof(action));

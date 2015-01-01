@@ -118,12 +118,11 @@ If you use another directory modify the vw solution and project macro definition
 			
 
 	   open a  Windows command shell
-	  (a) mkdir c:\boost 
-			
+      (a) mkdir c:\boost 
       (b) Download boost_1_56_0.zip from http://sourceforge.net/projects/boost/files/boost/1.56.0/boost_1_56_0.zip/download
-	  (c) Unzip it which creates the directory boost_1_56_0
+      (c) Unzip it which creates the directory boost_1_56_0
       (d) mkdir c:\boost\x86
-	  (e) mkdir c:\boost\x64
+      (e) mkdir c:\boost\x64
  	  
 build the x86 binaries
 	  (f)"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat x86"
@@ -135,10 +134,11 @@ build the x86 binaries
 
 	
 build the x64 binaries
-	  (k) mkdir c:\boost\x64	
-	  (l) "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat"  x86_amd64"
-	  (m) "bootstrap.bat"
-	  (n) ".\b2 --prefix=c:\boost\x64 --build-dir=x64 --toolset=msvc-12.0 address-model=64 install --with-program_options"
+	  (k) "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat"  x86_amd64"	
+	  (l) mkdir c:\boost\x64
+	  (m) cd c:\boost\boost_1_56_0
+	  (n) "bootstrap.bat"
+	  (o) ".\b2 --prefix=c:\boost\x64 --build-dir=x64 --toolset=msvc-12.0 address-model=64 install --with-program_options"
 
 	  
 	  

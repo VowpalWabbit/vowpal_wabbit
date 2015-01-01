@@ -476,7 +476,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
   weight* weights = all.reg.weight_vector;
   if (b.regularizers == NULL)
     {
-      b.regularizers = (weight *)calloc_or_die(2*length, sizeof(weight));
+      b.regularizers = calloc_or_die<weight>(2*length);
       
       if (b.regularizers == NULL)
 	{
@@ -818,13 +818,13 @@ void end_pass(bfgs& b)
 }
 
 // placeholder
-void predict(bfgs& b, learner& base, example& ec)
+void predict(bfgs& b, base_learner& base, example& ec)
 {
   vw* all = b.all;
   ec.pred.scalar = bfgs_predict(*all,ec);
 }
 
-void learn(bfgs& b, learner& base, example& ec)
+void learn(bfgs& b, base_learner& base, example& ec)
 {
   vw* all = b.all;
   assert(ec.in_use);
@@ -906,7 +906,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
       initialize_regressor(*all);
       if (all->per_feature_regularizer_input != "")
 	{
-	  b.regularizers = (weight *)calloc_or_die(2*length, sizeof(weight));
+	  b.regularizers = calloc_or_die<weight>(2*length);
 	  if (b.regularizers == NULL)
 	    {
 	      cerr << all->program_name << ": Failed to allocate regularizers array: try decreasing -b <bits>" << endl;
@@ -965,19 +965,19 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     b.backstep_on = true;
   }
 
-learner* setup(vw& all, po::variables_map& vm)
+base_learner* setup(vw& all, po::variables_map& vm)
 {
-  bfgs* b = (bfgs*)calloc_or_die(1,sizeof(bfgs));
-  b->all = &all;
-  b->wolfe1_bound = 0.01;
-  b->first_hessian_on=true;
-  b->first_pass = true;
-  b->gradient_pass = true;
-  b->preconditioner_pass = true;
-  b->backstep_on = false;
-  b->final_pass=all.numpasses;  
-  b->no_win_counter = 0;
-  b->early_stop_thres = 3;
+  bfgs& b = calloc_or_die<bfgs>();
+  b.all = &all;
+  b.wolfe1_bound = 0.01;
+  b.first_hessian_on=true;
+  b.first_pass = true;
+  b.gradient_pass = true;
+  b.preconditioner_pass = true;
+  b.backstep_on = false;
+  b.final_pass=all.numpasses;  
+  b.no_win_counter = 0;
+  b.early_stop_thres = 3;
 
   po::options_description bfgs_opts("LBFGS options");
 
@@ -993,7 +993,7 @@ learner* setup(vw& all, po::variables_map& vm)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     if(vm.count("early_terminate"))      
-      b->early_stop_thres = vm["early_terminate"].as< size_t>();     
+      b.early_stop_thres = vm["early_terminate"].as< size_t>();     
   }
   
   if (vm.count("hessian_on") || all.m==0) {
@@ -1018,14 +1018,13 @@ learner* setup(vw& all, po::variables_map& vm)
   all.bfgs = true;
   all.reg.stride_shift = 2;
 
-  learner* l = new learner(b, 1 << all.reg.stride_shift);
-  l->set_learn<bfgs, learn>();
-  l->set_predict<bfgs, predict>();
-  l->set_save_load<bfgs,save_load>();
-  l->set_init_driver<bfgs,init_driver>();
-  l->set_end_pass<bfgs,end_pass>();
-  l->set_finish<bfgs,finish>();
+  learner<bfgs>& l = init_learner(&b, learn, 1 << all.reg.stride_shift);
+  l.set_predict(predict);
+  l.set_save_load(save_load);
+  l.set_init_driver(init_driver);
+  l.set_end_pass(end_pass);
+  l.set_finish(finish);
 
-  return l;
+  return make_base(l);
 }
 }
