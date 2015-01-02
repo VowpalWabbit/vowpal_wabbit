@@ -31,6 +31,7 @@ class SearchTask():
     def learn(self, data_iterator):
         for my_example in data_iterator.__iter__():
             self._call_vw(my_example, isTest=False);
+            self.vw.end_pass() 
 
     def example(self, initStringOrDict=None, labelType=pylibvw.vw.lDefault):
         """TODO"""

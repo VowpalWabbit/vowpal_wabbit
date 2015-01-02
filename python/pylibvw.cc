@@ -6,6 +6,7 @@
 #include "../vowpalwabbit/search_hooktask.h"
 #include "../vowpalwabbit/parse_example.h"
 #include "../vowpalwabbit/gd.h"
+#include "../vowpalwabbit/io_buf.h"
 
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
@@ -103,6 +104,10 @@ void my_finish_example(vw_ptr all, example_ptr ec) {
 
 void my_learn(vw_ptr all, example_ptr ec) {
   all->learn(ec.get());
+}
+
+void my_end_pass(vw_ptr all) {
+  all->l->end_pass();
 }
 
 float my_learn_string(vw_ptr all, char*str) {
@@ -275,6 +280,19 @@ double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples; }
 
 bool search_should_output(search_ptr sch) { return sch->output().good(); }
 void search_output(search_ptr sch, string s) { sch->output() << s; }
+void save_search_state(search_ptr sch, string s){
+	io_buf buf;
+	buf.open_file(s.c_str(), true, io_buf::WRITE);
+	Search::save_load(*sch,buf,false,false); // do not switch on the text flag as it cannot be loaded later
+	buf.flush(); //necessary to dump contents on disk
+	buf.close_file();
+}
+void load_search_state(search_ptr sch, string s){
+	io_buf buf;
+	buf.open_file(s.c_str(), true, io_buf::READ);
+	Search::save_load(*sch,buf,true,false);
+	buf.close_file();
+}
 
 /*
 uint32_t search_predict_one_all(search_ptr sch, example_ptr ec, uint32_t one_ystar) {
@@ -463,6 +481,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("hash_feature", &VW::hash_feature, "given a feature string (arg2) and a hashed namespace (arg3), hash that feature")
       .def("finish_example", &my_finish_example, "tell VW that you're done with a given example")
       .def("setup_example", &my_setup_example, "given an example that you've created by hand, prepare it for learning (eg, compute quadratic feature)")
+      .def("end_pass", &my_end_pass,"Call this when you have to sync multiple workers in parallel mode")
 
       .def("num_weights", &VW::num_weights, "how many weights are we learning?")
       .def("get_weight", &VW::get_weight, "get the weight for a particular index")
@@ -571,6 +590,9 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("get_num_actions", &search_get_num_actions, "Return the total number of actions search was initialized with")
       .def("set_structured_predict_hook", &set_structured_predict_hook, "Set the hook (function pointer) that search should use for structured prediction (you don't want to call this yourself!")
       .def("is_ldf", &Search::search::is_ldf, "check whether this search task is running in LDF mode")
+
+	  .def("save_search_state",&save_search_state,"Saves state of the underlying VW object.")
+	  .def("load_search_state",&load_search_state,"Loads state of the underlying VW object.")
 
       .def("po_exists", &po_exists, "For program (cmd line) options, check to see if a given option was specified; eg sch.po_exists(\"search\") should be True")
       .def("po_get", &po_get, "For program (cmd line) options, if an option was specified, get its value; eg sch.po_get(\"search\") should return the # of actions (returns either int or string)")

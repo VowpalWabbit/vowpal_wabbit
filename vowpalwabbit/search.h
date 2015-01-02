@@ -240,6 +240,9 @@ namespace Search {
   bool uint32_equal(uint32_t a, uint32_t b);
   bool size_equal(size_t a, size_t b);
   
+  // save and load VW state
+  void save_load(search& sch, io_buf& model_file, bool read, bool text);
+
   // our interface within VW
   LEARNER::base_learner* setup(vw&);
 }
