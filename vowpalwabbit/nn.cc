@@ -310,7 +310,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
   base_learner* setup(vw& all)
   {
-    new_options(all, "NN options")
+    new_options(all, "Neural Network options")
       ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units");
     if(missing_required(all)) return NULL;
     new_options(all)

@@ -500,7 +500,7 @@ namespace LOG_MULTI
   
   base_learner* setup(vw& all)	//learner setup
   {
-    new_options(all, "Log Multi options")
+    new_options(all, "Logarithmic Time Multiclass options")
       ("log_multi", po::value<size_t>(), "Use online tree for multiclass");
     if (missing_required(all)) return NULL;
     new_options(all)

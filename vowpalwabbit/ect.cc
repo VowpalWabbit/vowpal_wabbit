@@ -364,7 +364,7 @@ namespace ECT
   
   base_learner* setup(vw& all)
   {
-    new_options(all, "ECT options")
+    new_options(all, "Error Correcting Tournament options")
       ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels");
     if (missing_required(all)) return NULL;
     new_options(all)("error", po::value<size_t>()->default_value(0), "error in ECT");
