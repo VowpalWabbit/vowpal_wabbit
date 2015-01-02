@@ -106,6 +106,10 @@ void my_learn(vw_ptr all, example_ptr ec) {
   all->learn(ec.get());
 }
 
+void my_end_pass(vw_ptr all) {
+  all->l->end_pass();
+}
+
 float my_learn_string(vw_ptr all, char*str) {
   example*ec = VW::read_example(*all, str);
   all->learn(ec);
@@ -477,6 +481,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("hash_feature", &VW::hash_feature, "given a feature string (arg2) and a hashed namespace (arg3), hash that feature")
       .def("finish_example", &my_finish_example, "tell VW that you're done with a given example")
       .def("setup_example", &my_setup_example, "given an example that you've created by hand, prepare it for learning (eg, compute quadratic feature)")
+      .def("end_pass", &my_end_pass,"Call this when you have to sync multiple workers in parallel mode")
 
       .def("num_weights", &VW::num_weights, "how many weights are we learning?")
       .def("get_weight", &VW::get_weight, "get the weight for a particular index")
