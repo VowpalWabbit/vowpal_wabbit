@@ -780,107 +780,107 @@ void add_to_args(vw& all, int argc, char* argv[])
     all.args.push_back(string(argv[i]));
 }
 
-vw* parse_args(int argc, char *argv[])
+vw& parse_args(int argc, char *argv[])
 {
-  vw* all = new vw();
+  vw& all = *(new vw());
 
-  add_to_args(*all, argc, argv);
+  add_to_args(all, argc, argv);
 
   size_t random_seed = 0;
-  all->program_name = argv[0];
+  all.program_name = argv[0];
 
-  new_options(*all, "VW options")
+  new_options(all, "VW options")
     ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
-    ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring");
-  add_options(*all);
+    ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring");
+  add_options(all);
 
-  new_options(*all, "Update options")
-    ("learning_rate,l", po::value<float>(&(all->eta)), "Set learning rate")
-    ("power_t", po::value<float>(&(all->power_t)), "t power value")
-    ("decay_learning_rate",    po::value<float>(&(all->eta_decay_rate)),
+  new_options(all, "Update options")
+    ("learning_rate,l", po::value<float>(&(all.eta)), "Set learning rate")
+    ("power_t", po::value<float>(&(all.power_t)), "t power value")
+    ("decay_learning_rate",    po::value<float>(&(all.eta_decay_rate)),
      "Set Decay factor for learning_rate between passes")
-    ("initial_t", po::value<double>(&((all->sd->t))), "initial t value")
+    ("initial_t", po::value<double>(&((all.sd->t))), "initial t value")
     ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights.");
-  add_options(*all);
+  add_options(all);
 
-  new_options(*all, "Weight options")
+  new_options(all, "Weight options")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
-    ("initial_weight", po::value<float>(&(all->initial_weight)), "Set all weights to an initial value of 1.")
-    ("random_weights", po::value<bool>(&(all->random_weights)), "make initial weights random")
-    ("input_feature_regularizer", po::value< string >(&(all->per_feature_regularizer_input)), "Per feature regularization input file");
-  add_options(*all);
+    ("initial_weight", po::value<float>(&(all.initial_weight)), "Set all weights to an initial value of 1.")
+    ("random_weights", po::value<bool>(&(all.random_weights)), "make initial weights random")
+    ("input_feature_regularizer", po::value< string >(&(all.per_feature_regularizer_input)), "Per feature regularization input file");
+  add_options(all);
 
-  new_options(*all, "Parallelization options")
-    ("span_server", po::value<string>(&(all->span_server)), "Location of server for setting up spanning tree")
-    ("unique_id", po::value<size_t>(&(all->unique_id)),"unique id used for cluster parallel jobs")
-    ("total", po::value<size_t>(&(all->total)),"total number of nodes used in cluster parallel job")
-    ("node", po::value<size_t>(&(all->node)),"node number in cluster parallel job");
-  add_options(*all);
+  new_options(all, "Parallelization options")
+    ("span_server", po::value<string>(&(all.span_server)), "Location of server for setting up spanning tree")
+    ("unique_id", po::value<size_t>(&(all.unique_id)),"unique id used for cluster parallel jobs")
+    ("total", po::value<size_t>(&(all.total)),"total number of nodes used in cluster parallel job")
+    ("node", po::value<size_t>(&(all.node)),"node number in cluster parallel job");
+  add_options(all);
 
-  po::variables_map& vm = all->vm;
+  po::variables_map& vm = all.vm;
   msrand48(random_seed);
-  parse_diagnostics(*all, argc);
+  parse_diagnostics(all, argc);
 
-  all->sd->weighted_unlabeled_examples = all->sd->t;
-  all->initial_t = (float)all->sd->t;
+  all.sd->weighted_unlabeled_examples = all.sd->t;
+  all.initial_t = (float)all.sd->t;
 
   //Input regressor header
   io_buf io_temp;
-  parse_regressor_args(*all, vm, io_temp);
+  parse_regressor_args(all, vm, io_temp);
   
   int temp_argc = 0;
-  char** temp_argv = VW::get_argv_from_string(all->file_options->str(), temp_argc);
-  add_to_args(*all, temp_argc, temp_argv);
+  char** temp_argv = VW::get_argv_from_string(all.file_options->str(), temp_argc);
+  add_to_args(all, temp_argc, temp_argv);
   for (int i = 0; i < temp_argc; i++)
     free(temp_argv[i]);
   free(temp_argv);
   
-  po::parsed_options pos = po::command_line_parser(all->args).
+  po::parsed_options pos = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(all->opts).allow_unregistered().run();
+    options(all.opts).allow_unregistered().run();
 
   vm = po::variables_map();
 
   po::store(pos, vm);
   po::notify(vm);
-  all->file_options->str("");
+  all.file_options->str("");
 
-  parse_feature_tweaks(*all); //feature tweaks
+  parse_feature_tweaks(all); //feature tweaks
 
-  parse_example_tweaks(*all); //example manipulation
+  parse_example_tweaks(all); //example manipulation
 
-  parse_output_model(*all);
+  parse_output_model(all);
   
-  parse_reductions(*all);
+  parse_reductions(all);
 
-  if (!all->quiet)
+  if (!all.quiet)
     {
-      cerr << "Num weight bits = " << all->num_bits << endl;
-      cerr << "learning rate = " << all->eta << endl;
-      cerr << "initial_t = " << all->sd->t << endl;
-      cerr << "power_t = " << all->power_t << endl;
-      if (all->numpasses > 1)
-	cerr << "decay_learning_rate = " << all->eta_decay_rate << endl;
+      cerr << "Num weight bits = " << all.num_bits << endl;
+      cerr << "learning rate = " << all.eta << endl;
+      cerr << "initial_t = " << all.sd->t << endl;
+      cerr << "power_t = " << all.power_t << endl;
+      if (all.numpasses > 1)
+	cerr << "decay_learning_rate = " << all.eta_decay_rate << endl;
     }
 
-  parse_output_preds(*all);
+  parse_output_preds(all);
 
-  load_input_model(*all, io_temp);
+  load_input_model(all, io_temp);
 
-  parse_source(*all);
+  parse_source(all);
 
-  enable_sources(*all, all->quiet, all->numpasses);
+  enable_sources(all, all.quiet, all.numpasses);
 
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
-  size_t params_per_problem = all->l->increment;
+  size_t params_per_problem = all.l->increment;
   while (params_per_problem > (uint32_t)(1 << i))
     i++;
-  all->wpp = (1 << i) >> all->reg.stride_shift;
+  all.wpp = (1 << i) >> all.reg.stride_shift;
 
   if (vm.count("help")) {
     /* upon direct query for help -- spit it out to stdout */
-    cout << "\n" << all->opts << "\n";
+    cout << "\n" << all.opts << "\n";
     exit(0);
   }
 
@@ -945,15 +945,15 @@ namespace VW {
     s += " --no_stdin";
     char** argv = get_argv_from_string(s,argc);
 
-    vw* all = parse_args(argc, argv);
+    vw& all = parse_args(argc, argv);
     
-    initialize_parser_datastructures(*all);
+    initialize_parser_datastructures(all);
 
     for(int i = 0; i < argc; i++)
       free(argv[i]);
     free (argv);
 
-    return all;
+    return &all;
   }
 
   void delete_dictionary_entry(substring ss, v_array<feature>*A) {
