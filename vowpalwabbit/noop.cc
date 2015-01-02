@@ -12,12 +12,8 @@ namespace NOOP {
   
   LEARNER::base_learner* setup(vw& all)
   {
-    po::options_description opts("Noop options");
-    opts.add_options()
-      ("noop","do no learning");
-    add_options(all, opts);
-    if(!all.vm.count("noop"))
-      return NULL;
+    new_options(all, "Noop options") ("noop","do no learning");
+    if(missing_required(all)) return NULL;
     
     return &LEARNER::init_learner<char>(NULL, learn, 1); }
 }

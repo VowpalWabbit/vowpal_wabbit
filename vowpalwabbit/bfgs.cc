@@ -970,18 +970,17 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
 base_learner* setup(vw& all)
 {
-  po::options_description opts("LBFGS options");
-  opts.add_options()
+  new_options(all, "LBFGS options")
     ("bfgs", "use bfgs optimization")
-    ("conjugate_gradient", "use conjugate gradient based optimization")
+    ("conjugate_gradient", "use conjugate gradient based optimization");
+  if (missing_required(all)) return NULL;
+  new_options(all)
     ("hessian_on", "use second derivative in line search")
     ("mem", po::value<uint32_t>()->default_value(15), "memory in bfgs")
     ("termination", po::value<float>()->default_value(0.001f),"Termination threshold");
-  add_options(all, opts);
+  add_options(all);
+
   po::variables_map& vm = all.vm;
-  if(!vm.count("bfgs") && !vm.count("conjugate_gradient"))
-    return NULL;
-  
   bfgs& b = calloc_or_die<bfgs>();
   b.all = &all;
   b.m = vm["mem"].as<uint32_t>();

@@ -102,12 +102,9 @@ namespace TOPK {
 
   LEARNER::base_learner* setup(vw& all)
   {
-    po::options_description opts("TOP K options");
-    opts.add_options()
+    new_options(all, "TOP K options")
       ("top", po::value<size_t>(), "top k recommendation");
-    add_options(all,opts);
-    if(!all.vm.count("top"))
-      return NULL;
+    if(missing_required(all)) return NULL;
 
     topk& data = calloc_or_die<topk>();
     data.B = (uint32_t)all.vm["top"].as<size_t>();

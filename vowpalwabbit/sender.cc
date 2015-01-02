@@ -98,12 +98,9 @@ void end_examples(sender& s)
 
   LEARNER::base_learner* setup(vw& all)
   {
-  po::options_description opts("Sender options");
-  opts.add_options()
+    new_options(all, "Sender options")
     ("sendto", po::value< vector<string> >(), "send examples to <host>");
-  add_options(all, opts);
-  if(!all.vm.count("sendto"))
-    return NULL;
+  if(missing_required(all)) return NULL;
   
   sender& s = calloc_or_die<sender>();
   s.sd = -1;

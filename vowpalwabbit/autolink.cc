@@ -39,12 +39,9 @@ namespace ALINK {
 
   LEARNER::base_learner* setup(vw& all)
   {
-    po::options_description opts("Autolink options");
-    opts.add_options()
+    new_options(all,"Autolink options")
       ("autolink", po::value<size_t>(), "create link function with polynomial d");
-    add_options(all,opts);
-    if(!all.vm.count("autolink"))
-      return NULL;
+    if(missing_required(all)) return NULL;
     
     autolink& data = calloc_or_die<autolink>();
     data.d = (uint32_t)all.vm["autolink"].as<size_t>();

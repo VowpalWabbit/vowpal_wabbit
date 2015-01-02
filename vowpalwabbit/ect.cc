@@ -364,13 +364,11 @@ namespace ECT
   
   base_learner* setup(vw& all)
   {
-    po::options_description opts("ECT options");
-    opts.add_options()
-      ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
-      ("error", po::value<size_t>()->default_value(0), "error in ECT");
-    add_options(all, opts);
-    if (!all.vm.count("ect")) 
-      return NULL;
+    new_options(all, "ECT options")
+      ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels");
+    if (missing_required(all)) return NULL;
+    new_options(all)("error", po::value<size_t>()->default_value(0), "error in ECT");
+    add_options(all);
     
     ect& data = calloc_or_die<ect>();
     data.k = (int)all.vm["ect"].as<size_t>();

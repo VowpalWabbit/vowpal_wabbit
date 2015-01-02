@@ -43,12 +43,8 @@ namespace PRINT
 
   LEARNER::base_learner* setup(vw& all)
   {
-    po::options_description opts("Print options");
-    opts.add_options()
-      ("print","print examples");
-    add_options(all, opts);
-    if(!all.vm.count("print"))
-      return NULL;
+    new_options(all, "Print options") ("print","print examples");
+    if(missing_required(all)) return NULL;
 
     print& p = calloc_or_die<print>();
     p.all = &all;

@@ -241,15 +241,11 @@ namespace BS {
 
   base_learner* setup(vw& all)
   {
-    po::options_description opts("Bootstrap options");
-    opts.add_options()
-      ("bootstrap,B", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
-      ("bs_type", po::value<string>(), "prediction type {mean,vote}");
-    
-    add_options(all, opts);
-    if (!all.vm.count("bootstrap"))
-      return NULL;
-
+    new_options(all, "Bootstrap options")
+      ("bootstrap,B", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling");
+    if (missing_required(all)) return NULL;
+    new_options(all)("bs_type", po::value<string>(), "prediction type {mean,vote}");    
+    add_options(all);
 
     bs& data = calloc_or_die<bs>();
     data.ub = FLT_MAX;

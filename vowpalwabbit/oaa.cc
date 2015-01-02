@@ -62,8 +62,7 @@ namespace OAA {
   
   void finish_example(vw& all, oaa&, example& ec) { MULTICLASS::finish_example(all, ec); }
 
-  /*
-{
+  /*{
   new_options(all, "One-against-all options")
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels");
   if (missing_required(all,vm)) return NULL;
@@ -74,12 +73,9 @@ namespace OAA {
 
   LEARNER::base_learner* setup(vw& all)
   {
-    po::options_description opts("One-against-all options");
-    opts.add_options()
+    new_options(all, "One-against-all options")
       ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels");
-    add_options(all, opts);
-    if(!all.vm.count("oaa"))
-      return NULL;
+    if(missing_required(all)) return NULL;
     
     oaa& data = calloc_or_die<oaa>();
     data.k = all.vm["oaa"].as<size_t>();

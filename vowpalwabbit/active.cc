@@ -153,14 +153,13 @@ namespace ACTIVE {
   
   base_learner* setup(vw& all)
   {//parse and set arguments
-    po::options_description opts("Active Learning options");
-    opts.add_options()
-      ("active", "enable active learning")
+    new_options(all, "Active Learning options")
+      ("active", "enable active learning");
+    if (missing_required(all)) return NULL;
+    new_options(all)
       ("simulation", "active learning simulation mode")
       ("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8");
-    add_options(all, opts);
-    if(!all.vm.count("active"))
-      return NULL;
+    add_options(all);
     
     active& data = calloc_or_die<active>();
     data.active_c0 = 8;

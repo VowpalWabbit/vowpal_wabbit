@@ -438,35 +438,33 @@ namespace CB_ALGS
 
   base_learner* setup(vw& all)
   {
-    po::options_description opts("CB options");
-    opts.add_options()
-      ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
+    new_options(all, "CB options")
+      ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs");
+    if (missing_required(all)) return NULL;
+    new_options(all)
       ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}")
       ("eval", "Evaluate a policy rather than optimizing.");
-    add_options(all, opts);
-    po::variables_map& vm = all.vm;
-    if (!vm.count("cb"))
-      return NULL;
+    add_options(all);
 
     cb& c = calloc_or_die<cb>();
     c.all = &all;
 
-    uint32_t nb_actions = (uint32_t)vm["cb"].as<size_t>();
+    uint32_t nb_actions = (uint32_t)all.vm["cb"].as<size_t>();
 
     *all.file_options << " --cb " << nb_actions;
 
     all.sd->k = nb_actions;
 
     bool eval = false;
-    if (vm.count("eval"))
+    if (all.vm.count("eval"))
       eval = true;
 
     size_t problem_multiplier = 2;//default for DR
-    if (vm.count("cb_type"))
+    if (all.vm.count("cb_type"))
     {
       std::string type_string;
 
-      type_string = vm["cb_type"].as<std::string>();
+      type_string = all.vm["cb_type"].as<std::string>();
       *all.file_options << " --cb_type " << type_string;
       
       if (type_string.compare("dr") == 0) 
@@ -501,7 +499,7 @@ namespace CB_ALGS
       {
 	all.args.push_back("--csoaa");
 	stringstream ss;
-	ss << vm["cb"].as<size_t>();
+	ss << all.vm["cb"].as<size_t>();
 	all.args.push_back(ss.str());
       }
 

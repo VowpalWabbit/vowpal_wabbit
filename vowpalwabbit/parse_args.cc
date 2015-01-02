@@ -180,16 +180,13 @@ void parse_affix_argument(vw&all, string str) {
 
 void parse_diagnostics(vw& all, int argc)
 {
-  po::options_description diag_opt("Diagnostic options");
-
-  diag_opt.add_options()
+  new_options(all, "Diagnostic options")
     ("version","Version information")
     ("audit,a", "print weights of features")
     ("progress,P", po::value< string >(), "Progress update frequency. int: additive, float: multiplicative")
     ("quiet", "Don't output disgnostics and progress updates")
     ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.");
-  
-  add_options(all, diag_opt);
+  add_options(all);
 
   po::variables_map& vm = all.vm;
 
@@ -250,9 +247,7 @@ void parse_diagnostics(vw& all, int argc)
 
 void parse_source(vw& all)
 {
-  po::options_description in_opt("Input options");
-  
-  in_opt.add_options()
+  new_options(all, "Input options")
     ("data,d", po::value< string >(), "Example Set")
     ("daemon", "persistent daemon mode on port 26542")
     ("port", po::value<size_t>(),"port to listen on; use 0 to pick unused port")
@@ -264,8 +259,7 @@ void parse_source(vw& all)
     ("kill_cache,k", "do not reuse existing cache: create a new one always")
     ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
     ("no_stdin", "do not default to reading from stdin");
-  
-  add_options(all, in_opt);
+  add_options(all);
 
   // Be friendly: if -d was left out, treat positional param as data file
   po::positional_options_description p;  
@@ -320,8 +314,7 @@ void parse_source(vw& all)
 
 void parse_feature_tweaks(vw& all)
 {
-  po::options_description feature_opt("Feature options");
-  feature_opt.add_options()
+  new_options(all, "Feature options")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
@@ -338,8 +331,8 @@ void parse_feature_tweaks(vw& all)
     ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
     ("cubic", po::value< vector<string> > (),
      "Create and use cubic features");
+  add_options(all);
 
-  add_options(all, feature_opt);
   po::variables_map& vm = all.vm;
 
   //feature manipulation
@@ -551,9 +544,7 @@ void parse_feature_tweaks(vw& all)
 
 void parse_example_tweaks(vw& all)
 {
-  po::options_description opts("Example options");
-  
-  opts.add_options()
+  new_options(all, "Example options")
     ("testonly,t", "Ignore label information and just test")
     ("holdout_off", "no holdout data in multiple passes")
     ("holdout_period", po::value<uint32_t>(&(all.holdout_period)), "holdout period for test only, default 10")
@@ -569,10 +560,9 @@ void parse_example_tweaks(vw& all)
     ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
     ("l1", po::value<float>(&(all.l1_lambda)), "l_1 lambda")
     ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda");
+  add_options(all);
 
-  add_options(all, opts);
   po::variables_map& vm = all.vm;
-
   if (vm.count("testonly") || all.eta == 0.)
     {
       if (!all.quiet)
@@ -628,16 +618,12 @@ void parse_example_tweaks(vw& all)
 
 void parse_output_preds(vw& all)
 {
-  po::options_description out_opt("Output options");
-
-  out_opt.add_options()
+  new_options(all, "Output options")
     ("predictions,p", po::value< string >(), "File to output predictions to")
-    ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to")
-    ;
+    ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to");
+  add_options(all);
 
-  add_options(all, out_opt);
   po::variables_map& vm = all.vm;
-
   if (vm.count("predictions")) {
     if (!all.quiet)
       cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
@@ -684,20 +670,17 @@ void parse_output_preds(vw& all)
 
 void parse_output_model(vw& all)
 {
-  po::options_description output_model("Output model");
-  
-  output_model.add_options()
+  new_options(all, "Output model")
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("readable_model", po::value< string >(), "Output human-readable final regressor with numeric features")
     ("invert_hash", po::value< string >(), "Output human-readable final regressor with feature names.  Computationally expensive.")
     ("save_resume", "save extra state so learning can be resumed later with new data")
     ("save_per_pass", "Save the model after every pass over data")
     ("output_feature_regularizer_binary", po::value< string >(&(all.per_feature_regularizer_output)), "Per feature regularization output file")
-    ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text");
-  
-  add_options(all, output_model);
-  po::variables_map& vm = all.vm;
+    ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text");  
+  add_options(all);
 
+  po::variables_map& vm = all.vm;
   if (vm.count("final_regressor")) {
     all.final_regressor_name = vm["final_regressor"].as<string>();
     if (!all.quiet)
@@ -806,49 +789,36 @@ vw* parse_args(int argc, char *argv[])
   size_t random_seed = 0;
   all->program_name = argv[0];
 
-  po::options_description desc("VW options");
-
-  desc.add_options()
+  new_options(*all, "VW options")
     ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
     ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring");
+  add_options(*all);
 
-  po::options_description update_opt("Update options");
-
-  update_opt.add_options()
+  new_options(*all, "Update options")
     ("learning_rate,l", po::value<float>(&(all->eta)), "Set learning rate")
     ("power_t", po::value<float>(&(all->power_t)), "t power value")
     ("decay_learning_rate",    po::value<float>(&(all->eta_decay_rate)),
      "Set Decay factor for learning_rate between passes")
     ("initial_t", po::value<double>(&((all->sd->t))), "initial t value")
-    ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights.")
-    ;
+    ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights.");
+  add_options(*all);
 
-  po::options_description weight_opt("Weight options");
-
-  weight_opt.add_options()
+  new_options(*all, "Weight options")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_weight", po::value<float>(&(all->initial_weight)), "Set all weights to an initial value of 1.")
     ("random_weights", po::value<bool>(&(all->random_weights)), "make initial weights random")
-    ("input_feature_regularizer", po::value< string >(&(all->per_feature_regularizer_input)), "Per feature regularization input file")
-    ;
+    ("input_feature_regularizer", po::value< string >(&(all->per_feature_regularizer_input)), "Per feature regularization input file");
+  add_options(*all);
 
-  po::options_description cluster_opt("Parallelization options");
-  cluster_opt.add_options()
+  new_options(*all, "Parallelization options")
     ("span_server", po::value<string>(&(all->span_server)), "Location of server for setting up spanning tree")
     ("unique_id", po::value<size_t>(&(all->unique_id)),"unique id used for cluster parallel jobs")
     ("total", po::value<size_t>(&(all->total)),"total number of nodes used in cluster parallel job")
-    ("node", po::value<size_t>(&(all->node)),"node number in cluster parallel job")
-    ;
+    ("node", po::value<size_t>(&(all->node)),"node number in cluster parallel job");
+  add_options(*all);
 
-  desc.add(update_opt)
-    .add(weight_opt)
-    .add(cluster_opt);
-
-  add_options(*all, desc);
   po::variables_map& vm = all->vm;
-
   msrand48(random_seed);
-
   parse_diagnostics(*all, argc);
 
   all->sd->weighted_unlabeled_examples = all->sd->t;

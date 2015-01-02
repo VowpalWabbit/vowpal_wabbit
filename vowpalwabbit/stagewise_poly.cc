@@ -658,9 +658,11 @@ namespace StagewisePoly
 
   base_learner *setup(vw &all)
   {
-    po::options_description opts("Stagewise poly options");
-    opts.add_options()
-      ("stage_poly", "use stagewise polynomial feature learning")
+    new_options(all, "Stagewise poly options")
+      ("stage_poly", "use stagewise polynomial feature learning");
+    if (missing_required(all)) return NULL;
+
+    new_options(all)
       ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
       ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")
       ("batch_sz_no_doubling", "batch_sz does not double")
@@ -668,12 +670,9 @@ namespace StagewisePoly
       ("magic_argument", po::value<float>(), "magical feature flag")
 #endif //MAGIC_ARGUMENT
       ;
-    add_options(all, opts);
+    add_options(all);
+
     po::variables_map &vm = all.vm;
-
-    if (!vm.count("stage_poly"))
-      return NULL;
-
     stagewise_poly& poly = calloc_or_die<stagewise_poly>();
     poly.all = &all;
     depthsbits_create(poly);

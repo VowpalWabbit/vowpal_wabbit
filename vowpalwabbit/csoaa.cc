@@ -68,12 +68,10 @@ namespace CSOAA {
 
   base_learner* setup(vw& all)
   {
-    po::options_description opts("CSOAA options");
-    opts.add_options()
+    new_options(all, "CSOAA options")
       ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs");
-    add_options(all, opts);
-    if(!all.vm.count("csoaa"))
-      return NULL;
+    if(missing_required(all)) return NULL;
+
     csoaa& c = calloc_or_die<csoaa>();
     c.all = &all;
     //first parse for number of actions
@@ -651,16 +649,15 @@ namespace LabelDict {
 
   base_learner* setup(vw& all)
   {
-    po::options_description opts("LDF Options");
-    opts.add_options()
+    new_options(all, "LDF Options")
       ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
-      ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
+      ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.");
+    if (missing_required(all)) return NULL;
+    new_options(all)
       ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file");
-    add_options(all, opts);
+    add_options(all);
+
     po::variables_map& vm = all.vm;
-    if(!vm.count("csoaa_ldf") && !vm.count("wap_ldf"))
-      return NULL;
-    
     ldf& ld = calloc_or_die<ldf>();
 
     ld.all = &all;

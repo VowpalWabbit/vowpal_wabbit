@@ -314,8 +314,10 @@ void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool q
 void compile_limits(vector<string> limits, uint32_t* dest, bool quiet);
 int print_tag(std::stringstream& ss, v_array<char> tag);
 void add_options(vw& all, po::options_description& opts);
-inline po::options_description_easy_init new_options(vw& all, const char* name) 
+inline po::options_description_easy_init new_options(vw& all, std::string name = "\0") 
 {
   all.new_opts = new po::options_description(name);
   return all.new_opts->add_options();
 }
+bool missing_required(vw& all);
+void add_options(vw& all);

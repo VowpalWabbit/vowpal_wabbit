@@ -373,20 +373,18 @@ namespace CBIFY {
 
   base_learner* setup(vw& all)
   {//parse and set arguments
-    po::options_description opts("CBIFY options");
-    opts.add_options()
-      ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve")
+    new_options(all, "CBIFY options")
+      ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve");
+    if (missing_required(all)) return NULL;
+    new_options(all)
       ("first", po::value<size_t>(), "tau-first exploration")
       ("epsilon",po::value<float>() ,"epsilon-greedy exploration")
       ("bag",po::value<size_t>() ,"bagging-based exploration")
       ("cover",po::value<size_t>() ,"bagging-based exploration");
-    add_options(all, opts);
+    add_options(all);
+
     po::variables_map& vm = all.vm;
-    if (!vm.count("cbify"))
-      return NULL;
-
     cbify& data = calloc_or_die<cbify>();
-
     data.all = &all;
     data.k = (uint32_t)vm["cbify"].as<size_t>();
     *all.file_options << " --cbify " << data.k;

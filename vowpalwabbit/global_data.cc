@@ -225,29 +225,31 @@ void add_options(vw& all, po::options_description& opts)
   po::store(parsed, new_vm);
   po::notify(new_vm); 
 
-  //parse all opts for a complete variable map.
-  parsed = po::command_line_parser(all.args).
-    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(all.opts).allow_unregistered().run();
-  po::store(parsed, new_vm);
-  all.vm = new_vm;
+  for (po::variables_map::iterator it=new_vm.begin(); it!=new_vm.end(); ++it)
+    all.vm.insert(*it);
 }
 
-bool missing_required(vw& all, po::variables_map& vm)
+void add_options(vw& all)
 {
-  all.opts.add(*all.new_opts);//record required.
-  po::variables_map new_vm;
+  add_options(all, *all.new_opts);
+  delete all.new_opts;
+}
+
+bool missing_required(vw& all)
+{
   //parse local opts once for notifications.
   po::parsed_options parsed = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(*all.new_opts).allow_unregistered().run();
+  po::variables_map new_vm;
   po::store(parsed, new_vm);
-
+  all.opts.add(*all.new_opts);
+  delete all.new_opts;
+  for (po::variables_map::iterator it=new_vm.begin(); it!=new_vm.end(); ++it)
+    all.vm.insert(*it);
+  
   if (new_vm.size() == 0) // required are missing;
-    {
-      delete all.new_opts;
-      return true;
-    }
+    return true;
   else
     return false;
 }

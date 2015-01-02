@@ -30,12 +30,9 @@ namespace BINARY {
 
 LEARNER::base_learner* setup(vw& all)
   {//parse and set arguments
-    po::options_description opts("Binary options");
-    opts.add_options()
+    new_options(all,"Binary options")
       ("binary", "report loss as binary classification on -1,1");
-    add_options(all,opts);
-    if(!all.vm.count("binary"))
-      return NULL;
+    if(missing_required(all)) return NULL;
 
     //Create new learner
     LEARNER::learner<char>& ret = 

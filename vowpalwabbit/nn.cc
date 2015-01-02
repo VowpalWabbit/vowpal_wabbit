@@ -310,17 +310,16 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
   base_learner* setup(vw& all)
   {
-    po::options_description opts("NN options");
-    opts.add_options()
-      ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
+    new_options(all, "NN options")
+      ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units");
+    if(missing_required(all)) return NULL;
+    new_options(all)
       ("inpass", "Train or test sigmoidal feedforward network with input passthrough.")
       ("dropout", "Train or test sigmoidal feedforward network using dropout.")
       ("meanfield", "Train or test sigmoidal feedforward network using mean field.");
-    add_options(all, opts);
+    add_options(all);
+
     po::variables_map& vm = all.vm;
-    if(!vm.count("nn"))
-      return NULL;
-    
     nn& n = calloc_or_die<nn>();
     n.all = &all;
     //first parse for number of hidden units

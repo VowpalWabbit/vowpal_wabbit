@@ -500,15 +500,15 @@ namespace LOG_MULTI
   
   base_learner* setup(vw& all)	//learner setup
   {
-    po::options_description opts("Log Multi options");
-    opts.add_options()
-      ("log_multi", po::value<size_t>(), "Use online tree for multiclass")
+    new_options(all, "Log Multi options")
+      ("log_multi", po::value<size_t>(), "Use online tree for multiclass");
+    if (missing_required(all)) return NULL;
+    new_options(all)
       ("no_progress", "disable progressive validation")
       ("swap_resistance", po::value<uint32_t>(), "higher = more resistance to swap, default=4");
-    add_options(all, opts);
+    add_options(all);
+
       po::variables_map& vm = all.vm;
-    if(!vm.count("log_multi"))
-      return NULL;
 
     log_multi& data = calloc_or_die<log_multi>();
     data.k = (uint32_t)vm["log_multi"].as<size_t>();

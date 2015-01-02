@@ -189,13 +189,14 @@ namespace LRQ {
 
   base_learner* setup(vw& all)
   {//parse and set arguments
-    po::options_description opts("Lrq options");
-    opts.add_options()
-      ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
+    new_options(all, "Lrq options")
+      ("lrq", po::value<vector<string> > (), "use low rank quadratic features");
+    if (missing_required(all)) return NULL;
+    new_options(all)
       ("lrqdropout", "use dropout training for low rank quadratic features");
-    add_options(all, opts);
-    po::variables_map& vm = all.vm;
-    if(!vm.count("lrq"))
+    add_options(all);
+
+    if(!all.vm.count("lrq"))
       return NULL;
 
     LRQstate& lrq = calloc_or_die<LRQstate>();
@@ -203,17 +204,17 @@ namespace LRQ {
     lrq.all = &all;
     
     size_t random_seed = 0;
-    if (vm.count("random_seed")) random_seed = vm["random_seed"].as<size_t> ();
+    if (all.vm.count("random_seed")) random_seed = all.vm["random_seed"].as<size_t> ();
     
     lrq.initial_seed = lrq.seed = random_seed | 8675309;
-    if (vm.count("lrqdropout"))
+    if (all.vm.count("lrqdropout"))
       lrq.dropout = true;
     else
       lrq.dropout = false;
     
     *all.file_options << " --lrqdropout ";
     
-    lrq.lrpairs = vm["lrq"].as<vector<string> > ();
+    lrq.lrpairs = all.vm["lrq"].as<vector<string> > ();
     
     for (vector<string>::iterator i = lrq.lrpairs.begin (); 
 	 i != lrq.lrpairs.end (); 

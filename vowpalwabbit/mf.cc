@@ -189,16 +189,11 @@ void finish(mf& o) {
 }
 
   base_learner* setup(vw& all) {
-    po::options_description opts("MF options");
-    opts.add_options()
+    new_options(all, "MF options")
       ("new_mf", po::value<size_t>(), "rank for reduction-based matrix factorization");
-    add_options(all, opts);
-    if(!all.vm.count("new_mf"))
-      return NULL;
+    if(missing_required(all)) return NULL;
     
     mf& data = calloc_or_die<mf>();
-    
-    // copy global data locally
     data.all = &all;
     data.rank = (uint32_t)all.vm["new_mf"].as<size_t>();
 

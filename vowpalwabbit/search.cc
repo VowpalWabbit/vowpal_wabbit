@@ -1669,13 +1669,12 @@ namespace Search {
   }
 
   void handle_condition_options(vw& vw, auto_condition_settings& acset) {
-    po::options_description condition_options("Search Auto-conditioning Options");
-    condition_options.add_options()
-        ("search_max_bias_ngram_length",   po::value<size_t>(), "add a \"bias\" feature for each ngram up to and including this length. eg., if it's 1 (default), then you get a single feature for each conditional")
-        ("search_max_quad_ngram_length",   po::value<size_t>(), "add bias *times* input features for each ngram up to and including this length (def: 0)")
-        ("search_condition_feature_value", po::value<float> (), "how much weight should the conditional features get? (def: 1.)");
+    new_options(vw, "Search Auto-conditioning Options")
+      ("search_max_bias_ngram_length",   po::value<size_t>(), "add a \"bias\" feature for each ngram up to and including this length. eg., if it's 1 (default), then you get a single feature for each conditional")
+      ("search_max_quad_ngram_length",   po::value<size_t>(), "add bias *times* input features for each ngram up to and including this length (def: 0)")
+      ("search_condition_feature_value", po::value<float> (), "how much weight should the conditional features get? (def: 1.)");
+    add_options(vw);
 
-    add_options(vw, condition_options);
     po::variables_map& vm = vw.vm;
 
     check_option<size_t>(acset.max_bias_ngram_length, vw, vm, "search_max_bias_ngram_length", false, size_equal,
@@ -1765,9 +1764,10 @@ namespace Search {
   }
 
   base_learner* setup(vw&all) {
-    po::options_description opts("Search Options");
-    opts.add_options()
-      ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF")
+    new_options(all,"Search Options")
+      ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF");
+    if (missing_required(all)) return NULL;
+    new_options(all)
       ("search_task",              po::value<string>(), "the search task (use \"--search_task list\" to get a list of available tasks)")
       ("search_interpolation",     po::value<string>(), "at what level should interpolation happen? [*data|policy]")
       ("search_rollout",           po::value<string>(), "how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_roll|none]")
@@ -1792,7 +1792,7 @@ namespace Search {
       ("search_beam",              po::value<size_t>(), "use beam search (arg = beam size, default 0 = no beam)")
       ("search_kbest",             po::value<size_t>(), "size of k-best list to produce (must be <= beam size)")
       ;
-    add_options(all, opts);
+    add_options(all);
     po::variables_map& vm = all.vm;
     if (!vm.count("search"))
       return NULL;

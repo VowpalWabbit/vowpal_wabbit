@@ -179,16 +179,14 @@ namespace FTRL {
   
   base_learner* setup(vw& all) 
   {
-    po::options_description opts("FTRL options");
-    opts.add_options()
-      ("ftrl", "Follow the Regularized Leader")
+    new_options(all, "FTRL options")
+      ("ftrl", "Follow the Regularized Leader");
+    if (missing_required(all)) return NULL;
+    new_options(all)
       ("ftrl_alpha", po::value<float>()->default_value(0.0), "Learning rate for FTRL-proximal optimization")
       ("ftrl_beta", po::value<float>()->default_value(0.1), "FTRL beta")
       ("progressive_validation", po::value<string>()->default_value("ftrl.evl"), "File to record progressive validation for ftrl-proximal");
-    add_options(all, opts);
-    
-    if (!all.vm.count("ftrl"))
-      return NULL;
+    add_options(all);
     
     ftrl& b = calloc_or_die<ftrl>();
     b.all = &all;
