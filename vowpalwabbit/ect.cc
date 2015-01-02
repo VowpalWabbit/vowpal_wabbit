@@ -367,21 +367,14 @@ namespace ECT
     po::options_description opts("ECT options");
     opts.add_options()
       ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
-      ("error", po::value<size_t>(), "error in ECT");
+      ("error", po::value<size_t>()->default_value(0), "error in ECT");
     add_options(all, opts);
     if (!all.vm.count("ect")) 
       return NULL;
     
     ect& data = calloc_or_die<ect>();
-    
-    //first parse for number of actions
     data.k = (int)all.vm["ect"].as<size_t>();
-    
-    //append ect with nb_actions to options_from_file so it is saved to regressor later
-    if (all.vm.count("error")) {
-      data.errors = (uint32_t)all.vm["error"].as<size_t>();
-    } else 
-      data.errors = 0;
+    data.errors = (uint32_t)all.vm["error"].as<size_t>();
     //append error flag to options_from_file so it is saved in regressor file later
     *all.file_options << " --ect " << data.k << " --error " << data.errors;
     
