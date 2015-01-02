@@ -41,13 +41,13 @@ namespace PRINT
     cout << endl;
   }
 
-  LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
+  LEARNER::base_learner* setup(vw& all)
   {
     po::options_description opts("Print options");
     opts.add_options()
       ("print","print examples");
-    vm = add_options(all, opts);
-    if(!vm.count("print"))
+    add_options(all, opts);
+    if(!all.vm.count("print"))
       return NULL;
 
     print& p = calloc_or_die<print>();

@@ -371,7 +371,7 @@ namespace CBIFY {
   void finish(cbify& data)
   { CB::cb_label.delete_label(&data.cb_label); }
 
-  base_learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all)
   {//parse and set arguments
     po::options_description opts("CBIFY options");
     opts.add_options()
@@ -380,7 +380,8 @@ namespace CBIFY {
       ("epsilon",po::value<float>() ,"epsilon-greedy exploration")
       ("bag",po::value<size_t>() ,"bagging-based exploration")
       ("cover",po::value<size_t>() ,"bagging-based exploration");
-    vm = add_options(all, opts);
+    add_options(all, opts);
+    po::variables_map& vm = all.vm;
     if (!vm.count("cbify"))
       return NULL;
 
@@ -397,7 +398,7 @@ namespace CBIFY {
 	ss << vm["cbify"].as<size_t>();
 	all.args.push_back(ss.str());
       }
-    base_learner* base = setup_base(all,vm);
+    base_learner* base = setup_base(all);
     
     all.p->lp = MULTICLASS::mc_label;
 

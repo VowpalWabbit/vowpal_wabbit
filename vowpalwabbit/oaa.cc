@@ -62,24 +62,34 @@ namespace OAA {
   
   void finish_example(vw& all, oaa&, example& ec) { MULTICLASS::finish_example(all, ec); }
 
-  LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
+  /*
+{
+  new_options(all, "One-against-all options")
+    ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels");
+  if (missing_required(all,vm)) return NULL;
+  options(all)
+    ...;
+  add_options(all)
+  }*/
+
+  LEARNER::base_learner* setup(vw& all)
   {
     po::options_description opts("One-against-all options");
     opts.add_options()
       ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels");
-    vm = add_options(all, opts);
-    if(!vm.count("oaa"))
+    add_options(all, opts);
+    if(!all.vm.count("oaa"))
       return NULL;
     
     oaa& data = calloc_or_die<oaa>();
-    data.k = vm["oaa"].as<size_t>();
+    data.k = all.vm["oaa"].as<size_t>();
     data.shouldOutput = all.raw_prediction > 0;
     data.all = &all;
 
     *all.file_options << " --oaa " << data.k;
     all.p->lp = MULTICLASS::mc_label;
 
-    LEARNER::learner<oaa>& l = init_learner(&data, setup_base(all,vm), predict_or_learn<true>, 
+    LEARNER::learner<oaa>& l = init_learner(&data, setup_base(all), predict_or_learn<true>, 
 				   predict_or_learn<false>, data.k);
     l.set_finish_example(finish_example);
     return make_base(l);

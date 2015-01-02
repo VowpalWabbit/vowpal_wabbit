@@ -100,20 +100,20 @@ namespace TOPK {
     VW::finish_example(all, &ec);
   }
 
-  LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
+  LEARNER::base_learner* setup(vw& all)
   {
     po::options_description opts("TOP K options");
     opts.add_options()
       ("top", po::value<size_t>(), "top k recommendation");
-    vm = add_options(all,opts);
-    if(!vm.count("top"))
+    add_options(all,opts);
+    if(!all.vm.count("top"))
       return NULL;
 
     topk& data = calloc_or_die<topk>();
-    data.B = (uint32_t)vm["top"].as<size_t>();
+    data.B = (uint32_t)all.vm["top"].as<size_t>();
     data.all = &all;
 
-    LEARNER::learner<topk>& l = init_learner(&data, setup_base(all,vm), predict_or_learn<true>, 
+    LEARNER::learner<topk>& l = init_learner(&data, setup_base(all), predict_or_learn<true>, 
 					     predict_or_learn<false>);
     l.set_finish_example(finish_example);
 

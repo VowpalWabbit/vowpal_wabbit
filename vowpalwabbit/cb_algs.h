@@ -6,7 +6,7 @@ license as described in the file LICENSE.
 #pragma once
 //TODO: extend to handle CSOAA_LDF and WAP_LDF
 namespace CB_ALGS {
-  LEARNER::base_learner* setup(vw& all, po::variables_map& vm);
+  LEARNER::base_learner* setup(vw& all);
 
   template <bool is_learn>
     float get_cost_pred(vw& all, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)

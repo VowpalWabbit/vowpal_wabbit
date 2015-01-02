@@ -37,22 +37,22 @@ namespace ALINK {
     ec.total_sum_feat_sq -= sum_sq;
   }
 
-  LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
+  LEARNER::base_learner* setup(vw& all)
   {
     po::options_description opts("Autolink options");
     opts.add_options()
       ("autolink", po::value<size_t>(), "create link function with polynomial d");
-    vm = add_options(all,opts);
-    if(!vm.count("autolink"))
+    add_options(all,opts);
+    if(!all.vm.count("autolink"))
       return NULL;
     
     autolink& data = calloc_or_die<autolink>();
-    data.d = (uint32_t)vm["autolink"].as<size_t>();
+    data.d = (uint32_t)all.vm["autolink"].as<size_t>();
     data.stride_shift = all.reg.stride_shift;
     
     *all.file_options << " --autolink " << data.d;
 
-    LEARNER::base_learner* base = setup_base(all,vm);
+    LEARNER::base_learner* base = setup_base(all);
 
     LEARNER::learner<autolink>& ret = init_learner(&data, base, predict_or_learn<true>, 
 					  predict_or_learn<false>);

@@ -362,24 +362,24 @@ namespace ECT
 
   void finish_example(vw& all, ect&, example& ec) { MULTICLASS::finish_example(all, ec); }
   
-  base_learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all)
   {
     po::options_description opts("ECT options");
     opts.add_options()
       ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
       ("error", po::value<size_t>(), "error in ECT");
-    vm = add_options(all, opts);
-    if (!vm.count("ect")) 
+    add_options(all, opts);
+    if (!all.vm.count("ect")) 
       return NULL;
     
     ect& data = calloc_or_die<ect>();
     
     //first parse for number of actions
-    data.k = (int)vm["ect"].as<size_t>();
+    data.k = (int)all.vm["ect"].as<size_t>();
     
     //append ect with nb_actions to options_from_file so it is saved to regressor later
-    if (vm.count("error")) {
-      data.errors = (uint32_t)vm["error"].as<size_t>();
+    if (all.vm.count("error")) {
+      data.errors = (uint32_t)all.vm["error"].as<size_t>();
     } else 
       data.errors = 0;
     //append error flag to options_from_file so it is saved in regressor file later
@@ -389,7 +389,7 @@ namespace ECT
     size_t wpp = create_circuit(all, data, data.k, data.errors+1);
     data.all = &all;
     
-    learner<ect>& l = init_learner(&data, setup_base(all,vm), learn, predict, wpp);
+    learner<ect>& l = init_learner(&data, setup_base(all), learn, predict, wpp);
     l.set_finish_example(finish_example);
     l.set_finish(finish);
 

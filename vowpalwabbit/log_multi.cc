@@ -498,14 +498,15 @@ namespace LOG_MULTI
   
   void finish_example(vw& all, log_multi&, example& ec) { MULTICLASS::finish_example(all, ec); }
   
-  base_learner* setup(vw& all, po::variables_map& vm)	//learner setup
+  base_learner* setup(vw& all)	//learner setup
   {
     po::options_description opts("Log Multi options");
     opts.add_options()
       ("log_multi", po::value<size_t>(), "Use online tree for multiclass")
       ("no_progress", "disable progressive validation")
       ("swap_resistance", po::value<uint32_t>(), "higher = more resistance to swap, default=4");
-    vm = add_options(all, opts);
+    add_options(all, opts);
+      po::variables_map& vm = all.vm;
     if(!vm.count("log_multi"))
       return NULL;
 
@@ -533,7 +534,7 @@ namespace LOG_MULTI
 
     data.max_predictors = data.k - 1;
 
-      learner<log_multi>& l = init_learner(&data, setup_base(all,vm), learn, predict, data.max_predictors);
+      learner<log_multi>& l = init_learner(&data, setup_base(all), learn, predict, data.max_predictors);
     l.set_save_load(save_load_tree);
     l.set_finish_example(finish_example);
     l.set_finish(finish);

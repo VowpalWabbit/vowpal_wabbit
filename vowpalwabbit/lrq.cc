@@ -187,13 +187,14 @@ namespace LRQ {
       }
   }
 
-  base_learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all)
   {//parse and set arguments
     po::options_description opts("Lrq options");
     opts.add_options()
       ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
       ("lrqdropout", "use dropout training for low rank quadratic features");
-    vm = add_options(all, opts);
+    add_options(all, opts);
+    po::variables_map& vm = all.vm;
     if(!vm.count("lrq"))
       return NULL;
 
@@ -251,7 +252,7 @@ namespace LRQ {
       cerr<<endl;
         
     all.wpp = all.wpp * (1 + maxk);
-    learner<LRQstate>& l = init_learner(&lrq, setup_base(all,vm), predict_or_learn<true>, 
+    learner<LRQstate>& l = init_learner(&lrq, setup_base(all), predict_or_learn<true>, 
 					predict_or_learn<false>, 1 + maxk);
     l.set_end_pass(reset_seed);
 

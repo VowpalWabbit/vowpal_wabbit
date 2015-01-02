@@ -10,13 +10,13 @@ license as described in the file LICENSE.
 namespace NOOP {
   void learn(char&, LEARNER::base_learner&, example&) {}
   
-  LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
+  LEARNER::base_learner* setup(vw& all)
   {
     po::options_description opts("Noop options");
     opts.add_options()
       ("noop","do no learning");
     add_options(all, opts);
-    if(!vm.count("noop"))
+    if(!all.vm.count("noop"))
       return NULL;
     
     return &LEARNER::init_learner<char>(NULL, learn, 1); }

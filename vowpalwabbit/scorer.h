@@ -1,4 +1,2 @@
 #pragma once
-namespace Scorer {
-  LEARNER::base_learner* setup(vw& all, po::variables_map& vm);
-}
+namespace Scorer { LEARNER::base_learner* setup(vw& all); }

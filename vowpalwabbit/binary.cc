@@ -28,18 +28,18 @@ namespace BINARY {
       }
   }
 
-LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
+LEARNER::base_learner* setup(vw& all)
   {//parse and set arguments
     po::options_description opts("Binary options");
     opts.add_options()
       ("binary", "report loss as binary classification on -1,1");
-    vm = add_options(all,opts);
-    if(!vm.count("binary"))
+    add_options(all,opts);
+    if(!all.vm.count("binary"))
       return NULL;
 
     //Create new learner
     LEARNER::learner<char>& ret = 
-      LEARNER::init_learner<char>(NULL, setup_base(all,vm), 
+      LEARNER::init_learner<char>(NULL, setup_base(all), 
 				  predict_or_learn<true>, predict_or_learn<false>);
     return make_base(ret);
   }

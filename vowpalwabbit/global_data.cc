@@ -214,23 +214,42 @@ void compile_limits(vector<string> limits, uint32_t* dest, bool quiet)
     }
 }
 
-po::variables_map add_options(vw& all, po::options_description& opts)
+void add_options(vw& all, po::options_description& opts)
 {
   all.opts.add(opts);
   po::variables_map new_vm;
-
   //parse local opts once for notifications.
   po::parsed_options parsed = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(opts).allow_unregistered().run();
   po::store(parsed, new_vm);
   po::notify(new_vm); 
+
   //parse all opts for a complete variable map.
   parsed = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(all.opts).allow_unregistered().run();
   po::store(parsed, new_vm);
-  return new_vm;
+  all.vm = new_vm;
+}
+
+bool missing_required(vw& all, po::variables_map& vm)
+{
+  all.opts.add(*all.new_opts);//record required.
+  po::variables_map new_vm;
+  //parse local opts once for notifications.
+  po::parsed_options parsed = po::command_line_parser(all.args).
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    options(*all.new_opts).allow_unregistered().run();
+  po::store(parsed, new_vm);
+
+  if (new_vm.size() == 0) // required are missing;
+    {
+      delete all.new_opts;
+      return true;
+    }
+  else
+    return false;
 }
 
 vw::vw()
@@ -247,7 +266,7 @@ vw::vw()
 
   reg_mode = 0;
   current_pass = 0;
-  reduction_stack=v_init<LEARNER::base_learner* (*)(vw&, po::variables_map&)>();
+  reduction_stack=v_init<LEARNER::base_learner* (*)(vw&)>();
 
   data_filename = "";
 

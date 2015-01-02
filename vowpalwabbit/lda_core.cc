@@ -754,7 +754,7 @@ void end_examples(lda& l)
   }
 
 
-base_learner* setup(vw&all, po::variables_map& vm)
+base_learner* setup(vw&all)
 {
     po::options_description opts("Lda options");
     opts.add_options()
@@ -764,7 +764,8 @@ base_learner* setup(vw&all, po::variables_map& vm)
       ("lda_D", po::value<float>()->default_value(10000.), "Number of documents")
       ("lda_epsilon", po::value<float>()->default_value(0.001f), "Loop convergence threshold")
       ("minibatch", po::value<size_t>()->default_value(1), "Minibatch size, for LDA");
-    vm = add_options(all, opts);
+    add_options(all, opts);
+    po::variables_map& vm= all.vm;
     if(!vm.count("lda"))
       return NULL;
     else

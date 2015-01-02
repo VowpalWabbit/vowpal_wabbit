@@ -31,17 +31,17 @@ namespace Scorer {
 
   float id(float in) { return in; }
 
-  LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
+  LEARNER::base_learner* setup(vw& all)
   {
     po::options_description opts("Link options");
     opts.add_options()
       ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity, logistic or glf1");
-    vm = add_options(all, opts);
-
+    add_options(all, opts);
+    po::variables_map& vm = all.vm;
     scorer& s = calloc_or_die<scorer>();
     s.all = &all;
 
-    LEARNER::base_learner* base = setup_base(all,vm);
+    LEARNER::base_learner* base = setup_base(all);
     LEARNER::learner<scorer>* l; 
 
     string link = vm["link"].as<string>();

@@ -198,6 +198,8 @@ struct vw {
   double normalized_sum_norm_x;
 
   po::options_description opts;
+  po::options_description* new_opts;
+  po::variables_map vm;
   std::stringstream* file_options;
   vector<std::string> args;
 
@@ -264,7 +266,7 @@ struct vw {
 
   size_t length () { return ((size_t)1) << num_bits; };
 
-  v_array<LEARNER::base_learner* (*)(vw&, po::variables_map&)> reduction_stack;
+  v_array<LEARNER::base_learner* (*)(vw&)> reduction_stack;
 
   //Prediction output
   v_array<int> final_prediction_sink; // set to send global predictions to.
@@ -311,4 +313,9 @@ void get_prediction(int sock, float& res, float& weight);
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet);
 void compile_limits(vector<string> limits, uint32_t* dest, bool quiet);
 int print_tag(std::stringstream& ss, v_array<char> tag);
-po::variables_map add_options(vw& all, po::options_description& opts);
+void add_options(vw& all, po::options_description& opts);
+inline po::options_description_easy_init new_options(vw& all, const char* name) 
+{
+  all.new_opts = new po::options_description(name);
+  return all.new_opts->add_options();
+}

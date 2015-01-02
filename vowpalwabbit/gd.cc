@@ -844,7 +844,7 @@ uint32_t ceil_log_2(uint32_t v)
     return 1 + ceil_log_2(v >> 1);
 }
 
-base_learner* setup(vw& all, po::variables_map& vm)
+base_learner* setup(vw& all)
 {
   po::options_description opts("Gradient Descent options");
   opts.add_options()
@@ -853,7 +853,8 @@ base_learner* setup(vw& all, po::variables_map& vm)
     ("invariant", "use safe/importance aware updates.")
     ("normalized", "use per feature normalized updates")
     ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule");
-  vm = add_options(all, opts);
+  add_options(all, opts);
+  po::variables_map& vm = all.vm;
   gd& g = calloc_or_die<gd>();
   g.all = &all;
   g.all->normalized_sum_norm_x = 0;

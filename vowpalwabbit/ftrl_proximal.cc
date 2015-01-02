@@ -177,7 +177,7 @@ namespace FTRL {
     ec.pred.scalar = ftrl_predict(*all,ec);
   }
   
-  base_learner* setup(vw& all, po::variables_map& vm) 
+  base_learner* setup(vw& all) 
   {
     po::options_description opts("FTRL options");
     opts.add_options()
@@ -185,21 +185,21 @@ namespace FTRL {
       ("ftrl_alpha", po::value<float>()->default_value(0.0), "Learning rate for FTRL-proximal optimization")
       ("ftrl_beta", po::value<float>()->default_value(0.1), "FTRL beta")
       ("progressive_validation", po::value<string>()->default_value("ftrl.evl"), "File to record progressive validation for ftrl-proximal");
-    vm = add_options(all, opts);
+    add_options(all, opts);
     
-    if (!vm.count("ftrl"))
+    if (!all.vm.count("ftrl"))
       return NULL;
     
     ftrl& b = calloc_or_die<ftrl>();
     b.all = &all;
-    b.ftrl_beta = vm["ftrl_beta"].as<float>();
-    b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
+    b.ftrl_beta = all.vm["ftrl_beta"].as<float>();
+    b.ftrl_alpha = all.vm["ftrl_alpha"].as<float>();
 
     all.reg.stride_shift = 2; // NOTE: for more parameter storage
     
     b.progressive_validation = false;
-    if (vm.count("progressive_validation")) {
-      std::string filename = vm["progressive_validation"].as<string>();
+    if (all.vm.count("progressive_validation")) {
+      std::string filename = all.vm["progressive_validation"].as<string>();
       b.fo = fopen(filename.c_str(), "w");
       assert(b.fo != NULL);
       b.progressive_validation = true;

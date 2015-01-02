@@ -968,7 +968,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     b.backstep_on = true;
   }
 
-base_learner* setup(vw& all, po::variables_map& vm)
+base_learner* setup(vw& all)
 {
   po::options_description opts("LBFGS options");
   opts.add_options()
@@ -977,7 +977,8 @@ base_learner* setup(vw& all, po::variables_map& vm)
     ("hessian_on", "use second derivative in line search")
     ("mem", po::value<uint32_t>()->default_value(15), "memory in bfgs")
     ("termination", po::value<float>()->default_value(0.001f),"Termination threshold");
-  vm = add_options(all, opts);
+  add_options(all, opts);
+  po::variables_map& vm = all.vm;
   if(!vm.count("bfgs") && !vm.count("conjugate_gradient"))
     return NULL;
   

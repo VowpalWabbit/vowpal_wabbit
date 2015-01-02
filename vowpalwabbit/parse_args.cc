@@ -178,7 +178,7 @@ void parse_affix_argument(vw&all, string str) {
   free(cstr);
 }
 
-void parse_diagnostics(vw& all, po::variables_map& vm, int argc)
+void parse_diagnostics(vw& all, int argc)
 {
   po::options_description diag_opt("Diagnostic options");
 
@@ -189,7 +189,9 @@ void parse_diagnostics(vw& all, po::variables_map& vm, int argc)
     ("quiet", "Don't output disgnostics and progress updates")
     ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.");
   
-  vm = add_options(all, diag_opt);
+  add_options(all, diag_opt);
+
+  po::variables_map& vm = all.vm;
 
   if (vm.count("version")) {
     /* upon direct query for version -- spit it out to stdout */
@@ -246,7 +248,7 @@ void parse_diagnostics(vw& all, po::variables_map& vm, int argc)
   }
 }
 
-void parse_source(vw& all, po::variables_map& vm)
+void parse_source(vw& all)
 {
   po::options_description in_opt("Input options");
   
@@ -263,18 +265,18 @@ void parse_source(vw& all, po::variables_map& vm)
     ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
     ("no_stdin", "do not default to reading from stdin");
   
-  vm = add_options(all, in_opt);
+  add_options(all, in_opt);
 
   // Be friendly: if -d was left out, treat positional param as data file
   po::positional_options_description p;  
   p.add("data", -1);
   
-  vm = po::variables_map();
   po::parsed_options pos = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(all.opts).positional(p).run();
-  vm = po::variables_map();
-  po::store(pos, vm);
+  all.vm = po::variables_map();
+  po::store(pos, all.vm);
+  po::variables_map& vm = all.vm;
  
   //begin input source
   if (vm.count("no_stdin"))
@@ -316,7 +318,7 @@ void parse_source(vw& all, po::variables_map& vm)
     }
 }
 
-void parse_feature_tweaks(vw& all, po::variables_map& vm)
+void parse_feature_tweaks(vw& all)
 {
   po::options_description feature_opt("Feature options");
   feature_opt.add_options()
@@ -337,7 +339,8 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
     ("cubic", po::value< vector<string> > (),
      "Create and use cubic features");
 
-  vm = add_options(all, feature_opt);
+  add_options(all, feature_opt);
+  po::variables_map& vm = all.vm;
 
   //feature manipulation
   string hash_function("strings");
@@ -546,7 +549,7 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
     all.add_constant = false;
 }
 
-void parse_example_tweaks(vw& all, po::variables_map& vm)
+void parse_example_tweaks(vw& all)
 {
   po::options_description opts("Example options");
   
@@ -567,7 +570,8 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
     ("l1", po::value<float>(&(all.l1_lambda)), "l_1 lambda")
     ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda");
 
-  vm = add_options(all, opts);
+  add_options(all, opts);
+  po::variables_map& vm = all.vm;
 
   if (vm.count("testonly") || all.eta == 0.)
     {
@@ -622,7 +626,7 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
     }
 }
 
-void parse_output_preds(vw& all, po::variables_map& vm)
+void parse_output_preds(vw& all)
 {
   po::options_description out_opt("Output options");
 
@@ -631,7 +635,8 @@ void parse_output_preds(vw& all, po::variables_map& vm)
     ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to")
     ;
 
-  vm = add_options(all, out_opt);
+  add_options(all, out_opt);
+  po::variables_map& vm = all.vm;
 
   if (vm.count("predictions")) {
     if (!all.quiet)
@@ -677,7 +682,7 @@ void parse_output_preds(vw& all, po::variables_map& vm)
   }
 }
 
-void parse_output_model(vw& all, po::variables_map& vm)
+void parse_output_model(vw& all)
 {
   po::options_description output_model("Output model");
   
@@ -690,7 +695,8 @@ void parse_output_model(vw& all, po::variables_map& vm)
     ("output_feature_regularizer_binary", po::value< string >(&(all.per_feature_regularizer_output)), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text");
   
-  vm = add_options(all, output_model);
+  add_options(all, output_model);
+  po::variables_map& vm = all.vm;
 
   if (vm.count("final_regressor")) {
     all.final_regressor_name = vm["final_regressor"].as<string>();
@@ -715,22 +721,22 @@ void parse_output_model(vw& all, po::variables_map& vm)
     all.save_resume = true;
 }
 
-void load_input_model(vw& all, po::variables_map& vm, io_buf& io_temp)
+void load_input_model(vw& all, io_buf& io_temp)
 {
   // Need to see if we have to load feature mask first or second.
   // -i and -mask are from same file, load -i file first so mask can use it
-  if (vm.count("feature_mask") && vm.count("initial_regressor")
-      && vm["feature_mask"].as<string>() == vm["initial_regressor"].as< vector<string> >()[0]) {
+  if (all.vm.count("feature_mask") && all.vm.count("initial_regressor")
+      && all.vm["feature_mask"].as<string>() == all.vm["initial_regressor"].as< vector<string> >()[0]) {
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
     io_temp.close_file();
 
     // set the mask, which will reuse -i file we just loaded
-    parse_mask_regressor_args(all, vm);
+    parse_mask_regressor_args(all);
   }
   else {
     // load mask first
-    parse_mask_regressor_args(all, vm);
+    parse_mask_regressor_args(all);
 
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
@@ -738,16 +744,16 @@ void load_input_model(vw& all, po::variables_map& vm, io_buf& io_temp)
   }
 }
 
-LEARNER::base_learner* setup_base(vw& all, po::variables_map& vm)
+LEARNER::base_learner* setup_base(vw& all)
 {
-  LEARNER::base_learner* ret = all.reduction_stack.pop()(all,vm);
+  LEARNER::base_learner* ret = all.reduction_stack.pop()(all);
   if (ret == NULL)
-    return setup_base(all,vm);
+    return setup_base(all);
   else 
     return ret;
 }
 
-void parse_reductions(vw& all, po::variables_map& vm)
+void parse_reductions(vw& all)
 {
   //Base algorithms
   all.reduction_stack.push_back(GD::setup);
@@ -782,7 +788,7 @@ void parse_reductions(vw& all, po::variables_map& vm)
   all.reduction_stack.push_back(Search::setup);
   all.reduction_stack.push_back(BS::setup);
 
-  all.l = setup_base(all,vm);
+  all.l = setup_base(all);
 }
 
 void add_to_args(vw& all, int argc, char* argv[])
@@ -838,11 +844,12 @@ vw* parse_args(int argc, char *argv[])
     .add(weight_opt)
     .add(cluster_opt);
 
-  po::variables_map vm = add_options(*all, desc);
+  add_options(*all, desc);
+  po::variables_map& vm = all->vm;
 
   msrand48(random_seed);
 
-  parse_diagnostics(*all, vm, argc);
+  parse_diagnostics(*all, argc);
 
   all->sd->weighted_unlabeled_examples = all->sd->t;
   all->initial_t = (float)all->sd->t;
@@ -868,13 +875,13 @@ vw* parse_args(int argc, char *argv[])
   po::notify(vm);
   all->file_options->str("");
 
-  parse_feature_tweaks(*all, vm); //feature tweaks
+  parse_feature_tweaks(*all); //feature tweaks
 
-  parse_example_tweaks(*all, vm); //example manipulation
+  parse_example_tweaks(*all); //example manipulation
 
-  parse_output_model(*all, vm);
+  parse_output_model(*all);
   
-  parse_reductions(*all, vm);
+  parse_reductions(*all);
 
   if (!all->quiet)
     {
@@ -886,13 +893,13 @@ vw* parse_args(int argc, char *argv[])
 	cerr << "decay_learning_rate = " << all->eta_decay_rate << endl;
     }
 
-  parse_output_preds(*all, vm);
+  parse_output_preds(*all);
 
-  load_input_model(*all, vm, io_temp);
+  load_input_model(*all, io_temp);
 
-  parse_source(*all, vm);
+  parse_source(*all);
 
-  enable_sources(*all, vm, all->quiet,all->numpasses);
+  enable_sources(*all, all->quiet, all->numpasses);
 
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;

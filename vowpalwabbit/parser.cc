@@ -405,10 +405,10 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
 # define MAP_ANONYMOUS MAP_ANON
 #endif
 
-void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
+void enable_sources(vw& all, bool quiet, size_t passes)
 {
   all.p->input->current = 0;
-  parse_cache(all, vm, all.data_filename, quiet);
+  parse_cache(all, all.vm, all.data_filename, quiet);
 
   if (all.daemon || all.active)
     {
@@ -431,8 +431,8 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
       address.sin_family = AF_INET;
       address.sin_addr.s_addr = htonl(INADDR_ANY);
       short unsigned int port = 26542;
-      if (vm.count("port"))
-	port = (uint16_t)vm["port"].as<size_t>();
+      if (all.vm.count("port"))
+	port = (uint16_t)all.vm["port"].as<size_t>();
       address.sin_port = htons(port);
 
       // attempt to bind to socket
@@ -449,7 +449,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
       }
 
       // write port file
-      if (vm.count("port_file"))
+      if (all.vm.count("port_file"))
 	{
           socklen_t address_size = sizeof(address);
           if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
@@ -457,7 +457,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
               cerr << "getsockname: " << strerror(errno) << endl;
             }
 	  ofstream port_file;
-	  port_file.open(vm["port_file"].as<string>().c_str());
+	  port_file.open(all.vm["port_file"].as<string>().c_str());
 	  if (!port_file.is_open())
 	    {
 	      cerr << "error writing port file" << endl;
@@ -474,10 +474,10 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
 	  throw exception();
 	}
       // write pid file
-      if (vm.count("pid_file"))
+      if (all.vm.count("pid_file"))
 	{
 	  ofstream pid_file;
-	  pid_file.open(vm["pid_file"].as<string>().c_str());
+	  pid_file.open(all.vm["pid_file"].as<string>().c_str());
 	  if (!pid_file.is_open())
 	    {
 	      cerr << "error writing pid file" << endl;
@@ -597,7 +597,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
       }
       all.p->resettable = all.p->write_cache || all.daemon;
     }
-  else  // was: else if (vm.count("data"))
+  else  
     {
       if (all.p->input->files.size() > 0)
 	{

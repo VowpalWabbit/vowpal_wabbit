@@ -656,7 +656,7 @@ namespace StagewisePoly
     //#endif //DEBUG
   }
 
-  base_learner *setup(vw &all, po::variables_map &vm)
+  base_learner *setup(vw &all)
   {
     po::options_description opts("Stagewise poly options");
     opts.add_options()
@@ -668,7 +668,8 @@ namespace StagewisePoly
       ("magic_argument", po::value<float>(), "magical feature flag")
 #endif //MAGIC_ARGUMENT
       ;
-    vm = add_options(all, opts);
+    add_options(all, opts);
+    po::variables_map &vm = all.vm;
 
     if (!vm.count("stage_poly"))
       return NULL;
@@ -700,7 +701,7 @@ namespace StagewisePoly
     //following is so that saved models know to load us.
     *all.file_options << " --stage_poly";
 
-    learner<stagewise_poly>& l = init_learner(&poly, setup_base(all,vm), learn, predict);
+    learner<stagewise_poly>& l = init_learner(&poly, setup_base(all), learn, predict);
     l.set_finish(finish);
     l.set_save_load(save_load);
     l.set_finish_example(finish_example);

@@ -308,7 +308,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     free (n.output_layer.atomics[nn_output_namespace].begin);
   }
 
-  base_learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all)
   {
     po::options_description opts("NN options");
     opts.add_options()
@@ -316,7 +316,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       ("inpass", "Train or test sigmoidal feedforward network with input passthrough.")
       ("dropout", "Train or test sigmoidal feedforward network using dropout.")
       ("meanfield", "Train or test sigmoidal feedforward network using mean field.");
-    vm = add_options(all, opts);
+    add_options(all, opts);
+    po::variables_map& vm = all.vm;
     if(!vm.count("nn"))
       return NULL;
     
@@ -366,7 +367,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     n.save_xsubi = n.xsubi;
     
-    base_learner* base = setup_base(all,vm);
+    base_learner* base = setup_base(all);
     n.increment = base->increment;//Indexing of output layer is odd.
     learner<nn>& l = init_learner(&n, base, predict_or_learn<true>, 
 				  predict_or_learn<false>, n.k+1);

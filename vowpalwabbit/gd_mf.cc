@@ -293,12 +293,13 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
       mf_train(d, ec);
   }
 
-  base_learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all)
   {
     po::options_description opts("Gdmf options");
     opts.add_options()
       ("rank", po::value<uint32_t>(), "rank for matrix factorization.");
-    vm = add_options(all, opts);
+    add_options(all, opts);
+    po::variables_map& vm=all.vm;
     if(!vm.count("rank"))
       return NULL;
 

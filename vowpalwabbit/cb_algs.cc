@@ -436,14 +436,15 @@ namespace CB_ALGS
     VW::finish_example(all, &ec);
   }
 
-  base_learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all)
   {
     po::options_description opts("CB options");
     opts.add_options()
       ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
       ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}")
       ("eval", "Evaluate a policy rather than optimizing.");
-    vm = add_options(all, opts);
+    add_options(all, opts);
+    po::variables_map& vm = all.vm;
     if (!vm.count("cb"))
       return NULL;
 
@@ -504,7 +505,7 @@ namespace CB_ALGS
 	all.args.push_back(ss.str());
       }
 
-    base_learner* base = setup_base(all,vm);
+    base_learner* base = setup_base(all);
     if (eval)
       all.p->lp = CB_EVAL::cb_eval; 
     else

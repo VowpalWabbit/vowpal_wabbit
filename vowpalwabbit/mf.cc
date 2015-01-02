@@ -188,19 +188,19 @@ void finish(mf& o) {
   o.sub_predictions.delete_v();
 }
 
-  base_learner* setup(vw& all, po::variables_map& vm) {
+  base_learner* setup(vw& all) {
     po::options_description opts("MF options");
     opts.add_options()
       ("new_mf", po::value<size_t>(), "rank for reduction-based matrix factorization");
-    vm = add_options(all, opts);
-    if(!vm.count("new_mf"))
+    add_options(all, opts);
+    if(!all.vm.count("new_mf"))
       return NULL;
     
     mf& data = calloc_or_die<mf>();
     
     // copy global data locally
     data.all = &all;
-    data.rank = (uint32_t)vm["new_mf"].as<size_t>();
+    data.rank = (uint32_t)all.vm["new_mf"].as<size_t>();
 
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
@@ -209,7 +209,7 @@ void finish(mf& o) {
 
   all.random_positive_weights = true;
 
-  learner<mf>& l = init_learner(&data, setup_base(all,vm), learn, predict<false>, 2*data.rank+1);
+  learner<mf>& l = init_learner(&data, setup_base(all), learn, predict<false>, 2*data.rank+1);
   l.set_finish(finish);
   return make_base(l);
 }

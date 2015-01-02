@@ -1668,14 +1668,15 @@ namespace Search {
       ret = false;
   }
 
-  void handle_condition_options(vw& vw, auto_condition_settings& acset, po::variables_map& vm) {
+  void handle_condition_options(vw& vw, auto_condition_settings& acset) {
     po::options_description condition_options("Search Auto-conditioning Options");
     condition_options.add_options()
         ("search_max_bias_ngram_length",   po::value<size_t>(), "add a \"bias\" feature for each ngram up to and including this length. eg., if it's 1 (default), then you get a single feature for each conditional")
         ("search_max_quad_ngram_length",   po::value<size_t>(), "add bias *times* input features for each ngram up to and including this length (def: 0)")
         ("search_condition_feature_value", po::value<float> (), "how much weight should the conditional features get? (def: 1.)");
 
-    vm = add_options(vw, condition_options);
+    add_options(vw, condition_options);
+    po::variables_map& vm = vw.vm;
 
     check_option<size_t>(acset.max_bias_ngram_length, vw, vm, "search_max_bias_ngram_length", false, size_equal,
                          "warning: you specified a different value for --search_max_bias_ngram_length than the one loaded from regressor. proceeding with loaded value: ", "");
@@ -1763,7 +1764,7 @@ namespace Search {
     delete[] cstr;
   }
 
-  base_learner* setup(vw&all, po::variables_map& vm) {
+  base_learner* setup(vw&all) {
     po::options_description opts("Search Options");
     opts.add_options()
       ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF")
@@ -1791,7 +1792,8 @@ namespace Search {
       ("search_beam",              po::value<size_t>(), "use beam search (arg = beam size, default 0 = no beam)")
       ("search_kbest",             po::value<size_t>(), "size of k-best list to produce (must be <= beam size)")
       ;
-    vm = add_options(all, opts);
+    add_options(all, opts);
+    po::variables_map& vm = all.vm;
     if (!vm.count("search"))
       return NULL;
 
@@ -1966,7 +1968,7 @@ namespace Search {
 	ss << vm["search"].as<size_t>();
 	all.args.push_back(ss.str());
       }
-    base_learner* base = setup_base(all,vm);
+    base_learner* base = setup_base(all);
     
     // default to OAA labels unless the task wants to override this (which they can do in initialize)
     all.p->lp = MC::mc_label;
@@ -1977,7 +1979,7 @@ namespace Search {
     
     // set up auto-history if they want it
     if (priv.auto_condition_features) {
-      handle_condition_options(all, priv.acset, vm);
+      handle_condition_options(all, priv.acset);
 
       // turn off auto-condition if it's irrelevant
       if (((priv.acset.max_bias_ngram_length == 0) && (priv.acset.max_quad_ngram_length == 0)) ||
@@ -2077,7 +2079,7 @@ namespace Search {
 
   
   void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
-  void search::add_program_options(po::variables_map& vm, po::options_description& opts) { vm = add_options( *this->priv->all, opts ); }
+  void search::add_program_options(po::variables_map& vw, po::options_description& opts) { add_options( *this->priv->all, opts ); }
 
   size_t search::get_mask() { return this->priv->all->reg.weight_mask;}
   size_t search::get_stride_shift() { return this->priv->all->reg.stride_shift;}
