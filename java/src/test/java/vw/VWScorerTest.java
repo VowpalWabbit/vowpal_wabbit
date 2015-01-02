@@ -3,6 +3,8 @@ package vw;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
+
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -12,8 +14,12 @@ public class VWScorerTest {
     private static VWScorer scorer;
 
     @BeforeClass
-    public static void setup() {
-        scorer = new VWScorer("-i src/test/resources/house.model --quiet -t");
+    public static void setup() throws IOException, InterruptedException {
+        // Since we want this test to continue to work between VW changes, we can't store the model
+        // Instead, we'll make a new model for each test
+        String vwModel = "target/house.model";
+        Runtime.getRuntime().exec("../vowpalwabbit/vw -d src/test/resources/house.vw -f " + vwModel).waitFor();
+        scorer = new VWScorer("--quiet -t -i " + vwModel);
     }
 
     @Test
