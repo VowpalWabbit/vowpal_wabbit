@@ -7,5 +7,5 @@ before_install:
   - sudo apt-get install maven
 install: 
   - make
-  - cd java; mvn test
+#  - cd java; mvn test
 script: make test
