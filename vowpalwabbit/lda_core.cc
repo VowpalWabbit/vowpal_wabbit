@@ -33,7 +33,7 @@ public:
 };
 
   struct lda {
-    uint32_t lda;
+    uint32_t topics;
     float lda_alpha;
     float lda_rho;
     float lda_D;
@@ -418,15 +418,15 @@ float average_diff(vw& all, float* oldgamma, float* newgamma)
 {
   float gammasum = 0;
   Elogtheta.erase();
-  for (size_t k = 0; k < l.lda; k++) {
+  for (size_t k = 0; k < l.topics; k++) {
     Elogtheta.push_back(mydigamma(gamma[k]));
     gammasum += gamma[k];
   }
   float digammasum = mydigamma(gammasum);
   gammasum = mylgamma(gammasum);
-  float kl = -(l.lda*mylgamma(l.lda_alpha));
-  kl += mylgamma(l.lda_alpha*l.lda) - gammasum;
-  for (size_t k = 0; k < l.lda; k++) {
+  float kl = -(l.topics*mylgamma(l.lda_alpha));
+  kl += mylgamma(l.lda_alpha*l.topics) - gammasum;
+  for (size_t k = 0; k < l.topics; k++) {
     Elogtheta[k] -= digammasum;
     kl += (l.lda_alpha - gamma[k]) * Elogtheta[k];
     kl += mylgamma(gamma[k]);
@@ -438,7 +438,7 @@ float average_diff(vw& all, float* oldgamma, float* newgamma)
 float find_cw(lda& l, float* u_for_w, float* v)
 {
   float c_w = 0;
-  for (size_t k =0; k<l.lda; k++)
+  for (size_t k =0; k<l.topics; k++)
     c_w += u_for_w[k]*v[k];
 
   return 1.f / c_w;
@@ -456,7 +456,7 @@ float find_cw(lda& l, float* u_for_w, float* v)
   new_gamma.erase();
   old_gamma.erase();
   
-  for (size_t i = 0; i < l.lda; i++)
+  for (size_t i = 0; i < l.topics; i++)
     {
       new_gamma.push_back(1.f);
       old_gamma.push_back(0.f);
@@ -470,11 +470,11 @@ float find_cw(lda& l, float* u_for_w, float* v)
   float doc_length = 0;
   do
     {
-      memcpy(v,new_gamma.begin,sizeof(float)*l.lda);
+      memcpy(v,new_gamma.begin,sizeof(float)*l.topics);
       myexpdigammify(*l.all, v);
 
-      memcpy(old_gamma.begin,new_gamma.begin,sizeof(float)*l.lda);
-      memset(new_gamma.begin,0,sizeof(float)*l.lda);
+      memcpy(old_gamma.begin,new_gamma.begin,sizeof(float)*l.topics);
+      memset(new_gamma.begin,0,sizeof(float)*l.topics);
 
       score = 0;
       size_t word_count = 0;
@@ -484,11 +484,11 @@ float find_cw(lda& l, float* u_for_w, float* v)
 	  feature *f = ec->atomics[*i].begin;
 	  for (; f != ec->atomics[*i].end; f++)
 	    {
-	      float* u_for_w = &weights[(f->weight_index & l.all->reg.weight_mask)+l.lda+1];
+	      float* u_for_w = &weights[(f->weight_index & l.all->reg.weight_mask)+l.topics+1];
 	      float c_w = find_cw(l, u_for_w,v);
 	      xc_w = c_w * f->x;
               score += -f->x*log(c_w);
-	      size_t max_k = l.lda;
+	      size_t max_k = l.topics;
 	      for (size_t k =0; k<max_k; k++) {
 		new_gamma[k] += xc_w*u_for_w[k];
 	      }
@@ -496,14 +496,14 @@ float find_cw(lda& l, float* u_for_w, float* v)
               doc_length += f->x;
 	    }
 	}
-      for (size_t k =0; k<l.lda; k++)
+      for (size_t k =0; k<l.topics; k++)
 	new_gamma[k] = new_gamma[k]*v[k]+l.lda_alpha;
     }
   while (average_diff(*l.all, old_gamma.begin, new_gamma.begin) > l.lda_epsilon);
 
   ec->topic_predictions.erase();
-  ec->topic_predictions.resize(l.lda);
-  memcpy(ec->topic_predictions.begin,new_gamma.begin,l.lda*sizeof(float));
+  ec->topic_predictions.resize(l.topics);
+  memcpy(ec->topic_predictions.begin,new_gamma.begin,l.topics*sizeof(float));
 
   score += theta_kl(l, Elogtheta, new_gamma.begin);
 
@@ -772,7 +772,7 @@ base_learner* setup(vw&all)
     
       lda& ld = calloc_or_die<lda>();
     
-    ld.lda = all.lda;
+    ld.topics = all.lda;
     ld.lda_alpha = vm["lda_alpha"].as<float>();
     ld.lda_rho = vm["lda_rho"].as<float>();
     ld.lda_D = vm["lda_D"].as<float>();

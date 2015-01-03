@@ -55,8 +55,8 @@ namespace FTRL {
   };
   
   void update_accumulated_state(weight* w, float ftrl_alpha) {
-    double ng2 = w[W_G2] + w[W_GT]*w[W_GT];
-    double sigma = (sqrt(ng2) - sqrt(w[W_G2]))/ ftrl_alpha;
+    float ng2 = w[W_G2] + w[W_GT]*w[W_GT];
+    float sigma = (sqrtf(ng2) - sqrtf(w[W_G2]))/ ftrl_alpha;
     w[W_ZT] += w[W_GT] - sigma * w[W_XT];
     w[W_G2] = ng2;
   }
@@ -107,7 +107,7 @@ namespace FTRL {
     if (fabs_zt <= d.l1_lambda) {
       w[W_XT] = 0.;
     } else {
-      double step = 1/(d.l2_lambda + (d.ftrl_beta + sqrt(w[W_G2]))/d.ftrl_alpha);
+      float step = 1/(d.l2_lambda + (d.ftrl_beta + sqrtf(w[W_G2]))/d.ftrl_alpha);
       w[W_XT] = step * flag * (d.l1_lambda - fabs_zt);
     }
  }
@@ -129,7 +129,7 @@ namespace FTRL {
     label_data& ld = ec.l.simple;
     ec.loss = all.loss->getLoss(all.sd, ec.updated_prediction, ld.label) * ld.weight;
     if (b.progressive_validation) {
-      float v = 1./(1 + exp(-ec.updated_prediction));
+      float v = 1.f/(1 + exp(-ec.updated_prediction));
       fprintf(b.fo, "%.6f\t%d\n", v, (int)(ld.label * ld.weight));
     }
   }
@@ -184,7 +184,7 @@ namespace FTRL {
     if (missing_required(all)) return NULL;
     new_options(all)
       ("ftrl_alpha", po::value<float>()->default_value(0.0), "Learning rate for FTRL-proximal optimization")
-      ("ftrl_beta", po::value<float>()->default_value(0.1), "FTRL beta")
+      ("ftrl_beta", po::value<float>()->default_value(0.1f), "FTRL beta")
       ("progressive_validation", po::value<string>()->default_value("ftrl.evl"), "File to record progressive validation for ftrl-proximal");
     add_options(all);
     
