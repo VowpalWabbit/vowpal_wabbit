@@ -7,7 +7,6 @@ license as described in the file LICENSE.
 #include "multiclass.h"
 #include "simple_label.h"
 #include "reductions.h"
-#include "vw.h"
 
 namespace OAA {
   struct oaa{
@@ -60,8 +59,6 @@ namespace OAA {
       o.all->print_text(o.all->raw_prediction, outputStringStream.str(), ec.tag);
   }
   
-  void finish_example(vw& all, oaa&, example& ec) { MULTICLASS::finish_example(all, ec); }
-
   LEARNER::base_learner* setup(vw& all)
   {
     new_options(all, "One-against-all options")
@@ -74,11 +71,11 @@ namespace OAA {
     data.all = &all;
 
     *all.file_options << " --oaa " << data.k;
-    all.p->lp = MULTICLASS::mc_label;
 
     LEARNER::learner<oaa>& l = init_learner(&data, setup_base(all), predict_or_learn<true>, 
-				   predict_or_learn<false>, data.k);
-    l.set_finish_example(finish_example);
+					    predict_or_learn<false>, data.k);
+    l.set_finish_example(MULTICLASS::finish_example<oaa>);
+    all.p->lp = MULTICLASS::mc_label;
     return make_base(l);
   }
 }
