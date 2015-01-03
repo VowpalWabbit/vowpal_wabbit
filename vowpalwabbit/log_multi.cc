@@ -197,7 +197,7 @@ namespace LOG_MULTI
 	    b.nodes.push_back(init_node());	
 	    right_child = (uint32_t)b.nodes.size();
 	    b.nodes.push_back(init_node());
-	    b.nodes[current].base_predictor = b.predictors_used++;
+	    b.nodes[current].base_predictor = (uint32_t)b.predictors_used++;
 	  }
 	else
 	  {
