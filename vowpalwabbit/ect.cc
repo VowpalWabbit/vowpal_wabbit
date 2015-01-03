@@ -17,7 +17,6 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "multiclass.h"
 #include "simple_label.h"
-#include "vw.h"
 
 using namespace std;
 using namespace LEARNER;

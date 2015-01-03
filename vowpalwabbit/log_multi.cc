@@ -12,7 +12,6 @@ license as described in the file LICENSE.node
 #include "reductions.h"
 #include "simple_label.h"
 #include "multiclass.h"
-#include "vw.h"
 
 using namespace std;
 using namespace LEARNER;
