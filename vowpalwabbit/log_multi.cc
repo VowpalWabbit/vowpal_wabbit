@@ -12,7 +12,6 @@ license as described in the file LICENSE.node
 #include "reductions.h"
 #include "simple_label.h"
 #include "multiclass.h"
-#include "vw.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -77,7 +76,6 @@ namespace LOG_MULTI
   struct log_multi
   {
     uint32_t k;	
-    vw* all;	
     
     v_array<node> nodes;	
     
@@ -199,7 +197,7 @@ namespace LOG_MULTI
 	    b.nodes.push_back(init_node());	
 	    right_child = (uint32_t)b.nodes.size();
 	    b.nodes.push_back(init_node());
-	    b.nodes[current].base_predictor = b.predictors_used++;
+	    b.nodes[current].base_predictor = (uint32_t)b.predictors_used++;
 	  }
 	else
 	  {
@@ -319,11 +317,10 @@ namespace LOG_MULTI
   void learn(log_multi& b, base_learner& base, example& ec)
   {
     //    verify_min_dfs(b, b.nodes[0]);
-
-    if (ec.l.multi.label == (uint32_t)-1 || !b.all->training || b.progress)
+    if (ec.l.multi.label == (uint32_t)-1 || b.progress)
       predict(b,base,ec);
     
-    if(b.all->training && (ec.l.multi.label != (uint32_t)-1) && !ec.test_only)	//if training the tree
+    if((ec.l.multi.label != (uint32_t)-1) && !ec.test_only)	//if training the tree
       {
 	MULTICLASS::multiclass mc = ec.l.multi;
     
@@ -496,8 +493,6 @@ namespace LOG_MULTI
       }
   }
   
-  void finish_example(vw& all, log_multi&, example& ec) { MULTICLASS::finish_example(all, ec); }
-  
   base_learner* setup(vw& all)	//learner setup
   {
     new_options(all, "Logarithmic Time Multiclass options")
@@ -508,7 +503,7 @@ namespace LOG_MULTI
       ("swap_resistance", po::value<uint32_t>(), "higher = more resistance to swap, default=4");
     add_options(all);
 
-      po::variables_map& vm = all.vm;
+    po::variables_map& vm = all.vm;
 
     log_multi& data = calloc_or_die<log_multi>();
     data.k = (uint32_t)vm["log_multi"].as<size_t>();
@@ -524,9 +519,6 @@ namespace LOG_MULTI
     else
       data.progress = true;
 
-    data.all = &all;
-    (all.p->lp) = MULTICLASS::mc_label;
-    
     string loss_function = "quantile"; 
     float loss_parameter = 0.5;
     delete(all.loss);
@@ -534,10 +526,11 @@ namespace LOG_MULTI
 
     data.max_predictors = data.k - 1;
 
-      learner<log_multi>& l = init_learner(&data, setup_base(all), learn, predict, data.max_predictors);
+    learner<log_multi>& l = init_learner(&data, setup_base(all), learn, predict, data.max_predictors);
     l.set_save_load(save_load_tree);
-    l.set_finish_example(finish_example);
     l.set_finish(finish);
+    l.set_finish_example(MULTICLASS::finish_example<log_multi>);
+    all.p->lp = MULTICLASS::mc_label;
     
     init_tree(data);	
     

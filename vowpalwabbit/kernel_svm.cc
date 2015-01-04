@@ -648,7 +648,7 @@ namespace KSVM
       else {
 
 	for(size_t i = 0;i < params.pool_pos;i++) {
-	  float queryp = 2.0f/(1.0f + expf((float)(params.active_c*fabs(scores[i]))*pow(params.pool[i]->ex.example_counter,0.5f)));
+	  float queryp = 2.0f/(1.0f + expf((float)(params.active_c*fabs(scores[i]))*(float)pow(params.pool[i]->ex.example_counter,0.5f)));
 	  if(rand() < queryp) {
 	    svm_example* fec = params.pool[i];
 	    fec->ex.l.simple.weight *= 1/queryp;

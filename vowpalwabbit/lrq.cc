@@ -252,7 +252,7 @@ namespace LRQ {
     if(!all.quiet)
       cerr<<endl;
         
-    all.wpp = all.wpp * (1 + maxk);
+	all.wpp = all.wpp * (uint32_t)(1 + maxk);
     learner<LRQstate>& l = init_learner(&lrq, setup_base(all), predict_or_learn<true>, 
 					predict_or_learn<false>, 1 + maxk);
     l.set_end_pass(reset_seed);
