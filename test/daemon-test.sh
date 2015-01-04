@@ -39,6 +39,7 @@ else
     exit 1
 fi
 
+
 # A command and pattern that will unlikely to match anything but our own test
 DaemonCmd="$VW -t -i $MODEL --daemon --num_children 1 --quiet --port $PORT"
 
