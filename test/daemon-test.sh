@@ -39,17 +39,6 @@ else
     exit 1
 fi
 
-#
-# fractional seconds sleep
-#
-mysleep() {
-    case "$1" in
-        *[0-9]*) Seconds="$1" ;;
-        *) Seconds=0.2 ;;
-    esac
-    perl -e "select(undef,undef,undef,$Seconds)"
-}
-
 # A command and pattern that will unlikely to match anything but our own test
 DaemonCmd="$VW -t -i $MODEL --daemon --num_children 1 --quiet --port $PORT"
 
@@ -58,8 +47,8 @@ stop_daemon() {
     # echo stopping daemon
     $PKILL -9 -f "$DaemonCmd" 2>&1 | grep -q 'no process found'
     # relinquish CPU by forcing some conext switches to be safe
-    # (to let existing vw daemon procs die)
-    mysleep 0.05
+    # (let existing vw daemon procs die)
+    wait
 }
 
 start_daemon() {
