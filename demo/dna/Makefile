@@ -27,3 +27,5 @@ quaddna2vw: quaddna2vw.cpp
 
 %.perf: %.test.predictions perf.check perl.check zsh.check
 	./do-perf $<
+
+.PHONY: all clean

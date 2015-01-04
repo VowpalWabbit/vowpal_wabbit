@@ -239,28 +239,27 @@ namespace BS {
     d.pred_vec.~vector();
   }
 
-  base_learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all)
   {
+    new_options(all, "Bootstrap options")
+      ("bootstrap,B", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling");
+    if (missing_required(all)) return NULL;
+    new_options(all)("bs_type", po::value<string>(), "prediction type {mean,vote}");    
+    add_options(all);
+
     bs& data = calloc_or_die<bs>();
     data.ub = FLT_MAX;
     data.lb = -FLT_MAX;
-
-    po::options_description bs_options("Bootstrap options");
-    bs_options.add_options()
-      ("bs_type", po::value<string>(), "prediction type {mean,vote}");
-    
-    vm = add_options(all, bs_options);
-
-    data.B = (uint32_t)vm["bootstrap"].as<size_t>();
+    data.B = (uint32_t)all.vm["bootstrap"].as<size_t>();
 
     //append bs with number of samples to options_from_file so it is saved to regressor later
     *all.file_options << " --bootstrap " << data.B;
 
     std::string type_string("mean");
 
-    if (vm.count("bs_type"))
+    if (all.vm.count("bs_type"))
     {
-      type_string = vm["bs_type"].as<std::string>();
+      type_string = all.vm["bs_type"].as<std::string>();
       
       if (type_string.compare("mean") == 0) { 
         data.bs_type = BS_TYPE_MEAN;
@@ -280,7 +279,7 @@ namespace BS {
     data.pred_vec.reserve(data.B);
     data.all = &all;
 
-    learner<bs>& l = init_learner(&data, all.l, predict_or_learn<true>, 
+    learner<bs>& l = init_learner(&data, setup_base(all), predict_or_learn<true>, 
 				  predict_or_learn<false>, data.B);
     l.set_finish_example(finish_example);
     l.set_finish(finish);

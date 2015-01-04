@@ -52,7 +52,7 @@ extern "C"
 			adjust_used_index(*pointer);
 			pointer->do_reset_source = true;
 			VW::start_parser(*pointer,false);
-			pointer->l->driver(pointer);
+			LEARNER::generic_driver(*pointer);
 			VW::end_parser(*pointer); 
 			}
 		else

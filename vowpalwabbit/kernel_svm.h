@@ -4,7 +4,4 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #pragma once
-namespace KSVM
-{
-LEARNER::base_learner* setup(vw &all, po::variables_map& vm);
-}
+namespace KSVM { LEARNER::base_learner* setup(vw &all); }

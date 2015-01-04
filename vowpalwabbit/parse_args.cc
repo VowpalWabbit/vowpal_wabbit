@@ -17,6 +17,7 @@ license as described in the file LICENSE.
 #include "network.h"
 #include "global_data.h"
 #include "nn.h"
+#include "gd.h"
 #include "cbify.h"
 #include "oaa.h"
 #include "rand48.h"
@@ -177,18 +178,17 @@ void parse_affix_argument(vw&all, string str) {
   free(cstr);
 }
 
-void parse_diagnostics(vw& all, po::variables_map& vm, int argc)
+void parse_diagnostics(vw& all, int argc)
 {
-  po::options_description diag_opt("Diagnostic options");
-
-  diag_opt.add_options()
+  new_options(all, "Diagnostic options")
     ("version","Version information")
     ("audit,a", "print weights of features")
     ("progress,P", po::value< string >(), "Progress update frequency. int: additive, float: multiplicative")
     ("quiet", "Don't output disgnostics and progress updates")
     ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.");
-  
-  vm = add_options(all, diag_opt);
+  add_options(all);
+
+  po::variables_map& vm = all.vm;
 
   if (vm.count("version")) {
     /* upon direct query for version -- spit it out to stdout */
@@ -245,11 +245,9 @@ void parse_diagnostics(vw& all, po::variables_map& vm, int argc)
   }
 }
 
-void parse_source(vw& all, po::variables_map& vm)
+void parse_source(vw& all)
 {
-  po::options_description in_opt("Input options");
-  
-  in_opt.add_options()
+  new_options(all, "Input options")
     ("data,d", po::value< string >(), "Example Set")
     ("daemon", "persistent daemon mode on port 26542")
     ("port", po::value<size_t>(),"port to listen on; use 0 to pick unused port")
@@ -261,19 +259,18 @@ void parse_source(vw& all, po::variables_map& vm)
     ("kill_cache,k", "do not reuse existing cache: create a new one always")
     ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
     ("no_stdin", "do not default to reading from stdin");
-  
-  vm = add_options(all, in_opt);
+  add_options(all);
 
   // Be friendly: if -d was left out, treat positional param as data file
   po::positional_options_description p;  
   p.add("data", -1);
   
-  vm = po::variables_map();
   po::parsed_options pos = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(all.opts).positional(p).run();
-  vm = po::variables_map();
-  po::store(pos, vm);
+  all.vm = po::variables_map();
+  po::store(pos, all.vm);
+  po::variables_map& vm = all.vm;
  
   //begin input source
   if (vm.count("no_stdin"))
@@ -315,10 +312,9 @@ void parse_source(vw& all, po::variables_map& vm)
     }
 }
 
-void parse_feature_tweaks(vw& all, po::variables_map& vm)
+void parse_feature_tweaks(vw& all)
 {
-  po::options_description feature_opt("Feature options");
-  feature_opt.add_options()
+  new_options(all, "Feature options")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
@@ -335,8 +331,9 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
     ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
     ("cubic", po::value< vector<string> > (),
      "Create and use cubic features");
+  add_options(all);
 
-  vm = add_options(all, feature_opt);
+  po::variables_map& vm = all.vm;
 
   //feature manipulation
   string hash_function("strings");
@@ -545,11 +542,9 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
     all.add_constant = false;
 }
 
-void parse_example_tweaks(vw& all, po::variables_map& vm)
+void parse_example_tweaks(vw& all)
 {
-  po::options_description example_opts("Example options");
-  
-  example_opts.add_options()
+  new_options(all, "Example options")
     ("testonly,t", "Ignore label information and just test")
     ("holdout_off", "no holdout data in multiple passes")
     ("holdout_period", po::value<uint32_t>(&(all.holdout_period)), "holdout period for test only, default 10")
@@ -565,9 +560,9 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
     ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
     ("l1", po::value<float>(&(all.l1_lambda)), "l_1 lambda")
     ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda");
+  add_options(all);
 
-  vm = add_options(all, example_opts);
-
+  po::variables_map& vm = all.vm;
   if (vm.count("testonly") || all.eta == 0.)
     {
       if (!all.quiet)
@@ -621,17 +616,14 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
     }
 }
 
-void parse_output_preds(vw& all, po::variables_map& vm)
+void parse_output_preds(vw& all)
 {
-  po::options_description out_opt("Output options");
-
-  out_opt.add_options()
+  new_options(all, "Output options")
     ("predictions,p", po::value< string >(), "File to output predictions to")
-    ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to")
-    ;
+    ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to");
+  add_options(all);
 
-  vm = add_options(all, out_opt);
-
+  po::variables_map& vm = all.vm;
   if (vm.count("predictions")) {
     if (!all.quiet)
       cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
@@ -676,21 +668,19 @@ void parse_output_preds(vw& all, po::variables_map& vm)
   }
 }
 
-void parse_output_model(vw& all, po::variables_map& vm)
+void parse_output_model(vw& all)
 {
-  po::options_description output_model("Output model");
-  
-  output_model.add_options()
+  new_options(all, "Output model")
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("readable_model", po::value< string >(), "Output human-readable final regressor with numeric features")
     ("invert_hash", po::value< string >(), "Output human-readable final regressor with feature names.  Computationally expensive.")
     ("save_resume", "save extra state so learning can be resumed later with new data")
     ("save_per_pass", "Save the model after every pass over data")
     ("output_feature_regularizer_binary", po::value< string >(&(all.per_feature_regularizer_output)), "Per feature regularization output file")
-    ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text");
-  
-  vm = add_options(all, output_model);
+    ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text");  
+  add_options(all);
 
+  po::variables_map& vm = all.vm;
   if (vm.count("final_regressor")) {
     all.final_regressor_name = vm["final_regressor"].as<string>();
     if (!all.quiet)
@@ -714,68 +704,22 @@ void parse_output_model(vw& all, po::variables_map& vm)
     all.save_resume = true;
 }
 
-void parse_base_algorithm(vw& all, po::variables_map& vm)
-{
-  //base learning algorithm.
-  po::options_description base_opt("base algorithms (these are exclusive)");
-  
-  base_opt.add_options()
-    ("sgd", "use regular stochastic gradient descent update.")
-    ("ftrl", "use ftrl-proximal optimization")
-    ("adaptive", "use adaptive, individual learning rates.")
-    ("invariant", "use safe/importance aware updates.")
-    ("normalized", "use per feature normalized updates")
-    ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule")
-    ("bfgs", "use bfgs optimization")
-    ("lda", po::value<uint32_t>(&(all.lda)), "Run lda with <int> topics")
-    ("rank", po::value<uint32_t>(&(all.rank)), "rank for matrix factorization.")
-    ("noop","do no learning")
-    ("print","print examples")
-    ("ksvm", "kernel svm")
-    ("sendto", po::value< vector<string> >(), "send examples to <host>");
-
-  vm = add_options(all, base_opt);
-
-  if (vm.count("bfgs") || vm.count("conjugate_gradient"))
-    all.l = BFGS::setup(all, vm);
-  else if (vm.count("lda"))
-    all.l = LDA::setup(all, vm);
-  else if (vm.count("ftrl"))
-    all.l = FTRL::setup(all, vm);
-  else if (vm.count("noop"))
-    all.l = NOOP::setup(all);
-  else if (vm.count("print"))
-    all.l = PRINT::setup(all);
-  else if (all.rank > 0)
-    all.l = GDMF::setup(all, vm);
-  else if (vm.count("sendto"))
-    all.l = SENDER::setup(all, vm, all.pairs);
-  else if (vm.count("ksvm")) {
-    all.l = KSVM::setup(all, vm);
-  }
-  else
-    {
-      all.l = GD::setup(all, vm);
-      all.scorer = all.l;
-    }
-}
-
-void load_input_model(vw& all, po::variables_map& vm, io_buf& io_temp)
+void load_input_model(vw& all, io_buf& io_temp)
 {
   // Need to see if we have to load feature mask first or second.
   // -i and -mask are from same file, load -i file first so mask can use it
-  if (vm.count("feature_mask") && vm.count("initial_regressor")
-      && vm["feature_mask"].as<string>() == vm["initial_regressor"].as< vector<string> >()[0]) {
+  if (all.vm.count("feature_mask") && all.vm.count("initial_regressor")
+      && all.vm["feature_mask"].as<string>() == all.vm["initial_regressor"].as< vector<string> >()[0]) {
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
     io_temp.close_file();
 
     // set the mask, which will reuse -i file we just loaded
-    parse_mask_regressor_args(all, vm);
+    parse_mask_regressor_args(all);
   }
   else {
     // load mask first
-    parse_mask_regressor_args(all, vm);
+    parse_mask_regressor_args(all);
 
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
@@ -783,166 +727,51 @@ void load_input_model(vw& all, po::variables_map& vm, io_buf& io_temp)
   }
 }
 
-void parse_scorer_reductions(vw& all, po::variables_map& vm)
+LEARNER::base_learner* setup_base(vw& all)
 {
-  po::options_description score_mod_opt("Score modifying options (can be combined)");
-
-  score_mod_opt.add_options()
-    ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
-    ("new_mf", po::value<size_t>(), "rank for reduction-based matrix factorization")
-    ("autolink", po::value<size_t>(), "create link function with polynomial d")
-    ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
-    ("lrqdropout", "use dropout training for low rank quadratic features")
-    ("stage_poly", "use stagewise polynomial feature learning")
-    ("active", "enable active learning");
-
-  vm = add_options(all, score_mod_opt);
-
-  if (vm.count("active"))
-    all.l = ACTIVE::setup(all,vm);
-  
-  if(vm.count("nn"))
-    all.l = NN::setup(all, vm);
-  
-  if (vm.count("new_mf"))
-    all.l = MF::setup(all, vm);
-  
-  if(vm.count("autolink"))
-    all.l = ALINK::setup(all, vm);
-  
-  if (vm.count("lrq"))
-    all.l = LRQ::setup(all, vm);
-
-  if (vm.count("stage_poly"))
-    all.l = StagewisePoly::setup(all, vm);
-
-  all.l = Scorer::setup(all, vm);
+  LEARNER::base_learner* ret = all.reduction_stack.pop()(all);
+  if (ret == NULL)
+    return setup_base(all);
+  else 
+    return ret;
 }
 
-LEARNER::base_learner* exclusive_setup(vw& all, po::variables_map& vm, bool& score_consumer, LEARNER::base_learner* (*setup)(vw&, po::variables_map&))
+void parse_reductions(vw& all)
 {
-  if (score_consumer) { cerr << "error: cannot specify multiple direct score consumers" << endl; throw exception(); }
-  score_consumer = true;
-  return setup(all, vm);
-}
+  //Base algorithms
+  all.reduction_stack.push_back(GD::setup);
+  all.reduction_stack.push_back(KSVM::setup);
+  all.reduction_stack.push_back(FTRL::setup);
+  all.reduction_stack.push_back(SENDER::setup);
+  all.reduction_stack.push_back(GDMF::setup);
+  all.reduction_stack.push_back(PRINT::setup);
+  all.reduction_stack.push_back(NOOP::setup);
+  all.reduction_stack.push_back(LDA::setup);
+  all.reduction_stack.push_back(BFGS::setup);
 
-void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
-{
-  po::options_description multiclass_opt("Score user options (these are exclusive)");
-  multiclass_opt.add_options()
-    ("top", po::value<size_t>(), "top k recommendation")
-    ("binary", "report loss as binary classification on -1,1")
-    ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
-    ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
-    ("log_multi", po::value<size_t>(), "Use online tree for multiclass")
-    ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
-    ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
-    ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
-    ;
+  //Score Users
+  all.reduction_stack.push_back(ACTIVE::setup);
+  all.reduction_stack.push_back(NN::setup);
+  all.reduction_stack.push_back(MF::setup);
+  all.reduction_stack.push_back(ALINK::setup);
+  all.reduction_stack.push_back(LRQ::setup);
+  all.reduction_stack.push_back(StagewisePoly::setup);
+  all.reduction_stack.push_back(Scorer::setup);
 
-  vm = add_options(all, multiclass_opt);
-  bool score_consumer = false;
-  
-  if(vm.count("top"))
-    all.l = exclusive_setup(all, vm, score_consumer, TOPK::setup);
-  
-  if (vm.count("binary"))
-    all.l = exclusive_setup(all, vm, score_consumer, BINARY::setup);
-  
-  if (vm.count("oaa")) 
-    all.l = exclusive_setup(all, vm, score_consumer, OAA::setup);
-  
-  if (vm.count("ect")) 
-    all.l = exclusive_setup(all, vm, score_consumer, ECT::setup);
-  
-  if(vm.count("csoaa")) {
-    all.l = exclusive_setup(all, vm, score_consumer, CSOAA::setup);
-    all.cost_sensitive = all.l;
-    got_cs = true;
-  }
-  
-  if(vm.count("log_multi")){
-    all.l = exclusive_setup(all, vm, score_consumer, LOG_MULTI::setup);
-  }
-  
-  if(vm.count("csoaa_ldf") || vm.count("csoaa_ldf")) {
-    all.l = exclusive_setup(all, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
-    all.cost_sensitive = all.l;
-    got_cs = true;
-  }
-  
-  if(vm.count("wap_ldf") || vm.count("wap_ldf") ) {
-    all.l = exclusive_setup(all, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
-    all.cost_sensitive = all.l;
-    got_cs = true;
-  }
-}
+  //Reductions
+  all.reduction_stack.push_back(BINARY::setup);
+  all.reduction_stack.push_back(TOPK::setup);
+  all.reduction_stack.push_back(OAA::setup);
+  all.reduction_stack.push_back(ECT::setup);
+  all.reduction_stack.push_back(LOG_MULTI::setup);
+  all.reduction_stack.push_back(CSOAA::setup);
+  all.reduction_stack.push_back(CSOAA_AND_WAP_LDF::setup);
+  all.reduction_stack.push_back(CB_ALGS::setup);
+  all.reduction_stack.push_back(CBIFY::setup);
+  all.reduction_stack.push_back(Search::setup);
+  all.reduction_stack.push_back(BS::setup);
 
-void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
-{
-  po::options_description cb_opts("Contextual Bandit options");
-    
-  cb_opts.add_options()
-    ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
-    ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve");
-
-  vm = add_options(all,cb_opts);
-  
-  if( vm.count("cb"))
-    {
-      if(!got_cs) {
-	if( vm.count("cb") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
-	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
-	
-	all.l = CSOAA::setup(all, vm);  // default to CSOAA unless wap is specified
-	all.cost_sensitive = all.l;
-	got_cs = true;
-      }
-      
-      all.l = CB_ALGS::setup(all, vm);
-      got_cb = true;
-    }
-
-  if (vm.count("cbify"))
-    {
-      if(!got_cs) {
-	vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
-	
-	all.l = CSOAA::setup(all, vm);  // default to CSOAA unless wap is specified
-	all.cost_sensitive = all.l;
-	got_cs = true;
-      }
-      
-      if (!got_cb) {
-	vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
-	all.l = CB_ALGS::setup(all, vm);
-	got_cb = true;
-      }
-
-      all.l = CBIFY::setup(all, vm);
-    }
-}
-
-void parse_search(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
-{
-  po::options_description search_opts("Search");
-    
-  search_opts.add_options()
-      ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF");
-
-  vm = add_options(all,search_opts);
-
-  if (vm.count("search")) {
-    if (!got_cs && !got_cb) {
-      if( vm.count("search") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
-      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
-      
-      all.l = CSOAA::setup(all, vm);  // default to CSOAA unless others have been specified
-      all.cost_sensitive = all.l;
-      got_cs = true;
-    }
-    all.l = Search::setup(all, vm);
-  }
+  all.l = setup_base(all);
 }
 
 void add_to_args(vw& all, int argc, char* argv[])
@@ -951,143 +780,107 @@ void add_to_args(vw& all, int argc, char* argv[])
     all.args.push_back(string(argv[i]));
 }
 
-vw* parse_args(int argc, char *argv[])
+vw& parse_args(int argc, char *argv[])
 {
-  vw* all = new vw();
+  vw& all = *(new vw());
 
-  add_to_args(*all, argc, argv);
+  add_to_args(all, argc, argv);
 
   size_t random_seed = 0;
-  all->program_name = argv[0];
+  all.program_name = argv[0];
 
-  po::options_description desc("VW options");
-
-  desc.add_options()
+  new_options(all, "VW options")
     ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
-    ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring");
+    ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring");
+  add_options(all);
 
-  po::options_description update_opt("Update options");
-
-  update_opt.add_options()
-    ("learning_rate,l", po::value<float>(&(all->eta)), "Set learning rate")
-    ("power_t", po::value<float>(&(all->power_t)), "t power value")
-    ("decay_learning_rate",    po::value<float>(&(all->eta_decay_rate)),
+  new_options(all, "Update options")
+    ("learning_rate,l", po::value<float>(&(all.eta)), "Set learning rate")
+    ("power_t", po::value<float>(&(all.power_t)), "t power value")
+    ("decay_learning_rate",    po::value<float>(&(all.eta_decay_rate)),
      "Set Decay factor for learning_rate between passes")
-    ("initial_t", po::value<double>(&((all->sd->t))), "initial t value")
-    ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights.")
-    ;
+    ("initial_t", po::value<double>(&((all.sd->t))), "initial t value")
+    ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights.");
+  add_options(all);
 
-  po::options_description weight_opt("Weight options");
-
-  weight_opt.add_options()
+  new_options(all, "Weight options")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
-    ("initial_weight", po::value<float>(&(all->initial_weight)), "Set all weights to an initial value of 1.")
-    ("random_weights", po::value<bool>(&(all->random_weights)), "make initial weights random")
-    ("input_feature_regularizer", po::value< string >(&(all->per_feature_regularizer_input)), "Per feature regularization input file")
-    ;
+    ("initial_weight", po::value<float>(&(all.initial_weight)), "Set all weights to an initial value of 1.")
+    ("random_weights", po::value<bool>(&(all.random_weights)), "make initial weights random")
+    ("input_feature_regularizer", po::value< string >(&(all.per_feature_regularizer_input)), "Per feature regularization input file");
+  add_options(all);
 
-  po::options_description cluster_opt("Parallelization options");
-  cluster_opt.add_options()
-    ("span_server", po::value<string>(&(all->span_server)), "Location of server for setting up spanning tree")
-    ("unique_id", po::value<size_t>(&(all->unique_id)),"unique id used for cluster parallel jobs")
-    ("total", po::value<size_t>(&(all->total)),"total number of nodes used in cluster parallel job")
-    ("node", po::value<size_t>(&(all->node)),"node number in cluster parallel job")
-    ;
+  new_options(all, "Parallelization options")
+    ("span_server", po::value<string>(&(all.span_server)), "Location of server for setting up spanning tree")
+    ("unique_id", po::value<size_t>(&(all.unique_id)),"unique id used for cluster parallel jobs")
+    ("total", po::value<size_t>(&(all.total)),"total number of nodes used in cluster parallel job")
+    ("node", po::value<size_t>(&(all.node)),"node number in cluster parallel job");
+  add_options(all);
 
-  po::options_description other_opt("Other options");
-  other_opt.add_options()
-    ("bootstrap,B", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
-    ;
-
-  desc.add(update_opt)
-    .add(weight_opt)
-    .add(cluster_opt)
-    .add(other_opt);
-
-  po::variables_map vm = add_options(*all, desc);
-
+  po::variables_map& vm = all.vm;
   msrand48(random_seed);
+  parse_diagnostics(all, argc);
 
-  parse_diagnostics(*all, vm, argc);
-
-  all->sd->weighted_unlabeled_examples = all->sd->t;
-  all->initial_t = (float)all->sd->t;
+  all.sd->weighted_unlabeled_examples = all.sd->t;
+  all.initial_t = (float)all.sd->t;
 
   //Input regressor header
   io_buf io_temp;
-  parse_regressor_args(*all, vm, io_temp);
+  parse_regressor_args(all, vm, io_temp);
   
   int temp_argc = 0;
-  char** temp_argv = VW::get_argv_from_string(all->file_options->str(), temp_argc);
-  add_to_args(*all, temp_argc, temp_argv);
+  char** temp_argv = VW::get_argv_from_string(all.file_options->str(), temp_argc);
+  add_to_args(all, temp_argc, temp_argv);
   for (int i = 0; i < temp_argc; i++)
     free(temp_argv[i]);
   free(temp_argv);
   
-  po::parsed_options pos = po::command_line_parser(all->args).
+  po::parsed_options pos = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(all->opts).allow_unregistered().run();
+    options(all.opts).allow_unregistered().run();
 
   vm = po::variables_map();
 
   po::store(pos, vm);
   po::notify(vm);
-  all->file_options->str("");
+  all.file_options->str("");
 
-  parse_feature_tweaks(*all, vm); //feature tweaks
+  parse_feature_tweaks(all); //feature tweaks
 
-  parse_example_tweaks(*all, vm); //example manipulation
+  parse_example_tweaks(all); //example manipulation
 
-  parse_output_model(*all, vm);
+  parse_output_model(all);
   
-  parse_base_algorithm(*all, vm);
+  parse_reductions(all);
 
-  if (!all->quiet)
+  if (!all.quiet)
     {
-      cerr << "Num weight bits = " << all->num_bits << endl;
-      cerr << "learning rate = " << all->eta << endl;
-      cerr << "initial_t = " << all->sd->t << endl;
-      cerr << "power_t = " << all->power_t << endl;
-      if (all->numpasses > 1)
-	cerr << "decay_learning_rate = " << all->eta_decay_rate << endl;
-      if (all->rank > 0)
-	cerr << "rank = " << all->rank << endl;
+      cerr << "Num weight bits = " << all.num_bits << endl;
+      cerr << "learning rate = " << all.eta << endl;
+      cerr << "initial_t = " << all.sd->t << endl;
+      cerr << "power_t = " << all.power_t << endl;
+      if (all.numpasses > 1)
+	cerr << "decay_learning_rate = " << all.eta_decay_rate << endl;
     }
 
-  parse_output_preds(*all, vm);
+  parse_output_preds(all);
 
-  parse_scorer_reductions(*all, vm);
+  load_input_model(all, io_temp);
 
-  bool got_cs = false;
-  
-  parse_score_users(*all, vm, got_cs);
+  parse_source(all);
 
-  bool got_cb = false;
-  
-  parse_cb(*all, vm, got_cs, got_cb);
-
-  parse_search(*all, vm, got_cs, got_cb);
-  
-
-  if(vm.count("bootstrap"))
-    all->l = BS::setup(*all, vm);
-
-  load_input_model(*all, vm, io_temp);
-
-  parse_source(*all, vm);
-
-  enable_sources(*all, vm, all->quiet,all->numpasses);
+  enable_sources(all, all.quiet, all.numpasses);
 
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
-  size_t params_per_problem = all->l->increment;
+  size_t params_per_problem = all.l->increment;
   while (params_per_problem > (uint32_t)(1 << i))
     i++;
-  all->wpp = (1 << i) >> all->reg.stride_shift;
+  all.wpp = (1 << i) >> all.reg.stride_shift;
 
   if (vm.count("help")) {
     /* upon direct query for help -- spit it out to stdout */
-    cout << "\n" << all->opts << "\n";
+    cout << "\n" << all.opts << "\n";
     exit(0);
   }
 
@@ -1152,15 +945,15 @@ namespace VW {
     s += " --no_stdin";
     char** argv = get_argv_from_string(s,argc);
 
-    vw* all = parse_args(argc, argv);
+    vw& all = parse_args(argc, argv);
     
-    initialize_parser_datastructures(*all);
+    initialize_parser_datastructures(all);
 
     for(int i = 0; i < argc; i++)
       free(argv[i]);
-    free (argv);
+    free(argv);
 
-    return all;
+    return &all;
   }
 
   void delete_dictionary_entry(substring ss, v_array<feature>*A) {
@@ -1182,6 +975,7 @@ namespace VW {
     all.p->parse_name.delete_v();
     free(all.p);
     free(all.sd);
+    all.reduction_stack.delete_v();
     delete all.file_options;
     for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
       if (all.final_prediction_sink[i] != 1)

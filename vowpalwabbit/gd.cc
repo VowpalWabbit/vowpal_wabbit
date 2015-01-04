@@ -844,8 +844,16 @@ uint32_t ceil_log_2(uint32_t v)
     return 1 + ceil_log_2(v >> 1);
 }
 
-base_learner* setup(vw& all, po::variables_map& vm)
+base_learner* setup(vw& all)
 {
+  new_options(all, "Gradient Descent options")
+    ("sgd", "use regular stochastic gradient descent update.")
+    ("adaptive", "use adaptive, individual learning rates.")
+    ("invariant", "use safe/importance aware updates.")
+    ("normalized", "use per feature normalized updates")
+    ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule");
+  add_options(all);
+  po::variables_map& vm = all.vm;
   gd& g = calloc_or_die<gd>();
   g.all = &all;
   g.all->normalized_sum_norm_x = 0;

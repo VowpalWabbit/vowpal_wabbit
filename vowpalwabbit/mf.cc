@@ -22,7 +22,7 @@ namespace MF {
 struct mf {
   vector<string> pairs;
 
-  uint32_t rank;
+  size_t rank;
 
   uint32_t increment;
 
@@ -188,22 +188,23 @@ void finish(mf& o) {
   o.sub_predictions.delete_v();
 }
 
-
-base_learner* setup(vw& all, po::variables_map& vm) {
-  mf* data = new mf;
-
-  // copy global data locally
-  data->all = &all;
-  data->rank = (uint32_t)vm["new_mf"].as<size_t>();
+  base_learner* setup(vw& all) {
+    new_options(all, "MF options")
+      ("new_mf", po::value<size_t>(), "rank for reduction-based matrix factorization");
+    if(missing_required(all)) return NULL;
+    
+    mf& data = calloc_or_die<mf>();
+    data.all = &all;
+    data.rank = (uint32_t)all.vm["new_mf"].as<size_t>();
 
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
-  data->pairs = all.pairs;
+  data.pairs = all.pairs;
   all.pairs.clear();
 
   all.random_positive_weights = true;
 
-  learner<mf>& l = init_learner(data, all.l, learn, predict<false>, 2*data->rank+1);
+  learner<mf>& l = init_learner(&data, setup_base(all), learn, predict<false>, 2*data.rank+1);
   l.set_finish(finish);
   return make_base(l);
 }

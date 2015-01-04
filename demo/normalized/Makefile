@@ -19,8 +19,8 @@ SHUFFLE='BEGIN { srand 69; };					\
 	 $$b[$$i] = $$_; } { print grep { defined $$_ } @b;'
 
 #---------------------------------------------------------------------
-#                           bank marketing                            
-# 
+#                           bank marketing
+#
 # normalization really helps.  The columns have units of euros, seconds,
 # days, and years; in addition there are categorical variables.
 #---------------------------------------------------------------------
@@ -57,10 +57,10 @@ bankbestmin=1e-2
 bankbestmax=10
 banknonormbestmin=1e-8
 banknonormbestmax=1e-3
-banktimeestimate=1  
+banktimeestimate=1
 
 #---------------------------------------------------------------------
-#                              covertype                              
+#                              covertype
 #---------------------------------------------------------------------
 
 covtype.data.gz:
@@ -88,11 +88,11 @@ covertypebestmin=1e-2
 covertypebestmax=10
 covertypenonormbestmin=1e-8
 covertypenonormbestmax=1e-5
-covertypetimeestimate=5  
+covertypetimeestimate=5
 
 #---------------------------------------------------------------------
-#                        million song database                        
-# 
+#                        million song database
+#
 # normalization is helpful.
 #---------------------------------------------------------------------
 
@@ -142,7 +142,7 @@ MSDnonormbestmax=1e-5
 MSDtimeestimate=15
 
 #---------------------------------------------------------------------
-#                         census-income (KDD)                         
+#                         census-income (KDD)
 #---------------------------------------------------------------------
 
 census-income.data.gz:
@@ -180,7 +180,7 @@ censusnonormbestmax=1e-4
 censustimeestimate=5
 
 #---------------------------------------------------------------------
-#                          Statlog (Shuttle)                          
+#                          Statlog (Shuttle)
 #---------------------------------------------------------------------
 
 shuttle.trn.Z:
@@ -211,7 +211,7 @@ shuttlenonormbestmax=1e-3
 shuttletimeestimate=1
 
 #---------------------------------------------------------------------
-#                              CT slices                              
+#                              CT slices
 #
 # normalization doesn't help much
 #---------------------------------------------------------------------
@@ -256,7 +256,7 @@ CTslicenonormbestmax=1
 CTslicetimeestimate=15
 
 #---------------------------------------------------------------------
-#                           common routines                           
+#                           common routines
 #---------------------------------------------------------------------
 
 %.best: %.data
@@ -269,8 +269,10 @@ CTslicetimeestimate=15
 	@printf "WARNING: this step takes about %s minutes\n" $($*timeestimate)
 	@./hypersearch $($*nonormbestmin) $($*nonormbestmax) '$(MAKE)' '$*.%.nonormlearn' > $@
 
-%.resultsprint: 
+%.resultsprint:
 	@printf "%20.20s\t%9.3g\t%9.3g\t%9.3g\t%9.3g\n" "$*" $$(cut -f1 $*.best) $$(cut -f2 $*.best) $$(cut -f1 $*.nonormbest) $$(cut -f2 $*.nonormbest)
 
 only.%: %.best %.nonormbest all.results.pre %.resultsprint
 	@true
+
+.PHONY: all all.results all.results.pre

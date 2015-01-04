@@ -58,7 +58,7 @@ struct parser {
 
 parser* new_parser();
 
-void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes);
+void enable_sources(vw& all, bool quiet, size_t passes);
 
 bool examples_to_finish();
 

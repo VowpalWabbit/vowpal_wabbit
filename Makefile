@@ -20,17 +20,21 @@ UNAME := $(shell uname)
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = -I /usr/include
 BOOST_LIBRARY = -L /usr/lib
+NPROCS := 1
 
 ifeq ($(UNAME), Linux)
   BOOST_LIBRARY += -L /usr/lib/x86_64-linux-gnu
+  NPROCS:=$(shell grep -c ^processor /proc/cpuinfo)
 endif
 ifeq ($(UNAME), FreeBSD)
   LIBS = -l boost_program_options -l pthread -l z -l compat
   BOOST_INCLUDE = -I /usr/local/include
+  NPROCS:=$(shell grep -c ^processor /proc/cpuinfo)
 endif
 ifeq "CYGWIN" "$(findstring CYGWIN,$(UNAME))"
   LIBS = -l boost_program_options-mt -l pthread -l z
   BOOST_INCLUDE = -I /usr/include
+  NPROCS:=$(shell grep -c ^processor /proc/cpuinfo)
 endif
 ifeq ($(UNAME), Darwin)
   LIBS = -lboost_program_options-mt -lboost_serialization-mt -l pthread -l z
@@ -46,6 +50,7 @@ ifeq ($(UNAME), Darwin)
     BOOST_INCLUDE += -I /opt/local/include
     BOOST_LIBRARY += -L /opt/local/lib
   endif
+  NPROCS:=$(shell sysctl -n hw.ncpu)
 endif
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
@@ -84,7 +89,7 @@ spanning_tree:
 	cd cluster; $(MAKE)
 
 vw:
-	cd vowpalwabbit; $(MAKE) -j 8 things
+	cd vowpalwabbit; $(MAKE) -j $(NPROCS) things
 
 active_interactor:
 	cd vowpalwabbit; $(MAKE)
@@ -117,3 +122,5 @@ clean:
 ifneq ($(JAVA_HOME),)
 	cd java    && $(MAKE) clean
 endif
+
+.PHONY: all clean install

@@ -9,7 +9,11 @@ license as described in the file LICENSE.
 
 namespace NOOP {
   void learn(char&, LEARNER::base_learner&, example&) {}
-
+  
   LEARNER::base_learner* setup(vw& all)
-  { return &LEARNER::init_learner<char>(NULL, learn, 1); }
+  {
+    new_options(all, "Noop options") ("noop","do no learning");
+    if(missing_required(all)) return NULL;
+    
+    return &LEARNER::init_learner<char>(NULL, learn, 1); }
 }

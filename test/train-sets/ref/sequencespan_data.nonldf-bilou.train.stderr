@@ -1,10 +1,10 @@
 final_regressor = models/sequencespan_data.model
+switching to BILOU encoding for sequence span labeling
 Num weight bits = 18
 learning rate = 10
 initial_t = 1
 power_t = 0.5
 decay_learning_rate = 1
-switching to BILOU encoding for sequence span labeling
 creating cache_file = train-sets/sequencespan_data.cache
 Reading datafile = train-sets/sequencespan_data
 num sources = 1

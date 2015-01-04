@@ -40,11 +40,15 @@ namespace PRINT
     GD::foreach_feature<vw, print_feature>(*(p.all), ec, *p.all);
     cout << endl;
   }
-  
+
   LEARNER::base_learner* setup(vw& all)
   {
+    new_options(all, "Print options") ("print","print examples");
+    if(missing_required(all)) return NULL;
+
     print& p = calloc_or_die<print>();
     p.all = &all;
+
     size_t length = ((size_t)1) << all.num_bits;
     all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
     all.reg.stride_shift = 0;

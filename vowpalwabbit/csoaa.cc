@@ -13,9 +13,7 @@ license as described in the file LICENSE.
 #include "gd.h" // GD::foreach_feature() needed in subtract_example()
 
 using namespace std;
-
 using namespace LEARNER;
-
 using namespace COST_SENSITIVE;
 
 namespace CSOAA {
@@ -68,21 +66,25 @@ namespace CSOAA {
     VW::finish_example(all, &ec);
   }
 
-  base_learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all)
   {
+    new_options(all, "CSOAA options")
+      ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs");
+    if(missing_required(all)) return NULL;
+
     csoaa& c = calloc_or_die<csoaa>();
     c.all = &all;
     //first parse for number of actions
     uint32_t nb_actions = 0;
 
-    nb_actions = (uint32_t)vm["csoaa"].as<size_t>();
+    nb_actions = (uint32_t)all.vm["csoaa"].as<size_t>();
     //append csoaa with nb_actions to file_options so it is saved to regressor later
     *all.file_options << " --csoaa " << nb_actions;
 
     all.p->lp = cs_label;
     all.sd->k = nb_actions;
 
-    learner<csoaa>& l = init_learner(&c, all.l, predict_or_learn<true>, 
+    learner<csoaa>& l = init_learner(&c, setup_base(all), predict_or_learn<true>, 
 				     predict_or_learn<false>, nb_actions);
     l.set_finish_example(finish_example);
     return make_base(l);
@@ -645,15 +647,17 @@ namespace LabelDict {
     }
   }
 
-  base_learner* setup(vw& all, po::variables_map& vm)
+  base_learner* setup(vw& all)
   {
-    po::options_description ldf_opts("LDF Options");
-    ldf_opts.add_options()
-        ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
-        ;
+    new_options(all, "LDF Options")
+      ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
+      ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.");
+    if (missing_required(all)) return NULL;
+    new_options(all)
+      ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file");
+    add_options(all);
 
-    vm = add_options(all, ldf_opts);
-    
+    po::variables_map& vm = all.vm;
     ldf& ld = calloc_or_die<ldf>();
 
     ld.all = &all;
@@ -708,7 +712,7 @@ namespace LabelDict {
 
     ld.read_example_this_loop = 0;
     ld.need_to_clear = false;
-    learner<ldf>& l = init_learner(&ld, all.l, predict_or_learn<true>, predict_or_learn<false>);
+    learner<ldf>& l = init_learner(&ld, setup_base(all), predict_or_learn<true>, predict_or_learn<false>);
     if (ld.is_singleline)
       l.set_finish_example(finish_singleline_example);
     else

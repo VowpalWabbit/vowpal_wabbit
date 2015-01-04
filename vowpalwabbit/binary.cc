@@ -28,10 +28,16 @@ namespace BINARY {
       }
   }
 
-  LEARNER::base_learner* setup(vw& all, po::variables_map& vm)
-  {
+LEARNER::base_learner* setup(vw& all)
+  {//parse and set arguments
+    new_options(all,"Binary options")
+      ("binary", "report loss as binary classification on -1,1");
+    if(missing_required(all)) return NULL;
+
+    //Create new learner
     LEARNER::learner<char>& ret = 
-      LEARNER::init_learner<char>(NULL, all.l, predict_or_learn<true>, predict_or_learn<false>);
+      LEARNER::init_learner<char>(NULL, setup_base(all), 
+				  predict_or_learn<true>, predict_or_learn<false>);
     return make_base(ret);
   }
 }

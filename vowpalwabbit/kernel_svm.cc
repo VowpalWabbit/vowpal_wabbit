@@ -648,7 +648,7 @@ namespace KSVM
       else {
 
 	for(size_t i = 0;i < params.pool_pos;i++) {
-	  float queryp = 2.0f/(1.0f + expf((float)(params.active_c*fabs(scores[i]))*pow(params.pool[i]->ex.example_counter,0.5f)));
+	  float queryp = 2.0f/(1.0f + expf((float)(params.active_c*fabs(scores[i]))*(float)pow(params.pool[i]->ex.example_counter,0.5f)));
 	  if(rand() < queryp) {
 	    svm_example* fec = params.pool[i];
 	    fec->ex.l.simple.weight *= 1/queryp;
@@ -790,13 +790,14 @@ namespace KSVM
     cerr<<"Done with finish \n";
   }
 
-
-  LEARNER::base_learner* setup(vw &all, po::variables_map& vm) {
-    po::options_description desc("KSVM options");
-    desc.add_options()
+  LEARNER::base_learner* setup(vw &all) {
+    new_options(all, "KSVM options")
+      ("ksvm", "kernel svm");
+    if (missing_required(all)) return NULL;
+    new_options(all)
       ("reprocess", po::value<size_t>(), "number of reprocess steps for LASVM")
-      ("active", "do active learning")
-      ("active_c", po::value<double>(), "parameter for query prob")
+      //      ("active", "do active learning")
+      //("active_c", po::value<double>(), "parameter for query prob")
       ("pool_greedy", "use greedy selection on mini pools")      
       ("para_active", "do parallel active learning")
       ("pool_size", po::value<size_t>(), "size of pools for active learning")
@@ -805,8 +806,9 @@ namespace KSVM
       ("bandwidth", po::value<float>(), "bandwidth of rbf kernel")
       ("degree", po::value<int>(), "degree of poly kernel")
       ("lambda", po::value<double>(), "saving regularization for test time");
-    vm = add_options(all, desc);
+    add_options(all);
 
+    po::variables_map& vm = all.vm;
     string loss_function = "hinge";
     float loss_parameter = 0.0;
     delete all.loss;

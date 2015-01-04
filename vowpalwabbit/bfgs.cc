@@ -63,6 +63,9 @@ namespace BFGS
 
   struct bfgs {
     vw* all;
+    int m;
+    float rel_threshold; // termination threshold
+
     double wolfe1_bound;
     
     size_t final_pass;
@@ -247,7 +250,7 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
   
   origin = 0;
   for(uint32_t i = 0; i < length; i++, mem+=b.mem_stride, w+=stride) {
-    if (all.m>0)
+    if (b.m>0)
       mem[(MEM_XT+origin)%b.mem_stride] = w[W_XT]; 
     mem[(MEM_GT+origin)%b.mem_stride] = w[W_GT];
     g1_Hg1 += w[W_GT] * w[W_GT] * w[W_COND];
@@ -272,7 +275,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
   float* w0 = w;
 
   // implement conjugate gradient
-  if (all.m==0) {
+  if (b.m==0) {
     double g_Hy = 0.;
     double g_Hg = 0.;
     double y = 0.;
@@ -374,7 +377,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 
   mem = mem0;
   w = w0;
-  lastj = (lastj<all.m-1) ? lastj+1 : all.m-1;
+  lastj = (lastj<b.m-1) ? lastj+1 : b.m-1;
   origin = (origin+b.mem_stride-2)%b.mem_stride;
   for(uint32_t i = 0; i < length; i++, mem+=b.mem_stride, w+=stride) {
     mem[(MEM_GT+origin)%b.mem_stride] = w[W_GT];
@@ -633,9 +636,9 @@ int process_pass(vw& all, bfgs& b) {
   /********************************************************************/ 
 		  else {
 		      double rel_decrease = (b.previous_loss_sum-b.loss_sum)/b.previous_loss_sum;
-		      if (!nanpattern((float)rel_decrease) && b.backstep_on && fabs(rel_decrease)<all.rel_threshold) {
+		      if (!nanpattern((float)rel_decrease) && b.backstep_on && fabs(rel_decrease)<b.rel_threshold) {
 			fprintf(stdout, "\nTermination condition reached in pass %ld: decrease in loss less than %.3f%%.\n"
-				"If you want to optimize further, decrease termination threshold.\n", (long int)b.current_pass+1, all.rel_threshold*100.0);
+				"If you want to optimize further, decrease termination threshold.\n", (long int)b.current_pass+1, b.rel_threshold*100.0);
 			status = LEARN_CONV;
 		      }
 		      b.previous_loss_sum = b.loss_sum;
@@ -913,7 +916,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 	      throw exception();
 	    }
 	}
-      int m = all->m;
+      int m = b.m;
       
       b.mem_stride = (m==0) ? CG_EXTRA : 2*m;
       b.mem = (float*) malloc(sizeof(float)*all->length()*(b.mem_stride));
@@ -965,10 +968,23 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     b.backstep_on = true;
   }
 
-base_learner* setup(vw& all, po::variables_map& vm)
+base_learner* setup(vw& all)
 {
+  new_options(all, "LBFGS options")
+    ("bfgs", "use bfgs optimization")
+    ("conjugate_gradient", "use conjugate gradient based optimization");
+  if (missing_required(all)) return NULL;
+  new_options(all)
+    ("hessian_on", "use second derivative in line search")
+    ("mem", po::value<uint32_t>()->default_value(15), "memory in bfgs")
+    ("termination", po::value<float>()->default_value(0.001f),"Termination threshold");
+  add_options(all);
+
+  po::variables_map& vm = all.vm;
   bfgs& b = calloc_or_die<bfgs>();
   b.all = &all;
+  b.m = vm["mem"].as<uint32_t>();
+  b.rel_threshold = vm["termination"].as<float>();
   b.wolfe1_bound = 0.01;
   b.first_hessian_on=true;
   b.first_pass = true;
@@ -979,16 +995,6 @@ base_learner* setup(vw& all, po::variables_map& vm)
   b.no_win_counter = 0;
   b.early_stop_thres = 3;
 
-  po::options_description bfgs_opts("LBFGS options");
-
-  bfgs_opts.add_options()
-    ("hessian_on", "use second derivative in line search")
-    ("mem", po::value<int>(&(all.m)), "memory in bfgs")
-    ("conjugate_gradient", "use conjugate gradient based optimization")
-    ("termination", po::value<float>(&(all.rel_threshold)),"Termination threshold");
-
-  vm = add_options(all, bfgs_opts);
-
   if(!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
@@ -996,11 +1002,11 @@ base_learner* setup(vw& all, po::variables_map& vm)
       b.early_stop_thres = vm["early_terminate"].as< size_t>();     
   }
   
-  if (vm.count("hessian_on") || all.m==0) {
+  if (vm.count("hessian_on") || b.m==0) {
     all.hessian_on = true;
   }
   if (!all.quiet) {
-    if (all.m>0)
+    if (b.m>0)
       cerr << "enabling BFGS based optimization ";
     else
       cerr << "enabling conjugate gradient optimization via BFGS ";

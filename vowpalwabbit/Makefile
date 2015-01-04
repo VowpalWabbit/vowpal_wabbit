@@ -52,3 +52,4 @@ install: $(BINARIES)
 clean:
 	rm -f  *.o *.d $(BINARIES) *~ $(MANPAGES) libvw.a
 
+.PHONY: all clean install test things

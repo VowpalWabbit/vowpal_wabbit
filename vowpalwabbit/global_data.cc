@@ -214,23 +214,44 @@ void compile_limits(vector<string> limits, uint32_t* dest, bool quiet)
     }
 }
 
-po::variables_map add_options(vw& all, po::options_description& opts)
+void add_options(vw& all, po::options_description& opts)
 {
   all.opts.add(opts);
   po::variables_map new_vm;
-
   //parse local opts once for notifications.
   po::parsed_options parsed = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(opts).allow_unregistered().run();
   po::store(parsed, new_vm);
   po::notify(new_vm); 
-  //parse all opts for a complete variable map.
-  parsed = po::command_line_parser(all.args).
+
+  for (po::variables_map::iterator it=new_vm.begin(); it!=new_vm.end(); ++it)
+    all.vm.insert(*it);
+}
+
+void add_options(vw& all)
+{
+  add_options(all, *all.new_opts);
+  delete all.new_opts;
+}
+
+bool missing_required(vw& all)
+{
+  //parse local opts once for notifications.
+  po::parsed_options parsed = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(all.opts).allow_unregistered().run();
+    options(*all.new_opts).allow_unregistered().run();
+  po::variables_map new_vm;
   po::store(parsed, new_vm);
-  return new_vm;
+  all.opts.add(*all.new_opts);
+  delete all.new_opts;
+  for (po::variables_map::iterator it=new_vm.begin(); it!=new_vm.end(); ++it)
+    all.vm.insert(*it);
+  
+  if (new_vm.size() == 0) // required are missing;
+    return true;
+  else
+    return false;
 }
 
 vw::vw()
@@ -247,6 +268,7 @@ vw::vw()
 
   reg_mode = 0;
   current_pass = 0;
+  reduction_stack=v_init<LEARNER::base_learner* (*)(vw&)>();
 
   data_filename = "";
 
@@ -260,13 +282,7 @@ vw::vw()
   default_bits = true;
   daemon = false;
   num_children = 10;
-  lda_alpha = 0.1f;
-  lda_rho = 0.1f;
-  lda_D = 10000.;
-  lda_epsilon = 0.001f;
-  minibatch = 1;
   span_server = "";
-  m = 15;
   save_resume = false;
 
   random_positive_weights = false;
@@ -276,8 +292,6 @@ vw::vw()
   power_t = 0.5;
   eta = 0.5; //default learning rate for normalized adaptive updates, this is switched to 10 by default for the other updates (see parse_args.cc)
   numpasses = 1;
-  rel_threshold = 0.001f;
-  rank = 0;
 
   final_prediction_sink.begin = final_prediction_sink.end=final_prediction_sink.end_array = NULL;
   raw_prediction = -1;

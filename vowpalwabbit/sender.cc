@@ -96,13 +96,17 @@ void end_examples(sender& s)
     delete s.buf;
   }
 
-  LEARNER::base_learner* setup(vw& all, po::variables_map& vm, vector<string> pairs)
-{
+  LEARNER::base_learner* setup(vw& all)
+  {
+    new_options(all, "Sender options")
+    ("sendto", po::value< vector<string> >(), "send examples to <host>");
+  if(missing_required(all)) return NULL;
+  
   sender& s = calloc_or_die<sender>();
   s.sd = -1;
-  if (vm.count("sendto"))
+  if (all.vm.count("sendto"))
     {      
-      vector<string> hosts = vm["sendto"].as< vector<string> >();
+      vector<string> hosts = all.vm["sendto"].as< vector<string> >();
       open_sockets(s, hosts[0]);
     }
 

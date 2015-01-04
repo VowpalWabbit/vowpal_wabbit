@@ -12,7 +12,6 @@ license as described in the file LICENSE.node
 #include "reductions.h"
 #include "simple_label.h"
 #include "multiclass.h"
-#include "vw.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -77,12 +76,11 @@ namespace LOG_MULTI
   struct log_multi
   {
     uint32_t k;	
-    vw* all;	
     
     v_array<node> nodes;	
     
-    uint32_t max_predictors;
-    uint32_t predictors_used;
+    size_t max_predictors;
+    size_t predictors_used;
 
     bool progress;
     uint32_t swap_resist;
@@ -199,7 +197,7 @@ namespace LOG_MULTI
 	    b.nodes.push_back(init_node());	
 	    right_child = (uint32_t)b.nodes.size();
 	    b.nodes.push_back(init_node());
-	    b.nodes[current].base_predictor = b.predictors_used++;
+	    b.nodes[current].base_predictor = (uint32_t)b.predictors_used++;
 	  }
 	else
 	  {
@@ -319,11 +317,10 @@ namespace LOG_MULTI
   void learn(log_multi& b, base_learner& base, example& ec)
   {
     //    verify_min_dfs(b, b.nodes[0]);
-
-    if (ec.l.multi.label == (uint32_t)-1 || !b.all->training || b.progress)
+    if (ec.l.multi.label == (uint32_t)-1 || b.progress)
       predict(b,base,ec);
     
-    if(b.all->training && (ec.l.multi.label != (uint32_t)-1) && !ec.test_only)	//if training the tree
+    if((ec.l.multi.label != (uint32_t)-1) && !ec.test_only)	//if training the tree
       {
 	MULTICLASS::multiclass mc = ec.l.multi;
     
@@ -413,10 +410,10 @@ namespace LOG_MULTI
 	if (read)
 	  for (uint32_t j = 1; j < temp; j++)
 	    b.nodes.push_back(init_node());
-	text_len = sprintf(buff, "max_predictors = %d ",b.max_predictors);
+	text_len = sprintf(buff, "max_predictors = %ld ",b.max_predictors);
 	bin_text_read_write_fixed(model_file,(char*)&b.max_predictors, sizeof(b.max_predictors), "", read, buff, text_len, text);
 
-	text_len = sprintf(buff, "predictors_used = %d ",b.predictors_used);
+	text_len = sprintf(buff, "predictors_used = %ld ",b.predictors_used);
 	bin_text_read_write_fixed(model_file,(char*)&b.predictors_used, sizeof(b.predictors_used), "", read, buff, text_len, text);
 
 	text_len = sprintf(buff, "progress = %d ",b.progress);
@@ -496,20 +493,25 @@ namespace LOG_MULTI
       }
   }
   
-  void finish_example(vw& all, log_multi&, example& ec) { MULTICLASS::finish_example(all, ec); }
-  
-  base_learner* setup(vw& all, po::variables_map& vm)	//learner setup
+  base_learner* setup(vw& all)	//learner setup
   {
-    log_multi& data = calloc_or_die<log_multi>();
-
-    po::options_description opts("TXM Online options");
-    opts.add_options()
+    new_options(all, "Logarithmic Time Multiclass options")
+      ("log_multi", po::value<size_t>(), "Use online tree for multiclass");
+    if (missing_required(all)) return NULL;
+    new_options(all)
       ("no_progress", "disable progressive validation")
-      ("swap_resistance", po::value<uint32_t>(&(data.swap_resist))->default_value(4), "higher = more resistance to swap, default=4");
-    
-    vm = add_options(all, opts);
-    
+      ("swap_resistance", po::value<uint32_t>(), "higher = more resistance to swap, default=4");
+    add_options(all);
+
+    po::variables_map& vm = all.vm;
+
+    log_multi& data = calloc_or_die<log_multi>();
     data.k = (uint32_t)vm["log_multi"].as<size_t>();
+    data.swap_resist = 4;
+
+    if (vm.count("swap_resistance"))
+      data.swap_resist = vm["swap_resistance"].as<uint32_t>();
+    
     *all.file_options << " --log_multi " << data.k;
     
     if (vm.count("no_progress"))
@@ -517,9 +519,6 @@ namespace LOG_MULTI
     else
       data.progress = true;
 
-    data.all = &all;
-    (all.p->lp) = MULTICLASS::mc_label;
-    
     string loss_function = "quantile"; 
     float loss_parameter = 0.5;
     delete(all.loss);
@@ -527,10 +526,11 @@ namespace LOG_MULTI
 
     data.max_predictors = data.k - 1;
 
-    learner<log_multi>& l = init_learner(&data, all.l, learn, predict, data.max_predictors);
+    learner<log_multi>& l = init_learner(&data, setup_base(all), learn, predict, data.max_predictors);
     l.set_save_load(save_load_tree);
-    l.set_finish_example(finish_example);
     l.set_finish(finish);
+    l.set_finish_example(MULTICLASS::finish_example<log_multi>);
+    all.p->lp = MULTICLASS::mc_label;
     
     init_tree(data);	
     

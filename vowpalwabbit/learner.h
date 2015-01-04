@@ -186,7 +186,7 @@ namespace LEARNER
   template<class T> 
     learner<T>& init_learner(T* dat, base_learner* base, 
 			     void (*learn)(T&, base_learner&, example&), 
-			     void (*predict)(T&, base_learner&, example&), size_t ws = 1) 
+			     void (*predict)(T&, base_learner&, example&), size_t ws) 
     { //the reduction constructor, with separate learn and predict functions
       learner<T>& ret = calloc_or_die<learner<T> >();
       ret = *(learner<T>*)base;
