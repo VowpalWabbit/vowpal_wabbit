@@ -8,7 +8,7 @@ eval_script=./evaluationER.py
 all:
 	@cat README.md
 clean:
-	rm -f *.model *.predictions ER_*.vw *.cache evaluationER.py er.zip *~ 
+	rm -f *.model *.predictions ER_*.vw *.cache evaluationER.py er.zip *~
 
 %.check:
 	@test -x "$$(which $*)" || {				\
@@ -33,5 +33,4 @@ er.test.predictions: ER_test.vw er.model
 er.perf: ER_test.vw  er.test.predictions python.check
 	@$(eval_script)  $< er.test.predictions
 
-
-
+.PHONY: all clean
