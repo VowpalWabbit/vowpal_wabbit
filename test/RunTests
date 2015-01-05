@@ -1086,3 +1086,7 @@ __DATA__
 {VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p ftrl_001.predict.tmp
     test-sets/ref/0001_ftrl.stderr
     pred-sets/ref/0001_ftrl.predict
+
+# Test 74: cb evaluation
+{VW} -d train-sets/rcv1_cb_eval --cb 2 --eval
+    train-sets/ref/rcv1_cb_eval.stderr
