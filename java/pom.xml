@@ -4,14 +4,14 @@
 
     <groupId>vw</groupId>
     <artifactId>vw-jni-${os.version}-${os.arch}</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.1</version>
     <name>Vowpal Wabbit JNI Layer</name>
 
     <scm>
         <connection>scm:git:git@github.com:elevatedcareers/vowpal_wabbit.git</connection>
         <url>git@github.com:elevatedcareers/vowpal_wabbit.git</url>
         <developerConnection>scm:git:git@github.com:elevatedcareers/vowpal_wabbit.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>vw-jni-3.13.0-37-generic-amd64-1.0.1</tag>
     </scm>
 
     <distributionManagement>
