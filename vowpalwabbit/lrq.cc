@@ -206,12 +206,13 @@ namespace LRQ {
     if (all.vm.count("random_seed")) random_seed = all.vm["random_seed"].as<size_t> ();
     
     lrq.initial_seed = lrq.seed = random_seed | 8675309;
-    if (all.vm.count("lrqdropout"))
-      lrq.dropout = true;
+    if (all.vm.count("lrqdropout")) 
+      {
+        lrq.dropout = true;
+        *all.file_options << " --lrqdropout ";
+      }
     else
       lrq.dropout = false;
-    
-    *all.file_options << " --lrqdropout ";
     
     lrq.lrpairs = all.vm["lrq"].as<vector<string> > ();
     
