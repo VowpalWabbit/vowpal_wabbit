@@ -5,11 +5,7 @@ license as described in the file LICENSE.
  */
 #include <float.h>
 
-#include "cost_sensitive.h"
-#include "cb.h"
-#include "simple_label.h"
 #include "example.h"
-#include "multiclass.h"
 #include "parse_primitives.h"
 #include "vw.h"
 

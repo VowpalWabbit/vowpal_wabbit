@@ -4,11 +4,7 @@
    license as described in the file LICENSE.
    */
 #include "search_dep_parser.h"
-#include "multiclass.h"
-#include "memory.h"
-#include "example.h"
 #include "gd.h"
-#include "ezexample.h"
 
 #define cdep cerr
 #undef cdep

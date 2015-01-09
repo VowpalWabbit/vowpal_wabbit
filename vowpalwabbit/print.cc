@@ -1,5 +1,3 @@
-#include "example.h"
-#include "simple_label.h"
 #include "gd.h"
 #include "float.h"
 #include "reductions.h"
@@ -44,7 +42,7 @@ namespace PRINT
   LEARNER::base_learner* setup(vw& all)
   {
     new_options(all, "Print options") ("print","print examples");
-    if(missing_required(all)) return NULL;
+    if(no_new_options(all)) return NULL;
 
     print& p = calloc_or_die<print>();
     p.all = &all;

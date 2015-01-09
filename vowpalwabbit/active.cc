@@ -1,6 +1,4 @@
 #include "reductions.h"
-#include "multiclass.h"
-#include "simple_label.h"
 #include "rand48.h"
 #include "float.h"
 #include "vw.h"
@@ -155,7 +153,7 @@ namespace ACTIVE {
   {//parse and set arguments
     new_options(all, "Active Learning options")
       ("active", "enable active learning");
-    if (missing_required(all)) return NULL;
+    if (no_new_options(all)) return NULL;
     new_options(all)
       ("simulation", "active learning simulation mode")
       ("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8");

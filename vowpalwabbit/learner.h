@@ -6,7 +6,11 @@ license as described in the file LICENSE.
 #pragma once
 // This is the interface for a learning algorithm
 #include<iostream>
-#include"memory.h"
+#include "memory.h"
+#include "cb.h"
+#include "cost_sensitive.h"
+#include "multiclass.h"
+#include "simple_label.h"
 using namespace std;
 
 struct vw;

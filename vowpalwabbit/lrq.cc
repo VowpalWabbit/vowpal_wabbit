@@ -1,5 +1,4 @@
 #include <string.h>
-
 #include <float.h>
 #include "reductions.h"
 #include "rand48.h"
@@ -191,7 +190,7 @@ namespace LRQ {
   {//parse and set arguments
     new_options(all, "Lrq options")
       ("lrq", po::value<vector<string> > (), "use low rank quadratic features");
-    if (missing_required(all)) return NULL;
+    if (no_new_options(all)) return NULL;
     new_options(all)
       ("lrqdropout", "use dropout training for low rank quadratic features");
     add_options(all);

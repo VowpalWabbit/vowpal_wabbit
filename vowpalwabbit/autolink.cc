@@ -1,5 +1,4 @@
 #include "reductions.h"
-#include "simple_label.h"
 
 namespace ALINK {
   const int autoconstant = 524267083;
@@ -41,7 +40,7 @@ namespace ALINK {
   {
     new_options(all,"Autolink options")
       ("autolink", po::value<size_t>(), "create link function with polynomial d");
-    if(missing_required(all)) return NULL;
+    if(no_new_options(all)) return NULL;
     
     autolink& data = calloc_or_die<autolink>();
     data.d = (uint32_t)all.vm["autolink"].as<size_t>();

@@ -10,11 +10,9 @@ license as described in the file LICENSE.
 #include <arpa/inet.h>
 #endif
 #include <sys/timeb.h>
-#include "global_data.h"
 #include "parse_args.h"
 #include "accumulate.h"
 #include "best_constant.h"
-#include "vw.h"
 
 using namespace std;
 

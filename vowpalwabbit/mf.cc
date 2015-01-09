@@ -9,9 +9,7 @@
 #include <netdb.h>
 #endif
 #include "reductions.h"
-#include "simple_label.h"
 #include "gd.h"
-#include "rand48.h"
 
 using namespace std;
 
@@ -191,7 +189,7 @@ void finish(mf& o) {
   base_learner* setup(vw& all) {
     new_options(all, "MF options")
       ("new_mf", po::value<size_t>(), "rank for reduction-based matrix factorization");
-    if(missing_required(all)) return NULL;
+    if(no_new_options(all)) return NULL;
     
     mf& data = calloc_or_die<mf>();
     data.all = &all;

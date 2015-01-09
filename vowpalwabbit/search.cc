@@ -5,18 +5,11 @@ license as described in the file LICENSE.
  */
 #include <float.h>
 #include <string.h>
-#include "vw.h"
-#include "search.h"
-#include "v_hashmap.h"
-#include "hash.h"
-#include "rand48.h"
-#include "cost_sensitive.h"
-#include "multiclass.h"
-#include "constant.h"
-#include "reductions.h"
-#include "cb.h"
-#include "gd.h" // for GD::foreach_feature
 #include <math.h>
+#include "vw.h"
+#include "rand48.h"
+#include "reductions.h"
+#include "gd.h" // for GD::foreach_feature
 #include "search_sequencetask.h"
 #include "search_multiclasstask.h"
 #include "search_dep_parser.h"
@@ -1766,7 +1759,7 @@ namespace Search {
   base_learner* setup(vw&all) {
     new_options(all,"Search Options")
       ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF");
-    if (missing_required(all)) return NULL;
+    if (no_new_options(all)) return NULL;
     new_options(all)
       ("search_task",              po::value<string>(), "the search task (use \"--search_task list\" to get a list of available tasks)")
       ("search_interpolation",     po::value<string>(), "at what level should interpolation happen? [*data|policy]")

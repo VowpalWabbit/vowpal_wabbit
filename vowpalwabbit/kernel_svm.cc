@@ -793,7 +793,7 @@ namespace KSVM
   LEARNER::base_learner* setup(vw &all) {
     new_options(all, "KSVM options")
       ("ksvm", "kernel svm");
-    if (missing_required(all)) return NULL;
+    if (no_new_options(all)) return NULL;
     new_options(all)
       ("reprocess", po::value<size_t>(), "number of reprocess steps for LASVM")
       //      ("active", "do active learning")

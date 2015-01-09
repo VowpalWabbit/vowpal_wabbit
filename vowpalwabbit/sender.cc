@@ -17,7 +17,6 @@
 #endif
 #include "io_buf.h"
 #include "cache.h"
-#include "simple_label.h"
 #include "network.h"
 #include "reductions.h"
 
@@ -100,7 +99,7 @@ void end_examples(sender& s)
   {
     new_options(all, "Sender options")
     ("sendto", po::value< vector<string> >(), "send examples to <host>");
-  if(missing_required(all)) return NULL;
+  if(no_new_options(all)) return NULL;
   
   sender& s = calloc_or_die<sender>();
   s.sd = -1;

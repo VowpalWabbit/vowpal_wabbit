@@ -1,7 +1,5 @@
 #include <float.h>
 #include "reductions.h"
-#include "multiclass.h"
-#include "simple_label.h"
 
 namespace BINARY {
   template <bool is_learn>
@@ -32,7 +30,7 @@ LEARNER::base_learner* setup(vw& all)
   {//parse and set arguments
     new_options(all,"Binary options")
       ("binary", "report loss as binary classification on -1,1");
-    if(missing_required(all)) return NULL;
+    if(no_new_options(all)) return NULL;
 
     //Create new learner
     LEARNER::learner<char>& ret = 

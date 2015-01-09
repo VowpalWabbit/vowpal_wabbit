@@ -4,11 +4,6 @@
   license as described in the file LICENSE.
 */
 #include "search_entityrelationtask.h"
-#include "multiclass.h"
-#include "memory.h"
-#include "example.h"
-#include "gd.h"
-#include "cost_sensitive.h"
 #include "vw.h"
 
 #define R_NONE 10 // label for NONE relation

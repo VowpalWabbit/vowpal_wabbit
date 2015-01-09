@@ -15,10 +15,6 @@ using namespace std;
 #include <math.h>
 #include <algorithm>
 
-#include "parse_regressor.h"
-#include "loss_functions.h"
-#include "io_buf.h"
-#include "memory.h"
 #include "rand48.h"
 #include "global_data.h"
 

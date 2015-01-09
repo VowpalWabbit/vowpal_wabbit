@@ -9,8 +9,6 @@ license as described in the file LICENSE.
 #include <sstream>
 
 #include "reductions.h"
-#include "constant.h"
-#include "simple_label.h"
 #include "rand48.h"
 #include "gd.h"
 
@@ -312,7 +310,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   {
     new_options(all, "Neural Network options")
       ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units");
-    if(missing_required(all)) return NULL;
+    if(no_new_options(all)) return NULL;
     new_options(all)
       ("inpass", "Train or test sigmoidal feedforward network with input passthrough.")
       ("dropout", "Train or test sigmoidal feedforward network using dropout.")

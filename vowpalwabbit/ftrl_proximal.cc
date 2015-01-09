@@ -12,15 +12,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <sys/timeb.h>
-#include "parse_example.h"
-#include "constant.h"
-#include "cache.h"
-#include "simple_label.h"
-#include "vw.h"
-#include "gd.h"
-#include "accumulate.h"
-#include "memory.h"
 #include <exception>
+#include "gd.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -181,7 +174,7 @@ namespace FTRL {
   {
     new_options(all, "FTRL options")
       ("ftrl", "Follow the Regularized Leader");
-    if (missing_required(all)) return NULL;
+    if (no_new_options(all)) return NULL;
     new_options(all)
       ("ftrl_alpha", po::value<float>()->default_value(0.0), "Learning rate for FTRL-proximal optimization")
       ("ftrl_beta", po::value<float>()->default_value(0.1f), "FTRL beta")

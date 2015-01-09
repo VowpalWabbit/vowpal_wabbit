@@ -7,10 +7,7 @@ license as described in the file LICENSE.
 
 #include "vw.h"
 #include "reductions.h"
-#include "cost_sensitive.h"
-#include "cb.h"
 #include "cb_algs.h"
-#include "simple_label.h"
 
 using namespace LEARNER;
 
@@ -435,7 +432,7 @@ namespace CB_ALGS
   {
     new_options(all, "CB options")
       ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs");
-    if (missing_required(all)) return NULL;
+    if (no_new_options(all)) return NULL;
     new_options(all)
       ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}")
       ("eval", "Evaluate a policy rather than optimizing.");

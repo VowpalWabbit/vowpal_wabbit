@@ -13,9 +13,7 @@ license as described in the file LICENSE.
 #include <netdb.h>
 #endif
 
-#include "constant.h"
 #include "gd.h"
-#include "simple_label.h"
 #include "rand48.h"
 #include "reductions.h"
 
@@ -297,7 +295,7 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
   {
     new_options(all, "Gdmf options")
       ("rank", po::value<uint32_t>(), "rank for matrix factorization.");
-    if(missing_required(all)) return NULL;
+    if(no_new_options(all)) return NULL;
 
     gdmf& data = calloc_or_die<gdmf>(); 
     data.all = &all;

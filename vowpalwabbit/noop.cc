@@ -13,7 +13,7 @@ namespace NOOP {
   LEARNER::base_learner* setup(vw& all)
   {
     new_options(all, "Noop options") ("noop","do no learning");
-    if(missing_required(all)) return NULL;
+    if(no_new_options(all)) return NULL;
     
     return &LEARNER::init_learner<char>(NULL, learn, 1); }
 }

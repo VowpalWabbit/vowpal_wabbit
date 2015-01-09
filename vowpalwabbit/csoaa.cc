@@ -6,8 +6,6 @@ license as described in the file LICENSE.
 #include <float.h>
 
 #include "reductions.h"
-#include "cost_sensitive.h"
-#include "simple_label.h"
 #include "v_hashmap.h"
 #include "vw.h"
 #include "gd.h" // GD::foreach_feature() needed in subtract_example()
@@ -70,7 +68,7 @@ namespace CSOAA {
   {
     new_options(all, "CSOAA options")
       ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs");
-    if(missing_required(all)) return NULL;
+    if(no_new_options(all)) return NULL;
 
     csoaa& c = calloc_or_die<csoaa>();
     c.all = &all;
@@ -652,7 +650,7 @@ namespace LabelDict {
     new_options(all, "LDF Options")
       ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
       ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.");
-    if (missing_required(all)) return NULL;
+    if (no_new_options(all)) return NULL;
     new_options(all)
       ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file");
     add_options(all);

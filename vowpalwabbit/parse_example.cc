@@ -8,11 +8,9 @@ license as described in the file LICENSE.
 #include <ctype.h>
 #include "parse_example.h"
 #include "hash.h"
-#include "cache.h"
 #include "unique_sort.h"
 #include "global_data.h"
 #include "constant.h"
-#include "memory.h"
 
 using namespace std;
 

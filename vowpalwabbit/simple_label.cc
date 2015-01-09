@@ -2,10 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "simple_label.h"
 #include "cache.h"
-#include "rand48.h"
-#include "vw.h"
 #include "accumulate.h"
 #include "best_constant.h"
 

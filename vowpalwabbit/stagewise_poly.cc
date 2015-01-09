@@ -2,11 +2,7 @@
 #include <cassert>
 
 #include "gd.h"
-#include "rand48.h"
-#include "simple_label.h"
-#include "allreduce.h"
 #include "accumulate.h"
-#include "constant.h"
 #include "reductions.h"
 #include "vw.h"
 
@@ -660,7 +656,7 @@ namespace StagewisePoly
   {
     new_options(all, "Stagewise poly options")
       ("stage_poly", "use stagewise polynomial feature learning");
-    if (missing_required(all)) return NULL;
+    if (no_new_options(all)) return NULL;
 
     new_options(all)
       ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")

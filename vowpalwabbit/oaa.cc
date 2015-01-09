@@ -4,8 +4,6 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <sstream>
-#include "multiclass.h"
-#include "simple_label.h"
 #include "reductions.h"
 
 namespace OAA {
@@ -63,7 +61,7 @@ namespace OAA {
   {
     new_options(all, "One-against-all options")
       ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels");
-    if(missing_required(all)) return NULL;
+    if(no_new_options(all)) return NULL;
     
     oaa& data = calloc_or_die<oaa>();
     data.k = all.vm["oaa"].as<size_t>();

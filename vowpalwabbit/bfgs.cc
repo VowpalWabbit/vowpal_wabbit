@@ -17,12 +17,8 @@ Implementation by Miro Dudik.
 #include <stdio.h>
 #include <assert.h>
 #include <sys/timeb.h>
-#include "constant.h"
-#include "simple_label.h"
 #include "accumulate.h"
-#include "vw.h"
 #include "gd.h"
-#include "reductions.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -973,7 +969,7 @@ base_learner* setup(vw& all)
   new_options(all, "LBFGS options")
     ("bfgs", "use bfgs optimization")
     ("conjugate_gradient", "use conjugate gradient based optimization");
-  if (missing_required(all)) return NULL;
+  if (no_new_options(all)) return NULL;
   new_options(all)
     ("hessian_on", "use second derivative in line search")
     ("mem", po::value<uint32_t>()->default_value(15), "memory in bfgs")

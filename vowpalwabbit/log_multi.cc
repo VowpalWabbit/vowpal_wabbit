@@ -10,8 +10,6 @@ license as described in the file LICENSE.node
 #include <sstream>
 
 #include "reductions.h"
-#include "simple_label.h"
-#include "multiclass.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -497,7 +495,7 @@ namespace LOG_MULTI
   {
     new_options(all, "Logarithmic Time Multiclass options")
       ("log_multi", po::value<size_t>(), "Use online tree for multiclass");
-    if (missing_required(all)) return NULL;
+    if (no_new_options(all)) return NULL;
     new_options(all)
       ("no_progress", "disable progressive validation")
       ("swap_resistance", po::value<uint32_t>(), "higher = more resistance to swap, default=4");

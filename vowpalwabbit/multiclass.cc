@@ -1,5 +1,4 @@
 #include <limits.h>
-#include "multiclass.h"
 #include "global_data.h"
 #include "vw.h"
 

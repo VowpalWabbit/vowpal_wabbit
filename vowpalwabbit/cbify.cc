@@ -1,8 +1,5 @@
 #include <float.h>
 #include "reductions.h"
-#include "multiclass.h"
-#include "cost_sensitive.h"
-#include "cb.h"
 #include "cb_algs.h"
 #include "rand48.h"
 #include "bs.h"
@@ -375,7 +372,7 @@ namespace CBIFY {
   {//parse and set arguments
     new_options(all, "CBIFY options")
       ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve");
-    if (missing_required(all)) return NULL;
+    if (no_new_options(all)) return NULL;
     new_options(all)
       ("first", po::value<size_t>(), "tau-first exploration")
       ("epsilon",po::value<float>() ,"epsilon-greedy exploration")

@@ -103,7 +103,7 @@ namespace TOPK {
   {
     new_options(all, "TOP K options")
       ("top", po::value<size_t>(), "top k recommendation");
-    if(missing_required(all)) return NULL;
+    if(no_new_options(all)) return NULL;
 
     topk& data = calloc_or_die<topk>();
     data.B = (uint32_t)all.vm["top"].as<size_t>();

@@ -11,7 +11,6 @@ license as described in the file LICENSE.
 
 #include "reductions.h"
 #include "vw.h"
-#include "simple_label.h"
 #include "rand48.h"
 #include "bs.h"
 
@@ -243,7 +242,7 @@ namespace BS {
   {
     new_options(all, "Bootstrap options")
       ("bootstrap,B", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling");
-    if (missing_required(all)) return NULL;
+    if (no_new_options(all)) return NULL;
     new_options(all)("bs_type", po::value<string>(), "prediction type {mean,vote}");    
     add_options(all);
 

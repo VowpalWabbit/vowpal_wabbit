@@ -4,11 +4,6 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include "search_multiclasstask.h"
-#include "multiclass.h"
-#include "memory.h"
-#include "example.h"
-#include "gd.h"
-#include "ezexample.h"
 
 namespace MulticlassTask { Search::search_task task = { "multiclasstask", run, initialize, finish, NULL, NULL };  }
 

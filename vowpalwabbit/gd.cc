@@ -20,7 +20,6 @@ license as described in the file LICENSE.
 #endif
 
 #include "gd.h"
-#include "simple_label.h"
 #include "accumulate.h"
 #include "reductions.h"
 #include "vw.h"

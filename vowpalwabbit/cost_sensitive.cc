@@ -1,5 +1,4 @@
 #include "float.h"
-#include "cost_sensitive.h"
 #include "gd.h"
 #include "vw.h"
 
