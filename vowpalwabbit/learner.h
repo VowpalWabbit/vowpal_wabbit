@@ -11,9 +11,9 @@ license as described in the file LICENSE.
 #include "cost_sensitive.h"
 #include "multiclass.h"
 #include "simple_label.h"
+#include "parser.h"
 using namespace std;
 
-struct vw;
 void return_simple_example(vw& all, void*, example& ec);  
   
 namespace LEARNER
@@ -209,6 +209,21 @@ namespace LEARNER
       ret.increment = base->increment * ret.weights;
       return ret;
     }
-    
+
+  template<class R, class T> 
+    learner<T>& init_learner(T* dat, base_learner* base, 
+			     void (*learn)(T&, base_learner&, example&), 
+			     void (*predict)(T&, base_learner&, example&), parser* p, size_t ws) 
+    {
+      learner<T>& l = init_learner(dat,base,learn,predict,ws);
+      if (std::is_same<R,MULTICLASS::label>::value)
+	{
+	  l.set_finish_example(MULTICLASS::finish_example<T>);
+	  p->lp = MULTICLASS::mc_label;
+	}
+
+      return l;
+    }
+
   template<class T> base_learner* make_base(learner<T>& base) { return (base_learner*)&base; }
 }

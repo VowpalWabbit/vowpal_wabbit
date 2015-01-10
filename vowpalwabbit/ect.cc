@@ -227,7 +227,7 @@ namespace ECT
   {
     if (e.k == 1)//nothing to do
       return;
-    MULTICLASS::multiclass mc = ec.l.multi;
+    MULTICLASS::label mc = ec.l.multi;
   
     label_data simple_temp;
 
@@ -313,7 +313,7 @@ namespace ECT
   }
 
   void predict(ect& e, base_learner& base, example& ec) {
-    MULTICLASS::multiclass mc = ec.l.multi;
+    MULTICLASS::label mc = ec.l.multi;
     if (mc.label == 0 || (mc.label > e.k && mc.label != (uint32_t)-1))
       cout << "label " << mc.label << " is not in {1,"<< e.k << "} This won't work right." << endl;
     ec.pred.multiclass = ect_predict(e, base, ec);
@@ -322,7 +322,7 @@ namespace ECT
 
   void learn(ect& e, base_learner& base, example& ec)
   {
-    MULTICLASS::multiclass mc = ec.l.multi;
+    MULTICLASS::label mc = ec.l.multi;
     predict(e, base, ec);
     uint32_t pred = ec.pred.multiclass;
 
@@ -367,9 +367,7 @@ namespace ECT
     
     size_t wpp = create_circuit(all, data, data.k, data.errors+1);
     
-    learner<ect>& l = init_learner(&data, setup_base(all), learn, predict, wpp);
-    l.set_finish_example(MULTICLASS::finish_example<ect>);
-    all.p->lp = MULTICLASS::mc_label;
+    learner<ect>& l = init_learner<MULTICLASS::label>(&data, setup_base(all), learn, predict, all.p, wpp);
     l.set_finish(finish);
     return make_base(l);
   }

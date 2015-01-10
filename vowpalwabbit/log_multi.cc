@@ -295,7 +295,7 @@ namespace LOG_MULTI
 
   void predict(log_multi& b,  base_learner& base, example& ec)	
   {
-    MULTICLASS::multiclass mc = ec.l.multi;
+    MULTICLASS::label mc = ec.l.multi;
 
     label_data simple_temp;
     simple_temp.initial = 0.0;
@@ -320,7 +320,7 @@ namespace LOG_MULTI
     
     if((ec.l.multi.label != (uint32_t)-1) && !ec.test_only)	//if training the tree
       {
-	MULTICLASS::multiclass mc = ec.l.multi;
+	MULTICLASS::label mc = ec.l.multi;
     
 	uint32_t class_index = 0;	
 	label_data simple_temp;
@@ -524,11 +524,9 @@ namespace LOG_MULTI
 
     data.max_predictors = data.k - 1;
 
-    learner<log_multi>& l = init_learner(&data, setup_base(all), learn, predict, data.max_predictors);
+      learner<log_multi>& l = init_learner<MULTICLASS::label>(&data, setup_base(all), learn, predict, all.p, data.max_predictors);
     l.set_save_load(save_load_tree);
     l.set_finish(finish);
-    l.set_finish_example(MULTICLASS::finish_example<log_multi>);
-    all.p->lp = MULTICLASS::mc_label;
     
     init_tree(data);	
     

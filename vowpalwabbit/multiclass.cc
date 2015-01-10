@@ -4,7 +4,7 @@
 
 namespace MULTICLASS {
 
-  char* bufread_label(multiclass* ld, char* c)
+  char* bufread_label(label* ld, char* c)
   {
     ld->label = *(uint32_t *)c;
     c += sizeof(ld->label);
@@ -15,7 +15,7 @@ namespace MULTICLASS {
   
   size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   {
-    multiclass* ld = (multiclass*) v;
+    label* ld = (label*) v;
     char *c;
     size_t total = sizeof(ld->label)+sizeof(ld->weight);
     if (buf_read(cache, c, total) < total) 
@@ -27,11 +27,11 @@ namespace MULTICLASS {
   
   float weight(void* v)
   {
-    multiclass* ld = (multiclass*) v;
+    label* ld = (label*) v;
     return (ld->weight > 0) ? ld->weight : 0.f;
   }
   
-  char* bufcache_label(multiclass* ld, char* c)
+  char* bufcache_label(label* ld, char* c)
   {
     *(uint32_t *)c = ld->label;
     c += sizeof(ld->label);
@@ -43,14 +43,14 @@ namespace MULTICLASS {
   void cache_label(void* v, io_buf& cache)
   {
     char *c;
-    multiclass* ld = (multiclass*) v;
+    label* ld = (label*) v;
     buf_write(cache, c, sizeof(ld->label)+sizeof(ld->weight));
     c = bufcache_label(ld,c);
   }
 
   void default_label(void* v)
   {
-    multiclass* ld = (multiclass*) v;
+    label* ld = (label*) v;
     ld->label = (uint32_t)-1;
     ld->weight = 1.;
   }
@@ -59,7 +59,7 @@ namespace MULTICLASS {
 
   void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
   {
-    multiclass* ld = (multiclass*)v;
+    label* ld = (label*)v;
 
     switch(words.size()) {
     case 0:
@@ -87,13 +87,13 @@ namespace MULTICLASS {
 				  cache_label, read_cached_label, 
 				  delete_label, weight, 
 				  NULL,
-				  sizeof(multiclass)};
+				  sizeof(label)};
   
   void print_update(vw& all, example &ec)
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
-        multiclass ld = ec.l.multi;
+        label ld = ec.l.multi;
         char label_buf[32];
         if (ld.label == INT_MAX)
           strcpy(label_buf," unknown");
@@ -141,7 +141,7 @@ namespace MULTICLASS {
 
   void finish_example(vw& all, example& ec)
   {
-    multiclass ld = ec.l.multi;
+    label ld = ec.l.multi;
     
     size_t loss = 1;
     if (ld.label == (uint32_t)ec.pred.multiclass)

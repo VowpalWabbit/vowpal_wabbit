@@ -64,7 +64,7 @@ namespace SequenceSpanTask {
 
   void convert_bio_to_bilou(vector<example*> ec) {
     for (size_t n=0; n<ec.size(); n++) {
-      MULTICLASS::multiclass& ylab = ec[n]->l.multi;
+      MULTICLASS::label& ylab = ec[n]->l.multi;
       action y = ylab.label;
       action nexty = (n == ec.size()-1) ? 0 : ec[n+1]->l.multi.label;
       if (y == 1) { // do nothing
@@ -145,7 +145,7 @@ namespace SequenceSpanTask {
 
     if (my_task_data->encoding == BILOU)
       for (size_t n=0; n<ec.size(); n++) {
-        MULTICLASS::multiclass ylab = ec[n]->l.multi;
+        MULTICLASS::label ylab = ec[n]->l.multi;
         ylab.label = bilou_to_bio(ylab.label);
       }
   }

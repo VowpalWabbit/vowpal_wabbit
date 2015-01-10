@@ -11,7 +11,7 @@ struct vw;
 
 namespace MULTICLASS
 {
-  struct multiclass {
+  struct label {
     uint32_t label;
     float weight;
   };
@@ -22,6 +22,6 @@ namespace MULTICLASS
 
   template <class T> void finish_example(vw& all, T&, example& ec) { finish_example(all, ec); }
 
-  inline int label_is_test(multiclass* ld)
+  inline int label_is_test(label* ld)
   { return ld->label == (uint32_t)-1; }
 }
