@@ -718,12 +718,12 @@ namespace Search {
     float  best_prediction = 0.;
     action best_action = 0;
 
-    size_t start_K = (priv.is_ldf && CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
+    size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
 
     for (action a= (uint32_t)start_K; a<ec_cnt; a++) {
       cdbg << "== single_prediction_LDF a=" << a << "==" << endl;
       if (start_K > 0)
-        CSOAA_AND_WAP_LDF::LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]);
+        LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]);
         
       polylabel old_label = ecs[a].l;
       ecs[a].l.cs = priv.ldf_test_label;
@@ -740,7 +740,7 @@ namespace Search {
       priv.num_features += ecs[a].num_features;
       ecs[a].l = old_label;
       if (start_K > 0)
-        CSOAA_AND_WAP_LDF::LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0]);
+        LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0]);
     }
 
     if (priv.beam) {
@@ -909,7 +909,7 @@ namespace Search {
       priv.total_examples_generated++;
     } else {              // is  LDF
       assert(losses.size() == priv.learn_ec_ref_cnt);
-      size_t start_K = (priv.is_ldf && CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(priv.learn_ec_ref[0])) ? 1 : 0;
+      size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(priv.learn_ec_ref[0])) ? 1 : 0;
       for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
         example& ec = priv.learn_ec_ref[a];
 
@@ -1083,7 +1083,7 @@ namespace Search {
           // if this succeeded, 'a' has the right action
           priv.total_cache_hits++;
         else { // we need to predict, and then cache
-          size_t start_K = (priv.is_ldf && CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
+          size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
           if (priv.auto_condition_features)
             for (size_t n=start_K; n<ec_cnt; n++)
               add_example_conditioning(priv, ecs[n], condition_on, condition_on_cnt, condition_on_names, priv.condition_on_actions.begin);

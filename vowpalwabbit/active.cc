@@ -5,25 +5,24 @@
 
 using namespace LEARNER;
 
-namespace ACTIVE {
-  struct active{
-    float active_c0;
-    vw* all;
-  };
-    
-    float get_active_coin_bias(float k, float avg_loss, float g, float c0)
-    {
-      float b,sb,rs,sl;
-      b=(float)(c0*(log(k+1.)+0.0001)/(k+0.0001));
-      sb=sqrt(b);
-      avg_loss = min(1.f, max(0.f, avg_loss)); //loss should be in [0,1]
+struct active{
+  float active_c0;
+  vw* all;
+};
 
-      sl=sqrt(avg_loss)+sqrt(avg_loss+g);
-      if (g<=sb*sl+b)
-	return 1;
-      rs = (sl+sqrt(sl*sl+4*g))/(2*g);
-      return b*rs*rs;
-    }
+float get_active_coin_bias(float k, float avg_loss, float g, float c0)
+{
+  float b,sb,rs,sl;
+  b=(float)(c0*(log(k+1.)+0.0001)/(k+0.0001));
+  sb=sqrt(b);
+  avg_loss = min(1.f, max(0.f, avg_loss)); //loss should be in [0,1]
+  
+  sl=sqrt(avg_loss)+sqrt(avg_loss+g);
+  if (g<=sb*sl+b)
+    return 1;
+  rs = (sl+sqrt(sl*sl+4*g))/(2*g);
+  return b*rs*rs;
+}
   
   float query_decision(active& a, example& ec, float k)
     {
@@ -147,38 +146,37 @@ namespace ACTIVE {
     VW::finish_example(all,&ec);
   }
   
-  base_learner* setup(vw& all)
-  {//parse and set arguments
-    new_options(all, "Active Learning options")
-      ("active", "enable active learning");
-    if (no_new_options(all)) return NULL;
-    new_options(all)
-      ("simulation", "active learning simulation mode")
-      ("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8");
-    add_options(all);
-    
-    active& data = calloc_or_die<active>();
-    data.active_c0 = 8;
-    data.all=&all;
-
-    if (all.vm.count("mellowness"))
-      data.active_c0 = all.vm["mellowness"].as<float>();
-
-    base_learner* base = setup_base(all);
-
-    //Create new learner
-    learner<active>* l;
-    if (all.vm.count("simulation"))
-      l = &init_learner(&data, base, predict_or_learn_simulation<true>, 
-			predict_or_learn_simulation<false>);
-    else
-      {
-	all.active = true;
-	l = &init_learner(&data, base, predict_or_learn_active<true>, 
-			  predict_or_learn_active<false>);
-	l->set_finish_example(return_active_example);
-      }
-
-    return make_base(*l);
-  }
+base_learner* active_setup(vw& all)
+{//parse and set arguments
+  new_options(all, "Active Learning options")
+    ("active", "enable active learning");
+  if (no_new_options(all)) return NULL;
+  new_options(all)
+    ("simulation", "active learning simulation mode")
+    ("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8");
+  add_options(all);
+  
+  active& data = calloc_or_die<active>();
+  data.active_c0 = 8;
+  data.all=&all;
+  
+  if (all.vm.count("mellowness"))
+    data.active_c0 = all.vm["mellowness"].as<float>();
+  
+  base_learner* base = setup_base(all);
+  
+  //Create new learner
+  learner<active>* l;
+  if (all.vm.count("simulation"))
+    l = &init_learner(&data, base, predict_or_learn_simulation<true>, 
+		      predict_or_learn_simulation<false>);
+  else
+    {
+      all.active = true;
+      l = &init_learner(&data, base, predict_or_learn_active<true>, 
+			predict_or_learn_active<false>);
+      l->set_finish_example(return_active_example);
+    }
+  
+  return make_base(*l);
 }

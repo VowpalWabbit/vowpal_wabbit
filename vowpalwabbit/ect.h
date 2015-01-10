@@ -4,4 +4,4 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
-namespace ECT { LEARNER::base_learner* setup(vw&); }
+LEARNER::base_learner* ect_setup(vw&);

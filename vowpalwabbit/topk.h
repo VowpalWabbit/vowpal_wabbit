@@ -4,4 +4,4 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
-namespace TOPK { LEARNER::base_learner* setup(vw& all); }
+LEARNER::base_learner* topk_setup(vw& all);

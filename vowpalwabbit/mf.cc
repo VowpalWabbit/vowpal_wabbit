@@ -15,8 +15,6 @@ using namespace std;
 
 using namespace LEARNER;
 
-namespace MF {
-
 struct mf {
   vector<string> pairs;
 
@@ -186,7 +184,7 @@ void finish(mf& o) {
   o.sub_predictions.delete_v();
 }
 
-  base_learner* setup(vw& all) {
+  base_learner* mf_setup(vw& all) {
     new_options(all, "MF options")
       ("new_mf", po::value<size_t>(), "rank for reduction-based matrix factorization");
     if(no_new_options(all)) return NULL;
@@ -205,5 +203,4 @@ void finish(mf& o) {
   learner<mf>& l = init_learner(&data, setup_base(all), learn, predict<false>, 2*data.rank+1);
   l.set_finish(finish);
   return make_base(l);
-}
 }

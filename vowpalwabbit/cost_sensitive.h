@@ -34,8 +34,3 @@ namespace COST_SENSITIVE {
 
   void print_update(vw& all, bool is_test, example& ec, const v_array<example*> *ec_seq);
 }
-
-namespace CSOAA_AND_WAP_LDF {
-  void global_print_newline(vw& all);
-  void output_example(vw& all, example& ec, bool& hit_loss);
-}

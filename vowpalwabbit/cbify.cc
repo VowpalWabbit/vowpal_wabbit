@@ -9,8 +9,6 @@
 using namespace LEARNER;
 using namespace MultiWorldTesting;
 
-namespace CBIFY {
-
   struct vw_context;
   void safety(v_array<float>& distribution, float min_prob);
 
@@ -366,7 +364,7 @@ namespace CBIFY {
   void finish(cbify& data)
   { CB::cb_label.delete_label(&data.cb_label); }
 
-  base_learner* setup(vw& all)
+  base_learner* cbify_setup(vw& all)
   {//parse and set arguments
     new_options(all, "CBIFY options")
       ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve");
@@ -444,4 +442,3 @@ namespace CBIFY {
     
     return make_base(*l);
   }
-}

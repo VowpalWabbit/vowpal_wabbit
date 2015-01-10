@@ -14,7 +14,6 @@ using namespace std;
 using namespace LEARNER;
 using namespace COST_SENSITIVE;
 
-namespace CSOAA {
   struct csoaa{
     vw* all;
   };
@@ -64,47 +63,45 @@ namespace CSOAA {
     VW::finish_example(all, &ec);
   }
 
-  base_learner* setup(vw& all)
-  {
-    new_options(all, "CSOAA options")
-      ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs");
-    if(no_new_options(all)) return NULL;
-
-    csoaa& c = calloc_or_die<csoaa>();
-    c.all = &all;
-    //first parse for number of actions
-    uint32_t nb_actions = 0;
-
-    nb_actions = (uint32_t)all.vm["csoaa"].as<size_t>();
-    //append csoaa with nb_actions to file_options so it is saved to regressor later
-    *all.file_options << " --csoaa " << nb_actions;
-
-    all.p->lp = cs_label;
-    all.sd->k = nb_actions;
-
-    learner<csoaa>& l = init_learner(&c, setup_base(all), predict_or_learn<true>, 
-				     predict_or_learn<false>, nb_actions);
-    l.set_finish_example(finish_example);
-    return make_base(l);
-  }
+base_learner* csoaa_setup(vw& all)
+{
+  new_options(all, "CSOAA options")
+    ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs");
+  if(no_new_options(all)) return NULL;
+  
+  csoaa& c = calloc_or_die<csoaa>();
+  c.all = &all;
+  //first parse for number of actions
+  uint32_t nb_actions = 0;
+  
+  nb_actions = (uint32_t)all.vm["csoaa"].as<size_t>();
+  //append csoaa with nb_actions to file_options so it is saved to regressor later
+  *all.file_options << " --csoaa " << nb_actions;
+  
+  all.p->lp = cs_label;
+  all.sd->k = nb_actions;
+  
+  learner<csoaa>& l = init_learner(&c, setup_base(all), predict_or_learn<true>, 
+				   predict_or_learn<false>, nb_actions);
+  l.set_finish_example(finish_example);
+  return make_base(l);
 }
 
-namespace CSOAA_AND_WAP_LDF {
-  struct ldf {
-    v_array<example*> ec_seq;
-    v_hashmap< size_t, v_array<feature> > label_features;
-
-    size_t read_example_this_loop;
-    bool need_to_clear;
-    bool is_wap;
-    bool first_pass;
-    bool treat_as_classifier;
-    bool is_singleline;
-    float csoaa_example_t;
-    vw* all;
-
-    base_learner* base;
-  };
+struct ldf {
+  v_array<example*> ec_seq;
+  v_hashmap< size_t, v_array<feature> > label_features;
+  
+  size_t read_example_this_loop;
+  bool need_to_clear;
+  bool is_wap;
+  bool first_pass;
+  bool treat_as_classifier;
+  bool is_singleline;
+  float csoaa_example_t;
+  vw* all;
+  
+  base_learner* base;
+};
 
 namespace LabelDict { 
   bool size_t_eq(size_t &a, size_t &b) { return (a==b); }
@@ -500,6 +497,19 @@ namespace LabelDict {
         LabelDict::del_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0]);
   }
 
+  void global_print_newline(vw& all)
+  {
+    char temp[1];
+    temp[0] = '\n';
+    for (size_t i=0; i<all.final_prediction_sink.size(); i++) {
+      int f = all.final_prediction_sink[i];
+      ssize_t t;
+      t = io_buf::write_file_or_socket(f, temp, 1);
+      if (t != 1)
+        std::cerr << "write error" << std::endl;
+    }
+  }
+
   void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_seq)
   {
     label& ld = ec.l.cs;
@@ -645,7 +655,7 @@ namespace LabelDict {
     }
   }
 
-  base_learner* setup(vw& all)
+  base_learner* csldf_setup(vw& all)
   {
     new_options(all, "LDF Options")
       ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
@@ -720,19 +730,3 @@ namespace LabelDict {
     l.set_end_pass(end_pass);
     return make_base(l);
   }
-
-  void global_print_newline(vw& all)
-  {
-    char temp[1];
-    temp[0] = '\n';
-    for (size_t i=0; i<all.final_prediction_sink.size(); i++) {
-      int f = all.final_prediction_sink[i];
-      ssize_t t;
-      t = io_buf::write_file_or_socket(f, temp, 1);
-      if (t != 1)
-        std::cerr << "write error" << std::endl;
-    }
-  }
-}
-
-

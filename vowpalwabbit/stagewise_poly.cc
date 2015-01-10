@@ -11,8 +11,6 @@
 using namespace std;
 using namespace LEARNER;
 
-namespace StagewisePoly
-{
   static const uint32_t parent_bit = 1;
   static const uint32_t cycle_bit = 2;
   static const uint32_t tree_atomics = 134;
@@ -652,7 +650,7 @@ namespace StagewisePoly
     //#endif //DEBUG
   }
 
-  base_learner *setup(vw &all)
+  base_learner *stagewise_poly_setup(vw &all)
   {
     new_options(all, "Stagewise poly options")
       ("stage_poly", "use stagewise polynomial feature learning");
@@ -704,4 +702,3 @@ namespace StagewisePoly
 
     return make_base(l);
   }
-}

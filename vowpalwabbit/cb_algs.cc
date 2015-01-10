@@ -17,8 +17,6 @@ using namespace LEARNER;
 
 using namespace CB;
 
-namespace CB_ALGS
-{
   struct cb {
     size_t cb_type;
     COST_SENSITIVE::label cb_cs_ld; 
@@ -147,7 +145,7 @@ namespace CB_ALGS
         wc.wap_value = 0.;
       
         //get cost prediction for this action
-        wc.x = get_cost_pred<is_learn>(all, c.known_cost, ec, i, 0);
+        wc.x = CB_ALGS::get_cost_pred<is_learn>(all, c.known_cost, ec, i, 0);
 	if (wc.x < min)
 	  {
 	    min = wc.x;
@@ -176,7 +174,7 @@ namespace CB_ALGS
         wc.wap_value = 0.;
       
         //get cost prediction for this action
-        wc.x = get_cost_pred<is_learn>(all, c.known_cost, ec, cl->action, 0);
+        wc.x = CB_ALGS::get_cost_pred<is_learn>(all, c.known_cost, ec, cl->action, 0);
 	if (wc.x < min || (wc.x == min && cl->action < argmin))
 	  {
 	    min = wc.x;
@@ -208,7 +206,7 @@ namespace CB_ALGS
     wc.wap_value = 0.;
     
     //get cost prediction for this label
-    wc.x = get_cost_pred<is_learn>(all, c.known_cost, ec, label, all.sd->k);
+    wc.x = CB_ALGS::get_cost_pred<is_learn>(all, c.known_cost, ec, label, all.sd->k);
     wc.class_index = label;
     wc.partial_prediction = 0.;
     wc.wap_value = 0.;
@@ -428,7 +426,7 @@ namespace CB_ALGS
     VW::finish_example(all, &ec);
   }
 
-  base_learner* setup(vw& all)
+  base_learner* cb_algs_setup(vw& all)
   {
     new_options(all, "CB options")
       ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs");
@@ -521,4 +519,3 @@ namespace CB_ALGS
     l->set_finish(finish);
     return make_base(*l);
   }
-}

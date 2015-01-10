@@ -4,4 +4,4 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
-namespace LOG_MULTI { LEARNER::base_learner* setup(vw& all); }
+LEARNER::base_learner* log_multi_setup(vw& all);

@@ -14,8 +14,6 @@ license as described in the file LICENSE.node
 using namespace std;
 using namespace LEARNER;
 
-namespace LOG_MULTI
-{
   class node_pred	
   {
   public:
@@ -491,7 +489,7 @@ namespace LOG_MULTI
       }
   }
   
-  base_learner* setup(vw& all)	//learner setup
+  base_learner* log_multi_setup(vw& all)	//learner setup
   {
     new_options(all, "Logarithmic Time Multiclass options")
       ("log_multi", po::value<size_t>(), "Use online tree for multiclass");
@@ -532,4 +530,3 @@ namespace LOG_MULTI
     
     return make_base(l);
   }	
-}

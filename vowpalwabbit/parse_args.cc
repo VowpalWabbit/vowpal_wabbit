@@ -743,24 +743,24 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(BFGS::setup);
 
   //Score Users
-  all.reduction_stack.push_back(ACTIVE::setup);
-  all.reduction_stack.push_back(NN::setup);
-  all.reduction_stack.push_back(MF::setup);
-  all.reduction_stack.push_back(ALINK::setup);
-  all.reduction_stack.push_back(LRQ::setup);
-  all.reduction_stack.push_back(StagewisePoly::setup);
-  all.reduction_stack.push_back(Scorer::setup);
+  all.reduction_stack.push_back(active_setup);
+  all.reduction_stack.push_back(nn_setup);
+  all.reduction_stack.push_back(mf_setup);
+  all.reduction_stack.push_back(autolink_setup);
+  all.reduction_stack.push_back(lrq_setup);
+  all.reduction_stack.push_back(stagewise_poly_setup);
+  all.reduction_stack.push_back(scorer_setup);
 
   //Reductions
-  all.reduction_stack.push_back(BINARY::setup);
-  all.reduction_stack.push_back(TOPK::setup);
-  all.reduction_stack.push_back(OAA::setup);
-  all.reduction_stack.push_back(ECT::setup);
-  all.reduction_stack.push_back(LOG_MULTI::setup);
-  all.reduction_stack.push_back(CSOAA::setup);
-  all.reduction_stack.push_back(CSOAA_AND_WAP_LDF::setup);
-  all.reduction_stack.push_back(CB_ALGS::setup);
-  all.reduction_stack.push_back(CBIFY::setup);
+  all.reduction_stack.push_back(binary_setup);
+  all.reduction_stack.push_back(topk_setup);
+  all.reduction_stack.push_back(oaa_setup);
+  all.reduction_stack.push_back(ect_setup);
+  all.reduction_stack.push_back(log_multi_setup);
+  all.reduction_stack.push_back(csoaa_setup);
+  all.reduction_stack.push_back(csldf_setup);
+  all.reduction_stack.push_back(cb_algs_setup);
+  all.reduction_stack.push_back(cbify_setup);
   all.reduction_stack.push_back(Search::setup);
   all.reduction_stack.push_back(BS::setup);
 
