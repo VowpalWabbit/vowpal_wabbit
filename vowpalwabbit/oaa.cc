@@ -20,9 +20,7 @@ namespace OAA {
       cout << "label " << mc_label_data.label << " is not in {1,"<< o.k << "} This won't work right." << endl;
     
     ec.l.simple = {0.f, mc_label_data.weight, 0.f};
-
     stringstream outputStringStream;
-
     uint32_t prediction = 1;
     float score = INT_MIN;
     for (uint32_t i = 1; i <= o.k; i++)

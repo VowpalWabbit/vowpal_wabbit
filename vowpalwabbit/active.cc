@@ -6,7 +6,6 @@
 using namespace LEARNER;
 
 namespace ACTIVE {
-  
   struct active{
     float active_c0;
     vw* all;
@@ -74,7 +73,6 @@ namespace ACTIVE {
     if (ec.l.simple.label == FLT_MAX) {
       vw& all = *a.all;
       float t = (float)(ec.example_t - all.sd->weighted_holdout_examples);
-      
       ec.revert_weight = all.loss->getRevertingWeight(all.sd, ec.pred.scalar, 
 						      all.eta/powf(t,all.power_t));
     }
@@ -169,18 +167,18 @@ namespace ACTIVE {
     base_learner* base = setup_base(all);
 
     //Create new learner
-    learner<active>* ret;
+    learner<active>* l;
     if (all.vm.count("simulation"))
-      ret = &init_learner(&data, base, predict_or_learn_simulation<true>, 
-			  predict_or_learn_simulation<false>);
+      l = &init_learner(&data, base, predict_or_learn_simulation<true>, 
+			predict_or_learn_simulation<false>);
     else
       {
 	all.active = true;
-	ret = &init_learner(&data, base, predict_or_learn_active<true>, 
-			    predict_or_learn_active<false>);
-	ret->set_finish_example(return_active_example);
+	l = &init_learner(&data, base, predict_or_learn_active<true>, 
+			  predict_or_learn_active<false>);
+	l->set_finish_example(return_active_example);
       }
 
-    return make_base(*ret);
+    return make_base(*l);
   }
 }
