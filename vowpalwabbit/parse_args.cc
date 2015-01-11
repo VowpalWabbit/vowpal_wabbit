@@ -731,6 +731,8 @@ LEARNER::base_learner* setup_base(vw& all)
 
 void parse_reductions(vw& all)
 {
+  new_options(all, "Reduction options, use [option] --help for more info");
+  add_options(all);
   //Base algorithms
   all.reduction_stack.push_back(GD::setup);
   all.reduction_stack.push_back(kernel_svm_setup);

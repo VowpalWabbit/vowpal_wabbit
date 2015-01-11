@@ -220,10 +220,11 @@ using namespace LEARNER;
 
 base_learner* bs_setup(vw& all)
 {
-  new_options(all, "Bootstrap options")
-    ("bootstrap,B", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling");
-  if (no_new_options(all)) return NULL;
-  new_options(all)("bs_type", po::value<string>(), "prediction type {mean,vote}");    
+  if (missing_option(all, "bootstrap,B", po::value<size_t>(), 
+		     "bootstrap mode with k rounds by online importance resampling"))
+    return NULL;
+  new_options(all, "Bootstrap options")("bs_type", po::value<string>(), 
+					"prediction type {mean,vote}");    
   add_options(all);
   
   bs& data = calloc_or_die<bs>();

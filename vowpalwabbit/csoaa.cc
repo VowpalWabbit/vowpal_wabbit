@@ -65,9 +65,9 @@ using namespace COST_SENSITIVE;
 
 base_learner* csoaa_setup(vw& all)
 {
-  new_options(all, "CSOAA options")
-    ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs");
-  if(no_new_options(all)) return NULL;
+  if (missing_option(all, "csoaa", po::value<size_t>(), 
+		     "Use one-against-all multiclass learning with <k> costs"))
+    return NULL;
   
   csoaa& c = calloc_or_die<csoaa>();
   c.all = &all;
@@ -657,11 +657,10 @@ namespace LabelDict {
 
   base_learner* csldf_setup(vw& all)
   {
+    if (missing_option(all, "csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
+	&& missing_option(all, "wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline."))
+      return NULL;
     new_options(all, "LDF Options")
-      ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
-      ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.");
-    if (no_new_options(all)) return NULL;
-    new_options(all)
       ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file");
     add_options(all);
 

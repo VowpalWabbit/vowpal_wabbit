@@ -366,10 +366,10 @@ using namespace MultiWorldTesting;
 
   base_learner* cbify_setup(vw& all)
   {//parse and set arguments
+    if (missing_option(all, "cbify", po::value<size_t>(), 
+		       "Convert multiclass on <k> classes into a contextual bandit problem"))
+      return NULL;
     new_options(all, "CBIFY options")
-      ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve");
-    if (no_new_options(all)) return NULL;
-    new_options(all)
       ("first", po::value<size_t>(), "tau-first exploration")
       ("epsilon",po::value<float>() ,"epsilon-greedy exploration")
       ("bag",po::value<size_t>() ,"bagging-based exploration")

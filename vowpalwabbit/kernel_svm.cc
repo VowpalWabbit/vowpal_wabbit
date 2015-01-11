@@ -784,10 +784,8 @@ struct svm_params{
   }
 
 LEARNER::base_learner* kernel_svm_setup(vw &all) {
+  if (missing_option(all, "ksvm", "kernel svm")) return NULL;
   new_options(all, "KSVM options")
-      ("ksvm", "kernel svm");
-  if (no_new_options(all)) return NULL;
-  new_options(all)
     ("reprocess", po::value<size_t>(), "number of reprocess steps for LASVM")
     //      ("active", "do active learning")
     //("active_c", po::value<double>(), "parameter for query prob")

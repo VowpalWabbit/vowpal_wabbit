@@ -180,10 +180,10 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
 
   base_learner* lrq_setup(vw& all)
   {//parse and set arguments
+    if (missing_option(all, "lrq", po::value<vector<string> > (), 
+		       "use low rank quadratic features"))
+      return NULL;
     new_options(all, "Lrq options")
-      ("lrq", po::value<vector<string> > (), "use low rank quadratic features");
-    if (no_new_options(all)) return NULL;
-    new_options(all)
       ("lrqdropout", "use dropout training for low rank quadratic features");
     add_options(all);
 

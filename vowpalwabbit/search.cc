@@ -1740,10 +1740,10 @@ namespace Search {
   }
 
   base_learner* setup(vw&all) {
-    new_options(all,"Search Options")
-      ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF");
-    if (no_new_options(all)) return NULL;
-    new_options(all)
+    if (missing_option(all, "search",  po::value<size_t>(), 
+		       "Use learning to search, argument=maximum action id or 0 for LDF"))
+      return NULL;
+    new_options(all, "Search Options")
       ("search_task",              po::value<string>(), "the search task (use \"--search_task list\" to get a list of available tasks)")
       ("search_interpolation",     po::value<string>(), "at what level should interpolation happen? [*data|policy]")
       ("search_rollout",           po::value<string>(), "how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_roll|none]")

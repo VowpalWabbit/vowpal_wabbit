@@ -491,10 +491,9 @@ using namespace LEARNER;
   
   base_learner* log_multi_setup(vw& all)	//learner setup
   {
+    if (missing_option(all, "log_multi", po::value<size_t>(), "Use online tree for multiclass"))
+      return NULL;
     new_options(all, "Logarithmic Time Multiclass options")
-      ("log_multi", po::value<size_t>(), "Use online tree for multiclass");
-    if (no_new_options(all)) return NULL;
-    new_options(all)
       ("no_progress", "disable progressive validation")
       ("swap_resistance", po::value<uint32_t>(), "higher = more resistance to swap, default=4");
     add_options(all);

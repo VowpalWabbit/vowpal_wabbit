@@ -32,7 +32,7 @@ float id(float in) { return in; }
 
 LEARNER::base_learner* scorer_setup(vw& all)
 {
-  new_options(all, "Link options")
+  new_options(all)
     ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity, logistic or glf1");
   add_options(all);
   po::variables_map& vm = all.vm;

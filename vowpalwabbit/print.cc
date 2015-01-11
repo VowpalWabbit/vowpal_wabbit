@@ -39,8 +39,7 @@ void learn(print& p, LEARNER::base_learner& base, example& ec)
 
 LEARNER::base_learner* print_setup(vw& all)
 {
-  new_options(all, "Print options") ("print","print examples");
-  if(no_new_options(all)) return NULL;
+  if (missing_option(all, "print", "print examples")) return NULL;
   
   print& p = calloc_or_die<print>();
   p.all = &all;

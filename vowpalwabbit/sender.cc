@@ -93,9 +93,8 @@ void finish(sender& s)
 
 LEARNER::base_learner* sender_setup(vw& all)
 {
-  new_options(all, "Sender options")
-    ("sendto", po::value< vector<string> >(), "send examples to <host>");
-  if(no_new_options(all)) return NULL;
+  if (missing_option(all, "sendto", po::value< vector<string> >(), "send examples to <host>"))
+    return NULL;
   
   sender& s = calloc_or_die<sender>();
   s.sd = -1;

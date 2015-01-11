@@ -26,12 +26,10 @@ void predict_or_learn(char&, LEARNER::base_learner& base, example& ec) {
 }
 
 LEARNER::base_learner* binary_setup(vw& all)
-{//parse and set arguments
-  new_options(all,"Binary options")
-    ("binary", "report loss as binary classification on -1,1");
-  if(no_new_options(all)) return NULL;
+{
+  if (missing_option(all, "binary", "report loss as binary classification on -1,1"))
+    return NULL;
   
-  //Create new learner
   LEARNER::learner<char>& ret = 
     LEARNER::init_learner<char>(NULL, setup_base(all), 
 				predict_or_learn<true>, predict_or_learn<false>);

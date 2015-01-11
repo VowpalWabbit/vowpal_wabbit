@@ -652,11 +652,10 @@ using namespace LEARNER;
 
   base_learner *stagewise_poly_setup(vw &all)
   {
+    if (missing_option(all, "stage_poly", "use stagewise polynomial feature learning"))
+      return NULL;
+    
     new_options(all, "Stagewise poly options")
-      ("stage_poly", "use stagewise polynomial feature learning");
-    if (no_new_options(all)) return NULL;
-
-    new_options(all)
       ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
       ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")
       ("batch_sz_no_doubling", "batch_sz does not double")

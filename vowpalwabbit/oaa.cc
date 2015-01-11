@@ -56,9 +56,9 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
 
 LEARNER::base_learner* oaa_setup(vw& all)
 {
-  new_options(all, "One-against-all options")
-    ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels");
-  if(no_new_options(all)) return NULL;
+  if (missing_option(all, "oaa", po::value<size_t>(), 
+		     "One-against-all multiclass with <k> labels")) 
+    return NULL;
   
   oaa& data = calloc_or_die<oaa>();
   data.k = all.vm["oaa"].as<size_t>();
@@ -69,6 +69,6 @@ LEARNER::base_learner* oaa_setup(vw& all)
   
   LEARNER::learner<oaa>& l = 
     LEARNER::init_multiclass_learner(&data, setup_base(all), predict_or_learn<true>, 
-					     predict_or_learn<false>, all.p, data.k);
+				     predict_or_learn<false>, all.p, data.k);
   return make_base(l);
 }

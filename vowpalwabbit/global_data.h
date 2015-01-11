@@ -387,5 +387,8 @@ inline po::options_description_easy_init new_options(vw& all, std::string name =
   all.new_opts = new po::options_description(name);
   return all.new_opts->add_options();
 }
+bool missing_option(vw& all, const char* name, const po::value_semantic* s, 
+		    const char* description);
+bool missing_option(vw& all, const char* name, const char* description);
 bool no_new_options(vw& all);
 void add_options(vw& all);

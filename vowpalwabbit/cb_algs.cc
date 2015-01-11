@@ -366,10 +366,10 @@ using namespace CB;
 
   base_learner* cb_algs_setup(vw& all)
   {
+    if (missing_option(all, "cb", po::value<size_t>(), 
+		       "Use contextual bandit learning with <k> costs"))
+      return NULL;
     new_options(all, "CB options")
-      ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs");
-    if (no_new_options(all)) return NULL;
-    new_options(all)
       ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}")
       ("eval", "Evaluate a policy rather than optimizing.");
     add_options(all);

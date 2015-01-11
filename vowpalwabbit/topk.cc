@@ -100,9 +100,8 @@ void finish_example(vw& all, topk& d, example& ec)
 
 LEARNER::base_learner* topk_setup(vw& all)
 {
-  new_options(all, "TOP K options")
-    ("top", po::value<size_t>(), "top k recommendation");
-  if(no_new_options(all)) return NULL;
+  if (missing_option(all, "top", po::value<size_t>(), "top k recommendation"))
+    return NULL;
   
   topk& data = calloc_or_die<topk>();
   data.B = (uint32_t)all.vm["top"].as<size_t>();
