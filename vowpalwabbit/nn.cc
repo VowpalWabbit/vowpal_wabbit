@@ -307,8 +307,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
   base_learner* nn_setup(vw& all)
   {
-    if (missing_option(all, "nn", po::value<size_t>(), 
-		       "Use sigmoidal feedforward network with <k> hidden units"))
+    if (missing_option<size_t>(all, "nn", "Sigmoidal feedforward network with <k> hidden units"))
       return NULL;
     new_options(all, "Neural Network options")
       ("inpass", "Train or test sigmoidal feedforward network with input passthrough.")

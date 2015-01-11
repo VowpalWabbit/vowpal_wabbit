@@ -752,7 +752,7 @@ void end_examples(lda& l)
 
 base_learner* lda_setup(vw&all)
 {
-  if (missing_option(all, "lda", po::value<uint32_t>(), "Run lda with <int> topics")) 
+  if (missing_option<uint32_t>(all, "lda", "Run lda with <int> topics")) 
     return NULL;
   new_options(all, "Lda options")
     ("lda_alpha", po::value<float>()->default_value(0.1f), "Prior on sparsity of per-document topic weights")

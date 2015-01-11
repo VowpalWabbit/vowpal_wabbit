@@ -56,8 +56,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
 
 LEARNER::base_learner* oaa_setup(vw& all)
 {
-  if (missing_option(all, "oaa", po::value<size_t>(), 
-		     "One-against-all multiclass with <k> labels")) 
+  if (missing_option<size_t>(all, "oaa", "One-against-all multiclass with <k> labels")) 
     return NULL;
   
   oaa& data = calloc_or_die<oaa>();

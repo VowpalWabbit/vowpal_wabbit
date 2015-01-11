@@ -37,8 +37,7 @@ void predict_or_learn(autolink& b, LEARNER::base_learner& base, example& ec)
 
 LEARNER::base_learner* autolink_setup(vw& all)
 {
-  if (missing_option(all, "autolink", po::value<size_t>(), 
-		     "create link function with polynomial d"))
+  if (missing_option<size_t>(all, "autolink", "create link function with polynomial d"))
     return NULL;
   
   autolink& data = calloc_or_die<autolink>();

@@ -251,13 +251,6 @@ bool no_new_options(vw& all)
     return false;
 }
 
-bool missing_option(vw& all, const char* name, const po::value_semantic* s, 
-		    const char* description)
-{
-  new_options(all)(name,s,description);
-  return no_new_options(all);
-}
-
 bool missing_option(vw& all, const char* name, const char* description)
 {
   new_options(all)(name,description);
