@@ -22,7 +22,6 @@ license as described in the file LICENSE.
 #include "parse_example.h"
 #include "constant.h"
 #include "gd.h"
-#include "kernel_svm.h"
 #include "cache.h"
 #include "accumulate.h"
 #include "learner.h"
@@ -38,60 +37,54 @@ license as described in the file LICENSE.
 using namespace std;
 using namespace LEARNER;
 
-namespace KSVM
-{
+struct svm_params;
 
-  struct svm_params;
-
-  struct svm_example {
-    v_array<float> krow;
-    flat_example ex;
-
-    ~svm_example();
+struct svm_example {
+  v_array<float> krow;
+  flat_example ex;
+  
+  ~svm_example();
     void init_svm_example(flat_example *fec); 
-    int compute_kernels(svm_params& params);
-    int clear_kernels();
-  };
+  int compute_kernels(svm_params& params);
+  int clear_kernels();
+};
 
-  struct svm_model{    
-    size_t num_support;
-    v_array<svm_example*> support_vec;
-    v_array<float> alpha;
-    v_array<float> delta;
-  };
+struct svm_model{    
+  size_t num_support;
+  v_array<svm_example*> support_vec;
+  v_array<float> alpha;
+  v_array<float> delta;
+};
   
+struct svm_params{
+  size_t current_pass;
+  bool active;
+  bool active_pool_greedy;
+  bool para_active;
+  double active_c;
   
-  struct svm_params{
-    size_t current_pass;
-    bool active;
-    bool active_pool_greedy;
-    bool para_active;
-    double active_c;
-
-    size_t pool_size;
-    size_t pool_pos;
-    size_t subsample; //NOTE: Eliminating subsample to only support 1/pool_size
-    size_t reprocess;
-
-    svm_model* model;
-    size_t maxcache;
-    //size_t curcache;
-
-    svm_example** pool;
-    float lambda;
-
-    void* kernel_params;
-    size_t kernel_type;
-
-    size_t local_begin, local_end;
-    size_t current_t;
-
-    float loss_sum;
-    
-    vw* all;
-  };
-
-
+  size_t pool_size;
+  size_t pool_pos;
+  size_t subsample; //NOTE: Eliminating subsample to only support 1/pool_size
+  size_t reprocess;
+  
+  svm_model* model;
+  size_t maxcache;
+  //size_t curcache;
+  
+  svm_example** pool;
+  float lambda;
+  
+  void* kernel_params;
+  size_t kernel_type;
+  
+  size_t local_begin, local_end;
+  size_t current_t;
+  
+  float loss_sum;
+  
+  vw* all;
+};
 
   static size_t num_kernel_evals = 0;
   static size_t num_cache_evals = 0;
@@ -790,120 +783,119 @@ namespace KSVM
     cerr<<"Done with finish \n";
   }
 
-  LEARNER::base_learner* setup(vw &all) {
-    new_options(all, "KSVM options")
+LEARNER::base_learner* kernel_svm_setup(vw &all) {
+  new_options(all, "KSVM options")
       ("ksvm", "kernel svm");
-    if (no_new_options(all)) return NULL;
-    new_options(all)
-      ("reprocess", po::value<size_t>(), "number of reprocess steps for LASVM")
-      //      ("active", "do active learning")
-      //("active_c", po::value<double>(), "parameter for query prob")
-      ("pool_greedy", "use greedy selection on mini pools")      
-      ("para_active", "do parallel active learning")
-      ("pool_size", po::value<size_t>(), "size of pools for active learning")
-      ("subsample", po::value<size_t>(), "number of items to subsample from the pool")
-      ("kernel", po::value<string>(), "type of kernel (rbf or linear (default))")
-      ("bandwidth", po::value<float>(), "bandwidth of rbf kernel")
-      ("degree", po::value<int>(), "degree of poly kernel")
-      ("lambda", po::value<double>(), "saving regularization for test time");
-    add_options(all);
-
-    po::variables_map& vm = all.vm;
-    string loss_function = "hinge";
-    float loss_parameter = 0.0;
-    delete all.loss;
-    all.loss = getLossFunction(all, loss_function, (float)loss_parameter);
-
-    svm_params& params = calloc_or_die<svm_params>();
-    params.model = &calloc_or_die<svm_model>();
-    params.model->num_support = 0;
-    //params.curcache = 0;
-    params.maxcache = 1024*1024*1024;
-    params.loss_sum = 0.;
-    params.all = &all;
-    
-    if(vm.count("reprocess"))
-      params.reprocess = vm["reprocess"].as<std::size_t>();
-    else 
-      params.reprocess = 1;
-
-    if(vm.count("active"))
-      params.active = true;
-    if(params.active) {
-      if(vm.count("active_c"))
-	params.active_c = vm["active_c"].as<double>();
-      else
-	params.active_c = 1.;
-      if(vm.count("pool_greedy"))
-	params.active_pool_greedy = 1;
-      /*if(vm.count("para_active"))
-	params.para_active = 1;*/
+  if (no_new_options(all)) return NULL;
+  new_options(all)
+    ("reprocess", po::value<size_t>(), "number of reprocess steps for LASVM")
+    //      ("active", "do active learning")
+    //("active_c", po::value<double>(), "parameter for query prob")
+    ("pool_greedy", "use greedy selection on mini pools")      
+    ("para_active", "do parallel active learning")
+    ("pool_size", po::value<size_t>(), "size of pools for active learning")
+    ("subsample", po::value<size_t>(), "number of items to subsample from the pool")
+    ("kernel", po::value<string>(), "type of kernel (rbf or linear (default))")
+    ("bandwidth", po::value<float>(), "bandwidth of rbf kernel")
+    ("degree", po::value<int>(), "degree of poly kernel")
+    ("lambda", po::value<double>(), "saving regularization for test time");
+  add_options(all);
+  
+  po::variables_map& vm = all.vm;
+  string loss_function = "hinge";
+  float loss_parameter = 0.0;
+  delete all.loss;
+  all.loss = getLossFunction(all, loss_function, (float)loss_parameter);
+  
+  svm_params& params = calloc_or_die<svm_params>();
+  params.model = &calloc_or_die<svm_model>();
+  params.model->num_support = 0;
+  //params.curcache = 0;
+  params.maxcache = 1024*1024*1024;
+  params.loss_sum = 0.;
+  params.all = &all;
+  
+  if(vm.count("reprocess"))
+    params.reprocess = vm["reprocess"].as<std::size_t>();
+  else 
+    params.reprocess = 1;
+  
+  if(vm.count("active"))
+    params.active = true;
+  if(params.active) {
+    if(vm.count("active_c"))
+      params.active_c = vm["active_c"].as<double>();
+    else
+      params.active_c = 1.;
+    if(vm.count("pool_greedy"))
+      params.active_pool_greedy = 1;
+    /*if(vm.count("para_active"))
+      params.para_active = 1;*/
+  }
+  
+  if(vm.count("pool_size")) 
+    params.pool_size = vm["pool_size"].as<std::size_t>();
+  else
+    params.pool_size = 1;
+  
+  params.pool = calloc_or_die<svm_example*>(params.pool_size);
+  params.pool_pos = 0;
+  
+  if(vm.count("subsample"))
+    params.subsample = vm["subsample"].as<std::size_t>();
+  else if(params.para_active)
+    params.subsample = (size_t)ceil(params.pool_size / all.total);
+  else
+    params.subsample = 1;
+  
+  params.lambda = all.l2_lambda;
+  
+  *all.file_options <<" --lambda "<< params.lambda;
+  
+  cerr<<"Lambda = "<<params.lambda<<endl;
+  
+  std::string kernel_type;
+  
+  if(vm.count("kernel")) 
+    kernel_type = vm["kernel"].as<std::string>();
+  else
+    kernel_type = string("linear");
+  
+  *all.file_options <<" --kernel "<< kernel_type;
+  
+  cerr<<"Kernel = "<<kernel_type<<endl;
+  
+  if(kernel_type.compare("rbf") == 0) {
+    params.kernel_type = SVM_KER_RBF;
+    float bandwidth = 1.;
+    if(vm.count("bandwidth")) {
+      bandwidth = vm["bandwidth"].as<float>();	
+      *all.file_options <<" --bandwidth "<<bandwidth;
     }
-    
-    if(vm.count("pool_size")) 
-      params.pool_size = vm["pool_size"].as<std::size_t>();
-    else
-      params.pool_size = 1;
-    
-    params.pool = calloc_or_die<svm_example*>(params.pool_size);
-    params.pool_pos = 0;
-    
-    if(vm.count("subsample"))
-	params.subsample = vm["subsample"].as<std::size_t>();
-      else if(params.para_active)
-	params.subsample = (size_t)ceil(params.pool_size / all.total);
-      else
-	params.subsample = 1;
-    
-    params.lambda = all.l2_lambda;
-
-    *all.file_options <<" --lambda "<< params.lambda;
-      
-    cerr<<"Lambda = "<<params.lambda<<endl;
-
-    std::string kernel_type;
-
-    if(vm.count("kernel")) 
-      kernel_type = vm["kernel"].as<std::string>();
-    else
-      kernel_type = string("linear");
-    
-    *all.file_options <<" --kernel "<< kernel_type;
-
-    cerr<<"Kernel = "<<kernel_type<<endl;
-
-    if(kernel_type.compare("rbf") == 0) {
-      params.kernel_type = SVM_KER_RBF;
-      float bandwidth = 1.;
-      if(vm.count("bandwidth")) {
-		bandwidth = vm["bandwidth"].as<float>();	
-		*all.file_options <<" --bandwidth "<<bandwidth;
-      }
-      cerr<<"bandwidth = "<<bandwidth<<endl;
-      params.kernel_params = &calloc_or_die<double>();
-      *((float*)params.kernel_params) = bandwidth;
+    cerr<<"bandwidth = "<<bandwidth<<endl;
+    params.kernel_params = &calloc_or_die<double>();
+    *((float*)params.kernel_params) = bandwidth;
+  }
+  else if(kernel_type.compare("poly") == 0) {
+    params.kernel_type = SVM_KER_POLY;
+    int degree = 2;
+    if(vm.count("degree")) {
+      degree = vm["degree"].as<int>();	
+      *all.file_options <<" --degree "<<degree;
     }
-    else if(kernel_type.compare("poly") == 0) {
-      params.kernel_type = SVM_KER_POLY;
-      int degree = 2;
-      if(vm.count("degree")) {
-	  degree = vm["degree"].as<int>();	
-	  *all.file_options <<" --degree "<<degree;
-	}
-      cerr<<"degree = "<<degree<<endl;
-      params.kernel_params = &calloc_or_die<int>();
-      *((int*)params.kernel_params) = degree;
-    }      
-    else
-      params.kernel_type = SVM_KER_LIN;            
-	
-    params.all->reg.weight_mask = (uint32_t)LONG_MAX;
-    params.all->reg.stride_shift = 0;
-    
-    learner<svm_params>& l = init_learner(&params, learn, 1); 
-    l.set_predict(predict);
-    l.set_save_load(save_load);
-    l.set_finish(finish);
-    return make_base(l);
-  }    
+    cerr<<"degree = "<<degree<<endl;
+    params.kernel_params = &calloc_or_die<int>();
+    *((int*)params.kernel_params) = degree;
+  }      
+  else
+    params.kernel_type = SVM_KER_LIN;            
+  
+  params.all->reg.weight_mask = (uint32_t)LONG_MAX;
+  params.all->reg.stride_shift = 0;
+  
+  learner<svm_params>& l = init_learner(&params, learn, 1); 
+  l.set_predict(predict);
+  l.set_save_load(save_load);
+  l.set_finish(finish);
+  return make_base(l);
 }

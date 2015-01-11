@@ -52,9 +52,6 @@ class curv_exception: public exception {} curv_ex;
 // w[2] = step direction
 // w[3] = preconditioner
   
-namespace BFGS 
-
-{
   const float max_precond_ratio = 100.f;
 
   struct bfgs {
@@ -964,7 +961,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     b.backstep_on = true;
   }
 
-base_learner* setup(vw& all)
+base_learner* bfgs_setup(vw& all)
 {
   new_options(all, "LBFGS options")
     ("bfgs", "use bfgs optimization")
@@ -1029,4 +1026,4 @@ base_learner* setup(vw& all)
 
   return make_base(l);
 }
-}
+

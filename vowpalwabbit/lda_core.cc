@@ -21,8 +21,6 @@ license as described in the file LICENSE.
 using namespace LEARNER;
 using namespace std;
 
-namespace LDA {
-
 class index_feature {
 public:
   uint32_t document;
@@ -752,7 +750,7 @@ void end_examples(lda& l)
   }
 
 
-base_learner* setup(vw&all)
+base_learner* lda_setup(vw&all)
 {
   new_options(all, "Lda options")
       ("lda", po::value<uint32_t>(), "Run lda with <int> topics")
@@ -812,5 +810,4 @@ base_learner* setup(vw&all)
   l.set_finish(finish);
   
   return make_base(l);
-}
 }

@@ -733,14 +733,14 @@ void parse_reductions(vw& all)
 {
   //Base algorithms
   all.reduction_stack.push_back(GD::setup);
-  all.reduction_stack.push_back(KSVM::setup);
-  all.reduction_stack.push_back(FTRL::setup);
-  all.reduction_stack.push_back(SENDER::setup);
-  all.reduction_stack.push_back(GDMF::setup);
-  all.reduction_stack.push_back(PRINT::setup);
-  all.reduction_stack.push_back(NOOP::setup);
-  all.reduction_stack.push_back(LDA::setup);
-  all.reduction_stack.push_back(BFGS::setup);
+  all.reduction_stack.push_back(kernel_svm_setup);
+  all.reduction_stack.push_back(ftrl_setup);
+  all.reduction_stack.push_back(sender_setup);
+  all.reduction_stack.push_back(gd_mf_setup);
+  all.reduction_stack.push_back(print_setup);
+  all.reduction_stack.push_back(noop_setup);
+  all.reduction_stack.push_back(lda_setup);
+  all.reduction_stack.push_back(bfgs_setup);
 
   //Score Users
   all.reduction_stack.push_back(active_setup);
@@ -762,7 +762,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(cb_algs_setup);
   all.reduction_stack.push_back(cbify_setup);
   all.reduction_stack.push_back(Search::setup);
-  all.reduction_stack.push_back(BS::setup);
+  all.reduction_stack.push_back(bs_setup);
 
   all.l = setup_base(all);
 }

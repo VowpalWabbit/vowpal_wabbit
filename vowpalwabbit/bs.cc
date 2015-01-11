@@ -17,8 +17,6 @@ license as described in the file LICENSE.
 using namespace std;
 using namespace LEARNER;
 
-namespace BS {
-
   struct bs{
     uint32_t B; //number of bootstrap rounds
     size_t bs_type;
@@ -173,7 +171,7 @@ namespace BS {
     }
 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      BS::print_result(*sink, ec.pred.scalar, 0, ec.tag, d.lb, d.ub);
+      print_result(*sink, ec.pred.scalar, 0, ec.tag, d.lb, d.ub);
   
     print_update(all, ec);
   }
@@ -192,7 +190,7 @@ namespace BS {
 
     for (size_t i = 1; i <= d.B; i++)
       {
-        ec.l.simple.weight = weight_temp * (float) weight_gen();
+        ec.l.simple.weight = weight_temp * (float) BS::weight_gen();
 
 	if (is_learn)
 	  base.learn(ec, i-1);
@@ -229,34 +227,32 @@ namespace BS {
 
   void finish_example(vw& all, bs& d, example& ec)
   {
-    BS::output_example(all, d, ec);
+    output_example(all, d, ec);
     VW::finish_example(all, &ec);
   }
 
   void finish(bs& d)
-  {
-    d.pred_vec.~vector();
-  }
+  { d.pred_vec.~vector(); }
 
-  base_learner* setup(vw& all)
-  {
-    new_options(all, "Bootstrap options")
-      ("bootstrap,B", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling");
-    if (no_new_options(all)) return NULL;
-    new_options(all)("bs_type", po::value<string>(), "prediction type {mean,vote}");    
-    add_options(all);
-
-    bs& data = calloc_or_die<bs>();
-    data.ub = FLT_MAX;
-    data.lb = -FLT_MAX;
-    data.B = (uint32_t)all.vm["bootstrap"].as<size_t>();
-
-    //append bs with number of samples to options_from_file so it is saved to regressor later
-    *all.file_options << " --bootstrap " << data.B;
-
-    std::string type_string("mean");
-
-    if (all.vm.count("bs_type"))
+base_learner* bs_setup(vw& all)
+{
+  new_options(all, "Bootstrap options")
+    ("bootstrap,B", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling");
+  if (no_new_options(all)) return NULL;
+  new_options(all)("bs_type", po::value<string>(), "prediction type {mean,vote}");    
+  add_options(all);
+  
+  bs& data = calloc_or_die<bs>();
+  data.ub = FLT_MAX;
+  data.lb = -FLT_MAX;
+  data.B = (uint32_t)all.vm["bootstrap"].as<size_t>();
+  
+  //append bs with number of samples to options_from_file so it is saved to regressor later
+  *all.file_options << " --bootstrap " << data.B;
+  
+  std::string type_string("mean");
+  
+  if (all.vm.count("bs_type"))
     {
       type_string = all.vm["bs_type"].as<std::string>();
       
@@ -271,18 +267,17 @@ namespace BS {
         data.bs_type = BS_TYPE_MEAN;
       }
     }
-    else //by default use mean
-      data.bs_type = BS_TYPE_MEAN;
-    *all.file_options << " --bs_type " << type_string;
-
-    data.pred_vec.reserve(data.B);
-    data.all = &all;
-
-    learner<bs>& l = init_learner(&data, setup_base(all), predict_or_learn<true>, 
-				  predict_or_learn<false>, data.B);
-    l.set_finish_example(finish_example);
-    l.set_finish(finish);
-
-    return make_base(l);
-  }
+  else //by default use mean
+    data.bs_type = BS_TYPE_MEAN;
+  *all.file_options << " --bs_type " << type_string;
+  
+  data.pred_vec.reserve(data.B);
+  data.all = &all;
+  
+  learner<bs>& l = init_learner(&data, setup_base(all), predict_or_learn<true>, 
+				predict_or_learn<false>, data.B);
+  l.set_finish_example(finish_example);
+  l.set_finish(finish);
+  
+  return make_base(l);
 }

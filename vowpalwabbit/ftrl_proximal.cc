@@ -18,7 +18,6 @@
 using namespace std;
 using namespace LEARNER;
 
-
 #define W_XT 0   // current parameter w(XT)
 #define W_GT 1   // current gradient  g(GT)
 #define W_ZT 2   // accumulated z(t) = z(t-1) + g(t) + sigma*w(t)
@@ -31,8 +30,6 @@ using namespace LEARNER;
 // w[1] = current first derivative
 // w[2] = accumulated zt
 // w[3] = accumulated g2
-
-namespace FTRL {
 
   //nonrentrant
   struct ftrl {
@@ -170,7 +167,7 @@ namespace FTRL {
     ec.pred.scalar = ftrl_predict(*all,ec);
   }
   
-  base_learner* setup(vw& all) 
+  base_learner* ftrl_setup(vw& all) 
   {
     new_options(all, "FTRL options")
       ("ftrl", "Follow the Regularized Leader");
@@ -207,4 +204,3 @@ namespace FTRL {
     l.set_save_load(save_load);
     return make_base(l);
   }
-} // end namespace
