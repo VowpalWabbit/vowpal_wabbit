@@ -343,11 +343,8 @@ using namespace CB;
 
     all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
 
-    for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
-      {
-        int f = all.final_prediction_sink[i];
-        all.print(f, (float)ec.pred.multiclass, 0, ec.tag);
-      }
+    for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+      all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
 
     print_update(all, is_test_label(ld), ec);
   }

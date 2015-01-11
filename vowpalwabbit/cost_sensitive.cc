@@ -244,8 +244,8 @@ namespace COST_SENSITIVE {
     all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
     
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print((int)*sink, (float)ec.pred.multiclass, 0, ec.tag);
-    
+      all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
+
     if (all.raw_prediction > 0) {
       stringstream outputStringStream;
       for (unsigned int i = 0; i < ld.costs.size(); i++) {

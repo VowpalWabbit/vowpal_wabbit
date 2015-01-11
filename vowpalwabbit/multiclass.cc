@@ -109,14 +109,12 @@ namespace MULTICLASS {
 
   void finish_example(vw& all, example& ec)
   {
-    label ld = ec.l.multi;
-    
     size_t loss = 1;
-    if (ld.label == (uint32_t)ec.pred.multiclass)
+    if (ec.l.multi.label == (uint32_t)ec.pred.multiclass)
       loss = 0;
     
-    all.sd->update(ec.test_only, loss, ld.weight, ec.num_features);
-
+    all.sd->update(ec.test_only, loss, ec.l.multi.weight, ec.num_features);
+    
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
     
