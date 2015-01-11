@@ -358,11 +358,8 @@ namespace Search {
       fprintf(stderr, " h");
 
     fprintf(stderr, "\n");
-
-    all.sd->sum_loss_since_last_dump = 0.0;
-    all.sd->old_weighted_examples = all.sd->weighted_examples;
     fflush(stderr);
-    VW::update_dump_interval(all);
+    all.sd->update_dump_interval(all.progress_add, all.progress_arg);
   }
 
   void add_new_feature(search_private& priv, float val, uint32_t idx) {
@@ -1280,22 +1277,8 @@ namespace Search {
       priv.task->run(sch, priv.ec_seq);
 
       // accumulate loss
-      if (! is_test_ex) { // we cannot accumulate loss on test examples!
-        if (priv.ec_seq[0]->test_only) {
-          all.sd->weighted_holdout_examples += 1.f;//test weight seen
-          all.sd->weighted_holdout_examples_since_last_dump += 1.f;
-          all.sd->weighted_holdout_examples_since_last_pass += 1.f;
-          all.sd->holdout_sum_loss += priv.test_loss;
-          all.sd->holdout_sum_loss_since_last_dump += priv.test_loss;
-          all.sd->holdout_sum_loss_since_last_pass += priv.test_loss;//since last pass
-        } else {
-          all.sd->weighted_examples += 1.f;
-          all.sd->total_features += priv.num_features;
-          all.sd->sum_loss += priv.test_loss;
-          all.sd->sum_loss_since_last_dump += priv.test_loss;
-          all.sd->example_number++;
-        }
-      }
+      if (! is_test_ex) 
+	all.sd->update(priv.ec_seq[0]->test_only, priv.test_loss, 1.f, priv.num_features);
       
       // generate output
       for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)

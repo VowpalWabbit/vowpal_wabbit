@@ -99,43 +99,11 @@ namespace MULTICLASS {
           strcpy(label_buf," unknown");
         else
           sprintf(label_buf,"%8ld",(long int)ld.label);
+	char pred_buf[32];
+	sprintf(pred_buf,"%8lu",(long unsigned int)ec.pred.multiclass);
 
-        if(!all.holdout_set_off && all.current_pass >= 1)
-        {
-          if(all.sd->holdout_sum_loss == 0. && all.sd->weighted_holdout_examples == 0.)
-            fprintf(stderr, " unknown   ");
-          else
-	    fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples);
-
-          if(all.sd->holdout_sum_loss_since_last_dump == 0. && all.sd->weighted_holdout_examples_since_last_dump == 0.)
-            fprintf(stderr, " unknown   ");
-          else
-	    fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss_since_last_dump/all.sd->weighted_holdout_examples_since_last_dump);
-
-            fprintf(stderr, "%8ld %8.1f   %s %8ld %8lu h\n",
-	      (long int)all.sd->example_number,
-	      all.sd->weighted_examples,
-	      label_buf,
-	      (long int)ec.pred.multiclass,
-	      (long unsigned int)ec.num_features);
-
-          all.sd->weighted_holdout_examples_since_last_dump = 0;
-          all.sd->holdout_sum_loss_since_last_dump = 0.0;
-        }
-        else
-          fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8ld %8lu\n",
-                all.sd->sum_loss/all.sd->weighted_examples,
-                all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
-                (long int)all.sd->example_number,
-                all.sd->weighted_examples,
-                label_buf,
-                (long int)ec.pred.multiclass,
-                (long unsigned int)ec.num_features);
-     
-        all.sd->sum_loss_since_last_dump = 0.0;
-        all.sd->old_weighted_examples = all.sd->weighted_examples;
-	fflush(stderr);
-        VW::update_dump_interval(all);
+	all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf, 
+			     ec.num_features, all.progress_add, all.progress_arg);
       }
   }
 
@@ -147,24 +115,8 @@ namespace MULTICLASS {
     if (ld.label == (uint32_t)ec.pred.multiclass)
       loss = 0;
     
-    if(ec.test_only)
-      {
-	all.sd->weighted_holdout_examples += ld.weight;//test weight seen
-	all.sd->weighted_holdout_examples_since_last_dump += ld.weight;
-	all.sd->weighted_holdout_examples_since_last_pass += ld.weight;
-	all.sd->holdout_sum_loss += loss;
-	all.sd->holdout_sum_loss_since_last_dump += loss;
-	all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass
-      }
-    else
-      {
-	all.sd->weighted_examples += ld.weight;
-	all.sd->total_features += ec.num_features;
-	all.sd->sum_loss += loss;
-	all.sd->sum_loss_since_last_dump += loss;
-	all.sd->example_number++;
-      }
-    
+    all.sd->update(ec.test_only, loss, ld.weight, ec.num_features);
+
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
     

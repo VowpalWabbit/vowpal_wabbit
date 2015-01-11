@@ -116,12 +116,4 @@ namespace VW {
 
   inline uint32_t get_stride(vw& all)
   { return (uint32_t)(1 << all.reg.stride_shift);}
-
-  inline void update_dump_interval(vw& all) {
-      if (all.progress_add) { 
-        all.sd->dump_interval = (float)all.sd->weighted_examples + all.progress_arg;
-      } else {
-        all.sd->dump_interval = (float)all.sd->weighted_examples * all.progress_arg;
-      }
-  }
 }

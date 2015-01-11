@@ -137,25 +137,9 @@ using namespace LEARNER;
   {
     label_data& ld = ec.l.simple;
     
-    if(ec.test_only)
-      {
-	all.sd->weighted_holdout_examples += ld.weight;//test weight seen
-	all.sd->weighted_holdout_examples_since_last_dump += ld.weight;
-	all.sd->weighted_holdout_examples_since_last_pass += ld.weight;
-	all.sd->holdout_sum_loss += ec.loss;
-	all.sd->holdout_sum_loss_since_last_dump += ec.loss;
-	all.sd->holdout_sum_loss_since_last_pass += ec.loss;//since last pass
-      }
-    else
-      {
-    if (ld.label != FLT_MAX)
-        all.sd->weighted_labels += ld.label * ld.weight;
-	all.sd->weighted_examples += ld.weight;
-	all.sd->sum_loss += ec.loss;
-	all.sd->sum_loss_since_last_dump += ec.loss;
-	all.sd->total_features += ec.num_features;
-	all.sd->example_number++;
-      }
+    all.sd->update(ec.test_only, ec.loss, ld.weight, ec.num_features);
+    if (ld.label != FLT_MAX && !ec.test_only)
+      all.sd->weighted_labels += ld.label * ld.weight;
     
     if(all.final_prediction_sink.size() != 0)//get confidence interval only when printing out predictions
     {

@@ -112,42 +112,11 @@ void print_update(vw& all, example& ec)
 	strcpy(label_buf," unknown");
       else
 	sprintf(label_buf,"%8.4f",ld.label);
+      char pred_buf[32];
+      sprintf(pred_buf,"%8.4f",ec.pred.scalar);
       
-      if(!all.holdout_set_off && all.current_pass >= 1){
-        if(all.sd->holdout_sum_loss == 0. && all.sd->weighted_holdout_examples == 0.)
-          fprintf(stderr, " unknown   ");
-        else
-	  fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples);
-
-        if(all.sd->holdout_sum_loss_since_last_dump == 0. && all.sd->weighted_holdout_examples_since_last_dump == 0.)
-          fprintf(stderr, " unknown   ");
-        else
-	  fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss_since_last_dump/all.sd->weighted_holdout_examples_since_last_dump);
-        
-        fprintf(stderr, "%10ld %11.1f %s %8.4f %8lu h\n",
-	      (long int)all.sd->example_number,
-	      all.sd->weighted_examples,
-	      label_buf,
-	      ec.pred.scalar,
-	      (long unsigned int)ec.num_features);
-
-        all.sd->weighted_holdout_examples_since_last_dump = 0.;
-        all.sd->holdout_sum_loss_since_last_dump = 0.0;
-      }
-      else
-        fprintf(stderr, "%-10.6f %-10.6f %10ld %11.1f %s %8.4f %8lu\n",
-	      all.sd->sum_loss/all.sd->weighted_examples,
-	      all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
-	      (long int)all.sd->example_number,
-	      all.sd->weighted_examples,
-	      label_buf,
-	      ec.pred.scalar,
-	      (long unsigned int)ec.num_features);
-     
-      all.sd->sum_loss_since_last_dump = 0.0;
-      all.sd->old_weighted_examples = all.sd->weighted_examples;
-      VW::update_dump_interval(all);
-	  fflush(stderr);
+      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf, 
+			   ec.num_features, all.progress_add, all.progress_arg);
     }
 }
 
@@ -155,29 +124,12 @@ void output_and_account_example(vw& all, example& ec)
 {
   label_data ld = ec.l.simple;
 
-  if(ec.test_only)
-  {
-    all.sd->weighted_holdout_examples += ld.weight;//test weight seen
-    all.sd->weighted_holdout_examples_since_last_dump += ld.weight;
-    all.sd->weighted_holdout_examples_since_last_pass += ld.weight;
-    all.sd->holdout_sum_loss += ec.loss;
-    all.sd->holdout_sum_loss_since_last_dump += ec.loss;
-    all.sd->holdout_sum_loss_since_last_pass += ec.loss;//since last pass
-  }
-  else
-  {
-    if (ld.label != FLT_MAX)
-      all.sd->weighted_labels += ld.label * ld.weight;
-    all.sd->weighted_examples += ld.weight;
-    all.sd->sum_loss += ec.loss;
-    all.sd->sum_loss_since_last_dump += ec.loss;
-    all.sd->total_features += ec.num_features;
-    all.sd->example_number++;
-  }
-  all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-
+  all.sd->update(ec.test_only, ec.loss, ld.weight, ec.num_features);
+  if (ld.label != FLT_MAX && !ec.test_only)
+    all.sd->weighted_labels += ld.label * ld.weight;
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ld.weight : 0;
-  
+
+  all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
   for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
     {
       int f = (int)all.final_prediction_sink[i];

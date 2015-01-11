@@ -297,12 +297,7 @@ using namespace CB;
     ec.pred.multiclass = ec.l.cb_eval.action;
   }
   
-  void init_driver(cb&)
-  {
-    fprintf(stderr, "*estimate* *estimate*                                                avglossreg last pred  last correct\n");
-  }
-
-  void print_update(vw& all, cb& c, bool is_test, example& ec)
+  void print_update(vw& all, bool is_test, example& ec)
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
@@ -311,49 +306,11 @@ using namespace CB;
           strcpy(label_buf," unknown");
         else
           sprintf(label_buf," known");
+	char pred_buf[32];
+	sprintf(pred_buf,"%8lu",(long unsigned int)ec.pred.multiclass);
 
-        if(!all.holdout_set_off && all.current_pass >= 1)
-        {
-          if(all.sd->holdout_sum_loss == 0. && all.sd->weighted_holdout_examples == 0.)
-            fprintf(stderr, " unknown   ");
-          else
-	    fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples);
-
-          if(all.sd->holdout_sum_loss_since_last_dump == 0. && all.sd->weighted_holdout_examples_since_last_dump == 0.)
-            fprintf(stderr, " unknown   ");
-          else
-	    fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss_since_last_dump/all.sd->weighted_holdout_examples_since_last_dump);
-        
-          fprintf(stderr, "%8ld %8.1f   %s %8lu %8lu   %-10.6f %-10.6f %-10.6f h\n",
-	      (long int)all.sd->example_number,
-	      all.sd->weighted_examples,
-	      label_buf,
-              (long unsigned int)ec.pred.multiclass,
-              (long unsigned int)ec.num_features,
-              c.avg_loss_regressors,
-              c.last_pred_reg,
-              c.last_correct_cost);
-
-          all.sd->weighted_holdout_examples_since_last_dump = 0;
-          all.sd->holdout_sum_loss_since_last_dump = 0.0;
-        }
-        else
-          fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8lu %8lu   %-10.6f %-10.6f %-10.6f\n",
-                all.sd->sum_loss/all.sd->weighted_examples,
-                all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
-                (long int)all.sd->example_number,
-                all.sd->weighted_examples,
-                label_buf,
-                (long unsigned int)ec.pred.multiclass,
-                (long unsigned int)ec.num_features,
-                c.avg_loss_regressors,
-                c.last_pred_reg,
-                c.last_correct_cost);
-     
-        all.sd->sum_loss_since_last_dump = 0.0;
-        all.sd->old_weighted_examples = all.sd->weighted_examples;
-	fflush(stderr);
-        VW::update_dump_interval(all);
+	all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf, 
+			     ec.num_features, all.progress_add, all.progress_arg);
       }
   }
 
@@ -384,23 +341,7 @@ using namespace CB;
         loss = chosen_loss;
       }
 
-    if(ec.test_only)
-    {
-      all.sd->weighted_holdout_examples += 1.;//test weight seen
-      all.sd->weighted_holdout_examples_since_last_dump += 1.;
-      all.sd->weighted_holdout_examples_since_last_pass += 1.;
-      all.sd->holdout_sum_loss += loss;
-      all.sd->holdout_sum_loss_since_last_dump += loss;
-      all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass
-    }
-    else
-    {
-      all.sd->sum_loss += loss;
-      all.sd->sum_loss_since_last_dump += loss;
-      all.sd->weighted_examples += 1.;
-      all.sd->total_features += ec.num_features;
-      all.sd->example_number++;
-    }
+    all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
 
     for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
       {
@@ -408,7 +349,7 @@ using namespace CB;
         all.print(f, (float)ec.pred.multiclass, 0, ec.tag);
       }
 
-    print_update(all, c, is_test_label(ld), ec);
+    print_update(all, is_test_label(ld), ec);
   }
 
   void finish(cb& c)
@@ -515,7 +456,6 @@ using namespace CB;
     // _adding_ to the number of problems rather than multiplying.
     l->increment = base->increment; 
     
-    l->set_init_driver(init_driver);
     l->set_finish(finish);
     return make_base(*l);
   }
