@@ -159,7 +159,7 @@ using namespace LEARNER;
   
   base_learner* ftrl_setup(vw& all) 
   {
-    if (missing_option(all, "ftrl", "Follow the Regularized Leader")) 
+    if (missing_option(all, false, "ftrl", "Follow the Regularized Leader")) 
       return NULL;
     new_options(all, "FTRL options")
       ("ftrl_alpha", po::value<float>()->default_value(0.0), "Learning rate for FTRL-proximal optimization")

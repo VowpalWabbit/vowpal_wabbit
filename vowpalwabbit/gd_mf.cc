@@ -292,14 +292,12 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
 
 base_learner* gd_mf_setup(vw& all)
 {
-  if (missing_option<uint32_t>(all, "rank", "rank for matrix factorization."))
+  if (missing_option<uint32_t, true>(all, "rank", "rank for matrix factorization."))
     return NULL;
   
   gdmf& data = calloc_or_die<gdmf>(); 
   data.all = &all;
   data.rank = all.vm["rank"].as<uint32_t>();
-  
-  *all.file_options << " --rank " << data.rank;
   // store linear + 2*rank weights per index, round up to power of two
   float temp = ceilf(logf((float)(data.rank*2+1)) / logf (2.f));
   all.reg.stride_shift = (size_t) temp;

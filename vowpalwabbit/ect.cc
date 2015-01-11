@@ -351,7 +351,7 @@ size_t create_circuit(vw& all, ect& e, uint32_t max_label, uint32_t eliminations
 
 base_learner* ect_setup(vw& all)
 {
-  if (missing_option<size_t>(all, "ect", "Error correcting tournament with <k> labels"))
+  if (missing_option<size_t, true>(all, "ect", "Error correcting tournament with <k> labels"))
     return NULL;
   new_options(all, "Error Correcting Tournament options")
     ("error", po::value<size_t>()->default_value(0), "error in ECT");
@@ -361,7 +361,7 @@ base_learner* ect_setup(vw& all)
   data.k = (int)all.vm["ect"].as<size_t>();
   data.errors = (uint32_t)all.vm["error"].as<size_t>();
   //append error flag to options_from_file so it is saved in regressor file later
-  *all.file_options << " --ect " << data.k << " --error " << data.errors;
+  *all.file_options << " --error " << data.errors;
   
   size_t wpp = create_circuit(all, data, data.k, data.errors+1);
   

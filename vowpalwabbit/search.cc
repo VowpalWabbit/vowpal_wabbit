@@ -1740,8 +1740,8 @@ namespace Search {
   }
 
   base_learner* setup(vw&all) {
-    if (missing_option<size_t>(all, "search", 
-			       "Use learning to search, argument=maximum action id or 0 for LDF"))
+    if (missing_option<size_t, false>(all, "search", 
+				      "Use learning to search, argument=maximum action id or 0 for LDF"))
       return NULL;
     new_options(all, "Search Options")
       ("search_task",              po::value<string>(), "the search task (use \"--search_task list\" to get a list of available tasks)")
@@ -1770,8 +1770,6 @@ namespace Search {
       ;
     add_options(all);
     po::variables_map& vm = all.vm;
-    if (!vm.count("search"))
-      return NULL;
 
     bool has_hook_task = false;
     for (size_t i=0; i<all.args.size()-1; i++)

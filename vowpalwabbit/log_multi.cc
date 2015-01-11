@@ -491,7 +491,7 @@ using namespace LEARNER;
   
   base_learner* log_multi_setup(vw& all)	//learner setup
   {
-    if (missing_option<size_t>(all, "log_multi", "Use online tree for multiclass"))
+    if (missing_option<size_t, true>(all, "log_multi", "Use online tree for multiclass"))
       return NULL;
     new_options(all, "Logarithmic Time Multiclass options")
       ("no_progress", "disable progressive validation")
@@ -506,8 +506,6 @@ using namespace LEARNER;
 
     if (vm.count("swap_resistance"))
       data.swap_resist = vm["swap_resistance"].as<uint32_t>();
-    
-    *all.file_options << " --log_multi " << data.k;
     
     if (vm.count("no_progress"))
       data.progress = false;

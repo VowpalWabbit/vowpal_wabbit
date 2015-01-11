@@ -387,11 +387,20 @@ inline po::options_description_easy_init new_options(vw& all, std::string name =
   all.new_opts = new po::options_description(name);
   return all.new_opts->add_options();
 }
-bool missing_option(vw& all, const char* name, const char* description);
 bool no_new_options(vw& all);
+bool missing_option(vw& all, bool keep, const char* name, const char* description);
 template <class T> bool missing_option(vw& all, const char* name, const char* description)
 {
   new_options(all)(name, po::value<T>(), description);
   return no_new_options(all);
+}
+template <class T, bool keep> bool missing_option(vw& all, const char* name,
+						  const char* description)
+{
+  if (missing_option<T>(all, name, description))
+    return true;
+  if (keep)
+    *all.file_options << " --" << name << " " << all.vm[name].as<T>();
+  return false;
 }
 void add_options(vw& all);

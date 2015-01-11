@@ -251,10 +251,14 @@ bool no_new_options(vw& all)
     return false;
 }
 
-bool missing_option(vw& all, const char* name, const char* description)
+bool missing_option(vw& all, bool keep, const char* name, const char* description)
 {
   new_options(all)(name,description);
-  return no_new_options(all);
+  if (no_new_options(all))
+    return true;
+  if (keep)
+    *all.file_options << " --" << name;
+  return false;
 }
 
 vw::vw()

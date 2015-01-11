@@ -366,7 +366,7 @@ using namespace MultiWorldTesting;
 
   base_learner* cbify_setup(vw& all)
   {//parse and set arguments
-    if (missing_option<size_t>(all, "cbify", "Convert multiclass on <k> classes into a contextual bandit problem"))
+    if (missing_option<size_t, true>(all, "cbify", "Convert multiclass on <k> classes into a contextual bandit problem"))
       return NULL;
     new_options(all, "CBIFY options")
       ("first", po::value<size_t>(), "tau-first exploration")
@@ -379,7 +379,6 @@ using namespace MultiWorldTesting;
     cbify& data = calloc_or_die<cbify>();
     data.all = &all;
     data.k = (uint32_t)vm["cbify"].as<size_t>();
-    *all.file_options << " --cbify " << data.k;
 
     if (count(all.args.begin(), all.args.end(),"--cb") == 0)
       {

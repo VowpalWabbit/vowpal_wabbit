@@ -93,15 +93,15 @@ void finish(sender& s)
 
 LEARNER::base_learner* sender_setup(vw& all)
 {
-  if (missing_option<vector<string> >(all, "sendto", "send examples to <host>"))
+  if (missing_option<string, true>(all, "sendto", "send examples to <host>"))
     return NULL;
   
   sender& s = calloc_or_die<sender>();
   s.sd = -1;
   if (all.vm.count("sendto"))
     {      
-      vector<string> hosts = all.vm["sendto"].as< vector<string> >();
-      open_sockets(s, hosts[0]);
+      string host = all.vm["sendto"].as< string >();
+      open_sockets(s, host);
     }
   
   s.all = &all;

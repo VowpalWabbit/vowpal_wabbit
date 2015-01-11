@@ -366,7 +366,7 @@ using namespace CB;
 
   base_learner* cb_algs_setup(vw& all)
   {
-    if (missing_option<size_t>(all, "cb", "Use contextual bandit learning with <k> costs"))
+    if (missing_option<size_t, true>(all, "cb", "Use contextual bandit learning with <k> costs"))
       return NULL;
     new_options(all, "CB options")
       ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}")
@@ -377,8 +377,6 @@ using namespace CB;
     c.all = &all;
 
     uint32_t nb_actions = (uint32_t)all.vm["cb"].as<size_t>();
-
-    *all.file_options << " --cb " << nb_actions;
 
     all.sd->k = nb_actions;
 

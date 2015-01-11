@@ -752,7 +752,7 @@ void end_examples(lda& l)
 
 base_learner* lda_setup(vw&all)
 {
-  if (missing_option<uint32_t>(all, "lda", "Run lda with <int> topics")) 
+  if (missing_option<uint32_t, true>(all, "lda", "Run lda with <int> topics")) 
     return NULL;
   new_options(all, "Lda options")
     ("lda_alpha", po::value<float>()->default_value(0.1f), "Prior on sparsity of per-document topic weights")
@@ -782,8 +782,6 @@ base_learner* lda_setup(vw&all)
   all.reg.stride_shift = (size_t)temp;
   all.random_weights = true;
   all.add_constant = false;
-  
-  *all.file_options << " --lda " << all.lda;
   
   if (all.eta > 1.)
     {

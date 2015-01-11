@@ -652,7 +652,7 @@ using namespace LEARNER;
 
   base_learner *stagewise_poly_setup(vw &all)
   {
-    if (missing_option(all, "stage_poly", "use stagewise polynomial feature learning"))
+    if (missing_option(all, true, "stage_poly", "use stagewise polynomial feature learning"))
       return NULL;
     
     new_options(all, "Stagewise poly options")
@@ -689,9 +689,6 @@ using namespace LEARNER;
     poly.update_support = false;
     poly.original_ec = NULL;
     poly.next_batch_sz = poly.batch_sz;
-
-    //following is so that saved models know to load us.
-    *all.file_options << " --stage_poly";
 
     learner<stagewise_poly>& l = init_learner(&poly, setup_base(all), learn, predict);
     l.set_finish(finish);

@@ -220,7 +220,7 @@ using namespace LEARNER;
 
 base_learner* bs_setup(vw& all)
 {
-  if (missing_option<size_t>(all, "bootstrap,B", "k-way bootstrap by online importance resampling"))
+  if (missing_option<size_t, true>(all, "bootstrap", "k-way bootstrap by online importance resampling"))
     return NULL;
   new_options(all, "Bootstrap options")("bs_type", po::value<string>(), 
 					"prediction type {mean,vote}");    
@@ -231,11 +231,7 @@ base_learner* bs_setup(vw& all)
   data.lb = -FLT_MAX;
   data.B = (uint32_t)all.vm["bootstrap"].as<size_t>();
   
-  //append bs with number of samples to options_from_file so it is saved to regressor later
-  *all.file_options << " --bootstrap " << data.B;
-  
   std::string type_string("mean");
-  
   if (all.vm.count("bs_type"))
     {
       type_string = all.vm["bs_type"].as<std::string>();

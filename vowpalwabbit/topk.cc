@@ -100,7 +100,7 @@ void finish_example(vw& all, topk& d, example& ec)
 
 LEARNER::base_learner* topk_setup(vw& all)
 {
-  if (missing_option<size_t>(all, "top", "top k recommendation"))
+  if (missing_option<size_t, false>(all, "top", "top k recommendation"))
     return NULL;
   
   topk& data = calloc_or_die<topk>();

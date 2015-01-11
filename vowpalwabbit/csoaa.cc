@@ -65,23 +65,17 @@ using namespace COST_SENSITIVE;
 
 base_learner* csoaa_setup(vw& all)
 {
-  if (missing_option<size_t>(all, "csoaa", "One-against-all multiclass with <k> costs"))
+  if (missing_option<size_t, true>(all, "csoaa", "One-against-all multiclass with <k> costs"))
     return NULL;
   
   csoaa& c = calloc_or_die<csoaa>();
   c.all = &all;
   //first parse for number of actions
-  uint32_t nb_actions = 0;
-  
-  nb_actions = (uint32_t)all.vm["csoaa"].as<size_t>();
-  //append csoaa with nb_actions to file_options so it is saved to regressor later
-  *all.file_options << " --csoaa " << nb_actions;
-  
   all.p->lp = cs_label;
-  all.sd->k = nb_actions;
+  all.sd->k = (uint32_t)all.vm["csoaa"].as<size_t>();
   
   learner<csoaa>& l = init_learner(&c, setup_base(all), predict_or_learn<true>, 
-				   predict_or_learn<false>, nb_actions);
+				   predict_or_learn<false>, all.sd->k);
   l.set_finish_example(finish_example);
   return make_base(l);
 }
@@ -656,8 +650,8 @@ namespace LabelDict {
 
   base_learner* csldf_setup(vw& all)
   {
-    if (missing_option<string>(all, "csoaa_ldf", "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
-	&& missing_option<string>(all, "wap_ldf", "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline."))
+    if (missing_option<string, true>(all, "csoaa_ldf", "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
+	&& missing_option<string, true>(all, "wap_ldf", "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline."))
       return NULL;
     new_options(all, "LDF Options")
       ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file");
@@ -674,12 +668,10 @@ namespace LabelDict {
 
     if( vm.count("csoaa_ldf") ){
       ldf_arg = vm["csoaa_ldf"].as<string>();
-      *all.file_options << " --csoaa_ldf " << ldf_arg;
     }
     else {
       ldf_arg = vm["wap_ldf"].as<string>();
       ld.is_wap = true;
-      *all.file_options << " --wap_ldf " << ldf_arg;
     }
     if ( vm.count("ldf_override") )
       ldf_arg = vm["ldf_override"].as<string>();

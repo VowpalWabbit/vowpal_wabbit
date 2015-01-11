@@ -56,15 +56,13 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
 
 LEARNER::base_learner* oaa_setup(vw& all)
 {
-  if (missing_option<size_t>(all, "oaa", "One-against-all multiclass with <k> labels")) 
+  if (missing_option<size_t, true>(all, "oaa", "One-against-all multiclass with <k> labels")) 
     return NULL;
   
   oaa& data = calloc_or_die<oaa>();
   data.k = all.vm["oaa"].as<size_t>();
   data.shouldOutput = all.raw_prediction > 0;
   data.all = &all;
-  
-  *all.file_options << " --oaa " << data.k;
   
   LEARNER::learner<oaa>& l = 
     LEARNER::init_multiclass_learner(&data, setup_base(all), predict_or_learn<true>, 

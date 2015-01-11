@@ -307,7 +307,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
   base_learner* nn_setup(vw& all)
   {
-    if (missing_option<size_t>(all, "nn", "Sigmoidal feedforward network with <k> hidden units"))
+    if (missing_option<size_t, true>(all, "nn", "Sigmoidal feedforward network with <k> hidden units"))
       return NULL;
     new_options(all, "Neural Network options")
       ("inpass", "Train or test sigmoidal feedforward network with input passthrough.")
@@ -320,7 +320,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     n.all = &all;
     //first parse for number of hidden units
     n.k = (uint32_t)vm["nn"].as<size_t>();
-    *all.file_options << " --nn " << n.k;
 
     if ( vm.count("dropout") ) {
       n.dropout = true;

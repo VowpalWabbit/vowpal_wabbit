@@ -27,7 +27,7 @@ void predict_or_learn(char&, LEARNER::base_learner& base, example& ec) {
 
 LEARNER::base_learner* binary_setup(vw& all)
 {
-  if (missing_option(all, "binary", "report loss as binary classification on -1,1"))
+  if (missing_option(all, false, "binary", "report loss as binary classification on -1,1"))
     return NULL;
   
   LEARNER::learner<char>& ret = 
