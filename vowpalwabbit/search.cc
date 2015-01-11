@@ -1006,7 +1006,7 @@ namespace Search {
         if (priv.examples_dont_change)
           priv.learn_ec_ref = ecs;
         else {
-          size_t label_size = priv.is_ldf ? sizeof(CS::label) : sizeof(MC::label);
+          size_t label_size = priv.is_ldf ? sizeof(CS::label) : sizeof(MC::label_t);
           void (*label_copy_fn)(void*,void*) = priv.is_ldf ? CS::cs_label.copy_label : NULL;
           
           ensure_size(priv.learn_ec_copy, ec_cnt);
@@ -1467,7 +1467,7 @@ namespace Search {
   }
 
   bool mc_label_is_test(void* lab) {
-	  if (MC::label_is_test((MC::label*)lab) > 0)
+	  if (MC::label_is_test((MC::label_t*)lab) > 0)
 		  return true;
 	  else
 		  return false;

@@ -155,7 +155,7 @@ using namespace MultiWorldTesting;
   template <bool is_learn>
   void predict_or_learn_first(cbify& data, base_learner& base, example& ec)
   {//Explore tau times, then act according to optimal.
-    MULTICLASS::label ld = ec.l.multi;
+    MULTICLASS::label_t ld = ec.l.multi;
 
     data.cb_label.costs.erase();
     ec.l.cb = data.cb_label;
@@ -183,7 +183,7 @@ using namespace MultiWorldTesting;
   template <bool is_learn>
   void predict_or_learn_greedy(cbify& data, base_learner& base, example& ec)
   {//Explore uniform random an epsilon fraction of the time.
-    MULTICLASS::label ld = ec.l.multi;
+    MULTICLASS::label_t ld = ec.l.multi;
 
     data.cb_label.costs.erase();
     ec.l.cb = data.cb_label;
@@ -211,7 +211,7 @@ using namespace MultiWorldTesting;
   void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
   {//Randomize over predictions from a base set of predictors
     //Use CB to find current predictions.
-    MULTICLASS::label ld = ec.l.multi;
+    MULTICLASS::label_t ld = ec.l.multi;
 
     data.cb_label.costs.erase();
     ec.l.cb = data.cb_label;
@@ -282,7 +282,7 @@ using namespace MultiWorldTesting;
   void predict_or_learn_cover(cbify& data, base_learner& base, example& ec)
   {//Randomize over predictions from a base set of predictors
     //Use cost sensitive oracle to cover actions to form distribution.
-    MULTICLASS::label ld = ec.l.multi;
+    MULTICLASS::label_t ld = ec.l.multi;
 
     data.cs_label.costs.erase();
     for (uint32_t j = 0; j < data.k; j++)

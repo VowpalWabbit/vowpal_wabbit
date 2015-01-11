@@ -4,7 +4,7 @@
 
 namespace MULTICLASS {
 
-  char* bufread_label(label* ld, char* c)
+  char* bufread_label(label_t* ld, char* c)
   {
     ld->label = *(uint32_t *)c;
     c += sizeof(ld->label);
@@ -15,7 +15,7 @@ namespace MULTICLASS {
   
   size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   {
-    label* ld = (label*) v;
+    label_t* ld = (label_t*) v;
     char *c;
     size_t total = sizeof(ld->label)+sizeof(ld->weight);
     if (buf_read(cache, c, total) < total) 
@@ -27,11 +27,11 @@ namespace MULTICLASS {
   
   float weight(void* v)
   {
-    label* ld = (label*) v;
+    label_t* ld = (label_t*) v;
     return (ld->weight > 0) ? ld->weight : 0.f;
   }
   
-  char* bufcache_label(label* ld, char* c)
+  char* bufcache_label(label_t* ld, char* c)
   {
     *(uint32_t *)c = ld->label;
     c += sizeof(ld->label);
@@ -43,14 +43,14 @@ namespace MULTICLASS {
   void cache_label(void* v, io_buf& cache)
   {
     char *c;
-    label* ld = (label*) v;
+    label_t* ld = (label_t*) v;
     buf_write(cache, c, sizeof(ld->label)+sizeof(ld->weight));
     c = bufcache_label(ld,c);
   }
 
   void default_label(void* v)
   {
-    label* ld = (label*) v;
+    label_t* ld = (label_t*) v;
     ld->label = (uint32_t)-1;
     ld->weight = 1.;
   }
@@ -59,7 +59,7 @@ namespace MULTICLASS {
 
   void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
   {
-    label* ld = (label*)v;
+    label_t* ld = (label_t*)v;
 
     switch(words.size()) {
     case 0:
@@ -87,13 +87,13 @@ namespace MULTICLASS {
 				  cache_label, read_cached_label, 
 				  delete_label, weight, 
 				  NULL,
-				  sizeof(label)};
+				  sizeof(label_t)};
   
   void print_update(vw& all, example &ec)
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
-        label ld = ec.l.multi;
+        label_t ld = ec.l.multi;
         char label_buf[32];
         if (ld.label == INT_MAX)
           strcpy(label_buf," unknown");

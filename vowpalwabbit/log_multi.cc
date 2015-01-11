@@ -293,7 +293,7 @@ using namespace LEARNER;
 
   void predict(log_multi& b,  base_learner& base, example& ec)	
   {
-    MULTICLASS::label mc = ec.l.multi;
+    MULTICLASS::label_t mc = ec.l.multi;
 
     label_data simple_temp;
     simple_temp.initial = 0.0;
@@ -318,7 +318,7 @@ using namespace LEARNER;
     
     if((ec.l.multi.label != (uint32_t)-1) && !ec.test_only)	//if training the tree
       {
-	MULTICLASS::label mc = ec.l.multi;
+	MULTICLASS::label_t mc = ec.l.multi;
     
 	uint32_t class_index = 0;	
 	label_data simple_temp;

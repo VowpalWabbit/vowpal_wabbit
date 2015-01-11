@@ -225,7 +225,7 @@ size_t create_circuit(vw& all, ect& e, uint32_t max_label, uint32_t eliminations
   {
     if (e.k == 1)//nothing to do
       return;
-    MULTICLASS::label mc = ec.l.multi;
+    MULTICLASS::label_t mc = ec.l.multi;
   
     label_data simple_temp;
 
@@ -311,7 +311,7 @@ size_t create_circuit(vw& all, ect& e, uint32_t max_label, uint32_t eliminations
   }
 
   void predict(ect& e, base_learner& base, example& ec) {
-    MULTICLASS::label mc = ec.l.multi;
+    MULTICLASS::label_t mc = ec.l.multi;
     if (mc.label == 0 || (mc.label > e.k && mc.label != (uint32_t)-1))
       cout << "label " << mc.label << " is not in {1,"<< e.k << "} This won't work right." << endl;
     ec.pred.multiclass = ect_predict(e, base, ec);
@@ -320,7 +320,7 @@ size_t create_circuit(vw& all, ect& e, uint32_t max_label, uint32_t eliminations
 
   void learn(ect& e, base_learner& base, example& ec)
   {
-    MULTICLASS::label mc = ec.l.multi;
+    MULTICLASS::label_t mc = ec.l.multi;
     predict(e, base, ec);
     uint32_t pred = ec.pred.multiclass;
 

@@ -38,7 +38,7 @@ struct audit_data {
 
 typedef union {
   label_data simple;
-  MULTICLASS::label multi;
+  MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
   CB::label cb;
   CB_EVAL::label cb_eval;
