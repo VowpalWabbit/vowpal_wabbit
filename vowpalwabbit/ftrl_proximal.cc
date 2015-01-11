@@ -3,16 +3,6 @@
    individual contributors. All rights reserved.  Released under a BSD (revised)
    license as described in the file LICENSE.
    */
-#include <fstream>
-#include <float.h>
-#ifndef _WIN32
-#include <netdb.h>
-#endif
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
-#include <sys/timeb.h>
-#include <exception>
 #include "gd.h"
 
 using namespace std;
