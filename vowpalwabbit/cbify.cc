@@ -405,7 +405,7 @@ using namespace MultiWorldTesting;
 	  epsilon = vm["epsilon"].as<float>();
 	data.scorer.reset(new vw_cover_scorer(epsilon, cover, (u32)data.k));
 	data.generic_explorer.reset(new GenericExplorer<vw_context>(*data.scorer.get(), (u32)data.k));
-	l = &init_learner<MULTICLASS::label>(&data, base, predict_or_learn_cover<true>, 
+	l = &init_multiclass_learner(&data, base, predict_or_learn_cover<true>, 
 					     predict_or_learn_cover<false>, all.p, cover + 1);
       }
     else if (vm.count("bag"))
@@ -416,7 +416,7 @@ using namespace MultiWorldTesting;
 	    data.policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
 	  }
 	data.bootstrap_explorer.reset(new BootstrapExplorer<vw_context>(data.policies, (u32)data.k));
-	l = &init_learner<MULTICLASS::label>(&data, base, predict_or_learn_bag<true>, 
+	l = &init_multiclass_learner(&data, base, predict_or_learn_bag<true>, 
 					     predict_or_learn_bag<false>, all.p, bags);
       }
     else if (vm.count("first") )
@@ -424,7 +424,7 @@ using namespace MultiWorldTesting;
 	uint32_t tau = (uint32_t)vm["first"].as<size_t>();
 	data.policy.reset(new vw_policy());
 	data.tau_explorer.reset(new TauFirstExplorer<vw_context>(*data.policy.get(), (u32)tau, (u32)data.k));
-	l = &init_learner<MULTICLASS::label>(&data, base, predict_or_learn_first<true>, 
+	l = &init_multiclass_learner(&data, base, predict_or_learn_first<true>, 
 					     predict_or_learn_first<false>, all.p, 1);
       }
     else
@@ -434,8 +434,8 @@ using namespace MultiWorldTesting;
 	  epsilon = vm["epsilon"].as<float>();
 	data.policy.reset(new vw_policy());
 	data.greedy_explorer.reset(new EpsilonGreedyExplorer<vw_context>(*data.policy.get(), epsilon, (u32)data.k));
-	l = &init_learner<MULTICLASS::label>(&data, base, predict_or_learn_greedy<true>, 
-					     predict_or_learn_greedy<false>, all.p, 1);
+	l = &init_multiclass_learner(&data, base, predict_or_learn_greedy<true>, 
+				     predict_or_learn_greedy<false>, all.p, 1);
       }
     l->set_finish(finish);
     l->set_init_driver(init_driver);

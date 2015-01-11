@@ -365,7 +365,7 @@ base_learner* ect_setup(vw& all)
   
   size_t wpp = create_circuit(all, data, data.k, data.errors+1);
   
-  learner<ect>& l = init_learner<MULTICLASS::label>(&data, setup_base(all), learn, predict, all.p, wpp);
+  learner<ect>& l = init_multiclass_learner(&data, setup_base(all), learn, predict, all.p, wpp);
   l.set_finish(finish);
   return make_base(l);
 }

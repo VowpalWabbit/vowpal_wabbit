@@ -522,7 +522,7 @@ using namespace LEARNER;
 
     data.max_predictors = data.k - 1;
 
-      learner<log_multi>& l = init_learner<MULTICLASS::label>(&data, setup_base(all), learn, predict, all.p, data.max_predictors);
+    learner<log_multi>& l = init_multiclass_learner(&data, setup_base(all), learn, predict, all.p, data.max_predictors);
     l.set_save_load(save_load_tree);
     l.set_finish(finish);
     

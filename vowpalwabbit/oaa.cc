@@ -68,7 +68,7 @@ LEARNER::base_learner* oaa_setup(vw& all)
   *all.file_options << " --oaa " << data.k;
   
   LEARNER::learner<oaa>& l = 
-    LEARNER::init_learner<MULTICLASS::label>(&data, setup_base(all), predict_or_learn<true>, 
+    LEARNER::init_multiclass_learner(&data, setup_base(all), predict_or_learn<true>, 
 					     predict_or_learn<false>, all.p, data.k);
   return make_base(l);
 }
