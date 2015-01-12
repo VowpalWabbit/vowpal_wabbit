@@ -295,11 +295,7 @@ using namespace LEARNER;
   {
     MULTICLASS::label_t mc = ec.l.multi;
 
-    label_data simple_temp;
-    simple_temp.initial = 0.0;
-    simple_temp.weight = 0.0;	
-    simple_temp.label = FLT_MAX;
-    ec.l.simple = simple_temp;
+    ec.l.simple = {FLT_MAX, 0.f, 0.f};
     uint32_t cn = 0;
     while(b.nodes[cn].internal)
       {
@@ -322,11 +318,7 @@ using namespace LEARNER;
 	uint32_t start_pred = ec.pred.multiclass;
 
 	uint32_t class_index = 0;	
-	label_data simple_temp;
-	simple_temp.initial = 0.0;
-	simple_temp.weight = mc.weight;
-	ec.l.simple = simple_temp;	
-
+	ec.l.simple = {FLT_MAX, mc.weight, 0.f};
 	uint32_t cn = 0;
 	while(children(b, cn, class_index, mc.label))
 	  {	    
@@ -336,8 +328,8 @@ using namespace LEARNER;
 	
 	b.nodes[cn].min_count++;
 	update_min_count(b, cn);	
-	ec.l.multi = mc;
 	ec.pred.multiclass = start_pred;
+	ec.l.multi = mc;
       }
   }
   
