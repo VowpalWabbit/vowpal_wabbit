@@ -52,10 +52,6 @@ public:
     vw* all;
   };
   
-#ifdef _WIN32
-inline float fmax(float f1, float f2) { return (f1 < f2 ? f2 : f1); }
-inline float fmin(float f1, float f2) { return (f1 > f2 ? f2 : f1); }
-#endif
 
 #define MINEIRO_SPECIAL
 #ifdef MINEIRO_SPECIAL
