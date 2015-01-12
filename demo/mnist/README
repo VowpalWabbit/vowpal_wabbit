@@ -19,6 +19,13 @@ training.
         training time requirements: about 5 minutes on 1 core
         memory requirements: less than 256 megabytes
 
+  * make mnisthogwild.test.confusion
+      same as above but "hogwild" training (uses all cores)
+      results in test errors: 218 out of 10000
+        disk requirements: about 10 megabytes
+        training time requirements: about 3 minutes on 4 cores
+        memory requirements: less than 256 megabytes
+
   * make mnist8m.test.confusion
       this will download the mnist test set and the mnist8m training set
       train a neural network model on mnist8m from raw pixels

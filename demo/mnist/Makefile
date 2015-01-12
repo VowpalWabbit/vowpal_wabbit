@@ -62,6 +62,9 @@ extractfeatures: extractfeatures.cpp
 mnist.model: train-labels-idx1-ubyte.gz train-images-idx3-ubyte.gz extractfeatures zsh.check perl.check paste.check
 	./do-mnist-train
 
+mnisthogwild.model: train-labels-idx1-ubyte.gz train-images-idx3-ubyte.gz extractfeatures zsh.check perl.check paste.check
+	./do-mnist-hogwild-train
+
 mnist8m.model: train8m-labels-idx1-ubyte.gz train8m-images-idx3-ubyte.gz extractfeatures zsh.check perl.check paste.check
 	./do-mnist8m-train
 
