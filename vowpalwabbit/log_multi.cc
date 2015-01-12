@@ -316,10 +316,11 @@ using namespace LEARNER;
     if (ec.l.multi.label == (uint32_t)-1 || b.progress)
       predict(b,base,ec);
     
-    if((ec.l.multi.label != (uint32_t)-1) && !ec.test_only)	//if training the tree
+    if(ec.l.multi.label != (uint32_t)-1)	//if training the tree
       {
 	MULTICLASS::label_t mc = ec.l.multi;
-    
+	uint32_t start_pred = ec.pred.multiclass;
+
 	uint32_t class_index = 0;	
 	label_data simple_temp;
 	simple_temp.initial = 0.0;
@@ -327,7 +328,6 @@ using namespace LEARNER;
 	ec.l.simple = simple_temp;	
 
 	uint32_t cn = 0;
-
 	while(children(b, cn, class_index, mc.label))
 	  {	    
 	    train_node(b, base, ec, cn, class_index);
@@ -336,8 +336,8 @@ using namespace LEARNER;
 	
 	b.nodes[cn].min_count++;
 	update_min_count(b, cn);	
-	
 	ec.l.multi = mc;
+	ec.pred.multiclass = start_pred;
       }
   }
   
@@ -388,8 +388,7 @@ using namespace LEARNER;
   
   void finish(log_multi& b)
   {
-    save_node_stats(b);
-    cout << "used " << b.nbofswaps << " swaps" << endl;
+    //save_node_stats(b);
   }
   
   void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
@@ -489,41 +488,40 @@ using namespace LEARNER;
       }
   }
   
-  base_learner* log_multi_setup(vw& all)	//learner setup
-  {
-    if (missing_option<size_t, true>(all, "log_multi", "Use online tree for multiclass"))
-      return NULL;
-    new_options(all, "Logarithmic Time Multiclass options")
-      ("no_progress", "disable progressive validation")
-      ("swap_resistance", po::value<uint32_t>(), "higher = more resistance to swap, default=4");
-    add_options(all);
-
-    po::variables_map& vm = all.vm;
-
-    log_multi& data = calloc_or_die<log_multi>();
-    data.k = (uint32_t)vm["log_multi"].as<size_t>();
-    data.swap_resist = 4;
-
-    if (vm.count("swap_resistance"))
-      data.swap_resist = vm["swap_resistance"].as<uint32_t>();
+base_learner* log_multi_setup(vw& all)	//learner setup
+{
+  if (missing_option<size_t, true>(all, "log_multi", "Use online tree for multiclass"))
+    return NULL;
+  new_options(all, "Logarithmic Time Multiclass options")
+    ("no_progress", "disable progressive validation")
+    ("swap_resistance", po::value<uint32_t>(), "higher = more resistance to swap, default=4");
+  add_options(all);
+  
+  po::variables_map& vm = all.vm;
+  
+  log_multi& data = calloc_or_die<log_multi>();
+  data.k = (uint32_t)vm["log_multi"].as<size_t>();
+  data.swap_resist = 4;
+  
+  if (vm.count("swap_resistance"))
+    data.swap_resist = vm["swap_resistance"].as<uint32_t>();
+  
+  if (vm.count("no_progress"))
+    data.progress = false;
+  else
+    data.progress = true;
+  
+  string loss_function = "quantile"; 
+  float loss_parameter = 0.5;
+  delete(all.loss);
+  all.loss = getLossFunction(all, loss_function, loss_parameter);
+  
+  data.max_predictors = data.k - 1;
+  init_tree(data);	
+  
+  learner<log_multi>& l = init_multiclass_learner(&data, setup_base(all), learn, predict, all.p, data.max_predictors);
+  l.set_save_load(save_load_tree);
+  l.set_finish(finish);
     
-    if (vm.count("no_progress"))
-      data.progress = false;
-    else
-      data.progress = true;
-
-    string loss_function = "quantile"; 
-    float loss_parameter = 0.5;
-    delete(all.loss);
-    all.loss = getLossFunction(all, loss_function, loss_parameter);
-
-    data.max_predictors = data.k - 1;
-
-    learner<log_multi>& l = init_multiclass_learner(&data, setup_base(all), learn, predict, all.p, data.max_predictors);
-    l.set_save_load(save_load_tree);
-    l.set_finish(finish);
-    
-    init_tree(data);	
-    
-    return make_base(l);
-  }	
+  return make_base(l);
+}
