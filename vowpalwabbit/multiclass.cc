@@ -109,7 +109,7 @@ namespace MULTICLASS {
 
   void finish_example(vw& all, example& ec)
   {
-    size_t loss = 1;
+    float loss = 1;
     if (ec.l.multi.label == (uint32_t)ec.pred.multiclass)
       loss = 0;
     
