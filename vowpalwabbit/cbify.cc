@@ -9,125 +9,125 @@
 using namespace LEARNER;
 using namespace MultiWorldTesting;
 
-  struct vw_context;
-  void safety(v_array<float>& distribution, float min_prob);
+struct vw_context;
+void safety(v_array<float>& distribution, float min_prob);
 
-	class vw_policy : public IPolicy<vw_context>
-	{
-	public:
-		vw_policy() : m_index(-1) { }
-		vw_policy(size_t i) : m_index((int)i) { }
-		u32 Choose_Action(vw_context& ctx);
-	private:
-		int m_index;
-	};
+class vw_policy : public IPolicy<vw_context>
+{
+public:
+  vw_policy() : m_index(-1) { }
+  vw_policy(size_t i) : m_index((int)i) { }
+  u32 Choose_Action(vw_context& ctx);
+private:
+  int m_index;
+};
 
-  class vw_cover_scorer : public IScorer<vw_context>
-  {
-  public:
-    vw_cover_scorer(float epsilon, size_t cover, u32 num_actions) :
-      m_epsilon(epsilon), m_cover(cover), m_num_actions(num_actions), m_counter(1)
-    { 
-      m_scores = v_init<float>();
-      m_predictions = v_init<uint32_t>();
-      m_scores.resize(num_actions + 1);
-      m_predictions.resize(m_cover);
-    }
-
-    float Get_Epsilon() { return m_epsilon; }
-    size_t Get_Cover() { return m_cover; }
-    size_t Get_Counter() { return m_counter; }
-    v_array<uint32_t>& Get_Predictions() { return m_predictions; };
-    v_array<float>& Get_Scores()
-    { 
-      m_scores.erase();
-      for (size_t i = 0; i < m_num_actions; i++)
+class vw_cover_scorer : public IScorer<vw_context>
+{
+public:
+  vw_cover_scorer(float epsilon, size_t cover, u32 num_actions) :
+    m_epsilon(epsilon), m_cover(cover), m_num_actions(num_actions), m_counter(1)
+  { 
+    m_scores = v_init<float>();
+    m_predictions = v_init<uint32_t>();
+    m_scores.resize(num_actions + 1);
+    m_predictions.resize(m_cover);
+  }
+  
+  float Get_Epsilon() { return m_epsilon; }
+  size_t Get_Cover() { return m_cover; }
+  size_t Get_Counter() { return m_counter; }
+  v_array<uint32_t>& Get_Predictions() { return m_predictions; };
+  v_array<float>& Get_Scores()
+  { 
+    m_scores.erase();
+    for (size_t i = 0; i < m_num_actions; i++)
       {
         m_scores.push_back(0);
       }
-      return m_scores; 
-    };
-
-    vector<float> Score_Actions(vw_context& ctx);
-
-  private:
-    float m_epsilon;
-    size_t m_cover;
-    u32 m_num_actions;
-    size_t m_counter;
-    v_array<float> m_scores;
-    v_array<uint32_t> m_predictions;
-  };
-
-  class vw_recorder : public IRecorder<vw_context>
-  {
-  public:
-    void Record(vw_context& context, u32 action, float probability, string unique_key);
-    u32 Get_Action() { return m_action; }
-    float Get_Prob() { return m_prob; }
-  private:
-    u32 m_action;
-    float m_prob;
-  };
-
-  struct cbify {
-
-    size_t k;
-    
-    CB::label cb_label;
-    COST_SENSITIVE::label cs_label;
-    COST_SENSITIVE::label second_cs_label;
-
-    base_learner* cs;
-    vw* all;
-
-    unique_ptr<vw_policy> policy;
-    vector<unique_ptr<IPolicy<vw_context>>> policies;
-    unique_ptr<vw_cover_scorer> scorer;
-    unique_ptr<vw_recorder> recorder;
-    unique_ptr<MwtExplorer<vw_context>> mwt_explorer;
-    unique_ptr<TauFirstExplorer<vw_context>> tau_explorer;
-    unique_ptr<EpsilonGreedyExplorer<vw_context>> greedy_explorer;
-    unique_ptr<BootstrapExplorer<vw_context>> bootstrap_explorer;
-    unique_ptr<GenericExplorer<vw_context>> generic_explorer;
+    return m_scores; 
   };
   
-  float loss(uint32_t label, uint32_t final_prediction)
-  {
-    if (label != final_prediction)
-      return 1.;
-    else
-      return 0.;
-  }
+  vector<float> Score_Actions(vw_context& ctx);
+  
+private:
+  float m_epsilon;
+  size_t m_cover;
+  u32 m_num_actions;
+  size_t m_counter;
+  v_array<float> m_scores;
+  v_array<uint32_t> m_predictions;
+};
 
-  struct vw_context {
-	  base_learner* l;
-	  example* e;
-	  cbify* data;
-    bool recorded;
-  };
+class vw_recorder : public IRecorder<vw_context>
+{
+public:
+  void Record(vw_context& context, u32 action, float probability, string unique_key);
+  u32 Get_Action() { return m_action; }
+  float Get_Prob() { return m_prob; }
+private:
+  u32 m_action;
+  float m_prob;
+};
 
-  u32 vw_policy::Choose_Action(vw_context& ctx)
-  {
-    if (m_index == -1)
-      ctx.l->predict(*ctx.e);
-    else
-      ctx.l->predict(*ctx.e, (size_t)m_index);
-    ctx.recorded = false;
-    return (u32)(ctx.e->pred.multiclass);
-  }
+struct cbify {
+  
+  size_t k;
+  
+  CB::label cb_label;
+  COST_SENSITIVE::label cs_label;
+  COST_SENSITIVE::label second_cs_label;
+  
+  base_learner* cs;
+  vw* all;
+  
+  unique_ptr<vw_policy> policy;
+  vector<unique_ptr<IPolicy<vw_context>>> policies;
+  unique_ptr<vw_cover_scorer> scorer;
+  unique_ptr<vw_recorder> recorder;
+  unique_ptr<MwtExplorer<vw_context>> mwt_explorer;
+  unique_ptr<TauFirstExplorer<vw_context>> tau_explorer;
+  unique_ptr<EpsilonGreedyExplorer<vw_context>> greedy_explorer;
+  unique_ptr<BootstrapExplorer<vw_context>> bootstrap_explorer;
+  unique_ptr<GenericExplorer<vw_context>> generic_explorer;
+};
 
-  void vw_recorder::Record(vw_context& context, u32 action, float probability, string unique_key)
-  {
-    m_action = action;
-    m_prob = probability;
-    context.recorded = true;
-  }
+float loss(uint32_t label, uint32_t final_prediction)
+{
+  if (label != final_prediction)
+    return 1.;
+  else
+    return 0.;
+}
 
-  vector<float> vw_cover_scorer::Score_Actions(vw_context& ctx)
-  {
-    float additive_probability = 1.f / (float)m_cover;
-    for (size_t i = 0; i < m_cover; i++)
+struct vw_context {
+  base_learner* l;
+  example* e;
+  cbify* data;
+  bool recorded;
+};
+
+u32 vw_policy::Choose_Action(vw_context& ctx)
+{
+  if (m_index == -1)
+    ctx.l->predict(*ctx.e);
+  else
+    ctx.l->predict(*ctx.e, (size_t)m_index);
+  ctx.recorded = false;
+  return (u32)(ctx.e->pred.multiclass);
+}
+
+void vw_recorder::Record(vw_context& context, u32 action, float probability, string unique_key)
+{
+  m_action = action;
+  m_prob = probability;
+  context.recorded = true;
+}
+
+vector<float> vw_cover_scorer::Score_Actions(vw_context& ctx)
+{
+  float additive_probability = 1.f / (float)m_cover;
+  for (size_t i = 0; i < m_cover; i++)
     { //get predicted cost-sensitive predictions
       if (i == 0)
         ctx.data->cs->predict(*ctx.e, i);
@@ -137,109 +137,107 @@ using namespace MultiWorldTesting;
       m_scores[pred - 1] += additive_probability;
       m_predictions[i] = (uint32_t)pred;
     }
-    float min_prob = m_epsilon * min(1.f / ctx.data->k, 1.f / (float)sqrt(m_counter * ctx.data->k));
+  float min_prob = m_epsilon * min(1.f / ctx.data->k, 1.f / (float)sqrt(m_counter * ctx.data->k));
+  
+  safety(m_scores, min_prob);
+  
+  vector<float> scores;
+  for (size_t i = 0; i < ctx.data->k; i++)
+    scores.push_back(m_scores[i]);
+  
+  m_counter++;
+  
+  return scores;
+}
 
-    safety(m_scores, min_prob);
-
-    vector<float> scores;
-    for (size_t i = 0; i < ctx.data->k; i++)
+template <bool is_learn>
+void predict_or_learn_first(cbify& data, base_learner& base, example& ec)
+{//Explore tau times, then act according to optimal.
+  MULTICLASS::label_t ld = ec.l.multi;
+  
+  data.cb_label.costs.erase();
+  ec.l.cb = data.cb_label;
+  //Use CB to find current prediction for remaining rounds.
+  
+  vw_context vwc;
+  vwc.l = &base;
+  vwc.e = &ec;
+  
+  uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer.get(), to_string((unsigned long long)ec.example_counter), vwc);
+  ec.loss = loss(ld.label, action);
+  
+  if (vwc.recorded && is_learn)
     {
-      scores.push_back(m_scores[i]);
-    }
-
-    m_counter++;
-
-    return scores;
-  }
-
-  template <bool is_learn>
-  void predict_or_learn_first(cbify& data, base_learner& base, example& ec)
-  {//Explore tau times, then act according to optimal.
-    MULTICLASS::label_t ld = ec.l.multi;
-
-    data.cb_label.costs.erase();
-    ec.l.cb = data.cb_label;
-    //Use CB to find current prediction for remaining rounds.
-
-    vw_context vwc;
-    vwc.l = &base;
-    vwc.e = &ec;
-    
-    uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer.get(), to_string((unsigned long long)ec.example_counter), vwc);
-    ec.loss = loss(ld.label, action);
-    
-    if (vwc.recorded && is_learn)
-      {
-	CB::cb_class l = {ec.loss, action, 1.f / data.k, 0};
-	data.cb_label.costs.push_back(l);
-	base.learn(ec);
-	ec.loss = l.cost;
-      }
-    
-    ec.pred.multiclass = action;
-    ec.l.multi = ld;
-  }
-
-  template <bool is_learn>
-  void predict_or_learn_greedy(cbify& data, base_learner& base, example& ec)
-  {//Explore uniform random an epsilon fraction of the time.
-    MULTICLASS::label_t ld = ec.l.multi;
-
-    data.cb_label.costs.erase();
-    ec.l.cb = data.cb_label;
-    
-    vw_context vwc;
-    vwc.l = &base;
-    vwc.e = &ec;
-    data.mwt_explorer->Choose_Action(*data.greedy_explorer.get(), to_string((unsigned long long)ec.example_counter), vwc);
-    
-    u32 action = data.recorder->Get_Action();
-    float prob = data.recorder->Get_Prob();
-    
-    CB::cb_class l = { loss(ld.label, action), action, prob };
-    data.cb_label.costs.push_back(l);
-    
-    if (is_learn)
+      CB::cb_class l = {ec.loss, action, 1.f / data.k, 0};
+      data.cb_label.costs.push_back(l);
       base.learn(ec);
-    
-    ec.pred.multiclass = action;
-    ec.l.multi = ld;
-    ec.loss = loss(ld.label, action);
-  }
+      ec.loss = l.cost;
+    }
+  
+  ec.pred.multiclass = action;
+  ec.l.multi = ld;
+}
 
-  template <bool is_learn>
-  void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
-  {//Randomize over predictions from a base set of predictors
-    //Use CB to find current predictions.
-    MULTICLASS::label_t ld = ec.l.multi;
+template <bool is_learn>
+void predict_or_learn_greedy(cbify& data, base_learner& base, example& ec)
+{//Explore uniform random an epsilon fraction of the time.
+  MULTICLASS::label_t ld = ec.l.multi;
+  
+  data.cb_label.costs.erase();
+  ec.l.cb = data.cb_label;
+  
+  vw_context vwc;
+  vwc.l = &base;
+  vwc.e = &ec;
+  data.mwt_explorer->Choose_Action(*data.greedy_explorer.get(), to_string((unsigned long long)ec.example_counter), vwc);
+  
+  u32 action = data.recorder->Get_Action();
+  float prob = data.recorder->Get_Prob();
+  
+  CB::cb_class l = { loss(ld.label, action), action, prob };
+  data.cb_label.costs.push_back(l);
+  
+  if (is_learn)
+    base.learn(ec);
+  
+  ec.pred.multiclass = action;
+  ec.l.multi = ld;
+  ec.loss = loss(ld.label, action);
+}
 
-    data.cb_label.costs.erase();
-    ec.l.cb = data.cb_label;
-
-    vw_context context;
-    context.l = &base;
-    context.e = &ec;
-    uint32_t action = data.mwt_explorer->Choose_Action(*data.bootstrap_explorer.get(), to_string((unsigned long long)ec.example_counter), context);
-    
-    assert(action != 0);
-    if (is_learn)
-      {
-	assert(action == data.recorder->Get_Action());
-	float probability = data.recorder->Get_Prob();
-	
-	CB::cb_class l = {loss(ld.label, action), 
-			  action, probability};
-	data.cb_label.costs.push_back(l);
-	for (size_t i = 0; i < data.policies.size(); i++)
-	  {
-	    uint32_t count = BS::weight_gen();
-	    for (uint32_t j = 0; j < count; j++)
-	      base.learn(ec,i);
-	  }
-      }
-    ec.pred.multiclass = action;
-    ec.l.multi = ld;
-  }
+template <bool is_learn>
+void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
+{//Randomize over predictions from a base set of predictors
+  //Use CB to find current predictions.
+  MULTICLASS::label_t ld = ec.l.multi;
+  
+  data.cb_label.costs.erase();
+  ec.l.cb = data.cb_label;
+  
+  vw_context context;
+  context.l = &base;
+  context.e = &ec;
+  uint32_t action = data.mwt_explorer->Choose_Action(*data.bootstrap_explorer.get(), to_string((unsigned long long)ec.example_counter), context);
+  
+  assert(action != 0);
+  if (is_learn)
+    {
+      assert(action == data.recorder->Get_Action());
+      float probability = data.recorder->Get_Prob();
+      
+      CB::cb_class l = {loss(ld.label, action), 
+			action, probability};
+      data.cb_label.costs.push_back(l);
+      for (size_t i = 0; i < data.policies.size(); i++)
+	{
+	  uint32_t count = BS::weight_gen();
+	  for (uint32_t j = 0; j < count; j++)
+	    base.learn(ec,i);
+	}
+    }
+  ec.pred.multiclass = action;
+  ec.l.multi = ld;
+}
   
   void safety(v_array<float>& distribution, float min_prob)
   {
