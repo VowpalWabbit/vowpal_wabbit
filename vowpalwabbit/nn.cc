@@ -26,6 +26,8 @@ namespace NN {
     uint32_t k;
     loss_function* squared_loss;
     example output_layer;
+    example hiddenbias;
+    example outputweight;
     float prediction;
     size_t increment;
     bool dropout;
@@ -86,6 +88,25 @@ namespace NN {
 
     n.output_layer.in_use = true;
 
+    // TODO: not correct if --noconstant
+    memset (&n.hiddenbias, 0, sizeof (n.hiddenbias));
+    n.hiddenbias.indices.push_back(constant_namespace);
+    feature temp = {1,(uint32_t) constant};
+    n.hiddenbias.atomics[constant_namespace].push_back(temp);
+    n.hiddenbias.total_sum_feat_sq++;
+    n.hiddenbias.l.simple.label = FLT_MAX;
+    n.hiddenbias.l.simple.weight = 1;
+    n.hiddenbias.in_use = true;
+
+    memset (&n.outputweight, 0, sizeof (n.outputweight));
+    n.outputweight.indices.push_back(nn_output_namespace);
+    n.outputweight.atomics[nn_output_namespace].push_back(n.output_layer.atomics[nn_output_namespace][0]);
+    n.outputweight.atomics[nn_output_namespace][0].x = 1;
+    n.outputweight.total_sum_feat_sq++;
+    n.outputweight.l.simple.label = FLT_MAX;
+    n.outputweight.l.simple.weight = 1;
+    n.outputweight.in_use = true;
+
     n.finished_setup = true;
   }
 
@@ -127,18 +148,20 @@ namespace NN {
     n.all->sd->min_label = hidden_min_activation;
     save_max_label = n.all->sd->max_label;
     n.all->sd->max_label = hidden_max_activation;
+
+    n.hiddenbias.ft_offset = ec.ft_offset;
+
     for (unsigned int i = 0; i < n.k; ++i)
       {
-        uint32_t biasindex = (uint32_t) constant * (n.all->wpp << n.all->reg.stride_shift) + i * (uint32_t)n.increment + ec.ft_offset;
-        weight* w = &n.all->reg.weight_vector[biasindex & n.all->reg.weight_mask];
-        
-        // avoid saddle point at 0
-        if (*w == 0)
-          {
-            w[0] = (float) (frand48 () - 0.5);
+        base.predict(n.hiddenbias, i);
+        float wf = n.hiddenbias.pred.scalar;
 
-            if (n.dropout && n.all->normalized_updates)
-              w[n.all->normalized_idx] = 1e-4f;
+        // avoid saddle point at 0
+        if (wf == 0)
+          {
+            n.hiddenbias.l.simple.label = (float) (frand48 () - 0.5);
+            base.learn(n.hiddenbias, i);
+            n.hiddenbias.l.simple.label = FLT_MAX;
           }
 
 	base.predict(ec, i);
@@ -167,6 +190,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     n.output_layer.total_sum_feat_sq = 1;
     n.output_layer.sum_feat_sq[nn_output_namespace] = 1;
 
+    n.outputweight.ft_offset = ec.ft_offset;
+
     for (unsigned int i = 0; i < n.k; ++i)
       {
         float sigmah = 
@@ -176,17 +201,22 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         n.output_layer.total_sum_feat_sq += sigmah * sigmah;
         n.output_layer.sum_feat_sq[nn_output_namespace] += sigmah * sigmah;
 
-        uint32_t nuindex = n.output_layer.atomics[nn_output_namespace][i].weight_index + (n.k * (uint32_t)n.increment) + ec.ft_offset;
-        weight* w = &n.all->reg.weight_vector[nuindex & n.all->reg.weight_mask];
-        
-        // avoid saddle point at 0
-        if (*w == 0)
-          {
-            float sqrtk = sqrt ((float)n.k);
-            w[0] = (float) (frand48 () - 0.5) / sqrtk;
+        n.outputweight.atomics[nn_output_namespace][0].weight_index = 
+          n.output_layer.atomics[nn_output_namespace][i].weight_index;
+        base.predict(n.outputweight, n.k);
+        float wf = n.outputweight.pred.scalar;
 
-            if (n.dropout && n.all->normalized_updates)
-              w[n.all->normalized_idx] = 1e-4f;
+        // avoid saddle point at 0
+        if (wf == 0)
+          {    
+            n.all->loss = n.squared_loss;
+
+            float sqrtk = sqrt ((float)n.k);
+            n.outputweight.l.simple.label = (float) (frand48 () - 0.5) / sqrtk;
+            base.learn(n.outputweight, n.k);
+            n.outputweight.l.simple.label = FLT_MAX;
+
+            n.all->loss = save_loss;
           }
       }
 
@@ -248,8 +278,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
             float sigmah = 
               n.output_layer.atomics[nn_output_namespace][i].x / dropscale;
             float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-            uint32_t nuindex = n.output_layer.atomics[nn_output_namespace][i].weight_index + (n.k * (uint32_t)n.increment) + ec.ft_offset;
-            float nu = n.all->reg.weight_vector[nuindex & n.all->reg.weight_mask];
+            n.outputweight.atomics[nn_output_namespace][0].weight_index = 
+              n.output_layer.atomics[nn_output_namespace][i].weight_index;
+            base.predict(n.outputweight, n.k);
+            float nu = n.outputweight.pred.scalar;
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
             ec.l.simple.label = GD::finalize_prediction (n.all->sd, hidden_units[i] - gradhw);
@@ -304,8 +336,9 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   void finish(nn& n)
   {
     delete n.squared_loss;
-    free (n.output_layer.indices.begin);
-    free (n.output_layer.atomics[nn_output_namespace].begin);
+    dealloc_example (NULL, n.output_layer);
+    dealloc_example (NULL, n.hiddenbias);
+    dealloc_example (NULL, n.outputweight);
   }
 
   base_learner* setup(vw& all)

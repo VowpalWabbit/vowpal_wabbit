@@ -4,14 +4,14 @@ CXXFLAGS=-O3 -Wall
 help:
 	@cat README
 
-RAW = mnist mnist8m
+RAW = mnist mnisthogwild mnist8m
 PNG = mnistpng mnist11png mnist8mpng mnist8m11png
 
 raw : $(addsuffix .test.confusion, $(RAW))
 
 png : $(addsuffix .test.confusion, $(PNG))
 
-MNIST = mnist mnistpng mnist11png
+MNIST = mnist mnisthogwild mnistpng mnist11png
 8M = mnist8m mnist8mpng mnist8m11png
 
 mnist : $(addsuffix .test.confusion, $(MNIST))
@@ -40,9 +40,11 @@ infimnist : infimnist.tar.gz
 	tar xvfz $<
 	make -C $@
 
-train8m-%.gz: infimnist
-	cd infimnist && ./infimnist lab 10000 8109999 | gzip > ../train8m-labels-idx1-ubyte.gz
-	cd infimnist && ./infimnist pat 10000 8109999 | gzip > ../train8m-images-idx3-ubyte.gz
+train8m-labels-idx1-ubyte.gz: infimnist
+	(cd infimnist && ./infimnist lab 10000 8109999) | gzip > $@
+
+train8m-images-idx3-ubyte.gz: infimnist
+	(cd infimnist && ./infimnist pat 10000 8109999) | gzip > $@
 
 train-%.gz: wget.check
 	wget http://yann.lecun.com/exdb/mnist/train-$*.gz

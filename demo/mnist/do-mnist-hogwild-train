@@ -43,7 +43,7 @@ SHUFFLE='BEGIN { srand 69; };
          print $b[$i] if $b[$i];
          $b[$i] = $_; } { print grep { defined $_ } @b;'
 
-( for pass in $(seq 1 14)
+( for pass in $(seq 1 24)
   do
     paste -d' '                                                         \
       <(gunzip -c train-labels-idx1-ubyte.gz | ./extract-labels)        \
