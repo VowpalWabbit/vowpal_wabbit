@@ -7,10 +7,7 @@ license as described in the file LICENSE.
 
 #include "vw.h"
 #include "reductions.h"
-#include "cost_sensitive.h"
-#include "cb.h"
 #include "cb_algs.h"
-#include "simple_label.h"
 
 using namespace LEARNER;
 
@@ -20,8 +17,6 @@ using namespace LEARNER;
 
 using namespace CB;
 
-namespace CB_ALGS
-{
   struct cb {
     size_t cb_type;
     COST_SENSITIVE::label cb_cs_ld; 
@@ -150,7 +145,7 @@ namespace CB_ALGS
         wc.wap_value = 0.;
       
         //get cost prediction for this action
-        wc.x = get_cost_pred<is_learn>(all, c.known_cost, ec, i, 0);
+        wc.x = CB_ALGS::get_cost_pred<is_learn>(all, c.known_cost, ec, i, 0);
 	if (wc.x < min)
 	  {
 	    min = wc.x;
@@ -179,7 +174,7 @@ namespace CB_ALGS
         wc.wap_value = 0.;
       
         //get cost prediction for this action
-        wc.x = get_cost_pred<is_learn>(all, c.known_cost, ec, cl->action, 0);
+        wc.x = CB_ALGS::get_cost_pred<is_learn>(all, c.known_cost, ec, cl->action, 0);
 	if (wc.x < min || (wc.x == min && cl->action < argmin))
 	  {
 	    min = wc.x;
@@ -211,7 +206,7 @@ namespace CB_ALGS
     wc.wap_value = 0.;
     
     //get cost prediction for this label
-    wc.x = get_cost_pred<is_learn>(all, c.known_cost, ec, label, all.sd->k);
+    wc.x = CB_ALGS::get_cost_pred<is_learn>(all, c.known_cost, ec, label, all.sd->k);
     wc.class_index = label;
     wc.partial_prediction = 0.;
     wc.wap_value = 0.;
@@ -302,12 +297,7 @@ namespace CB_ALGS
     ec.pred.multiclass = ec.l.cb_eval.action;
   }
   
-  void init_driver(cb&)
-  {
-    fprintf(stderr, "*estimate* *estimate*                                                avglossreg last pred  last correct\n");
-  }
-
-  void print_update(vw& all, cb& c, bool is_test, example& ec)
+  void print_update(vw& all, bool is_test, example& ec)
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
@@ -316,49 +306,11 @@ namespace CB_ALGS
           strcpy(label_buf," unknown");
         else
           sprintf(label_buf," known");
+	char pred_buf[32];
+	sprintf(pred_buf,"%8lu",(long unsigned int)ec.pred.multiclass);
 
-        if(!all.holdout_set_off && all.current_pass >= 1)
-        {
-          if(all.sd->holdout_sum_loss == 0. && all.sd->weighted_holdout_examples == 0.)
-            fprintf(stderr, " unknown   ");
-          else
-	    fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples);
-
-          if(all.sd->holdout_sum_loss_since_last_dump == 0. && all.sd->weighted_holdout_examples_since_last_dump == 0.)
-            fprintf(stderr, " unknown   ");
-          else
-	    fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss_since_last_dump/all.sd->weighted_holdout_examples_since_last_dump);
-        
-          fprintf(stderr, "%8ld %8.1f   %s %8lu %8lu   %-10.6f %-10.6f %-10.6f h\n",
-	      (long int)all.sd->example_number,
-	      all.sd->weighted_examples,
-	      label_buf,
-              (long unsigned int)ec.pred.multiclass,
-              (long unsigned int)ec.num_features,
-              c.avg_loss_regressors,
-              c.last_pred_reg,
-              c.last_correct_cost);
-
-          all.sd->weighted_holdout_examples_since_last_dump = 0;
-          all.sd->holdout_sum_loss_since_last_dump = 0.0;
-        }
-        else
-          fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8lu %8lu   %-10.6f %-10.6f %-10.6f\n",
-                all.sd->sum_loss/all.sd->weighted_examples,
-                all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
-                (long int)all.sd->example_number,
-                all.sd->weighted_examples,
-                label_buf,
-                (long unsigned int)ec.pred.multiclass,
-                (long unsigned int)ec.num_features,
-                c.avg_loss_regressors,
-                c.last_pred_reg,
-                c.last_correct_cost);
-     
-        all.sd->sum_loss_since_last_dump = 0.0;
-        all.sd->old_weighted_examples = all.sd->weighted_examples;
-	fflush(stderr);
-        VW::update_dump_interval(all);
+	all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf, 
+			     ec.num_features, all.progress_add, all.progress_arg);
       }
   }
 
@@ -389,31 +341,12 @@ namespace CB_ALGS
         loss = chosen_loss;
       }
 
-    if(ec.test_only)
-    {
-      all.sd->weighted_holdout_examples += 1.;//test weight seen
-      all.sd->weighted_holdout_examples_since_last_dump += 1.;
-      all.sd->weighted_holdout_examples_since_last_pass += 1.;
-      all.sd->holdout_sum_loss += loss;
-      all.sd->holdout_sum_loss_since_last_dump += loss;
-      all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass
-    }
-    else
-    {
-      all.sd->sum_loss += loss;
-      all.sd->sum_loss_since_last_dump += loss;
-      all.sd->weighted_examples += 1.;
-      all.sd->total_features += ec.num_features;
-      all.sd->example_number++;
-    }
+    all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
 
-    for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
-      {
-        int f = all.final_prediction_sink[i];
-        all.print(f, (float)ec.pred.multiclass, 0, ec.tag);
-      }
+    for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+      all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
 
-    print_update(all, c, is_test_label(ld), ec);
+    print_update(all, is_test_label(ld), ec);
   }
 
   void finish(cb& c)
@@ -431,12 +364,11 @@ namespace CB_ALGS
     VW::finish_example(all, &ec);
   }
 
-  base_learner* setup(vw& all)
+  base_learner* cb_algs_setup(vw& all)
   {
+    if (missing_option<size_t, true>(all, "cb", "Use contextual bandit learning with <k> costs"))
+      return NULL;
     new_options(all, "CB options")
-      ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs");
-    if (missing_required(all)) return NULL;
-    new_options(all)
       ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}")
       ("eval", "Evaluate a policy rather than optimizing.");
     add_options(all);
@@ -445,8 +377,6 @@ namespace CB_ALGS
     c.all = &all;
 
     uint32_t nb_actions = (uint32_t)all.vm["cb"].as<size_t>();
-
-    *all.file_options << " --cb " << nb_actions;
 
     all.sd->k = nb_actions;
 
@@ -520,8 +450,6 @@ namespace CB_ALGS
     // _adding_ to the number of problems rather than multiplying.
     l->increment = base->increment; 
     
-    l->set_init_driver(init_driver);
     l->set_finish(finish);
     return make_base(*l);
   }
-}

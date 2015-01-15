@@ -1,6 +1,4 @@
-#include "global_data.h"
 #include "parser.h"
-#include "learner.h"
 #include "vw.h"
 #include "parse_regressor.h"
 

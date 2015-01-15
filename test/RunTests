@@ -1090,3 +1090,7 @@ __DATA__
 # Test 74: cb evaluation
 {VW} -d train-sets/rcv1_cb_eval --cb 2 --eval
     train-sets/ref/rcv1_cb_eval.stderr
+
+# Test 75: Log_multi 
+{VW} --log_multi 10 train-sets/multiclass 
+    train-sets/ref/log_multi.stderr

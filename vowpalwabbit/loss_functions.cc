@@ -10,7 +10,6 @@ license as described in the file LICENSE.
 #include<float.h>
 using namespace std;
 
-#include "loss_functions.h"
 #include "global_data.h"
 
 class squaredloss : public loss_function {

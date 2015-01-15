@@ -11,10 +11,7 @@ license as described in the file LICENSE.
 #include <assert.h>
 
 #include "global_data.h"
-#include "simple_label.h"
-#include "parser.h"
 #include "gd.h"
-#include "memory.h"
 
 using namespace std;
 
@@ -235,7 +232,7 @@ void add_options(vw& all)
   delete all.new_opts;
 }
 
-bool missing_required(vw& all)
+bool no_new_options(vw& all)
 {
   //parse local opts once for notifications.
   po::parsed_options parsed = po::command_line_parser(all.args).
@@ -252,6 +249,16 @@ bool missing_required(vw& all)
     return true;
   else
     return false;
+}
+
+bool missing_option(vw& all, bool keep, const char* name, const char* description)
+{
+  new_options(all)(name,description);
+  if (no_new_options(all))
+    return true;
+  if (keep)
+    *all.file_options << " --" << name;
+  return false;
 }
 
 vw::vw()

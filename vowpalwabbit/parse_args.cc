@@ -8,14 +8,11 @@ license as described in the file LICENSE.
 #include <sstream>
 #include <fstream>
 
-#include "cache.h"
-#include "io_buf.h"
 #include "parse_regressor.h"
 #include "parser.h"
-#include "parse_args.h"
+#include "vw.h"
+
 #include "sender.h"
-#include "network.h"
-#include "global_data.h"
 #include "nn.h"
 #include "gd.h"
 #include "cbify.h"
@@ -25,7 +22,6 @@ license as described in the file LICENSE.
 #include "topk.h"
 #include "ect.h"
 #include "csoaa.h"
-#include "cb.h"
 #include "cb_algs.h"
 #include "scorer.h"
 #include "search.h"
@@ -35,15 +31,12 @@ license as described in the file LICENSE.
 #include "print.h"
 #include "gd_mf.h"
 #include "mf.h"
-#include "vw.h"
 #include "ftrl_proximal.h"
 #include "rand48.h"
-#include "parse_args.h"
 #include "binary.h"
 #include "lrq.h"
 #include "autolink.h"
 #include "log_multi.h"
-#include "memory.h"
 #include "stagewise_poly.h"
 #include "active.h"
 #include "kernel_svm.h"
@@ -738,38 +731,40 @@ LEARNER::base_learner* setup_base(vw& all)
 
 void parse_reductions(vw& all)
 {
+  new_options(all, "Reduction options, use [option] --help for more info");
+  add_options(all);
   //Base algorithms
   all.reduction_stack.push_back(GD::setup);
-  all.reduction_stack.push_back(KSVM::setup);
-  all.reduction_stack.push_back(FTRL::setup);
-  all.reduction_stack.push_back(SENDER::setup);
-  all.reduction_stack.push_back(GDMF::setup);
-  all.reduction_stack.push_back(PRINT::setup);
-  all.reduction_stack.push_back(NOOP::setup);
-  all.reduction_stack.push_back(LDA::setup);
-  all.reduction_stack.push_back(BFGS::setup);
+  all.reduction_stack.push_back(kernel_svm_setup);
+  all.reduction_stack.push_back(ftrl_setup);
+  all.reduction_stack.push_back(sender_setup);
+  all.reduction_stack.push_back(gd_mf_setup);
+  all.reduction_stack.push_back(print_setup);
+  all.reduction_stack.push_back(noop_setup);
+  all.reduction_stack.push_back(lda_setup);
+  all.reduction_stack.push_back(bfgs_setup);
 
   //Score Users
-  all.reduction_stack.push_back(ACTIVE::setup);
-  all.reduction_stack.push_back(NN::setup);
-  all.reduction_stack.push_back(MF::setup);
-  all.reduction_stack.push_back(ALINK::setup);
-  all.reduction_stack.push_back(LRQ::setup);
-  all.reduction_stack.push_back(StagewisePoly::setup);
-  all.reduction_stack.push_back(Scorer::setup);
+  all.reduction_stack.push_back(active_setup);
+  all.reduction_stack.push_back(nn_setup);
+  all.reduction_stack.push_back(mf_setup);
+  all.reduction_stack.push_back(autolink_setup);
+  all.reduction_stack.push_back(lrq_setup);
+  all.reduction_stack.push_back(stagewise_poly_setup);
+  all.reduction_stack.push_back(scorer_setup);
 
   //Reductions
-  all.reduction_stack.push_back(BINARY::setup);
-  all.reduction_stack.push_back(TOPK::setup);
-  all.reduction_stack.push_back(OAA::setup);
-  all.reduction_stack.push_back(ECT::setup);
-  all.reduction_stack.push_back(LOG_MULTI::setup);
-  all.reduction_stack.push_back(CSOAA::setup);
-  all.reduction_stack.push_back(CSOAA_AND_WAP_LDF::setup);
-  all.reduction_stack.push_back(CB_ALGS::setup);
-  all.reduction_stack.push_back(CBIFY::setup);
+  all.reduction_stack.push_back(binary_setup);
+  all.reduction_stack.push_back(topk_setup);
+  all.reduction_stack.push_back(oaa_setup);
+  all.reduction_stack.push_back(ect_setup);
+  all.reduction_stack.push_back(log_multi_setup);
+  all.reduction_stack.push_back(csoaa_setup);
+  all.reduction_stack.push_back(csldf_setup);
+  all.reduction_stack.push_back(cb_algs_setup);
+  all.reduction_stack.push_back(cbify_setup);
   all.reduction_stack.push_back(Search::setup);
-  all.reduction_stack.push_back(BS::setup);
+  all.reduction_stack.push_back(bs_setup);
 
   all.l = setup_base(all);
 }

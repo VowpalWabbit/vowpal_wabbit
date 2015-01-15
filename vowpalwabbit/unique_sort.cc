@@ -3,7 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#include "global_data.h"
+#include "example.h"
 
 int order_features(const void* first, const void* second)
 { return ((feature*)first)->weight_index - ((feature*)second)->weight_index;}

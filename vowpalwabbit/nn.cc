@@ -9,35 +9,32 @@ license as described in the file LICENSE.
 #include <sstream>
 
 #include "reductions.h"
-#include "constant.h"
-#include "simple_label.h"
 #include "rand48.h"
 #include "gd.h"
 
 using namespace std;
 using namespace LEARNER;
 
-namespace NN {
-  const float hidden_min_activation = -3;
-  const float hidden_max_activation = 3;
-  const uint32_t nn_constant = 533357803;
+const float hidden_min_activation = -3;
+const float hidden_max_activation = 3;
+const uint32_t nn_constant = 533357803;
   
-  struct nn {
-    uint32_t k;
-    loss_function* squared_loss;
-    example output_layer;
-    example hiddenbias;
-    example outputweight;
-    float prediction;
-    size_t increment;
-    bool dropout;
-    uint64_t xsubi;
-    uint64_t save_xsubi;
-    bool inpass;
-    bool finished_setup;
+struct nn {
+  uint32_t k;
+  loss_function* squared_loss;
+  example output_layer;
+  example hiddenbias;
+  example outputweight;
+  float prediction;
+  size_t increment;
+  bool dropout;
+  uint64_t xsubi;
+  uint64_t save_xsubi;
+  bool inpass;
+  bool finished_setup;
 
-    vw* all;
-  };
+  vw* all;
+};
 
 #define cast_uint32_t static_cast<uint32_t>
 
@@ -341,23 +338,21 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     dealloc_example (NULL, n.outputweight);
   }
 
-  base_learner* setup(vw& all)
+  base_learner* nn_setup(vw& all)
   {
+    if (missing_option<size_t, true>(all, "nn", "Sigmoidal feedforward network with <k> hidden units"))
+      return NULL;
     new_options(all, "Neural Network options")
-      ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units");
-    if(missing_required(all)) return NULL;
-    new_options(all)
       ("inpass", "Train or test sigmoidal feedforward network with input passthrough.")
       ("dropout", "Train or test sigmoidal feedforward network using dropout.")
       ("meanfield", "Train or test sigmoidal feedforward network using mean field.");
     add_options(all);
-
+    
     po::variables_map& vm = all.vm;
     nn& n = calloc_or_die<nn>();
     n.all = &all;
     //first parse for number of hidden units
     n.k = (uint32_t)vm["nn"].as<size_t>();
-    *all.file_options << " --nn " << n.k;
 
     if ( vm.count("dropout") ) {
       n.dropout = true;
@@ -409,4 +404,3 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     return make_base(l);
   }
-}

@@ -45,19 +45,11 @@ int getpid()
 #include <assert.h>
 namespace po = boost::program_options;
 
-#include "parser.h"
-#include "global_data.h"
 #include "parse_example.h"
 #include "cache.h"
-#include "gd.h"
-#include "comp_io.h"
 #include "unique_sort.h"
 #include "constant.h"
-#include "example.h"
-#include "simple_label.h"
-#include "cost_sensitive.h"
 #include "vw.h"
-#include "memory.h"
 
 using namespace std;
 

@@ -17,12 +17,8 @@ Implementation by Miro Dudik.
 #include <stdio.h>
 #include <assert.h>
 #include <sys/timeb.h>
-#include "constant.h"
-#include "simple_label.h"
 #include "accumulate.h"
-#include "vw.h"
 #include "gd.h"
-#include "reductions.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -56,9 +52,6 @@ class curv_exception: public exception {} curv_ex;
 // w[2] = step direction
 // w[3] = preconditioner
   
-namespace BFGS 
-
-{
   const float max_precond_ratio = 100.f;
 
   struct bfgs {
@@ -968,13 +961,12 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     b.backstep_on = true;
   }
 
-base_learner* setup(vw& all)
+base_learner* bfgs_setup(vw& all)
 {
+  if (missing_option(all, false, "bfgs", "use bfgs optimization") &&
+      missing_option(all, false, "conjugate_gradient", "use conjugate gradient based optimization"))
+    return NULL;
   new_options(all, "LBFGS options")
-    ("bfgs", "use bfgs optimization")
-    ("conjugate_gradient", "use conjugate gradient based optimization");
-  if (missing_required(all)) return NULL;
-  new_options(all)
     ("hessian_on", "use second derivative in line search")
     ("mem", po::value<uint32_t>()->default_value(15), "memory in bfgs")
     ("termination", po::value<float>()->default_value(0.001f),"Termination threshold");
@@ -1033,4 +1025,4 @@ base_learner* setup(vw& all)
 
   return make_base(l);
 }
-}
+

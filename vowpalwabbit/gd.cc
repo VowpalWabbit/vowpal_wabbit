@@ -3,24 +3,18 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include <fstream>
-#include <sstream>
 #include <float.h>
 #ifdef _WIN32
 #include <WinSock2.h>
 #else
 #include <netdb.h>
 #endif
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
 
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
 #include <xmmintrin.h>
 #endif
 
 #include "gd.h"
-#include "simple_label.h"
 #include "accumulate.h"
 #include "reductions.h"
 #include "vw.h"

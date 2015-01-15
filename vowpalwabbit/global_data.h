@@ -155,6 +155,74 @@ struct shared_data {
   size_t holdout_best_pass; 
 
   uint32_t k;
+
+  void update(bool test_example, float loss, float weight, size_t num_features)
+  {
+    if(test_example)
+      {
+	weighted_holdout_examples += weight;//test weight seen
+	weighted_holdout_examples_since_last_dump += weight;
+	weighted_holdout_examples_since_last_pass += weight;
+	holdout_sum_loss += loss;
+	holdout_sum_loss_since_last_dump += loss;
+	holdout_sum_loss_since_last_pass += loss;//since last pass
+      }
+    else
+      {
+	weighted_examples += weight;
+	sum_loss += loss;
+	sum_loss_since_last_dump += loss;
+	total_features += num_features;
+	example_number++;
+      }
+  }
+
+  inline void update_dump_interval(bool progress_add, float progress_arg) {
+    sum_loss_since_last_dump = 0.0;
+    old_weighted_examples = weighted_examples;
+    if (progress_add)  
+      dump_interval = (float)weighted_examples + progress_arg;
+    else 
+      dump_interval = (float)weighted_examples * progress_arg;
+  }
+
+  void print_update(bool holdout_set_off, size_t current_pass, char* label_buf, char* pred_buf, 
+		    size_t num_features, bool progress_add, float progress_arg)
+  {
+    if(!holdout_set_off && current_pass >= 1)
+      {
+	if(holdout_sum_loss == 0. && weighted_holdout_examples == 0.)
+	  fprintf(stderr, " unknown   ");
+	else
+	  fprintf(stderr, "%-10.6f " , holdout_sum_loss/weighted_holdout_examples);
+	
+	if(holdout_sum_loss_since_last_dump == 0. && weighted_holdout_examples_since_last_dump == 0.)
+	  fprintf(stderr, " unknown   ");
+	else
+	  fprintf(stderr, "%-10.6f " , holdout_sum_loss_since_last_dump/weighted_holdout_examples_since_last_dump);
+	
+	weighted_holdout_examples_since_last_dump = 0;
+	holdout_sum_loss_since_last_dump = 0.0;
+	
+	fprintf(stderr, "%8ld %8.1f   %s %s %8lu h\n",
+		(long int)example_number,
+		weighted_examples,
+		label_buf,
+		pred_buf,
+		num_features);
+      }
+    else
+      fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %s %8lu\n",
+	      sum_loss/weighted_examples,
+	      sum_loss_since_last_dump / (weighted_examples - old_weighted_examples),
+	      (long int)example_number,
+	      weighted_examples,
+	      label_buf,
+	      pred_buf,
+	      (long unsigned int)num_features);
+    fflush(stderr);
+    update_dump_interval(progress_add, progress_arg);
+  }
 };
 
 struct vw {
@@ -319,5 +387,20 @@ inline po::options_description_easy_init new_options(vw& all, std::string name =
   all.new_opts = new po::options_description(name);
   return all.new_opts->add_options();
 }
-bool missing_required(vw& all);
+bool no_new_options(vw& all);
+bool missing_option(vw& all, bool keep, const char* name, const char* description);
+template <class T> bool missing_option(vw& all, const char* name, const char* description)
+{
+  new_options(all)(name, po::value<T>(), description);
+  return no_new_options(all);
+}
+template <class T, bool keep> bool missing_option(vw& all, const char* name,
+						  const char* description)
+{
+  if (missing_option<T>(all, name, description))
+    return true;
+  if (keep)
+    *all.file_options << " --" << name << " " << all.vm[name].as<T>();
+  return false;
+}
 void add_options(vw& all);

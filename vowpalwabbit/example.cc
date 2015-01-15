@@ -4,13 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <stdint.h>
-#include "parse_primitives.h"
-#include "v_array.h"
-#include "example.h"
-#include "simple_label.h"  
 #include "gd.h"  
-#include "global_data.h"  
-#include "memory.h"
   
 int compare_feature(const void* p1, const void* p2) {  
   feature* f1 = (feature*) p1;  

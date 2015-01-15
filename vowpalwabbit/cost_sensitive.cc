@@ -1,5 +1,4 @@
 #include "float.h"
-#include "cost_sensitive.h"
 #include "gd.h"
 #include "vw.h"
 
@@ -211,42 +210,11 @@ namespace COST_SENSITIVE {
           strcpy(label_buf," unknown");
         else
           sprintf(label_buf," known");
+	char pred_buf[32];
+	sprintf(pred_buf,"%8lu",(long unsigned int)ec.pred.multiclass);
 
-        if(!all.holdout_set_off && all.current_pass >= 1)
-        {
-          if(all.sd->holdout_sum_loss == 0. && all.sd->weighted_holdout_examples == 0.)
-            fprintf(stderr, " unknown   ");
-          else
-            fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples);
-
-          if(all.sd->holdout_sum_loss_since_last_dump == 0. && all.sd->weighted_holdout_examples_since_last_dump == 0.)
-            fprintf(stderr, " unknown   ");
-          else
-            fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss_since_last_dump/all.sd->weighted_holdout_examples_since_last_dump);
-
-          fprintf(stderr, "%8ld %8.1f   %s %8lu %8lu h\n",
-                (long int)all.sd->example_number,
-                all.sd->weighted_examples,
-                label_buf,
-                (long unsigned int)ec.pred.multiclass,
-                (long unsigned int)num_current_features);
-
-          all.sd->weighted_holdout_examples_since_last_dump = 0;
-          all.sd->holdout_sum_loss_since_last_dump = 0.0;
-        }
-        else
-          fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8lu %8lu\n",
-                all.sd->sum_loss/all.sd->weighted_examples,
-                all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
-                (long int)all.sd->example_number,
-                all.sd->weighted_examples,
-                label_buf,
-                (long unsigned int)ec.pred.multiclass,
-                (long unsigned int)num_current_features);
-     
-	all.sd->sum_loss_since_last_dump = 0.0;
-        all.sd->old_weighted_examples = all.sd->weighted_examples;
-        VW::update_dump_interval(all);
+	all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf, 
+			     num_current_features, all.progress_add, all.progress_arg);
       }
   }
 
@@ -273,36 +241,18 @@ namespace COST_SENSITIVE {
         loss = chosen_loss - min;
       }
 
-    if(ec.test_only)
-      {
-        all.sd->weighted_holdout_examples += 1;//test weight seen
-        all.sd->weighted_holdout_examples_since_last_dump += 1;
-        all.sd->weighted_holdout_examples_since_last_pass += 1;
-        all.sd->holdout_sum_loss += loss;
-        all.sd->holdout_sum_loss_since_last_dump += loss;
-        all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass
-     }
-    else
-      {
-        all.sd->weighted_examples += 1.;
-        all.sd->total_features += ec.num_features;
-        all.sd->sum_loss += loss;
-        all.sd->sum_loss_since_last_dump += loss;    
-        all.sd->example_number++;
-      }
-
+    all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
+    
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print((int)*sink, (float)ec.pred.multiclass, 0, ec.tag);
+      all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
 
     if (all.raw_prediction > 0) {
-      string outputString;
-      stringstream outputStringStream(outputString);
+      stringstream outputStringStream;
       for (unsigned int i = 0; i < ld.costs.size(); i++) {
         wclass cl = ld.costs[i];
         if (i > 0) outputStringStream << ' ';
         outputStringStream << cl.class_index << ':' << cl.partial_prediction;
       }
-      //outputStringStream << endl;
       all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
     }
 

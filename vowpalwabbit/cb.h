@@ -8,7 +8,6 @@ license as described in the file LICENSE.
 #include "label_parser.h"
 
 namespace CB {
-
   struct cb_class {
     float cost;  // the cost of this class
     uint32_t action;  // the index of this class

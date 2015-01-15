@@ -1,8 +1,5 @@
 #include <float.h>
 #include "reductions.h"
-#include "multiclass.h"
-#include "cost_sensitive.h"
-#include "cb.h"
 #include "cb_algs.h"
 #include "rand48.h"
 #include "bs.h"
@@ -11,8 +8,6 @@
 
 using namespace LEARNER;
 using namespace MultiWorldTesting;
-
-namespace CBIFY {
 
   struct vw_context;
   void safety(v_array<float>& distribution, float min_prob);
@@ -160,7 +155,7 @@ namespace CBIFY {
   template <bool is_learn>
   void predict_or_learn_first(cbify& data, base_learner& base, example& ec)
   {//Explore tau times, then act according to optimal.
-    MULTICLASS::multiclass ld = ec.l.multi;
+    MULTICLASS::label_t ld = ec.l.multi;
 
     data.cb_label.costs.erase();
     ec.l.cb = data.cb_label;
@@ -188,7 +183,7 @@ namespace CBIFY {
   template <bool is_learn>
   void predict_or_learn_greedy(cbify& data, base_learner& base, example& ec)
   {//Explore uniform random an epsilon fraction of the time.
-    MULTICLASS::multiclass ld = ec.l.multi;
+    MULTICLASS::label_t ld = ec.l.multi;
 
     data.cb_label.costs.erase();
     ec.l.cb = data.cb_label;
@@ -216,7 +211,7 @@ namespace CBIFY {
   void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
   {//Randomize over predictions from a base set of predictors
     //Use CB to find current predictions.
-    MULTICLASS::multiclass ld = ec.l.multi;
+    MULTICLASS::label_t ld = ec.l.multi;
 
     data.cb_label.costs.erase();
     ec.l.cb = data.cb_label;
@@ -287,7 +282,7 @@ namespace CBIFY {
   void predict_or_learn_cover(cbify& data, base_learner& base, example& ec)
   {//Randomize over predictions from a base set of predictors
     //Use cost sensitive oracle to cover actions to form distribution.
-    MULTICLASS::multiclass ld = ec.l.multi;
+    MULTICLASS::label_t ld = ec.l.multi;
 
     data.cs_label.costs.erase();
     for (uint32_t j = 0; j < data.k; j++)
@@ -366,17 +361,14 @@ namespace CBIFY {
   
   void init_driver(cbify&) {}
 
-  void finish_example(vw& all, cbify&, example& ec) { MULTICLASS::finish_example(all, ec); }
-
   void finish(cbify& data)
   { CB::cb_label.delete_label(&data.cb_label); }
 
-  base_learner* setup(vw& all)
+  base_learner* cbify_setup(vw& all)
   {//parse and set arguments
+    if (missing_option<size_t, true>(all, "cbify", "Convert multiclass on <k> classes into a contextual bandit problem"))
+      return NULL;
     new_options(all, "CBIFY options")
-      ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve");
-    if (missing_required(all)) return NULL;
-    new_options(all)
       ("first", po::value<size_t>(), "tau-first exploration")
       ("epsilon",po::value<float>() ,"epsilon-greedy exploration")
       ("bag",po::value<size_t>() ,"bagging-based exploration")
@@ -387,7 +379,6 @@ namespace CBIFY {
     cbify& data = calloc_or_die<cbify>();
     data.all = &all;
     data.k = (uint32_t)vm["cbify"].as<size_t>();
-    *all.file_options << " --cbify " << data.k;
 
     if (count(all.args.begin(), all.args.end(),"--cb") == 0)
       {
@@ -398,8 +389,6 @@ namespace CBIFY {
       }
     base_learner* base = setup_base(all);
     
-    all.p->lp = MULTICLASS::mc_label;
-
     learner<cbify>* l;
     data.recorder.reset(new vw_recorder());
     data.mwt_explorer.reset(new MwtExplorer<vw_context>("vw", *data.recorder.get()));
@@ -414,8 +403,8 @@ namespace CBIFY {
 	  epsilon = vm["epsilon"].as<float>();
 	data.scorer.reset(new vw_cover_scorer(epsilon, cover, (u32)data.k));
 	data.generic_explorer.reset(new GenericExplorer<vw_context>(*data.scorer.get(), (u32)data.k));
-	l = &init_learner(&data, base, predict_or_learn_cover<true>, 
-			  predict_or_learn_cover<false>, cover + 1);
+	l = &init_multiclass_learner(&data, base, predict_or_learn_cover<true>, 
+					     predict_or_learn_cover<false>, all.p, cover + 1);
       }
     else if (vm.count("bag"))
       {
@@ -425,16 +414,16 @@ namespace CBIFY {
 	    data.policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
 	  }
 	data.bootstrap_explorer.reset(new BootstrapExplorer<vw_context>(data.policies, (u32)data.k));
-	l = &init_learner(&data, base, predict_or_learn_bag<true>, 
-			  predict_or_learn_bag<false>, bags);
+	l = &init_multiclass_learner(&data, base, predict_or_learn_bag<true>, 
+					     predict_or_learn_bag<false>, all.p, bags);
       }
     else if (vm.count("first") )
       {
 	uint32_t tau = (uint32_t)vm["first"].as<size_t>();
 	data.policy.reset(new vw_policy());
 	data.tau_explorer.reset(new TauFirstExplorer<vw_context>(*data.policy.get(), (u32)tau, (u32)data.k));
-	l = &init_learner(&data, base, predict_or_learn_first<true>, 
-			  predict_or_learn_first<false>, 1);
+	l = &init_multiclass_learner(&data, base, predict_or_learn_first<true>, 
+					     predict_or_learn_first<false>, all.p, 1);
       }
     else
       {
@@ -443,14 +432,11 @@ namespace CBIFY {
 	  epsilon = vm["epsilon"].as<float>();
 	data.policy.reset(new vw_policy());
 	data.greedy_explorer.reset(new EpsilonGreedyExplorer<vw_context>(*data.policy.get(), epsilon, (u32)data.k));
-	l = &init_learner(&data, base, predict_or_learn_greedy<true>, 
-			  predict_or_learn_greedy<false>, 1);
+	l = &init_multiclass_learner(&data, base, predict_or_learn_greedy<true>, 
+				     predict_or_learn_greedy<false>, all.p, 1);
       }
-    
-    l->set_finish_example(finish_example);
     l->set_finish(finish);
     l->set_init_driver(init_driver);
     
     return make_base(*l);
   }
-}

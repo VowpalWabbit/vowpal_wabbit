@@ -1,2 +1,1 @@
-#pragma once
-namespace ACTIVE { LEARNER::base_learner* setup(vw& all); }
+LEARNER::base_learner* active_setup(vw& all);

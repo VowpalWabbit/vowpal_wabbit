@@ -5,18 +5,11 @@ license as described in the file LICENSE.
  */
 #include <float.h>
 #include <string.h>
-#include "vw.h"
-#include "search.h"
-#include "v_hashmap.h"
-#include "hash.h"
-#include "rand48.h"
-#include "cost_sensitive.h"
-#include "multiclass.h"
-#include "constant.h"
-#include "reductions.h"
-#include "cb.h"
-#include "gd.h" // for GD::foreach_feature
 #include <math.h>
+#include "vw.h"
+#include "rand48.h"
+#include "reductions.h"
+#include "gd.h" // for GD::foreach_feature
 #include "search_sequencetask.h"
 #include "search_multiclasstask.h"
 #include "search_dep_parser.h"
@@ -365,11 +358,8 @@ namespace Search {
       fprintf(stderr, " h");
 
     fprintf(stderr, "\n");
-
-    all.sd->sum_loss_since_last_dump = 0.0;
-    all.sd->old_weighted_examples = all.sd->weighted_examples;
     fflush(stderr);
-    VW::update_dump_interval(all);
+    all.sd->update_dump_interval(all.progress_add, all.progress_arg);
   }
 
   void add_new_feature(search_private& priv, float val, uint32_t idx) {
@@ -725,12 +715,12 @@ namespace Search {
     float  best_prediction = 0.;
     action best_action = 0;
 
-    size_t start_K = (priv.is_ldf && CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
+    size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
 
     for (action a= (uint32_t)start_K; a<ec_cnt; a++) {
       cdbg << "== single_prediction_LDF a=" << a << "==" << endl;
       if (start_K > 0)
-        CSOAA_AND_WAP_LDF::LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]);
+        LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]);
         
       polylabel old_label = ecs[a].l;
       ecs[a].l.cs = priv.ldf_test_label;
@@ -747,7 +737,7 @@ namespace Search {
       priv.num_features += ecs[a].num_features;
       ecs[a].l = old_label;
       if (start_K > 0)
-        CSOAA_AND_WAP_LDF::LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0]);
+        LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0]);
     }
 
     if (priv.beam) {
@@ -916,7 +906,7 @@ namespace Search {
       priv.total_examples_generated++;
     } else {              // is  LDF
       assert(losses.size() == priv.learn_ec_ref_cnt);
-      size_t start_K = (priv.is_ldf && CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(priv.learn_ec_ref[0])) ? 1 : 0;
+      size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(priv.learn_ec_ref[0])) ? 1 : 0;
       for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
         example& ec = priv.learn_ec_ref[a];
 
@@ -1016,7 +1006,7 @@ namespace Search {
         if (priv.examples_dont_change)
           priv.learn_ec_ref = ecs;
         else {
-          size_t label_size = priv.is_ldf ? sizeof(CS::label) : sizeof(MC::multiclass);
+          size_t label_size = priv.is_ldf ? sizeof(CS::label) : sizeof(MC::label_t);
           void (*label_copy_fn)(void*,void*) = priv.is_ldf ? CS::cs_label.copy_label : NULL;
           
           ensure_size(priv.learn_ec_copy, ec_cnt);
@@ -1090,7 +1080,7 @@ namespace Search {
           // if this succeeded, 'a' has the right action
           priv.total_cache_hits++;
         else { // we need to predict, and then cache
-          size_t start_K = (priv.is_ldf && CSOAA_AND_WAP_LDF::LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
+          size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
           if (priv.auto_condition_features)
             for (size_t n=start_K; n<ec_cnt; n++)
               add_example_conditioning(priv, ecs[n], condition_on, condition_on_cnt, condition_on_names, priv.condition_on_actions.begin);
@@ -1287,22 +1277,8 @@ namespace Search {
       priv.task->run(sch, priv.ec_seq);
 
       // accumulate loss
-      if (! is_test_ex) { // we cannot accumulate loss on test examples!
-        if (priv.ec_seq[0]->test_only) {
-          all.sd->weighted_holdout_examples += 1.f;//test weight seen
-          all.sd->weighted_holdout_examples_since_last_dump += 1.f;
-          all.sd->weighted_holdout_examples_since_last_pass += 1.f;
-          all.sd->holdout_sum_loss += priv.test_loss;
-          all.sd->holdout_sum_loss_since_last_dump += priv.test_loss;
-          all.sd->holdout_sum_loss_since_last_pass += priv.test_loss;//since last pass
-        } else {
-          all.sd->weighted_examples += 1.f;
-          all.sd->total_features += priv.num_features;
-          all.sd->sum_loss += priv.test_loss;
-          all.sd->sum_loss_since_last_dump += priv.test_loss;
-          all.sd->example_number++;
-        }
-      }
+      if (! is_test_ex) 
+	all.sd->update(priv.ec_seq[0]->test_only, priv.test_loss, 1.f, priv.num_features);
       
       // generate output
       for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
@@ -1491,7 +1467,7 @@ namespace Search {
   }
 
   bool mc_label_is_test(void* lab) {
-	  if (MC::label_is_test((MC::multiclass*)lab) > 0)
+	  if (MC::label_is_test((MC::label_t*)lab) > 0)
 		  return true;
 	  else
 		  return false;
@@ -1764,10 +1740,10 @@ namespace Search {
   }
 
   base_learner* setup(vw&all) {
-    new_options(all,"Search Options")
-      ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF");
-    if (missing_required(all)) return NULL;
-    new_options(all)
+    if (missing_option<size_t, false>(all, "search", 
+				      "Use learning to search, argument=maximum action id or 0 for LDF"))
+      return NULL;
+    new_options(all, "Search Options")
       ("search_task",              po::value<string>(), "the search task (use \"--search_task list\" to get a list of available tasks)")
       ("search_interpolation",     po::value<string>(), "at what level should interpolation happen? [*data|policy]")
       ("search_rollout",           po::value<string>(), "how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_roll|none]")
@@ -1794,8 +1770,6 @@ namespace Search {
       ;
     add_options(all);
     po::variables_map& vm = all.vm;
-    if (!vm.count("search"))
-      return NULL;
 
     bool has_hook_task = false;
     for (size_t i=0; i<all.args.size()-1; i++)

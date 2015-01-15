@@ -2,11 +2,7 @@
 #include <cassert>
 
 #include "gd.h"
-#include "rand48.h"
-#include "simple_label.h"
-#include "allreduce.h"
 #include "accumulate.h"
-#include "constant.h"
 #include "reductions.h"
 #include "vw.h"
 
@@ -15,8 +11,6 @@
 using namespace std;
 using namespace LEARNER;
 
-namespace StagewisePoly
-{
   static const uint32_t parent_bit = 1;
   static const uint32_t cycle_bit = 2;
   static const uint32_t tree_atomics = 134;
@@ -656,13 +650,12 @@ namespace StagewisePoly
     //#endif //DEBUG
   }
 
-  base_learner *setup(vw &all)
+  base_learner *stagewise_poly_setup(vw &all)
   {
+    if (missing_option(all, true, "stage_poly", "use stagewise polynomial feature learning"))
+      return NULL;
+    
     new_options(all, "Stagewise poly options")
-      ("stage_poly", "use stagewise polynomial feature learning");
-    if (missing_required(all)) return NULL;
-
-    new_options(all)
       ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
       ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")
       ("batch_sz_no_doubling", "batch_sz does not double")
@@ -697,9 +690,6 @@ namespace StagewisePoly
     poly.original_ec = NULL;
     poly.next_batch_sz = poly.batch_sz;
 
-    //following is so that saved models know to load us.
-    *all.file_options << " --stage_poly";
-
     learner<stagewise_poly>& l = init_learner(&poly, setup_base(all), learn, predict);
     l.set_finish(finish);
     l.set_save_load(save_load);
@@ -708,4 +698,3 @@ namespace StagewisePoly
 
     return make_base(l);
   }
-}
