@@ -189,6 +189,13 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     n.outputweight.ft_offset = ec.ft_offset;
 
+    n.all->set_minmax = noop_mm;
+    n.all->loss = n.squared_loss;
+    save_min_label = n.all->sd->min_label;
+    n.all->sd->min_label = -1;
+    save_max_label = n.all->sd->max_label;
+    n.all->sd->max_label = 1;
+
     for (unsigned int i = 0; i < n.k; ++i)
       {
         float sigmah = 
@@ -206,16 +213,17 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         // avoid saddle point at 0
         if (wf == 0)
           {    
-            n.all->loss = n.squared_loss;
-
             float sqrtk = sqrt ((float)n.k);
             n.outputweight.l.simple.label = (float) (frand48 () - 0.5) / sqrtk;
             base.learn(n.outputweight, n.k);
             n.outputweight.l.simple.label = FLT_MAX;
-
-            n.all->loss = save_loss;
           }
       }
+
+    n.all->loss = save_loss;
+    n.all->set_minmax = save_set_minmax;
+    n.all->sd->min_label = save_min_label;
+    n.all->sd->max_label = save_max_label;
 
     if (n.inpass) {
       // TODO: this is not correct if there is something in the 
