@@ -1,0 +1,60 @@
+#! /bin/zsh
+
+test -e train-images-idx3-ubyte.gz || {
+  echo "ERROR: you need to download train-image-idx3-ubyte.gz" 1>&2
+  echo "ERROR: from http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz" 1>&2
+  exit 1
+}
+
+test -e train-labels-idx1-ubyte.gz || {
+  echo "ERROR: you need to download train-labels-idx1-ubyte.gz" 1>&2
+  echo "ERROR: from http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz" 1>&2
+  exit 1
+}
+
+set -e
+
+nukeem() { \
+  trap - INT QUIT TERM 
+  pkill -9 -f 'vw.*--port 26544'
+}
+
+learner() {
+  netcat localhost 26544 > /dev/null
+}
+
+{
+../../vowpalwabbit/vw --oaa 10 -f mnisthogwild.model                    \
+   -b 24 --adaptive --invariant --holdout_off                           \
+   -l 0.08 --nn 40                                                      \
+   --daemon --num_children 4 --port 26544 2>&1 |                        \
+   perl -lane 'print $_ unless $c{$F[2]}++;'  
+} &
+
+trap 'nukeem; exit 1' INT QUIT TERM 
+
+while ! netcat -z localhost 26544
+  do
+    sleep 1
+  done
+
+SHUFFLE='BEGIN { srand 69; };
+         $i = int rand 1000;
+         print $b[$i] if $b[$i];
+         $b[$i] = $_; } { print grep { defined $_ } @b;'
+
+( for pass in $(seq 1 24)
+  do
+    paste -d' '                                                         \
+      <(gunzip -c train-labels-idx1-ubyte.gz | ./extract-labels)        \
+      <(gunzip -c train-images-idx3-ubyte.gz | ./extractfeatures)
+  done ) |                                                              \
+perl -ne ${SHUFFLE} |                                                   \
+time ./map >(learner) >(learner) >(learner) >(learner)
+
+pkill -f 'vw.*--port 26544'
+
+while test ! -s mnisthogwild.model
+  do
+    sleep 1
+  done
