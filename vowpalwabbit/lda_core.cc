@@ -52,10 +52,6 @@ public:
     vw* all;
   };
   
-#ifdef _WIN32
-inline float fmax(float f1, float f2) { return (f1 < f2 ? f2 : f1); }
-inline float fmin(float f1, float f2) { return (f1 > f2 ? f2 : f1); }
-#endif
 
 #define MINEIRO_SPECIAL
 #ifdef MINEIRO_SPECIAL
@@ -635,7 +631,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 	  continue;
 	last_weight_index = s->f.weight_index;
 	float* weights_for_w = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
-	float decay = fmin(1.0, exp(l.decay_levels.end[-2] - l.decay_levels.end[(int)(-1 - l.example_t+weights_for_w[l.all->lda])]));
+	float decay = fmin(1.0f, exp(l.decay_levels.end[-2] - l.decay_levels.end[(int)(-1 - l.example_t+weights_for_w[l.all->lda])]));
 	float* u_for_w = weights_for_w + l.all->lda+1;
 	
 	weights_for_w[l.all->lda] = (float)l.example_t;
@@ -727,7 +723,7 @@ void end_examples(lda& l)
 {
   for (size_t i = 0; i < l.all->length(); i++) {
     weight* weights_for_w = & (l.all->reg.weight_vector[i << l.all->reg.stride_shift]);
-    float decay = fmin(1.0, exp(l.decay_levels.last() - l.decay_levels.end[(int)(-1- l.example_t +weights_for_w[l.all->lda])]));
+    float decay = fmin(1.f, exp(l.decay_levels.last() - l.decay_levels.end[(int)(-1- l.example_t +weights_for_w[l.all->lda])]));
     for (size_t k = 0; k < l.all->lda; k++) 
       weights_for_w[k] *= decay;
   }
