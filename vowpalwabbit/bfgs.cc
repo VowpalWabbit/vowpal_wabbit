@@ -52,7 +52,7 @@ class curv_exception: public exception {} curv_ex;
 // w[2] = step direction
 // w[3] = preconditioner
   
-  const float max_precond_ratio = 100.f;
+  const float max_precond_ratio = 10000.f;
 
   struct bfgs {
     vw* all;
