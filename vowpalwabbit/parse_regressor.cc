@@ -254,13 +254,11 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
 
 void save_predictor(vw& all, string reg_name, size_t current_pass)
 {
-  char* filename = new char[reg_name.length()+4];
+  stringstream filename;
+  filename << reg_name;
   if (all.save_per_pass)
-    sprintf(filename,"%s.%lu",reg_name.c_str(),(long unsigned)current_pass);
-  else
-    sprintf(filename,"%s",reg_name.c_str());
-  dump_regressor(all, string(filename), false);
-  delete[] filename;
+    filename << "." << current_pass;
+  dump_regressor(all, filename.str(), false);
 }
 
 void finalize_regressor(vw& all, string reg_name)
