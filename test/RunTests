@@ -1102,3 +1102,7 @@ __DATA__
 # Test 77: cbify, tau first
 {VW} --cbify 10 --first 5 train-sets/multiclass 
     train-sets/ref/cbify_first.stderr
+
+# Test 78: cbify, bag
+{VW} --cbify 10 --bag 7 train-sets/multiclass 
+    train-sets/ref/cbify_bag.stderr
