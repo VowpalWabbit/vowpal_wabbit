@@ -44,6 +44,7 @@ extern "C"
 #endif
 	VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeA(const char * pstrArgs);
 
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_Finish_Passes(VW_HANDLE handle);
 	VW_DLL_MEMBER void VW_CALLING_CONV VW_Finish(VW_HANDLE handle);
 
 	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ImportExample(VW_HANDLE handle, VW_FEATURE_SPACE * features, size_t len);
