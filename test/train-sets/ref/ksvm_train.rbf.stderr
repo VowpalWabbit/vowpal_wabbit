@@ -1,5 +1,4 @@
 using l2 regularization = 1
-In setup
 Lambda = 1
 Kernel = rbf
 bandwidth = 1
@@ -28,6 +27,7 @@ weighted example sum = 250
 weighted label sum = -22
 average loss = 0.888309
 best constant = -0.088
+best constant's loss = 0.992256
 total feature number = 19870
 Num support = 250
 Number of kernel evaluations = 192975 Number of cache queries = 172366

@@ -7,8 +7,8 @@ license as described in the file LICENSE.
 #include "global_data.h"
 
 #define cdbg clog
-//#undef cdbg
-//#define cdbg if (1) {} else clog
+#undef cdbg
+#define cdbg if (1) {} else clog
 // comment the previous two lines if you want loads of debug output :)
 
 typedef uint32_t    action;
@@ -241,8 +241,5 @@ namespace Search {
   bool size_equal(size_t a, size_t b);
   
   // our interface within VW
-  LEARNER::learner* setup(vw&, po::variables_map&);
-  void search_finish(void*);
-  void search_drive(void*);
-  void search_learn(void*,example*);  
+  LEARNER::base_learner* setup(vw&);
 }

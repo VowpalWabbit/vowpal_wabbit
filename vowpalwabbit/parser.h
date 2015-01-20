@@ -7,14 +7,58 @@ license as described in the file LICENSE.
 #include "io_buf.h"
 #include "parse_primitives.h"
 #include "example.h"
-#include "vw.h"
 
-parser* new_parser();
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 
-#include "global_data.h"
-void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes);
+struct vw;
+
+struct parser {
+  v_array<substring> channels;//helper(s) for text parsing
+  v_array<substring> words;
+  v_array<substring> name;
+
+  io_buf* input; //Input source(s)
+  int (*reader)(void*, example* ae);
+  hash_func_t hasher;
+  bool resettable; //Whether or not the input can be reset.
+  io_buf* output; //Where to output the cache.
+  bool write_cache; 
+  bool sort_features;
+  bool sorted_cache;
+
+  size_t ring_size;
+  uint64_t begin_parsed_examples; // The index of the beginning parsed example.
+  uint64_t end_parsed_examples; // The index of the fully parsed example.
+  uint64_t local_example_number; 
+  uint32_t in_pass_counter;
+  example* examples;
+  uint64_t used_index;
+  bool emptylines_separate_examples; // true if you want to have holdout computed on a per-block basis rather than a per-line basis
+  MUTEX examples_lock;
+  CV example_available;
+  CV example_unused;
+  MUTEX output_lock;
+  CV output_done;
+  
+  bool done;
+  v_array<size_t> gram_mask;
+
+  v_array<size_t> ids; //unique ids for sources
+  v_array<size_t> counts; //partial examples received from sources
+  size_t finished_count;//the number of finished examples;
+  int label_sock;
+  int bound_sock;
+  int max_fd;
+
+  v_array<substring> parse_name;
+
+  label_parser lp;  // moved from vw
+};
+
+parser* new_parser();
+
+void enable_sources(vw& all, bool quiet, size_t passes);
 
 bool examples_to_finish();
 

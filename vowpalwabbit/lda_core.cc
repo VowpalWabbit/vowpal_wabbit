@@ -14,16 +14,12 @@ license as described in the file LICENSE.
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
-#include "constant.h"
 #include "gd.h"
-#include "simple_label.h"
 #include "rand48.h"
 #include "reductions.h"
 
 using namespace LEARNER;
 using namespace std;
-
-namespace LDA {
 
 class index_feature {
 public:
@@ -33,6 +29,13 @@ public:
 };
 
   struct lda {
+    uint32_t topics;
+    float lda_alpha;
+    float lda_rho;
+    float lda_D;
+    float lda_epsilon;
+    size_t minibatch;
+
     v_array<float> Elogtheta;
     v_array<float> decay_levels;
     v_array<float> total_new;
@@ -49,10 +52,6 @@ public:
     vw* all;
   };
   
-#ifdef _WIN32
-inline float fmax(float f1, float f2) { return (f1 < f2 ? f2 : f1); }
-inline float fmin(float f1, float f2) { return (f1 > f2 ? f2 : f1); }
-#endif
 
 #define MINEIRO_SPECIAL
 #ifdef MINEIRO_SPECIAL
@@ -407,49 +406,49 @@ float average_diff(vw& all, float* oldgamma, float* newgamma)
 }
 
 // Returns E_q[log p(\theta)] - E_q[log q(\theta)].
-  float theta_kl(vw& all, v_array<float>& Elogtheta, float* gamma)
+  float theta_kl(lda& l, v_array<float>& Elogtheta, float* gamma)
 {
   float gammasum = 0;
   Elogtheta.erase();
-  for (size_t k = 0; k < all.lda; k++) {
+  for (size_t k = 0; k < l.topics; k++) {
     Elogtheta.push_back(mydigamma(gamma[k]));
     gammasum += gamma[k];
   }
   float digammasum = mydigamma(gammasum);
   gammasum = mylgamma(gammasum);
-  float kl = -(all.lda*mylgamma(all.lda_alpha));
-  kl += mylgamma(all.lda_alpha*all.lda) - gammasum;
-  for (size_t k = 0; k < all.lda; k++) {
+  float kl = -(l.topics*mylgamma(l.lda_alpha));
+  kl += mylgamma(l.lda_alpha*l.topics) - gammasum;
+  for (size_t k = 0; k < l.topics; k++) {
     Elogtheta[k] -= digammasum;
-    kl += (all.lda_alpha - gamma[k]) * Elogtheta[k];
+    kl += (l.lda_alpha - gamma[k]) * Elogtheta[k];
     kl += mylgamma(gamma[k]);
   }
 
   return kl;
 }
 
-float find_cw(vw& all, float* u_for_w, float* v)
+float find_cw(lda& l, float* u_for_w, float* v)
 {
   float c_w = 0;
-  for (size_t k =0; k<all.lda; k++)
+  for (size_t k =0; k<l.topics; k++)
     c_w += u_for_w[k]*v[k];
 
   return 1.f / c_w;
 }
 
-v_array<float> new_gamma;
-v_array<float> old_gamma;
+  v_array<float> new_gamma = v_init<float>();
+  v_array<float> old_gamma = v_init<float>();
 // Returns an estimate of the part of the variational bound that
 // doesn't have to do with beta for the entire corpus for the current
 // setting of lambda based on the document passed in. The value is
 // divided by the total number of words in the document This can be
 // used as a (possibly very noisy) estimate of held-out likelihood.
-  float lda_loop(vw& all, v_array<float>& Elogtheta, float* v,weight* weights,example* ec, float power_t)
+  float lda_loop(lda& l, v_array<float>& Elogtheta, float* v,weight* weights,example* ec, float power_t)
 {
   new_gamma.erase();
   old_gamma.erase();
   
-  for (size_t i = 0; i < all.lda; i++)
+  for (size_t i = 0; i < l.topics; i++)
     {
       new_gamma.push_back(1.f);
       old_gamma.push_back(0.f);
@@ -463,11 +462,11 @@ v_array<float> old_gamma;
   float doc_length = 0;
   do
     {
-      memcpy(v,new_gamma.begin,sizeof(float)*all.lda);
-      myexpdigammify(all, v);
+      memcpy(v,new_gamma.begin,sizeof(float)*l.topics);
+      myexpdigammify(*l.all, v);
 
-      memcpy(old_gamma.begin,new_gamma.begin,sizeof(float)*all.lda);
-      memset(new_gamma.begin,0,sizeof(float)*all.lda);
+      memcpy(old_gamma.begin,new_gamma.begin,sizeof(float)*l.topics);
+      memset(new_gamma.begin,0,sizeof(float)*l.topics);
 
       score = 0;
       size_t word_count = 0;
@@ -477,11 +476,11 @@ v_array<float> old_gamma;
 	  feature *f = ec->atomics[*i].begin;
 	  for (; f != ec->atomics[*i].end; f++)
 	    {
-	      float* u_for_w = &weights[(f->weight_index&all.reg.weight_mask)+all.lda+1];
-	      float c_w = find_cw(all, u_for_w,v);
+	      float* u_for_w = &weights[(f->weight_index & l.all->reg.weight_mask)+l.topics+1];
+	      float c_w = find_cw(l, u_for_w,v);
 	      xc_w = c_w * f->x;
               score += -f->x*log(c_w);
-	      size_t max_k = all.lda;
+	      size_t max_k = l.topics;
 	      for (size_t k =0; k<max_k; k++) {
 		new_gamma[k] += xc_w*u_for_w[k];
 	      }
@@ -489,16 +488,16 @@ v_array<float> old_gamma;
               doc_length += f->x;
 	    }
 	}
-      for (size_t k =0; k<all.lda; k++)
-	new_gamma[k] = new_gamma[k]*v[k]+all.lda_alpha;
+      for (size_t k =0; k<l.topics; k++)
+	new_gamma[k] = new_gamma[k]*v[k]+l.lda_alpha;
     }
-  while (average_diff(all, old_gamma.begin, new_gamma.begin) > all.lda_epsilon);
+  while (average_diff(*l.all, old_gamma.begin, new_gamma.begin) > l.lda_epsilon);
 
   ec->topic_predictions.erase();
-  ec->topic_predictions.resize(all.lda);
-  memcpy(ec->topic_predictions.begin,new_gamma.begin,all.lda*sizeof(float));
+  ec->topic_predictions.resize(l.topics);
+  memcpy(ec->topic_predictions.begin,new_gamma.begin,l.topics*sizeof(float));
 
-  score += theta_kl(all, Elogtheta, new_gamma.begin);
+  score += theta_kl(l, Elogtheta, new_gamma.begin);
 
   return score / doc_length;
 }
@@ -527,7 +526,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 	  for (size_t k = 0; k < all->lda; k++) {
 	    if (all->random_weights) {
 	      all->reg.weight_vector[j+k] = (float)(-log(frand48()) + 1.0f);
-	      all->reg.weight_vector[j+k] *= (float)(all->lda_D / all->lda / all->length() * 200);
+	      all->reg.weight_vector[j+k] *= (float)(l.lda_D / all->lda / all->length() * 200);
 	    }
 	  }
 	  all->reg.weight_vector[j+all->lda] = all->initial_t;
@@ -555,7 +554,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 		uint32_t ndx = stride*i+k;
 		
 		weight* v = &(all->reg.weight_vector[ndx]);
-		text_len = sprintf(buff, "%f ", *v + all->lda_rho);
+		text_len = sprintf(buff, "%f ", *v + l.lda_rho);
 		
 		brw += bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
 						 "", read,
@@ -613,11 +612,11 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
     
     eta = l.all->eta * powf((float)l.example_t, - l.all->power_t);
     minuseta = 1.0f - eta;
-    eta *= l.all->lda_D / batch_size;
+    eta *= l.lda_D / batch_size;
     l.decay_levels.push_back(l.decay_levels.last() + log(minuseta));
     
     l.digammas.erase();
-    float additional = (float)(l.all->length()) * l.all->lda_rho;
+    float additional = (float)(l.all->length()) * l.lda_rho;
     for (size_t i = 0; i<l.all->lda; i++) {
       l.digammas.push_back(mydigamma(l.total_lambda[i] + additional));
     }
@@ -632,21 +631,21 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 	  continue;
 	last_weight_index = s->f.weight_index;
 	float* weights_for_w = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
-	float decay = fmin(1.0, exp(l.decay_levels.end[-2] - l.decay_levels.end[(int)(-1 - l.example_t+weights_for_w[l.all->lda])]));
+	float decay = fmin(1.0f, exp(l.decay_levels.end[-2] - l.decay_levels.end[(int)(-1 - l.example_t+weights_for_w[l.all->lda])]));
 	float* u_for_w = weights_for_w + l.all->lda+1;
 	
 	weights_for_w[l.all->lda] = (float)l.example_t;
 	for (size_t k = 0; k < l.all->lda; k++)
 	  {
 	    weights_for_w[k] *= decay;
-	    u_for_w[k] = weights_for_w[k] + l.all->lda_rho;
+	    u_for_w[k] = weights_for_w[k] + l.lda_rho;
 	  }
 	myexpdigammify_2(*l.all, u_for_w, l.digammas.begin);
       }
     
     for (size_t d = 0; d < batch_size; d++)
       {
-	float score = lda_loop(*l.all, l.Elogtheta, &(l.v[d*l.all->lda]), weights, l.examples[d],l.all->power_t);
+	float score = lda_loop(l, l.Elogtheta, &(l.v[d*l.all->lda]), weights, l.examples[d],l.all->power_t);
 	if (l.all->audit)
 	  GD::print_audit_features(*l.all, *l.examples[d]);
 	// If the doc is empty, give it loss of 0.
@@ -672,7 +671,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 	for (; s != next; s++) {
 	  float* v_s = &(l.v[s->document*l.all->lda]);
 	  float* u_for_w = &weights[(s->f.weight_index & l.all->reg.weight_mask) + l.all->lda + 1];
-	  float c_w = eta*find_cw(*l.all, u_for_w, v_s)*s->f.x;
+	  float c_w = eta*find_cw(l, u_for_w, v_s)*s->f.x;
 	  for (size_t k = 0; k < l.all->lda; k++) {
 	    float new_value = u_for_w[k]*v_s[k]*c_w;
 	    l.total_new[k] += new_value;
@@ -691,7 +690,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
     l.doc_lengths.erase();
   }
   
-  void learn(lda& l, learner& base, example& ec) 
+  void learn(lda& l, base_learner& base, example& ec) 
   {
     size_t num_ex = l.examples.size();
     l.examples.push_back(&ec);
@@ -704,12 +703,12 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 	l.doc_lengths[num_ex] += (int)f->x;
       }
     }
-    if (++num_ex == l.all->minibatch)
+    if (++num_ex == l.minibatch)
       learn_batch(l);
   }
 
   // placeholder
-  void predict(lda& l, learner& base, example& ec)
+  void predict(lda& l, base_learner& base, example& ec)
   {
     learn(l, base, ec);
   }
@@ -724,7 +723,7 @@ void end_examples(lda& l)
 {
   for (size_t i = 0; i < l.all->length(); i++) {
     weight* weights_for_w = & (l.all->reg.weight_vector[i << l.all->reg.stride_shift]);
-    float decay = fmin(1.0, exp(l.decay_levels.last() - l.decay_levels.end[(int)(-1- l.example_t +weights_for_w[l.all->lda])]));
+    float decay = fmin(1.f, exp(l.decay_levels.last() - l.decay_levels.end[(int)(-1- l.example_t +weights_for_w[l.all->lda])]));
     for (size_t k = 0; k < l.all->lda; k++) 
       weights_for_w[k] *= decay;
   }
@@ -746,57 +745,62 @@ void end_examples(lda& l)
     ld.v.delete_v();
   }
 
-learner* setup(vw&all, po::variables_map& vm)
+
+base_learner* lda_setup(vw&all)
 {
-  lda* ld = (lda*)calloc_or_die(1,sizeof(lda));
-  ld->sorted_features = vector<index_feature>();
-  ld->total_lambda_init = 0;
-  ld->all = &all;
-  ld->example_t = all.initial_t;
+  if (missing_option<uint32_t, true>(all, "lda", "Run lda with <int> topics")) 
+    return NULL;
+  new_options(all, "Lda options")
+    ("lda_alpha", po::value<float>()->default_value(0.1f), "Prior on sparsity of per-document topic weights")
+    ("lda_rho", po::value<float>()->default_value(0.1f), "Prior on sparsity of topic distributions")
+    ("lda_D", po::value<float>()->default_value(10000.), "Number of documents")
+    ("lda_epsilon", po::value<float>()->default_value(0.001f), "Loop convergence threshold")
+    ("minibatch", po::value<size_t>()->default_value(1), "Minibatch size, for LDA");
+  add_options(all);
+  po::variables_map& vm= all.vm;
 
-  po::options_description lda_opts("LDA options");
-  lda_opts.add_options()
-    ("lda_alpha", po::value<float>(&all.lda_alpha), "Prior on sparsity of per-document topic weights")
-    ("lda_rho", po::value<float>(&all.lda_rho), "Prior on sparsity of topic distributions")
-    ("lda_D", po::value<float>(&all.lda_D), "Number of documents")
-    ("lda_epsilon", po::value<float>(&all.lda_epsilon), "Loop convergence threshold")
-    ("minibatch", po::value<size_t>(&all.minibatch), "Minibatch size, for LDA");
-
-  vm = add_options(all, lda_opts);
-
+  all.lda = vm["lda"].as<uint32_t>();
+  
+  lda& ld = calloc_or_die<lda>();
+  
+  ld.topics = all.lda;
+  ld.lda_alpha = vm["lda_alpha"].as<float>();
+  ld.lda_rho = vm["lda_rho"].as<float>();
+  ld.lda_D = vm["lda_D"].as<float>();
+  ld.lda_epsilon = vm["lda_epsilon"].as<float>();
+  ld.minibatch = vm["minibatch"].as<size_t>();
+  ld.sorted_features = vector<index_feature>();
+  ld.total_lambda_init = 0;
+  ld.all = &all;
+  ld.example_t = all.initial_t;
+  
   float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
   all.reg.stride_shift = (size_t)temp;
   all.random_weights = true;
   all.add_constant = false;
-
-  std::stringstream ss;
-  ss << " --lda " << all.lda;
-  all.file_options.append(ss.str());
-
+  
   if (all.eta > 1.)
     {
       cerr << "your learning rate is too high, setting it to 1" << endl;
       all.eta = min(all.eta,1.f);
     }
-
+  
   if (vm.count("minibatch")) {
-    size_t minibatch2 = next_pow2(all.minibatch);
+    size_t minibatch2 = next_pow2(ld.minibatch);
     all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
   }
   
-  ld->v.resize(all.lda*all.minibatch);
+  ld.v.resize(all.lda*ld.minibatch);
   
-  ld->decay_levels.push_back(0.f);
-
-  learner* l = new learner(ld, 1 << all.reg.stride_shift);
-  l->set_learn<lda,learn>();
-  l->set_predict<lda,predict>();
-  l->set_save_load<lda,save_load>();
-  l->set_finish_example<lda,finish_example>();
-  l->set_end_examples<lda,end_examples>();  
-  l->set_end_pass<lda,end_pass>();  
-  l->set_finish<lda,finish>();
+  ld.decay_levels.push_back(0.f);
   
-  return l;
-}
+  learner<lda>& l = init_learner(&ld, learn, 1 << all.reg.stride_shift);
+  l.set_predict(predict);
+  l.set_save_load(save_load);
+  l.set_finish_example(finish_example);
+  l.set_end_examples(end_examples);  
+  l.set_end_pass(end_pass);  
+  l.set_finish(finish);
+  
+  return make_base(l);
 }

@@ -4,12 +4,10 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
-#include "io_buf.h"
-#include "parse_primitives.h"
-#include "global_data.h"
-#include "example.h"
-#include "parser.h"
-#include "parse_args.h"
+#include "label_parser.h"
+
+struct example;
+struct vw;
 
 namespace COST_SENSITIVE {
   struct wclass {
@@ -25,10 +23,8 @@ namespace COST_SENSITIVE {
      if x > 0 then this is a label feature vector for (size_t)x
 */
 
-  
   struct label {
     v_array<wclass> costs;
-    uint32_t prediction;
   };
   
   void output_example(vw& all, example& ec);
@@ -36,10 +32,5 @@ namespace COST_SENSITIVE {
 
   bool example_is_test(example& ec);
 
-  void print_update(vw& all, bool is_test, example& ec);
-}
-
-namespace CSOAA_AND_WAP_LDF {
-  void global_print_newline(vw& all);
-  void output_example(vw& all, example& ec, bool& hit_loss);
+  void print_update(vw& all, bool is_test, example& ec, const v_array<example*> *ec_seq);
 }

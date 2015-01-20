@@ -1,0 +1,26 @@
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+predictions = 0002.autolink.predict
+using no cache
+Reading datafile = train-sets/0002.dat
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+0.271591   0.271591            1         1.0   0.5211   0.0000       15
+0.136121   0.000650            2         2.0   0.5353   0.5098       15
+0.150865   0.165610            4         4.0   0.5854   0.9858       15
+0.118837   0.086808            8         8.0   0.5575   0.4187       15
+0.101632   0.084426           16        16.0   0.5878   0.3575       15
+0.055032   0.008432           32        32.0   0.6038   0.6153       15
+0.033363   0.011695           64        64.0   0.5683   0.4726       15
+
+finished run
+number of examples per pass = 100
+passes used = 1
+weighted example sum = 100
+weighted label sum = 52.2221
+average loss = 0.0232522
+best constant = 0.522221
+total feature number = 1499

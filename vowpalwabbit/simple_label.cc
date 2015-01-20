@@ -2,11 +2,9 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "simple_label.h"
 #include "cache.h"
-#include "rand48.h"
-#include "vw.h"
 #include "accumulate.h"
+#include "best_constant.h"
 
 using namespace std;
 
@@ -14,12 +12,12 @@ char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 {
   ld->label = *(float *)c;
   c += sizeof(ld->label);
-  if (sd->binary_label && fabs(ld->label) != 1.f && ld->label != FLT_MAX)
-    cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
   ld->weight = *(float *)c;
   c += sizeof(ld->weight);
   ld->initial = *(float *)c;
   c += sizeof(ld->initial);
+
+  count_label(ld->label);
   return c;
 }
 
@@ -95,11 +93,10 @@ void parse_simple_label(parser* p, shared_data* sd, void* v, v_array<substring>&
     cerr << "malformed example!\n";
     cerr << "words.size() = " << words.size() << endl;
   }
-  if (words.size() > 0 && sd->binary_label && fabs(ld->label) != 1.f)
-    cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
+  count_label(ld->label);
 }
 
-label_parser simple_label = {default_simple_label, parse_simple_label, 
+label_parser simple_label = {default_simple_label, parse_simple_label,
 				   cache_simple_label, read_cached_simple_label, 
 				   delete_simple_label, get_weight,  
                                    NULL,
@@ -109,85 +106,37 @@ void print_update(vw& all, example& ec)
 {
   if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
     {
-      label_data* ld = (label_data*) ec.ld;
+      label_data ld = ec.l.simple;
       char label_buf[32];
-      if (ld->label == FLT_MAX)
+      if (ld.label == FLT_MAX)
 	strcpy(label_buf," unknown");
       else
-	sprintf(label_buf,"%8.4f",ld->label);
+	sprintf(label_buf,"%8.4f",ld.label);
+      char pred_buf[32];
+      sprintf(pred_buf,"%8.4f",ec.pred.scalar);
       
-      if(!all.holdout_set_off && all.current_pass >= 1){
-        if(all.sd->holdout_sum_loss == 0. && all.sd->weighted_holdout_examples == 0.)
-          fprintf(stderr, " unknown   ");
-        else
-	  fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples);
-
-        if(all.sd->holdout_sum_loss_since_last_dump == 0. && all.sd->weighted_holdout_examples_since_last_dump == 0.)
-          fprintf(stderr, " unknown   ");
-        else
-	  fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss_since_last_dump/all.sd->weighted_holdout_examples_since_last_dump);
-        
-        fprintf(stderr, "%10ld %11.1f %s %8.4f %8lu h\n",
-	      (long int)all.sd->example_number,
-	      all.sd->weighted_examples,
-	      label_buf,
-	      ld->prediction,
-	      (long unsigned int)ec.num_features);
-
-        all.sd->weighted_holdout_examples_since_last_dump = 0.;
-        all.sd->holdout_sum_loss_since_last_dump = 0.0;
-      }
-      else
-        fprintf(stderr, "%-10.6f %-10.6f %10ld %11.1f %s %8.4f %8lu\n",
-	      all.sd->sum_loss/all.sd->weighted_examples,
-	      all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
-	      (long int)all.sd->example_number,
-	      all.sd->weighted_examples,
-	      label_buf,
-	      ld->prediction,
-	      (long unsigned int)ec.num_features);
-     
-      all.sd->sum_loss_since_last_dump = 0.0;
-      all.sd->old_weighted_examples = all.sd->weighted_examples;
-      VW::update_dump_interval(all);
-	  fflush(stderr);
+      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf, 
+			   ec.num_features, all.progress_add, all.progress_arg);
     }
 }
 
 void output_and_account_example(vw& all, example& ec)
 {
-  label_data* ld = (label_data*)ec.ld;
+  label_data ld = ec.l.simple;
 
-  if(ec.test_only)
-  {
-    all.sd->weighted_holdout_examples += ld->weight;//test weight seen
-    all.sd->weighted_holdout_examples_since_last_dump += ld->weight;
-    all.sd->weighted_holdout_examples_since_last_pass += ld->weight;
-    all.sd->holdout_sum_loss += ec.loss;
-    all.sd->holdout_sum_loss_since_last_dump += ec.loss;
-    all.sd->holdout_sum_loss_since_last_pass += ec.loss;//since last pass
-  }
-  else
-  {
-    if (ld->label != FLT_MAX)
-      all.sd->weighted_labels += ld->label * ld->weight;
-    all.sd->weighted_examples += ld->weight;
-    all.sd->sum_loss += ec.loss;
-    all.sd->sum_loss_since_last_dump += ec.loss;
-    all.sd->total_features += ec.num_features;
-    all.sd->example_number++;
-  }
+  all.sd->update(ec.test_only, ec.loss, ld.weight, ec.num_features);
+  if (ld.label != FLT_MAX && !ec.test_only)
+    all.sd->weighted_labels += ld.label * ld.weight;
+  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ld.weight : 0;
+
   all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-
-  all.sd->weighted_unlabeled_examples += ld->label == FLT_MAX ? ld->weight : 0;
-  
   for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
     {
       int f = (int)all.final_prediction_sink[i];
       if (all.lda > 0)
 	print_lda_result(all, f,ec.topic_predictions.begin,0.,ec.tag);
       else
-	all.print(f, ld->prediction, 0, ec.tag);
+	all.print(f, ec.pred.scalar, 0, ec.tag);
     }
 
   print_update(all, ec);

@@ -10,14 +10,12 @@ license as described in the file LICENSE.
 #include <vector>
 
 #include "reductions.h"
-#include "simple_label.h"
+#include "vw.h"
 #include "rand48.h"
 #include "bs.h"
 
 using namespace std;
 using namespace LEARNER;
-
-namespace BS {
 
   struct bs{
     uint32_t B; //number of bootstrap rounds
@@ -30,9 +28,8 @@ namespace BS {
 
   void bs_predict_mean(vw& all, example& ec, vector<double> &pred_vec)
   {
-    label_data& ld = *(label_data*)ec.ld;
-    ld.prediction = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
-    ec.loss = all.loss->getLoss(all.sd, ld.prediction, ((label_data*)ec.ld)->label) * ((label_data*)ec.ld)->weight;    
+    ec.pred.scalar = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.l.simple.weight;    
   }
 
   void bs_predict_vote(vw& all, example& ec, vector<double> &pred_vec)
@@ -43,8 +40,6 @@ namespace BS {
     bool majority_found = false;
     bool multivote_detected = false; // distinct(votes)>2: used to skip part of the algorithm
     int* pred_vec_int = new int[pred_vec.size()];
-
-    label_data& ld = *(label_data*)ec.ld;
 
     for(unsigned int i=0; i<pred_vec.size(); i++)
     {
@@ -109,10 +104,10 @@ namespace BS {
     }
 
     // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()
-    ld.prediction = (float)current_label;
+    ec.pred.scalar = (float)current_label;
 
     // ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ld.weight; //replace line below for: "avg on votes" and getLoss()
-    ec.loss = ((ld.prediction == ld.label) ? 0.f : 1.f) * ld.weight;
+    ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.l.simple.weight;
   }
 
   void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub)
@@ -140,25 +135,11 @@ namespace BS {
 
   void output_example(vw& all, bs& d, example& ec)
   {
-    label_data* ld = (label_data*)ec.ld;
+    label_data& ld = ec.l.simple;
     
-    if(ec.test_only)
-      {
-	all.sd->weighted_holdout_examples += ld->weight;//test weight seen
-	all.sd->weighted_holdout_examples_since_last_dump += ld->weight;
-	all.sd->weighted_holdout_examples_since_last_pass += ld->weight;
-	all.sd->holdout_sum_loss += ec.loss;
-	all.sd->holdout_sum_loss_since_last_dump += ec.loss;
-	all.sd->holdout_sum_loss_since_last_pass += ec.loss;//since last pass
-      }
-    else
-      {
-	all.sd->weighted_examples += ld->weight;
-	all.sd->sum_loss += ec.loss;
-	all.sd->sum_loss_since_last_dump += ec.loss;
-	all.sd->total_features += ec.num_features;
-	all.sd->example_number++;
-      }
+    all.sd->update(ec.test_only, ec.loss, ld.weight, ec.num_features);
+    if (ld.label != FLT_MAX && !ec.test_only)
+      all.sd->weighted_labels += ld.label * ld.weight;
     
     if(all.final_prediction_sink.size() != 0)//get confidence interval only when printing out predictions
     {
@@ -174,18 +155,18 @@ namespace BS {
     }
 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      BS::print_result(*sink, ld->prediction, 0, ec.tag, d.lb, d.ub);
+      print_result(*sink, ec.pred.scalar, 0, ec.tag, d.lb, d.ub);
   
     print_update(all, ec);
   }
 
   template <bool is_learn>
-  void predict_or_learn(bs& d, learner& base, example& ec)
+  void predict_or_learn(bs& d, base_learner& base, example& ec)
   {
     vw* all = d.all;
     bool shouldOutput = all->raw_prediction > 0;
 
-    float weight_temp = ((label_data*)ec.ld)->weight;
+    float weight_temp = ec.l.simple.weight;
   
     string outputString;
     stringstream outputStringStream(outputString);
@@ -193,23 +174,23 @@ namespace BS {
 
     for (size_t i = 1; i <= d.B; i++)
       {
-        ((label_data*)ec.ld)->weight = weight_temp * (float) weight_gen();
+        ec.l.simple.weight = weight_temp * (float) BS::weight_gen();
 
 	if (is_learn)
 	  base.learn(ec, i-1);
 	else
 	  base.predict(ec, i-1);
-
-        d.pred_vec.push_back(((label_data*)ec.ld)->prediction);
+	
+        d.pred_vec.push_back(ec.pred.scalar);
 
         if (shouldOutput) {
           if (i > 1) outputStringStream << ' ';
           outputStringStream << i << ':' << ec.partial_prediction;
         }
       }	
-
-    ((label_data*)ec.ld)->weight = weight_temp;
-
+    
+    ec.l.simple.weight = weight_temp;
+    
     switch(d.bs_type)
     {
       case BS_TYPE_MEAN:
@@ -230,65 +211,53 @@ namespace BS {
 
   void finish_example(vw& all, bs& d, example& ec)
   {
-    BS::output_example(all, d, ec);
+    output_example(all, d, ec);
     VW::finish_example(all, &ec);
   }
 
   void finish(bs& d)
-  {
-    d.pred_vec.~vector();
-  }
+  { d.pred_vec.~vector(); }
 
-  learner* setup(vw& all, po::variables_map& vm)
-  {
-    bs* data = (bs*)calloc_or_die(1, sizeof(bs));
-    data->ub = FLT_MAX;
-    data->lb = -FLT_MAX;
-
-    po::options_description bs_options("Bootstrap options");
-    bs_options.add_options()
-      ("bs_type", po::value<string>(), "prediction type {mean,vote}");
-    
-    vm = add_options(all, bs_options);
-
-    data->B = (uint32_t)vm["bootstrap"].as<size_t>();
-
-    //append bs with number of samples to options_from_file so it is saved to regressor later
-    std::stringstream ss;
-    ss << " --bootstrap " << data->B;
-    all.file_options.append(ss.str());
-
-    std::string type_string("mean");
-
-    if (vm.count("bs_type"))
+base_learner* bs_setup(vw& all)
+{
+  if (missing_option<size_t, true>(all, "bootstrap", "k-way bootstrap by online importance resampling"))
+    return NULL;
+  new_options(all, "Bootstrap options")("bs_type", po::value<string>(), 
+					"prediction type {mean,vote}");    
+  add_options(all);
+  
+  bs& data = calloc_or_die<bs>();
+  data.ub = FLT_MAX;
+  data.lb = -FLT_MAX;
+  data.B = (uint32_t)all.vm["bootstrap"].as<size_t>();
+  
+  std::string type_string("mean");
+  if (all.vm.count("bs_type"))
     {
-      type_string = vm["bs_type"].as<std::string>();
+      type_string = all.vm["bs_type"].as<std::string>();
       
       if (type_string.compare("mean") == 0) { 
-        data->bs_type = BS_TYPE_MEAN;
+        data.bs_type = BS_TYPE_MEAN;
       }
       else if (type_string.compare("vote") == 0) {
-        data->bs_type = BS_TYPE_VOTE;
+        data.bs_type = BS_TYPE_VOTE;
       }
       else {
         std::cerr << "warning: bs_type must be in {'mean','vote'}; resetting to mean." << std::endl;
-        data->bs_type = BS_TYPE_MEAN;
+        data.bs_type = BS_TYPE_MEAN;
       }
     }
-    else //by default use mean
-      data->bs_type = BS_TYPE_MEAN;
-    all.file_options.append(" --bs_type ");
-    all.file_options.append(type_string);
-
-    data->pred_vec.reserve(data->B);
-    data->all = &all;
-
-    learner* l = new learner(data, all.l, data->B);
-    l->set_learn<bs, predict_or_learn<true> >();
-    l->set_predict<bs, predict_or_learn<false> >();
-    l->set_finish_example<bs,finish_example>();
-    l->set_finish<bs,finish>();
-
-    return l;
-  }
+  else //by default use mean
+    data.bs_type = BS_TYPE_MEAN;
+  *all.file_options << " --bs_type " << type_string;
+  
+  data.pred_vec.reserve(data.B);
+  data.all = &all;
+  
+  learner<bs>& l = init_learner(&data, setup_base(all), predict_or_learn<true>, 
+				predict_or_learn<false>, data.B);
+  l.set_finish_example(finish_example);
+  l.set_finish(finish);
+  
+  return make_base(l);
 }

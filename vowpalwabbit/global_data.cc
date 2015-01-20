@@ -11,10 +11,7 @@ license as described in the file LICENSE.
 #include <assert.h>
 
 #include "global_data.h"
-#include "simple_label.h"
-#include "parser.h"
 #include "gd.h"
-#include "memory.h"
 
 using namespace std;
 
@@ -190,28 +187,83 @@ void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool q
     }
 }
 
-po::variables_map add_options(vw& all, po::options_description& opts)
+void compile_limits(vector<string> limits, uint32_t* dest, bool quiet)
+{
+  for (size_t i = 0; i < limits.size(); i++)
+    {
+      string limit = limits[i];
+      if ( isdigit(limit[0]) )
+	{
+	  int n = atoi(limit.c_str());
+	  if (!quiet)
+	    cerr << "limiting to " << n << "features for each namespace." << endl;
+	  for (size_t j = 0; j < 256; j++)
+	    dest[j] = n;
+	}
+      else if ( limit.size() == 1)
+	cout << "You must specify the namespace index before the n" << endl;
+      else {
+	int n = atoi(limit.c_str()+1);
+	dest[(uint32_t)limit[0]] = n;
+	if (!quiet)
+	  cerr << "limiting to " << n << " for namespaces " << limit[0] << endl;
+      }
+    }
+}
+
+void add_options(vw& all, po::options_description& opts)
 {
   all.opts.add(opts);
   po::variables_map new_vm;
-
   //parse local opts once for notifications.
   po::parsed_options parsed = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(opts).allow_unregistered().run();
   po::store(parsed, new_vm);
   po::notify(new_vm); 
-  //parse all opts for a complete variable map.
-  parsed = po::command_line_parser(all.args).
+
+  for (po::variables_map::iterator it=new_vm.begin(); it!=new_vm.end(); ++it)
+    all.vm.insert(*it);
+}
+
+void add_options(vw& all)
+{
+  add_options(all, *all.new_opts);
+  delete all.new_opts;
+}
+
+bool no_new_options(vw& all)
+{
+  //parse local opts once for notifications.
+  po::parsed_options parsed = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(all.opts).allow_unregistered().run();
+    options(*all.new_opts).allow_unregistered().run();
+  po::variables_map new_vm;
   po::store(parsed, new_vm);
-  return new_vm;
+  all.opts.add(*all.new_opts);
+  delete all.new_opts;
+  for (po::variables_map::iterator it=new_vm.begin(); it!=new_vm.end(); ++it)
+    all.vm.insert(*it);
+  
+  if (new_vm.size() == 0) // required are missing;
+    return true;
+  else
+    return false;
+}
+
+bool missing_option(vw& all, bool keep, const char* name, const char* description)
+{
+  new_options(all)(name,description);
+  if (no_new_options(all))
+    return true;
+  if (keep)
+    *all.file_options << " --" << name;
+  return false;
 }
 
 vw::vw()
 {
-  sd = (shared_data *) calloc_or_die(1, sizeof(shared_data));
+  sd = &calloc_or_die<shared_data>();
   sd->dump_interval = 1.;   // next update progress dump
   sd->contraction = 1.;
   sd->max_label = 1.;
@@ -223,8 +275,11 @@ vw::vw()
 
   reg_mode = 0;
   current_pass = 0;
+  reduction_stack=v_init<LEARNER::base_learner* (*)(vw&)>();
 
   data_filename = "";
+
+  file_options = new std::stringstream;
 
   bfgs = false;
   hessian_on = false;
@@ -234,22 +289,16 @@ vw::vw()
   default_bits = true;
   daemon = false;
   num_children = 10;
-  lda_alpha = 0.1f;
-  lda_rho = 0.1f;
-  lda_D = 10000.;
-  lda_epsilon = 0.001f;
-  minibatch = 1;
   span_server = "";
-  m = 15;
   save_resume = false;
+
+  random_positive_weights = false;
 
   set_minmax = set_mm;
 
   power_t = 0.5;
   eta = 0.5; //default learning rate for normalized adaptive updates, this is switched to 10 by default for the other updates (see parse_args.cc)
   numpasses = 1;
-  rel_threshold = 0.001f;
-  rank = 0;
 
   final_prediction_sink.begin = final_prediction_sink.end=final_prediction_sink.end_array = NULL;
   raw_prediction = -1;
@@ -260,8 +309,6 @@ vw::vw()
   per_feature_regularizer_input = "";
   per_feature_regularizer_output = "";
   per_feature_regularizer_text = "";
-
-  file_options = "";
 
   #ifdef _WIN32
   stdout_fileno = _fileno(stdout);
@@ -287,6 +334,7 @@ vw::vw()
     {
       ngram[i] = 0;
       skips[i] = 0;
+      limit[i] = INT_MAX;
       affix_features[i] = 0;
       spelling_features[i] = 0;
     }

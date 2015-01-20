@@ -36,7 +36,7 @@ class ezexample {
 
   example* get_new_example() {
     example* new_ec = VW::new_unused_example(*vw_par_ref);
-    vw_par_ref->p->lp.default_label(new_ec->ld);
+    vw_par_ref->p->lp.default_label(&new_ec->l);
     return new_ec;
   }
 
@@ -74,7 +74,7 @@ class ezexample {
   // create a new ezexample by asking the vw parser for an example
   ezexample(vw*this_vw, bool multiline=false, vw*this_vw_parser=NULL) {
     setup_new_ezexample(this_vw, multiline, this_vw_parser);
-    
+    example_copies = v_init<example*>();    
     ec = get_new_example();
     we_create_ec = true;
 
@@ -193,7 +193,7 @@ class ezexample {
 
   void mini_setup_example() {
     ec->partial_prediction = 0.;
-    vw_ref->sd->t += vw_par_ref->p->lp.get_weight(ec->ld);
+    vw_ref->sd->t += vw_par_ref->p->lp.get_weight(&ec->l);
     ec->example_t = (float)vw_ref->sd->t;
 
     ec->num_features      -= quadratic_features_num;
@@ -222,7 +222,7 @@ class ezexample {
   
   float predict() {
     setup_for_predict();
-    return ((label_data*) ec->ld)->prediction;
+    return ec->pred.scalar;
   }
 
   float predict_partial() {

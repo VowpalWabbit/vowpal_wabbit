@@ -4,8 +4,10 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
-namespace CB {
 
+#include "label_parser.h"
+
+namespace CB {
   struct cb_class {
     float cost;  // the cost of this class
     uint32_t action;  // the index of this class
@@ -16,12 +18,16 @@ namespace CB {
 
   struct label {
     v_array<cb_class> costs;
-    uint32_t prediction;
   };
 
   extern label_parser cb_label;//for learning
 }
 
 namespace CB_EVAL {
+  struct label {
+    uint32_t action;
+    CB::label event;
+  };
+
   extern label_parser cb_eval;//for evaluation of an arbitrary policy.
 }

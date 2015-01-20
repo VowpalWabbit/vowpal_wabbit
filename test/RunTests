@@ -32,7 +32,7 @@ my $Valgrind = 'valgrind --quiet --error-exitcode=100 --track-origins=yes';
 
 # -- timeout is part of GNU coreutils, some systems may not have it
 my $TimeOut = '';
-my $TimeOutSec = 20;    # max allowed time for single vw command run
+my $TimeOutSec = 30;    # max allowed time for single vw command run
 
 # By default, we run all tests in the list
 my $FullRun = 1;
@@ -111,6 +111,11 @@ sub command_failed($) {
             printf STDERR
                 "$0: test $TestNo: '%s' died from signal $signal$core\n", $cmd;
             $exitcode = 1;
+        } elsif ($exitcode == 124) {
+            printf STDERR
+                "$0: test $TestNo: '%s' timed-out (exitcode=$exitcode)\n" .
+                "$0: test $TestNo: you may increase the imposed time-out: \$TimeOutSec=%d\n",
+                $cmd, $TimeOutSec;
         } elsif ($exitcode) {
             printf STDERR
                 "$0: test $TestNo: '%s' failed (exitcode=$exitcode)\n", $cmd;
@@ -316,8 +321,13 @@ sub next_test() {
             next;
         }
         # if we get here it is some unrecognized pattern
-        printf STDERR "Unrecognized test spec line:\n\t%s\n", $line;
-        print STDERR "Test lines must match one of the following patterns:\n";
+        if (! -e $first_word) {
+            # 1st word must exist, either as a reference-file
+            # or some command
+            printf STDERR "$0: %s: %s\n", $first_word, $!;
+        }
+        printf STDERR "$0: failed to run test line:\n\t%s\n", $line;
+        print STDERR "$0: test lines must be one of the following:\n";
         print STDERR "\tshell command to run\n";
         print STDERR "\tvw command to run: {VW} ...\n";
         print STDERR "\tstdout reference:  *.stdout\n";
@@ -613,7 +623,8 @@ sub run_tests() {
         my $status = $full_status >> 8;
         unless ($opt_V) {
             if (my $failure = command_failed($cmd)) {
-                print STDERR `$Cat $errf`;
+                print STDERR `$Cat $errf`
+                    unless ($failure == 124);
                 if ($opt_e) {
                     printf STDERR "$0: exiting with status=$failure\n";
                     exit $failure;
@@ -818,7 +829,7 @@ __DATA__
     train-sets/ref/rcv1_small.stderr
 
 # Test 17: Run LDA with 100 topics on 1000 Wikipedia articles
-{LDA} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 --invariant train-sets/wiki1K.dat
+{LDA} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 train-sets/wiki256.dat
     train-sets/ref/wiki1K.stderr
 
 # Test 18: Run search on seq_small for 12 passes, 4 passes per policy
@@ -826,7 +837,7 @@ __DATA__
     train-sets/ref/search_small.stderr
 
 # Test 19: neural network 3-parity with 2 hidden units
-{VW} -k -c -d train-sets/3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 15 --quiet --holdout_off
+{VW} -k -c -d train-sets/3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 19 --quiet --holdout_off
     train-sets/ref/3parity.stderr
 
 # Test 20: neural network 3-parity with 2 hidden units (predict)
@@ -839,12 +850,12 @@ __DATA__
     train-sets/ref/xxor.stderr
 
 # Test 22: matrix factorization -- training
-{VW} -k -d train-sets/ml100k_small_train -b 16 -q ui --rank 10 --l2 2e-6 --learning_rate 0.05 --passes 2 --decay_learning_rate 0.97 --power_t 0 -f movielens.reg --cache_file movielens.cache --loss_function classic --holdout_off
+{VW} -k -d train-sets/ml100k_small_train -b 16 -q ui --rank 10 --l2 2e-6 --learning_rate 0.05 --passes 2 --decay_learning_rate 0.97 --power_t 0 -f models/movielens.reg -c --loss_function classic --holdout_off
     train-sets/ref/ml100k_small.stdout
     train-sets/ref/ml100k_small.stderr
 
 # Test 23: matrix factorization -- testing
-{VW} -i movielens.reg -t -d test-sets/ml100k_small_test
+{VW} -i models/movielens.reg -t -d test-sets/ml100k_small_test
     test-sets/ref/ml100k_small.stdout
     test-sets/ref/ml100k_small.stderr
 
@@ -1061,3 +1072,25 @@ __DATA__
 {VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data_beam.predict --search_beam 10 --search_kbest 10
     train-sets/ref/sequence_data.ldf.beam.test.stderr
     train-sets/ref/sequence_data.ldf.beam.test.predict
+
+# Test 71: autolink
+{VW} -d train-sets/0002.dat --autolink 1 --examples 100 -p 0002.autolink.predict
+    train-sets/ref/0002.autolink.stderr
+    train-sets/ref/0002.autolink.predict
+
+# Test 72: train FTRL-Proximal
+{VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 1 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2
+    train-sets/ref/0001_ftrl.stderr
+
+# Test 73: test FTRL-Proximal
+{VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p ftrl_001.predict.tmp
+    test-sets/ref/0001_ftrl.stderr
+    pred-sets/ref/0001_ftrl.predict
+
+# Test 74: cb evaluation
+{VW} -d train-sets/rcv1_cb_eval --cb 2 --eval
+    train-sets/ref/rcv1_cb_eval.stderr
+
+# Test 75: Log_multi 
+{VW} --log_multi 10 train-sets/multiclass 
+    train-sets/ref/log_multi.stderr

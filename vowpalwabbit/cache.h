@@ -4,7 +4,9 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
-#include "parse_example.h"
+#include "v_array.h"
+#include "io_buf.h"
+#include "example.h"
 
 const size_t int_size = 6;
 const size_t char_size = 2;

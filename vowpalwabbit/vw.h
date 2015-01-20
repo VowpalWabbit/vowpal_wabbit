@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 #include "example.h"
 #include "hash.h"
 #include "simple_label.h"
+#include "parser.h"
 
 namespace VW {
 
@@ -17,7 +18,7 @@ namespace VW {
    */
   vw* initialize(string s);
 
-  void cmd_string_replace_value( string& cmd, string flag_to_replace, string new_value );
+  void cmd_string_replace_value( std::stringstream*& ss, string flag_to_replace, string new_value );
 
   char** get_argv_from_string(string s, int& argc);
 
@@ -57,6 +58,7 @@ namespace VW {
   float get_importance(example*ec);
   float get_initial(example*ec);
   float get_prediction(example*ec);
+  float get_cost_sensitive_prediction(example*ec);
   size_t get_tag_length(example* ec);
   const char* get_tag(example* ec);
   size_t get_feature_number(example* ec);
@@ -69,7 +71,7 @@ namespace VW {
   //notify VW that you are done with the example.
   void finish_example(vw& all, example* ec);
 
-  void copy_example_data(bool audit, example*, example*, size_t, void(*copy_label)(void*&,void*));
+  void copy_example_data(bool audit, example*, example*, size_t, void(*copy_label)(void*,void*));
   void copy_example_data(bool audit, example*, example*);  // don't copy the label
 
   // after export_example, must call releaseFeatureSpace to free native memory
@@ -114,12 +116,4 @@ namespace VW {
 
   inline uint32_t get_stride(vw& all)
   { return (uint32_t)(1 << all.reg.stride_shift);}
-
-  inline void update_dump_interval(vw& all) {
-      if (all.progress_add) { 
-        all.sd->dump_interval = (float)all.sd->weighted_examples + all.progress_arg;
-      } else {
-        all.sd->dump_interval = (float)all.sd->weighted_examples * all.progress_arg;
-      }
-  }
 }

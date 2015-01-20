@@ -44,7 +44,7 @@ extern "C"
 		return static_cast<VW_HANDLE>(all);
 	}
 	
-	VW_DLL_MEMBER void      VW_CALLING_CONV VW_Finish(VW_HANDLE handle)
+	VW_DLL_MEMBER void      VW_CALLING_CONV VW_Finish_Passes(VW_HANDLE handle)
 	{
 		vw * pointer = static_cast<vw*>(handle);
 		if (pointer->numpasses > 1)
@@ -52,12 +52,15 @@ extern "C"
 			adjust_used_index(*pointer);
 			pointer->do_reset_source = true;
 			VW::start_parser(*pointer,false);
-			pointer->l->driver(pointer);
+			LEARNER::generic_driver(*pointer);
 			VW::end_parser(*pointer); 
 			}
-		else
-			release_parser_datastructures(*pointer);
+	}
 
+	VW_DLL_MEMBER void      VW_CALLING_CONV VW_Finish(VW_HANDLE handle)
+	{
+		vw * pointer = static_cast<vw*>(handle);
+		release_parser_datastructures(*pointer);
 		VW::finish(*pointer);
 	}
 
@@ -137,6 +140,11 @@ extern "C"
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_GetPrediction(VW_EXAMPLE e)
 	{
 		return VW::get_prediction(static_cast<example*>(e));
+	}
+
+	VW_DLL_MEMBER float VW_CALLING_CONV VW_GetCostSensitivePrediction(VW_EXAMPLE e)
+	{
+		return VW::get_cost_sensitive_prediction(static_cast<example*>(e));
 	}
 
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetTagLength(VW_EXAMPLE e)
@@ -219,6 +227,8 @@ extern "C"
 		vw * pointer = static_cast<vw*>(handle);
 		example * ex = static_cast<example*>(e);
 		pointer->l->predict(*ex);
+		//BUG: The below method may return garbage as it assumes a certain structure for ex->ld
+		//which may not be the actual one used (e.g., for cost-sensitive multi-class learning)
 		return VW::get_prediction(ex);
 	}
 

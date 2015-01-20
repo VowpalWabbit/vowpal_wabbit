@@ -9,33 +9,32 @@ license as described in the file LICENSE.
 #include <sstream>
 
 #include "reductions.h"
-#include "constant.h"
-#include "simple_label.h"
 #include "rand48.h"
 #include "gd.h"
 
 using namespace std;
 using namespace LEARNER;
 
-namespace NN {
-  const float hidden_min_activation = -3;
-  const float hidden_max_activation = 3;
-  const uint32_t nn_constant = 533357803;
+const float hidden_min_activation = -3;
+const float hidden_max_activation = 3;
+const uint32_t nn_constant = 533357803;
   
-  struct nn {
-    uint32_t k;
-    loss_function* squared_loss;
-    example output_layer;
-    float prediction;
-    size_t increment;
-    bool dropout;
-    uint64_t xsubi;
-    uint64_t save_xsubi;
-    bool inpass;
-    bool finished_setup;
+struct nn {
+  uint32_t k;
+  loss_function* squared_loss;
+  example output_layer;
+  example hiddenbias;
+  example outputweight;
+  float prediction;
+  size_t increment;
+  bool dropout;
+  uint64_t xsubi;
+  uint64_t save_xsubi;
+  bool inpass;
+  bool finished_setup;
 
-    vw* all;
-  };
+  vw* all;
+};
 
 #define cast_uint32_t static_cast<uint32_t>
 
@@ -86,6 +85,25 @@ namespace NN {
 
     n.output_layer.in_use = true;
 
+    // TODO: not correct if --noconstant
+    memset (&n.hiddenbias, 0, sizeof (n.hiddenbias));
+    n.hiddenbias.indices.push_back(constant_namespace);
+    feature temp = {1,(uint32_t) constant};
+    n.hiddenbias.atomics[constant_namespace].push_back(temp);
+    n.hiddenbias.total_sum_feat_sq++;
+    n.hiddenbias.l.simple.label = FLT_MAX;
+    n.hiddenbias.l.simple.weight = 1;
+    n.hiddenbias.in_use = true;
+
+    memset (&n.outputweight, 0, sizeof (n.outputweight));
+    n.outputweight.indices.push_back(nn_output_namespace);
+    n.outputweight.atomics[nn_output_namespace].push_back(n.output_layer.atomics[nn_output_namespace][0]);
+    n.outputweight.atomics[nn_output_namespace][0].x = 1;
+    n.outputweight.total_sum_feat_sq++;
+    n.outputweight.l.simple.label = FLT_MAX;
+    n.outputweight.l.simple.weight = 1;
+    n.outputweight.in_use = true;
+
     n.finished_setup = true;
   }
 
@@ -96,7 +114,7 @@ namespace NN {
   }
 
   template <bool is_learn>
-  void predict_or_learn(nn& n, learner& base, example& ec)
+  void predict_or_learn(nn& n, base_learner& base, example& ec)
   {
     bool shouldOutput = n.all->raw_prediction > 0;
 
@@ -108,8 +126,7 @@ namespace NN {
     shared_data* save_sd = n.all->sd;
     n.all->sd = &sd;
 
-    label_data* ld = (label_data*)ec.ld;
-    float save_label = ld->label;
+    label_data ld = ec.l.simple;
     void (*save_set_minmax) (shared_data*, float) = n.all->set_minmax;
     float save_min_label;
     float save_max_label;
@@ -128,24 +145,25 @@ namespace NN {
     n.all->sd->min_label = hidden_min_activation;
     save_max_label = n.all->sd->max_label;
     n.all->sd->max_label = hidden_max_activation;
-    //ld->label = FLT_MAX;
+
+    n.hiddenbias.ft_offset = ec.ft_offset;
+
     for (unsigned int i = 0; i < n.k; ++i)
       {
-        uint32_t biasindex = (uint32_t) constant * (n.all->wpp << n.all->reg.stride_shift) + i * (uint32_t)n.increment + ec.ft_offset;
-        weight* w = &n.all->reg.weight_vector[biasindex & n.all->reg.weight_mask];
-        
-        // avoid saddle point at 0
-        if (*w == 0)
-          {
-            w[0] = (float) (frand48 () - 0.5);
+        base.predict(n.hiddenbias, i);
+        float wf = n.hiddenbias.pred.scalar;
 
-            if (n.dropout && n.all->normalized_updates)
-              w[n.all->normalized_idx] = 1e-4f;
+        // avoid saddle point at 0
+        if (wf == 0)
+          {
+            n.hiddenbias.l.simple.label = (float) (frand48 () - 0.5);
+            base.learn(n.hiddenbias, i);
+            n.hiddenbias.l.simple.label = FLT_MAX;
           }
 
 	base.predict(ec, i);
 
-        hidden_units[i] = ld->prediction;
+        hidden_units[i] = ec.pred.scalar;
 
         dropped_out[i] = (n.dropout && merand48 (n.xsubi) < 0.5);
 
@@ -154,7 +172,6 @@ namespace NN {
           outputStringStream << i << ':' << ec.partial_prediction << ',' << fasttanh (hidden_units[i]);
         }
       }
-    //ld->label = save_label;
     n.all->loss = save_loss;
     n.all->set_minmax = save_set_minmax;
     n.all->sd->min_label = save_min_label;
@@ -170,6 +187,15 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     n.output_layer.total_sum_feat_sq = 1;
     n.output_layer.sum_feat_sq[nn_output_namespace] = 1;
 
+    n.outputweight.ft_offset = ec.ft_offset;
+
+    n.all->set_minmax = noop_mm;
+    n.all->loss = n.squared_loss;
+    save_min_label = n.all->sd->min_label;
+    n.all->sd->min_label = -1;
+    save_max_label = n.all->sd->max_label;
+    n.all->sd->max_label = 1;
+
     for (unsigned int i = 0; i < n.k; ++i)
       {
         float sigmah = 
@@ -179,19 +205,25 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         n.output_layer.total_sum_feat_sq += sigmah * sigmah;
         n.output_layer.sum_feat_sq[nn_output_namespace] += sigmah * sigmah;
 
-        uint32_t nuindex = n.output_layer.atomics[nn_output_namespace][i].weight_index + (n.k * (uint32_t)n.increment) + ec.ft_offset;
-        weight* w = &n.all->reg.weight_vector[nuindex & n.all->reg.weight_mask];
-        
-        // avoid saddle point at 0
-        if (*w == 0)
-          {
-            float sqrtk = sqrt ((float)n.k);
-            w[0] = (float) (frand48 () - 0.5) / sqrtk;
+        n.outputweight.atomics[nn_output_namespace][0].weight_index = 
+          n.output_layer.atomics[nn_output_namespace][i].weight_index;
+        base.predict(n.outputweight, n.k);
+        float wf = n.outputweight.pred.scalar;
 
-            if (n.dropout && n.all->normalized_updates)
-              w[n.all->normalized_idx] = 1e-4f;
+        // avoid saddle point at 0
+        if (wf == 0)
+          {    
+            float sqrtk = sqrt ((float)n.k);
+            n.outputweight.l.simple.label = (float) (frand48 () - 0.5) / sqrtk;
+            base.learn(n.outputweight, n.k);
+            n.outputweight.l.simple.label = FLT_MAX;
           }
       }
+
+    n.all->loss = save_loss;
+    n.all->set_minmax = save_set_minmax;
+    n.all->sd->min_label = save_min_label;
+    n.all->sd->max_label = save_max_label;
 
     if (n.inpass) {
       // TODO: this is not correct if there is something in the 
@@ -216,14 +248,14 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     }
     else {
       n.output_layer.ft_offset = ec.ft_offset;
-      n.output_layer.ld = ec.ld;
+      n.output_layer.l = ec.l;
       n.output_layer.partial_prediction = 0;
       n.output_layer.example_t = ec.example_t;
       if (is_learn)
 	base.learn(n.output_layer, n.k);
       else
 	base.predict(n.output_layer, n.k);
-      n.output_layer.ld = 0;
+      ec.l = n.output_layer.l;
     }
 
     n.prediction = GD::finalize_prediction (n.all->sd, n.output_layer.partial_prediction);
@@ -232,11 +264,11 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       outputStringStream << ' ' << n.output_layer.partial_prediction;
       n.all->print_text(n.all->raw_prediction, outputStringStream.str(), ec.tag);
     }
-
-    if (is_learn && n.all->training && ld->label != FLT_MAX) {
+    
+    if (is_learn && n.all->training && ld.label != FLT_MAX) {
       float gradient = n.all->loss->first_derivative(n.all->sd, 
-                                                  n.prediction,
-                                                  ld->label);
+						     n.prediction,
+						     ld.label);
 
       if (fabs (gradient) > 0) {
         n.all->loss = n.squared_loss;
@@ -251,12 +283,14 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
             float sigmah = 
               n.output_layer.atomics[nn_output_namespace][i].x / dropscale;
             float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-            uint32_t nuindex = n.output_layer.atomics[nn_output_namespace][i].weight_index + (n.k * (uint32_t)n.increment) + ec.ft_offset;
-            float nu = n.all->reg.weight_vector[nuindex & n.all->reg.weight_mask];
+            n.outputweight.atomics[nn_output_namespace][0].weight_index = 
+              n.output_layer.atomics[nn_output_namespace][i].weight_index;
+            base.predict(n.outputweight, n.k);
+            float nu = n.outputweight.pred.scalar;
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
-            ld->label = GD::finalize_prediction (n.all->sd, hidden_units[i] - gradhw);
-            if (ld->label != hidden_units[i]) 
+            ec.l.simple.label = GD::finalize_prediction (n.all->sd, hidden_units[i] - gradhw);
+            if (ec.l.simple.label != hidden_units[i]) 
               base.learn(ec, i);
           }
         }
@@ -268,7 +302,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       }
     }
 
-    ld->label = save_label;
+    ec.l.simple.label = ld.label;
 
     if (! converse) {
       save_partial_prediction = n.output_layer.partial_prediction;
@@ -288,7 +322,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       }
 
     ec.partial_prediction = save_partial_prediction;
-    ld->prediction = save_final_prediction;
+    ec.pred.scalar = save_final_prediction;
     ec.loss = save_ec_loss;
 
     n.all->sd = save_sd;
@@ -307,82 +341,74 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   void finish(nn& n)
   {
     delete n.squared_loss;
-    free (n.output_layer.indices.begin);
-    free (n.output_layer.atomics[nn_output_namespace].begin);
+    dealloc_example (NULL, n.output_layer);
+    dealloc_example (NULL, n.hiddenbias);
+    dealloc_example (NULL, n.outputweight);
   }
 
-  learner* setup(vw& all, po::variables_map& vm)
+  base_learner* nn_setup(vw& all)
   {
-    nn* n = (nn*)calloc_or_die(1,sizeof(nn));
-    n->all = &all;
-
-    po::options_description nn_opts("NN options");
-    nn_opts.add_options()
+    if (missing_option<size_t, true>(all, "nn", "Sigmoidal feedforward network with <k> hidden units"))
+      return NULL;
+    new_options(all, "Neural Network options")
       ("inpass", "Train or test sigmoidal feedforward network with input passthrough.")
       ("dropout", "Train or test sigmoidal feedforward network using dropout.")
       ("meanfield", "Train or test sigmoidal feedforward network using mean field.");
-
-    vm = add_options(all, nn_opts);
-
-    //first parse for number of hidden units
-    n->k = (uint32_t)vm["nn"].as<size_t>();
+    add_options(all);
     
-    std::stringstream ss;
-    ss << " --nn " << n->k;
-    all.file_options.append(ss.str());
+    po::variables_map& vm = all.vm;
+    nn& n = calloc_or_die<nn>();
+    n.all = &all;
+    //first parse for number of hidden units
+    n.k = (uint32_t)vm["nn"].as<size_t>();
 
     if ( vm.count("dropout") ) {
-      n->dropout = true;
-      
-      std::stringstream ss;
-      ss << " --dropout ";
-      all.file_options.append(ss.str());
+      n.dropout = true;
+      *all.file_options << " --dropout ";
     }
     
     if ( vm.count("meanfield") ) {
-      n->dropout = false;
+      n.dropout = false;
       if (! all.quiet) 
         std::cerr << "using mean field for neural network " 
                   << (all.training ? "training" : "testing") 
                   << std::endl;
     }
 
-    if (n->dropout) 
+    if (n.dropout) 
       if (! all.quiet)
         std::cerr << "using dropout for neural network "
                   << (all.training ? "training" : "testing") 
                   << std::endl;
 
     if (vm.count ("inpass")) {
-      n->inpass = true;
+      n.inpass = true;
+      *all.file_options << " --inpass";
 
-      std::stringstream ss;
-      ss << " --inpass";
-      all.file_options.append(ss.str());
     }
 
-    if (n->inpass && ! all.quiet)
+    if (n.inpass && ! all.quiet)
       std::cerr << "using input passthrough for neural network "
                 << (all.training ? "training" : "testing") 
                 << std::endl;
 
-    n->finished_setup = false;
-    n->squared_loss = getLossFunction (0, "squared", 0);
+    n.finished_setup = false;
+    n.squared_loss = getLossFunction (all, "squared", 0);
 
-    n->xsubi = 0;
+    n.xsubi = 0;
 
     if (vm.count("random_seed"))
-      n->xsubi = vm["random_seed"].as<size_t>();
+      n.xsubi = vm["random_seed"].as<size_t>();
 
-    n->save_xsubi = n->xsubi;
-    n->increment = all.l->increment;//Indexing of output layer is odd.
-    learner* l = new learner(n,  all.l, n->k+1);
-    l->set_learn<nn, predict_or_learn<true> >();
-    l->set_predict<nn, predict_or_learn<false> >();
-    l->set_finish<nn, finish>();
-    l->set_finish_example<nn, finish_example>();
-    l->set_end_pass<nn,end_pass>();
+    n.save_xsubi = n.xsubi;
+    
+    base_learner* base = setup_base(all);
+    n.increment = base->increment;//Indexing of output layer is odd.
+    learner<nn>& l = init_learner(&n, base, predict_or_learn<true>, 
+				  predict_or_learn<false>, n.k+1);
+    l.set_finish(finish);
+    l.set_finish_example(finish_example);
+    l.set_end_pass(end_pass);
 
-    return l;
+    return make_base(l);
   }
-}
