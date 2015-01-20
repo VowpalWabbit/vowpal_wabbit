@@ -225,9 +225,11 @@ using namespace CB;
   template <bool is_learn>
   void gen_cs_example_dr(vw& all, cb& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
   {//this implements the doubly robust method
-    //generate cost sensitive example
     cs_ld.costs.erase();
-    if( ld.costs.size() == 1) //this is a typical example where we can perform all actions
+    if(ld.costs.size() == 0)//a test example
+      for(uint32_t i = 1; i <= all.sd->k; i++)
+	cs_ld.costs.push_back({FLT_MAX,i,0.,0.});
+    else if( ld.costs.size() == 1) //this is a typical example where we can perform all actions
       //in this case generate cost-sensitive example with all actions
       for(uint32_t i = 1; i <= all.sd->k; i++)
 	gen_cs_label<is_learn>(all, c, ec, cs_ld, i);
@@ -268,7 +270,7 @@ using namespace CB;
 	  base.learn(ec);
 	else
 	  base.predict(ec);
-
+	
         for (size_t i=0; i<ld.costs.size(); i++)
           ld.costs[i].partial_prediction = c.cb_cs_ld.costs[i].partial_prediction;
 	ec.l.cb = ld;

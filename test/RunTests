@@ -1094,3 +1094,11 @@ __DATA__
 # Test 75: Log_multi 
 {VW} --log_multi 10 train-sets/multiclass 
     train-sets/ref/log_multi.stderr
+
+# Test 76: cbify, epsilon-greedy
+{VW} --cbify 10 --epsilon 0.05 train-sets/multiclass 
+    train-sets/ref/cbify_epsilon.stderr
+
+# Test 77: cbify, tau first
+{VW} --cbify 10 --first 5 train-sets/multiclass 
+    train-sets/ref/cbify_first.stderr

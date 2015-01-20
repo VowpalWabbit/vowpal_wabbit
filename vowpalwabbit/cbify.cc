@@ -169,7 +169,7 @@ void predict_or_learn_first(cbify& data, base_learner& base, example& ec)
   if (vwc.recorded && is_learn)
     {
       CB::cb_class l = {ec.loss, action, 1.f / data.k, 0};
-      data.cb_label.costs.push_back(l);
+      ec.l.cb.costs.push_back(l);
       base.learn(ec);
       ec.loss = l.cost;
     }
@@ -195,7 +195,7 @@ void predict_or_learn_greedy(cbify& data, base_learner& base, example& ec)
   float prob = data.recorder->Get_Prob();
   
   CB::cb_class l = { loss(ld.label, action), action, prob };
-  data.cb_label.costs.push_back(l);
+  ec.l.cb.costs.push_back(l);
   
   if (is_learn)
     base.learn(ec);
@@ -227,7 +227,7 @@ void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
       
       CB::cb_class l = {loss(ld.label, action), 
 			action, probability};
-      data.cb_label.costs.push_back(l);
+      ec.l.cb.costs.push_back(l);
       for (size_t i = 0; i < data.policies.size(); i++)
 	{
 	  uint32_t count = BS::weight_gen();
