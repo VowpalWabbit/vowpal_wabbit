@@ -8,11 +8,10 @@ license as described in the file LICENSE.
 
 struct oaa{
   size_t k;
-  bool shouldOutput;
   vw* all;
 };
 
-template <bool is_learn>
+template <bool is_learn, bool print_all>
 void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   MULTICLASS::label_t mc_label_data = ec.l.multi;
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
@@ -42,7 +41,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
 	  prediction = i;
 	}
       
-      if (o.shouldOutput) {
+      if (print_all) {
 	if (i > 1) outputStringStream << ' ';
 	outputStringStream << i << ':' << ec.partial_prediction;
       }
@@ -50,7 +49,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   ec.pred.multiclass = prediction;
   ec.l.multi = mc_label_data;
   
-  if (o.shouldOutput) 
+  if (print_all) 
     o.all->print_text(o.all->raw_prediction, outputStringStream.str(), ec.tag);
 }
 
@@ -61,11 +60,15 @@ LEARNER::base_learner* oaa_setup(vw& all)
   
   oaa& data = calloc_or_die<oaa>();
   data.k = all.vm["oaa"].as<size_t>();
-  data.shouldOutput = all.raw_prediction > 0;
   data.all = &all;
   
-  LEARNER::learner<oaa>& l = 
-    LEARNER::init_multiclass_learner(&data, setup_base(all), predict_or_learn<true>, 
-				     predict_or_learn<false>, all.p, data.k);
-  return make_base(l);
+  LEARNER::learner<oaa>* l;
+  if (all.raw_prediction > 0)
+    l = &LEARNER::init_multiclass_learner(&data, setup_base(all), predict_or_learn<true, true>, 
+					  predict_or_learn<false, true>, all.p, data.k);
+  else
+    l = &LEARNER::init_multiclass_learner(&data, setup_base(all),predict_or_learn<true, false>, 
+					  predict_or_learn<false, false>, all.p, data.k);
+    
+  return make_base(*l);
 }

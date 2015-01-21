@@ -353,7 +353,6 @@ void predict(gd& g, base_learner& base, example& ec)
   
   ec.partial_prediction *= (float)all.sd->contraction;
   ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
-  
   if (audit)
     print_audit_features(all, ec);
 }

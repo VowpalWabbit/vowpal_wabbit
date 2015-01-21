@@ -94,6 +94,9 @@ example_ptr my_read_example(vw_ptr all, size_t labelType, char*str) {
   parse_atomic_example(*all, ec, false);
   VW::setup_example(*all, ec);
   ec->example_counter = labelType;
+  ec->tag.erase();
+  if (labelType != lDEFAULT)
+    ec->tag.push_back((char)labelType);  // hide the label type in the tag
   return boost::shared_ptr<example>(ec, my_delete_example);
 }
 

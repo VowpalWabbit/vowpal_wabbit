@@ -19,6 +19,7 @@ using namespace CB;
 
   struct cb {
     size_t cb_type;
+    size_t num_actions;
     COST_SENSITIVE::label cb_cs_ld; 
     float avg_loss_regressors;
     size_t nb_ex_regressors;
@@ -77,7 +78,7 @@ using namespace CB;
     cs_ld.costs.erase();
     if( ld.costs.size() == 1) { //this is a typical example where we can perform all actions
       //in this case generate cost-sensitive example with all actions
-      for(uint32_t i = 1; i <= all.sd->k; i++)
+      for(uint32_t i = 1; i <= c.num_actions; i++)
       {
         COST_SENSITIVE::wclass wc;
         wc.wap_value = 0.;
@@ -139,7 +140,7 @@ using namespace CB;
     cs_ld.costs.erase();  
     if( ld.costs.size() == 1) { //this is a typical example where we can perform all actions
       //in this case generate cost-sensitive example with all actions  
-      for(uint32_t i = 1; i <= all.sd->k; i++)
+      for(uint32_t i = 1; i <= c.num_actions; i++)
       {
         COST_SENSITIVE::wclass wc;
         wc.wap_value = 0.;
@@ -206,7 +207,7 @@ using namespace CB;
     wc.wap_value = 0.;
     
     //get cost prediction for this label
-    wc.x = CB_ALGS::get_cost_pred<is_learn>(all, c.known_cost, ec, label, all.sd->k);
+    wc.x = CB_ALGS::get_cost_pred<is_learn>(all, c.known_cost, ec, label, c.num_actions);
     wc.class_index = label;
     wc.partial_prediction = 0.;
     wc.wap_value = 0.;
@@ -225,11 +226,13 @@ using namespace CB;
   template <bool is_learn>
   void gen_cs_example_dr(vw& all, cb& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
   {//this implements the doubly robust method
-    //generate cost sensitive example
     cs_ld.costs.erase();
-    if( ld.costs.size() == 1) //this is a typical example where we can perform all actions
+    if(ld.costs.size() == 0)//a test example
+      for(uint32_t i = 1; i <= c.num_actions; i++)
+	cs_ld.costs.push_back({FLT_MAX,i,0.,0.});
+    else if( ld.costs.size() == 1) //this is a typical example where we can perform all actions
       //in this case generate cost-sensitive example with all actions
-      for(uint32_t i = 1; i <= all.sd->k; i++)
+      for(uint32_t i = 1; i <= c.num_actions; i++)
 	gen_cs_label<is_learn>(all, c, ec, cs_ld, i);
     else  //this is an example where we can only perform a subset of the actions
       //in this case generate cost-sensitive example with only allowed actions
@@ -268,7 +271,7 @@ using namespace CB;
 	  base.learn(ec);
 	else
 	  base.predict(ec);
-
+	
         for (size_t i=0; i<ld.costs.size(); i++)
           ld.costs[i].partial_prediction = c.cb_cs_ld.costs[i].partial_prediction;
 	ec.l.cb = ld;
@@ -376,9 +379,9 @@ using namespace CB;
     cb& c = calloc_or_die<cb>();
     c.all = &all;
 
-    uint32_t nb_actions = (uint32_t)all.vm["cb"].as<size_t>();
+    c.num_actions = (uint32_t)all.vm["cb"].as<size_t>();
 
-    all.sd->k = nb_actions;
+    all.sd->k = c.num_actions;
 
     bool eval = false;
     if (all.vm.count("eval"))
