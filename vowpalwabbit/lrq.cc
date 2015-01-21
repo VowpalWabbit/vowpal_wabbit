@@ -126,16 +126,13 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
 
                             if (iter == 0 && (all.audit || all.hash_inv))
                               {
-                                std::stringstream new_space_buffer;
                                 std::stringstream new_feature_buffer;
 
-                                new_space_buffer << "lrq";
                                 new_feature_buffer << right << '^' 
                                                    << ra->feature << '^'
                                                    << n;
 
-                                char* new_space = 
-                                  strdup (new_space_buffer.str().c_str());
+                                char* new_space = strdup("lrq");
                                 char* new_feature = 
                                   strdup (new_feature_buffer.str().c_str());
 
