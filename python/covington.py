@@ -38,17 +38,17 @@ class CovingtonDepParser(pyvw.SearchTask):
 
                 # construct an example
                 dir = 'l' if m < n else 'r'
-                with self.vw.example({'a': [wordN, dir + '_' + wordN], 'b': [wordM, dir + '_' + wordN], 'p': [wordN + '_' + wordM, dir + '_' + wordN + '_' + wordM],
-                                      'd': [ str(m-n <= d) + '<=' + str(d) for d in [-8, -4, -2, -1, 1, 2, 4, 8] ] +
-                                           [ str(m-n >= d) + '>=' + str(d) for d in [-8, -4, -2, -1, 1, 2, 4, 8] ] }) as ex:
-                    pred = self.sch.predict(examples  = ex,
-                                            my_tag    = (m+1)*N + n + 1,
-                                            oracle    = isParent,
-                                            condition = [ (max(0, (m  )*N + n + 1), 'p'),
-                                                          (max(0, (m+1)*N + n    ), 'q') ])
-                    if pred == 2:
-                        output[n] = m
-                        break
+                ex = lambda: self.vw.example({'a': [wordN, dir + '_' + wordN], 'b': [wordM, dir + '_' + wordN], 'p': [wordN + '_' + wordM, dir + '_' + wordN + '_' + wordM],
+                                              'd': [ str(m-n <= d) + '<=' + str(d) for d in [-8, -4, -2, -1, 1, 2, 4, 8] ] +
+                                                   [ str(m-n >= d) + '>=' + str(d) for d in [-8, -4, -2, -1, 1, 2, 4, 8] ] })
+                pred = self.sch.predict(examples  = ex,
+                                        my_tag    = (m+1)*N + n + 1,
+                                        oracle    = isParent,
+                                        condition = [ (max(0, (m  )*N + n + 1), 'p'),
+                                                      (max(0, (m+1)*N + n    ), 'q') ])
+                if pred == 2:
+                    output[n] = m
+                    break
         return output
 
 class CovingtonDepParserLDF(pyvw.SearchTask):
@@ -61,7 +61,7 @@ class CovingtonDepParserLDF(pyvw.SearchTask):
         wordM = sentence[m][0] if m >= 0 else '*ROOT*'
         dir   = 'l' if m < n else 'r'
         ex = self.vw.example( { 'a': [wordN, dir + '_' + wordN],
-                                'b': [wordM, dir + '_' + wordN],
+                                'b': [wordM, dir + '_' + wordM],
                                 'p': [wordN + '_' + wordM, dir + '_' + wordN + '_' + wordM],
                                 'd': [ str(m-n <= d) + '<=' + str(d) for d in [-8, -4, -2, -1, 1, 2, 4, 8] ] +
                                      [ str(m-n >= d) + '>=' + str(d) for d in [-8, -4, -2, -1, 1, 2, 4, 8] ] },
@@ -77,7 +77,7 @@ class CovingtonDepParserLDF(pyvw.SearchTask):
         output = [-1 for i in range(N)]
         for n in range(N):
             # make LDF examples
-            examples = [ self.makeExample(sentence,n,m) for m in range(-1,N) if n != m ]
+            examples = [ lambda: self.makeExample(sentence,n,m) for m in range(-1,N) if n != m ]
 
             # truth
             parN = sentence[n][1]
@@ -91,8 +91,6 @@ class CovingtonDepParserLDF(pyvw.SearchTask):
 
             output[n] = pred-1 if pred < n else pred # have to +1 because n==m excluded
 
-            for ex in examples: ex.finish()  # clean up
-            
         return output
 
 # TODO: if they make sure search=0 <==> ldf <==> csoaa_ldf
@@ -109,11 +107,10 @@ print task.predict( [(w,-1) for w in "the monster ate a sandwich".split()] )
 print 'should have printed [ 1 2 -1 4 2 ]'
 
 # demo the ldf version:
-
 print 'training LDF'
 vw = pyvw.vw("--search 0 --csoaa_ldf m --search_task hook --ring_size 1024 --quiet")
 task = vw.init_search_task(CovingtonDepParserLDF)
-for p in range(2): # do two passes over the training data
+for p in range(100): # do two passes over the training data
     task.learn(my_dataset)
 print 'testing LDF'
 print task.predict( [(w,-1) for w in "the monster ate a sandwich".split()] )
