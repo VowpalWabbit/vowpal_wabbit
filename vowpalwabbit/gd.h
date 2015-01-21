@@ -46,28 +46,28 @@ namespace GD{
       foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[*i].begin, ec.atomics[*i].end, dat, offset);
      
     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
-      if (ec.atomics[(int)(*i)[0]].size() > 0) {
-        v_array<feature> temp = ec.atomics[(int)(*i)[0]];
+      if (ec.atomics[(unsigned char)(*i)[0]].size() > 0) {
+        v_array<feature> temp = ec.atomics[(unsigned char)(*i)[0]];
         for (; temp.begin != temp.end; temp.begin++)
         {
           uint32_t halfhash = quadratic_constant * (temp.begin->weight_index + offset);
        
-          foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(int)(*i)[1]].begin, ec.atomics[(int)(*i)[1]].end, dat, 
+          foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(unsigned char)(*i)[1]].begin, ec.atomics[(unsigned char)(*i)[1]].end, dat, 
                                halfhash, temp.begin->x);
         }
       }
     }
      
     for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-      if ((ec.atomics[(int)(*i)[0]].size() == 0) || (ec.atomics[(int)(*i)[1]].size() == 0) || (ec.atomics[(int)(*i)[2]].size() == 0)) { continue; }
-      v_array<feature> temp1 = ec.atomics[(int)(*i)[0]];
+      if ((ec.atomics[(unsigned char)(*i)[0]].size() == 0) || (ec.atomics[(unsigned char)(*i)[1]].size() == 0) || (ec.atomics[(unsigned char)(*i)[2]].size() == 0)) { continue; }
+      v_array<feature> temp1 = ec.atomics[(unsigned char)(*i)[0]];
       for (; temp1.begin != temp1.end; temp1.begin++) {
-        v_array<feature> temp2 = ec.atomics[(int)(*i)[1]];
+        v_array<feature> temp2 = ec.atomics[(unsigned char)(*i)[1]];
         for (; temp2.begin != temp2.end; temp2.begin++) {
            
           uint32_t halfhash = cubic_constant2 * (cubic_constant * (temp1.begin->weight_index + offset) + temp2.begin->weight_index + offset);
           float mult = temp1.begin->x * temp2.begin->x;
-          foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(int)(*i)[2]].begin, ec.atomics[(int)(*i)[2]].end, dat, halfhash, mult);
+          foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(unsigned char)(*i)[2]].begin, ec.atomics[(unsigned char)(*i)[2]].end, dat, halfhash, mult);
         }
       }
     }

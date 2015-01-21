@@ -176,7 +176,8 @@ class vw(pylibvw.vw):
 
                 if learner_id != 0: P.set_learner_id(learner_id)
 
-                return P.predict()
+                p = P.predict()
+                return p
             else:
                 raise TypeError("'examples' should be a pyvw example (or a pylibvw example), or a list of said things")
 
