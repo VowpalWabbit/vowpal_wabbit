@@ -42,9 +42,7 @@ public:
   { 
     m_scores.erase();
     for (size_t i = 0; i < m_num_actions; i++)
-      {
-        m_scores.push_back(0);
-      }
+      m_scores.push_back(0);
     return m_scores; 
   };
   
@@ -264,7 +262,7 @@ void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
     COST_SENSITIVE::wclass wc;
     
     //get cost prediction for this label
-    wc.x = CB_ALGS::get_cost_pred<false>(all, &known_cost, ec, label, all.sd->k);
+    wc.x = CB_ALGS::get_cost_pred<false>(all.scorer, &known_cost, ec, label, all.sd->k);
     wc.class_index = label;
     wc.partial_prediction = 0.;
     wc.wap_value = 0.;

@@ -15,12 +15,11 @@ using namespace LEARNER;
 using namespace COST_SENSITIVE;
 
   struct csoaa{
-    vw* all;
+    size_t num_classes;
   };
 
   template <bool is_learn>
   void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
-    vw* all = c.all;
     COST_SENSITIVE::label ld = ec.l.cs;
     uint32_t prediction = 1;
     float score = FLT_MAX;
@@ -30,7 +29,7 @@ using namespace COST_SENSITIVE;
         uint32_t i = cl->class_index;
         if (is_learn)
           {
-            if (cl->x == FLT_MAX || !all->training)
+            if (cl->x == FLT_MAX)
               {
                 ec.l.simple.label = FLT_MAX;
                 ec.l.simple.weight = 0.;
@@ -69,10 +68,10 @@ base_learner* csoaa_setup(vw& all)
     return NULL;
   
   csoaa& c = calloc_or_die<csoaa>();
-  c.all = &all;
+  c.num_classes = all.vm["csoaa"].as<size_t>();
   //first parse for number of actions
   all.p->lp = cs_label;
-  all.sd->k = (uint32_t)all.vm["csoaa"].as<size_t>();
+  all.sd->k = (uint32_t)c.num_classes;
   
   learner<csoaa>& l = init_learner(&c, setup_base(all), predict_or_learn<true>, 
 				   predict_or_learn<false>, all.sd->k);
