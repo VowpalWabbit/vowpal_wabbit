@@ -151,7 +151,7 @@ bool operator<(const string_value& first, const string_value& second)
   
   string tmp = "";
   
-  if (a != NULL){
+  if (a != NULL && all.audit){
     tmp += a->space;
     tmp += '^';
     tmp += a->feature; 
