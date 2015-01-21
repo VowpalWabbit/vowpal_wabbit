@@ -1,13 +1,13 @@
-#CXX = $(shell which clang++)
+CXX = $(shell which g++)
 # -- if you want to test 32-bit use this instead,
 #    it sometimes reveals type portability issues
-# CXX = $(shell which clang++) -m32
+# CXX = $(shell which g++) -m32
 ifneq ($(CXX),)
   #$(warning Using clang: "$(CXX)")
   ARCH = -D__extern_always_inline=inline
 else
-  CXX = g++
-  $(warning Using g++)
+  CXX = clang++
+  $(warning Using clang++)
 ARCH = $(shell test `g++ -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2` \< 4.3 && echo -march=nocona || echo -march=native)
 endif
 
@@ -78,7 +78,7 @@ FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_
 BINARIES = vw active_interactor
 MANPAGES = vw.1
 
-all:	vw spanning_tree library_example python java
+all:	vw spanning_tree library_example java
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
