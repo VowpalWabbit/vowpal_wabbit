@@ -124,7 +124,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
 
                             ec.atomics[right].push_back (lrq);
 
-                            if (iter == 0 && (all.audit || all.hash_inv))
+                            if (all.audit || all.hash_inv)
                               {
                                 std::stringstream new_feature_buffer;
 
@@ -145,22 +145,10 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
               }
           }
 
-        bool save_audit = all.audit;
-        bool save_hash_inv = all.hash_inv;
-
-        if (iter == 1)
-          {
-            all.audit = false;
-            all.hash_inv = false;
-          }
-
 	if (is_learn)
 	  base.learn(ec);
 	else
 	  base.predict(ec);
-
-        all.audit = save_audit;
-        all.hash_inv = save_hash_inv;
 
         // Restore example
         if (iter == 0)
@@ -183,7 +171,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
             ec.atomics[right].end = 
               ec.atomics[right].begin + lrq.orig_size[right];
 
-            if (iter == 0 && (all.audit || all.hash_inv))
+            if (all.audit || all.hash_inv)
               {
                 for (audit_data* a = ec.audit_features[right].begin + lrq.orig_size[right];
                      a < ec.audit_features[right].end;
