@@ -66,8 +66,8 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
     }
   
   size_t which = ec.example_counter;
-  float first_prediction;
-  float first_loss;
+  float first_prediction = 0;
+  float first_loss = 0;
   unsigned int maxiter = (is_learn && ! example_is_test (ec)) ? 2 : 1;
   
   bool do_dropout = lrq.dropout && is_learn && ! example_is_test (ec);
