@@ -22,7 +22,7 @@ using namespace std;
 using namespace LEARNER;
 
 struct gdmf {
-  vw* all;
+  vw* all;//regressor, printing
   uint32_t rank;
   size_t no_win_counter;
   size_t early_stop_thres;

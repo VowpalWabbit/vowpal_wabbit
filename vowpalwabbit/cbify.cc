@@ -77,7 +77,7 @@ struct cbify {
   COST_SENSITIVE::label second_cs_label;
   
   base_learner* cs;
-  vw* all;
+  LEARNER::base_learner* reg;
   
   unique_ptr<vw_policy> policy;
   vector<unique_ptr<IPolicy<vw_context>>> policies;
@@ -262,7 +262,7 @@ void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
     COST_SENSITIVE::wclass wc;
     
     //get cost prediction for this label
-    wc.x = CB_ALGS::get_cost_pred<false>(c.all->scorer, &known_cost, ec, label, c.k);
+    wc.x = CB_ALGS::get_cost_pred<false>(c.reg, &known_cost, ec, label, c.k);
     wc.class_index = label;
     wc.partial_prediction = 0.;
     wc.wap_value = 0.;
@@ -373,7 +373,6 @@ void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
 
     po::variables_map& vm = all.vm;
     cbify& data = calloc_or_die<cbify>();
-    data.all = &all;
     data.k = (uint32_t)vm["cbify"].as<size_t>();
 
     if (count(all.args.begin(), all.args.end(),"--cb") == 0)
@@ -431,6 +430,7 @@ void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
 	l = &init_multiclass_learner(&data, base, predict_or_learn_greedy<true>, 
 				     predict_or_learn_greedy<false>, all.p, 1);
       }
+    data.reg = all.scorer;
     l->set_finish(finish);
     l->set_init_driver(init_driver);
     

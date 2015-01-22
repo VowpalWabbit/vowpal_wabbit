@@ -23,7 +23,7 @@ using namespace LEARNER;
     float lb;
     float ub;
     vector<double> pred_vec;
-    vw* all;
+    vw* all; // for raw prediction and loss
   };
 
   void bs_predict_mean(vw& all, example& ec, vector<double> &pred_vec)

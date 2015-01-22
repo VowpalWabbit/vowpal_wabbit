@@ -83,7 +83,7 @@ struct svm_params{
   
   float loss_sum;
   
-  vw* all;
+  vw* all;//flatten, parallel
 };
 
   static size_t num_kernel_evals = 0;

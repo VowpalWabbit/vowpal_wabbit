@@ -1,7 +1,7 @@
 #include <float.h>
 #include "reductions.h"
 
-struct scorer{ vw* all; };
+struct scorer{ vw* all; }; // for set_minmax, loss
 
 template <bool is_learn, float (*link)(float in)>
 void predict_or_learn(scorer& s, LEARNER::base_learner& base, example& ec)

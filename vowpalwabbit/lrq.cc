@@ -6,7 +6,7 @@
 using namespace LEARNER;
 
 struct LRQstate {
-  vw* all;
+  vw* all; // feature creation, audit, hash_inv
   bool lrindices[256];
   size_t orig_size[256];
   std::vector<std::string> lrpairs;
