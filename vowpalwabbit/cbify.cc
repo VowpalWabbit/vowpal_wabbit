@@ -257,12 +257,12 @@ void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
       }
   }
 
-  void gen_cs_label(vw& all, CB::cb_class& known_cost, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t label)
+  void gen_cs_label(cbify& c, CB::cb_class& known_cost, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t label)
   {
     COST_SENSITIVE::wclass wc;
     
     //get cost prediction for this label
-    wc.x = CB_ALGS::get_cost_pred<false>(all.scorer, &known_cost, ec, label, all.sd->k);
+    wc.x = CB_ALGS::get_cost_pred<false>(c.all->scorer, &known_cost, ec, label, c.k);
     wc.class_index = label;
     wc.partial_prediction = 0.;
     wc.wap_value = 0.;
@@ -327,8 +327,8 @@ void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
 	float norm = min_prob * data.k;
 	for (uint32_t j = 0; j < data.k; j++)
 	  { //data.cs_label now contains an unbiased estimate of cost of each class.
-	    gen_cs_label(*data.all, l, ec, data.cs_label, j+1);
-      scores[j] = 0;
+	    gen_cs_label(data, l, ec, data.cs_label, j+1);
+	    scores[j] = 0;
 	  }
 	
 	ec.l.cs = data.second_cs_label;

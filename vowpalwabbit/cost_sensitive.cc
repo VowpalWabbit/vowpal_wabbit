@@ -162,18 +162,6 @@ namespace COST_SENSITIVE {
         ld->costs.push_back(f);
       }
     }
-
-    if (words.size() == 0) {
-      if (sd->k != (uint32_t)-1) {
-        for (uint32_t i = 1; i <= sd->k; i++) {
-          wclass f = {FLT_MAX, i, 0., 0.};
-          ld->costs.push_back(f);
-        }
-      } else {
-        //cerr << "ldf test examples must have possible labels listed" << endl;
-        //throw exception();
-      }
-    }
   }
 
   label_parser cs_label = {default_label, parse_label, 

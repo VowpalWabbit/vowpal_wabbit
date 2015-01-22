@@ -244,7 +244,9 @@ using namespace CB;
   void predict_or_learn(cb& c, base_learner& base, example& ec) {
     CB::label ld = ec.l.cb;
 
-    c.known_cost = get_observed_cost(ld);    
+    c.known_cost = get_observed_cost(ld);
+    if (c.known_cost != NULL && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions))
+      cerr << "invalid action: " << c.known_cost->action << endl;
     //generate a cost-sensitive example to update classifiers
     switch(c.cb_type)
     {
@@ -376,8 +378,6 @@ using namespace CB;
 
     cb& c = calloc_or_die<cb>();
     c.num_actions = (uint32_t)all.vm["cb"].as<size_t>();
-
-    all.sd->k = c.num_actions;
 
     bool eval = false;
     if (all.vm.count("eval"))
