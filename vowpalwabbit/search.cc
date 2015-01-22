@@ -426,7 +426,7 @@ namespace Search {
         }
 
         //cerr << "n=" << n << " offset=" << offset << endl;
-        if (n + offset < 0) // add <s> feature
+        if (n < -offset) // add <s> feature
           add_new_feature(priv, 1., 925871901 << priv.all->reg.stride_shift);
         else if (n + offset >= priv.ec_seq.size()) // add </s> feature
           add_new_feature(priv, 1., 3824917 << priv.all->reg.stride_shift);
