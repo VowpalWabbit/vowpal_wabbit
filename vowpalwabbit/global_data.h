@@ -154,8 +154,6 @@ struct shared_data {
   double holdout_sum_loss_since_last_pass;
   size_t holdout_best_pass; 
 
-  uint32_t k;
-
   void update(bool test_example, float loss, float weight, size_t num_features)
   {
     if(test_example)

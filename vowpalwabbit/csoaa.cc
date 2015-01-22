@@ -15,8 +15,31 @@ using namespace LEARNER;
 using namespace COST_SENSITIVE;
 
   struct csoaa{
-    size_t num_classes;
+    uint32_t num_classes;
   };
+
+template<bool is_learn>
+inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost, 
+		       uint32_t& prediction, float& score, float& partial_prediction)
+{
+  if (is_learn)
+    {
+      ec.l.simple.label = cost;
+      if (cost == FLT_MAX)
+	ec.l.simple.weight = 0.;
+      else
+	ec.l.simple.weight = 1.;
+      base.learn(ec, i-1);
+    }
+  else
+    base.predict(ec, i-1);
+  
+  partial_prediction = ec.partial_prediction;
+  if (ec.partial_prediction < score || (ec.partial_prediction == score && i < prediction)) {
+    score = ec.partial_prediction;
+    prediction = i;
+  }
+}
 
   template <bool is_learn>
   void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
@@ -24,32 +47,13 @@ using namespace COST_SENSITIVE;
     uint32_t prediction = 1;
     float score = FLT_MAX;
     ec.l.simple = { 0., 0., 0. };
-    for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++)
-      {
-        uint32_t i = cl->class_index;
-        if (is_learn)
-          {
-            if (cl->x == FLT_MAX)
-              {
-                ec.l.simple.label = FLT_MAX;
-                ec.l.simple.weight = 0.;
-              }
-            else
-              {
-                ec.l.simple.label = cl->x;
-                ec.l.simple.weight = 1.;
-              }
-            base.learn(ec, i-1);
-          }
-        else
-          base.predict(ec, i-1);
-
-        cl->partial_prediction = ec.partial_prediction;
-        if (ec.partial_prediction < score || (ec.partial_prediction == score && i < prediction)) {
-          score = ec.partial_prediction;
-          prediction = i;
-        }
-        ec.partial_prediction = 0.;
+    if (ld.costs.size() > 0)
+      for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++)
+	inner_loop<is_learn>(base, ec, cl->class_index, cl->x, prediction, score, cl->partial_prediction);
+    else
+      {	float temp;
+	for (uint32_t i = 1; i <= c.num_classes; i++)
+	  inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp);
       }
 
     ec.pred.multiclass = prediction;
@@ -71,10 +75,9 @@ base_learner* csoaa_setup(vw& all)
   c.num_classes = all.vm["csoaa"].as<size_t>();
   //first parse for number of actions
   all.p->lp = cs_label;
-  all.sd->k = (uint32_t)c.num_classes;
   
   learner<csoaa>& l = init_learner(&c, setup_base(all), predict_or_learn<true>, 
-				   predict_or_learn<false>, all.sd->k);
+				   predict_or_learn<false>, c.num_classes);
   l.set_finish_example(finish_example);
   return make_base(l);
 }
@@ -676,8 +679,6 @@ namespace LabelDict {
       ldf_arg = vm["ldf_override"].as<string>();
 
     all.p->lp = COST_SENSITIVE::cs_label;
-
-    all.sd->k = (uint32_t)-1;
 
     ld.treat_as_classifier = false;
     ld.is_singleline = false;
