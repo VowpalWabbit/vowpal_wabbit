@@ -124,18 +124,18 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
 
                             ec.atomics[right].push_back (lrq);
 
-                            if (iter == 0 && (all.audit || all.hash_inv))
+                            if (all.audit || all.hash_inv)
                               {
-                                char* new_space = calloc_or_die<char>(4);
-                                strcpy(new_space, "lrq");
-                                size_t n_len = strlen(i->c_str () + 4);
-                                size_t len = strlen(ra->feature) + n_len + 2;
-                                char* new_feature = calloc_or_die<char>(len);
-                                new_feature[0] = right;
-                                new_feature[1] = '^';
-                                strcat(new_feature, ra->feature);
-                                strcat(new_feature, "^");
-                                sprintf(new_feature+strlen(new_feature), "%d", n);
+                                std::stringstream new_feature_buffer;
+
+                                new_feature_buffer << right << '^' 
+                                                   << ra->feature << '^'
+                                                   << n;
+
+                                char* new_space = strdup("lrq");
+                                char* new_feature = 
+                                  strdup (new_feature_buffer.str().c_str());
+
                                 audit_data ad = { new_space, new_feature, lrq.weight_index, lrq.x, true };
                                 ec.audit_features[right].push_back (ad);
                               }
@@ -171,9 +171,19 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
             ec.atomics[right].end = 
               ec.atomics[right].begin + lrq.orig_size[right];
 
-            if (all.audit)
-              ec.audit_features[right].end = 
-                ec.audit_features[right].begin + lrq.orig_size[right];
+            if (all.audit || all.hash_inv)
+              {
+                for (audit_data* a = ec.audit_features[right].begin + lrq.orig_size[right];
+                     a < ec.audit_features[right].end;
+                     ++a)
+                  {
+                    free (a->space);
+                    free (a->feature);
+                  }
+
+                ec.audit_features[right].end = 
+                  ec.audit_features[right].begin + lrq.orig_size[right];
+              }
           }
       }
   }
