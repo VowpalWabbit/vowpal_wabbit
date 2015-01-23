@@ -38,7 +38,7 @@ namespace GD
     void (*learn)(gd&, base_learner&, example&);
     void (*update)(gd&, base_learner&, example&);
 
-    vw* all;
+    vw* all; //parallel, features, parameters
   };
 
   void sync_weights(vw& all);
@@ -263,8 +263,8 @@ void print_features(vw& all, example& ec)
       }
       for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
 	{
-	  int fst = (*i)[0];
-	  int snd = (*i)[1];
+	  unsigned char fst = (*i)[0];
+	  unsigned char snd = (*i)[1];
 	  for (size_t j = 0; j < ec.atomics[fst].size(); j++)
 	    {
 	      audit_data* a = NULL;
@@ -276,9 +276,9 @@ void print_features(vw& all, example& ec)
 
       for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) 
 	{
-	  int fst = (*i)[0];
-	  int snd = (*i)[1];
-	  int trd = (*i)[2];
+	  unsigned char fst = (*i)[0];
+	  unsigned char snd = (*i)[1];
+	  unsigned char trd = (*i)[2];
 	  for (size_t j = 0; j < ec.atomics[fst].size(); j++)
 	    {
 	      audit_data* a1 = NULL;

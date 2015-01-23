@@ -426,7 +426,7 @@ namespace Search {
         }
 
         //cerr << "n=" << n << " offset=" << offset << endl;
-        if (n + offset < 0) // add <s> feature
+        if ((offset < 0) && (n < (uint32_t)(-offset))) // add <s> feature
           add_new_feature(priv, 1., 925871901 << priv.all->reg.stride_shift);
         else if (n + offset >= priv.ec_seq.size()) // add </s> feature
           add_new_feature(priv, 1., 3824917 << priv.all->reg.stride_shift);
@@ -507,7 +507,8 @@ namespace Search {
   action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* oracle_actions, size_t oracle_actions_cnt, const action* allowed_actions, size_t allowed_actions_cnt, bool add_alternatives_to_beam) {
     action ret = ( oracle_actions_cnt > 0) ?  oracle_actions[random(oracle_actions_cnt )] :
                  (allowed_actions_cnt > 0) ? allowed_actions[random(allowed_actions_cnt)] :
-                 (action)random(ec_cnt);
+                 priv.is_ldf ? (action)random(ec_cnt) :
+                 (action)(1 + random(ec_cnt));
     cdbg << "choose_oracle_action from oracle_actions = ["; for (size_t i=0; i<oracle_actions_cnt; i++) cdbg << " " << oracle_actions[i]; cdbg << " ], ret=" << ret << endl;
     if (add_alternatives_to_beam) {
       // first, insert all the oracle actions (other than ret)

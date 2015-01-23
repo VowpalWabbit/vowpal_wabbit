@@ -35,7 +35,7 @@ struct mf {
   // array for temp storage of features
   v_array<feature> temp_features;
 
-  vw* all;
+  vw* all; // for pairs? and finalize
 };
 
 template <bool cache_sub_predictions>

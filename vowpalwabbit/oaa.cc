@@ -8,7 +8,7 @@ license as described in the file LICENSE.
 
 struct oaa{
   size_t k;
-  vw* all;
+  vw* all; // for raw
 };
 
 template <bool is_learn, bool print_all>

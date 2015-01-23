@@ -25,7 +25,7 @@ using namespace LEARNER;
 
   struct stagewise_poly
   {
-    vw *all;
+    vw *all; // many uses, unmodular reduction
 
     float sched_exponent;
     uint32_t batch_sz;

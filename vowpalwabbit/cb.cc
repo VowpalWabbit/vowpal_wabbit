@@ -108,15 +108,7 @@ namespace CB
         }
 
         f.partial_prediction = 0.;
-        
         f.action = (uint32_t)hashstring(p->parse_name[0], 0);
-        if (f.action < 1 || f.action > sd->k)
-        {
-          cerr << "invalid action: " << f.action << endl;
-          cerr << "terminating." << endl;
-          throw exception();
-        }
-
         f.cost = FLT_MAX;
         if(p->parse_name.size() > 1)
           f.cost = float_of_substring(p->parse_name[1]);

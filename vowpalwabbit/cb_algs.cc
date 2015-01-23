@@ -21,13 +21,13 @@ using namespace CB;
     size_t cb_type;
     size_t num_actions;
     COST_SENSITIVE::label cb_cs_ld; 
+    LEARNER::base_learner* scorer;
     float avg_loss_regressors;
     size_t nb_ex_regressors;
     float last_pred_reg;
     float last_correct_cost;
     
     cb_class* known_cost;
-    vw* all;
   };
   
   bool know_all_cost_example(CB::label& ld)
@@ -72,7 +72,7 @@ using namespace CB;
     return NULL;
   }
 
-  void gen_cs_example_ips(vw& all, cb& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
+  void gen_cs_example_ips(cb& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
   {//this implements the inverse propensity score method, where cost are importance weighted by the probability of the chosen action
     //generate cost-sensitive example
     cs_ld.costs.erase();
@@ -129,7 +129,7 @@ using namespace CB;
   }
 
   template <bool is_learn>
-  void gen_cs_example_dm(vw& all, cb& c, example& ec, COST_SENSITIVE::label& cs_ld)
+  void gen_cs_example_dm(cb& c, example& ec, COST_SENSITIVE::label& cs_ld)
   {
     //this implements the direct estimation method, where costs are directly specified by the learned regressor.
     CB::label ld = ec.l.cb;
@@ -146,7 +146,7 @@ using namespace CB;
         wc.wap_value = 0.;
       
         //get cost prediction for this action
-        wc.x = CB_ALGS::get_cost_pred<is_learn>(all, c.known_cost, ec, i, 0);
+        wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, i, 0);
 	if (wc.x < min)
 	  {
 	    min = wc.x;
@@ -175,7 +175,7 @@ using namespace CB;
         wc.wap_value = 0.;
       
         //get cost prediction for this action
-        wc.x = CB_ALGS::get_cost_pred<is_learn>(all, c.known_cost, ec, cl->action, 0);
+        wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, cl->action, 0);
 	if (wc.x < min || (wc.x == min && cl->action < argmin))
 	  {
 	    min = wc.x;
@@ -201,13 +201,13 @@ using namespace CB;
   }
 
   template <bool is_learn>
-  void gen_cs_label(vw& all, cb& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t label)
+  void gen_cs_label(cb& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t label)
   {
     COST_SENSITIVE::wclass wc;
     wc.wap_value = 0.;
     
     //get cost prediction for this label
-    wc.x = CB_ALGS::get_cost_pred<is_learn>(all, c.known_cost, ec, label, c.num_actions);
+    wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, label, c.num_actions);
     wc.class_index = label;
     wc.partial_prediction = 0.;
     wc.wap_value = 0.;
@@ -224,7 +224,7 @@ using namespace CB;
   }
 
   template <bool is_learn>
-  void gen_cs_example_dr(vw& all, cb& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
+  void gen_cs_example_dr(cb& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
   {//this implements the doubly robust method
     cs_ld.costs.erase();
     if(ld.costs.size() == 0)//a test example
@@ -233,30 +233,31 @@ using namespace CB;
     else if( ld.costs.size() == 1) //this is a typical example where we can perform all actions
       //in this case generate cost-sensitive example with all actions
       for(uint32_t i = 1; i <= c.num_actions; i++)
-	gen_cs_label<is_learn>(all, c, ec, cs_ld, i);
+	gen_cs_label<is_learn>(c, ec, cs_ld, i);
     else  //this is an example where we can only perform a subset of the actions
       //in this case generate cost-sensitive example with only allowed actions
       for( cb_class* cl = ld.costs.begin; cl != ld.costs.end; cl++ )
-	gen_cs_label<is_learn>(all, c, ec, cs_ld, cl->action);
+	gen_cs_label<is_learn>(c, ec, cs_ld, cl->action);
   }
 
   template <bool is_learn>
   void predict_or_learn(cb& c, base_learner& base, example& ec) {
-    vw* all = c.all;
     CB::label ld = ec.l.cb;
 
-    c.known_cost = get_observed_cost(ld);    
+    c.known_cost = get_observed_cost(ld);
+    if (c.known_cost != NULL && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions))
+      cerr << "invalid action: " << c.known_cost->action << endl;
     //generate a cost-sensitive example to update classifiers
     switch(c.cb_type)
     {
       case CB_TYPE_IPS:
-        gen_cs_example_ips(*all,c,ec,ld,c.cb_cs_ld);
+        gen_cs_example_ips(c,ec,ld,c.cb_cs_ld);
         break;
       case CB_TYPE_DM:
-        gen_cs_example_dm<is_learn>(*all,c,ec,c.cb_cs_ld);
+        gen_cs_example_dm<is_learn>(c,ec,c.cb_cs_ld);
         break;
       case CB_TYPE_DR:
-        gen_cs_example_dr<is_learn>(*all,c,ec,ld,c.cb_cs_ld);
+        gen_cs_example_dr<is_learn>(c,ec,ld,c.cb_cs_ld);
         break;
       default:
         std::cerr << "Unknown cb_type specified for contextual bandit learning: " << c.cb_type << ". Exiting." << endl;
@@ -284,15 +285,14 @@ using namespace CB;
   }
 
   void learn_eval(cb& c, base_learner& base, example& ec) {
-    vw* all = c.all;
     CB_EVAL::label ld = ec.l.cb_eval;
     
     c.known_cost = get_observed_cost(ld.event);
     
     if (c.cb_type == CB_TYPE_DR)
-      gen_cs_example_dr<true>(*all, c, ec, ld.event, c.cb_cs_ld);
+      gen_cs_example_dr<true>(c, ec, ld.event, c.cb_cs_ld);
     else //c.cb_type == CB_TYPE_IPS
-      gen_cs_example_ips(*all, c, ec, ld.event, c.cb_cs_ld);
+      gen_cs_example_ips(c, ec, ld.event, c.cb_cs_ld);
     
     for (size_t i=0; i<ld.event.costs.size(); i++)
       ld.event.costs[i].partial_prediction = c.cb_cs_ld.costs[i].partial_prediction;
@@ -377,11 +377,7 @@ using namespace CB;
     add_options(all);
 
     cb& c = calloc_or_die<cb>();
-    c.all = &all;
-
     c.num_actions = (uint32_t)all.vm["cb"].as<size_t>();
-
-    all.sd->k = c.num_actions;
 
     bool eval = false;
     if (all.vm.count("eval"))
@@ -452,6 +448,7 @@ using namespace CB;
     // preserve the increment of the base learner since we are
     // _adding_ to the number of problems rather than multiplying.
     l->increment = base->increment; 
+    c.scorer = all.scorer;
     
     l->set_finish(finish);
     return make_base(*l);

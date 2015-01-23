@@ -9,7 +9,7 @@ license as described in the file LICENSE.
 
 namespace CB_ALGS {
   template <bool is_learn>
-    float get_cost_pred(vw& all, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
+    float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
   {
     CB::label ld = ec.l.cb;
 
@@ -29,9 +29,9 @@ namespace CB_ALGS {
     ec.l.simple = simple_temp;
 
     if (is_learn && simple_temp.label != FLT_MAX)
-      all.scorer->learn(ec, index-1+base);
+      scorer->learn(ec, index-1+base);
     else
-      all.scorer->predict(ec, index-1+base);
+      scorer->predict(ec, index-1+base);
     
     float pred = ec.pred.scalar;
     

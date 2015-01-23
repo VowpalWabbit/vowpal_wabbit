@@ -2,7 +2,7 @@
 #include "float.h"
 #include "reductions.h"
 
-struct print{ vw* all; };
+struct print{ vw* all; };//regressor, feature loop
 
 void print_feature(vw& all, float value, float& weight)
 {

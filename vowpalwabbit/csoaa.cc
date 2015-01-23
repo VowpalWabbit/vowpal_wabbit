@@ -14,54 +14,55 @@ using namespace std;
 using namespace LEARNER;
 using namespace COST_SENSITIVE;
 
-  struct csoaa{
-    vw* all;
-  };
+struct csoaa{ uint32_t num_classes; };
 
-  template <bool is_learn>
-  void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
-    vw* all = c.all;
-    COST_SENSITIVE::label ld = ec.l.cs;
-    uint32_t prediction = 1;
-    float score = FLT_MAX;
-    ec.l.simple = { 0., 0., 0. };
+template<bool is_learn>
+inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost, 
+		       uint32_t& prediction, float& score, float& partial_prediction)
+{
+  if (is_learn)
+    {
+      ec.l.simple.label = cost;
+      if (cost == FLT_MAX)
+	ec.l.simple.weight = 0.;
+      else
+	ec.l.simple.weight = 1.;
+      base.learn(ec, i-1);
+    }
+  else
+    base.predict(ec, i-1);
+  
+  partial_prediction = ec.partial_prediction;
+  if (ec.partial_prediction < score || (ec.partial_prediction == score && i < prediction)) {
+    score = ec.partial_prediction;
+    prediction = i;
+  }
+}
+
+template <bool is_learn>
+void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
+  COST_SENSITIVE::label ld = ec.l.cs;
+  uint32_t prediction = 1;
+  float score = FLT_MAX;
+  ec.l.simple = { 0., 0., 0. };
+  if (ld.costs.size() > 0)
     for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++)
-      {
-        uint32_t i = cl->class_index;
-        if (is_learn)
-          {
-            if (cl->x == FLT_MAX || !all->training)
-              {
-                ec.l.simple.label = FLT_MAX;
-                ec.l.simple.weight = 0.;
-              }
-            else
-              {
-                ec.l.simple.label = cl->x;
-                ec.l.simple.weight = 1.;
-              }
-            base.learn(ec, i-1);
-          }
-        else
-          base.predict(ec, i-1);
+      inner_loop<is_learn>(base, ec, cl->class_index, cl->x, prediction, score, cl->partial_prediction);
+  else
+    { float temp;
+      for (uint32_t i = 1; i <= c.num_classes; i++)
+	inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp);
+    }
+  
+  ec.pred.multiclass = prediction;
+  ec.l.cs = ld;
+}
 
-        cl->partial_prediction = ec.partial_prediction;
-        if (ec.partial_prediction < score || (ec.partial_prediction == score && i < prediction)) {
-          score = ec.partial_prediction;
-          prediction = i;
-        }
-        ec.partial_prediction = 0.;
-      }
-
-    ec.pred.multiclass = prediction;
-    ec.l.cs = ld;
-  }
-
-  void finish_example(vw& all, csoaa&, example& ec)
-  {
-    output_example(all, ec);
-    VW::finish_example(all, &ec);
-  }
+void finish_example(vw& all, csoaa&, example& ec)
+{
+  output_example(all, ec);
+  VW::finish_example(all, &ec);
+}
 
 base_learner* csoaa_setup(vw& all)
 {
@@ -69,13 +70,11 @@ base_learner* csoaa_setup(vw& all)
     return NULL;
   
   csoaa& c = calloc_or_die<csoaa>();
-  c.all = &all;
-  //first parse for number of actions
-  all.p->lp = cs_label;
-  all.sd->k = (uint32_t)all.vm["csoaa"].as<size_t>();
+  c.num_classes = all.vm["csoaa"].as<size_t>();
   
   learner<csoaa>& l = init_learner(&c, setup_base(all), predict_or_learn<true>, 
-				   predict_or_learn<false>, all.sd->k);
+				   predict_or_learn<false>, c.num_classes);
+  all.p->lp = cs_label;
   l.set_finish_example(finish_example);
   return make_base(l);
 }
@@ -321,7 +320,7 @@ namespace LabelDict {
     return isTest;
   }
 
-  void do_actual_learning_wap(vw& all, ldf& data, base_learner& base, size_t start_K)
+  void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
   {
     size_t K = data.ec_seq.size();
     vector<COST_SENSITIVE::wclass*> all_costs;
@@ -361,9 +360,9 @@ namespace LabelDict {
         simple_label.label = (costs1[0].x < costs2[0].x) ? -1.0f : 1.0f;
         simple_label.weight = value_diff;
         ec1->partial_prediction = 0.;
-        subtract_example(all, ec1, ec2);
+        subtract_example(*data.all, ec1, ec2);
         base.learn(*ec1);
-        unsubtract_example(all, ec1);
+        unsubtract_example(*data.all, ec1);
         
         LabelDict::del_example_namespace_from_memory(data, *ec2, costs2[0].class_index);
       }
@@ -376,7 +375,7 @@ namespace LabelDict {
     }
   }
 
-  void do_actual_learning_oaa(vw& all, ldf& data, base_learner& base, size_t start_K)
+  void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
   {
     size_t K = data.ec_seq.size();
     float  min_cost  = FLT_MAX;
@@ -429,7 +428,7 @@ namespace LabelDict {
   }
 
   template <bool is_learn>
-  void do_actual_learning(vw& all, ldf& data, base_learner& base)
+  void do_actual_learning(ldf& data, base_learner& base)
   {
     //cdbg << "do_actual_learning size=" << data.ec_seq.size() << endl;
     if (data.ec_seq.size() <= 0) return;  // nothing to do
@@ -476,8 +475,8 @@ namespace LabelDict {
 
     /////////////////////// learn
     if (is_learn && !isTest){
-      if (data.is_wap) do_actual_learning_wap(all, data, base, start_K);
-      else             do_actual_learning_oaa(all, data, base, start_K);
+      if (data.is_wap) do_actual_learning_wap(data, base, start_K);
+      else             do_actual_learning_oaa(data, base, start_K);
     }
 
     // Mark the predicted subexample with its class_index, all other with 0
@@ -632,12 +631,12 @@ namespace LabelDict {
         throw exception();
       }
       data.ec_seq.push_back(&ec);
-      do_actual_learning<is_learn>(*all, data, base);
+      do_actual_learning<is_learn>(data, base);
       data.need_to_clear = true;
     } else if ((example_is_newline(ec) && is_test_ec) || need_to_break) {
       if (need_to_break && data.first_pass)
         cerr << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << endl;
-      do_actual_learning<is_learn>(*all, data, base);
+      do_actual_learning<is_learn>(data, base);
       data.need_to_clear = true;
     } else {
       if (data.need_to_clear) {  // should only happen if we're NOT driving
@@ -677,8 +676,6 @@ namespace LabelDict {
       ldf_arg = vm["ldf_override"].as<string>();
 
     all.p->lp = COST_SENSITIVE::cs_label;
-
-    all.sd->k = (uint32_t)-1;
 
     ld.treat_as_classifier = false;
     ld.is_singleline = false;

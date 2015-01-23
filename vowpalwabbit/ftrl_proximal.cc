@@ -21,8 +21,7 @@ using namespace LEARNER;
 
 //nonrentrant
 struct ftrl {
-  vw* all;
-  // set by initializer
+  vw* all; //features, finalize, l1, l2, 
   float ftrl_alpha;
   float ftrl_beta;
 };
