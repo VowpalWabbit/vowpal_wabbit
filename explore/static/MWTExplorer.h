@@ -186,7 +186,9 @@ struct StringRecorder : public IRecorder<Ctx>
 		m_recording.append(" ", 1);
 
 		char prob_str[10] = { 0 };
-		NumberUtils::Float_To_String(probability, prob_str);
+        int x = (int)probability;
+        int d = (int)(fabs(probability - x) * 100000);
+        cpfloat_sprintf(prob_str, 10 * sizeof(char), "%d.%05d", x, d);
 		m_recording.append(prob_str);
 
 		m_recording.append(" | ", 3);
@@ -248,13 +250,13 @@ public:
 			int chars;
 			if (i == 0)
 			{
-				chars = sprintf(feature_str, "%d:", m_features[i].Id);
+                chars = cpfloat_sprintf(feature_str, sizeof(feature_str), "%d:", m_features[i].Id, 0);
 			}
 			else
 			{
-				chars = sprintf(feature_str, " %d:", m_features[i].Id);
+                chars = cpfloat_sprintf(feature_str, sizeof(feature_str), " %d:", m_features[i].Id, 0);
 			}
-			NumberUtils::print_float(feature_str + chars, m_features[i].Value);
+            NumberUtils::print_float(feature_str + chars, sizeof(feature_str), m_features[i].Value);
 			out_string.append(feature_str);
 		}
 		return out_string;

@@ -15,6 +15,8 @@ typedef signed __int64 i64;
 typedef signed __int32 i32;
 typedef signed __int16 i16;
 typedef signed __int8  i8;
+// cross-platform float to_string
+#define cpfloat_sprintf(str, size, format, x, d) sprintf_s(str, size, format, x, d)
 #else
 typedef uint64_t u64;
 typedef uint32_t u32;
@@ -24,6 +26,8 @@ typedef int64_t i64;
 typedef int32_t i32;
 typedef int16_t i16;
 typedef int8_t i8;
+// cross-platform float to_string
+#define cpfloat_sprintf(str, size, format, x, d) sprintf(str, format, x, d)
 #endif
 
 typedef unsigned char    byte;
@@ -181,13 +185,6 @@ const size_t max_digits = (size_t) roundf((float) (-log(min_float) / log(10.)));
 class NumberUtils
 {
 public:
-	static void Float_To_String(float f, char* str)
-	{
-		int x = (int)f;
-		int d = (int)(fabs(f - x) * 100000);
-		sprintf(str, "%d.%05d", x, d);
-	}
-
 	template<bool trailing_zeros>
 	static void print_mantissa(char*& begin, float f)
 	{ // helper for print_float
@@ -211,7 +208,7 @@ public:
 			*begin++ = values[--digit];
 	}
 
-	static void print_float(char* begin, float f)
+    static void print_float(char* begin, size_t size, float f)
 	{
 		bool sign = false;
 		if (f < 0.f)
@@ -234,7 +231,7 @@ public:
 			*begin++ = '0';
 		else
 		{
-			sprintf(begin, "%g", f);
+            cpfloat_sprintf(begin, size, "%g", f, 0);
 			return;
 		}
 		*begin = '\0';
