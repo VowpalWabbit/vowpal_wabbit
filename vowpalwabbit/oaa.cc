@@ -17,7 +17,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
     cout << "label " << mc_label_data.label << " is not in {1,"<< o.k << "} This won't work right." << endl;
   
-  ec.l.simple = {0.f, mc_label_data.weight, 0.f};
+  ec.l.simple = {FLT_MAX, mc_label_data.weight, 0.f};
   stringstream outputStringStream;
   uint32_t prediction = 1;
   float score = INT_MIN;
