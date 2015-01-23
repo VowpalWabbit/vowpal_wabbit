@@ -21,7 +21,7 @@ namespace MultiWorldTesting {
 /// </summary>
 /// <typeparam name="Ctx">The Context type.</typeparam>
 /// <remarks>
-/// Exploration data is specified as a set of tuples <context, action, probability, key> as described below. An 
+/// Exploration data is specified as a set of tuples (context, action, probability, key) as described below. An 
 /// application passes an IRecorder object to the @MwtExplorer constructor. See 
 /// @StringRecorder for a sample IRecorder object.
 /// </remarks>
