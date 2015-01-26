@@ -76,7 +76,9 @@ base_learner* csoaa_setup(vw& all)
 				   predict_or_learn<false>, c.num_classes);
   all.p->lp = cs_label;
   l.set_finish_example(finish_example);
-  return make_base(l);
+  base_learner* b = make_base(l);
+  all.cost_sensitive = b;
+  return b;
 }
 
 struct ldf {

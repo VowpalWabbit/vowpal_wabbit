@@ -1106,3 +1106,7 @@ __DATA__
 # Test 78: cbify, bag
 {VW} --cbify 10 --bag 7 train-sets/multiclass 
     train-sets/ref/cbify_bag.stderr
+
+# Test 79: cbify, cover
+{VW} --cbify 10 --cover 3 train-sets/multiclass 
+    train-sets/ref/cbify_cover.stderr

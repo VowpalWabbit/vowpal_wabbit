@@ -62,13 +62,9 @@ using namespace CB;
   
   cb_class* get_observed_cost(CB::label& ld)
   {
-    size_t i = 0;
-    for (cb_class *cl = ld.costs.begin; cl != ld.costs.end; cl ++, i++)
-    {
-      if( observed_cost(cl) ) {
+    for (cb_class *cl = ld.costs.begin; cl != ld.costs.end; cl++)
+      if( observed_cost(cl) ) 
         return cl;
-      }
-    }
     return NULL;
   }
 
