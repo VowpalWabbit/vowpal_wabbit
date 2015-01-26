@@ -1,9 +1,9 @@
+predictions = cs_test.ldf.wap.predict
 Num weight bits = 18
 learning rate = 10
 initial_t = 1
 power_t = 0.5
 decay_learning_rate = 1
-predictions = cs_test.ldf.wap.predict
 creating cache_file = train-sets/cs_test.ldf.cache
 Reading datafile = train-sets/cs_test.ldf
 num sources = 1

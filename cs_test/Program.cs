@@ -18,7 +18,6 @@ namespace cs_test
             //ExploreClock.Clock();
             //LabDemo.Run();
             ExploreOnlySample.Run();
-            return;
             RunFeaturesTest();
             RunParserTest();
             RunSpeedTest();
