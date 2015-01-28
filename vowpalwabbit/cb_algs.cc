@@ -225,7 +225,10 @@ using namespace CB;
     cs_ld.costs.erase();
     if(ld.costs.size() == 0)//a test example
       for(uint32_t i = 1; i <= c.num_actions; i++)
-	cs_ld.costs.push_back({FLT_MAX,i,0.,0.});
+	{//Explicit declaration for a weak compiler.
+	  COST_SENSITIVE::wclass c = {FLT_MAX, i, 0., 0.};
+	  cs_ld.costs.push_back(c);
+	}
     else if( ld.costs.size() == 1) //this is a typical example where we can perform all actions
       //in this case generate cost-sensitive example with all actions
       for(uint32_t i = 1; i <= c.num_actions; i++)

@@ -16,7 +16,6 @@ typedef signed __int32 i32;
 typedef signed __int16 i16;
 typedef signed __int8  i8;
 // cross-platform float to_string
-#define cpfloat_sprintf(str, size, format, x, d) sprintf_s(str, size, format, x, d)
 #else
 typedef uint64_t u64;
 typedef uint32_t u32;
@@ -27,7 +26,7 @@ typedef int32_t i32;
 typedef int16_t i16;
 typedef int8_t i8;
 // cross-platform float to_string
-#define cpfloat_sprintf(str, size, format, x, d) sprintf(str, format, x, d)
+#define sprintf_s snprintf
 #endif
 
 typedef unsigned char    byte;
@@ -231,7 +230,7 @@ public:
 			*begin++ = '0';
 		else
 		{
-            cpfloat_sprintf(begin, size, "%g", f, 0);
+		  sprintf_s(begin, size, "%g", f);
 			return;
 		}
 		*begin = '\0';
