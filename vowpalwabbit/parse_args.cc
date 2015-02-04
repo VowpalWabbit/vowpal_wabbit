@@ -22,6 +22,7 @@ license as described in the file LICENSE.
 #include "topk.h"
 #include "ect.h"
 #include "boosting.h"
+#include "decision_stump.h"
 #include "csoaa.h"
 #include "cb_algs.h"
 #include "scorer.h"
@@ -758,6 +759,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(binary_setup);
   all.reduction_stack.push_back(topk_setup);
   all.reduction_stack.push_back(oaa_setup);
+  all.reduction_stack.push_back(decision_stump_setup);
   all.reduction_stack.push_back(boosting_setup);
   all.reduction_stack.push_back(ect_setup);
   all.reduction_stack.push_back(log_multi_setup);

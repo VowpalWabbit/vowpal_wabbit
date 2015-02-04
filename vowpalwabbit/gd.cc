@@ -703,6 +703,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
 	  brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
 	  if (brw > 0)
 	    {
+	      cerr << "i= " << i << " length= " << length << endl;
 	      assert (i< length);		
 	      v = &(all.reg.weight_vector[stride*i]);
 	      if (stride == 2) //either adaptive or normalized

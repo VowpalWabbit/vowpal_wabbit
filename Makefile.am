@@ -42,6 +42,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/nn.h \
 	vowpalwabbit/noop.h \
 	vowpalwabbit/oaa.h \
+	vowpalwabbit/decision_stump.h \
 	vowpalwabbit/boosting.h \
 	vowpalwabbit/parse_args.h \
 	vowpalwabbit/parse_example.h \
