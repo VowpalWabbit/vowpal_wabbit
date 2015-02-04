@@ -1,4 +1,4 @@
-AC_INIT([vowpal_wabbit], [7.7], [jl@hunch.net])
+AC_INIT([vowpal_wabbit], [7.8], [jl@hunch.net])
 AC_DEFINE([PACKAGE_URL],["https://github.com/JohnLangford/vowpal_wabbit"],[project url])
 AC_CONFIG_HEADERS(vowpalwabbit/config.h)
 AM_INIT_AUTOMAKE()
@@ -14,6 +14,7 @@ AC_LANG_CPLUSPLUS
 AC_CANONICAL_HOST
 AC_PROG_INSTALL
 AM_PROG_LIBTOOL
+CXXFLAGS='-std=c++0x'
 
 AC_HEADER_STDC
 

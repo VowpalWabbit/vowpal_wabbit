@@ -1,14 +1,13 @@
 //A quick implementation similar to drand48 for cross-platform compatibility
 #include <stdint.h>
-#include <iostream>
-using namespace std;
-
 //
 // NB: the 'ULL' suffix is not part of the constant it is there to
 // prevent truncation of constant to (32-bit long) when compiling
 // in a 32-bit env: warning: integer constant is too large for "long" type
 //
+#ifdef __clang__
 #pragma clang diagnostic ignored "-Wc++11-long-long"
+#endif
 uint64_t a = 0xeece66d5deece66dULL;
 uint64_t c = 2147483647;
 
@@ -23,15 +22,9 @@ float merand48(uint64_t& initial)
 
 uint64_t v = c;
 
-void msrand48(uint64_t initial)
-{
-	v = initial;
-}
+void msrand48(uint64_t initial) { v = initial; }
 
-float frand48()
-{
-	return merand48(v);
-}
+float frand48() { return merand48(v); }
 
 float frand48_noadvance()
 {
@@ -40,16 +33,3 @@ float frand48_noadvance()
   v = old_v;
   return ret;
 }
-
-/*
-//int mantissa = 128 << 15;
-
-int main(int argc, char *argv[])
-{
-  for (size_t i = 0 ; i < 100000; i++) {
-    msrand48(i);
-    cout << frand48() << endl;
-  }
-}
-
-*/

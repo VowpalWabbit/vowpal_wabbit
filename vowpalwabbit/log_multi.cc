@@ -10,14 +10,10 @@ license as described in the file LICENSE.node
 #include <sstream>
 
 #include "reductions.h"
-#include "simple_label.h"
-#include "multiclass.h"
 
 using namespace std;
 using namespace LEARNER;
 
-namespace LOG_MULTI
-{
   class node_pred	
   {
   public:
@@ -76,12 +72,11 @@ namespace LOG_MULTI
   struct log_multi
   {
     uint32_t k;	
-    vw* all;	
     
     v_array<node> nodes;	
     
-    uint32_t max_predictors;
-    uint32_t predictors_used;
+    size_t max_predictors;
+    size_t predictors_used;
 
     bool progress;
     uint32_t swap_resist;
@@ -109,6 +104,7 @@ namespace LOG_MULTI
     
     node.parent = 0;
     node.min_count = 0;
+    node.preds = v_init<node_pred>();
     init_leaf(node);
 
     return node;
@@ -197,7 +193,7 @@ namespace LOG_MULTI
 	    b.nodes.push_back(init_node());	
 	    right_child = (uint32_t)b.nodes.size();
 	    b.nodes.push_back(init_node());
-	    b.nodes[current].base_predictor = b.predictors_used++;
+	    b.nodes[current].base_predictor = (uint32_t)b.predictors_used++;
 	  }
 	else
 	  {
@@ -244,18 +240,16 @@ namespace LOG_MULTI
     return b.nodes[current].internal;
   }
   
-  void train_node(log_multi& b, learner& base, example& ec, uint32_t& current, uint32_t& class_index)
+  void train_node(log_multi& b, base_learner& base, example& ec, uint32_t& current, uint32_t& class_index)
   {
-    label_data* simple_temp = (label_data*)ec.ld;
-
     if(b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk)
-      simple_temp->label = -1.f;
+      ec.l.simple.label = -1.f;
     else
-      simple_temp->label = 1.f;
+      ec.l.simple.label = 1.f;
     
     base.learn(ec, b.nodes[current].base_predictor);	
 
-    simple_temp->label = FLT_MAX;
+    ec.l.simple.label = FLT_MAX;
     base.predict(ec, b.nodes[current].base_predictor);
     
     b.nodes[current].Eh += (double)ec.partial_prediction;
@@ -297,54 +291,45 @@ namespace LOG_MULTI
       return n.right;
   }
 
-  void predict(log_multi& b, learner& base, example& ec)	
+  void predict(log_multi& b,  base_learner& base, example& ec)	
   {
-    MULTICLASS::multiclass* mc = (MULTICLASS::multiclass*)ec.ld;
+    MULTICLASS::label_t mc = ec.l.multi;
 
-    label_data simple_temp;
-    simple_temp.initial = 0.0;
-    simple_temp.weight = 0.0;	
-    simple_temp.label = FLT_MAX;
-    ec.ld = &simple_temp;
+    ec.l.simple = {FLT_MAX, 0.f, 0.f};
     uint32_t cn = 0;
     while(b.nodes[cn].internal)
       {
 	base.predict(ec, b.nodes[cn].base_predictor);
-	cn = descend(b.nodes[cn], simple_temp.prediction);
+	cn = descend(b.nodes[cn], ec.pred.scalar);
       }	
-    mc->prediction = b.nodes[cn].max_count_label;
-    ec.ld = mc;
+    ec.pred.multiclass = b.nodes[cn].max_count_label;
+    ec.l.multi = mc;
   }
 
-  void learn(log_multi& b, learner& base, example& ec)
+  void learn(log_multi& b, base_learner& base, example& ec)
   {
     //    verify_min_dfs(b, b.nodes[0]);
-
-    MULTICLASS::multiclass *mc = (MULTICLASS::multiclass*)ec.ld;
-    
-    if (mc->label == (uint32_t)-1 || !b.all->training || b.progress)
+    if (ec.l.multi.label == (uint32_t)-1 || b.progress)
       predict(b,base,ec);
-
-    if(b.all->training && (mc->label != (uint32_t)-1) && !ec.test_only)	//if training the tree
+    
+    if(ec.l.multi.label != (uint32_t)-1)	//if training the tree
       {
+	MULTICLASS::label_t mc = ec.l.multi;
+	uint32_t start_pred = ec.pred.multiclass;
+
 	uint32_t class_index = 0;	
-	label_data simple_temp;
-	simple_temp.initial = 0.0;
-	simple_temp.weight = mc->weight;
-	ec.ld = &simple_temp;	
-
+	ec.l.simple = {FLT_MAX, mc.weight, 0.f};
 	uint32_t cn = 0;
-
-	while(children(b, cn, class_index, mc->label))
+	while(children(b, cn, class_index, mc.label))
 	  {	    
 	    train_node(b, base, ec, cn, class_index);
-	    cn = descend(b.nodes[cn], simple_temp.prediction);
+	    cn = descend(b.nodes[cn], ec.pred.scalar);
 	  }
 	
 	b.nodes[cn].min_count++;
 	update_min_count(b, cn);	
-	
-	ec.ld = mc;
+	ec.pred.multiclass = start_pred;
+	ec.l.multi = mc;
       }
   }
   
@@ -395,8 +380,7 @@ namespace LOG_MULTI
   
   void finish(log_multi& b)
   {
-    save_node_stats(b);
-    cout << "used " << b.nbofswaps << " swaps" << endl;
+    //save_node_stats(b);
   }
   
   void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
@@ -413,10 +397,10 @@ namespace LOG_MULTI
 	if (read)
 	  for (uint32_t j = 1; j < temp; j++)
 	    b.nodes.push_back(init_node());
-	text_len = sprintf(buff, "max_predictors = %d ",b.max_predictors);
+	text_len = sprintf(buff, "max_predictors = %ld ",b.max_predictors);
 	bin_text_read_write_fixed(model_file,(char*)&b.max_predictors, sizeof(b.max_predictors), "", read, buff, text_len, text);
 
-	text_len = sprintf(buff, "predictors_used = %d ",b.predictors_used);
+	text_len = sprintf(buff, "predictors_used = %ld ",b.predictors_used);
 	bin_text_read_write_fixed(model_file,(char*)&b.predictors_used, sizeof(b.predictors_used), "", read, buff, text_len, text);
 
 	text_len = sprintf(buff, "progress = %d ",b.progress);
@@ -496,54 +480,40 @@ namespace LOG_MULTI
       }
   }
   
-  void finish_example(vw& all, log_multi&, example& ec)
-  {
-    MULTICLASS::output_example(all, ec);
-    VW::finish_example(all, &ec);
-  }
+base_learner* log_multi_setup(vw& all)	//learner setup
+{
+  if (missing_option<size_t, true>(all, "log_multi", "Use online tree for multiclass"))
+    return NULL;
+  new_options(all, "Logarithmic Time Multiclass options")
+    ("no_progress", "disable progressive validation")
+    ("swap_resistance", po::value<uint32_t>(), "higher = more resistance to swap, default=4");
+  add_options(all);
   
-  learner* setup(vw& all, po::variables_map& vm)	//learner setup
-  {
-    log_multi* data = (log_multi*)calloc(1, sizeof(log_multi));
-
-    po::options_description opts("TXM Online options");
-    opts.add_options()
-      ("no_progress", "disable progressive validation")
-      ("swap_resistance", po::value<uint32_t>(&(data->swap_resist))->default_value(4), "higher = more resistance to swap, default=4");
+  po::variables_map& vm = all.vm;
+  
+  log_multi& data = calloc_or_die<log_multi>();
+  data.k = (uint32_t)vm["log_multi"].as<size_t>();
+  data.swap_resist = 4;
+  
+  if (vm.count("swap_resistance"))
+    data.swap_resist = vm["swap_resistance"].as<uint32_t>();
+  
+  if (vm.count("no_progress"))
+    data.progress = false;
+  else
+    data.progress = true;
+  
+  string loss_function = "quantile"; 
+  float loss_parameter = 0.5;
+  delete(all.loss);
+  all.loss = getLossFunction(all, loss_function, loss_parameter);
+  
+  data.max_predictors = data.k - 1;
+  init_tree(data);	
+  
+  learner<log_multi>& l = init_multiclass_learner(&data, setup_base(all), learn, predict, all.p, data.max_predictors);
+  l.set_save_load(save_load_tree);
+  l.set_finish(finish);
     
-    vm = add_options(all, opts);
-    
-    data->k = (uint32_t)vm["log_multi"].as<size_t>();
-    
-    //append log_multi with nb_actions to options_from_file so it is saved to regressor later
-    std::stringstream ss;
-    ss << " --log_multi " << data->k;
-    all.file_options.append(ss.str());
-    
-    if (vm.count("no_progress"))
-      data->progress = false;
-    else
-      data->progress = true;
-
-    data->all = &all;
-    (all.p->lp) = MULTICLASS::mc_label;
-    
-    string loss_function = "quantile"; 
-    float loss_parameter = 0.5;
-    delete(all.loss);
-    all.loss = getLossFunction(&all, loss_function, loss_parameter);
-
-    data->max_predictors = data->k - 1;
-
-    learner* l = new learner(data, all.l, data->max_predictors);
-    l->set_save_load<log_multi,save_load_tree>();
-    l->set_learn<log_multi,learn>();
-    l->set_predict<log_multi,predict>();
-    l->set_finish_example<log_multi,finish_example>();
-    l->set_finish<log_multi,finish>();
-    
-    init_tree(*data);	
-    
-    return l;
-  }	
+  return make_base(l);
 }

@@ -25,7 +25,7 @@
 #   * Alex Hudek:
 #       - Support log-space search which seems to work better
 #         with --l1 (very small values) and/or hinge-loss
-#   * trufanov-nok (@github)
+#   * Alex Trufanov:
 #       - A bunch of very useful bug reports:
 #           https://github.com/JohnLangford/vowpal_wabbit/issues/406
 #
@@ -34,7 +34,7 @@ use strict;
 use Getopt::Std;
 use Scalar::Util qw(looks_like_number);
 use File::Temp;
-use vars qw($opt_v $opt_b $opt_t $opt_L);
+use vars qw($opt_v $opt_b $opt_t $opt_c $opt_L);
 
 my $MaxDouble = 1.79769e+308;
 my $ModelFile;
@@ -202,7 +202,7 @@ sub loss($) {
         "\n\nTry to run:\n\t@command\nmanually to figure out why.\n"
             unless defined ($loss);
 
-    unlink($ModelFile) if ($opt_t && $ScratchModel && -e $ModelFile);
+    unlink($ModelFile) if (($opt_t || $opt_c) && $ScratchModel && -e $ModelFile);
 
     printf STDERR " %.6g%s\n", $loss, $best_msg;
     $Loss{$param} = $loss;      # cache it
@@ -231,6 +231,9 @@ sub usage(@) {
 
     Options:
         -t <TS>     Use <TS> as test-set file + evaluate goodness on it
+        -c <TC>     Use <TC> as test-cache file + evaluate goodness on it
+                    (This implies '-t' except the test-cache <TC> will be used
+                     instead of <TS>)
         -L          Use log-space for mid-point bisection
 
     lower_bound     lower bound of the parameter search range
@@ -426,8 +429,8 @@ sub best_hyperparam($$$) {
     # if it is linear. Only 'loss()' knows about this trick to reverse it,
     # goldenSectionSearch is oblivious to it.
     if ($opt_L) {
-      $lb = log($lb);
-      $ub = log($ub);
+        $lb = log($lb);
+        $ub = log($ub);
     }
 
     my ($best, $fbest);
@@ -505,12 +508,15 @@ sub is_integer_option($) {
 sub process_args {
     $0 =~ s{.*/}{};
 
-    getopts('vbLt:');
+    getopts('vbLc:t:');
 
     # Brent is not ready for prime-time yet so don't advertise it.
     warn "$0: using Brent's method search\n" if ($opt_b);
     if ($opt_t) {       # evaluate on test-set
         usage("-t $opt_t: $!") unless (-e $opt_t && -r $opt_t);
+    }
+    if ($opt_c) {       # evaluate on test-cache
+        usage("-c $opt_c: $!") unless (-e $opt_c && -r $opt_c);
     }
 
     # v("after getopts: \@ARGV=(@ARGV)\n");
@@ -560,7 +566,7 @@ sub process_args {
     my ($option_before_pct) = ($vw_command_line =~ /(\S+)\s+\S*%/);
     $IntegerOpt = is_integer_option($option_before_pct);
 
-    if ($opt_t) {
+    if ($opt_t || $opt_c) {
         # Evaluate on test:
         #   1) Make sure we store the model after training
         #   2) Call vw again, loading model and evaluating on test-set
@@ -582,8 +588,14 @@ sub process_args {
         if ($vw_command_line =~ /(--loss_function)\s+(\S+)/) {
             push(@ARGV, $1, $2);
         }
-        # And finally, add the test file
-        push(@ARGV, $opt_t);
+        # Add the test file
+        if ($opt_t) {
+            push(@ARGV, $opt_t);
+        }
+        # Add test-cache if -c is in effect
+        if ($opt_c) {
+            push(@ARGV, '--cache_file', $opt_c);
+        }
         v("New -t command line: %s\n", "@ARGV");
     }
 

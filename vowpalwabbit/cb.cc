@@ -5,12 +5,7 @@ license as described in the file LICENSE.
  */
 #include <float.h>
 
-#include "cost_sensitive.h"
-#include "cb.h"
-#include "simple_label.h"
 #include "example.h"
-#include "multiclass.h"
-#include "parse_example.h"
 #include "parse_primitives.h"
 #include "vw.h"
 
@@ -89,10 +84,10 @@ namespace CB
     ld->costs.delete_v();
   }
 
-  void copy_label(void*&dst, void*src)
+  void copy_label(void*dst, void*src)
   {
-    CB::label*&ldD = (CB::label*&)dst;
-    CB::label* ldS = (CB::label* )src;
+    CB::label* ldD = (CB::label*)dst;
+    CB::label* ldS = (CB::label*)src;
     copy_array(ldD->costs, ldS->costs);
   }
 
@@ -113,15 +108,7 @@ namespace CB
         }
 
         f.partial_prediction = 0.;
-        
         f.action = (uint32_t)hashstring(p->parse_name[0], 0);
-        if (f.action < 1 || f.action > sd->k)
-        {
-          cerr << "invalid action: " << f.action << endl;
-          cerr << "terminating." << endl;
-          throw exception();
-        }
-
         f.cost = FLT_MAX;
         if(p->parse_name.size() > 1)
           f.cost = float_of_substring(p->parse_name[1]);
@@ -173,31 +160,52 @@ namespace CB_EVAL
 {
   size_t read_cached_label(shared_data*sd, void* v, io_buf& cache)
   {
-    CB::label* ld = (CB::label*) v;
+    CB_EVAL::label* ld = (CB_EVAL::label*) v;
     char* c;
     size_t total = sizeof(uint32_t);
     if (buf_read(cache, c, total) < total) 
       return 0;
-    ld->prediction = *(uint32_t*)c;
+    ld->action = *(uint32_t*)c;
     c += sizeof(uint32_t);
     
-    return total + CB::read_cached_label(sd, ld, cache);
+    return total + CB::read_cached_label(sd, &(ld->event), cache);
   }
 
   void cache_label(void* v, io_buf& cache)
   {
     char *c;
-    CB::label* ld = (CB::label*) v;
+    CB_EVAL::label* ld = (CB_EVAL::label*) v;
     buf_write(cache, c, sizeof(uint32_t));
-    *(uint32_t *)c = ld->prediction;
+    *(uint32_t *)c = ld->action;
     c+= sizeof(uint32_t);
     
-    CB::cache_label(ld, cache);
+    CB::cache_label(&(ld->event), cache);
+  }
+
+  void default_label(void* v)
+  {
+    CB_EVAL::label* ld = (CB_EVAL::label*) v;
+    CB::default_label(&(ld->event));
+    ld->action = 0;
+  }
+
+  void delete_label(void* v)
+  {
+    CB_EVAL::label* ld = (CB_EVAL::label*)v;
+    CB::delete_label(&(ld->event));
+  }
+
+  void copy_label(void*dst, void*src)
+  {
+    CB_EVAL::label* ldD = (CB_EVAL::label*)dst;
+    CB_EVAL::label* ldS = (CB_EVAL::label*)src;
+    CB::copy_label(&(ldD->event), &(ldS)->event);
+    ldD->action = ldS->action;
   }
 
   void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
   {
-    CB::label* ld = (CB::label*)v;
+    CB_EVAL::label* ld = (CB_EVAL::label*)v;
     
     if (words.size() < 2)
       {
@@ -205,18 +213,18 @@ namespace CB_EVAL
 	throw exception();
       }
     
-    ld->prediction = (uint32_t)hashstring(words[0], 0);    
+    ld->action = (uint32_t)hashstring(words[0], 0);    
     
     words.begin++;
     
-    CB::parse_label(p, sd, ld, words);
+    CB::parse_label(p, sd, &(ld->event), words);
     
     words.begin--;
   }
 
-  label_parser cb_eval = {CB::default_label, parse_label, 
+  label_parser cb_eval = {default_label, parse_label, 
 			  cache_label, read_cached_label, 
-			  CB::delete_label, CB::weight, 
-			  CB::copy_label,
-			  sizeof(CB::label)};
+			  delete_label, CB::weight, 
+			  copy_label,
+			  sizeof(CB_EVAL::label)};
 }

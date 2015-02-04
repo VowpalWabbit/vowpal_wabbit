@@ -4,11 +4,7 @@
    license as described in the file LICENSE.
    */
 #include "search_dep_parser.h"
-#include "multiclass.h"
-#include "memory.h"
-#include "example.h"
 #include "gd.h"
-#include "ezexample.h"
 
 #define cdep cerr
 #undef cdep
@@ -25,6 +21,8 @@ struct task_data {
   bool no_quadratic_features;
   bool no_cubic_features;
   bool my_init_flag;
+  bool sub_ref;
+  bool bad_ref;
   int nfs;
   size_t root_label;
   size_t num_label;
@@ -50,10 +48,19 @@ namespace DepParserTask {
   void initialize(Search::search& srn, size_t& num_actions, po::variables_map& vm) {
     task_data *data = new task_data();
     data->my_init_flag = false;
-    //data->ex = (example*)calloc_or_die(1, sizeof(example));
     data->ec_buf.resize(12, true);
 	data->gold_action_reward.resize(4,true);
     data->children = new v_array<uint32_t>[6]; 
+
+    for(size_t i = 0; i < 6; i++)
+      data->children[i] = v_init<uint32_t>();
+
+    data->valid_actions = v_init<uint32_t>();
+    data->gold_heads = v_init<uint32_t>();
+    data->stack = v_init<uint32_t>();
+    data->heads = v_init<uint32_t>();
+    data->ec_buf = v_init<example*>();
+    data->temp = v_init<uint32_t>();
 
 
     srn.set_num_learners(3);
@@ -62,6 +69,8 @@ namespace DepParserTask {
     dparser_opts.add_options()
       ("dparser_no_quad", "Don't use qudaratic features")
       ("dparser_no_cubic","Don't use cubic features")
+      ("dparser_bad_ref","Use an abitary bad ref")
+      ("dparser_sub_ref","Use an abitary sub-optimal ref")
       ("root_label", po::value<size_t>(&(data->root_label))->default_value(8), "Ensure that there is only one root in each sentence")
       ("num_label", po::value<size_t>(&(data->num_label))->default_value(12), "Number of arc labels");
     srn.add_program_options(vm, dparser_opts);
@@ -76,6 +85,8 @@ namespace DepParserTask {
     // setup entity and relation labels
     data->no_quadratic_features = (vm.count("dparser_no_quad"))?true:false;
     data->no_cubic_features =(vm.count("dparser_no_cubic"))?true:false;
+    data->sub_ref = (vm.count("dparser_sub_ref"))?true:false;
+    data->bad_ref =(vm.count("dparser_bad_ref"))?true:false;
     srn.set_options(AUTO_CONDITION_FEATURES);
   }
 
@@ -100,7 +111,7 @@ namespace DepParserTask {
   } // if we had task data, we'd want to free it here
 
   void inline add_feature(example *ex,  uint32_t idx, unsigned  char ns, size_t mask, size_t ss){
-    feature f = {1.0f, (idx<<ss)&mask};
+    feature f = {1.0f, (idx<<ss) & (uint32_t)mask};
     ex->atomics[(int)ns].push_back(f);
   }
   void add_quad_features(Search::search& srn, example *ex){
@@ -112,7 +123,7 @@ namespace DepParserTask {
       unsigned char ns_a = data->pairs[idx][0];
       unsigned char ns_b = data->pairs[idx][1];
       for(uint32_t i=0; i< ex->atomics[(int)ns_a].size();i++){
-        uint32_t offset = (ex->atomics[(int)ns_a][i].weight_index>>ss) *quadratic_constant+additional_offset;
+        uint32_t offset = (ex->atomics[(int)ns_a][i].weight_index>>ss) *quadratic_constant+ (uint32_t) additional_offset;
         for(uint32_t j=0; j< ex->atomics[(int)ns_b].size();j++){
           add_feature(ex,  offset+ (ex->atomics[(int)ns_b][j].weight_index>>ss) , quad_namespace, mask, ss);
         }
@@ -131,7 +142,7 @@ namespace DepParserTask {
       for(uint32_t i=0; i< ex->atomics[(int)ns_a].size();i++){
         uint32_t offset1 =  (ex->atomics[(int)ns_a][i].weight_index>>ss)*cubic_constant;
         for(uint32_t j=0; j< ex->atomics[(int)ns_b].size();j++){
-          uint32_t offset2 =  ((ex->atomics[(int)ns_b][j].weight_index>>ss)+offset1)*cubic_constant2+additional_offset;
+          uint32_t offset2 =  ((ex->atomics[(int)ns_b][j].weight_index>>ss)+offset1)*cubic_constant2+ (uint32_t)additional_offset;
           for(uint32_t k=0; k< ex->atomics[(int)ns_c].size();k++){
             add_feature(ex, offset2 + ( ex->atomics[(int)ns_c][k].weight_index>>ss) , cubic_namespace, mask, ss);
           }
@@ -193,8 +204,8 @@ namespace DepParserTask {
     task_data *data = srn.get_task_data<task_data>();
     vector<string> &newpairs = data->pairs;
     vector<string> &newtriples = data->triples;
-    data->ex = alloc_examples(sizeof(MULTICLASS::get_example_label(&base_ex[0])), 1);
-    data->nfs = base_ex->indices.size()-1; // remove constant fs
+    data->ex = alloc_examples(sizeof(base_ex[0].l.multi.label), 1);
+    data->nfs = (int) base_ex->indices.size()-1; // remove constant fs
     size_t nfs = data->nfs;
 
     // setup feature template
@@ -206,7 +217,7 @@ namespace DepParserTask {
 
     data->ex->indices.push_back(val_namespace);
     for(size_t i=0; i<12*nfs; i++)
-      data->ex->indices.push_back(i);
+      data->ex->indices.push_back((unsigned char)i);
 
     size_t pos = 0;
     if(!data->no_quadratic_features){
@@ -317,20 +328,20 @@ namespace DepParserTask {
         if(*fs == constant_namespace) // ignore constant_namespace
           continue;
 
-        size_t additional_offset = (i*nfs+j)*offset_const;
+        uint32_t additional_offset = (uint32_t)((i*nfs+j)*offset_const);
         for(size_t k=0; k<ec[0]->atomics[*fs].size(); k++) {
           if(!ec_buf[i])
             v0 = affix_constant*((j+1)*quadratic_constant + k);
           else
             v0 = (ec_buf[i]->atomics[*fs][k].weight_index>>ss);
-          add_feature(&ex, (uint32_t) v0 + additional_offset, i*nfs+j, mask, ss);
+          add_feature(&ex, (uint32_t) v0 + additional_offset, (unsigned char)(i*nfs+j), mask, ss);
         }
         j++;
       }
     }
     temp.resize(4,true);
     // distance
-    temp[0] = stack.empty()?0: (idx >n? 1: 2+min(5, idx - stack.last()));
+    temp[0] = stack.empty()? 0: (idx >n? 1: 2+min(5, idx - stack.last()));
 
     // #left child of top item in stack
     temp[1] = stack.empty()? 1: 1+min(5, children[0][stack.last()]);
@@ -342,9 +353,9 @@ namespace DepParserTask {
     temp[3] = idx>n? 1: 1+min(5 , children[0][idx]);
 
     size_t additional_offset = val_namespace*offset_const; 
-    for(int j=0; j< 4;j++)
-      add_feature(&ex, (uint32_t) temp[j]+additional_offset , val_namespace, mask, ss);
-
+    for(int j=0; j< 4;j++) {
+      add_feature(&ex, temp[j]+ additional_offset , val_namespace, mask, ss);
+	}
     // action history
     if(!data->no_quadratic_features)
       add_quad_features(srn, data->ex);
@@ -352,11 +363,11 @@ namespace DepParserTask {
       add_cubic_features(srn, data->ex);
     size_t count=0;
     for (unsigned char* ns = data->ex->indices.begin; ns != data->ex->indices.end; ns++) {
-      data->ex->sum_feat_sq[(int)*ns] = data->ex->atomics[(int)*ns].size();
+      data->ex->sum_feat_sq[(int)*ns] = (float) data->ex->atomics[(int)*ns].size();
       count+= data->ex->atomics[(int)*ns].size();
     }
     data->ex->num_features = count;
-    data->ex->total_sum_feat_sq = count;
+    data->ex->total_sum_feat_sq = (float) count;
   }
 
   void get_valid_actions(v_array<uint32_t> & valid_action, uint32_t idx, uint32_t n, uint32_t stack_depth) {
@@ -379,6 +390,20 @@ namespace DepParserTask {
       if(valid_actions[i] == action)
         return true;
     return false;
+  }
+
+  size_t get_sub_gold_actions(Search::search &srn, uint32_t idx, uint32_t n){
+    task_data *data = srn.get_task_data<task_data>();
+    v_array<uint32_t> &gold_action_reward = data->gold_action_reward, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions;
+
+    // gold = SHIFT
+    if (is_valid(1,valid_actions) &&( stack.empty() || gold_heads[idx] == stack.last()))
+		return 1;
+
+    // gold = LEFT
+    if (is_valid(3,valid_actions) && gold_heads[stack.last()] == idx)
+		return 3;
+	return 0;
   }
 
   size_t get_gold_actions(Search::search &srn, uint32_t idx, uint32_t n){
@@ -428,8 +453,10 @@ namespace DepParserTask {
   void run(Search::search& srn, vector<example*>& ec) {
     cdep << "start structured predict"<<endl;
     task_data *data = srn.get_task_data<task_data>();
-    v_array<uint32_t> &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags, &valid_labels = data->valid_labels;
-    uint32_t n = ec.size();
+
+    v_array<uint32_t> &stack=data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags, &valid_labels=data->valid_labels;
+    uint32_t n = (uint32_t) ec.size();
+
     uint32_t idx = 2;
 
     // initialization
@@ -444,7 +471,7 @@ namespace DepParserTask {
     gold_tags.erase();
     gold_tags.push_back(0);
     for(size_t i=0; i<ec.size(); i++) {
-      uint32_t label = (MULTICLASS::get_example_label(ec[i]));
+      uint32_t label = ec[i]->l.multi.label;
       gold_heads.push_back((label & 255) -1);
       gold_tags.push_back(label >>8);
       heads[i+1] = 0;
@@ -463,15 +490,25 @@ namespace DepParserTask {
     while(stack.size()>1 || idx <= n){
       if(srn.predictNeedsExample())
         extract_features(srn, idx, ec);
-      get_valid_actions(valid_actions, idx, n, stack.size());
+      get_valid_actions(valid_actions, idx, n, (uint32_t) stack.size());
       uint32_t gold_action = get_gold_actions(srn, idx, n);
-
+      if(data->bad_ref)
+		  gold_action = valid_actions[0];
+	  if(data->sub_ref){
+          gold_action = get_sub_gold_actions(srn, idx, n);
+		  if(gold_action==0) gold_action = valid_actions[0];
+	  }
       // Predict the next action {SHIFT, REDUCE_LEFT, REDUCE_RIGHT}
-      uint32_t a_id= Search::predictor(srn, (ptag) count+1).set_input(*(data->ex)).set_oracle(gold_action).set_allowed(valid_actions).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(0).predict();
+      uint32_t a_id= Search::predictor(srn, (ptag) 0).set_input(*(data->ex)).set_oracle(gold_action).set_allowed(valid_actions).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(0).predict();
       count++;
       uint32_t t_id = 0;
       if(a_id ==2 || a_id == 3){
-        t_id= Search::predictor(srn, (ptag) count+1).set_input(*(data->ex)).set_oracle(gold_tags[stack.last()]).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(a_id-1).predict();
+	  	uint32_t gold_label = gold_tags[stack.last()];
+		if(data->bad_ref)
+			gold_label = 0;
+		if(data->sub_ref)
+			gold_label = gold_tags[stack.last()];
+        t_id= Search::predictor(srn, (ptag) count+1).set_input(*(data->ex)).set_oracle(gold_label).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(a_id-1).predict();
         count++;
       }
       idx = transition_hybrid(srn, a_id, idx, t_id);

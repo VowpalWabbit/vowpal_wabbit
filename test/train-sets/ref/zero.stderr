@@ -14,9 +14,8 @@ num sources = 1
  1 0.00000   	0.00000   	0.00000   	          	          	          	0.00000   	0.00000   	0.00000   
 
 finished run
-number of examples = 25
-weighted example sum = 25
+number of examples = 10
+weighted example sum = 10
 weighted label sum = 0
 average loss = 0
-best constant = 0
-total feature number = 15005
+total feature number = 6002

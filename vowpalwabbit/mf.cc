@@ -9,20 +9,16 @@
 #include <netdb.h>
 #endif
 #include "reductions.h"
-#include "simple_label.h"
 #include "gd.h"
-#include "rand48.h"
 
 using namespace std;
 
 using namespace LEARNER;
 
-namespace MF {
-
 struct mf {
   vector<string> pairs;
 
-  uint32_t rank;
+  size_t rank;
 
   uint32_t increment;
 
@@ -30,22 +26,23 @@ struct mf {
   // [ w*(1,x_l,x_r) , l^1*x_l, r^1*x_r, l^2*x_l, r^2*x_2, ... ]
   v_array<float> sub_predictions;
 
+  // array for temp storage of indices during prediction
+  v_array<unsigned char> predict_indices;
+
   // array for temp storage of indices
   v_array<unsigned char> indices;
 
   // array for temp storage of features
   v_array<feature> temp_features;
 
-  vw* all;
+  vw* all; // for pairs? and finalize
 };
 
 template <bool cache_sub_predictions>
-void predict(mf& data, learner& base, example& ec) {
-  vw* all = data.all;
-
+void predict(mf& data, base_learner& base, example& ec) {
   float prediction = 0;
   if (cache_sub_predictions)
-    data.sub_predictions.resize(2*all->rank+1, true);
+    data.sub_predictions.resize(2*data.rank+1, true);
 
   // predict from linear terms
   base.predict(ec);
@@ -56,7 +53,7 @@ void predict(mf& data, learner& base, example& ec) {
   prediction += ec.partial_prediction;
 
   // store namespace indices
-  copy_array(data.indices, ec.indices);
+  copy_array(data.predict_indices, ec.indices);
 
   // erase indices
   ec.indices.erase();
@@ -69,7 +66,7 @@ void predict(mf& data, learner& base, example& ec) {
     int right_ns = (int) (*i)[1];
 
     if (ec.atomics[left_ns].size() > 0 && ec.atomics[right_ns].size() > 0) {
-      for (size_t k = 1; k <= all->rank; k++) {
+      for (size_t k = 1; k <= data.rank; k++) {
 
 	ec.indices[0] = left_ns;
 
@@ -83,7 +80,7 @@ void predict(mf& data, learner& base, example& ec) {
 	ec.indices[0] = right_ns;
 
 	// compute r^k * x_r using base learner
-	base.predict(ec, k + all->rank);
+	base.predict(ec, k + data.rank);
 	float x_dot_r = ec.partial_prediction;
 	if (cache_sub_predictions)
 	  data.sub_predictions[2*k] = x_dot_r;
@@ -94,21 +91,21 @@ void predict(mf& data, learner& base, example& ec) {
     }
   }
   // restore namespace indices and label
-  copy_array(ec.indices, data.indices);
+  copy_array(ec.indices, data.predict_indices);
 
   // finalize prediction
   ec.partial_prediction = prediction;
-  ((label_data*)ec.ld)->prediction = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
 }
 
-void learn(mf& data, learner& base, example& ec) {
-  vw* all = data.all;
-
+void learn(mf& data, base_learner& base, example& ec) {
   // predict with current weights
   predict<true>(data, base, ec);
+  float predicted = ec.pred.scalar;
 
   // update linear weights
   base.update(ec);
+  ec.pred.scalar = ec.updated_prediction;
 
   // store namespace indices
   copy_array(data.indices, ec.indices);
@@ -132,7 +129,7 @@ void learn(mf& data, learner& base, example& ec) {
       // store feature values in left namespace
       copy_array(data.temp_features, ec.atomics[left_ns]);
 
-      for (size_t k = 1; k <= all->rank; k++) {
+      for (size_t k = 1; k <= data.rank; k++) {
 
 	// multiply features in left namespace by r^k * x_r
 	for (feature* f = ec.atomics[left_ns].begin; f != ec.atomics[left_ns].end; f++)
@@ -143,6 +140,11 @@ void learn(mf& data, learner& base, example& ec) {
 
 	// restore left namespace features (undoing multiply)
 	copy_array(ec.atomics[left_ns], data.temp_features);
+
+	// compute new l_k * x_l scaling factors
+	// base.predict(ec, k);
+	// data.sub_predictions[2*k-1] = ec.partial_prediction;
+	// ec.pred.scalar = ec.updated_prediction;
       }
 
       // set example to right namespace only
@@ -151,14 +153,15 @@ void learn(mf& data, learner& base, example& ec) {
       // store feature values for right namespace
       copy_array(data.temp_features, ec.atomics[right_ns]);
 
-      for (size_t k = 1; k <= all->rank; k++) {
+      for (size_t k = 1; k <= data.rank; k++) {
 
 	// multiply features in right namespace by l^k * x_l
 	for (feature* f = ec.atomics[right_ns].begin; f != ec.atomics[right_ns].end; f++)
 	  f->x *= data.sub_predictions[2*k-1];
 
 	// update r^k using base learner
-	base.update(ec, k + all->rank);
+	base.update(ec, k + data.rank);
+	ec.pred.scalar = ec.updated_prediction;
 
 	// restore right namespace features
 	copy_array(ec.atomics[right_ns], data.temp_features);
@@ -167,6 +170,9 @@ void learn(mf& data, learner& base, example& ec) {
   }
   // restore namespace indices
   copy_array(ec.indices, data.indices);
+
+  // restore original prediction
+  ec.pred.scalar = predicted;
 }
 
 void finish(mf& o) {
@@ -178,29 +184,22 @@ void finish(mf& o) {
   o.sub_predictions.delete_v();
 }
 
-
-learner* setup(vw& all, po::variables_map& vm) {
-  mf* data = new mf;
-
-  // copy global data locally
-  data->all = &all;
-  data->rank = all.rank;
-
-  // store global pairs in local data structure and clear global pairs
-  // for eventual calls to base learner
-  data->pairs = all.pairs;
-  all.pairs.clear();
-
-  // initialize weights randomly
-  if(!vm.count("initial_regressor"))
-    {
-      for (size_t j = 0; j < (all.reg.weight_mask + 1) >> all.reg.stride_shift; j++)
-	all.reg.weight_vector[j << all.reg.stride_shift] = (float) (0.1 * frand48());
-    }
-  learner* l = new learner(data, all.l, 2*data->rank+1);
-  l->set_learn<mf, learn>();
-  l->set_predict<mf, predict<false> >();
-  l->set_finish<mf,finish>();
-  return l;
-}
-}
+  base_learner* mf_setup(vw& all) {
+    if (missing_option<size_t, true>(all, "new_mf", "rank for reduction-based matrix factorization")) 
+      return NULL;
+    
+    mf& data = calloc_or_die<mf>();
+    data.all = &all;
+    data.rank = (uint32_t)all.vm["new_mf"].as<size_t>();
+    
+    // store global pairs in local data structure and clear global pairs
+    // for eventual calls to base learner
+    data.pairs = all.pairs;
+    all.pairs.clear();
+    
+    all.random_positive_weights = true;
+    
+    learner<mf>& l = init_learner(&data, setup_base(all), learn, predict<false>, 2*data.rank+1);
+    l.set_finish(finish);
+    return make_base(l);
+  }

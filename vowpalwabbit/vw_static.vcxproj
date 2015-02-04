@@ -204,7 +204,7 @@
   </Target>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(BoostIncludeDir);$(ZlibIncludeDir);./win32;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\explore\static;$(BoostIncludeDir);$(ZlibIncludeDir);./win32;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion Condition="'$(Configuration)'=='Release'">AnySuitable</InlineFunctionExpansion>
@@ -249,6 +249,7 @@
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
     <ClInclude Include="gd.h" />
+    <ClInclude Include="ftrl_proximal.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="multiclass.h" />
     <ClInclude Include="cost_sensitive.h" />
@@ -305,8 +306,8 @@
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
     <ClCompile Include="gd.cc" />
+    <ClCompile Include="ftrl_proximal.cc" />
     <ClCompile Include="kernel_svm.cc" />
-    <ClCompile Include="memory.cc" />
     <ClCompile Include="multiclass.cc" />
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cb_algs.cc" />
@@ -314,6 +315,7 @@
     <ClCompile Include="gd_mf.cc" />
     <ClCompile Include="lrq.cc" />
     <ClCompile Include="log_multi.cc" />
+    <ClCompile Include="best_constant.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="hash.cc" />
     <ClCompile Include="io_buf.cc" />

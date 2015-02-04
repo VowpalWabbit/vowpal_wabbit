@@ -58,27 +58,40 @@ boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
 **************************************************************************************************************
 (5) Build zlib with Visual Studio 2013
 
+	The patched version of the sources for zlib are up on https://github.com/nicknussbaum/zlibpatched.git
+	They can also be made as follows.
+	
+
 	(a)Get the zlib 1.28.0 file from   http://zlib.net/zlib128.zip
 	(b) unzip zlib-1.2.8.zip into the c:\src\vw\zlib-1.2.8  
 
 	use contrib/vstudio/vc11 since there is no contrib/vstudio/vc12 as yet
 	
-	get the GnuWin32 Patch Utility http://gnuwin32.sourceforge.net/packages/patch.htm patch.exe
-	and simply put it in vw.
+	(c)Get the GnuWin32 Patch Utility http://gnuwin32.sourceforge.net/packages/patch.htm patch.exe
+	and simply put it in the c:\src\vw
 
-	(c) from a dos command shell run as administrator
+	(d)Unzip the zlibpatch.zip file and place the contained zlibpatch.txt file in vowpa_wabbit 
+
+
+
+	(e) From a dos command shell run as administrator
 	
 	  patch --dry-run -p0 --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
 		check output messages looks good then
 	  patch  -p0 --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
+	  
+	  
+	  
+	  
+	  
 
-	(d) Build the zlib libararies using by either of
+	 From the patched sources build the zlib libararies by either of the following steps. 
 
 	Launch Visual Studio 2013
 	Open the solution %ROOT%/zlib-1.2.8\contrib\vstudio\vc11\zlibvc.sln
 	Batch build the configurations you want of x86 and x64 debut and release
 
-    	(e) or from your Visual Studio Command shell 
+    	 or from your Visual Studio Command shell 
 	     cd c:\src\vw\zlib-1.2.0\contrib\vstudio\vc11
 		run the following commands (can skip the last four if you only want 32bit binaries)
 
@@ -90,6 +103,9 @@ boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
         "msbuild /p:Configuration=Release;Platform=x64 zlibstat.vcxproj"
 
 	Ignore the warnings about Platform 'Itanium' referenced in the project file  since Itanium is no longer supported 
+	
+	
+	
 
 **************************************************************************************************************
 (6) Building Boost
@@ -102,12 +118,11 @@ If you use another directory modify the vw solution and project macro definition
 			
 
 	   open a  Windows command shell
-	  (a) mkdir c:\boost 
-			
+      (a) mkdir c:\boost 
       (b) Download boost_1_56_0.zip from http://sourceforge.net/projects/boost/files/boost/1.56.0/boost_1_56_0.zip/download
-	  (c) Unzip it which creates the directory boost_1_56_0
+      (c) Unzip it which creates the directory boost_1_56_0
       (d) mkdir c:\boost\x86
-	  (e) mkdir c:\boost\x64
+      (e) mkdir c:\boost\x64
  	  
 build the x86 binaries
 	  (f)"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat x86"
@@ -119,10 +134,11 @@ build the x86 binaries
 
 	
 build the x64 binaries
-	  (k) mkdir c:\boost\x64	
-	  (l) "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat"  x86_amd64"
-	  (m) "bootstrap.bat"
-	  (n) ".\b2 --prefix=c:\boost\x64 --build-dir=x64 --toolset=msvc-12.0 address-model=64 install --with-program_options"
+	  (k) "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat"  x86_amd64"	
+	  (l) mkdir c:\boost\x64
+	  (m) cd c:\boost\boost_1_56_0
+	  (n) "bootstrap.bat"
+	  (o) ".\b2 --prefix=c:\boost\x64 --build-dir=x64 --toolset=msvc-12.0 address-model=64 install --with-program_options"
 
 	  
 	  
