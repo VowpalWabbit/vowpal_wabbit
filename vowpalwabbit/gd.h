@@ -32,7 +32,7 @@ namespace GD{
    void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R&dat, uint32_t offset=0, float mult=1.)
    {
      for (feature* f = begin; f!= end; f++) 
-       T(dat, mult*f->x, f->weight_index + offset);
+       T(dat, mult*f->x, (f->weight_index + offset) & weight_mask);
    }
  
   // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x, S)

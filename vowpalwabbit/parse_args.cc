@@ -753,13 +753,13 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(autolink_setup);
   all.reduction_stack.push_back(lrq_setup);
   all.reduction_stack.push_back(stagewise_poly_setup);
+  all.reduction_stack.push_back(decision_stump_setup);
   all.reduction_stack.push_back(scorer_setup);
 
   //Reductions
   all.reduction_stack.push_back(binary_setup);
   all.reduction_stack.push_back(topk_setup);
   all.reduction_stack.push_back(oaa_setup);
-  all.reduction_stack.push_back(decision_stump_setup);
   all.reduction_stack.push_back(boosting_setup);
   all.reduction_stack.push_back(ect_setup);
   all.reduction_stack.push_back(log_multi_setup);
