@@ -14,8 +14,7 @@ AC_LANG_CPLUSPLUS
 AC_CANONICAL_HOST
 AC_PROG_INSTALL
 AM_PROG_LIBTOOL
-CXXFLAGS='-std=c++0x'
-
+AX_CXX_COMPILE_STDCXX_11
 AC_HEADER_STDC
 
 AX_BOOST_BASE([1.0], [], [
@@ -50,13 +49,19 @@ profile=false
 AC_ARG_ENABLE([profiling],AC_HELP_STRING([--enable-profiling],[add -pg -g CPPFLAGS]),[ test "$enableval" = "no" || profile=true ])
 AM_CONDITIONAL(PROFILE, test x$profile = xtrue)
 
+clang_libcxx=false
+AC_ARG_ENABLE([libc++],
+              AC_HELP_STRING([--enable-libc++],[use clang's libc++ vs. g++ libstdc++ headers/libraries]),
+              [ test "$enableval" = "no" || clang_libcxx=true])
+AM_CONDITIONAL([CLANG_LIBCXX], test x$clang_libcxx = xtrue)
+
 case $host in
-     *-*-freebsd*)
-	freebsd=true
-	;;
-     *)
-	freebsd=false
-	;;
+  *-*-freebsd*)
+	 freebsd=true
+	 ;;
+  *)
+	 freebsd=false
+	 ;;
 esac
 AM_CONDITIONAL(FREEBSD, test x$freebsd = xtrue)
 
