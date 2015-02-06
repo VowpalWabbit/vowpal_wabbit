@@ -296,9 +296,7 @@ public:
 		}
 	}
 
-	~EpsilonGreedyExplorer()
-	{
-	}
+	virtual ~EpsilonGreedyExplorer() { }
 
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
@@ -465,6 +463,8 @@ public:
 		}
 	}
 
+	virtual ~GenericExplorer() { }
+	
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
@@ -548,6 +548,8 @@ public:
 		}
 	}
 
+	virtual ~TauFirstExplorer() { }
+
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
@@ -620,6 +622,8 @@ public:
 			throw std::invalid_argument("Number of bags must be at least 1.");
 		}
 	}
+
+	virtual ~BootstrapExplorer() { }
 
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
