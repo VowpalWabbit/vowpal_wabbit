@@ -12,6 +12,20 @@ struct oaa{
   vw* all; // for raw
 };
 
+// to break ties randomly in OAA
+static void 
+randperm(uint32_t* a, int n) {
+  int k;
+  for (k = 0; k < n; k++)
+    a[k] = k;
+  for (k = n-1; k > 0; k--) {
+    int j = rand() % (k+1);
+    int temp = a[j];
+    a[j] = a[k];
+    a[k] = temp;
+  }
+}
+
 template <bool is_learn, bool print_all>
 void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   MULTICLASS::label_t mc_label_data = ec.l.multi;
@@ -22,8 +36,12 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   stringstream outputStringStream;
   uint32_t prediction = 1;
   float score = INT_MIN;
-  for (uint32_t i = 1; i <= o.k; i++)
+  uint32_t perm[o.k];
+  randperm(perm,o.k);
+  for (uint32_t ind = 1; ind <= o.k; ind++)
     {
+      uint32_t i=1+perm[ind-1];
+
       if (is_learn)
 	{
 	  if (mc_label_data.label == i)

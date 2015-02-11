@@ -12,6 +12,9 @@ void predict_or_learn(char&, LEARNER::base_learner& base, example& ec) {
     ec.pred.scalar = 1;
   else
     ec.pred.scalar = -1;
+
+  // to force OAA to use the discrete label
+  ec.partial_prediction = ec.pred.scalar;
   
   if (ec.l.simple.label != FLT_MAX)
     {
