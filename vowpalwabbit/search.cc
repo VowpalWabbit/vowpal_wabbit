@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 #include "search_dep_parser.h"
 #include "search_entityrelationtask.h"
 #include "search_hooktask.h"
+#include "search_graph.h"
 #include "csoaa.h"
 #include "beam.h"
 
@@ -32,6 +33,7 @@ namespace Search {
                                &DepParserTask::task,
                                &EntityRelationTask::task,
                                &HookTask::task,
+                               &GraphTask::task,
                                NULL };   // must NULL terminate!
 
   const bool PRINT_UPDATE_EVERY_EXAMPLE =0;
@@ -712,6 +714,7 @@ namespace Search {
       for (size_t k = 0; k < K; k++) {
         action k_act = cs_get_cost_index(priv.cb_learner, ec.l, k);
         if (k_act == act) continue;  // skip the taken action
+        // TODO: delta_cost is correct for prioritizing, but not for full path cost -- for that, we cannot be subtracting off act_cost
         float delta_cost = cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k) - act_cost + priv.beam_initial_cost;   // TODO: is delta_cost the right cost?
         // construct the action prefix
         action_prefix* px = new v_array<action>;
@@ -770,6 +773,8 @@ namespace Search {
       priv.empty_example->in_use = true;
       priv.base_learner->predict(*priv.empty_example);
 
+      //cerr << "partial_prediction[" << a << "] = " << ecs[a].partial_prediction << endl;
+      
       if ((a == start_K) || (ecs[a].partial_prediction < best_prediction)) {
         best_prediction = ecs[a].partial_prediction;
         best_action     = a;
@@ -931,7 +936,7 @@ namespace Search {
       cdbg_print_array("learn_allowed_actions", priv.learn_allowed_actions);
       //bool any_gt_1 = false;
       for (size_t i=0; i<losses.size(); i++) {
-        losses[i] = losses[i] - min_loss;
+        losses[i] = losses[i] - min_loss;  // TODO: in BEAM mode, subtracting off min_loss seems like a bad idea
         if (priv.cb_learner) labels.cb.costs[i].cost = losses[i];
         else                 labels.cs.costs[i].x    = losses[i];
       }
@@ -957,6 +962,7 @@ namespace Search {
           lab.costs.push_back(wc);
         }
         lab.costs[0].x = losses[a] - min_loss;
+        //cerr << "cost[" << a << "] = " << losses[a] << " - " << min_loss << " = " << lab.costs[0].x << endl;
         ec.in_use = true;
         if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.begin, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
         priv.base_learner->learn(ec, learner);
@@ -1208,7 +1214,7 @@ namespace Search {
         id ++;
       }
     } else {
-      cerr << "error: cannot do subsampling of timesteps with beam search yet!" << endl;
+      std::cerr << "error: cannot do subsampling of timesteps with beam search yet!" << endl;
       throw exception();
     }
   }
@@ -1411,7 +1417,7 @@ namespace Search {
     size_t last_beam_id = 0;
     for (size_t tid=0; tid<priv.timesteps.size(); tid++) {
       size_t bid = priv.timesteps[tid].first;
-      //cerr << "timestep = " << priv.timesteps[tid].first << "/" << priv.timesteps[tid].second << endl;
+      //cerr << "timestep = " << priv.timesteps[tid].first << "." << priv.timesteps[tid].second << " [" << tid << "/" << priv.timesteps.size() << "]" << endl;
       if (bid != last_beam_id) {
         priv.train_trajectory.erase();
         push_many(priv.train_trajectory, final_beam->begin()[bid].data->first->begin, final_beam->begin()[bid].data->first->size());
@@ -1905,7 +1911,7 @@ namespace Search {
     if (vm.count("search_kbest")) {
       priv.kbest = max(1, vm["search_kbest"].as<size_t>());
       if (priv.kbest > priv.beam->get_beam_size()) {
-        cerr << "warning: kbest set greater than beam size; shrinking back to " << priv.beam->get_beam_size() << endl;
+        std::cerr << "warning: kbest set greater than beam size; shrinking back to " << priv.beam->get_beam_size() << endl;
         priv.kbest = priv.beam->get_beam_size();
       }
     }
@@ -1935,7 +1941,7 @@ namespace Search {
     else if (rollout_string.compare("oracle") == 0)          priv.rollout_method = ORACLE;
     else if (rollout_string.compare("mix_per_state") == 0)   priv.rollout_method = MIX_PER_STATE;
     else if (rollout_string.compare("mix_per_roll") == 0)    priv.rollout_method = MIX_PER_ROLL;
-    else if (rollout_string.compare("none") == 0)          { priv.rollout_method = NO_ROLLOUT; priv.no_caching = true; cerr << "no rollout!" << endl; }
+    else if (rollout_string.compare("none") == 0)          { priv.rollout_method = NO_ROLLOUT; priv.no_caching = true; std::cerr << "no rollout!" << endl; }
     else {
       std::cerr << "error: --search_rollout must be 'policy', 'oracle', 'mix_per_state', 'mix_per_roll' or 'none'" << endl;
       throw exception();
@@ -2148,6 +2154,8 @@ namespace Search {
   size_t search::get_mask() { return this->priv->all->reg.weight_mask;}
   size_t search::get_stride_shift() { return this->priv->all->reg.stride_shift;}
   uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
+
+  vw& search::get_vw_pointer_unsafe() { return *this->priv->all; }
   
   // predictor implementation
   predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(NULL), ec_cnt(0), ec_alloced(false), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { 
@@ -2325,3 +2333,5 @@ namespace Search {
 
 
 // TODO: raw predictions in LDF mode
+
+// TODO: there's a bug in which if holdout is on, loss isn't computed properly
