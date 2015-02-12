@@ -848,6 +848,8 @@ vw& parse_args(int argc, char *argv[])
 
   parse_output_model(all);
   
+  parse_output_preds(all);
+
   parse_reductions(all);
 
   if (!all.quiet)
@@ -859,8 +861,6 @@ vw& parse_args(int argc, char *argv[])
       if (all.numpasses > 1)
 	cerr << "decay_learning_rate = " << all.eta_decay_rate << endl;
     }
-
-  parse_output_preds(all);
 
   load_input_model(all, io_temp);
 

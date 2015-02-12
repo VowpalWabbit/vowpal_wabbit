@@ -1,9 +1,9 @@
 only testing
+predictions = sequence_data.predict
 Num weight bits = 18
 learning rate = 10
 initial_t = 1
 power_t = 0.5
-predictions = sequence_data.predict
 using no cache
 Reading datafile = train-sets/sequence_data
 num sources = 1

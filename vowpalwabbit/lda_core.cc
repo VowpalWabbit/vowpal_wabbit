@@ -49,7 +49,7 @@ public:
     bool total_lambda_init;
     
     double example_t;
-    vw* all;
+    vw* all;//regressor, lda
   };
   
 

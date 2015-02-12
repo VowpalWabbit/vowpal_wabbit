@@ -38,7 +38,7 @@ namespace GD
     void (*learn)(gd&, base_learner&, example&);
     void (*update)(gd&, base_learner&, example&);
 
-    vw* all;
+    vw* all; //parallel, features, parameters
   };
 
   void sync_weights(vw& all);

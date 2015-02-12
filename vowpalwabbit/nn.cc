@@ -33,7 +33,7 @@ struct nn {
   bool inpass;
   bool finished_setup;
 
-  vw* all;
+  vw* all;//many things
 };
 
 #define cast_uint32_t static_cast<uint32_t>

@@ -55,7 +55,7 @@ class curv_exception: public exception {} curv_ex;
   const float max_precond_ratio = 10000.f;
 
   struct bfgs {
-    vw* all;
+    vw* all;//prediction, regressor
     int m;
     float rel_threshold; // termination threshold
 

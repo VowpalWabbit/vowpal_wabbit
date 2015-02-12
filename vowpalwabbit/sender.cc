@@ -23,7 +23,7 @@
 struct sender {
   io_buf* buf;
   int sd;
-  vw* all;
+  vw* all;//loss ring_size others
   example** delay_ring;
   size_t sent_index;
   size_t received_index;

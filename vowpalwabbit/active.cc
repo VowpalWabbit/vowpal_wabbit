@@ -7,7 +7,7 @@ using namespace LEARNER;
 
 struct active{
   float active_c0;
-  vw* all;
+  vw* all;//statistics, loss
 };
 
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
