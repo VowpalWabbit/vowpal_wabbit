@@ -520,10 +520,11 @@ namespace Search {
           if (oracle_actions[i] != ret) {
             float delta_cost = priv.beam_initial_cost + 1e-6;
             action_prefix* px = new v_array<action>;
-            px->resize(new_len);
-            px->end = px->begin + new_len;
+            px->resize(new_len+1);
+            px->end = px->begin + new_len + 1;
             memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
             px->begin[new_len-1] = oracle_actions[i];
+            px->begin[new_len] = (action)delta_cost;
             uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
             //cerr << "insertingA" << endl;
             if (! priv.beam->insert(px, delta_cost, px_hash)) {
@@ -539,10 +540,11 @@ namespace Search {
         if (array_contains<action>(a, oracle_actions, oracle_actions_cnt)) continue;
         float delta_cost = priv.beam_initial_cost + 1. + 1e-6;  // TODO: why is this the right cost?
         action_prefix* px = new v_array<action>;
-        px->resize(new_len);
-        px->end = px->begin + new_len;
+        px->resize(new_len + 1);
+        px->end = px->begin + new_len + 1;
         memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
         px->begin[new_len-1] = a;
+        px->begin[new_len] = (action)delta_cost;
         uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
         //cerr << "insertingB " << i << " " << allowed_actions_cnt << " " << ec_cnt << " " << top << endl;
         if (! priv.beam->insert(px, delta_cost, px_hash)) {
@@ -719,10 +721,11 @@ namespace Search {
         // construct the action prefix
         action_prefix* px = new v_array<action>;
 	*px = v_init<action>();
-        px->resize(new_len);
-        px->end = px->begin + new_len;
+        px->resize(new_len + 1);
+        px->end = px->begin + new_len + 1;
         memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
         px->begin[new_len-1] = k_act;
+        px->begin[new_len] = (action)(delta_cost + act_cost);
         uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
         //cerr << "inserting" << endl;
         if (! priv.beam->insert(px, delta_cost, px_hash)) {
@@ -794,10 +797,11 @@ namespace Search {
         float delta_cost = ecs[k].partial_prediction - best_prediction + priv.beam_initial_cost;
         action_prefix* px = new v_array<action>;
 	*px = v_init<action>();
-        px->resize(new_len);
-        px->end = px->begin + new_len;
+        px->resize(new_len + 1);
+        px->end = px->begin + new_len + 1;
         memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
         px->begin[new_len-1] = (uint32_t)k;  // TODO: k or ld[k]?
+        px->begin[new_len] = (action)(delta_cost + best_prediction);
         uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
         if (! priv.beam->insert(px, delta_cost, px_hash)) {
           px->delete_v();  // SPEEDUP: could be more efficient by reusing for next action
@@ -1287,9 +1291,9 @@ namespace Search {
         priv.state = state;
         priv.should_produce_string = (state == INIT_TEST) && (might_print_update(all) || (all.final_prediction_sink.size() > 0) || (all.raw_prediction > 0));
         if (priv.should_produce_string) priv.pred_string->str("");
-        priv.beam_initial_cost = item->cost;
+        priv.beam_initial_cost = (float)item->data->begin[item->data->size()-1]; // item->cost;
         priv.beam_total_cost   = priv.beam_initial_cost;
-        push_many(priv.beam_actions, item->data->begin, item->data->size());
+        push_many(priv.beam_actions, item->data->begin, item->data->size() - 1);
         if      (state == INIT_TEST)  priv.test_action_sequence.clear();
         else if (state == INIT_TRAIN) priv.train_trajectory.erase();
         priv.task->run(sch, priv.ec_seq);
