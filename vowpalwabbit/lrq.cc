@@ -59,6 +59,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
   
   // Remember original features
   
+  memset (lrq.orig_size, 0, sizeof (lrq.orig_size));
   for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
     {
       if (lrq.lrindices[*i])
