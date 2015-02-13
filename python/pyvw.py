@@ -48,10 +48,22 @@ class vw(pylibvw.vw):
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
     
-    def __init__(self, argString=""):
+    def __init__(self, argString=None, **kw):
         """Initialize the vw object. The (optional) argString is the
-        same as the command line arguments you'd use to run vw (eg,"--audit")"""
-        pylibvw.vw.__init__(self,argString)
+        same as the command line arguments you'd use to run vw (eg,"--audit").
+        you can also use key/value pairs as in:
+          pyvw.vw(audit=True, b=24, k=True, c=True, l2=0.001)
+        or a combination, for instance:
+          pyvw.vw("--audit", b=26)"""
+        def format(key,val):
+            if type(val) is bool and val == False: return ''
+            s = ('-'+key) if len(key) == 1 else ('--'+key)
+            if type(val) is not bool or val != True: s += ' ' + str(val)
+            return s
+        l = [format(k,v) for k,v in kw.iteritems()]
+        if argString is not None: l = [argString] + l
+        #print ' '.join(l)
+        pylibvw.vw.__init__(self,' '.join(l))
         self.finished = False
 
     def get_weight(self, index, offset=0):
