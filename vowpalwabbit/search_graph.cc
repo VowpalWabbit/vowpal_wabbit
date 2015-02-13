@@ -51,6 +51,7 @@ namespace GraphTask {
     // global data
     size_t num_loops;
     size_t K;  // number of labels, *NOT* including the +1 for 'unlabeled'
+    bool   use_structure;
     
     // per-example data
     uint32_t N;  // number of nodes
@@ -71,11 +72,13 @@ namespace GraphTask {
     task_data * D = new task_data();
     po::options_description sspan_opts("search graphtask options");
     sspan_opts.add_options()("search_graph_num_loops", po::value<size_t>(), "how many loops to run [def: 2]");
+    sspan_opts.add_options()("search_graph_no_structure", "turn off edge features");
     sch.add_program_options(vm, sspan_opts);
 
     D->num_loops = 2;
-    if (vm.count("search_graph_num_loops") > 0)
-      D->num_loops = vm["search_graph_num_loops"].as<size_t>();
+    D->use_structure = true;
+    if (vm.count("search_graph_num_loops"))      D->num_loops = vm["search_graph_num_loops"].as<size_t>();
+    if (vm.count("search_graph_no_structure"))   D->use_structure = false;
 
     D->K = num_actions;
     D->neighbor_predictions = calloc_or_die<float>(D->K+1);
@@ -231,7 +234,7 @@ namespace GraphTask {
       for (int n_id = start; n_id != end; n_id += step) {
         uint32_t n = D.bfs[n_id];
 
-        add_edge_features(sch, D, n, ec);
+        if (D.use_structure) add_edge_features(sch, D, n, ec);
         Search::predictor P = Search::predictor(sch, n+1);
         P.set_input(*ec[n]);
         P.set_oracle(ec[n]->l.cs.costs[0].class_index); // TODO: check if it exists for test data
@@ -247,7 +250,7 @@ namespace GraphTask {
         // make the prediction
         D.pred[n] = P.predict();
         
-        del_edge_features(D, n, ec);
+        if (D.use_structure) del_edge_features(D, n, ec);
       }
     }
 
