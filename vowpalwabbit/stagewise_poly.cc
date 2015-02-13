@@ -503,6 +503,7 @@ using namespace LEARNER;
     base.predict(poly.synth_ec);
     ec.partial_prediction = poly.synth_ec.partial_prediction;
     ec.updated_prediction = poly.synth_ec.updated_prediction;
+    ec.pred.scalar = poly.synth_ec.pred.scalar;
   }
 
   void learn(stagewise_poly &poly, base_learner &base, example &ec)

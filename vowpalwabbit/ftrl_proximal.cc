@@ -104,7 +104,7 @@ base_learner* ftrl_setup(vw& all)
   if (missing_option(all, false, "ftrl", "Follow the Regularized Leader")) 
     return NULL;
   new_options(all, "FTRL options")
-    ("ftrl_alpha", po::value<float>()->default_value(0.0), "Learning rate for FTRL-proximal optimization")
+    ("ftrl_alpha", po::value<float>()->default_value(0.005f), "Learning rate for FTRL-proximal optimization")
     ("ftrl_beta", po::value<float>()->default_value(0.1f), "FTRL beta");
   add_options(all);
   
