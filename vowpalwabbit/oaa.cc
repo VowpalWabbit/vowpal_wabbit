@@ -11,7 +11,6 @@ license as described in the file LICENSE.
 struct oaa{
   size_t k;
   vw* all; // for raw
-  float*ret;
 };
 
 template <bool is_learn, bool print_all>
@@ -58,7 +57,6 @@ LEARNER::base_learner* oaa_setup(vw& all)
   oaa& data = calloc_or_die<oaa>();
   data.k = all.vm["oaa"].as<size_t>();
   data.all = &all;
-  data.ret = (float*)malloc(sizeof(float)*data.k);
   
   LEARNER::learner<oaa>* l;
   if (all.raw_prediction > 0)
