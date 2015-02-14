@@ -6,7 +6,6 @@ license as described in the file LICENSE.
 #include <sstream>
 #include <float.h>
 #include "reductions.h"
-#include "gd.h"
 
 struct oaa{
   size_t k;
