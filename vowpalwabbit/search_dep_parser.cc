@@ -178,7 +178,12 @@ namespace DepParserTask {
         children[4][stack[stack.size()-2]]=stack.last();
         children[1][stack[stack.size()-2]]++;
         tags[stack.last()] = t_id;
-        srn.loss((gold_heads[stack.last()] != heads[stack.last()]) + (gold_tags[stack.last()] != t_id));
+		if(gold_heads[stack.last()] != heads[stack.last()])
+			srn.loss(2);
+		else if (gold_tags[stack.last()] != t_id)
+			srn.loss(1);
+		else
+			srn.loss(0);
         stack.pop();
         return idx;
 
@@ -190,7 +195,13 @@ namespace DepParserTask {
         children[2][idx]=stack.last();
         children[0][idx]++;
         tags[stack.last()] = t_id;
-        srn.loss((gold_heads[stack.last()] != heads[stack.last()]) + (gold_tags[stack.last()] != t_id));
+		if(gold_heads[stack.last()] != heads[stack.last()])
+			srn.loss(2);
+		else if (gold_tags[stack.last()] != t_id)
+			srn.loss(1);
+		else
+			srn.loss(0);
+//        srn.loss((gold_heads[stack.last()] != heads[stack.last()]) + (gold_tags[stack.last()] != t_id));
         stack.pop();
         return idx;
     }
@@ -283,6 +294,7 @@ namespace DepParserTask {
     size_t ss = srn.get_stride_shift();
     size_t mask = srn.get_mask();
     v_array<uint32_t> &stack = data->stack;
+    v_array<uint32_t> &tags = data->tags;
     v_array<uint32_t> *children = data->children, &temp=data->temp;
     v_array<example*> &ec_buf = data->ec_buf;
     example &ex = *(data->ex);
@@ -339,7 +351,7 @@ namespace DepParserTask {
         j++;
       }
     }
-    temp.resize(4,true);
+    temp.resize(10,true);
     // distance
     temp[0] = stack.empty()? 0: (idx >n? 1: 2+min(5, idx - stack.last()));
 
@@ -351,6 +363,18 @@ namespace DepParserTask {
 
     // #left child of rightmost item in buf
     temp[3] = idx>n? 1: 1+min(5 , children[0][idx]);
+
+    for(size_t i=4; i<8; i++)
+      if (!stack.empty() && children[i-2][stack.last()]!=0)
+        temp[i] = tags[children[i-2][stack.last()]];
+	  else
+  	    temp[i] = 15;
+
+    // features based on leftmost children of the top element in bufer
+    // ec_buf[10]: bl1, ec_buf[11]: bl2
+    for(size_t i=8; i<10; i++)
+        temp[i] = (idx <=n && children[i-6][idx]!=0)? tags[children[i-6][idx]] : 15;
+
 
     size_t additional_offset = val_namespace*offset_const; 
     for(int j=0; j< 4;j++) {
