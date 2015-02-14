@@ -32,7 +32,6 @@ public:
     return (u32)(ctx.e.pred.multiclass);
   }
 
-  virtual ~vw_policy() { }
 private:
   size_t m_index;
 };
@@ -57,8 +56,6 @@ public:
     return probabilities; 
   };
 
-  virtual ~vw_cover() { }
-  
   vector<float> Score_Actions(vw_context& ctx);
   
   float epsilon;
@@ -79,8 +76,6 @@ struct vw_recorder : public IRecorder<vw_context>
   }
   u32 action;
   float probability;
-
-  virtual ~vw_recorder() { }
 };
 
 struct cbify {
