@@ -36,20 +36,22 @@ void initialize_regressor(vw& all)
     {
       cerr << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>" << endl;
       throw exception();
-    }
+    } else
+  if (all.initial_weight != 0.)
+    {
+     for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
+       all.reg.weight_vector[j] = all.initial_weight;      
+    } else
+  if (all.random_positive_weights)
+    {
+      for (size_t j = 0; j < length; j++)
+	all.reg.weight_vector[j << all.reg.stride_shift] = (float)(0.1 * frand48());
+    } else      
   if (all.random_weights)
     {
       for (size_t j = 0; j < length; j++)
 	all.reg.weight_vector[j << all.reg.stride_shift] = (float)(frand48() - 0.5);
     }
-  if (all.random_positive_weights)
-    {
-      for (size_t j = 0; j < length; j++)
-	all.reg.weight_vector[j << all.reg.stride_shift] = (float)(0.1 * frand48());
-    }
-  if (all.initial_weight != 0.)
-    for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
-      all.reg.weight_vector[j] = all.initial_weight;
 }
 
 const size_t buf_size = 512;

@@ -296,10 +296,6 @@ public:
 		}
 	}
 
-	~EpsilonGreedyExplorer()
-	{
-	}
-
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{

@@ -1110,3 +1110,7 @@ __DATA__
 # Test 79: cbify, cover
 {VW} --cbify 10 --cover 3 train-sets/multiclass 
     train-sets/ref/cbify_cover.stderr
+
+# Test 80: lrq empty namespace
+{VW} --lrq aa3 -d train-sets/0080.dat
+    train-sets/ref/0080.stderr

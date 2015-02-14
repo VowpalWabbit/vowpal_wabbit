@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -279,6 +279,7 @@
     <ClInclude Include="scorer.h" />
     <ClInclude Include="search.h" />
     <ClInclude Include="search_sequencetask.h" />
+    <ClInclude Include="search_graph.h" />
     <ClInclude Include="search_multiclasstask.h" />
     <ClInclude Include="search_hooktask.h" />
     <ClInclude Include="search_entityrelationtask.h" />
@@ -336,6 +337,7 @@
     <ClCompile Include="rand48.cc" />
     <ClCompile Include="scorer.cc" />
     <ClCompile Include="search.cc" />
+    <ClCompile Include="search_graph.cc" />
     <ClCompile Include="search_multiclasstask.cc" />
     <ClCompile Include="search_hooktask.cc" />
     <ClCompile Include="search_sequencetask.cc" />

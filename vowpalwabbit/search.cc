@@ -498,6 +498,11 @@ namespace Search {
     }
   }
 
+
+  template<class T> void cdbg_print_array(string str, v_array<T>& A) { cdbg << str << " = ["; for (size_t i=0; i<A.size(); i++) cdbg << " " << A[i]; cdbg << " ]" << endl; }
+  template<class T> void cerr_print_array(string str, v_array<T>& A) { cerr << str << " = ["; for (size_t i=0; i<A.size(); i++) cerr << " " << A[i]; cerr << " ]" << endl; }
+  
+  
   size_t random(size_t max) { return (size_t)(frand48() * (float)max); }
   template<class T> bool array_contains(T target, const T*A, size_t n) {
     if (A == NULL) return false;
@@ -510,23 +515,56 @@ namespace Search {
     action ret = ( oracle_actions_cnt > 0) ?  oracle_actions[random(oracle_actions_cnt )] :
                  (allowed_actions_cnt > 0) ? allowed_actions[random(allowed_actions_cnt)] :
                  priv.is_ldf ? (action)random(ec_cnt) :
-                 (action)(1 + random(ec_cnt));
+                 (action)(1 + random(priv.A));
     cdbg << "choose_oracle_action from oracle_actions = ["; for (size_t i=0; i<oracle_actions_cnt; i++) cdbg << " " << oracle_actions[i]; cdbg << " ], ret=" << ret << endl;
     if (add_alternatives_to_beam) {
+      size_t A = priv.is_ldf ? ec_cnt : (priv.A+1);
+      float*alternative_costs = calloc_or_die<float>( A );
+      for (size_t i = 0; i < A; i++) alternative_costs[i] = priv.beam_initial_cost + 1. + 1e-10;
+      if (oracle_actions_cnt > 1)
+        for (size_t i=0; i<oracle_actions_cnt; i++)
+          alternative_costs[ oracle_actions[i] ] -= 1.;
+
+      if (allowed_actions_cnt != 0) throw exception(); // TODO implement this
+
+      size_t new_len = priv.current_trajectory.size() + 1;
+      for (size_t i = priv.is_ldf ? 0 : 1; i < A; i++) {
+        if (i == ret) continue;
+
+        action_prefix* px = new action_prefix;
+        *px = v_init<action>();
+        px->resize(new_len+1);
+        px->end = px->begin + new_len + 1;
+        memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
+        px->begin[new_len-1] = i;
+        *((float*)(px->begin+new_len)) = alternative_costs[i];
+        uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
+        cdbg_print_array<action>("oracle insertA", *px);
+        if (! priv.beam->insert(px, alternative_costs[i], px_hash)) {
+          px->delete_v();  // SPEEDUP: could be more efficient by reusing for next action
+          delete px;
+        }
+      }
+
+      free(alternative_costs);
+        
+
+        /*        
       // first, insert all the oracle actions (other than ret)
       size_t new_len = priv.current_trajectory.size() + 1;
       if (oracle_actions_cnt > 1)
         for (size_t i=0; i<oracle_actions_cnt; i++)
           if (oracle_actions[i] != ret) {
             float delta_cost = priv.beam_initial_cost + 1e-6;
-            action_prefix* px = new v_array<action>;
+            action_prefix* px = new action_prefix;
+            *px = v_init<action>();
             px->resize(new_len+1);
             px->end = px->begin + new_len + 1;
             memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
             px->begin[new_len-1] = oracle_actions[i];
             *((float*)(px->begin+new_len)) = delta_cost;
             uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
-            //cerr << "insertingA" << endl;
+            cdbg_print_array<action>("oracle insertA", *px);
             if (! priv.beam->insert(px, delta_cost, px_hash)) {
               px->delete_v();  // SPEEDUP: could be more efficient by reusing for next action
               delete px;
@@ -539,19 +577,21 @@ namespace Search {
         if (a == ret) continue;
         if (array_contains<action>(a, oracle_actions, oracle_actions_cnt)) continue;
         float delta_cost = priv.beam_initial_cost + 1. + 1e-6;  // TODO: why is this the right cost?
-        action_prefix* px = new v_array<action>;
+        action_prefix* px = new action_prefix;
+        *px = v_init<action>();
         px->resize(new_len + 1);
         px->end = px->begin + new_len + 1;
         memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
-        px->begin[new_len-1] = a;
+        px->begin[new_len-1] = (action)a;
         *((float*)(px->begin+new_len)) = delta_cost;
         uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
-        //cerr << "insertingB " << i << " " << allowed_actions_cnt << " " << ec_cnt << " " << top << endl;
+        cdbg_print_array("oracle insertB", *px);
         if (! priv.beam->insert(px, delta_cost, px_hash)) {
           px->delete_v();  // SPEEDUP: could be more efficient by reusing for next action
           delete px;
         }
       }
+        */
     }
     return ret;
   }
@@ -841,10 +881,6 @@ namespace Search {
         throw exception();
     }
   }
-
-  template<class T> void cdbg_print_array(string str, v_array<T>& A) { cdbg << str << " = ["; for (size_t i=0; i<A.size(); i++) cdbg << " " << A[i]; cdbg << " ]" << endl; }
-  template<class T> void cerr_print_array(string str, v_array<T>& A) { cerr << str << " = ["; for (size_t i=0; i<A.size(); i++) cerr << " " << A[i]; cerr << " ]" << endl; }
-  
   template<class T>
   void ensure_size(v_array<T>& A, size_t sz) {
     if ((size_t)(A.end_array - A.begin) < sz) 
@@ -1031,8 +1067,10 @@ namespace Search {
       return priv.train_trajectory[t];
     }
 
-    if (priv.beam && (t < priv.beam_actions.size()) && ((priv.state == INIT_TEST) || (priv.state == INIT_TRAIN)))
+    if (priv.beam && (t < priv.beam_actions.size()) && ((priv.state == INIT_TEST) || (priv.state == INIT_TRAIN))) {
+      if (priv.state == INIT_TRAIN) priv.train_trajectory.push_back( priv.beam_actions[t] );
       return priv.beam_actions[t];
+    }
 
     // for LDF, # of valid actions is ec_cnt; otherwise it's either allowed_actions_cnt or A
     size_t valid_action_cnt = priv.is_ldf ? ec_cnt :
@@ -1238,12 +1276,12 @@ namespace Search {
   void final_beam_insert(search_private&priv, Beam::beam< pair<action_prefix*,string> >& beam, float cost, SearchState state) {
     action_prefix* final = new action_prefix;  // TODO: can we memcpy/push_many?
     *final = v_init<action>();
-    //cerr << "final_beam_insert: cost=" << cost << ", len=" << ((state == INIT_TEST) ? priv.test_action_sequence.size() : priv.train_trajectory.size()) << endl;
+    cdbg << "final_beam_insert: cost=" << cost << ", len=" << ((state == INIT_TEST) ? priv.test_action_sequence.size() : priv.train_trajectory.size()) << endl;
     if (state == INIT_TEST)
       for (size_t i=0; i<priv.test_action_sequence.size(); i++) final->push_back(priv.test_action_sequence[i]);
     else if (state == INIT_TRAIN)
       for (size_t i=0; i<priv.train_trajectory.size(); i++) final->push_back(priv.train_trajectory[i]);
-    //cerr << "  --> ["; for (size_t i=0; i<final->size(); i++) cerr << " " << final->get(i); cerr << " ]" << endl;
+    cdbg << "  --> ["; for (size_t i=0; i<final->size(); i++) cdbg << " " << final->get(i); cdbg << " ]" << endl;
     pair<action_prefix*,string>* p = priv.should_produce_string ? new pair<action_prefix*,string>(final, priv.pred_string->str()) : new pair<action_prefix*,string>(final, "");
     uint32_t final_hash = uniform_hash(final->begin, sizeof(action)*final->size(), 3419);
     if (!beam.insert(p, cost, final_hash)) {
@@ -1283,7 +1321,7 @@ namespace Search {
     final_beam_insert(priv, *final_beam, priv.beam_total_cost, state);
     
     for (size_t beam_run=1; beam_run<priv.beam->get_beam_size(); beam_run++) {
-      //cerr << "beam_run=" << beam_run << endl;
+      cdbg << "beam_run=" << beam_run << endl;
       priv.beam->compact(free_action_prefix);
       Beam::beam_element<action_prefix>* item = priv.beam->pop_best_item();
       if (item != NULL) {
@@ -1295,6 +1333,7 @@ namespace Search {
         priv.beam_initial_cost = *((float*)(item->data->begin+item->data->size()-1));
         priv.beam_total_cost   = priv.beam_initial_cost;
         push_many(priv.beam_actions, item->data->begin, item->data->size() - 1);
+        cdbg_print_array("beam_actions", priv.beam_actions);
         if      (state == INIT_TEST)  priv.test_action_sequence.clear();
         else if (state == INIT_TRAIN) priv.train_trajectory.erase();
         priv.task->run(sch, priv.ec_seq);
@@ -1418,15 +1457,15 @@ namespace Search {
     if (priv.beam) get_training_timesteps_beam(priv, *final_beam, priv.timesteps);
     else           get_training_timesteps(priv, priv.timesteps);
     priv.learn_losses.erase();
-    //cdbg_print_array("timesteps", priv.timesteps);
     size_t last_beam_id = 0;
     for (size_t tid=0; tid<priv.timesteps.size(); tid++) {
       size_t bid = priv.timesteps[tid].first;
-      //cerr << "timestep = " << priv.timesteps[tid].first << "." << priv.timesteps[tid].second << " [" << tid << "/" << priv.timesteps.size() << "]" << endl;
+      cdbg << "timestep = " << priv.timesteps[tid].first << "." << priv.timesteps[tid].second << " [" << tid << "/" << priv.timesteps.size() << "]" << endl;
       if (bid != last_beam_id) {
         priv.train_trajectory.erase();
         push_many(priv.train_trajectory, final_beam->begin()[bid].data->first->begin, final_beam->begin()[bid].data->first->size());
       }
+      cdbg_print_array<action>("train_trajectory", priv.train_trajectory);
       
       priv.learn_a_idx = 0;
       priv.done_with_all_actions = false;
