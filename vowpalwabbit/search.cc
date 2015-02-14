@@ -582,7 +582,7 @@ namespace Search {
         px->resize(new_len + 1);
         px->end = px->begin + new_len + 1;
         memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
-        px->begin[new_len-1] = a;
+        px->begin[new_len-1] = (action)a;
         *((float*)(px->begin+new_len)) = delta_cost;
         uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
         cdbg_print_array("oracle insertB", *px);

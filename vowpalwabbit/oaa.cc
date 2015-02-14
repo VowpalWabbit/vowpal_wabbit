@@ -6,12 +6,10 @@ license as described in the file LICENSE.
 #include <sstream>
 #include <float.h>
 #include "reductions.h"
-#include "gd.h"
 
 struct oaa{
   size_t k;
   vw* all; // for raw
-  float*ret;
 };
 
 template <bool is_learn, bool print_all>
@@ -27,7 +25,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   float score = INT_MIN;
   for (uint32_t i = 1; i <= o.k; i++) {
     if (is_learn) {
-      ec.l.simple.label = (mc_label_data.label == i) ? 1 : -1;
+      ec.l.simple.label = (mc_label_data.label == i) ? 1.f : -1.f;
       base.learn(ec, i-1);
     } else
       base.predict(ec, i-1);
@@ -58,7 +56,6 @@ LEARNER::base_learner* oaa_setup(vw& all)
   oaa& data = calloc_or_die<oaa>();
   data.k = all.vm["oaa"].as<size_t>();
   data.all = &all;
-  data.ret = (float*)malloc(sizeof(float)*data.k);
   
   LEARNER::learner<oaa>* l;
   if (all.raw_prediction > 0)

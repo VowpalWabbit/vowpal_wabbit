@@ -70,7 +70,7 @@ base_learner* csoaa_setup(vw& all)
     return NULL;
   
   csoaa& c = calloc_or_die<csoaa>();
-  c.num_classes = all.vm["csoaa"].as<size_t>();
+  c.num_classes = (uint32_t)all.vm["csoaa"].as<size_t>();
   
   learner<csoaa>& l = init_learner(&c, setup_base(all), predict_or_learn<true>, 
 				   predict_or_learn<false>, c.num_classes);

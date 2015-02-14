@@ -19,7 +19,7 @@ using namespace CB;
 
   struct cb {
     size_t cb_type;
-    size_t num_actions;
+    uint32_t num_actions;
     COST_SENSITIVE::label cb_cs_ld; 
     LEARNER::base_learner* scorer;
     float avg_loss_regressors;

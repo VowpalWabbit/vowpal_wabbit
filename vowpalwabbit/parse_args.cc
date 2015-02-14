@@ -800,7 +800,7 @@ vw& parse_args(int argc, char *argv[])
 
   new_options(all, "Weight options")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
-    ("initial_weight", po::value<float>(&(all.initial_weight)), "Set all weights to an initial value of 1.")
+    ("initial_weight", po::value<float>(&(all.initial_weight)), "Set all weights to an initial value of arg.")
     ("random_weights", po::value<bool>(&(all.random_weights)), "make initial weights random")
     ("input_feature_regularizer", po::value< string >(&(all.per_feature_regularizer_input)), "Per feature regularization input file");
   add_options(all);

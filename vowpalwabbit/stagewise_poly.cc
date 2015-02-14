@@ -550,8 +550,17 @@ using namespace LEARNER;
 
   void reduce_min_max(uint8_t &v1,const uint8_t &v2)
   {
-    bool parent_or_depth = (v1 & indicator_bit);
-    if(parent_or_depth != (bool)(v2 & indicator_bit)) {
+	  bool parent_or_depth;
+	  if (v1 & indicator_bit)
+		  parent_or_depth = true;
+	  else
+		  parent_or_depth = false;
+	  bool p_or_d2;
+	  if (v2 & indicator_bit)
+		  p_or_d2 = true;
+	  else
+		  p_or_d2 = false;
+    if(parent_or_depth != p_or_d2) {
 #ifdef DEBUG
       cout << "Reducing parent with depth!!!!!";
 #endif //DEBUG

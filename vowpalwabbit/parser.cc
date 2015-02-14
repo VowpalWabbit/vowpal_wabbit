@@ -419,6 +419,11 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
 	cerr << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 
+      // Enable TCP Keep Alive to prevent socket leaks
+      int enableTKA = 1;
+      if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
+        cerr << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
+
       sockaddr_in address;
       address.sin_family = AF_INET;
       address.sin_addr.s_addr = htonl(INADDR_ANY);

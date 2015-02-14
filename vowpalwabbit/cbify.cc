@@ -31,6 +31,7 @@ public:
     ctx.recorded = false;
     return (u32)(ctx.e.pred.multiclass);
   }
+
 private:
   size_t m_index;
 };
@@ -54,7 +55,7 @@ public:
       probabilities.push_back(0);
     return probabilities; 
   };
-  
+
   vector<float> Score_Actions(vw_context& ctx);
   
   float epsilon;
@@ -78,7 +79,7 @@ struct vw_recorder : public IRecorder<vw_context>
 };
 
 struct cbify {
-  size_t k;
+  uint32_t k;
   
   CB::label cb_label;
   COST_SENSITIVE::label cs_label;

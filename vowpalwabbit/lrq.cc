@@ -59,6 +59,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
   
   // Remember original features
   
+  memset (lrq.orig_size, 0, sizeof (lrq.orig_size));
   for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
     {
       if (lrq.lrindices[*i])
@@ -132,9 +133,13 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
                                                    << ra->feature << '^'
                                                    << n;
 
-                                char* new_space = strdup("lrq");
-                                char* new_feature = 
-                                  strdup (new_feature_buffer.str().c_str());
+#ifdef _WIN32
+								char* new_space = _strdup("lrq");
+								char* new_feature =	_strdup(new_feature_buffer.str().c_str());
+#else
+								char* new_space = strdup("lrq");
+								char* new_feature = strdup(new_feature_buffer.str().c_str());
+#endif
 
                                 audit_data ad = { new_space, new_feature, lrq.weight_index, lrq.x, true };
                                 ec.audit_features[right].push_back (ad);
