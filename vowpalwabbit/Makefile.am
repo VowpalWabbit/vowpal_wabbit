@@ -11,23 +11,15 @@ libvw_c_wrapper_la_SOURCES = vwdll.cpp
 # accumulate.cc uses all_reduce
 libvw_la_LIBADD = liballreduce.la
 
-vw_SOURCES = main.cc
-vw_CXXFLAGS = $(AM_CXXFLAGS)
-
-vw_LDADD = libvw.la liballreduce.la
-vw_DEPENDENCIES = libvw.la liballreduce.la
-
-active_interactor_SOURCES = active_interactor.cc
-
 ACLOCAL_AMFLAGS = -I acinclude.d
 
-INCLUDES = ${BOOST_CPPFLAGS} ${ZLIB_CPPFLAGS} ${PTHREAD_CFLAGS}
+AM_CXXFLAGS = ${BOOST_CPPFLAGS} ${ZLIB_CPPFLAGS} ${PTHREAD_CFLAGS} -Wall -Wno-unused-local-typedef
 AM_LDFLAGS = ${BOOST_LDFLAGS} ${BOOST_PROGRAM_OPTIONS_LIB} ${ZLIB_LDFLAGS} ${PTHREAD_LIBS}
 
 if PROFILE
-AM_CXXFLAGS = -pg -g -D_FILE_OFFSET_BITS=64
+AM_CXXFLAGS += -pg -g -D_FILE_OFFSET_BITS=64
 else
-AM_CXXFLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 -DNDEBUG 
+AM_CXXFLAGS += -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 -DNDEBUG 
 endif
 
 if NITPICK
@@ -40,8 +32,19 @@ AM_CXXFLAGS += -Wno-strict-aliasing -fopenmp
 endif
 
 if FREEBSD
-AM_CXXFLAGS += -l compat -Wall
+AM_CXXFLAGS += -l compat
 else
-AM_CXXFLAGS += -Wall -pedantic
+AM_CXXFLAGS += -pedantic
 endif
 
+if CLANG_LIBCXX
+AM_CXXFLAGS += -stdlib=libc++
+endif
+
+vw_SOURCES = main.cc
+vw_CXXFLAGS = $(AM_CXXFLAGS)
+
+vw_LDADD = libvw.la liballreduce.la
+vw_DEPENDENCIES = libvw.la liballreduce.la
+
+active_interactor_SOURCES = active_interactor.cc
