@@ -78,7 +78,7 @@ struct vw_recorder : public IRecorder<vw_context>
 };
 
 struct cbify {
-  size_t k;
+  uint32_t k;
   
   CB::label cb_label;
   COST_SENSITIVE::label cs_label;

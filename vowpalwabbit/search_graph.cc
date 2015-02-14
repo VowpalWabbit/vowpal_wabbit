@@ -110,7 +110,7 @@ namespace GraphTask {
         uint32_t n = D.bfs[i];
         for (size_t id : D.adj[n])
           for (size_t j=0; j<ec[id]->l.cs.costs.size(); j++) {
-            size_t m = ec[id]->l.cs.costs[j].class_index - 1;
+            uint32_t m = ec[id]->l.cs.costs[j].class_index - 1;
             if (!touched[m]) {
               D.bfs.push_back(m);
               touched[m] = true;
@@ -121,7 +121,7 @@ namespace GraphTask {
 
       if (D.bfs.size() < D.N)
         // we finished a SCC, need to find another
-        for (size_t n=0; n<D.N; n++)
+        for (uint32_t n=0; n<D.N; n++)
           if (! touched[n]) {
             touched[n] = true;
             D.bfs.push_back(n);
@@ -241,7 +241,7 @@ namespace GraphTask {
         // add all the conditioning
         for (size_t i=0; i<D.adj[n].size(); i++) {
           for (size_t j=0; j<ec[i]->l.cs.costs.size(); j++) {
-            size_t m = ec[i]->l.cs.costs[j].class_index - 1;
+            uint32_t m = ec[i]->l.cs.costs[j].class_index - 1;
             if (m == n) continue;
             P.add_condition(m+1, 'e');
           }

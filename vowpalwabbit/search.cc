@@ -518,7 +518,7 @@ namespace Search {
       if (oracle_actions_cnt > 1)
         for (size_t i=0; i<oracle_actions_cnt; i++)
           if (oracle_actions[i] != ret) {
-            float delta_cost = priv.beam_initial_cost + 1e-6;
+            float delta_cost = priv.beam_initial_cost + 1e-6f;
             action_prefix* px = new v_array<action>;
             px->resize(new_len+1);
             px->end = px->begin + new_len + 1;
@@ -537,13 +537,13 @@ namespace Search {
       for (size_t i = 0; i < top; i++) {
         size_t a = (allowed_actions_cnt > 0) ? allowed_actions[i] : i;
         if (a == ret) continue;
-        if (array_contains<action>(a, oracle_actions, oracle_actions_cnt)) continue;
-        float delta_cost = priv.beam_initial_cost + 1. + 1e-6;  // TODO: why is this the right cost?
+        if (array_contains<action>((action)a, oracle_actions, oracle_actions_cnt)) continue;
+        float delta_cost = priv.beam_initial_cost + 1.f + 1e-6f;  // TODO: why is this the right cost?
         action_prefix* px = new v_array<action>;
         px->resize(new_len + 1);
         px->end = px->begin + new_len + 1;
         memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
-        px->begin[new_len-1] = a;
+        px->begin[new_len-1] = (action)a;
         *((float*)(px->begin+new_len)) = delta_cost;
         uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
         //cerr << "insertingB " << i << " " << allowed_actions_cnt << " " << ec_cnt << " " << top << endl;
