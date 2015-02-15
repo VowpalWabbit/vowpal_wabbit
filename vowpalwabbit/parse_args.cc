@@ -311,7 +311,7 @@ void parse_feature_tweaks(vw& all)
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
-    ("redefine", po::value< vector<string> >(), "redefine namespaces beginning with characters from string <s>... as namespace <n>. <arg> shall be in form 's:=n' where := is operator. Use ':=n' to redefine all namespaces.")
+    ("redefine", po::value< vector<string> >(), "redefine namespaces beginning with characters of string <s> as namespace <n>. <arg> shall be in form 's:=n' where := is operator. Use ':=n' to redefine all namespaces.")
     ("bit_precision,b", po::value<size_t>(), "number of bits in the feature table")
     ("noconstant", "Don't add a constant feature")
     ("constant,C", po::value<float>(&(all.initial_constant)), "Set initial value of constant")
@@ -532,7 +532,7 @@ void parse_feature_tweaks(vw& all)
   if (vm.count("redefine"))
   {
       // initail values i-th namespace is redefined to i itself
-      for (uint i = 0; i < 256; i++)
+      for (size_t i = 0; i < 256; i++)
           all.redefine[i] = i;
 
       // note: --redefine declaration order is matter
@@ -548,11 +548,11 @@ void parse_feature_tweaks(vw& all)
           unsigned char new_namespace = ' ';
 
           // let's find operator ':=' and new namespace's character after it
-          for (int i = 0; i < arg.length(); i++)
+          for (size_t i = 0; i < arg.length(); i++)
           {
               if (arg[i] == ':')
                   operator_pos = i;
-              else if ( (arg[i] == '=') && (operator_pos == i-1) )
+              else if ( (arg[i] == '=') && (operator_pos == (int)i-1) )
                   operator_found = true;
               else if (operator_found)
               {
@@ -571,7 +571,7 @@ void parse_feature_tweaks(vw& all)
 
           if (operator_pos != 0)
               for (int i = 0; i < operator_pos; i++) // namespaces from s in s:=k are redefined to k
-                  all.redefine[arg[i]] = new_namespace;
+                  all.redefine[(size_t)arg[i]] = new_namespace;
           else
               for (int i = 0; i < 256; i++) //s is empty - all nammespaces must be redefined to k
                   all.redefine[i] = new_namespace;

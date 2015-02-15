@@ -313,7 +313,7 @@ public:
 	this->ae = ae;
 	this->affix_features = all.affix_features;
 	this->spelling_features = all.spelling_features;
-        this->namespace_dictionaries = all.namespace_dictionaries;
+    this->namespace_dictionaries = all.namespace_dictionaries;
 	this->base = NULL;
 	listNameSpace();
 	if (base != NULL)
