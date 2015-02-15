@@ -308,12 +308,12 @@ public:
 	this->reading_head = reading_head;
 	this->endLine = endLine;
 	this->p = all.p;
-    this->redefine_some = all.redefine_some;
-    this->redefine = &all.redefine;
+	this->redefine_some = all.redefine_some;
+	this->redefine = &all.redefine;
 	this->ae = ae;
 	this->affix_features = all.affix_features;
 	this->spelling_features = all.spelling_features;
-    this->namespace_dictionaries = all.namespace_dictionaries;
+	this->namespace_dictionaries = all.namespace_dictionaries;
 	this->base = NULL;
 	listNameSpace();
 	if (base != NULL)
