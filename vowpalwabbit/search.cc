@@ -525,10 +525,13 @@ namespace Search {
         for (size_t i=0; i<oracle_actions_cnt; i++)
           alternative_costs[ oracle_actions[i] ] -= 1.;
 
-      if (allowed_actions_cnt != 0) throw exception(); // TODO implement this
+      size_t lo = priv.is_ldf ? 0 : 1;
+      size_t hi = A;
+      if (allowed_actions_cnt != 0) { lo = 0; hi = allowed_actions_cnt; }
 
       size_t new_len = priv.current_trajectory.size() + 1;
-      for (size_t i = priv.is_ldf ? 0 : 1; i < A; i++) {
+      for (size_t j = lo; j < hi; j++) {
+        size_t i = (allowed_actions_cnt > 0) ? allowed_actions[j] : j;
         if (i == ret) continue;
 
         action_prefix* px = new action_prefix;
