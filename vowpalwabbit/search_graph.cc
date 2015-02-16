@@ -65,6 +65,7 @@ namespace GraphTask {
     vector<size_t>   pred;  // predictions
     example*cur_node;       // pointer to the current node for add_edge_features_fn
     float* neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
+    weight* weight_vector;
   };
 
   inline bool example_is_test(polylabel&l) { return l.cs.costs.size() == 0; }
@@ -136,6 +137,7 @@ namespace GraphTask {
 
     D.mask = sch.get_vw_pointer_unsafe().reg.weight_mask;
     D.ss   = sch.get_vw_pointer_unsafe().reg.stride_shift;
+    D.weight_vector = sch.get_vw_pointer_unsafe().reg.weight_vector;
     
     D.N = 0;
     D.E = 0;
@@ -183,7 +185,8 @@ namespace GraphTask {
     example*node = D.cur_node;
     for (size_t k=0; k<=D.K; k++) {
       if (D.neighbor_predictions[k] == 0.) continue;
-      feature f = { fv * D.neighbor_predictions[k], (uint32_t) (( (fx >> D.ss) + 348919043 * k ) << D.ss) };
+      feature f = { fv * D.neighbor_predictions[k], (uint32_t) ((( ((fx & D.mask) >> D.ss) + 348919043 * k ) << D.ss) & D.mask) };
+      //cerr << "e: " << fx << " (:= " << ((fx & D.mask) >> D.ss) << ") / " << k << " -> " << f.weight_index << ", w=" << D.weight_vector[f.weight_index] << endl;
       node->atomics[neighbor_namespace].push_back(f);
       node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     }
@@ -193,7 +196,7 @@ namespace GraphTask {
   void add_edge_features_single_fn(task_data&D, float fv, uint32_t fx) {
     example*node = D.cur_node;
     size_t k = (size_t) D.neighbor_predictions[0];
-    feature f = { fv, (uint32_t) (( (fx >> D.ss) + 348919043 * k ) << D.ss) };
+    feature f = { fv, (uint32_t) (( ((fx & D.mask) >> D.ss) + 348919043 * k ) << D.ss) };
     node->atomics[neighbor_namespace].push_back(f);
     node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     // TODO: audit
@@ -218,6 +221,7 @@ namespace GraphTask {
       if (pred_total == 0.) continue;
       //for (size_t k=0; k<D.K+1; k++) D.neighbor_predictions[k] /= pred_total;
       example&edge = *ec[i];
+      //cerr << "adding to n=" << n << " from e=" << i << endl;
       if (pred_total <= 1.) {  // single edge
         D.neighbor_predictions[0] = (float)last_pred;
         GD::foreach_feature<task_data,uint32_t,add_edge_features_single_fn>(sch.get_vw_pointer_unsafe(), edge, D);
