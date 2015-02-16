@@ -183,8 +183,8 @@ namespace GraphTask {
     example*node = D.cur_node;
     for (size_t k=0; k<=D.K; k++) {
       if (D.neighbor_predictions[k] == 0.) continue;
-      size_t fx2 = ((fx & D.mask) >> D.ss) & D.mask;
-      feature f = { fv * D.neighbor_predictions[k], (uint32_t) ((( fx2 + 348919043 * k ) << D.ss) & D.mask) };
+      size_t fx2 = fx >> D.ss; // ((fx & D.mask) >> D.ss) & D.mask;
+      feature f = { fv * D.neighbor_predictions[k], (uint32_t) (( fx2 + 348919043 * k ) << D.ss) };
       node->atomics[neighbor_namespace].push_back(f);
       node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     }
@@ -194,8 +194,8 @@ namespace GraphTask {
   void add_edge_features_single_fn(task_data&D, float fv, uint32_t fx) {
     example*node = D.cur_node;
     size_t k = (size_t) D.neighbor_predictions[0];
-    size_t fx2 = ((fx & D.mask) >> D.ss) & D.mask;
-    feature f = { fv, (uint32_t) ((( fx2 + 348919043 * k ) << D.ss) & D.mask) };
+    size_t fx2 = fx >> D.ss; // ((fx & D.mask) >> D.ss) & D.mask;
+    feature f = { fv, (uint32_t) (( fx2 + 348919043 * k ) << D.ss) };
     node->atomics[neighbor_namespace].push_back(f);
     node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     // TODO: audit
