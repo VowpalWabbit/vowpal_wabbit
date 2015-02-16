@@ -183,8 +183,7 @@ namespace GraphTask {
     example*node = D.cur_node;
     for (size_t k=0; k<=D.K; k++) {
       if (D.neighbor_predictions[k] == 0.) continue;
-      size_t fx2 = fx >> D.ss; // ((fx & D.mask) >> D.ss) & D.mask;
-      feature f = { fv * D.neighbor_predictions[k], (uint32_t) (( fx2 + 348919043 * k ) << D.ss) };
+      feature f = { fv * D.neighbor_predictions[k], (uint32_t) (( (fx >> D.ss) + 348919043 * k ) << D.ss) };
       node->atomics[neighbor_namespace].push_back(f);
       node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     }
@@ -194,8 +193,7 @@ namespace GraphTask {
   void add_edge_features_single_fn(task_data&D, float fv, uint32_t fx) {
     example*node = D.cur_node;
     size_t k = (size_t) D.neighbor_predictions[0];
-    size_t fx2 = fx >> D.ss; // ((fx & D.mask) >> D.ss) & D.mask;
-    feature f = { fv, (uint32_t) (( fx2 + 348919043 * k ) << D.ss) };
+    feature f = { fv, (uint32_t) (( (fx >> D.ss) + 348919043 * k ) << D.ss) };
     node->atomics[neighbor_namespace].push_back(f);
     node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     // TODO: audit
@@ -250,7 +248,9 @@ namespace GraphTask {
       for (int n_id = start; n_id != end; n_id += step) {
         uint32_t n = D.bfs[n_id];
 
-        if (D.use_structure) add_edge_features(sch, D, n, ec);
+        bool add_features = D.use_structure && sch.predictNeedsExample();
+
+        if (add_features) add_edge_features(sch, D, n, ec);
         Search::predictor P = Search::predictor(sch, n+1);
         P.set_input(*ec[n]);
         if (ec[n]->l.cs.costs.size() > 0) // for test examples
@@ -267,7 +267,7 @@ namespace GraphTask {
         // make the prediction
         D.pred[n] = P.predict();
         
-        if (D.use_structure) del_edge_features(D, n, ec);
+        if (add_features) del_edge_features(D, n, ec);
       }
     }
 
