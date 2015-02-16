@@ -31,7 +31,7 @@ namespace GD{
   template <class R, void (*T)(R&, float, uint32_t)>
    void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R&dat, uint32_t offset=0, float mult=1.)
    {
-     for (feature* f = begin; f!= end; f++) 
+     for (feature* f = begin; f!= end; f++)
        T(dat, mult*f->x, f->weight_index + offset);
    }
  
@@ -42,7 +42,7 @@ namespace GD{
   {
     uint32_t offset = ec.ft_offset;
 
-    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
+    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
       foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[*i].begin, ec.atomics[*i].end, dat, offset);
      
     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {

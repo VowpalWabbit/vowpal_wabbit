@@ -83,9 +83,6 @@ namespace GraphTask {
 
     D->K = num_actions;
     D->neighbor_predictions = calloc_or_die<float>(D->K+1);
-
-    D->mask = sch.get_vw_pointer_unsafe().reg.weight_mask;
-    D->ss   = sch.get_vw_pointer_unsafe().reg.stride_shift;
     
     sch.set_task_data<task_data>(D);
     sch.set_options( Search::AUTO_HAMMING_LOSS );
@@ -137,6 +134,9 @@ namespace GraphTask {
   void setup(Search::search& sch, vector<example*>& ec) {
     task_data& D = *sch.get_task_data<task_data>();
 
+    D.mask = sch.get_vw_pointer_unsafe().reg.weight_mask;
+    D.ss   = sch.get_vw_pointer_unsafe().reg.stride_shift;
+    
     D.N = 0;
     D.E = 0;
     for (size_t i=0; i<ec.size(); i++)
@@ -184,7 +184,7 @@ namespace GraphTask {
     for (size_t k=0; k<=D.K; k++) {
       if (D.neighbor_predictions[k] == 0.) continue;
       size_t fx2 = ((fx & D.mask) >> D.ss) & D.mask;
-      feature f = { fv * D.neighbor_predictions[k], (uint32_t) (( fx2 + 348919043 * k ) << D.ss) };
+      feature f = { fv * D.neighbor_predictions[k], (uint32_t) ((( fx2 + 348919043 * k ) << D.ss) & D.mask) };
       node->atomics[neighbor_namespace].push_back(f);
       node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     }
@@ -195,7 +195,7 @@ namespace GraphTask {
     example*node = D.cur_node;
     size_t k = (size_t) D.neighbor_predictions[0];
     size_t fx2 = ((fx & D.mask) >> D.ss) & D.mask;
-    feature f = { fv, (uint32_t) (( fx2 + 348919043 * k ) << D.ss) };
+    feature f = { fv, (uint32_t) ((( fx2 + 348919043 * k ) << D.ss) & D.mask) };
     node->atomics[neighbor_namespace].push_back(f);
     node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     // TODO: audit
