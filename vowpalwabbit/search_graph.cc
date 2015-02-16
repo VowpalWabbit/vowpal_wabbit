@@ -52,6 +52,10 @@ namespace GraphTask {
     size_t num_loops;
     size_t K;  // number of labels, *NOT* including the +1 for 'unlabeled'
     bool   use_structure;
+
+    // for adding new features
+    size_t mask; // all->reg.weight_mask
+    size_t ss;   // all->reg.stride_shift
     
     // per-example data
     uint32_t N;  // number of nodes
@@ -63,10 +67,7 @@ namespace GraphTask {
     float* neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
   };
 
-  bool example_is_test(void*ld) {
-    // TODO
-    return false;
-  }
+  inline bool example_is_test(polylabel&l) { return l.cs.costs.size() == 0; }
   
   void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
     task_data * D = new task_data();
@@ -83,6 +84,9 @@ namespace GraphTask {
     D->K = num_actions;
     D->neighbor_predictions = calloc_or_die<float>(D->K+1);
 
+    D->mask = sch.get_vw_pointer_unsafe().reg.weight_mask;
+    D->ss   = sch.get_vw_pointer_unsafe().reg.stride_shift;
+    
     sch.set_task_data<task_data>(D);
     sch.set_options( Search::AUTO_HAMMING_LOSS );
     sch.set_label_parser( COST_SENSITIVE::cs_label, example_is_test );
@@ -175,40 +179,52 @@ namespace GraphTask {
     D.adj.clear();
   }
 
-  void add_edge_features_fn(task_data&D, float fv, uint32_t fx) {
+  void add_edge_features_group_fn(task_data&D, float fv, uint32_t fx) {
     example*node = D.cur_node;
     for (size_t k=0; k<=D.K; k++) {
       if (D.neighbor_predictions[k] == 0.) continue;
-      feature f = { fv * D.neighbor_predictions[k], (uint32_t) ( fx + 348919043 * k ) };
+      size_t fx2 = ((fx & D.mask) >> D.ss) & D.mask;
+      feature f = { fv * D.neighbor_predictions[k], (uint32_t) (( fx2 + 348919043 * k ) << D.ss) };
       node->atomics[neighbor_namespace].push_back(f);
       node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     }
-    /*
-    feature f = { fv, (uint32_t) ( fx + 348919043 * D.neighbor_prediction ) };
-    node->atomics[neighbor_namespace].push_back(f);
-    node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
-    */
     // TODO: audit
   }
 
+  void add_edge_features_single_fn(task_data&D, float fv, uint32_t fx) {
+    example*node = D.cur_node;
+    size_t k = (size_t) D.neighbor_predictions[0];
+    size_t fx2 = ((fx & D.mask) >> D.ss) & D.mask;
+    feature f = { fv, (uint32_t) (( fx2 + 348919043 * k ) << D.ss) };
+    node->atomics[neighbor_namespace].push_back(f);
+    node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
+    // TODO: audit
+  }
+  
   void add_edge_features(Search::search&sch, task_data&D, uint32_t n, vector<example*>&ec) {
     D.cur_node = ec[n];
 
     for (size_t i : D.adj[n]) {
       for (size_t k=0; k<D.K+1; k++) D.neighbor_predictions[k] = 0.;
-      float pred_total = 0.;
 
+      float pred_total = 0.;
+      uint32_t last_pred = 0;
       for (size_t j=0; j<ec[i]->l.cs.costs.size(); j++) {
         size_t m = ec[i]->l.cs.costs[j].class_index - 1;
         if (m == n) continue;
         D.neighbor_predictions[ D.pred[m]-1 ] += 1.;
         pred_total += 1.;
+        last_pred = D.pred[m]-1;
       }
 
       if (pred_total == 0.) continue;
       //for (size_t k=0; k<D.K+1; k++) D.neighbor_predictions[k] /= pred_total;
       example&edge = *ec[i];
-      GD::foreach_feature<task_data,uint32_t,add_edge_features_fn>(sch.get_vw_pointer_unsafe(), edge, D);
+      if (pred_total <= 1.) {  // single edge
+        D.neighbor_predictions[0] = (float)last_pred;
+        GD::foreach_feature<task_data,uint32_t,add_edge_features_single_fn>(sch.get_vw_pointer_unsafe(), edge, D);
+      } else // lots of edges
+        GD::foreach_feature<task_data,uint32_t,add_edge_features_group_fn>(sch.get_vw_pointer_unsafe(), edge, D);
     }
     ec[n]->indices.push_back(neighbor_namespace);
     ec[n]->total_sum_feat_sq += ec[n]->sum_feat_sq[neighbor_namespace];
@@ -237,7 +253,8 @@ namespace GraphTask {
         if (D.use_structure) add_edge_features(sch, D, n, ec);
         Search::predictor P = Search::predictor(sch, n+1);
         P.set_input(*ec[n]);
-        P.set_oracle(ec[n]->l.cs.costs[0].class_index); // TODO: check if it exists for test data
+        if (ec[n]->l.cs.costs.size() > 0) // for test examples
+          P.set_oracle(ec[n]->l.cs.costs[0].class_index);
         // add all the conditioning
         for (size_t i=0; i<D.adj[n].size(); i++) {
           for (size_t j=0; j<ec[i]->l.cs.costs.size(); j++) {

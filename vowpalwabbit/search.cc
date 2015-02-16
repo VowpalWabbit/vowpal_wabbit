@@ -85,7 +85,7 @@ namespace Search {
     int mix_per_roll_policy;       // for MIX_PER_ROLL, we need to choose a policy to use; this is where it's stored (-2 means "not selected yet")
     bool no_caching;               // turn off caching
     size_t rollout_num_steps;      // how many calls of "loss" before we stop really predicting on rollouts and switch to oracle (0 means "infinite")
-    bool (*label_is_test)(void*);  // tell me if the label data from an example is test
+    bool (*label_is_test)(polylabel&); // tell me if the label data from an example is test
     
     size_t t;                      // current search step
     size_t T;                      // length of root trajectory
@@ -1508,7 +1508,7 @@ namespace Search {
 
     bool is_test_ex = false;
     for (size_t i=0; i<priv.ec_seq.size(); i++)
-      if (priv.label_is_test(&priv.ec_seq[i]->l)) { is_test_ex = true; break; }
+      if (priv.label_is_test(priv.ec_seq[i]->l)) { is_test_ex = true; break; }
     
     if (priv.task->run_setup) priv.task->run_setup(sch, priv.ec_seq);
     
@@ -1609,11 +1609,8 @@ namespace Search {
     }
   }
 
-  bool mc_label_is_test(void* lab) {
-	  if (MC::label_is_test((MC::label_t*)lab) > 0)
-		  return true;
-	  else
-		  return false;
+  bool mc_label_is_test(polylabel& lab) {
+    return MC::label_is_test(&lab.multi);
   }
   
   void search_initialize(vw* all, search& sch) {
@@ -2179,7 +2176,7 @@ namespace Search {
     if ((opts & IS_LDF)                  != 0) this->priv->is_ldf = true;
   }
 
-  void search::set_label_parser(label_parser&lp, bool (*is_test)(void*)) {
+  void search::set_label_parser(label_parser&lp, bool (*is_test)(polylabel&)) {
     if (this->priv->state != INITIALIZE) {
       std::cerr << "error: task cannot set label parser except in initialize function!" << endl;
       throw exception();
