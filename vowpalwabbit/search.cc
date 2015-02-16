@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 #include "search_graph.h"
 #include "csoaa.h"
 #include "beam.h"
+#include "active.h"
 
 using namespace LEARNER;
 using namespace std;
@@ -1186,9 +1187,20 @@ namespace Search {
   inline bool cmp_size_t_pair(const pair<size_t,size_t>& a, const pair<size_t,size_t>& b) { return ((a.first == b.first) && (a.second < b.second)) || (a.first < b.first); }
   void get_training_timesteps(search_private& priv, v_array< pair<size_t,size_t> >& timesteps) {  // timesteps are pairs of (beam elem, t) where beam elem == 0 means "default" for non-beam search
     timesteps.erase();
-    
+
+    // if there's active learning, we need to 
+    if (priv.subsample_timesteps <= -1) {
+      for (size_t t=0; t<priv.T; t++) {
+        active active_str = { 1., priv.all };
+        float k = (float)priv.total_examples_generated;
+        priv.ec_seq[t]->revert_weight = priv.all->loss->getRevertingWeight(priv.all->sd, priv.ec_seq[t].pred.scalar, priv.all->eta / powf(k, priv.all->power_t));
+        float importance = query_decision(active_str, *priv.ec_seq[t], k);
+        if (importance > 0.)
+          timesteps.push_back(pair<size_t,size_t>(0,t));
+      }
+    }
     // if there's no subsampling to do, just return [0,T)
-    if (priv.subsample_timesteps <= 0)
+    else if (priv.subsample_timesteps <= 0)
       for (size_t t=0; t<priv.T; t++)
         timesteps.push_back(pair<size_t,size_t>(0,t));
 
@@ -1865,7 +1877,7 @@ namespace Search {
       ("search_trained_nb_policies", po::value<size_t>(), "the number of trained policies in a file")
       
       ("search_allowed_transitions",po::value<string>(),"read file of allowed transitions [def: all transitions are allowed]")
-      ("search_subsample_time",    po::value<float>(),  "instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example, if v<0, use active learning")
+      ("search_subsample_time",    po::value<float>(),  "instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example, if v<=-1, use active learning")
       ("search_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them")
       ("search_rollout_num_steps", po::value<size_t>(), "how many calls of \"loss\" before we stop really predicting on rollouts and switch to oracle (def: 0 means \"infinite\")")
       ("search_history_length",    po::value<size_t>(), "some tasks allow you to specify how much history their depend on; specify that here [def: 1]")
