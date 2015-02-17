@@ -91,13 +91,7 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
     if (beam_size == 1) do_kbest = false;  // automatically turn of kbest
   }
 
-  bool might_insert(float cost) {
-    bool should_add = false;
-    if (count < beam_size) should_add = true;
-    else if (cost < worst_cost) should_add = true;
-    if (cost > prune_if_gt) should_add = false;
-    return should_add;
-  }   
+  inline bool might_insert(float cost) { return (cost <= prune_if_gt) && ((count < beam_size) || (cost < worst_cost)); }
 
   bool insert(T*data, float cost, uint32_t hash) { // returns TRUE iff element was actually added
     if (!might_insert(cost)) return false;

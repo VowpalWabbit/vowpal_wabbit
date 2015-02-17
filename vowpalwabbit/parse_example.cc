@@ -41,7 +41,8 @@ public:
   example* ae;
   uint32_t* affix_features;
   bool* spelling_features;
-  v_array<char> spelling;
+  v_array<char> spelling = v_init<char>();
+
   vector<feature_dict*>* namespace_dictionaries;
   
   ~TC_parser(){ }
