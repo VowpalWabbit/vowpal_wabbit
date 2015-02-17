@@ -38,7 +38,7 @@ namespace Search {
                                NULL };   // must NULL terminate!
 
   const bool PRINT_UPDATE_EVERY_EXAMPLE =0;
-  const bool PRINT_UPDATE_EVERY_PASS =0;
+  const bool PRINT_UPDATE_EVERY_PASS =1;
   const bool PRINT_CLOCK_TIME =0;
 
   string   neighbor_feature_space("neighbor");
@@ -170,6 +170,7 @@ namespace Search {
     v_array<action> condition_on_actions;
     v_array< pair<size_t,size_t> > timesteps;
     v_array<float> learn_losses;
+    v_array< pair<float,size_t> > active_uncertainty;
     
     LEARNER::base_learner* base_learner;
     clock_t start_clock_time;
@@ -544,6 +545,8 @@ namespace Search {
         size_t i = (allowed_actions_cnt > 0) ? allowed_actions[j] : j;
         if (i == ret) continue;
 
+        if (! priv.beam->might_insert( alternative_costs[i] )) continue;
+
         action_prefix* px = new action_prefix;
         *px = v_init<action>();
         px->resize(new_len+1);
@@ -709,6 +712,18 @@ namespace Search {
     priv.base_learner->predict(ec, policy);
     uint32_t act = ec.pred.multiclass;
 
+    if ((priv.state == INIT_TRAIN) && (priv.subsample_timesteps <= -1)) { // active learning
+      size_t K = cs_get_costs_size(priv.cb_learner, ec.l);
+      float min_cost = FLT_MAX, min_cost2 = FLT_MAX;
+      for (size_t k = 0; k < K; k++) {
+        float cost = cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
+        if (cost < min_cost) { min_cost2 = min_cost; min_cost = cost; }
+        else if (cost < min_cost2) { min_cost2 = cost; }
+      }
+      if (min_cost2 < FLT_MAX)
+        priv.active_uncertainty.push_back( make_pair(min_cost2 - min_cost, priv.t) );
+    }
+    
     // in beam search mode, go through alternatives and add them as back-ups
     if (priv.beam) {
       float act_cost = 0;
@@ -725,6 +740,9 @@ namespace Search {
         action k_act = cs_get_cost_index(priv.cb_learner, ec.l, k);
         if (k_act == act) continue;  // skip the taken action
         float delta_cost = cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k) - act_cost + priv.beam_initial_cost;
+
+        if (! priv.beam->might_insert( delta_cost )) continue;
+        
         // construct the action prefix
         action_prefix* px = new v_array<action>;
         *px = v_init<action>();
@@ -803,6 +821,7 @@ namespace Search {
       for (size_t k=start_K; k<ec_cnt; k++) {
         if (k == best_action) continue;
         float delta_cost = ecs[k].partial_prediction - best_prediction + priv.beam_initial_cost;
+        if (! priv.beam->might_insert( delta_cost )) continue;
         action_prefix* px = new v_array<action>;
         *px = v_init<action>();
         px->resize(new_len + 1);
@@ -1190,17 +1209,20 @@ namespace Search {
 
     // if there's active learning, we need to 
     if (priv.subsample_timesteps <= -1) {
-      for (size_t t=0; t<priv.T; t++) {
-        active active_str = { 1., priv.all };
+      for (size_t i=0; i<priv.active_uncertainty.size(); i++)
+        if (frand48() > priv.active_uncertainty[i].first)
+          timesteps.push_back(pair<size_t,size_t>(0, priv.active_uncertainty[i].second - 1));
+          /*
         float k = (float)priv.total_examples_generated;
         priv.ec_seq[t]->revert_weight = priv.all->loss->getRevertingWeight(priv.all->sd, priv.ec_seq[t].pred.scalar, priv.all->eta / powf(k, priv.all->power_t));
         float importance = query_decision(active_str, *priv.ec_seq[t], k);
         if (importance > 0.)
           timesteps.push_back(pair<size_t,size_t>(0,t));
-      }
+          */
     }
     // if there's no subsampling to do, just return [0,T)
-    else if (priv.subsample_timesteps <= 0)
+    else
+    if (priv.subsample_timesteps <= 0)
       for (size_t t=0; t<priv.T; t++)
         timesteps.push_back(pair<size_t,size_t>(0,t));
 
@@ -1412,6 +1434,7 @@ namespace Search {
 
     reset_search_structure(priv);
     priv.state = INIT_TRAIN;
+    priv.active_uncertainty.erase();
     priv.train_trajectory.erase();  // this is where we'll store the training sequence
     priv.task->run(sch, priv.ec_seq);
 
@@ -1437,6 +1460,7 @@ namespace Search {
     priv.T = priv.t;
     if (priv.beam) get_training_timesteps_beam(priv, *final_beam, priv.timesteps);
     else           get_training_timesteps(priv, priv.timesteps);
+
     priv.learn_losses.erase();
     size_t last_beam_id = 0;
     for (size_t tid=0; tid<priv.timesteps.size(); tid++) {
@@ -1602,6 +1626,7 @@ namespace Search {
 
     priv.label_is_test = mc_label_is_test;
 
+    priv.active_uncertainty = v_init< pair<float,size_t> >();
     priv.cross_validate = false;
     priv.A = 1;
     priv.num_learners = 1;
