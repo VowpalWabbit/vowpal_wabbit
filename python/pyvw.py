@@ -406,8 +406,9 @@ class example(pylibvw.example):
             self.stride = vw.get_stride()
             self.finished = False
             self.setup_done = False
-            for ns_char,feats in initStringOrDict.iteritems():
-                self.push_features(ns_char, feats)
+            #for ns_char,feats in initStringOrDict.iteritems():
+            #    self.push_features(ns_char, feats)
+            self.push_feature_dict(vw, initStringOrDict)
             self.setup_example()
         else:
             raise TypeError('expecting string or dict as argument for example construction')

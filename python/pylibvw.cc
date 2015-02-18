@@ -178,35 +178,28 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
       else { cerr << "warning: malformed feature in list" << endl; continue; }
       ai = fv[0];
     }
-    
-    bool got = false;
-    py::extract<uint32_t> get_int(ai);
-    if (get_int.check()) { f.weight_index = get_int(); got = true; }
-    else {
+
+    if (f.x != 0.) {
+      bool got = false;
       py::extract<string> get_str(ai);
       if (get_str.check()) {
         f.weight_index = VW::hash_feature(*vw, get_str(), ns_hash);
         got = true;
-      } else { cerr << "warning: malformed feature in list" << endl; continue; }
-    }
-    if (got && (f.x != 0.)) {
-      ec->atomics[ns].push_back(f);
-      count++;
-      sum_sq += f.x * f.x;
+      } else {
+        py::extract<uint32_t> get_int(ai);
+        if (get_int.check()) { f.weight_index = get_int(); got = true; }
+        else { cerr << "warning: malformed feature in list" << endl; continue; }
+      }
+      if (got) {
+        ec->atomics[ns].push_back(f);
+        count++;
+        sum_sq += f.x * f.x;
+      }
     }
   }
   ec->num_features += count;
   ec->sum_feat_sq[ns] += sum_sq;
   ec->total_sum_feat_sq += sum_sq;
-}
-
-bool ex_pop_feature(example_ptr ec, unsigned char ns) {
-  if (ec->atomics[ns].size() == 0) return false;
-  feature f = ec->atomics[ns].pop();
-  ec->num_features--;
-  ec->sum_feat_sq[ns] -= f.x * f.x;
-  ec->total_sum_feat_sq -= f.x * f.x;
-  return true;
 }
 
 void ex_push_namespace(example_ptr ec, unsigned char ns) {
@@ -217,6 +210,39 @@ void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns) {
   for (unsigned char* nss = ec->indices.begin; nss != ec->indices.end; ++nss)
     if (ns == *nss) return;
   ex_push_namespace(ec, ns);
+}
+
+void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict& dict) {
+  py::object objectKey, objectVal;
+  const py::object objectKeys = dict.iterkeys();
+  const py::object objectVals = dict.itervalues();
+  unsigned long ulCount = boost::python::extract<unsigned long>(dict.attr("__len__")());
+  for (size_t u=0; u<ulCount; u++) {
+    objectKey = objectKeys.attr( "next" )();
+    objectVal = objectVals.attr( "next" )();
+
+    char chCheckKey = objectKey.ptr()->ob_type->tp_name[0];
+    if (chCheckKey != 's') continue;
+    chCheckKey = objectVal.ptr()->ob_type->tp_name[0];
+    if (chCheckKey != 'l') continue;
+
+    py::extract<string> ns_e(objectKey);
+    if (ns_e().length() < 1) continue;
+    py::extract<py::list> list_e(objectVal);
+    py::list list = list_e();
+    char ns = ns_e()[0];
+    ex_ensure_namespace_exists(ec, ns);
+    ex_push_feature_list(ec, vw, ns, list);
+  }
+}
+
+bool ex_pop_feature(example_ptr ec, unsigned char ns) {
+  if (ec->atomics[ns].size() == 0) return false;
+  feature f = ec->atomics[ns].pop();
+  ec->num_features--;
+  ec->sum_feat_sq[ns] -= f.x * f.x;
+  ec->total_sum_feat_sq -= f.x * f.x;
+  return true;
 }
 
 bool ex_pop_namespace(example_ptr ec) {
@@ -513,6 +539,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
 
       .def("push_hashed_feature", &ex_push_feature, "Add a hashed feature to a given namespace (id=character-ord)")
       .def("push_feature_list", &ex_push_feature_list, "Add a (Python) list of features to a given namespace")
+      .def("push_feature_dict", &ex_push_dictionary, "Add a (Python) dictionary of namespace/feature-list pairs")
       .def("pop_feature", &ex_pop_feature, "Remove the top feature from a given namespace; returns True iff the list was non-empty")
       .def("push_namespace", &ex_push_namespace, "Add a new namespace")
       .def("ensure_namespace_exists", &ex_ensure_namespace_exists, "Add a new namespace if it doesn't already exist")

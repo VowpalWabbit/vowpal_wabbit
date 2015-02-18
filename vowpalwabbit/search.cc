@@ -1360,15 +1360,18 @@ namespace Search {
       for (; best != final_beam->end(); ++best)
         if (best->active) {
           new_tag.erase();
-          new_tag.resize(50, true);
-          int len = sprintf(new_tag.begin, "%-10.6f\t", best->cost);
-          new_tag.end = new_tag.begin + len;
+          if (priv.kbest > 1) {
+            new_tag.resize(50, true);
+            int len = sprintf(new_tag.begin, "%-10.6f\t", best->cost);
+            new_tag.end = new_tag.begin + len;
+          }
           push_many(new_tag, priv.ec_seq[0]->tag.begin, priv.ec_seq[0]->tag.size());
           for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
             all.print_text((int)*sink, best->data->second, new_tag);
         }
-      for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)      
-        all.print_text((int)*sink, "", priv.ec_seq[0]->tag);
+      if (priv.kbest > 1)
+        for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)      
+          all.print_text((int)*sink, "", priv.ec_seq[0]->tag);
       new_tag.delete_v();
     }
 
