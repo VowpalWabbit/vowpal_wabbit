@@ -569,8 +569,10 @@ void parse_feature_tweaks(vw& all)
               throw exception();
           }
 
-          all.redefine_some = true;
-          operator_pos++; // seek operator end
+          if (++operator_pos > 3) // seek operator end
+              cerr << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('" << new_namespace << "') will be used as target namespace." << endl;
+
+          all.redefine_some = true;         
 
           // case ':=S' doesn't require any additional code as new_namespace = ' ' by default
 
