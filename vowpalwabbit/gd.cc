@@ -855,8 +855,7 @@ base_learner* setup(vw& all)
     ("adaptive", "use adaptive, individual learning rates.")
     ("invariant", "use safe/importance aware updates.")
     ("normalized", "use per feature normalized updates")
-    ("sparse_l2", po::value<float>()->default_value(0.f), "use per feature normalized updates")
-    ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule");
+    ("sparse_l2", po::value<float>()->default_value(0.f), "use per feature normalized updates");
   add_options(all);
   po::variables_map& vm = all.vm;
   gd& g = calloc_or_die<gd>();
@@ -890,7 +889,7 @@ base_learner* setup(vw& all)
       g.initial_constant = vm["constant"].as<float>();     
   }
 
-  if( !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
+  if( !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) ) )
     {//nondefault
       all.adaptive = all.training && vm.count("adaptive");
       all.invariant_updates = all.training && vm.count("invariant");
