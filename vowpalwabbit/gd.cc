@@ -19,6 +19,8 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "vw.h"
 
+#define VERSION_SAVE_RESUME_FIX "7.10.1"
+
 using namespace std;
 using namespace LEARNER;
 //todo: 
@@ -607,7 +609,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 }
 
 //void save_load_online_state(gd& g, io_buf& model_file, bool read, bool text)
-void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
+void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g)
 {
   //vw& all = *g.all;
   
@@ -677,6 +679,32 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
   bin_text_read_write_fixed(model_file,(char*)&all.sd->total_features, sizeof(all.sd->total_features), 
 			    "", read, 
 			    buff, text_len, text);
+
+  if (!read || all.model_file_ver >= VERSION_SAVE_RESUME_FIX)
+  { // restore some data to allow --save_resume work more accurate
+
+      // fix average loss
+      double total_weight = 0.; //value holder as g* may be null
+      if (!read && g != NULL) total_weight = g->total_weight;
+      text_len = sprintf(buff, "gd::total_weight %f\n", total_weight);
+      bin_text_read_write_fixed(model_file,(char*)&total_weight, sizeof(total_weight),
+                                "", read,
+                                buff, text_len, text);
+      if (read && g != NULL) g->total_weight = total_weight;
+
+      // fix "loss since last" for first printed out example details
+      text_len = sprintf(buff, "sd::old_weighted_examples %f\n", all.sd->old_weighted_examples);
+      bin_text_read_write_fixed(model_file,(char*)&all.sd->old_weighted_examples, sizeof(all.sd->old_weighted_examples),
+                                "", read,
+                                buff, text_len, text);
+
+      // fix "number of examples per pass"
+      text_len = sprintf(buff, "current_pass %u\n", (uint32_t)all.current_pass);
+      bin_text_read_write_fixed(model_file,(char*)&all.current_pass, sizeof(all.current_pass),
+                                "", read,
+                                buff, text_len, text);
+  }
+
   if (!all.training) // reset various things so that we report test set performance properly
     {
       all.sd->sum_loss = 0;
@@ -778,8 +806,12 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 				"", read,
 				buff, text_len, text);
       if (resume)
-	//save_load_online_state(g, model_file, read, text);
-        save_load_online_state(all, model_file, read, text);
+      {
+          if (read && all.model_file_ver < VERSION_SAVE_RESUME_FIX)
+           cerr << endl << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than " << VERSION_SAVE_RESUME_FIX << endl << endl;
+     // save_load_online_state(g, model_file, read, text);
+        save_load_online_state(all, model_file, read, text, &g);
+      }
       else
 	save_load_regressor(all, model_file, read, text);
     }
