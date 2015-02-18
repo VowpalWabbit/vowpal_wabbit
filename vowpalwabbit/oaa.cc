@@ -21,7 +21,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   stringstream outputStringStream;
   uint32_t prediction = 1;
 
-  ec.l.simple = {0.f, mc_label_data.weight, 0.f};
+  ec.l.simple = {FLT_MAX, mc_label_data.weight, 0.f};
   float score = INT_MIN;
   for (uint32_t i = 1; i <= o.k; i++) {
     if (is_learn) {

@@ -16,7 +16,7 @@ void predict_or_learn(char&, LEARNER::base_learner& base, example& ec) {
   if (ec.l.simple.label != FLT_MAX)
     {
       if (fabs(ec.l.simple.label) != 1.f)
-	cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
+	cout << "You are using label " << ec.l.simple.label << " not -1 or 1 as loss function expects!" << endl;
       else
 	if (ec.l.simple.label == ec.pred.scalar)
 	  ec.loss = 0.;
