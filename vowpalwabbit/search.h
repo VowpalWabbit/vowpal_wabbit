@@ -32,7 +32,7 @@ namespace Search {
 
     // change the default label parser, but you _must_ tell me how
     // to detect test examples!
-    void set_label_parser(label_parser&lp, bool (*is_test)(void*));
+    void set_label_parser(label_parser&lp, bool (*is_test)(polylabel&));
 
     // for adding command-line options
     void add_program_options(po::variables_map& vw, po::options_description& opts);

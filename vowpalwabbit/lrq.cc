@@ -9,7 +9,7 @@ struct LRQstate {
   vw* all; // feature creation, audit, hash_inv
   bool lrindices[256];
   size_t orig_size[256];
-  std::vector<std::string> lrpairs;
+  std::set<std::string> lrpairs;
   bool dropout;
   uint64_t seed;
   uint64_t initial_seed;
@@ -81,9 +81,9 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
       // TODO: what happens with --lrq ab2 --lrq ac2
       //       i.e. namespace occurs multiple times (?)
       
-      for (vector<string>::iterator i = lrq.lrpairs.begin ();
-             i != lrq.lrpairs.end ();
-             ++i)
+      for (set<string>::iterator i = lrq.lrpairs.begin ();
+           i != lrq.lrpairs.end ();
+           ++i)
           {
             unsigned char left = (*i)[which%2];
             unsigned char right = (*i)[(which+1)%2];
@@ -167,7 +167,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
             ec.loss = first_loss;
           }
 
-        for (vector<string>::iterator i = lrq.lrpairs.begin ();
+        for (set<string>::iterator i = lrq.lrpairs.begin ();
              i != lrq.lrpairs.end ();
              ++i)
           {
@@ -207,6 +207,9 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
     LRQstate& lrq = calloc_or_die<LRQstate>();
     size_t maxk = 0;
     lrq.all = &all;
+    new(&lrq.lrpairs) 
+      std::set<std::string> (all.vm["lrq"].as<vector<string> > ().begin (),
+                             all.vm["lrq"].as<vector<string> > ().end ());
     
     size_t random_seed = 0;
     if (all.vm.count("random_seed")) random_seed = all.vm["random_seed"].as<size_t> ();
@@ -220,11 +223,9 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
     else
       lrq.dropout = false;
     
-    lrq.lrpairs = all.vm["lrq"].as<vector<string> > ();
-    
-    for (vector<string>::iterator i = lrq.lrpairs.begin (); 
-	 i != lrq.lrpairs.end (); 
-	 ++i)
+    for (set<string>::iterator i = lrq.lrpairs.begin (); 
+         i != lrq.lrpairs.end (); 
+         ++i)
       *all.file_options << " --lrq " << *i;
     
     if (! all.quiet)
@@ -234,7 +235,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
           cerr << "(using dropout) ";
       }
 
-    for (vector<string>::iterator i = lrq.lrpairs.begin (); 
+    for (set<string>::iterator i = lrq.lrpairs.begin (); 
          i != lrq.lrpairs.end (); 
          ++i)
       {
