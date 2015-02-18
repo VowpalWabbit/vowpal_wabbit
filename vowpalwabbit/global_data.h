@@ -25,7 +25,7 @@ struct version_struct {
   int major;
   int minor;
   int rev;
-  version_struct(int maj, int min, int rv)
+  version_struct(int maj = 0, int min = 0, int rv = 0)
   {
     major = maj;
     minor = min;
@@ -261,6 +261,7 @@ struct vw {
   bool hessian_on;
 
   bool save_resume;
+  version_struct model_file_ver;
   double normalized_sum_norm_x;
 
   po::options_description opts;

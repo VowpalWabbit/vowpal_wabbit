@@ -92,7 +92,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
     uint32_t text_len = sprintf(buff, ":%d\n", resume);
     bin_text_read_write_fixed(model_file,(char *)&resume, sizeof (resume), "", read, buff, text_len, text);
     
-    if (resume) 
+    if (resume)
       GD::save_load_online_state(*all, model_file, read, text);
     else
       GD::save_load_regressor(*all, model_file, read, text);
