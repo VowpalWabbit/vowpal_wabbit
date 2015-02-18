@@ -311,6 +311,7 @@ void parse_feature_tweaks(vw& all)
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
+    ("redefine", po::value< vector<string> >(), "redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in form 'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a wildcard in S.")
     ("bit_precision,b", po::value<size_t>(), "number of bits in the feature table")
     ("noconstant", "Don't add a constant feature")
     ("constant,C", po::value<float>(&(all.initial_constant)), "Set initial value of constant")
@@ -524,6 +525,78 @@ void parse_feature_tweaks(vw& all)
 	  cerr << endl;
 	}
     }
+
+  // --redefine param code
+  all.redefine_some = false; // false by default
+
+  if (vm.count("redefine"))
+  {
+      // initail values: i-th namespace is redefined to i itself
+      for (size_t i = 0; i < 256; i++)
+          all.redefine[i] = i;
+
+      // note: --redefine declaration order is matter
+      // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
+
+      vector< string > arg_list = vm["redefine"].as< vector< string > >();
+      for (vector<string>::iterator arg_iter = arg_list.begin(); arg_iter != arg_list.end(); arg_iter++)
+      {
+          string arg = *arg_iter;
+          size_t arg_len = arg.length();
+
+          size_t operator_pos = 0; //keeps operator pos + 1 to stay unsigned type
+          bool operator_found = false;
+          unsigned char new_namespace = ' ';
+
+          // let's find operator ':=' position in N:=S
+          for (size_t i = 0; i < arg_len; i++)
+          {
+              if (operator_found)
+              {
+                  if (i > 2) { new_namespace = arg[0];} //N is not empty
+                  break;
+              } else
+                  if (arg[i] == ':')
+                      operator_pos = i+1;
+                  else
+                      if ( (arg[i] == '=') && (operator_pos == i) )
+                          operator_found = true;
+          }
+
+          if (!operator_found)
+          {
+              cerr << "argument of --redefine is malformed. Valid format is N:=S, :=S or N:=" << endl;
+              throw exception();
+          }
+
+          if (++operator_pos > 3) // seek operator end
+              cerr << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('" << new_namespace << "') will be used as target namespace." << endl;
+
+          all.redefine_some = true;         
+
+          // case ':=S' doesn't require any additional code as new_namespace = ' ' by default
+
+          if (operator_pos == arg_len) // S is empty, default namespace shall be used
+              all.redefine[' '] = new_namespace;
+          else
+              for (size_t i = operator_pos; i < arg_len; i++)
+              { // all namespaces from S are redefined to N
+                  unsigned char c = arg[i];
+                  if (c != ':')
+                      all.redefine[c] = new_namespace;
+                  else
+                  { // wildcard found: redefine all except default and break
+                      for (size_t i = 0; i < 256; i++)
+                      {
+                          if (i != ' ')
+                              all.redefine[i] = new_namespace;
+                      }
+                      break; //break processing S
+                  }
+              }
+
+      }
+  }
 
   if (vm.count("dictionary")) {
     vector<string> dictionary_ns = vm["dictionary"].as< vector<string> >();
