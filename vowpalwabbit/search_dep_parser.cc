@@ -178,12 +178,13 @@ namespace DepParserTask {
         children[4][stack[stack.size()-2]]=stack.last();
         children[1][stack[stack.size()-2]]++;
         tags[stack.last()] = t_id;
-		if(gold_heads[stack.last()] != heads[stack.last()])
+		srn.loss((gold_heads[stack.last()] != heads[stack.last()])+(gold_tags[stack.last()] != t_id));
+/*		if(gold_heads[stack.last()] != heads[stack.last()])
 			srn.loss(2);
 		else if (gold_tags[stack.last()] != t_id)
 			srn.loss(1);
 		else
-			srn.loss(0);
+			srn.loss(0);*/
         stack.pop();
         return idx;
 
@@ -195,12 +196,15 @@ namespace DepParserTask {
         children[2][idx]=stack.last();
         children[0][idx]++;
         tags[stack.last()] = t_id;
+		srn.loss((gold_heads[stack.last()] != heads[stack.last()])+(gold_tags[stack.last()] != t_id));
+		/*
 		if(gold_heads[stack.last()] != heads[stack.last()])
 			srn.loss(2);
 		else if (gold_tags[stack.last()] != t_id)
 			srn.loss(1);
 		else
 			srn.loss(0);
+			*/
 //        srn.loss((gold_heads[stack.last()] != heads[stack.last()]) + (gold_tags[stack.last()] != t_id));
         stack.pop();
         return idx;
@@ -363,7 +367,7 @@ namespace DepParserTask {
 
     // #left child of rightmost item in buf
     temp[3] = idx>n? 1: 1+min(5 , children[0][idx]);
-
+	/*
     for(size_t i=4; i<8; i++)
       if (!stack.empty() && children[i-2][stack.last()]!=0)
         temp[i] = tags[children[i-2][stack.last()]];
@@ -374,7 +378,7 @@ namespace DepParserTask {
     // ec_buf[10]: bl1, ec_buf[11]: bl2
     for(size_t i=8; i<10; i++)
         temp[i] = (idx <=n && children[i-6][idx]!=0)? tags[children[i-6][idx]] : 15;
-
+	*/
 
     size_t additional_offset = val_namespace*offset_const; 
     for(int j=0; j< 4;j++) {
@@ -447,7 +451,7 @@ namespace DepParserTask {
 
     // dependency with SHIFT
     for(uint32_t i = 0; i<stack.size(); i++)
-   	  if(gold_heads[stack[i]] == idx || gold_heads[idx] == stack[i])
+   	  if(idx <=n && (gold_heads[stack[i]] == idx || gold_heads[idx] == stack[i]))
 		  gold_action_reward[1] -= 1;
 
     // dependency with left and right
