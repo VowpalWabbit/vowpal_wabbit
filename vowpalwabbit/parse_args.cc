@@ -120,6 +120,10 @@ void parse_dictionary_argument(vw&all, string str) {
     *arr = v_init<feature>();
     push_many(*arr, ec->atomics[def].begin, ec->atomics[def].size());
     map->put(ss, hash, arr);
+
+    // clear up ec
+    ec->tag.erase(); ec->indices.erase();
+    for (size_t i=0; i<256; i++) { ec->atomics[i].erase(); ec->audit_features[i].erase(); }
   }
   dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
