@@ -950,7 +950,7 @@ namespace Search {
       else if (losses[i] == min_loss) num_min++;
       if (losses[i] > max_loss) { max_loss = losses[i]; }
     }
-    
+
     int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true);
     
     if (!priv.is_ldf) {   // not LDF
@@ -1148,6 +1148,7 @@ namespace Search {
         a = choose_oracle_action(priv, ec_cnt, oracle_actions, oracle_actions_cnt, allowed_actions, allowed_actions_cnt, priv.beam && (priv.state != INIT_TEST));
 
       if ((policy >= 0) || gte_here) {
+        priv.learn_learner_id = learner_id;
         int learner = select_learner(priv, policy, learner_id, false);
 
         ensure_size(priv.condition_on_actions, condition_on_cnt);
@@ -2121,7 +2122,7 @@ namespace Search {
     learner<search>& l = init_learner(&sch, base,
                                       search_predict_or_learn<true>,
                                       search_predict_or_learn<false>,
-                                      priv.total_number_of_policies);
+                                      priv.total_number_of_policies * priv.num_learners);
     l.set_finish_example(finish_example);
     l.set_end_examples(end_examples);
     l.set_finish(search_finish);
