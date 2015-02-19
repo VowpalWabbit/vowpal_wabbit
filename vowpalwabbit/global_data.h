@@ -293,6 +293,9 @@ struct vw {
   bool ignore_some;
   bool ignore[256];//a set of namespaces to ignore
 
+  bool redefine_some;          // --redefine param was used
+  unsigned char redefine[256]; // keeps new chars for amespaces
+
   std::vector<std::string> ngram_strings; // pairs of features to cross.
   std::vector<std::string> skip_strings; // triples of features to cross.
   uint32_t ngram[256];//ngrams to generate.

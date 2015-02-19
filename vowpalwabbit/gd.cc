@@ -33,6 +33,7 @@ namespace GD
     float initial_constant;
     float neg_norm_power;
     float neg_power_t;
+    float sparse_l2;
     float update_multiplier;
     void (*predict)(gd&, base_learner&, example&);
     void (*learn)(gd&, base_learner&, example&);
@@ -88,7 +89,7 @@ namespace GD
   {
     if (normalized)
       update *= g.update_multiplier;
-    
+
     foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
   }
 
@@ -456,13 +457,13 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
     return nd.pred_per_update;
   }
 
-template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
+  template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 float compute_update(gd& g, example& ec)
 {//invariant: not a test label, importance weight > 0
   label_data& ld = ec.l.simple;
   vw& all = *g.all;
   
-  float ret = 0.;
+  float update = 0.;
   ec.updated_prediction = ec.pred.scalar;
   if (all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) > 0.)
     {
@@ -479,7 +480,6 @@ float compute_update(gd& g, example& ec)
 	  delta_pred *= powf(t, g.neg_power_t);
 	}
       
-      float update;
       if(invariant)
 	update = all.loss->getUpdate(ec.pred.scalar, ld.label, delta_pred, pred_per_update);
       else
@@ -496,32 +496,34 @@ float compute_update(gd& g, example& ec)
 	update /= (float)all.sd->contraction;
 	all.sd->gravity += eta_bar * all.l1_lambda;
       }
-      ret = update;
     }
   
-  return ret;
+  if (sparse_l2)
+    update -= g.sparse_l2 * ec.pred.scalar;
+  
+  return update;
 }
 
-template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
+  template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 void update(gd& g, base_learner& base, example& ec)
 {//invariant: not a test label, importance weight > 0
   float update;
-  if ( (update = compute_update<invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (g, ec)) != 0.)
+  if ( (update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (g, ec)) != 0.)
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
   
   if (g.all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
     sync_weights(*g.all);
 }
 
-template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-void learn(gd& g, base_learner& base, example& ec)
-{//invariant: not a test label, importance weight > 0
+  template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
+  void learn(gd& g, base_learner& base, example& ec)
+  {//invariant: not a test label, importance weight > 0
   assert(ec.in_use);
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.l.simple.weight > 0.);
 
   g.predict(g,base,ec);
-  update<invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,base,ec);
+  update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,base,ec);
 }
 
 void sync_weights(vw& all) {
@@ -783,22 +785,31 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     }
 }
 
-template<bool invariant, bool sqrt_rate, uint32_t adaptive, uint32_t normalized, uint32_t spare, uint32_t next>
+template<bool sparse_l2, bool invariant, bool sqrt_rate, uint32_t adaptive, uint32_t normalized, uint32_t spare, uint32_t next>
 uint32_t set_learn(vw& all, bool feature_mask_off, gd& g)
 {
   all.normalized_idx = normalized;
   if (feature_mask_off)
     {
-      g.learn = learn<invariant, sqrt_rate, true, adaptive, normalized, spare>;
-      g.update = update<invariant, sqrt_rate, true, adaptive, normalized, spare>;
+      g.learn = learn<sparse_l2, invariant, sqrt_rate, true, adaptive, normalized, spare>;
+      g.update = update<sparse_l2, invariant, sqrt_rate, true, adaptive, normalized, spare>;
       return next;
     }
   else
     {
-      g.learn = learn<invariant, sqrt_rate, false, adaptive, normalized, spare>;
-      g.update = update<invariant, sqrt_rate, false, adaptive, normalized, spare>;
+      g.learn = learn<sparse_l2, invariant, sqrt_rate, false, adaptive, normalized, spare>;
+      g.update = update<sparse_l2, invariant, sqrt_rate, false, adaptive, normalized, spare>;
       return next;
     }
+}
+
+template<bool invariant, bool sqrt_rate, uint32_t adaptive, uint32_t normalized, uint32_t spare, uint32_t next>
+uint32_t set_learn(vw& all, bool feature_mask_off, gd& g)
+{
+  if (g.sparse_l2 > 0.f)
+    return set_learn<true, invariant, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g);
+  else
+    return set_learn<false, invariant, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g);
 }
 
 template<bool sqrt_rate, uint32_t adaptive, uint32_t normalized, uint32_t spare, uint32_t next>
@@ -844,7 +855,7 @@ base_learner* setup(vw& all)
     ("adaptive", "use adaptive, individual learning rates.")
     ("invariant", "use safe/importance aware updates.")
     ("normalized", "use per feature normalized updates")
-    ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule");
+    ("sparse_l2", po::value<float>()->default_value(0.f), "use per feature normalized updates");
   add_options(all);
   po::variables_map& vm = all.vm;
   gd& g = calloc_or_die<gd>();
@@ -853,6 +864,7 @@ base_learner* setup(vw& all)
   g.no_win_counter = 0;
   g.total_weight = 0.;
   g.early_stop_thres = 3;
+  g.sparse_l2 = vm["sparse_l2"].as<float>();
   g.neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
   g.neg_power_t = - all.power_t;
 
@@ -877,7 +889,7 @@ base_learner* setup(vw& all)
       g.initial_constant = vm["constant"].as<float>();     
   }
 
-  if( !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
+  if( !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) ) )
     {//nondefault
       all.adaptive = all.training && vm.count("adaptive");
       all.invariant_updates = all.training && vm.count("invariant");
