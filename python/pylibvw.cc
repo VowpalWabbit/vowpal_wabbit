@@ -245,19 +245,74 @@ bool ex_pop_feature(example_ptr ec, unsigned char ns) {
   return true;
 }
 
-bool ex_pop_namespace(example_ptr ec) {
-  if (ec->indices.size() == 0) return false;
-  unsigned char ns = ec->indices.pop();
+void ex_erase_namespace(example_ptr ec, unsigned char ns) {
   ec->num_features -= ec->atomics[ns].size();
   ec->total_sum_feat_sq -= ec->sum_feat_sq[ns];
   ec->sum_feat_sq[ns] = 0.;
   ec->atomics[ns].erase();
+  ec->audit_features[ns].erase();
+}
+
+bool ex_pop_namespace(example_ptr ec) {
+  if (ec->indices.size() == 0) return false;
+  unsigned char ns = ec->indices.pop();
+  ex_erase_namespace(ec, ns);
   return true;
 }
 
 void my_setup_example(vw_ptr vw, example_ptr ec) {
   VW::setup_example(*vw, ec.get());
 }
+
+void unsetup_example(vw_ptr vwP, example_ptr ae) {
+  vw&all = *vwP;
+  ae->partial_prediction = 0.;
+  ae->num_features = 0;
+  ae->total_sum_feat_sq = 0;
+  ae->loss = 0.;
+  
+  if (all.ignore_some) {
+    cerr << "error: cannot unsetup example when some namespaces are ignored!" << endl;
+    throw exception();
+  }
+
+  if(all.ngram_strings.size() > 0) {
+    cerr << "error: cannot unsetup example when ngrams are in use!" << endl;
+    throw exception();
+  }
+  
+  if (all.add_constant) {
+    ae->atomics[constant_namespace].erase();
+    ae->audit_features[constant_namespace].erase();
+    int hit_constant = -1;
+    size_t N = ae->indices.size();
+    for (size_t i=0; i<N; i++) {
+      size_t j = N - 1 - i;
+      if (ae->indices[j] == constant_namespace) {
+        if (hit_constant >= 0) { cerr << "error: hit constant namespace twice!" << endl; throw exception(); }
+        hit_constant = j;
+        break;
+      }
+    }
+    if (hit_constant >= 0) {
+      for (size_t i=hit_constant; i<N-1; i++)
+        ae->indices[i] = ae->indices[i+1];
+      ae->indices.pop();
+    }
+  }
+
+  uint32_t multiplier = all.wpp << all.reg.stride_shift;
+  if(multiplier != 1) { //make room for per-feature information.
+    for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
+      for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
+        j->weight_index /= multiplier;
+    if (all.audit || all.hash_inv)
+      for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
+        for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
+          j->weight_index /= multiplier;
+  }
+}
+
 
 void ex_set_label_string(example_ptr ec, vw_ptr vw, string label, size_t labelType) {
   // SPEEDUP: if it's already set properly, don't modify
@@ -492,6 +547,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("hash_feature", &VW::hash_feature, "given a feature string (arg2) and a hashed namespace (arg3), hash that feature")
       .def("finish_example", &my_finish_example, "tell VW that you're done with a given example")
       .def("setup_example", &my_setup_example, "given an example that you've created by hand, prepare it for learning (eg, compute quadratic feature)")
+      .def("unsetup_example", &unsetup_example, "reverse the process of setup, so that you can go back and modify this example")
 
       .def("num_weights", &VW::num_weights, "how many weights are we learning?")
       .def("get_weight", &VW::get_weight, "get the weight for a particular index")
@@ -544,6 +600,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("push_namespace", &ex_push_namespace, "Add a new namespace")
       .def("ensure_namespace_exists", &ex_ensure_namespace_exists, "Add a new namespace if it doesn't already exist")
       .def("pop_namespace", &ex_pop_namespace, "Remove the top namespace off; returns True iff the list was non-empty")
+      .def("erase_namespace", &ex_erase_namespace, "Remove all the features from a given namespace")
 
       .def("set_label_string", &ex_set_label_string, "(Re)assign the label of this example to this string")
       
