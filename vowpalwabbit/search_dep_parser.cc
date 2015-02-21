@@ -197,14 +197,14 @@ namespace DepParserTask {
         children[0][idx]++;
         tags[stack.last()] = t_id;
 		srn.loss((gold_heads[stack.last()] != heads[stack.last()])+(gold_tags[stack.last()] != t_id));
-		/*
-		if(gold_heads[stack.last()] != heads[stack.last()])
+		
+/*		if(gold_heads[stack.last()] != heads[stack.last()])
 			srn.loss(2);
 		else if (gold_tags[stack.last()] != t_id)
 			srn.loss(1);
 		else
 			srn.loss(0);
-			*/
+*/			
 //        srn.loss((gold_heads[stack.last()] != heads[stack.last()]) + (gold_tags[stack.last()] != t_id));
         stack.pop();
         return idx;
@@ -543,10 +543,10 @@ namespace DepParserTask {
       idx = transition_hybrid(srn, a_id, idx, t_id);
     }
 
-	if(data->root_label!=0){
+//	if(data->root_label!=0){
 	    heads[stack.last()] = 0;
 	    tags[stack.last()] = data->root_label;
-	}
+//	}
 //	else
 
     cdep << "root link to the last element in stack" <<  "root ====> " << (stack.last()) << endl;
