@@ -313,7 +313,7 @@ namespace DepParserTask {
     // feature based on top three examples in stack
     // ec_buf[0]: s1, ec_buf[1]: s2, ec_buf[2]: s3
     for(size_t i=0; i<3; i++)
-      ec_buf[i] = (stack.size()>i) ? ec[*(stack.end-(i+1))-1] : 0;
+      ec_buf[i] = (stack.size()>i && *(stack.end-(i+1))!=0) ? ec[*(stack.end-(i+1))-1] : 0;
 
     // features based on examples in string buffer
     // ec_buf[3]: b1, ec_buf[4]: b2, ec_buf[5]: b3
@@ -324,7 +324,7 @@ namespace DepParserTask {
     // ec_buf[6]: sl1, ec_buf[7]: sl2, ec_buf[8]: sr1, ec_buf[9]: sr2;
 
     for(size_t i=6; i<10; i++)
-      if (!stack.empty() && children[i-4][stack.last()]!=0)
+      if (!stack.empty() && stack.last() != 0&& children[i-4][stack.last()]!=0)
         ec_buf[i] = ec[children[i-4][stack.last()]-1];
 
     // features based on leftmost children of the top element in bufer
@@ -398,7 +398,7 @@ namespace DepParserTask {
     data->ex->total_sum_feat_sq = (float) count;
   }
 
-  void get_valid_actions(v_array<uint32_t> & valid_action, uint32_t idx, uint32_t n, uint32_t stack_depth) {
+  void get_valid_actions(v_array<uint32_t> & valid_action, uint32_t idx, uint32_t n, uint32_t stack_depth, uint32_t state) {
     valid_action.erase();
     // SHIFT
     if(idx<=n)
@@ -409,7 +409,7 @@ namespace DepParserTask {
       valid_action.push_back(2);
 
     // LEFT
-    if(stack_depth >=1 && idx<=n)
+    if(stack_depth >=1 && state!=0 && idx<=n)
       valid_action.push_back(3);
   }
 
@@ -485,7 +485,7 @@ namespace DepParserTask {
     v_array<uint32_t> &stack=data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags, &valid_labels=data->valid_labels;
     uint32_t n = (uint32_t) ec.size();
 
-    uint32_t idx = 2;
+
 
     // initialization
     if(!data->my_init_flag) {
@@ -506,7 +506,8 @@ namespace DepParserTask {
       tags[i+1] = -1;
     }
     stack.erase();
-    stack.push_back(1);
+   	stack.push_back((data->root_label==0)?0:1);
+    uint32_t idx = ((data->root_label==0)?1:2);
     for(size_t i=0; i<6; i++){
       data->children[i].resize(ec.size()+1, true);
       for(size_t j=0; j<ec.size()+1; j++)
@@ -518,7 +519,7 @@ namespace DepParserTask {
     while(stack.size()>1 || idx <= n){
       if(srn.predictNeedsExample())
         extract_features(srn, idx, ec);
-      get_valid_actions(valid_actions, idx, n, (uint32_t) stack.size());
+      get_valid_actions(valid_actions, idx, n, (uint32_t) stack.size(), stack.last());
       uint32_t gold_action = get_gold_actions(srn, idx, n);
       if(data->bad_ref)
 		  gold_action = valid_actions[0];
@@ -541,8 +542,13 @@ namespace DepParserTask {
       }
       idx = transition_hybrid(srn, a_id, idx, t_id);
     }
-    heads[stack.last()] = 0;
-    tags[stack.last()] = data->root_label;
+
+	if(data->root_label!=0){
+	    heads[stack.last()] = 0;
+	    tags[stack.last()] = data->root_label;
+	}
+//	else
+
     cdep << "root link to the last element in stack" <<  "root ====> " << (stack.last()) << endl;
     srn.loss((gold_heads[stack.last()] != heads[stack.last()]));
     if (srn.output().good())
