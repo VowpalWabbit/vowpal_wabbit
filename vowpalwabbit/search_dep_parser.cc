@@ -454,20 +454,33 @@ namespace DepParserTask {
 		gold_action_reward[i] = 500;
 
     // dependency with SHIFT
-    for(uint32_t i = 0; i<stack.size(); i++)
+    for(uint32_t i = 0; i<stack.size()-1; i++)
    	  if(idx <=n && (gold_heads[stack[i]] == idx || gold_heads[idx] == stack[i]))
 		  gold_action_reward[1] -= 1;
+
+ 	if(stack.size()>0 && gold_heads[stack.last()] == idx)
+	  gold_action_reward[1] -= 1;
 
     // dependency with left and right
     for(uint32_t i = idx+1; i<=n; i++)
    	  if(gold_heads[i] == stack.last()|| gold_heads[stack.last()] == i) {
-          gold_action_reward[2] -=1;
 		  gold_action_reward[3] -=1;
 	  }
+	if(gold_heads[idx] == stack.last())
+		  gold_action_reward[3] -=1;
+
+	if(stack.size()>=2 && gold_heads[stack.last()] == stack[stack.size()-2])
+		gold_action_reward[3] -= 1;
+
+	if(gold_heads[stack.last()] >=idx)
+		gold_action_reward[2] -=1;
+
+	for(uint32_t i = idx; i<=n; i++)
+   	  if(gold_heads[i] == stack.last())
+          gold_action_reward[2] -=1;
 
 	// break the tie between left and right
-	if(stack.size()>=2 && gold_heads[stack.last()] == stack[stack.size()-2])
-		gold_action_reward[3] -= 10;
+
 
 	// remove invalid actions
 	for(size_t i=1; i<=3; i++)
