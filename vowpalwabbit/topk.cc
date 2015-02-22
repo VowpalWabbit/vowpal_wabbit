@@ -49,7 +49,7 @@ void print_result(int f, priority_queue<scored_example, vector<scored_example>, 
       ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
 #endif
       if (t != len)
-        cerr << "write error" << endl;
+        cerr << "write error: " << strerror(errno) << endl;
     }    
 }
 
