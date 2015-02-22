@@ -178,13 +178,13 @@ namespace DepParserTask {
         children[4][stack[stack.size()-2]]=stack.last();
         children[1][stack[stack.size()-2]]++;
         tags[stack.last()] = t_id;
-		srn.loss((gold_heads[stack.last()] != heads[stack.last()])+(gold_tags[stack.last()] != t_id));
-/*		if(gold_heads[stack.last()] != heads[stack.last()])
+//		srn.loss((gold_heads[stack.last()] != heads[stack.last()])+(gold_tags[stack.last()] != t_id));
+		if(gold_heads[stack.last()] != heads[stack.last()])
 			srn.loss(2);
 		else if (gold_tags[stack.last()] != t_id)
 			srn.loss(1);
 		else
-			srn.loss(0);*/
+			srn.loss(0);
         stack.pop();
         return idx;
 
@@ -196,15 +196,15 @@ namespace DepParserTask {
         children[2][idx]=stack.last();
         children[0][idx]++;
         tags[stack.last()] = t_id;
-		srn.loss((gold_heads[stack.last()] != heads[stack.last()])+(gold_tags[stack.last()] != t_id));
+//		srn.loss((gold_heads[stack.last()] != heads[stack.last()])+(gold_tags[stack.last()] != t_id));
 		
-/*		if(gold_heads[stack.last()] != heads[stack.last()])
+		if(gold_heads[stack.last()] != heads[stack.last()])
 			srn.loss(2);
 		else if (gold_tags[stack.last()] != t_id)
 			srn.loss(1);
 		else
 			srn.loss(0);
-*/			
+
 //        srn.loss((gold_heads[stack.last()] != heads[stack.last()]) + (gold_tags[stack.last()] != t_id));
         stack.pop();
         return idx;
@@ -229,15 +229,16 @@ namespace DepParserTask {
     fs_idx_map["b1"]=3, fs_idx_map["b2"]=4, fs_idx_map["b3"]=5;
     fs_idx_map["sl1"]=6, fs_idx_map["sl2"]=7, fs_idx_map["sr1"]=8;
     fs_idx_map["sr2"]=9, fs_idx_map["bl1"]=10, fs_idx_map["bl2"]=11;
+	fs_idx_map["s21"]=12;
 
     data->ex->indices.push_back(val_namespace);
-    for(size_t i=0; i<12*nfs; i++)
+    for(size_t i=0; i<13*nfs; i++)
       data->ex->indices.push_back((unsigned char)i);
 
     size_t pos = 0;
     if(!data->no_quadratic_features){
       // quadratic feature encoding
-      string quadratic_feature_template = "s1-s2 s1-b1 s1-s1 s2-s2 s3-s3 b1-b1 b2-b2 b3-b3 b1-b2 s1-sl1 s1-sr1 b1-bl1 ENDQ";
+      string quadratic_feature_template = "s1-s2 s1-b1 s1-s1 s2-s2 s3-s3 b1-b1 b2-b2 b3-b3 b1-b2 s1-sl1 s1-sr1 b1-bl1 s1-b1-sl1 s1-b1-s21 s1-b1-sr1 ENDQ";
 
       // Generate quadratic features templete
       while ((pos = quadratic_feature_template.find(" ")) != std::string::npos) {
@@ -307,7 +308,7 @@ namespace DepParserTask {
     // be careful: indices in ec starts from 0, but i is starts from 1
     size_t n = ec.size();
     // use this buffer to c_vw()ect the examples, default value: NULL
-    for(size_t i=0; i<12; i++)
+    for(size_t i=0; i<13; i++)
       ec_buf[i] = 0;
 
     // feature based on top three examples in stack
@@ -332,13 +333,15 @@ namespace DepParserTask {
     for(size_t i=10; i<12; i++)
       ec_buf[i] = (idx <=n && children[i-8][idx]!=0)? ec[children[i-8][idx]-1] : 0;
 
+	// ec_buf[13]
+    ec_buf[12] = (stack.size()>1 && *(stack.end-2)!=0 && children[2][*(stack.end-2)]!=0)? ec[children[2][*(stack.end-2)]-1]:0;
 
     cdep << "start generating features";
 
     // unigram features
     size_t nfs = data->nfs;
     uint64_t v0;
-    for(size_t i=0; i<12; i++) {
+    for(size_t i=0; i<13; i++) {
       unsigned char j=0;
       for (unsigned char* fs = ec[0]->indices.begin; fs != ec[0]->indices.end; fs++) {
         if(*fs == constant_namespace) // ignore constant_namespace
@@ -367,7 +370,7 @@ namespace DepParserTask {
 
     // #left child of rightmost item in buf
     temp[3] = idx>n? 1: 1+min(5 , children[0][idx]);
-	/*
+	
     for(size_t i=4; i<8; i++)
       if (!stack.empty() && children[i-2][stack.last()]!=0)
         temp[i] = tags[children[i-2][stack.last()]];
@@ -378,10 +381,11 @@ namespace DepParserTask {
     // ec_buf[10]: bl1, ec_buf[11]: bl2
     for(size_t i=8; i<10; i++)
         temp[i] = (idx <=n && children[i-6][idx]!=0)? tags[children[i-6][idx]] : 15;
-	*/
+	
 
     size_t additional_offset = val_namespace*offset_const; 
-    for(int j=0; j< 4;j++) {
+    for(int j=0; j< 10;j++) {
+ 	  additional_offset += j* 1023;
       add_feature(&ex, temp[j]+ additional_offset , val_namespace, mask, ss);
 	}
     // action history
