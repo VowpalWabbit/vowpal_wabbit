@@ -55,7 +55,7 @@ Options that were passed to `./configure` in 7.6 and earlier may now be passed
 to `./autogen.sh`.
 
 Be sure to read the wiki: https://github.com/JohnLangford/vowpal_wabbit/wiki
-for the tutorial, command line options, etc.  
+for the tutorial, command line options, etc.
 
 The 'cluster' directory has it's own documentation for cluster
 parallel use, and the examples at the end of test/Runtests give some
@@ -63,10 +63,16 @@ example flags.
 
 ## Mac OS X-specific info
 
-OSX requires _glibtools_, which is available via the [brew](http://brew.sh) or 
+OSX requires _glibtools_, which is available via the [brew](http://brew.sh) or
 [MacPorts](https://www.macports.org) package managers.
 
-### brew
+### Complete brew install of 7.10
+```
+brew install vowpal-wabbit
+```
+[The homebrew formula for VW is located on github](https://github.com/Homebrew/homebrew/blob/master/Library/Formula/vowpal-wabbit.rb).
+
+### brew install dependencies + manual install of vowpal wabbit
 ```
 brew install libtool
 brew install boost --with-python
