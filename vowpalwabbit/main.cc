@@ -25,13 +25,36 @@ int main(int argc, char *argv[])
     
     if (!all.quiet && !all.bfgs && !all.searchstr)
         {
-        const char * header_fmt = "%-10s %-10s %10s %11s %8s %8s %8s\n";
-        fprintf(stderr, header_fmt,
-                "average", "since", "example", "example",
-                "current", "current", "current");
-        fprintf(stderr, header_fmt,
-                "loss", "last", "counter", "weight", "label", "predict", "features");
-        cerr.precision(5);
+	std::cerr << std::setw(10) << "average"
+		  << " "
+		  << std::setw(10) << "since"
+		  << " "
+		  << std::setw(10) << "example"
+		  << " "
+		  << std::setw(11) << "example"
+		  << " "
+		  << std::setw(8) << "current"
+		  << " "
+		  << std::setw(8) << "current"
+		  << " "
+		  << std::setw(8) << "current"
+		  << std::endl;
+	std::cerr << std::setw(10) << "loss"
+		  << " "
+		  << std::setw(10) << "last"
+		  << " "
+		  << std::setw(10) << "counter"
+		  << " "
+		  << std::setw(11) << "weight"
+		  << " "
+		  << std::setw(8) << "label"
+		  << " "
+		  << std::setw(8) << "predict"
+		  << " "
+		  << std::setw(8) << "features"
+		  << std::endl;
+
+	std::cerr.precision(5);
         }
 
     VW::start_parser(all);

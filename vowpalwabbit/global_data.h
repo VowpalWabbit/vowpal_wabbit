@@ -4,6 +4,8 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
+#include <iostream>
+#include <iomanip>
 #include <vector>
 #include <map>
 #include <stdint.h>
@@ -187,38 +189,61 @@ struct shared_data {
   void print_update(bool holdout_set_off, size_t current_pass, char* label_buf, char* pred_buf, 
 		    size_t num_features, bool progress_add, float progress_arg)
   {
+    std::streamsize saved_w = std::cerr.width();
+    std::streamsize saved_prec = std::cerr.precision();
+    std::ios_base::fmtflags saved_f = std::cerr.flags();
+    bool holding_out = false;
+
     if(!holdout_set_off && current_pass >= 1)
       {
 	if(holdout_sum_loss == 0. && weighted_holdout_examples == 0.)
-	  fprintf(stderr, " unknown   ");
+	  std::cerr << " unknown   ";
 	else
-	  fprintf(stderr, "%-10.6f " , holdout_sum_loss/weighted_holdout_examples);
-	
+	  std::cerr << std::setw(10) << std::setprecision(6) << std::fixed << std::right
+		    << (holdout_sum_loss / weighted_holdout_examples)
+		    << " ";
+
 	if(holdout_sum_loss_since_last_dump == 0. && weighted_holdout_examples_since_last_dump == 0.)
-	  fprintf(stderr, " unknown   ");
+	  std::cerr << " unknown  ";
 	else
-	  fprintf(stderr, "%-10.6f " , holdout_sum_loss_since_last_dump/weighted_holdout_examples_since_last_dump);
+	  std::cerr << std::setw(10) << std::setprecision(6) << std::fixed << std::right
+		    << (holdout_sum_loss_since_last_dump/weighted_holdout_examples_since_last_dump);
 	
 	weighted_holdout_examples_since_last_dump = 0;
 	holdout_sum_loss_since_last_dump = 0.0;
 	
-	fprintf(stderr, "%8ld %8.1f   %s %s %8lu h\n",
-		(long int)example_number,
-		weighted_examples,
-		label_buf,
-		pred_buf,
-		num_features);
+	holding_out = true;
       }
     else
-      fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %s %8lu\n",
-	      sum_loss/weighted_examples,
-	      sum_loss_since_last_dump / (weighted_examples - old_weighted_examples),
-	      (long int)example_number,
-	      weighted_examples,
-	      label_buf,
-	      pred_buf,
-	      (long unsigned int)num_features);
-    fflush(stderr);
+      {
+	std::cerr << std::setw(10) << std::setprecision(6) << std::right << std::fixed
+		  << (sum_loss / weighted_examples)
+		  << " "
+	          << std::setw(10) << std::setprecision(6) << std::right << std::fixed
+		  << (sum_loss_since_last_dump / (weighted_examples - old_weighted_examples));
+      }
+
+    std::cerr << " "
+	      << std::setw(10) << std::right << example_number
+	      << " "
+	      << std::setw(11) << std::setprecision(1) << std::right << weighted_examples
+	      << " "
+	      << std::setw(8) << std::right << label_buf
+	      << " "
+	      << std::setw(8) << std::right << pred_buf
+	      << " "
+	      << std::setw(8) << std::right << num_features;
+
+    if (holding_out)
+	std::cerr << " h";
+
+    std::cerr << std::endl;
+    std::cerr.flush();
+
+    std::cerr.width(saved_w);
+    std::cerr.precision(saved_prec);
+    std::cerr.setf(saved_f);
+
     update_dump_interval(progress_add, progress_arg);
   }
 };
