@@ -1,4 +1,5 @@
-#include <limits.h>
+#include <cstring>
+#include <climits>
 #include "global_data.h"
 #include "vw.h"
 
@@ -6,9 +7,9 @@ namespace MULTICLASS {
 
   char* bufread_label(label_t* ld, char* c)
   {
-    ld->label = *(uint32_t *)c;
+    memcpy(&ld->label, c, sizeof(ld->label));
     c += sizeof(ld->label);
-    ld->weight = *(float *)c;
+    memcpy(&ld->weight, c, sizeof(ld->weight));
     c += sizeof(ld->weight);
     return c;
   }
@@ -33,9 +34,9 @@ namespace MULTICLASS {
   
   char* bufcache_label(label_t* ld, char* c)
   {
-    *(uint32_t *)c = ld->label;
+    memcpy(c, &ld->label, sizeof(ld->label));
     c += sizeof(ld->label);
-    *(float *)c = ld->weight;
+    memcpy(c, &ld->weight, sizeof(ld->weight));
     c += sizeof(ld->weight);
     return c;
   }

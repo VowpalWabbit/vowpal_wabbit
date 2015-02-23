@@ -1,3 +1,4 @@
+#include <cstring>
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
@@ -10,11 +11,11 @@ using namespace std;
 
 char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 {
-  ld->label = *(float *)c;
+  memcpy(&ld->label, c, sizeof(ld->label));
   c += sizeof(ld->label);
-  ld->weight = *(float *)c;
+  memcpy(&ld->weight, c, sizeof(ld->weight));
   c += sizeof(ld->weight);
-  ld->initial = *(float *)c;
+  memcpy(&ld->initial, c, sizeof(ld->initial));
   c += sizeof(ld->initial);
 
   count_label(ld->label);
@@ -41,11 +42,11 @@ float get_weight(void* v)
 
 char* bufcache_simple_label(label_data* ld, char* c)
 {
-  *(float *)c = ld->label;
+  memcpy(c, &ld->label, sizeof(ld->label));
   c += sizeof(ld->label);
-  *(float *)c = ld->weight;
+  memcpy(c, &ld->weight, sizeof(ld->weight));
   c += sizeof(ld->weight);
-  *(float *)c = ld->initial;
+  memcpy(c, &ld->initial, sizeof(ld->initial));
   c += sizeof(ld->initial);
   return c;
 }
