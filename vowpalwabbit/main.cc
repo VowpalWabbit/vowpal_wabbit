@@ -25,36 +25,34 @@ int main(int argc, char *argv[])
     
     if (!all.quiet && !all.bfgs && !all.searchstr)
         {
-	std::cerr << std::setw(10) << "average"
-		  << " "
-		  << std::setw(10) << "since"
-		  << " "
-		  << std::setw(10) << "example"
-		  << " "
-		  << std::setw(11) << "example"
-		  << " "
-		  << std::setw(8) << "current"
-		  << " "
-		  << std::setw(8) << "current"
-		  << " "
-		  << std::setw(8) << "current"
-		  << std::endl;
-	std::cerr << std::setw(10) << "loss"
-		  << " "
-		  << std::setw(10) << "last"
-		  << " "
-		  << std::setw(10) << "counter"
-		  << " "
-		  << std::setw(11) << "weight"
-		  << " "
-		  << std::setw(8) << "label"
-		  << " "
-		  << std::setw(8) << "predict"
-		  << " "
-		  << std::setw(8) << "features"
-		  << std::endl;
-
-	std::cerr.precision(5);
+        	std::cerr << std::setw(shared_data::col_avg_loss) << "average"
+        		  << " "
+        		  << std::setw(shared_data::col_since_last) << "since"
+        		  << " "
+        		  << std::setw(shared_data::col_example_counter) << "example"
+        		  << " "
+        		  << std::setw(shared_data::col_example_weight) << "example"
+        		  << " "
+        		  << std::setw(shared_data::col_current_label) << "current"
+        		  << " "
+        		  << std::setw(shared_data::col_current_predict) << "current"
+        		  << " "
+        		  << std::setw(shared_data::col_current_features) << "current"
+        		  << std::endl;
+        	std::cerr << std::setw(shared_data::col_avg_loss) << "loss"
+        		  << " "
+        		  << std::setw(shared_data::col_since_last) << "last"
+        		  << " "
+        		  << std::setw(shared_data::col_example_counter) << "counter"
+        		  << " "
+        		  << std::setw(shared_data::col_example_weight) << "weight"
+        		  << " "
+        		  << std::setw(shared_data::col_current_label) << "label"
+        		  << " "
+        		  << std::setw(shared_data::col_current_predict) << "predict"
+        		  << " "
+        		  << std::setw(shared_data::col_current_features) << "features"
+        		  << std::endl;
         }
 
     VW::start_parser(all);

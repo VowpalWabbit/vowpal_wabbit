@@ -154,7 +154,19 @@ struct shared_data {
   double holdout_best_loss;
   double weighted_holdout_examples_since_last_pass;//reserved for best predictor selection
   double holdout_sum_loss_since_last_pass;
-  size_t holdout_best_pass; 
+  size_t holdout_best_pass;
+
+  // Column width, precision constants:
+  static const int col_avg_loss = 10;
+  static const int prec_avg_loss = 6;
+  static const int col_since_last = 10;
+  static const int prec_since_last = 6;
+  static const int col_example_counter = 11;
+  static const int col_example_weight = 12;
+  static const int prec_example_weight = 1;
+  static const int col_current_label = 8;
+  static const int col_current_predict = 8;
+  static const int col_current_features = 8;
 
   void update(bool test_example, float loss, float weight, size_t num_features)
   {
@@ -197,16 +209,17 @@ struct shared_data {
     if(!holdout_set_off && current_pass >= 1)
       {
 	if(holdout_sum_loss == 0. && weighted_holdout_examples == 0.)
-	  std::cerr << " unknown   ";
+	  std::cerr << std::setw(col_avg_loss) << std::left << " unknown";
 	else
-	  std::cerr << std::setw(10) << std::setprecision(6) << std::fixed << std::right
-		    << (holdout_sum_loss / weighted_holdout_examples)
-		    << " ";
+	  std::cerr << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::fixed << std::right
+		    << (holdout_sum_loss / weighted_holdout_examples);
+
+	std::cerr << " ";
 
 	if(holdout_sum_loss_since_last_dump == 0. && weighted_holdout_examples_since_last_dump == 0.)
-	  std::cerr << " unknown  ";
+	  std::cerr << std::setw(col_since_last) << std::left << " unknown";
 	else
-	  std::cerr << std::setw(10) << std::setprecision(6) << std::fixed << std::right
+	  std::cerr << std::setw(col_since_last) << std::setprecision(prec_since_last) << std::fixed << std::right
 		    << (holdout_sum_loss_since_last_dump/weighted_holdout_examples_since_last_dump);
 	
 	weighted_holdout_examples_since_last_dump = 0;
@@ -216,23 +229,23 @@ struct shared_data {
       }
     else
       {
-	std::cerr << std::setw(10) << std::setprecision(6) << std::right << std::fixed
+	std::cerr << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::right << std::fixed
 		  << (sum_loss / weighted_examples)
 		  << " "
-	          << std::setw(10) << std::setprecision(6) << std::right << std::fixed
+	          << std::setw(col_since_last) << std::setprecision(prec_avg_loss) << std::right << std::fixed
 		  << (sum_loss_since_last_dump / (weighted_examples - old_weighted_examples));
       }
 
     std::cerr << " "
-	      << std::setw(10) << std::right << example_number
+	      << std::setw(col_example_counter) << std::right << example_number
 	      << " "
-	      << std::setw(11) << std::setprecision(1) << std::right << weighted_examples
+	      << std::setw(col_example_weight) << std::setprecision(prec_example_weight) << std::right << weighted_examples
 	      << " "
-	      << std::setw(8) << std::right << label_buf
+	      << std::setw(col_current_label) << std::right << label_buf
 	      << " "
-	      << std::setw(8) << std::right << pred_buf
+	      << std::setw(col_current_predict) << std::right << pred_buf
 	      << " "
-	      << std::setw(8) << std::right << num_features;
+	      << std::setw(col_current_features) << std::right << num_features;
 
     if (holding_out)
 	std::cerr << " h";
