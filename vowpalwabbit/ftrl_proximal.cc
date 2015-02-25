@@ -42,6 +42,7 @@ struct update_data {
   float ftrl_beta;
   float l1_lambda;
   float l2_lambda;
+  float t;
 };
 
 void inner_update_proximal(update_data& d, float x, float& wref) {
@@ -62,13 +63,25 @@ void inner_update_proximal(update_data& d, float x, float& wref) {
 }
 
 void inner_update_adagrad(update_data& d, float x, float& wref) {
+  /* Adagrad "Primal-dual" update
+   * It is nothing else than a FTRL algorithm
+   * Note that equation (19) in Duchi et al. JMLR'11 is wrong, the one below is the correct one
+   */
+
   float* w = &wref;
   float gradient = d.update * x;
   
-  w[W_ZT] += -gradient - d.l2_lambda * w[W_XT];
+  w[W_ZT] += -gradient;
   w[W_G2] += gradient * gradient;
   
-  w[W_XT] = d.ftrl_alpha*w[W_ZT]/sqrtf(w[W_G2]+d.ftrl_beta);
+  float flag = sign(w[W_ZT]);
+  float fabs_zt = w[W_ZT] * flag;
+  if (fabs_zt <= d.l1_lambda*d.t) 
+    w[W_XT] = 0.;
+  else {
+    float step = d.ftrl_alpha/(sqrtf(w[W_G2])+d.ftrl_beta);
+    w[W_XT] = step * flag * (fabs_zt - d.l1_lambda*d.t);
+  }
 }
 
 void update(ftrl& b, example& ec)
@@ -80,6 +93,7 @@ void update(ftrl& b, example& ec)
   data.ftrl_beta = b.ftrl_beta;
   data.l1_lambda = b.all->l1_lambda;
   data.l2_lambda = b.all->l2_lambda;
+  data.t = b.all->sd->t;
   
   if (b.proximal)
     GD::foreach_feature<update_data, inner_update_proximal>(*b.all, ec, data);
@@ -138,7 +152,7 @@ base_learner* ftrl_setup(vw& all)
     b.proximal = true;
   else if (ftrl_algo.compare("adagrad") == 0)
     b.adagrad = true;
-      
+  
   all.reg.stride_shift = 2; // NOTE: for more parameter storage
   
   if (!all.quiet) {
