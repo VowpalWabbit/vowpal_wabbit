@@ -213,12 +213,12 @@ int main(int argc, char *argv[])
 
                                 if(pr_queue.size() < (size_t)topk)
                                 {        
-				  pr_queue.push(make_pair(((label_data*)ex->ld)->prediction, str));
+				  pr_queue.push(make_pair(ex->pred.scalar, str));
                                 }
-                                else if(pr_queue.top().first < ((label_data*)ex->ld)->prediction)
+                                else if(pr_queue.top().first < ex->pred.scalar)
                                 {
                                         pr_queue.pop();
-                                        pr_queue.push(make_pair(((label_data*)ex->ld)->prediction, str));
+                                        pr_queue.push(make_pair(ex->pred.scalar, str));
                                 }
 
                                 VW::finish_example(*model, ex);

@@ -204,8 +204,8 @@
   </Target>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(BoostIncludeDir);$(ZlibIncludeDir);./win32;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\explore\static;$(BoostIncludeDir);$(ZlibIncludeDir);./win32;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>ZLIB_WINAPI;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion Condition="'$(Configuration)'=='Release'">AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed Condition="'$(Configuration)'=='Release'">Speed</FavorSizeOrSpeed>
@@ -249,6 +249,7 @@
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
     <ClInclude Include="gd.h" />
+    <ClInclude Include="ftrl_proximal.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="multiclass.h" />
     <ClInclude Include="cost_sensitive.h" />
@@ -278,6 +279,7 @@
     <ClInclude Include="scorer.h" />
     <ClInclude Include="search.h" />
     <ClInclude Include="search_sequencetask.h" />
+    <ClInclude Include="search_graph.h" />
     <ClInclude Include="search_multiclasstask.h" />
     <ClInclude Include="search_hooktask.h" />
     <ClInclude Include="search_entityrelationtask.h" />
@@ -305,8 +307,8 @@
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
     <ClCompile Include="gd.cc" />
+    <ClCompile Include="ftrl_proximal.cc" />
     <ClCompile Include="kernel_svm.cc" />
-    <ClCompile Include="memory.cc" />
     <ClCompile Include="multiclass.cc" />
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cb_algs.cc" />
@@ -314,6 +316,7 @@
     <ClCompile Include="gd_mf.cc" />
     <ClCompile Include="lrq.cc" />
     <ClCompile Include="log_multi.cc" />
+    <ClCompile Include="best_constant.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="hash.cc" />
     <ClCompile Include="io_buf.cc" />
@@ -334,6 +337,7 @@
     <ClCompile Include="rand48.cc" />
     <ClCompile Include="scorer.cc" />
     <ClCompile Include="search.cc" />
+    <ClCompile Include="search_graph.cc" />
     <ClCompile Include="search_multiclasstask.cc" />
     <ClCompile Include="search_hooktask.cc" />
     <ClCompile Include="search_sequencetask.cc" />

@@ -24,5 +24,4 @@ number of examples = 1000
 weighted example sum = 1000
 weighted label sum = 0
 average loss = 14.3326
-best constant = -nan
 total feature number = 193156

@@ -7,8 +7,6 @@ license as described in the file LICENSE.
 #include "unique_sort.h"
 #include "global_data.h"
 
-using namespace std;
-
 const size_t neg_1 = 1;
 const size_t general = 2;
 
@@ -40,9 +38,7 @@ size_t read_cached_tag(io_buf& cache, example* ae)
   return tag_size+sizeof(tag_size);
 }
 
-struct one_float {
-  float f;
-}
+struct one_float { float f; }
 #ifndef _WIN32
 __attribute__((packed))
 #endif
@@ -55,7 +51,7 @@ int read_cached_features(void* in, example* ec)
   ae->sorted = all->p->sorted_cache;
   io_buf* input = all->p->input;
 
-  size_t total = all->p->lp.read_cached_label(all->sd, ae->ld, *input);
+  size_t total = all->p->lp.read_cached_label(all->sd, &ae->l, *input);
   if (total == 0)
     return 0;
   if (read_cached_tag(*input,ae) == 0)

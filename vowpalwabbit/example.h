@@ -6,6 +6,10 @@ license as described in the file LICENSE.
 #pragma once
 #include <stdint.h>
 #include "v_array.h"
+#include "simple_label.h"
+#include "multiclass.h"
+#include "cost_sensitive.h"
+#include "cb.h"
 
 const size_t wap_ldf_namespace  = 126;
 const size_t history_namespace  = 127;
@@ -32,19 +36,33 @@ struct audit_data {
   bool alloced;
 };
 
-struct example // core example datatype.
-{
-  void* ld;
+typedef union {
+  label_data simple;
+  MULTICLASS::label_t multi;
+  COST_SENSITIVE::label cs;
+  CB::label cb;
+  CB_EVAL::label cb_eval;
+} polylabel;
 
+typedef union {
+  float scalar;
+  uint32_t multiclass;
+} polyprediction;
+
+struct example // core example datatype.
+{//output prediction
+  polyprediction pred;
+
+  // input fields
+  polylabel l;
   v_array<char> tag;//An identifier for the example.
   size_t example_counter;
-
   v_array<unsigned char> indices;
   v_array<feature> atomics[256]; // raw parsed data
   uint32_t ft_offset;
   
-  v_array<audit_data> audit_features[256];
-  
+  //helpers
+  v_array<audit_data> audit_features[256];  
   size_t num_features;//precomputed, cause it's fast&easy.
   float partial_prediction;//shared data for prediction.
   float updated_prediction;//estimated post-update prediction.
@@ -65,19 +83,19 @@ struct example // core example datatype.
  
 struct flat_example 
 {
-	void* ld;  
+  polylabel l;
 
-	size_t tag_len;
-	char* tag;//An identifier for the example.  
-
-	size_t example_counter;  
-	uint32_t ft_offset;  
-	float global_weight;
-
-	size_t num_features;//precomputed, cause it's fast&easy.  
-        float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
-	size_t feature_map_len;
-	feature* feature_map; //map to store sparse feature vectors  
+  size_t tag_len;
+  char* tag;//An identifier for the example.  
+  
+  size_t example_counter;  
+  uint32_t ft_offset;  
+  float global_weight;
+  
+  size_t num_features;//precomputed, cause it's fast&easy.  
+  float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
+  size_t feature_map_len;
+  feature* feature_map; //map to store sparse feature vectors  
 };
 
 flat_example* flatten_example(vw& all, example *ec);

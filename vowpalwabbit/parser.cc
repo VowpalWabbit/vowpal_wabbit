@@ -45,18 +45,11 @@ int getpid()
 #include <assert.h>
 namespace po = boost::program_options;
 
-#include "parser.h"
-#include "global_data.h"
 #include "parse_example.h"
 #include "cache.h"
-#include "gd.h"
-#include "comp_io.h"
 #include "unique_sort.h"
 #include "constant.h"
-#include "example.h"
-#include "simple_label.h"
 #include "vw.h"
-#include "memory.h"
 
 using namespace std;
 
@@ -152,16 +145,16 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
 
 parser* new_parser()
 {
-  parser* ret = (parser*) calloc_or_die(1,sizeof(parser));
-  ret->input = new io_buf;
-  ret->output = new io_buf;
-  ret->local_example_number = 0;
-  ret->in_pass_counter = 0;
-  ret->ring_size = 1 << 8;
-  ret->done = false;
-  ret->used_index = 0;
+  parser& ret = calloc_or_die<parser>();
+  ret.input = new io_buf;
+  ret.output = new io_buf;
+  ret.local_example_number = 0;
+  ret.in_pass_counter = 0;
+  ret.ring_size = 1 << 8;
+  ret.done = false;
+  ret.used_index = 0;
 
-  return ret;
+  return &ret;
 }
 
 void set_compressed(parser* par){
@@ -172,7 +165,7 @@ void set_compressed(parser* par){
 
 uint32_t cache_numbits(io_buf* buf, int filepointer)
 {
-  v_array<char> t;
+  v_array<char> t = v_init<char>();
 
   uint32_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
@@ -240,14 +233,17 @@ void reset_source(vw& all, size_t numbits)
       all.p->output->flush();
       all.p->write_cache = false;
       all.p->output->close_file();
-	  remove(all.p->output->finalname.begin);
+      remove(all.p->output->finalname.begin);
       rename(all.p->output->currentname.begin, all.p->output->finalname.begin);
-      while(input->files.size() > 0)
-	{
-	  int fd = input->files.pop();
-	  if (!member(all.final_prediction_sink, (size_t) fd))
-	    io_buf::close_file_or_socket(fd);
-	}
+      while(input->num_files() > 0)
+	if (input->compressed())
+	  input->close_file();
+	else
+	  {
+	    int fd = input->files.pop();
+	    if (!member(all.final_prediction_sink, (size_t) fd))
+	      io_buf::close_file_or_socket(fd);
+	  }
       input->open_file(all.p->output->finalname.begin, all.stdin_off, io_buf::READ); //pushing is merged into open_file
       all.p->reader = read_cached_features;
     }
@@ -401,10 +397,10 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
 # define MAP_ANONYMOUS MAP_ANON
 #endif
 
-void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
+void enable_sources(vw& all, bool quiet, size_t passes)
 {
   all.p->input->current = 0;
-  parse_cache(all, vm, all.data_filename, quiet);
+  parse_cache(all, all.vm, all.data_filename, quiet);
 
   if (all.daemon || all.active)
     {
@@ -423,12 +419,17 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
       if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
 	cerr << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 
+      // Enable TCP Keep Alive to prevent socket leaks
+      int enableTKA = 1;
+      if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
+        cerr << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
+
       sockaddr_in address;
       address.sin_family = AF_INET;
       address.sin_addr.s_addr = htonl(INADDR_ANY);
       short unsigned int port = 26542;
-      if (vm.count("port"))
-	port = (uint16_t)vm["port"].as<size_t>();
+      if (all.vm.count("port"))
+	port = (uint16_t)all.vm["port"].as<size_t>();
       address.sin_port = htons(port);
 
       // attempt to bind to socket
@@ -445,7 +446,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
       }
 
       // write port file
-      if (vm.count("port_file"))
+      if (all.vm.count("port_file"))
 	{
           socklen_t address_size = sizeof(address);
           if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
@@ -453,7 +454,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
               cerr << "getsockname: " << strerror(errno) << endl;
             }
 	  ofstream port_file;
-	  port_file.open(vm["port_file"].as<string>().c_str());
+	  port_file.open(all.vm["port_file"].as<string>().c_str());
 	  if (!port_file.is_open())
 	    {
 	      cerr << "error writing port file" << endl;
@@ -470,10 +471,10 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
 	  throw exception();
 	}
       // write pid file
-      if (vm.count("pid_file"))
+      if (all.vm.count("pid_file"))
 	{
 	  ofstream pid_file;
-	  pid_file.open(vm["pid_file"].as<string>().c_str());
+	  pid_file.open(all.vm["pid_file"].as<string>().c_str());
 	  if (!pid_file.is_open())
 	    {
 	      cerr << "error writing pid file" << endl;
@@ -508,7 +509,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
 
 	  // create children
 	  size_t num_children = all.num_children;
-	  v_array<int> children;
+	  v_array<int> children = v_init<int>();
 	  children.resize(num_children);
 	  for (size_t i = 0; i < num_children; i++)
 	    {
@@ -593,7 +594,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
       }
       all.p->resettable = all.p->write_cache || all.daemon;
     }
-  else  // was: else if (vm.count("data"))
+  else  
     {
       if (all.p->input->files.size() > 0)
 	{
@@ -740,7 +741,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
 
   if (all.p->write_cache) 
     {
-      all.p->lp.cache_label(ae->ld,*(all.p->output));
+      all.p->lp.cache_label(&ae->l,*(all.p->output));
       cache_features(*(all.p->output), ae, (uint32_t)all.parse_mask);
     }
   return true;
@@ -748,9 +749,22 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
 
 void end_pass_example(vw& all, example* ae)
 {
-  all.p->lp.default_label(ae->ld);
+  all.p->lp.default_label(&ae->l);
   ae->end_pass = true;
   all.p->in_pass_counter = 0;
+}
+
+void feature_limit(vw& all, example* ex)
+{
+  for(unsigned char* index = ex->indices.begin; index < ex->indices.end; index++)
+    if (all.limit[*index] < ex->atomics[*index].size())
+      {
+	v_array<feature>& features = ex->atomics[*index];
+	
+	qsort(features.begin, features.size(), sizeof(feature), order_features);
+	
+	unique_features(features, all.limit[*index]);
+      }
 }
 
 namespace VW{
@@ -770,7 +784,7 @@ void setup_example(vw& all, example* ae)
   if (all.p->emptylines_separate_examples && example_is_newline(*ae))
     all.p->in_pass_counter++;
   
-  all.sd->t += all.p->lp.get_weight(ae->ld);
+  all.sd->t += all.p->lp.get_weight(&ae->l);
   ae->example_t = (float)all.sd->t;
 
   
@@ -801,6 +815,9 @@ void setup_example(vw& all, example* ae)
     ae->atomics[constant_namespace].push_back(temp);
     ae->total_sum_feat_sq++;
   }
+
+  if(all.limit_strings.size() > 0)
+    feature_limit(all,ae);
   
   uint32_t multiplier = all.wpp << all.reg.stride_shift;
   if(multiplier != 1) //make room for per-feature information.
@@ -820,49 +837,29 @@ void setup_example(vw& all, example* ae)
       ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
     }
 
-  if (all.rank == 0) {
-    for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
-      {
-	ae->num_features 
-	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin)
-	  *(ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin);
-	ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]]*ae->sum_feat_sq[(int)(*i)[1]];
-      }
-
-    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
-      {
-	ae->num_features 
-	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin)
-            *(ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin)
-            *(ae->atomics[(int)(*i)[2]].end - ae->atomics[(int)(*i)[2]].begin);
-	ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]] * ae->sum_feat_sq[(int)(*i)[1]] * ae->sum_feat_sq[(int)(*i)[2]];
-      }
-
-  } else {
-    for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
-      {
-	ae->num_features
-	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin) * all.rank;
-	ae->num_features
-	  += (ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin) * all.rank;
-      }
-    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
-      {
-	ae->num_features
-	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin) * all.rank;
-	ae->num_features
-	  += (ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin) * all.rank;
-	ae->num_features
-	  += (ae->atomics[(int)(*i)[2]].end - ae->atomics[(int)(*i)[2]].begin) * all.rank;
-      }
-  }
+  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
+    {
+      ae->num_features 
+	+= ae->atomics[(int)(*i)[0]].size()
+	*ae->atomics[(int)(*i)[1]].size();
+      ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]]*ae->sum_feat_sq[(int)(*i)[1]];
+    }
+  
+  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
+    {
+      ae->num_features 
+	+= ae->atomics[(int)(*i)[0]].size()
+	*ae->atomics[(int)(*i)[1]].size()
+	*ae->atomics[(int)(*i)[2]].size();
+      ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]] * ae->sum_feat_sq[(int)(*i)[1]] * ae->sum_feat_sq[(int)(*i)[2]];
+    }
 }
 }
 
 namespace VW{
   example* new_unused_example(vw& all) { 
     example* ec = get_unused_example(all);
-    all.p->lp.default_label(ec->ld);
+    all.p->lp.default_label(&ec->l);
     all.p->begin_parsed_examples++;
     ec->example_counter = all.p->begin_parsed_examples;
     return ec;
@@ -892,16 +889,15 @@ namespace VW{
 
   void add_label(example* ec, float label, float weight, float base)
   {
-    label_data* l = (label_data*)ec->ld;
-    l->label = label;
-    l->weight = weight;
-    l->initial = base;
+    ec->l.simple.label = label;
+    ec->l.simple.weight = weight;
+    ec->l.simple.initial = base;
   }
 
   example* import_example(vw& all, vector<feature_space> vf)
   {
     example* ret = get_unused_example(all);
-    all.p->lp.default_label(ret->ld);
+    all.p->lp.default_label(&ret->l);
     for (size_t i = 0; i < vf.size();i++)
       {
 	uint32_t index = vf[i].first;
@@ -921,7 +917,7 @@ namespace VW{
   example* import_example(vw& all, primitive_feature_space* features, size_t len)
   {
     example* ret = get_unused_example(all);
-    all.p->lp.default_label(ret->ld);
+    all.p->lp.default_label(&ret->l);
     for (size_t i = 0; i < len;i++)
       {
 	uint32_t index = features[i].name;
@@ -971,11 +967,11 @@ namespace VW{
   }
 
   void parse_example_label(vw& all, example&ec, string label) {
-    v_array<substring> words;
+    v_array<substring> words = v_init<substring>();
     char* cstr = (char*)label.c_str();
     substring str = { cstr, cstr+label.length() };
     words.push_back(str);
-    all.p->lp.parse_label(all.p, all.sd, ec.ld, words);
+    all.p->lp.parse_label(all.p, all.sd, &ec.l, words);
     words.erase();
     words.delete_v();
   }
@@ -1110,22 +1106,27 @@ float get_topic_prediction(example* ec, size_t i)
 
 float get_label(example* ec)
 {
-	return ((label_data*)(ec->ld))->label;
+	return ec->l.simple.label;
 }
 
 float get_importance(example* ec)
 {
-	return ((label_data*)(ec->ld))->weight;
+	return ec->l.simple.weight;
 }
 
 float get_initial(example* ec)
 {
-	return ((label_data*)(ec->ld))->initial;
+	return ec->l.simple.initial;
 }
 
 float get_prediction(example* ec)
 {
-	return ((label_data*)(ec->ld))->prediction;
+	return ec->pred.scalar;
+}
+
+float get_cost_sensitive_prediction(example* ec)
+{
+       return (float)ec->pred.multiclass;
 }
 
 size_t get_tag_length(example* ec)
@@ -1151,11 +1152,11 @@ void initialize_examples(vw& all)
   all.p->end_parsed_examples = 0;
   all.p->done = false;
 
-  all.p->examples = (example*)calloc_or_die(all.p->ring_size, sizeof(example));
+  all.p->examples = calloc_or_die<example>(all.p->ring_size);
 
   for (size_t i = 0; i < all.p->ring_size; i++)
     {
-      all.p->examples[i].ld = calloc_or_die(1,all.p->lp.label_size);
+      memset(&all.p->examples[i].l, 0, sizeof(polylabel));
       all.p->examples[i].in_use = false;
     }
 }

@@ -32,7 +32,7 @@ namespace Search {
 
     // change the default label parser, but you _must_ tell me how
     // to detect test examples!
-    void set_label_parser(label_parser&lp, bool (*is_test)(void*));
+    void set_label_parser(label_parser&lp, bool (*is_test)(polylabel&));
 
     // for adding command-line options
     void add_program_options(po::variables_map& vw, po::options_description& opts);
@@ -134,6 +134,9 @@ namespace Search {
     search_private* priv;
     void*           task_data;  // your task data!
     const char*     task_name;
+
+    // although you should rarely need this, some times you need a poiter to the vw data structure :(
+    vw& get_vw_pointer_unsafe();
   };
 
   // for defining new tasks, you must fill out a search_task
@@ -241,8 +244,5 @@ namespace Search {
   bool size_equal(size_t a, size_t b);
   
   // our interface within VW
-  LEARNER::learner* setup(vw&, po::variables_map&);
-  void search_finish(void*);
-  void search_drive(void*);
-  void search_learn(void*,example*);  
+  LEARNER::base_learner* setup(vw&);
 }

@@ -48,10 +48,22 @@ class vw(pylibvw.vw):
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
     
-    def __init__(self, argString=""):
+    def __init__(self, argString=None, **kw):
         """Initialize the vw object. The (optional) argString is the
-        same as the command line arguments you'd use to run vw (eg,"--audit")"""
-        pylibvw.vw.__init__(self,argString)
+        same as the command line arguments you'd use to run vw (eg,"--audit").
+        you can also use key/value pairs as in:
+          pyvw.vw(audit=True, b=24, k=True, c=True, l2=0.001)
+        or a combination, for instance:
+          pyvw.vw("--audit", b=26)"""
+        def format(key,val):
+            if type(val) is bool and val == False: return ''
+            s = ('-'+key) if len(key) == 1 else ('--'+key)
+            if type(val) is not bool or val != True: s += ' ' + str(val)
+            return s
+        l = [format(k,v) for k,v in kw.iteritems()]
+        if argString is not None: l = [argString] + l
+        #print ' '.join(l)
+        pylibvw.vw.__init__(self,' '.join(l))
         self.finished = False
 
     def get_weight(self, index, offset=0):
@@ -176,7 +188,8 @@ class vw(pylibvw.vw):
 
                 if learner_id != 0: P.set_learner_id(learner_id)
 
-                return P.predict()
+                p = P.predict()
+                return p
             else:
                 raise TypeError("'examples' should be a pyvw example (or a pylibvw example), or a list of said things")
 
@@ -543,19 +556,18 @@ class example(pylibvw.example):
         Fails if setup has run."""
         ns = self.get_ns(ns)
         self.ensure_namespace_exists(ns)
-        #self.push_feature_list(self.vw, ns.ord_ns, featureList)
-        ns_hash = self.vw.hash_space( ns.ns )
-        for feature in featureList:
-            if isinstance(feature, int) or isinstance(feature, str):
-                f = feature
-                v = 1.
-            elif isinstance(feature, tuple) and len(feature) == 2:
-                f = feature[0]
-                v = feature[1]
-            else:
-                raise Exception('malformed feature to push of type: ' + str(type(feature)))
-
-            self.push_feature(ns, f, v, ns_hash)
+        self.push_feature_list(self.vw, ns.ord_ns, featureList)   # much faster just to do it in C++
+        # ns_hash = self.vw.hash_space( ns.ns )
+        # for feature in featureList:
+        #     if isinstance(feature, int) or isinstance(feature, str):
+        #         f = feature
+        #         v = 1.
+        #     elif isinstance(feature, tuple) and len(feature) == 2 and (isinstance(feature[0], int) or isinstance(feature[0], str)) and (isinstance(feature[1], int) or isinstance(feature[1], float)):
+        #         f = feature[0]
+        #         v = feature[1]
+        #     else:
+        #         raise Exception('malformed feature to push of type: ' + str(type(feature)))
+        #     self.push_feature(ns, f, v, ns_hash)
 
 
     def finish(self):

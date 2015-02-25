@@ -1,4 +1,1 @@
-#pragma once
-namespace BINARY {
-  LEARNER::learner* setup(vw& all, po::variables_map& vm);
-}
+LEARNER::base_learner* binary_setup(vw& all);

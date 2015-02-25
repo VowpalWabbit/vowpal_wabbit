@@ -1,23 +1,16 @@
-#include "gd.h"
-#include "rand48.h"
-#include "simple_label.h"
-#include "allreduce.h"
-#include "accumulate.h"
-#include "constant.h"
-#include "memory.h"
 #include <float.h>
-
-//#undef NDEBUG
-//#define DEBUG
 #include <cassert>
+
+#include "gd.h"
+#include "accumulate.h"
+#include "reductions.h"
+#include "vw.h"
 
 //#define MAGIC_ARGUMENT //MAY IT NEVER DIE
 
 using namespace std;
 using namespace LEARNER;
 
-namespace StagewisePoly
-{
   static const uint32_t parent_bit = 1;
   static const uint32_t cycle_bit = 2;
   static const uint32_t tree_atomics = 134;
@@ -32,7 +25,7 @@ namespace StagewisePoly
 
   struct stagewise_poly
   {
-    vw *all;
+    vw *all; // many uses, unmodular reduction
 
     float sched_exponent;
     uint32_t batch_sz;
@@ -130,7 +123,7 @@ namespace StagewisePoly
 
   void depthsbits_create(stagewise_poly &poly)
   {
-    poly.depthsbits = (uint8_t *) calloc_or_die(1, depthsbits_sizeof(poly));
+    poly.depthsbits = calloc_or_die<uint8_t>(2 * poly.all->length());
     for (uint32_t i = 0; i < poly.all->length() * 2; i += 2) {
       poly.depthsbits[i] = default_depth;
       poly.depthsbits[i+1] = indicator_bit;
@@ -160,7 +153,10 @@ namespace StagewisePoly
   {
     //note: intentionally leaving out ft_offset.
     assert(wid % stride_shift(poly, 1) == 0);
-    return poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & cycle_bit;
+	if ((poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & cycle_bit) > 0)
+		return true;
+	else
+		return false;
   }
 
   inline void cycle_toggle(stagewise_poly &poly, uint32_t wid)
@@ -245,7 +241,7 @@ namespace StagewisePoly
       cout << ", new size " << poly.sd_len << endl;
 #endif //DEBUG
       free(poly.sd); //okay for null.
-      poly.sd = (sort_data *) calloc_or_die(poly.sd_len, sizeof(sort_data));
+      poly.sd = calloc_or_die<sort_data>(poly.sd_len);
     }
     assert(len <= poly.sd_len);
   }
@@ -370,7 +366,7 @@ namespace StagewisePoly
 
   void synthetic_reset(stagewise_poly &poly, example &ec)
   {
-    poly.synth_ec.ld = ec.ld;
+    poly.synth_ec.l = ec.l;
     poly.synth_ec.tag = ec.tag;
     poly.synth_ec.example_counter = ec.example_counter;
 
@@ -500,18 +496,19 @@ namespace StagewisePoly
     }
   }
 
-  void predict(stagewise_poly &poly, learner &base, example &ec)
+  void predict(stagewise_poly &poly, base_learner &base, example &ec)
   {
     poly.original_ec = &ec;
     synthetic_create(poly, ec, false);
     base.predict(poly.synth_ec);
     ec.partial_prediction = poly.synth_ec.partial_prediction;
     ec.updated_prediction = poly.synth_ec.updated_prediction;
+    ec.pred.scalar = poly.synth_ec.pred.scalar;
   }
 
-  void learn(stagewise_poly &poly, learner &base, example &ec)
+  void learn(stagewise_poly &poly, base_learner &base, example &ec)
   {
-    bool training = poly.all->training && ((label_data *) ec.ld)->label != FLT_MAX;
+    bool training = poly.all->training && ec.l.simple.label != FLT_MAX;
     poly.original_ec = &ec;
 
     if (training) {
@@ -524,6 +521,7 @@ namespace StagewisePoly
       base.learn(poly.synth_ec);
       ec.partial_prediction = poly.synth_ec.partial_prediction;
       ec.updated_prediction = poly.synth_ec.updated_prediction;
+      ec.pred.scalar = poly.synth_ec.pred.scalar;
 
       if (ec.example_counter
           //following line is to avoid repeats when multiple reductions on same example.
@@ -552,8 +550,17 @@ namespace StagewisePoly
 
   void reduce_min_max(uint8_t &v1,const uint8_t &v2)
   {
-    bool parent_or_depth = (v1 & indicator_bit);
-    if(parent_or_depth != (bool)(v2 & indicator_bit)) {
+	  bool parent_or_depth;
+	  if (v1 & indicator_bit)
+		  parent_or_depth = true;
+	  else
+		  parent_or_depth = false;
+	  bool p_or_d2;
+	  if (v2 & indicator_bit)
+		  p_or_d2 = true;
+	  else
+		  p_or_d2 = false;
+    if(parent_or_depth != p_or_d2) {
 #ifdef DEBUG
       cout << "Reducing parent with depth!!!!!";
 #endif //DEBUG
@@ -653,17 +660,12 @@ namespace StagewisePoly
     //#endif //DEBUG
   }
 
-
-  learner *setup(vw &all, po::variables_map &vm)
+  base_learner *stagewise_poly_setup(vw &all)
   {
-    stagewise_poly *poly = (stagewise_poly *) calloc_or_die(1, sizeof(stagewise_poly));
-    poly->all = &all;
-
-    depthsbits_create(*poly);
-    sort_data_create(*poly);
-
-    po::options_description sp_opt("Stagewise poly options");
-    sp_opt.add_options()
+    if (missing_option(all, true, "stage_poly", "use stagewise polynomial feature learning"))
+      return NULL;
+    
+    new_options(all, "Stagewise poly options")
       ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
       ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")
       ("batch_sz_no_doubling", "batch_sz does not double")
@@ -671,38 +673,38 @@ namespace StagewisePoly
       ("magic_argument", po::value<float>(), "magical feature flag")
 #endif //MAGIC_ARGUMENT
       ;
-    vm = add_options(all, sp_opt);
+    add_options(all);
 
-    poly->sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 1.f;
-    poly->batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 1000;
-    poly->batch_sz_double = vm.count("batch_sz_no_doubling") ? false : true;
+    po::variables_map &vm = all.vm;
+    stagewise_poly& poly = calloc_or_die<stagewise_poly>();
+    poly.all = &all;
+    depthsbits_create(poly);
+    sort_data_create(poly);
+
+    poly.sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 1.f;
+    poly.batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 1000;
+    poly.batch_sz_double = vm.count("batch_sz_no_doubling") ? false : true;
 #ifdef MAGIC_ARGUMENT
-    poly->magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;
+    poly.magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;
 #endif //MAGIC_ARGUMENT
 
-    poly->sum_sparsity = 0;
-    poly->sum_input_sparsity = 0;
-    poly->num_examples = 0;
-    poly->sum_sparsity_sync = 0;
-    poly->sum_input_sparsity_sync = 0;
-    poly->num_examples_sync = 0;
-    poly->last_example_counter = -1;
-    poly->numpasses = 1;
-    poly->update_support = false;
-    poly->original_ec = NULL;
-    poly->next_batch_sz = poly->batch_sz;
+    poly.sum_sparsity = 0;
+    poly.sum_input_sparsity = 0;
+    poly.num_examples = 0;
+    poly.sum_sparsity_sync = 0;
+    poly.sum_input_sparsity_sync = 0;
+    poly.num_examples_sync = 0;
+    poly.last_example_counter = -1;
+    poly.numpasses = 1;
+    poly.update_support = false;
+    poly.original_ec = NULL;
+    poly.next_batch_sz = poly.batch_sz;
 
-    //following is so that saved models know to load us.
-    all.file_options.append(" --stage_poly");
+    learner<stagewise_poly>& l = init_learner(&poly, setup_base(all), learn, predict);
+    l.set_finish(finish);
+    l.set_save_load(save_load);
+    l.set_finish_example(finish_example);
+    l.set_end_pass(end_pass);
 
-    learner *l = new learner(poly, all.l);
-    l->set_learn<stagewise_poly, learn>();
-    l->set_predict<stagewise_poly, predict>();
-    l->set_finish<stagewise_poly, finish>();
-    l->set_save_load<stagewise_poly, save_load>();
-    l->set_finish_example<stagewise_poly,finish_example>();
-    l->set_end_pass<stagewise_poly, end_pass>();
-
-    return l;
+    return make_base(l);
   }
-}

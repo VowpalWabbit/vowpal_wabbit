@@ -15,10 +15,6 @@ using namespace std;
 #include <math.h>
 #include <algorithm>
 
-#include "parse_regressor.h"
-#include "loss_functions.h"
-#include "io_buf.h"
-#include "memory.h"
 #include "rand48.h"
 #include "global_data.h"
 
@@ -35,20 +31,27 @@ void initialize_regressor(vw& all)
 
   size_t length = ((size_t)1) << all.num_bits;
   all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
-  all.reg.weight_vector = (weight *)calloc_or_die(length << all.reg.stride_shift, sizeof(weight));
+  all.reg.weight_vector = calloc_or_die<weight>(length << all.reg.stride_shift);
   if (all.reg.weight_vector == NULL)
     {
       cerr << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>" << endl;
       throw exception();
-    }
+    } else
+  if (all.initial_weight != 0.)
+    {
+     for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
+       all.reg.weight_vector[j] = all.initial_weight;      
+    } else
+  if (all.random_positive_weights)
+    {
+      for (size_t j = 0; j < length; j++)
+	all.reg.weight_vector[j << all.reg.stride_shift] = (float)(0.1 * frand48());
+    } else      
   if (all.random_weights)
     {
       for (size_t j = 0; j < length; j++)
 	all.reg.weight_vector[j << all.reg.stride_shift] = (float)(frand48() - 0.5);
     }
-  if (all.initial_weight != 0.)
-    for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
-      all.reg.weight_vector[j] = all.initial_weight;
 }
 
 const size_t buf_size = 512;
@@ -159,11 +162,6 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				"", read, 
 				"\n",1, text);
       
-      text_len = sprintf(buff, "rank:%d\n", (int)all.rank);
-      bin_text_read_write_fixed(model_file,(char*)&all.rank, sizeof(all.rank), 
-				"", read, 
-				buff,text_len, text);
-      
       text_len = sprintf(buff, "lda:%d\n", (int)all.lda);
       bin_text_read_write_fixed(model_file,(char*)&all.lda, sizeof(all.lda), 
 				"", read, 
@@ -224,16 +222,16 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				"", read, 
 				"\n",1, text);
       
-      text_len = sprintf(buff, "options:%s\n", all.file_options.c_str());
-      uint32_t len = (uint32_t)all.file_options.length()+1;
-      memcpy(buff2, all.file_options.c_str(),len);
+      text_len = sprintf(buff, "options:%s\n", all.file_options->str().c_str());
+      uint32_t len = (uint32_t)all.file_options->str().length()+1;
+      memcpy(buff2, all.file_options->str().c_str(),len);
       if (read)
 	len = buf_size;
       bin_text_read_write(model_file,buff2, len, 
 			  "", read,
 			  buff, text_len, text);
       if (read)
-	all.file_options.assign(buff2);
+	all.file_options->str(buff2);
     }
 
 }
@@ -258,13 +256,11 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
 
 void save_predictor(vw& all, string reg_name, size_t current_pass)
 {
-  char* filename = new char[reg_name.length()+4];
+  stringstream filename;
+  filename << reg_name;
   if (all.save_per_pass)
-    sprintf(filename,"%s.%lu",reg_name.c_str(),(long unsigned)current_pass);
-  else
-    sprintf(filename,"%s",reg_name.c_str());
-  dump_regressor(all, string(filename), false);
-  delete[] filename;
+    filename << "." << current_pass;
+  dump_regressor(all, filename.str(), false);
 }
 
 void finalize_regressor(vw& all, string reg_name)
@@ -307,19 +303,19 @@ void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)
   save_load_header(all, io_temp, true, false);
 }
 
-void parse_mask_regressor_args(vw& all, po::variables_map& vm){
-
+void parse_mask_regressor_args(vw& all)
+{
+  po::variables_map& vm = all.vm;
   if (vm.count("feature_mask")) {
     size_t length = ((size_t)1) << all.num_bits;  
     string mask_filename = vm["feature_mask"].as<string>();
     if (vm.count("initial_regressor")){ 
       vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
       if(mask_filename == init_filename[0]){//-i and -mask are from same file, just generate mask
-           
         return;
       }
     }
-
+    
     //all other cases, including from different file, or -i does not exist, need to read in the mask file
     io_buf io_temp_mask;
     io_temp_mask.open_file(mask_filename.c_str(), false, io_buf::READ);
@@ -343,7 +339,7 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
       }
     } else {
       // If no initial regressor, just clear out the options loaded from the header.
-      all.file_options.assign("");
+      all.file_options->str("");
     }
   }
 }

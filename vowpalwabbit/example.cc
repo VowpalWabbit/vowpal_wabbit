@@ -4,13 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <stdint.h>
-#include "parse_primitives.h"
-#include "v_array.h"
-#include "example.h"
-#include "simple_label.h"  
 #include "gd.h"  
-#include "global_data.h"  
-#include "memory.h"
   
 int compare_feature(const void* p1, const void* p2) {  
   feature* f1 = (feature*) p1;  
@@ -40,9 +34,9 @@ float collision_cleanup(feature* feature_map, size_t& len) {
   
 audit_data copy_audit_data(audit_data &src) {
   audit_data dst;
-  dst.space = (char*)calloc_or_die(strlen(src.space)+1, sizeof(char));
+  dst.space = calloc_or_die<char>(strlen(src.space)+1);
   strcpy(dst.space, src.space);
-  dst.feature = (char*)calloc_or_die(strlen(src.feature)+1, sizeof(char));
+  dst.feature = calloc_or_die<char>(strlen(src.feature)+1);
   strcpy(dst.feature, src.feature);
   dst.weight_index = src.weight_index;
   dst.x = src.x;
@@ -51,21 +45,11 @@ audit_data copy_audit_data(audit_data &src) {
 }
 
 namespace VW {
-void copy_example_label(example* dst, example* src, size_t label_size, void(*copy_label)(void*&,void*)) {
-  if (!src->ld) {
-    if (dst->ld) free(dst->ld);  // TODO: this should be a delete_label, really
-    dst->ld = NULL;
-  } else {
-    if ((label_size == 0) && (copy_label == NULL)) {
-      if (dst->ld) free(dst->ld);  // TODO: this should be a delete_label, really
-      dst->ld = NULL;
-    } else if (copy_label) {
-      copy_label(dst->ld, src->ld);
-    } else {
-      //dst->ld = (void*)malloc(label_size);
-      memcpy(dst->ld, src->ld, label_size);
-    }
-  }
+void copy_example_label(example* dst, example* src, size_t label_size, void(*copy_label)(void*,void*)) {
+  if (copy_label)
+    copy_label(&dst->l, &src->l);   // TODO: we really need to delete_label on dst :(
+  else
+    dst->l = src->l;
 }
 
 void copy_example_data(bool audit, example* dst, example* src)
@@ -102,7 +86,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->sorted = src->sorted;
   dst->in_use = src->in_use;}
 
-void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void(*copy_label)(void*&,void*)) {
+void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void(*copy_label)(void*,void*)) {
   copy_example_data(audit, dst, src);
   copy_example_label(dst, src, label_size, copy_label);
 }
@@ -130,6 +114,7 @@ namespace VW {
 	fs.mask = (uint32_t)all.reg.weight_mask >> all.reg.stride_shift;
 	fs.base = all.reg.weight_vector;
 	fs.all = &all;
+	fs.feature_map = v_init<feature>();
 	GD::foreach_feature<features_and_source, uint32_t, vec_store>(all, *ec, fs); 		
 	feature_map_len = fs.feature_map.size();
 	return fs.feature_map.begin;
@@ -144,24 +129,23 @@ void return_features(feature* f)
 
 flat_example* flatten_example(vw& all, example *ec) 
 {
-	flat_example* fec = (flat_example*) calloc_or_die(1,sizeof(flat_example));  
-	fec->ld = (label_data*)calloc_or_die(1, sizeof(label_data));
-	memcpy(fec->ld, ec->ld, sizeof(label_data));
+  flat_example& fec = calloc_or_die<flat_example>();  
+	fec.l = ec->l;
 
-	fec->tag_len = ec->tag.size();
-	if (fec->tag_len >0)
+	fec.tag_len = ec->tag.size();
+	if (fec.tag_len >0)
 	  {
-	    fec->tag = (char*)calloc_or_die(fec->tag_len+1, sizeof(char));
-	    memcpy(fec->tag,ec->tag.begin, fec->tag_len);
+	    fec.tag = calloc_or_die<char>(fec.tag_len+1);
+	    memcpy(fec.tag,ec->tag.begin, fec.tag_len);
 	  }
 
-	fec->example_counter = ec->example_counter;  
-	fec->ft_offset = ec->ft_offset;  
-	fec->num_features = ec->num_features;  
+	fec.example_counter = ec->example_counter;  
+	fec.ft_offset = ec->ft_offset;  
+	fec.num_features = ec->num_features;  
         
-	fec->feature_map = VW::get_features(all, ec, fec->feature_map_len);
+	fec.feature_map = VW::get_features(all, ec, fec.feature_map_len);
 
-	return fec;  
+	return &fec;  
 }
 
 flat_example* flatten_sort_example(vw& all, example *ec) 
@@ -180,22 +164,15 @@ void free_flatten_example(flat_example* fec)
 	free(fec->feature_map);
       if (fec->tag_len > 0)
 	free(fec->tag);
-      free(fec->ld);
       free(fec);
     }
 }
 
 example *alloc_examples(size_t label_size, size_t count=1)
 {
-  example* ec = (example*)calloc_or_die(count, sizeof(example));
+  example* ec = calloc_or_die<example>(count);
   if (ec == NULL) return NULL;
   for (size_t i=0; i<count; i++) {
-    ec[i].ld = calloc_or_die(1, label_size);
-    if (ec[i].ld == NULL) {
-      for (size_t j=0; j<i; j++) free(ec[j].ld);
-      free(ec);
-      return NULL;
-    }
     ec[i].in_use = true;
     ec[i].ft_offset = 0;
     //  std::cerr << "  alloc_example.indices.begin=" << ec->indices.begin << " end=" << ec->indices.end << " // ld = " << ec->ld << "\t|| me = " << ec << std::endl;
@@ -205,14 +182,13 @@ example *alloc_examples(size_t label_size, size_t count=1)
 
 void dealloc_example(void(*delete_label)(void*), example&ec)
 {
-  if (delete_label) {
-    delete_label(ec.ld);
-  }
+  if (delete_label)
+    delete_label(&ec.l);
+
   ec.tag.delete_v();
       
   ec.topic_predictions.delete_v();
 
-  free(ec.ld);
   for (size_t j = 0; j < 256; j++)
     {
       ec.atomics[j].delete_v();

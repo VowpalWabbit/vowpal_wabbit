@@ -1,11 +1,10 @@
 #include <limits.h>
-#include "multiclass.h"
 #include "global_data.h"
 #include "vw.h"
 
 namespace MULTICLASS {
 
-  char* bufread_label(multiclass* ld, char* c)
+  char* bufread_label(label_t* ld, char* c)
   {
     ld->label = *(uint32_t *)c;
     c += sizeof(ld->label);
@@ -16,7 +15,7 @@ namespace MULTICLASS {
   
   size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   {
-    multiclass* ld = (multiclass*) v;
+    label_t* ld = (label_t*) v;
     char *c;
     size_t total = sizeof(ld->label)+sizeof(ld->weight);
     if (buf_read(cache, c, total) < total) 
@@ -28,11 +27,11 @@ namespace MULTICLASS {
   
   float weight(void* v)
   {
-    multiclass* ld = (multiclass*) v;
+    label_t* ld = (label_t*) v;
     return (ld->weight > 0) ? ld->weight : 0.f;
   }
   
-  char* bufcache_label(multiclass* ld, char* c)
+  char* bufcache_label(label_t* ld, char* c)
   {
     *(uint32_t *)c = ld->label;
     c += sizeof(ld->label);
@@ -44,25 +43,23 @@ namespace MULTICLASS {
   void cache_label(void* v, io_buf& cache)
   {
     char *c;
-    multiclass* ld = (multiclass*) v;
+    label_t* ld = (label_t*) v;
     buf_write(cache, c, sizeof(ld->label)+sizeof(ld->weight));
     c = bufcache_label(ld,c);
   }
 
   void default_label(void* v)
   {
-    multiclass* ld = (multiclass*) v;
+    label_t* ld = (label_t*) v;
     ld->label = (uint32_t)-1;
     ld->weight = 1.;
   }
 
-  void delete_label(void* v)
-  {
-  }
+  void delete_label(void* v) {}
 
   void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
   {
-    multiclass* ld = (multiclass*)v;
+    label_t* ld = (label_t*)v;
 
     switch(words.size()) {
     case 0:
@@ -90,87 +87,38 @@ namespace MULTICLASS {
 				  cache_label, read_cached_label, 
 				  delete_label, weight, 
 				  NULL,
-				  sizeof(multiclass)};
+				  sizeof(label_t)};
   
   void print_update(vw& all, example &ec)
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
-        multiclass* ld = (multiclass*) ec.ld;
+        label_t ld = ec.l.multi;
         char label_buf[32];
-        if (ld->label == INT_MAX)
+        if (ld.label == INT_MAX)
           strcpy(label_buf," unknown");
         else
-          sprintf(label_buf,"%8ld",(long int)ld->label);
+          sprintf(label_buf,"%8ld",(long int)ld.label);
+	char pred_buf[32];
+	sprintf(pred_buf,"%8lu",(long unsigned int)ec.pred.multiclass);
 
-        if(!all.holdout_set_off && all.current_pass >= 1)
-        {
-          if(all.sd->holdout_sum_loss == 0. && all.sd->weighted_holdout_examples == 0.)
-            fprintf(stderr, " unknown   ");
-          else
-	    fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples);
-
-          if(all.sd->holdout_sum_loss_since_last_dump == 0. && all.sd->weighted_holdout_examples_since_last_dump == 0.)
-            fprintf(stderr, " unknown   ");
-          else
-	    fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss_since_last_dump/all.sd->weighted_holdout_examples_since_last_dump);
-
-            fprintf(stderr, "%8ld %8.1f   %s %8ld %8lu h\n",
-	      (long int)all.sd->example_number,
-	      all.sd->weighted_examples,
-	      label_buf,
-	      (long int)ld->prediction,
-	      (long unsigned int)ec.num_features);
-
-          all.sd->weighted_holdout_examples_since_last_dump = 0;
-          all.sd->holdout_sum_loss_since_last_dump = 0.0;
-        }
-        else
-          fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8ld %8lu\n",
-                all.sd->sum_loss/all.sd->weighted_examples,
-                all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
-                (long int)all.sd->example_number,
-                all.sd->weighted_examples,
-                label_buf,
-                (long int)ld->prediction,
-                (long unsigned int)ec.num_features);
-     
-        all.sd->sum_loss_since_last_dump = 0.0;
-        all.sd->old_weighted_examples = all.sd->weighted_examples;
-	fflush(stderr);
-        VW::update_dump_interval(all);
+	all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf, 
+			     ec.num_features, all.progress_add, all.progress_arg);
       }
   }
 
-  void output_example(vw& all, example& ec)
+  void finish_example(vw& all, example& ec)
   {
-    multiclass* ld = (multiclass*)ec.ld;
-
-    size_t loss = 1;
-    if (ld->label == (uint32_t)ld->prediction)
+    float loss = 1;
+    if (ec.l.multi.label == (uint32_t)ec.pred.multiclass)
       loss = 0;
-
-    if(ec.test_only)
-    {
-      all.sd->weighted_holdout_examples += ld->weight;//test weight seen
-      all.sd->weighted_holdout_examples_since_last_dump += ld->weight;
-      all.sd->weighted_holdout_examples_since_last_pass += ld->weight;
-      all.sd->holdout_sum_loss += loss;
-      all.sd->holdout_sum_loss_since_last_dump += loss;
-      all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass
-    }
-    else
-    {
-      all.sd->weighted_examples += ld->weight;
-      all.sd->total_features += ec.num_features;
-      all.sd->sum_loss += loss;
-      all.sd->sum_loss_since_last_dump += loss;
-      all.sd->example_number++;
-    }
- 
+    
+    all.sd->update(ec.test_only, loss, ec.l.multi.weight, ec.num_features);
+    
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, (float)ld->prediction, 0, ec.tag);
-
+      all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
+    
     MULTICLASS::print_update(all, ec);
+    VW::finish_example(all, &ec);
   }
 }

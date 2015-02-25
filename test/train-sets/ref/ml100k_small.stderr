@@ -1,13 +1,12 @@
 creating quadratic features for pairs: ui 
 using l2 regularization = 2e-06
-final_regressor = movielens.reg
+final_regressor = models/movielens.reg
 Num weight bits = 16
 learning rate = 0.05
 initial_t = 1
 power_t = 0
 decay_learning_rate = 0.97
-rank = 10
-creating cache_file = movielens.cache
+creating cache_file = train-sets/ml100k_small_train.cache
 Reading datafile = train-sets/ml100k_small_train
 num sources = 1
 average    since         example     example  current  current  current
@@ -28,5 +27,5 @@ passes used = 2
 weighted example sum = 474
 weighted label sum = 1666
 average loss = 1.51233
-best constant = 3.52008
+best constant = 3.51477
 total feature number = 10902

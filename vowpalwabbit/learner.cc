@@ -1,8 +1,6 @@
-#include "global_data.h"
 #include "parser.h"
-#include "learner.h"
-
-void save_predictor(vw& all, string reg_name, size_t current_pass);
+#include "vw.h"
+#include "parse_regressor.h"
 
 void dispatch_example(vw& all, example& ec)
 {
@@ -15,44 +13,55 @@ void dispatch_example(vw& all, example& ec)
 
 namespace LEARNER
 {
-  void generic_driver(vw* all)
+  void generic_driver(vw& all)
   {
     example* ec = NULL;
 
-    all->l->init_driver();
-    while ( true )
+    all.l->init_driver();
+    while ( all.early_terminate == false )
       {
-	if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
+	if ((ec = VW::get_example(all.p)) != NULL)//semiblocking operation.
 	  {
 	    if (ec->indices.size() > 1) // 1+ nonconstant feature. (most common case first)
-	      dispatch_example(*all, *ec);
+	      dispatch_example(all, *ec);
 	    else if (ec->end_pass)
 	      {
-		all->l->end_pass();
-		VW::finish_example(*all,ec);
+		all.l->end_pass();
+		VW::finish_example(all, ec);
 	      }
 	    else if (ec->tag.size() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4))
 	      {// save state command
 
-		string final_regressor_name = all->final_regressor_name;
+		string final_regressor_name = all.final_regressor_name;
 		
 		if ((ec->tag).size() >= 6 && (ec->tag)[4] == '_')
 		  final_regressor_name = string(ec->tag.begin+5, (ec->tag).size()-5);
 		
-		if (!all->quiet)
+		if (!all.quiet)
 		  cerr << "saving regressor to " << final_regressor_name << endl;
-		save_predictor(*all, final_regressor_name, 0);
+		save_predictor(all, final_regressor_name, 0);
 		
-		VW::finish_example(*all,ec);
+		VW::finish_example(all,ec);
 	      }
 	    else // empty example
-	      dispatch_example(*all, *ec);
+	      dispatch_example(all, *ec);
 	  }
-	else if (parser_done(all->p))
+	else if (parser_done(all.p))
 	  {
-	    all->l->end_examples();
+	    all.l->end_examples();
 	    return;
 	  }
       }
+    if (all.early_terminate) //drain any extra examples from parser and call end_examples
+      while ( all.early_terminate == false )
+	{
+	  if ((ec = VW::get_example(all.p)) != NULL)//semiblocking operation.
+	    VW::finish_example(all, ec);
+	  else if (parser_done(all.p))
+	    {
+	      all.l->end_examples();
+	      return;
+	    }
+	}
   }
 }

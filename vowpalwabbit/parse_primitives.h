@@ -8,8 +8,6 @@ license as described in the file LICENSE.
 #include <stdint.h>
 #include <math.h>
 #include "v_array.h"
-#include "io_buf.h"
-#include "example.h"
 
 #ifdef _WIN32
 #include <WinSock2.h>
@@ -26,98 +24,6 @@ struct substring {
   char *end;
 };
 
-struct shared_data {
-  size_t queries;
-
-  uint64_t example_number;
-  uint64_t total_features;
-
-  double t;
-  double weighted_examples;
-  double weighted_unlabeled_examples;
-  double old_weighted_examples;
-  double weighted_labels;
-  double sum_loss;
-  double sum_loss_since_last_dump;
-  float dump_interval;// when should I update for the user.
-  double gravity;
-  double contraction;
-  float min_label;//minimum label encountered
-  float max_label;//maximum label encountered
-
-  //for holdout
-  double weighted_holdout_examples;
-  double weighted_holdout_examples_since_last_dump;
-  double holdout_sum_loss_since_last_dump;
-  double holdout_sum_loss;
-  //for best model selection
-  double holdout_best_loss;
-  double weighted_holdout_examples_since_last_pass;//reserved for best predictor selection
-  double holdout_sum_loss_since_last_pass;
-  size_t holdout_best_pass; 
-
-  bool binary_label;
-  uint32_t k;
-};
-
-struct parser;
-
-struct label_parser {
-  void (*default_label)(void*);
-  void (*parse_label)(parser*, shared_data*, void*, v_array<substring>&);
-  void (*cache_label)(void*, io_buf& cache);
-  size_t (*read_cached_label)(shared_data*, void*, io_buf& cache);
-  void (*delete_label)(void*);
-  float (*get_weight)(void*);
-  void (*copy_label)(void*&,void*); // copy_label(dst,src) performs a DEEP copy of src into dst (dst is allocated correctly).  if this function is NULL, then we assume that a memcpy of size label_size is sufficient, so you need only specify this function if your label constains, for instance, pointers (otherwise you'll get double-free errors)
-  size_t label_size;
-};
-
-typedef size_t (*hash_func_t)(substring, uint32_t);
-
-struct parser {
-  v_array<substring> channels;//helper(s) for text parsing
-  v_array<substring> words;
-  v_array<substring> name;
-
-  io_buf* input; //Input source(s)
-  int (*reader)(void*, example* ae);
-  hash_func_t hasher;
-  bool resettable; //Whether or not the input can be reset.
-  io_buf* output; //Where to output the cache.
-  bool write_cache; 
-  bool sort_features;
-  bool sorted_cache;
-
-  size_t ring_size;
-  uint64_t begin_parsed_examples; // The index of the beginning parsed example.
-  uint64_t end_parsed_examples; // The index of the fully parsed example.
-  uint64_t local_example_number; 
-  uint32_t in_pass_counter;
-  example* examples;
-  uint64_t used_index;
-  bool emptylines_separate_examples; // true if you want to have holdout computed on a per-block basis rather than a per-line basis
-  MUTEX examples_lock;
-  CV example_available;
-  CV example_unused;
-  MUTEX output_lock;
-  CV output_done;
-  
-  bool done;
-  v_array<size_t> gram_mask;
-
-  v_array<size_t> ids; //unique ids for sources
-  v_array<size_t> counts; //partial examples received from sources
-  size_t finished_count;//the number of finished examples;
-  int label_sock;
-  int bound_sock;
-  int max_fd;
-
-  v_array<substring> parse_name;
-
-  label_parser lp;  // moved from vw
-};
-
 //chop up the string into a v_array of substring.
 void tokenize(char delim, substring s, v_array<substring> &ret, bool allow_empty=false);
 
@@ -132,6 +38,12 @@ inline void print_substring(substring s)
 {
   std::cout.write(s.begin,s.end - s.begin);
 }
+
+size_t hashstring (substring s, uint32_t h);
+
+typedef size_t (*hash_func_t)(substring, uint32_t);
+
+hash_func_t getHasher(const std::string& s);
 
 // The following function is a home made strtof. The
 // differences are :
@@ -181,7 +93,7 @@ inline float parseFloat(char * p, char **end)
     exp_acc *= exp_s;
     
   }
-  if (*p == ' ')//easy case succeeded.
+  if (*p == ' ' || *p == '\n' || *p == '\t')//easy case succeeded.
     {
       acc *= powf(10,(float)(exp_acc-num_dec));
       *end = p;

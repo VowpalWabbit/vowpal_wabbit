@@ -92,6 +92,12 @@ socket_t getsock()
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
       cerr << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 #endif
+
+  // Enable TCP Keep Alive to prevent socket leaks
+  int enableTKA = 1;
+  if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
+    cerr << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
+
   return sock;
 }
 

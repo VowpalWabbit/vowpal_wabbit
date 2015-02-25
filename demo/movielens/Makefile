@@ -39,7 +39,7 @@ ml-%.ratings.train.vw: ml-%/ratings.dat
 	@printf "%s test MAE is %3.3f\n" $* $$(cat $*.results)
 
 #---------------------------------------------------------------------
-#               linear model (no interaction terms)               
+#               linear model (no interaction terms)
 #---------------------------------------------------------------------
 
 linear.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw
@@ -154,3 +154,5 @@ lrqdropouthogwild.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw do-lrq-h
 	  -d $(word 1,$+) -p						\
 	  >(perl -lane '$$s+=abs(($$F[0]-$$F[1])); } { 			\
 			1; print $$s/$$.;' > $@)
+
+.PHONY: all clean shootout
