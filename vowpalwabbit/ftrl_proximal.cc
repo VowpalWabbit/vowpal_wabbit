@@ -8,15 +8,15 @@
 using namespace std;
 using namespace LEARNER;
 
-#define W_XT 0   // current parameter w(XT)
-#define W_ZT 1   // accumulated z(t) = z(t-1) + g(t) + sigma*w(t)
-#define W_G2 2   // accumulated gradient squre n(t) = n(t-1) + g(t)*g(t)
+#define W_XT 0   // current parameter
+#define W_ZT 1   // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in general is the dual weight vector
+#define W_G2 2   // accumulated gradient square n(t) = n(t-1) + g(t)*g(t)
 
 /********************************************************************/
 /* mem & w definition ***********************************************/
 /********************************************************************/ 
-// w[0] = current weight
-// w[1] = accumulated zt
+// w[0] = current weight vector
+// w[1] = accumulated dual weight vector
 // w[2] = accumulated g2
 
 //nonrentrant
@@ -24,6 +24,8 @@ struct ftrl {
   vw* all; //features, finalize, l1, l2, 
   float ftrl_alpha;
   float ftrl_beta;
+  bool proximal;
+  bool adagrad;
 };
   
 void predict(ftrl& b, base_learner& base, example& ec)
@@ -42,7 +44,7 @@ struct update_data {
   float l2_lambda;
 };
 
-void inner_update(update_data& d, float x, float& wref) {
+void inner_update_proximal(update_data& d, float x, float& wref) {
   float* w = &wref;
   float gradient = d.update * x;
   float ng2 = w[W_G2] + gradient * gradient;
@@ -59,6 +61,16 @@ void inner_update(update_data& d, float x, float& wref) {
   }
 }
 
+void inner_update_adagrad(update_data& d, float x, float& wref) {
+  float* w = &wref;
+  float gradient = d.update * x;
+  
+  w[W_ZT] += -gradient - d.l2_lambda * w[W_XT];
+  w[W_G2] += gradient * gradient;
+  
+  w[W_XT] = d.ftrl_alpha*w[W_ZT]/sqrtf(w[W_G2]+d.ftrl_beta);
+}
+
 void update(ftrl& b, example& ec)
 {
   struct update_data data;  
@@ -68,8 +80,11 @@ void update(ftrl& b, example& ec)
   data.ftrl_beta = b.ftrl_beta;
   data.l1_lambda = b.all->l1_lambda;
   data.l2_lambda = b.all->l2_lambda;
- 
-  GD::foreach_feature<update_data, inner_update>(*b.all, ec, data);
+  
+  if (b.proximal)
+    GD::foreach_feature<update_data, inner_update_proximal>(*b.all, ec, data);
+  else if (b.adagrad)
+    GD::foreach_feature<update_data, inner_update_adagrad>(*b.all, ec, data);  
 }
 
 void learn(ftrl& a, base_learner& base, example& ec) {
@@ -101,22 +116,34 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
 
 base_learner* ftrl_setup(vw& all) 
 {
-  if (missing_option(all, false, "ftrl", "Follow the Regularized Leader")) 
-    return NULL;
   new_options(all, "FTRL options")
-    ("ftrl_alpha", po::value<float>()->default_value(0.005f), "Learning rate for FTRL-proximal optimization")
-    ("ftrl_beta", po::value<float>()->default_value(0.1f), "FTRL beta");
+    ("ftrl_algo", po::value<string>()->default_value("adagrad"), "Specify the kind of FTRL used. Currently available ones are adagrad, proximal.")
+    ("ftrl_alpha", po::value<float>()->default_value(0.005f), "Learning rate for FTRL optimization")
+    ("ftrl_beta", po::value<float>()->default_value(1e-6f), "FTRL beta parameter");
   add_options(all);
   
+  if (missing_option(all, false, "ftrl", "Follow the Regularized Leader")) 
+    return NULL;
+
   ftrl& b = calloc_or_die<ftrl>();
   b.all = &all;
-  b.ftrl_beta = all.vm["ftrl_beta"].as<float>();
-  b.ftrl_alpha = all.vm["ftrl_alpha"].as<float>();
+  po::variables_map& vm = all.vm;
+  string ftrl_algo = vm["ftrl_algo"].as<string>();
+  b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
+  b.ftrl_beta = vm["ftrl_beta"].as<float>();
   
+  b.proximal = false;
+  b.adagrad = false;
+  if (ftrl_algo.compare("proximal") == 0)
+    b.proximal = true;
+  else if (ftrl_algo.compare("adagrad") == 0)
+    b.adagrad = true;
+      
   all.reg.stride_shift = 2; // NOTE: for more parameter storage
   
   if (!all.quiet) {
-    cerr << "Enabling FTRL-Proximal based optimization" << endl;
+    cerr << "Enabling FTRL based optimization" << endl;
+    cerr << "Algorithm used: "<< ftrl_algo << endl;
     cerr << "ftrl_alpha = " << b.ftrl_alpha << endl;
     cerr << "ftrl_beta = " << b.ftrl_beta << endl;
   }
