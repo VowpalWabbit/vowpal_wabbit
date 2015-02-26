@@ -21,8 +21,6 @@ struct task_data {
   bool no_quadratic_features;
   bool no_cubic_features;
   bool my_init_flag;
-  bool sub_ref;
-  bool bad_ref;
   int nfs;
   size_t root_label;
   size_t num_label;
@@ -67,10 +65,6 @@ namespace DepParserTask {
     srn.set_task_data<task_data>(data);
     po::options_description dparser_opts("dependency parser options");
     dparser_opts.add_options()
-      ("dparser_no_quad", "Don't use qudaratic features")
-      ("dparser_no_cubic","Don't use cubic features")
-      ("dparser_bad_ref","Use an abitary bad ref")
-      ("dparser_sub_ref","Use an abitary sub-optimal ref")
       ("root_label", po::value<size_t>(&(data->root_label))->default_value(8), "Ensure that there is only one root in each sentence")
       ("num_label", po::value<size_t>(&(data->num_label))->default_value(12), "Number of arc labels");
     srn.add_program_options(vm, dparser_opts);
@@ -83,10 +77,6 @@ namespace DepParserTask {
     data->ec_buf.resize(12,true);
 
     // setup entity and relation labels
-    data->no_quadratic_features = (vm.count("dparser_no_quad"))?true:false;
-    data->no_cubic_features =(vm.count("dparser_no_cubic"))?true:false;
-    data->sub_ref = (vm.count("dparser_sub_ref"))?true:false;
-    data->bad_ref =(vm.count("dparser_bad_ref"))?true:false;
     srn.set_options(AUTO_CONDITION_FEATURES);
   }
 
@@ -114,49 +104,15 @@ namespace DepParserTask {
     feature f = {1.0f, (idx<<ss) & (uint32_t)mask};
     ex->atomics[(int)ns].push_back(f);
   }
-  void add_quad_features(Search::search& srn, example *ex){
-    size_t ss = srn.get_stride_shift();
-    size_t mask = srn.get_mask();
-    size_t additional_offset = quad_namespace*offset_const;
-    task_data *data = srn.get_task_data<task_data>();
-    for(uint32_t idx=0; idx< data->pairs.size(); idx++){
-      unsigned char ns_a = data->pairs[idx][0];
-      unsigned char ns_b = data->pairs[idx][1];
-      for(uint32_t i=0; i< ex->atomics[(int)ns_a].size();i++){
-        uint32_t offset = (ex->atomics[(int)ns_a][i].weight_index>>ss) *quadratic_constant+ (uint32_t) additional_offset;
-        for(uint32_t j=0; j< ex->atomics[(int)ns_b].size();j++){
-          add_feature(ex,  offset+ (ex->atomics[(int)ns_b][j].weight_index>>ss) , quad_namespace, mask, ss);
-        }
-      }
-    }
-  }
-  void add_cubic_features(Search::search& srn, example *ex){
-    size_t ss = srn.get_stride_shift();
-    size_t mask = srn.get_mask();
-    task_data *data = srn.get_task_data<task_data>();
-    size_t additional_offset = cubic_namespace*offset_const;
-    for(uint32_t idx=0; idx< data->triples.size(); idx++){
-      unsigned char ns_a = data->triples[idx][0];
-      unsigned char ns_b = data->triples[idx][1];
-      unsigned char ns_c = data->triples[idx][2];
-      for(uint32_t i=0; i< ex->atomics[(int)ns_a].size();i++){
-        uint32_t offset1 =  (ex->atomics[(int)ns_a][i].weight_index>>ss)*cubic_constant;
-        for(uint32_t j=0; j< ex->atomics[(int)ns_b].size();j++){
-          uint32_t offset2 =  ((ex->atomics[(int)ns_b][j].weight_index>>ss)+offset1)*cubic_constant2+ (uint32_t)additional_offset;
-          for(uint32_t k=0; k< ex->atomics[(int)ns_c].size();k++){
-            add_feature(ex, offset2 + ( ex->atomics[(int)ns_c][k].weight_index>>ss) , cubic_namespace, mask, ss);
-          }
-        }
-      }
-    }
-  }
 
   void inline reset_ex(example *ex){
     ex->num_features = 0;
     ex->total_sum_feat_sq = 0;
     for(unsigned char *ns = ex->indices.begin; ns!=ex->indices.end; ns++){
-      ex->sum_feat_sq[(int)*ns] = 0;
-      ex->atomics[(int)*ns].erase();
+		if(*ns != constant_namespace){
+	      	ex->atomics[(int)*ns].erase();
+			ex->sum_feat_sq[(int)*ns] = 0;
+		}
     }
   }
   // arc-hybrid System.
@@ -213,149 +169,60 @@ namespace DepParserTask {
     return idx;
   }
 
-  // This function is only called once
-  // We use VW's internal implementation to create second-order and third-order features
   void my_initialize(Search::search& srn, example *base_ex) {
     task_data *data = srn.get_task_data<task_data>();
-    vector<string> &newpairs = data->pairs;
-    vector<string> &newtriples = data->triples;
     data->ex = alloc_examples(sizeof(base_ex[0].l.multi.label), 1);
-    data->nfs = (int) base_ex->indices.size()-1; // remove constant fs
-    size_t nfs = data->nfs;
-
-    // setup feature template
-    map<string, char> fs_idx_map;
-    fs_idx_map["s1"]=0, fs_idx_map["s2"]=1, fs_idx_map["s3"]=2;
-    fs_idx_map["b1"]=3, fs_idx_map["b2"]=4, fs_idx_map["b3"]=5;
-    fs_idx_map["sl1"]=6, fs_idx_map["sl2"]=7, fs_idx_map["sr1"]=8;
-    fs_idx_map["sr2"]=9, fs_idx_map["bl1"]=10, fs_idx_map["bl2"]=11;
-	fs_idx_map["s21"]=12;
-
+    
+	// setup feature template
     data->ex->indices.push_back(val_namespace);
-    for(size_t i=0; i<13*nfs; i++)
-      data->ex->indices.push_back((unsigned char)i);
-
-    size_t pos = 0;
-    if(!data->no_quadratic_features){
-      // quadratic feature encoding
-      string quadratic_feature_template = "s1-s2 s1-b1 s1-s1 s2-s2 s3-s3 b1-b1 b2-b2 b3-b3 b1-b2 s1-sl1 s1-sr1 b1-bl1 s1-b1-sl1 s1-b1-s21 s1-b1-sr1 ENDQ";
-
-      // Generate quadratic features templete
-      while ((pos = quadratic_feature_template.find(" ")) != std::string::npos) {
-        string token = quadratic_feature_template.substr(0, pos);
-        char first_fs_idx = fs_idx_map[token.substr(0,token.find("-"))];
-        char second_fs_idx = fs_idx_map[token.substr(token.find("-")+1,token.size())];
-        for (size_t i=0; i<nfs; i++) {
-          for (size_t j=0; j<nfs; j++) {
-            char space_a = (char)(first_fs_idx*nfs+i);
-            char space_b = (char)(second_fs_idx*nfs+j);
-            newpairs.push_back(string(1, space_a)+ string(1, space_b));
-          }
-        }
-        quadratic_feature_template.erase(0, pos + 1);
-      }
-
-      for(size_t i=0; i<6; i++){
-        for (size_t j=0; j<nfs; j++) {
-          char space_a = (char)(val_namespace);
-          char space_b = (char)(i*nfs+j);
-          newpairs.push_back(string(1, space_a)+ string(1, space_b));
-        }
-      }
-      char space_a = (char)(val_namespace);
-      newpairs.push_back(string(1, space_a)+ string(1, space_a));
-      data->ex->indices.push_back(quad_namespace);
-    }
-
-    // Generate cubic features
-
-    if(!data->no_cubic_features){
-      string cubic_feature_template = "b1-b2-b3 s1-b1-b2 s1-s2-b1 s1-s2-s3 s1-b1-bl1 b1-bl1-bl2 s1-sl1-sl2 s1-s2-s2 s1-sr1-b1 s1-sl1-b1 s1-sr1-sr2 ENDC";
-      while ((pos = cubic_feature_template.find(" ")) != std::string::npos) {
-        string token = cubic_feature_template.substr(0, pos);
-        char first_fs_idx = fs_idx_map[token.substr(0,token.find("-"))];
-        token.erase(0, token.find("-")+1);
-        char second_fs_idx = fs_idx_map[token.substr(0,token.find("-"))];
-        char third_fs_idx = fs_idx_map[token.substr(token.find("-")+1,token.size())];
-        for (size_t i=0; i<nfs; i++) {
-          for (size_t j=0; j<nfs; j++) {
-            for (size_t k=0; k<nfs; k++) {
-              char str[3] ={(char)(first_fs_idx*nfs+i), (char)(second_fs_idx*nfs+j), (char)(third_fs_idx*nfs+k)};
-              newtriples.push_back(string(1, str[0])+ string(1, str[1])+string(1,str[2]));
-            }
-          }
-        }
-        cubic_feature_template.erase(0, pos + 1);
-      }
-      data->ex->indices.push_back(cubic_namespace);
-    }
-    data->ex->indices.push_back(constant_namespace);
+    for(size_t i=0; i<13; i++)
+      data->ex->indices.push_back((unsigned char)(i+'a'));
   }
 
-  // This function needs to be very fast
+  // Put features in place. This function needs to be very fast
   void extract_features(Search::search& srn, uint32_t idx,  vector<example*> &ec) {
     task_data *data = srn.get_task_data<task_data>();
     reset_ex(data->ex);
-    size_t ss = srn.get_stride_shift();
-    size_t mask = srn.get_mask();
-    v_array<uint32_t> &stack = data->stack;
-    v_array<uint32_t> &tags = data->tags;
-    v_array<uint32_t> *children = data->children, &temp=data->temp;
+    size_t ss = srn.get_stride_shift(), mask = srn.get_mask();
+    v_array<uint32_t> &stack = data->stack, &tags = data->tags, *children = data->children, &temp=data->temp;
     v_array<example*> &ec_buf = data->ec_buf;
     example &ex = *(data->ex);
-    //add constant
-    add_feature(&ex, (uint32_t) constant, constant_namespace, mask, ss);
+
     // be careful: indices in ec starts from 0, but i is starts from 1
     size_t n = ec.size();
-    // use this buffer to c_vw()ect the examples, default value: NULL
-    for(size_t i=0; i<13; i++)
-      ec_buf[i] = 0;
 
-    // feature based on top three examples in stack
-    // ec_buf[0]: s1, ec_buf[1]: s2, ec_buf[2]: s3
+    // feature based on top three examples in stack  ec_buf[0]: s1, ec_buf[1]: s2, ec_buf[2]: s3
     for(size_t i=0; i<3; i++)
       ec_buf[i] = (stack.size()>i && *(stack.end-(i+1))!=0) ? ec[*(stack.end-(i+1))-1] : 0;
 
-    // features based on examples in string buffer
-    // ec_buf[3]: b1, ec_buf[4]: b2, ec_buf[5]: b3
+    // features based on examples in string buffer ec_buf[3]: b1, ec_buf[4]: b2, ec_buf[5]: b3
     for(size_t i=3; i<6; i++)
       ec_buf[i] = (idx+(i-3)-1 < n) ? ec[idx+i-3-1] : 0;
 
-    // features based on leftmost and rightmost children of the top element stack
-    // ec_buf[6]: sl1, ec_buf[7]: sl2, ec_buf[8]: sr1, ec_buf[9]: sr2;
-
+    // features based on the children of the top element stack ec_buf[6]: sl1, ec_buf[7]: sl2, ec_buf[8]: sr1, ec_buf[9]: sr2;
     for(size_t i=6; i<10; i++)
       if (!stack.empty() && stack.last() != 0&& children[i-4][stack.last()]!=0)
         ec_buf[i] = ec[children[i-4][stack.last()]-1];
 
-    // features based on leftmost children of the top element in bufer
-    // ec_buf[10]: bl1, ec_buf[11]: bl2
+    // features based on leftmost children of the top element in bufer ec_buf[10]: bl1, ec_buf[11]: bl2
     for(size_t i=10; i<12; i++)
       ec_buf[i] = (idx <=n && children[i-8][idx]!=0)? ec[children[i-8][idx]-1] : 0;
 
-	// ec_buf[13]
+	// feature based on the childrean of the second element in the stack ec_buf[13]
     ec_buf[12] = (stack.size()>1 && *(stack.end-2)!=0 && children[2][*(stack.end-2)]!=0)? ec[children[2][*(stack.end-2)]-1]:0;
 
-    cdep << "start generating features";
-
-    // unigram features
-    size_t nfs = data->nfs;
     uint64_t v0;
     for(size_t i=0; i<13; i++) {
-      unsigned char j=0;
-      for (unsigned char* fs = ec[0]->indices.begin; fs != ec[0]->indices.end; fs++) {
-        if(*fs == constant_namespace) // ignore constant_namespace
-          continue;
-
-        uint32_t additional_offset = (uint32_t)((i*nfs+j)*offset_const);
-        for(size_t k=0; k<ec[0]->atomics[*fs].size(); k++) {
-          if(!ec_buf[i])
-            v0 = affix_constant*((j+1)*quadratic_constant + k);
-          else
-            v0 = (ec_buf[i]->atomics[*fs][k].weight_index>>ss);
-          add_feature(&ex, (uint32_t) v0 + additional_offset, (unsigned char)(i*nfs+j), mask, ss);
+      if(!ec_buf[i]) continue;
+      for (size_t j = 0;  j < ec_buf[i]->indices.size(); j++) {
+		unsigned char fs = ec_buf[i]->indices[j];
+        if(fs == constant_namespace) continue; // ignore constant_namespace
+        uint32_t additional_offset = (uint32_t)(i*offset_const);
+		unsigned char ts = i+'a';
+        for(size_t k=0; k<ec_buf[i]->atomics[fs].size(); k++) {
+            v0 = (ec_buf[i]->atomics[fs][k].weight_index>>ss);
+          add_feature(&ex, (uint32_t) v0 + additional_offset, ts, mask, ss);
         }
-        j++;
       }
     }
     temp.resize(10,true);
@@ -389,10 +256,7 @@ namespace DepParserTask {
       add_feature(&ex, temp[j]+ additional_offset , val_namespace, mask, ss);
 	}
     // action history
-    if(!data->no_quadratic_features)
-      add_quad_features(srn, data->ex);
-    if(!data->no_cubic_features)
-      add_cubic_features(srn, data->ex);
+	
     size_t count=0;
     for (unsigned char* ns = data->ex->indices.begin; ns != data->ex->indices.end; ns++) {
       data->ex->sum_feat_sq[(int)*ns] = (float) data->ex->atomics[(int)*ns].size();
@@ -422,20 +286,6 @@ namespace DepParserTask {
       if(valid_actions[i] == action)
         return true;
     return false;
-  }
-
-  size_t get_sub_gold_actions(Search::search &srn, uint32_t idx, uint32_t n){
-    task_data *data = srn.get_task_data<task_data>();
-    v_array<uint32_t> &gold_action_reward = data->gold_action_reward, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions;
-
-    // gold = SHIFT
-    if (is_valid(1,valid_actions) &&( stack.empty() || gold_heads[idx] == stack.last()))
-		return 1;
-
-    // gold = LEFT
-    if (is_valid(3,valid_actions) && gold_heads[stack.last()] == idx)
-		return 3;
-	return 0;
   }
 
   size_t get_gold_actions(Search::search &srn, uint32_t idx, uint32_t n){
@@ -538,28 +388,19 @@ namespace DepParserTask {
         extract_features(srn, idx, ec);
       get_valid_actions(valid_actions, idx, n, (uint32_t) stack.size(), stack.last());
       uint32_t gold_action = get_gold_actions(srn, idx, n);
-      if(data->bad_ref)
-		  gold_action = valid_actions[0];
-	  if(data->sub_ref){
-          gold_action = get_sub_gold_actions(srn, idx, n);
-		  if(gold_action==0) gold_action = valid_actions[0];
-	  }
+	  if(gold_action==0) gold_action = valid_actions[0];
+
       // Predict the next action {SHIFT, REDUCE_LEFT, REDUCE_RIGHT}
       uint32_t a_id= Search::predictor(srn, (ptag) 0).set_input(*(data->ex)).set_oracle(gold_action).set_allowed(valid_actions).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(0).predict();
       count++;
       uint32_t t_id = 0;
       if(a_id ==2 || a_id == 3){
 	  	uint32_t gold_label = gold_tags[stack.last()];
-		if(data->bad_ref)
-			gold_label = 0;
-		if(data->sub_ref)
-			gold_label = gold_tags[stack.last()];
         t_id= Search::predictor(srn, (ptag) count+1).set_input(*(data->ex)).set_oracle(gold_label).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(a_id-1).predict();
         count++;
       }
       idx = transition_hybrid(srn, a_id, idx, t_id);
     }
-
 //	if(data->root_label!=0){
 	    heads[stack.last()] = 0;
 	    tags[stack.last()] = data->root_label;
