@@ -25,13 +25,34 @@ int main(int argc, char *argv[])
     
     if (!all.quiet && !all.bfgs && !all.searchstr)
         {
-        const char * header_fmt = "%-10s %-10s %10s %11s %8s %8s %8s\n";
-        fprintf(stderr, header_fmt,
-                "average", "since", "example", "example",
-                "current", "current", "current");
-        fprintf(stderr, header_fmt,
-                "loss", "last", "counter", "weight", "label", "predict", "features");
-        cerr.precision(5);
+        	std::cerr << std::setw(shared_data::col_avg_loss) << "average"
+        		  << " "
+        		  << std::setw(shared_data::col_since_last) << "since"
+        		  << " "
+        		  << std::setw(shared_data::col_example_counter) << "example"
+        		  << " "
+        		  << std::setw(shared_data::col_example_weight) << "example"
+        		  << " "
+        		  << std::setw(shared_data::col_current_label) << "current"
+        		  << " "
+        		  << std::setw(shared_data::col_current_predict) << "current"
+        		  << " "
+        		  << std::setw(shared_data::col_current_features) << "current"
+        		  << std::endl;
+        	std::cerr << std::setw(shared_data::col_avg_loss) << "loss"
+        		  << " "
+        		  << std::setw(shared_data::col_since_last) << "last"
+        		  << " "
+        		  << std::setw(shared_data::col_example_counter) << "counter"
+        		  << " "
+        		  << std::setw(shared_data::col_example_weight) << "weight"
+        		  << " "
+        		  << std::setw(shared_data::col_current_label) << "label"
+        		  << " "
+        		  << std::setw(shared_data::col_current_predict) << "predict"
+        		  << " "
+        		  << std::setw(shared_data::col_current_features) << "features"
+        		  << std::endl;
         }
 
     VW::start_parser(all);
