@@ -63,9 +63,8 @@ void inner_update_proximal(update_data& d, float x, float& wref) {
 }
 
 void inner_update_adagrad(update_data& d, float x, float& wref) {
-  /* Adagrad "Primal-dual" update
-   * It is nothing else than a FTRL algorithm
-   * Note that equation (19) in Duchi et al. JMLR'11 is wrong, the one below is the correct one
+  /* Adagrad "Primal-dual" update is nothing else than a FTRL algorithm.
+   * Note that equation (19) in Duchi et al. JMLR'11 is wrong, the one below is the correct one.
    */
 
   float* w = &wref;
@@ -84,7 +83,11 @@ void inner_update_adagrad(update_data& d, float x, float& wref) {
   }
 }
 
-void update(ftrl& b, example& ec)
+void update_before_prediction(ftrl& b, example& ec)
+{
+}
+
+void update_after_prediction(ftrl& b, example& ec)
 {
   struct update_data data;  
   data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label)
@@ -103,10 +106,15 @@ void update(ftrl& b, example& ec)
 
 void learn(ftrl& a, base_learner& base, example& ec) {
   assert(ec.in_use);
+  
+  // update state based on the example
+  update_before_prediction(a,ec);
+  
   // predict w*x
   predict(a, base, ec);
-  //updat state
-  update(a,ec);
+  
+  //update state based on the prediction
+  update_after_prediction(a,ec);
 }
 
 void save_load(ftrl& b, io_buf& model_file, bool read, bool text) 
