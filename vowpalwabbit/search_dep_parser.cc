@@ -62,7 +62,6 @@ namespace DepParserTask {
 
     for(size_t i=0; i<6; i++)
       data->children[i].delete_v();
-    delete[] data->children;
     delete data;
   } // if we had task data, we'd want to free it here
 
