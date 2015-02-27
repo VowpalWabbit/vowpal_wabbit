@@ -10,14 +10,8 @@ using namespace LEARNER;
 
 #define W_XT 0   // current parameter
 #define W_ZT 1   // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in general is the dual weight vector
-#define W_G2 2   // accumulated gradient square n(t) = n(t-1) + g(t)*g(t)
-
-/********************************************************************/
-/* mem & w definition ***********************************************/
-/********************************************************************/ 
-// w[0] = current weight vector
-// w[1] = accumulated dual weight vector
-// w[2] = accumulated g2
+#define W_G2 2   // accumulated gradient information
+#define W_MX 3   // maximum absolute value
 
 //nonrentrant
 struct ftrl {
@@ -25,7 +19,7 @@ struct ftrl {
   float ftrl_alpha;
   float ftrl_beta;
   bool proximal;
-  bool adagrad;
+  bool pistol;
 };
   
 void predict(ftrl& b, base_learner& base, example& ec)
@@ -42,7 +36,6 @@ struct update_data {
   float ftrl_beta;
   float l1_lambda;
   float l2_lambda;
-  float t;
 };
 
 void inner_update_proximal(update_data& d, float x, float& wref) {
@@ -62,29 +55,35 @@ void inner_update_proximal(update_data& d, float x, float& wref) {
   }
 }
 
-void inner_update_adagrad(update_data& d, float x, float& wref) {
-  /* Adagrad "Primal-dual" update is nothing else than a FTRL algorithm.
-   * Note that equation (19) in Duchi et al. JMLR'11 is wrong, the one below is the correct one.
-   */
+void inner_update_pistol_pre(update_data& d, float x, float& wref) {
+  float* w = &wref;
+  
+  float fabs_x = fabs(x);
+  if (fabs_x > w[W_MX]) 
+    w[W_MX]=fabs_x;
+  
+  float squared_theta = w[W_ZT] * w[W_ZT];
+  float tmp = 1.f / (d.ftrl_alpha * w[W_MX] * (w[W_G2] + w[W_MX]));
+  w[W_XT] = sqrt(w[W_G2]) * d.ftrl_beta * w[W_ZT] * exp(squared_theta / 2 * tmp) * tmp;
+}
 
+void inner_update_pistol_post(update_data& d, float x, float& wref) {
   float* w = &wref;
   float gradient = d.update * x;
   
   w[W_ZT] += -gradient;
-  w[W_G2] += gradient * gradient;
-  
-  float flag = sign(w[W_ZT]);
-  float fabs_zt = w[W_ZT] * flag;
-  if (fabs_zt <= d.l1_lambda*d.t) 
-    w[W_XT] = 0.;
-  else {
-    float step = d.ftrl_alpha/(sqrtf(w[W_G2])+d.ftrl_beta);
-    w[W_XT] = step * flag * (fabs_zt - d.l1_lambda*d.t);
-  }
+  w[W_G2] += fabs(gradient);
 }
 
 void update_before_prediction(ftrl& b, example& ec)
 {
+  if (b.pistol) {
+    struct update_data data;  
+    data.ftrl_alpha = b.ftrl_alpha;
+    data.ftrl_beta = b.ftrl_beta;
+
+    GD::foreach_feature<update_data, inner_update_pistol_pre>(*b.all, ec, data);
+  }
 }
 
 void update_after_prediction(ftrl& b, example& ec)
@@ -96,12 +95,11 @@ void update_after_prediction(ftrl& b, example& ec)
   data.ftrl_beta = b.ftrl_beta;
   data.l1_lambda = b.all->l1_lambda;
   data.l2_lambda = b.all->l2_lambda;
-  data.t = b.all->sd->t;
   
   if (b.proximal)
     GD::foreach_feature<update_data, inner_update_proximal>(*b.all, ec, data);
-  else if (b.adagrad)
-    GD::foreach_feature<update_data, inner_update_adagrad>(*b.all, ec, data);  
+  else if (b.pistol)
+    GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, data);  
 }
 
 void learn(ftrl& a, base_learner& base, example& ec) {
@@ -139,7 +137,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
 base_learner* ftrl_setup(vw& all) 
 {
   new_options(all, "FTRL options")
-    ("ftrl_algo", po::value<string>()->default_value("adagrad"), "Specify the kind of FTRL used. Currently available ones are adagrad, proximal.")
+    ("ftrl_algo", po::value<string>()->default_value("adagrad"), "Specify the kind of FTRL used. Currently available ones are pistol, proximal.")
     ("ftrl_alpha", po::value<float>()->default_value(0.005f), "Learning rate for FTRL optimization")
     ("ftrl_beta", po::value<float>()->default_value(1e-6f), "FTRL beta parameter");
   add_options(all);
@@ -155,11 +153,14 @@ base_learner* ftrl_setup(vw& all)
   b.ftrl_beta = vm["ftrl_beta"].as<float>();
   
   b.proximal = false;
-  b.adagrad = false;
+  b.pistol = false;
   if (ftrl_algo.compare("proximal") == 0)
     b.proximal = true;
-  else if (ftrl_algo.compare("adagrad") == 0)
-    b.adagrad = true;
+  else if (ftrl_algo.compare("pistol") == 0) {
+    b.pistol = true;
+    b.ftrl_alpha = 1;
+    b.ftrl_beta = .5;
+  }
   
   all.reg.stride_shift = 2; // NOTE: for more parameter storage
   
