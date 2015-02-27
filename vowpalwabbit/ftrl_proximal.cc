@@ -136,30 +136,43 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
 
 base_learner* ftrl_setup(vw& all) 
 {
-  new_options(all, "FTRL options")
-    ("ftrl_algo", po::value<string>()->default_value("adagrad"), "Specify the kind of FTRL used. Currently available ones are pistol, proximal.")
-    ("ftrl_alpha", po::value<float>()->default_value(0.005f), "Learning rate for FTRL optimization")
-    ("ftrl_beta", po::value<float>()->default_value(1e-6f), "FTRL beta parameter");
-  add_options(all);
-  
   if (missing_option(all, false, "ftrl", "Follow the Regularized Leader")) 
     return NULL;
-
+  
+  new_options(all, "FTRL options")
+    ("ftrl_algo", po::value<string>()->default_value("pistol"), "Specify the kind of FTRL used. Currently available ones are pistol, proximal.")
+    ("ftrl_alpha", po::value<float>(), "Learning rate for FTRL optimization")
+    ("ftrl_beta", po::value<float>(), "FTRL beta parameter");
+  add_options(all);
+  
   ftrl& b = calloc_or_die<ftrl>();
   b.all = &all;
   po::variables_map& vm = all.vm;
   string ftrl_algo = vm["ftrl_algo"].as<string>();
-  b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
-  b.ftrl_beta = vm["ftrl_beta"].as<float>();
   
   b.proximal = false;
   b.pistol = false;
-  if (ftrl_algo.compare("proximal") == 0)
+  if (ftrl_algo.compare("proximal") == 0) {
     b.proximal = true;
+    if (vm.count("ftrl_alpha"))
+      b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
+    else
+      b.ftrl_alpha = 0.005f;
+    if (vm.count("ftrl_beta"))
+      b.ftrl_beta = vm["ftrl_beta"].as<float>();
+    else
+      b.ftrl_beta = 0.1f;
+  }
   else if (ftrl_algo.compare("pistol") == 0) {
     b.pistol = true;
-    b.ftrl_alpha = 1;
-    b.ftrl_beta = .5;
+    if (vm.count("ftrl_alpha"))
+      b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
+    else
+      b.ftrl_alpha = 1.0f;
+    if (vm.count("ftrl_beta"))
+      b.ftrl_beta = vm["ftrl_beta"].as<float>();
+    else
+      b.ftrl_beta = 0.5f;
   }
   
   all.reg.stride_shift = 2; // NOTE: for more parameter storage
