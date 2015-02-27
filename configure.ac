@@ -8,12 +8,12 @@ AC_CONFIG_MACRO_DIR([acinclude.d])
 # if CXXFLAGS is not given by user, don't use default of "-O2 -g"
 : ${CXXFLAGS=""}
 
+LT_INIT
 AC_PROG_CXX
 AC_PROG_CXXCPP
-AC_LANG_CPLUSPLUS
+AC_LANG([C++])
 AC_CANONICAL_HOST
 AC_PROG_INSTALL
-AM_PROG_LIBTOOL
 AX_CXX_COMPILE_STDCXX_11
 AC_HEADER_STDC
 
@@ -36,41 +36,99 @@ AX_PTHREAD([], [
 
 nitpick=false
 AC_ARG_ENABLE([nitpicking],
- AC_HELP_STRING([--enable-nitpicking],[make compiler warn about possible problems]),
+ AS_HELP_STRING([--enable-nitpicking],[make compiler warn about possible problems]),
  [ test "$enableval" = "no" || nitpick=true ]
 )
 AM_CONDITIONAL(NITPICK, test x$nitpick = xtrue)
 
 parallelize=false
-AC_ARG_ENABLE([parallelization],AC_HELP_STRING([--enable-parallelization],[enable openmp]),[ test "$enableval" = "no" || parallelize=true ])
+AC_ARG_ENABLE([parallelization],
+  AS_HELP_STRING([--enable-parallelization],[enable openmp]),
+  [ test "$enableval" = "no" || parallelize=true ])
 AM_CONDITIONAL(PARALLELIZE, test x$parallelize = xtrue)
 
 profile=false
 AC_ARG_ENABLE([profiling],
-  AC_HELP_STRING([--enable-profiling], [add -pg to C++ compiler flags]),
+  AS_HELP_STRING([--enable-profiling], [add -pg to C++ compiler flags]),
   [ test "$enableval" = "no" || profile=true ])
 AM_CONDITIONAL(PROFILE, test x$profile = xtrue)
 
 vwbug=false
 AC_ARG_ENABLE([debug],
-  AC_HELP_STRING([--enable-debug], [Enable debugging, disable optimization in the compiler]),
+  AS_HELP_STRING([--enable-debug], [Enable debugging, disable optimization in the compiler]),
   [ test "$enableval" = "no" || vwbug=true ])
 AM_CONDITIONAL(VWBUG, test x$vwbug = xtrue)
 
 clang_libcxx=false
 AC_ARG_ENABLE([libc++],
-              AC_HELP_STRING([--enable-libc++],[use clang's libc++ vs. g++ libstdc++ headers/libraries]),
-              [ test "$enableval" = "no" || clang_libcxx=true])
+  AS_HELP_STRING([--enable-libc++],
+                 [Use Clang libc++ vs. GNU libstdc++ headers and libraries]),
+  [ test "$enableval" = "no" || clang_libcxx=true])
+
+AS_IF([test "x${clang_libcxx}" = xfalse],
+  [
+    AS_CASE([${host_os}], 
+      [darwin*], [
+        dnl Mac OSX: Really prefer libc++ when using clang++
+        AS_CASE(["${CXX}"],
+          [*clang++*], [
+            clang_libcxx=true
+            AC_MSG_NOTICE([**** clang++ compiler enables libc++ for Mac OS X.])
+          ])
+      ])
+  ])
+
 AM_CONDITIONAL([CLANG_LIBCXX], test x$clang_libcxx = xtrue)
 
-case $host in
-  *-*-freebsd*)
-	 freebsd=true
-	 ;;
-  *)
-	 freebsd=false
-	 ;;
-esac
+pythonmod=false
+AC_ARG_ENABLE([python],
+  AS_HELP_STRING([--enable-python],
+                 [Build the Vowpal Wabbit Python module; a specific version of the Python interpreter can be
+                  enabled via the PYTHON_VERSION variable. [default=no]]),
+  [ 
+    AS_IF([test "${enableval}" != "no"],
+      [
+        pythonmod=true
+        AM_PATH_PYTHON
+        AX_PYTHON_DEVEL
+        AX_BOOST_PYTHON
+      ])
+  ],
+  [
+    AC_MSG_NOTICE([**** Python module not enabled.])
+  ])
+
+AM_CONDITIONAL(PYTHON_MODULE, test x${pythonmod} = xtrue)
+
+javajnimod=false
+AC_ARG_ENABLE([java-jni],
+  AS_HELP_STRING([--enable-java-jni],
+                 [Build the Java JNI library. [default=no]]),
+  [
+    AS_IF([test "${enableval}" != "no"],
+      [
+        javajnimod=true
+        AX_JAVA_OPTIONS
+        AX_PROG_JAVA
+        AX_PROG_JAVAC
+        AX_JNI_INCLUDE_DIR
+      ])
+  ],
+  [
+    AC_MSG_NOTICE([**** Java JNI module not enabled.])
+  ])
+
+AM_CONDITIONAL([JAVA_JNI_MODULE], test "x${javajnimod}" = xtrue)
+
+CXXFLAGS_JNI_INCLUDES=""
+for d in ${JNI_INCLUDE_DIRS}; do
+  CXXFLAGS_JNI_INCLUDES="${CXXFLAGS_JNI_INCLUDES} -I${d}"
+done
+AC_SUBST(CXXFLAGS_JNI_INCLUDES)
+
+AS_CASE([$host_os],
+  [freebsd*], [freebsd=true],
+	[freebsd=false])
 AM_CONDITIONAL(FREEBSD, test x$freebsd = xtrue)
 
 
@@ -79,5 +137,7 @@ AC_CONFIG_FILES([
  vowpalwabbit/Makefile
  cluster/Makefile
  library/Makefile
+ python/Makefile
+ java/Makefile
 ])
 AC_OUTPUT

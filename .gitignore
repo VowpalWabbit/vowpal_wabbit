@@ -1,11 +1,9 @@
-Makefile.in
-cluster/Makefile.in
-cluster/Makefile
 acinclude.d/libtool.m4
 acinclude.d/ltoptions.m4
 acinclude.d/ltsugar.m4
 acinclude.d/ltversion.m4
 acinclude.d/lt~obsolete.m4
+cluster/Makefile
 aclocal.m4
 config.guess
 config.sub
@@ -15,8 +13,6 @@ install-sh
 libtool
 ltmain.sh
 missing
-vowpalwabbit/Makefile.in
-vowpalwabbit/config.h.in
 config.h
 *.la
 *.lo
@@ -43,7 +39,6 @@ autom4te.cache/
 vowpalwabbit/active_interactor
 vowpalwabbit/vw
 cluster/spanning_tree
-*.d
 *.prev
 library/ezexample_predict
 library/ezexample_train
@@ -51,6 +46,7 @@ library/library_example
 library/recommend
 library/gd_mf_weights
 library/test_search
+python/Makefile
 test/RunTests.last.times
 *.dSYM
 

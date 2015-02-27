@@ -15,10 +15,12 @@ This is the *vowpal wabbit* fast online learning code.  For Windows, look at REA
 These prerequisites are usually pre-installed on many platforms. However, you may need to consult your favorite package
 manager (*yum*, *apt*, *MacPorts*, *brew*, ...) to install missing software.
 
-- [Boost](http://www.boost.org) library, with the `Boost::Program_Options` library option enabled.
+- [Boost](http://www.boost.org) library, with the `Boost::Program\_Options library option enabled.
 - GNU *autotools*: *autoconf*, *automake*, *libtool*, *autoheader*, et. al.
 - (optional) [git](http://git-scm.com) if you want to check out the latest version of *vowpal wabbit*,
   work on the code, or even contribute code to the main project.
+- (optional) If you want Python support from the `python` subdirectory, ensure that Boost is installed
+  with Python options enabled.
 
 ## Getting the code
 
@@ -37,9 +39,13 @@ $ git clone https://github.com/JohnLangford/vowpal_wabbit.git
 
 You should be able to build the *vowpal wabbit* on most systems with:
 ```
+$ ./configure
 $ make
 $ make test    # (optional)
 ```
+
+`configure --help` will give you all the options that you can pass to `configure` in order to
+fine-tune your compilation process.
 
 If that fails, try:
 ```

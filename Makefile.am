@@ -1,5 +1,12 @@
 SUBDIRS = vowpalwabbit cluster library
 
+if PYTHON_MODULE
+SUBDIRS += python
+endif
+if JAVA_JNI_MODULE
+SUBDIRS += java
+endif
+
 nobase_include_HEADERS = vowpalwabbit/allreduce.h \
 	vowpalwabbit/comp_io.h \
 	vowpalwabbit/config.h \
