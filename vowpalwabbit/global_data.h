@@ -158,9 +158,9 @@ struct shared_data {
   size_t holdout_best_pass;
 
   // Column width, precision constants:
-  static const int col_avg_loss = 10;
+  static const int col_avg_loss = 8;
   static const int prec_avg_loss = 6;
-  static const int col_since_last = 10;
+  static const int col_since_last = 8;
   static const int prec_since_last = 6;
   static const int col_example_counter = 12;
   static const int col_example_weight = col_example_counter + 2;

@@ -25,10 +25,12 @@ int main(int argc, char *argv[])
     
     if (!all.quiet && !all.bfgs && !all.searchstr)
         {
-        	std::cerr << std::setw(shared_data::col_avg_loss) << "average"
+        	std::cerr << std::left
+        	          << std::setw(shared_data::col_avg_loss) << std::left << "average"
         		  << " "
-        		  << std::setw(shared_data::col_since_last) << "since"
+        		  << std::setw(shared_data::col_since_last) << std::left << "since"
         		  << " "
+			  << std::right
         		  << std::setw(shared_data::col_example_counter) << "example"
         		  << " "
         		  << std::setw(shared_data::col_example_weight) << "example"
@@ -39,10 +41,12 @@ int main(int argc, char *argv[])
         		  << " "
         		  << std::setw(shared_data::col_current_features) << "current"
         		  << std::endl;
-        	std::cerr << std::setw(shared_data::col_avg_loss) << "loss"
+        	std::cerr << std::left
+        	          << std::setw(shared_data::col_avg_loss) << std::left << "loss"
         		  << " "
-        		  << std::setw(shared_data::col_since_last) << "last"
+        		  << std::setw(shared_data::col_since_last) << std::left << "last"
         		  << " "
+			  << std::right
         		  << std::setw(shared_data::col_example_counter) << "counter"
         		  << " "
         		  << std::setw(shared_data::col_example_weight) << "weight"
