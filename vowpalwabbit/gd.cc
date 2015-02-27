@@ -10,8 +10,12 @@ license as described in the file LICENSE.
 #include <netdb.h>
 #endif
 
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+#if !defined(VW_NO_INLINE_SIMD)
+#  if defined(__ARM_NEON__)
+#include <arm_neon.h>
+#  elif defined(__SSE2__)
 #include <xmmintrin.h>
+#  endif
 #endif
 
 #include "gd.h"
@@ -25,7 +29,7 @@ using namespace LEARNER;
 //4. Factor various state out of vw&
 namespace GD
 {
-  struct gd{
+  struct gd {
     //double normalized_sum_norm_x;
     double total_weight;
     size_t no_win_counter;
@@ -44,12 +48,36 @@ namespace GD
 
   void sync_weights(vw& all);
 
-  float InvSqrt(float x){
+  static inline float InvSqrt(float x)
+  {
+#if !defined(VW_NO_INLINE_SIMD)
+#  if defined(__ARM_NEON__)
+    // Propagate into vector
+    float32x2_t v1 = vdup_n_f32(x);
+    // Estimate
+    float32x2_t e1 = vrsqrte_f32(v1);
+    // N-R iteration 1
+    float32x2_t e2 = vmul_f32(e1, vrsqrts_f32(v1, vmul_f32(e1, e1)));
+    // N-R iteration 2
+    float32x2_t e3 = vmul_f32(e2, vrsqrts_f32(v1, vmul_f32(e2, e2)));
+    // Extract result
+    return vget_lane_f32(e3, 0);
+#  elif defined(__SSE2__)
+    __m128 eta = _mm_load_ss(&x);
+    eta = _mm_rsqrt_ss(eta);
+    _mm_store_ss(&x, eta);
+    // Fall through
+#  endif
+#else
+    // Carmack/Quake/SGI fast method:
     float xhalf = 0.5f * x;
     int i = *(int*)&x; // store floating-point bits in integer
     i = 0x5f3759d5 - (i >> 1); // initial guess for Newton's method
     x = *(float*)&i; // convert new bits into float
     x = x*(1.5f - xhalf*x*x); // One round of Newton's method
+    // Fall through
+#endif
+
     return x;
   }
   
@@ -371,13 +399,7 @@ void predict(gd& g, base_learner& base, example& ec)
     if(adaptive) {
       if (sqrt_rate)
 	{  
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-	  __m128 eta = _mm_load_ss(&w[adaptive]);
-	  eta = _mm_rsqrt_ss(eta);
-	  _mm_store_ss(&rate_decay, eta);
-#else
 	  rate_decay = InvSqrt(w[adaptive]);
-#endif
 	}
       else
 	rate_decay = powf(w[adaptive],s.minus_power_t);
