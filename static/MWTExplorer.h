@@ -296,6 +296,11 @@ public:
 		}
 	}
 
+    void UpdatePolicy(IPolicy<Ctx>& new_policy)
+    {
+        m_default_policy = new_policy;
+    }
+
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
@@ -371,6 +376,11 @@ public:
 			throw std::invalid_argument("Number of actions must be at least 1.");
 		}
 	}
+
+    void UpdateScorer(IScorer<Ctx>& new_scorer)
+    {
+        m_default_scorer = new_scorer;
+    }
 
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
@@ -461,6 +471,11 @@ public:
 		}
 	}
 
+    void UpdateScorer(IScorer<Ctx>& new_scorer)
+    {
+        m_default_scorer = new_scorer;
+    }
+
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
@@ -544,6 +559,11 @@ public:
 		}
 	}
 
+    void UpdatePolicy(IPolicy<Ctx>& new_policy)
+    {
+        m_default_policy = new_policy;
+    }
+
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
@@ -616,6 +636,11 @@ public:
 			throw std::invalid_argument("Number of bags must be at least 1.");
 		}
 	}
+
+    void UpdatePolicy(vector<unique_ptr<IPolicy<Ctx>>>& new_policy_functions)
+    {
+        m_default_policy_functions = new_policy_functions;
+    }
 
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
