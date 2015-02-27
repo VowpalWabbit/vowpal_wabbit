@@ -157,10 +157,10 @@ int main(int argc, char* argv[])
 		u32 num_bags = 2;
 
 		// Create a vector of smart pointers to default policies using the built-in type PolicyPtr<Context>
-		IPolicy<MyContext>::Vector policy_functions;
+		vector<unique_ptr<IPolicy<MyContext>>> policy_functions;
 		for (size_t i = 0; i < num_bags; i++)
 		{
-		  policy_functions.push_back(IPolicy<MyContext>::Ptr(new MyPolicy()));
+		  policy_functions.push_back(unique_ptr<IPolicy<MyContext>>(new MyPolicy()));
 		}
 		int num_actions = 10;
 		BootstrapExplorer<MyContext> explorer(policy_functions, num_actions);

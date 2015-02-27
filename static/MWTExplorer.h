@@ -153,16 +153,6 @@ public:
 	/// @returns	        The action to take (1-based index)
 	///
 	virtual u32 Choose_Action(Ctx& context) = 0;
-
-  ///
-  /// Represents a smart pointer to an IPolicy object.
-  ///
-  typedef unique_ptr<IPolicy<Ctx>> Ptr;
-
-  ///
-  /// Represents a vector of IPolicy objects that are managed via smart pointers.
-  ///
-  typedef vector<Ptr> Vector;
 };
 
 ///
@@ -190,13 +180,15 @@ struct StringRecorder : public IRecorder<Ctx>
 	void Record(Ctx& context, u32 action, float probability, string unique_key)
 	{
 		// Implicitly enforce To_String() API on the context
-		m_recording.append(to_string(action));
+	  m_recording.append(to_string((unsigned long long)action));
 		m_recording.append(" ", 1);
 		m_recording.append(unique_key);
 		m_recording.append(" ", 1);
 
 		char prob_str[10] = { 0 };
-		NumberUtils::Float_To_String(probability, prob_str);
+        int x = (int)probability;
+        int d = (int)(fabs(probability - x) * 100000);
+        sprintf_s(prob_str, 10 * sizeof(char), "%d.%05d", x, d);
 		m_recording.append(prob_str);
 
 		m_recording.append(" | ", 3);
@@ -252,19 +244,20 @@ public:
 	string To_String()
 	{
 		string out_string;
-		char feature_str[35] = { 0 };
+		const size_t strlen = 35;
+		char feature_str[strlen] = { 0 };
 		for (size_t i = 0; i < m_features.size(); i++)
 		{
 			int chars;
 			if (i == 0)
 			{
-				chars = sprintf(feature_str, "%d:", m_features[i].Id);
+                chars = sprintf_s(feature_str, strlen, "%d:", m_features[i].Id);
 			}
 			else
 			{
-				chars = sprintf(feature_str, " %d:", m_features[i].Id);
+                chars = sprintf_s(feature_str, strlen, " %d:", m_features[i].Id);
 			}
-			NumberUtils::print_float(feature_str + chars, m_features[i].Value);
+            NumberUtils::print_float(feature_str + chars, strlen-chars, m_features[i].Value);
 			out_string.append(feature_str);
 		}
 		return out_string;
@@ -301,10 +294,6 @@ public:
 		{
 			throw std::invalid_argument("Epsilon must be between 0 and 1.");
 		}
-	}
-
-	~EpsilonGreedyExplorer()
-	{
 	}
 
 private:
@@ -612,7 +601,7 @@ public:
 	/// The policy pointers must be valid throughout the lifetime of this explorer.
     /// @param num_actions               The number of actions to randomize over.
 	///
-  BootstrapExplorer(typename IPolicy<Ctx>::Vector& default_policy_functions, u32 num_actions) :
+	BootstrapExplorer(vector<unique_ptr<IPolicy<Ctx>>>& default_policy_functions, u32 num_actions) :
 		m_default_policy_functions(default_policy_functions),
 		m_num_actions(num_actions)
 	{
@@ -668,7 +657,7 @@ private:
 	}
 
 private:
-  typename IPolicy<Ctx>::Vector& m_default_policy_functions;
+	vector<unique_ptr<IPolicy<Ctx>>>& m_default_policy_functions;
 	u32 m_bags;
 	u32 m_num_actions;
 

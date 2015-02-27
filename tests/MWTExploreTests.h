@@ -47,16 +47,16 @@ public:
 		vector<float> scores;
 		if (m_uniform)
 		{
-			for (u32 i = 0; i < m_num_actions; i++)
+			for (int i = 0; i < m_num_actions; i++)
 			{
-				scores.push_back(m_params);
+				scores.push_back((float)m_params);
 			}
 		}
 		else
 		{
-			for (u32 i = 0; i < m_num_actions; i++)
+            for (int i = 0; i < m_num_actions; i++)
 			{
-				scores.push_back(m_params + i);
+                scores.push_back((float)m_params + i);
 			}
 		}
 		return scores;
@@ -77,7 +77,7 @@ public:
 	vector<float> Score_Actions(TestContext& context)
 	{
 		vector<float> scores;
-		for (u32 i = 0; i < m_num_actions; i++)
+        for (int i = 0; i < m_num_actions; i++)
 		{
 			scores.push_back((float)m_value);
 		}
@@ -95,9 +95,9 @@ public:
 	vector<float> Score_Actions(SimpleContext& context)
 	{
 		vector<float> scores;
-		for (u32 i = 0; i < m_num_actions; i++)
+        for (int i = 0; i < m_num_actions; i++)
 		{
-			scores.push_back(m_params);
+            scores.push_back((float)m_params);
 		}
 		return scores;
 	}

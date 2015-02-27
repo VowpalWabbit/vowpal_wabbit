@@ -120,9 +120,9 @@ namespace vw_explore_tests
 			int params = 101;
 			TestRecorder my_recorder;
 
-			IPolicy<TestContext>::Vector policies;
-			policies.push_back(IPolicy<TestContext>::Ptr(new TestPolicy(params, num_actions)));
-			policies.push_back(IPolicy<TestContext>::Ptr(new TestPolicy(params + 1, num_actions)));
+			vector<unique_ptr<IPolicy<TestContext>>> policies;
+			policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params, num_actions)));
+			policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params + 1, num_actions)));
 
 			TestContext my_context;
 
@@ -149,9 +149,9 @@ namespace vw_explore_tests
 			int params = 101;
 			TestRecorder my_recorder;
 
-			IPolicy<TestContext>::Vector policies;
-			policies.push_back(IPolicy<TestContext>::Ptr(new TestPolicy(params, num_actions)));
-			policies.push_back(IPolicy<TestContext>::Ptr(new TestPolicy(params + 1, num_actions)));
+			vector<unique_ptr<IPolicy<TestContext>>> policies;
+			policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params, num_actions)));
+			policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params + 1, num_actions)));
 
 			TestContext my_context;
 
@@ -183,7 +183,7 @@ namespace vw_explore_tests
 			SoftmaxExplorer<TestContext> explorer(my_scorer, lambda, num_actions);
 
 			// Scale C up since we have fewer interactions
-			u32 num_decisions = num_actions * log(num_actions * 1.0) + log(NUM_ACTIONS_COVER * 1.0 / num_actions) * C * num_actions;
+			u32 num_decisions = (u32)(num_actions * log(num_actions * 1.0) + log(NUM_ACTIONS_COVER * 1.0 / num_actions) * C * num_actions);
 			// The () following the array should ensure zero-initialization
 			u32* actions = new u32[num_actions]();
 			u32 i;
@@ -194,7 +194,7 @@ namespace vw_explore_tests
 				actions[action - 1]++;
 			}
 			// Ensure all actions are covered
-			for (i = 0; i < num_actions; i++)
+			for (i = 0; i < (u32)num_actions; i++)
 			{
 				Assert::IsTrue(actions[i] > 0);
 			}		
@@ -202,7 +202,7 @@ namespace vw_explore_tests
 			for (i = 0; i < num_decisions; i++)
 			{
 				// Our default scorer currently assigns equal weight to each action
-				expected_probs[i] = 1.0 / num_actions;
+				expected_probs[i] = 1.0f / num_actions;
 			}
 			vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
 			this->Test_Interactions(interactions, num_decisions, expected_probs);
@@ -231,7 +231,7 @@ namespace vw_explore_tests
 			size_t num_interactions = interactions.size();
 
 			Assert::AreEqual(3, (int)num_interactions);
-			for (int i = 0; i < num_interactions; i++)
+			for (size_t i = 0; i < num_interactions; i++)
 			{
 				Assert::AreNotEqual(1.f / num_actions, interactions[i].Probability);
 			}
@@ -294,9 +294,9 @@ namespace vw_explore_tests
 			int params = 101;
 			StringRecorder<SimpleContext> my_recorder;
 
-			IPolicy<SimpleContext>::Vector policies;
-			policies.push_back(IPolicy<SimpleContext>::Ptr(new TestSimplePolicy(params, num_actions)));
-			policies.push_back(IPolicy<SimpleContext>::Ptr(new TestSimplePolicy(params, num_actions)));
+			vector<unique_ptr<IPolicy<SimpleContext>>> policies;
+			policies.push_back(unique_ptr<IPolicy<SimpleContext>>(new TestSimplePolicy(params, num_actions)));
+			policies.push_back(unique_ptr<IPolicy<SimpleContext>>(new TestSimplePolicy(params, num_actions)));
 
 			MwtExplorer<SimpleContext> mwt("salt", my_recorder);
 			BootstrapExplorer<SimpleContext> explorer(policies, num_actions);
@@ -339,7 +339,7 @@ namespace vw_explore_tests
 			// We could use many fewer bits (e.g. u8) per bin since we're throwing uniformly at
 			// random, but this is safer in case we change things
 			u32 bins[NUM_ACTIONS_COVER] = { 0 };
-			u32 num_balls = NUM_ACTIONS_COVER * log(NUM_ACTIONS_COVER) + C * NUM_ACTIONS_COVER;
+			u32 num_balls = (u32)(NUM_ACTIONS_COVER * log(NUM_ACTIONS_COVER) + C * NUM_ACTIONS_COVER);
 			PRG::prg rg;
 			u32 i;
 			for (i = 0; i < num_balls; i++)
@@ -350,28 +350,6 @@ namespace vw_explore_tests
 			for (i = 0; i < NUM_ACTIONS_COVER; i++)
 			{
 				Assert::IsTrue(bins[i] > 0);
-			}
-		}
-
-		TEST_METHOD(Float_To_String)
-		{
-			PRG::prg rand;
-
-			for (int i = 0; i < 10000; i++)
-			{
-				float f = (rand.Uniform_Unit_Interval() - 0.5f) * rand.Uniform_Int(0, 100000);
-
-				ostringstream expected_stream;
-				expected_stream << std::fixed << std::setprecision(10) << f;
-				string expected_str = expected_stream.str();
-
-				char actual_chars[15] = { 0 };
-				NumberUtils::Float_To_String(f, actual_chars);
-				string actual_str(actual_chars);
-
-				size_t length = actual_str.length() - 1;
-				int compare_result = expected_str.compare(0, length, actual_str, 0, length);
-				Assert::AreEqual(0, compare_result);
 			}
 		}
 
@@ -449,7 +427,7 @@ namespace vw_explore_tests
 					expected_str = expected_str.erase(0, 1);
 				}
 
-				sprintf(expected_log, "%d %s %.5f | %d:%s",
+				sprintf_s(expected_log, "%d %s %.5f | %d:%s",
 					action, "", 1.f, i, expected_str.c_str());
 
 				size_t length = actual_log.length() - 1;
@@ -464,7 +442,7 @@ namespace vw_explore_tests
 			int params = 101;
 			TestPolicy my_policy(params, 0);
 			TestScorer my_scorer(params, 0);
-			IPolicy<TestContext>::Vector policies;
+			vector<unique_ptr<IPolicy<TestContext>>> policies;
 
 			COUNT_INVALID(EpsilonGreedyExplorer<TestContext> explorer(my_policy, .5f, 0);) // Invalid # actions, must be > 0
 			COUNT_INVALID(EpsilonGreedyExplorer<TestContext> explorer(my_policy, 1.5f, 10);) // Invalid epsilon, must be in [0,1]
@@ -512,8 +490,8 @@ namespace vw_explore_tests
 				TestRecorder recorder;
 				TestContext context;
 
-				IPolicy<TestContext>::Vector policies;
-				policies.push_back(IPolicy<TestContext>::Ptr(new TestBadPolicy()));
+				vector<unique_ptr<IPolicy<TestContext>>> policies;
+				policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestBadPolicy()));
 				MwtExplorer<TestContext> mwt("salt", recorder);
 				BootstrapExplorer<TestContext> explorer(policies, (u32)1);
 				mwt.Choose_Action(explorer, "test", context);
@@ -628,7 +606,7 @@ namespace vw_explore_tests
 			size_t num_interactions = interactions.size();
 
 			Assert::AreEqual(num_interactions_expected, (int)num_interactions);
-			for (int i = 0; i < num_interactions; i++)
+			for (size_t i = 0; i < num_interactions; i++)
 			{
 				Assert::AreEqual(probs_expected[i], interactions[i].Probability);
 			}
