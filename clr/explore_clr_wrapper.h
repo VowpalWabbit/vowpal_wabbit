@@ -36,6 +36,11 @@ namespace MultiWorldTesting {
 			delete m_explorer;
 		}
 
+        void UpdatePolicy(IPolicy<Ctx>^ newPolicy)
+        {
+            this->defaultPolicy = newPolicy;
+        }
+
 	internal:
 		virtual UInt32 InvokePolicyCallback(Ctx context, int index) override
 		{
@@ -75,6 +80,11 @@ namespace MultiWorldTesting {
 			this->defaultPolicy = defaultPolicy;
 			m_explorer = new NativeMultiWorldTesting::TauFirstExplorer<NativeContext>(*GetNativePolicy(), tau, (u32)numActions);
 		}
+
+        void UpdatePolicy(IPolicy<Ctx>^ newPolicy)
+        {
+            this->defaultPolicy = newPolicy;
+        }
 
 		~TauFirstExplorer()
 		{
@@ -122,6 +132,11 @@ namespace MultiWorldTesting {
 			m_explorer = new NativeMultiWorldTesting::SoftmaxExplorer<NativeContext>(*GetNativeScorer(), lambda, (u32)numActions);
 		}
 
+        void UpdateScorer(IScorer<Ctx>^ newScorer)
+        {
+            this->defaultScorer = newScorer;
+        }
+
 		~SoftmaxExplorer()
 		{
 			delete m_explorer;
@@ -165,6 +180,11 @@ namespace MultiWorldTesting {
 			this->defaultScorer = defaultScorer;
 			m_explorer = new NativeMultiWorldTesting::GenericExplorer<NativeContext>(*GetNativeScorer(), (u32)numActions);
 		}
+
+        void UpdateScorer(IScorer<Ctx>^ newScorer)
+        {
+            this->defaultScorer = newScorer;
+        }
 
 		~GenericExplorer()
 		{
@@ -215,6 +235,11 @@ namespace MultiWorldTesting {
 
 			m_explorer = new NativeMultiWorldTesting::BootstrapExplorer<NativeContext>(*GetNativePolicies((u32)defaultPolicies->Length), (u32)numActions);
 		}
+
+        void UpdateScorer(cli::array<IPolicy<Ctx>^>^ newPolicies)
+        {
+            this->defaultPolicies = newPolicies;
+        }
 
 		~BootstrapExplorer()
 		{
