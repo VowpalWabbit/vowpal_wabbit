@@ -25,7 +25,7 @@ namespace DepParserTask {
     task_data *data = new task_data();
 	data->gold_action_reward.resize(4,true);
     data->temp = v_init<uint32_t>();
-	for(size_t i=0; i<12; i++){
+	for(size_t i=0; i<13; i++){
 	    data->ec_buf.push_back(NULL);
 		data->temp.push_back(0);
 		data->gold_action_reward.push_back(0);
@@ -98,7 +98,7 @@ namespace DepParserTask {
         children[4][stack[stack.size()-2]]=stack.last();
         children[1][stack[stack.size()-2]]++;
         tags[stack.last()] = t_id;
-//		srn.loss((gold_heads[stack.last()] != heads[stack.last()])+(gold_tags[stack.last()] != t_id));
+//		srn.loss((gold_heads[stack.last()] != heads[stack.last()]) || (gold_tags[stack.last()] != t_id));
 		if(gold_heads[stack.last()] != heads[stack.last()])
 			srn.loss(2);
 		else if (gold_tags[stack.last()] != t_id)
@@ -115,7 +115,7 @@ namespace DepParserTask {
         children[2][idx]=stack.last();
         children[0][idx]++;
         tags[stack.last()] = t_id;
-//		srn.loss((gold_heads[stack.last()] != heads[stack.last()])+(gold_tags[stack.last()] != t_id));
+		srn.loss((gold_heads[stack.last()] != heads[stack.last()])||(gold_tags[stack.last()] != t_id));
 		
 		if(gold_heads[stack.last()] != heads[stack.last()])
 			srn.loss(2);
@@ -124,7 +124,7 @@ namespace DepParserTask {
 		else
 			srn.loss(0);
 
-//        srn.loss((gold_heads[stack.last()] != heads[stack.last()]) + (gold_tags[stack.last()] != t_id));
+        srn.loss((gold_heads[stack.last()] != heads[stack.last()]) + (gold_tags[stack.last()] != t_id));
         stack.pop();
         return idx;
     }
@@ -166,8 +166,6 @@ namespace DepParserTask {
     uint64_t v0;
     for(size_t i=0; i<13; i++) {
 	  unsigned char ts = i+'A';
-  	  ex.atomics[ts].erase();
-
       if(!ec_buf[i]) continue;
       for (size_t j = 0;  j < ec_buf[i]->indices.size(); j++) {
 		unsigned char fs = ec_buf[i]->indices[j];
@@ -180,8 +178,7 @@ namespace DepParserTask {
         }
       }
     }
-
-	ex.atomics[val_namespace].erase();
+	
     temp.resize(10,true);
     temp[0] = stack.empty()? 0: (idx >n? 1: 2+min(5, idx - stack.last())); //distance
     temp[1] = stack.empty()? 1: 1+min(5, children[0][stack.last()]); // num of left childrean of the top item in stack
