@@ -37,6 +37,8 @@ public:
   char* base;
   unsigned char index;
   float v;
+  bool redefine_some;
+  unsigned char (*redefine)[256];
   parser* p;
   example* ae;
   uint32_t* affix_features;
@@ -227,6 +229,7 @@ public:
     }else{
       // NameSpaceInfo --> 'String' NameSpaceInfoValue
       index = (unsigned char)(*reading_head);
+      if (redefine_some) index = (*redefine)[index]; //redefine index
       if(ae->atomics[index].begin == ae->atomics[index].end)
 	new_index = true;
       substring name = read_name();
@@ -306,10 +309,12 @@ public:
 	this->reading_head = reading_head;
 	this->endLine = endLine;
 	this->p = all.p;
+	this->redefine_some = all.redefine_some;
+	this->redefine = &all.redefine;
 	this->ae = ae;
 	this->affix_features = all.affix_features;
 	this->spelling_features = all.spelling_features;
-        this->namespace_dictionaries = all.namespace_dictionaries;
+	this->namespace_dictionaries = all.namespace_dictionaries;
 	this->base = NULL;
 	listNameSpace();
 	if (base != NULL)
