@@ -1161,7 +1161,6 @@ namespace Search {
         a = choose_oracle_action(priv, ec_cnt, oracle_actions, oracle_actions_cnt, allowed_actions, allowed_actions_cnt, priv.beam && (priv.state != INIT_TEST));
 
       if ((policy >= 0) || gte_here) {
-        priv.learn_learner_id = learner_id;
         int learner = select_learner(priv, policy, learner_id, false, priv.state == INIT_TEST);
 
         ensure_size(priv.condition_on_actions, condition_on_cnt);
@@ -1193,7 +1192,10 @@ namespace Search {
             priv.learn_ec_ref_cnt = ec_cnt;
             ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);
             memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt * sizeof(action));
+            size_t old_learner_id = priv.learn_learner_id;
+            priv.learn_learner_id = learner_id;
             generate_training_example(priv, losses, false);
+            priv.learn_learner_id = old_learner_id;
             losses.delete_v();
           }
           
