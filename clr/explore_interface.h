@@ -77,6 +77,27 @@ public interface class IExplorer
 {
 };
 
+generic <class Ctx>
+public interface class IConsumePolicy
+{
+public:
+    virtual void UpdatePolicy(IPolicy<Ctx>^ newPolicy) = 0;
+};
+
+generic <class Ctx>
+public interface class IConsumePolicies
+{
+public:
+    virtual void UpdatePolicy(cli::array<IPolicy<Ctx>^>^ newPolicies) = 0;
+};
+
+generic <class Ctx>
+public interface class IConsumeScorer
+{
+public:
+    virtual void UpdateScorer(IScorer<Ctx>^ newScorer) = 0;
+};
+
 public interface class IStringContext
 {
 public:

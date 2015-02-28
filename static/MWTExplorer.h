@@ -114,6 +114,7 @@ public:
 	/// @param unique_key   A user-defined unique identifer for the decision
 	///
 	virtual void Record(Ctx& context, u32 action, float probability, string unique_key) = 0;
+    virtual ~IRecorder() { }
 };
 
 ///
@@ -136,6 +137,7 @@ public:
 	///                     whether to record this decision
 	///
 	virtual std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context) = 0;
+    virtual ~IExplorer() { }
 };
 
 ///
@@ -153,6 +155,7 @@ public:
 	/// @returns	        The action to take (1-based index)
 	///
 	virtual u32 Choose_Action(Ctx& context) = 0;
+    virtual ~IPolicy() { }
 };
 
 ///
@@ -169,6 +172,31 @@ public:
 	/// @returns         A vector of scores indexed by action (1-based)
 	///
 	virtual vector<float> Score_Actions(Ctx& context) = 0;
+    virtual ~IScorer() { }
+};
+
+template <class Ctx>
+class IConsumePolicy
+{
+public:
+    virtual void Update_Policy(IPolicy<Ctx>& new_policy) = 0;
+    virtual ~IConsumePolicy() { }
+};
+
+template <class Ctx>
+class IConsumePolicies
+{
+public:
+    virtual void Update_Policy(vector<unique_ptr<IPolicy<Ctx>>>& new_policy_functions) = 0;
+    virtual ~IConsumePolicies() { }
+};
+
+template <class Ctx>
+class IConsumeScorer
+{
+public:
+    virtual void Update_Scorer(IScorer<Ctx>& new_policy) = 0;
+    virtual ~IConsumeScorer() { }
 };
 
 ///
@@ -272,7 +300,7 @@ private:
 /// which actions should be preferred.  Epsilon greedy is also computationally cheap.
 ///
 template <class Ctx>
-class EpsilonGreedyExplorer : public IExplorer<Ctx>
+class EpsilonGreedyExplorer : public IExplorer<Ctx>, public IConsumePolicy<Ctx>
 {
 public:
 	///
@@ -296,7 +324,7 @@ public:
 		}
 	}
 
-    void UpdatePolicy(IPolicy<Ctx>& new_policy)
+    void Update_Policy(IPolicy<Ctx>& new_policy)
     {
         m_default_policy = new_policy;
     }
@@ -358,7 +386,7 @@ private:
 /// choose actions with large scores. Softmax allows you to do that.
 /// 
 template <class Ctx>
-class SoftmaxExplorer : public IExplorer<Ctx>
+class SoftmaxExplorer : public IExplorer<Ctx>, public IConsumeScorer<Ctx>
 {
 public:
 	///
@@ -377,7 +405,7 @@ public:
 		}
 	}
 
-    void UpdateScorer(IScorer<Ctx>& new_scorer)
+    void Update_Scorer(IScorer<Ctx>& new_scorer)
     {
         m_default_scorer = new_scorer;
     }
@@ -453,7 +481,7 @@ private:
 /// distribution over actions desired, and it will draw from that.
 /// 
 template <class Ctx>
-class GenericExplorer : public IExplorer<Ctx>
+class GenericExplorer : public IExplorer<Ctx>, public IConsumeScorer<Ctx>
 {
 public:
 	///
@@ -471,7 +499,7 @@ public:
 		}
 	}
 
-    void UpdateScorer(IScorer<Ctx>& new_scorer)
+    void Update_Scorer(IScorer<Ctx>& new_scorer)
     {
         m_default_scorer = new_scorer;
     }
@@ -539,7 +567,7 @@ private:
 /// uses the default policy thereafter.
 /// 
 template <class Ctx>
-class TauFirstExplorer : public IExplorer<Ctx>
+class TauFirstExplorer : public IExplorer<Ctx>, public IConsumePolicy<Ctx>
 {
 public:
 
@@ -559,7 +587,7 @@ public:
 		}
 	}
 
-    void UpdatePolicy(IPolicy<Ctx>& new_policy)
+    void Update_Policy(IPolicy<Ctx>& new_policy)
     {
         m_default_policy = new_policy;
     }
@@ -611,7 +639,7 @@ private:
 /// This performs well statistically but can be computationally expensive.
 /// 
 template <class Ctx>
-class BootstrapExplorer : public IExplorer<Ctx>
+class BootstrapExplorer : public IExplorer<Ctx>, public IConsumePolicies<Ctx>
 {
 public:
 	///
@@ -637,9 +665,9 @@ public:
 		}
 	}
 
-    void UpdatePolicy(vector<unique_ptr<IPolicy<Ctx>>>& new_policy_functions)
+    void Update_Policy(vector<unique_ptr<IPolicy<Ctx>>>& new_policy_functions)
     {
-        m_default_policy_functions = new_policy_functions;
+        m_default_policy_functions = move(new_policy_functions);
     }
 
 private:

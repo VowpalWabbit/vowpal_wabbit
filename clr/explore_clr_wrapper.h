@@ -16,7 +16,7 @@ namespace MultiWorldTesting {
 	/// </remarks>
 	/// <typeparam name="Ctx">The Context type.</typeparam>
 	generic <class Ctx>
-	public ref class EpsilonGreedyExplorer : public IExplorer<Ctx>, public PolicyCallback<Ctx>
+	public ref class EpsilonGreedyExplorer : public IExplorer<Ctx>, public IConsumePolicy<Ctx>, public PolicyCallback<Ctx>
 	{
 	public:
 		/// <summary>
@@ -36,7 +36,7 @@ namespace MultiWorldTesting {
 			delete m_explorer;
 		}
 
-        void UpdatePolicy(IPolicy<Ctx>^ newPolicy)
+        virtual void UpdatePolicy(IPolicy<Ctx>^ newPolicy)
         {
             this->defaultPolicy = newPolicy;
         }
@@ -66,7 +66,7 @@ namespace MultiWorldTesting {
 	/// </remarks>
 	/// <typeparam name="Ctx">The Context type.</typeparam>
 	generic <class Ctx>
-	public ref class TauFirstExplorer : public IExplorer<Ctx>, public PolicyCallback<Ctx>
+    public ref class TauFirstExplorer : public IExplorer<Ctx>, public IConsumePolicy<Ctx>, public PolicyCallback<Ctx>
 	{
 	public:
 		/// <summary>
@@ -81,7 +81,7 @@ namespace MultiWorldTesting {
 			m_explorer = new NativeMultiWorldTesting::TauFirstExplorer<NativeContext>(*GetNativePolicy(), tau, (u32)numActions);
 		}
 
-        void UpdatePolicy(IPolicy<Ctx>^ newPolicy)
+        virtual void UpdatePolicy(IPolicy<Ctx>^ newPolicy)
         {
             this->defaultPolicy = newPolicy;
         }
@@ -117,7 +117,7 @@ namespace MultiWorldTesting {
 	/// </remarks>
 	/// <typeparam name="Ctx">The Context type.</typeparam>
 	generic <class Ctx>
-	public ref class SoftmaxExplorer : public IExplorer<Ctx>, public ScorerCallback<Ctx>
+	public ref class SoftmaxExplorer : public IExplorer<Ctx>, public IConsumeScorer<Ctx>, public ScorerCallback<Ctx>
 	{
 	public:
 		/// <summary>
@@ -132,7 +132,7 @@ namespace MultiWorldTesting {
 			m_explorer = new NativeMultiWorldTesting::SoftmaxExplorer<NativeContext>(*GetNativeScorer(), lambda, (u32)numActions);
 		}
 
-        void UpdateScorer(IScorer<Ctx>^ newScorer)
+        virtual void UpdateScorer(IScorer<Ctx>^ newScorer)
         {
             this->defaultScorer = newScorer;
         }
@@ -167,7 +167,7 @@ namespace MultiWorldTesting {
 	/// </remarks>
 	/// <typeparam name="Ctx">The Context type.</typeparam>
 	generic <class Ctx>
-	public ref class GenericExplorer : public IExplorer<Ctx>, public ScorerCallback<Ctx>
+    public ref class GenericExplorer : public IExplorer<Ctx>, public IConsumeScorer<Ctx>, public ScorerCallback<Ctx>
 	{
 	public:
 		/// <summary>
@@ -181,7 +181,7 @@ namespace MultiWorldTesting {
 			m_explorer = new NativeMultiWorldTesting::GenericExplorer<NativeContext>(*GetNativeScorer(), (u32)numActions);
 		}
 
-        void UpdateScorer(IScorer<Ctx>^ newScorer)
+        virtual void UpdateScorer(IScorer<Ctx>^ newScorer)
         {
             this->defaultScorer = newScorer;
         }
@@ -217,7 +217,7 @@ namespace MultiWorldTesting {
 	/// </remarks>
 	/// <typeparam name="Ctx">The Context type.</typeparam>
 	generic <class Ctx>
-	public ref class BootstrapExplorer : public IExplorer<Ctx>, public PolicyCallback<Ctx>
+	public ref class BootstrapExplorer : public IExplorer<Ctx>, public IConsumePolicies<Ctx>, public PolicyCallback<Ctx>
 	{
 	public:
 		/// <summary>
@@ -236,7 +236,7 @@ namespace MultiWorldTesting {
 			m_explorer = new NativeMultiWorldTesting::BootstrapExplorer<NativeContext>(*GetNativePolicies((u32)defaultPolicies->Length), (u32)numActions);
 		}
 
-        void UpdateScorer(cli::array<IPolicy<Ctx>^>^ newPolicies)
+        virtual void UpdatePolicy(cli::array<IPolicy<Ctx>^>^ newPolicies)
         {
             this->defaultPolicies = newPolicies;
         }
