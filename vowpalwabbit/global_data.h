@@ -206,7 +206,8 @@ struct shared_data {
   {
     std::ostringstream label_buf, pred_buf;
 
-    label_buf << std::setw(col_current_label);
+    label_buf << std::setw(col_current_label)
+              << std::setfill(' ');
     if (label < FLT_MAX)
 	label_buf << std::setprecision(prec_current_label) << std::fixed << std::right << label;
     else
@@ -214,6 +215,7 @@ struct shared_data {
 
     pred_buf << std::setw(col_current_predict) << std::setprecision(prec_current_predict)
 	     << std::fixed << std::right
+             << std::setfill(' ')
 	     << prediction;
 
     print_update(holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features,
@@ -225,13 +227,16 @@ struct shared_data {
   {
     std::ostringstream label_buf, pred_buf;
 
-    label_buf << std::setw(col_current_label);
+    label_buf << std::setw(col_current_label)
+              << std::setfill(' ');
     if (label < INT_MAX)
 	label_buf << std::right << label;
     else
 	label_buf << std::left << " unknown";
 
-    pred_buf << std::setw(col_current_predict) << std::right << prediction;
+    pred_buf << std::setw(col_current_predict) << std::right 
+             << std::setfill(' ')
+             << prediction;
 
     print_update(holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features,
 		 progress_add, progress_arg);
@@ -242,7 +247,8 @@ struct shared_data {
   {
     std::ostringstream pred_buf;
 
-    pred_buf << std::setw(col_current_predict) << std::right << prediction;
+    pred_buf << std::setw(col_current_predict) << std::right << std::setfill(' ')
+             << prediction;
 
     print_update(holdout_set_off, current_pass, label, pred_buf.str(), num_features,
 		 progress_add, progress_arg);
