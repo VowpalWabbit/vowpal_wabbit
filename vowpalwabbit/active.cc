@@ -3,13 +3,9 @@
 #include "rand48.h"
 #include "float.h"
 #include "vw.h"
+#include "active.h"
 
 using namespace LEARNER;
-
-struct active{
-  float active_c0;
-  vw* all;//statistics, loss
-};
 
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 {
@@ -25,7 +21,7 @@ float get_active_coin_bias(float k, float avg_loss, float g, float c0)
   return b*rs*rs;
 }
   
-  float query_decision(active& a, example& ec, float k)
+  float query_decision(active& a, float ec_revert_weight, float k)
     {
       float bias, avg_loss, weighted_queries;
       if (k<=1.)
@@ -33,7 +29,7 @@ float get_active_coin_bias(float k, float avg_loss, float g, float c0)
       else{
 	weighted_queries = (float)(a.all->initial_t + a.all->sd->weighted_examples - a.all->sd->weighted_unlabeled_examples);
 	avg_loss = (float)(a.all->sd->sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001)));
-	bias = get_active_coin_bias(k, avg_loss, ec.revert_weight/k, a.active_c0);
+	bias = get_active_coin_bias(k, avg_loss, ec_revert_weight/k, a.active_c0);
       }
       if(frand48() < bias)
 	return 1.f / bias;
@@ -51,7 +47,7 @@ float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 
 	float k = ec.example_t - ec.l.simple.weight;
 	ec.revert_weight = all.loss->getRevertingWeight(all.sd, ec.pred.scalar, all.eta/powf(k,all.power_t));
-	float importance = query_decision(a, ec, k);
+	float importance = query_decision(a, ec.revert_weight, k);
 
 	if(importance > 0){
 	  all.sd->queries += 1;
@@ -112,7 +108,7 @@ float get_active_coin_bias(float k, float avg_loss, float g, float c0)
     
     float ai=-1; 
     if(ld.label == FLT_MAX)
-      ai=query_decision(a, ec, (float)all.sd->weighted_unlabeled_examples);
+      ai=query_decision(a, ec.revert_weight, (float)all.sd->weighted_unlabeled_examples);
 
     all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
     for (size_t i = 0; i<all.final_prediction_sink.size(); i++)

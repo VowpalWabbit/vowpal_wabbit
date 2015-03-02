@@ -6,7 +6,6 @@ license as described in the file LICENSE.
 #include<math.h>
 #include<iostream>
 #include<stdlib.h>
-#include<assert.h>
 #include<float.h>
 using namespace std;
 

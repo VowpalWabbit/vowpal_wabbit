@@ -346,8 +346,11 @@ float finalize_prediction(shared_data* sd, float ret)
 {
   if ( nanpattern(ret))
     {
-      cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing 0.0" << endl;
-      return 0.;
+      float ret = 0.;
+      if (ret > sd->max_label) ret = (float)sd->max_label;
+      if (ret < sd->min_label) ret = (float)sd->min_label;
+      cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing " << ret << endl;
+      return ret;
     }
   if ( ret > sd->max_label )
     return (float)sd->max_label;

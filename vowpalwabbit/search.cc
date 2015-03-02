@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 #include "search_graph.h"
 #include "csoaa.h"
 #include "beam.h"
+#include "active.h"
 
 using namespace LEARNER;
 using namespace std;
@@ -37,7 +38,7 @@ namespace Search {
                                NULL };   // must NULL terminate!
 
   const bool PRINT_UPDATE_EVERY_EXAMPLE =0;
-  const bool PRINT_UPDATE_EVERY_PASS =0;
+  const bool PRINT_UPDATE_EVERY_PASS =1;
   const bool PRINT_CLOCK_TIME =0;
 
   string   neighbor_feature_space("neighbor");
@@ -133,7 +134,7 @@ namespace Search {
     RollMethod rollout_method;     // 0=policy, 1=oracle, 2=mix_per_state, 3=mix_per_roll
     RollMethod rollin_method;
     float subsample_timesteps;     // train at every time step or just a (random) subset?
-    bool cross_validate;           // train two separate policies -- TODO how should we deal with this at test time? really we want three but that's hard to implement ;)
+    bool xv;           // train three separate policies -- two for providing examples to the other and a third training on the union (which will be used at test time -- TODO)
     
     bool   allow_current_policy;   // should the current policy be used for training? true for dagger
     bool   adaptive_beta;          // used to implement dagger-like algorithms. if true, beta = 1-(1-alpha)^n after n updates, and policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
@@ -169,6 +170,7 @@ namespace Search {
     v_array<action> condition_on_actions;
     v_array< pair<size_t,size_t> > timesteps;
     v_array<float> learn_losses;
+    v_array< pair<float,size_t> > active_uncertainty;
     
     LEARNER::base_learner* base_learner;
     clock_t start_clock_time;
@@ -233,12 +235,12 @@ namespace Search {
   // for two-fold cross validation, we double the number of learners
   // and send examples to one or the other depending on the xor of
   // (is_training) and (example_id % 2)
-  int select_learner(search_private& priv, int policy, size_t learner_id, bool is_training) {
+  int select_learner(search_private& priv, int policy, size_t learner_id, bool is_gte, bool global_xv_train) {
     if (policy<0) return policy;  // optimal policy
     else {
       int p = (int) (policy*priv.num_learners+learner_id);
-      if (priv.cross_validate)
-        p = 2*p + ( is_training ^ (priv.all->sd->example_number % 2) );
+      if (priv.xv && !global_xv_train)
+        p = 2*p + 1 + ( is_gte ^ (priv.all->sd->example_number % 2) );
       return p;
     }
   }
@@ -543,6 +545,8 @@ namespace Search {
         size_t i = (allowed_actions_cnt > 0) ? allowed_actions[j] : j;
         if (i == ret) continue;
 
+        if (! priv.beam->might_insert( alternative_costs[i] )) continue;
+
         action_prefix* px = new action_prefix;
         *px = v_init<action>();
         px->resize(new_len+1);
@@ -708,6 +712,18 @@ namespace Search {
     priv.base_learner->predict(ec, policy);
     uint32_t act = ec.pred.multiclass;
 
+    if ((priv.state == INIT_TRAIN) && (priv.subsample_timesteps <= -1)) { // active learning
+      size_t K = cs_get_costs_size(priv.cb_learner, ec.l);
+      float min_cost = FLT_MAX, min_cost2 = FLT_MAX;
+      for (size_t k = 0; k < K; k++) {
+        float cost = cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
+        if (cost < min_cost) { min_cost2 = min_cost; min_cost = cost; }
+        else if (cost < min_cost2) { min_cost2 = cost; }
+      }
+      if (min_cost2 < FLT_MAX)
+        priv.active_uncertainty.push_back( make_pair(min_cost2 - min_cost, priv.t) );
+    }
+    
     // in beam search mode, go through alternatives and add them as back-ups
     if (priv.beam) {
       float act_cost = 0;
@@ -724,6 +740,9 @@ namespace Search {
         action k_act = cs_get_cost_index(priv.cb_learner, ec.l, k);
         if (k_act == act) continue;  // skip the taken action
         float delta_cost = cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k) - act_cost + priv.beam_initial_cost;
+
+        if (! priv.beam->might_insert( delta_cost )) continue;
+        
         // construct the action prefix
         action_prefix* px = new v_array<action>;
         *px = v_init<action>();
@@ -802,6 +821,7 @@ namespace Search {
       for (size_t k=start_K; k<ec_cnt; k++) {
         if (k == best_action) continue;
         float delta_cost = ecs[k].partial_prediction - best_prediction + priv.beam_initial_cost;
+        if (! priv.beam->might_insert( delta_cost )) continue;
         action_prefix* px = new v_array<action>;
         *px = v_init<action>();
         px->resize(new_len + 1);
@@ -931,8 +951,6 @@ namespace Search {
       if (losses[i] > max_loss) { max_loss = losses[i]; }
     }
     
-    int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true);
-    
     if (!priv.is_ldf) {   // not LDF
       // since we're not LDF, it should be the case that ec_ref_cnt == 1
       // and learn_ec_ref[0] is a pointer to a single example
@@ -951,39 +969,54 @@ namespace Search {
       example& ec = priv.learn_ec_ref[0];
       polylabel old_label = ec.l;
       ec.l = labels;
-      ec.in_use = true;
       if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.begin, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
-      priv.base_learner->learn(ec, learner);
+      for (size_t is_global_train=0; is_global_train<=priv.xv; is_global_train++) {
+        int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_global_train);
+        ec.in_use = true;
+        priv.base_learner->learn(ec, learner);
+      }
       if (add_conditioning) del_example_conditioning(priv, ec);
       ec.l = old_label;
       priv.total_examples_generated++;
     } else {              // is  LDF
       assert(losses.size() == priv.learn_ec_ref_cnt);
       size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(priv.learn_ec_ref[0])) ? 1 : 0;
-      for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
-        example& ec = priv.learn_ec_ref[a];
 
-        CS::label& lab = ec.l.cs;
-        if (lab.costs.size() == 0) {
-          CS::wclass wc = { 0., 1, 0., 0. };
-          lab.costs.push_back(wc);
+      if (add_conditioning)
+        for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
+          example& ec = priv.learn_ec_ref[a];
+          add_example_conditioning(priv, ec, priv.learn_condition_on.begin, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
         }
-        lab.costs[0].x = losses[a] - min_loss;
-        //cerr << "cost[" << a << "] = " << losses[a] << " - " << min_loss << " = " << lab.costs[0].x << endl;
-        ec.in_use = true;
-        if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.begin, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
-        priv.base_learner->learn(ec, learner);
-        cdbg << "generate_training_example called learn on action a=" << a << ", costs.size=" << lab.costs.size() << " ec=" << &ec << endl;
-        priv.total_examples_generated++;
-      }
-      priv.base_learner->learn(*priv.empty_example, learner);
-      cdbg << "generate_training_example called learn on empty_example" << endl;
+      
+      for (size_t is_global_train=0; is_global_train<=priv.xv; is_global_train++) {
+        int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_global_train);
 
-      for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
-        example& ec = priv.learn_ec_ref[a];
-        if (add_conditioning) 
-          del_example_conditioning(priv, ec);
+        for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
+          example& ec = priv.learn_ec_ref[a];
+
+          CS::label& lab = ec.l.cs;
+          if (lab.costs.size() == 0) {
+            CS::wclass wc = { 0., 1, 0., 0. };
+            lab.costs.push_back(wc);
+          }
+          lab.costs[0].x = losses[a] - min_loss;
+          //cerr << "cost[" << a << "] = " << losses[a] << " - " << min_loss << " = " << lab.costs[0].x << endl;
+          ec.in_use = true;
+          priv.base_learner->learn(ec, learner);
+
+          cdbg << "generate_training_example called learn on action a=" << a << ", costs.size=" << lab.costs.size() << " ec=" << &ec << endl;
+          priv.total_examples_generated++;
+        }
+
+        priv.base_learner->learn(*priv.empty_example, learner);
+        cdbg << "generate_training_example called learn on empty_example" << endl;
       }
+
+      if (add_conditioning) 
+        for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
+          example& ec = priv.learn_ec_ref[a];
+          del_example_conditioning(priv, ec);
+        }
     }
   }
 
@@ -1128,13 +1161,15 @@ namespace Search {
         a = choose_oracle_action(priv, ec_cnt, oracle_actions, oracle_actions_cnt, allowed_actions, allowed_actions_cnt, priv.beam && (priv.state != INIT_TEST));
 
       if ((policy >= 0) || gte_here) {
-        int learner = select_learner(priv, policy, learner_id, false);
+        int learner = select_learner(priv, policy, learner_id, false, priv.state == INIT_TEST);
 
         ensure_size(priv.condition_on_actions, condition_on_cnt);
         for (size_t i=0; i<condition_on_cnt; i++)
           priv.condition_on_actions[i] = ((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size())) ? priv.ptag_to_action[condition_on[i]] : 0;
 
-        if (cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, learner_id, a, false))
+        bool not_test = priv.all->training && !ecs[0].test_only;
+
+        if (not_test && cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, learner_id, a, false))
           // if this succeeded, 'a' has the right action
           priv.total_cache_hits++;
         else { // we need to predict, and then cache
@@ -1157,7 +1192,10 @@ namespace Search {
             priv.learn_ec_ref_cnt = ec_cnt;
             ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);
             memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt * sizeof(action));
+            size_t old_learner_id = priv.learn_learner_id;
+            priv.learn_learner_id = learner_id;
             generate_training_example(priv, losses, false);
+            priv.learn_learner_id = old_learner_id;
             losses.delete_v();
           }
           
@@ -1165,7 +1203,8 @@ namespace Search {
             for (size_t n=start_K; n<ec_cnt; n++)
               del_example_conditioning(priv, ecs[n]);
 
-          cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, learner_id, a, true);
+          if (not_test)
+            cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, learner_id, a, true);
         }
       }
 
@@ -1183,8 +1222,22 @@ namespace Search {
   inline bool cmp_size_t_pair(const pair<size_t,size_t>& a, const pair<size_t,size_t>& b) { return ((a.first == b.first) && (a.second < b.second)) || (a.first < b.first); }
   void get_training_timesteps(search_private& priv, v_array< pair<size_t,size_t> >& timesteps) {  // timesteps are pairs of (beam elem, t) where beam elem == 0 means "default" for non-beam search
     timesteps.erase();
-    
+
+    // if there's active learning, we need to 
+    if (priv.subsample_timesteps <= -1) {
+      for (size_t i=0; i<priv.active_uncertainty.size(); i++)
+        if (frand48() > priv.active_uncertainty[i].first)
+          timesteps.push_back(pair<size_t,size_t>(0, priv.active_uncertainty[i].second - 1));
+          /*
+        float k = (float)priv.total_examples_generated;
+        priv.ec_seq[t]->revert_weight = priv.all->loss->getRevertingWeight(priv.all->sd, priv.ec_seq[t].pred.scalar, priv.all->eta / powf(k, priv.all->power_t));
+        float importance = query_decision(active_str, *priv.ec_seq[t], k);
+        if (importance > 0.)
+          timesteps.push_back(pair<size_t,size_t>(0,t));
+          */
+    }
     // if there's no subsampling to do, just return [0,T)
+    else
     if (priv.subsample_timesteps <= 0)
       for (size_t t=0; t<priv.T; t++)
         timesteps.push_back(pair<size_t,size_t>(0,t));
@@ -1323,15 +1376,18 @@ namespace Search {
       for (; best != final_beam->end(); ++best)
         if (best->active) {
           new_tag.erase();
-          new_tag.resize(50, true);
-          int len = sprintf(new_tag.begin, "%-10.6f\t", best->cost);
-          new_tag.end = new_tag.begin + len;
+          if (priv.kbest > 1) {
+            new_tag.resize(50, true);
+            int len = sprintf(new_tag.begin, "%-10.6f\t", best->cost);
+            new_tag.end = new_tag.begin + len;
+          }
           push_many(new_tag, priv.ec_seq[0]->tag.begin, priv.ec_seq[0]->tag.size());
           for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
             all.print_text((int)*sink, best->data->second, new_tag);
         }
-      for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)      
-        all.print_text((int)*sink, "", priv.ec_seq[0]->tag);
+      if (priv.kbest > 1)
+        for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)      
+          all.print_text((int)*sink, "", priv.ec_seq[0]->tag);
       new_tag.delete_v();
     }
 
@@ -1397,6 +1453,7 @@ namespace Search {
 
     reset_search_structure(priv);
     priv.state = INIT_TRAIN;
+    priv.active_uncertainty.erase();
     priv.train_trajectory.erase();  // this is where we'll store the training sequence
     priv.task->run(sch, priv.ec_seq);
 
@@ -1422,6 +1479,7 @@ namespace Search {
     priv.T = priv.t;
     if (priv.beam) get_training_timesteps_beam(priv, *final_beam, priv.timesteps);
     else           get_training_timesteps(priv, priv.timesteps);
+
     priv.learn_losses.erase();
     size_t last_beam_id = 0;
     for (size_t tid=0; tid<priv.timesteps.size(); tid++) {
@@ -1587,7 +1645,8 @@ namespace Search {
 
     priv.label_is_test = mc_label_is_test;
 
-    priv.cross_validate = false;
+    priv.active_uncertainty = v_init< pair<float,size_t> >();
+    priv.xv = false;
     priv.A = 1;
     priv.num_learners = 1;
     priv.cb_learner = false;
@@ -1862,7 +1921,7 @@ namespace Search {
       ("search_trained_nb_policies", po::value<size_t>(), "the number of trained policies in a file")
       
       ("search_allowed_transitions",po::value<string>(),"read file of allowed transitions [def: all transitions are allowed]")
-      ("search_subsample_time",    po::value<float>(),  "instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example")
+      ("search_subsample_time",    po::value<float>(),  "instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example, if v<=-1, use active learning")
       ("search_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them")
       ("search_rollout_num_steps", po::value<size_t>(), "how many calls of \"loss\" before we stop really predicting on rollouts and switch to oracle (def: 0 means \"infinite\")")
       ("search_history_length",    po::value<size_t>(), "some tasks allow you to specify how much history their depend on; specify that here [def: 1]")
@@ -1870,7 +1929,7 @@ namespace Search {
       ("search_no_caching",                             "turn off the built-in caching ability (makes things slower, but technically more safe)")
       ("search_beam",              po::value<size_t>(), "use beam search (arg = beam size, default 0 = no beam)")
       ("search_kbest",             po::value<size_t>(), "size of k-best list to produce (must be <= beam size)")
-      ("search_crossvalidate",                          "train two separate policies, alternating prediction/learning")
+      ("search_xv",                                     "train two separate policies, alternating prediction/learning")
       ;
     add_options(all);
     po::variables_map& vm = all.vm;
@@ -1902,7 +1961,7 @@ namespace Search {
                          "warning: specified --search_interpolation different than the one loaded from regressor. using loaded value of: ", "");
 
     if (vm.count("search_passes_per_policy"))       priv.passes_per_policy    = vm["search_passes_per_policy"].as<size_t>();
-    if (vm.count("search_crossvalidate"))           priv.cross_validate       = true;
+    if (vm.count("search_xv"))                      priv.xv       = true;
 
     if (vm.count("search_alpha"))                   priv.alpha                = vm["search_alpha"            ].as<float>();
     if (vm.count("search_beta"))                    priv.beta                 = vm["search_beta"             ].as<float>();
@@ -2078,7 +2137,7 @@ namespace Search {
     learner<search>& l = init_learner(&sch, base,
                                       search_predict_or_learn<true>,
                                       search_predict_or_learn<false>,
-                                      priv.total_number_of_policies);
+                                      priv.total_number_of_policies * priv.num_learners);
     l.set_finish_example(finish_example);
     l.set_end_examples(end_examples);
     l.set_finish(search_finish);

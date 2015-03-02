@@ -145,6 +145,8 @@ class vw(pylibvw.vw):
                         ec = examples[n]
                         while hasattr(ec, '__call__'): ec = ec()   # unfold the lambdas
                         if not isinstance(ec, example) and not isinstance(ec, pylibvw.example): raise TypeError('non-example in LDF example list in SearchTask.predict()')
+                        if hasattr(ec, 'setup_done') and not ec.setup_done:
+                            ec.setup_example()
                         P.set_input_at(n, ec)
                 else:
                     pass # TODO: do we need to set the examples even though they're not used?
@@ -265,7 +267,7 @@ class example_namespace():
     def pop_feature(self):
         """Remove the top feature from the current namespace; returns True
         if a feature was removed, returns False if there were no
-        features to pop. Fails if setup has run."""
+        features to pop."""
         return self.ex.pop_feature(self.ns)
 
     def push_features(self, ns, featureList):
@@ -399,16 +401,14 @@ class example(pylibvw.example):
             self.setup_done = False
         elif isinstance(initStringOrDict, str):
             pylibvw.example.__init__(self, vw, labelType, initStringOrDict)
-            self.setup_done = True
+            self.setup_done = False
         elif isinstance(initStringOrDict, dict):
             pylibvw.example.__init__(self, vw, labelType)
             self.vw = vw
             self.stride = vw.get_stride()
             self.finished = False
+            self.push_feature_dict(vw, initStringOrDict)
             self.setup_done = False
-            for ns_char,feats in initStringOrDict.iteritems():
-                self.push_features(ns_char, feats)
-            self.setup_example()
         else:
             raise TypeError('expecting string or dict as argument for example construction')
 
@@ -468,6 +468,13 @@ class example(pylibvw.example):
         self.vw.setup_example(self)
         self.setup_done = True
 
+    def unsetup_example(self):
+        """If this example has been setup, reverse that process so you can continue editing the examples."""
+        if not self.setup_done:
+            raise Exception('trying to unsetup_example that has not yet been setup')
+        self.vw.unsetup_example(self)
+        self.setup_done = False
+        
     def learn(self):
         """Learn on this example (and before learning, automatically
         call setup_example if the example hasn't yet been setup)."""
@@ -501,42 +508,40 @@ class example(pylibvw.example):
 
 
     def push_hashed_feature(self, ns, f, v=1.):
-        """Add a hashed feature to a given namespace (fails if setup
-        has already run on this example). Fails if setup has run."""
-        if self.setup_done: raise Exception("error: modification to example after setup")
+        """Add a hashed feature to a given namespace."""
+        if self.setup_done: self.unsetup_example();
         pylibvw.example.push_hashed_feature(self, self.get_ns(ns).ord_ns, f, v)
 
     def push_feature(self, ns, feature, v=1., ns_hash=None):
-        """Add an unhashed feature to a given namespace (fails if
-        setup has already run on this example)."""
+        """Add an unhashed feature to a given namespace."""
         f = self.get_feature_id(ns, feature, ns_hash)
         self.push_hashed_feature(ns, f, v)
 
     def pop_feature(self, ns):
         """Remove the top feature from a given namespace; returns True
         if a feature was removed, returns False if there were no
-        features to pop. Fails if setup has run."""
-        if self.setup_done: raise Exception("error: modification to example after setup")
+        features to pop."""
+        if self.setup_done: self.unsetup_example();
         return pylibvw.example.pop_feature(self, self.get_ns(ns).ord_ns)
 
     def push_namespace(self, ns):
         """Push a new namespace onto this example. You should only do
         this if you're sure that this example doesn't already have the
-        given namespace. Fails if setup has run."""
-        if self.setup_done: raise Exception("error: modification to example after setup")
+        given namespace."""
+        if self.setup_done: self.unsetup_example();
         pylibvw.example.push_namespace(self, self.get_ns(ns).ord_ns)
 
     def pop_namespace(self):
         """Remove the top namespace from an example; returns True if a
         namespace was removed, or False if there were no namespaces
-        left. Fails if setup has run."""
-        if self.setup_done: raise Exception("error: modification to example after setup")
+        left."""
+        if self.setup_done: self.unsetup_example();
         return pylibvw.example.pop_namespace(self)
 
     def ensure_namespace_exists(self, ns):
         """Check to see if a namespace already exists. If it does, do
-        nothing. If it doesn't, add it. Fails if setup has run."""
-        if self.setup_done: raise Exception("error: modification to example after setup")
+        nothing. If it doesn't, add it."""
+        if self.setup_done: self.unsetup_example();
         return pylibvw.example.ensure_namespace_exists(self, self.get_ns(ns).ord_ns)
 
     def push_features(self, ns, featureList):
@@ -552,8 +557,7 @@ class example(pylibvw.example):
            space_hash = vw.hash_space( 'x' )
            feat_hash  = vw.hash_feature( 'a', space_hash )
            ex.push_features('x', [feat_hash])    # note: 'x' should match the space_hash!
-
-        Fails if setup has run."""
+        """
         ns = self.get_ns(ns)
         self.ensure_namespace_exists(ns)
         self.push_feature_list(self.vw, ns.ord_ns, featureList)   # much faster just to do it in C++
