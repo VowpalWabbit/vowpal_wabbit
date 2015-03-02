@@ -1,3 +1,4 @@
+#include <errno.h>
 #include "reductions.h"
 #include "rand48.h"
 #include "float.h"
@@ -92,7 +93,7 @@ float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 	ssize_t len = ss.str().size();
 	ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
 	if (t != len)
-	cerr << "write error" << endl;
+	  cerr << "write error: " << strerror(errno) << endl;
       }
   }
   

@@ -4,6 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <float.h>
+#include <errno.h>
 
 #include "reductions.h"
 #include "v_hashmap.h"
@@ -500,7 +501,7 @@ namespace LabelDict {
       ssize_t t;
       t = io_buf::write_file_or_socket(f, temp, 1);
       if (t != 1)
-        std::cerr << "write error" << std::endl;
+        cerr << "write error: " << strerror(errno) << endl;
     }
   }
 

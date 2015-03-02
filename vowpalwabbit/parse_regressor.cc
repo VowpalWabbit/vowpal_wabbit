@@ -73,12 +73,12 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       bin_text_read_write(model_file, buff2, v_length, 
 			  "", read, 
 			  buff, text_len, text);
-      version_struct v_tmp(buff2);
-      if (v_tmp < LAST_COMPATIBLE_VERSION)
-	{
-	  cout << "Model has possibly incompatible version! " << v_tmp.to_string() << endl;
-	  throw exception();
-	}
+      all.model_file_ver = buff2; //stord in all to check save_resume fix in gd
+      if (all.model_file_ver < LAST_COMPATIBLE_VERSION)
+            {
+                cout << "Model has possibly incompatible version! " << all.model_file_ver.to_string() << endl;
+                throw exception();
+            }
       
       char model = 'm';
       bin_text_read_write_fixed(model_file,&model,1,

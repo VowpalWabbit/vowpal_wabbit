@@ -5,6 +5,7 @@ license as described in the file LICENSE.
  */
 #include <stdio.h>
 #include <float.h>
+#include <errno.h>
 #include <iostream>
 #include <sstream>
 #include <math.h>
@@ -105,7 +106,7 @@ void print_result(int f, float res, float weight, v_array<char> tag)
       ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
       if (t != len)
         {
-          cerr << "write error" << endl;
+          cerr << "write error: " << strerror(errno) << endl;
         }
     }
 }
@@ -123,7 +124,7 @@ void print_raw_text(int f, string s, v_array<char> tag)
   ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
   if (t != len)
     {
-      cerr << "write error" << endl;
+      cerr << "write error: " << strerror(errno) << endl;
     }
 }
 
@@ -144,7 +145,7 @@ void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> ta
       ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
 
       if (t != len)
-	cerr << "write error" << endl;
+        cerr << "write error: " << strerror(errno) << endl;
     }
 }
 
