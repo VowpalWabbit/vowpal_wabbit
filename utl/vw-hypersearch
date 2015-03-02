@@ -474,6 +474,7 @@ sub is_integer_option($) {
     my $expects_integer =
         ($opt =~ qr{^-*
             bs?
+            |affix
             |autolink
             |batch_sz
             |bootstrap|B

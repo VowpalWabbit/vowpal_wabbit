@@ -1,3 +1,4 @@
+#include <cstring>
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
@@ -10,11 +11,11 @@ using namespace std;
 
 char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 {
-  ld->label = *(float *)c;
+  memcpy(&ld->label, c, sizeof(ld->label));
   c += sizeof(ld->label);
-  ld->weight = *(float *)c;
+  memcpy(&ld->weight, c, sizeof(ld->weight));
   c += sizeof(ld->weight);
-  ld->initial = *(float *)c;
+  memcpy(&ld->initial, c, sizeof(ld->initial));
   c += sizeof(ld->initial);
 
   count_label(ld->label);
@@ -41,11 +42,11 @@ float get_weight(void* v)
 
 char* bufcache_simple_label(label_data* ld, char* c)
 {
-  *(float *)c = ld->label;
+  memcpy(c, &ld->label, sizeof(ld->label));
   c += sizeof(ld->label);
-  *(float *)c = ld->weight;
+  memcpy(c, &ld->weight, sizeof(ld->weight));
   c += sizeof(ld->weight);
-  *(float *)c = ld->initial;
+  memcpy(c, &ld->initial, sizeof(ld->initial));
   c += sizeof(ld->initial);
   return c;
 }
@@ -106,16 +107,7 @@ void print_update(vw& all, example& ec)
 {
   if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
     {
-      label_data ld = ec.l.simple;
-      char label_buf[32];
-      if (ld.label == FLT_MAX)
-	strcpy(label_buf," unknown");
-      else
-	sprintf(label_buf,"%8.4f",ld.label);
-      char pred_buf[32];
-      sprintf(pred_buf,"%8.4f",ec.pred.scalar);
-      
-      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf, 
+      all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar, 
 			   ec.num_features, all.progress_add, all.progress_arg);
     }
 }

@@ -5,6 +5,7 @@ license as described in the file LICENSE.
  */
 #include <float.h>
 #include <math.h>
+#include <errno.h>
 #include <sstream>
 #include <numeric>
 #include <vector>
@@ -129,7 +130,7 @@ using namespace LEARNER;
       ssize_t len = ss.str().size();
       ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
       if (t != len)
-        cerr << "write error" << endl;
+        cerr << "write error: " << strerror(errno) << endl;
     }    
   }
 

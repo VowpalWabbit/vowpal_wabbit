@@ -10,8 +10,12 @@ license as described in the file LICENSE.
 #include <netdb.h>
 #endif
 
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+#if !defined(VW_NO_INLINE_SIMD)
+#  if defined(__ARM_NEON__)
+#include <arm_neon.h>
+#  elif defined(__SSE2__)
 #include <xmmintrin.h>
+#  endif
 #endif
 
 #include "gd.h"
@@ -19,13 +23,15 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "vw.h"
 
+#define VERSION_SAVE_RESUME_FIX "7.10.1"
+
 using namespace std;
 using namespace LEARNER;
 //todo: 
 //4. Factor various state out of vw&
 namespace GD
 {
-  struct gd{
+  struct gd {
     //double normalized_sum_norm_x;
     double total_weight;
     size_t no_win_counter;
@@ -44,12 +50,36 @@ namespace GD
 
   void sync_weights(vw& all);
 
-  float InvSqrt(float x){
+  static inline float InvSqrt(float x)
+  {
+#if !defined(VW_NO_INLINE_SIMD)
+#  if defined(__ARM_NEON__)
+    // Propagate into vector
+    float32x2_t v1 = vdup_n_f32(x);
+    // Estimate
+    float32x2_t e1 = vrsqrte_f32(v1);
+    // N-R iteration 1
+    float32x2_t e2 = vmul_f32(e1, vrsqrts_f32(v1, vmul_f32(e1, e1)));
+    // N-R iteration 2
+    float32x2_t e3 = vmul_f32(e2, vrsqrts_f32(v1, vmul_f32(e2, e2)));
+    // Extract result
+    return vget_lane_f32(e3, 0);
+#  elif defined(__SSE2__)
+    __m128 eta = _mm_load_ss(&x);
+    eta = _mm_rsqrt_ss(eta);
+    _mm_store_ss(&x, eta);
+    // Fall through
+#  endif
+#else
+    // Carmack/Quake/SGI fast method:
     float xhalf = 0.5f * x;
     int i = *(int*)&x; // store floating-point bits in integer
     i = 0x5f3759d5 - (i >> 1); // initial guess for Newton's method
     x = *(float*)&i; // convert new bits into float
     x = x*(1.5f - xhalf*x*x); // One round of Newton's method
+    // Fall through
+#endif
+
     return x;
   }
   
@@ -371,13 +401,7 @@ void predict(gd& g, base_learner& base, example& ec)
     if(adaptive) {
       if (sqrt_rate)
 	{  
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-	  __m128 eta = _mm_load_ss(&w[adaptive]);
-	  eta = _mm_rsqrt_ss(eta);
-	  _mm_store_ss(&rate_decay, eta);
-#else
 	  rate_decay = InvSqrt(w[adaptive]);
-#endif
 	}
       else
 	rate_decay = powf(w[adaptive],s.minus_power_t);
@@ -607,7 +631,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 }
 
 //void save_load_online_state(gd& g, io_buf& model_file, bool read, bool text)
-void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
+void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g)
 {
   //vw& all = *g.all;
   
@@ -677,6 +701,32 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
   bin_text_read_write_fixed(model_file,(char*)&all.sd->total_features, sizeof(all.sd->total_features), 
 			    "", read, 
 			    buff, text_len, text);
+
+  if (!read || all.model_file_ver >= VERSION_SAVE_RESUME_FIX)
+  { // restore some data to allow --save_resume work more accurate
+
+      // fix average loss
+      double total_weight = 0.; //value holder as g* may be null
+      if (!read && g != NULL) total_weight = g->total_weight;
+      text_len = sprintf(buff, "gd::total_weight %f\n", total_weight);
+      bin_text_read_write_fixed(model_file,(char*)&total_weight, sizeof(total_weight),
+                                "", read,
+                                buff, text_len, text);
+      if (read && g != NULL) g->total_weight = total_weight;
+
+      // fix "loss since last" for first printed out example details
+      text_len = sprintf(buff, "sd::old_weighted_examples %f\n", all.sd->old_weighted_examples);
+      bin_text_read_write_fixed(model_file,(char*)&all.sd->old_weighted_examples, sizeof(all.sd->old_weighted_examples),
+                                "", read,
+                                buff, text_len, text);
+
+      // fix "number of examples per pass"
+      text_len = sprintf(buff, "current_pass %u\n", (uint32_t)all.current_pass);
+      bin_text_read_write_fixed(model_file,(char*)&all.current_pass, sizeof(all.current_pass),
+                                "", read,
+                                buff, text_len, text);
+  }
+
   if (!all.training) // reset various things so that we report test set performance properly
     {
       all.sd->sum_loss = 0;
@@ -778,8 +828,12 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 				"", read,
 				buff, text_len, text);
       if (resume)
-	//save_load_online_state(g, model_file, read, text);
-        save_load_online_state(all, model_file, read, text);
+      {
+          if (read && all.model_file_ver < VERSION_SAVE_RESUME_FIX)
+           cerr << endl << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than " << VERSION_SAVE_RESUME_FIX << endl << endl;
+     // save_load_online_state(g, model_file, read, text);
+        save_load_online_state(all, model_file, read, text, &g);
+      }
       else
 	save_load_regressor(all, model_file, read, text);
     }
