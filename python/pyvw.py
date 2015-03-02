@@ -145,6 +145,8 @@ class vw(pylibvw.vw):
                         ec = examples[n]
                         while hasattr(ec, '__call__'): ec = ec()   # unfold the lambdas
                         if not isinstance(ec, example) and not isinstance(ec, pylibvw.example): raise TypeError('non-example in LDF example list in SearchTask.predict()')
+                        if hasattr(ec, 'setup_done') and not ec.setup_done:
+                            ec.setup_example()
                         P.set_input_at(n, ec)
                 else:
                     pass # TODO: do we need to set the examples even though they're not used?
@@ -399,15 +401,14 @@ class example(pylibvw.example):
             self.setup_done = False
         elif isinstance(initStringOrDict, str):
             pylibvw.example.__init__(self, vw, labelType, initStringOrDict)
-            self.setup_done = True
+            self.setup_done = False
         elif isinstance(initStringOrDict, dict):
             pylibvw.example.__init__(self, vw, labelType)
             self.vw = vw
             self.stride = vw.get_stride()
             self.finished = False
-            self.setup_done = False
             self.push_feature_dict(vw, initStringOrDict)
-            #self.setup_example()
+            self.setup_done = False
         else:
             raise TypeError('expecting string or dict as argument for example construction')
 
