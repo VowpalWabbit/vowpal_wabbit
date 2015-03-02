@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 #include <iomanip>
 #include <vector>
 #include <map>
+#include <cfloat>
 #include <stdint.h>
 #include <cstdio>
 #include <boost/program_options.hpp>
@@ -157,15 +158,17 @@ struct shared_data {
   size_t holdout_best_pass;
 
   // Column width, precision constants:
-  static const int col_avg_loss = 10;
+  static const int col_avg_loss = 8;
   static const int prec_avg_loss = 6;
-  static const int col_since_last = 10;
+  static const int col_since_last = 8;
   static const int prec_since_last = 6;
-  static const int col_example_counter = 11;
-  static const int col_example_weight = 12;
+  static const int col_example_counter = 12;
+  static const int col_example_weight = col_example_counter + 2;
   static const int prec_example_weight = 1;
   static const int col_current_label = 8;
+  static const int prec_current_label = 4;
   static const int col_current_predict = 8;
+  static const int prec_current_predict = 4;
   static const int col_current_features = 8;
 
   void update(bool test_example, float loss, float weight, size_t num_features)
@@ -198,12 +201,60 @@ struct shared_data {
       dump_interval = (float)weighted_examples * progress_arg;
   }
 
-  void print_update(bool holdout_set_off, size_t current_pass, char* label_buf, char* pred_buf, 
+  void print_update(bool holdout_set_off, size_t current_pass, float label, float prediction,
+		    size_t num_features, bool progress_add, float progress_arg)
+  {
+    std::ostringstream label_buf, pred_buf;
+
+    label_buf << std::setw(col_current_label);
+    if (label < FLT_MAX)
+	label_buf << std::setprecision(prec_current_label) << std::fixed << std::right << label;
+    else
+	label_buf << std::left << " unknown";
+
+    pred_buf << std::setw(col_current_predict) << std::setprecision(prec_current_predict)
+	     << std::fixed << std::right
+	     << prediction;
+
+    print_update(holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features,
+		 progress_add, progress_arg);
+  }
+
+  void print_update(bool holdout_set_off, size_t current_pass, uint32_t label, uint32_t prediction,
+		    size_t num_features, bool progress_add, float progress_arg)
+  {
+    std::ostringstream label_buf, pred_buf;
+
+    label_buf << std::setw(col_current_label);
+    if (label < INT_MAX)
+	label_buf << std::right << label;
+    else
+	label_buf << std::left << " unknown";
+
+    pred_buf << std::setw(col_current_predict) << std::right << prediction;
+
+    print_update(holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features,
+		 progress_add, progress_arg);
+  }
+
+  void print_update(bool holdout_set_off, size_t current_pass, const std::string &label, uint32_t prediction,
+		    size_t num_features, bool progress_add, float progress_arg)
+  {
+    std::ostringstream pred_buf;
+
+    pred_buf << std::setw(col_current_predict) << std::right << prediction;
+
+    print_update(holdout_set_off, current_pass, label, pred_buf.str(), num_features,
+		 progress_add, progress_arg);
+  }
+
+private:
+  void print_update(bool holdout_set_off, size_t current_pass, const std::string &label, const std::string &prediction,
 		    size_t num_features, bool progress_add, float progress_arg)
   {
     std::streamsize saved_w = std::cerr.width();
     std::streamsize saved_prec = std::cerr.precision();
-    std::ios_base::fmtflags saved_f = std::cerr.flags();
+    std::ostream::fmtflags saved_f = std::cerr.flags();
     bool holding_out = false;
 
     if(!holdout_set_off && current_pass >= 1)
@@ -224,7 +275,7 @@ struct shared_data {
 	
 	weighted_holdout_examples_since_last_dump = 0;
 	holdout_sum_loss_since_last_dump = 0.0;
-	
+
 	holding_out = true;
       }
     else
@@ -241,9 +292,9 @@ struct shared_data {
 	      << " "
 	      << std::setw(col_example_weight) << std::setprecision(prec_example_weight) << std::right << weighted_examples
 	      << " "
-	      << std::setw(col_current_label) << std::right << label_buf
-	      << " "
-	      << std::setw(col_current_predict) << std::right << pred_buf
+              << std::setw(col_current_label) << std::right << label
+              << " "
+	      << std::setw(col_current_predict) << std::right << prediction
 	      << " "
 	      << std::setw(col_current_features) << std::right << num_features;
 

@@ -106,16 +106,7 @@ void print_update(vw& all, example& ec)
 {
   if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
     {
-      label_data ld = ec.l.simple;
-      char label_buf[32];
-      if (ld.label == FLT_MAX)
-	strcpy(label_buf," unknown");
-      else
-	sprintf(label_buf,"%8.4f",ld.label);
-      char pred_buf[32];
-      sprintf(pred_buf,"%8.4f",ec.pred.scalar);
-      
-      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf, 
+      all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar, 
 			   ec.num_features, all.progress_add, all.progress_arg);
     }
 }

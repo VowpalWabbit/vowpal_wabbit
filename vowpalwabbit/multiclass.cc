@@ -93,16 +93,7 @@ namespace MULTICLASS {
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
-        label_t ld = ec.l.multi;
-        char label_buf[32];
-        if (ld.label == INT_MAX)
-          strcpy(label_buf," unknown");
-        else
-          sprintf(label_buf,"%8ld",(long int)ld.label);
-	char pred_buf[32];
-	sprintf(pred_buf,"%8lu",(long unsigned int)ec.pred.multiclass);
-
-	all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf, 
+	all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.multi.label, ec.pred.multiclass,
 			     ec.num_features, all.progress_add, all.progress_arg);
       }
   }
