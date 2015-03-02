@@ -51,8 +51,8 @@ $ make install
 
 Note that ``./autogen.sh`` requires *automake* (see the prerequisites, above.)
 
-Options that were passed to `./configure` in 7.6 and earlier may now be passed
-to `./autogen.sh`.
+`./autogen.sh`'s command line arguments are passed directly to `configure` as
+if they were `configure` arguments and flags.
 
 Be sure to read the wiki: https://github.com/JohnLangford/vowpal_wabbit/wiki
 for the tutorial, command line options, etc.
@@ -60,6 +60,20 @@ for the tutorial, command line options, etc.
 The 'cluster' directory has it's own documentation for cluster
 parallel use, and the examples at the end of test/Runtests give some
 example flags.
+
+## C++ Optimization
+
+The default C++ compiler optimization flags are very aggressive. If you should run into a problem, consider running `configure` with the `--enable-debug` option, e.g.:
+
+```
+$ ./configure --enable-debug
+```
+
+or passing your own compiler flags via the `CXXOPTIMIZE` make variable:
+
+```
+$ make CXXOPTIMIZE="-O0 -g"
+```
 
 ## Mac OS X-specific info
 

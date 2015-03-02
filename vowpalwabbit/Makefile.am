@@ -16,10 +16,16 @@ ACLOCAL_AMFLAGS = -I acinclude.d
 AM_CXXFLAGS = ${BOOST_CPPFLAGS} ${ZLIB_CPPFLAGS} ${PTHREAD_CFLAGS} -Wall -Wno-unused-local-typedef
 AM_LDFLAGS = ${BOOST_LDFLAGS} ${BOOST_PROGRAM_OPTIONS_LIB} ${ZLIB_LDFLAGS} ${PTHREAD_LIBS}
 
+CXXOPTIMIZE = -ffast-math
+
 if PROFILE
-AM_CXXFLAGS += -pg -g -D_FILE_OFFSET_BITS=64
+CXXOPTIMIZE += -pg
+endif
+
+if VWBUG
+CXXOPTIMIZE += -g -O1
 else
-AM_CXXFLAGS += -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 -DNDEBUG 
+CXXOPTIMIZE += -O3 -fomit-frame-pointer -fno-strict-aliasing -DNDEBUG 
 endif
 
 if NITPICK
@@ -40,6 +46,8 @@ endif
 if CLANG_LIBCXX
 AM_CXXFLAGS += -stdlib=libc++
 endif
+
+AM_CXXFLAGS += $(CXXOPTIMIZE)
 
 vw_SOURCES = main.cc
 vw_CXXFLAGS = $(AM_CXXFLAGS)
