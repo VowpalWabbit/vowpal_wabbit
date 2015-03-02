@@ -43,10 +43,10 @@ public:
   example* ae;
   uint32_t* affix_features;
   bool* spelling_features;
-  v_array<char> spelling = v_init<char>();
+  v_array<char> spelling;
 
   vector<feature_dict*>* namespace_dictionaries;
-  
+
   ~TC_parser(){ }
   
   inline float featureValue(){
@@ -303,6 +303,7 @@ public:
   }
 
   TC_parser(char* reading_head, char* endLine, vw& all, example* ae){
+    spelling = v_init<char>();
     if (endLine != reading_head)
       {
 	this->beginLine = reading_head;
