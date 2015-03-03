@@ -27,8 +27,7 @@ label:weight |n features
 ...
 
 they are *implicitly* labeled starting at 1. (note the namespace
-needn't be called n.) if weight is
-omitted it is assumed to be 1.0.
+needn't be called n.) if weight is omitted it is assumed to be 1.0.
 
 edge lines look like:
 
@@ -52,6 +51,7 @@ namespace GraphTask {
     size_t num_loops;
     size_t K;  // number of labels, *NOT* including the +1 for 'unlabeled'
     bool   use_structure;
+    bool   separate_learners;
 
     // for adding new features
     size_t mask; // all->reg.weight_mask
@@ -65,6 +65,7 @@ namespace GraphTask {
     vector<size_t>   pred;  // predictions
     example*cur_node;       // pointer to the current node for add_edge_features_fn
     float* neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
+    weight* weight_vector;
   };
 
   inline bool example_is_test(polylabel&l) { return l.cs.costs.size() == 0; }
@@ -74,15 +75,21 @@ namespace GraphTask {
     po::options_description sspan_opts("search graphtask options");
     sspan_opts.add_options()("search_graph_num_loops", po::value<size_t>(), "how many loops to run [def: 2]");
     sspan_opts.add_options()("search_graph_no_structure", "turn off edge features");
+    sspan_opts.add_options()("search_graph_separate_learners", "use a different learner for each pass");
     sch.add_program_options(vm, sspan_opts);
 
     D->num_loops = 2;
     D->use_structure = true;
     if (vm.count("search_graph_num_loops"))      D->num_loops = vm["search_graph_num_loops"].as<size_t>();
     if (vm.count("search_graph_no_structure"))   D->use_structure = false;
+    if (vm.count("search_graph_separate_learners")) D->separate_learners = true;
 
+    if (D->num_loops <= 1) { D->num_loops = 1; D->separate_learners = false; }
+    
     D->K = num_actions;
     D->neighbor_predictions = calloc_or_die<float>(D->K+1);
+
+    if (D->separate_learners) sch.set_num_learners(D->num_loops);
     
     sch.set_task_data<task_data>(D);
     sch.set_options( Search::AUTO_HAMMING_LOSS );
@@ -136,6 +143,7 @@ namespace GraphTask {
 
     D.mask = sch.get_vw_pointer_unsafe().reg.weight_mask;
     D.ss   = sch.get_vw_pointer_unsafe().reg.stride_shift;
+    D.weight_vector = sch.get_vw_pointer_unsafe().reg.weight_vector;
     
     D.N = 0;
     D.E = 0;
@@ -183,7 +191,7 @@ namespace GraphTask {
     example*node = D.cur_node;
     for (size_t k=0; k<=D.K; k++) {
       if (D.neighbor_predictions[k] == 0.) continue;
-      feature f = { fv * D.neighbor_predictions[k], (uint32_t) (( (fx >> D.ss) + 348919043 * k ) << D.ss) };
+      feature f = { fv * D.neighbor_predictions[k], (uint32_t) ((( ((fx & D.mask) >> D.ss) + 348919043 * k ) << D.ss) & D.mask) };
       node->atomics[neighbor_namespace].push_back(f);
       node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     }
@@ -193,7 +201,7 @@ namespace GraphTask {
   void add_edge_features_single_fn(task_data&D, float fv, uint32_t fx) {
     example*node = D.cur_node;
     size_t k = (size_t) D.neighbor_predictions[0];
-    feature f = { fv, (uint32_t) (( (fx >> D.ss) + 348919043 * k ) << D.ss) };
+    feature f = { fv, (uint32_t) (( ((fx & D.mask) >> D.ss) + 348919043 * k ) << D.ss) };
     node->atomics[neighbor_namespace].push_back(f);
     node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     // TODO: audit
@@ -253,6 +261,7 @@ namespace GraphTask {
         if (add_features) add_edge_features(sch, D, n, ec);
         Search::predictor P = Search::predictor(sch, n+1);
         P.set_input(*ec[n]);
+        if (D.separate_learners) P.set_learner_id(loop);
         if (ec[n]->l.cs.costs.size() > 0) // for test examples
           P.set_oracle(ec[n]->l.cs.costs[0].class_index);
         // add all the conditioning

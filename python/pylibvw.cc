@@ -178,35 +178,28 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
       else { cerr << "warning: malformed feature in list" << endl; continue; }
       ai = fv[0];
     }
-    
-    bool got = false;
-    py::extract<uint32_t> get_int(ai);
-    if (get_int.check()) { f.weight_index = get_int(); got = true; }
-    else {
+
+    if (f.x != 0.) {
+      bool got = false;
       py::extract<string> get_str(ai);
       if (get_str.check()) {
         f.weight_index = VW::hash_feature(*vw, get_str(), ns_hash);
         got = true;
-      } else { cerr << "warning: malformed feature in list" << endl; continue; }
-    }
-    if (got && (f.x != 0.)) {
-      ec->atomics[ns].push_back(f);
-      count++;
-      sum_sq += f.x * f.x;
+      } else {
+        py::extract<uint32_t> get_int(ai);
+        if (get_int.check()) { f.weight_index = get_int(); got = true; }
+        else { cerr << "warning: malformed feature in list" << endl; continue; }
+      }
+      if (got) {
+        ec->atomics[ns].push_back(f);
+        count++;
+        sum_sq += f.x * f.x;
+      }
     }
   }
   ec->num_features += count;
   ec->sum_feat_sq[ns] += sum_sq;
   ec->total_sum_feat_sq += sum_sq;
-}
-
-bool ex_pop_feature(example_ptr ec, unsigned char ns) {
-  if (ec->atomics[ns].size() == 0) return false;
-  feature f = ec->atomics[ns].pop();
-  ec->num_features--;
-  ec->sum_feat_sq[ns] -= f.x * f.x;
-  ec->total_sum_feat_sq -= f.x * f.x;
-  return true;
 }
 
 void ex_push_namespace(example_ptr ec, unsigned char ns) {
@@ -219,19 +212,107 @@ void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns) {
   ex_push_namespace(ec, ns);
 }
 
-bool ex_pop_namespace(example_ptr ec) {
-  if (ec->indices.size() == 0) return false;
-  unsigned char ns = ec->indices.pop();
+void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict& dict) {
+  py::object objectKey, objectVal;
+  const py::object objectKeys = dict.iterkeys();
+  const py::object objectVals = dict.itervalues();
+  unsigned long ulCount = boost::python::extract<unsigned long>(dict.attr("__len__")());
+  for (size_t u=0; u<ulCount; u++) {
+    objectKey = objectKeys.attr( "next" )();
+    objectVal = objectVals.attr( "next" )();
+
+    char chCheckKey = objectKey.ptr()->ob_type->tp_name[0];
+    if (chCheckKey != 's') continue;
+    chCheckKey = objectVal.ptr()->ob_type->tp_name[0];
+    if (chCheckKey != 'l') continue;
+
+    py::extract<string> ns_e(objectKey);
+    if (ns_e().length() < 1) continue;
+    py::extract<py::list> list_e(objectVal);
+    py::list list = list_e();
+    char ns = ns_e()[0];
+    ex_ensure_namespace_exists(ec, ns);
+    ex_push_feature_list(ec, vw, ns, list);
+  }
+}
+
+bool ex_pop_feature(example_ptr ec, unsigned char ns) {
+  if (ec->atomics[ns].size() == 0) return false;
+  feature f = ec->atomics[ns].pop();
+  ec->num_features--;
+  ec->sum_feat_sq[ns] -= f.x * f.x;
+  ec->total_sum_feat_sq -= f.x * f.x;
+  return true;
+}
+
+void ex_erase_namespace(example_ptr ec, unsigned char ns) {
   ec->num_features -= ec->atomics[ns].size();
   ec->total_sum_feat_sq -= ec->sum_feat_sq[ns];
   ec->sum_feat_sq[ns] = 0.;
   ec->atomics[ns].erase();
+  ec->audit_features[ns].erase();
+}
+
+bool ex_pop_namespace(example_ptr ec) {
+  if (ec->indices.size() == 0) return false;
+  unsigned char ns = ec->indices.pop();
+  ex_erase_namespace(ec, ns);
   return true;
 }
 
 void my_setup_example(vw_ptr vw, example_ptr ec) {
   VW::setup_example(*vw, ec.get());
 }
+
+void unsetup_example(vw_ptr vwP, example_ptr ae) {
+  vw&all = *vwP;
+  ae->partial_prediction = 0.;
+  ae->num_features = 0;
+  ae->total_sum_feat_sq = 0;
+  ae->loss = 0.;
+  
+  if (all.ignore_some) {
+    cerr << "error: cannot unsetup example when some namespaces are ignored!" << endl;
+    throw exception();
+  }
+
+  if(all.ngram_strings.size() > 0) {
+    cerr << "error: cannot unsetup example when ngrams are in use!" << endl;
+    throw exception();
+  }
+  
+  if (all.add_constant) {
+    ae->atomics[constant_namespace].erase();
+    ae->audit_features[constant_namespace].erase();
+    int hit_constant = -1;
+    size_t N = ae->indices.size();
+    for (size_t i=0; i<N; i++) {
+      size_t j = N - 1 - i;
+      if (ae->indices[j] == constant_namespace) {
+        if (hit_constant >= 0) { cerr << "error: hit constant namespace twice!" << endl; throw exception(); }
+        hit_constant = j;
+        break;
+      }
+    }
+    if (hit_constant >= 0) {
+      for (size_t i=hit_constant; i<N-1; i++)
+        ae->indices[i] = ae->indices[i+1];
+      ae->indices.pop();
+    }
+  }
+
+  uint32_t multiplier = all.wpp << all.reg.stride_shift;
+  if(multiplier != 1) { //make room for per-feature information.
+    for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
+      for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
+        j->weight_index /= multiplier;
+    if (all.audit || all.hash_inv)
+      for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
+        for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
+          j->weight_index /= multiplier;
+  }
+}
+
 
 void ex_set_label_string(example_ptr ec, vw_ptr vw, string label, size_t labelType) {
   // SPEEDUP: if it's already set properly, don't modify
@@ -466,6 +547,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("hash_feature", &VW::hash_feature, "given a feature string (arg2) and a hashed namespace (arg3), hash that feature")
       .def("finish_example", &my_finish_example, "tell VW that you're done with a given example")
       .def("setup_example", &my_setup_example, "given an example that you've created by hand, prepare it for learning (eg, compute quadratic feature)")
+      .def("unsetup_example", &unsetup_example, "reverse the process of setup, so that you can go back and modify this example")
 
       .def("num_weights", &VW::num_weights, "how many weights are we learning?")
       .def("get_weight", &VW::get_weight, "get the weight for a particular index")
@@ -513,10 +595,12 @@ BOOST_PYTHON_MODULE(pylibvw) {
 
       .def("push_hashed_feature", &ex_push_feature, "Add a hashed feature to a given namespace (id=character-ord)")
       .def("push_feature_list", &ex_push_feature_list, "Add a (Python) list of features to a given namespace")
+      .def("push_feature_dict", &ex_push_dictionary, "Add a (Python) dictionary of namespace/feature-list pairs")
       .def("pop_feature", &ex_pop_feature, "Remove the top feature from a given namespace; returns True iff the list was non-empty")
       .def("push_namespace", &ex_push_namespace, "Add a new namespace")
       .def("ensure_namespace_exists", &ex_ensure_namespace_exists, "Add a new namespace if it doesn't already exist")
       .def("pop_namespace", &ex_pop_namespace, "Remove the top namespace off; returns True iff the list was non-empty")
+      .def("erase_namespace", &ex_erase_namespace, "Remove all the features from a given namespace")
 
       .def("set_label_string", &ex_set_label_string, "(Re)assign the label of this example to this string")
       

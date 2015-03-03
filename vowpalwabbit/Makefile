@@ -52,4 +52,7 @@ install: $(BINARIES)
 clean:
 	rm -f  *.o *.d $(BINARIES) *~ $(MANPAGES) libvw.a
 
+python: vw
+	cd .. ; $(MAKE) python
+
 .PHONY: all clean install test things
