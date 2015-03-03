@@ -9,6 +9,9 @@
 /* define if the Boost::Python library is available */
 #undef HAVE_BOOST_PYTHON
 
+/* define if the compiler supports basic C++0x syntax */
+#undef HAVE_CXX0X
+
 /* define if the compiler supports basic C++11 syntax */
 #undef HAVE_CXX11
 
@@ -104,3 +107,10 @@
 
 /* Define for large files, on AIX-style hosts. */
 #undef _LARGE_FILES
+
+
+#if defined(HAVE_CXX11) && HAVE_CXX11
+/* If c++11 is available, then so is c++0x: */
+#define HAVE_CXX0X 1
+#endif
+

@@ -94,6 +94,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude.d/ax_boost_base.m4 \
 	$(top_srcdir)/acinclude.d/ax_boost_program_options.m4 \
 	$(top_srcdir)/acinclude.d/ax_boost_python.m4 \
 	$(top_srcdir)/acinclude.d/ax_check_zlib.m4 \
+	$(top_srcdir)/acinclude.d/ax_cxx_compile_stdcxx_0x.m4 \
 	$(top_srcdir)/acinclude.d/ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/acinclude.d/ax_java_options.m4 \
 	$(top_srcdir)/acinclude.d/ax_jni_include_dir.m4 \
@@ -253,6 +254,7 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 GREP = @GREP@
+HAVE_CXX0X = @HAVE_CXX0X@
 HAVE_CXX11 = @HAVE_CXX11@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@

@@ -96,6 +96,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude.d/ax_boost_base.m4 \
 	$(top_srcdir)/acinclude.d/ax_boost_program_options.m4 \
 	$(top_srcdir)/acinclude.d/ax_boost_python.m4 \
 	$(top_srcdir)/acinclude.d/ax_check_zlib.m4 \
+	$(top_srcdir)/acinclude.d/ax_cxx_compile_stdcxx_0x.m4 \
 	$(top_srcdir)/acinclude.d/ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/acinclude.d/ax_java_options.m4 \
 	$(top_srcdir)/acinclude.d/ax_jni_include_dir.m4 \
@@ -114,8 +115,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude.d/ax_boost_base.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
-	$(am__configure_deps) $(nobase_include_HEADERS) \
-	$(noinst_HEADERS) $(am__DIST_COMMON)
+	$(am__configure_deps) $(noinst_HEADERS) $(am__DIST_COMMON)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
@@ -149,35 +149,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
-am__install_max = 40
-am__nobase_strip_setup = \
-  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
-am__nobase_strip = \
-  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
-am__nobase_list = $(am__nobase_strip_setup); \
-  for p in $$list; do echo "$$p $$p"; done | \
-  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
-  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
-    if (++n[$$2] == $(am__install_max)) \
-      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
-    END { for (dir in files) print dir, files[dir] }'
-am__base_list = \
-  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
-  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__uninstall_files_from_dir = { \
-  test -z "$$files" \
-    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
-    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
-         $(am__cd) "$$dir" && rm -f $$files; }; \
-  }
-am__installdirs = "$(DESTDIR)$(includedir)"
-HEADERS = $(nobase_include_HEADERS) $(noinst_HEADERS)
+HEADERS = $(noinst_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 am__recursive_targets = \
@@ -208,8 +180,8 @@ CTAGS = ctags
 CSCOPE = cscope
 DIST_SUBDIRS = vowpalwabbit cluster library python java
 am__DIST_COMMON = $(srcdir)/Makefile.in AUTHORS COPYING ChangeLog \
-	INSTALL NEWS README compile config.guess config.sub depcomp \
-	install-sh ltmain.sh missing
+	INSTALL NEWS README compile config.guess config.sub install-sh \
+	ltmain.sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -287,6 +259,7 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 GREP = @GREP@
+HAVE_CXX0X = @HAVE_CXX0X@
 HAVE_CXX11 = @HAVE_CXX11@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -406,66 +379,9 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = vowpalwabbit cluster library $(am__append_1) $(am__append_2)
-nobase_include_HEADERS = vowpalwabbit/allreduce.h \
-	vowpalwabbit/comp_io.h \
-	vowpalwabbit/config.h \
-	vowpalwabbit/example.h \
-	vowpalwabbit/global_data.h \
-	vowpalwabbit/hash.h \
-	vowpalwabbit/io_buf.h \
-	vowpalwabbit/learner.h \
-	vowpalwabbit/loss_functions.h \
-	vowpalwabbit/parse_primitives.h \
-	vowpalwabbit/parser.h \
-	vowpalwabbit/simple_label.h \
-	vowpalwabbit/v_array.h \
-	vowpalwabbit/vw.h \
-	vowpalwabbit/vwdll.h
-
-noinst_HEADERS = vowpalwabbit/accumulate.h \
-	vowpalwabbit/autolink.h \
-	vowpalwabbit/bfgs.h \
-	vowpalwabbit/binary.h \
-	vowpalwabbit/bs.h \
-	vowpalwabbit/cache.h \
-	vowpalwabbit/cb.h \
-	vowpalwabbit/cb_algs.h \
-	vowpalwabbit/cbify.h \
-	vowpalwabbit/comp_io.h \
-	vowpalwabbit/constant.h \
-	vowpalwabbit/cost_sensitive.h \
-	vowpalwabbit/csoaa.h \
-	vowpalwabbit/ect.h \
-	vowpalwabbit/gd.h \
-	vowpalwabbit/gd_mf.h \
-	vowpalwabbit/kernel_svm.h \
-	vowpalwabbit/lda_core.h \
-	vowpalwabbit/log_multi.h \
-	vowpalwabbit/lrq.h \
-	vowpalwabbit/mf.h \
-	vowpalwabbit/multiclass.h \
-	vowpalwabbit/network.h \
-	vowpalwabbit/nn.h \
-	vowpalwabbit/noop.h \
-	vowpalwabbit/oaa.h \
-	vowpalwabbit/parse_args.h \
-	vowpalwabbit/parse_example.h \
-	vowpalwabbit/parse_regressor.h \
-	vowpalwabbit/print.h \
-	vowpalwabbit/rand48.h \
-	vowpalwabbit/reductions.h \
-	vowpalwabbit/scorer.h \
-	vowpalwabbit/search.h \
-	vowpalwabbit/search_sequencetask.h \
-	vowpalwabbit/search_entityrelationtask.h \
-	vowpalwabbit/search_hooktask.h \
-	vowpalwabbit/search_multiclasstask.h \
-	vowpalwabbit/search_dep_parser.h \
-	vowpalwabbit/sender.h \
-	vowpalwabbit/stagewise_poly.h \
-	vowpalwabbit/topk.h \
-	vowpalwabbit/unique_sort.h \
-	vowpalwabbit/v_hashmap.h
+noinst_HEADERS = \
+	explore/static/utility.h \
+	explore/static/MWTExplorer.h
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 all: all-recursive
@@ -513,30 +429,6 @@ clean-libtool:
 
 distclean-libtool:
 	-rm -f libtool config.lt
-install-nobase_includeHEADERS: $(nobase_include_HEADERS)
-	@$(NORMAL_INSTALL)
-	@list='$(nobase_include_HEADERS)'; test -n "$(includedir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(includedir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(includedir)" || exit 1; \
-	fi; \
-	$(am__nobase_list) | while read dir files; do \
-	  xfiles=; for file in $$files; do \
-	    if test -f "$$file"; then xfiles="$$xfiles $$file"; \
-	    else xfiles="$$xfiles $(srcdir)/$$file"; fi; done; \
-	  test -z "$$xfiles" || { \
-	    test "x$$dir" = x. || { \
-	      echo " $(MKDIR_P) '$(DESTDIR)$(includedir)/$$dir'"; \
-	      $(MKDIR_P) "$(DESTDIR)$(includedir)/$$dir"; }; \
-	    echo " $(INSTALL_HEADER) $$xfiles '$(DESTDIR)$(includedir)/$$dir'"; \
-	    $(INSTALL_HEADER) $$xfiles "$(DESTDIR)$(includedir)/$$dir" || exit $$?; }; \
-	done
-
-uninstall-nobase_includeHEADERS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(nobase_include_HEADERS)'; test -n "$(includedir)" || list=; \
-	$(am__nobase_strip_setup); files=`$(am__nobase_strip)`; \
-	dir='$(DESTDIR)$(includedir)'; $(am__uninstall_files_from_dir)
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run 'make' without going through this Makefile.
@@ -837,9 +729,6 @@ check: check-recursive
 all-am: Makefile $(HEADERS)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(includedir)"; do \
-	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
-	done
 install: install-recursive
 install-exec: install-exec-recursive
 install-data: install-data-recursive
@@ -892,7 +781,7 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-nobase_includeHEADERS
+install-data-am:
 
 install-dvi: install-dvi-recursive
 
@@ -938,7 +827,7 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-nobase_includeHEADERS
+uninstall-am:
 
 .MAKE: $(am__recursive_targets) install-am install-strip
 
@@ -952,12 +841,11 @@ uninstall-am: uninstall-nobase_includeHEADERS
 	install install-am install-data install-data-am install-dvi \
 	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-info install-info-am install-man \
-	install-nobase_includeHEADERS install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-nobase_includeHEADERS
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	installdirs-am maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
+	ps ps-am tags tags-am uninstall uninstall-am
 
 .PRECIOUS: Makefile
 

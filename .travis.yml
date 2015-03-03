@@ -1,11 +1,13 @@
 language: cpp
 compiler:
   - gcc
+  - clang
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libboost-all-dev
   - sudo apt-get install maven
 install: 
+  - ./configure --enable-python --enable-java-jni
   - make
   - make python
   - cd java; mvn test

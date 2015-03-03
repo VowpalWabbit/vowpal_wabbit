@@ -14,18 +14,30 @@ AC_PROG_CXXCPP
 AC_LANG([C++])
 AC_CANONICAL_HOST
 AC_PROG_INSTALL
-AX_CXX_COMPILE_STDCXX_11
+AX_CXX_COMPILE_STDCXX_11(noext,optional)
+AS_IF([test "${HAVE_CXX11}" != 1],
+  [
+    AX_CXX_COMPILE_STDCXX_0X(noext,mandatory)
+  ])
 AC_HEADER_STDC
 
 AX_BOOST_BASE([1.0], [], [
   AC_MSG_ERROR([Could not find a valid version of boost.])
 ])
-AX_BOOST_PROGRAM_OPTIONS()
+AX_BOOST_PROGRAM_OPTIONS
 
-AX_CHECK_ZLIB()
-ZLIB_CPPFLAGS="-I${ZLIB_HOME}/include"
-ZLIB_LDFLAGS="-L${ZLIB_HOME}/lib -lz"
-AC_SUBST(ZLIB_CPPFLAGS)
+AX_CHECK_ZLIB
+AS_IF([test "x${ZLIB_HOME}" != x],
+  [
+    ZLIB_CPPFLAGS="-I${ZLIB_HOME}/include"
+    ZLIB_LDFLAGS="-L${ZLIB_HOME}/lib"
+  ], [
+    ZLIB_CPPFLAGS=""
+    ZLIB_LDFLAGS=""
+  ])
+
+ZLIB_LDFLAGS="${ZLIB_LDFLAGS} -lz"
+  AC_SUBST(ZLIB_CPPFLAGS)
 AC_SUBST(ZLIB_LDFLAGS)
 
 PTHREAD_LIBS=-lpthread
@@ -131,6 +143,13 @@ AS_CASE([$host_os],
 	[freebsd=false])
 AM_CONDITIONAL(FREEBSD, test x$freebsd = xtrue)
 
+dnl Extra code appended to config.h:
+AH_BOTTOM([
+#if defined(HAVE_CXX11) && HAVE_CXX11
+/* If c++11 is available, then so is c++0x: */
+#define HAVE_CXX0X 1
+#endif
+])
 
 AC_CONFIG_FILES([
  Makefile
