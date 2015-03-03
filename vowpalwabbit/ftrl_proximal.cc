@@ -39,6 +39,7 @@ struct update_data {
   float ftrl_beta;
   float l1_lambda;
   float l2_lambda;
+  float inverse_ec_l2_norm;
 };
 
 void inner_update_proximal(update_data& d, float x, float& wref) {
@@ -61,6 +62,9 @@ void inner_update_proximal(update_data& d, float x, float& wref) {
 void inner_update_pistol_pre(update_data& d, float x, float& wref) {
   float* w = &wref;
   
+  if (d.inverse_ec_l2_norm>0)
+    x *= d.inverse_ec_l2_norm;
+  
   float fabs_x = fabs(x);
   if (fabs_x > w[W_MX]) 
     w[W_MX]=fabs_x;
@@ -72,6 +76,10 @@ void inner_update_pistol_pre(update_data& d, float x, float& wref) {
 
 void inner_update_pistol_post(update_data& d, float x, float& wref) {
   float* w = &wref;
+  
+  if (d.inverse_ec_l2_norm>0)
+    x *= d.inverse_ec_l2_norm;
+  
   float gradient = d.update * x;
   
   w[W_ZT] += -gradient;
@@ -84,6 +92,10 @@ void update_before_prediction(ftrl& b, example& ec)
     struct update_data data;  
     data.ftrl_alpha = b.ftrl_alpha;
     data.ftrl_beta = b.ftrl_beta;
+    if (b.normalized)
+      data.inverse_ec_l2_norm=1/sqrt(ec.total_sum_feat_sq);
+    else
+      data.inverse_ec_l2_norm=0;
 
     GD::foreach_feature<update_data, inner_update_pistol_pre>(*b.all, ec, data);
   }
@@ -98,6 +110,10 @@ void update_after_prediction(ftrl& b, example& ec)
   data.ftrl_beta = b.ftrl_beta;
   data.l1_lambda = b.all->l1_lambda;
   data.l2_lambda = b.all->l2_lambda;
+  if (b.normalized)
+    data.inverse_ec_l2_norm=1/sqrt(ec.total_sum_feat_sq);
+  else
+    data.inverse_ec_l2_norm=0;
   
   if (b.proximal)
     GD::foreach_feature<update_data, inner_update_proximal>(*b.all, ec, data);
