@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 #include "v_array.h"
 #include "simple_label.h"
 #include "multiclass.h"
+#include "multilabel.h"
 #include "cost_sensitive.h"
 #include "cb.h"
 
@@ -42,11 +43,13 @@ typedef union {
   COST_SENSITIVE::label cs;
   CB::label cb;
   CB_EVAL::label cb_eval;
+  MULTILABEL::labels multilabels;
 } polylabel;
 
 typedef union {
   float scalar;
   uint32_t multiclass;
+  MULTILABEL::labels multilabels;
 } polyprediction;
 
 struct example // core example datatype.
