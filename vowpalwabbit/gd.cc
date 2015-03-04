@@ -44,6 +44,7 @@ namespace GD
     void (*predict)(gd&, base_learner&, example&);
     void (*learn)(gd&, base_learner&, example&);
     void (*update)(gd&, base_learner&, example&);
+    void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, polyprediction*);
 
     vw* all; //parallel, features, parameters
   };
@@ -391,6 +392,44 @@ void predict(gd& g, base_learner& base, example& ec)
     print_audit_features(all, ec);
 }
 
+struct multipredict_info { size_t count; size_t step; polyprediction* pred; regressor* reg; /* & for l1: */ float gravity; };
+
+inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
+  uint32_t offset = 0;
+  for (size_t c=0; c<mp.count; c++) {
+    mp.pred[c].scalar += fx * mp.reg->weight_vector[ (fi + offset) & mp.reg->weight_mask ];
+    offset += mp.step;
+  }
+}
+
+inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
+  uint32_t offset = 0;
+  for (size_t c=0; c<mp.count; c++) {
+    mp.pred[c].scalar += fx * trunc_weight(mp.reg->weight_vector[ (fi + offset) & mp.reg->weight_mask ], mp.gravity);
+    offset += mp.step;
+  }
+}
+  
+template<bool l1, bool audit>
+void multipredict(gd& g, base_learner& base, example& ec, size_t count, size_t step, polyprediction*pred) {
+  vw& all = *g.all;
+  for (size_t c=0; c<count; c++)
+    pred[c].scalar = ec.l.simple.initial;
+  multipredict_info mp = { count, step, pred, &g.all->reg, (float)all.sd->gravity };
+  if (l1) foreach_feature<multipredict_info, uint32_t, vec_add_trunc_multipredict>(all, ec, mp);
+  else    foreach_feature<multipredict_info, uint32_t, vec_add_multipredict      >(all, ec, mp);
+  for (size_t c=0; c<count; c++)
+    pred[c].scalar = finalize_prediction(all.sd, pred[c].scalar * (float)all.sd->contraction);
+  if (audit) {
+    for (size_t c=0; c<count; c++) {
+      ec.pred.scalar = pred[c].scalar;
+      print_audit_features(all, ec);
+      ec.ft_offset += (uint32_t)step;
+    }
+    ec.ft_offset -= (uint32_t)step*count;
+  }
+}
+
   struct power_data {
     float minus_power_t;
     float neg_norm_power;
@@ -499,7 +538,6 @@ float compute_update(gd& g, example& ec)
 	pred_per_update = get_pred_per_update<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,ec);
       else
 	pred_per_update = ec.total_sum_feat_sq;
-      
       float delta_pred = pred_per_update * all.eta * ld.weight;
       if(!adaptive) 
 	{
@@ -511,7 +549,6 @@ float compute_update(gd& g, example& ec)
 	update = all.loss->getUpdate(ec.pred.scalar, ld.label, delta_pred, pred_per_update);
       else
 	update = all.loss->getUnsafeUpdate(ec.pred.scalar, ld.label, delta_pred, pred_per_update);
-      
       // changed from ec.partial_prediction to ld.prediction
       ec.updated_prediction += pred_per_update * update;
       
@@ -537,7 +574,7 @@ void update(gd& g, base_learner& base, example& ec)
   float update;
   if ( (update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (g, ec)) != 0.)
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
-  
+
   if (g.all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
     sync_weights(*g.all);
 }
@@ -548,7 +585,6 @@ void update(gd& g, base_learner& base, example& ec)
   assert(ec.in_use);
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.l.simple.weight > 0.);
-
   g.predict(g,base,ec);
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,base,ec);
 }
@@ -971,14 +1007,14 @@ base_learner* setup(vw& all)
 	 << " adjust --decay_learning_rate larger to avoid this." << endl;
   
   if (all.reg_mode % 2)
-    if (all.audit || all.hash_inv)
-      g.predict = predict<true, true>;
-    else
-      g.predict = predict<true, false>;
-  else if (all.audit || all.hash_inv)
-    g.predict = predict<false, true>;
-  else
-    g.predict = predict<false, false>;
+    if (all.audit || all.hash_inv) {
+      g.predict = predict<true, true>;   g.multipredict = multipredict<true, true>; }
+    else {
+      g.predict = predict<true, false>;  g.multipredict = multipredict<true, false>; }
+  else if (all.audit || all.hash_inv) {
+    g.predict = predict<false, true>;    g.multipredict = multipredict<false, true>; }
+  else {
+    g.predict = predict<false, false>;   g.multipredict = multipredict<false, false>; }
 
   uint32_t stride;
   if (all.power_t == 0.5)
@@ -992,6 +1028,8 @@ base_learner* setup(vw& all)
   ret.set_update(g.update);
   ret.set_save_load(save_load);
   ret.set_end_pass(end_pass);
+  ret.set_multipredict(g.multipredict);
+  
   return make_base(ret);
 }
 }

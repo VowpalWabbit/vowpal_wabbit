@@ -52,7 +52,7 @@ namespace GD{
         v_array<feature> temp = ec.atomics[(unsigned char)(*i)[0]];
         for (; temp.begin != temp.end; temp.begin++)
         {
-          uint32_t halfhash = quadratic_constant * (temp.begin->weight_index + offset);
+          uint32_t halfhash = quadratic_constant * (temp.begin->weight_index);
        
           foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(unsigned char)(*i)[1]].begin, ec.atomics[(unsigned char)(*i)[1]].end, dat, 
                                halfhash, temp.begin->x);
@@ -67,7 +67,7 @@ namespace GD{
         v_array<feature> temp2 = ec.atomics[(unsigned char)(*i)[1]];
         for (; temp2.begin != temp2.end; temp2.begin++) {
            
-          uint32_t halfhash = cubic_constant2 * (cubic_constant * (temp1.begin->weight_index + offset) + temp2.begin->weight_index + offset);
+          uint32_t halfhash = cubic_constant2 * (cubic_constant * (temp1.begin->weight_index) + temp2.begin->weight_index);
           float mult = temp1.begin->x * temp2.begin->x;
           foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(unsigned char)(*i)[2]].begin, ec.atomics[(unsigned char)(*i)[2]].end, dat, halfhash, mult);
         }
