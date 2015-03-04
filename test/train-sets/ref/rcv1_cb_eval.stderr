@@ -5,23 +5,23 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/rcv1_cb_eval
 num sources = 1
-average    since         example     example  current  current  current
-loss       last          counter      weight    label  predict features
-0.000000   0.000000          1      1.0    known        2       50
-0.000000   0.000000          2      2.0    known        2      103
-0.000000   0.000000          4      4.0    known        2      134
-0.000000   0.000000          8      8.0    known        2      145
-0.476507   0.953014         16     16.0    known        2       23
-0.500997   0.525487         32     32.0    known        2       31
-0.581606   0.662214         64     64.0    known        2       60
-0.484693   0.387780        128    128.0    known        2      105
-0.481404   0.478114        256    256.0    known        2      122
-0.520069   0.558734        512    512.0    known        2       74
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.000000 0.000000            1            1.0    known        2       50
+0.000000 0.000000            2            2.0    known        2      103
+0.000000 0.000000            4            4.0    known        2      134
+0.000000 0.000000            8            8.0    known        2      145
+0.476507 0.953014           16           16.0    known        2       23
+0.500997 0.525487           32           32.0    known        2       31
+0.581606 0.662214           64           64.0    known        2       60
+0.484693 0.387780          128          128.0    known        2      105
+0.481404 0.478114          256          256.0    known        2      122
+0.520069 0.558734          512          512.0    known        2       74
 
 finished run
 number of examples per pass = 1000
 passes used = 1
-weighted example sum = 1000
-weighted label sum = 0
+weighted example sum = 1000.000000
+weighted label sum = 0.000000
 average loss = 0.507619
 total feature number = 76670
