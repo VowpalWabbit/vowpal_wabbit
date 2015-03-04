@@ -20,14 +20,11 @@ struct ftrl {
   float ftrl_beta;
   bool proximal;
   bool pistol;
-  bool normalized;
 };
   
 void predict(ftrl& b, base_learner& base, example& ec)
 {
   ec.partial_prediction = GD::inline_predict(*b.all, ec);
-  if (b.normalized)
-    ec.partial_prediction /= sqrt(ec.total_sum_feat_sq);
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
   
@@ -144,7 +141,6 @@ base_learner* ftrl_setup(vw& all)
   
   new_options(all, "FTRL options")
     ("ftrl_algo", po::value<string>()->default_value("pistol"), "Specify the kind of FTRL used. Currently available ones are pistol, proximal.")
-    ("ftrl_normalized", "normalize the samples by their L2 norm")
     ("ftrl_alpha", po::value<float>(), "Learning rate for FTRL optimization")
     ("ftrl_beta", po::value<float>(), "FTRL beta parameter");
   add_options(all);
@@ -154,10 +150,6 @@ base_learner* ftrl_setup(vw& all)
   po::variables_map& vm = all.vm;
   string ftrl_algo = vm["ftrl_algo"].as<string>();
   
-  b.normalized = false;
-  if (vm.count("ftrl_normalized"))
-    b.normalized=true;
-
   b.proximal = false;
   b.pistol = false;
   if (ftrl_algo.compare("proximal") == 0) {
