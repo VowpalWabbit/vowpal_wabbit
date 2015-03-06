@@ -42,7 +42,8 @@ namespace LEARNER
     void (*learn_f)(void* data, base_learner& base, example&);
     void (*predict_f)(void* data, base_learner& base, example&);
     void (*update_f)(void* data, base_learner& base, example&);
-    void (*multipredict_f)(void* data, base_learner& base, example&, size_t count, size_t step, polyprediction*lab);
+    void (*multipredict_f)(void* data, base_learner& base, example&, size_t count, size_t step, polyprediction*pred);
+    void (*multiupdate_f)(void*, base_learner&, example&, size_t, size_t, polyprediction*, polylabel*);
   };
 
   struct save_load_data{
@@ -64,6 +65,7 @@ namespace LEARNER
 
   typedef void (*tlearn)(void* d, base_learner& base, example& ec);
   typedef void (*tmultipredict)(void* d, base_learner& base, example& ec, size_t, size_t, polyprediction*);
+  typedef void (*tmultiupdate )(void* d, base_learner& base, example& ec, size_t, size_t, polyprediction*, polylabel*);
   typedef void (*tsl)(void* d, io_buf& io, bool read, bool text);
   typedef void (*tfunc)(void*d);
   typedef void (*tend_example)(vw& all, void* d, example& ec);
@@ -116,10 +118,28 @@ namespace LEARNER
         ec.ft_offset -= (uint32_t)(increment*lo);
       }
     }
+    inline void multiupdate(example& ec, size_t lo, size_t count, polyprediction* pred, polylabel* label) {
+      if (learn_fd.multiupdate_f == NULL) {
+        ec.ft_offset += (uint32_t)(increment*lo);
+        for (size_t c=0; c<count; c++) {
+          ec.l = label[c];
+          ec.pred = pred[c];
+          learn_fd.update_f(learn_fd.data, *learn_fd.base, ec);
+          ec.ft_offset += (uint32_t)increment;
+        }
+        ec.ft_offset -= (uint32_t)(increment*(lo+count));
+      } else {
+        ec.ft_offset += (uint32_t)(increment*lo);
+        learn_fd.multiupdate_f(learn_fd.data, *learn_fd.base, ec, count, increment, pred, label);
+        ec.ft_offset -= (uint32_t)(increment*lo);
+      }
+    }
       inline void set_predict(void (*u)(T& data, base_learner& base, example&))
       { learn_fd.predict_f = (tlearn)u; }
       inline void set_multipredict(void (*u)(T&, base_learner&, example&, size_t, size_t, polyprediction*))
       { learn_fd.multipredict_f = (tmultipredict)u; }
+      inline void set_multiupdate(void (*u)(T&, base_learner&, example&, size_t, size_t, polyprediction*, polylabel*))
+      { learn_fd.multiupdate_f = (tmultiupdate)u; }
       
       inline void update(example& ec, size_t i=0) 
       { 
@@ -201,6 +221,7 @@ namespace LEARNER
       ret.learn_fd.update_f = (tlearn)learn;
       ret.learn_fd.predict_f = (tlearn)learn;
       ret.learn_fd.multipredict_f = NULL;
+      ret.learn_fd.multiupdate_f = NULL;
       ret.finish_example_fd.data = dat;
       ret.finish_example_fd.finish_example_f = return_simple_example;
 
@@ -220,6 +241,7 @@ namespace LEARNER
       ret.learn_fd.update_f = (tlearn)learn;
       ret.learn_fd.predict_f = (tlearn)predict;
       ret.learn_fd.multipredict_f = NULL;
+      ret.learn_fd.multiupdate_f = NULL;
       ret.learn_fd.base = base;
       
       ret.finisher_fd.data = dat;

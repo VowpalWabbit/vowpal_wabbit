@@ -26,6 +26,13 @@ inline void multipredict(scorer& s, LEARNER::base_learner& base, example& ec, si
     pred[c].scalar = link(pred[c].scalar);
 }
 
+void multiupdate(scorer& s, LEARNER::base_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, polylabel*label) {
+  for (size_t c=0; c<count; c++)
+    s.all->set_minmax(s.all->sd, label[c].simple.label);
+  base.multiupdate(ec, 0, count, pred, label);
+}
+
+
 void update(scorer& s, LEARNER::base_learner& base, example& ec) {
   s.all->set_minmax(s.all->sd, ec.l.simple.label);  
   base.update(ec);
@@ -78,6 +85,7 @@ LEARNER::base_learner* scorer_setup(vw& all)
       throw exception();
     }
   l->set_multipredict(multipredict_f);
+  l->set_multiupdate(multiupdate);
   l->set_update(update);
   all.scorer = make_base(*l);
   
