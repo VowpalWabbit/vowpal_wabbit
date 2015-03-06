@@ -32,13 +32,12 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
       base.learn(ec, i);
     } else
       base.predict(ec, i);
-    
     if (ec.pred.scalar > 0.) 
       preds.label_v.push_back(i);
   }
-  if (multilabel_index < multilabels.label_v.size())
-    cout << "label " << multilabels.label_v[multilabel_index] << " is not in {0,"<< o.k-1 << "} This won't work right." << endl;    
-  
+  if (is_learn && multilabel_index < multilabels.label_v.size())
+    cout << "label " << multilabels.label_v[multilabel_index] << " is not in {0," << o.k-1 << "} This won't work right." << endl;
+
   ec.pred.multilabels = preds;
   ec.l.multilabels = multilabels;
 }
