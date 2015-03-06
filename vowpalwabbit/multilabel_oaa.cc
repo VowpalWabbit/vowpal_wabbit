@@ -16,6 +16,7 @@ template <bool is_learn>
 void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
+  preds.label_v.erase();
 
   ec.l.simple = {FLT_MAX, 1.f, 0.f};
   uint32_t multilabel_index = 0;
@@ -54,7 +55,7 @@ LEARNER::base_learner* multilabel_oaa_setup(vw& all)
     return NULL;
   
   oaa& data = calloc_or_die<oaa>();
-  data.k = all.vm["oaa"].as<size_t>();
+  data.k = all.vm["multilabel_oaa"].as<size_t>();
   
   LEARNER::learner<oaa>& l = LEARNER::init_learner(&data, setup_base(all), predict_or_learn<true>, 
 						   predict_or_learn<false>, data.k);

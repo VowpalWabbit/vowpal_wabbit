@@ -17,6 +17,7 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "cbify.h"
 #include "oaa.h"
+#include "multilabel_oaa.h"
 #include "rand48.h"
 #include "bs.h"
 #include "topk.h"
@@ -836,6 +837,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(oaa_setup);
   all.reduction_stack.push_back(ect_setup);
   all.reduction_stack.push_back(log_multi_setup);
+  all.reduction_stack.push_back(multilabel_oaa_setup);
   all.reduction_stack.push_back(csoaa_setup);
   all.reduction_stack.push_back(csldf_setup);
   all.reduction_stack.push_back(cb_algs_setup);

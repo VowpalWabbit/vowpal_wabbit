@@ -254,7 +254,6 @@ struct shared_data {
 		 progress_add, progress_arg);
   }
 
-private:
   void print_update(bool holdout_set_off, size_t current_pass, const std::string &label, const std::string &prediction,
 		    size_t num_features, bool progress_add, float progress_arg)
   {

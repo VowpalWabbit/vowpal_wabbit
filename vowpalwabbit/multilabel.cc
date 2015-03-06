@@ -125,18 +125,24 @@ label_parser multilabel = {default_label, parse_label,
 			   copy_label,
 			   sizeof(labels)};
 
- void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* ec_seq)
+ void print_update(vw& all, bool is_test, example& ec)
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
-	std::string label_buf;
+	stringstream label_string;
         if (is_test)
-          label_buf = " unknown";
+          label_string << " unknown";
         else
-          label_buf = " known";
+	  for(size_t i = 0; i < ec.l.multilabels.label_v.size(); i++)
+	    label_string << " " << ec.l.multilabels.label_v[i];
 
-	all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, ec.pred.multiclass, 
-			     ec.num_features, all.progress_add, all.progress_arg);
+	stringstream pred_string;
+	  for(size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
+	    pred_string << " " << ec.pred.multilabels.label_v[i];
+	  
+	  
+	  all.sd->print_update(all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(), 
+			       ec.num_features, all.progress_add, all.progress_arg);
       }
   }
 
@@ -176,7 +182,7 @@ label_parser multilabel = {default_label, parse_label,
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
 
-    print_update(all, is_test_label(ec.l.multilabels), ec, NULL);
+    print_update(all, is_test_label(ec.l.multilabels), ec);
   }
 
   bool example_is_test(example& ec)
