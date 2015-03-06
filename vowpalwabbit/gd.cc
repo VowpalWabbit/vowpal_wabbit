@@ -404,31 +404,29 @@ struct multipredict_info { size_t count; size_t step; polyprediction* pred; regr
 
   template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
   inline void update_feature_multi(multipredict_info& mp, const float fx, uint32_t fi) {
-    uint32_t idx = fi;
+    uint32_t last = 0;
+    weight*w = mp.reg->weight_vector + (fi & mp.reg->weight_mask);
     for (size_t i=0; i<mp.count; i++) {
       uint32_t c = (uint32_t)mp.update[2*i];
-      float update = mp.update[2*i+1];
-      float x = fx;
-      idx = fi + c * mp.step;
-      if (spare != 0) x *= mp.reg->weight_vector[ (idx+spare) & mp.reg->weight_mask ];
-      mp.reg->weight_vector[idx & mp.reg->weight_mask] += update * x;
-      //cerr << "W[" << (idx & mp.reg->weight_mask) << "] += " << update*x << endl;
+      w += (c-last) * mp.step; last = c;
+      if (spare != 0) w[0] += fx * mp.update[2*i+1] * w[spare];
+      else            w[0] += fx * mp.update[2*i+1];
     }
   }
   
 inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
-  uint32_t idx = fi;
+  weight*w = mp.reg->weight_vector + (fi & mp.reg->weight_mask);
   for (size_t c=0; c<mp.count; c++) {
-    mp.pred[c].scalar += fx * mp.reg->weight_vector[ idx & mp.reg->weight_mask ];
-    idx += mp.step;
+    mp.pred[c].scalar += fx * *w;
+    w += mp.step;
   }
 }
 
 inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
-  uint32_t idx = fi;
+  weight*w = mp.reg->weight_vector + (fi & mp.reg->weight_mask);
   for (size_t c=0; c<mp.count; c++) {
-    mp.pred[c].scalar += fx * trunc_weight(mp.reg->weight_vector[ idx & mp.reg->weight_mask ], mp.gravity);
-    idx += mp.step;
+    mp.pred[c].scalar += fx * trunc_weight(*w, mp.gravity);
+    w += mp.step;
   }
 }
   
@@ -608,9 +606,10 @@ float compute_update(gd& g, example& ec)
     multipredict_info& mp = nd.mp;
     float x2 = x * x;
     float* info = nd.info;
+    fi &= mp.reg->weight_mask;
     for (size_t i=0; i<mp.count; i++) {
       uint32_t c = INFO_ID(i);
-      weight*w = mp.reg->weight_vector + ((fi + c*nd.mp.step) & mp.reg->weight_mask);
+      weight*w = mp.reg->weight_vector + fi + c*nd.mp.step;
       if ((INFO_GS(i) != 0) && (feature_mask_off || w[0] != 0.)) {
         if (adaptive) w[adaptive] += INFO_GS(i) * x2;
         if (normalized) {
