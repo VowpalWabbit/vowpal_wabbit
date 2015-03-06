@@ -20,7 +20,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
 
   ec.l.simple = {FLT_MAX, 1.f, 0.f};
   uint32_t multilabel_index = 0;
-  for (uint32_t i = 1; i <= o.k; i++) {
+  for (uint32_t i = 0; i < o.k; i++) {
     if (is_learn) {
       ec.l.simple.label = -1.f;
       if (multilabels.label_v.size() > multilabel_index 
@@ -29,15 +29,15 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
 	  ec.l.simple.label = 1.f;
 	  multilabel_index++;
 	}
-      base.learn(ec, i-1);
+      base.learn(ec, i);
     } else
-      base.predict(ec, i-1);
+      base.predict(ec, i);
     
     if (ec.pred.scalar > 0.) 
       preds.label_v.push_back(i);
   }
   if (multilabel_index < multilabels.label_v.size())
-    cout << "label " << multilabels.label_v[multilabel_index] << " is not in {1,"<< o.k << "} This won't work right." << endl;    
+    cout << "label " << multilabels.label_v[multilabel_index] << " is not in {0,"<< o.k-1 << "} This won't work right." << endl;    
   
   ec.pred.multilabels = preds;
   ec.l.multilabels = multilabels;
