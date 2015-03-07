@@ -401,7 +401,7 @@ class example(pylibvw.example):
             self.setup_done = False
         elif isinstance(initStringOrDict, str):
             pylibvw.example.__init__(self, vw, labelType, initStringOrDict)
-            self.setup_done = False
+            self.setup_done = True
         elif isinstance(initStringOrDict, dict):
             pylibvw.example.__init__(self, vw, labelType)
             self.vw = vw
