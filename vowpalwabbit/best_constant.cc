@@ -7,7 +7,7 @@ float second_observed_label = FLT_MAX;
 bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
 {
     if (    first_observed_label == FLT_MAX || // no non-test labels observed or function was never called
-            (all.loss == NULL) || (all.sd == NULL)) return false;
+            (all.loss == nullptr) || (all.sd == nullptr)) return false;
 
     float label1 = first_observed_label; // observed labels might be inside [sd->Min_label, sd->Max_label], so can't use Min/Max
     float label2 = (second_observed_label == FLT_MAX)?0:second_observed_label; // if only one label observed, second might be 0

@@ -301,7 +301,7 @@ vw::vw()
   eta = 0.5; //default learning rate for normalized adaptive updates, this is switched to 10 by default for the other updates (see parse_args.cc)
   numpasses = 1;
 
-  final_prediction_sink.begin = final_prediction_sink.end=final_prediction_sink.end_array = NULL;
+  final_prediction_sink.begin = final_prediction_sink.end=final_prediction_sink.end_array = nullptr;
   raw_prediction = -1;
   print = print_result;
   print_text = print_raw_text;
@@ -317,7 +317,7 @@ vw::vw()
   stdout_fileno = fileno(stdout);
   #endif
 
-  searchstr = NULL;
+  searchstr = nullptr;
 
   nonormalize = false;
   l1_lambda = 0.0;
@@ -349,7 +349,7 @@ vw::vw()
 
   add_constant = true;
   audit = false;
-  reg.weight_vector = NULL;
+  reg.weight_vector = nullptr;
   pass_length = (size_t)-1;
   passes_complete = 0;
 

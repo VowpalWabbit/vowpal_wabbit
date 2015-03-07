@@ -225,7 +225,7 @@ using namespace LEARNER;
 
   void sort_data_create(stagewise_poly &poly)
   {
-    poly.sd = NULL;
+    poly.sd = nullptr;
     poly.sd_len = 0;
   }
 
@@ -663,7 +663,7 @@ using namespace LEARNER;
   base_learner *stagewise_poly_setup(vw &all)
   {
     if (missing_option(all, true, "stage_poly", "use stagewise polynomial feature learning"))
-      return NULL;
+      return nullptr;
     
     new_options(all, "Stagewise poly options")
       ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
@@ -697,7 +697,7 @@ using namespace LEARNER;
     poly.last_example_counter = -1;
     poly.numpasses = 1;
     poly.update_support = false;
-    poly.original_ec = NULL;
+    poly.original_ec = nullptr;
     poly.next_batch_sz = poly.batch_sz;
 
     learner<stagewise_poly>& l = init_learner(&poly, setup_base(all), learn, predict);

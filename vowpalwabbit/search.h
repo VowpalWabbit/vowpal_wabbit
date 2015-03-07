@@ -47,8 +47,8 @@ namespace Search {
     //                           state, for future predictions, which ones depend
     //                           explicitely or implicitly on this prediction
     //   oracle_actions        an array of actions that the oracle would take
-    //                           NULL => the oracle doesn't know (is random!)
-    //   oracle_actions_cnt    the length of the previous array, or 0 if it's NULL
+    //                           nullptr => the oracle doesn't know (is random!)
+    //   oracle_actions_cnt    the length of the previous array, or 0 if it's nullptr
     //   condition_on          an array of previous (or future) predictions on which
     //                           this prediction depends. the semantics of conditioning
     //                           is that IF the predictions for all the tags in
@@ -57,22 +57,22 @@ namespace Search {
     //                           features, etc. (also assuming same policy). if
     //                           AUTO_CONDITION_FEATURES is on, then we will automatically
     //                           add features to ec based on what you're conditioning on.
-    //                           NULL => independent prediction
+    //                           nullptr => independent prediction
     //   condition_on_names    a string containing the list of names of features you're
     //                           conditioning on. used explicitly for auditing, implicitly
     //                           for keeping tags separated. also, strlen(condition_on_names)
     //                           tells us how long condition_on is
     //   allowed_actions       an array of actions that are allowed at this step, or
-    //                           NULL if everything is allowed
+    //                           nullptr if everything is allowed
     //   allowed_actions_cnt   the length of allowed_actions
     //   learner_id            the id for the underlying learner to use (via set_num_learners)
     action predict(        example& ec
                    ,       ptag     my_tag
                    , const action*  oracle_actions
                    ,       size_t   oracle_actions_cnt   = 1
-                   , const ptag*    condition_on         = NULL
-                   , const char*    condition_on_names   = NULL   // strlen(condition_on_names) should == |condition_on|
-                   , const action*  allowed_actions      = NULL
+                   , const ptag*    condition_on         = nullptr
+                   , const char*    condition_on_names   = nullptr   // strlen(condition_on_names) should == |condition_on|
+                   , const action*  allowed_actions      = nullptr
                    ,       size_t   allowed_actions_cnt  = 0
                    ,       size_t   learner_id           = 0
                    );
@@ -88,8 +88,8 @@ namespace Search {
                       ,       ptag     my_tag
                       , const action*  oracle_actions
                       ,       size_t   oracle_actions_cnt   = 1
-                      , const ptag*    condition_on         = NULL
-                      , const char*    condition_on_names   = NULL
+                      , const ptag*    condition_on         = nullptr
+                      , const char*    condition_on_names   = nullptr
                       ,       size_t   learner_id           = 0
                       );
 

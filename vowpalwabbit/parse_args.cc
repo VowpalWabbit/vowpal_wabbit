@@ -87,7 +87,7 @@ void parse_dictionary_argument(vw&all, string str) {
       return;
     }
 
-  feature_dict* map = new feature_dict(1023, NULL, substring_equal);
+  feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
   
   // TODO: handle gzipped dictionaries
   example *ec = alloc_examples(all.p->lp.label_size, 1);
@@ -104,7 +104,7 @@ void parse_dictionary_argument(vw&all, string str) {
     memcpy(word, c, d-c);
     substring ss = { word, word + (d - c) };
     uint32_t hash = uniform_hash( ss.begin, ss.end-ss.begin, quadratic_constant);
-    if (map->get(ss, hash) != NULL) { // don't overwrite old values!
+    if (map->get(ss, hash) != nullptr) { // don't overwrite old values!
       free(word);
       continue;
     }
@@ -170,7 +170,7 @@ void parse_affix_argument(vw&all, string str) {
     all.affix_features[ns] <<= 4;
     all.affix_features[ns] |=  afx;
 
-    p = strtok(NULL, ",");
+    p = strtok(nullptr, ",");
   }
 
   free(cstr);
@@ -801,7 +801,7 @@ void load_input_model(vw& all, io_buf& io_temp)
 LEARNER::base_learner* setup_base(vw& all)
 {
   LEARNER::base_learner* ret = all.reduction_stack.pop()(all);
-  if (ret == NULL)
+  if (ret == nullptr)
     return setup_base(all);
   else 
     return ret;
@@ -1041,7 +1041,7 @@ namespace VW {
     finalize_regressor(all, all.final_regressor_name);
     all.l->finish();
     free_it(all.l);
-    if (all.reg.weight_vector != NULL)
+    if (all.reg.weight_vector != nullptr)
       free(all.reg.weight_vector);
     free_parser(all);
     finalize_source(all.p);

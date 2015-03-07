@@ -51,7 +51,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
 LEARNER::base_learner* multilabel_oaa_setup(vw& all)
 {
   if (missing_option<size_t, true>(all, "multilabel_oaa", "One-against-all multilabel with <k> labels")) 
-    return NULL;
+    return nullptr;
   
   oaa& data = calloc_or_die<oaa>();
   data.k = all.vm["multilabel_oaa"].as<size_t>();

@@ -147,7 +147,7 @@ public:
   }
 
   float getSquareGrad(float prediction, float label) {
-    float d = first_derivative(NULL, prediction,label);
+    float d = first_derivative(nullptr, prediction,label);
     return d*d;
   }
 
@@ -218,7 +218,7 @@ public:
   }
 
   float getSquareGrad(float prediction, float label) {
-    float d = first_derivative(NULL, prediction,label);
+    float d = first_derivative(nullptr, prediction,label);
     return d*d;
   }
 
@@ -283,7 +283,7 @@ public:
   }
 
   float getSquareGrad(float prediction, float label) {
-    float fd = first_derivative(NULL, prediction,label);
+    float fd = first_derivative(nullptr, prediction,label);
     return fd*fd;
   }
 

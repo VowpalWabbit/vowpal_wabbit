@@ -14,7 +14,7 @@
 #define cubic_namespace 102 // namespace for cubic feature
 #define offset_const 344429
 
-namespace DepParserTask         {  Search::search_task task = { "dep_parser", run, initialize, finish, NULL, NULL};  }
+namespace DepParserTask         {  Search::search_task task = { "dep_parser", run, initialize, finish, nullptr, nullptr};  }
 
 struct task_data {
   example *ex;
@@ -263,7 +263,7 @@ namespace DepParserTask {
     add_feature(&ex, (uint32_t) constant, constant_namespace, mask, ss);
     // be careful: indices in ec starts from 0, but i is starts from 1
     size_t n = ec.size();
-    // use this buffer to c_vw()ect the examples, default value: NULL
+    // use this buffer to c_vw()ect the examples, default value: nullptr
     ec_buf.resize(12,true);
     for(size_t i=0; i<12; i++)
       ec_buf[i] = 0;

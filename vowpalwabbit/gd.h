@@ -19,7 +19,7 @@ namespace GD{
   float finalize_prediction(shared_data* sd, float ret);
   void print_audit_features(vw&, example& ec);
   void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
-  void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, GD::gd *g = NULL);
+  void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, GD::gd *g = nullptr);
 
   // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
   template <class R, void (*T)(R&, const float, float&)>

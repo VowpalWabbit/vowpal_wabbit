@@ -37,8 +37,8 @@ extern "C"
 	typedef void * VW_FEATURE_SPACE;
 	typedef void * VW_FEATURE;
  
-	const VW_HANDLE INVALID_VW_HANDLE = NULL;
-	const VW_HANDLE INVALID_VW_EXAMPLE = NULL;
+	const VW_HANDLE INVALID_VW_HANDLE = nullptr;
+	const VW_HANDLE INVALID_VW_EXAMPLE = nullptr;
 #ifdef USE_CODECVT
 	VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_Initialize(const char16_t * pstrArgs);
 #endif

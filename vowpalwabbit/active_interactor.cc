@@ -26,7 +26,7 @@ int open_socket(const char* host, unsigned short port)
   hostent* he;
   he = gethostbyname(host);
 
-  if (he == NULL)
+  if (he == nullptr)
     {
       cerr << "gethostbyname(" << host << "): " << strerror(errno) << endl;
       throw exception();
@@ -111,7 +111,7 @@ int main(int argc, char* argv[]){
         ttag=strsep(&toks," ");
         tag=ttag?string(ttag):string("'empty");
         itok=strsep(&toks,"\n");
-        if(itok==NULL || itok[0]=='\0'){
+        if(itok==nullptr || itok[0]=='\0'){
             continue;
         }
 

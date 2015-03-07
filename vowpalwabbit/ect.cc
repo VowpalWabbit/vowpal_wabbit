@@ -352,7 +352,7 @@ size_t create_circuit(ect& e, uint32_t max_label, uint32_t eliminations)
 base_learner* ect_setup(vw& all)
 {
   if (missing_option<size_t, true>(all, "ect", "Error correcting tournament with <k> labels"))
-    return NULL;
+    return nullptr;
   new_options(all, "Error Correcting Tournament options")
     ("error", po::value<size_t>()->default_value(0), "error in ECT");
   add_options(all);

@@ -220,7 +220,7 @@ using namespace LEARNER;
 base_learner* bs_setup(vw& all)
 {
   if (missing_option<size_t, true>(all, "bootstrap", "k-way bootstrap by online importance resampling"))
-    return NULL;
+    return nullptr;
   new_options(all, "Bootstrap options")("bs_type", po::value<string>(), 
 					"prediction type {mean,vote}");    
   add_options(all);
