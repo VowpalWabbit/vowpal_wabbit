@@ -119,7 +119,7 @@ namespace DepParserTask {
     for(uint32_t idx=0; idx< data->pairs.size(); idx++){
       unsigned char ns_a = data->pairs[idx][0];
       unsigned char ns_b = data->pairs[idx][1];
-//	  cerr << "-q `printf \"\\x"<<hex << (int)ns_a<<"\\x"<< (int)ns_b<<"\"` ";
+	  cerr << "-q `printf \"\\x"<<hex << (int)ns_a<<"\\x"<< (int)ns_b<<"\"` ";
       for(uint32_t i=0; i< ex->atomics[(int)ns_a].size();i++){
         uint32_t offset = (ex->atomics[(int)ns_a][i].weight_index>>ss) *quadratic_constant+ (uint32_t) additional_offset;
         for(uint32_t j=0; j< ex->atomics[(int)ns_b].size();j++){
@@ -138,7 +138,7 @@ namespace DepParserTask {
       unsigned char ns_b = data->triples[idx][1];
       unsigned char ns_c = data->triples[idx][2];
 
-//	  cerr << "--cubic `printf \"\\x"<<hex << (int)ns_a<<"\\x"<< (int)ns_b<<"\\x"<<(int) ns_c<<"\"` ";
+	  cerr << "--cubic `printf \"\\x"<<hex << (int)ns_a<<"\\x"<< (int)ns_b<<"\\x"<<(int) ns_c<<"\"` ";
       for(uint32_t i=0; i< ex->atomics[(int)ns_a].size();i++){
         uint32_t offset1 =  (ex->atomics[(int)ns_a][i].weight_index>>ss)*cubic_constant;
         for(uint32_t j=0; j< ex->atomics[(int)ns_b].size();j++){
@@ -149,7 +149,7 @@ namespace DepParserTask {
         }
       }
     }
-//	exit(1);
+	exit(1);
   }
 
   void inline reset_ex(example *ex){
@@ -222,7 +222,7 @@ namespace DepParserTask {
     vector<string> &newtriples = data->triples;
     data->ex = alloc_examples(sizeof(base_ex[0].l.multi.label), 1);
     data->nfs = (int) base_ex->indices.size()-1; // remove constant fs
-    size_t nfs = data->nfs;
+//    size_t nfs = data->nfs;
   	vw& all = srn.get_vw_pointer_unsafe();
 
     // setup feature template
@@ -234,7 +234,7 @@ namespace DepParserTask {
 	fs_idx_map["s21"]=13;
 
     data->ex->indices.push_back(val_namespace);
-    for(size_t i=nfs; i<14*nfs; i++)
+    for(size_t i=1; i<14; i++)
       data->ex->indices.push_back((unsigned char)i+'A');
 
     size_t pos = 0;
@@ -247,24 +247,24 @@ namespace DepParserTask {
         string token = quadratic_feature_template.substr(0, pos);
         char first_fs_idx = fs_idx_map[token.substr(0,token.find("-"))];
         char second_fs_idx = fs_idx_map[token.substr(token.find("-")+1,token.size())];
-        for (size_t i=0; i<nfs; i++) {
-          for (size_t j=0; j<nfs; j++) {
-            char space_a = (char)(first_fs_idx*nfs+i+'A');
-            char space_b = (char)(second_fs_idx*nfs+j+'A');
+//        for (size_t i=0; i<nfs; i++) {
+//          for (size_t j=0; j<nfs; j++) {
+            char space_a = (char)(first_fs_idx+'A');
+            char space_b = (char)(second_fs_idx+'A');
             newpairs.push_back(string(1, space_a)+ string(1, space_b));
 //			all.pairs.push_back(string(1, space_a)+ string(1, space_b));
-          }
-        }
+//          }
+//        }
         quadratic_feature_template.erase(0, pos + 1);
       }
 
       for(size_t i=1; i<=6; i++){
-        for (size_t j=0; j<nfs; j++) {
+//        for (size_t j=0; j<nfs; j++) {
           char space_a = (char)(val_namespace);
-          char space_b = (char)(i*nfs+j+'A');
+          char space_b = (char)(i+'A');
 //		  	all.pairs.push_back(string(1, space_a)+ string(1, space_b));
           newpairs.push_back(string(1, space_a)+ string(1, space_b));
-        }
+//        }
       }
       char space_a = (char)(val_namespace);
 //      all.pairs.push_back(string(1, space_a)+ string(1, space_a));
@@ -282,20 +282,20 @@ namespace DepParserTask {
         token.erase(0, token.find("-")+1);
         char second_fs_idx = fs_idx_map[token.substr(0,token.find("-"))];
         char third_fs_idx = fs_idx_map[token.substr(token.find("-")+1,token.size())];
-        for (size_t i=0; i<nfs; i++) {
-          for (size_t j=0; j<nfs; j++) {
-            for (size_t k=0; k<nfs; k++) {
+//        for (size_t i=0; i<nfs; i++) {
+//          for (size_t j=0; j<nfs; j++) {
+//            for (size_t k=0; k<nfs; k++) {
 
 //				cerr<<"a"<<endl;	
-              char str[3] ={(char)(first_fs_idx*nfs+i+'A'), (char)(second_fs_idx*nfs+j+'A'), (char)(third_fs_idx*nfs+k+'A')};
+              char str[3] ={(char)(first_fs_idx+'A'), (char)(second_fs_idx+'A'), (char)(third_fs_idx+'A')};
 
 //				cerr<<"b"<<endl;	
 //			  	all.triples.push_back((string(1, str[0])+ string(1, str[1])+string(1,str[2])));
 //				cerr<<"c"<<endl;	
               newtriples.push_back(string(1, str[0])+ string(1, str[1])+string(1,str[2]));
-            }
-          }
-        }
+//            }
+//          }
+//        }
         cubic_feature_template.erase(0, pos + 1);
       }
       data->ex->indices.push_back(cubic_namespace);
@@ -306,6 +306,7 @@ namespace DepParserTask {
 
   // This function needs to be very fast
   void extract_features(Search::search& srn, uint32_t idx,  vector<example*> &ec) {
+  	vw& all = srn.get_vw_pointer_unsafe();
     task_data *data = srn.get_task_data<task_data>();
     reset_ex(data->ex);
     size_t ss = srn.get_stride_shift();
@@ -364,13 +365,13 @@ namespace DepParserTask {
         if(!ec_buf[i]){
         	for(size_t k=0; k<ec[0]->atomics[*fs].size(); k++) {
         	    v0 = affix_constant*((j+1)*quadratic_constant + k);
-	            add_feature(&ex, (uint32_t) v0 + additional_offset, (unsigned char)((i+1)*nfs+j+'A'), mask, ss);
+	            add_feature(&ex, (uint32_t) v0 + additional_offset, (unsigned char)((i+1)+'A'), mask, ss);
 			}
 		}
         else {
         	for(size_t k=0; k<ec_buf[i]->atomics[*fs].size(); k++) {
     	        v0 = (ec_buf[i]->atomics[*fs][k].weight_index>>ss);
-	            add_feature(&ex, (uint32_t) v0 + additional_offset, (unsigned char)((i+1)*nfs+j+'A'), mask, ss);
+	            add_feature(&ex, (uint32_t) v0 + additional_offset, (unsigned char)((i+1)+'A'), mask, ss);
 			}
         }
         j++;
@@ -416,6 +417,12 @@ namespace DepParserTask {
       data->ex->sum_feat_sq[(int)*ns] = (float) data->ex->atomics[(int)*ns].size();
       count+= data->ex->atomics[(int)*ns].size();
     }
+	for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
+		count += data->ex->atomics[(int)(*i)[0]].size()* data->ex->atomics[(int)(*i)[1]].size();	
+  
+    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
+		count += data->ex->atomics[(int)(*i)[0]].size()*data->ex->atomics[(int)(*i)[1]].size()*data->ex->atomics[(int)(*i)[2]].size();	
+
     data->ex->num_features = count;
     data->ex->total_sum_feat_sq = (float) count;
   }
@@ -514,13 +521,10 @@ namespace DepParserTask {
   }
 
   void run(Search::search& srn, vector<example*>& ec) {
-    cdep << "start structured predict"<<endl;
     task_data *data = srn.get_task_data<task_data>();
 
     v_array<uint32_t> &stack=data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags, &valid_labels=data->valid_labels;
     uint32_t n = (uint32_t) ec.size();
-
-
 
     // initialization
     if(!data->my_init_flag) {
@@ -568,29 +572,18 @@ namespace DepParserTask {
       uint32_t t_id = 0;
       if(a_id ==2 || a_id == 3){
 	  	uint32_t gold_label = gold_tags[stack.last()];
-		if(data->bad_ref)
-			gold_label = 0;
-		if(data->sub_ref)
-			gold_label = gold_tags[stack.last()];
         t_id= Search::predictor(srn, (ptag) count+1).set_input(*(data->ex)).set_oracle(gold_label).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(a_id-1).predict();
         count++;
       }
       idx = transition_hybrid(srn, a_id, idx, t_id);
     }
 
-//	if(data->root_label!=0){
-	    heads[stack.last()] = 0;
-	    tags[stack.last()] = data->root_label;
-//	}
-//	else
-
-    cdep << "root link to the last element in stack" <<  "root ====> " << (stack.last()) << endl;
+	heads[stack.last()] = 0;
+	tags[stack.last()] = data->root_label;
     srn.loss((gold_heads[stack.last()] != heads[stack.last()]));
+
     if (srn.output().good())
-      for(size_t i=1; i<=n; i++) {
-        cdep << heads[i] << " ";
+      for(size_t i=1; i<=n; i++)
         srn.output() << (heads[i])<<":"<<tags[i] << endl;
-      }
-    cdep << "end structured predict"<<endl;
   }
 }
