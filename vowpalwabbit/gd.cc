@@ -418,7 +418,7 @@ inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint32_t
   weight*w = mp.reg->weight_vector + (fi & mp.reg->weight_mask);
   for (size_t c=0; c<mp.count; c++) {
     mp.pred[c].scalar += fx * *w;
-    w += mp.step;
+    w += mp.step;  // TODO: does this play well with -q
   }
 }
 
@@ -609,7 +609,7 @@ float compute_update(gd& g, example& ec)
     fi &= mp.reg->weight_mask;
     for (size_t i=0; i<mp.count; i++) {
       uint32_t c = INFO_ID(i);
-      weight*w = mp.reg->weight_vector + fi + c*nd.mp.step;
+      weight*w = mp.reg->weight_vector + fi + c*nd.mp.step;   // TODO: need mask?
       if ((INFO_GS(i) != 0) && (feature_mask_off || w[0] != 0.)) {
         if (adaptive) w[adaptive] += INFO_GS(i) * x2;
         if (normalized) {
@@ -703,12 +703,11 @@ float compute_update(gd& g, example& ec)
         }
 
         INFO_UP(j) = up;
+
+        if (sparse_l2)
+          INFO_UP(j) *= g.sparse_l2;
       }
     }
-
-    if (sparse_l2)
-      for (size_t j=0; j<i; j++)
-        INFO_UP(j) *= g.sparse_l2;
 
     return i;
   }

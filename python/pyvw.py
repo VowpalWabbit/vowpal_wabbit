@@ -133,7 +133,6 @@ class vw(pylibvw.vw):
             Returns a single prediction.
 
             """
-
             P = sch.get_predictor(my_tag)
             if sch.is_ldf():
                 # we need to know how many actions there are, even if we don't know their identities
@@ -153,6 +152,8 @@ class vw(pylibvw.vw):
             else:
                 if sch.predict_needs_example():
                     while hasattr(examples, '__call__'): examples = examples()
+                    if hasattr(examples, 'setup_done') and not examples.setup_done:
+                        examples.setup_example()
                     P.set_input(examples)
                 else:
                     pass # TODO: do we need to set the examples even though they're not used?

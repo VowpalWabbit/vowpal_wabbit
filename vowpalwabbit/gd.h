@@ -82,7 +82,7 @@ namespace GD{
     foreach_feature<R,float&,T>(all, ec, dat);
   }
 
- inline void vec_add(float& p, const float fx, float& fw) { p += fw * fx; }
+  inline void vec_add(float& p, const float fx, float& fw) { p += fw * fx; }
 
   inline float inline_predict(vw& all, example& ec)
   {
