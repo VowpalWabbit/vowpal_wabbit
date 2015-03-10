@@ -23,6 +23,7 @@ namespace po = boost::program_options;
 #include "learner.h"
 #include "allreduce.h"
 #include "v_hashmap.h"
+#include <time.h>
 
 struct version_struct {
   int major;
@@ -451,6 +452,7 @@ struct vw {
   float initial_t;
   float eta;//learning rate control.
   float eta_decay_rate;
+  time_t init_time;
 
   std::string final_regressor_name;
   regressor reg;

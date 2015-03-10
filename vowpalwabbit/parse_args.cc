@@ -866,6 +866,8 @@ vw& parse_args(int argc, char *argv[])
   size_t random_seed = 0;
   all.program_name = argv[0];
 
+  time(&all.init_time);
+
   new_options(all, "VW options")
     ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
     ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring");
@@ -1023,9 +1025,9 @@ namespace VW {
     char** argv = get_argv_from_string(s,argc);
 
     vw& all = parse_args(argc, argv);
-    
-    initialize_parser_datastructures(all);
 
+    initialize_parser_datastructures(all);
+    
     for(int i = 0; i < argc; i++)
       free(argv[i]);
     free(argv);
