@@ -1275,6 +1275,8 @@ namespace Search {
             timesteps.push_back( pair<size_t,size_t>( id, t ) );
         id ++;
       }
+      sort(timesteps.begin, timesteps.end,
+           [](const pair<size_t,size_t>& a, const pair<size_t,size_t>& b) -> bool { return a.second < b.second; });
     } else {
       std::cerr << "error: cannot do subsampling of timesteps with beam search yet!" << endl;
       throw exception();
