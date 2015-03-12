@@ -31,14 +31,21 @@ extern "C"
 {
 #endif
 
+#ifdef __cplusplus
+#define VW_TYPE_SAFE_NULL nullptr
+#else
+#define VW_TYPE_SAFE_NULL NULL
+#endif
+
 	typedef void * VW_HANDLE;
 	typedef void * VW_EXAMPLE;
 	typedef void * VW_LABEL;
 	typedef void * VW_FEATURE_SPACE;
 	typedef void * VW_FEATURE;
  
-	const VW_HANDLE INVALID_VW_HANDLE = nullptr;
-	const VW_HANDLE INVALID_VW_EXAMPLE = nullptr;
+	const VW_HANDLE INVALID_VW_HANDLE = VW_TYPE_SAFE_NULL;
+	const VW_HANDLE INVALID_VW_EXAMPLE = VW_TYPE_SAFE_NULL;
+
 #ifdef USE_CODECVT
 	VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_Initialize(const char16_t * pstrArgs);
 #endif
@@ -93,3 +100,5 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
+#undef VW_TYPE_SAFE_NULL
