@@ -1197,10 +1197,12 @@ void free_parser(vw& all)
   if(all.ngram_strings.size() > 0)
     all.p->gram_mask.delete_v();
   
-  for (size_t i = 0; i < all.p->ring_size; i++) 
-    {
+  if (all.p->lp.parse_label == MULTILABEL::multilabel.parse_label)
+    for (size_t i = 0; i < all.p->ring_size; i++) 
+      dealloc_example(all.p->lp.delete_label, all.p->examples[i], all.p->lp.delete_label);
+  else
+    for (size_t i = 0; i < all.p->ring_size; i++) 
       dealloc_example(all.p->lp.delete_label, all.p->examples[i]);
-    }
   free(all.p->examples);
   
   io_buf* output = all.p->output;

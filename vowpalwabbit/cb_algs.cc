@@ -303,15 +303,13 @@ using namespace CB;
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
-        char label_buf[32];
+	std::string label_buf;
         if (is_test)
-          strcpy(label_buf," unknown");
+          label_buf = " unknown";
         else
-          sprintf(label_buf," known");
-	char pred_buf[32];
-	sprintf(pred_buf,"%8lu",(long unsigned int)ec.pred.multiclass);
+          label_buf = " known";
 
-	all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf, 
+	all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, ec.pred.multiclass, 
 			     ec.num_features, all.progress_add, all.progress_arg);
       }
   }

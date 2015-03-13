@@ -15,10 +15,6 @@ license as described in the file LICENSE.
 #include <stdio.h>
 #include <assert.h>
 
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-#include <xmmintrin.h>
-#endif
-
 #include "parse_example.h"
 #include "constant.h"
 #include "gd.h"

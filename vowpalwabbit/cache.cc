@@ -148,9 +148,9 @@ void output_features(io_buf& cache, unsigned char index, feature* begin, feature
   size_t storage = (end-begin) * int_size;
   for (feature* i = begin; i != end; i++)
     if (i->x != 1. && i->x != -1.)
-      storage+=sizeof(float);
+      storage += sizeof(float);
   buf_write(cache, c, sizeof(index) + storage + sizeof(size_t));
-  *(unsigned char*)c = index;
+  *reinterpret_cast<unsigned char*>(c) = index;
   c += sizeof(index);
 
   char *storage_size_loc = c;
@@ -170,8 +170,8 @@ void output_features(io_buf& cache, unsigned char index, feature* begin, feature
 	c = run_len_encode(c, diff | neg_1);
       else {
 	c = run_len_encode(c, diff | general);
-	*(float *)c = i->x;
-	c += sizeof(float);
+	memcpy(c, &i->x, sizeof(i->x));
+	c += sizeof(i->x);
       }
     }
   cache.set(c);

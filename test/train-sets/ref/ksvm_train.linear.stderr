@@ -9,28 +9,28 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/rcv1_smaller.dat
 num sources = 1
-average    since         example     example  current  current  current
-loss       last          counter      weight    label  predict features
-1.000000   1.000000          1      1.0     1.0000   0.0000       50
-1.266901   1.533802          2      2.0    -1.0000   0.5338      103
-1.036548   0.806194          4      4.0    -1.0000  -0.4120      134
-0.912373   0.788199          8      8.0    -1.0000  -0.5214      145
-0.897671   0.882969         16     16.0     1.0000  -0.4508       23
-0.922436   0.947200         32     32.0    -1.0000  -0.3565       31
-0.921296   0.920155         64     64.0    -1.0000  -0.6174       60
-0.917609   0.913923        128    128.0     1.0000   0.2031      105
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+1.000000 1.000000            1            1.0   1.0000   0.0000       50
+1.266901 1.533802            2            2.0  -1.0000   0.5338      103
+1.036548 0.806194            4            4.0  -1.0000  -0.4120      134
+0.912373 0.788199            8            8.0  -1.0000  -0.5214      145
+0.897671 0.882969           16           16.0   1.0000  -0.4508       23
+0.922436 0.947200           32           32.0  -1.0000  -0.3565       31
+0.921296 0.920156           64           64.0  -1.0000  -0.6174       60
+0.917609 0.913923          128          128.0   1.0000   0.2031      105
 
 finished run
 number of examples = 250
-weighted example sum = 250
-weighted label sum = -22
+weighted example sum = 250.000000
+weighted label sum = -22.000000
 average loss = 0.806317
-best constant = -0.088
+best constant = -0.088000
 best constant's loss = 0.992256
 total feature number = 19870
 Num support = 239
 Number of kernel evaluations = 140880 Number of cache queries = 228024
-Total loss = 201.579
+Total loss = 201.579147
 Done freeing model
 Done freeing kernel params
 Done with finish 

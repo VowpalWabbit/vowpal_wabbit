@@ -9,14 +9,14 @@ num sources = 1
 average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
 loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
 1.000000   1.000000          1  [4                   ] [1                   ]     0     0        1        0        1  0.000000
-2.000000   3.000000          2  [2 4 2 5 10 10       ] [4 4 4 10 10 10      ]     0     0        7        0        7  0.000000
-2.875000   3.750000          4  [1 4 4 1 10 10 10 1..] [4 4 4 4 10 10 10 1..]     0     0       32        0       32  0.000000
-1.437500   0.000000          8  [1 4 4 1 10 10 10 1..] [1 4 4 1 10 10 10 1..]     1     0       64        0       64  0.000001
+2.500000   4.000000          2  [2 4 2 5 10 10       ] [4 4 4 7 7 7         ]     0     0        7        0        7  0.000000
+3.250000   4.000000          4  [1 4 4 1 10 10 10 1..] [4 4 4 4 10 10 10 1..]     0     0       32        0       32  0.000000
+1.625000   0.000000          8  [1 4 4 1 10 10 10 1..] [1 4 4 1 10 10 10 1..]     1     0       64        0       64  0.000001
 
 finished run
 number of examples per pass = 4
 passes used = 3
 weighted example sum = 12
 weighted label sum = 0
-average loss = 0.958333
+average loss = 1.08333
 total feature number = 1185

@@ -32,6 +32,7 @@ struct nn {
   uint64_t save_xsubi;
   bool inpass;
   bool finished_setup;
+  bool multitask;
 
   vw* all;//many things
 };
@@ -146,6 +147,11 @@ struct nn {
     save_max_label = n.all->sd->max_label;
     n.all->sd->max_label = hidden_max_activation;
 
+    uint32_t save_ft_offset = ec.ft_offset;
+
+    if (n.multitask)
+      ec.ft_offset = 0;
+
     n.hiddenbias.ft_offset = ec.ft_offset;
 
     for (unsigned int i = 0; i < n.k; ++i)
@@ -176,6 +182,7 @@ struct nn {
     n.all->set_minmax = save_set_minmax;
     n.all->sd->min_label = save_min_label;
     n.all->sd->max_label = save_max_label;
+    ec.ft_offset = save_ft_offset;
 
     bool converse = false;
     float save_partial_prediction = 0;
@@ -277,6 +284,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         n.all->sd->min_label = hidden_min_activation;
         save_max_label = n.all->sd->max_label;
         n.all->sd->max_label = hidden_max_activation;
+        save_ft_offset = ec.ft_offset;
+
+        if (n.multitask)
+          ec.ft_offset = 0;
 
         for (unsigned int i = 0; i < n.k; ++i) {
           if (! dropped_out[i]) {
@@ -299,6 +310,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         n.all->set_minmax = save_set_minmax;
         n.all->sd->min_label = save_min_label;
         n.all->sd->max_label = save_max_label;
+        ec.ft_offset = save_ft_offset;
       }
     }
 
@@ -352,6 +364,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       return NULL;
     new_options(all, "Neural Network options")
       ("inpass", "Train or test sigmoidal feedforward network with input passthrough.")
+      ("multitask", "Share hidden layer across all reduced tasks.")
       ("dropout", "Train or test sigmoidal feedforward network using dropout.")
       ("meanfield", "Train or test sigmoidal feedforward network using mean field.");
     add_options(all);
@@ -366,6 +379,16 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n.dropout = true;
       *all.file_options << " --dropout ";
     }
+
+    if ( vm.count("multitask") ) {
+      n.multitask = true;
+      *all.file_options << " --multitask ";
+    }
+
+    if (n.multitask && ! all.quiet)
+      std::cerr << "using multitask sharing for neural network "
+                << (all.training ? "training" : "testing") 
+                << std::endl;
     
     if ( vm.count("meanfield") ) {
       n.dropout = false;

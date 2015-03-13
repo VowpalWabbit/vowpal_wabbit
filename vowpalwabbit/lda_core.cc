@@ -128,7 +128,7 @@ fastdigamma (float x)
 #define mydigamma fastdigamma
 #define mylgamma fastlgamma
 
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+#if defined(__SSE2__) && !defined(VW_NO_INLINE_SIMD)
 
 #include <emmintrin.h>
 

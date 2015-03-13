@@ -180,10 +180,13 @@ example *alloc_examples(size_t label_size, size_t count=1)
   return ec;
 }
 
-void dealloc_example(void(*delete_label)(void*), example&ec)
+void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*))
 {
   if (delete_label)
     delete_label(&ec.l);
+
+  if (delete_prediction)
+    delete_prediction(&ec.pred);
 
   ec.tag.delete_v();
       

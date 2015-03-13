@@ -1,4 +1,5 @@
-#include <limits.h>
+#include <cstring>
+#include <climits>
 #include "global_data.h"
 #include "vw.h"
 
@@ -6,9 +7,9 @@ namespace MULTICLASS {
 
   char* bufread_label(label_t* ld, char* c)
   {
-    ld->label = *(uint32_t *)c;
+    memcpy(&ld->label, c, sizeof(ld->label));
     c += sizeof(ld->label);
-    ld->weight = *(float *)c;
+    memcpy(&ld->weight, c, sizeof(ld->weight));
     c += sizeof(ld->weight);
     return c;
   }
@@ -33,9 +34,9 @@ namespace MULTICLASS {
   
   char* bufcache_label(label_t* ld, char* c)
   {
-    *(uint32_t *)c = ld->label;
+    memcpy(c, &ld->label, sizeof(ld->label));
     c += sizeof(ld->label);
-    *(float *)c = ld->weight;
+    memcpy(c, &ld->weight, sizeof(ld->weight));
     c += sizeof(ld->weight);
     return c;
   }
@@ -93,16 +94,7 @@ namespace MULTICLASS {
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
-        label_t ld = ec.l.multi;
-        char label_buf[32];
-        if (ld.label == INT_MAX)
-          strcpy(label_buf," unknown");
-        else
-          sprintf(label_buf,"%8ld",(long int)ld.label);
-	char pred_buf[32];
-	sprintf(pred_buf,"%8lu",(long unsigned int)ec.pred.multiclass);
-
-	all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf, 
+	all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.multi.label, ec.pred.multiclass,
 			     ec.num_features, all.progress_add, all.progress_arg);
       }
   }
