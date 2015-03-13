@@ -66,8 +66,16 @@ void generate_interactions(vw& all, example& ec)
                     if (ns[i] == ns[i-1])
                     {
                         size_t& loop_end = state_data[i-1].loop_end;
-                        if ( (impossible_without_permutations = (loop_end < ++margin)) ) break;
+
+                        if (ec.atomics[(int32_t)ns[i-1]][loop_end-margin].x == 1. || // if special case at end of array then we can't exclude more than existing margin
+                                !feature_self_interactions_for_weight_other_than_1)  // and we have to
+                        {
+                            ++margin; // otherwise margin can 't be increased
+
+                            if ( (impossible_without_permutations = (loop_end < margin)) ) break;
+                        }
                         loop_end -= margin;               // skip some features and increase margin
+
                         state_data[i].same_ns = true;     // mark namespace as appearing more than once
                     } else
                         margin = 0;
