@@ -56,11 +56,9 @@ bool ends_with(string const &fullString, string const &ending)
     }
 }
 
-bool valid_ns(char c)
+inline bool valid_ns(char c)
 {
-    if (c=='|'||c==':')
-        return false;
-    return true;
+  return !(c == '|' || c == ':');
 }
 
 bool substring_equal(substring&a, substring&b) {
@@ -310,6 +308,46 @@ void parse_source(vw& all)
     }
 }
 
+// expand namespace interactions if contain wildcards
+const unsigned char printable_start = '!';
+const unsigned char printable_end   = '~';
+const uint valid_ns_size = printable_end - printable_start - 1; //will skip two characters
+void expand_namespace_depth(string& ns, vector<string>& res, string val,  size_t pos)
+{
+    assert (pos <= ns.length());
+
+    if (pos == ns.length())
+    {
+        res.push_back(val);
+    }
+    else
+        if (ns[pos] != ':')
+        {
+            val.push_back(ns[pos]);
+            expand_namespace_depth(ns, res, val, pos+1);
+        }
+        else
+        {
+            res.reserve(res.size() + valid_ns_size);
+            for (unsigned char j = printable_start; j <= printable_end; j++)
+            {
+                if(valid_ns(j))
+                {
+                    val.push_back(j);
+                    expand_namespace_depth(ns, res, val, pos+1);
+                    val.pop_back();
+                }
+            }
+        }
+}
+
+inline void expand_namespace(string ns, vector<string>& res)
+{
+    string temp;
+    expand_namespace_depth(ns, res, temp, 0);
+}
+
+
 void parse_feature_tweaks(vw& all)
 {
   new_options(all, "Feature options")
@@ -327,6 +365,8 @@ void parse_feature_tweaks(vw& all)
     ("spelling", po::value< vector<string> >(), "compute spelling features for a give namespace (use '_' for default namespace)")
     ("dictionary", po::value< vector<string> >(), "read a dictionary for additional features (arg either 'x:file' or just 'file')")
     ("quadratic,q", po::value< vector<string> > (), "Create and use quadratic features")
+    ("interactions", po::value< vector<string> > (), "Create feature interactions of any level between namespaces.")
+    ("permutations", "Use permutations instead of combinations for feature interactions of same namespace.")
     ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
     ("cubic", po::value< vector<string> > (),
      "Create and use cubic features");
@@ -398,93 +438,126 @@ void parse_feature_tweaks(vw& all)
 	}
     }
 
+  all.permutations = vm.count("permutations");
+
+  // prepare namespace interactions
+  vector<string> expanded_ns;
+  vector<string> ns;
+
   if (vm.count("quadratic"))
-    {
-      all.pairs = vm["quadratic"].as< vector<string> >();
-      vector<string> newpairs;
-      //string tmp;
-      char printable_start = '!';
-      char printable_end = '~';
-      int valid_ns_size = printable_end - printable_start - 1; //will skip two characters
+  {
+      ns = vm["quadratic"].as< vector<string> >();
+      if (!all.quiet) cerr << "creating quadratic features for pairs: ";
 
-      if(!all.quiet)
-        cerr<<"creating quadratic features for pairs: ";
+      for (vector<string>::iterator i = ns.begin(); i != ns.end(); i++)
+      {
+          if (!all.quiet) cerr << *i << " ";
 
-      for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++){
-        if(!all.quiet){
-          cerr << *i << " ";
-          if (i->length() > 2)
-            cerr << endl << "warning, ignoring characters after the 2nd.\n";
-          if (i->length() < 2) {
-            cerr << endl << "error, quadratic features must involve two sets.\n";
-            throw exception();
+          if (i->length() != 2)
+          {
+              cerr << endl << "error, quadratic features must involve two sets.\n";
+              throw exception();
           }
-        }
-        //-q x:
-        if((*i)[0]!=':'&&(*i)[1]==':'){
-          newpairs.reserve(newpairs.size() + valid_ns_size);
-          for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j))
-              newpairs.push_back(string(1,(*i)[0])+j);
-          }
-        }
-        //-q :x
-        else if((*i)[0]==':'&&(*i)[1]!=':'){
-          newpairs.reserve(newpairs.size() + valid_ns_size);
-          for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j)){
-	      stringstream ss;
-	      ss << j << (*i)[1];
-	      newpairs.push_back(ss.str());
-	    }
-          }
-        }
-        //-q ::
-        else if((*i)[0]==':'&&(*i)[1]==':'){
-	  cout << "in pair creation" << endl;
-          newpairs.reserve(newpairs.size() + valid_ns_size*valid_ns_size);
-	  stringstream ss;
-	  ss << ' ' << ' ';
-	  newpairs.push_back(ss.str());
-          for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j)){
-              for (char k=printable_start; k<=printable_end; k++){
-                if(valid_ns(k)){
-		  stringstream ss;
-                  ss << j << k;
-                  newpairs.push_back(ss.str());
-		}
-              }
-            }
-          }
-        }
-        else{
-          newpairs.push_back(string(*i));
-        }
+
+          expand_namespace(*i, expanded_ns);
       }
-      newpairs.swap(all.pairs);
-      if(!all.quiet)
-        cerr<<endl;
-    }
+      if (!all.quiet) cerr << endl;
+
+      all.pairs = expanded_ns;
+      expanded_ns.clear();
+  }
 
   if (vm.count("cubic"))
-    {
-      all.triples = vm["cubic"].as< vector<string> >();
+  {
+      ns = vm["cubic"].as< vector<string> >();
+      if (!all.quiet) cerr << "creating cubic features for triples: ";
+
+      for (vector<string>::iterator i = ns.begin(); i != ns.end(); i++)
+      {
+          if (!all.quiet) cerr << *i << " ";
+          if (i->length() != 3)
+          {
+              cerr << endl << "error, cubic features must involve three sets.\n";
+              throw exception();
+          }
+          expand_namespace(*i, expanded_ns);
+      }
+      if (!all.quiet) cerr << endl;
+
+      all.triples = expanded_ns;
+      expanded_ns.clear();
+  }
+
+  vector<string> new_pairs;
+  vector<string> new_triples;
+  if (vm.count("interactions"))
+  {
+      ns = vm["interactions"].as< vector<string> >();
       if (!all.quiet)
-	{
-	  cerr << "creating cubic features for triples: ";
-	  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-	    cerr << *i << " ";
-	    if (i->length() > 3)
-	      cerr << endl << "warning, ignoring characters after the 3rd.\n";
-	    if (i->length() < 3) {
-	      cerr << endl << "error, cubic features must involve three sets.\n";
-	      throw exception();
-	    }
-	  }
-	  cerr << endl;
-	}
-    }
+      {
+          if (!all.quiet) cerr << "creating features for following interactions: ";
+          vector<string> temp;
+          for (vector<string>::iterator i = ns.begin(); i != ns.end(); i++)
+          {
+              if (!all.quiet) cerr << *i << " ";
+              size_t len = i->length();
+              if (len < 2)
+              {
+                  cerr << endl << "error, feature interactions must involve at least two namespaces.\n";
+                  throw exception();
+              }
+
+              temp.clear();
+              expand_namespace(*i, temp);
+
+              // even after wildcard replacement length of generated interactions won't change
+              if (len == 2)
+                  new_pairs.insert(new_pairs.end(), temp.begin(), temp.end());
+              else
+                  if (len == 3)
+                      new_triples.insert(new_triples.end(), temp.begin(), temp.end());
+
+              expanded_ns.insert(expanded_ns.end(), temp.begin(), temp.end());
+          }
+          if (!all.quiet) cerr << endl;
+      }
+      all.interactions = expanded_ns;
+      expanded_ns.clear();
+  }
+
+  ns.clear();
+
+  // synchronize -q, --cubic and --interactions contsnt
+
+  if (all.pairs.size() > 0)
+      all.interactions.insert(all.interactions.end(), all.pairs.begin(), all.pairs.end());
+
+  if (all.triples.size() > 0)
+      all.interactions.insert(all.interactions.end(), all.triples.begin(), all.triples.end());
+
+  if (new_pairs.size() > 0)
+      all.pairs.insert(all.pairs.end(), new_pairs.begin(), new_pairs.end());
+
+  if (new_triples.size() > 0)
+      all.triples.insert(all.triples.end(), new_triples.begin(), new_triples.end());
+
+  // Leaving all.pairs and all.triples for compatibility
+
+  if (!all.permutations) // order matters
+  {
+      for (vector<string>::iterator i = all.interactions.begin(); i != all.interactions.end(); i++)
+      {  // sort namespaces in each interaction ascendantly to group equal namespaces in them
+          string& s = *i;
+          std::sort(s.begin(), s.end());
+      }
+
+      // remove duplicate interactions from all.interactions which might be generated with '-q ::', (for example), as 'ba' just was sorted to 'ab'
+      // perhaps it has sense to remove them for --permutations too?
+      std::sort( all.interactions.begin(), all.interactions.end() );
+      all.interactions.erase( std::unique( all.interactions.begin(), all.interactions.end() ), all.interactions.end() );
+  }
+
+
 
   for (size_t i = 0; i < 256; i++)
     all.ignore[i] = false;
