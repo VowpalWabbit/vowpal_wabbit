@@ -346,22 +346,22 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   {
     int save_raw_prediction = all.raw_prediction;
     all.raw_prediction = -1;
-    return_simple_example(all, NULL, ec);
+    return_simple_example(all, nullptr, ec);
     all.raw_prediction = save_raw_prediction;
   }
 
   void finish(nn& n)
   {
     delete n.squared_loss;
-    dealloc_example (NULL, n.output_layer);
-    dealloc_example (NULL, n.hiddenbias);
-    dealloc_example (NULL, n.outputweight);
+    dealloc_example (nullptr, n.output_layer);
+    dealloc_example (nullptr, n.hiddenbias);
+    dealloc_example (nullptr, n.outputweight);
   }
 
   base_learner* nn_setup(vw& all)
   {
     if (missing_option<size_t, true>(all, "nn", "Sigmoidal feedforward network with <k> hidden units"))
-      return NULL;
+      return nullptr;
     new_options(all, "Neural Network options")
       ("inpass", "Train or test sigmoidal feedforward network with input passthrough.")
       ("multitask", "Share hidden layer across all reduced tasks.")

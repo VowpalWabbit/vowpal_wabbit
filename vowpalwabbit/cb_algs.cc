@@ -57,7 +57,7 @@ using namespace CB;
   inline bool observed_cost(cb_class* cl)
   {
     //cost observed for this action if it has non zero probability and cost != FLT_MAX
-    return (cl != NULL && cl->cost != FLT_MAX && cl->probability > .0);
+    return (cl != nullptr && cl->cost != FLT_MAX && cl->probability > .0);
   }
   
   cb_class* get_observed_cost(CB::label& ld)
@@ -65,7 +65,7 @@ using namespace CB;
     for (cb_class *cl = ld.costs.begin; cl != ld.costs.end; cl++)
       if( observed_cost(cl) ) 
         return cl;
-    return NULL;
+    return nullptr;
   }
 
   void gen_cs_example_ips(cb& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
@@ -82,7 +82,7 @@ using namespace CB;
         wc.class_index = i;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
-        if( c.known_cost != NULL && i == c.known_cost->action )
+        if( c.known_cost != nullptr && i == c.known_cost->action )
         {
           wc.x = c.known_cost->cost / c.known_cost->probability; //use importance weighted cost for observed action, 0 otherwise 
           //ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
@@ -106,7 +106,7 @@ using namespace CB;
         wc.class_index = cl->action;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
-        if( c.known_cost != NULL && cl->action == c.known_cost->action )
+        if( c.known_cost != nullptr && cl->action == c.known_cost->action )
         {
           wc.x = c.known_cost->cost / c.known_cost->probability; //use importance weighted cost for observed action, 0 otherwise 
 
@@ -153,7 +153,7 @@ using namespace CB;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
 
-        if( c.known_cost != NULL && c.known_cost->action == i ) {
+        if( c.known_cost != nullptr && c.known_cost->action == i ) {
           c.nb_ex_regressors++;
           c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->cost - wc.x)*(c.known_cost->cost - wc.x) - c.avg_loss_regressors );
           c.last_pred_reg = wc.x;
@@ -182,7 +182,7 @@ using namespace CB;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
 
-        if( c.known_cost != NULL && c.known_cost->action == cl->action ) {
+        if( c.known_cost != nullptr && c.known_cost->action == cl->action ) {
           c.nb_ex_regressors++;
           c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->cost - wc.x)*(c.known_cost->cost - wc.x) - c.avg_loss_regressors );
           c.last_pred_reg = wc.x;
@@ -209,7 +209,7 @@ using namespace CB;
     wc.wap_value = 0.;
     
     //add correction if we observed cost for this action and regressor is wrong
-    if( c.known_cost != NULL && c.known_cost->action == label ) {
+    if( c.known_cost != nullptr && c.known_cost->action == label ) {
       c.nb_ex_regressors++;
       c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->cost - wc.x)*(c.known_cost->cost - wc.x) - c.avg_loss_regressors );
       c.last_pred_reg = wc.x;
@@ -244,7 +244,7 @@ using namespace CB;
     CB::label ld = ec.l.cb;
 
     c.known_cost = get_observed_cost(ld);
-    if (c.known_cost != NULL && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions))
+    if (c.known_cost != nullptr && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions))
       cerr << "invalid action: " << c.known_cost->action << endl;
     //generate a cost-sensitive example to update classifiers
     switch(c.cb_type)
@@ -367,7 +367,7 @@ using namespace CB;
   base_learner* cb_algs_setup(vw& all)
   {
     if (missing_option<size_t, true>(all, "cb", "Use contextual bandit learning with <k> costs"))
-      return NULL;
+      return nullptr;
     new_options(all, "CB options")
       ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}")
       ("eval", "Evaluate a policy rather than optimizing.");

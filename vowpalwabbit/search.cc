@@ -35,7 +35,7 @@ namespace Search {
                                &EntityRelationTask::task,
                                &HookTask::task,
                                &GraphTask::task,
-                               NULL };   // must NULL terminate!
+                               nullptr };   // must nullptr terminate!
 
   const bool PRINT_UPDATE_EVERY_EXAMPLE =0;
   const bool PRINT_UPDATE_EVERY_PASS =1;
@@ -384,7 +384,7 @@ namespace Search {
     priv.dat_new_feature_ec->atomics[priv.dat_new_feature_namespace].push_back(f);
     priv.dat_new_feature_ec->sum_feat_sq[priv.dat_new_feature_namespace] += f.x * f.x;
     if (priv.all->audit) {
-      audit_data a = { NULL, NULL, f.weight_index, f.x, true };
+      audit_data a = { nullptr, nullptr, f.weight_index, f.x, true };
       a.space   = calloc_or_die<char>(priv.dat_new_feature_feature_space->length()+1);
       a.feature = calloc_or_die<char>(priv.dat_new_feature_audit_ss.str().length() + 32);
       strcpy(a.space, priv.dat_new_feature_feature_space->c_str());
@@ -516,7 +516,7 @@ namespace Search {
   
   size_t random(size_t max) { return (size_t)(frand48() * (float)max); }
   template<class T> bool array_contains(T target, const T*A, size_t n) {
-    if (A == NULL) return false;
+    if (A == nullptr) return false;
     for (size_t i=0; i<n; i++)
       if (A[i] == target) return true;
     return false;
@@ -672,7 +672,7 @@ namespace Search {
           cs_cost_push_back(isCB, ld, k, FLT_MAX);
       
     } else { // non-LDF version
-      if ((allowed_actions == NULL) || (allowed_actions_cnt == 0)) { // any action is allowed
+      if ((allowed_actions == nullptr) || (allowed_actions_cnt == 0)) { // any action is allowed
         if (num_costs != priv.A) {  // if there are already A-many actions, they must be the right ones, unless the user did something stupid like putting duplicate allowed_actions...
           cs_costs_erase(isCB, ld);
           for (action k = 0; k < priv.A; k++)
@@ -693,7 +693,7 @@ namespace Search {
       for (action k=0; k<ec_cnt; k++)
         losses.push_back( array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f );
     else { // non-LDF
-      if ((allowed_actions == NULL) || (allowed_actions_cnt == 0))  // any action is allowed
+      if ((allowed_actions == nullptr) || (allowed_actions_cnt == 0))  // any action is allowed
         for (action k=1; k<=priv.A; k++)
           losses.push_back( array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f );
       else
@@ -955,7 +955,7 @@ namespace Search {
       // since we're not LDF, it should be the case that ec_ref_cnt == 1
       // and learn_ec_ref[0] is a pointer to a single example
       assert(priv.learn_ec_ref_cnt == 1);
-      assert(priv.learn_ec_ref != NULL);
+      assert(priv.learn_ec_ref != nullptr);
 
       polylabel labels = allowed_actions_to_ld(priv, priv.learn_ec_ref_cnt, priv.learn_allowed_actions.begin, priv.learn_allowed_actions.size());
       cdbg_print_array("learn_allowed_actions", priv.learn_allowed_actions);
@@ -1052,9 +1052,9 @@ namespace Search {
     priv.t++;
 
     // make sure parameters come in pairs correctly
-    assert((oracle_actions  == NULL) == (oracle_actions_cnt  == 0));
-    assert((condition_on    == NULL) == (condition_on_names  == NULL));
-    assert((allowed_actions == NULL) == (allowed_actions_cnt == 0));
+    assert((oracle_actions  == nullptr) == (oracle_actions_cnt  == 0));
+    assert((condition_on    == nullptr) == (condition_on_names  == nullptr));
+    assert((allowed_actions == nullptr) == (allowed_actions_cnt == 0));
     
     // if we're just after the string, choose an oracle action
     if (priv.state == GET_TRUTH_STRING)
@@ -1098,7 +1098,7 @@ namespace Search {
           priv.learn_ec_ref = ecs;
         else {
           size_t label_size = priv.is_ldf ? sizeof(CS::label) : sizeof(MC::label_t);
-          void (*label_copy_fn)(void*,void*) = priv.is_ldf ? CS::cs_label.copy_label : NULL;
+          void (*label_copy_fn)(void*,void*) = priv.is_ldf ? CS::cs_label.copy_label : nullptr;
           
           ensure_size(priv.learn_ec_copy, ec_cnt);
           for (size_t i=0; i<ec_cnt; i++) 
@@ -1119,7 +1119,7 @@ namespace Search {
           for (size_t i=0; i<condition_on_cnt; i++)
             push_at(priv.learn_condition_on_act, ((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size())) ? priv.ptag_to_action[condition_on[i]] : 0, i);
 
-          if (condition_on_names == NULL) {
+          if (condition_on_names == nullptr) {
             ensure_size(priv.learn_condition_on_names, 1);
             priv.learn_condition_on_names[0] = 0;
           } else {
@@ -1343,7 +1343,7 @@ namespace Search {
       cdbg << "beam_run=" << beam_run << endl;
       priv.beam->compact(free_action_prefix);
       Beam::beam_element<action_prefix>* item = priv.beam->pop_best_item();
-      if (item != NULL) {
+      if (item != nullptr) {
         reset_search_structure(priv);
         priv.beam_actions.erase();
         priv.state = state;
@@ -1402,7 +1402,7 @@ namespace Search {
     bool ran_test = false;  // we must keep track so that even if we skip test, we still update # of examples seen
 
     clear_cache_hash_map(priv);
-    Beam::beam< pair<action_prefix*, string> >* final_beam = NULL;
+    Beam::beam< pair<action_prefix*, string> >* final_beam = nullptr;
     
     // do an initial test pass to compute output (and loss)
     if (must_run_test(all, priv.ec_seq, is_test_ex)) {
@@ -1447,7 +1447,7 @@ namespace Search {
     // do a pass over the data allowing oracle
     cdbg << "======================================== INIT TRAIN (" << priv.current_policy << "," << priv.read_example_last_pass << ") ========================================" << endl;
     //cerr << "training" << endl;
-    final_beam = NULL;
+    final_beam = nullptr;
     if (priv.beam)
       final_beam = beam_predict(sch, INIT_TRAIN);
 
@@ -1656,9 +1656,9 @@ namespace Search {
 
     priv.t = 0;
     priv.T = 0;
-    priv.learn_ec_ref = NULL;
+    priv.learn_ec_ref = nullptr;
     priv.learn_ec_ref_cnt = 0;
-    //priv.allowed_actions_cache = NULL;
+    //priv.allowed_actions_cache = nullptr;
     
     priv.loss_declared_cnt = 0;
     priv.learn_t = 0;
@@ -1710,8 +1710,8 @@ namespace Search {
     priv.cache_hash_map.set_default_value((action)-1);
     priv.cache_hash_map.set_equivalent(cached_item_equivalent);
     
-    priv.task = NULL;
-    sch.task_data = NULL;
+    priv.task = nullptr;
+    sch.task_data = nullptr;
 
     priv.empty_example = alloc_examples(sizeof(CS::label), 1);
     CS::cs_label.default_label(&priv.empty_example->l.cs);
@@ -1767,7 +1767,7 @@ namespace Search {
     priv.learn_condition_on.delete_v();
     priv.learn_condition_on_act.delete_v();
     
-    if (priv.task->finish != NULL) {
+    if (priv.task->finish != nullptr) {
       priv.task->finish(sch);
     }
 
@@ -1828,7 +1828,7 @@ namespace Search {
 
   v_array<CS::label> read_allowed_transitions(action A, const char* filename) {
     FILE *f = fopen(filename, "r");
-    if (f == NULL) {
+    if (f == nullptr) {
       std::cerr << "error: could not read file " << filename << " (" << strerror(errno) << "); assuming all transitions are valid" << endl;
       throw exception();
     }
@@ -1895,7 +1895,7 @@ namespace Search {
       int32_t enc = (posn << 24) | (ns & 0xFF);
       priv.neighbor_features.push_back(enc);
 
-      p = strtok(NULL, ",");
+      p = strtok(nullptr, ",");
     }
     cmd.delete_v();
 
@@ -1904,7 +1904,7 @@ namespace Search {
 
   base_learner* setup(vw&all) {
     if (missing_option<size_t, false>(all, "search", "Use learning to search, argument=maximum action id or 0 for LDF"))
-      return NULL;
+      return nullptr;
     new_options(all, "Search Options")
       ("search_task",              po::value<string>(), "the search task (use \"--search_task list\" to get a list of available tasks)")
       ("search_interpolation",     po::value<string>(), "at what level should interpolation happen? [*data|policy]")
@@ -1973,7 +1973,7 @@ namespace Search {
     if (vm.count("search_beam"))
       priv.beam = new Beam::beam<action_prefix>(vm["search_beam"].as<size_t>());  // TODO: pruning, kbest, equivalence testing
     else
-      priv.beam = NULL;
+      priv.beam = nullptr;
 
     priv.kbest = 1;
     if (vm.count("search_kbest")) {
@@ -2077,18 +2077,18 @@ namespace Search {
 
     if (task_string.compare("list") == 0) {
       std::cerr << endl << "available search tasks:" << endl;
-      for (search_task** mytask = all_tasks; *mytask != NULL; mytask++)
+      for (search_task** mytask = all_tasks; *mytask != nullptr; mytask++)
         std::cerr << "  " << (*mytask)->task_name << endl;
       std::cerr << endl;
       exit(0);
     }
-    for (search_task** mytask = all_tasks; *mytask != NULL; mytask++)
+    for (search_task** mytask = all_tasks; *mytask != nullptr; mytask++)
       if (task_string.compare((*mytask)->task_name) == 0) {
         priv.task = *mytask;
         sch.task_name = (*mytask)->task_name;
         break;
       }
-    if (priv.task == NULL) {
+    if (priv.task == nullptr) {
       if (! vm.count("help")) {
         std::cerr << "fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list" << endl;
         throw exception();
@@ -2168,7 +2168,7 @@ namespace Search {
   }
 
   action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, size_t learner_id) {
-    action a = search_predict(*this->priv, ecs, ec_cnt, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, NULL, 0, learner_id);
+    action a = search_predict(*this->priv, ecs, ec_cnt, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, nullptr, 0, learner_id);
     if (priv->beam) priv->current_trajectory.push_back(a);
     if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
     if ((mytag != 0) && ecs[a].l.cs.costs.size() > 0)
@@ -2226,7 +2226,7 @@ namespace Search {
   vw& search::get_vw_pointer_unsafe() { return *this->priv->all; }
   
   // predictor implementation
-  predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(NULL), ec_cnt(0), ec_alloced(false), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { 
+  predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(nullptr), ec_cnt(0), ec_alloced(false), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { 
     oracle_actions = v_init<action>(); 
     condition_on_tags = v_init<ptag>();
     condition_on_names = v_init<char>();
@@ -2239,7 +2239,7 @@ namespace Search {
         for (size_t i=0; i<ec_cnt; i++)
           dealloc_example(CS::cs_label.delete_label, ec[i]);
       else
-        dealloc_example(NULL, *ec);
+        dealloc_example(nullptr, *ec);
       free(ec);
     }
   }
@@ -2373,14 +2373,14 @@ namespace Search {
   predictor& predictor::set_tag(ptag tag) { my_tag = tag; return *this; }
 
   action predictor::predict() {
-    const action* orA = oracle_actions.size() == 0 ? NULL : oracle_actions.begin;
-    const ptag*   cOn = condition_on_names.size() == 0 ? NULL : condition_on_tags.begin;
-    const char*   cNa = NULL;
+    const action* orA = oracle_actions.size() == 0 ? nullptr : oracle_actions.begin;
+    const ptag*   cOn = condition_on_names.size() == 0 ? nullptr : condition_on_tags.begin;
+    const char*   cNa = nullptr;
     if (condition_on_names.size() > 0) {
       condition_on_names.push_back((char)0);  // null terminate
       cNa = condition_on_names.begin;
     }
-    const action* alA = (allowed_actions.size() == 0) ? NULL : allowed_actions.begin;
+    const action* alA = (allowed_actions.size() == 0) ? nullptr : allowed_actions.begin;
     action p = is_ldf ? sch.predictLDF(ec, ec_cnt, my_tag, orA, oracle_actions.size(), cOn, cNa, learner_id)
                       : sch.predict(*ec, my_tag, orA, oracle_actions.size(), cOn, cNa, alA, allowed_actions.size(), learner_id);
 

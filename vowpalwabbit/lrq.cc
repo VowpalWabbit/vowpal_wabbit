@@ -196,13 +196,13 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
   base_learner* lrq_setup(vw& all)
   {//parse and set arguments
     if (missing_option<vector<string>>(all, "lrq", "use low rank quadratic features"))
-      return NULL;
+      return nullptr;
     new_options(all, "Lrq options")
       ("lrqdropout", "use dropout training for low rank quadratic features");
     add_options(all);
 
     if(!all.vm.count("lrq"))
-      return NULL;
+      return nullptr;
 
     LRQstate& lrq = calloc_or_die<LRQstate>();
     size_t maxk = 0;

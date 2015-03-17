@@ -582,7 +582,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
       // the for loops down there. Since it seems that there's not much to
       // do in this case, we just return.
       for (size_t d = 0; d < l.examples.size(); d++)
-	return_simple_example(*l.all, NULL, *l.examples[d]);
+	return_simple_example(*l.all, nullptr, *l.examples[d]);
       l.examples.erase();
       return;
     }
@@ -653,7 +653,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 	  l.all->sd->sum_loss -= score;
 	  l.all->sd->sum_loss_since_last_dump -= score;
 	}
-	return_simple_example(*l.all, NULL, *l.examples[d]);
+	return_simple_example(*l.all, nullptr, *l.examples[d]);
       }
     
     for (index_feature* s = &l.sorted_features[0]; s <= &l.sorted_features.back();)
@@ -749,7 +749,7 @@ void end_examples(lda& l)
 base_learner* lda_setup(vw&all)
 {
   if (missing_option<uint32_t, true>(all, "lda", "Run lda with <int> topics")) 
-    return NULL;
+    return nullptr;
   new_options(all, "Lda options")
     ("lda_alpha", po::value<float>()->default_value(0.1f), "Prior on sparsity of per-document topic weights")
     ("lda_rho", po::value<float>()->default_value(0.1f), "Prior on sparsity of topic distributions")

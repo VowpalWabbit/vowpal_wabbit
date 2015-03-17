@@ -25,14 +25,14 @@ using namespace std;
 void initialize_regressor(vw& all)
 {
   // Regressor is already initialized.
-  if (all.reg.weight_vector != NULL) {
+  if (all.reg.weight_vector != nullptr) {
     return;
   }
 
   size_t length = ((size_t)1) << all.num_bits;
   all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
   all.reg.weight_vector = calloc_or_die<weight>(length << all.reg.stride_shift);
-  if (all.reg.weight_vector == NULL)
+  if (all.reg.weight_vector == nullptr)
     {
       cerr << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>" << endl;
       throw exception();

@@ -36,14 +36,14 @@ template<class K, class V> class v_hashmap{
 
   void set_default_value(V def) { default_value = def; }
   
-  void init_dat(size_t min_size, V def, bool (*eq)(void*,K&,K&), void*eq_dat=NULL) {
+  void init_dat(size_t min_size, V def, bool (*eq)(void*,K&,K&), void *eq_dat = nullptr) {
     dat = v_init<hash_elem>();
     if (min_size < 1023) min_size = 1023;
     dat.resize(min_size, true); // resize sets to 0 ==> occupied=false
 
     default_value = def;
     equivalent = eq;
-    equivalent_no_data = NULL;
+    equivalent_no_data = nullptr;
     eq_data = eq_dat;
 
     last_position = 0;
@@ -56,9 +56,9 @@ template<class K, class V> class v_hashmap{
     dat.resize(min_size, true); // resize sets to 0 ==> occupied=false
 
     default_value = def;
-    equivalent = NULL;
+    equivalent = nullptr;
     equivalent_no_data = eq;
-    eq_data = NULL;
+    eq_data = nullptr;
 
     last_position = 0;
     num_occupants = 0;
@@ -69,20 +69,20 @@ template<class K, class V> class v_hashmap{
     if (min_size < 1023) min_size = 1023;
     dat.resize(min_size, true); // resize sets to 0 ==> occupied=false
 
-    equivalent = NULL;
+    equivalent = nullptr;
     equivalent_no_data = eq;
-    eq_data = NULL;
+    eq_data = nullptr;
 
     last_position = 0;
     num_occupants = 0;
   }
   
-  v_hashmap(size_t min_size, V def, bool (*eq)(void*,K&,K&), void*eq_dat=NULL) { init_dat(min_size, def, eq, eq_dat); }
+  v_hashmap(size_t min_size, V def, bool (*eq)(void*,K&,K&), void*eq_dat=nullptr) { init_dat(min_size, def, eq, eq_dat); }
   v_hashmap(size_t min_size, V def, bool (*eq)(K&,K&))                         { init(min_size, def, eq); }
-  v_hashmap() { init(1023, NULL); }
+  v_hashmap() { init(1023, nullptr); }
   
-  void set_equivalent(bool (*eq)(void*,K&,K&), void*eq_dat=NULL) { equivalent = eq; eq_data = eq_dat; equivalent_no_data = NULL; }
-  void set_equivalent(bool (*eq)(K&,K&)) { equivalent_no_data = eq; eq_data = NULL; equivalent = NULL; }
+  void set_equivalent(bool (*eq)(void*,K&,K&), void*eq_dat=nullptr) { equivalent = eq; eq_data = eq_dat; equivalent_no_data = nullptr; }
+  void set_equivalent(bool (*eq)(K&,K&)) { equivalent_no_data = eq; eq_data = nullptr; equivalent = nullptr; }
 
   void delete_v() { dat.delete_v(); }
   
@@ -97,14 +97,14 @@ template<class K, class V> class v_hashmap{
 
   void* iterator_next(void* prev) {
     hash_elem* e = (hash_elem*)prev;
-    if (e == NULL) return NULL;
+    if (e == nullptr) return nullptr;
     e++;
     while (e != dat.end_array) {
       if (e->occupied)
         return e;
       e++;
     }
-    return NULL;
+    return nullptr;
   }
 
   void* iterator() {
@@ -114,7 +114,7 @@ template<class K, class V> class v_hashmap{
         return e;
       e++;
     }
-    return NULL;
+    return nullptr;
   }
 
   V* iterator_get_value(void* el) {
@@ -165,9 +165,9 @@ template<class K, class V> class v_hashmap{
   }
 
   bool is_equivalent(K& key, K& key2) {
-    if ((equivalent == NULL) && (equivalent_no_data == NULL))
+    if ((equivalent == nullptr) && (equivalent_no_data == nullptr))
       return true;
-    else if (equivalent != NULL)
+    else if (equivalent != nullptr)
       return equivalent(eq_data, key, key2);
     else
       return equivalent_no_data(key, key2);

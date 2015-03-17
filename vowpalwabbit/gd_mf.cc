@@ -305,7 +305,7 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
 base_learner* gd_mf_setup(vw& all)
 {
   if (missing_option<uint32_t, true>(all, "rank", "rank for matrix factorization."))
-    return NULL;
+    return nullptr;
   
   gdmf& data = calloc_or_die<gdmf>(); 
   data.all = &all;
