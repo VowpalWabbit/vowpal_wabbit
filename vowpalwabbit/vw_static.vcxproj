@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -264,6 +264,8 @@
     <ClInclude Include="lda_core.h" />
     <ClInclude Include="learner.h" />
     <ClInclude Include="loss_functions.h" />
+    <ClInclude Include="multilabel.h" />
+    <ClInclude Include="multilabel_oaa.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="nn.h" />
     <ClInclude Include="noop.h" />
@@ -286,6 +288,7 @@
     <ClInclude Include="search_dep_parser.h" />
     <ClInclude Include="sender.h" />
     <ClInclude Include="simple_label.h" />
+    <ClInclude Include="svrg.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
@@ -323,6 +326,8 @@
     <ClCompile Include="lda_core.cc" />
     <ClCompile Include="learner.cc" />
     <ClCompile Include="loss_functions.cc" />
+    <ClCompile Include="multilabel.cc" />
+    <ClCompile Include="multilabel_oaa.cc" />
     <ClCompile Include="network.cc" />
     <ClCompile Include="nn.cc" />
     <ClCompile Include="noop.cc" />
@@ -346,6 +351,7 @@
     <ClCompile Include="sender.cc" />
     <ClCompile Include="simple_label.cc" />
     <ClCompile Include="stagewise_poly.cc" />
+    <ClCompile Include="svrg.cc" />
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
   </ItemGroup>
