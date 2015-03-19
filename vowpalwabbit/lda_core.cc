@@ -7,7 +7,8 @@ license as described in the file LICENSE.
 #include <vector>
 #include <algorithm>
 #include <numeric>
-#include <boost/align/is_aligned.hpp>
+#include <cmath>
+
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/math/special_functions/gamma.hpp>
 
@@ -23,6 +24,13 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "rand48.h"
 #include "reductions.h"
+
+#include <boost/version.hpp>
+
+#if BOOST_VERSION >= 105600
+#include <boost/align/is_aligned.hpp>
+#endif
+  
 
 enum lda_math_mode { USE_SIMD, USE_PRECISE, USE_FAST_APPROX };
 
@@ -66,6 +74,18 @@ struct lda {
 };
 
 // #define VW_NO_INLINE_SIMD
+
+namespace
+{
+  inline bool is_aligned16(void *ptr)
+  {
+#if BOOST_VERSION >= 105600
+    return boost::alignment::is_aligned(16, ptr);
+#else
+    return (reinterpret_cast<uintptr_t>(ptr) & 0x0f == 0);
+#endif
+  }
+}
 
 namespace ldamath
 {
@@ -147,7 +167,7 @@ namespace ldamath
   // Extract v[idx]
   template <const int idx> float v4sf_index(const v4sf x)
   {
-#ifdef __SSE4_1__
+#if defined(__SSE4_1__)
     float ret;
     uint32_t val;
 
@@ -227,22 +247,20 @@ namespace ldamath
 
   void vexpdigammify(vw &all, float *gamma)
   {
-    unsigned int n = all.lda;
     float extra_sum = 0.0f;
     v4sf sum = v4sfl(0.0f);
-    size_t i;
     float *fp;
     const float *fpend = gamma + all.lda;
 
     // Iterate through the initial part of the array that isn't 128-bit SIMD
     // aligned.
-    for (fp = gamma; fp < fpend && !boost::alignment::is_aligned(16, fp); ++fp) {
+    for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp) {
       extra_sum += *fp;
       *fp = fastdigamma(*fp);
     }
 
     // Rip through the aligned portion...
-    for (; boost::alignment::is_aligned(16, fp) && fp + 4 < fpend; fp += 4) {
+    for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4) {
       v4sf arg = _mm_load_ps(fp);
       sum += arg;
       arg = vfastdigamma(arg);
@@ -254,7 +272,7 @@ namespace ldamath
       *fp = fastdigamma(*fp);
     }
 
-#if defined(__SSE3__)
+#if defined(__SSE3__) || defined(__SSE4_1__)
     // Do two horizontal adds on sum, extract the total from the 0 element:
     sum = _mm_hadd_ps(sum, sum);
     sum = _mm_hadd_ps(sum, sum);
@@ -266,11 +284,11 @@ namespace ldamath
     extra_sum = fastdigamma(extra_sum);
     sum = v4sfl(extra_sum);
 
-    for (fp = gamma; fp < fpend && !boost::alignment::is_aligned(16, fp); ++fp) {
+    for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp) {
       *fp = fmax(1e-6f, fastexp(*fp - extra_sum));
     }
 
-    for (; boost::alignment::is_aligned(16, fp) && fp + 4 < fpend; fp += 4) {
+    for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4) {
       v4sf arg = _mm_load_ps(fp);
       arg -= sum;
       arg = vfastexp(arg);
@@ -289,11 +307,11 @@ namespace ldamath
     const float *np;
     const float *fpend = gamma + all.lda;
 
-    for (fp = gamma, np = norm; fp < fpend && !boost::alignment::is_aligned(16, fp); ++fp, ++np) {
+    for (fp = gamma, np = norm; fp < fpend && !is_aligned16(fp); ++fp, ++np) {
       *fp = fmax(1e-6f, fastexp(fastdigamma(*fp) - *np));
     }
 
-   for (; boost::alignment::is_aligned(16, fp) && fp + 4 < fpend; fp += 4, np += 4) {
+   for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4, np += 4) {
       v4sf arg = _mm_load_ps(fp);
       arg = vfastdigamma(arg);
       v4sf vnorm = _mm_loadu_ps(np);
@@ -328,34 +346,25 @@ namespace ldamath
   // Log gamma:
   template <typename T, const lda_math_mode mtype> inline T lgamma(T x)
   {
-    // This is an intentional crash for generic types.
-    std::cerr << "Using generic lgamma<T, bool> template, aborting." << std::endl;
-    abort();
+    BOOST_STATIC_ASSERT_MSG(true, "ldamath::lgamma is not defined for this type and math mode.");
   }
 
   // Digamma:
   template <typename T, const lda_math_mode mtype> inline T digamma(T x)
   {
-    // This is an intentional crash for generic types.
-    std::cerr << "Using generic digamma<T, lda_math_mode> template, aborting." << std::endl;
-    abort();
-    return static_cast<T>(0);
+    BOOST_STATIC_ASSERT_MSG(true, "ldamath::digamma is not defined for this type and math mode.");
   }
 
   // Exponential
   template <typename T, lda_math_mode mtype> inline T exponential(T x)
   {
-    // This is an intentional crash for generic types.
-    std::cerr << "Using generic exponential<T, bool> template, aborting." << std::endl;
-    abort();
+    BOOST_STATIC_ASSERT_MSG(true, "ldamath::exponential is not defined for this type and math mode.");
   }
 
   // Powf
   template <typename T, lda_math_mode mtype> inline T powf(T x, T p)
   {
-    // This is an intentional crash for generic types.
-    std::cerr << "Using generic powf<T, bool> template, aborting." << std::endl;
-    abort();
+    BOOST_STATIC_ASSERT_MSG(true, "ldamath::powf is not defined for this type and math mode.");
   }
 
   // High accuracy float specializations:
@@ -363,7 +372,7 @@ namespace ldamath
   template <> inline float lgamma<float, USE_PRECISE>(float x) { return boost::math::lgamma(x); }
   template <> inline float digamma<float, USE_PRECISE>(float x) { return boost::math::digamma(x); }
   template <> inline float exponential<float, USE_PRECISE>(float x) { return std::exp(x); }
-  template <> inline float powf<float, USE_PRECISE>(float x, float p) { return std::powf(x, p); }
+  template <> inline float powf<float, USE_PRECISE>(float x, float p) { return std::pow(x, p); }
 
   // Fast approximation float specializations:
 
@@ -371,6 +380,8 @@ namespace ldamath
   template <> inline float digamma<float, USE_FAST_APPROX>(float x) { return fastdigamma(x); }
   template <> inline float exponential<float, USE_FAST_APPROX>(float x) { return fastexp(x); }
   template <> inline float powf<float, USE_FAST_APPROX>(float x, float p) { return fastpow(x, p); }
+
+  // SIMD specializations:
 
   template <> inline float lgamma<float, USE_SIMD>(float x) { return lgamma<float, USE_FAST_APPROX>(x); }
   template <> inline float digamma<float, USE_SIMD>(float x) { return digamma<float, USE_FAST_APPROX>(x); }
