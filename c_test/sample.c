@@ -1,7 +1,14 @@
 #include <stdio.h>
 
+
+#ifndef OMIT_MS				// a gcc sample would omit these two defines
+#define MS_CONV				// use Microsoft libraray convention
+#define USE_CODECVT			// enable wide character converesion enabled API
+#endif
+
+
 /*
-To compule with gcc use this command
+To compile with gcc use this command
 LD_LIBRARY_PATH=../vowpalwabbit/.libs ; gcc sample_gcc.c -I./../vowpalwabbit/ -L./../vowpalwabbit/.libs -lvw -lvw_c_wrapper -lallreduce -o sample_gcc
 */
 
@@ -12,6 +19,8 @@ typedef short char16_t;
 #define bool int
 #define true (1)
 #define false (0)
+
+
 
 #include "vwdll.h"
 

@@ -31,6 +31,7 @@ license as described in the file LICENSE.
 #include "noop.h"
 #include "print.h"
 #include "gd_mf.h"
+#include "learner.h"
 #include "mf.h"
 #include "ftrl_proximal.h"
 #include "svrg.h"
@@ -538,7 +539,7 @@ void parse_feature_tweaks(vw& all)
   if (vm.count("redefine"))
   {
       // initail values: i-th namespace is redefined to i itself
-      for (size_t i = 0; i < 256; i++)
+      for (unsigned char i = 0; i < 256; i++)
           all.redefine[i] = i;
 
       // note: --redefine declaration order is matter
