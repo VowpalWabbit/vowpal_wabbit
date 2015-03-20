@@ -66,6 +66,8 @@ struct lda {
   double example_t;
   vw *all; // regressor, lda
 
+  static constexpr float underflow_threshold = 1.0e-10f;
+
   inline float digamma(float x);
   inline float lgamma(float x);
   inline float powf(float x, float p);
@@ -245,7 +247,7 @@ namespace ldamath
            logterm;
   }
 
-  void vexpdigammify(vw &all, float *gamma)
+  void vexpdigammify(vw &all, float *gamma, const float underflow_threshold)
   {
     float extra_sum = 0.0f;
     v4sf sum = v4sfl(0.0f);
@@ -285,30 +287,30 @@ namespace ldamath
     sum = v4sfl(extra_sum);
 
     for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp) {
-      *fp = fmax(1e-6f, fastexp(*fp - extra_sum));
+      *fp = fmax(underflow_threshold, fastexp(*fp - extra_sum));
     }
 
     for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4) {
       v4sf arg = _mm_load_ps(fp);
       arg -= sum;
       arg = vfastexp(arg);
-      arg = _mm_max_ps(v4sfl(1e-6f), arg);
+      arg = _mm_max_ps(v4sfl(underflow_threshold), arg);
       _mm_store_ps(fp, arg);
     }
 
     for (; fp < fpend; ++fp) {
-      *fp = fmax(1e-6f, fastexp(*fp - extra_sum));
+      *fp = fmax(underflow_threshold, fastexp(*fp - extra_sum));
     }
   }
 
-  void vexpdigammify_2(vw &all, float *gamma, const float *norm)
+  void vexpdigammify_2(vw &all, float *gamma, const float *norm, const float underflow_threshold)
   {
     float *fp;
     const float *np;
     const float *fpend = gamma + all.lda;
 
     for (fp = gamma, np = norm; fp < fpend && !is_aligned16(fp); ++fp, ++np) {
-      *fp = fmax(1e-6f, fastexp(fastdigamma(*fp) - *np));
+      *fp = fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
     }
 
    for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4, np += 4) {
@@ -317,12 +319,12 @@ namespace ldamath
       v4sf vnorm = _mm_loadu_ps(np);
       arg -= vnorm;
       arg = vfastexp(arg);
-      arg = _mm_max_ps(v4sfl(1e-6f), arg);
+      arg = _mm_max_ps(v4sfl(underflow_threshold), arg);
       _mm_store_ps(fp, arg);
     }
 
     for (; fp < fpend; ++fp, ++np) {
-      *fp = fmax(1e-6f, fastexp(fastdigamma(*fp) - *np));
+      *fp = fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
     }
   }
 
@@ -397,9 +399,9 @@ namespace ldamath
     });
   }
 
-  template <> inline void expdigammify<float, USE_SIMD>(vw &all, float *gamma, float, float)
+  template <> inline void expdigammify<float, USE_SIMD>(vw &all, float *gamma, float threshold, float)
   {
-    vexpdigammify(all, gamma);
+    vexpdigammify(all, gamma, threshold);
   }
 
   template <typename T, const lda_math_mode mtype>
@@ -410,9 +412,9 @@ namespace ldamath
     });
   }
 
-  template <> inline void expdigammify_2<float, USE_SIMD>(vw &all, float *gamma, float *norm, const float)
+  template <> inline void expdigammify_2<float, USE_SIMD>(vw &all, float *gamma, float *norm, const float threshold)
   {
-    vexpdigammify_2(all, gamma, norm);
+    vexpdigammify_2(all, gamma, norm, threshold);
   }
 } // namespace ldamath
 
@@ -465,13 +467,13 @@ void lda::expdigammify(vw &all, float *gamma)
 {
   switch (mmode) {
   case USE_FAST_APPROX:
-    ldamath::expdigammify<float, USE_FAST_APPROX>(all, gamma, 1.0e-6f, 0.0f);
+    ldamath::expdigammify<float, USE_FAST_APPROX>(all, gamma, underflow_threshold, 0.0f);
     break;
   case USE_PRECISE:
-    ldamath::expdigammify<float, USE_PRECISE>(all, gamma, 1.0e-6f, 0.0f);
+    ldamath::expdigammify<float, USE_PRECISE>(all, gamma, underflow_threshold, 0.0f);
     break;
   case USE_SIMD:
-    ldamath::expdigammify<float, USE_SIMD>(all, gamma, 1.0e-6f, 0.0f);
+    ldamath::expdigammify<float, USE_SIMD>(all, gamma, underflow_threshold, 0.0f);
     break;
   }
 }
@@ -480,13 +482,13 @@ void lda::expdigammify_2(vw &all, float *gamma, float *norm)
 {
   switch (mmode) {
   case USE_FAST_APPROX:
-    ldamath::expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, 1.0e-6f);
+    ldamath::expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, underflow_threshold);
     break;
   case USE_PRECISE:
-    ldamath::expdigammify_2<float, USE_PRECISE>(all, gamma, norm, 1.0e-6f);
+    ldamath::expdigammify_2<float, USE_PRECISE>(all, gamma, norm, underflow_threshold);
     break;
   case USE_SIMD:
-    ldamath::expdigammify_2<float, USE_SIMD>(all, gamma, norm, 1.0e-6f);
+    ldamath::expdigammify_2<float, USE_SIMD>(all, gamma, norm, underflow_threshold);
     break;
   }
 }
