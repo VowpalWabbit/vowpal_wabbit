@@ -346,6 +346,16 @@ using namespace CB;
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
 
+    if (all.raw_prediction > 0) {
+      stringstream outputStringStream;
+      for (unsigned int i = 0; i < ld.costs.size(); i++) {
+    	  cb_class cl = ld.costs[i];
+        if (i > 0) outputStringStream << ' ';
+        outputStringStream <<  cl.action <<':' << cl.partial_prediction;
+      }
+      all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    }
+
     print_update(all, is_test_label(ld), ec);
   }
 
