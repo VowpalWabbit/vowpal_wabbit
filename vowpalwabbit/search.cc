@@ -1992,7 +1992,7 @@ namespace Search {
     parse_neighbor_features(neighbor_features_string, sch);
 
     if (interpolation_string.compare("data") == 0) { // run as dagger
-      priv.adaptive_beta = (vm.count("search_beta"))?false:true;
+      priv.adaptive_beta = true;
       priv.allow_current_policy = true;
       priv.passes_per_policy = all.numpasses;
       if (priv.current_policy > 1) priv.current_policy = 1;
