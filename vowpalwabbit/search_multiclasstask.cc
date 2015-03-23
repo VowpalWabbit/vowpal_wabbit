@@ -13,7 +13,6 @@ namespace MulticlassTask {
     size_t max_label;
     size_t num_level;
     v_array<uint32_t> y_allowed;
-	bool bad_ref;
   };
 
   void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
@@ -24,12 +23,6 @@ namespace MulticlassTask {
 	my_task_data->num_level = (size_t)ceil(log(num_actions) /log(2));
 	my_task_data->y_allowed.push_back(1);
 	my_task_data->y_allowed.push_back(2);
-
-	po::options_description mc_opts("multiclass options");
-    mc_opts.add_options()
-    ("mc_bad_ref","Use an abitary bad ref");
-    sch.add_program_options(vm, mc_opts);
-    my_task_data->bad_ref = (vm.count("mc_bad_ref"))?true:false;
     sch.set_task_data(my_task_data);
   }
 
