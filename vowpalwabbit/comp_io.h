@@ -15,7 +15,7 @@ public:
   vector<gzFile> gz_files;
 
   virtual int open_file(const char* name, bool stdin_off, int flag=READ){
-    gzFile fil=NULL;
+    gzFile fil=nullptr;
     int ret = -1;
     switch(flag){
     case READ:
@@ -27,7 +27,7 @@ public:
 #else
        fil = gzdopen(fileno(stdin), "rb");
 #endif
-       if(fil!=NULL){
+       if(fil!=nullptr){
 	 gz_files.push_back(fil);
 	 ret = (int)gz_files.size()-1;
 	 files.push_back(ret);
@@ -36,7 +36,7 @@ public:
 
     case WRITE:
       fil = gzopen(name, "wb");
-      if(fil!=NULL){
+      if(fil!=nullptr){
         gz_files.push_back(fil);
         ret = (int)gz_files.size()-1;
 	files.push_back(ret);

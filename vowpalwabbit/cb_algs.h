@@ -15,7 +15,7 @@ namespace CB_ALGS {
 
     label_data simple_temp;
     simple_temp.initial = 0.;
-    if (known_cost != NULL && index == known_cost->action)
+    if (known_cost != nullptr && index == known_cost->action)
       {
 	simple_temp.label = known_cost->cost;
 	simple_temp.weight = 1.;

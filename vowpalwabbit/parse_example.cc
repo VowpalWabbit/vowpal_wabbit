@@ -55,7 +55,7 @@ public:
     else if(*reading_head == ':'){
       // featureValue --> ':' 'Float'
       ++reading_head;
-      char *end_read = NULL;
+      char *end_read = nullptr;
       v = parseFloat(reading_head,&end_read);
       if(end_read == reading_head){
 	cout << "malformed example !\nFloat expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
@@ -173,7 +173,7 @@ public:
           feature_dict* map = namespace_dictionaries[index][dict];
           uint32_t hash = uniform_hash(feature_name.begin, feature_name.end-feature_name.begin, quadratic_constant);
           v_array<feature>* feats = map->get(feature_name, hash);
-          if ((feats != NULL) && (feats->size() > 0)) {
+          if ((feats != nullptr) && (feats->size() > 0)) {
             if (ae->atomics[dictionary_namespace].size() == 0)
               ae->indices.push_back(dictionary_namespace);
             push_many(ae->atomics[dictionary_namespace], feats->begin, feats->size());
@@ -206,7 +206,7 @@ public:
     }else if(*reading_head == ':'){
       // nameSpaceInfoValue --> ':' 'Float'
       ++reading_head;
-      char *end_read = NULL;
+      char *end_read = nullptr;
       cur_channel_v = parseFloat(reading_head,&end_read);
       if(end_read == reading_head){
 	cout << "malformed example !\nFloat expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
@@ -237,7 +237,7 @@ public:
 	v_array<char> base_v_array = v_init<char>();
 	push_many(base_v_array, name.begin, name.end - name.begin);
 	base_v_array.push_back('\0');
-	if (base != NULL)
+	if (base != nullptr)
 	  free(base);
 	base = base_v_array.begin;
       }
@@ -270,7 +270,7 @@ public:
 	new_index = true;
       if(audit)
 	{
-	  if (base != NULL)
+	  if (base != nullptr)
 	    free(base);
 	  base = calloc_or_die<char>(2);
 	  base[0] = ' ';
@@ -316,9 +316,9 @@ public:
 	this->affix_features = all.affix_features;
 	this->spelling_features = all.spelling_features;
 	this->namespace_dictionaries = all.namespace_dictionaries;
-	this->base = NULL;
+	this->base = nullptr;
 	listNameSpace();
-	if (base != NULL)
+	if (base != nullptr)
 	  free(base);
       }
   }
@@ -363,7 +363,7 @@ int read_features(void* in, example* ex)
 {
   vw* all = (vw*)in;
   example* ae = (example*)ex;
-  char *line=NULL;
+  char *line=nullptr;
   size_t num_chars_initial = readto(*(all->p->input), line, '\n');
   if (num_chars_initial < 1)
     return (int)num_chars_initial;

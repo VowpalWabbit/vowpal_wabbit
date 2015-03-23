@@ -186,7 +186,7 @@ void finish(mf& o) {
 
   base_learner* mf_setup(vw& all) {
     if (missing_option<size_t, true>(all, "new_mf", "rank for reduction-based matrix factorization")) 
-      return NULL;
+      return nullptr;
     
     mf& data = calloc_or_die<mf>();
     data.all = &all;

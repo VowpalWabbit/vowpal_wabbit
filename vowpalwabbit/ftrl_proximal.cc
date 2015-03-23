@@ -137,8 +137,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
 base_learner* ftrl_setup(vw& all) 
 {
   if (missing_option(all, false, "ftrl", "Follow the Regularized Leader")) 
-    return NULL;
-  
+    return nullptr;
   new_options(all, "FTRL options")
     ("ftrl_algo", po::value<string>()->default_value("pistol"), "Specify the kind of FTRL used. Currently available ones are pistol, proximal.")
     ("ftrl_alpha", po::value<float>(), "Learning rate for FTRL optimization")

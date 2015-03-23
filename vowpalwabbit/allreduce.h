@@ -107,7 +107,7 @@ template <class T, void (*f)(T&, const T&)>void reduce(char* buffer, const size_
       if(parent_sent_pos >= n && child_read_pos[0] >= n && child_read_pos[1] >= n) break;
 
       if(child_read_pos[0] < n || child_read_pos[1] < n) {
-	if (max_fd > 0 && select((int)max_fd,&fds,NULL, NULL, NULL) == -1)
+	if (max_fd > 0 && select((int)max_fd,&fds, nullptr, nullptr, nullptr) == -1)
 	  {
 	    cerr << "select: " << strerror(errno) << endl;
 	    throw exception();

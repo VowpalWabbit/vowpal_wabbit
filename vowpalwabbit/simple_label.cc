@@ -100,7 +100,7 @@ void parse_simple_label(parser* p, shared_data* sd, void* v, v_array<substring>&
 label_parser simple_label = {default_simple_label, parse_simple_label,
 				   cache_simple_label, read_cached_simple_label, 
 				   delete_simple_label, get_weight,  
-                                   NULL,
+                                   nullptr,
 				   sizeof(label_data)};
 
 void print_update(vw& all, example& ec)
