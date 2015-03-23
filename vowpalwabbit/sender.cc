@@ -59,7 +59,7 @@ void receive_result(sender& s)
   label_data& ld = ec.l.simple;
   ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ld.label) * ld.weight;
   
-  return_simple_example(*(s.all), NULL, ec);  
+  return_simple_example(*(s.all), nullptr, ec);  
 }
 
 void learn(sender& s, LEARNER::base_learner& base, example& ec) 
@@ -94,7 +94,7 @@ void finish(sender& s)
 LEARNER::base_learner* sender_setup(vw& all)
 {
   if (missing_option<string, true>(all, "sendto", "send examples to <host>"))
-    return NULL;
+    return nullptr;
   
   sender& s = calloc_or_die<sender>();
   s.sd = -1;

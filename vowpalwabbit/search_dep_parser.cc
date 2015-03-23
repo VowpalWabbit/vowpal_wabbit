@@ -8,7 +8,7 @@
 #define val_namespace 100 // valency and distance feature space
 #define offset_const 344429
 
-namespace DepParserTask         {  Search::search_task task = { "dep_parser", run, initialize, finish, NULL, NULL};  }
+namespace DepParserTask         {  Search::search_task task = { "dep_parser", run, initialize, finish, nullptr, nullptr};  }
 
 struct task_data {
   example *ex;
@@ -111,7 +111,7 @@ namespace DepParserTask {
     size_t n = ec.size();
 
     for(size_t i=0; i<13; i++)
-		ec_buf[i] = 0;
+		ec_buf[i] = nullptr;
 
     // feature based on the top three examples in stack ec_buf[0]: s1, ec_buf[1]: s2, ec_buf[2]: s3
     for(size_t i=0; i<3; i++)

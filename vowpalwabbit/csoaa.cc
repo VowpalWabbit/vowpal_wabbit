@@ -68,7 +68,7 @@ void finish_example(vw& all, csoaa&, example& ec)
 base_learner* csoaa_setup(vw& all)
 {
   if (missing_option<size_t, true>(all, "csoaa", "One-against-all multiclass with <k> costs"))
-    return NULL;
+    return nullptr;
   
   csoaa& c = calloc_or_die<csoaa>();
   c.num_classes = (uint32_t)all.vm["csoaa"].as<size_t>();
@@ -223,7 +223,7 @@ namespace LabelDict {
 
   void free_label_features(ldf& data) {
     void* label_iter = data.label_features.iterator();
-    while (label_iter != NULL) {
+    while (label_iter != nullptr) {
       v_array<feature> *features = data.label_features.iterator_get_value(label_iter);
       features->erase();
       features->delete_v();
@@ -585,7 +585,7 @@ namespace LabelDict {
       all.sd->example_number++;
     }
     bool hit_loss = false;
-    output_example(all, ec, hit_loss, NULL);
+    output_example(all, ec, hit_loss, nullptr);
     VW::finish_example(all, &ec);
   }
 
@@ -654,7 +654,7 @@ namespace LabelDict {
   {
     if (missing_option<string, true>(all, "csoaa_ldf", "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
 	&& missing_option<string, true>(all, "wap_ldf", "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline."))
-      return NULL;
+      return nullptr;
     new_options(all, "LDF Options")
       ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file");
     add_options(all);

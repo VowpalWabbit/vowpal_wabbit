@@ -105,7 +105,7 @@ namespace MULTILABEL {
 	
 	for (size_t i = 0; i < p->parse_name.size(); i++)
 	  {
-	    p->parse_name[i].end = '\0';
+	    *(p->parse_name[i].end) = '\0';
 	    uint32_t n = atoi(p->parse_name[i].begin);
 	    ld->label_v.push_back(n);
 	  }

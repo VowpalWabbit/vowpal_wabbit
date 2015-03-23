@@ -182,13 +182,13 @@ bool operator<(const string_value& first, const string_value& second)
   
   string tmp = "";
   
-  if (a != NULL){
+  if (a != nullptr){
     tmp += a->space;
     tmp += '^';
     tmp += a->feature; 
   }
  
-  if (a != NULL && all.audit){
+  if (a != nullptr && all.audit){
     tempstream << tmp << ':';
   }
   else 	if ( index == ((( (constant << stride_shift) * all.wpp + offset)&all.reg.weight_mask)) && all.audit){
@@ -223,7 +223,7 @@ bool operator<(const string_value& first, const string_value& second)
     if (as.begin != as.end)
       audit_feature(all, & fs[j], & as[j], results, prepend, ns_pre, offset, mult);
     else
-      audit_feature(all, & fs[j], NULL, results, prepend, ns_pre, offset, mult);
+      audit_feature(all, & fs[j], nullptr, results, prepend, ns_pre, offset, mult);
 }
 
 void audit_quad(vw& all, feature& left_feature, audit_data* left_audit, v_array<feature> &right_features, v_array<audit_data> &audit_right, vector<string_value>& results, string& ns_pre, uint32_t offset = 0)
@@ -298,7 +298,7 @@ void print_features(vw& all, example& ec)
 	  unsigned char snd = (*i)[1];
 	  for (size_t j = 0; j < ec.atomics[fst].size(); j++)
 	    {
-	      audit_data* a = NULL;
+	      audit_data* a = nullptr;
 	      if (ec.audit_features[fst].size() > 0)
 		a = & ec.audit_features[fst][j];
 	      audit_quad(all, ec.atomics[fst][j], a, ec.atomics[snd], ec.audit_features[snd], features, ns_pre);
@@ -312,12 +312,12 @@ void print_features(vw& all, example& ec)
 	  unsigned char trd = (*i)[2];
 	  for (size_t j = 0; j < ec.atomics[fst].size(); j++)
 	    {
-	      audit_data* a1 = NULL;
+	      audit_data* a1 = nullptr;
 	      if (ec.audit_features[fst].size() > 0)
 		a1 = & ec.audit_features[fst][j];
 	      for (size_t k = 0; k < ec.atomics[snd].size(); k++)
 		{
-		  audit_data* a2 = NULL;
+		  audit_data* a2 = nullptr;
 		  if (ec.audit_features[snd].size() > 0)
 		    a2 = & ec.audit_features[snd][k];
 		  audit_triple(all, ec.atomics[fst][j], a1, ec.atomics[snd][k], a2, ec.atomics[trd], ec.audit_features[trd], features, ns_pre);
@@ -710,12 +710,12 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 
       // fix average loss
       double total_weight = 0.; //value holder as g* may be null
-      if (!read && g != NULL) total_weight = g->total_weight;
+      if (!read && g != nullptr) total_weight = g->total_weight;
       text_len = sprintf(buff, "gd::total_weight %f\n", total_weight);
       bin_text_read_write_fixed(model_file,(char*)&total_weight, sizeof(total_weight),
                                 "", read,
                                 buff, text_len, text);
-      if (read && g != NULL) g->total_weight = total_weight;
+      if (read && g != nullptr) g->total_weight = total_weight;
 
       // fix "loss since last" for first printed out example details
       text_len = sprintf(buff, "sd::old_weighted_examples %f\n", all.sd->old_weighted_examples);

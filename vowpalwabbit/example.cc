@@ -122,7 +122,7 @@ namespace VW {
 
 void return_features(feature* f)
 {
-	if (f != NULL)
+	if (f != nullptr)
 		free(f);
 }
 }
@@ -171,7 +171,7 @@ void free_flatten_example(flat_example* fec)
 example *alloc_examples(size_t label_size, size_t count=1)
 {
   example* ec = calloc_or_die<example>(count);
-  if (ec == NULL) return NULL;
+  if (ec == nullptr) return nullptr;
   for (size_t i=0; i<count; i++) {
     ec[i].in_use = true;
     ec[i].ft_offset = 0;

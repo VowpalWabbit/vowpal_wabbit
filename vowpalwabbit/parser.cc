@@ -56,7 +56,7 @@ using namespace std;
 void initialize_mutex(MUTEX * pm)
 {
 #ifndef _WIN32
-  pthread_mutex_init(pm, NULL);
+  pthread_mutex_init(pm, nullptr);
 #else
 	::InitializeCriticalSection(pm);
 #endif
@@ -74,7 +74,7 @@ void delete_mutex(MUTEX * pm)
 void initialize_condition_variable(CV * pcv)
 {
 #ifndef _WIN32
-  pthread_cond_init(pcv, NULL);
+  pthread_cond_init(pcv, nullptr);
 #else
 	::InitializeConditionVariable(pcv);
 #endif
@@ -526,7 +526,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	    // waitid will be interrupted by SIGTERM with handler installed
 	    memset(&sa, 0, sizeof(sa));
 	    sa.sa_handler = handle_sigterm;
-	    sigaction(SIGTERM, &sa, NULL);
+	    sigaction(SIGTERM, &sa, nullptr);
 	  }
 
 	  while (true)
@@ -668,7 +668,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 		}
 	      string feature_space = string(audits[i].space);
 	      
-	      audit_data a_feature = {NULL,NULL,new_index, 1., true};
+	      audit_data a_feature = {nullptr,nullptr,new_index, 1., true};
 	      a_feature.space = (char*)malloc(feature_space.length()+1);
 	      strcpy(a_feature.space, feature_space.c_str());
 	      a_feature.feature = (char*)malloc(feature_name.length()+1);
@@ -1069,7 +1069,7 @@ void *main_parse_loop(void *in)
 	   condition_variable_signal_all(&all->p->example_available);
 	   mutex_unlock(&all->p->examples_lock);
 	  }  
-	return NULL;
+	return 0L;
 }
 
 namespace VW{
@@ -1094,7 +1094,7 @@ example* get_example(parser* p)
       }
     else {
       mutex_unlock(&p->examples_lock);
-      return NULL;
+      return nullptr;
     }
   }
 }
@@ -1182,10 +1182,10 @@ void start_parser(vw& all, bool init_structures)
   if (init_structures)
 	initialize_parser_datastructures(all);
   #ifndef _WIN32
-  pthread_create(&all.parse_thread, NULL, main_parse_loop, &all);
+  pthread_create(&all.parse_thread, nullptr, main_parse_loop, &all);
   #else
-  all.parse_thread = ::CreateThread(NULL, 0, static_cast<LPTHREAD_START_ROUTINE>(main_parse_loop), &all, NULL, NULL);
-  #endif
+  all.parse_thread = ::CreateThread(nullptr, 0, static_cast<LPTHREAD_START_ROUTINE>(main_parse_loop), &all, 0L, nullptr);
+#endif
 }
 }
 void free_parser(vw& all)
@@ -1206,7 +1206,7 @@ void free_parser(vw& all)
   free(all.p->examples);
   
   io_buf* output = all.p->output;
-  if (output != NULL)
+  if (output != nullptr)
     {
       output->finalname.delete_v();
       output->currentname.delete_v();
@@ -1225,7 +1225,7 @@ namespace VW {
 void end_parser(vw& all)
 {
   #ifndef _WIN32
-  pthread_join(all.parse_thread, NULL);
+  pthread_join(all.parse_thread, nullptr);
   #else
   ::WaitForSingleObject(all.parse_thread, INFINITE);
   ::CloseHandle(all.parse_thread);
