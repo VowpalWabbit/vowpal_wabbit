@@ -1029,7 +1029,7 @@ __DATA__
     train-sets/ref/empty-set.stderr
 
 # Test 61: daemon test
-./daemon-test.sh
+ ./daemon-test.sh
     test-sets/ref/vw-daemon.stdout
 
 # Test 62: SVM linear kernel
@@ -1079,7 +1079,7 @@ __DATA__
     train-sets/ref/0002.autolink.predict
 
 # Test 72: train FTRL-Proximal
-{VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 1 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2
+{VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 1 --ftrl --ftrl_algo proximal --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2
     train-sets/ref/0001_ftrl.stderr
 
 # Test 73: test FTRL-Proximal
@@ -1114,3 +1114,13 @@ __DATA__
 # Test 80: lrq empty namespace
 {VW} --lrq aa3 -d train-sets/0080.dat
     train-sets/ref/0080.stderr
+
+# Test 81: train FTRL-PiSTOL
+{VW} -k -d train-sets/0001.dat -f models/ftrl_pistol.model --passes 1 --ftrl --ftrl_algo pistol
+    train-sets/ref/ftrl_pistol.stderr
+
+# Test 82: test FTRL-PiSTOL
+{VW} -k -t train-sets/0001.dat -i models/ftrl_pistol.model -p ftrl_pistol.predict.tmp
+    test-sets/ref/ftrl_pistol.stderr
+    pred-sets/ref/ftrl_pistol.predict    
+    
