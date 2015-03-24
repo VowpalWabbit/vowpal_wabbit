@@ -1029,7 +1029,7 @@ __DATA__
     train-sets/ref/empty-set.stderr
 
 # Test 61: daemon test
- ./daemon-test.sh
+./daemon-test.sh
     test-sets/ref/vw-daemon.stdout
 
 # Test 62: SVM linear kernel
