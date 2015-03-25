@@ -18,7 +18,7 @@
 #         train-set error
 #       - Add integral-value option support
 #       - More reliable/informative progress indication
-#       - Add -e <eval-plugin-script> support
+#       - Add -e <external-eval-plugin-script> support
 #       Bug fixes:
 #           - Golden-section search bug-fix
 #           - Loss value capture bug-fix (can be in scientific notation)
@@ -278,8 +278,9 @@ sub usage(@) {
         -e <prog>   Use <prog> (external utility) to evaluate how good
                     the result is instead of vw's own 'average loss' line
                     The protocol is: <prog> simply prints a number (last
-                    numeric output is used) and the search attempts
-                    to find argmin() for this output.
+                    line numeric output is used) and the search attempts
+                    to find argmin() for this output.  You may also pass
+                    arguments to the plugin using: -e '<prog> <args...>'
 
     lower_bound     lower bound of the parameter search range
     upper_bound     upper bound of the parameter search range
