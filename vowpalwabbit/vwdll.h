@@ -4,17 +4,28 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
+
+
+// indirect the Win32 so non win32 Microsoft C programs can work
 #ifdef WIN32
-#define USE_CODECVT
+#define MS_CONV		// use Microsoft library calling conventions
 #endif
 
+// enable wide character (32 bit) versions of functions
+// these are optional  since other compilers may not have wide to narrow char libarray facilities built in.
 #ifdef WIN32
+#define USE_CODECVT 
+#endif
+
+
+
+#ifdef MS_CONV
 #define VW_CALLING_CONV __stdcall
 #else
 #define VW_CALLING_CONV
 #endif
 
-#ifdef WIN32
+#ifdef MS_CONV
 
 #ifdef VWDLL_EXPORTS
 #define VW_DLL_MEMBER __declspec(dllexport)
@@ -25,6 +36,10 @@ license as described in the file LICENSE.
 #else
 #define VW_DLL_MEMBER
 #endif
+
+
+
+
 
 #ifdef __cplusplus
 extern "C"

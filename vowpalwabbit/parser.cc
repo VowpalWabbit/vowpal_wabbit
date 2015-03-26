@@ -1069,7 +1069,7 @@ void *main_parse_loop(void *in)
 	   condition_variable_signal_all(&all->p->example_available);
 	   mutex_unlock(&all->p->examples_lock);
 	  }  
-	return nullptr;
+	return 0L;
 }
 
 namespace VW{
@@ -1184,8 +1184,8 @@ void start_parser(vw& all, bool init_structures)
   #ifndef _WIN32
   pthread_create(&all.parse_thread, nullptr, main_parse_loop, &all);
   #else
-  all.parse_thread = ::CreateThread(nullptr, 0, static_cast<LPTHREAD_START_ROUTINE>(main_parse_loop), &all, nullptr, nullptr);
-  #endif
+  all.parse_thread = ::CreateThread(nullptr, 0, static_cast<LPTHREAD_START_ROUTINE>(main_parse_loop), &all, 0L, nullptr);
+#endif
 }
 }
 void free_parser(vw& all)
