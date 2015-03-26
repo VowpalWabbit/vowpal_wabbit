@@ -2,10 +2,10 @@ SHELL=/bin/bash
 VW=../../vowpalwabbit/vw
 python_exe=python2.7
 
-#train_data=wsj_train_subset
-#test_data=wsj_test_subset
-train_data=wsj_train
-test_data=wsj_test
+train_data=wsj_train_subset
+test_data=wsj_test_subset
+#train_data=wsj_train
+#test_data=wsj_test
 tag=tags
 
 .SECONDARY:
