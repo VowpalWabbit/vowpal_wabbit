@@ -18,6 +18,7 @@
 #         train-set error
 #       - Add integral-value option support
 #       - More reliable/informative progress indication
+#       - Add -e <external-eval-plugin-script> support
 #       Bug fixes:
 #           - Golden-section search bug-fix
 #           - Loss value capture bug-fix (can be in scientific notation)
@@ -34,7 +35,7 @@ use strict;
 use Getopt::Std;
 use Scalar::Util qw(looks_like_number);
 use File::Temp;
-use vars qw($opt_v $opt_b $opt_t $opt_c $opt_L);
+use vars qw($opt_v $opt_b $opt_t $opt_c $opt_L $opt_e);
 
 my $MaxDouble = 1.79769e+308;
 my $ModelFile;
@@ -159,44 +160,58 @@ sub real_param($) {
 my %Loss;   # x -> f(x) cache
 my $BestParam;
 my $BestLoss = $MaxDouble;
+my $NumberPat = qr{
+    (?:                 # mantissa
+        [-+]?               # optional sign
+        (?:
+            \d*\.\d+        # numeric part
+            |\d+(?:\.\d*)?
+            |\d+
+        )
+    )
+    (?:[Ee][-+]?\d+)?   # optional exponent
+}ox;
 
-sub loss($) {
-    my ($param) = @_;
-
-    if ($opt_L) {
-        # -- map back from log-space to real value of the parameter
-       $param = exp($param);  
-    }
-    return  $Loss{$param} if (exists $Loss{$param});
-
-    printf STDERR "trying %s ", $param;
-
-    my @command = @ARGV;
-    foreach my $c (@command) {
-        $c =~ s/%/$param/g;
-    }
+#
+# get_loss($param, @command)
+#   Run command (and optional external eval plug-in)
+#   and extract the loss from the output.
+#   Keep track of best (argmin($param)) result so far.
+#
+sub get_loss($@) {
+    my ($param, @command) = @_;
 
     my $rv = ExecCmd \@command;
 
     my $loss;
     my $best_msg = '';
 
+    if ($opt_e) {
+        $rv = ExecCmd $opt_e;
+    }
+
     # Read from the end, so if we run a test after train,
     # we get the last (test) loss, rather than the train loss.
     foreach my $line (reverse @$rv) {
-        next unless $line =~ /^average loss\s*=\s*(\S+)/;
+        if (
+                ($opt_e && $line =~ /($NumberPat)/o)
+                    or
+                ($line =~ /^average loss\s*=\s*(\S+)/)
+            ) {
 
-        # Found a loss
-        $loss = $1;
-        if ($loss <= $BestLoss) {
-            $BestParam = $param;
-            $BestLoss = $loss;
-            $best_msg = ' (best)';
+            # Found a loss
+            $loss = $1;
+            # should bail out of loop on 1st loss line found
+            last;
         }
-        # should bail out of loop on 1st 'average loss' line found
-        last;
     }
 
+    if ($loss <= $BestLoss) {
+        $BestParam = $param;
+        $BestLoss = $loss;
+        $best_msg = ' (best)';
+    }
+ 
     die "\n$0: failed to parse average loss from vw output: ",
         join('', @$rv),
         "\n\nTry to run:\n\t@command\nmanually to figure out why.\n"
@@ -205,8 +220,33 @@ sub loss($) {
     unlink($ModelFile) if (($opt_t || $opt_c) && $ScratchModel && -e $ModelFile);
 
     printf STDERR " %.6g%s\n", $loss, $best_msg;
-    $Loss{$param} = $loss;      # cache it
-    $loss;
+    $loss; 
+}
+
+sub loss($) {
+    my ($param) = @_;
+
+    if ($opt_L) {
+        # -- map back from log-space to real value of the parameter
+       $param = exp($param);  
+    }
+    # if already tested/cached return immediately
+    return  $Loss{$param} if (exists $Loss{$param});
+
+    # otherwise try to run an evaluate:
+    printf STDERR "trying %s ", $param;
+
+    my @command = @ARGV;
+    foreach my $c (@command) {
+        $c =~ s/%/$param/g;
+    }
+
+    # Run command (and optional external eval plug-in)
+    # and extract the loss from the output.
+    my $the_loss = get_loss($param, @command);
+
+    $Loss{$param} = $the_loss;      # cache it
+    $the_loss;
 }
 
 #
@@ -235,6 +275,12 @@ sub usage(@) {
                     (This implies '-t' except the test-cache <TC> will be used
                      instead of <TS>)
         -L          Use log-space for mid-point bisection
+        -e <prog>   Use <prog> (external utility) to evaluate how good
+                    the result is instead of vw's own 'average loss' line
+                    The protocol is: <prog> simply prints a number (last
+                    line numeric output is used) and the search attempts
+                    to find argmin() for this output.  You may also pass
+                    arguments to the plugin using: -e '<prog> <args...>'
 
     lower_bound     lower bound of the parameter search range
     upper_bound     upper bound of the parameter search range
@@ -509,7 +555,7 @@ sub is_integer_option($) {
 sub process_args {
     $0 =~ s{.*/}{};
 
-    getopts('vbLc:t:');
+    getopts('vbLc:t:e:');
 
     # Brent is not ready for prime-time yet so don't advertise it.
     warn "$0: using Brent's method search\n" if ($opt_b);
@@ -518,6 +564,13 @@ sub process_args {
     }
     if ($opt_c) {       # evaluate on test-cache
         usage("-c $opt_c: $!") unless (-e $opt_c && -r $opt_c);
+    }
+    if ($opt_e) {       # external plugin 'loss like' evaluator
+        # Allow users to pass args to the eval script,
+        # assume first non-space sequence is the command
+        my ($first_word) = ($opt_e =~ /^\s*(\S+)/);
+        usage("-e $opt_e: $!") unless (-e $first_word && -x $first_word);
+        warn "Using external evaluation plug-in: '$opt_e'\n";
     }
 
     # v("after getopts: \@ARGV=(@ARGV)\n");
