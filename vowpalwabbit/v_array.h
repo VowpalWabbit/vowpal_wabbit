@@ -18,7 +18,7 @@ license as described in the file LICENSE.
 
 const size_t erase_point = ~ ((1 << 10) -1);
 
-template<class T> struct v_array{
+template<class T> struct v_array {
  public:
   T* begin;
   T* end;
