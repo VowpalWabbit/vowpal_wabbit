@@ -36,6 +36,7 @@ struct update_data {
   float ftrl_beta;
   float l1_lambda;
   float l2_lambda;
+  float predict;
 };
 
 void inner_update_proximal(update_data& d, float x, float& wref) {
@@ -55,7 +56,7 @@ void inner_update_proximal(update_data& d, float x, float& wref) {
   }
 }
 
-void inner_update_pistol_pre(update_data& d, float x, float& wref) {
+void inner_update_pistol_state_and_predict(update_data& d, float x, float& wref) {
   float* w = &wref;
   
   float fabs_x = fabs(x);
@@ -65,6 +66,8 @@ void inner_update_pistol_pre(update_data& d, float x, float& wref) {
   float squared_theta = w[W_ZT] * w[W_ZT];
   float tmp = 1.f / (d.ftrl_alpha * w[W_MX] * (w[W_G2] + w[W_MX]));
   w[W_XT] = sqrt(w[W_G2]) * d.ftrl_beta * w[W_ZT] * exp(squared_theta / 2 * tmp) * tmp;
+  
+  d.predict +=  w[W_XT]*x;
 }
 
 void inner_update_pistol_post(update_data& d, float x, float& wref) {
@@ -75,14 +78,19 @@ void inner_update_pistol_post(update_data& d, float x, float& wref) {
   w[W_G2] += fabs(gradient);
 }
 
-void update_before_prediction(ftrl& b, example& ec)
+void update_state_and_predict(ftrl& b, base_learner& base, example& ec)
 {
   if (b.pistol) {
     struct update_data data;  
     data.ftrl_alpha = b.ftrl_alpha;
     data.ftrl_beta = b.ftrl_beta;
-
-    GD::foreach_feature<update_data, inner_update_pistol_pre>(*b.all, ec, data);
+    data.predict = 0;
+    
+    GD::foreach_feature<update_data, inner_update_pistol_state_and_predict>(*b.all, ec, data);
+    ec.partial_prediction = data.predict;
+    ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+  } else {
+    predict(b, base, ec);
   }
 }
 
@@ -105,11 +113,8 @@ void update_after_prediction(ftrl& b, example& ec)
 void learn(ftrl& a, base_learner& base, example& ec) {
   assert(ec.in_use);
   
-  // update state based on the example
-  update_before_prediction(a,ec);
-  
-  // predict w*x
-  predict(a, base, ec);
+  // update state based on the example and predict
+  update_state_and_predict(a, base, ec);
   
   //update state based on the prediction
   update_after_prediction(a,ec);
@@ -136,55 +141,60 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
 
 base_learner* ftrl_setup(vw& all) 
 {
-  if (missing_option(all, false, "ftrl", "Follow the Regularized Leader")) 
-    return nullptr;
-  new_options(all, "FTRL options")
-    ("ftrl_algo", po::value<string>()->default_value("pistol"), "Specify the kind of FTRL used. Currently available ones are pistol, proximal.")
-    ("ftrl_alpha", po::value<float>(), "Learning rate for FTRL optimization")
-    ("ftrl_beta", po::value<float>(), "FTRL beta parameter");
+  new_options(all)
+    ("ftrl", po::value<string>(), "Follow the Regularized Leader: pistol or proximal.");    
   add_options(all);
   
-  ftrl& b = calloc_or_die<ftrl>();
-  b.all = &all;
   po::variables_map& vm = all.vm;
-  string ftrl_algo = vm["ftrl_algo"].as<string>();
   
-  b.proximal = false;
-  b.pistol = false;
-  if (ftrl_algo.compare("proximal") == 0) {
-    b.proximal = true;
-    if (vm.count("ftrl_alpha"))
-      b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
-    else
-      b.ftrl_alpha = 0.005f;
-    if (vm.count("ftrl_beta"))
-      b.ftrl_beta = vm["ftrl_beta"].as<float>();
-    else
-      b.ftrl_beta = 0.1f;
-  }
-  else if (ftrl_algo.compare("pistol") == 0) {
-    b.pistol = true;
-    if (vm.count("ftrl_alpha"))
-      b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
-    else
-      b.ftrl_alpha = 1.0f;
-    if (vm.count("ftrl_beta"))
-      b.ftrl_beta = vm["ftrl_beta"].as<float>();
-    else
-      b.ftrl_beta = 0.5f;
-  }
-  
-  all.reg.stride_shift = 2; // NOTE: for more parameter storage
-  
-  if (!all.quiet) {
-    cerr << "Enabling FTRL based optimization" << endl;
-    cerr << "Algorithm used: "<< ftrl_algo << endl;
-    cerr << "ftrl_alpha = " << b.ftrl_alpha << endl;
-    cerr << "ftrl_beta = " << b.ftrl_beta << endl;
-  }
-  
-  learner<ftrl>& l = init_learner(&b, learn, 1 << all.reg.stride_shift);
-  l.set_predict(predict);
-  l.set_save_load(save_load);
-  return make_base(l);
+  if (vm.count("ftrl")) {
+    new_options(all, "FTRL options")
+      ("ftrl_alpha", po::value<float>(), "Learning rate for FTRL optimization")
+      ("ftrl_beta", po::value<float>(), "FTRL beta parameter");
+    add_options(all);
+    
+    ftrl& b = calloc_or_die<ftrl>();
+    b.all = &all;
+    string ftrl_algo = vm["ftrl"].as<string>();
+    
+    b.proximal = false;
+    b.pistol = false;
+    if (ftrl_algo.compare("proximal") == 0) {
+      b.proximal = true;
+      if (vm.count("ftrl_alpha"))
+        b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
+      else
+        b.ftrl_alpha = 0.005f;
+      if (vm.count("ftrl_beta"))
+        b.ftrl_beta = vm["ftrl_beta"].as<float>();
+      else
+        b.ftrl_beta = 0.1f;
+    }
+    else if (ftrl_algo.compare("pistol") == 0) {
+      b.pistol = true;
+      if (vm.count("ftrl_alpha"))
+        b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
+      else
+        b.ftrl_alpha = 1.0f;
+      if (vm.count("ftrl_beta"))
+        b.ftrl_beta = vm["ftrl_beta"].as<float>();
+      else
+        b.ftrl_beta = 0.5f;
+    }
+    
+    all.reg.stride_shift = 2; // NOTE: for more parameter storage
+    
+    if (!all.quiet) {
+      cerr << "Enabling FTRL based optimization" << endl;
+      cerr << "Algorithm used: "<< ftrl_algo << endl;
+      cerr << "ftrl_alpha = " << b.ftrl_alpha << endl;
+      cerr << "ftrl_beta = " << b.ftrl_beta << endl;
+    }
+    
+    learner<ftrl>& l = init_learner(&b, learn, 1 << all.reg.stride_shift);
+    l.set_predict(predict);
+    l.set_save_load(save_load);
+    return make_base(l);
+  } else
+    return nullptr;
 }
