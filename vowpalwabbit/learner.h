@@ -44,13 +44,13 @@ namespace LEARNER
     void (*update_f)(void* data, base_learner& base, example&);
   };
 
-  struct save_load_data{
+  struct save_load_data {
     void* data;
     base_learner* base;
     void (*save_load_f)(void*, io_buf&, bool read, bool text);
   };
   
-  struct finish_example_data{
+  struct finish_example_data {
     void* data;
     base_learner* base;
     void (*finish_example_f)(vw&, void* data, example&);
