@@ -70,7 +70,7 @@ struct lda {
 // if it makes it into VS 2015 change the next ifdef to check Visual Studio Release
 
   // static constexpr float underflow_threshold = 1.0e-10f;
-  inline const float  underflow_threshold(void) { return 1.0e-10f; }
+  inline const float  underflow_threshold() { return 1.0e-10f; }
 
   inline float digamma(float x);
   inline float lgamma(float x);
@@ -162,6 +162,8 @@ namespace ldamath
 #if defined(__SSE4_1__)
 #include <smmintrin.h>
 #endif
+
+#define HAVE_SIMD_MATHMODE
 
   typedef __m128 v4sf;
   typedef __m128i v4si;
@@ -334,6 +336,7 @@ namespace ldamath
 
 #else
 // PLACEHOLDER for future ARM NEON code
+// Also remember to define HAVE_SIMD_MATHMODE
 #endif
 
 #endif // !VW_NO_INLINE_SIMD
@@ -402,12 +405,15 @@ namespace ldamath
       return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - sum));
     });
   }
-#if defined(__SSE2__) || defined(__SSE3__) || defined(__SSE4_1__)
   template <> inline void expdigammify<float, USE_SIMD>(vw &all, float *gamma, float threshold, float)
   {
+#if defined(HAVE_SIMD_MATHMODE)
     vexpdigammify(all, gamma, threshold);
-  }
+#else
+    // Do something sensible if SIMD math isn't available:
+    expdigammify<float, USE_FAST_APPROX>(all, gamma, threshold, 0.0);
 #endif
+  }
 
   template <typename T, const lda_math_mode mtype>
   inline void expdigammify_2(vw &all, T *gamma, T *norm, const T threshold)
@@ -416,12 +422,15 @@ namespace ldamath
       return std::fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n));
     });
   }
-#if defined(__SSE2__) || defined(__SSE3__) || defined(__SSE4_1__)
   template <> inline void expdigammify_2<float, USE_SIMD>(vw &all, float *gamma, float *norm, const float threshold)
   {
+#if defined(HAVE_SIMD_MATHMODE)
     vexpdigammify_2(all, gamma, norm, threshold);
-  }
+#else
+    // Do something sensible if SIMD math isn't available:
+    expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, threshold);
 #endif
+  }
 } // namespace ldamath
 
 float lda::digamma(float x)
@@ -430,13 +439,17 @@ float lda::digamma(float x)
   case USE_FAST_APPROX:
     // std::cerr << "lda::digamma FAST_APPROX ";
     return ldamath::digamma<float, USE_FAST_APPROX>(x);
-  default:
   case USE_PRECISE:
     // std::cerr << "lda::digamma PRECISE ";
     return ldamath::digamma<float, USE_PRECISE>(x);
   case USE_SIMD:
     // std::cerr << "lda::digamma SIMD ";
     return ldamath::digamma<float, USE_SIMD>(x);
+  default:
+    // Should not happen.
+    std::cerr << "lda::digamma: Trampled or invalid math mode, aborting" << std::endl;
+    abort();
+    return 0.0f;
   }
 }
 
@@ -446,13 +459,16 @@ float lda::lgamma(float x)
   case USE_FAST_APPROX:
     // std::cerr << "lda::lgamma FAST_APPROX ";
     return ldamath::lgamma<float, USE_FAST_APPROX>(x);
-  default:
   case USE_PRECISE:
     // std::cerr << "lda::lgamma PRECISE ";
     return ldamath::lgamma<float, USE_PRECISE>(x);
   case USE_SIMD:
     // std::cerr << "lda::gamma SIMD ";
     return ldamath::lgamma<float, USE_SIMD>(x);
+  default:
+    std::cerr << "lda::lgamma: Trampled or invalid math mode, aborting" << std::endl;
+    abort();
+    return 0.0f;
   }
 }
 
@@ -462,13 +478,16 @@ float lda::powf(float x, float p)
   case USE_FAST_APPROX:
     // std::cerr << "lda::powf FAST_APPROX ";
     return ldamath::powf<float, USE_FAST_APPROX>(x, p);
-  default:
   case USE_PRECISE:
     // std::cerr << "lda::powf PRECISE ";
     return ldamath::powf<float, USE_PRECISE>(x, p);
   case USE_SIMD:
     // std::cerr << "lda::powf SIMD ";
     return ldamath::powf<float, USE_SIMD>(x, p);
+  default:
+    std::cerr << "lda::powf: Trampled or invalid math mode, aborting" << std::endl;
+    abort();
+    return 0.0f;
   }
 }
 
@@ -478,13 +497,15 @@ void lda::expdigammify(vw &all, float *gamma)
   case USE_FAST_APPROX:
     ldamath::expdigammify<float, USE_FAST_APPROX>(all, gamma, underflow_threshold(), 0.0f);
     break;
-  default:
   case USE_PRECISE:
     ldamath::expdigammify<float, USE_PRECISE>(all, gamma, underflow_threshold(), 0.0f);
     break;
   case USE_SIMD:
     ldamath::expdigammify<float, USE_SIMD>(all, gamma, underflow_threshold(), 0.0f);
     break;
+  default:
+    std::cerr << "lda::expdigammify: Trampled or invalid math mode, aborting" << std::endl;
+    abort();
   }
 }
 
@@ -494,13 +515,15 @@ void lda::expdigammify_2(vw &all, float *gamma, float *norm)
   case USE_FAST_APPROX:
     ldamath::expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, underflow_threshold());
     break;
-  default:
   case USE_PRECISE:
 	  ldamath::expdigammify_2<float, USE_PRECISE>(all, gamma, norm, underflow_threshold());
     break;
   case USE_SIMD:
 	  ldamath::expdigammify_2<float, USE_SIMD>(all, gamma, norm, underflow_threshold());
     break;
+  default:
+    std::cerr << "lda::expdigammify_2: Trampled or invalid math mode, aborting" << std::endl;
+    abort();
   }
 }
 
