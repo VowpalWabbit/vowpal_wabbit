@@ -539,8 +539,8 @@ void parse_feature_tweaks(vw& all)
   if (vm.count("redefine"))
   {
       // initail values: i-th namespace is redefined to i itself
-      for (unsigned char i = 0; i < 256; i++)
-          all.redefine[i] = i;
+      for (size_t i = 0; i < 256; i++)
+          all.redefine[i] = (unsigned char)i;
 
       // note: --redefine declaration order is matter
       // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
