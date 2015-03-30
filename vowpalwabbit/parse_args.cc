@@ -308,45 +308,6 @@ void parse_source(vw& all)
     }
 }
 
-// expand namespace interactions if contain wildcards
-const unsigned char printable_start = '!';
-const unsigned char printable_end   = '~';
-const uint valid_ns_size = printable_end - printable_start - 1; //will skip two characters
-void expand_namespace_depth(string& ns, vector<string>& res, string val,  size_t pos)
-{
-    assert (pos <= ns.length());
-
-    if (pos == ns.length())
-    {
-        res.push_back(val);
-    }
-    else
-        if (ns[pos] != ':')
-        {
-            val.push_back(ns[pos]);
-            expand_namespace_depth(ns, res, val, pos+1);
-        }
-        else
-        {
-            res.reserve(res.size() + valid_ns_size);
-            for (unsigned char j = printable_start; j <= printable_end; j++)
-            {
-                if(valid_ns(j))
-                {
-                    val.push_back(j);
-                    expand_namespace_depth(ns, res, val, pos+1);
-                    val.pop_back();
-                }
-            }
-        }
-}
-
-inline void expand_namespace(string ns, vector<string>& res)
-{
-    string temp;
-    expand_namespace_depth(ns, res, temp, 0);
-}
-
 
 void parse_feature_tweaks(vw& all)
 {
@@ -459,7 +420,7 @@ void parse_feature_tweaks(vw& all)
               throw exception();
           }
 
-          expand_namespace(*i, expanded_ns);
+          INTERACTIONS::expand_namespace(*i, expanded_ns);
       }
       if (!all.quiet) cerr << endl;
 
@@ -480,7 +441,7 @@ void parse_feature_tweaks(vw& all)
               cerr << endl << "error, cubic features must involve three sets.\n";
               throw exception();
           }
-          expand_namespace(*i, expanded_ns);
+          INTERACTIONS::expand_namespace(*i, expanded_ns);
       }
       if (!all.quiet) cerr << endl;
 
@@ -508,7 +469,7 @@ void parse_feature_tweaks(vw& all)
               }
 
               temp.clear();
-              expand_namespace(*i, temp);
+              INTERACTIONS::expand_namespace(*i, temp);
 
               // even after wildcard replacement length of generated interactions won't change
               if (len == 2)
@@ -541,22 +502,9 @@ void parse_feature_tweaks(vw& all)
   if (new_triples.size() > 0)
       all.triples.insert(all.triples.end(), new_triples.begin(), new_triples.end());
 
-  // Leaving all.pairs and all.triples for compatibility
-
-  if (!all.permutations) // order matters
-  {
-      for (vector<string>::iterator i = all.interactions.begin(); i != all.interactions.end(); i++)
-      {  // sort namespaces in each interaction ascendantly to group equal namespaces in them
-          string& s = *i;
-          std::sort(s.begin(), s.end());
-      }
-
-      // remove duplicate interactions from all.interactions which might be generated with '-q ::', (for example), as 'ba' just was sorted to 'ab'
-      // perhaps it has sense to remove them for --permutations too?
-      std::sort( all.interactions.begin(), all.interactions.end() );
-      all.interactions.erase( std::unique( all.interactions.begin(), all.interactions.end() ), all.interactions.end() );
-  }
-
+  INTERACTIONS::filter_duplicate_interactions(all.interactions, !all.permutations);
+  INTERACTIONS::filter_duplicate_interactions(all.pairs);
+  INTERACTIONS::filter_duplicate_interactions(all.triples);
 
 
   for (size_t i = 0; i < 256; i++)

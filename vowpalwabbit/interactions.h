@@ -54,8 +54,24 @@ inline void ensure_could_push(v_array<T>& v, size_t cnt)
 }
 
 
-
 void generate_interactions(vw& all, example& ec);
+
+// some helper functions
+
+// expand namespace interactions if contain wildcards
+const unsigned char printable_start = '!';
+const unsigned char printable_end   = '~';
+const uint valid_ns_size = printable_end - printable_start - 1; //will skip two characters
+
+void expand_namespace_depth(string& ns, vector<string>& res, string val,  size_t pos);
+inline void expand_namespace(string ns, vector<string>& res)
+{
+    string temp;
+    expand_namespace_depth(ns, res, temp, 0);
+}
+
+// remove duplicate interactions from vector<string>
+void filter_duplicate_interactions(vector<string>& vec, bool leave_elements_sorted = false);
 
 }
 

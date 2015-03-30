@@ -233,4 +233,74 @@ void generate_interactions(vw& all, example& ec)
 
 }
 
+//some helper functions
+
+inline bool valid_ns(char c)
+{
+    return !(c == '|' || c == ':');
+}
+
+// expand namespace interactions if contain wildcards
+
+void expand_namespace_depth(string& ns, vector<string>& res, string val,  size_t pos)
+{
+    assert (pos <= ns.length());
+
+    if (pos == ns.length())
+    {
+        res.push_back(val);
+    }
+    else
+        if (ns[pos] != ':')
+        {
+            val.push_back(ns[pos]);
+            expand_namespace_depth(ns, res, val, pos+1);
+        }
+        else
+        {
+            res.reserve(res.size() + valid_ns_size);
+            for (unsigned char j = printable_start; j <= printable_end; j++)
+            {
+                if(valid_ns(j))
+                {
+                    val.push_back(j);
+                    expand_namespace_depth(ns, res, val, pos+1);
+                    val.pop_back();
+                }
+            }
+        }
+}
+
+bool compare_interactions (string a, string b) {
+    std::sort(a.begin(), a.end());
+    std::sort(b.begin(), b.end());
+    return (a < b);
+}
+
+bool compare_sorted_interactions (string a, string b) {
+    return (a < b);
+}
+
+void filter_duplicate_interactions(vector<string>& vec, bool leave_elements_sorted)
+{
+    bool(*fn_cmp)(string,string);
+    if (leave_elements_sorted)
+    {
+        for (vector<string>::iterator i = vec.begin(); i != vec.end(); ++i)
+        {  // sort namespaces in each interaction ascendantly to group equal namespaces in them
+            string& s = *i;
+            std::sort(s.begin(), s.end());
+        }
+        fn_cmp = compare_sorted_interactions;
+    } else
+        fn_cmp = compare_interactions;
+    // can't use unique in case of !
+    // so use fastest std::set (http://stackoverflow.com/a/1041939/841424) with proper comparision function
+    set<string, bool(*)(string,string)> temp_set(fn_cmp);
+    size_t size = vec.size();
+    for ( size_t i = 0; i < size; ++i )
+        temp_set.insert( vec[i] );
+    vec.assign( temp_set.begin(), temp_set.end() );
+}
+
 }
