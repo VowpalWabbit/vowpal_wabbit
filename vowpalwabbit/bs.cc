@@ -18,7 +18,7 @@ license as described in the file LICENSE.
 using namespace std;
 using namespace LEARNER;
 
-  struct bs{
+  struct bs {
     uint32_t B; //number of bootstrap rounds
     size_t bs_type;
     float lb;

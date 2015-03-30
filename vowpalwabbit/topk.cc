@@ -18,7 +18,7 @@ struct compare_scored_examples
   { return a.first > b.first; }
 };
 
-struct topk{
+struct topk {
   uint32_t B; //rec number
   priority_queue<scored_example, vector<scored_example>, compare_scored_examples > pr_queue;
 };

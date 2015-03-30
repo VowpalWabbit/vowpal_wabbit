@@ -7,7 +7,7 @@ license as described in the file LICENSE.
 #include <float.h>
 #include "reductions.h"
 
-struct oaa{
+struct oaa {
   size_t k;
   vw* all; // for raw
 };
