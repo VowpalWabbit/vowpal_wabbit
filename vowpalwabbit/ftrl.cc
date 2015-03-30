@@ -3,6 +3,7 @@
    individual contributors. All rights reserved.  Released under a BSD (revised)
    license as described in the file LICENSE.
    */
+#include <string>
 #include "gd.h"
 
 using namespace std;
@@ -13,23 +14,6 @@ using namespace LEARNER;
 #define W_G2 2   // accumulated gradient information
 #define W_MX 3   // maximum absolute value
 
-//nonrentrant
-struct ftrl {
-  vw* all; //features, finalize, l1, l2, 
-  float ftrl_alpha;
-  float ftrl_beta;
-  bool proximal;
-  bool pistol;
-};
-  
-void predict(ftrl& b, base_learner& base, example& ec)
-{
-  ec.partial_prediction = GD::inline_predict(*b.all, ec);
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
-}
-  
-inline float sign(float w){ if (w < 0.) return -1.; else  return 1.;}
-
 struct update_data {
   float update;
   float ftrl_alpha;
@@ -38,6 +22,20 @@ struct update_data {
   float l2_lambda;
   float predict;
 };
+
+struct ftrl {
+  vw* all; //features, finalize, l1, l2, 
+  float ftrl_alpha;
+  float ftrl_beta;
+  struct update_data data;  
+};
+  
+void predict(ftrl& b, base_learner& base, example& ec) {
+  ec.partial_prediction = GD::inline_predict(*b.all, ec);
+  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+}
+  
+inline float sign(float w){ if (w < 0.) return -1.; else  return 1.;}
 
 void inner_update_proximal(update_data& d, float x, float& wref) {
   float* w = &wref;
@@ -78,50 +76,49 @@ void inner_update_pistol_post(update_data& d, float x, float& wref) {
   w[W_G2] += fabs(gradient);
 }
 
-void update_state_and_predict(ftrl& b, base_learner& base, example& ec)
-{
-  if (b.pistol) {
-    struct update_data data;  
-    data.ftrl_alpha = b.ftrl_alpha;
-    data.ftrl_beta = b.ftrl_beta;
-    data.predict = 0;
-    
-    GD::foreach_feature<update_data, inner_update_pistol_state_and_predict>(*b.all, ec, data);
-    ec.partial_prediction = data.predict;
-    ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
-  } else {
-    predict(b, base, ec);
-  }
-}
-
-void update_after_prediction(ftrl& b, example& ec)
-{
-  struct update_data data;  
-  data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label)
-    *ec.l.simple.weight;
-  data.ftrl_alpha = b.ftrl_alpha;
-  data.ftrl_beta = b.ftrl_beta;
-  data.l1_lambda = b.all->l1_lambda;
-  data.l2_lambda = b.all->l2_lambda;
+void update_state_and_predict_pistol(ftrl& b, base_learner& base, example& ec) {
+  b.data.predict = 0;
   
-  if (b.proximal)
-    GD::foreach_feature<update_data, inner_update_proximal>(*b.all, ec, data);
-  else if (b.pistol)
-    GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, data);  
+  GD::foreach_feature<update_data, inner_update_pistol_state_and_predict>(*b.all, ec, b.data);
+  ec.partial_prediction = b.data.predict;
+  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
 
-void learn(ftrl& a, base_learner& base, example& ec) {
+void update_after_prediction_proximal(ftrl& b, example& ec) {
+  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label)
+    *ec.l.simple.weight;
+  
+  GD::foreach_feature<update_data, inner_update_proximal>(*b.all, ec, b.data);
+}
+
+void update_after_prediction_pistol(ftrl& b, example& ec) {
+  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label)
+    *ec.l.simple.weight;
+  
+  GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, b.data);  
+}
+
+void learn_proximal(ftrl& a, base_learner& base, example& ec) {
+  assert(ec.in_use);
+  
+  // predict
+  predict(a, base, ec);
+  
+  //update state based on the prediction
+  update_after_prediction_proximal(a,ec);
+}
+
+void learn_pistol(ftrl& a, base_learner& base, example& ec) {
   assert(ec.in_use);
   
   // update state based on the example and predict
-  update_state_and_predict(a, base, ec);
+  update_state_and_predict_pistol(a, base, ec);
   
   //update state based on the prediction
-  update_after_prediction(a,ec);
+  update_after_prediction_pistol(a,ec);
 }
 
-void save_load(ftrl& b, io_buf& model_file, bool read, bool text) 
-{
+void save_load(ftrl& b, io_buf& model_file, bool read, bool text) {
   vw* all = b.all;
   if (read)
     initialize_regressor(*all);
@@ -139,62 +136,63 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
   }
 }
 
-base_learner* ftrl_setup(vw& all) 
-{
-  new_options(all)
-    ("ftrl", po::value<string>(), "Follow the Regularized Leader: pistol or proximal.");    
-  add_options(all);
+base_learner* ftrl_setup(vw& all) {
+  if (missing_option(all, false, "ftrl_proximal", "FTRL: Follow the Proximal Regularized Leader") &&
+      missing_option(all, false, "pistol", "FTRL: Parameter-free Stochastic Learning"))
+    return nullptr;
   
+  new_options(all, "FTRL options")
+    ("ftrl_alpha", po::value<float>(), "Learning rate for FTRL optimization")
+    ("ftrl_beta", po::value<float>(), "FTRL beta parameter");
+  add_options(all);
+
   po::variables_map& vm = all.vm;
   
-  if (vm.count("ftrl")) {
-    new_options(all, "FTRL options")
-      ("ftrl_alpha", po::value<float>(), "Learning rate for FTRL optimization")
-      ("ftrl_beta", po::value<float>(), "FTRL beta parameter");
-    add_options(all);
-    
-    ftrl& b = calloc_or_die<ftrl>();
-    b.all = &all;
-    string ftrl_algo = vm["ftrl"].as<string>();
-    
-    b.proximal = false;
-    b.pistol = false;
-    if (ftrl_algo.compare("proximal") == 0) {
-      b.proximal = true;
-      if (vm.count("ftrl_alpha"))
-        b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
-      else
-        b.ftrl_alpha = 0.005f;
-      if (vm.count("ftrl_beta"))
-        b.ftrl_beta = vm["ftrl_beta"].as<float>();
-      else
-        b.ftrl_beta = 0.1f;
-    }
-    else if (ftrl_algo.compare("pistol") == 0) {
-      b.pistol = true;
-      if (vm.count("ftrl_alpha"))
-        b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
-      else
-        b.ftrl_alpha = 1.0f;
-      if (vm.count("ftrl_beta"))
-        b.ftrl_beta = vm["ftrl_beta"].as<float>();
-      else
-        b.ftrl_beta = 0.5f;
-    }
-    
-    all.reg.stride_shift = 2; // NOTE: for more parameter storage
-    
-    if (!all.quiet) {
-      cerr << "Enabling FTRL based optimization" << endl;
-      cerr << "Algorithm used: "<< ftrl_algo << endl;
-      cerr << "ftrl_alpha = " << b.ftrl_alpha << endl;
-      cerr << "ftrl_beta = " << b.ftrl_beta << endl;
-    }
-    
-    learner<ftrl>& l = init_learner(&b, learn, 1 << all.reg.stride_shift);
-    l.set_predict(predict);
-    l.set_save_load(save_load);
-    return make_base(l);
-  } else
-    return nullptr;
+  ftrl& b = calloc_or_die<ftrl>();
+  b.all = &all;
+  
+  void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
+  
+  string algorithm_name;
+  if (vm.count("ftrl_proximal")) {
+    algorithm_name = "Proximal-FTRL";
+    learn_ptr=learn_proximal;
+    if (vm.count("ftrl_alpha"))
+      b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
+    else
+      b.ftrl_alpha = 0.005f;
+    if (vm.count("ftrl_beta"))
+      b.ftrl_beta = vm["ftrl_beta"].as<float>();
+    else
+      b.ftrl_beta = 0.1f;    
+  } else if (vm.count("pistol")) {
+    algorithm_name = "PiSTOL";
+    learn_ptr=learn_pistol;
+    if (vm.count("ftrl_alpha"))
+      b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
+    else
+      b.ftrl_alpha = 1.0f;
+    if (vm.count("ftrl_beta"))
+      b.ftrl_beta = vm["ftrl_beta"].as<float>();
+    else
+      b.ftrl_beta = 0.5f;  
+  }
+  b.data.ftrl_alpha = b.ftrl_alpha;
+  b.data.ftrl_beta = b.ftrl_beta;
+  b.data.l1_lambda = b.all->l1_lambda;
+  b.data.l2_lambda = b.all->l2_lambda;
+  
+  all.reg.stride_shift = 2; // NOTE: for more parameter storage
+  
+  if (!all.quiet) {
+    cerr << "Enabling FTRL based optimization" << endl;
+    cerr << "Algorithm used: " << algorithm_name << endl;
+    cerr << "ftrl_alpha = " << b.ftrl_alpha << endl;
+    cerr << "ftrl_beta = " << b.ftrl_beta << endl;
+  }
+  
+  learner<ftrl>& l = init_learner(&b, learn_ptr, 1 << all.reg.stride_shift);
+  l.set_predict(predict);
+  l.set_save_load(save_load);
+  return make_base(l);
 }

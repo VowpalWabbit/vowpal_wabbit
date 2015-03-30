@@ -1,6 +1,6 @@
 final_regressor = models/ftrl_pistol.model
 Enabling FTRL based optimization
-Algorithm used: pistol
+Algorithm used: PiSTOL
 ftrl_alpha = 1
 ftrl_beta = 0.5
 Num weight bits = 18

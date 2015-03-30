@@ -1079,7 +1079,7 @@ __DATA__
     train-sets/ref/0002.autolink.predict
 
 # Test 72: train FTRL-Proximal
-{VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 1 --ftrl proximal --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2
+{VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 1 --ftrl_proximal --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2
     train-sets/ref/0001_ftrl.stderr
 
 # Test 73: test FTRL-Proximal
@@ -1116,7 +1116,7 @@ __DATA__
     train-sets/ref/0080.stderr
 
 # Test 81: train FTRL-PiSTOL
-{VW} -k -d train-sets/0001.dat -f models/ftrl_pistol.model --passes 1 --ftrl pistol
+{VW} -k -d train-sets/0001.dat -f models/ftrl_pistol.model --passes 1 --pistol
     train-sets/ref/ftrl_pistol.stderr
 
 # Test 82: test FTRL-PiSTOL
