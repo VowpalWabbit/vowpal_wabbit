@@ -23,7 +23,7 @@ void predict_or_learn(sqrtmc& mc, LEARNER::base_learner& base, example& ec) {
   uint32_t trueL = ld.label - 1;
   uint32_t true0 = trueL % mc.layer1;
 
-  base.multipredict(ec, 0, mc.layer1, mc.pred);
+  base.multipredict(ec, 0, mc.layer1, mc.pred, true);
   uint32_t pred0 = 0;
   for (uint32_t i=1; i<mc.layer1; i++)
     if (mc.pred[i].scalar > mc.pred[pred0].scalar)
@@ -31,7 +31,7 @@ void predict_or_learn(sqrtmc& mc, LEARNER::base_learner& base, example& ec) {
 
   uint32_t top = min(mc.layer2, mc.k - mc.layer2 * pred0 + 1);
   
-  base.multipredict(ec, mc.layer1 + mc.layer2 * pred0, top, mc.pred);
+  base.multipredict(ec, mc.layer1 + mc.layer2 * pred0, top, mc.pred, true);
   uint32_t pred1 = 0;
   for (uint32_t i=1; i<top; i++)
     if (mc.pred[i].scalar > mc.pred[pred1].scalar)

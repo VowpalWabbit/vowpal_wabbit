@@ -358,6 +358,7 @@ struct vw {
   bool save_resume;
   version_struct model_file_ver;
   double normalized_sum_norm_x;
+  bool vw_is_main;  // true if vw is executable; false in library mode
 
   po::options_description opts;
   po::options_description* new_opts;

@@ -157,7 +157,7 @@ struct nn {
 
     n.hiddenbias.ft_offset = ec.ft_offset;
 
-    base.multipredict(n.hiddenbias, 0, n.k, hiddenbias_pred);
+    base.multipredict(n.hiddenbias, 0, n.k, hiddenbias_pred, false);
     
     for (unsigned int i = 0; i < n.k; ++i)
         // avoid saddle point at 0
@@ -168,7 +168,7 @@ struct nn {
             n.hiddenbias.l.simple.label = FLT_MAX;
           }
 
-    base.multipredict(ec, 0, n.k, hidden_units);
+    base.multipredict(ec, 0, n.k, hidden_units, false);
 
     for (unsigned int i = 0; i < n.k; ++i ) {
       dropped_out[i] = (n.dropout && merand48 (n.xsubi) < 0.5);

@@ -42,7 +42,7 @@ namespace LEARNER
     void (*learn_f)(void* data, base_learner& base, example&);
     void (*predict_f)(void* data, base_learner& base, example&);
     void (*update_f)(void* data, base_learner& base, example&);
-    void (*multipredict_f)(void* data, base_learner& base, example&, size_t count, size_t step, polyprediction*pred);
+    void (*multipredict_f)(void* data, base_learner& base, example&, size_t count, size_t step, polyprediction*pred, bool finalize_predictions);
     void (*multiupdate_f)(void*, base_learner&, example&, size_t, size_t, polyprediction*, polylabel*);
   };
 
@@ -64,7 +64,7 @@ namespace LEARNER
   inline void noop(void* data) {}
 
   typedef void (*tlearn)(void* d, base_learner& base, example& ec);
-  typedef void (*tmultipredict)(void* d, base_learner& base, example& ec, size_t, size_t, polyprediction*);
+  typedef void (*tmultipredict)(void* d, base_learner& base, example& ec, size_t, size_t, polyprediction*, bool);
   typedef void (*tmultiupdate )(void* d, base_learner& base, example& ec, size_t, size_t, polyprediction*, polylabel*);
   typedef void (*tsl)(void* d, io_buf& io, bool read, bool text);
   typedef void (*tfunc)(void*d);
@@ -103,18 +103,20 @@ namespace LEARNER
 	learn_fd.predict_f(learn_fd.data, *learn_fd.base, ec);
 	ec.ft_offset -= (uint32_t)(increment*i);
       }
-    inline void multipredict(example& ec, size_t lo, size_t count, polyprediction* pred) {
+    inline void multipredict(example& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions) {
       if (learn_fd.multipredict_f == NULL) {
         ec.ft_offset += (uint32_t)(increment*lo);
         for (size_t c=0; c<count; c++) {
           learn_fd.predict_f(learn_fd.data, *learn_fd.base, ec);
-          pred[c] = ec.pred; // TODO: this breaks for complex labels because = doesn't do deep copy!
+          if (finalize_predictions) pred[c] = ec.pred; // TODO: this breaks for complex labels because = doesn't do deep copy!
+          else                      pred[c].scalar = ec.partial_prediction;
+          //pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because = doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
           ec.ft_offset += (uint32_t)increment;
         }
         ec.ft_offset -= (uint32_t)(increment*(lo+count));
       } else {
         ec.ft_offset += (uint32_t)(increment*lo);
-        learn_fd.multipredict_f(learn_fd.data, *learn_fd.base, ec, count, increment, pred);
+        learn_fd.multipredict_f(learn_fd.data, *learn_fd.base, ec, count, increment, pred, finalize_predictions);
         ec.ft_offset -= (uint32_t)(increment*lo);
       }
     }
@@ -136,7 +138,7 @@ namespace LEARNER
     }
       inline void set_predict(void (*u)(T& data, base_learner& base, example&))
       { learn_fd.predict_f = (tlearn)u; }
-      inline void set_multipredict(void (*u)(T&, base_learner&, example&, size_t, size_t, polyprediction*))
+      inline void set_multipredict(void (*u)(T&, base_learner&, example&, size_t, size_t, polyprediction*, bool))
       { learn_fd.multipredict_f = (tmultipredict)u; }
       inline void set_multiupdate(void (*u)(T&, base_learner&, example&, size_t, size_t, polyprediction*, polylabel*))
       { learn_fd.multiupdate_f = (tmultiupdate)u; }

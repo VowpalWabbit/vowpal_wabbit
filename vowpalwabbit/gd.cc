@@ -51,7 +51,7 @@ namespace GD
     void (*predict)(gd&, base_learner&, example&);
     void (*learn)(gd&, base_learner&, example&);
     void (*update)(gd&, base_learner&, example&);
-    void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, polyprediction*);
+    void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, polyprediction*, bool);
     void (*multiupdate)(gd&, base_learner&, example&, size_t, size_t, polyprediction*, polylabel*);
 
     vw* all; //parallel, features, parameters
@@ -189,7 +189,7 @@ bool operator<(const string_value& first, const string_value& second)
   if(all.audit) tempstream << prepend;
   
   string tmp = "";
-  
+
   if (a != NULL){
     tmp += a->space;
     tmp += '^';
@@ -404,22 +404,38 @@ struct multipredict_info { size_t count; size_t step; polyprediction* pred; regr
 
   template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
   inline void update_feature_multi(multipredict_info& mp, const float fx, uint32_t fi) {
+    size_t mask = mp.reg->weight_mask;
+    float* up   = mp.update;
     uint32_t last = 0;
-    weight*w = mp.reg->weight_vector + (fi & mp.reg->weight_mask);
-    for (size_t i=0; i<mp.count; i++) {
-      uint32_t c = (uint32_t)mp.update[2*i];
-      w += (c-last) * mp.step; last = c;
-      if (spare != 0) w[0] += fx * mp.update[2*i+1] * w[spare];
-      else            w[0] += fx * mp.update[2*i+1];
+    fi &= mask;
+    weight*w = mp.reg->weight_vector + fi;
+    for (; up < mp.update+mp.count; ++up) {
+      uint32_t c = (uint32_t)*up; up++;
+      w += (c-last) * mp.step;
+      last = c;
+      if (spare != 0) w[0] += fx * *up * w[spare];
+      else            w[0] += fx * *up;
     }
   }
   
 inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
-  weight*w = mp.reg->weight_vector + (fi & mp.reg->weight_mask);
-  for (size_t c=0; c<mp.count; c++) {
-    mp.pred[c].scalar += fx * *w;
-    w += mp.step;  // TODO: does this play well with -q
-  }
+  if ((-1e-10 < fx) && (fx < 1e-10)) return;
+  weight*w    = mp.reg->weight_vector;
+  size_t mask = mp.reg->weight_mask;
+  polyprediction* p = mp.pred;
+
+  fi &= mask;
+  uint32_t top = fi + (mp.count-1) * mp.step;
+  if (top <= mask) {
+    weight* last = w + top;
+    w += fi;
+    for (; w <= last; w += mp.step, ++p)
+      p->scalar += fx * *w;
+  } else  // TODO: this could be faster by unrolling into two loops
+    for (size_t c=0; c<mp.count; ++c, fi += mp.step, ++p) {
+      fi &= mask;
+      p->scalar += fx * w[fi];
+    }
 }
 
 inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
@@ -431,15 +447,19 @@ inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, ui
 }
   
 template<bool l1, bool audit>
-void multipredict(gd& g, base_learner& base, example& ec, size_t count, size_t step, polyprediction*pred) {
+void multipredict(gd& g, base_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions) {
   vw& all = *g.all;
   for (size_t c=0; c<count; c++)
     pred[c].scalar = ec.l.simple.initial;
   multipredict_info mp = { count, step, pred, &g.all->reg, NULL, (float)all.sd->gravity };
   if (l1) foreach_feature<multipredict_info, uint32_t, vec_add_trunc_multipredict>(all, ec, mp);
   else    foreach_feature<multipredict_info, uint32_t, vec_add_multipredict      >(all, ec, mp);
-  for (size_t c=0; c<count; c++)
-    pred[c].scalar = finalize_prediction(all.sd, pred[c].scalar * (float)all.sd->contraction);
+  if (all.sd->contraction != 1.)
+    for (size_t c=0; c<count; c++)
+      pred[c].scalar *= (float)all.sd->contraction;
+  if (finalize_predictions)
+    for (size_t c=0; c<count; c++)
+      pred[c].scalar = finalize_prediction(all.sd, pred[c].scalar);
   if (audit) {
     for (size_t c=0; c<count; c++) {
       ec.pred.scalar = pred[c].scalar;
@@ -1221,7 +1241,7 @@ base_learner* setup(vw& all)
   ret.set_save_load(save_load);
   ret.set_end_pass(end_pass);
   ret.set_multipredict(g.multipredict);
-  ret.set_multiupdate(g.multiupdate);
+  //ret.set_multiupdate(g.multiupdate);
   ret.set_finish(finish);
   
   return make_base(ret);

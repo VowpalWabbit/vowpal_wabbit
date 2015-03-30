@@ -40,6 +40,8 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
   }
 }
 
+#define DO_MULTIPREDICT true
+
 template <bool is_learn>
 void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
   COST_SENSITIVE::label ld = ec.l.cs;
@@ -49,12 +51,19 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
   if (ld.costs.size() > 0)
     for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++)
       inner_loop<is_learn>(base, ec, cl->class_index, cl->x, prediction, score, cl->partial_prediction);
-  else
+  else if (DO_MULTIPREDICT && !is_learn) {
+    ec.l.simple = { FLT_MAX, 0.f, 0.f };
+    polyprediction* pred = (polyprediction*)alloca(c.num_classes * sizeof(polyprediction));
+    base.multipredict(ec, 0, c.num_classes, pred, false);
+    for (uint32_t i = 1; i <= c.num_classes; i++)
+      if (pred[i-1].scalar < pred[prediction-1].scalar)
+        prediction = i;
+  } else
     { float temp;
       for (uint32_t i = 1; i <= c.num_classes; i++)
 	inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp);
     }
-  
+
   ec.pred.multiclass = prediction;
   ec.l.cs = ld;
 }

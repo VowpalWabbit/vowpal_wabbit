@@ -53,7 +53,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   uint32_t prediction = 1;
 
   ec.l.simple = { FLT_MAX, mc_label_data.weight, 0.f };
-  base.multipredict(ec, 0, o.k, o.pred);
+  base.multipredict(ec, 0, o.k, o.pred, true);
   for (uint32_t i=2; i<=o.k; i++)
     if (o.pred[i-1].scalar > o.pred[prediction-1].scalar)
       prediction = i;

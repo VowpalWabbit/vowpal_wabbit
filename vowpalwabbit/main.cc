@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
 {
   try {
     vw& all = parse_args(argc, argv);
+    all.vw_is_main = true;
     struct timeb t_start, t_end;
     ftime(&t_start);
     
