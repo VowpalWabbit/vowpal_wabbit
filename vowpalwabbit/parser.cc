@@ -838,27 +838,9 @@ void setup_example(vw& all, example* ae)
       ae->num_features += ae->atomics[*i].end - ae->atomics[*i].begin;
       ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
     }
-#ifndef USE_INTERACTIONS //defined in interactions.h
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
-    {
-      ae->num_features
-    += ae->atomics[(int)(*i)[0]].size()
-    *ae->atomics[(int)(*i)[1]].size();
-      ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]]*ae->sum_feat_sq[(int)(*i)[1]];
-    }
-  
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
-    {
-      ae->num_features
-    += ae->atomics[(int)(*i)[0]].size()
-    *ae->atomics[(int)(*i)[1]].size()
-    *ae->atomics[(int)(*i)[2]].size();
-      ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]] * ae->sum_feat_sq[(int)(*i)[1]] * ae->sum_feat_sq[(int)(*i)[2]];
-    }
-#else
+
  // generate atomic features for all interactions
  INTERACTIONS::generate_interactions(all, *ae); //num_features and total_sum_feat_sq will be updated in it
-#endif
 }
 }
 

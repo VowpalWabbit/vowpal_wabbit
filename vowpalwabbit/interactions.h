@@ -3,8 +3,6 @@
 #include "global_data.h"
 #include "constant.h"
 
-#define USE_INTERACTIONS
-
 namespace INTERACTIONS
 {
 
