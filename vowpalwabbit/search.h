@@ -134,9 +134,9 @@ namespace Search {
     search_private* priv;
     void*           task_data;  // your task data!
     const char*     task_name;
-
-    // although you should rarely need this, some times you need a poiter to the vw data structure :(
-    vw& get_vw_pointer_unsafe();
+    
+    vw& get_vw_pointer_unsafe();   // although you should rarely need this, some times you need a poiter to the vw data structure :(
+    void set_force_oracle(bool force);  // if the library wants to force search to use the oracle, set this to true
   };
 
   // for defining new tasks, you must fill out a search_task

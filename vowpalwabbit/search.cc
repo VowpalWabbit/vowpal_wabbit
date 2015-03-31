@@ -116,7 +116,8 @@ namespace Search {
     
     bool last_example_was_newline; // used so we know when a block of examples has passed
     bool hit_new_pass;             // have we hit a new pass?
-
+    bool force_oracle;             // insist on using the oracle to make predictions
+    
     // if we're printing to stderr we need to remember if we've printed the header yet
     // (i.e., we do this if we're driving)
     bool printed_output_header;
@@ -1087,7 +1088,7 @@ namespace Search {
     assert((allowed_actions == NULL) == (allowed_actions_cnt == 0));
     
     // if we're just after the string, choose an oracle action
-    if (priv.state == GET_TRUTH_STRING)
+    if ((priv.state == GET_TRUTH_STRING) || priv.force_oracle)
       return choose_oracle_action(priv, ec_cnt, oracle_actions, oracle_actions_cnt, allowed_actions, allowed_actions_cnt, false);
 
     // if we're in LEARN mode and before learn_t, return the train action
@@ -2273,6 +2274,7 @@ namespace Search {
   uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
 
   vw& search::get_vw_pointer_unsafe() { return *this->priv->all; }
+  void search::set_force_oracle(bool force) { this->priv->force_oracle = force; }
   
   // predictor implementation
   predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(NULL), ec_cnt(0), ec_alloced(false), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { 

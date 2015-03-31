@@ -16,7 +16,7 @@ class SearchTask():
     def _run(self, your_own_input_example):
         pass
 
-    def _call_vw(self, my_example, isTest): # run_fn, setup_fn, takedown_fn, isTest):
+    def _call_vw(self, my_example, isTest, useOracle=False): # run_fn, setup_fn, takedown_fn, isTest):
         self._output = None
         self.bogus_example.set_test_only(isTest)
         def run(): self._output = self._run(my_example)
@@ -25,6 +25,7 @@ class SearchTask():
         if callable(getattr(self, "_setup", None)): setup = lambda: self._setup(my_example)
         if callable(getattr(self, "_takedown", None)): takedown = lambda: self._takedown(my_example)
         self.sch.set_structured_predict_hook(run, setup, takedown)
+        self.sch.set_force_oracle(useOracle)
         self.vw.learn(self.bogus_example)
         self.vw.learn(self.blank_line) # this will cause our ._run hook to get called
         
@@ -39,8 +40,8 @@ class SearchTask():
         else:
             return self.vw.example(None, labelType)
             
-    def predict(self, my_example):
-        self._call_vw(my_example, isTest=True);
+    def predict(self, my_example, useOracle=False):
+        self._call_vw(my_example, isTest=True, useOracle=useOracle);
         return self._output
 
 class vw(pylibvw.vw):
