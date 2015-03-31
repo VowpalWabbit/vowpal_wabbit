@@ -45,14 +45,14 @@ struct svm_example {
   int clear_kernels();
 };
 
-struct svm_model{    
+struct svm_model {
   size_t num_support;
   v_array<svm_example*> support_vec;
   v_array<float> alpha;
   v_array<float> delta;
 };
   
-struct svm_params{
+struct svm_params {
   size_t current_pass;
   bool active;
   bool active_pool_greedy;

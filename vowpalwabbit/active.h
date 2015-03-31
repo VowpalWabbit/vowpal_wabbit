@@ -1,6 +1,6 @@
 #pragma once
 
-struct active{
+struct active {
   float active_c0;
   vw* all;//statistics, loss
 };

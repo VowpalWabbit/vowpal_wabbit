@@ -29,7 +29,7 @@ struct direction {
   bool last;
 };
 
-struct ect{
+struct ect {
   uint32_t k;
   uint32_t errors;
   v_array<direction> directions;//The nodes of the tournament datastructure

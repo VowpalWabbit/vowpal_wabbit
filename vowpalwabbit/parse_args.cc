@@ -33,7 +33,7 @@ license as described in the file LICENSE.
 #include "gd_mf.h"
 #include "learner.h"
 #include "mf.h"
-#include "ftrl_proximal.h"
+#include "ftrl.h"
 #include "svrg.h"
 #include "rand48.h"
 #include "binary.h"
