@@ -27,10 +27,6 @@ void generate_interactions(vw& all, example& ec)
             bool no_data_to_interact = false; // if any namespace has 0 features - whole interaction is skipped
 
             const size_t len = ns.length();
-            if (len > state_data.size())
-                ensure_could_push(state_data, len);
-
-
             for (size_t i = 0; i < len; ++i)
             {
                 size_t ft_cnt = ec.atomics[(int32_t)ns[i]].size();
@@ -180,8 +176,6 @@ void generate_interactions(vw& all, example& ec)
                     }
 
                     // add new features to cache
-
-                    ensure_could_push(cache, new_ft_cnt); // it's better than just resize(size()+new_ft_cnt)
 
                     float ft_weight; // micro-optimization. useless, i think
 

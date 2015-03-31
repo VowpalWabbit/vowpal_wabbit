@@ -43,15 +43,6 @@ struct feature_gen_data
 };
 
 
-// checks if allready allocated memory is enough to store cnt items. Resize if not enough.
-template<class T>
-inline void ensure_could_push(v_array<T>& v, size_t cnt)
-{
-    if (v.end + cnt > v.end_array)
-        v.resize(2*(v.size()+cnt)+3);
-}
-
-
 void generate_interactions(vw& all, example& ec);
 
 // some helper functions
