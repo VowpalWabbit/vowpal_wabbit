@@ -56,7 +56,6 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec) {
           size_t lindex = lf->weight_index;
           for (unsigned int n = 1; n <= k; ++n) {
             uint32_t lwindex = (uint32_t)(lindex + ((rfd_id*k+n) << all.reg.stride_shift)); // a feature has k weights in each field
-            //cerr << "[ZJF] lindex: " << lindex << " lfd_id: " << lfd_id << " k: " << k << " n: " << n << endl;
             float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
 
             // perturb away from saddle point at (0, 0)
@@ -65,7 +64,6 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec) {
             }
 
             for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn) {
-              //cerr << "[ZJF] space: " << *i1 << " & " << *i2 << " feature: " << lfn << "/" << lrq.orig_size[(int)*i1] << " & " << rfn << "/" << lrq.orig_size[(int)*i2] << endl;
               feature* rf = ec.atomics[right].begin + rfn;
               audit_data* ra = ec.audit_features[right].begin + rfn;
               // NB: ec.ft_offset added by base learner
@@ -76,9 +74,6 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec) {
               feature lrq;
               lrq.x = *lw * lfx * rfx;
               lrq.weight_index = rwindex;
-              //cerr << "[ZJF] iter:" << iter << " left:" << left << " right:" << right << " n:" << n
-              //     << " lindex:" << lindex << " lwindex:" << lwindex << " *lw:" << *lw << " lfx:" << lfx << " rfx:" << rfx
-              //     << " rindex:" << rindex << " rwindex:" << rwindex << endl;
               ec.atomics[right].push_back (lrq);
               if (all.audit || all.hash_inv) {
                 std::stringstream new_feature_buffer;
