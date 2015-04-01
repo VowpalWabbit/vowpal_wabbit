@@ -293,11 +293,16 @@ namespace DepParserTask {
       uint32_t gold_action = get_gold_actions(srn, idx, n);
 
       // Predict the next action {SHIFT, REDUCE_LEFT, REDUCE_RIGHT}
-      uint32_t a_id= Search::predictor(srn, (ptag) count).set_input(*(data->ex)).set_oracle(gold_action).set_allowed(valid_actions).set_condition_range(count++, srn.get_history_length(), 'p').set_learner_id(0).predict();
+      uint32_t a_id= Search::predictor(srn, (ptag) count).set_input(*(data->ex)).set_oracle(gold_action).set_allowed(valid_actions).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(0).predict();
+      // Increment count after to prevent undefined behavior.
+      count++;
+
       uint32_t t_id = 0;
       if(a_id ==2 || a_id == 3){
 	  	uint32_t gold_label = gold_tags[stack.last()];
-        t_id= Search::predictor(srn, (ptag) count).set_input(*(data->ex)).set_oracle(gold_label).set_allowed(valid_labels).set_condition_range(count++, srn.get_history_length(), 'p').set_learner_id(a_id-1).predict();
+        t_id= Search::predictor(srn, (ptag) count).set_input(*(data->ex)).set_oracle(gold_label).set_allowed(valid_labels).set_condition_range(count, srn.get_history_length(), 'p').set_learner_id(a_id-1).predict();
+        // Increment count after to prevent undefined behavior
+        count++;
       }
       idx = transition_hybrid(srn, a_id, idx, t_id);
     }
