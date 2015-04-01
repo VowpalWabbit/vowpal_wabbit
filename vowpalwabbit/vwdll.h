@@ -5,41 +5,33 @@ license as described in the file LICENSE.
  */
 #pragma once
 
+// Library visibility macros:
+// VW_DLL_MEMBER: Function/class should be exported or imported on WinXX, publicly visible for *nix platforms.
+// VW_DLL_INTERNAL: Function/class is internal to the library, not visible or import-able. Here for completeness, not
+//   currently used.
+// VW_CALLING_CONV: Calling convention for WinXX (future: could use GNU calling conventions)
 
-// indirect the Win32 so non win32 Microsoft C programs can work
-#ifdef WIN32
-#define MS_CONV		// use Microsoft library calling conventions
-#endif
-
-// enable wide character (32 bit) versions of functions
-// these are optional  since other compilers may not have wide to narrow char libarray facilities built in.
-#ifdef WIN32
-#define USE_CODECVT 
-#endif
-
-
-
-#ifdef MS_CONV
-#define VW_CALLING_CONV __stdcall
+#if defined(_WIN32) || defined(_WIN64) || defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__MINGW64__)
+#  if defined(VW_DLL_EXPORTS)
+#    define VW_DLL_MEMBER __declspec(dllexport)
+#  else
+#    define VW_DLL_MEMBER __declspec(dllimport)
+#  endif
+#  define VW_DLL_INTERNAL
+#  define VW_CALLING_CONV __stdcall
+// Enable wide character (32 bit) versions of functions
+// These are optional since other compilers may not have wide to narrow char libarray facilities built in.
+#  define USE_CODECVT 
 #else
-#define VW_CALLING_CONV
+#  if __GNUC__ >= 4
+#    define VW_DLL_MEMBER __attribute__ ((visibility ("default")))
+#    define VW_DLL_INTERNAL  __attribute__ ((visibility ("hidden")))
+#  else
+#    define VW_DLL_MEMBER
+#    define VW_DLL_INTERNAL
+#  endif
+#  define VW_CALLING_CONV
 #endif
-
-#ifdef MS_CONV
-
-#ifdef VWDLL_EXPORTS
-#define VW_DLL_MEMBER __declspec(dllexport)
-#else
-#define VW_DLL_MEMBER __declspec(dllimport)
-#endif
-
-#else
-#define VW_DLL_MEMBER
-#endif
-
-
-
-
 
 #ifdef __cplusplus
 extern "C"
