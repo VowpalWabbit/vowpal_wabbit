@@ -137,7 +137,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text) {
 }
 
 base_learner* ftrl_setup(vw& all) {
-  if (missing_option(all, false, "ftrl_proximal", "FTRL: Follow the Proximal Regularized Leader") &&
+  if (missing_option(all, false, "ftrl", "FTRL: Follow the Proximal Regularized Leader") &&
       missing_option(all, false, "pistol", "FTRL: Parameter-free Stochastic Learning"))
     return nullptr;
   
@@ -154,7 +154,7 @@ base_learner* ftrl_setup(vw& all) {
   void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
   
   string algorithm_name;
-  if (vm.count("ftrl_proximal")) {
+  if (vm.count("ftrl")) {
     algorithm_name = "Proximal-FTRL";
     learn_ptr=learn_proximal;
     if (vm.count("ftrl_alpha"))
