@@ -12,7 +12,7 @@ license as described in the file LICENSE.
 // VW_CALLING_CONV: Calling convention for WinXX (future: could use GNU calling conventions)
 
 #if defined(_WIN32) || defined(_WIN64) || defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__MINGW64__)
-#  if defined(VW_DLL_EXPORTS)
+#  if defined(VWDLL_EXPORTS)
 #    define VW_DLL_MEMBER __declspec(dllexport)
 #  else
 #    define VW_DLL_MEMBER __declspec(dllimport)
@@ -31,6 +31,15 @@ license as described in the file LICENSE.
 #    define VW_DLL_INTERNAL
 #  endif
 #  define VW_CALLING_CONV
+#endif
+
+#if defined(USE_CODECVT)
+#if defined(_WIN32) || defined(_WIN64) || defined(MSC_VER)
+#include <codecvt>
+#else
+// Other platforms that automagically convert from wide-to-narrow should
+// insert code here.
+#endif
 #endif
 
 #ifdef __cplusplus

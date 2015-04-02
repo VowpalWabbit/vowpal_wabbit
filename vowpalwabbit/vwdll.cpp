@@ -1,10 +1,5 @@
 #include <memory>
 
-#ifdef WIN32
-#define USE_CODECVT
-#include <codecvt>
-#endif
-
 #include <locale>
 #include <string>
 
