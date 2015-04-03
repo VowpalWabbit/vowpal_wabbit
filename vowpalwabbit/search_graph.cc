@@ -215,12 +215,18 @@ namespace GraphTask {
 
       float pred_total = 0.;
       uint32_t last_pred = 0;
-      for (size_t j=0; j<ec[i]->l.cs.costs.size(); j++) {
-        size_t m = ec[i]->l.cs.costs[j].class_index - 1;
-        if (m == n) continue;
-        D.neighbor_predictions[ D.pred[m]-1 ] += 1.;
+      if (D.use_structure)
+        for (size_t j=0; j<ec[i]->l.cs.costs.size(); j++) {
+          size_t m = ec[i]->l.cs.costs[j].class_index - 1;
+          if (m == n) continue;
+          D.neighbor_predictions[ D.pred[m]-1 ] += 1.;
+          pred_total += 1.;
+          last_pred = D.pred[m]-1;
+        }
+      else {
+        D.neighbor_predictions[0] += 1.;
         pred_total += 1.;
-        last_pred = D.pred[m]-1;
+        last_pred = 0;
       }
 
       if (pred_total == 0.) continue;
@@ -256,7 +262,7 @@ namespace GraphTask {
       for (int n_id = start; n_id != end; n_id += step) {
         uint32_t n = D.bfs[n_id];
 
-        bool add_features = D.use_structure && sch.predictNeedsExample();
+        bool add_features = /* D.use_structure && */ sch.predictNeedsExample();
 
         if (add_features) add_edge_features(sch, D, n, ec);
         Search::predictor P = Search::predictor(sch, n+1);

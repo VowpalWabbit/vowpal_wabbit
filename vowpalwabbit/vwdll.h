@@ -4,17 +4,28 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
+
+
+// indirect the Win32 so non win32 Microsoft C programs can work
 #ifdef WIN32
-#define USE_CODECVT
+#define MS_CONV		// use Microsoft library calling conventions
 #endif
 
+// enable wide character (32 bit) versions of functions
+// these are optional  since other compilers may not have wide to narrow char libarray facilities built in.
 #ifdef WIN32
+#define USE_CODECVT 
+#endif
+
+
+
+#ifdef MS_CONV
 #define VW_CALLING_CONV __stdcall
 #else
 #define VW_CALLING_CONV
 #endif
 
-#ifdef WIN32
+#ifdef MS_CONV
 
 #ifdef VWDLL_EXPORTS
 #define VW_DLL_MEMBER __declspec(dllexport)
@@ -26,9 +37,19 @@ license as described in the file LICENSE.
 #define VW_DLL_MEMBER
 #endif
 
+
+
+
+
 #ifdef __cplusplus
 extern "C"
 {
+#endif
+
+#ifdef __cplusplus
+#define VW_TYPE_SAFE_NULL nullptr
+#else
+#define VW_TYPE_SAFE_NULL NULL
 #endif
 
 	typedef void * VW_HANDLE;
@@ -37,8 +58,9 @@ extern "C"
 	typedef void * VW_FEATURE_SPACE;
 	typedef void * VW_FEATURE;
  
-	const VW_HANDLE INVALID_VW_HANDLE = NULL;
-	const VW_HANDLE INVALID_VW_EXAMPLE = NULL;
+	const VW_HANDLE INVALID_VW_HANDLE = VW_TYPE_SAFE_NULL;
+	const VW_HANDLE INVALID_VW_EXAMPLE = VW_TYPE_SAFE_NULL;
+
 #ifdef USE_CODECVT
 	VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_Initialize(const char16_t * pstrArgs);
 #endif
@@ -93,3 +115,5 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
+#undef VW_TYPE_SAFE_NULL

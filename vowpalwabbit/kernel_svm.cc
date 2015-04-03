@@ -45,14 +45,14 @@ struct svm_example {
   int clear_kernels();
 };
 
-struct svm_model{    
+struct svm_model {
   size_t num_support;
   v_array<svm_example*> support_vec;
   v_array<float> alpha;
   v_array<float> delta;
 };
   
-struct svm_params{
+struct svm_params {
   size_t current_pass;
   bool active;
   bool active_pool_greedy;
@@ -780,7 +780,7 @@ struct svm_params{
   }
 
 LEARNER::base_learner* kernel_svm_setup(vw &all) {
-  if (missing_option(all, true, "ksvm", "kernel svm")) return NULL;
+  if (missing_option(all, true, "ksvm", "kernel svm")) return nullptr;
   new_options(all, "KSVM options")
     ("reprocess", po::value<size_t>(), "number of reprocess steps for LASVM")
     //      ("active", "do active learning")

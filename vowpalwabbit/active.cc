@@ -128,7 +128,7 @@ float get_active_coin_bias(float k, float avg_loss, float g, float c0)
   
 base_learner* active_setup(vw& all)
 {//parse and set arguments
-  if(missing_option(all, false, "active", "enable active learning")) return NULL;
+  if(missing_option(all, false, "active", "enable active learning")) return nullptr;
   new_options(all, "Active Learning options")
     ("simulation", "active learning simulation mode")
     ("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8");

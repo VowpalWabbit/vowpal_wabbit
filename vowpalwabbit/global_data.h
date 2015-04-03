@@ -39,25 +39,25 @@ struct version_struct {
   {
     from_string(v_str);
   }
-  void operator=(version_struct v){
+  void operator=(version_struct v) {
     major = v.major;
     minor = v.minor;
     rev = v.rev;
   }
-  void operator=(const char* v_str){
+  void operator=(const char* v_str) {
     from_string(v_str);
   }
-  bool operator==(version_struct v){
+  bool operator==(version_struct v) {
     return (major == v.major && minor == v.minor && rev == v.rev);
   }
-  bool operator==(const char* v_str){
+  bool operator==(const char* v_str) {
     version_struct v_tmp(v_str);
     return (*this == v_tmp);
   }
-  bool operator!=(version_struct v){
+  bool operator!=(version_struct v) {
     return !(*this == v);
   }
-  bool operator!=(const char* v_str){
+  bool operator!=(const char* v_str) {
     version_struct v_tmp(v_str);
     return (*this != v_tmp);
   }
@@ -69,11 +69,11 @@ struct version_struct {
     if(rev >= v.rev ) return true;
     return false;
   }
-  bool operator>=(const char* v_str){
+  bool operator>=(const char* v_str) {
     version_struct v_tmp(v_str);
     return (*this >= v_tmp);
   }
-  bool operator>(version_struct v){
+  bool operator>(version_struct v) {
     if(major < v.major) return false;
     if(major > v.major) return true;
     if(minor < v.minor) return false;
@@ -81,21 +81,21 @@ struct version_struct {
     if(rev > v.rev ) return true;
     return false;
   }
-  bool operator>(const char* v_str){
+  bool operator>(const char* v_str) {
     version_struct v_tmp(v_str);
     return (*this > v_tmp);
   }
-  bool operator<=(version_struct v){
+  bool operator<=(version_struct v) {
     return !(*this < v);
   }
-  bool operator<=(const char* v_str){
+  bool operator<=(const char* v_str) {
     version_struct v_tmp(v_str);
     return (*this <= v_tmp);
   }
-  bool operator<(version_struct v){
+  bool operator<(version_struct v) {
     return !(*this >= v);
   }
-  bool operator<(const char* v_str){
+  bool operator<(const char* v_str) {
     version_struct v_tmp(v_str);
     return (*this < v_tmp);
   }

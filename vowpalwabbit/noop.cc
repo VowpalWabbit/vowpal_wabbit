@@ -11,7 +11,7 @@ void learn(char&, LEARNER::base_learner&, example&) {}
 
 LEARNER::base_learner* noop_setup(vw& all)
 {
-  if (missing_option(all, true, "noop", "do no learning")) return NULL;
+  if (missing_option(all, true, "noop", "do no learning")) return nullptr;
   
-  return &LEARNER::init_learner<char>(NULL, learn, 1); 
+  return &LEARNER::init_learner<char>(nullptr, learn, 1); 
 }

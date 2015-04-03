@@ -87,7 +87,7 @@ namespace MULTICLASS {
   label_parser mc_label = {default_label, parse_label, 
 				  cache_label, read_cached_label, 
 				  delete_label, weight, 
-				  NULL,
+				  nullptr,
 				  sizeof(label_t)};
   
   void print_update(vw& all, example &ec)

@@ -6,10 +6,10 @@ template<class T>
 T* calloc_or_die(size_t nmemb)
 {
   if (nmemb == 0)
-    return NULL;
+    return nullptr;
   
   void* data = calloc(nmemb, sizeof(T));
-  if (data == NULL) {
+  if (data == nullptr) {
     std::cerr << "internal error: memory allocation failed; dying!" << std::endl;
     throw std::exception();
   }
@@ -19,4 +19,4 @@ T* calloc_or_die(size_t nmemb)
 template<class T> T& calloc_or_die()
 { return *calloc_or_die<T>(1); }
 
-inline void free_it(void* ptr) { if (ptr != NULL) free(ptr); }
+inline void free_it(void* ptr) { if (ptr != nullptr) free(ptr); }

@@ -8,7 +8,7 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "rand48.h"
 
-struct oaa{
+struct oaa {
   size_t k;
   vw* all; // for raw
   polyprediction* pred;  // for multipredict
@@ -79,7 +79,7 @@ void finish(oaa&o) { free(o.pred); free(o.label); free(o.subsample_order); }
 LEARNER::base_learner* oaa_setup(vw& all)
 {
   if (missing_option<size_t, true>(all, "oaa", "One-against-all multiclass with <k> labels")) 
-    return NULL;
+    return nullptr;
   new_options(all, "oaa options")
       ("oaa_subsample", po::value<size_t>(), "subsample this number of negative examples when learning");
   

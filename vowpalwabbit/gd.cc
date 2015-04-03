@@ -23,11 +23,6 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "vw.h"
 
-#define cdbg clog
-//#undef cdbg
-//#define cdbg if (1) {} else clog
-// comment the previous two lines if you want loads of debug output :)
-
 #define VERSION_SAVE_RESUME_FIX "7.10.1"
 
 using namespace std;
@@ -46,13 +41,9 @@ namespace GD
     float neg_power_t;
     float sparse_l2;
     float update_multiplier;
-    v_array<float> update_vec;
-    bool DO_MULTIUPDATE;
     void (*predict)(gd&, base_learner&, example&);
     void (*learn)(gd&, base_learner&, example&);
     void (*update)(gd&, base_learner&, example&);
-    void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, polyprediction*, bool);
-    void (*multiupdate)(gd&, base_learner&, example&, size_t, size_t, polyprediction*, polylabel*);
 
     vw* all; //parallel, features, parameters
   };
@@ -106,7 +97,7 @@ namespace GD
 
   //this deals with few nonzero features vs. all nonzero features issues.  
   template<bool sqrt_rate, size_t adaptive, size_t normalized>
-  float average_update(gd& g)
+  float average_update(gd& g, float update)
   {
     if (normalized) {
       if (sqrt_rate) 
@@ -128,6 +119,7 @@ namespace GD
   {
     if (normalized)
       update *= g.update_multiplier;
+
     foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
   }
 
@@ -189,14 +181,14 @@ bool operator<(const string_value& first, const string_value& second)
   if(all.audit) tempstream << prepend;
   
   string tmp = "";
-
-  if (a != NULL){
+  
+  if (a != nullptr){
     tmp += a->space;
     tmp += '^';
     tmp += a->feature; 
   }
  
-  if (a != NULL && all.audit){
+  if (a != nullptr && all.audit){
     tempstream << tmp << ':';
   }
   else 	if ( index == ((( (constant << stride_shift) * all.wpp + offset)&all.reg.weight_mask)) && all.audit){
@@ -231,7 +223,7 @@ bool operator<(const string_value& first, const string_value& second)
     if (as.begin != as.end)
       audit_feature(all, & fs[j], & as[j], results, prepend, ns_pre, offset, mult);
     else
-      audit_feature(all, & fs[j], NULL, results, prepend, ns_pre, offset, mult);
+      audit_feature(all, & fs[j], nullptr, results, prepend, ns_pre, offset, mult);
 }
 
 void audit_quad(vw& all, feature& left_feature, audit_data* left_audit, v_array<feature> &right_features, v_array<audit_data> &audit_right, vector<string_value>& results, string& ns_pre, uint32_t offset = 0)
@@ -306,7 +298,7 @@ void print_features(vw& all, example& ec)
 	  unsigned char snd = (*i)[1];
 	  for (size_t j = 0; j < ec.atomics[fst].size(); j++)
 	    {
-	      audit_data* a = NULL;
+	      audit_data* a = nullptr;
 	      if (ec.audit_features[fst].size() > 0)
 		a = & ec.audit_features[fst][j];
 	      audit_quad(all, ec.atomics[fst][j], a, ec.atomics[snd], ec.audit_features[snd], features, ns_pre);
@@ -320,12 +312,12 @@ void print_features(vw& all, example& ec)
 	  unsigned char trd = (*i)[2];
 	  for (size_t j = 0; j < ec.atomics[fst].size(); j++)
 	    {
-	      audit_data* a1 = NULL;
+	      audit_data* a1 = nullptr;
 	      if (ec.audit_features[fst].size() > 0)
 		a1 = & ec.audit_features[fst][j];
 	      for (size_t k = 0; k < ec.atomics[snd].size(); k++)
 		{
-		  audit_data* a2 = NULL;
+		  audit_data* a2 = nullptr;
 		  if (ec.audit_features[snd].size() > 0)
 		    a2 = & ec.audit_features[snd][k];
 		  audit_triple(all, ec.atomics[fst][j], a1, ec.atomics[snd][k], a2, ec.atomics[trd], ec.audit_features[trd], features, ns_pre);
@@ -399,77 +391,6 @@ void predict(gd& g, base_learner& base, example& ec)
     print_audit_features(all, ec);
 }
 
-struct multipredict_info { size_t count; size_t step; polyprediction* pred; regressor* reg; /* & for update */ float* update; /* & for l1: */ float gravity; };
-
-
-  template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-  inline void update_feature_multi(multipredict_info& mp, const float fx, uint32_t fi) {
-    size_t mask = mp.reg->weight_mask;
-    float* up   = mp.update;
-    uint32_t last = 0;
-    fi &= mask;
-    weight*w = mp.reg->weight_vector + fi;
-    for (; up < mp.update+mp.count; ++up) {
-      uint32_t c = (uint32_t)*up; up++;
-      w += (c-last) * mp.step;
-      last = c;
-      if (spare != 0) w[0] += fx * *up * w[spare];
-      else            w[0] += fx * *up;
-    }
-  }
-  
-inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
-  if ((-1e-10 < fx) && (fx < 1e-10)) return;
-  weight*w    = mp.reg->weight_vector;
-  size_t mask = mp.reg->weight_mask;
-  polyprediction* p = mp.pred;
-
-  fi &= mask;
-  uint32_t top = fi + (mp.count-1) * mp.step;
-  if (top <= mask) {
-    weight* last = w + top;
-    w += fi;
-    for (; w <= last; w += mp.step, ++p)
-      p->scalar += fx * *w;
-  } else  // TODO: this could be faster by unrolling into two loops
-    for (size_t c=0; c<mp.count; ++c, fi += mp.step, ++p) {
-      fi &= mask;
-      p->scalar += fx * w[fi];
-    }
-}
-
-inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
-  weight*w = mp.reg->weight_vector + (fi & mp.reg->weight_mask);
-  for (size_t c=0; c<mp.count; c++) {
-    mp.pred[c].scalar += fx * trunc_weight(*w, mp.gravity);
-    w += mp.step;
-  }
-}
-  
-template<bool l1, bool audit>
-void multipredict(gd& g, base_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions) {
-  vw& all = *g.all;
-  for (size_t c=0; c<count; c++)
-    pred[c].scalar = ec.l.simple.initial;
-  multipredict_info mp = { count, step, pred, &g.all->reg, NULL, (float)all.sd->gravity };
-  if (l1) foreach_feature<multipredict_info, uint32_t, vec_add_trunc_multipredict>(all, ec, mp);
-  else    foreach_feature<multipredict_info, uint32_t, vec_add_multipredict      >(all, ec, mp);
-  if (all.sd->contraction != 1.)
-    for (size_t c=0; c<count; c++)
-      pred[c].scalar *= (float)all.sd->contraction;
-  if (finalize_predictions)
-    for (size_t c=0; c<count; c++)
-      pred[c].scalar = finalize_prediction(all.sd, pred[c].scalar);
-  if (audit) {
-    for (size_t c=0; c<count; c++) {
-      ec.pred.scalar = pred[c].scalar;
-      print_audit_features(all, ec);
-      ec.ft_offset += (uint32_t)step;
-    }
-    ec.ft_offset -= (uint32_t)step*count;
-  }
-}
-
   struct power_data {
     float minus_power_t;
     float neg_norm_power;
@@ -508,11 +429,6 @@ void multipredict(gd& g, base_learner& base, example& ec, size_t count, size_t s
     float pred_per_update;
     float norm_x;
     power_data pd;
-  };
-  struct norm_data_multi {
-    float* info;
-    power_data pd;
-    multipredict_info mp;
   };
 
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
@@ -556,11 +472,12 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
     norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
     
     foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, nd);
+    
     if(normalized) {
       g.all->normalized_sum_norm_x += ld.weight * nd.norm_x;
       g.total_weight += ld.weight;
 
-      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g);
+      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g, nd.pred_per_update);
       nd.pred_per_update *= g.update_multiplier;
     }
     
@@ -575,15 +492,14 @@ float compute_update(gd& g, example& ec)
   
   float update = 0.;
   ec.updated_prediction = ec.pred.scalar;
-  float loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label);
-  
-  if (loss > 0.)
+  if (all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) > 0.)
     {
       float pred_per_update;
       if(adaptive || normalized)
 	pred_per_update = get_pred_per_update<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,ec);
       else
 	pred_per_update = ec.total_sum_feat_sq;
+      
       float delta_pred = pred_per_update * all.eta * ld.weight;
       if(!adaptive) 
 	{
@@ -595,6 +511,7 @@ float compute_update(gd& g, example& ec)
 	update = all.loss->getUpdate(ec.pred.scalar, ld.label, delta_pred, pred_per_update);
       else
 	update = all.loss->getUnsafeUpdate(ec.pred.scalar, ld.label, delta_pred, pred_per_update);
+      
       // changed from ec.partial_prediction to ld.prediction
       ec.updated_prediction += pred_per_update * update;
       
@@ -613,166 +530,6 @@ float compute_update(gd& g, example& ec)
   
   return update;
 }
-#define INFO_ID( idx) info[idx*7+0]
-#define INFO_UP( idx) info[idx*7+1]
-#define INFO_PPU(idx) info[idx*7+2]
-#define INFO_GS( idx) info[idx*7+3]
-#define INFO_L(  idx) info[idx*7+4]
-#define INFO_UM( idx) info[idx*7+5]
-#define INFO_NX( idx) info[idx*7+6]
-
-  template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-  inline void pred_per_multiupdate_feature(norm_data_multi& nd, const float x, uint32_t fi) {
-    multipredict_info& mp = nd.mp;
-    float x2 = x * x;
-    float* info = nd.info;
-    fi &= mp.reg->weight_mask;
-    for (size_t i=0; i<mp.count; i++) {
-      uint32_t c = INFO_ID(i);
-      weight*w = mp.reg->weight_vector + fi + c*nd.mp.step;   // TODO: need mask?
-      if ((INFO_GS(i) != 0) && (feature_mask_off || w[0] != 0.)) {
-        if (adaptive) w[adaptive] += INFO_GS(i) * x2;
-        if (normalized) {
-          float x_abs = fabsf(x);
-          if (x_abs > w[normalized]) {
-            if (w[normalized] > 0.) {
-              if (sqrt_rate) {
-                float rescale = w[normalized] / x_abs;
-                w[0] *= (adaptive ? rescale : rescale*rescale);
-              } else {
-                float rescale = x_abs / w[normalized];
-                w[0] *= powf(rescale*rescale, nd.pd.neg_norm_power);
-              }
-            }
-            w[normalized] = x_abs;
-          }
-          INFO_NX(i) += x2 / (w[normalized] * w[normalized]);
-        }
-        w[spare] = compute_rate_decay<sqrt_rate, adaptive, normalized>(nd.pd, w[0]);
-        INFO_PPU(i) += x2 * w[spare];
-      }
-    }
-  }
-  
-  template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-  void get_pred_per_multiupdate(gd& g, example& ec, size_t count, size_t step, polyprediction*pred, polylabel*label) {
-    vw& all = *g.all;
-    float* info = g.update_vec.begin;
-
-    multipredict_info mp = { count, step, pred, &g.all->reg, g.update_vec.begin, (float)g.all->sd->gravity };
-    norm_data_multi nd = { info, { g.neg_power_t, g.neg_norm_power }, mp };
-    foreach_feature<norm_data_multi, uint32_t, pred_per_multiupdate_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, nd);
-    
-    if (normalized) {
-      for (size_t i=0; i<count; i++) {
-        uint32_t c = (uint32_t)INFO_ID(i);
-        g.all->normalized_sum_norm_x += label[c].simple.weight * INFO_NX(i);
-        if (INFO_GS(i) != 0.) g.total_weight += label[c].simple.weight;
-        g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g);
-        INFO_UM(i) = g.update_multiplier;
-        INFO_PPU(i) *= g.update_multiplier;
-      }
-    }
-  }
-
-  
-  template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-  size_t compute_multiupdate(gd& g, example& ec, size_t count, size_t step, polyprediction*pred, polylabel*label) {
-    vw& all = *g.all;
-    //static_assert(sizeof(float) * CHAR_BIT == 32, "require 32 bits floats"); // TODO: pack bits instead of cast on (float)c
-    if (g.update_vec.end_array - g.update_vec.begin < 7*count+1) g.update_vec.resize(7*count+1);
-    float* info = g.update_vec.begin;
-
-    size_t i = 0;
-    for (size_t c=0; c<count; c++) {
-      float loss = all.loss->getLoss(all.sd, pred[c].scalar, label[c].simple.label);
-      if (loss == 0.) continue;
-      float grad_squared = all.loss->getSquareGrad(pred[c].scalar, label[c].simple.label) * label[c].simple.weight;
-      if (grad_squared == 0) continue;
-
-      INFO_ID (i) = (float)c;  // ID is first
-      INFO_UP (i) = 0.;        // UPDATE is second
-      INFO_PPU(i) = (adaptive || normalized) ? 0. : ec.total_sum_feat_sq;
-      INFO_GS (i) = grad_squared;
-      INFO_L  (i) = loss;
-      INFO_UM (i) = 0.;
-      INFO_NX (i) = 0.;
-      i++;
-    }
-
-    if (i > 0) {
-      if (adaptive || normalized)
-        get_pred_per_multiupdate<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, i, step, pred, label);
-
-      for (size_t j=0; j<i; j++) {
-        uint32_t c = (uint32_t)INFO_ID(j);
-        float ppu = INFO_PPU(j);
-        float delta_pred = ppu * all.eta * label[c].simple.weight;
-        if (!adaptive) delta_pred *= powf( (float)(ec.example_t - all.sd->weighted_holdout_examples), g.neg_power_t );
-
-        float up = invariant ? all.loss->getUpdate(      pred[c].scalar, label[c].simple.label, delta_pred, ppu)
-                             : all.loss->getUnsafeUpdate(pred[c].scalar, label[c].simple.label, delta_pred, ppu);
-
-        if (all.reg_mode && (fabs(up) > 1e-8)) {
-          // ??? why was this a double?
-          double dev1    = all.loss->first_derivative(all.sd, pred[c].scalar, label[c].simple.label);
-          double eta_bar = (fabs(dev1) > 1e-8) ? (-up / dev1) : 0.;
-          if (fabs(dev1) > 1e-8) all.sd->contraction *= (1. - all.l2_lambda * eta_bar);
-          up /= (float)all.sd->contraction;
-          all.sd->gravity += eta_bar * all.l1_lambda;
-        }
-
-        INFO_UP(j) = up;
-
-        if (sparse_l2)
-          INFO_UP(j) *= g.sparse_l2;
-      }
-    }
-
-    return i;
-  }
-
-  
-  template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-  void multiupdate(gd& g, base_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, polylabel*label) {  //invariant: not a test label, importance weight > 0
-    if (g.DO_MULTIUPDATE) {
-      size_t i = compute_multiupdate<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, count, step, pred, label);
-      if (i > 0) {
-        float* info = g.update_vec.begin;
-        for (size_t j=0; j<i; j++) {
-          //cerr << "update[" << INFO_ID(j) << "] = " << INFO_UP(j) << " * " <<  INFO_UM(j) << endl;
-          g.update_vec[2*j  ] = INFO_ID(j);
-          g.update_vec[2*j+1] = INFO_UP(j);
-          if (normalized) g.update_vec[2*j+1] *= INFO_UM(j);
-        }
-        multipredict_info mp = { i, step, pred, &g.all->reg, info, (float)g.all->sd->gravity };
-        foreach_feature< multipredict_info, uint32_t, update_feature_multi<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, mp);
-      }
-    } else {
-      size_t num_update = 0;
-      if (g.update_vec.end_array - g.update_vec.begin < 2*count+1) g.update_vec.resize(2*count+1);
-      for (size_t c=0; c<count; c++) {
-        ec.pred.scalar = pred[c].scalar;
-        ec.l = label[c];
-        float update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec);  // TODO: multi-ify compute_update
-        if (update != 0.) {
-          //cerr << "update[" << c << "] = " << update << " * " << g.update_multiplier << endl;
-          if (normalized) update *= g.update_multiplier;
-          g.update_vec[2*num_update  ] = (float)c;
-          g.update_vec[2*num_update+1] = update;
-          num_update++;
-        }
-        ec.ft_offset += step;
-      }
-      ec.ft_offset -= step*count;
-      if (num_update > 0) {
-        multipredict_info mp = { num_update, step, pred, &g.all->reg, g.update_vec.begin, (float)g.all->sd->gravity };
-        foreach_feature< multipredict_info, uint32_t, update_feature_multi<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, mp);
-      }
-    }
-    if (g.all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
-      sync_weights(*g.all);
-  }
 
   template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 void update(gd& g, base_learner& base, example& ec)
@@ -780,7 +537,7 @@ void update(gd& g, base_learner& base, example& ec)
   float update;
   if ( (update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (g, ec)) != 0.)
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
-
+  
   if (g.all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
     sync_weights(*g.all);
 }
@@ -791,6 +548,7 @@ void update(gd& g, base_learner& base, example& ec)
   assert(ec.in_use);
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.l.simple.weight > 0.);
+
   g.predict(g,base,ec);
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,base,ec);
 }
@@ -952,12 +710,12 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 
       // fix average loss
       double total_weight = 0.; //value holder as g* may be null
-      if (!read && g != NULL) total_weight = g->total_weight;
+      if (!read && g != nullptr) total_weight = g->total_weight;
       text_len = sprintf(buff, "gd::total_weight %f\n", total_weight);
       bin_text_read_write_fixed(model_file,(char*)&total_weight, sizeof(total_weight),
                                 "", read,
                                 buff, text_len, text);
-      if (read && g != NULL) g->total_weight = total_weight;
+      if (read && g != nullptr) g->total_weight = total_weight;
 
       // fix "loss since last" for first printed out example details
       text_len = sprintf(buff, "sd::old_weighted_examples %f\n", all.sd->old_weighted_examples);
@@ -1075,7 +833,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       if (resume)
       {
           if (read && all.model_file_ver < VERSION_SAVE_RESUME_FIX)
-            cerr << endl << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than " << VERSION_SAVE_RESUME_FIX << endl << endl;
+           cerr << endl << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than " << VERSION_SAVE_RESUME_FIX << endl << endl;
      // save_load_online_state(g, model_file, read, text);
         save_load_online_state(all, model_file, read, text, &g);
       }
@@ -1092,14 +850,12 @@ uint32_t set_learn(vw& all, bool feature_mask_off, gd& g)
     {
       g.learn = learn<sparse_l2, invariant, sqrt_rate, true, adaptive, normalized, spare>;
       g.update = update<sparse_l2, invariant, sqrt_rate, true, adaptive, normalized, spare>;
-      g.multiupdate = multiupdate<sparse_l2, invariant, sqrt_rate, true, adaptive, normalized, spare>;
       return next;
     }
   else
     {
       g.learn = learn<sparse_l2, invariant, sqrt_rate, false, adaptive, normalized, spare>;
       g.update = update<sparse_l2, invariant, sqrt_rate, false, adaptive, normalized, spare>;
-      g.multiupdate = multiupdate<sparse_l2, invariant, sqrt_rate, false, adaptive, normalized, spare>;
       return next;
     }
 }
@@ -1149,8 +905,6 @@ uint32_t ceil_log_2(uint32_t v)
     return 1 + ceil_log_2(v >> 1);
 }
 
-void finish(gd&g) { g.update_vec.delete_v(); }
-  
 base_learner* setup(vw& all)
 {
   new_options(all, "Gradient Descent options")
@@ -1158,7 +912,6 @@ base_learner* setup(vw& all)
     ("adaptive", "use adaptive, individual learning rates.")
     ("invariant", "use safe/importance aware updates.")
     ("normalized", "use per feature normalized updates")
-    ("multiupdate", "use multiupdates")
     ("sparse_l2", po::value<float>()->default_value(0.f), "use per feature normalized updates");
   add_options(all);
   po::variables_map& vm = all.vm;
@@ -1171,8 +924,7 @@ base_learner* setup(vw& all)
   g.sparse_l2 = vm["sparse_l2"].as<float>();
   g.neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
   g.neg_power_t = - all.power_t;
-  g.DO_MULTIUPDATE = vm.count("multiupdate")>0;
-  
+
   if(all.initial_t > 0)//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all.initial_t) previous fake datapoints all with norm 1
     {
       g.all->normalized_sum_norm_x = all.initial_t;
@@ -1219,14 +971,14 @@ base_learner* setup(vw& all)
 	 << " adjust --decay_learning_rate larger to avoid this." << endl;
   
   if (all.reg_mode % 2)
-    if (all.audit || all.hash_inv) {
-      g.predict = predict<true, true>;   g.multipredict = multipredict<true, true>; }
-    else {
-      g.predict = predict<true, false>;  g.multipredict = multipredict<true, false>; }
-  else if (all.audit || all.hash_inv) {
-    g.predict = predict<false, true>;    g.multipredict = multipredict<false, true>; }
-  else {
-    g.predict = predict<false, false>;   g.multipredict = multipredict<false, false>; }
+    if (all.audit || all.hash_inv)
+      g.predict = predict<true, true>;
+    else
+      g.predict = predict<true, false>;
+  else if (all.audit || all.hash_inv)
+    g.predict = predict<false, true>;
+  else
+    g.predict = predict<false, false>;
 
   uint32_t stride;
   if (all.power_t == 0.5)
@@ -1240,10 +992,6 @@ base_learner* setup(vw& all)
   ret.set_update(g.update);
   ret.set_save_load(save_load);
   ret.set_end_pass(end_pass);
-  ret.set_multipredict(g.multipredict);
-  //ret.set_multiupdate(g.multiupdate);
-  ret.set_finish(finish);
-  
   return make_base(ret);
 }
 }

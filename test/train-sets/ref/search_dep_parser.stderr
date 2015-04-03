@@ -8,15 +8,15 @@ Reading datafile = train-sets/wsj_small.dparser.vw.gz
 num sources = 1
 average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
 loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
-42.000000  42.000000         1  [43 5 5 5 1 5 9 9 6..] [0 1 2 3 4 5 6 7 8 ..]     0     0       96        0       96  0.009455
-23.500000  5.000000          2  [2 3 0 3 3           ] [0 1 1 1 1           ]     0     0      104        0      104  0.010248
-18.000000  12.500000         4  [4 4 4 7 6 7 0 9 7 ..] [2 0 2 2 4 2 2 7 2 ..]     0     0      164        0      164  0.016169
-12.125000  6.250000          8  [4 4 4 5 0 7 5 10 1..] [4 3 4 5 0 7 5 10 1..]     1     0      367        0      362  0.035458
+88.000000  88.000000         1  [43:1 5:2 5:2 5:2 1..] [0:8 1:1 2:1 3:1 4:..]     0     0      144        0      144  0.014199
+47.500000  7.000000          2  [2:2 3:5 0:8 3:7 3:4 ] [2:2 0:8 2:4 2:3 2:4 ]     0     0      156        1      156  0.015381
+37.000000  26.500000         4  [4:2 4:2 4:2 7:5 6:..] [2:2 7:5 2:4 2:4 2:..]     0     0      247        1      246  0.024204
+27.375000  17.750000         8  [4:2 4:2 4:2 5:5 0:..] [3:2 3:2 4:2 5:5 0:..]     1     0      546        5      543  0.052760
 
 finished run
 number of examples per pass = 5
 passes used = 2
 weighted example sum = 10
 weighted label sum = 0
-average loss = 10.2
-total feature number = 101200
+average loss = 23.2
+total feature number = 275880

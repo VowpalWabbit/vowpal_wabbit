@@ -335,7 +335,7 @@ void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
    ec.l.multi = ld;
  }
   
-template<class T> inline void delete_it(T* p) { if (p != NULL) delete p; } 
+template<class T> inline void delete_it(T* p) { if (p != nullptr) delete p; } 
 
   void finish(cbify& data)
   { CB::cb_label.delete_label(&data.cb_label);
@@ -348,7 +348,7 @@ template<class T> inline void delete_it(T* p) { if (p != NULL) delete p; }
     delete_it(data.generic_explorer);
     delete_it(data.mwt_explorer);
     delete_it(data.recorder);
-    if (data.cover != NULL)
+    if (data.cover != nullptr)
       {
 	data.cover->predictions.delete_v();
 	data.cover->probabilities.delete_v();
@@ -361,7 +361,7 @@ template<class T> inline void delete_it(T* p) { if (p != NULL) delete p; }
   base_learner* cbify_setup(vw& all)
   {//parse and set arguments
     if (missing_option<size_t, true>(all, "cbify", "Convert multiclass on <k> classes into a contextual bandit problem"))
-      return NULL;
+      return nullptr;
     new_options(all, "CBIFY options")
       ("first", po::value<size_t>(), "tau-first exploration")
       ("epsilon",po::value<float>() ,"epsilon-greedy exploration")

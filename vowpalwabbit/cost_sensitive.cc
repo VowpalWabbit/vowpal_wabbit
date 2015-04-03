@@ -177,7 +177,7 @@ namespace COST_SENSITIVE {
         size_t num_current_features = ec.num_features;
         // for csoaa_ldf we want features from the whole (multiline example),
         // not only from one line (the first one) represented by ec
-        if (ec_seq != NULL)
+        if (ec_seq != nullptr)
 	  {
           num_current_features = 0;
           // If the first example is "shared", don't include its features.
@@ -242,7 +242,7 @@ namespace COST_SENSITIVE {
       all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
     }
 
-    print_update(all, is_test_label(ec.l.cs), ec, NULL);
+    print_update(all, is_test_label(ec.l.cs), ec, nullptr);
   }
 
   bool example_is_test(example& ec)
