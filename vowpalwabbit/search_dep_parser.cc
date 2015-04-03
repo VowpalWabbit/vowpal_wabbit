@@ -83,7 +83,7 @@ namespace DepParserTask {
         children[4][stack[stack.size()-2]]=stack.last();
         children[1][stack[stack.size()-2]]++;
         tags[stack.last()] = t_id;
-		srn.loss(gold_heads[stack.last()] != heads[stack.last()]?2:(gold_tags[stack.last()] != t_id)?1:0);
+		srn.loss(gold_heads[stack.last()] != heads[stack.last()]?2:(gold_tags[stack.last()] != t_id) ? 1.0f : 0.0f);
         stack.pop();
         return idx;
       case 3:  //LEFT
@@ -92,7 +92,7 @@ namespace DepParserTask {
         children[2][idx]=stack.last();
         children[0][idx]++;
         tags[stack.last()] = t_id;
-		srn.loss(gold_heads[stack.last()] != heads[stack.last()]?2:(gold_tags[stack.last()] != t_id)?1:0);
+		srn.loss(gold_heads[stack.last()] != heads[stack.last()]?2:(gold_tags[stack.last()] != t_id) ? 1.0f : 0.0f);
 		stack.pop();
         return idx;
     }
