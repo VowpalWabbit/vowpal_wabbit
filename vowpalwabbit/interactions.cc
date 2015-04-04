@@ -1,18 +1,21 @@
 #include "interactions.h"
 
+// uncomment to try pairs and triples with FNV-like hash
+// #define FNV_HASH_TEST
+
 namespace INTERACTIONS
 {
 
 // generates features for all.interations and store them in cache ( ec.atomics[interactions_namespace] )
 void generate_interactions(vw& all, example& ec)
 {
-  if (!all.interactions.empty() && !v_array_contains(ec.indices, (unsigned char)interactions_namespace) )
+    if (!all.interactions.empty() && !v_array_contains(ec.indices, (unsigned char)interactions_namespace) )
     {   // if cache wasn't created yet
 
         v_array<feature>& cache = ec.atomics[interactions_namespace];
         float& sum_feat_sq = ec.sum_feat_sq[interactions_namespace];
 
-        uint32_t offset = ec.ft_offset;
+        const uint32_t offset = ec.ft_offset;
 
         v_array<feature_gen_data> state_data = v_init<feature_gen_data>(); // statedata for non-recursive iteration
         feature_gen_data empty_ns_data;  // befare: micro-optimization. don't want to call its constructor each time in loop.
@@ -21,197 +24,296 @@ void generate_interactions(vw& all, example& ec)
         {
             const string ns = (*it);  // current list of namespaces to interact.
             // 'const string::operator[]' seems to be faster (http://stackoverflow.com/a/19920071/841424)
-
-            // preparing state data
-
-            bool no_data_to_interact = false; // if any namespace has 0 features - whole interaction is skipped
-
             const size_t len = ns.length();
-            for (size_t i = 0; i < len; ++i)
+
+#ifndef FNV_HASH_TEST
+
+            if (len == 2) //special case of pairs
             {
-                size_t ft_cnt = ec.atomics[(int32_t)ns[i]].size();
-                if (ft_cnt == 0)
-                {
-                    no_data_to_interact = true;
-                    break;
-                }
+                const size_t fst_ns = ns[0];
+                if (ec.atomics[fst_ns].size() > 0) {
 
-                if (state_data.size() <= i)
-                    state_data.push_back(empty_ns_data);
-                state_data[i].loop_end = ft_cnt-1; // saving number of features in each namespace
-            }
-
-            if (no_data_to_interact) continue;
+                    const size_t snd_ns = ns[1];
+                    if (ec.atomics[snd_ns].size() > 0) {
 
 
+                        const bool same_namespace = ( !all.permutations && ( fst_ns == snd_ns ) );
+                        const feature* fst     = ec.atomics[fst_ns].begin;
+                        const feature* fst_end = ec.atomics[fst_ns].end;
+                        const feature* snd_end = ec.atomics[snd_ns].end;
 
-            if (!all.permutations)
-            {
-                // if permutations mode disabeled then namespaces in ns are already sorted and thus grouped
-                // let's go throw the list and calculate number of features to skip in namespaces which
-                // repeated more than once to ensure generation of only simple combinations
-
-                size_t margin = 0;  // number of features to ignore if namesapce has been seen before
-
-
-                bool impossible_without_permutations = false;
-
-                // iterate list backward as margin grows in this order
-                for (int i = len-1; i >= 1; --i)
-                {
-                    if (ns[i] == ns[i-1])
-                    {
-                        size_t& loop_end = state_data[i-1].loop_end;
-
-                        if (ec.atomics[(int32_t)ns[i-1]][loop_end-margin].x == 1. || // if special case at end of array then we can't exclude more than existing margin
-                                !feature_self_interactions_for_weight_other_than_1)  // and we have to
+                        for (; fst != fst_end; ++fst)
                         {
-                            ++margin; // otherwise margin can 't be increased
+                            const uint32_t halfhash = quadratic_constant * (fst->weight_index + offset);
+                            const feature* snd = (!same_namespace) ? ec.atomics[snd_ns].begin :
+                                                                     (fst->x != 1. && feature_self_interactions_for_weight_other_than_1) ? fst : fst+1;
 
-                            if ( (impossible_without_permutations = (loop_end < margin)) ) break;
-                        }
-                        loop_end -= margin;               // skip some features and increase margin
+                            ec.num_features += snd_end - snd;
 
-                        state_data[i].same_ns = true;     // mark namespace as appearing more than once
-                    } else
-                        margin = 0;
-                }
+                            for (; snd < snd_end; ++snd)
+                            {
 
-                // if impossible_without_permutations is true then we faced with case like interaction 'aaaa'
-                // where namespace 'a' contains less than 4 unique features. It's impossible to make simple
-                // combination of length 4 without repetitions from 3 or less elements.
-                if (impossible_without_permutations) continue;
-            }
+                                const float ft_weight = fst->x*snd->x;
 
-            // a small trick to keep backward compatibility with hash functions and good performance
+                                cache.push_back(feature {
+                                                    ft_weight,
+                                                    snd->weight_index + halfhash
+                                                });
 
-            int coef1; int coef2;
+                                sum_feat_sq += ft_weight * ft_weight;
 
-            switch(len)
-            {
-            case 2: { // pairs
-                coef1 = quadratic_constant;
-                coef2 = quadratic_constant;
-            } break;
-            case 3: { // triples
-                coef1 = cubic_constant;
-                coef2 = cubic_constant2;
-            } break;
-            default: {// all other
-                coef1 = bernstein_c0;
-                coef2 = bernstein_c0;
-                offset += bernstein_c1 << all.reg.stride_shift;
-            } break;
-            }
+                            } // end for snd
+                        } // end for fst
 
-            // as coef2 != coef1 only for triples, its use will be hardcoded for hash calculation for last namespace in interaction
+                    } // end if atomics[snd] size > 0
+                } // end if atomics[fst] size > 0
 
+            } else
 
-            size_t cur_ns_idx = 0;      // idx of current namespace
-            state_data[0].loop_idx = 0; // loop_idx contains current feature id for curently processed namespace.
-
-            const int32_t last_ns = (int32_t)ns[len-1];
-
-            // beware: micro-optimization. This block taken out from the while loop. Seems to be useful.
-            feature* features_begin = ec.atomics[last_ns].begin; // really constant in all cases. Left non constant to avoid type conversion
-            feature_gen_data* data = &state_data[len-1];
-             /* start & end are always point to features in last namespace of interaction.
-                for 'all.permutations == true' they are constant, so new_ft_cnt is constant too.*/
-            feature* start = features_begin;
-            feature* end = features_begin + data->loop_end + 1; // end is constant as data->loop_end is never chabges in the loop
-            size_t new_ft_cnt = (size_t)(end-start);
-
-            uint include_itself = 0;
-            feature_gen_data* next_data;
-            feature* cur_feature;
-            // end of micro-optimization block
-
-            bool do_it = true;
-
-            while (do_it)
-            {
-                data = &state_data[cur_ns_idx];
-
-                if (cur_ns_idx < len-1) // can go further throw the list of namespaces
+                if (len == 3) // special case for triples
                 {
-                    next_data = &state_data[cur_ns_idx+1];
-                    cur_feature = &ec.atomics[(int32_t)ns[cur_ns_idx]][data->loop_idx];
+                    const size_t fst_ns = ns[0];
+                    if (ec.atomics[fst_ns].size() > 0) {
 
-                    if (next_data->same_ns)
+                        const size_t snd_ns = ns[1];
+                        if (ec.atomics[snd_ns].size() > 0) {
+
+                            const size_t thr_ns = ns[2];
+                            if (ec.atomics[thr_ns].size() > 0) {
+
+
+                                // don't compare 1 and 3 as string is sorted
+                                const bool same_namespace1 = ( !all.permutations && ( fst_ns == snd_ns ) );
+                                const bool same_namespace2 = ( !all.permutations && ( snd_ns == thr_ns ) );
+
+                                /* // make sure ns in form <a,b,c>, <a,a,b> or <a,a,a>
+                                if (same_namespace2 && !same_namespace1)
+                                { // <a,b,a> -> <a,a,b>
+                                  thr_ns = fst_ns;
+                                  fst_ns = snd_ns;
+                                  same_namespace2 = false;
+                                  same_namespace1 = true;
+                                }
+
+                                const size_t margin = (same_namespace1 && same_namespace2) ? 2 :
+                                                            (same_namespace1 || same_namespace2) ? 1 : 0;
+                                if (fst + margin >= fst_end) continue; */
+
+
+                                const feature* fst = ec.atomics[fst_ns].begin;
+                                const feature* fst_end = ec.atomics[fst_ns].end;
+                                const feature* snd_end = (same_namespace1) ? fst_end : ec.atomics[snd_ns].end;
+                                const feature* thr_end = (same_namespace2) ? snd_end : ec.atomics[thr_ns].end;
+
+                                for (; fst < fst_end; ++fst)
+                                {
+
+                                    const feature* snd = (!same_namespace1) ? ec.atomics[snd_ns].begin :
+                                                                              (fst->x != 1. && feature_self_interactions_for_weight_other_than_1) ? fst : fst+1;
+                                    const uint32_t halfhash1 = cubic_constant * (fst->weight_index + offset);
+
+                                    for (; snd < snd_end; ++snd)
+                                    {
+                                        const uint32_t halfhash2 = cubic_constant2 * (halfhash1 + snd->weight_index) + offset;
+                                        const float ft_weight1 = fst->x * snd->x;
+
+                                        const feature* thr = (!same_namespace2) ? ec.atomics[thr_ns].begin :
+                                                                                  (snd->x != 1. && feature_self_interactions_for_weight_other_than_1) ? snd : snd+1;
+
+                                        ec.num_features += thr_end - thr;
+
+                                        for (; thr < thr_end; ++thr)
+                                        {
+
+                                            const float ft_weight2 = ft_weight1 * thr->x;
+
+                                            cache.push_back(feature {
+                                                                ft_weight2,
+                                                                thr->weight_index + halfhash2
+                                                            });
+
+
+                                            sum_feat_sq += ft_weight2 * ft_weight2;
+
+                                        } // end for thr
+                                    } // end for snd
+                                } // end for fst
+
+                            } // end if atomics[thr] size > 0
+                        } // end if atomics[snd] size > 0
+                    } // end if atomics[fst] size > 0
+
+                } else // generic case: quatriples, etc.
+
+#endif
+                {
+
+                    // preparing state data
+
+                    bool no_data_to_interact = false; // if any namespace has 0 features - whole interaction is skipped
+                    const uint32_t stride_shift = all.reg.stride_shift;
+
+                    for (size_t i = 0; i < len; ++i)
                     {
-                        // if next namespace is same, we should start with loop_idx + 1 to avoid feature interaction with itself
-                        // unless feature has weight w and w != w*w. E.g. w != 0 and w != 1. Features with w == 0 are already
-                        // filtered out in parce_args.cc::maybeFeature().
+                        size_t ft_cnt = ec.atomics[(int32_t)ns[i]].size();
+                        if (ft_cnt == 0)
+                        {
+                            no_data_to_interact = true;
+                            break;
+                        }
 
-                        include_itself = ((cur_feature->x != 1.) && feature_self_interactions_for_weight_other_than_1) ? 0 : 1;
-                        next_data->loop_idx = data->loop_idx + include_itself;
+                        if (state_data.size() <= i)
+                            state_data.push_back(empty_ns_data);
+                        state_data[i].loop_end = ft_cnt-1; // saving number of features in each namespace
                     }
-                    else
-                        next_data->loop_idx = 0;
+
+                    if (no_data_to_interact) continue;
 
 
-                    if (cur_ns_idx == 0)
-                    { // small micro-optimization
-                        next_data->hash = cur_feature->weight_index;
-                        next_data->x = cur_feature->x; // data->x == 1.
-                    }
-                    else
+
+                    if (!all.permutations)
                     {
-                        next_data->hash = interact( data->hash, cur_feature->weight_index, coef1, offset); // always coef1, as we are not in last namespace yet
-                        next_data->x = cur_feature->x * data->x;
+                        // if permutations mode disabeled then namespaces in ns are already sorted and thus grouped
+                        // let's go throw the list and calculate number of features to skip in namespaces which
+                        // repeated more than once to ensure generation of only simple combinations
+
+                        size_t margin = 0;  // number of features to ignore if namesapce has been seen before
+
+
+                        bool impossible_without_permutations = false;
+
+                        // iterate list backward as margin grows in this order
+                        for (int i = len-1; i >= 1; --i)
+                        {
+                            if (ns[i] == ns[i-1])
+                            {
+                                size_t& loop_end = state_data[i-1].loop_end;
+
+                                if (ec.atomics[(int32_t)ns[i-1]][loop_end-margin].x == 1. || // if special case at end of array then we can't exclude more than existing margin
+                                        !feature_self_interactions_for_weight_other_than_1)  // and we have to
+                                {
+                                    ++margin; // otherwise margin can 't be increased
+
+                                    if ( (impossible_without_permutations = (loop_end < margin)) ) break;
+                                }
+                                loop_end -= margin;               // skip some features and increase margin
+
+                                state_data[i].same_ns = true;     // mark namespace as appearing more than once
+                            } else
+                                margin = 0;
+                        }
+
+                        // if impossible_without_permutations is true then we faced with case like interaction 'aaaa'
+                        // where namespace 'a' contains less than 4 unique features. It's impossible to make simple
+                        // combination of length 4 without repetitions from 3 or less elements.
+                        if (impossible_without_permutations) continue;
                     }
 
 
+                    size_t cur_ns_idx = 0;      // idx of current namespace
+                    state_data[0].loop_idx = 0; // loop_idx contains current feature id for curently processed namespace.
 
-                    ++cur_ns_idx;
+                    const int32_t last_ns = (int32_t)ns[len-1];
 
-                } else {
+                    // beware: micro-optimization. This block taken out from the while loop. Seems to be useful.
+                    feature* features_begin = ec.atomics[last_ns].begin; // really constant in all cases. Left non constant to avoid type conversion
+                    feature_gen_data* data = &state_data[len-1];
+                    /* start & end are always point to features in last namespace of interaction.
+                    for 'all.permutations == true' they are constant, so new_ft_cnt is constant too.*/
+                    feature* start = features_begin;
+                    feature* end = features_begin + data->loop_end + 1; // end is constant as data->loop_end is never chabges in the loop
+                    size_t new_ft_cnt = (size_t)(end-start);
 
-                    // last namespace - iterate its features and go back
+                    uint include_itself = 0;
+                    feature_gen_data* next_data;
+                    feature* cur_feature;
+                    // end of micro-optimization block
 
-                    if (!all.permutations) // values are not constant in this case
+                    bool do_it = true;
+
+                    while (do_it)
                     {
-                        start = features_begin + data->loop_idx;
-                        new_ft_cnt = (size_t)(end-start);
-                    }
+                        data = &state_data[cur_ns_idx];
 
-                    // add new features to cache
+                        if (cur_ns_idx < len-1) // can go further throw the list of namespaces
+                        {
+                            next_data = &state_data[cur_ns_idx+1];
+                            cur_feature = &ec.atomics[(int32_t)ns[cur_ns_idx]][data->loop_idx];
 
-                    float ft_weight; // micro-optimization. useless, i think
+                            if (next_data->same_ns)
+                            {
+                                // if next namespace is same, we should start with loop_idx + 1 to avoid feature interaction with itself
+                                // unless feature has weight w and w != w*w. E.g. w != 0 and w != 1. Features with w == 0 are already
+                                // filtered out in parce_args.cc::maybeFeature().
 
-                    for (feature* f = start; f != end; ++f)
-                    {
-                        ft_weight = data->x * f->x;
+                                include_itself = ((cur_feature->x != 1.) && feature_self_interactions_for_weight_other_than_1) ? 0 : 1;
+                                next_data->loop_idx = data->loop_idx + include_itself;
+                            }
+                            else
+                                next_data->loop_idx = 0;
 
-                        cache.push_back(feature {
-                                            ft_weight,
-                                            interact(data->hash, f->weight_index, coef2, offset)
-                                            }); /* coef2 here. If triples then we are in namespace #3.
-                                                   In other cases coef1==coef2 anyway, so coef2 is hardcoded here
-                                                   and no check of 'len' and 'cur_ns_idx' is done. */
 
-                        if (ft_weight != 1.) // another useless micro-optimization, i suppose.
-                            sum_feat_sq += ft_weight * ft_weight;
-                        else ++sum_feat_sq;
-                    }
+                            if (cur_ns_idx == 0)
+                            {
+                                next_data->hash = (cur_feature->weight_index  + offset) >> stride_shift;
+                                next_data->x = cur_feature->x; // data->x == 1.
+                            }
+                            else
+                            {
+                                // feature2 xor (16777619*feature1)
+                                next_data->hash = (FNV_prime * data->hash) ^ (( (cur_feature->weight_index  + offset ) >> stride_shift ) ); // not a real index yet as [<< stride_shift] wasn't done for performance reasons
+                                next_data->x = cur_feature->x * data->x;
+                            }
 
-                    ec.num_features += new_ft_cnt;
+                            ++cur_ns_idx;
 
-                    // trying to go back increasing loop_idx of each namespace by the way
+                        } else {
 
-                    bool go_further = true;
-                    feature_gen_data* cur_data; // beware: useless micro-optimization
+                            // last namespace - iterate its features and go back
 
-                    do {
-                        cur_data = &state_data[--cur_ns_idx];
-                        go_further = (++cur_data->loop_idx > cur_data->loop_end);
-                    } while (go_further && cur_ns_idx != 0);
+                            if (!all.permutations) // values are not constant in this case
+                            {
+                                start = features_begin + data->loop_idx;
+                                new_ft_cnt = (size_t)(end-start);
+                            }
 
-                    do_it = !(cur_ns_idx == 0 && go_further);
-                    //if false - we've reached 0 namespace but its 'cur_data.loop_idx > cur_data.loop_end' -> exit the while loop
+                            // add new features to cache
+
+                            float ft_weight; // micro-optimization. useless, i think
+
+                            for (feature* f = start; f != end; ++f)
+                            {
+                                ft_weight = data->x * f->x;
+
+                                cache.push_back(feature {
+                                                    ft_weight,
+                                                    ( (FNV_prime * data->hash) ^ (f->weight_index >> stride_shift) ) << stride_shift
+                                                });
+
+                                if (ft_weight != 1.) // another useless micro-optimization, i suppose.
+                                    sum_feat_sq += ft_weight * ft_weight;
+                                else ++sum_feat_sq;
+                            }
+
+                            ec.num_features += new_ft_cnt;
+
+                            // trying to go back increasing loop_idx of each namespace by the way
+
+                            bool go_further = true;
+                            feature_gen_data* cur_data; // beware: useless micro-optimization
+
+                            do {
+                                cur_data = &state_data[--cur_ns_idx];
+                                go_further = (++cur_data->loop_idx > cur_data->loop_end);
+                            } while (go_further && cur_ns_idx != 0);
+
+                            do_it = !(cur_ns_idx == 0 && go_further);
+                            //if false - we've reached 0 namespace but its 'cur_data.loop_idx > cur_data.loop_end' -> exit the while loop
+                        }
+
+                    } // while do_it
+
                 }
-
-            } // while do_it
 
         } // for all.interactions
 

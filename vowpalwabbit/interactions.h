@@ -9,23 +9,8 @@ namespace INTERACTIONS
 // By default include interactions of feature with itself when its weight != weight^2.
 const bool feature_self_interactions_for_weight_other_than_1 = true;
 
-// Default interaction hash constants
-// It's a variation of Bernstein hash http://www.eternallyconfuzzled.com/tuts/algorithms/jsw_tut_hashing.aspx
-// Suggested by Josh Bloch in Effective Java http://stackoverflow.com/a/1646913/841424
-
-const int bernstein_c1 = 31;
-const int bernstein_c0 = 17 * bernstein_c1; // 17*31
-
-// All hashes could be represented in form f(x,a,b) = a*x + b
-// for pairs it's f(hash1 + offset, quadratic_constant, hash2)
-// for triples it's f( f(hash1 + offset, cubic_constant, hash2) + offset, cubic_constant2, hash3)
-// for bernshtain it's f(bernstein_c1, hash1 + offset + bernstein_c0, hash2)
-
-inline uint32_t interact(const uint32_t hash1, const uint32_t hash2, const int coef, const uint32_t offset)
-{
-    return coef*(hash1+offset) + hash2;
-}
-
+// http://www.isthe.com/chongo/tech/comp/fnv/#FNV-param
+const uint32_t FNV_prime = 16777619;
 
 // state data for non-recursive iteration algorithm
 // consists on N feature_gen_data records
@@ -34,12 +19,12 @@ inline uint32_t interact(const uint32_t hash1, const uint32_t hash2, const int c
 struct feature_gen_data
 {
     size_t loop_idx; // current feature id in namespace
-    size_t hash;     // hash of feature interactions of previous namespaces in the list
+    uint32_t hash;   // hash of feature interactions of previous namespaces in the list
     double x;        // weight of feature interactions of previous namespaces in the list
     size_t loop_end; // last feature id. May be less than number of features if namespace involved in interaction more than once
                      // calculated at preprocessing together with same_ns
     size_t same_ns;  // true if same namespace as previous is interaction list
-    feature_gen_data(): loop_idx(0), hash(1), x(1.), loop_end(0), same_ns(false) {}
+    feature_gen_data(): loop_idx(0), x(1.), loop_end(0), same_ns(false) {}
 };
 
 
@@ -50,7 +35,7 @@ void generate_interactions(vw& all, example& ec);
 // expand namespace interactions if contain wildcards
 const unsigned char printable_start = '!';
 const unsigned char printable_end   = '~';
-const uint valid_ns_size = printable_end - printable_start - 1; //will skip two characters
+const uint valid_ns_size = printable_end - printable_start - 1; // will skip two characters
 
 void expand_namespace_depth(string& ns, vector<string>& res, string val,  size_t pos);
 inline void expand_namespace(string ns, vector<string>& res)
