@@ -367,35 +367,45 @@ void expand_namespace_depth(string& ns, vector<string>& res, string val,  size_t
         }
 }
 
+/* Don't sort duplicated interaction without need.
+ * 1. Duplicated interactions should be always removed from -q, --cubic and --interactions.
+ * 2. After duplicated interactions were removed it's allowed to sort indexes in interactions ascendantly
+ *    if only all.permutations==false (it's false by default) and there is at least one duplicate
+ *    namespace in interaction. Otherwise it should be left as is.
+ */
+
 bool compare_interactions (string a, string b) {
+    // compare namespaces ignoring their original position in interaction
     std::sort(a.begin(), a.end());
     std::sort(b.begin(), b.end());
     return (a < b);
 }
 
-bool compare_sorted_interactions (string a, string b) {
-    return (a < b);
-}
-
 void filter_duplicate_interactions(vector<string>& vec, bool leave_elements_sorted)
 {
-    bool(*fn_cmp)(string,string);
+
     if (leave_elements_sorted)
     {
+        // preliminary sort interactions, but only if needed
         for (vector<string>::iterator i = vec.begin(); i != vec.end(); ++i)
-        {  // sort namespaces in each interaction ascendantly to group equal namespaces in them
-            string& s = *i;
+        {
+            string& interaction = *i;
+            string s = interaction;
+            // sort namespaces in interaction ascendantly to group equal namespaces in them
             std::sort(s.begin(), s.end());
+            if (std::unique(s.begin(),s.end()) < s.end())
+                std::sort(interaction.begin(), interaction.end()); // can't just assign s as unique(<aab>) -> <abb>
         }
-        fn_cmp = compare_sorted_interactions;
-    } else
-        fn_cmp = compare_interactions;
-    // can't use unique in case of !
-    // so use fastest std::set (http://stackoverflow.com/a/1041939/841424) with proper comparision function
-    set<string, bool(*)(string,string)> temp_set(fn_cmp);
-    size_t size = vec.size();
-    for ( size_t i = 0; i < size; ++i )
+    }
+
+    // can't use just unique() in case leave_elements_sorted == false
+    // so using fastest std::set (http://stackoverflow.com/a/1041939/841424)
+    // with comparision function that ignores namespace position
+    set<string, bool(*)(string,string)> temp_set(compare_interactions);
+
+    for ( size_t i = 0; i < vec.size(); ++i )
         temp_set.insert( vec[i] );
+
     vec.assign( temp_set.begin(), temp_set.end() );
 }
 

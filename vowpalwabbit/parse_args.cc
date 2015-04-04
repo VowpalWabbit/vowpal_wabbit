@@ -503,8 +503,8 @@ void parse_feature_tweaks(vw& all)
       all.triples.insert(all.triples.end(), new_triples.begin(), new_triples.end());
 
   INTERACTIONS::filter_duplicate_interactions(all.interactions, !all.permutations);
-  INTERACTIONS::filter_duplicate_interactions(all.pairs);
-  INTERACTIONS::filter_duplicate_interactions(all.triples);
+  INTERACTIONS::filter_duplicate_interactions(all.pairs, !all.permutations);
+  INTERACTIONS::filter_duplicate_interactions(all.triples, !all.permutations);
 
 
   for (size_t i = 0; i < 256; i++)
