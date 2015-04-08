@@ -21,19 +21,13 @@ struct csoaa{
 };
 
 template<bool is_learn>
-inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost, 
-		       uint32_t& prediction, float& score, float& partial_prediction)
-{
-  if (is_learn)
-    {
-      ec.l.simple.label = cost;
-      if (cost == FLT_MAX)
-	ec.l.simple.weight = 0.;
-      else
-	ec.l.simple.weight = 1.;
-      base.learn(ec, i-1);
-    }
-  else
+inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
+                       uint32_t& prediction, float& score, float& partial_prediction) {
+  if (is_learn) {
+    ec.l.simple.label = cost;
+    ec.l.simple.weight = (cost == FLT_MAX) ? 0. : 1.;
+    base.learn(ec, i-1);
+  } else
     base.predict(ec, i-1);
   
   partial_prediction = ec.partial_prediction;
@@ -58,6 +52,7 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
     else
       for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++)
         inner_loop<is_learn>(base, ec, cl->class_index, cl->x / c.class_weight_multipliers[cl->class_index-1], prediction, score, cl->partial_prediction);
+    ec.partial_prediction = score;
   } else if (DO_MULTIPREDICT && !is_learn) {
     ec.l.simple = { FLT_MAX, 0.f, 0.f };
     polyprediction* pred = (polyprediction*)alloca(c.num_classes * sizeof(polyprediction));
@@ -65,11 +60,13 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
     for (uint32_t i = 1; i <= c.num_classes; i++)
       if (pred[i-1].scalar < pred[prediction-1].scalar)
         prediction = i;
-  } else
-    { float temp;
-      for (uint32_t i = 1; i <= c.num_classes; i++)
-	inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp);
-    }
+    ec.partial_prediction = pred[prediction-1].scalar;
+  } else {
+    float temp;
+    for (uint32_t i = 1; i <= c.num_classes; i++)
+      inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp);
+    ec.partial_prediction = score;
+  }
 
   ec.pred.multiclass = prediction;
   ec.l.cs = ld;
@@ -86,9 +83,9 @@ base_learner* csoaa_setup(vw& all)
   if (missing_option<size_t, true>(all, "csoaa", "One-against-all multiclass with <k> costs"))
     return nullptr;
   new_options(all, "csoaa options")
-    ("csoaa_class_weights", po::value<string>(), "list of weight multipliers for each class in form \"2,0.1,...\" for 1..<k>");
+      ("csoaa_class_weights", po::value<string>(), "list of weight multipliers for each class in form \"2,0.1,...\" for 1..<k>");
   add_options(all);
-  
+
   csoaa& c = calloc_or_die<csoaa>();
   c.num_classes = (uint32_t)all.vm["csoaa"].as<size_t>();
   c.class_weight_multipliers = nullptr;

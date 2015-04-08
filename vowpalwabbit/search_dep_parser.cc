@@ -1,14 +1,16 @@
 /*
-   Copyright (c) by respective owners including Yahoo!, Microsoft, and
-   individual contributors. All rights reserved.  Released under a BSD (revised)
-   license as described in the file LICENSE.
-   */
+  Copyright (c) by respective owners including Yahoo!, Microsoft, and
+  individual contributors. All rights reserved.  Released under a BSD (revised)
+  license as described in the file LICENSE.
+*/
 #include "search_dep_parser.h"
 #include "gd.h"
+#include "cost_sensitive.h"
+
 #define val_namespace 100 // valency and distance feature space
 #define offset_const 344429
 
-namespace DepParserTask         {  Search::search_task task = { "dep_parser", run, initialize, finish, nullptr, nullptr};  }
+namespace DepParserTask         {  Search::search_task task = { "dep_parser", run, initialize, finish, setup, nullptr};  }
 
 struct task_data {
   example *ex;
@@ -23,21 +25,35 @@ namespace DepParserTask {
 
   void initialize(Search::search& srn, size_t& num_actions, po::variables_map& vm) {
     task_data *data = new task_data();
-	data->action_loss.resize(4,true);
-	data->ex = NULL;
+    data->action_loss.resize(4,true);
+    data->ex = NULL;
     srn.set_num_learners(3);
     srn.set_task_data<task_data>(data);
     po::options_description dparser_opts("dependency parser options");
     dparser_opts.add_options()
-      ("root_label", po::value<size_t>(&(data->root_label))->default_value(8), "Ensure that there is only one root in each sentence")
-      ("num_label", po::value<size_t>(&(data->num_label))->default_value(12), "Number of arc labels");
+        ("root_label", po::value<size_t>(&(data->root_label))->default_value(8), "Ensure that there is only one root in each sentence")
+        ("num_label", po::value<size_t>(&(data->num_label))->default_value(12), "Number of arc labels");
     srn.add_program_options(vm, dparser_opts);
 
     for(size_t i=1; i<=data->num_label;i++)
       if(i!=data->root_label)
         data->valid_labels.push_back(i);
 
-    srn.set_options(AUTO_CONDITION_FEATURES);
+    data->ex = alloc_examples(sizeof(polylabel), 1);
+    data->ex->indices.push_back(val_namespace);
+    for(size_t i=1; i<14; i++)
+      data->ex->indices.push_back((unsigned char)i+'A');
+    data->ex->indices.push_back(constant_namespace);
+
+    vw& all = srn.get_vw_pointer_unsafe();
+    const char* pair[] = {"BC", "BE", "BB", "CC", "DD", "EE", "FF", "GG", "EF", "BH", "BJ", "EL", "dB", "dC", "dD", "dE", "dF", "dG", "dd"};
+    const char* triple[] = {"EFG", "BEF", "BCE", "BCD", "BEL", "ELM", "BHI", "BCC", "BJE", "BHE", "BJK", "BEH", "BEN", "BEJ"};
+    vector<string> newpairs(pair, pair+19);
+    vector<string> newtriples(triple, triple+14);
+    all.pairs.swap(newpairs);
+    all.triples.swap(newtriples);
+    
+    srn.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
   }
 
   void finish(Search::search& srn) {
@@ -51,11 +67,14 @@ namespace DepParserTask {
     data->tags.delete_v();
     data->temp.delete_v();
     data->action_loss.delete_v();
+    dealloc_example(COST_SENSITIVE::cs_label.delete_label, *data->ex);
+    free(data->ex);
+    for (size_t i=0; i<6; i++) data->children[i].delete_v();
     delete data;
   } 
 
-  void inline add_feature(example *ex,  uint32_t idx, unsigned  char ns, size_t mask, size_t multiplier){
-    feature f = {1.0f, (idx * multiplier ) & (uint32_t)mask};
+  void inline add_feature(example *ex,  uint32_t idx, unsigned  char ns, size_t mask, uint32_t multiplier){
+    feature f = {1.0f, (idx * multiplier) & (uint32_t)mask};
     ex->atomics[(int)ns].push_back(f);
   }
 
@@ -83,7 +102,8 @@ namespace DepParserTask {
         children[4][stack[stack.size()-2]]=stack.last();
         children[1][stack[stack.size()-2]]++;
         tags[stack.last()] = t_id;
-		srn.loss(gold_heads[stack.last()] != heads[stack.last()]?2:(gold_tags[stack.last()] != t_id)?1:0);
+        srn.loss(gold_heads[stack.last()] != heads[stack.last()]?2:(gold_tags[stack.last()] != t_id)?1:0);
+        assert(! stack.empty());
         stack.pop();
         return idx;
       case 3:  //LEFT
@@ -92,27 +112,29 @@ namespace DepParserTask {
         children[2][idx]=stack.last();
         children[0][idx]++;
         tags[stack.last()] = t_id;
-		srn.loss(gold_heads[stack.last()] != heads[stack.last()]?2:(gold_tags[stack.last()] != t_id)?1:0);
-		stack.pop();
+        srn.loss(gold_heads[stack.last()] != heads[stack.last()]?2:(gold_tags[stack.last()] != t_id)?1:0);
+        assert(! stack.empty());
+        stack.pop();
         return idx;
     }
     return idx;
   }
   
   void extract_features(Search::search& srn, uint32_t idx,  vector<example*> &ec) {
-  	vw& all = srn.get_vw_pointer_unsafe();
+    vw& all = srn.get_vw_pointer_unsafe();
     task_data *data = srn.get_task_data<task_data>();
     reset_ex(data->ex);
-    size_t ss = srn.get_stride_shift(), mask = srn.get_mask();
+    size_t mask = srn.get_mask();
     uint32_t multiplier = all.wpp << all.reg.stride_shift;
     v_array<uint32_t> &stack = data->stack, &tags = data->tags, *children = data->children, &temp=data->temp;
     example **ec_buf = data->ec_buf;
     example &ex = *(data->ex);
+
     add_feature(&ex, (uint32_t) constant, constant_namespace, mask, multiplier);
     size_t n = ec.size();
 
     for(size_t i=0; i<13; i++)
-		ec_buf[i] = nullptr;
+      ec_buf[i] = nullptr;
 
     // feature based on the top three examples in stack ec_buf[0]: s1, ec_buf[1]: s2, ec_buf[2]: s3
     for(size_t i=0; i<3; i++)
@@ -125,9 +147,9 @@ namespace DepParserTask {
     // features based on the leftmost and the rightmost children of the top element stack ec_buf[6]: sl1, ec_buf[7]: sl2, ec_buf[8]: sr1, ec_buf[9]: sr2;
     for(size_t i=6; i<10; i++) {
       /*      if (stack.empty()) continue;
-      cerr << "stack.last() = " << stack.last() << endl;
-      cerr << "children[i-4] = " << &children[i-4] << endl;
-      cerr << "children[i-4][s.l] = " << children[i-4][stack.last()] << endl; */
+              cerr << "stack.last() = " << stack.last() << endl;
+              cerr << "children[i-4] = " << &children[i-4] << endl;
+              cerr << "children[i-4][s.l] = " << children[i-4][stack.last()] << endl; */
       if (!stack.empty() && stack.last() != 0&& children[i-4][stack.last()]!=0)
         ec_buf[i] = ec[children[i-4][stack.last()]-1];
     }
@@ -146,16 +168,16 @@ namespace DepParserTask {
 
         uint32_t additional_offset = (uint32_t)(i*offset_const);
         if(!ec_buf[i]){
-        	for(size_t k=0; k<ec[0]->atomics[*fs].size(); k++) {
-        	    v0 = affix_constant*((*fs+1)*quadratic_constant + k);
-	            add_feature(&ex, (uint32_t) v0 + additional_offset, (unsigned char)((i+1)+'A'), mask, multiplier);
-			}
-		}
+          for(size_t k=0; k<ec[0]->atomics[*fs].size(); k++) {
+            v0 = affix_constant*((*fs+1)*quadratic_constant + k);
+            add_feature(&ex, (uint32_t) v0 + additional_offset, (unsigned char)((i+1)+'A'), mask, multiplier);
+          }
+        }
         else {
-        	for(size_t k=0; k<ec_buf[i]->atomics[*fs].size(); k++) {
-    	        v0 = (ec_buf[i]->atomics[*fs][k].weight_index / multiplier);
-	            add_feature(&ex, (uint32_t) v0 + additional_offset, (unsigned char)((i+1)+'A'), mask, multiplier);
-			}
+          for(size_t k=0; k<ec_buf[i]->atomics[*fs].size(); k++) {
+            v0 = (ec_buf[i]->atomics[*fs][k].weight_index / multiplier);
+            add_feature(&ex, (uint32_t) v0 + additional_offset, (unsigned char)((i+1)+'A'), mask, multiplier);
+          }
         }
       }
     }
@@ -167,25 +189,25 @@ namespace DepParserTask {
     temp[2] = stack.empty()? 1: 1+min(5, children[1][stack.last()]);
     temp[3] = idx>n? 1: 1+min(5 , children[0][idx]);
     for(size_t i=4; i<8; i++)
-		temp[i] = (!stack.empty() && children[i-2][stack.last()]!=0)?tags[children[i-2][stack.last()]]:15;
+      temp[i] = (!stack.empty() && children[i-2][stack.last()]!=0)?tags[children[i-2][stack.last()]]:15;
     for(size_t i=8; i<10; i++)
-        temp[i] = (idx <=n && children[i-6][idx]!=0)? tags[children[i-6][idx]] : 15;	
+      temp[i] = (idx <=n && children[i-6][idx]!=0)? tags[children[i-6][idx]] : 15;	
 
     size_t additional_offset = val_namespace*offset_const; 
     for(int j=0; j< 10;j++) {
- 	  additional_offset += j* 1023;
+      additional_offset += j* 1023;
       add_feature(&ex, temp[j]+ additional_offset , val_namespace, mask, multiplier);
-	}
+    }
 
     size_t count=0;
     for (unsigned char* ns = data->ex->indices.begin; ns != data->ex->indices.end; ns++) {
       data->ex->sum_feat_sq[(int)*ns] = (float) data->ex->atomics[(int)*ns].size();
       count+= data->ex->atomics[(int)*ns].size();
     }
-	for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
-		count += data->ex->atomics[(int)(*i)[0]].size()* data->ex->atomics[(int)(*i)[1]].size();	
+    for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
+      count += data->ex->atomics[(int)(*i)[0]].size()* data->ex->atomics[(int)(*i)[1]].size();	
     for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
-		count += data->ex->atomics[(int)(*i)[0]].size()*data->ex->atomics[(int)(*i)[1]].size()*data->ex->atomics[(int)(*i)[2]].size();	
+      count += data->ex->atomics[(int)(*i)[0]].size()*data->ex->atomics[(int)(*i)[1]].size()*data->ex->atomics[(int)(*i)[2]].size();	
     data->ex->num_features = count;
     data->ex->total_sum_feat_sq = (float) count;
   }
@@ -212,70 +234,53 @@ namespace DepParserTask {
     v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions;
 
     if (is_valid(1,valid_actions) &&( stack.empty() || gold_heads[idx] == stack.last()))
-		return 1;
+      return 1;
     
-	if (is_valid(3,valid_actions) && gold_heads[stack.last()] == idx)
-		return 3;
+    if (is_valid(3,valid_actions) && gold_heads[stack.last()] == idx)
+      return 3;
 
-	for(size_t i = 1; i<= 3; i++)
-		action_loss[i] = (is_valid(i,valid_actions))?0:100;
+    for(size_t i = 1; i<= 3; i++)
+      action_loss[i] = (is_valid(i,valid_actions))?0:100;
 
     for(uint32_t i = 0; i<stack.size()-1; i++)
-   	  if(idx <=n && (gold_heads[stack[i]] == idx || gold_heads[idx] == stack[i]))
-		  action_loss[1] += 1;
- 	if(stack.size()>0 && gold_heads[stack.last()] == idx)
-	  action_loss[1] += 1;
+      if(idx <=n && (gold_heads[stack[i]] == idx || gold_heads[idx] == stack[i]))
+        action_loss[1] += 1;
+    if(stack.size()>0 && gold_heads[stack.last()] == idx)
+      action_loss[1] += 1;
 
     for(uint32_t i = idx+1; i<=n; i++)
-   	  if(gold_heads[i] == stack.last()|| gold_heads[stack.last()] == i)
-		  action_loss[3] +=1;
-	if(stack.size()>0  && idx <=n && gold_heads[idx] == stack.last())
-		  action_loss[3] +=1;
-	if(stack.size()>=2 && gold_heads[stack.last()] == stack[stack.size()-2])
-		action_loss[3] += 1;
+      if(gold_heads[i] == stack.last()|| gold_heads[stack.last()] == i)
+        action_loss[3] +=1;
+    if(stack.size()>0  && idx <=n && gold_heads[idx] == stack.last())
+      action_loss[3] +=1;
+    if(stack.size()>=2 && gold_heads[stack.last()] == stack[stack.size()-2])
+      action_loss[3] += 1;
 
-	if(gold_heads[stack.last()] >=idx)
-		action_loss[2] +=1;
-	for(uint32_t i = idx; i<=n; i++)
-   	  if(gold_heads[i] == stack.last())
-          action_loss[2] +=1;
+    if(gold_heads[stack.last()] >=idx)
+      action_loss[2] +=1;
+    for(uint32_t i = idx; i<=n; i++)
+      if(gold_heads[i] == stack.last())
+        action_loss[2] +=1;
 
-	// return the best action
-	size_t best_action = 1;
-	for(size_t i=1; i<=3; i++)
-		if(action_loss[i] <= action_loss[best_action])
-			best_action= i;
-	return best_action;
+    // return the best action
+    size_t best_action = 1;
+    for(size_t i=1; i<=3; i++)
+      if(action_loss[i] <= action_loss[best_action])
+        best_action= i;
+    return best_action;
   }
 
-  void run(Search::search& srn, vector<example*>& ec) {
+  void setup(Search::search& srn, vector<example*>& ec) {
     task_data *data = srn.get_task_data<task_data>();
-    v_array<uint32_t> &stack=data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags, &valid_labels=data->valid_labels;
+    v_array<uint32_t> &gold_heads=data->gold_heads, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags;
     uint32_t n = (uint32_t) ec.size();
-
-    // initialization
-    if(!data->ex) {
-    	data->ex = alloc_examples(sizeof(ec[0][0].l.multi.label), 1);
-		data->ex->indices.push_back(val_namespace);
-	    for(size_t i=1; i<14; i++)
-	      data->ex->indices.push_back((unsigned char)i+'A');
-	    data->ex->indices.push_back(constant_namespace);
-
-  		vw& all = srn.get_vw_pointer_unsafe();
-		const char* pair[] = {"BC", "BE", "BB", "CC", "DD", "EE", "FF", "GG", "EF", "BH", "BJ", "EL", "dB", "dC", "dD", "dE", "dF", "dG", "dd"};
-		const char* triple[] = {"EFG", "BEF", "BCE", "BCD", "BEL", "ELM", "BHI", "BCC", "BJE", "BHE", "BJK", "BEH", "BEN", "BEJ"};
-		vector<string> newpairs(pair, pair+19);
-		vector<string> newtriples(triple, triple+14);
-		all.pairs.swap(newpairs);
-		all.triples.swap(newtriples);
-    }    
-    heads.resize(ec.size()+1, true);
-    tags.resize(ec.size()+1, true);
+    heads.resize(n+1, true);
+    tags.resize(n+1, true);
     gold_heads.erase();
     gold_heads.push_back(0);
     gold_tags.erase();
     gold_tags.push_back(0);
-    for(size_t i=0; i<ec.size(); i++) {
+    for(size_t i=0; i<n; i++) {
       uint32_t label = ec[i]->l.multi.label;
       gold_heads.push_back((label & 255) -1);
       if (label >> 8 > data->num_label) {
@@ -286,16 +291,24 @@ namespace DepParserTask {
       heads[i+1] = 0;
       tags[i+1] = -1;
     }
-    stack.erase();
-   	stack.push_back((data->root_label==0)?0:1);
-    uint32_t idx = ((data->root_label==0)?1:2);
-    for(size_t i=0; i<6; i++){
-      data->children[i].resize(ec.size()+1, true);
-      for(size_t j=0; j<ec.size()+1; j++)
-        data->children[i][j] = 0;
-    }
 
-    int count=0;
+    for(size_t i=0; i<6; i++)
+      data->children[i].resize(n+1, true);
+  }    
+  
+  void run(Search::search& srn, vector<example*>& ec) {
+    task_data *data = srn.get_task_data<task_data>();
+    v_array<uint32_t> &stack=data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags, &valid_labels=data->valid_labels;
+    uint32_t n = (uint32_t) ec.size();
+
+    stack.erase();
+    stack.push_back((data->root_label==0)?0:1);
+    for(size_t i=0; i<6; i++)
+      for(size_t j=0; j<n+1; j++)
+        data->children[i][j] = 0;
+    
+    int count=1;
+    uint32_t idx = ((data->root_label==0)?1:2);
     while(stack.size()>1 || idx <= n){
       if(srn.predictNeedsExample())
         extract_features(srn, idx, ec);
@@ -303,17 +316,23 @@ namespace DepParserTask {
       uint32_t gold_action = get_gold_actions(srn, idx, n);
 
       // Predict the next action {SHIFT, REDUCE_LEFT, REDUCE_RIGHT}
-      uint32_t a_id= Search::predictor(srn, (ptag) count).set_input(*(data->ex)).set_oracle(gold_action).set_allowed(valid_actions).set_condition_range(count++, srn.get_history_length(), 'p').set_learner_id(0).predict();
+      //cerr << "----------------------" << endl << "valid = ["; for (size_t ii=0; ii<valid_actions.size(); ii++) cerr << ' ' << valid_actions[ii]; cerr << "], gold=" << gold_action << endl;
+      count = 2*idx + 1;
+      uint32_t a_id= Search::predictor(srn, (ptag) count).set_input(*(data->ex)).set_oracle(gold_action).set_allowed(valid_actions).set_condition_range(count-1, srn.get_history_length(), 'p').set_learner_id(0).predict();
+      count++;
+      //cerr << "a_id=" << a_id << endl;
+      
       uint32_t t_id = 0;
       if(a_id ==2 || a_id == 3){
-	  	uint32_t gold_label = gold_tags[stack.last()];
-        t_id= Search::predictor(srn, (ptag) count).set_input(*(data->ex)).set_oracle(gold_label).set_allowed(valid_labels).set_condition_range(count++, srn.get_history_length(), 'p').set_learner_id(a_id-1).predict();
+        uint32_t gold_label = gold_tags[stack.last()];
+        t_id= Search::predictor(srn, (ptag) count).set_input(*(data->ex)).set_oracle(gold_label).set_allowed(valid_labels).set_condition_range(count-1, srn.get_history_length(), 'p').set_learner_id(a_id-1).predict();
       }
+      count++;
       idx = transition_hybrid(srn, a_id, idx, t_id);
     }
 
-	heads[stack.last()] = 0;
-	tags[stack.last()] = data->root_label;
+    heads[stack.last()] = 0;
+    tags[stack.last()] = data->root_label;
     srn.loss((gold_heads[stack.last()] != heads[stack.last()]));
     if (srn.output().good())
       for(size_t i=1; i<=n; i++)

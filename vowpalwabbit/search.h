@@ -18,7 +18,7 @@ namespace Search {
   struct search_private;
   struct search_task;
 
-  extern uint32_t AUTO_CONDITION_FEATURES, AUTO_HAMMING_LOSS, EXAMPLES_DONT_CHANGE, IS_LDF;
+  extern uint32_t AUTO_CONDITION_FEATURES, AUTO_HAMMING_LOSS, EXAMPLES_DONT_CHANGE, IS_LDF, NO_CACHING;
 
   struct search {
     // INTERFACE

@@ -47,7 +47,7 @@ namespace Search {
   string   neighbor_feature_space("neighbor");
   string   condition_feature_space("search_condition");
 
-  uint32_t AUTO_CONDITION_FEATURES = 1, AUTO_HAMMING_LOSS = 2, EXAMPLES_DONT_CHANGE = 4, IS_LDF = 8;
+  uint32_t AUTO_CONDITION_FEATURES = 1, AUTO_HAMMING_LOSS = 2, EXAMPLES_DONT_CHANGE = 4, IS_LDF = 8, NO_CACHING = 16;
   enum SearchState { INITIALIZE, INIT_TEST, INIT_TRAIN, LEARN, GET_TRUTH_STRING };
   enum RollMethod { POLICY, ORACLE, MIX_PER_STATE, MIX_PER_ROLL, NO_ROLLOUT };
 
@@ -67,8 +67,15 @@ namespace Search {
     float  feature_value;           // how much weight should the conditional features get?
   };
 
-  typedef v_array<action> action_prefix;
+  struct scored_action {
+    action a;  // the action
+    float  s;  // the predicted cost of this action
+    scored_action(action _a, float _s) : a(_a), s(_s) {}
+    scored_action() { a = (action)-1; s = 0.; }
+  };
   
+  typedef v_array<scored_action> action_prefix;
+
   struct search_private {
     vw* all;
 
@@ -109,6 +116,7 @@ namespace Search {
     size_t loss_declared_cnt;      // how many times did run declare any loss (implicitly or explicitly)?
     v_array<action> train_trajectory; // the training trajectory
     v_array<action> current_trajectory;  // the current trajectory; only used in beam search mode
+    v_array<float>  action_sequence_score;  // in beam mode during INIT_TRAIN, we need to keep track of the sequence of scores of predicted actions (to avoid re-predicting)
     size_t learn_t;                // what time step are we learning on?
     size_t learn_a_idx;            // what action index are we trying?
     bool done_with_all_actions;    // set to true when there are no more learn_a_idx to go
@@ -158,7 +166,7 @@ namespace Search {
     size_t total_cache_hits;
 
     vector<example*> ec_seq;  // the collected examples
-    v_hashmap<unsigned char*, action> cache_hash_map;
+    v_hashmap<unsigned char*, scored_action> cache_hash_map;
     
     // for foreach_feature temporary storage for conditioning
     uint32_t dat_new_feature_idx;
@@ -509,8 +517,10 @@ namespace Search {
       case INIT_TEST:  priv.test_loss  += loss; break;
       case INIT_TRAIN: priv.train_loss += loss; break;
       case LEARN:
-        if ((priv.rollout_num_steps == 0) || (priv.loss_declared_cnt <= priv.rollout_num_steps))
+        if ((priv.rollout_num_steps == 0) || (priv.loss_declared_cnt <= priv.rollout_num_steps)) {
           priv.learn_loss += loss;
+          cdbg << "priv.learn_loss += " << loss << endl;
+        }
         break;
       default: break; // get rid of the warning about missing cases (danger!)
     }
@@ -555,14 +565,19 @@ namespace Search {
         if (! priv.beam->might_insert( alternative_costs[i] )) continue;
 
         action_prefix* px = new action_prefix;
-        *px = v_init<action>();
+        *px = v_init<scored_action>();
         px->resize(new_len+1);
         px->end = px->begin + new_len + 1;
-        memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
-        px->begin[new_len-1] = i;
+        //memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
+        for (size_t tmp=0; tmp<new_len-1; tmp++) {
+          px->begin[tmp].a = priv.current_trajectory[tmp];
+          px->begin[tmp].s = priv.action_sequence_score[tmp];
+        }
+        px->begin[new_len-1].a = i;
+        px->begin[new_len-1].s = alternative_costs[i];
         *((float*)(px->begin+new_len)) = alternative_costs[i];
         uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
-        cdbg_print_array<action>("oracle insertA", *px);
+        //cdbg_print_array<action>("oracle insertA", *px);
         if (! priv.beam->insert(px, alternative_costs[i], px_hash)) {
           px->delete_v();  // SPEEDUP: could be more efficient by reusing for next action
           delete px;
@@ -705,7 +720,7 @@ namespace Search {
       cs_costs_erase(priv.cb_learner, lab);
       for (action k=0; k<ec_cnt; k++)
         cs_cost_push_back(priv.cb_learner, lab, k, array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f );
-      //cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cerr << ' ' << lab.cs.costs[i].class_index << ':' << lab.cs.costs[i].x; cerr << " ]" << endl;
+      //cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index << ':' << lab.cs.costs[i].x; cdbg << " ]" << endl;
     } else { // non-LDF
       if ((allowed_actions == NULL) || (allowed_actions_cnt == 0)) { // any action is allowed
         bool set_to_one = false;
@@ -715,7 +730,7 @@ namespace Search {
             cs_cost_push_back(priv.cb_learner, lab, k+1, 1.);
           set_to_one = true;
         }
-        //cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cerr << ' ' << lab.cs.costs[i].class_index << ':' << lab.cs.costs[i].x; cerr << " ]" << endl;
+        //cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index << ':' << lab.cs.costs[i].x; cdbg << " ]" << endl;
         if (oracle_actions_cnt <= 1) { // common case to speed up
           if (! set_to_one)
             for (action k=0; k<priv.A; k++)
@@ -736,7 +751,7 @@ namespace Search {
     }
   }
   
-  action single_prediction_notLDF(search_private& priv, example& ec, int policy, const action* allowed_actions, size_t allowed_actions_cnt) {
+  action single_prediction_notLDF(search_private& priv, example& ec, int policy, const action* allowed_actions, size_t allowed_actions_cnt, float& a_cost) {
     vw& all = *priv.all;
     polylabel old_label = ec.l;
     if (priv.beam || (allowed_actions_cnt > 0))  // SPEEDUP: beam case
@@ -744,8 +759,13 @@ namespace Search {
     else
       ec.l.cs = priv.empty_cs_label;
 
+    cdbg << "allowed_actions_cnt=" << allowed_actions_cnt << ", ec.l = ["; for (size_t i=0; i<ec.l.cs.costs.size(); i++) cdbg << ' ' << ec.l.cs.costs[i].class_index << ':' << ec.l.cs.costs[i].x; cdbg << " ]" << endl;
+
+    
     priv.base_learner->predict(ec, policy);
     uint32_t act = ec.pred.multiclass;
+    a_cost = ec.partial_prediction;
+    cdbg << "a_cost = " << a_cost << endl;
 
     if ((priv.state == INIT_TRAIN) && (priv.subsample_timesteps <= -1)) { // active learning
       size_t K = cs_get_costs_size(priv.cb_learner, ec.l);
@@ -767,7 +787,7 @@ namespace Search {
       for (size_t k = 0; k < K; k++) {
         //cerr << "act=" << act << " k=" << k << " gci=" << cs_get_cost_index(priv.cb_learner, ec.l, k) << " pp=" << cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k) << endl;
         if (cs_get_cost_index(priv.cb_learner, ec.l, k) == act) {
-          act_cost = MAX(0., cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k));
+          act_cost = cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
           break;
         }
       }
@@ -778,20 +798,26 @@ namespace Search {
         action k_act = cs_get_cost_index(priv.cb_learner, ec.l, k);
         if (k_act == act) continue;  // skip the taken action
         //float delta_cost = cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k) - act_cost + priv.beam_initial_cost;
-        float total_cost = priv.beam_total_cost + MAX(0., cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k));
+        float total_cost = priv.beam_total_cost + cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
         
         if (! priv.beam->might_insert( total_cost )) continue;
         
         // construct the action prefix
-        action_prefix* px = new v_array<action>;
-        *px = v_init<action>();
+        action_prefix* px = new v_array<scored_action>;
+        *px = v_init<scored_action>();
         px->resize(new_len + 1);
         px->end = px->begin + new_len + 1;
-        memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
-        px->begin[new_len-1] = k_act;
+        //memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
+        for (size_t tmp=0; tmp<new_len-1; tmp++) {
+          px->begin[tmp].a = priv.current_trajectory[tmp];
+          px->begin[tmp].s = (priv.beam && (priv.state == INIT_TRAIN)) ? priv.action_sequence_score[tmp] : 0.;
+        }
+        px->begin[new_len-1].a = k_act;
+        px->begin[new_len-1].s = total_cost - priv.beam_total_cost;
+
         *((float*)(px->begin+new_len)) = total_cost; // delta_cost + act_cost;
-        uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
-        cerr << "inserting total_cost=" << total_cost << " total_cost=" << *((float*)(px->begin+new_len)) << " seq="; for (size_t ii=0; ii<new_len; ii++) cerr << px->begin[ii] << ' '; cerr << endl;
+        uint32_t px_hash = uniform_hash(px->begin, sizeof(scored_action) * new_len, 3419);
+        //cdbg << "inserting total_cost=" << total_cost << " total_cost=" << *((float*)(px->begin+new_len)) << " seq="; for (size_t ii=0; ii<new_len; ii++) cdbg << px->begin[ii] << ' '; cdbg << endl;
         if (! priv.beam->insert(px, total_cost, px_hash)) {
           px->delete_v();  // SPEEDUP: could be more efficient by reusing for next action
           delete px;
@@ -819,7 +845,7 @@ namespace Search {
     return act;
   }
 
-  action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, int policy) {
+  action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, int policy, float& a_cost) {
     CS::cs_label.default_label(&priv.ldf_test_label);
     CS::wclass wc = { 0., 1, 0., 0. };
     priv.ldf_test_label.costs.push_back(wc);
@@ -847,6 +873,7 @@ namespace Search {
       if ((a == start_K) || (ecs[a].partial_prediction < best_prediction)) {
         best_prediction = ecs[a].partial_prediction;
         best_action     = a;
+        a_cost          = best_prediction;
       }
       
       priv.num_features += ecs[a].num_features;
@@ -854,28 +881,39 @@ namespace Search {
       if (start_K > 0)
         LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0]);
     }
+    a_cost = best_prediction;
 
     if (priv.beam) {
-      priv.beam_total_cost += best_prediction;
       size_t new_len = priv.current_trajectory.size() + 1;
       for (size_t k=start_K; k<ec_cnt; k++) {
         if (k == best_action) continue;
-        float delta_cost = ecs[k].partial_prediction - best_prediction + priv.beam_initial_cost;
+        float delta_cost = ecs[k].partial_prediction - best_prediction;// + priv.beam_initial_cost;
+        float total_cost = priv.beam_total_cost + ecs[k].partial_prediction;
+        //cerr << "total_cost = " << total_cost << " = " << priv.beam_total_cost << " + " << ecs[k].partial_prediction << endl;
         if (! priv.beam->might_insert( delta_cost )) continue;
-        action_prefix* px = new v_array<action>;
-        *px = v_init<action>();
+        action_prefix* px = new v_array<scored_action>;
+        *px = v_init<scored_action>();
         px->resize(new_len + 1);
         px->end = px->begin + new_len + 1;
-        memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
-        px->begin[new_len-1] = (uint32_t)k;  // TODO: k or ld[k]?
-        *((float*)(px->begin+new_len)) = delta_cost + best_prediction;
-        uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
+        //memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
+        for (size_t tmp=0; tmp<new_len-1; tmp++) {
+          px->begin[tmp].a = priv.current_trajectory[tmp];
+          px->begin[tmp].s = (priv.state == INIT_TRAIN) ? priv.action_sequence_score[tmp] : 0.;
+        }
+        px->begin[new_len-1].a = (uint32_t)k;  // TODO: k or ld[k]?
+        px->begin[new_len-1].s = total_cost - priv.beam_total_cost;
+        *((float*)(px->begin+new_len)) = total_cost; // delta_cost + act_cost;
+        //px->begin[new_len-1] = (uint32_t)k;  // TODO: k or ld[k]?
+        uint32_t px_hash = uniform_hash(px->begin, sizeof(scored_action) * new_len, 3419);
         if (! priv.beam->insert(px, delta_cost, px_hash)) {
           px->delete_v();  // SPEEDUP: could be more efficient by reusing for next action
           delete px;
         }
       }
+      priv.beam_total_cost += best_prediction;
     }
+
+    // TODO: generate raw predictions if necessary
     
     priv.total_predictions_made++;
     return best_action;
@@ -943,14 +981,14 @@ namespace Search {
     return memcmp(A, B, sz_A) == 0;
   }
 
-  void free_key(unsigned char* mem, action a) { free(mem); }
+  void free_key(unsigned char* mem, scored_action a) { free(mem); }
   void clear_cache_hash_map(search_private& priv) {
     priv.cache_hash_map.iter(free_key);
     priv.cache_hash_map.clear();
   }
   
   // returns true if found and do_store is false. if do_store is true, always returns true.
-  bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on, const char* condition_on_names, const action* condition_on_actions, size_t condition_on_cnt, int policy, size_t learner_id, action &a, bool do_store) {
+  bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on, const char* condition_on_names, const action* condition_on_actions, size_t condition_on_cnt, int policy, size_t learner_id, action &a, bool do_store, float& a_cost) {
     if (priv.no_caching) return do_store;
     if (mytag == 0) return do_store; // don't attempt to cache when tag is zero
 
@@ -972,10 +1010,12 @@ namespace Search {
     uint32_t hash = uniform_hash(item, sz, 3419);
 
     if (do_store) {
-      priv.cache_hash_map.put(item, hash, a);
+      priv.cache_hash_map.put(item, hash, scored_action(a, a_cost));
       return true;
     } else { // its a find
-      a = priv.cache_hash_map.get(item, hash);
+      scored_action sa = priv.cache_hash_map.get(item, hash);
+      a = sa.a;
+      a_cost = sa.s;
       free(item);
       return a != (action)-1;
     }
@@ -984,14 +1024,15 @@ namespace Search {
   void generate_training_example(search_private& priv, polylabel& losses, bool add_conditioning=true, float min_loss=FLT_MAX) {  // min_loss = FLT_MAX means "please compute it for me as the actual min"; any other value means to use this
     // should we really subtract out min-loss?
     //float min_loss = FLT_MAX;
-    cdbg << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cdbg << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x; cdbg << " ]" << endl;    if (priv.cb_learner) {
+    cdbg << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cdbg << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x; cdbg << " ], min_loss=" << min_loss << endl;
+    if (priv.cb_learner) {
       if (min_loss == FLT_MAX)
         for (size_t i=0; i<losses.cb.costs.size(); i++) min_loss = MIN(min_loss, losses.cb.costs[i].cost);
-      for (size_t i=0; i<losses.cb.costs.size(); i++) losses.cb.costs[i].cost = MAX(0., losses.cb.costs[i].cost - min_loss);
+      for (size_t i=0; i<losses.cb.costs.size(); i++) losses.cb.costs[i].cost = losses.cb.costs[i].cost - min_loss;
     } else {
       if (min_loss == FLT_MAX)
         for (size_t i=0; i<losses.cs.costs.size(); i++) min_loss = MIN(min_loss, losses.cs.costs[i].x);
-      for (size_t i=0; i<losses.cs.costs.size(); i++) losses.cs.costs[i].x = MAX(0., losses.cs.costs[i].x - min_loss);
+      for (size_t i=0; i<losses.cs.costs.size(); i++) losses.cs.costs[i].x = losses.cs.costs[i].x - min_loss;
     }
 
     priv.total_example_t += 1.;   // TODO: should be max-min
@@ -1109,12 +1150,17 @@ namespace Search {
     // if we're in LEARN mode and before learn_t, return the train action
     if ((priv.state == LEARN) && (t < priv.learn_t)) {
       assert(t < priv.train_trajectory.size());
+      if (priv.beam)
+        priv.beam_total_cost += priv.action_sequence_score[t];
       return priv.train_trajectory[t];
     }
 
     if (priv.beam && (t < priv.beam_actions.size()) && ((priv.state == INIT_TEST) || (priv.state == INIT_TRAIN))) {
-      if (priv.state == INIT_TRAIN) priv.train_trajectory.push_back( priv.beam_actions[t] );
-      return priv.beam_actions[t];
+      if (priv.state == INIT_TRAIN) {
+        priv.train_trajectory.push_back( priv.beam_actions[t].a );
+        priv.action_sequence_score.push_back( priv.beam_actions[t].s );
+      }
+      return priv.beam_actions[t].a;
     }
 
     // for LDF, # of valid actions is ec_cnt; otherwise it's either allowed_actions_cnt or A
@@ -1130,7 +1176,7 @@ namespace Search {
       priv.loss_declared_cnt = 0;
       
       priv.learn_a_idx++;
-      priv.learn_loss = 0.;  // don't include "past cost"
+      //priv.learn_loss = 0.;  // TODO: why was this here? for beam it's def wrong, for non-beam seems wacky.... don't include "past cost"
 
       // check to see if we're done with available actions
       if (priv.learn_a_idx >= valid_action_cnt) {
@@ -1202,9 +1248,10 @@ namespace Search {
       cdbg << "executing policy " << policy << endl;
       
       bool gte_here = (priv.state == INIT_TRAIN) && (priv.rollout_method == NO_ROLLOUT) && (oracle_actions_cnt > 0);
+      float a_cost = 0.;
       
       if (policy == -1)
-        a = choose_oracle_action(priv, ec_cnt, oracle_actions, oracle_actions_cnt, allowed_actions, allowed_actions_cnt, priv.beam && (priv.state != INIT_TEST));
+        a = choose_oracle_action(priv, ec_cnt, oracle_actions, oracle_actions_cnt, allowed_actions, allowed_actions_cnt, priv.beam && (priv.state != INIT_TEST));   // TODO: we probably want to actually get costs for oracle actions???
 
       if ((policy >= 0) || gte_here) {
         int learner = select_learner(priv, policy, learner_id, false, priv.state == INIT_TEST);
@@ -1215,7 +1262,7 @@ namespace Search {
 
         bool not_test = priv.all->training && !ecs[0].test_only;
 
-        if (not_test && cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, learner_id, a, false))
+        if (not_test && cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, learner_id, a, false, a_cost))
           // if this succeeded, 'a' has the right action
           priv.total_cache_hits++;
         else { // we need to predict, and then cache
@@ -1225,15 +1272,15 @@ namespace Search {
               add_example_conditioning(priv, ecs[n], condition_on, condition_on_cnt, condition_on_names, priv.condition_on_actions.begin);
 
           if (policy >= 0)   // only make a prediction if we're going to use the output
-            a = priv.is_ldf ? single_prediction_LDF(priv, ecs, ec_cnt, learner)
-                            : single_prediction_notLDF(priv, *ecs, learner, allowed_actions, allowed_actions_cnt);
+            a = priv.is_ldf ? single_prediction_LDF(priv, ecs, ec_cnt, learner, a_cost)
+                            : single_prediction_notLDF(priv, *ecs, learner, allowed_actions, allowed_actions_cnt, a_cost);
           
           if (gte_here) {
             cdbg << "INIT_TRAIN, NO_ROLLOUT, at least one oracle_actions" << endl;
             // we can generate a training example _NOW_ because we're not doing rollouts
             //allowed_actions_to_losses(priv, ec_cnt, allowed_actions, allowed_actions_cnt, oracle_actions, oracle_actions_cnt, losses);
             allowed_actions_to_label(priv, ec_cnt, allowed_actions, allowed_actions_cnt, oracle_actions, oracle_actions_cnt, priv.gte_label);
-            //cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cerr << ' ' << lab.cs.costs[i].class_index << ':' << lab.cs.costs[i].x; cerr << " ]" << endl;
+            //cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index << ':' << lab.cs.costs[i].x; cdbg << " ]" << endl;
             
             priv.learn_ec_ref = ecs;
             priv.learn_ec_ref_cnt = ec_cnt;
@@ -1250,12 +1297,14 @@ namespace Search {
               del_example_conditioning(priv, ecs[n]);
 
           if (not_test)
-            cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, learner_id, a, true);
+            cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, learner_id, a, true, a_cost);
         }
       }
 
-      if (priv.state == INIT_TRAIN)
+      if (priv.state == INIT_TRAIN) {
         priv.train_trajectory.push_back(a); // note the action for future reference
+        if (priv.beam) priv.action_sequence_score.push_back(a_cost);
+      }
       
       return a;
     }
@@ -1309,12 +1358,12 @@ namespace Search {
       std::sort(timesteps.begin, timesteps.end, cmp_size_t_pair);
     }
   }
-
+  
   struct final_item {
-    action_prefix* prefix;
+    v_array<scored_action> * prefix;
     string str;
-    float init_cost;
-    final_item(action_prefix*p,string s,float ic) : prefix(p), str(s), init_cost(ic) {}
+    float total_cost;
+    final_item(v_array<scored_action>*p,string s,float ic) : prefix(p), str(s), total_cost(ic) {}
   };
 
 
@@ -1348,18 +1397,20 @@ namespace Search {
     delete p;
   }
   
-  void final_beam_insert(search_private&priv, Beam::beam<final_item>& beam, float cost, float init_cost, SearchState state) {
-    action_prefix* final = new action_prefix;  // TODO: can we memcpy/push_many?
-    *final = v_init<action>();
+  void final_beam_insert(search_private&priv, Beam::beam<final_item>& beam, float cost, SearchState state) {
+    v_array<scored_action>* final = new v_array<scored_action>;  // TODO: can we memcpy/push_many?
+    *final = v_init<scored_action>();
     cdbg << "final_beam_insert: cost=" << cost << ", len=" << ((state == INIT_TEST) ? priv.test_action_sequence.size() : priv.train_trajectory.size()) << endl;
     if (state == INIT_TEST)
-      for (size_t i=0; i<priv.test_action_sequence.size(); i++) final->push_back(priv.test_action_sequence[i]);
+      for (size_t i=0; i<priv.test_action_sequence.size(); i++)
+        final->push_back(scored_action(priv.test_action_sequence[i], 0.)); // we don't need priv.action_sequence_score[i] for INIT_TEST
     else if (state == INIT_TRAIN)
-      for (size_t i=0; i<priv.train_trajectory.size(); i++) final->push_back(priv.train_trajectory[i]);
-    cdbg << "  --> ["; for (size_t i=0; i<final->size(); i++) cdbg << " " << final->get(i); cdbg << " ]" << endl;
+      for (size_t i=0; i<priv.train_trajectory.size(); i++)
+        final->push_back(scored_action(priv.train_trajectory[i], priv.action_sequence_score[i]));
+    cdbg << "  --> ["; for (size_t i=0; i<final->size(); i++) cdbg << " " << final->get(i).a << ':' << final->get(i).s; cdbg << " ]" << endl;
     final_item* item = new final_item(final,
                                       priv.should_produce_string ? priv.pred_string->str() : "",
-                                      init_cost);
+                                      cost);
     //pair<action_prefix*,string>* p = priv.should_produce_string ? new pair<action_prefix*,string>(final, priv.pred_string->str()) : new pair<action_prefix*,string>(final, "");
     uint32_t final_hash = uniform_hash(final->begin, sizeof(action)*final->size(), 3419);
     if (!beam.insert(item, cost, final_hash)) {
@@ -1387,7 +1438,7 @@ namespace Search {
     priv.beam_initial_cost = 0.;
     priv.beam_total_cost = 0.;
     if      (state == INIT_TEST)  priv.test_action_sequence.clear();
-    else if (state == INIT_TRAIN) priv.train_trajectory.erase();
+    else if (state == INIT_TRAIN) { priv.train_trajectory.erase(); priv.action_sequence_score.erase(); }
     if (priv.should_produce_string) priv.pred_string->str("");
     priv.task->run(sch, priv.ec_seq);
     if (all.raw_prediction > 0) all.print_text(all.raw_prediction, "end of initial beam prediction", priv.ec_seq[0]->tag);
@@ -1395,7 +1446,7 @@ namespace Search {
     size_t final_size = (state == INIT_TEST) ? max(1, priv.kbest) : max(1, priv.beam->get_beam_size()); // at training time, use beam size
     
     Beam::beam<final_item>* final_beam = new Beam::beam<final_item>(final_size);
-    final_beam_insert(priv, *final_beam, priv.beam_total_cost, 0., state);
+    final_beam_insert(priv, *final_beam, priv.beam_total_cost, state);
     
     for (size_t beam_run=1; beam_run<priv.beam->get_beam_size(); beam_run++) {
       priv.beam->compact(free_action_prefix);
@@ -1410,13 +1461,14 @@ namespace Search {
         priv.beam_initial_cost = init_cost;
         priv.beam_total_cost   = priv.beam_initial_cost;
         push_many(priv.beam_actions, item->data->begin, item->data->size() - 1);
-        cdbg_print_array("beam_actions", priv.beam_actions);
+        //cdbg_print_array("beam_actions", priv.beam_actions);
+        cdbg << "beam_actions = [ "; for (size_t tmp=0; tmp<priv.beam_actions.size(); tmp++) cdbg << priv.beam_actions[tmp].a << ':' << priv.beam_actions[tmp].s << ' '; cdbg << ']' << endl;
         cdbg << "\tbeam_initial_cost = " << init_cost << endl;
         if      (state == INIT_TEST)  priv.test_action_sequence.clear();
-        else if (state == INIT_TRAIN) priv.train_trajectory.erase();
+        else if (state == INIT_TRAIN) { priv.train_trajectory.erase(); priv.action_sequence_score.erase(); }
         priv.task->run(sch, priv.ec_seq);
         if (all.raw_prediction > 0) all.print_text(all.raw_prediction, "end of next beam prediction", priv.ec_seq[0]->tag);
-        final_beam_insert(priv, *final_beam, priv.beam_total_cost, init_cost, state);
+        final_beam_insert(priv, *final_beam, priv.beam_total_cost, state);
       }
     }
 
@@ -1426,7 +1478,13 @@ namespace Search {
     if (best != final_beam->end()) {
       // store in beam_actions the actions for this so that subsequent calls to ->_run() produce it!
       priv.beam_actions.erase();
-      push_many(priv.beam_actions, best->data->prefix->begin, best->data->prefix->size());
+      if (state == INIT_TRAIN) priv.action_sequence_score.erase();
+      //push_many(priv.beam_actions, best->data->prefix->begin, best->data->prefix->size());
+      final_item& item = *(best->data);
+      for (size_t i=0; i<item.prefix->size(); i++) {
+        priv.beam_actions.push_back(item.prefix->get(i));
+        if (state == INIT_TRAIN) priv.action_sequence_score.push_back(item.prefix->get(i).s);
+      }
     }
 
     // TODO: only if test?
@@ -1542,15 +1600,24 @@ namespace Search {
 
     if (priv.cb_learner) priv.learn_losses.cb.costs.erase();
     else                 priv.learn_losses.cs.costs.erase();
-    size_t last_beam_id = 0;
+    //size_t last_beam_id = 0;
     for (size_t tid=0; tid<priv.timesteps.size(); tid++) {
       size_t bid = priv.timesteps[tid].first;
       cdbg << "timestep = " << priv.timesteps[tid].first << "." << priv.timesteps[tid].second << " [" << tid << "/" << priv.timesteps.size() << "]" << endl;
-      if (bid != last_beam_id) {
+      //if (bid != last_beam_id) {
+      if (priv.beam) {
         priv.train_trajectory.erase();
-        push_many(priv.train_trajectory, final_beam->begin()[bid].data->prefix->begin, final_beam->begin()[bid].data->prefix->size());
+        priv.action_sequence_score.erase();
+        final_item& item = *(final_beam->begin()[bid].data);
+        for (size_t i=0; i<item.prefix->size(); i++) {
+          priv.train_trajectory.push_back(item.prefix->get(i).a);
+          priv.action_sequence_score.push_back(item.prefix->get(i).s);
+        }
+        //push_many(priv.train_trajectory, final_beam->begin()[bid].data->prefix->begin, final_beam->begin()[bid].data->prefix->size() - 1);
+        //}
       }
       cdbg_print_array<action>("train_trajectory", priv.train_trajectory);
+      cdbg_print_array<float>("action_sequence_score", priv.action_sequence_score);
       
       priv.learn_a_idx = 0;
       priv.done_with_all_actions = false;
@@ -1559,12 +1626,18 @@ namespace Search {
         reset_search_structure(priv);
         priv.beam_actions.erase();
         priv.beam_initial_cost = 0.;
+        priv.beam_total_cost = 0.;
         priv.state = LEARN;
         priv.learn_t = priv.timesteps[tid].second;
         cdbg << "learn_t = " << priv.learn_t << ", learn_a_idx = " << priv.learn_a_idx << endl;
         priv.task->run(sch, priv.ec_seq);
         //cerr_print_array("in GENER, learn_allowed_actions", priv.learn_allowed_actions);
-        cs_cost_push_back(priv.cb_learner, priv.learn_losses, priv.is_ldf ? (priv.learn_a_idx - 1) : priv.learn_a_idx, priv.learn_loss);
+        float this_loss = priv.learn_loss;
+        if (priv.beam) {
+          cdbg << "this_loss = " << this_loss << " - " << priv.beam_total_cost << endl;
+          this_loss -= priv.beam_total_cost;
+        }
+        cs_cost_push_back(priv.cb_learner, priv.learn_losses, priv.is_ldf ? (priv.learn_a_idx - 1) : priv.learn_a_idx, this_loss);
         //                          (priv.learn_allowed_actions.size() > 0) ? priv.learn_allowed_actions[priv.learn_a_idx-1] : priv.is_ldf ? (priv.learn_a_idx-1) : (priv.learn_a_idx),
         //                           priv.learn_loss);
       }
@@ -1575,7 +1648,7 @@ namespace Search {
         }
       }
       cdbg << "gte, beam_initial_cost = " << priv.beam_initial_cost << endl;
-      float min_loss = priv.beam ? priv.beam_initial_cost : FLT_MAX;  // for non-beam search, just compute min_loss, but for beam search we want to use estimated path cost
+      float min_loss = priv.beam ? 0. : FLT_MAX;  // for non-beam search, just compute min_loss, but for beam search we want to use estimated path cost (which is already computed)
       generate_training_example(priv, priv.learn_losses, true, min_loss);
       if (! priv.examples_dont_change)
         for (size_t n=0; n<priv.learn_ec_copy.size(); n++) {
@@ -1779,7 +1852,8 @@ namespace Search {
     priv.acset.max_quad_ngram_length = 0;
     priv.acset.feature_value = 1.;
 
-    priv.cache_hash_map.set_default_value((action)-1);
+    scored_action sa((action)-1,0.);
+    priv.cache_hash_map.set_default_value(sa);
     priv.cache_hash_map.set_equivalent(cached_item_equivalent);
     
     priv.task = nullptr;
@@ -1827,6 +1901,7 @@ namespace Search {
     priv.train_trajectory.delete_v();
     priv.current_trajectory.delete_v();
     priv.ptag_to_action.delete_v();
+    priv.action_sequence_score.delete_v();
     
     dealloc_example(CS::cs_label.delete_label, *(priv.empty_example));
     free(priv.empty_example);
@@ -2279,6 +2354,7 @@ namespace Search {
     if ((opts & AUTO_HAMMING_LOSS)       != 0) this->priv->auto_hamming_loss = true;
     if ((opts & EXAMPLES_DONT_CHANGE)    != 0) this->priv->examples_dont_change = true;
     if ((opts & IS_LDF)                  != 0) this->priv->is_ldf = true;
+    if ((opts & NO_CACHING)              != 0) this->priv->no_caching = true;
   }
 
   void search::set_label_parser(label_parser&lp, bool (*is_test)(polylabel&)) {
