@@ -20,11 +20,36 @@ namespace Search {
 
   extern uint32_t AUTO_CONDITION_FEATURES, AUTO_HAMMING_LOSS, EXAMPLES_DONT_CHANGE, IS_LDF, NO_CACHING;
 
+  struct search;
+  
+  class BaseTask {
+    public:
+    BaseTask(search* _sch, vector<example*>& _ec) : sch(_sch), ec(_ec) {}
+    inline BaseTask& foreach_action(void (*f)(search&,size_t,float,action,bool,float)) { _foreach_action = f; return *this; }
+    inline BaseTask& post_prediction(void (*f)(search&,size_t,action,float)) { _post_prediction = f; return *this; }
+    inline BaseTask& maybe_override_prediction(bool (*f)(search&,size_t,action&,float&)) { _maybe_override_prediction = f; return *this; }
+    inline BaseTask& final_run() { _final_run = true; return *this; }
+    
+    void Run();
+    
+    private:
+    search* sch;
+    vector<example*>& ec;
+    bool _final_run;
+    void (*_foreach_action)(search&,size_t,float,action,bool,float);
+    void (*_post_prediction)(search&,size_t,action,float);
+    bool (*_maybe_override_prediction)(search&,size_t,action&,float&);
+  };
+  
   struct search {
     // INTERFACE
     // for managing task-specific data that you want on the heap:
     template<class T> void  set_task_data(T*data)           { task_data = data; }
     template<class T> T*    get_task_data()                 { return (T*)task_data; }
+
+    // for managing metatask-specific data
+    template<class T> void  set_metatask_data(T*data)           { metatask_data = data; }
+    template<class T> T*    get_metatask_data()                 { return (T*)metatask_data; }
 
     // for setting programmatic options during initialization
     // this should be an or ("|") of AUTO_CONDITION_FEATURES, etc.
@@ -130,9 +155,13 @@ namespace Search {
     // get stride_shift
     size_t get_stride_shift();
 
+    // for meta-tasks:
+    BaseTask base_task(vector<example*>& ec) { return BaseTask(this, ec); }
+    
     // internal data that you don't get to see!
     search_private* priv;
     void*           task_data;  // your task data!
+    void*           metatask_data;  // your metatask data!
     const char*     task_name;
     
     vw& get_vw_pointer_unsafe();   // although you should rarely need this, some times you need a poiter to the vw data structure :(

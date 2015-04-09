@@ -74,7 +74,7 @@ namespace DepParserTask {
   } 
 
   void inline add_feature(example *ex,  uint32_t idx, unsigned  char ns, size_t mask, uint32_t multiplier){
-    feature f = {1.0f, (idx * multiplier) & (uint32_t)mask};
+    feature f = {1.0f, ((idx & (uint32_t)mask) * multiplier) & (uint32_t)mask};
     ex->atomics[(int)ns].push_back(f);
   }
 
