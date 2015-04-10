@@ -156,6 +156,13 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
     return true;
   }
 
+  beam_element<T>* get_best_item() {
+    if (count == 0) return nullptr;
+    beam_element<T> *ret = A.begin;
+    while ((ret != A.end) && (!ret->active)) ++ret;
+    return (ret == A.end) ? nullptr : ret;
+  }
+   
   beam_element<T>* pop_best_item() {
     if (count == 0)
       return nullptr;

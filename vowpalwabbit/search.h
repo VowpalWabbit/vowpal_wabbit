@@ -7,8 +7,8 @@ license as described in the file LICENSE.
 #include "global_data.h"
 
 #define cdbg clog
-#undef cdbg
-#define cdbg if (1) {} else clog
+//#undef cdbg
+//#define cdbg if (1) {} else clog
 // comment the previous two lines if you want loads of debug output :)
 
 typedef uint32_t    action;
@@ -24,7 +24,7 @@ namespace Search {
   
   class BaseTask {
     public:
-    BaseTask(search* _sch, vector<example*>& _ec) : sch(_sch), ec(_ec) {}
+    BaseTask(search* _sch, vector<example*>& _ec) : sch(_sch), ec(_ec) { _foreach_action = nullptr; _post_prediction = nullptr; _maybe_override_prediction = nullptr; _final_run = false; }
     inline BaseTask& foreach_action(void (*f)(search&,size_t,float,action,bool,float)) { _foreach_action = f; return *this; }
     inline BaseTask& post_prediction(void (*f)(search&,size_t,action,float)) { _post_prediction = f; return *this; }
     inline BaseTask& maybe_override_prediction(bool (*f)(search&,size_t,action&,float&)) { _maybe_override_prediction = f; return *this; }
@@ -32,7 +32,7 @@ namespace Search {
     
     void Run();
     
-    private:
+    // data
     search* sch;
     vector<example*>& ec;
     bool _final_run;
@@ -163,6 +163,7 @@ namespace Search {
     void*           task_data;  // your task data!
     void*           metatask_data;  // your metatask data!
     const char*     task_name;
+    const char*     metatask_name;
     
     vw& get_vw_pointer_unsafe();   // although you should rarely need this, some times you need a poiter to the vw data structure :(
     void set_force_oracle(bool force);  // if the library wants to force search to use the oracle, set this to true
@@ -181,6 +182,18 @@ namespace Search {
     void (*run_takedown)(search&, std::vector<example*>&);
   };
 
+  struct search_metatask {
+    // required
+    const char* metatask_name;
+    void (*run)(search&,std::vector<example*>&);
+
+    // optional
+    void (*initialize)(search&,size_t&,po::variables_map&);
+    void (*finish)(search&);
+    void (*run_setup)(search&,std::vector<example*>&);
+    void (*run_takedown)(search&,std::vector<example*>&);
+  };
+  
   // to make calls to "predict" (and "predictLDF") cleaner when you
   // want to use crazy combinations of arguments
   class predictor {
