@@ -137,6 +137,7 @@ public:
 	///                     whether to record this decision
 	///
 	virtual std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context) = 0;
+    virtual void Enable_Explore(bool explore) = 0;
     virtual ~IExplorer() { }
 };
 
@@ -311,7 +312,7 @@ public:
 	/// @param num_actions     The number of actions to randomize over.
 	///
 	EpsilonGreedyExplorer(IPolicy<Ctx>& default_policy, float epsilon, u32 num_actions) :
-		m_default_policy(default_policy), m_epsilon(epsilon), m_num_actions(num_actions)
+        m_default_policy(default_policy), m_epsilon(epsilon), m_num_actions(num_actions), m_explore(true)
 	{
 		if (m_num_actions < 1)
 		{
@@ -329,6 +330,11 @@ public:
         m_default_policy = new_policy;
     }
 
+    void Enable_Explore(bool explore)
+    {
+        m_explore = explore;
+    }
+
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
@@ -342,13 +348,15 @@ private:
 			throw std::invalid_argument("Action chosen by default policy is not within valid range.");
 		}
 
+        float epsilon = m_explore ? m_epsilon : 0.f;
+
 		float action_probability = 0.f;
-		float base_probability = m_epsilon / m_num_actions; // uniform probability
+        float base_probability = epsilon / m_num_actions; // uniform probability
 
 		// TODO: check this random generation
-		if (random_generator.Uniform_Unit_Interval() < 1.f - m_epsilon)
+        if (random_generator.Uniform_Unit_Interval() < 1.f - epsilon)
 		{
-			action_probability = 1.f - m_epsilon + base_probability;
+            action_probability = 1.f - epsilon + base_probability;
 		}
 		else
 		{
@@ -359,7 +367,7 @@ private:
 			{
 				// IF it matches the one chosen by the default policy
 				// then increase the probability
-				action_probability = 1.f - m_epsilon + base_probability;
+                action_probability = 1.f - epsilon + base_probability;
 			}
 			else
 			{
@@ -375,6 +383,7 @@ private:
 private:
 	IPolicy<Ctx>& m_default_policy;
 	float m_epsilon;
+    bool m_explore;
 	u32 m_num_actions;
 
 private:
@@ -397,7 +406,7 @@ public:
     /// @param num_actions     The number of actions to randomize over.
 	///
 	SoftmaxExplorer(IScorer<Ctx>& default_scorer, float lambda, u32 num_actions) :
-		m_default_scorer(default_scorer), m_lambda(lambda), m_num_actions(num_actions)
+        m_default_scorer(default_scorer), m_lambda(lambda), m_num_actions(num_actions), m_explore(true)
 	{
 		if (m_num_actions < 1)
 		{
@@ -408,6 +417,11 @@ public:
     void Update_Scorer(IScorer<Ctx>& new_scorer)
     {
         m_default_scorer = new_scorer;
+    }
+
+    void Enable_Explore(bool explore)
+    {
+        m_explore = explore;
     }
 
 private:
@@ -434,34 +448,52 @@ private:
 			}
 		}
 
-		// Create a normalized exponential distribution based on the returned scores
-		for (i = 0; i < num_scores; i++)
-		{
-			scores[i] = exp(m_lambda * (scores[i] - max_score));
-		}
+        float action_probability = 0.f;
+        u32 action_index = 0;
+        if (m_explore)
+        {
+            // Create a normalized exponential distribution based on the returned scores
+            for (i = 0; i < num_scores; i++)
+            {
+                scores[i] = exp(m_lambda * (scores[i] - max_score));
+            }
 
-		// Create a discrete_distribution based on the returned weights. This class handles the
-		// case where the sum of the weights is < or > 1, by normalizing agains the sum.
-		float total = 0.f;
-		for (size_t i = 0; i < num_scores; i++)
-			total += scores[i];
+            // Create a discrete_distribution based on the returned weights. This class handles the
+            // case where the sum of the weights is < or > 1, by normalizing agains the sum.
+            float total = 0.f;
+            for (size_t i = 0; i < num_scores; i++)
+                total += scores[i];
 
-		float draw = random_generator.Uniform_Unit_Interval();
+            float draw = random_generator.Uniform_Unit_Interval();
 
-		float sum = 0.f;
-		float action_probability = 0.f;
-		u32 action_index = num_scores - 1;
-		for (u32 i = 0; i < num_scores; i++)
-		{
-			scores[i] = scores[i] / total;
-			sum += scores[i];
-			if (sum > draw)
-			{
-				action_index = i;
-				action_probability = scores[i];
-				break;
-			}
-		}
+            float sum = 0.f;
+            action_probability = 0.f;
+            action_index = num_scores - 1;
+            for (u32 i = 0; i < num_scores; i++)
+            {
+                scores[i] = scores[i] / total;
+                sum += scores[i];
+                if (sum > draw)
+                {
+                    action_index = i;
+                    action_probability = scores[i];
+                    break;
+                }
+            }
+        }
+        else
+        {
+            float max_score = 0.f;
+            for (size_t i = 0; i < num_scores; i++)
+            {
+                if (max_score < scores[i])
+                {
+                    max_score = scores[i];
+                    action_index = (u32)i;
+                }
+            }
+            action_probability = 1.f; // Set to 1 since we always pick the highest one.
+        }
 
 		// action id is one-based
 		return std::tuple<u32, float, bool>(action_index + 1, action_probability, true);
@@ -469,6 +501,7 @@ private:
 
 private:
 	IScorer<Ctx>& m_default_scorer;
+    bool m_explore;
 	float m_lambda;
 	u32 m_num_actions;
 
@@ -491,7 +524,7 @@ public:
     /// @param num_actions     The number of actions to randomize over.
 	///
 	GenericExplorer(IScorer<Ctx>& default_scorer, u32 num_actions) :
-		m_default_scorer(default_scorer), m_num_actions(num_actions)
+        m_default_scorer(default_scorer), m_num_actions(num_actions), m_explore(true)
 	{
 		if (m_num_actions < 1)
 		{
@@ -502,6 +535,11 @@ public:
     void Update_Scorer(IScorer<Ctx>& new_scorer)
     {
         m_default_scorer = new_scorer;
+    }
+
+    void Enable_Explore(bool explore)
+    {
+        m_explore = explore;
     }
 
 private:
@@ -556,6 +594,7 @@ private:
 
 private:
 	IScorer<Ctx>& m_default_scorer;
+    bool m_explore;
 	u32 m_num_actions;
 
 private:
@@ -579,7 +618,7 @@ public:
     /// @param num_actions     The number of actions to randomize over.
 	///
 	TauFirstExplorer(IPolicy<Ctx>& default_policy, u32 tau, u32 num_actions) :
-		m_default_policy(default_policy), m_tau(tau), m_num_actions(num_actions)
+        m_default_policy(default_policy), m_tau(tau), m_num_actions(num_actions), m_explore(true)
 	{
 		if (m_num_actions < 1)
 		{
@@ -592,6 +631,11 @@ public:
         m_default_policy = new_policy;
     }
 
+    void Enable_Explore(bool explore)
+    {
+        m_explore = explore;
+    }
+
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
@@ -600,9 +644,10 @@ private:
 		u32 chosen_action = 0;
 		float action_probability = 0.f;
 		bool log_action;
-		if (m_tau)
+
+        if (m_tau && m_explore)
 		{
-			m_tau--;
+            m_tau--;
 			u32 actionId = random_generator.Uniform_Int(1, m_num_actions);
 			action_probability = 1.f / m_num_actions;
 			chosen_action = actionId;
@@ -627,6 +672,7 @@ private:
 
 private:
 	IPolicy<Ctx>& m_default_policy;
+    bool m_explore;
 	u32 m_tau;
 	u32 m_num_actions;
 
@@ -651,7 +697,7 @@ public:
 	///
 	BootstrapExplorer(vector<unique_ptr<IPolicy<Ctx>>>& default_policy_functions, u32 num_actions) :
 		m_default_policy_functions(default_policy_functions),
-		m_num_actions(num_actions)
+        m_num_actions(num_actions), m_explore(true)
 	{
 	        m_bags = (u32)default_policy_functions.size();
 		if (m_num_actions < 1)
@@ -670,48 +716,64 @@ public:
         m_default_policy_functions = move(new_policy_functions);
     }
 
+    void Enable_Explore(bool explore)
+    {
+        m_explore = explore;
+    }
+
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
 		PRG::prg random_generator(salted_seed);
 
 		// Select bag
-		u32 chosen_bag = random_generator.Uniform_Int(0, m_bags - 1);
+        u32 chosen_bag = random_generator.Uniform_Int(0, m_bags - 1);
 
 		// Invoke the default policy function to get the action
 		u32 chosen_action = 0;
-		u32 action_from_bag = 0;
-		vector<u32> actions_selected;
-		for (size_t i = 0; i < m_num_actions; i++)
-		{
-			actions_selected.push_back(0);
-		}
+        float action_probability = 0.f;
 
-		// Invoke the default policy function to get the action
-		for (u32 current_bag = 0; current_bag < m_bags; current_bag++)
-		{
-			action_from_bag = m_default_policy_functions[current_bag]->Choose_Action(context);
+        if (m_explore)
+        {
+            u32 action_from_bag = 0;
+            vector<u32> actions_selected;
+            for (size_t i = 0; i < m_num_actions; i++)
+            {
+                actions_selected.push_back(0);
+            }
 
-			if (action_from_bag == 0 || action_from_bag > m_num_actions)
-			{
-				throw std::invalid_argument("Action chosen by default policy is not within valid range.");
-			}
+            // Invoke the default policy function to get the action
+            for (u32 current_bag = 0; current_bag < m_bags; current_bag++)
+            {
+                action_from_bag = m_default_policy_functions[current_bag]->Choose_Action(context);
 
-			if (current_bag == chosen_bag)
-			{
-				chosen_action = action_from_bag;
-			}
-			//this won't work if actions aren't 0 to Count
-			actions_selected[action_from_bag - 1]++; // action id is one-based
-		}
-		float action_probability = (float)actions_selected[chosen_action - 1] / m_bags; // action id is one-based
+                if (action_from_bag == 0 || action_from_bag > m_num_actions)
+                {
+                    throw std::invalid_argument("Action chosen by default policy is not within valid range.");
+                }
+
+                if (current_bag == chosen_bag)
+                {
+                    chosen_action = action_from_bag;
+                }
+                //this won't work if actions aren't 0 to Count
+                actions_selected[action_from_bag - 1]++; // action id is one-based
+            }
+            action_probability = (float)actions_selected[chosen_action - 1] / m_bags; // action id is one-based
+        }
+        else
+        {
+            chosen_action = m_default_policy_functions[0]->Choose_Action(context);
+            action_probability = 1.f;
+        }
 
 		return std::tuple<u32, float, bool>(chosen_action, action_probability, true);
 	}
 
 private:
 	vector<unique_ptr<IPolicy<Ctx>>>& m_default_policy_functions;
-	u32 m_bags;
+    bool m_explore;
+    u32 m_bags;
 	u32 m_num_actions;
 
 private:

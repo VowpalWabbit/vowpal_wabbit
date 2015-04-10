@@ -67,6 +67,53 @@ namespace vw_explore_tests
 			Assert::IsTrue(abs((double)times_policy_action_chosen / times_choose - 0.5) < 0.1);
 		}
 
+        TEST_METHOD(Epsilon_Greedy_Toggle_Exploration)
+        {
+            int num_actions = 10;
+            float epsilon = 0.5f;
+            int params = 101;
+
+            TestPolicy my_policy(params, num_actions);
+            TestContext my_context;
+            TestRecorder my_recorder;
+
+            MwtExplorer<TestContext> mwt("salt", my_recorder);
+            EpsilonGreedyExplorer<TestContext> explorer(my_policy, epsilon, num_actions);
+
+            u32 policy_action = my_policy.Choose_Action(my_context);
+
+            int times_choose = 10000;
+            int times_policy_action_chosen = 0;
+
+            explorer.Enable_Explore(false);
+
+            // Verify that all the time the default policy is chosen
+            for (int i = 0; i < times_choose; i++)
+            {
+                u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(i), my_context);
+                if (chosen_action == policy_action)
+                {
+                    times_policy_action_chosen++;
+                }
+            }
+            Assert::AreEqual(times_choose, times_policy_action_chosen);
+
+            explorer.Enable_Explore(true);
+            times_policy_action_chosen = 0;
+
+            // Verify that about half the time the default policy is chosen
+            for (int i = 0; i < times_choose; i++)
+            {
+                u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(i), my_context);
+                if (chosen_action == policy_action)
+                {
+                    times_policy_action_chosen++;
+                }
+            }
+
+            Assert::IsTrue(abs((double)times_policy_action_chosen / times_choose - 0.5) < 0.1);
+        }
+
 		TEST_METHOD(Tau_First)
 		{
 			int num_actions = 10;
@@ -113,6 +160,50 @@ namespace vw_explore_tests
 			float expected_probs[2] = { .1f, .1f };
 			this->Test_Interactions(interactions, 2, expected_probs);
 		}
+
+        TEST_METHOD(Tau_First_Toggle_Exploration)
+        {
+            int num_actions = 10;
+            u32 tau = 2;
+            TestPolicy my_policy(99, num_actions);
+            TestRecorder my_recorder;
+            TestContext my_context;
+
+            MwtExplorer<TestContext> mwt("salt", my_recorder);
+            TauFirstExplorer<TestContext> explorer(my_policy, tau, num_actions);
+
+            u32 policy_action = my_policy.Choose_Action(my_context);
+
+            int times_choose = 10000;
+            int times_policy_action_chosen = 0;
+
+            explorer.Enable_Explore(false);
+
+            // Verify that all the time the default policy is chosen
+            for (int i = 0; i < times_choose; i++)
+            {
+                u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(i), my_context);
+                if (chosen_action == policy_action)
+                {
+                    times_policy_action_chosen++;
+                }
+            }
+            Assert::AreEqual(times_choose, times_policy_action_chosen);
+
+            explorer.Enable_Explore(true);
+
+            u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
+            chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
+
+            // Tau expired, did not explore
+            chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(3), my_context);
+            Assert::AreEqual((u32)10, chosen_action);
+
+            // Only 2 interactions logged, 3rd one should not be stored
+            vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
+            float expected_probs[2] = { .1f, .1f };
+            this->Test_Interactions(interactions, 2, expected_probs);
+        }
 
 		TEST_METHOD(Bootstrap)
 		{
@@ -166,6 +257,59 @@ namespace vw_explore_tests
 			float expected_probs[2] = { .5f, .5f };
 			this->Test_Interactions(interactions, 2, expected_probs);
 		}
+
+        TEST_METHOD(Bootstrap_Toggle_Exploration)
+        {
+            int num_actions = 10;
+            int params = 101;
+            TestRecorder my_recorder;
+
+            vector<unique_ptr<IPolicy<TestContext>>> policies;
+            policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params, num_actions)));
+            policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params + 1, num_actions)));
+
+            TestContext my_context;
+
+            MwtExplorer<TestContext> mwt("c++-test", my_recorder);
+            BootstrapExplorer<TestContext> explorer(policies, num_actions);
+
+            u32 policy_action = policies[0]->Choose_Action(my_context);
+
+            int times_choose = 10000;
+            int times_policy_action_chosen = 0;
+
+            explorer.Enable_Explore(false);
+
+            // Verify that all the time the first policy is chosen
+            for (int i = 0; i < times_choose; i++)
+            {
+                u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(i), my_context);
+                if (chosen_action == policy_action)
+                {
+                    times_policy_action_chosen++;
+                }
+            }
+            Assert::AreEqual(times_choose, times_policy_action_chosen);
+
+            explorer.Enable_Explore(true);
+
+            u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
+            chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
+
+            // Two bags choosing different actions so prob of each is 1/2
+            vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
+
+            float* expected_probs = new float[times_choose + 2];
+            for (int i = 0; i < times_choose; i++)
+            {
+                expected_probs[i] = 1.f;
+            }
+            expected_probs[times_choose] = .5f;
+            expected_probs[times_choose + 1] = .5f;
+            this->Test_Interactions(interactions, times_choose + 2, expected_probs);
+
+            delete[] expected_probs;
+        }
 
 		TEST_METHOD(Softmax)
 		{
@@ -236,6 +380,66 @@ namespace vw_explore_tests
 				Assert::AreNotEqual(1.f / num_actions, interactions[i].Probability);
 			}
 		}
+
+        TEST_METHOD(Softmax_Toggle_Exploration)
+        {
+            int num_actions = 10;
+            float lambda = 0.5f;
+            int scorer_arg = 7;
+            TestScorer my_scorer(scorer_arg, num_actions, /* uniform = */ false);
+            TestRecorder my_recorder;
+            TestContext my_context;
+
+            MwtExplorer<TestContext> mwt("salt", my_recorder);
+            SoftmaxExplorer<TestContext> explorer(my_scorer, lambda, num_actions);
+
+            vector<float> scores = my_scorer.Score_Actions(my_context);
+            float max_score = 0.f;
+            u32 policy_action = 0;
+            for (size_t i = 0; i < scores.size(); i++)
+            {
+                if (max_score < scores[i])
+                {
+                    max_score = scores[i];
+                    policy_action = (u32)i + 1;
+                }
+            }
+
+            int times_choose = 10000;
+            int times_policy_action_chosen = 0;
+
+            explorer.Enable_Explore(false);
+
+            // Verify that all the time the highest score action is chosen
+            for (int i = 0; i < times_choose; i++)
+            {
+                u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(i), my_context);
+                if (chosen_action == policy_action)
+                {
+                    times_policy_action_chosen++;
+                }
+            }
+            Assert::AreEqual(times_choose, times_policy_action_chosen);
+
+            explorer.Enable_Explore(true);
+
+            u32 action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
+            action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
+            action = mwt.Choose_Action(explorer, this->Get_Unique_Key(3), my_context);
+
+            vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
+            size_t num_interactions = interactions.size();
+
+            Assert::AreEqual(times_choose + 3, (int)num_interactions);
+            for (size_t i = 0; i < times_choose; i++)
+            {
+                Assert::AreEqual(1.f, interactions[i].Probability);
+            }
+            for (size_t i = times_choose; i < num_interactions; i++)
+            {
+                Assert::AreNotEqual(1.f / num_actions, interactions[i].Probability);
+            }
+        }
 
 		TEST_METHOD(Generic)
 		{

@@ -41,6 +41,11 @@ namespace MultiWorldTesting {
             this->defaultPolicy = newPolicy;
         }
 
+        virtual void EnableExplore(bool explore)
+        {
+            m_explorer->Enable_Explore(explore);
+        }
+
 	internal:
 		virtual UInt32 InvokePolicyCallback(Ctx context, int index) override
 		{
@@ -84,6 +89,11 @@ namespace MultiWorldTesting {
         virtual void UpdatePolicy(IPolicy<Ctx>^ newPolicy)
         {
             this->defaultPolicy = newPolicy;
+        }
+
+        virtual void EnableExplore(bool explore)
+        {
+            m_explorer->Enable_Explore(explore);
         }
 
 		~TauFirstExplorer()
@@ -137,6 +147,11 @@ namespace MultiWorldTesting {
             this->defaultScorer = newScorer;
         }
 
+        virtual void EnableExplore(bool explore)
+        {
+            m_explorer->Enable_Explore(explore);
+        }
+
 		~SoftmaxExplorer()
 		{
 			delete m_explorer;
@@ -184,6 +199,11 @@ namespace MultiWorldTesting {
         virtual void UpdateScorer(IScorer<Ctx>^ newScorer)
         {
             this->defaultScorer = newScorer;
+        }
+
+        virtual void EnableExplore(bool explore)
+        {
+            m_explorer->Enable_Explore(explore);
         }
 
 		~GenericExplorer()
@@ -239,6 +259,11 @@ namespace MultiWorldTesting {
         virtual void UpdatePolicy(cli::array<IPolicy<Ctx>^>^ newPolicies)
         {
             this->defaultPolicies = newPolicies;
+        }
+
+        virtual void EnableExplore(bool explore)
+        {
+            m_explorer->Enable_Explore(explore);
         }
 
 		~BootstrapExplorer()

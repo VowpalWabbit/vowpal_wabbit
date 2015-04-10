@@ -75,6 +75,8 @@ public:
 generic <class Ctx>
 public interface class IExplorer
 {
+public:
+    virtual void EnableExplore(bool explore) = 0;
 };
 
 generic <class Ctx>

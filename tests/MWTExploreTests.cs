@@ -41,6 +41,14 @@ namespace ExploreTests
             Assert.AreEqual(2, interactions.Count);
 
             Assert.AreEqual(testContext.Id, interactions[0].Context.Id);
+
+            // Verify that policy action is chosen all the time
+            explorer.EnableExplore(false);
+            for (int i = 0; i < 1000; i++)
+            {
+                chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext);
+                Assert.AreEqual(expectedAction, chosenAction);
+            }
         }
 
         [TestMethod]
@@ -64,6 +72,14 @@ namespace ExploreTests
 
             var interactions = recorder.GetAllInteractions();
             Assert.AreEqual(0, interactions.Count);
+
+            // Verify that policy action is chosen all the time
+            explorer.EnableExplore(false);
+            for (int i = 0; i < 1000; i++)
+            {
+                chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext);
+                Assert.AreEqual(expectedAction, chosenAction);
+            }
         }
 
         [TestMethod]
@@ -98,6 +114,14 @@ namespace ExploreTests
 
             Assert.AreEqual(testContext1.Id, interactions[0].Context.Id);
             Assert.AreEqual(testContext2.Id, interactions[1].Context.Id);
+
+            // Verify that policy action is chosen all the time
+            explorer.EnableExplore(false);
+            for (int i = 0; i < 1000; i++)
+            {
+                chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext1);
+                Assert.AreEqual(expectedAction, chosenAction);
+            }
         }
 
         [TestMethod]
@@ -163,6 +187,27 @@ namespace ExploreTests
                 // Scores are not equal therefore probabilities should not be uniform
                 Assert.AreNotEqual(interactions[i].Probability, 1.0f / numActions);
                 Assert.AreEqual(100 + i, interactions[i].Context.Id);
+            }
+
+            // Verify that policy action is chosen all the time
+            TestContext context = new TestContext { Id = 100 };
+            List<float> scores = scorer.ScoreActions(context);
+            float maxScore = 0;
+            uint highestScoreAction = 0;
+            for (int i = 0; i < scores.Count; i++)
+            {
+                if (maxScore < scores[i])
+                {
+                    maxScore = scores[i];
+                    highestScoreAction = (uint)i + 1;
+                }
+            }
+
+            explorer.EnableExplore(false);
+            for (int i = 0; i < 1000; i++)
+            {
+                uint chosenAction = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = (int)i });
+                Assert.AreEqual(highestScoreAction, chosenAction);
             }
         }
 
