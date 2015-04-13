@@ -708,7 +708,7 @@ void learn_batch(lda &l, bool do_m_step = true)
 
   sort(l.sorted_features.begin(), l.sorted_features.end());
 
-  if (do_m_step) {
+  if (!do_m_step) {
     eta = 0;
   }
   else {
@@ -791,7 +791,7 @@ void learn_batch(lda &l, bool do_m_step = true)
   l.doc_lengths.erase();
 }
 
-void learn(lda &l, LEARNER::base_learner &base, example &ec, bool do_m_step = true)
+void learn(lda &l, LEARNER::base_learner &base, example &ec)
 {
   size_t num_ex = l.examples.size();
   l.examples.push_back(&ec);
@@ -805,19 +805,30 @@ void learn(lda &l, LEARNER::base_learner &base, example &ec, bool do_m_step = tr
     }
   }
   if (++num_ex == l.minibatch)
-    learn_batch(l, do_m_step);
+    learn_batch(l, true);
 }
 
 // placeholder
 void predict(lda &l, LEARNER::base_learner &base, example &ec)
 { 
-	learn(l, base, ec, false);
+	size_t num_ex = l.examples.size();
+	l.examples.push_back(&ec);
+	l.doc_lengths.push_back(0);
+	for (unsigned char *i = ec.indices.begin; i != ec.indices.end; i++) {
+		feature *f = ec.atomics[*i].begin;
+		for (; f != ec.atomics[*i].end; f++) {
+			index_feature temp = { (uint32_t)num_ex, *f };
+			l.sorted_features.push_back(temp);
+			l.doc_lengths[num_ex] += (int)f->x;
+		}
+	}
+	learn_batch(l, false);
 }
 
 void end_pass(lda &l)
 {
   if (l.examples.size())
-    learn_batch(l);
+    learn_batch(l, l.all->training);
 }
 
 void end_examples(lda &l)
