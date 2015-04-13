@@ -672,7 +672,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
   }
 }
 
-void learn_batch(lda &l)
+void learn_batch(lda &l, bool do_m_step = true)
 {
   if (l.sorted_features.empty()) {
     // This can happen when the socket connection is dropped by the client.
@@ -708,9 +708,14 @@ void learn_batch(lda &l)
 
   sort(l.sorted_features.begin(), l.sorted_features.end());
 
-  eta = l.all->eta * l.powf((float)l.example_t, -l.all->power_t);
+  if (do_m_step) {
+    eta = 0;
+  }
+  else {
+    eta = l.all->eta * l.powf((float)l.example_t, -l.all->power_t);
+    eta *= l.lda_D / batch_size;
+  }
   minuseta = 1.0f - eta;
-  eta *= l.lda_D / batch_size;
   l.decay_levels.push_back(l.decay_levels.last() + log(minuseta));
 
   l.digammas.erase();
@@ -752,40 +757,41 @@ void learn_batch(lda &l)
     return_simple_example(*l.all, nullptr, *l.examples[d]);
   }
 
-  for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back();) {
-    index_feature *next = s + 1;
-    while (next <= &l.sorted_features.back() && next->f.weight_index == s->f.weight_index)
-      next++;
+  if (do_m_step) {
+	  for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back();) {
+		  index_feature *next = s + 1;
+		  while (next <= &l.sorted_features.back() && next->f.weight_index == s->f.weight_index)
+			  next++;
 
-    float *word_weights = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
-    for (size_t k = 0; k < l.all->lda; k++) {
-      float new_value = minuseta * word_weights[k];
-      word_weights[k] = new_value;
-    }
+		  float *word_weights = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
+		  for (size_t k = 0; k < l.all->lda; k++) {
+			  float new_value = minuseta * word_weights[k];
+			  word_weights[k] = new_value;
+		  }
 
-    for (; s != next; s++) {
-      float *v_s = &(l.v[s->document * l.all->lda]);
-      float *u_for_w = &weights[(s->f.weight_index & l.all->reg.weight_mask) + l.all->lda + 1];
-      float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
-      for (size_t k = 0; k < l.all->lda; k++) {
-        float new_value = u_for_w[k] * v_s[k] * c_w;
-        l.total_new[k] += new_value;
-        word_weights[k] += new_value;
-      }
-    }
+		  for (; s != next; s++) {
+			  float *v_s = &(l.v[s->document * l.all->lda]);
+			  float *u_for_w = &weights[(s->f.weight_index & l.all->reg.weight_mask) + l.all->lda + 1];
+			  float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
+			  for (size_t k = 0; k < l.all->lda; k++) {
+				  float new_value = u_for_w[k] * v_s[k] * c_w;
+				  l.total_new[k] += new_value;
+				  word_weights[k] += new_value;
+			  }
+		  }
+	  }
+	  for (size_t k = 0; k < l.all->lda; k++) {
+		  l.total_lambda[k] *= minuseta;
+		  l.total_lambda[k] += l.total_new[k];
+	  }
   }
-  for (size_t k = 0; k < l.all->lda; k++) {
-    l.total_lambda[k] *= minuseta;
-    l.total_lambda[k] += l.total_new[k];
-  }
-
   l.sorted_features.resize(0);
 
   l.examples.erase();
   l.doc_lengths.erase();
 }
 
-void learn(lda &l, LEARNER::base_learner &base, example &ec)
+void learn(lda &l, LEARNER::base_learner &base, example &ec, bool do_m_step = true)
 {
   size_t num_ex = l.examples.size();
   l.examples.push_back(&ec);
@@ -799,11 +805,14 @@ void learn(lda &l, LEARNER::base_learner &base, example &ec)
     }
   }
   if (++num_ex == l.minibatch)
-    learn_batch(l);
+    learn_batch(l, do_m_step);
 }
 
 // placeholder
-void predict(lda &l, LEARNER::base_learner &base, example &ec) { learn(l, base, ec); }
+void predict(lda &l, LEARNER::base_learner &base, example &ec)
+{ 
+	learn(l, base, ec, false);
+}
 
 void end_pass(lda &l)
 {
