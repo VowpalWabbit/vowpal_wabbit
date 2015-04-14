@@ -18,7 +18,6 @@ license as described in the file LICENSE.
 #include "search_graph.h"
 #include "search_meta.h"
 #include "csoaa.h"
-#include "beam.h"
 #include "active.h"
 
 using namespace LEARNER;
@@ -80,6 +79,7 @@ namespace Search {
     scored_action(action _a, float _s) : a(_a), s(_s) {}
     scored_action() { a = (action)-1; s = 0.; }
   };
+  std::ostream& operator << (std::ostream& os, const scored_action& x) { os << x.a << ':' << x.s; return os; }
   
   typedef v_array<scored_action> action_prefix;
 
@@ -90,6 +90,7 @@ namespace Search {
     float cost;
     action_cache(float _min_cost, action _k, bool _is_opt, float _cost) : min_cost(_min_cost), k(_k), is_opt(_is_opt), cost(_cost) {}
   };
+  std::ostream& operator << (std::ostream& os, const action_cache& x) { os << x.k << ':' << x.cost; if (x.is_opt) os << '*'; return os; }
   
   struct search_private {
     vw* all;
@@ -129,9 +130,7 @@ namespace Search {
     polylabel* allowed_actions_cache;
     
     size_t loss_declared_cnt;      // how many times did run declare any loss (implicitly or explicitly)?
-    v_array<action> train_trajectory; // the training trajectory
-    v_array<action> current_trajectory;  // the current trajectory; only used in beam search mode
-    v_array<float>  action_sequence_score;  // in beam mode during INIT_TRAIN, we need to keep track of the sequence of scores of predicted actions (to avoid re-predicting)
+    v_array<scored_action> train_trajectory; // the training trajectory
     size_t learn_t;                // what time step are we learning on?
     size_t learn_a_idx;            // what action index are we trying?
     bool done_with_all_actions;    // set to true when there are no more learn_a_idx to go
@@ -196,7 +195,7 @@ namespace Search {
     stringstream* rawOutputStringStream;
     CS::label ldf_test_label;
     v_array<action> condition_on_actions;
-    v_array< pair<size_t,size_t> > timesteps;
+    v_array<size_t> timesteps;
     polylabel learn_losses;
     polylabel gte_label;
     v_array< pair<float,size_t> > active_uncertainty;
@@ -207,12 +206,6 @@ namespace Search {
     example*empty_example;
     CS::label empty_cs_label;
 
-    Beam::beam< action_prefix > *beam;
-    size_t kbest;            // size of kbest list; 1 just means 1best
-    float beam_initial_cost; // when we're doing a subsequent run, how much do we initially pay?
-    action_prefix beam_actions; // on non-initial beam runs, what prefix of actions should we take?
-    float beam_total_cost;
-    
     search_task* task;    // your task!
     search_metatask* metatask;  // your (optional) metatask
     BaseTask* metaoverride;
@@ -230,6 +223,14 @@ namespace Search {
         delete priv.memo_foreach_action[i];
       }
     priv.memo_foreach_action.erase();
+  }
+
+  inline bool need_memo_foreach_action(search_private& priv) {
+    return
+        (priv.state == INIT_TRAIN) &&
+        (priv.metatask) &&
+        (priv.metaoverride); // &&
+    //        (priv.metaoverride->_foreach_action || priv.metaoverride->_post_prediction);
   }
   
   int random_policy(search_private& priv, bool allow_current, bool allow_optimal, bool advance_prng=true) {
@@ -531,8 +532,6 @@ namespace Search {
       if (priv.beta > 1) priv.beta = 1;
     }
     priv.ptag_to_action.erase();
-    if (priv.beam)
-      priv.current_trajectory.erase();
     
     if (! priv.cb_learner) { // was: if rollout_all_actions
       uint32_t seed = (uint32_t)(priv.read_example_last_id * 147483 + 4831921) * 2147483647;
@@ -566,56 +565,6 @@ namespace Search {
     for (size_t i=0; i<n; i++)
       if (A[i] == target) return true;
     return false;
-  }
-    
-  action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* oracle_actions, size_t oracle_actions_cnt, const action* allowed_actions, size_t allowed_actions_cnt, bool add_alternatives_to_beam) {
-    action ret = ( oracle_actions_cnt > 0) ?  oracle_actions[random(oracle_actions_cnt )] :
-                 (allowed_actions_cnt > 0) ? allowed_actions[random(allowed_actions_cnt)] :
-                 priv.is_ldf ? (action)random(ec_cnt) :
-                 (action)(1 + random(priv.A));
-    cdbg << "choose_oracle_action from oracle_actions = ["; for (size_t i=0; i<oracle_actions_cnt; i++) cdbg << " " << oracle_actions[i]; cdbg << " ], ret=" << ret << endl;
-    if (add_alternatives_to_beam) {
-      size_t A = priv.is_ldf ? ec_cnt : (priv.A+1);
-      float*alternative_costs = calloc_or_die<float>( A );
-      for (size_t i = 0; i < A; i++) alternative_costs[i] = priv.beam_initial_cost + 1. + 1e-10;
-      if (oracle_actions_cnt >= 1)
-        for (size_t i=0; i<oracle_actions_cnt; i++)
-          alternative_costs[ oracle_actions[i] ] -= 1.;
-
-      size_t lo = priv.is_ldf ? 0 : 1;
-      size_t hi = A;
-      if (allowed_actions_cnt != 0) { lo = 0; hi = allowed_actions_cnt; }
-
-      size_t new_len = priv.current_trajectory.size() + 1;
-      for (size_t j = lo; j < hi; j++) {
-        size_t i = (allowed_actions_cnt > 0) ? allowed_actions[j] : j;
-        if (i == ret) continue;
-
-        if (! priv.beam->might_insert( alternative_costs[i] )) continue;
-
-        action_prefix* px = new action_prefix;
-        *px = v_init<scored_action>();
-        px->resize(new_len+1);
-        px->end = px->begin + new_len + 1;
-        //memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
-        for (size_t tmp=0; tmp<new_len-1; tmp++) {
-          px->begin[tmp].a = priv.current_trajectory[tmp];
-          px->begin[tmp].s = priv.action_sequence_score[tmp];
-        }
-        px->begin[new_len-1].a = i;
-        px->begin[new_len-1].s = alternative_costs[i];
-        *((float*)(px->begin+new_len)) = alternative_costs[i];
-        uint32_t px_hash = uniform_hash(px->begin, sizeof(action) * new_len, 3419);
-        //cdbg_print_array<action>("oracle insertA", *px);
-        if (! priv.beam->insert(px, alternative_costs[i], px_hash)) {
-          px->delete_v();  // SPEEDUP: could be more efficient by reusing for next action
-          delete px;
-        }
-      }
-
-      free(alternative_costs);
-    }
-    return ret;
   }
 
   void add_example_conditioning(search_private& priv, example& ec, const ptag* condition_on, size_t condition_on_cnt, const char* condition_on_names, const action* condition_on_actions) {
@@ -779,7 +728,7 @@ namespace Search {
       }
     }
   }
-
+  
   template<class T>
   void ensure_size(v_array<T>& A, size_t sz) {
     if ((size_t)(A.end_array - A.begin) < sz) 
@@ -803,24 +752,49 @@ namespace Search {
       }
     }
   }
+
+  action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* oracle_actions, size_t oracle_actions_cnt, const action* allowed_actions, size_t allowed_actions_cnt) {
+    action a = ( oracle_actions_cnt > 0) ?  oracle_actions[random(oracle_actions_cnt )] :
+               (allowed_actions_cnt > 0) ? allowed_actions[random(allowed_actions_cnt)] :
+               priv.is_ldf ? (action)random(ec_cnt) :
+               (action)(1 + random(priv.A));
+    cdbg << "choose_oracle_action from oracle_actions = ["; for (size_t i=0; i<oracle_actions_cnt; i++) cdbg << " " << oracle_actions[i]; cdbg << " ], ret=" << a << endl;
+    if (need_memo_foreach_action(priv) && (priv.state == INIT_TRAIN)) {
+      v_array<action_cache>* this_cache = new v_array<action_cache>();
+      *this_cache = v_init<action_cache>();
+      // TODO we don't really need to construct this polylabel
+      polylabel l = allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt);
+      size_t K = cs_get_costs_size(priv.cb_learner, l);
+      for (size_t k = 0; k < K; k++) {
+        action cl = cs_get_cost_index(priv.cb_learner, l, k);
+        float cost = array_contains(cl, oracle_actions, oracle_actions_cnt) ? 0. : 1.;
+        this_cache->push_back( action_cache(0., cl, cl==a, cost) );
+      }
+      size_t pos = priv.meta_t + priv.t;
+      assert( priv.memo_foreach_action.size() == pos - 1 );
+      priv.memo_foreach_action.push_back(this_cache);
+      cdbg << "memo_foreach_action[" << pos-1 << "] = " << this_cache << " from oracle" << endl;
+    }
+    return a;
+  }
   
   action single_prediction_notLDF(search_private& priv, example& ec, int policy, const action* allowed_actions, size_t allowed_actions_cnt, float& a_cost) {
     vw& all = *priv.all;
     polylabel old_label = ec.l;
-    if (priv.beam || (allowed_actions_cnt > 0) || (priv.metaoverride && priv.metaoverride->_foreach_action))  // SPEEDUP: beam case
+    bool need_partial_predictions = need_memo_foreach_action(priv) || (priv.metaoverride && priv.metaoverride->_foreach_action);
+    if ((allowed_actions_cnt > 0) || need_partial_predictions)
       ec.l = allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt);
     else
       ec.l.cs = priv.empty_cs_label;
 
     cdbg << "allowed_actions_cnt=" << allowed_actions_cnt << ", ec.l = ["; for (size_t i=0; i<ec.l.cs.costs.size(); i++) cdbg << ' ' << ec.l.cs.costs[i].class_index << ':' << ec.l.cs.costs[i].x; cdbg << " ]" << endl;
-
     
     priv.base_learner->predict(ec, policy);
     uint32_t act = ec.pred.multiclass;
     a_cost = ec.partial_prediction;
     cdbg << "a_cost = " << a_cost << endl;
 
-    if (priv.metaoverride && priv.metaoverride->_foreach_action) {
+    if (need_partial_predictions) {
       size_t K = cs_get_costs_size(priv.cb_learner, ec.l);
       float min_cost = FLT_MAX;
       for (size_t k = 0; k < K; k++) {
@@ -828,24 +802,23 @@ namespace Search {
         if (cost < min_cost) min_cost = cost;
       }
       v_array<action_cache>* this_cache = nullptr;
-      if (priv.state == INIT_TRAIN) {
+      if (need_memo_foreach_action(priv)) {
         this_cache = new v_array<action_cache>();
         *this_cache = v_init<action_cache>();
       }
       for (size_t k = 0; k < K; k++) {
         action cl = cs_get_cost_index(priv.cb_learner, ec.l, k);
         float cost = cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
-        priv.metaoverride->_foreach_action(*priv.metaoverride->sch, priv.t-1, min_cost, cl, cl==act, cost);
+        if (priv.metaoverride && priv.metaoverride->_foreach_action)
+          priv.metaoverride->_foreach_action(*priv.metaoverride->sch, priv.t-1, min_cost, cl, cl==act, cost);
         if (this_cache)
           this_cache->push_back( action_cache(min_cost, cl, cl==act, cost) );
       }
       if (this_cache) {
         size_t pos = priv.meta_t + priv.t;
-        //ensure_size(priv.memo_foreach_action, pos);
-        //priv.memo_foreach_action[pos-1] = this_cache;
         assert( priv.memo_foreach_action.size() == pos - 1 );
         priv.memo_foreach_action.push_back(this_cache);
-        cerr << "memo_foreach_action[" << pos-1 << "] = " << this_cache << endl;
+        cdbg << "memo_foreach_action[" << pos-1 << "] = " << this_cache << endl;
       }
     }
     
@@ -859,54 +832,6 @@ namespace Search {
       }
       if (min_cost2 < FLT_MAX)
         priv.active_uncertainty.push_back( make_pair(min_cost2 - min_cost, priv.t+priv.meta_t) );
-    }
-    
-    // in beam search mode, go through alternatives and add them as back-ups
-    if (priv.beam) {
-      float act_cost = 0.;
-      size_t K = cs_get_costs_size(priv.cb_learner, ec.l);
-      //cerr << "gcs=" << K << endl;
-      for (size_t k = 0; k < K; k++) {
-        //cerr << "act=" << act << " k=" << k << " gci=" << cs_get_cost_index(priv.cb_learner, ec.l, k) << " pp=" << cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k) << endl;
-        if (cs_get_cost_index(priv.cb_learner, ec.l, k) == act) {
-          act_cost = cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
-          break;
-        }
-      }
-      cdbg << "act=" << act << " act_cost=" << act_cost << endl;
-
-      size_t new_len = priv.current_trajectory.size() + 1;
-      for (size_t k = 0; k < K; k++) {
-        action k_act = cs_get_cost_index(priv.cb_learner, ec.l, k);
-        if (k_act == act) continue;  // skip the taken action
-        //float delta_cost = cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k) - act_cost + priv.beam_initial_cost;
-        float total_cost = priv.beam_total_cost + cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
-        
-        if (! priv.beam->might_insert( total_cost )) continue;
-        
-        // construct the action prefix
-        action_prefix* px = new v_array<scored_action>;
-        *px = v_init<scored_action>();
-        px->resize(new_len + 1);
-        px->end = px->begin + new_len + 1;
-        //memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
-        for (size_t tmp=0; tmp<new_len-1; tmp++) {
-          px->begin[tmp].a = priv.current_trajectory[tmp];
-          px->begin[tmp].s = (priv.beam && (priv.state == INIT_TRAIN)) ? priv.action_sequence_score[tmp] : 0.;
-        }
-        px->begin[new_len-1].a = k_act;
-        px->begin[new_len-1].s = total_cost - priv.beam_total_cost;
-
-        *((float*)(px->begin+new_len)) = total_cost; // delta_cost + act_cost;
-        uint32_t px_hash = uniform_hash(px->begin, sizeof(scored_action) * new_len, 3419);
-        //cdbg << "inserting total_cost=" << total_cost << " total_cost=" << *((float*)(px->begin+new_len)) << " seq="; for (size_t ii=0; ii<new_len; ii++) cdbg << px->begin[ii] << ' '; cdbg << endl;
-        if (! priv.beam->insert(px, total_cost, px_hash)) {
-          px->delete_v();  // SPEEDUP: could be more efficient by reusing for next action
-          delete px;
-        }
-      }
-
-      priv.beam_total_cost += act_cost;
     }
     
     // generate raw predictions if necessary
@@ -928,6 +853,8 @@ namespace Search {
   }
 
   action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, int policy, float& a_cost) {
+    bool need_partial_predictions = need_memo_foreach_action(priv) || (priv.metaoverride && priv.metaoverride->_foreach_action);
+
     CS::cs_label.default_label(&priv.ldf_test_label);
     CS::wclass wc = { 0., 1, 0., 0. };
     priv.ldf_test_label.costs.push_back(wc);
@@ -938,6 +865,12 @@ namespace Search {
 
     size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
 
+    v_array<action_cache>* this_cache = nullptr;
+    if (need_partial_predictions) {
+      this_cache = new v_array<action_cache>();
+      *this_cache = v_init<action_cache>();
+    }
+    
     for (action a= (uint32_t)start_K; a<ec_cnt; a++) {
       cdbg << "== single_prediction_LDF a=" << a << "==" << endl;
       if (start_K > 0)
@@ -957,6 +890,8 @@ namespace Search {
         best_action     = a;
         a_cost          = best_prediction;
       }
+      if (this_cache)
+        this_cache->push_back( action_cache(0., a, false, ecs[a].partial_prediction) );
       
       priv.num_features += ecs[a].num_features;
       ecs[a].l = old_label;
@@ -965,34 +900,20 @@ namespace Search {
     }
     a_cost = best_prediction;
 
-    if (priv.beam) {
-      size_t new_len = priv.current_trajectory.size() + 1;
-      for (size_t k=start_K; k<ec_cnt; k++) {
-        if (k == best_action) continue;
-        float delta_cost = ecs[k].partial_prediction - best_prediction;// + priv.beam_initial_cost;
-        float total_cost = priv.beam_total_cost + ecs[k].partial_prediction;
-        //cerr << "total_cost = " << total_cost << " = " << priv.beam_total_cost << " + " << ecs[k].partial_prediction << endl;
-        if (! priv.beam->might_insert( delta_cost )) continue;
-        action_prefix* px = new v_array<scored_action>;
-        *px = v_init<scored_action>();
-        px->resize(new_len + 1);
-        px->end = px->begin + new_len + 1;
-        //memcpy(px->begin, priv.current_trajectory.begin, sizeof(action) * (new_len-1));
-        for (size_t tmp=0; tmp<new_len-1; tmp++) {
-          px->begin[tmp].a = priv.current_trajectory[tmp];
-          px->begin[tmp].s = (priv.state == INIT_TRAIN) ? priv.action_sequence_score[tmp] : 0.;
-        }
-        px->begin[new_len-1].a = (uint32_t)k;  // TODO: k or ld[k]?
-        px->begin[new_len-1].s = total_cost - priv.beam_total_cost;
-        *((float*)(px->begin+new_len)) = total_cost; // delta_cost + act_cost;
-        //px->begin[new_len-1] = (uint32_t)k;  // TODO: k or ld[k]?
-        uint32_t px_hash = uniform_hash(px->begin, sizeof(scored_action) * new_len, 3419);
-        if (! priv.beam->insert(px, delta_cost, px_hash)) {
-          px->delete_v();  // SPEEDUP: could be more efficient by reusing for next action
-          delete px;
-        }
+    if (this_cache) {
+      for (size_t i=0; i<this_cache->size(); i++) {
+        action_cache& ac = this_cache->get(i);
+        ac.min_cost = a_cost;
+        ac.is_opt = (ac.k == best_action);
+        if (priv.metaoverride && priv.metaoverride->_foreach_action)
+          priv.metaoverride->_foreach_action(*priv.metaoverride->sch, priv.t-1, ac.min_cost, ac.k, ac.is_opt, ac.cost);
       }
-      priv.beam_total_cost += best_prediction;
+      if (need_memo_foreach_action(priv))
+        priv.memo_foreach_action.push_back(this_cache);
+      else {
+        this_cache->delete_v();
+        delete this_cache;
+      }
     }
 
     // TODO: generate raw predictions if necessary
@@ -1172,12 +1093,11 @@ namespace Search {
       case INITIALIZE: return false;
       case GET_TRUTH_STRING: return false;
       case INIT_TEST:
-        if (priv.beam && (priv.t < priv.beam_actions.size()))
-          return false;
         return true;
       case INIT_TRAIN:
-        if (priv.beam && (priv.t < priv.beam_actions.size()))
-          return false;
+        // TODO: do we need to do something here for metatasks?
+        //if (priv.beam && (priv.t < priv.beam_actions.size()))
+        //  return false;
         break;
       case LEARN:
         if (priv.t+priv.meta_t < priv.learn_t) return false;  // TODO: in meta search mode with foreach feature we'll need it even here
@@ -1214,7 +1134,7 @@ namespace Search {
     
     // if we're just after the string, choose an oracle action
     if ((priv.state == GET_TRUTH_STRING) || priv.force_oracle) {
-      action a = choose_oracle_action(priv, ec_cnt, oracle_actions, oracle_actions_cnt, allowed_actions, allowed_actions_cnt, false);
+      action a = choose_oracle_action(priv, ec_cnt, oracle_actions, oracle_actions_cnt, allowed_actions, allowed_actions_cnt);
       //if (priv.metaoverride && priv.metaoverride->_post_prediction)
       //  priv.metaoverride->_post_prediction(*priv.metaoverride->sch, t-priv.meta_t, a, 0.);
       a_cost = 0.;
@@ -1224,11 +1144,9 @@ namespace Search {
     // if we're in LEARN mode and before learn_t, return the train action
     if ((priv.state == LEARN) && (t < priv.learn_t)) {
       assert(t < priv.train_trajectory.size());
-      action a = priv.train_trajectory[t];
-      a_cost = priv.action_sequence_score[t];
-      cerr << "LEARN < priv.learn_t ==> a=" << a << ", a_cost=" << a_cost << endl;
-      if (priv.beam)
-        priv.beam_total_cost += priv.action_sequence_score[t];
+      action a = priv.train_trajectory[t].a;
+      a_cost   = priv.train_trajectory[t].s;
+      cdbg << "LEARN < priv.learn_t ==> a=" << a << ", a_cost=" << a_cost << endl;
       if (priv.metaoverride && priv.metaoverride->_foreach_action)
         foreach_action_from_cache(priv, t);
       if (priv.metaoverride && priv.metaoverride->_post_prediction)
@@ -1236,14 +1154,6 @@ namespace Search {
       return a;
     }
     
-    if (priv.beam && (t < priv.beam_actions.size()) && ((priv.state == INIT_TEST) || (priv.state == INIT_TRAIN))) {
-      if (priv.state == INIT_TRAIN) {
-        priv.train_trajectory.push_back( priv.beam_actions[t].a );
-        priv.action_sequence_score.push_back( priv.beam_actions[t].s );
-      }
-      return priv.beam_actions[t].a;
-    }
-
     // for LDF, # of valid actions is ec_cnt; otherwise it's either allowed_actions_cnt or A
     size_t valid_action_cnt = priv.is_ldf ? ec_cnt :
                               (allowed_actions_cnt > 0) ? allowed_actions_cnt : priv.A;
@@ -1257,7 +1167,6 @@ namespace Search {
       priv.loss_declared_cnt = 0;
       
       priv.learn_a_idx++;
-      //priv.learn_loss = 0.;  // TODO: why was this here? for beam it's def wrong, for non-beam seems wacky.... don't include "past cost"
 
       // check to see if we're done with available actions
       if (priv.learn_a_idx >= valid_action_cnt) {
@@ -1352,12 +1261,12 @@ namespace Search {
       if (priv.metaoverride && priv.metaoverride->_maybe_override_prediction) {
         skip = priv.metaoverride->_maybe_override_prediction(*priv.metaoverride->sch, t-priv.meta_t, a, a_cost);
         cdbg << "maybe_override_prediction --> " << skip << ", a=" << a << ", a_cost=" << a_cost << endl;
-        if (skip && (priv.state == INIT_TRAIN))
+        if (skip && need_memo_foreach_action(priv))
           priv.memo_foreach_action.push_back(nullptr);
       }
       
       if ((!skip) && (policy == -1)) 
-        a = choose_oracle_action(priv, ec_cnt, oracle_actions, oracle_actions_cnt, allowed_actions, allowed_actions_cnt, priv.beam && (priv.state != INIT_TEST));   // TODO: we probably want to actually get costs for oracle actions???
+        a = choose_oracle_action(priv, ec_cnt, oracle_actions, oracle_actions_cnt, allowed_actions, allowed_actions_cnt);   // TODO: we probably want to actually get costs for oracle actions???
 
       if ((policy == -1) && priv.metaoverride && priv.metaoverride->_foreach_action)
         foreach_action_from_cache(priv, t);
@@ -1410,10 +1319,8 @@ namespace Search {
         }
       }
 
-      if (priv.state == INIT_TRAIN) {
-        priv.train_trajectory.push_back(a); // note the action for future reference
-        //if (priv.beam) priv.action_sequence_score.push_back(a_cost);
-      }
+      if (priv.state == INIT_TRAIN)
+        priv.train_trajectory.push_back( scored_action(a, a_cost) ); // note the action for future reference
       
       if (priv.metaoverride && priv.metaoverride->_post_prediction)
         priv.metaoverride->_post_prediction(*priv.metaoverride->sch, t-priv.meta_t, a, a_cost);
@@ -1427,14 +1334,14 @@ namespace Search {
   
   inline bool cmp_size_t(const size_t a, const size_t b) { return a < b; }
   inline bool cmp_size_t_pair(const pair<size_t,size_t>& a, const pair<size_t,size_t>& b) { return ((a.first == b.first) && (a.second < b.second)) || (a.first < b.first); }
-  void get_training_timesteps(search_private& priv, v_array< pair<size_t,size_t> >& timesteps) {  // timesteps are pairs of (beam elem, t) where beam elem == 0 means "default" for non-beam search
+  void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps) {
     timesteps.erase();
 
     // if there's active learning, we need to 
     if (priv.subsample_timesteps <= -1) {
       for (size_t i=0; i<priv.active_uncertainty.size(); i++)
         if (frand48() > priv.active_uncertainty[i].first)
-          timesteps.push_back(pair<size_t,size_t>(0, priv.active_uncertainty[i].second - 1));
+          timesteps.push_back(priv.active_uncertainty[i].second - 1);
           /*
         float k = (float)priv.total_examples_generated;
         priv.ec_seq[t]->revert_weight = priv.all->loss->getRevertingWeight(priv.all->sd, priv.ec_seq[t].pred.scalar, priv.all->eta / powf(k, priv.all->power_t));
@@ -1447,16 +1354,16 @@ namespace Search {
     else
     if (priv.subsample_timesteps <= 0)
       for (size_t t=0; t<priv.T; t++)
-        timesteps.push_back(pair<size_t,size_t>(0,t));
+        timesteps.push_back(t);
 
     // if subsample in (0,1) then pick steps with that probability, but ensuring there's at least one!
     else if (priv.subsample_timesteps < 1) {
       for (size_t t=0; t<priv.T; t++)
         if (frand48() <= priv.subsample_timesteps)
-          timesteps.push_back(pair<size_t,size_t>(0,t));
+          timesteps.push_back(t);
 
       if (timesteps.size() == 0) // ensure at least one
-        timesteps.push_back(pair<size_t,size_t>(0,(size_t)(frand48() * priv.T)));
+        timesteps.push_back((size_t)(frand48() * priv.T));
     }
 
     // finally, if subsample >= 1, then pick (int) that many uniformly at random without replacement; could use an LFSR but why? :P
@@ -1464,10 +1371,10 @@ namespace Search {
       while ((timesteps.size() < (size_t)priv.subsample_timesteps) &&
              (timesteps.size() < priv.T)) {
         size_t t = (size_t)(frand48() * (float)priv.T);
-        if (! v_array_contains(timesteps, pair<size_t,size_t>(0,t)))
-          timesteps.push_back(pair<size_t,size_t>(0,t));
+        if (! v_array_contains(timesteps, t))
+          timesteps.push_back(t);
       }
-      std::sort(timesteps.begin, timesteps.end, cmp_size_t_pair);
+      std::sort(timesteps.begin, timesteps.end, cmp_size_t);
     }
   }
   
@@ -1478,25 +1385,6 @@ namespace Search {
     final_item(v_array<scored_action>*p,string s,float ic) : prefix(p), str(s), total_cost(ic) {}
   };
 
-
-  void get_training_timesteps_beam(search_private& priv, Beam::beam<final_item>& final_beam, v_array< pair<size_t,size_t> >& timesteps) {
-    timesteps.erase();
-    if (priv.subsample_timesteps <= 0) {
-      size_t id = 0;
-      for (Beam::beam_element<final_item>* item = final_beam.begin(); item != final_beam.end(); ++item) {
-        //cerr << id << " " << item->active << " " << item->data->first->size() << endl;
-        if (item->active)
-          for (size_t t=0; t<item->data->prefix->size(); t++)
-            timesteps.push_back( pair<size_t,size_t>( id, t ) );
-        id ++;
-      }
-      sort(timesteps.begin, timesteps.end,
-           [](const pair<size_t,size_t>& a, const pair<size_t,size_t>& b) -> bool { return a.second < b.second; });
-    } else {
-      std::cerr << "error: cannot do subsampling of timesteps with beam search yet!" << endl;
-      throw exception();
-    }
-  }
   
   void free_action_prefix(action_prefix* px) {
     px->delete_v();
@@ -1509,39 +1397,19 @@ namespace Search {
     delete p;
   }
   
-  void final_beam_insert(search_private&priv, Beam::beam<final_item>& beam, float cost, SearchState state) {
-    v_array<scored_action>* final = new v_array<scored_action>;  // TODO: can we memcpy/push_many?
-    *final = v_init<scored_action>();
-    cdbg << "final_beam_insert: cost=" << cost << ", len=" << ((state == INIT_TEST) ? priv.test_action_sequence.size() : priv.train_trajectory.size()) << endl;
-    if (state == INIT_TEST)
-      for (size_t i=0; i<priv.test_action_sequence.size(); i++)
-        final->push_back(scored_action(priv.test_action_sequence[i], 0.)); // we don't need priv.action_sequence_score[i] for INIT_TEST
-    else if (state == INIT_TRAIN)
-      for (size_t i=0; i<priv.train_trajectory.size(); i++)
-        final->push_back(scored_action(priv.train_trajectory[i], priv.action_sequence_score[i]));
-    cdbg << "  --> ["; for (size_t i=0; i<final->size(); i++) cdbg << " " << final->get(i).a << ':' << final->get(i).s; cdbg << " ]" << endl;
-    final_item* item = new final_item(final,
-                                      priv.should_produce_string ? priv.pred_string->str() : "",
-                                      cost);
-    //pair<action_prefix*,string>* p = priv.should_produce_string ? new pair<action_prefix*,string>(final, priv.pred_string->str()) : new pair<action_prefix*,string>(final, "");
-    uint32_t final_hash = uniform_hash(final->begin, sizeof(action)*final->size(), 3419);
-    if (!beam.insert(item, cost, final_hash)) {
-      final->delete_v();
-      delete final;
-      delete item;
-    }
-  }
-
   void BaseTask::Run() {
     search_private& priv = *sch->priv;
     // make sure output is correct
     bool old_should_produce_string = priv.should_produce_string;
-    if (! _final_run) priv.should_produce_string = false;
+    if (! _final_run && ! _with_output_string) priv.should_produce_string = false;
     // if this isn't a final run, it shouldn't count for loss
-    //float old_test_loss = priv.test_loss;
+    float old_test_loss = priv.test_loss;
     //float old_learn_loss = priv.learn_loss;
-    //float old_train_loss = priv.train_loss;
+    float old_train_loss = priv.train_loss;
 
+    if (priv.should_produce_string)
+      priv.pred_string->str("");
+    
     priv.t = 0;
     priv.metaoverride = this;
     priv.task->run(*sch, ec);
@@ -1549,110 +1417,23 @@ namespace Search {
     priv.meta_t += priv.t;
 
     // restore
+    if (_with_output_string && old_should_produce_string)
+      _with_output_string(*sch, *priv.pred_string);
+          
     priv.should_produce_string = old_should_produce_string;
     if (! _final_run) {
-      //priv.test_loss = old_test_loss;
+      priv.test_loss = old_test_loss;
       //priv.learn_loss = old_learn_loss;
-      //priv.train_loss = old_train_loss;
+      priv.train_loss = old_train_loss;
     }
   }
   
   void run_task(search& sch, vector<example*>& ec) {
     search_private& priv = *sch.priv;
-    if (priv.metatask) priv.metatask->run(sch, ec);
-    else               priv.task->run(sch, ec);
-  }
-
-  Beam::beam<final_item>* beam_predict(search& sch, SearchState state) {
-    search_private& priv = *sch.priv;
-    vw&all = *priv.all;
-    bool old_no_caching = priv.no_caching;   // caching is incompatible with generating beam rollouts
-    priv.no_caching = true;
-
-    priv.beam->erase(free_action_prefix);
-    clear_cache_hash_map(priv);
-
-    reset_search_structure(priv);
-    priv.beam_actions.erase();
-    priv.state = state;
-    priv.should_produce_string = (state == INIT_TEST) && (might_print_update(all) || (all.final_prediction_sink.size() > 0) || (all.raw_prediction > 0));
-
-    // do the initial prediction
-    priv.beam_initial_cost = 0.;
-    priv.beam_total_cost = 0.;
-    if      (state == INIT_TEST)  priv.test_action_sequence.clear();
-    else if (state == INIT_TRAIN) { priv.train_trajectory.erase(); priv.action_sequence_score.erase(); }
-    if (priv.should_produce_string) priv.pred_string->str("");
-    run_task(sch, priv.ec_seq);
-    if (all.raw_prediction > 0) all.print_text(all.raw_prediction, "end of initial beam prediction", priv.ec_seq[0]->tag);
-
-    size_t final_size = (state == INIT_TEST) ? max(1, priv.kbest) : max(1, priv.beam->get_beam_size()); // at training time, use beam size
-    
-    Beam::beam<final_item>* final_beam = new Beam::beam<final_item>(final_size);
-    final_beam_insert(priv, *final_beam, priv.beam_total_cost, state);
-    
-    for (size_t beam_run=1; beam_run<priv.beam->get_beam_size(); beam_run++) {
-      priv.beam->compact(free_action_prefix);
-      Beam::beam_element<action_prefix>* item = priv.beam->pop_best_item();
-      if (item != nullptr) {
-        reset_search_structure(priv);
-        priv.beam_actions.erase();
-        priv.state = state;
-        priv.should_produce_string = (state == INIT_TEST) && (might_print_update(all) || (all.final_prediction_sink.size() > 0) || (all.raw_prediction > 0));
-        if (priv.should_produce_string) priv.pred_string->str("");
-        float init_cost = *((float*)(item->data->begin+item->data->size()-1));
-        priv.beam_initial_cost = init_cost;
-        priv.beam_total_cost   = priv.beam_initial_cost;
-        push_many(priv.beam_actions, item->data->begin, item->data->size() - 1);
-        //cdbg_print_array("beam_actions", priv.beam_actions);
-        cdbg << "beam_actions = [ "; for (size_t tmp=0; tmp<priv.beam_actions.size(); tmp++) cdbg << priv.beam_actions[tmp].a << ':' << priv.beam_actions[tmp].s << ' '; cdbg << ']' << endl;
-        cdbg << "\tbeam_initial_cost = " << init_cost << endl;
-        if      (state == INIT_TEST)  priv.test_action_sequence.clear();
-        else if (state == INIT_TRAIN) { priv.train_trajectory.erase(); priv.action_sequence_score.erase(); }
-        run_task(sch, priv.ec_seq);
-        if (all.raw_prediction > 0) all.print_text(all.raw_prediction, "end of next beam prediction", priv.ec_seq[0]->tag);
-        final_beam_insert(priv, *final_beam, priv.beam_total_cost, state);
-      }
-    }
-
-    final_beam->compact(free_final_item);
-    Beam::beam_element<final_item>* best = final_beam->begin();
-    while ((best != final_beam->end()) && !best->active) ++best;
-    if (best != final_beam->end()) {
-      // store in beam_actions the actions for this so that subsequent calls to ->_run() produce it!
-      priv.beam_actions.erase();
-      if (state == INIT_TRAIN) priv.action_sequence_score.erase();
-      //push_many(priv.beam_actions, best->data->prefix->begin, best->data->prefix->size());
-      final_item& item = *(best->data);
-      for (size_t i=0; i<item.prefix->size(); i++) {
-        priv.beam_actions.push_back(item.prefix->get(i));
-        if (state == INIT_TRAIN) priv.action_sequence_score.push_back(item.prefix->get(i).s);
-      }
-    }
-
-    // TODO: only if test?
-    if (all.final_prediction_sink.begin != all.final_prediction_sink.end) {  // need to produce prediction output
-      v_array<char> new_tag = v_init<char>();
-      for (; best != final_beam->end(); ++best)
-        if (best->active) {
-          new_tag.erase();
-          if (priv.kbest > 1) {
-            new_tag.resize(50, true);
-            int len = sprintf(new_tag.begin, "%-10.6f\t", best->cost);
-            new_tag.end = new_tag.begin + len;
-          }
-          push_many(new_tag, priv.ec_seq[0]->tag.begin, priv.ec_seq[0]->tag.size());
-          for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
-            all.print_text((int)*sink, best->data->str, new_tag);
-        }
-      if (priv.kbest > 1)
-        for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)      
-          all.print_text((int)*sink, "", priv.ec_seq[0]->tag);
-      new_tag.delete_v();
-    }
-
-    priv.no_caching = old_no_caching;
-    return final_beam;
+    if (priv.metatask && (priv.state != GET_TRUTH_STRING))
+      priv.metatask->run(sch, ec);
+    else
+      priv.task->run(sch, ec);
   }
   
   template <bool is_learn>
@@ -1663,7 +1444,6 @@ namespace Search {
 
     //if (! priv.no_caching)
       clear_cache_hash_map(priv);
-    Beam::beam<final_item>* final_beam = nullptr;
     
     // do an initial test pass to compute output (and loss)
     if (must_run_test(all, priv.ec_seq, is_test_ex)) {
@@ -1671,20 +1451,12 @@ namespace Search {
 
       ran_test = true;
       
-      if (priv.beam) {
-        final_beam = beam_predict(sch, INIT_TEST);
-        final_beam->erase(free_final_item);
-        delete final_beam;
-      }
-
-      // SPEEDUP: in the case of beam, we could skip some of this...
       // do the prediction
       reset_search_structure(priv);
       priv.state = INIT_TEST;
       priv.should_produce_string = might_print_update(all) || (all.final_prediction_sink.size() > 0) || (all.raw_prediction > 0);
       priv.pred_string->str("");
       priv.test_action_sequence.clear();
-      priv.action_sequence_score.erase();
       run_task(sch, priv.ec_seq);
 
       // accumulate loss
@@ -1692,9 +1464,8 @@ namespace Search {
         all.sd->update(priv.ec_seq[0]->test_only, priv.test_loss, 1.f, priv.num_features);
       
       // generate output
-      if (!priv.beam)
-        for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
-          all.print_text((int)*sink, priv.pred_string->str(), priv.ec_seq[0]->tag);
+      for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
+        all.print_text((int)*sink, priv.pred_string->str(), priv.ec_seq[0]->tag);
 
       if (all.raw_prediction > 0)
         all.print_text(all.raw_prediction, "", priv.ec_seq[0]->tag);
@@ -1709,16 +1480,13 @@ namespace Search {
     // do a pass over the data allowing oracle
     cdbg << "======================================== INIT TRAIN (" << priv.current_policy << "," << priv.read_example_last_pass << ") ========================================" << endl;
     //cerr << "training" << endl;
-    final_beam = nullptr;
-    if (priv.beam)
-      final_beam = beam_predict(sch, INIT_TRAIN);
 
+    clear_cache_hash_map(priv);
     reset_search_structure(priv);
     clear_memo_foreach_action(priv);
     priv.state = INIT_TRAIN;
     priv.active_uncertainty.erase();
     priv.train_trajectory.erase();  // this is where we'll store the training sequence
-    priv.action_sequence_score.erase();
     run_task(sch, priv.ec_seq);
 
     if (!ran_test) {  // was  && !priv.ec_seq[0]->test_only) { but we know it's not test_only
@@ -1731,64 +1499,45 @@ namespace Search {
     
     // if there's nothing to train on, we're done!
     if ((priv.loss_declared_cnt == 0) || (priv.t+priv.meta_t == 0) || (priv.rollout_method == NO_ROLLOUT)) {// TODO: make sure NO_ROLLOUT works with beam!
-      if (priv.beam) {
-        final_beam->erase(free_final_item);
-        delete final_beam;
-      }
       return;
     }
     
     // otherwise, we have some learn'in to do!      
     cdbg << "======================================== LEARN (" << priv.current_policy << "," << priv.read_example_last_pass << ") ========================================" << endl;
     priv.T = priv.metatask ? priv.meta_t : priv.t;
-    if (priv.beam) get_training_timesteps_beam(priv, *final_beam, priv.timesteps);
-    else           get_training_timesteps(priv, priv.timesteps);
+    get_training_timesteps(priv, priv.timesteps);
+    cdbg_print_array<scored_action>("train_trajectory", priv.train_trajectory);
+    //cdbg << "memo_foreach_action = " << priv.memo_foreach_action << endl;
+    for (size_t i=0; i<priv.memo_foreach_action.size(); i++) {
+      cdbg << "memo_foreach_action[" << i << "] = ";
+      if (priv.memo_foreach_action[i]) cdbg << *priv.memo_foreach_action[i];
+      else cdbg << "null";
+      cdbg << endl;
+    }
 
     if (priv.cb_learner) priv.learn_losses.cb.costs.erase();
     else                 priv.learn_losses.cs.costs.erase();
-    //size_t last_beam_id = 0;
+
     for (size_t tid=0; tid<priv.timesteps.size(); tid++) {
-      size_t bid = priv.timesteps[tid].first;
-      cdbg << "timestep = " << priv.timesteps[tid].first << "." << priv.timesteps[tid].second << " [" << tid << "/" << priv.timesteps.size() << "]" << endl;
+      cdbg << "timestep = " << priv.timesteps[tid] << " [" << tid << "/" << priv.timesteps.size() << "]" << endl;
 
       if (priv.metatask && !priv.memo_foreach_action[tid]) {
-        cerr << "skipping because it looks like this was overridden by metatask" << endl;
+        cdbg << "skipping because it looks like this was overridden by metatask" << endl;
         continue;
       }
-      //if (bid != last_beam_id) {
-      //priv.action_sequence_score.erase();
-      if (priv.beam) {
-        priv.train_trajectory.erase();
-        final_item& item = *(final_beam->begin()[bid].data);
-        for (size_t i=0; i<item.prefix->size(); i++) {
-          priv.train_trajectory.push_back(item.prefix->get(i).a);
-          priv.action_sequence_score.push_back(item.prefix->get(i).s);
-        }
-        //push_many(priv.train_trajectory, final_beam->begin()[bid].data->prefix->begin, final_beam->begin()[bid].data->prefix->size() - 1);
-        //}
-      }
-      cdbg_print_array<action>("train_trajectory", priv.train_trajectory);
-      cdbg_print_array<float>("action_sequence_score", priv.action_sequence_score);
 
       priv.learn_a_idx = 0;
       priv.done_with_all_actions = false;
       // for each action, roll out to get a loss
       while (! priv.done_with_all_actions) {
         reset_search_structure(priv);
-        priv.beam_actions.erase();
-        priv.beam_initial_cost = 0.;
-        priv.beam_total_cost = 0.;
         priv.state = LEARN;
-        priv.learn_t = priv.timesteps[tid].second;
+        priv.learn_t = priv.timesteps[tid];
         cdbg << "-------------------------------------------------------------------------------------" << endl;
         cdbg << "learn_t = " << priv.learn_t << ", learn_a_idx = " << priv.learn_a_idx << endl;
         run_task(sch, priv.ec_seq);
         //cerr_print_array("in GENER, learn_allowed_actions", priv.learn_allowed_actions);
         float this_loss = priv.learn_loss;
-        if (priv.beam) {
-          cdbg << "this_loss = " << this_loss << " - " << priv.beam_total_cost << endl;
-          this_loss -= priv.beam_total_cost;
-        }
         cs_cost_push_back(priv.cb_learner, priv.learn_losses, priv.is_ldf ? (priv.learn_a_idx - 1) : priv.learn_a_idx, this_loss);
         //                          (priv.learn_allowed_actions.size() > 0) ? priv.learn_allowed_actions[priv.learn_a_idx-1] : priv.is_ldf ? (priv.learn_a_idx-1) : (priv.learn_a_idx),
         //                           priv.learn_loss);
@@ -1799,9 +1548,7 @@ namespace Search {
           priv.learn_losses.cs.costs[i].class_index = priv.learn_allowed_actions[i];
         }
       }
-      cdbg << "gte, beam_initial_cost = " << priv.beam_initial_cost << endl;
-      float min_loss = priv.beam ? 0. : FLT_MAX;  // for non-beam search, just compute min_loss, but for beam search we want to use estimated path cost (which is already computed)
-      generate_training_example(priv, priv.learn_losses, true, min_loss);
+      generate_training_example(priv, priv.learn_losses, true, FLT_MAX);
       if (! priv.examples_dont_change)
         for (size_t n=0; n<priv.learn_ec_copy.size(); n++) {
           if (sch.priv->is_ldf) CS::cs_label.delete_label(&priv.learn_ec_copy[n].l.cs);
@@ -1809,10 +1556,6 @@ namespace Search {
         }
       if (priv.cb_learner) priv.learn_losses.cb.costs.erase();
       else                 priv.learn_losses.cs.costs.erase();
-    }
-    if (priv.beam) {
-      final_beam->erase(free_final_item);
-      delete final_beam;
     }
   }
 
@@ -1837,7 +1580,6 @@ namespace Search {
         priv.truth_string->str("**test**");
       else {
         reset_search_structure(*sch.priv);
-        priv.beam_actions.erase();
         priv.state = GET_TRUTH_STRING;
         priv.should_produce_string = true;
         priv.truth_string->str("");
@@ -2039,21 +1781,13 @@ namespace Search {
     priv.learn_allowed_actions.delete_v();
     priv.ldf_test_label.costs.delete_v();
 
-    if (priv.beam) {
-      priv.beam->erase(free_action_prefix);
-      delete priv.beam;
-    }
-    priv.beam_actions.delete_v();
-
     if (priv.cb_learner)
       priv.allowed_actions_cache->cb.costs.delete_v();
     else
       priv.allowed_actions_cache->cs.costs.delete_v();
 
     priv.train_trajectory.delete_v();
-    priv.current_trajectory.delete_v();
     priv.ptag_to_action.delete_v();
-    priv.action_sequence_score.delete_v();
     clear_memo_foreach_action(priv);
     priv.memo_foreach_action.delete_v();
 
@@ -2233,8 +1967,6 @@ namespace Search {
         ("search_history_length",    po::value<size_t>(), "some tasks allow you to specify how much history their depend on; specify that here [def: 1]")
 
         ("search_no_caching",                             "turn off the built-in caching ability (makes things slower, but technically more safe)")
-        ("search_beam",              po::value<size_t>(), "use beam search (arg = beam size, default 0 = no beam)")
-        ("search_kbest",             po::value<size_t>(), "size of k-best list to produce (must be <= beam size)")
         ("search_xv",                                     "train two separate policies, alternating prediction/learning")
         ;
     add_options(all);
@@ -2279,20 +2011,6 @@ namespace Search {
     if (vm.count("search_subsample_time"))          priv.subsample_timesteps  = vm["search_subsample_time"].as<float>();
     if (vm.count("search_no_caching"))              priv.no_caching           = true;
     if (vm.count("search_rollout_num_steps"))       priv.rollout_num_steps    = vm["search_rollout_num_steps"].as<size_t>();
-
-    if (vm.count("search_beam"))
-      priv.beam = new Beam::beam<action_prefix>(vm["search_beam"].as<size_t>());  // TODO: pruning, kbest, equivalence testing
-    else
-      priv.beam = nullptr;
-
-    priv.kbest = 1;
-    if (vm.count("search_kbest")) {
-      priv.kbest = max(1, vm["search_kbest"].as<size_t>());
-      if (priv.kbest > priv.beam->get_beam_size()) {
-        std::cerr << "warning: kbest set greater than beam size; shrinking back to " << priv.beam->get_beam_size() << endl;
-        priv.kbest = priv.beam->get_beam_size();
-      }
-    }
 
     priv.A = vm["search"].as<size_t>();
 
@@ -2490,12 +2208,10 @@ namespace Search {
   action search::predict(example& ec, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, const action* allowed_actions, size_t allowed_actions_cnt, size_t learner_id) {
     float a_cost = 0.;
     action a = search_predict(*priv, &ec, 1, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, allowed_actions, allowed_actions_cnt, learner_id, a_cost);
-    if (priv->beam) priv->current_trajectory.push_back(a);
     if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
     if (mytag != 0) push_at(priv->ptag_to_action, a, mytag);
     if (priv->auto_hamming_loss)
       loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));
-    if (priv->state == INIT_TRAIN) priv->action_sequence_score.push_back(a_cost);
     cdbg << "predict returning " << a << endl;
     return a;
   }
@@ -2503,13 +2219,11 @@ namespace Search {
   action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, size_t learner_id) {
     float a_cost = 0.;
     action a = search_predict(*priv, ecs, ec_cnt, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, nullptr, 0, learner_id, a_cost);
-    if (priv->beam) priv->current_trajectory.push_back(a);
     if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
     if ((mytag != 0) && ecs[a].l.cs.costs.size() > 0)
       push_at(priv->ptag_to_action, ecs[a].l.cs.costs[0].class_index, mytag);
     if (priv->auto_hamming_loss)
       loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));
-    priv->action_sequence_score.push_back(a_cost);
     cdbg << "predict returning " << a << endl;
     return a;
   }
@@ -2727,58 +2441,4 @@ namespace Search {
   }
 }
 
-// ./vw --search 5 -k -c --search_task sequence -d test_seq --passes 10 -f test_seq.model --holdout_off
-// ./vw -i test_seq.model -t -d test_seq --search_beam 2 -p /dev/stdout -r /dev/stdout
-
-// ./vw --search 5 --csoaa_ldf m -k -c --search_task sequence_demoldf -d test_seq --passes 10 -f test_seq.model --holdout_off --search_history_length 0
-// ./vw -i test_seq.model -t -d test_seq -p /dev/stdout -r /dev/stdout
-
-// ./vw --search 5 -k -c --search_task sequence -d test_seq --passes 10 -f test_seq.model --holdout_off --search_beam 2
-
-
-
-// TODO: raw predictions in LDF mode
-// TODO: there's a bug in which if holdout is on, loss isn't computed properly
-
-/*
-
-  timing:
-
-  time ./vw --search 45 -k -c --search_task sequence -d ../../searn_vs_other/POS/tr.vw --search_neighbor_features -1:w,1:w --affix -2w,+2w --search_rollout none --passes 2
-  15.000000  15.000000         1  [1 1 2 3 4 5 2 6 7 ..] [1 1 1 1 1 1 1 1 1 ..]     0     0       18        0       18  0.000000
-  11.500000  8.000000          2  [1 1 12 9 10 1 1 2 ..] [1 1 2 3 11 3 11 2 ..]     0     0       31        0       31  0.000000
-  13.500000  15.500000         4  [8 9 10 9 17 16 18 ..] [1 1 10 1 1 1 1 1 1..]     0     0       93        0       93  0.000000
-  13.375000  13.250000         8  [8 1 9 15 2 27 8 12..] [8 9 10 1 2 9 10 12..]     0     0      198        0      198  0.000000
-  10.687500  8.000000         16  [3 10 8 3 13 4 22 5..] [1 10 8 9 10 4 22 1..]     0     0      385        0      375  0.000000
-  9.343750   8.000000         32  [8 5 5 9 9 10 8 3 5..] [8 9 9 9 9 10 8 9 9..]     0     0      839        0      769  0.000000
-  6.953125   4.562500         64  [17 8 9 11           ] [1 8 9 11            ]     0     0     1586        0     1400  0.000000
-  5.781250   4.609375        128  [10 3 2 1 1 15 4 10..] [10 3 2 1 1 15 4 10..]     0     0     3423        0     3042  0.000000
-  4.277344   2.773438        256  [1 1 2 17 9 9 9 2 6..] [1 1 2 17 9 9 9 2 6..]     0     0     6775        0     6110  0.000001
-  3.634766   2.992188        512  [7 8 9 2 17 2 10 8 ..] [10 8 9 2 17 2 10 8..]     0     0      13k        0      12k  0.000001
-  2.937500   2.240234       1024  [8 4 4 22 10 8 5 9 ..] [8 5 4 9 10 8 5 9 6..]     0     0      26k        0      24k  0.000002
-  2.386719   1.835938       2048  [8 9 17 17 12 16 10..] [8 9 17 17 12 16 10..]     0     0      54k        0      49k  0.000005
-  1.961914   1.537109       4096  [10 1 2 5 9 12 10 9..] [10 1 2 4 9 12 10 5..]     0     0     109k        0      98k  0.000010
-  1.709717   1.457520       8192  [37 8 9 15 17 16 23..] [37 8 9 15 17 7 23 ..]     0     0     218k        0     196k  0.000020
-  1.517395   1.325073        16k  [1 6 7 16 8 9 10 9 ..] [1 6 7 16 8 9 10 9 ..]     0     0     438k        0     395k  0.000040
-  1.374634   1.231873        32k  [1 1 12 13 10 8 4 2..] [1 1 12 13 10 8 4 2..]     0     0     869k        0     782k  0.000078
-  1.239286   1.239286        65k  [8 9 2 10 21 19 15 ..] [8 9 2 10 21 19 15 ..]     1     0    1739k        0    1566k  0.000157 h
-  average loss = 1.14996 h
-  real	0m11.669s
-  user	0m12.713s
-  sys	0m0.306s
-
-  switching to empty_cs_label: down to 10.660 / 11.541
-
-
-
-  time ./vw --search 45 -k -c --search_task sequence -d ../../searn_vs_other/POS/tr.vw --search_neighbor_features -1:w,1:w --affix -2w,+2w --search_rollout none --passes 2 --quiet
-  real	0m10.992s
-  user	0m11.894s
-  sys	0m0.356s
-
-  switching to empty_cs_label: down to 10.778 / 11.695 -- so very little change
-
-  want: -47.500000  7.000000          2  [2:2 3:5 0:8 3:7 3:4 ] [2:2 0:8 2:4 2:3 2:4 ]     0     0      156        1      156  0.015381
-  get:  48.500000  9.000000          2  [2:2 3:5 0:8 3:7 3:4 ] [0:8 1:3 1:3 1:3 1:3 ]     0     0      157        0      156  0.015381
-
-*/
+// valgrind --leak-check=full ./vw --search 2 -k -c --passes 1 --search_task sequence -d test_beam --holdout_off --search_rollin policy --search_metatask selective_branching 2>&1 | less

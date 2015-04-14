@@ -7,8 +7,8 @@ license as described in the file LICENSE.
 #include "global_data.h"
 
 #define cdbg clog
-//#undef cdbg
-//#define cdbg if (1) {} else clog
+#undef cdbg
+#define cdbg if (1) {} else clog
 // comment the previous two lines if you want loads of debug output :)
 
 typedef uint32_t    action;
@@ -24,10 +24,11 @@ namespace Search {
   
   class BaseTask {
     public:
-    BaseTask(search* _sch, vector<example*>& _ec) : sch(_sch), ec(_ec) { _foreach_action = nullptr; _post_prediction = nullptr; _maybe_override_prediction = nullptr; _final_run = false; }
+    BaseTask(search* _sch, vector<example*>& _ec) : sch(_sch), ec(_ec) { _foreach_action = nullptr; _post_prediction = nullptr; _maybe_override_prediction = nullptr; _with_output_string = nullptr; _final_run = false; }
     inline BaseTask& foreach_action(void (*f)(search&,size_t,float,action,bool,float)) { _foreach_action = f; return *this; }
     inline BaseTask& post_prediction(void (*f)(search&,size_t,action,float)) { _post_prediction = f; return *this; }
     inline BaseTask& maybe_override_prediction(bool (*f)(search&,size_t,action&,float&)) { _maybe_override_prediction = f; return *this; }
+    inline BaseTask& with_output_string(void (*f)(search&,stringstream&)) { _with_output_string = f; return *this; }
     inline BaseTask& final_run() { _final_run = true; return *this; }
     
     void Run();
@@ -39,6 +40,7 @@ namespace Search {
     void (*_foreach_action)(search&,size_t,float,action,bool,float);
     void (*_post_prediction)(search&,size_t,action,float);
     bool (*_maybe_override_prediction)(search&,size_t,action&,float&);
+    void (*_with_output_string)(search&,stringstream&);
   };
   
   struct search {

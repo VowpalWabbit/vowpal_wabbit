@@ -1063,13 +1063,13 @@ __DATA__
 {VW} -k -c -d train-sets/multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off
 	train-sets/ref/search_multiclass.stderr
 
-# Test 69: (see Test 43/Test 44): search sequence labeling, with beam
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data_beam.predict --search_beam 10 --search_kbest 10
+# Test 69: (see Test 43/Test 44): search sequence labeling, with selective branching
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data_beam.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10
     train-sets/ref/sequence_data.nonldf.beam.test.stderr
     train-sets/ref/sequence_data.nonldf.beam.test.predict
 
-# Test 70: (see Test 46/47) search sequence labeling, ldf test, with beam
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data_beam.predict --search_beam 10 --search_kbest 10
+# Test 70: (see Test 46/47) search sequence labeling, ldf test, with selective branching
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data_beam.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10
     train-sets/ref/sequence_data.ldf.beam.test.stderr
     train-sets/ref/sequence_data.ldf.beam.test.predict
 

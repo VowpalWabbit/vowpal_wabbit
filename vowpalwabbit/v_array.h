@@ -188,3 +188,10 @@ template<class T> bool v_array_contains(v_array<T> &A, T x) {
     if (*e == x) return true;
   return false;
 }
+
+template<class T>std::ostream& operator<<(std::ostream& os, const v_array<T>& v) {
+  os << '[';
+  for (T* i=v.begin; i!=v.end; ++i) os << ' ' << *i; 
+  os << " ]";
+  return os;
+}

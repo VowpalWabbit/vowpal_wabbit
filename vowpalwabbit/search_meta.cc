@@ -49,30 +49,40 @@ namespace SelectiveBranchingMT {
   typedef pair< float, path > branch;
   
   struct task_data {
-    size_t max_branches;
+    size_t max_branches, kbest;
     v_array< branch > branches;
-    v_array< branch > final;
+    v_array< pair<branch,string*> > final;
     path trajectory;
     float total_cost;
     size_t cur_branch;
-    task_data(size_t mb) : max_branches(mb) {
+    string*output_string;
+    stringstream*kbest_out;
+    task_data(size_t mb, size_t kb) : max_branches(mb), kbest(kb) {
       branches   = v_init<branch>();
-      final      = v_init<branch>();
+      final      = v_init< pair<branch,string*> >();
       trajectory = v_init<act_score>();
+      output_string = nullptr;
+      kbest_out     = nullptr;
     }
     ~task_data() {
       branches.delete_v();
       final.delete_v();
       trajectory.delete_v();
+      if (output_string) delete output_string;
+      if (kbest_out) delete kbest_out;
     }
   };
   
   void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
-    task_data* d = new task_data(2);
+    size_t max_branches = 2;
+    size_t kbest = 0;
     po::options_description opts("selective branching options");
     opts.add_options()
-        ("max_branch", po::value<size_t>(&(d->max_branches))->default_value(2), "maximum number of branches to consider");
+        ("search_max_branch", po::value<size_t>(&max_branches)->default_value(2), "maximum number of branches to consider")
+        ("search_kbest",      po::value<size_t>(&kbest)->default_value(0), "number of best items to output (0=just like non-selectional-branching, default)");
     sch.add_program_options(vm, opts);
+    
+    task_data* d = new task_data(max_branches, kbest);
     sch.set_metatask_data(d);
   }
 
@@ -86,11 +96,11 @@ namespace SelectiveBranchingMT {
     d.final.erase();
     d.trajectory.erase();
     d.total_cost = 0.;
+    d.output_string = nullptr;
     
     sch.base_task(ec)
         .foreach_action(
             [](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {
-              cerr << "==DebugMT== foreach_action(t=" << t << ", min_cost=" << min_cost << ", a=" << a << ", taken=" << taken << ", a_cost=" << a_cost << ")" << endl;
               if (taken) return;  // ignore the taken action
               task_data& d = *sch.get_metatask_data<task_data>();
               float delta = a_cost - min_cost;
@@ -101,47 +111,41 @@ namespace SelectiveBranchingMT {
             })
         .post_prediction(
             [](Search::search& sch, size_t t, action a, float a_cost) -> void {
-              cerr << "==DebugMT== post_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")" << endl;
               task_data& d = *sch.get_metatask_data<task_data>();
               d.trajectory.push_back( make_pair(a,a_cost) );
               d.total_cost += a_cost;
             })
+        .with_output_string(
+            [](Search::search& sch, stringstream& output) -> void {
+              sch.get_metatask_data<task_data>()->output_string = new string(output.str());
+            })
         .Run();
 
     // the last item the trajectory stack is complete and therefore not a branch
-    if (! d.branches.empty())
-      d.branches.pop().second.delete_v();
+    //if (! d.branches.empty())
+    //  d.branches.pop().second.delete_v();
     
     { // construct the final trajectory
       path original_final = v_init<act_score>();
       copy_array(original_final, d.trajectory);
-      d.final.push_back( make_pair(d.total_cost, original_final) );
+      d.final.push_back( make_pair(make_pair(d.total_cost, original_final), d.output_string) );
     }
 
     // sort the branches by cost
     sort(d.branches.begin, d.branches.end,
          [](const branch& a, const branch& b) -> bool { return a.first < b.first; });
 
-    cerr << "=========== BRANCHES" << endl;
-    for (size_t i=0; i<d.branches.size(); i++) {
-      path& p = d.branches[i].second;
-      cerr << d.branches[i].first << "\t";
-      for (size_t j=0; j<p.size(); j++)
-        cerr << p[j].first << ' ';
-      cerr << endl;
-    }
-
     // make new predictions
     for (size_t i=0; i<min(d.max_branches, d.branches.size()); i++) {
-      cerr << "======= BRANCH " << i << endl;
       d.cur_branch = i;
       d.trajectory.erase();
       d.total_cost = 0.;
+      d.output_string = nullptr;
+      
       sch.base_task(ec)
           .foreach_action([](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {})
           .maybe_override_prediction(
               [](Search::search& sch, size_t t, action& a, float& a_cost) -> bool {
-                cerr << "==DebugMT== maybe_override_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")" << endl;
                 task_data& d = *sch.get_metatask_data<task_data>();
                 path& path = d.branches[d.cur_branch].second;
                 if (t >= path.size()) return false;
@@ -151,49 +155,59 @@ namespace SelectiveBranchingMT {
               })
           .post_prediction(
               [](Search::search& sch, size_t t, action a, float a_cost) -> void {
-                cerr << "==DebugMT== post_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")" << endl;
                 task_data& d = *sch.get_metatask_data<task_data>();
                 d.trajectory.push_back( make_pair(a,a_cost) );
                 d.total_cost += a_cost;
+              })
+          .with_output_string(
+              [](Search::search& sch, stringstream& output) -> void {
+                sch.get_metatask_data<task_data>()->output_string = new string(output.str());
               })
           .Run();
 
       { // construct the final trajectory
         path this_final = v_init<act_score>();
         copy_array(this_final, d.trajectory);
-        d.final.push_back( make_pair(d.total_cost, this_final) );
+        d.final.push_back( make_pair(make_pair(d.total_cost, this_final), d.output_string) );
       }
     }
 
-    // finally we need to select a final trajectory, currently we do this by min cost
+    // sort the finals by cost
+    sort(d.final.begin, d.final.end,
+         [](const pair<branch,string*>& a, const pair<branch,string*>& b) -> bool { return a.first.first < b.first.first; });
+    
     size_t best = 0;
     for (size_t i=1; i<d.final.size(); i++)
-      if (d.final[i].first < d.final[best].first) best = i;
+      if (d.final[i].first.first < d.final[best].first.first) best = i;
 
-    cerr << "=========== FINAL" << endl;
-    for (size_t i=0; i<d.final.size(); i++) {
-      path& p = d.final[i].second;
-      cerr << d.final[i].first << "\t";
-      for (size_t j=0; j<p.size(); j++)
-        cerr << p[j].first << ' ';
-      if (best == i) cerr << '*';
-      cerr << endl;
+    d.kbest_out = nullptr;
+    if (d.output_string && (d.kbest > 0)) {
+      d.kbest_out = new stringstream();
+      for (size_t i=0; i<min(d.final.size(), d.kbest); i++)
+        (*d.kbest_out) << d.final[i].first.first << "\t" << *d.final[i].second << endl;
     }
     
     // run the final selected trajectory
     d.cur_branch = best;
+    d.output_string = nullptr;
     sch.base_task(ec)
         .foreach_action([](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {})
         .maybe_override_prediction(
             [](Search::search& sch, size_t t, action& a, float& a_cost) -> bool {
-              cerr << "==DebugMT== maybe_override_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")" << endl;
               task_data& d = *sch.get_metatask_data<task_data>();
-              path& path = d.final[d.cur_branch].second;
-              cerr << "t=" << t << ", path.size=" << path.size() << endl;
+              path& path = d.final[d.cur_branch].first.second;
               if ((t >= path.size()) || (path[t].first == (action)-1)) return false;
               a = path[t].first;
               a_cost = path[t].second;
               return true;
+            })
+        .with_output_string(
+            [](Search::search& sch, stringstream& output) -> void {
+              task_data& d = *sch.get_metatask_data<task_data>();
+              if (d.kbest_out) {
+                output.str("");
+                output << d.kbest_out->str();
+              }
             })
         .final_run()
         .Run();
@@ -201,7 +215,8 @@ namespace SelectiveBranchingMT {
     // clean up memory
     for (size_t i=0; i<d.branches.size(); i++) d.branches[i].second.delete_v();
     d.branches.erase();
-    for (size_t i=0; i<d.final.size(); i++) d.final[i].second.delete_v();
+    for (size_t i=0; i<d.final.size(); i++) { d.final[i].first.second.delete_v(); delete d.final[i].second; }
     d.final.erase();
+    if (d.kbest_out) delete d.kbest_out; d.kbest_out = nullptr;
   }
 }
