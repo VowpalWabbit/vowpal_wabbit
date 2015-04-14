@@ -905,6 +905,9 @@ LEARNER::base_learner *lda_setup(vw &all)
   ld.example_t = all.initial_t;
   ld.mmode = vm["math-mode"].as<lda_math_mode>();
 
+  // Add lda_alpha to options serialized as part of the regressor
+  *all.file_options << " --lda_alpha " << ld.lda_alpha;
+
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
   all.reg.stride_shift = (size_t)temp;
   all.random_weights = true;
