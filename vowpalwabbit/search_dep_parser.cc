@@ -54,6 +54,7 @@ namespace DepParserTask {
     all.triples.swap(newtriples);
     
     srn.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
+    srn.set_label_parser( COST_SENSITIVE::cs_label, [](polylabel&l) -> bool { return l.cs.costs.size() == 0; });
   }
 
   void finish(Search::search& srn) {
@@ -280,6 +281,20 @@ namespace DepParserTask {
     gold_heads.push_back(0);
     gold_tags.erase();
     gold_tags.push_back(0);
+    for (size_t i=0; i<n; i++) {
+      v_array<COST_SENSITIVE::wclass>& costs = ec[i]->l.cs.costs;
+      uint32_t head = (costs.size() == 0) ? 0 : costs[0].class_index;
+      uint32_t tag  = (costs.size() <= 1) ? data->root_label : costs[1].class_index;
+      if (tag > data->num_label) {
+        cerr << "invalid label " << tag << " which is > num actions=" << data->num_label << endl;
+        throw exception();
+      }
+      gold_heads.push_back(head);
+      gold_tags.push_back(tag);
+      heads[i+1] = 0;
+      tags[i+1] = -1;
+    }
+    /*
     for(size_t i=0; i<n; i++) {
       uint32_t label = ec[i]->l.multi.label;
       gold_heads.push_back((label & 255) -1);
@@ -291,7 +306,7 @@ namespace DepParserTask {
       heads[i+1] = 0;
       tags[i+1] = -1;
     }
-
+    */
     for(size_t i=0; i<6; i++)
       data->children[i].resize(n+1, true);
   }    
