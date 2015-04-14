@@ -392,28 +392,6 @@ void predict(gd& g, base_learner& base, example& ec)
     print_audit_features(all, ec);
 }
 
-struct multipredict_info { size_t count; size_t step; polyprediction* pred; regressor* reg; /* & for l1: */ float gravity; };
-  
-inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
-  if ((-1e-10 < fx) && (fx < 1e-10)) return;
-  weight*w    = mp.reg->weight_vector;
-  size_t mask = mp.reg->weight_mask;
-  polyprediction* p = mp.pred;
-
-  fi &= mask;
-  uint32_t top = fi + (mp.count-1) * mp.step;
-  if (top <= mask) {
-    weight* last = w + top;
-    w += fi;
-    for (; w <= last; w += mp.step, ++p)
-      p->scalar += fx * *w;
-  } else  // TODO: this could be faster by unrolling into two loops
-    for (size_t c=0; c<mp.count; ++c, fi += mp.step, ++p) {
-      fi &= mask;
-      p->scalar += fx * w[fi];
-    }
-}
-
 inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
   weight*w = mp.reg->weight_vector + (fi & mp.reg->weight_mask);
   for (size_t c=0; c<mp.count; c++) {

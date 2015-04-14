@@ -157,7 +157,7 @@ struct nn {
 
     n.hiddenbias.ft_offset = ec.ft_offset;
 
-    base.multipredict(n.hiddenbias, 0, n.k, hiddenbias_pred, false);
+    base.multipredict(n.hiddenbias, 0, n.k, hiddenbias_pred, true);
     
     for (unsigned int i = 0; i < n.k; ++i)
         // avoid saddle point at 0
@@ -168,7 +168,7 @@ struct nn {
             n.hiddenbias.l.simple.label = FLT_MAX;
           }
 
-    base.multipredict(ec, 0, n.k, hidden_units, false);
+    base.multipredict(ec, 0, n.k, hidden_units, true);
 
     for (unsigned int i = 0; i < n.k; ++i ) {
       dropped_out[i] = (n.dropout && merand48 (n.xsubi) < 0.5);
@@ -594,7 +594,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       ("multitask", "Share hidden layer across all reduced tasks.")
       ("dropout", "Train or test sigmoidal feedforward network using dropout.")
       ("meanfield", "Train or test sigmoidal feedforward network using mean field.")
-      ("nnmultipredict", "Turn on multipredict");
+      ("nn_nomultipredict", "Turn off multipredict");
     add_options(all);
     
     po::variables_map& vm = all.vm;
@@ -659,7 +659,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     base_learner* base = setup_base(all);
     n.increment = base->increment;//Indexing of output layer is odd.
     learner<nn>&l = 
-        (vm.count("nnmultipredict") > 0) ?
+        (vm.count("nn_nomultipredict") == 0) ?
            init_learner(&n, base, predict_or_learn_multi<true>, 
 				  predict_or_learn_multi<false>, n.k+1)
         :  init_learner(&n, base, predict_or_learn<true>, 

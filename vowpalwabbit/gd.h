@@ -21,6 +21,28 @@ namespace GD{
   void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
   void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, GD::gd *g = nullptr);
 
+  struct multipredict_info { size_t count; size_t step; polyprediction* pred; regressor* reg; /* & for l1: */ float gravity; };
+
+  inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
+    if ((-1e-10 < fx) && (fx < 1e-10)) return;
+    weight*w    = mp.reg->weight_vector;
+    size_t mask = mp.reg->weight_mask;
+    polyprediction* p = mp.pred;
+
+    fi &= mask;
+    uint32_t top = fi + (mp.count-1) * mp.step;
+    if (top <= mask) {
+      weight* last = w + top;
+      w += fi;
+      for (; w <= last; w += mp.step, ++p)
+        p->scalar += fx * *w;
+    } else  // TODO: this could be faster by unrolling into two loops
+      for (size_t c=0; c<mp.count; ++c, fi += mp.step, ++p) {
+        fi &= mask;
+        p->scalar += fx * w[fi];
+      }
+  }
+  
   // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
   template <class R, void (*T)(R&, const float, float&)>
   inline void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R& dat, uint32_t offset=0, float mult=1.)
