@@ -778,10 +778,10 @@ namespace Search {
     return a;
   }
   
-  action single_prediction_notLDF(search_private& priv, example& ec, int policy, const action* allowed_actions, size_t allowed_actions_cnt, float& a_cost) {
+  action single_prediction_notLDF(search_private& priv, example& ec, int policy, const action* allowed_actions, size_t allowed_actions_cnt, float& a_cost, action override_action) {  // if override_action != -1, then we return it as the action and a_cost is set to the appropriate cost for that action
     vw& all = *priv.all;
     polylabel old_label = ec.l;
-    bool need_partial_predictions = need_memo_foreach_action(priv) || (priv.metaoverride && priv.metaoverride->_foreach_action);
+    bool need_partial_predictions = need_memo_foreach_action(priv) || (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != (action)-1);
     if ((allowed_actions_cnt > 0) || need_partial_predictions)
       ec.l = allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt);
     else
@@ -794,6 +794,9 @@ namespace Search {
     a_cost = ec.partial_prediction;
     cdbg << "a_cost = " << a_cost << endl;
 
+    if (override_action != (action)-1)
+      act = override_action;
+
     if (need_partial_predictions) {
       size_t K = cs_get_costs_size(priv.cb_learner, ec.l);
       float min_cost = FLT_MAX;
@@ -802,7 +805,7 @@ namespace Search {
         if (cost < min_cost) min_cost = cost;
       }
       v_array<action_cache>* this_cache = nullptr;
-      if (need_memo_foreach_action(priv)) {
+      if (need_memo_foreach_action(priv) && (override_action == (action)-1)) {
         this_cache = new v_array<action_cache>();
         *this_cache = v_init<action_cache>();
       }
@@ -811,6 +814,8 @@ namespace Search {
         float cost = cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
         if (priv.metaoverride && priv.metaoverride->_foreach_action)
           priv.metaoverride->_foreach_action(*priv.metaoverride->sch, priv.t-1, min_cost, cl, cl==act, cost);
+        if (override_action == cl)
+          a_cost = cost;
         if (this_cache)
           this_cache->push_back( action_cache(min_cost, cl, cl==act, cost) );
       }
@@ -852,17 +857,17 @@ namespace Search {
     return act;
   }
 
-  action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, int policy, float& a_cost) {
-    bool need_partial_predictions = need_memo_foreach_action(priv) || (priv.metaoverride && priv.metaoverride->_foreach_action);
+  action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, int policy, float& a_cost, action override_action) {  // if override_action != -1, then we return it as the action and a_cost is set to the appropriate cost for that action
+    bool need_partial_predictions = need_memo_foreach_action(priv) || (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != (action)-1);
 
     CS::cs_label.default_label(&priv.ldf_test_label);
     CS::wclass wc = { 0., 1, 0., 0. };
     priv.ldf_test_label.costs.push_back(wc);
-
+    
     // keep track of best (aka chosen) action
     float  best_prediction = 0.;
     action best_action = 0;
-
+    
     size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
 
     v_array<action_cache>* this_cache = nullptr;
@@ -884,8 +889,11 @@ namespace Search {
       priv.base_learner->predict(*priv.empty_example);
 
       //cerr << "partial_prediction[" << a << "] = " << ecs[a].partial_prediction << endl;
-      
-      if ((a == start_K) || (ecs[a].partial_prediction < best_prediction)) {
+
+      if (override_action != (action)-1) {
+        if (a == override_action)
+          a_cost = ecs[a].partial_prediction;
+      } else if ((a == start_K) || (ecs[a].partial_prediction < best_prediction)) {
         best_prediction = ecs[a].partial_prediction;
         best_action     = a;
         a_cost          = best_prediction;
@@ -898,8 +906,11 @@ namespace Search {
       if (start_K > 0)
         LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0]);
     }
-    a_cost = best_prediction;
-
+    if (override_action != (action)-1)
+      best_action = override_action;
+    else
+      a_cost = best_prediction;
+    
     if (this_cache) {
       for (size_t i=0; i<this_cache->size(); i++) {
         action_cache& ac = this_cache->get(i);
@@ -908,7 +919,7 @@ namespace Search {
         if (priv.metaoverride && priv.metaoverride->_foreach_action)
           priv.metaoverride->_foreach_action(*priv.metaoverride->sch, priv.t-1, ac.min_cost, ac.k, ac.is_opt, ac.cost);
       }
-      if (need_memo_foreach_action(priv))
+      if (need_memo_foreach_action(priv) && (override_action == (action)-1))
         priv.memo_foreach_action.push_back(this_cache);
       else {
         this_cache->delete_v();
@@ -1111,14 +1122,21 @@ namespace Search {
     return (pol != -1);
   }
 
-  void foreach_action_from_cache(search_private& priv, size_t t) {
-    cdbg << "foreach_action_from_cache: t=" << t << ", memo_foreach_action.size()=" << priv.memo_foreach_action.size() << endl;
+  void foreach_action_from_cache(search_private& priv, size_t t, action override_a=(action)-1) {
+    cdbg << "foreach_action_from_cache: t=" << t << ", memo_foreach_action.size()=" << priv.memo_foreach_action.size() << ", override_a=" << override_a << endl;
     assert(t < priv.memo_foreach_action.size());
     v_array<action_cache>* cached = priv.memo_foreach_action[t];
     if (!cached) return; // the only way this can happen is if the metatask overrode this action
     cdbg << "memo_foreach_action size = " << cached->size() << endl;
-    for (size_t id=0; id<cached->size(); id++)
-      priv.metaoverride->_foreach_action(*priv.metaoverride->sch, t-priv.meta_t, cached->get(id).min_cost, cached->get(id).k, cached->get(id).is_opt, cached->get(id).cost);
+    for (size_t id=0; id<cached->size(); id++) {
+      action_cache& ac = cached->get(id);
+      priv.metaoverride->_foreach_action(*priv.metaoverride->sch,
+                                         t-priv.meta_t,
+                                         ac.min_cost,
+                                         ac.k,
+                                         (override_a == (action)-1) ? ac.is_opt : (ac.k == override_a),
+                                         ac.cost);
+    }
   }
   
   // note: ec_cnt should be 1 if we are not LDF
@@ -1146,7 +1164,7 @@ namespace Search {
       assert(t < priv.train_trajectory.size());
       action a = priv.train_trajectory[t].a;
       a_cost   = priv.train_trajectory[t].s;
-      cdbg << "LEARN < priv.learn_t ==> a=" << a << ", a_cost=" << a_cost << endl;
+      cdbg << "LEARN " << t << " < priv.learn_t ==> a=" << a << ", a_cost=" << a_cost << endl;
       if (priv.metaoverride && priv.metaoverride->_foreach_action)
         foreach_action_from_cache(priv, t);
       if (priv.metaoverride && priv.metaoverride->_post_prediction)
@@ -1165,6 +1183,8 @@ namespace Search {
     if ((priv.state == LEARN) && (t == priv.learn_t)) {
       action a = (action)priv.learn_a_idx;
       priv.loss_declared_cnt = 0;
+      
+      cdbg << "LEARN " << t << " = priv.learn_t ==> a=" << a << endl;
       
       priv.learn_a_idx++;
 
@@ -1218,15 +1238,17 @@ namespace Search {
       assert((allowed_actions_cnt == 0) || (a < allowed_actions_cnt));
 
       a_cost = 0.;
+      action a_name = (allowed_actions_cnt > 0) ? allowed_actions[a] : priv.is_ldf ? a : (a+1);
       if (priv.metaoverride && priv.metaoverride->_foreach_action) {
-        foreach_action_from_cache(priv,t);
+        foreach_action_from_cache(priv,t,a_name);
         if (priv.memo_foreach_action[t]) {
           cdbg << "@ memo_foreach_action: t=" << t << ", a=" << a << ", cost=" << priv.memo_foreach_action[t]->get(a).cost << endl;
           a_cost = priv.memo_foreach_action[t]->get(a).cost;
         }
       }
+
+      a = a_name;
       
-      a = (allowed_actions_cnt > 0) ? allowed_actions[a] : priv.is_ldf ? a : (a+1);
       if (priv.metaoverride && priv.metaoverride->_post_prediction)
         priv.metaoverride->_post_prediction(*priv.metaoverride->sch, t-priv.meta_t, a, a_cost);
       return a;
@@ -1258,7 +1280,7 @@ namespace Search {
       a_cost = 0.;
       bool skip = false;
       
-      if (priv.metaoverride && priv.metaoverride->_maybe_override_prediction) {
+      if (priv.metaoverride && priv.metaoverride->_maybe_override_prediction && (priv.state != LEARN)) { // if LEARN and t>learn_t,then we cannot allow overrides!
         skip = priv.metaoverride->_maybe_override_prediction(*priv.metaoverride->sch, t-priv.meta_t, a, a_cost);
         cdbg << "maybe_override_prediction --> " << skip << ", a=" << a << ", a_cost=" << a_cost << endl;
         if (skip && need_memo_foreach_action(priv))
@@ -1268,10 +1290,9 @@ namespace Search {
       if ((!skip) && (policy == -1)) 
         a = choose_oracle_action(priv, ec_cnt, oracle_actions, oracle_actions_cnt, allowed_actions, allowed_actions_cnt);   // TODO: we probably want to actually get costs for oracle actions???
 
-      if ((policy == -1) && priv.metaoverride && priv.metaoverride->_foreach_action)
-        foreach_action_from_cache(priv, t);
+      bool need_fea = (policy == -1) && priv.metaoverride && priv.metaoverride->_foreach_action;
       
-      if ((policy >= 0) || gte_here) {
+      if ((policy >= 0) || gte_here || need_fea) { // the last case is we need to do foreach action
         int learner = select_learner(priv, policy, learner_id, false, priv.state == INIT_TEST);
 
         ensure_size(priv.condition_on_actions, condition_on_cnt);
@@ -1280,18 +1301,23 @@ namespace Search {
 
         bool not_test = priv.all->training && !ecs[0].test_only;
 
-        if ((!skip) && not_test && cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, learner_id, a, false, a_cost))
+        if ((!skip) && (!need_fea) && not_test && cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, learner_id, a, false, a_cost))
           // if this succeeded, 'a' has the right action
           priv.total_cache_hits++;
-        else { // we need to predict, and then cache
+        else { // we need to predict, and then cache, and maybe run foreach_action
           size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
           if (priv.auto_condition_features)
             for (size_t n=start_K; n<ec_cnt; n++)
               add_example_conditioning(priv, ecs[n], condition_on, condition_on_cnt, condition_on_names, priv.condition_on_actions.begin);
 
-          if ((!skip) && (policy >= 0))   // only make a prediction if we're going to use the output
-            a = priv.is_ldf ? single_prediction_LDF(priv, ecs, ec_cnt, learner, a_cost)
-                            : single_prediction_notLDF(priv, *ecs, learner, allowed_actions, allowed_actions_cnt, a_cost);
+          if (((!skip) && (policy >= 0)) || need_fea)   // only make a prediction if we're going to use the output
+            a = priv.is_ldf ? single_prediction_LDF(priv, ecs, ec_cnt, learner, a_cost, need_fea ? a : (action)-1)
+                            : single_prediction_notLDF(priv, *ecs, learner, allowed_actions, allowed_actions_cnt, a_cost, need_fea ? a : (action)-1);
+
+          if (need_fea) {
+            // TODO this
+
+          }
           
           if (gte_here) {
             cdbg << "INIT_TRAIN, NO_ROLLOUT, at least one oracle_actions" << endl;
@@ -1506,7 +1532,8 @@ namespace Search {
     cdbg << "======================================== LEARN (" << priv.current_policy << "," << priv.read_example_last_pass << ") ========================================" << endl;
     priv.T = priv.metatask ? priv.meta_t : priv.t;
     get_training_timesteps(priv, priv.timesteps);
-    cdbg_print_array<scored_action>("train_trajectory", priv.train_trajectory);
+    cdbg << "train_trajectory.size() = " << priv.train_trajectory.size() << ":\t";
+    cdbg_print_array<scored_action>("", priv.train_trajectory);
     //cdbg << "memo_foreach_action = " << priv.memo_foreach_action << endl;
     for (size_t i=0; i<priv.memo_foreach_action.size(); i++) {
       cdbg << "memo_foreach_action[" << i << "] = ";

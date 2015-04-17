@@ -12,7 +12,6 @@ struct oaa {
   size_t k;
   vw* all; // for raw
   polyprediction* pred;  // for multipredict
-  polylabel* label; // for multipredict
   size_t num_subsample; // for randomized subsampling, how many negatives to draw?
   uint32_t* subsample_order; // for randomized subsampling, in what order should we touch classes
   size_t subsample_id; // for randomized subsampling, where do we live in the list
@@ -59,9 +58,11 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
       prediction = i;
   
   if (is_learn) {
-    for (uint32_t i=1; i<=o.k; i++)
-      o.label[i-1].simple = { (mc_label_data.label == i) ? 1.f : -1.f, mc_label_data.weight, 0.f };
-    base.multiupdate(ec, 0, o.k, o.pred, o.label);
+    for (uint32_t i=1; i<=o.k; i++) {
+      ec.l.simple = { (mc_label_data.label == i) ? 1.f : -1.f, mc_label_data.weight, 0.f };
+      ec.pred.scalar = o.pred[i-1].scalar;
+      base.update(ec, i-1);
+    }
   } 
 
   if (print_all) {
@@ -74,7 +75,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   ec.l.multi = mc_label_data;
 }
 
-void finish(oaa&o) { free(o.pred); free(o.label); free(o.subsample_order); }
+void finish(oaa&o) { free(o.pred); free(o.subsample_order); }
 
 LEARNER::base_learner* oaa_setup(vw& all)
 {
@@ -87,7 +88,6 @@ LEARNER::base_learner* oaa_setup(vw& all)
   data.k = all.vm["oaa"].as<size_t>();
   data.all = &all;
   data.pred = calloc_or_die<polyprediction>(data.k);
-  data.label = calloc_or_die<polylabel>(data.k);
   data.num_subsample = 0; data.subsample_order = NULL; data.subsample_id = 0;
   if (all.vm.count("oaa_subsample")) {
     data.num_subsample = all.vm["oaa_subsample"].as<size_t>();

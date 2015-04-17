@@ -195,3 +195,10 @@ template<class T>std::ostream& operator<<(std::ostream& os, const v_array<T>& v)
   os << " ]";
   return os;
 }
+
+template<class T,class U>std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T,U> >& v) {
+  os << '[';
+  for (std::pair<T,U>* i=v.begin; i!=v.end; ++i) os << ' ' << i->first << ':' << i->second;
+  os << " ]";
+  return os;
+}

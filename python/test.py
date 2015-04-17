@@ -12,7 +12,7 @@ def ensure_close(a,b,eps=1e-6):
         raise Exception("test failed: expected " + str(a) + " and " + str(b) + " to be " + str(eps) + "-close, but they differ by " + str(abs(a-b)))
 
 ###############################################################################
-vw = pyvw.vw("--quiet --audit")
+vw = pyvw.vw("--quiet")
 
 
 ###############################################################################

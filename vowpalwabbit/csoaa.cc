@@ -17,7 +17,6 @@ using namespace COST_SENSITIVE;
 
 struct csoaa{
   uint32_t num_classes;
-  float* class_weight_multipliers;
 };
 
 template<bool is_learn>
@@ -46,21 +45,18 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
   float score = FLT_MAX;
   ec.l.simple = { 0., 0., 0. };
   if (ld.costs.size() > 0) {
-    if (! c.class_weight_multipliers)
-      for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++)
-        inner_loop<is_learn>(base, ec, cl->class_index, cl->x, prediction, score, cl->partial_prediction);
-    else
-      for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++)
-        inner_loop<is_learn>(base, ec, cl->class_index, cl->x / c.class_weight_multipliers[cl->class_index-1], prediction, score, cl->partial_prediction);
+    for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++)
+      inner_loop<is_learn>(base, ec, cl->class_index, cl->x, prediction, score, cl->partial_prediction);
     ec.partial_prediction = score;
   } else if (DO_MULTIPREDICT && !is_learn) {
     ec.l.simple = { FLT_MAX, 0.f, 0.f };
-    polyprediction* pred = (polyprediction*)alloca(c.num_classes * sizeof(polyprediction));
+    polyprediction* pred = calloc_or_die<polyprediction>(c.num_classes);
     base.multipredict(ec, 0, c.num_classes, pred, false);
     for (uint32_t i = 1; i <= c.num_classes; i++)
       if (pred[i-1].scalar < pred[prediction-1].scalar)
         prediction = i;
     ec.partial_prediction = pred[prediction-1].scalar;
+    free(pred);
   } else {
     float temp;
     for (uint32_t i = 1; i <= c.num_classes; i++)
@@ -82,26 +78,9 @@ base_learner* csoaa_setup(vw& all)
 {
   if (missing_option<size_t, true>(all, "csoaa", "One-against-all multiclass with <k> costs"))
     return nullptr;
-  new_options(all, "csoaa options")
-      ("csoaa_class_weights", po::value<string>(), "list of weight multipliers for each class in form \"2,0.1,...\" for 1..<k>");
-  add_options(all);
 
   csoaa& c = calloc_or_die<csoaa>();
   c.num_classes = (uint32_t)all.vm["csoaa"].as<size_t>();
-  c.class_weight_multipliers = nullptr;
-  if (all.vm.count("csoaa_class_weights")) {
-    c.class_weight_multipliers = calloc_or_die<float>(c.num_classes); // TODO: free this
-    for (size_t i=0; i<c.num_classes; i++) c.class_weight_multipliers[i] = 1.f;
-    const char* str = all.vm["csoaa_class_weights"].as<string>().c_str();
-    size_t i = 0;
-    for (char*p = strtok((char*)str, ","); p != nullptr; p = strtok(nullptr, ",")) {
-      if (i >= c.num_classes) { cerr << "csoaa: warning -- got too many weight multipliers in --csoaa_class_weights" << endl; break; }
-      c.class_weight_multipliers[i++] = atof(p);
-    }
-    cerr << "csoaa weights = [";
-    for (size_t i=0; i<c.num_classes; i++) cerr << ' ' << c.class_weight_multipliers[i];
-    cerr << " ]" << endl;
-  }
   
   learner<csoaa>& l = init_learner(&c, setup_base(all), predict_or_learn<true>, 
 				   predict_or_learn<false>, c.num_classes);

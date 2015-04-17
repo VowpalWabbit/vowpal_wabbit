@@ -47,6 +47,8 @@ namespace SelectiveBranchingMT {
   typedef pair<action,float>  act_score;
   typedef v_array<act_score>  path;
   typedef pair< float, path > branch;
+
+  std::ostream& operator<<(std::ostream& os, const std::pair<unsigned int,float>& v) { os << v.first << '_' << v.second; return os; }
   
   struct task_data {
     size_t max_branches, kbest;
@@ -97,10 +99,12 @@ namespace SelectiveBranchingMT {
     d.trajectory.erase();
     d.total_cost = 0.;
     d.output_string = nullptr;
-    
+
+    //cerr << "*** INITIAL PASS ***" << endl;
     sch.base_task(ec)
         .foreach_action(
             [](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {
+              //cerr << "==DebugMT== foreach_action(t=" << t << ", min_cost=" << min_cost << ", a=" << a << ", taken=" << taken << ", a_cost=" << a_cost << ")" << endl;
               if (taken) return;  // ignore the taken action
               task_data& d = *sch.get_metatask_data<task_data>();
               float delta = a_cost - min_cost;
@@ -108,6 +112,7 @@ namespace SelectiveBranchingMT {
               push_many<act_score>(branch, d.trajectory.begin, d.trajectory.size());
               branch.push_back( make_pair(a,a_cost) );
               d.branches.push_back( make_pair(delta, branch) );
+              //cerr << "adding branch: " << delta << " -> " << branch << endl;
             })
         .post_prediction(
             [](Search::search& sch, size_t t, action a, float a_cost) -> void {
@@ -132,8 +137,8 @@ namespace SelectiveBranchingMT {
     }
 
     // sort the branches by cost
-    sort(d.branches.begin, d.branches.end,
-         [](const branch& a, const branch& b) -> bool { return a.first < b.first; });
+    stable_sort(d.branches.begin, d.branches.end,
+                [](const branch& a, const branch& b) -> bool { return a.first < b.first; });
 
     // make new predictions
     for (size_t i=0; i<min(d.max_branches, d.branches.size()); i++) {
@@ -142,6 +147,7 @@ namespace SelectiveBranchingMT {
       d.total_cost = 0.;
       d.output_string = nullptr;
       
+      //cerr << "*** BRANCH " << i << " *** " << d.branches[i].first << " : " << d.branches[i].second << endl;
       sch.base_task(ec)
           .foreach_action([](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {})
           .maybe_override_prediction(
@@ -173,13 +179,9 @@ namespace SelectiveBranchingMT {
     }
 
     // sort the finals by cost
-    sort(d.final.begin, d.final.end,
-         [](const pair<branch,string*>& a, const pair<branch,string*>& b) -> bool { return a.first.first < b.first.first; });
+    stable_sort(d.final.begin, d.final.end,
+                [](const pair<branch,string*>& a, const pair<branch,string*>& b) -> bool { return a.first.first < b.first.first; });
     
-    size_t best = 0;
-    for (size_t i=1; i<d.final.size(); i++)
-      if (d.final[i].first.first < d.final[best].first.first) best = i;
-
     d.kbest_out = nullptr;
     if (d.output_string && (d.kbest > 0)) {
       d.kbest_out = new stringstream();
@@ -188,7 +190,8 @@ namespace SelectiveBranchingMT {
     }
     
     // run the final selected trajectory
-    d.cur_branch = best;
+    //cerr << "*** FINAL ***" << endl;
+    d.cur_branch = 0;
     d.output_string = nullptr;
     sch.base_task(ec)
         .foreach_action([](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {})
