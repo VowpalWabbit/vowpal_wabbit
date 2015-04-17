@@ -38,6 +38,7 @@ license as described in the file LICENSE.
 #include "rand48.h"
 #include "binary.h"
 #include "lrq.h"
+#include "lrqfa.h"
 #include "autolink.h"
 #include "log_multi.h"
 #include "stagewise_poly.h"
@@ -831,6 +832,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(mf_setup);
   all.reduction_stack.push_back(autolink_setup);
   all.reduction_stack.push_back(lrq_setup);
+  all.reduction_stack.push_back(lrqfa_setup);
   all.reduction_stack.push_back(stagewise_poly_setup);
   all.reduction_stack.push_back(scorer_setup);
 
