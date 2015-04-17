@@ -38,6 +38,7 @@ license as described in the file LICENSE.
 #include "rand48.h"
 #include "binary.h"
 #include "lrq.h"
+#include "lrqfa.h"
 #include "autolink.h"
 #include "log_multi.h"
 #include "stagewise_poly.h"
@@ -540,8 +541,8 @@ void parse_feature_tweaks(vw& all)
   if (vm.count("redefine"))
   {
       // initail values: i-th namespace is redefined to i itself
-      for (unsigned char i = 0; i < 256; i++)
-          all.redefine[i] = i;
+      for (size_t i = 0; i < 256; i++)
+          all.redefine[i] = (unsigned char)i;
 
       // note: --redefine declaration order is matter
       // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
@@ -832,6 +833,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(mf_setup);
   all.reduction_stack.push_back(autolink_setup);
   all.reduction_stack.push_back(lrq_setup);
+  all.reduction_stack.push_back(lrqfa_setup);
   all.reduction_stack.push_back(stagewise_poly_setup);
   all.reduction_stack.push_back(scorer_setup);
 

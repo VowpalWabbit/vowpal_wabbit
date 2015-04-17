@@ -9,7 +9,8 @@ JNIEXPORT void JNICALL Java_vw_VWScorer_initialize (JNIEnv *env, jobject obj, js
 }
 
 JNIEXPORT jfloat JNICALL Java_vw_VWScorer_getPrediction (JNIEnv *env, jobject obj, jstring example_string) {
-    example *vec2 = VW::read_example(*vw, env->GetStringUTFChars(example_string, NULL));
+    const char *utf_string = env->GetStringUTFChars(example_string, NULL);
+    example *vec2 = VW::read_example(*vw, utf_string);
     vw->l->predict(*vec2);
     float prediction;
     if (vw->p->lp.parse_label == simple_label.parse_label)
@@ -17,6 +18,8 @@ JNIEXPORT jfloat JNICALL Java_vw_VWScorer_getPrediction (JNIEnv *env, jobject ob
     else
         prediction = vec2->pred.multiclass;
     VW::finish_example(*vw, vec2);
+    env->ReleaseStringUTFChars(example_string, utf_string);
+    env->DeleteLocalRef(example_string);
     return prediction;
 }
 
