@@ -34,7 +34,10 @@ struct nn {
   bool finished_setup;
   bool multitask;
 
-  polyprediction* hidden_units;
+  float* hidden_units;
+  bool* dropped_out;
+  
+  polyprediction* hidden_units_pred;
   polyprediction* hiddenbias_pred;
   
   vw* all;//many things
@@ -136,7 +139,7 @@ struct nn {
     float dropscale = n.dropout ? 2.0f : 1.0f;
     loss_function* save_loss = n.all->loss;
 
-    polyprediction* hidden_units = n.hidden_units;
+    polyprediction* hidden_units = n.hidden_units_pred;
     polyprediction* hiddenbias_pred = n.hiddenbias_pred;
     bool* dropped_out = (bool*) alloca (n.k * sizeof (bool));
   
@@ -361,8 +364,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     float dropscale = n.dropout ? 2.0f : 1.0f;
     loss_function* save_loss = n.all->loss;
 
-    float* hidden_units = (float*) alloca (n.k * sizeof (float));
-    bool* dropped_out = (bool*) alloca (n.k * sizeof (bool));
+    float* hidden_units = n.hidden_units; // (float*) alloca (n.k * sizeof (float));
+    bool* dropped_out = n.dropped_out; // (bool*) alloca (n.k * sizeof (bool));
   
     string outputString;
     stringstream outputStringStream(outputString);
@@ -580,6 +583,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   void finish(nn& n)
   {
     delete n.squared_loss;
+    free(n.hidden_units);
+    free(n.dropped_out);
+    free(n.hidden_units_pred);
+    free(n.hiddenbias_pred);
     dealloc_example (nullptr, n.output_layer);
     dealloc_example (nullptr, n.hiddenbias);
     dealloc_example (nullptr, n.outputweight);
@@ -653,8 +660,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     n.save_xsubi = n.xsubi;
 
-    n.hidden_units = (polyprediction*) malloc (n.k * sizeof (polyprediction));
-    n.hiddenbias_pred = (polyprediction*) malloc (n.k * sizeof (polyprediction));
+    n.hidden_units = calloc_or_die<float>(n.k);
+    n.dropped_out = calloc_or_die<bool>(n.k);
+    n.hidden_units_pred = calloc_or_die<polyprediction>(n.k);
+    n.hiddenbias_pred = calloc_or_die<polyprediction>(n.k);
     
     base_learner* base = setup_base(all);
     n.increment = base->increment;//Indexing of output layer is odd.
