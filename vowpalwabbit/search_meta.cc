@@ -186,7 +186,7 @@ namespace SelectiveBranchingMT {
     if (d.output_string && (d.kbest > 0)) {
       d.kbest_out = new stringstream();
       for (size_t i=0; i<min(d.final.size(), d.kbest); i++)
-        (*d.kbest_out) << d.final[i].first.first << "\t" << *d.final[i].second << endl;
+        (*d.kbest_out) << *d.final[i].second << "\t" << d.final[i].first.first << endl;
     }
     
     // run the final selected trajectory
