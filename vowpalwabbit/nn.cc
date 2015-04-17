@@ -141,7 +141,7 @@ struct nn {
 
     polyprediction* hidden_units = n.hidden_units_pred;
     polyprediction* hiddenbias_pred = n.hiddenbias_pred;
-    bool* dropped_out = (bool*) alloca (n.k * sizeof (bool));
+    bool* dropped_out = n.dropped_out;
   
     string outputString;
     stringstream outputStringStream(outputString);
