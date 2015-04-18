@@ -19,16 +19,28 @@ void predict_or_learn(scorer& s, LEARNER::base_learner& base, example& ec)
   ec.pred.scalar = link(ec.pred.scalar);
 }
 
+template <float (*link)(float in)>
+inline void multipredict(scorer& s, LEARNER::base_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions) {
+  base.multipredict(ec, 0, count, pred, finalize_predictions); // TODO: need to thread step through???
+  for (size_t c=0; c<count; c++)
+    pred[c].scalar = link(pred[c].scalar);
+}
+
+void update(scorer& s, LEARNER::base_learner& base, example& ec) {
+  s.all->set_minmax(s.all->sd, ec.l.simple.label);  
+  base.update(ec);
+}
+
 // y = f(x) -> [0, 1]
-float logistic(float in) { return 1.f / (1.f + exp(- in)); }
+inline float logistic(float in) { return 1.f / (1.f + exp(- in)); }
 
 // http://en.wikipedia.org/wiki/Generalized_logistic_curve
 // where the lower & upper asymptotes are -1 & 1 respectively
 // 'glf1' stands for 'Generalized Logistic Function with [-1,1] range'
 //    y = f(x) -> [-1, 1]
-float glf1(float in) { return 2.f / (1.f + exp(- in)) - 1.f; }
+inline float glf1(float in) { return 2.f / (1.f + exp(- in)) - 1.f; }
 
-float id(float in) { return in; }
+inline float id(float in) { return in; }
 
 LEARNER::base_learner* scorer_setup(vw& all)
 {
@@ -40,7 +52,8 @@ LEARNER::base_learner* scorer_setup(vw& all)
   s.all = &all;
   
   LEARNER::base_learner* base = setup_base(all);
-  LEARNER::learner<scorer>* l; 
+  LEARNER::learner<scorer>* l;
+  void (*multipredict_f)(scorer&, LEARNER::base_learner&, example&, size_t, size_t, polyprediction*, bool) = multipredict<id>;
   
   string link = vm["link"].as<string>();
   if (!vm.count("link") || link.compare("identity") == 0)
@@ -50,18 +63,22 @@ LEARNER::base_learner* scorer_setup(vw& all)
       *all.file_options << " --link=logistic ";
       l = &init_learner(&s, base, predict_or_learn<true, logistic>, 
 			predict_or_learn<false, logistic>);
+      multipredict_f = multipredict<logistic>;
     }
   else if (link.compare("glf1") == 0)
     {
       *all.file_options << " --link=glf1 ";
       l = &init_learner(&s, base, predict_or_learn<true, glf1>, 
 			predict_or_learn<false, glf1>);
+      multipredict_f = multipredict<glf1>;
     }
   else
     {
       cerr << "Unknown link function: " << link << endl;
       throw exception();
     }
+  l->set_multipredict(multipredict_f);
+  l->set_update(update);
   all.scorer = make_base(*l);
   
   return all.scorer;

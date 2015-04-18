@@ -34,22 +34,39 @@ void predict(ftrl& b, base_learner& base, example& ec) {
   ec.partial_prediction = GD::inline_predict(*b.all, ec);
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
-  
+
+void multipredict(ftrl& b, base_learner& base, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions) {
+  vw& all = *b.all;
+  for (size_t c=0; c<count; c++)
+    pred[c].scalar = ec.l.simple.initial;
+  GD::multipredict_info mp = { count, step, pred, &all.reg, (float)all.sd->gravity };
+  GD::foreach_feature<GD::multipredict_info, uint32_t, GD::vec_add_multipredict>(all, ec, mp);
+  if (all.sd->contraction != 1.)
+    for (size_t c=0; c<count; c++)
+      pred[c].scalar *= (float)all.sd->contraction;
+  if (finalize_predictions)
+    for (size_t c=0; c<count; c++)
+      pred[c].scalar = GD::finalize_prediction(all.sd, pred[c].scalar);
+}
+
 inline float sign(float w){ if (w < 0.) return -1.; else  return 1.;}
 
 void inner_update_proximal(update_data& d, float x, float& wref) {
   float* w = &wref;
   float gradient = d.update * x;
   float ng2 = w[W_G2] + gradient * gradient;
-  float sigma = (sqrtf(ng2) - sqrtf(w[W_G2]))/ d.ftrl_alpha;
+  float sqrt_ng2 = sqrtf(ng2);
+  float sqrt_wW_G2 = sqrtf(w[W_G2]);
+  float sigma = (sqrt_ng2 - sqrt_wW_G2)/ d.ftrl_alpha;
   w[W_ZT] += gradient - sigma * w[W_XT];
   w[W_G2] = ng2;
+  sqrt_wW_G2 = sqrt_ng2;
   float flag = sign(w[W_ZT]);
   float fabs_zt = w[W_ZT] * flag;
   if (fabs_zt <= d.l1_lambda) 
     w[W_XT] = 0.;
   else {
-    float step = 1/(d.l2_lambda + (d.ftrl_beta + sqrtf(w[W_G2]))/d.ftrl_alpha);
+    float step = 1/(d.l2_lambda + (d.ftrl_beta + sqrt_wW_G2)/d.ftrl_alpha);
     w[W_XT] = step * flag * (d.l1_lambda - fabs_zt);
   }
 }
@@ -193,6 +210,7 @@ base_learner* ftrl_setup(vw& all) {
   
   learner<ftrl>& l = init_learner(&b, learn_ptr, 1 << all.reg.stride_shift);
   l.set_predict(predict);
+  l.set_multipredict(multipredict);
   l.set_save_load(save_load);
   return make_base(l);
 }

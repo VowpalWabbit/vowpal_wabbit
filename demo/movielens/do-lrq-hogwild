@@ -16,7 +16,7 @@ fi
 
 rm -f "$1"
 
-{ ../../vowpalwabbit/vw --loss_function quantile -l 0.45 -b 24 -d ml-1m.ratings.train.vw --holdout_off --lrq um14 --lrqdropout --adaptive --invariant -f "$1" --daemon --num_children 4 --port 26542 2>&1 | perl -lane 'print $_ unless $c{$F[2]}++; ' } &
+{ ../../vowpalwabbit/vw --loss_function quantile -l 0.45 -b 24 --holdout_off --lrq um14 --lrqdropout --adaptive --invariant -f "$1" --daemon --num_children 4 --port 26542 2>&1 | perl -lane 'print $_ unless $c{$F[2]}++; ' } &
 
 trap 'nukeem; exit 1' INT QUIT TERM
 

@@ -44,6 +44,7 @@ namespace GD
     void (*predict)(gd&, base_learner&, example&);
     void (*learn)(gd&, base_learner&, example&);
     void (*update)(gd&, base_learner&, example&);
+    void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, polyprediction*, bool);
 
     vw* all; //parallel, features, parameters
   };
@@ -391,6 +392,39 @@ void predict(gd& g, base_learner& base, example& ec)
     print_audit_features(all, ec);
 }
 
+inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
+  weight*w = mp.reg->weight_vector + (fi & mp.reg->weight_mask);
+  for (size_t c=0; c<mp.count; c++) {
+    mp.pred[c].scalar += fx * trunc_weight(*w, mp.gravity);
+    w += mp.step;
+  }
+}
+  
+template<bool l1, bool audit>
+void multipredict(gd& g, base_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions) {
+  vw& all = *g.all;
+  for (size_t c=0; c<count; c++)
+    pred[c].scalar = ec.l.simple.initial;
+  multipredict_info mp = { count, step, pred, &g.all->reg, (float)all.sd->gravity };
+  if (l1) foreach_feature<multipredict_info, uint32_t, vec_add_trunc_multipredict>(all, ec, mp);
+  else    foreach_feature<multipredict_info, uint32_t, vec_add_multipredict      >(all, ec, mp);
+  if (all.sd->contraction != 1.)
+    for (size_t c=0; c<count; c++)
+      pred[c].scalar *= (float)all.sd->contraction;
+  if (finalize_predictions)
+    for (size_t c=0; c<count; c++)
+      pred[c].scalar = finalize_prediction(all.sd, pred[c].scalar);
+  if (audit) {
+    for (size_t c=0; c<count; c++) {
+      ec.pred.scalar = pred[c].scalar;
+      print_audit_features(all, ec);
+      ec.ft_offset += (uint32_t)step;
+    }
+    ec.ft_offset -= (uint32_t)step*count;
+  }
+}
+
+  
   struct power_data {
     float minus_power_t;
     float neg_norm_power;
@@ -969,16 +1003,18 @@ base_learner* setup(vw& all)
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
 	 << " adjust --decay_learning_rate larger to avoid this." << endl;
+
+
   
   if (all.reg_mode % 2)
-    if (all.audit || all.hash_inv)
-      g.predict = predict<true, true>;
-    else
-      g.predict = predict<true, false>;
-  else if (all.audit || all.hash_inv)
-    g.predict = predict<false, true>;
-  else
-    g.predict = predict<false, false>;
+    if (all.audit || all.hash_inv) {
+      g.predict = predict<true, true>;   g.multipredict = multipredict<true, true>; }
+    else {
+      g.predict = predict<true, false>;  g.multipredict = multipredict<true, false>; }
+  else if (all.audit || all.hash_inv) {
+    g.predict = predict<false, true>;    g.multipredict = multipredict<false, true>; }
+  else {
+    g.predict = predict<false, false>;   g.multipredict = multipredict<false, false>; }
 
   uint32_t stride;
   if (all.power_t == 0.5)
@@ -989,6 +1025,7 @@ base_learner* setup(vw& all)
 
   learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.reg.stride_shift));
   ret.set_predict(g.predict);
+  ret.set_multipredict(g.multipredict);
   ret.set_update(g.update);
   ret.set_save_load(save_load);
   ret.set_end_pass(end_pass);

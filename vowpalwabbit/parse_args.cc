@@ -45,6 +45,7 @@ license as described in the file LICENSE.
 #include "active.h"
 #include "kernel_svm.h"
 #include "parse_example.h"
+#include "best_constant.h"
 
 using namespace std;
 //
@@ -868,6 +869,8 @@ vw& parse_args(int argc, char *argv[])
   size_t random_seed = 0;
   all.program_name = argv[0];
 
+  time(&all.init_time);
+
   new_options(all, "VW options")
     ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
     ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring");
@@ -1025,9 +1028,9 @@ namespace VW {
     char** argv = get_argv_from_string(s,argc);
 
     vw& all = parse_args(argc, argv);
-    
-    initialize_parser_datastructures(all);
 
+    initialize_parser_datastructures(all);
+    
     for(int i = 0; i < argc; i++)
       free(argv[i]);
     free(argv);
@@ -1043,6 +1046,37 @@ namespace VW {
   
   void finish(vw& all, bool delete_all)
   {
+    if (!all.quiet)
+        {
+        cerr.precision(6);
+        cerr << endl << "finished run";
+        if(all.current_pass == 0)
+            cerr << endl << "number of examples = " << all.sd->example_number;
+        else{
+            cerr << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
+            cerr << endl << "passes used = " << all.current_pass;
+        }
+        cerr << endl << "weighted example sum = " << all.sd->weighted_examples;
+        cerr << endl << "weighted label sum = " << all.sd->weighted_labels;
+        if(all.holdout_set_off || (all.sd->holdout_best_loss == FLT_MAX))
+	  cerr << endl << "average loss = " << all.sd->sum_loss / all.sd->weighted_examples;
+	else
+	  cerr << endl << "average loss = " << all.sd->holdout_best_loss << " h";
+
+        float best_constant; float best_constant_loss;
+        if (get_best_constant(all, best_constant, best_constant_loss))
+	  {
+            cerr << endl << "best constant = " << best_constant;
+            if (best_constant_loss != FLT_MIN)
+	      cerr << endl << "best constant's loss = " << best_constant_loss;
+	  }
+	
+        cerr << endl << "total feature number = " << all.sd->total_features;
+        if (all.sd->queries > 0)
+	  cerr << endl << "total queries = " << all.sd->queries << endl;
+        cerr << endl;
+        }
+    
     finalize_regressor(all, all.final_regressor_name);
     all.l->finish();
     free_it(all.l);

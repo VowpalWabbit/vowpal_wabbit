@@ -23,6 +23,7 @@ if __name__ == '__main__':
 		if tag not in hash:
 			hash[tag] = c
 			c+=1
-		writer.write('%s 1.0  %s:%s%s %s\n'%((int(splits[7])+1) + (hash[tag]<<8), int(splits[7]),tag,strw, strp))
+		#writer.write('%s 1.0  %s:%s%s %s\n'%((int(splits[7])+1) + (hash[tag]<<8), int(splits[7]),tag,strw, strp))
+		writer.write('%s %s %s:%s%s %s\n' % (int(splits[7]), hash[tag], int(splits[7]), tag, strw, strp))
 	writer.close()
 

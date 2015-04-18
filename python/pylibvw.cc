@@ -456,6 +456,11 @@ void py_delete_run_object(void* pyobj) {
   delete o;
 }
 
+void set_force_oracle(search_ptr sch, bool useOracle) {
+  verify_search_set_properly(sch);
+  sch->set_force_oracle(useOracle);
+}
+
 void set_structured_predict_hook(search_ptr sch, py::object run_object, py::object setup_object, py::object takedown_object) {
   verify_search_set_properly(sch);
   HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
@@ -463,6 +468,7 @@ void set_structured_predict_hook(search_ptr sch, py::object run_object, py::obje
   delete (py::object*)d->run_object; d->run_object = NULL;
   delete (py::object*)d->setup_object; d->setup_object = NULL;
   delete (py::object*)d->takedown_object; d->takedown_object = NULL;
+  sch->set_force_oracle(false);
   d->run_object = new py::object(run_object);
   if (setup_object.ptr() != Py_None) {
     d->setup_object = new py::object(setup_object);
@@ -657,6 +663,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("output", &search_output, "Add a string to the coutput (should only do if should_output returns True)")
       .def("get_num_actions", &search_get_num_actions, "Return the total number of actions search was initialized with")
       .def("set_structured_predict_hook", &set_structured_predict_hook, "Set the hook (function pointer) that search should use for structured prediction (you don't want to call this yourself!")
+      .def("set_force_oracle", &set_force_oracle, "For oracle decoding when .predict is run")
       .def("is_ldf", &Search::search::is_ldf, "check whether this search task is running in LDF mode")
 
       .def("po_exists", &po_exists, "For program (cmd line) options, check to see if a given option was specified; eg sch.po_exists(\"search\") should be True")

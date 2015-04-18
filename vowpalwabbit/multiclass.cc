@@ -94,6 +94,7 @@ namespace MULTICLASS {
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
+        //std::cerr << "@" << (uint32_t)difftime(time(0), all.init_time) << "s\t";
 	all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.multi.label, ec.pred.multiclass,
 			     ec.num_features, all.progress_add, all.progress_arg);
       }
