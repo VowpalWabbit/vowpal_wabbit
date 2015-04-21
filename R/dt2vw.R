@@ -124,6 +124,4 @@ dt2vw <- function(data, fileName, namespaces, label, weight, hard_parse = F)
   con = file(fileName,"w")
   writeLines(temp,con = con)
   close(con)
-  
-  print(str_sub(temp,-100,-1))
 }
