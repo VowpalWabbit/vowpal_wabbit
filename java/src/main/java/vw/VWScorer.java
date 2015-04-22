@@ -57,6 +57,15 @@ public class VWScorer {
      */
     public native float getPrediction(String example);
 
+      /**
+     * Runs learning on <code>example</code> and returns the prediction output.  Note that
+     * this only works for "simple" VW predictions.
+     *
+     * @param example a single vw example string
+     * @return prediction output
+     */
+    public native float doLearnAndGetPrediction(String example);
+   
     /**
      * Properly shutdown vw instance
      */
