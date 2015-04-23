@@ -17,6 +17,16 @@ JNIEXPORT void JNICALL Java_vw_VWScorer_initialize
 
 /*
  * Class:     vw_VWScorer
+ * Method:    doLearnAndGetPrediction
+ * Signature: (Ljava/lang/String;)F
+ */
+JNIEXPORT jfloat JNICALL Java_vw_VWScorer_doLearnAndGetPrediction
+  (JNIEnv *, jobject, jstring);
+
+
+
+/*
+ * Class:     vw_VWScorer
  * Method:    getPrediction
  * Signature: (Ljava/lang/String;)F
  */
