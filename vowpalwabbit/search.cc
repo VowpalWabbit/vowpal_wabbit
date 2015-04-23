@@ -46,7 +46,7 @@ namespace Search {
     &SelectiveBranchingMT::metatask,
     nullptr };   // must nullptr terminate!
   
-  const bool PRINT_UPDATE_EVERY_EXAMPLE =0;
+  const bool PRINT_UPDATE_EVERY_EXAMPLE =1;
   const bool PRINT_UPDATE_EVERY_PASS =0;
   const bool PRINT_CLOCK_TIME =0;
 
@@ -1431,6 +1431,7 @@ namespace Search {
     // if this isn't a final run, it shouldn't count for loss
     float old_test_loss = priv.test_loss;
     //float old_learn_loss = priv.learn_loss;
+    priv.learn_loss *= 0.5;
     float old_train_loss = priv.train_loss;
 
     if (priv.should_produce_string)
@@ -1575,7 +1576,11 @@ namespace Search {
           priv.learn_losses.cs.costs[i].class_index = priv.learn_allowed_actions[i];
         }
       }
-      generate_training_example(priv, priv.learn_losses, true, FLT_MAX);
+      float min_loss = 0.;
+      //if (priv.metatask)
+      //  for (size_t aid=0; aid<priv.memo_foreach_action[tid]->size(); aid++)
+      //    min_loss = MIN(min_loss, priv.memo_foreach_action[tid]->get(aid).cost);
+      generate_training_example(priv, priv.learn_losses, true, min_loss);
       if (! priv.examples_dont_change)
         for (size_t n=0; n<priv.learn_ec_copy.size(); n++) {
           if (sch.priv->is_ldf) CS::cs_label.delete_label(&priv.learn_ec_copy[n].l.cs);
