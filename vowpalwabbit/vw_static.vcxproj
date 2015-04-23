@@ -257,6 +257,7 @@
     <ClInclude Include="mf.h" />
     <ClInclude Include="gd_mf.h" />
     <ClInclude Include="lrq.h" />
+	<ClInclude Include="lrqfa.h" />
     <ClInclude Include="log_multi.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="hash.h" />
@@ -282,12 +283,14 @@
     <ClInclude Include="search.h" />
     <ClInclude Include="search_sequencetask.h" />
     <ClInclude Include="search_graph.h" />
+    <ClInclude Include="search_meta.h" />
     <ClInclude Include="search_multiclasstask.h" />
     <ClInclude Include="search_hooktask.h" />
     <ClInclude Include="search_entityrelationtask.h" />
     <ClInclude Include="search_dep_parser.h" />
     <ClInclude Include="sender.h" />
     <ClInclude Include="simple_label.h" />
+    <ClInclude Include="stagewise_poly.h" />
     <ClInclude Include="svrg.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="topk.h" />
@@ -318,6 +321,7 @@
     <ClCompile Include="mf.cc" />
     <ClCompile Include="gd_mf.cc" />
     <ClCompile Include="lrq.cc" />
+    <ClCompile Include="lrqfa.cc" />
     <ClCompile Include="log_multi.cc" />
     <ClCompile Include="best_constant.cc" />
     <ClCompile Include="global_data.cc" />
@@ -343,6 +347,7 @@
     <ClCompile Include="scorer.cc" />
     <ClCompile Include="search.cc" />
     <ClCompile Include="search_graph.cc" />
+    <ClCompile Include="search_meta.cc" />
     <ClCompile Include="search_multiclasstask.cc" />
     <ClCompile Include="search_hooktask.cc" />
     <ClCompile Include="search_sequencetask.cc" />
