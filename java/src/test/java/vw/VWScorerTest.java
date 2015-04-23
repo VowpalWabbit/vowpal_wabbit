@@ -15,7 +15,7 @@ import org.junit.Ignore;
 public class VWScorerTest {
     private static final String houseModel = "target/house.model";
     private static final String houseData = "src/test/resources/house.vw";
-
+    private static final String heightData = "|f height:0.23 weight:0.25 width:0.05";
     //Note: had to remove the static init for the scorer, because it made the tests interact with each other and fail,
     //      even when using different features and/or different namespaces with the same scorer,
     //      or even with two different scorer instances.. !
@@ -38,19 +38,9 @@ public class VWScorerTest {
     @Test
     public void testLearn() throws IOException, InterruptedException {      
         VWScorer learner = getScorer();  
-        float firstPrediction = learner.getPrediction("|f height:0.23 weight:0.25 width:0.05");
-        
-        learner.doLearnAndGetPrediction("0.1 |f height:0.23 weight:0.25 width:0.05");
-        float secondPrediction = learner.getPrediction("|f height:0.23 weight:0.25 width:0.05");
-    
-        learner.doLearnAndGetPrediction("0.9 |f height:0.23 weight:0.25 width:0.05");
-        float thirdPrediction = learner.getPrediction("|f height:0.23 weight:0.25 width:0.05"); 
- 
+        float firstPrediction = learner.doLearnAndGetPrediction("0.1 " + heightData);    
+        float secondPrediction = learner.doLearnAndGetPrediction("0.9 " + heightData);
         assertNotEquals(firstPrediction, secondPrediction, 0.001);
-        assertNotEquals(firstPrediction, thirdPrediction, 0.001);
-        assertNotEquals(secondPrediction, thirdPrediction, 0.001);
-
-
     }
 
     private VWScorer getScorer() throws IOException, InterruptedException {
@@ -60,6 +50,4 @@ public class VWScorerTest {
         VWScorer scorer = new VWScorer("--quiet -t -i " + houseModel);
         return scorer;
     }
-
-
 }
