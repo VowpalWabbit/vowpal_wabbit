@@ -1,7 +1,7 @@
 #include "interactions.h"
 
-// uncomment to try pairs and triples with FNV-like hash
-// #define FNV_HASH_TEST
+// uncomment to perform generic loop for interactions of all levels
+// #define GEN_INTER_LOOP
 
 namespace INTERACTIONS
 {
@@ -16,6 +16,7 @@ void generate_interactions(vw& all, example& ec)
         float& sum_feat_sq = ec.sum_feat_sq[interactions_namespace];
 
         const uint32_t offset = ec.ft_offset;
+        const uint32_t stride_shift = all.reg.stride_shift;
 
         v_array<feature_gen_data> state_data = v_init<feature_gen_data>(); // statedata for non-recursive iteration
         feature_gen_data empty_ns_data;  // befare: micro-optimization. don't want to call its constructor each time in loop.
@@ -26,7 +27,7 @@ void generate_interactions(vw& all, example& ec)
             // 'const string::operator[]' seems to be faster (http://stackoverflow.com/a/19920071/841424)
             const size_t len = ns.length();
 
-#ifndef FNV_HASH_TEST
+#ifndef GEN_INTER_LOOP
 
             if (len == 2) //special case of pairs
             {
@@ -44,7 +45,7 @@ void generate_interactions(vw& all, example& ec)
 
                         for (; fst != fst_end; ++fst)
                         {
-                            const uint32_t halfhash = quadratic_constant * (fst->weight_index + offset);
+                            const uint32_t halfhash = FNV_prime * ((fst->weight_index + offset) >> stride_shift);
                             const feature* snd = (!same_namespace) ? ec.atomics[snd_ns].begin :
                                                                      (fst->x != 1. && feature_self_interactions_for_weight_other_than_1) ? fst : fst+1;
 
@@ -57,7 +58,7 @@ void generate_interactions(vw& all, example& ec)
 
                                 cache.push_back(feature {
                                                     ft_weight,
-                                                    snd->weight_index + halfhash
+                                                    snd->weight_index ^ halfhash << stride_shift
                                                 });
 
                                 sum_feat_sq += ft_weight * ft_weight;
@@ -110,11 +111,11 @@ void generate_interactions(vw& all, example& ec)
 
                                     const feature* snd = (!same_namespace1) ? ec.atomics[snd_ns].begin :
                                                                               (fst->x != 1. && feature_self_interactions_for_weight_other_than_1) ? fst : fst+1;
-                                    const uint32_t halfhash1 = cubic_constant * (fst->weight_index + offset);
+                                    const uint32_t halfhash1 = FNV_prime * ((fst->weight_index + offset) >> stride_shift);
 
                                     for (; snd < snd_end; ++snd)
-                                    {
-                                        const uint32_t halfhash2 = cubic_constant2 * (halfhash1 + snd->weight_index) + offset;
+                                    { //f3 x k*(f2 x k*f1)
+                                        const uint32_t halfhash2 = FNV_prime * (halfhash1 ^ ((snd->weight_index + offset) >> stride_shift));
                                         const float ft_weight1 = fst->x * snd->x;
 
                                         const feature* thr = (!same_namespace2) ? ec.atomics[thr_ns].begin :
@@ -129,7 +130,7 @@ void generate_interactions(vw& all, example& ec)
 
                                             cache.push_back(feature {
                                                                 ft_weight2,
-                                                                thr->weight_index + halfhash2
+                                                                thr->weight_index ^ halfhash2 << stride_shift
                                                             });
 
 
@@ -150,8 +151,7 @@ void generate_interactions(vw& all, example& ec)
 
                     // preparing state data
 
-                    bool no_data_to_interact = false; // if any namespace has 0 features - whole interaction is skipped
-                    const uint32_t stride_shift = all.reg.stride_shift;
+                    bool no_data_to_interact = false; // if any namespace has 0 features - whole interaction is skipped                    
 
                     for (size_t i = 0; i < len; ++i)
                     {
