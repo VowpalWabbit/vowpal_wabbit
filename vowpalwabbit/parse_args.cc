@@ -328,6 +328,7 @@ void parse_feature_tweaks(vw& all)
     ("quadratic,q", po::value< vector<string> > (), "Create and use quadratic features")
     ("interactions", po::value< vector<string> > (), "Create feature interactions of any level between namespaces.")
     ("permutations", "Use permutations instead of combinations for feature interactions of same namespace.")
+    ("leave_duplicate_interactions", "Don't remove interactions with duplicate combinations of namespaces. For ex. this is a duplicate: '-q ab -q ba' and a lot more in '-q ::'.")
     ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
     ("cubic", po::value< vector<string> > (),
      "Create and use cubic features");
@@ -402,109 +403,78 @@ void parse_feature_tweaks(vw& all)
   all.permutations = vm.count("permutations");
 
   // prepare namespace interactions
-  vector<string> expanded_ns;
-  vector<string> ns;
+  vector<string> expanded_interactions;
 
   if (vm.count("quadratic"))
   {
-      ns = vm["quadratic"].as< vector<string> >();
-      if (!all.quiet) cerr << "creating quadratic features for pairs: ";
+      const vector<string> vec_arg = vm["quadratic"].as< vector<string> >();
+      if (!all.quiet)
+       {
+           cerr << "creating quadratic features for pairs: ";
+           for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+             if (!all.quiet) cerr << *i << " ";
+       }
+      expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
 
-      for (vector<string>::iterator i = ns.begin(); i != ns.end(); i++)
-      {
-          if (!all.quiet) cerr << *i << " ";
-
-          if (i->length() != 2)
-          {
-              cerr << endl << "error, quadratic features must involve two sets.\n";
-              throw exception();
-          }
-
-          INTERACTIONS::expand_namespace(*i, expanded_ns);
-      }
       if (!all.quiet) cerr << endl;
-
-      all.pairs = expanded_ns;
-      expanded_ns.clear();
   }
 
   if (vm.count("cubic"))
   {
-      ns = vm["cubic"].as< vector<string> >();
-      if (!all.quiet) cerr << "creating cubic features for triples: ";
+      vector<string> vec_arg = vm["cubic"].as< vector<string> >();
+      if (!all.quiet)
+       {
+           cerr << "creating cubic features for triples: ";
+           for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+             if (!all.quiet) cerr << *i << " ";
+       }
 
-      for (vector<string>::iterator i = ns.begin(); i != ns.end(); i++)
-      {
-          if (!all.quiet) cerr << *i << " ";
-          if (i->length() != 3)
-          {
-              cerr << endl << "error, cubic features must involve three sets.\n";
-              throw exception();
-          }
-          INTERACTIONS::expand_namespace(*i, expanded_ns);
-      }
+      vec_arg = INTERACTIONS::expand_interactions(vec_arg, 3, "error, cubic features must involve three sets.");
+      expanded_interactions.insert(expanded_interactions.end(), vec_arg.begin(), vec_arg.end());
+
       if (!all.quiet) cerr << endl;
-
-      all.triples = expanded_ns;
-      expanded_ns.clear();
   }
 
-  vector<string> new_pairs;
-  vector<string> new_triples;
   if (vm.count("interactions"))
   {
-      ns = vm["interactions"].as< vector<string> >();
+      vector<string> vec_arg = vm["interactions"].as< vector<string> >();
       if (!all.quiet)
-      {
-          if (!all.quiet) cerr << "creating features for following interactions: ";
-          vector<string> temp;
-          for (vector<string>::iterator i = ns.begin(); i != ns.end(); i++)
-          {
-              if (!all.quiet) cerr << *i << " ";
-              size_t len = i->length();
-              if (len < 2)
-              {
-                  cerr << endl << "error, feature interactions must involve at least two namespaces.\n";
-                  throw exception();
-              }
+       {
+           cerr << "creating features for following interactions: ";
+           for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+             if (!all.quiet) cerr << *i << " ";
+       }
 
-              temp.clear();
-              INTERACTIONS::expand_namespace(*i, temp);
+      vec_arg = INTERACTIONS::expand_interactions(vec_arg, 0, "");
+      expanded_interactions.insert(expanded_interactions.end(), vec_arg.begin(), vec_arg.end());
 
-              // even after wildcard replacement length of generated interactions won't change
-              if (len == 2)
-                  new_pairs.insert(new_pairs.end(), temp.begin(), temp.end());
-              else
-                  if (len == 3)
-                      new_triples.insert(new_triples.end(), temp.begin(), temp.end());
-
-              expanded_ns.insert(expanded_ns.end(), temp.begin(), temp.end());
-          }
-          if (!all.quiet) cerr << endl;
-      }
-      all.interactions = expanded_ns;
-      expanded_ns.clear();
+      if (!all.quiet) cerr << endl;
   }
 
-  ns.clear();
+  if (expanded_interactions.size() > 0)
+  {
 
-  // synchronize -q, --cubic and --interactions contsnt
+      if (!vm.count("leave_duplicate_interactions"))
+      {
+         size_t removed_cnt = INTERACTIONS::filter_duplicate_interactions(expanded_interactions);
+         if (removed_cnt > 0)
+             cerr << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.' << endl << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
+      }
 
-  if (all.pairs.size() > 0)
-      all.interactions.insert(all.interactions.end(), all.pairs.begin(), all.pairs.end());
+      all.interactions = expanded_interactions;
 
-  if (all.triples.size() > 0)
-      all.interactions.insert(all.interactions.end(), all.triples.begin(), all.triples.end());
+      // copy interactions of size 2 and 3 to old vectors for backward compatibility
+      for (vector<string>::const_iterator i = expanded_interactions.begin(); i != expanded_interactions.end(); ++i)
+      {
+        const size_t len = i->size();
+        if (len == 2)
+            all.pairs.push_back(*i);
+        else if (len == 3)
+            all.triples.push_back(*i);
+      }
+  }
 
-  if (new_pairs.size() > 0)
-      all.pairs.insert(all.pairs.end(), new_pairs.begin(), new_pairs.end());
 
-  if (new_triples.size() > 0)
-      all.triples.insert(all.triples.end(), new_triples.begin(), new_triples.end());
-
-  INTERACTIONS::filter_duplicate_interactions(all.interactions, !all.permutations);
-  INTERACTIONS::filter_duplicate_interactions(all.pairs, !all.permutations);
-  INTERACTIONS::filter_duplicate_interactions(all.triples, !all.permutations);
 
 
   for (size_t i = 0; i < 256; i++)

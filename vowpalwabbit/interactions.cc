@@ -338,7 +338,7 @@ inline bool valid_ns(char c)
 
 // expand namespace interactions if contain wildcards
 
-void expand_namespace_depth(string& ns, vector<string>& res, string val,  size_t pos)
+void expand_namespace_depth(const string& ns, vector<string>& res, string val,  size_t pos)
 {
     assert (pos <= ns.length());
 
@@ -367,46 +367,39 @@ void expand_namespace_depth(string& ns, vector<string>& res, string val,  size_t
         }
 }
 
-/* Don't sort duplicated interaction without need.
- * 1. Duplicated interactions should be always removed from -q, --cubic and --interactions.
- * 2. After duplicated interactions were removed it's allowed to sort indexes in interactions ascendantly
- *    if only all.permutations==false (it's false by default) and there is at least one duplicate
- *    namespace in interaction. Otherwise it should be left as is.
- */
+size_t filter_duplicate_interactions(vector<string>& vec)
+{
+    // always preliminary sort interactions
+    for (vector<string>::iterator i = vec.begin(); i != vec.end(); ++i)
+        std::sort(i->begin(), i->end());
 
-bool compare_interactions (string a, string b) {
-    // compare namespaces ignoring their original position in interaction
-    std::sort(a.begin(), a.end());
-    std::sort(b.begin(), b.end());
-    return (a < b);
+    size_t cnt = vec.size();
+    sort(vec.begin(), vec.end());
+    vec.erase(unique(vec.begin(), vec.end()), vec.end());
+    return cnt - vec.size();
 }
 
-void filter_duplicate_interactions(vector<string>& vec, bool leave_elements_sorted)
+vector<string> expand_interactions(const vector<string>& vec, const size_t req_length, const string err_msg)
 {
+    vector<string> res;
 
-    if (leave_elements_sorted)
+    for (vector<string>::const_iterator i = vec.begin(); i != vec.end(); ++i)
     {
-        // preliminary sort interactions, but only if needed
-        for (vector<string>::iterator i = vec.begin(); i != vec.end(); ++i)
+        const size_t len = i->length();
+        if (req_length > 0 && len != req_length)
         {
-            string& interaction = *i;
-            string s = interaction;
-            // sort namespaces in interaction ascendantly to group equal namespaces in them
-            std::sort(s.begin(), s.end());
-            if (std::unique(s.begin(),s.end()) < s.end())
-                std::sort(interaction.begin(), interaction.end()); // can't just assign s as unique(<aab>) -> <abb>
-        }
+            cerr << endl << err_msg << endl;
+            throw exception();
+        } else
+            if (len < 2)
+            {
+                cerr << endl << "error, feature interactions must involve at least two namespaces.\n";
+                throw exception();
+            }
+
+        INTERACTIONS::expand_namespace(*i, res);
     }
-
-    // can't use just unique() in case leave_elements_sorted == false
-    // so using fastest std::set (http://stackoverflow.com/a/1041939/841424)
-    // with comparision function that ignores namespace position
-    set<string, bool(*)(string,string)> temp_set(compare_interactions);
-
-    for ( size_t i = 0; i < vec.size(); ++i )
-        temp_set.insert( vec[i] );
-
-    vec.assign( temp_set.begin(), temp_set.end() );
+    return res;
 }
 
 }

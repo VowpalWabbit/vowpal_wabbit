@@ -37,15 +37,20 @@ const unsigned char printable_start = '!';
 const unsigned char printable_end   = '~';
 const uint valid_ns_size = printable_end - printable_start - 1; // will skip two characters
 
-void expand_namespace_depth(string& ns, vector<string>& res, string val,  size_t pos);
-inline void expand_namespace(string ns, vector<string>& res)
+void expand_namespace_depth(const string& ns, vector<string>& res, string val,  size_t pos);
+inline void expand_namespace(const string& ns, vector<string>& res)
 {
     string temp;
     expand_namespace_depth(ns, res, temp, 0);
 }
 
-// remove duplicate interactions from vector<string>
-void filter_duplicate_interactions(vector<string>& vec, bool leave_elements_sorted = false);
 
+// exand all wildcard namespaces in vector<string>
+// req_length must be 0 if interactions of any length are allowed, otherwise contains required length
+// err_msg will be printed plus exception will be thrown if req_length != 0 and mismatch interaction length.
+vector<string> expand_interactions(const vector<string> &vec, const size_t req_length, const string err_msg);
+
+// remove duplicate interactions from vector<string>
+size_t filter_duplicate_interactions(vector<string>& vec);
 }
 
