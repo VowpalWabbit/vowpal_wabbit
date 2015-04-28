@@ -69,13 +69,26 @@ namespace ExploreTests
         public void TauFirst()
         {
             uint numActions = 10;
+            TestContext testContext = new TestContext() { Id = 100 };
+            TauFirstWithContext(numActions, testContext);
+        }
+
+        [TestMethod]
+        public void TauFirstFixedActionUsingVariableActionInterface()
+        {
+            uint numActions = 10;
+            var testContext = new TestFixedActionContextUsingVariableInterface(numActions) { Id = 100 };
+            TauFirstWithContext(numActions, testContext);
+        }
+
+        private static void TauFirstWithContext(uint numActions, TestContext testContext)
+        {
             uint tau = 0;
             string uniqueKey = "ManagedTestId";
 
             TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
             TestPolicy policy = new TestPolicy();
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
-            TestContext testContext = new TestContext() { Id = 100 };
 
             var explorer = new TauFirstExplorer<TestContext>(policy, tau, numActions);
 
@@ -100,6 +113,24 @@ namespace ExploreTests
         public void Bootstrap()
         {
             uint numActions = 10;
+            TestContext testContext1 = new TestContext() { Id = 99 };
+            TestContext testContext2 = new TestContext() { Id = 100 };
+
+            BootstrapWithContext(numActions, testContext1, testContext2);
+        }
+
+        [TestMethod]
+        public void BootstrapFixedActionUsingVariableActionInterface()
+        {
+            uint numActions = 10;
+            var testContext1 = new TestFixedActionContextUsingVariableInterface(numActions) { Id = 99 };
+            var testContext2 = new TestFixedActionContextUsingVariableInterface(numActions) { Id = 100 };
+
+            BootstrapWithContext(numActions, testContext1, testContext2);
+        }
+
+        private static void BootstrapWithContext(uint numActions, TestContext testContext1, TestContext testContext2)
+        {
             uint numbags = 2;
             string uniqueKey = "ManagedTestId";
 
@@ -109,8 +140,6 @@ namespace ExploreTests
             {
                 policies[i] = new TestPolicy(i * 2);
             }
-            TestContext testContext1 = new TestContext() { Id = 99 };
-            TestContext testContext2 = new TestContext() { Id = 100 };
 
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
             var explorer = new BootstrapExplorer<TestContext>(policies, numActions);
