@@ -176,6 +176,22 @@ public:
     virtual ~IScorer() { }
 };
 
+///
+/// Represents a context interface with variable number of actions which is
+/// enforced if exploration algorithm is initialized in variable number of actions mode.
+///
+class IVariableActionContext
+{
+public:
+    ///
+    /// Gets the number of actions for the current context.
+    ///
+    /// @returns            The number of actions available for the current context.
+    ///
+    virtual u32 Get_Number_Of_Actions() = 0;
+    virtual ~IVariableActionContext() { }
+};
+
 template <class Ctx>
 class IConsumePolicy
 {
@@ -296,6 +312,21 @@ private:
 	vector<Feature>& m_features;
 };
 
+template <class Ctx>
+static u32 Get_Variable_Number_Of_Actions(Ctx& context, u32 default_num_actions)
+{
+    u32 num_actions = default_num_actions;
+    if (num_actions == UINT_MAX)
+    {
+        num_actions = ((IVariableActionContext*)(&context))->Get_Number_Of_Actions();
+        if (num_actions < 1)
+        {
+            throw std::invalid_argument("Number of actions must be at least 1.");
+        }
+    }
+    return num_actions;
+}
+
 ///
 /// The epsilon greedy exploration algorithm. This is a good choice if you have no idea 
 /// which actions should be preferred.  Epsilon greedy is also computationally cheap.
@@ -325,6 +356,22 @@ public:
 		}
 	}
 
+    ///
+    /// Initializes an epsilon greedy explorer with variable number of actions.
+    ///
+    /// @param default_policy  A default function which outputs an action given a context.
+    /// @param epsilon         The probability of a random exploration.
+    ///
+    EpsilonGreedyExplorer(IPolicy<Ctx>& default_policy, float epsilon) :
+        m_default_policy(default_policy), m_epsilon(epsilon), m_num_actions(UINT_MAX), m_explore(true)
+    {
+        if (m_epsilon < 0 || m_epsilon > 1)
+        {
+            throw std::invalid_argument("Epsilon must be between 0 and 1.");
+        }
+        static_assert(std::is_base_of<IVariableActionContext, Ctx>::value, "The provided context does not implement variable-action interface.");
+    }
+
     void Update_Policy(IPolicy<Ctx>& new_policy)
     {
         m_default_policy = new_policy;
@@ -338,12 +385,14 @@ public:
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
+        u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+
 		PRG::prg random_generator(salted_seed);
 
 		// Invoke the default policy function to get the action
 		u32 chosen_action = m_default_policy.Choose_Action(context);
 
-		if (chosen_action == 0 || chosen_action > m_num_actions)
+        if (chosen_action == 0 || chosen_action > num_actions)
 		{
 			throw std::invalid_argument("Action chosen by default policy is not within valid range.");
 		}
@@ -351,7 +400,7 @@ private:
         float epsilon = m_explore ? m_epsilon : 0.f;
 
 		float action_probability = 0.f;
-        float base_probability = epsilon / m_num_actions; // uniform probability
+        float base_probability = epsilon / num_actions; // uniform probability
 
 		// TODO: check this random generation
         if (random_generator.Uniform_Unit_Interval() < 1.f - epsilon)
@@ -361,7 +410,7 @@ private:
 		else
 		{
 			// Get uniform random action ID
-			u32 actionId = random_generator.Uniform_Int(1, m_num_actions);
+            u32 actionId = random_generator.Uniform_Int(1, num_actions);
 
 			if (actionId == chosen_action)
 			{
@@ -385,9 +434,6 @@ private:
 	float m_epsilon;
     bool m_explore;
 	u32 m_num_actions;
-
-private:
-	friend class MwtExplorer<Ctx>;
 };
 
 ///
@@ -414,6 +460,18 @@ public:
 		}
 	}
 
+    ///
+    /// Initializes a softmax explorer with variable number of actions.
+    ///
+    /// @param default_scorer  A function which outputs a score for each action.
+    /// @param lambda          lambda = 0 implies uniform distribution.  Large lambda is equivalent to a max.
+    ///
+    SoftmaxExplorer(IScorer<Ctx>& default_scorer, float lambda) :
+        m_default_scorer(default_scorer), m_lambda(lambda), m_num_actions(UINT_MAX), m_explore(true)
+    {
+        static_assert(std::is_base_of<IVariableActionContext, Ctx>::value, "The provided context does not implement variable-action interface.");
+    }
+
     void Update_Scorer(IScorer<Ctx>& new_scorer)
     {
         m_default_scorer = new_scorer;
@@ -427,12 +485,14 @@ public:
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
+        u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+
 		PRG::prg random_generator(salted_seed);
 
 		// Invoke the default scorer function
 		vector<float> scores = m_default_scorer.Score_Actions(context);
 		u32 num_scores = (u32)scores.size();
-		if (num_scores != m_num_actions)
+        if (num_scores != num_actions)
 		{
 			throw std::invalid_argument("The number of scores returned by the scorer must equal number of actions");
 		}
@@ -504,9 +564,6 @@ private:
     bool m_explore;
 	float m_lambda;
 	u32 m_num_actions;
-
-private:
-	friend class MwtExplorer<Ctx>;
 };
 
 ///
@@ -532,6 +589,17 @@ public:
 		}
 	}
 
+    ///
+    /// Initializes a generic explorer with variable number of actions.
+    ///
+    /// @param default_scorer  A function which outputs the probability of each action.
+    ///
+    GenericExplorer(IScorer<Ctx>& default_scorer) :
+        m_default_scorer(default_scorer), m_num_actions(UINT_MAX), m_explore(true)
+    {
+        static_assert(std::is_base_of<IVariableActionContext, Ctx>::value, "The provided context does not implement variable-action interface.");
+    }
+
     void Update_Scorer(IScorer<Ctx>& new_scorer)
     {
         m_default_scorer = new_scorer;
@@ -545,12 +613,14 @@ public:
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
+        u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+
 		PRG::prg random_generator(salted_seed);
 
 		// Invoke the default scorer function
 		vector<float> weights = m_default_scorer.Score_Actions(context);
 		u32 num_weights = (u32)weights.size();
-		if (num_weights != m_num_actions)
+        if (num_weights != num_actions)
 		{
 			throw std::invalid_argument("The number of weights returned by the scorer must equal number of actions");
 		}
@@ -596,9 +666,6 @@ private:
 	IScorer<Ctx>& m_default_scorer;
     bool m_explore;
 	u32 m_num_actions;
-
-private:
-	friend class MwtExplorer<Ctx>;
 };
 
 ///
@@ -626,6 +693,18 @@ public:
 		}
 	}
 
+    ///
+    /// Initializes a tau-first explorer with variable number of actions.
+    ///
+    /// @param default_policy  A default policy after randomization finishes.
+    /// @param tau             The number of events to be uniform over.
+    ///
+    TauFirstExplorer(IPolicy<Ctx>& default_policy, u32 tau) :
+        m_default_policy(default_policy), m_tau(tau), m_num_actions(UINT_MAX), m_explore(true)
+    {
+        static_assert(std::is_base_of<IVariableActionContext, Ctx>::value, "The provided context does not implement variable-action interface.");
+    }
+
     void Update_Policy(IPolicy<Ctx>& new_policy)
     {
         m_default_policy = new_policy;
@@ -639,7 +718,9 @@ public:
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
-		PRG::prg random_generator(salted_seed);
+        u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+
+        PRG::prg random_generator(salted_seed);
 
 		u32 chosen_action = 0;
 		float action_probability = 0.f;
@@ -648,8 +729,8 @@ private:
         if (m_tau && m_explore)
 		{
             m_tau--;
-			u32 actionId = random_generator.Uniform_Int(1, m_num_actions);
-			action_probability = 1.f / m_num_actions;
+            u32 actionId = random_generator.Uniform_Int(1, num_actions);
+            action_probability = 1.f / num_actions;
 			chosen_action = actionId;
 			log_action = true;
 		}
@@ -658,7 +739,7 @@ private:
 			// Invoke the default policy function to get the action
 			chosen_action = m_default_policy.Choose_Action(context);
 
-			if (chosen_action == 0 || chosen_action > m_num_actions)
+            if (chosen_action == 0 || chosen_action > num_actions)
 			{
 				throw std::invalid_argument("Action chosen by default policy is not within valid range.");
 			}
@@ -675,9 +756,6 @@ private:
     bool m_explore;
 	u32 m_tau;
 	u32 m_num_actions;
-
-private:
-	friend class MwtExplorer<Ctx>;
 };
 
 ///
@@ -711,6 +789,26 @@ public:
 		}
 	}
 
+    ///
+    /// Initializes a bootstrap explorer with variable number of actions.
+    ///
+    /// @param default_policy_functions  A set of default policies to be uniform random over. 
+    /// The policy pointers must be valid throughout the lifetime of this explorer.
+    ///
+    BootstrapExplorer(vector<unique_ptr<IPolicy<Ctx>>>& default_policy_functions) :
+        m_default_policy_functions(default_policy_functions),
+        m_num_actions(UINT_MAX), m_explore(true)
+    {
+        m_bags = (u32)default_policy_functions.size();
+
+        if (m_bags < 1)
+        {
+            throw std::invalid_argument("Number of bags must be at least 1.");
+        }
+
+        static_assert(std::is_base_of<IVariableActionContext, Ctx>::value, "The provided context does not implement variable-action interface.");
+    }
+
     void Update_Policy(vector<unique_ptr<IPolicy<Ctx>>>& new_policy_functions)
     {
         m_default_policy_functions = move(new_policy_functions);
@@ -724,7 +822,9 @@ public:
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
-		PRG::prg random_generator(salted_seed);
+        u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+
+        PRG::prg random_generator(salted_seed);
 
 		// Select bag
         u32 chosen_bag = random_generator.Uniform_Int(0, m_bags - 1);
@@ -737,7 +837,7 @@ private:
         {
             u32 action_from_bag = 0;
             vector<u32> actions_selected;
-            for (size_t i = 0; i < m_num_actions; i++)
+            for (size_t i = 0; i < num_actions; i++)
             {
                 actions_selected.push_back(0);
             }
@@ -747,7 +847,7 @@ private:
             {
                 action_from_bag = m_default_policy_functions[current_bag]->Choose_Action(context);
 
-                if (action_from_bag == 0 || action_from_bag > m_num_actions)
+                if (action_from_bag == 0 || action_from_bag > num_actions)
                 {
                     throw std::invalid_argument("Action chosen by default policy is not within valid range.");
                 }
@@ -775,9 +875,7 @@ private:
     bool m_explore;
     u32 m_bags;
 	u32 m_num_actions;
-
-private:
-	friend class MwtExplorer<Ctx>;
 };
+
 } // End namespace MultiWorldTestingCpp
 /*! @} End of Doxygen Groups*/

@@ -431,7 +431,7 @@ namespace vw_explore_tests
             size_t num_interactions = interactions.size();
 
             Assert::AreEqual(times_choose + 3, (int)num_interactions);
-            for (size_t i = 0; i < times_choose; i++)
+            for (size_t i = 0; i < (size_t)times_choose; i++)
             {
                 Assert::AreEqual(1.f, interactions[i].Probability);
             }
