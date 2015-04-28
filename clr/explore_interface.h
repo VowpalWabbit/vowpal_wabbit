@@ -72,6 +72,20 @@ public:
 	virtual List<float>^ ScoreActions(Ctx context) = 0;
 };
 
+/// <summary>
+/// Represents a context interface with variable number of actions which is
+/// enforced if exploration algorithm is initialized in variable number of actions mode.
+/// </summary>
+public interface class IVariableActionContext
+{
+public:
+    /// <summary>
+    /// Gets the number of actions for the current context.
+    /// </summary>
+    /// <returns>The number of actions available for the current context.</returns>
+    virtual UInt32 GetNumberOfActions() = 0;
+};
+
 generic <class Ctx>
 public interface class IExplorer
 {
