@@ -31,6 +31,22 @@ namespace MultiWorldTesting {
 			m_explorer = new NativeMultiWorldTesting::EpsilonGreedyExplorer<NativeContext>(*GetNativePolicy(), epsilon, (u32)numActions);
 		}
 
+        /// <summary>
+        /// Initializes an epsilon greedy explorer with variable number of actions.
+        /// </summary>
+        /// <param name="defaultPolicy">A default function which outputs an action given a context.</param>
+        /// <param name="epsilon">The probability of a random exploration.</param>
+        EpsilonGreedyExplorer(IPolicy<Ctx>^ defaultPolicy, float epsilon)
+        {
+            if (Ctx::typeid->BaseType == IVariableActionContext::typeid)
+            {
+                throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
+            }
+
+            this->defaultPolicy = defaultPolicy;
+            m_explorer = new NativeMultiWorldTesting::EpsilonGreedyExplorer<NativeContext>(*GetNativePolicy(), epsilon);
+        }
+
 		~EpsilonGreedyExplorer()
 		{
 			delete m_explorer;
@@ -85,6 +101,22 @@ namespace MultiWorldTesting {
 			this->defaultPolicy = defaultPolicy;
 			m_explorer = new NativeMultiWorldTesting::TauFirstExplorer<NativeContext>(*GetNativePolicy(), tau, (u32)numActions);
 		}
+
+        /// <summary>
+        /// Initializes a tau-first explorer with variable number of actions.
+        /// </summary>
+        /// <param name="defaultPolicy">A default policy after randomization finishes.</param>
+        /// <param name="tau">The number of events to be uniform over.</param>
+        TauFirstExplorer(IPolicy<Ctx>^ defaultPolicy, UInt32 tau)
+        {
+            if (Ctx::typeid->BaseType == IVariableActionContext::typeid)
+            {
+                throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
+            }
+
+            this->defaultPolicy = defaultPolicy;
+            m_explorer = new NativeMultiWorldTesting::TauFirstExplorer<NativeContext>(*GetNativePolicy(), tau);
+        }
 
         virtual void UpdatePolicy(IPolicy<Ctx>^ newPolicy)
         {
@@ -142,6 +174,22 @@ namespace MultiWorldTesting {
 			m_explorer = new NativeMultiWorldTesting::SoftmaxExplorer<NativeContext>(*GetNativeScorer(), lambda, (u32)numActions);
 		}
 
+        /// <summary>
+        /// Initializes a softmax explorer with variable number of actions.
+        /// </summary>
+        /// <param name="defaultScorer">A function which outputs a score for each action.</param>
+        /// <param name="lambda">lambda = 0 implies uniform distribution. Large lambda is equivalent to a max.</param>
+        SoftmaxExplorer(IScorer<Ctx>^ defaultScorer, float lambda)
+        {
+            if (Ctx::typeid->BaseType == IVariableActionContext::typeid)
+            {
+                throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
+            }
+
+            this->defaultScorer = defaultScorer;
+            m_explorer = new NativeMultiWorldTesting::SoftmaxExplorer<NativeContext>(*GetNativeScorer(), lambda);
+        }
+
         virtual void UpdateScorer(IScorer<Ctx>^ newScorer)
         {
             this->defaultScorer = newScorer;
@@ -195,6 +243,21 @@ namespace MultiWorldTesting {
 			this->defaultScorer = defaultScorer;
 			m_explorer = new NativeMultiWorldTesting::GenericExplorer<NativeContext>(*GetNativeScorer(), (u32)numActions);
 		}
+
+        /// <summary>
+        /// Initializes a generic explorer with variable number of actions.
+        /// </summary>
+        /// <param name="defaultScorer">A function which outputs the probability of each action.</param>
+        GenericExplorer(IScorer<Ctx>^ defaultScorer)
+        {
+            if (Ctx::typeid->BaseType == IVariableActionContext::typeid)
+            {
+                throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
+            }
+
+            this->defaultScorer = defaultScorer;
+            m_explorer = new NativeMultiWorldTesting::GenericExplorer<NativeContext>(*GetNativeScorer());
+        }
 
         virtual void UpdateScorer(IScorer<Ctx>^ newScorer)
         {
@@ -255,6 +318,26 @@ namespace MultiWorldTesting {
 
 			m_explorer = new NativeMultiWorldTesting::BootstrapExplorer<NativeContext>(*GetNativePolicies((u32)defaultPolicies->Length), (u32)numActions);
 		}
+
+        /// <summary>
+        /// Initializes a bootstrap explorer with variable number of actions.
+        /// </summary>
+        /// <param name="defaultPolicies">A set of default policies to be uniform random over.</param>
+        BootstrapExplorer(cli::array<IPolicy<Ctx>^>^ defaultPolicies)
+        {
+            if (Ctx::typeid->BaseType == IVariableActionContext::typeid)
+            {
+                throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
+            }
+
+            this->defaultPolicies = defaultPolicies;
+            if (this->defaultPolicies == nullptr)
+            {
+                throw gcnew ArgumentNullException("The specified array of default policy functions cannot be null.");
+            }
+
+            m_explorer = new NativeMultiWorldTesting::BootstrapExplorer<NativeContext>(*GetNativePolicies((u32)defaultPolicies->Length));
+        }
 
         virtual void UpdatePolicy(cli::array<IPolicy<Ctx>^>^ newPolicies)
         {
@@ -332,7 +415,8 @@ namespace MultiWorldTesting {
 			GCHandle explorerHandle = GCHandle::Alloc(explorer);
 			IntPtr explorerPtr = (IntPtr)explorerHandle;
 
-			NativeContext native_context(selfPtr.ToPointer(), explorerPtr.ToPointer(), contextPtr.ToPointer());
+			NativeContext native_context(selfPtr.ToPointer(), explorerPtr.ToPointer(), contextPtr.ToPointer(),
+                this->GetNumActionsCallback());
 			u32 action = 0;
 			if (explorer->GetType() == EpsilonGreedyExplorer<Ctx>::typeid)
 			{

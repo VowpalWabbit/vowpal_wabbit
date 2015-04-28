@@ -16,6 +16,10 @@ using namespace msclr::interop;
 
 namespace MultiWorldTesting {
 
+// Context callback
+private delegate UInt32 ClrContextGetNumActionsCallback(IntPtr contextPtr);
+typedef u32 Native_Context_Get_Num_Actions_Callback(void* context);
+
 // Policy callback
 private delegate UInt32 ClrPolicyCallback(IntPtr explorerPtr, IntPtr contextPtr, int index);
 typedef u32 Native_Policy_Callback(void* explorer, void* context, int index);
@@ -34,15 +38,23 @@ typedef void Native_To_String_Callback(void* explorer, void* string_value);
 
 // NativeContext travels through interop space and contains instances of Mwt, Explorer, Context
 // used for triggering callback for Policy, Scorer, Recorder
-class NativeContext
+class NativeContext : public NativeMultiWorldTesting::IVariableActionContext
 {
 public:
-	NativeContext(void* clr_mwt, void* clr_explorer, void* clr_context)
+	NativeContext(void* clr_mwt, void* clr_explorer, void* clr_context,
+        Native_Context_Get_Num_Actions_Callback* callback_num_actions)
 	{
 		m_clr_mwt = clr_mwt;
 		m_clr_explorer = clr_explorer;
 		m_clr_context = clr_context;
+
+        m_callback_num_actions = callback_num_actions;
 	}
+
+    u32 Get_Number_Of_Actions()
+    {
+        return m_callback_num_actions(m_clr_context);
+    }
 
 	void* Get_Clr_Mwt()
 	{
@@ -63,6 +75,9 @@ private:
 	void* m_clr_mwt;
 	void* m_clr_context;
 	void* m_clr_explorer;
+
+private:
+    Native_Context_Get_Num_Actions_Callback* m_callback_num_actions;
 };
 
 class NativeStringContext
@@ -151,6 +166,37 @@ private:
 	Native_Scorer_Callback* m_func;
 };
 
+// Triggers callback to the Context instance
+generic <class Ctx>
+public ref class ContextCallback
+{
+internal:
+    ContextCallback()
+    {
+        contextNumActionsCallback = gcnew ClrContextGetNumActionsCallback(&ContextCallback<Ctx>::InteropInvokeNumActions);
+        IntPtr contextNumActionsCallbackPtr = Marshal::GetFunctionPointerForDelegate(contextNumActionsCallback);
+        m_num_actions_callback = static_cast<Native_Context_Get_Num_Actions_Callback*>(contextNumActionsCallbackPtr.ToPointer());
+    }
+
+    Native_Context_Get_Num_Actions_Callback* GetNumActionsCallback()
+    {
+        return m_num_actions_callback;
+    }
+
+    static UInt32 InteropInvokeNumActions(IntPtr contextPtr)
+    {
+        GCHandle contextHandle = (GCHandle)contextPtr;
+
+        return ((IVariableActionContext^)contextHandle.Target)->GetNumberOfActions();
+    }
+
+private:
+    ClrContextGetNumActionsCallback^ contextNumActionsCallback;
+
+private:
+    Native_Context_Get_Num_Actions_Callback* m_num_actions_callback;
+};
+
 // Triggers callback to the Policy instance to choose an action
 generic <class Ctx>
 public ref class PolicyCallback abstract
@@ -186,10 +232,10 @@ internal:
 	{
 		if (m_native_policies == nullptr)
 		{
-      m_native_policies = new vector<unique_ptr<NativeMultiWorldTesting::IPolicy<NativeContext>>>();
+            m_native_policies = new vector<unique_ptr<NativeMultiWorldTesting::IPolicy<NativeContext>>>();
 			for (int i = 0; i < count; i++)
 			{
-        m_native_policies->push_back(unique_ptr<NativeMultiWorldTesting::IPolicy<NativeContext>>(new NativePolicy(m_callback, i)));
+                m_native_policies->push_back(unique_ptr<NativeMultiWorldTesting::IPolicy<NativeContext>>(new NativePolicy(m_callback, i)));
 			}
 		}
 
@@ -218,7 +264,7 @@ private:
 
 // Triggers callback to the Recorder instance to record interaction data
 generic <class Ctx>
-public ref class RecorderCallback abstract
+public ref class RecorderCallback abstract : public ContextCallback<Ctx>
 {
 internal:
 	virtual void InvokeRecorderCallback(Ctx context, UInt32 action, float probability, String^ unique_key) = 0;
