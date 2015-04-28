@@ -187,7 +187,13 @@ internal:
     {
         GCHandle contextHandle = (GCHandle)contextPtr;
 
-        return ((IVariableActionContext^)contextHandle.Target)->GetNumberOfActions();
+        IVariableActionContext^ context = dynamic_cast<IVariableActionContext^>(contextHandle.Target);
+        if (context == nullptr)
+        {
+            throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
+        }
+
+        return context->GetNumberOfActions();
     }
 
 private:

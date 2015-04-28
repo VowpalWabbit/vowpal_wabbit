@@ -18,30 +18,32 @@ namespace ExploreTests
         public void EpsilonGreedy()
         {
             uint numActions = 10;
+            float epsilon = 0f;
+            TestPolicy policy = new TestPolicy();
             var testContext = new TestContext();
+            var explorer = new EpsilonGreedyExplorer<TestContext>(policy, epsilon, numActions);
 
-            EpsilonGreedyWithContext(numActions, testContext);
+            EpsilonGreedyWithContext(numActions, testContext, policy, explorer);
         }
 
         [TestMethod]
         public void EpsilonGreedyFixedActionUsingVariableActionInterface()
         {
             uint numActions = 10;
+            float epsilon = 0f;
+            TestPolicy policy = new TestPolicy();
             var testContext = new TestFixedActionContextUsingVariableInterface(numActions);
+            var explorer = new EpsilonGreedyExplorer<TestContext>(policy, epsilon);
 
-            EpsilonGreedyWithContext(numActions, testContext);
+            EpsilonGreedyWithContext(numActions, testContext, policy, explorer);
         }
 
-        private static void EpsilonGreedyWithContext(uint numActions, TestContext testContext)
+        private static void EpsilonGreedyWithContext(uint numActions, TestContext testContext, TestPolicy policy, IExplorer<TestContext> explorer)
         {
-            float epsilon = 0f;
             string uniqueKey = "ManagedTestId";
             TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
-            TestPolicy policy = new TestPolicy();
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
             testContext.Id = 100;
-
-            var explorer = new EpsilonGreedyExplorer<TestContext>(policy, epsilon, numActions);
 
             uint expectedAction = policy.ChooseAction(testContext);
 
@@ -69,28 +71,30 @@ namespace ExploreTests
         public void TauFirst()
         {
             uint numActions = 10;
+            uint tau = 0;
             TestContext testContext = new TestContext() { Id = 100 };
-            TauFirstWithContext(numActions, testContext);
+            TestPolicy policy = new TestPolicy();
+            var explorer = new TauFirstExplorer<TestContext>(policy, tau, numActions);
+            TauFirstWithContext(numActions, testContext, policy, explorer);
         }
 
         [TestMethod]
         public void TauFirstFixedActionUsingVariableActionInterface()
         {
             uint numActions = 10;
+            uint tau = 0;
             var testContext = new TestFixedActionContextUsingVariableInterface(numActions) { Id = 100 };
-            TauFirstWithContext(numActions, testContext);
+            TestPolicy policy = new TestPolicy();
+            var explorer = new TauFirstExplorer<TestContext>(policy, tau);
+            TauFirstWithContext(numActions, testContext, policy, explorer);
         }
 
-        private static void TauFirstWithContext(uint numActions, TestContext testContext)
+        private static void TauFirstWithContext(uint numActions, TestContext testContext, TestPolicy policy, IExplorer<TestContext> explorer)
         {
-            uint tau = 0;
             string uniqueKey = "ManagedTestId";
 
             TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
-            TestPolicy policy = new TestPolicy();
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
-
-            var explorer = new TauFirstExplorer<TestContext>(policy, tau, numActions);
 
             uint expectedAction = policy.ChooseAction(testContext);
 
@@ -113,36 +117,44 @@ namespace ExploreTests
         public void Bootstrap()
         {
             uint numActions = 10;
+            uint numbags = 2;
             TestContext testContext1 = new TestContext() { Id = 99 };
             TestContext testContext2 = new TestContext() { Id = 100 };
 
-            BootstrapWithContext(numActions, testContext1, testContext2);
+            TestPolicy[] policies = new TestPolicy[numbags];
+            for (int i = 0; i < numbags; i++)
+            {
+                policies[i] = new TestPolicy(i * 2);
+            }
+            var explorer = new BootstrapExplorer<TestContext>(policies, numActions);
+
+            BootstrapWithContext(numActions, testContext1, testContext2, policies, explorer);
         }
 
         [TestMethod]
         public void BootstrapFixedActionUsingVariableActionInterface()
         {
             uint numActions = 10;
+            uint numbags = 2;
             var testContext1 = new TestFixedActionContextUsingVariableInterface(numActions) { Id = 99 };
             var testContext2 = new TestFixedActionContextUsingVariableInterface(numActions) { Id = 100 };
 
-            BootstrapWithContext(numActions, testContext1, testContext2);
-        }
-
-        private static void BootstrapWithContext(uint numActions, TestContext testContext1, TestContext testContext2)
-        {
-            uint numbags = 2;
-            string uniqueKey = "ManagedTestId";
-
-            TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
             TestPolicy[] policies = new TestPolicy[numbags];
             for (int i = 0; i < numbags; i++)
             {
                 policies[i] = new TestPolicy(i * 2);
             }
+            var explorer = new BootstrapExplorer<TestContext>(policies);
 
+            BootstrapWithContext(numActions, testContext1, testContext2, policies, explorer);
+        }
+
+        private static void BootstrapWithContext(uint numActions, TestContext testContext1, TestContext testContext2, TestPolicy[] policies, IExplorer<TestContext> explorer)
+        {
+            string uniqueKey = "ManagedTestId";
+
+            TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
-            var explorer = new BootstrapExplorer<TestContext>(policies, numActions);
 
             uint expectedAction = policies[0].ChooseAction(testContext1);
 
@@ -170,27 +182,31 @@ namespace ExploreTests
         [TestMethod]
         public void Softmax()
         {
-            SoftmaxWithContext(useTestFixedActionContextUsingVariableInterface: false);
+            uint numActions = 10;
+            float lambda = 0.5f;
+            TestScorer<TestContext> scorer = new TestScorer<TestContext>(numActions);
+            var explorer = new SoftmaxExplorer<TestContext>(scorer, lambda, numActions);
+            SoftmaxWithContext(numActions, explorer, useTestFixedActionContextUsingVariableInterface: false);
         }
 
         [TestMethod]
         public void SoftmaxFixedActionUsingVariableActionInterface()
         {
-            SoftmaxWithContext(useTestFixedActionContextUsingVariableInterface: true);
-        }
-
-        private static void SoftmaxWithContext(bool useTestFixedActionContextUsingVariableInterface)
-        {
             uint numActions = 10;
             float lambda = 0.5f;
+            TestScorer<TestContext> scorer = new TestScorer<TestContext>(numActions);
+            var explorer = new SoftmaxExplorer<TestContext>(scorer, lambda);
+            SoftmaxWithContext(numActions, explorer, useTestFixedActionContextUsingVariableInterface: true);
+        }
+
+        private static void SoftmaxWithContext(uint numActions, IExplorer<TestContext> explorer, bool useTestFixedActionContextUsingVariableInterface)
+        {
             uint numActionsCover = 100;
             float C = 5;
 
             TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
-            TestScorer<TestContext> scorer = new TestScorer<TestContext>(numActions);
 
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
-            var explorer = new SoftmaxExplorer<TestContext>(scorer, lambda, numActions);
 
             uint numDecisions = (uint)(numActions * Math.Log(numActions * 1.0) + Math.Log(numActionsCover * 1.0 / numActions) * C * numActions);
             uint[] actions = new uint[numActions];
@@ -273,26 +289,28 @@ namespace ExploreTests
         public void Generic()
         {
             uint numActions = 10;
+            TestScorer<TestContext> scorer = new TestScorer<TestContext>(numActions);
             TestContext testContext = new TestContext() { Id = 100 };
-            GenericWithContext(numActions, testContext);
+            var explorer = new GenericExplorer<TestContext>(scorer, numActions);
+            GenericWithContext(numActions, testContext, explorer);
         }
 
         [TestMethod]
         public void GenericFixedActionUsingVariableActionInterface()
         {
             uint numActions = 10;
+            TestScorer<TestContext> scorer = new TestScorer<TestContext>(numActions);
             TestContext testContext = new TestFixedActionContextUsingVariableInterface(numActions) { Id = 100 };
-            GenericWithContext(numActions, testContext);
+            var explorer = new GenericExplorer<TestContext>(scorer);
+            GenericWithContext(numActions, testContext, explorer);
         }
 
-        private static void GenericWithContext(uint numActions, TestContext testContext)
+        private static void GenericWithContext(uint numActions, TestContext testContext, IExplorer<TestContext> explorer)
         {
             string uniqueKey = "ManagedTestId";
             TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
-            TestScorer<TestContext> scorer = new TestScorer<TestContext>(numActions);
 
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
-            var explorer = new GenericExplorer<TestContext>(scorer, numActions);
 
             uint chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext);
 
@@ -322,32 +340,42 @@ namespace ExploreTests
             });
 
             tryCatchArgumentException(() => {
+                var mwt = new MwtExplorer<TestContext>("test", new TestRecorder<TestContext>());
                 var policy = new TestPolicy();
                 var explorer = new EpsilonGreedyExplorer<TestContext>(policy, 0.2f);
+                mwt.ChooseAction(explorer, "key", new TestContext());
             });
             tryCatchArgumentException(() =>
             {
+                var mwt = new MwtExplorer<TestContext>("test", new TestRecorder<TestContext>());
                 var policy = new TestPolicy();
                 var explorer = new TauFirstExplorer<TestContext>(policy, 10);
+                mwt.ChooseAction(explorer, "key", new TestContext());
             });
             tryCatchArgumentException(() =>
             {
+                var mwt = new MwtExplorer<TestContext>("test", new TestRecorder<TestContext>());
                 TestPolicy[] policies = new TestPolicy[2];
                 for (int i = 0; i < 2; i++)
                 {
                     policies[i] = new TestPolicy(i * 2);
                 }
                 var explorer = new BootstrapExplorer<TestContext>(policies);
+                mwt.ChooseAction(explorer, "key", new TestContext());
             });
             tryCatchArgumentException(() =>
             {
+                var mwt = new MwtExplorer<TestContext>("test", new TestRecorder<TestContext>());
                 var scorer = new TestScorer<TestContext>(10);
                 var explorer = new SoftmaxExplorer<TestContext>(scorer, 0.5f);
+                mwt.ChooseAction(explorer, "key", new TestContext());
             });
             tryCatchArgumentException(() =>
             {
+                var mwt = new MwtExplorer<TestContext>("test", new TestRecorder<TestContext>());
                 var scorer = new TestScorer<TestContext>(10);
                 var explorer = new GenericExplorer<TestContext>(scorer);
+                mwt.ChooseAction(explorer, "key", new TestContext());
             });
 
             Assert.AreEqual(numExceptionsExpected, numExceptionsCaught);
