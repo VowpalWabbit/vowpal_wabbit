@@ -51,6 +51,16 @@ namespace GD
 
   void sync_weights(vw& all);
 
+  inline float quake_InvSqrt(float x)
+  {    // Carmack/Quake/SGI fast method:
+	  float xhalf = 0.5f * x;
+	  int i = *(int*)&x; // store floating-point bits in integer
+	  i = 0x5f3759d5 - (i >> 1); // initial guess for Newton's method
+	  x = *(float*)&i; // convert new bits into float
+	  x = x*(1.5f - xhalf*x*x); // One round of Newton's method
+	  return x;
+  }
+
   static inline float InvSqrt(float x)
   {
 #if !defined(VW_NO_INLINE_SIMD)
@@ -65,20 +75,15 @@ namespace GD
     float32x2_t e3 = vmul_f32(e2, vrsqrts_f32(v1, vmul_f32(e2, e2)));
     // Extract result
     return vget_lane_f32(e3, 0);
-#  elif defined(__SSE2__)
+#  (elif defined(__SSE2__) || defined(_M_AMD64) || defined(_M_X64))
     __m128 eta = _mm_load_ss(&x);
     eta = _mm_rsqrt_ss(eta);
     _mm_store_ss(&x, eta);
-    // Fall through
+#else
+	  x = quake_InvSqrt(x);
 #  endif
 #else
-    // Carmack/Quake/SGI fast method:
-    float xhalf = 0.5f * x;
-    int i = *(int*)&x; // store floating-point bits in integer
-    i = 0x5f3759d5 - (i >> 1); // initial guess for Newton's method
-    x = *(float*)&i; // convert new bits into float
-    x = x*(1.5f - xhalf*x*x); // One round of Newton's method
-    // Fall through
+	  x = quake_InvSqrt(x);
 #endif
 
     return x;
@@ -439,7 +444,7 @@ void multipredict(gd& g, base_learner& base, example& ec, size_t count, size_t s
       if (sqrt_rate)
 	{  
 	  rate_decay = InvSqrt(w[adaptive]);
-	}
+	  }
       else
 	rate_decay = powf(w[adaptive],s.minus_power_t);
     }
@@ -455,7 +460,7 @@ void multipredict(gd& g, base_learner& base, example& ec, size_t count, size_t s
       else
 	rate_decay *= powf(w[normalized]*w[normalized], s.neg_norm_power);
     }
-    return rate_decay;
+	return rate_decay;
   }
 
   struct norm_data {
@@ -490,7 +495,6 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
       nd.norm_x += x2 / (w[normalized] * w[normalized]);
     }
     w[spare] = compute_rate_decay<sqrt_rate, adaptive, normalized>(nd.pd, fw);
-
     nd.pred_per_update += x2 * w[spare];
   }
 }
@@ -506,7 +510,6 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
     norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
     
     foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, nd);
-    
     if(normalized) {
       g.all->normalized_sum_norm_x += ld.weight * nd.norm_x;
       g.total_weight += ld.weight;
@@ -533,19 +536,17 @@ float compute_update(gd& g, example& ec)
 	pred_per_update = get_pred_per_update<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,ec);
       else
 	pred_per_update = ec.total_sum_feat_sq;
-      
       float delta_pred = pred_per_update * all.eta * ld.weight;
       if(!adaptive) 
 	{
 	  float t = (float)(ec.example_t - all.sd->weighted_holdout_examples);
 	  delta_pred *= powf(t, g.neg_power_t);
 	}
-      
       if(invariant)
 	update = all.loss->getUpdate(ec.pred.scalar, ld.label, delta_pred, pred_per_update);
       else
 	update = all.loss->getUnsafeUpdate(ec.pred.scalar, ld.label, delta_pred, pred_per_update);
-      
+
       // changed from ec.partial_prediction to ld.prediction
       ec.updated_prediction += pred_per_update * update;
       
@@ -561,7 +562,6 @@ float compute_update(gd& g, example& ec)
   
   if (sparse_l2)
     update -= g.sparse_l2 * ec.pred.scalar;
-  
   return update;
 }
 
