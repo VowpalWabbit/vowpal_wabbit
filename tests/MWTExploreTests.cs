@@ -170,6 +170,17 @@ namespace ExploreTests
         [TestMethod]
         public void Softmax()
         {
+            SoftmaxWithContext(useTestFixedActionContextUsingVariableInterface: false);
+        }
+
+        [TestMethod]
+        public void SoftmaxFixedActionUsingVariableActionInterface()
+        {
+            SoftmaxWithContext(useTestFixedActionContextUsingVariableInterface: true);
+        }
+
+        private static void SoftmaxWithContext(bool useTestFixedActionContextUsingVariableInterface)
+        {
             uint numActions = 10;
             float lambda = 0.5f;
             uint numActionsCover = 100;
@@ -187,7 +198,11 @@ namespace ExploreTests
             Random rand = new Random();
             for (uint i = 0; i < numDecisions; i++)
             {
-                uint chosenAction = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = (int)i });
+                var context = useTestFixedActionContextUsingVariableInterface ?
+                    new TestFixedActionContextUsingVariableInterface(numActions) { Id = (int)i } :
+                    new TestContext() { Id = (int)i };
+
+                uint chosenAction = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), context);
                 actions[chosenAction - 1]++; // action id is one-based
             }
 
@@ -258,6 +273,20 @@ namespace ExploreTests
         public void Generic()
         {
             uint numActions = 10;
+            TestContext testContext = new TestContext() { Id = 100 };
+            GenericWithContext(numActions, testContext);
+        }
+
+        [TestMethod]
+        public void GenericFixedActionUsingVariableActionInterface()
+        {
+            uint numActions = 10;
+            TestContext testContext = new TestFixedActionContextUsingVariableInterface(numActions) { Id = 100 };
+            GenericWithContext(numActions, testContext);
+        }
+
+        private static void GenericWithContext(uint numActions, TestContext testContext)
+        {
             string uniqueKey = "ManagedTestId";
             TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
             TestScorer<TestContext> scorer = new TestScorer<TestContext>(numActions);
@@ -265,7 +294,6 @@ namespace ExploreTests
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
             var explorer = new GenericExplorer<TestContext>(scorer, numActions);
 
-            TestContext testContext = new TestContext() { Id = 100 };
             uint chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext);
 
             var interactions = recorder.GetAllInteractions();
