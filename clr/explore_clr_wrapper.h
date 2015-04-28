@@ -38,7 +38,7 @@ namespace MultiWorldTesting {
         /// <param name="epsilon">The probability of a random exploration.</param>
         EpsilonGreedyExplorer(IPolicy<Ctx>^ defaultPolicy, float epsilon)
         {
-            if (Ctx::typeid->BaseType == IVariableActionContext::typeid)
+            if (Ctx::typeid->BaseType != IVariableActionContext::typeid)
             {
                 throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
             }
@@ -109,7 +109,7 @@ namespace MultiWorldTesting {
         /// <param name="tau">The number of events to be uniform over.</param>
         TauFirstExplorer(IPolicy<Ctx>^ defaultPolicy, UInt32 tau)
         {
-            if (Ctx::typeid->BaseType == IVariableActionContext::typeid)
+            if (Ctx::typeid->BaseType != IVariableActionContext::typeid)
             {
                 throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
             }
@@ -181,7 +181,7 @@ namespace MultiWorldTesting {
         /// <param name="lambda">lambda = 0 implies uniform distribution. Large lambda is equivalent to a max.</param>
         SoftmaxExplorer(IScorer<Ctx>^ defaultScorer, float lambda)
         {
-            if (Ctx::typeid->BaseType == IVariableActionContext::typeid)
+            if (Ctx::typeid->BaseType != IVariableActionContext::typeid)
             {
                 throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
             }
@@ -250,7 +250,7 @@ namespace MultiWorldTesting {
         /// <param name="defaultScorer">A function which outputs the probability of each action.</param>
         GenericExplorer(IScorer<Ctx>^ defaultScorer)
         {
-            if (Ctx::typeid->BaseType == IVariableActionContext::typeid)
+            if (Ctx::typeid->BaseType != IVariableActionContext::typeid)
             {
                 throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
             }
@@ -325,7 +325,7 @@ namespace MultiWorldTesting {
         /// <param name="defaultPolicies">A set of default policies to be uniform random over.</param>
         BootstrapExplorer(cli::array<IPolicy<Ctx>^>^ defaultPolicies)
         {
-            if (Ctx::typeid->BaseType == IVariableActionContext::typeid)
+            if (Ctx::typeid->BaseType != IVariableActionContext::typeid)
             {
                 throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
             }

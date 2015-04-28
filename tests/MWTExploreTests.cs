@@ -18,13 +18,27 @@ namespace ExploreTests
         public void EpsilonGreedy()
         {
             uint numActions = 10;
+            var testContext = new TestContext();
+
+            EpsilonGreedyWithContext(numActions, testContext);
+        }
+
+        [TestMethod]
+        public void EpsilonGreedyFixedActionUsingVariableActionInterface()
+        {
+            uint numActions = 10;
+            var testContext = new TestFixedActionContextUsingVariableInterface(numActions);
+
+            EpsilonGreedyWithContext(numActions, testContext);
+        }
+
+        private static void EpsilonGreedyWithContext(uint numActions, TestContext testContext)
+        {
             float epsilon = 0f;
             string uniqueKey = "ManagedTestId";
-
             TestRecorder<TestContext> recorder = new TestRecorder<TestContext>();
             TestPolicy policy = new TestPolicy();
             MwtExplorer<TestContext> mwtt = new MwtExplorer<TestContext>("mwt", recorder);
-            TestContext testContext = new TestContext();
             testContext.Id = 100;
 
             var explorer = new EpsilonGreedyExplorer<TestContext>(policy, epsilon, numActions);
@@ -230,6 +244,58 @@ namespace ExploreTests
             Assert.AreEqual(testContext.Id, interactions[0].Context.Id);
         }
 
+        [TestMethod]
+        public void UsageBadVariableActionContext()
+        {
+            int numExceptionsCaught = 0;
+            int numExceptionsExpected = 5;
+
+            var tryCatchArgumentException = (Action<Action>)((action) => {
+                try
+                {
+                    action();
+                }
+                catch (ArgumentException ex)
+                {
+                    if (ex.ParamName.ToLower() == "ctx")
+                    {
+                        numExceptionsCaught++;
+                    }
+                }
+            });
+
+            tryCatchArgumentException(() => {
+                var policy = new TestPolicy();
+                var explorer = new EpsilonGreedyExplorer<TestContext>(policy, 0.2f);
+            });
+            tryCatchArgumentException(() =>
+            {
+                var policy = new TestPolicy();
+                var explorer = new TauFirstExplorer<TestContext>(policy, 10);
+            });
+            tryCatchArgumentException(() =>
+            {
+                TestPolicy[] policies = new TestPolicy[2];
+                for (int i = 0; i < 2; i++)
+                {
+                    policies[i] = new TestPolicy(i * 2);
+                }
+                var explorer = new BootstrapExplorer<TestContext>(policies);
+            });
+            tryCatchArgumentException(() =>
+            {
+                var scorer = new TestScorer<TestContext>(10);
+                var explorer = new SoftmaxExplorer<TestContext>(scorer, 0.5f);
+            });
+            tryCatchArgumentException(() =>
+            {
+                var scorer = new TestScorer<TestContext>(10);
+                var explorer = new GenericExplorer<TestContext>(scorer);
+            });
+
+            Assert.AreEqual(numExceptionsExpected, numExceptionsCaught);
+        }
+
         [TestInitialize]
         public void TestInitialize()
         {
@@ -258,6 +324,21 @@ namespace ExploreTests
             get { return id; }
             set { id = value; }
         }
+    }
+
+    class TestFixedActionContextUsingVariableInterface : TestContext, IVariableActionContext
+    {
+        public TestFixedActionContextUsingVariableInterface(uint numberOfActions) 
+        {
+            NumberOfActions = numberOfActions;
+        }
+
+        public uint GetNumberOfActions()
+        {
+            return NumberOfActions;
+        }
+
+        public uint NumberOfActions { get; set; }
     }
 
     class TestRecorder<Ctx> : IRecorder<Ctx>
