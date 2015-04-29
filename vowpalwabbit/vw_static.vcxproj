@@ -22,7 +22,9 @@
     <ProjectGuid>{1E205806-7F80-47DD-A38D-FC08083F3592}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>vw_static</RootNamespace>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">.\</SolutionDir>
   </PropertyGroup>
+  <Import Project="$(SolutionDir)Build.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -187,20 +189,8 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <PropertyGroup Condition="'$(Platform)'=='x64'">
-    <BoostIncludeDir>c:\boost\x64\include\boost-1_56</BoostIncludeDir>
-    <BoostLibDir>c:\boost\x64\lib</BoostLibDir>
-    <ZlibIncludeDir>..\..\zlib-1.2.8</ZlibIncludeDir>
-    <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc11\x64\ZlibStat$(Configuration)</ZlibLibDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Platform)'=='Win32'">
-    <BoostIncludeDir>c:\boost\x86\include\boost-1_56</BoostIncludeDir>
-    <BoostLibDir>c:\boost\x64\lib</BoostLibDir>
-    <ZlibIncludeDir>..\..\zlib-1.2.8</ZlibIncludeDir>
-    <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc11\x86\ZlibStat$(Configuration)</ZlibLibDir>
-  </PropertyGroup>
   <Target Name="DepCheck">
-    <Error Text=" Cannot find zlibstat.lib in $(ZlibLibDir)" Condition="!Exists($(ZlibLibDir)\zlibstat.lib)" />
+    <Error Text=" Cannot find zlib.lib in $(ZlibLibDir)" Condition="!Exists($(ZlibLibDir)\zlib.lib)" />
   </Target>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -217,7 +207,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(BoostLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;$(ZlibLibDir)\zlibstat.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;$(ZlibLibDir)\zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>win32\make_config_h.exe</Command>
@@ -257,7 +247,7 @@
     <ClInclude Include="mf.h" />
     <ClInclude Include="gd_mf.h" />
     <ClInclude Include="lrq.h" />
-	<ClInclude Include="lrqfa.h" />
+    <ClInclude Include="lrqfa.h" />
     <ClInclude Include="log_multi.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="hash.h" />
@@ -362,5 +352,12 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
+  </Target>
 </Project>
