@@ -18,9 +18,9 @@ namespace vw_explore_tests
 			string unique_key = "1001";
 			int params = 101;
 
-			TestPolicy my_policy(params, num_actions);
+			TestPolicy<TestContext> my_policy(params, num_actions);
 			TestContext my_context;
-			TestRecorder my_recorder;
+            TestRecorder<TestContext> my_recorder;
 
 			MwtExplorer<TestContext> mwt("salt", my_recorder);
 			EpsilonGreedyExplorer<TestContext> explorer(my_policy, epsilon, num_actions);
@@ -40,32 +40,30 @@ namespace vw_explore_tests
 
 		TEST_METHOD(Epsilon_Greedy_Random)
 		{
-			int num_actions = 10;
-			float epsilon = 0.5f; // Verify that about half the time the default policy is chosen
-			int params = 101;
+            int num_actions = 10;
+            float epsilon = 0.5f; // Verify that about half the time the default policy is chosen
+            int params = 101;
+            TestPolicy<TestContext> my_policy(params, num_actions);
+            TestContext my_context;
 
-			TestPolicy my_policy(params, num_actions);
-			TestContext my_context;
-			TestRecorder my_recorder;
+            EpsilonGreedyExplorer<TestContext> explorer(my_policy, epsilon, num_actions); // Initialize in fixed # action mode
 
-			MwtExplorer<TestContext> mwt("salt", my_recorder);
-			EpsilonGreedyExplorer<TestContext> explorer(my_policy, epsilon, num_actions);
-
-			u32 policy_action = my_policy.Choose_Action(my_context);
-
-			int times_choose = 10000;
-			int times_policy_action_chosen = 0;
-			for (int i = 0; i < times_choose; i++)
-			{
-				u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(i), my_context);
-				if (chosen_action == policy_action)
-				{
-					times_policy_action_chosen++;
-				}
-			}
-
-			Assert::IsTrue(abs((double)times_policy_action_chosen / times_choose - 0.5) < 0.1);
+            this->Epsilon_Greedy_Random_Context(num_actions, my_context, explorer, my_policy);
 		}
+
+        TEST_METHOD(Epsilon_Greedy_Random_Var_Context)
+        {
+            int num_actions = 10;
+            float epsilon = 0.5f; // Verify that about half the time the default policy is chosen
+            int params = 101;
+            TestPolicy<TestVarContext> my_policy(params, num_actions);
+            TestVarContext my_context(num_actions);
+            
+            EpsilonGreedyExplorer<TestVarContext> explorer(my_policy, epsilon); // Initialize in variable # action mode
+            
+            // Test results using context that supports variable # action interface but returns fixed # action.
+            this->Epsilon_Greedy_Random_Context(num_actions, my_context, explorer, my_policy);
+        }
 
         TEST_METHOD(Epsilon_Greedy_Toggle_Exploration)
         {
@@ -73,9 +71,9 @@ namespace vw_explore_tests
             float epsilon = 0.5f;
             int params = 101;
 
-            TestPolicy my_policy(params, num_actions);
+            TestPolicy<TestContext> my_policy(params, num_actions);
             TestContext my_context;
-            TestRecorder my_recorder;
+            TestRecorder<TestContext> my_recorder;
 
             MwtExplorer<TestContext> mwt("salt", my_recorder);
             EpsilonGreedyExplorer<TestContext> explorer(my_policy, epsilon, num_actions);
@@ -120,8 +118,8 @@ namespace vw_explore_tests
 			u32 tau = 0;
 			int params = 101;
 
-			TestPolicy my_policy(params, num_actions);
-			TestRecorder my_recorder;
+			TestPolicy<TestContext> my_policy(params, num_actions);
+            TestRecorder<TestContext> my_recorder;
 			TestContext my_context;
 
 			MwtExplorer<TestContext> mwt("salt", my_recorder);
@@ -140,33 +138,31 @@ namespace vw_explore_tests
 		TEST_METHOD(Tau_First_Random)
 		{
 			int num_actions = 10;
-			u32 tau = 2;
-			TestPolicy my_policy(99, num_actions);
-			TestRecorder my_recorder;
-			TestContext my_context;
+            u32 tau = 2;
+            TestContext my_context;
+            TestPolicy<TestContext> my_policy(99, num_actions);
+            TauFirstExplorer<TestContext> explorer(my_policy, tau, num_actions);
 
-			MwtExplorer<TestContext> mwt("salt", my_recorder);
-			TauFirstExplorer<TestContext> explorer(my_policy, tau, num_actions);
-
-			u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
-			chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
-
-			// Tau expired, did not explore
-			chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(3), my_context);
-			Assert::AreEqual((u32)10, chosen_action);
-
-			// Only 2 interactions logged, 3rd one should not be stored
-			vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
-			float expected_probs[2] = { .1f, .1f };
-			this->Test_Interactions(interactions, 2, expected_probs);
+            this->Tau_First_Random_Context(num_actions, my_context, explorer);
 		}
+
+        TEST_METHOD(Tau_First_Random_Var_Context)
+        {
+            int num_actions = 10;
+            u32 tau = 2;
+            TestVarContext my_context(num_actions);
+            TestPolicy<TestVarContext> my_policy(99, num_actions);
+            TauFirstExplorer<TestVarContext> explorer(my_policy, tau);
+
+            this->Tau_First_Random_Context(num_actions, my_context, explorer);
+        }
 
         TEST_METHOD(Tau_First_Toggle_Exploration)
         {
             int num_actions = 10;
             u32 tau = 2;
-            TestPolicy my_policy(99, num_actions);
-            TestRecorder my_recorder;
+            TestPolicy<TestContext> my_policy(99, num_actions);
+            TestRecorder<TestContext> my_recorder;
             TestContext my_context;
 
             MwtExplorer<TestContext> mwt("salt", my_recorder);
@@ -209,11 +205,11 @@ namespace vw_explore_tests
 		{
 			int num_actions = 10;
 			int params = 101;
-			TestRecorder my_recorder;
+            TestRecorder<TestContext> my_recorder;
 
 			vector<unique_ptr<IPolicy<TestContext>>> policies;
-			policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params, num_actions)));
-			policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params + 1, num_actions)));
+            policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy<TestContext>(params, num_actions)));
+            policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy<TestContext>(params + 1, num_actions)));
 
 			TestContext my_context;
 
@@ -235,38 +231,44 @@ namespace vw_explore_tests
 		}
 
 		TEST_METHOD(Bootstrap_Random)
-		{
-			int num_actions = 10;
-			int params = 101;
-			TestRecorder my_recorder;
+        {
+            int num_actions = 10;
+            int params = 101;
+            TestContext my_context;
 
-			vector<unique_ptr<IPolicy<TestContext>>> policies;
-			policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params, num_actions)));
-			policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params + 1, num_actions)));
+            vector<unique_ptr<IPolicy<TestContext>>> policies;
+            policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy<TestContext>(params, num_actions)));
+            policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy<TestContext>(params + 1, num_actions)));
 
-			TestContext my_context;
+            BootstrapExplorer<TestContext> explorer(policies, num_actions);
 
-			MwtExplorer<TestContext> mwt("c++-test", my_recorder);
-			BootstrapExplorer<TestContext> explorer(policies, num_actions);
-
-			u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
-			chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
-
-			// Two bags choosing different actions so prob of each is 1/2
-			vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
-			float expected_probs[2] = { .5f, .5f };
-			this->Test_Interactions(interactions, 2, expected_probs);
+            this->Bootstrap_Random_Context(num_actions, my_context, explorer);
 		}
+
+        TEST_METHOD(Bootstrap_Random_Var_Context)
+        {
+            int num_actions = 10;
+            int params = 101;
+            TestVarContext my_context(num_actions);
+
+            vector<unique_ptr<IPolicy<TestVarContext>>> policies;
+            policies.push_back(unique_ptr<IPolicy<TestVarContext>>(new TestPolicy<TestVarContext>(params, num_actions)));
+            policies.push_back(unique_ptr<IPolicy<TestVarContext>>(new TestPolicy<TestVarContext>(params + 1, num_actions)));
+
+            BootstrapExplorer<TestVarContext> explorer(policies);
+
+            this->Bootstrap_Random_Context(num_actions, my_context, explorer);
+        }
 
         TEST_METHOD(Bootstrap_Toggle_Exploration)
         {
             int num_actions = 10;
             int params = 101;
-            TestRecorder my_recorder;
+            TestRecorder<TestContext> my_recorder;
 
             vector<unique_ptr<IPolicy<TestContext>>> policies;
-            policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params, num_actions)));
-            policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy(params + 1, num_actions)));
+            policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy<TestContext>(params, num_actions)));
+            policies.push_back(unique_ptr<IPolicy<TestContext>>(new TestPolicy<TestContext>(params + 1, num_actions)));
 
             TestContext my_context;
 
@@ -313,55 +315,39 @@ namespace vw_explore_tests
 
 		TEST_METHOD(Softmax)
 		{
-			int num_actions = 10;
-			float lambda = 0.f;
-			int scorer_arg = 7;
-			u32 NUM_ACTIONS_COVER = 100;
-			float C = 5.0f;
+            int scorer_arg = 7;
+            int num_actions = 10;
+            float lambda = 0.f;
 
-			TestScorer my_scorer(scorer_arg, num_actions);
-			TestRecorder my_recorder;
-			TestContext my_context;
+            TestContext my_context;
 
-			MwtExplorer<TestContext> mwt("salt", my_recorder);
-			SoftmaxExplorer<TestContext> explorer(my_scorer, lambda, num_actions);
+            TestScorer<TestContext> my_scorer(scorer_arg, num_actions);
+            SoftmaxExplorer<TestContext> explorer(my_scorer, lambda, num_actions);
 
-			// Scale C up since we have fewer interactions
-			u32 num_decisions = (u32)(num_actions * log(num_actions * 1.0) + log(NUM_ACTIONS_COVER * 1.0 / num_actions) * C * num_actions);
-			// The () following the array should ensure zero-initialization
-			u32* actions = new u32[num_actions]();
-			u32 i;
-			for (i = 0; i < num_decisions; i++)
-			{
-				u32 action = mwt.Choose_Action(explorer, this->Get_Unique_Key(i + 1), my_context);
-				// Action IDs are 1-based
-				actions[action - 1]++;
-			}
-			// Ensure all actions are covered
-			for (i = 0; i < (u32)num_actions; i++)
-			{
-				Assert::IsTrue(actions[i] > 0);
-			}		
-			float* expected_probs = new float[num_decisions];
-			for (i = 0; i < num_decisions; i++)
-			{
-				// Our default scorer currently assigns equal weight to each action
-				expected_probs[i] = 1.0f / num_actions;
-			}
-			vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
-			this->Test_Interactions(interactions, num_decisions, expected_probs);
-
-			delete actions;
-			delete expected_probs;
+            this->Softmax_Context(num_actions, my_context, explorer);
 		}
+
+        TEST_METHOD(Softmax_Var_Context)
+        {
+            int scorer_arg = 7;
+            int num_actions = 10;
+            float lambda = 0.f;
+
+            TestVarContext my_context(num_actions);
+
+            TestScorer<TestVarContext> my_scorer(scorer_arg, num_actions);
+            SoftmaxExplorer<TestVarContext> explorer(my_scorer, lambda);
+
+            this->Softmax_Context(num_actions, my_context, explorer);
+        }
 
 		TEST_METHOD(Softmax_Scores)
 		{
 			int num_actions = 10;
 			float lambda = 0.5f;
 			int scorer_arg = 7;
-			TestScorer my_scorer(scorer_arg, num_actions, /* uniform = */ false);
-			TestRecorder my_recorder;
+            TestScorer<TestContext> my_scorer(scorer_arg, num_actions, /* uniform = */ false);
+            TestRecorder<TestContext> my_recorder;
 			TestContext my_context;
 
 			MwtExplorer<TestContext> mwt("salt", my_recorder);
@@ -386,8 +372,8 @@ namespace vw_explore_tests
             int num_actions = 10;
             float lambda = 0.5f;
             int scorer_arg = 7;
-            TestScorer my_scorer(scorer_arg, num_actions, /* uniform = */ false);
-            TestRecorder my_recorder;
+            TestScorer<TestContext> my_scorer(scorer_arg, num_actions, /* uniform = */ false);
+            TestRecorder<TestContext> my_recorder;
             TestContext my_context;
 
             MwtExplorer<TestContext> mwt("salt", my_recorder);
@@ -443,23 +429,29 @@ namespace vw_explore_tests
 
 		TEST_METHOD(Generic)
 		{
-			int num_actions = 10;
-			int scorer_arg = 7;
-			TestScorer my_scorer(scorer_arg, num_actions);
-			TestRecorder my_recorder;
-			TestContext my_context;
+            int num_actions = 10;
+            int scorer_arg = 7;
+            
+            TestContext my_context;
+            
+            TestScorer<TestContext> my_scorer(scorer_arg, num_actions);
+            GenericExplorer<TestContext> explorer(my_scorer, num_actions);
 
-			MwtExplorer<TestContext> mwt("salt", my_recorder);
-			GenericExplorer<TestContext> explorer(my_scorer, num_actions);
-
-			u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
-			chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
-			chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(3), my_context);
-
-			vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
-			float expected_probs[3] = { .1f, .1f, .1f };
-			this->Test_Interactions(interactions, 3, expected_probs);
+            this->Generic_Context(num_actions, my_context, explorer);
 		}
+
+        TEST_METHOD(Generic_Var_Context)
+        {
+            int num_actions = 10;
+            int scorer_arg = 7;
+
+            TestVarContext my_context(num_actions);
+
+            TestScorer<TestVarContext> my_scorer(scorer_arg, num_actions);
+            GenericExplorer<TestVarContext> explorer(my_scorer);
+
+            this->Generic_Context(num_actions, my_context, explorer);
+        }
 
 		TEST_METHOD(End_To_End_Epsilon_Greedy)
 		{
@@ -644,8 +636,8 @@ namespace vw_explore_tests
 		{
 			int num_ex = 0;
 			int params = 101;
-			TestPolicy my_policy(params, 0);
-			TestScorer my_scorer(params, 0);
+            TestPolicy<TestContext> my_policy(params, 0);
+            TestScorer<TestContext> my_scorer(params, 0);
 			vector<unique_ptr<IPolicy<TestContext>>> policies;
 
 			COUNT_INVALID(EpsilonGreedyExplorer<TestContext> explorer(my_policy, .5f, 0);) // Invalid # actions, must be > 0
@@ -670,7 +662,7 @@ namespace vw_explore_tests
 			// Default policy returns action outside valid range
 			COUNT_BAD_CALL
 			(
-				TestRecorder recorder;
+                TestRecorder<TestContext> recorder;
 				TestBadPolicy policy;
 				TestContext context;
 
@@ -681,7 +673,7 @@ namespace vw_explore_tests
 			)
 			COUNT_BAD_CALL
 			(
-				TestRecorder recorder;
+                TestRecorder<TestContext> recorder;
 				TestBadPolicy policy;
 				TestContext context;
 
@@ -691,7 +683,7 @@ namespace vw_explore_tests
 			)
 			COUNT_BAD_CALL
 			(
-				TestRecorder recorder;
+                TestRecorder<TestContext> recorder;
 				TestContext context;
 
 				vector<unique_ptr<IPolicy<TestContext>>> policies;
@@ -712,7 +704,7 @@ namespace vw_explore_tests
 			(
 				u32 num_actions = 1;
 				FixedScorer scorer(num_actions, -1);
-				MwtExplorer<TestContext> mwt("salt", TestRecorder());
+                MwtExplorer<TestContext> mwt("salt", TestRecorder<TestContext>());
 				GenericExplorer<TestContext> explorer(scorer, num_actions);
 				mwt.Choose_Action(explorer, "test", TestContext());
 			)
@@ -720,7 +712,7 @@ namespace vw_explore_tests
 			(
 				u32 num_actions = 1;
 				FixedScorer scorer(num_actions, 0);
-				MwtExplorer<TestContext> mwt("salt", TestRecorder());
+                MwtExplorer<TestContext> mwt("salt", TestRecorder<TestContext>());
 				GenericExplorer<TestContext> explorer(scorer, num_actions);
 				mwt.Choose_Action(explorer, "test", TestContext());
 			)
@@ -780,6 +772,119 @@ namespace vw_explore_tests
 		}
 
 	private: 
+
+        template <class TContext>
+        void Epsilon_Greedy_Random_Context(int num_actions, TContext& my_context, EpsilonGreedyExplorer<TContext>& explorer, TestPolicy<TContext>& my_policy)
+        {
+            TestRecorder<TContext> my_recorder;
+            MwtExplorer<TContext> mwt("salt", my_recorder);
+
+            u32 policy_action = my_policy.Choose_Action(my_context);
+
+            int times_choose = 10000;
+            int times_policy_action_chosen = 0;
+            for (int i = 0; i < times_choose; i++)
+            {
+                u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(i), my_context);
+                if (chosen_action == policy_action)
+                {
+                    times_policy_action_chosen++;
+                }
+            }
+
+            Assert::IsTrue(abs((double)times_policy_action_chosen / times_choose - 0.5) < 0.1);
+        }
+
+        template <class TContext>
+        void Tau_First_Random_Context(int num_actions, TContext& my_context, TauFirstExplorer<TContext>& explorer)
+        {
+            TestRecorder<TContext> my_recorder;
+            MwtExplorer<TContext> mwt("salt", my_recorder);
+
+            u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
+            chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
+
+            // Tau expired, did not explore
+            chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(3), my_context);
+            Assert::AreEqual((u32)10, chosen_action);
+
+            // Only 2 interactions logged, 3rd one should not be stored
+            vector<TestInteraction<TContext>> interactions = my_recorder.Get_All_Interactions();
+            float expected_probs[2] = { .1f, .1f };
+            this->Test_Interactions(interactions, 2, expected_probs);
+        }
+
+        template <class TContext>
+        void Bootstrap_Random_Context(int num_actions, TContext& my_context, BootstrapExplorer<TContext>& explorer)
+        {
+            TestRecorder<TContext> my_recorder;
+
+            MwtExplorer<TContext> mwt("c++-test", my_recorder);
+
+            u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
+            chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
+
+            // Two bags choosing different actions so prob of each is 1/2
+            vector<TestInteraction<TContext>> interactions = my_recorder.Get_All_Interactions();
+            float expected_probs[2] = { .5f, .5f };
+            this->Test_Interactions(interactions, 2, expected_probs);
+        }
+
+        template <class TContext>
+        void Softmax_Context(int num_actions, TContext& my_context, SoftmaxExplorer<TContext>& explorer)
+        {
+            u32 NUM_ACTIONS_COVER = 100;
+            float C = 5.0f;
+
+            TestRecorder<TContext> my_recorder;
+
+            MwtExplorer<TContext> mwt("salt", my_recorder);
+
+            // Scale C up since we have fewer interactions
+            u32 num_decisions = (u32)(num_actions * log(num_actions * 1.0) + log(NUM_ACTIONS_COVER * 1.0 / num_actions) * C * num_actions);
+            // The () following the array should ensure zero-initialization
+            u32* actions = new u32[num_actions]();
+            u32 i;
+            for (i = 0; i < num_decisions; i++)
+            {
+                u32 action = mwt.Choose_Action(explorer, this->Get_Unique_Key(i + 1), my_context);
+                // Action IDs are 1-based
+                actions[action - 1]++;
+            }
+            // Ensure all actions are covered
+            for (i = 0; i < (u32)num_actions; i++)
+            {
+                Assert::IsTrue(actions[i] > 0);
+            }
+            float* expected_probs = new float[num_decisions];
+            for (i = 0; i < num_decisions; i++)
+            {
+                // Our default scorer currently assigns equal weight to each action
+                expected_probs[i] = 1.0f / num_actions;
+            }
+            vector<TestInteraction<TContext>> interactions = my_recorder.Get_All_Interactions();
+            this->Test_Interactions(interactions, num_decisions, expected_probs);
+
+            delete actions;
+            delete expected_probs;
+        }
+
+        template <class TContext>
+        void Generic_Context(int num_actions, TContext& my_context, GenericExplorer<TContext>& explorer)
+        {
+            TestRecorder<TContext> my_recorder;
+
+            MwtExplorer<TContext> mwt("salt", my_recorder);
+
+            u32 chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context);
+            chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
+            chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(3), my_context);
+
+            vector<TestInteraction<TContext>> interactions = my_recorder.Get_All_Interactions();
+            float expected_probs[3] = { .1f, .1f, .1f };
+            this->Test_Interactions(interactions, 3, expected_probs);
+        }
+
 		// Test end-to-end using StringRecorder with no crash
 		template <class Exp>
 		void End_To_End(MwtExplorer<SimpleContext>& mwt, Exp& explorer, StringRecorder<SimpleContext>& recorder)

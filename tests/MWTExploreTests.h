@@ -13,6 +13,23 @@ class TestContext
 
 };
 
+class TestVarContext : public TestContext, public IVariableActionContext
+{
+public:
+    TestVarContext(u32 num_actions)
+    {
+        m_num_actions = num_actions;
+    }
+
+    u32 Get_Number_Of_Actions()
+    {
+        return m_num_actions;
+    }
+
+private:
+    u32 m_num_actions;
+};
+
 template <class Ctx>
 struct TestInteraction
 {
@@ -22,11 +39,12 @@ struct TestInteraction
 	string Unique_Key;
 };
 
-class TestPolicy : public IPolicy<TestContext>
+template <class TContext>
+class TestPolicy : public IPolicy<TContext>
 {
 public:
 	TestPolicy(int params, int num_actions) : m_params(params), m_num_actions(num_actions) { }
-	u32 Choose_Action(TestContext& context)
+    u32 Choose_Action(TContext& context)
 	{
 		return m_params % m_num_actions + 1; // action id is one-based
 	}
@@ -35,14 +53,15 @@ private:
 	int m_num_actions;
 };
 
-class TestScorer : public IScorer<TestContext>
+template <class TContext>
+class TestScorer : public IScorer<TContext>
 {
 public:
 	TestScorer(int params, int num_actions, bool uniform = true) : 
 		m_params(params), m_num_actions(num_actions), m_uniform(uniform) 
 	{ }
 
-	vector<float> Score_Actions(TestContext& context)
+    vector<float> Score_Actions(TContext& context)
 	{
 		vector<float> scores;
 		if (m_uniform)
@@ -146,19 +165,20 @@ public:
 	}
 };
 
-class TestRecorder : public IRecorder<TestContext>
+template <class TContext>
+class TestRecorder : public IRecorder<TContext>
 {
 public:
-	virtual void Record(TestContext& context, u32 action, float probability, string unique_key)
+    virtual void Record(TContext& context, u32 action, float probability, string unique_key)
 	{
 		m_interactions.push_back({ context, action, probability, unique_key });
 	}
 
-	vector<TestInteraction<TestContext>> Get_All_Interactions()
+    vector<TestInteraction<TContext>> Get_All_Interactions()
 	{
 		return m_interactions;
 	}
 
 private:
-	vector<TestInteraction<TestContext>> m_interactions;
+    vector<TestInteraction<TContext>> m_interactions;
 };
