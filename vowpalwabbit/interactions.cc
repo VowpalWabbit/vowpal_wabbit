@@ -58,7 +58,7 @@ void generate_interactions(vw& all, example& ec)
 
                                 cache.push_back(feature {
                                                     ft_weight,
-                                                    snd->weight_index ^ halfhash << stride_shift
+                                                    (snd->weight_index ^ halfhash) << stride_shift
                                                 });
 
                                 sum_feat_sq += ft_weight * ft_weight;
@@ -130,7 +130,7 @@ void generate_interactions(vw& all, example& ec)
 
                                             cache.push_back(feature {
                                                                 ft_weight2,
-                                                                thr->weight_index ^ halfhash2 << stride_shift
+                                                                (thr->weight_index ^ halfhash2) << stride_shift
                                                             });
 
 
