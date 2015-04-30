@@ -9,18 +9,18 @@ num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0  -1.0000   0.0000        3
-1.211740 1.423480            2            2.0   1.0000  -0.1931        3
-0.963641 0.715542            4            4.0   1.0000   0.0888        3
-0.645542 0.327443            8            8.0   1.0000   0.5890        3
-0.353358 0.061174           16           16.0   1.0000   0.8558        3
-0.178619 0.003879           32           32.0   1.0000   0.9818        3
+1.211530 1.423060            2            2.0   1.0000  -0.1929        3
+0.963679 0.715827            4            4.0   1.0000   0.0886        3
+0.645767 0.327855            8            8.0   1.0000   0.5883        3
+0.353561 0.061356           16           16.0   1.0000   0.8556        3
+0.178733 0.003904           32           32.0   1.0000   0.9817        3
 
 finished run
 number of examples per pass = 6
 passes used = 10
 weighted example sum = 60.000000
 weighted label sum = 0.000000
-average loss = 0.095275
+average loss = 0.095336
 best constant = 0.000000
 best constant's loss = 1.000000
 total feature number = 180
