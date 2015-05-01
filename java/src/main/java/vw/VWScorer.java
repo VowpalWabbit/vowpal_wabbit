@@ -21,8 +21,24 @@ public class VWScorer {
         }
     }
 
+    private boolean isClosed;
+
     public VWScorer(String command){
+        isClosed = false;
         initialize(command);
+    }
+
+    /**
+     * Probably the only acceptable use of a finalizer.  Because this class
+     * uses native code, we have to manually clean up the native code when this
+     * object is garbage collected.
+     */
+    @Override
+    public void finalize() {
+        if (!isClosed) {
+            closeInstance();
+            isClosed = true;
+        }
     }
 
     /**
@@ -52,8 +68,6 @@ public class VWScorer {
    
     /**
      * Properly shutdown vw instance
-     * Made this public and removed finalize call, as finalize is not guaranteed to be called
-     * and it caused memory errors to rely on it. Instead explicitly call this method.
      */
-    public native void closeInstance();
+    private native void closeInstance();
 }
