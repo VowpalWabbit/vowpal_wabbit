@@ -49,6 +49,8 @@ namespace GD{
 
        for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
            foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[*i].begin, ec.atomics[*i].end, dat, offset);
+
+       INTERACTIONS::generate_interactions<R,S,T>(all, ec, dat);
    }
 
   // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x, feature_weight)
