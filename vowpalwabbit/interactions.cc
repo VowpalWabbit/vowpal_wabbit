@@ -6,18 +6,18 @@
 namespace INTERACTIONS
 {
 
-struct eval_gen_data
-{
-    size_t& new_features_cnt;
-    float& new_features_weight;
-    eval_gen_data(size_t& features_cnt, float& features_weight): new_features_cnt(features_cnt), new_features_weight(features_weight) {}
-};
+//struct eval_gen_data
+//{
+//    size_t& new_features_cnt;
+//    float& new_features_weight;
+//    eval_gen_data(size_t& features_cnt, float& features_weight): new_features_cnt(features_cnt), new_features_weight(features_weight) {}
+//};
 
-void ft_cnt(eval_gen_data& dat, float fx, uint32_t /*fw*/)
-{
-    ++ dat.new_features_cnt;
-    dat.new_features_weight += fx * fx;
-}
+//void ft_cnt(eval_gen_data& dat, float fx, uint32_t /*fw*/)
+//{
+//    ++ dat.new_features_cnt;
+//    dat.new_features_weight += fx * fx;
+//}
 
 inline size_t factor(const size_t n, size_t start_from = 2)
 {
@@ -35,7 +35,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 {
     new_features_cnt = 0;
     new_features_weight = 0.;
-//    return;
+
     v_array<float> results = v_init<float>();
 
     if (all.permutations)
