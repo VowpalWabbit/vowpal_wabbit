@@ -48,15 +48,15 @@ namespace GD{
   template <class R, void (*T)(R&, const float, float&)>
   inline void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R& dat, uint32_t offset=0, float mult=1.)
   {
-    for (feature* f = begin; f!= end; f++)
+    for (feature* f = begin; f != end; ++f)
       T(dat, mult*f->x, weight_vector[(f->weight_index + offset) & weight_mask]);
   }
 
   // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_index)
   template <class R, void (*T)(R&, float, uint32_t)>
-   void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R&dat, uint32_t offset=0, float mult=1.)
+   void foreach_feature(weight* /*weight_vector*/, size_t /*weight_mask*/, feature* begin, feature* end, R&dat, uint32_t offset=0, float mult=1.)
    {
-     for (feature* f = begin; f!= end; f++)
+     for (feature* f = begin; f != end; ++f)
        T(dat, mult*f->x, f->weight_index + offset);
    }
  
