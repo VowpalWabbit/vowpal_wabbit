@@ -1,0 +1,6 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Target Name="Build">
+        <MSBuild Projects="vowpalwabbit/vw.sln..." Properties="Configuration=Debug"/>
+        <MSBuild Projects="vowpalwabbit/vw.sln..." Properties="Configuration=Release"/>
+    </Target>
+</Project>
