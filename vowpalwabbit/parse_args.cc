@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include "parse_regressor.h"
 #include "parser.h"
 #include "vw.h"
+#include "interactions.h"
 
 #include "sender.h"
 #include "nn.h"
@@ -323,6 +324,9 @@ void parse_feature_tweaks(vw& all)
     ("affix", po::value<string>(), "generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace")
     ("spelling", po::value< vector<string> >(), "compute spelling features for a give namespace (use '_' for default namespace)")
     ("dictionary", po::value< vector<string> >(), "read a dictionary for additional features (arg either 'x:file' or just 'file')")
+    ("interactions", po::value< vector<string> > (), "Create feature interactions of any level between namespaces.")
+    ("permutations", "Use permutations instead of combinations for feature interactions of same namespace.")
+    ("leave_duplicate_interactions", "Don't remove interactions with duplicate combinations of namespaces. For ex. this is a duplicate: '-q ab -q ba' and a lot more in '-q ::'.")
     ("quadratic,q", po::value< vector<string> > (), "Create and use quadratic features")
     ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
     ("cubic", po::value< vector<string> > (),
@@ -395,93 +399,84 @@ void parse_feature_tweaks(vw& all)
 	}
     }
 
+  all.permutations = vm.count("permutations");
+
+  // prepare namespace interactions
+  v_array<v_string> expanded_interactions = v_init<v_string>();
+
   if (vm.count("quadratic"))
-    {
-      all.pairs = vm["quadratic"].as< vector<string> >();
-      vector<string> newpairs;
-      //string tmp;
-      char printable_start = '!';
-      char printable_end = '~';
-      int valid_ns_size = printable_end - printable_start - 1; //will skip two characters
-
-      if(!all.quiet)
-        cerr<<"creating quadratic features for pairs: ";
-
-      for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++){
-        if(!all.quiet){
-          cerr << *i << " ";
-          if (i->length() > 2)
-            cerr << endl << "warning, ignoring characters after the 2nd.\n";
-          if (i->length() < 2) {
-            cerr << endl << "error, quadratic features must involve two sets.\n";
-            throw exception();
-          }
-        }
-        //-q x:
-        if((*i)[0]!=':'&&(*i)[1]==':'){
-          newpairs.reserve(newpairs.size() + valid_ns_size);
-          for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j))
-              newpairs.push_back(string(1,(*i)[0])+j);
-          }
-        }
-        //-q :x
-        else if((*i)[0]==':'&&(*i)[1]!=':'){
-          newpairs.reserve(newpairs.size() + valid_ns_size);
-          for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j)){
-	      stringstream ss;
-	      ss << j << (*i)[1];
-	      newpairs.push_back(ss.str());
-	    }
-          }
-        }
-        //-q ::
-        else if((*i)[0]==':'&&(*i)[1]==':'){
-	  cout << "in pair creation" << endl;
-          newpairs.reserve(newpairs.size() + valid_ns_size*valid_ns_size);
-	  stringstream ss;
-	  ss << ' ' << ' ';
-	  newpairs.push_back(ss.str());
-          for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j)){
-              for (char k=printable_start; k<=printable_end; k++){
-                if(valid_ns(k)){
-		  stringstream ss;
-                  ss << j << k;
-                  newpairs.push_back(ss.str());
-		}
-              }
-            }
-          }
-        }
-        else{
-          newpairs.push_back(string(*i));
-        }
+  {
+      const vector<string> vec_arg = vm["quadratic"].as< vector<string> >();
+      if (!all.quiet)
+      {
+          cerr << "creating quadratic features for pairs: ";
+          for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+              if (!all.quiet) cerr << *i << " ";
       }
-      newpairs.swap(all.pairs);
-      if(!all.quiet)
-        cerr<<endl;
-    }
+      expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
+
+      if (!all.quiet) cerr << endl;
+  }
 
   if (vm.count("cubic"))
-    {
-      all.triples = vm["cubic"].as< vector<string> >();
+  {
+      vector<string> vec_arg = vm["cubic"].as< vector<string> >();
       if (!all.quiet)
-	{
-	  cerr << "creating cubic features for triples: ";
-	  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-	    cerr << *i << " ";
-	    if (i->length() > 3)
-	      cerr << endl << "warning, ignoring characters after the 3rd.\n";
-	    if (i->length() < 3) {
-	      cerr << endl << "error, cubic features must involve three sets.\n";
-	      throw exception();
-	    }
-	  }
-	  cerr << endl;
-	}
-    }
+      {
+          cerr << "creating cubic features for triples: ";
+          for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+              if (!all.quiet) cerr << *i << " ";
+      }
+
+      v_array<v_string> exp_cubic = INTERACTIONS::expand_interactions(vec_arg, 3, "error, cubic features must involve three sets.");
+      push_many(expanded_interactions, exp_cubic.begin, exp_cubic.size());
+      exp_cubic.delete_v();
+
+      if (!all.quiet) cerr << endl;
+  }
+
+  if (vm.count("interactions"))
+  {
+      vector<string> vec_arg = vm["interactions"].as< vector<string> >();
+      if (!all.quiet)
+      {
+          cerr << "creating features for following interactions: ";
+          for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+              if (!all.quiet) cerr << *i << " ";
+      }
+
+      v_array<v_string> exp_inter = INTERACTIONS::expand_interactions(vec_arg, 0, "");
+      push_many(expanded_interactions, exp_inter.begin, exp_inter.size());
+      exp_inter.delete_v();
+
+      if (!all.quiet) cerr << endl;
+  }
+
+  if (expanded_interactions.size() > 0)
+  {
+
+      size_t removed_cnt;
+      size_t sorted_cnt;
+      INTERACTIONS::sort_and_filter_duplicate_interactions(expanded_interactions, !vm.count("leave_duplicate_interactions"), removed_cnt, sorted_cnt);
+
+      if (removed_cnt > 0)
+          cerr << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.' << endl << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
+      if (sorted_cnt > 0)
+          cerr << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
+
+      all.interactions = expanded_interactions;
+
+      // copy interactions of size 2 and 3 to old vectors for backward compatibility
+      for (v_string* i = expanded_interactions.begin; i != expanded_interactions.end; ++i)
+      {
+          const size_t len = i->size();
+          if (len == 2)
+              all.pairs.push_back(v_string2string(*i));
+          else if (len == 3)
+              all.triples.push_back(v_string2string(*i));
+      }
+  }
+
 
   for (size_t i = 0; i < 256; i++)
     all.ignore[i] = false;
