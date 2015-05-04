@@ -484,7 +484,7 @@ template <bool is_learn>
                 final_prediction += ec.pred.scalar * o.alpha[i];
 	}
 	else { 
-	    cerr << is_learn << " stopping at learner "  << i+1 << endl;
+	    // cerr << is_learn << " stopping at learner "  << i+1 << endl;
 	    // cerr << "stopping point "  << stopping_point;
 	    // cerr << " v_partial_sum "  << v_partial_sum << endl;
 	    break;
