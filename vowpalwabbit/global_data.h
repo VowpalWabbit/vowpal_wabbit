@@ -384,7 +384,7 @@ struct vw {
   size_t passes_complete;
   size_t parse_mask; // 1 << num_bits -1
   bool permutations;
-  std::vector<std::string> interactions; // interactions of namespaces to cross.
+  v_array<v_string> interactions; // interactions of namespaces to cross.
   std::vector<std::string> pairs; // pairs of features to cross.
   std::vector<std::string> triples; // triples of features to cross.
   bool ignore_some;

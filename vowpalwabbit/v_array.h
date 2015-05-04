@@ -130,7 +130,6 @@ template<class T> struct v_array{
  }
 };
 
-
 #ifdef _WIN32
 #undef max
 #undef min
@@ -188,3 +187,22 @@ template<class T> bool v_array_contains(v_array<T> &A, T x) {
     if (*e == x) return true;
   return false;
 }
+
+typedef v_array<unsigned char> v_string;
+
+inline v_string string2v_string(const std::string& s)
+{
+    v_string res = v_init<unsigned char>();
+    if (!s.empty())
+        push_many(res, (unsigned  char*)s.data(), s.size());
+    return res;
+}
+
+inline std::string v_string2string(const v_string& v_s)
+{
+    std::string res;
+    for (unsigned char* i = v_s.begin; i != v_s.end; ++i)
+        res.push_back(*i);
+    return res;
+}
+
