@@ -50,6 +50,7 @@ namespace po = boost::program_options;
 #include "unique_sort.h"
 #include "constant.h"
 #include "vw.h"
+#include "interactions.h"
 
 using namespace std;
 
@@ -841,22 +842,13 @@ void setup_example(vw& all, example* ae)
       ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
     }
 
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
-    {
-      ae->num_features 
-	+= ae->atomics[(int)(*i)[0]].size()
-	*ae->atomics[(int)(*i)[1]].size();
-      ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]]*ae->sum_feat_sq[(int)(*i)[1]];
-    }
-  
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
-    {
-      ae->num_features 
-	+= ae->atomics[(int)(*i)[0]].size()
-	*ae->atomics[(int)(*i)[1]].size()
-	*ae->atomics[(int)(*i)[2]].size();
-      ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]] * ae->sum_feat_sq[(int)(*i)[1]] * ae->sum_feat_sq[(int)(*i)[2]];
-    }
+  // generate atomic features for all interactions
+  size_t new_features_cnt;
+  float new_features_sum_feat_sq;
+  INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
+  ae->num_features += new_features_cnt;
+  ae->total_sum_feat_sq += new_features_sum_feat_sq;
+
 }
 }
 
