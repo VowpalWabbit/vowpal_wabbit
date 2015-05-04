@@ -20,8 +20,6 @@ using namespace LEARNER;
 
 inline float sign(float w) { if (w <= 0.) return -1.; else  return 1.;}
 
-//#define DEBUG
-
 void euclidean_proj_simplex(std::vector<float> &v) {
     float sum = 0;
 
