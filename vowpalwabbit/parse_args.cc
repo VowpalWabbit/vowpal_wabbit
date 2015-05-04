@@ -1094,6 +1094,11 @@ namespace VW {
       delete all.read_dictionaries[i].dict;
     }
     delete all.loss;
+
+    // destroy all interactions and array of them
+    for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i) i->delete_v();
+    all.interactions.delete_v();
+
     if (delete_all) delete &all;
   }
 }
