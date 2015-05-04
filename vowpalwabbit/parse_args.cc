@@ -60,13 +60,6 @@ bool ends_with(string const &fullString, string const &ending)
     }
 }
 
-bool valid_ns(char c)
-{
-    if (c=='|'||c==':')
-        return false;
-    return true;
-}
-
 bool substring_equal(substring&a, substring&b) {
   return (a.end - a.begin == b.end - b.begin) // same length
       && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);

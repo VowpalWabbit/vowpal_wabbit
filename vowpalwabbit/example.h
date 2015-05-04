@@ -115,3 +115,10 @@ inline int example_is_newline(example& ec)
           ((ec.indices.size() == 1) &&
            (ec.indices.last() == constant_namespace)));
 }
+
+inline bool valid_ns(char c)
+{
+    if (c=='|'||c==':')
+        return false;
+    return true;
+}
