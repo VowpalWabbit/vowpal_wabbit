@@ -70,11 +70,7 @@ FLAGS = -std=c++0x -O2 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS)
 #CXX = g++
 
 # for valgrind / gdb debugging
-<<<<<<< HEAD
-FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -ffast-math -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) -g -O0  -fPIC
-=======
-#FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) -g -O0  -fPIC
->>>>>>> master
+# FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -ffast-math -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) -g -O0  -fPIC
 
 # for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
 #FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) -g -O2 -fomit-frame-pointer -ffast-math -fno-strict-aliasing  -fPIC
