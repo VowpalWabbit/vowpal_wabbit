@@ -129,5 +129,8 @@ namespace Microsoft.Research.MachineLearning
 
         [DllImport(LIBVW, EntryPoint = "VW_Get_Stride")]
         public static extern SizeT Get_Stride(VwHandle vw);
+
+        [DllImport(LIBVW, EntryPoint = "VW_SaveModel")]
+        public static extern void SaveModel(VwHandle vw);
     }
 }
