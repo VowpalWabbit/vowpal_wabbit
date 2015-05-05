@@ -349,9 +349,6 @@ template <bool is_learn>
     label_data& ld = ec.l.simple;
 
 #ifdef DEBUG
-    cerr << "example " << ec.example_counter 
-	 << "with label " << ld.label << endl;
-
     for(int i = 0; i < o.N; i++) {
 	cerr << o.v[i] << " ";
     }
@@ -375,9 +372,6 @@ template <bool is_learn>
         float w = 1 / (1 + exp(s));
 
         ld.weight = u * w;
-#ifdef DEBUG
-        cout << "Weight for learner "  << i << ": " << ld.weight << endl;
-#endif
 
         base.predict(ec, i);
 	float z;
@@ -386,17 +380,6 @@ template <bool is_learn>
 	else z = ld.label * ec.pred.scalar;
 
         s += z * o.alpha[i];
-
-#ifdef DEBUG
-        if (ld.label * ec.pred.scalar < 0) {
-           cout << "Learner " << i << " made a mistake: "
-                << ec.pred.scalar << endl;
-        }
-        else {
-           cout << "Learner " << i << " predicted correctly: "
-                << ec.pred.scalar << endl;
-        }
-#endif
 
         if (v_partial_sum <= stopping_point) {
 	    if (o.discrete)
@@ -410,13 +393,6 @@ template <bool is_learn>
 
 	v_partial_sum += o.v[i];
 
-#ifdef DEBUG
-	if (ld.label * ec.pred.scalar < 0) {
-	    cerr << "Learner " << i+1 << " made a mistake: "
-                << ec.pred.scalar << endl;
-	    cerr << "Total prediction = " << final_prediction << endl;
-	}
-#endif
 	// update v, exp(-1) = 0.36788
 	if (ld.label * partial_prediction < 0) {
 	    o.v[i] *= 0.36788;
@@ -587,6 +563,14 @@ LEARNER::base_learner* boosting_setup(vw& all)
       ("discrete", "use hard predictions to update s")
       ("alg", po::value<string>()->default_value("BBM"),
 	 "specify the boosting algorithm: BBM (default), logistic, smooth, OCP, adaptive");
+    // Description of options:
+    // "BBM" implements online BBM (Algorithm 1 in BLK'15)
+    // "logistic" implements AdaBoost.OL (Algorithm 2 in BLK'15)
+    // "adaptive" implements AdaBoost.OL.S (a version of AdaBoost.OL 
+    //     based on rejection sampling rather than importance weighting)
+    // "smooth" implements Smooth boost, the second algorithm 
+    //     in CLL'12 based on learning with expert advice
+    // "OCP" implements Algorithm 1 in CLL'12
     add_options(all);
     
     boosting& data = calloc_or_die<boosting>();
