@@ -75,7 +75,7 @@ namespace GD
     float32x2_t e3 = vmul_f32(e2, vrsqrts_f32(v1, vmul_f32(e2, e2)));
     // Extract result
     return vget_lane_f32(e3, 0);
-#  (elif defined(__SSE2__) || defined(_M_AMD64) || defined(_M_X64))
+#  elif (defined(__SSE2__) || defined(_M_AMD64) || defined(_M_X64))
     __m128 eta = _mm_load_ss(&x);
     eta = _mm_rsqrt_ss(eta);
     _mm_store_ss(&x, eta);

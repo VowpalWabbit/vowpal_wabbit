@@ -112,6 +112,8 @@ extern "C"
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_Num_Weights(VW_HANDLE handle);
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_Get_Stride(VW_HANDLE handle);
 
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_SaveModel(VW_HANDLE handle);
+
 #ifdef __cplusplus
 }
 #endif

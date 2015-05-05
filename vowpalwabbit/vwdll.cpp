@@ -255,4 +255,17 @@ extern "C"
 		vw* pointer = static_cast<vw*>(handle);
 		return VW::get_stride(*pointer);
 	}
+
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_SaveModel(VW_HANDLE handle)
+	{
+		vw* pointer = static_cast<vw*>(handle);
+
+		string name = pointer->final_regressor_name;
+		if (name.empty())
+		{
+			return;
+		}
+
+		return VW::save_predictor(*pointer, name);
+	}
 }
