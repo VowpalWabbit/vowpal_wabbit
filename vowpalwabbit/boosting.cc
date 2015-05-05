@@ -565,9 +565,10 @@ LEARNER::base_learner* boosting_setup(vw& all)
 	 "specify the boosting algorithm: BBM (default), logistic, smooth, OCP, adaptive");
     // Description of options:
     // "BBM" implements online BBM (Algorithm 1 in BLK'15)
-    // "logistic" implements AdaBoost.OL (Algorithm 2 in BLK'15)
-    // "adaptive" implements AdaBoost.OL.S (a version of AdaBoost.OL 
-    //     based on rejection sampling rather than importance weighting)
+    // "logistic" implements AdaBoost.OL.W (importance weighted version 
+    // 	    of Algorithm 2 in BLK'15)
+    // "adaptive" implements AdaBoost.OL (Algorithm 2 in BLK'15, 
+    // 	    using sampling rather than importance weighting)
     // "smooth" implements Smooth boost, the second algorithm 
     //     in CLL'12 based on learning with expert advice
     // "OCP" implements Algorithm 1 in CLL'12
