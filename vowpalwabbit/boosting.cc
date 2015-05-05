@@ -3,6 +3,15 @@
  individual contributors. All rights reserved.  Released under a BSD (revised)
  license as described in the file LICENSE.
  */
+
+/*
+ * Implementation of online boosting algorithms in the following two papers: 
+ * 1) Beygelzimer, Kale, Luo: Optimal and adaptive algorithms for online 
+ *    boosting, ICML-2015. 
+ * 2) Chen, Lin, and Lu: An online boosting algorithm with theoretical 
+ *    justifications, ICML-2012.
+ */
+
 #include <float.h>
 #include <limits.h>
 #include <math.h>
@@ -20,6 +29,15 @@ using namespace LEARNER;
 
 inline float sign(float w) { if (w <= 0.) return -1.; else  return 1.;}
 
+/* 
+ * Module to compute projections on the positive simplex or the L1-ball
+ * translated from Adrien Gaidon's Python implementation:
+ * https://gist.github.com/daien/1272551
+ *
+ * Based on:
+ * Duchi, Shalev-Shwartz, Singer, and Chandra: Efficient Projections 
+ * onto the l1-Ball for Learning in High Dimensions, ICML 2008.
+ */
 void euclidean_proj_simplex(std::vector<float> &v) {
     float sum = 0;
 
@@ -83,15 +101,11 @@ struct boosting {
 };
   
 //---------------------------------------------------
-// BBM 
+// Online Boost-by-Majority (BBM)
 // --------------------------------------------------
 template <bool is_learn>
   void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec) {
     label_data& ld = ec.l.simple;
-    
-#ifdef DEBUG
-    cout << "example " << ec.example_counter << ", label " << ld.label << endl;
-#endif
     
     float final_prediction = 0;
     
@@ -116,30 +130,15 @@ template <bool is_learn>
         float w = c * pow((double)(0.5+o.gamma),
 	    (double)k) * pow((double)0.5-o.gamma,(double)(o.N-(i+1)-k));
           
+        // update ld.weight, weight for learner i (starting from 0)
 	ld.weight = u * w;
-#ifdef DEBUG
-        cout << "Weight for learner "  << i+1 << ": " << ld.weight << endl;
-#endif
         
         base.predict(ec, i);
 
-#ifdef DEBUG
-	cerr << "Learner " << i+1 << "th prediction on example " << ec.example_counter << " is : " << ec.pred.scalar << endl;
-#endif
-
+	// ec.pred.scalar is now ith learner prediction on this example
 	if (o.discrete) s += ld.label * sign(ec.pred.scalar);
 	else s += ld.label * ec.pred.scalar;
 
-#ifdef DEBUG
-	if (ld.label * ec.pred.scalar < 0) {
-	   cout << "Learner " << i+1 << " made a mistake: " 
-		<< ec.pred.scalar << " s = " << s << endl;	
-	}
-	else {
-	   cout << "Learner " << i+1 << " predicted correctly: " 
-		<< ec.pred.scalar << " s = " << s << endl;	
-	}
-#endif
 	if (o.discrete) final_prediction += sign(ec.pred.scalar);
 	else final_prediction += ec.pred.scalar;
 
@@ -155,11 +154,6 @@ template <bool is_learn>
     ld.weight = u;
     ec.pred.scalar = sign(final_prediction);
 
-#ifdef DEBUG
-    cerr << "example " << ec.example_counter << ", label " << ld.label << endl;
-    cerr << "final_prediction " << final_prediction << endl;
-#endif
-    
     if (ld.label == ec.pred.scalar)
       ec.loss = 0.;
     else
@@ -172,11 +166,6 @@ template <bool is_learn>
 template <bool is_learn>
   void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example& ec) {
     label_data& ld = ec.l.simple;
-
-#ifdef DEBUG
-    cerr << "example " << ec.example_counter 
-	 << "with label " << ld.label << endl;
-#endif
 
     float final_prediction = 0;
 
@@ -192,9 +181,6 @@ template <bool is_learn>
         float w = 1 / (1 + exp(s));
 
         ld.weight = u * w;
-#ifdef DEBUG
-        cout << "Weight for learner "  << i << ": " << ld.weight << endl;
-#endif
 
         base.predict(ec, i);
 	float z;
@@ -203,35 +189,14 @@ template <bool is_learn>
 
         s += z * o.alpha[i];
 
-	// if (o.discrete) cerr << "Learner " << i << " " << sign(ec.pred.scalar) << " z=" << z << endl;
-	// else cerr << "Learner " << i << " " << ec.pred.scalar << " z=" << z << endl;
-
-#ifdef DEBUG
-        if (ld.label * ec.pred.scalar < 0) {
-           cout << "Learner " << i << " made a mistake: "
-                << ec.pred.scalar << endl;
-        }
-        else {
-           cout << "Learner " << i << " predicted correctly: "
-                << ec.pred.scalar << endl;
-        }
-#endif
+	// if ld.label * ec.pred.scalar < 0, learner i made a mistake
 
 	if (o.discrete) {
 	    final_prediction += sign(ec.pred.scalar) * o.alpha[i];
 	}
 	else 
 	    final_prediction += ec.pred.scalar * o.alpha[i];
-        // cerr << "partial prediction: " << final_prediction << endl;
 
-
-#ifdef DEBUG
-	if (ld.label * ec.pred.scalar < 0) {
-	    cerr << "Learner " << i+1 << " made a mistake: "
-                << ec.pred.scalar << endl;
-	    cerr << "Total prediction = " << final_prediction << endl;
-	}
-#endif
 	// update alpha
         o.alpha[i] += eta * z / (1 + exp(s));
 	if (o.alpha[i] > 2.) o.alpha[i] = 2;
@@ -250,8 +215,6 @@ template <bool is_learn>
     }
 
     ld.weight = u;
-    // cerr << "final prediction: " << final_prediction << endl;
-    // cerr << "discrete? " << o.discrete << endl;
     ec.pred.scalar = sign(final_prediction);
 
     if (ld.label == ec.pred.scalar)
@@ -381,10 +344,6 @@ template <bool is_learn>
 }
 
 /*-------------------------------------------------------*/
-
-//-----------------------------------------------------------------
-// Logistic boost
-//-----------------------------------------------------------------
 template <bool is_learn>
   void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example& ec) {
     label_data& ld = ec.l.simple;
@@ -482,9 +441,7 @@ template <bool is_learn>
                 final_prediction += ec.pred.scalar * o.alpha[i];
 	}
 	else { 
-	    // cerr << is_learn << " stopping at learner "  << i+1 << endl;
-	    // cerr << "stopping point "  << stopping_point;
-	    // cerr << " v_partial_sum "  << v_partial_sum << endl;
+	    // stopping at learner i
 	    break;
 	}
 	v_partial_sum += o.v[i];
@@ -509,7 +466,6 @@ template <bool is_learn>
 }
 
 
-/*************************************************************************/
 void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text) 
 {
   if (model_file.files.size() == 0)
@@ -669,7 +625,6 @@ LEARNER::base_learner* boosting_setup(vw& all)
 	    predict_or_learn_OCP<true>, 
 	    predict_or_learn_OCP<false>, data.N);
 	l->set_save_load(save_load);
-
     } 
     else if (*data.alg == "logistic") {
 
