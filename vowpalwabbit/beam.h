@@ -69,10 +69,10 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
 
   //  static size_t NUM_RECOMB_BUCKETS = 10231;
   
-  bool (*is_equivalent)(T*,T*);  // test if two items are equivalent; NULL means don't do hypothesis recombination
+  bool (*is_equivalent)(T*,T*);  // test if two items are equivalent; nullptr means don't do hypothesis recombination
   
  public:
-  beam(size_t beam_size, float prune_coeff=FLT_MAX, bool (*test_equiv)(T*,T*)=NULL, bool kbest=false)
+  beam(size_t beam_size, float prune_coeff=FLT_MAX, bool (*test_equiv)(T*,T*)=nullptr, bool kbest=false)
       : beam_size(beam_size)
       , pruning_coefficient(prune_coeff)
       , do_kbest(kbest)
@@ -82,7 +82,7 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
     worst_cost  = -FLT_MAX;
     best_cost   =  FLT_MAX;
     prune_if_gt =  FLT_MAX;
-    best_cost_data = NULL;
+    best_cost_data = nullptr;
     A = v_init<beam_element<T>>();
     if (beam_size <= BEAM_CONSTANT_SIZE)
       A.resize(beam_size, true);
@@ -91,16 +91,10 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
     if (beam_size == 1) do_kbest = false;  // automatically turn of kbest
   }
 
-  bool insert(T*data, float cost, uint32_t hash) { // returns TRUE iff element was actually added
-    bool should_add = false;
+  inline bool might_insert(float cost) { return (cost <= prune_if_gt) && ((count < beam_size) || (cost < worst_cost)); }
 
-    if (count < beam_size) should_add = true;
-    else if (cost < worst_cost) should_add = true;
-    if (cost > prune_if_gt) should_add = false;
-    
-    //cerr << "insert " << ((size_t)data) << " with cost=" << cost << " wc=" << worst_cost << " count=" << count << " size=" << beam_size << " has should_add=" << should_add << endl;
-    
-    if (!should_add) return false;
+  bool insert(T*data, float cost, uint32_t hash) { // returns TRUE iff element was actually added
+    if (!might_insert(cost)) return false;
 
     //bool we_were_worse = false;
     // if (is_equivalent) {
@@ -112,7 +106,7 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
     //       // we are more expensive, so ignore
     //       we_were_worse = true;
     //       beam_element<T> * be = new beam_element<T>;
-    //       be->hash = hash; be->cost = cost; be->data = data; be->active = true; be->recombined = false; be->recomb_friends = NULL;
+    //       be->hash = hash; be->cost = cost; be->data = data; be->active = true; be->recombined = false; be->recomb_friends = nullptr;
     //       add_recomb_friend(recomb_buckets[i][equiv_pos], be);
     //   }
     // }
@@ -136,7 +130,7 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
       A[worst_idx].data = data;
       A[worst_idx].active = true;
       // A[worst_idx].recombined = false;
-      // A[worst_idx].recomb_friends = NULL;  // TODO: free it if it isn't NULL
+      // A[worst_idx].recomb_friends = nullptr;  // TODO: free it if it isn't nullptr
       worst_cost = cost;
     } else {
       beam_element<T> be;
@@ -145,7 +139,7 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
       be.data = data;
       be.active = true;
       // be.recombined = false;
-      // be.recomb_friends = NULL;
+      // be.recomb_friends = nullptr;
 
       A.push_back(be);
       count++;
@@ -162,21 +156,28 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
     return true;
   }
 
+  beam_element<T>* get_best_item() {
+    if (count == 0) return nullptr;
+    beam_element<T> *ret = A.begin;
+    while ((ret != A.end) && (!ret->active)) ++ret;
+    return (ret == A.end) ? nullptr : ret;
+  }
+   
   beam_element<T>* pop_best_item() {
     if (count == 0)
-      return NULL;
+      return nullptr;
 
-    beam_element<T> *ret = NULL;
+    beam_element<T> *ret = nullptr;
     float next_best_cost = FLT_MAX;
     for (beam_element<T> *el = A.begin; el!=A.end; el++)
-      if ((ret == NULL) && el->active && (el->cost <= best_cost))
+      if ((ret == nullptr) && el->active && (el->cost <= best_cost))
         ret = el;
       else if (el->active && (el->cost < next_best_cost)) {
         next_best_cost = el->cost;
         best_cost_data = el->data;
       }
 
-    if (ret != NULL) {
+    if (ret != nullptr) {
       best_cost = next_best_cost;
       prune_if_gt = max(1.f, best_cost) * pruning_coefficient;
       ret->active = false;
@@ -184,7 +185,7 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
     } else {
       best_cost = FLT_MAX;
       prune_if_gt = FLT_MAX;
-      best_cost_data = NULL;
+      best_cost_data = nullptr;
     }
     
     return ret;
@@ -217,7 +218,7 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
     }
   }
   
-  void compact(void (*free_data)(T*)=NULL) {
+  void compact(void (*free_data)(T*)=nullptr) {
     if (is_equivalent) do_recombination();
     qsort(A.begin, A.size(), sizeof(beam_element<T>), compare_on_cost); // TODO: quick select
 
@@ -239,12 +240,12 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
     best_cost_data = A[0].data;
   }
 
-  void maybe_compact(void (*free_data)(T*)=NULL) {
+  void maybe_compact(void (*free_data)(T*)=nullptr) {
     if (count >= beam_size * 10)
       compact(free_data);
   }
 
-  void erase(void (*free_data)(T*)=NULL) {
+  void erase(void (*free_data)(T*)=nullptr) {
     if (free_data)
       for (beam_element<T> * be = A.begin; be != A.end; ++be)
         free_data(be->data);
@@ -253,7 +254,7 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
     worst_cost  = -FLT_MAX;
     best_cost   =  FLT_MAX;
     prune_if_gt =  FLT_MAX;
-    best_cost_data = NULL;
+    best_cost_data = nullptr;
   }
 
   ~beam() {
@@ -270,14 +271,14 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
  private:
   // void add_recomb_friend(beam_element<T> *better, beam_element<T> *worse) {
   //   assert( better->cost <= worse->cost );
-  //   if (better->recomb_friends == NULL) {
-  //     if (worse->recomb_friends != NULL) {
+  //   if (better->recomb_friends == nullptr) {
+  //     if (worse->recomb_friends != nullptr) {
   //       better->recomb_friends = worse->recomb_friends;
-  //       worse->recomb_friends = NULL;
+  //       worse->recomb_friends = nullptr;
   //     } else
   //       better->recomb_friends = new vector<beam_element<T>*>;
   //   } else {
-  //     assert(worse->recomb_friends == NULL);
+  //     assert(worse->recomb_friends == nullptr);
   //   }
   // }
 };

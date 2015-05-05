@@ -26,8 +26,13 @@ NETCAT=`which netcat`
 if [ -x "$NETCAT" ]; then
     : cool found netcat at: $NETCAT
 else
-    echo "$NAME: can not find 'netcat' in $PATH - sorry"
-    exit 1
+    NETCAT=`which nc`
+    if [ -x "$NETCAT" ]; then
+        : "no netcat but found 'nc' at: $NETCAT"
+    else
+        echo "$NAME: can not find 'netcat' not 'nc' in $PATH - sorry"
+        exit 1
+    fi
 fi
 
 # -- and pkill

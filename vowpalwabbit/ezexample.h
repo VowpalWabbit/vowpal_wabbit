@@ -42,7 +42,7 @@ class ezexample {
 
   void setup_new_ezexample(vw*this_vw, bool multiline, vw*this_vw_parser) {
     vw_ref = this_vw;
-    vw_par_ref = (this_vw_parser == NULL) ? this_vw : this_vw_parser;
+    vw_par_ref = (this_vw_parser == nullptr) ? this_vw : this_vw_parser;
     is_multiline = multiline;
 
     str[0] = 0; str[1] = 0;
@@ -59,7 +59,7 @@ class ezexample {
 
   
   void setup_for_predict() {
-    static example* empty_example = is_multiline ? VW::read_example(*vw_par_ref, (char*)"") : NULL;
+    static example* empty_example = is_multiline ? VW::read_example(*vw_par_ref, (char*)"") : nullptr;
     if (example_changed_since_prediction) {
       mini_setup_example();
       vw_ref->learn(ec);
@@ -72,7 +72,7 @@ class ezexample {
 
   // REAL FUNCTIONALITY
   // create a new ezexample by asking the vw parser for an example
-  ezexample(vw*this_vw, bool multiline=false, vw*this_vw_parser=NULL) {
+  ezexample(vw*this_vw, bool multiline=false, vw*this_vw_parser=nullptr) {
     setup_new_ezexample(this_vw, multiline, this_vw_parser);
     example_copies = v_init<example*>();    
     ec = get_new_example();
@@ -85,7 +85,7 @@ class ezexample {
   // create a new ezexample by wrapping around an already existing example
   // we do NOT copy your data, therefore, WARNING:
   //   do NOT touch the underlying example unless you really know what you're done)
-  ezexample(vw*this_vw, example*this_ec, bool multiline=false, vw*this_vw_parser=NULL) {
+  ezexample(vw*this_vw, example*this_ec, bool multiline=false, vw*this_vw_parser=nullptr) {
     setup_new_ezexample(this_vw, multiline, this_vw_parser);
 
     ec = this_ec;
@@ -257,7 +257,7 @@ class ezexample {
   }
 
   void finish() {
-    static example* empty_example = is_multiline ? VW::read_example(*vw_par_ref, (char*)"") : NULL;
+    static example* empty_example = is_multiline ? VW::read_example(*vw_par_ref, (char*)"") : nullptr;
     if (is_multiline) {
       vw_ref->learn(empty_example);
       for (example**ecc=example_copies.begin; ecc!=example_copies.end; ecc++)

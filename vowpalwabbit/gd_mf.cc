@@ -22,8 +22,10 @@ using namespace std;
 using namespace LEARNER;
 
 struct gdmf {
-  vw* all;
+  vw* all;//regressor, printing
   uint32_t rank;
+  size_t no_win_counter;
+  size_t early_stop_thres;
 };
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
@@ -277,6 +279,16 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
       save_predictor(*all, all->final_regressor_name, all->current_pass);
     
     all->current_pass++;
+
+    if(!all->holdout_set_off)
+      {
+        if(summarize_holdout_set(*all, d.no_win_counter))
+          finalize_regressor(*all, all->final_regressor_name);
+        if((d.early_stop_thres == d.no_win_counter) &&
+           ((all->check_holdout_every_n_passes <= 1) ||
+            ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
+	  set_done(*all);
+      }
   }
 
   void predict(gdmf& d, base_learner&, example& ec) { mf_predict(d,ec); }
@@ -293,11 +305,14 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
 base_learner* gd_mf_setup(vw& all)
 {
   if (missing_option<uint32_t, true>(all, "rank", "rank for matrix factorization."))
-    return NULL;
+    return nullptr;
   
   gdmf& data = calloc_or_die<gdmf>(); 
   data.all = &all;
   data.rank = all.vm["rank"].as<uint32_t>();
+  data.no_win_counter = 0;
+  data.early_stop_thres = 3;
+
   // store linear + 2*rank weights per index, round up to power of two
   float temp = ceilf(logf((float)(data.rank*2+1)) / logf (2.f));
   all.reg.stride_shift = (size_t) temp;
@@ -323,6 +338,13 @@ base_learner* gd_mf_setup(vw& all)
       cerr << "bfgs is not implemented for matrix factorization" << endl;
       throw exception();
     }	
+
+  if(!all.holdout_set_off)
+  {
+    all.sd->holdout_best_loss = FLT_MAX;
+    if(all.vm.count("early_terminate"))      
+      data.early_stop_thres = all.vm["early_terminate"].as< size_t>();     
+  }
   
   if(!all.vm.count("learning_rate") && !all.vm.count("l"))
     all.eta = 10; //default learning rate to 10 for non default update rule

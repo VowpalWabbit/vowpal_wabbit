@@ -6,7 +6,6 @@ license as described in the file LICENSE.
 #include<math.h>
 #include<iostream>
 #include<stdlib.h>
-#include<assert.h>
 #include<float.h>
 using namespace std;
 
@@ -127,7 +126,7 @@ public:
   
   float getLoss(shared_data*, float prediction, float label) {
     if (label != -1.f && label != 1.f)
-      cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
+      cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << endl;
     float e = 1 - label*prediction;
     return (e > 0) ? e : 0;
   }
@@ -148,7 +147,7 @@ public:
   }
 
   float getSquareGrad(float prediction, float label) {
-    float d = first_derivative(NULL, prediction,label);
+    float d = first_derivative(nullptr, prediction,label);
     return d*d;
   }
 
@@ -171,7 +170,7 @@ public:
   
   float getLoss(shared_data*, float prediction, float label) {
     if (label != -1.f && label != 1.f)
-      cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
+      cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << endl;
     return log(1 + exp(-label * prediction));
   }
   
@@ -219,7 +218,7 @@ public:
   }
 
   float getSquareGrad(float prediction, float label) {
-    float d = first_derivative(NULL, prediction,label);
+    float d = first_derivative(nullptr, prediction,label);
     return d*d;
   }
 
@@ -284,7 +283,7 @@ public:
   }
 
   float getSquareGrad(float prediction, float label) {
-    float fd = first_derivative(NULL, prediction,label);
+    float fd = first_derivative(nullptr, prediction,label);
     return fd*fd;
   }
 

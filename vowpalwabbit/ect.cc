@@ -29,7 +29,7 @@ struct direction {
   bool last;
 };
 
-struct ect{
+struct ect {
   uint32_t k;
   uint32_t errors;
   v_array<direction> directions;//The nodes of the tournament datastructure
@@ -87,7 +87,7 @@ void print_level(v_array<v_array<uint32_t> > level)
   cout << endl;
 }
 
-size_t create_circuit(vw& all, ect& e, uint32_t max_label, uint32_t eliminations)
+size_t create_circuit(ect& e, uint32_t max_label, uint32_t eliminations)
 {
   if (max_label == 1)
     return 0;
@@ -352,7 +352,7 @@ size_t create_circuit(vw& all, ect& e, uint32_t max_label, uint32_t eliminations
 base_learner* ect_setup(vw& all)
 {
   if (missing_option<size_t, true>(all, "ect", "Error correcting tournament with <k> labels"))
-    return NULL;
+    return nullptr;
   new_options(all, "Error Correcting Tournament options")
     ("error", po::value<size_t>()->default_value(0), "error in ECT");
   add_options(all);
@@ -363,7 +363,7 @@ base_learner* ect_setup(vw& all)
   //append error flag to options_from_file so it is saved in regressor file later
   *all.file_options << " --error " << data.errors;
   
-  size_t wpp = create_circuit(all, data, data.k, data.errors+1);
+  size_t wpp = create_circuit(data, data.k, data.errors+1);
   
   learner<ect>& l = init_multiclass_learner(&data, setup_base(all), learn, predict, all.p, wpp);
   l.set_finish(finish);

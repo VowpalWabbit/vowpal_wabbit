@@ -18,7 +18,7 @@ license as described in the file LICENSE.
 
 const size_t erase_point = ~ ((1 << 10) -1);
 
-template<class T> struct v_array{
+template<class T> struct v_array {
  public:
   T* begin;
   T* end;
@@ -38,7 +38,7 @@ template<class T> struct v_array{
 	{
 	  size_t old_len = end-begin;
 	  begin = (T *)realloc(begin, sizeof(T) * length);
-	  if ((begin == NULL) && ((sizeof(T)*length) > 0)) {
+	  if ((begin == nullptr) && ((sizeof(T)*length) > 0)) {
 	    std::cerr << "realloc of " << length << " failed in resize().  out of memory?" << std::endl;
 	    throw std::exception();
 	  }
@@ -59,9 +59,9 @@ template<class T> struct v_array{
   }
   void delete_v()
   {
-    if (begin != NULL)
+    if (begin != nullptr)
       free(begin);
-    begin = end = end_array = NULL;
+    begin = end = end_array = nullptr;
   }
   void push_back(const T &new_ele)
   {
@@ -144,7 +144,7 @@ inline size_t min(size_t a, size_t b)
 }
 
 template<class T> 
-inline v_array<T> v_init() { return {NULL, NULL, NULL, 0};}
+inline v_array<T> v_init() { return {nullptr, nullptr, nullptr, 0};}
 
 template<class T> void copy_array(v_array<T>& dst, v_array<T> src)
 {
@@ -187,4 +187,18 @@ template<class T> bool v_array_contains(v_array<T> &A, T x) {
   for (T* e = A.begin; e != A.end; ++e)
     if (*e == x) return true;
   return false;
+}
+
+template<class T>std::ostream& operator<<(std::ostream& os, const v_array<T>& v) {
+  os << '[';
+  for (T* i=v.begin; i!=v.end; ++i) os << ' ' << *i; 
+  os << " ]";
+  return os;
+}
+
+template<class T,class U>std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T,U> >& v) {
+  os << '[';
+  for (std::pair<T,U>* i=v.begin; i!=v.end; ++i) os << ' ' << i->first << ':' << i->second;
+  os << " ]";
+  return os;
 }

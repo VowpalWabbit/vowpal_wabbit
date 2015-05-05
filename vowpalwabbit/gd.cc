@@ -10,8 +10,12 @@ license as described in the file LICENSE.
 #include <netdb.h>
 #endif
 
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+#if !defined(VW_NO_INLINE_SIMD)
+#  if defined(__ARM_NEON__)
+#include <arm_neon.h>
+#  elif defined(__SSE2__)
 #include <xmmintrin.h>
+#  endif
 #endif
 
 #include "gd.h"
@@ -19,13 +23,15 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "vw.h"
 
+#define VERSION_SAVE_RESUME_FIX "7.10.1"
+
 using namespace std;
 using namespace LEARNER;
 //todo: 
 //4. Factor various state out of vw&
 namespace GD
 {
-  struct gd{
+  struct gd {
     //double normalized_sum_norm_x;
     double total_weight;
     size_t no_win_counter;
@@ -33,22 +39,53 @@ namespace GD
     float initial_constant;
     float neg_norm_power;
     float neg_power_t;
+    float sparse_l2;
     float update_multiplier;
     void (*predict)(gd&, base_learner&, example&);
     void (*learn)(gd&, base_learner&, example&);
     void (*update)(gd&, base_learner&, example&);
+    void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, polyprediction*, bool);
 
-    vw* all;
+    vw* all; //parallel, features, parameters
   };
 
   void sync_weights(vw& all);
 
-  float InvSqrt(float x){
-    float xhalf = 0.5f * x;
-    int i = *(int*)&x; // store floating-point bits in integer
-    i = 0x5f3759d5 - (i >> 1); // initial guess for Newton's method
-    x = *(float*)&i; // convert new bits into float
-    x = x*(1.5f - xhalf*x*x); // One round of Newton's method
+  inline float quake_InvSqrt(float x)
+  {    // Carmack/Quake/SGI fast method:
+	  float xhalf = 0.5f * x;
+	  int i = *(int*)&x; // store floating-point bits in integer
+	  i = 0x5f3759d5 - (i >> 1); // initial guess for Newton's method
+	  x = *(float*)&i; // convert new bits into float
+	  x = x*(1.5f - xhalf*x*x); // One round of Newton's method
+	  return x;
+  }
+
+  static inline float InvSqrt(float x)
+  {
+#if !defined(VW_NO_INLINE_SIMD)
+#  if defined(__ARM_NEON__)
+    // Propagate into vector
+    float32x2_t v1 = vdup_n_f32(x);
+    // Estimate
+    float32x2_t e1 = vrsqrte_f32(v1);
+    // N-R iteration 1
+    float32x2_t e2 = vmul_f32(e1, vrsqrts_f32(v1, vmul_f32(e1, e1)));
+    // N-R iteration 2
+    float32x2_t e3 = vmul_f32(e2, vrsqrts_f32(v1, vmul_f32(e2, e2)));
+    // Extract result
+    return vget_lane_f32(e3, 0);
+#  (elif defined(__SSE2__) || defined(_M_AMD64) || defined(_M_X64))
+    __m128 eta = _mm_load_ss(&x);
+    eta = _mm_rsqrt_ss(eta);
+    _mm_store_ss(&x, eta);
+#else
+	  x = quake_InvSqrt(x);
+#  endif
+#else
+	  x = quake_InvSqrt(x);
+#endif
+
     return x;
   }
   
@@ -88,7 +125,7 @@ namespace GD
   {
     if (normalized)
       update *= g.update_multiplier;
-    
+
     foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
   }
 
@@ -151,13 +188,13 @@ bool operator<(const string_value& first, const string_value& second)
   
   string tmp = "";
   
-  if (a != NULL){
+  if (a != nullptr){
     tmp += a->space;
     tmp += '^';
     tmp += a->feature; 
   }
  
-  if (a != NULL && all.audit){
+  if (a != nullptr && all.audit){
     tempstream << tmp << ':';
   }
   else 	if ( index == ((( (constant << stride_shift) * all.wpp + offset)&all.reg.weight_mask)) && all.audit){
@@ -192,7 +229,7 @@ bool operator<(const string_value& first, const string_value& second)
     if (as.begin != as.end)
       audit_feature(all, & fs[j], & as[j], results, prepend, ns_pre, offset, mult);
     else
-      audit_feature(all, & fs[j], NULL, results, prepend, ns_pre, offset, mult);
+      audit_feature(all, & fs[j], nullptr, results, prepend, ns_pre, offset, mult);
 }
 
 void audit_quad(vw& all, feature& left_feature, audit_data* left_audit, v_array<feature> &right_features, v_array<audit_data> &audit_right, vector<string_value>& results, string& ns_pre, uint32_t offset = 0)
@@ -263,11 +300,11 @@ void print_features(vw& all, example& ec)
       }
       for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
 	{
-	  int fst = (*i)[0];
-	  int snd = (*i)[1];
+	  unsigned char fst = (*i)[0];
+	  unsigned char snd = (*i)[1];
 	  for (size_t j = 0; j < ec.atomics[fst].size(); j++)
 	    {
-	      audit_data* a = NULL;
+	      audit_data* a = nullptr;
 	      if (ec.audit_features[fst].size() > 0)
 		a = & ec.audit_features[fst][j];
 	      audit_quad(all, ec.atomics[fst][j], a, ec.atomics[snd], ec.audit_features[snd], features, ns_pre);
@@ -276,17 +313,17 @@ void print_features(vw& all, example& ec)
 
       for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) 
 	{
-	  int fst = (*i)[0];
-	  int snd = (*i)[1];
-	  int trd = (*i)[2];
+	  unsigned char fst = (*i)[0];
+	  unsigned char snd = (*i)[1];
+	  unsigned char trd = (*i)[2];
 	  for (size_t j = 0; j < ec.atomics[fst].size(); j++)
 	    {
-	      audit_data* a1 = NULL;
+	      audit_data* a1 = nullptr;
 	      if (ec.audit_features[fst].size() > 0)
 		a1 = & ec.audit_features[fst][j];
 	      for (size_t k = 0; k < ec.atomics[snd].size(); k++)
 		{
-		  audit_data* a2 = NULL;
+		  audit_data* a2 = nullptr;
 		  if (ec.audit_features[snd].size() > 0)
 		    a2 = & ec.audit_features[snd][k];
 		  audit_triple(all, ec.atomics[fst][j], a1, ec.atomics[snd][k], a2, ec.atomics[trd], ec.audit_features[trd], features, ns_pre);
@@ -315,8 +352,11 @@ float finalize_prediction(shared_data* sd, float ret)
 {
   if ( nanpattern(ret))
     {
-      cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing 0.0" << endl;
-      return 0.;
+      float ret = 0.;
+      if (ret > sd->max_label) ret = (float)sd->max_label;
+      if (ret < sd->min_label) ret = (float)sd->min_label;
+      cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing " << ret << endl;
+      return ret;
     }
   if ( ret > sd->max_label )
     return (float)sd->max_label;
@@ -353,11 +393,43 @@ void predict(gd& g, base_learner& base, example& ec)
   
   ec.partial_prediction *= (float)all.sd->contraction;
   ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
-  
   if (audit)
     print_audit_features(all, ec);
 }
 
+inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
+  weight*w = mp.reg->weight_vector + (fi & mp.reg->weight_mask);
+  for (size_t c=0; c<mp.count; c++) {
+    mp.pred[c].scalar += fx * trunc_weight(*w, mp.gravity);
+    w += mp.step;
+  }
+}
+  
+template<bool l1, bool audit>
+void multipredict(gd& g, base_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions) {
+  vw& all = *g.all;
+  for (size_t c=0; c<count; c++)
+    pred[c].scalar = ec.l.simple.initial;
+  multipredict_info mp = { count, step, pred, &g.all->reg, (float)all.sd->gravity };
+  if (l1) foreach_feature<multipredict_info, uint32_t, vec_add_trunc_multipredict>(all, ec, mp);
+  else    foreach_feature<multipredict_info, uint32_t, vec_add_multipredict      >(all, ec, mp);
+  if (all.sd->contraction != 1.)
+    for (size_t c=0; c<count; c++)
+      pred[c].scalar *= (float)all.sd->contraction;
+  if (finalize_predictions)
+    for (size_t c=0; c<count; c++)
+      pred[c].scalar = finalize_prediction(all.sd, pred[c].scalar);
+  if (audit) {
+    for (size_t c=0; c<count; c++) {
+      ec.pred.scalar = pred[c].scalar;
+      print_audit_features(all, ec);
+      ec.ft_offset += (uint32_t)step;
+    }
+    ec.ft_offset -= (uint32_t)step*count;
+  }
+}
+
+  
   struct power_data {
     float minus_power_t;
     float neg_norm_power;
@@ -371,14 +443,8 @@ void predict(gd& g, base_learner& base, example& ec)
     if(adaptive) {
       if (sqrt_rate)
 	{  
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-	  __m128 eta = _mm_load_ss(&w[adaptive]);
-	  eta = _mm_rsqrt_ss(eta);
-	  _mm_store_ss(&rate_decay, eta);
-#else
 	  rate_decay = InvSqrt(w[adaptive]);
-#endif
-	}
+	  }
       else
 	rate_decay = powf(w[adaptive],s.minus_power_t);
     }
@@ -394,7 +460,7 @@ void predict(gd& g, base_learner& base, example& ec)
       else
 	rate_decay *= powf(w[normalized]*w[normalized], s.neg_norm_power);
     }
-    return rate_decay;
+	return rate_decay;
   }
 
   struct norm_data {
@@ -429,7 +495,6 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
       nd.norm_x += x2 / (w[normalized] * w[normalized]);
     }
     w[spare] = compute_rate_decay<sqrt_rate, adaptive, normalized>(nd.pd, fw);
-
     nd.pred_per_update += x2 * w[spare];
   }
 }
@@ -445,7 +510,6 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
     norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
     
     foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, nd);
-    
     if(normalized) {
       g.all->normalized_sum_norm_x += ld.weight * nd.norm_x;
       g.total_weight += ld.weight;
@@ -457,13 +521,13 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
     return nd.pred_per_update;
   }
 
-template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
+  template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 float compute_update(gd& g, example& ec)
 {//invariant: not a test label, importance weight > 0
   label_data& ld = ec.l.simple;
   vw& all = *g.all;
   
-  float ret = 0.;
+  float update = 0.;
   ec.updated_prediction = ec.pred.scalar;
   if (all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) > 0.)
     {
@@ -472,20 +536,17 @@ float compute_update(gd& g, example& ec)
 	pred_per_update = get_pred_per_update<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,ec);
       else
 	pred_per_update = ec.total_sum_feat_sq;
-      
       float delta_pred = pred_per_update * all.eta * ld.weight;
       if(!adaptive) 
 	{
 	  float t = (float)(ec.example_t - all.sd->weighted_holdout_examples);
 	  delta_pred *= powf(t, g.neg_power_t);
 	}
-      
-      float update;
       if(invariant)
 	update = all.loss->getUpdate(ec.pred.scalar, ld.label, delta_pred, pred_per_update);
       else
 	update = all.loss->getUnsafeUpdate(ec.pred.scalar, ld.label, delta_pred, pred_per_update);
-      
+
       // changed from ec.partial_prediction to ld.prediction
       ec.updated_prediction += pred_per_update * update;
       
@@ -497,32 +558,33 @@ float compute_update(gd& g, example& ec)
 	update /= (float)all.sd->contraction;
 	all.sd->gravity += eta_bar * all.l1_lambda;
       }
-      ret = update;
     }
   
-  return ret;
+  if (sparse_l2)
+    update -= g.sparse_l2 * ec.pred.scalar;
+  return update;
 }
 
-template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
+  template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 void update(gd& g, base_learner& base, example& ec)
 {//invariant: not a test label, importance weight > 0
   float update;
-  if ( (update = compute_update<invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (g, ec)) != 0.)
+  if ( (update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (g, ec)) != 0.)
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
   
   if (g.all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
     sync_weights(*g.all);
 }
 
-template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-void learn(gd& g, base_learner& base, example& ec)
-{//invariant: not a test label, importance weight > 0
+  template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
+  void learn(gd& g, base_learner& base, example& ec)
+  {//invariant: not a test label, importance weight > 0
   assert(ec.in_use);
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.l.simple.weight > 0.);
 
   g.predict(g,base,ec);
-  update<invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,base,ec);
+  update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,base,ec);
 }
 
 void sync_weights(vw& all) {
@@ -606,7 +668,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 }
 
 //void save_load_online_state(gd& g, io_buf& model_file, bool read, bool text)
-void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
+void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g)
 {
   //vw& all = *g.all;
   
@@ -676,6 +738,32 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
   bin_text_read_write_fixed(model_file,(char*)&all.sd->total_features, sizeof(all.sd->total_features), 
 			    "", read, 
 			    buff, text_len, text);
+
+  if (!read || all.model_file_ver >= VERSION_SAVE_RESUME_FIX)
+  { // restore some data to allow --save_resume work more accurate
+
+      // fix average loss
+      double total_weight = 0.; //value holder as g* may be null
+      if (!read && g != nullptr) total_weight = g->total_weight;
+      text_len = sprintf(buff, "gd::total_weight %f\n", total_weight);
+      bin_text_read_write_fixed(model_file,(char*)&total_weight, sizeof(total_weight),
+                                "", read,
+                                buff, text_len, text);
+      if (read && g != nullptr) g->total_weight = total_weight;
+
+      // fix "loss since last" for first printed out example details
+      text_len = sprintf(buff, "sd::old_weighted_examples %f\n", all.sd->old_weighted_examples);
+      bin_text_read_write_fixed(model_file,(char*)&all.sd->old_weighted_examples, sizeof(all.sd->old_weighted_examples),
+                                "", read,
+                                buff, text_len, text);
+
+      // fix "number of examples per pass"
+      text_len = sprintf(buff, "current_pass %u\n", (uint32_t)all.current_pass);
+      bin_text_read_write_fixed(model_file,(char*)&all.current_pass, sizeof(all.current_pass),
+                                "", read,
+                                buff, text_len, text);
+  }
+
   if (!all.training) // reset various things so that we report test set performance properly
     {
       all.sd->sum_loss = 0;
@@ -778,29 +866,42 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 				"", read,
 				buff, text_len, text);
       if (resume)
-	//save_load_online_state(g, model_file, read, text);
-        save_load_online_state(all, model_file, read, text);
+      {
+          if (read && all.model_file_ver < VERSION_SAVE_RESUME_FIX)
+           cerr << endl << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than " << VERSION_SAVE_RESUME_FIX << endl << endl;
+     // save_load_online_state(g, model_file, read, text);
+        save_load_online_state(all, model_file, read, text, &g);
+      }
       else
 	save_load_regressor(all, model_file, read, text);
+    }
+}
+
+template<bool sparse_l2, bool invariant, bool sqrt_rate, uint32_t adaptive, uint32_t normalized, uint32_t spare, uint32_t next>
+uint32_t set_learn(vw& all, bool feature_mask_off, gd& g)
+{
+  all.normalized_idx = normalized;
+  if (feature_mask_off)
+    {
+      g.learn = learn<sparse_l2, invariant, sqrt_rate, true, adaptive, normalized, spare>;
+      g.update = update<sparse_l2, invariant, sqrt_rate, true, adaptive, normalized, spare>;
+      return next;
+    }
+  else
+    {
+      g.learn = learn<sparse_l2, invariant, sqrt_rate, false, adaptive, normalized, spare>;
+      g.update = update<sparse_l2, invariant, sqrt_rate, false, adaptive, normalized, spare>;
+      return next;
     }
 }
 
 template<bool invariant, bool sqrt_rate, uint32_t adaptive, uint32_t normalized, uint32_t spare, uint32_t next>
 uint32_t set_learn(vw& all, bool feature_mask_off, gd& g)
 {
-  all.normalized_idx = normalized;
-  if (feature_mask_off)
-    {
-      g.learn = learn<invariant, sqrt_rate, true, adaptive, normalized, spare>;
-      g.update = update<invariant, sqrt_rate, true, adaptive, normalized, spare>;
-      return next;
-    }
+  if (g.sparse_l2 > 0.f)
+    return set_learn<true, invariant, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g);
   else
-    {
-      g.learn = learn<invariant, sqrt_rate, false, adaptive, normalized, spare>;
-      g.update = update<invariant, sqrt_rate, false, adaptive, normalized, spare>;
-      return next;
-    }
+    return set_learn<false, invariant, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g);
 }
 
 template<bool sqrt_rate, uint32_t adaptive, uint32_t normalized, uint32_t spare, uint32_t next>
@@ -846,7 +947,7 @@ base_learner* setup(vw& all)
     ("adaptive", "use adaptive, individual learning rates.")
     ("invariant", "use safe/importance aware updates.")
     ("normalized", "use per feature normalized updates")
-    ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule");
+    ("sparse_l2", po::value<float>()->default_value(0.f), "use per feature normalized updates");
   add_options(all);
   po::variables_map& vm = all.vm;
   gd& g = calloc_or_die<gd>();
@@ -855,6 +956,7 @@ base_learner* setup(vw& all)
   g.no_win_counter = 0;
   g.total_weight = 0.;
   g.early_stop_thres = 3;
+  g.sparse_l2 = vm["sparse_l2"].as<float>();
   g.neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
   g.neg_power_t = - all.power_t;
 
@@ -879,7 +981,7 @@ base_learner* setup(vw& all)
       g.initial_constant = vm["constant"].as<float>();     
   }
 
-  if( !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
+  if( !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) ) )
     {//nondefault
       all.adaptive = all.training && vm.count("adaptive");
       all.invariant_updates = all.training && vm.count("invariant");
@@ -902,16 +1004,18 @@ base_learner* setup(vw& all)
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
 	 << " adjust --decay_learning_rate larger to avoid this." << endl;
+
+
   
   if (all.reg_mode % 2)
-    if (all.audit || all.hash_inv)
-      g.predict = predict<true, true>;
-    else
-      g.predict = predict<true, false>;
-  else if (all.audit || all.hash_inv)
-    g.predict = predict<false, true>;
-  else
-    g.predict = predict<false, false>;
+    if (all.audit || all.hash_inv) {
+      g.predict = predict<true, true>;   g.multipredict = multipredict<true, true>; }
+    else {
+      g.predict = predict<true, false>;  g.multipredict = multipredict<true, false>; }
+  else if (all.audit || all.hash_inv) {
+    g.predict = predict<false, true>;    g.multipredict = multipredict<false, true>; }
+  else {
+    g.predict = predict<false, false>;   g.multipredict = multipredict<false, false>; }
 
   uint32_t stride;
   if (all.power_t == 0.5)
@@ -922,6 +1026,7 @@ base_learner* setup(vw& all)
 
   learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.reg.stride_shift));
   ret.set_predict(g.predict);
+  ret.set_multipredict(g.multipredict);
   ret.set_update(g.update);
   ret.set_save_load(save_load);
   ret.set_end_pass(end_pass);

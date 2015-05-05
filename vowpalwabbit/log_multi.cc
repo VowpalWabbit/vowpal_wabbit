@@ -1,5 +1,4 @@
-/*\t
-
+/*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved. Released under a BSD (revised)
 license as described in the file LICENSE.node
@@ -483,7 +482,7 @@ using namespace LEARNER;
 base_learner* log_multi_setup(vw& all)	//learner setup
 {
   if (missing_option<size_t, true>(all, "log_multi", "Use online tree for multiclass"))
-    return NULL;
+    return nullptr;
   new_options(all, "Logarithmic Time Multiclass options")
     ("no_progress", "disable progressive validation")
     ("swap_resistance", po::value<uint32_t>(), "higher = more resistance to swap, default=4");

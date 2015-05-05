@@ -25,7 +25,7 @@ using namespace LEARNER;
 
   struct stagewise_poly
   {
-    vw *all;
+    vw *all; // many uses, unmodular reduction
 
     float sched_exponent;
     uint32_t batch_sz;
@@ -225,7 +225,7 @@ using namespace LEARNER;
 
   void sort_data_create(stagewise_poly &poly)
   {
-    poly.sd = NULL;
+    poly.sd = nullptr;
     poly.sd_len = 0;
   }
 
@@ -503,6 +503,7 @@ using namespace LEARNER;
     base.predict(poly.synth_ec);
     ec.partial_prediction = poly.synth_ec.partial_prediction;
     ec.updated_prediction = poly.synth_ec.updated_prediction;
+    ec.pred.scalar = poly.synth_ec.pred.scalar;
   }
 
   void learn(stagewise_poly &poly, base_learner &base, example &ec)
@@ -549,8 +550,17 @@ using namespace LEARNER;
 
   void reduce_min_max(uint8_t &v1,const uint8_t &v2)
   {
-    bool parent_or_depth = (v1 & indicator_bit);
-    if(parent_or_depth != (bool)(v2 & indicator_bit)) {
+	  bool parent_or_depth;
+	  if (v1 & indicator_bit)
+		  parent_or_depth = true;
+	  else
+		  parent_or_depth = false;
+	  bool p_or_d2;
+	  if (v2 & indicator_bit)
+		  p_or_d2 = true;
+	  else
+		  p_or_d2 = false;
+    if(parent_or_depth != p_or_d2) {
 #ifdef DEBUG
       cout << "Reducing parent with depth!!!!!";
 #endif //DEBUG
@@ -653,7 +663,7 @@ using namespace LEARNER;
   base_learner *stagewise_poly_setup(vw &all)
   {
     if (missing_option(all, true, "stage_poly", "use stagewise polynomial feature learning"))
-      return NULL;
+      return nullptr;
     
     new_options(all, "Stagewise poly options")
       ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
@@ -687,7 +697,7 @@ using namespace LEARNER;
     poly.last_example_counter = -1;
     poly.numpasses = 1;
     poly.update_support = false;
-    poly.original_ec = NULL;
+    poly.original_ec = nullptr;
     poly.next_batch_sz = poly.batch_sz;
 
     learner<stagewise_poly>& l = init_learner(&poly, setup_base(all), learn, predict);

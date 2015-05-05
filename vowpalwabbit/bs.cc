@@ -5,6 +5,7 @@ license as described in the file LICENSE.
  */
 #include <float.h>
 #include <math.h>
+#include <errno.h>
 #include <sstream>
 #include <numeric>
 #include <vector>
@@ -17,13 +18,13 @@ license as described in the file LICENSE.
 using namespace std;
 using namespace LEARNER;
 
-  struct bs{
+  struct bs {
     uint32_t B; //number of bootstrap rounds
     size_t bs_type;
     float lb;
     float ub;
     vector<double> pred_vec;
-    vw* all;
+    vw* all; // for raw prediction and loss
   };
 
   void bs_predict_mean(vw& all, example& ec, vector<double> &pred_vec)
@@ -32,7 +33,7 @@ using namespace LEARNER;
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.l.simple.weight;    
   }
 
-  void bs_predict_vote(vw& all, example& ec, vector<double> &pred_vec)
+  void bs_predict_vote(example& ec, vector<double> &pred_vec)
   { //majority vote in linear time
     unsigned int counter = 0;
     int current_label = 1, init_label = 1;
@@ -129,7 +130,7 @@ using namespace LEARNER;
       ssize_t len = ss.str().size();
       ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
       if (t != len)
-        cerr << "write error" << endl;
+        cerr << "write error: " << strerror(errno) << endl;
     }    
   }
 
@@ -163,13 +164,12 @@ using namespace LEARNER;
   template <bool is_learn>
   void predict_or_learn(bs& d, base_learner& base, example& ec)
   {
-    vw* all = d.all;
-    bool shouldOutput = all->raw_prediction > 0;
+    vw& all = *d.all;
+    bool shouldOutput = all.raw_prediction > 0;
 
     float weight_temp = ec.l.simple.weight;
   
-    string outputString;
-    stringstream outputStringStream(outputString);
+    stringstream outputStringStream;
     d.pred_vec.clear();
 
     for (size_t i = 1; i <= d.B; i++)
@@ -194,10 +194,10 @@ using namespace LEARNER;
     switch(d.bs_type)
     {
       case BS_TYPE_MEAN:
-        bs_predict_mean(*all, ec, d.pred_vec);
+        bs_predict_mean(all, ec, d.pred_vec);
         break;
       case BS_TYPE_VOTE:
-        bs_predict_vote(*all, ec, d.pred_vec);
+        bs_predict_vote(ec, d.pred_vec);
         break;
       default:
         std::cerr << "Unknown bs_type specified: " << d.bs_type << ". Exiting." << endl;
@@ -205,8 +205,7 @@ using namespace LEARNER;
     }
 
     if (shouldOutput) 
-      all->print_text(all->raw_prediction, outputStringStream.str(), ec.tag);
-
+      all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
   void finish_example(vw& all, bs& d, example& ec)
@@ -221,7 +220,7 @@ using namespace LEARNER;
 base_learner* bs_setup(vw& all)
 {
   if (missing_option<size_t, true>(all, "bootstrap", "k-way bootstrap by online importance resampling"))
-    return NULL;
+    return nullptr;
   new_options(all, "Bootstrap options")("bs_type", po::value<string>(), 
 					"prediction type {mean,vote}");    
   add_options(all);

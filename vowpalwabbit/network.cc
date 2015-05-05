@@ -34,7 +34,7 @@ int open_socket(const char* host)
 #endif
   short unsigned int port = 26542;
   hostent* he;
-  if (colon != NULL)
+  if (colon != nullptr)
     {
       port = atoi(colon+1);
       string hostname(host,colon-host);
@@ -43,7 +43,7 @@ int open_socket(const char* host)
   else
     he = gethostbyname(host);
 
-  if (he == NULL)
+  if (he == nullptr)
     {
       cerr << "gethostbyname(" << host << "): " << strerror(errno) << endl;
       throw exception();

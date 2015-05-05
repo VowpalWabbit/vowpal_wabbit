@@ -18,7 +18,7 @@ struct compare_scored_examples
   { return a.first > b.first; }
 };
 
-struct topk{
+struct topk {
   uint32_t B; //rec number
   priority_queue<scored_example, vector<scored_example>, compare_scored_examples > pr_queue;
 };
@@ -49,7 +49,7 @@ void print_result(int f, priority_queue<scored_example, vector<scored_example>, 
       ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
 #endif
       if (t != len)
-        cerr << "write error" << endl;
+        cerr << "write error: " << strerror(errno) << endl;
     }    
 }
 
@@ -101,7 +101,7 @@ void finish_example(vw& all, topk& d, example& ec)
 LEARNER::base_learner* topk_setup(vw& all)
 {
   if (missing_option<size_t, false>(all, "top", "top k recommendation"))
-    return NULL;
+    return nullptr;
   
   topk& data = calloc_or_die<topk>();
   data.B = (uint32_t)all.vm["top"].as<size_t>();

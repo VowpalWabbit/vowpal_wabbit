@@ -25,31 +25,33 @@ using namespace std;
 void initialize_regressor(vw& all)
 {
   // Regressor is already initialized.
-  if (all.reg.weight_vector != NULL) {
+  if (all.reg.weight_vector != nullptr) {
     return;
   }
 
   size_t length = ((size_t)1) << all.num_bits;
   all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
   all.reg.weight_vector = calloc_or_die<weight>(length << all.reg.stride_shift);
-  if (all.reg.weight_vector == NULL)
+  if (all.reg.weight_vector == nullptr)
     {
       cerr << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>" << endl;
       throw exception();
-    }
+    } else
+  if (all.initial_weight != 0.)
+    {
+     for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
+       all.reg.weight_vector[j] = all.initial_weight;      
+    } else
+  if (all.random_positive_weights)
+    {
+      for (size_t j = 0; j < length; j++)
+	all.reg.weight_vector[j << all.reg.stride_shift] = (float)(0.1 * frand48());
+    } else      
   if (all.random_weights)
     {
       for (size_t j = 0; j < length; j++)
 	all.reg.weight_vector[j << all.reg.stride_shift] = (float)(frand48() - 0.5);
     }
-  if (all.random_positive_weights)
-    {
-      for (size_t j = 0; j < length; j++)
-	all.reg.weight_vector[j << all.reg.stride_shift] = (float)(0.1 * frand48());
-    }
-  if (all.initial_weight != 0.)
-    for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
-      all.reg.weight_vector[j] = all.initial_weight;
 }
 
 const size_t buf_size = 512;
@@ -71,12 +73,12 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       bin_text_read_write(model_file, buff2, v_length, 
 			  "", read, 
 			  buff, text_len, text);
-      version_struct v_tmp(buff2);
-      if (v_tmp < LAST_COMPATIBLE_VERSION)
-	{
-	  cout << "Model has possibly incompatible version! " << v_tmp.to_string() << endl;
-	  throw exception();
-	}
+      all.model_file_ver = buff2; //stord in all to check save_resume fix in gd
+      if (all.model_file_ver < LAST_COMPATIBLE_VERSION)
+            {
+                cout << "Model has possibly incompatible version! " << all.model_file_ver.to_string() << endl;
+                throw exception();
+            }
       
       char model = 'm';
       bin_text_read_write_fixed(model_file,&model,1,
@@ -254,13 +256,11 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
 
 void save_predictor(vw& all, string reg_name, size_t current_pass)
 {
-  char* filename = new char[reg_name.length()+4];
+  stringstream filename;
+  filename << reg_name;
   if (all.save_per_pass)
-    sprintf(filename,"%s.%lu",reg_name.c_str(),(long unsigned)current_pass);
-  else
-    sprintf(filename,"%s",reg_name.c_str());
-  dump_regressor(all, string(filename), false);
-  delete[] filename;
+    filename << "." << current_pass;
+  dump_regressor(all, filename.str(), false);
 }
 
 void finalize_regressor(vw& all, string reg_name)

@@ -16,7 +16,7 @@ class SearchTask():
     def _run(self, your_own_input_example):
         pass
 
-    def _call_vw(self, my_example, isTest): # run_fn, setup_fn, takedown_fn, isTest):
+    def _call_vw(self, my_example, isTest, useOracle=False): # run_fn, setup_fn, takedown_fn, isTest):
         self._output = None
         self.bogus_example.set_test_only(isTest)
         def run(): self._output = self._run(my_example)
@@ -25,6 +25,7 @@ class SearchTask():
         if callable(getattr(self, "_setup", None)): setup = lambda: self._setup(my_example)
         if callable(getattr(self, "_takedown", None)): takedown = lambda: self._takedown(my_example)
         self.sch.set_structured_predict_hook(run, setup, takedown)
+        self.sch.set_force_oracle(useOracle)
         self.vw.learn(self.bogus_example)
         self.vw.learn(self.blank_line) # this will cause our ._run hook to get called
         
@@ -39,8 +40,8 @@ class SearchTask():
         else:
             return self.vw.example(None, labelType)
             
-    def predict(self, my_example):
-        self._call_vw(my_example, isTest=True);
+    def predict(self, my_example, useOracle=False):
+        self._call_vw(my_example, isTest=True, useOracle=useOracle);
         return self._output
 
 class vw(pylibvw.vw):
@@ -48,10 +49,22 @@ class vw(pylibvw.vw):
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
     
-    def __init__(self, argString=""):
+    def __init__(self, argString=None, **kw):
         """Initialize the vw object. The (optional) argString is the
-        same as the command line arguments you'd use to run vw (eg,"--audit")"""
-        pylibvw.vw.__init__(self,argString)
+        same as the command line arguments you'd use to run vw (eg,"--audit").
+        you can also use key/value pairs as in:
+          pyvw.vw(audit=True, b=24, k=True, c=True, l2=0.001)
+        or a combination, for instance:
+          pyvw.vw("--audit", b=26)"""
+        def format(key,val):
+            if type(val) is bool and val == False: return ''
+            s = ('-'+key) if len(key) == 1 else ('--'+key)
+            if type(val) is not bool or val != True: s += ' ' + str(val)
+            return s
+        l = [format(k,v) for k,v in kw.iteritems()]
+        if argString is not None: l = [argString] + l
+        #print ' '.join(l)
+        pylibvw.vw.__init__(self,' '.join(l))
         self.finished = False
 
     def get_weight(self, index, offset=0):
@@ -121,7 +134,6 @@ class vw(pylibvw.vw):
             Returns a single prediction.
 
             """
-
             P = sch.get_predictor(my_tag)
             if sch.is_ldf():
                 # we need to know how many actions there are, even if we don't know their identities
@@ -133,12 +145,16 @@ class vw(pylibvw.vw):
                         ec = examples[n]
                         while hasattr(ec, '__call__'): ec = ec()   # unfold the lambdas
                         if not isinstance(ec, example) and not isinstance(ec, pylibvw.example): raise TypeError('non-example in LDF example list in SearchTask.predict()')
+                        if hasattr(ec, 'setup_done') and not ec.setup_done:
+                            ec.setup_example()
                         P.set_input_at(n, ec)
                 else:
                     pass # TODO: do we need to set the examples even though they're not used?
             else:
                 if sch.predict_needs_example():
                     while hasattr(examples, '__call__'): examples = examples()
+                    if hasattr(examples, 'setup_done') and not examples.setup_done:
+                        examples.setup_example()
                     P.set_input(examples)
                 else:
                     pass # TODO: do we need to set the examples even though they're not used?
@@ -176,7 +192,8 @@ class vw(pylibvw.vw):
 
                 if learner_id != 0: P.set_learner_id(learner_id)
 
-                return P.predict()
+                p = P.predict()
+                return p
             else:
                 raise TypeError("'examples' should be a pyvw example (or a pylibvw example), or a list of said things")
 
@@ -252,7 +269,7 @@ class example_namespace():
     def pop_feature(self):
         """Remove the top feature from the current namespace; returns True
         if a feature was removed, returns False if there were no
-        features to pop. Fails if setup has run."""
+        features to pop."""
         return self.ex.pop_feature(self.ns)
 
     def push_features(self, ns, featureList):
@@ -392,10 +409,8 @@ class example(pylibvw.example):
             self.vw = vw
             self.stride = vw.get_stride()
             self.finished = False
+            self.push_feature_dict(vw, initStringOrDict)
             self.setup_done = False
-            for ns_char,feats in initStringOrDict.iteritems():
-                self.push_features(ns_char, feats)
-            self.setup_example()
         else:
             raise TypeError('expecting string or dict as argument for example construction')
 
@@ -455,6 +470,13 @@ class example(pylibvw.example):
         self.vw.setup_example(self)
         self.setup_done = True
 
+    def unsetup_example(self):
+        """If this example has been setup, reverse that process so you can continue editing the examples."""
+        if not self.setup_done:
+            raise Exception('trying to unsetup_example that has not yet been setup')
+        self.vw.unsetup_example(self)
+        self.setup_done = False
+        
     def learn(self):
         """Learn on this example (and before learning, automatically
         call setup_example if the example hasn't yet been setup)."""
@@ -488,42 +510,40 @@ class example(pylibvw.example):
 
 
     def push_hashed_feature(self, ns, f, v=1.):
-        """Add a hashed feature to a given namespace (fails if setup
-        has already run on this example). Fails if setup has run."""
-        if self.setup_done: raise Exception("error: modification to example after setup")
+        """Add a hashed feature to a given namespace."""
+        if self.setup_done: self.unsetup_example();
         pylibvw.example.push_hashed_feature(self, self.get_ns(ns).ord_ns, f, v)
 
     def push_feature(self, ns, feature, v=1., ns_hash=None):
-        """Add an unhashed feature to a given namespace (fails if
-        setup has already run on this example)."""
+        """Add an unhashed feature to a given namespace."""
         f = self.get_feature_id(ns, feature, ns_hash)
         self.push_hashed_feature(ns, f, v)
 
     def pop_feature(self, ns):
         """Remove the top feature from a given namespace; returns True
         if a feature was removed, returns False if there were no
-        features to pop. Fails if setup has run."""
-        if self.setup_done: raise Exception("error: modification to example after setup")
+        features to pop."""
+        if self.setup_done: self.unsetup_example();
         return pylibvw.example.pop_feature(self, self.get_ns(ns).ord_ns)
 
     def push_namespace(self, ns):
         """Push a new namespace onto this example. You should only do
         this if you're sure that this example doesn't already have the
-        given namespace. Fails if setup has run."""
-        if self.setup_done: raise Exception("error: modification to example after setup")
+        given namespace."""
+        if self.setup_done: self.unsetup_example();
         pylibvw.example.push_namespace(self, self.get_ns(ns).ord_ns)
 
     def pop_namespace(self):
         """Remove the top namespace from an example; returns True if a
         namespace was removed, or False if there were no namespaces
-        left. Fails if setup has run."""
-        if self.setup_done: raise Exception("error: modification to example after setup")
+        left."""
+        if self.setup_done: self.unsetup_example();
         return pylibvw.example.pop_namespace(self)
 
     def ensure_namespace_exists(self, ns):
         """Check to see if a namespace already exists. If it does, do
-        nothing. If it doesn't, add it. Fails if setup has run."""
-        if self.setup_done: raise Exception("error: modification to example after setup")
+        nothing. If it doesn't, add it."""
+        if self.setup_done: self.unsetup_example();
         return pylibvw.example.ensure_namespace_exists(self, self.get_ns(ns).ord_ns)
 
     def push_features(self, ns, featureList):
@@ -539,23 +559,21 @@ class example(pylibvw.example):
            space_hash = vw.hash_space( 'x' )
            feat_hash  = vw.hash_feature( 'a', space_hash )
            ex.push_features('x', [feat_hash])    # note: 'x' should match the space_hash!
-
-        Fails if setup has run."""
+        """
         ns = self.get_ns(ns)
         self.ensure_namespace_exists(ns)
-        #self.push_feature_list(self.vw, ns.ord_ns, featureList)
-        ns_hash = self.vw.hash_space( ns.ns )
-        for feature in featureList:
-            if isinstance(feature, int) or isinstance(feature, str):
-                f = feature
-                v = 1.
-            elif isinstance(feature, tuple) and len(feature) == 2:
-                f = feature[0]
-                v = feature[1]
-            else:
-                raise Exception('malformed feature to push of type: ' + str(type(feature)))
-
-            self.push_feature(ns, f, v, ns_hash)
+        self.push_feature_list(self.vw, ns.ord_ns, featureList)   # much faster just to do it in C++
+        # ns_hash = self.vw.hash_space( ns.ns )
+        # for feature in featureList:
+        #     if isinstance(feature, int) or isinstance(feature, str):
+        #         f = feature
+        #         v = 1.
+        #     elif isinstance(feature, tuple) and len(feature) == 2 and (isinstance(feature[0], int) or isinstance(feature[0], str)) and (isinstance(feature[1], int) or isinstance(feature[1], float)):
+        #         f = feature[0]
+        #         v = feature[1]
+        #     else:
+        #         raise Exception('malformed feature to push of type: ' + str(type(feature)))
+        #     self.push_feature(ns, f, v, ns_hash)
 
 
     def finish(self):

@@ -93,7 +93,7 @@ inline float parseFloat(char * p, char **end)
     exp_acc *= exp_s;
     
   }
-  if (*p == ' ')//easy case succeeded.
+  if (*p == ' ' || *p == '\n' || *p == '\t')//easy case succeeded.
     {
       acc *= powf(10,(float)(exp_acc-num_dec));
       *end = p;

@@ -52,10 +52,10 @@ class curv_exception: public exception {} curv_ex;
 // w[2] = step direction
 // w[3] = preconditioner
   
-  const float max_precond_ratio = 100.f;
+  const float max_precond_ratio = 10000.f;
 
   struct bfgs {
-    vw* all;
+    vw* all;//prediction, regressor
     int m;
     float rel_threshold; // termination threshold
 
@@ -210,7 +210,7 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer)
   uint32_t length = 1 << all.num_bits;
   size_t stride_shift = all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
-  if (b.regularizers == NULL)
+  if (b.regularizers == nullptr)
     for(uint32_t i = 0; i < length; i++)
       ret += regularizer*weights[(i << stride_shift)+W_DIR]*weights[(i << stride_shift)+W_DIR];
   else
@@ -414,7 +414,7 @@ double add_regularization(vw& all, bfgs& b, float regularization)
   uint32_t length = 1 << all.num_bits;
   size_t stride_shift = all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
-  if (b.regularizers == NULL)
+  if (b.regularizers == nullptr)
     {
       for(uint32_t i = 0; i < length; i++) {
 	weights[(i << stride_shift)+W_GT] += regularization*weights[i << stride_shift];
@@ -440,7 +440,7 @@ void finalize_preconditioner(vw& all, bfgs& b, float regularization)
   weight* weights = all.reg.weight_vector;
   float max_hessian = 0.f;
 
-  if (b.regularizers == NULL)
+  if (b.regularizers == nullptr)
     for(uint32_t i = 0; i < length; i++) {
       weights[stride*i+W_COND] += regularization;
 	  if (weights[stride*i+W_COND] > max_hessian)
@@ -470,11 +470,11 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
   uint32_t length = 1 << all.num_bits;
   size_t stride = 1 << all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
-  if (b.regularizers == NULL)
+  if (b.regularizers == nullptr)
     {
       b.regularizers = calloc_or_die<weight>(2*length);
       
-      if (b.regularizers == NULL)
+      if (b.regularizers == nullptr)
 	{
 	  cerr << all.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
 	  throw exception();
@@ -903,7 +903,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
       if (all->per_feature_regularizer_input != "")
 	{
 	  b.regularizers = calloc_or_die<weight>(2*length);
-	  if (b.regularizers == NULL)
+	  if (b.regularizers == nullptr)
 	    {
 	      cerr << all->program_name << ": Failed to allocate regularizers array: try decreasing -b <bits>" << endl;
 	      throw exception();
@@ -932,7 +932,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 	  cerr.precision(5);
 	}
       
-      if (b.regularizers != NULL)
+      if (b.regularizers != nullptr)
 	all->l2_lambda = 1; // To make sure we are adding the regularization
       b.output_regularizer =  (all->per_feature_regularizer_output != "" || all->per_feature_regularizer_text != "");
       reset_state(*all, b, false);
@@ -965,7 +965,7 @@ base_learner* bfgs_setup(vw& all)
 {
   if (missing_option(all, false, "bfgs", "use bfgs optimization") &&
       missing_option(all, false, "conjugate_gradient", "use conjugate gradient based optimization"))
-    return NULL;
+    return nullptr;
   new_options(all, "LBFGS options")
     ("hessian_on", "use second derivative in line search")
     ("mem", po::value<uint32_t>()->default_value(15), "memory in bfgs")

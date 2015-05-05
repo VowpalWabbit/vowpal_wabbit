@@ -162,18 +162,6 @@ namespace COST_SENSITIVE {
         ld->costs.push_back(f);
       }
     }
-
-    if (words.size() == 0) {
-      if (sd->k != (uint32_t)-1) {
-        for (uint32_t i = 1; i <= sd->k; i++) {
-          wclass f = {FLT_MAX, i, 0., 0.};
-          ld->costs.push_back(f);
-        }
-      } else {
-        //cerr << "ldf test examples must have possible labels listed" << endl;
-        //throw exception();
-      }
-    }
   }
 
   label_parser cs_label = {default_label, parse_label, 
@@ -189,7 +177,7 @@ namespace COST_SENSITIVE {
         size_t num_current_features = ec.num_features;
         // for csoaa_ldf we want features from the whole (multiline example),
         // not only from one line (the first one) represented by ec
-        if (ec_seq != NULL)
+        if (ec_seq != nullptr)
 	  {
           num_current_features = 0;
           // If the first example is "shared", don't include its features.
@@ -205,15 +193,13 @@ namespace COST_SENSITIVE {
 	    num_current_features += (*ecc)->num_features;
         }
 
-        char label_buf[32];
+	std::string label_buf;
         if (is_test)
-          strcpy(label_buf," unknown");
+          label_buf = " unknown";
         else
-          sprintf(label_buf," known");
-	char pred_buf[32];
-	sprintf(pred_buf,"%8lu",(long unsigned int)ec.pred.multiclass);
+          label_buf = " known";
 
-	all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf, 
+	all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, ec.pred.multiclass, 
 			     num_current_features, all.progress_add, all.progress_arg);
       }
   }
@@ -256,7 +242,7 @@ namespace COST_SENSITIVE {
       all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
     }
 
-    print_update(all, is_test_label(ec.l.cs), ec, NULL);
+    print_update(all, is_test_label(ec.l.cs), ec, nullptr);
   }
 
   bool example_is_test(example& ec)

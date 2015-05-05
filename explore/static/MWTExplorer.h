@@ -90,6 +90,9 @@ public:
 		return action;
 	}
 
+	virtual ~MwtExplorer()
+	{ }
+
 private:
 	u64 m_app_id;
 	IRecorder<Ctx>& m_recorder;
@@ -186,7 +189,9 @@ struct StringRecorder : public IRecorder<Ctx>
 		m_recording.append(" ", 1);
 
 		char prob_str[10] = { 0 };
-		NumberUtils::Float_To_String(probability, prob_str);
+        int x = (int)probability;
+        int d = (int)(fabs(probability - x) * 100000);
+        sprintf_s(prob_str, 10 * sizeof(char), "%d.%05d", x, d);
 		m_recording.append(prob_str);
 
 		m_recording.append(" | ", 3);
@@ -242,19 +247,20 @@ public:
 	string To_String()
 	{
 		string out_string;
-		char feature_str[35] = { 0 };
+		const size_t strlen = 35;
+		char feature_str[strlen] = { 0 };
 		for (size_t i = 0; i < m_features.size(); i++)
 		{
 			int chars;
 			if (i == 0)
 			{
-				chars = sprintf(feature_str, "%d:", m_features[i].Id);
+                chars = sprintf_s(feature_str, strlen, "%d:", m_features[i].Id);
 			}
 			else
 			{
-				chars = sprintf(feature_str, " %d:", m_features[i].Id);
+                chars = sprintf_s(feature_str, strlen, " %d:", m_features[i].Id);
 			}
-			NumberUtils::print_float(feature_str + chars, m_features[i].Value);
+            NumberUtils::print_float(feature_str + chars, strlen-chars, m_features[i].Value);
 			out_string.append(feature_str);
 		}
 		return out_string;
@@ -293,9 +299,8 @@ public:
 		}
 	}
 
-	~EpsilonGreedyExplorer()
-	{
-	}
+	virtual ~EpsilonGreedyExplorer()
+	{ }
 
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
@@ -462,6 +467,9 @@ public:
 		}
 	}
 
+	virtual ~GenericExplorer()
+	{ }
+
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
@@ -545,6 +553,9 @@ public:
 		}
 	}
 
+	virtual ~TauFirstExplorer()
+	{ }
+
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
 	{
@@ -617,6 +628,9 @@ public:
 			throw std::invalid_argument("Number of bags must be at least 1.");
 		}
 	}
+
+	virtual ~BootstrapExplorer()
+	{ }
 
 private:
 	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)

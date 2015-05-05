@@ -16,7 +16,7 @@ void predict_or_learn(char&, LEARNER::base_learner& base, example& ec) {
   if (ec.l.simple.label != FLT_MAX)
     {
       if (fabs(ec.l.simple.label) != 1.f)
-	cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
+	cout << "You are using label " << ec.l.simple.label << " not -1 or 1 as loss function expects!" << endl;
       else
 	if (ec.l.simple.label == ec.pred.scalar)
 	  ec.loss = 0.;
@@ -28,10 +28,10 @@ void predict_or_learn(char&, LEARNER::base_learner& base, example& ec) {
 LEARNER::base_learner* binary_setup(vw& all)
 {
   if (missing_option(all, false, "binary", "report loss as binary classification on -1,1"))
-    return NULL;
+    return nullptr;
   
   LEARNER::learner<char>& ret = 
-    LEARNER::init_learner<char>(NULL, setup_base(all), 
+    LEARNER::init_learner<char>(nullptr, setup_base(all), 
 				predict_or_learn<true>, predict_or_learn<false>);
   return make_base(ret);
 }
