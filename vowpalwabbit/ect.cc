@@ -115,7 +115,7 @@ size_t create_circuit(ect& e, uint32_t max_label, uint32_t eliminations)
   
   while (not_empty(e.all_levels[level]))
     {
-      v_array<v_array<uint32_t > > new_tournaments = v_init<v_array<uint32_t>>();
+      v_array<v_array<uint32_t > > new_tournaments = v_init<v_array<uint32_t> >();
       tournaments = e.all_levels[level];
       
       for (size_t t = 0; t < tournaments.size(); t++)
