@@ -78,6 +78,8 @@ namespace VW {
   primitive_feature_space* export_example(vw& all, example* e, size_t& len);
   void releaseFeatureSpace(primitive_feature_space* features, size_t len);
 
+  void save_predictor(vw& all, string reg_name);
+
   // inlines
 
   //First create the hash of a namespace.
