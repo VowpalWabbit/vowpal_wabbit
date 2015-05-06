@@ -109,7 +109,7 @@ endif
 
 test: .FORCE vw library_example
 	@echo "vw running test-suite..."
-	(cd test && ./RunTests -d -fe -E 0.001 ../vowpalwabbit/vw ../vowpalwabbit/vw)
+	(cd test && ./RunTests -d -f  -E 0.001 ../vowpalwabbit/vw ../vowpalwabbit/vw)
 
 install: $(BINARIES)
 	cd vowpalwabbit; cp $(BINARIES) /usr/local/bin; cd ../cluster; $(MAKE) install

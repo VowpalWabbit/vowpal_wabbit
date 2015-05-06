@@ -37,11 +37,13 @@ template<class T> struct v_array {
       if ((size_t)(end_array-begin) != length)
 	{
 	  size_t old_len = end-begin;
-	  begin = (T *)realloc(begin, sizeof(T) * length);
-	  if ((begin == nullptr) && ((sizeof(T)*length) > 0)) {
+	  T* temp = (T *)realloc(begin, sizeof(T) * length);
+	  if ((temp == nullptr) && ((sizeof(T)*length) > 0)) {
 	    std::cerr << "realloc of " << length << " failed in resize().  out of memory?" << std::endl;
 	    throw std::exception();
 	  }
+	  else
+	    begin = temp;
           if (zero_everything && (old_len < length))
             memset(begin+old_len, 0, (length-old_len)*sizeof(T));
 	  end = begin+old_len;

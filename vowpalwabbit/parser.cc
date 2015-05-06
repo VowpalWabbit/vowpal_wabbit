@@ -842,7 +842,6 @@ void setup_example(vw& all, example* ae)
       ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
     }
 
-  // generate atomic features for all interactions
   size_t new_features_cnt;
   float new_features_sum_feat_sq;
   INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
