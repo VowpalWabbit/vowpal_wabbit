@@ -204,7 +204,7 @@ namespace GraphTask {
 
   void add_edge_features_group_fn(task_data&D, float fv, uint32_t fx) {
     example*node = D.cur_node;
-    float fx2 = (fx & D.mask); // / D.multiplier;
+    float fx2 = (fx & D.mask) / D.multiplier;
     for (size_t k=0; k<=D.K; k++) {
       if (D.neighbor_predictions[k] == 0.) continue;
       feature f = { fv * D.neighbor_predictions[k], (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint32_t)D.mask };
@@ -216,7 +216,7 @@ namespace GraphTask {
 
   void add_edge_features_single_fn(task_data&D, float fv, uint32_t fx) {
     example*node = D.cur_node;
-    float fx2 = (fx & D.mask); // / D.multiplier;
+    float fx2 = (fx & D.mask) / D.multiplier;
     size_t k = (size_t) D.neighbor_predictions[0];
     feature f = { fv, (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint32_t)D.mask };
     node->atomics[neighbor_namespace].push_back(f);
