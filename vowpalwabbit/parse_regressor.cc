@@ -344,4 +344,11 @@ void parse_mask_regressor_args(vw& all)
   }
 }
 
+namespace VW
+{
+	void save_predictor(vw& all, string reg_name)
+	{
+		dump_regressor(all, reg_name, false);
+	}
+}
 
