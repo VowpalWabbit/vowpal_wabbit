@@ -90,7 +90,7 @@ namespace VW {
     ss.end = ss.begin + s.length();
     return (uint32_t)all.p->hasher(ss,hash_base);
   }
-  inline uint32_t hash_space(string s, string hash)
+  inline uint32_t hash_space_static(string s, string hash)
   {
       substring ss;
       ss.begin = (char*)s.c_str();
@@ -105,7 +105,7 @@ namespace VW {
     ss.end = ss.begin + s.length();
     return (uint32_t)(all.p->hasher(ss,u) & all.parse_mask);
   }
-  inline uint32_t hash_feature(string s, unsigned long u, string h, uint32_t num_bits)
+  inline uint32_t hash_feature_static(string s, unsigned long u, string h, uint32_t num_bits)
   {
       substring ss;
       ss.begin = (char*)s.c_str();

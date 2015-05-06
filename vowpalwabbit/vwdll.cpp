@@ -205,7 +205,7 @@ extern "C"
     {
         string str(s);
         string hash(h);
-        return VW::hash_space(str, hash);
+        return VW::hash_space_static(str, hash);
     }
 
 #ifdef USE_CODECVT
@@ -236,7 +236,7 @@ extern "C"
     {
         string str(s);
         string hash(h);
-        return VW::hash_feature(str, u, hash, num_bits);
+        return VW::hash_feature_static(str, u, hash, num_bits);
     }
 
 	VW_DLL_MEMBER void  VW_CALLING_CONV VW_AddLabel(VW_EXAMPLE e, float label, float weight, float base)
