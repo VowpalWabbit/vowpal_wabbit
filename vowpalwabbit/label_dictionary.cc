@@ -5,40 +5,6 @@
 namespace LabelDict { 
   size_t hash_lab(size_t lab) { return 328051 + 94389193 * lab; }
   
-  bool ec_is_label_definition(example& ec) // label defs look like "0:___" or just "label:___"
-  {
-    if (ec.indices.size() != 1) return false;
-    if (ec.indices[0] != 'l') return false;
-    v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
-    for (size_t j=0; j<costs.size(); j++)
-      if ((costs[j].class_index != 0) || (costs[j].x <= 0.)) return false;
-    return true;    
-  }
-
-  bool ec_is_example_header(example& ec)  // example headers look like "0:-1" or just "shared"
-  {
-    v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
-    if (costs.size() != 1) return false;
-    if (costs[0].class_index != 0) return false;
-    if (costs[0].x >= 0) return false;
-    return true;    
-  }
-
-  bool ec_seq_is_label_definition(v_array<example*>ec_seq)
-  {
-    if (ec_seq.size() == 0) return false;
-    bool is_lab = ec_is_label_definition(*ec_seq[0]);
-    for (size_t i=1; i<ec_seq.size(); i++) {
-      if (is_lab != ec_is_label_definition(*ec_seq[i])) {
-        if (!((i == ec_seq.size()-1) && (example_is_newline(*ec_seq[i])))) {
-          cerr << "error: mixed label definition and examples in ldf data!" << endl;
-          throw exception();
-        }
-      }
-    }
-    return is_lab;
-  }
-
   void del_example_namespace(example& ec, char ns, v_array<feature> features) {
     size_t numf = features.size();
     // print_update is called after this del_example_namespace,

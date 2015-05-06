@@ -868,7 +868,7 @@ namespace Search {
     float  best_prediction = 0.;
     action best_action = 0;
     
-    size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
+    size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 1 : 0;
 
     v_array<action_cache>* this_cache = nullptr;
     if (need_partial_predictions) {
@@ -1055,7 +1055,7 @@ namespace Search {
       priv.total_examples_generated++;
     } else {              // is  LDF
       assert(cs_get_costs_size(priv.cb_learner, losses) == priv.learn_ec_ref_cnt);
-      size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(priv.learn_ec_ref[0])) ? 1 : 0;
+      size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(priv.learn_ec_ref[0])) ? 1 : 0;
 
       if (add_conditioning)
         for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
@@ -1305,7 +1305,7 @@ namespace Search {
           // if this succeeded, 'a' has the right action
           priv.total_cache_hits++;
         else { // we need to predict, and then cache, and maybe run foreach_action
-          size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
+          size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 1 : 0;
           if (priv.auto_condition_features)
             for (size_t n=start_K; n<ec_cnt; n++)
               add_example_conditioning(priv, ecs[n], condition_on, condition_on_cnt, condition_on_names, priv.condition_on_actions.begin);

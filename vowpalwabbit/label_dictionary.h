@@ -4,10 +4,7 @@ namespace LabelDict {
 
   void add_example_namespace(example& ec, char ns, v_array<feature> features);
   void del_example_namespace(example& ec, char ns, v_array<feature> features);
-  bool ec_is_label_definition(example& ec); // label defs look like "0:___" or just "label:___"
-  bool ec_seq_is_label_definition(v_array<example*>ec_seq);
 
-  bool ec_is_example_header(example& ec);  // example headers look like "0:-1" or just "shared"
   void set_label_features(label_feature_map& data, size_t lab, v_array<feature>features);
 
   void add_example_namespaces_from_example(example& target, example& source);

@@ -108,6 +108,31 @@ struct ldf {
   base_learner* base;
 };
 
+  bool ec_is_label_definition(example& ec) // label defs look like "0:___" or just "label:___"
+  {
+    if (ec.indices.size() != 1) return false;
+    if (ec.indices[0] != 'l') return false;
+    v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
+    for (size_t j=0; j<costs.size(); j++)
+      if ((costs[j].class_index != 0) || (costs[j].x <= 0.)) return false;
+    return true;    
+  }
+
+  bool ec_seq_is_label_definition(v_array<example*>ec_seq)
+  {
+    if (ec_seq.size() == 0) return false;
+    bool is_lab = ec_is_label_definition(*ec_seq[0]);
+    for (size_t i=1; i<ec_seq.size(); i++) {
+      if (is_lab != ec_is_label_definition(*ec_seq[i])) {
+        if (!((i == ec_seq.size()-1) && (example_is_newline(*ec_seq[i])))) {
+          cerr << "error: mixed label definition and examples in ldf data!" << endl;
+          throw exception();
+        }
+      }
+    }
+    return is_lab;
+  }
+
 inline bool cmp_wclass_ptr(const COST_SENSITIVE::wclass* a, const COST_SENSITIVE::wclass* b) { return a->x < b->x; }
 
 void compute_wap_values(vector<COST_SENSITIVE::wclass*> costs) {
@@ -188,7 +213,7 @@ bool check_ldf_sequence(ldf& data, size_t start_K)
       isTest = true;
       cerr << "warning: ldf example has mix of train/test data; assuming test" << endl;
     }
-    if (LabelDict::ec_is_example_header(*ec)) {
+    if (ec_is_example_header(*ec)) {
       cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
       throw exception();
     }
@@ -310,7 +335,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   if (data.ec_seq.size() <= 0) return;  // nothing to do
 
   /////////////////////// handle label definitions
-  if (LabelDict::ec_seq_is_label_definition(data.ec_seq)) {
+  if (ec_seq_is_label_definition(data.ec_seq)) {
     for (size_t i=0; i<data.ec_seq.size(); i++) {
       v_array<feature> features = v_init<feature>();
       for (feature*f=data.ec_seq[i]->atomics[data.ec_seq[i]->indices[0]].begin; f!=data.ec_seq[i]->atomics[data.ec_seq[i]->indices[0]].end; f++) {
@@ -330,7 +355,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   /////////////////////// add headers
   size_t K = data.ec_seq.size();
   size_t start_K = 0;
-  if (LabelDict::ec_is_example_header(*data.ec_seq[0])) {
+  if (ec_is_example_header(*data.ec_seq[0])) {
     start_K = 1;
     for (size_t k=1; k<K; k++)
       LabelDict::add_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0]);
@@ -384,8 +409,8 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
   v_array<COST_SENSITIVE::wclass> costs = ld.costs;
     
   if (example_is_newline(ec)) return;
-  if (LabelDict::ec_is_example_header(ec)) return;
-  if (LabelDict::ec_is_label_definition(ec)) return;
+  if (ec_is_example_header(ec)) return;
+  if (ec_is_label_definition(ec)) return;
 
   all.sd->total_features += ec.num_features;
 
@@ -424,7 +449,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
 
 void output_example_seq(vw& all, ldf& data)
 {
-  if ((data.ec_seq.size() > 0) && !LabelDict::ec_seq_is_label_definition(data.ec_seq)) {
+  if ((data.ec_seq.size() > 0) && !ec_seq_is_label_definition(data.ec_seq)) {
     all.sd->weighted_examples += 1;
     all.sd->example_number++;
 
@@ -453,7 +478,7 @@ void end_pass(ldf& data)
 
 void finish_singleline_example(vw& all, ldf&, example& ec)
 {
-  if (! LabelDict::ec_is_label_definition(ec)) {
+  if (! ec_is_label_definition(ec)) {
     all.sd->weighted_examples += 1;
     all.sd->example_number++;
   }
@@ -501,7 +526,7 @@ void predict_or_learn(ldf& data, base_learner& base, example &ec) {
     assert(is_test_ec); // Only test examples are supported with singleline
     assert(ec.l.cs.costs.size() > 0); // headers not allowed with singleline
     make_single_prediction(data, base, ec);
-  } else if (LabelDict::ec_is_label_definition(ec)) {
+  } else if (ec_is_label_definition(ec)) {
     if (data.ec_seq.size() > 0) {
       cerr << "error: label definition encountered in data block" << endl;
       throw exception();
