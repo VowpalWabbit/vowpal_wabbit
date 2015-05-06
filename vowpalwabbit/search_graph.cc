@@ -55,7 +55,7 @@ namespace GraphTask {
 
     // for adding new features
     size_t mask; // all->reg.weight_mask
-    size_t ss;   // all->reg.stride_shift
+    size_t multiplier;   // all.wpp << all.reg.stride_shift
     
     // per-example data
     uint32_t N;  // number of nodes
@@ -66,6 +66,9 @@ namespace GraphTask {
     example*cur_node;       // pointer to the current node for add_edge_features_fn
     float* neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
     weight* weight_vector;
+    uint32_t* confusion_matrix;
+    float* true_counts;
+    float true_counts_total;
   };
 
   inline bool example_is_test(polylabel&l) { return l.cs.costs.size() == 0; }
@@ -89,16 +92,23 @@ namespace GraphTask {
     D->K = num_actions;
     D->neighbor_predictions = calloc_or_die<float>(D->K+1);
 
+    D->confusion_matrix = calloc_or_die<uint32_t>( (D->K+1)*(D->K+1) );
+    D->true_counts = calloc_or_die<float>(D->K+1);
+    D->true_counts_total = (float)(D->K+1);
+    for (size_t k=0; k<=D->K; k++) D->true_counts[k] = 1.;
+    
     if (D->separate_learners) sch.set_num_learners(D->num_loops);
     
     sch.set_task_data<task_data>(D);
-    sch.set_options( Search::AUTO_HAMMING_LOSS );
+    sch.set_options( 0 ); // Search::AUTO_HAMMING_LOSS );
     sch.set_label_parser( COST_SENSITIVE::cs_label, example_is_test );
   }
 
   void finish(Search::search& sch) {
     task_data * D = sch.get_task_data<task_data>();
     free(D->neighbor_predictions);
+    free(D->confusion_matrix);
+    free(D->true_counts);
     delete D;
   }
   
@@ -142,7 +152,8 @@ namespace GraphTask {
     task_data& D = *sch.get_task_data<task_data>();
 
     D.mask = sch.get_vw_pointer_unsafe().reg.weight_mask;
-    D.ss   = sch.get_vw_pointer_unsafe().reg.stride_shift;
+    D.multiplier = sch.get_vw_pointer_unsafe().wpp << sch.get_vw_pointer_unsafe().reg.stride_shift;
+    cerr << "multiplier = " << D.multiplier << endl;
     D.weight_vector = sch.get_vw_pointer_unsafe().reg.weight_vector;
     
     D.N = 0;
@@ -153,9 +164,13 @@ namespace GraphTask {
       else { // it's a node!
         if (D.E > 0) { cerr << "error: got a node after getting edges!" << endl; throw exception(); }
         D.N++;
+        if (ec[i]->l.cs.costs.size() > 0) {
+          D.true_counts[ec[i]->l.cs.costs[0].class_index] += 1.;
+          D.true_counts_total += 1.;
+        }
       }
 
-    if ((D.N == 0) && (D.E > 0)) { cerr << "error: got edges without any nodes!" << endl; throw exception(); }
+    if ((D.N == 0) && (D.E > 0)) { cerr << "error: got edges without any nodes (perhaps ring_size is too small?)!" << endl; throw exception(); }
 
     D.adj = vector<vector<size_t>>(D.N, vector<size_t>(0));
 
@@ -189,9 +204,10 @@ namespace GraphTask {
 
   void add_edge_features_group_fn(task_data&D, float fv, uint32_t fx) {
     example*node = D.cur_node;
+    float fx2 = (fx & D.mask); // / D.multiplier;
     for (size_t k=0; k<=D.K; k++) {
       if (D.neighbor_predictions[k] == 0.) continue;
-      feature f = { fv * D.neighbor_predictions[k], (uint32_t) ((( ((fx & D.mask) >> D.ss) + 348919043 * k ) << D.ss) & D.mask) };
+      feature f = { fv * D.neighbor_predictions[k], (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint32_t)D.mask };
       node->atomics[neighbor_namespace].push_back(f);
       node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     }
@@ -200,8 +216,9 @@ namespace GraphTask {
 
   void add_edge_features_single_fn(task_data&D, float fv, uint32_t fx) {
     example*node = D.cur_node;
+    float fx2 = (fx & D.mask); // / D.multiplier;
     size_t k = (size_t) D.neighbor_predictions[0];
-    feature f = { fv, (uint32_t) (( ((fx & D.mask) >> D.ss) + 348919043 * k ) << D.ss) };
+    feature f = { fv, (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint32_t)D.mask };
     node->atomics[neighbor_namespace].push_back(f);
     node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     // TODO: audit
@@ -241,6 +258,17 @@ namespace GraphTask {
     ec[n]->indices.push_back(neighbor_namespace);
     ec[n]->total_sum_feat_sq += ec[n]->sum_feat_sq[neighbor_namespace];
     ec[n]->num_features += ec[n]->atomics[neighbor_namespace].size();
+
+    vw& all = sch.get_vw_pointer_unsafe();
+    for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
+      int i0 = (int)(*i)[0];
+      int i1 = (int)(*i)[1];
+      if ((i0 == neighbor_namespace) || (i1 == neighbor_namespace)) {
+        ec[n]->num_features      += ec[n]->atomics[i0].size() * ec[n]->atomics[i1].size();
+        ec[n]->total_sum_feat_sq += ec[n]->sum_feat_sq[i0]*ec[n]->sum_feat_sq[i1];
+      }
+    }
+    
   }
   
   void del_edge_features(task_data&D, uint32_t n, vector<example*>&ec) {
@@ -250,10 +278,37 @@ namespace GraphTask {
     ec[n]->atomics[neighbor_namespace].erase();
     ec[n]->sum_feat_sq[neighbor_namespace] = 0.;
   }
+
+#define IDX(i,j) ( (i) * (D.K+1) + j )
+
+  float macro_f(task_data& D) {
+    float total_f1 = 0.;
+    float count_f1 = 0.;
+    for (size_t k=1; k<=D.K; k++) {
+      float trueC = 0.;
+      float predC = 0.;
+      for (size_t j=1; j<=D.K; j++) {
+        trueC += (float)D.confusion_matrix[ IDX(k,j) ];
+        predC += (float)D.confusion_matrix[ IDX(j,k) ];
+      }
+      if (trueC == 0) continue;
+      float correctC = D.confusion_matrix[ IDX(k,k) ];
+      count_f1++;
+      if (correctC > 0) {
+        float pre = correctC / predC;
+        float rec = correctC / trueC;
+        total_f1 += 2 * pre * rec / (pre + rec);
+      }
+    }
+    return total_f1 / count_f1;
+  }
   
   void run(Search::search& sch, vector<example*>& ec) {
     task_data& D = *sch.get_task_data<task_data>();
-
+    size_t K_squared = (D.K+1)*(D.K+1);
+    
+    memset(D.confusion_matrix, 0, K_squared * sizeof(uint32_t));
+    
     for (size_t n=0; n<D.N; n++) D.pred[n] = D.K+1;
     
     for (size_t loop=0; loop<D.num_loops; loop++) {
@@ -261,15 +316,18 @@ namespace GraphTask {
       if (loop % 2 == 1) { start = D.N-1; end=-1; step = -1; } // go inward on odd loops
       for (int n_id = start; n_id != end; n_id += step) {
         uint32_t n = D.bfs[n_id];
+        uint32_t k = (ec[n]->l.cs.costs.size() > 0) ? ec[n]->l.cs.costs[0].class_index : 0;
 
         bool add_features = /* D.use_structure && */ sch.predictNeedsExample();
 
         if (add_features) add_edge_features(sch, D, n, ec);
         Search::predictor P = Search::predictor(sch, n+1);
         P.set_input(*ec[n]);
+        if (k > 0)
+          P.set_weight( D.true_counts_total / D.true_counts[k] / (float)(D.K) );
         if (D.separate_learners) P.set_learner_id(loop);
-        if (ec[n]->l.cs.costs.size() > 0) // for test examples
-          P.set_oracle(ec[n]->l.cs.costs[0].class_index);
+        if (k > 0) // for test examples
+          P.set_oracle(k);
         // add all the conditioning
         for (size_t i=0; i<D.adj[n].size(); i++) {
           for (size_t j=0; j<ec[i]->l.cs.costs.size(); j++) {
@@ -286,26 +344,12 @@ namespace GraphTask {
       }
     }
 
+    for (uint32_t n=0; n<D.N; n++)
+      D.confusion_matrix[ IDX( ec[n]->l.cs.costs[0].class_index, D.pred[n] ) ] ++;
+    sch.loss( 1. - macro_f(D) );
+    
     if (sch.output().good())
       for (uint32_t n=0; n<D.N; n++)
         sch.output() << D.pred[n] << ' ';
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

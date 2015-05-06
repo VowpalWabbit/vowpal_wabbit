@@ -229,7 +229,7 @@ bool operator<(const string_value& first, const string_value& second)
 
 void audit_quad(vw& all, feature& left_feature, audit_data* left_audit, v_array<feature> &right_features, v_array<audit_data> &audit_right, vector<string_value>& results, string& ns_pre, uint32_t offset = 0)
 {
-  size_t halfhash = quadratic_constant * (left_feature.weight_index + offset);
+  size_t halfhash = quadratic_constant * (left_feature.weight_index) + offset;
 
   ostringstream tempstream;
   if (audit_right.size() != 0 && left_audit && all.audit)
@@ -242,13 +242,13 @@ void audit_quad(vw& all, feature& left_feature, audit_data* left_audit, v_array<
     ns_pre = ns_pre + '^' + left_audit->feature + '^';
   }
  
-  audit_features(all, right_features, audit_right, results, prepend, ns_pre, halfhash + offset, left_audit ? left_audit->x : 1);
+  audit_features(all, right_features, audit_right, results, prepend, ns_pre, halfhash, left_audit ? left_audit->x : 1);
 }
 
 void audit_triple(vw& all, feature& f0, audit_data* f0_audit, feature& f1, audit_data* f1_audit, 
 		  v_array<feature> &right_features, v_array<audit_data> &audit_right, vector<string_value>& results, string& ns_pre, uint32_t offset = 0)
 {
-  size_t halfhash = cubic_constant2 * (cubic_constant * (f0.weight_index + offset) + f1.weight_index + offset);
+  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index) + offset;
 
   ostringstream tempstream;
   if (audit_right.size() > 0 && f0_audit && f1_audit && all.audit)
@@ -261,7 +261,7 @@ void audit_triple(vw& all, feature& f0, audit_data* f0_audit, feature& f1, audit
     ns_pre = f0_audit->space;
     ns_pre = ns_pre + '^' + f0_audit->feature + '^' + f1_audit->space + '^' + f1_audit->feature + '^';
   }
-  audit_features(all, right_features, audit_right, results, prepend, ns_pre, halfhash + offset);  
+  audit_features(all, right_features, audit_right, results, prepend, ns_pre, halfhash);
 }
 
 void print_features(vw& all, example& ec)
@@ -328,6 +328,7 @@ void print_features(vw& all, example& ec)
 
       sort(features.begin(),features.end());
       if(all.audit){
+        cout << "(+=" << ec.ft_offset << ") ";
         for (vector<string_value>::iterator sv = features.begin(); sv!= features.end(); sv++)
 	  cout << '\t' << (*sv).s;
         cout << endl;
@@ -387,8 +388,9 @@ void predict(gd& g, base_learner& base, example& ec)
     ec.partial_prediction = inline_predict(all, ec);    
   
   ec.partial_prediction *= (float)all.sd->contraction;
+  bool wasNAN = nanpattern(ec.partial_prediction);
   ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
-  if (audit)
+  if (audit && wasNAN)
     print_audit_features(all, ec);
 }
 
@@ -411,10 +413,13 @@ void multipredict(gd& g, base_learner& base, example& ec, size_t count, size_t s
   if (all.sd->contraction != 1.)
     for (size_t c=0; c<count; c++)
       pred[c].scalar *= (float)all.sd->contraction;
+  bool wasNAN = false;
   if (finalize_predictions)
-    for (size_t c=0; c<count; c++)
+    for (size_t c=0; c<count; c++) {
+      if (nanpattern(pred[c].scalar)) wasNAN = true;
       pred[c].scalar = finalize_prediction(all.sd, pred[c].scalar);
-  if (audit) {
+    }
+  if (audit && wasNAN) {
     for (size_t c=0; c<count; c++) {
       ec.pred.scalar = pred[c].scalar;
       print_audit_features(all, ec);

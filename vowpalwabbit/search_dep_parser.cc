@@ -18,6 +18,7 @@ struct task_data {
   v_array<uint32_t> valid_actions, valid_labels, action_loss, gold_heads, gold_tags, stack, heads, tags, temp;
   v_array<uint32_t> children[6]; // [0]:num_left_arcs, [1]:num_right_arcs; [2]: leftmost_arc, [3]: second_leftmost_arc, [4]:rightmost_arc, [5]: second_rightmost_arc
   example * ec_buf[13];
+  bool old_style_labels;
 };
 
 namespace DepParserTask {
@@ -32,7 +33,8 @@ namespace DepParserTask {
     po::options_description dparser_opts("dependency parser options");
     dparser_opts.add_options()
         ("root_label", po::value<size_t>(&(data->root_label))->default_value(8), "Ensure that there is only one root in each sentence")
-        ("num_label", po::value<size_t>(&(data->num_label))->default_value(12), "Number of arc labels");
+        ("num_label", po::value<size_t>(&(data->num_label))->default_value(12), "Number of arc labels")
+        ("old_style_labels", "Use old hack of label information");
     srn.add_program_options(vm, dparser_opts);
 
     for(size_t i=1; i<=data->num_label;i++)
@@ -45,6 +47,8 @@ namespace DepParserTask {
       data->ex->indices.push_back((unsigned char)i+'A');
     data->ex->indices.push_back(constant_namespace);
 
+    data->old_style_labels = vm.count("old_style_labels") > 0;
+    
     vw& all = srn.get_vw_pointer_unsafe();
     const char* pair[] = {"BC", "BE", "BB", "CC", "DD", "EE", "FF", "GG", "EF", "BH", "BJ", "EL", "dB", "dC", "dD", "dE", "dF", "dG", "dd"};
     const char* triple[] = {"EFG", "BEF", "BCE", "BCD", "BEL", "ELM", "BHI", "BCC", "BJE", "BHE", "BJK", "BEH", "BEN", "BEJ"};
@@ -265,9 +269,15 @@ namespace DepParserTask {
 
     // return the best action
     size_t best_action = 1;
+    size_t count = 0;
     for(size_t i=1; i<=3; i++)
-      if(action_loss[i] <= action_loss[best_action])
+      if(action_loss[i] < action_loss[best_action]) {
         best_action= i;
+        count = 1;
+      } else if (action_loss[i] == action_loss[best_action])
+        count++;
+    if (count > 0)
+      cerr << count << ':' << action_loss[best_action] << ' ';
     return best_action;
   }
 
@@ -283,8 +293,15 @@ namespace DepParserTask {
     gold_tags.push_back(0);
     for (size_t i=0; i<n; i++) {
       v_array<COST_SENSITIVE::wclass>& costs = ec[i]->l.cs.costs;
-      uint32_t head = (costs.size() == 0) ? 0 : costs[0].class_index;
-      uint32_t tag  = (costs.size() <= 1) ? data->root_label : costs[1].class_index;
+      uint32_t head,tag;
+      if (data->old_style_labels) {
+        uint32_t label = costs[0].class_index;
+        head = (label & 255) -1;
+        tag  = label >> 8;
+      } else {
+        head = (costs.size() == 0) ? 0 : costs[0].class_index;
+        tag  = (costs.size() <= 1) ? data->root_label : costs[1].class_index;
+      }
       if (tag > data->num_label) {
         cerr << "invalid label " << tag << " which is > num actions=" << data->num_label << endl;
         throw exception();
