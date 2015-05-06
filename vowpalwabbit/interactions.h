@@ -147,7 +147,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
                         {
 
                             const float ft_weight = fst->x*snd->x;
-                            const size_t ft_idx = (snd->weight_index ^ halfhash) << stride_shift;
+                            const size_t ft_idx = ((snd->weight_index >> stride_shift) ^ halfhash) << stride_shift;
                             call_T<R, T> (dat, weight_vector, weight_mask, ft_weight, ft_idx);
 
                         } // end for(snd)
@@ -200,7 +200,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
                                     for (; thr < thr_end; ++thr)
                                     {
                                         const float ft_weight2 = ft_weight1 * thr->x;
-                                        const size_t ft_idx = (thr->weight_index ^ halfhash2) << stride_shift;
+                                        const size_t ft_idx = ((thr->weight_index >> stride_shift)^ halfhash2) << stride_shift;
 
                                         call_T<R, T> (dat, weight_vector, weight_mask, ft_weight2, ft_idx);
 
