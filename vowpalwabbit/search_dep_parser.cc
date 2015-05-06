@@ -52,6 +52,13 @@ namespace DepParserTask {
     vector<string> newtriples(triple, triple+14);
     all.pairs.swap(newpairs);
     all.triples.swap(newtriples);
+
+    for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i)
+        i->delete_v();
+    for (vector<string>::const_iterator i = all.pairs.begin(); i != all.pairs.end(); ++i)
+        all.interactions.push_back(string2v_string(*i));
+    for (vector<string>::const_iterator i = all.triples.begin(); i != all.triples.end(); ++i)
+        all.interactions.push_back(string2v_string(*i));
     
     srn.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
     srn.set_label_parser( COST_SENSITIVE::cs_label, [](polylabel&l) -> bool { return l.cs.costs.size() == 0; });
