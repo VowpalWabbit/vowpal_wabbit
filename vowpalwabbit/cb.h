@@ -21,6 +21,8 @@ namespace CB {
   };
 
   extern label_parser cb_label;//for learning
+  bool example_is_test(example& ec);
+  bool ec_is_example_header(example& ec);  // example headers look like "0:-1" or just "shared"
 }
 
 namespace CB_EVAL {

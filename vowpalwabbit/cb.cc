@@ -227,4 +227,22 @@ namespace CB_EVAL
 			  delete_label, CB::weight, 
 			  copy_label,
 			  sizeof(CB_EVAL::label)};
+  
+  bool example_is_test(example& ec)
+  {
+    v_array<CB::cb_class> costs = ec.l.cb.costs;
+    if (costs.size() == 0) return true;
+    for (size_t j=0; j<costs.size(); j++)
+      if (costs[j].cost != FLT_MAX) return false;
+    return true;    
+  }
+
+  bool ec_is_example_header(example& ec)  // example headers look like "0:-1" or just "shared"
+  {
+    v_array<CB::cb_class> costs = ec.l.cb.costs;
+    if (costs.size() != 1) return false;
+    if (costs[0].action != 0) return false;
+    if (costs[0].cost >= 0) return false;
+    return true;    
+  }
 }
