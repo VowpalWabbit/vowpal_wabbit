@@ -90,6 +90,13 @@ namespace VW {
     ss.end = ss.begin + s.length();
     return (uint32_t)all.p->hasher(ss,hash_base);
   }
+  inline uint32_t hash_space(string s, string hash)
+  {
+      substring ss;
+      ss.begin = (char*)s.c_str();
+      ss.end = ss.begin + s.length();
+      return (uint32_t)getHasher(hash)(ss, hash_base);
+  }
   //Then use it as the seed for hashing features.
   inline uint32_t hash_feature(vw& all, string s, unsigned long u)
   {
@@ -97,6 +104,14 @@ namespace VW {
     ss.begin = (char*)s.c_str();
     ss.end = ss.begin + s.length();
     return (uint32_t)(all.p->hasher(ss,u) & all.parse_mask);
+  }
+  inline uint32_t hash_feature(string s, unsigned long u, string h, uint32_t num_bits)
+  {
+      substring ss;
+      ss.begin = (char*)s.c_str();
+      ss.end = ss.begin + s.length();
+      size_t parse_mark = (1 << num_bits) - 1;
+      return (uint32_t)(getHasher(h)(ss, u) & parse_mark);
   }
 
   inline uint32_t hash_feature_cstr(vw& all, char* fstr, unsigned long u)

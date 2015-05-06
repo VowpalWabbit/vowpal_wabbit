@@ -184,6 +184,15 @@ extern "C"
 		std::string sa(convert.to_bytes(s));
 		return VW_HashSpaceA(handle,sa.c_str());
 	}
+
+    VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceStatic(const char16_t * s, const char16_t * h)
+    {
+        std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
+        std::string sa(convert.to_bytes(s));
+        std::string ha(convert.to_bytes(h));
+
+        return VW_HashSpaceStaticA(sa.c_str(), ha.c_str());
+    }
 #endif
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceA(VW_HANDLE handle, const char * s)
 	{
@@ -192,6 +201,13 @@ extern "C"
 		return VW::hash_space(*pointer, str);
 	}
 
+    VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceStaticA(const char * s, const char* h = "strings")
+    {
+        string str(s);
+        string hash(h);
+        return VW::hash_space(str, hash);
+    }
+
 #ifdef USE_CODECVT
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeature(VW_HANDLE handle, const char16_t * s, unsigned long u)
 	{
@@ -199,6 +215,14 @@ extern "C"
 		std::string sa(convert.to_bytes(s));
 		return VW_HashFeatureA(handle,sa.c_str(),u);
 	}
+
+    VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStatic(const char16_t * s, unsigned long u, const char16_t * h, unsigned int num_bits)
+    {
+        std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
+        std::string sa(convert.to_bytes(s));
+        std::string ha(convert.to_bytes(h));
+        return VW_HashFeatureStaticA(sa.c_str(), u, ha.c_str(), num_bits);
+    }
 #endif
 
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureA(VW_HANDLE handle, const char * s, unsigned long u)
@@ -208,6 +232,13 @@ extern "C"
 		return VW::hash_feature(*pointer, str, u);
 	}
 	
+    VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStaticA(const char * s, unsigned long u, const char * h = "strings", unsigned int num_bits = 18)
+    {
+        string str(s);
+        string hash(h);
+        return VW::hash_feature(str, u, hash, num_bits);
+    }
+
 	VW_DLL_MEMBER void  VW_CALLING_CONV VW_AddLabel(VW_EXAMPLE e, float label, float weight, float base)
 	{
 		example* ex = static_cast<example*>(e);
