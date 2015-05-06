@@ -2350,7 +2350,17 @@ namespace Search {
 
   void predictor::set_input_length(size_t input_length) {
     is_ldf = true;
-    if (ec_alloced) ec = (example*)realloc(ec, input_length * sizeof(example));
+    if (ec_alloced) 
+      {
+	example* temp = (example*)realloc(ec, input_length * sizeof(example));
+	if (temp != nullptr)
+	  ec = temp;
+	else
+	  {
+	    cerr << "realloc failed in search.cc " << endl;
+	    throw exception();
+	  }
+      }
     else            ec = calloc_or_die<example>(input_length);
     ec_cnt = input_length;
     ec_alloced = true;
