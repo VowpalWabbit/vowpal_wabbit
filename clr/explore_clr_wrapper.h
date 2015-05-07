@@ -494,11 +494,15 @@ namespace MultiWorldTesting {
 
 		virtual void Record(Ctx context, UInt32 action, float probability, String^ uniqueKey)
 		{
+            // Normal handles are sufficient here since native code will only hold references and not access the object's data
+            // https://www.microsoftpressstore.com/articles/article.aspx?p=2224054&seqNum=4
 			GCHandle contextHandle = GCHandle::Alloc(context);
 			IntPtr contextPtr = (IntPtr)contextHandle;
 
 			NativeStringContext native_context(contextPtr.ToPointer(), GetCallback());
 			m_string_recorder->Record(native_context, (u32)action, probability, marshal_as<string>(uniqueKey));
+
+            contextHandle.Free();
 		}
 
 		/// <summary>

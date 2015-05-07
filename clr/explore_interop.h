@@ -111,6 +111,8 @@ public:
 
 	void Record(NativeContext& context, u32 action, float probability, string unique_key)
 	{
+        // Normal handles are sufficient here since native code will only hold references and not access the object's data
+        // https://www.microsoftpressstore.com/articles/article.aspx?p=2224054&seqNum=4
 		GCHandle uniqueKeyHandle = GCHandle::Alloc(gcnew String(unique_key.c_str()));
 		IntPtr uniqueKeyPtr = (IntPtr)uniqueKeyHandle;
 
