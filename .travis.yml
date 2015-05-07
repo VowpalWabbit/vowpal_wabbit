@@ -5,8 +5,12 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libboost-all-dev
   - sudo apt-get install maven
-install: 
+  - sudo pip install cpp-coveralls
+script:
   - make
   - make python
-  - cd java; mvn test
-script: make test
+  - cd java; mvn test; cd ..
+  - make test
+  - make test_gcov --always-make
+after_success:
+  - coveralls --exclude lib --exclude tests --gcov-options '\-lp'
