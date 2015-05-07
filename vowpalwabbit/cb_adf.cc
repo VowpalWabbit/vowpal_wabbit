@@ -18,7 +18,6 @@ struct cb_adf {
   v_array<example*> ec_seq;
   
   bool need_to_clear;
-  bool first_pass;
   bool is_singleline;
   float csoaa_example_t;
   vw* all;
@@ -175,7 +174,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
     
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(ec), ec, ec_seq);
+  CB::print_update(all, CB::example_is_test(ec), ec, ec_seq);
 }
 
 void output_example_seq(vw& all, cb_adf& data)
@@ -200,11 +199,6 @@ void clear_seq_and_finish_examples(vw& all, cb_adf& data)
       if ((*ecc)->in_use)
         VW::finish_example(all, *ecc);
   data.ec_seq.erase();
-}
-
-void end_pass(cb_adf& data)
-{
-  data.first_pass = false;
 }
 
 void finish_singleline_example(vw& all, cb_adf&, example& ec)
@@ -247,7 +241,7 @@ template <bool is_learn>
 void predict_or_learn(cb_adf& data, base_learner& base, example &ec) {
   vw* all = data.all;
   data.base = &base;
-  bool is_test_ec = COST_SENSITIVE::example_is_test(ec);
+  bool is_test_ec = CB::example_is_test(ec);
   bool need_to_break = data.ec_seq.size() >= all->p->ring_size - 2;
 
   if (ec_is_label_definition(ec)) {
@@ -259,8 +253,6 @@ void predict_or_learn(cb_adf& data, base_learner& base, example &ec) {
     do_actual_learning<is_learn>(data, base);
     data.need_to_clear = true;
   } else if ((example_is_newline(ec) && is_test_ec) || need_to_break) {
-    if (need_to_break && data.first_pass)
-      cerr << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << endl;
     do_actual_learning<is_learn>(data, base);
     data.need_to_clear = true;
   } else {
@@ -280,7 +272,6 @@ base_learner* cb_adf_setup(vw& all)
   cb_adf& ld = calloc_or_die<cb_adf>();
 
   ld.all = &all;
-  ld.first_pass = true;
  
   string adf_arg;
 
@@ -294,6 +285,12 @@ base_learner* cb_adf_setup(vw& all)
 
   all.p->lp = CB::cb_label;
 
+  if (count(all.args.begin(), all.args.end(),"--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(),"--wap_ldf") == 0)
+    {
+      all.args.push_back("--csoaa_ldf");
+      all.args.push_back(adf_arg);
+    }
+
   learner<cb_adf>& l = init_learner(&ld, setup_base(all), predict_or_learn<true>, predict_or_learn<false>);
   if (ld.is_singleline)
     l.set_finish_example(finish_singleline_example);
@@ -301,6 +298,5 @@ base_learner* cb_adf_setup(vw& all)
     l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);
   l.set_end_examples(end_examples); 
-  l.set_end_pass(end_pass);
   return make_base(l);
 }

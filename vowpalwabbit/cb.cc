@@ -154,6 +154,57 @@ namespace CB
 				  copy_label,
 				  sizeof(label)};
 
+  bool example_is_test(example& ec)
+  {
+    v_array<CB::cb_class> costs = ec.l.cb.costs;
+    if (costs.size() == 0) return true;
+    for (size_t j=0; j<costs.size(); j++)
+      if (costs[j].cost != FLT_MAX) return false;
+    return true;    
+  }
+
+  bool ec_is_example_header(example& ec)  // example headers look like "0:-1" or just "shared"
+  {
+    v_array<CB::cb_class> costs = ec.l.cb.costs;
+    if (costs.size() != 1) return false;
+    if (costs[0].action != 0) return false;
+    if (costs[0].cost >= 0) return false;
+    return true;    
+  }
+
+  void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* ec_seq)
+  {
+    if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+      {
+	size_t num_current_features = ec.num_features;
+	// for csoaa_ldf we want features from the whole (multiline example),
+        // not only from one line (the first one) represented by ec
+        if (ec_seq != nullptr)
+	  {
+	    num_current_features = 0;
+          // If the first example is "shared", don't include its features.
+          // These should be already included in each example (TODO: including quadratic and cubic).
+          // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
+	    example** ecc=ec_seq->begin;
+	    example& first_ex = **ecc;
+	    
+	    v_array<CB::cb_class> costs = first_ex.l.cb.costs;
+	    if (costs.size() == 1 && costs[0].action == 0 && costs[0].cost < 0) ecc++;
+	    
+	    for (; ecc!=ec_seq->end; ecc++)
+	      num_current_features += (*ecc)->num_features;
+	  }
+	
+	std::string label_buf;
+        if (is_test)
+          label_buf = " unknown";
+        else
+          label_buf = " known";
+
+	all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, ec.pred.multiclass, 
+			     num_current_features, all.progress_add, all.progress_arg);
+      }
+  }
 }
 
 namespace CB_EVAL
@@ -227,22 +278,4 @@ namespace CB_EVAL
 			  delete_label, CB::weight, 
 			  copy_label,
 			  sizeof(CB_EVAL::label)};
-  
-  bool example_is_test(example& ec)
-  {
-    v_array<CB::cb_class> costs = ec.l.cb.costs;
-    if (costs.size() == 0) return true;
-    for (size_t j=0; j<costs.size(); j++)
-      if (costs[j].cost != FLT_MAX) return false;
-    return true;    
-  }
-
-  bool ec_is_example_header(example& ec)  // example headers look like "0:-1" or just "shared"
-  {
-    v_array<CB::cb_class> costs = ec.l.cb.costs;
-    if (costs.size() != 1) return false;
-    if (costs[0].action != 0) return false;
-    if (costs[0].cost >= 0) return false;
-    return true;    
-  }
 }
