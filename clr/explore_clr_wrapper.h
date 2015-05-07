@@ -406,6 +406,8 @@ namespace MultiWorldTesting {
 			String^ salt = this->appId;
 			NativeMultiWorldTesting::MwtExplorer<NativeContext> mwt(marshal_as<std::string>(salt), *GetNativeRecorder());
 
+			// Normal handles are sufficient here since native code will only hold references and not access the object's data
+			// https://www.microsoftpressstore.com/articles/article.aspx?p=2224054&seqNum=4
 			GCHandle selfHandle = GCHandle::Alloc(this);
 			IntPtr selfPtr = (IntPtr)selfHandle;
 
