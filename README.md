@@ -6,7 +6,7 @@ license as described in the file LICENSE.
  */
 ```
 
-[![Build Status](https://travis-ci.org/JohnLangford/vowpal_wabbit.png)](https://travis-ci.org/JohnLangford/vowpal wabbit)
+[![Build Status](https://travis-ci.org/JohnLangford/vowpal_wabbit.png)](https://travis-ci.org/JohnLangford/vowpal_wabbit)
 
 This is the *vowpal wabbit* fast online learning code.  For Windows, look at README.windows.txt
 
