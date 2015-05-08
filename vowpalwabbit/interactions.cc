@@ -374,10 +374,6 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
                     // count number of features with weight != 1.;
                     size_t cnt_ft_weight_non_1 = 0;
-                    if (feature_self_interactions_for_weight_other_than_1)
-                        for (feature* ft = features.begin; ft != features.end; ++ft)
-                            if (ft->x != 1.) ++cnt_ft_weight_non_1;
-
 
 
                     // if number of features is less than  order of interaction then go to the next interaction
