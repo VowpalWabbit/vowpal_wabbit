@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{E4E962AE-7056-4EB0-A8C5-8DC824A4B068}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>VowpalWabbit</RootNamespace>
+    <AssemblyName>VowpalWabbit</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Serializer\Attributes\CacheableAttribute.cs" />
+    <Compile Include="Serializer\Attributes\CommentAttribute.cs" />
+    <Compile Include="Serializer\Attributes\FeatureAttribute.cs" />
+    <Compile Include="Serializer\Attributes\ActionDependentFeaturesAttribute.cs" />
+    <Compile Include="Serializer\Interfaces\IFeature.cs" />
+    <Compile Include="Serializer\Interfaces\INamespace.cs" />
+    <Compile Include="Serializer\Interfaces\INamespaceDense.cs" />
+    <Compile Include="Serializer\Interfaces\INamespaceSparse.cs" />
+    <Compile Include="Serializer\Interfaces\IVowpalWabbitSerializer.cs" />
+    <Compile Include="Serializer\Interfaces\IVowpalWabbitVisitor.cs" />
+    <Compile Include="Serializer\Intermediate\Feature.cs" />
+    <Compile Include="Serializer\Intermediate\FeatureExpression.cs" />
+    <Compile Include="Serializer\Intermediate\Namespace.cs" />
+    <Compile Include="Serializer\Intermediate\NamespaceDense.cs" />
+    <Compile Include="Serializer\Intermediate\NamespaceSparse.cs" />
+    <Compile Include="Serializer\Reflection\ReflectionHelper.cs" />
+    <Compile Include="Serializer\Reflection\TypeDistance.cs" />
+    <Compile Include="Serializer\Reflection\TypeMatch.cs" />
+    <Compile Include="Serializer\Visitors\VowpalWabbitStringVisitor.cs" />
+    <Compile Include="Serializer\VWSerializer.cs" />
+    <Compile Include="Serializer\VWStringSerializer.cs" />
+    <Compile Include="VowpalWabbit.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
