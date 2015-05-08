@@ -90,6 +90,12 @@ public:
 		return action;
 	}
 
+PORTING_INTERFACE:
+    u32 Get_Number_Of_Actions(IExplorer<Ctx>& explorer, Ctx& context)
+    {
+        return explorer.Get_Number_Of_Actions(context);
+    }
+
 private:
 	u64 m_app_id;
 	IRecorder<Ctx>& m_recorder;
@@ -140,6 +146,9 @@ public:
 	virtual std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context) = 0;
     virtual void Enable_Explore(bool explore) = 0;
     virtual ~IExplorer() { }
+
+PORTING_INTERFACE:
+    virtual u32 Get_Number_Of_Actions(Ctx& context) = 0;
 };
 
 ///
@@ -432,6 +441,13 @@ private:
 		return std::tuple<u32, float, bool>(chosen_action, action_probability, true);
 	}
 
+PORTING_INTERFACE:
+
+    u32 Get_Number_Of_Actions(Ctx& context)
+    {
+        return ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+    }
+
 private:
 	IPolicy<Ctx>& m_default_policy;
 	const float m_epsilon;
@@ -562,6 +578,13 @@ private:
 		return std::tuple<u32, float, bool>(action_index + 1, action_probability, true);
 	}
 
+PORTING_INTERFACE:
+
+    u32 Get_Number_Of_Actions(Ctx& context)
+    {
+        return ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+    }
+
 private:
 	IScorer<Ctx>& m_default_scorer;
     bool m_explore;
@@ -665,6 +688,13 @@ private:
 		return std::tuple<u32, float, bool>(action_index + 1, action_probability, true);
 	}
 
+PORTING_INTERFACE:
+
+    u32 Get_Number_Of_Actions(Ctx& context)
+    {
+        return ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+    }
+
 private:
 	IScorer<Ctx>& m_default_scorer;
     bool m_explore;
@@ -753,6 +783,13 @@ private:
 
 		return std::tuple<u32, float, bool>(chosen_action, action_probability, log_action);
 	}
+
+PORTING_INTERFACE:
+
+    u32 Get_Number_Of_Actions(Ctx& context)
+    {
+        return ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+    }
 
 private:
 	IPolicy<Ctx>& m_default_policy;
@@ -872,6 +909,13 @@ private:
 
 		return std::tuple<u32, float, bool>(chosen_action, action_probability, true);
 	}
+
+PORTING_INTERFACE:
+
+    u32 Get_Number_Of_Actions(Ctx& context)
+    {
+        return ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+    }
 
 private:
 	vector<unique_ptr<IPolicy<Ctx>>>& m_default_policy_functions;

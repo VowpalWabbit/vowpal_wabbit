@@ -71,10 +71,21 @@ public:
 		return m_clr_explorer;
 	}
 
+    void* Get_Clr_Action_List()
+    {
+        return m_clr_action_list;
+    }
+
+    void Set_Clr_Action_List(void* clr_action_list)
+    {
+        m_clr_action_list = clr_action_list;
+    }
+
 private:
 	void* m_clr_mwt;
 	void* m_clr_context;
 	void* m_clr_explorer;
+    void* m_clr_action_list;
 
 private:
     Native_Context_Get_Num_Actions_Callback* m_callback_num_actions;
