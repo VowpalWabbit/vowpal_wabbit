@@ -31,6 +31,7 @@ public interface class IRecorder
 public:
 	/// <summary>
 	/// Records the exploration data associated with a given decision.
+    /// This implementation should be thread-safe if multithreading is needed.
 	/// </summary>
 	/// <param name="context">A user-defined context for the decision.</param>
 	/// <param name="action">Chosen by an exploration algorithm given context.</param>
@@ -50,6 +51,7 @@ public interface class IPolicy
 public:
 	/// <summary>
 	/// Determines the action to take for a given context.
+    /// This implementation should be thread-safe if multithreading is needed.
 	/// </summary>
 	/// <param name="context">A user-defined context for the decision.</param>
 	/// <returns>Index of the action to take (1-based)</returns>
@@ -66,6 +68,7 @@ public interface class IScorer
 public:
 	/// <summary>
 	/// Determines the score of each action for a given context.
+    /// This implementation should be thread-safe if multithreading is needed.
 	/// </summary>
 	/// <param name="context">A user-defined context for the decision.</param>
 	/// <returns>Vector of scores indexed by action (1-based).</returns>

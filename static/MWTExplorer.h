@@ -107,6 +107,7 @@ class IRecorder
 public:
 	///
 	/// Records the exploration data associated with a given decision.
+    /// This implementation should be thread-safe if multithreading is needed.
 	///
 	/// @param context      A user-defined context for the decision
 	/// @param action       The action chosen by an exploration algorithm given context
@@ -151,6 +152,7 @@ class IPolicy
 public:
 	///
 	/// Determines the action to take for a given context.
+    /// This implementation should be thread-safe if multithreading is needed.
 	///
 	/// @param context   A user-defined context for the decision
 	/// @returns	        The action to take (1-based index)
@@ -168,6 +170,7 @@ class IScorer
 public:
 	///
 	/// Determines the score of each action for a given context.
+    /// This implementation should be thread-safe if multithreading is needed.
 	///
 	/// @param context   A user-defined context for the decision 
 	/// @returns         A vector of scores indexed by action (1-based)
@@ -225,7 +228,7 @@ struct StringRecorder : public IRecorder<Ctx>
 	void Record(Ctx& context, u32 action, float probability, string unique_key)
 	{
 		// Implicitly enforce To_String() API on the context
-	    m_recording.append(to_string((unsigned long long)action));
+	  m_recording.append(to_string((unsigned long long)action));
 		m_recording.append(" ", 1);
 		m_recording.append(unique_key);
 		m_recording.append(" ", 1);
@@ -431,9 +434,9 @@ private:
 
 private:
 	IPolicy<Ctx>& m_default_policy;
-	float m_epsilon;
+	const float m_epsilon;
     bool m_explore;
-	u32 m_num_actions;
+    const u32 m_num_actions;
 };
 
 ///
@@ -562,8 +565,8 @@ private:
 private:
 	IScorer<Ctx>& m_default_scorer;
     bool m_explore;
-	float m_lambda;
-	u32 m_num_actions;
+	const float m_lambda;
+    const u32 m_num_actions;
 };
 
 ///
@@ -665,7 +668,7 @@ private:
 private:
 	IScorer<Ctx>& m_default_scorer;
     bool m_explore;
-	u32 m_num_actions;
+    const u32 m_num_actions;
 };
 
 ///
@@ -755,7 +758,7 @@ private:
 	IPolicy<Ctx>& m_default_policy;
     bool m_explore;
 	u32 m_tau;
-	u32 m_num_actions;
+    const u32 m_num_actions;
 };
 
 ///
@@ -775,9 +778,8 @@ public:
 	///
 	BootstrapExplorer(vector<unique_ptr<IPolicy<Ctx>>>& default_policy_functions, u32 num_actions) :
 		m_default_policy_functions(default_policy_functions),
-        m_num_actions(num_actions), m_explore(true)
+        m_num_actions(num_actions), m_explore(true), m_bags((u32)default_policy_functions.size())
 	{
-	        m_bags = (u32)default_policy_functions.size();
 		if (m_num_actions < 1)
 		{
 			throw std::invalid_argument("Number of actions must be at least 1.");
@@ -797,10 +799,8 @@ public:
     ///
     BootstrapExplorer(vector<unique_ptr<IPolicy<Ctx>>>& default_policy_functions) :
         m_default_policy_functions(default_policy_functions),
-        m_num_actions(UINT_MAX), m_explore(true)
+        m_num_actions(UINT_MAX), m_explore(true), m_bags((u32)default_policy_functions.size())
     {
-        m_bags = (u32)default_policy_functions.size();
-
         if (m_bags < 1)
         {
             throw std::invalid_argument("Number of bags must be at least 1.");
@@ -845,6 +845,9 @@ private:
             // Invoke the default policy function to get the action
             for (u32 current_bag = 0; current_bag < m_bags; current_bag++)
             {
+                // TODO: can VW predict for all bags on one call? (returning all actions at once)
+                // if we trigger into VW passing an index to invoke bootstrap scoring, and if VW model changes while we are doing so, 
+                // we could end up calling the wrong bag
                 action_from_bag = m_default_policy_functions[current_bag]->Choose_Action(context);
 
                 if (action_from_bag == 0 || action_from_bag > num_actions)
@@ -873,8 +876,8 @@ private:
 private:
 	vector<unique_ptr<IPolicy<Ctx>>>& m_default_policy_functions;
     bool m_explore;
-    u32 m_bags;
-	u32 m_num_actions;
+    const u32 m_bags;
+	const u32 m_num_actions;
 };
 
 } // End namespace MultiWorldTestingCpp
