@@ -25,6 +25,8 @@ struct cb_adf {
   base_learner* base;
 };
 
+namespace CB_ADF {
+
 bool check_cb_adf_sequence(cb_adf& data, size_t start_K)
 {
   bool isTest = CB::example_is_test(*data.ec_seq[start_K]);
@@ -263,6 +265,7 @@ void predict_or_learn(cb_adf& data, base_learner& base, example &ec) {
     data.ec_seq.push_back(&ec);
   }
 }
+}
 
 base_learner* cb_adf_setup(vw& all)
 {
@@ -291,12 +294,12 @@ base_learner* cb_adf_setup(vw& all)
       all.args.push_back(adf_arg);
     }
 
-  learner<cb_adf>& l = init_learner(&ld, setup_base(all), predict_or_learn<true>, predict_or_learn<false>);
+  learner<cb_adf>& l = init_learner(&ld, setup_base(all), CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>);
   if (ld.is_singleline)
-    l.set_finish_example(finish_singleline_example);
+    l.set_finish_example(CB_ADF::finish_singleline_example);
   else
-    l.set_finish_example(finish_multiline_example);
-  l.set_finish(finish);
-  l.set_end_examples(end_examples); 
+    l.set_finish_example(CB_ADF::finish_multiline_example);
+  l.set_finish(CB_ADF::finish);
+  l.set_end_examples(CB_ADF::end_examples); 
   return make_base(l);
 }
