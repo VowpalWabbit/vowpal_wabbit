@@ -101,7 +101,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
 {
     // often used values
     const uint32_t offset = ec.ft_offset;
-    const uint32_t stride_shift = all.reg.stride_shift;
+//    const uint32_t stride_shift = all.reg.stride_shift; // it seems we don't need stride shift in FTRL-like hash
     weight* weight_vector = all.reg.weight_vector;
     const size_t  weight_mask   = all.reg.weight_mask;
 
@@ -138,18 +138,15 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
 
                     for (; fst != fst_end; ++fst)
                     {
-                        const uint32_t halfhash = FNV_prime * ((fst->weight_index + offset) >> stride_shift);
+                        const uint32_t halfhash = FNV_prime * ((fst->weight_index + offset) /*>> stride_shift*/);
                         // next index differs for permutations and simple combinations
                         const feature* snd = (!same_namespace) ? ec.atomics[snd_ns].begin :
                                                                  (fst->x != 1. && feature_self_interactions_for_weight_other_than_1) ? fst : fst+1;
-
+                        const float& ft_weight = fst->x;
                         for (; snd < snd_end; ++snd)
-                        {
-
-                            const float ft_weight = fst->x*snd->x;
-                            const size_t ft_idx = ((snd->weight_index >> stride_shift) ^ halfhash) << stride_shift;
-                            call_T<R, T> (dat, weight_vector, weight_mask, ft_weight, ft_idx);
-
+                        {                            
+                            //  const size_t ft_idx = ((snd->weight_index /*>> stride_shift*/) ^ halfhash) /*<< stride_shift*/;
+                            call_T<R, T> (dat, weight_vector, weight_mask, ft_weight*snd->x, snd->weight_index^halfhash);
                         } // end for(snd)
                     } // end for(fst)
 
@@ -185,13 +182,14 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
                                 const feature* snd = (!same_namespace1) ? ec.atomics[snd_ns].begin :
                                                                           (fst->x != 1. && feature_self_interactions_for_weight_other_than_1) ? fst : fst+1;
 
-                                const uint32_t halfhash1 = FNV_prime * ((fst->weight_index + offset) >> stride_shift);
+                                const uint32_t halfhash1 = FNV_prime * ((fst->weight_index + offset) /*>> stride_shift*/);
+                                const float& ft_weight = fst->x;
 
                                 for (; snd < snd_end; ++snd)
                                 {
                                     //f3 x k*(f2 x k*f1)
-                                    const uint32_t halfhash2 = FNV_prime * (halfhash1 ^ ((snd->weight_index + offset) >> stride_shift));
-                                    const float ft_weight1 = fst->x * snd->x;
+                                    const uint32_t halfhash2 = FNV_prime * (halfhash1 ^ ((snd->weight_index + offset) /*>> stride_shift*/));
+                                    const float ft_weight1 =  ft_weight * snd->x;
 
                                     // next index differs for permutations and simple combinations
                                     const feature* thr = (!same_namespace2) ? ec.atomics[thr_ns].begin :
@@ -199,11 +197,8 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
 
                                     for (; thr < thr_end; ++thr)
                                     {
-                                        const float ft_weight2 = ft_weight1 * thr->x;
-                                        const size_t ft_idx = ((thr->weight_index >> stride_shift)^ halfhash2) << stride_shift;
-
-                                        call_T<R, T> (dat, weight_vector, weight_mask, ft_weight2, ft_idx);
-
+//                                        const size_t ft_idx = ((thr->weight_index /*>> stride_shift*/)^ halfhash2) /*<< stride_shift*/;
+                                        call_T<R, T> (dat, weight_vector, weight_mask, ft_weight1 * thr->x, thr->weight_index^halfhash2);
                                     } // end for (thr)
                                 } // end for (snd)
                             } // end for (fst)
@@ -270,8 +265,10 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
                             loop_end -= margin;               // skip some features and increase margin
 
                             state_data[i].self_interaction = true;     // mark namespace as appearing more than once
-                        } else
+                        } else {
                             margin = 0;
+                            state_data[i].self_interaction = false;
+                        }
                     }
 
                     // if impossible_without_permutations == true then we faced with case like interaction 'aaaa'
@@ -316,8 +313,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
                             // unless feature has weight w and w != w*w. E.g. w != 0 and w != 1. Features with w == 0 are already
                             // filtered out in parce_args.cc::maybeFeature().
 
-                            next_data->loop_idx = data->loop_idx +
-                                    ((cur_feature->x != 1.) && feature_self_interactions_for_weight_other_than_1) ? 0 : 1;
+                            next_data->loop_idx = ((cur_feature->x != 1.) && feature_self_interactions_for_weight_other_than_1) ? data->loop_idx : data->loop_idx + 1;
                         }
                         else
                             next_data->loop_idx = 0;
@@ -325,14 +321,13 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
 
                         if (cur_ns_idx == 0)
                         {
-                            next_data->hash = (cur_feature->weight_index  + offset) >> stride_shift;
+                            next_data->hash = FNV_prime *(cur_feature->weight_index  + offset) /*>> stride_shift*/;
                             next_data->x = cur_feature->x; // data->x == 1.
                         }
                         else
                         {
                             // feature2 xor (16777619*feature1)
-                            next_data->hash = (FNV_prime * data->hash) ^ (( (cur_feature->weight_index  + offset ) >> stride_shift ) );
-                            // next_data->hash is not a real ft index yet as [<< stride_shift] wasn't done here for performance reasons
+                            next_data->hash = FNV_prime * (data->hash ^ ( (cur_feature->weight_index  + offset ) /*>> stride_shift*/ ));
 
                             next_data->x = cur_feature->x * data->x;
                         }
@@ -347,10 +342,11 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
                             start = features_begin + data->loop_idx;
 
 
+
                         for (feature* f = start; f != end; ++f)
                         {
-                            const size_t ft_idx = ( (FNV_prime * data->hash) ^ (f->weight_index >> stride_shift) ) << stride_shift;
-                            call_T<R, T> (dat, weight_vector, weight_mask, data->x * f->x /*ft_weight*/, ft_idx);
+                            // const size_t ft_idx = ( data->hash ^ (f->weight_index /*>> stride_shift*/) ) /*<< stride_shift*/;
+                            call_T<R, T> (dat, weight_vector, weight_mask, data->x * f->x /*ft_weight*/, data->hash ^ f->weight_index );
                         }
 
                         // trying to go back increasing loop_idx of each namespace by the way
