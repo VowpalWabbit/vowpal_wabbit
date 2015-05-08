@@ -299,21 +299,6 @@ using namespace CB;
     ec.pred.multiclass = ec.l.cb_eval.action;
   }
   
-  void print_update(vw& all, bool is_test, example& ec)
-  {
-    if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
-      {
-	std::string label_buf;
-        if (is_test)
-          label_buf = " unknown";
-        else
-          label_buf = " known";
-
-	all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, ec.pred.multiclass, 
-			     ec.num_features, all.progress_add, all.progress_arg);
-      }
-  }
-
   void output_example(vw& all, cb& c, example& ec, CB::label& ld)
   {
     float loss = 0.;
@@ -356,7 +341,7 @@ using namespace CB;
       all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
     }
 
-    print_update(all, is_test_label(ld), ec);
+    print_update(all, is_test_label(ld), ec, nullptr);
   }
 
   void finish(cb& c)
