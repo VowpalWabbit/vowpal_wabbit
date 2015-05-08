@@ -81,9 +81,9 @@ struct feature_gen_data
     double x;                 // weight of feature interactions of previous namespaces in the list
     size_t loop_end;          // last feature id. May be less than number of features if namespace involved in interaction more than once
                               // calculated at preprocessing together with same_ns
-    size_t self_interaction;  // namespace interacting with itself
-
-    feature_gen_data(): loop_idx(0), x(1.), loop_end(0), self_interaction(false) {}
+    size_t self_interaction;  // namespace interacting with itself    
+    v_array<feature>* ft_arr;
+//    feature_gen_data(): loop_idx(0), x(1.), loop_end(0), self_interaction(false) {}
 };
 
 
@@ -107,20 +107,25 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
 
     // statedata for generic non-recursive iteration
     v_array<feature_gen_data> state_data = v_init<feature_gen_data>();
+
     feature_gen_data empty_ns_data;  // micro-optimization. don't want to call its constructor each time in loop.
+    empty_ns_data.loop_idx = 0;
+    empty_ns_data.x = 1.;
+    empty_ns_data.loop_end = 0;
+    empty_ns_data.self_interaction = false;
 
     // loop throw the set of possible interactions
     for (v_string* it = all.interactions.begin; it != all.interactions.end; ++it)
     {
         v_string& ns = (*it);         // current list of namespaces to interact.
 
-        const size_t len = ns.size();
-
 #ifndef GEN_INTER_LOOP
 
         // unless GEN_INTER_LOOP is defined we use nested 'for' loops for interactions length 2 (pairs) and 3 (triples)
         // and generic non-recursive algorythm for all other cases.
         // nested 'for' loops approach is faster, but can't be used for interation of any length.
+
+        const size_t len = ns.size();
 
         if (len == 2) //special case of pairs
         {
@@ -212,27 +217,35 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
 #endif
             {
 
-                bool no_data_to_interact = false;
+                bool must_skip_interaction = false;
 
                 // preparing state data
-                for (size_t i = 0; i < len; ++i)
-                {
-                    const size_t ft_cnt = ec.atomics[ (int32_t) ns[i] ].size();
+                feature_gen_data* fgd = state_data.begin;
+                feature_gen_data* fgd2; // for further use
+                for (unsigned char* n = ns.begin; n != ns.end; ++n)
+                {                    
+                    v_array<feature>* ft = &ec.atomics[(int32_t)*n];
+                    const size_t ft_cnt = ft->size();
 
                     if (ft_cnt == 0)
                     {
-                        no_data_to_interact = true;
+                        must_skip_interaction = true;
                         break;
                     }
 
-                    if (state_data.size() <= i) // state_data must always has at least [len] elements
+                    if (fgd == state_data.end)
+                    {
                         state_data.push_back(empty_ns_data);
+                        fgd = state_data.end-1; // reassign as memory could be realloced
+                    }
 
-                    state_data[i].loop_end = ft_cnt-1; // saving number of features for each namespace
+                    fgd->loop_end = ft_cnt-1; // saving number of features for each namespace
+                    fgd->ft_arr = ft;
+                    ++fgd;
                 }
 
                 // if any of interacting namespace has 0 features - whole interaction is skipped
-                if (no_data_to_interact) continue;
+                if (must_skip_interaction) continue; //no_data_to_interact
 
 
 
@@ -243,53 +256,52 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
                     // let's go throw the list and calculate number of features to skip in namespaces which
                     // repeated more than once to generate only simple combinations of features
 
-                    size_t margin = 0;  // number of features to ignore if namesapce has been seen before
+                    size_t margin = 0;  // number of features to ignore if namesapce has been seen before                    
 
+                    // iterate list backward as margin grows in this order                    
 
-                    bool impossible_without_permutations = false;
-
-                    // iterate list backward as margin grows in this order
-                    for (int i = len-1; i >= 1; --i)
+                    for (fgd = state_data.end-1; fgd > state_data.begin; --fgd)
                     {
-                        if (ns[i] == ns[i-1])
-                        {
-                            size_t& loop_end = state_data[i-1].loop_end;
+                        fgd2 = fgd-1;
+                        fgd->self_interaction = (fgd->ft_arr == fgd2->ft_arr); //state_data.begin.self_interaction is always false
+                        if (fgd->self_interaction)
+                        {                            
+                            size_t& loop_end = fgd2->loop_end;
 
-                            if (ec.atomics[(int32_t)ns[i-1]][loop_end-margin].x == 1. || // if special case at end of array then we can't exclude more than existing margin
+                            if ((*fgd2->ft_arr)[loop_end-margin].x == 1. || // if special case at end of array then we can't exclude more than existing margin
                                     !feature_self_interactions_for_weight_other_than_1)  // and we have to
                             {
                                 ++margin; // otherwise margin can 't be increased
-
-                                if ( (impossible_without_permutations = (loop_end < margin)) ) break;
+                                if ( (must_skip_interaction = (loop_end < margin)) ) break;
                             }
-                            loop_end -= margin;               // skip some features and increase margin
 
-                            state_data[i].self_interaction = true;     // mark namespace as appearing more than once
-                        } else {
-                            margin = 0;
-                            state_data[i].self_interaction = false;
-                        }
+                            if (margin != 0)
+                                loop_end -= margin;               // skip some features and increase margin
+                        } else
+                            if (margin != 0) margin = 0;
+
                     }
 
                     // if impossible_without_permutations == true then we faced with case like interaction 'aaaa'
                     // where namespace 'a' contains less than 4 unique features. It's impossible to make simple
                     // combination of length 4 without repetitions from 3 or less elements.
-                    if (impossible_without_permutations) continue;
+                    if (must_skip_interaction) continue; // impossible_without_permutations
                 } // end of state_data adjustment
 
 
-                size_t cur_ns_idx = 0;      // idx of current namespace
-                state_data[0].loop_idx = 0; // loop_idx contains current feature id for curently processed namespace.
+                fgd = state_data.begin;  // always equal to first ns
+                fgd2 = state_data.end-1; // always equal to last ns
+                fgd->loop_idx = 0; // loop_idx contains current feature id for curently processed namespace.
 
-                // beware: micro-optimization. Next block taken out from the while loop as these valuse are always same.
-                const int32_t last_ns = (int32_t) ns[len-1];
-                feature* features_begin = ec.atomics[last_ns].begin; // in fact, constant in all cases. Left non constant to avoid type conversion
-                feature_gen_data* data = &state_data[len-1];
+                // beware: micro-optimization.
+
+                feature* features_begin = fgd2->ft_arr->begin; // in fact, constant in all cases. Left non constant to avoid type conversion
                 /* start & end are always point to features in last namespace of interaction.
                     for 'all.permutations == true' they are constant.*/
                 feature* start = features_begin;
-                feature* end = features_begin + data->loop_end + 1; // end is constant as data->loop_end is never changed in the loop
+                feature* end = features_begin + fgd2->loop_end + 1; // end is constant as data->loop_end is never changed in the loop
 
+                feature_gen_data* data = fgd;
                 feature_gen_data* next_data;
                 feature* cur_feature;
                 // end of micro-optimization block
@@ -299,13 +311,12 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
                 bool do_it = true;
 
                 while (do_it)
-                {
-                    data = &state_data[cur_ns_idx];
+                {                    
 
-                    if (cur_ns_idx < len-1) // can go further throw the list of namespaces in interaction
+                    if (data < fgd2) // can go further throw the list of namespaces in interaction
                     {
-                        next_data = &state_data[cur_ns_idx+1];
-                        cur_feature = &ec.atomics[(int32_t)ns[cur_ns_idx]][data->loop_idx];
+                        next_data = data+1;
+                        cur_feature = data->ft_arr->begin + data->loop_idx;
 
                         if (next_data->self_interaction)
                         {
@@ -319,7 +330,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
                             next_data->loop_idx = 0;
 
 
-                        if (cur_ns_idx == 0)
+                        if (data == fgd)
                         {
                             next_data->hash = FNV_prime *(cur_feature->weight_index  + offset) /*>> stride_shift*/;
                             next_data->x = cur_feature->x; // data->x == 1.
@@ -328,25 +339,24 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
                         {
                             // feature2 xor (16777619*feature1)
                             next_data->hash = FNV_prime * (data->hash ^ ( (cur_feature->weight_index  + offset ) /*>> stride_shift*/ ));
-
                             next_data->x = cur_feature->x * data->x;
                         }
 
-                        ++cur_ns_idx;
+                        ++data;
 
                     } else {
 
                         // last namespace - iterate its features and go back
 
                         if (!all.permutations) // start value is not a constant in this case
-                            start = features_begin + data->loop_idx;
+                            start = features_begin + fgd2->loop_idx;
 
 
 
                         for (feature* f = start; f != end; ++f)
                         {
                             // const size_t ft_idx = ( data->hash ^ (f->weight_index /*>> stride_shift*/) ) /*<< stride_shift*/;
-                            call_T<R, T> (dat, weight_vector, weight_mask, data->x * f->x /*ft_weight*/, data->hash ^ f->weight_index );
+                            call_T<R, T> (dat, weight_vector, weight_mask, fgd2->x * f->x /*ft_weight*/, fgd2->hash ^ f->weight_index );
                         }
 
                         // trying to go back increasing loop_idx of each namespace by the way
@@ -354,11 +364,13 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
                         bool go_further = true;
 
                         do {
-                            feature_gen_data* cur_data = &state_data[--cur_ns_idx];
-                            go_further = (++cur_data->loop_idx > cur_data->loop_end);
-                        } while (go_further && cur_ns_idx != 0);
 
-                        do_it = !(cur_ns_idx == 0 && go_further);
+//                            feature_gen_data* cur_data = &state_data[--cur_ns_idx];
+                            --data;
+                            go_further = (++data->loop_idx > data->loop_end);
+                        } while (go_further && data != fgd);
+
+                        do_it = !(data == fgd && go_further);
                         //if do_it==false - we've reached 0 namespace but its 'cur_data.loop_idx > cur_data.loop_end' -> exit the while loop
 
                     } // if last namespace
