@@ -336,6 +336,52 @@ static u32 Get_Variable_Number_Of_Actions(Ctx& context, u32 default_num_actions)
     return num_actions;
 }
 
+static void Sample_Without_Replacement(u32* actions, vector<float>& probs, u32 size, PRG::prg& random_generator, float& top_action_probability)
+{
+    // sample without replacement
+    u32 running_index = 0;
+    u32 running_action = 0;
+    float draw, sum;
+    while (running_index < size)
+    {
+        draw = random_generator.Uniform_Unit_Interval();
+        sum = 0.f;
+
+        for (u32 i = 0; i < size; i++)
+        {
+            sum += probs[i];
+            if (sum > draw)
+            {
+                running_action = (u32)(i + 1);
+
+                // TODO: make this more efficient
+                // check for duplicate
+                bool exists = false;
+                for (u32 j = 0; j <= running_index; j++)
+                {
+                    if (actions[j] == running_action)
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (exists)
+                {
+                    continue;
+                }
+
+                // store newly sampled action
+                if (running_index == 0)
+                {
+                    top_action_probability = probs[i];
+                }
+                actions[running_index++] = running_action;
+                break;
+            }
+        }
+    }
+}
+
 ///
 /// The epsilon greedy exploration algorithm. This is a good choice if you have no idea 
 /// which actions should be preferred.  Epsilon greedy is also computationally cheap.
@@ -521,7 +567,6 @@ private:
 		}
 
         float action_probability = 0.f;
-        u32 action_index = 0;
         if (m_explore)
         {
             // Create a normalized exponential distribution based on the returned scores
@@ -536,39 +581,41 @@ private:
             for (size_t i = 0; i < num_scores; i++)
                 total += scores[i];
 
-            float draw = random_generator.Uniform_Unit_Interval();
-
-            float sum = 0.f;
-            action_probability = 0.f;
-            action_index = num_scores - 1;
-            for (u32 i = 0; i < num_scores; i++)
+            // normalize scores & reset actions
+            for (size_t i = 0; i < num_scores; i++)
             {
                 scores[i] = scores[i] / total;
-                sum += scores[i];
-                if (sum > draw)
-                {
-                    action_index = i;
-                    action_probability = scores[i];
-                    break;
-                }
+                actions[i] = 0;
             }
+
+            ::Sample_Without_Replacement(actions, scores, num_actions, random_generator, action_probability);
         }
         else
         {
+            // prefill list of actions
+            for (size_t i = 0; i < num_actions; i++)
+            {
+                actions[i] = (u32)(i + 1);
+            }
+
+            // find action with the highest score
+            u32 max_index = 0;
             float max_score = 0.f;
-            for (size_t i = 0; i < num_scores; i++)
+            for (u32 i = 0; i < num_scores; i++)
             {
                 if (max_score < scores[i])
                 {
                     max_score = scores[i];
-                    action_index = (u32)i;
+                    max_index = i;
                 }
             }
+            // swap max-score action with the first one
+            u32 first_action = actions[0];
+            actions[0] = actions[max_index];
+            actions[max_index] = first_action;
+
             action_probability = 1.f; // Set to 1 since we always pick the highest one.
         }
-
-		// action id is one-based
-        actions[0] = action_index + 1; // TODO: fill array by drawing without replacement
 
 		return std::tuple<float, bool>(action_probability, true);
 	}
@@ -660,25 +707,15 @@ private:
 			throw std::invalid_argument("At least one score must be positive.");
 		}
 
-		float draw = random_generator.Uniform_Unit_Interval();
+        // normalize weights & reset actions
+        for (size_t i = 0; i < num_weights; i++)
+        {
+            weights[i] = weights[i] / total;
+            actions[i] = 0;
+        }
 
-		float sum = 0.f;
-		float action_probability = 0.f;
-		u32 action_index = num_weights - 1;
-		for (u32 i = 0; i < num_weights; i++)
-		{
-			weights[i] = weights[i] / total;
-			sum += weights[i];
-			if (sum > draw)
-			{
-				action_index = i;
-				action_probability = weights[i];
-				break;
-			}
-		}
-
-		// action id is one-based
-        actions[0] = action_index + 1; // TODO: fill array by drawing without replacement
+        float action_probability = 0.f;
+        ::Sample_Without_Replacement(actions, weights, num_actions, random_generator, action_probability);
 
 		return std::tuple<float, bool>(action_probability, true);
 	}
