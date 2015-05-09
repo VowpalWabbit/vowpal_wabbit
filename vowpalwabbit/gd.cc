@@ -180,6 +180,8 @@ bool operator<(const string_value& first, const string_value& second)
   size_t stride_shift = all.reg.stride_shift;
   
   if(all.audit) tempstream << prepend;
+  if (((index >> stride_shift) & 3) != 0)
+        throw exception();
   
   string tmp = "";
   
@@ -390,7 +392,7 @@ void predict(gd& g, base_learner& base, example& ec)
   ec.partial_prediction *= (float)all.sd->contraction;
   bool wasNAN = nanpattern(ec.partial_prediction);
   ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
-  if (audit && wasNAN)
+  if (audit&&wasNAN)
     print_audit_features(all, ec);
 }
 
@@ -1030,7 +1032,7 @@ base_learner* setup(vw& all)
 
   learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.reg.stride_shift));
   ret.set_predict(g.predict);
-  ret.set_multipredict(g.multipredict);
+  //ret.set_multipredict(g.multipredict);
   ret.set_update(g.update);
   ret.set_save_load(save_load);
   ret.set_end_pass(end_pass);

@@ -49,7 +49,7 @@ namespace GD{
   {
     for (feature* f = begin; f!= end; f++) {
       T(dat, mult*f->x, weight_vector[(f->weight_index + offset) & weight_mask]);
-      if ((f->weight_index & 3) != 0)
+      if (((f->weight_index+offset) & 3) != 0)
         throw exception();
     }
   }
@@ -60,7 +60,7 @@ namespace GD{
    {
      for (feature* f = begin; f!= end; f++) {
        T(dat, mult*f->x, f->weight_index + offset);
-      if ((f->weight_index & 3) != 0)
+      if (((f->weight_index+offset) & 3) != 0)
         throw exception();
      }       
    }

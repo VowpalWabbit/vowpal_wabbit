@@ -56,6 +56,8 @@ namespace GraphTask {
     // for adding new features
     size_t mask; // all->reg.weight_mask
     size_t multiplier;   // all.wpp << all.reg.stride_shift
+    size_t ss; // stride_shift
+    size_t wpp;
     
     // per-example data
     uint32_t N;  // number of nodes
@@ -152,8 +154,10 @@ namespace GraphTask {
     task_data& D = *sch.get_task_data<task_data>();
 
     D.mask = sch.get_vw_pointer_unsafe().reg.weight_mask;
-    D.multiplier = sch.get_vw_pointer_unsafe().wpp << sch.get_vw_pointer_unsafe().reg.stride_shift;
-    cerr << "multiplier = " << D.multiplier << endl;
+    D.wpp  = sch.get_vw_pointer_unsafe().wpp;
+    D.ss   = sch.get_vw_pointer_unsafe().reg.stride_shift;
+    D.multiplier = D.wpp << D.ss;
+    cerr << "multiplier = " << D.multiplier << ", wpp=" << D.wpp << ", ss=" << D.ss << " mask=" << D.mask << endl;
     D.weight_vector = sch.get_vw_pointer_unsafe().reg.weight_vector;
     
     D.N = 0;
@@ -204,10 +208,12 @@ namespace GraphTask {
 
   void add_edge_features_group_fn(task_data&D, float fv, uint32_t fx) {
     example*node = D.cur_node;
-    float fx2 = (fx & D.mask) / D.multiplier;
+    if (((fx / D.multiplier) * D.multiplier) != fx) { cerr << "eek"<<endl; throw exception();}
+    //float fx2 = (fx & D.mask) / D.multiplier;
+    uint32_t fx2 = (fx >> D.ss) & D.mask;// / D.multiplier;
     for (size_t k=0; k<=D.K; k++) {
       if (D.neighbor_predictions[k] == 0.) continue;
-      feature f = { fv * D.neighbor_predictions[k], (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint32_t)D.mask };
+      feature f = { fv * D.neighbor_predictions[k], (uint32_t)(( fx2 + 348919043 * k ) << D.ss) & (uint32_t)D.mask };
       node->atomics[neighbor_namespace].push_back(f);
       node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     }
@@ -216,9 +222,10 @@ namespace GraphTask {
 
   void add_edge_features_single_fn(task_data&D, float fv, uint32_t fx) {
     example*node = D.cur_node;
-    float fx2 = (fx & D.mask) / D.multiplier;
+    if (((fx / D.multiplier) * D.multiplier) != fx) { cerr << "eek"<<endl; throw exception();}
+    uint32_t fx2 = (fx >> D.ss) & D.mask;// / D.multiplier;
     size_t k = (size_t) D.neighbor_predictions[0];
-    feature f = { fv, (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint32_t)D.mask };
+    feature f = { fv, (uint32_t)(( fx2 + 348919043 * k ) << D.ss) & (uint32_t)D.mask };
     node->atomics[neighbor_namespace].push_back(f);
     node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     // TODO: audit
