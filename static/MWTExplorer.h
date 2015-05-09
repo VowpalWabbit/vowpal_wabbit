@@ -445,11 +445,6 @@ private:
 		// Invoke the default policy function to get the action
 		m_default_policy.Choose_Action(context, actions, num_actions);
 
-        if (actions[0] == 0 || actions[0] > num_actions)
-        {
-            throw std::invalid_argument("Action chosen by default policy is not within valid range.");
-        }
-
         float epsilon = m_explore ? m_epsilon : 0.f;
 
 		float action_probability = 0.f;
@@ -801,11 +796,6 @@ private:
 		}
 		else
 		{
-            if (actions[0] == 0 || actions[0] > num_actions)
-            {
-                throw std::invalid_argument("Action chosen by default policy is not within valid range.");
-            }
-
 			action_probability = 1.f;
 			log_action = false;
 		}

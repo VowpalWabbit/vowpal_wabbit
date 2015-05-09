@@ -720,7 +720,9 @@ namespace vw_explore_tests
                 u32 actions[1];
                 mwt.Choose_Action(explorer, "test", context, actions, 1);
 			)
-			COUNT_BAD_CALL
+            Assert::AreEqual(0, num_ex);
+
+            COUNT_BAD_CALL
 			(
                 TestRecorder<TestContext> recorder;
 				TestContext context;
@@ -733,7 +735,7 @@ namespace vw_explore_tests
                 u32 actions[1];
                 mwt.Choose_Action(explorer, "test", context, actions, 1);
 			)
-			Assert::AreEqual(3, num_ex);
+			Assert::AreEqual(1, num_ex); // only bootstrap should throw error on action index
 		}
 
 		TEST_METHOD(Usage_Bad_Scorer)
