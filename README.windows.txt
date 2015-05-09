@@ -5,6 +5,8 @@ Originally by Chris Quirk <chrisq@microsoft.com>
 Notes for building VW under Visual Studio 2013 on Windows 8.1
 9/02/2014 Nick Nussbaum nickn@seanet.com
 
+Replace source dependencies with Nuget
+04/29/2015 Sharat Chikkerur sharat.chikkerur@gmail.com
 
 **************************************************************************************************************
 (1) Get Tools
@@ -12,20 +14,8 @@ You'll need a Visual Studio 2013 installed that includes c# and c++
 You'll also need the Windows SDK which you can download from Microsoft at
 	http://msdn.microsoft.com/en-us/windows/desktop/bg162891.aspx
 
-
-There's a patch for zlib to make it work.
-There also some changes to Vowpal Wabbit in this commit.
-Details are at the last section of this file
-
-It's  handy to have a bash shell to run git
-You can use a git bash shell fron the https://windows.github.com/ if you don't have it already.
-Or you can just edit the changes using notepad to read the files. 
-
-There are end of line problems with patching with git patch.
-I used the GnuWin32 patch package binaries from
-http://gnuwin32.sourceforge.net/packages/patch.htm which will run in a dos batch file.
-This seems to be able to deal with patching without damaging the windows <CR><LF> pairs.
-
+You'll need Nuget integration with visual studio
+	http://docs.nuget.org/consume
 **************************************************************************************************************
 (2) open a copy various command shells
 
@@ -42,8 +32,7 @@ This seems to be able to deal with patching without damaging the windows <CR><LF
 **************************************************************************************************************
 (3) Setup Directories
 
-I use c:\src\vw as my %ROOT% directory; You could use another directory 
-boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
+I use c:\src\vw as my %ROOT% directory; 
 
         (a) mkdir c:\src
         (b) mkdir c:\src\vw
@@ -56,108 +45,25 @@ boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
 	details of the changes are in bottom of this file.
 
 **************************************************************************************************************
-(5) Build zlib with Visual Studio 2013
-
-	The patched version of the sources for zlib are up on https://github.com/nicknussbaum/zlibpatched.git
-	They can also be made as follows.
-	
-
-	(a)Get the zlib 1.28.0 file from   http://zlib.net/zlib128.zip
-	(b) unzip zlib-1.2.8.zip into the c:\src\vw\zlib-1.2.8  
-
-	use contrib/vstudio/vc11 since there is no contrib/vstudio/vc12 as yet
-	
-	(c)Get the GnuWin32 Patch Utility http://gnuwin32.sourceforge.net/packages/patch.htm patch.exe
-	and simply put it in the c:\src\vw
-
-	(d)Unzip the zlibpatch.zip file and place the contained zlibpatch.txt file in vowpa_wabbit 
-
-
-
-	(e) From a dos command shell run as administrator
-	
-	  patch --dry-run -p0 --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
-		check output messages looks good then
-	  patch  -p0 --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
-	  
-	  
-	  
-	  
-	  
-
-	 From the patched sources build the zlib libararies by either of the following steps. 
-
-	Launch Visual Studio 2013
-	Open the solution %ROOT%/zlib-1.2.8\contrib\vstudio\vc11\zlibvc.sln
-	Batch build the configurations you want of x86 and x64 debut and release
-
-    	 or from your Visual Studio Command shell 
-	     cd c:\src\vw\zlib-1.2.0\contrib\vstudio\vc11
-		run the following commands (can skip the last four if you only want 32bit binaries)
-
-        "msbuild /p:Configuration=Debug;Platform=Win32 zlibstat.vcxproj"
-        "msbuild /p:Configuration=Release;Platform=Win32 zlibvc.vcxproj"
-        "msbuild /p:Configuration=Release;Platform=Win32 zlibstat.vcxproj"
-        "msbuild /p:Configuration=Debug;Platform=x64 zlibstat.vcxproj"
-        "msbuild /p:Configuration=Release;Platform=x64 zlibvc.vcxproj"
-        "msbuild /p:Configuration=Release;Platform=x64 zlibstat.vcxproj"
-
-	Ignore the warnings about Platform 'Itanium' referenced in the project file  since Itanium is no longer supported 
-	
-	
-	
-
 **************************************************************************************************************
-(6) Building Boost
+(5) Build Vowpal Wabbit 
 
-I build boost in c:\boost with the sources in a subdirectory
-If you use another directory modify the vw solution and project macro definitions for BoostIncludeDir and BoostLibDir
-
-
-	Get boost from http://www.boost.org/users/history/version_1_56_0.html
-			
-
-	   open a  Windows command shell
-      (a) mkdir c:\boost 
-      (b) Download boost_1_56_0.zip from http://sourceforge.net/projects/boost/files/boost/1.56.0/boost_1_56_0.zip/download
-      (c) Unzip it which creates the directory boost_1_56_0
-      (d) mkdir c:\boost\x86
-      (e) mkdir c:\boost\x64
- 	  
-build the x86 binaries
-	  (f)"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat x86"
-	  (g) mkdir c:\boost\x86
-	  (h) cd c:\boost\boost_1_56_0
-	  (i) "bootstrap.bat"
-	  (j) "b2 --prefix=c:\boost\x86 --build-dir=x86 --toolset=msvc-12.0 address-model=32 install --with-program_options" 
-			(You can add " -j 16" to the end to run up to 16 processors at once.)
-
-	
-build the x64 binaries
-	  (k) "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat"  x86_amd64"	
-	  (l) mkdir c:\boost\x64
-	  (m) cd c:\boost\boost_1_56_0
-	  (n) "bootstrap.bat"
-	  (o) ".\b2 --prefix=c:\boost\x64 --build-dir=x64 --toolset=msvc-12.0 address-model=64 install --with-program_options"
-
-	  
-	  
-**************************************************************************************************************
-(7) Build Vowpal Wabbit 
-
-
+	(a) Using visual studio
 	Open %ROOT%\vowpal_wabbit\vowpalwabbit\vw.sln in Visual Studio 2013
 	Set startup project as vw (or the test project)
 	run  build>rebuild solution
 		or run  batch build
-
-	Binaries will be in one of these four directories, based on whether you built DEBUG or RELEASE bits and whether you are building x64 or Win32.
+    Binaries will be in one of these four directories, based on whether you built DEBUG or RELEASE bits and whether you are building x64 or Win32.
 
 		%ROOT%\vowpal_wabbit\vowpalwabbit\x86\Debug\vw.exe
 		%ROOT%\vowpal_wabbit\vowpalwabbit\x86\Release\vw.exe
 		%ROOT%\vowpal_wabbit\vowpalwabbit\x64\Debug\vw.exe
 		%ROOT%\vowpal_wabbit\vowpalwabbit\x64\Release\vw.exe
+	Missing nugets will be installed during the build.
 
+	(b) Using command line (available configurations are "Release" and "Debug". Available platforms are "x64" and "Win32")
+	run>msbuild /p:Configuration="Release" /p:Platform="x64" vw.sln
+	
 **************************************************************************************************************
 (8) Test
 	There's a new test batch file that runs a quick test on all four configurations
