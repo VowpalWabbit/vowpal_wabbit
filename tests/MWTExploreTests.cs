@@ -487,22 +487,6 @@ namespace ExploreTests
         private uint numberOfActions;
     }
 
-    class TestSimplePolicy : IPolicy<SimpleContext>
-    {
-        public uint[] ChooseAction(SimpleContext context)
-        {
-            return new uint[] { 1 };
-        }
-    }
-
-    class StringPolicy : IPolicy<SimpleContext>
-    {
-        public uint[] ChooseAction(SimpleContext context)
-        {
-            return new uint[] { 1 };
-        }
-    }
-
     class TestScorer<Ctx> : IScorer<Ctx>
     {
         public TestScorer(uint numActions, bool uniform = true)
