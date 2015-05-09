@@ -18,7 +18,7 @@ namespace ExploreTests
         public void EpsilonGreedy()
         {
             uint numActions = 10;
-            float epsilon = 0f;
+            float epsilon = 0f; // no randomization
             var policy = new TestPolicy<TestContext>(numActions);
             var testContext = new TestContext();
             var explorer = new EpsilonGreedyExplorer<TestContext>(policy, epsilon, numActions);
@@ -30,7 +30,7 @@ namespace ExploreTests
         public void EpsilonGreedyFixedActionUsingVariableActionInterface()
         {
             uint numActions = 10;
-            float epsilon = 0f;
+            float epsilon = 0f; // no randomization
             var policy = new TestPolicy<TestVarContext>(numActions);
             var testContext = new TestVarContext(numActions);
             var explorer = new EpsilonGreedyExplorer<TestVarContext>(policy, epsilon);
@@ -49,10 +49,10 @@ namespace ExploreTests
             uint[] expectedActions = policy.ChooseAction(testContext);
 
             uint[] chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext);
-            Assert.AreEqual(expectedActions[0], chosenActions[0]);
+            Assert.IsTrue(expectedActions.SequenceEqual(chosenActions));
 
             chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext);
-            Assert.AreEqual(expectedActions[0], chosenActions[0]);
+            Assert.IsTrue(expectedActions.SequenceEqual(chosenActions));
 
             var interactions = recorder.GetAllInteractions();
             Assert.AreEqual(2, interactions.Count);
@@ -64,7 +64,7 @@ namespace ExploreTests
             for (int i = 0; i < 1000; i++)
             {
                 chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext);
-                Assert.AreEqual(expectedActions[0], chosenActions[0]);
+                Assert.IsTrue(expectedActions.SequenceEqual(chosenActions));
             }
         }
 
@@ -101,7 +101,7 @@ namespace ExploreTests
             uint[] expectedActions = policy.ChooseAction(testContext);
 
             uint[] chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext);
-            Assert.AreEqual(expectedActions[0], chosenActions[0]);
+            Assert.IsTrue(expectedActions.SequenceEqual(chosenActions));
 
             var interactions = recorder.GetAllInteractions();
             Assert.AreEqual(0, interactions.Count);
@@ -111,7 +111,7 @@ namespace ExploreTests
             for (int i = 0; i < 1000; i++)
             {
                 chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext);
-                Assert.AreEqual(expectedActions[0], chosenActions[0]);
+                Assert.IsTrue(expectedActions.SequenceEqual(chosenActions));
             }
         }
 
@@ -162,10 +162,10 @@ namespace ExploreTests
             uint[] expectedActions = policies[0].ChooseAction(testContext1);
 
             uint[] chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext1);
-            Assert.AreEqual(expectedActions[0], chosenActions[0]);
+            Assert.IsTrue(expectedActions.SequenceEqual(chosenActions));
 
             chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext2);
-            Assert.AreEqual(expectedActions[0], chosenActions[0]);
+            Assert.IsTrue(expectedActions.SequenceEqual(chosenActions));
 
             var interactions = recorder.GetAllInteractions();
             Assert.AreEqual(2, interactions.Count);
@@ -178,7 +178,7 @@ namespace ExploreTests
             for (int i = 0; i < 1000; i++)
             {
                 chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext1);
-                Assert.AreEqual(expectedActions[0], chosenActions[0]);
+                Assert.IsTrue(expectedActions.SequenceEqual(chosenActions));
             }
         }
 
@@ -234,6 +234,12 @@ namespace ExploreTests
             for (uint i = 0; i < contexts.Length; i++)
             {
                 uint[] chosenActions = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), contexts[i]);
+
+                Assert.AreEqual(numActions, (uint)chosenActions.Length);
+                
+                // Make sure the list does not contain duplicate items
+                Assert.AreEqual(chosenActions.Length, chosenActions.Distinct().Count());
+                
                 actions[chosenActions[0] - 1]++; // action id is one-based
             }
 
@@ -263,9 +269,20 @@ namespace ExploreTests
             var explorer = new SoftmaxExplorer<TestContext>(scorer, lambda, numActions);
 
             Random rand = new Random();
-            mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = 100 });
-            mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = 101 });
-            mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = 102 });
+            uint[] chosenActions = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = 100 });
+
+            Assert.AreEqual(numActions, (uint)chosenActions.Length);
+            Assert.AreEqual(chosenActions.Length, chosenActions.Distinct().Count());
+
+            chosenActions = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = 101 });
+
+            Assert.AreEqual(numActions, (uint)chosenActions.Length);
+            Assert.AreEqual(chosenActions.Length, chosenActions.Distinct().Count());
+
+            chosenActions = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = 102 });
+
+            Assert.AreEqual(numActions, (uint)chosenActions.Length);
+            Assert.AreEqual(chosenActions.Length, chosenActions.Distinct().Count());
 
             var interactions = recorder.GetAllInteractions();
             
@@ -278,7 +295,7 @@ namespace ExploreTests
                 Assert.AreEqual(100 + i, interactions[i].Context.Id);
             }
 
-            // Verify that policy action is chosen all the time
+            // Verify that the highest-score action is chosen all the time
             TestContext context = new TestContext { Id = 100 };
             List<float> scores = scorer.ScoreActions(context);
             float maxScore = 0;
@@ -295,7 +312,10 @@ namespace ExploreTests
             explorer.EnableExplore(false);
             for (int i = 0; i < 1000; i++)
             {
-                uint[] chosenActions = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = (int)i });
+                chosenActions = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = (int)i });
+                Assert.AreEqual(numActions, (uint)chosenActions.Length);
+                Assert.AreEqual(chosenActions.Length, chosenActions.Distinct().Count());
+
                 Assert.AreEqual(highestScoreAction, chosenActions[0]);
             }
         }
@@ -328,7 +348,9 @@ namespace ExploreTests
 
             var mwtt = new MwtExplorer<TContext>("mwt", recorder);
 
-            mwtt.ChooseAction(explorer, uniqueKey, testContext);
+            uint[] chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext);
+            Assert.AreEqual(numActions, (uint)chosenActions.Length);
+            Assert.AreEqual(chosenActions.Length, chosenActions.Distinct().Count());
 
             var interactions = recorder.GetAllInteractions();
             Assert.AreEqual(1, interactions.Count);
