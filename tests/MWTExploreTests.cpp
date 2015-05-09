@@ -909,10 +909,11 @@ namespace vw_explore_tests
             {
                 u32* chosen_actions = new u32[num_actions];
                 mwt.Choose_Action(explorer, this->Get_Unique_Key(i + 1), my_context, chosen_actions, num_actions);
-                delete[] chosen_actions;
 
                 // Action IDs are 1-based
                 actions[chosen_actions[0] - 1]++;
+
+                delete[] chosen_actions;
             }
             // Ensure all actions are covered
             for (i = 0; i < (u32)num_actions; i++)
