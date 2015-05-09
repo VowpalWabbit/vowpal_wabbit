@@ -28,7 +28,7 @@ struct cb_adf {
   LEARNER::base_learner* scorer;
   CB::cb_class* known_cost;
   v_array<CB::label> array;
-  // suggest to add an array of cs_label.
+
   v_array<COST_SENSITIVE::label> cs_label_array;
 
   base_learner* base;
