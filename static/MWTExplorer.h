@@ -73,21 +73,18 @@ public:
 	/// @param unique_key  A unique identifier for the experimental unit. This could be a user id, a session id, etc..
 	/// @param context     The context upon which a decision is made. See SimpleContext below for an example.
 	///
-	u32 Choose_Action(IExplorer<Ctx>& explorer, string unique_key, Ctx& context)
+    void Choose_Action(IExplorer<Ctx>& explorer, string unique_key, Ctx& context, u32* actions, u32 num_actions)
 	{
 		u64 seed = HashUtils::Compute_Id_Hash(unique_key);
 
-		std::tuple<u32, float, bool> action_probability_log_tuple = explorer.Choose_Action(seed + m_app_id, context);
+		std::tuple<float, bool> action_probability_log_tuple = explorer.Choose_Action(seed + m_app_id, context, actions, num_actions);
 
-		u32 action = std::get<0>(action_probability_log_tuple);
-		float prob = std::get<1>(action_probability_log_tuple);
+		float prob = std::get<0>(action_probability_log_tuple);
 
-		if (std::get<2>(action_probability_log_tuple))
+		if (std::get<1>(action_probability_log_tuple))
 		{
-			m_recorder.Record(context, action, prob, unique_key);
+            m_recorder.Record(context, actions, num_actions, prob, unique_key);
 		}
-
-		return action;
 	}
 
 PORTING_INTERFACE:
@@ -120,7 +117,7 @@ public:
 	/// @param probability  The probability the exploration algorithm chose said action 
 	/// @param unique_key   A user-defined unique identifer for the decision
 	///
-	virtual void Record(Ctx& context, u32 action, float probability, string unique_key) = 0;
+    virtual void Record(Ctx& context, u32* actions, u32 num_actions, float probability, string unique_key) = 0;
     virtual ~IRecorder() { }
 };
 
@@ -143,7 +140,7 @@ public:
 	/// @returns            The action to take, the probability it was chosen, and a flag indicating 
 	///                     whether to record this decision
 	///
-	virtual std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context) = 0;
+    virtual std::tuple<float, bool> Choose_Action(u64 salted_seed, Ctx& context, u32* actions, u32 num_actions) = 0;
     virtual void Enable_Explore(bool explore) = 0;
     virtual ~IExplorer() { }
 
@@ -166,7 +163,7 @@ public:
 	/// @param context   A user-defined context for the decision
 	/// @returns	        The action to take (1-based index)
 	///
-	virtual u32 Choose_Action(Ctx& context) = 0;
+    virtual void Choose_Action(Ctx& context, u32* actions, u32 num_actions) = 0;
     virtual ~IPolicy() { }
 };
 
@@ -234,10 +231,10 @@ public:
 template <class Ctx>
 struct StringRecorder : public IRecorder<Ctx>
 {
-	void Record(Ctx& context, u32 action, float probability, string unique_key)
+    void Record(Ctx& context, u32* actions, u32 num_actions, float probability, string unique_key)
 	{
 		// Implicitly enforce To_String() API on the context
-	  m_recording.append(to_string((unsigned long long)action));
+	    m_recording.append(to_string((unsigned long long)actions[0])); // TODO: serialize the whole list of actions instead of just the top 1
 		m_recording.append(" ", 1);
 		m_recording.append(unique_key);
 		m_recording.append(" ", 1);
@@ -395,19 +392,12 @@ public:
     }
 
 private:
-	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
+    std::tuple<float, bool> Choose_Action(u64 salted_seed, Ctx& context, u32* actions, u32 num_actions)
 	{
-        u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
-
 		PRG::prg random_generator(salted_seed);
 
 		// Invoke the default policy function to get the action
-		u32 chosen_action = m_default_policy.Choose_Action(context);
-
-        if (chosen_action == 0 || chosen_action > num_actions)
-		{
-			throw std::invalid_argument("Action chosen by default policy is not within valid range.");
-		}
+		m_default_policy.Choose_Action(context, actions, num_actions);
 
         float epsilon = m_explore ? m_epsilon : 0.f;
 
@@ -424,7 +414,7 @@ private:
 			// Get uniform random action ID
             u32 actionId = random_generator.Uniform_Int(1, num_actions);
 
-			if (actionId == chosen_action)
+			if (actionId == actions[0])
 			{
 				// IF it matches the one chosen by the default policy
 				// then increase the probability
@@ -435,10 +425,10 @@ private:
 				// Otherwise it's just the uniform probability
 				action_probability = base_probability;
 			}
-			chosen_action = actionId;
+            actions[0] = actionId;
 		}
 
-		return std::tuple<u32, float, bool>(chosen_action, action_probability, true);
+		return std::tuple<float, bool>(action_probability, true);
 	}
 
 PORTING_INTERFACE:
@@ -502,10 +492,8 @@ public:
     }
 
 private:
-	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
+    std::tuple<float, bool> Choose_Action(u64 salted_seed, Ctx& context, u32* actions, u32 num_actions)
 	{
-        u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
-
 		PRG::prg random_generator(salted_seed);
 
 		// Invoke the default scorer function
@@ -575,7 +563,9 @@ private:
         }
 
 		// action id is one-based
-		return std::tuple<u32, float, bool>(action_index + 1, action_probability, true);
+        actions[0] = action_index + 1; // TODO: fill array by drawing without replacement
+
+		return std::tuple<float, bool>(action_probability, true);
 	}
 
 PORTING_INTERFACE:
@@ -637,10 +627,8 @@ public:
     }
 
 private:
-	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
+    std::tuple<float, bool> Choose_Action(u64 salted_seed, Ctx& context, u32* actions, u32 num_actions)
 	{
-        u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
-
 		PRG::prg random_generator(salted_seed);
 
 		// Invoke the default scorer function
@@ -685,7 +673,9 @@ private:
 		}
 
 		// action id is one-based
-		return std::tuple<u32, float, bool>(action_index + 1, action_probability, true);
+        actions[0] = action_index + 1; // TODO: fill array by drawing without replacement
+
+		return std::tuple<float, bool>(action_probability, true);
 	}
 
 PORTING_INTERFACE:
@@ -749,39 +739,31 @@ public:
     }
 
 private:
-	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
+    std::tuple<float, bool> Choose_Action(u64 salted_seed, Ctx& context, u32* actions, u32 num_actions)
 	{
-        u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
-
         PRG::prg random_generator(salted_seed);
 
-		u32 chosen_action = 0;
 		float action_probability = 0.f;
 		bool log_action;
+
+        // Invoke the default policy function to get the action
+        m_default_policy.Choose_Action(context, actions, num_actions);
 
         if (m_tau && m_explore)
 		{
             m_tau--;
             u32 actionId = random_generator.Uniform_Int(1, num_actions);
             action_probability = 1.f / num_actions;
-			chosen_action = actionId;
+            actions[0] = actionId;
 			log_action = true;
 		}
 		else
 		{
-			// Invoke the default policy function to get the action
-			chosen_action = m_default_policy.Choose_Action(context);
-
-            if (chosen_action == 0 || chosen_action > num_actions)
-			{
-				throw std::invalid_argument("Action chosen by default policy is not within valid range.");
-			}
-
 			action_probability = 1.f;
 			log_action = false;
 		}
 
-		return std::tuple<u32, float, bool>(chosen_action, action_probability, log_action);
+		return std::tuple<float, bool>(action_probability, log_action);
 	}
 
 PORTING_INTERFACE:
@@ -857,10 +839,8 @@ public:
     }
 
 private:
-	std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
+    std::tuple<float, bool> Choose_Action(u64 salted_seed, Ctx& context, u32* actions, u32 num_actions)
 	{
-        u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
-
         PRG::prg random_generator(salted_seed);
 
 		// Select bag
@@ -885,12 +865,9 @@ private:
                 // TODO: can VW predict for all bags on one call? (returning all actions at once)
                 // if we trigger into VW passing an index to invoke bootstrap scoring, and if VW model changes while we are doing so, 
                 // we could end up calling the wrong bag
-                action_from_bag = m_default_policy_functions[current_bag]->Choose_Action(context);
-
-                if (action_from_bag == 0 || action_from_bag > num_actions)
-                {
-                    throw std::invalid_argument("Action chosen by default policy is not within valid range.");
-                }
+                m_default_policy_functions[current_bag]->Choose_Action(context, actions, num_actions);
+                
+                action_from_bag = actions[0];
 
                 if (current_bag == chosen_bag)
                 {
@@ -899,15 +876,16 @@ private:
                 //this won't work if actions aren't 0 to Count
                 actions_selected[action_from_bag - 1]++; // action id is one-based
             }
+            actions[0] = chosen_action;
             action_probability = (float)actions_selected[chosen_action - 1] / m_bags; // action id is one-based
         }
         else
         {
-            chosen_action = m_default_policy_functions[0]->Choose_Action(context);
+            m_default_policy_functions[0]->Choose_Action(context, actions, num_actions);
             action_probability = 1.f;
         }
 
-		return std::tuple<u32, float, bool>(chosen_action, action_probability, true);
+		return std::tuple<float, bool>(action_probability, true);
 	}
 
 PORTING_INTERFACE:

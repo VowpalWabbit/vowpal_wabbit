@@ -63,9 +63,21 @@ namespace MultiWorldTesting {
         }
 
 	internal:
-		virtual UInt32 InvokePolicyCallback(Ctx context, int index) override
+		virtual void InvokePolicyCallback(Ctx context, cli::array<UInt32>^ actions, int index) override
 		{
-			return defaultPolicy->ChooseAction(context);
+            cli::array<UInt32>^ defaultActions = defaultPolicy->ChooseAction(context);
+            
+            if (defaultActions == nullptr)
+            {
+                throw gcnew NullReferenceException("List of actions returned by default policy is null.");
+            }
+            if (defaultActions->Length < actions->Length)
+            {
+                throw gcnew InvalidDataException("Number of actions returned by default policy is unexpected. Expected: " + actions->Length + ", Actual: " + defaultActions->Length);
+            }
+
+            // TODO: possible to remove the copy by requiring users to fill in a preallocated array instead.
+            Array::Copy(defaultActions, actions, actions->Length);
 		}
 
 		NativeMultiWorldTesting::EpsilonGreedyExplorer<NativeContext>* Get()
@@ -134,9 +146,21 @@ namespace MultiWorldTesting {
 		}
 
 	internal:
-		virtual UInt32 InvokePolicyCallback(Ctx context, int index) override
+		virtual void InvokePolicyCallback(Ctx context, cli::array<UInt32>^ actions, int index) override
 		{
-			return defaultPolicy->ChooseAction(context);
+            cli::array<UInt32>^ defaultActions = defaultPolicy->ChooseAction(context);
+
+            if (defaultActions == nullptr)
+            {
+                throw gcnew NullReferenceException("List of actions returned by default policy is null.");
+            }
+            if (defaultActions->Length < actions->Length)
+            {
+                throw gcnew InvalidDataException("Number of actions returned by default policy is unexpected. Expected: " + actions->Length + ", Actual: " + defaultActions->Length);
+            }
+
+            // TODO: possible to remove the copy by forcing users to fill in a preallocated array instead.
+            Array::Copy(defaultActions, actions, actions->Length);
 		}
 
 		NativeMultiWorldTesting::TauFirstExplorer<NativeContext>* Get()
@@ -355,13 +379,25 @@ namespace MultiWorldTesting {
 		}
 
 	internal:
-		virtual UInt32 InvokePolicyCallback(Ctx context, int index) override
+		virtual void InvokePolicyCallback(Ctx context, cli::array<UInt32>^ actions, int index) override
 		{
 			if (index < 0 || index >= defaultPolicies->Length)
 			{
 				throw gcnew InvalidDataException("Internal error: Index of interop bag is out of range.");
 			}
-			return defaultPolicies[index]->ChooseAction(context);
+            cli::array<UInt32>^ defaultActions = defaultPolicies[index]->ChooseAction(context);
+
+            if (defaultActions == nullptr)
+            {
+                throw gcnew NullReferenceException("List of actions returned by default policy is null.");
+            }
+            if (defaultActions->Length < actions->Length)
+            {
+                throw gcnew InvalidDataException("Number of actions returned by default policy is unexpected. Expected: " + actions->Length + ", Actual: " + defaultActions->Length);
+            }
+
+            // TODO: possible to remove the copy by forcing users to fill in a preallocated array instead.
+            Array::Copy(defaultActions, actions, actions->Length);
 		}
 
 		NativeMultiWorldTesting::BootstrapExplorer<NativeContext>* Get()
@@ -401,7 +437,7 @@ namespace MultiWorldTesting {
 		/// <param name="unique_key">A unique identifier for the experimental unit. This could be a user id, a session id, etc...</param>
 		/// <param name="context">The context upon which a decision is made. See SimpleContext above for an example.</param>
 		/// <returns>An unsigned 32-bit integer representing the 1-based chosen action.</returns>
-		UInt32 ChooseAction(IExplorer<Ctx>^ explorer, String^ unique_key, Ctx context)
+        cli::array<UInt32>^ ChooseAction(IExplorer<Ctx>^ explorer, String^ unique_key, Ctx context)
 		{
 			String^ salt = this->appId;
 			NativeMultiWorldTesting::MwtExplorer<NativeContext> mwt(marshal_as<std::string>(salt), *GetNativeRecorder());
@@ -455,10 +491,10 @@ namespace MultiWorldTesting {
             }
 
             UInt32 numActions = mwt.Get_Number_Of_Actions(*native_explorer, native_context);
-            cli::array<UInt32>^ actionList = gcnew cli::array<UInt32>(numActions);
+            cli::array<UInt32>^ actions = gcnew cli::array<UInt32>(numActions);
 
             // Get pinned handle to pass through interop boundary and so that native code can modify
-            GCHandle actionListHandle = GCHandle::Alloc(actionList, GCHandleType::Pinned);
+            GCHandle actionListHandle = GCHandle::Alloc(actions, GCHandleType::Pinned);
             IntPtr actionListPtr = (IntPtr)actionListHandle;
 
             // This is achieved by storing the pointer in the internal context
@@ -466,22 +502,22 @@ namespace MultiWorldTesting {
 
             // Conver to native array
             IntPtr actionListPinnedPtr = actionListHandle.AddrOfPinnedObject();
-            u32* actions = (u32*)actionListPinnedPtr.ToPointer();
+            u32* native_actions = (u32*)actionListPinnedPtr.ToPointer();
 
-            action = mwt.Choose_Action(*native_explorer, marshal_as<std::string>(unique_key), native_context);
+            mwt.Choose_Action(*native_explorer, marshal_as<std::string>(unique_key), native_context, native_actions, numActions);
 
             actionListHandle.Free();
 			explorerHandle.Free();
 			contextHandle.Free();
 			selfHandle.Free();
 
-			return action;
+            return actions;
 		}
 
 	internal:
-		virtual void InvokeRecorderCallback(Ctx context, UInt32 action, float probability, String^ unique_key) override
+        virtual void InvokeRecorderCallback(Ctx context, cli::array<UInt32>^ actions, float probability, String^ unique_key) override
 		{
-			recorder->Record(context, action, probability, unique_key);
+			recorder->Record(context, actions, probability, unique_key);
 		}
 
 	private:
@@ -499,64 +535,64 @@ namespace MultiWorldTesting {
 		UInt32 Id;
 	};
 
-	/// <summary>
-	/// A sample recorder class that converts the exploration tuple into string format.
-	/// </summary>
-	/// <typeparam name="Ctx">The Context type.</typeparam>
-	generic <class Ctx> where Ctx : IStringContext
-	public ref class StringRecorder : public IRecorder<Ctx>, public ToStringCallback<Ctx>
-	{
-	public:
-		StringRecorder()
-		{
-			m_string_recorder = new NativeMultiWorldTesting::StringRecorder<NativeStringContext>();
-		}
+	///// <summary>
+	///// A sample recorder class that converts the exploration tuple into string format.
+	///// </summary>
+	///// <typeparam name="Ctx">The Context type.</typeparam>
+	//generic <class Ctx> where Ctx : IStringContext
+	//public ref class StringRecorder : public IRecorder<Ctx>, public ToStringCallback<Ctx>
+	//{
+	//public:
+	//	StringRecorder()
+	//	{
+	//		m_string_recorder = new NativeMultiWorldTesting::StringRecorder<NativeStringContext>();
+	//	}
 
-		~StringRecorder()
-		{
-			delete m_string_recorder;
-		}
+	//	~StringRecorder()
+	//	{
+	//		delete m_string_recorder;
+	//	}
 
-		virtual void Record(Ctx context, UInt32 action, float probability, String^ uniqueKey)
-		{
-            // Normal handles are sufficient here since native code will only hold references and not access the object's data
-            // https://www.microsoftpressstore.com/articles/article.aspx?p=2224054&seqNum=4
-			GCHandle contextHandle = GCHandle::Alloc(context);
-			IntPtr contextPtr = (IntPtr)contextHandle;
+	//	virtual void Record(Ctx context, cli::array<UInt32>^ action, float probability, String^ uniqueKey)
+	//	{
+ //           // Normal handles are sufficient here since native code will only hold references and not access the object's data
+ //           // https://www.microsoftpressstore.com/articles/article.aspx?p=2224054&seqNum=4
+	//		GCHandle contextHandle = GCHandle::Alloc(context);
+	//		IntPtr contextPtr = (IntPtr)contextHandle;
 
-			NativeStringContext native_context(contextPtr.ToPointer(), GetCallback());
-			m_string_recorder->Record(native_context, (u32)action, probability, marshal_as<string>(uniqueKey));
+	//		NativeStringContext native_context(contextPtr.ToPointer(), GetCallback());
+	//		m_string_recorder->Record(native_context, (u32)action, probability, marshal_as<string>(uniqueKey));
 
-            contextHandle.Free();
-		}
+ //           contextHandle.Free();
+	//	}
 
-		/// <summary>
-		/// Gets the content of the recording so far as a string and clears internal content.
-		/// </summary>
-		/// <returns>
-		/// A string with recording content.
-		/// </returns>
-		String^ GetRecording()
-		{
-			// Workaround for C++-CLI bug which does not allow default value for parameter
-			return GetRecording(true);
-		}
+	//	/// <summary>
+	//	/// Gets the content of the recording so far as a string and clears internal content.
+	//	/// </summary>
+	//	/// <returns>
+	//	/// A string with recording content.
+	//	/// </returns>
+	//	String^ GetRecording()
+	//	{
+	//		// Workaround for C++-CLI bug which does not allow default value for parameter
+	//		return GetRecording(true);
+	//	}
 
-		/// <summary>
-		/// Gets the content of the recording so far as a string and optionally clears internal content.
-		/// </summary>
-		/// <param name="flush">A boolean value indicating whether to clear the internal content.</param>
-		/// <returns>
-		/// A string with recording content.
-		/// </returns>
-		String^ GetRecording(bool flush)
-		{
-			return gcnew String(m_string_recorder->Get_Recording(flush).c_str());
-		}
+	//	/// <summary>
+	//	/// Gets the content of the recording so far as a string and optionally clears internal content.
+	//	/// </summary>
+	//	/// <param name="flush">A boolean value indicating whether to clear the internal content.</param>
+	//	/// <returns>
+	//	/// A string with recording content.
+	//	/// </returns>
+	//	String^ GetRecording(bool flush)
+	//	{
+	//		return gcnew String(m_string_recorder->Get_Recording(flush).c_str());
+	//	}
 
-	private:
-		NativeMultiWorldTesting::StringRecorder<NativeStringContext>* m_string_recorder;
-	};
+	//private:
+	//	NativeMultiWorldTesting::StringRecorder<NativeStringContext>* m_string_recorder;
+	//};
 
 	/// <summary>
 	/// A sample context class that stores a vector of Features.

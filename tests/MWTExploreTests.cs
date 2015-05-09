@@ -19,7 +19,7 @@ namespace ExploreTests
         {
             uint numActions = 10;
             float epsilon = 0f;
-            var policy = new TestPolicy<TestContext>();
+            var policy = new TestPolicy<TestContext>(numActions);
             var testContext = new TestContext();
             var explorer = new EpsilonGreedyExplorer<TestContext>(policy, epsilon, numActions);
 
@@ -31,7 +31,7 @@ namespace ExploreTests
         {
             uint numActions = 10;
             float epsilon = 0f;
-            var policy = new TestPolicy<TestVarContext>();
+            var policy = new TestPolicy<TestVarContext>(numActions);
             var testContext = new TestVarContext(numActions);
             var explorer = new EpsilonGreedyExplorer<TestVarContext>(policy, epsilon);
 
@@ -46,13 +46,13 @@ namespace ExploreTests
             MwtExplorer<TContext> mwtt = new MwtExplorer<TContext>("mwt", recorder);
             testContext.Id = 100;
 
-            uint expectedAction = policy.ChooseAction(testContext);
+            uint[] expectedActions = policy.ChooseAction(testContext);
 
-            uint chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext);
-            Assert.AreEqual(expectedAction, chosenAction);
+            uint[] chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext);
+            Assert.AreEqual(expectedActions[0], chosenActions[0]);
 
-            chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext);
-            Assert.AreEqual(expectedAction, chosenAction);
+            chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext);
+            Assert.AreEqual(expectedActions[0], chosenActions[0]);
 
             var interactions = recorder.GetAllInteractions();
             Assert.AreEqual(2, interactions.Count);
@@ -63,8 +63,8 @@ namespace ExploreTests
             explorer.EnableExplore(false);
             for (int i = 0; i < 1000; i++)
             {
-                chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext);
-                Assert.AreEqual(expectedAction, chosenAction);
+                chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext);
+                Assert.AreEqual(expectedActions[0], chosenActions[0]);
             }
         }
 
@@ -74,7 +74,7 @@ namespace ExploreTests
             uint numActions = 10;
             uint tau = 0;
             TestContext testContext = new TestContext() { Id = 100 };
-            var policy = new TestPolicy<TestContext>();
+            var policy = new TestPolicy<TestContext>(numActions);
             var explorer = new TauFirstExplorer<TestContext>(policy, tau, numActions);
             TauFirstWithContext(numActions, testContext, policy, explorer);
         }
@@ -85,7 +85,7 @@ namespace ExploreTests
             uint numActions = 10;
             uint tau = 0;
             var testContext = new TestVarContext(numActions) { Id = 100 };
-            var policy = new TestPolicy<TestVarContext>();
+            var policy = new TestPolicy<TestVarContext>(numActions);
             var explorer = new TauFirstExplorer<TestVarContext>(policy, tau);
             TauFirstWithContext(numActions, testContext, policy, explorer);
         }
@@ -98,10 +98,10 @@ namespace ExploreTests
             var recorder = new TestRecorder<TContext>();
             var mwtt = new MwtExplorer<TContext>("mwt", recorder);
 
-            uint expectedAction = policy.ChooseAction(testContext);
+            uint[] expectedActions = policy.ChooseAction(testContext);
 
-            uint chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext);
-            Assert.AreEqual(expectedAction, chosenAction);
+            uint[] chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext);
+            Assert.AreEqual(expectedActions[0], chosenActions[0]);
 
             var interactions = recorder.GetAllInteractions();
             Assert.AreEqual(0, interactions.Count);
@@ -110,8 +110,8 @@ namespace ExploreTests
             explorer.EnableExplore(false);
             for (int i = 0; i < 1000; i++)
             {
-                chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext);
-                Assert.AreEqual(expectedAction, chosenAction);
+                chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext);
+                Assert.AreEqual(expectedActions[0], chosenActions[0]);
             }
         }
 
@@ -126,7 +126,7 @@ namespace ExploreTests
             var policies = new TestPolicy<TestContext>[numbags];
             for (int i = 0; i < numbags; i++)
             {
-                policies[i] = new TestPolicy<TestContext>(i * 2);
+                policies[i] = new TestPolicy<TestContext>(numActions, i * 2);
             }
             var explorer = new BootstrapExplorer<TestContext>(policies, numActions);
 
@@ -144,7 +144,7 @@ namespace ExploreTests
             var policies = new TestPolicy<TestVarContext>[numbags];
             for (int i = 0; i < numbags; i++)
             {
-                policies[i] = new TestPolicy<TestVarContext>(i * 2);
+                policies[i] = new TestPolicy<TestVarContext>(numActions, i * 2);
             }
             var explorer = new BootstrapExplorer<TestVarContext>(policies);
 
@@ -159,13 +159,13 @@ namespace ExploreTests
             var recorder = new TestRecorder<TContext>();
             var mwtt = new MwtExplorer<TContext>("mwt", recorder);
 
-            uint expectedAction = policies[0].ChooseAction(testContext1);
+            uint[] expectedActions = policies[0].ChooseAction(testContext1);
 
-            uint chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext1);
-            Assert.AreEqual(expectedAction, chosenAction);
+            uint[] chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext1);
+            Assert.AreEqual(expectedActions[0], chosenActions[0]);
 
-            chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext2);
-            Assert.AreEqual(expectedAction, chosenAction);
+            chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext2);
+            Assert.AreEqual(expectedActions[0], chosenActions[0]);
 
             var interactions = recorder.GetAllInteractions();
             Assert.AreEqual(2, interactions.Count);
@@ -177,8 +177,8 @@ namespace ExploreTests
             explorer.EnableExplore(false);
             for (int i = 0; i < 1000; i++)
             {
-                chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext1);
-                Assert.AreEqual(expectedAction, chosenAction);
+                chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext1);
+                Assert.AreEqual(expectedActions[0], chosenActions[0]);
             }
         }
 
@@ -233,8 +233,8 @@ namespace ExploreTests
             Random rand = new Random();
             for (uint i = 0; i < contexts.Length; i++)
             {
-                uint chosenAction = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), contexts[i]);
-                actions[chosenAction - 1]++; // action id is one-based
+                uint[] chosenActions = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), contexts[i]);
+                actions[chosenActions[0] - 1]++; // action id is one-based
             }
 
             for (uint i = 0; i < numActions; i++)
@@ -295,8 +295,8 @@ namespace ExploreTests
             explorer.EnableExplore(false);
             for (int i = 0; i < 1000; i++)
             {
-                uint chosenAction = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = (int)i });
-                Assert.AreEqual(highestScoreAction, chosenAction);
+                uint[] chosenActions = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = (int)i });
+                Assert.AreEqual(highestScoreAction, chosenActions[0]);
             }
         }
 
@@ -328,7 +328,7 @@ namespace ExploreTests
 
             var mwtt = new MwtExplorer<TContext>("mwt", recorder);
 
-            uint chosenAction = mwtt.ChooseAction(explorer, uniqueKey, testContext);
+            mwtt.ChooseAction(explorer, uniqueKey, testContext);
 
             var interactions = recorder.GetAllInteractions();
             Assert.AreEqual(1, interactions.Count);
@@ -357,14 +357,14 @@ namespace ExploreTests
 
             tryCatchArgumentException(() => {
                 var mwt = new MwtExplorer<TestContext>("test", new TestRecorder<TestContext>());
-                var policy = new TestPolicy<TestContext>();
+                var policy = new TestPolicy<TestContext>(1);
                 var explorer = new EpsilonGreedyExplorer<TestContext>(policy, 0.2f);
                 mwt.ChooseAction(explorer, "key", new TestContext());
             });
             tryCatchArgumentException(() =>
             {
                 var mwt = new MwtExplorer<TestContext>("test", new TestRecorder<TestContext>());
-                var policy = new TestPolicy<TestContext>();
+                var policy = new TestPolicy<TestContext>(1);
                 var explorer = new TauFirstExplorer<TestContext>(policy, 10);
                 mwt.ChooseAction(explorer, "key", new TestContext());
             });
@@ -374,7 +374,7 @@ namespace ExploreTests
                 var policies = new TestPolicy<TestContext>[2];
                 for (int i = 0; i < 2; i++)
                 {
-                    policies[i] = new TestPolicy<TestContext>(i * 2);
+                    policies[i] = new TestPolicy<TestContext>(1, i * 2);
                 }
                 var explorer = new BootstrapExplorer<TestContext>(policies);
                 mwt.ChooseAction(explorer, "key", new TestContext());
@@ -411,7 +411,7 @@ namespace ExploreTests
     struct TestInteraction<Ctx>
     { 
         public Ctx Context; 
-        public UInt32 Action;
+        public UInt32[] Actions;
         public float Probability;
         public string UniqueKey;
     }
@@ -444,12 +444,12 @@ namespace ExploreTests
 
     class TestRecorder<Ctx> : IRecorder<Ctx>
     {
-        public void Record(Ctx context, UInt32 action, float probability, string uniqueKey)
+        public void Record(Ctx context, UInt32[] actions, float probability, string uniqueKey)
         {
             interactions.Add(new TestInteraction<Ctx>()
             { 
                 Context = context,
-                Action = action,
+                Actions = actions,
                 Probability = probability,
                 UniqueKey = uniqueKey
             });
@@ -465,34 +465,41 @@ namespace ExploreTests
 
     class TestPolicy<TContext> : IPolicy<TContext>
     {
-        public TestPolicy() : this(-1) { }
+        public TestPolicy(uint numberOfActions) : this(numberOfActions, -1) { }
 
-        public TestPolicy(int index)
+        public TestPolicy(uint numberOfActions, int index)
         {
+            this.numberOfActions = numberOfActions;
             this.index = index;
         }
 
-        public uint ChooseAction(TContext context)
+        public uint[] ChooseAction(TContext context)
         {
-            return 5;
+            uint[] actions = new uint[numberOfActions];
+            for (int i = 0; i < actions.Length; i++)
+            {
+                actions[i] = (uint)(i + 1);
+            }
+            return actions;
         }
 
         private int index;
+        private uint numberOfActions;
     }
 
     class TestSimplePolicy : IPolicy<SimpleContext>
     {
-        public uint ChooseAction(SimpleContext context)
+        public uint[] ChooseAction(SimpleContext context)
         {
-            return 1;
+            return new uint[] { 1 };
         }
     }
 
     class StringPolicy : IPolicy<SimpleContext>
     {
-        public uint ChooseAction(SimpleContext context)
+        public uint[] ChooseAction(SimpleContext context)
         {
-            return 1;
+            return new uint[] { 1 };
         }
     }
 

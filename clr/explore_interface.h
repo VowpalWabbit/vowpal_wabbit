@@ -34,10 +34,10 @@ public:
     /// This implementation should be thread-safe if multithreading is needed.
 	/// </summary>
 	/// <param name="context">A user-defined context for the decision.</param>
-	/// <param name="action">Chosen by an exploration algorithm given context.</param>
+	/// <param name="actions">Chosen by an exploration algorithm given context.</param>
 	/// <param name="probability">The probability of the chosen action given context.</param>
 	/// <param name="uniqueKey">A user-defined identifer for the decision.</param>
-	virtual void Record(Ctx context, UInt32 action, float probability, String^ uniqueKey) = 0;
+    virtual void Record(Ctx context, cli::array<UInt32>^ actions, float probability, String^ uniqueKey) = 0;
 };
 
 /// <summary>
@@ -55,7 +55,7 @@ public:
 	/// </summary>
 	/// <param name="context">A user-defined context for the decision.</param>
 	/// <returns>Index of the action to take (1-based)</returns>
-	virtual UInt32 ChooseAction(Ctx context) = 0;
+    virtual cli::array<UInt32>^ ChooseAction(Ctx context) = 0;
 };
 
 /// <summary>
