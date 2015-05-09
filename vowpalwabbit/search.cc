@@ -1230,15 +1230,17 @@ namespace Search {
           }
         }
 
-        ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);
-        memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt*sizeof(action));
-        cdbg_print_array("in LEARN, learn_allowed_actions", priv.learn_allowed_actions);
+        if (allowed_actions && (allowed_actions_cnt > 0)) {
+          ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);
+          memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt*sizeof(action));
+          cdbg_print_array("in LEARN, learn_allowed_actions", priv.learn_allowed_actions);
+        }
       }
 
       assert((allowed_actions_cnt == 0) || (a < allowed_actions_cnt));
 
       a_cost = 0.;
-      action a_name = (allowed_actions_cnt > 0) ? allowed_actions[a] : priv.is_ldf ? a : (a+1);
+      action a_name = (allowed_actions && (allowed_actions_cnt > 0)) ? allowed_actions[a] : priv.is_ldf ? a : (a+1);
       if (priv.metaoverride && priv.metaoverride->_foreach_action) {
         foreach_action_from_cache(priv,t,a_name);
         if (priv.memo_foreach_action[t]) {
@@ -1256,7 +1258,7 @@ namespace Search {
 
     if ((priv.state == LEARN) && (t > priv.learn_t) && (priv.rollout_num_steps > 0) && (priv.loss_declared_cnt >= priv.rollout_num_steps)) {
       cdbg << "... skipping" << endl;
-      action a = priv.is_ldf ? 0 : ((allowed_actions_cnt > 0) ? allowed_actions[0] : 1);
+      action a = priv.is_ldf ? 0 : ((allowed_actions && (allowed_actions_cnt > 0)) ? allowed_actions[0] : 1);
       if (priv.metaoverride && priv.metaoverride->_post_prediction)
         priv.metaoverride->_post_prediction(*priv.metaoverride->sch, t-priv.meta_t, a, 0.);
       if (priv.metaoverride && priv.metaoverride->_foreach_action)
@@ -1328,8 +1330,10 @@ namespace Search {
             
             priv.learn_ec_ref = ecs;
             priv.learn_ec_ref_cnt = ec_cnt;
-            ensure_size(priv.learn_allowed_actions, allowed_actions_cnt); // TODO: do we really need this?
-            memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt * sizeof(action));
+            if (allowed_actions) {
+              ensure_size(priv.learn_allowed_actions, allowed_actions_cnt); // TODO: do we really need this?
+              memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt * sizeof(action));
+            }
             size_t old_learner_id = priv.learn_learner_id;
             priv.learn_learner_id = learner_id;
             generate_training_example(priv, priv.gte_label, false);  // this is false because the conditioning has already been added!
