@@ -94,6 +94,7 @@ base_learner* csoaa_setup(vw& all)
 struct ldf {
   v_array<example*> ec_seq;
   v_hashmap< size_t, v_array<feature> > label_features;
+  v_hashmap< size_t, v_array<audit_data> > label_features_audit;
   
   size_t read_example_this_loop;
   bool need_to_clear;
@@ -146,7 +147,7 @@ namespace LabelDict {
     return is_lab;
   }
 
-  void del_example_namespace(example& ec, char ns, v_array<feature> features) {
+  void del_example_namespace(example& ec, char ns, v_array<feature> features, bool audit) {
     size_t numf = features.size();
     // print_update is called after this del_example_namespace,
     // so we need to keep the ec.num_features correct,
@@ -161,15 +162,19 @@ namespace LabelDict {
       ec.total_sum_feat_sq -= ec.sum_feat_sq[(size_t)ns];
       ec.atomics[(size_t)ns].erase();
       ec.sum_feat_sq[(size_t)ns] = 0.;
+      if (audit)
+        ec.audit_features[(size_t)ns].erase();
     } else { // DID have ns
       for (feature*f=features.begin; f!=features.end; f++) {
         ec.sum_feat_sq[(size_t)ns] -= f->x * f->x;
         ec.atomics[(size_t)ns].pop();
+        if (audit)
+          ec.audit_features[(size_t)ns].pop();
       }
     }
   }
 
-  void add_example_namespace(example& ec, char ns, v_array<feature> features) {
+  void add_example_namespace(example& ec, char ns, v_array<feature>& features, v_array<audit_data>* audit) {
     bool has_ns = false;
     for (size_t i=0; i<ec.indices.size(); i++) {
       if (ec.indices[i] == (size_t)ns) {
@@ -191,43 +196,52 @@ namespace LabelDict {
 
     ec.num_features += features.size();
     ec.total_sum_feat_sq += ec.sum_feat_sq[(size_t)ns];
+
+    if (audit != nullptr)
+      for (audit_data*f = audit->begin; f != audit->end; ++f) {
+        audit_data f2 = { f->space, f->feature, f->weight_index, f->x, false };
+        ec.audit_features[(size_t)ns].push_back(f2);
+      }
   }
 
-  void add_example_namespaces_from_example(example& target, example& source) {
+  void add_example_namespaces_from_example(example& target, example& source, bool audit) {
     for (unsigned char* idx=source.indices.begin; idx!=source.indices.end; idx++) {
       if (*idx == constant_namespace) continue;
-      add_example_namespace(target, (char)*idx, source.atomics[*idx]);
+      add_example_namespace(target, (char)*idx, source.atomics[*idx],
+                            audit ? &source.audit_features[*idx] : nullptr);
     }
   }
 
-  void del_example_namespaces_from_example(example& target, example& source) {
+  void del_example_namespaces_from_example(example& target, example& source, bool audit) {
     //for (size_t*idx=source.indices.begin; idx!=source.indices.end; idx++) {
     unsigned char* idx = source.indices.end;
     idx--;
     for (; idx>=source.indices.begin; idx--) {
       if (*idx == constant_namespace) continue;
-      del_example_namespace(target, (char)*idx, source.atomics[*idx]);
+      del_example_namespace(target, (char)*idx, source.atomics[*idx], audit);
     }
   }
 
   void add_example_namespace_from_memory(ldf& data, example& ec, size_t lab) {
     size_t lab_hash = hash_lab(lab);
-    v_array<feature> features = data.label_features.get(lab, lab_hash);
+    v_array<feature>& features = data.label_features.get(lab, lab_hash);
     if (features.size() == 0) return;
-    add_example_namespace(ec, 'l', features);
+    add_example_namespace(ec, 'l', features, (data.all->audit || data.all->hash_inv) ? &data.label_features_audit.get(lab, lab_hash) : nullptr);
   }
 
   void del_example_namespace_from_memory(ldf& data, example& ec, size_t lab) {
     size_t lab_hash = hash_lab(lab);
-    v_array<feature> features = data.label_features.get(lab, lab_hash);
+    v_array<feature>& features = data.label_features.get(lab, lab_hash);
     if (features.size() == 0) return;
-    del_example_namespace(ec, 'l', features);
+    del_example_namespace(ec, 'l', features, (data.all->audit || data.all->hash_inv));
   }
 
-  void set_label_features(ldf& data, size_t lab, v_array<feature>features) {
+  void set_label_features(ldf& data, size_t lab, v_array<feature>& features, v_array<audit_data>* audit) {
     size_t lab_hash = hash_lab(lab);
     if (data.label_features.contains(lab, lab_hash)) { return; }
     data.label_features.put_after_get(lab, lab_hash, features);
+    if (audit != nullptr)
+      data.label_features_audit.put(lab, lab_hash, *audit);
   }
 
   void free_label_features(ldf& data) {
@@ -449,15 +463,21 @@ void do_actual_learning(ldf& data, base_learner& base)
   if (LabelDict::ec_seq_is_label_definition(data, data.ec_seq)) {
     for (size_t i=0; i<data.ec_seq.size(); i++) {
       v_array<feature> features = v_init<feature>();
+      v_array<audit_data> audit = v_init<audit_data>();
       for (feature*f=data.ec_seq[i]->atomics[data.ec_seq[i]->indices[0]].begin; f!=data.ec_seq[i]->atomics[data.ec_seq[i]->indices[0]].end; f++) {
         feature fnew = { f->x,  f->weight_index };
         features.push_back(fnew);
       }
+      if ((data.all->audit || data.all->hash_inv))
+        for (audit_data*f=data.ec_seq[i]->audit_features[data.ec_seq[i]->indices[0]].begin; f!=data.ec_seq[i]->audit_features[data.ec_seq[i]->indices[0]].end; f++) {
+          audit_data f2 = { f->space, f->feature, f->weight_index, f->x, false };
+          audit.push_back(f2);
+        }
 
-      v_array<COST_SENSITIVE::wclass> costs = data.ec_seq[i]->l.cs.costs;
+      v_array<COST_SENSITIVE::wclass>& costs = data.ec_seq[i]->l.cs.costs;
       for (size_t j=0; j<costs.size(); j++) {
         size_t lab = (size_t)costs[j].x;
-        LabelDict::set_label_features(data, lab, features);
+        LabelDict::set_label_features(data, lab, features, (data.all->audit || data.all->hash_inv) ? &audit : nullptr);
       }
     }
     return;
@@ -469,7 +489,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   if (LabelDict::ec_is_example_header(*data.ec_seq[0])) {
     start_K = 1;
     for (size_t k=1; k<K; k++)
-      LabelDict::add_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0]);
+      LabelDict::add_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0], (data.all->audit || data.all->hash_inv));
   }
   bool isTest = check_ldf_sequence(data, start_K);
 
@@ -498,7 +518,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   /////////////////////// remove header
   if (start_K > 0)
     for (size_t k=1; k<K; k++)
-      LabelDict::del_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0]);
+      LabelDict::del_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0], (data.all->audit || data.all->hash_inv));
 }
 
 void global_print_newline(vw& all)
