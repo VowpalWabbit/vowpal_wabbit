@@ -436,8 +436,8 @@ sub goldenSectionSearch($$$$) {
 
     # assert(loss($x) != loss($mid));
     if (loss($x) == loss($mid)) {
-        printf STDERR "%s: loss(%g) == loss(%g): %g\n",
-                            $0, real_param($x), real_param($mid), loss($x);
+        printf STDERR "loss(%g) == loss(%g): %g\n",
+                            real_param($x), real_param($mid), loss($x);
         return opt_value(($x + $mid) / 2.0);
     }
 
