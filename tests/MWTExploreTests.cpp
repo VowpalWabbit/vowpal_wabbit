@@ -153,7 +153,7 @@ namespace vw_explore_tests
             TestPolicy<TestContext> my_policy(99, num_actions);
             TauFirstExplorer<TestContext> explorer(my_policy, tau, num_actions);
 
-            this->Tau_First_Random_Context(num_actions, my_context, explorer);
+            this->Tau_First_Random_Context(num_actions, my_context, explorer, my_policy);
 		}
 
         TEST_METHOD(Tau_First_Random_Var_Context)
@@ -164,7 +164,7 @@ namespace vw_explore_tests
             TestPolicy<TestVarContext> my_policy(99, num_actions);
             TauFirstExplorer<TestVarContext> explorer(my_policy, tau);
 
-            this->Tau_First_Random_Context(num_actions, my_context, explorer);
+            this->Tau_First_Random_Context(num_actions, my_context, explorer, my_policy);
         }
 
         TEST_METHOD(Tau_First_Toggle_Exploration)
@@ -263,7 +263,7 @@ namespace vw_explore_tests
 
             BootstrapExplorer<TestContext> explorer(policies, num_actions);
 
-            this->Bootstrap_Random_Context(num_actions, my_context, explorer);
+            this->Bootstrap_Random_Context(num_actions, my_context, explorer, policies);
 		}
 
         TEST_METHOD(Bootstrap_Random_Var_Context)
@@ -278,7 +278,7 @@ namespace vw_explore_tests
 
             BootstrapExplorer<TestVarContext> explorer(policies);
 
-            this->Bootstrap_Random_Context(num_actions, my_context, explorer);
+            this->Bootstrap_Random_Context(num_actions, my_context, explorer, policies);
         }
 
         TEST_METHOD(Bootstrap_Toggle_Exploration)
@@ -836,7 +836,7 @@ namespace vw_explore_tests
                 u32* chosen_actions = new u32[num_actions];
                 mwt.Choose_Action(explorer, this->Get_Unique_Key(i), my_context, chosen_actions, num_actions);
 
-                if (chosen_actions[0] == policy_actions[0])
+                if (!this->Chosen_Actions_Match_Policy_Actions(num_actions, chosen_actions, policy_actions))
                 {
                     times_policy_action_chosen++;
                 }
@@ -849,21 +849,28 @@ namespace vw_explore_tests
         }
 
         template <class TContext>
-        void Tau_First_Random_Context(int num_actions, TContext& my_context, TauFirstExplorer<TContext>& explorer)
+        void Tau_First_Random_Context(int num_actions, TContext& my_context, TauFirstExplorer<TContext>& explorer, TestPolicy<TContext>& my_policy)
         {
             TestRecorder<TContext> my_recorder;
             MwtExplorer<TContext> mwt("salt", my_recorder);
 
+            u32* policy_actions = new u32[num_actions];
+            my_policy.Choose_Action(my_context, policy_actions, num_actions);
+
             u32* chosen_actions = new u32[num_actions];
             mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context, chosen_actions, num_actions);
+            Assert::IsTrue(this->Chosen_Actions_Match_Policy_Actions(num_actions, chosen_actions, policy_actions, 1));
 
             mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context, chosen_actions, num_actions);
+            Assert::IsTrue(this->Chosen_Actions_Match_Policy_Actions(num_actions, chosen_actions, policy_actions, 1));
 
             // Tau expired, did not explore
             mwt.Choose_Action(explorer, this->Get_Unique_Key(3), my_context, chosen_actions, num_actions);
+            Assert::IsTrue(this->Chosen_Actions_Match_Policy_Actions(num_actions, chosen_actions, policy_actions));
             Assert::AreEqual((u32)10, chosen_actions[0]);
 
             delete[] chosen_actions;
+            delete[] policy_actions;
 
             // Only 2 interactions logged, 3rd one should not be stored
             vector<TestInteraction<TContext>> interactions = my_recorder.Get_All_Interactions();
@@ -872,15 +879,38 @@ namespace vw_explore_tests
         }
 
         template <class TContext>
-        void Bootstrap_Random_Context(int num_actions, TContext& my_context, BootstrapExplorer<TContext>& explorer)
+        void Bootstrap_Random_Context(int num_actions, TContext& my_context, BootstrapExplorer<TContext>& explorer, vector<unique_ptr<IPolicy<TContext>>>& policies)
         {
             TestRecorder<TContext> my_recorder;
 
             MwtExplorer<TContext> mwt("c++-test", my_recorder);
 
+            size_t bags = policies.size();
+            u32** policy_actions = new u32*[bags];
+            for (size_t i = 0; i < bags; i++)
+            {
+                policy_actions[i] = new u32[num_actions];
+                policies[i]->Choose_Action(my_context, policy_actions[i], num_actions);
+            }
+
             u32* chosen_actions = new u32[num_actions];
             mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context, chosen_actions, num_actions);
+
+            bool match = false;
+            for (size_t i = 0; i < bags; i++)
+            {
+                match |= this->Chosen_Actions_Match_Policy_Actions(num_actions, chosen_actions, policy_actions[i]);
+            }
+            Assert::IsTrue(match);
+            
             mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context, chosen_actions, num_actions);
+            
+            match = false;
+            for (size_t i = 0; i < bags; i++)
+            {
+                match |= this->Chosen_Actions_Match_Policy_Actions(num_actions, chosen_actions, policy_actions[i]);
+            }
+            Assert::IsTrue(match);
 
             delete[] chosen_actions;
 
@@ -909,6 +939,8 @@ namespace vw_explore_tests
             {
                 u32* chosen_actions = new u32[num_actions];
                 mwt.Choose_Action(explorer, this->Get_Unique_Key(i + 1), my_context, chosen_actions, num_actions);
+
+                Assert::IsFalse(this->Chosen_Actions_Contain_Duplicates(num_actions, chosen_actions));
 
                 // Action IDs are 1-based
                 actions[chosen_actions[0] - 1]++;
@@ -943,8 +975,13 @@ namespace vw_explore_tests
             u32* chosen_actions = new u32[num_actions];
 
             mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context, chosen_actions, num_actions);
+            Assert::IsFalse(this->Chosen_Actions_Contain_Duplicates(num_actions, chosen_actions));
+
             mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context, chosen_actions, num_actions);
+            Assert::IsFalse(this->Chosen_Actions_Contain_Duplicates(num_actions, chosen_actions));
+
             mwt.Choose_Action(explorer, this->Get_Unique_Key(3), my_context, chosen_actions, num_actions);
+            Assert::IsFalse(this->Chosen_Actions_Contain_Duplicates(num_actions, chosen_actions));
 
             delete[] chosen_actions;
 
@@ -990,6 +1027,36 @@ namespace vw_explore_tests
 				Assert::AreEqual(probs_expected[i], interactions[i].Probability);
 			}
 		}
+
+        bool Chosen_Actions_Match_Policy_Actions(int num_actions, u32* chosen_actions, u32* policy_actions, int start_index = 0)
+        {
+            bool match = true;
+            for (int j = start_index; j < num_actions; j++)
+            {
+                if (chosen_actions[j] != policy_actions[j])
+                {
+                    match = false;
+                    break;
+                }
+            }
+            return match;
+        }
+
+        bool Chosen_Actions_Contain_Duplicates(int num_actions, u32* chosen_actions)
+        {
+            bool duplicate = false;
+            for (int i = 0; i < num_actions; i++)
+            {
+                for (int j = i + 1; j < num_actions; j++)
+                {
+                    if (chosen_actions[i] == chosen_actions[j])
+                    {
+                        duplicate = true;
+                    }
+                }
+            }
+            return duplicate;
+        }
 
 		string Get_Unique_Key(u32 seed)
 		{

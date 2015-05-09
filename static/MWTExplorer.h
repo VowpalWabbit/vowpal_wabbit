@@ -894,17 +894,19 @@ private:
         u32 chosen_bag = random_generator.Uniform_Int(0, m_bags - 1);
 
 		// Invoke the default policy function to get the action
-		u32 chosen_action = 0;
+		u32 chosen_top_action = 0;
         float action_probability = 0.f;
 
         if (m_explore)
         {
-            u32 action_from_bag = 0;
+            u32 top_action_from_bag = 0;
             vector<u32> actions_selected;
             for (size_t i = 0; i < num_actions; i++)
             {
                 actions_selected.push_back(0);
             }
+
+            u32* chosen_actions = new u32[num_actions];
 
             // Invoke the default policy function to get the action
             for (u32 current_bag = 0; current_bag < m_bags; current_bag++)
@@ -914,22 +916,29 @@ private:
                 // we could end up calling the wrong bag
                 m_default_policy_functions[current_bag]->Choose_Action(context, actions, num_actions);
                 
-                action_from_bag = actions[0];
-
-                if (action_from_bag == 0 || action_from_bag > num_actions)
+                top_action_from_bag = actions[0];
+                if (top_action_from_bag == 0 || top_action_from_bag > num_actions)
                 {
                     throw std::invalid_argument("Action chosen by default policy is not within valid range.");
                 }
 
                 if (current_bag == chosen_bag)
                 {
-                    chosen_action = action_from_bag;
+                    // store the list of actions chosen by the selected bag
+                    // this is needed since 'actions' array is pre-allocated by managed code
+                    // and will be overidden by the next policy::choose_action
+                    ::memcpy(chosen_actions, actions, num_actions * sizeof(u32));
+                    chosen_top_action = top_action_from_bag;
                 }
                 //this won't work if actions aren't 0 to Count
-                actions_selected[action_from_bag - 1]++; // action id is one-based
+                actions_selected[top_action_from_bag - 1]++; // action id is one-based
             }
-            actions[0] = chosen_action;
-            action_probability = (float)actions_selected[chosen_action - 1] / m_bags; // action id is one-based
+            action_probability = (float)actions_selected[chosen_top_action - 1] / m_bags; // action id is one-based
+            
+            // restore the list of actions chosen by the selected bag
+            ::memcpy(actions, chosen_actions, num_actions * sizeof(u32));
+
+            delete[] chosen_actions;
         }
         else
         {
