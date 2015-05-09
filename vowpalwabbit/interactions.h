@@ -143,7 +143,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
 
                     for (; fst != fst_end; ++fst)
                     {
-                        const uint32_t halfhash = FNV_prime * ((fst->weight_index + offset) /*>> stride_shift*/);
+                        const uint32_t halfhash = FNV_prime * fst->weight_index;
                         // next index differs for permutations and simple combinations
                         const feature* snd = (!same_namespace) ? ec.atomics[snd_ns].begin :
                                                                  (fst->x != 1. && feature_self_interactions_for_weight_other_than_1) ? fst : fst+1;
@@ -151,7 +151,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
                         for (; snd < snd_end; ++snd)
                         {                            
                             //  const size_t ft_idx = ((snd->weight_index /*>> stride_shift*/) ^ halfhash) /*<< stride_shift*/;
-                            call_T<R, T> (dat, weight_vector, weight_mask, ft_weight*snd->x, snd->weight_index^halfhash);
+                            call_T<R, T> (dat, weight_vector, weight_mask, ft_weight*snd->x, (snd->weight_index^halfhash) + offset);
                         } // end for(snd)
                     } // end for(fst)
 
@@ -187,13 +187,13 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
                                 const feature* snd = (!same_namespace1) ? ec.atomics[snd_ns].begin :
                                                                           (fst->x != 1. && feature_self_interactions_for_weight_other_than_1) ? fst : fst+1;
 
-                                const uint32_t halfhash1 = FNV_prime * ((fst->weight_index + offset) /*>> stride_shift*/);
+                                const uint32_t halfhash1 = FNV_prime * fst->weight_index;
                                 const float& ft_weight = fst->x;
 
                                 for (; snd < snd_end; ++snd)
                                 {
                                     //f3 x k*(f2 x k*f1)
-                                    const uint32_t halfhash2 = FNV_prime * (halfhash1 ^ ((snd->weight_index + offset) /*>> stride_shift*/));
+                                    const uint32_t halfhash2 = FNV_prime * (halfhash1 ^ snd->weight_index);
                                     const float ft_weight1 =  ft_weight * snd->x;
 
                                     // next index differs for permutations and simple combinations
@@ -203,7 +203,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
                                     for (; thr < thr_end; ++thr)
                                     {
 //                                        const size_t ft_idx = ((thr->weight_index /*>> stride_shift*/)^ halfhash2) /*<< stride_shift*/;
-                                        call_T<R, T> (dat, weight_vector, weight_mask, ft_weight1 * thr->x, thr->weight_index^halfhash2);
+                                        call_T<R, T> (dat, weight_vector, weight_mask, ft_weight1 * thr->x, (thr->weight_index^halfhash2) + offset);
                                     } // end for (thr)
                                 } // end for (snd)
                             } // end for (fst)
@@ -332,13 +332,13 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
 
                         if (data == fgd)
                         {
-                            next_data->hash = FNV_prime *(cur_feature->weight_index  + offset) /*>> stride_shift*/;
+                            next_data->hash = FNV_prime * cur_feature->weight_index;
                             next_data->x = cur_feature->x; // data->x == 1.
                         }
                         else
                         {
                             // feature2 xor (16777619*feature1)
-                            next_data->hash = FNV_prime * (data->hash ^ ( (cur_feature->weight_index  + offset ) /*>> stride_shift*/ ));
+                            next_data->hash = FNV_prime * (data->hash ^ cur_feature->weight_index);
                             next_data->x = cur_feature->x * data->x;
                         }
 
@@ -356,7 +356,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
                         for (feature* f = start; f != end; ++f)
                         {
                             // const size_t ft_idx = ( data->hash ^ (f->weight_index /*>> stride_shift*/) ) /*<< stride_shift*/;
-                            call_T<R, T> (dat, weight_vector, weight_mask, fgd2->x * f->x /*ft_weight*/, fgd2->hash ^ f->weight_index );
+                            call_T<R, T> (dat, weight_vector, weight_mask, fgd2->x * f->x /*ft_weight*/, (fgd2->hash^f->weight_index) + offset );
                         }
 
                         // trying to go back increasing loop_idx of each namespace by the way
