@@ -568,8 +568,10 @@ void output_example_seq(vw& all, ldf& data)
     for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
       output_example(all, **ecc, hit_loss, &(data.ec_seq));
 
-    if (!data.is_singleline && (all.raw_prediction > 0))
-      all.print_text(all.raw_prediction, "", data.ec_seq[0]->tag);
+    if (!data.is_singleline && (all.raw_prediction > 0)) {
+      v_array<char> empty = { nullptr, nullptr, nullptr, 0 };
+      all.print_text(all.raw_prediction, "", empty);
+    }
   }
 }
 
