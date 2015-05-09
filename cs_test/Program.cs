@@ -49,26 +49,26 @@ namespace cs_test
 
             IntPtr featureSpacePtr = pinnedFeatureSpace.AddrOfPinnedObject();
 
-            uint snum = VowpalWabbitInterface.HashSpace(vw, "s");
+            uint snum = VowpalWabbitInterface.HashSpace("s");
             featureSpace[0].name = (byte)'s';
-            sfeatures[0].weight_index = VowpalWabbitInterface.HashFeature(vw, "p^the_man", snum);
+            sfeatures[0].weight_index = VowpalWabbitInterface.HashFeature("p^the_man", snum);
             sfeatures[0].x = 1;
             // add the character "delta" to test unicode
             // do it as a string to test the marshaling is doing pinning correctly.
             const string s = "w^thew^man\u0394";
-            sfeatures[1].weight_index = VowpalWabbitInterface.HashFeature(vw, s, snum);
+            sfeatures[1].weight_index = VowpalWabbitInterface.HashFeature(s, snum);
             sfeatures[1].x = 1;
-            sfeatures[2].weight_index = VowpalWabbitInterface.HashFeature(vw, "w^man", snum);
+            sfeatures[2].weight_index = VowpalWabbitInterface.HashFeature("w^man", snum);
             sfeatures[2].x = 1;
             featureSpace[0].len = 3;
 
-            uint tnum = VowpalWabbitInterface.HashSpace(vw, "t");
+            uint tnum = VowpalWabbitInterface.HashSpace("t");
             featureSpace[1].name = (byte)'t';
-            tfeatures[0].weight_index = VowpalWabbitInterface.HashFeature(vw, "p^un_homme", tnum);
+            tfeatures[0].weight_index = VowpalWabbitInterface.HashFeature("p^un_homme", tnum);
             tfeatures[0].x = 1;
-            tfeatures[1].weight_index = VowpalWabbitInterface.HashFeature(vw, "w^un", tnum);
+            tfeatures[1].weight_index = VowpalWabbitInterface.HashFeature("w^un", tnum);
             tfeatures[1].x = 1;
-            tfeatures[2].weight_index = VowpalWabbitInterface.HashFeature(vw, "w^homme", tnum);
+            tfeatures[2].weight_index = VowpalWabbitInterface.HashFeature("w^homme", tnum);
             tfeatures[2].x = 1;
             featureSpace[1].len = 3;
 

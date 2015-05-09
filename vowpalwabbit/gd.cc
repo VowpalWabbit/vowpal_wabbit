@@ -45,11 +45,23 @@ namespace GD
     void (*learn)(gd&, base_learner&, example&);
     void (*update)(gd&, base_learner&, example&);
     void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, polyprediction*, bool);
+    bool normalized;
+    bool adaptive;
 
     vw* all; //parallel, features, parameters
   };
 
   void sync_weights(vw& all);
+
+  inline float quake_InvSqrt(float x)
+  {    // Carmack/Quake/SGI fast method:
+	  float xhalf = 0.5f * x;
+	  int i = *(int*)&x; // store floating-point bits in integer
+	  i = 0x5f3759d5 - (i >> 1); // initial guess for Newton's method
+	  x = *(float*)&i; // convert new bits into float
+	  x = x*(1.5f - xhalf*x*x); // One round of Newton's method
+	  return x;
+  }
 
   static inline float InvSqrt(float x)
   {
@@ -65,20 +77,15 @@ namespace GD
     float32x2_t e3 = vmul_f32(e2, vrsqrts_f32(v1, vmul_f32(e2, e2)));
     // Extract result
     return vget_lane_f32(e3, 0);
-#  elif defined(__SSE2__)
+#  elif (defined(__SSE2__) || defined(_M_AMD64) || defined(_M_X64))
     __m128 eta = _mm_load_ss(&x);
     eta = _mm_rsqrt_ss(eta);
     _mm_store_ss(&x, eta);
-    // Fall through
+#else
+	  x = quake_InvSqrt(x);
 #  endif
 #else
-    // Carmack/Quake/SGI fast method:
-    float xhalf = 0.5f * x;
-    int i = *(int*)&x; // store floating-point bits in integer
-    i = 0x5f3759d5 - (i >> 1); // initial guess for Newton's method
-    x = *(float*)&i; // convert new bits into float
-    x = x*(1.5f - xhalf*x*x); // One round of Newton's method
-    // Fall through
+	  x = quake_InvSqrt(x);
 #endif
 
     return x;
@@ -439,7 +446,7 @@ void multipredict(gd& g, base_learner& base, example& ec, size_t count, size_t s
       if (sqrt_rate)
 	{  
 	  rate_decay = InvSqrt(w[adaptive]);
-	}
+	  }
       else
 	rate_decay = powf(w[adaptive],s.minus_power_t);
     }
@@ -455,7 +462,7 @@ void multipredict(gd& g, base_learner& base, example& ec, size_t count, size_t s
       else
 	rate_decay *= powf(w[normalized]*w[normalized], s.neg_norm_power);
     }
-    return rate_decay;
+	return rate_decay;
   }
 
   struct norm_data {
@@ -490,7 +497,6 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
       nd.norm_x += x2 / (w[normalized] * w[normalized]);
     }
     w[spare] = compute_rate_decay<sqrt_rate, adaptive, normalized>(nd.pd, fw);
-
     nd.pred_per_update += x2 * w[spare];
   }
 }
@@ -506,7 +512,6 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
     norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
     
     foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, nd);
-    
     if(normalized) {
       g.all->normalized_sum_norm_x += ld.weight * nd.norm_x;
       g.total_weight += ld.weight;
@@ -533,19 +538,17 @@ float compute_update(gd& g, example& ec)
 	pred_per_update = get_pred_per_update<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,ec);
       else
 	pred_per_update = ec.total_sum_feat_sq;
-      
       float delta_pred = pred_per_update * all.eta * ld.weight;
       if(!adaptive) 
 	{
 	  float t = (float)(ec.example_t - all.sd->weighted_holdout_examples);
 	  delta_pred *= powf(t, g.neg_power_t);
 	}
-      
       if(invariant)
 	update = all.loss->getUpdate(ec.pred.scalar, ld.label, delta_pred, pred_per_update);
       else
 	update = all.loss->getUnsafeUpdate(ec.pred.scalar, ld.label, delta_pred, pred_per_update);
-      
+
       // changed from ec.partial_prediction to ld.prediction
       ec.updated_prediction += pred_per_update * update;
       
@@ -561,7 +564,6 @@ float compute_update(gd& g, example& ec)
   
   if (sparse_l2)
     update -= g.sparse_l2 * ec.pred.scalar;
-  
   return update;
 }
 
@@ -667,7 +669,6 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
   while ((!read && i < length) || (read && brw >0));  
 }
 
-//void save_load_online_state(gd& g, io_buf& model_file, bool read, bool text)
 void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g)
 {
   //vw& all = *g.all;
@@ -793,7 +794,9 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 	    {
 	      assert (i< length);		
 	      v = &(all.reg.weight_vector[stride*i]);
-	      if (stride == 2) //either adaptive or normalized
+	      if (! g->adaptive && ! g->normalized)
+		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+	      else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
 		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v)*2, "");
 	      else //adaptive and normalized
 		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v)*3, "");	
@@ -811,8 +814,13 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 	      int text_len = sprintf(buff, "%d", i);
 	      brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i),
 					 buff, text_len, text);
-	      
-	      if (stride == 2)
+	      if (! g->adaptive && ! g->normalized)
+		{
+		  text_len = sprintf(buff, ":%f\n", *v);
+		  brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
+					     buff, text_len, text);
+		}
+	      else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
 		{//either adaptive or normalized
 		  text_len = sprintf(buff, ":%f %f\n", *v, *(v+1));
 		  brw+= bin_text_write_fixed(model_file,(char *)v, 2*sizeof (*v),
@@ -983,8 +991,10 @@ base_learner* setup(vw& all)
   if( !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) ) )
     {//nondefault
       all.adaptive = all.training && vm.count("adaptive");
+      g.adaptive = all.adaptive;
       all.invariant_updates = all.training && vm.count("invariant");
       all.normalized_updates = all.training && vm.count("normalized");
+      g.normalized = all.normalized_updates;
       
       if(!vm.count("learning_rate") && !vm.count("l") && !(all.adaptive && all.normalized_updates))
 	all.eta = 10; //default learning rate to 10 for non default update rule
