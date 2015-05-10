@@ -338,6 +338,29 @@ static u32 Get_Variable_Number_Of_Actions(Ctx& context, u32 default_num_actions)
 
 static void Sample_Without_Replacement(u32* actions, vector<float>& probs, u32 size, PRG::prg& random_generator, float& top_action_probability)
 {
+    bool sample = true;
+    u32 deterministic_action = 0;
+
+    for (u32 i = 0; i < size; i++)
+    {
+        if (probs[i] == 1.f)
+        {
+            sample = false;
+            deterministic_action = (u32)(i + 1);
+            break;
+        }
+    }
+
+    if (!sample)
+    {
+        for (u32 i = 0; i < size; i++)
+            actions[i] = deterministic_action;
+
+        top_action_probability = 1.f;
+
+        return;
+    }
+
     // sample without replacement
     u32 running_index = 0;
     u32 running_action = 0;
