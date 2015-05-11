@@ -440,67 +440,83 @@ namespace MultiWorldTesting {
 			GCHandle explorerHandle = GCHandle::Alloc(explorer);
 			IntPtr explorerPtr = (IntPtr)explorerHandle;
 
-			NativeContext native_context(selfPtr.ToPointer(), explorerPtr.ToPointer(), contextPtr.ToPointer(),
-                this->GetNumActionsCallback());
+            cli::array<UInt32>^ actions = nullptr;
+            GCHandle actionListHandle;
 
-            //TODO: try finally to make sure GCHandles are freed
-
-			u32 action = 0;
-            NativeMultiWorldTesting::IExplorer<NativeContext>* native_explorer = nullptr;
-
-			if (explorer->GetType() == EpsilonGreedyExplorer<Ctx>::typeid)
-			{
-				EpsilonGreedyExplorer<Ctx>^ epsilonGreedyExplorer = (EpsilonGreedyExplorer<Ctx>^)explorer;
-                native_explorer = (NativeMultiWorldTesting::IExplorer<NativeContext>*)epsilonGreedyExplorer->Get();
-			}
-			else if (explorer->GetType() == TauFirstExplorer<Ctx>::typeid)
-			{
-				TauFirstExplorer<Ctx>^ tauFirstExplorer = (TauFirstExplorer<Ctx>^)explorer;
-                native_explorer = (NativeMultiWorldTesting::IExplorer<NativeContext>*)tauFirstExplorer->Get();
-			}
-			else if (explorer->GetType() == SoftmaxExplorer<Ctx>::typeid)
-			{
-				SoftmaxExplorer<Ctx>^ softmaxExplorer = (SoftmaxExplorer<Ctx>^)explorer;
-                native_explorer = (NativeMultiWorldTesting::IExplorer<NativeContext>*)softmaxExplorer->Get();
-			}
-			else if (explorer->GetType() == GenericExplorer<Ctx>::typeid)
-			{
-				GenericExplorer<Ctx>^ genericExplorer = (GenericExplorer<Ctx>^)explorer;
-                native_explorer = (NativeMultiWorldTesting::IExplorer<NativeContext>*)genericExplorer->Get();
-			}
-			else if (explorer->GetType() == BootstrapExplorer<Ctx>::typeid)
-			{
-				BootstrapExplorer<Ctx>^ bootstrapExplorer = (BootstrapExplorer<Ctx>^)explorer;
-                native_explorer = (NativeMultiWorldTesting::IExplorer<NativeContext>*)bootstrapExplorer->Get();
-			}
-
-            if (native_explorer == nullptr)
+            try
             {
-                throw gcnew Exception("Unknown type of exploration algorithm used.");
+                NativeContext native_context(selfPtr.ToPointer(), explorerPtr.ToPointer(), contextPtr.ToPointer(),
+                    this->GetNumActionsCallback());
+
+                u32 action = 0;
+                NativeMultiWorldTesting::IExplorer<NativeContext>* native_explorer = nullptr;
+
+                if (explorer->GetType() == EpsilonGreedyExplorer<Ctx>::typeid)
+                {
+                    EpsilonGreedyExplorer<Ctx>^ epsilonGreedyExplorer = (EpsilonGreedyExplorer<Ctx>^)explorer;
+                    native_explorer = (NativeMultiWorldTesting::IExplorer<NativeContext>*)epsilonGreedyExplorer->Get();
+                }
+                else if (explorer->GetType() == TauFirstExplorer<Ctx>::typeid)
+                {
+                    TauFirstExplorer<Ctx>^ tauFirstExplorer = (TauFirstExplorer<Ctx>^)explorer;
+                    native_explorer = (NativeMultiWorldTesting::IExplorer<NativeContext>*)tauFirstExplorer->Get();
+                }
+                else if (explorer->GetType() == SoftmaxExplorer<Ctx>::typeid)
+                {
+                    SoftmaxExplorer<Ctx>^ softmaxExplorer = (SoftmaxExplorer<Ctx>^)explorer;
+                    native_explorer = (NativeMultiWorldTesting::IExplorer<NativeContext>*)softmaxExplorer->Get();
+                }
+                else if (explorer->GetType() == GenericExplorer<Ctx>::typeid)
+                {
+                    GenericExplorer<Ctx>^ genericExplorer = (GenericExplorer<Ctx>^)explorer;
+                    native_explorer = (NativeMultiWorldTesting::IExplorer<NativeContext>*)genericExplorer->Get();
+                }
+                else if (explorer->GetType() == BootstrapExplorer<Ctx>::typeid)
+                {
+                    BootstrapExplorer<Ctx>^ bootstrapExplorer = (BootstrapExplorer<Ctx>^)explorer;
+                    native_explorer = (NativeMultiWorldTesting::IExplorer<NativeContext>*)bootstrapExplorer->Get();
+                }
+
+                if (native_explorer == nullptr)
+                {
+                    throw gcnew Exception("Unknown type of exploration algorithm used.");
+                }
+
+                UInt32 numActions = mwt.Get_Number_Of_Actions(*native_explorer, native_context);
+                actions = gcnew cli::array<UInt32>(numActions);
+
+                // Get pinned handle to pass through interop boundary and so that native code can modify
+                actionListHandle = GCHandle::Alloc(actions, GCHandleType::Pinned);
+                IntPtr actionListPtr = (IntPtr)actionListHandle;
+
+                // This is achieved by storing the pointer in the internal context
+                native_context.Set_Clr_Action_List(actionListPtr.ToPointer());
+
+                // Conver to native array
+                IntPtr actionListPinnedPtr = actionListHandle.AddrOfPinnedObject();
+                u32* native_actions = (u32*)actionListPinnedPtr.ToPointer();
+
+                mwt.Choose_Action(*native_explorer, marshal_as<std::string>(unique_key), native_context, native_actions, numActions);
             }
-
-            UInt32 numActions = mwt.Get_Number_Of_Actions(*native_explorer, native_context);
-            cli::array<UInt32>^ actions = gcnew cli::array<UInt32>(numActions);
-
-            // Get pinned handle to pass through interop boundary and so that native code can modify
-            GCHandle actionListHandle = GCHandle::Alloc(actions, GCHandleType::Pinned);
-            IntPtr actionListPtr = (IntPtr)actionListHandle;
-
-            // This is achieved by storing the pointer in the internal context
-            native_context.Set_Clr_Action_List(actionListPtr.ToPointer());
-
-            // TODO: test whether C# recorder exception is caught here.
-
-            // Conver to native array
-            IntPtr actionListPinnedPtr = actionListHandle.AddrOfPinnedObject();
-            u32* native_actions = (u32*)actionListPinnedPtr.ToPointer();
-
-            mwt.Choose_Action(*native_explorer, marshal_as<std::string>(unique_key), native_context, native_actions, numActions);
-
-            actionListHandle.Free();
-			explorerHandle.Free();
-			contextHandle.Free();
-			selfHandle.Free();
+            finally
+            {
+                if (actionListHandle.IsAllocated)
+                {
+                    actionListHandle.Free();
+                }
+                if (explorerHandle.IsAllocated)
+                {
+                    explorerHandle.Free();
+                }
+                if (contextHandle.IsAllocated)
+                {
+                    contextHandle.Free();
+                }
+                if (selfHandle.IsAllocated)
+                {
+                    selfHandle.Free();
+                }
+            }
 
             return actions;
 		}

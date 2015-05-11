@@ -122,15 +122,22 @@ public:
 
     void Record(NativeContext& context, u32* actions, u32 num_actions, float probability, string unique_key)
 	{
-        // TODO: add try finally
         // Normal handles are sufficient here since native code will only hold references and not access the object's data
         // https://www.microsoftpressstore.com/articles/article.aspx?p=2224054&seqNum=4
 		GCHandle uniqueKeyHandle = GCHandle::Alloc(gcnew String(unique_key.c_str()));
-		IntPtr uniqueKeyPtr = (IntPtr)uniqueKeyHandle;
+        try
+        {
+            IntPtr uniqueKeyPtr = (IntPtr)uniqueKeyHandle;
 
-		m_func(context.Get_Clr_Mwt(), context.Get_Clr_Context(), context.Get_Clr_Action_List(), probability, uniqueKeyPtr.ToPointer());
-
-		uniqueKeyHandle.Free();
+            m_func(context.Get_Clr_Mwt(), context.Get_Clr_Context(), context.Get_Clr_Action_List(), probability, uniqueKeyPtr.ToPointer());
+        }
+        finally
+        {
+            if (uniqueKeyHandle.IsAllocated)
+            {
+                uniqueKeyHandle.Free();
+            }
+        }
 	}
 private:
 	Native_Recorder_Callback* m_func;
