@@ -33,17 +33,19 @@ namespace ExploreTests
             float epsilon = 0f; // no randomization
             var policy = new TestPolicy<TestVarContext>(numActions);
             var testContext = new TestVarContext(numActions);
+            var getNumActionsFunc = (Func<TestVarContext, uint>)((context) => { return context.GetNumberOfActions(); });
             var explorer = new EpsilonGreedyExplorer<TestVarContext>(policy, epsilon);
 
-            EpsilonGreedyWithContext(numActions, testContext, policy, explorer);
+            EpsilonGreedyWithContext(numActions, testContext, policy, explorer, getNumActionsFunc);
         }
 
-        private static void EpsilonGreedyWithContext<TContext>(uint numActions, TContext testContext, TestPolicy<TContext> policy, IExplorer<TContext> explorer)
+        private static void EpsilonGreedyWithContext<TContext>(uint numActions, TContext testContext, TestPolicy<TContext> policy, IExplorer<TContext> explorer,
+            Func<TContext, uint> getNumActionsFunc = null)
             where TContext : TestContext
         {
             string uniqueKey = "ManagedTestId";
             TestRecorder<TContext> recorder = new TestRecorder<TContext>();
-            MwtExplorer<TContext> mwtt = new MwtExplorer<TContext>("mwt", recorder);
+            MwtExplorer<TContext> mwtt = new MwtExplorer<TContext>("mwt", recorder, getNumActionsFunc);
             testContext.Id = 100;
 
             uint[] expectedActions = policy.ChooseAction(testContext);
@@ -85,18 +87,20 @@ namespace ExploreTests
             uint numActions = 10;
             uint tau = 0;
             var testContext = new TestVarContext(numActions) { Id = 100 };
+            var getNumActionsFunc = (Func<TestVarContext, uint>)((context) => { return context.GetNumberOfActions(); });
             var policy = new TestPolicy<TestVarContext>(numActions);
             var explorer = new TauFirstExplorer<TestVarContext>(policy, tau);
-            TauFirstWithContext(numActions, testContext, policy, explorer);
+            TauFirstWithContext(numActions, testContext, policy, explorer, getNumActionsFunc);
         }
 
-        private static void TauFirstWithContext<TContext>(uint numActions, TContext testContext, TestPolicy<TContext> policy, IExplorer<TContext> explorer)
+        private static void TauFirstWithContext<TContext>(uint numActions, TContext testContext, TestPolicy<TContext> policy, IExplorer<TContext> explorer,
+            Func<TContext, uint> getNumActionsFunc = null)
             where TContext : TestContext
         {
             string uniqueKey = "ManagedTestId";
 
             var recorder = new TestRecorder<TContext>();
-            var mwtt = new MwtExplorer<TContext>("mwt", recorder);
+            var mwtt = new MwtExplorer<TContext>("mwt", recorder, getNumActionsFunc);
 
             uint[] expectedActions = policy.ChooseAction(testContext);
 
@@ -140,6 +144,7 @@ namespace ExploreTests
             uint numbags = 2;
             var testContext1 = new TestVarContext(numActions) { Id = 99 };
             var testContext2 = new TestVarContext(numActions) { Id = 100 };
+            var getNumActionsFunc = (Func<TestVarContext, uint>)((context) => { return context.GetNumberOfActions(); });
 
             var policies = new TestPolicy<TestVarContext>[numbags];
             for (int i = 0; i < numbags; i++)
@@ -148,16 +153,17 @@ namespace ExploreTests
             }
             var explorer = new BootstrapExplorer<TestVarContext>(policies);
 
-            BootstrapWithContext(numActions, testContext1, testContext2, policies, explorer);
+            BootstrapWithContext(numActions, testContext1, testContext2, policies, explorer, getNumActionsFunc);
         }
 
-        private static void BootstrapWithContext<TContext>(uint numActions, TContext testContext1, TContext testContext2, TestPolicy<TContext>[] policies, IExplorer<TContext> explorer)
+        private static void BootstrapWithContext<TContext>(uint numActions, TContext testContext1, TContext testContext2, TestPolicy<TContext>[] policies, IExplorer<TContext> explorer,
+            Func<TContext, uint> getNumActionsFunc = null)
             where TContext : TestContext
         {
             string uniqueKey = "ManagedTestId";
 
             var recorder = new TestRecorder<TContext>();
-            var mwtt = new MwtExplorer<TContext>("mwt", recorder);
+            var mwtt = new MwtExplorer<TContext>("mwt", recorder, getNumActionsFunc);
 
             uint[] expectedActions = policies[0].ChooseAction(testContext1);
 
@@ -218,15 +224,17 @@ namespace ExploreTests
             {
                 contexts[i] = new TestVarContext(numActions) { Id = i };
             }
-            
-            SoftmaxWithContext(numActions, explorer, contexts);
+            var getNumActionsFunc = (Func<TestVarContext, uint>)((context) => { return context.GetNumberOfActions(); });
+
+            SoftmaxWithContext(numActions, explorer, contexts, getNumActionsFunc);
         }
 
-        private static void SoftmaxWithContext<TContext>(uint numActions, IExplorer<TContext> explorer, TContext[] contexts)
+        private static void SoftmaxWithContext<TContext>(uint numActions, IExplorer<TContext> explorer, TContext[] contexts,
+            Func<TContext, uint> getNumActionsFunc = null)
             where TContext : TestContext
         {
             var recorder = new TestRecorder<TContext>();
-            var mwtt = new MwtExplorer<TContext>("mwt", recorder);
+            var mwtt = new MwtExplorer<TContext>("mwt", recorder, getNumActionsFunc);
 
             uint[] actions = new uint[numActions];
 
@@ -370,12 +378,9 @@ namespace ExploreTests
                 {
                     action();
                 }
-                catch (ArgumentException ex)
+                catch (InvalidOperationException ex)
                 {
-                    if (ex.ParamName.ToLower() == "ctx")
-                    {
-                        numExceptionsCaught++;
-                    }
+                    numExceptionsCaught++;
                 }
             });
 

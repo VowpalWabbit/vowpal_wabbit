@@ -17,8 +17,8 @@ using namespace msclr::interop;
 namespace MultiWorldTesting {
 
 // Context callback
-private delegate UInt32 ClrContextGetNumActionsCallback(IntPtr contextPtr);
-typedef u32 Native_Context_Get_Num_Actions_Callback(void* context);
+private delegate UInt32 ClrContextGetNumActionsCallback(IntPtr mwtPtr, IntPtr contextPtr);
+typedef u32 Native_Context_Get_Num_Actions_Callback(void* mwt, void* context);
 
 // Policy callback
 private delegate void ClrPolicyCallback(IntPtr explorerPtr, IntPtr contextPtr, IntPtr actionsPtr, int index);
@@ -53,7 +53,7 @@ public:
 
     u32 Get_Number_Of_Actions()
     {
-        return m_callback_num_actions(m_clr_context);
+        return m_callback_num_actions(m_clr_mwt, m_clr_context);
     }
 
 	void* Get_Clr_Mwt()
@@ -200,23 +200,24 @@ internal:
         return m_num_actions_callback;
     }
 
-    static UInt32 InteropInvokeNumActions(IntPtr contextPtr)
+    static UInt32 InteropInvokeNumActions(IntPtr mwtPtr, IntPtr contextPtr)
     {
+        GCHandle mwtHandle = (GCHandle)mwtPtr;
+        ContextCallback<Ctx>^ callback = (ContextCallback<Ctx>^)mwtHandle.Target;
+
         GCHandle contextHandle = (GCHandle)contextPtr;
 
-        if (getNumberOfActionsFunc == nullptr)
+        if (callback->getNumberOfActionsFunc == nullptr)
         {
             throw gcnew InvalidOperationException("A callback to retrieve number of actions for the current context has not been set.");
         }
 
-        return getNumberOfActionsFunc((Ctx)contextHandle.Target);
+        return callback->getNumberOfActionsFunc((Ctx)contextHandle.Target);
     }
 
 private:
     ClrContextGetNumActionsCallback^ contextNumActionsCallback;
-
-protected:
-    static Func<Ctx, UInt32>^ getNumberOfActionsFunc; // TODO: make non-static
+    Func<Ctx, UInt32>^ getNumberOfActionsFunc;
 
 private:
     Native_Context_Get_Num_Actions_Callback* m_num_actions_callback;
