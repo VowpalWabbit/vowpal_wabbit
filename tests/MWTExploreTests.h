@@ -135,7 +135,10 @@ public:
 	TestSimplePolicy(int params, int num_actions) : m_params(params), m_num_actions(num_actions) { }
     void Choose_Action(SimpleContext& context, u32* actions, u32 num_actions)
 	{
-		actions[0] = m_params % m_num_actions + 1; // action id is one-based
+        for (u32 i = 0; i < num_actions; i++)
+        {
+            actions[i] = (m_params + i) % m_num_actions + 1; // action id is one-based
+        }
 	}
 private:
 	int m_params;
@@ -165,7 +168,10 @@ class TestBadPolicy : public IPolicy<TestContext>
 public:
     void Choose_Action(TestContext& context, u32* actions, u32 num_actions)
 	{
-        actions[0] = 100;
+        for (u32 i = 0; i < num_actions; i++)
+        {
+            actions[0] = num_actions + i + 1;
+        }
 	}
 };
 

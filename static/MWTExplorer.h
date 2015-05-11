@@ -405,6 +405,43 @@ static void Sample_Without_Replacement(u32* actions, vector<float>& probs, u32 s
     }
 }
 
+void Validate_Actions(u32* actions, u32 num_actions)
+{
+    unique_ptr<bool> exists_ptr(new bool[num_actions + 1]());
+    
+    bool* exists = exists_ptr.get();
+    for (u32 i = 0; i < num_actions; i++)
+    {
+        if (actions[i] == 0 || actions[i] > num_actions)
+        {
+            throw std::invalid_argument("Action chosen by default policy is not within valid range.");
+        }
+        if (exists[actions[i]])
+        {
+            throw std::invalid_argument("List of actions cannot contain duplicates.");
+        }
+        exists[actions[i]] = true;
+    }
+};
+
+void Put_Action_To_List(u32 action, u32* actions, u32 num_actions)
+{
+    for (u32 i = 0; i < num_actions; i++)
+    {
+        if (action == actions[i])
+        {
+            // swap
+            actions[i] = actions[0];
+            actions[0] = action;
+
+            return;
+        }
+    }
+
+    // Specified action isn't in the list, just replace the top. 
+    actions[0] = action;
+}
+
 ///
 /// The epsilon greedy exploration algorithm. This is a good choice if you have no idea 
 /// which actions should be preferred.  Epsilon greedy is also computationally cheap.
@@ -467,6 +504,7 @@ private:
 
         // Invoke the default policy function to get the action
         m_default_policy.Choose_Action(context, actions, num_actions);
+        ::Validate_Actions(actions, num_actions);
 
         float epsilon = m_explore ? m_epsilon : 0.f;
 
@@ -493,8 +531,9 @@ private:
             {
                 // Otherwise it's just the uniform probability
                 action_probability = base_probability;
+
+                ::Put_Action_To_List(actionId, actions, num_actions);
             }
-            actions[0] = actionId;
         }
 
         return std::tuple<float, bool>(action_probability, true);
@@ -808,13 +847,16 @@ private:
 
         // Invoke the default policy function to get the action
         m_default_policy.Choose_Action(context, actions, num_actions);
+        ::Validate_Actions(actions, num_actions);
 
         if (m_tau && m_explore)
         {
             m_tau--;
             u32 actionId = random_generator.Uniform_Int(1, num_actions);
             action_probability = 1.f / num_actions;
-            actions[0] = actionId;
+
+            ::Put_Action_To_List(actionId, actions, num_actions);
+            
             log_action = true;
         }
         else
@@ -919,7 +961,8 @@ private:
                 actions_selected.push_back(0);
             }
 
-            u32* chosen_actions = new u32[num_actions];
+            unique_ptr<u32> chosen_actions_ptr(new u32[num_actions]);
+            u32* chosen_actions = chosen_actions_ptr.get();
 
             // Invoke the default policy function to get the action
             for (u32 current_bag = 0; current_bag < m_bags; current_bag++)
@@ -928,12 +971,9 @@ private:
                 // if we trigger into VW passing an index to invoke bootstrap scoring, and if VW model changes while we are doing so, 
                 // we could end up calling the wrong bag
                 m_default_policy_functions[current_bag]->Choose_Action(context, actions, num_actions);
-                
+                ::Validate_Actions(actions, num_actions);
+
                 top_action_from_bag = actions[0];
-                if (top_action_from_bag == 0 || top_action_from_bag > num_actions)
-                {
-                    throw std::invalid_argument("Action chosen by default policy is not within valid range.");
-                }
 
                 if (current_bag == chosen_bag)
                 {
@@ -950,8 +990,6 @@ private:
             
             // restore the list of actions chosen by the selected bag
             ::memcpy(actions, chosen_actions, num_actions * sizeof(u32));
-
-            delete[] chosen_actions;
         }
         else
         {

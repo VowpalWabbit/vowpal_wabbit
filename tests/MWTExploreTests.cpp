@@ -720,7 +720,7 @@ namespace vw_explore_tests
                 u32 actions[1];
                 mwt.Choose_Action(explorer, "test", context, actions, 1);
 			)
-            Assert::AreEqual(0, num_ex);
+            Assert::AreEqual(2, num_ex);
 
             COUNT_BAD_CALL
 			(
@@ -735,7 +735,7 @@ namespace vw_explore_tests
                 u32 actions[1];
                 mwt.Choose_Action(explorer, "test", context, actions, 1);
 			)
-			Assert::AreEqual(1, num_ex); // only bootstrap should throw error on action index
+			Assert::AreEqual(3, num_ex); // only bootstrap should throw error on action index
 		}
 
 		TEST_METHOD(Usage_Bad_Scorer)
@@ -861,10 +861,10 @@ namespace vw_explore_tests
 
             u32* chosen_actions = new u32[num_actions];
             mwt.Choose_Action(explorer, this->Get_Unique_Key(1), my_context, chosen_actions, num_actions);
-            Assert::IsTrue(this->Chosen_Actions_Match_Policy_Actions(num_actions, chosen_actions, policy_actions, 1));
+            Assert::IsFalse(this->Chosen_Actions_Contain_Duplicates(num_actions, chosen_actions));
 
             mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context, chosen_actions, num_actions);
-            Assert::IsTrue(this->Chosen_Actions_Match_Policy_Actions(num_actions, chosen_actions, policy_actions, 1));
+            Assert::IsFalse(this->Chosen_Actions_Contain_Duplicates(num_actions, chosen_actions));
 
             // Tau expired, did not explore
             mwt.Choose_Action(explorer, this->Get_Unique_Key(3), my_context, chosen_actions, num_actions);
@@ -1030,10 +1030,10 @@ namespace vw_explore_tests
 			}
 		}
 
-        bool Chosen_Actions_Match_Policy_Actions(int num_actions, u32* chosen_actions, u32* policy_actions, int start_index = 0)
+        bool Chosen_Actions_Match_Policy_Actions(int num_actions, u32* chosen_actions, u32* policy_actions)
         {
             bool match = true;
-            for (int j = start_index; j < num_actions; j++)
+            for (int j = 0; j < num_actions; j++)
             {
                 if (chosen_actions[j] != policy_actions[j])
                 {
