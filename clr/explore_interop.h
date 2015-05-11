@@ -173,17 +173,19 @@ public:
 
 	vector<float> Score_Actions(NativeContext& context)
 	{
-        // TODO: try finally to delete, but make sure exceptions are propagated
-
 		float* scores = nullptr;
 		u32 num_scores = 0;
-		m_func(context.Get_Clr_Explorer(), context.Get_Clr_Context(), &scores, &num_scores);
-
-		// It's ok if scores is null, vector will be empty
-		vector<float> scores_vector(scores, scores + num_scores);
-		delete[] scores;
-
-		return scores_vector;
+        try
+        {
+            m_func(context.Get_Clr_Explorer(), context.Get_Clr_Context(), &scores, &num_scores);
+            // It's ok if scores is null, vector will be empty
+            vector<float> scores_vector(scores, scores + num_scores);
+            return scores_vector;
+        }
+        finally
+        {
+            delete[] scores;
+        }
 	}
 private:
 	Native_Scorer_Callback* m_func; // TODO: make const
