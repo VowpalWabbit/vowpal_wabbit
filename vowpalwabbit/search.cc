@@ -879,7 +879,7 @@ namespace Search {
     for (action a= (uint32_t)start_K; a<ec_cnt; a++) {
       cdbg << "== single_prediction_LDF a=" << a << "==" << endl;
       if (start_K > 0)
-        LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]);
+        LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0], priv.all->audit);
         
       polylabel old_label = ecs[a].l;
       ecs[a].l.cs = priv.ldf_test_label;
@@ -904,7 +904,7 @@ namespace Search {
       priv.num_features += ecs[a].num_features;
       ecs[a].l = old_label;
       if (start_K > 0)
-        LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0]);
+        LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0], priv.all->audit);
     }
     if (override_action != (action)-1)
       best_action = override_action;
@@ -1230,15 +1230,17 @@ namespace Search {
           }
         }
 
-        ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);
-        memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt*sizeof(action));
-        cdbg_print_array("in LEARN, learn_allowed_actions", priv.learn_allowed_actions);
+        if (allowed_actions && (allowed_actions_cnt > 0)) {
+          ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);
+          memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt*sizeof(action));
+          cdbg_print_array("in LEARN, learn_allowed_actions", priv.learn_allowed_actions);
+        }
       }
 
       assert((allowed_actions_cnt == 0) || (a < allowed_actions_cnt));
 
       a_cost = 0.;
-      action a_name = (allowed_actions_cnt > 0) ? allowed_actions[a] : priv.is_ldf ? a : (a+1);
+      action a_name = (allowed_actions && (allowed_actions_cnt > 0)) ? allowed_actions[a] : priv.is_ldf ? a : (a+1);
       if (priv.metaoverride && priv.metaoverride->_foreach_action) {
         foreach_action_from_cache(priv,t,a_name);
         if (priv.memo_foreach_action[t]) {
@@ -1256,7 +1258,7 @@ namespace Search {
 
     if ((priv.state == LEARN) && (t > priv.learn_t) && (priv.rollout_num_steps > 0) && (priv.loss_declared_cnt >= priv.rollout_num_steps)) {
       cdbg << "... skipping" << endl;
-      action a = priv.is_ldf ? 0 : ((allowed_actions_cnt > 0) ? allowed_actions[0] : 1);
+      action a = priv.is_ldf ? 0 : ((allowed_actions && (allowed_actions_cnt > 0)) ? allowed_actions[0] : 1);
       if (priv.metaoverride && priv.metaoverride->_post_prediction)
         priv.metaoverride->_post_prediction(*priv.metaoverride->sch, t-priv.meta_t, a, 0.);
       if (priv.metaoverride && priv.metaoverride->_foreach_action)
@@ -1328,8 +1330,10 @@ namespace Search {
             
             priv.learn_ec_ref = ecs;
             priv.learn_ec_ref_cnt = ec_cnt;
-            ensure_size(priv.learn_allowed_actions, allowed_actions_cnt); // TODO: do we really need this?
-            memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt * sizeof(action));
+            if (allowed_actions) {
+              ensure_size(priv.learn_allowed_actions, allowed_actions_cnt); // TODO: do we really need this?
+              memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt * sizeof(action));
+            }
             size_t old_learner_id = priv.learn_learner_id;
             priv.learn_learner_id = learner_id;
             generate_training_example(priv, priv.gte_label, false);  // this is false because the conditioning has already been added!
@@ -1431,6 +1435,7 @@ namespace Search {
     // if this isn't a final run, it shouldn't count for loss
     float old_test_loss = priv.test_loss;
     //float old_learn_loss = priv.learn_loss;
+    priv.learn_loss *= 0.5;
     float old_train_loss = priv.train_loss;
 
     if (priv.should_produce_string)
@@ -1575,7 +1580,11 @@ namespace Search {
           priv.learn_losses.cs.costs[i].class_index = priv.learn_allowed_actions[i];
         }
       }
-      generate_training_example(priv, priv.learn_losses, true, FLT_MAX);
+      float min_loss = 0.;
+      //if (priv.metatask)
+      //  for (size_t aid=0; aid<priv.memo_foreach_action[tid]->size(); aid++)
+      //    min_loss = MIN(min_loss, priv.memo_foreach_action[tid]->get(aid).cost);
+      generate_training_example(priv, priv.learn_losses, true, min_loss);
       if (! priv.examples_dont_change)
         for (size_t n=0; n<priv.learn_ec_copy.size(); n++) {
           if (sch.priv->is_ldf) CS::cs_label.delete_label(&priv.learn_ec_copy[n].l.cs);

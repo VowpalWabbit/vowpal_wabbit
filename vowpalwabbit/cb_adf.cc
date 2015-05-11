@@ -300,7 +300,7 @@ void do_actual_learning(cb_adf& data, base_learner& base)
   if (CB::ec_is_example_header(*data.ec_seq[0])) {
     start_K = 1;
     for (size_t k=1; k<K; k++)
-      LabelDict::add_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0]);
+      LabelDict::add_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0], data.all->audit || data.all->hash_inv);
   }
   bool isTest = check_cb_adf_sequence(data, start_K);
 
@@ -328,7 +328,7 @@ void do_actual_learning(cb_adf& data, base_learner& base)
   /////////////////////// remove header
   if (start_K > 0)
     for (size_t k=1; k<K; k++)
-      LabelDict::del_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0]);
+      LabelDict::del_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0], data.all->audit || data.all->hash_inv);
 }
 
 void global_print_newline(vw& all)

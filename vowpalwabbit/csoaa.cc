@@ -190,13 +190,13 @@ void make_single_prediction(ldf& data, base_learner& base, example& ec) {
   simple_label.weight = 0.;
   ec.partial_prediction = 0.;
     
-  LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
+  LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index, data.all->audit || data.all->hash_inv);
     
   ec.l.simple = simple_label;
   base.predict(ec); // make a prediction
   ld.costs[0].partial_prediction = ec.partial_prediction;
 
-  LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
+  LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index, data.all->audit || data.all->hash_inv);
   ec.l.cs = ld;
 }
 
@@ -241,7 +241,7 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
     v_array<COST_SENSITIVE::wclass> costs1 = save_cs_label.costs;
     if (costs1[0].class_index == (uint32_t)-1) continue;
       
-    LabelDict::add_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
+    LabelDict::add_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index, data.all->audit || data.all->hash_inv);
       
     for (size_t k2=k1+1; k2<K; k2++) {
       example *ec2 = data.ec_seq[k2];
@@ -253,7 +253,7 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
       if (value_diff < 1e-6)
         continue;
         
-      LabelDict::add_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
+      LabelDict::add_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index, data.all->audit || data.all->hash_inv);
         
       // learn
       ec1->example_t = data.csoaa_example_t;
@@ -265,9 +265,9 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
       base.learn(*ec1);
       unsubtract_example(*data.all, ec1);
         
-      LabelDict::del_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
+      LabelDict::del_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index, data.all->audit || data.all->hash_inv);
     }
-    LabelDict::del_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
+    LabelDict::del_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index, data.all->audit || data.all->hash_inv);
       
     // restore original cost-sensitive label, sum of importance weights
     ec1->l.cs = save_cs_label;
@@ -317,9 +317,9 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
     ec->l.simple = simple_label;
 
     // learn
-    LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
+    LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index, data.all->audit || data.all->hash_inv);
     base.learn(*ec);
-    LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
+    LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index, data.all->audit || data.all->hash_inv);
       
     // restore original cost-sensitive label, sum of importance weights and partial_prediction
     ec->l.cs = save_cs_label;
@@ -338,15 +338,21 @@ void do_actual_learning(ldf& data, base_learner& base)
   if (ec_seq_is_label_definition(data.ec_seq)) {
     for (size_t i=0; i<data.ec_seq.size(); i++) {
       v_array<feature> features = v_init<feature>();
+      v_array<audit_data> audit = v_init<audit_data>();
       for (feature*f=data.ec_seq[i]->atomics[data.ec_seq[i]->indices[0]].begin; f!=data.ec_seq[i]->atomics[data.ec_seq[i]->indices[0]].end; f++) {
         feature fnew = { f->x,  f->weight_index };
         features.push_back(fnew);
       }
+      if ((data.all->audit || data.all->hash_inv))
+        for (audit_data*f=data.ec_seq[i]->audit_features[data.ec_seq[i]->indices[0]].begin; f!=data.ec_seq[i]->audit_features[data.ec_seq[i]->indices[0]].end; f++) {
+          audit_data f2 = { f->space, f->feature, f->weight_index, f->x, false };
+          audit.push_back(f2);
+        }
 
-      v_array<COST_SENSITIVE::wclass> costs = data.ec_seq[i]->l.cs.costs;
+      v_array<COST_SENSITIVE::wclass>& costs = data.ec_seq[i]->l.cs.costs;
       for (size_t j=0; j<costs.size(); j++) {
         size_t lab = (size_t)costs[j].x;
-        LabelDict::set_label_features(data.label_features, lab, features);
+        LabelDict::set_label_features(data.label_features, lab, features, (data.all->audit || data.all->hash_inv) ? &audit : nullptr);
       }
     }
     return;
@@ -358,7 +364,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   if (ec_is_example_header(*data.ec_seq[0])) {
     start_K = 1;
     for (size_t k=1; k<K; k++)
-      LabelDict::add_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0]);
+      LabelDict::add_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0], (data.all->audit || data.all->hash_inv));
   }
   bool isTest = check_ldf_sequence(data, start_K);
 
@@ -387,7 +393,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   /////////////////////// remove header
   if (start_K > 0)
     for (size_t k=1; k<K; k++)
-      LabelDict::del_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0]);
+      LabelDict::del_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0], (data.all->audit || data.all->hash_inv));
 }
 
 void global_print_newline(vw& all)
@@ -457,8 +463,10 @@ void output_example_seq(vw& all, ldf& data)
     for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
       output_example(all, **ecc, hit_loss, &(data.ec_seq));
 
-    if (!data.is_singleline && (all.raw_prediction > 0))
-      all.print_text(all.raw_prediction, "", data.ec_seq[0]->tag);
+    if (!data.is_singleline && (all.raw_prediction > 0)) {
+      v_array<char> empty = { nullptr, nullptr, nullptr, 0 };
+      all.print_text(all.raw_prediction, "", empty);
+    }
   }
 }
 
@@ -603,7 +611,10 @@ base_learner* csldf_setup(vw& all)
   if (all.add_constant) {
     all.add_constant = false;
   }
-  ld.label_features.init(256, v_array<feature>(), LabelDict::size_t_eq);
+  v_array<feature> empty_f = { nullptr, nullptr, nullptr, 0 };
+  v_array<audit_data> empty_a = { nullptr, nullptr, nullptr, 0 };
+  LabelDict::feature_audit empty_fa = { empty_f, empty_a };
+  ld.label_features.init(256, empty_fa, LabelDict::size_t_eq);
   ld.label_features.get(1, 94717244); // TODO: figure this out
 
   ld.read_example_this_loop = 0;
