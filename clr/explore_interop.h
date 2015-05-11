@@ -147,9 +147,8 @@ private:
 class NativePolicy : public NativeMultiWorldTesting::IPolicy<NativeContext>
 {
 public:
-	NativePolicy(Native_Policy_Callback* func, int index = -1)
+    NativePolicy(Native_Policy_Callback* func, int index = -1) : m_func(func)
 	{
-		m_func = func;
 		m_index = index;
 	}
 
@@ -159,16 +158,15 @@ public:
 	}
 
 private:
-	Native_Policy_Callback* m_func;
+	Native_Policy_Callback* const m_func;
 	int m_index;
 };
 
 class NativeScorer : public NativeMultiWorldTesting::IScorer<NativeContext>
 {
 public:
-	NativeScorer(Native_Scorer_Callback* func)
+    NativeScorer(Native_Scorer_Callback* func) : m_func(func)
 	{
-		m_func = func;
 	}
 
 	vector<float> Score_Actions(NativeContext& context)
@@ -188,7 +186,7 @@ public:
         }
 	}
 private:
-	Native_Scorer_Callback* m_func; // TODO: make const
+	Native_Scorer_Callback* const m_func;
 };
 
 // Triggers callback to the Context instance

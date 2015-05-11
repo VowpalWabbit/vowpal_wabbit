@@ -378,7 +378,7 @@ namespace ExploreTests
                 {
                     action();
                 }
-                catch (InvalidOperationException ex)
+                catch (InvalidOperationException)
                 {
                     numExceptionsCaught++;
                 }
