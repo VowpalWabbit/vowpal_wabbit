@@ -46,6 +46,7 @@ license as described in the file LICENSE.
 #include "kernel_svm.h"
 #include "parse_example.h"
 #include "best_constant.h"
+#include "interact.h"
 
 using namespace std;
 //
@@ -839,6 +840,7 @@ void parse_reductions(vw& all)
 
   //Reductions
   all.reduction_stack.push_back(binary_setup);
+  all.reduction_stack.push_back(interact_setup);
   all.reduction_stack.push_back(topk_setup);
   all.reduction_stack.push_back(oaa_setup);
   all.reduction_stack.push_back(ect_setup);
