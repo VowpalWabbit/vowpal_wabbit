@@ -122,6 +122,7 @@ public:
 
     void Record(NativeContext& context, u32* actions, u32 num_actions, float probability, string unique_key)
 	{
+        // TODO: add try finally
         // Normal handles are sufficient here since native code will only hold references and not access the object's data
         // https://www.microsoftpressstore.com/articles/article.aspx?p=2224054&seqNum=4
 		GCHandle uniqueKeyHandle = GCHandle::Alloc(gcnew String(unique_key.c_str()));
@@ -165,6 +166,8 @@ public:
 
 	vector<float> Score_Actions(NativeContext& context)
 	{
+        // TODO: try finally to delete, but make sure exceptions are propagated
+
 		float* scores = nullptr;
 		u32 num_scores = 0;
 		m_func(context.Get_Clr_Explorer(), context.Get_Clr_Context(), &scores, &num_scores);
@@ -176,7 +179,7 @@ public:
 		return scores_vector;
 	}
 private:
-	Native_Scorer_Callback* m_func;
+	Native_Scorer_Callback* m_func; // TODO: make const
 };
 
 // Triggers callback to the Context instance
@@ -184,11 +187,12 @@ generic <class Ctx>
 public ref class ContextCallback
 {
 internal:
-    ContextCallback()
+    ContextCallback(Func<Ctx, UInt32>^ func)
     {
         contextNumActionsCallback = gcnew ClrContextGetNumActionsCallback(&ContextCallback<Ctx>::InteropInvokeNumActions);
         IntPtr contextNumActionsCallbackPtr = Marshal::GetFunctionPointerForDelegate(contextNumActionsCallback);
         m_num_actions_callback = static_cast<Native_Context_Get_Num_Actions_Callback*>(contextNumActionsCallbackPtr.ToPointer());
+        getNumberOfActionsFunc = func;
     }
 
     Native_Context_Get_Num_Actions_Callback* GetNumActionsCallback()
@@ -200,11 +204,19 @@ internal:
     {
         GCHandle contextHandle = (GCHandle)contextPtr;
 
-        return ((IVariableActionContext^)contextHandle.Target)->GetNumberOfActions();
+        if (getNumberOfActionsFunc == nullptr)
+        {
+            throw gcnew InvalidOperationException("A callback to retrieve number of actions for the current context has not been set.");
+        }
+
+        return getNumberOfActionsFunc((Ctx)contextHandle.Target);
     }
 
 private:
     ClrContextGetNumActionsCallback^ contextNumActionsCallback;
+
+protected:
+    static Func<Ctx, UInt32>^ getNumberOfActionsFunc; // TODO: make non-static
 
 private:
     Native_Context_Get_Num_Actions_Callback* m_num_actions_callback;
@@ -285,7 +297,7 @@ public ref class RecorderCallback abstract : public ContextCallback<Ctx>
 internal:
     virtual void InvokeRecorderCallback(Ctx context, cli::array<UInt32>^ actions, float probability, String^ unique_key) = 0;
 
-	RecorderCallback()
+    RecorderCallback(Func<Ctx, UInt32>^ func) : ContextCallback(func)
 	{
 		recorderCallback = gcnew ClrRecorderCallback(&RecorderCallback<Ctx>::InteropInvoke);
 		IntPtr recorderCallbackPtr = Marshal::GetFunctionPointerForDelegate(recorderCallback);
@@ -321,7 +333,7 @@ internal:
 	}
 
 private:
-	ClrRecorderCallback^ recorderCallback;
+	ClrRecorderCallback^ recorderCallback; //TODO: mark as initonly or const where appropriate
 
 private:
 	NativeRecorder* m_native_recorder;

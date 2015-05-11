@@ -38,11 +38,6 @@ namespace MultiWorldTesting {
         /// <param name="epsilon">The probability of a random exploration.</param>
         EpsilonGreedyExplorer(IPolicy<Ctx>^ defaultPolicy, float epsilon)
         {
-            if (!(IVariableActionContext::typeid->IsAssignableFrom(Ctx::typeid)))
-            {
-                throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
-            }
-
             this->defaultPolicy = defaultPolicy;
             m_explorer = new NativeMultiWorldTesting::EpsilonGreedyExplorer<NativeContext>(*GetNativePolicy(), epsilon);
         }
@@ -121,11 +116,6 @@ namespace MultiWorldTesting {
         /// <param name="tau">The number of events to be uniform over.</param>
         TauFirstExplorer(IPolicy<Ctx>^ defaultPolicy, UInt32 tau)
         {
-            if (!(IVariableActionContext::typeid->IsAssignableFrom(Ctx::typeid)))
-            {
-                throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
-            }
-
             this->defaultPolicy = defaultPolicy;
             m_explorer = new NativeMultiWorldTesting::TauFirstExplorer<NativeContext>(*GetNativePolicy(), tau);
         }
@@ -205,11 +195,6 @@ namespace MultiWorldTesting {
         /// <param name="lambda">lambda = 0 implies uniform distribution. Large lambda is equivalent to a max.</param>
         SoftmaxExplorer(IScorer<Ctx>^ defaultScorer, float lambda)
         {
-            if (!(IVariableActionContext::typeid->IsAssignableFrom(Ctx::typeid)))
-            {
-                throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
-            }
-
             this->defaultScorer = defaultScorer;
             m_explorer = new NativeMultiWorldTesting::SoftmaxExplorer<NativeContext>(*GetNativeScorer(), lambda);
         }
@@ -274,11 +259,6 @@ namespace MultiWorldTesting {
         /// <param name="defaultScorer">A function which outputs the probability of each action.</param>
         GenericExplorer(IScorer<Ctx>^ defaultScorer)
         {
-            if (!(IVariableActionContext::typeid->IsAssignableFrom(Ctx::typeid)))
-            {
-                throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
-            }
-
             this->defaultScorer = defaultScorer;
             m_explorer = new NativeMultiWorldTesting::GenericExplorer<NativeContext>(*GetNativeScorer());
         }
@@ -349,11 +329,6 @@ namespace MultiWorldTesting {
         /// <param name="defaultPolicies">A set of default policies to be uniform random over.</param>
         BootstrapExplorer(cli::array<IPolicy<Ctx>^>^ defaultPolicies)
         {
-            if (!(IVariableActionContext::typeid->IsAssignableFrom(Ctx::typeid)))
-            {
-                throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
-            }
-
             this->defaultPolicies = defaultPolicies;
             if (this->defaultPolicies == nullptr)
             {
@@ -419,12 +394,24 @@ namespace MultiWorldTesting {
 	public ref class MwtExplorer : public RecorderCallback<Ctx>
 	{
 	public:
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        /// <param name="appId">This should be unique to each experiment to avoid correlation bugs.</param>
+        /// <param name="recorder">A user-specified class for recording the appropriate bits for use in evaluation and learning.</param>
+        MwtExplorer(String^ appId, IRecorder<Ctx>^ recorder) : RecorderCallback(nullptr)
+        {
+            this->appId = appId;
+            this->recorder = recorder;
+        }
+
 		/// <summary>
 		/// Constructor.
 		/// </summary>
 		/// <param name="appId">This should be unique to each experiment to avoid correlation bugs.</param>
 		/// <param name="recorder">A user-specified class for recording the appropriate bits for use in evaluation and learning.</param>
-		MwtExplorer(String^ appId, IRecorder<Ctx>^ recorder)
+        /// <param name="getNumberOfActionsFunc">Optional; A callback function to retrieve the number of actions for the current context.</param>
+        MwtExplorer(String^ appId, IRecorder<Ctx>^ recorder, Func<Ctx, UInt32>^ getNumberOfActionsFunc) : RecorderCallback(getNumberOfActionsFunc)
 		{
 			this->appId = appId;
 			this->recorder = recorder;
@@ -455,6 +442,8 @@ namespace MultiWorldTesting {
 
 			NativeContext native_context(selfPtr.ToPointer(), explorerPtr.ToPointer(), contextPtr.ToPointer(),
                 this->GetNumActionsCallback());
+
+            //TODO: try finally to make sure GCHandles are freed
 
 			u32 action = 0;
             NativeMultiWorldTesting::IExplorer<NativeContext>* native_explorer = nullptr;
@@ -499,6 +488,8 @@ namespace MultiWorldTesting {
 
             // This is achieved by storing the pointer in the internal context
             native_context.Set_Clr_Action_List(actionListPtr.ToPointer());
+
+            // TODO: test whether C# recorder exception is caught here.
 
             // Conver to native array
             IntPtr actionListPinnedPtr = actionListHandle.AddrOfPinnedObject();

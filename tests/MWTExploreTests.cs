@@ -336,17 +336,19 @@ namespace ExploreTests
             uint numActions = 10;
             var scorer = new TestScorer<TestVarContext>(numActions);
             var testContext = new TestVarContext(numActions) { Id = 100 };
+            var getNumActionsFunc = (Func<TestVarContext, uint>)((context) => { return context.GetNumberOfActions(); });
             var explorer = new GenericExplorer<TestVarContext>(scorer);
-            GenericWithContext(numActions, testContext, explorer);
+            GenericWithContext(numActions, testContext, explorer, getNumActionsFunc);
         }
 
-        private static void GenericWithContext<TContext>(uint numActions, TContext testContext, IExplorer<TContext> explorer)
+        private static void GenericWithContext<TContext>(uint numActions, TContext testContext, IExplorer<TContext> explorer,
+            Func<TContext, uint> getNumActionsFunc = null)
             where TContext : TestContext
         {
             string uniqueKey = "ManagedTestId";
             var recorder = new TestRecorder<TContext>();
 
-            var mwtt = new MwtExplorer<TContext>("mwt", recorder);
+            var mwtt = new MwtExplorer<TContext>("mwt", recorder, getNumActionsFunc);
 
             uint[] chosenActions = mwtt.ChooseAction(explorer, uniqueKey, testContext);
             Assert.AreEqual(numActions, (uint)chosenActions.Length);
@@ -449,7 +451,7 @@ namespace ExploreTests
         }
     }
 
-    class TestVarContext : TestContext, IVariableActionContext
+    class TestVarContext : TestContext
     {
         public TestVarContext(uint numberOfActions) 
         {
