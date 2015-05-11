@@ -1,0 +1,129 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+ */
+#include <sstream>
+#include <float.h>
+#include "reductions.h"
+
+struct interact {
+  unsigned char n1, n2;  //namespaces to interact
+  v_array<feature> feat_store;
+  vw *all;
+  float n1_feat_sq;
+  float total_sum_feat_sq;
+  size_t num_features;
+};
+
+float multiply(v_array<feature>& f_dest, v_array<feature>& f_src2, interact& in) {
+  f_dest.erase();
+  v_array<feature> f_src1 = in.feat_store;
+  vw* all = in.all;
+  size_t stride = 1<<(all->reg.stride_shift);
+  
+  feature f;
+  f.weight_index = f_src1[0].weight_index;
+  f.x = f_src1[0].x*f_src2[0].x;
+  float sum_sq = f.x*f.x;
+  f_dest.push_back(f);
+
+  for(size_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();) {
+    size_t cur_id1 = (size_t)((f_src1[i1].weight_index - f_src1[0].weight_index)/stride);
+    size_t cur_id2 = (size_t)((f_src2[i2].weight_index - f_src2[0].weight_index)/stride);
+
+    if(cur_id1 == cur_id2) {
+      feature f;
+      f.weight_index = f_src1[i1].weight_index;
+      f.x = f_src1[i1].x*f_src2[i2].x;
+      sum_sq += f.x*f.x;
+      f_dest.push_back(f);
+      i1++;
+      i2++;
+    }
+    else if(cur_id1 < cur_id2)
+      i1++;
+    else
+      i2++;    
+  }
+  return sum_sq;
+}
+
+template <bool is_learn, bool print_all>
+void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec) {
+  v_array<feature> f1 = ec.atomics[in.n1];
+  v_array<feature> f2 = ec.atomics[in.n2];
+
+  in.num_features = ec.num_features;
+  in.total_sum_feat_sq = ec.total_sum_feat_sq;
+  in.n1_feat_sq = ec.sum_feat_sq[in.n1];
+  ec.total_sum_feat_sq -= in.n1_feat_sq;
+  ec.total_sum_feat_sq -= ec.sum_feat_sq[in.n2];
+  ec.num_features -= f1.size();
+  ec.num_features -= f2.size();
+  
+  in.feat_store.erase();
+  for(int i = 0;i < f1.size();i++)
+    in.feat_store.push_back(f1[i]);
+  
+  ec.sum_feat_sq[in.n1] = multiply(f1, f2, in);
+  ec.total_sum_feat_sq += ec.sum_feat_sq[in.n1];
+  ec.num_features += f1.size();
+  
+  /*for(size_t i = 0;i < f1.size();i++)
+    cout<<f1[i].weight_index<<":"<<f1[i].x<<" ";
+    cout<<endl;*/
+  
+  bool shift = 0;
+  for(int i = 0; i < ec.indices.size(); i++) {
+    if(shift) 
+      ec.indices[i-1] = ec.indices[i];
+    if(ec.indices[i] == in.n2) shift = 1;
+  }
+  ec.indices.decr();
+  
+  /*cout<<"num_features = "<<ec.num_features<<endl;
+
+  for(int i = 0;i < ec.indices.size();i++)
+    cout<<(int)ec.indices[i]<<" ";
+    cout<<endl;*/
+
+  base.predict(ec);
+  if(is_learn)
+    base.learn(ec);
+  
+  ec.indices.push_back(in.n2);
+  ec.atomics[in.n1].erase();
+  for(int i = 0;i < in.feat_store.size();i++)
+    ec.atomics[in.n1].push_back(in.feat_store[i]);  
+  ec.total_sum_feat_sq = in.total_sum_feat_sq;
+  ec.sum_feat_sq[in.n1] = in.n1_feat_sq;
+  ec.num_features = in.num_features;
+  
+}
+
+void finish(interact& in) {in.feat_store.delete_v();}
+
+LEARNER::base_learner* interact_setup(vw& all) 
+{
+  if(missing_option<string, true>(all, "interact", "Put weights on feature products from namespaces <n1> and <n2>"))
+    return nullptr;
+  interact& data = calloc_or_die<interact>();
+  string s = all.vm["interact"].as<string>();
+  if(s.length() != 2) {
+    cerr<<"Need two namespace arguments to interact!! EXITING\n";
+    return nullptr;
+  }
+  else {
+    data.n1 = (unsigned char) s[0];
+    data.n2 = (unsigned char) s[1];
+  }
+  cout<<"Interacting namespaces "<<data.n1<<" and "<<data.n2<<endl;
+  data.all = &all;
+
+  LEARNER::learner<interact>* l;
+  l = &LEARNER::init_learner(&data, setup_base(all), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
+
+  l->set_finish(finish);
+  return make_base(*l);
+}
