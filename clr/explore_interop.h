@@ -94,10 +94,9 @@ private:
 class NativeStringContext
 {
 public:
-	NativeStringContext(void* clr_context, Native_To_String_Callback* func)
+    NativeStringContext(void* clr_context, Native_To_String_Callback* func) : m_func(func)
 	{
 		m_clr_context = clr_context;
-		m_func = func;
 	}
 
 	string To_String()
@@ -108,16 +107,15 @@ public:
 	}
 private:
 	void* m_clr_context;
-	Native_To_String_Callback* m_func;
+	Native_To_String_Callback* const m_func;
 };
 
 // NativeRecorder listens to callback event and reroute it to the managed Recorder instance
 class NativeRecorder : public NativeMultiWorldTesting::IRecorder<NativeContext>
 {
 public:
-	NativeRecorder(Native_Recorder_Callback* native_func)
+    NativeRecorder(Native_Recorder_Callback* native_func) : m_func(native_func)
 	{
-		m_func = native_func;
 	}
 
     void Record(NativeContext& context, u32* actions, u32 num_actions, float probability, string unique_key)
@@ -140,7 +138,7 @@ public:
         }
 	}
 private:
-	Native_Recorder_Callback* m_func;
+	Native_Recorder_Callback* const m_func;
 };
 
 // NativePolicy listens to callback event and reroute it to the managed Policy instance
@@ -223,7 +221,7 @@ internal:
     }
 
 private:
-    ClrContextGetNumActionsCallback^ contextNumActionsCallback;
+    initonly ClrContextGetNumActionsCallback^ contextNumActionsCallback;
     Func<Ctx, UInt32>^ getNumberOfActionsFunc;
 
 private:
@@ -290,7 +288,7 @@ internal:
 	}
 
 private:
-	ClrPolicyCallback^ policyCallback;
+	initonly ClrPolicyCallback^ policyCallback;
 
 private:
 	NativePolicy* m_native_policy;
@@ -341,7 +339,7 @@ internal:
 	}
 
 private:
-	ClrRecorderCallback^ recorderCallback; //TODO: mark as initonly or const where appropriate
+	initonly ClrRecorderCallback^ recorderCallback;
 
 private:
 	NativeRecorder* m_native_recorder;
@@ -401,7 +399,7 @@ internal:
 	}
 
 private:
-	ClrScorerCallback^ scorerCallback;
+	initonly ClrScorerCallback^ scorerCallback;
 
 private:
 	NativeScorer* m_native_scorer;
@@ -434,7 +432,7 @@ internal:
 	}
 
 private:
-	ClrToStringCallback^ toStringCallback;
+	initonly ClrToStringCallback^ toStringCallback;
 
 private:
 	Native_To_String_Callback* m_callback;
