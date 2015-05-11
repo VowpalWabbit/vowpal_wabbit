@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VowpalWabbit.Serializer.Reflection
+namespace Microsoft.Research.MachineLearning.Serializer.Reflection
 {
     internal static class ReflectionHelper
     {

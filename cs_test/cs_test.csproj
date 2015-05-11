@@ -122,13 +122,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AttributesSample.cs" />
     <Compile Include="ExploreClock.cs" />
     <Compile Include="ExploreOnlySample.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="VowpalWabbitInterface.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\cs\cs.csproj">
+      <Project>{e4e962ae-7056-4eb0-a8c5-8dc824a4b068}</Project>
+      <Name>cs</Name>
+    </ProjectReference>
     <ProjectReference Include="..\explore\clr\explore_clr.vcxproj">
       <Project>{8400da16-1f46-4a31-a126-bbe16f62bfd7}</Project>
       <Name>vw_explore_clr_wrapper</Name>

@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using VowpalWabbit.Serializer;
-using VowpalWabbit.Serializer.Attributes;
+using Microsoft.Research.MachineLearning.Serializer.Attributes;
+using Microsoft.Research.MachineLearning.Serializer;
+using Microsoft.Research.MachineLearning.Serializer.Visitor;
 
 namespace cs_test
 {
@@ -45,9 +46,12 @@ namespace cs_test
                 }
             };
 
-            var vw = VWStringSerializer.Serialize(context);
+            var visitor = new VowpalWabbitStringVisitor();
+            VowpalWabbitSerializer
+                .CreateSerializer<UserContext, VowpalWabbitStringVisitor>()
+                .Serialize(context, visitor);
 
-            Console.WriteLine(vw);
+            Console.WriteLine(visitor.ExampleLine);
             Console.ReadKey();
         }
     }

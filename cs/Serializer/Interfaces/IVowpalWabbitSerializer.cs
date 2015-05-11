@@ -1,11 +1,10 @@
-﻿using VowpalWabbit;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VowpalWabbit.Serializer.Interfaces
+namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
 {
     public interface IVowpalWabbitSerializer<TContext, TVisitor>
         where TVisitor : IVowpalWabbitVisitor

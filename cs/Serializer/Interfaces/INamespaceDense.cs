@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace VowpalWabbit.Serializer.Interfaces
+namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
 {
     public interface INamespaceDense<out T> : INamespace
     {

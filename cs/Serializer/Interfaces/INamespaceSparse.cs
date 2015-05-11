@@ -1,9 +1,8 @@
 ﻿
-namespace VowpalWabbit.Serializer.Interfaces
+namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
 {
-    public interface INamespaceSparse : INamespace
+    public interface INamespaceSparse<TResultFeature> : INamespace
     {
-        IFeature[] Features { get; }
+        IVisitableFeature<TResultFeature>[] Features { get; }
     }
-
 }

@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VowpalWabbit.Serializer.Intermediate
+namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 {
     /// <summary>
     /// Intermediate representation of a Feature

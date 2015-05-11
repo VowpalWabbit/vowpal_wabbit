@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.Research.MachineLearning
@@ -13,7 +10,7 @@ namespace Microsoft.Research.MachineLearning
     using VwFeature = IntPtr;
     using BytePtr = IntPtr;
 
-    public sealed class VowpalWabbitInterface
+    public static class VowpalWabbitNative
     {
         private const string LIBVW = "libvw.dll";
 
@@ -64,9 +61,12 @@ namespace Microsoft.Research.MachineLearning
         [DllImport(LIBVW, EntryPoint = "VW_FinishExample")]
         public static extern void FinishExample(VwHandle vw, VwExample example);
 
+        [DllImport(LIBVW, EntryPoint = "VW_GetCostSensitivePrediction")]
+        public static extern float GetCostSensitivePrediction(VwExample example);
+
         [DllImport(LIBVW, EntryPoint = "VW_GetTopicPrediction")]
         public static extern float GetTopicPrediction(VwExample example, SizeT i);
-        
+
         [DllImport(LIBVW, EntryPoint = "VW_GetLabel")]
         public static extern float GetLabel(VwExample example);
 

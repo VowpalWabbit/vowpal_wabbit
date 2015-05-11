@@ -5,40 +5,35 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VowpalWabbit.Serializer.Interfaces;
+using Microsoft.Research.MachineLearning.Serializer.Interfaces;
 
-namespace VowpalWabbit.Serializer.Visitor
+namespace Microsoft.Research.MachineLearning.Serializer.Visitor
 {
-    public class VowpalWabbitStringVisitor : IVowpalWabbitVisitor
+    public class VowpalWabbitStringVisitor : IVowpalWabbitVisitor<string, string, string>
     {
-        private StringBuilder example;
-
         public VowpalWabbitStringVisitor()
         {
-            this.example = new StringBuilder();
         }
 
-        public string Example { get { return this.example.ToString(); } }
-
-        private void VisitNamespace(INamespace @namespace)
+        private string VisitNamespace(INamespace @namespace)
         {
-            this.example.AppendFormat(
+            return string.Format(
+                CultureInfo.InvariantCulture,
                 "|{0}{1} ",
                 @namespace.FeatureGroup,
                 @namespace.Name);
         }
 
-        public void Visit<T>(INamespaceDense<T> namespaceDense)
+        public string Visit<T>(INamespaceDense<T> namespaceDense)
         {
             // TODO: move to compiled Lambda
             if (namespaceDense.DenseFeature.Value == null)
             {
-                return;
+                return string.Empty;
             }
 
-            this.VisitNamespace(namespaceDense);
-            this.example.Append(string.Join(" ", namespaceDense.DenseFeature.Value.Select(v => ":" + v)));
-            this.example.Append(" ");
+            return this.VisitNamespace(namespaceDense) +
+                   string.Join(" ", namespaceDense.DenseFeature.Value.Select(v => ":" + v));
         }
 
         #region Dictionary support
@@ -69,98 +64,91 @@ namespace VowpalWabbit.Serializer.Visitor
         }
         */
 
-        public void Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature)
+        public string Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature)
         {
             // TODO: call VwHash
-            this.Visit(feature, key => Convert.ToString(key));
+            return this.Visit(feature, key => Convert.ToString(key));
         }
-        private void Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature, Func<TKey, string> keyMapper)
+
+        private string Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature, Func<TKey, string> keyMapper)
         {
             // lhs: int, hash(string), hash(long), hash(*) -> uint
             // rhs: int, short, long, float, bool -> float
-            foreach (var kvp in feature.Value)
-            {
-                example.AppendFormat(
+
+            return string.Join(" ",
+                feature.Value.Select(value => string.Format(
                     CultureInfo.InvariantCulture,
-                    "{0}:{1} ",
+                    "{0}:{1}",
                     keyMapper(kvp.Key),
-                    kvp.Value);
-            }
+                    kvp.Value)));
         }
 
         #endregion
 
-        public void Visit(IFeature<string> feature)
+        public string Visit(IFeature<string> feature)
         {
-            this.Visit<string>(feature);
+            return this.Visit<string>(feature);
         }
 
-        public void Visit<TValue>(IFeature<IEnumerable<TValue>> feature)
+        public string Visit<TValue>(IFeature<IEnumerable<TValue>> feature)
         {
             // TODO: call VwHash
             // this.Visit(feature, key => (UInt32)Convert.ToString(key).GetHashCode());
-            var index = 0;
-            foreach (var item in feature.Value)
-            {
-                this.example.AppendFormat(
-                    CultureInfo.InvariantCulture,
-                    "{0}:{1} ",
-                    index++,
-                    item);                
-            }
+            return string.Join(" ", 
+                feature.Value.Select((value, i) =>
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "{0}:{1} ",
+                        i,
+                        item)));
         }
 
-        public void Visit<T>(IFeature<T> feature)
+        public string Visit<T>(IFeature<T> feature)
         {
             // can't specify constraints
             var valueType = feature.Value.GetType();
             if (valueType.IsEnum)
             {
-                this.example.AppendFormat(
+                return string.Format(
                     CultureInfo.InvariantCulture, 
-                    "{0}_{1} ", 
+                    "{0}_{1}", 
                     feature.Name, 
                     Enum.GetName(valueType, feature.Value));
-                return;
             }
 
             if (feature.Enumerize)
             {
-                this.example.AppendFormat(
+                return string.Format(
                     CultureInfo.InvariantCulture, 
-                    "{0}_{1} ",
+                    "{0}_{1}",
                     feature.Name,
                     feature.Value);
-                return;
             }
 
             // TODO: more support for built-in types
-            example.Append(string.Format(
+            return string.Format(
                 CultureInfo.InvariantCulture, 
-                "{0}:{1} ", 
+                "{0}:{1}", 
                 feature.Name, 
-                feature.Value));
+                feature.Value);
         }
 
-        public void Visit(INamespaceSparse namespaceSparse, Action visitFeatures)
+        public string Visit(INamespaceSparse<string> namespaceSparse)
         {
-            // TODO: what if there is no output produced in visitFeatures
-
-            this.VisitNamespace(namespaceSparse);
-
-            // alternative: namespaceSparse.VisitFeatures(); (<-- this would be Action generated by VWSerializer)
-            visitFeatures();
-
-            this.example.Append(" ");
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0} {1}",
+                    VisitNamespace(namespaceSparse),
+                    string.Join(" ", namespaceSparse.Features.Select(f => f.Visit())));
         }
 
-        public void Visit(string comment, INamespace[] namespaces, Action visitNamespaces)
+        public string Visit(string comment, IVisitableNamespace<string>[] namespaces)
         {
-            this.example.AppendFormat("`{0} ", comment);
-
-            visitNamespaces();
-
-            this.example.AppendLine();
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "`{0} {1}\n", 
+                comment,
+                string.Join(" ", namespaces.Select(n => n.Visit()));
 
             // TODO: it's unclear who generates the separating new line in the case of PerAction features
         }

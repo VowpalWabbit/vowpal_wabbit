@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VowpalWabbit.Serializer
+namespace Microsoft.Research.MachineLearning.Serializer
 {
     using System.Collections;
     using System.Diagnostics;
@@ -14,17 +14,27 @@ namespace VowpalWabbit.Serializer
     using System.Reflection.Emit;
     using System.Security;
     using System.Security.Permissions;
-    using VowpalWabbit.Serializer.Attributes;
-    using VowpalWabbit.Serializer.Interfaces;
-    using VowpalWabbit.Serializer.Intermediate;
-    using VowpalWabbit.Serializer.Reflection;
+    using Microsoft.Research.MachineLearning.Serializer.Attributes;
+    using Microsoft.Research.MachineLearning.Serializer.Interfaces;
+    using Microsoft.Research.MachineLearning.Serializer.Intermediate;
+    using Microsoft.Research.MachineLearning.Serializer.Reflection;
     using VwHandle = IntPtr;
 
-    public static class VWSerializer
+    public static class VowpalWabbitSerializer
     {
-        public static Action<TContext, TVisitor> CreateSerializer<TContext, TVisitor>()
-            where TVisitor : IVowpalWabbitVisitor
+        private static readonly Dictionary<Tuple<Type, Type>, object> SerializerCache = new Dictionary<Tuple<Type, Type>, object>();
+
+        public static Func<TContext, TVisitor, TResultExample> CreateSerializer<TContext, TVisitor, TResultExample, TResultNamespace, TResultFeature>()
+            where TVisitor : IVowpalWabbitVisitor<TResultExample, TResultNamespace, TResultFeature>
         {
+            var cacheKey = Tuple.Create<TContext, TVisitor>(typeof(TContext), typeof(TVisitor));
+            object serializer;
+
+            if (SerializerCache.TryGetValue(cacheKey, out serializer))
+            {
+                return (Action<TContext, TVisitor>)serializer;
+            }
+
             // Create dynamic assembly
             var asmName = new AssemblyName("VowpalWabbitSerializer." + typeof(TContext).Name);
             var dynAsm = AppDomain.CurrentDomain.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
@@ -32,11 +42,15 @@ namespace VowpalWabbit.Serializer
             // Create a dynamic module and type
             var dynMod = dynAsm.DefineDynamicModule("VowpalWabbitSerializerModule");
 
-            return CreateSerializer<TContext, TVisitor>(dynMod);
+            var newSerializer = CreateSerializer<TContext, TVisitor>(dynMod);
+
+            SerializerCache[cacheKey] = newSerializer;
+
+            return newSerializer;
         }
 
-        private static Action<TContext, TVisitor> CreateSerializer<TContext, TVisitor>(ModuleBuilder moduleBuilder)
-            where TVisitor : IVowpalWabbitVisitor
+        private static Func<TContext, TVisitor, TResultExample> CreateSerializer<TContext, TVisitor, TResultExample, TResultNamespace, TResultFeature>(ModuleBuilder moduleBuilder)
+            where TVisitor : IVowpalWabbitVisitor<TResultExample, TResultNamespace, TResultFeature>
         {            
             var valueType = typeof(TContext);
             var valueParameter = Expression.Parameter(valueType, "value");
@@ -183,7 +197,7 @@ namespace VowpalWabbit.Serializer
                     .GetGenericArguments()[0];
 
                 // Build serializer for PerAction feature
-                var createSerializer = typeof(VWSerializer)
+                var createSerializer = typeof(VowpalWabbitSerializer)
                     .GetMethod("CreateSerializer", BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(ModuleBuilder) }, null)
                     .MakeGenericMethod(perActionItemType, typeof(TVisitor));
 

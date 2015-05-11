@@ -1,6 +1,6 @@
-﻿using VowpalWabbit.Serializer.Interfaces;
+﻿using Microsoft.Research.MachineLearning.Serializer.Interfaces;
 
-namespace VowpalWabbit.Serializer.Intermediate
+namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 {
     public abstract class Namespace : INamespace
     {

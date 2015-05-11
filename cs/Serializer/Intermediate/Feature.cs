@@ -5,9 +5,9 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using VowpalWabbit.Serializer.Interfaces;
+using Microsoft.Research.MachineLearning.Serializer.Interfaces;
 
-namespace VowpalWabbit.Serializer.Intermediate
+namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 {
     using VwHandle = IntPtr;
 
@@ -22,11 +22,23 @@ namespace VowpalWabbit.Serializer.Intermediate
         public bool Enumerize { get; set;  }
     }
 
-    public sealed class Feature<T> : Feature, IFeature<T>
+    public sealed class Feature<T, TResult> : Feature, IFeature<T>, IVisitableFeature<TResult>
     {
+        private Func<IFeature<T>, TResult> dispatch;
+
+        public Feature(Func<IFeature<T>, TResult> dispatch)
+        {
+            this.dispatch = dispatch;
+        }
+
         public T Value { get; set; }
 
-        //internal void ToVW(VwHandle vw, VowpalWabbitInterface.FEATURE feature, uint namespaceHash)
+        public TResult Visit()
+        {
+            return this.dispatch(this);
+        }
+
+        //internal void ToVW(VwHandle vw, VowpalWabbitNative.FEATURE feature, uint namespaceHash)
         //{
         //    var value = this.Property.GetValue(this.Source);
 
@@ -46,14 +58,14 @@ namespace VowpalWabbit.Serializer.Intermediate
         //    if (valueStr != null)
         //    {
         //        // TODO: what's the reason for vw global data structure being passed
-        //        feature.weight_index = VowpalWabbitInterface.HashFeature(vw, valueStr, namespaceHash);
+        //        feature.weight_index = VowpalWabbitNative.HashFeature(vw, valueStr, namespaceHash);
         //        feature.x = 1;
         //    }
 
         //    var dblValue = value as double?;
         //    if (dblValue != null)
         //    {
-        //        feature.weight_index = VowpalWabbitInterface.HashFeature(vw, this.Property.Name, namespaceHash);
+        //        feature.weight_index = VowpalWabbitNative.HashFeature(vw, this.Property.Name, namespaceHash);
         //        feature.x = (float)dblValue;
         //    }
         //}

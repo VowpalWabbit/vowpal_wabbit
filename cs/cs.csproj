@@ -7,8 +7,8 @@
     <ProjectGuid>{E4E962AE-7056-4EB0-A8C5-8DC824A4B068}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>VowpalWabbit</RootNamespace>
-    <AssemblyName>VowpalWabbit</AssemblyName>
+    <RootNamespace>Microsoft.Research.MachineLearning</RootNamespace>
+    <AssemblyName>Microsoft.Research.MachineLearning.VowpalWabbit</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
@@ -60,10 +60,13 @@
     <Compile Include="Serializer\Reflection\ReflectionHelper.cs" />
     <Compile Include="Serializer\Reflection\TypeDistance.cs" />
     <Compile Include="Serializer\Reflection\TypeMatch.cs" />
+    <Compile Include="Serializer\Visitors\VowpalWabbitExample.cs" />
+    <Compile Include="Serializer\Visitors\VowpalWabbitNativeVisitor.cs" />
     <Compile Include="Serializer\Visitors\VowpalWabbitStringVisitor.cs" />
-    <Compile Include="Serializer\VWSerializer.cs" />
-    <Compile Include="Serializer\VWStringSerializer.cs" />
+    <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
     <Compile Include="VowpalWabbit.cs" />
+    <Compile Include="VowpalWabbitModel.cs" />
+    <Compile Include="VowpalWabbitNative.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

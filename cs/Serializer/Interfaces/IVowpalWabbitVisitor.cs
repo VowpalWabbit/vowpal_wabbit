@@ -4,16 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VowpalWabbit.Serializer.Interfaces
+namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
 {
-    public interface IVowpalWabbitVisitor
+    public interface IVowpalWabbitVisitor<out TResultExample, out TResultNamespace, out TResultFeature>
     {
-        void Visit<T>(INamespaceDense<T> namespaceDense);
+        TResultExample Visit(string comment, IVisitableNamespace<TResultNamespace>[] namespaces);
 
-        void Visit(INamespaceSparse namespaceSparse, Action visitFeatures);
+        TResultNamespace Visit<T>(INamespaceDense<T> namespaceDense);
 
-        void Visit<T>(IFeature<T> feature);
+        TResultNamespace Visit(INamespaceSparse<TResultFeature> namespaceSparse);
 
-        void Visit(string comment, INamespace[] namespaces, Action visitNamespaces);
+        TResultFeature Visit<T>(IFeature<T> feature);
+
     }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VowpalWabbit.Serializer.Interfaces
+namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
 {
     public interface IFeature
     {
@@ -20,5 +20,10 @@ namespace VowpalWabbit.Serializer.Interfaces
     public interface IFeature<out T> : IFeature
     {
         T Value { get; }
+    }
+
+    public interface IVisitableFeature<out TResult> : IFeature
+    {
+        TResult Visit();
     }
 }

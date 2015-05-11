@@ -1,10 +1,23 @@
 ﻿using System.Collections.Generic;
-using VowpalWabbit.Serializer.Interfaces;
+using Microsoft.Research.MachineLearning.Serializer.Interfaces;
+using System;
 
-namespace VowpalWabbit.Serializer.Intermediate
+namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 {
-    public class NamespaceDense<T> : Namespace, INamespaceDense<T>
+    public class NamespaceDense<T, TResult> : Namespace, INamespaceDense<T>, IVisitableNamespace<TResult>
     {
+        private Func<INamespaceDense<T>> dispatch;
+
+        public NamespaceDense(Func<INamespaceDense<T>> dispatch)
+        {
+            this.dispatch = dispatch;
+        }
+
         public IFeature<IEnumerable<T>> DenseFeature { get; set; }
+
+        public TResult Visit()
+        {
+            return this.dispatch(this);
+        }
     }
 }
