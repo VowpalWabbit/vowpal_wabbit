@@ -1,19 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 {
     public class VowpalWabbitExample : IDisposable
     {
-        private VowpalWabbitNative.FEATURE_SPACE[] featureSpace;
+        private GCHandle[] handles;
 
-        internal VowpalWabbitExample(VowpalWabbitNative.FEATURE_SPACE[] featureSpace)
+        internal VowpalWabbitExample(VowpalWabbitNative.FEATURE_SPACE[] featureSpace, GCHandle[] handles)
         {
-            this.featureSpace = featureSpace;
+            this.FeatureSpace = featureSpace;
+            this.handles = handles;
         }
 
+        public VowpalWabbitNative.FEATURE_SPACE[] FeatureSpace { get; private set; }
 
         public void Dispose()
         {
@@ -26,6 +29,14 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
             if (disposing)
             {
                 // Free managed resources
+
+                if (this.handles != null)
+                {
+                    foreach (var handle in this.handles)
+                    {
+                        handle.Free();
+                    }
+                }
             }
 
             // Free unmanaged resources

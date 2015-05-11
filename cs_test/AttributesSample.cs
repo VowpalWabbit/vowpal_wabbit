@@ -47,11 +47,13 @@ namespace cs_test
             };
 
             var visitor = new VowpalWabbitStringVisitor();
-            VowpalWabbitSerializer
-                .CreateSerializer<UserContext, VowpalWabbitStringVisitor>()
-                .Serialize(context, visitor);
+            var lines = VowpalWabbitSerializer
+                .CreateSerializer<UserContext, VowpalWabbitStringVisitor, string, string, string>()(context, visitor);
 
-            Console.WriteLine(visitor.ExampleLine);
+            foreach (var line in lines)
+            {
+                Console.WriteLine(line);
+            }
             Console.ReadKey();
         }
     }

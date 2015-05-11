@@ -24,19 +24,9 @@ namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 
     public sealed class Feature<T, TResult> : Feature, IFeature<T>, IVisitableFeature<TResult>
     {
-        private Func<IFeature<T>, TResult> dispatch;
-
-        public Feature(Func<IFeature<T>, TResult> dispatch)
-        {
-            this.dispatch = dispatch;
-        }
-
         public T Value { get; set; }
 
-        public TResult Visit()
-        {
-            return this.dispatch(this);
-        }
+        public Func<TResult> Visit { get; set;  }
 
         //internal void ToVW(VwHandle vw, VowpalWabbitNative.FEATURE feature, uint namespaceHash)
         //{

@@ -4,20 +4,10 @@ using System;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 {
-    public class NamespaceDense<T, TResult> : Namespace, INamespaceDense<T>, IVisitableNamespace<TResult>
+    public class NamespaceDense<TFeature, TNamespaceResult> : Namespace, INamespaceDense<TFeature>, IVisitableNamespace<TNamespaceResult>
     {
-        private Func<INamespaceDense<T>> dispatch;
+        public Func<TNamespaceResult> Visit { get; set; }
 
-        public NamespaceDense(Func<INamespaceDense<T>> dispatch)
-        {
-            this.dispatch = dispatch;
-        }
-
-        public IFeature<IEnumerable<T>> DenseFeature { get; set; }
-
-        public TResult Visit()
-        {
-            return this.dispatch(this);
-        }
+        public IFeature<IEnumerable<TFeature>> DenseFeature { get; set; }
     }
 }

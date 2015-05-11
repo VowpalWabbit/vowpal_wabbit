@@ -19,7 +19,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitor
         {
             return string.Format(
                 CultureInfo.InvariantCulture,
-                "|{0}{1} ",
+                "|{0}{1}",
                 @namespace.FeatureGroup,
                 @namespace.Name);
         }
@@ -76,7 +76,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitor
             // rhs: int, short, long, float, bool -> float
 
             return string.Join(" ",
-                feature.Value.Select(value => string.Format(
+                feature.Value.Select(kvp => string.Format(
                     CultureInfo.InvariantCulture,
                     "{0}:{1}",
                     keyMapper(kvp.Key),
@@ -98,15 +98,24 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitor
                 feature.Value.Select((value, i) =>
                     string.Format(
                         CultureInfo.InvariantCulture,
-                        "{0}:{1} ",
+                        "{0}:{1}",
                         i,
-                        item)));
+                        value)));
+        }
+
+        public string VisitEnumerize<T>(IFeature<T> feature)
+        {
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0}_{1}",
+                feature.Name,
+                feature.Value);
         }
 
         public string Visit<T>(IFeature<T> feature)
         {
-            // can't specify constraints
-            var valueType = feature.Value.GetType();
+            // can't specify constraints to narrow for enums
+            var valueType = typeof(T);
             if (valueType.IsEnum)
             {
                 return string.Format(
@@ -115,16 +124,6 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitor
                     feature.Name, 
                     Enum.GetName(valueType, feature.Value));
             }
-
-            if (feature.Enumerize)
-            {
-                return string.Format(
-                    CultureInfo.InvariantCulture, 
-                    "{0}_{1}",
-                    feature.Name,
-                    feature.Value);
-            }
-
             // TODO: more support for built-in types
             return string.Format(
                 CultureInfo.InvariantCulture, 
@@ -146,11 +145,11 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitor
         {
             return string.Format(
                 CultureInfo.InvariantCulture,
-                "`{0} {1}\n", 
+                "`{0} {1}", 
                 comment,
-                string.Join(" ", namespaces.Select(n => n.Visit()));
+                string.Join(" ", namespaces.Select(n => n.Visit())));
 
-            // TODO: it's unclear who generates the separating new line in the case of PerAction features
+            // TODO: it's unclear who generates the separating new line in the case of action dependent features
         }
     }
 }

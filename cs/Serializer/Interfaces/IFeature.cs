@@ -21,9 +21,4 @@ namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
     {
         T Value { get; }
     }
-
-    public interface IVisitableFeature<out TResult> : IFeature
-    {
-        TResult Visit();
-    }
 }

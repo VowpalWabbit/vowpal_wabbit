@@ -50,7 +50,8 @@
     <Compile Include="Serializer\Interfaces\INamespace.cs" />
     <Compile Include="Serializer\Interfaces\INamespaceDense.cs" />
     <Compile Include="Serializer\Interfaces\INamespaceSparse.cs" />
-    <Compile Include="Serializer\Interfaces\IVowpalWabbitSerializer.cs" />
+    <Compile Include="Serializer\Interfaces\IVisitableFeature.cs" />
+    <Compile Include="Serializer\Interfaces\IVisitableNamespace.cs" />
     <Compile Include="Serializer\Interfaces\IVowpalWabbitVisitor.cs" />
     <Compile Include="Serializer\Intermediate\Feature.cs" />
     <Compile Include="Serializer\Intermediate\FeatureExpression.cs" />

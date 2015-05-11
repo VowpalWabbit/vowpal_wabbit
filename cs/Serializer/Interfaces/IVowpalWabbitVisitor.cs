@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
 {
-    public interface IVowpalWabbitVisitor<out TResultExample, out TResultNamespace, out TResultFeature>
+    public interface IVowpalWabbitVisitor<TResultExample, TResultNamespace, TResultFeature>
     {
         TResultExample Visit(string comment, IVisitableNamespace<TResultNamespace>[] namespaces);
 
@@ -16,5 +16,6 @@ namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
 
         TResultFeature Visit<T>(IFeature<T> feature);
 
+        TResultFeature VisitEnumerize<T>(IFeature<T> feature);
     }
 }

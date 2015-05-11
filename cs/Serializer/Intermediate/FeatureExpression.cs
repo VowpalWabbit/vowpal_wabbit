@@ -24,6 +24,8 @@ namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 
         internal bool IsDense { get { return this.DenseFeatureValueElementType != null; } }
 
+        internal bool Enumerize { get; set; }
+
         internal MemberInitExpression NewFeatureExpression { get; set; }
 
         internal MemberExpression PropertyExpression { get; set; }

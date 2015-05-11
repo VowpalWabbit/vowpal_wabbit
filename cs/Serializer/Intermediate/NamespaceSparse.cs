@@ -3,21 +3,11 @@ using System;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 {
-    public class NamespaceSparse : Namespace, INamespaceSparse, IVisitableNamespace<TResult>
+    public class NamespaceSparse<TNamespaceResult, TFeatureResult> : Namespace, INamespaceSparse<TFeatureResult>, IVisitableNamespace<TNamespaceResult>
     {
-        private Func<INamespaceDense<T>> dispatch;
+        public Func<TNamespaceResult> Visit { get; set; }
 
-        public NamespaceSparse(Func<INamespaceDense<T>> dispatch)
-        {
-            this.dispatch = dispatch;
-        }
-
-        public IFeature[] Features { get; set; }
-
-        public TResult Visit()
-        {
-            return this.dispatch(this);
-        }
+        public IVisitableFeature<TFeatureResult>[] Features { get; set; }
 
         //override internal void ToVW(VwHandle vw, VowpalWabbitNative.FEATURE_SPACE featureSpace)
         //{

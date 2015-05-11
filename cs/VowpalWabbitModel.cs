@@ -37,7 +37,7 @@ namespace Microsoft.Research.MachineLearning
                 // Free managed resources
             }
 
-             Free unmanaged resources
+            // Free unmanaged resources
             if (this.vw != IntPtr.Zero)
             {
                 VowpalWabbitNative.Finish(this.vw);

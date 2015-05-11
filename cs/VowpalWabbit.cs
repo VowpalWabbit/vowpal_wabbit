@@ -1,8 +1,10 @@
 ﻿using Microsoft.Research.MachineLearning.Serializer;
 using Microsoft.Research.MachineLearning.Serializer.Visitor;
+using Microsoft.Research.MachineLearning.Serializer.Visitors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Microsoft.Research.MachineLearning
@@ -16,15 +18,13 @@ namespace Microsoft.Research.MachineLearning
             this.vw = VowpalWabbitNative.Initialize(arguments);
         }
 
-        public VowpalWabbitModel(VowpalWabbitModel model)
+        public VowpalWabbit(VowpalWabbitModel model)
         {
 
         }
 
-        public float GetCostSensitivePrediction(string exampleLine)
+        public float GetCostSensitivePrediction(IntPtr example)
         {
-            IntPtr example = VowpalWabbitNative.ReadExample(vw, exampleLine);
-
             VowpalWabbitNative.Predict(vw, example);
             VowpalWabbitNative.FinishExample(vw, example);
 
@@ -52,28 +52,61 @@ namespace Microsoft.Research.MachineLearning
             }
         }
     }
-
+    
     public sealed class VowpalWabbit<TExample> : VowpalWabbit
     {
-        private readonly Action<TExample, VowpalWabbitStringVisitor> serializer;
+        private readonly Func<TExample, VowpalWabbitNativeVisitor, IList<VowpalWabbitExample>> serializer;
+        private readonly VowpalWabbitNativeVisitor visitor;
 
         public VowpalWabbit(string arguments) : base(arguments)
         {
+            this.visitor = new VowpalWabbitNativeVisitor();
+
             // Compile serializer
-            this.serializer = VowpalWabbitSerializer.CreateSerializer<TExample, VowpalWabbitStringVisitor>();
+            this.serializer = VowpalWabbitSerializer.CreateSerializer<TExample, VowpalWabbitNativeVisitor, VowpalWabbitExample, VowpalWabbitNative.FEATURE[], IEnumerable<VowpalWabbitNative.FEATURE>>();
         }
-
-        private string GetExampleLine(TExample example)
-        {
-            var visitor = new VowpalWabbitStringVisitor();
-            this.serializer(example, visitor);
-            return visitor.ExampleLine;
-        }
-
+        
         public float GetCostSensitivePrediction(TExample example)
         {
-            var exampleLine = GetExampleLine(example);
-            return base.GetCostSensitivePrediction(exampleLine);
+            // TODO: support action dependent features
+            using (var vwExample = this.serializer(example, this.visitor)[0])
+            {
+                var handle = GCHandle.Alloc(vwExample, GCHandleType.Pinned);
+                try 
+	            {
+                    var importedExample = VowpalWabbitNative.ImportExample(this.vw, handle.AddrOfPinnedObject(), (IntPtr)vwExample.FeatureSpace.Length);
+
+                    return base.GetCostSensitivePrediction(importedExample);
+	            }
+	            finally
+	            {
+                    handle.Free();
+	            }
+            }
+        }
+    }
+
+    public sealed class VowpalWabbitString<TExample> : VowpalWabbit
+    {
+        private readonly Func<TExample, VowpalWabbitStringVisitor, IList<string>> serializer;
+        private readonly VowpalWabbitStringVisitor stringVisitor;
+
+        public VowpalWabbitString(string arguments)
+            : base(arguments)
+        {
+            this.stringVisitor = new VowpalWabbitStringVisitor();
+            // Compile serializer
+            this.serializer = VowpalWabbitSerializer.CreateSerializer<TExample, VowpalWabbitStringVisitor, string, string, string>();
+        }
+        
+        public float GetCostSensitivePrediction(TExample example)
+        {
+            // TODO: support action dependent features
+            var exampleLine = this.serializer(example, this.stringVisitor)[0];
+
+            var vwExample = VowpalWabbitNative.ReadExample(this.vw, exampleLine);
+
+            return base.GetCostSensitivePrediction(vwExample);
         }
     }
 }
