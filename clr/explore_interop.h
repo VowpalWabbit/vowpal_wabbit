@@ -222,7 +222,7 @@ internal:
 
 private:
     initonly ClrContextGetNumActionsCallback^ contextNumActionsCallback;
-    Func<Ctx, UInt32>^ getNumberOfActionsFunc;
+    initonly Func<Ctx, UInt32>^ getNumberOfActionsFunc;
 
 private:
     Native_Context_Get_Num_Actions_Callback* m_num_actions_callback;
