@@ -14,6 +14,7 @@
 #include <memory>
 #include <limits.h>
 #include <tuple>
+#include <Windows.h>
 
 #ifdef MANAGED_CODE
 #define PORTING_INTERFACE public
@@ -798,6 +799,8 @@ public:
         {
             throw std::invalid_argument("Number of actions must be at least 1.");
         }
+
+        ::InitializeCriticalSection(&m_critical_section);
     }
 
     ///
@@ -810,6 +813,13 @@ public:
         m_default_policy(default_policy), m_tau(tau), m_num_actions(UINT_MAX), m_explore(true)
     {
         static_assert(std::is_base_of<IVariableActionContext, Ctx>::value, "The provided context does not implement variable-action interface.");
+
+        ::InitializeCriticalSection(&m_critical_section);
+    }
+
+    ~TauFirstExplorer() 
+    {
+        ::DeleteCriticalSection(&m_critical_section);
     }
 
     void Update_Policy(IPolicy<Ctx>& new_policy)
@@ -833,10 +843,24 @@ private:
         // Invoke the default policy function to get the action
         m_default_policy.Choose_Action(context, actions, num_actions);
         ::Validate_Actions(actions, num_actions);
-
-        if (m_tau && m_explore)
+        
+        bool explore = false;
+        if (m_explore)
         {
-            m_tau--;
+            // TODO: add non-windows locking mechanism
+            ::EnterCriticalSection(&m_critical_section);
+
+            if (m_tau)
+            {
+                m_tau--;
+                explore = true;
+            }
+
+            ::LeaveCriticalSection(&m_critical_section);
+        }
+
+        if (explore)
+        {
             u32 actionId = random_generator.Uniform_Int(1, num_actions);
             action_probability = 1.f / num_actions;
 
@@ -865,6 +889,7 @@ private:
     bool m_explore;
     u32 m_tau;
     const u32 m_num_actions;
+    CRITICAL_SECTION m_critical_section;
 };
 
 ///
