@@ -35,45 +35,23 @@ struct cb_adf {
 
 namespace CB_ADF {
 
-void gen_cs_example_ips(cb_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label> array)
+void gen_cs_example_ips(cb_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
 {
-	for (example **ec = examples.begin; ec != examples.end; ec++)
+  if (cs_labels.size() < examples.size())
+    cs_labels.resize(examples.size(), true);
+  for (size_t i = 0; i < examples.size(); i++)
 	{
 		// Get CB::label for each example/line.
-		CB::label ld = (**ec).l.cb;
-
-		if ( ld.costs.size() == 1 )  // 2nd line
-		{
-			COST_SENSITIVE::wclass wc;
-			wc.x = ld.costs[0].cost / ld.costs[0].probability;
-
-			COST_SENSITIVE::label cs_ld;
-			cs_ld.costs.push_back(wc);
-
-			array.push_back(cs_ld);
-		}
-		else if (ld.costs.size() == 0)
-		{
-			COST_SENSITIVE::wclass wc;
-			wc.x = 0.;
-
-			if (true)  // compare if (**ec).tag == "shared"
-			{
-				COST_SENSITIVE::label cs_ld;
-				cs_ld.costs.push_back(wc);
-				array.push_back(cs_ld);
-			}
-			else
-			{
-				// In this case, push in an instance of wclass with maximum cost as merely a placeholder.
-				wc.x = FLT_MAX;
-				COST_SENSITIVE::label cs_ld;
-				cs_ld.costs.push_back(wc);
-				array.push_back(cs_ld);
-			}
-		}
+	  CB::label ld = examples[i]->l.cb;
+	  
+	  COST_SENSITIVE::wclass wc;
+	  if ( ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)  // 2nd line
+	    wc.x = ld.costs[0].cost / ld.costs[0].probability;
+	  else 
+	    wc.x = 0;
+	  cs_labels[i].costs.erase();
+	  cs_labels[i].costs.push_back(wc);
 	}
-    
 }
 
 template <bool is_learn>
