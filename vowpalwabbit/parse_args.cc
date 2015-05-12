@@ -24,6 +24,7 @@ license as described in the file LICENSE.
 #include "ect.h"
 #include "csoaa.h"
 #include "cb_algs.h"
+#include "cb_adf.h"
 #include "scorer.h"
 #include "search.h"
 #include "bfgs.h"
@@ -847,6 +848,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(csoaa_setup);
   all.reduction_stack.push_back(csldf_setup);
   all.reduction_stack.push_back(cb_algs_setup);
+  all.reduction_stack.push_back(cb_adf_setup);
   all.reduction_stack.push_back(cbify_setup);
   all.reduction_stack.push_back(Search::setup);
   all.reduction_stack.push_back(bs_setup);

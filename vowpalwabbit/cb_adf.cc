@@ -25,7 +25,8 @@ using namespace CB;
 
 struct cb_adf {
   v_array<example*> ec_seq;
-  
+  example end_example;
+
   size_t cb_type;
   bool need_to_clear;
   vw* all;
@@ -50,45 +51,25 @@ struct cb_adf {
 
 namespace CB_ADF {
 
-void gen_cs_example_ips(cb_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label> array)
+void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
 {
-	for (example **ec = examples.begin; ec != examples.end; ec++)
+  if (cs_labels.size() < examples.size()) {
+    cs_labels.resize(examples.size(), true);
+    cs_labels.end = cs_labels.end_array;
+  }
+  for (size_t i = 0; i < examples.size(); i++)
 	{
 		// Get CB::label for each example/line.
-		CB::label ld = (**ec).l.cb;
-
-		if ( ld.costs.size() == 1 )  // 2nd line
-		{
-			COST_SENSITIVE::wclass wc;
-			wc.x = ld.costs[0].cost / ld.costs[0].probability;
-
-			COST_SENSITIVE::label cs_ld;
-			cs_ld.costs.push_back(wc);
-
-			array.push_back(cs_ld);
-		}
-		else if (ld.costs.size() == 0)
-		{
-			COST_SENSITIVE::wclass wc;
-			wc.x = 0.;
-
-			if (true)  // compare if (**ec).tag == "shared"
-			{
-				COST_SENSITIVE::label cs_ld;
-				cs_ld.costs.push_back(wc);
-				array.push_back(cs_ld);
-			}
-			else
-			{
-				// In this case, push in an instance of wclass with maximum cost as merely a placeholder.
-				wc.x = FLT_MAX;
-				COST_SENSITIVE::label cs_ld;
-				cs_ld.costs.push_back(wc);
-				array.push_back(cs_ld);
-			}
-		}
+	  CB::label ld = examples[i]->l.cb;
+	  
+	  COST_SENSITIVE::wclass wc;
+	  if ( ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)  // 2nd line
+	    wc.x = ld.costs[0].cost / ld.costs[0].probability;
+	  else 
+	    wc.x = 0;
+	  cs_labels[i].costs.erase();
+	  cs_labels[i].costs.push_back(wc);
 	}
-    
 }
 
 template <bool is_learn>
@@ -155,7 +136,7 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
   for (example **ec = examples.begin; ec != examples.end; ec++)
     {
       mydata.cb_labels.push_back((**ec).l.cb);
-      (**ec).l.cs = mydata.cs_labels[index++];  // To be checked with John.
+      (**ec).l.cs = mydata.cs_labels[index++]; 
     }
   
   
@@ -166,6 +147,11 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
       base.learn(**ec);
     else
       base.predict(**ec);
+
+  if (is_learn)
+    base.learn(mydata.end_example);
+  else
+    base.predict(mydata.end_example);
   
   // 3rd: restore cb_label for each example
   // (**ec).l.cb = mydata.array.element.
@@ -195,7 +181,7 @@ void learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 	  cerr << "known cost is null." << endl;
 	
 	if(reduction_type == CB_TYPE_IPS )
-	  gen_cs_example_ips(mydata, examples, mydata.cs_labels);
+	  gen_cs_example_ips(examples, mydata.cs_labels);
 	else 
 	  {
 	    std::cerr << "Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type << ". Exiting." << endl;
@@ -217,7 +203,8 @@ bool test_adf_sequence(cb_adf& data)
 	throw exception();
       }
     
-    count += ec->l.cb.costs.size();
+    if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)      
+      count += 1;
     
     if (CB::ec_is_example_header(*ec)) {
       cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
@@ -241,7 +228,10 @@ void do_actual_learning(cb_adf& data, base_learner& base)
   bool isTest = test_adf_sequence(data);
   
   if (isTest || !is_learn)
-    call_predict_or_learn<false>(data, base, data.ec_seq);
+    {
+      gen_cs_example_ips(data.ec_seq, data.cs_labels);//create test labels.
+      call_predict_or_learn<false>(data, base, data.ec_seq);
+    }
   else 
     learn<CB_TYPE_IPS>(data, base, data.ec_seq); 
 }
@@ -348,6 +338,10 @@ void end_examples(cb_adf& data)
 void finish(cb_adf& data)
 {
   data.ec_seq.delete_v();
+  data.cb_labels.delete_v();
+  for(size_t i = 0; i < data.cs_labels.size(); i++)
+    data.cs_labels[i].costs.delete_v();
+  data.cs_labels.delete_v();
 }
 
 template <bool is_learn>
@@ -378,8 +372,7 @@ base_learner* cb_adf_setup(vw& all)
   cb_adf& ld = calloc_or_die<cb_adf>();
   
   ld.all = &all;
-  
-  all.p->lp = CB::cb_label;
+  ld.end_example.in_use = true;
 
   if (count(all.args.begin(), all.args.end(),"--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(),"--wap_ldf") == 0)
     {
@@ -387,7 +380,10 @@ base_learner* cb_adf_setup(vw& all)
       all.args.push_back("multiline");
     }
 
-  learner<cb_adf>& l = init_learner(&ld, setup_base(all), CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>);
+  base_learner* base = setup_base(all);
+  all.p->lp = CB::cb_label;
+
+  learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>);
   l.set_finish_example(CB_ADF::finish_multiline_example);
   l.set_finish(CB_ADF::finish);
   l.set_end_examples(CB_ADF::end_examples); 
