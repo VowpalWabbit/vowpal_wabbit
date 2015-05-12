@@ -866,6 +866,7 @@ vw& parse_args(int argc, char *argv[])
 {
   vw& all = *(new vw());
 
+  all.vw_is_main = false;
   add_to_args(all, argc, argv);
 
   size_t random_seed = 0;

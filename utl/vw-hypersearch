@@ -504,7 +504,8 @@ sub best_hyperparam($$$) {
 
 sub fullpath($) {
     my $exe = shift;
-    foreach my $dir (split(':', $ENV{PATH}), '.') {
+    # I'm told on Windows, the PATH separator is ';' instead of ':'
+    foreach my $dir (split(/[:;]/, $ENV{PATH}), '.') {
         my $fp = "$dir/$exe";
         return $fp if (-x $fp);
         # On windows, the executable may be called 'vw.exe'
