@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Research.MachineLearning.Serializer.Attributes;
 using Microsoft.Research.MachineLearning.Serializer;
 using Microsoft.Research.MachineLearning.Serializer.Visitor;
+using Microsoft.Research.MachineLearning;
 
 namespace cs_test
 {
@@ -58,7 +59,7 @@ namespace cs_test
         }
     }
 
-    public class UserContext
+    public class UserContext : IActionDependentFeatures<DocumentFeature>
     {
         [Feature(Namespace = "otheruser", FeatureGroup = 'o')]
         public UserFeature User { get; set; }
@@ -67,6 +68,7 @@ namespace cs_test
         public LDAFeatureVector UserLDATopicPreference { get; set; }
 
         [ActionDependentFeatures]
+        ICollection<T> ActionDependentFeatures { get; }
         public IEnumerable<DocumentFeature> Documents { get; set; }
     }
 

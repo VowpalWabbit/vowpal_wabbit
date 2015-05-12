@@ -18,6 +18,10 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
         public VowpalWabbitNative.FEATURE[] Visit<T>(INamespaceDense<T> namespaceDense)
         {
             throw new NotImplementedException();
+
+            // TODO: Issues: returned cached version of Cached example
+            // manage completely outside of vw
+            // introduce interface!!!
         }
 
         public VowpalWabbitNative.FEATURE[] Visit(INamespaceSparse<IEnumerable<VowpalWabbitNative.FEATURE>> namespaceSparse)
@@ -28,7 +32,6 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
                 .Select(f => f.Visit())
                 .Where(f => f != null)
                 .SelectMany(l => l)
-                // TODO: is there a mem copy happing?
                 .ToArray();
         }
 
@@ -130,7 +133,6 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
                 x = 1.0f
             };
         }
-
 
         // TODO: more overloads to avoid Convert.ToDouble()
 

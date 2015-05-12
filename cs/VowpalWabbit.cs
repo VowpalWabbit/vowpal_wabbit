@@ -20,7 +20,7 @@ namespace Microsoft.Research.MachineLearning
 
         public VowpalWabbit(VowpalWabbitModel model)
         {
-
+            // TODO: initialize VW using shared model
         }
 
         public float GetCostSensitivePrediction(IntPtr example)
@@ -71,17 +71,9 @@ namespace Microsoft.Research.MachineLearning
             // TODO: support action dependent features
             using (var vwExample = this.serializer(example, this.visitor)[0])
             {
-                var handle = GCHandle.Alloc(vwExample, GCHandleType.Pinned);
-                try 
-	            {
-                    var importedExample = VowpalWabbitNative.ImportExample(this.vw, handle.AddrOfPinnedObject(), (IntPtr)vwExample.FeatureSpace.Length);
+                var importedExample = VowpalWabbitNative.ImportExample(this.vw, vwExample.FeatureSpacePtr, (IntPtr)vwExample.FeatureSpace.Length);
 
-                    return base.GetCostSensitivePrediction(importedExample);
-	            }
-	            finally
-	            {
-                    handle.Free();
-	            }
+                return base.GetCostSensitivePrediction(importedExample);
             }
         }
     }
