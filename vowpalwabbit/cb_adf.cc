@@ -25,7 +25,6 @@ using namespace CB;
 
 struct cb_adf {
   v_array<example*> ec_seq;
-  example end_example;
 
   size_t cb_type;
   bool need_to_clear;
@@ -51,27 +50,28 @@ struct cb_adf {
 
 namespace CB_ADF {
 
-void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
-{
-  if (cs_labels.size() < examples.size()) {
-    cs_labels.resize(examples.size(), true);
-    cs_labels.end = cs_labels.end_array;
+  void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
+  {
+    if (cs_labels.size() < examples.size()) {
+      cs_labels.resize(examples.size(), true);
+      cs_labels.end = cs_labels.end_array;
+    }
+    for (size_t i = 0; i < examples.size(); i++)
+      {
+	// Get CB::label for each example/line.
+	CB::label ld = examples[i]->l.cb;
+	
+	COST_SENSITIVE::wclass wc;
+	if ( ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)  // 2nd line
+	  wc.x = ld.costs[0].cost / ld.costs[0].probability;
+	else 
+	  wc.x = 0.f;
+	cs_labels[i].costs.erase();
+	cs_labels[i].costs.push_back(wc);
+      }
+    cs_labels[examples.size()-1].costs[0].x = FLT_MAX;
   }
-  for (size_t i = 0; i < examples.size(); i++)
-	{
-		// Get CB::label for each example/line.
-	  CB::label ld = examples[i]->l.cb;
-	  
-	  COST_SENSITIVE::wclass wc;
-	  if ( ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)  // 2nd line
-	    wc.x = ld.costs[0].cost / ld.costs[0].probability;
-	  else 
-	    wc.x = 0;
-	  cs_labels[i].costs.erase();
-	  cs_labels[i].costs.push_back(wc);
-	}
-}
-
+  
 template <bool is_learn>
 void gen_cs_label(cb_adf& c, example& ec, v_array<COST_SENSITIVE::label> array, uint32_t label)
 {
@@ -139,7 +139,6 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
       (**ec).l.cs = mydata.cs_labels[index++]; 
     }
   
-  
   // 2nd: predict for each ex
   // // call base.predict for each vw exmaple in the sequence
   for (example **ec = examples.begin; ec != examples.end; ec++)
@@ -147,11 +146,6 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
       base.learn(**ec);
     else
       base.predict(**ec);
-
-  if (is_learn)
-    base.learn(mydata.end_example);
-  else
-    base.predict(mydata.end_example);
   
   // 3rd: restore cb_label for each example
   // (**ec).l.cb = mydata.array.element.
@@ -352,6 +346,7 @@ void predict_or_learn(cb_adf& data, base_learner& base, example &ec) {
   bool need_to_break = data.ec_seq.size() >= all->p->ring_size - 2;
 
   if ((example_is_newline(ec) && is_test_ec) || need_to_break) {
+    data.ec_seq.push_back(&ec);
     do_actual_learning<is_learn>(data, base);
     data.need_to_clear = true;
   } else {
@@ -372,7 +367,6 @@ base_learner* cb_adf_setup(vw& all)
   cb_adf& ld = calloc_or_die<cb_adf>();
   
   ld.all = &all;
-  ld.end_example.in_use = true;
 
   if (count(all.args.begin(), all.args.end(),"--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(),"--wap_ldf") == 0)
     {
