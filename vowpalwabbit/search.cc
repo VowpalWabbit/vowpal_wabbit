@@ -315,6 +315,7 @@ namespace Search {
         (all.final_prediction_sink.size() > 0) ||   // if we have to produce output, we need to run this
         might_print_update(all) ||                  // if we have to print and update to stderr
         (all.raw_prediction > 0) ||                 // we need raw predictions
+        ((!all.vw_is_main) && (is_test_ex)) ||      // library needs predictions
         // or:
         //   it's not quiet AND
         //     current_pass == 0
@@ -556,7 +557,7 @@ namespace Search {
 
 
   template<class T> void cdbg_print_array(string str, v_array<T>& A) { cdbg << str << " = ["; for (size_t i=0; i<A.size(); i++) cdbg << " " << A[i]; cdbg << " ]" << endl; }
-  template<class T> void cerr_print_array(string str, v_array<T>& A) { cerr << str << " = ["; for (size_t i=0; i<A.size(); i++) cerr << " " << A[i]; cerr << " ]" << endl; }
+  template<class T> void cerr_print_array(string str, v_array<T>& A) { std::cerr << str << " = ["; for (size_t i=0; i<A.size(); i++) std::cerr << " " << A[i]; std::cerr << " ]" << endl; }
   
   
   size_t random(size_t max) { return (size_t)(frand48() * (float)max); }
@@ -1475,7 +1476,9 @@ namespace Search {
 
     //if (! priv.no_caching)
       clear_cache_hash_map(priv);
-    
+
+    cdbg << "is_test_ex=" << is_test_ex << " vw_is_main=" << all.vw_is_main << endl;
+    cdbg << "must_run_test = " << must_run_test(all, priv.ec_seq, is_test_ex) << endl;
     // do an initial test pass to compute output (and loss)
     if (must_run_test(all, priv.ec_seq, is_test_ex)) {
       cdbg << "======================================== INIT TEST (" << priv.current_policy << "," << priv.read_example_last_pass << ") ========================================" << endl;
@@ -1605,7 +1608,7 @@ namespace Search {
 
     bool is_test_ex = false;
     for (size_t i=0; i<priv.ec_seq.size(); i++)
-      if (priv.label_is_test(priv.ec_seq[i]->l)) { is_test_ex = true; break; }
+      if (priv.ec_seq[i]->test_only || priv.label_is_test(priv.ec_seq[i]->l)) { is_test_ex = true; break; }
 
     if (priv.task->run_setup) priv.task->run_setup(sch, priv.ec_seq);
 
@@ -2275,10 +2278,8 @@ namespace Search {
   }
 
   void  search::set_options(uint32_t opts) {
-    if (this->priv->state != INITIALIZE) {
-      std::cerr << "error: task cannot set options except in initialize function!" << endl;
-      throw exception();
-    }
+    if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
+      std::cerr << "warning: task should not set options except in initialize function!" << endl;
     if ((opts & AUTO_CONDITION_FEATURES) != 0) this->priv->auto_condition_features = true;
     if ((opts & AUTO_HAMMING_LOSS)       != 0) this->priv->auto_hamming_loss = true;
     if ((opts & EXAMPLES_DONT_CHANGE)    != 0) this->priv->examples_dont_change = true;
@@ -2287,10 +2288,8 @@ namespace Search {
   }
 
   void search::set_label_parser(label_parser&lp, bool (*is_test)(polylabel&)) {
-    if (this->priv->state != INITIALIZE) {
-      std::cerr << "error: task cannot set label parser except in initialize function!" << endl;
-      throw exception();
-    }
+    if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
+      std::cerr << "warning: task should not set label parser except in initialize function!" << endl;
     this->priv->all->p->lp = lp;
     this->priv->label_is_test = is_test;
   }
@@ -2366,7 +2365,7 @@ namespace Search {
 	  ec = temp;
 	else
 	  {
-	    cerr << "realloc failed in search.cc " << endl;
+	    std::cerr << "realloc failed in search.cc " << endl;
 	    throw exception();
 	  }
       }
