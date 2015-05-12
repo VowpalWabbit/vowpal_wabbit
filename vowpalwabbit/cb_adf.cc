@@ -20,7 +20,8 @@ using namespace LEARNER;
 
 struct cb_adf {
   v_array<example*> ec_seq;
-  
+  example end_example;
+
   size_t cb_type;
   bool need_to_clear;
   vw* all;
@@ -131,6 +132,11 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
       base.learn(**ec);
     else
       base.predict(**ec);
+
+  if (is_learn)
+    base.learn(mydata.end_example);
+  else
+    base.predict(mydata.end_example);
   
   // 3rd: restore cb_label for each example
   // (**ec).l.cb = mydata.array.element.
@@ -206,8 +212,11 @@ void do_actual_learning(cb_adf& data, base_learner& base)
 {
   bool isTest = test_adf_sequence(data);
   
-  if (isTest || !is_learn)// bug: must set costs to test mode
-    call_predict_or_learn<false>(data, base, data.ec_seq);
+  if (isTest || !is_learn)
+    {
+      gen_cs_example_ips(data.ec_seq, data.cs_labels);//create test labels.
+      call_predict_or_learn<false>(data, base, data.ec_seq);
+    }
   else 
     learn<CB_TYPE_IPS>(data, base, data.ec_seq); 
 }
@@ -315,7 +324,7 @@ void finish(cb_adf& data)
 {
   data.ec_seq.delete_v();
   data.cb_labels.delete_v();
-  for(size_t i = 0; i < data.cs_labels.end_array - data.cs_labels.begin; i++)
+  for(size_t i = 0; i < data.cs_labels.size(); i++)
     data.cs_labels[i].costs.delete_v();
   data.cs_labels.delete_v();
 }
@@ -348,7 +357,8 @@ base_learner* cb_adf_setup(vw& all)
   cb_adf& ld = calloc_or_die<cb_adf>();
   
   ld.all = &all;
-  
+  ld.end_example.in_use = true;
+
   if (count(all.args.begin(), all.args.end(),"--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(),"--wap_ldf") == 0)
     {
       all.args.push_back("--csoaa_ldf");
