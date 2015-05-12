@@ -35,10 +35,12 @@ struct cb_adf {
 
 namespace CB_ADF {
 
-void gen_cs_example_ips(cb_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
+void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
 {
-  if (cs_labels.size() < examples.size())
+  if (cs_labels.size() < examples.size()) {
     cs_labels.resize(examples.size(), true);
+    cs_labels.end = cs_labels.end_array;
+  }
   for (size_t i = 0; i < examples.size(); i++)
 	{
 		// Get CB::label for each example/line.
@@ -118,7 +120,7 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
   for (example **ec = examples.begin; ec != examples.end; ec++)
     {
       mydata.cb_labels.push_back((**ec).l.cb);
-      (**ec).l.cs = mydata.cs_labels[index++];  // To be checked with John.
+      (**ec).l.cs = mydata.cs_labels[index++]; 
     }
   
   
@@ -158,7 +160,7 @@ void learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 	  cerr << "known cost is null." << endl;
 	
 	if(reduction_type == CB_TYPE_IPS )
-	  gen_cs_example_ips(mydata, examples, mydata.cs_labels);
+	  gen_cs_example_ips(examples, mydata.cs_labels);
 	else 
 	  {
 	    std::cerr << "Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type << ". Exiting." << endl;
@@ -204,7 +206,7 @@ void do_actual_learning(cb_adf& data, base_learner& base)
 {
   bool isTest = test_adf_sequence(data);
   
-  if (isTest || !is_learn)
+  if (isTest || !is_learn)// bug: must set costs to test mode
     call_predict_or_learn<false>(data, base, data.ec_seq);
   else 
     learn<CB_TYPE_IPS>(data, base, data.ec_seq); 
@@ -312,6 +314,10 @@ void end_examples(cb_adf& data)
 void finish(cb_adf& data)
 {
   data.ec_seq.delete_v();
+  data.cb_labels.delete_v();
+  for(size_t i = 0; i < data.cs_labels.end_array - data.cs_labels.begin; i++)
+    data.cs_labels[i].costs.delete_v();
+  data.cs_labels.delete_v();
 }
 
 template <bool is_learn>
