@@ -124,7 +124,6 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
       (**ec).l.cs = mydata.cs_labels[index++]; 
     }
   
-  
   // 2nd: predict for each ex
   // // call base.predict for each vw exmaple in the sequence
   for (example **ec = examples.begin; ec != examples.end; ec++)
