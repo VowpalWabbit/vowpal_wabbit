@@ -46,6 +46,7 @@ namespace CB_ADF {
 	CB::label ld = examples[i]->l.cb;
 	
 	COST_SENSITIVE::wclass wc;
+	wc.class_index = 0;
 	if ( ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)  
 	  wc.x = ld.costs[0].cost / ld.costs[0].probability;
 	else 
@@ -55,7 +56,7 @@ namespace CB_ADF {
       }
     cs_labels[examples.size()-1].costs[0].x = FLT_MAX; //trigger end of multiline example.
 
-    if (examples[0]->l.cb.costs[0].probability == -1.f)//take care of shared examples
+    if (examples[0]->l.cb.costs.size() > 0 && examples[0]->l.cb.costs[0].probability == -1.f)//take care of shared examples
       {
 	cs_labels[0].costs[0].class_index = 0;
 	cs_labels[0].costs[0].x = -1.f;
