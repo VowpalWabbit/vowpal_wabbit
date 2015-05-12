@@ -840,13 +840,13 @@ void parse_reductions(vw& all)
 
   //Reductions
   all.reduction_stack.push_back(binary_setup);
-  all.reduction_stack.push_back(interact_setup);
   all.reduction_stack.push_back(topk_setup);
   all.reduction_stack.push_back(oaa_setup);
   all.reduction_stack.push_back(ect_setup);
   all.reduction_stack.push_back(log_multi_setup);
   all.reduction_stack.push_back(multilabel_oaa_setup);
   all.reduction_stack.push_back(csoaa_setup);
+  all.reduction_stack.push_back(interact_setup);
   all.reduction_stack.push_back(csldf_setup);
   all.reduction_stack.push_back(cb_algs_setup);
   all.reduction_stack.push_back(cbify_setup);
