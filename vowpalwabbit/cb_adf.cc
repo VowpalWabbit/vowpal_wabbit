@@ -35,42 +35,38 @@ struct cb_adf {
 
   v_array<COST_SENSITIVE::label> cs_labels;
 
-  base_learner* base;
-  
-  size_t cb_type;
+  base_learner* base;  
   
   // An array of cb_label.
   v_array<CB::label> array;
 
   // suggest to add an array of cs_label.
-  v_array<COST_SENSITIVE::label> cs_label_array;
-
-  cb_class* known_cost;  
+  v_array<COST_SENSITIVE::label> cs_label_array;   
 };
 
 namespace CB_ADF {
 
-  void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
-  {
-    if (cs_labels.size() < examples.size()) {
-      cs_labels.resize(examples.size(), true);
-      cs_labels.end = cs_labels.end_array;
-    }
-    for (size_t i = 0; i < examples.size(); i++)
-      {
-	// Get CB::label for each example/line.
-	CB::label ld = examples[i]->l.cb;
-	
-	COST_SENSITIVE::wclass wc;
-	if ( ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)  // 2nd line
-	  wc.x = ld.costs[0].cost / ld.costs[0].probability;
-	else 
-	  wc.x = 0.f;
-	cs_labels[i].costs.erase();
-	cs_labels[i].costs.push_back(wc);
-      }
-    cs_labels[examples.size()-1].costs[0].x = FLT_MAX;
-  }
+void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
+{
+	if (cs_labels.size() < examples.size()) {
+	  cs_labels.resize(examples.size(), true);
+	  cs_labels.end = cs_labels.end_array;
+	}
+	for (size_t i = 0; i < examples.size(); i++)
+	{
+		// Get CB::label for each example/line.
+		CB::label ld = examples[i]->l.cb;
+		
+		COST_SENSITIVE::wclass wc;
+		if ( ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)  // 2nd line
+		  wc.x = ld.costs[0].cost / ld.costs[0].probability;
+		else 
+		  wc.x = 0.f;
+		cs_labels[i].costs.erase();
+		cs_labels[i].costs.push_back(wc);
+	}
+	cs_labels[examples.size()-1].costs[0].x = FLT_MAX;
+}
   
 template <bool is_learn>
 void gen_cs_label(cb_adf& c, example& ec, v_array<COST_SENSITIVE::label> array, uint32_t label)
@@ -357,47 +353,30 @@ void predict_or_learn(cb_adf& data, base_learner& base, example &ec) {
     data.ec_seq.push_back(&ec);
   }
 }
-}
 
 base_learner* cb_adf_setup(vw& all)
 {
-  if (missing_option(all, true, "cb_adf", "Do Contextual Bandit learning with multiline action dependent features."))
-    return nullptr;
-  
-  cb_adf& ld = calloc_or_die<cb_adf>();
-  
-  ld.all = &all;
+	if (missing_option(all, true, "cb_adf", "Do Contextual Bandit learning with multiline action dependent features."))
+		return nullptr;
 
-  if (count(all.args.begin(), all.args.end(),"--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(),"--wap_ldf") == 0)
-    {
-      all.args.push_back("--csoaa_ldf");
-      all.args.push_back("multiline");
-    }
+	cb_adf& ld = calloc_or_die<cb_adf>();
 
-  base_learner* base = setup_base(all);
-  all.p->lp = CB::cb_label;
+	ld.all = &all;
 
-  learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>);
-  l.set_finish_example(CB_ADF::finish_multiline_example);
-  l.set_finish(CB_ADF::finish);
-  l.set_end_examples(CB_ADF::end_examples); 
-  return make_base(l);
-}
-
-inline bool observed_cost(cb_class* cl)
-{
-	//cost observed for this action if it has non zero probability and cost != FLT_MAX
-	return (cl != nullptr && cl->cost != FLT_MAX && cl->probability > .0);
-}
-
-cb_class* get_observed_cost(CB::label ld)
-{
-	for (cb_class *cl = ld.costs.begin; cl != ld.costs.end; cl++)
+	if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0)
 	{
-		if (observed_cost(cl))
-			return cl;
+		all.args.push_back("--csoaa_ldf");
+		all.args.push_back("multiline");
 	}
-	return nullptr;
+
+	base_learner* base = setup_base(all);
+	all.p->lp = CB::cb_label;
+
+	learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>);
+	l.set_finish_example(CB_ADF::finish_multiline_example);
+	l.set_finish(CB_ADF::finish);
+	l.set_end_examples(CB_ADF::end_examples);
+	return make_base(l);
 }
 
 void predict(cb_adf& mydata, base_learner& base, v_array<example*> examples)
@@ -441,7 +420,7 @@ void learn(cb_adf& mydata, base_learner& base, v_array<example*> examples)
 	CB::label ld;
 	for (example **ec = examples.begin; ec != examples.end; ec++)
 	{
-		if ( (**ec).l.cb.costs.size() == 1 &&
+		if ((**ec).l.cb.costs.size() == 1 &&
 			(**ec).l.cb.costs[0].cost != FLT_MAX &&
 			(**ec).l.cb.costs[0].probability > 0)
 		{
@@ -462,13 +441,13 @@ void learn(cb_adf& mydata, base_learner& base, v_array<example*> examples)
 
 	switch (mydata.cb_type)
 	{
-		case CB_TYPE_IPS:			
-			gen_cs_example_ips(mydata, examples, mydata.cs_label_array);
-			break;
+	case CB_TYPE_IPS:
+		gen_cs_example_ips(examples, mydata.cs_label_array);
+		break;
 
-		default:
-			std::cerr << "Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type << ". Exiting." << endl;
-			throw exception();
+	default:
+		std::cerr << "Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type << ". Exiting." << endl;
+		throw exception();
 	}
 
 	if (mydata.cb_type != CB_TYPE_DM)
@@ -486,7 +465,7 @@ void learn(cb_adf& mydata, base_learner& base, v_array<example*> examples)
 			(**ec).l.cs = mydata.cs_label_array[index];  // To be checked with John.
 			index++;
 		}
-		 
+
 
 		// 2nd: learn for each ex
 		// // call base.learn for each vw exmaple in the sequence
@@ -506,42 +485,6 @@ void learn(cb_adf& mydata, base_learner& base, v_array<example*> examples)
 	}
 }
 
-void predict(cb_adf& mydata, base_learner& base, v_array<example*> examples)
-{
-
-	// m2: still save, store, and restore
-	// starting with 3 for loops
-	// first of all, clear the container mydata.array.
-	mydata.array.erase();
-
-	// 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.
-	size_t index = 0;
-	for (example **ec = examples.begin; ec != examples.end; ec++)
-	{
-		mydata.array.push_back((**ec).l.cb);
-		(**ec).l.cs = mydata.cs_label_array[index];  // To be checked with John.
-		index++;
-	}
-
-
-	// 2nd: predict for each ex
-	// // call base.predict for each vw exmaple in the sequence
-	for (example **ec = examples.begin; ec != examples.end; ec++)
-	{
-		base.predict(**ec);
-	}
-
-	// 3rd: restore cb_label for each example
-	// (**ec).l.cb = mydata.array.element.
-	size_t i = 0;
-	for (example **ec = examples.begin; ec != examples.end; ec++)
-	{
-		(**ec).l.cb = mydata.array[i];
-		i++;
-	}
-
-}
-
 void gen_cs_example_ips(cb_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label> array)
 {
 	for (example **ec = examples.begin; ec != examples.end; ec++)
@@ -549,7 +492,7 @@ void gen_cs_example_ips(cb_adf& c, v_array<example*> examples, v_array<COST_SENS
 		// Get CB::label for each example/line.
 		CB::label ld = (**ec).l.cb;
 
-		if ( ld.costs.size() == 1 )  // 2nd line
+		if (ld.costs.size() == 1)  // 2nd line
 		{
 			COST_SENSITIVE::wclass wc;
 			wc.x = ld.costs[0].cost / ld.costs[0].probability;
@@ -580,7 +523,7 @@ void gen_cs_example_ips(cb_adf& c, v_array<example*> examples, v_array<COST_SENS
 			}
 		}
 	}
-    
+
 }
 
 template <bool is_learn>
@@ -613,20 +556,7 @@ void gen_cs_label(cb_adf& c, example& ec, v_array<COST_SENSITIVE::label> array)
 	array.push_back(cs_ld);
 }
 
-void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label> array)
-{
-	for (example **ec = examples.begin; ec != examples.end; ec++)
-	{
-		// Get CB::label for each example/line.
-		CB::label ld = (**ec).l.cb;
 
-		if (ld.costs.size() == 1)  // 2nd line
-		{
-			gen_cs_label<true>(c, **ec, array);
-		}
-		else if (ld.costs.size() == 0)
-		{
-			gen_cs_label<false>(c, **ec, array);
-		}
-	}
+
 }
+
