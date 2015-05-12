@@ -91,6 +91,13 @@ namespace CB
     copy_array(ldD->costs, ldS->costs);
   }
 
+  bool substring_eq(substring ss, const char* str) {
+    size_t len_ss  = ss.end - ss.begin;
+    size_t len_str = strlen(str);
+    if (len_ss != len_str) return false;
+    return (strncmp(ss.begin, str, len_ss) == 0);
+  }
+
   void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
   {
     CB::label* ld = (CB::label*)v;
@@ -110,9 +117,10 @@ namespace CB
         f.partial_prediction = 0.;
         f.action = (uint32_t)hashstring(p->parse_name[0], 0);
         f.cost = FLT_MAX;
-        if(p->parse_name.size() > 1)
-          f.cost = float_of_substring(p->parse_name[1]);
 
+	if(p->parse_name.size() > 1)
+	  f.cost = float_of_substring(p->parse_name[1]);
+	
         if ( nanpattern(f.cost))
         {
 	  cerr << "error NaN cost for action: ";
@@ -121,10 +129,11 @@ namespace CB
 	  throw exception();
         }
       
+
         f.probability = .0;
         if(p->parse_name.size() > 2)
           f.probability = float_of_substring(p->parse_name[2]);
-
+	
         if ( nanpattern(f.probability))
         {
 	  cerr << "error NaN probability for action: ";
@@ -139,11 +148,17 @@ namespace CB
           f.probability = 1.0;
         }
         if( f.probability < 0.0 )
-        {
-          cerr << "invalid probability < 0 specified for an action, resetting to 0." << endl;
-          f.probability = .0;
-        }
-
+	  {
+	    cerr << "invalid probability < 0 specified for an action, resetting to 0." << endl;
+	    f.probability = .0;
+	  }
+	if (substring_eq(p->parse_name[0], "shared")) {
+          if (p->parse_name.size() == 1) {
+            f.probability = -1.f;
+          } else
+            cerr << "shared feature vectors should not have costs" << endl;
+	}
+	
         ld->costs.push_back(f);
       }
   }
