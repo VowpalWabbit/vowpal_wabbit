@@ -202,7 +202,8 @@ bool test_adf_sequence(cb_adf& data)
 	throw exception();
       }
     
-    count += ec->l.cb.costs.size();
+    if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)      
+      count += 1;
     
     if (CB::ec_is_example_header(*ec)) {
       cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
