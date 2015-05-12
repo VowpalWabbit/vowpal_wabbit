@@ -251,7 +251,7 @@ namespace COST_SENSITIVE {
     if (costs.size() == 0) return true;
     for (size_t j=0; j<costs.size(); j++)
       if (costs[j].x != FLT_MAX) return false;
-    return true;    
+    return true;
   }
 
   bool ec_is_example_header(example& ec)  // example headers look like "0:-1" or just "shared"
