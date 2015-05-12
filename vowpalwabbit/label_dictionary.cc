@@ -5,7 +5,7 @@
 namespace LabelDict { 
   size_t hash_lab(size_t lab) { return 328051 + 94389193 * lab; }
   
-  void del_example_namespace(example& ec, char ns, v_array<feature> features) {
+  void del_example_namespace(example& ec, char ns, v_array<feature>& features, bool audit) {
     size_t numf = features.size();
     // print_update is called after this del_example_namespace,
     // so we need to keep the ec.num_features correct,
@@ -20,15 +20,19 @@ namespace LabelDict {
       ec.total_sum_feat_sq -= ec.sum_feat_sq[(size_t)ns];
       ec.atomics[(size_t)ns].erase();
       ec.sum_feat_sq[(size_t)ns] = 0.;
+      if (audit)
+        ec.audit_features[(size_t)ns].erase();
     } else { // DID have ns
       for (feature*f=features.begin; f!=features.end; f++) {
         ec.sum_feat_sq[(size_t)ns] -= f->x * f->x;
         ec.atomics[(size_t)ns].pop();
+        if (audit)
+          ec.audit_features[(size_t)ns].pop();
       }
     }
   }
 
-  void add_example_namespace(example& ec, char ns, v_array<feature> features) {
+  void add_example_namespace(example& ec, char ns, v_array<feature>& features, v_array<audit_data>* audit) {
     bool has_ns = false;
     for (size_t i=0; i<ec.indices.size(); i++) {
       if (ec.indices[i] == (size_t)ns) {
@@ -50,51 +54,62 @@ namespace LabelDict {
 
     ec.num_features += features.size();
     ec.total_sum_feat_sq += ec.sum_feat_sq[(size_t)ns];
+
+    if (audit != nullptr)
+      for (audit_data*f = audit->begin; f != audit->end; ++f) {
+        audit_data f2 = { f->space, f->feature, f->weight_index, f->x, false };
+        ec.audit_features[(size_t)ns].push_back(f2);
+      }
   }
 
-  void add_example_namespaces_from_example(example& target, example& source) {
+  void add_example_namespaces_from_example(example& target, example& source, bool audit) {
     for (unsigned char* idx=source.indices.begin; idx!=source.indices.end; idx++) {
       if (*idx == constant_namespace) continue;
-      add_example_namespace(target, (char)*idx, source.atomics[*idx]);
+      add_example_namespace(target, (char)*idx, source.atomics[*idx],
+                            audit ? &source.audit_features[*idx] : nullptr);
     }
   }
 
-  void del_example_namespaces_from_example(example& target, example& source) {
+  void del_example_namespaces_from_example(example& target, example& source, bool audit) {
     //for (size_t*idx=source.indices.begin; idx!=source.indices.end; idx++) {
     unsigned char* idx = source.indices.end;
     idx--;
     for (; idx>=source.indices.begin; idx--) {
       if (*idx == constant_namespace) continue;
-      del_example_namespace(target, (char)*idx, source.atomics[*idx]);
+      del_example_namespace(target, (char)*idx, source.atomics[*idx], audit);
     }
   }
 
-  void add_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab) {
+  void add_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab, bool audit) {
     size_t lab_hash = hash_lab(lab);
-    v_array<feature> features = lfm.get(lab, lab_hash);
-    if (features.size() == 0) return;
-    add_example_namespace(ec, 'l', features);
+    feature_audit& res = lfm.get(lab, lab_hash);
+    if (res.features.size() == 0) return;
+    add_example_namespace(ec, 'l', res.features, audit ? &res.audit : nullptr);
   }
 
-  void del_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab) {
+  void del_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab, bool audit) {
     size_t lab_hash = hash_lab(lab);
-    v_array<feature> features = lfm.get(lab, lab_hash);
-    if (features.size() == 0) return;
-    del_example_namespace(ec, 'l', features);
+    feature_audit& res = lfm.get(lab, lab_hash);
+    if (res.features.size() == 0) return;
+    del_example_namespace(ec, 'l', res.features, audit ? &res.audit : nullptr);
   }
 
-  void set_label_features(label_feature_map& lfm, size_t lab, v_array<feature>features) {
+  void set_label_features(label_feature_map& lfm, size_t lab, v_array<feature>&features, v_array<audit_data>* audit) {
     size_t lab_hash = hash_lab(lab);
     if (lfm.contains(lab, lab_hash)) { return; }
-    lfm.put_after_get(lab, lab_hash, features);
+    const v_array<audit_data> empty = { nullptr, nullptr, nullptr, 0 };
+    feature_audit fa = { features, audit ? (*audit) : empty };
+    lfm.put_after_get(lab, lab_hash, fa);
   }
 
   void free_label_features(label_feature_map& lfm) {
     void* label_iter = lfm.iterator();
     while (label_iter != nullptr) {
-      v_array<feature> *features = lfm.iterator_get_value(label_iter);
-      features->erase();
-      features->delete_v();
+      feature_audit *res = lfm.iterator_get_value(label_iter);
+      res->features.erase();
+      res->features.delete_v();
+      res->audit.erase();
+      res->audit.delete_v();
 
       label_iter = lfm.iterator_next(label_iter);
     }
