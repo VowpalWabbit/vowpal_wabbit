@@ -49,7 +49,6 @@ license as described in the file LICENSE.
 #include "best_constant.h"
 
 using namespace std;
-using namespace CB_ADF;
 //
 // Does string end with a certain substring?
 //

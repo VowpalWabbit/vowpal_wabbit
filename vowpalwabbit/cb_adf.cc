@@ -356,31 +356,6 @@ void predict_or_learn(cb_adf& data, base_learner& base, example &ec) {
   }
 }
 
-base_learner* cb_adf_setup(vw& all)
-{
-	if (missing_option(all, true, "cb_adf", "Do Contextual Bandit learning with multiline action dependent features."))
-		return nullptr;
-
-	cb_adf& ld = calloc_or_die<cb_adf>();
-
-	ld.all = &all;
-
-	if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0)
-	{
-		all.args.push_back("--csoaa_ldf");
-		all.args.push_back("multiline");
-	}
-
-	base_learner* base = setup_base(all);
-	all.p->lp = CB::cb_label;
-
-	learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>);
-	l.set_finish_example(CB_ADF::finish_multiline_example);
-	l.set_finish(CB_ADF::finish);
-	l.set_end_examples(CB_ADF::end_examples);
-	return make_base(l);
-}
-
 void predict(cb_adf& mydata, base_learner& base, v_array<example*> examples)
 {
 
@@ -417,4 +392,29 @@ void predict(cb_adf& mydata, base_learner& base, v_array<example*> examples)
 
 }
 
+}
+
+base_learner* cb_adf_setup(vw& all)
+{
+	if (missing_option(all, true, "cb_adf", "Do Contextual Bandit learning with multiline action dependent features."))
+		return nullptr;
+
+	cb_adf& ld = calloc_or_die<cb_adf>();
+
+	ld.all = &all;
+
+	if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0)
+	{
+		all.args.push_back("--csoaa_ldf");
+		all.args.push_back("multiline");
+	}
+
+	base_learner* base = setup_base(all);
+	all.p->lp = CB::cb_label;
+
+	learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>);
+	l.set_finish_example(CB_ADF::finish_multiline_example);
+	l.set_finish(CB_ADF::finish);
+	l.set_end_examples(CB_ADF::end_examples);
+	return make_base(l);
 }
