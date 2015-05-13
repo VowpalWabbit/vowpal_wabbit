@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 #include <sstream>
 #include <float.h>
 #include "reductions.h"
+#include "v_array.h"
 
 struct interact {
   unsigned char n1, n2;  //namespaces to interact
@@ -20,6 +21,7 @@ float multiply(v_array<feature>& f_dest, v_array<feature>& f_src2, interact& in)
   f_dest.erase();
   v_array<feature> f_src1 = in.feat_store;
   vw* all = in.all;
+  size_t weight_mask = all->reg.weight_mask;
   size_t base_id1 = f_src1[0].weight_index & weight_mask;
   size_t base_id2 = f_src2[0].weight_index & weight_mask;
   
@@ -30,8 +32,8 @@ float multiply(v_array<feature>& f_dest, v_array<feature>& f_src2, interact& in)
   f_dest.push_back(f);
 
   for(size_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();) {
-    size_t cur_id1 = (size_t)((f_src1[i1].weight_index & weight_mask - base_id1) & weight_mask);
-    size_t cur_id2 = (size_t)((f_src2[i2].weight_index & weight_mask - base_id2) & weight_mask);
+    size_t cur_id1 = (size_t)(((f_src1[i1].weight_index & weight_mask) - base_id1) & weight_mask);
+    size_t cur_id2 = (size_t)(((f_src2[i2].weight_index & weight_mask) - base_id2) & weight_mask);
 
     if(cur_id1 == cur_id2) {
       feature f;
@@ -64,7 +66,7 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec) {
   ec.num_features -= f2.size();
   
   in.feat_store.erase();
-  in.feat_store.push_many(f1, f1.begin, f1.size());
+  push_many(in.feat_store, f1.begin, f1.size());
   
   ec.sum_feat_sq[in.n1] = multiply(f1, f2, in);
   ec.total_sum_feat_sq += ec.sum_feat_sq[in.n1];
@@ -89,7 +91,7 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec) {
   
   ec.indices.push_back(in.n2);
   ec.atomics[in.n1].erase();
-  ec.atomics[in.n1].push_many(in.feat_store, in.feat_store.begin, in.feat_store.size());  
+  push_many(ec.atomics[in.n1], in.feat_store.begin, in.feat_store.size());  
   ec.total_sum_feat_sq = in.total_sum_feat_sq;
   ec.sum_feat_sq[in.n1] = in.n1_feat_sq;
   ec.num_features = in.num_features;
