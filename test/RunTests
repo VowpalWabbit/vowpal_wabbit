@@ -1127,3 +1127,7 @@ __DATA__
 # Test 83: check redefine functionality
 {VW} -k -d train-sets/0080.dat --redefine := --redefine y:=: --redefine x:=arma --ignore x -q yy
     train-sets/ref/redefine.stderr
+
+# Test 84: check cb_adf
+{VW} --cb_adf train-sets/cb_test.ldf 
+    train-sets/ref/cb_adf.stderr
