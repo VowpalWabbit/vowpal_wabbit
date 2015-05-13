@@ -92,9 +92,15 @@ base_learner* csoaa_setup(vw& all)
   return b;
 }
 
+struct score {
+  float val;
+  size_t idx;
+};
+
 struct ldf {
   v_array<example*> ec_seq;
-  LabelDict::label_feature_map label_features;
+  LabelDict::label_feature_map label_features;  
+  
   
   size_t read_example_this_loop;
   bool need_to_clear;
@@ -105,8 +111,17 @@ struct ldf {
   float csoaa_example_t;
   vw* all;
   
+  bool score_all;
+  v_array<score> scores;
+  
   base_learner* base;
 };
+
+int score_comp(const void* p1, const void* p2) {
+  score* s1 = (score*)p1;
+  score* s2 = (score*)p2;
+  return (s2.val - s1.val);
+}
 
   bool ec_is_label_definition(example& ec) // label defs look like "0:___" or just "label:___"
   {
@@ -369,16 +384,34 @@ void do_actual_learning(ldf& data, base_learner& base)
   bool isTest = check_ldf_sequence(data, start_K);
 
   /////////////////////// do prediction
-  float  min_score = FLT_MAX;
-  size_t predicted_K = start_K;   
-  for (size_t k=start_K; k<K; k++) {
-    example *ec = data.ec_seq[k];
-    make_single_prediction(data, base, *ec);
-    if (ec->partial_prediction < min_score) {
-      min_score = ec->partial_prediction;
-      predicted_K = k;
+  if(data.score_all) {
+    scores.erase();
+    
+    for (size_t k=start_K; k<K; k++) {
+      example *ec = data.ec_seq[k];
+      make_single_prediction(data, base, *ec);
+      score s;
+      s.val = ec->partial_prediction;
+      s.idx = k;
+      scores.push_back(s);
     }
-  }   
+
+    qsort((void*) scores.begin, scores.size(), sizeof(score), score_comp);
+    
+    
+  }
+  else {
+    float  min_score = FLT_MAX;
+    size_t predicted_K = start_K;   
+    for (size_t k=start_K; k<K; k++) {
+      example *ec = data.ec_seq[k];
+      make_single_prediction(data, base, *ec);
+      if (ec->partial_prediction < min_score) {
+	min_score = ec->partial_prediction;
+	predicted_K = k;
+      }
+    }   
+  }
 
   /////////////////////// learn
   if (is_learn && !isTest){
@@ -520,6 +553,7 @@ void finish(ldf& data)
   //vw* all = l->all;
   data.ec_seq.delete_v();
   LabelDict::free_label_features(data.label_features);
+  data.scores.delete_v();
 }
 
 template <bool is_learn>
@@ -562,7 +596,8 @@ base_learner* csldf_setup(vw& all)
       && missing_option<string, true>(all, "wap_ldf", "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline."))
     return nullptr;
   new_options(all, "LDF Options")
-      ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file");
+      ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
+    ("score_all", po::value<bool>(),"Return actions sorted by score order");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -583,6 +618,8 @@ base_learner* csldf_setup(vw& all)
   }
   if ( vm.count("ldf_override") )
     ldf_arg = vm["ldf_override"].as<string>();
+  if(vm.count("score_all"))
+    ld.score_all = vm["score_all"].as<bool>();
 
   all.p->lp = COST_SENSITIVE::cs_label;
 
