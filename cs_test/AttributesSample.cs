@@ -34,7 +34,7 @@ namespace cs_test
                     }
                 },
                 UserLDATopicPreference = new LDAFeatureVector { Values = new[] { 0.1, 0.2, 0.3 } },
-                Documents = new[]
+                ActionDependentFeatures = new[]
                 {
                     d1,
                     new DocumentFeature
@@ -48,18 +48,38 @@ namespace cs_test
             };
 
             var visitor = new VowpalWabbitStringVisitor();
-            var lines = VowpalWabbitSerializer
-                .CreateSerializer<UserContext, VowpalWabbitStringVisitor, string, string, string>()(context, visitor);
+            var serializer = VowpalWabbitSerializer.CreateSerializer<UserContext, VowpalWabbitStringVisitor, string, string, string>();
+            var serializerDependent = VowpalWabbitSerializer.CreateSerializer<DocumentFeature, VowpalWabbitStringVisitor, string, string, string>();
+            Console.WriteLine(serializer(context, visitor));
 
-            foreach (var line in lines)
+            foreach (var actionDependentFeature in context.ActionDependentFeatures)
             {
-                Console.WriteLine(line);
+                Console.WriteLine(serializerDependent(actionDependentFeature, visitor));
             }
             Console.ReadKey();
         }
+
+        public static void RunFeaturesTest()
+        {
+            var context = new FeatureTestContext
+            {
+                S = new[] { "p^the_man", "w^thew^man\u0394", "w^man" },
+                T = new[] { "p^un_homme", "w^un", "w^homme" }
+            };
+
+        }
     }
 
-    public class UserContext : IActionDependentFeatures<DocumentFeature>
+    public class FeatureTestContext
+    {
+        [Feature(FeatureGroup = 's')]
+        public IEnumerable<string> S { get; set; }
+
+        [Feature(FeatureGroup = 't')]
+        public IEnumerable<string> T { get; set; }
+    }
+
+    public class UserContext : IActionDependentFeatureExample<DocumentFeature>
     {
         [Feature(Namespace = "otheruser", FeatureGroup = 'o')]
         public UserFeature User { get; set; }
@@ -67,9 +87,7 @@ namespace cs_test
         [Feature(Namespace = "userlda", FeatureGroup = 'u')]
         public LDAFeatureVector UserLDATopicPreference { get; set; }
 
-        [ActionDependentFeatures]
-        ICollection<T> ActionDependentFeatures { get; }
-        public IEnumerable<DocumentFeature> Documents { get; set; }
+        public ICollection<DocumentFeature> ActionDependentFeatures { get; set;  }
     }
 
     [Cacheable(EqualityComparer = typeof(DocumentFeatureEqualityComparer))]
@@ -77,6 +95,9 @@ namespace cs_test
     {
         [Comment]
         public string Id { get; set; }
+
+
+        public string SomeOtherId { get; set; }
 
         public DateTime Time { get; set; }
 

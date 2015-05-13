@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 {
-    public class VowpalWabbitNativeVisitor : IVowpalWabbitVisitor<VowpalWabbitExample, VowpalWabbitNative.FEATURE[], IEnumerable<VowpalWabbitNative.FEATURE>>
+    public class VowpalWabbitNativeVisitor : IVowpalWabbitVisitor<VowpalWabbitNativeExample, VowpalWabbitNative.FEATURE[], IEnumerable<VowpalWabbitNative.FEATURE>>
     {
         /// <summary>
         /// Performance improvement. Calculate hash once per namespace.
@@ -134,10 +134,81 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
             };
         }
 
+        #region Dictionary
+
         // TODO: more overloads to avoid Convert.ToDouble()
+
+        /*        
+public void Visit<TValue>(IFeature<IDictionary<Int16, TValue>> feature)
+{
+    this.Visit(feature, key => (UInt32)key);
+}
+
+public void Visit<TValue>(IFeature<IDictionary<Int32, TValue>> feature)
+{
+    this.Visit(feature, key => (UInt32)key);
+}
+
+// TODO: not clear when to hash... should we check for negative values?
+public void Visit<TValue>(IFeature<IDictionary<Int64, TValue>> feature)
+{
+    this.Visit(feature, key => (UInt32)key);
+}
+
+public void Visit<TValue>(IFeature<IDictionary<UInt16, TValue>> feature)
+{
+    this.Visit(feature, key => key);
+}
+public void Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
+{
+    this.Visit(feature, key => key);
+}
+*/
+        public IEnumerable<VowpalWabbitNative.FEATURE> Visit<TValue>(IFeature<IDictionary<UInt16, TValue>> feature)
+        {
+            return feature.Value
+                .Select(kvp => new VowpalWabbitNative.FEATURE
+                {
+                    weight_index = this.namespaceHash + kvp.Key,
+                    x = (float)Convert.ToDouble(kvp.Value)
+                });
+        }
+
+        public IEnumerable<VowpalWabbitNative.FEATURE> Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
+        {
+            return feature.Value
+                .Select(kvp => new VowpalWabbitNative.FEATURE
+                {
+                    weight_index = this.namespaceHash + kvp.Key,
+                    x = (float)Convert.ToDouble(kvp.Value)
+                });
+        }
+
+        public IEnumerable<VowpalWabbitNative.FEATURE> Visit<TValue>(IFeature<IDictionary<Int16, TValue>> feature)
+        {
+            return feature.Value
+                .Select(kvp => new VowpalWabbitNative.FEATURE
+                {
+                    weight_index = (uint)(this.namespaceHash + kvp.Key),
+                    x = (float)Convert.ToDouble(kvp.Value)
+                });
+        }
+
+        public IEnumerable<VowpalWabbitNative.FEATURE> Visit<TValue>(IFeature<IDictionary<Int32, TValue>> feature)
+        {
+            return feature.Value
+                .Select(kvp => new VowpalWabbitNative.FEATURE
+                {
+                    weight_index = (uint)(this.namespaceHash + kvp.Key),
+                    x = (float)Convert.ToDouble(kvp.Value)
+                });
+        }
 
         public IEnumerable<VowpalWabbitNative.FEATURE> Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature)
         {
+            // lhs: int, hash(string), hash(long), hash(*) -> uint
+            // rhs: int, short, long, float, bool -> float
+
             return feature.Value
                 .Select(kvp => new VowpalWabbitNative.FEATURE
                 {
@@ -146,18 +217,12 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
                 });
         }
 
+        #endregion
+
         public IEnumerable<VowpalWabbitNative.FEATURE> Visit<T>(IFeature<T> feature)
         {
-            string strValue;
-
-            if (typeof(T).IsEnum)
-            {
-                strValue = Enum.GetName(typeof(T), feature.Value);
-            }
-            else
-            {
-                strValue = Convert.ToString(feature.Value);
-            }
+            var  strValue = typeof(T).IsEnum ? 
+                Enum.GetName(typeof(T), feature.Value) : Convert.ToString(feature.Value);
 
             yield return new VowpalWabbitNative.FEATURE
             {
@@ -166,7 +231,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
             };
         }
 
-        public VowpalWabbitExample Visit(string comment, IVisitableNamespace<VowpalWabbitNative.FEATURE[]>[] namespaces)
+        public VowpalWabbitNativeExample Visit(IVisitableNamespace<VowpalWabbitNative.FEATURE[]>[] namespaces)
         {
             var features = (from n in namespaces
                             let resultFeature = n.Visit()
@@ -190,7 +255,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
                 featureSpace.len = featureNs.Features.Length;
 			}
 
-            return new VowpalWabbitExample(featureSpaces, handles);
+            return new VowpalWabbitNativeExample(featureSpaces, handles);
 
             //this.namespaceOutput = new List<VowpalWabbitNative.FEATURE_SPACE>();
 

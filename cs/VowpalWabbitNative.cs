@@ -39,6 +39,9 @@ namespace Microsoft.Research.MachineLearning
         // features points to a FEATURE_SPACE[]
         public static extern VwExample ImportExample(VwHandle vw, VwFeatureSpace features, SizeT length);
 
+        [DllImport(LIBVW, EntryPoint = "VW_ImporLabelledtExample")]
+        public static extern VwExample ImportLabelledExample(VwHandle vw, VwFeatureSpace features, SizeT length, [MarshalAs(UnmanagedType.LPWStr)]string label);
+
         [DllImport(LIBVW, EntryPoint = "VW_ExportExample")]
         public static extern VwFeatureSpace ExportExample(VwHandle vw, VwExample example, ref SizeT length);
 

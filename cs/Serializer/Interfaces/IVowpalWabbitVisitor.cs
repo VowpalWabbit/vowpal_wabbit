@@ -8,7 +8,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
 {
     public interface IVowpalWabbitVisitor<TResultExample, TResultNamespace, TResultFeature>
     {
-        TResultExample Visit(string comment, IVisitableNamespace<TResultNamespace>[] namespaces);
+        TResultExample Visit(IVisitableNamespace<TResultNamespace>[] namespaces);
 
         TResultNamespace Visit<T>(INamespaceDense<T> namespaceDense);
 

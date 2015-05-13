@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -44,12 +45,13 @@ namespace Microsoft.Research.MachineLearning.Serializer.Reflection
             }
 
             MethodInfo method = bestCandidate.Method;
-            //foreach (var item in visitMethods)
+
+            //foreach (var item in methods)
             //{
-            //    Debug.WriteLine(string.Format("Distance={0} Interfaces={1} OpenGenerics={2} Method={3}", 
-            //        item.Distance.Distance, 
+            //    Debug.WriteLine(string.Format("Distance={0} Interfaces={1} OpenGenerics={2} Method={3}",
+            //        item.Distance.Distance,
             //        item.Distance.InterfacesImplemented,
-            //        item.Distance.GenericTypes.Count, 
+            //        item.Distance.GenericTypes.Count,
             //        item.Method));
             //}
 

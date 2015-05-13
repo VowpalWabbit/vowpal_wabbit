@@ -29,52 +29,24 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitor
             // TODO: move to compiled Lambda
             if (namespaceDense.DenseFeature.Value == null)
             {
-                return string.Empty;
+                return null;
             }
 
-            return this.VisitNamespace(namespaceDense) +
-                   string.Join(" ", namespaceDense.DenseFeature.Value.Select(v => ":" + v));
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0} {1}",
+                this.VisitNamespace(namespaceDense),
+                string.Join(" ", namespaceDense.DenseFeature.Value.Select(v => ":" + v)));
         }
 
-        #region Dictionary support
-        /*        
-        public void Visit<TValue>(IFeature<IDictionary<Int16, TValue>> feature)
-        {
-            this.Visit(feature, key => (UInt32)key);
-        }
-
-        public void Visit<TValue>(IFeature<IDictionary<Int32, TValue>> feature)
-        {
-            this.Visit(feature, key => (UInt32)key);
-        }
-
-        // TODO: not clear when to hash... should we check for negative values?
-        public void Visit<TValue>(IFeature<IDictionary<Int64, TValue>> feature)
-        {
-            this.Visit(feature, key => (UInt32)key);
-        }
-
-        public void Visit<TValue>(IFeature<IDictionary<UInt16, TValue>> feature)
-        {
-            this.Visit(feature, key => key);
-        }
-        public void Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
-        {
-            this.Visit(feature, key => key);
-        }
-        */
 
         public string Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature)
         {
-            // TODO: call VwHash
             return this.Visit(feature, key => Convert.ToString(key));
         }
 
         private string Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature, Func<TKey, string> keyMapper)
         {
-            // lhs: int, hash(string), hash(long), hash(*) -> uint
-            // rhs: int, short, long, float, bool -> float
-
             return string.Join(" ",
                 feature.Value.Select(kvp => string.Format(
                     CultureInfo.InvariantCulture,
@@ -83,8 +55,6 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitor
                     kvp.Value)));
         }
 
-        #endregion
-
         public string Visit(IFeature<string> feature)
         {
             return this.Visit<string>(feature);
@@ -92,7 +62,6 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitor
 
         public string Visit<TValue>(IFeature<IEnumerable<TValue>> feature)
         {
-            // TODO: call VwHash
             // this.Visit(feature, key => (UInt32)Convert.ToString(key).GetHashCode());
             return string.Join(" ", 
                 feature.Value.Select((value, i) =>
@@ -134,22 +103,21 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitor
 
         public string Visit(INamespaceSparse<string> namespaceSparse)
         {
+            var featureResults = from feature in namespaceSparse.Features
+                                 let result = feature.Visit()
+                                 where result != null
+                                 select result;
+
             return string.Format(
                 CultureInfo.InvariantCulture,
                 "{0} {1}",
                     VisitNamespace(namespaceSparse),
-                    string.Join(" ", namespaceSparse.Features.Select(f => f.Visit())));
+                    string.Join(" ", featureResults));
         }
 
-        public string Visit(string comment, IVisitableNamespace<string>[] namespaces)
+        public string Visit(IVisitableNamespace<string>[] namespaces)
         {
-            return string.Format(
-                CultureInfo.InvariantCulture,
-                "`{0} {1}", 
-                comment,
-                string.Join(" ", namespaces.Select(n => n.Visit())));
-
-            // TODO: it's unclear who generates the separating new line in the case of action dependent features
+            return string.Join(" ", namespaces.Select(n => n.Visit()));
         }
     }
 }

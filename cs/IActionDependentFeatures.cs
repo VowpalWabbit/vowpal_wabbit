@@ -5,8 +5,8 @@ using System.Text;
 
 namespace Microsoft.Research.MachineLearning
 {
-    public interface IActionDependentFeatures<T>
+    public interface IActionDependentFeatureExample<T>
     {
-        ICollection<T> ActionDependentFeatures { get; }
+        IList<T> ActionDependentFeatures { get; }
     }
 }
