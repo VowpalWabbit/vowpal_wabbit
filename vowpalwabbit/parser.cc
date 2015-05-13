@@ -1133,6 +1133,13 @@ float get_cost_sensitive_prediction(example* ec)
        return (float)ec->pred.multiclass;
 }
 
+uint32_t* get_multilabel_predictions(vw& all, example* ec, size_t& len)
+{
+    MULTILABEL::labels labels = ec->pred.multilabels;
+    len = labels.label_v.size();
+    return labels.label_v.begin;
+}
+
 size_t get_tag_length(example* ec)
 {
 	return ec->tag.size();
