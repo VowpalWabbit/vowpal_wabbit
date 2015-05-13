@@ -400,7 +400,8 @@ void do_actual_learning(ldf& data, base_learner& base)
 
     qsort((void*) data.scores.begin, data.scores.size(), sizeof(score), score_comp);
     
-    
+    for (size_t k=start_K; k<K; k++)      
+      data.ec_seq[0]->pred.multilabels.label_v.push_back(data.scores[k].idx);
   }
   else {
     float  min_score = FLT_MAX;       
