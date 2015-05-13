@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <title>Vowpal Wabbit</title>
+    <id>Microsoft.Research.VowpalWabbit</id>
+    <tags>vw vowpal wabbit john langford</tags>
+    <version>7.10.1.0</version>
+    <authors>cloudmlstudiomodtrio</authors>
+    <owners>cloudmlstudiomodtrio</owners>
+    <projectUrl>https://github.com/JohnLangford/vowpal_wabbit</projectUrl>
+    <licenseUrl>http://sharepoint/sites/sqlises/SitePages/NugetCanUseInShippingCode.aspx</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Vowpal Wabbit source and prebuilt lib for CloudML Studio</description>
+    <copyright>Copyright (C) Microsoft Corporation. All rights reserved.</copyright>
+    <releaseNotes>
+		Modified Vowpal Wabbit 7.7.0 code, nugetized by akannava for Feature Hashing and LDA modules in Passau. Modifications included windows-specific standard library functions where compiler errors were found and moving LDA structs to headers for wrapper access.
+	</releaseNotes>
+    <dependencies>
+      <dependency id="zlib" version="1.2.8.7" />
+      <dependency id="boost" version="1.58.0.0" />
+      <dependency id="boost_program_options-vc120" version="1.58.0.0" />
+    </dependencies>
+  </metadata>
+
+  <files>
+    <file src="..\VowpalWabbitNugetizer\vw.targets" target="build\vw.targets" />
+    <file src="$vowpalwabbit$\x64\Debug\vw_static.lib" target="lib\vc120\Debug\vw_static.lib" />
+    <file src="$vowpalwabbit$\x64\Debug\vw_static\vc120.pdb" target="lib\vc120\Debug\vc120.pdb" />
+
+    <file src="$vowpalwabbit$\x64\Release\vw_static.lib" target="lib\vc120\Release\vw_static.lib" />
+    <file src="$vowpalwabbit$\x64\Release\vw_static\vc120.pdb" target="lib\vc120\Release\vc120.pdb" />
+
+    <file src="$vowpalwabbit$\*.h" target="src\inc\" />
+    <!--<file src="$vowpalwabbit$\*.cc" target="src\" />-->
+  </files>
+</package>
+

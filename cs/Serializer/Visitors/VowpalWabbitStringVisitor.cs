@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Research.MachineLearning.Serializer.Interfaces;
 
-namespace Microsoft.Research.MachineLearning.Serializer.Visitor
+namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 {
     public class VowpalWabbitStringVisitor : IVowpalWabbitVisitor<string, string, string>
     {

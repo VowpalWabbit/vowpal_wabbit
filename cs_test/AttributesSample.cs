@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Research.MachineLearning.Serializer.Attributes;
 using Microsoft.Research.MachineLearning.Serializer;
-using Microsoft.Research.MachineLearning.Serializer.Visitor;
+using Microsoft.Research.MachineLearning.Serializer.Visitors;
 using Microsoft.Research.MachineLearning;
 
 namespace cs_test
@@ -34,7 +34,7 @@ namespace cs_test
                     }
                 },
                 UserLDATopicPreference = new LDAFeatureVector { Values = new[] { 0.1, 0.2, 0.3 } },
-                ActionDependentFeatures = new[]
+                ActionDependentFeatures = new List<DocumentFeature>
                 {
                     d1,
                     new DocumentFeature
@@ -67,6 +67,21 @@ namespace cs_test
                 T = new[] { "p^un_homme", "w^un", "w^homme" }
             };
 
+            var vw = new VowpalWabbit<FeatureTestContext>("-q st --noconstant --quiet");
+
+            using (var example = vw.ReadExample("1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme"))
+            {
+                vw.Learn(example);
+            }
+
+            using (var example = vw.ReadExample(context))
+            {
+                example.AddLabel(1);
+
+                var score = vw.Learn(example);;
+
+                Console.Error.WriteLine("p2 = {0}", score);
+            }
         }
     }
 
@@ -87,7 +102,7 @@ namespace cs_test
         [Feature(Namespace = "userlda", FeatureGroup = 'u')]
         public LDAFeatureVector UserLDATopicPreference { get; set; }
 
-        public ICollection<DocumentFeature> ActionDependentFeatures { get; set;  }
+        public IList<DocumentFeature> ActionDependentFeatures { get; set;  }
     }
 
     [Cacheable(EqualityComparer = typeof(DocumentFeatureEqualityComparer))]

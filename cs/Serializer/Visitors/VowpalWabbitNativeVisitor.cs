@@ -10,6 +10,13 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 {
     public class VowpalWabbitNativeVisitor : IVowpalWabbitVisitor<VowpalWabbitNativeExample, VowpalWabbitNative.FEATURE[], IEnumerable<VowpalWabbitNative.FEATURE>>
     {
+        private readonly VowpalWabbit vw;
+
+        public VowpalWabbitNativeVisitor(VowpalWabbit vw)
+        {
+            this.vw = vw;
+        }
+
         /// <summary>
         /// Performance improvement. Calculate hash once per namespace.
         /// </summary>
@@ -26,7 +33,9 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 
         public VowpalWabbitNative.FEATURE[] Visit(INamespaceSparse<IEnumerable<VowpalWabbitNative.FEATURE>> namespaceSparse)
         {
-            this.namespaceHash = namespaceSparse.Name == null ? 0 : VowpalWabbitNative.HashSpace(namespaceSparse.Name);
+            this.namespaceHash = namespaceSparse.Name == null ? 
+                VowpalWabbitNative.HashSpace(namespaceSparse.FeatureGroup.ToString()) :
+                VowpalWabbitNative.HashSpace(namespaceSparse.FeatureGroup + namespaceSparse.Name);
 
             return namespaceSparse.Features
                 .Select(f => f.Visit())
@@ -219,6 +228,16 @@ public void Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
 
         #endregion
 
+        public IEnumerable<VowpalWabbitNative.FEATURE> Visit(IFeature<IEnumerable<string>> feature)
+        {
+            return feature.Value
+                .Select(value => new VowpalWabbitNative.FEATURE
+                {
+                    weight_index = VowpalWabbitNative.HashFeature(value, this.namespaceHash),
+                    x = 1f
+                });
+        }
+
         public IEnumerable<VowpalWabbitNative.FEATURE> Visit<T>(IFeature<T> feature)
         {
             var  strValue = typeof(T).IsEnum ? 
@@ -245,17 +264,16 @@ public void Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
 
             for (int i = 0; i < featureSpaces.Length; i++)
 			{
-                var featureSpace = featureSpaces[i];
                 var featureNs = features[i];
 			    var pinnedFeatures = GCHandle.Alloc(features[i].Features, GCHandleType.Pinned);
                 handles[i] = pinnedFeatures;
 
-                featureSpace.name = (byte)featureNs.Namespace.FeatureGroup;
-                featureSpace.features = pinnedFeatures.AddrOfPinnedObject();
-                featureSpace.len = featureNs.Features.Length;
+                featureSpaces[i].name = (byte)featureNs.Namespace.FeatureGroup;
+                featureSpaces[i].features = pinnedFeatures.AddrOfPinnedObject();
+                featureSpaces[i].len = featureNs.Features.Length;
 			}
 
-            return new VowpalWabbitNativeExample(featureSpaces, handles);
+            return new VowpalWabbitNativeExample(vw, featureSpaces, handles);
 
             //this.namespaceOutput = new List<VowpalWabbitNative.FEATURE_SPACE>();
 

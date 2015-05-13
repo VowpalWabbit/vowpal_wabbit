@@ -71,15 +71,6 @@ extern "C"
 		return static_cast<VW_EXAMPLE>(VW::import_example(*pointer, f, len));
 	}
 	
-	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ImportLabelledExample(VW_HANDLE handle, VW_FEATURE_SPACE* features, size_t len, const char* label)
-	{
-		vw * pointer = static_cast<vw*>(handle);
-		VW::primitive_feature_space * f = reinterpret_cast<VW::primitive_feature_space*>(features);
-		example* ex = VW::import_example(*pointer, f, len);
-		VW::parse_example_label(*pointer, *ex, label);
-		return static_cast<VW_EXAMPLE>(ex);
-	}
-
 	VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_ExportExample(VW_HANDLE handle, VW_EXAMPLE e, size_t * plen)
 	{
 		vw* pointer = static_cast<vw*>(handle);
@@ -258,6 +249,13 @@ extern "C"
 	{
 		example* ex = static_cast<example*>(e);
 		return VW::add_label(ex, label, weight, base);
+	}
+
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_AddStringLabel(VW_HANDLE handle, VW_EXAMPLE e, const char* label)
+	{
+		vw * pointer = static_cast<vw*>(handle);
+		example* ex = static_cast<example*>(e);
+		VW::parse_example_label(*pointer, *ex, label);
 	}
 
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_Learn(VW_HANDLE handle, VW_EXAMPLE e)

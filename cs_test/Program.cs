@@ -15,16 +15,19 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
-            AttributesSample.Attributes();
+            //AttributesSample.Attributes();
+            AttributesSample.RunFeaturesTest();
             //ExploreClock.Clock();
             //LabDemo.Run();
             //ExploreOnlySample.Run();
-            //RunFeaturesTest();
+            RunFeaturesTest();
             //RunParserTest();
             //RunSpeedTest();
             //RunFlatExampleTestEx();
     //      RunLDAPredict();
             //RunVWParse_and_VWLearn();
+
+            Console.ReadKey();
         }
 
         private static void RunFeaturesTest()

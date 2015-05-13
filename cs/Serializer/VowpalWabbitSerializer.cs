@@ -1,58 +1,73 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Emit;
+using System.Security;
+using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Research.MachineLearning.Serializer.Attributes;
+using Microsoft.Research.MachineLearning.Serializer.Interfaces;
+using Microsoft.Research.MachineLearning.Serializer.Intermediate;
+using Microsoft.Research.MachineLearning.Serializer.Reflection;
+using Microsoft.Research.MachineLearning.Serializer.Visitors;
 
 namespace Microsoft.Research.MachineLearning.Serializer
 {
-    using System.Collections;
-    using System.Diagnostics;
-    using System.Globalization;
-    using System.Linq.Expressions;
-    using System.Reflection.Emit;
-    using System.Security;
-    using System.Security.Permissions;
-    using Microsoft.Research.MachineLearning.Serializer.Attributes;
-    using Microsoft.Research.MachineLearning.Serializer.Interfaces;
-    using Microsoft.Research.MachineLearning.Serializer.Intermediate;
-    using Microsoft.Research.MachineLearning.Serializer.Reflection;
     using VwHandle = IntPtr;
 
     public static class VowpalWabbitSerializer
     {
         private static readonly Dictionary<Tuple<Type, Type>, object> SerializerCache = new Dictionary<Tuple<Type, Type>, object>();
 
-        public static Func<TContext, TVisitor, TExampleResult> CreateSerializer<TContext, TVisitor, TExampleResult, TNamespaceResult, TFeatureResult>()
+        #region Factory Methods
+
+        public static Func<TExample, VowpalWabbitNativeVisitor, VowpalWabbitNativeExample> CreateNativeSerializer<TExample>()
+        {
+            return CreateSerializer<TExample, VowpalWabbitNativeVisitor, VowpalWabbitNativeExample, VowpalWabbitNative.FEATURE[], IEnumerable<VowpalWabbitNative.FEATURE>>();
+        }
+
+        public static Func<TExample, VowpalWabbitStringVisitor, string> CreateStringSerializer<TExample>()
+        {
+            return CreateSerializer<TExample, VowpalWabbitStringVisitor, string, string, string>();
+        }
+
+        #endregion
+
+        public static Func<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult, TNamespaceResult, TFeatureResult>()
             where TVisitor : IVowpalWabbitVisitor<TExampleResult, TNamespaceResult, TFeatureResult>
         {
-            var cacheKey = Tuple.Create(typeof(TContext), typeof(TVisitor));
+            var cacheKey = Tuple.Create(typeof(TExample), typeof(TVisitor));
             object serializer;
 
             if (SerializerCache.TryGetValue(cacheKey, out serializer))
             {
-                return (Func<TContext, TVisitor, TExampleResult>)serializer;
+                return (Func<TExample, TVisitor, TExampleResult>)serializer;
             }
 
             // Create dynamic assembly
-            var asmName = new AssemblyName("VowpalWabbitSerializer." + typeof(TContext).Name + "." + typeof(TVisitor));
+            var asmName = new AssemblyName("VowpalWabbitSerializer." + typeof(TExample).Name + "." + typeof(TVisitor));
             var dynAsm = AppDomain.CurrentDomain.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
 
             // Create a dynamic module and type
             var dynMod = dynAsm.DefineDynamicModule("VowpalWabbitSerializerModule");
 
-            var newSerializer = CreateSerializer<TContext, TVisitor, TExampleResult, TNamespaceResult, TFeatureResult>(dynMod);
+            var newSerializer = CreateSerializer<TExample, TVisitor, TExampleResult, TNamespaceResult, TFeatureResult>(dynMod);
 
             SerializerCache[cacheKey] = newSerializer;
 
             return newSerializer;
         }
 
-        private static Func<TContext, TVisitor, TExampleResult> CreateSerializer<TContext, TVisitor, TExampleResult, TNamespaceResult, TFeatureResult>(ModuleBuilder moduleBuilder)
+        private static Func<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult, TNamespaceResult, TFeatureResult>(ModuleBuilder moduleBuilder)
             where TVisitor : IVowpalWabbitVisitor<TExampleResult, TNamespaceResult, TFeatureResult>
         {
-            var valueType = typeof(TContext);
+            var valueType = typeof(TExample);
 
             // define functions input parameter
             var valueParameter = Expression.Parameter(valueType, "value");
@@ -73,7 +88,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
 
                 var baseNamespaceType = typeof(Namespace);
                 var baseNamespaceInits = new[] {
-                    Expression.Bind(baseNamespaceType.GetProperty("Name"), Expression.Constant(ns.Key.Namespace)),
+                    Expression.Bind(baseNamespaceType.GetProperty("Name"), Expression.Constant(ns.Key.Namespace, typeof(string))),
                     Expression.Bind(baseNamespaceType.GetProperty("FeatureGroup"), Expression.Constant(ns.Key.FeatureGroup)),
                 };
 
@@ -181,106 +196,19 @@ namespace Microsoft.Research.MachineLearning.Serializer
                 }
             }
 
-            // Extract comment value
-            //var sharedComment = ExtractComment(valueParameter);
-
-            // Find action dependent features
-            //var perAction = (from p in valueType.GetProperties(BindingFlags.Instance | BindingFlags.GetProperty | BindingFlags.Public)
-            //                 let attr = p.GetCustomAttributes(typeof(ActionDependentFeaturesAttribute), true).FirstOrDefault()
-            //                 where attr != null
-            //                 select new { Property = p, Attribute = attr }
-            //    ).FirstOrDefault();
-
-            // var exampleResults = Expression.Variable(typeof(List<TExampleResult>), "exampleResults");
-
-            // variables.Add(exampleResults);
-            // CODE exampleResults = new List<TExampleResult>(); 
-            // body.Add(Expression.Assign(exampleResults, Expression.New(exampleResults.Type)));
-
-            // var listAddMethod = exampleResults.Type.GetMethod("Add", new[] { typeof(TExampleResult) });
             var visitNamespaceMethod = typeof(TVisitor).GetMethod("Visit", new[] { typeof(IVisitableNamespace<TNamespaceResult>[]) });
-
-            // CODE exampleResults.Add(visitor.Visit(comment, new[] { ns1, ns2, ... }));
-            //body.Add(
-            //    Expression.Call(
-            //        exampleResults,
-            //        listAddMethod,
-            //        Expression.Call(
-            //            visitorParameter,
-            //            visitNamespaceMethod,
-            //            // comment:
-            //            sharedComment,
-            //            // namespaces: 
-            //            Expression.NewArrayInit(
-            //                typeof(IVisitableNamespace<TNamespaceResult>),
-            //                namespaceVariables.ToArray()))));
-
 
             // CODE return visitor.Visit(comment, new[] { ns1, ns2, ... })
             body.Add(
                 Expression.Call(
                     visitorParameter,
                     visitNamespaceMethod,
-                // namespaces: 
                     Expression.NewArrayInit(
                         typeof(IVisitableNamespace<TNamespaceResult>),
                         namespaceVariables.ToArray())));
 
-            //if (perAction != null)
-            //{
-            //    sharedComment = Expression.Constant("shared");
 
-            //    // Get Serializer Action Method
-            //    // construct loop to go through PerActionSamples
-            //    var perActionType = perAction.Property.PropertyType;
-
-            //    if (!typeof(IEnumerable<object>).IsAssignableFrom(perActionType))
-            //    {
-            //        throw new NotSupportedException("PerAction types must implement from IEnumerable<>");
-            //    }
-
-            //    // find IEnumerable
-            //    var perActionItemType = perActionType.GetInterfaces().Union(new[] { perActionType })
-            //        .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-            //        .First()
-            //        .GetGenericArguments()[0];
-
-            //    // Build serializer for PerAction feature
-            //    var createSerializer = typeof(VowpalWabbitSerializer)
-            //        .GetMethod("CreateSerializer", BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(ModuleBuilder) }, null)
-            //        .MakeGenericMethod(perActionItemType, typeof(TVisitor), typeof(TExampleResult), typeof(TNamespaceResult), typeof(TFeatureResult));
-
-            //    var serializer = (Delegate)createSerializer.Invoke(null, new [] { moduleBuilder });
-
-            //    var enumerator = Expression.Variable(typeof(IEnumerator<>).MakeGenericType(perActionItemType));
-            //    variables.Add(enumerator);
-
-            //    // CODE enumerator = value.ActionDependentFeatures.GetEnumerator()
-            //    body.Add(Expression.Assign(
-            //        enumerator, 
-            //        Expression.Call(Expression.Property(valueParameter, perAction.Property), perActionType.GetMethod("GetEnumerator"))));
-
-            //    // CODE exit: while(true) { if (enumerator.MoveNext()) { ... } else { goto exit; } }
-            //    var loopBreak = Expression.Label();
-            //    body.Add(Expression.Loop(Expression.Block(
-            //            Expression.IfThenElse(
-            //                test: Expression.Call(enumerator, typeof(IEnumerator).GetMethod("MoveNext")),
-            //                // CODE exampleResults.AddRange(serializer(visitor, enumerator.Current));
-            //                ifTrue: Expression.Call(
-            //                    exampleResults,
-            //                    exampleResults.Type.GetMethod("AddRange"),
-            //                    Expression.Call(
-            //                        serializer.Method,
-            //                        Expression.Property(enumerator, "Current"),
-            //                        visitorParameter)),
-            //                ifFalse:Expression.Break(loopBreak))),
-            //        loopBreak));
-            //}
-
-            // CODE: return exampleResults;
-            // body.Add(exampleResults);
-
-            var visit = Expression.Lambda<Func<TContext, TVisitor, TExampleResult>>(
+            var visit = Expression.Lambda<Func<TExample, TVisitor, TExampleResult>>(
                 Expression.Block(variables.Union(namespaceVariables), body),
                 valueParameter,
                 visitorParameter);
@@ -291,7 +219,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
             var methodBuilder = typeBuilder.DefineMethod("Serialize",
                 MethodAttributes.Public | MethodAttributes.Static,
                 typeof(void),
-                new[] { typeof(TContext), typeof(TVisitor) });
+                new[] { typeof(TExample), typeof(TVisitor) });
 
             // compared to Compile this looks rather ugly, but there is a feature-bug 
             // that adds a security check to every call of the Serialize method
@@ -299,7 +227,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
 
             var dynType = typeBuilder.CreateType();
 
-            return (Func<TContext, TVisitor, TExampleResult>)Delegate.CreateDelegate(typeof(Func<TContext, TVisitor, TExampleResult>), dynType.GetMethod("Serialize"));
+            return (Func<TExample, TVisitor, TExampleResult>)Delegate.CreateDelegate(typeof(Func<TExample, TVisitor, TExampleResult>), dynType.GetMethod("Serialize"));
         }
 
         internal static bool IsValidDenseFeatureValueElementType(Type elemType)
@@ -328,9 +256,14 @@ namespace Microsoft.Research.MachineLearning.Serializer
             if (typeof(IEnumerable<object>).IsAssignableFrom(type))
             {
                 // let's get T of IEnumerable<T>
-                return type.GetInterfaces()
+                var elemType = type.GetInterfaces().Union(new[] { type })
                     .First(it => it.IsGenericType && it.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                     .GetGenericArguments()[0];
+
+                if (IsValidDenseFeatureValueElementType(elemType))
+                {
+                    return elemType;
+                }
             }
 
             return null;
@@ -365,7 +298,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
                                        Expression.Bind(featureType.GetProperty("Name"), Expression.Constant(name)),
                                        Expression.Bind(featureType.GetProperty("Enumerize"), Expression.Constant(attr.Enumerize)),
                                        Expression.Bind(featureType.GetProperty("Value"), propertyExpression),
-                                       Expression.Bind(featureType.GetProperty("Namespace"), Expression.Constant(namespaceValue)),
+                                       Expression.Bind(featureType.GetProperty("Namespace"), Expression.Constant(namespaceValue, typeof(string))),
                                        Expression.Bind(featureType.GetProperty("FeatureGroup"), Expression.Constant(featureGroup)))
                                 };
 

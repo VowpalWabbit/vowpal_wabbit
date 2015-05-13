@@ -1,8 +1,8 @@
 ﻿using Microsoft.Research.MachineLearning.Serializer;
-using Microsoft.Research.MachineLearning.Serializer.Visitor;
 using Microsoft.Research.MachineLearning.Serializer.Visitors;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -29,12 +29,18 @@ namespace Microsoft.Research.MachineLearning
             return new VowpalWabbitExample(this, ptr);
         }
 
-        public float GetCostSensitivePrediction(IntPtr example)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="example"></param>
+        public float Learn(IVowpalWabbitExample example)
         {
-            VowpalWabbitNative.Predict(vw, example);
-            VowpalWabbitNative.FinishExample(vw, example);
+            return VowpalWabbitNative.Learn(this.vw, example.Ptr);
+        }
 
-            return VowpalWabbitNative.GetCostSensitivePrediction(example);
+        public float Predict(IVowpalWabbitExample example)
+        {
+            return VowpalWabbitNative.Predict(this.vw, example.Ptr);
         }
 
         public void Dispose()
@@ -66,10 +72,10 @@ namespace Microsoft.Research.MachineLearning
 
         public VowpalWabbit(string arguments) : base(arguments)
         {
-            this.visitor = new VowpalWabbitNativeVisitor();
+            this.visitor = new VowpalWabbitNativeVisitor(this);
 
             // Compile serializer
-            this.serializer = VowpalWabbitSerializer.CreateSerializer<TExample, VowpalWabbitNativeVisitor, VowpalWabbitNativeExample, VowpalWabbitNative.FEATURE[], IEnumerable<VowpalWabbitNative.FEATURE>>();
+            this.serializer = VowpalWabbitSerializer.CreateNativeSerializer<TExample>();
         }
         
         public float GetCostSensitivePrediction(TExample example)
@@ -77,11 +83,20 @@ namespace Microsoft.Research.MachineLearning
             // TODO: support action dependent features
             using (var vwExample = this.serializer(example, this.visitor))
             {
-                vwExample.ImportInto(this.vw);
+                this.Predict(vwExample);
 
-                return base.GetCostSensitivePrediction(vwExample.Ptr);
+                return VowpalWabbitNative.GetCostSensitivePrediction(vwExample.Ptr);
             }
         }
+
+        //public void Learn(TExample example, string label)
+        //{
+        //    using (var vwExample = this.serializer(example, this.visitor))
+        //    {
+        //        vwExample.ImportLabeledInto(this, label);
+        //        this.Learn(vwExample);
+        //    }
+        //}
 
         public IVowpalWabbitExample ReadExample(TExample example)
         {
@@ -92,26 +107,28 @@ namespace Microsoft.Research.MachineLearning
     public sealed class VowpalWabbit<TExample, TActionDependentFeature> : VowpalWabbit<TExample>
         where TExample : IActionDependentFeatureExample<TActionDependentFeature>
     {
-        private Func<TActionDependentFeature, VowpalWabbitNativeVisitor, VowpalWabbitNativeExample> actionDependentFeatureSerializer;
+        private readonly Func<TActionDependentFeature, VowpalWabbitNativeVisitor, VowpalWabbitNativeExample> actionDependentFeatureSerializer;
+        private readonly VowpalWabbitNativeVisitor actionDependentFeatureVisitor;
 
         public VowpalWabbit(string arguments) : base(arguments)
         {
+            this.actionDependentFeatureVisitor = new VowpalWabbitNativeVisitor(this);
+            this.actionDependentFeatureSerializer = VowpalWabbitSerializer.CreateNativeSerializer<TActionDependentFeature>();
         }
 
-        public void MSNTrain<T>(IActionDependentFeatureExample<T> example, int chosenActionIndex, float cost, float prob)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="example"></param>
+        /// <param name="chosenAction">Must be an an instance out of example.ActionDependentFeatures.</param>
+        /// <param name="cost"></param>
+        /// <param name="probability"></param>
+        public void MSNTrain(TExample example, TActionDependentFeature chosenAction, float cost, float probability)
         {
             // TODO: where to stick the cost
             // shared|userlda: .1
             // `doc1|lda :.1 :.2
             // 0:cost:prob `doc2 |lda :.2 :.3
-            // <new line>
-        }
-
-        public T[] MSNPredict<T>(IActionDependentFeatureExample<T> example)
-        {
-            // shared |userlda :.1 |che a:.1 
-            // `doc1 |lda :.1 :.2 [1]
-            // `doc2 |lda :.2 :.3 [2]
             // <new line>
 
             var examples = new List<VowpalWabbitNativeExample>();
@@ -121,59 +138,112 @@ namespace Microsoft.Research.MachineLearning
                 var sharedExample = this.serializer(example, this.visitor);
                 examples.Add(sharedExample);
 
-                sharedExample.ImportLabeledInto(this.vw, "shared");
-                VowpalWabbitNative.Predict(this.vw, sharedExample.Ptr);
+                if (!sharedExample.IsEmpty)
+                {
+                    sharedExample.AddLabel("shared");
+                    this.Learn(sharedExample);
+                }
 
                 // leave as loop so if the serializer throws an exception, anything allocated so far can be free'd
                 foreach (var actionDependentFeature in example.ActionDependentFeatures)
                 {
                     // TODO: insert caching here
                     var adfExample = this.actionDependentFeatureSerializer(actionDependentFeature, this.visitor);
-                    actionDependentFeatures.Add(adfExample);
+                    examples.Add(adfExample);
 
-                    adfExample.ImportInto(this.vw);
-                    VowpalWabbitNative.Predict(this.vw, adfExample.Ptr);
+                    if (adfExample.IsEmpty)
+                    {
+                        continue;
+                    }
+
+                    if (object.ReferenceEquals(actionDependentFeature, chosenAction))
+                    {
+                        adfExample.AddLabel(
+                            string.Format(
+                            CultureInfo.InvariantCulture, 
+                            "0:{1}:{2}",
+                            cost, probability));
+                    }
+
+                    this.Learn(adfExample);
                 }
 
                 // allocate empty example to signal we're finished
-                var emptyExample = new VowpalWabbitNativeExample(new VowpalWabbitNative.FEATURE_SPACE[0], new GCHandle[0]);
-                emptyExample.ImportInto(this.vw);
+                var finalExample = new VowpalWabbitNativeExample(this, new VowpalWabbitNative.FEATURE_SPACE[0], new GCHandle[0]);
 
-                VowpalWabbitNative.Predict(this.vw, emptyExample);
+                this.Learn(finalExample);
+            }
+            finally
+            {
+                foreach (var e in examples)
+                {
+                    e.Dispose();
+                }
+            }
+        }
 
-                var multiLabelPrediction = new List<uint>();
+        public TActionDependentFeature[] MSNPredict(TExample example)
+        {
+            // shared |userlda :.1 |che a:.1 
+            // `doc1 |lda :.1 :.2 [1]
+            // `doc2 |lda :.2 :.3 [2]
+            // <new line>
+            var examples = new List<VowpalWabbitNativeExample>();
+            
+            try
+            {
+                var sharedExample = this.serializer(example, this.visitor);
+                examples.Add(sharedExample);
 
-                // reorder
-                var result = new T[multiLabelPrediction.Count];
-                for (var i = 0; i < multiLabelPrediction.Count; i++)
+                if (!sharedExample.IsEmpty)
+                {
+                    sharedExample.AddLabel("shared");
+                    this.Predict(sharedExample);
+                }
+
+                // leave as loop so if the serializer throws an exception, anything allocated so far can be free'd
+                foreach (var actionDependentFeature in example.ActionDependentFeatures)
+                {
+                    // TODO: insert caching here
+                    var adfExample = this.actionDependentFeatureSerializer(actionDependentFeature, this.visitor);
+                    examples.Add(adfExample);
+
+                    if (adfExample.IsEmpty)
+                    {
+                        continue;
+                    }
+
+                    this.Predict(adfExample);
+                }
+
+                // allocate empty example to signal we're finished
+                var finalExample = new VowpalWabbitNativeExample(this, new VowpalWabbitNative.FEATURE_SPACE[0], new GCHandle[0]);
+
+                this.Predict(finalExample);
+
+                // no need to free labelsPtr (managed by finalExample through VW)
+                var labelCount = IntPtr.Zero;
+                var labelsPtr = VowpalWabbitNative.GetMultilabelPredictions(this.vw, finalExample.Ptr, ref labelCount);
+                var multiLabelPrediction = new int[(int)labelCount];
+                Marshal.Copy(labelsPtr, multiLabelPrediction, 0, multiLabelPrediction.Length);
+
+                // re-shuffle
+                var result = new TActionDependentFeature[multiLabelPrediction.Length];
+                for (var i = 0; i < multiLabelPrediction.Length; i++)
 			    {
-			        result[i] = example.ActionDependentFeatures[multiLabelPrediction[i]];
+                    // VW indicies are 1-based
+			        result[i] = example.ActionDependentFeatures[multiLabelPrediction[i] - 1];
 			    }
 
                 return result;
             }
             finally
             {
-                foreach (var actionDependentFeature in actionDependentFeatures)
+                foreach (var e in examples)
                 {
-                    actionDependentFeature.Dispose();
+                    e.Dispose();
                 }
             }
-
-            // ImportExampled(shared)
-            // for all action depent
-            //  ImportExample(actionDepent) if not in cache
-
-            // ee = new EmptyExample (ImportExample)
-
-            // Predict for shared and action dependent
-
-            // VW.Predict(ee) // new line example
-            // List<uint> VW.GetMultiLabelPrediction(ee)
-            // remapping of ints into the ActionDependent Feature object - this is a subset?
-            // 1-based index for action results
-
-            return null;
         }
     }
 
@@ -185,20 +255,11 @@ namespace Microsoft.Research.MachineLearning
         public VowpalWabbitString(string arguments)
             : base(arguments)
         {
-            this.stringVisitor = new VowpalWabbitStringVisitor();
             // Compile serializer
-            this.serializer = VowpalWabbitSerializer.CreateSerializer<TExample, VowpalWabbitStringVisitor, string, string, string>();
+            this.stringVisitor = new VowpalWabbitStringVisitor();
+            this.serializer = VowpalWabbitSerializer.CreateStringSerializer<TExample>();
         }
         
-        public float GetCostSensitivePrediction(TExample example)
-        {
-            var exampleLine = this.serializer(example, this.stringVisitor);
-
-            var vwExample = VowpalWabbitNative.ReadExample(this.vw, exampleLine);
-
-            return base.GetCostSensitivePrediction(vwExample);
-        }
-
         public IVowpalWabbitExample ReadExample(TExample example)
         {
             var exampleLine = this.serializer(example, this.stringVisitor);

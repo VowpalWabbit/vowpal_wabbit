@@ -9,7 +9,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
     /// <summary>
     /// Manages features spaces.
     /// </summary>
-    internal class VowpalWabbitNativeExample : IVowpalWabbitExample
+    public class VowpalWabbitNativeExample : VowpalWabbitExample
     {
         /// <summary>
         /// GCHandles to safely pass memory to VW. 
@@ -17,65 +17,38 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
         private GCHandle[] handles;
         private GCHandle featureSpaceHandle;
         private VowpalWabbitNative.FEATURE_SPACE[] featureSpace;
-        private VowpalWabbit vw;
 
-        internal VowpalWabbitNativeExample(VowpalWabbitNative.FEATURE_SPACE[] featureSpace, GCHandle[] handles)
+        internal VowpalWabbitNativeExample(VowpalWabbit vw, VowpalWabbitNative.FEATURE_SPACE[] featureSpace, GCHandle[] handles) 
+            : base(vw)
         {
             this.featureSpace = featureSpace;
             this.handles = handles;
             this.featureSpaceHandle = GCHandle.Alloc(featureSpace, GCHandleType.Pinned);
-        }
-
-        internal void ImportInto(VowpalWabbit vw)
-        {
-            if (this.vw != null && this.Ptr != IntPtr.Zero)
-            {
-                VowpalWabbitNative.FinishExample(this.vw.vw, this.Ptr);
-            }
-
-            this.vw = vw;
 
             this.Ptr = VowpalWabbitNative.ImportExample(
-                this.vw.vw, 
-                this.featureSpaceHandle.AddrOfPinnedObject(), 
+                this.vw.vw,
+                this.featureSpaceHandle.AddrOfPinnedObject(),
                 (IntPtr)this.featureSpace.Length);
         }
 
-        public IntPtr Ptr
+        internal bool IsEmpty
         {
-            get;
-            private set;
+            get { return featureSpace.Length == 0; }
         }
-
-        public void Dispose()
+        
+        protected override void Dispose(bool disposing)
         {
-            this.Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool disposing)
-        {
-            if (disposing)
+            // Free unmanaged resources
+            if (this.handles != null)
             {
-                // Free managed resources
-                if (this.handles != null)
+                foreach (var handle in this.handles)
                 {
-                    foreach (var handle in this.handles)
-                    {
-                        handle.Free();
-                    }
-                    this.handles = null;
+                    handle.Free();
                 }
-
-                this.featureSpaceHandle.Free();
-
-                if (this.vw != null && this.Ptr != IntPtr.Zero)
-                {
-                    VowpalWabbitNative.FinishExample(this.vw.vw, this.Ptr);
-                    this.Ptr = IntPtr.Zero;
-                }
+                this.handles = null;
             }
-        }
 
+            this.featureSpaceHandle.Free();
+        }
     }
 }

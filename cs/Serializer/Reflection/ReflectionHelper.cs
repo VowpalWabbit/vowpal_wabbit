@@ -111,7 +111,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Reflection
 
         internal static IEnumerable<TypeDistance> GetBaseTypes(Type type, int depth = 0)
         {
-            if (type == typeof(object))
+            if (type == typeof(object) || type == null)
             {
                 yield break;
             }

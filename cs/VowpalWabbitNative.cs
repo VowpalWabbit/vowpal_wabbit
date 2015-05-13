@@ -39,9 +39,6 @@ namespace Microsoft.Research.MachineLearning
         // features points to a FEATURE_SPACE[]
         public static extern VwExample ImportExample(VwHandle vw, VwFeatureSpace features, SizeT length);
 
-        [DllImport(LIBVW, EntryPoint = "VW_ImporLabelledtExample")]
-        public static extern VwExample ImportLabelledExample(VwHandle vw, VwFeatureSpace features, SizeT length, [MarshalAs(UnmanagedType.LPWStr)]string label);
-
         [DllImport(LIBVW, EntryPoint = "VW_ExportExample")]
         public static extern VwFeatureSpace ExportExample(VwHandle vw, VwExample example, ref SizeT length);
 
@@ -78,6 +75,9 @@ namespace Microsoft.Research.MachineLearning
 
         [DllImport(LIBVW, EntryPoint = "VW_GetInitial")]
         public static extern float GetInitial(VwExample example);
+
+        [DllImport(LIBVW, EntryPoint = "VW_GetMultilabelPredictions")]
+        public static extern IntPtr GetMultilabelPredictions(VwHandle vw, VwExample example, ref SizeT length);
 
         [DllImport(LIBVW, EntryPoint = "VW_GetPrediction")]
         public static extern float GetPrediction(VwExample example);
@@ -126,6 +126,9 @@ namespace Microsoft.Research.MachineLearning
 
         [DllImport(LIBVW, EntryPoint = "VW_AddLabel")]
         public static extern void AddLabel(VwExample example, float label = float.MaxValue, float weight = 1, float initial = 0);
+
+        [DllImport(LIBVW, EntryPoint = "VW_AddStringLabel")]
+        public static extern void AddLabel(VwHandle vw, VwExample example, [MarshalAs(UnmanagedType.LPWStr)]string label);
 
         [DllImport(LIBVW, EntryPoint = "VW_Get_Weight")]
         public static extern float Get_Weight(VwHandle vw, SizeT index, SizeT offset);
