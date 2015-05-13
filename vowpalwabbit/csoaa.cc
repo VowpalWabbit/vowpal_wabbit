@@ -120,7 +120,7 @@ struct ldf {
 int score_comp(const void* p1, const void* p2) {
   score* s1 = (score*)p1;
   score* s2 = (score*)p2;
-  return (s2.val - s1.val);
+  return (s2->val - s1->val);
 }
 
   bool ec_is_label_definition(example& ec) // label defs look like "0:___" or just "label:___"
@@ -376,6 +376,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   /////////////////////// add headers
   size_t K = data.ec_seq.size();
   size_t start_K = 0;
+
   if (ec_is_example_header(*data.ec_seq[0])) {
     start_K = 1;
     for (size_t k=1; k<K; k++)
@@ -384,8 +385,9 @@ void do_actual_learning(ldf& data, base_learner& base)
   bool isTest = check_ldf_sequence(data, start_K);
 
   /////////////////////// do prediction
+  size_t predicted_K = start_K;
   if(data.score_all) {
-    scores.erase();
+    data.scores.erase();
     
     for (size_t k=start_K; k<K; k++) {
       example *ec = data.ec_seq[k];
@@ -393,16 +395,15 @@ void do_actual_learning(ldf& data, base_learner& base)
       score s;
       s.val = ec->partial_prediction;
       s.idx = k;
-      scores.push_back(s);
+      data.scores.push_back(s);
     }
 
-    qsort((void*) scores.begin, scores.size(), sizeof(score), score_comp);
+    qsort((void*) data.scores.begin, data.scores.size(), sizeof(score), score_comp);
     
     
   }
   else {
-    float  min_score = FLT_MAX;
-    size_t predicted_K = start_K;   
+    float  min_score = FLT_MAX;       
     for (size_t k=start_K; k<K; k++) {
       example *ec = data.ec_seq[k];
       make_single_prediction(data, base, *ec);
@@ -420,8 +421,12 @@ void do_actual_learning(ldf& data, base_learner& base)
   }
 
   // Mark the predicted subexample with its class_index, all other with 0
-  for (size_t k=start_K; k<K; k++)
-    data.ec_seq[k]->pred.multiclass = (k == predicted_K) ? data.ec_seq[k]->l.cs.costs[0].class_index : 0;
+  if(data.score_all) {
+  }  
+  else 
+    for (size_t k=start_K; k<K; k++)
+      data.ec_seq[k]->pred.multiclass = (k == predicted_K) ? data.ec_seq[k]->l.cs.costs[0].class_index : 0;
+  
 
   /////////////////////// remove header
   if (start_K > 0)
