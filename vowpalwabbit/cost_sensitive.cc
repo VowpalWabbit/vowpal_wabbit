@@ -199,20 +199,20 @@ namespace COST_SENSITIVE {
         else
           label_buf = " known";
 
-		if (multilabel) {
-			std::ostringstream pred_buf;
-
-			pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ')
-				<< ec.pred.multilabels.label_v[0]<<".....";			
-			all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), 
-				num_current_features, all.progress_add, all.progress_arg);;
-		}
-		else
-			all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, ec.pred.multiclass, 
-			     num_current_features, all.progress_add, all.progress_arg);
+	if (multilabel) {
+	  std::ostringstream pred_buf;
+	  
+	  pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ')
+		   << ec.pred.multilabels.label_v[0]<<".....";			
+	  all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), 
+			       num_current_features, all.progress_add, all.progress_arg);;
+	}
+	else
+	  all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, ec.pred.multiclass, 
+			       num_current_features, all.progress_add, all.progress_arg);
       }
   }
-
+  
   void output_example(vw& all, example& ec)
   {
     label& ld = ec.l.cs;
