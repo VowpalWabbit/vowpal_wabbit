@@ -59,8 +59,8 @@ namespace Microsoft
 				size_t length;
 				uint32_t* labels = VW::get_multilabel_predictions(m_example, length);
 
-				auto result = gcnew cli::array<int>(length);
-				Marshal::Copy(IntPtr(labels), result, 0, length);
+				auto result = gcnew cli::array<int>((int)length);
+				Marshal::Copy(IntPtr(labels), result, 0, (int)length);
 
 				return result;
 			}
