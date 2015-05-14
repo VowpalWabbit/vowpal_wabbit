@@ -4,22 +4,19 @@
     <title>Vowpal Wabbit</title>
     <id>Microsoft.Research.VowpalWabbit</id>
     <tags>vw vowpal wabbit john langford</tags>
-    <version>7.10.1.0</version>
+    <version>7.10.1.2</version>
     <authors>John Langford</authors>
     <projectUrl>https://github.com/JohnLangford/vowpal_wabbit</projectUrl>
     <licenseUrl>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Vowpal Wabbit nugetized by marcozo@microsoft.com</description>
+    <description>Official Vowpal Wabbit library including C# interface</description>
     <copyright>Copyright (C) Microsoft Corp 2012-2014, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved.</copyright>
-    <releaseNotes>Vowpal Wabbit 7.10.1.0</releaseNotes>
-    <dependencies>
-      <dependency id="zlib" version="1.2.8.7" />
-      <dependency id="boost" version="1.58.0.0" />
-      <dependency id="boost_program_options-vc120" version="1.58.0.0" />
-    </dependencies>
+    <releaseNotes>Vowpal Wabbit 7.10.1</releaseNotes>
+    <dependencies />
   </metadata>
   <files>
-	  <file src="..\VowpalWabbit\Dll\x64\Release\libvw.dll" target="lib\net40-client\libvw.dll" />
+	  <!-- despite warning this is still required -->
+	  <file src="bin\$Platform$\$Configuration$\*.dll" target="lib\net45" />
   </files>
 </package>
 

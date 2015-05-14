@@ -59,7 +59,7 @@ namespace VW {
   float get_initial(example*ec);
   float get_prediction(example*ec);
   float get_cost_sensitive_prediction(example*ec);
-  uint32_t* get_multilabel_predictions(vw& all, example* ec, size_t& len);
+  uint32_t* get_multilabel_predictions(example* ec, size_t& len);
   size_t get_tag_length(example* ec);
   const char* get_tag(example* ec);
   size_t get_feature_number(example* ec);

@@ -147,10 +147,9 @@ extern "C"
 		return VW::get_cost_sensitive_prediction(static_cast<example*>(e));
 	}
 
-    VW_DLL_MEMBER void* VW_CALLING_CONV VW_GetMultilabelPredictions(VW_HANDLE handle, VW_EXAMPLE e, size_t* plen)
+    VW_DLL_MEMBER void* VW_CALLING_CONV VW_GetMultilabelPredictions(VW_EXAMPLE e, size_t* plen)
     {
-        vw* pointer = static_cast<vw*>(handle);
-        return VW::get_multilabel_predictions(*pointer, static_cast<example*>(e), *plen);
+        return VW::get_multilabel_predictions(static_cast<example*>(e), *plen);
     }
 
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetTagLength(VW_EXAMPLE e)

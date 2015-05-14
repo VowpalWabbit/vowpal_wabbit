@@ -53,6 +53,7 @@
     <CLRSupport>true</CLRSupport>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <Import Project="$(SolutionDir)\Build.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -80,6 +81,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <TargetName>Microsoft.Research.MachineLearning.VowpalWabbitCore</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -87,11 +89,12 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\vowpalwabbit\packages\boost.1.58.0.0\lib\native\include;..\vowpalwabbit\win32;..\vowpalwabbit;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BoostIncludeDir);$(SolutionDir)win32;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;$(SolutionDir)packages\zlib.1.2.8.7\build\native\lib\v120\$(Platform)\$(Configuration)\static\stdcall\zlib.lib;$(SolutionDir)packages\boost_program_options-vc120.1.58.0.0\lib\native\address-model-32\lib\libboost_program_options-vc120-mt-1_58.lib;$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(BoostLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;$(ZlibLibDir)\zlib.lib;$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(BoostLibDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -101,11 +104,12 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\vowpalwabbit\packages\boost.1.58.0.0\lib\native\include;..\vowpalwabbit\win32;..\vowpalwabbit;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BoostIncludeDir);$(SolutionDir)win32;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;$(SolutionDir)packages\zlib.1.2.8.7\build\native\lib\v120\$(Platform)\$(Configuration)\static\stdcall\zlib.lib;$(SolutionDir)packages\boost_program_options-vc120.1.58.0.0\lib\native\address-model-32\lib\libboost_program_options-vc120-mt-1_58.lib;$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(BoostLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;$(ZlibLibDir)\zlib.lib;$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(BoostLibDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -114,11 +118,12 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\vowpalwabbit\packages\boost.1.58.0.0\lib\native\include;..\vowpalwabbit\win32;..\vowpalwabbit;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BoostIncludeDir);$(SolutionDir)win32;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;$(SolutionDir)packages\zlib.1.2.8.7\build\native\lib\v120\$(Platform)\$(Configuration)\static\stdcall\zlib.lib;$(SolutionDir)packages\boost_program_options-vc120.1.58.0.0\lib\native\address-model-32\lib\libboost_program_options-vc120-mt-1_58.lib;$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(BoostLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;$(ZlibLibDir)\zlib.lib;$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(BoostLibDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -127,12 +132,12 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\vowpalwabbit\packages\boost.1.58.0.0\lib\native\include;..\vowpalwabbit\win32;..\vowpalwabbit;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BoostIncludeDir);$(SolutionDir)win32;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;$(SolutionDir)packages\zlib.1.2.8.7\build\native\lib\v120\$(Platform)\$(Configuration)\static\stdcall\zlib.lib;$(SolutionDir)packages\boost_program_options-vc120.1.58.0.0\lib\native\address-model-64\lib\libboost_program_options-vc120-mt-1_58.lib;$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(BoostLibDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(BoostLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;$(ZlibLibDir)\zlib.lib;$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

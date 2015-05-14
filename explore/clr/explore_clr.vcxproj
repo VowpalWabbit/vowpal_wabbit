@@ -56,12 +56,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <CLRSupport>true</CLRSupport>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Platform)'=='x64'">
-    <BoostIncludeDir>c:\boost\x64\include\boost-1_56</BoostIncludeDir>
-    <BoostLibDir>c:\boost\x64\lib</BoostLibDir>
-    <ZlibIncludeDir>..\..\..\zlib-1.2.8</ZlibIncludeDir>
-    <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc11\x64\ZlibStat$(Configuration)</ZlibLibDir>
-  </PropertyGroup>
+  <Import Project="$(SolutionDir)Build.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>

@@ -1,4 +1,7 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.Research.MachineLearning
@@ -10,7 +13,7 @@ namespace Microsoft.Research.MachineLearning
     using VwFeature = IntPtr;
     using BytePtr = IntPtr;
 
-    public static class VowpalWabbitNative
+    public sealed class VowpalWabbitInterface
     {
         private const string LIBVW = "libvw.dll";
 
@@ -61,12 +64,9 @@ namespace Microsoft.Research.MachineLearning
         [DllImport(LIBVW, EntryPoint = "VW_FinishExample")]
         public static extern void FinishExample(VwHandle vw, VwExample example);
 
-        [DllImport(LIBVW, EntryPoint = "VW_GetCostSensitivePrediction")]
-        public static extern float GetCostSensitivePrediction(VwExample example);
-
         [DllImport(LIBVW, EntryPoint = "VW_GetTopicPrediction")]
         public static extern float GetTopicPrediction(VwExample example, SizeT i);
-
+        
         [DllImport(LIBVW, EntryPoint = "VW_GetLabel")]
         public static extern float GetLabel(VwExample example);
 
@@ -126,9 +126,6 @@ namespace Microsoft.Research.MachineLearning
 
         [DllImport(LIBVW, EntryPoint = "VW_AddLabel")]
         public static extern void AddLabel(VwExample example, float label = float.MaxValue, float weight = 1, float initial = 0);
-
-        [DllImport(LIBVW, EntryPoint = "VW_AddStringLabel")]
-        public static extern void AddLabel(VwHandle vw, VwExample example, [MarshalAs(UnmanagedType.LPWStr)]string label);
 
         [DllImport(LIBVW, EntryPoint = "VW_Get_Weight")]
         public static extern float Get_Weight(VwHandle vw, SizeT index, SizeT offset);

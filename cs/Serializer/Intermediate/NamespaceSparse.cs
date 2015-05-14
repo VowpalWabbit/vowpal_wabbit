@@ -9,16 +9,16 @@ namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 
         public IVisitableFeature<TFeatureResult>[] Features { get; set; }
 
-        //override internal void ToVW(VwHandle vw, VowpalWabbitNative.FEATURE_SPACE featureSpace)
+        //override internal void ToVW(VwHandle vw, VowpalWabbitInterface.FEATURE_SPACE featureSpace)
         //{
-        //    var features = new VowpalWabbitNative.FEATURE[this.Features.Count];
+        //    var features = new VowpalWabbitInterface.FEATURE[this.Features.Count];
         //    var pinnedsFeatures = GCHandle.Alloc(features, GCHandleType.Pinned);
 
         //    featureSpace.name = (byte)this.FeatureGroup;
         //    featureSpace.features = pinnedsFeatures.AddrOfPinnedObject();
         //    featureSpace.len = this.Features.Count;
 
-        //    var namespaceHash = this.Name == null ? 0 : VowpalWabbitNative.HashSpace(vw, this.Name);
+        //    var namespaceHash = this.Name == null ? 0 : VowpalWabbitInterface.HashSpace(vw, this.Name);
         //    for (var i = 0; i < this.Features.Count; i++)
         //    {
         //        this.Features[i].ToVW(vw, features[i], namespaceHash);

@@ -42,22 +42,57 @@ namespace Microsoft
 				m_isDisposed = true;
 			}
 
+			uint32_t VowpalWabbit::HashSpace(System::String^ s)
+			{
+				auto string = msclr::interop::marshal_as<std::string>(s);
+				return VW::hash_space(*m_vw, string);
+			}
+
+			uint32_t VowpalWabbit::HashFeature(System::String^ s, unsigned long u)
+			{
+				auto string = msclr::interop::marshal_as<std::string>(s);
+				return VW::hash_feature(*m_vw, string, u);
+			}
+
 			VowpalWabbitExample^ VowpalWabbit::ReadExample(System::String^ line)
 			{
 				auto string = msclr::interop::marshal_as<std::string>(line);
+
 				example* ex = VW::read_example(*m_vw, string.c_str());
+				return gcnew VowpalWabbitExample(m_vw, ex);
+			}
+
+			VowpalWabbitExample^ VowpalWabbit::ImportExample(cli::array<FeatureSpace^>^ featureSpaces)
+			{
+				auto f = new VW::primitive_feature_space[featureSpaces->Length];
+				auto handles = gcnew cli::array<GCHandle>(featureSpaces->Length);
+
+				for (int i = 0; i < featureSpaces->Length; i++)
+				{
+					auto fs = featureSpaces[i];
+					auto pf = GCHandle::Alloc(fs->Features, GCHandleType::Pinned);
+					handles[i] = pf;
+
+					f[i].name = fs->Name;
+					f[i].fs = static_cast<feature*>(pf.AddrOfPinnedObject().ToPointer());
+					f[i].len = fs->Features->Length;
+				}
+
+				example* ex = VW::import_example(*m_vw, f, featureSpaces->Length);
+
+				for (int i = 0; i < handles->Length; i++)
+				{
+					handles[i].Free();
+				}
+				delete f;
 
 				return gcnew VowpalWabbitExample(m_vw, ex);
 			}
 
-			VowpalWabbitExample^ VowpalWabbit::ImportExample(cli::array<FEATURE_SPACE>^ featureSpace)
+			VowpalWabbitExample^ VowpalWabbit::CreateEmptyExample()
 			{
-				pin_ptr<FEATURE_SPACE> ptr = &featureSpace[0];
-				VW::primitive_feature_space * f = reinterpret_cast<VW::primitive_feature_space*>(ptr);
-
-				example* ex = VW::import_example(*m_vw, f, featureSpace->Length);
-
-				return gcnew VowpalWabbitExample(m_vw, ex);
+				example* ex = VW::read_example(*m_vw, "");
+				return gcnew VowpalWabbitExample(m_vw, ex, true);
 			}
 		}
 	}

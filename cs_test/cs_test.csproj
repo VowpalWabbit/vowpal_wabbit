@@ -134,6 +134,7 @@
     <Compile Include="ExploreOnlySample.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="VowpalWabbitInterface.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\cs\cs.csproj">
@@ -143,6 +144,10 @@
     <ProjectReference Include="..\explore\clr\explore_clr.vcxproj">
       <Project>{8400da16-1f46-4a31-a126-bbe16f62bfd7}</Project>
       <Name>vw_explore_clr_wrapper</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\vw_clr\vw_clr.vcxproj">
+      <Project>{85e55ae0-3784-4968-9271-c81af560e1c1}</Project>
+      <Name>vw_clr</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
