@@ -1052,7 +1052,7 @@ __DATA__
     train-sets/ref/search_er.stderr
 
 # Test 66: Train a depenency parser with search (dagger) on wsj_small.dparser.vw.gz for 2 passes
-{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 2 --search_task dep_parser --search 3  --search_alpha 1e-4 --search_rollout oracle --holdout_off
+{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout oracle --holdout_off
     train-sets/ref/search_dep_parser.stderr
 
 # Test 67: classification with data from dictionaries (eg embeddings or gazetteers) -- note that this is impossible without dictionaries because --ignore w
@@ -1127,3 +1127,12 @@ __DATA__
 # Test 83: check redefine functionality
 {VW} -k -d train-sets/0080.dat --redefine := --redefine y:=: --redefine x:=arma --ignore x -q yy
     train-sets/ref/redefine.stderr
+
+# Test 84: check cb_adf
+{VW} --cb_adf train-sets/cb_test.ldf 
+    train-sets/ref/cb_adf.stderr
+
+# Test 85: check multilabel_oaa
+{VW} --multilabel_oaa 10 train-sets/multilabel -p multilabel.pred
+    train-sets/ref/multilabel.stderr
+    pred-sets/ref/multilabel.predict
