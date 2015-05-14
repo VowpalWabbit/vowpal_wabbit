@@ -1,7 +1,4 @@
-// This is the main DLL file.
-
 #include "vw_clr.h"
-
 
 namespace Microsoft
 {
@@ -45,19 +42,22 @@ namespace Microsoft
 				m_isDisposed = true;
 			}
 
-			VowpalWabbitExample::VowpalWabbitExample(vw* vw, example* example) :
-				m_vw(vw), m_example(example), m_isDisposed(false)
+			VowpalWabbitExample^ VowpalWabbit::ReadExample(System::String^ line)
 			{
+				auto string = msclr::interop::marshal_as<std::string>(line);
+				example* ex = VW::read_example(*m_vw, string.c_str());
+
+				return gcnew VowpalWabbitExample(m_vw, ex);
 			}
 
-			VowpalWabbitExample::!VowpalWabbitExample()
+			VowpalWabbitExample^ VowpalWabbit::ImportExample(cli::array<FEATURE_SPACE>^ featureSpace)
 			{
-				// TODO: cleanup by calling finish
-			}
+				pin_ptr<FEATURE_SPACE> ptr = &featureSpace[0];
+				VW::primitive_feature_space * f = reinterpret_cast<VW::primitive_feature_space*>(ptr);
 
-			VowpalWabbitExample::~VowpalWabbitExample()
-			{
-				this->!VowpalWabbitExample();
+				example* ex = VW::import_example(*m_vw, f, featureSpace->Length);
+
+				return gcnew VowpalWabbitExample(m_vw, ex);
 			}
 		}
 	}
