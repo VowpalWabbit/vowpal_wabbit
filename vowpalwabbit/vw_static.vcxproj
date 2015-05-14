@@ -308,6 +308,7 @@
     <ClCompile Include="example.cc" />
     <ClCompile Include="gd.cc" />
     <ClCompile Include="ftrl.cc" />
+    <ClCompile Include="interact.cc" />
     <ClCompile Include="kernel_svm.cc" />
     <ClCompile Include="label_dictionary.cc" />
     <ClCompile Include="multiclass.cc" />
