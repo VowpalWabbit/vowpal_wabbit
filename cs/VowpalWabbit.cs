@@ -51,11 +51,6 @@ namespace Microsoft.Research.MachineLearning
 
         private void Dispose(bool disposing)
         {
-            //if (disposing)
-            //{
-            //    // Free managed resources
-            //}
-
             // Free unmanaged resources
             if (this.vw != IntPtr.Zero)
             {

@@ -311,23 +311,5 @@ namespace Microsoft.Research.MachineLearning.Serializer
                 .SelectMany(f => f)
                 .ToList();
         }
-
-        private static Expression ExtractComment(Expression expression)
-        {
-            var props = expression.Type.GetProperties(BindingFlags.Instance | BindingFlags.GetProperty | BindingFlags.Public);
-
-            var comment = (from p in props
-                           let attr = p.GetCustomAttributes(typeof(CommentAttribute), true).FirstOrDefault()
-                           where attr != null
-                           select p)
-                .FirstOrDefault();
-
-            if (comment == null)
-            {
-                return Expression.Constant(string.Empty);
-            }
-
-            return Expression.Property(expression, comment);
-        }
     }
 }

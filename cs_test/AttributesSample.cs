@@ -78,7 +78,7 @@ namespace cs_test
             {
                 example.AddLabel(1);
 
-                var score = vw.Learn(example);;
+                var score = vw.Learn(example);
 
                 Console.Error.WriteLine("p2 = {0}", score);
             }
@@ -108,9 +108,7 @@ namespace cs_test
     [Cacheable(EqualityComparer = typeof(DocumentFeatureEqualityComparer))]
     public class DocumentFeature
     {
-        [Comment]
         public string Id { get; set; }
-
 
         public string SomeOtherId { get; set; }
 

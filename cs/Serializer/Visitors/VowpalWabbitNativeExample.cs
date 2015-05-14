@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Research.MachineLearning;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 {
@@ -29,6 +30,8 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
                 this.vw.vw,
                 this.featureSpaceHandle.AddrOfPinnedObject(),
                 (IntPtr)this.featureSpace.Length);
+
+            // this.featureSpaceHandle.Free();
         }
 
         internal bool IsEmpty

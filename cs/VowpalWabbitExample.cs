@@ -5,6 +5,7 @@ using System.Text;
 
 namespace Microsoft.Research.MachineLearning
 {
+    /*
     public class VowpalWabbitExample : IVowpalWabbitExample
     {
         protected readonly VowpalWabbit vw;
@@ -47,4 +48,5 @@ namespace Microsoft.Research.MachineLearning
             }
         }
     }
+     */
 }
