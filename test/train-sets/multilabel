@@ -1,0 +1,10 @@
+0,1 | one
+1,2 | two
+2,3 | three
+3,4 | four
+2,3,4,5 | five
+6 | six
+5,7 | seven
+8 | eight
+9 | nine
+1,8 | ten
