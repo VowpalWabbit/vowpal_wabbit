@@ -9,56 +9,56 @@ using System.Text;
 
 namespace Microsoft.Research.MachineLearning
 {
-    public class VowpalWabbit : IDisposable
-    {
-        internal IntPtr vw;
+    //public class VowpalWabbit : IDisposable
+    //{
+    //    internal IntPtr vw;
 
-        public VowpalWabbit(string arguments)
-        {
-            this.vw = VowpalWabbitNative.Initialize(arguments);
-        }
+    //    public VowpalWabbit(string arguments)
+    //    {
+    //        this.vw = VowpalWabbitNative.Initialize(arguments);
+    //    }
 
-        public VowpalWabbit(VowpalWabbitModel model)
-        {
-            // TODO: initialize VW using shared model
-        }
+    //    public VowpalWabbit(VowpalWabbitModel model)
+    //    {
+    //        // TODO: initialize VW using shared model
+    //    }
 
-        public IVowpalWabbitExample ReadExample(string line)
-        {
-            var ptr = VowpalWabbitNative.ReadExample(this.vw, line);
-            return new VowpalWabbitExample(this, ptr);
-        }
+    //    public IVowpalWabbitExample ReadExample(string line)
+    //    {
+    //        var ptr = VowpalWabbitNative.ReadExample(this.vw, line);
+    //        return new VowpalWabbitExample(this, ptr);
+    //    }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="example"></param>
-        public float Learn(IVowpalWabbitExample example)
-        {
-            return VowpalWabbitNative.Learn(this.vw, example.Ptr);
-        }
+    //    /// <summary>
+    //    /// 
+    //    /// </summary>
+    //    /// <param name="example"></param>
+    //    public float Learn(IVowpalWabbitExample example)
+    //    {
+    //        return VowpalWabbitNative.Learn(this.vw, example.Ptr);
+    //    }
 
-        public float Predict(IVowpalWabbitExample example)
-        {
-            return VowpalWabbitNative.Predict(this.vw, example.Ptr);
-        }
+    //    public float Predict(IVowpalWabbitExample example)
+    //    {
+    //        return VowpalWabbitNative.Predict(this.vw, example.Ptr);
+    //    }
 
-        public void Dispose()
-        {
-            this.Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+    //    public void Dispose()
+    //    {
+    //        this.Dispose(true);
+    //        GC.SuppressFinalize(this);
+    //    }
 
-        private void Dispose(bool disposing)
-        {
-            // Free unmanaged resources
-            if (this.vw != IntPtr.Zero)
-            {
-                VowpalWabbitNative.Finish(this.vw);
-                this.vw = IntPtr.Zero;
-            }
-        }
-    }
+    //    private void Dispose(bool disposing)
+    //    {
+    //        // Free unmanaged resources
+    //        if (this.vw != IntPtr.Zero)
+    //        {
+    //            VowpalWabbitNative.Finish(this.vw);
+    //            this.vw = IntPtr.Zero;
+    //        }
+    //    }
+    //}
     
     public class VowpalWabbit<TExample> : VowpalWabbit
     {
