@@ -654,7 +654,7 @@ base_learner* csldf_setup(vw& all)
     return nullptr;
   new_options(all, "LDF Options")
       ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
-    ("score_all", po::value<bool>(),"Return actions sorted by score order");
+    ("score_all","Return actions sorted by score order");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -675,8 +675,10 @@ base_learner* csldf_setup(vw& all)
   }
   if ( vm.count("ldf_override") )
     ldf_arg = vm["ldf_override"].as<string>();
-  if(vm.count("score_all"))
-    ld.score_all = vm["score_all"].as<bool>();
+  if (vm.count("score_all"))
+	  ld.score_all = true;
+  else
+	  ld.score_all = false;
 
   all.p->lp = COST_SENSITIVE::cs_label;
 
