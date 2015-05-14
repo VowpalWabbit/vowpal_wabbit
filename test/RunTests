@@ -1131,3 +1131,8 @@ __DATA__
 # Test 84: check cb_adf
 {VW} --cb_adf train-sets/cb_test.ldf 
     train-sets/ref/cb_adf.stderr
+
+# Test 85: check multilabel_oaa
+{VW} --multilabel_oaa 10 train-sets/multilabel -p multilabel.pred
+    train-sets/ref/multilabel.stderr
+    pred-sets/ref/multilabel.predict
