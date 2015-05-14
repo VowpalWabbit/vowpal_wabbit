@@ -492,6 +492,54 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(ec), ec, ec_seq);
 }
 
+void output_example_multilabel(vw& all, example* ec, bool& hit_loss)
+{
+	label& ld = ec->l.cs;
+	v_array<COST_SENSITIVE::wclass> costs = ld.costs;
+
+	if (example_is_newline(*ec)) return;
+	if (ec_is_example_header(*ec)) return;
+	if (ec_is_label_definition(*ec)) return;
+
+	all.sd->total_features += ec->num_features;
+
+	float loss = 0.;
+	v_array<uint32_t> preds = ec->pred.multilabels.label_v;
+
+	if (!COST_SENSITIVE::example_is_test(*ec)) {
+		for (size_t j = 0; j<costs.size(); j++) {
+			if (hit_loss) break;
+			if (preds[0] == costs[j].class_index) {
+				loss = costs[j].x;
+				hit_loss = true;
+			}
+		}
+
+		all.sd->sum_loss += loss;
+		all.sd->sum_loss_since_last_dump += loss;
+		assert(loss >= 0);
+	}
+
+	v_array<char> empty; //CHECK ME!!!!!!
+	for (int i = 0; i < preds.size();i++)
+		for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+			all.print(*sink, (float)preds[i], 0, empty);
+
+	if (all.raw_prediction > 0) {
+		string outputString;
+		stringstream outputStringStream(outputString);
+		for (size_t i = 0; i < costs.size(); i++) {
+			if (i > 0) outputStringStream << ' ';
+			outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
+		}
+		//outputStringStream << endl;
+		all.print_text(all.raw_prediction, outputStringStream.str(), empty);
+	}
+
+	//COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(*ec), ec, ec_seq);
+}
+
+
 void output_example_seq(vw& all, ldf& data)
 {
   if ((data.ec_seq.size() > 0) && !ec_seq_is_label_definition(data.ec_seq)) {
@@ -499,8 +547,11 @@ void output_example_seq(vw& all, ldf& data)
     all.sd->example_number++;
 
     bool hit_loss = false;
-    for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
-      output_example(all, **ecc, hit_loss, &(data.ec_seq));
+	if(data.score_all)
+		output_example_multilabel(all, *(data.ec_seq.begin), hit_loss);
+	else
+		for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
+			output_example(all, **ecc, hit_loss, &(data.ec_seq));
 
     if (!data.is_singleline && (all.raw_prediction > 0)) {
       v_array<char> empty = { nullptr, nullptr, nullptr, 0 };

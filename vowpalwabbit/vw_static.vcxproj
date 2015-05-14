@@ -241,6 +241,7 @@
     <ClInclude Include="example.h" />
     <ClInclude Include="gd.h" />
     <ClInclude Include="ftrl.h" />
+    <ClInclude Include="interact.h" />
     <ClInclude Include="label_dictionary.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="multiclass.h" />
@@ -307,6 +308,7 @@
     <ClCompile Include="example.cc" />
     <ClCompile Include="gd.cc" />
     <ClCompile Include="ftrl.cc" />
+    <ClCompile Include="interact.cc" />
     <ClCompile Include="kernel_svm.cc" />
     <ClCompile Include="label_dictionary.cc" />
     <ClCompile Include="multiclass.cc" />
