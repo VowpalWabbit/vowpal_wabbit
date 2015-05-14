@@ -61,11 +61,9 @@ I use c:\src\vw as my %ROOT% directory;
 		%ROOT%\vowpal_wabbit\vowpalwabbit\x64\Release\vw.exe
 	Missing nugets will be installed during the build.
 
-	(b) Using command line as specified in Step 2
-		msbuild /p:Platform="x64" and/or
-		msbuild /p:Platform="Win32"
-	This will automatically pick up make.proj present in %ROOT% and build both Release and Debug versions of the projects in %ROOT%\vowpal_wabbit.
-		
+	(b) Using command line (available configurations are "Release" and "Debug". Available platforms are "x64" and "Win32")
+	run>msbuild /p:Configuration="Release" /p:Platform="x64" vw.sln
+	
 **************************************************************************************************************
 (8) Test
 	There's a new test batch file that runs a quick test on all four configurations
