@@ -146,6 +146,26 @@ label_parser multilabel = {default_label, parse_label,
       }
   }
 
+  void print_multilabel(int f, labels& mls, v_array<char>& tag)
+  {
+    if (f >= 0)
+      {
+	std::stringstream ss;
+	
+	for (size_t i = 0; i < mls.label_v.size(); i++)
+	  {
+	    if (i > 0)
+	      ss << ',';
+	    ss << mls.label_v[i];
+	  }
+	ss << '\n';
+	ssize_t len = ss.str().size();
+	ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+	if (t != len)
+	  cerr << "write error: " << strerror(errno) << endl;
+      }
+  }
+
   void output_example(vw& all, example& ec)
   {
     labels& ld = ec.l.multilabels;
@@ -180,7 +200,7 @@ label_parser multilabel = {default_label, parse_label,
     all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
     
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
+      print_multilabel(*sink, ec.pred.multilabels, ec.tag);
 
     print_update(all, is_test_label(ec.l.multilabels), ec);
   }

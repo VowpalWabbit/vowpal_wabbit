@@ -315,6 +315,7 @@ namespace Search {
         (all.final_prediction_sink.size() > 0) ||   // if we have to produce output, we need to run this
         might_print_update(all) ||                  // if we have to print and update to stderr
         (all.raw_prediction > 0) ||                 // we need raw predictions
+        ((!all.vw_is_main) && (is_test_ex)) ||      // library needs predictions
         // or:
         //   it's not quiet AND
         //     current_pass == 0
@@ -556,7 +557,7 @@ namespace Search {
 
 
   template<class T> void cdbg_print_array(string str, v_array<T>& A) { cdbg << str << " = ["; for (size_t i=0; i<A.size(); i++) cdbg << " " << A[i]; cdbg << " ]" << endl; }
-  template<class T> void cerr_print_array(string str, v_array<T>& A) { cerr << str << " = ["; for (size_t i=0; i<A.size(); i++) cerr << " " << A[i]; cerr << " ]" << endl; }
+  template<class T> void cerr_print_array(string str, v_array<T>& A) { std::cerr << str << " = ["; for (size_t i=0; i<A.size(); i++) std::cerr << " " << A[i]; std::cerr << " ]" << endl; }
   
   
   size_t random(size_t max) { return (size_t)(frand48() * (float)max); }
@@ -879,7 +880,7 @@ namespace Search {
     for (action a= (uint32_t)start_K; a<ec_cnt; a++) {
       cdbg << "== single_prediction_LDF a=" << a << "==" << endl;
       if (start_K > 0)
-        LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]);
+        LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0], priv.all->audit);
         
       polylabel old_label = ecs[a].l;
       ecs[a].l.cs = priv.ldf_test_label;
@@ -904,7 +905,7 @@ namespace Search {
       priv.num_features += ecs[a].num_features;
       ecs[a].l = old_label;
       if (start_K > 0)
-        LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0]);
+        LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0], priv.all->audit);
     }
     if (override_action != (action)-1)
       best_action = override_action;
@@ -1230,15 +1231,17 @@ namespace Search {
           }
         }
 
-        ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);
-        memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt*sizeof(action));
-        cdbg_print_array("in LEARN, learn_allowed_actions", priv.learn_allowed_actions);
+        if (allowed_actions && (allowed_actions_cnt > 0)) {
+          ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);
+          memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt*sizeof(action));
+          cdbg_print_array("in LEARN, learn_allowed_actions", priv.learn_allowed_actions);
+        }
       }
 
       assert((allowed_actions_cnt == 0) || (a < allowed_actions_cnt));
 
       a_cost = 0.;
-      action a_name = (allowed_actions_cnt > 0) ? allowed_actions[a] : priv.is_ldf ? a : (a+1);
+      action a_name = (allowed_actions && (allowed_actions_cnt > 0)) ? allowed_actions[a] : priv.is_ldf ? a : (a+1);
       if (priv.metaoverride && priv.metaoverride->_foreach_action) {
         foreach_action_from_cache(priv,t,a_name);
         if (priv.memo_foreach_action[t]) {
@@ -1256,7 +1259,7 @@ namespace Search {
 
     if ((priv.state == LEARN) && (t > priv.learn_t) && (priv.rollout_num_steps > 0) && (priv.loss_declared_cnt >= priv.rollout_num_steps)) {
       cdbg << "... skipping" << endl;
-      action a = priv.is_ldf ? 0 : ((allowed_actions_cnt > 0) ? allowed_actions[0] : 1);
+      action a = priv.is_ldf ? 0 : ((allowed_actions && (allowed_actions_cnt > 0)) ? allowed_actions[0] : 1);
       if (priv.metaoverride && priv.metaoverride->_post_prediction)
         priv.metaoverride->_post_prediction(*priv.metaoverride->sch, t-priv.meta_t, a, 0.);
       if (priv.metaoverride && priv.metaoverride->_foreach_action)
@@ -1328,8 +1331,10 @@ namespace Search {
             
             priv.learn_ec_ref = ecs;
             priv.learn_ec_ref_cnt = ec_cnt;
-            ensure_size(priv.learn_allowed_actions, allowed_actions_cnt); // TODO: do we really need this?
-            memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt * sizeof(action));
+            if (allowed_actions) {
+              ensure_size(priv.learn_allowed_actions, allowed_actions_cnt); // TODO: do we really need this?
+              memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt * sizeof(action));
+            }
             size_t old_learner_id = priv.learn_learner_id;
             priv.learn_learner_id = learner_id;
             generate_training_example(priv, priv.gte_label, false);  // this is false because the conditioning has already been added!
@@ -1431,6 +1436,7 @@ namespace Search {
     // if this isn't a final run, it shouldn't count for loss
     float old_test_loss = priv.test_loss;
     //float old_learn_loss = priv.learn_loss;
+    priv.learn_loss *= 0.5;
     float old_train_loss = priv.train_loss;
 
     if (priv.should_produce_string)
@@ -1470,7 +1476,9 @@ namespace Search {
 
     //if (! priv.no_caching)
       clear_cache_hash_map(priv);
-    
+
+    cdbg << "is_test_ex=" << is_test_ex << " vw_is_main=" << all.vw_is_main << endl;
+    cdbg << "must_run_test = " << must_run_test(all, priv.ec_seq, is_test_ex) << endl;
     // do an initial test pass to compute output (and loss)
     if (must_run_test(all, priv.ec_seq, is_test_ex)) {
       cdbg << "======================================== INIT TEST (" << priv.current_policy << "," << priv.read_example_last_pass << ") ========================================" << endl;
@@ -1575,7 +1583,11 @@ namespace Search {
           priv.learn_losses.cs.costs[i].class_index = priv.learn_allowed_actions[i];
         }
       }
-      generate_training_example(priv, priv.learn_losses, true, FLT_MAX);
+      float min_loss = 0.;
+      //if (priv.metatask)
+      //  for (size_t aid=0; aid<priv.memo_foreach_action[tid]->size(); aid++)
+      //    min_loss = MIN(min_loss, priv.memo_foreach_action[tid]->get(aid).cost);
+      generate_training_example(priv, priv.learn_losses, true, min_loss);
       if (! priv.examples_dont_change)
         for (size_t n=0; n<priv.learn_ec_copy.size(); n++) {
           if (sch.priv->is_ldf) CS::cs_label.delete_label(&priv.learn_ec_copy[n].l.cs);
@@ -1596,7 +1608,7 @@ namespace Search {
 
     bool is_test_ex = false;
     for (size_t i=0; i<priv.ec_seq.size(); i++)
-      if (priv.label_is_test(priv.ec_seq[i]->l)) { is_test_ex = true; break; }
+      if (priv.ec_seq[i]->test_only || priv.label_is_test(priv.ec_seq[i]->l)) { is_test_ex = true; break; }
 
     if (priv.task->run_setup) priv.task->run_setup(sch, priv.ec_seq);
 
@@ -2266,10 +2278,8 @@ namespace Search {
   }
 
   void  search::set_options(uint32_t opts) {
-    if (this->priv->state != INITIALIZE) {
-      std::cerr << "error: task cannot set options except in initialize function!" << endl;
-      throw exception();
-    }
+    if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
+      std::cerr << "warning: task should not set options except in initialize function!" << endl;
     if ((opts & AUTO_CONDITION_FEATURES) != 0) this->priv->auto_condition_features = true;
     if ((opts & AUTO_HAMMING_LOSS)       != 0) this->priv->auto_hamming_loss = true;
     if ((opts & EXAMPLES_DONT_CHANGE)    != 0) this->priv->examples_dont_change = true;
@@ -2278,10 +2288,8 @@ namespace Search {
   }
 
   void search::set_label_parser(label_parser&lp, bool (*is_test)(polylabel&)) {
-    if (this->priv->state != INITIALIZE) {
-      std::cerr << "error: task cannot set label parser except in initialize function!" << endl;
-      throw exception();
-    }
+    if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
+      std::cerr << "warning: task should not set label parser except in initialize function!" << endl;
     this->priv->all->p->lp = lp;
     this->priv->label_is_test = is_test;
   }
@@ -2357,7 +2365,7 @@ namespace Search {
 	  ec = temp;
 	else
 	  {
-	    cerr << "realloc failed in search.cc " << endl;
+	    std::cerr << "realloc failed in search.cc " << endl;
 	    throw exception();
 	  }
       }

@@ -25,6 +25,7 @@ license as described in the file LICENSE.
 #include "ect.h"
 #include "csoaa.h"
 #include "cb_algs.h"
+#include "cb_adf.h"
 #include "scorer.h"
 #include "search.h"
 #include "bfgs.h"
@@ -47,6 +48,7 @@ license as described in the file LICENSE.
 #include "kernel_svm.h"
 #include "parse_example.h"
 #include "best_constant.h"
+#include "interact.h"
 
 using namespace std;
 //
@@ -833,8 +835,10 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(log_multi_setup);
   all.reduction_stack.push_back(multilabel_oaa_setup);
   all.reduction_stack.push_back(csoaa_setup);
+  all.reduction_stack.push_back(interact_setup);
   all.reduction_stack.push_back(csldf_setup);
   all.reduction_stack.push_back(cb_algs_setup);
+  all.reduction_stack.push_back(cb_adf_setup);
   all.reduction_stack.push_back(cbify_setup);
   all.reduction_stack.push_back(Search::setup);
   all.reduction_stack.push_back(bs_setup);
@@ -852,6 +856,7 @@ vw& parse_args(int argc, char *argv[])
 {
   vw& all = *(new vw());
 
+  all.vw_is_main = false;
   add_to_args(all, argc, argv);
 
   size_t random_seed = 0;

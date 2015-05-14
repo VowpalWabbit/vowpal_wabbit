@@ -100,11 +100,11 @@ namespace SelectiveBranchingMT {
     d.total_cost = 0.;
     d.output_string = nullptr;
 
-    //cerr << "*** INITIAL PASS ***" << endl;
+    cdbg << "*** INITIAL PASS ***" << endl;
     sch.base_task(ec)
         .foreach_action(
             [](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {
-              //cerr << "==DebugMT== foreach_action(t=" << t << ", min_cost=" << min_cost << ", a=" << a << ", taken=" << taken << ", a_cost=" << a_cost << ")" << endl;
+              cdbg << "==DebugMT== foreach_action(t=" << t << ", min_cost=" << min_cost << ", a=" << a << ", taken=" << taken << ", a_cost=" << a_cost << ")" << endl;
               if (taken) return;  // ignore the taken action
               task_data& d = *sch.get_metatask_data<task_data>();
               float delta = a_cost - min_cost;
@@ -112,7 +112,7 @@ namespace SelectiveBranchingMT {
               push_many<act_score>(branch, d.trajectory.begin, d.trajectory.size());
               branch.push_back( make_pair(a,a_cost) );
               d.branches.push_back( make_pair(delta, branch) );
-              //cerr << "adding branch: " << delta << " -> " << branch << endl;
+              cdbg << "adding branch: " << delta << " -> " << branch << endl;
             })
         .post_prediction(
             [](Search::search& sch, size_t t, action a, float a_cost) -> void {
@@ -147,7 +147,7 @@ namespace SelectiveBranchingMT {
       d.total_cost = 0.;
       d.output_string = nullptr;
       
-      //cerr << "*** BRANCH " << i << " *** " << d.branches[i].first << " : " << d.branches[i].second << endl;
+      cdbg << "*** BRANCH " << i << " *** " << d.branches[i].first << " : " << d.branches[i].second << endl;
       sch.base_task(ec)
           .foreach_action([](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {})
           .maybe_override_prediction(
@@ -190,7 +190,7 @@ namespace SelectiveBranchingMT {
     }
     
     // run the final selected trajectory
-    //cerr << "*** FINAL ***" << endl;
+    cdbg << "*** FINAL ***" << endl;
     d.cur_branch = 0;
     d.output_string = nullptr;
     sch.base_task(ec)

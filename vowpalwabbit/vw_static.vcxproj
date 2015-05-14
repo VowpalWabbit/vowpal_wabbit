@@ -233,6 +233,7 @@
     <ClInclude Include="bfgs.h" />
     <ClInclude Include="binary.h" />
     <ClInclude Include="cache.h" />
+    <ClInclude Include="cb_adf.h" />
     <ClInclude Include="comp_io.h" />
     <ClInclude Include="constant.h" />
     <ClInclude Include="csoaa.h" />
@@ -241,6 +242,7 @@
     <ClInclude Include="gd.h" />
     <ClInclude Include="interactions.h" />
     <ClInclude Include="ftrl.h" />
+    <ClInclude Include="label_dictionary.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="multiclass.h" />
     <ClInclude Include="cost_sensitive.h" />
@@ -300,6 +302,7 @@
     <ClCompile Include="cache.cc" />
     <ClCompile Include="cb.cc" />
     <ClCompile Include="cbify.cc" />
+    <ClCompile Include="cb_adf.cc" />
     <ClCompile Include="csoaa.cc" />
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
@@ -307,6 +310,7 @@
     <ClCompile Include="interactions.cc" />
     <ClCompile Include="ftrl.cc" />
     <ClCompile Include="kernel_svm.cc" />
+    <ClCompile Include="label_dictionary.cc" />
     <ClCompile Include="multiclass.cc" />
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cb_algs.cc" />
