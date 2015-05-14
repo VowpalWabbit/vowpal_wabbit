@@ -170,7 +170,7 @@ namespace COST_SENSITIVE {
 				  copy_label,
 				  sizeof(label)};
 
-  void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* ec_seq)
+  void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* ec_seq, bool multilabel)
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
@@ -199,7 +199,16 @@ namespace COST_SENSITIVE {
         else
           label_buf = " known";
 
-	all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, ec.pred.multiclass, 
+		if (multilabel) {
+			std::ostringstream pred_buf;
+
+			pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ')
+				<< ec.pred.multilabels.label_v[0]<<".....";			
+			all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), 
+				num_current_features, all.progress_add, all.progress_arg);;
+		}
+		else
+			all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, ec.pred.multiclass, 
 			     num_current_features, all.progress_add, all.progress_arg);
       }
   }

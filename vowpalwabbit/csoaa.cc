@@ -492,13 +492,13 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(ec), ec, ec_seq);
 }
 
-void output_example_multilabel(vw& all, example* ec, bool& hit_loss)
+void output_example_multilabel(vw& all, example* ec, bool& hit_loss, v_array<example*>* ec_seq)
 {
 	label& ld = ec->l.cs;
 	v_array<COST_SENSITIVE::wclass> costs = ld.costs;
 
 	if (example_is_newline(*ec)) return;
-	if (ec_is_example_header(*ec)) return;
+	//if (ec_is_example_header(*ec)) return; //CHECK ME!!!!!!
 	if (ec_is_label_definition(*ec)) return;
 
 	all.sd->total_features += ec->num_features;
@@ -521,9 +521,9 @@ void output_example_multilabel(vw& all, example* ec, bool& hit_loss)
 	}
 
 	v_array<char> empty; //CHECK ME!!!!!!
-	for (int i = 0; i < preds.size();i++)
-		for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-			all.print(*sink, (float)preds[i], 0, empty);
+	//for (int i = 0; i < preds.size();i++)
+	for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+		MULTILABEL::print_multilabel(*sink, ec->pred.multilabels, empty);
 
 	if (all.raw_prediction > 0) {
 		string outputString;
@@ -536,7 +536,7 @@ void output_example_multilabel(vw& all, example* ec, bool& hit_loss)
 		all.print_text(all.raw_prediction, outputStringStream.str(), empty);
 	}
 
-	//COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(*ec), ec, ec_seq);
+	COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(*ec), *ec, ec_seq, true);
 }
 
 
@@ -548,7 +548,7 @@ void output_example_seq(vw& all, ldf& data)
 
     bool hit_loss = false;
 	if(data.score_all)
-		output_example_multilabel(all, *(data.ec_seq.begin), hit_loss);
+		output_example_multilabel(all, *(data.ec_seq.begin), hit_loss, &(data.ec_seq));
 	else
 		for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
 			output_example(all, **ecc, hit_loss, &(data.ec_seq));
