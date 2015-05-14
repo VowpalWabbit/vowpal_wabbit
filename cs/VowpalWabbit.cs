@@ -3,63 +3,9 @@ using Microsoft.Research.MachineLearning.Serializer.Visitors;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Microsoft.Research.MachineLearning
 {
-    //public class VowpalWabbit : IDisposable
-    //{
-    //    internal IntPtr vw;
-
-    //    public VowpalWabbit(string arguments)
-    //    {
-    //        this.vw = VowpalWabbitInterface.Initialize(arguments);
-    //    }
-
-    //    public VowpalWabbit(VowpalWabbitModel model)
-    //    {
-    //        // TODO: initialize VW using shared model
-    //    }
-
-    //    public IVowpalWabbitExample ReadExample(string line)
-    //    {
-    //        var ptr = VowpalWabbitInterface.ReadExample(this.vw, line);
-    //        return new VowpalWabbitExample(this, ptr);
-    //    }
-
-    //    /// <summary>
-    //    /// 
-    //    /// </summary>
-    //    /// <param name="example"></param>
-    //    public float Learn(IVowpalWabbitExample example)
-    //    {
-    //        return VowpalWabbitInterface.Learn(this.vw, example.Ptr);
-    //    }
-
-    //    public float Predict(IVowpalWabbitExample example)
-    //    {
-    //        return VowpalWabbitInterface.Predict(this.vw, example.Ptr);
-    //    }
-
-    //    public void Dispose()
-    //    {
-    //        this.Dispose(true);
-    //        GC.SuppressFinalize(this);
-    //    }
-
-    //    private void Dispose(bool disposing)
-    //    {
-    //        // Free unmanaged resources
-    //        if (this.vw != IntPtr.Zero)
-    //        {
-    //            VowpalWabbitInterface.Finish(this.vw);
-    //            this.vw = IntPtr.Zero;
-    //        }
-    //    }
-    //}
-    
     public class VowpalWabbit<TExample> : VowpalWabbit
     {
         protected readonly Func<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample> serializer;
@@ -75,7 +21,7 @@ namespace Microsoft.Research.MachineLearning
         
         public VowpalWabbitExample ReadExample(TExample example)
         {
-            return this.serializer(example, this.visitor);
+            return this.serializer(example, this.visitor);    
         }
     }
 
@@ -98,14 +44,8 @@ namespace Microsoft.Research.MachineLearning
         /// <param name="chosenAction">Must be an an instance out of example.ActionDependentFeatures.</param>
         /// <param name="cost"></param>
         /// <param name="probability"></param>
-        public float MSNTrain(TExample example, TActionDependentFeature chosenAction, float cost, float probability)
+        public float Train(TExample example, TActionDependentFeature chosenAction, float cost, float probability)
         {
-            // TODO: where to stick the cost
-            // shared|userlda: .1
-            // `doc1|lda :.1 :.2
-            // 0:cost:prob `doc2 |lda :.2 :.3
-            // <new line>
-
             var examples = new List<VowpalWabbitExample>();
             
             try
@@ -161,7 +101,7 @@ namespace Microsoft.Research.MachineLearning
             }
         }
 
-        public TActionDependentFeature[] MSNPredict(TExample example)
+        public TActionDependentFeature[] Predict(TExample example)
         {
             // shared |userlda :.1 |che a:.1 
             // `doc1 |lda :.1 :.2 [1]
@@ -201,12 +141,7 @@ namespace Microsoft.Research.MachineLearning
 
                 finalExample.Predict();
 
-                // TODO: move to CLI/C++
-                // no need to free labelsPtr (managed by finalExample through VW)
-                var labelCount = IntPtr.Zero;
-                //var labelsPtr = VowpalWabbitInterface.GetMultilabelPredictions(this.vw, finalExample.Ptr, ref labelCount);
-                var multiLabelPrediction = new int[(int)labelCount];
-                //Marshal.Copy(labelsPtr, multiLabelPrediction, 0, multiLabelPrediction.Length);
+                var multiLabelPrediction = finalExample.MultilabelPredictions;
 
                 // re-shuffle
                 var result = new TActionDependentFeature[multiLabelPrediction.Length];
@@ -228,6 +163,9 @@ namespace Microsoft.Research.MachineLearning
         }
     }
 
+    /// <summary>
+    /// Useful for debugging
+    /// </summary>
     public sealed class VowpalWabbitString<TExample> : VowpalWabbit
     {
         private readonly Func<TExample, VowpalWabbitStringVisitor, string> serializer;
