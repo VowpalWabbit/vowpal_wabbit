@@ -9,9 +9,12 @@ license as described in the file LICENSE.
 #include <vector>
 #include <stdio.h>
 
-struct gzFile_s;
-
-typedef struct gzFile_s *gzFile;    
+#if (ZLIB_VERNUM < 0x1252)
+	typedef void* gzFile;
+#else
+	struct gzFile_s;
+	typedef struct gzFile_s *gzFile;    
+#endif 
 
 class comp_io_buf : public io_buf
 {

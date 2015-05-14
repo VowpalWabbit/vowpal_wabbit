@@ -1,5 +1,5 @@
-#include "comp_io.h"
 #include "zlib.h"
+#include "comp_io.h"
 
 int comp_io_buf::open_file(const char* name, bool stdin_off, int flag){
 	gzFile fil = nullptr;
