@@ -27,9 +27,9 @@ namespace Microsoft.Research.MachineLearning.Serializer
 
         #region Factory Methods
 
-        public static Func<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitInterfaceExample> CreateNativeSerializer<TExample>()
+        public static Func<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample> CreateNativeSerializer<TExample>()
         {
-            return CreateSerializer<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitInterfaceExample, VowpalWabbitInterface.FEATURE[], IEnumerable<VowpalWabbitInterface.FEATURE>>();
+            return CreateSerializer<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample, FEATURE[], IEnumerable<FEATURE>>();
         }
 
         public static Func<TExample, VowpalWabbitStringVisitor, string> CreateStringSerializer<TExample>()

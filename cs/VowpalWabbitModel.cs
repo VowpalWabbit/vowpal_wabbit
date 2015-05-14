@@ -38,11 +38,11 @@ namespace Microsoft.Research.MachineLearning
             }
 
             // Free unmanaged resources
-            if (this.vw != IntPtr.Zero)
-            {
-                VowpalWabbitInterface.Finish(this.vw);
-                this.vw = IntPtr.Zero;
-            }
+            //if (this.vw != IntPtr.Zero)
+            //{
+            //    VowpalWabbitInterface.Finish(this.vw);
+            //    this.vw = IntPtr.Zero;
+            //}
         }
     }
 }

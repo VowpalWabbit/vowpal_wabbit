@@ -33,6 +33,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -45,7 +46,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IActionDependentFeatures.cs" />
-    <Compile Include="IVowpalWabbitExample.cs" />
     <Compile Include="VowpalWabbitExample.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializer\Attributes\CacheableAttribute.cs" />

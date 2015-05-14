@@ -71,14 +71,14 @@ namespace cs_test
 
             using (var example = vw.ReadExample("1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme"))
             {
-                vw.Learn(example);
+                example.Learn();
             }
 
             using (var example = vw.ReadExample(context))
             {
                 example.AddLabel(1);
 
-                var score = vw.Learn(example);
+                var score = example.Learn();
 
                 Console.Error.WriteLine("p2 = {0}", score);
             }

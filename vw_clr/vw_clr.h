@@ -20,15 +20,6 @@ namespace Microsoft
 		namespace MachineLearning 
 		{
 			[StructLayout(LayoutKind::Sequential)]
-			public value struct FEATURE_SPACE
-			{
-			public:
-				Byte name;
-				IntPtr features;     
-				int len;
-			};
-
-			[StructLayout(LayoutKind::Sequential)]
 			public value struct FEATURE
 			{
 			public:
@@ -36,6 +27,12 @@ namespace Microsoft
 				UInt32 weight_index;
 			};
 
+			public ref class FeatureSpace
+			{
+			public: 
+				property cli::array<FEATURE>^ Features;
+				property unsigned char Name;
+			};
 
 			public ref class VowpalWabbitExample
 			{
@@ -55,22 +52,32 @@ namespace Microsoft
 
 				~VowpalWabbitExample();
 
-				bool IsEmpty();
-
-				void AddLabel(string label)
+				property bool IsEmpty
 				{
-
+					bool get();
 				}
+
+				property float CostSensitivePrediction
+				{
+					float get();
+				}
+					
+				property cli::array<int>^ MultilabelPredictions
+				{
+					cli::array<int>^ get();
+				}
+
+				void AddLabel(System::String^ label);
+
+				void AddLabel(float label);
+				
+				void AddLabel(float label, float weight);
+
+				void AddLabel(float label, float weight, float base);
 
 				float Learn();
 
 				float Predict();
-
-				// void AddLabel(float label = float.MaxValue, float weight = 1, float initial = 0);
-				void AddLabel(float label, float weight, float base)
-				{
-					VW::add_label(m_example, label, weight, base);
-				}
 			};
 
 			public ref class VowpalWabbit
@@ -84,13 +91,13 @@ namespace Microsoft
 
 			public:
 				VowpalWabbit(System::String^ pArgs);
-
 				~VowpalWabbit();
+				
+				uint32_t HashSpace(System::String^ s);
+				uint32_t HashFeature(System::String^ s, unsigned long u);
 
 				VowpalWabbitExample^ ReadExample(System::String^ line);
-
-				VowpalWabbitExample^ ImportExample(cli::array<FEATURE_SPACE>^ featureSpace);
-
+				VowpalWabbitExample^ ImportExample(cli::array<FeatureSpace^>^ featureSpaces);
 				VowpalWabbitExample^ CreateEmptyExample();
 
 				//void Foo()

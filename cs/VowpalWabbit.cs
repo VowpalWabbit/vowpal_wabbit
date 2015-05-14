@@ -62,7 +62,7 @@ namespace Microsoft.Research.MachineLearning
     
     public class VowpalWabbit<TExample> : VowpalWabbit
     {
-        protected readonly Func<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitInterfaceExample> serializer;
+        protected readonly Func<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample> serializer;
         protected readonly VowpalWabbitInterfaceVisitor visitor;
 
         public VowpalWabbit(string arguments) : base(arguments)
@@ -73,27 +73,7 @@ namespace Microsoft.Research.MachineLearning
             this.serializer = VowpalWabbitSerializer.CreateNativeSerializer<TExample>();
         }
         
-        public float GetCostSensitivePrediction(TExample example)
-        {
-            // TODO: support action dependent features
-            using (var vwExample = this.serializer(example, this.visitor))
-            {
-                this.Predict(vwExample);
-
-                return VowpalWabbitInterface.GetCostSensitivePrediction(vwExample.Ptr);
-            }
-        }
-
-        //public void Learn(TExample example, string label)
-        //{
-        //    using (var vwExample = this.serializer(example, this.visitor))
-        //    {
-        //        vwExample.ImportLabeledInto(this, label);
-        //        this.Learn(vwExample);
-        //    }
-        //}
-
-        public IVowpalWabbitExample ReadExample(TExample example)
+        public VowpalWabbitExample ReadExample(TExample example)
         {
             return this.serializer(example, this.visitor);
         }
@@ -102,7 +82,7 @@ namespace Microsoft.Research.MachineLearning
     public sealed class VowpalWabbit<TExample, TActionDependentFeature> : VowpalWabbit<TExample>
         where TExample : IActionDependentFeatureExample<TActionDependentFeature>
     {
-        private readonly Func<TActionDependentFeature, VowpalWabbitInterfaceVisitor, VowpalWabbitInterfaceExample> actionDependentFeatureSerializer;
+        private readonly Func<TActionDependentFeature, VowpalWabbitInterfaceVisitor, VowpalWabbitExample> actionDependentFeatureSerializer;
         private readonly VowpalWabbitInterfaceVisitor actionDependentFeatureVisitor;
 
         public VowpalWabbit(string arguments) : base(arguments)
@@ -118,7 +98,7 @@ namespace Microsoft.Research.MachineLearning
         /// <param name="chosenAction">Must be an an instance out of example.ActionDependentFeatures.</param>
         /// <param name="cost"></param>
         /// <param name="probability"></param>
-        public void MSNTrain(TExample example, TActionDependentFeature chosenAction, float cost, float probability)
+        public float MSNTrain(TExample example, TActionDependentFeature chosenAction, float cost, float probability)
         {
             // TODO: where to stick the cost
             // shared|userlda: .1
@@ -126,7 +106,7 @@ namespace Microsoft.Research.MachineLearning
             // 0:cost:prob `doc2 |lda :.2 :.3
             // <new line>
 
-            var examples = new List<VowpalWabbitInterfaceExample>();
+            var examples = new List<VowpalWabbitExample>();
             
             try
             {
@@ -136,7 +116,7 @@ namespace Microsoft.Research.MachineLearning
                 if (!sharedExample.IsEmpty)
                 {
                     sharedExample.AddLabel("shared");
-                    this.Learn(sharedExample);
+                    sharedExample.Learn();
                 }
 
                 // leave as loop so if the serializer throws an exception, anything allocated so far can be free'd
@@ -146,6 +126,9 @@ namespace Microsoft.Research.MachineLearning
                     var adfExample = this.actionDependentFeatureSerializer(actionDependentFeature, this.visitor);
                     examples.Add(adfExample);
 
+                    // TODO: this is broken as IsEmpty is only true in the CreateEmptyExample case. Not sure
+                    // how to determine if an action dependent feature example is empty and thus mis identified as a 
+                    // final example
                     if (adfExample.IsEmpty)
                     {
                         continue;
@@ -160,13 +143,14 @@ namespace Microsoft.Research.MachineLearning
                             cost, probability));
                     }
 
-                    this.Learn(adfExample);
+                    adfExample.Learn();
                 }
 
                 // allocate empty example to signal we're finished
-                var finalExample = new VowpalWabbitInterfaceExample(this, new VowpalWabbitInterface.FEATURE_SPACE[0], new GCHandle[0]);
+                var finalExample = this.CreateEmptyExample();
+                examples.Add(finalExample);
 
-                this.Learn(finalExample);
+                return finalExample.Learn();
             }
             finally
             {
@@ -183,7 +167,7 @@ namespace Microsoft.Research.MachineLearning
             // `doc1 |lda :.1 :.2 [1]
             // `doc2 |lda :.2 :.3 [2]
             // <new line>
-            var examples = new List<VowpalWabbitInterfaceExample>();
+            var examples = new List<VowpalWabbitExample>();
             
             try
             {
@@ -193,7 +177,7 @@ namespace Microsoft.Research.MachineLearning
                 if (!sharedExample.IsEmpty)
                 {
                     sharedExample.AddLabel("shared");
-                    this.Predict(sharedExample);
+                    sharedExample.Predict();
                 }
 
                 // leave as loop so if the serializer throws an exception, anything allocated so far can be free'd
@@ -208,19 +192,21 @@ namespace Microsoft.Research.MachineLearning
                         continue;
                     }
 
-                    this.Predict(adfExample);
+                    adfExample.Predict();
                 }
 
                 // allocate empty example to signal we're finished
-                var finalExample = new VowpalWabbitInterfaceExample(this, new VowpalWabbitInterface.FEATURE_SPACE[0], new GCHandle[0]);
+                var finalExample = this.CreateEmptyExample();
+                examples.Add(finalExample);
 
-                this.Predict(finalExample);
+                finalExample.Predict();
 
+                // TODO: move to CLI/C++
                 // no need to free labelsPtr (managed by finalExample through VW)
                 var labelCount = IntPtr.Zero;
-                var labelsPtr = VowpalWabbitInterface.GetMultilabelPredictions(this.vw, finalExample.Ptr, ref labelCount);
+                //var labelsPtr = VowpalWabbitInterface.GetMultilabelPredictions(this.vw, finalExample.Ptr, ref labelCount);
                 var multiLabelPrediction = new int[(int)labelCount];
-                Marshal.Copy(labelsPtr, multiLabelPrediction, 0, multiLabelPrediction.Length);
+                //Marshal.Copy(labelsPtr, multiLabelPrediction, 0, multiLabelPrediction.Length);
 
                 // re-shuffle
                 var result = new TActionDependentFeature[multiLabelPrediction.Length];
@@ -255,10 +241,9 @@ namespace Microsoft.Research.MachineLearning
             this.serializer = VowpalWabbitSerializer.CreateStringSerializer<TExample>();
         }
         
-        public IVowpalWabbitExample ReadExample(TExample example)
+        public VowpalWabbitExample ReadExample(TExample example)
         {
             var exampleLine = this.serializer(example, this.stringVisitor);
-
             return base.ReadExample(exampleLine);
         }
     }
