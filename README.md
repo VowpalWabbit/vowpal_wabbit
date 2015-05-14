@@ -16,7 +16,7 @@ These prerequisites are usually pre-installed on many platforms. However, you ma
 manager (*yum*, *apt*, *MacPorts*, *brew*, ...) to install missing software.
 
 - [Boost](http://www.boost.org) library, with the `Boost::Program_Options` library option enabled.
-- GNU *autotools*: *autoconf*, *automake*, *libtool*, *autoheader*, et. al.
+- GNU *autotools*: *autoconf*, *automake*, *libtool*, *autoheader*, et. al. This is not a strict prereq. On many systems (notably Ubuntu with `libboost-dev` installed), the provided `Makefile` works fine.
 - (optional) [git](http://git-scm.com) if you want to check out the latest version of *vowpal wabbit*,
   work on the code, or even contribute code to the main project.
 
@@ -49,10 +49,13 @@ $ make test    # (optional)
 $ make install
 ```
 
-Note that ``./autogen.sh`` requires *automake* (see the prerequisites, above.)
+Note that `./autogen.sh` requires *automake* (see the prerequisites, above.)
 
 `./autogen.sh`'s command line arguments are passed directly to `configure` as
 if they were `configure` arguments and flags.
+
+Note that `./autogen.sh` will overwrite the supplied `Makefile`, so
+keeping a copy of `Makefile` may be a good idea before running `autogen.sh`.
 
 Be sure to read the wiki: https://github.com/JohnLangford/vowpal_wabbit/wiki
 for the tutorial, command line options, etc.
@@ -73,6 +76,40 @@ or passing your own compiler flags via the `CXXOPTIMIZE` make variable:
 
 ```
 $ make CXXOPTIMIZE="-O0 -g"
+```
+
+## Ubuntu/Debian specific info
+
+On Ubuntu/Debian/Mint and similar the following sequence should work
+for building the latest from github:
+
+```
+apt-get install libboost-dev
+git clone git://github.com/JohnLangford/vowpal_wabbit.git
+cd vowpal_wabbit
+make
+make test       # (optional)
+make install
+```
+
+### Ubuntu advanced build options (clang and static)
+
+If you prefer building with `clang` instead of `gcc` (much faster build
+and slighly faster executable), install `clang` and change the `make`
+step slightly:
+
+```
+apt-get install clang
+
+make CXX=clang++
+```
+
+A statically linked `vw` executable that is not sensitive to boost
+version upgrades and can be safely copied between different Linux
+versions (e.g. even from Ubuntu the Red Hat) can be built and tested with:
+
+```
+make CXX='clang++ -static' clean vw test     # you may ignore warnings
 ```
 
 ## Mac OS X-specific info
@@ -116,3 +153,4 @@ $ sh autogen.sh --enable-libc++
 $ make
 $ make test    # (optional)
 ```
+

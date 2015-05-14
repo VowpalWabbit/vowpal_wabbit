@@ -65,7 +65,7 @@ sub v(@) {
 #        failure of fork or exec, ...)
 #       print a user-helpful error message and abort
 #
-sub ExecCmd {
+sub ExecCmd($;$) {
     my $cmd = shift || return(0, []);
     my $timeout = shift || 0;
 
@@ -436,8 +436,8 @@ sub goldenSectionSearch($$$$) {
 
     # assert(loss($x) != loss($mid));
     if (loss($x) == loss($mid)) {
-        printf STDERR "%s: loss(%g) == loss(%g): %g\n",
-                            $0, real_param($x), real_param($mid), loss($x);
+        printf STDERR "loss(%g) == loss(%g): %g\n",
+                            real_param($x), real_param($mid), loss($x);
         return opt_value(($x + $mid) / 2.0);
     }
 
@@ -504,9 +504,15 @@ sub best_hyperparam($$$) {
 
 sub fullpath($) {
     my $exe = shift;
-    foreach my $dir (split(':', $ENV{PATH})) {
+    # I'm told on Windows, the PATH separator is ';' instead of ':'
+    foreach my $dir (split(/[:;]/, $ENV{PATH}), '.') {
         my $fp = "$dir/$exe";
         return $fp if (-x $fp);
+        # On windows, the executable may be called 'vw.exe'
+        if ($^O =~ /(MS|Win)/i) {
+            $fp = "$dir/$exe.exe";
+            return $fp if (-x $fp);
+        }
     }
     '';
 }
@@ -599,10 +605,16 @@ sub process_args {
         usage("3rd argument (tolerance): $tolerance: not in the (0, 1) range")
             unless (0 < $tolerance and $tolerance < 1.0);
     }
-    usage("command: $ARGV[0]: must start with an executable")
-        unless (-x $ARGV[0] || -x (fullpath($ARGV[0])));
+    if (! -x $ARGV[0]) {
+        my $fp = fullpath($ARGV[0]);
+        if (-x $fp) {
+            $ARGV[0] = $fp;
+        }
+    }
+    usage("Couldn't locate '$ARGV[0]'. Need a vw executable. Is \$PATH correct?")
+        unless (-x $ARGV[0]);
 
-    # --- Now @ARGV contains the vw command only
+    # --- Now @ARGV contains the vw command
 
     # --quiet prevents progress from being detected so don't allow it
     my @saved_argv = @ARGV; @ARGV = ();

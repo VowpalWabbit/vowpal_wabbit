@@ -20,8 +20,8 @@ const size_t autolink_namespace  = 130;
 const size_t neighbor_namespace  = 131;   // this is \x83 -- to do quadratic, say "-q a`printf "\x83"` on the command line
 const size_t affix_namespace     = 132;   // this is \x84
 const size_t spelling_namespace  = 133;   // this is \x85
-const size_t conditioning_namespace = 134;
-const size_t dictionary_namespace  = 135;
+const size_t conditioning_namespace = 134;// this is \x86
+const size_t dictionary_namespace  = 135; // this is \x87
 
 struct feature {
   float x;
