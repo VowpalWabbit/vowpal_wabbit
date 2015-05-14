@@ -134,6 +134,7 @@
     <Compile Include="ExploreOnlySample.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="VowpalWabbitInterface.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\cs\cs.csproj">

@@ -15,7 +15,7 @@ namespace Microsoft.Research.MachineLearning
 
     //    public VowpalWabbit(string arguments)
     //    {
-    //        this.vw = VowpalWabbitNative.Initialize(arguments);
+    //        this.vw = VowpalWabbitInterface.Initialize(arguments);
     //    }
 
     //    public VowpalWabbit(VowpalWabbitModel model)
@@ -25,7 +25,7 @@ namespace Microsoft.Research.MachineLearning
 
     //    public IVowpalWabbitExample ReadExample(string line)
     //    {
-    //        var ptr = VowpalWabbitNative.ReadExample(this.vw, line);
+    //        var ptr = VowpalWabbitInterface.ReadExample(this.vw, line);
     //        return new VowpalWabbitExample(this, ptr);
     //    }
 
@@ -35,12 +35,12 @@ namespace Microsoft.Research.MachineLearning
     //    /// <param name="example"></param>
     //    public float Learn(IVowpalWabbitExample example)
     //    {
-    //        return VowpalWabbitNative.Learn(this.vw, example.Ptr);
+    //        return VowpalWabbitInterface.Learn(this.vw, example.Ptr);
     //    }
 
     //    public float Predict(IVowpalWabbitExample example)
     //    {
-    //        return VowpalWabbitNative.Predict(this.vw, example.Ptr);
+    //        return VowpalWabbitInterface.Predict(this.vw, example.Ptr);
     //    }
 
     //    public void Dispose()
@@ -54,7 +54,7 @@ namespace Microsoft.Research.MachineLearning
     //        // Free unmanaged resources
     //        if (this.vw != IntPtr.Zero)
     //        {
-    //            VowpalWabbitNative.Finish(this.vw);
+    //            VowpalWabbitInterface.Finish(this.vw);
     //            this.vw = IntPtr.Zero;
     //        }
     //    }
@@ -62,12 +62,12 @@ namespace Microsoft.Research.MachineLearning
     
     public class VowpalWabbit<TExample> : VowpalWabbit
     {
-        protected readonly Func<TExample, VowpalWabbitNativeVisitor, VowpalWabbitNativeExample> serializer;
-        protected readonly VowpalWabbitNativeVisitor visitor;
+        protected readonly Func<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitInterfaceExample> serializer;
+        protected readonly VowpalWabbitInterfaceVisitor visitor;
 
         public VowpalWabbit(string arguments) : base(arguments)
         {
-            this.visitor = new VowpalWabbitNativeVisitor(this);
+            this.visitor = new VowpalWabbitInterfaceVisitor(this);
 
             // Compile serializer
             this.serializer = VowpalWabbitSerializer.CreateNativeSerializer<TExample>();
@@ -80,7 +80,7 @@ namespace Microsoft.Research.MachineLearning
             {
                 this.Predict(vwExample);
 
-                return VowpalWabbitNative.GetCostSensitivePrediction(vwExample.Ptr);
+                return VowpalWabbitInterface.GetCostSensitivePrediction(vwExample.Ptr);
             }
         }
 
@@ -102,12 +102,12 @@ namespace Microsoft.Research.MachineLearning
     public sealed class VowpalWabbit<TExample, TActionDependentFeature> : VowpalWabbit<TExample>
         where TExample : IActionDependentFeatureExample<TActionDependentFeature>
     {
-        private readonly Func<TActionDependentFeature, VowpalWabbitNativeVisitor, VowpalWabbitNativeExample> actionDependentFeatureSerializer;
-        private readonly VowpalWabbitNativeVisitor actionDependentFeatureVisitor;
+        private readonly Func<TActionDependentFeature, VowpalWabbitInterfaceVisitor, VowpalWabbitInterfaceExample> actionDependentFeatureSerializer;
+        private readonly VowpalWabbitInterfaceVisitor actionDependentFeatureVisitor;
 
         public VowpalWabbit(string arguments) : base(arguments)
         {
-            this.actionDependentFeatureVisitor = new VowpalWabbitNativeVisitor(this);
+            this.actionDependentFeatureVisitor = new VowpalWabbitInterfaceVisitor(this);
             this.actionDependentFeatureSerializer = VowpalWabbitSerializer.CreateNativeSerializer<TActionDependentFeature>();
         }
 
@@ -126,7 +126,7 @@ namespace Microsoft.Research.MachineLearning
             // 0:cost:prob `doc2 |lda :.2 :.3
             // <new line>
 
-            var examples = new List<VowpalWabbitNativeExample>();
+            var examples = new List<VowpalWabbitInterfaceExample>();
             
             try
             {
@@ -164,7 +164,7 @@ namespace Microsoft.Research.MachineLearning
                 }
 
                 // allocate empty example to signal we're finished
-                var finalExample = new VowpalWabbitNativeExample(this, new VowpalWabbitNative.FEATURE_SPACE[0], new GCHandle[0]);
+                var finalExample = new VowpalWabbitInterfaceExample(this, new VowpalWabbitInterface.FEATURE_SPACE[0], new GCHandle[0]);
 
                 this.Learn(finalExample);
             }
@@ -183,7 +183,7 @@ namespace Microsoft.Research.MachineLearning
             // `doc1 |lda :.1 :.2 [1]
             // `doc2 |lda :.2 :.3 [2]
             // <new line>
-            var examples = new List<VowpalWabbitNativeExample>();
+            var examples = new List<VowpalWabbitInterfaceExample>();
             
             try
             {
@@ -212,13 +212,13 @@ namespace Microsoft.Research.MachineLearning
                 }
 
                 // allocate empty example to signal we're finished
-                var finalExample = new VowpalWabbitNativeExample(this, new VowpalWabbitNative.FEATURE_SPACE[0], new GCHandle[0]);
+                var finalExample = new VowpalWabbitInterfaceExample(this, new VowpalWabbitInterface.FEATURE_SPACE[0], new GCHandle[0]);
 
                 this.Predict(finalExample);
 
                 // no need to free labelsPtr (managed by finalExample through VW)
                 var labelCount = IntPtr.Zero;
-                var labelsPtr = VowpalWabbitNative.GetMultilabelPredictions(this.vw, finalExample.Ptr, ref labelCount);
+                var labelsPtr = VowpalWabbitInterface.GetMultilabelPredictions(this.vw, finalExample.Ptr, ref labelCount);
                 var multiLabelPrediction = new int[(int)labelCount];
                 Marshal.Copy(labelsPtr, multiLabelPrediction, 0, multiLabelPrediction.Length);
 

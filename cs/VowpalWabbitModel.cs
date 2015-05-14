@@ -13,9 +13,9 @@ namespace Microsoft.Research.MachineLearning
         public VowpalWabbitModel(Stream model)
         {
             // TODO: initialize with byte array
-            // this.vw = VowpalWabbitNative.Initialize(arguments);
+            // this.vw = VowpalWabbitInterface.Initialize(arguments);
             // TODO: export model
-            // this.ModelPtr = VowpalWabbitNative.ExportModel(vw);
+            // this.ModelPtr = VowpalWabbitInterface.ExportModel(vw);
         }
 
         internal IntPtr ModelPtr
@@ -40,7 +40,7 @@ namespace Microsoft.Research.MachineLearning
             // Free unmanaged resources
             if (this.vw != IntPtr.Zero)
             {
-                VowpalWabbitNative.Finish(this.vw);
+                VowpalWabbitInterface.Finish(this.vw);
                 this.vw = IntPtr.Zero;
             }
         }

@@ -24,12 +24,12 @@ namespace Microsoft.Research.MachineLearning
 
         public void AddLabel(string label)
         {
-            VowpalWabbitNative.AddLabel(this.vw.vw, this.Ptr, label);
+            VowpalWabbitInterface.AddLabel(this.vw.vw, this.Ptr, label);
         }
 
         public void AddLabel(float label = float.MaxValue, float weight = 1, float initial = 0)
         {
-            VowpalWabbitNative.AddLabel(this.Ptr, label, weight, initial);
+            VowpalWabbitInterface.AddLabel(this.Ptr, label, weight, initial);
         }
 
         public void Dispose()
@@ -43,7 +43,7 @@ namespace Microsoft.Research.MachineLearning
             // Free managed resources
             if (this.vw != null && this.Ptr != IntPtr.Zero)
             {
-                VowpalWabbitNative.FinishExample(this.vw.vw, this.Ptr);
+                VowpalWabbitInterface.FinishExample(this.vw.vw, this.Ptr);
                 this.Ptr = IntPtr.Zero;
             }
         }

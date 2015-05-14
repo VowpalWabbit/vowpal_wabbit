@@ -8,11 +8,11 @@ using System.Text;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 {
-    public class VowpalWabbitNativeVisitor : IVowpalWabbitVisitor<VowpalWabbitNativeExample, VowpalWabbitNative.FEATURE[], IEnumerable<VowpalWabbitNative.FEATURE>>
+    public class VowpalWabbitInterfaceVisitor : IVowpalWabbitVisitor<VowpalWabbitInterfaceExample, VowpalWabbitInterface.FEATURE[], IEnumerable<VowpalWabbitInterface.FEATURE>>
     {
         private readonly VowpalWabbit vw;
 
-        public VowpalWabbitNativeVisitor(VowpalWabbit vw)
+        public VowpalWabbitInterfaceVisitor(VowpalWabbit vw)
         {
             this.vw = vw;
         }
@@ -22,7 +22,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
         /// </summary>
         private uint namespaceHash;
 
-        public VowpalWabbitNative.FEATURE[] Visit<T>(INamespaceDense<T> namespaceDense)
+        public FEATURE[] Visit<T>(INamespaceDense<T> namespaceDense)
         {
             throw new NotImplementedException();
 
@@ -31,11 +31,11 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
             // introduce interface!!!
         }
 
-        public VowpalWabbitNative.FEATURE[] Visit(INamespaceSparse<IEnumerable<VowpalWabbitNative.FEATURE>> namespaceSparse)
+        public FEATURE[] Visit(INamespaceSparse<IEnumerable<VowpalWabbitInterface.FEATURE>> namespaceSparse)
         {
             this.namespaceHash = namespaceSparse.Name == null ? 
-                VowpalWabbitNative.HashSpace(namespaceSparse.FeatureGroup.ToString()) :
-                VowpalWabbitNative.HashSpace(namespaceSparse.FeatureGroup + namespaceSparse.Name);
+                VowpalWabbitInterface.HashSpace(namespaceSparse.FeatureGroup.ToString()) :
+                VowpalWabbitInterface.HashSpace(namespaceSparse.FeatureGroup + namespaceSparse.Name);
 
             return namespaceSparse.Features
                 .Select(f => f.Visit())
@@ -46,61 +46,61 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 
 #region Numeric types
 
-        public IEnumerable<VowpalWabbitNative.FEATURE> Visit(IFeature<short> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> Visit(IFeature<short> feature)
         {
-            yield return new VowpalWabbitNative.FEATURE
+            yield return new VowpalWabbitInterface.FEATURE
             {
-                weight_index = VowpalWabbitNative.HashFeature(feature.Name, this.namespaceHash),
+                weight_index = VowpalWabbitInterface.HashFeature(feature.Name, this.namespaceHash),
                 x = feature.Value
             };
         }
 
-        public IEnumerable<VowpalWabbitNative.FEATURE> Visit(IFeature<short?> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> Visit(IFeature<short?> feature)
         {
-            yield return new VowpalWabbitNative.FEATURE
+            yield return new VowpalWabbitInterface.FEATURE
             {
-                weight_index = VowpalWabbitNative.HashFeature(feature.Name, this.namespaceHash),
+                weight_index = VowpalWabbitInterface.HashFeature(feature.Name, this.namespaceHash),
                 x = (short)feature.Value
             };
         }
 
-        public IEnumerable<VowpalWabbitNative.FEATURE> Visit(IFeature<int> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> Visit(IFeature<int> feature)
         {
-            yield return new VowpalWabbitNative.FEATURE
+            yield return new VowpalWabbitInterface.FEATURE
             {
-                weight_index = VowpalWabbitNative.HashFeature(feature.Name, this.namespaceHash),
+                weight_index = VowpalWabbitInterface.HashFeature(feature.Name, this.namespaceHash),
                 x = feature.Value
             };
         }
 
-        public IEnumerable<VowpalWabbitNative.FEATURE> Visit(IFeature<int?> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> Visit(IFeature<int?> feature)
         {
-            yield return new VowpalWabbitNative.FEATURE
+            yield return new VowpalWabbitInterface.FEATURE
             {
-                weight_index = VowpalWabbitNative.HashFeature(feature.Name, this.namespaceHash),
+                weight_index = VowpalWabbitInterface.HashFeature(feature.Name, this.namespaceHash),
                 x = (int)feature.Value
             };
         }
 
-        public IEnumerable<VowpalWabbitNative.FEATURE> Visit(IFeature<float> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> Visit(IFeature<float> feature)
         {
-            yield return new VowpalWabbitNative.FEATURE
+            yield return new VowpalWabbitInterface.FEATURE
             {
-                weight_index = VowpalWabbitNative.HashFeature(feature.Name, this.namespaceHash),
+                weight_index = VowpalWabbitInterface.HashFeature(feature.Name, this.namespaceHash),
                 x = feature.Value
             };
         }
 
-        public IEnumerable<VowpalWabbitNative.FEATURE> Visit(IFeature<float?> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> Visit(IFeature<float?> feature)
         {
-            yield return new VowpalWabbitNative.FEATURE
+            yield return new VowpalWabbitInterface.FEATURE
             {
-                weight_index = VowpalWabbitNative.HashFeature(feature.Name, this.namespaceHash),
+                weight_index = VowpalWabbitInterface.HashFeature(feature.Name, this.namespaceHash),
                 x = (float)feature.Value
             };
         }
 
-        public IEnumerable<VowpalWabbitNative.FEATURE> Visit(IFeature<double> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> Visit(IFeature<double> feature)
         {
 #if DEBUG
             if (feature.Value > float.MaxValue || feature.Value < float.MinValue)
@@ -108,14 +108,14 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
                 Trace.TraceWarning("Precision lost for feature value: " + feature.Value);
             }
 #endif
-            yield return new VowpalWabbitNative.FEATURE
+            yield return new VowpalWabbitInterface.FEATURE
             {
-                weight_index = VowpalWabbitNative.HashFeature(feature.Name, this.namespaceHash),
+                weight_index = VowpalWabbitInterface.HashFeature(feature.Name, this.namespaceHash),
                 x = (float)feature.Value
             };
         }
 
-        public IEnumerable<VowpalWabbitNative.FEATURE> Visit(IFeature<double?> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> Visit(IFeature<double?> feature)
         {
 #if DEBUG
             if (feature.Value > float.MaxValue || feature.Value < float.MinValue)
@@ -123,22 +123,22 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
                 Trace.TraceWarning("Precision lost for feature value: " + feature.Value);
             }
 #endif
-            yield return new VowpalWabbitNative.FEATURE
+            yield return new VowpalWabbitInterface.FEATURE
             {
-                weight_index = VowpalWabbitNative.HashFeature(feature.Name, this.namespaceHash),
+                weight_index = VowpalWabbitInterface.HashFeature(feature.Name, this.namespaceHash),
                 x = (float)feature.Value
             };
         }
 
 #endregion
 
-        public IEnumerable<VowpalWabbitNative.FEATURE> VisitEnumerize<T>(IFeature<T> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> VisitEnumerize<T>(IFeature<T> feature)
         {
             var strValue = Convert.ToString(feature.Value);
 
-            yield return new VowpalWabbitNative.FEATURE
+            yield return new VowpalWabbitInterface.FEATURE
             {
-                weight_index = VowpalWabbitNative.HashFeature(feature.Name + strValue, this.namespaceHash),
+                weight_index = VowpalWabbitInterface.HashFeature(feature.Name + strValue, this.namespaceHash),
                 x = 1.0f
             };
         }
@@ -173,84 +173,84 @@ public void Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
     this.Visit(feature, key => key);
 }
 */
-        public IEnumerable<VowpalWabbitNative.FEATURE> Visit<TValue>(IFeature<IDictionary<UInt16, TValue>> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> Visit<TValue>(IFeature<IDictionary<UInt16, TValue>> feature)
         {
             return feature.Value
-                .Select(kvp => new VowpalWabbitNative.FEATURE
+                .Select(kvp => new VowpalWabbitInterface.FEATURE
                 {
                     weight_index = this.namespaceHash + kvp.Key,
                     x = (float)Convert.ToDouble(kvp.Value)
                 });
         }
 
-        public IEnumerable<VowpalWabbitNative.FEATURE> Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
         {
             return feature.Value
-                .Select(kvp => new VowpalWabbitNative.FEATURE
+                .Select(kvp => new VowpalWabbitInterface.FEATURE
                 {
                     weight_index = this.namespaceHash + kvp.Key,
                     x = (float)Convert.ToDouble(kvp.Value)
                 });
         }
 
-        public IEnumerable<VowpalWabbitNative.FEATURE> Visit<TValue>(IFeature<IDictionary<Int16, TValue>> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> Visit<TValue>(IFeature<IDictionary<Int16, TValue>> feature)
         {
             return feature.Value
-                .Select(kvp => new VowpalWabbitNative.FEATURE
+                .Select(kvp => new VowpalWabbitInterface.FEATURE
                 {
                     weight_index = (uint)(this.namespaceHash + kvp.Key),
                     x = (float)Convert.ToDouble(kvp.Value)
                 });
         }
 
-        public IEnumerable<VowpalWabbitNative.FEATURE> Visit<TValue>(IFeature<IDictionary<Int32, TValue>> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> Visit<TValue>(IFeature<IDictionary<Int32, TValue>> feature)
         {
             return feature.Value
-                .Select(kvp => new VowpalWabbitNative.FEATURE
+                .Select(kvp => new VowpalWabbitInterface.FEATURE
                 {
                     weight_index = (uint)(this.namespaceHash + kvp.Key),
                     x = (float)Convert.ToDouble(kvp.Value)
                 });
         }
 
-        public IEnumerable<VowpalWabbitNative.FEATURE> Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature)
         {
             // lhs: int, hash(string), hash(long), hash(*) -> uint
             // rhs: int, short, long, float, bool -> float
 
             return feature.Value
-                .Select(kvp => new VowpalWabbitNative.FEATURE
+                .Select(kvp => new VowpalWabbitInterface.FEATURE
                 {
-                    weight_index = VowpalWabbitNative.HashFeature(feature.Name + Convert.ToString(kvp.Key), this.namespaceHash),
+                    weight_index = VowpalWabbitInterface.HashFeature(feature.Name + Convert.ToString(kvp.Key), this.namespaceHash),
                     x = (float)Convert.ToDouble(kvp.Value)
                 });
         }
 
         #endregion
 
-        public IEnumerable<VowpalWabbitNative.FEATURE> Visit(IFeature<IEnumerable<string>> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> Visit(IFeature<IEnumerable<string>> feature)
         {
             return feature.Value
-                .Select(value => new VowpalWabbitNative.FEATURE
+                .Select(value => new VowpalWabbitInterface.FEATURE
                 {
-                    weight_index = VowpalWabbitNative.HashFeature(value, this.namespaceHash),
+                    weight_index = VowpalWabbitInterface.HashFeature(value, this.namespaceHash),
                     x = 1f
                 });
         }
 
-        public IEnumerable<VowpalWabbitNative.FEATURE> Visit<T>(IFeature<T> feature)
+        public IEnumerable<VowpalWabbitInterface.FEATURE> Visit<T>(IFeature<T> feature)
         {
             var  strValue = typeof(T).IsEnum ? 
                 Enum.GetName(typeof(T), feature.Value) : Convert.ToString(feature.Value);
 
-            yield return new VowpalWabbitNative.FEATURE
+            yield return new VowpalWabbitInterface.FEATURE
             {
-                weight_index = VowpalWabbitNative.HashFeature(feature.Name + strValue, this.namespaceHash),
+                weight_index = VowpalWabbitInterface.HashFeature(feature.Name + strValue, this.namespaceHash),
                 x = 1.0f
             };
         }
 
-        public VowpalWabbitNativeExample Visit(IVisitableNamespace<VowpalWabbitNative.FEATURE[]>[] namespaces)
+        public VowpalWabbitInterfaceExample Visit(IVisitableNamespace<VowpalWabbitInterface.FEATURE[]>[] namespaces)
         {
             var features = (from n in namespaces
                             let resultFeature = n.Visit()
@@ -258,7 +258,7 @@ public void Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
                             select new { Namespace = n, Features = resultFeature }
                             ).ToArray();
 
-            var featureSpaces = new VowpalWabbitNative.FEATURE_SPACE[features.Length];
+            var featureSpaces = new VowpalWabbitInterface.FEATURE_SPACE[features.Length];
 
             var handles = new GCHandle[features.Length];
 
@@ -273,9 +273,9 @@ public void Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
                 featureSpaces[i].len = featureNs.Features.Length;
 			}
 
-            return new VowpalWabbitNativeExample(vw, featureSpaces, handles);
+            return new VowpalWabbitInterfaceExample(vw, featureSpaces, handles);
 
-            //this.namespaceOutput = new List<VowpalWabbitNative.FEATURE_SPACE>();
+            //this.namespaceOutput = new List<VowpalWabbitInterface.FEATURE_SPACE>();
 
             //// TODO: not clear on how to caching here (and keeping track was is inserted)
             //// VisitActionDependentFeatures(string label, INamespace[],...) ?

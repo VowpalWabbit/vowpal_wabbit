@@ -6,8 +6,13 @@ namespace Microsoft
 	{
 		namespace  MachineLearning
 		{
-			VowpalWabbitExample::VowpalWabbitExample(vw* vw, example* example) :
-				m_vw(vw), m_example(example), m_isDisposed(false)
+			VowpalWabbitExample::VowpalWabbitExample(vw* vw, example* example) : 
+				VowpalWabbitExample(vw, example, false)
+			{
+			}
+
+			VowpalWabbitExample::VowpalWabbitExample(vw* vw, example* example, bool isEmpty) :
+				m_vw(vw), m_example(example), m_isDisposed(false), m_isEmpty(isEmpty)
 			{
 			}
 
@@ -30,7 +35,7 @@ namespace Microsoft
 
 			float VowpalWabbitExample::Learn()
 			{
-				//return VowpalWabbitNative.Learn(this.vw, example.Ptr);
+				//return VowpalWabbitInterface.Learn(this.vw, example.Ptr);
 				m_vw->learn(m_example);
 
 				return VW::get_prediction(m_example);
@@ -38,7 +43,7 @@ namespace Microsoft
 
 			float VowpalWabbitExample::Predict()
 			{
-				//return VowpalWabbitNative.Learn(this.vw, example.Ptr);
+				//return VowpalWabbitInterface.Learn(this.vw, example.Ptr);
 				m_vw->l->predict(*m_example);
 
 				//BUG: The below method may return garbage as it assumes a certain structure for ex->ld
@@ -53,7 +58,7 @@ namespace Microsoft
 
 			bool VowpalWabbitExample::IsEmpty()
 			{
-
+				return m_isEmpty;
 			}
 		}
 

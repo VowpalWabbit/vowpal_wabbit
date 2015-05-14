@@ -19,10 +19,8 @@ namespace Microsoft
 	{
 		namespace MachineLearning 
 		{
-			public ref class VowpalWabbit;
-
 			[StructLayout(LayoutKind::Sequential)]
-			value struct FEATURE_SPACE
+			public value struct FEATURE_SPACE
 			{
 			public:
 				Byte name;
@@ -31,7 +29,7 @@ namespace Microsoft
 			};
 
 			[StructLayout(LayoutKind::Sequential)]
-			value struct FEATURE
+			public value struct FEATURE
 			{
 			public:
 				float x;
@@ -44,6 +42,7 @@ namespace Microsoft
 			private:
 				vw* const m_vw;
 				example* const m_example;
+				bool m_isEmpty;
 
 			protected:
 				bool m_isDisposed;
@@ -51,6 +50,8 @@ namespace Microsoft
 
 			public:
 				VowpalWabbitExample(vw* vw, example* example);
+
+				VowpalWabbitExample(vw* vw, example* example, bool isEmpty);
 
 				~VowpalWabbitExample();
 
@@ -89,6 +90,8 @@ namespace Microsoft
 				VowpalWabbitExample^ ReadExample(System::String^ line);
 
 				VowpalWabbitExample^ ImportExample(cli::array<FEATURE_SPACE>^ featureSpace);
+
+				VowpalWabbitExample^ CreateEmptyExample();
 
 				//void Foo()
 				//{

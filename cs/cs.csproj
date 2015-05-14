@@ -66,13 +66,11 @@
     <Compile Include="Serializer\Reflection\ReflectionHelper.cs" />
     <Compile Include="Serializer\Reflection\TypeDistance.cs" />
     <Compile Include="Serializer\Reflection\TypeMatch.cs" />
-    <Compile Include="Serializer\Visitors\VowpalWabbitNativeExample.cs" />
     <Compile Include="Serializer\Visitors\VowpalWabbitNativeVisitor.cs" />
     <Compile Include="Serializer\Visitors\VowpalWabbitStringVisitor.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
     <Compile Include="VowpalWabbit.cs" />
     <Compile Include="VowpalWabbitModel.cs" />
-    <Compile Include="VowpalWabbitNative.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\vw_clr\vw_clr.vcxproj">

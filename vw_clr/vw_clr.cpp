@@ -45,8 +45,8 @@ namespace Microsoft
 			VowpalWabbitExample^ VowpalWabbit::ReadExample(System::String^ line)
 			{
 				auto string = msclr::interop::marshal_as<std::string>(line);
-				example* ex = VW::read_example(*m_vw, string.c_str());
 
+				example* ex = VW::read_example(*m_vw, string.c_str());
 				return gcnew VowpalWabbitExample(m_vw, ex);
 			}
 
@@ -56,8 +56,13 @@ namespace Microsoft
 				VW::primitive_feature_space * f = reinterpret_cast<VW::primitive_feature_space*>(ptr);
 
 				example* ex = VW::import_example(*m_vw, f, featureSpace->Length);
-
 				return gcnew VowpalWabbitExample(m_vw, ex);
+			}
+
+			VowpalWabbitExample^ VowpalWabbit::CreateEmptyExample()
+			{
+				example* ex = VW::read_example(*m_vw, "");
+				return gcnew VowpalWabbitExample(m_vw, ex, true);
 			}
 		}
 	}
