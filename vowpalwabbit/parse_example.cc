@@ -14,15 +14,6 @@ license as described in the file LICENSE.
 
 using namespace std;
 
-char* copy(char* base)
-{
-  size_t len = 0;
-  while (base[len++] != '\0');
-  char* ret = calloc_or_die<char>(len);
-  memcpy(ret,base,len);
-  return ret;
-}
-
 template<bool audit>
 class TC_parser {
   
@@ -103,7 +94,7 @@ public:
 	v_array<char> feature_v = v_init<char>();
 	push_many(feature_v, feature_name.begin, feature_name.end - feature_name.begin);
 	feature_v.push_back('\0');
-	audit_data ad = {copy(base),feature_v.begin,word_hash,v,true};
+    audit_data ad = {copy_char(base),feature_v.begin,word_hash,v,true};
 	ae->audit_features[index].push_back(ad);
       }
       if ((affix_features[index] > 0) && (feature_name.end != feature_name.begin)) {
@@ -132,7 +123,7 @@ public:
             affix_v.push_back('=');
             push_many(affix_v, affix_name.begin, affix_name.end - affix_name.begin);
             affix_v.push_back('\0');
-            audit_data ad = {copy((char*)"affix"),affix_v.begin,word_hash,v,true};
+            audit_data ad = {copy_char((char*)"affix"),affix_v.begin,word_hash,v,true};
             ae->audit_features[affix_namespace].push_back(ad);
           }
           
@@ -164,7 +155,7 @@ public:
           if (index != ' ') { spelling_v.push_back(index); spelling_v.push_back('_'); }
           push_many(spelling_v, spelling_ss.begin, spelling_ss.end - spelling_ss.begin);
           spelling_v.push_back('\0');
-          audit_data ad = {copy((char*)"spelling"),spelling_v.begin,word_hash,v,true};
+          audit_data ad = {copy_char((char*)"spelling"),spelling_v.begin,word_hash,v,true};
           ae->audit_features[spelling_namespace].push_back(ad);
         }
       }
@@ -190,7 +181,7 @@ public:
                 for (char* fc=feature_name.begin; fc!=feature_name.end; ++fc) *(c++) = *fc;
                 *(c++) = '=';
                 sprintf(c, "%d", id);
-                audit_data ad = { copy((char*)"dictionary"), str, f->weight_index, f->x, true };
+                audit_data ad = { copy_char((char*)"dictionary"), str, f->weight_index, f->x, true };
                 ae->audit_features[dictionary_namespace].push_back(ad);
               }
             }
