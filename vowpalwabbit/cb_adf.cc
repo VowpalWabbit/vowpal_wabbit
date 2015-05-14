@@ -32,12 +32,6 @@ struct cb_adf {
   v_array<COST_SENSITIVE::label> cs_labels;
 
   base_learner* base;  
-  
-  // An array of cb_label.
-  v_array<CB::label> array;
-
-  // suggest to add an array of cs_label.
-  v_array<COST_SENSITIVE::label> cs_label_array;   
 };
 
 namespace CB_ADF {
@@ -354,42 +348,6 @@ void predict_or_learn(cb_adf& data, base_learner& base, example &ec) {
     }
     data.ec_seq.push_back(&ec);
   }
-}
-
-void predict(cb_adf& mydata, base_learner& base, v_array<example*> examples)
-{
-
-	// m2: still save, store, and restore
-	// starting with 3 for loops
-	// first of all, clear the container mydata.array.
-	mydata.array.erase();
-
-	// 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.
-	size_t index = 0;
-	for (example **ec = examples.begin; ec != examples.end; ec++)
-	{
-		mydata.array.push_back((**ec).l.cb);
-		(**ec).l.cs = mydata.cs_label_array[index];  // To be checked with John.
-		index++;
-	}
-
-
-	// 2nd: predict for each ex
-	// // call base.predict for each vw exmaple in the sequence
-	for (example **ec = examples.begin; ec != examples.end; ec++)
-	{
-		base.predict(**ec);
-	}
-
-	// 3rd: restore cb_label for each example
-	// (**ec).l.cb = mydata.array.element.
-	size_t i = 0;
-	for (example **ec = examples.begin; ec != examples.end; ec++)
-	{
-		(**ec).l.cb = mydata.array[i];
-		i++;
-	}
-
 }
 
 }
