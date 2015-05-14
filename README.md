@@ -13,5 +13,7 @@ First version of client-side exploration library that includes the following exp
 This release supports C++ and C#. 
 
 For sample usage, see:
+
 C++: https://github.com/multiworldtesting/explore/blob/master/explore_sample.cpp
+
 C#: https://github.com/multiworldtesting/explore/blob/master/ExploreSample/ExploreOnlySample.cs
