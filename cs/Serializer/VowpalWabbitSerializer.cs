@@ -12,10 +12,6 @@ using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Research.MachineLearning.Serializer.Attributes;
-using Microsoft.Research.MachineLearning.Serializer.Interfaces;
-using Microsoft.Research.MachineLearning.Serializer.Intermediate;
-using Microsoft.Research.MachineLearning.Serializer.Reflection;
-using Microsoft.Research.MachineLearning.Serializer.Visitors;
 
 namespace Microsoft.Research.MachineLearning.Serializer
 {

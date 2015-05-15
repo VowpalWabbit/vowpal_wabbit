@@ -4,8 +4,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Research.MachineLearning.Serializer.Attributes;
 using Microsoft.Research.MachineLearning.Serializer.Interfaces;
 using Microsoft.Research.MachineLearning.Serializer.Intermediate;

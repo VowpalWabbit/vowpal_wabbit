@@ -1,10 +1,7 @@
-﻿using Microsoft.Research.MachineLearning.Serializer;
-using Microsoft.Research.MachineLearning.Serializer.Visitors;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using Microsoft.Research.MachineLearning.Serializer.Attributes;
+using Microsoft.Research.MachineLearning.Serializer;
+using Microsoft.Research.MachineLearning.Serializer.Visitors;
 
 namespace Microsoft.Research.MachineLearning
 {
