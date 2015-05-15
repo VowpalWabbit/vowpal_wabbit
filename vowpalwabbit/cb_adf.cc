@@ -14,9 +14,15 @@ license as described in the file LICENSE.
 
 using namespace std;
 using namespace LEARNER;
+using namespace CB;
 
 #define CB_TYPE_DR 1
 #define CB_TYPE_IPS 2
+
+struct score {
+	float val;
+	size_t idx;
+};
 
 struct cb_adf {
   v_array<example*> ec_seq;
@@ -31,37 +37,40 @@ struct cb_adf {
   v_array<COST_SENSITIVE::label> cs_labels;
 
   base_learner* base;
+
+  bool score_all;
+  v_array<score> scores;  
 };
 
 namespace CB_ADF {
 
-  void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
-  {
-    if (cs_labels.size() < examples.size()) {
-      cs_labels.resize(examples.size(), true);
-      cs_labels.end = cs_labels.end_array;
-    }
-    for (size_t i = 0; i < examples.size(); i++)
-      {
-	CB::label ld = examples[i]->l.cb;
-	
-	COST_SENSITIVE::wclass wc;
-	wc.class_index = 0;
-	if ( ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)  
-	  wc.x = ld.costs[0].cost / ld.costs[0].probability;
-	else 
-	  wc.x = 0.f;
-	cs_labels[i].costs.erase();
-	cs_labels[i].costs.push_back(wc);
-      }
-    cs_labels[examples.size()-1].costs[0].x = FLT_MAX; //trigger end of multiline example.
+void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
+{
+	if (cs_labels.size() < examples.size()) {
+	  cs_labels.resize(examples.size(), true);
+	  cs_labels.end = cs_labels.end_array;
+	}
+	for (size_t i = 0; i < examples.size(); i++)
+	{
+		CB::label ld = examples[i]->l.cb;
 
-    if (examples[0]->l.cb.costs.size() > 0 && examples[0]->l.cb.costs[0].probability == -1.f)//take care of shared examples
-      {
-	cs_labels[0].costs[0].class_index = 0;
-	cs_labels[0].costs[0].x = -1.f;
-      }
-  }
+		COST_SENSITIVE::wclass wc;
+		wc.class_index = 0;
+		if ( ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)  
+			wc.x = ld.costs[0].cost / ld.costs[0].probability;
+		else 
+			wc.x = 0.f;
+		cs_labels[i].costs.erase();
+		cs_labels[i].costs.push_back(wc);
+	}
+	cs_labels[examples.size()-1].costs[0].x = FLT_MAX; //trigger end of multiline example.
+
+	if (examples[0]->l.cb.costs.size() > 0 && examples[0]->l.cb.costs[0].probability == -1.f)//take care of shared examples
+	{
+		cs_labels[0].costs[0].class_index = 0;
+		cs_labels[0].costs[0].x = -1.f;
+	}
+}
   
 template <bool is_learn>
 void gen_cs_label(cb_adf& c, example& ec, v_array<COST_SENSITIVE::label> array, uint32_t label)
@@ -202,7 +211,7 @@ bool test_adf_sequence(cb_adf& data)
     return false;
   else
     {
-      cerr << "cb_adf: badly formatted example, only one line can have a cost" << endl; \
+      cerr << "cb_adf: badly formatted example, only one line can have a cost" << endl;
       throw exception();
     }
 }
@@ -348,29 +357,33 @@ void predict_or_learn(cb_adf& data, base_learner& base, example &ec) {
     data.ec_seq.push_back(&ec);
   }
 }
+
 }
 
 base_learner* cb_adf_setup(vw& all)
 {
-  if (missing_option(all, true, "cb_adf", "Do Contextual Bandit learning with multiline action dependent features."))
-    return nullptr;
-  
-  cb_adf& ld = calloc_or_die<cb_adf>();
-  
-  ld.all = &all;
+	if (missing_option(all, true, "cb_adf", "Do Contextual Bandit learning with multiline action dependent features."))
+		return nullptr;
+	new_options(all, "ADF Options")		
+		("score_all", po::value<bool>(), "Return actions sorted by score order");
+	add_options(all);		
 
-  if (count(all.args.begin(), all.args.end(),"--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(),"--wap_ldf") == 0)
-    {
-      all.args.push_back("--csoaa_ldf");
-      all.args.push_back("multiline");
-    }
+	cb_adf& ld = calloc_or_die<cb_adf>();
 
-  base_learner* base = setup_base(all);
-  all.p->lp = CB::cb_label;
+	ld.all = &all;
 
-  learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>);
-  l.set_finish_example(CB_ADF::finish_multiline_example);
-  l.set_finish(CB_ADF::finish);
-  l.set_end_examples(CB_ADF::end_examples); 
-  return make_base(l);
+	if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0)
+	{
+		all.args.push_back("--csoaa_ldf");
+		all.args.push_back("multiline");
+	}
+
+	base_learner* base = setup_base(all);
+	all.p->lp = CB::cb_label;
+
+	learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>);
+	l.set_finish_example(CB_ADF::finish_multiline_example);
+	l.set_finish(CB_ADF::finish);
+	l.set_end_examples(CB_ADF::end_examples);
+	return make_base(l);
 }
