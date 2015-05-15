@@ -371,5 +371,7 @@ vw::vw()
   // Set by the '--progress <arg>' option and affect sd->dump_interval
   progress_add = false;   // default is multiplicative progress dumps
   progress_arg = 2.0;     // next update progress dump multiplier
+
+  seeded = false; // default is not to share model states
 }
 

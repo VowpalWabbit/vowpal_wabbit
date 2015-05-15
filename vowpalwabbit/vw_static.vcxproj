@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -241,7 +241,6 @@
     <ClInclude Include="example.h" />
     <ClInclude Include="gd.h" />
     <ClInclude Include="ftrl.h" />
-    <ClInclude Include="interact.h" />
     <ClInclude Include="label_dictionary.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="multiclass.h" />
@@ -254,6 +253,7 @@
     <ClInclude Include="log_multi.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="hash.h" />
+    <ClInclude Include="interact.h" />
     <ClInclude Include="io_buf.h" />
     <ClInclude Include="lda_core.h" />
     <ClInclude Include="learner.h" />
