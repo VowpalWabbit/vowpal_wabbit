@@ -48,14 +48,35 @@ namespace cs_test
             };
 
             var visitor = new VowpalWabbitStringVisitor();
-            var serializer = VowpalWabbitSerializer.CreateSerializer<UserContext, VowpalWabbitStringVisitor, string, string, string>();
-            var serializerDependent = VowpalWabbitSerializer.CreateSerializer<DocumentFeature, VowpalWabbitStringVisitor, string, string, string>();
-            Console.WriteLine(serializer(context, visitor));
+            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<UserContext>(visitor);
+            var serializerDependent = VowpalWabbitSerializerFactory.CreateSerializer<DocumentFeature>(visitor);
+            Console.WriteLine(serializer.Serialize(context));
 
             foreach (var actionDependentFeature in context.ActionDependentFeatures)
             {
-                Console.WriteLine(serializerDependent(actionDependentFeature, visitor));
+                Console.WriteLine(serializerDependent.Serialize(actionDependentFeature));
             }
+
+            //using (var pool = new ObjectPool<VowpalWabbit<UserContext, DocumentFeature>>(() => new VowpalWabbit<UserContext, DocumentFeature>("")))
+            //{
+            //    using (var vw = pool.Get())
+            //    {
+            //        // do work with VW
+            //        // vw.Value.CreateEmptyExample();
+            //    }
+
+            //    // don't modify this model from another thread!
+            //    var newVwModel = new VowpalWabbitModel("model init");
+            //    pool.UpdateFactory(() => new VowpalWabbit<UserContext, DocumentFeature>(newVwModel));
+
+            //    // this will get a new VW instance with a newer version!
+            //    using (var vw = pool.Get())
+            //    {
+            //        // do work with VW
+            //        // vw.Value.CreateEmptyExample();
+            //    }
+            //}
+
             Console.ReadKey();
         }
 

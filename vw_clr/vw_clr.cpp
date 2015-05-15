@@ -4,21 +4,32 @@ namespace Microsoft
 {
 	namespace Research
 	{
-		namespace  MachineLearning
+		namespace MachineLearning
 		{
-			VowpalWabbit::VowpalWabbit(System::String^ pArgs) : m_vw(nullptr), m_isDisposed(false)
+			VowpalWabbitBase::VowpalWabbitBase(vw* vw) 
+				: m_vw(vw), m_isDisposed(false)
+			{
+			}
+
+			VowpalWabbitBase::VowpalWabbitBase(System::String^ pArgs) 
+				: m_vw(nullptr), m_isDisposed(false)
 			{
 				auto string = msclr::interop::marshal_as<std::string>(pArgs);
 				m_vw = VW::initialize(string);
 				initialize_parser_datastructures(*m_vw);
 			}
 
-			VowpalWabbit::~VowpalWabbit()
+			VowpalWabbit::VowpalWabbit(System::String^ pArgs) 
+				: VowpalWabbitBase(pArgs)
 			{
-				this->!VowpalWabbit();
 			}
 
-			VowpalWabbit::!VowpalWabbit()
+			VowpalWabbitBase::~VowpalWabbitBase()
+			{
+				this->!VowpalWabbitBase();
+			}
+
+			VowpalWabbitBase::!VowpalWabbitBase()
 			{
 				if (m_isDisposed)
 				{
@@ -37,9 +48,20 @@ namespace Microsoft
 				{
 					release_parser_datastructures(*m_vw);
 				}
+
 				VW::finish(*m_vw);
 
 				m_isDisposed = true;
+			}
+
+			VowpalWabbitModel::VowpalWabbitModel(System::String^ pArgs)
+				: VowpalWabbitBase(pArgs)
+			{
+			}
+
+			VowpalWabbit::VowpalWabbit(VowpalWabbitModel^ model) 
+				: VowpalWabbitBase(VW::seed_vw_model(model->m_vw, ""))
+			{
 			}
 
 			uint32_t VowpalWabbit::HashSpace(System::String^ s)
@@ -58,7 +80,7 @@ namespace Microsoft
 			{
 				auto string = msclr::interop::marshal_as<std::string>(line);
 
-				example* ex = VW::read_example(*m_vw, string.c_str());
+				auto ex = VW::read_example(*m_vw, string.c_str());
 				return gcnew VowpalWabbitExample(m_vw, ex);
 			}
 
@@ -78,7 +100,7 @@ namespace Microsoft
 					f[i].len = fs->Features->Length;
 				}
 
-				example* ex = VW::import_example(*m_vw, f, featureSpaces->Length);
+				auto ex = VW::import_example(*m_vw, f, featureSpaces->Length);
 
 				for (int i = 0; i < handles->Length; i++)
 				{
@@ -91,7 +113,7 @@ namespace Microsoft
 
 			VowpalWabbitExample^ VowpalWabbit::CreateEmptyExample()
 			{
-				example* ex = VW::read_example(*m_vw, "");
+				auto ex = VW::read_example(*m_vw, "");
 				return gcnew VowpalWabbitExample(m_vw, ex, true);
 			}
 		}

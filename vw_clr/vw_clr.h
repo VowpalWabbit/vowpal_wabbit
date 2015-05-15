@@ -80,18 +80,40 @@ namespace Microsoft
 				float Predict();
 			};
 
-			public ref class VowpalWabbit
+			public ref class VowpalWabbitBase abstract
 			{
-			private:
+			internal:
 				vw* m_vw;
+			
+			protected:
 				bool m_isDisposed;
 
-			protected:
-				!VowpalWabbit();
+				VowpalWabbitBase(System::String^ pArgs);
+				VowpalWabbitBase(vw* vw);
+
+				!VowpalWabbitBase();
 
 			public:
+				~VowpalWabbitBase();
+			};
+
+			/// <summary>
+			/// VowpalWabbit model wrapper.
+			/// </summary>
+			public ref class VowpalWabbitModel : VowpalWabbitBase
+			{
+			public:
+				VowpalWabbitModel(System::String^ pArgs);
+			};
+
+			/// <summary>
+			/// VowpalWabbit wrapper
+			/// </summary>
+			public ref class VowpalWabbit : VowpalWabbitBase
+			{
+			public:
 				VowpalWabbit(System::String^ pArgs);
-				~VowpalWabbit();
+				VowpalWabbit(VowpalWabbitModel^ model);
 				
 				uint32_t HashSpace(System::String^ s);
 				uint32_t HashFeature(System::String^ s, unsigned long u);
@@ -99,24 +121,7 @@ namespace Microsoft
 				VowpalWabbitExample^ ReadExample(System::String^ line);
 				VowpalWabbitExample^ ImportExample(cli::array<FeatureSpace^>^ featureSpaces);
 				VowpalWabbitExample^ CreateEmptyExample();
-
-				//void Foo()
-				//{
-				//	VW::add_label((example*)nullptr, 0);
-
-				//	// (VW::primitive_feature_space*)
-
-				//	cli::array<int>^ test = gcnew cli::array<int>(5);
-				//	
-				//	pin_ptr<int> native_test = &test[0];
-
-				//	(int*)native_test
-				//}
-
-				// TODO: Add your methods for this class here.
 			};
-
 		}
 	}
 }
-

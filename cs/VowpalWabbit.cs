@@ -3,38 +3,49 @@ using Microsoft.Research.MachineLearning.Serializer.Visitors;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using Microsoft.Research.MachineLearning.Serializer.Attributes;
 
 namespace Microsoft.Research.MachineLearning
 {
     public class VowpalWabbit<TExample> : VowpalWabbit
     {
-        protected readonly Func<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample> serializer;
-        protected readonly VowpalWabbitInterfaceVisitor visitor;
+        protected readonly VowpalWabbitSerializer<TExample, VowpalWabbitExample> serializer;
+
+        public VowpalWabbit(VowpalWabbitModel model)
+            : base(model)
+        {
+            var visitor = new VowpalWabbitInterfaceVisitor(this);
+            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(visitor);
+        }
 
         public VowpalWabbit(string arguments) : base(arguments)
         {
-            this.visitor = new VowpalWabbitInterfaceVisitor(this);
-
-            // Compile serializer
-            this.serializer = VowpalWabbitSerializer.CreateNativeSerializer<TExample>();
+            var visitor = new VowpalWabbitInterfaceVisitor(this);
+            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(visitor);
         }
         
         public VowpalWabbitExample ReadExample(TExample example)
         {
-            return this.serializer(example, this.visitor);    
+            return this.serializer.Serialize(example);    
         }
     }
 
     public sealed class VowpalWabbit<TExample, TActionDependentFeature> : VowpalWabbit<TExample>
         where TExample : IActionDependentFeatureExample<TActionDependentFeature>
     {
-        private readonly Func<TActionDependentFeature, VowpalWabbitInterfaceVisitor, VowpalWabbitExample> actionDependentFeatureSerializer;
-        private readonly VowpalWabbitInterfaceVisitor actionDependentFeatureVisitor;
+        private readonly VowpalWabbitSerializer<TActionDependentFeature, VowpalWabbitExample> actionDependentFeatureSerializer;
+
+        public VowpalWabbit(VowpalWabbitModel model) : base(model)
+        {
+            var visitor = new VowpalWabbitInterfaceVisitor(this);
+            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(visitor);
+        }
 
         public VowpalWabbit(string arguments) : base(arguments)
         {
-            this.actionDependentFeatureVisitor = new VowpalWabbitInterfaceVisitor(this);
-            this.actionDependentFeatureSerializer = VowpalWabbitSerializer.CreateNativeSerializer<TActionDependentFeature>();
+            var visitor = new VowpalWabbitInterfaceVisitor(this);
+            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(visitor);
         }
 
         /// <summary>
@@ -50,7 +61,7 @@ namespace Microsoft.Research.MachineLearning
             
             try
             {
-                var sharedExample = this.serializer(example, this.visitor);
+                var sharedExample = this.serializer.Serialize(example);
                 examples.Add(sharedExample);
 
                 if (!sharedExample.IsEmpty)
@@ -63,7 +74,7 @@ namespace Microsoft.Research.MachineLearning
                 foreach (var actionDependentFeature in example.ActionDependentFeatures)
                 {
                     // TODO: insert caching here
-                    var adfExample = this.actionDependentFeatureSerializer(actionDependentFeature, this.visitor);
+                    var adfExample = this.actionDependentFeatureSerializer.Serialize(actionDependentFeature);
                     examples.Add(adfExample);
 
                     // TODO: this is broken as IsEmpty is only true in the CreateEmptyExample case. Not sure
@@ -79,7 +90,7 @@ namespace Microsoft.Research.MachineLearning
                         adfExample.AddLabel(
                             string.Format(
                             CultureInfo.InvariantCulture, 
-                            "0:{1}:{2}",
+                            "0:{0}:{1}",
                             cost, probability));
                     }
 
@@ -111,7 +122,7 @@ namespace Microsoft.Research.MachineLearning
             
             try
             {
-                var sharedExample = this.serializer(example, this.visitor);
+                var sharedExample = this.serializer.Serialize(example);
                 examples.Add(sharedExample);
 
                 if (!sharedExample.IsEmpty)
@@ -123,8 +134,7 @@ namespace Microsoft.Research.MachineLearning
                 // leave as loop so if the serializer throws an exception, anything allocated so far can be free'd
                 foreach (var actionDependentFeature in example.ActionDependentFeatures)
                 {
-                    // TODO: insert caching here
-                    var adfExample = this.actionDependentFeatureSerializer(actionDependentFeature, this.visitor);
+                    var adfExample = this.actionDependentFeatureSerializer.Serialize(actionDependentFeature);
                     examples.Add(adfExample);
 
                     if (adfExample.IsEmpty)
@@ -168,7 +178,7 @@ namespace Microsoft.Research.MachineLearning
     /// </summary>
     public sealed class VowpalWabbitString<TExample> : VowpalWabbit
     {
-        private readonly Func<TExample, VowpalWabbitStringVisitor, string> serializer;
+        private readonly VowpalWabbitSerializer<TExample, string> serializer;
         private readonly VowpalWabbitStringVisitor stringVisitor;
 
         public VowpalWabbitString(string arguments)
@@ -176,12 +186,12 @@ namespace Microsoft.Research.MachineLearning
         {
             // Compile serializer
             this.stringVisitor = new VowpalWabbitStringVisitor();
-            this.serializer = VowpalWabbitSerializer.CreateStringSerializer<TExample>();
+            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(this.stringVisitor);
         }
         
         public VowpalWabbitExample ReadExample(TExample example)
         {
-            var exampleLine = this.serializer(example, this.stringVisitor);
+            var exampleLine = this.serializer.Serialize(example);
             return base.ReadExample(exampleLine);
         }
     }
