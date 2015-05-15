@@ -253,6 +253,7 @@
     <ClInclude Include="log_multi.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="hash.h" />
+    <ClInclude Include="interact.h" />
     <ClInclude Include="io_buf.h" />
     <ClInclude Include="lda_core.h" />
     <ClInclude Include="learner.h" />
@@ -320,6 +321,7 @@
     <ClCompile Include="best_constant.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="hash.cc" />
+    <ClCompile Include="interact.cc" />
     <ClCompile Include="io_buf.cc" />
     <ClCompile Include="lda_core.cc" />
     <ClCompile Include="learner.cc" />
