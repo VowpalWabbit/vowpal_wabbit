@@ -303,6 +303,7 @@
     <ClCompile Include="cb.cc" />
     <ClCompile Include="cbify.cc" />
     <ClCompile Include="cb_adf.cc" />
+    <ClCompile Include="comp_io.cc" />
     <ClCompile Include="csoaa.cc" />
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
