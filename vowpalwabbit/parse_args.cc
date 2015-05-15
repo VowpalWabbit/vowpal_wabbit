@@ -1043,6 +1043,36 @@ namespace VW {
     return &all;
   }
 
+  // Create a new VW instance while sharing the model with another instance
+  // The extra arguments will be appended to those of the other VW instance
+  vw* seed_vw_model(vw* vw_model, const string extra_args)
+  {
+    vector<string> model_args = vw_model->args;
+    model_args.push_back(extra_args);
+
+    std::ostringstream init_args;
+    for (size_t i = 0; i < model_args.size(); i++)
+    {
+      if (model_args[i] == "--no_stdin" || // ignore this since it will be added by vw::initialize
+          model_args[i] == "-i" || // ignore -i since we don't want to reload the model
+          (i > 0 && model_args[i - 1] == "-i"))
+      {
+        continue;
+      }
+      init_args << model_args[i] << " ";
+    }
+
+    vw* new_model = VW::initialize(init_args.str().c_str());
+    
+    // reference model states stored in the specified VW instance
+    new_model->reg = vw_model->reg; // regressor
+    new_model->sd = vw_model->sd; // shared data
+
+    new_model->seeded = true;
+
+    return new_model;
+  }
+
   void delete_dictionary_entry(substring ss, v_array<feature>*A) {
     free(ss.begin);
     A->delete_v();
@@ -1085,14 +1115,17 @@ namespace VW {
     finalize_regressor(all, all.final_regressor_name);
     all.l->finish();
     free_it(all.l);
-    if (all.reg.weight_vector != nullptr)
+    if (all.reg.weight_vector != nullptr && !all.seeded) // don't free weight vector if it is shared with another instance
       free(all.reg.weight_vector);
     free_parser(all);
     finalize_source(all.p);
     all.p->parse_name.erase();
     all.p->parse_name.delete_v();
     free(all.p);
-    free(all.sd);
+    if (!all.seeded)
+    {
+      free(all.sd);
+    }
     all.reduction_stack.delete_v();
     delete all.file_options;
     for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
