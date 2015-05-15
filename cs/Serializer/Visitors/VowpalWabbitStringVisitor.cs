@@ -1,20 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Research.MachineLearning.Serializer.Interfaces;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 {
     public class VowpalWabbitStringVisitor : IVowpalWabbitVisitor<string, string, string>
     {
-        public VowpalWabbitStringVisitor()
-        {
-        }
-
         private string VisitNamespace(INamespace @namespace)
         {
             return string.Format(

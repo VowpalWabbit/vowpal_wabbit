@@ -77,7 +77,6 @@ namespace Microsoft.Research.MachineLearning.Serializer
             var body = new List<Expression>();
             var variables = new List<ParameterExpression>();
             var namespaceVariables = new List<ParameterExpression>();
-            var visitationNamespace = new List<Expression>();
 
             foreach (var ns in featuresByNamespace)
             {
@@ -240,7 +239,6 @@ namespace Microsoft.Research.MachineLearning.Serializer
         {
             if (type.IsArray)
             {
-                // TODO: also support IList/List
                 var elemType = type.GetElementType();
 
                 // numeric types

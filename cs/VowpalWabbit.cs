@@ -73,7 +73,6 @@ namespace Microsoft.Research.MachineLearning
                 // leave as loop so if the serializer throws an exception, anything allocated so far can be free'd
                 foreach (var actionDependentFeature in example.ActionDependentFeatures)
                 {
-                    // TODO: insert caching here
                     var adfExample = this.actionDependentFeatureSerializer.Serialize(actionDependentFeature);
                     examples.Add(adfExample);
 

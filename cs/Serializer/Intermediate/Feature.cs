@@ -24,40 +24,14 @@ namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 
     public sealed class Feature<T, TResult> : Feature, IFeature<T>, IVisitableFeature<TResult>
     {
+        /// <summary>
+        /// The actual value
+        /// </summary>
         public T Value { get; set; }
 
+        /// <summary>
+        /// Compiled func to enable automatic double dispatch.
+        /// </summary>
         public Func<TResult> Visit { get; set;  }
-
-        //internal void ToVW(VwHandle vw, VowpalWabbitInterface.FEATURE feature, uint namespaceHash)
-        //{
-        //    var value = this.Property.GetValue(this.Source);
-
-        //    if (this.Converter != null)
-        //    {
-        //        var converter = Activator.CreateInstance(this.Converter) as IVowpalWabbitFeatureConverter;
-
-        //        // refine a bit to know if it's taking care of sparse with name or dense
-        //        value = converter.Convert(this.Property, value);
-        //    }
-        //    else if (this.Property.PropertyType.IsEnum)
-        //    {
-        //        value = string.Format("{0}_{1}", this.Property.Name, Enum.GetName(this.Property.PropertyType, value));
-        //    }
-
-        //    var valueStr = value as string;
-        //    if (valueStr != null)
-        //    {
-        //        // TODO: what's the reason for vw global data structure being passed
-        //        feature.weight_index = VowpalWabbitInterface.HashFeature(vw, valueStr, namespaceHash);
-        //        feature.x = 1;
-        //    }
-
-        //    var dblValue = value as double?;
-        //    if (dblValue != null)
-        //    {
-        //        feature.weight_index = VowpalWabbitInterface.HashFeature(vw, this.Property.Name, namespaceHash);
-        //        feature.x = (float)dblValue;
-        //    }
-        //}
     }
 }

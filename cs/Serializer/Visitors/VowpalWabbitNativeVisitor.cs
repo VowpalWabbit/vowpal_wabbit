@@ -3,8 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 {
@@ -12,23 +10,29 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
     {
         private readonly VowpalWabbit vw;
 
-        public VowpalWabbitInterfaceVisitor(VowpalWabbit vw)
-        {
-            this.vw = vw;
-        }
-
         /// <summary>
         /// Performance improvement. Calculate hash once per namespace.
         /// </summary>
         private uint namespaceHash;
 
+        public VowpalWabbitInterfaceVisitor(VowpalWabbit vw)
+        {
+            this.vw = vw;
+        }
+
         public FEATURE[] Visit<T>(INamespaceDense<T> namespaceDense)
         {
-            throw new NotImplementedException();
+            this.namespaceHash = namespaceDense.Name == null ? 
+                this.vw.HashSpace(namespaceDense.FeatureGroup.ToString()) :
+                this.vw.HashSpace(namespaceDense.FeatureGroup + namespaceDense.Name);
 
-            // TODO: Issues: returned cached version of Cached example
-            // manage completely outside of vw
-            // introduce interface!!!
+            return namespaceDense.DenseFeature.Value
+                .Select((v, i) => new FEATURE
+                {
+                    weight_index = (uint) (this.namespaceHash + i),
+                    x = (float) Convert.ToDouble(v)
+                })
+                .ToArray();
         }
 
         public FEATURE[] Visit(INamespaceSparse<IEnumerable<FEATURE>> namespaceSparse)
@@ -43,8 +47,6 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
                 .SelectMany(l => l)
                 .ToArray();
         }
-
-#region Numeric types
 
         public IEnumerable<FEATURE> Visit(IFeature<short> feature)
         {
@@ -130,8 +132,6 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
             };
         }
 
-#endregion
-
         public IEnumerable<FEATURE> VisitEnumerize<T>(IFeature<T> feature)
         {
             var strValue = Convert.ToString(feature.Value);
@@ -143,36 +143,6 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
             };
         }
 
-        #region Dictionary
-
-        // TODO: more overloads to avoid Convert.ToDouble()
-
-        /*        
-public void Visit<TValue>(IFeature<IDictionary<Int16, TValue>> feature)
-{
-    this.Visit(feature, key => (UInt32)key);
-}
-
-public void Visit<TValue>(IFeature<IDictionary<Int32, TValue>> feature)
-{
-    this.Visit(feature, key => (UInt32)key);
-}
-
-// TODO: not clear when to hash... should we check for negative values?
-public void Visit<TValue>(IFeature<IDictionary<Int64, TValue>> feature)
-{
-    this.Visit(feature, key => (UInt32)key);
-}
-
-public void Visit<TValue>(IFeature<IDictionary<UInt16, TValue>> feature)
-{
-    this.Visit(feature, key => key);
-}
-public void Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
-{
-    this.Visit(feature, key => key);
-}
-*/
         public IEnumerable<FEATURE> Visit<TValue>(IFeature<IDictionary<UInt16, TValue>> feature)
         {
             return feature.Value
@@ -226,8 +196,6 @@ public void Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
                 });
         }
 
-        #endregion
-
         public IEnumerable<FEATURE> Visit(IFeature<IEnumerable<string>> feature)
         {
             return feature.Value
@@ -261,25 +229,8 @@ public void Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
                                 Features = resultFeature 
                             }).ToArray();
 
+            // move data into VW
             return this.vw.ImportExample(featureSpaces);
-
-
-            //this.namespaceOutput = new List<FEATURE_SPACE>();
-
-            //// TODO: not clear on how to caching here (and keeping track was is inserted)
-            //// VisitActionDependentFeatures(string label, INamespace[],...) ?
-
-            //visitNamespaces();
-
-            //this.Examples.Add(new VowpalWabbitExample(this.namespaceOutput.ToArray()));
-
-
-
-            // move to Example
-            // TODO: how to handle GCHandle (need to keep in memory?)
-            /// GCHandle pinnedFeatureSpace = GCHandle.Alloc(featureSpace, GCHandleType.Pinned);
-
-            // return null; // pinnedFeatureSpace.AddrOfPinnedObject();
         }
     }
 }
