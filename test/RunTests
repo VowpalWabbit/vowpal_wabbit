@@ -1139,5 +1139,5 @@ __DATA__
 
 # Test 86: check --score_all on csoaa_ldf
 {VW} --csoaa_ldf multiline train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict
-    train-sets/ref/cs_test_multilabel.stderr
+    train-sets/ref/multilabel_ldf.stderr
     pred-sets/ref/multilabel_ldf.predict
