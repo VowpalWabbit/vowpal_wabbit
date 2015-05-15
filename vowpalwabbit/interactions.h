@@ -75,7 +75,7 @@ inline void call_audit(R& dat, const audit_data* f)
     audit_func(dat, f);
 }
 
-//should be optimized away for audit_func == nullptr
+// should be optimized away for any audit_func with feature argument
 template <class R, void (*audit_func)(R&, const feature*)>
 inline void call_audit(R&, const feature*) {}
 
@@ -105,8 +105,8 @@ struct feature_gen_data
 // and passes each of them to given function T()
 // it must be in header file to avoid compilation problems
 
-template <class R, class S, void (*T)(R&, float, S), class feature_class = feature,  void (*audit_func)(R&, const feature_class*) = nullptr>
-inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_class>* features_data = NULL)
+template <class R, class S, void (*T)(R&, float, S), class feature_class = feature,  void (*audit_func)(R&, const feature_class*) /*= nullptr*/> // nullptr func can't be used as template param in old compilers
+inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_class>* features_data /*= NULL*/) // default value removed to eliminate ambiguity in old complers
 {
     if (features_data == NULL) features_data = (v_array<feature_class>*)ec.atomics;
     assert(((void*)features_data == (void*)ec.atomics) || ((void*)features_data == (void*)ec.audit_features));
@@ -409,6 +409,15 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
     state_data.delete_v();
 }
 
+template <class R>
+inline void dummy_func(R&, const feature*) {} // should never be called due to call_audit overload
+
+// this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6
+template <class R, class S, void (*T)(R&, float, S)>
+inline void generate_interactions(vw& all, example& ec, R& dat)
+{
+    generate_interactions<R, S, T, feature, dummy_func<R> > (all, ec, dat, ec.atomics);
+}
 
 } // end of namespace
 
