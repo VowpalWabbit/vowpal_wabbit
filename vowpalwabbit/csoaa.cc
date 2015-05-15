@@ -121,8 +121,8 @@ int score_comp(const void* p1, const void* p2) {
   score* s1 = (score*)p1;
   score* s2 = (score*)p2;
   if(s2->val == s1->val) return 0;
-  else if(s2->val >= s1->val) return 1;
-  else return -1;
+  else if(s2->val >= s1->val) return -1;
+  else return 1;
 }
 
   bool ec_is_label_definition(example& ec) // label defs look like "0:___" or just "label:___"
@@ -514,13 +514,25 @@ void output_example_multilabel(vw& all, example* ec, bool& hit_loss, v_array<exa
   v_array<uint32_t> preds = ec->pred.multilabels.label_v;
   
   if (!COST_SENSITIVE::example_is_test(*ec)) {
-    for (size_t j = 0; j<costs.size(); j++) {
+    size_t idx = 0;
+    for(example** ecc = ec_seq->begin; ecc != ec_seq->end;ecc++,idx++) {
+      example& ex = **ecc;
+      if(ec_is_example_header(ex)) continue;
       if (hit_loss) break;
-      if (preds[0] == costs[j].class_index) {
-	loss = costs[j].x;
+      if (preds[0] == idx) {
+	loss = ex.l.cs.costs[0].x;
 	hit_loss = true;
       }
     }
+
+    // for (size_t j = 0; j<costs.size(); j++) {
+    //   if (hit_loss) break;
+    //   if (preds[0] == costs[j].class_index) {
+    // 	loss = costs[j].x;
+    // 	hit_loss = true;
+    // 	cout<<"loss = "<<endl;
+    //   }
+    
     
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
@@ -554,12 +566,12 @@ void output_example_seq(vw& all, ldf& data)
     all.sd->example_number++;
 
     bool hit_loss = false;
-	if(data.score_all)
-	  output_example_multilabel(all, *(data.ec_seq.begin), hit_loss, &(data.ec_seq));
-	else
-	  for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
-	    output_example(all, **ecc, hit_loss, &(data.ec_seq));
-
+    if(data.score_all)
+      output_example_multilabel(all, *(data.ec_seq.begin), hit_loss, &(data.ec_seq));
+    else
+      for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
+	output_example(all, **ecc, hit_loss, &(data.ec_seq));
+    
     if (!data.is_singleline && (all.raw_prediction > 0)) {
       v_array<char> empty = { nullptr, nullptr, nullptr, 0 };
       all.print_text(all.raw_prediction, "", empty);
