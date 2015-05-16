@@ -297,19 +297,24 @@ generate_interactions<eval_gen_data, uint32_t, ft_cnt>(all, ec, dat);
 ...
 */
 
-
+// lookup table of factorials up tu 21!
+size_t fast_factorial[] = {1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600,6227020800,87178291200,1307674368000,
+                             20922789888000,355687428096000,6402373705728000,121645100408832000,2432902008176640000};
+const size_t size_fast_factorial = sizeof(fast_factorial)/sizeof(*fast_factorial);
 
 // helper factorial function that allows to perform:
 // n!/(n-k)! = (n-k+1)*(n-k+2)..*(n-1)*n
-// by specifying n-k+1 as second argument
+// by specifying n-k as second argument
 // that helps to avoid size_t overflow for big n
-// leave second argument = 2 to get regular factorial function
+// leave second argument = 1 to get regular factorial function
 
-inline size_t factor(const size_t n, const size_t start_from = 2)
+inline size_t factor(const size_t n, const size_t start_from = 1)
 {
-    if (n == 0) return 1.;
+    if (n <= 0) return 1.;
+    if (start_from == 1 && n < size_fast_factorial) return fast_factorial[n];
+
     size_t res = 1;
-    for (size_t i = start_from; i <= n; ++i) res *= i;
+    for (size_t i = start_from+1; i <= n; ++i) res *= i;
     return res;
 }
 
@@ -376,17 +381,6 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
                     size_t cnt_ft_weight_non_1 = 0;
 
 
-                    // if number of features is less than  order of interaction then go to the next interaction
-                    // as you can't make simple combination of interaction 'aaa' if a contains < 3 features.
-                    // unsell one of them has weight != 1. and we are counting them.
-                    const size_t ft_size = features.size();
-                    if (cnt_ft_weight_non_1 == 0 && ft_size < order_of_inter)
-                    {
-                        num_features_in_inter = 0;
-                        break;
-                    }
-
-
                     // in this block we shall calculate number of generated features and sum of their weights
                     // keeping in mind rules applicable for simple combinations instead of permutations
 
@@ -419,30 +413,50 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
                     }
 
-                    sum_feat_sq_in_inter *= results[0]; // will be explained in [URL]
+                    sum_feat_sq_in_inter *= results[0]; // will be explained in http://bit.ly/1Hk9JX1
 
 
                     // let's calculate  the number of a new features
 
-                    // number of generated simple combinations is C(n,k) = n!/(n-k)!/k!
-                    size_t n = factor(ft_size, ft_size-order_of_inter+1);
-                    n /= factor(order_of_inter); // k!
-
-                    // let's adjust with cnt_ft_weight_non_1 features
-                    if (cnt_ft_weight_non_1 != 0)
+                    // if number of features is less than  order of interaction then go to the next interaction
+                    // as you can't make simple combination of interaction 'aaa' if a contains < 3 features.
+                    // unless one of them has weight != 1. and we are counting them.
+                    const size_t ft_size = features.size();
+                    if (cnt_ft_weight_non_1 == 0 && ft_size < order_of_inter)
                     {
-                        size_t num = 1;
-                        for (size_t m = 1; m < order_of_inter-1; ++m)
-                            num += factor(ft_size-1, ft_size-m)/factor(m);
-                        num *= cnt_ft_weight_non_1;
+                        num_features_in_inter = 0;
+                        break;
+                    }
 
-                        for (size_t j = 2; j <= order_of_inter / 2; ++j)
+                    // number of generated simple combinations is C(n,k) = n!/(n-k)!/k!
+                    size_t n;
+                    if (cnt_ft_weight_non_1 == 0)
+                    {
+                        n = factor(ft_size, ft_size-order_of_inter);
+                        n /= factor(order_of_inter); // k!
+                    } else {
+                        // m - number of weight != 1.0
+                        // C(n-m,k)  = n-m!/(n-m-k)!/k!
+                        if (ft_size - cnt_ft_weight_non_1 > 0)
+                        {  // not all features have weight != 1.0
+                           n = factor(ft_size - cnt_ft_weight_non_1, ft_size - cnt_ft_weight_non_1 - order_of_inter);
+                           n /= factor(order_of_inter); // k!
+                        } else n = 0.;
+
+                        for (size_t l = 1; l <= order_of_inter; ++l)
                         {
-                            size_t spaces_left = order_of_inter - j*2;
-                            num += factor(cnt_ft_weight_non_1 + spaces_left -1, cnt_ft_weight_non_1)/factor(spaces_left);
+                            //C(l+m-1, l) * C(k-l, n-m)
+                            size_t num = factor(l+cnt_ft_weight_non_1-1, cnt_ft_weight_non_1-1)/factor(l);
+                            if (l < order_of_inter)
+                            {
+                                if (ft_size > cnt_ft_weight_non_1)
+                                    num *= factor(order_of_inter-l, order_of_inter-l-ft_size+cnt_ft_weight_non_1)/factor(ft_size - cnt_ft_weight_non_1);
+                                else num = 0.;
+                            }
+                            n +=  num;
                         }
-                        n += num;
-                    } // details on [URL]
+
+                    } // details on http://bit.ly/1Hk9JX1
 
                     num_features_in_inter *= n;
 
