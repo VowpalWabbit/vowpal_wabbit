@@ -272,12 +272,12 @@ void sort_and_filter_duplicate_interactions(v_array<v_string>& vec, bool filter_
  */
 
 
-// these 3 commented code blocks below are alternative way of implementation of eval_count_of_generated_ft()
-// for !all.permutations. - it just calls generate_interactions() with small function which counts generated
-// functiona and sums their squared weights
-// it's replaced with more fast (?) analytic solution but keeps just in case.
+// thecode under DEBUG_EVAL_COUNT_OF_GEN_FT below is an alternative way of implementation of eval_count_of_generated_ft()
+// it just calls generate_interactions() with small function which counts generated features and sums their squared weights
+// it's replaced with more fast (?) analytic solution but keeps just in case and for doublecheck.
 
-/*
+//#define DEBUG_EVAL_COUNT_OF_GEN_FT
+#ifdef DEBUG_EVAL_COUNT_OF_GEN_FT
 struct eval_gen_data
 {
     size_t& new_features_cnt;
@@ -290,12 +290,7 @@ void ft_cnt(eval_gen_data& dat, float fx, uint32_t )
     ++ dat.new_features_cnt;
     dat.new_features_weight += fx * fx;
 }
-
-... // put in eval_count_of_generated_ft instead of 'else {}'
-eval_gen_data dat(new_features_cnt, new_features_weight);
-generate_interactions<eval_gen_data, uint32_t, ft_cnt>(all, ec, dat);
-...
-*/
+#endif
 
 // lookup table of factorials up tu 21!
 size_t fast_factorial[] = {1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600,6227020800,87178291200,1307674368000,
@@ -353,6 +348,13 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
     } else { // case of simple combinations
 
+        #ifdef DEBUG_EVAL_COUNT_OF_GEN_FT
+        size_t correct_features_cnt = 0;
+        float correct_features_weight = 0.;
+        eval_gen_data dat(correct_features_cnt, correct_features_weight);
+        generate_interactions<eval_gen_data, uint32_t, ft_cnt>(all, ec, dat);
+        #endif
+
         for (v_string* inter = all.interactions.begin; inter != all.interactions.end; ++inter)
         {
             size_t num_features_in_inter = 1;
@@ -388,32 +390,33 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
                     // let's calculate sum of their squared weight for whole block
 
-                    float ft_wt_sum = 0.;
-
                     // ensure results as big as order_of_inter and empty.
-                    for (size_t i = 0; i < results.size(); ++i) results[i] = 0;
+                    for (size_t i = 0; i < results.size(); ++i) results[i] = 0.;
                     while (results.size() < order_of_inter) results.push_back(0.);
 
-                    // recurrent weight calculatios
+                    // recurrent weight calculations
                     for (feature* ft = features.begin; ft != features.end; ++ft)
                     {
                         const float x = ft->x*ft->x;
 
-                        for (size_t i = 0; i < order_of_inter-1; ++i)
-                            results[i] += results[i+1]*x;
-
-                        results[order_of_inter-1] += ft_wt_sum*x;
-                        ft_wt_sum += x;
-
-                        if (ft->x != 1. && feature_self_interactions_for_weight_other_than_1)
+                        if ( ft->x == 1.0 || !feature_self_interactions_for_weight_other_than_1) // must compare  ft->x
                         {
-                            results[order_of_inter-1] += x*x;
+                            for (size_t i = order_of_inter-1; i > 0; --i)
+                                results[i] += results[i-1]*x;
+
+                            results[0] += x;
+                        } else {
+                            results[0] += x;
+
+                            for (size_t i = 1; i < order_of_inter; ++i)
+                                results[i] += results[i-1]*x;
+
                             ++cnt_ft_weight_non_1;
                         }
 
                     }
 
-                    sum_feat_sq_in_inter *= results[0]; // will be explained in http://bit.ly/1Hk9JX1
+                    sum_feat_sq_in_inter *= results[order_of_inter-1]; // will be explained in http://bit.ly/1Hk9JX1
 
 
                     // let's calculate  the number of a new features
@@ -428,35 +431,28 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
                         break;
                     }
 
-                    // number of generated simple combinations is C(n,k) = n!/(n-k)!/k!
+
                     size_t n;
-                    if (cnt_ft_weight_non_1 == 0)
+                    if (cnt_ft_weight_non_1 == 0) // number of generated simple combinations is C(n,k) = n!/(n-k)!/k!
                     {
                         n = factor(ft_size, ft_size-order_of_inter);
                         n /= factor(order_of_inter); // k!
                     } else {
-                        // m - number of weight != 1.0
-                        // C(n-m,k)  = n-m!/(n-m-k)!/k!
-                        if (ft_size - cnt_ft_weight_non_1 > 0)
-                        {  // not all features have weight != 1.0
-                           n = factor(ft_size - cnt_ft_weight_non_1, ft_size - cnt_ft_weight_non_1 - order_of_inter);
-                           n /= factor(order_of_inter); // k!
-                        } else n = 0.;
-
-                        for (size_t l = 1; l <= order_of_inter; ++l)
+                        n = 0.;
+                        for (size_t l = 0; l <= order_of_inter; ++l)
                         {
-                            //C(l+m-1, l) * C(k-l, n-m)
-                            size_t num = factor(l+cnt_ft_weight_non_1-1, cnt_ft_weight_non_1-1)/factor(l);
-                            if (l < order_of_inter)
-                            {
-                                if (ft_size > cnt_ft_weight_non_1)
-                                    num *= factor(order_of_inter-l, order_of_inter-l-ft_size+cnt_ft_weight_non_1)/factor(ft_size - cnt_ft_weight_non_1);
-                                else num = 0.;
-                            }
+                            //C(l+m-1, l) * C(n-m, k-l)
+                            size_t num = (l==0)?1:factor(l+cnt_ft_weight_non_1-1, cnt_ft_weight_non_1-1)/factor(l);
+
+                            if (ft_size - cnt_ft_weight_non_1 >= order_of_inter-l)
+                                num *= factor(ft_size - cnt_ft_weight_non_1, ft_size - cnt_ft_weight_non_1 - order_of_inter + l)/factor(order_of_inter-l);
+                            else num = 0;
+
                             n +=  num;
                         }
 
                     } // details on http://bit.ly/1Hk9JX1
+
 
                     num_features_in_inter *= n;
 
@@ -470,6 +466,13 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
             new_features_cnt += num_features_in_inter;
             new_features_weight += sum_feat_sq_in_inter;
         }
+
+        #ifdef DEBUG_EVAL_COUNT_OF_GEN_FT
+        if (correct_features_cnt != new_features_cnt)
+            cerr << "Incorrect new features count " << new_features_cnt << " must be " << correct_features_cnt << endl;
+        if (fabs(correct_features_weight - new_features_weight) > 1e-5)
+            cerr << "Incorrect new features weight " << new_features_weight << " must be " << correct_features_weight << endl;
+        #endif
 
     }
 
