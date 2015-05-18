@@ -17,20 +17,20 @@ using namespace msclr::interop;
 namespace MultiWorldTesting {
 
 // Context callback
-private delegate UInt32 ClrContextGetNumActionsCallback(IntPtr contextPtr);
-typedef u32 Native_Context_Get_Num_Actions_Callback(void* context);
+private delegate UInt32 ClrContextGetNumActionsCallback(IntPtr mwtPtr, IntPtr contextPtr);
+typedef u32 Native_Context_Get_Num_Actions_Callback(void* mwt, void* context);
 
 // Policy callback
-private delegate UInt32 ClrPolicyCallback(IntPtr explorerPtr, IntPtr contextPtr, int index);
-typedef u32 Native_Policy_Callback(void* explorer, void* context, int index);
+private delegate void ClrPolicyCallback(IntPtr explorerPtr, IntPtr contextPtr, IntPtr actionsPtr, int index);
+typedef void Native_Policy_Callback(void* explorer, void* context, void* actions, int index);
 
 // Scorer callback
 private delegate void ClrScorerCallback(IntPtr explorerPtr, IntPtr contextPtr, IntPtr scores, IntPtr size);
 typedef void Native_Scorer_Callback(void* explorer, void* context, float* scores[], u32* size);
 
 // Recorder callback
-private delegate void ClrRecorderCallback(IntPtr mwtPtr, IntPtr contextPtr, UInt32 action, float probability, IntPtr uniqueKey);
-typedef void Native_Recorder_Callback(void* mwt, void* context, u32 action, float probability, void* unique_key);
+private delegate void ClrRecorderCallback(IntPtr mwtPtr, IntPtr contextPtr, IntPtr actionsPtr, float probability, IntPtr uniqueKey);
+typedef void Native_Recorder_Callback(void* mwt, void* context, void* actions, float probability, void* unique_key);
 
 // ToString callback
 private delegate void ClrToStringCallback(IntPtr contextPtr, IntPtr stringValue);
@@ -53,7 +53,7 @@ public:
 
     u32 Get_Number_Of_Actions()
     {
-        return m_callback_num_actions(m_clr_context);
+        return m_callback_num_actions(m_clr_mwt, m_clr_context);
     }
 
 	void* Get_Clr_Mwt()
@@ -71,10 +71,21 @@ public:
 		return m_clr_explorer;
 	}
 
+    void* Get_Clr_Action_List()
+    {
+        return m_clr_action_list;
+    }
+
+    void Set_Clr_Action_List(void* clr_action_list)
+    {
+        m_clr_action_list = clr_action_list;
+    }
+
 private:
 	void* m_clr_mwt;
 	void* m_clr_context;
 	void* m_clr_explorer;
+    void* m_clr_action_list;
 
 private:
     Native_Context_Get_Num_Actions_Callback* m_callback_num_actions;
@@ -83,10 +94,9 @@ private:
 class NativeStringContext
 {
 public:
-	NativeStringContext(void* clr_context, Native_To_String_Callback* func)
+    NativeStringContext(void* clr_context, Native_To_String_Callback* func) : m_func(func)
 	{
 		m_clr_context = clr_context;
-		m_func = func;
 	}
 
 	string To_String()
@@ -97,75 +107,84 @@ public:
 	}
 private:
 	void* m_clr_context;
-	Native_To_String_Callback* m_func;
+	Native_To_String_Callback* const m_func;
 };
 
 // NativeRecorder listens to callback event and reroute it to the managed Recorder instance
 class NativeRecorder : public NativeMultiWorldTesting::IRecorder<NativeContext>
 {
 public:
-	NativeRecorder(Native_Recorder_Callback* native_func)
+    NativeRecorder(Native_Recorder_Callback* native_func) : m_func(native_func)
 	{
-		m_func = native_func;
 	}
 
-	void Record(NativeContext& context, u32 action, float probability, string unique_key)
+    void Record(NativeContext& context, u32* actions, u32 num_actions, float probability, string unique_key)
 	{
         // Normal handles are sufficient here since native code will only hold references and not access the object's data
         // https://www.microsoftpressstore.com/articles/article.aspx?p=2224054&seqNum=4
 		GCHandle uniqueKeyHandle = GCHandle::Alloc(gcnew String(unique_key.c_str()));
-		IntPtr uniqueKeyPtr = (IntPtr)uniqueKeyHandle;
+        try
+        {
+            IntPtr uniqueKeyPtr = (IntPtr)uniqueKeyHandle;
 
-		m_func(context.Get_Clr_Mwt(), context.Get_Clr_Context(), action, probability, uniqueKeyPtr.ToPointer());
-
-		uniqueKeyHandle.Free();
+            m_func(context.Get_Clr_Mwt(), context.Get_Clr_Context(), context.Get_Clr_Action_List(), probability, uniqueKeyPtr.ToPointer());
+        }
+        finally
+        {
+            if (uniqueKeyHandle.IsAllocated)
+            {
+                uniqueKeyHandle.Free();
+            }
+        }
 	}
 private:
-	Native_Recorder_Callback* m_func;
+	Native_Recorder_Callback* const m_func;
 };
 
 // NativePolicy listens to callback event and reroute it to the managed Policy instance
 class NativePolicy : public NativeMultiWorldTesting::IPolicy<NativeContext>
 {
 public:
-	NativePolicy(Native_Policy_Callback* func, int index = -1)
+    NativePolicy(Native_Policy_Callback* func, int index = -1) : m_func(func)
 	{
-		m_func = func;
 		m_index = index;
 	}
 
-	u32 Choose_Action(NativeContext& context)
+    void Choose_Action(NativeContext& context, u32* actions, u32 num_actions)
 	{
-		return m_func(context.Get_Clr_Explorer(), context.Get_Clr_Context(), m_index);
+		m_func(context.Get_Clr_Explorer(), context.Get_Clr_Context(), context.Get_Clr_Action_List(), m_index);
 	}
 
 private:
-	Native_Policy_Callback* m_func;
+	Native_Policy_Callback* const m_func;
 	int m_index;
 };
 
 class NativeScorer : public NativeMultiWorldTesting::IScorer<NativeContext>
 {
 public:
-	NativeScorer(Native_Scorer_Callback* func)
+    NativeScorer(Native_Scorer_Callback* func) : m_func(func)
 	{
-		m_func = func;
 	}
 
 	vector<float> Score_Actions(NativeContext& context)
 	{
 		float* scores = nullptr;
 		u32 num_scores = 0;
-		m_func(context.Get_Clr_Explorer(), context.Get_Clr_Context(), &scores, &num_scores);
-
-		// It's ok if scores is null, vector will be empty
-		vector<float> scores_vector(scores, scores + num_scores);
-		delete[] scores;
-
-		return scores_vector;
+        try
+        {
+            m_func(context.Get_Clr_Explorer(), context.Get_Clr_Context(), &scores, &num_scores);
+            // It's ok if scores is null, vector will be empty
+            vector<float> scores_vector(scores, scores + num_scores);
+            return scores_vector;
+        }
+        finally
+        {
+            delete[] scores;
+        }
 	}
 private:
-	Native_Scorer_Callback* m_func;
+	Native_Scorer_Callback* const m_func;
 };
 
 // Triggers callback to the Context instance
@@ -173,11 +192,12 @@ generic <class Ctx>
 public ref class ContextCallback
 {
 internal:
-    ContextCallback()
+    ContextCallback(Func<Ctx, UInt32>^ func)
     {
         contextNumActionsCallback = gcnew ClrContextGetNumActionsCallback(&ContextCallback<Ctx>::InteropInvokeNumActions);
         IntPtr contextNumActionsCallbackPtr = Marshal::GetFunctionPointerForDelegate(contextNumActionsCallback);
         m_num_actions_callback = static_cast<Native_Context_Get_Num_Actions_Callback*>(contextNumActionsCallbackPtr.ToPointer());
+        getNumberOfActionsFunc = func;
     }
 
     Native_Context_Get_Num_Actions_Callback* GetNumActionsCallback()
@@ -185,15 +205,24 @@ internal:
         return m_num_actions_callback;
     }
 
-    static UInt32 InteropInvokeNumActions(IntPtr contextPtr)
+    static UInt32 InteropInvokeNumActions(IntPtr mwtPtr, IntPtr contextPtr)
     {
+        GCHandle mwtHandle = (GCHandle)mwtPtr;
+        ContextCallback<Ctx>^ callback = (ContextCallback<Ctx>^)mwtHandle.Target;
+
         GCHandle contextHandle = (GCHandle)contextPtr;
 
-        return ((IVariableActionContext^)contextHandle.Target)->GetNumberOfActions();
+        if (callback->getNumberOfActionsFunc == nullptr)
+        {
+            throw gcnew InvalidOperationException("A callback to retrieve number of actions for the current context has not been set.");
+        }
+
+        return callback->getNumberOfActionsFunc((Ctx)contextHandle.Target);
     }
 
 private:
-    ClrContextGetNumActionsCallback^ contextNumActionsCallback;
+    initonly ClrContextGetNumActionsCallback^ contextNumActionsCallback;
+    initonly Func<Ctx, UInt32>^ getNumberOfActionsFunc;
 
 private:
     Native_Context_Get_Num_Actions_Callback* m_num_actions_callback;
@@ -204,7 +233,7 @@ generic <class Ctx>
 public ref class PolicyCallback abstract
 {
 internal:
-	virtual UInt32 InvokePolicyCallback(Ctx context, int index) = 0;
+	virtual void InvokePolicyCallback(Ctx context, cli::array<UInt32>^ actions, int index) = 0;
 
 	PolicyCallback()
 	{
@@ -244,7 +273,7 @@ internal:
 		return m_native_policies;
 	}
 
-	static UInt32 InteropInvoke(IntPtr callbackPtr, IntPtr contextPtr, int index)
+	static void InteropInvoke(IntPtr callbackPtr, IntPtr contextPtr, IntPtr actionsPtr, int index)
 	{
 		GCHandle callbackHandle = (GCHandle)callbackPtr;
 		PolicyCallback<Ctx>^ callback = (PolicyCallback<Ctx>^)callbackHandle.Target;
@@ -252,11 +281,14 @@ internal:
 		GCHandle contextHandle = (GCHandle)contextPtr;
 		Ctx context = (Ctx)contextHandle.Target;
 
-		return callback->InvokePolicyCallback(context, index);
+        GCHandle actionsHandle = (GCHandle)actionsPtr;
+        cli::array<UInt32>^ actions = (cli::array<UInt32>^)actionsHandle.Target;
+
+        callback->InvokePolicyCallback(context, actions, index);
 	}
 
 private:
-	ClrPolicyCallback^ policyCallback;
+	initonly ClrPolicyCallback^ policyCallback;
 
 private:
 	NativePolicy* m_native_policy;
@@ -269,9 +301,9 @@ generic <class Ctx>
 public ref class RecorderCallback abstract : public ContextCallback<Ctx>
 {
 internal:
-	virtual void InvokeRecorderCallback(Ctx context, UInt32 action, float probability, String^ unique_key) = 0;
+    virtual void InvokeRecorderCallback(Ctx context, cli::array<UInt32>^ actions, float probability, String^ unique_key) = 0;
 
-	RecorderCallback()
+    RecorderCallback(Func<Ctx, UInt32>^ func) : ContextCallback(func)
 	{
 		recorderCallback = gcnew ClrRecorderCallback(&RecorderCallback<Ctx>::InteropInvoke);
 		IntPtr recorderCallbackPtr = Marshal::GetFunctionPointerForDelegate(recorderCallback);
@@ -289,7 +321,7 @@ internal:
 		return m_native_recorder;
 	}
 
-	static void InteropInvoke(IntPtr mwtPtr, IntPtr contextPtr, UInt32 action, float probability, IntPtr uniqueKeyPtr)
+    static void InteropInvoke(IntPtr mwtPtr, IntPtr contextPtr, IntPtr actionsPtr, float probability, IntPtr uniqueKeyPtr)
 	{
 		GCHandle mwtHandle = (GCHandle)mwtPtr;
 		RecorderCallback<Ctx>^ callback = (RecorderCallback<Ctx>^)mwtHandle.Target;
@@ -300,11 +332,14 @@ internal:
 		GCHandle uniqueKeyHandle = (GCHandle)uniqueKeyPtr;
 		String^ uniqueKey = (String^)uniqueKeyHandle.Target;
 
-		callback->InvokeRecorderCallback(context, action, probability, uniqueKey);
+        GCHandle actionsHandle = (GCHandle)actionsPtr;
+        cli::array<UInt32>^ actions = (cli::array<UInt32>^)actionsHandle.Target;
+
+        callback->InvokeRecorderCallback(context, actions, probability, uniqueKey);
 	}
 
 private:
-	ClrRecorderCallback^ recorderCallback;
+	initonly ClrRecorderCallback^ recorderCallback;
 
 private:
 	NativeRecorder* m_native_recorder;
@@ -364,7 +399,7 @@ internal:
 	}
 
 private:
-	ClrScorerCallback^ scorerCallback;
+	initonly ClrScorerCallback^ scorerCallback;
 
 private:
 	NativeScorer* m_native_scorer;
@@ -397,7 +432,7 @@ internal:
 	}
 
 private:
-	ClrToStringCallback^ toStringCallback;
+	initonly ClrToStringCallback^ toStringCallback;
 
 private:
 	Native_To_String_Callback* m_callback;
