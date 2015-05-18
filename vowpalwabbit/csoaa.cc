@@ -432,7 +432,7 @@ void do_actual_learning(ldf& data, base_learner& base)
       data.ec_seq[0]->pred.multilabels = data.stored_preds[0];
     for (size_t k=start_K; k<K; k++) {
       data.ec_seq[k]->pred.multilabels = data.stored_preds[k];
-      data.ec_seq[0]->pred.multilabels.label_v.push_back(data.scores[k].idx);
+      data.ec_seq[0]->pred.multilabels.label_v.push_back(data.scores[k-start_K].idx);
     }
   }  
   else // Mark the predicted subexample with its class_index, all other with 0
