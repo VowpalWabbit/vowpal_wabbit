@@ -616,10 +616,10 @@ void end_examples(ldf& data)
 
 void finish(ldf& data)
 {
-  //vw* all = l->all;
   data.ec_seq.delete_v();
   LabelDict::free_label_features(data.label_features);
   data.scores.delete_v();
+  data.stored_preds.delete_v();
 }
 
 template <bool is_learn>
