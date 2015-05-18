@@ -154,4 +154,3 @@ $ sh autogen.sh --enable-libc++
 $ make
 $ make test    # (optional)
 ```
-
