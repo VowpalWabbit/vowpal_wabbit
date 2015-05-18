@@ -111,7 +111,7 @@ struct ldf {
   float csoaa_example_t;
   vw* all;
   
-  bool score_all;
+  bool rank_all;
   v_array<score> scores;
   
   base_learner* base;
@@ -120,7 +120,9 @@ struct ldf {
 int score_comp(const void* p1, const void* p2) {
   score* s1 = (score*)p1;
   score* s2 = (score*)p2;
-  return (s2->val - s1->val);
+  if(s2->val == s1->val) return 0;
+  else if(s2->val >= s1->val) return -1;
+  else return 1;
 }
 
   bool ec_is_label_definition(example& ec) // label defs look like "0:___" or just "label:___"
@@ -348,7 +350,7 @@ void do_actual_learning(ldf& data, base_learner& base)
 {
   //cdbg << "do_actual_learning size=" << data.ec_seq.size() << endl;
   if (data.ec_seq.size() <= 0) return;  // nothing to do
-
+  
   /////////////////////// handle label definitions
   if (ec_seq_is_label_definition(data.ec_seq)) {
     for (size_t i=0; i<data.ec_seq.size(); i++) {
@@ -383,25 +385,24 @@ void do_actual_learning(ldf& data, base_learner& base)
       LabelDict::add_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0], (data.all->audit || data.all->hash_inv));
   }
   bool isTest = check_ldf_sequence(data, start_K);
+  MULTILABEL::labels preds;
 
   /////////////////////// do prediction
   size_t predicted_K = start_K;
-  if(data.score_all) {
+  if(data.rank_all) {
     data.scores.erase();
+    preds = data.ec_seq[0]->pred.multilabels;
     
     for (size_t k=start_K; k<K; k++) {
-      example *ec = data.ec_seq[k];
+      example *ec = data.ec_seq[k];      
       make_single_prediction(data, base, *ec);
       score s;
       s.val = ec->partial_prediction;
       s.idx = k;
       data.scores.push_back(s);
-    }
+    }    
 
-    qsort((void*) data.scores.begin, data.scores.size(), sizeof(score), score_comp);
-    
-    for (size_t k=start_K; k<K; k++)      
-      data.ec_seq[0]->pred.multilabels.label_v.push_back(data.scores[k].idx);
+    qsort((void*) data.scores.begin, data.scores.size(), sizeof(score), score_comp);        
   }
   else {
     float  min_score = FLT_MAX;       
@@ -414,6 +415,7 @@ void do_actual_learning(ldf& data, base_learner& base)
       }
     }   
   }
+  
 
   /////////////////////// learn
   if (is_learn && !isTest){
@@ -421,10 +423,15 @@ void do_actual_learning(ldf& data, base_learner& base)
     else             do_actual_learning_oaa(data, base, start_K);
   }
 
-  // Mark the predicted subexample with its class_index, all other with 0
-  if(data.score_all) {
+  
+  if(data.rank_all) {
+    preds.label_v.erase();
+    for (size_t k=start_K; k<K; k++) {
+      preds.label_v.push_back(data.scores[k].idx);
+    }
+    data.ec_seq[0]->pred.multilabels = preds;
   }  
-  else 
+  else // Mark the predicted subexample with its class_index, all other with 0
     for (size_t k=start_K; k<K; k++)
       data.ec_seq[k]->pred.multiclass = (k == predicted_K) ? data.ec_seq[k]->l.cs.costs[0].class_index : 0;
   
@@ -492,6 +499,66 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(ec), ec, ec_seq);
 }
 
+void output_example_multilabel(vw& all, example* ec, bool& hit_loss, v_array<example*>* ec_seq)
+{
+  label& ld = ec->l.cs;
+  v_array<COST_SENSITIVE::wclass> costs = ld.costs;
+  
+  if (example_is_newline(*ec)) return;
+  //if (ec_is_example_header(*ec)) return; //CHECK ME!!!!!!
+  if (ec_is_label_definition(*ec)) return;
+  
+  all.sd->total_features += ec->num_features;
+  
+  float loss = 0.;
+  v_array<uint32_t> preds = ec->pred.multilabels.label_v;
+  
+  if (!COST_SENSITIVE::example_is_test(*ec)) {
+    size_t idx = 0;
+    for(example** ecc = ec_seq->begin; ecc != ec_seq->end;ecc++,idx++) {
+      example& ex = **ecc;
+      if(ec_is_example_header(ex)) continue;
+      if (hit_loss) break;
+      if (preds[0] == idx) {
+	loss = ex.l.cs.costs[0].x;
+	hit_loss = true;
+      }
+    }
+
+    // for (size_t j = 0; j<costs.size(); j++) {
+    //   if (hit_loss) break;
+    //   if (preds[0] == costs[j].class_index) {
+    // 	loss = costs[j].x;
+    // 	hit_loss = true;
+    // 	cout<<"loss = "<<endl;
+    //   }
+    
+    
+    all.sd->sum_loss += loss;
+    all.sd->sum_loss_since_last_dump += loss;
+    assert(loss >= 0);
+  }
+  
+  v_array<char> empty; //CHECK ME!!!!!!
+  //for (int i = 0; i < preds.size();i++)
+  for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+    MULTILABEL::print_multilabel(*sink, ec->pred.multilabels, empty);
+  
+  if (all.raw_prediction > 0) {
+    string outputString;
+    stringstream outputStringStream(outputString);
+    for (size_t i = 0; i < costs.size(); i++) {
+      if (i > 0) outputStringStream << ' ';
+      outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
+    }
+    //outputStringStream << endl;
+    all.print_text(all.raw_prediction, outputStringStream.str(), empty);
+  }
+  
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(*ec), *ec, ec_seq, true);
+}
+
+
 void output_example_seq(vw& all, ldf& data)
 {
   if ((data.ec_seq.size() > 0) && !ec_seq_is_label_definition(data.ec_seq)) {
@@ -499,9 +566,12 @@ void output_example_seq(vw& all, ldf& data)
     all.sd->example_number++;
 
     bool hit_loss = false;
-    for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
-      output_example(all, **ecc, hit_loss, &(data.ec_seq));
-
+    if(data.rank_all)
+      output_example_multilabel(all, *(data.ec_seq.begin), hit_loss, &(data.ec_seq));
+    else
+      for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
+	output_example(all, **ecc, hit_loss, &(data.ec_seq));
+    
     if (!data.is_singleline && (all.raw_prediction > 0)) {
       v_array<char> empty = { nullptr, nullptr, nullptr, 0 };
       all.print_text(all.raw_prediction, "", empty);
@@ -603,7 +673,7 @@ base_learner* csldf_setup(vw& all)
     return nullptr;
   new_options(all, "LDF Options")
       ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
-    ("score_all", po::value<bool>(),"Return actions sorted by score order");
+    ("rank_all","Return actions sorted by score order");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -624,8 +694,10 @@ base_learner* csldf_setup(vw& all)
   }
   if ( vm.count("ldf_override") )
     ldf_arg = vm["ldf_override"].as<string>();
-  if(vm.count("score_all"))
-    ld.score_all = vm["score_all"].as<bool>();
+  if (vm.count("rank_all"))
+	  ld.rank_all = true;
+  else
+	  ld.rank_all = false;
 
   all.p->lp = COST_SENSITIVE::cs_label;
 

@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 ```
 
 [![Build Status](https://travis-ci.org/JohnLangford/vowpal_wabbit.png)](https://travis-ci.org/JohnLangford/vowpal_wabbit)
+[![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/JohnLangford/vowpal_wabbit?branch=master&svg=true)](https://ci.appveyor.com/project/JohnLangford/vowpal-wabbit)
 
 This is the *vowpal wabbit* fast online learning code.  For Windows, look at README.windows.txt
 
@@ -153,4 +154,3 @@ $ sh autogen.sh --enable-libc++
 $ make
 $ make test    # (optional)
 ```
-
