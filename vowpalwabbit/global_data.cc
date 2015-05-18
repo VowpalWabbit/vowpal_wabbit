@@ -355,6 +355,7 @@ vw::vw()
 
   save_per_pass = false;
 
+  multilabel_prediction = false;
   stdin_off = false;
   do_reset_source = false;
   holdout_set_off = true;

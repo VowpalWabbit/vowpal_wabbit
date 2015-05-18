@@ -418,9 +418,10 @@ base_learner* cb_adf_setup(vw& all)
 	ld.all = &all;
 
 	if (all.vm.count("rank_all"))
-	  ld.rank_all = true;
-	else
-	  ld.rank_all = false;
+	  {
+	    ld.rank_all = true;
+	    all.multilabel_prediction = true;
+	  }
 	
 	if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0)
 	{
