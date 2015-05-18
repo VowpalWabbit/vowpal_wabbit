@@ -19,11 +19,6 @@ using namespace CB;
 #define CB_TYPE_DR 1
 #define CB_TYPE_IPS 2
 
-struct score {
-	float val;
-	size_t idx;
-};
-
 struct cb_adf {
   v_array<example*> ec_seq;
 
@@ -38,8 +33,7 @@ struct cb_adf {
 
   base_learner* base;
 
-  bool score_all;
-  v_array<score> scores;  
+  bool rank_all;
 };
 
 namespace CB_ADF {
@@ -365,13 +359,18 @@ base_learner* cb_adf_setup(vw& all)
 	if (missing_option(all, true, "cb_adf", "Do Contextual Bandit learning with multiline action dependent features."))
 		return nullptr;
 	new_options(all, "ADF Options")		
-		("score_all", po::value<bool>(), "Return actions sorted by score order");
+		("rank_all", po::value<bool>(), "Return actions sorted by score order");
 	add_options(all);		
 
 	cb_adf& ld = calloc_or_die<cb_adf>();
 
 	ld.all = &all;
 
+	if (all.vm.count("rank_all"))
+	  ld.rank_all = true;
+	else
+	  ld.rank_all = false;
+	
 	if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0)
 	{
 		all.args.push_back("--csoaa_ldf");

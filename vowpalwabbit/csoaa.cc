@@ -111,7 +111,7 @@ struct ldf {
   float csoaa_example_t;
   vw* all;
   
-  bool score_all;
+  bool rank_all;
   v_array<score> scores;
   
   base_learner* base;
@@ -389,7 +389,7 @@ void do_actual_learning(ldf& data, base_learner& base)
 
   /////////////////////// do prediction
   size_t predicted_K = start_K;
-  if(data.score_all) {
+  if(data.rank_all) {
     data.scores.erase();
     preds = data.ec_seq[0]->pred.multilabels;
     
@@ -424,7 +424,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   }
 
   
-  if(data.score_all) {
+  if(data.rank_all) {
     preds.label_v.erase();
     for (size_t k=start_K; k<K; k++) {
       preds.label_v.push_back(data.scores[k].idx);
@@ -566,7 +566,7 @@ void output_example_seq(vw& all, ldf& data)
     all.sd->example_number++;
 
     bool hit_loss = false;
-    if(data.score_all)
+    if(data.rank_all)
       output_example_multilabel(all, *(data.ec_seq.begin), hit_loss, &(data.ec_seq));
     else
       for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
@@ -673,7 +673,7 @@ base_learner* csldf_setup(vw& all)
     return nullptr;
   new_options(all, "LDF Options")
       ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
-    ("score_all","Return actions sorted by score order");
+    ("rank_all","Return actions sorted by score order");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -694,10 +694,10 @@ base_learner* csldf_setup(vw& all)
   }
   if ( vm.count("ldf_override") )
     ldf_arg = vm["ldf_override"].as<string>();
-  if (vm.count("score_all"))
-	  ld.score_all = true;
+  if (vm.count("rank_all"))
+	  ld.rank_all = true;
   else
-	  ld.score_all = false;
+	  ld.rank_all = false;
 
   all.p->lp = COST_SENSITIVE::cs_label;
 
