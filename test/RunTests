@@ -1137,7 +1137,7 @@ __DATA__
     train-sets/ref/multilabel.stderr
     pred-sets/ref/multilabel.predict
 
-# Test 86: check --rank_all on csoaa_ldf
-{VW} --csoaa_ldf multiline --rank train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict
+# Test 86: check --csoaa_rank on csoaa_ldf
+{VW} --csoaa_ldf multiline --csoaa_rank train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict
     train-sets/ref/multilabel_ldf.stderr
     pred-sets/ref/multilabel_ldf.predict
