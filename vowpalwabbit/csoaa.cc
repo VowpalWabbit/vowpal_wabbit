@@ -400,7 +400,7 @@ void do_actual_learning(ldf& data, base_learner& base)
       make_single_prediction(data, base, *ec);
       score s;
       s.val = ec->partial_prediction;
-      s.idx = k;
+      s.idx = k - start_K;
       data.scores.push_back(s);
     }    
 
