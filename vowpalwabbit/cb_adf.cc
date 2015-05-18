@@ -276,7 +276,53 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
     
-  CB::print_update(all, CB::example_is_test(ec), ec, ec_seq);
+  CB::print_update(all, CB::example_is_test(ec), ec, ec_seq, false);
+}
+
+void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<example*>* ec_seq)
+{
+  label& ld = head_ec.l.cb;
+  v_array<CB::cb_class> costs = ld.costs;
+  
+  if (example_is_newline(head_ec)) return;
+  
+  all.sd->total_features += head_ec.num_features;
+  
+  float loss = 0.;
+  v_array<uint32_t> preds = head_ec.pred.multilabels.label_v;
+  
+  if (!CB::example_is_test(head_ec)) {
+    size_t idx = 0;
+    for(example** ecc = ec_seq->begin; ecc != ec_seq->end;ecc++,idx++) {
+      example& ex = **ecc;
+      if(ec_is_example_header(ex)) continue;
+      if (hit_loss) break;
+      if (preds[0] == idx) {
+	loss = ex.l.cs.costs[0].x;
+	hit_loss = true;
+      }
+    }
+
+    all.sd->sum_loss += loss;
+    all.sd->sum_loss_since_last_dump += loss;
+    assert(loss >= 0);
+  }
+  
+  //for (int i = 0; i < preds.size();i++)
+  for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+    MULTILABEL::print_multilabel(*sink, head_ec.pred.multilabels, head_ec.tag);
+  
+  if (all.raw_prediction > 0) {
+    string outputString;
+    stringstream outputStringStream(outputString);
+    for (size_t i = 0; i < costs.size(); i++) {
+      if (i > 0) outputStringStream << ' ';
+      outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
+    }
+    all.print_text(all.raw_prediction, outputStringStream.str(), head_ec.tag);
+  }
+  
+  CB::print_update(all, CB::example_is_test(head_ec), head_ec, ec_seq, true);
 }
 
 void output_example_seq(vw& all, cb_adf& data)
@@ -286,11 +332,17 @@ void output_example_seq(vw& all, cb_adf& data)
     all.sd->example_number++;
     
     bool hit_loss = false;
-    for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
-      output_example(all, **ecc, hit_loss, &(data.ec_seq));
-    
-    if (all.raw_prediction > 0)
-      all.print_text(all.raw_prediction, "", data.ec_seq[0]->tag);
+
+    if (data.rank_all)
+      output_rank_example(all, **(data.ec_seq.begin), hit_loss, &(data.ec_seq));
+    else
+      {
+	for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
+	  output_example(all, **ecc, hit_loss, &(data.ec_seq));
+	
+	if (all.raw_prediction > 0)
+	  all.print_text(all.raw_prediction, "", data.ec_seq[0]->tag);
+      }
   }
 }
 
@@ -351,7 +403,6 @@ void predict_or_learn(cb_adf& data, base_learner& base, example &ec) {
     data.ec_seq.push_back(&ec);
   }
 }
-
 }
 
 base_learner* cb_adf_setup(vw& all)

@@ -499,7 +499,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(ec), ec, ec_seq);
 }
 
-void output_example_multilabel(vw& all, example* ec, bool& hit_loss, v_array<example*>* ec_seq)
+void output_rank_example(vw& all, example* ec, bool& hit_loss, v_array<example*>* ec_seq)
 {
   label& ld = ec->l.cs;
   v_array<COST_SENSITIVE::wclass> costs = ld.costs;
@@ -558,7 +558,6 @@ void output_example_multilabel(vw& all, example* ec, bool& hit_loss, v_array<exa
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(*ec), *ec, ec_seq, true);
 }
 
-
 void output_example_seq(vw& all, ldf& data)
 {
   if ((data.ec_seq.size() > 0) && !ec_seq_is_label_definition(data.ec_seq)) {
@@ -567,7 +566,7 @@ void output_example_seq(vw& all, ldf& data)
 
     bool hit_loss = false;
     if(data.rank)
-      output_example_multilabel(all, *(data.ec_seq.begin), hit_loss, &(data.ec_seq));
+      output_rank_example(all, *(data.ec_seq.begin), hit_loss, &(data.ec_seq));
     else
       for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
 	output_example(all, **ecc, hit_loss, &(data.ec_seq));
