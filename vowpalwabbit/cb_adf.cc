@@ -359,7 +359,7 @@ base_learner* cb_adf_setup(vw& all)
 	if (missing_option(all, true, "cb_adf", "Do Contextual Bandit learning with multiline action dependent features."))
 		return nullptr;
 	new_options(all, "ADF Options")		
-		("rank_all", po::value<bool>(), "Return actions sorted by score order");
+		("rank_all", "Return actions sorted by score order");
 	add_options(all);		
 
 	cb_adf& ld = calloc_or_die<cb_adf>();
@@ -375,6 +375,8 @@ base_learner* cb_adf_setup(vw& all)
 	{
 		all.args.push_back("--csoaa_ldf");
 		all.args.push_back("multiline");
+		if (ld.rank_all) 
+		  all.args.push_back("--csoaa_rank");
 	}
 
 	base_learner* base = setup_base(all);
