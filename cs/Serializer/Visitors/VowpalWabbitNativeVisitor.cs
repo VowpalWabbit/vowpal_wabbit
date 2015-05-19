@@ -225,7 +225,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
                             where resultFeature != null
                             select new FeatureSpace 
                             { 
-                                Name = (byte)n.FeatureGroup, 
+                                Name = (byte)(n.FeatureGroup ?? 0), 
                                 Features = resultFeature 
                             }).ToArray();
 

@@ -6,6 +6,6 @@ namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
     {
         public string Name { get; set; }
 
-        public char FeatureGroup { get; set; }
+        public char? FeatureGroup { get; set; }
     }
 }

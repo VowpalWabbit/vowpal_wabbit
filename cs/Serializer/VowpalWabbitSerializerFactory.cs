@@ -25,12 +25,22 @@ namespace Microsoft.Research.MachineLearning.Serializer
         public static VowpalWabbitSerializer<TExample, VowpalWabbitExample> CreateSerializer<TExample>(VowpalWabbitInterfaceVisitor visitor)
         {
             var serializerFunc = CreateSerializer<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample, FEATURE[], IEnumerable<FEATURE>>();
+            if (serializerFunc == null)
+            {
+                return null;
+            }
+
             return new VowpalWabbitSerializer<TExample, VowpalWabbitExample>(ex => serializerFunc(ex, visitor));
         }
 
         public static VowpalWabbitSerializer<TExample, string> CreateSerializer<TExample>(VowpalWabbitStringVisitor visitor)
         {
             var serializerFunc = CreateSerializer<TExample, VowpalWabbitStringVisitor, string, string, string>();
+            if (serializerFunc == null)
+            {
+                return null;
+            }
+
             return new VowpalWabbitSerializer<TExample, string>(ex => serializerFunc(ex, visitor));
         }
 
@@ -69,7 +79,13 @@ namespace Microsoft.Research.MachineLearning.Serializer
             var visitorParameter = Expression.Parameter(typeof(TVisitor), "visitor");
 
             // find all features and group by namespace
-            var featuresByNamespace = ExtractFeaturesCompiled<TFeatureResult>(valueParameter, null, null)
+            var allFeatures = ExtractFeaturesCompiled<TFeatureResult>(valueParameter, null, null).ToList();
+            if (allFeatures.Count == 0)
+            {
+                return null;
+            }
+
+            var featuresByNamespace = allFeatures
                     .GroupBy(f => new { f.Namespace, f.FeatureGroup, f.IsDense }, f => f);
 
             var body = new List<Expression>();
@@ -83,7 +99,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
                 var baseNamespaceType = typeof(Namespace);
                 var baseNamespaceInits = new[] {
                     Expression.Bind(baseNamespaceType.GetProperty("Name"), Expression.Constant(ns.Key.Namespace, typeof(string))),
-                    Expression.Bind(baseNamespaceType.GetProperty("FeatureGroup"), Expression.Constant(ns.Key.FeatureGroup)),
+                    Expression.Bind(baseNamespaceType.GetProperty("FeatureGroup"), Expression.Constant(ns.Key.FeatureGroup, typeof(char?))),
                 };
 
                 if (ns.Key.IsDense)
@@ -292,7 +308,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
                                        Expression.Bind(featureType.GetProperty("Enumerize"), Expression.Constant(attr.Enumerize)),
                                        Expression.Bind(featureType.GetProperty("Value"), propertyExpression),
                                        Expression.Bind(featureType.GetProperty("Namespace"), Expression.Constant(namespaceValue, typeof(string))),
-                                       Expression.Bind(featureType.GetProperty("FeatureGroup"), Expression.Constant(featureGroup)))
+                                       Expression.Bind(featureType.GetProperty("FeatureGroup"), Expression.Constant(featureGroup, typeof(char?))))
                                 };
 
             return localFeatures

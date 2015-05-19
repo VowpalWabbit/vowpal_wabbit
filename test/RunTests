@@ -1136,3 +1136,13 @@ __DATA__
 {VW} --multilabel_oaa 10 train-sets/multilabel -p multilabel.pred
     train-sets/ref/multilabel.stderr
     pred-sets/ref/multilabel.predict
+
+# Test 86: check --csoaa_rank on csoaa_ldf
+{VW} --csoaa_ldf multiline --csoaa_rank train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict
+    train-sets/ref/multilabel_ldf.stderr
+    pred-sets/ref/multilabel_ldf.predict
+
+# Test 87: check --rank_all on csoaa_ldf
+{VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p adf_rank.predict
+    train-sets/ref/cb_adf_rank.stderr
+    pred-sets/ref/cb_adf_rank.predict

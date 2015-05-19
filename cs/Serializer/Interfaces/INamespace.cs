@@ -10,6 +10,6 @@ namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
     {
         string Name { get; }
 
-        char FeatureGroup { get; }
+        char? FeatureGroup { get; }
     }
 }

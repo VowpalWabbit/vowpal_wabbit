@@ -77,7 +77,7 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec) {
     cout<<endl;*/
   
   bool shift = 0;
-  for(int i = 0; i < ec.indices.size(); i++) {
+  for(size_t i = 0; i < ec.indices.size(); i++) {
     if(shift) 
       ec.indices[i-1] = ec.indices[i];
     if(ec.indices[i] == in.n2) shift = 1;

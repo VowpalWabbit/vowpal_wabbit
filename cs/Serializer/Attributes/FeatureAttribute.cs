@@ -9,6 +9,9 @@ using System;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Attributes
 {
+    /// <summary>
+    /// Annotate properties that should be serialized to Vowpal Wabbit
+    /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
     public class FeatureAttribute : Attribute
     {
@@ -17,10 +20,17 @@ namespace Microsoft.Research.MachineLearning.Serializer.Attributes
             this.Enumerize = false;
         }
 
-        public Type Converter { get; set; }
-
+        /// <summary>
+        /// The namespace. Corresponds to the string literal after | in the native VW line format. <br/>
+        /// e.g. user in "|user :0.1 :0.2"
+        /// </summary>
         public string Namespace { get; set; }
 
+        /// <summary>
+        /// If true, features will be converted to string and then hashed.
+        /// In VW line format: Age:15 (Enumerize=false), Age_15 (Enumerize=true)
+        /// Defaults to false.
+        /// </summary>
         public bool Enumerize { get; set; }
 
         internal char? InternalFeatureGroup { get; set; }

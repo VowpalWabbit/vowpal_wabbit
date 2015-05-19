@@ -341,7 +341,7 @@ using namespace CB;
       all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
     }
 
-    print_update(all, is_test_label(ld), ec, nullptr);
+    print_update(all, is_test_label(ld), ec, nullptr, false);
   }
 
   void finish(cb& c)
