@@ -197,6 +197,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
   {//parse and set arguments
     if (missing_option<vector<string>>(all, "lrq", "use low rank quadratic features"))
       return nullptr;
+
     new_options(all, "Lrq options")
       ("lrqdropout", "use dropout training for low rank quadratic features");
     add_options(all);
