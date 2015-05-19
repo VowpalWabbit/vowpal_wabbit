@@ -130,6 +130,7 @@ struct dictionary_info {
 
 struct shared_data {
   size_t queries;
+  size_t n_in_dis;
 
   uint64_t example_number;
   uint64_t total_features;
