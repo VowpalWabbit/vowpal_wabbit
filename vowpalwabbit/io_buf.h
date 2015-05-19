@@ -12,7 +12,8 @@ license as described in the file LICENSE.
 #include <stdio.h>
 #include <fcntl.h>
 #include "v_array.h"
-#include<iostream>
+#include <iostream>
+#include <sstream>
 #include <errno.h>
 
 using namespace std;
@@ -91,8 +92,10 @@ class io_buf {
     }
     if (ret == -1 && *name != '\0')
       {
-	cerr << "can't open: " << name << ", error = " << strerror(errno) << endl;
-	throw exception();
+	std::stringstream msg;
+	msg << "can't open: " << name << ", error = " << strerror(errno);
+	cerr << msg.str() << endl;
+	throw exception(msg.str().c_str());
       }
     
     return ret;

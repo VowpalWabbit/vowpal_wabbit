@@ -36,20 +36,28 @@ namespace Microsoft
 					return;
 				}
 
-				if (m_vw->numpasses > 1)
+				try
 				{
-					adjust_used_index(*m_vw);
-					m_vw->do_reset_source = true;
-					VW::start_parser(*m_vw, false);
-					LEARNER::generic_driver(*m_vw);
-					VW::end_parser(*m_vw);
-				}
-				else
-				{
-					release_parser_datastructures(*m_vw);
-				}
+					// TODO: crashes VwCleanupTestError
+					//if (m_vw->numpasses > 1)
+					//{
+					//	adjust_used_index(*m_vw);
+					//	m_vw->do_reset_source = true;
+					//	VW::start_parser(*m_vw, false);
+					//	LEARNER::generic_driver(*m_vw);
+					//	VW::end_parser(*m_vw);
+					//}
+					//else
+					//{
+					//	release_parser_datastructures(*m_vw);
+					//}
 
-				VW::finish(*m_vw);
+					VW::finish(*m_vw);
+				}
+				catch (std::exception const& ex)
+				{ 
+					throw gcnew System::Exception(gcnew System::String(ex.what()));
+				}
 
 				m_isDisposed = true;
 			}
@@ -62,7 +70,14 @@ namespace Microsoft
 					return;
 				}
 
-				VW::save_predictor(*m_vw, name);
+				try
+				{
+					VW::save_predictor(*m_vw, name);
+				}
+				catch (std::exception const& ex)
+				{
+					throw gcnew System::Exception(gcnew System::String(ex.what()));
+				}
 			}
 
 			void VowpalWabbitBase::SaveModel(System::String^ filename)
@@ -73,7 +88,15 @@ namespace Microsoft
 				}
 
 				auto name = msclr::interop::marshal_as<std::string>(filename);
-				VW::save_predictor(*m_vw, name);
+
+				try
+				{
+					VW::save_predictor(*m_vw, name);
+				}
+				catch (std::exception const& ex)
+				{
+					throw gcnew System::Exception(gcnew System::String(ex.what()));
+				}
 			}
 
 			VowpalWabbitModel::VowpalWabbitModel(System::String^ pArgs)
@@ -81,29 +104,63 @@ namespace Microsoft
 			{
 			}
 
+			vw* wrapped_seed_vw_model(vw* vw)
+			{
+				try
+				{
+					return VW::seed_vw_model(vw, "");
+				}
+				catch (std::exception const& ex)
+				{
+					throw gcnew System::Exception(gcnew System::String(ex.what()));
+				}
+			}
+
 			VowpalWabbit::VowpalWabbit(VowpalWabbitModel^ model) 
-				: VowpalWabbitBase(VW::seed_vw_model(model->m_vw, ""))
+				: VowpalWabbitBase(wrapped_seed_vw_model(model->m_vw))
 			{
 			}
 
 			uint32_t VowpalWabbit::HashSpace(System::String^ s)
 			{
 				auto string = msclr::interop::marshal_as<std::string>(s);
-				return VW::hash_space(*m_vw, string);
+
+				try
+				{
+					return VW::hash_space(*m_vw, string);
+				}
+				catch (std::exception const& ex)
+				{
+					throw gcnew System::Exception(gcnew System::String(ex.what()));
+				}
 			}
 
 			uint32_t VowpalWabbit::HashFeature(System::String^ s, unsigned long u)
 			{
-				auto string = msclr::interop::marshal_as<std::string>(s);
-				return VW::hash_feature(*m_vw, string, u);
+				try
+				{
+					auto string = msclr::interop::marshal_as<std::string>(s);
+					return VW::hash_feature(*m_vw, string, u);
+				}
+				catch (std::exception const& ex)
+				{
+					throw gcnew System::Exception(gcnew System::String(ex.what()));
+				}
 			}
 
 			VowpalWabbitExample^ VowpalWabbit::ReadExample(System::String^ line)
 			{
 				auto string = msclr::interop::marshal_as<std::string>(line);
 
-				auto ex = VW::read_example(*m_vw, string.c_str());
-				return gcnew VowpalWabbitExample(m_vw, ex);
+				try
+				{
+					auto ex = VW::read_example(*m_vw, string.c_str());
+					return gcnew VowpalWabbitExample(m_vw, ex);
+				}
+				catch (std::exception const& ex)
+				{
+					throw gcnew System::Exception(gcnew System::String(ex.what()));
+				}
 			}
 
 			VowpalWabbitExample^ VowpalWabbit::ImportExample(cli::array<FeatureSpace^>^ featureSpaces)
@@ -122,21 +179,35 @@ namespace Microsoft
 					f[i].len = fs->Features->Length;
 				}
 
-				auto ex = VW::import_example(*m_vw, f, featureSpaces->Length);
-
-				for (int i = 0; i < handles->Length; i++)
+				try
 				{
-					handles[i].Free();
-				}
-				delete f;
+					auto ex = VW::import_example(*m_vw, f, featureSpaces->Length);
 
-				return gcnew VowpalWabbitExample(m_vw, ex);
+					for (int i = 0; i < handles->Length; i++)
+					{
+						handles[i].Free();
+					}
+					delete f;
+
+					return gcnew VowpalWabbitExample(m_vw, ex);
+				}
+				catch (std::exception const& ex)
+				{
+					throw gcnew System::Exception(gcnew System::String(ex.what()));
+				}
 			}
 
 			VowpalWabbitExample^ VowpalWabbit::CreateEmptyExample()
 			{
-				auto ex = VW::read_example(*m_vw, "");
-				return gcnew VowpalWabbitExample(m_vw, ex, true);
+				try
+				{
+					auto ex = VW::read_example(*m_vw, "");
+					return gcnew VowpalWabbitExample(m_vw, ex, true);
+				}
+				catch (std::exception const& ex)
+				{
+					throw gcnew System::Exception(gcnew System::String(ex.what()));
+				}
 			}
 		}
 	}

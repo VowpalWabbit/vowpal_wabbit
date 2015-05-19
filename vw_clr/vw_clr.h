@@ -117,7 +117,7 @@ namespace Microsoft
 			public:
 				VowpalWabbit(System::String^ pArgs);
 				VowpalWabbit(VowpalWabbitModel^ model);
-				
+
 				uint32_t HashSpace(System::String^ s);
 				uint32_t HashFeature(System::String^ s, unsigned long u);
 
