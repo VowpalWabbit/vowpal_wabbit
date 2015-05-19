@@ -183,6 +183,16 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
                 });
         }
 
+        public IEnumerable<FEATURE> Visit(IFeature<IDictionary<Int32, float>> feature)
+        {
+            return feature.Value
+                .Select(kvp => new FEATURE
+                {
+                    weight_index = (uint)(this.namespaceHash + kvp.Key),
+                    x = kvp.Value
+                });
+        }
+
         public IEnumerable<FEATURE> Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature)
         {
             // lhs: int, hash(string), hash(long), hash(*) -> uint

@@ -33,10 +33,17 @@ namespace Microsoft.Research.MachineLearning.Serializer.Attributes
         /// </summary>
         public bool Enumerize { get; set; }
 
+        /// <summary>
+        /// Cope with potential null values.
+        /// </summary>
         internal char? InternalFeatureGroup { get; set; }
 
+        /// <summary>
+        /// The regular VW string interface interprets the first character of the namespace as the feature group.
+        /// </summary>
         public char FeatureGroup
         {
+            // TODO: is ' ' a good default?
             get { return InternalFeatureGroup ?? ' '; }
             set { this.InternalFeatureGroup = value; }
         }

@@ -97,10 +97,14 @@ namespace Microsoft.Research.MachineLearning.Serializer
                 var features = ns.ToList();
 
                 var baseNamespaceType = typeof(Namespace);
-                var baseNamespaceInits = new[] {
-                    Expression.Bind(baseNamespaceType.GetProperty("Name"), Expression.Constant(ns.Key.Namespace, typeof(string))),
-                    Expression.Bind(baseNamespaceType.GetProperty("FeatureGroup"), Expression.Constant(ns.Key.FeatureGroup, typeof(char?))),
+                var baseNamespaceInits = new List<MemberAssignment> {
+                    Expression.Bind(baseNamespaceType.GetProperty("Name"), Expression.Constant(ns.Key.Namespace, typeof(string)))
                 };
+
+                if (ns.Key.FeatureGroup != null)
+                {
+                    baseNamespaceInits.Add(Expression.Bind(baseNamespaceType.GetProperty("FeatureGroup"), Expression.Constant((char)ns.Key.FeatureGroup)));
+                }
 
                 if (ns.Key.IsDense)
                 {
@@ -308,7 +312,8 @@ namespace Microsoft.Research.MachineLearning.Serializer
                                        Expression.Bind(featureType.GetProperty("Enumerize"), Expression.Constant(attr.Enumerize)),
                                        Expression.Bind(featureType.GetProperty("Value"), propertyExpression),
                                        Expression.Bind(featureType.GetProperty("Namespace"), Expression.Constant(namespaceValue, typeof(string))),
-                                       Expression.Bind(featureType.GetProperty("FeatureGroup"), Expression.Constant(featureGroup, typeof(char?))))
+                                       Expression.Bind(featureType.GetProperty("FeatureGroup"),
+                                        featureGroup == null ? Expression.Constant(null, typeof(char?)) : Expression.Constant((char)featureGroup)))
                                 };
 
             return localFeatures
