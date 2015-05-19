@@ -95,6 +95,9 @@ namespace Microsoft
 
 			public:
 				~VowpalWabbitBase();
+
+				void SaveModel();
+				void SaveModel(System::String^ filename);
 			};
 
 			/// <summary>

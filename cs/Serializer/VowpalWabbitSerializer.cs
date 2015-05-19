@@ -22,6 +22,8 @@ namespace Microsoft.Research.MachineLearning.Serializer
     public sealed class VowpalWabbitSerializer<TExample, TExampleResult> : IDisposable
     {
         private readonly Func<TExample, TExampleResult> serializer;
+
+        // TODO: replace with MemoryCache
         private Dictionary<TExample, TExampleResult> exampleCache;
 
         internal VowpalWabbitSerializer(Func<TExample, TExampleResult> serializer)

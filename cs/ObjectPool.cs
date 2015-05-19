@@ -10,12 +10,28 @@ namespace Microsoft.Research.MachineLearning
     public class ObjectPool<T> : IDisposable
         where T : IDisposable
     {
+        /// <summary>
+        /// Lock resources
+        /// </summary>
         private readonly ReaderWriterLockSlim rwLockSlim;
 
+        /// <summary>
+        /// Version of the factory function.
+        /// </summary>
         private int version;
 
+        /// <summary>
+        /// Used to create new pooled objects.
+        /// </summary>
         private Func<T> factory;
 
+        /// <summary>
+        /// The actual pool.
+        /// </summary>
+        /// <remarks>
+        /// To maximize reuse of previously cached items within the pooled objects.
+        /// (e.g. cached action dependent features)
+        /// </remarks>
         private Stack<PooledObject<T>> pool; 
 
         public ObjectPool(Func<T> factory)
@@ -105,36 +121,33 @@ namespace Microsoft.Research.MachineLearning
             this.rwLockSlim.EnterUpgradeableReadLock();
             try
             {
-                if (this.version != pooledObject.Version || this.pool == null)
+                if (this.version == pooledObject.Version && this.pool != null)
                 {
-                    // outdated
-                    pooledObject.Value.Dispose();
-                    return;
-                }
-
-                this.rwLockSlim.EnterWriteLock();
-                try
-                {
-                    // double check
-                    if (this.version != pooledObject.Version || this.pool == null)
+                    this.rwLockSlim.EnterWriteLock();
+                    try
                     {
-                        // outdated
-                        pooledObject.Value.Dispose();
-                        return;
-                    }
+                        // double check
+                        if (this.version == pooledObject.Version && this.pool != null)
+                        {
+                            // it's the same version, return to pool
+                            this.pool.Push(pooledObject);
 
-                    // it's the same version, return to pool
-                    this.pool.Push(pooledObject);
-                }
-                finally
-                {
-                    this.rwLockSlim.ExitWriteLock();
+                            return;
+                        }
+                    }
+                    finally
+                    {
+                        this.rwLockSlim.ExitWriteLock();
+                    }
                 }
             }
             finally
             {
                 this.rwLockSlim.ExitUpgradeableReadLock();
             }
+
+            // outdated
+            pooledObject.Value.Dispose();
         }
 
         public void Dispose()

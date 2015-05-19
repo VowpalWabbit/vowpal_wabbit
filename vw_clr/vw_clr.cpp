@@ -54,6 +54,28 @@ namespace Microsoft
 				m_isDisposed = true;
 			}
 
+			void VowpalWabbitBase::SaveModel()
+			{
+				string name = m_vw->final_regressor_name;
+				if (name.empty())
+				{
+					return;
+				}
+
+				VW::save_predictor(*m_vw, name);
+			}
+
+			void VowpalWabbitBase::SaveModel(System::String^ filename)
+			{
+				if (System::String::IsNullOrEmpty(filename))
+				{
+					return;
+				}
+
+				auto name = msclr::interop::marshal_as<std::string>(filename);
+				VW::save_predictor(*m_vw, name);
+			}
+
 			VowpalWabbitModel::VowpalWabbitModel(System::String^ pArgs)
 				: VowpalWabbitBase(pArgs)
 			{

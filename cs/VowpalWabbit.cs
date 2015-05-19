@@ -27,6 +27,11 @@ namespace Microsoft.Research.MachineLearning
         
         public VowpalWabbitExample ReadExample(TExample example)
         {
+            if (this.serializer == null)
+            {
+                return null;
+            }
+
             return this.serializer.Serialize(example);    
         }
     }
@@ -40,12 +45,22 @@ namespace Microsoft.Research.MachineLearning
         {
             var visitor = new VowpalWabbitInterfaceVisitor(this);
             this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(visitor);
+
+            if (this.actionDependentFeatureSerializer == null)
+            {
+                throw new ArgumentException(typeof(TActionDependentFeature) + " must have a least a single [Feature] defined.");
+            }
         }
 
         public VowpalWabbit(string arguments) : base(arguments)
         {
             var visitor = new VowpalWabbitInterfaceVisitor(this);
             this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(visitor);
+
+            if (this.actionDependentFeatureSerializer == null)
+            {
+                throw new ArgumentException(typeof(TActionDependentFeature) + " must have a least a single [Feature] defined.");
+            }
         }
 
         /// <summary>
@@ -55,64 +70,29 @@ namespace Microsoft.Research.MachineLearning
         /// <param name="chosenAction">Must be an an instance out of example.ActionDependentFeatures.</param>
         /// <param name="cost"></param>
         /// <param name="probability"></param>
-        public float Train(TExample example, TActionDependentFeature chosenAction, float cost, float probability)
+        public TActionDependentFeature[] Learn(TExample example, TActionDependentFeature chosenAction, float cost, float probability)
         {
-            var examples = new List<VowpalWabbitExample>();
-            
-            try
+            return this.LearnOrPredict(example, ex =>
             {
-                var sharedExample = this.serializer.Serialize(example);
-                examples.Add(sharedExample);
-
-                if (!sharedExample.IsEmpty)
+                if (object.ReferenceEquals(ex, chosenAction))
                 {
-                    sharedExample.AddLabel("shared");
-                    sharedExample.Learn();
+                    ex.AddLabel(
+                        string.Format(
+                        CultureInfo.InvariantCulture,
+                        "0:{0}:{1}",
+                        cost, probability));
                 }
 
-                // leave as loop so if the serializer throws an exception, anything allocated so far can be free'd
-                foreach (var actionDependentFeature in example.ActionDependentFeatures)
-                {
-                    // TODO: insert caching here
-                    var adfExample = this.actionDependentFeatureSerializer.Serialize(actionDependentFeature);
-                    examples.Add(adfExample);
-
-                    // TODO: this is broken as IsEmpty is only true in the CreateEmptyExample case. Not sure
-                    // how to determine if an action dependent feature example is empty and thus mis identified as a 
-                    // final example
-                    if (adfExample.IsEmpty)
-                    {
-                        continue;
-                    }
-
-                    if (object.ReferenceEquals(actionDependentFeature, chosenAction))
-                    {
-                        adfExample.AddLabel(
-                            string.Format(
-                            CultureInfo.InvariantCulture, 
-                            "0:{0}:{1}",
-                            cost, probability));
-                    }
-
-                    adfExample.Learn();
-                }
-
-                // allocate empty example to signal we're finished
-                var finalExample = this.CreateEmptyExample();
-                examples.Add(finalExample);
-
-                return finalExample.Learn();
-            }
-            finally
-            {
-                foreach (var e in examples)
-                {
-                    e.Dispose();
-                }
-            }
+                ex.Learn();
+            });
         }
 
         public TActionDependentFeature[] Predict(TExample example)
+        {
+            return this.LearnOrPredict(example, ex => ex.Predict());
+        }
+
+        private TActionDependentFeature[] LearnOrPredict(TExample example, Action<VowpalWabbitExample> learnOrPredict)
         {
             // shared |userlda :.1 |che a:.1 
             // `doc1 |lda :.1 :.2 [1]
@@ -122,13 +102,17 @@ namespace Microsoft.Research.MachineLearning
             
             try
             {
-                var sharedExample = this.serializer.Serialize(example);
-                examples.Add(sharedExample);
+                VowpalWabbitExample firstExample = null;
 
-                if (!sharedExample.IsEmpty)
+                if (this.serializer != null)
                 {
+                    var sharedExample = this.serializer.Serialize(example);
+                    examples.Add(sharedExample);
+
                     sharedExample.AddLabel("shared");
-                    sharedExample.Predict();
+                    learnOrPredict(sharedExample);
+
+                    firstExample = sharedExample;
                 }
 
                 // leave as loop so if the serializer throws an exception, anything allocated so far can be free'd
@@ -142,23 +126,28 @@ namespace Microsoft.Research.MachineLearning
                         continue;
                     }
 
-                    adfExample.Predict();
+                    learnOrPredict(adfExample);
+
+                    if (firstExample == null)
+                    {
+                        firstExample = adfExample;
+                    }
                 }
 
                 // allocate empty example to signal we're finished
                 var finalExample = this.CreateEmptyExample();
                 examples.Add(finalExample);
 
-                finalExample.Predict();
+                learnOrPredict(finalExample);
 
-                var multiLabelPrediction = finalExample.MultilabelPredictions;
+                var multiLabelPrediction = firstExample.MultilabelPredictions;
 
                 // re-shuffle
                 var result = new TActionDependentFeature[multiLabelPrediction.Length];
                 for (var i = 0; i < multiLabelPrediction.Length; i++)
 			    {
                     // VW indicies are 1-based
-			        result[i] = example.ActionDependentFeatures[multiLabelPrediction[i] - 1];
+			        result[i] = example.ActionDependentFeatures[multiLabelPrediction[i]];
 			    }
 
                 return result;

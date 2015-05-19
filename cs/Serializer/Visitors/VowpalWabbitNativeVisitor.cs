@@ -257,29 +257,11 @@ public void Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
                             where resultFeature != null
                             select new FeatureSpace 
                             { 
-                                Name = (byte)n.FeatureGroup, 
+                                Name = (byte)(n.FeatureGroup ?? 0), 
                                 Features = resultFeature 
                             }).ToArray();
 
             return this.vw.ImportExample(featureSpaces);
-
-
-            //this.namespaceOutput = new List<FEATURE_SPACE>();
-
-            //// TODO: not clear on how to caching here (and keeping track was is inserted)
-            //// VisitActionDependentFeatures(string label, INamespace[],...) ?
-
-            //visitNamespaces();
-
-            //this.Examples.Add(new VowpalWabbitExample(this.namespaceOutput.ToArray()));
-
-
-
-            // move to Example
-            // TODO: how to handle GCHandle (need to keep in memory?)
-            /// GCHandle pinnedFeatureSpace = GCHandle.Alloc(featureSpace, GCHandleType.Pinned);
-
-            // return null; // pinnedFeatureSpace.AddrOfPinnedObject();
         }
     }
 }
