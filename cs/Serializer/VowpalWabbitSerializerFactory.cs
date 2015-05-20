@@ -1,4 +1,12 @@
-﻿using System;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="VowpalWabbitSerializerFactory.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -13,7 +21,7 @@ using Microsoft.Research.MachineLearning.Serializer.Visitors;
 namespace Microsoft.Research.MachineLearning.Serializer
 {
     /// <summary>
-    /// Factory to ease creation of serializers
+    /// Factory to ease creation of serializers.
     /// </summary>
     public static class VowpalWabbitSerializerFactory
     {
@@ -58,10 +66,10 @@ namespace Microsoft.Research.MachineLearning.Serializer
             // Create dynamic assembly
             var asmName = new AssemblyName("VowpalWabbitSerializer." + typeof(TExample).Name + "." + typeof(TVisitor));
             var dynAsm = AppDomain.CurrentDomain.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
-
+            
             // Create a dynamic module and type
             var dynMod = dynAsm.DefineDynamicModule("VowpalWabbitSerializerModule");
-
+            
             var newSerializer = CreateSerializer<TExample, TVisitor, TExampleResult, TNamespaceResult, TFeatureResult>(dynMod);
 
             SerializerCache[cacheKey] = newSerializer;
@@ -85,8 +93,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
                 return null;
             }
 
-            var featuresByNamespace = allFeatures
-                    .GroupBy(f => new { f.Namespace, f.FeatureGroup, f.IsDense }, f => f);
+            var featuresByNamespace = allFeatures.GroupBy(f => new { f.Namespace, f.FeatureGroup, f.IsDense }, f => f);
 
             var body = new List<Expression>();
             var variables = new List<ParameterExpression>();
@@ -94,7 +101,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
 
             foreach (var ns in featuresByNamespace)
             {
-                var features = ns.ToList();
+                var features = ns.OrderBy(f => f.Order).ToList();
 
                 var baseNamespaceType = typeof(Namespace);
                 var baseNamespaceInits = new List<MemberAssignment> {
@@ -239,7 +246,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
             // compared to Compile this looks rather ugly, but there is a feature-bug 
             // that adds a security check to every call of the Serialize method
             visit.CompileToMethod(methodBuilder);
-
+            
             var dynType = typeBuilder.CreateType();
 
             return (Func<TExample, TVisitor, TExampleResult>)Delegate.CreateDelegate(typeof(Func<TExample, TVisitor, TExampleResult>), dynType.GetMethod("Serialize"));
@@ -295,7 +302,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
                                 let namespaceValue = attr.Namespace ?? parentNamespace
                                 let featureGroup = attr.InternalFeatureGroup ?? parentFeatureGroup
                                 let propertyExpression = Expression.Property(valueExpression, p)
-                                let name = p.Name
+                                let name = attr.Name ?? p.Name
                                 select new FeatureExpression
                                 {
                                     Name = name,
@@ -306,6 +313,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
                                     FeatureValueType = featureValueType,
                                     DenseFeatureValueElementType = GetDenseFeatureValueElementType(featureValueType),
                                     PropertyExpression = propertyExpression,
+                                    Order = attr.Order,
                                     // CODE new Feature<T> { Namespace = ..., ... } 
                                     NewFeatureExpression = Expression.MemberInit(
                                        Expression.New(featureType),
@@ -314,9 +322,10 @@ namespace Microsoft.Research.MachineLearning.Serializer
                                        Expression.Bind(featureType.GetProperty("Value"), propertyExpression),
                                        Expression.Bind(featureType.GetProperty("Namespace"), Expression.Constant(namespaceValue, typeof(string))),
                                        Expression.Bind(featureType.GetProperty("FeatureGroup"),
-                                        featureGroup == null ? Expression.Constant(null, typeof(char?)) : Expression.Constant((char)featureGroup)))
+                                            featureGroup == null ? Expression.Constant(null, typeof(char?)) : Expression.Constant((char)featureGroup)))
                                 };
 
+            // Recurse
             return localFeatures
                 .Select(f =>
                 {

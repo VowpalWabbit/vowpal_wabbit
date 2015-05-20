@@ -476,8 +476,9 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
       
       if (b.regularizers == nullptr)
 	{
-	  cerr << all.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
-	  throw exception();
+      const char* msg = "Failed to allocate weight array: try decreasing -b <bits>";
+	  cerr << all.program_name << ": " << msg << endl;
+	  throw exception(msg);
 	}
       for(uint32_t i = 0; i < length; i++) 
 	b.regularizers[2*i] = weights[stride*i+W_COND] + regularization;
@@ -905,8 +906,9 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 	  b.regularizers = calloc_or_die<weight>(2*length);
 	  if (b.regularizers == nullptr)
 	    {
-	      cerr << all->program_name << ": Failed to allocate regularizers array: try decreasing -b <bits>" << endl;
-	      throw exception();
+		  const char* msg = "Failed to allocate regularizers array: try decreasing -b <bits>";
+	      cerr << all->program_name << ": " << msg << endl;
+	      throw exception(msg);
 	    }
 	}
       int m = b.m;
@@ -1009,8 +1011,9 @@ base_learner* bfgs_setup(vw& all)
   }
   if (all.numpasses < 2)
     {
-      cout << "you must make at least 2 passes to use BFGS" << endl;
-      throw exception();
+	  const char* msg = "you must make at least 2 passes to use BFGS";
+      cerr << msg << endl;
+      throw exception(msg);
     }
 
   all.bfgs = true;

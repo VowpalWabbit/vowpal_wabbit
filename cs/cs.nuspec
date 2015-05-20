@@ -4,8 +4,8 @@
     <title>Vowpal Wabbit</title>
     <id>Microsoft.Research.VowpalWabbit</id>
     <tags>vw vowpal wabbit john langford</tags>
-    <version>7.10.1.6</version>
-    <authors>John Langford</authors>
+    <version>7.10.1.7</version>
+    <authors>John Langford et al</authors>
     <projectUrl>https://github.com/JohnLangford/vowpal_wabbit</projectUrl>
     <licenseUrl>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -18,9 +18,10 @@
 	  <!-- despite warning this is still required -->
 	  <file src="bin\$Platform$\$Configuration$\*.dll" target="lib\net45" />
 	  <file src="bin\$Platform$\$Configuration$\*.pdb" target="lib\net45" />
-	  <file src="**\*.cs" target="src" />
-	  <file src="..\vowpalwabbit\*.cc" target="src" />
-	  <file src="..\vowpalwabbit\*.h" target="src" />
+	  <file src="**\*.cs" target="src\cs" />
+	  <file src="..\vw_clr\**\*.cs" target="src\vw_clr" />
+	  <file src="..\vowpalwabbit\*.cc" target="src\vowpalwabbit" />
+	  <file src="..\vowpalwabbit\*.h" target="src\vowpalwabbit" />
   </files>
 </package>
 

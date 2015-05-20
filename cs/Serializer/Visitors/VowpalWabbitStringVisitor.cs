@@ -1,4 +1,12 @@
-﻿using System;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="VowpalWabbitStringVisitor.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -6,6 +14,9 @@ using Microsoft.Research.MachineLearning.Serializer.Interfaces;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 {
+    /// <summary>
+    /// Front-end to serialize data into Vowpal Wabbit string format.
+    /// </summary>
     public class VowpalWabbitStringVisitor : IVowpalWabbitVisitor<string, string, string>
     {
         private string VisitNamespace(INamespace @namespace)
@@ -19,12 +30,6 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 
         public string Visit<T>(INamespaceDense<T> namespaceDense)
         {
-            // TODO: move to compiled Lambda
-            if (namespaceDense.DenseFeature.Value == null)
-            {
-                return null;
-            }
-
             return string.Format(
                 CultureInfo.InvariantCulture,
                 "{0} {1}",
@@ -55,7 +60,6 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 
         public string Visit<TValue>(IFeature<IEnumerable<TValue>> feature)
         {
-            // this.Visit(feature, key => (UInt32)Convert.ToString(key).GetHashCode());
             return string.Join(" ", 
                 feature.Value.Select((value, i) =>
                     string.Format(
@@ -86,7 +90,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
                     feature.Name, 
                     Enum.GetName(valueType, feature.Value));
             }
-            // TODO: more support for built-in types
+
             return string.Format(
                 CultureInfo.InvariantCulture, 
                 "{0}:{1}", 

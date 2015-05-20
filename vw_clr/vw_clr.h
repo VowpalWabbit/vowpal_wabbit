@@ -39,7 +39,6 @@ namespace Microsoft
 			private:
 				vw* const m_vw;
 				example* const m_example;
-				bool m_isEmpty;
 
 			protected:
 				bool m_isDisposed;
@@ -48,11 +47,9 @@ namespace Microsoft
 			public:
 				VowpalWabbitExample(vw* vw, example* example);
 
-				VowpalWabbitExample(vw* vw, example* example, bool isEmpty);
-
 				~VowpalWabbitExample();
 
-				property bool IsEmpty
+				property bool IsNewLine
 				{
 					bool get();
 				}
@@ -78,6 +75,8 @@ namespace Microsoft
 				float Learn();
 
 				float Predict();
+
+				System::String^ Diff(VowpalWabbitExample^ other, bool sameOrder);
 			};
 
 			public ref class VowpalWabbitBase abstract

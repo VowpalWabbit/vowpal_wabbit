@@ -1,11 +1,23 @@
-﻿using Microsoft.Research.MachineLearning.Serializer.Interfaces;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="VowpalWabbitInterfaceVisitor.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Research.MachineLearning.Serializer.Interfaces;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 {
+    /// <summary>
+    /// Front-end to serialize data into Vowpal Wabbit native C++ structures.
+    /// </summary>
     public class VowpalWabbitInterfaceVisitor : IVowpalWabbitVisitor<VowpalWabbitExample, FEATURE[], IEnumerable<FEATURE>>
     {
         private readonly VowpalWabbit vw;
@@ -193,20 +205,31 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
                 });
         }
 
-        public IEnumerable<FEATURE> Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature)
+        public IEnumerable<FEATURE> Visit<TKey, TValue>(IFeature<IEnumerable<KeyValuePair<TKey, TValue>>> feature)
+        {
+            return feature.Value
+                .Select(kvp => new FEATURE
+                {
+                    weight_index = this.vw.HashFeature(Convert.ToString(kvp.Key), this.namespaceHash),
+                    x = (float)Convert.ToDouble(kvp.Value)
+                });
+        }
+
+
+        public IEnumerable<FEATURE> Visit(IFeature<IDictionary> feature)
         {
             // lhs: int, hash(string), hash(long), hash(*) -> uint
             // rhs: int, short, long, float, bool -> float
 
-            var ret = feature.Value
-                .Select(kvp => new FEATURE
-                {
-                    // feature.Name +
-                    weight_index = this.vw.HashFeature(Convert.ToString(kvp.Key), this.namespaceHash),
-                    x = (float) Convert.ToDouble(kvp.Value)
-                }).ToList();
-
-            return ret;
+            var features = new FEATURE[feature.Value.Count];
+            var i = 0;
+            foreach (DictionaryEntry item in feature.Value)
+            {
+                features[i].weight_index = this.vw.HashFeature(Convert.ToString(item.Key), this.namespaceHash);
+                features[i].x = (float) Convert.ToDouble(item.Value);
+            }
+        
+            return features;
         }
 
         public IEnumerable<FEATURE> Visit(IFeature<IEnumerable<string>> feature)

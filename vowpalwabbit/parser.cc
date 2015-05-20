@@ -610,11 +610,22 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	  string temp = all.data_filename;
 	  if (!quiet)
 	    cerr << "Reading datafile = " << temp << endl;
-	  int f = all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
-	  if (f == -1 && temp.size() != 0)
-	    {
-			cerr << "can't open '" << temp << "', sailing on!" << endl;
-	    }
+	  try
+	  {
+		  int f = all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
+	  }
+	  catch (exception const& ex)
+	  {
+		  if (temp.size() != 0)
+		  {
+			  cerr << "can't open '" << temp << "', sailing on!" << endl;
+		  }
+		  else
+		  {
+			  throw ex;
+		  }
+	  }
+
 	  all.p->reader = read_features;
 	  all.p->resettable = all.p->write_cache;
 	}
@@ -622,8 +633,9 @@ void enable_sources(vw& all, bool quiet, size_t passes)
   
   if (passes > 1 && !all.p->resettable)
     {
-      cerr << all.program_name << ": need a cache file for multiple passes: try using --cache_file" << endl;  
-      throw exception();
+	  const char* msg = "need a cache file for multiple passes : try using --cache_file";
+      cerr << all.program_name << ": " << msg << endl;  
+      throw exception(msg);
     }
   all.p->input->count = all.p->input->files.size();
   if (!quiet && !all.daemon)

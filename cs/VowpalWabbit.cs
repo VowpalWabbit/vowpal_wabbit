@@ -121,7 +121,7 @@ namespace Microsoft.Research.MachineLearning
                     var adfExample = this.actionDependentFeatureSerializer.Serialize(actionDependentFeature);
                     examples.Add(adfExample);
 
-                    if (adfExample.IsEmpty)
+                    if (adfExample.IsNewLine)
                     {
                         continue;
                     }

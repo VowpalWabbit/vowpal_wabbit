@@ -1,14 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="FeatureExpression.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using System;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 {
     /// <summary>
-    /// Intermediate representation of a Feature
+    /// Intermediate representation of a Feature.
     /// </summary>
     internal sealed class FeatureExpression
     {
@@ -31,6 +35,8 @@ namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
         internal MemberExpression PropertyExpression { get; set; }
 
         internal Type DenseFeatureValueElementType { get; set; }
+
+        internal int Order { get; set; }
     }
 
 }

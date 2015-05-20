@@ -46,5 +46,15 @@ namespace Microsoft.Research.MachineLearning.Serializer.Attributes
             get { return InternalFeatureGroup ?? (char)0; }
             set { this.InternalFeatureGroup = value; }
         }
+
+        /// <summary>
+        /// Allows override of feature name. Defaults to property name.
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Specify the serialization order.
+        /// </summary>
+        public int Order { get; set; }
     }
 }

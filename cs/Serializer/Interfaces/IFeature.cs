@@ -39,7 +39,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
     /// <summary>
     /// The typed representation of the feature.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">Type of feature value.</typeparam>
     public interface IFeature<out T> : IFeature
     {
         /// <summary>

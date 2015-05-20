@@ -1,5 +1,13 @@
-﻿using Microsoft.Research.MachineLearning.Serializer.Interfaces;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="NamespaceSparse.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
 using System;
+using Microsoft.Research.MachineLearning.Serializer.Interfaces;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 {
@@ -8,21 +16,5 @@ namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
         public Func<TNamespaceResult> Visit { get; set; }
 
         public IVisitableFeature<TFeatureResult>[] Features { get; set; }
-
-        //override internal void ToVW(VwHandle vw, VowpalWabbitInterface.FEATURE_SPACE featureSpace)
-        //{
-        //    var features = new VowpalWabbitInterface.FEATURE[this.Features.Count];
-        //    var pinnedsFeatures = GCHandle.Alloc(features, GCHandleType.Pinned);
-
-        //    featureSpace.name = (byte)this.FeatureGroup;
-        //    featureSpace.features = pinnedsFeatures.AddrOfPinnedObject();
-        //    featureSpace.len = this.Features.Count;
-
-        //    var namespaceHash = this.Name == null ? 0 : VowpalWabbitInterface.HashSpace(vw, this.Name);
-        //    for (var i = 0; i < this.Features.Count; i++)
-        //    {
-        //        this.Features[i].ToVW(vw, features[i], namespaceHash);
-        //    }
-        //}
     }
 }

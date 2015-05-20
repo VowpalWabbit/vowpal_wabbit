@@ -15,6 +15,9 @@ namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
     /// <typeparam name="T">The element type of the dense features.</typeparam>
     public interface INamespaceDense<out T> : INamespace
     {
+        /// <summary>
+        /// The list of features.
+        /// </summary>
         IFeature<IEnumerable<T>> DenseFeature { get; }
     }
 }

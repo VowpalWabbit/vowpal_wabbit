@@ -1,10 +1,19 @@
-﻿using System;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="IActionDependentFeatureExample.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Microsoft.Research.MachineLearning
 {
+    /// <summary>
+    /// Types supporting action dependent features must implement this interface.
+    /// </summary>
+    /// <typeparam name="T">Type of each action dependent feature.</typeparam>
     public interface IActionDependentFeatureExample<T>
     {
         IList<T> ActionDependentFeatures { get; }

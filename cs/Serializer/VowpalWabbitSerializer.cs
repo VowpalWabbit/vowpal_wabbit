@@ -1,16 +1,15 @@
-﻿using System;
-using System.Collections;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="VowpalWabbitSerializer.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Security;
-using System.Security.Permissions;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Research.MachineLearning.Serializer.Attributes;
 
 namespace Microsoft.Research.MachineLearning.Serializer
@@ -86,7 +85,6 @@ namespace Microsoft.Research.MachineLearning.Serializer
         {
             if (disposing)
             {
-                // Free managed resources
                 var disposableDictionary = this.exampleCache as IDictionary<object, IDisposable>;
                 if (disposableDictionary != null)
                 {
@@ -94,6 +92,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
                     {
                         value.Dispose();
                     }
+
                     this.exampleCache = null;
                 }
             }

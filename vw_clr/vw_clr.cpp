@@ -6,20 +6,27 @@ namespace Microsoft
 	{
 		namespace MachineLearning
 		{
-			VowpalWabbitBase::VowpalWabbitBase(vw* vw) 
+			VowpalWabbitBase::VowpalWabbitBase(vw* vw)
 				: m_vw(vw), m_isDisposed(false)
 			{
 			}
 
-			VowpalWabbitBase::VowpalWabbitBase(System::String^ pArgs) 
+			VowpalWabbitBase::VowpalWabbitBase(System::String^ pArgs)
 				: m_vw(nullptr), m_isDisposed(false)
 			{
-				auto string = msclr::interop::marshal_as<std::string>(pArgs);
-				m_vw = VW::initialize(string);
-				initialize_parser_datastructures(*m_vw);
+				try
+				{
+					auto string = msclr::interop::marshal_as<std::string>(pArgs);
+					m_vw = VW::initialize(string);
+					initialize_parser_datastructures(*m_vw);
+				}
+				catch (std::exception const& ex)
+				{
+					throw gcnew System::Exception(gcnew System::String(ex.what()));
+				}
 			}
 
-			VowpalWabbit::VowpalWabbit(System::String^ pArgs) 
+			VowpalWabbit::VowpalWabbit(System::String^ pArgs)
 				: VowpalWabbitBase(pArgs)
 			{
 			}
@@ -55,7 +62,7 @@ namespace Microsoft
 					VW::finish(*m_vw);
 				}
 				catch (std::exception const& ex)
-				{ 
+				{
 					throw gcnew System::Exception(gcnew System::String(ex.what()));
 				}
 
@@ -116,7 +123,7 @@ namespace Microsoft
 				}
 			}
 
-			VowpalWabbit::VowpalWabbit(VowpalWabbitModel^ model) 
+			VowpalWabbit::VowpalWabbit(VowpalWabbitModel^ model)
 				: VowpalWabbitBase(wrapped_seed_vw_model(model->m_vw))
 			{
 			}
@@ -140,12 +147,12 @@ namespace Microsoft
 				try
 				{
 					auto string = msclr::interop::marshal_as<std::string>(s);
-					substring ss;
-					ss.begin = (char*)string.c_str();
-					ss.end = ss.begin + string.length();
-					return (uint32_t)m_vw->p->hasher(ss, u);
+					//substring ss;
+					//ss.begin = (char*)string.c_str();
+					//ss.end = ss.begin + string.length();
+					//return (uint32_t)m_vw->p->hasher(ss, u);
 
-					// return VW::hash_feature(*m_vw, s, u);
+					return VW::hash_feature(*m_vw, string, u);
 				}
 				catch (std::exception const& ex)
 				{
@@ -207,7 +214,7 @@ namespace Microsoft
 				try
 				{
 					auto ex = VW::read_example(*m_vw, "");
-					return gcnew VowpalWabbitExample(m_vw, ex, true);
+					return gcnew VowpalWabbitExample(m_vw, ex);
 				}
 				catch (std::exception const& ex)
 				{

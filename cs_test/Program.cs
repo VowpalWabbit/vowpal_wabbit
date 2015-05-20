@@ -7,28 +7,30 @@ using System.IO;
 using Microsoft.Research.MachineLearning;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using Microsoft.Research.MachineLearning.Serializer.Attributes;
+using System.Globalization;
 
 namespace cs_test
 {
-
     class Program
     {
         static void Main(string[] args)
         {
-            //AttributesSample.Attributes();
-            AttributesSample.RunFeaturesTest();
+            AttributesSample.Attributes();
+            //AttributesSample.RunFeaturesTest();
             //ExploreClock.Clock();
             //LabDemo.Run();
             //ExploreOnlySample.Run();
-            RunFeaturesTest();
+            //RunFeaturesTest();
             //RunParserTest();
             //RunSpeedTest();
             //RunFlatExampleTestEx();
-    //      RunLDAPredict();
+            //RunLDAPredict();
             //RunVWParse_and_VWLearn();
 
             Console.ReadKey();
         }
+
 
         private static void RunFeaturesTest()
         {

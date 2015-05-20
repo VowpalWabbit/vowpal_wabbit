@@ -7,12 +7,7 @@ namespace Microsoft
 		namespace  MachineLearning
 		{
 			VowpalWabbitExample::VowpalWabbitExample(vw* vw, example* example) : 
-				VowpalWabbitExample(vw, example, false)
-			{
-			}
-
-			VowpalWabbitExample::VowpalWabbitExample(vw* vw, example* example, bool isEmpty) :
-				m_vw(vw), m_example(example), m_isDisposed(false), m_isEmpty(isEmpty)
+				m_vw(vw), m_example(example), m_isDisposed(false)
 			{
 			}
 
@@ -65,9 +60,9 @@ namespace Microsoft
 				return result;
 			}
 
-			bool VowpalWabbitExample::IsEmpty::get()
+			bool VowpalWabbitExample::IsNewLine::get()
 			{
-				return m_isEmpty;
+				return example_is_newline(*m_example) != 0;
 			}
 
 			void VowpalWabbitExample::AddLabel(System::String^ label)
@@ -88,6 +83,110 @@ namespace Microsoft
 			void VowpalWabbitExample::AddLabel(float label, float weight, float base)
 			{
 				VW::add_label(m_example, label, weight, base);
+			}
+
+			System::String^ VowpalWabbitExample::Diff(VowpalWabbitExample^ other, bool sameOrder)
+			{
+				auto a = this->m_example;
+				auto b = other->m_example;
+				if (a->indices.size() != b->indices.size())
+				{
+					return System::String::Format("Indicies length differ: {0} vs {1}",
+						a->indices.size(),
+						b->indices.size());
+				}
+
+				for (auto i = a->indices.begin, j = b->indices.begin; i != a->indices.end; i++)
+				{
+					if (sameOrder)
+					{
+						if (*i != *j)
+						{
+							return gcnew System::String("Can't find index.");
+						}
+						j++;
+					}
+					else
+					{
+						// search index
+						j = b->indices.begin;
+						for (; j != b->indices.end; j++)
+						{
+							if (*i == *j)
+							{
+								break;
+							}
+						}
+
+						if (j == b->indices.end)
+						{
+							return gcnew System::String("Can't find index.");
+						}
+					}
+
+					// compare features
+					auto fa = a->atomics[*i];
+					auto fb = b->atomics[*i];
+
+					if (fa.size() != fb.size())
+					{
+						return gcnew System::String("Feature length differ");
+					}
+
+					for (auto k = fa.begin, l = fb.begin; k != fa.end; k++)
+					{
+						auto masked_weight_index = k->weight_index & m_vw->reg.weight_mask;
+
+						if (sameOrder)
+						{
+							auto other_masked_weight_index = l->weight_index & other->m_vw->reg.weight_mask;
+							if (!(masked_weight_index == other_masked_weight_index && abs(k->x - l->x) < 1e-5))
+							{
+								return System::String::Format(
+									"Feature differ: this(weight_index = {0}, x = {1}) vs other(weight_index = {2}, x = {3})",
+									masked_weight_index, k->x,
+									other_masked_weight_index, l->x);
+							}
+
+							l++;
+						}
+						else
+						{
+							for (l = fb.begin; l != fb.end; l++)
+							{
+								auto other_masked_weight_index = l->weight_index & other->m_vw->reg.weight_mask;
+
+								if (masked_weight_index == other_masked_weight_index)
+								{
+									if (k->x != l->x)
+									{
+										return System::String::Format(
+											"Feature differ: this(weight_index = {0}, x = {1}) vs other(weight_index = {2}, x = {3})",
+											masked_weight_index, k->x,
+											other_masked_weight_index, l->x);
+									}
+								}
+							}
+
+							if (l == fb.end)
+							{
+								return System::String::Format("Can't find feature: weight_index = {0}, x = {1}", k->weight_index, k->x);
+							}
+						}
+					}
+				}
+
+				auto s1 = a->l.simple;
+				auto s2 = b->l.simple;
+
+				if (!(s1.initial == s2.initial &&
+					s1.label == s2.label &&
+					s1.weight == s2.weight))
+				{
+					return gcnew System::String("Label differ");
+				}
+
+				return nullptr;
 			}
 		}
 	}
