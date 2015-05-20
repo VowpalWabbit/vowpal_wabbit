@@ -180,8 +180,6 @@ bool operator<(const string_value& first, const string_value& second)
   size_t stride_shift = all.reg.stride_shift;
   
   if(all.audit) tempstream << prepend;
-  if (((index >> stride_shift) & 3) != 0)
-        throw exception();
   
   string tmp = "";
   
@@ -379,6 +377,17 @@ float finalize_prediction(shared_data* sd, float ret)
    return temp.prediction;
  }
 
+// inline void vec_add_print(float& p, const float fx, float& fw) {
+//   p += fw * fx;
+//   float*w = &fw;
+//   cerr << '\t' << fx << ':' << fw << '@' << w[1];
+// }
+
+  inline void vec_add_print(float&p, float fx, uint32_t i) {
+    cerr << '\t' << i << ':' << fx;
+  }
+  
+  
 template<bool l1, bool audit>
 void predict(gd& g, base_learner& base, example& ec)
 {
@@ -392,8 +401,12 @@ void predict(gd& g, base_learner& base, example& ec)
   ec.partial_prediction *= (float)all.sd->contraction;
   bool wasNAN = nanpattern(ec.partial_prediction);
   ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
-  if (audit&&wasNAN)
+  if (audit&&wasNAN) {
     print_audit_features(all, ec);
+    /*    float temp = 0.;
+    foreach_feature<float, vec_add_print>(all, ec, temp);
+    cerr << endl; */
+  }
 }
 
 inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
@@ -415,13 +428,10 @@ void multipredict(gd& g, base_learner& base, example& ec, size_t count, size_t s
   if (all.sd->contraction != 1.)
     for (size_t c=0; c<count; c++)
       pred[c].scalar *= (float)all.sd->contraction;
-  bool wasNAN = false;
   if (finalize_predictions)
-    for (size_t c=0; c<count; c++) {
-      if (nanpattern(pred[c].scalar)) wasNAN = true;
+    for (size_t c=0; c<count; c++)
       pred[c].scalar = finalize_prediction(all.sd, pred[c].scalar);
-    }
-  if (audit && wasNAN) {
+  if (audit) {
     for (size_t c=0; c<count; c++) {
       ec.pred.scalar = pred[c].scalar;
       print_audit_features(all, ec);
@@ -479,6 +489,8 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
     float x2 = x * x;
     if(adaptive)
       w[adaptive] += nd.grad_squared * x2;
+    //if (nd.grad_squared * x2 > 10000)
+    //  cerr << "(large g^2 * x^2 : " << nd.grad_squared << ' ' << x << ')';
     if(normalized) {
       float x_abs = fabsf(x);
       if( x_abs > w[normalized] ) {// new scale discovered
@@ -501,7 +513,8 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
     nd.pred_per_update += x2 * w[spare];
   }
 }
-  
+
+  bool global_print_features = false;
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
   float get_pred_per_update(gd& g, example& ec)
   {//We must traverse the features in _precisely_ the same order as during training.
@@ -511,8 +524,10 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
     if (grad_squared == 0) return 1.;
     
     norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
-    
+
+    //global_print_features = true;
     foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, nd);
+    global_print_features = false;
     
     if(normalized) {
       g.all->normalized_sum_norm_x += ld.weight * nd.norm_x;

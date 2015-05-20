@@ -14,6 +14,8 @@
 namespace GD{
   LEARNER::base_learner* setup(vw& all);
 
+  extern bool global_print_features;
+  
   struct gd;
 
   float finalize_prediction(shared_data* sd, float ret);
@@ -48,10 +50,15 @@ namespace GD{
   inline void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R& dat, uint32_t offset=0, float mult=1.)
   {
     for (feature* f = begin; f!= end; f++) {
+      if (global_print_features)
+        cerr << '[' << ((f->weight_index + offset) & weight_mask) << ' ' << mult << ' ' << f->x << ' ' << (weight_vector[(f->weight_index + offset) & weight_mask]);
       T(dat, mult*f->x, weight_vector[(f->weight_index + offset) & weight_mask]);
-      if (((f->weight_index+offset) & 3) != 0)
-        throw exception();
+      if (global_print_features) cerr << ']';
+      //if ((((f->weight_index+offset) >> 2) & (weight_mask >> 2)) == target)
+      //  cerr << target << ':' << mult*f->x << ':' << weight_vector[(f->weight_index + offset) & weight_mask] << '@'  << weight_vector[(f->weight_index + offset + 1) & weight_mask] << endl;
     }
+      if (global_print_features)
+    cerr << endl;
   }
 
   // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_index)
@@ -60,8 +67,6 @@ namespace GD{
    {
      for (feature* f = begin; f!= end; f++) {
        T(dat, mult*f->x, f->weight_index + offset);
-      if (((f->weight_index+offset) & 3) != 0)
-        throw exception();
      }       
    }
  

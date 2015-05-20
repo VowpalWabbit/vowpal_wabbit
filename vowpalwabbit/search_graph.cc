@@ -5,7 +5,6 @@ license as described in the file LICENSE.
  */
 #include "search_graph.h"
 #include "vw.h"
-#include "rand48.h"
 #include "gd.h"
 
 /*
@@ -157,7 +156,6 @@ namespace GraphTask {
     D.wpp  = sch.get_vw_pointer_unsafe().wpp;
     D.ss   = sch.get_vw_pointer_unsafe().reg.stride_shift;
     D.multiplier = D.wpp << D.ss;
-    cerr << "multiplier = " << D.multiplier << ", wpp=" << D.wpp << ", ss=" << D.ss << " mask=" << D.mask << endl;
     D.weight_vector = sch.get_vw_pointer_unsafe().reg.weight_vector;
     
     D.N = 0;
@@ -210,10 +208,12 @@ namespace GraphTask {
     example*node = D.cur_node;
     if (((fx / D.multiplier) * D.multiplier) != fx) { cerr << "eek"<<endl; throw exception();}
     //float fx2 = (fx & D.mask) / D.multiplier;
-    uint32_t fx2 = (fx >> D.ss) & D.mask;// / D.multiplier;
+    //uint32_t fx2 = (fx >> D.ss) & D.mask;// / D.multiplier;
+    uint32_t fx2 = fx / D.multiplier;
     for (size_t k=0; k<=D.K; k++) {
       if (D.neighbor_predictions[k] == 0.) continue;
-      feature f = { fv * D.neighbor_predictions[k], (uint32_t)(( fx2 + 348919043 * k ) << D.ss) & (uint32_t)D.mask };
+      float fv2 = fv * D.neighbor_predictions[k];
+      feature f = { fv2, (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint32_t)D.mask };
       node->atomics[neighbor_namespace].push_back(f);
       node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     }
@@ -223,9 +223,10 @@ namespace GraphTask {
   void add_edge_features_single_fn(task_data&D, float fv, uint32_t fx) {
     example*node = D.cur_node;
     if (((fx / D.multiplier) * D.multiplier) != fx) { cerr << "eek"<<endl; throw exception();}
-    uint32_t fx2 = (fx >> D.ss) & D.mask;// / D.multiplier;
+    //uint32_t fx2 = (fx >> D.ss) & D.mask;// / D.multiplier;
+    uint32_t fx2 = fx / D.multiplier;
     size_t k = (size_t) D.neighbor_predictions[0];
-    feature f = { fv, (uint32_t)(( fx2 + 348919043 * k ) << D.ss) & (uint32_t)D.mask };
+    feature f = { fv, (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint32_t)D.mask };
     node->atomics[neighbor_namespace].push_back(f);
     node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
     // TODO: audit
@@ -239,16 +240,17 @@ namespace GraphTask {
 
       float pred_total = 0.;
       uint32_t last_pred = 0;
+      float one_over_K = 1. / max(1., (float)ec[i]->l.cs.costs.size() - 1.);
       if (D.use_structure)
         for (size_t j=0; j<ec[i]->l.cs.costs.size(); j++) {
           size_t m = ec[i]->l.cs.costs[j].class_index - 1;
           if (m == n) continue;
-          D.neighbor_predictions[ D.pred[m]-1 ] += 1.;
+          D.neighbor_predictions[ D.pred[m]-1 ] += 1.; // one_over_K;
           pred_total += 1.;
           last_pred = D.pred[m]-1;
         }
       else {
-        D.neighbor_predictions[0] += 1.;
+        D.neighbor_predictions[0] += 1.; // one_over_K;
         pred_total += 1.;
         last_pred = 0;
       }
@@ -326,12 +328,21 @@ namespace GraphTask {
         uint32_t k = (ec[n]->l.cs.costs.size() > 0) ? ec[n]->l.cs.costs[0].class_index : 0;
 
         bool add_features = /* D.use_structure && */ sch.predictNeedsExample();
+        //add_features = false;
 
         if (add_features) add_edge_features(sch, D, n, ec);
         Search::predictor P = Search::predictor(sch, n+1);
         P.set_input(*ec[n]);
-        if (k > 0)
-          P.set_weight( D.true_counts_total / D.true_counts[k] / (float)(D.K) );
+        if (k > 0) {
+          float min_count = 1e12;
+          for (size_t k2=1; k2<=D.K; k2++)
+            min_count = min(min_count, D.true_counts[k2]);
+          //float w = min_count / D.true_counts[k];
+          float w = D.true_counts_total / D.true_counts[k] / (float)(D.K);
+          //P.set_weight( sqrt(w) );
+          //cerr << "w = " << D.true_counts_total / D.true_counts[k] / (float)(D.K) << endl;
+          //P.set_weight( D.true_counts_total / D.true_counts[k] / (float)(D.K) );
+        }
         if (D.separate_learners) P.set_learner_id(loop);
         if (k > 0) // for test examples
           P.set_oracle(k);
@@ -360,3 +371,5 @@ namespace GraphTask {
         sch.output() << D.pred[n] << ' ';
   }
 }
+
+// TODO: in graph data, ef0= should be ef0:

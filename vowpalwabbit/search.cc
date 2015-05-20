@@ -1024,6 +1024,7 @@ namespace Search {
       if (min_loss == FLT_MAX)
         for (size_t i=0; i<losses.cs.costs.size(); i++) min_loss = MIN(min_loss, losses.cs.costs[i].x);
       for (size_t i=0; i<losses.cs.costs.size(); i++) losses.cs.costs[i].x = (losses.cs.costs[i].x - min_loss) * weight;
+      //for (size_t i=0; i<losses.cs.costs.size(); i++) cerr << '\t' << losses.cs.costs[i].x; cerr << endl;
     }
 
     priv.total_example_t += 1.;   // TODO: should be max-min
@@ -2310,7 +2311,7 @@ namespace Search {
   void search::set_force_oracle(bool force) { this->priv->force_oracle = force; }
 
   // predictor implementation
-  predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(nullptr), ec_cnt(0), ec_alloced(false), weight(0.), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { 
+  predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(nullptr), ec_cnt(0), ec_alloced(false), weight(1.), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { 
     oracle_actions = v_init<action>(); 
     condition_on_tags = v_init<ptag>();
     condition_on_names = v_init<char>();
