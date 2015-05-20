@@ -198,12 +198,15 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
             // lhs: int, hash(string), hash(long), hash(*) -> uint
             // rhs: int, short, long, float, bool -> float
 
-            return feature.Value
+            var ret = feature.Value
                 .Select(kvp => new FEATURE
                 {
-                    weight_index = this.vw.HashFeature(feature.Name + Convert.ToString(kvp.Key), this.namespaceHash),
-                    x = (float)Convert.ToDouble(kvp.Value)
-                });
+                    // feature.Name +
+                    weight_index = this.vw.HashFeature(Convert.ToString(kvp.Key), this.namespaceHash),
+                    x = (float) Convert.ToDouble(kvp.Value)
+                }).ToList();
+
+            return ret;
         }
 
         public IEnumerable<FEATURE> Visit(IFeature<IEnumerable<string>> feature)

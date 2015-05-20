@@ -103,7 +103,8 @@ namespace Microsoft.Research.MachineLearning.Serializer
 
                 if (ns.Key.FeatureGroup != null)
                 {
-                    baseNamespaceInits.Add(Expression.Bind(baseNamespaceType.GetProperty("FeatureGroup"), Expression.Constant((char)ns.Key.FeatureGroup)));
+                    baseNamespaceInits.Add(Expression.Bind(baseNamespaceType.GetProperty("FeatureGroup"), 
+                        Expression.Convert(Expression.Constant((char)ns.Key.FeatureGroup), typeof(char?))));
                 }
 
                 if (ns.Key.IsDense)

@@ -43,8 +43,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Attributes
         /// </summary>
         public char FeatureGroup
         {
-            // TODO: is ' ' a good default?
-            get { return InternalFeatureGroup ?? ' '; }
+            get { return InternalFeatureGroup ?? (char)0; }
             set { this.InternalFeatureGroup = value; }
         }
     }

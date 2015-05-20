@@ -140,7 +140,12 @@ namespace Microsoft
 				try
 				{
 					auto string = msclr::interop::marshal_as<std::string>(s);
-					return VW::hash_feature(*m_vw, string, u);
+					substring ss;
+					ss.begin = (char*)string.c_str();
+					ss.end = ss.begin + string.length();
+					return (uint32_t)m_vw->p->hasher(ss, u);
+
+					// return VW::hash_feature(*m_vw, s, u);
 				}
 				catch (std::exception const& ex)
 				{

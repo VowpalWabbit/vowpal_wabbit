@@ -65,9 +65,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\test\models\0001.model">
-      <Link>models\0001.model</Link>
-    </None>
     <None Include="..\test\pred-sets\ref\0001.predict">
       <Link>pred-sets\ref\0001.predict</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
