@@ -96,7 +96,7 @@ LEARNER::base_learner* oaa_setup(vw& all)
       cerr << "oaa is turning off subsampling because your parameter >= K" << endl;
     } else {
       data.subsample_order = calloc_or_die<uint32_t>(data.k-1);
-      for (size_t i=0; i<data.k-1; i++) data.subsample_order[i] = i;
+      for (size_t i=0; i<data.k-1; i++) data.subsample_order[i] = (uint32_t) i;
       for (size_t i=0; i<data.k-1; i++) {
         size_t j = (size_t)(frand48() * (float)(data.k-i)) + i;
         uint32_t tmp = data.subsample_order[i];

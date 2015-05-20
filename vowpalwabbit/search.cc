@@ -284,7 +284,7 @@ namespace Search {
     else {
       int p = (int) (policy*priv.num_learners+learner_id);
       if (priv.xv && !global_xv_train)
-        p = 2*p + 1 + ( is_gte ^ (priv.all->sd->example_number % 2) );
+        p = 2*p + 1 + ( (uint32_t)is_gte ^ (priv.all->sd->example_number % 2) );
       return p;
     }
   }
@@ -718,7 +718,7 @@ namespace Search {
             cs_set_cost_loss(priv.cb_learner, lab, oracle_actions[0]-1, 0.);
         } else {
           for (action k=0; k<priv.A; k++)
-            cs_set_cost_loss(priv.cb_learner, lab, k, array_contains<action>(k+1, oracle_actions, oracle_actions_cnt) ? 0. : 1.);
+            cs_set_cost_loss(priv.cb_learner, lab, k, array_contains<action>(k+1, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f);
         }
       } else { // only some actions are allowed
         cs_costs_erase(priv.cb_learner, lab);
@@ -768,7 +768,7 @@ namespace Search {
       size_t K = cs_get_costs_size(priv.cb_learner, l);
       for (size_t k = 0; k < K; k++) {
         action cl = cs_get_cost_index(priv.cb_learner, l, k);
-        float cost = array_contains(cl, oracle_actions, oracle_actions_cnt) ? 0. : 1.;
+        float cost = array_contains(cl, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f;
         this_cache->push_back( action_cache(0., cl, cl==a, cost) );
       }
       size_t pos = priv.meta_t + priv.t;
@@ -1045,8 +1045,8 @@ namespace Search {
       ec.l = losses; // labels;
       if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.begin, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
       cdbg << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cdbg << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x; cdbg << " ]" << endl;
-      for (size_t is_global_train=0; is_global_train<=priv.xv; is_global_train++) {
-        int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_global_train);
+      for (size_t is_global_train=0; is_global_train<=(size_t) priv.xv; is_global_train++) {
+        int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_global_train > 0);
         ec.in_use = true;
         priv.base_learner->learn(ec, learner);
       }
@@ -1064,8 +1064,8 @@ namespace Search {
           add_example_conditioning(priv, ec, priv.learn_condition_on.begin, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
         }
 
-      for (size_t is_global_train=0; is_global_train<=priv.xv; is_global_train++) {
-        int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_global_train);
+      for (size_t is_global_train=0; is_global_train<= (size_t)priv.xv; is_global_train++) {
+        int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_global_train > 0);
 
         for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
           example& ec = priv.learn_ec_ref[a];
