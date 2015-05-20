@@ -39,7 +39,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec) {
   float first_loss = 0;
   unsigned int maxiter = (is_learn && ! example_is_test (ec)) ? 2 : 1;
   unsigned int k = lrq.k;
-  float sqrtk = sqrt(k);
+  float sqrtk = (float) sqrt(k);
   for (unsigned int iter = 0; iter < maxiter; ++iter, ++which) {
     // Add left LRQ features, holding right LRQ features fixed
     //     and vice versa
@@ -60,7 +60,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec) {
 
             // perturb away from saddle point at (0, 0)
             if (is_learn && ! example_is_test (ec) && *lw == 0) {
-              *lw = cheesyrand(lwindex) * 0.5 / sqrtk;
+              *lw = cheesyrand(lwindex) * 0.5f / sqrtk;
             }
 
             for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn) {
