@@ -214,6 +214,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 		if(!in_dis) // Use predicted label 
 		{
 			ec.l.simple.label = sign(prediction);
+			ec.l.simple.weight = ec_input_weight * a.predicted_label_weight;
 			//cout << "not in dis, example_t: " << ec.example_t << ", weight: " << ec.l.simple.weight << ", pre-learn label: " << ec.l.simple.label << endl;
 			if(a.print_used)
 			{
@@ -330,6 +331,7 @@ base_learner* active_cover_setup(vw& all)
     	("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8.")
     	("alpha", po::value<float>(), "active learning variance upper bound parameter alpha. Default 1.")
     	("cover", po::value<float>(), "cover size. Default 20.")
+    	("predicted_label_weight", po::value<float>(), "Weight on predicted labels. Should be no larger than 1. Default 1.")
     	("oracular", "Use Oracular-CAL style query or not. Default false.")
     	("no_beta", "Do not use beta. Default false.")
     	("print_used", "print used examples with weights. Default false.");
@@ -343,6 +345,7 @@ base_learner* active_cover_setup(vw& all)
 	data.oracular = false;
 	data.no_beta = false;
 	data.print_used = false;
+	data.predicted_label_weight = 1.0;
 
  	size_t cover_size = 20;
 	if(all.vm.count("mellowness"))
@@ -374,6 +377,11 @@ base_learner* active_cover_setup(vw& all)
 	if(all.vm.count("no_beta"))
 	{
 		data.no_beta = true;
+	}
+	
+	if(all.vm.count("predicted_label_weight"))
+	{
+		data.predicted_label_weight = all.vm["predicted_label_weight"].as<float>();;
 	}
 
 

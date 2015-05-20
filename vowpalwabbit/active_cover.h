@@ -95,6 +95,7 @@ struct active_cover
 	bool no_beta;
 	bool print_used;
 	bool oracular;
+	float predicted_label_weight;
 
 	//uint32_t k;  
 	
