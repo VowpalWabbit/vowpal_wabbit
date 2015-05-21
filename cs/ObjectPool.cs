@@ -40,8 +40,9 @@ namespace Microsoft.Research.MachineLearning
         /// To maximize reuse of previously cached items within the pooled objects.
         /// (e.g. cached action dependent features)
         /// </remarks>
-        private Stack<PooledObject<T>> pool; 
+        private Stack<PooledObject<T>> pool;
 
+        // TODO: add Dispose to Factory using reference couting to dispose the shared model correctly.
         public ObjectPool(Func<T> factory)
         {
             this.rwLockSlim = new ReaderWriterLockSlim();
