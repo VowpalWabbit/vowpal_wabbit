@@ -215,11 +215,11 @@ void compile_limits(vector<string> limits, uint32_t* dest, bool quiet)
 void add_options(vw& all, po::options_description& opts)
 {
   all.opts.add(opts);
-  po::variables_map new_vm;
   //parse local opts once for notifications.
   po::parsed_options parsed = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(opts).allow_unregistered().run();
+  po::variables_map new_vm;
   po::store(parsed, new_vm);
   po::notify(new_vm); 
 
@@ -355,6 +355,7 @@ vw::vw()
 
   save_per_pass = false;
 
+  multilabel_prediction = false;
   stdin_off = false;
   do_reset_source = false;
   holdout_set_off = true;
