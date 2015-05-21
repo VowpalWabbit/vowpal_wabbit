@@ -224,7 +224,7 @@ namespace cs_test
         [Feature]
         public string[] Shared { get; set; }
 
-        public IList<Test87ADF> ActionDependentFeatures { get; set; }
+        public IReadOnlyList<Test87ADF> ActionDependentFeatures { get; set; }
     }
 
     public class Test87ADF

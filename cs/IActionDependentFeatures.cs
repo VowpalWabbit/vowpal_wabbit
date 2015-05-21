@@ -14,8 +14,8 @@ namespace Microsoft.Research.MachineLearning
     /// Types supporting action dependent features must implement this interface.
     /// </summary>
     /// <typeparam name="T">Type of each action dependent feature.</typeparam>
-    public interface IActionDependentFeatureExample<T>
+    public interface IActionDependentFeatureExample<out T>
     {
-        IList<T> ActionDependentFeatures { get; }
+        IReadOnlyList<T> ActionDependentFeatures { get; }
     }
 }
