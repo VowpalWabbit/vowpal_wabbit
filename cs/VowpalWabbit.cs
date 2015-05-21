@@ -147,7 +147,7 @@ namespace Microsoft.Research.MachineLearning
                 for (var i = 0; i < multiLabelPrediction.Length; i++)
 			    {
                     // VW multi-label indicies are 0-based
-                    result[i] = example.ActionDependentFeatures[multiLabelPrediction[i]];
+			        result[i] = example.ActionDependentFeatures[multiLabelPrediction[i]];
 			    }
 
                 return result;
