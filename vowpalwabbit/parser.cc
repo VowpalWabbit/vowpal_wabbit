@@ -672,6 +672,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 	  size_t new_index = atomics[i].weight_index;
 	  for (size_t n = 1; n < gram_mask.size(); n++)
 	    new_index = new_index*quadratic_constant + atomics[i+gram_mask[n]].weight_index;
+
 	  feature f = {1.,(uint32_t)(new_index)};
 	  atomics.push_back(f);
 	  if ((all.audit || all.hash_inv) && audits.size() >= initial_length)
@@ -682,6 +683,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 		  feature_name += string("^");
 		  feature_name += string(audits[i+gram_mask[n]].feature);
 		}
+
 	      string feature_space = string(audits[i].space);
 	      
 	      audit_data a_feature = {nullptr,nullptr,new_index, 1., true};
@@ -946,7 +948,7 @@ namespace VW{
       }
     parse_atomic_example(all,ret,false); // all.p->parsed_examples++;
     setup_example(all, ret);
-    
+	all.p->end_parsed_examples++;
     return ret;
   }
 

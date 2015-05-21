@@ -14,14 +14,14 @@ using Microsoft.Research.MachineLearning.Serializer.Attributes;
 
 namespace Microsoft.Research.MachineLearning.Serializer
 {
-    public sealed class VowpalWabbitSerializer<TExample, TExampleResult> : IDisposable
+    public sealed class VowpalWabbitSerializer<TExample> : IDisposable
     {
-        private readonly Func<TExample, TExampleResult> serializer;
+        private readonly Func<TExample, IVowpalWabbitExample> serializer;
 
         // TODO: replace with MemoryCache
-        private Dictionary<TExample, TExampleResult> exampleCache;
+        private Dictionary<TExample, VowpalWabbitCachedExample<TExample>> exampleCache;
 
-        internal VowpalWabbitSerializer(Func<TExample, TExampleResult> serializer)
+        internal VowpalWabbitSerializer(Func<TExample, IVowpalWabbitExample> serializer)
         {
             this.serializer = serializer;
 
@@ -33,7 +33,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
 
             if (cacheableAttribute.EqualityComparer == null)
             {
-                this.exampleCache = new Dictionary<TExample, TExampleResult>();
+                this.exampleCache = new Dictionary<TExample, VowpalWabbitCachedExample<TExample>>();
             }
             else
             {
@@ -48,7 +48,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
                 }
 
                 var comparer = (IEqualityComparer<TExample>) Activator.CreateInstance(cacheableAttribute.EqualityComparer);
-                this.exampleCache = new Dictionary<TExample, TExampleResult>(comparer);
+                this.exampleCache = new Dictionary<TExample, VowpalWabbitCachedExample<TExample>>(comparer);
             }
         }
 
@@ -58,18 +58,23 @@ namespace Microsoft.Research.MachineLearning.Serializer
         /// <param name="example">The example to serialize.</param>
         /// <returns>The serialized example.</returns>
         /// <remarks>If TExample is annotated using the Cachable attribute, examples are returned from cache.</remarks>
-        public TExampleResult Serialize(TExample example)
+        public IVowpalWabbitExample Serialize(TExample example)
         {
             if (this.exampleCache == null)
             {
                 return this.serializer(example);
             }
 
-            TExampleResult result;
+            VowpalWabbitCachedExample<TExample> result;
             if (!this.exampleCache.TryGetValue(example, out result))
             {
-                result = this.serializer(example);
+                result = new VowpalWabbitCachedExample<TExample>(this, this.serializer(example));
                 this.exampleCache.Add(example, result);
+
+                // add IVowpalWabbitExample to catch IDispose transparently or hook into exampel?
+                // update count with every read
+                // sort on add, then discard the top ones (maybe have a grace ppoint to reduce the number of sorting)
+
             }
 
             return result;
@@ -96,6 +101,11 @@ namespace Microsoft.Research.MachineLearning.Serializer
                     this.exampleCache = null;
                 }
             }
+        }
+
+        internal void ReturnExampleToCache(VowpalWabbitCachedExample<TExample> example)
+        {
+            throw new NotImplementedException();
         }
     }
 }

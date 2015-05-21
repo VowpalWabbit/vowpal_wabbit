@@ -30,7 +30,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
         /// </summary>
         private static readonly Dictionary<Tuple<Type, Type>, object> SerializerCache = new Dictionary<Tuple<Type, Type>, object>();
 
-        public static VowpalWabbitSerializer<TExample, VowpalWabbitExample> CreateSerializer<TExample>(VowpalWabbitInterfaceVisitor visitor)
+        public static VowpalWabbitSerializer<TExample> CreateSerializer<TExample>(VowpalWabbitInterfaceVisitor visitor)
         {
             var serializerFunc = CreateSerializer<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample, FEATURE[], IEnumerable<FEATURE>>();
             if (serializerFunc == null)
@@ -38,19 +38,19 @@ namespace Microsoft.Research.MachineLearning.Serializer
                 return null;
             }
 
-            return new VowpalWabbitSerializer<TExample, VowpalWabbitExample>(ex => serializerFunc(ex, visitor));
+            return new VowpalWabbitSerializer<TExample>(ex => serializerFunc(ex, visitor));
         }
 
-        public static VowpalWabbitSerializer<TExample, string> CreateSerializer<TExample>(VowpalWabbitStringVisitor visitor)
-        {
-            var serializerFunc = CreateSerializer<TExample, VowpalWabbitStringVisitor, string, string, string>();
-            if (serializerFunc == null)
-            {
-                return null;
-            }
+        //public static VowpalWabbitSerializer<TExample, string> CreateSerializer<TExample>(VowpalWabbitStringVisitor visitor)
+        //{
+        //    var serializerFunc = CreateSerializer<TExample, VowpalWabbitStringVisitor, string, string, string>();
+        //    if (serializerFunc == null)
+        //    {
+        //        return null;
+        //    }
 
-            return new VowpalWabbitSerializer<TExample, string>(ex => serializerFunc(ex, visitor));
-        }
+        //    return new VowpalWabbitSerializer<TExample, string>(ex => serializerFunc(ex, visitor));
+        //}
 
         public static Func<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult, TNamespaceResult, TFeatureResult>()
             where TVisitor : IVowpalWabbitVisitor<TExampleResult, TNamespaceResult, TFeatureResult>

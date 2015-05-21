@@ -12,11 +12,106 @@ using System.Globalization;
 
 namespace cs_test
 {
+    public class Test1
+    {
+        [Feature(FeatureGroup = 'f', Namespace = "eatures", Name = "const", Order = 2)]
+        public float Constant { get; set; }
+
+        [Feature(FeatureGroup = 'f', Namespace = "eatures", Order = 1)]
+        public IEnumerable<KeyValuePair<string, float>> Features { get; set; }
+
+        public string Line { get; set; }
+    }
+
+
     class Program
     {
         static void Main(string[] args)
         {
-            AttributesSample.Attributes();
+            var references = File.ReadAllLines(@"pred-sets\ref\0001.predict").Select(l => float.Parse(l, CultureInfo.InvariantCulture)).ToArray();
+
+            var input = new List<Test1>();
+
+            Directory.CreateDirectory("models");
+
+            //using (var vwStr = new VowpalWabbit(" -k -l 20 --initial_t 128000 --power_t 1 -c test1and2.str --passes 8 --invariant --ngram 3 --skips 1 --holdout_off -f models/str0001.model --readable_model models/str0001.readablemodel"))
+            using (var vw = new VowpalWabbit<Test1>(" -k -l 20 --initial_t 128000 --power_t 1 -c test1and2 --passes 8 --invariant --ngram 3 --skips 1 --holdout_off -f models/0001.model --readable_model models/0001.readablemodel --audit"))
+            using (var fr = new StreamReader(@"train-sets\0001.dat"))
+            {
+                string line;
+                for (var lineNr = 1; (line = fr.ReadLine()) != null; lineNr++)
+                {
+                    var parts = line.Split('|');
+
+                    var features = parts[1]
+                                .Split(' ')
+                                .Skip(1) // skip namespace label
+                                .ToList();
+
+                    var dictFeatures = from f in features
+                                       where !f.StartsWith("const")
+                                       let t = f.Split(':')
+                                       // weight_index, x
+                                       select new KeyValuePair<string, float>(t[0], float.Parse(t[1], CultureInfo.InvariantCulture));
+
+                    var data = new Test1()
+                    {
+                        Constant = float.Parse(features.First(f => f.StartsWith("const")).Substring(6), CultureInfo.InvariantCulture),
+                        Features = dictFeatures.ToList(),
+                        Line = line
+                    };
+
+                    input.Add(data);
+
+                    //using (var strExample = vwStr.ReadExample(line))
+                    //using (var example = vw.ReadExample(line))
+                    using (var example = vw.ReadExample(data))
+                    {
+                        example.AddLabel(float.Parse(parts[0].Trim(), CultureInfo.InvariantCulture));
+
+                        //var diff = example.Diff(strExample, true);
+                        //Assert.IsNull(diff, "Found diff for line " + lineNr + ": " + diff);
+
+                        var actual = example.Learn();
+                        //var expected = strExample.Learn();
+
+                        //Assert.AreEqual(expected, actual, 1e-6, "Learn output differs on line: " + lineNr);
+                    }
+                }
+
+                vw.RunMultiPass();
+                // vwStr.SaveModel("models/str0001.model");
+                // vw.SaveModel("models/0001.model");
+            }
+
+            //Assert.AreEqual(input.Count, references.Length);
+
+            //using (var vwStr = new VowpalWabbit("-k -t -i models/str0001.model --invariant"))
+            //using (var vw = new VowpalWabbit<Test1>("-k -t -i models/0001.model --invariant"))
+            //{
+            //    for (var i = 0; i < input.Count; i++)
+            //    {
+            //        using (var strExample = vwStr.ReadExample(input[i].Line))
+            //        using (var example = vw.ReadExample(input[i]))
+            //        {
+            //            var actual = example.Predict();
+            //            var expected = strExample.Predict();
+
+            //            //Assert.AreEqual(
+            //            //    expected,
+            //            //    actual,
+            //            //    1e-5,
+            //            //    string.Format(CultureInfo.InvariantCulture, "Expected {0} vs. actual {1} at line {2}", expected, actual, i));
+
+            //            //Assert.AreEqual(
+            //            //    references[i],
+            //            //    actual,
+            //            //    1e-5,
+            //            //    string.Format(CultureInfo.InvariantCulture, "Expected {0} vs. actual {1} at line {2}", references[i], actual, i));                    
+            //        }
+            //    }
+            //}
+            // AttributesSample.Attributes();
             //AttributesSample.RunFeaturesTest();
             //ExploreClock.Clock();
             //LabDemo.Run();
@@ -28,7 +123,7 @@ namespace cs_test
             //RunLDAPredict();
             //RunVWParse_and_VWLearn();
 
-            Console.ReadKey();
+            //Console.ReadKey();
         }
 
 

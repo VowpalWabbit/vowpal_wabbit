@@ -10,7 +10,7 @@ namespace Microsoft.Research.MachineLearning
 {
     public class VowpalWabbit<TExample> : VowpalWabbit
     {
-        protected readonly VowpalWabbitSerializer<TExample, VowpalWabbitExample> serializer;
+        protected readonly VowpalWabbitSerializer<TExample> serializer;
 
         public VowpalWabbit(VowpalWabbitModel model)
             : base(model)
@@ -25,7 +25,7 @@ namespace Microsoft.Research.MachineLearning
             this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(visitor);
         }
         
-        public VowpalWabbitExample ReadExample(TExample example)
+        public IVowpalWabbitExample ReadExample(TExample example)
         {
             if (this.serializer == null)
             {
@@ -39,7 +39,7 @@ namespace Microsoft.Research.MachineLearning
     public sealed class VowpalWabbit<TExample, TActionDependentFeature> : VowpalWabbit<TExample>
         where TExample : IActionDependentFeatureExample<TActionDependentFeature>
     {
-        private readonly VowpalWabbitSerializer<TActionDependentFeature, VowpalWabbitExample> actionDependentFeatureSerializer;
+        private readonly VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
 
         public VowpalWabbit(VowpalWabbitModel model) : base(model)
         {
@@ -92,17 +92,17 @@ namespace Microsoft.Research.MachineLearning
             return this.LearnOrPredict(example, ex => ex.Predict());
         }
 
-        private TActionDependentFeature[] LearnOrPredict(TExample example, Action<VowpalWabbitExample> learnOrPredict)
+        private TActionDependentFeature[] LearnOrPredict(TExample example, Action<IVowpalWabbitExample> learnOrPredict)
         {
             // shared |userlda :.1 |che a:.1 
             // `doc1 |lda :.1 :.2 [1]
             // `doc2 |lda :.2 :.3 [2]
             // <new line>
-            var examples = new List<VowpalWabbitExample>();
+            var examples = new List<IVowpalWabbitExample>();
             
             try
             {
-                VowpalWabbitExample firstExample = null;
+                IVowpalWabbitExample firstExample = null;
 
                 if (this.serializer != null)
                 {
@@ -167,7 +167,7 @@ namespace Microsoft.Research.MachineLearning
     /// </summary>
     public sealed class VowpalWabbitString<TExample> : VowpalWabbit
     {
-        private readonly VowpalWabbitSerializer<TExample, string> serializer;
+        //private readonly VowpalWabbitSerializer<TExample, string> serializer;
         private readonly VowpalWabbitStringVisitor stringVisitor;
 
         public VowpalWabbitString(string arguments)
@@ -175,13 +175,14 @@ namespace Microsoft.Research.MachineLearning
         {
             // Compile serializer
             this.stringVisitor = new VowpalWabbitStringVisitor();
-            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(this.stringVisitor);
+            //this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(this.stringVisitor);
         }
         
         public VowpalWabbitExample ReadExample(TExample example)
         {
-            var exampleLine = this.serializer.Serialize(example);
-            return base.ReadExample(exampleLine);
+            //var exampleLine = this.serializer.Serialize(example);
+            //return base.ReadExample(exampleLine);
+            return null;
         }
     }
 }

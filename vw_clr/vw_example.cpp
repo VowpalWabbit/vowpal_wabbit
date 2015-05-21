@@ -60,6 +60,13 @@ namespace Microsoft
 				return result;
 			}
 
+			cli::array<float>^ VowpalWabbitExample::TopicPredictions::get()
+			{
+				auto result = gcnew cli::array<float>(m_vw->lda);
+				Marshal::Copy(IntPtr(m_example->topic_predictions.begin), result, 0, m_vw->lda);
+				return result;
+			}
+
 			bool VowpalWabbitExample::IsNewLine::get()
 			{
 				return example_is_newline(*m_example) != 0;
@@ -85,10 +92,17 @@ namespace Microsoft
 				VW::add_label(m_example, label, weight, base);
 			}
 
-			System::String^ VowpalWabbitExample::Diff(VowpalWabbitExample^ other, bool sameOrder)
+			System::String^ VowpalWabbitExample::Diff(IVowpalWabbitExample^ other, bool sameOrder)
 			{
+				auto otherSameType = dynamic_cast<VowpalWabbitExample^>(other);
+
+				if (otherSameType == nullptr)
+				{
+					return gcnew System::String("Can't compare examples of different types.");
+				}
+
 				auto a = this->m_example;
-				auto b = other->m_example;
+				auto b = otherSameType->m_example;
 				if (a->indices.size() != b->indices.size())
 				{
 					return System::String::Format("Indicies length differ: {0} vs {1}",
@@ -139,7 +153,7 @@ namespace Microsoft
 
 						if (sameOrder)
 						{
-							auto other_masked_weight_index = l->weight_index & other->m_vw->reg.weight_mask;
+							auto other_masked_weight_index = l->weight_index & otherSameType->m_vw->reg.weight_mask;
 							if (!(masked_weight_index == other_masked_weight_index && abs(k->x - l->x) < 1e-5))
 							{
 								return System::String::Format(
@@ -154,7 +168,7 @@ namespace Microsoft
 						{
 							for (l = fb.begin; l != fb.end; l++)
 							{
-								auto other_masked_weight_index = l->weight_index & other->m_vw->reg.weight_mask;
+								auto other_masked_weight_index = l->weight_index & otherSameType->m_vw->reg.weight_mask;
 
 								if (masked_weight_index == other_masked_weight_index)
 								{

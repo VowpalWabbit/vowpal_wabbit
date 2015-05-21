@@ -45,19 +45,7 @@ namespace Microsoft
 
 				try
 				{
-					// TODO: crashes VwCleanupTestError
-					//if (m_vw->numpasses > 1)
-					//{
-					//	adjust_used_index(*m_vw);
-					//	m_vw->do_reset_source = true;
-					//	VW::start_parser(*m_vw, false);
-					//	LEARNER::generic_driver(*m_vw);
-					//	VW::end_parser(*m_vw);
-					//}
-					//else
-					//{
-					//	release_parser_datastructures(*m_vw);
-					//}
+					release_parser_datastructures(*m_vw);
 
 					VW::finish(*m_vw);
 				}
@@ -67,6 +55,18 @@ namespace Microsoft
 				}
 
 				m_isDisposed = true;
+			}
+
+			void VowpalWabbitBase::RunMultiPass()
+			{
+				if (m_vw->numpasses > 1)
+				{
+					adjust_used_index(*m_vw);
+					m_vw->do_reset_source = true;
+					VW::start_parser(*m_vw, false);
+					LEARNER::generic_driver(*m_vw);
+					VW::end_parser(*m_vw);
+				}
 			}
 
 			void VowpalWabbitBase::SaveModel()

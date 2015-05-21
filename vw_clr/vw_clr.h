@@ -34,7 +34,45 @@ namespace Microsoft
 				property unsigned char Name;
 			};
 
-			public ref class VowpalWabbitExample
+			public interface class IVowpalWabbitExample : public IDisposable
+			{
+			public:
+				property bool IsNewLine
+				{
+					virtual bool get() = 0;
+				}
+
+				property float CostSensitivePrediction
+				{
+					virtual float get() = 0;
+				}
+
+				property cli::array<int>^ MultilabelPredictions
+				{
+					virtual cli::array<int>^ get() = 0;
+				}
+
+				property cli::array<float>^ TopicPredictions
+				{
+					virtual cli::array<float>^ get() = 0;
+				}
+
+				virtual void AddLabel(System::String^ label) = 0;
+
+				virtual void AddLabel(float label) = 0;
+
+				virtual void AddLabel(float label, float weight) = 0;
+
+				virtual void AddLabel(float label, float weight, float base) = 0;
+
+				virtual float Learn() = 0;
+
+				virtual float Predict() = 0;
+
+				virtual System::String^ Diff(IVowpalWabbitExample^ other, bool sameOrder) = 0;
+			};
+
+			public ref class VowpalWabbitExample : public IVowpalWabbitExample
 			{
 			private:
 				vw* const m_vw;
@@ -51,32 +89,37 @@ namespace Microsoft
 
 				property bool IsNewLine
 				{
-					bool get();
+					virtual bool get();
 				}
 
 				property float CostSensitivePrediction
 				{
-					float get();
+					virtual float get();
 				}
 					
 				property cli::array<int>^ MultilabelPredictions
 				{
-					cli::array<int>^ get();
+					virtual cli::array<int>^ get();
 				}
 
-				void AddLabel(System::String^ label);
+				property cli::array<float>^ TopicPredictions
+				{
+					virtual cli::array<float>^ get();
+				}
 
-				void AddLabel(float label);
+				virtual void AddLabel(System::String^ label);
+
+				virtual void AddLabel(float label);
 				
-				void AddLabel(float label, float weight);
+				virtual void AddLabel(float label, float weight);
 
-				void AddLabel(float label, float weight, float base);
+				virtual void AddLabel(float label, float weight, float base);
 
-				float Learn();
+				virtual float Learn();
 
-				float Predict();
+				virtual float Predict();
 
-				System::String^ Diff(VowpalWabbitExample^ other, bool sameOrder);
+				virtual System::String^ Diff(IVowpalWabbitExample^ other, bool sameOrder);
 			};
 
 			public ref class VowpalWabbitBase abstract
@@ -95,6 +138,7 @@ namespace Microsoft
 			public:
 				~VowpalWabbitBase();
 
+				void RunMultiPass();
 				void SaveModel();
 				void SaveModel(System::String^ filename);
 			};

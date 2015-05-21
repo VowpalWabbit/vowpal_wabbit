@@ -65,6 +65,7 @@
     <Compile Include="Serializer\Reflection\TypeMatch.cs" />
     <Compile Include="Serializer\Visitors\VowpalWabbitNativeVisitor.cs" />
     <Compile Include="Serializer\Visitors\VowpalWabbitStringVisitor.cs" />
+    <Compile Include="Serializer\VowpalWabbitCachedExample.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerFactory.cs" />
     <Compile Include="VowpalWabbit.cs" />

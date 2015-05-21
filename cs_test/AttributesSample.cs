@@ -47,15 +47,15 @@ namespace cs_test
                 }
             };
 
-            var visitor = new VowpalWabbitStringVisitor();
-            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<UserContext>(visitor);
-            var serializerDependent = VowpalWabbitSerializerFactory.CreateSerializer<DocumentFeature>(visitor);
-            Console.WriteLine(serializer.Serialize(context));
+            //var visitor = new VowpalWabbitStringVisitor();
+            //var serializer = VowpalWabbitSerializerFactory.CreateSerializer<UserContext>(visitor);
+            //var serializerDependent = VowpalWabbitSerializerFactory.CreateSerializer<DocumentFeature>(visitor);
+            //Console.WriteLine(serializer.Serialize(context));
 
-            foreach (var actionDependentFeature in context.ActionDependentFeatures)
-            {
-                Console.WriteLine(serializerDependent.Serialize(actionDependentFeature));
-            }
+            //foreach (var actionDependentFeature in context.ActionDependentFeatures)
+            //{
+            //    Console.WriteLine(serializerDependent.Serialize(actionDependentFeature));
+            //}
 
             //using (var pool = new ObjectPool<VowpalWabbit<UserContext, DocumentFeature>>(() => new VowpalWabbit<UserContext, DocumentFeature>("")))
             //{
