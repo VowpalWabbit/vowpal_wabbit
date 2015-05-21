@@ -123,7 +123,7 @@ namespace cs_test
         [Feature(Namespace = "userlda", FeatureGroup = 'u')]
         public LDAFeatureVector UserLDATopicPreference { get; set; }
 
-        public IList<DocumentFeature> ActionDependentFeatures { get; set;  }
+        public IReadOnlyList<DocumentFeature> ActionDependentFeatures { get; set; }
     }
 
     [Cacheable(EqualityComparer = typeof(DocumentFeatureEqualityComparer))]
