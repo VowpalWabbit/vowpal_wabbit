@@ -48,8 +48,7 @@ namespace VW {
   //The more complex way to create an example.
 
   //after you create and fill feature_spaces, get an example with everything filled in.
-  example* import_example(vw& all, primitive_feature_space* features, size_t len);
-  example* import_example(vw& all, vector< feature_space > ec_info);
+  example* import_example(vw& all, string label, primitive_feature_space* features, size_t len);
   void parse_example_label(vw&all, example&ec, string label);
   void setup_example(vw& all, example* ae);
   example* new_unused_example(vw& all);

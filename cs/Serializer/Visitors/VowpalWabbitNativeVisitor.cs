@@ -254,7 +254,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
             };
         }
 
-        public VowpalWabbitExample Visit(IVisitableNamespace<FEATURE[]>[] namespaces)
+        public VowpalWabbitExample Visit(string label, IVisitableNamespace<FEATURE[]>[] namespaces)
         {
             var featureSpaces = (from n in namespaces
                             let resultFeature = n.Visit()
@@ -266,7 +266,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
                             }).ToArray();
 
             // move data into VW
-            return this.vw.ImportExample(featureSpaces);
+            return this.vw.ImportExample(label, featureSpaces);
         }
     }
 }

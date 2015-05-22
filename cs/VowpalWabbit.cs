@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Microsoft.Research.MachineLearning.Serializer.Attributes;
+using Microsoft.Research.MachineLearning.Interfaces;
 
 namespace Microsoft.Research.MachineLearning
 {
@@ -37,7 +38,7 @@ namespace Microsoft.Research.MachineLearning
     }
 
     public sealed class VowpalWabbit<TExample, TActionDependentFeature> : VowpalWabbit<TExample>
-        where TExample : IActionDependentFeatureExample<TActionDependentFeature>
+        where TExample : SharedExample, IActionDependentFeatureExample<TActionDependentFeature>
     {
         private readonly VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
 
@@ -63,28 +64,9 @@ namespace Microsoft.Research.MachineLearning
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="example"></param>
-        /// <param name="chosenAction">Must be an an instance out of example.ActionDependentFeatures.</param>
-        /// <param name="cost"></param>
-        /// <param name="probability"></param>
-        public TActionDependentFeature[] Learn(TExample example, TActionDependentFeature chosenAction, float cost, float probability)
+        public TActionDependentFeature[] Learn(TExample example)
         {
-            return this.LearnOrPredict(example, ex =>
-            {
-                if (object.ReferenceEquals(ex, chosenAction))
-                {
-                    ex.AddLabel(
-                        string.Format(
-                        CultureInfo.InvariantCulture,
-                        "0:{0}:{1}",
-                        cost, probability));
-                }
-
-                ex.Learn();
-            });
+            return this.LearnOrPredict(example, ex => ex.Learn());
         }
 
         public TActionDependentFeature[] Predict(TExample example)
@@ -109,7 +91,6 @@ namespace Microsoft.Research.MachineLearning
                     var sharedExample = this.serializer.Serialize(example);
                     examples.Add(sharedExample);
 
-                    sharedExample.AddLabel("shared");
                     learnOrPredict(sharedExample);
 
                     firstExample = sharedExample;

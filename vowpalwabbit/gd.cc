@@ -333,6 +333,7 @@ void print_features(vw& all, example& ec)
 	    }
 	}
 
+	  // disable the following sorting to get comparable audit results in the case of small numerical differences
       sort(features.begin(),features.end());
       if(all.audit){
         for (vector<string_value>::iterator sv = features.begin(); sv!= features.end(); sv++)

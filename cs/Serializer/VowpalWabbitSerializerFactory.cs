@@ -17,6 +17,7 @@ using Microsoft.Research.MachineLearning.Serializer.Interfaces;
 using Microsoft.Research.MachineLearning.Serializer.Intermediate;
 using Microsoft.Research.MachineLearning.Serializer.Reflection;
 using Microsoft.Research.MachineLearning.Serializer.Visitors;
+using Microsoft.Research.MachineLearning.Interfaces;
 
 namespace Microsoft.Research.MachineLearning.Serializer
 {
@@ -40,17 +41,6 @@ namespace Microsoft.Research.MachineLearning.Serializer
 
             return new VowpalWabbitSerializer<TExample>(ex => serializerFunc(ex, visitor));
         }
-
-        //public static VowpalWabbitSerializer<TExample, string> CreateSerializer<TExample>(VowpalWabbitStringVisitor visitor)
-        //{
-        //    var serializerFunc = CreateSerializer<TExample, VowpalWabbitStringVisitor, string, string, string>();
-        //    if (serializerFunc == null)
-        //    {
-        //        return null;
-        //    }
-
-        //    return new VowpalWabbitSerializer<TExample, string>(ex => serializerFunc(ex, visitor));
-        //}
 
         public static Func<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult, TNamespaceResult, TFeatureResult>()
             where TVisitor : IVowpalWabbitVisitor<TExampleResult, TNamespaceResult, TFeatureResult>
@@ -218,13 +208,30 @@ namespace Microsoft.Research.MachineLearning.Serializer
                 }
             }
 
-            var visitNamespaceMethod = typeof(TVisitor).GetMethod("Visit", new[] { typeof(IVisitableNamespace<TNamespaceResult>[]) });
+            Expression label;
+            if (typeof(IExample).IsAssignableFrom(typeof(TExample)))
+            {
+                var labelProperty = Expression.Property(valueParameter, typeof(IExample).GetProperty("Label"));
 
-            // CODE return visitor.Visit(comment, new[] { ns1, ns2, ... })
+                // CODE: value.Label == null ? null : value.Label.ToVowpalWabbitFormat();
+                label = Expression.Condition(
+                    test: Expression.Equal(labelProperty, Expression.Constant(null)),
+                    ifTrue: Expression.Constant(null, typeof(string)),
+                    ifFalse: Expression.Call(labelProperty, typeof(ILabel).GetMethod("ToVowpalWabbitFormat"))); 
+            }
+            else
+            {
+                label = Expression.Constant(null, typeof(string));
+            }
+
+            var visitNamespaceMethod = typeof(TVisitor).GetMethod("Visit", new[] { typeof(string), typeof(IVisitableNamespace<TNamespaceResult>[]) });
+
+            // CODE return visitor.Visit(label, new[] { ns1, ns2, ... })
             body.Add(
                 Expression.Call(
                     visitorParameter,
                     visitNamespaceMethod,
+                    label,
                     Expression.NewArrayInit(
                         typeof(IVisitableNamespace<TNamespaceResult>),
                         namespaceVariables.ToArray())));

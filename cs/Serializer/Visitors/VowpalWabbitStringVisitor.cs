@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Microsoft.Research.MachineLearning.Serializer.Interfaces;
+using System.Text;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 {
@@ -112,9 +113,19 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
                     string.Join(" ", featureResults));
         }
 
-        public string Visit(IVisitableNamespace<string>[] namespaces)
+        public string Visit(string label, IVisitableNamespace<string>[] namespaces)
         {
-            return string.Join(" ", namespaces.Select(n => n.Visit()));
+            // see https://github.com/JohnLangford/vowpal_wabbit/wiki/Input-format 
+            // prefix with label
+            var sb = new StringBuilder();
+            if (!string.IsNullOrEmpty(label))
+            {
+                sb.Append(label).Append(' ');
+            }
+
+            sb.Append(string.Join(" ", namespaces.Select(n => n.Visit())));
+
+            return sb.ToString();
         }
     }
 }

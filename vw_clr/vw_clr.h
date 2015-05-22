@@ -57,14 +57,6 @@ namespace Microsoft
 					virtual cli::array<float>^ get() = 0;
 				}
 
-				virtual void AddLabel(System::String^ label) = 0;
-
-				virtual void AddLabel(float label) = 0;
-
-				virtual void AddLabel(float label, float weight) = 0;
-
-				virtual void AddLabel(float label, float weight, float base) = 0;
-
 				virtual float Learn() = 0;
 
 				virtual float Predict() = 0;
@@ -107,14 +99,6 @@ namespace Microsoft
 					virtual cli::array<float>^ get();
 				}
 
-				virtual void AddLabel(System::String^ label);
-
-				virtual void AddLabel(float label);
-				
-				virtual void AddLabel(float label, float weight);
-
-				virtual void AddLabel(float label, float weight, float base);
-
 				virtual float Learn();
 
 				virtual float Predict();
@@ -122,22 +106,22 @@ namespace Microsoft
 				virtual System::String^ Diff(IVowpalWabbitExample^ other, bool sameOrder);
 			};
 
+			// Since the model class must delay diposal of m_vw until all referencing
+			// VowpalWabbit instances are disposed, the base class does not dispose m_vw
 			public ref class VowpalWabbitBase abstract
 			{
 			internal:
 				vw* m_vw;
-			
+				
 			protected:
 				bool m_isDisposed;
 
 				VowpalWabbitBase(System::String^ pArgs);
 				VowpalWabbitBase(vw* vw);
 
-				!VowpalWabbitBase();
+				void InternalDispose();
 
 			public:
-				~VowpalWabbitBase();
-
 				void RunMultiPass();
 				void SaveModel();
 				void SaveModel(System::String^ filename);
@@ -146,10 +130,18 @@ namespace Microsoft
 			/// <summary>
 			/// VowpalWabbit model wrapper.
 			/// </summary>
-			public ref class VowpalWabbitModel : VowpalWabbitBase
+			public ref class VowpalWabbitModel : public VowpalWabbitBase
 			{
+			internal:
+				System::Int32 m_instanceCount;
+
+				void IncrementReference();
+				void DecrementReference();
+				!VowpalWabbitModel();
+
 			public:
 				VowpalWabbitModel(System::String^ pArgs);
+				virtual ~VowpalWabbitModel();
 			};
 
 			/// <summary>
@@ -157,15 +149,22 @@ namespace Microsoft
 			/// </summary>
 			public ref class VowpalWabbit : VowpalWabbitBase
 			{
+			private:
+				VowpalWabbitModel^ m_model;
+
+			protected:
+				!VowpalWabbit();
+
 			public:
 				VowpalWabbit(System::String^ pArgs);
 				VowpalWabbit(VowpalWabbitModel^ model);
+				virtual ~VowpalWabbit();
 
 				uint32_t HashSpace(System::String^ s);
 				uint32_t HashFeature(System::String^ s, unsigned long u);
 
 				VowpalWabbitExample^ ReadExample(System::String^ line);
-				VowpalWabbitExample^ ImportExample(cli::array<FeatureSpace^>^ featureSpaces);
+				VowpalWabbitExample^ ImportExample(System::String^ label, cli::array<FeatureSpace^>^ featureSpaces);
 				VowpalWabbitExample^ CreateEmptyExample();
 			};
 		}

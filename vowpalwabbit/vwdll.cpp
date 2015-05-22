@@ -64,11 +64,11 @@ extern "C"
 		VW::finish(*pointer);
 	}
 
-	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ImportExample(VW_HANDLE handle, VW_FEATURE_SPACE* features, size_t len)
+	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ImportExample(VW_HANDLE handle, const char * label, VW_FEATURE_SPACE* features, size_t len)
 	{
 		vw * pointer = static_cast<vw*>(handle);
 		VW::primitive_feature_space * f = reinterpret_cast<VW::primitive_feature_space*>( features );
-		return static_cast<VW_EXAMPLE>(VW::import_example(*pointer, f, len));
+		return static_cast<VW_EXAMPLE>(VW::import_example(*pointer, label, f, len));
 	}
 	
 	VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_ExportExample(VW_HANDLE handle, VW_EXAMPLE e, size_t * plen)

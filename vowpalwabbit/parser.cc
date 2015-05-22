@@ -912,30 +912,14 @@ namespace VW{
     ec->l.simple.initial = base;
   }
 
-  example* import_example(vw& all, vector<feature_space> vf)
+  example* import_example(vw& all, string label, primitive_feature_space* features, size_t len)
   {
     example* ret = get_unused_example(all);
-    all.p->lp.default_label(&ret->l);
-    for (size_t i = 0; i < vf.size();i++)
-      {
-	uint32_t index = vf[i].first;
-	ret->indices.push_back(index);
-	for (size_t j = 0; j < vf[i].second.size(); j++)
-	  {	    
-	    ret->sum_feat_sq[index] += vf[i].second[j].x * vf[i].second[j].x;
-	    ret->atomics[index].push_back(vf[i].second[j]);
-	  }
-      }
-	parse_atomic_example(all,ret,false);
-    setup_example(all, ret);
-    all.p->end_parsed_examples++;
-    return ret;
-  }
+	all.p->lp.default_label(&ret->l);
 
-  example* import_example(vw& all, primitive_feature_space* features, size_t len)
-  {
-    example* ret = get_unused_example(all);
-    all.p->lp.default_label(&ret->l);
+	if (label.length() > 0)
+		parse_example_label(all, *ret, label);
+
     for (size_t i = 0; i < len;i++)
       {
 	uint32_t index = features[i].name;

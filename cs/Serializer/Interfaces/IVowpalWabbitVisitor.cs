@@ -16,7 +16,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
     /// <typeparam name="TResultFeature">Type of feature produced by front-end.</typeparam>
     public interface IVowpalWabbitVisitor<TResultExample, TResultNamespace, TResultFeature>
     {
-        TResultExample Visit(IVisitableNamespace<TResultNamespace>[] namespaces);
+        TResultExample Visit(string label, IVisitableNamespace<TResultNamespace>[] namespaces);
 
         TResultNamespace Visit<T>(INamespaceDense<T> namespaceDense);
 

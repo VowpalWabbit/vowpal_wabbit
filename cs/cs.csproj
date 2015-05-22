@@ -43,12 +43,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="IActionDependentFeatures.cs" />
+    <Compile Include="Interfaces\IActionDependentFeatures.cs" />
+    <Compile Include="Interfaces\IExample.cs" />
+    <Compile Include="Labels\ContextualBanditLabel.cs" />
     <Compile Include="PooledObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializer\Attributes\CacheableAttribute.cs" />
     <Compile Include="Serializer\Attributes\FeatureAttribute.cs" />
     <Compile Include="Serializer\Interfaces\IFeature.cs" />
+    <Compile Include="Interfaces\ILabel.cs" />
     <Compile Include="Serializer\Interfaces\INamespace.cs" />
     <Compile Include="Serializer\Interfaces\INamespaceDense.cs" />
     <Compile Include="Serializer\Interfaces\INamespaceSparse.cs" />
@@ -68,6 +71,8 @@
     <Compile Include="Serializer\VowpalWabbitCachedExample.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerFactory.cs" />
+    <Compile Include="SharedExample.cs" />
+    <Compile Include="Labels\SimpleLabel.cs" />
     <Compile Include="VowpalWabbit.cs" />
     <Compile Include="ObjectPool.cs" />
   </ItemGroup>

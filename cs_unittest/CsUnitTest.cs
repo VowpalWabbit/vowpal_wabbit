@@ -1,4 +1,6 @@
 ﻿using Microsoft.Research.MachineLearning;
+using Microsoft.Research.MachineLearning.Interfaces;
+using Microsoft.Research.MachineLearning.Labels;
 using Microsoft.Research.MachineLearning.Serializer.Attributes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
@@ -41,6 +43,19 @@ namespace cs_test
         }
 
         [TestMethod]
+        public void VwModelRefCounting()
+        {
+            var model = new VowpalWabbitModel("");
+
+            //var i1 = new VowpalWabbit(model);
+            //var i2 = new VowpalWabbit(model);
+
+            //i1.Dispose();
+            model.Dispose();
+            //i1.Dispose();
+        }
+
+        [TestMethod]
         // [Ignore]
         [DeploymentItem(@"train-sets\0001.dat", "train-sets")]
         [DeploymentItem(@"pred-sets\ref\0001.predict", @"pred-sets\ref")]
@@ -52,8 +67,8 @@ namespace cs_test
 
             Directory.CreateDirectory("models");
 
-            using (var vwStr = new VowpalWabbit(" -k -l 20 --initial_t 128000 --power_t 1 -c test1and2.str --passes 8 --invariant --ngram 3 --skips 1 --holdout_off"))
-            using (var vw = new VowpalWabbit<Test1>(" -k -l 20 --initial_t 128000 --power_t 1 -c test1and2 --passes 8 --invariant --ngram 3 --skips 1 --holdout_off"))
+            using (var vwStr = new VowpalWabbit(" -k -c test1and2.str --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off"))
+            using (var vw = new VowpalWabbit<Test1>(" -k -c test1and2 --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off"))
             using (var fr = new StreamReader(@"train-sets\0001.dat"))
             {
                 string line;
@@ -76,6 +91,10 @@ namespace cs_test
                     {
                         Constant = float.Parse(features.First(f => f.StartsWith("const")).Substring(6), CultureInfo.InvariantCulture),
                         Features = dictFeatures.ToList(),
+                        Label = new SimpleLabel 
+                        {
+                            Label = float.Parse(parts[0].Trim(), CultureInfo.InvariantCulture)
+                        },
                         Line = line
                     };
 
@@ -84,15 +103,13 @@ namespace cs_test
                     using (var strExample = vwStr.ReadExample(line))
                     using (var example = vw.ReadExample(data))
                     {
-                        example.AddLabel(float.Parse(parts[0].Trim(), CultureInfo.InvariantCulture));
-
                         var diff = example.Diff(strExample, true);
                         Assert.IsNull(diff, "Found diff for line " + lineNr + ": " + diff);
 
                         var actual = example.Learn();
                         var expected = strExample.Learn();
 
-                        Assert.AreEqual(expected, actual, 1e-6, "Learn output differs on line: " + lineNr);
+                        Assert.AreEqual(expected, actual, 1e-5, "Learn output differs on line: " + lineNr);
                     }
                 }
 
@@ -105,8 +122,6 @@ namespace cs_test
 
             Assert.AreEqual(input.Count, references.Length);
 
-            var samePredictions = 0;
-
             using (var vwStr = new VowpalWabbit("-k -t -i models/str0001.model --invariant"))
             using (var vw = new VowpalWabbit<Test1>("-k -t -i models/0001.model --invariant"))
             {
@@ -118,10 +133,7 @@ namespace cs_test
                         var actual = example.Predict();
                         var expected = strExample.Predict();
 
-                        if (actual == expected)
-                        {
-                            samePredictions++;
-                        }
+                        Assert.AreEqual(expected, actual, 1e-5);
 
                         Assert.AreEqual(
                             references[i],
@@ -131,38 +143,36 @@ namespace cs_test
                     }
                 }
             }
-
-            Assert.IsTrue(samePredictions / (float)input.Count > .9, "Prediction results diverge too much");
         }
 
-        [TestMethod]
-        [Ignore]
-        [DeploymentItem(@"train-sets\rcv1_cb_eval", "train-sets")]
-        public void Test74()
-        {
-            // 2 1:1:0.5 | tuesday year million short compan vehicl line stat financ commit exchang plan corp subsid credit issu debt pay gold bureau prelimin refin billion telephon time draw basic relat file spokesm reut secur acquir form prospect period interview regist toront resourc barrick ontario qualif bln prospectus convertibl vinc borg arequip
-            using (var vw = new VowpalWabbit<Rcv1CbEval>("--cb 2 --eval"))
-            using (var fr = new StreamReader(@"train-sets\rcv1_cb_eval"))
-            {
-                string line;
+        //[TestMethod]
+        //[Ignore]
+        //[DeploymentItem(@"train-sets\rcv1_cb_eval", "train-sets")]
+        //public void Test74()
+        //{
+        //    // 2 1:1:0.5 | tuesday year million short compan vehicl line stat financ commit exchang plan corp subsid credit issu debt pay gold bureau prelimin refin billion telephon time draw basic relat file spokesm reut secur acquir form prospect period interview regist toront resourc barrick ontario qualif bln prospectus convertibl vinc borg arequip
+        //    using (var vw = new VowpalWabbit<Rcv1CbEval>("--cb 2 --eval"))
+        //    using (var fr = new StreamReader(@"train-sets\rcv1_cb_eval"))
+        //    {
+        //        string line;
 
-                while ((line = fr.ReadLine()) != null)
-                {
-                    var parts = line.Split('|');
+        //        while ((line = fr.ReadLine()) != null)
+        //        {
+        //            var parts = line.Split('|');
 
-                    var data = new Rcv1CbEval()
-                    {
-                        Words = parts[1].Split(' ')
-                    }; 
+        //            var data = new Rcv1CbEval()
+        //            {
+        //                Words = parts[1].Split(' ')
+        //            }; 
 
-                    using(var example = vw.ReadExample(data))
-                    {
-                        example.AddLabel(parts[0]);
-                        example.Learn();
-                    }
-                }
-            }
-        }
+        //            using(var example = vw.ReadExample(data))
+        //            {
+        //                example.AddLabel(parts[0]);
+        //                example.Learn();
+        //            }
+        //        }
+        //    }
+        //}
         
         [TestMethod]
         public void Test87()
@@ -180,33 +190,47 @@ namespace cs_test
                 //| a_1 b_1 c_1
                 //| a_3 b_3 c_3
 
-                var chosenAction = new Test87ADF { Features = new [] { "a_1","b_1","c_1" } };
                 var example = new Test87
                 {
                     Shared = new[] { "s_1", "s_2" },
                     ActionDependentFeatures = new[] {
-                        chosenAction,
+                        new Test87ADF
+                        {
+                            Features = new[] { "a_1", "b_1", "c_1" },
+                            Label = new ContextualBanditLabel
+                            {
+                                Cost = 1f,
+                                Probability = .5f
+                            }
+                        },
                         new Test87ADF { Features = new [] { "a_2","b_2","c_2" } },
                         new Test87ADF { Features = new [] { "a_3","b_3","c_3" } },
                     }
                 };
                 
-                var result = vw.Learn(example, chosenAction, 1.0f, 0.5f);
+                var result = vw.Learn(example);
 
                 Assert.ReferenceEquals(example.ActionDependentFeatures[0], result[0]);
                 Assert.ReferenceEquals(example.ActionDependentFeatures[1], result[1]);
                 Assert.ReferenceEquals(example.ActionDependentFeatures[2], result[2]);
 
-                chosenAction = new Test87ADF { Features = new [] { "b_2", "c_2", "d_2" } };
                 example = new Test87
                 {
                     ActionDependentFeatures = new[] {
                         new Test87ADF { Features = new [] { "b_1","c_1","d_1" } },
-                        chosenAction,
+                        new Test87ADF 
+                        { 
+                            Features = new [] { "b_2", "c_2", "d_2" },
+                            Label = new ContextualBanditLabel
+                            {
+                                Cost = 0f,
+                                Probability = .5f
+                            }
+                        },
                     }
                 };
                 
-                result = vw.Learn(example, chosenAction, 0.0f, 0.5f);
+                result = vw.Learn(example);
                 Assert.ReferenceEquals(example.ActionDependentFeatures[0], result[1]);
                 Assert.ReferenceEquals(example.ActionDependentFeatures[1], result[0]);
 
@@ -225,7 +249,7 @@ namespace cs_test
         }
     }
 
-    public class Test87 : IActionDependentFeatureExample<Test87ADF>
+    public class Test87 : SharedExample, IActionDependentFeatureExample<Test87ADF>
     {
         [Feature]
         public string[] Shared { get; set; }
@@ -233,7 +257,7 @@ namespace cs_test
         public IReadOnlyList<Test87ADF> ActionDependentFeatures { get; set; }
     }
 
-    public class Test87ADF
+    public class Test87ADF : IExample
     {
         [Feature]
         public string[] Features { get; set; }
@@ -242,9 +266,11 @@ namespace cs_test
         {
             return string.Join(" ", this.Features);
         }
+
+        public ILabel Label { get; set; }
     }
 
-    public class Test1
+    public class Test1 : IExample
     {
         [Feature(FeatureGroup = 'f', Namespace = "eatures", Name = "const", Order = 2)]
         public float Constant { get; set; }
@@ -253,6 +279,8 @@ namespace cs_test
         public IEnumerable<KeyValuePair<string, float>> Features { get; set; }
 
         public string Line { get; set; }
+
+        public ILabel Label { get; set;}
     }
 
     public class Rcv1CbEval

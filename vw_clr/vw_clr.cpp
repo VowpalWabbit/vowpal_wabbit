@@ -31,12 +31,7 @@ namespace Microsoft
 			{
 			}
 
-			VowpalWabbitBase::~VowpalWabbitBase()
-			{
-				this->!VowpalWabbitBase();
-			}
-
-			VowpalWabbitBase::!VowpalWabbitBase()
+			void VowpalWabbitBase::InternalDispose()
 			{
 				if (m_isDisposed)
 				{
@@ -107,8 +102,34 @@ namespace Microsoft
 			}
 
 			VowpalWabbitModel::VowpalWabbitModel(System::String^ pArgs)
-				: VowpalWabbitBase(pArgs)
+				: VowpalWabbitBase(pArgs), m_instanceCount(0)
 			{
+			}
+
+			VowpalWabbitModel::~VowpalWabbitModel()
+			{
+				this->!VowpalWabbitModel();
+			}
+
+			VowpalWabbitModel::!VowpalWabbitModel()
+			{
+				if (m_instanceCount <= 0)
+				{
+					this->InternalDispose();
+				}
+			}
+
+			void VowpalWabbitModel::IncrementReference()
+			{
+				System::Threading::Interlocked::Increment(m_instanceCount);
+			}
+
+			void VowpalWabbitModel::DecrementReference()
+			{
+				if (System::Threading::Interlocked::Decrement(m_instanceCount) <= 0)
+				{
+					this->InternalDispose();
+				}
 			}
 
 			vw* wrapped_seed_vw_model(vw* vw)
@@ -124,8 +145,29 @@ namespace Microsoft
 			}
 
 			VowpalWabbit::VowpalWabbit(VowpalWabbitModel^ model)
-				: VowpalWabbitBase(wrapped_seed_vw_model(model->m_vw))
+				: VowpalWabbitBase(wrapped_seed_vw_model(model->m_vw)), m_model(model)
 			{
+				m_model->IncrementReference();
+			}
+
+			VowpalWabbit::~VowpalWabbit()
+			{
+				this->!VowpalWabbit();
+			}
+
+			VowpalWabbit::!VowpalWabbit()
+			{
+				if (m_model)
+				{
+					// this object doesn't own the VW instance
+					m_model->DecrementReference();
+					m_model = nullptr;
+				}
+				else
+				{
+					// this object owns the VW instance.
+					this->InternalDispose();
+				}
 			}
 
 			uint32_t VowpalWabbit::HashSpace(System::String^ s)
@@ -175,7 +217,7 @@ namespace Microsoft
 				}
 			}
 
-			VowpalWabbitExample^ VowpalWabbit::ImportExample(cli::array<FeatureSpace^>^ featureSpaces)
+			VowpalWabbitExample^ VowpalWabbit::ImportExample(System::String^ label, cli::array<FeatureSpace^>^ featureSpaces)
 			{
 				auto f = new VW::primitive_feature_space[featureSpaces->Length];
 				auto handles = gcnew cli::array<GCHandle>(featureSpaces->Length);
@@ -193,7 +235,10 @@ namespace Microsoft
 
 				try
 				{
-					auto ex = VW::import_example(*m_vw, f, featureSpaces->Length);
+					auto labelString = msclr::interop::marshal_as<std::string>(label);
+
+					// Call VW
+					auto ex = VW::import_example(*m_vw, labelString, f, featureSpaces->Length);
 
 					for (int i = 0; i < handles->Length; i++)
 					{

@@ -19,26 +19,6 @@ namespace Microsoft.Research.MachineLearning.Serializer
 
         internal int UsageCounter { get; set; }
 
-        public void AddLabel(string label)
-        {
-            this.example.AddLabel(label);
-        }
-
-        public void AddLabel(float label)
-        {
-            this.example.AddLabel(label);
-        }
-
-        public void AddLabel(float label, float weight)
-        {
-            this.example.AddLabel(label, weight);
-        }
-
-        public void AddLabel(float label, float weight, float @base)
-        {
-            this.example.AddLabel(label, weight, @base);
-        }
-
         public float CostSensitivePrediction
         {
             get { return this.example.CostSensitivePrediction; }

@@ -72,26 +72,6 @@ namespace Microsoft
 				return example_is_newline(*m_example) != 0;
 			}
 
-			void VowpalWabbitExample::AddLabel(System::String^ label)
-			{
-				auto string = msclr::interop::marshal_as<std::string>(label);
-				VW::parse_example_label(*m_vw, *m_example, string);
-			}
-
-			void VowpalWabbitExample::AddLabel(float label)
-			{
-				VW::add_label(m_example, label);
-			}
-			void VowpalWabbitExample::AddLabel(float label, float weight)
-			{
-				VW::add_label(m_example, label, weight);
-			}
-
-			void VowpalWabbitExample::AddLabel(float label, float weight, float base)
-			{
-				VW::add_label(m_example, label, weight, base);
-			}
-
 			System::String^ VowpalWabbitExample::Diff(IVowpalWabbitExample^ other, bool sameOrder)
 			{
 				auto otherSameType = dynamic_cast<VowpalWabbitExample^>(other);
@@ -190,6 +170,7 @@ namespace Microsoft
 					}
 				}
 
+				// TODO: introduce parameter to check different kind of labels
 				auto s1 = a->l.simple;
 				auto s2 = b->l.simple;
 

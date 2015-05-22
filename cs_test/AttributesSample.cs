@@ -6,6 +6,8 @@ using Microsoft.Research.MachineLearning.Serializer.Attributes;
 using Microsoft.Research.MachineLearning.Serializer;
 using Microsoft.Research.MachineLearning.Serializer.Visitors;
 using Microsoft.Research.MachineLearning;
+using Microsoft.Research.MachineLearning.Interfaces;
+using Microsoft.Research.MachineLearning.Labels;
 
 namespace cs_test
 {
@@ -85,7 +87,8 @@ namespace cs_test
             var context = new FeatureTestContext
             {
                 S = new[] { "p^the_man", "w^thew^man\u0394", "w^man" },
-                T = new[] { "p^un_homme", "w^un", "w^homme" }
+                T = new[] { "p^un_homme", "w^un", "w^homme" },
+                Label = new SimpleLabel { Label = 1f }
             };
 
             var vw = new VowpalWabbit<FeatureTestContext>("-q st --noconstant --quiet");
@@ -97,8 +100,6 @@ namespace cs_test
 
             using (var example = vw.ReadExample(context))
             {
-                example.AddLabel(1);
-
                 var score = example.Learn();
 
                 Console.Error.WriteLine("p2 = {0}", score);
@@ -106,13 +107,15 @@ namespace cs_test
         }
     }
 
-    public class FeatureTestContext
+    public class FeatureTestContext : IExample
     {
         [Feature(FeatureGroup = 's')]
         public IEnumerable<string> S { get; set; }
 
         [Feature(FeatureGroup = 't')]
         public IEnumerable<string> T { get; set; }
+
+        public ILabel Label { get; set; }
     }
 
     public class UserContext : IActionDependentFeatureExample<DocumentFeature>
