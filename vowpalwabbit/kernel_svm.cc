@@ -392,6 +392,7 @@ struct svm_params {
       float score;
       predict(params, &sec, &score, 1);
       ec.pred.scalar = score;
+      free(sec);
     }
   }
 
