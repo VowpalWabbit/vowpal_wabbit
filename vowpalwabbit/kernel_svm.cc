@@ -393,6 +393,7 @@ struct svm_params {
       predict(params, &sec, &score, 1);
       ec.pred.scalar = score;
       sec->~svm_example();
+      free(sec);
     }
   }
 

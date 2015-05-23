@@ -3,7 +3,6 @@
   individual contributors. All rights reserved.  Released under a BSD
   license as described in the file LICENSE.
 */
-#pragma warning (disable : 4267)  // mixed use of size_t and uint32_t
 #pragma once
 #ifdef __FreeBSD__
 #include <sys/socket.h>
