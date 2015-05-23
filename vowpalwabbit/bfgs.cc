@@ -880,8 +880,6 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 	      text_len = sprintf(buff, ":%f\n", *v);
 	      brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
 					 buff, text_len, text);
-	      if (read && i%2 == 1) // This is the prior mean
-		all.reg.weight_vector[(i/2*stride)] = *v;
 	    }
 	}
       if (!read)
