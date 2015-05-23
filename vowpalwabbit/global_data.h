@@ -385,6 +385,8 @@ struct vw {
   size_t numpasses;
   size_t passes_complete;
   size_t parse_mask; // 1 << num_bits -1
+  bool permutations; // if true - permutations of features generated instead of simple combinations. false by default
+  v_array<v_string> interactions; // interactions of namespaces to cross.
   std::vector<std::string> pairs; // pairs of features to cross.
   std::vector<std::string> triples; // triples of features to cross.
   bool ignore_some;
@@ -393,8 +395,8 @@ struct vw {
   bool redefine_some;          // --redefine param was used
   unsigned char redefine[256]; // keeps new chars for amespaces
 
-  std::vector<std::string> ngram_strings; // pairs of features to cross.
-  std::vector<std::string> skip_strings; // triples of features to cross.
+  std::vector<std::string> ngram_strings;
+  std::vector<std::string> skip_strings;
   uint32_t ngram[256];//ngrams to generate.
   uint32_t skips[256];//skips in ngrams.
   std::vector<std::string> limit_strings; // descriptor of feature limits
