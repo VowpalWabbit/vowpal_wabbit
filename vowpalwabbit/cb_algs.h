@@ -39,4 +39,23 @@ namespace CB_ALGS {
 
     return pred;
   }
+
+	
+}
+
+namespace CB{
+	struct cb {
+		size_t cb_type;
+		uint32_t num_actions;
+		COST_SENSITIVE::label cb_cs_ld;
+		LEARNER::base_learner* scorer;
+		float avg_loss_regressors;
+		size_t nb_ex_regressors;
+		float last_pred_reg;
+		float last_correct_cost;
+
+		cb_class* known_cost;
+	};
+
+	float get_unbiased_cost(cb &c, uint32_t action);
 }
