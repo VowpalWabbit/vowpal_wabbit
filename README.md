@@ -17,7 +17,7 @@ These prerequisites are usually pre-installed on many platforms. However, you ma
 manager (*yum*, *apt*, *MacPorts*, *brew*, ...) to install missing software.
 
 - [Boost](http://www.boost.org) library, with the `Boost::Program_Options` library option enabled.
-- GNU *autotools*: *autoconf*, *automake*, *libtool*, *autoheader*, et. al. This is not a strict prereq. On many systems (notably Ubuntu with `libboost-dev` installed), the provided `Makefile` works fine.
+- GNU *autotools*: *autoconf*, *automake*, *libtool*, *autoheader*, et. al. This is not a strict prereq. On many systems (notably Ubuntu with `libboost-program-options-dev` installed), the provided `Makefile` works fine.
 - (optional) [git](http://git-scm.com) if you want to check out the latest version of *vowpal wabbit*,
   work on the code, or even contribute code to the main project.
 
@@ -85,7 +85,7 @@ On Ubuntu/Debian/Mint and similar the following sequence should work
 for building the latest from github:
 
 ```
-apt-get install libboost-dev
+apt-get install libboost-program-options-dev
 git clone git://github.com/JohnLangford/vowpal_wabbit.git
 cd vowpal_wabbit
 make
