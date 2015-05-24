@@ -287,38 +287,39 @@ using namespace CB;
     ec.pred.multiclass = ec.l.cb_eval.action;
   }
 
-  float get_unbiased_cost(cb& c, uint32_t action) {
-	  float loss = 0.;
+float get_unbiased_cost(cb& c, uint32_t action, CB::label& ld) {
+  float loss = 0.;
+  
+  if (!is_test_label(ld))
+    {//need to compute exact loss
+      c.known_cost = get_observed_cost(ld);
+      float chosen_loss = FLT_MAX;
+      if( know_all_cost_example(ld) ) {
+	for (cb_class *cl = ld.costs.begin; cl != ld.costs.end; cl++) 
+	  if (cl->action == action)
+	    chosen_loss = cl->cost;
+      }
+      else 
+	//we do not know exact cost of each action, so evaluate on generated cost-sensitive example currently stored in cb_cs_ld
+	for (COST_SENSITIVE::wclass *cl = c.cb_cs_ld.costs.begin; cl != c.cb_cs_ld.costs.end; cl ++) 
+	  if (cl->class_index == action)
+	    {
+	      chosen_loss = cl->x;
+	      if (c.known_cost->action == action && c.cb_type == CB_TYPE_DM) 
+		chosen_loss += (c.known_cost->cost - chosen_loss) / c.known_cost->probability;
+	    }
+      if (chosen_loss == FLT_MAX)
+	cerr << "warning: cb predicted an invalid class" << endl;
+	
+      loss = chosen_loss;
+    }
 
-	  return loss;
-  }
+  return loss;
+}
   
   void output_example(vw& all, cb& c, example& ec, CB::label& ld)
   {
-    float loss = 0.;
-    if (!is_test_label(ld))
-      {//need to compute exact loss
-	c.known_cost = get_observed_cost(ld);
-        float chosen_loss = FLT_MAX;
-        if( know_all_cost_example(ld) ) {
-          for (cb_class *cl = ld.costs.begin; cl != ld.costs.end; cl++) 
-            if (cl->action == ec.pred.multiclass)
-              chosen_loss = cl->cost;
-        }
-        else 
-          //we do not know exact cost of each action, so evaluate on generated cost-sensitive example currently stored in cb_cs_ld
-          for (COST_SENSITIVE::wclass *cl = c.cb_cs_ld.costs.begin; cl != c.cb_cs_ld.costs.end; cl ++) 
-            if (cl->class_index == ec.pred.multiclass)
-	      {
-		chosen_loss = cl->x;
-		if (c.known_cost->action == ec.pred.multiclass && c.cb_type == CB_TYPE_DM) 
-		  chosen_loss += (c.known_cost->cost - chosen_loss) / c.known_cost->probability;
-	      }
-        if (chosen_loss == FLT_MAX)
-          cerr << "warning: cb predicted an invalid class" << endl;
-	
-        loss = chosen_loss;
-      }
+    float loss = get_unbiased_cost(c, ec.pred.multiclass, ld);    
 
     all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
 

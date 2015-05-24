@@ -57,5 +57,8 @@ namespace CB{
 		cb_class* known_cost;
 	};
 
-	float get_unbiased_cost(cb &c, uint32_t action);
+	
 }
+
+float get_unbiased_cost(CB::cb &c, uint32_t action, CB::label& ld);
+
