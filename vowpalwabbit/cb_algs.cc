@@ -17,18 +17,6 @@ using namespace LEARNER;
 
 using namespace CB;
 
-  struct cb {
-    size_t cb_type;
-    uint32_t num_actions;
-    COST_SENSITIVE::label cb_cs_ld; 
-    LEARNER::base_learner* scorer;
-    float avg_loss_regressors;
-    size_t nb_ex_regressors;
-    float last_pred_reg;
-    float last_correct_cost;
-    
-    cb_class* known_cost;
-  };
   
   bool know_all_cost_example(CB::label& ld)
   {
@@ -297,6 +285,12 @@ using namespace CB;
       ld.event.costs[i].partial_prediction = c.cb_cs_ld.costs[i].partial_prediction;
 
     ec.pred.multiclass = ec.l.cb_eval.action;
+  }
+
+  float get_unbiased_cost(cb& c, uint32_t action) {
+	  float loss = 0.;
+
+	  return loss;
   }
   
   void output_example(vw& all, cb& c, example& ec, CB::label& ld)
