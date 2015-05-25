@@ -115,7 +115,7 @@ make CXX=clang++
 
 A statically linked `vw` executable that is not sensitive to boost
 version upgrades and can be safely copied between different Linux
-versions (e.g. even from Ubuntu the Red Hat) can be built and tested with:
+versions (e.g. even from Ubuntu to Red-Hat) can be built and tested with:
 
 ```
 make CXX='clang++ -static' clean vw test     # ignore warnings
