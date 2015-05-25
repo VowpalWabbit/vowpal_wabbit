@@ -583,7 +583,7 @@ namespace
 // setting of lambda based on the document passed in. The value is
 // divided by the total number of words in the document This can be
 // used as a (possibly very noisy) estimate of held-out likelihood.
-float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, example *ec, float power_t)
+float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, example *ec, float /*power_t*/)
 {
   new_gamma.erase();
   old_gamma.erase();
@@ -815,7 +815,7 @@ void learn_batch(lda &l, bool do_m_step = true)
   l.doc_lengths.erase();
 }
 
-void learn(lda &l, LEARNER::base_learner &base, example &ec)
+void learn(lda &l, LEARNER::base_learner &/*base*/, example &ec)
 {
   size_t num_ex = l.examples.size();
   l.examples.push_back(&ec);
@@ -833,7 +833,7 @@ void learn(lda &l, LEARNER::base_learner &base, example &ec)
 }
 
 // placeholder
-void predict(lda &l, LEARNER::base_learner &base, example &ec)
+void predict(lda &l, LEARNER::base_learner &/*base*/, example &ec)
 {
 	size_t num_ex = l.examples.size();
 	l.examples.push_back(&ec);
@@ -867,7 +867,7 @@ void end_examples(lda &l)
   }
 }
 
-void finish_example(vw &all, lda &, example &ec) {}
+void finish_example(vw&, lda&, example &) {}
 
 void finish(lda &ld)
 {

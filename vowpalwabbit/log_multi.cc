@@ -377,7 +377,7 @@ using namespace LEARNER;
     fclose(fp);
   }	
   
-  void finish(log_multi& b)
+  void finish(log_multi& /*b*/)
   {
     //save_node_stats(b);
   }

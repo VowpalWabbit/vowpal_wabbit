@@ -23,7 +23,7 @@ struct task_data {
 namespace DepParserTask {
   using namespace Search;
 
-  void initialize(Search::search& srn, size_t& num_actions, po::variables_map& vm) {
+  void initialize(Search::search& srn, size_t& /*num_actions*/, po::variables_map& vm) {
     task_data *data = new task_data();
     data->action_loss.resize(4,true);
     data->ex = NULL;

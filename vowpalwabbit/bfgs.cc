@@ -514,7 +514,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
   return ret;
 }
   
-void update_weight(vw& all, float step_size, size_t current_pass)
+void update_weight(vw& all, float step_size, size_t /*current_pass*/)
   {
     uint32_t length = 1 << all.num_bits;
     size_t stride = 1 << all.reg.stride_shift;
@@ -814,7 +814,7 @@ void end_pass(bfgs& b)
 }
 
 // placeholder
-void predict(bfgs& b, base_learner& base, example& ec)
+void predict(bfgs& b, base_learner& /*base*/, example& ec)
 {
   vw* all = b.all;
   ec.pred.scalar = bfgs_predict(*all,ec);
@@ -847,7 +847,6 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 
   char buff[512];
   int c = 0;
-  uint32_t stride = 1 << all.reg.stride_shift;
   uint32_t length = 2*(1 << all.num_bits);
   uint32_t i = 0;
   size_t brw = 1;

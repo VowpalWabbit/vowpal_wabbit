@@ -34,7 +34,7 @@ namespace EntityRelationTask {
   };
 
 
-  void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
+  void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm) {
     task_data * my_task_data = new task_data();
     po::options_description sspan_opts("entity relation options");
     sspan_opts.add_options()
@@ -119,7 +119,7 @@ namespace EntityRelationTask {
     id2 = atoi(s2.c_str());
   }
   
-  size_t predict_entity(Search::search&sch, example* ex, v_array<size_t>& predictions, ptag my_tag, bool isLdf=false){
+  size_t predict_entity(Search::search&sch, example* ex, v_array<size_t>& /*predictions*/, ptag my_tag, bool isLdf=false){
 	  	
     task_data* my_task_data = sch.get_task_data<task_data>();
     size_t prediction;
