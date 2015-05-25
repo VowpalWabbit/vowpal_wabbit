@@ -62,7 +62,7 @@ void receive_result(sender& s)
   return_simple_example(*(s.all), nullptr, ec);  
 }
 
-void learn(sender& s, LEARNER::base_learner& /*base*/, example& ec)
+void learn(sender& s, LEARNER::base_learner&, example& ec)
 { 
   if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
     receive_result(s);

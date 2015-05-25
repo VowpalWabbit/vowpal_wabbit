@@ -180,7 +180,7 @@ void subtract_example(vw& all, example *ec, example *ecsub)
   ec->total_sum_feat_sq += ec->sum_feat_sq[wap_ldf_namespace];
 }
 
-void unsubtract_example(vw& /*all*/, example *ec)
+void unsubtract_example(example *ec)
 {
   if (ec->indices.size() == 0) {
     cerr << "internal error (bug): trying to unsubtract_example, but there are no namespaces!" << endl;
@@ -280,7 +280,7 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
       ec1->partial_prediction = 0.;
       subtract_example(*data.all, ec1, ec2);
       base.learn(*ec1);
-      unsubtract_example(*data.all, ec1);
+      unsubtract_example(ec1);
         
       LabelDict::del_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index, data.all->audit || data.all->hash_inv);
     }

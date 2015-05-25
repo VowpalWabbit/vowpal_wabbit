@@ -241,7 +241,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
 }
 
 
-void pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos, const socket_t * child_sockets, const size_t /*n*/) {
+void pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos, const socket_t * child_sockets) {
 
   size_t my_bufsize = min(ar_buf_size, (parent_read_pos - children_sent_pos));
 
@@ -273,7 +273,7 @@ void broadcast(char* buffer, const size_t n, const socket_t parent_sock, const s
 
    while (parent_read_pos < n || children_sent_pos < n)
     {
-      pass_down(buffer, parent_read_pos, children_sent_pos, child_sockets, n);
+      pass_down(buffer, parent_read_pos, children_sent_pos, child_sockets);
       if(parent_read_pos >= n && children_sent_pos >= n) break;
 
       if (parent_sock != -1) {
