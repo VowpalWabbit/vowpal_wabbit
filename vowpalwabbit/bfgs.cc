@@ -847,7 +847,6 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 
   char buff[512];
   int c = 0;
-  uint32_t stride = 1 << all.reg.stride_shift;
   uint32_t length = 2*(1 << all.num_bits);
   uint32_t i = 0;
   size_t brw = 1;
