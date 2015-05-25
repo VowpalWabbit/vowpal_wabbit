@@ -180,7 +180,7 @@ void subtract_example(vw& all, example *ec, example *ecsub)
   ec->total_sum_feat_sq += ec->sum_feat_sq[wap_ldf_namespace];
 }
 
-void unsubtract_example(vw& all, example *ec)
+void unsubtract_example(vw& /*all*/, example *ec)
 {
   if (ec->indices.size() == 0) {
     cerr << "internal error (bug): trying to unsubtract_example, but there are no namespaces!" << endl;

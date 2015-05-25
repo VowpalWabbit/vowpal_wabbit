@@ -12,7 +12,7 @@ namespace ArgmaxTask           { Search::search_task task = { "argmax",         
 namespace SequenceTask_DemoLDF { Search::search_task task = { "sequence_demoldf",  run, initialize, finish, nullptr,  nullptr     }; }
 
 namespace SequenceTask {
-  void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
+  void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& /*vm*/) {
     sch.set_options( Search::AUTO_CONDITION_FEATURES  |    // automatically add history features to our examples, please
                      Search::AUTO_HAMMING_LOSS        |    // please just use hamming loss on individual predictions -- we won't declare loss
                      Search::EXAMPLES_DONT_CHANGE     |    // we don't do any internal example munging
@@ -204,7 +204,7 @@ namespace ArgmaxTask {
     bool predict_max;
   };
 
-  void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
+  void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm) {
     task_data* D = new task_data();
     
     po::options_description argmax_opts("argmax options");
@@ -260,7 +260,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     size_t   num_actions;
   };
   
-  void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
+  void initialize(Search::search& sch, size_t& num_actions, po::variables_map& /*vm*/) {
     CS::wclass default_wclass = { 0., 0, 0., 0. };
 
     example* ldf_examples = alloc_examples(sizeof(CS::label), num_actions);

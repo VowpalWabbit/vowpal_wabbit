@@ -60,7 +60,7 @@ template <class T, void (*f)(T&, const T&)> void addbufs(T* buf1, const T* buf2,
 
 void all_reduce_init(const string master_location, const size_t unique_id, const size_t total, const size_t node, node_socks& socks);
 
-template <class T> void pass_up(char* buffer, size_t left_read_pos, size_t right_read_pos, size_t& parent_sent_pos, socket_t parent_sock, size_t n) {
+template <class T> void pass_up(char* buffer, size_t left_read_pos, size_t right_read_pos, size_t& parent_sent_pos, socket_t parent_sock, size_t /*n*/) {
   size_t my_bufsize = min(ar_buf_size, min(left_read_pos, right_read_pos) / sizeof(T) * sizeof(T) - parent_sent_pos);
 
   if(my_bufsize > 0) {

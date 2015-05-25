@@ -56,9 +56,9 @@ namespace MULTICLASS {
     ld->weight = 1.;
   }
 
-  void delete_label(void* v) {}
+  void delete_label(void* /*v*/) {}
 
-  void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
+  void parse_label(parser* /*p*/, shared_data*, void* v, v_array<substring>& words)
   {
     label_t* ld = (label_t*)v;
 

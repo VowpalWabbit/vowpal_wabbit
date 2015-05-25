@@ -568,7 +568,7 @@ namespace Search {
     return false;
   }
 
-  void add_example_conditioning(search_private& priv, example& ec, const ptag* condition_on, size_t condition_on_cnt, const char* condition_on_names, const action* condition_on_actions) {
+  void add_example_conditioning(search_private& priv, example& ec, const ptag* /*condition_on*/, size_t condition_on_cnt, const char* condition_on_names, const action* condition_on_actions) {
     if (condition_on_cnt == 0) return;
 
     uint32_t extra_offset=0;
@@ -973,7 +973,7 @@ namespace Search {
     return memcmp(A, B, sz_A) == 0;
   }
 
-  void free_key(unsigned char* mem, scored_action a) { free(mem); }
+  void free_key(unsigned char* mem, scored_action /*a*/) { free(mem); }
   void clear_cache_hash_map(search_private& priv) {
     priv.cache_hash_map.iter(free_key);
     priv.cache_hash_map.clear();
@@ -1866,7 +1866,7 @@ namespace Search {
   bool uint32_equal(uint32_t a, uint32_t b) { return a==b; }
   bool size_equal(size_t a, size_t b) { return a==b; }
 
-  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) {
+  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool /*default_to_cmdline*/, bool(*/*equal*/)(T,T), const char* /*mismatch_error_string*/, const char* required_error_string) {
     if (vm.count(opt_name)) {
       ret = vm[opt_name].as<T>();
       *all.file_options << " --" << opt_name << " " << ret;
@@ -1877,7 +1877,7 @@ namespace Search {
     }
   }
 
-  void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string) {
+  void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool /*default_to_cmdline*/, const char* /*mismatch_error_string*/) {
     if (vm.count(opt_name)) {
       ret = true;
       *all.file_options << " --" << opt_name;
@@ -2302,7 +2302,7 @@ namespace Search {
 
 
   void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
-  void search::add_program_options(po::variables_map& vw, po::options_description& opts) { add_options( *this->priv->all, opts ); }
+  void search::add_program_options(po::variables_map& /*vw*/, po::options_description& opts) { add_options( *this->priv->all, opts ); }
 
   size_t search::get_mask() { return this->priv->all->reg.weight_mask;}
   size_t search::get_stride_shift() { return this->priv->all->reg.stride_shift;}

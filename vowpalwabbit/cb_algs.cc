@@ -68,7 +68,7 @@ using namespace CB;
     return nullptr;
   }
 
-  void gen_cs_example_ips(cb& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
+  void gen_cs_example_ips(cb& c, example& /*ec*/, CB::label& ld, COST_SENSITIVE::label& cs_ld)
   {//this implements the inverse propensity score method, where cost are importance weighted by the probability of the chosen action
     //generate cost-sensitive example
     cs_ld.costs.erase();
@@ -278,12 +278,12 @@ using namespace CB;
       }
   }
 
-  void predict_eval(cb& c, base_learner& base, example& ec) {
+  void predict_eval(cb& /*c*/, base_learner& /*base*/, example& /*ec*/) {
     cout << "can not use a test label for evaluation" << endl;
     throw exception();
   }
 
-  void learn_eval(cb& c, base_learner& base, example& ec) {
+  void learn_eval(cb& c, base_learner& /*base*/, example& ec) {
     CB_EVAL::label ld = ec.l.cb_eval;
     
     c.known_cost = get_observed_cost(ld.event);

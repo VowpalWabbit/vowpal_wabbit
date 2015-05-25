@@ -60,7 +60,7 @@ namespace LEARNER
   void generic_driver(vw& all);
   
   inline void noop_sl(void*, io_buf&, bool, bool) {}
-  inline void noop(void* data) {}
+  inline void noop(void*) {}
 
   typedef void (*tlearn)(void* d, base_learner& base, example& ec);
   typedef void (*tmultipredict)(void* d, base_learner& base, example& ec, size_t, size_t, polyprediction*, bool);
