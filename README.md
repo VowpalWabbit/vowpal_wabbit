@@ -85,8 +85,16 @@ On Ubuntu/Debian/Mint and similar the following sequence should work
 for building the latest from github:
 
 ```
+# -- Get libboost program-options:
 apt-get install libboost-program-options-dev
+
+# -- Get the python libboost bindings (python subdir) - optional:
+apt-get install libboost-python-dev
+
+# -- Get the vw source:
 git clone git://github.com/JohnLangford/vowpal_wabbit.git
+
+# -- Build:
 cd vowpal_wabbit
 make
 make test       # (optional)
@@ -110,7 +118,7 @@ version upgrades and can be safely copied between different Linux
 versions (e.g. even from Ubuntu the Red Hat) can be built and tested with:
 
 ```
-make CXX='clang++ -static' clean vw test     # you may ignore warnings
+make CXX='clang++ -static' clean vw test     # ignore warnings
 ```
 
 ## Mac OS X-specific info
