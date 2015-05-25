@@ -17,6 +17,18 @@ using namespace LEARNER;
 
 using namespace CB;
 
+struct cb {
+  size_t cb_type;
+  uint32_t num_actions;
+  COST_SENSITIVE::label cb_cs_ld;
+  LEARNER::base_learner* scorer;
+  float avg_loss_regressors;
+  size_t nb_ex_regressors;
+  float last_pred_reg;
+  float last_correct_cost;
+  
+  cb_class* known_cost;
+};
   
   bool know_all_cost_example(CB::label& ld)
   {
@@ -287,12 +299,12 @@ using namespace CB;
     ec.pred.multiclass = ec.l.cb_eval.action;
   }
 
-float get_unbiased_cost(cb& c, uint32_t action, CB::label& ld) {
+float get_unbiased_cost(CB::cb_class* known_cost, COST_SENSITIVE::label& cb_label, size_t &cb_type, uint32_t action, CB::label& ld) {
   float loss = 0.;
   
   if (!is_test_label(ld))
     {//need to compute exact loss
-      c.known_cost = get_observed_cost(ld);
+      known_cost = get_observed_cost(ld);
       float chosen_loss = FLT_MAX;
       if( know_all_cost_example(ld) ) {
 	for (cb_class *cl = ld.costs.begin; cl != ld.costs.end; cl++) 
@@ -301,12 +313,12 @@ float get_unbiased_cost(cb& c, uint32_t action, CB::label& ld) {
       }
       else 
 	//we do not know exact cost of each action, so evaluate on generated cost-sensitive example currently stored in cb_cs_ld
-	for (COST_SENSITIVE::wclass *cl = c.cb_cs_ld.costs.begin; cl != c.cb_cs_ld.costs.end; cl ++) 
+	for (COST_SENSITIVE::wclass *cl = cb_label.costs.begin; cl != cb_label.costs.end; cl++) 
 	  if (cl->class_index == action)
 	    {
 	      chosen_loss = cl->x;
-	      if (c.known_cost->action == action && c.cb_type == CB_TYPE_DM) 
-		chosen_loss += (c.known_cost->cost - chosen_loss) / c.known_cost->probability;
+	      if (known_cost->action == action && cb_type == CB_TYPE_DM) 
+		chosen_loss += (known_cost->cost - chosen_loss) / known_cost->probability;
 	    }
       if (chosen_loss == FLT_MAX)
 	cerr << "warning: cb predicted an invalid class" << endl;
@@ -319,7 +331,7 @@ float get_unbiased_cost(cb& c, uint32_t action, CB::label& ld) {
   
   void output_example(vw& all, cb& c, example& ec, CB::label& ld)
   {
-    float loss = get_unbiased_cost(c, ec.pred.multiclass, ld);    
+    float loss = get_unbiased_cost(c.known_cost, c.cb_cs_ld, c.cb_type, ec.pred.multiclass, ld);    
 
     all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
 
