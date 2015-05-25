@@ -112,7 +112,7 @@ using namespace LEARNER;
     ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.l.simple.weight;
   }
 
-  void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub)
+  void print_result(int f, float res, float /*weight*/, v_array<char> tag, float lb, float ub)
   {
     if (f >= 0)
     {

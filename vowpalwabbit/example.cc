@@ -45,7 +45,7 @@ audit_data copy_audit_data(audit_data &src) {
 }
 
 namespace VW {
-void copy_example_label(example* dst, example* src, size_t label_size, void(*copy_label)(void*,void*)) {
+void copy_example_label(example* dst, example* src, size_t /*label_size*/, void(*copy_label)(void*,void*)) {
   if (copy_label)
     copy_label(&dst->l, &src->l);   // TODO: we really need to delete_label on dst :(
   else
@@ -168,7 +168,7 @@ void free_flatten_example(flat_example* fec)
     }
 }
 
-example *alloc_examples(size_t label_size, size_t count=1)
+example *alloc_examples(size_t /*label_size*/, size_t count = 1)
 {
   example* ec = calloc_or_die<example>(count);
   if (ec == nullptr) return nullptr;

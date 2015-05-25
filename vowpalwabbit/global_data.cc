@@ -74,7 +74,7 @@ void send_prediction(int sock, global_prediction p)
     }
 }
 
-void binary_print_result(int f, float res, float weight, v_array<char> tag)
+void binary_print_result(int f, float res, float weight, v_array<char> /*tag*/)
 {
   if (f >= 0)
     {
@@ -92,7 +92,7 @@ int print_tag(std::stringstream& ss, v_array<char> tag)
   return tag.begin != tag.end;
 }
 
-void print_result(int f, float res, float weight, v_array<char> tag)
+void print_result(int f, float res, float /*weight*/, v_array<char> tag)
 {
   if (f >= 0)
     {
@@ -128,7 +128,7 @@ void print_raw_text(int f, string s, v_array<char> tag)
     }
 }
 
-void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag)
+void print_lda_result(vw& all, int f, float* res, float /*weight*/, v_array<char> tag)
 {
   if (f >= 0)
     {
@@ -156,7 +156,7 @@ void set_mm(shared_data* sd, float label)
     sd->max_label = max(sd->max_label, label);
 }
 
-void noop_mm(shared_data* sd, float label)
+void noop_mm(shared_data*, float)
 {}
 
 void vw::learn(example* ec)

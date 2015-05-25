@@ -70,7 +70,7 @@ public:
       prediction = sd->max_label;
     return 2.f * (prediction-label);
   }
-  float second_derivative(shared_data* sd, float prediction, float label)
+  float second_derivative(shared_data* sd, float prediction, float /*label*/)
   {
     if (prediction <= sd->max_label && prediction >= sd->min_label)
       return 2.;
@@ -111,7 +111,7 @@ public:
   {
     return 2.f * (prediction-label);
   }
-  float second_derivative(shared_data*, float prediction, float label)
+  float second_derivative(shared_data*, float /*prediction*/, float /*label*/)
   {
     return 2.;
   }
@@ -156,7 +156,7 @@ public:
     return (label*prediction >= 1) ? 0 : -label;
   }
 
-  float second_derivative(shared_data*, float prediction, float label)
+  float second_derivative(shared_data*, float /*prediction*/, float /*label*/)
   {
     return 0.;
   }
@@ -287,7 +287,7 @@ public:
     return fd*fd;
   }
 
-  float second_derivative(shared_data*, float prediction, float label)
+  float second_derivative(shared_data*, float /*prediction*/, float /*label*/)
   {
     return 0.;
   }
