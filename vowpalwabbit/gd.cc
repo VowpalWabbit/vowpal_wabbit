@@ -105,7 +105,7 @@ namespace GD
 
   //this deals with few nonzero features vs. all nonzero features issues.  
   template<bool sqrt_rate, size_t adaptive, size_t normalized>
-  float average_update(gd& g, float /*update*/)
+  float average_update(gd& g)
   {
     if (normalized) {
       if (sqrt_rate) 
@@ -332,7 +332,7 @@ float finalize_prediction(shared_data* sd, float ret)
  }
 
 template<bool l1, bool audit>
-void predict(gd& g, base_learner& /*base*/, example& ec)
+void predict(gd& g, base_learner&, example& ec)
 {
   vw& all = *g.all;
   
@@ -356,7 +356,7 @@ inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, ui
 }
   
 template<bool l1, bool audit>
-void multipredict(gd& g, base_learner& /*base*/, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions) {
+void multipredict(gd& g, base_learner&, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions) {
   vw& all = *g.all;
   for (size_t c=0; c<count; c++)
     pred[c].scalar = ec.l.simple.initial;
@@ -464,7 +464,7 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
       g.all->normalized_sum_norm_x += ld.weight * nd.norm_x;
       g.total_weight += ld.weight;
 
-      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g, nd.pred_per_update);
+      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g);
       nd.pred_per_update *= g.update_multiplier;
     }
     
@@ -516,7 +516,7 @@ float compute_update(gd& g, example& ec)
 }
 
   template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-void update(gd& g, base_learner& /*base*/, example& ec)
+void update(gd& g, base_learner&, example& ec)
 {//invariant: not a test label, importance weight > 0
   float update;
   if ( (update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (g, ec)) != 0.)
