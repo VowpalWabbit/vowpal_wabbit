@@ -240,7 +240,7 @@ namespace GD
           if (dat.offset != 0)
           {   // otherwise --oaa output no features for class > 0.
               ostringstream tempstream;
-              tempstream << '[' << (dat.offset >> stride_shift)+1 << ']';
+              tempstream << '[' << (dat.offset >> stride_shift) << ']';
               ns_pre += tempstream.str();
           }
 
