@@ -112,7 +112,7 @@ using namespace LEARNER;
     ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.l.simple.weight;
   }
 
-  void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub)
+  void print_result(int f, float res, v_array<char> tag, float lb, float ub)
   {
     if (f >= 0)
     {
@@ -157,7 +157,7 @@ using namespace LEARNER;
     }
 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      print_result(*sink, ec.pred.scalar, 0, ec.tag, d.lb, d.ub);
+      print_result(*sink, ec.pred.scalar, ec.tag, d.lb, d.ub);
   
     print_update(all, ec);
   }

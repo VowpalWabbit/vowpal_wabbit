@@ -50,7 +50,7 @@ float predict_stable(const svrg& s, example& ec)
   return GD::finalize_prediction(s.all->sd, inline_predict<W_STABLE>(*s.all, ec));
 }
 
-void predict(svrg& s, base_learner& base, example& ec)
+void predict(svrg& s, base_learner&, example& ec)
 {
   ec.partial_prediction = inline_predict<W_INNER>(*s.all, ec);
   ec.pred.scalar = GD::finalize_prediction(s.all->sd, ec.partial_prediction);
