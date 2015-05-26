@@ -837,7 +837,7 @@ __DATA__
     train-sets/ref/search_small.stderr
 
 # Test 19: neural network 3-parity with 2 hidden units
-{VW} -k -c -d train-sets/3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 15 --quiet --holdout_off
+{VW} -k -c -d train-sets/3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 19 --quiet --holdout_off
     train-sets/ref/3parity.stderr
 
 # Test 20: neural network 3-parity with 2 hidden units (predict)
@@ -1052,7 +1052,7 @@ __DATA__
     train-sets/ref/search_er.stderr
 
 # Test 66: Train a depenency parser with search (dagger) on wsj_small.dparser.vw.gz for 2 passes
-{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 2 --search_task dep_parser --search 3  --search_alpha 1e-4 --search_rollout oracle --holdout_off
+{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout oracle --holdout_off
     train-sets/ref/search_dep_parser.stderr
 
 # Test 67: classification with data from dictionaries (eg embeddings or gazetteers) -- note that this is impossible without dictionaries because --ignore w
@@ -1063,13 +1063,13 @@ __DATA__
 {VW} -k -c -d train-sets/multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off
 	train-sets/ref/search_multiclass.stderr
 
-# Test 69: (see Test 43/Test 44): search sequence labeling, with beam
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data_beam.predict --search_beam 10 --search_kbest 10
+# Test 69: (see Test 43/Test 44): search sequence labeling, with selective branching
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data_beam.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10
     train-sets/ref/sequence_data.nonldf.beam.test.stderr
     train-sets/ref/sequence_data.nonldf.beam.test.predict
 
-# Test 70: (see Test 46/47) search sequence labeling, ldf test, with beam
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data_beam.predict --search_beam 10 --search_kbest 10
+# Test 70: (see Test 46/47) search sequence labeling, ldf test, with selective branching
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data_beam.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10
     train-sets/ref/sequence_data.ldf.beam.test.stderr
     train-sets/ref/sequence_data.ldf.beam.test.predict
 
@@ -1086,3 +1086,63 @@ __DATA__
 {VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p ftrl_001.predict.tmp
     test-sets/ref/0001_ftrl.stderr
     pred-sets/ref/0001_ftrl.predict
+
+# Test 74: cb evaluation
+{VW} -d train-sets/rcv1_cb_eval --cb 2 --eval
+    train-sets/ref/rcv1_cb_eval.stderr
+
+# Test 75: Log_multi 
+{VW} --log_multi 10 train-sets/multiclass 
+    train-sets/ref/log_multi.stderr
+
+# Test 76: cbify, epsilon-greedy
+{VW} --cbify 10 --epsilon 0.05 train-sets/multiclass 
+    train-sets/ref/cbify_epsilon.stderr
+
+# Test 77: cbify, tau first
+{VW} --cbify 10 --first 5 train-sets/multiclass 
+    train-sets/ref/cbify_first.stderr
+
+# Test 78: cbify, bag
+{VW} --cbify 10 --bag 7 train-sets/multiclass 
+    train-sets/ref/cbify_bag.stderr
+
+# Test 79: cbify, cover
+{VW} --cbify 10 --cover 3 train-sets/multiclass 
+    train-sets/ref/cbify_cover.stderr
+
+# Test 80: lrq empty namespace
+{VW} --lrq aa3 -d train-sets/0080.dat
+    train-sets/ref/0080.stderr
+
+# Test 81: train FTRL-PiSTOL
+{VW} -k -d train-sets/0001.dat -f models/ftrl_pistol.model --passes 1 --pistol
+    train-sets/ref/ftrl_pistol.stderr
+
+# Test 82: test FTRL-PiSTOL
+{VW} -k -t train-sets/0001.dat -i models/ftrl_pistol.model -p ftrl_pistol.predict.tmp
+    test-sets/ref/ftrl_pistol.stderr
+    pred-sets/ref/ftrl_pistol.predict    
+    
+# Test 83: check redefine functionality
+{VW} -k -d train-sets/0080.dat --redefine := --redefine y:=: --redefine x:=arma --ignore x -q yy
+    train-sets/ref/redefine.stderr
+
+# Test 84: check cb_adf
+{VW} --cb_adf train-sets/cb_test.ldf 
+    train-sets/ref/cb_adf.stderr
+
+# Test 85: check multilabel_oaa
+{VW} --multilabel_oaa 10 train-sets/multilabel -p multilabel.pred
+    train-sets/ref/multilabel.stderr
+    pred-sets/ref/multilabel.predict
+
+# Test 86: check --csoaa_rank on csoaa_ldf
+{VW} --csoaa_ldf multiline --csoaa_rank train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict
+    train-sets/ref/multilabel_ldf.stderr
+    pred-sets/ref/multilabel_ldf.predict
+
+# Test 87: check --rank_all on csoaa_ldf
+{VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p adf_rank.predict
+    train-sets/ref/cb_adf_rank.stderr
+    pred-sets/ref/cb_adf_rank.predict

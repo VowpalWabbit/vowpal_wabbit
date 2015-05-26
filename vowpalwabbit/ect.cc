@@ -15,130 +15,126 @@ license as described in the file LICENSE.
 #include <time.h>
 
 #include "reductions.h"
-#include "multiclass.h"
-#include "simple_label.h"
 
 using namespace std;
 using namespace LEARNER;
 
-namespace ECT
-{
-  struct direction { 
-    size_t id; //unique id for node
-    size_t tournament; //unique id for node
-    uint32_t winner; //up traversal, winner
-    uint32_t loser; //up traversal, loser
-    uint32_t left; //down traversal, left
-    uint32_t right; //down traversal, right
-    bool last;
-  };
+struct direction { 
+  size_t id; //unique id for node
+  size_t tournament; //unique id for node
+  uint32_t winner; //up traversal, winner
+  uint32_t loser; //up traversal, loser
+  uint32_t left; //down traversal, left
+  uint32_t right; //down traversal, right
+  bool last;
+};
+
+struct ect {
+  uint32_t k;
+  uint32_t errors;
+  v_array<direction> directions;//The nodes of the tournament datastructure
   
-  struct ect{
-    uint32_t k;
-    uint32_t errors;
-    v_array<direction> directions;//The nodes of the tournament datastructure
-    
-    v_array<v_array<v_array<uint32_t > > > all_levels;
-    
-    v_array<uint32_t> final_nodes; //The final nodes of each tournament. 
-    
-    v_array<size_t> up_directions; //On edge e, which node n is in the up direction?
-    v_array<size_t> down_directions;//On edge e, which node n is in the down direction?
-    
-    size_t tree_height; //The height of the final tournament.
-    
-    uint32_t last_pair;
-    
-    v_array<bool> tournaments_won;
-  };
+  v_array<v_array<v_array<uint32_t > > > all_levels;
+  
+  v_array<uint32_t> final_nodes; //The final nodes of each tournament. 
+  
+  v_array<size_t> up_directions; //On edge e, which node n is in the up direction?
+  v_array<size_t> down_directions;//On edge e, which node n is in the down direction?
+  
+  size_t tree_height; //The height of the final tournament.
+  
+  uint32_t last_pair;
+  
+  v_array<bool> tournaments_won;
+};
 
-  bool exists(v_array<size_t> db)
-  {
-    for (size_t i = 0; i< db.size();i++)
-      if (db[i] != 0)
-        return true;
-    return false;
-  }
+bool exists(v_array<size_t> db)
+{
+  for (size_t i = 0; i< db.size();i++)
+    if (db[i] != 0)
+      return true;
+  return false;
+}
 
-  size_t final_depth(size_t eliminations)
-  {
-    eliminations--;
-    for (size_t i = 0; i < 32; i++)
-      if (eliminations >> i == 0)
-	return i;
-    cerr << "too many eliminations" << endl;
-    return 31;
-  }
- 
-  bool not_empty(v_array<v_array<uint32_t > > tournaments)
-  {
-    for (size_t i = 0; i < tournaments.size(); i++)
+size_t final_depth(size_t eliminations)
+{
+  eliminations--;
+  for (size_t i = 0; i < 32; i++)
+    if (eliminations >> i == 0)
+      return i;
+  cerr << "too many eliminations" << endl;
+  return 31;
+}
+
+bool not_empty(v_array<v_array<uint32_t > > tournaments)
+{
+  for (size_t i = 0; i < tournaments.size(); i++)
     {
       if (tournaments[i].size() > 0)
         return true;
     }
-    return false;
-  }
+  return false;
+}
 
-  void print_level(v_array<v_array<uint32_t> > level)
-  {
-    for (size_t t = 0; t < level.size(); t++)
-      {
-	for (size_t i = 0; i < level[t].size(); i++)
-	  cout << " " << level[t][i];
-	cout << " | ";
-      }
-    cout << endl;
-  }
+void print_level(v_array<v_array<uint32_t> > level)
+{
+  for (size_t t = 0; t < level.size(); t++)
+    {
+      for (size_t i = 0; i < level[t].size(); i++)
+	cout << " " << level[t][i];
+      cout << " | ";
+    }
+  cout << endl;
+}
 
-  size_t create_circuit(vw& all, ect& e, uint32_t max_label, uint32_t eliminations)
-  {
-    if (max_label == 1)
-      return 0;
-
-    v_array<v_array<uint32_t > > tournaments = v_init<v_array<uint32_t > >();
-    v_array<uint32_t> t = v_init<uint32_t>();
-
-    for (uint32_t i = 0; i < max_label; i++)
-      {
-	t.push_back(i);	
-	direction d = {i,0,0,0,0,0, false};
-	e.directions.push_back(d);
-      }
-
-    tournaments.push_back(t);
-
-    for (size_t i = 0; i < eliminations-1; i++)
-      tournaments.push_back(v_array<uint32_t>());
-    
-    e.all_levels.push_back(tournaments);
-    
-    size_t level = 0;
-
-    uint32_t node = (uint32_t)e.directions.size();
-
-    while (not_empty(e.all_levels[level]))
-      {
-	v_array<v_array<uint32_t > > new_tournaments = v_init<v_array<uint32_t>>();
-	tournaments = e.all_levels[level];
-
-	for (size_t t = 0; t < tournaments.size(); t++)
-	  {
-	    v_array<uint32_t> empty = v_init<uint32_t>();
-	    new_tournaments.push_back(empty);
-	  }
-
-	for (size_t t = 0; t < tournaments.size(); t++)
-	  {
-	    for (size_t j = 0; j < tournaments[t].size()/2; j++)
-	      {
-		uint32_t id = node++;
-		uint32_t left = tournaments[t][2*j];
-		uint32_t right = tournaments[t][2*j+1];
-		
-		direction d = {id,t,0,0,left,right, false};
-		e.directions.push_back(d);
-		uint32_t direction_index = (uint32_t)e.directions.size()-1;
+size_t create_circuit(ect& e, uint32_t max_label, uint32_t eliminations)
+{
+  if (max_label == 1)
+    return 0;
+  
+  v_array<v_array<uint32_t > > tournaments = v_init<v_array<uint32_t > >();
+  v_array<uint32_t> t = v_init<uint32_t>();
+  
+  for (uint32_t i = 0; i < max_label; i++)
+    {
+      t.push_back(i);	
+      direction d = {i,0,0,0,0,0, false};
+      e.directions.push_back(d);
+    }
+  
+  tournaments.push_back(t);
+  
+  for (size_t i = 0; i < eliminations-1; i++)
+    tournaments.push_back(v_array<uint32_t>());
+  
+  e.all_levels.push_back(tournaments);
+  
+  size_t level = 0;
+  
+  uint32_t node = (uint32_t)e.directions.size();
+  
+  while (not_empty(e.all_levels[level]))
+    {
+      v_array<v_array<uint32_t > > new_tournaments = v_init<v_array<uint32_t>>();
+      tournaments = e.all_levels[level];
+      
+      for (size_t t = 0; t < tournaments.size(); t++)
+	{
+	  v_array<uint32_t> empty = v_init<uint32_t>();
+	  new_tournaments.push_back(empty);
+	}
+      
+      for (size_t t = 0; t < tournaments.size(); t++)
+	{
+	  for (size_t j = 0; j < tournaments[t].size()/2; j++)
+	    {
+	      uint32_t id = node++;
+	      uint32_t left = tournaments[t][2*j];
+	      uint32_t right = tournaments[t][2*j+1];
+	      
+	      direction d = {id,t,0,0,left,right, false};
+	      e.directions.push_back(d);
+	      uint32_t direction_index = (uint32_t)e.directions.size()-1;
 		if (e.directions[left].tournament == t)
 		  e.directions[left].winner = direction_index;
 		else
@@ -229,7 +225,7 @@ namespace ECT
   {
     if (e.k == 1)//nothing to do
       return;
-    MULTICLASS::multiclass mc = ec.l.multi;
+    MULTICLASS::label_t mc = ec.l.multi;
   
     label_data simple_temp;
 
@@ -315,7 +311,7 @@ namespace ECT
   }
 
   void predict(ect& e, base_learner& base, example& ec) {
-    MULTICLASS::multiclass mc = ec.l.multi;
+    MULTICLASS::label_t mc = ec.l.multi;
     if (mc.label == 0 || (mc.label > e.k && mc.label != (uint32_t)-1))
       cout << "label " << mc.label << " is not in {1,"<< e.k << "} This won't work right." << endl;
     ec.pred.multiclass = ect_predict(e, base, ec);
@@ -324,7 +320,7 @@ namespace ECT
 
   void learn(ect& e, base_learner& base, example& ec)
   {
-    MULTICLASS::multiclass mc = ec.l.multi;
+    MULTICLASS::label_t mc = ec.l.multi;
     predict(e, base, ec);
     uint32_t pred = ec.pred.multiclass;
 
@@ -353,26 +349,23 @@ namespace ECT
     e.tournaments_won.delete_v();
   }
 
-  base_learner* setup(vw& all)
-  {
-    new_options(all, "Error Correcting Tournament options")
-      ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels");
-    if (missing_required(all)) return NULL;
-    new_options(all)("error", po::value<size_t>()->default_value(0), "error in ECT");
-    add_options(all);
-    
-    ect& data = calloc_or_die<ect>();
-    data.k = (int)all.vm["ect"].as<size_t>();
-    data.errors = (uint32_t)all.vm["error"].as<size_t>();
-    //append error flag to options_from_file so it is saved in regressor file later
-    *all.file_options << " --ect " << data.k << " --error " << data.errors;
-    
-    size_t wpp = create_circuit(all, data, data.k, data.errors+1);
-    
-    learner<ect>& l = init_learner(&data, setup_base(all), learn, predict, wpp);
-    l.set_finish_example(MULTICLASS::finish_example<ect>);
-    all.p->lp = MULTICLASS::mc_label;
-    l.set_finish(finish);
-    return make_base(l);
-  }
+base_learner* ect_setup(vw& all)
+{
+  if (missing_option<size_t, true>(all, "ect", "Error correcting tournament with <k> labels"))
+    return nullptr;
+  new_options(all, "Error Correcting Tournament options")
+    ("error", po::value<size_t>()->default_value(0), "error in ECT");
+  add_options(all);
+  
+  ect& data = calloc_or_die<ect>();
+  data.k = (int)all.vm["ect"].as<size_t>();
+  data.errors = (uint32_t)all.vm["error"].as<size_t>();
+  //append error flag to options_from_file so it is saved in regressor file later
+  *all.file_options << " --error " << data.errors;
+  
+  size_t wpp = create_circuit(data, data.k, data.errors+1);
+  
+  learner<ect>& l = init_multiclass_learner(&data, setup_base(all), learn, predict, all.p, wpp);
+  l.set_finish(finish);
+  return make_base(l);
 }

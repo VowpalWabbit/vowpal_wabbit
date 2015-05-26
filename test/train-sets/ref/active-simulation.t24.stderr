@@ -5,24 +5,24 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/rcv1_small.dat
 num sources = 1
-average    since         example     example  current  current  current
-loss       last          counter      weight    label  predict features
-1.000000   1.000000            1         1.0  -1.0000   0.0000      128
-0.770418   0.755288            2        16.2  -1.0000  -0.1309       44
-1.118590   1.361900            3        39.3   1.0000  -0.1670       30
-0.780574   0.450168           39        79.5  unknown   0.1277       85
-0.592298   0.405239           75       159.6  unknown  -0.3427       71
-0.509643   0.427269          169       319.7  unknown   0.3984       18
-0.559013   0.606211          325       654.2  -1.0000  -0.4780      189
-0.447653   0.336421          754      1309.2  unknown  -0.2552       31
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+1.000000 1.000000            1            1.0  -1.0000   0.0000      128
+0.770418 0.755288            2           16.2  -1.0000  -0.1309       44
+1.118590 1.361900            3           39.3   1.0000  -0.1670       30
+0.780574 0.450168           39           79.5  unknown   0.1277       85
+0.592298 0.405239           75          159.6  unknown  -0.3427       71
+0.509643 0.427269          169          319.7  unknown   0.3984       18
+0.559013 0.606211          325          654.2  -1.0000  -0.4780      189
+0.447653 0.336421          754         1309.2  unknown  -0.2552       31
 
 finished run
 number of examples per pass = 1000
 passes used = 1
-weighted example sum = 1682.95
-weighted label sum = -89.1631
+weighted example sum = 1682.949109
+weighted label sum = -89.163114
 average loss = 0.458888
-best constant = -0.10179
+best constant = -0.101790
 best constant's loss = 0.989639
 total feature number = 78739
 total queries = 193

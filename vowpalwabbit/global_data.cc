@@ -5,16 +5,14 @@ license as described in the file LICENSE.
  */
 #include <stdio.h>
 #include <float.h>
+#include <errno.h>
 #include <iostream>
 #include <sstream>
 #include <math.h>
 #include <assert.h>
 
 #include "global_data.h"
-#include "simple_label.h"
-#include "parser.h"
 #include "gd.h"
-#include "memory.h"
 
 using namespace std;
 
@@ -76,7 +74,7 @@ void send_prediction(int sock, global_prediction p)
     }
 }
 
-void binary_print_result(int f, float res, float weight, v_array<char> tag)
+void binary_print_result(int f, float res, float weight, v_array<char>)
 {
   if (f >= 0)
     {
@@ -94,7 +92,7 @@ int print_tag(std::stringstream& ss, v_array<char> tag)
   return tag.begin != tag.end;
 }
 
-void print_result(int f, float res, float weight, v_array<char> tag)
+void print_result(int f, float res, float, v_array<char> tag)
 {
   if (f >= 0)
     {
@@ -108,7 +106,7 @@ void print_result(int f, float res, float weight, v_array<char> tag)
       ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
       if (t != len)
         {
-          cerr << "write error" << endl;
+          cerr << "write error: " << strerror(errno) << endl;
         }
     }
 }
@@ -126,11 +124,11 @@ void print_raw_text(int f, string s, v_array<char> tag)
   ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
   if (t != len)
     {
-      cerr << "write error" << endl;
+      cerr << "write error: " << strerror(errno) << endl;
     }
 }
 
-void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag)
+void print_lda_result(vw& all, int f, float* res, float, v_array<char> tag)
 {
   if (f >= 0)
     {
@@ -147,7 +145,7 @@ void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> ta
       ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
 
       if (t != len)
-	cerr << "write error" << endl;
+        cerr << "write error: " << strerror(errno) << endl;
     }
 }
 
@@ -158,7 +156,7 @@ void set_mm(shared_data* sd, float label)
     sd->max_label = max(sd->max_label, label);
 }
 
-void noop_mm(shared_data* sd, float label)
+void noop_mm(shared_data*, float)
 {}
 
 void vw::learn(example* ec)
@@ -217,11 +215,11 @@ void compile_limits(vector<string> limits, uint32_t* dest, bool quiet)
 void add_options(vw& all, po::options_description& opts)
 {
   all.opts.add(opts);
-  po::variables_map new_vm;
   //parse local opts once for notifications.
   po::parsed_options parsed = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(opts).allow_unregistered().run();
+  po::variables_map new_vm;
   po::store(parsed, new_vm);
   po::notify(new_vm); 
 
@@ -235,7 +233,7 @@ void add_options(vw& all)
   delete all.new_opts;
 }
 
-bool missing_required(vw& all)
+bool no_new_options(vw& all)
 {
   //parse local opts once for notifications.
   po::parsed_options parsed = po::command_line_parser(all.args).
@@ -252,6 +250,16 @@ bool missing_required(vw& all)
     return true;
   else
     return false;
+}
+
+bool missing_option(vw& all, bool keep, const char* name, const char* description)
+{
+  new_options(all)(name,description);
+  if (no_new_options(all))
+    return true;
+  if (keep)
+    *all.file_options << " --" << name;
+  return false;
 }
 
 vw::vw()
@@ -293,7 +301,7 @@ vw::vw()
   eta = 0.5; //default learning rate for normalized adaptive updates, this is switched to 10 by default for the other updates (see parse_args.cc)
   numpasses = 1;
 
-  final_prediction_sink.begin = final_prediction_sink.end=final_prediction_sink.end_array = NULL;
+  final_prediction_sink.begin = final_prediction_sink.end=final_prediction_sink.end_array = nullptr;
   raw_prediction = -1;
   print = print_result;
   print_text = print_raw_text;
@@ -309,7 +317,7 @@ vw::vw()
   stdout_fileno = fileno(stdout);
   #endif
 
-  searchstr = NULL;
+  searchstr = nullptr;
 
   nonormalize = false;
   l1_lambda = 0.0;
@@ -332,6 +340,8 @@ vw::vw()
       spelling_features[i] = 0;
     }
 
+  interactions = v_init<v_string>();
+
   //by default use invariant normalized adaptive updates
   adaptive = true;
   normalized_updates = true;
@@ -341,12 +351,13 @@ vw::vw()
 
   add_constant = true;
   audit = false;
-  reg.weight_vector = NULL;
+  reg.weight_vector = nullptr;
   pass_length = (size_t)-1;
   passes_complete = 0;
 
   save_per_pass = false;
 
+  multilabel_prediction = false;
   stdin_off = false;
   do_reset_source = false;
   holdout_set_off = true;
@@ -363,5 +374,7 @@ vw::vw()
   // Set by the '--progress <arg>' option and affect sd->dump_interval
   progress_add = false;   // default is multiplicative progress dumps
   progress_arg = 2.0;     // next update progress dump multiplier
+
+  seeded = false; // default is not to share model states
 }
 

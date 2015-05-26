@@ -76,6 +76,9 @@ namespace Microsoft.Research.MachineLearning
         [DllImport(LIBVW, EntryPoint = "VW_GetInitial")]
         public static extern float GetInitial(VwExample example);
 
+        [DllImport(LIBVW, EntryPoint = "VW_GetMultilabelPredictions")]
+        public static extern IntPtr GetMultilabelPredictions(VwHandle vw, VwExample example, ref SizeT length);
+
         [DllImport(LIBVW, EntryPoint = "VW_GetPrediction")]
         public static extern float GetPrediction(VwExample example);
 
@@ -101,6 +104,9 @@ namespace Microsoft.Research.MachineLearning
         [DllImport(LIBVW, EntryPoint = "VW_HashSpace")]
         public static extern uint HashSpace(VwHandle vw, [MarshalAs(UnmanagedType.LPWStr)]string s);
 
+        [DllImport(LIBVW, EntryPoint = "VW_HashSpaceStatic")]
+        public static extern uint HashSpace([MarshalAs(UnmanagedType.LPWStr)]string s, [MarshalAs(UnmanagedType.LPWStr)]string h = "strings");
+
         // The DLL defines the last argument "u" as being an "unsigned long".
         // In C++ under current circumstances, both ints and longs are four byte integers.
         // If you wanted an eight byte integer you should use "long long" (or probably
@@ -108,6 +114,9 @@ namespace Microsoft.Research.MachineLearning
         // In C#, "int" is four bytes, "long" is eight bytes.
         [DllImport(LIBVW, EntryPoint = "VW_HashFeature")]
         public static extern uint HashFeature(VwHandle vw, [MarshalAs(UnmanagedType.LPWStr)]string s, uint u);
+
+        [DllImport(LIBVW, EntryPoint = "VW_HashFeatureStatic")]
+        public static extern uint HashFeature([MarshalAs(UnmanagedType.LPWStr)]string s, uint u, [MarshalAs(UnmanagedType.LPWStr)]string h = "strings", uint numBits = 18);
 
         [DllImport(LIBVW, EntryPoint = "VW_Learn")]
         public static extern float Learn(VwHandle vw, VwExample example);
@@ -129,5 +138,8 @@ namespace Microsoft.Research.MachineLearning
 
         [DllImport(LIBVW, EntryPoint = "VW_Get_Stride")]
         public static extern SizeT Get_Stride(VwHandle vw);
+
+        [DllImport(LIBVW, EntryPoint = "VW_SaveModel")]
+        public static extern void SaveModel(VwHandle vw);
     }
 }

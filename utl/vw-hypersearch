@@ -18,6 +18,7 @@
 #         train-set error
 #       - Add integral-value option support
 #       - More reliable/informative progress indication
+#       - Add -e <external-eval-plugin-script> support
 #       Bug fixes:
 #           - Golden-section search bug-fix
 #           - Loss value capture bug-fix (can be in scientific notation)
@@ -25,7 +26,7 @@
 #   * Alex Hudek:
 #       - Support log-space search which seems to work better
 #         with --l1 (very small values) and/or hinge-loss
-#   * trufanov-nok (@github)
+#   * Alex Trufanov:
 #       - A bunch of very useful bug reports:
 #           https://github.com/JohnLangford/vowpal_wabbit/issues/406
 #
@@ -34,7 +35,7 @@ use strict;
 use Getopt::Std;
 use Scalar::Util qw(looks_like_number);
 use File::Temp;
-use vars qw($opt_v $opt_b $opt_t $opt_L);
+use vars qw($opt_v $opt_b $opt_t $opt_c $opt_L $opt_e);
 
 my $MaxDouble = 1.79769e+308;
 my $ModelFile;
@@ -64,7 +65,7 @@ sub v(@) {
 #        failure of fork or exec, ...)
 #       print a user-helpful error message and abort
 #
-sub ExecCmd {
+sub ExecCmd($;$) {
     my $cmd = shift || return(0, []);
     my $timeout = shift || 0;
 
@@ -159,6 +160,68 @@ sub real_param($) {
 my %Loss;   # x -> f(x) cache
 my $BestParam;
 my $BestLoss = $MaxDouble;
+my $NumberPat = qr{
+    (?:                 # mantissa
+        [-+]?               # optional sign
+        (?:
+            \d*\.\d+        # numeric part
+            |\d+(?:\.\d*)?
+            |\d+
+        )
+    )
+    (?:[Ee][-+]?\d+)?   # optional exponent
+}ox;
+
+#
+# get_loss($param, @command)
+#   Run command (and optional external eval plug-in)
+#   and extract the loss from the output.
+#   Keep track of best (argmin($param)) result so far.
+#
+sub get_loss($@) {
+    my ($param, @command) = @_;
+
+    my $rv = ExecCmd \@command;
+
+    my $loss;
+    my $best_msg = '';
+
+    if ($opt_e) {
+        $rv = ExecCmd $opt_e;
+    }
+
+    # Read from the end, so if we run a test after train,
+    # we get the last (test) loss, rather than the train loss.
+    foreach my $line (reverse @$rv) {
+        if (
+                ($opt_e && $line =~ /($NumberPat)/o)
+                    or
+                ($line =~ /^average loss\s*=\s*(\S+)/)
+            ) {
+
+            # Found a loss
+            $loss = $1;
+            # should bail out of loop on 1st loss line found
+            last;
+        }
+    }
+
+    if ($loss <= $BestLoss) {
+        $BestParam = $param;
+        $BestLoss = $loss;
+        $best_msg = ' (best)';
+    }
+ 
+    die "\n$0: failed to parse average loss from vw output: ",
+        join('', @$rv),
+        "\n\nTry to run:\n\t@command\nmanually to figure out why.\n"
+            unless defined ($loss);
+
+    unlink($ModelFile) if (($opt_t || $opt_c) && $ScratchModel && -e $ModelFile);
+
+    printf STDERR " %.6g%s\n", $loss, $best_msg;
+    $loss; 
+}
 
 sub loss($) {
     my ($param) = @_;
@@ -167,8 +230,10 @@ sub loss($) {
         # -- map back from log-space to real value of the parameter
        $param = exp($param);  
     }
+    # if already tested/cached return immediately
     return  $Loss{$param} if (exists $Loss{$param});
 
+    # otherwise try to run an evaluate:
     printf STDERR "trying %s ", $param;
 
     my @command = @ARGV;
@@ -176,37 +241,12 @@ sub loss($) {
         $c =~ s/%/$param/g;
     }
 
-    my $rv = ExecCmd \@command;
+    # Run command (and optional external eval plug-in)
+    # and extract the loss from the output.
+    my $the_loss = get_loss($param, @command);
 
-    my $loss;
-    my $best_msg = '';
-
-    # Read from the end, so if we run a test after train,
-    # we get the last (test) loss, rather than the train loss.
-    foreach my $line (reverse @$rv) {
-        next unless $line =~ /^average loss\s*=\s*(\S+)/;
-
-        # Found a loss
-        $loss = $1;
-        if ($loss <= $BestLoss) {
-            $BestParam = $param;
-            $BestLoss = $loss;
-            $best_msg = ' (best)';
-        }
-        # should bail out of loop on 1st 'average loss' line found
-        last;
-    }
-
-    die "\n$0: failed to parse average loss from vw output: ",
-        join('', @$rv),
-        "\n\nTry to run:\n\t@command\nmanually to figure out why.\n"
-            unless defined ($loss);
-
-    unlink($ModelFile) if ($opt_t && $ScratchModel && -e $ModelFile);
-
-    printf STDERR " %.6g%s\n", $loss, $best_msg;
-    $Loss{$param} = $loss;      # cache it
-    $loss;
+    $Loss{$param} = $the_loss;      # cache it
+    $the_loss;
 }
 
 #
@@ -231,7 +271,16 @@ sub usage(@) {
 
     Options:
         -t <TS>     Use <TS> as test-set file + evaluate goodness on it
+        -c <TC>     Use <TC> as test-cache file + evaluate goodness on it
+                    (This implies '-t' except the test-cache <TC> will be used
+                     instead of <TS>)
         -L          Use log-space for mid-point bisection
+        -e <prog>   Use <prog> (external utility) to evaluate how good
+                    the result is instead of vw's own 'average loss' line
+                    The protocol is: <prog> simply prints a number (last
+                    line numeric output is used) and the search attempts
+                    to find argmin() for this output.  You may also pass
+                    arguments to the plugin using: -e '<prog> <args...>'
 
     lower_bound     lower bound of the parameter search range
     upper_bound     upper bound of the parameter search range
@@ -387,8 +436,8 @@ sub goldenSectionSearch($$$$) {
 
     # assert(loss($x) != loss($mid));
     if (loss($x) == loss($mid)) {
-        printf STDERR "%s: loss(%g) == loss(%g): %g\n",
-                            $0, real_param($x), real_param($mid), loss($x);
+        printf STDERR "loss(%g) == loss(%g): %g\n",
+                            real_param($x), real_param($mid), loss($x);
         return opt_value(($x + $mid) / 2.0);
     }
 
@@ -426,8 +475,8 @@ sub best_hyperparam($$$) {
     # if it is linear. Only 'loss()' knows about this trick to reverse it,
     # goldenSectionSearch is oblivious to it.
     if ($opt_L) {
-      $lb = log($lb);
-      $ub = log($ub);
+        $lb = log($lb);
+        $ub = log($ub);
     }
 
     my ($best, $fbest);
@@ -455,9 +504,21 @@ sub best_hyperparam($$$) {
 
 sub fullpath($) {
     my $exe = shift;
-    foreach my $dir (split(':', $ENV{PATH})) {
+    # I'm told on Windows, the PATH separator is ';' instead of ':'
+    my ($path_sep, $ext) = (':', '');
+    if ($^O =~ /MSWin/i) {
+        $path_sep = ';';
+        $ext = '.exe';
+    }
+    foreach my $dir (split($path_sep, $ENV{PATH}), '.') {
         my $fp = "$dir/$exe";
         return $fp if (-x $fp);
+        # On windows, the executable may be called 'vw.exe'
+        # so try that as well
+        if ($ext) {
+            $fp = "$dir/$exe$ext";
+            return $fp if (-x $fp);
+        }
     }
     '';
 }
@@ -471,6 +532,7 @@ sub is_integer_option($) {
     my $expects_integer =
         ($opt =~ qr{^-*
             bs?
+            |affix
             |autolink
             |batch_sz
             |bootstrap|B
@@ -505,12 +567,22 @@ sub is_integer_option($) {
 sub process_args {
     $0 =~ s{.*/}{};
 
-    getopts('vbLt:');
+    getopts('vbLc:t:e:');
 
     # Brent is not ready for prime-time yet so don't advertise it.
     warn "$0: using Brent's method search\n" if ($opt_b);
     if ($opt_t) {       # evaluate on test-set
         usage("-t $opt_t: $!") unless (-e $opt_t && -r $opt_t);
+    }
+    if ($opt_c) {       # evaluate on test-cache
+        usage("-c $opt_c: $!") unless (-e $opt_c && -r $opt_c);
+    }
+    if ($opt_e) {       # external plugin 'loss like' evaluator
+        # Allow users to pass args to the eval script,
+        # assume first non-space sequence is the command
+        my ($first_word) = ($opt_e =~ /^\s*(\S+)/);
+        usage("-e $opt_e: $!") unless (-e $first_word && -x $first_word);
+        warn "Using external evaluation plug-in: '$opt_e'\n";
     }
 
     # v("after getopts: \@ARGV=(@ARGV)\n");
@@ -539,10 +611,20 @@ sub process_args {
         usage("3rd argument (tolerance): $tolerance: not in the (0, 1) range")
             unless (0 < $tolerance and $tolerance < 1.0);
     }
-    usage("command: $ARGV[0]: must start with an executable")
-        unless (-x $ARGV[0] || -x (fullpath($ARGV[0])));
+    if (! -x $ARGV[0]) {
+        # Not directly executable, look along PATH:
+        my $fp = fullpath($ARGV[0]);
+        if ($fp && -x $fp) {
+            $ARGV[0] = $fp;
+        }
+    }
+    # retry after looking along PATH, warn if still no go
+    if (! -x $ARGV[0]) {
+        warn "Couldn't find '$ARGV[0]' executable: " .
+             "(is \$PATH correct?)" . "Will try anyway.\n";
+    }
 
-    # --- Now @ARGV contains the vw command only
+    # --- Now @ARGV contains the full vw command
 
     # --quiet prevents progress from being detected so don't allow it
     my @saved_argv = @ARGV; @ARGV = ();
@@ -560,7 +642,7 @@ sub process_args {
     my ($option_before_pct) = ($vw_command_line =~ /(\S+)\s+\S*%/);
     $IntegerOpt = is_integer_option($option_before_pct);
 
-    if ($opt_t) {
+    if ($opt_t || $opt_c) {
         # Evaluate on test:
         #   1) Make sure we store the model after training
         #   2) Call vw again, loading model and evaluating on test-set
@@ -582,8 +664,14 @@ sub process_args {
         if ($vw_command_line =~ /(--loss_function)\s+(\S+)/) {
             push(@ARGV, $1, $2);
         }
-        # And finally, add the test file
-        push(@ARGV, $opt_t);
+        # Add the test file
+        if ($opt_t) {
+            push(@ARGV, $opt_t);
+        }
+        # Add test-cache if -c is in effect
+        if ($opt_c) {
+            push(@ARGV, '--cache_file', $opt_c);
+        }
         v("New -t command line: %s\n", "@ARGV");
     }
 

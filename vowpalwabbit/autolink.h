@@ -1,2 +1,1 @@
-#pragma once
-namespace ALINK { LEARNER::base_learner* setup(vw& all); }
+LEARNER::base_learner* autolink_setup(vw& all);

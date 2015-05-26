@@ -2,11 +2,7 @@
 #include <cassert>
 
 #include "gd.h"
-#include "rand48.h"
-#include "simple_label.h"
-#include "allreduce.h"
 #include "accumulate.h"
-#include "constant.h"
 #include "reductions.h"
 #include "vw.h"
 
@@ -15,8 +11,6 @@
 using namespace std;
 using namespace LEARNER;
 
-namespace StagewisePoly
-{
   static const uint32_t parent_bit = 1;
   static const uint32_t cycle_bit = 2;
   static const uint32_t tree_atomics = 134;
@@ -31,7 +25,7 @@ namespace StagewisePoly
 
   struct stagewise_poly
   {
-    vw *all;
+    vw *all; // many uses, unmodular reduction
 
     float sched_exponent;
     uint32_t batch_sz;
@@ -231,7 +225,7 @@ namespace StagewisePoly
 
   void sort_data_create(stagewise_poly &poly)
   {
-    poly.sd = NULL;
+    poly.sd = nullptr;
     poly.sd_len = 0;
   }
 
@@ -509,6 +503,7 @@ namespace StagewisePoly
     base.predict(poly.synth_ec);
     ec.partial_prediction = poly.synth_ec.partial_prediction;
     ec.updated_prediction = poly.synth_ec.updated_prediction;
+    ec.pred.scalar = poly.synth_ec.pred.scalar;
   }
 
   void learn(stagewise_poly &poly, base_learner &base, example &ec)
@@ -555,8 +550,17 @@ namespace StagewisePoly
 
   void reduce_min_max(uint8_t &v1,const uint8_t &v2)
   {
-    bool parent_or_depth = (v1 & indicator_bit);
-    if(parent_or_depth != (bool)(v2 & indicator_bit)) {
+	  bool parent_or_depth;
+	  if (v1 & indicator_bit)
+		  parent_or_depth = true;
+	  else
+		  parent_or_depth = false;
+	  bool p_or_d2;
+	  if (v2 & indicator_bit)
+		  p_or_d2 = true;
+	  else
+		  p_or_d2 = false;
+    if(parent_or_depth != p_or_d2) {
 #ifdef DEBUG
       cout << "Reducing parent with depth!!!!!";
 #endif //DEBUG
@@ -656,13 +660,12 @@ namespace StagewisePoly
     //#endif //DEBUG
   }
 
-  base_learner *setup(vw &all)
+  base_learner *stagewise_poly_setup(vw &all)
   {
+    if (missing_option(all, true, "stage_poly", "use stagewise polynomial feature learning"))
+      return nullptr;
+    
     new_options(all, "Stagewise poly options")
-      ("stage_poly", "use stagewise polynomial feature learning");
-    if (missing_required(all)) return NULL;
-
-    new_options(all)
       ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
       ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")
       ("batch_sz_no_doubling", "batch_sz does not double")
@@ -694,11 +697,8 @@ namespace StagewisePoly
     poly.last_example_counter = -1;
     poly.numpasses = 1;
     poly.update_support = false;
-    poly.original_ec = NULL;
+    poly.original_ec = nullptr;
     poly.next_batch_sz = poly.batch_sz;
-
-    //following is so that saved models know to load us.
-    *all.file_options << " --stage_poly";
 
     learner<stagewise_poly>& l = init_learner(&poly, setup_base(all), learn, predict);
     l.set_finish(finish);
@@ -708,4 +708,3 @@ namespace StagewisePoly
 
     return make_base(l);
   }
-}

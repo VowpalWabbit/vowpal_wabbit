@@ -1,97 +1,89 @@
 #include <string.h>
-
 #include <float.h>
 #include "reductions.h"
 #include "rand48.h"
 
 using namespace LEARNER;
 
-namespace LRQ {
+struct LRQstate {
+  vw* all; // feature creation, audit, hash_inv
+  bool lrindices[256];
+  size_t orig_size[256];
+  std::set<std::string> lrpairs;
+  bool dropout;
+  uint64_t seed;
+  uint64_t initial_seed;
+};
 
-  struct LRQstate {
-    vw* all;
-    bool lrindices[256];
-    size_t orig_size[256];
-    std::vector<std::string> lrpairs;
-    bool dropout;
-    uint64_t seed;
-    uint64_t initial_seed;
-  };
+bool valid_int (const char* s)
+{
+  char* endptr;
+  
+  int v = strtoul (s, &endptr, 0);
+  (void) v;
+  
+  return (*s != '\0' && *endptr == '\0');
 }
 
-namespace {
-  bool 
-  valid_int (const char* s)
-    {
-      char* endptr;
-
-      int v = strtoul (s, &endptr, 0);
-      (void) v;
-
-      return (*s != '\0' && *endptr == '\0');
-    }
-
-  inline bool
-  cheesyrbit (uint64_t& seed)
-    {
-      return merand48 (seed) > 0.5;
-    }
-
-  inline float
-  cheesyrand (uint32_t x)
-    {
-      uint64_t seed = x;
-
-      return merand48 (seed);
-    }
-
-  inline bool
-  example_is_test (example& ec)
-  {
-    return ec.l.simple.label == FLT_MAX;
-  }
-
-  void
-  reset_seed (LRQ::LRQstate& lrq)
-    {
-      if (lrq.all->bfgs)
-        lrq.seed = lrq.initial_seed;
-    }
+inline bool
+cheesyrbit (uint64_t& seed)
+{
+  return merand48 (seed) > 0.5;
 }
 
-namespace LRQ {
+inline float
+cheesyrand (uint32_t x)
+{
+  uint64_t seed = x;
+  
+  return merand48 (seed);
+}
 
-  template <bool is_learn>
-  void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
-  {
-    vw& all = *lrq.all;
+inline bool
+example_is_test (example& ec)
+{
+  return ec.l.simple.label == FLT_MAX;
+}
 
-    // Remember original features
-        
-    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
-      {
-        if (lrq.lrindices[*i])
-          lrq.orig_size[*i] = ec.atomics[*i].size ();
-      }
+void
+reset_seed (LRQstate& lrq)
+{
+  if (lrq.all->bfgs)
+    lrq.seed = lrq.initial_seed;
+}
 
-    size_t which = ec.example_counter;
-    float first_prediction;
-    float first_loss;
-    unsigned int maxiter = (is_learn && ! example_is_test (ec)) ? 2 : 1;
-
-    bool do_dropout = lrq.dropout && is_learn && ! example_is_test (ec);
-    float scale = (! lrq.dropout || do_dropout) ? 1.f : 0.5f;
-
-    for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
-      {
-        // Add left LRQ features, holding right LRQ features fixed
-        //     and vice versa
-        // TODO: what happens with --lrq ab2 --lrq ac2
-        //       i.e. namespace occurs multiple times (?)
-    
-        for (vector<string>::iterator i = lrq.lrpairs.begin ();
-             i != lrq.lrpairs.end ();
-             ++i)
+template <bool is_learn>
+void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
+{
+  vw& all = *lrq.all;
+  
+  // Remember original features
+  
+  memset (lrq.orig_size, 0, sizeof (lrq.orig_size));
+  for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
+    {
+      if (lrq.lrindices[*i])
+	lrq.orig_size[*i] = ec.atomics[*i].size ();
+    }
+  
+  size_t which = ec.example_counter;
+  float first_prediction = 0;
+  float first_loss = 0;
+  unsigned int maxiter = (is_learn && ! example_is_test (ec)) ? 2 : 1;
+  
+  bool do_dropout = lrq.dropout && is_learn && ! example_is_test (ec);
+  float scale = (! lrq.dropout || do_dropout) ? 1.f : 0.5f;
+  
+  for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
+    {
+      // Add left LRQ features, holding right LRQ features fixed
+      //     and vice versa
+      // TODO: what happens with --lrq ab2 --lrq ac2
+      //       i.e. namespace occurs multiple times (?)
+      
+      for (set<string>::iterator i = lrq.lrpairs.begin ();
+           i != lrq.lrpairs.end ();
+           ++i)
           {
             unsigned char left = (*i)[which%2];
             unsigned char right = (*i)[(which+1)%2];
@@ -133,18 +125,22 @@ namespace LRQ {
 
                             ec.atomics[right].push_back (lrq);
 
-                            if (iter == 0 && (all.audit || all.hash_inv))
+                            if (all.audit || all.hash_inv)
                               {
-                                char* new_space = calloc_or_die<char>(4);
-                                strcpy(new_space, "lrq");
-                                size_t n_len = strlen(i->c_str () + 4);
-                                size_t len = strlen(ra->feature) + n_len + 2;
-                                char* new_feature = calloc_or_die<char>(len);
-                                new_feature[0] = right;
-                                new_feature[1] = '^';
-                                strcat(new_feature, ra->feature);
-                                strcat(new_feature, "^");
-                                sprintf(new_feature+strlen(new_feature), "%d", n);
+                                std::stringstream new_feature_buffer;
+
+                                new_feature_buffer << right << '^' 
+                                                   << ra->feature << '^'
+                                                   << n;
+
+#ifdef _WIN32
+								char* new_space = _strdup("lrq");
+								char* new_feature =	_strdup(new_feature_buffer.str().c_str());
+#else
+								char* new_space = strdup("lrq");
+								char* new_feature = strdup(new_feature_buffer.str().c_str());
+#endif
+
                                 audit_data ad = { new_space, new_feature, lrq.weight_index, lrq.x, true };
                                 ec.audit_features[right].push_back (ad);
                               }
@@ -171,7 +167,7 @@ namespace LRQ {
             ec.loss = first_loss;
           }
 
-        for (vector<string>::iterator i = lrq.lrpairs.begin ();
+        for (set<string>::iterator i = lrq.lrpairs.begin ();
              i != lrq.lrpairs.end ();
              ++i)
           {
@@ -180,45 +176,56 @@ namespace LRQ {
             ec.atomics[right].end = 
               ec.atomics[right].begin + lrq.orig_size[right];
 
-            if (all.audit)
-              ec.audit_features[right].end = 
-                ec.audit_features[right].begin + lrq.orig_size[right];
+            if (all.audit || all.hash_inv)
+              {
+                for (audit_data* a = ec.audit_features[right].begin + lrq.orig_size[right];
+                     a < ec.audit_features[right].end;
+                     ++a)
+                  {
+                    free (a->space);
+                    free (a->feature);
+                  }
+
+                ec.audit_features[right].end = 
+                  ec.audit_features[right].begin + lrq.orig_size[right];
+              }
           }
       }
   }
 
-  base_learner* setup(vw& all)
+  base_learner* lrq_setup(vw& all)
   {//parse and set arguments
+    if (missing_option<vector<string>>(all, "lrq", "use low rank quadratic features"))
+      return nullptr;
     new_options(all, "Lrq options")
-      ("lrq", po::value<vector<string> > (), "use low rank quadratic features");
-    if (missing_required(all)) return NULL;
-    new_options(all)
       ("lrqdropout", "use dropout training for low rank quadratic features");
     add_options(all);
 
     if(!all.vm.count("lrq"))
-      return NULL;
+      return nullptr;
 
     LRQstate& lrq = calloc_or_die<LRQstate>();
     size_t maxk = 0;
     lrq.all = &all;
+    new(&lrq.lrpairs) 
+      std::set<std::string> (all.vm["lrq"].as<vector<string> > ().begin (),
+                             all.vm["lrq"].as<vector<string> > ().end ());
     
     size_t random_seed = 0;
     if (all.vm.count("random_seed")) random_seed = all.vm["random_seed"].as<size_t> ();
     
     lrq.initial_seed = lrq.seed = random_seed | 8675309;
-    if (all.vm.count("lrqdropout"))
-      lrq.dropout = true;
+    if (all.vm.count("lrqdropout")) 
+      {
+        lrq.dropout = true;
+        *all.file_options << " --lrqdropout ";
+      }
     else
       lrq.dropout = false;
     
-    *all.file_options << " --lrqdropout ";
-    
-    lrq.lrpairs = all.vm["lrq"].as<vector<string> > ();
-    
-    for (vector<string>::iterator i = lrq.lrpairs.begin (); 
-	 i != lrq.lrpairs.end (); 
-	 ++i)
+    for (set<string>::iterator i = lrq.lrpairs.begin (); 
+         i != lrq.lrpairs.end (); 
+         ++i)
       *all.file_options << " --lrq " << *i;
     
     if (! all.quiet)
@@ -228,7 +235,7 @@ namespace LRQ {
           cerr << "(using dropout) ";
       }
 
-    for (vector<string>::iterator i = lrq.lrpairs.begin (); 
+    for (set<string>::iterator i = lrq.lrpairs.begin (); 
          i != lrq.lrpairs.end (); 
          ++i)
       {
@@ -260,4 +267,3 @@ namespace LRQ {
     // TODO: leaks memory ?
     return make_base(l);
   }
-}

@@ -8,25 +8,24 @@ license as described in the file LICENSE.
 #include <sstream>
 #include <fstream>
 
-#include "cache.h"
-#include "io_buf.h"
 #include "parse_regressor.h"
 #include "parser.h"
-#include "parse_args.h"
+#include "vw.h"
+#include "interactions.h"
+
 #include "sender.h"
-#include "network.h"
-#include "global_data.h"
 #include "nn.h"
 #include "gd.h"
 #include "cbify.h"
 #include "oaa.h"
+#include "multilabel_oaa.h"
 #include "rand48.h"
 #include "bs.h"
 #include "topk.h"
 #include "ect.h"
 #include "csoaa.h"
-#include "cb.h"
 #include "cb_algs.h"
+#include "cb_adf.h"
 #include "scorer.h"
 #include "search.h"
 #include "bfgs.h"
@@ -34,20 +33,22 @@ license as described in the file LICENSE.
 #include "noop.h"
 #include "print.h"
 #include "gd_mf.h"
+#include "learner.h"
 #include "mf.h"
-#include "vw.h"
-#include "ftrl_proximal.h"
+#include "ftrl.h"
+#include "svrg.h"
 #include "rand48.h"
-#include "parse_args.h"
 #include "binary.h"
 #include "lrq.h"
+#include "lrqfa.h"
 #include "autolink.h"
 #include "log_multi.h"
-#include "memory.h"
 #include "stagewise_poly.h"
 #include "active.h"
 #include "kernel_svm.h"
 #include "parse_example.h"
+#include "best_constant.h"
+#include "interact.h"
 
 using namespace std;
 //
@@ -60,13 +61,6 @@ bool ends_with(string const &fullString, string const &ending)
     } else {
         return false;
     }
-}
-
-bool valid_ns(char c)
-{
-    if (c=='|'||c==':')
-        return false;
-    return true;
 }
 
 bool substring_equal(substring&a, substring&b) {
@@ -93,7 +87,7 @@ void parse_dictionary_argument(vw&all, string str) {
       return;
     }
 
-  feature_dict* map = new feature_dict(1023, NULL, substring_equal);
+  feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
   
   // TODO: handle gzipped dictionaries
   example *ec = alloc_examples(all.p->lp.label_size, 1);
@@ -110,7 +104,7 @@ void parse_dictionary_argument(vw&all, string str) {
     memcpy(word, c, d-c);
     substring ss = { word, word + (d - c) };
     uint32_t hash = uniform_hash( ss.begin, ss.end-ss.begin, quadratic_constant);
-    if (map->get(ss, hash) != NULL) { // don't overwrite old values!
+    if (map->get(ss, hash) != nullptr) { // don't overwrite old values!
       free(word);
       continue;
     }
@@ -127,6 +121,10 @@ void parse_dictionary_argument(vw&all, string str) {
     *arr = v_init<feature>();
     push_many(*arr, ec->atomics[def].begin, ec->atomics[def].size());
     map->put(ss, hash, arr);
+
+    // clear up ec
+    ec->tag.erase(); ec->indices.erase();
+    for (size_t i=0; i<256; i++) { ec->atomics[i].erase(); ec->audit_features[i].erase(); }
   }
   dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
@@ -172,7 +170,7 @@ void parse_affix_argument(vw&all, string str) {
     all.affix_features[ns] <<= 4;
     all.affix_features[ns] |=  afx;
 
-    p = strtok(NULL, ",");
+    p = strtok(nullptr, ",");
   }
 
   free(cstr);
@@ -264,7 +262,6 @@ void parse_source(vw& all)
   // Be friendly: if -d was left out, treat positional param as data file
   po::positional_options_description p;  
   p.add("data", -1);
-  
   po::parsed_options pos = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(all.opts).positional(p).run();
@@ -318,6 +315,7 @@ void parse_feature_tweaks(vw& all)
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
+    ("redefine", po::value< vector<string> >(), "redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in form 'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a wildcard in S.")
     ("bit_precision,b", po::value<size_t>(), "number of bits in the feature table")
     ("noconstant", "Don't add a constant feature")
     ("constant,C", po::value<float>(&(all.initial_constant)), "Set initial value of constant")
@@ -327,6 +325,9 @@ void parse_feature_tweaks(vw& all)
     ("affix", po::value<string>(), "generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace")
     ("spelling", po::value< vector<string> >(), "compute spelling features for a give namespace (use '_' for default namespace)")
     ("dictionary", po::value< vector<string> >(), "read a dictionary for additional features (arg either 'x:file' or just 'file')")
+    ("interactions", po::value< vector<string> > (), "Create feature interactions of any level between namespaces.")
+    ("permutations", "Use permutations instead of combinations for feature interactions of same namespace.")
+    ("leave_duplicate_interactions", "Don't remove interactions with duplicate combinations of namespaces. For ex. this is a duplicate: '-q ab -q ba' and a lot more in '-q ::'.")
     ("quadratic,q", po::value< vector<string> > (), "Create and use quadratic features")
     ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
     ("cubic", po::value< vector<string> > (),
@@ -399,93 +400,84 @@ void parse_feature_tweaks(vw& all)
 	}
     }
 
+  all.permutations = vm.count("permutations");
+
+  // prepare namespace interactions
+  v_array<v_string> expanded_interactions = v_init<v_string>();
+
   if (vm.count("quadratic"))
-    {
-      all.pairs = vm["quadratic"].as< vector<string> >();
-      vector<string> newpairs;
-      //string tmp;
-      char printable_start = '!';
-      char printable_end = '~';
-      int valid_ns_size = printable_end - printable_start - 1; //will skip two characters
-
-      if(!all.quiet)
-        cerr<<"creating quadratic features for pairs: ";
-
-      for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++){
-        if(!all.quiet){
-          cerr << *i << " ";
-          if (i->length() > 2)
-            cerr << endl << "warning, ignoring characters after the 2nd.\n";
-          if (i->length() < 2) {
-            cerr << endl << "error, quadratic features must involve two sets.\n";
-            throw exception();
-          }
-        }
-        //-q x:
-        if((*i)[0]!=':'&&(*i)[1]==':'){
-          newpairs.reserve(newpairs.size() + valid_ns_size);
-          for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j))
-              newpairs.push_back(string(1,(*i)[0])+j);
-          }
-        }
-        //-q :x
-        else if((*i)[0]==':'&&(*i)[1]!=':'){
-          newpairs.reserve(newpairs.size() + valid_ns_size);
-          for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j)){
-	      stringstream ss;
-	      ss << j << (*i)[1];
-	      newpairs.push_back(ss.str());
-	    }
-          }
-        }
-        //-q ::
-        else if((*i)[0]==':'&&(*i)[1]==':'){
-	  cout << "in pair creation" << endl;
-          newpairs.reserve(newpairs.size() + valid_ns_size*valid_ns_size);
-	  stringstream ss;
-	  ss << ' ' << ' ';
-	  newpairs.push_back(ss.str());
-          for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j)){
-              for (char k=printable_start; k<=printable_end; k++){
-                if(valid_ns(k)){
-		  stringstream ss;
-                  ss << j << k;
-                  newpairs.push_back(ss.str());
-		}
-              }
-            }
-          }
-        }
-        else{
-          newpairs.push_back(string(*i));
-        }
+  {
+      const vector<string> vec_arg = vm["quadratic"].as< vector<string> >();
+      if (!all.quiet)
+      {
+          cerr << "creating quadratic features for pairs: ";
+          for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+              if (!all.quiet) cerr << *i << " ";
       }
-      newpairs.swap(all.pairs);
-      if(!all.quiet)
-        cerr<<endl;
-    }
+      expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
+
+      if (!all.quiet) cerr << endl;
+  }
 
   if (vm.count("cubic"))
-    {
-      all.triples = vm["cubic"].as< vector<string> >();
+  {
+      vector<string> vec_arg = vm["cubic"].as< vector<string> >();
       if (!all.quiet)
-	{
-	  cerr << "creating cubic features for triples: ";
-	  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-	    cerr << *i << " ";
-	    if (i->length() > 3)
-	      cerr << endl << "warning, ignoring characters after the 3rd.\n";
-	    if (i->length() < 3) {
-	      cerr << endl << "error, cubic features must involve three sets.\n";
-	      throw exception();
-	    }
-	  }
-	  cerr << endl;
-	}
-    }
+      {
+          cerr << "creating cubic features for triples: ";
+          for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+              if (!all.quiet) cerr << *i << " ";
+      }
+
+      v_array<v_string> exp_cubic = INTERACTIONS::expand_interactions(vec_arg, 3, "error, cubic features must involve three sets.");
+      push_many(expanded_interactions, exp_cubic.begin, exp_cubic.size());
+      exp_cubic.delete_v();
+
+      if (!all.quiet) cerr << endl;
+  }
+
+  if (vm.count("interactions"))
+  {
+      vector<string> vec_arg = vm["interactions"].as< vector<string> >();
+      if (!all.quiet)
+      {
+          cerr << "creating features for following interactions: ";
+          for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+              if (!all.quiet) cerr << *i << " ";
+      }
+
+      v_array<v_string> exp_inter = INTERACTIONS::expand_interactions(vec_arg, 0, "");
+      push_many(expanded_interactions, exp_inter.begin, exp_inter.size());
+      exp_inter.delete_v();
+
+      if (!all.quiet) cerr << endl;
+  }
+
+  if (expanded_interactions.size() > 0)
+  {
+
+      size_t removed_cnt;
+      size_t sorted_cnt;
+      INTERACTIONS::sort_and_filter_duplicate_interactions(expanded_interactions, !vm.count("leave_duplicate_interactions"), removed_cnt, sorted_cnt);
+
+      if (removed_cnt > 0)
+          cerr << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.' << endl << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
+      if (sorted_cnt > 0)
+          cerr << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
+
+      all.interactions = expanded_interactions;
+
+      // copy interactions of size 2 and 3 to old vectors for backward compatibility
+      for (v_string* i = expanded_interactions.begin; i != expanded_interactions.end; ++i)
+      {
+          const size_t len = i->size();
+          if (len == 2)
+              all.pairs.push_back(v_string2string(*i));
+          else if (len == 3)
+              all.triples.push_back(v_string2string(*i));
+      }
+  }
+
 
   for (size_t i = 0; i < 256; i++)
     all.ignore[i] = false;
@@ -531,6 +523,75 @@ void parse_feature_tweaks(vw& all)
 	  cerr << endl;
 	}
     }
+
+  // --redefine param code
+  all.redefine_some = false; // false by default
+
+  if (vm.count("redefine"))
+  {
+      // initail values: i-th namespace is redefined to i itself
+      for (size_t i = 0; i < 256; i++)
+          all.redefine[i] = (unsigned char)i;
+
+      // note: --redefine declaration order is matter
+      // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
+
+      vector< string > arg_list = vm["redefine"].as< vector< string > >();
+      for (vector<string>::iterator arg_iter = arg_list.begin(); arg_iter != arg_list.end(); arg_iter++)
+      {
+          string arg = *arg_iter;
+          size_t arg_len = arg.length();
+
+          size_t operator_pos = 0; //keeps operator pos + 1 to stay unsigned type
+          bool operator_found = false;
+          unsigned char new_namespace = ' ';
+
+          // let's find operator ':=' position in N:=S
+          for (size_t i = 0; i < arg_len; i++)
+          {
+              if (operator_found)
+              {
+                  if (i > 2) { new_namespace = arg[0];} //N is not empty
+                  break;
+              } else
+                  if (arg[i] == ':')
+                      operator_pos = i+1;
+                  else
+                      if ( (arg[i] == '=') && (operator_pos == i) )
+                          operator_found = true;
+          }
+
+          if (!operator_found)
+          {
+              cerr << "argument of --redefine is malformed. Valid format is N:=S, :=S or N:=" << endl;
+              throw exception();
+          }
+
+          if (++operator_pos > 3) // seek operator end
+              cerr << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('" << new_namespace << "') will be used as target namespace." << endl;
+
+          all.redefine_some = true;         
+
+          // case ':=S' doesn't require any additional code as new_namespace = ' ' by default
+
+          if (operator_pos == arg_len) // S is empty, default namespace shall be used
+              all.redefine[' '] = new_namespace;
+          else
+              for (size_t i = operator_pos; i < arg_len; i++)
+              { // all namespaces from S are redefined to N
+                  unsigned char c = arg[i];
+                  if (c != ':')
+                      all.redefine[c] = new_namespace;
+                  else
+                  { // wildcard found: redefine all except default and break
+                      for (size_t i = 0; i < 256; i++)
+                         all.redefine[i] = new_namespace;
+                      break; //break processing S
+                  }
+              }
+
+      }
+  }
 
   if (vm.count("dictionary")) {
     vector<string> dictionary_ns = vm["dictionary"].as< vector<string> >();
@@ -730,7 +791,7 @@ void load_input_model(vw& all, io_buf& io_temp)
 LEARNER::base_learner* setup_base(vw& all)
 {
   LEARNER::base_learner* ret = all.reduction_stack.pop()(all);
-  if (ret == NULL)
+  if (ret == nullptr)
     return setup_base(all);
   else 
     return ret;
@@ -738,38 +799,45 @@ LEARNER::base_learner* setup_base(vw& all)
 
 void parse_reductions(vw& all)
 {
+  new_options(all, "Reduction options, use [option] --help for more info");
+  add_options(all);
   //Base algorithms
   all.reduction_stack.push_back(GD::setup);
-  all.reduction_stack.push_back(KSVM::setup);
-  all.reduction_stack.push_back(FTRL::setup);
-  all.reduction_stack.push_back(SENDER::setup);
-  all.reduction_stack.push_back(GDMF::setup);
-  all.reduction_stack.push_back(PRINT::setup);
-  all.reduction_stack.push_back(NOOP::setup);
-  all.reduction_stack.push_back(LDA::setup);
-  all.reduction_stack.push_back(BFGS::setup);
+  all.reduction_stack.push_back(kernel_svm_setup);
+  all.reduction_stack.push_back(ftrl_setup);
+  all.reduction_stack.push_back(svrg_setup);
+  all.reduction_stack.push_back(sender_setup);
+  all.reduction_stack.push_back(gd_mf_setup);
+  all.reduction_stack.push_back(print_setup);
+  all.reduction_stack.push_back(noop_setup);
+  all.reduction_stack.push_back(lda_setup);
+  all.reduction_stack.push_back(bfgs_setup);
 
   //Score Users
-  all.reduction_stack.push_back(ACTIVE::setup);
-  all.reduction_stack.push_back(NN::setup);
-  all.reduction_stack.push_back(MF::setup);
-  all.reduction_stack.push_back(ALINK::setup);
-  all.reduction_stack.push_back(LRQ::setup);
-  all.reduction_stack.push_back(StagewisePoly::setup);
-  all.reduction_stack.push_back(Scorer::setup);
+  all.reduction_stack.push_back(active_setup);
+  all.reduction_stack.push_back(nn_setup);
+  all.reduction_stack.push_back(mf_setup);
+  all.reduction_stack.push_back(autolink_setup);
+  all.reduction_stack.push_back(lrq_setup);
+  all.reduction_stack.push_back(lrqfa_setup);
+  all.reduction_stack.push_back(stagewise_poly_setup);
+  all.reduction_stack.push_back(scorer_setup);
 
   //Reductions
-  all.reduction_stack.push_back(BINARY::setup);
-  all.reduction_stack.push_back(TOPK::setup);
-  all.reduction_stack.push_back(OAA::setup);
-  all.reduction_stack.push_back(ECT::setup);
-  all.reduction_stack.push_back(LOG_MULTI::setup);
-  all.reduction_stack.push_back(CSOAA::setup);
-  all.reduction_stack.push_back(CSOAA_AND_WAP_LDF::setup);
-  all.reduction_stack.push_back(CB_ALGS::setup);
-  all.reduction_stack.push_back(CBIFY::setup);
+  all.reduction_stack.push_back(binary_setup);
+  all.reduction_stack.push_back(topk_setup);
+  all.reduction_stack.push_back(oaa_setup);
+  all.reduction_stack.push_back(ect_setup);
+  all.reduction_stack.push_back(log_multi_setup);
+  all.reduction_stack.push_back(multilabel_oaa_setup);
+  all.reduction_stack.push_back(csoaa_setup);
+  all.reduction_stack.push_back(interact_setup);
+  all.reduction_stack.push_back(csldf_setup);
+  all.reduction_stack.push_back(cb_algs_setup);
+  all.reduction_stack.push_back(cb_adf_setup);
+  all.reduction_stack.push_back(cbify_setup);
   all.reduction_stack.push_back(Search::setup);
-  all.reduction_stack.push_back(BS::setup);
+  all.reduction_stack.push_back(bs_setup);
 
   all.l = setup_base(all);
 }
@@ -784,10 +852,13 @@ vw& parse_args(int argc, char *argv[])
 {
   vw& all = *(new vw());
 
+  all.vw_is_main = false;
   add_to_args(all, argc, argv);
 
   size_t random_seed = 0;
   all.program_name = argv[0];
+
+  time(&all.init_time);
 
   new_options(all, "VW options")
     ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
@@ -805,7 +876,7 @@ vw& parse_args(int argc, char *argv[])
 
   new_options(all, "Weight options")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
-    ("initial_weight", po::value<float>(&(all.initial_weight)), "Set all weights to an initial value of 1.")
+    ("initial_weight", po::value<float>(&(all.initial_weight)), "Set all weights to an initial value of arg.")
     ("random_weights", po::value<bool>(&(all.random_weights)), "make initial weights random")
     ("input_feature_regularizer", po::value< string >(&(all.per_feature_regularizer_input)), "Per feature regularization input file");
   add_options(all);
@@ -851,6 +922,8 @@ vw& parse_args(int argc, char *argv[])
 
   parse_output_model(all);
   
+  parse_output_preds(all);
+
   parse_reductions(all);
 
   if (!all.quiet)
@@ -862,8 +935,6 @@ vw& parse_args(int argc, char *argv[])
       if (all.numpasses > 1)
 	cerr << "decay_learning_rate = " << all.eta_decay_rate << endl;
     }
-
-  parse_output_preds(all);
 
   load_input_model(all, io_temp);
 
@@ -946,14 +1017,44 @@ namespace VW {
     char** argv = get_argv_from_string(s,argc);
 
     vw& all = parse_args(argc, argv);
-    
-    initialize_parser_datastructures(all);
 
+    initialize_parser_datastructures(all);
+    
     for(int i = 0; i < argc; i++)
       free(argv[i]);
     free(argv);
 
     return &all;
+  }
+
+  // Create a new VW instance while sharing the model with another instance
+  // The extra arguments will be appended to those of the other VW instance
+  vw* seed_vw_model(vw* vw_model, const string extra_args)
+  {
+    vector<string> model_args = vw_model->args;
+    model_args.push_back(extra_args);
+
+    std::ostringstream init_args;
+    for (size_t i = 0; i < model_args.size(); i++)
+    {
+      if (model_args[i] == "--no_stdin" || // ignore this since it will be added by vw::initialize
+          model_args[i] == "-i" || // ignore -i since we don't want to reload the model
+          (i > 0 && model_args[i - 1] == "-i"))
+      {
+        continue;
+      }
+      init_args << model_args[i] << " ";
+    }
+
+    vw* new_model = VW::initialize(init_args.str().c_str());
+    
+    // reference model states stored in the specified VW instance
+    new_model->reg = vw_model->reg; // regressor
+    new_model->sd = vw_model->sd; // shared data
+
+    new_model->seeded = true;
+
+    return new_model;
   }
 
   void delete_dictionary_entry(substring ss, v_array<feature>*A) {
@@ -964,17 +1065,51 @@ namespace VW {
   
   void finish(vw& all, bool delete_all)
   {
+    if (!all.quiet)
+        {
+        cerr.precision(6);
+        cerr << endl << "finished run";
+        if(all.current_pass == 0)
+            cerr << endl << "number of examples = " << all.sd->example_number;
+        else{
+            cerr << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
+            cerr << endl << "passes used = " << all.current_pass;
+        }
+        cerr << endl << "weighted example sum = " << all.sd->weighted_examples;
+        cerr << endl << "weighted label sum = " << all.sd->weighted_labels;
+        if(all.holdout_set_off || (all.sd->holdout_best_loss == FLT_MAX))
+	  cerr << endl << "average loss = " << all.sd->sum_loss / all.sd->weighted_examples;
+	else
+	  cerr << endl << "average loss = " << all.sd->holdout_best_loss << " h";
+
+        float best_constant; float best_constant_loss;
+        if (get_best_constant(all, best_constant, best_constant_loss))
+	  {
+            cerr << endl << "best constant = " << best_constant;
+            if (best_constant_loss != FLT_MIN)
+	      cerr << endl << "best constant's loss = " << best_constant_loss;
+	  }
+	
+        cerr << endl << "total feature number = " << all.sd->total_features;
+        if (all.sd->queries > 0)
+	  cerr << endl << "total queries = " << all.sd->queries << endl;
+        cerr << endl;
+        }
+    
     finalize_regressor(all, all.final_regressor_name);
     all.l->finish();
     free_it(all.l);
-    if (all.reg.weight_vector != NULL)
+    if (all.reg.weight_vector != nullptr && !all.seeded) // don't free weight vector if it is shared with another instance
       free(all.reg.weight_vector);
     free_parser(all);
     finalize_source(all.p);
     all.p->parse_name.erase();
     all.p->parse_name.delete_v();
     free(all.p);
-    free(all.sd);
+    if (!all.seeded)
+    {
+      free(all.sd);
+    }
     all.reduction_stack.delete_v();
     delete all.file_options;
     for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
@@ -988,6 +1123,11 @@ namespace VW {
       delete all.read_dictionaries[i].dict;
     }
     delete all.loss;
+
+    // destroy all interactions and array of them
+    for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i) i->delete_v();
+    all.interactions.delete_v();
+
     if (delete_all) delete &all;
   }
 }

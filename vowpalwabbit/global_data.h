@@ -4,8 +4,11 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
+#include <iostream>
+#include <iomanip>
 #include <vector>
 #include <map>
+#include <cfloat>
 #include <stdint.h>
 #include <cstdio>
 #include <boost/program_options.hpp>
@@ -20,12 +23,13 @@ namespace po = boost::program_options;
 #include "learner.h"
 #include "allreduce.h"
 #include "v_hashmap.h"
+#include <time.h>
 
 struct version_struct {
   int major;
   int minor;
   int rev;
-  version_struct(int maj, int min, int rv)
+  version_struct(int maj = 0, int min = 0, int rv = 0)
   {
     major = maj;
     minor = min;
@@ -35,25 +39,25 @@ struct version_struct {
   {
     from_string(v_str);
   }
-  void operator=(version_struct v){
+  void operator=(version_struct v) {
     major = v.major;
     minor = v.minor;
     rev = v.rev;
   }
-  void operator=(const char* v_str){
+  void operator=(const char* v_str) {
     from_string(v_str);
   }
-  bool operator==(version_struct v){
+  bool operator==(version_struct v) {
     return (major == v.major && minor == v.minor && rev == v.rev);
   }
-  bool operator==(const char* v_str){
+  bool operator==(const char* v_str) {
     version_struct v_tmp(v_str);
     return (*this == v_tmp);
   }
-  bool operator!=(version_struct v){
+  bool operator!=(version_struct v) {
     return !(*this == v);
   }
-  bool operator!=(const char* v_str){
+  bool operator!=(const char* v_str) {
     version_struct v_tmp(v_str);
     return (*this != v_tmp);
   }
@@ -65,11 +69,11 @@ struct version_struct {
     if(rev >= v.rev ) return true;
     return false;
   }
-  bool operator>=(const char* v_str){
+  bool operator>=(const char* v_str) {
     version_struct v_tmp(v_str);
     return (*this >= v_tmp);
   }
-  bool operator>(version_struct v){
+  bool operator>(version_struct v) {
     if(major < v.major) return false;
     if(major > v.major) return true;
     if(minor < v.minor) return false;
@@ -77,21 +81,21 @@ struct version_struct {
     if(rev > v.rev ) return true;
     return false;
   }
-  bool operator>(const char* v_str){
+  bool operator>(const char* v_str) {
     version_struct v_tmp(v_str);
     return (*this > v_tmp);
   }
-  bool operator<=(version_struct v){
+  bool operator<=(version_struct v) {
     return !(*this < v);
   }
-  bool operator<=(const char* v_str){
+  bool operator<=(const char* v_str) {
     version_struct v_tmp(v_str);
     return (*this <= v_tmp);
   }
-  bool operator<(version_struct v){
+  bool operator<(version_struct v) {
     return !(*this >= v);
   }
-  bool operator<(const char* v_str){
+  bool operator<(const char* v_str) {
     version_struct v_tmp(v_str);
     return (*this < v_tmp);
   }
@@ -152,9 +156,166 @@ struct shared_data {
   double holdout_best_loss;
   double weighted_holdout_examples_since_last_pass;//reserved for best predictor selection
   double holdout_sum_loss_since_last_pass;
-  size_t holdout_best_pass; 
+  size_t holdout_best_pass;
 
-  uint32_t k;
+  // Column width, precision constants:
+  static const int col_avg_loss = 8;
+  static const int prec_avg_loss = 6;
+  static const int col_since_last = 8;
+  static const int prec_since_last = 6;
+  static const int col_example_counter = 12;
+  static const int col_example_weight = col_example_counter + 2;
+  static const int prec_example_weight = 1;
+  static const int col_current_label = 8;
+  static const int prec_current_label = 4;
+  static const int col_current_predict = 8;
+  static const int prec_current_predict = 4;
+  static const int col_current_features = 8;
+
+  void update(bool test_example, float loss, float weight, size_t num_features)
+  {
+    if(test_example)
+      {
+	weighted_holdout_examples += weight;//test weight seen
+	weighted_holdout_examples_since_last_dump += weight;
+	weighted_holdout_examples_since_last_pass += weight;
+	holdout_sum_loss += loss;
+	holdout_sum_loss_since_last_dump += loss;
+	holdout_sum_loss_since_last_pass += loss;//since last pass
+      }
+    else
+      {
+	weighted_examples += weight;
+	sum_loss += loss;
+	sum_loss_since_last_dump += loss;
+	total_features += num_features;
+	example_number++;
+      }
+  }
+
+  inline void update_dump_interval(bool progress_add, float progress_arg) {
+    sum_loss_since_last_dump = 0.0;
+    old_weighted_examples = weighted_examples;
+    if (progress_add)  
+      dump_interval = (float)weighted_examples + progress_arg;
+    else 
+      dump_interval = (float)weighted_examples * progress_arg;
+  }
+
+  void print_update(bool holdout_set_off, size_t current_pass, float label, float prediction,
+		    size_t num_features, bool progress_add, float progress_arg)
+  {
+    std::ostringstream label_buf, pred_buf;
+
+    label_buf << std::setw(col_current_label)
+              << std::setfill(' ');
+    if (label < FLT_MAX)
+	label_buf << std::setprecision(prec_current_label) << std::fixed << std::right << label;
+    else
+	label_buf << std::left << " unknown";
+
+    pred_buf << std::setw(col_current_predict) << std::setprecision(prec_current_predict)
+	     << std::fixed << std::right
+             << std::setfill(' ')
+	     << prediction;
+
+    print_update(holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features,
+		 progress_add, progress_arg);
+  }
+
+  void print_update(bool holdout_set_off, size_t current_pass, uint32_t label, uint32_t prediction,
+		    size_t num_features, bool progress_add, float progress_arg)
+  {
+    std::ostringstream label_buf, pred_buf;
+
+    label_buf << std::setw(col_current_label)
+              << std::setfill(' ');
+    if (label < INT_MAX)
+	label_buf << std::right << label;
+    else
+	label_buf << std::left << " unknown";
+
+    pred_buf << std::setw(col_current_predict) << std::right 
+             << std::setfill(' ')
+             << prediction;
+
+    print_update(holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features,
+		 progress_add, progress_arg);
+  }
+
+  void print_update(bool holdout_set_off, size_t current_pass, const std::string &label, uint32_t prediction,
+		    size_t num_features, bool progress_add, float progress_arg)
+  {
+    std::ostringstream pred_buf;
+
+    pred_buf << std::setw(col_current_predict) << std::right << std::setfill(' ')
+             << prediction;
+
+    print_update(holdout_set_off, current_pass, label, pred_buf.str(), num_features,
+		 progress_add, progress_arg);
+  }
+
+  void print_update(bool holdout_set_off, size_t current_pass, const std::string &label, const std::string &prediction,
+		    size_t num_features, bool progress_add, float progress_arg)
+  {
+    std::streamsize saved_w = std::cerr.width();
+    std::streamsize saved_prec = std::cerr.precision();
+    std::ostream::fmtflags saved_f = std::cerr.flags();
+    bool holding_out = false;
+
+    if(!holdout_set_off && current_pass >= 1)
+      {
+	if(holdout_sum_loss == 0. && weighted_holdout_examples == 0.)
+	  std::cerr << std::setw(col_avg_loss) << std::left << " unknown";
+	else
+	  std::cerr << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::fixed << std::right
+		    << (holdout_sum_loss / weighted_holdout_examples);
+
+	std::cerr << " ";
+
+	if(holdout_sum_loss_since_last_dump == 0. && weighted_holdout_examples_since_last_dump == 0.)
+	  std::cerr << std::setw(col_since_last) << std::left << " unknown";
+	else
+	  std::cerr << std::setw(col_since_last) << std::setprecision(prec_since_last) << std::fixed << std::right
+		    << (holdout_sum_loss_since_last_dump/weighted_holdout_examples_since_last_dump);
+	
+	weighted_holdout_examples_since_last_dump = 0;
+	holdout_sum_loss_since_last_dump = 0.0;
+
+	holding_out = true;
+      }
+    else
+      {
+	std::cerr << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::right << std::fixed
+		  << (sum_loss / weighted_examples)
+		  << " "
+	          << std::setw(col_since_last) << std::setprecision(prec_avg_loss) << std::right << std::fixed
+		  << (sum_loss_since_last_dump / (weighted_examples - old_weighted_examples));
+      }
+
+    std::cerr << " "
+	      << std::setw(col_example_counter) << std::right << example_number
+	      << " "
+	      << std::setw(col_example_weight) << std::setprecision(prec_example_weight) << std::right << weighted_examples
+	      << " "
+              << std::setw(col_current_label) << std::right << label
+              << " "
+	      << std::setw(col_current_predict) << std::right << prediction
+	      << " "
+	      << std::setw(col_current_features) << std::right << num_features;
+
+    if (holding_out)
+	std::cerr << " h";
+
+    std::cerr << std::endl;
+    std::cerr.flush();
+
+    std::cerr.width(saved_w);
+    std::cerr.precision(saved_prec);
+    std::cerr.setf(saved_f);
+
+    update_dump_interval(progress_add, progress_arg);
+  }
 };
 
 struct vw {
@@ -195,7 +356,9 @@ struct vw {
   bool hessian_on;
 
   bool save_resume;
+  version_struct model_file_ver;
   double normalized_sum_norm_x;
+  bool vw_is_main;  // true if vw is executable; false in library mode
 
   po::options_description opts;
   po::options_description* new_opts;
@@ -222,13 +385,18 @@ struct vw {
   size_t numpasses;
   size_t passes_complete;
   size_t parse_mask; // 1 << num_bits -1
+  bool permutations; // if true - permutations of features generated instead of simple combinations. false by default
+  v_array<v_string> interactions; // interactions of namespaces to cross.
   std::vector<std::string> pairs; // pairs of features to cross.
   std::vector<std::string> triples; // triples of features to cross.
   bool ignore_some;
   bool ignore[256];//a set of namespaces to ignore
 
-  std::vector<std::string> ngram_strings; // pairs of features to cross.
-  std::vector<std::string> skip_strings; // triples of features to cross.
+  bool redefine_some;          // --redefine param was used
+  unsigned char redefine[256]; // keeps new chars for amespaces
+
+  std::vector<std::string> ngram_strings;
+  std::vector<std::string> skip_strings;
   uint32_t ngram[256];//ngrams to generate.
   uint32_t skips[256];//skips in ngrams.
   std::vector<std::string> limit_strings; // descriptor of feature limits
@@ -238,6 +406,7 @@ struct vw {
   vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
   vector<dictionary_info> read_dictionaries; // which dictionaries have we read?
   
+  bool multilabel_prediction;
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress progress-printing of updates?
   bool training;//Should I train if lable data is available?
@@ -287,6 +456,7 @@ struct vw {
   float initial_t;
   float eta;//learning rate control.
   float eta_decay_rate;
+  time_t init_time;
 
   std::string final_regressor_name;
   regressor reg;
@@ -299,6 +469,8 @@ struct vw {
   // Set by --progress <arg>
   bool  progress_add;   // additive (rather than multiplicative) progress dumps
   float progress_arg;   // next update progress dump multiplier
+
+  bool seeded; // whether the instance is sharing model state with others
 
   std::map< std::string, size_t> name_index_map;
 
@@ -319,5 +491,20 @@ inline po::options_description_easy_init new_options(vw& all, std::string name =
   all.new_opts = new po::options_description(name);
   return all.new_opts->add_options();
 }
-bool missing_required(vw& all);
+bool no_new_options(vw& all);
+bool missing_option(vw& all, bool keep, const char* name, const char* description);
+template <class T> bool missing_option(vw& all, const char* name, const char* description)
+{
+  new_options(all)(name, po::value<T>(), description);
+  return no_new_options(all);
+}
+template <class T, bool keep> bool missing_option(vw& all, const char* name,
+						  const char* description)
+{
+  if (missing_option<T>(all, name, description))
+    return true;
+  if (keep)
+    *all.file_options << " --" << name << " " << all.vm[name].as<T>();
+  return false;
+}
 void add_options(vw& all);

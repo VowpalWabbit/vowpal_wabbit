@@ -3,12 +3,14 @@ package vw;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by jmorra on 11/23/14.
  */
-public class VWScorer {
+public class VWScorer implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(VWScorer.class);
 
     static {
@@ -21,10 +23,10 @@ public class VWScorer {
         }
     }
 
-    private boolean isClosed;
+    private AtomicBoolean isClosed;
 
-    public VWScorer(String command){
-        isClosed = false;
+    public VWScorer(String command) {
+        isClosed = new AtomicBoolean(false);
         initialize(command);
     }
 
@@ -35,10 +37,7 @@ public class VWScorer {
      */
     @Override
     public void finalize() {
-        if (!isClosed) {
-            closeInstance();
-            isClosed = true;
-        }
+        close();
     }
 
     /**
@@ -56,6 +55,22 @@ public class VWScorer {
      * @return prediction output
      */
     public native float getPrediction(String example);
+
+      /**
+     * Runs learning on <code>example</code> and returns the prediction output.  Note that
+     * this only works for "simple" VW predictions.
+     *
+     * @param example a single vw example string
+     * @return prediction output
+     */
+    public native float doLearnAndGetPrediction(String example);
+
+    public void close() {
+        if (!isClosed.getAndSet(true)) {
+            logger.info("Shutting down VW");
+            closeInstance();
+        }
+    }
 
     /**
      * Properly shutdown vw instance

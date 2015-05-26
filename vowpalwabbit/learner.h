@@ -6,10 +6,14 @@ license as described in the file LICENSE.
 #pragma once
 // This is the interface for a learning algorithm
 #include<iostream>
-#include"memory.h"
+#include "memory.h"
+#include "cb.h"
+#include "cost_sensitive.h"
+#include "multiclass.h"
+#include "simple_label.h"
+#include "parser.h"
 using namespace std;
 
-struct vw;
 void return_simple_example(vw& all, void*, example& ec);  
   
 namespace LEARNER
@@ -38,15 +42,16 @@ namespace LEARNER
     void (*learn_f)(void* data, base_learner& base, example&);
     void (*predict_f)(void* data, base_learner& base, example&);
     void (*update_f)(void* data, base_learner& base, example&);
+    void (*multipredict_f)(void* data, base_learner& base, example&, size_t count, size_t step, polyprediction*pred, bool finalize_predictions);
   };
 
-  struct save_load_data{
+  struct save_load_data {
     void* data;
     base_learner* base;
     void (*save_load_f)(void*, io_buf&, bool read, bool text);
   };
   
-  struct finish_example_data{
+  struct finish_example_data {
     void* data;
     base_learner* base;
     void (*finish_example_f)(vw&, void* data, example&);
@@ -55,9 +60,10 @@ namespace LEARNER
   void generic_driver(vw& all);
   
   inline void noop_sl(void*, io_buf&, bool, bool) {}
-  inline void noop(void* data) {}
+  inline void noop(void*) {}
 
   typedef void (*tlearn)(void* d, base_learner& base, example& ec);
+  typedef void (*tmultipredict)(void* d, base_learner& base, example& ec, size_t, size_t, polyprediction*, bool);
   typedef void (*tsl)(void* d, io_buf& io, bool read, bool text);
   typedef void (*tfunc)(void*d);
   typedef void (*tend_example)(vw& all, void* d, example& ec);
@@ -95,8 +101,25 @@ namespace LEARNER
 	learn_fd.predict_f(learn_fd.data, *learn_fd.base, ec);
 	ec.ft_offset -= (uint32_t)(increment*i);
       }
-      inline void set_predict(void (*u)(T& data, base_learner& base, example&))
-      { learn_fd.predict_f = (tlearn)u; }
+      inline void multipredict(example& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions) {
+        if (learn_fd.multipredict_f == NULL) {
+          ec.ft_offset += (uint32_t)(increment*lo);
+          for (size_t c=0; c<count; c++) {
+            learn_fd.predict_f(learn_fd.data, *learn_fd.base, ec);
+            if (finalize_predictions) pred[c] = ec.pred; // TODO: this breaks for complex labels because = doesn't do deep copy!
+            else                      pred[c].scalar = ec.partial_prediction;
+            //pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because = doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
+            ec.ft_offset += (uint32_t)increment;
+          }
+          ec.ft_offset -= (uint32_t)(increment*(lo+count));
+        } else {
+          ec.ft_offset += (uint32_t)(increment*lo);
+          learn_fd.multipredict_f(learn_fd.data, *learn_fd.base, ec, count, increment, pred, finalize_predictions);
+          ec.ft_offset -= (uint32_t)(increment*lo);
+        }
+      }
+      inline void set_predict(void (*u)(T& data, base_learner& base, example&)) { learn_fd.predict_f = (tlearn)u; }
+      inline void set_multipredict(void (*u)(T&, base_learner&, example&, size_t, size_t, polyprediction*, bool)) { learn_fd.multipredict_f = (tmultipredict)u; }
       
       inline void update(example& ec, size_t i=0) 
       { 
@@ -177,6 +200,7 @@ namespace LEARNER
       ret.learn_fd.learn_f = (tlearn)learn;
       ret.learn_fd.update_f = (tlearn)learn;
       ret.learn_fd.predict_f = (tlearn)learn;
+      ret.learn_fd.multipredict_f = nullptr;
       ret.finish_example_fd.data = dat;
       ret.finish_example_fd.finish_example_f = return_simple_example;
 
@@ -195,6 +219,7 @@ namespace LEARNER
       ret.learn_fd.learn_f = (tlearn)learn;
       ret.learn_fd.update_f = (tlearn)learn;
       ret.learn_fd.predict_f = (tlearn)predict;
+      ret.learn_fd.multipredict_f = nullptr;
       ret.learn_fd.base = base;
       
       ret.finisher_fd.data = dat;
@@ -204,6 +229,17 @@ namespace LEARNER
       ret.weights = ws;
       ret.increment = base->increment * ret.weights;
       return ret;
+    }
+
+  template<class T> learner<T>& 
+    init_multiclass_learner(T* dat, base_learner* base, 
+			    void (*learn)(T&, base_learner&, example&), 
+			    void (*predict)(T&, base_learner&, example&), parser* p, size_t ws) 
+    {
+      learner<T>& l = init_learner(dat,base,learn,predict,ws);
+      l.set_finish_example(MULTICLASS::finish_example<T>);
+      p->lp = MULTICLASS::mc_label;
+      return l;
     }
   
   template<class T> base_learner* make_base(learner<T>& base) { return (base_learner*)&base; }

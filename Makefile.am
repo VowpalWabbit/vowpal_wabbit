@@ -30,8 +30,10 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/cost_sensitive.h \
 	vowpalwabbit/csoaa.h \
 	vowpalwabbit/ect.h \
+	vowpalwabbit/interactions.h \
 	vowpalwabbit/gd.h \
 	vowpalwabbit/gd_mf.h \
+	vowpalwabbit/interact.h \
 	vowpalwabbit/kernel_svm.h \
 	vowpalwabbit/lda_core.h \
 	vowpalwabbit/log_multi.h \

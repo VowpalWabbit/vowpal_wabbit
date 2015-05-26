@@ -13,9 +13,7 @@ license as described in the file LICENSE.
 #include <netdb.h>
 #endif
 
-#include "constant.h"
 #include "gd.h"
-#include "simple_label.h"
 #include "rand48.h"
 #include "reductions.h"
 
@@ -23,11 +21,12 @@ using namespace std;
 
 using namespace LEARNER;
 
-namespace GDMF {
-  struct gdmf {
-    vw* all;
-    uint32_t rank;
-  };
+struct gdmf {
+  vw* all;//regressor, printing
+  uint32_t rank;
+  size_t no_win_counter;
+  size_t early_stop_thres;
+};
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 {
@@ -280,11 +279,21 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
       save_predictor(*all, all->final_regressor_name, all->current_pass);
     
     all->current_pass++;
+
+    if(!all->holdout_set_off)
+      {
+        if(summarize_holdout_set(*all, d.no_win_counter))
+          finalize_regressor(*all, all->final_regressor_name);
+        if((d.early_stop_thres == d.no_win_counter) &&
+           ((all->check_holdout_every_n_passes <= 1) ||
+            ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
+	  set_done(*all);
+      }
   }
 
   void predict(gdmf& d, base_learner&, example& ec) { mf_predict(d,ec); }
 
-  void learn(gdmf& d, base_learner& base, example& ec)
+  void learn(gdmf& d, base_learner&, example& ec)
   {
     vw& all = *d.all;
  
@@ -293,59 +302,65 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
       mf_train(d, ec);
   }
 
-  base_learner* setup(vw& all)
-  {
-    new_options(all, "Gdmf options")
-      ("rank", po::value<uint32_t>(), "rank for matrix factorization.");
-    if(missing_required(all)) return NULL;
+base_learner* gd_mf_setup(vw& all)
+{
+  if (missing_option<uint32_t, true>(all, "rank", "rank for matrix factorization."))
+    return nullptr;
+  
+  gdmf& data = calloc_or_die<gdmf>(); 
+  data.all = &all;
+  data.rank = all.vm["rank"].as<uint32_t>();
+  data.no_win_counter = 0;
+  data.early_stop_thres = 3;
 
-    gdmf& data = calloc_or_die<gdmf>(); 
-    data.all = &all;
-    data.rank = all.vm["rank"].as<uint32_t>();
-
-    *all.file_options << " --rank " << data.rank;
-    // store linear + 2*rank weights per index, round up to power of two
-    float temp = ceilf(logf((float)(data.rank*2+1)) / logf (2.f));
-    all.reg.stride_shift = (size_t) temp;
-    all.random_weights = true;
-    
-    if ( all.vm.count("adaptive") )
-      {
-	cerr << "adaptive is not implemented for matrix factorization" << endl;
-	throw exception();
-      }
-    if ( all.vm.count("normalized") )
-      {
-	cerr << "normalized is not implemented for matrix factorization" << endl;
-	throw exception();
-      }
-    if ( all.vm.count("exact_adaptive_norm") )
-      {
-	cerr << "normalized adaptive updates is not implemented for matrix factorization" << endl;
-	throw exception();
-      }
-    if (all.vm.count("bfgs") || all.vm.count("conjugate_gradient"))
-      {
-	cerr << "bfgs is not implemented for matrix factorization" << endl;
-	throw exception();
-      }	
-    
-    if(!all.vm.count("learning_rate") && !all.vm.count("l"))
-      all.eta = 10; //default learning rate to 10 for non default update rule
-    
-    //default initial_t to 1 instead of 0
-    if(!all.vm.count("initial_t")) {
-      all.sd->t = 1.f;
-      all.sd->weighted_unlabeled_examples = 1.f;
-      all.initial_t = 1.f;
+  // store linear + 2*rank weights per index, round up to power of two
+  float temp = ceilf(logf((float)(data.rank*2+1)) / logf (2.f));
+  all.reg.stride_shift = (size_t) temp;
+  all.random_weights = true;
+  
+  if ( all.vm.count("adaptive") )
+    {
+      cerr << "adaptive is not implemented for matrix factorization" << endl;
+      throw exception();
     }
-    all.eta *= powf((float)(all.sd->t), all.power_t);
+  if ( all.vm.count("normalized") )
+    {
+      cerr << "normalized is not implemented for matrix factorization" << endl;
+      throw exception();
+    }
+  if ( all.vm.count("exact_adaptive_norm") )
+    {
+      cerr << "normalized adaptive updates is not implemented for matrix factorization" << endl;
+      throw exception();
+    }
+  if (all.vm.count("bfgs") || all.vm.count("conjugate_gradient"))
+    {
+      cerr << "bfgs is not implemented for matrix factorization" << endl;
+      throw exception();
+    }	
 
-    learner<gdmf>& l = init_learner(&data, learn, 1 << all.reg.stride_shift);
-    l.set_predict(predict);
-    l.set_save_load(save_load);
-    l.set_end_pass(end_pass);
-
-    return make_base(l);
+  if(!all.holdout_set_off)
+  {
+    all.sd->holdout_best_loss = FLT_MAX;
+    if(all.vm.count("early_terminate"))      
+      data.early_stop_thres = all.vm["early_terminate"].as< size_t>();     
   }
+  
+  if(!all.vm.count("learning_rate") && !all.vm.count("l"))
+    all.eta = 10; //default learning rate to 10 for non default update rule
+  
+  //default initial_t to 1 instead of 0
+  if(!all.vm.count("initial_t")) {
+    all.sd->t = 1.f;
+    all.sd->weighted_unlabeled_examples = 1.f;
+    all.initial_t = 1.f;
+  }
+  all.eta *= powf((float)(all.sd->t), all.power_t);
+  
+  learner<gdmf>& l = init_learner(&data, learn, 1 << all.reg.stride_shift);
+  l.set_predict(predict);
+  l.set_save_load(save_load);
+  l.set_end_pass(end_pass);
+  
+  return make_base(l);
 }

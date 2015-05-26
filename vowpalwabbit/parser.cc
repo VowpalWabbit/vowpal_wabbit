@@ -45,26 +45,19 @@ int getpid()
 #include <assert.h>
 namespace po = boost::program_options;
 
-#include "parser.h"
-#include "global_data.h"
 #include "parse_example.h"
 #include "cache.h"
-#include "gd.h"
-#include "comp_io.h"
 #include "unique_sort.h"
 #include "constant.h"
-#include "example.h"
-#include "simple_label.h"
-#include "cost_sensitive.h"
 #include "vw.h"
-#include "memory.h"
+#include "interactions.h"
 
 using namespace std;
 
 void initialize_mutex(MUTEX * pm)
 {
 #ifndef _WIN32
-  pthread_mutex_init(pm, NULL);
+  pthread_mutex_init(pm, nullptr);
 #else
 	::InitializeCriticalSection(pm);
 #endif
@@ -82,7 +75,7 @@ void delete_mutex(MUTEX * pm)
 void initialize_condition_variable(CV * pcv)
 {
 #ifndef _WIN32
-  pthread_cond_init(pcv, NULL);
+  pthread_cond_init(pcv, nullptr);
 #else
 	::InitializeConditionVariable(pcv);
 #endif
@@ -427,6 +420,11 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
 	cerr << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 
+      // Enable TCP Keep Alive to prevent socket leaks
+      int enableTKA = 1;
+      if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
+        cerr << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
+
       sockaddr_in address;
       address.sin_family = AF_INET;
       address.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -492,6 +490,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 #ifdef _WIN32
 		throw exception();
 #else
+		fclose(stdin);
 	  // weights will be shared across processes, accessible to children
 	  float* shared_weights =
 	    (float*)mmap(0,(all.length() << all.reg.stride_shift) * sizeof(float),
@@ -518,8 +517,10 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	    {
 	      // fork() returns pid if parent, 0 if child
 	      // store fork value and run child process if child
-	      if ((children[i] = fork()) == 0)
+	      if ((children[i] = fork()) == 0) {
+                all.quiet |= (i > 0);
 		goto child;
+              }
 	    }
 
 	  // install signal handler so we can kill children when killed
@@ -529,7 +530,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	    // waitid will be interrupted by SIGTERM with handler installed
 	    memset(&sa, 0, sizeof(sa));
 	    sa.sa_handler = handle_sigterm;
-	    sigaction(SIGTERM, &sa, NULL);
+	    sigaction(SIGTERM, &sa, nullptr);
 	  }
 
 	  while (true)
@@ -549,8 +550,10 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	      for (size_t i = 0; i < num_children; i++)
 		if (pid == children[i])
 		  {
-		    if ((children[i]=fork()) == 0)
+		    if ((children[i]=fork()) == 0) {
+                      all.quiet |= (i > 0);
 		      goto child;
+                    }
 		    break;
 		  }
 	    }
@@ -625,7 +628,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       throw exception();
     }
   all.p->input->count = all.p->input->files.size();
-  if (!quiet)
+  if (!quiet && !all.daemon)
     cerr << "num sources = " << all.p->input->files.size() << endl;
 }
 
@@ -671,7 +674,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 		}
 	      string feature_space = string(audits[i].space);
 	      
-	      audit_data a_feature = {NULL,NULL,new_index, 1., true};
+	      audit_data a_feature = {nullptr,nullptr,new_index, 1., true};
 	      a_feature.space = (char*)malloc(feature_space.length()+1);
 	      strcpy(a_feature.space, feature_space.c_str());
 	      a_feature.feature = (char*)malloc(feature_name.length()+1);
@@ -814,9 +817,11 @@ void setup_example(vw& all, example* ae)
   if (all.add_constant) {
     //add constant feature
     ae->indices.push_back(constant_namespace);
-    feature temp = {1,(uint32_t) constant};
+    feature temp = {1.f,(uint32_t) constant};
     ae->atomics[constant_namespace].push_back(temp);
     ae->total_sum_feat_sq++;
+
+    if (all.audit || all.hash_inv) ae->audit_features[constant_namespace].push_back({nullptr,(char*)"Constant",(uint32_t)constant, 1.,false});
   }
 
   if(all.limit_strings.size() > 0)
@@ -840,22 +845,12 @@ void setup_example(vw& all, example* ae)
       ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
     }
 
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
-    {
-      ae->num_features 
-	+= ae->atomics[(int)(*i)[0]].size()
-	*ae->atomics[(int)(*i)[1]].size();
-      ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]]*ae->sum_feat_sq[(int)(*i)[1]];
-    }
-  
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
-    {
-      ae->num_features 
-	+= ae->atomics[(int)(*i)[0]].size()
-	*ae->atomics[(int)(*i)[1]].size()
-	*ae->atomics[(int)(*i)[2]].size();
-      ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]] * ae->sum_feat_sq[(int)(*i)[1]] * ae->sum_feat_sq[(int)(*i)[2]];
-    }
+  size_t new_features_cnt;
+  float new_features_sum_feat_sq;
+  INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
+  ae->num_features += new_features_cnt;
+  ae->total_sum_feat_sq += new_features_sum_feat_sq;
+
 }
 }
 
@@ -888,6 +883,7 @@ namespace VW{
     ec->atomics[cns].push_back(temp);
     ec->total_sum_feat_sq++;
     ec->num_features++;
+    if (vw.audit || vw.hash_inv) ec->audit_features[constant_namespace].push_back({nullptr,(char*)"Constant",(uint32_t)constant, 1.,false});
   }
 
   void add_label(example* ec, float label, float weight, float base)
@@ -1072,7 +1068,7 @@ void *main_parse_loop(void *in)
 	   condition_variable_signal_all(&all->p->example_available);
 	   mutex_unlock(&all->p->examples_lock);
 	  }  
-	return NULL;
+	return 0L;
 }
 
 namespace VW{
@@ -1097,7 +1093,7 @@ example* get_example(parser* p)
       }
     else {
       mutex_unlock(&p->examples_lock);
-      return NULL;
+      return nullptr;
     }
   }
 }
@@ -1130,6 +1126,13 @@ float get_prediction(example* ec)
 float get_cost_sensitive_prediction(example* ec)
 {
        return (float)ec->pred.multiclass;
+}
+
+uint32_t* get_multilabel_predictions(vw&, example* ec, size_t& len)
+{
+    MULTILABEL::labels labels = ec->pred.multilabels;
+    len = labels.label_v.size();
+    return labels.label_v.begin;
 }
 
 size_t get_tag_length(example* ec)
@@ -1185,10 +1188,10 @@ void start_parser(vw& all, bool init_structures)
   if (init_structures)
 	initialize_parser_datastructures(all);
   #ifndef _WIN32
-  pthread_create(&all.parse_thread, NULL, main_parse_loop, &all);
+  pthread_create(&all.parse_thread, nullptr, main_parse_loop, &all);
   #else
-  all.parse_thread = ::CreateThread(NULL, 0, static_cast<LPTHREAD_START_ROUTINE>(main_parse_loop), &all, NULL, NULL);
-  #endif
+  all.parse_thread = ::CreateThread(nullptr, 0, static_cast<LPTHREAD_START_ROUTINE>(main_parse_loop), &all, 0L, nullptr);
+#endif
 }
 }
 void free_parser(vw& all)
@@ -1200,14 +1203,16 @@ void free_parser(vw& all)
   if(all.ngram_strings.size() > 0)
     all.p->gram_mask.delete_v();
   
-  for (size_t i = 0; i < all.p->ring_size; i++) 
-    {
+  if (all.multilabel_prediction)
+    for (size_t i = 0; i < all.p->ring_size; i++) 
+      dealloc_example(all.p->lp.delete_label, all.p->examples[i], MULTILABEL::multilabel.delete_label);
+  else
+    for (size_t i = 0; i < all.p->ring_size; i++) 
       dealloc_example(all.p->lp.delete_label, all.p->examples[i]);
-    }
   free(all.p->examples);
   
   io_buf* output = all.p->output;
-  if (output != NULL)
+  if (output != nullptr)
     {
       output->finalname.delete_v();
       output->currentname.delete_v();
@@ -1226,7 +1231,7 @@ namespace VW {
 void end_parser(vw& all)
 {
   #ifndef _WIN32
-  pthread_join(all.parse_thread, NULL);
+  pthread_join(all.parse_thread, nullptr);
   #else
   ::WaitForSingleObject(all.parse_thread, INFINITE);
   ::CloseHandle(all.parse_thread);

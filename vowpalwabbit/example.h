@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 #include "v_array.h"
 #include "simple_label.h"
 #include "multiclass.h"
+#include "multilabel.h"
 #include "cost_sensitive.h"
 #include "cb.h"
 
@@ -19,8 +20,8 @@ const size_t autolink_namespace  = 130;
 const size_t neighbor_namespace  = 131;   // this is \x83 -- to do quadratic, say "-q a`printf "\x83"` on the command line
 const size_t affix_namespace     = 132;   // this is \x84
 const size_t spelling_namespace  = 133;   // this is \x85
-const size_t conditioning_namespace = 134;
-const size_t dictionary_namespace  = 135;
+const size_t conditioning_namespace = 134;// this is \x86
+const size_t dictionary_namespace  = 135; // this is \x87
 
 struct feature {
   float x;
@@ -38,15 +39,17 @@ struct audit_data {
 
 typedef union {
   label_data simple;
-  MULTICLASS::multiclass multi;
+  MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
   CB::label cb;
   CB_EVAL::label cb_eval;
+  MULTILABEL::labels multilabels;
 } polylabel;
 
 typedef union {
   float scalar;
   uint32_t multiclass;
+  MULTILABEL::labels multilabels;
 } polyprediction;
 
 struct example // core example datatype.
@@ -103,7 +106,7 @@ flat_example* flatten_sort_example(vw& all, example *ec);
 void free_flatten_example(flat_example* fec);
 
 example *alloc_examples(size_t,size_t);
-void dealloc_example(void(*delete_label)(void*), example&);
+void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*) = nullptr);
 
 inline int example_is_newline(example& ec)
 {
@@ -111,4 +114,11 @@ inline int example_is_newline(example& ec)
   return ((ec.indices.size() == 0) || 
           ((ec.indices.size() == 1) &&
            (ec.indices.last() == constant_namespace)));
+}
+
+inline bool valid_ns(char c)
+{
+    if (c=='|'||c==':')
+        return false;
+    return true;
 }

@@ -4,17 +4,12 @@
   license as described in the file LICENSE.
 */
 #include "search_entityrelationtask.h"
-#include "multiclass.h"
-#include "memory.h"
-#include "example.h"
-#include "gd.h"
-#include "cost_sensitive.h"
 #include "vw.h"
 
 #define R_NONE 10 // label for NONE relation
 #define LABEL_SKIP 11 // label for SKIP
 
-namespace EntityRelationTask { Search::search_task task = { "entity_relation", run, initialize, finish, NULL, NULL };  }
+namespace EntityRelationTask { Search::search_task task = { "entity_relation", run, initialize, finish, nullptr, nullptr };  }
 
 
 namespace EntityRelationTask {
@@ -39,7 +34,7 @@ namespace EntityRelationTask {
   };
 
 
-  void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
+  void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm) {
     task_data * my_task_data = new task_data();
     po::options_description sspan_opts("entity relation options");
     sspan_opts.add_options()
@@ -124,7 +119,7 @@ namespace EntityRelationTask {
     id2 = atoi(s2.c_str());
   }
   
-  size_t predict_entity(Search::search&sch, example* ex, v_array<size_t>& predictions, ptag my_tag, bool isLdf=false){
+  size_t predict_entity(Search::search&sch, example* ex, v_array<size_t>& /*predictions*/, ptag my_tag, bool isLdf=false){
 	  	
     task_data* my_task_data = sch.get_task_data<task_data>();
     size_t prediction;

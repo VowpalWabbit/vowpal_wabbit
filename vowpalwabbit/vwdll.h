@@ -4,17 +4,28 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
+
+
+// indirect the Win32 so non win32 Microsoft C programs can work
 #ifdef WIN32
-#define USE_CODECVT
+#define MS_CONV		// use Microsoft library calling conventions
 #endif
 
+// enable wide character (32 bit) versions of functions
+// these are optional  since other compilers may not have wide to narrow char libarray facilities built in.
 #ifdef WIN32
+#define USE_CODECVT 
+#endif
+
+
+
+#ifdef MS_CONV
 #define VW_CALLING_CONV __stdcall
 #else
 #define VW_CALLING_CONV
 #endif
 
-#ifdef WIN32
+#ifdef MS_CONV
 
 #ifdef VWDLL_EXPORTS
 #define VW_DLL_MEMBER __declspec(dllexport)
@@ -26,9 +37,19 @@ license as described in the file LICENSE.
 #define VW_DLL_MEMBER
 #endif
 
+
+
+
+
 #ifdef __cplusplus
 extern "C"
 {
+#endif
+
+#ifdef __cplusplus
+#define VW_TYPE_SAFE_NULL nullptr
+#else
+#define VW_TYPE_SAFE_NULL NULL
 #endif
 
 	typedef void * VW_HANDLE;
@@ -37,13 +58,15 @@ extern "C"
 	typedef void * VW_FEATURE_SPACE;
 	typedef void * VW_FEATURE;
  
-	const VW_HANDLE INVALID_VW_HANDLE = NULL;
-	const VW_HANDLE INVALID_VW_EXAMPLE = NULL;
+	const VW_HANDLE INVALID_VW_HANDLE = VW_TYPE_SAFE_NULL;
+	const VW_HANDLE INVALID_VW_EXAMPLE = VW_TYPE_SAFE_NULL;
+
 #ifdef USE_CODECVT
 	VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_Initialize(const char16_t * pstrArgs);
 #endif
 	VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeA(const char * pstrArgs);
 
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_Finish_Passes(VW_HANDLE handle);
 	VW_DLL_MEMBER void VW_CALLING_CONV VW_Finish(VW_HANDLE handle);
 
 	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ImportExample(VW_HANDLE handle, VW_FEATURE_SPACE * features, size_t len);
@@ -65,6 +88,7 @@ extern "C"
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_GetInitial(VW_EXAMPLE e);
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_GetPrediction(VW_EXAMPLE e);
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_GetCostSensitivePrediction(VW_EXAMPLE e);
+    VW_DLL_MEMBER void* VW_CALLING_CONV VW_GetMultilabelPredictions(VW_HANDLE handle, VW_EXAMPLE e, size_t* plen);
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_GetTopicPrediction(VW_EXAMPLE e, size_t i);
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetTagLength(VW_EXAMPLE e);
 	VW_DLL_MEMBER const char* VW_CALLING_CONV VW_GetTag(VW_EXAMPLE e);
@@ -73,12 +97,16 @@ extern "C"
 	VW_DLL_MEMBER void VW_CALLING_CONV VW_ReturnFeatures(VW_FEATURE f);
 #ifdef USE_CODECVT
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpace(VW_HANDLE handle, const char16_t * s);
+    VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceStatic(const char16_t * s, const char16_t * h);
 #endif
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceA(VW_HANDLE handle, const char * s);
+    VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceStaticA(const char * s, const char* h);
 #ifdef USE_CODECVT
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeature(VW_HANDLE handle, const char16_t * s, unsigned long u);
+    VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStatic(const char16_t * s, unsigned long u, const char16_t * h, unsigned int num_bits);
 #endif
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureA(VW_HANDLE handle, const char * s, unsigned long u);
+    VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStaticA(const char * s, unsigned long u, const char * h, unsigned int num_bits);
 
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_Learn(VW_HANDLE handle, VW_EXAMPLE e);
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_Predict(VW_HANDLE handle, VW_EXAMPLE e);
@@ -89,6 +117,10 @@ extern "C"
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_Num_Weights(VW_HANDLE handle);
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_Get_Stride(VW_HANDLE handle);
 
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_SaveModel(VW_HANDLE handle);
+
 #ifdef __cplusplus
 }
 #endif
+
+#undef VW_TYPE_SAFE_NULL

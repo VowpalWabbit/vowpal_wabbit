@@ -17,12 +17,8 @@ Implementation by Miro Dudik.
 #include <stdio.h>
 #include <assert.h>
 #include <sys/timeb.h>
-#include "constant.h"
-#include "simple_label.h"
 #include "accumulate.h"
-#include "vw.h"
 #include "gd.h"
-#include "reductions.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -56,13 +52,10 @@ class curv_exception: public exception {} curv_ex;
 // w[2] = step direction
 // w[3] = preconditioner
   
-namespace BFGS 
-
-{
-  const float max_precond_ratio = 100.f;
+  const float max_precond_ratio = 10000.f;
 
   struct bfgs {
-    vw* all;
+    vw* all;//prediction, regressor
     int m;
     float rel_threshold; // termination threshold
 
@@ -217,7 +210,7 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer)
   uint32_t length = 1 << all.num_bits;
   size_t stride_shift = all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
-  if (b.regularizers == NULL)
+  if (b.regularizers == nullptr)
     for(uint32_t i = 0; i < length; i++)
       ret += regularizer*weights[(i << stride_shift)+W_DIR]*weights[(i << stride_shift)+W_DIR];
   else
@@ -421,7 +414,7 @@ double add_regularization(vw& all, bfgs& b, float regularization)
   uint32_t length = 1 << all.num_bits;
   size_t stride_shift = all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
-  if (b.regularizers == NULL)
+  if (b.regularizers == nullptr)
     {
       for(uint32_t i = 0; i < length; i++) {
 	weights[(i << stride_shift)+W_GT] += regularization*weights[i << stride_shift];
@@ -447,7 +440,7 @@ void finalize_preconditioner(vw& all, bfgs& b, float regularization)
   weight* weights = all.reg.weight_vector;
   float max_hessian = 0.f;
 
-  if (b.regularizers == NULL)
+  if (b.regularizers == nullptr)
     for(uint32_t i = 0; i < length; i++) {
       weights[stride*i+W_COND] += regularization;
 	  if (weights[stride*i+W_COND] > max_hessian)
@@ -477,11 +470,11 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
   uint32_t length = 1 << all.num_bits;
   size_t stride = 1 << all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
-  if (b.regularizers == NULL)
+  if (b.regularizers == nullptr)
     {
       b.regularizers = calloc_or_die<weight>(2*length);
       
-      if (b.regularizers == NULL)
+      if (b.regularizers == nullptr)
 	{
 	  cerr << all.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
 	  throw exception();
@@ -521,7 +514,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
   return ret;
 }
   
-void update_weight(vw& all, float step_size, size_t current_pass)
+void update_weight(vw& all, float step_size)
   {
     uint32_t length = 1 << all.num_bits;
     size_t stride = 1 << all.reg.stride_shift;
@@ -571,7 +564,7 @@ int process_pass(vw& all, bfgs& b) {
 	if (!all.quiet)
 	  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, b.step_size);
 	b.predictions.erase();
-	update_weight(all, b.step_size, b.current_pass);		     		           }
+	update_weight(all, b.step_size);		     		           }
     }
     else
   /********************************************************************/
@@ -624,7 +617,7 @@ int process_pass(vw& all, bfgs& b) {
 				"","",ratio,
 				new_step);
 			b.predictions.erase();
-			update_weight(all, (float)(-b.step_size+new_step), b.current_pass);		     		      			
+			update_weight(all, (float)(-b.step_size+new_step));		     		      			
 			b.step_size = (float)new_step;
 			zero_derivative(all);
 			b.loss_sum = 0.;
@@ -666,7 +659,7 @@ int process_pass(vw& all, bfgs& b) {
 			if (!all.quiet)
 			  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, b.step_size);
 			b.predictions.erase();
-			update_weight(all, b.step_size, b.current_pass);		     		      
+			update_weight(all, b.step_size);		     		      
 		      }
 		    }
 		}
@@ -701,7 +694,7 @@ int process_pass(vw& all, bfgs& b) {
 		  float d_mag = direction_magnitude(all);
 
 		  b.predictions.erase();
-		  update_weight(all, b.step_size, b.current_pass);
+		  update_weight(all, b.step_size);
 		  ftime(&b.t_end_global);
 		  b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm)); 
 		  if (!all.quiet)
@@ -821,7 +814,7 @@ void end_pass(bfgs& b)
 }
 
 // placeholder
-void predict(bfgs& b, base_learner& base, example& ec)
+void predict(bfgs& b, base_learner&, example& ec)
 {
   vw* all = b.all;
   ec.pred.scalar = bfgs_predict(*all,ec);
@@ -854,7 +847,6 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 
   char buff[512];
   int c = 0;
-  uint32_t stride = 1 << all.reg.stride_shift;
   uint32_t length = 2*(1 << all.num_bits);
   uint32_t i = 0;
   size_t brw = 1;
@@ -887,8 +879,6 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 	      text_len = sprintf(buff, ":%f\n", *v);
 	      brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
 					 buff, text_len, text);
-	      if (read && i%2 == 1) // This is the prior mean
-		all.reg.weight_vector[(i/2*stride)] = *v;
 	    }
 	}
       if (!read)
@@ -910,7 +900,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
       if (all->per_feature_regularizer_input != "")
 	{
 	  b.regularizers = calloc_or_die<weight>(2*length);
-	  if (b.regularizers == NULL)
+	  if (b.regularizers == nullptr)
 	    {
 	      cerr << all->program_name << ": Failed to allocate regularizers array: try decreasing -b <bits>" << endl;
 	      throw exception();
@@ -939,7 +929,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 	  cerr.precision(5);
 	}
       
-      if (b.regularizers != NULL)
+      if (b.regularizers != nullptr)
 	all->l2_lambda = 1; // To make sure we are adding the regularization
       b.output_regularizer =  (all->per_feature_regularizer_output != "" || all->per_feature_regularizer_text != "");
       reset_state(*all, b, false);
@@ -968,13 +958,12 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     b.backstep_on = true;
   }
 
-base_learner* setup(vw& all)
+base_learner* bfgs_setup(vw& all)
 {
+  if (missing_option(all, false, "bfgs", "use bfgs optimization") &&
+      missing_option(all, false, "conjugate_gradient", "use conjugate gradient based optimization"))
+    return nullptr;
   new_options(all, "LBFGS options")
-    ("bfgs", "use bfgs optimization")
-    ("conjugate_gradient", "use conjugate gradient based optimization");
-  if (missing_required(all)) return NULL;
-  new_options(all)
     ("hessian_on", "use second derivative in line search")
     ("mem", po::value<uint32_t>()->default_value(15), "memory in bfgs")
     ("termination", po::value<float>()->default_value(0.001f),"Termination threshold");
@@ -1033,4 +1022,4 @@ base_learner* setup(vw& all)
 
   return make_base(l);
 }
-}
+

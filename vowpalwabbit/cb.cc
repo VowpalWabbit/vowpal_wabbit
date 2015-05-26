@@ -5,11 +5,7 @@ license as described in the file LICENSE.
  */
 #include <float.h>
 
-#include "cost_sensitive.h"
-#include "cb.h"
-#include "simple_label.h"
 #include "example.h"
-#include "multiclass.h"
 #include "parse_primitives.h"
 #include "vw.h"
 
@@ -51,7 +47,7 @@ namespace CB
     return total;
   }
 
-  float weight(void* v)
+  float weight(void*)
   {
     return 1.;
   }
@@ -95,7 +91,14 @@ namespace CB
     copy_array(ldD->costs, ldS->costs);
   }
 
-  void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
+  bool substring_eq(substring ss, const char* str) {
+    size_t len_ss  = ss.end - ss.begin;
+    size_t len_str = strlen(str);
+    if (len_ss != len_str) return false;
+    return (strncmp(ss.begin, str, len_ss) == 0);
+  }
+
+  void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
   {
     CB::label* ld = (CB::label*)v;
 
@@ -112,19 +115,12 @@ namespace CB
         }
 
         f.partial_prediction = 0.;
-        
         f.action = (uint32_t)hashstring(p->parse_name[0], 0);
-        if (f.action < 1 || f.action > sd->k)
-        {
-          cerr << "invalid action: " << f.action << endl;
-          cerr << "terminating." << endl;
-          throw exception();
-        }
-
         f.cost = FLT_MAX;
-        if(p->parse_name.size() > 1)
-          f.cost = float_of_substring(p->parse_name[1]);
 
+	if(p->parse_name.size() > 1)
+	  f.cost = float_of_substring(p->parse_name[1]);
+	
         if ( nanpattern(f.cost))
         {
 	  cerr << "error NaN cost for action: ";
@@ -133,10 +129,11 @@ namespace CB
 	  throw exception();
         }
       
+
         f.probability = .0;
         if(p->parse_name.size() > 2)
           f.probability = float_of_substring(p->parse_name[2]);
-
+	
         if ( nanpattern(f.probability))
         {
 	  cerr << "error NaN probability for action: ";
@@ -151,11 +148,17 @@ namespace CB
           f.probability = 1.0;
         }
         if( f.probability < 0.0 )
-        {
-          cerr << "invalid probability < 0 specified for an action, resetting to 0." << endl;
-          f.probability = .0;
-        }
-
+	  {
+	    cerr << "invalid probability < 0 specified for an action, resetting to 0." << endl;
+	    f.probability = .0;
+	  }
+	if (substring_eq(p->parse_name[0], "shared")) {
+          if (p->parse_name.size() == 1) {
+            f.probability = -1.f;
+          } else
+            cerr << "shared feature vectors should not have costs" << endl;
+	}
+	
         ld->costs.push_back(f);
       }
   }
@@ -166,6 +169,66 @@ namespace CB
 				  copy_label,
 				  sizeof(label)};
 
+  bool example_is_test(example& ec)
+  {
+    v_array<CB::cb_class> costs = ec.l.cb.costs;
+    if (costs.size() == 0) return true;
+    for (size_t j=0; j<costs.size(); j++)
+      if (costs[j].cost != FLT_MAX) return false;
+    return true;    
+  }
+
+  bool ec_is_example_header(example& ec)  // example headers look like "0:-1" or just "shared"
+  {
+    v_array<CB::cb_class> costs = ec.l.cb.costs;
+    if (costs.size() != 1) return false;
+    if (costs[0].action != 0) return false;
+    if (costs[0].cost >= 0) return false;
+    return true;    
+  }
+
+  void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* ec_seq, bool multilabel)
+  {
+    if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+      {
+	size_t num_current_features = ec.num_features;
+	// for csoaa_ldf we want features from the whole (multiline example),
+        // not only from one line (the first one) represented by ec
+        if (ec_seq != nullptr)
+	  {
+	    num_current_features = 0;
+          // If the first example is "shared", don't include its features.
+          // These should be already included in each example (TODO: including quadratic and cubic).
+          // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
+	    example** ecc=ec_seq->begin;
+	    example& first_ex = **ecc;
+	    
+	    v_array<CB::cb_class> costs = first_ex.l.cb.costs;
+	    if (costs.size() == 1 && costs[0].action == 0 && costs[0].cost < 0) ecc++;
+	    
+	    for (; ecc!=ec_seq->end; ecc++)
+	      num_current_features += (*ecc)->num_features;
+	  }
+	
+	std::string label_buf;
+        if (is_test)
+          label_buf = " unknown";
+        else
+          label_buf = " known";
+	
+	if (multilabel) {
+	  std::ostringstream pred_buf;
+	  
+	  pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ')
+		   << ec.pred.multilabels.label_v[0]<<".....";			
+	  all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), 
+			       num_current_features, all.progress_add, all.progress_arg);;
+	}
+	else
+	  all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, ec.pred.multiclass, 
+			     num_current_features, all.progress_add, all.progress_arg);
+      }
+  }
 }
 
 namespace CB_EVAL

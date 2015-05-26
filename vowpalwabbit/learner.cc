@@ -1,6 +1,4 @@
-#include "global_data.h"
 #include "parser.h"
-#include "learner.h"
 #include "vw.h"
 #include "parse_regressor.h"
 
@@ -17,12 +15,12 @@ namespace LEARNER
 {
   void generic_driver(vw& all)
   {
-    example* ec = NULL;
+    example* ec = nullptr;
 
     all.l->init_driver();
     while ( all.early_terminate == false )
       {
-	if ((ec = VW::get_example(all.p)) != NULL)//semiblocking operation.
+	if ((ec = VW::get_example(all.p)) != nullptr)//semiblocking operation.
 	  {
 	    if (ec->indices.size() > 1) // 1+ nonconstant feature. (most common case first)
 	      dispatch_example(all, *ec);
@@ -57,7 +55,7 @@ namespace LEARNER
     if (all.early_terminate) //drain any extra examples from parser and call end_examples
       while ( all.early_terminate == false )
 	{
-	  if ((ec = VW::get_example(all.p)) != NULL)//semiblocking operation.
+	  if ((ec = VW::get_example(all.p)) != nullptr)//semiblocking operation.
 	    VW::finish_example(all, ec);
 	  else if (parser_done(all.p))
 	    {

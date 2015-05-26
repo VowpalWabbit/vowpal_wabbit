@@ -15,45 +15,44 @@ using namespace std;
 #include <math.h>
 #include <algorithm>
 
-#include "parse_regressor.h"
-#include "loss_functions.h"
-#include "io_buf.h"
-#include "memory.h"
 #include "rand48.h"
 #include "global_data.h"
 
 /* Define the last version where files are backward compatible. */
 #define LAST_COMPATIBLE_VERSION "6.1.3"
 #define VERSION_FILE_WITH_CUBIC "6.1.3"
+#define VERSION_FILE_WITH_INTERACTIONS "7.10.2"
 
 void initialize_regressor(vw& all)
 {
   // Regressor is already initialized.
-  if (all.reg.weight_vector != NULL) {
+  if (all.reg.weight_vector != nullptr) {
     return;
   }
 
   size_t length = ((size_t)1) << all.num_bits;
   all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
   all.reg.weight_vector = calloc_or_die<weight>(length << all.reg.stride_shift);
-  if (all.reg.weight_vector == NULL)
+  if (all.reg.weight_vector == nullptr)
     {
       cerr << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>" << endl;
       throw exception();
-    }
+    } else
+  if (all.initial_weight != 0.)
+    {
+     for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
+       all.reg.weight_vector[j] = all.initial_weight;      
+    } else
+  if (all.random_positive_weights)
+    {
+      for (size_t j = 0; j < length; j++)
+	all.reg.weight_vector[j << all.reg.stride_shift] = (float)(0.1 * frand48());
+    } else      
   if (all.random_weights)
     {
       for (size_t j = 0; j < length; j++)
 	all.reg.weight_vector[j << all.reg.stride_shift] = (float)(frand48() - 0.5);
     }
-  if (all.random_positive_weights)
-    {
-      for (size_t j = 0; j < length; j++)
-	all.reg.weight_vector[j << all.reg.stride_shift] = (float)(0.1 * frand48());
-    }
-  if (all.initial_weight != 0.)
-    for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
-      all.reg.weight_vector[j] = all.initial_weight;
 }
 
 const size_t buf_size = 512;
@@ -75,12 +74,12 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       bin_text_read_write(model_file, buff2, v_length, 
 			  "", read, 
 			  buff, text_len, text);
-      version_struct v_tmp(buff2);
-      if (v_tmp < LAST_COMPATIBLE_VERSION)
-	{
-	  cout << "Model has possibly incompatible version! " << v_tmp.to_string() << endl;
-	  throw exception();
-	}
+      all.model_file_ver = buff2; //stord in all to check save_resume fix in gd
+      if (all.model_file_ver < LAST_COMPATIBLE_VERSION)
+            {
+                cout << "Model has possibly incompatible version! " << all.model_file_ver.to_string() << endl;
+                throw exception();
+            }
       
       char model = 'm';
       bin_text_read_write_fixed(model_file,&model,1,
@@ -112,17 +111,17 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       
       uint32_t pair_len = (uint32_t)all.pairs.size();
       text_len = sprintf(buff, "%d pairs: ", (int)pair_len);
-      bin_text_read_write_fixed(model_file,(char *)&pair_len, sizeof(pair_len), 
+      bin_text_read_write_fixed(model_file,(char *)&pair_len, sizeof(pair_len),
 				"", read, 
 				buff, text_len, text);
       for (size_t i = 0; i < pair_len; i++)
 	{
 	  char pair[2];
-	  if (!read)
-	    {
-	      memcpy(pair,all.pairs[i].c_str(),2);
-	      text_len = sprintf(buff, "%s ", all.pairs[i].c_str());
-	    }
+      if (!read)
+        {
+          memcpy(pair,all.pairs[i].c_str(),2);
+          text_len = sprintf(buff, "%s ", all.pairs[i].c_str());
+        }
 	  bin_text_read_write_fixed(model_file, pair,2, 
 				    "", read,
 				    buff, text_len, text);
@@ -163,6 +162,43 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       bin_text_read_write_fixed(model_file,buff,0,
 				"", read, 
 				"\n",1, text);
+
+      if (all.model_file_ver >= VERSION_FILE_WITH_INTERACTIONS)
+      {
+          uint32_t len = (uint32_t)all.interactions.size();
+          text_len = sprintf(buff, "%d interactions: ", (int)len);
+          bin_text_read_write_fixed(model_file,(char *)&len, sizeof(len),
+                    "", read,
+                    buff,text_len, text);
+
+          for (size_t i = 0; i < len; i++)
+        {
+          uint32_t inter_len = 0;
+          if (!read)
+            {
+              inter_len = all.interactions[i].size();
+              text_len = sprintf(buff, "len: %d ", inter_len);
+            }
+          bin_text_read_write_fixed(model_file, (char *)&inter_len, sizeof(inter_len),
+                        "", read,
+                        buff,text_len,text);
+          if (read)
+          {
+              v_string s = v_init<unsigned char>();
+              s.resize(inter_len);
+              s.end += inter_len;
+              all.interactions.push_back(s);
+          } else
+              text_len = sprintf(buff, "interaction: %.*s ", inter_len, all.interactions[i].begin);
+
+          bin_text_read_write_fixed(model_file, (char*)all.interactions[i].begin, inter_len,
+                        "", read,
+                        buff,text_len,text);
+        }
+          bin_text_read_write_fixed(model_file,buff,0,
+                    "", read,
+                    "\n",1, text);
+      }
       
       text_len = sprintf(buff, "lda:%d\n", (int)all.lda);
       bin_text_read_write_fixed(model_file,(char*)&all.lda, sizeof(all.lda), 
@@ -258,13 +294,11 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
 
 void save_predictor(vw& all, string reg_name, size_t current_pass)
 {
-  char* filename = new char[reg_name.length()+4];
+  stringstream filename;
+  filename << reg_name;
   if (all.save_per_pass)
-    sprintf(filename,"%s.%lu",reg_name.c_str(),(long unsigned)current_pass);
-  else
-    sprintf(filename,"%s",reg_name.c_str());
-  dump_regressor(all, string(filename), false);
-  delete[] filename;
+    filename << "." << current_pass;
+  dump_regressor(all, filename.str(), false);
 }
 
 void finalize_regressor(vw& all, string reg_name)
@@ -348,4 +382,11 @@ void parse_mask_regressor_args(vw& all)
   }
 }
 
+namespace VW
+{
+	void save_predictor(vw& all, string reg_name)
+	{
+		dump_regressor(all, reg_name, false);
+	}
+}
 

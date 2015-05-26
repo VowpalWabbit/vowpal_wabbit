@@ -8,11 +8,9 @@ license as described in the file LICENSE.
 #include <ctype.h>
 #include "parse_example.h"
 #include "hash.h"
-#include "cache.h"
 #include "unique_sort.h"
 #include "global_data.h"
 #include "constant.h"
-#include "memory.h"
 
 using namespace std;
 
@@ -39,13 +37,16 @@ public:
   char* base;
   unsigned char index;
   float v;
+  bool redefine_some;
+  unsigned char (*redefine)[256];
   parser* p;
   example* ae;
   uint32_t* affix_features;
   bool* spelling_features;
   v_array<char> spelling;
+
   vector<feature_dict*>* namespace_dictionaries;
-  
+
   ~TC_parser(){ }
   
   inline float featureValue(){
@@ -54,7 +55,7 @@ public:
     else if(*reading_head == ':'){
       // featureValue --> ':' 'Float'
       ++reading_head;
-      char *end_read = NULL;
+      char *end_read = nullptr;
       v = parseFloat(reading_head,&end_read);
       if(end_read == reading_head){
 	cout << "malformed example !\nFloat expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
@@ -102,7 +103,7 @@ public:
 	v_array<char> feature_v = v_init<char>();
 	push_many(feature_v, feature_name.begin, feature_name.end - feature_name.begin);
 	feature_v.push_back('\0');
-	audit_data ad = {copy(base),feature_v.begin,word_hash,v,true};
+    audit_data ad = {copy(base),feature_v.begin,word_hash,v,true};
 	ae->audit_features[index].push_back(ad);
       }
       if ((affix_features[index] > 0) && (feature_name.end != feature_name.begin)) {
@@ -172,7 +173,7 @@ public:
           feature_dict* map = namespace_dictionaries[index][dict];
           uint32_t hash = uniform_hash(feature_name.begin, feature_name.end-feature_name.begin, quadratic_constant);
           v_array<feature>* feats = map->get(feature_name, hash);
-          if ((feats != NULL) && (feats->size() > 0)) {
+          if ((feats != nullptr) && (feats->size() > 0)) {
             if (ae->atomics[dictionary_namespace].size() == 0)
               ae->indices.push_back(dictionary_namespace);
             push_many(ae->atomics[dictionary_namespace], feats->begin, feats->size());
@@ -205,7 +206,7 @@ public:
     }else if(*reading_head == ':'){
       // nameSpaceInfoValue --> ':' 'Float'
       ++reading_head;
-      char *end_read = NULL;
+      char *end_read = nullptr;
       cur_channel_v = parseFloat(reading_head,&end_read);
       if(end_read == reading_head){
 	cout << "malformed example !\nFloat expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
@@ -228,6 +229,7 @@ public:
     }else{
       // NameSpaceInfo --> 'String' NameSpaceInfoValue
       index = (unsigned char)(*reading_head);
+      if (redefine_some) index = (*redefine)[index]; //redefine index
       if(ae->atomics[index].begin == ae->atomics[index].end)
 	new_index = true;
       substring name = read_name();
@@ -235,7 +237,7 @@ public:
 	v_array<char> base_v_array = v_init<char>();
 	push_many(base_v_array, name.begin, name.end - name.begin);
 	base_v_array.push_back('\0');
-	if (base != NULL)
+	if (base != nullptr)
 	  free(base);
 	base = base_v_array.begin;
       }
@@ -268,7 +270,7 @@ public:
 	new_index = true;
       if(audit)
 	{
-	  if (base != NULL)
+	  if (base != nullptr)
 	    free(base);
 	  base = calloc_or_die<char>(2);
 	  base[0] = ' ';
@@ -301,19 +303,22 @@ public:
   }
 
   TC_parser(char* reading_head, char* endLine, vw& all, example* ae){
+    spelling = v_init<char>();
     if (endLine != reading_head)
       {
 	this->beginLine = reading_head;
 	this->reading_head = reading_head;
 	this->endLine = endLine;
 	this->p = all.p;
+	this->redefine_some = all.redefine_some;
+	this->redefine = &all.redefine;
 	this->ae = ae;
 	this->affix_features = all.affix_features;
 	this->spelling_features = all.spelling_features;
-        this->namespace_dictionaries = all.namespace_dictionaries;
-	this->base = NULL;
+	this->namespace_dictionaries = all.namespace_dictionaries;
+	this->base = nullptr;
 	listNameSpace();
-	if (base != NULL)
+	if (base != nullptr)
 	  free(base);
       }
   }
@@ -358,7 +363,7 @@ int read_features(void* in, example* ex)
 {
   vw* all = (vw*)in;
   example* ae = (example*)ex;
-  char *line=NULL;
+  char *line=nullptr;
   size_t num_chars_initial = readto(*(all->p->input), line, '\n');
   if (num_chars_initial < 1)
     return (int)num_chars_initial;

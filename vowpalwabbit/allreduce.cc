@@ -46,7 +46,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
 
   {
     char dotted_quad[INET_ADDRSTRLEN];
-    if (NULL == inet_ntop(AF_INET, &(far_end.sin_addr), dotted_quad, INET_ADDRSTRLEN)) {
+    if (nullptr == inet_ntop(AF_INET, &(far_end.sin_addr), dotted_quad, INET_ADDRSTRLEN)) {
       cerr << "inet_ntop: " << strerror(errno) << endl;
       throw exception();
     }
@@ -92,6 +92,12 @@ socket_t getsock()
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
       cerr << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 #endif
+
+  // Enable TCP Keep Alive to prevent socket leaks
+  int enableTKA = 1;
+  if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
+    cerr << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
+
   return sock;
 }
 
@@ -107,7 +113,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
 
   struct hostent* master = gethostbyname(master_location.c_str());
 
-  if (master == NULL) {
+  if (master == nullptr) {
     cerr << "gethostbyname(" << master_location << "): " << strerror(errno) << endl;
     throw exception();
   }
@@ -195,7 +201,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
     cerr << "read parent_ip failed!" << endl;
   else {
     char dotted_quad[INET_ADDRSTRLEN];
-    if (NULL == inet_ntop(AF_INET, (char*)&parent_ip, dotted_quad, INET_ADDRSTRLEN)) {
+    if (nullptr == inet_ntop(AF_INET, (char*)&parent_ip, dotted_quad, INET_ADDRSTRLEN)) {
       cerr << "read parent_ip=" << parent_ip << "(inet_ntop: " << strerror(errno) << ")" << endl;
     } else
       cerr << "read parent_ip=" << dotted_quad << endl;
@@ -235,7 +241,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
 }
 
 
-void pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos, const socket_t * child_sockets, const size_t n) {
+void pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos, const socket_t * child_sockets) {
 
   size_t my_bufsize = min(ar_buf_size, (parent_read_pos - children_sent_pos));
 
@@ -267,7 +273,7 @@ void broadcast(char* buffer, const size_t n, const socket_t parent_sock, const s
 
    while (parent_read_pos < n || children_sent_pos < n)
     {
-      pass_down(buffer, parent_read_pos, children_sent_pos, child_sockets, n);
+      pass_down(buffer, parent_read_pos, children_sent_pos, child_sockets);
       if(parent_read_pos >= n && children_sent_pos >= n) break;
 
       if (parent_sock != -1) {

@@ -32,10 +32,6 @@ namespace COST_SENSITIVE {
 
   bool example_is_test(example& ec);
 
-  void print_update(vw& all, bool is_test, example& ec, const v_array<example*> *ec_seq);
-}
-
-namespace CSOAA_AND_WAP_LDF {
-  void global_print_newline(vw& all);
-  void output_example(vw& all, example& ec, bool& hit_loss);
+  void print_update(vw& all, bool is_test, example& ec, const v_array<example*> *ec_seq, bool multilabel = false);
+  bool ec_is_example_header(example& ec);  // example headers look like "0:-1" or just "shared"
 }

@@ -4,13 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <stdint.h>
-#include "parse_primitives.h"
-#include "v_array.h"
-#include "example.h"
-#include "simple_label.h"  
 #include "gd.h"  
-#include "global_data.h"  
-#include "memory.h"
   
 int compare_feature(const void* p1, const void* p2) {  
   feature* f1 = (feature*) p1;  
@@ -51,7 +45,7 @@ audit_data copy_audit_data(audit_data &src) {
 }
 
 namespace VW {
-void copy_example_label(example* dst, example* src, size_t label_size, void(*copy_label)(void*,void*)) {
+void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(void*,void*)) {
   if (copy_label)
     copy_label(&dst->l, &src->l);   // TODO: we really need to delete_label on dst :(
   else
@@ -128,7 +122,7 @@ namespace VW {
 
 void return_features(feature* f)
 {
-	if (f != NULL)
+	if (f != nullptr)
 		free(f);
 }
 }
@@ -174,10 +168,10 @@ void free_flatten_example(flat_example* fec)
     }
 }
 
-example *alloc_examples(size_t label_size, size_t count=1)
+example *alloc_examples(size_t, size_t count = 1)
 {
   example* ec = calloc_or_die<example>(count);
-  if (ec == NULL) return NULL;
+  if (ec == nullptr) return nullptr;
   for (size_t i=0; i<count; i++) {
     ec[i].in_use = true;
     ec[i].ft_offset = 0;
@@ -186,10 +180,13 @@ example *alloc_examples(size_t label_size, size_t count=1)
   return ec;
 }
 
-void dealloc_example(void(*delete_label)(void*), example&ec)
+void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*))
 {
   if (delete_label)
     delete_label(&ec.l);
+
+  if (delete_prediction)
+    delete_prediction(&ec.pred);
 
   ec.tag.delete_v();
       
