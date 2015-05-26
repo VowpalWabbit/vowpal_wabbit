@@ -42,7 +42,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   ec.l.multilabels = multilabels;
 }
 
-  void finish_example(vw& all, oaa& c, example& ec)
+  void finish_example(vw& all, oaa&, example& ec)
   {
     MULTILABEL::output_example(all, ec);
     VW::finish_example(all, &ec);

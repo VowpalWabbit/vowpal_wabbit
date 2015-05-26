@@ -50,6 +50,7 @@ namespace po = boost::program_options;
 #include "unique_sort.h"
 #include "constant.h"
 #include "vw.h"
+#include "interactions.h"
 
 using namespace std;
 
@@ -489,6 +490,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 #ifdef _WIN32
 		throw exception();
 #else
+		fclose(stdin);
 	  // weights will be shared across processes, accessible to children
 	  float* shared_weights =
 	    (float*)mmap(0,(all.length() << all.reg.stride_shift) * sizeof(float),
@@ -612,14 +614,14 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	    cerr << "Reading datafile = " << temp << endl;
 	  try
 	  {
-		  int f = all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
+	  int f = all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
 	  }
 	  catch (exception const& ex)
-	  {
+	    {
 		  if (temp.size() != 0)
 		  {
-			  cerr << "can't open '" << temp << "', sailing on!" << endl;
-		  }
+			cerr << "can't open '" << temp << "', sailing on!" << endl;
+	    }
 		  else
 		  {
 			  throw ex;
@@ -829,9 +831,11 @@ void setup_example(vw& all, example* ae)
   if (all.add_constant) {
     //add constant feature
     ae->indices.push_back(constant_namespace);
-    feature temp = {1,(uint32_t) constant};
+    feature temp = {1.f,(uint32_t) constant};
     ae->atomics[constant_namespace].push_back(temp);
     ae->total_sum_feat_sq++;
+
+    if (all.audit || all.hash_inv) ae->audit_features[constant_namespace].push_back({nullptr,(char*)"Constant",(uint32_t)constant, 1.,false});
   }
 
   if(all.limit_strings.size() > 0)
@@ -855,22 +859,12 @@ void setup_example(vw& all, example* ae)
       ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
     }
 
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
-    {
-      ae->num_features 
-	+= ae->atomics[(int)(*i)[0]].size()
-	*ae->atomics[(int)(*i)[1]].size();
-      ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]]*ae->sum_feat_sq[(int)(*i)[1]];
-    }
+  size_t new_features_cnt;
+  float new_features_sum_feat_sq;
+  INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
+  ae->num_features += new_features_cnt;
+  ae->total_sum_feat_sq += new_features_sum_feat_sq;
   
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
-    {
-      ae->num_features 
-	+= ae->atomics[(int)(*i)[0]].size()
-	*ae->atomics[(int)(*i)[1]].size()
-	*ae->atomics[(int)(*i)[2]].size();
-      ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]] * ae->sum_feat_sq[(int)(*i)[1]] * ae->sum_feat_sq[(int)(*i)[2]];
-    }
 }
 }
 
@@ -903,6 +897,7 @@ namespace VW{
     ec->atomics[cns].push_back(temp);
     ec->total_sum_feat_sq++;
     ec->num_features++;
+    if (vw.audit || vw.hash_inv) ec->audit_features[constant_namespace].push_back({nullptr,(char*)"Constant",(uint32_t)constant, 1.,false});
   }
 
   void add_label(example* ec, float label, float weight, float base)
@@ -915,7 +910,7 @@ namespace VW{
   example* import_example(vw& all, string label, primitive_feature_space* features, size_t len)
   {
     example* ret = get_unused_example(all);
-	all.p->lp.default_label(&ret->l);
+    all.p->lp.default_label(&ret->l);
 
 	if (label.length() > 0)
 		parse_example_label(all, *ret, label);

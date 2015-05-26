@@ -17,7 +17,7 @@ These prerequisites are usually pre-installed on many platforms. However, you ma
 manager (*yum*, *apt*, *MacPorts*, *brew*, ...) to install missing software.
 
 - [Boost](http://www.boost.org) library, with the `Boost::Program_Options` library option enabled.
-- GNU *autotools*: *autoconf*, *automake*, *libtool*, *autoheader*, et. al. This is not a strict prereq. On many systems (notably Ubuntu with `libboost-dev` installed), the provided `Makefile` works fine.
+- GNU *autotools*: *autoconf*, *automake*, *libtool*, *autoheader*, et. al. This is not a strict prereq. On many systems (notably Ubuntu with `libboost-program-options-dev` installed), the provided `Makefile` works fine.
 - (optional) [git](http://git-scm.com) if you want to check out the latest version of *vowpal wabbit*,
   work on the code, or even contribute code to the main project.
 
@@ -85,8 +85,16 @@ On Ubuntu/Debian/Mint and similar the following sequence should work
 for building the latest from github:
 
 ```
-apt-get install libboost-dev
+# -- Get libboost program-options:
+apt-get install libboost-program-options-dev
+
+# -- Get the python libboost bindings (python subdir) - optional:
+apt-get install libboost-python-dev
+
+# -- Get the vw source:
 git clone git://github.com/JohnLangford/vowpal_wabbit.git
+
+# -- Build:
 cd vowpal_wabbit
 make
 make test       # (optional)
@@ -107,10 +115,10 @@ make CXX=clang++
 
 A statically linked `vw` executable that is not sensitive to boost
 version upgrades and can be safely copied between different Linux
-versions (e.g. even from Ubuntu the Red Hat) can be built and tested with:
+versions (e.g. even from Ubuntu to Red-Hat) can be built and tested with:
 
 ```
-make CXX='clang++ -static' clean vw test     # you may ignore warnings
+make CXX='clang++ -static' clean vw test     # ignore warnings
 ```
 
 ## Mac OS X-specific info

@@ -68,7 +68,7 @@ using namespace CB;
     return nullptr;
   }
 
-  void gen_cs_example_ips(cb& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
+  void gen_cs_example_ips(cb& c, CB::label& ld, COST_SENSITIVE::label& cs_ld)
   {//this implements the inverse propensity score method, where cost are importance weighted by the probability of the chosen action
     //generate cost-sensitive example
     cs_ld.costs.erase();
@@ -250,7 +250,7 @@ using namespace CB;
     switch(c.cb_type)
     {
       case CB_TYPE_IPS:
-        gen_cs_example_ips(c,ec,ld,c.cb_cs_ld);
+        gen_cs_example_ips(c,ld,c.cb_cs_ld);
         break;
       case CB_TYPE_DM:
         gen_cs_example_dm<is_learn>(c,ec,c.cb_cs_ld);
@@ -278,12 +278,12 @@ using namespace CB;
       }
   }
 
-  void predict_eval(cb& c, base_learner& base, example& ec) {
+  void predict_eval(cb&, base_learner&, example&) {
     cout << "can not use a test label for evaluation" << endl;
     throw exception();
   }
 
-  void learn_eval(cb& c, base_learner& base, example& ec) {
+  void learn_eval(cb& c, base_learner&, example& ec) {
     CB_EVAL::label ld = ec.l.cb_eval;
     
     c.known_cost = get_observed_cost(ld.event);
@@ -291,7 +291,7 @@ using namespace CB;
     if (c.cb_type == CB_TYPE_DR)
       gen_cs_example_dr<true>(c, ec, ld.event, c.cb_cs_ld);
     else //c.cb_type == CB_TYPE_IPS
-      gen_cs_example_ips(c, ec, ld.event, c.cb_cs_ld);
+      gen_cs_example_ips(c, ld.event, c.cb_cs_ld);
     
     for (size_t i=0; i<ld.event.costs.size(); i++)
       ld.event.costs[i].partial_prediction = c.cb_cs_ld.costs[i].partial_prediction;

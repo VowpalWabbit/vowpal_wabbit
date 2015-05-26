@@ -11,13 +11,17 @@ namespace Microsoft.Research.MachineLearning.Serializer
         private readonly VowpalWabbitSerializer<TExample> serializer;
         private readonly IVowpalWabbitExample example;
 
-        internal VowpalWabbitCachedExample(VowpalWabbitSerializer<TExample> serializer, IVowpalWabbitExample example)
+        internal VowpalWabbitCachedExample(VowpalWabbitSerializer<TExample> serializer, TExample source, IVowpalWabbitExample example)
         {
             this.serializer = serializer;
             this.example = example;
+            this.Source = source;
+            this.LastRecentUse = DateTime.Now;
         }
 
-        internal int UsageCounter { get; set; }
+        internal TExample Source { get; private; }
+
+        internal DateTime LastRecentUse { get; set; }
 
         public float CostSensitivePrediction
         {

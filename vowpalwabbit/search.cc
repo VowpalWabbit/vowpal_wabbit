@@ -568,7 +568,7 @@ namespace Search {
     return false;
   }
 
-  void add_example_conditioning(search_private& priv, example& ec, const ptag* condition_on, size_t condition_on_cnt, const char* condition_on_names, const action* condition_on_actions) {
+  void add_example_conditioning(search_private& priv, example& ec, size_t condition_on_cnt, const char* condition_on_names, const action* condition_on_actions) {
     if (condition_on_cnt == 0) return;
 
     uint32_t extra_offset=0;
@@ -973,7 +973,7 @@ namespace Search {
     return memcmp(A, B, sz_A) == 0;
   }
 
-  void free_key(unsigned char* mem, scored_action a) { free(mem); }
+  void free_key(unsigned char* mem, scored_action) { free(mem); }
   void clear_cache_hash_map(search_private& priv) {
     priv.cache_hash_map.iter(free_key);
     priv.cache_hash_map.clear();
@@ -1043,7 +1043,7 @@ namespace Search {
       ec.example_t = priv.total_example_t;
       polylabel old_label = ec.l;
       ec.l = losses; // labels;
-      if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.begin, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
+      if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
       cdbg << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cdbg << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x; cdbg << " ]" << endl;
       for (size_t is_global_train=0; is_global_train<=(size_t) priv.xv; is_global_train++) {
         int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_global_train > 0);
@@ -1061,7 +1061,7 @@ namespace Search {
       if (add_conditioning)
         for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
           example& ec = priv.learn_ec_ref[a];
-          add_example_conditioning(priv, ec, priv.learn_condition_on.begin, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
+          add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
         }
 
       for (size_t is_global_train=0; is_global_train<= (size_t)priv.xv; is_global_train++) {
@@ -1311,7 +1311,7 @@ namespace Search {
           size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 1 : 0;
           if (priv.auto_condition_features)
             for (size_t n=start_K; n<ec_cnt; n++)
-              add_example_conditioning(priv, ecs[n], condition_on, condition_on_cnt, condition_on_names, priv.condition_on_actions.begin);
+              add_example_conditioning(priv, ecs[n], condition_on_cnt, condition_on_names, priv.condition_on_actions.begin);
 
           if (((!skip) && (policy >= 0)) || need_fea)   // only make a prediction if we're going to use the output
             a = priv.is_ldf ? single_prediction_LDF(priv, ecs, ec_cnt, learner, a_cost, need_fea ? a : (action)-1)
@@ -1866,7 +1866,7 @@ namespace Search {
   bool uint32_equal(uint32_t a, uint32_t b) { return a==b; }
   bool size_equal(size_t a, size_t b) { return a==b; }
 
-  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) {
+  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool /*default_to_cmdline*/, bool(*/*equal*/)(T,T), const char* /*mismatch_error_string*/, const char* required_error_string) {
     if (vm.count(opt_name)) {
       ret = vm[opt_name].as<T>();
       *all.file_options << " --" << opt_name << " " << ret;
@@ -1877,7 +1877,7 @@ namespace Search {
     }
   }
 
-  void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string) {
+  void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool /*default_to_cmdline*/, const char* /*mismatch_error_string*/) {
     if (vm.count(opt_name)) {
       ret = true;
       *all.file_options << " --" << opt_name;
@@ -2302,7 +2302,7 @@ namespace Search {
 
 
   void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
-  void search::add_program_options(po::variables_map& vw, po::options_description& opts) { add_options( *this->priv->all, opts ); }
+  void search::add_program_options(po::variables_map& /*vw*/, po::options_description& opts) { add_options( *this->priv->all, opts ); }
 
   size_t search::get_mask() { return this->priv->all->reg.weight_mask;}
   size_t search::get_stride_shift() { return this->priv->all->reg.stride_shift;}

@@ -3,7 +3,6 @@
   individual contributors. All rights reserved.  Released under a BSD
   license as described in the file LICENSE.
 */
-#pragma warning (disable : 4267)  // mixed use of size_t and uint32_t
 #pragma once
 #ifdef __FreeBSD__
 #include <sys/socket.h>
@@ -11,6 +10,7 @@
 
 #include "parse_regressor.h"
 #include "constant.h"
+#include "interactions.h"
 
 namespace GD{
   LEARNER::base_learner* setup(vw& all);
@@ -48,15 +48,15 @@ namespace GD{
   template <class R, void (*T)(R&, const float, float&)>
   inline void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R& dat, uint32_t offset=0, float mult=1.)
   {
-    for (feature* f = begin; f!= end; f++)
+    for (feature* f = begin; f != end; ++f)
       T(dat, mult*f->x, weight_vector[(f->weight_index + offset) & weight_mask]);
   }
 
   // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_index)
   template <class R, void (*T)(R&, float, uint32_t)>
-   void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R&dat, uint32_t offset=0, float mult=1.)
+   void foreach_feature(weight* /*weight_vector*/, size_t /*weight_mask*/, feature* begin, feature* end, R&dat, uint32_t offset=0, float mult=1.)
    {
-     for (feature* f = begin; f!= end; f++)
+     for (feature* f = begin; f != end; ++f)
        T(dat, mult*f->x, f->weight_index + offset);
    }
  
@@ -70,34 +70,7 @@ namespace GD{
     for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
       foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[*i].begin, ec.atomics[*i].end, dat, offset);
      
-    for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
-      if (ec.atomics[(unsigned char)(*i)[0]].size() > 0) {
-        v_array<feature> temp = ec.atomics[(unsigned char)(*i)[0]];
-        for (; temp.begin != temp.end; temp.begin++)
-        {
-          uint32_t halfhash = quadratic_constant * (temp.begin->weight_index) + offset;
-       
-          foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(unsigned char)(*i)[1]].begin, ec.atomics[(unsigned char)(*i)[1]].end, dat, 
-                               halfhash, temp.begin->x);
-        }
-      }
-    }
-
-    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-      if ((ec.atomics[(unsigned char)(*i)[0]].size() == 0) || (ec.atomics[(unsigned char)(*i)[1]].size() == 0) || (ec.atomics[(unsigned char)(*i)[2]].size() == 0)) { continue; }
-      v_array<feature> temp1 = ec.atomics[(unsigned char)(*i)[0]];
-      for (; temp1.begin != temp1.end; temp1.begin++) {
-        v_array<feature> temp2 = ec.atomics[(unsigned char)(*i)[1]];
-        for (; temp2.begin != temp2.end; temp2.begin++) {
-
-          uint32_t a = temp1.begin->weight_index;
-          uint32_t b = temp2.begin->weight_index;
-          uint32_t halfhash = cubic_constant2 * (cubic_constant * a + b) + offset;
-          float mult = temp1.begin->x * temp2.begin->x;
-          foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(unsigned char)(*i)[2]].begin, ec.atomics[(unsigned char)(*i)[2]].end, dat, halfhash, mult);
-        }
-      }
-    }
+    INTERACTIONS::generate_interactions<R,S,T>(all, ec, dat);
   }
 
   // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x, feature_weight)

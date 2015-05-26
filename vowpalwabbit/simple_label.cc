@@ -9,7 +9,7 @@
 
 using namespace std;
 
-char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
+char* bufread_simple_label(shared_data*, label_data* ld, char* c)
 {
   memcpy(&ld->label, c, sizeof(ld->label));
   c += sizeof(ld->label);
@@ -67,11 +67,11 @@ void default_simple_label(void* v)
   ld->initial = 0.;
 }
 
-void delete_simple_label(void* v)
+void delete_simple_label(void*)
 {
 }
 
-void parse_simple_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
+void parse_simple_label(parser*, shared_data*, void* v, v_array<substring>& words)
 {
   label_data* ld = (label_data*)v;
 

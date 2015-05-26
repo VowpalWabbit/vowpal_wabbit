@@ -10,19 +10,22 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using MoreLinq;
 using Microsoft.Research.MachineLearning.Serializer.Attributes;
 
 namespace Microsoft.Research.MachineLearning.Serializer
 {
     public sealed class VowpalWabbitSerializer<TExample> : IDisposable
     {
+        private readonly int maxCacheSize;
+
         private readonly Func<TExample, IVowpalWabbitExample> serializer;
 
-        // TODO: replace with MemoryCache
         private Dictionary<TExample, VowpalWabbitCachedExample<TExample>> exampleCache;
 
-        internal VowpalWabbitSerializer(Func<TExample, IVowpalWabbitExample> serializer)
+        internal VowpalWabbitSerializer(Func<TExample, IVowpalWabbitExample> serializer, int maxCacheSize = int.MaxValue)
         {
+            this.maxCacheSize = maxCacheSize;
             this.serializer = serializer;
 
             var cacheableAttribute = (CacheableAttribute) typeof (TExample).GetCustomAttributes(typeof (CacheableAttribute), true).FirstOrDefault();
@@ -66,15 +69,14 @@ namespace Microsoft.Research.MachineLearning.Serializer
             }
 
             VowpalWabbitCachedExample<TExample> result;
-            if (!this.exampleCache.TryGetValue(example, out result))
+            if (this.exampleCache.TryGetValue(example, out result))
+            {
+                result.LastRecentUse = DateTime.Now;
+            }
+            else
             {
                 result = new VowpalWabbitCachedExample<TExample>(this, this.serializer(example));
                 this.exampleCache.Add(example, result);
-
-                // add IVowpalWabbitExample to catch IDispose transparently or hook into exampel?
-                // update count with every read
-                // sort on add, then discard the top ones (maybe have a grace ppoint to reduce the number of sorting)
-
             }
 
             return result;
@@ -90,22 +92,25 @@ namespace Microsoft.Research.MachineLearning.Serializer
         {
             if (disposing)
             {
-                var disposableDictionary = this.exampleCache as IDictionary<object, IDisposable>;
-                if (disposableDictionary != null)
+                foreach (var example in this.exampleCache.Values)
                 {
-                    foreach (var value in disposableDictionary.Values)
-                    {
-                        value.Dispose();
-                    }
-
-                    this.exampleCache = null;
+                    example.Value.Dispose();
                 }
+
+                this.exampleCache = null;
             }
         }
 
         internal void ReturnExampleToCache(VowpalWabbitCachedExample<TExample> example)
         {
-            throw new NotImplementedException();
+            // if we reach the cache boundary, dispose the oldest example
+            if (this.exampleCache.Count > this.maxCacheSize)
+            {
+                var minElement = this.exampleCache.MinBy(kv => kv.Value.LastRecentUse);
+                
+                this.exampleCache.Remove(example.Source);
+                minElement.Value.Dispose();
+            }
         }
     }
 }

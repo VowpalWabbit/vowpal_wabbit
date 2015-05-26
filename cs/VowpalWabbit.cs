@@ -35,6 +35,20 @@ namespace Microsoft.Research.MachineLearning
 
             return this.serializer.Serialize(example);    
         }
+
+        protected override void Dispose(bool isDiposing)
+        {
+            base.Dispose(isDiposing);
+
+            if (isDiposing)
+            {
+                if (this.serializer != null)
+                {
+                    this.serializer.Dispose();
+                    this.serializer = null;
+                }
+            }
+        }
     }
 
     public sealed class VowpalWabbit<TExample, TActionDependentFeature> : VowpalWabbit<TExample>
@@ -138,6 +152,20 @@ namespace Microsoft.Research.MachineLearning
                 foreach (var e in examples)
                 {
                     e.Dispose();
+                }
+            }
+        }
+
+        protected override void Dispose(bool isDiposing)
+        {
+            base.Dispose(isDiposing);
+
+            if (isDiposing)
+            {
+                if (this.actionDependentFeatureSerializer != null)
+                {
+                    this.actionDependentFeatureSerializer.Dispose();
+                    this.actionDependentFeatureSerializer = null;
                 }
             }
         }
