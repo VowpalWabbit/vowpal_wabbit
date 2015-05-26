@@ -490,6 +490,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 #ifdef _WIN32
 		throw exception();
 #else
+		fclose(stdin);
 	  // weights will be shared across processes, accessible to children
 	  float* shared_weights =
 	    (float*)mmap(0,(all.length() << all.reg.stride_shift) * sizeof(float),
