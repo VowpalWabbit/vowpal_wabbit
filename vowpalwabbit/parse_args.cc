@@ -585,10 +585,7 @@ void parse_feature_tweaks(vw& all)
                   else
                   { // wildcard found: redefine all except default and break
                       for (size_t i = 0; i < 256; i++)
-                      {
-                          if (i != ' ')
-                              all.redefine[i] = new_namespace;
-                      }
+                         all.redefine[i] = new_namespace;
                       break; //break processing S
                   }
               }

@@ -16,7 +16,7 @@ namespace INTERACTIONS
  */
 
 
-const unsigned char printable_start = '!';
+const unsigned char printable_start = ' ';
 const unsigned char printable_end   = '~';
 const uint32_t valid_ns_size = printable_end - printable_start - 1; // -1 to skip characters ':' and '|' excluded in is_valid_ns()
 
