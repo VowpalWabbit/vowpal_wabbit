@@ -17,7 +17,7 @@ namespace SVRG {
 struct svrg
 {
   int stage_size;               // Number of data passes per stage.
-  int prev_pass;                // To detect that we're in a new pass.
+  size_t prev_pass;             // To detect that we're in a new pass.
   int stable_grad_count;        // Number of data points that
                                 // contributed to the stable gradient
                                 // calculation.
