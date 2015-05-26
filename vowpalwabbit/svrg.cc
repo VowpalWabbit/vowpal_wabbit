@@ -17,7 +17,7 @@ namespace SVRG {
 struct svrg
 {
   int stage_size;               // Number of data passes per stage.
-  size_t prev_pass;             // To detect that we're in a new pass.
+  int prev_pass;                // To detect that we're in a new pass.
   int stable_grad_count;        // Number of data points that
                                 // contributed to the stable gradient
                                 // calculation.
@@ -106,7 +106,7 @@ void learn(svrg& s, base_learner& base, example& ec)
 
   predict(s, base, ec);
 
-  const size_t pass = s.all->passes_complete;
+  const int pass = (int) s.all->passes_complete;
 
   if (pass % (s.stage_size + 1) == 0) { // Compute exact gradient
     if (s.prev_pass != pass && !s.all->quiet) {
