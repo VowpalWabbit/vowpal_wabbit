@@ -95,7 +95,7 @@ public:
   }
 
   float getUnsafeUpdate(float prediction, float label,float eta_t,float pred_per_update) {
-    return 2.f*(label - prediction)*eta_t/pred_per_update;
+    return 2.f*eta_t*(label - prediction)/pred_per_update;
   }
   
   float getRevertingWeight(shared_data* sd, float prediction, float eta_t){
