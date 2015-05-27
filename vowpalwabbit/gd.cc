@@ -236,9 +236,16 @@ namespace GD
 
       if(dat.all.current_pass == 0 && dat.all.hash_inv)
       { //for invert_hash
-        if(!dat.all.name_index_map.count(ns_pre)) {
-          dat.all.name_index_map.insert(std::map< std::string, size_t>::value_type(ns_pre, index >> stride_shift));
-        }
+
+          if (dat.offset != 0)
+          {   // otherwise --oaa output no features for class > 0.
+              ostringstream tempstream;
+              tempstream << '[' << (dat.offset >> stride_shift) << ']';
+              ns_pre += tempstream.str();
+          }
+
+          if(!dat.all.name_index_map.count(ns_pre))
+              dat.all.name_index_map.insert(std::map< std::string, size_t>::value_type(ns_pre, index >> stride_shift));
       }
 
   }
