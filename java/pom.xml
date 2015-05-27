@@ -2,42 +2,27 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.EmergentOrder</groupId>
+    <groupId>vw</groupId>
     <artifactId>vw-jni-${os.version}-${os.arch}</artifactId>
     <version>1.0.3-SNAPSHOT</version>
     <name>Vowpal Wabbit JNI Layer</name>
-    <url>https://github.com/EmergentOrder/vowpal_wabbit</url>
+    <url>https://github.com/JohnLangford/vowpal_wabbit</url>
 
     <scm>
-    	<connection>scm:git:git@github.com:EmergentOrder/vowpal_wabbit.git</connection>
-    	<developerConnection>scm:git:git@github.com:EmergentOrder/vowpal_wabbit.git</developerConnection>
-    	<url>git@github.com:EmergentOrder/vowpal_wabbit.git</url>
-    </scm>
-
-    <scm>
-        <connection>scm:git:git@github.com:elevatedcareers/vowpal_wabbit.git</connection>
-        <url>git@github.com:elevatedcareers/vowpal_wabbit.git</url>
-        <developerConnection>scm:git:git@github.com:elevatedcareers/vowpal_wabbit.git</developerConnection>
-        <tag>HEAD</tag>
+    	<connection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</connection>
+    	<developerConnection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</developerConnection>
+    	<url>git@github.com:JohnLangford/vowpal_wabbit.git</url>
     </scm>
 
     <distributionManagement>
-        <!-- use the following if you're not using a snapshot version. -->
-        <repository>
-            <uniqueVersion>false</uniqueVersion>
-            <id>releases</id>
-            <name>Internal Releases</name>
-            <url>http://nexus.elevatedcareers.com:8081/nexus/content/repositories/releases</url>
-            <layout>default</layout>
-        </repository>
-
-        <!-- use the following if you ARE using a snapshot version. -->
         <snapshotRepository>
-            <id>snapshots</id>
-            <name>Internal Snapshots</name>
-            <url>http://nexus.elevatedcareers.com:8081/nexus/content/repositories/snapshots</url>
-            <layout>default</layout>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
     </distributionManagement>
 
     <properties>
@@ -201,11 +186,11 @@
                 <artifactId>maven-release-plugin</artifactId>
                 <version>2.5</version>
                 <configuration>
-    			<autoVersionSubmodules>true</autoVersionSubmodules>
-   			<useReleaseProfile>false</useReleaseProfile>
-    			<releaseProfiles>release</releaseProfiles>
-    			<goals>deploy</goals>
-  			</configuration>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <useReleaseProfile>false</useReleaseProfile>
+                    <releaseProfiles>release</releaseProfiles>
+                    <goals>deploy</goals>
+                </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>org.apache.maven.scm</groupId>
@@ -226,43 +211,29 @@
                 </executions>
             </plugin>
             <plugin>
-    		<groupId>org.sonatype.plugins</groupId>
-      		<artifactId>nexus-staging-maven-plugin</artifactId>
-      		<version>1.6.2</version>
-      		<extensions>true</extensions>
-      		<configuration>
-        		<serverId>ossrh</serverId>
-        		<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-        		<autoReleaseAfterClose>true</autoReleaseAfterClose>
-      		</configuration>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.2</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
     	    </plugin>
             <plugin>
-		<groupId>org.apache.maven.plugins</groupId>
-		<artifactId>maven-gpg-plugin</artifactId>
-	        <executions>
-		  <execution>
-			<id>sign-artifacts</id>
-			<phase>verify</phase>
-			<goals>
-				<goal>sign</goal>
-			</goals>
-		  </execution>
-		</executions>
-	    </plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-    <distributionManagement>
-        <snapshotRepository>
-    		<id>ossrh</id>
-    		<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-  	</snapshotRepository>
-	<repository>
-    		<id>ossrh</id>
-    		<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-  	</repository>
-
-
-
-
-    </distributionManagement>
 </project>
