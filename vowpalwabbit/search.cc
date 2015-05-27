@@ -143,6 +143,7 @@ namespace Search {
     bool last_example_was_newline; // used so we know when a block of examples has passed
     bool hit_new_pass;             // have we hit a new pass?
     bool force_oracle;             // insist on using the oracle to make predictions
+    float perturb_oracle;          // with this probability, choose a random action instead of oracle action
     
     // if we're printing to stderr we need to remember if we've printed the header yet
     // (i.e., we do this if we're driving)
@@ -279,12 +280,15 @@ namespace Search {
   // for two-fold cross validation, we double the number of learners
   // and send examples to one or the other depending on the xor of
   // (is_training) and (example_id % 2)
-  int select_learner(search_private& priv, int policy, size_t learner_id, bool is_gte, bool global_xv_train) {
+  int select_learner(search_private& priv, int policy, size_t learner_id, bool is_training, bool is_local) {
     if (policy<0) return policy;  // optimal policy
     else {
+      if (priv.xv) {
+        learner_id *= 3;
+        if (! is_local)
+          learner_id += 1 + ( is_training ^ (priv.all->sd->example_number % 2) );
+      }
       int p = (int) (policy*priv.num_learners+learner_id);
-      if (priv.xv && !global_xv_train)
-        p = 2*p + 1 + ( is_gte ^ (priv.all->sd->example_number % 2) );
       return p;
     }
   }
@@ -754,6 +758,8 @@ namespace Search {
   }
 
   action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* oracle_actions, size_t oracle_actions_cnt, const action* allowed_actions, size_t allowed_actions_cnt) {
+    if ((priv.perturb_oracle > 0.) && (priv.state == INIT_TRAIN) && (frand48() < priv.perturb_oracle))
+      oracle_actions_cnt = 0;
     action a = ( oracle_actions_cnt > 0) ?  oracle_actions[random(oracle_actions_cnt )] :
                (allowed_actions_cnt > 0) ? allowed_actions[random(allowed_actions_cnt)] :
                priv.is_ldf ? (action)random(ec_cnt) :
@@ -888,7 +894,7 @@ namespace Search {
       priv.empty_example->in_use = true;
       priv.base_learner->predict(*priv.empty_example);
 
-      //cerr << "partial_prediction[" << a << "] = " << ecs[a].partial_prediction << endl;
+      cdbg << "partial_prediction[" << a << "] = " << ecs[a].partial_prediction << endl;
 
       if (override_action != (action)-1) {
         if (a == override_action)
@@ -1045,8 +1051,8 @@ namespace Search {
       ec.l = losses; // labels;
       if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.begin, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
       cdbg << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cdbg << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x; cdbg << " ]" << endl;
-      for (size_t is_global_train=0; is_global_train<=priv.xv; is_global_train++) {
-        int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_global_train);
+      for (size_t is_local=0; is_local<=priv.xv; is_local++) {
+        int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local);
         ec.in_use = true;
         priv.base_learner->learn(ec, learner);
       }
@@ -1065,8 +1071,8 @@ namespace Search {
           add_example_conditioning(priv, ec, priv.learn_condition_on.begin, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
         }
 
-      for (size_t is_global_train=0; is_global_train<=priv.xv; is_global_train++) {
-        int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_global_train);
+      for (size_t is_local=0; is_local<=priv.xv; is_local++) {
+        int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local);
 
         for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
           example& ec = priv.learn_ec_ref[a];
@@ -1295,7 +1301,7 @@ namespace Search {
       bool need_fea = (policy == -1) && priv.metaoverride && priv.metaoverride->_foreach_action;
       
       if ((policy >= 0) || gte_here || need_fea) { // the last case is we need to do foreach action
-        int learner = select_learner(priv, policy, learner_id, false, priv.state == INIT_TEST);
+        int learner = select_learner(priv, policy, learner_id, false, priv.state != INIT_TEST);
 
         ensure_size(priv.condition_on_actions, condition_on_cnt);
         for (size_t i=0; i<condition_on_cnt; i++)
@@ -1741,7 +1747,10 @@ namespace Search {
     priv.test_loss = 0.;
     priv.learn_loss = 0.;
     priv.train_loss = 0.;
-
+    
+    priv.force_oracle = false;
+    priv.perturb_oracle = 0.;
+    
     priv.last_example_was_newline = false;
     priv.hit_new_pass = false;
 
@@ -2002,6 +2011,7 @@ namespace Search {
 
         ("search_no_caching",                             "turn off the built-in caching ability (makes things slower, but technically more safe)")
         ("search_xv",                                     "train two separate policies, alternating prediction/learning")
+        ("search_perturb_oracle",    po::value<float>(),  "perturb the oracle on rollin with this probability (def: 0)")
         ;
     add_options(all);
     po::variables_map& vm = all.vm;
@@ -2038,6 +2048,7 @@ namespace Search {
 
     if (vm.count("search_passes_per_policy"))       priv.passes_per_policy    = vm["search_passes_per_policy"].as<size_t>();
     if (vm.count("search_xv"))                      priv.xv       = true;
+    if (vm.count("search_perturb_oracle"))          priv.perturb_oracle       = vm["search_perturb_oracle"].as<float>();
 
     if (vm.count("search_alpha"))                   priv.alpha                = vm["search_alpha"            ].as<float>();
     if (vm.count("search_beta"))                    priv.beta                 = vm["search_beta"             ].as<float>();
@@ -2216,6 +2227,8 @@ namespace Search {
     all.searchstr = &sch;
 
     priv.start_clock_time = clock();
+
+    if (priv.xv) priv.num_learners *= 3;
 
     learner<search>& l = init_learner(&sch, base,
                                       search_predict_or_learn<true>,

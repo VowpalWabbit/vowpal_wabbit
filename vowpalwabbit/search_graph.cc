@@ -333,13 +333,13 @@ namespace GraphTask {
         if (add_features) add_edge_features(sch, D, n, ec);
         Search::predictor P = Search::predictor(sch, n+1);
         P.set_input(*ec[n]);
-        if (k > 0) {
+        if (false && (k > 0)) {
           float min_count = 1e12;
           for (size_t k2=1; k2<=D.K; k2++)
             min_count = min(min_count, D.true_counts[k2]);
-          //float w = min_count / D.true_counts[k];
-          float w = D.true_counts_total / D.true_counts[k] / (float)(D.K);
-          //P.set_weight( sqrt(w) );
+          float w = min_count / D.true_counts[k];
+          //float w = D.true_counts_total / D.true_counts[k] / (float)(D.K);
+          P.set_weight( w );
           //cerr << "w = " << D.true_counts_total / D.true_counts[k] / (float)(D.K) << endl;
           //P.set_weight( D.true_counts_total / D.true_counts[k] / (float)(D.K) );
         }

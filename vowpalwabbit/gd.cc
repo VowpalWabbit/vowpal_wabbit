@@ -383,8 +383,9 @@ float finalize_prediction(shared_data* sd, float ret)
 //   cerr << '\t' << fx << ':' << fw << '@' << w[1];
 // }
 
-  inline void vec_add_print(float&p, float fx, uint32_t i) {
-    cerr << '\t' << i << ':' << fx;
+  inline void vec_add_print(float&p, const float fx, float& fw) {
+    p += fw * fx;
+    cerr << " + " << fw << "*" << fx;
   }
   
   
@@ -396,17 +397,18 @@ void predict(gd& g, base_learner& base, example& ec)
   if (l1)
     ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);
   else
-    ec.partial_prediction = inline_predict(all, ec);    
+    ec.partial_prediction = inline_predict(all, ec);
+  // { ec.partial_prediction = ec.l.simple.initial;
+  //   cerr << "vec_add_print: [";
+  //   foreach_feature<float,vec_add_print>(all, ec, ec.partial_prediction);
+  //   cerr << "]" << endl;
+  // }
   
   ec.partial_prediction *= (float)all.sd->contraction;
-  bool wasNAN = nanpattern(ec.partial_prediction);
+  //bool wasNAN = nanpattern(ec.partial_prediction);
   ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
-  if (audit&&wasNAN) {
+  if (audit)
     print_audit_features(all, ec);
-    /*    float temp = 0.;
-    foreach_feature<float, vec_add_print>(all, ec, temp);
-    cerr << endl; */
-  }
 }
 
 inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
