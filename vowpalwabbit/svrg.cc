@@ -106,7 +106,7 @@ void learn(svrg& s, base_learner& base, example& ec)
 
   predict(s, base, ec);
 
-  const size_t pass = s.all->passes_complete;
+  const int pass = (int) s.all->passes_complete;
 
   if (pass % (s.stage_size + 1) == 0) { // Compute exact gradient
     if (s.prev_pass != pass && !s.all->quiet) {

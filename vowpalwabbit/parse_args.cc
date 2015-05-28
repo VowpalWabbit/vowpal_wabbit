@@ -575,7 +575,7 @@ void parse_feature_tweaks(vw& all)
           // case ':=S' doesn't require any additional code as new_namespace = ' ' by default
 
           if (operator_pos == arg_len) // S is empty, default namespace shall be used
-              all.redefine[' '] = new_namespace;
+              all.redefine[(int) ' '] = new_namespace;
           else
               for (size_t i = operator_pos; i < arg_len; i++)
               { // all namespaces from S are redefined to N

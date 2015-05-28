@@ -2072,22 +2072,22 @@ namespace Search {
     if (vm.count("search_rollout")) rollout_string = vm["search_rollout"].as<string>();
     if (vm.count("search_rollin" )) rollin_string  = vm["search_rollin" ].as<string>();
 
-    if      (rollout_string.compare("policy") == 0)          priv.rollout_method = POLICY;
-    else if (rollout_string.compare("oracle") == 0)          priv.rollout_method = ORACLE;
-    else if (rollout_string.compare("mix_per_state") == 0)   priv.rollout_method = MIX_PER_STATE;
-    else if (rollout_string.compare("mix_per_roll") == 0)    priv.rollout_method = MIX_PER_ROLL;
-    else if (rollout_string.compare("none") == 0)          { priv.rollout_method = NO_ROLLOUT; priv.no_caching = true; if (!all.quiet) std::cerr << "no rollout!" << endl; }
+    if      ((rollout_string.compare("policy") == 0)       || (rollout_string.compare("learn") == 0))          priv.rollout_method = POLICY;
+    else if ((rollout_string.compare("oracle") == 0)       || (rollout_string.compare("ref") == 0))            priv.rollout_method = ORACLE;
+    else if ((rollout_string.compare("mix_per_state") == 0))                                                   priv.rollout_method = MIX_PER_STATE;
+    else if ((rollout_string.compare("mix_per_roll") == 0) || (rollout_string.compare("mix") == 0))            priv.rollout_method = MIX_PER_ROLL;
+    else if ((rollout_string.compare("none") == 0))          { priv.rollout_method = NO_ROLLOUT; priv.no_caching = true; if (!all.quiet) std::cerr << "no rollout!" << endl; }
     else {
-      std::cerr << "error: --search_rollout must be 'policy', 'oracle', 'mix_per_state', 'mix_per_roll' or 'none'" << endl;
+      std::cerr << "error: --search_rollout must be 'learn', 'ref', 'mix', 'mix_per_state' or 'none'" << endl;
       throw exception();
     }
 
-    if      (rollin_string.compare("policy") == 0)         priv.rollin_method = POLICY;
-    else if (rollin_string.compare("oracle") == 0)         priv.rollin_method = ORACLE;
-    else if (rollin_string.compare("mix_per_state") == 0)  priv.rollin_method = MIX_PER_STATE;
-    else if (rollin_string.compare("mix_per_roll") == 0)   priv.rollin_method = MIX_PER_ROLL;
+    if      ((rollin_string.compare("policy") == 0)       || (rollin_string.compare("learn") == 0))          priv.rollin_method = POLICY;
+    else if ((rollin_string.compare("oracle") == 0)       || (rollin_string.compare("ref") == 0))            priv.rollin_method = ORACLE;
+    else if ((rollin_string.compare("mix_per_state") == 0))                                                  priv.rollin_method = MIX_PER_STATE;
+    else if ((rollin_string.compare("mix_per_roll") == 0) || (rollin_string.compare("mix") == 0))            priv.rollin_method = MIX_PER_ROLL;
     else {
-      std::cerr << "error: --search_rollin must be 'policy', 'oracle', 'mix_per_state' or 'mix_per_roll'" << endl;
+      std::cerr << "error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'" << endl;
       throw exception();
     }
 

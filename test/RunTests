@@ -944,7 +944,7 @@ __DATA__
     train-sets/ref/lda-2pass-hang.stderr
 
 # Test 43: search sequence labeling, non-ldf train
-{VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout oracle --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off -f models/sequence_data.model
+{VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off -f models/sequence_data.model
     train-sets/ref/sequence_data.nonldf.train.stderr
 
 # Test 44: search sequence labeling, non-ldf test
@@ -957,7 +957,7 @@ __DATA__
     train-sets/ref/search_small2.stderr
 
 # Test 46: search sequence labeling, ldf train
-{VW} -k -c -d train-sets/sequence_data --passes 20 --search_rollout oracle --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.ldf.model
+{VW} -k -c -d train-sets/sequence_data --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.ldf.model
     train-sets/ref/sequence_data.ldf.train.stderr
 
 # Test 47: search sequence labeling, ldf test
@@ -975,7 +975,7 @@ __DATA__
     train-sets/ref/sequencespan_data.nonldf.test.predict
 
 # Test 50: search sequence SPAN labeling BILOU, non-ldf train
-{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout oracle --search_alpha 1e-8 --search_task sequencespan --search_span_bilou --search 7 --holdout_off -f models/sequencespan_data.model
+{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequencespan --search_span_bilou --search 7 --holdout_off -f models/sequencespan_data.model
     train-sets/ref/sequencespan_data.nonldf-bilou.train.stderr
 
 # Test 51: search sequence SPAN labeling BILOU, non-ldf test
@@ -984,7 +984,7 @@ __DATA__
     train-sets/ref/sequencespan_data.nonldf-bilou.test.predict
 
 # Test 52: silly test for "argmax" task
-{VW} -d train-sets/argmax_data -k -c --passes 20 --search_rollout oracle --search_alpha 1e-8 --search_task argmax --search 2 --holdout_off
+{VW} -d train-sets/argmax_data -k -c --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task argmax --search 2 --holdout_off
     train-sets/ref/argmax_data.stderr
 
 # Test 53: (holdout-broken regression)
@@ -1052,7 +1052,7 @@ __DATA__
     train-sets/ref/search_er.stderr
 
 # Test 66: Train a depenency parser with search (dagger) on wsj_small.dparser.vw.gz for 2 passes
-{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout oracle --holdout_off
+{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout ref --holdout_off
     train-sets/ref/search_dep_parser.stderr
 
 # Test 67: classification with data from dictionaries (eg embeddings or gazetteers) -- note that this is impossible without dictionaries because --ignore w
