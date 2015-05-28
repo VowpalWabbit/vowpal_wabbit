@@ -34,7 +34,7 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, hard
   #if namespaces = NULL, define a unique namespace
   if(is.null(namespaces))
   {
-    all_vars = colnames(data)[colnames(data) != target]
+    all_vars = colnames(data)[!colnames(data) %in% c(target, weight)]
     namespaces <- list(A = list(varName = all_vars, keepSpace=F)) 
   }
    
