@@ -23,7 +23,7 @@ public class VWScorer implements Closeable {
         }
     }
 
-    private AtomicBoolean isClosed;
+    private final AtomicBoolean isClosed;
 
     public VWScorer(String command) {
         isClosed = new AtomicBoolean(false);
