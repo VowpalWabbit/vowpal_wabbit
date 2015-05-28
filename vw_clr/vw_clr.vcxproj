@@ -149,8 +149,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp" />
-    <ClCompile Include="vw_clr.cpp" />
+    <ClCompile Include="vw_base.cpp" />
+    <ClCompile Include="vw.cpp" />
     <ClCompile Include="vw_example.cpp" />
+    <ClCompile Include="vw_examplebuilder.cpp" />
+    <ClCompile Include="vw_model.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\vowpalwabbit\vw_static.vcxproj">

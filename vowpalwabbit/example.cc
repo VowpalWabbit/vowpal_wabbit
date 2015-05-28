@@ -168,6 +168,7 @@ void free_flatten_example(flat_example* fec)
     }
 }
 
+namespace VW {
 example *alloc_examples(size_t, size_t count = 1)
 {
   example* ec = calloc_or_die<example>(count);
@@ -210,4 +211,4 @@ void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_predic
     }
   ec.indices.delete_v();
 }
-
+}

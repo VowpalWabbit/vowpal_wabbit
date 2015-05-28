@@ -12,7 +12,7 @@ using System.Linq.Expressions;
 namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 {
     /// <summary>
-    /// Intermediate representation of a Feature.
+    /// Feature data composed during compilation step.
     /// </summary>
     internal sealed class FeatureExpression
     {

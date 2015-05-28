@@ -12,6 +12,9 @@ using System.Linq;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Reflection
 {
+    /// <summary>
+    /// Models a distance and additional matching constraints for a type.
+    /// </summary>
     internal sealed class TypeMatch
     {
         internal TypeMatch(int distance)

@@ -14,7 +14,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Attributes
     /// Annotate an example class that's generated output should be cached.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class CacheableAttribute : Attribute
+    public sealed class CacheableAttribute : Attribute
     {
         /// <summary>
         /// Specify an equality comparer to be used for the dictionary cache.

@@ -90,7 +90,7 @@ void parse_dictionary_argument(vw&all, string str) {
   feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
   
   // TODO: handle gzipped dictionaries
-  example *ec = alloc_examples(all.p->lp.label_size, 1);
+  example *ec = VW::alloc_examples(all.p->lp.label_size, 1);
   ifstream infile(s);
   size_t def = (size_t)' ';
   for (string line; getline(infile, line);) {
@@ -126,7 +126,7 @@ void parse_dictionary_argument(vw&all, string str) {
     ec->tag.erase(); ec->indices.erase();
     for (size_t i=0; i<256; i++) { ec->atomics[i].erase(); ec->audit_features[i].erase(); }
   }
-  dealloc_example(all.p->lp.delete_label, *ec);
+  VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
   
   cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");

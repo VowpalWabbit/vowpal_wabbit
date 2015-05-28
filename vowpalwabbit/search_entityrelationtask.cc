@@ -62,7 +62,7 @@ namespace EntityRelationTask {
     if(my_task_data->search_order != 3 && my_task_data->search_order != 4 ) {
       sch.set_options(0);
     } else {
-      example* ldf_examples = alloc_examples(sizeof(CS::label), 10);
+      example* ldf_examples = VW::alloc_examples(sizeof(CS::label), 10);
       CS::wclass default_wclass = { 0., 0, 0., 0. };
       for (size_t a=0; a<10; a++) {
         ldf_examples[a].l.cs.costs.push_back(default_wclass);
@@ -84,7 +84,7 @@ namespace EntityRelationTask {
     my_task_data->y_allowed_relation.delete_v();
     if(my_task_data->search_order == 3) {
       for (size_t a=0; a<10; a++)
-        dealloc_example(CS::cs_label.delete_label, my_task_data->ldf_entity[a]);
+        VW::dealloc_example(CS::cs_label.delete_label, my_task_data->ldf_entity[a]);
       free(my_task_data->ldf_entity);
     }
     delete my_task_data;

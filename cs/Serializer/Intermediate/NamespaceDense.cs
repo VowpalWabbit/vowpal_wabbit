@@ -12,10 +12,20 @@ using Microsoft.Research.MachineLearning.Serializer.Interfaces;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 {
-    public class NamespaceDense<TFeature, TNamespaceResult> : Namespace, INamespaceDense<TFeature>, IVisitableNamespace<TNamespaceResult>
+    /// <summary>
+    /// The intermediate representation of a dense namespace.
+    /// </summary>
+    /// <typeparam name="TFeature">The element type of the dense features.</typeparam>
+    public sealed class NamespaceDense<TFeature> : Namespace, INamespaceDense<TFeature>, IVisitableNamespace
     {
-        public Func<TNamespaceResult> Visit { get; set; }
+        /// <summary>
+        /// Invoke to dispatch to best matched method.
+        /// </summary>
+        public Action Visit { get; set; }
 
+        /// <summary>
+        /// The dense feature data.
+        /// </summary>
         public IFeature<IEnumerable<TFeature>> DenseFeature { get; set; }
     }
 }

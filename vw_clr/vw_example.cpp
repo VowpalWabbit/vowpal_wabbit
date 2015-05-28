@@ -18,7 +18,26 @@ namespace Microsoft
 					return;
 				}
 
-				VW::finish_example(*m_vw, m_example);
+				if (m_example)
+				{
+					// make sure we don't free an example that belongs to the ring
+					// TODO: expose function to determine ring member ship
+					if (!VW::is_ring_example(*m_vw, m_example))
+					{
+						if (m_vw->multilabel_prediction)
+						{
+							VW::dealloc_example(m_vw->p->lp.delete_label, *m_example, MULTILABEL::multilabel.delete_label);
+						}
+						else
+						{
+							VW::dealloc_example(m_vw->p->lp.delete_label, *m_example);
+						}
+
+						::free_it(m_example);
+					}
+
+					m_example = nullptr;
+				}
 
 				m_isDisposed = true;
 			}
@@ -26,6 +45,11 @@ namespace Microsoft
 			VowpalWabbitExample::~VowpalWabbitExample()
 			{
 				this->!VowpalWabbitExample();
+			}
+
+			void VowpalWabbitExample::Finish()
+			{
+				m_vw->l->finish_example(*m_vw, *m_example);
 			}
 
 			float VowpalWabbitExample::Learn()

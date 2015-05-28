@@ -5,11 +5,15 @@
 //   license as described in the file LICENSE.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+
 using System;
 using Microsoft.Research.MachineLearning.Serializer.Interfaces;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 {
+    /// <summary>
+    /// The intermediate feature representation.
+    /// </summary>
     public class Feature : IFeature
     {
         /// <summary>
@@ -40,7 +44,7 @@ namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
     /// </summary>
     /// <typeparam name="T">Type of feature value.</typeparam>
     /// <typeparam name="TResult">Result type produved by visitor.</typeparam>
-    public sealed class Feature<T, TResult> : Feature, IFeature<T>, IVisitableFeature<TResult>
+    public sealed class Feature<T> : Feature, IFeature<T>, IVisitableFeature
     {
         /// <summary>
         /// The actual value
@@ -50,6 +54,6 @@ namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
         /// <summary>
         /// Compiled func to enable automatic double dispatch.
         /// </summary>
-        public Func<TResult> Visit { get; set;  }
+        public Action Visit { get; set;  }
     }
 }

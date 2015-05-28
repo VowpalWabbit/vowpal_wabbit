@@ -1,4 +1,5 @@
-﻿using Microsoft.Research.MachineLearning;
+﻿using cs_unittest;
+using Microsoft.Research.MachineLearning;
 using Microsoft.Research.MachineLearning.Interfaces;
 using Microsoft.Research.MachineLearning.Labels;
 using Microsoft.Research.MachineLearning.Serializer.Attributes;
@@ -58,6 +59,8 @@ namespace cs_test
         [TestMethod]
         // [Ignore]
         [DeploymentItem(@"train-sets\0001.dat", "train-sets")]
+        [DeploymentItem(@"train-sets\ref\0001.stderr", @"train-sets\ref")]
+        [DeploymentItem(@"test-sets\ref\0001.stderr", @"test-sets\ref")]
         [DeploymentItem(@"pred-sets\ref\0001.predict", @"pred-sets\ref")]
         public void Test1and2()
         {
@@ -96,7 +99,7 @@ namespace cs_test
                             Label = float.Parse(parts[0].Trim(), CultureInfo.InvariantCulture)
                         },
                         Line = line
-                    };
+                    }; 
 
                     input.Add(data);
 
@@ -109,7 +112,10 @@ namespace cs_test
                         var actual = example.Learn();
                         var expected = strExample.Learn();
 
-                        Assert.AreEqual(expected, actual, 1e-5, "Learn output differs on line: " + lineNr);
+                        Assert.AreEqual(expected, actual, 1e-6, "Learn output differs on line: " + lineNr);
+
+                        example.Finish();
+                        strExample.Finish();
                     }
                 }
 
@@ -118,6 +124,10 @@ namespace cs_test
 
                 vwStr.SaveModel("models/str0001.model");
                 vw.SaveModel("models/0001.model");
+                 
+                var expectedPerformanceStatistics = VWTestHelper.ReadPerformanceStatistics(@"train-sets\ref\0001.stderr");
+                VWTestHelper.AssertEqual(expectedPerformanceStatistics, vwStr.PerformanceStatistics);
+                VWTestHelper.AssertEqual(expectedPerformanceStatistics, vw.PerformanceStatistics);
             }
 
             Assert.AreEqual(input.Count, references.Length);
@@ -139,9 +149,16 @@ namespace cs_test
                             references[i],
                             expected,
                             1e-5,
-                            string.Format(CultureInfo.InvariantCulture, "Expected {0} vs. actual {1} at line {2}", references[i], actual, i));                    
+                            string.Format(CultureInfo.InvariantCulture, "Expected {0} vs. actual {1} at line {2}", references[i], actual, i));
+
+                        example.Finish();
+                        strExample.Finish();
                     }
                 }
+
+                var expectedPerformanceStatistics = VWTestHelper.ReadPerformanceStatistics(@"test-sets\ref\0001.stderr");
+                VWTestHelper.AssertEqual(expectedPerformanceStatistics, vwStr.PerformanceStatistics);
+                VWTestHelper.AssertEqual(expectedPerformanceStatistics, vw.PerformanceStatistics);
             }
         }
 

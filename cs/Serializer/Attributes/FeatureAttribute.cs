@@ -5,6 +5,7 @@
 //   license as described in the file LICENSE.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+
 using System;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Attributes
@@ -13,8 +14,11 @@ namespace Microsoft.Research.MachineLearning.Serializer.Attributes
     /// Annotate properties that should be serialized to Vowpal Wabbit
     /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
-    public class FeatureAttribute : Attribute
+    public sealed class FeatureAttribute : Attribute
     {
+        /// <summary>
+        /// Initializes a new instance of the FeatureAttribte class.
+        /// </summary>
         public FeatureAttribute()
         {
             this.Enumerize = false;
@@ -29,8 +33,8 @@ namespace Microsoft.Research.MachineLearning.Serializer.Attributes
         /// <summary>
         /// If true, features will be converted to string and then hashed.
         /// In VW line format: Age:15 (Enumerize=false), Age_15 (Enumerize=true)
-        /// Defaults to false.
         /// </summary>
+        /// <remarks>Defaults to false.</remarks>
         public bool Enumerize { get; set; }
 
         /// <summary>
@@ -48,8 +52,9 @@ namespace Microsoft.Research.MachineLearning.Serializer.Attributes
         }
 
         /// <summary>
-        /// Allows override of feature name. Defaults to property name.
+        /// Allows feature name override.
         /// </summary>
+        /// <remarks>Defaults to reflected property name.</remarks>
         public string Name { get; set; }
 
         /// <summary>

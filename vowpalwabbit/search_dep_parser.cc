@@ -6,6 +6,7 @@
 #include "search_dep_parser.h"
 #include "gd.h"
 #include "cost_sensitive.h"
+#include "vw.h"
 
 #define val_namespace 100 // valency and distance feature space
 #define offset_const 344429
@@ -39,7 +40,7 @@ namespace DepParserTask {
       if(i!=data->root_label)
         data->valid_labels.push_back(i);
 
-    data->ex = alloc_examples(sizeof(polylabel), 1);
+    data->ex = VW::alloc_examples(sizeof(polylabel), 1);
     data->ex->indices.push_back(val_namespace);
     for(size_t i=1; i<14; i++)
       data->ex->indices.push_back((unsigned char)i+'A');
@@ -75,7 +76,7 @@ namespace DepParserTask {
     data->tags.delete_v();
     data->temp.delete_v();
     data->action_loss.delete_v();
-    dealloc_example(COST_SENSITIVE::cs_label.delete_label, *data->ex);
+	VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, *data->ex);
     free(data->ex);
     for (size_t i=0; i<6; i++) data->children[i].delete_v();
     delete data;

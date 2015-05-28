@@ -263,7 +263,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
   void initialize(Search::search& sch, size_t& num_actions, po::variables_map& /*vm*/) {
     CS::wclass default_wclass = { 0., 0, 0., 0. };
 
-    example* ldf_examples = alloc_examples(sizeof(CS::label), num_actions);
+    example* ldf_examples = VW::alloc_examples(sizeof(CS::label), num_actions);
     for (size_t a=0; a<num_actions; a++) {
       CS::label& lab = ldf_examples[a].l.cs;
       CS::cs_label.default_label(&lab);
@@ -283,7 +283,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
   void finish(Search::search& sch) {
     task_data *data = sch.get_task_data<task_data>();
     for (size_t a=0; a<data->num_actions; a++)
-      dealloc_example(CS::cs_label.delete_label, data->ldf_examples[a]);
+      VW::dealloc_example(CS::cs_label.delete_label, data->ldf_examples[a]);
     free(data->ldf_examples);
     free(data);
   }

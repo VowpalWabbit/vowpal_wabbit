@@ -9,13 +9,19 @@ using Microsoft.Research.MachineLearning.Serializer.Interfaces;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
 {
+    /// <summary>
+    /// The intermediate namespace representation.
+    /// </summary>
     public abstract class Namespace : INamespace
     {
         /// <summary>
-        /// The namespace name.
+        /// Gets or sets the namespace name.
         /// </summary>
         public string Name { get; set; }
 
+        /// <summary>
+        /// Gets or sets the feature group.
+        /// </summary>
         public char? FeatureGroup { get; set; }
     }
 }

@@ -11,12 +11,11 @@ namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
     /// <summary>
     /// A sparse namespace.
     /// </summary>
-    /// <typeparam name="TResultFeature"></typeparam>
-    public interface INamespaceSparse<TResultFeature> : INamespace
+    public interface INamespaceSparse : INamespace
     {
         /// <summary>
         /// The features of the namespace.
         /// </summary>
-        IVisitableFeature<TResultFeature>[] Features { get; }
+        IVisitableFeature[] Features { get; }
     }
 }

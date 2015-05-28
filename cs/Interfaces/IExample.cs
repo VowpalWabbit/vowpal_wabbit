@@ -8,8 +8,14 @@
 
 namespace Microsoft.Research.MachineLearning.Interfaces
 {
+    /// <summary>
+    /// User classes that support labeling need to implement this interface.
+    /// </summary>
     public interface IExample
     {
+        /// <summary>
+        /// The label that this example is tagged with.
+        /// </summary>
         ILabel Label { get; }
     }
 }

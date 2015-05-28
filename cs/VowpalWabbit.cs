@@ -1,38 +1,49 @@
-﻿using Microsoft.Research.MachineLearning.Serializer;
-using Microsoft.Research.MachineLearning.Serializer.Visitors;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="VowpalWabbit.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using Microsoft.Research.MachineLearning.Serializer.Attributes;
 using Microsoft.Research.MachineLearning.Interfaces;
+using Microsoft.Research.MachineLearning.Serializer;
+using Microsoft.Research.MachineLearning.Serializer.Visitors;
 
 namespace Microsoft.Research.MachineLearning
 {
+    /// <summary>
+    /// A wrapper for Vowpal Wabbit using a native serializer transferring data using the library interface.
+    /// </summary>
+    /// <typeparam name="TExample">The user example type.</typeparam>
     public class VowpalWabbit<TExample> : VowpalWabbit
     {
-        protected readonly VowpalWabbitSerializer<TExample> serializer;
+        protected VowpalWabbitSerializer<TExample> serializer;
 
-        public VowpalWabbit(VowpalWabbitModel model)
+        public VowpalWabbit(VowpalWabbitModel model, int maxExampleCacheSize = int.MaxValue)
             : base(model)
         {
             var visitor = new VowpalWabbitInterfaceVisitor(this);
-            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(visitor);
+            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(visitor, maxExampleCacheSize);
         }
 
-        public VowpalWabbit(string arguments) : base(arguments)
+        public VowpalWabbit(string arguments, int maxExampleCacheSize = int.MaxValue)
+            : base(arguments)
         {
             var visitor = new VowpalWabbitInterfaceVisitor(this);
-            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(visitor);
+            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(visitor, maxExampleCacheSize);
         }
         
+        /// <summary>
+        /// Serializes <paramref name="example"/> into VowpalWabbit.
+        /// </summary>
+        /// <param name="example">The example to be read.</param>
+        /// <returns>A native Vowpal Wabbit representation of the example.</returns>
         public IVowpalWabbitExample ReadExample(TExample example)
         {
-            if (this.serializer == null)
-            {
-                return null;
-            }
-
             return this.serializer.Serialize(example);    
         }
 
@@ -44,6 +55,7 @@ namespace Microsoft.Research.MachineLearning
             {
                 if (this.serializer != null)
                 {
+                    // free cached examples
                     this.serializer.Dispose();
                     this.serializer = null;
                 }
@@ -51,15 +63,21 @@ namespace Microsoft.Research.MachineLearning
         }
     }
 
+    /// <summary>
+    /// A wrapper around Vowpal Wabbit to simplify action dependent feature scenarios.
+    /// </summary>
+    /// <typeparam name="TExample">The user example type.</typeparam>
+    /// <typeparam name="TActionDependentFeature">The user action dependent feature type.</typeparam>
     public sealed class VowpalWabbit<TExample, TActionDependentFeature> : VowpalWabbit<TExample>
         where TExample : SharedExample, IActionDependentFeatureExample<TActionDependentFeature>
     {
-        private readonly VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
+        private VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
 
-        public VowpalWabbit(VowpalWabbitModel model) : base(model)
+        public VowpalWabbit(VowpalWabbitModel model, int maxExampleCacheSize = int.MaxValue)
+            : base(model)
         {
             var visitor = new VowpalWabbitInterfaceVisitor(this);
-            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(visitor);
+            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(visitor, maxExampleCacheSize);
 
             if (this.actionDependentFeatureSerializer == null)
             {
@@ -67,10 +85,11 @@ namespace Microsoft.Research.MachineLearning
             }
         }
 
-        public VowpalWabbit(string arguments) : base(arguments)
+        public VowpalWabbit(string arguments, int maxExampleCacheSize = int.MaxValue)
+            : base(arguments)
         {
             var visitor = new VowpalWabbitInterfaceVisitor(this);
-            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(visitor);
+            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(visitor, maxExampleCacheSize);
 
             if (this.actionDependentFeatureSerializer == null)
             {
@@ -78,11 +97,21 @@ namespace Microsoft.Research.MachineLearning
             }
         }
 
+        /// <summary>
+        /// Simplify learning of examples with action dependent features. 
+        /// </summary>
+        /// <param name="example">The user example</param>
+        /// <returns>An ordered subset of predicted action dependent features.</returns>
         public TActionDependentFeature[] Learn(TExample example)
         {
             return this.LearnOrPredict(example, ex => ex.Learn());
         }
 
+        /// <summary>
+        /// Simplify prediction of examples with action dependent features.
+        /// </summary>
+        /// <param name="example">The user example.</param>
+        /// <returns>An ordered subset of predicted action dependent features.</returns>
         public TActionDependentFeature[] Predict(TExample example)
         {
             return this.LearnOrPredict(example, ex => ex.Predict());
@@ -98,35 +127,25 @@ namespace Microsoft.Research.MachineLearning
             
             try
             {
-                IVowpalWabbitExample firstExample = null;
+                // contains prediction results
+                var sharedExample = this.serializer.Serialize(example);
 
-                if (this.serializer != null)
+                // check if we have shared features
+                if (sharedExample != null)
                 {
-                    var sharedExample = this.serializer.Serialize(example);
                     examples.Add(sharedExample);
-
                     learnOrPredict(sharedExample);
-
-                    firstExample = sharedExample;
+                    sharedExample.Finish();
                 }
 
-                // leave as loop so if the serializer throws an exception, anything allocated so far can be free'd
+                // leave as loop (vs. linq) so if the serializer throws an exception, anything allocated so far can be free'd
                 foreach (var actionDependentFeature in example.ActionDependentFeatures)
                 {
                     var adfExample = this.actionDependentFeatureSerializer.Serialize(actionDependentFeature);
                     examples.Add(adfExample);
 
-                    if (adfExample.IsNewLine)
-                    {
-                        continue;
-                    }
-
                     learnOrPredict(adfExample);
-
-                    if (firstExample == null)
-                    {
-                        firstExample = adfExample;
-                    }
+                    adfExample.Finish();
                 }
 
                 // allocate empty example to signal we're finished
@@ -134,8 +153,9 @@ namespace Microsoft.Research.MachineLearning
                 examples.Add(finalExample);
 
                 learnOrPredict(finalExample);
+                finalExample.Finish();
 
-                var multiLabelPrediction = firstExample.MultilabelPredictions;
+                var multiLabelPrediction = examples.First().MultilabelPredictions;
 
                 // re-shuffle
                 var result = new TActionDependentFeature[multiLabelPrediction.Length];
@@ -149,6 +169,10 @@ namespace Microsoft.Research.MachineLearning
             }
             finally
             {
+                // dispose examples
+                // Note: most not dispose examples before final example
+                // as the learning algorithm (such as cbf) keeps a reference 
+                // to the example
                 foreach (var e in examples)
                 {
                     e.Dispose();
@@ -168,30 +192,6 @@ namespace Microsoft.Research.MachineLearning
                     this.actionDependentFeatureSerializer = null;
                 }
             }
-        }
-    }
-
-    /// <summary>
-    /// Useful for debugging
-    /// </summary>
-    public sealed class VowpalWabbitString<TExample> : VowpalWabbit
-    {
-        //private readonly VowpalWabbitSerializer<TExample, string> serializer;
-        private readonly VowpalWabbitStringVisitor stringVisitor;
-
-        public VowpalWabbitString(string arguments)
-            : base(arguments)
-        {
-            // Compile serializer
-            this.stringVisitor = new VowpalWabbitStringVisitor();
-            //this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(this.stringVisitor);
-        }
-        
-        public VowpalWabbitExample ReadExample(TExample example)
-        {
-            //var exampleLine = this.serializer.Serialize(example);
-            //return base.ReadExample(exampleLine);
-            return null;
         }
     }
 }

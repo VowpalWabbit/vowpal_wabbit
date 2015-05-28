@@ -15,17 +15,21 @@ using Microsoft.Research.MachineLearning.Serializer.Attributes;
 
 namespace Microsoft.Research.MachineLearning.Serializer
 {
+    /// <summary>
+    /// A serializer from a user type (TExample) to a native Vowpal Wabbit example type.
+    /// </summary>
+    /// <typeparam name="TExample">The source example type.</typeparam>
     public sealed class VowpalWabbitSerializer<TExample> : IDisposable
     {
-        private readonly int maxCacheSize;
+        private readonly int maxExampleCacheSize;
 
         private readonly Func<TExample, IVowpalWabbitExample> serializer;
 
         private Dictionary<TExample, VowpalWabbitCachedExample<TExample>> exampleCache;
 
-        internal VowpalWabbitSerializer(Func<TExample, IVowpalWabbitExample> serializer, int maxCacheSize = int.MaxValue)
+        internal VowpalWabbitSerializer(Func<TExample, IVowpalWabbitExample> serializer, int maxExampleCacheSize)
         {
-            this.maxCacheSize = maxCacheSize;
+            this.maxExampleCacheSize = maxExampleCacheSize;
             this.serializer = serializer;
 
             var cacheableAttribute = (CacheableAttribute) typeof (TExample).GetCustomAttributes(typeof (CacheableAttribute), true).FirstOrDefault();
@@ -92,24 +96,32 @@ namespace Microsoft.Research.MachineLearning.Serializer
         {
             if (disposing)
             {
-                foreach (var example in this.exampleCache.Values)
+                if (this.exampleCache != null)
                 {
-                    example.Value.Dispose();
-                }
+                    foreach (var example in this.exampleCache.Values)
+                    {
+                        example.UnderlyingExample.Dispose();
+                    }
 
-                this.exampleCache = null;
+                    this.exampleCache = null;
+                }
             }
         }
 
         internal void ReturnExampleToCache(VowpalWabbitCachedExample<TExample> example)
         {
+            if (this.exampleCache == null)
+            {
+                throw new ObjectDisposedException("VowpalWabbitSerializer");
+            }
+
             // if we reach the cache boundary, dispose the oldest example
-            if (this.exampleCache.Count > this.maxCacheSize)
+            if (this.exampleCache.Count > this.maxExampleCacheSize)
             {
                 var minElement = this.exampleCache.MinBy(kv => kv.Value.LastRecentUse);
                 
-                this.exampleCache.Remove(example.Source);
-                minElement.Value.Dispose();
+                this.exampleCache.Remove(minElement.Key);
+                minElement.Value.UnderlyingExample.Dispose();
             }
         }
     }

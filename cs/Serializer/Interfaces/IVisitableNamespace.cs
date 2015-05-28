@@ -5,6 +5,7 @@
 //   license as described in the file LICENSE.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+
 using System;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
@@ -12,12 +13,11 @@ namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
     /// <summary>
     /// A visitable namespace.
     /// </summary>
-    /// <typeparam name="TResult">The type of the result produced by the visitor.</typeparam>
-    public interface IVisitableNamespace<TNamespaceResult> : INamespace
+    public interface IVisitableNamespace : INamespace
     {
         /// <summary>
         /// Dispatch to the best matching overload of Visit() for this namespace.
         /// </summary>
-        Func<TNamespaceResult> Visit { get; }
+        Action Visit { get; }
     }
 }

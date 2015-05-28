@@ -11,18 +11,29 @@ using System.Globalization;
 
 namespace Microsoft.Research.MachineLearning.Labels
 {
-    public class SimpleLabel : ILabel
+    public sealed class SimpleLabel : ILabel
     {
+        /// <summary>
+        /// Gets or sets the float label.
+        /// </summary>
         public float Label { get; set; }
 
+        /// <summary>
+        /// Gets or sets the optional weight.
+        /// </summary>
         public float? Weight { get; set; }
 
+        /// <summary>
+        /// Gets or sets the optional initial value.
+        /// </summary>
         public float? Initial { get; set; }
 
+        /// <summary>
+        /// Serialize to Vowpal Wabbit string format.
+        /// </summary>
+        /// <remarks>see simple_label.cc: parse_simple_label</remarks>
         public string ToVowpalWabbitFormat()
         {
-            // see simple_label.cc: parse_simple_label
-
             if (Weight == null)
             {
                 return string.Format(CultureInfo.InvariantCulture, "{0}", this.Label);
@@ -33,7 +44,7 @@ namespace Microsoft.Research.MachineLearning.Labels
                 return string.Format(CultureInfo.InvariantCulture, "{0} {1}", this.Label, this.Weight);
             }
 
-            return string.Format("{0} {1} {2}", this.Label, this.Weight, this.Initial);
+            return string.Format(CultureInfo.InvariantCulture, "{0} {1} {2}", this.Label, this.Weight, this.Initial);
         }
     }
 }

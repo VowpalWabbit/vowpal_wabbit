@@ -751,6 +751,7 @@ example* get_unused_example(vw& all)
     }
 }
 
+namespace VW {
 bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
 {
   if (do_read && all.p->reader(&all, ae) <= 0)
@@ -765,6 +766,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
       cache_features(*(all.p->output), ae, (uint32_t)all.parse_mask);
     }
   return true;
+}
 }
 
 void end_pass_example(vw& all, example* ae)
@@ -925,7 +927,7 @@ namespace VW{
 	    ret->atomics[index].push_back(features[i].fs[j]);
 	  }
       }
-    parse_atomic_example(all,ret,false); // all.p->parsed_examples++;
+    VW::parse_atomic_example(all,ret,false); 
     setup_example(all, ret);
 	all.p->end_parsed_examples++;
     return ret;
@@ -1006,6 +1008,10 @@ namespace VW{
 
   void finish_example(vw& all, example* ec)
   {
+	// only return examples to the pool that are from the pool and not externally allocated
+	if (!is_ring_example(all, ec))
+      return;
+
     mutex_lock(&all.p->output_lock);
     all.p->local_example_number++;
     condition_variable_signal(&all.p->output_done);
@@ -1037,7 +1043,7 @@ void *main_parse_loop(void *in)
 	  {
             example* ae = get_unused_example(*all);
 	    if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
-		   && parse_atomic_example(*all, ae) )
+		   && VW::parse_atomic_example(*all, ae) )
 	     {
 	       VW::setup_example(*all, ae);
 	       example_number++;
@@ -1203,10 +1209,10 @@ void free_parser(vw& all)
   
   if (all.multilabel_prediction)
     for (size_t i = 0; i < all.p->ring_size; i++) 
-      dealloc_example(all.p->lp.delete_label, all.p->examples[i], MULTILABEL::multilabel.delete_label);
+      VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i], MULTILABEL::multilabel.delete_label);
   else
     for (size_t i = 0; i < all.p->ring_size; i++) 
-      dealloc_example(all.p->lp.delete_label, all.p->examples[i]);
+      VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i]);
   free(all.p->examples);
   
   io_buf* output = all.p->output;
@@ -1235,5 +1241,10 @@ void end_parser(vw& all)
   ::CloseHandle(all.parse_thread);
   #endif
   release_parser_datastructures(all);
+}
+
+bool is_ring_example(vw& all, example* ae)
+{
+	return all.p->examples <= ae && ae < all.p->examples + all.p->ring_size;
 }
 }

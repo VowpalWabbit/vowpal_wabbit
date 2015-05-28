@@ -8,8 +8,14 @@
 
 namespace Microsoft.Research.MachineLearning.Interfaces
 {
+    /// <summary>
+    /// Interface implemented by all valid VowpalWabbit labels.
+    /// </summary>
     public interface ILabel
     {
+        /// <summary>
+        /// Serialize to Vowpal Wabbit string format.
+        /// </summary>
         string ToVowpalWabbitFormat();
     }
 }

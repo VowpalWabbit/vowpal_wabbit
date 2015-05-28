@@ -62,20 +62,28 @@ namespace Microsoft
 				virtual float Predict() = 0;
 
 				virtual System::String^ Diff(IVowpalWabbitExample^ other, bool sameOrder) = 0;
+
+				// this performs the finish_example of the learning algorithm
+				// if examples are not allocated within VW's ring
+				// memory will not be released. 
+				// The actual release of memory is done in Dipose.
+				virtual void Finish() = 0;
 			};
 
 			public ref class VowpalWabbitExample : public IVowpalWabbitExample
 			{
 			private:
 				vw* const m_vw;
-				example* const m_example;
+				example* m_example;
 
 			protected:
 				bool m_isDisposed;
 				!VowpalWabbitExample();
 
-			public:
+			internal :
 				VowpalWabbitExample(vw* vw, example* example);
+
+			public:
 
 				~VowpalWabbitExample();
 
@@ -104,6 +112,26 @@ namespace Microsoft
 				virtual float Predict();
 
 				virtual System::String^ Diff(IVowpalWabbitExample^ other, bool sameOrder);
+
+				virtual void Finish();
+			};
+			
+			public ref class VowpalWabbitPerformanceStatistics
+			{
+			public:
+				property uint64_t TotalNumberOfFeatures;
+
+				property double WeightedExampleSum;
+
+				property uint64_t NumberOfExamplesPerPass;
+
+				property double WeightedLabelSum;
+
+				property double AverageLoss;
+
+				property double BestConstant;
+
+				property double BestConstantLoss;
 			};
 
 			// Since the model class must delay diposal of m_vw until all referencing
@@ -125,6 +153,11 @@ namespace Microsoft
 				void RunMultiPass();
 				void SaveModel();
 				void SaveModel(System::String^ filename);
+
+				property VowpalWabbitPerformanceStatistics^ PerformanceStatistics
+				{
+					VowpalWabbitPerformanceStatistics^ get();
+				}
 			};
 
 			/// <summary>
@@ -142,6 +175,42 @@ namespace Microsoft
 			public:
 				VowpalWabbitModel(System::String^ pArgs);
 				virtual ~VowpalWabbitModel();
+			};
+
+			public ref class VowpalWabbitNamespaceBuilder
+			{
+			private:
+				float* m_sum_feat_sq;
+				v_array<feature>* m_atomic;
+			internal:
+				VowpalWabbitNamespaceBuilder(float* sum_feat_sq, v_array<feature>* atomic);
+
+			public:
+				void AddFeature(uint32_t weight_index, float x);
+			};
+
+			public ref class VowpalWabbitExampleBuilder
+			{
+			private:
+				vw* const m_vw;
+				example* m_example;
+				VowpalWabbitExample^ m_clrExample;
+
+			protected:
+				!VowpalWabbitExampleBuilder();
+
+			public:
+				VowpalWabbitExampleBuilder(VowpalWabbitBase^ vw);
+				~VowpalWabbitExampleBuilder();
+
+				VowpalWabbitExample^ CreateExample();
+
+				property System::String^ Label
+				{
+					void set(System::String^ value);
+				}
+
+				VowpalWabbitNamespaceBuilder^ AddNamespace(System::Byte featureGroup);
 			};
 
 			/// <summary>
@@ -164,7 +233,6 @@ namespace Microsoft
 				uint32_t HashFeature(System::String^ s, unsigned long u);
 
 				VowpalWabbitExample^ ReadExample(System::String^ line);
-				VowpalWabbitExample^ ImportExample(System::String^ label, cli::array<FeatureSpace^>^ featureSpaces);
 				VowpalWabbitExample^ CreateEmptyExample();
 			};
 		}

@@ -10,6 +10,9 @@ using System;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Reflection
 {
+    /// <summary>
+    /// Models a distance to a given type.
+    /// </summary>
     internal sealed class TypeDistance
     {
         internal int Distance { get; set; }

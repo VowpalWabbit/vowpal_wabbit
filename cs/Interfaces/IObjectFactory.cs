@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="NamespaceSparse.cs">
+// <copyright file="IObjectFactory.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
 //   license as described in the file LICENSE.
@@ -7,17 +7,18 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
-using Microsoft.Research.MachineLearning.Serializer.Interfaces;
 
-namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
+namespace Microsoft.Research.MachineLearning.Interfaces
 {
     /// <summary>
-    /// The intermediate representation of a sparse namespace.
+    /// Disposable object factory.
     /// </summary>
-    public sealed class NamespaceSparse : Namespace, INamespaceSparse, IVisitableNamespace
+    /// <typeparam name="T">The type of the objects to be created.</typeparam>
+    public interface IObjectFactory<T> : IDisposable
     {
-        public Action Visit { get; set; }
-
-        public IVisitableFeature[] Features { get; set; }
+        /// <summary>
+        /// Creates a new object of type T.
+        /// </summary>
+        T Create();
     }
 }

@@ -9,11 +9,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Microsoft.Research.MachineLearning.Interfaces;
 
 namespace Microsoft.Research.MachineLearning
 {
     /// <summary>
-    /// Thread-safe object pool supporting version updates.
+    /// Thread-safe object pool supporting versioned updates.
     /// </summary>
     public class ObjectPool<T> : IDisposable
         where T : IDisposable
@@ -31,7 +32,7 @@ namespace Microsoft.Research.MachineLearning
         /// <summary>
         /// Used to create new pooled objects.
         /// </summary>
-        private Func<T> factory;
+        private IObjectFactory<T> factory;
 
         /// <summary>
         /// The actual pool.
@@ -42,17 +43,17 @@ namespace Microsoft.Research.MachineLearning
         /// </remarks>
         private Stack<PooledObject<T>> pool; 
 
-        // TODO: add Dispose to Factory using reference couting to dispose the shared model correctly.
-        public ObjectPool(Func<T> factory)
+        public ObjectPool(IObjectFactory<T> factory = null)
         {
             this.rwLockSlim = new ReaderWriterLockSlim();
             this.pool = new Stack<PooledObject<T>>();
             this.factory = factory;
         }
 
-        public void UpdateFactory(Func<T> factory)
+        public void UpdateFactory(IObjectFactory<T> factory)
         {
             Stack<PooledObject<T>> oldPool;
+            IObjectFactory<T> oldFactory;
 
             this.rwLockSlim.EnterWriteLock();
             try
@@ -63,6 +64,7 @@ namespace Microsoft.Research.MachineLearning
                 }
 
                 this.version++;
+                oldFactory = factory;
                 this.factory = factory;
                 oldPool = this.pool;
                 this.pool = new Stack<PooledObject<T>>();
@@ -77,12 +79,18 @@ namespace Microsoft.Research.MachineLearning
             {
                 item.Value.Dispose();
             }
+
+            // dispose factory
+            if (oldFactory != null)
+            {
+                oldFactory.Dispose();
+            }
         }
 
         public PooledObject<T> Get()
         {
             int localVersion;
-            Func<T> localFactory;
+            IObjectFactory<T> localFactory;
 
             this.rwLockSlim.EnterUpgradeableReadLock();
             try
@@ -121,8 +129,13 @@ namespace Microsoft.Research.MachineLearning
                 this.rwLockSlim.ExitUpgradeableReadLock();
             }
 
+            if (localFactory == null)
+            {
+                throw new InvalidOperationException("Factory must be initialized before calling Get()");
+            }
+
             // invoke the factory outside of the lock
-            return new PooledObject<T>(this, localVersion, localFactory());
+            return new PooledObject<T>(this, localVersion, localFactory.Create());
         }
 
         internal void ReturnObject(PooledObject<T> pooledObject)
@@ -169,10 +182,10 @@ namespace Microsoft.Research.MachineLearning
         {
             if (disposing)
             {
-                // Free managed resources
                 this.rwLockSlim.EnterWriteLock();
                 try
                 {
+                    // Dispose pool items
                     if (this.pool != null)
                     {
                         foreach (var item in this.pool)
@@ -180,6 +193,13 @@ namespace Microsoft.Research.MachineLearning
                             item.Value.Dispose();
                         }
                         this.pool = null;
+                    }
+
+                    // Dispose factory
+                    if (this.factory != null)
+                    {
+                        this.factory.Dispose();
+                        this.factory = null;
                     }
                 }
                 finally

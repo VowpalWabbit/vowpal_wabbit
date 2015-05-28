@@ -46,7 +46,10 @@
   <ItemGroup>
     <Compile Include="Interfaces\IActionDependentFeatures.cs" />
     <Compile Include="Interfaces\IExample.cs" />
+    <Compile Include="Interfaces\IObjectFactory.cs" />
     <Compile Include="Labels\ContextualBanditLabel.cs" />
+    <Compile Include="MoreLinq\MoreEnumerable.ForEach.cs" />
+    <Compile Include="MoreLinq\MoreEnumerable.ForEachIndex.cs" />
     <Compile Include="MoreLinq\MoreEnumerable.MinBy.cs" />
     <Compile Include="PooledObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -77,6 +80,8 @@
     <Compile Include="Labels\SimpleLabel.cs" />
     <Compile Include="VowpalWabbit.cs" />
     <Compile Include="ObjectPool.cs" />
+    <Compile Include="VowpalWabbitFactory.cs" />
+    <Compile Include="VowpalWabbitFactoryBase.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\vw_clr\vw_clr.vcxproj">
@@ -85,7 +90,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
