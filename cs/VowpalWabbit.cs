@@ -117,14 +117,49 @@ namespace Microsoft.Research.MachineLearning
             return this.LearnOrPredict(example, ex => ex.Predict());
         }
 
+        /// <summary>
+        /// Simplify learning of examples with action dependent features. 
+        /// </summary>
+        /// <param name="example">The user example</param>
+        /// <returns>An ordered subset of predicted action indexes.</returns>
+        public int[] LearnIndex(TExample example)
+        {
+            return this.LearnOrPredictIndex(example, ex => ex.Learn());
+        }
+
+        /// <summary>
+        /// Simplify prediction of examples with action dependent features.
+        /// </summary>
+        /// <param name="example">The user example.</param>
+        /// <returns>An ordered subset of predicted action indexes.</returns>
+        public int[] PredictIndex(TExample example)
+        {
+            return this.LearnOrPredictIndex(example, ex => ex.Predict());
+        }
+
         private TActionDependentFeature[] LearnOrPredict(TExample example, Action<IVowpalWabbitExample> learnOrPredict)
+        {
+            int[] multiLabelPredictions = this.LearnOrPredictIndex(example, learnOrPredict);
+
+            // re-shuffle
+            var result = new TActionDependentFeature[multiLabelPredictions.Length];
+            for (var i = 0; i < multiLabelPredictions.Length; i++)
+			{
+                // VW multi-label indicies are 0-based
+                result[i] = example.ActionDependentFeatures[multiLabelPredictions[i]];
+			}
+
+            return result;
+        }
+
+        private int[] LearnOrPredictIndex(TExample example, Action<IVowpalWabbitExample> learnOrPredict)
         {
             // shared |userlda :.1 |che a:.1 
             // `doc1 |lda :.1 :.2 [1]
             // `doc2 |lda :.2 :.3 [2]
             // <new line>
             var examples = new List<IVowpalWabbitExample>();
-            
+
             try
             {
                 // contains prediction results
@@ -155,17 +190,7 @@ namespace Microsoft.Research.MachineLearning
                 learnOrPredict(finalExample);
                 finalExample.Finish();
 
-                var multiLabelPrediction = examples.First().MultilabelPredictions;
-
-                // re-shuffle
-                var result = new TActionDependentFeature[multiLabelPrediction.Length];
-                for (var i = 0; i < multiLabelPrediction.Length; i++)
-			    {
-                    // VW multi-label indicies are 0-based
-			        result[i] = example.ActionDependentFeatures[multiLabelPrediction[i]];
-			    }
-
-                return result;
+                return examples[0].MultilabelPredictions;
             }
             finally
             {

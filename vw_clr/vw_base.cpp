@@ -64,15 +64,8 @@ namespace Microsoft
 				{
 					return;
 				}
-
-				try
-				{
-					VW::save_predictor(*m_vw, name);
-				}
-				catch (std::exception const& ex)
-				{
-					throw gcnew System::Exception(gcnew System::String(ex.what()));
-				}
+                // this results in extra marshaling but should be fine here
+                this->SaveModel(gcnew String(name.c_str()));
 			}
 
 			void VowpalWabbitBase::SaveModel(System::String^ filename)
@@ -81,6 +74,8 @@ namespace Microsoft
 				{
 					return;
 				}
+
+                System::IO::Directory::CreateDirectory(System::IO::Path::GetDirectoryName(filename));
 
 				auto name = msclr::interop::marshal_as<std::string>(filename);
 
