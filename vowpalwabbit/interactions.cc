@@ -62,12 +62,13 @@ v_array<v_string> expand_interactions(const vector<string>& vec, const size_t re
         if (required_length > 0 && len != required_length)
         {   // got strict requrenment of interaction length and it wasfailed.
             cerr << endl << err_msg << endl;
-            throw exception();
+            throw runtime_error(err_msg.c_str());
         } else
             if (len < 2)
             { // regardles of required_length value this check is always performed
-                cerr << endl << "error, feature interactions must involve at least two namespaces." << endl;
-                throw exception();
+	        const char* msg = "error, feature interactions must involve at least two namespaces.";
+                cerr << endl << msg << endl;
+                throw runtime_error(msg);
             }
 
 

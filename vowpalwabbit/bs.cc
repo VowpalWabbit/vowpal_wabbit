@@ -201,10 +201,10 @@ using namespace LEARNER;
         bs_predict_vote(ec, d.pred_vec);
         break;
       default:
-		std::stringstream msg;
-		msg << "Unknown bs_type specified: " << d.bs_type << ".";
+	std::stringstream msg;
+	msg << "Unknown bs_type specified: " << d.bs_type << ".";
         std::cerr << msg.str() << " Exiting." << endl;
-        throw exception(msg.str().c_str());
+        throw runtime_error(msg.str().c_str());
     }
 
     if (shouldOutput) 

@@ -172,8 +172,10 @@ void learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 	  gen_cs_example_ips(examples, mydata.cs_labels);
 	else 
 	  {
-	    std::cerr << "Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type << ". Exiting." << endl;
-	    throw exception();
+	    stringstream msg;
+	    msg << "Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type;
+	    std::cerr << msg << ". Exiting." << endl;
+	    throw runtime_error(msg.str().c_str());
 	  }
 	
 	call_predict_or_learn<true>(mydata,base,examples);
@@ -187,16 +189,19 @@ bool test_adf_sequence(cb_adf& data)
     
     if (ec->l.cb.costs.size() > 1)
       {
-	cerr << "cb_adf: badly formatted example, only one cost can be known." << endl;	\
-	throw exception();
+      	const char* msg = "cb_adf: badly formatted example, only one cost can be known.";
+	cerr << msg << endl;	
+	throw runtime_error(msg);
       }
     
     if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)      
       count += 1;
     
     if (CB::ec_is_example_header(*ec)) {
-      cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
-      throw exception();
+      stringstream msg;
+      msg << "warning: example headers at position " << k << ": can only have in initial position!"; 
+      cerr << msg << endl;
+      throw runtime_error(msg.str().c_str());
     }
   }
   if (count == 0)
@@ -205,8 +210,9 @@ bool test_adf_sequence(cb_adf& data)
     return false;
   else
     {
-      cerr << "cb_adf: badly formatted example, only one line can have a cost" << endl;
-      throw exception();
+      const char* msg = "cb_adf: badly formatted example, only one line can have a cost";
+      cerr << msg << endl;
+      throw runtime_error(msg);
     }
 }
 

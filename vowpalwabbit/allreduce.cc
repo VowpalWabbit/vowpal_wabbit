@@ -8,6 +8,8 @@ This implements the allreduce function of MPI.  Code primarily by
 Alekh Agarwal and John Langford, with help Olivier Chapelle.
  */
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 #include <cstdio>
 #include <cmath>
 #include <ctime>
@@ -34,8 +36,10 @@ socket_t sock_connect(const uint32_t ip, const int port) {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock == -1)
     {
-      cerr << "socket: " << strerror(errno) << endl;
-      throw exception();
+      stringstream msg;
+      msg << "socket: " << strerror(errno);
+      cerr << msg << endl;
+      throw runtime_error(msg.str().c_str());
     }
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
@@ -47,15 +51,19 @@ socket_t sock_connect(const uint32_t ip, const int port) {
   {
     char dotted_quad[INET_ADDRSTRLEN];
     if (nullptr == inet_ntop(AF_INET, &(far_end.sin_addr), dotted_quad, INET_ADDRSTRLEN)) {
-      cerr << "inet_ntop: " << strerror(errno) << endl;
-      throw exception();
+      stringstream msg;
+      msg << "inet_ntop: " << strerror(errno);
+      cerr << msg << endl;
+      throw runtime_error(msg.str().c_str());
     }
 
     char hostname[NI_MAXHOST];
     char servInfo[NI_MAXSERV];
     if (getnameinfo((sockaddr *) &far_end, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV)) {
-      cerr << "getnameinfo(" << dotted_quad << "): " << strerror(errno) << endl;
-      throw exception();
+      stringstream msg;
+      msg << "getnameinfo(" << dotted_quad << "): " << strerror(errno);
+      cerr << msg << endl;
+      throw runtime_error(msg.str().c_str());
     }
     cerr << "connecting to " << dotted_quad << " = " << hostname << ':' << ntohs(port) << endl;
   }
@@ -65,7 +73,9 @@ socket_t sock_connect(const uint32_t ip, const int port) {
   while ( (ret =connect(sock,(sockaddr*)&far_end, sizeof(far_end))) == -1 && count < 100)
     {
       count++;
-      cerr << "connect attempt " << count << " failed: " << strerror(errno) << endl;
+      stringstream msg;
+      msg << "connect attempt " << count << " failed: " << strerror(errno);
+      cerr << msg << endl;
 #ifdef _WIN32
       Sleep(1);
 #else
@@ -73,7 +83,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
 #endif
     }
   if (ret == -1)
-    throw exception();
+    throw runtime_error("cannot connect");
   return sock;
 }
 
@@ -81,8 +91,10 @@ socket_t getsock()
 {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
-    cerr << "socket: " << strerror(errno) << endl;
-    throw exception();
+    stringstream msg;
+    msg << "socket: " << strerror(errno);
+    cerr << msg << endl;
+    throw runtime_error(msg.str().c_str());
   }
 
   // SO_REUSEADDR will allow port rebinding on Windows, causing multiple instances
@@ -114,8 +126,10 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   struct hostent* master = gethostbyname(master_location.c_str());
 
   if (master == nullptr) {
-    cerr << "gethostbyname(" << master_location << "): " << strerror(errno) << endl;
-    throw exception();
+    stringstream msg;
+    msg << "gethostbyname(" << master_location << "): " << strerror(errno);
+    cerr << msg << endl;
+    throw runtime_error(msg.str().c_str());
   }
   socks.current_master = master_location;
 
@@ -137,8 +151,10 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
     cerr << "read ok failed!" << endl;
   else cerr << "read ok=" << ok << endl;
   if (!ok) {
-    cerr << "mapper already connected" << endl;
-    throw exception();
+    stringstream msg;
+    msg << "mapper already connected";
+    cerr << msg << endl;
+    throw runtime_error(msg.str().c_str());
   }
 
   uint16_t kid_count;
@@ -174,8 +190,10 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
         }
         else
         {
-          cerr << "bind: " << strerror(errno) << endl;
-          throw exception();
+          stringstream msg;
+	  msg << "bind: " << strerror(errno);
+	  cerr << msg << endl;
+	  throw runtime_error(msg.str().c_str());
         }
       }
       else
@@ -226,8 +244,10 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
     socket_t f = accept(sock,(sockaddr*)&child_address,&size);
     if (f < 0)
     {
-      cerr << "accept: " << strerror(errno) << endl;
-      throw exception();
+      stringstream msg;
+      msg << "accept: " << strerror(errno);
+      cerr << msg << endl;
+      throw runtime_error(msg.str().c_str());
     }
     // char hostname[NI_MAXHOST];
     // char servInfo[NI_MAXSERV];
@@ -279,8 +299,10 @@ void broadcast(char* buffer, const size_t n, const socket_t parent_sock, const s
       if (parent_sock != -1) {
 	//there is data to be read from the parent
 	if(parent_read_pos == n) {
-	  cerr<<"I think parent has no data to send but he thinks he has\n";
-	  throw exception();
+	  stringstream msg;
+	  msg << "I think parent has no data to send but he thinks he has";
+	  cerr << msg << endl;
+	  throw runtime_error(msg.str().c_str());
 	}
 	size_t count = min(ar_buf_size,n-parent_read_pos);
 	int read_size = recv(parent_sock, buffer + parent_read_pos, (int)count, 0);

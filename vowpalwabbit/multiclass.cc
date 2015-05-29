@@ -79,8 +79,9 @@ namespace MULTICLASS {
     }
     if (ld->label == 0)
       {
-	cout << "label 0 is not allowed for multiclass.  Valid labels are {1,k}" << endl;
-	throw exception();
+        const char* msg = "label 0 is not allowed for multiclass.  Valid labels are {1,k}";
+	cout << msg << endl;
+	throw runtime_error(msg);
       }
   }
 

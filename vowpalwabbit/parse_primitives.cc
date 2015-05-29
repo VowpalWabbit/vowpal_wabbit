@@ -7,6 +7,8 @@ license as described in the file LICENSE.
 #ifndef WIN32
 #include <strings.h>
 #endif
+#include <stdexcept>
+#include <sstream>
 
 #include "parse_primitives.h"
 #include "hash.h"
@@ -59,7 +61,9 @@ hash_func_t getHasher(const std::string& s){
   else if(s=="all")
     return hashall;
   else{
-    std::cerr << "Unknown hash function: " << s.c_str() << ". Exiting " << std::endl;
-    throw std::exception();
+    std::stringstream msg;
+    msg << "Unknown hash function: " << s.c_str() << ". Exiting ";
+    std::cerr << msg << std::endl;
+    throw std::runtime_error(msg.str().c_str());
   }
 }

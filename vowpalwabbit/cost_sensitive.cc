@@ -17,10 +17,11 @@ namespace COST_SENSITIVE {
       v = float_of_substring(name[1]);
       if ( nanpattern(v))
 	{
-	  cerr << "error NaN value for: ";
-	  cerr.write(name[0].begin, name[0].end - name[0].begin);
-	  cerr << " terminating." << endl;
-	  throw exception();
+	  stringstream msg;
+	  msg << "error NaN value for: ";
+	  msg.write(name[0].begin, name[0].end - name[0].begin);
+	  cerr << msg << " terminating." << endl;
+	  throw runtime_error(msg.str().c_str());
 	}
       break;
     default:

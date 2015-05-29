@@ -142,8 +142,9 @@ int score_comp(const void* p1, const void* p2) {
     for (size_t i=1; i<ec_seq.size(); i++) {
       if (is_lab != ec_is_label_definition(*ec_seq[i])) {
         if (!((i == ec_seq.size()-1) && (example_is_newline(*ec_seq[i])))) {
-          cerr << "error: mixed label definition and examples in ldf data!" << endl;
-          throw exception();
+	  const char* msg = "error: mixed label definition and examples in ldf data!";
+          cerr << msg << endl;
+          throw runtime_error(msg);
         }
       }
     }
@@ -231,8 +232,10 @@ bool check_ldf_sequence(ldf& data, size_t start_K)
       cerr << "warning: ldf example has mix of train/test data; assuming test" << endl;
     }
     if (ec_is_example_header(*ec)) {
-      cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
-      throw exception();
+      stringstream msg;
+      msg << "warning: example headers at position " << k << ": can only have in initial position!";
+      cerr << msg << endl;
+      throw runtime_error(msg.str().c_str());
     }
   }
   return isTest;
@@ -636,8 +639,9 @@ void predict_or_learn(ldf& data, base_learner& base, example &ec) {
     make_single_prediction(data, base, ec);
   } else if (ec_is_label_definition(ec)) {
     if (data.ec_seq.size() > 0) {
-      cerr << "error: label definition encountered in data block" << endl;
-      throw exception();
+      const char* msg = "error: label definition encountered in data block";
+      cerr << msg << endl;
+      throw runtime_error(msg);
     }
     data.ec_seq.push_back(&ec);
     do_actual_learning<is_learn>(data, base);
@@ -700,8 +704,9 @@ base_learner* csldf_setup(vw& all)
     ld.treat_as_classifier = true;
   } else {
     if (all.training) {
-      cerr << "ldf requires either m/multiline or mc/multiline-classifier, except in test-mode which can be s/sc/singleline/singleline-classifier" << endl;
-      throw exception();
+      const char* msg = "ldf requires either m/multiline or mc/multiline-classifier, except in test-mode which can be s/sc/singleline/singleline-classifier";
+      cerr << msg << endl;
+      throw runtime_error(msg);
     }
     if (ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0) {
       ld.treat_as_classifier = false;

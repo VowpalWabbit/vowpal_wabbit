@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 
     VW::finish(all);
   } catch (exception& e) {
-    // vw is implemented as a library, so we use 'throw exception()'
+    // vw is implemented as a library, so we use 'throw runtime_error()'
     // error 'handling' everywhere.  To reduce stderr pollution
     // everything gets caught here & the error message is printed
     // sans the excess exception noise, and core dump.

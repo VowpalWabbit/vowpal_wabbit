@@ -22,6 +22,8 @@ license as described in the file LICENSE.
 
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -45,14 +47,18 @@ int open_socket(const char* host)
 
   if (he == nullptr)
     {
-      cerr << "gethostbyname(" << host << "): " << strerror(errno) << endl;
-      throw exception();
+      stringstream msg;
+      msg << "gethostbyname(" << host << "): " << strerror(errno);
+      cerr << msg << endl;
+      throw runtime_error(msg.str().c_str());
     }
   int sd = (int)socket(PF_INET, SOCK_STREAM, 0);
   if (sd == -1)
     {
-      cerr << "socket: " << strerror(errno) << endl;
-      throw exception();
+      stringstream msg;
+      msg << "socket: " << strerror(errno);
+      cerr << msg << endl;
+      throw runtime_error(msg.str().c_str());
     }
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
@@ -61,8 +67,10 @@ int open_socket(const char* host)
   memset(&far_end.sin_zero, '\0',8);
   if (connect(sd,(sockaddr*)&far_end, sizeof(far_end)) == -1)
     {
-      cerr << "connect(" << host << ':' << port << "): " << strerror(errno) << endl;
-      throw exception();
+      stringstream msg;
+      msg << "connect(" << host << ':' << port << "): " << strerror(errno);
+      cerr << msg << endl;
+      throw runtime_error(msg.str().c_str());
     }
   char id = '\0';
   if (

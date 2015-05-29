@@ -148,8 +148,10 @@ void parse_affix_argument(vw&all, string str) {
     if (q[0] == '+') { q++; }
     else if (q[0] == '-') { prefix = 0; q++; }
     if ((q[0] < '1') || (q[0] > '7')) {
-      cerr << "malformed affix argument (length must be 1..7): " << p << endl;
-      throw exception();
+      stringstream msg;
+      msg << "malformed affix argument (length must be 1..7): " << p;
+      cerr << msg << endl;
+      throw runtime_error(msg.str().c_str());
     }
     uint16_t len = (uint16_t)(q[0] - '0');
     uint16_t ns = (uint16_t)' ';  // default namespace
@@ -157,12 +159,16 @@ void parse_affix_argument(vw&all, string str) {
       if (valid_ns(q[1]))
         ns = (uint16_t)q[1];
       else {
-        cerr << "malformed affix argument (invalid namespace): " << p << endl;
-        throw exception();
+        stringstream msg;
+	msg << "malformed affix argument (invalid namespace): " << p;
+	cerr << msg << endl;
+	throw runtime_error(msg.str().c_str());
       }
       if (q[2] != 0) {
-        cerr << "malformed affix argument (too long): " << p << endl;
-        throw exception();
+        stringstream msg;
+        msg << "malformed affix argument (too long): " << p;
+        cerr << msg << endl;
+        throw runtime_error(msg.str().c_str());
       }
     }
 
@@ -275,8 +281,9 @@ void parse_source(vw& all)
   
   if ( (vm.count("total") || vm.count("node") || vm.count("unique_id")) && !(vm.count("total") && vm.count("node") && vm.count("unique_id")) )
     {
-      cout << "you must specificy unique_id, total, and node if you specify any" << endl;
-      throw exception();
+      const char* msg = "you must specificy unique_id, total, and node if you specify any";
+      cout << msg << endl;
+      throw runtime_error(msg);
     }
   
   if (vm.count("daemon") || vm.count("pid_file") || (vm.count("port") && !all.active) ) {
@@ -298,8 +305,9 @@ void parse_source(vw& all)
 
   if ((vm.count("cache") || vm.count("cache_file")) && vm.count("invert_hash"))
     {
-      cout << "invert_hash is incompatible with a cache file.  Use it in single pass mode only." << endl;
-      throw exception();
+      const char* msg = "invert_hash is incompatible with a cache file.  Use it in single pass mode only.";
+      cout << msg << endl;
+      throw runtime_error(msg);
     }
 
   if(!all.holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
@@ -357,8 +365,10 @@ void parse_feature_tweaks(vw& all)
   if(vm.count("ngram")){
     if(vm.count("sort_features"))
       {
-	cerr << "ngram is incompatible with sort_features.  " << endl;
-	throw exception();
+	stringstream msg;
+	msg << "ngram is incompatible with sort_features.  ";
+	cerr << msg << endl;
+	throw runtime_error(msg.str().c_str());
       }
 
     all.ngram_strings = vm["ngram"].as< vector<string> >();
@@ -369,8 +379,10 @@ void parse_feature_tweaks(vw& all)
     {
       if(!vm.count("ngram"))
 	{
-	  cout << "You can not skip unless ngram is > 1" << endl;
-	  throw exception();
+	  stringstream msg;
+	  msg << "You can not skip unless ngram is > 1";
+	  cout << msg << endl;
+	  throw runtime_error(msg.str().c_str());
 	}
 
       all.skip_strings = vm["skips"].as<vector<string> >();
@@ -388,15 +400,19 @@ void parse_feature_tweaks(vw& all)
       uint32_t new_bits = (uint32_t)vm["bit_precision"].as< size_t>();
       if (all.default_bits == false && new_bits != all.num_bits)
 	{
-	  cout << "Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work." << endl;
-	  throw exception();
+	  stringstream msg;
+	  msg << "Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work.";
+	  cout << msg << endl;
+	  throw runtime_error(msg.str().c_str());
 	}
       all.default_bits = false;
       all.num_bits = new_bits;
       if (all.num_bits > min(31, sizeof(size_t)*8 - 3))
 	{
-	  cout << "Only " << min(31, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
-	  throw exception();
+	  stringstream msg;
+	  msg << "Only " << min(31, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up.";
+	  cout << msg << endl;
+	  throw runtime_error(msg.str().c_str());
 	}
     }
 
@@ -563,8 +579,10 @@ void parse_feature_tweaks(vw& all)
 
           if (!operator_found)
           {
-              cerr << "argument of --redefine is malformed. Valid format is N:=S, :=S or N:=" << endl;
-              throw exception();
+              stringstream msg;
+	      msg << "argument of --redefine is malformed. Valid format is N:=S, :=S or N:=";
+	      cerr << msg << endl;
+	      throw runtime_error(msg.str().c_str());
           }
 
           if (++operator_pos > 3) // seek operator end

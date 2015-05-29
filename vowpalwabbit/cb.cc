@@ -109,9 +109,10 @@ namespace CB
 
         if( p->parse_name.size() < 1 || p->parse_name.size() > 3 )
         {
-          cerr << "malformed cost specification!" << endl;
+	  const char* msg = "malformed cost specification!";
+          cerr << msg << endl;
 	  cerr << "terminating." << endl;
-          throw exception();
+          throw runtime_error(msg);
         }
 
         f.partial_prediction = 0.;
@@ -123,10 +124,11 @@ namespace CB
 	
         if ( nanpattern(f.cost))
         {
-	  cerr << "error NaN cost for action: ";
-	  cerr.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
-	  cerr << " terminating." << endl;
-	  throw exception();
+	  stringstream msg;
+	  msg << "error NaN cost for action: ";
+	  msg.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
+	  cerr << msg << " terminating." << endl;
+	  throw runtime_error(msg.str().c_str());
         }
       
 
@@ -136,10 +138,11 @@ namespace CB
 	
         if ( nanpattern(f.probability))
         {
-	  cerr << "error NaN probability for action: ";
-	  cerr.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
-	  cerr << " terminating." << endl;
-	  throw exception();
+	  stringstream msg;
+	  msg << "error NaN probability for action: ";
+	  msg.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
+	  cerr << msg << " terminating." << endl;
+	  throw runtime_error(msg.str().c_str());
         }
         
         if( f.probability > 1.0 )
@@ -284,8 +287,9 @@ namespace CB_EVAL
     
     if (words.size() < 2)
       {
-	cout << "Evaluation can not happen without an action and an exploration" << endl;
-	throw exception();
+        const char* msg = "Evaluation can not happen without an action and an exploration";
+	cout <<  msg << endl;
+	throw runtime_error(msg);
       }
     
     ld->action = (uint32_t)hashstring(words[0], 0);    

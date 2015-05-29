@@ -151,19 +151,31 @@ namespace GraphTask {
       if (example_is_edge(ec[i]))
         D.E++;
       else { // it's a node!
-        if (D.E > 0) { cerr << "error: got a node after getting edges!" << endl; throw exception(); }
+        if (D.E > 0) {
+	  stringstream msg;
+	  msg << "error: got a node after getting edges!";
+	  cerr << msg << endl;
+	  throw runtime_error(msg.str().c_str());
+	}
         D.N++;
       }
 
-    if ((D.N == 0) && (D.E > 0)) { cerr << "error: got edges without any nodes!" << endl; throw exception(); }
+    if ((D.N == 0) && (D.E > 0)) {
+      stringstream msg;
+      msg << "error: got edges without any nodes!";
+      cerr << msg << endl;
+      throw runtime_error(msg.str().c_str());
+    }
 
     D.adj = vector<vector<size_t>>(D.N, vector<size_t>(0));
 
     for (size_t i=D.N; i<ec.size(); i++) {
       for (size_t n=0; n<ec[i]->l.cs.costs.size(); n++) {
         if (ec[i]->l.cs.costs[n].class_index > D.N) {
-          cerr << "error: edge source points to too large of a node id: " << (ec[i]->l.cs.costs[n].class_index) << " > " << D.N << endl;
-          throw exception();
+          stringstream msg;
+	  msg << "error: edge source points to too large of a node id: " << (ec[i]->l.cs.costs[n].class_index) << " > " << D.N;
+	  cerr << msg << endl;
+	  throw runtime_error(msg.str().c_str());
         }
       }
       for (size_t n=0; n<ec[i]->l.cs.costs.size(); n++) {

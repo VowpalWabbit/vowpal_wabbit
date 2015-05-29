@@ -241,8 +241,9 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
       {
         if(!all.quiet){
           if (( i->length() < 3 ) || ! valid_int (i->c_str () + 2)) {
-            cerr << endl << "error, low-rank quadratic features must involve two sets and a rank.\n";
-            throw exception();
+	    const char* msg = "error, low-rank quadratic features must involve two sets and a rank.";
+            cerr << endl << msg << endl;
+            throw runtime_error(msg);
           }
           cerr << *i << " ";
         }

@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 #include <iostream>
 #include <sstream>
 #include <errno.h>
+#include <stdexcept>
 
 using namespace std;
 
@@ -95,7 +96,7 @@ class io_buf {
 	std::stringstream msg;
 	msg << "can't open: " << name << ", error = " << strerror(errno);
 	cerr << msg.str() << endl;
-	throw exception(msg.str().c_str());
+	throw std::runtime_error(msg.str().c_str());
       }
     
     return ret;

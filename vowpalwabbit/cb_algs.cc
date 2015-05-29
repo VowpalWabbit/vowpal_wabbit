@@ -259,8 +259,10 @@ using namespace CB;
         gen_cs_example_dr<is_learn>(c,ec,ld,c.cb_cs_ld);
         break;
       default:
-        std::cerr << "Unknown cb_type specified for contextual bandit learning: " << c.cb_type << ". Exiting." << endl;
-        throw exception();
+        stringstream msg;
+	msg << "Unknown cb_type specified for contextual bandit learning: " << c.cb_type;
+        std::cerr << msg <<  ". Exiting." << endl;
+        throw runtime_error(msg.str().c_str());
     }
 
     if (c.cb_type != CB_TYPE_DM)
@@ -279,8 +281,9 @@ using namespace CB;
   }
 
   void predict_eval(cb&, base_learner&, example&) {
-    cout << "can not use a test label for evaluation" << endl;
-    throw exception();
+    const char* msg = "can not use a test label for evaluation";
+    cout << msg << endl;
+    throw runtime_error(msg);
   }
 
   void learn_eval(cb& c, base_learner&, example& ec) {
@@ -389,8 +392,9 @@ using namespace CB;
 	{
 	  if (eval)
 	    {
-	      cout << "direct method can not be used for evaluation --- it is biased." << endl;
-	      throw exception();
+	      const char* msg = "direct method can not be used for evaluation --- it is biased.";
+	      cout << msg << endl;
+	      throw runtime_error(msg);
 	    }
 	  c.cb_type = CB_TYPE_DM;
 	  problem_multiplier = 1;

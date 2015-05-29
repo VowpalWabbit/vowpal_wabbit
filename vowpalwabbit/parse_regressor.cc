@@ -35,8 +35,10 @@ void initialize_regressor(vw& all)
   all.reg.weight_vector = calloc_or_die<weight>(length << all.reg.stride_shift);
   if (all.reg.weight_vector == nullptr)
     {
-      cerr << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>" << endl;
-      throw exception();
+      stringstream msg;
+      msg << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>";
+      cerr << msg << endl;
+      throw runtime_error(msg.str().c_str());
     } else
   if (all.initial_weight != 0.)
     {
@@ -77,8 +79,10 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       all.model_file_ver = buff2; //stord in all to check save_resume fix in gd
       if (all.model_file_ver < LAST_COMPATIBLE_VERSION)
             {
-                cout << "Model has possibly incompatible version! " << all.model_file_ver.to_string() << endl;
-                throw exception();
+                stringstream msg;
+		msg << "Model has possibly incompatible version! " << all.model_file_ver.to_string();
+		cout << msg << endl;
+		throw runtime_error(msg.str().c_str());
             }
       
       char model = 'm';
@@ -103,8 +107,10 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				buff, text_len, text);
       if (all.default_bits != true && all.num_bits != local_num_bits)
 	{
-	  cout << "vw: -b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model" << endl;
-	  throw exception();
+	  stringstream msg;
+	  msg << "vw: -b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model";
+	  cout << msg << endl;
+	  throw runtime_error(msg.str().c_str());
 	}
       all.default_bits = false;
       all.num_bits = local_num_bits;

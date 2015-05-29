@@ -143,8 +143,9 @@ base_learner* active_setup(vw& all)
   
   if (count(all.args.begin(), all.args.end(),"--lda") != 0)
     {//can't have lda base learner
-      cout << "error: you can't combine lda and active learning" << endl;
-      throw exception();
+      const char* msg =  "error: you can't combine lda and active learning";
+      cerr << msg << endl;
+      throw runtime_error(msg);
     }
 
   base_learner* base = setup_base(all);

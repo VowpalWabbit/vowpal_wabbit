@@ -72,8 +72,9 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 	  }
       }
   if (all.triples.begin() != all.triples.end()) {
-    cerr << "cannot use triples in matrix factorization" << endl;
-    throw exception();
+    const char* msg = "cannot use triples in matrix factorization";
+    cerr << msg << endl;
+    throw runtime_error(msg);
   }
   cout << endl;
 }
@@ -139,8 +140,9 @@ float mf_predict(gdmf& d, example& ec)
     }
 
   if (all.triples.begin() != all.triples.end()) {
-    cerr << "cannot use triples in matrix factorization" << endl;
-    throw exception();
+    const char* msg = "cannot use triples in matrix factorization";
+    cerr << msg << endl;
+    throw runtime_error(msg);
   }
 
   // ec.topic_predictions has linear, x_dot_l_1, x_dot_r_1, x_dot_l_2, x_dot_r_2, ... 
@@ -211,8 +213,9 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
 	  }
       }
     if (all.triples.begin() != all.triples.end()) {
-      cerr << "cannot use triples in matrix factorization" << endl;
-      throw exception();
+      const char* msg = "cannot use triples in matrix factorization";
+      cerr << msg << endl;
+      throw runtime_error(msg);
     }
   }  
   
@@ -320,23 +323,27 @@ base_learner* gd_mf_setup(vw& all)
   
   if ( all.vm.count("adaptive") )
     {
-      cerr << "adaptive is not implemented for matrix factorization" << endl;
-      throw exception();
+      const char* msg = "adaptive is not implemented for matrix factorization";
+      cerr << msg << endl;
+      throw runtime_error(msg);
     }
   if ( all.vm.count("normalized") )
     {
-      cerr << "normalized is not implemented for matrix factorization" << endl;
-      throw exception();
+      const char* msg = "normalized is not implemented for matrix factorization";
+      cerr << msg << endl;
+      throw runtime_error(msg);
     }
   if ( all.vm.count("exact_adaptive_norm") )
     {
-      cerr << "normalized adaptive updates is not implemented for matrix factorization" << endl;
-      throw exception();
+      const char* msg = "normalized adaptive updates is not implemented for matrix factorization";
+      cerr << msg << endl;
+      throw runtime_error(msg);
     }
   if (all.vm.count("bfgs") || all.vm.count("conjugate_gradient"))
     {
-      cerr << "bfgs is not implemented for matrix factorization" << endl;
-      throw exception();
+      const char* msg = "bfgs is not implemented for matrix factorization";
+      cerr << msg << endl;
+      throw runtime_error(msg);
     }	
 
   if(!all.holdout_set_off)

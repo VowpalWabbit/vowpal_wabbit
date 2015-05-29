@@ -74,8 +74,10 @@ LEARNER::base_learner* scorer_setup(vw& all)
     }
   else
     {
-      cerr << "Unknown link function: " << link << endl;
-      throw exception();
+      stringstream msg;
+      msg << "Unknown link function: " << link;
+      cerr << msg << endl;
+      throw runtime_error(msg.str().c_str());
     }
   l->set_multipredict(multipredict_f);
   l->set_update(update);

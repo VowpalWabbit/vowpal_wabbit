@@ -171,12 +171,16 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
   uint32_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
   if(v_length>29){
-    cerr << "cache version too long, cache file is probably invalid" << endl;
-    throw exception();
+    stringstream msg;
+    msg << "cache version too long, cache file is probably invalid";
+    cerr << msg << endl;
+    throw runtime_error(msg.str().c_str());
   }
   else if (v_length == 0) {
-    cerr << "cache version too short, cache file is probably invalid" << endl;
-    throw exception();
+    stringstream msg;
+    msg << "cache version too short, cache file is probably invalid";
+    cerr << msg << endl;
+    throw runtime_error(msg.str().c_str());
   }
     
   t.erase();
@@ -195,13 +199,17 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
   char temp;
   if (buf->read_file(filepointer, &temp, 1) < 1) 
     {
-      cout << "failed to read" << endl;
-      throw exception();
+      stringstream msg;
+      msg << "failed to read";
+      cout << msg << endl;
+      throw runtime_error(msg.str().c_str());
     }
   if (temp != 'c')
     {
-      cout << "data file is not a cache file" << endl;
-      throw exception();
+      stringstream msg;
+      msg << "data file is not a cache file";
+      cout << msg << endl;
+      throw runtime_error(msg.str().c_str());
     }
 
   t.delete_v();
@@ -268,8 +276,10 @@ void reset_source(vw& all, size_t numbits)
 	  int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
 	  if (f < 0)
 	    {
-	      cerr << "accept: " << strerror(errno) << endl;
-	      throw exception();
+	      stringstream msg;
+	      msg << "accept: " << strerror(errno);
+	      cerr << msg << endl;
+	      throw runtime_error(msg.str().c_str());
 	    }
 	  
 	  // note: breaking cluster parallel online learning by dropping support for id
@@ -290,8 +300,9 @@ void reset_source(vw& all, size_t numbits)
 	  {
 	    input->reset_file(input->files[i]);
 	    if (cache_numbits(input, input->files[i]) < numbits) {
-	      cerr << "argh, a bug in caching of some sort!  Exiting\n" ;
-	      throw exception();
+	      const char* msg = "argh, a bug in caching of some sort!  Exiting" ;
+	      cout << msg << endl;
+	      throw runtime_error(msg);
 	    }
 	  }
       }
@@ -412,8 +423,10 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 #endif
       all.p->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
       if (all.p->bound_sock < 0) {
-	cerr << "socket: " << strerror(errno) << endl;
-	throw exception();
+	stringstream msg;
+	msg << "socket: " << strerror(errno);
+	cerr << msg << endl;
+	throw runtime_error(msg.str().c_str());
       }
 
       int on = 1;
@@ -436,14 +449,18 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       // attempt to bind to socket
       if ( ::bind(all.p->bound_sock,(sockaddr*)&address, sizeof(address)) < 0 )
 	{
-	  cerr << "bind: " << strerror(errno) << endl;
-	  throw exception();
+	  stringstream msg;
+	  msg << "bind: " << strerror(errno);
+	  cerr << msg << endl;
+	  throw runtime_error(msg.str().c_str());
 	}
 
       // listen on socket
       if (listen(all.p->bound_sock, 1) < 0) {
-        cerr << "listen: " << strerror(errno) << endl;
-        throw exception();
+        stringstream msg;
+	msg << "listen: " << strerror(errno);
+	cerr << msg << endl;
+	throw runtime_error(msg.str().c_str());
       }
 
       // write port file
@@ -458,8 +475,10 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	  port_file.open(all.vm["port_file"].as<string>().c_str());
 	  if (!port_file.is_open())
 	    {
-	      cerr << "error writing port file" << endl;
-	      throw exception();
+	      stringstream msg;
+	      msg << "error writing port file";
+	      cerr << msg << endl;
+	      throw runtime_error(msg.str().c_str());
 	    }
 	  port_file << ntohs(address.sin_port) << endl;
 	  port_file.close();
@@ -468,8 +487,10 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       // background process
       if (!all.active && daemon(1,1))
 	{
-	  cerr << "daemon: " << strerror(errno) << endl;
-	  throw exception();
+	  stringstream msg;
+	  msg << "daemon: " << strerror(errno);
+	  cerr << msg << endl;
+	  throw runtime_error(msg.str().c_str());
 	}
       // write pid file
       if (all.vm.count("pid_file"))
@@ -478,8 +499,10 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	  pid_file.open(all.vm["pid_file"].as<string>().c_str());
 	  if (!pid_file.is_open())
 	    {
-	      cerr << "error writing pid file" << endl;
-	      throw exception();
+	      stringstream msg;
+	      msg << "error writing pid file";
+	      cerr << msg << endl;
+	      throw runtime_error(msg.str().c_str());
 	    }
 	  pid_file << getpid() << endl;
 	  pid_file.close();
@@ -488,7 +511,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       if (all.daemon && !all.active)
 	{
 #ifdef _WIN32
-		throw exception();
+		throw runtime_error("not supported on windows");
 #else
 		fclose(stdin);
 	  // weights will be shared across processes, accessible to children
@@ -572,8 +595,10 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
       if (f < 0)
 	{
-	  cerr << "accept: " << strerror(errno) << endl;
-	  throw exception();
+	  stringstream msg;
+	  msg << "accept: " << strerror(errno);
+	  cerr << msg << endl;
+	  throw runtime_error(msg.str().c_str());
 	}
       
       all.p->label_sock = f;
@@ -614,7 +639,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	    cerr << "Reading datafile = " << temp << endl;
 	  try
 	  {
-	  int f = all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
+	    all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
 	  }
 	  catch (exception const& ex)
 	    {
@@ -637,7 +662,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
     {
 	  const char* msg = "need a cache file for multiple passes : try using --cache_file";
       cerr << all.program_name << ": " << msg << endl;  
-      throw exception(msg);
+      throw runtime_error(msg);
     }
   all.p->input->count = all.p->input->files.size();
   if (!quiet && !all.daemon)

@@ -294,8 +294,10 @@ namespace DepParserTask {
       uint32_t head = (costs.size() == 0) ? 0 : costs[0].class_index;
       uint32_t tag  = (costs.size() <= 1) ? data->root_label : costs[1].class_index;
       if (tag > data->num_label) {
-        cerr << "invalid label " << tag << " which is > num actions=" << data->num_label << endl;
-        throw exception();
+        stringstream msg;
+	msg << "invalid label " << tag << " which is > num actions=" << data->num_label;
+	cerr << msg << endl;
+	throw runtime_error(msg.str().c_str());
       }
       gold_heads.push_back(head);
       gold_tags.push_back(tag);
@@ -307,8 +309,10 @@ namespace DepParserTask {
       uint32_t label = ec[i]->l.multi.label;
       gold_heads.push_back((label & 255) -1);
       if (label >> 8 > data->num_label) {
-        cerr << "invalid y=" << label << " implies a label of " << (label >> 8) << " which is > num actions=" << data->num_label << endl;
-        throw exception();
+        stringstream msg;
+	msg << "invalid y=" << label << " implies a label of " << (label >> 8) << " which is > num actions=" << data->num_label;
+	cerr << msg << endl;
+	throw runtime_error(msg.str().c_str());
       }
       gold_tags.push_back(label >>8);
       heads[i+1] = 0;
