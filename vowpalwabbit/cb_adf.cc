@@ -91,7 +91,7 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
 
 		//get cost prediction for this label
 		// num_actions should be 1 effectively.
-		// my get_cost_pred function will use 1 for 'index-1+base'				
+		// my get_cost_pred function will use 1 for 'index-1+base'			
 		wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, *(examples[i]), 1, 1);
 
 		//add correction if we observed cost for this action and regressor is wrong
@@ -235,8 +235,22 @@ void do_actual_learning(cb_adf& data, base_learner& base)
       gen_cs_example_ips(data.ec_seq, data.cs_labels);//create test labels.
       call_predict_or_learn<false>(data, base, data.ec_seq);
     }
-  else 
-	  learn<CB_TYPE_DR>(data, base, data.ec_seq);  // needs to call respective methods based on reduction_type. 
+  else
+  {
+	  if (data.cb_type == CB_TYPE_IPS)
+	  {
+		  learn<CB_TYPE_IPS>(data, base, data.ec_seq);
+	  }
+	  else if (data.cb_type == CB_TYPE_DR)
+	  {
+		  learn<CB_TYPE_DR>(data, base, data.ec_seq);
+	  }
+	  else
+	  {
+		  std::cerr << "Unknown cb_type specified for contextual bandit learning: " << data.cb_type << ". Exiting." << endl;
+		  throw exception();
+	  }
+  }
 }
 
 void global_print_newline(vw& all)
@@ -449,7 +463,7 @@ base_learner* cb_adf_setup(vw& all)
 
 	ld.all = &all;
 
-	size_t problem_multiplier = 2;//default for DR
+	size_t problem_multiplier = 1;//default for IPS
 	if (all.vm.count("cb_type"))
 	{
 		std::string type_string;
@@ -465,14 +479,14 @@ base_learner* cb_adf_setup(vw& all)
 			problem_multiplier = 1;
 		}
 		else {
-			std::cerr << "warning: cb_type must be in {'ips','dr'}; resetting to dr." << std::endl;
-			ld.cb_type = CB_TYPE_DR;
+			std::cerr << "warning: cb_type must be in {'ips','dr'}; resetting to ips." << std::endl;
+			ld.cb_type = CB_TYPE_IPS;
 		}
 	}
 	else {
-		//by default use doubly robust
-		ld.cb_type = CB_TYPE_DR;
-		*all.file_options << " --cb_type dr";
+		//by default use ips
+		ld.cb_type = CB_TYPE_IPS;
+		*all.file_options << " --cb_type ips";
 	}
 
 	if (all.vm.count("rank_all"))
