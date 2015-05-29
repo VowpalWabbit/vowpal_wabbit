@@ -49,7 +49,7 @@ int open_socket(const char* host)
     {
       stringstream msg;
       msg << "gethostbyname(" << host << "): " << strerror(errno);
-      cerr << msg << endl;
+      cerr << msg.str() << endl;
       throw runtime_error(msg.str().c_str());
     }
   int sd = (int)socket(PF_INET, SOCK_STREAM, 0);
@@ -57,7 +57,7 @@ int open_socket(const char* host)
     {
       stringstream msg;
       msg << "socket: " << strerror(errno);
-      cerr << msg << endl;
+      cerr << msg.str() << endl;
       throw runtime_error(msg.str().c_str());
     }
   sockaddr_in far_end;
@@ -69,7 +69,7 @@ int open_socket(const char* host)
     {
       stringstream msg;
       msg << "connect(" << host << ':' << port << "): " << strerror(errno);
-      cerr << msg << endl;
+      cerr << msg.str() << endl;
       throw runtime_error(msg.str().c_str());
     }
   char id = '\0';

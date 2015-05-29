@@ -314,7 +314,7 @@ loss_function* getLossFunction(vw& all, string funcName, float function_paramete
   } else {
     stringstream msg;
     msg << "Invalid loss function name: \'" << funcName << "\' Bailing!";
-    cout << msg << endl;
+    cout << msg.str() << endl;
     throw runtime_error(msg.str().c_str());
   }
 }

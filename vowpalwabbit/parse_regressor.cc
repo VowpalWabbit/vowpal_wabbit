@@ -37,7 +37,7 @@ void initialize_regressor(vw& all)
     {
       stringstream msg;
       msg << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>";
-      cerr << msg << endl;
+      cerr << msg.str() << endl;
       throw runtime_error(msg.str().c_str());
     } else
   if (all.initial_weight != 0.)
@@ -81,7 +81,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
             {
                 stringstream msg;
 		msg << "Model has possibly incompatible version! " << all.model_file_ver.to_string();
-		cout << msg << endl;
+		cout << msg.str() << endl;
 		throw runtime_error(msg.str().c_str());
             }
       
@@ -109,7 +109,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 	{
 	  stringstream msg;
 	  msg << "vw: -b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model";
-	  cout << msg << endl;
+	  cout << msg.str() << endl;
 	  throw runtime_error(msg.str().c_str());
 	}
       all.default_bits = false;

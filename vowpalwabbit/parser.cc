@@ -171,16 +171,14 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
   uint32_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
   if(v_length>29){
-    stringstream msg;
-    msg << "cache version too long, cache file is probably invalid";
+    const char* msg = "cache version too long, cache file is probably invalid";
     cerr << msg << endl;
-    throw runtime_error(msg.str().c_str());
+    throw runtime_error(msg);
   }
   else if (v_length == 0) {
-    stringstream msg;
-    msg << "cache version too short, cache file is probably invalid";
+    const char* msg= "cache version too short, cache file is probably invalid";
     cerr << msg << endl;
-    throw runtime_error(msg.str().c_str());
+    throw runtime_error(msg);
   }
     
   t.erase();
@@ -199,17 +197,15 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
   char temp;
   if (buf->read_file(filepointer, &temp, 1) < 1) 
     {
-      stringstream msg;
-      msg << "failed to read";
+      const char* msg = "failed to read";
       cout << msg << endl;
-      throw runtime_error(msg.str().c_str());
+      throw runtime_error(msg);
     }
   if (temp != 'c')
     {
-      stringstream msg;
-      msg << "data file is not a cache file";
+      const char* msg = "data file is not a cache file";
       cout << msg << endl;
-      throw runtime_error(msg.str().c_str());
+      throw runtime_error(msg);
     }
 
   t.delete_v();
@@ -278,7 +274,7 @@ void reset_source(vw& all, size_t numbits)
 	    {
 	      stringstream msg;
 	      msg << "accept: " << strerror(errno);
-	      cerr << msg << endl;
+	      cerr << msg.str() << endl;
 	      throw runtime_error(msg.str().c_str());
 	    }
 	  
@@ -425,7 +421,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       if (all.p->bound_sock < 0) {
 	stringstream msg;
 	msg << "socket: " << strerror(errno);
-	cerr << msg << endl;
+	cerr << msg.str() << endl;
 	throw runtime_error(msg.str().c_str());
       }
 
@@ -451,7 +447,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	{
 	  stringstream msg;
 	  msg << "bind: " << strerror(errno);
-	  cerr << msg << endl;
+	  cerr << msg.str() << endl;
 	  throw runtime_error(msg.str().c_str());
 	}
 
@@ -459,7 +455,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       if (listen(all.p->bound_sock, 1) < 0) {
         stringstream msg;
 	msg << "listen: " << strerror(errno);
-	cerr << msg << endl;
+	cerr << msg.str() << endl;
 	throw runtime_error(msg.str().c_str());
       }
 
@@ -475,10 +471,9 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	  port_file.open(all.vm["port_file"].as<string>().c_str());
 	  if (!port_file.is_open())
 	    {
-	      stringstream msg;
-	      msg << "error writing port file";
+	      const char* msg = "error writing port file";
 	      cerr << msg << endl;
-	      throw runtime_error(msg.str().c_str());
+	      throw runtime_error(msg);
 	    }
 	  port_file << ntohs(address.sin_port) << endl;
 	  port_file.close();
@@ -489,7 +484,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	{
 	  stringstream msg;
 	  msg << "daemon: " << strerror(errno);
-	  cerr << msg << endl;
+	  cerr << msg.str() << endl;
 	  throw runtime_error(msg.str().c_str());
 	}
       // write pid file
@@ -499,10 +494,9 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	  pid_file.open(all.vm["pid_file"].as<string>().c_str());
 	  if (!pid_file.is_open())
 	    {
-	      stringstream msg;
-	      msg << "error writing pid file";
+	      const char* msg = "error writing pid file";
 	      cerr << msg << endl;
-	      throw runtime_error(msg.str().c_str());
+	      throw runtime_error(msg);
 	    }
 	  pid_file << getpid() << endl;
 	  pid_file.close();
@@ -597,7 +591,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	{
 	  stringstream msg;
 	  msg << "accept: " << strerror(errno);
-	  cerr << msg << endl;
+	  cerr << msg.str() << endl;
 	  throw runtime_error(msg.str().c_str());
 	}
       

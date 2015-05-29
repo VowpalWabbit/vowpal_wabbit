@@ -174,7 +174,7 @@ void learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 	  {
 	    stringstream msg;
 	    msg << "Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type;
-	    std::cerr << msg << ". Exiting." << endl;
+	    std::cerr << msg.str() << ". Exiting." << endl;
 	    throw runtime_error(msg.str().c_str());
 	  }
 	
@@ -200,7 +200,7 @@ bool test_adf_sequence(cb_adf& data)
     if (CB::ec_is_example_header(*ec)) {
       stringstream msg;
       msg << "warning: example headers at position " << k << ": can only have in initial position!"; 
-      cerr << msg << endl;
+      cerr << msg.str() << endl;
       throw runtime_error(msg.str().c_str());
     }
   }

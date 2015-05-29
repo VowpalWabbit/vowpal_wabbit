@@ -152,19 +152,17 @@ namespace GraphTask {
         D.E++;
       else { // it's a node!
         if (D.E > 0) {
-	  stringstream msg;
-	  msg << "error: got a node after getting edges!";
+	  const char* msg = "error: got a node after getting edges!";
 	  cerr << msg << endl;
-	  throw runtime_error(msg.str().c_str());
+	  throw runtime_error(msg);
 	}
         D.N++;
       }
 
     if ((D.N == 0) && (D.E > 0)) {
-      stringstream msg;
-      msg << "error: got edges without any nodes!";
+      const char* msg = "error: got edges without any nodes!";
       cerr << msg << endl;
-      throw runtime_error(msg.str().c_str());
+      throw runtime_error(msg);
     }
 
     D.adj = vector<vector<size_t>>(D.N, vector<size_t>(0));
@@ -174,7 +172,7 @@ namespace GraphTask {
         if (ec[i]->l.cs.costs[n].class_index > D.N) {
           stringstream msg;
 	  msg << "error: edge source points to too large of a node id: " << (ec[i]->l.cs.costs[n].class_index) << " > " << D.N;
-	  cerr << msg << endl;
+	  cerr << msg.str() << endl;
 	  throw runtime_error(msg.str().c_str());
         }
       }

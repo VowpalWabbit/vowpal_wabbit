@@ -150,7 +150,7 @@ void parse_affix_argument(vw&all, string str) {
     if ((q[0] < '1') || (q[0] > '7')) {
       stringstream msg;
       msg << "malformed affix argument (length must be 1..7): " << p;
-      cerr << msg << endl;
+      cerr << msg.str() << endl;
       throw runtime_error(msg.str().c_str());
     }
     uint16_t len = (uint16_t)(q[0] - '0');
@@ -161,13 +161,13 @@ void parse_affix_argument(vw&all, string str) {
       else {
         stringstream msg;
 	msg << "malformed affix argument (invalid namespace): " << p;
-	cerr << msg << endl;
+	cerr << msg.str() << endl;
 	throw runtime_error(msg.str().c_str());
       }
       if (q[2] != 0) {
         stringstream msg;
         msg << "malformed affix argument (too long): " << p;
-        cerr << msg << endl;
+        cerr << msg.str() << endl;
         throw runtime_error(msg.str().c_str());
       }
     }
@@ -365,10 +365,9 @@ void parse_feature_tweaks(vw& all)
   if(vm.count("ngram")){
     if(vm.count("sort_features"))
       {
-	stringstream msg;
-	msg << "ngram is incompatible with sort_features.  ";
+	const char* msg = "ngram is incompatible with sort_features.  ";
 	cerr << msg << endl;
-	throw runtime_error(msg.str().c_str());
+	throw runtime_error(msg);
       }
 
     all.ngram_strings = vm["ngram"].as< vector<string> >();
@@ -379,10 +378,9 @@ void parse_feature_tweaks(vw& all)
     {
       if(!vm.count("ngram"))
 	{
-	  stringstream msg;
-	  msg << "You can not skip unless ngram is > 1";
+	  const char* msg = "You can not skip unless ngram is > 1";
 	  cout << msg << endl;
-	  throw runtime_error(msg.str().c_str());
+	  throw runtime_error(msg);
 	}
 
       all.skip_strings = vm["skips"].as<vector<string> >();
@@ -402,7 +400,7 @@ void parse_feature_tweaks(vw& all)
 	{
 	  stringstream msg;
 	  msg << "Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work.";
-	  cout << msg << endl;
+	  cout << msg.str() << endl;
 	  throw runtime_error(msg.str().c_str());
 	}
       all.default_bits = false;
@@ -411,7 +409,7 @@ void parse_feature_tweaks(vw& all)
 	{
 	  stringstream msg;
 	  msg << "Only " << min(31, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up.";
-	  cout << msg << endl;
+	  cout << msg.str() << endl;
 	  throw runtime_error(msg.str().c_str());
 	}
     }
@@ -579,10 +577,9 @@ void parse_feature_tweaks(vw& all)
 
           if (!operator_found)
           {
-              stringstream msg;
-	      msg << "argument of --redefine is malformed. Valid format is N:=S, :=S or N:=";
+	      const char* msg = "argument of --redefine is malformed. Valid format is N:=S, :=S or N:=";
 	      cerr << msg << endl;
-	      throw runtime_error(msg.str().c_str());
+	      throw runtime_error(msg);
           }
 
           if (++operator_pos > 3) // seek operator end

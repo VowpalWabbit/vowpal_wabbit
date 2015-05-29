@@ -445,7 +445,7 @@ namespace Search {
       msg << "internal error (bug): expecting top namespace to be '" << ns << "' but it was ";
       if (ec.indices.size() == 0) msg << "empty";
       else msg << (size_t)ec.indices.last();
-      std::cerr << msg << endl;
+      std::cerr << msg.str() << endl;
       throw runtime_error(msg.str().c_str());
     }
     ec.num_features -= ec.atomics[ns].size();
@@ -957,10 +957,9 @@ namespace Search {
 
     case NO_ROLLOUT:
     default:
-        std::stringstream msg;
-	msg << "internal error (bug): trying to rollin or rollout with NO_ROLLOUT";
+	const char* msg = "internal error (bug): trying to rollin or rollout with NO_ROLLOUT";
 	cerr << msg << endl;
-	throw runtime_error(msg.str().c_str());
+	throw runtime_error(msg);
     }
   }
   
@@ -1362,10 +1361,9 @@ namespace Search {
       return a;
     }
 
-    std::stringstream msg;
-    msg << "error: predict called in unknown state";
+    const char* msg = "error: predict called in unknown state";
     cerr << msg << endl;
-    throw runtime_error(msg.str().c_str());
+    throw runtime_error(msg);
   }
   
   inline bool cmp_size_t(const size_t a, const size_t b) { return a < b; }
@@ -1914,7 +1912,7 @@ namespace Search {
     if (f == nullptr) {
       std::stringstream msg;
       msg << "error: could not read file " << filename << " (" << strerror(errno) << "); assuming all transitions are valid";
-      std::cerr << msg << std::endl;
+      std::cerr << msg.str() << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
 
@@ -2072,10 +2070,9 @@ namespace Search {
       if (priv.current_policy > 1) priv.current_policy = 1;
     } else if (interpolation_string.compare("policy") == 0) {
     } else {
-      stringstream msg;
-      msg << "error: --search_interpolation must be 'data' or 'policy'";
+      const char* msg = "error: --search_interpolation must be 'data' or 'policy'";
       cerr << msg << endl;
-      throw runtime_error(msg.str().c_str());
+      throw runtime_error(msg);
     }
 
     if (vm.count("search_rollout")) rollout_string = vm["search_rollout"].as<string>();
@@ -2087,10 +2084,9 @@ namespace Search {
     else if ((rollout_string.compare("mix_per_roll") == 0) || (rollout_string.compare("mix") == 0))            priv.rollout_method = MIX_PER_ROLL;
     else if ((rollout_string.compare("none") == 0))          { priv.rollout_method = NO_ROLLOUT; priv.no_caching = true; if (!all.quiet) std::cerr << "no rollout!" << endl; }
     else {
-      stringstream msg;
-      msg << "error: --search_rollout must be 'learn', 'ref', 'mix', 'mix_per_state' or 'none'";
+      const char* msg = "error: --search_rollout must be 'learn', 'ref', 'mix', 'mix_per_state' or 'none'";
       cerr << msg << endl;
-      throw runtime_error(msg.str().c_str());
+      throw runtime_error(msg);
     }
 
     if      ((rollin_string.compare("policy") == 0)       || (rollin_string.compare("learn") == 0))          priv.rollin_method = POLICY;
@@ -2098,10 +2094,9 @@ namespace Search {
     else if ((rollin_string.compare("mix_per_state") == 0))                                                  priv.rollin_method = MIX_PER_STATE;
     else if ((rollin_string.compare("mix_per_roll") == 0) || (rollin_string.compare("mix") == 0))            priv.rollin_method = MIX_PER_ROLL;
     else {
-      stringstream msg;
-      msg << "error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'";
+      const char* msg = "error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'";
       cerr << msg << endl;
-      throw runtime_error(msg.str().c_str());
+      throw runtime_error(msg);
     }
 
     check_option<size_t>(priv.A, all, vm, "search", false, size_equal,
@@ -2183,7 +2178,7 @@ namespace Search {
       if (! vm.count("help")) {
         stringstream msg;
 	msg << "fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list";
-	cerr << msg << endl;
+	cerr << msg.str() << endl;
 	throw runtime_error(msg.str().c_str());
       }
     }
@@ -2380,10 +2375,9 @@ namespace Search {
 	  ec = temp;
 	else
 	  {
-	    std::stringstream msg;
-	    msg << "realloc failed in search.cc ";
+	    const char* msg = "realloc failed in search.cc ";
 	    cerr << msg << endl;
-	    throw runtime_error(msg.str().c_str());
+	    throw runtime_error(msg);
 	  }
       }
     else            ec = calloc_or_die<example>(input_length);
@@ -2393,17 +2387,15 @@ namespace Search {
   void predictor::set_input_at(size_t posn, example&ex) {
     if (!ec_alloced)
     {
-    	stringstream msg;
-	msg << "call to set_input_at without previous call to set_input_length";
+	const char* msg = "call to set_input_at without previous call to set_input_length";
 	cerr << msg << endl;
-	throw runtime_error(msg.str().c_str());
+	throw runtime_error(msg);
     }
     if (posn >= ec_cnt)
     {
-    	stringstream msg;
-	msg << "call to set_input_at with too large a position";
+	const char* msg = "call to set_input_at with too large a position";
 	cerr << msg << endl;
-	throw runtime_error(msg.str().c_str());
+	throw runtime_error(msg);
     }
     VW::copy_example_data(false, ec+posn, &ex, CS::cs_label.label_size, CS::cs_label.copy_label); // TODO: the false is "audit"
   }

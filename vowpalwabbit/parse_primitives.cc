@@ -63,7 +63,7 @@ hash_func_t getHasher(const std::string& s){
   else{
     std::stringstream msg;
     msg << "Unknown hash function: " << s.c_str() << ". Exiting ";
-    std::cerr << msg << std::endl;
+    std::cerr << msg.str() << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 }

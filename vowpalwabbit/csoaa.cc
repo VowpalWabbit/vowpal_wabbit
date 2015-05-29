@@ -234,7 +234,7 @@ bool check_ldf_sequence(ldf& data, size_t start_K)
     if (ec_is_example_header(*ec)) {
       stringstream msg;
       msg << "warning: example headers at position " << k << ": can only have in initial position!";
-      cerr << msg << endl;
+      cerr << msg.str() << endl;
       throw runtime_error(msg.str().c_str());
     }
   }

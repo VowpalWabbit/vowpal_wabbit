@@ -296,7 +296,7 @@ namespace DepParserTask {
       if (tag > data->num_label) {
         stringstream msg;
 	msg << "invalid label " << tag << " which is > num actions=" << data->num_label;
-	cerr << msg << endl;
+	cerr << msg.str() << endl;
 	throw runtime_error(msg.str().c_str());
       }
       gold_heads.push_back(head);

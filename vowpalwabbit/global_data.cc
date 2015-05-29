@@ -41,7 +41,7 @@ size_t really_read(int sock, void* in, size_t count)
 	  {
 	    stringstream msg;
 	    msg << "read(" << sock << "," << count << "-" << done << "): " << strerror(errno);
-	    cerr << msg << endl;
+	    cerr << msg.str() << endl;
 	    throw runtime_error(msg.str().c_str());
 	  }
 	else
@@ -73,7 +73,7 @@ void send_prediction(int sock, global_prediction p)
     {
       stringstream msg;
       msg << "send_prediction write(" << sock << "): " << strerror(errno);
-      cerr << msg << endl;
+      cerr << msg.str() << endl;
       throw runtime_error(msg.str().c_str());
     }
 }

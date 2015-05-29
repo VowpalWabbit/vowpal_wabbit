@@ -38,7 +38,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
     {
       stringstream msg;
       msg << "socket: " << strerror(errno);
-      cerr << msg << endl;
+      cerr << msg.str() << endl;
       throw runtime_error(msg.str().c_str());
     }
   sockaddr_in far_end;
@@ -53,7 +53,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
     if (nullptr == inet_ntop(AF_INET, &(far_end.sin_addr), dotted_quad, INET_ADDRSTRLEN)) {
       stringstream msg;
       msg << "inet_ntop: " << strerror(errno);
-      cerr << msg << endl;
+      cerr << msg.str() << endl;
       throw runtime_error(msg.str().c_str());
     }
 
@@ -62,7 +62,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
     if (getnameinfo((sockaddr *) &far_end, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV)) {
       stringstream msg;
       msg << "getnameinfo(" << dotted_quad << "): " << strerror(errno);
-      cerr << msg << endl;
+      cerr << msg.str() << endl;
       throw runtime_error(msg.str().c_str());
     }
     cerr << "connecting to " << dotted_quad << " = " << hostname << ':' << ntohs(port) << endl;
@@ -75,7 +75,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
       count++;
       stringstream msg;
       msg << "connect attempt " << count << " failed: " << strerror(errno);
-      cerr << msg << endl;
+      cerr << msg.str() << endl;
 #ifdef _WIN32
       Sleep(1);
 #else
@@ -93,7 +93,7 @@ socket_t getsock()
   if (sock < 0) {
     stringstream msg;
     msg << "socket: " << strerror(errno);
-    cerr << msg << endl;
+    cerr << msg.str() << endl;
     throw runtime_error(msg.str().c_str());
   }
 
@@ -128,7 +128,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   if (master == nullptr) {
     stringstream msg;
     msg << "gethostbyname(" << master_location << "): " << strerror(errno);
-    cerr << msg << endl;
+    cerr << msg.str() << endl;
     throw runtime_error(msg.str().c_str());
   }
   socks.current_master = master_location;
@@ -151,10 +151,9 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
     cerr << "read ok failed!" << endl;
   else cerr << "read ok=" << ok << endl;
   if (!ok) {
-    stringstream msg;
-    msg << "mapper already connected";
+    const char* msg = "mapper already connected";
     cerr << msg << endl;
-    throw runtime_error(msg.str().c_str());
+    throw runtime_error(msg);
   }
 
   uint16_t kid_count;
@@ -192,7 +191,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
         {
           stringstream msg;
 	  msg << "bind: " << strerror(errno);
-	  cerr << msg << endl;
+	  cerr << msg.str() << endl;
 	  throw runtime_error(msg.str().c_str());
         }
       }
@@ -246,7 +245,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
     {
       stringstream msg;
       msg << "accept: " << strerror(errno);
-      cerr << msg << endl;
+      cerr << msg.str() << endl;
       throw runtime_error(msg.str().c_str());
     }
     // char hostname[NI_MAXHOST];
@@ -299,10 +298,9 @@ void broadcast(char* buffer, const size_t n, const socket_t parent_sock, const s
       if (parent_sock != -1) {
 	//there is data to be read from the parent
 	if(parent_read_pos == n) {
-	  stringstream msg;
-	  msg << "I think parent has no data to send but he thinks he has";
+	  const char* msg = "I think parent has no data to send but he thinks he has";
 	  cerr << msg << endl;
-	  throw runtime_error(msg.str().c_str());
+	  throw runtime_error(msg);
 	}
 	size_t count = min(ar_buf_size,n-parent_read_pos);
 	int read_size = recv(parent_sock, buffer + parent_read_pos, (int)count, 0);

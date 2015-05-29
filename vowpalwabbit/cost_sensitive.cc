@@ -20,7 +20,7 @@ namespace COST_SENSITIVE {
 	  stringstream msg;
 	  msg << "error NaN value for: ";
 	  msg.write(name[0].begin, name[0].end - name[0].begin);
-	  cerr << msg << " terminating." << endl;
+	  cerr << msg.str() << " terminating." << endl;
 	  throw runtime_error(msg.str().c_str());
 	}
       break;

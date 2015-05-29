@@ -127,7 +127,7 @@ namespace CB
 	  stringstream msg;
 	  msg << "error NaN cost for action: ";
 	  msg.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
-	  cerr << msg << " terminating." << endl;
+	  cerr << msg.str() << " terminating." << endl;
 	  throw runtime_error(msg.str().c_str());
         }
       
@@ -141,7 +141,7 @@ namespace CB
 	  stringstream msg;
 	  msg << "error NaN probability for action: ";
 	  msg.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
-	  cerr << msg << " terminating." << endl;
+	  cerr << msg.str() << " terminating." << endl;
 	  throw runtime_error(msg.str().c_str());
         }
         

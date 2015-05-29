@@ -261,7 +261,7 @@ using namespace CB;
       default:
         stringstream msg;
 	msg << "Unknown cb_type specified for contextual bandit learning: " << c.cb_type;
-        std::cerr << msg <<  ". Exiting." << endl;
+        std::cerr << msg.str() <<  ". Exiting." << endl;
         throw runtime_error(msg.str().c_str());
     }
 
