@@ -12,11 +12,12 @@
                                     #                            by VW as two distinct categorical variables)
 #target[string]:                    target of the data (target)
 #weight[string]:                    weight of each line of the dataset (importance)
+#tag[string]:                       tag of each line of the dataset
 #hard_parse[bool]:                  if equals true, parses the data more strictly to avoid feeding VW with false categorical
                                     #variables like '_', or same variables perceived differently life "_var" and "var" 
 
 
-dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, hard_parse = F)
+dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag = NULL, hard_parse = F)
 {
   #required packages
   require(data.table)
@@ -34,7 +35,7 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, hard
   #if namespaces = NULL, define a unique namespace
   if(is.null(namespaces))
   {
-    all_vars = colnames(data)[colnames(data) != target]
+    all_vars = colnames(data)[!colnames(data) %in% c(target, weight, tag)]
     namespaces <- list(A = list(varName = all_vars, keepSpace=F)) 
   }
    
@@ -78,6 +79,7 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, hard
   names(namespaces) <- parsingNames(names(namespaces))
   for(x in names(namespaces)) namespaces[[x]]$varName = parsingNames(namespaces[[x]]$varName)
   target = parsingNames(target)
+  if(!is.null(tag)) tag = parsingNames(tag)
   if(!is.null(weight)) weight = parsingNames(weight)
   
   
@@ -104,16 +106,32 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, hard
                                                                 ", keepSpace = F, hard_parse = hard_parse)'))") 
   }
   
-  ###   FIRST PART OF THE VW DATA FORMAT: target AND WEIGHT
+  ###   FIRST PART OF THE VW DATA FORMAT: target, weight, tag
   formatDataVW = ''
   argexpr = character(0)  
+  
+  ### Label can be null, no training is performed
   if(!is.null(target))
   {
-    if(!is.null(weight))
+    # Both weight and tag are not null
+    if(!is.null(weight) && !is.null(tag))
+    {
+      formatDataVW = '%f %f %s'
+      argexpr = paste(target, weight, tag, sep = ', ')
+    }
+    # Weight is null, tag is not null
+    else if(is.null(weight) && !is.null(tag))
+    {
+      formatDataVW = '%f %s'
+      argexpr = paste(target, tag, sep = ', ')
+    }
+    # Weight is not null, tag is null
+    else if(!is.null(weight) && is.null(tag))
     {
       formatDataVW = '%f %f'
       argexpr = paste(target, weight, sep = ', ')
     }
+    # We just output target
     else
     {
       formatDataVW = '%f'
@@ -137,7 +155,15 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, hard
   }
   
   ###   FULL VW DATA STRING (NOT FORMATTED YET) : (%target %weight |A num1:%f %s |B num2:%f %s)
-  formatDataVW = paste0(formatDataVW, collapse = ' |')
+  if (!is.null(tag))
+  {
+    formatDataVW = paste0(formatDataVW, collapse = '|')
+  }
+  else
+  {
+    formatDataVW = paste0(formatDataVW, collapse = ' |')
+  }
+  
   formatDataVW = paste0("sprintf('", formatDataVW, "',",argexpr, ")")
   
   ###   FORMATTING USING THE DATA.TABLE DYNAMICS TO OBTAIN THE FINAL VW DATA STRING
