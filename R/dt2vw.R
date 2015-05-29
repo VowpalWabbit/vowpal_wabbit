@@ -2,16 +2,42 @@
 #fileName[string]:                  file name of the resulting data in VW-friendly format
 #namespaces[list / yaml file]:      name of each namespace and each variable for each namespace
                                     #can be a R list, or a YAML file
-#label[string]:                     label of the data (target)
+                                    #example namespace with the IRIS database:
+                                    # namespaces = list(sepal = list(varName = c('Sepal.Length', 'Sepal.Width'), keepSpace=F),
+                                    #                   petal = list(varName = c('Petal.Length', 'Petal.Width'), keepSpace=F))
+                                    # this creates 2 namespaces (sepal and petal) containing the variables defined by varName.
+                                    # keepSpace allows to keep or remove spaces in categorical variables
+                                    #example: "FERRARI 4Si" ==> "FERRARI_4Si" with keepSpace = F
+                                    #                       ==> "FERRARI 4Si" with keepSpace = T (interpreted
+                                    #                            by VW as two distinct categorical variables)
+#target[string]:                    target of the data (target)
 #weight[string]:                    weight of each line of the dataset (importance)
 #hard_parse[bool]:                  if equals true, parses the data more strictly to avoid feeding VW with false categorical
                                     #variables like '_', or same variables perceived differently life "_var" and "var" 
 
-dt2vw <- function(data, fileName, namespaces, label, weight, hard_parse = F)
+
+dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, hard_parse = F)
 {
   #required packages
   require(data.table)
   
+  if(class(data)[1] != "data.table")
+    data = data.table(data)
+  
+  #change target if its boolean to take values in {-1,1}
+  if(is.logical(data[[target]]) | sum(levels(factor(data[[target]])) == levels(factor(c(0,1)))) == 2)
+  {
+    data[[target]][data[[target]] == TRUE] = 1
+    data[[target]][data[[target]] == FALSE] = -1
+  }
+  
+  #if namespaces = NULL, define a unique namespace
+  if(is.null(namespaces))
+  {
+    all_vars = colnames(data)[colnames(data) != target]
+    namespaces <- list(A = list(varName = all_vars, keepSpace=F)) 
+  }
+   
   #parse variable names
   specChar = '\\(|\\)|\\||\\:'
   specCharSpace = '\\(|\\)|\\||\\:| '
@@ -28,7 +54,6 @@ dt2vw <- function(data, fileName, namespaces, label, weight, hard_parse = F)
   parsingVar <- function(x, keepSpace, hard_parse)
   {           
     #remove leading and trailing spaces, then remove special characters then remove isolated underscores.
-    
     if(!keepSpace) 
       spch = specCharSpace
     else
@@ -37,8 +62,7 @@ dt2vw <- function(data, fileName, namespaces, label, weight, hard_parse = F)
     if(hard_parse)
       gsub('(^_( *|_*)+)|(^_$)|(( *|_*)+_$)|( +_+ +)',' ', gsub(specChar,'_', gsub('(^ +)|( +$)', '',x)))
     else
-      gsub(spch, '_', x)
-      
+      gsub(spch, '_', x)  
   }
 
   ###   NAMESPACE LOAD WITH A YAML FILE
@@ -53,7 +77,7 @@ dt2vw <- function(data, fileName, namespaces, label, weight, hard_parse = F)
   setnames(data, names(data), parsingNames(names(data)))
   names(namespaces) <- parsingNames(names(namespaces))
   for(x in names(namespaces)) namespaces[[x]]$varName = parsingNames(namespaces[[x]]$varName)
-  label = parsingNames(label)
+  target = parsingNames(target)
   if(!is.null(weight)) weight = parsingNames(weight)
   
   
@@ -80,20 +104,20 @@ dt2vw <- function(data, fileName, namespaces, label, weight, hard_parse = F)
                                                                 ", keepSpace = F, hard_parse = hard_parse)'))") 
   }
   
-  ###   FIRST PART OF THE VW DATA FORMAT: LABEL AND WEIGHT
+  ###   FIRST PART OF THE VW DATA FORMAT: target AND WEIGHT
   formatDataVW = ''
   argexpr = character(0)  
-  if(!is.null(label))
+  if(!is.null(target))
   {
     if(!is.null(weight))
     {
       formatDataVW = '%f %f'
-      argexpr = paste(label, weight, sep = ', ')
+      argexpr = paste(target, weight, sep = ', ')
     }
     else
     {
       formatDataVW = '%f'
-      argexpr = label
+      argexpr = target
     }
   }
    
@@ -112,7 +136,7 @@ dt2vw <- function(data, fileName, namespaces, label, weight, hard_parse = F)
     argexpr = paste0(c(argexpr, paramexpr), collapse = ', ')    
   }
   
-  ###   FULL VW DATA STRING (NOT FORMATTED YET) : (%label %weight |A num1:%f %s |B num2:%f %s)
+  ###   FULL VW DATA STRING (NOT FORMATTED YET) : (%target %weight |A num1:%f %s |B num2:%f %s)
   formatDataVW = paste0(formatDataVW, collapse = ' |')
   formatDataVW = paste0("sprintf('", formatDataVW, "',",argexpr, ")")
   
