@@ -36,7 +36,7 @@ namespace DepParserTask {
         ("num_label", po::value<size_t>(&(data->num_label))->default_value(12), "Number of arc labels");
     srn.add_program_options(vm, dparser_opts);
 
-    for(size_t i=1; i<=data->num_label;i++)
+    for(uint32_t i=1; i<=data->num_label;i++)
       if(i!=data->root_label)
         data->valid_labels.push_back(i);
 
@@ -170,12 +170,12 @@ namespace DepParserTask {
 
     // unigram features
     uint64_t v0;
-    for(size_t i=0; i<13; i++) {
+    for(uint32_t i=0; i<13; i++) {
       for (unsigned char* fs = ec[0]->indices.begin; fs != ec[0]->indices.end; fs++) {
         if(*fs == constant_namespace) // ignore constant_namespace
           continue;
 
-        uint32_t additional_offset = (uint32_t)(i*offset_const);
+        uint32_t additional_offset = i*offset_const;
         if(!ec_buf[i]){
           for(size_t k=0; k<ec[0]->atomics[*fs].size(); k++) {
             v0 = affix_constant*((*fs+1)*quadratic_constant + k);
@@ -202,8 +202,8 @@ namespace DepParserTask {
     for(size_t i=8; i<10; i++)
       temp[i] = (idx <=n && children[i-6][idx]!=0)? tags[children[i-6][idx]] : 15;	
 
-    size_t additional_offset = val_namespace*offset_const; 
-    for(int j=0; j< 10;j++) {
+    uint32_t additional_offset = val_namespace*offset_const; 
+    for(uint32_t j=0; j< 10;j++) {
       additional_offset += j* 1023;
       add_feature(&ex, temp[j]+ additional_offset , val_namespace, mask, multiplier);
     }
@@ -248,7 +248,7 @@ namespace DepParserTask {
     if (is_valid(3,valid_actions) && gold_heads[stack.last()] == idx)
       return 3;
 
-    for(size_t i = 1; i<= 3; i++)
+    for(uint32_t i = 1; i<= 3; i++)
       action_loss[i] = (is_valid(i,valid_actions))?0:100;
 
     for(uint32_t i = 0; i<stack.size()-1; i++)
@@ -292,7 +292,7 @@ namespace DepParserTask {
     for (size_t i=0; i<n; i++) {
       v_array<COST_SENSITIVE::wclass>& costs = ec[i]->l.cs.costs;
       uint32_t head = (costs.size() == 0) ? 0 : costs[0].class_index;
-      uint32_t tag  = (costs.size() <= 1) ? data->root_label : costs[1].class_index;
+      uint32_t tag  = (costs.size() <= 1) ? (uint32_t)data->root_label : costs[1].class_index;
       if (tag > data->num_label) {
         stringstream msg;
 	msg << "invalid label " << tag << " which is > num actions=" << data->num_label;
@@ -340,7 +340,7 @@ namespace DepParserTask {
       if(srn.predictNeedsExample())
         extract_features(srn, idx, ec);
       get_valid_actions(valid_actions, idx, n, (uint32_t) stack.size(), stack.size()>0?stack.last():0);
-      uint32_t gold_action = get_gold_actions(srn, idx, n);
+      uint32_t gold_action = (uint32_t) get_gold_actions(srn, idx, n);
 
       // Predict the next action {SHIFT, REDUCE_LEFT, REDUCE_RIGHT}
       //cerr << "----------------------" << endl << "valid = ["; for (size_t ii=0; ii<valid_actions.size(); ii++) cerr << ' ' << valid_actions[ii]; cerr << "], gold=" << gold_action << endl;
@@ -359,7 +359,7 @@ namespace DepParserTask {
     }
 
     heads[stack.last()] = 0;
-    tags[stack.last()] = data->root_label;
+    tags[stack.last()] = (uint32_t)data->root_label;
     srn.loss((gold_heads[stack.last()] != heads[stack.last()]));
     if (srn.output().good())
       for(size_t i=1; i<=n; i++)

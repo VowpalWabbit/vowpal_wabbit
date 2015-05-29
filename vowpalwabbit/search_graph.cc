@@ -231,7 +231,7 @@ namespace GraphTask {
           if (m == n) continue;
           D.neighbor_predictions[ D.pred[m]-1 ] += 1.;
           pred_total += 1.;
-          last_pred = D.pred[m]-1;
+          last_pred = (uint32_t)(D.pred[m]-1);
         }
       else {
         D.neighbor_predictions[0] += 1.;
