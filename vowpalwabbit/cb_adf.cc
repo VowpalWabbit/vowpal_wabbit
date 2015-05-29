@@ -16,7 +16,8 @@ using namespace std;
 using namespace LEARNER;
 using namespace CB;
 
-#define CB_TYPE_DR 1
+#define CB_TYPE_DR 0
+#define CB_TYPE_DM 1
 #define CB_TYPE_IPS 2
 
 struct cb_adf {
@@ -68,7 +69,7 @@ void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::labe
   
 // 
 template <bool is_learn>
-void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label> cs_labels)
+void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
 {
 	size_t mysize = examples.size();
 	if (cs_labels.size() < examples.size()) {
@@ -76,10 +77,8 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
 		cs_labels.end = cs_labels.end_array;
 	}
 
-	c.scorer = c.all->l;
-
 	// initialize the example struct
-
+	
 
 	for (size_t i = 0; i < examples.size(); i++)
 	{
@@ -112,6 +111,7 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
 		cs_labels[0].costs[0].class_index = 0;
 		cs_labels[0].costs[0].x = -1.f;
 	}
+
 }
 
   inline bool observed_cost(CB::cb_class* cl)
@@ -190,6 +190,7 @@ void learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 		std::cerr << "Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type << ". Exiting." << endl;
 		throw exception();
 	}
+
 	
 	call_predict_or_learn<true>(mydata,base,examples);
 }
@@ -441,7 +442,8 @@ base_learner* cb_adf_setup(vw& all)
 	if (missing_option(all, true, "cb_adf", "Do Contextual Bandit learning with multiline action dependent features."))
 		return nullptr;
 	new_options(all, "ADF Options")		
-		("rank_all", "Return actions sorted by score order");
+		("rank_all", "Return actions sorted by score order")
+	  ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}");
 	add_options(all);		
 
 	cb_adf& ld = calloc_or_die<cb_adf>();
@@ -493,6 +495,10 @@ base_learner* cb_adf_setup(vw& all)
 
 	learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>, problem_multiplier);
 	l.set_finish_example(CB_ADF::finish_multiline_example);
+
+	l.increment = base->increment; 
+	ld.scorer = all.scorer;
+
 	l.set_finish(CB_ADF::finish);
 	l.set_end_examples(CB_ADF::end_examples);
 	return make_base(l);
