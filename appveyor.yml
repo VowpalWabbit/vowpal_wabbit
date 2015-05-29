@@ -15,5 +15,5 @@ test_script:
     if($env:PLATFORM -eq "x64")
 
     {
-       vstest.console /logger:Appveyor /Platform:x64 $env:APPVEYOR_BUILD_FOLDER\cs_unittest\bin\x64\Debug\cs_unittest.dll
+       vstest.console /logger:Appveyor /Platform:x64 $env:APPVEYOR_BUILD_FOLDER\cs_unittest\bin\x64\$env:configuration\cs_unittest.dll
     }
