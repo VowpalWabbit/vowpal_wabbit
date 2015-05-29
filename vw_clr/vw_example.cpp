@@ -21,7 +21,6 @@ namespace Microsoft
 				if (m_example)
 				{
 					// make sure we don't free an example that belongs to the ring
-					// TODO: expose function to determine ring member ship
 					if (!VW::is_ring_example(*m_vw, m_example))
 					{
 						if (m_vw->multilabel_prediction)

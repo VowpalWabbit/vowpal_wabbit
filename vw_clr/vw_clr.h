@@ -2,11 +2,8 @@
 
 #pragma once
 
-// #include <codecvt>
-
 #include "vw.h"
 #include "parser.h"
-// #include "lda_core.h"
 
 #include <msclr\marshal_cppstd.h>
 
@@ -19,21 +16,6 @@ namespace Microsoft
 	{
 		namespace MachineLearning 
 		{
-			[StructLayout(LayoutKind::Sequential)]
-			public value struct FEATURE
-			{
-			public:
-				float x;
-				UInt32 weight_index;
-			};
-
-			public ref class FeatureSpace
-			{
-			public: 
-				property cli::array<FEATURE>^ Features;
-				property unsigned char Name;
-			};
-
 			public interface class IVowpalWabbitExample : public IDisposable
 			{
 			public:
