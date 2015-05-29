@@ -1,5 +1,8 @@
 version: 1.0.{build}
 os: Visual Studio 2015 RC
+configuration:
+- Debug
+- Release
 platform: x64
 shallow_clone: true
 clone_folder: C:\vowpal_wabbit
@@ -7,3 +10,10 @@ build:
   project: C:\vowpal_wabbit\vowpalwabbit\vw.sln
   parallel: true
   verbosity: detailed
+test_script:
+- ps: >-
+    if($env:PLATFORM -eq "x64")
+
+    {
+       vstest.console /logger:Appveyor /Platform:x64 $env:APPVEYOR_BUILD_FOLDER\cs_unittest\bin\x64\Debug\cs_unittest.dll
+    }
