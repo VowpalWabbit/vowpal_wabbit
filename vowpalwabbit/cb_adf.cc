@@ -91,8 +91,7 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
 
 		//get cost prediction for this label
 		// num_actions should be 1 effectively.
-		// my get_cost_pred function will use 1 for 'index-1+base'
-		example exa = *(examples[i]);		
+		// my get_cost_pred function will use 1 for 'index-1+base'				
 		wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, *(examples[i]), 1, 1);
 
 		//add correction if we observed cost for this action and regressor is wrong
