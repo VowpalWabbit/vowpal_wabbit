@@ -280,7 +280,7 @@ void print_features(vw& all, example& ec)
         for (audit_data* a = ns.begin; a != ns.end; ++a)
         {
             audit_interaction(dat, a);
-            audit_feature(dat, a->x, a->weight_index);
+            audit_feature(dat, a->x, a->weight_index + ec.ft_offset);
             audit_interaction(dat, NULL);
         }
       }
