@@ -362,7 +362,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
             for (unsigned char* ns = inter->begin; ns != inter->end; ++ns)
             {
-                if (*ns != *(ns + 1)) // neighbour namespaces are different
+                if ((ns == inter->end-1) || (*ns != *(ns + 1))) // neighbour namespaces are different
                 {   // just multiply precomputed values
                     const int nsc = *ns;
                     num_features_in_inter *= ec.atomics[nsc].size();
@@ -371,10 +371,10 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
                 } else { // we are at beginning of a block made of same namespace (interaction is preliminary sorted)
 
                     // let's find out real length of this block
-                    size_t order_of_inter = 2;
+                    size_t order_of_inter = 2; // alredy compared ns == ns+1
 
-                    unsigned char* ns_end = ns + 1;
-                    while (*ns == *(++ns_end)) ++order_of_inter;
+                    for (unsigned char* ns_end = ns + 2; ns_end < inter->end; ++ns_end)
+                        if (*ns == *ns_end) ++order_of_inter;
 
                     // namespace is same for whole block
                     v_array<feature>& features = ec.atomics[(const int)*ns];
