@@ -293,7 +293,7 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
 
   void predict(gdmf& d, base_learner&, example& ec) { mf_predict(d,ec); }
 
-  void learn(gdmf& d, base_learner& base, example& ec)
+  void learn(gdmf& d, base_learner&, example& ec)
   {
     vw& all = *d.all;
  

@@ -47,7 +47,7 @@ namespace CB
     return total;
   }
 
-  float weight(void* v)
+  float weight(void*)
   {
     return 1.;
   }
@@ -98,7 +98,7 @@ namespace CB
     return (strncmp(ss.begin, str, len_ss) == 0);
   }
 
-  void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
+  void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
   {
     CB::label* ld = (CB::label*)v;
 

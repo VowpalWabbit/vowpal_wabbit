@@ -204,3 +204,21 @@ template<class T,class U>std::ostream& operator<<(std::ostream& os, const v_arra
   os << " ]";
   return os;
 }
+
+typedef v_array<unsigned char> v_string;
+
+inline v_string string2v_string(const std::string& s)
+{
+    v_string res = v_init<unsigned char>();
+    if (!s.empty())
+        push_many(res, (unsigned  char*)s.data(), s.size());
+    return res;
+}
+
+inline std::string v_string2string(const v_string& v_s)
+{
+    std::string res;
+    for (unsigned char* i = v_s.begin; i != v_s.end; ++i)
+        res.push_back(*i);
+    return res;
+}

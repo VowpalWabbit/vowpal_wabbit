@@ -180,7 +180,7 @@ namespace GraphTask {
       D.pred.push_back( D.K+1 );
   }
 
-  void takedown(Search::search& sch, vector<example*>& ec) {
+  void takedown(Search::search& sch, vector<example*>& /*ec*/) {
     task_data& D = *sch.get_task_data<task_data>();
     D.bfs.clear();
     D.pred.clear();
@@ -243,7 +243,7 @@ namespace GraphTask {
     ec[n]->num_features += ec[n]->atomics[neighbor_namespace].size();
   }
   
-  void del_edge_features(task_data&D, uint32_t n, vector<example*>&ec) {
+  void del_edge_features(task_data&/*D*/, uint32_t n, vector<example*>&ec) {
     ec[n]->indices.pop();
     ec[n]->total_sum_feat_sq -= ec[n]->sum_feat_sq[neighbor_namespace];
     ec[n]->num_features -= ec[n]->atomics[neighbor_namespace].size();
