@@ -43,5 +43,5 @@ namespace CB_ALGS {
 	
 }
 
-float get_unbiased_cost(CB::cb_class* known_cost, CB::label& cb_label, size_t &cb_type, uint32_t action, CB::label& ld);
+float get_unbiased_cost(CB::cb_class* known_cost, COST_SENSITIVE::label& cb_label, uint32_t action);
 
