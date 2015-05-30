@@ -14,11 +14,33 @@ import java.io.*;
  */
 public class NativeUtils {
     private static final Logger logger = LoggerFactory.getLogger(NativeUtils.class);
-
     /**
      * Private constructor - this class will never be instanced
      */
     private NativeUtils() {
+    }
+
+    private static String getOsFamily() {
+        final String osName = System.getProperty("os.name");
+        if (osName.toLowerCase().contains("mac")) {
+            return "mac";
+        } else if (osName.toLowerCase().contains("linux")) {
+            return "linux";
+        } else if (osName.toLowerCase().contains("win")) {
+            return "windows";
+        }
+        throw new IllegalStateException("Unsupported operating system " + osName);
+    }
+
+    public static void loadOSDependentLibrary(String path) throws IOException {
+        String osFamily = getOsFamily();
+        String osDependentLib = path + "." + osFamily + "." + System.getProperty("os.arch") + ".lib";
+        if (NativeUtils.class.getResource(osDependentLib) != null) {
+            loadLibraryFromJar(osDependentLib);
+        }
+        else {
+            loadLibraryFromJar(path + ".lib");
+        }
     }
 
     /**

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>vw</groupId>
-    <artifactId>vw-jni-${os.version}-${os.arch}</artifactId>
+    <artifactId>vw-jni</artifactId>
     <version>1.0.3-SNAPSHOT</version>
     <name>Vowpal Wabbit JNI Layer</name>
     <url>https://github.com/JohnLangford/vowpal_wabbit</url>
@@ -49,7 +49,7 @@
             <testResource>
                 <directory>${project.build.directory}</directory>
                 <includes>
-                    <include>vw_jni.lib</include>
+                    <include>vw_jni.*lib</include>
                 </includes>
             </testResource>
         </testResources>
@@ -65,41 +65,6 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.7</version>
-                <executions>
-                    <execution>
-                        <id>Build VW</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <exportAntProperties>true</exportAntProperties>
-                            <target>
-                                <exec executable="make" failonerror="true" />
-                            </target>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>Clean VW</id>
-                        <phase>clean</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <exportAntProperties>true</exportAntProperties>
-                            <target>
-                                <exec executable="make" failonerror="true">
-                                    <arg value="clean" />
-                                </exec>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <version>1.1</version>
                 <executions>
@@ -110,9 +75,6 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <requireJavaVersion>
-					<version>[1.6,)</version>
-				</requireJavaVersion>
                                 <banDuplicateClasses>
                                     <findAllDuplicates>true</findAllDuplicates>
                                 </banDuplicateClasses>
@@ -173,7 +135,7 @@
                                 <resource>
                                     <directory>${project.build.directory}</directory>
                                     <includes>
-                                        <include>vw_jni.lib</include>
+                                        <include>vw_jni.*lib</include>
                                     </includes>
                                 </resource>
                             </resources>

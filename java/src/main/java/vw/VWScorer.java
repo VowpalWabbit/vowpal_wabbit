@@ -15,7 +15,7 @@ public class VWScorer implements Closeable {
 
     static {
         try {
-            NativeUtils.loadLibraryFromJar("/vw_jni.lib");
+            NativeUtils.loadOSDependentLibrary("/vw_jni");
         }
         catch (IOException ioe) {
             logger.error("Cannot load JNI libraries!!");
@@ -56,7 +56,7 @@ public class VWScorer implements Closeable {
      */
     public native float getPrediction(String example);
 
-      /**
+    /**
      * Runs learning on <code>example</code> and returns the prediction output.  Note that
      * this only works for "simple" VW predictions.
      *
@@ -64,6 +64,22 @@ public class VWScorer implements Closeable {
      * @return prediction output
      */
     public native float doLearnAndGetPrediction(String example);
+
+    /**
+     * Run prediction on <code>examples</code> and returns all of the predictions.  Note that
+     * this only works for "simple" VW predictions.
+     * @param examples an array of vw example strings
+     * @return predictions
+     */
+    public native float[] getPredictions(String[] examples);
+
+    /**
+     * Run learning on <code>examples</code> and returns all of the predictions.  Note that
+     * this only works for "simple" VW predictions.
+     * @param examples an array of vw example strings
+     * @return predictions
+     */
+    public native float[] doLearnAndGetPredictions(String[] examples);
 
     public void close() {
         if (!isClosed.getAndSet(true)) {

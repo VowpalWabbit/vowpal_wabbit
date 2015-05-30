@@ -64,6 +64,23 @@ JNIEXPORT jfloat JNICALL Java_vw_VWScorer_doLearnAndGetPrediction (JNIEnv *env, 
     return prediction;
 }
 
+
+JNIEXPORT jfloatArray JNICALL Java_vw_VWScorer_doLearnAndGetPredictions(JNIEnv *env, jobject obj, jobjectArray examples) {
+    size_t len = env->GetArrayLength(examples);
+    float* predictions = new float[len];
+    for (size_t i=0; i<len; ++i) {
+        jstring example = (jstring)env->GetObjectArrayElement(examples, i);
+        predictions[i] = Java_vw_VWScorer_doLearnAndGetPrediction(env, obj, example);
+        env->DeleteLocalRef(example);
+    }
+    jfloatArray jPredictions = env->NewFloatArray(len);
+    env->SetFloatArrayRegion(jPredictions, 0, len, predictions);
+
+    free(predictions);
+    env->DeleteLocalRef(examples);
+    return jPredictions;
+}
+
 JNIEXPORT jfloat JNICALL Java_vw_VWScorer_getPrediction (JNIEnv *env, jobject obj, jstring example_string) {
     const char *utf_string = env->GetStringUTFChars(example_string, NULL);
     example *vec2 = VW::read_example(*vw, utf_string);
@@ -72,6 +89,22 @@ JNIEXPORT jfloat JNICALL Java_vw_VWScorer_getPrediction (JNIEnv *env, jobject ob
     env->ReleaseStringUTFChars(example_string, utf_string);
     env->DeleteLocalRef(example_string);
     return prediction;
+}
+
+JNIEXPORT jfloatArray JNICALL Java_vw_VWScorer_getPredictions(JNIEnv *env, jobject obj, jobjectArray examples) {
+    size_t len = env->GetArrayLength(examples);
+    float* predictions = new float[len];
+    for (size_t i=0; i<len; ++i) {
+        jstring example = (jstring)env->GetObjectArrayElement(examples, i);
+        predictions[i] = Java_vw_VWScorer_getPrediction(env, obj, example);
+        env->DeleteLocalRef(example);
+    }
+    jfloatArray jPredictions = env->NewFloatArray(len);
+    env->SetFloatArrayRegion(jPredictions, 0, len, predictions);
+
+    free(predictions);
+    env->DeleteLocalRef(examples);
+    return jPredictions;
 }
 
 JNIEXPORT void JNICALL Java_vw_VWScorer_closeInstance (JNIEnv *env, jobject obj) {

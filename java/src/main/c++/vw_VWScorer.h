@@ -23,8 +23,6 @@ JNIEXPORT void JNICALL Java_vw_VWScorer_initialize
 JNIEXPORT jfloat JNICALL Java_vw_VWScorer_doLearnAndGetPrediction
   (JNIEnv *, jobject, jstring);
 
-
-
 /*
  * Class:     vw_VWScorer
  * Method:    getPrediction
@@ -32,6 +30,22 @@ JNIEXPORT jfloat JNICALL Java_vw_VWScorer_doLearnAndGetPrediction
  */
 JNIEXPORT jfloat JNICALL Java_vw_VWScorer_getPrediction
   (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     vw_VWScorer
+ * Method:    getPredictions
+ * Signature: ([Ljava/lang/String;)[F
+ */
+JNIEXPORT jfloatArray JNICALL Java_vw_VWScorer_getPredictions
+  (JNIEnv *, jobject, jobjectArray);
+
+/*
+ * Class:     vw_VWScorer
+ * Method:    doLearnAndGetPredictions
+ * Signature: ([Ljava/lang/String;)[F
+ */
+JNIEXPORT jfloatArray JNICALL Java_vw_VWScorer_doLearnAndGetPredictions
+  (JNIEnv *, jobject, jobjectArray);
 
 /*
  * Class:     vw_VWScorer
