@@ -39,4 +39,9 @@ namespace CB_ALGS {
 
     return pred;
   }
+
+	
 }
+
+float get_unbiased_cost(CB::cb_class* known_cost, COST_SENSITIVE::label& cb_label, uint32_t action);
+
