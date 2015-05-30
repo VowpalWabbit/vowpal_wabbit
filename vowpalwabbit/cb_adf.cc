@@ -493,16 +493,12 @@ base_learner* cb_adf_setup(vw& all)
 	  {
 	    ld.rank_all = true;
 	    all.multilabel_prediction = true;
-	  }
-	
-	if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0)
-	{
+		// Push extra flags automatically when rank_all is specified.
 		all.args.push_back("--csoaa_ldf");
 		all.args.push_back("multiline");
-		if (ld.rank_all) 
-		  all.args.push_back("--csoaa_rank");
-	}
-
+		all.args.push_back("--csoaa_rank");		
+	  }
+	
 	base_learner* base = setup_base(all);
 	all.p->lp = CB::cb_label;
 
