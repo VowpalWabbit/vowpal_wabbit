@@ -1,7 +1,6 @@
 version: 1.0.{build}
-os: Visual Studio 2015 RC
+os: Windows Server 2012 R2
 configuration:
-- Debug
 - Release
 platform: x64
 shallow_clone: true
@@ -9,7 +8,10 @@ clone_folder: C:\vowpal_wabbit
 build:
   project: C:\vowpal_wabbit\vowpalwabbit\vw.sln
   parallel: true
-  verbosity: detailed
+  verbosity: normal
+after_build:
+- cd cs
+- ..\vowpalwabbit\.nuget\nuget pack cs.csproj -Prop "Configuration=Release;Platform=x64" -Prop SolutionDir=..\vowpalwabbit\ -OutputDirectory bin\x64\Release
 test_script:
 - ps: >-
     if($env:PLATFORM -eq "x64")
