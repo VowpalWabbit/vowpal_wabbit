@@ -202,7 +202,7 @@ bool test_adf_sequence(cb_adf& data)
     
     if (ec->l.cb.costs.size() > 1)
       {
-	cerr << "cb_adf: badly formatted example, only one cost can be known." << endl;	\
+	cerr << "cb_adf: badly formatted example, only one cost can be known." << endl;	
 	throw exception();
       }
     
