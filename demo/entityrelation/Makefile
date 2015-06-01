@@ -18,7 +18,7 @@ clean:
 
 er.zip: wget.check unzip.check
 	@echo "downloading entity relation data ..." 1>&2
-	@wget -q http://www.cs.illinois.edu/~kchang10/data/$@ \
+	@wget -q http://web.engr.illinois.edu/~kchang10/data/$@ \
 
 ER_%.vw: er.zip
 	@echo "preprocessing entity relation data ..." 1>&2
