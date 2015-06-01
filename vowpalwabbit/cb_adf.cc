@@ -16,7 +16,8 @@ using namespace std;
 using namespace LEARNER;
 using namespace CB;
 
-#define CB_TYPE_DR 1
+#define CB_TYPE_DR 0
+#define CB_TYPE_DM 1
 #define CB_TYPE_IPS 2
 
 struct cb_adf {
@@ -66,39 +67,50 @@ void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::labe
 	}
 }
   
+// 
 template <bool is_learn>
-void gen_cs_label(cb_adf& c, example& ec, v_array<COST_SENSITIVE::label> array, uint32_t label)
+void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
 {
-	COST_SENSITIVE::wclass wc;
-	wc.wap_value = 0.;
-
-	//get cost prediction for this label
-	// num_actions should be 1 effectively.
-	// my get_cost_pred function will use 1 for 'index-1+base'
-	wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, 1, 1);
-
-	//add correction if we observed cost for this action and regressor is wrong
-	if (c.known_cost != nullptr && c.known_cost->action == label)
-		wc.x += (c.known_cost->cost - wc.x) / c.known_cost->probability;
-
-	// do two-step pushes as for learn.
-	COST_SENSITIVE::label cs_ld;
-	cs_ld.costs.push_back(wc);
-	array.push_back(cs_ld);
-}
-
-void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label> array)
-{
-	for (example **ec = examples.begin; ec != examples.end; ec++)
-	{
-		// Get CB::label for each example/line.
-		CB::label ld = (**ec).l.cb;
-
-		if (ld.costs.size() == 1)  // 2nd line
-		  gen_cs_label<true>(c, **ec, array, 1);
-		else if (ld.costs.size() == 0)
-		  gen_cs_label<false>(c, **ec, array, 1);
+	size_t mysize = examples.size();
+	if (cs_labels.size() < examples.size()) {
+		cs_labels.resize(examples.size(), true);
+		cs_labels.end = cs_labels.end_array;
 	}
+
+	// initialize the example struct
+	
+
+	for (size_t i = 0; i < examples.size(); i++)
+	{
+		examples[i]->l.cb.costs.erase();
+		CB::label ld = examples[i]->l.cb;
+		
+
+		COST_SENSITIVE::wclass wc;
+		wc.class_index = 0;
+
+		//get cost prediction for this label
+		// num_actions should be 1 effectively.
+		// my get_cost_pred function will use 1 for 'index-1+base'			
+		wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, *(examples[i]), 1, 1);
+
+		//add correction if we observed cost for this action and regressor is wrong
+		if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
+		{			
+			wc.x += (ld.costs[0].cost - wc.x) / ld.costs[0].probability;
+		}
+
+		cs_labels[i].costs.erase();
+		cs_labels[i].costs.push_back(wc);
+	}
+	cs_labels[examples.size() - 1].costs[0].x = FLT_MAX; //trigger end of multiline example.
+
+	if (examples[0]->l.cb.costs.size() > 0 && examples[0]->l.cb.costs[0].probability == -1.f)//take care of shared examples
+	{
+		cs_labels[0].costs[0].class_index = 0;
+		cs_labels[0].costs[0].x = -1.f;
+	}
+
 }
 
   inline bool observed_cost(CB::cb_class* cl)
@@ -168,13 +180,16 @@ void learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 	if (mydata.known_cost == nullptr)
 	  cerr << "known cost is null." << endl;
 	
-	if(reduction_type == CB_TYPE_IPS )
-	  gen_cs_example_ips(examples, mydata.cs_labels);
-	else 
-	  {
-	    std::cerr << "Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type << ". Exiting." << endl;
-	    throw exception();
-	  }
+	if (reduction_type == CB_TYPE_IPS)
+		gen_cs_example_ips(examples, mydata.cs_labels);
+	else if (reduction_type == CB_TYPE_DR)
+		gen_cs_example_dr<true>(mydata, examples, mydata.cs_labels);
+	else
+	{
+		std::cerr << "Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type << ". Exiting." << endl;
+		throw exception();
+	}
+
 	
 	call_predict_or_learn<true>(mydata,base,examples);
 }
@@ -220,8 +235,22 @@ void do_actual_learning(cb_adf& data, base_learner& base)
       gen_cs_example_ips(data.ec_seq, data.cs_labels);//create test labels.
       call_predict_or_learn<false>(data, base, data.ec_seq);
     }
-  else 
-    learn<CB_TYPE_IPS>(data, base, data.ec_seq); 
+  else
+  {
+	  if (data.cb_type == CB_TYPE_IPS)
+	  {
+		  learn<CB_TYPE_IPS>(data, base, data.ec_seq);
+	  }
+	  else if (data.cb_type == CB_TYPE_DR)
+	  {
+		  learn<CB_TYPE_DR>(data, base, data.ec_seq);
+	  }
+	  else
+	  {
+		  std::cerr << "Unknown cb_type specified for contextual bandit learning: " << data.cb_type << ". Exiting." << endl;
+		  throw exception();
+	  }
+  }
 }
 
 void global_print_newline(vw& all)
@@ -237,6 +266,8 @@ void global_print_newline(vw& all)
   }
 }
 
+// how to 
+
 void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_seq)
 {
   v_array<CB::cb_class> costs = ec.l.cb.costs;
@@ -249,13 +280,27 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
   float loss = 0.;
 
   if (!CB::example_is_test(ec)) {
+
+	  // Replace for loop with a call to Alekh's function to get cost for top 1 action (the first example in ec_seq).
+	  // need to pass in the action ID, element 0 of the array, get its label of multilabel.
+	  // input: the first element of label_v (action ID) of th top 1
+	  /*
+	  namespace MULTILABEL {
+  struct labels {
+    v_array<uint32_t> label_v;
+	  */
+	  // return the cost as one float, 
     for (size_t j=0; j<costs.size(); j++) {
       if (hit_loss) break;
       if (ec.pred.multiclass == costs[j].action) {
         loss = costs[j].cost;
+		// loss = call_Alekh_function(action ID)
+
         hit_loss = true;
       }
     }
+
+	// below codes stay the same.
 
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
@@ -410,32 +455,65 @@ base_learner* cb_adf_setup(vw& all)
 	if (missing_option(all, true, "cb_adf", "Do Contextual Bandit learning with multiline action dependent features."))
 		return nullptr;
 	new_options(all, "ADF Options")		
-		("rank_all", "Return actions sorted by score order");
+		("rank_all", "Return actions sorted by score order")
+	  ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}");
 	add_options(all);		
 
 	cb_adf& ld = calloc_or_die<cb_adf>();
 
 	ld.all = &all;
 
+	size_t problem_multiplier = 1;//default for IPS
+	if (all.vm.count("cb_type"))
+	{
+		std::string type_string;
+
+		type_string = all.vm["cb_type"].as<std::string>();
+		*all.file_options << " --cb_type " << type_string;
+
+		if (type_string.compare("dr") == 0)
+			ld.cb_type = CB_TYPE_DR;
+		else if (type_string.compare("ips") == 0)
+		{
+			ld.cb_type = CB_TYPE_IPS;
+			problem_multiplier = 1;
+		}
+		else {
+			std::cerr << "warning: cb_type must be in {'ips','dr'}; resetting to ips." << std::endl;
+			ld.cb_type = CB_TYPE_IPS;
+		}
+	}
+	else {
+		//by default use ips
+		ld.cb_type = CB_TYPE_IPS;
+		*all.file_options << " --cb_type ips";
+	}
+
 	if (all.vm.count("rank_all"))
-	  {
-	    ld.rank_all = true;
-	    all.multilabel_prediction = true;
-	  }
-	
-	if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0)
+	{
+		ld.rank_all = true;
+		all.multilabel_prediction = true;
+	}
+
+	// Push necessary flags.
+	if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0
+		|| all.vm.count("rank_all"))
 	{
 		all.args.push_back("--csoaa_ldf");
 		all.args.push_back("multiline");
-		if (ld.rank_all) 
-		  all.args.push_back("--csoaa_rank");
-	}
-
+		if (ld.rank_all)
+			all.args.push_back("--csoaa_rank");
+	}	
+	
 	base_learner* base = setup_base(all);
 	all.p->lp = CB::cb_label;
 
-	learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>);
+	learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>, problem_multiplier);
 	l.set_finish_example(CB_ADF::finish_multiline_example);
+
+	l.increment = base->increment; 
+	ld.scorer = all.scorer;
+
 	l.set_finish(CB_ADF::finish);
 	l.set_end_examples(CB_ADF::end_examples);
 	return make_base(l);
