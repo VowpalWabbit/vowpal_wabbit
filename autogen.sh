@@ -28,4 +28,5 @@ case $( uname -s ) in
   ;;
 esac
 
-vwlibtool -f -c && aclocal -I ./acinclude.d -I $AC_PATH/aclocal && autoheader && touch README && automake -ac -Woverride && autoconf && ./configure "$@" $BOOST_DIR_ARG CXX=$CXX
+vwlibtool -f -c && aclocal -I ./acinclude.d -I $AC_PATH/aclocal && autoheader && touch README && automake -ac -Woverride && autoconf
+# && ./configure "$@" $BOOST_DIR_ARG CXX=$CXX

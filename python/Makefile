@@ -8,6 +8,11 @@
 #  $(error Please run 'make' at the top level only)
 #endif
 
+CXX=g++
+BOOST_CPPFLAGS=$(shell grep BOOST_CPPFLAGS ../Makefile | awk  '{print $$3}')
+BOOST_LDFLAGS=$(shell grep BOOST_LDFLAGS ../Makefile | awk  '{print $$3}')
+BOOST_PYTHON=$(shell brew --prefix boost-python)
+
 PYTHON_VERSION = 2.7
 PYTHON_INCLUDE = $(shell python$(PYTHON_VERSION)-config --includes)
 PYTHON_LDFLAGS = $(shell python$(PYTHON_VERSION)-config --ldflags)
@@ -20,8 +25,10 @@ else
 endif
 PYLIBVW = pylibvw.so
 
-all:
-	cd ..; $(MAKE) python
+VWLIBS = -L../vowpalwabbit/.libs -l vw -l allreduce
+
+#all:
+#	cd ..; $(MAKE) python
 
 things: $(PYLIBVW)
 
@@ -30,16 +37,18 @@ ifeq "CYGWIN" "$(findstring CYGWIN,$(UNAME))"
   PYLIBVW = pylibvw.dll
 endif
 ifneq ($(UNAME), Darwin)
-  EXPORT_DYNAMIC = -Wl,--export-dynamic
+#  EXPORT_DYNAMIC = -Wl,--export-dynamic
+  EXPORT_DYNAMIC = -Wl
 endif
 
 STDLIBS = $(BOOST_LIBRARY) $(LIBS) $(PYTHON_LIBS)
 
-$(PYLIBVW): pylibvw.o  ../vowpalwabbit/libvw.a
-	$(CXX) -shared $(EXPORT_DYNAMIC) pylibvw.o $(BOOST_LIBRARY) $(PYTHON_LDFLAGS) $(VWLIBS) $(STDLIBS) -o $(PYLIBVW)
+#  ../vowpalwabbit/libvw.a
+$(PYLIBVW): pylibvw.o
+	$(CXX) -std=c++0x -shared $(EXPORT_DYNAMIC) pylibvw.o $(BOOST_LDFLAGS) -lboost_program_options -L$(BOOST_PYTHON)/lib $(PYTHON_LDFLAGS) $(VWLIBS) $(STDLIBS) -o $(PYLIBVW)
 
 pylibvw.o: pylibvw.cc
-	$(CXX) -std=c++0x $(PYTHON_INCLUDE) $(BOOST_INCLUDE) -fPIC -c pylibvw.cc -o pylibvw.o
+	$(CXX) -std=c++0x $(PYTHON_INCLUDE) $(BOOST_CPPFLAGS) -fPIC -c pylibvw.cc -o pylibvw.o
 
 clean:
 	rm -f *.o $(PYLIBVW)

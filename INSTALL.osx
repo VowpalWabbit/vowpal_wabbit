@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# execute this as a script (for the brave), or better babysit it by executing each in turn
+
+brew install boost
+brew install boost-python
+AC_PATH=`brew --prefix libtool`/share ./autogen.sh 
+# prefix here is optional (for those of us who only install in our home dirs)
+./configure --prefix=<somewhere_in_your_home_dir>/vowpal-wabbit --with-boost=`brew --prefix boost` --with-zlib=`brew --prefix zlib`
+make install
+cd python
+make
