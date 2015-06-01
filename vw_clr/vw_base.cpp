@@ -75,7 +75,11 @@ namespace Microsoft
 					return;
 				}
 
-                System::IO::Directory::CreateDirectory(System::IO::Path::GetDirectoryName(filename));
+                System::String^ directoryName = System::IO::Path::GetDirectoryName(filename);
+                if (!System::String::IsNullOrEmpty(directoryName))
+                {
+                    System::IO::Directory::CreateDirectory(directoryName);
+                }
 
 				auto name = msclr::interop::marshal_as<std::string>(filename);
 
