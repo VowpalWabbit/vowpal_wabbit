@@ -64,7 +64,7 @@ namespace Microsoft.Research.MachineLearning
                 }
 
                 this.version++;
-                oldFactory = factory;
+                oldFactory = this.factory;
                 this.factory = factory;
                 oldPool = this.pool;
                 this.pool = new Stack<PooledObject<T>>();
