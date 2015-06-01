@@ -23,7 +23,7 @@ namespace Microsoft
 
 			VowpalWabbitExampleBuilder::!VowpalWabbitExampleBuilder()
 			{
-				if (m_clrExample)
+				if (m_clrExample != nullptr)
 				{
 					// in case CreateExample is not getting called
 					delete m_clrExample;
@@ -34,12 +34,19 @@ namespace Microsoft
 
 			VowpalWabbitExample^ VowpalWabbitExampleBuilder::CreateExample()
 			{
-				if (!m_clrExample)
+				if (m_clrExample == nullptr)
 					return nullptr;
 
-				// finalize example
-				VW::parse_atomic_example(*m_vw, m_example, false);
-				VW::setup_example(*m_vw, m_example);
+				try
+				{
+					// finalize example
+					VW::parse_atomic_example(*m_vw, m_example, false);
+					VW::setup_example(*m_vw, m_example);
+				}
+				catch (std::exception const& ex)
+				{
+					throw gcnew System::Exception(gcnew System::String(ex.what()));
+				}
 
 				// hand memory management off to VowpalWabbitExample
 				auto ret = m_clrExample;
@@ -51,7 +58,7 @@ namespace Microsoft
 
 			void VowpalWabbitExampleBuilder::Label::set(System::String^ value)
 			{
-				if (!value)
+				if (value == nullptr)
 					return;
 
 				auto labelString = msclr::interop::marshal_as<std::string>(value);

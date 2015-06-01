@@ -49,11 +49,6 @@ namespace Microsoft.Research.MachineLearning.Serializer
             return this.UnderlyingExample.Diff(other, sameOrder);
         }
 
-        public bool IsNewLine
-        {
-            get { return this.UnderlyingExample.IsNewLine; }
-        }
-
         public float Learn()
         {
             return this.UnderlyingExample.Learn();

@@ -23,11 +23,6 @@ namespace Microsoft
 			public interface class IVowpalWabbitExample : public IDisposable
 			{
 			public:
-				property bool IsNewLine
-				{
-					virtual bool get() = 0;
-				}
-
 				property float CostSensitivePrediction
 				{
 					virtual float get() = 0;
@@ -72,11 +67,6 @@ namespace Microsoft
 			public:
 
 				~VowpalWabbitExample();
-
-				property bool IsNewLine
-				{
-					virtual bool get();
-				}
 
 				property float CostSensitivePrediction
 				{

@@ -148,7 +148,6 @@
     <ClInclude Include="vw_clr.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AssemblyInfo.cpp" />
     <ClCompile Include="vw_base.cpp" />
     <ClCompile Include="vw.cpp" />
     <ClCompile Include="vw_example.cpp" />

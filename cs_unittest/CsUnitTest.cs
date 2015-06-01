@@ -57,7 +57,6 @@ namespace cs_test
         }
 
         [TestMethod]
-        // [Ignore]
         [DeploymentItem(@"train-sets\0001.dat", "train-sets")]
         [DeploymentItem(@"train-sets\ref\0001.stderr", @"train-sets\ref")]
         [DeploymentItem(@"test-sets\ref\0001.stderr", @"test-sets\ref")]

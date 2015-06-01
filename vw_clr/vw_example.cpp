@@ -77,6 +77,11 @@ namespace Microsoft
 				size_t length;
 				uint32_t* labels = VW::get_multilabel_predictions(m_example, length);
 
+				if (length > Int32::MaxValue)
+				{
+					throw gcnew ArgumentOutOfRangeException("Multi-label predictions too large");
+				}
+
 				auto result = gcnew cli::array<int>((int)length);
 				Marshal::Copy(IntPtr(labels), result, 0, (int)length);
 
@@ -88,11 +93,6 @@ namespace Microsoft
 				auto result = gcnew cli::array<float>(m_vw->lda);
 				Marshal::Copy(IntPtr(m_example->topic_predictions.begin), result, 0, m_vw->lda);
 				return result;
-			}
-
-			bool VowpalWabbitExample::IsNewLine::get()
-			{
-				return example_is_newline(*m_example) != 0;
 			}
 
 			System::String^ VowpalWabbitExample::Diff(IVowpalWabbitExample^ other, bool sameOrder)

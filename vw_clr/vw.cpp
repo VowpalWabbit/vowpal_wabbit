@@ -36,7 +36,7 @@ namespace Microsoft
 
 			VowpalWabbit::!VowpalWabbit()
 			{
-				if (m_model)
+				if (m_model != nullptr)
 				{
 					// this object doesn't own the VW instance
 					m_model->DecrementReference();

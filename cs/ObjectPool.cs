@@ -43,6 +43,13 @@ namespace Microsoft.Research.MachineLearning
         /// </remarks>
         private Stack<PooledObject<T>> pool; 
 
+        /// <summary>
+        /// Initializes a new ObjectPool.
+        /// </summary>
+        /// <param name="factory">
+        /// An optional factory to create pooled objects on demand. 
+        /// <see cref="ObjectPool{T}.get"/> will throw if the factory is still null when called.
+        /// </param>
         public ObjectPool(IObjectFactory<T> factory = null)
         {
             this.rwLockSlim = new ReaderWriterLockSlim();
@@ -50,6 +57,10 @@ namespace Microsoft.Research.MachineLearning
             this.factory = factory;
         }
 
+        /// <summary>
+        /// Updates the object factory in a thread-safe manner.
+        /// </summary>
+        /// <param name="factory">The new object factory to be used.</param>
         public void UpdateFactory(IObjectFactory<T> factory)
         {
             Stack<PooledObject<T>> oldPool;
@@ -87,6 +98,11 @@ namespace Microsoft.Research.MachineLearning
             }
         }
 
+        /// <summary>
+        /// Returns an instance of T from the pool or creates a new instance using the objectFactory
+        /// if the pool is empty.
+        /// </summary>
+        /// <remarks>This method is thread-safe.</remarks>
         public PooledObject<T> Get()
         {
             int localVersion;

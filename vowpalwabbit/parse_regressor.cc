@@ -182,7 +182,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
           uint32_t inter_len = 0;
           if (!read)
             {
-              inter_len = all.interactions[i].size();
+              inter_len = (uint32_t)all.interactions[i].size();
               text_len = sprintf(buff, "len: %d ", inter_len);
             }
           bin_text_read_write_fixed(model_file, (char *)&inter_len, sizeof(inter_len),

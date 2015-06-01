@@ -115,7 +115,5 @@ inline int example_is_newline(example& ec)
 
 inline bool valid_ns(char c)
 {
-    if (c=='|'||c==':')
-        return false;
-    return true;
+	return !(c == '|' || c == ':');
 }

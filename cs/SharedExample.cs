@@ -12,6 +12,8 @@ namespace Microsoft.Research.MachineLearning
 {
     /// <summary>
     /// Examples used with <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> must inherit from this class.
+    /// In multi-line scenarios the first example can contain a set of shared features. This first example must be 
+    /// marked using a 'shared' label.
     /// </summary>
     public abstract class SharedExample : IExample
     {
