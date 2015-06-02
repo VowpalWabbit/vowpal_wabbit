@@ -43,12 +43,12 @@ ifeq ($(UNAME), Darwin)
   #	but /opt/local seems to be preferred by some users
   #	so we try them both
   ifneq (,$(wildcard /usr/local/include))
-    BOOST_INCLUDE += -I /usr/local/include
-    BOOST_LIBRARY += -L /usr/local/lib
+    BOOST_INCLUDE = -I /usr/local/include
+    BOOST_LIBRARY = -L /usr/local/lib
   endif
   ifneq (,$(wildcard /opt/local/include))
-    BOOST_INCLUDE += -I /opt/local/include
-    BOOST_LIBRARY += -L /opt/local/lib
+    BOOST_INCLUDE = -I /opt/local/include
+    BOOST_LIBRARY = -L /opt/local/lib
   endif
   NPROCS:=$(shell sysctl -n hw.ncpu)
 endif
