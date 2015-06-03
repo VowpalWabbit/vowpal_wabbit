@@ -103,6 +103,7 @@ using namespace LEARNER;
           if(pred_vec_int[i] == current_label)
             sum_labels += pred_vec[i]; */
     }
+	// TODO: unique_ptr would also handle exception case
     delete[] pred_vec_int;
 
     // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()

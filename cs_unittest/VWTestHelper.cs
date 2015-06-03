@@ -7,11 +7,40 @@ using System.Threading.Tasks;
 using Microsoft.Research.MachineLearning;
 using System.Globalization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Antlr4.Runtime;
+using Antlr4.Runtime.Tree;
 
 namespace cs_unittest
 {
     internal static class VWTestHelper
     {
+        internal static void ParseInput(Stream stream, IParseTreeListener listener)
+        {
+            try
+            {
+                AntlrInputStream antlrStream = new AntlrInputStream(stream);
+
+                ITokenSource lexer = new VowpalWabbitLexer(antlrStream);
+
+                ITokenStream tokens = new CommonTokenStream(lexer);
+
+                VowpalWabbitParser parser = new VowpalWabbitParser(tokens);
+
+                parser.AddParseListener(listener);
+                parser.AddErrorListener(new TestErrorListener());
+                parser.start();
+            }
+            finally
+            {
+                stream.Dispose();
+            }
+        }
+        internal static void AssertEqual(string expectedFile, VowpalWabbitPerformanceStatistics actual)
+        {
+            var expectedPerformanceStatistics = VWTestHelper.ReadPerformanceStatistics(expectedFile);
+            AssertEqual(expectedPerformanceStatistics, actual);
+        }
+
         internal static void AssertEqual(VowpalWabbitPerformanceStatistics expected, VowpalWabbitPerformanceStatistics actual)
         {
             Assert.AreEqual(expected.NumberOfExamplesPerPass, actual.NumberOfExamplesPerPass);

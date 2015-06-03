@@ -76,32 +76,58 @@ namespace Microsoft
 				}
 			}
 
-			VowpalWabbitExample^ VowpalWabbit::ReadExample(System::String^ line)
+			generic<typename TPrediction>
+				where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+			TPrediction VowpalWabbit::PredictOrLearn(System::String^ line, bool predict)
 			{
-				auto string = msclr::interop::marshal_as<std::string>(line);
+				auto bytes = System::Text::Encoding::UTF8->GetBytes(line);
+				auto lineHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
 
+				example* ex = nullptr;
 				try
 				{
-					auto ex = VW::read_example(*m_vw, string.c_str());
-					return gcnew VowpalWabbitExample(m_vw, ex);
+					ex = VW::read_example(*m_vw, reinterpret_cast<char*>(lineHandle.AddrOfPinnedObject().ToPointer()));
+
+					if (predict)
+						m_vw->l->predict(*ex);
+					else
+						m_vw->learn(ex);
+
+					auto prediction = gcnew TPrediction();
+					prediction->ReadFromExample(m_vw, ex);
+
+					m_vw->l->finish_example(*m_vw, *ex);
+					ex = nullptr;
+
+					return prediction;
 				}
 				catch (std::exception const& ex)
 				{
 					throw gcnew System::Exception(gcnew System::String(ex.what()));
+				}
+				finally
+				{
+					lineHandle.Free();
+
+					if (ex != nullptr)
+					{
+						VW::finish_example(*m_vw, ex);
+					}
 				}
 			}
 
-			VowpalWabbitExample^ VowpalWabbit::CreateEmptyExample()
+			generic<typename TPrediction>
+				where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+			TPrediction VowpalWabbit::Learn(System::String^ line)
 			{
-				try
-				{
-					auto ex = VW::read_example(*m_vw, "");
-					return gcnew VowpalWabbitExample(m_vw, ex);
-				}
-				catch (std::exception const& ex)
-				{
-					throw gcnew System::Exception(gcnew System::String(ex.what()));
-				}
+				return PredictOrLearn<TPrediction>(line, false);
+			}
+
+			generic<typename TPrediction>
+				where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+			TPrediction VowpalWabbit::Predict(System::String^ line)
+			{
+				return PredictOrLearn<TPrediction>(line, true);
 			}
 		}
 	}

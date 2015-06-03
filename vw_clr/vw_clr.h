@@ -20,76 +20,102 @@ namespace Microsoft
 	{
 		namespace MachineLearning 
 		{
+			ref class VowpalWabbitExample;
+
+			public  ref class VowpalWabbitPredictionBase abstract
+			{
+			public:
+				void ReadFromExample(VowpalWabbitExample^ example);
+
+				virtual void ReadFromExample(vw* vw, example* ex) abstract;
+			};
+
+			public ref class VowpalWabbitPrediction : VowpalWabbitPredictionBase
+			{
+			public:
+				void ReadFromExample(vw* vw, example* ex) override;
+
+				property float Value;
+			};
+
+			public ref class VowpalWabbitCostSensitivePrediction : VowpalWabbitPredictionBase
+			{
+			public:
+				void ReadFromExample(vw* vw, example* ex) override;
+
+				property float Value;
+			};
+
+			public ref class VowpalWabbitMultilabelPrediction : VowpalWabbitPredictionBase
+			{
+			public:
+				void ReadFromExample(vw* vw, example* ex) override;
+
+				property cli::array<int>^ Values;
+			};
+
+			public ref class VowpalWabbitTopicPrediction : VowpalWabbitPredictionBase
+			{
+			public:
+				void ReadFromExample(vw* vw, example* ex) override;
+
+				property cli::array<float>^ Values;
+			};
+
+			public ref class VowpalWabbitPredictionNone : VowpalWabbitPredictionBase
+			{
+			public:
+				void ReadFromExample(vw* vw, example* ex) override;
+			};
+
 			public interface class IVowpalWabbitExample : public IDisposable
 			{
 			public:
-				property float CostSensitivePrediction
+				generic<typename TPrediction>
+					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+				virtual TPrediction Learn() = 0;
+
+				generic<typename TPrediction>
+					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+				virtual TPrediction Predict() = 0;
+
+				virtual property VowpalWabbitExample^ UnderlyingExample
 				{
-					virtual float get() = 0;
+					VowpalWabbitExample^ get() = 0;
 				}
-
-				property cli::array<int>^ MultilabelPredictions
-				{
-					virtual cli::array<int>^ get() = 0;
-				}
-
-				property cli::array<float>^ TopicPredictions
-				{
-					virtual cli::array<float>^ get() = 0;
-				}
-
-				virtual float Learn() = 0;
-
-				virtual float Predict() = 0;
-
-				virtual System::String^ Diff(IVowpalWabbitExample^ other, bool sameOrder) = 0;
-
-				// this performs the finish_example of the learning algorithm
-				// if examples are not allocated within VW's ring
-				// memory will not be released. 
-				// The actual release of memory is done in Dipose.
-				virtual void Finish() = 0;
 			};
 
 			public ref class VowpalWabbitExample : public IVowpalWabbitExample
 			{
 			private:
-				vw* const m_vw;
-				example* m_example;
+				generic<typename TPrediction>
+					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+				TPrediction PredictOrLearn(bool predict);
 
 			protected:
-				bool m_isDisposed;
 				!VowpalWabbitExample();
 
 			internal :
 				VowpalWabbitExample(vw* vw, example* example);
+				vw* const m_vw;
+				example* m_example;
 
 			public:
 
 				~VowpalWabbitExample();
 
-				property float CostSensitivePrediction
+				generic<typename TPrediction>
+					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+				virtual TPrediction Learn();
+
+				generic<typename TPrediction>
+					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+				virtual TPrediction Predict();
+
+					virtual property VowpalWabbitExample^ UnderlyingExample
 				{
-					virtual float get();
+					VowpalWabbitExample^ get();
 				}
-					
-				property cli::array<int>^ MultilabelPredictions
-				{
-					virtual cli::array<int>^ get();
-				}
-
-				property cli::array<float>^ TopicPredictions
-				{
-					virtual cli::array<float>^ get();
-				}
-
-				virtual float Learn();
-
-				virtual float Predict();
-
-				virtual System::String^ Diff(IVowpalWabbitExample^ other, bool sameOrder);
-
-				virtual void Finish();
 			};
 			
 			public ref class VowpalWabbitPerformanceStatistics
@@ -197,6 +223,10 @@ namespace Microsoft
 			private:
 				VowpalWabbitModel^ m_model;
 
+				generic<typename TPrediction>
+					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+				TPrediction PredictOrLearn(System::String^ line, bool predict);
+
 			protected:
 				!VowpalWabbit();
 
@@ -208,8 +238,13 @@ namespace Microsoft
 				uint32_t HashSpace(System::String^ s);
 				uint32_t HashFeature(System::String^ s, unsigned long u);
 
-				VowpalWabbitExample^ ReadExample(System::String^ line);
-				VowpalWabbitExample^ CreateEmptyExample();
+				generic<typename TPrediction>
+					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+				TPrediction Learn(System::String^ line);
+
+				generic<typename TPrediction>
+					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+				TPrediction Predict(System::String^ line);
 			};
 		}
 	}

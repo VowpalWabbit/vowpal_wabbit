@@ -21,63 +21,51 @@ namespace Microsoft.Research.MachineLearning.Serializer
     internal sealed class VowpalWabbitCachedExample<TExample> : IVowpalWabbitExample
     {
         private readonly VowpalWabbitSerializer<TExample> serializer;
+        private IVowpalWabbitExample example;
 
         internal VowpalWabbitCachedExample(VowpalWabbitSerializer<TExample> serializer, IVowpalWabbitExample example)
         {
             this.serializer = serializer;
-            this.UnderlyingExample = example;
+            this.example = example;
             this.LastRecentUse = DateTime.Now;
         }
 
         /// <summary>
         /// The underlying examle that is proxied too.
         /// </summary>
-        internal IVowpalWabbitExample UnderlyingExample { get; private set; }
+        public VowpalWabbitExample UnderlyingExample
+        {
+            get
+            {
+                return this.example.UnderlyingExample;
+            }
+        }
 
         /// <summary>
         /// The last time this item was retrieved from the cache
         /// </summary>
         internal DateTime LastRecentUse { get; set; }
 
-        public float CostSensitivePrediction
-        {
-            get { return this.UnderlyingExample.CostSensitivePrediction; }
-        }
-
-        public string Diff(IVowpalWabbitExample other, bool sameOrder)
-        {
-            return this.UnderlyingExample.Diff(other, sameOrder);
-        }
-
-        public float Learn()
-        {
-            return this.UnderlyingExample.Learn();
-        }
-
-        public int[] MultilabelPredictions
-        {
-            get { return this.UnderlyingExample.MultilabelPredictions; }
-        }
-
-        public float[] TopicPredictions
-        {
-            get { return this.UnderlyingExample.TopicPredictions; }
-        }
-
-        public float Predict()
-        {
-            return this.UnderlyingExample.Predict();
-        }
-
-        public void Finish()
-        {
-            this.UnderlyingExample.Finish();
-        }
-
         public void Dispose()
         {
             // return example to cache.
             this.serializer.ReturnExampleToCache(this);
+        }
+
+
+        void IDisposable.Dispose()
+        {
+            throw new NotImplementedException();
+        }
+
+        TPrediction IVowpalWabbitExample.Learn<TPrediction>()
+        {
+            return this.example.Learn<TPrediction>();
+        }
+
+        TPrediction IVowpalWabbitExample.Predict<TPrediction>()
+        {
+            return this.example.Predict<TPrediction>();
         }
     }
 }

@@ -57,9 +57,12 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="CsUnitTest.cs" />
+    <Compile Include="Test1and2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Test3.cs" />
+    <Compile Include="Test87.cs" />
+    <Compile Include="TestErrorListener.cs" />
+    <Compile Include="TestWrapper.cs" />
     <Compile Include="VWTestHelper.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -746,8 +749,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
-    <Antlr4 Include="vw.g4">
+    <Antlr4 Include="VowpalWabbit.g4">
       <Generator>MSBuild:Compile</Generator>
+      <Listener>True</Listener>
+      <Visitor>False</Visitor>
     </Antlr4>
   </ItemGroup>
   <ItemGroup>

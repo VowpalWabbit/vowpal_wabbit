@@ -60,9 +60,22 @@ namespace Microsoft
 			{
 				if (value == nullptr)
 					return;
-
-				auto labelString = msclr::interop::marshal_as<std::string>(value);
-				VW::parse_example_label(*m_vw, *m_example, labelString);
+				
+				auto bytes = System::Text::Encoding::UTF8->GetBytes(value);
+				auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
+				
+				try
+				{
+					VW::parse_example_label(*m_vw, *m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
+				}
+				catch (std::exception const& ex)
+				{
+					throw gcnew System::Exception(gcnew System::String(ex.what()));
+				}
+				finally
+				{
+					valueHandle.Free();
+				}
 			}
 
 			VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(System::Byte featureGroup)
