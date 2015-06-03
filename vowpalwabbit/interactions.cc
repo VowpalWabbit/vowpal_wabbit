@@ -152,7 +152,7 @@ bool comp_interaction (ordered_interaction a, ordered_interaction b)
     if (a.size != b.size)
         return a.size < b.size;
     else
-        return memcmp(a.data, b.data, a.size) <= 0;
+        return memcmp(a.data, b.data, a.size) < 0;
 }
 
 // comparision function for std::sort to sort interactions by their position (to restore original order)
