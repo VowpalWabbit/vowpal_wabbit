@@ -493,15 +493,18 @@ base_learner* cb_adf_setup(vw& all)
 	{
 		ld.rank_all = true;
 		all.multilabel_prediction = true;
+		*all.file_options << " --rank_all";
 	}
 
 	// Push necessary flags.
 	if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0
 		|| all.vm.count("rank_all"))
 	{
-		all.args.push_back("--csoaa_ldf");
-		all.args.push_back("multiline");
-		if (ld.rank_all)
+		if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0)
+			all.args.push_back("--csoaa_ldf");
+		if (count(all.args.begin(), all.args.end(), "multiline") == 0)
+			all.args.push_back("multiline");
+		if (ld.rank_all && count(all.args.begin(), all.args.end(), "--csoaa_rank") == 0)
 			all.args.push_back("--csoaa_rank");
 	}	
 	
