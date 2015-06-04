@@ -276,8 +276,6 @@ namespace DepParserTask {
         count = 1;
       } else if (action_loss[i] == action_loss[best_action])
         count++;
-    if (count > 0)
-      cerr << count << ':' << action_loss[best_action] << ' ';
     return best_action;
   }
 
