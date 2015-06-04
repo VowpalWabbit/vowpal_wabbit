@@ -38,6 +38,11 @@ namespace MultiWorldTesting {
         /// <param name="epsilon">The probability of a random exploration.</param>
         EpsilonGreedyExplorer(IPolicy<Ctx>^ defaultPolicy, float epsilon)
         {
+            if (!(IVariableActionContext::typeid->IsAssignableFrom(Ctx::typeid)))
+            {
+                throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
+            }
+
             this->defaultPolicy = defaultPolicy;
             m_explorer = new NativeMultiWorldTesting::EpsilonGreedyExplorer<NativeContext>(*GetNativePolicy(), epsilon);
         }
@@ -58,21 +63,9 @@ namespace MultiWorldTesting {
         }
 
 	internal:
-		virtual void InvokePolicyCallback(Ctx context, cli::array<UInt32>^ actions, int index) override
+		virtual UInt32 InvokePolicyCallback(Ctx context, int index) override
 		{
-            cli::array<UInt32>^ defaultActions = defaultPolicy->ChooseAction(context);
-            
-            if (defaultActions == nullptr)
-            {
-                throw gcnew NullReferenceException("List of actions returned by default policy is null.");
-            }
-            if (defaultActions->Length < actions->Length)
-            {
-                throw gcnew InvalidDataException("Number of actions returned by default policy is unexpected. Expected: " + actions->Length + ", Actual: " + defaultActions->Length);
-            }
-
-            // TODO: possible to remove the copy by requiring users to fill in a preallocated array instead.
-            Array::Copy(defaultActions, actions, actions->Length);
+			return defaultPolicy->ChooseAction(context);
 		}
 
 		NativeMultiWorldTesting::EpsilonGreedyExplorer<NativeContext>* Get()
@@ -116,6 +109,11 @@ namespace MultiWorldTesting {
         /// <param name="tau">The number of events to be uniform over.</param>
         TauFirstExplorer(IPolicy<Ctx>^ defaultPolicy, UInt32 tau)
         {
+            if (!(IVariableActionContext::typeid->IsAssignableFrom(Ctx::typeid)))
+            {
+                throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
+            }
+
             this->defaultPolicy = defaultPolicy;
             m_explorer = new NativeMultiWorldTesting::TauFirstExplorer<NativeContext>(*GetNativePolicy(), tau);
         }
@@ -136,21 +134,9 @@ namespace MultiWorldTesting {
 		}
 
 	internal:
-		virtual void InvokePolicyCallback(Ctx context, cli::array<UInt32>^ actions, int index) override
+		virtual UInt32 InvokePolicyCallback(Ctx context, int index) override
 		{
-            cli::array<UInt32>^ defaultActions = defaultPolicy->ChooseAction(context);
-
-            if (defaultActions == nullptr)
-            {
-                throw gcnew NullReferenceException("List of actions returned by default policy is null.");
-            }
-            if (defaultActions->Length < actions->Length)
-            {
-                throw gcnew InvalidDataException("Number of actions returned by default policy is unexpected. Expected: " + actions->Length + ", Actual: " + defaultActions->Length);
-            }
-
-            // TODO: possible to remove the copy by forcing users to fill in a preallocated array instead.
-            Array::Copy(defaultActions, actions, actions->Length);
+			return defaultPolicy->ChooseAction(context);
 		}
 
 		NativeMultiWorldTesting::TauFirstExplorer<NativeContext>* Get()
@@ -195,6 +181,11 @@ namespace MultiWorldTesting {
         /// <param name="lambda">lambda = 0 implies uniform distribution. Large lambda is equivalent to a max.</param>
         SoftmaxExplorer(IScorer<Ctx>^ defaultScorer, float lambda)
         {
+            if (!(IVariableActionContext::typeid->IsAssignableFrom(Ctx::typeid)))
+            {
+                throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
+            }
+
             this->defaultScorer = defaultScorer;
             m_explorer = new NativeMultiWorldTesting::SoftmaxExplorer<NativeContext>(*GetNativeScorer(), lambda);
         }
@@ -259,6 +250,11 @@ namespace MultiWorldTesting {
         /// <param name="defaultScorer">A function which outputs the probability of each action.</param>
         GenericExplorer(IScorer<Ctx>^ defaultScorer)
         {
+            if (!(IVariableActionContext::typeid->IsAssignableFrom(Ctx::typeid)))
+            {
+                throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
+            }
+
             this->defaultScorer = defaultScorer;
             m_explorer = new NativeMultiWorldTesting::GenericExplorer<NativeContext>(*GetNativeScorer());
         }
@@ -329,6 +325,11 @@ namespace MultiWorldTesting {
         /// <param name="defaultPolicies">A set of default policies to be uniform random over.</param>
         BootstrapExplorer(cli::array<IPolicy<Ctx>^>^ defaultPolicies)
         {
+            if (!(IVariableActionContext::typeid->IsAssignableFrom(Ctx::typeid)))
+            {
+                throw gcnew ArgumentException("The specified context type does not implement variable-action interface.", "Ctx");
+            }
+
             this->defaultPolicies = defaultPolicies;
             if (this->defaultPolicies == nullptr)
             {
@@ -354,25 +355,13 @@ namespace MultiWorldTesting {
 		}
 
 	internal:
-		virtual void InvokePolicyCallback(Ctx context, cli::array<UInt32>^ actions, int index) override
+		virtual UInt32 InvokePolicyCallback(Ctx context, int index) override
 		{
 			if (index < 0 || index >= defaultPolicies->Length)
 			{
 				throw gcnew InvalidDataException("Internal error: Index of interop bag is out of range.");
 			}
-            cli::array<UInt32>^ defaultActions = defaultPolicies[index]->ChooseAction(context);
-
-            if (defaultActions == nullptr)
-            {
-                throw gcnew NullReferenceException("List of actions returned by default policy is null.");
-            }
-            if (defaultActions->Length < actions->Length)
-            {
-                throw gcnew InvalidDataException("Number of actions returned by default policy is unexpected. Expected: " + actions->Length + ", Actual: " + defaultActions->Length);
-            }
-
-            // TODO: possible to remove the copy by forcing users to fill in a preallocated array instead.
-            Array::Copy(defaultActions, actions, actions->Length);
+			return defaultPolicies[index]->ChooseAction(context);
 		}
 
 		NativeMultiWorldTesting::BootstrapExplorer<NativeContext>* Get()
@@ -394,24 +383,12 @@ namespace MultiWorldTesting {
 	public ref class MwtExplorer : public RecorderCallback<Ctx>
 	{
 	public:
-        /// <summary>
-        /// Constructor.
-        /// </summary>
-        /// <param name="appId">This should be unique to each experiment to avoid correlation bugs.</param>
-        /// <param name="recorder">A user-specified class for recording the appropriate bits for use in evaluation and learning.</param>
-        MwtExplorer(String^ appId, IRecorder<Ctx>^ recorder) : RecorderCallback(nullptr)
-        {
-            this->appId = appId;
-            this->recorder = recorder;
-        }
-
 		/// <summary>
 		/// Constructor.
 		/// </summary>
 		/// <param name="appId">This should be unique to each experiment to avoid correlation bugs.</param>
 		/// <param name="recorder">A user-specified class for recording the appropriate bits for use in evaluation and learning.</param>
-        /// <param name="getNumberOfActionsFunc">Optional; A callback function to retrieve the number of actions for the current context.</param>
-        MwtExplorer(String^ appId, IRecorder<Ctx>^ recorder, Func<Ctx, UInt32>^ getNumberOfActionsFunc) : RecorderCallback(getNumberOfActionsFunc)
+		MwtExplorer(String^ appId, IRecorder<Ctx>^ recorder)
 		{
 			this->appId = appId;
 			this->recorder = recorder;
@@ -424,7 +401,7 @@ namespace MultiWorldTesting {
 		/// <param name="unique_key">A unique identifier for the experimental unit. This could be a user id, a session id, etc...</param>
 		/// <param name="context">The context upon which a decision is made. See SimpleContext above for an example.</param>
 		/// <returns>An unsigned 32-bit integer representing the 1-based chosen action.</returns>
-        cli::array<UInt32>^ ChooseAction(IExplorer<Ctx>^ explorer, String^ unique_key, Ctx context)
+		UInt32 ChooseAction(IExplorer<Ctx>^ explorer, String^ unique_key, Ctx context)
 		{
 			String^ salt = this->appId;
 			NativeMultiWorldTesting::MwtExplorer<NativeContext> mwt(marshal_as<std::string>(salt), *GetNativeRecorder());
@@ -440,91 +417,59 @@ namespace MultiWorldTesting {
 			GCHandle explorerHandle = GCHandle::Alloc(explorer);
 			IntPtr explorerPtr = (IntPtr)explorerHandle;
 
-            cli::array<UInt32>^ actions = nullptr;
-            GCHandle actionListHandle;
-
-            try
-            {
-                NativeContext native_context(selfPtr.ToPointer(), explorerPtr.ToPointer(), contextPtr.ToPointer(),
-                    this->GetNumActionsCallback());
-
-                u32 action = 0;
-                NativeMultiWorldTesting::IExplorer<NativeContext>* native_explorer = nullptr;
-
-                if (explorer->GetType() == EpsilonGreedyExplorer<Ctx>::typeid)
-                {
-                    EpsilonGreedyExplorer<Ctx>^ epsilonGreedyExplorer = (EpsilonGreedyExplorer<Ctx>^)explorer;
-                    native_explorer = (NativeMultiWorldTesting::IExplorer<NativeContext>*)epsilonGreedyExplorer->Get();
-                }
-                else if (explorer->GetType() == TauFirstExplorer<Ctx>::typeid)
-                {
-                    TauFirstExplorer<Ctx>^ tauFirstExplorer = (TauFirstExplorer<Ctx>^)explorer;
-                    native_explorer = (NativeMultiWorldTesting::IExplorer<NativeContext>*)tauFirstExplorer->Get();
-                }
-                else if (explorer->GetType() == SoftmaxExplorer<Ctx>::typeid)
-                {
-                    SoftmaxExplorer<Ctx>^ softmaxExplorer = (SoftmaxExplorer<Ctx>^)explorer;
-                    native_explorer = (NativeMultiWorldTesting::IExplorer<NativeContext>*)softmaxExplorer->Get();
-                }
-                else if (explorer->GetType() == GenericExplorer<Ctx>::typeid)
-                {
-                    GenericExplorer<Ctx>^ genericExplorer = (GenericExplorer<Ctx>^)explorer;
-                    native_explorer = (NativeMultiWorldTesting::IExplorer<NativeContext>*)genericExplorer->Get();
-                }
-                else if (explorer->GetType() == BootstrapExplorer<Ctx>::typeid)
-                {
-                    BootstrapExplorer<Ctx>^ bootstrapExplorer = (BootstrapExplorer<Ctx>^)explorer;
-                    native_explorer = (NativeMultiWorldTesting::IExplorer<NativeContext>*)bootstrapExplorer->Get();
-                }
-
-                if (native_explorer == nullptr)
-                {
-                    throw gcnew Exception("Unknown type of exploration algorithm used.");
-                }
-
-                UInt32 numActions = mwt.Get_Number_Of_Actions(*native_explorer, native_context);
-                actions = gcnew cli::array<UInt32>(numActions);
-
-                // Get pinned handle to pass through interop boundary and so that native code can modify
-                actionListHandle = GCHandle::Alloc(actions, GCHandleType::Pinned);
-                IntPtr actionListPtr = (IntPtr)actionListHandle;
-
-                // This is achieved by storing the pointer in the internal context
-                native_context.Set_Clr_Action_List(actionListPtr.ToPointer());
-
-                // Conver to native array
-                IntPtr actionListPinnedPtr = actionListHandle.AddrOfPinnedObject();
-                u32* native_actions = (u32*)actionListPinnedPtr.ToPointer();
-
-                mwt.Choose_Action(*native_explorer, marshal_as<std::string>(unique_key), native_context, native_actions, numActions);
-            }
-            finally
-            {
-                if (actionListHandle.IsAllocated)
-                {
-                    actionListHandle.Free();
-                }
-                if (explorerHandle.IsAllocated)
-                {
-                    explorerHandle.Free();
-                }
-                if (contextHandle.IsAllocated)
-                {
-                    contextHandle.Free();
-                }
-                if (selfHandle.IsAllocated)
-                {
-                    selfHandle.Free();
-                }
-            }
-
-            return actions;
+			try
+			{
+				NativeContext native_context(selfPtr.ToPointer(), explorerPtr.ToPointer(), contextPtr.ToPointer(),
+					this->GetNumActionsCallback());
+				u32 action = 0;
+				if (explorer->GetType() == EpsilonGreedyExplorer<Ctx>::typeid)
+				{
+					EpsilonGreedyExplorer<Ctx>^ epsilonGreedyExplorer = (EpsilonGreedyExplorer<Ctx>^)explorer;
+					action = mwt.Choose_Action(*epsilonGreedyExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+				}
+				else if (explorer->GetType() == TauFirstExplorer<Ctx>::typeid)
+				{
+					TauFirstExplorer<Ctx>^ tauFirstExplorer = (TauFirstExplorer<Ctx>^)explorer;
+					action = mwt.Choose_Action(*tauFirstExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+				}
+				else if (explorer->GetType() == SoftmaxExplorer<Ctx>::typeid)
+				{
+					SoftmaxExplorer<Ctx>^ softmaxExplorer = (SoftmaxExplorer<Ctx>^)explorer;
+					action = mwt.Choose_Action(*softmaxExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+				}
+				else if (explorer->GetType() == GenericExplorer<Ctx>::typeid)
+				{
+					GenericExplorer<Ctx>^ genericExplorer = (GenericExplorer<Ctx>^)explorer;
+					action = mwt.Choose_Action(*genericExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+				}
+				else if (explorer->GetType() == BootstrapExplorer<Ctx>::typeid)
+				{
+					BootstrapExplorer<Ctx>^ bootstrapExplorer = (BootstrapExplorer<Ctx>^)explorer;
+					action = mwt.Choose_Action(*bootstrapExplorer->Get(), marshal_as<std::string>(unique_key), native_context);
+				}
+				return action;
+			}
+			finally
+			{
+				if (explorerHandle.IsAllocated)
+				{
+					explorerHandle.Free();
+				}
+				if (contextHandle.IsAllocated)
+				{
+					contextHandle.Free();
+				}
+				if (selfHandle.IsAllocated)
+				{
+					selfHandle.Free();
+				}
+			}
 		}
 
 	internal:
-        virtual void InvokeRecorderCallback(Ctx context, cli::array<UInt32>^ actions, float probability, String^ unique_key) override
+		virtual void InvokeRecorderCallback(Ctx context, UInt32 action, float probability, String^ unique_key) override
 		{
-			recorder->Record(context, actions, probability, unique_key);
+			recorder->Record(context, action, probability, unique_key);
 		}
 
 	private:
@@ -540,6 +485,106 @@ namespace MultiWorldTesting {
 	{
 		float Value;
 		UInt32 Id;
+	};
+
+	/// <summary>
+	/// A sample recorder class that converts the exploration tuple into string format.
+	/// </summary>
+	/// <typeparam name="Ctx">The Context type.</typeparam>
+	generic <class Ctx> where Ctx : IStringContext
+	public ref class StringRecorder : public IRecorder<Ctx>, public ToStringCallback<Ctx>
+	{
+	public:
+		StringRecorder()
+		{
+			m_string_recorder = new NativeMultiWorldTesting::StringRecorder<NativeStringContext>();
+		}
+
+		~StringRecorder()
+		{
+			delete m_string_recorder;
+		}
+
+		virtual void Record(Ctx context, UInt32 action, float probability, String^ uniqueKey)
+		{
+            // Normal handles are sufficient here since native code will only hold references and not access the object's data
+            // https://www.microsoftpressstore.com/articles/article.aspx?p=2224054&seqNum=4
+			GCHandle contextHandle = GCHandle::Alloc(context);
+			IntPtr contextPtr = (IntPtr)contextHandle;
+
+			NativeStringContext native_context(contextPtr.ToPointer(), GetCallback());
+			m_string_recorder->Record(native_context, (u32)action, probability, marshal_as<string>(uniqueKey));
+
+            contextHandle.Free();
+		}
+
+		/// <summary>
+		/// Gets the content of the recording so far as a string and clears internal content.
+		/// </summary>
+		/// <returns>
+		/// A string with recording content.
+		/// </returns>
+		String^ GetRecording()
+		{
+			// Workaround for C++-CLI bug which does not allow default value for parameter
+			return GetRecording(true);
+		}
+
+		/// <summary>
+		/// Gets the content of the recording so far as a string and optionally clears internal content.
+		/// </summary>
+		/// <param name="flush">A boolean value indicating whether to clear the internal content.</param>
+		/// <returns>
+		/// A string with recording content.
+		/// </returns>
+		String^ GetRecording(bool flush)
+		{
+			return gcnew String(m_string_recorder->Get_Recording(flush).c_str());
+		}
+
+	private:
+		NativeMultiWorldTesting::StringRecorder<NativeStringContext>* m_string_recorder;
+	};
+
+	/// <summary>
+	/// A sample context class that stores a vector of Features.
+	/// </summary>
+	public ref class SimpleContext : public IStringContext
+	{
+	public:
+		SimpleContext(cli::array<Feature>^ features)
+		{
+			Features = features;
+
+			// TODO: add another constructor overload for native SimpleContext to avoid copying feature values
+			m_features = new vector<NativeMultiWorldTesting::Feature>();
+			for (int i = 0; i < features->Length; i++)
+			{
+				m_features->push_back({ features[i].Value, features[i].Id });
+			}
+
+			m_native_context = new NativeMultiWorldTesting::SimpleContext(*m_features);
+		}
+
+		String^ ToString() override
+		{
+			return gcnew String(m_native_context->To_String().c_str());
+		}
+
+		~SimpleContext()
+		{
+			delete m_native_context;
+		}
+
+	public:
+		cli::array<Feature>^ GetFeatures() { return Features; }
+
+	internal:
+		cli::array<Feature>^ Features;
+
+	private:
+		vector<NativeMultiWorldTesting::Feature>* m_features;
+		NativeMultiWorldTesting::SimpleContext* m_native_context;
 	};
 }
 

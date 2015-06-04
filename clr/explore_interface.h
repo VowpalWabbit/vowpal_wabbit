@@ -34,10 +34,10 @@ public:
     /// This implementation should be thread-safe if multithreading is needed.
 	/// </summary>
 	/// <param name="context">A user-defined context for the decision.</param>
-	/// <param name="actions">Chosen by an exploration algorithm given context.</param>
+	/// <param name="action">Chosen by an exploration algorithm given context.</param>
 	/// <param name="probability">The probability of the chosen action given context.</param>
 	/// <param name="uniqueKey">A user-defined identifer for the decision.</param>
-    virtual void Record(Ctx context, cli::array<UInt32>^ actions, float probability, String^ uniqueKey) = 0;
+	virtual void Record(Ctx context, UInt32 action, float probability, String^ uniqueKey) = 0;
 };
 
 /// <summary>
@@ -55,7 +55,7 @@ public:
 	/// </summary>
 	/// <param name="context">A user-defined context for the decision.</param>
 	/// <returns>Index of the action to take (1-based)</returns>
-    virtual cli::array<UInt32>^ ChooseAction(Ctx context) = 0;
+	virtual UInt32 ChooseAction(Ctx context) = 0;
 };
 
 /// <summary>
@@ -73,6 +73,20 @@ public:
 	/// <param name="context">A user-defined context for the decision.</param>
 	/// <returns>Vector of scores indexed by action (1-based).</returns>
 	virtual List<float>^ ScoreActions(Ctx context) = 0;
+};
+
+/// <summary>
+/// Represents a context interface with variable number of actions which is
+/// enforced if exploration algorithm is initialized in variable number of actions mode.
+/// </summary>
+public interface class IVariableActionContext
+{
+public:
+    /// <summary>
+    /// Gets the number of actions for the current context.
+    /// </summary>
+    /// <returns>The number of actions available for the current context.</returns>
+    virtual UInt32 GetNumberOfActions() = 0;
 };
 
 generic <class Ctx>
