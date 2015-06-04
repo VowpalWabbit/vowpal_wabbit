@@ -319,6 +319,7 @@ namespace Search {
         (all.final_prediction_sink.size() > 0) ||   // if we have to produce output, we need to run this
         might_print_update(all) ||                  // if we have to print and update to stderr
         (all.raw_prediction > 0) ||                 // we need raw predictions
+        ((!all.vw_is_main) && (is_test_ex)) ||      // library needs predictions
         // or:
         //   it's not quiet AND
         //     current_pass == 0
@@ -560,7 +561,7 @@ namespace Search {
 
 
   template<class T> void cdbg_print_array(string str, v_array<T>& A) { cdbg << str << " = ["; for (size_t i=0; i<A.size(); i++) cdbg << " " << A[i]; cdbg << " ]" << endl; }
-  template<class T> void cerr_print_array(string str, v_array<T>& A) { cerr << str << " = ["; for (size_t i=0; i<A.size(); i++) cerr << " " << A[i]; cerr << " ]" << endl; }
+  template<class T> void cerr_print_array(string str, v_array<T>& A) { std::cerr << str << " = ["; for (size_t i=0; i<A.size(); i++) std::cerr << " " << A[i]; std::cerr << " ]" << endl; }
   
   
   size_t random(size_t max) { return (size_t)(frand48() * (float)max); }
@@ -571,7 +572,7 @@ namespace Search {
     return false;
   }
 
-  void add_example_conditioning(search_private& priv, example& ec, const ptag* condition_on, size_t condition_on_cnt, const char* condition_on_names, const action* condition_on_actions) {
+  void add_example_conditioning(search_private& priv, example& ec, size_t condition_on_cnt, const char* condition_on_names, const action* condition_on_actions) {
     if (condition_on_cnt == 0) return;
 
     uint32_t extra_offset=0;
@@ -721,7 +722,7 @@ namespace Search {
             cs_set_cost_loss(priv.cb_learner, lab, oracle_actions[0]-1, 0.);
         } else {
           for (action k=0; k<priv.A; k++)
-            cs_set_cost_loss(priv.cb_learner, lab, k, array_contains<action>(k+1, oracle_actions, oracle_actions_cnt) ? 0. : 1.);
+            cs_set_cost_loss(priv.cb_learner, lab, k, array_contains<action>(k+1, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f);
         }
       } else { // only some actions are allowed
         cs_costs_erase(priv.cb_learner, lab);
@@ -773,7 +774,7 @@ namespace Search {
       size_t K = cs_get_costs_size(priv.cb_learner, l);
       for (size_t k = 0; k < K; k++) {
         action cl = cs_get_cost_index(priv.cb_learner, l, k);
-        float cost = array_contains(cl, oracle_actions, oracle_actions_cnt) ? 0. : 1.;
+        float cost = array_contains(cl, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f;
         this_cache->push_back( action_cache(0., cl, cl==a, cost) );
       }
       size_t pos = priv.meta_t + priv.t;
@@ -874,7 +875,7 @@ namespace Search {
     float  best_prediction = 0.;
     action best_action = 0;
     
-    size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
+    size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 1 : 0;
 
     v_array<action_cache>* this_cache = nullptr;
     if (need_partial_predictions) {
@@ -885,7 +886,7 @@ namespace Search {
     for (action a= (uint32_t)start_K; a<ec_cnt; a++) {
       cdbg << "== single_prediction_LDF a=" << a << "==" << endl;
       if (start_K > 0)
-        LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]);
+        LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0], priv.all->audit);
         
       polylabel old_label = ecs[a].l;
       ecs[a].l.cs = priv.ldf_test_label;
@@ -910,7 +911,7 @@ namespace Search {
       priv.num_features += ecs[a].num_features;
       ecs[a].l = old_label;
       if (start_K > 0)
-        LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0]);
+        LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0], priv.all->audit);
     }
     if (override_action != (action)-1)
       best_action = override_action;
@@ -978,7 +979,7 @@ namespace Search {
     return memcmp(A, B, sz_A) == 0;
   }
 
-  void free_key(unsigned char* mem, scored_action a) { free(mem); }
+  void free_key(unsigned char* mem, scored_action) { free(mem); }
   void clear_cache_hash_map(search_private& priv) {
     priv.cache_hash_map.iter(free_key);
     priv.cache_hash_map.clear();
@@ -1049,7 +1050,7 @@ namespace Search {
       ec.example_t = priv.total_example_t;
       polylabel old_label = ec.l;
       ec.l = losses; // labels;
-      if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.begin, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
+      if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
       cdbg << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cdbg << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x; cdbg << " ]" << endl;
       for (size_t is_local=0; is_local<=priv.xv; is_local++) {
         int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local);
@@ -1062,13 +1063,13 @@ namespace Search {
       priv.total_examples_generated++;
     } else {              // is  LDF
       assert(cs_get_costs_size(priv.cb_learner, losses) == priv.learn_ec_ref_cnt);
-      size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(priv.learn_ec_ref[0])) ? 1 : 0;
+      size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(priv.learn_ec_ref[0])) ? 1 : 0;
 
       // TODO: weight
       if (add_conditioning)
         for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++) {
           example& ec = priv.learn_ec_ref[a];
-          add_example_conditioning(priv, ec, priv.learn_condition_on.begin, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
+          add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
         }
 
       for (size_t is_local=0; is_local<=priv.xv; is_local++) {
@@ -1238,15 +1239,17 @@ namespace Search {
           }
         }
 
-        ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);
-        memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt*sizeof(action));
-        cdbg_print_array("in LEARN, learn_allowed_actions", priv.learn_allowed_actions);
+        if (allowed_actions && (allowed_actions_cnt > 0)) {
+          ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);
+          memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt*sizeof(action));
+          cdbg_print_array("in LEARN, learn_allowed_actions", priv.learn_allowed_actions);
+        }
       }
 
       assert((allowed_actions_cnt == 0) || (a < allowed_actions_cnt));
 
       a_cost = 0.;
-      action a_name = (allowed_actions_cnt > 0) ? allowed_actions[a] : priv.is_ldf ? a : (a+1);
+      action a_name = (allowed_actions && (allowed_actions_cnt > 0)) ? allowed_actions[a] : priv.is_ldf ? a : (a+1);
       if (priv.metaoverride && priv.metaoverride->_foreach_action) {
         foreach_action_from_cache(priv,t,a_name);
         if (priv.memo_foreach_action[t]) {
@@ -1264,7 +1267,7 @@ namespace Search {
 
     if ((priv.state == LEARN) && (t > priv.learn_t) && (priv.rollout_num_steps > 0) && (priv.loss_declared_cnt >= priv.rollout_num_steps)) {
       cdbg << "... skipping" << endl;
-      action a = priv.is_ldf ? 0 : ((allowed_actions_cnt > 0) ? allowed_actions[0] : 1);
+      action a = priv.is_ldf ? 0 : ((allowed_actions && (allowed_actions_cnt > 0)) ? allowed_actions[0] : 1);
       if (priv.metaoverride && priv.metaoverride->_post_prediction)
         priv.metaoverride->_post_prediction(*priv.metaoverride->sch, t-priv.meta_t, a, 0.);
       if (priv.metaoverride && priv.metaoverride->_foreach_action)
@@ -1313,10 +1316,10 @@ namespace Search {
           // if this succeeded, 'a' has the right action
           priv.total_cache_hits++;
         else { // we need to predict, and then cache, and maybe run foreach_action
-          size_t start_K = (priv.is_ldf && LabelDict::ec_is_example_header(ecs[0])) ? 1 : 0;
+          size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 1 : 0;
           if (priv.auto_condition_features)
             for (size_t n=start_K; n<ec_cnt; n++)
-              add_example_conditioning(priv, ecs[n], condition_on, condition_on_cnt, condition_on_names, priv.condition_on_actions.begin);
+              add_example_conditioning(priv, ecs[n], condition_on_cnt, condition_on_names, priv.condition_on_actions.begin);
 
           if (((!skip) && (policy >= 0)) || need_fea)   // only make a prediction if we're going to use the output
             a = priv.is_ldf ? single_prediction_LDF(priv, ecs, ec_cnt, learner, a_cost, need_fea ? a : (action)-1)
@@ -1336,8 +1339,10 @@ namespace Search {
             
             priv.learn_ec_ref = ecs;
             priv.learn_ec_ref_cnt = ec_cnt;
-            ensure_size(priv.learn_allowed_actions, allowed_actions_cnt); // TODO: do we really need this?
-            memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt * sizeof(action));
+            if (allowed_actions) {
+              ensure_size(priv.learn_allowed_actions, allowed_actions_cnt); // TODO: do we really need this?
+              memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt * sizeof(action));
+            }
             size_t old_learner_id = priv.learn_learner_id;
             priv.learn_learner_id = learner_id;
             generate_training_example(priv, priv.gte_label, weight, false);  // this is false because the conditioning has already been added!
@@ -1479,7 +1484,9 @@ namespace Search {
 
     //if (! priv.no_caching)
       clear_cache_hash_map(priv);
-    
+
+    cdbg << "is_test_ex=" << is_test_ex << " vw_is_main=" << all.vw_is_main << endl;
+    cdbg << "must_run_test = " << must_run_test(all, priv.ec_seq, is_test_ex) << endl;
     // do an initial test pass to compute output (and loss)
     if (must_run_test(all, priv.ec_seq, is_test_ex)) {
       cdbg << "======================================== INIT TEST (" << priv.current_policy << "," << priv.read_example_last_pass << ") ========================================" << endl;
@@ -1609,7 +1616,7 @@ namespace Search {
 
     bool is_test_ex = false;
     for (size_t i=0; i<priv.ec_seq.size(); i++)
-      if (priv.label_is_test(priv.ec_seq[i]->l)) { is_test_ex = true; break; }
+      if (priv.ec_seq[i]->test_only || priv.label_is_test(priv.ec_seq[i]->l)) { is_test_ex = true; break; }
 
     if (priv.task->run_setup) priv.task->run_setup(sch, priv.ec_seq);
 
@@ -1870,7 +1877,7 @@ namespace Search {
   bool uint32_equal(uint32_t a, uint32_t b) { return a==b; }
   bool size_equal(size_t a, size_t b) { return a==b; }
 
-  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) {
+  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool /*default_to_cmdline*/, bool(*/*equal*/)(T,T), const char* /*mismatch_error_string*/, const char* required_error_string) {
     if (vm.count(opt_name)) {
       ret = vm[opt_name].as<T>();
       *all.file_options << " --" << opt_name << " " << ret;
@@ -1881,7 +1888,7 @@ namespace Search {
     }
   }
 
-  void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string) {
+  void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool /*default_to_cmdline*/, const char* /*mismatch_error_string*/) {
     if (vm.count(opt_name)) {
       ret = true;
       *all.file_options << " --" << opt_name;
@@ -2078,22 +2085,22 @@ namespace Search {
     if (vm.count("search_rollout")) rollout_string = vm["search_rollout"].as<string>();
     if (vm.count("search_rollin" )) rollin_string  = vm["search_rollin" ].as<string>();
 
-    if      (rollout_string.compare("policy") == 0)          priv.rollout_method = POLICY;
-    else if (rollout_string.compare("oracle") == 0)          priv.rollout_method = ORACLE;
-    else if (rollout_string.compare("mix_per_state") == 0)   priv.rollout_method = MIX_PER_STATE;
-    else if (rollout_string.compare("mix_per_roll") == 0)    priv.rollout_method = MIX_PER_ROLL;
-    else if (rollout_string.compare("none") == 0)          { priv.rollout_method = NO_ROLLOUT; priv.no_caching = true; if (!all.quiet) std::cerr << "no rollout!" << endl; }
+    if      ((rollout_string.compare("policy") == 0)       || (rollout_string.compare("learn") == 0))          priv.rollout_method = POLICY;
+    else if ((rollout_string.compare("oracle") == 0)       || (rollout_string.compare("ref") == 0))            priv.rollout_method = ORACLE;
+    else if ((rollout_string.compare("mix_per_state") == 0))                                                   priv.rollout_method = MIX_PER_STATE;
+    else if ((rollout_string.compare("mix_per_roll") == 0) || (rollout_string.compare("mix") == 0))            priv.rollout_method = MIX_PER_ROLL;
+    else if ((rollout_string.compare("none") == 0))          { priv.rollout_method = NO_ROLLOUT; priv.no_caching = true; if (!all.quiet) std::cerr << "no rollout!" << endl; }
     else {
-      std::cerr << "error: --search_rollout must be 'policy', 'oracle', 'mix_per_state', 'mix_per_roll' or 'none'" << endl;
+      std::cerr << "error: --search_rollout must be 'learn', 'ref', 'mix', 'mix_per_state' or 'none'" << endl;
       throw exception();
     }
 
-    if      (rollin_string.compare("policy") == 0)         priv.rollin_method = POLICY;
-    else if (rollin_string.compare("oracle") == 0)         priv.rollin_method = ORACLE;
-    else if (rollin_string.compare("mix_per_state") == 0)  priv.rollin_method = MIX_PER_STATE;
-    else if (rollin_string.compare("mix_per_roll") == 0)   priv.rollin_method = MIX_PER_ROLL;
+    if      ((rollin_string.compare("policy") == 0)       || (rollin_string.compare("learn") == 0))          priv.rollin_method = POLICY;
+    else if ((rollin_string.compare("oracle") == 0)       || (rollin_string.compare("ref") == 0))            priv.rollin_method = ORACLE;
+    else if ((rollin_string.compare("mix_per_state") == 0))                                                  priv.rollin_method = MIX_PER_STATE;
+    else if ((rollin_string.compare("mix_per_roll") == 0) || (rollin_string.compare("mix") == 0))            priv.rollin_method = MIX_PER_ROLL;
     else {
-      std::cerr << "error: --search_rollin must be 'policy', 'oracle', 'mix_per_state' or 'mix_per_roll'" << endl;
+      std::cerr << "error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'" << endl;
       throw exception();
     }
 
@@ -2286,10 +2293,8 @@ namespace Search {
   }
 
   void  search::set_options(uint32_t opts) {
-    if (this->priv->state != INITIALIZE) {
-      std::cerr << "error: task cannot set options except in initialize function!" << endl;
-      throw exception();
-    }
+    if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
+      std::cerr << "warning: task should not set options except in initialize function!" << endl;
     if ((opts & AUTO_CONDITION_FEATURES) != 0) this->priv->auto_condition_features = true;
     if ((opts & AUTO_HAMMING_LOSS)       != 0) this->priv->auto_hamming_loss = true;
     if ((opts & EXAMPLES_DONT_CHANGE)    != 0) this->priv->examples_dont_change = true;
@@ -2298,10 +2303,8 @@ namespace Search {
   }
 
   void search::set_label_parser(label_parser&lp, bool (*is_test)(polylabel&)) {
-    if (this->priv->state != INITIALIZE) {
-      std::cerr << "error: task cannot set label parser except in initialize function!" << endl;
-      throw exception();
-    }
+    if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
+      std::cerr << "warning: task should not set label parser except in initialize function!" << endl;
     this->priv->all->p->lp = lp;
     this->priv->label_is_test = is_test;
   }
@@ -2314,7 +2317,7 @@ namespace Search {
 
 
   void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
-  void search::add_program_options(po::variables_map& vw, po::options_description& opts) { add_options( *this->priv->all, opts ); }
+  void search::add_program_options(po::variables_map& /*vw*/, po::options_description& opts) { add_options( *this->priv->all, opts ); }
 
   size_t search::get_mask() { return this->priv->all->reg.weight_mask;}
   size_t search::get_stride_shift() { return this->priv->all->reg.stride_shift;}
@@ -2370,7 +2373,17 @@ namespace Search {
 
   void predictor::set_input_length(size_t input_length) {
     is_ldf = true;
-    if (ec_alloced) ec = (example*)realloc(ec, input_length * sizeof(example));
+    if (ec_alloced) 
+      {
+	example* temp = (example*)realloc(ec, input_length * sizeof(example));
+	if (temp != nullptr)
+	  ec = temp;
+	else
+	  {
+	    std::cerr << "realloc failed in search.cc " << endl;
+	    throw exception();
+	  }
+      }
     else            ec = calloc_or_die<example>(input_length);
     ec_cnt = input_length;
     ec_alloced = true;

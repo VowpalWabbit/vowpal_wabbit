@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 ```
 
 [![Build Status](https://travis-ci.org/JohnLangford/vowpal_wabbit.png)](https://travis-ci.org/JohnLangford/vowpal_wabbit)
+[![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/JohnLangford/vowpal_wabbit?branch=master&svg=true)](https://ci.appveyor.com/project/JohnLangford/vowpal-wabbit)
 
 This is the *vowpal wabbit* fast online learning code.  For Windows, look at README.windows.txt
 
@@ -16,7 +17,7 @@ These prerequisites are usually pre-installed on many platforms. However, you ma
 manager (*yum*, *apt*, *MacPorts*, *brew*, ...) to install missing software.
 
 - [Boost](http://www.boost.org) library, with the `Boost::Program_Options` library option enabled.
-- GNU *autotools*: *autoconf*, *automake*, *libtool*, *autoheader*, et. al.
+- GNU *autotools*: *autoconf*, *automake*, *libtool*, *autoheader*, et. al. This is not a strict prereq. On many systems (notably Ubuntu with `libboost-program-options-dev` installed), the provided `Makefile` works fine.
 - (optional) [git](http://git-scm.com) if you want to check out the latest version of *vowpal wabbit*,
   work on the code, or even contribute code to the main project.
 
@@ -49,10 +50,13 @@ $ make test    # (optional)
 $ make install
 ```
 
-Note that ``./autogen.sh`` requires *automake* (see the prerequisites, above.)
+Note that `./autogen.sh` requires *automake* (see the prerequisites, above.)
 
 `./autogen.sh`'s command line arguments are passed directly to `configure` as
 if they were `configure` arguments and flags.
+
+Note that `./autogen.sh` will overwrite the supplied `Makefile`, so
+keeping a copy of `Makefile` may be a good idea before running `autogen.sh`.
 
 Be sure to read the wiki: https://github.com/JohnLangford/vowpal_wabbit/wiki
 for the tutorial, command line options, etc.
@@ -73,6 +77,48 @@ or passing your own compiler flags via the `CXXOPTIMIZE` make variable:
 
 ```
 $ make CXXOPTIMIZE="-O0 -g"
+```
+
+## Ubuntu/Debian specific info
+
+On Ubuntu/Debian/Mint and similar the following sequence should work
+for building the latest from github:
+
+```
+# -- Get libboost program-options:
+apt-get install libboost-program-options-dev
+
+# -- Get the python libboost bindings (python subdir) - optional:
+apt-get install libboost-python-dev
+
+# -- Get the vw source:
+git clone git://github.com/JohnLangford/vowpal_wabbit.git
+
+# -- Build:
+cd vowpal_wabbit
+make
+make test       # (optional)
+make install
+```
+
+### Ubuntu advanced build options (clang and static)
+
+If you prefer building with `clang` instead of `gcc` (much faster build
+and slighly faster executable), install `clang` and change the `make`
+step slightly:
+
+```
+apt-get install clang
+
+make CXX=clang++
+```
+
+A statically linked `vw` executable that is not sensitive to boost
+version upgrades and can be safely copied between different Linux
+versions (e.g. even from Ubuntu to Red-Hat) can be built and tested with:
+
+```
+make CXX='clang++ -static' clean vw test     # ignore warnings
 ```
 
 ## Mac OS X-specific info

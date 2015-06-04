@@ -385,6 +385,8 @@ struct vw {
   size_t numpasses;
   size_t passes_complete;
   size_t parse_mask; // 1 << num_bits -1
+  bool permutations; // if true - permutations of features generated instead of simple combinations. false by default
+  v_array<v_string> interactions; // interactions of namespaces to cross.
   std::vector<std::string> pairs; // pairs of features to cross.
   std::vector<std::string> triples; // triples of features to cross.
   bool ignore_some;
@@ -393,8 +395,8 @@ struct vw {
   bool redefine_some;          // --redefine param was used
   unsigned char redefine[256]; // keeps new chars for amespaces
 
-  std::vector<std::string> ngram_strings; // pairs of features to cross.
-  std::vector<std::string> skip_strings; // triples of features to cross.
+  std::vector<std::string> ngram_strings;
+  std::vector<std::string> skip_strings;
   uint32_t ngram[256];//ngrams to generate.
   uint32_t skips[256];//skips in ngrams.
   std::vector<std::string> limit_strings; // descriptor of feature limits
@@ -404,6 +406,7 @@ struct vw {
   vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
   vector<dictionary_info> read_dictionaries; // which dictionaries have we read?
   
+  bool multilabel_prediction;
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress progress-printing of updates?
   bool training;//Should I train if lable data is available?
@@ -466,6 +469,8 @@ struct vw {
   // Set by --progress <arg>
   bool  progress_add;   // additive (rather than multiplicative) progress dumps
   float progress_arg;   // next update progress dump multiplier
+
+  bool seeded; // whether the instance is sharing model state with others
 
   std::map< std::string, size_t> name_index_map;
 

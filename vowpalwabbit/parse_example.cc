@@ -103,7 +103,7 @@ public:
 	v_array<char> feature_v = v_init<char>();
 	push_many(feature_v, feature_name.begin, feature_name.end - feature_name.begin);
 	feature_v.push_back('\0');
-	audit_data ad = {copy(base),feature_v.begin,word_hash,v,true};
+    audit_data ad = {copy(base),feature_v.begin,word_hash,v,true};
 	ae->audit_features[index].push_back(ad);
       }
       if ((affix_features[index] > 0) && (feature_name.end != feature_name.begin)) {

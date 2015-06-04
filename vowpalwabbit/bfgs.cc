@@ -514,7 +514,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
   return ret;
 }
   
-void update_weight(vw& all, float step_size, size_t current_pass)
+void update_weight(vw& all, float step_size)
   {
     uint32_t length = 1 << all.num_bits;
     size_t stride = 1 << all.reg.stride_shift;
@@ -564,7 +564,7 @@ int process_pass(vw& all, bfgs& b) {
 	if (!all.quiet)
 	  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, b.step_size);
 	b.predictions.erase();
-	update_weight(all, b.step_size, b.current_pass);		     		           }
+	update_weight(all, b.step_size);		     		           }
     }
     else
   /********************************************************************/
@@ -617,7 +617,7 @@ int process_pass(vw& all, bfgs& b) {
 				"","",ratio,
 				new_step);
 			b.predictions.erase();
-			update_weight(all, (float)(-b.step_size+new_step), b.current_pass);		     		      			
+			update_weight(all, (float)(-b.step_size+new_step));		     		      			
 			b.step_size = (float)new_step;
 			zero_derivative(all);
 			b.loss_sum = 0.;
@@ -659,7 +659,7 @@ int process_pass(vw& all, bfgs& b) {
 			if (!all.quiet)
 			  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, b.step_size);
 			b.predictions.erase();
-			update_weight(all, b.step_size, b.current_pass);		     		      
+			update_weight(all, b.step_size);		     		      
 		      }
 		    }
 		}
@@ -694,7 +694,7 @@ int process_pass(vw& all, bfgs& b) {
 		  float d_mag = direction_magnitude(all);
 
 		  b.predictions.erase();
-		  update_weight(all, b.step_size, b.current_pass);
+		  update_weight(all, b.step_size);
 		  ftime(&b.t_end_global);
 		  b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm)); 
 		  if (!all.quiet)
@@ -814,7 +814,7 @@ void end_pass(bfgs& b)
 }
 
 // placeholder
-void predict(bfgs& b, base_learner& base, example& ec)
+void predict(bfgs& b, base_learner&, example& ec)
 {
   vw* all = b.all;
   ec.pred.scalar = bfgs_predict(*all,ec);
@@ -847,7 +847,6 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 
   char buff[512];
   int c = 0;
-  uint32_t stride = 1 << all.reg.stride_shift;
   uint32_t length = 2*(1 << all.num_bits);
   uint32_t i = 0;
   size_t brw = 1;
@@ -880,8 +879,6 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 	      text_len = sprintf(buff, ":%f\n", *v);
 	      brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
 					 buff, text_len, text);
-	      if (read && i%2 == 1) // This is the prior mean
-		all.reg.weight_vector[(i/2*stride)] = *v;
 	    }
 	}
       if (!read)

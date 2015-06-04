@@ -62,7 +62,7 @@ void receive_result(sender& s)
   return_simple_example(*(s.all), nullptr, ec);  
 }
 
-void learn(sender& s, LEARNER::base_learner& base, example& ec) 
+void learn(sender& s, LEARNER::base_learner&, example& ec)
 { 
   if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
     receive_result(s);
@@ -74,7 +74,7 @@ void learn(sender& s, LEARNER::base_learner& base, example& ec)
   s.delay_ring[s.sent_index++ % s.all->p->ring_size] = &ec;
 }
 
-void finish_example(vw& all, sender&, example& ec){}
+void finish_example(vw&, sender&, example&){}
 
 void end_examples(sender& s)
 { //close our outputs to signal finishing.

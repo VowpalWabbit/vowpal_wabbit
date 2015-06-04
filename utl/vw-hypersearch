@@ -65,7 +65,7 @@ sub v(@) {
 #        failure of fork or exec, ...)
 #       print a user-helpful error message and abort
 #
-sub ExecCmd {
+sub ExecCmd($;$) {
     my $cmd = shift || return(0, []);
     my $timeout = shift || 0;
 
@@ -436,8 +436,8 @@ sub goldenSectionSearch($$$$) {
 
     # assert(loss($x) != loss($mid));
     if (loss($x) == loss($mid)) {
-        printf STDERR "%s: loss(%g) == loss(%g): %g\n",
-                            $0, real_param($x), real_param($mid), loss($x);
+        printf STDERR "loss(%g) == loss(%g): %g\n",
+                            real_param($x), real_param($mid), loss($x);
         return opt_value(($x + $mid) / 2.0);
     }
 
@@ -504,9 +504,21 @@ sub best_hyperparam($$$) {
 
 sub fullpath($) {
     my $exe = shift;
-    foreach my $dir (split(':', $ENV{PATH})) {
+    # I'm told on Windows, the PATH separator is ';' instead of ':'
+    my ($path_sep, $ext) = (':', '');
+    if ($^O =~ /MSWin/i) {
+        $path_sep = ';';
+        $ext = '.exe';
+    }
+    foreach my $dir (split($path_sep, $ENV{PATH}), '.') {
         my $fp = "$dir/$exe";
         return $fp if (-x $fp);
+        # On windows, the executable may be called 'vw.exe'
+        # so try that as well
+        if ($ext) {
+            $fp = "$dir/$exe$ext";
+            return $fp if (-x $fp);
+        }
     }
     '';
 }
@@ -599,10 +611,20 @@ sub process_args {
         usage("3rd argument (tolerance): $tolerance: not in the (0, 1) range")
             unless (0 < $tolerance and $tolerance < 1.0);
     }
-    usage("command: $ARGV[0]: must start with an executable")
-        unless (-x $ARGV[0] || -x (fullpath($ARGV[0])));
+    if (! -x $ARGV[0]) {
+        # Not directly executable, look along PATH:
+        my $fp = fullpath($ARGV[0]);
+        if ($fp && -x $fp) {
+            $ARGV[0] = $fp;
+        }
+    }
+    # retry after looking along PATH, warn if still no go
+    if (! -x $ARGV[0]) {
+        warn "Couldn't find '$ARGV[0]' executable: " .
+             "(is \$PATH correct?)" . "Will try anyway.\n";
+    }
 
-    # --- Now @ARGV contains the vw command only
+    # --- Now @ARGV contains the full vw command
 
     # --quiet prevents progress from being detected so don't allow it
     my @saved_argv = @ARGV; @ARGV = ();

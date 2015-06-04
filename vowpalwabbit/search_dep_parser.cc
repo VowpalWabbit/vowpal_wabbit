@@ -24,7 +24,7 @@ struct task_data {
 namespace DepParserTask {
   using namespace Search;
 
-  void initialize(Search::search& srn, size_t& num_actions, po::variables_map& vm) {
+  void initialize(Search::search& srn, size_t& /*num_actions*/, po::variables_map& vm) {
     task_data *data = new task_data();
     data->action_loss.resize(4,true);
     data->ex = NULL;
@@ -56,6 +56,13 @@ namespace DepParserTask {
     vector<string> newtriples(triple, triple+14);
     all.pairs.swap(newpairs);
     all.triples.swap(newtriples);
+
+    for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i)
+        i->delete_v();
+    for (vector<string>::const_iterator i = all.pairs.begin(); i != all.pairs.end(); ++i)
+        all.interactions.push_back(string2v_string(*i));
+    for (vector<string>::const_iterator i = all.triples.begin(); i != all.triples.end(); ++i)
+        all.interactions.push_back(string2v_string(*i));
     
     srn.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
     srn.set_label_parser( COST_SENSITIVE::cs_label, [](polylabel&l) -> bool { return l.cs.costs.size() == 0; });
@@ -107,7 +114,7 @@ namespace DepParserTask {
         children[4][stack[stack.size()-2]]=stack.last();
         children[1][stack[stack.size()-2]]++;
         tags[stack.last()] = t_id;
-        srn.loss(gold_heads[stack.last()] != heads[stack.last()]?2:(gold_tags[stack.last()] != t_id)?1:0);
+        srn.loss(gold_heads[stack.last()] != heads[stack.last()]?2:(gold_tags[stack.last()] != t_id)? 1.f : 0.f);
         assert(! stack.empty());
         stack.pop();
         return idx;
@@ -117,7 +124,7 @@ namespace DepParserTask {
         children[2][idx]=stack.last();
         children[0][idx]++;
         tags[stack.last()] = t_id;
-        srn.loss(gold_heads[stack.last()] != heads[stack.last()]?2:(gold_tags[stack.last()] != t_id)?1:0);
+        srn.loss(gold_heads[stack.last()] != heads[stack.last()]?2:(gold_tags[stack.last()] != t_id)? 1.f : 0.f);
         assert(! stack.empty());
         stack.pop();
         return idx;

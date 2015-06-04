@@ -37,11 +37,13 @@ template<class T> struct v_array {
       if ((size_t)(end_array-begin) != length)
 	{
 	  size_t old_len = end-begin;
-	  begin = (T *)realloc(begin, sizeof(T) * length);
-	  if ((begin == nullptr) && ((sizeof(T)*length) > 0)) {
+	  T* temp = (T *)realloc(begin, sizeof(T) * length);
+	  if ((temp == nullptr) && ((sizeof(T)*length) > 0)) {
 	    std::cerr << "realloc of " << length << " failed in resize().  out of memory?" << std::endl;
 	    throw std::exception();
 	  }
+	  else
+	    begin = temp;
           if (zero_everything && (old_len < length))
             memset(begin+old_len, 0, (length-old_len)*sizeof(T));
 	  end = begin+old_len;
@@ -201,4 +203,22 @@ template<class T,class U>std::ostream& operator<<(std::ostream& os, const v_arra
   for (std::pair<T,U>* i=v.begin; i!=v.end; ++i) os << ' ' << i->first << ':' << i->second;
   os << " ]";
   return os;
+}
+
+typedef v_array<unsigned char> v_string;
+
+inline v_string string2v_string(const std::string& s)
+{
+    v_string res = v_init<unsigned char>();
+    if (!s.empty())
+        push_many(res, (unsigned  char*)s.data(), s.size());
+    return res;
+}
+
+inline std::string v_string2string(const v_string& v_s)
+{
+    std::string res;
+    for (unsigned char* i = v_s.begin; i != v_s.end; ++i)
+        res.push_back(*i);
+    return res;
 }

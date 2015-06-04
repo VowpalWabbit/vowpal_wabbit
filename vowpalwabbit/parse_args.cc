@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include "parse_regressor.h"
 #include "parser.h"
 #include "vw.h"
+#include "interactions.h"
 
 #include "sender.h"
 #include "nn.h"
@@ -24,6 +25,7 @@ license as described in the file LICENSE.
 #include "ect.h"
 #include "csoaa.h"
 #include "cb_algs.h"
+#include "cb_adf.h"
 #include "scorer.h"
 #include "search.h"
 #include "bfgs.h"
@@ -46,6 +48,7 @@ license as described in the file LICENSE.
 #include "kernel_svm.h"
 #include "parse_example.h"
 #include "best_constant.h"
+#include "interact.h"
 
 using namespace std;
 //
@@ -58,13 +61,6 @@ bool ends_with(string const &fullString, string const &ending)
     } else {
         return false;
     }
-}
-
-bool valid_ns(char c)
-{
-    if (c=='|'||c==':')
-        return false;
-    return true;
 }
 
 bool substring_equal(substring&a, substring&b) {
@@ -266,7 +262,6 @@ void parse_source(vw& all)
   // Be friendly: if -d was left out, treat positional param as data file
   po::positional_options_description p;  
   p.add("data", -1);
-  
   po::parsed_options pos = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(all.opts).positional(p).run();
@@ -330,6 +325,9 @@ void parse_feature_tweaks(vw& all)
     ("affix", po::value<string>(), "generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace")
     ("spelling", po::value< vector<string> >(), "compute spelling features for a give namespace (use '_' for default namespace)")
     ("dictionary", po::value< vector<string> >(), "read a dictionary for additional features (arg either 'x:file' or just 'file')")
+    ("interactions", po::value< vector<string> > (), "Create feature interactions of any level between namespaces.")
+    ("permutations", "Use permutations instead of combinations for feature interactions of same namespace.")
+    ("leave_duplicate_interactions", "Don't remove interactions with duplicate combinations of namespaces. For ex. this is a duplicate: '-q ab -q ba' and a lot more in '-q ::'.")
     ("quadratic,q", po::value< vector<string> > (), "Create and use quadratic features")
     ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
     ("cubic", po::value< vector<string> > (),
@@ -402,93 +400,84 @@ void parse_feature_tweaks(vw& all)
 	}
     }
 
+  all.permutations = vm.count("permutations");
+
+  // prepare namespace interactions
+  v_array<v_string> expanded_interactions = v_init<v_string>();
+
   if (vm.count("quadratic"))
-    {
-      all.pairs = vm["quadratic"].as< vector<string> >();
-      vector<string> newpairs;
-      //string tmp;
-      char printable_start = '!';
-      char printable_end = '~';
-      int valid_ns_size = printable_end - printable_start - 1; //will skip two characters
-
-      if(!all.quiet)
-        cerr<<"creating quadratic features for pairs: ";
-
-      for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++){
-        if(!all.quiet){
-          cerr << *i << " ";
-          if (i->length() > 2)
-            cerr << endl << "warning, ignoring characters after the 2nd.\n";
-          if (i->length() < 2) {
-            cerr << endl << "error, quadratic features must involve two sets.\n";
-            throw exception();
-          }
-        }
-        //-q x:
-        if((*i)[0]!=':'&&(*i)[1]==':'){
-          newpairs.reserve(newpairs.size() + valid_ns_size);
-          for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j))
-              newpairs.push_back(string(1,(*i)[0])+j);
-          }
-        }
-        //-q :x
-        else if((*i)[0]==':'&&(*i)[1]!=':'){
-          newpairs.reserve(newpairs.size() + valid_ns_size);
-          for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j)){
-	      stringstream ss;
-	      ss << j << (*i)[1];
-	      newpairs.push_back(ss.str());
-	    }
-          }
-        }
-        //-q ::
-        else if((*i)[0]==':'&&(*i)[1]==':'){
-	  cout << "in pair creation" << endl;
-          newpairs.reserve(newpairs.size() + valid_ns_size*valid_ns_size);
-	  stringstream ss;
-	  ss << ' ' << ' ';
-	  newpairs.push_back(ss.str());
-          for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j)){
-              for (char k=printable_start; k<=printable_end; k++){
-                if(valid_ns(k)){
-		  stringstream ss;
-                  ss << j << k;
-                  newpairs.push_back(ss.str());
-		}
-              }
-            }
-          }
-        }
-        else{
-          newpairs.push_back(string(*i));
-        }
+  {
+      const vector<string> vec_arg = vm["quadratic"].as< vector<string> >();
+      if (!all.quiet)
+      {
+          cerr << "creating quadratic features for pairs: ";
+          for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+              if (!all.quiet) cerr << *i << " ";
       }
-      newpairs.swap(all.pairs);
-      if(!all.quiet)
-        cerr<<endl;
-    }
+      expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
+
+      if (!all.quiet) cerr << endl;
+  }
 
   if (vm.count("cubic"))
-    {
-      all.triples = vm["cubic"].as< vector<string> >();
+  {
+      vector<string> vec_arg = vm["cubic"].as< vector<string> >();
       if (!all.quiet)
-	{
-	  cerr << "creating cubic features for triples: ";
-	  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-	    cerr << *i << " ";
-	    if (i->length() > 3)
-	      cerr << endl << "warning, ignoring characters after the 3rd.\n";
-	    if (i->length() < 3) {
-	      cerr << endl << "error, cubic features must involve three sets.\n";
-	      throw exception();
-	    }
-	  }
-	  cerr << endl;
-	}
-    }
+      {
+          cerr << "creating cubic features for triples: ";
+          for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+              if (!all.quiet) cerr << *i << " ";
+      }
+
+      v_array<v_string> exp_cubic = INTERACTIONS::expand_interactions(vec_arg, 3, "error, cubic features must involve three sets.");
+      push_many(expanded_interactions, exp_cubic.begin, exp_cubic.size());
+      exp_cubic.delete_v();
+
+      if (!all.quiet) cerr << endl;
+  }
+
+  if (vm.count("interactions"))
+  {
+      vector<string> vec_arg = vm["interactions"].as< vector<string> >();
+      if (!all.quiet)
+      {
+          cerr << "creating features for following interactions: ";
+          for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+              if (!all.quiet) cerr << *i << " ";
+      }
+
+      v_array<v_string> exp_inter = INTERACTIONS::expand_interactions(vec_arg, 0, "");
+      push_many(expanded_interactions, exp_inter.begin, exp_inter.size());
+      exp_inter.delete_v();
+
+      if (!all.quiet) cerr << endl;
+  }
+
+  if (expanded_interactions.size() > 0)
+  {
+
+      size_t removed_cnt;
+      size_t sorted_cnt;
+      INTERACTIONS::sort_and_filter_duplicate_interactions(expanded_interactions, !vm.count("leave_duplicate_interactions"), removed_cnt, sorted_cnt);
+
+      if (removed_cnt > 0)
+          cerr << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.' << endl << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
+      if (sorted_cnt > 0)
+          cerr << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
+
+      all.interactions = expanded_interactions;
+
+      // copy interactions of size 2 and 3 to old vectors for backward compatibility
+      for (v_string* i = expanded_interactions.begin; i != expanded_interactions.end; ++i)
+      {
+          const size_t len = i->size();
+          if (len == 2)
+              all.pairs.push_back(v_string2string(*i));
+          else if (len == 3)
+              all.triples.push_back(v_string2string(*i));
+      }
+  }
+
 
   for (size_t i = 0; i < 256; i++)
     all.ignore[i] = false;
@@ -586,7 +575,7 @@ void parse_feature_tweaks(vw& all)
           // case ':=S' doesn't require any additional code as new_namespace = ' ' by default
 
           if (operator_pos == arg_len) // S is empty, default namespace shall be used
-              all.redefine[' '] = new_namespace;
+              all.redefine[(int) ' '] = new_namespace;
           else
               for (size_t i = operator_pos; i < arg_len; i++)
               { // all namespaces from S are redefined to N
@@ -596,10 +585,7 @@ void parse_feature_tweaks(vw& all)
                   else
                   { // wildcard found: redefine all except default and break
                       for (size_t i = 0; i < 256; i++)
-                      {
-                          if (i != ' ')
-                              all.redefine[i] = new_namespace;
-                      }
+                         all.redefine[i] = new_namespace;
                       break; //break processing S
                   }
               }
@@ -845,8 +831,10 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(log_multi_setup);
   all.reduction_stack.push_back(multilabel_oaa_setup);
   all.reduction_stack.push_back(csoaa_setup);
+  all.reduction_stack.push_back(interact_setup);
   all.reduction_stack.push_back(csldf_setup);
   all.reduction_stack.push_back(cb_algs_setup);
+  all.reduction_stack.push_back(cb_adf_setup);
   all.reduction_stack.push_back(cbify_setup);
   all.reduction_stack.push_back(Search::setup);
   all.reduction_stack.push_back(bs_setup);
@@ -864,6 +852,7 @@ vw& parse_args(int argc, char *argv[])
 {
   vw& all = *(new vw());
 
+  all.vw_is_main = false;
   add_to_args(all, argc, argv);
 
   size_t random_seed = 0;
@@ -1038,6 +1027,36 @@ namespace VW {
     return &all;
   }
 
+  // Create a new VW instance while sharing the model with another instance
+  // The extra arguments will be appended to those of the other VW instance
+  vw* seed_vw_model(vw* vw_model, const string extra_args)
+  {
+    vector<string> model_args = vw_model->args;
+    model_args.push_back(extra_args);
+
+    std::ostringstream init_args;
+    for (size_t i = 0; i < model_args.size(); i++)
+    {
+      if (model_args[i] == "--no_stdin" || // ignore this since it will be added by vw::initialize
+          model_args[i] == "-i" || // ignore -i since we don't want to reload the model
+          (i > 0 && model_args[i - 1] == "-i"))
+      {
+        continue;
+      }
+      init_args << model_args[i] << " ";
+    }
+
+    vw* new_model = VW::initialize(init_args.str().c_str());
+    
+    // reference model states stored in the specified VW instance
+    new_model->reg = vw_model->reg; // regressor
+    new_model->sd = vw_model->sd; // shared data
+
+    new_model->seeded = true;
+
+    return new_model;
+  }
+
   void delete_dictionary_entry(substring ss, v_array<feature>*A) {
     free(ss.begin);
     A->delete_v();
@@ -1080,14 +1099,17 @@ namespace VW {
     finalize_regressor(all, all.final_regressor_name);
     all.l->finish();
     free_it(all.l);
-    if (all.reg.weight_vector != nullptr)
+    if (all.reg.weight_vector != nullptr && !all.seeded) // don't free weight vector if it is shared with another instance
       free(all.reg.weight_vector);
     free_parser(all);
     finalize_source(all.p);
     all.p->parse_name.erase();
     all.p->parse_name.delete_v();
     free(all.p);
-    free(all.sd);
+    if (!all.seeded)
+    {
+      free(all.sd);
+    }
     all.reduction_stack.delete_v();
     delete all.file_options;
     for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
@@ -1101,6 +1123,11 @@ namespace VW {
       delete all.read_dictionaries[i].dict;
     }
     delete all.loss;
+
+    // destroy all interactions and array of them
+    for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i) i->delete_v();
+    all.interactions.delete_v();
+
     if (delete_all) delete &all;
   }
 }

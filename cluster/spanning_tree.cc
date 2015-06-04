@@ -304,7 +304,9 @@ int main(int argc, char* argv[]) {
 	      }
 	    CLOSESOCK(partial_nodeset.nodes[i].socket);
 	  }
-	free (partial_nodeset.nodes);
+	free(partial_nodeset.nodes);
+	free(parent);
+	free(kid_count);
       }
   }
 

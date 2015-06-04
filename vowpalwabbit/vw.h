@@ -17,6 +17,7 @@ namespace VW {
     (2) The code is not yet reentrant.
    */
   vw* initialize(string s);
+  vw* seed_vw_model(vw* vw_model, string extra_args);
 
   void cmd_string_replace_value( std::stringstream*& ss, string flag_to_replace, string new_value );
 
@@ -59,6 +60,7 @@ namespace VW {
   float get_initial(example*ec);
   float get_prediction(example*ec);
   float get_cost_sensitive_prediction(example*ec);
+  uint32_t* get_multilabel_predictions(vw& all, example* ec, size_t& len);
   size_t get_tag_length(example* ec);
   const char* get_tag(example* ec);
   size_t get_feature_number(example* ec);
@@ -78,6 +80,8 @@ namespace VW {
   primitive_feature_space* export_example(vw& all, example* e, size_t& len);
   void releaseFeatureSpace(primitive_feature_space* features, size_t len);
 
+  void save_predictor(vw& all, string reg_name);
+
   // inlines
 
   //First create the hash of a namespace.
@@ -88,6 +92,13 @@ namespace VW {
     ss.end = ss.begin + s.length();
     return (uint32_t)all.p->hasher(ss,hash_base);
   }
+  inline uint32_t hash_space_static(string s, string hash)
+  {
+      substring ss;
+      ss.begin = (char*)s.c_str();
+      ss.end = ss.begin + s.length();
+      return (uint32_t)getHasher(hash)(ss, hash_base);
+  }
   //Then use it as the seed for hashing features.
   inline uint32_t hash_feature(vw& all, string s, unsigned long u)
   {
@@ -95,6 +106,14 @@ namespace VW {
     ss.begin = (char*)s.c_str();
     ss.end = ss.begin + s.length();
     return (uint32_t)(all.p->hasher(ss,u) & all.parse_mask);
+  }
+  inline uint32_t hash_feature_static(string s, unsigned long u, string h, uint32_t num_bits)
+  {
+      substring ss;
+      ss.begin = (char*)s.c_str();
+      ss.end = ss.begin + s.length();
+      size_t parse_mark = (1 << num_bits) - 1;
+      return (uint32_t)(getHasher(h)(ss, u) & parse_mark);
   }
 
   inline uint32_t hash_feature_cstr(vw& all, char* fstr, unsigned long u)
