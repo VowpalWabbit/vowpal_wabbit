@@ -22,7 +22,7 @@ namespace Microsoft
 		{
 			ref class VowpalWabbitExample;
 
-			public  ref class VowpalWabbitPredictionBase abstract
+			public  ref class VowpalWabbitPrediction abstract
 			{
 			public:
 				void ReadFromExample(VowpalWabbitExample^ example);
@@ -30,7 +30,7 @@ namespace Microsoft
 				virtual void ReadFromExample(vw* vw, example* ex) abstract;
 			};
 
-			public ref class VowpalWabbitPrediction : VowpalWabbitPredictionBase
+			public ref class VowpalWabbitScalarPrediction : VowpalWabbitPrediction
 			{
 			public:
 				void ReadFromExample(vw* vw, example* ex) override;
@@ -38,7 +38,7 @@ namespace Microsoft
 				property float Value;
 			};
 
-			public ref class VowpalWabbitCostSensitivePrediction : VowpalWabbitPredictionBase
+			public ref class VowpalWabbitCostSensitivePrediction : VowpalWabbitPrediction
 			{
 			public:
 				void ReadFromExample(vw* vw, example* ex) override;
@@ -46,7 +46,7 @@ namespace Microsoft
 				property float Value;
 			};
 
-			public ref class VowpalWabbitMultilabelPrediction : VowpalWabbitPredictionBase
+			public ref class VowpalWabbitMultilabelPrediction : VowpalWabbitPrediction
 			{
 			public:
 				void ReadFromExample(vw* vw, example* ex) override;
@@ -54,7 +54,7 @@ namespace Microsoft
 				property cli::array<int>^ Values;
 			};
 
-			public ref class VowpalWabbitTopicPrediction : VowpalWabbitPredictionBase
+			public ref class VowpalWabbitTopicPrediction : VowpalWabbitPrediction
 			{
 			public:
 				void ReadFromExample(vw* vw, example* ex) override;
@@ -62,7 +62,7 @@ namespace Microsoft
 				property cli::array<float>^ Values;
 			};
 
-			public ref class VowpalWabbitPredictionNone : VowpalWabbitPredictionBase
+			public ref class VowpalWabbitPredictionNone : VowpalWabbitPrediction
 			{
 			public:
 				void ReadFromExample(vw* vw, example* ex) override;
@@ -72,11 +72,11 @@ namespace Microsoft
 			{
 			public:
 				generic<typename TPrediction>
-					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+					where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 				virtual TPrediction Learn() = 0;
 
 				generic<typename TPrediction>
-					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+					where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 				virtual TPrediction Predict() = 0;
 
 				virtual property VowpalWabbitExample^ UnderlyingExample
@@ -89,7 +89,7 @@ namespace Microsoft
 			{
 			private:
 				generic<typename TPrediction>
-					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+					where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 				TPrediction PredictOrLearn(bool predict);
 
 			protected:
@@ -105,11 +105,11 @@ namespace Microsoft
 				~VowpalWabbitExample();
 
 				generic<typename TPrediction>
-					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+					where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 				virtual TPrediction Learn();
 
 				generic<typename TPrediction>
-					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+					where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 				virtual TPrediction Predict();
 
 					virtual property VowpalWabbitExample^ UnderlyingExample
@@ -224,7 +224,7 @@ namespace Microsoft
 				VowpalWabbitModel^ m_model;
 
 				generic<typename TPrediction>
-					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+					where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 				TPrediction PredictOrLearn(System::String^ line, bool predict);
 
 			protected:
@@ -239,12 +239,14 @@ namespace Microsoft
 				uint32_t HashFeature(System::String^ s, unsigned long u);
 
 				generic<typename TPrediction>
-					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+					where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 				TPrediction Learn(System::String^ line);
 
 				generic<typename TPrediction>
-					where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+					where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 				TPrediction Predict(System::String^ line);
+
+				void Driver();
 			};
 		}
 	}

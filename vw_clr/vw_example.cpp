@@ -13,7 +13,7 @@ namespace Microsoft
 
 			VowpalWabbitExample::!VowpalWabbitExample()
 			{
-				if (m_example)
+				if (m_example != nullptr)
 				{
 					// make sure we're not a ring based example 
 					assert(!VW::is_ring_example(*m_vw, m_example));
@@ -38,9 +38,8 @@ namespace Microsoft
 				this->!VowpalWabbitExample();
 			}
 
-
 			generic<typename TPrediction>
-				where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+				where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 			TPrediction VowpalWabbitExample::PredictOrLearn(bool predict)
 			{
 				try
@@ -65,14 +64,14 @@ namespace Microsoft
 			}
 
 			generic<typename TPrediction>
-				where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+				where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 			TPrediction VowpalWabbitExample::Learn()
 			{
 				return PredictOrLearn<TPrediction>(false);
 			}
 
 			generic<typename TPrediction>
-				where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+				where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 			TPrediction VowpalWabbitExample::Predict()
 			{
 				return PredictOrLearn<TPrediction>(true);

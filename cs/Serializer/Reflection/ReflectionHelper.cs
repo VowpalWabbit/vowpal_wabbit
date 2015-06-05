@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Reflection
@@ -127,6 +128,68 @@ namespace Microsoft.Research.MachineLearning.Serializer.Reflection
             {
                 yield return item;
             }
+        }
+
+        /// <summary>
+        /// Gets the member info in a sort of type safe manner - it's better than using strings, but some runtime errors are still possbile.
+        /// </summary>
+        public static MemberInfo GetInfo<T, TResult>(Expression<Func<T, TResult>> expression)
+        {
+            return GetInfo(expression.Body);
+        }
+
+        /// <summary>
+        /// Gets the member info in a sort of type safe manner - it's better than using strings, but some runtime errors are still possbile.
+        /// </summary>
+        public static MemberInfo GetInfo<T>(Expression<Action<T>> expression)
+        {
+            return GetInfo(expression.Body);
+        }
+
+        /// <summary>
+        /// Gets the member info in a sort of type safe manner - it's better than using strings, but some runtime errors are still possbile.
+        /// </summary>
+        public static MemberInfo GetInfo(Expression expression)
+        {
+            var binaryExpression = expression as BinaryExpression;
+            if (binaryExpression != null)
+            {
+                if (binaryExpression.Method != null)
+                {
+                    return binaryExpression.Method;
+                }
+                
+                throw new NotSupportedException();
+            }
+            
+            var methodExpression = expression as MemberExpression;
+            if (methodExpression != null)
+            {
+                return methodExpression.Member;
+            }
+
+            var methodCallExpression = expression as MethodCallExpression;
+            if (methodCallExpression != null)
+            {
+                return methodCallExpression.Method;
+            }
+
+            var newExpression = expression as NewExpression;
+            if (newExpression != null)
+            {
+                return newExpression.Constructor;
+            }
+
+            var unaryExpression = expression as UnaryExpression;
+            if (unaryExpression != null)
+            {
+                if (unaryExpression.Method != null)
+                {
+                    return unaryExpression.Method;
+                }
+            }
+
+            throw new NotSupportedException();
         }
     }
 }

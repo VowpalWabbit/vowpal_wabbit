@@ -18,10 +18,9 @@ using System.Threading.Tasks;
 namespace cs_unittest
 {
     [TestClass]
-    public class Test3Class
+    public class Test3Class : TestBase
     {
         [TestMethod]
-        [Ignore]
         [DeploymentItem(@"train-sets\0002.dat", "train-sets")]
         [DeploymentItem(@"train-sets\ref\0002.stderr", @"train-sets\ref")]
         public void Test3()

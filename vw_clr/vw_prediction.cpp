@@ -6,12 +6,12 @@ namespace Microsoft
 	{
 		namespace MachineLearning
 		{
-			void VowpalWabbitPredictionBase::ReadFromExample(VowpalWabbitExample^ example)
+			void VowpalWabbitPrediction::ReadFromExample(VowpalWabbitExample^ example)
 			{
 				ReadFromExample(example->m_vw, example->m_example);
 			}
 
-			void VowpalWabbitPrediction::ReadFromExample(vw* vw, example* ex)
+			void VowpalWabbitScalarPrediction::ReadFromExample(vw* vw, example* ex)
 			{
 				Value = VW::get_prediction(ex);
 			}

@@ -8,7 +8,7 @@ clone_folder: C:\vowpal_wabbit
 build:
   project: C:\vowpal_wabbit\vowpalwabbit\vw.sln
   parallel: true
-  verbosity: normal
+  verbosity: detailed
 after_build:
 - cd cs
 - ..\vowpalwabbit\.nuget\nuget pack cs.csproj -Prop "Configuration=Release;Platform=x64" -Prop SolutionDir=..\vowpalwabbit\ -OutputDirectory bin\x64\Release

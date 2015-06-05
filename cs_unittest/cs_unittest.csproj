@@ -57,10 +57,12 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="Rcv1Test.cs" />
     <Compile Include="Test1and2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Test3.cs" />
     <Compile Include="Test87.cs" />
+    <Compile Include="TestBase.cs" />
     <Compile Include="TestErrorListener.cs" />
     <Compile Include="TestWrapper.cs" />
     <Compile Include="VWTestHelper.cs" />

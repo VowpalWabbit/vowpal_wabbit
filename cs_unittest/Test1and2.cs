@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 namespace cs_test
 {
     [TestClass]
-    public class Test1and2Class
+    public class Test1and2Class : TestBase
     {
         [TestMethod]
         [DeploymentItem(@"train-sets\0001.dat", "train-sets")]
@@ -31,8 +31,6 @@ namespace cs_test
 
             var input = new List<Test1>();
 
-            Directory.CreateDirectory("models");
-
             using (var vwStr = new VowpalWabbit(" -k -c test1and2.str --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off"))
             using (var vw = new VowpalWabbit<Test1>(" -k -c test1and2 --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off"))
             {
@@ -43,11 +41,11 @@ namespace cs_test
                     {
                         input.Add(data);
 
-                        var expected = vwStr.Learn<VowpalWabbitPrediction>(data.Line);
+                        var expected = vwStr.Learn<VowpalWabbitScalarPrediction>(data.Line);
 
                         using (var example = vw.ReadExample(data))
                         {
-                            var actual = example.Learn<VowpalWabbitPrediction>();
+                            var actual = example.Learn<VowpalWabbitScalarPrediction>();
 
                             Assert.AreEqual(expected.Value, actual.Value, 1e-6, "Learn output differs on line: " + lineNr);
                         }
@@ -72,11 +70,11 @@ namespace cs_test
             {
                 for (var i = 0; i < input.Count; i++)
                 {
-                    var expected = vwStr.Predict<VowpalWabbitPrediction>(input[i].Line);
+                    var expected = vwStr.Predict<VowpalWabbitScalarPrediction>(input[i].Line);
 
                     using (var example = vw.ReadExample(input[i]))
                     {
-                        var actual = example.Predict<VowpalWabbitPrediction>();
+                        var actual = example.Predict<VowpalWabbitScalarPrediction>();
 
                         Assert.AreEqual(expected.Value, actual.Value, 1e-5);
 

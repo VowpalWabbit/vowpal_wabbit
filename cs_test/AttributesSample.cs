@@ -93,11 +93,11 @@ namespace cs_test
 
             var vw = new VowpalWabbit<FeatureTestContext>("-q st --noconstant --quiet");
 
-            vw.Learn<VowpalWabbitPrediction>("1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme"); 
+            vw.Learn<VowpalWabbitScalarPrediction>("1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme"); 
 
             using (var example = vw.ReadExample(context))
             {
-                var score = example.Learn<VowpalWabbitPrediction>().Value;
+                var score = example.Learn<VowpalWabbitScalarPrediction>().Value;
                 Console.Error.WriteLine("p2 = {0}", score);
             }
         }

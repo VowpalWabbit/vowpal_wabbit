@@ -31,6 +31,18 @@ namespace Microsoft.Research.MachineLearning.Serializer
         /// </summary>
         private static readonly Dictionary<Tuple<Type, Type>, object> SerializerCache = new Dictionary<Tuple<Type, Type>, object>();
 
+        private static readonly string SerializeMethodName = "Serialize";
+
+        private static MethodInfo IVowpalWabbitVisitorVisitWithLabelMethod<TExampleResult>()
+        {
+            return (MethodInfo)ReflectionHelper.GetInfo((IVowpalWabbitVisitor<TExampleResult> e) => e.Visit("", (IVisitableNamespace[])null));
+        }
+
+        private static MethodInfo IVowpalWabbitVisitorVisitMethod<TExampleResult>()
+        {
+            return (MethodInfo)ReflectionHelper.GetInfo((IVowpalWabbitVisitor<TExampleResult> e) => e.Visit((NamespaceSparse)null));
+        }
+
         public static VowpalWabbitSerializer<TExample> CreateSerializer<TExample>(VowpalWabbitInterfaceVisitor visitor, int maxExampleCacheSize)
         {
             var serializerFunc = CreateSerializer<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample>();
@@ -95,14 +107,19 @@ namespace Microsoft.Research.MachineLearning.Serializer
                 var features = ns.OrderBy(f => f.Order).ToList();
 
                 var baseNamespaceType = typeof(Namespace);
-                var baseNamespaceInits = new List<MemberAssignment> {
-                    Expression.Bind(baseNamespaceType.GetProperty("Name"), Expression.Constant(ns.Key.Namespace, typeof(string)))
+                var baseNamespaceInits = new List<MemberAssignment> 
+                {
+                    Expression.Bind(
+                        ReflectionHelper.GetInfo((Namespace n) => n.Name),
+                        Expression.Constant(ns.Key.Namespace, typeof(string)))
                 };
 
                 if (ns.Key.FeatureGroup != null)
                 {
-                    baseNamespaceInits.Add(Expression.Bind(baseNamespaceType.GetProperty("FeatureGroup"), 
-                        Expression.Convert(Expression.Constant((char)ns.Key.FeatureGroup), typeof(char?))));
+                    baseNamespaceInits.Add(
+                        Expression.Bind(
+                            ReflectionHelper.GetInfo((Namespace n) => n.FeatureGroup), 
+                            Expression.Convert(Expression.Constant((char)ns.Key.FeatureGroup), typeof(char?))));
                 }
 
                 if (ns.Key.IsDense)
@@ -158,7 +175,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
                         Expression.New(typeof(NamespaceSparse)),
                         baseNamespaceInits.Union(new[] { 
                             Expression.Bind(
-                                typeof(NamespaceSparse).GetProperty("Features"),
+                                ReflectionHelper.GetInfo((NamespaceSparse n) => n.Features),
                                 Expression.NewArrayInit(typeof(IVisitableFeature), featureVariables))
                         }));
 
@@ -199,25 +216,31 @@ namespace Microsoft.Research.MachineLearning.Serializer
                     // CODE namespace.Visit = () => { visitor.Visit(namespace); });
                     body.Add(
                         Expression.Assign(
-                            Expression.Property(namespaceVariable, namespaceVariable.Type.GetProperty("Visit")),
-                                Expression.Lambda<Action>(
-                                    Expression.Call(
-                                        visitorParameter,
-                                        visitorParameter.Type.GetMethod("Visit", new[] { typeof(NamespaceSparse) }),
-                                        namespaceVariable))));
+                            Expression.Property(
+                                namespaceVariable,
+                                (PropertyInfo)ReflectionHelper.GetInfo((NamespaceSparse n) => n.Visit)),
+                            Expression.Lambda<Action>(
+                                Expression.Call(
+                                    visitorParameter,
+                                    IVowpalWabbitVisitorVisitMethod<TExampleResult>(),
+                                    namespaceVariable))));
                 }
             }
 
             Expression label;
             if (typeof(IExample).IsAssignableFrom(typeof(TExample)))
             {
-                var labelProperty = Expression.Property(valueParameter, typeof(IExample).GetProperty("Label"));
+                var labelProperty = Expression.Property(
+                    valueParameter,
+                    (PropertyInfo)ReflectionHelper.GetInfo((IExample e) => e.Label));
 
                 // CODE: value.Label == null ? null : value.Label.ToVowpalWabbitFormat();
                 label = Expression.Condition(
                     test: Expression.Equal(labelProperty, Expression.Constant(null)),
                     ifTrue: Expression.Constant(null, typeof(string)),
-                    ifFalse: Expression.Call(labelProperty, typeof(ILabel).GetMethod("ToVowpalWabbitFormat"))); 
+                    ifFalse: Expression.Call(
+                        labelProperty,
+                        (MethodInfo)ReflectionHelper.GetInfo((ILabel l) => l.ToVowpalWabbitFormat()))); 
             }
             else
             {
@@ -228,7 +251,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
             body.Add(
                 Expression.Call(
                     visitorParameter,
-                    typeof(TVisitor).GetMethod("Visit", new[] { typeof(string), typeof(IVisitableNamespace[]) }),
+                    IVowpalWabbitVisitorVisitWithLabelMethod<TExampleResult>(),
                     label,
                     Expression.NewArrayInit(
                         typeof(IVisitableNamespace),
@@ -244,7 +267,8 @@ namespace Microsoft.Research.MachineLearning.Serializer
             var typeBuilder = moduleBuilder.DefineType("VowpalWabbitSerializer" + Guid.NewGuid().ToString().Replace('-', '_'));
 
             // Create our method builder for this type builder
-            var methodBuilder = typeBuilder.DefineMethod("Serialize",
+            var methodBuilder = typeBuilder.DefineMethod(
+                SerializeMethodName,
                 MethodAttributes.Public | MethodAttributes.Static,
                 typeof(void),
                 new[] { typeof(TExample), typeof(TVisitor) });
@@ -255,7 +279,9 @@ namespace Microsoft.Research.MachineLearning.Serializer
             
             var dynType = typeBuilder.CreateType();
 
-            return (Func<TExample, TVisitor, TExampleResult>)Delegate.CreateDelegate(typeof(Func<TExample, TVisitor, TExampleResult>), dynType.GetMethod("Serialize"));
+            return (Func<TExample, TVisitor, TExampleResult>)Delegate.CreateDelegate(
+                typeof(Func<TExample, TVisitor, TExampleResult>),
+                dynType.GetMethod(SerializeMethodName));
         }
 
         internal static bool IsValidDenseFeatureValueElementType(Type elemType)
@@ -323,11 +349,11 @@ namespace Microsoft.Research.MachineLearning.Serializer
                                     // CODE new Feature<T> { Namespace = ..., ... } 
                                     NewFeatureExpression = Expression.MemberInit(
                                        Expression.New(featureType),
-                                       Expression.Bind(featureType.GetProperty("Name"), Expression.Constant(name)),
-                                       Expression.Bind(featureType.GetProperty("Enumerize"), Expression.Constant(attr.Enumerize)),
+                                       Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Name), Expression.Constant(name)),
+                                       Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Enumerize), Expression.Constant(attr.Enumerize)),
                                        Expression.Bind(featureType.GetProperty("Value"), propertyExpression),
-                                       Expression.Bind(featureType.GetProperty("Namespace"), Expression.Constant(namespaceValue, typeof(string))),
-                                       Expression.Bind(featureType.GetProperty("FeatureGroup"),
+                                       Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Namespace), Expression.Constant(namespaceValue, typeof(string))),
+                                       Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.FeatureGroup),
                                             featureGroup == null ? Expression.Constant(null, typeof(char?)) : Expression.Constant((char)featureGroup)))
                                 };
 

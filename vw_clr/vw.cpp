@@ -77,7 +77,7 @@ namespace Microsoft
 			}
 
 			generic<typename TPrediction>
-				where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+				where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 			TPrediction VowpalWabbit::PredictOrLearn(System::String^ line, bool predict)
 			{
 				auto bytes = System::Text::Encoding::UTF8->GetBytes(line);
@@ -117,17 +117,22 @@ namespace Microsoft
 			}
 
 			generic<typename TPrediction>
-				where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+				where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 			TPrediction VowpalWabbit::Learn(System::String^ line)
 			{
 				return PredictOrLearn<TPrediction>(line, false);
 			}
 
 			generic<typename TPrediction>
-				where TPrediction : VowpalWabbitPredictionBase, gcnew(), ref class
+				where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 			TPrediction VowpalWabbit::Predict(System::String^ line)
 			{
 				return PredictOrLearn<TPrediction>(line, true);
+			}
+
+			void VowpalWabbit::Driver()
+			{
+				LEARNER::generic_driver(*m_vw);
 			}
 		}
 	}

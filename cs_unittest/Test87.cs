@@ -88,7 +88,6 @@ namespace cs_unittest
             }
         }
 
-
         public class Data : SharedExample, IActionDependentFeatureExample<DataADF>
         {
             [Feature]
