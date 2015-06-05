@@ -144,10 +144,12 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="clr_io.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="vw_clr.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="clr_io.cpp" />
     <ClCompile Include="vw_base.cpp" />
     <ClCompile Include="vw.cpp" />
     <ClCompile Include="vw_example.cpp" />

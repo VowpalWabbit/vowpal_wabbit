@@ -863,7 +863,7 @@ void add_to_args(vw& all, int argc, char* argv[])
     all.args.push_back(string(argv[i]));
 }
 
-vw& parse_args(int argc, char *argv[])
+vw& parse_args(int argc, char *argv[], io_buf* model)
 {
   vw& all = *(new vw());
 
@@ -911,8 +911,8 @@ vw& parse_args(int argc, char *argv[])
   all.initial_t = (float)all.sd->t;
 
   //Input regressor header
-  io_buf io_temp;
-  parse_regressor_args(all, vm, io_temp);
+  io_buf* io_temp = model ? model : new io_buf();
+  parse_regressor_args(all, vm, *io_temp);
   
   int temp_argc = 0;
   char** temp_argv = VW::get_argv_from_string(all.file_options->str(), temp_argc);
@@ -951,7 +951,12 @@ vw& parse_args(int argc, char *argv[])
 	cerr << "decay_learning_rate = " << all.eta_decay_rate << endl;
     }
 
-  load_input_model(all, io_temp);
+  load_input_model(all, *io_temp);
+
+  if (!model)
+  {
+	  delete model;
+  }
 
   parse_source(all);
 
@@ -971,6 +976,11 @@ vw& parse_args(int argc, char *argv[])
   }
 
   return all;
+}
+
+vw& parse_args(int argc, char *argv[])
+{
+	return parse_args(argc, argv, nullptr);
 }
 
 namespace VW {
@@ -1027,11 +1037,16 @@ namespace VW {
 
   vw* initialize(string s)
   {
+	  return initialize(s, nullptr);
+  }
+
+  vw* initialize(string s, io_buf* model)
+  {
     int argc = 0;
     s += " --no_stdin";
     char** argv = get_argv_from_string(s,argc);
 
-    vw& all = parse_args(argc, argv);
+    vw& all = parse_args(argc, argv, model);
 
     initialize_parser_datastructures(all);
     

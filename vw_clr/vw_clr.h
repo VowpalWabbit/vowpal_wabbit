@@ -1,4 +1,8 @@
-// vw_clr.h
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+*/
 
 #pragma once
 
@@ -22,7 +26,7 @@ namespace Microsoft
 		{
 			ref class VowpalWabbitExample;
 
-			public  ref class VowpalWabbitPrediction abstract
+			public ref class VowpalWabbitPrediction abstract
 			{
 			public:
 				void ReadFromExample(VowpalWabbitExample^ example);
@@ -176,6 +180,7 @@ namespace Microsoft
 
 			public:
 				VowpalWabbitModel(System::String^ pArgs);
+				VowpalWabbitModel(System::String^ pArgs, System::IO::Stream^ stream);
 				virtual ~VowpalWabbitModel();
 			};
 
@@ -233,6 +238,7 @@ namespace Microsoft
 			public:
 				VowpalWabbit(System::String^ pArgs);
 				VowpalWabbit(VowpalWabbitModel^ model);
+				VowpalWabbit(System::String^ pArgs, System::IO::Stream^ stream);
 				virtual ~VowpalWabbit();
 
 				uint32_t HashSpace(System::String^ s);

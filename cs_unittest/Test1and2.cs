@@ -65,6 +65,10 @@ namespace cs_test
 
             Assert.AreEqual(input.Count, references.Length);
 
+            using (var stream = new MemoryStream(File.ReadAllBytes("models/0001.model")))
+            //using (var vwModel = new VowpalWabbitModel("-k -t --invariant", stream))
+            //using (var vwInMemory = new VowpalWabbit<Test1>(vwModel))
+            using (var vwInMemory = new VowpalWabbit("-k -t --invariant", stream))
             using (var vwStr = new VowpalWabbit("-k -t -i models/str0001.model --invariant"))
             using (var vw = new VowpalWabbit<Test1>("-k -t -i models/0001.model --invariant"))
             {
@@ -73,11 +77,15 @@ namespace cs_test
                     var expected = vwStr.Predict<VowpalWabbitScalarPrediction>(input[i].Line);
 
                     using (var example = vw.ReadExample(input[i]))
+                    //using (var exampleInMemory = vwInMemory.ReadExample(input[i]))
                     {
                         var actual = example.Predict<VowpalWabbitScalarPrediction>();
+                        // var actualInMemory = exampleInMemory.Predict<VowpalWabbitScalarPrediction>();
+                        var actualInMemory = vwInMemory.Predict<VowpalWabbitScalarPrediction>(input[i].Line);
 
                         Assert.AreEqual(expected.Value, actual.Value, 1e-5);
-
+                        Assert.AreEqual(expected.Value, actualInMemory.Value, 1e-5);
+                        
                         Assert.AreEqual(
                             references[i],
                             actual.Value,
