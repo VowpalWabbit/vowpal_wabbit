@@ -64,6 +64,7 @@
     <Compile Include="Test87.cs" />
     <Compile Include="TestBase.cs" />
     <Compile Include="TestErrorListener.cs" />
+    <Compile Include="TestPooling.cs" />
     <Compile Include="TestWrapper.cs" />
     <Compile Include="VWTestHelper.cs" />
   </ItemGroup>

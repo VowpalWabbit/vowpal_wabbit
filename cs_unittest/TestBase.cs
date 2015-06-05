@@ -8,10 +8,11 @@ using System.Threading.Tasks;
 
 namespace cs_unittest
 {
-    public class TestBase
+    [TestClass]
+    public abstract class TestBase
     {
         [TestInitialize]
-        void InitializeTest()
+        public void InitializeTest()
         {
             if (Directory.Exists("models"))
             {
