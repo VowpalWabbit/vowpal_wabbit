@@ -1,6 +1,8 @@
 ignoring namespaces beginning with: w 
-dictionary train-sets/dictionary_test.dict contains 4 items
-Num weight bits = 18
+scanned dictionary 'dictionary_test.dict' from 'train-sets/dictionary_test.dict', hash=3226e82e3d58b6b2
+dictionary dictionary_test.dict contains 4 items
+scanned dictionary 'dictionary_test.dict.gz' from 'train-sets/dictionary_test.dict.gz', hash=3226e82e3d58b6b2
+Num weight bits = 12
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
@@ -10,21 +12,21 @@ Reading datafile = train-sets/dictionary_test.dat
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-1.000000 1.000000            1            1.0   1.0000  -1.0000        2
-1.000000 1.000000            2            2.0  -1.0000   1.0000        2
-0.500000 0.000000            4            4.0  -1.0000  -1.0000        2
-0.250000 0.000000            8            8.0  -1.0000  -1.0000        2
-0.125000 0.000000           16           16.0  -1.0000  -1.0000        2
-0.062500 0.000000           32           32.0  -1.0000  -1.0000        2
-0.031250 0.000000           64           64.0  -1.0000  -1.0000        2
-0.015625 0.000000          128          128.0  -1.0000  -1.0000        2
+1.000000 1.000000            1            1.0   1.0000  -1.0000        3
+1.000000 1.000000            2            2.0  -1.0000   1.0000        3
+0.500000 0.000000            4            4.0  -1.0000  -1.0000        3
+0.250000 0.000000            8            8.0  -1.0000  -1.0000        3
+0.125000 0.000000           10           16.0  -1.0000  -1.0000        3
+0.062500 0.000000           20           32.0  -1.0000  -1.0000        3
+0.031250 0.000000           40           64.0  -1.0000  -1.0000        3
+0.015625 0.000000           80          128.0  -1.0000  -1.0000        3
 
 finished run
 number of examples per pass = 4
-passes used = 32
+passes used = 20
 weighted example sum = 128.000000
 weighted label sum = 0.000000
 average loss = 0.015625
 best constant = 0.000000
 best constant's loss = 1.000000
-total feature number = 256
+total feature number = 180

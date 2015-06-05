@@ -125,6 +125,7 @@ struct regressor {
 typedef v_hashmap< substring, v_array<feature>* > feature_dict;
 struct dictionary_info {
   char* name;
+  unsigned long long file_hash;
   feature_dict* dict;
 };
 
@@ -403,6 +404,7 @@ struct vw {
   uint32_t limit[256];//count to limit features by
   uint32_t affix_features[256]; // affixes to generate (up to 8 per namespace)
   bool     spelling_features[256]; // generate spelling features for which namespace
+  vector<string> dictionary_path;  // where to look for dictionaries
   vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
   vector<dictionary_info> read_dictionaries; // which dictionaries have we read?
   

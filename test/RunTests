@@ -1055,8 +1055,8 @@ __DATA__
 {VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout ref --holdout_off
     train-sets/ref/search_dep_parser.stderr
 
-# Test 67: classification with data from dictionaries (eg embeddings or gazetteers) -- note that this is impossible without dictionaries because --ignore w
-{VW} -k -c -d train-sets/dictionary_test.dat --binary --ignore w --holdout_off --passes 32 --dictionary w:train-sets/dictionary_test.dict
+# Test 67: classification with data from dictionaries (eg embeddings or gazetteers) -- note that this is impossible without dictionaries because --ignore w; also test to make sure gzipped dicts work and dictionary redundancy checking works
+{VW} -k -c -d train-sets/dictionary_test.dat --binary --ignore w --holdout_off --passes 32 --dictionary w:dictionary_test.dict --dictionary w:dictionary_test.dict.gz --dictionary_path train-sets/
     train-sets/ref/dictionary_test.stderr
 
 # Test 68: Search for multiclass classification

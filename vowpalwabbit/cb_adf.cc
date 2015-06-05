@@ -71,7 +71,7 @@ void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::labe
 template <bool is_learn>
 void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
 {
-	size_t mysize = examples.size();
+  //size_t mysize = examples.size();
 	if (cs_labels.size() < examples.size()) {
 		cs_labels.resize(examples.size(), true);
 		cs_labels.end = cs_labels.end_array;
@@ -497,7 +497,7 @@ base_learner* cb_adf_setup(vw& all)
 	}
 
 	// Push necessary flags.
-	if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0
+	if ((count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0)
 		|| all.vm.count("rank_all"))
 	{
 		if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0)

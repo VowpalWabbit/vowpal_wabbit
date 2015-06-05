@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 #include <float.h>
 #include <sstream>
 #include <fstream>
+#include <boost/filesystem.hpp>
 
 #include "parse_regressor.h"
 #include "parser.h"
@@ -68,6 +69,36 @@ bool substring_equal(substring&a, substring&b) {
       && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
 }  
 
+unsigned long long hash_file_contents(io_buf *io, int f) {
+  unsigned long long v = 5289374183516789128;
+  unsigned char buf[1024];
+  while (true) {
+    size_t n = io->read_file(f, buf, 1024);
+    if (n == 0) break;
+    for (size_t i=0; i<n; i++) {
+      v *= 341789041;
+      v += buf[i];
+    }
+  }
+  return v;
+}
+
+bool directory_exists(string path) {
+  boost::filesystem::path p(path);
+  return boost::filesystem::exists(p) && boost::filesystem::is_directory(p);
+}
+
+boost::filesystem::path find_in_path(vector<string> paths, string fname) {
+  // TODO: if fname has path separators, issue warning
+  for (string path : paths) {
+    boost::filesystem::path p(path);
+    p /= fname;
+    if (boost::filesystem::exists(p) && !boost::filesystem::is_directory(p))
+      return p;
+  }
+  return boost::filesystem::path("");
+}
+
 void parse_dictionary_argument(vw&all, string str) {
   if (str.length() == 0) return;
   // expecting 'namespace:file', for instance 'w:foo.txt'
@@ -80,21 +111,63 @@ void parse_dictionary_argument(vw&all, string str) {
     s  += 2;
   }
 
+  boost::filesystem::path fname = find_in_path(all.dictionary_path, string(s));
+  if ( ! boost::filesystem::exists(fname) ) {
+    cerr << "error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path?" << endl;
+    throw exception();
+  }
+
+  bool is_gzip = ends_with(fname.c_str(), ".gz");
+  io_buf* io = is_gzip ? new comp_io_buf : new io_buf;
+  int fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
+  if (fd < 0) {
+    cerr << "error: cannot read dictionary from file '" << fname.c_str() << "'" << ", opening failed" << endl;
+    throw exception();
+  }
+  unsigned long long fd_hash = hash_file_contents(io, fd);
+  io->close_file();
+
+  if (! all.quiet)
+    cerr << "scanned dictionary '" << s << "' from '" << fname.c_str() << "', hash=" << hex << fd_hash << endl;
+
   // see if we've already read this dictionary
   for (size_t id=0; id<all.read_dictionaries.size(); id++)
-    if (strcmp(all.read_dictionaries[id].name, s) == 0) {
+    if (all.read_dictionaries[id].file_hash == fd_hash) {
       all.namespace_dictionaries[(size_t)ns].push_back(all.read_dictionaries[id].dict);
       return;
     }
 
   feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
   
-  // TODO: handle gzipped dictionaries
   example *ec = alloc_examples(all.p->lp.label_size, 1);
-  ifstream infile(s);
+  fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
+  if (fd < 0) {
+    cerr << "error: cannot re-read dictionary from file '" << fname.c_str() << "'" << ", opening failed" << endl;
+    throw exception();
+  }
   size_t def = (size_t)' ';
-  for (string line; getline(infile, line);) {
-    char* c = (char*)line.c_str(); // we're throwing away const, which is dangerous...
+
+  int size = 2048, pos, nread;
+  char rc;
+  char*buffer = calloc_or_die<char>(size);
+  do {
+    pos = 0;
+    do {
+      nread = io->read_file(fd, &rc, 1);
+      if ((rc != EOF) && (nread > 0)) buffer[pos++] = rc;
+      if (pos >= size - 1) {
+        size *= 2;
+        buffer = (char*)realloc(buffer, size);
+        if (buffer == nullptr) {
+          cerr << "error: memory allocation failed in reading dictionary" << endl;
+          throw exception();
+        }
+      }
+    } while ( (rc != EOF) && (rc != '\n') && (nread > 0) );
+    buffer[pos] = 0;
+
+    // we now have a line in buffer
+    char* c = buffer;
     while (*c == ' ' || *c == '\t') ++c; // skip initial whitespace
     char* d = c;
     while (*d != ' ' && *d != '\t' && *d != '\n' && *d != '\0') ++d; // gobble up initial word
@@ -108,7 +181,6 @@ void parse_dictionary_argument(vw&all, string str) {
       free(word);
       continue;
     }
-    
     d--;
     *d = '|';  // set up for parser::read_line
     read_line(all, ec, d);
@@ -125,13 +197,15 @@ void parse_dictionary_argument(vw&all, string str) {
     // clear up ec
     ec->tag.erase(); ec->indices.erase();
     for (size_t i=0; i<256; i++) { ec->atomics[i].erase(); ec->audit_features[i].erase(); }
-  }
+  } while ((rc != EOF) && (nread > 0));
+  free(buffer);
+  io->close_file();
   dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
   
   cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
   all.namespace_dictionaries[(size_t)ns].push_back(map);
-  dictionary_info info = { calloc_or_die<char>(strlen(s)+1), map };
+  dictionary_info info = { calloc_or_die<char>(strlen(s)+1), fd_hash, map };
   strcpy(info.name, s);
   all.read_dictionaries.push_back(info);
 }
@@ -325,6 +399,7 @@ void parse_feature_tweaks(vw& all)
     ("affix", po::value<string>(), "generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace")
     ("spelling", po::value< vector<string> >(), "compute spelling features for a give namespace (use '_' for default namespace)")
     ("dictionary", po::value< vector<string> >(), "read a dictionary for additional features (arg either 'x:file' or just 'file')")
+    ("dictionary_path", po::value< vector<string> >(), "look in this directory for dictionaries; defaults to current directory or env{PATH}")
     ("interactions", po::value< vector<string> > (), "Create feature interactions of any level between namespaces.")
     ("permutations", "Use permutations instead of combinations for feature interactions of same namespace.")
     ("leave_duplicate_interactions", "Don't remove interactions with duplicate combinations of namespaces. For ex. this is a duplicate: '-q ab -q ba' and a lot more in '-q ::'.")
@@ -344,9 +419,11 @@ void parse_feature_tweaks(vw& all)
       
   if (vm.count("spelling")) {
     vector<string> spelling_ns = vm["spelling"].as< vector<string> >();
-    for (size_t id=0; id<spelling_ns.size(); id++)
+    for (size_t id=0; id<spelling_ns.size(); id++) {
       if (spelling_ns[id][0] == '_') all.spelling_features[(unsigned char)' '] = true;
       else all.spelling_features[(size_t)spelling_ns[id][0]] = true;
+      *all.file_options << " --spelling " << spelling_ns[id];
+    }
   }
 
   if (vm.count("affix")) {
@@ -592,11 +669,39 @@ void parse_feature_tweaks(vw& all)
 
       }
   }
-
+    
   if (vm.count("dictionary")) {
+    if (vm.count("dictionary_path"))
+      for (string path : vm["dictionary_path"].as< vector<string> >())
+        if (directory_exists(path))
+          all.dictionary_path.push_back(path);
+    if (directory_exists("."))
+      all.dictionary_path.push_back(".");
+
+    // PATH env variable from http://stackoverflow.com/questions/11295019/environment-path-directories-iteration
+#if _WIN32
+    const std::string PATH = convert_to_utf8( _wgetenv(L"PATH") ); // Handle Unicode, just remove if you don't want/need this. convert_to_utf8 uses WideCharToMultiByte in the Win32 API
+    const char delimiter = ';';
+#else
+    const std::string PATH = getenv( "PATH" );
+    const char delimiter = ':';
+#endif
+    if(!PATH.empty()) {
+      size_t previous = 0;
+      size_t index = PATH.find( delimiter );
+      while( index != string::npos ) {
+        all.dictionary_path.push_back( PATH.substr(previous, index-previous));
+        previous=index+1;
+        index = PATH.find( delimiter, previous );
+      }
+      all.dictionary_path.push_back( PATH.substr(previous) );
+    }
+    
     vector<string> dictionary_ns = vm["dictionary"].as< vector<string> >();
-    for (size_t id=0; id<dictionary_ns.size(); id++)
+    for (size_t id=0; id<dictionary_ns.size(); id++) {
       parse_dictionary_argument(all, dictionary_ns[id]);
+      *all.file_options << " --dictionary " << dictionary_ns[id];
+    }
   }
   
   if (vm.count("noconstant"))

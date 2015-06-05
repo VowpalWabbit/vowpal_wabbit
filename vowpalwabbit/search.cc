@@ -91,6 +91,13 @@ namespace Search {
     action_cache(float _min_cost, action _k, bool _is_opt, float _cost) : min_cost(_min_cost), k(_k), is_opt(_is_opt), cost(_cost) {}
   };
   std::ostream& operator << (std::ostream& os, const action_cache& x) { os << x.k << ':' << x.cost; if (x.is_opt) os << '*'; return os; }
+
+  struct actionpp { // action++ stores an action and any number of "intermediate" floats
+    action a;
+    v_array<float> pp;
+    actionpp(action _a, v_array<float> _pp) : a(_a), pp(_pp) {}
+    actionpp(action _a) : a(_a) { pp = v_init<float>(); }
+  };
   
   struct search_private {
     vw* all;
@@ -120,7 +127,7 @@ namespace Search {
     example* learn_ec_ref;         // reference to example at learn_t, when there's no example munging
     size_t learn_ec_ref_cnt;       // how many are there (for LDF mode only; otherwise 1)
     v_array<ptag> learn_condition_on;      // a copy of the tags used for conditioning at the training position
-    v_array<action> learn_condition_on_act;// the actions taken
+    v_array<actionpp>learn_condition_on_act;// the actions taken
     v_array<char>   learn_condition_on_names;// the names of the actions
     v_array<action> learn_allowed_actions; // which actions were allowed at training time?
     v_array<action> ptag_to_action;// tag to action mapping for conditioning
@@ -195,7 +202,7 @@ namespace Search {
     string rawOutputString;
     stringstream* rawOutputStringStream;
     CS::label ldf_test_label;
-    v_array<action> condition_on_actions;
+    v_array<actionpp> condition_on_actions;
     v_array<size_t> timesteps;
     polylabel learn_losses;
     polylabel gte_label;
@@ -572,7 +579,7 @@ namespace Search {
     return false;
   }
 
-  void add_example_conditioning(search_private& priv, example& ec, size_t condition_on_cnt, const char* condition_on_names, const action* condition_on_actions) {
+  void add_example_conditioning(search_private& priv, example& ec, size_t condition_on_cnt, const char* condition_on_names, actionpp* condition_on_actions) {
     if (condition_on_cnt == 0) return;
 
     uint32_t extra_offset=0;
@@ -594,7 +601,7 @@ namespace Search {
         if (i + n >= I) break; // no more ngrams
         // we're going to add features for the ngram condition_on_actions[i .. i+N]
         char name = condition_on_names[i+n];
-        fid = fid * 328901 + 71933 * ((condition_on_actions[i+n] + 349101) * (name + 38490137));
+        fid = fid * 328901 + 71933 * ((condition_on_actions[i+n].a + 349101) * (name + 38490137));
 
         priv.dat_new_feature_ec  = &ec;
         priv.dat_new_feature_idx = fid * quadratic_constant;
@@ -605,7 +612,7 @@ namespace Search {
           if (n > 0) priv.dat_new_feature_audit_ss << ',';
           if ((33 <= name) && (name <= 126)) priv.dat_new_feature_audit_ss << name;
           else priv.dat_new_feature_audit_ss << '#' << (int)name;
-          priv.dat_new_feature_audit_ss << '=' << condition_on_actions[i+n];
+          priv.dat_new_feature_audit_ss << '=' << condition_on_actions[i+n].a;
         }
         
         // add the single bias feature
@@ -617,6 +624,20 @@ namespace Search {
           GD::foreach_feature<search_private,uint32_t,add_new_feature>(*priv.all, ec, priv);
       }
     }
+
+    for (size_t i=0; i<I; i++)
+      if (condition_on_actions[i].pp.size() > 0) {
+        char name = condition_on_names[i];
+        uint32_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name);
+        for (size_t k=0; k<condition_on_actions[i].pp.size(); k++) {
+          priv.dat_new_feature_ec  = &ec;
+          priv.dat_new_feature_idx = (fid + k) * quadratic_constant;
+          priv.dat_new_feature_namespace = conditioning_namespace;
+          priv.dat_new_feature_value = condition_on_actions[i].pp[k];
+          add_new_feature(priv, condition_on_actions[i].pp[k], 4308927 << priv.all->reg.stride_shift);
+          // TODO: audit
+        }
+      }
 
     size_t sz = ec.atomics[conditioning_namespace].size();
     if ((sz > 0) && (ec.sum_feat_sq[conditioning_namespace] > 0.)) {
@@ -986,11 +1007,13 @@ namespace Search {
   }
   
   // returns true if found and do_store is false. if do_store is true, always returns true.
-  bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on, const char* condition_on_names, const action* condition_on_actions, size_t condition_on_cnt, int policy, size_t learner_id, action &a, bool do_store, float& a_cost) {
+  bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on, const char* condition_on_names, actionpp* condition_on_actions, size_t condition_on_cnt, int policy, size_t learner_id, action &a, bool do_store, float& a_cost) {
     if (priv.no_caching) return do_store;
     if (mytag == 0) return do_store; // don't attempt to cache when tag is zero
 
     size_t sz  = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + sizeof(size_t) + condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(char));
+    for (size_t i=0; i<condition_on_cnt; i++)
+      sz += sizeof(float) * condition_on_actions[i].pp.size();
     if (sz % 4 != 0) sz = 4 * (sz / 4 + 1); // make sure sz aligns to 4 so that uniform_hash does the right thing
 
     unsigned char* item = calloc_or_die<unsigned char>(sz);
@@ -1001,9 +1024,13 @@ namespace Search {
     *here = (unsigned char)learner_id;        here += sizeof(size_t);
     *here = (unsigned char)condition_on_cnt;  here += (unsigned char)sizeof(size_t);
     for (size_t i=0; i<condition_on_cnt; i++) {
-      *here = condition_on[i];         here += sizeof(ptag);
-      *here = condition_on_actions[i]; here += sizeof(action);
-      *here = condition_on_names[i];   here += sizeof(char);  // SPEEDUP: should we align this at 4?
+      uint32_t nf = condition_on_actions[i].pp.size();
+      *here = condition_on[i];           here += sizeof(ptag);
+      *here = condition_on_actions[i].a; here += sizeof(action);
+      *here = nf;                        here += sizeof(uint32_t);
+      for (uint32_t j=0; j<nf; j++)
+        *here = condition_on_actions[i].pp[j]; here += sizeof(float);
+      *here = condition_on_names[i];     here += sizeof(char);  // SPEEDUP: should we align this at 4?
     }
     uint32_t hash = uniform_hash(item, sz, 3419);
 
@@ -1228,7 +1255,9 @@ namespace Search {
           memcpy(priv.learn_condition_on.begin, condition_on, condition_on_cnt * sizeof(ptag));
           
           for (size_t i=0; i<condition_on_cnt; i++)
-            push_at(priv.learn_condition_on_act, ((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size())) ? priv.ptag_to_action[condition_on[i]] : 0, i);
+            push_at(priv.learn_condition_on_act
+                    , actionpp(((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size())) ? priv.ptag_to_action[condition_on[i]] : 0)
+                    , i);  // TODO pp
 
           if (condition_on_names == nullptr) {
             ensure_size(priv.learn_condition_on_names, 1);
@@ -1308,7 +1337,8 @@ namespace Search {
 
         ensure_size(priv.condition_on_actions, condition_on_cnt);
         for (size_t i=0; i<condition_on_cnt; i++)
-          priv.condition_on_actions[i] = ((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size())) ? priv.ptag_to_action[condition_on[i]] : 0;
+          priv.condition_on_actions[i].a = ((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size())) ? priv.ptag_to_action[condition_on[i]] : 0;
+        // TODO: store floats
 
         bool not_test = priv.all->training && !ecs[0].test_only;
 
@@ -1827,7 +1857,7 @@ namespace Search {
     if (priv.cb_learner) priv.gte_label.cb.costs.delete_v();
     else                 priv.gte_label.cs.costs.delete_v();
 
-    priv.condition_on_actions.delete_v();
+    priv.condition_on_actions.delete_v(); // TODO: delete floats
     priv.learn_allowed_actions.delete_v();
     priv.ldf_test_label.costs.delete_v();
 

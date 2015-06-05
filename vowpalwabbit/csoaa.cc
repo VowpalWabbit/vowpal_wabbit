@@ -51,7 +51,7 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
     ec.partial_prediction = score;
   } else if (DO_MULTIPREDICT && !is_learn) {
     ec.l.simple = { FLT_MAX, 0.f, 0.f };
-    polyprediction* pred = calloc_or_die<polyprediction>(c.num_classes);
+    polyprediction* pred = calloc_or_die<polyprediction>(c.num_classes);  // TODO: pull this allocation out
     base.multipredict(ec, 0, c.num_classes, pred, false);
     for (uint32_t i = 1; i <= c.num_classes; i++)
       if (pred[i-1].scalar < pred[prediction-1].scalar)
