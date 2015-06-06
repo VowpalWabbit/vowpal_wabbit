@@ -119,7 +119,7 @@ void parse_dictionary_argument(vw&all, string str) {
 
   bool is_gzip = ends_with(fname.string(), ".gz");
   io_buf* io = is_gzip ? new comp_io_buf : new io_buf;
-  int fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
+  int fd = io->open_file(fname.string().c_str(), all.stdin_off, io_buf::READ);
   if (fd < 0) {
     cerr << "error: cannot read dictionary from file '" << fname.string() << "'" << ", opening failed" << endl;
     throw exception();
@@ -140,7 +140,7 @@ void parse_dictionary_argument(vw&all, string str) {
   feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
   
   example *ec = alloc_examples(all.p->lp.label_size, 1);
-  fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
+  fd = io->open_file(fname.string().c_str(), all.stdin_off, io_buf::READ);
   if (fd < 0) {
     cerr << "error: cannot re-read dictionary from file '" << fname.string() << "'" << ", opening failed" << endl;
     throw exception();
