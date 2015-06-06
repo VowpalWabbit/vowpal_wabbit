@@ -680,7 +680,7 @@ void parse_feature_tweaks(vw& all)
 
     // PATH env variable from http://stackoverflow.com/questions/11295019/environment-path-directories-iteration
 #if _WIN32
-    const std::string PATH = convert_to_utf8( _wgetenv(L"PATH") ); // Handle Unicode, just remove if you don't want/need this. convert_to_utf8 uses WideCharToMultiByte in the Win32 API
+    const std::string PATH = _wgetenv(L"PATH");
     const char delimiter = ';';
 #else
     const std::string PATH = getenv( "PATH" );
