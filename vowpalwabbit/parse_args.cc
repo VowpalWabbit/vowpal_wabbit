@@ -680,7 +680,7 @@ void parse_feature_tweaks(vw& all)
 
     // PATH env variable from http://stackoverflow.com/questions/11295019/environment-path-directories-iteration
 #if _WIN32
-    const std::string PATH(_wgetenv(L"PATH"));
+    const std::string PATH(_getenv(L"PATH"));
     const char delimiter = ';';
 #else
     const std::string PATH = getenv( "PATH" );
