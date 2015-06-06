@@ -208,8 +208,17 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
           bin_text_read_write_fixed(model_file,(char*)&rank, sizeof(rank),
                                     "", read,
                                     buff,text_len, text);
-          if (rank != 0) // rank was used
-              cerr << "WARNING: this model file version is outdated. Unfortunately 'rank: "<< rank << "' value stored in it can't be restored automatically. Please pass it via the command line.";
+          if (rank != 0)
+          {
+            if (std::find(all.args.begin(), all.args.end(), "--rank") == all.args.end())
+            {
+                all.args.push_back("--rank");
+                sprintf(buff, "%d", (int)rank);
+                all.args.push_back(buff);
+            } else
+                cerr << "WARNING: this model file contains 'rank: " << rank << "' value but it will be ignored as another value specified via the command line." << endl;
+          }
+
       }
       
       text_len = sprintf(buff, "lda:%d\n", (int)all.lda);
