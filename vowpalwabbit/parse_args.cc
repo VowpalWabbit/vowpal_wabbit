@@ -678,12 +678,10 @@ void parse_feature_tweaks(vw& all)
     if (directory_exists("."))
       all.dictionary_path.push_back(".");
 
-    // PATH env variable from http://stackoverflow.com/questions/11295019/environment-path-directories-iteration
+    const std::string PATH = getenv( "PATH" );
 #if _WIN32
-    const std::string PATH(_getenv(L"PATH"));
     const char delimiter = ';';
 #else
-    const std::string PATH = getenv( "PATH" );
     const char delimiter = ':';
 #endif
     if(!PATH.empty()) {
