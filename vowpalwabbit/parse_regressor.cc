@@ -202,8 +202,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       }
 
       if (all.model_file_ver <= VERSION_FILE_WITH_RANK_IN_HEADER)
-      { // to fix compatibility broken in 7.9
-          u_int32_t rank = 0;
+      { // to fix compatibility that was broken in 7.9
+          uint32_t rank = 0;
           text_len = sprintf(buff, "rank:%d\n", (int)rank);
           bin_text_read_write_fixed(model_file,(char*)&rank, sizeof(rank),
                                     "", read,
