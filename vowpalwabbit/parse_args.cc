@@ -117,18 +117,18 @@ void parse_dictionary_argument(vw&all, string str) {
     throw exception();
   }
 
-  bool is_gzip = ends_with(fname.c_str(), ".gz");
+  bool is_gzip = ends_with(fname.string(), ".gz");
   io_buf* io = is_gzip ? new comp_io_buf : new io_buf;
   int fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
   if (fd < 0) {
-    cerr << "error: cannot read dictionary from file '" << fname.c_str() << "'" << ", opening failed" << endl;
+    cerr << "error: cannot read dictionary from file '" << fname.string() << "'" << ", opening failed" << endl;
     throw exception();
   }
   unsigned long long fd_hash = hash_file_contents(io, fd);
   io->close_file();
 
   if (! all.quiet)
-    cerr << "scanned dictionary '" << s << "' from '" << fname.c_str() << "', hash=" << hex << fd_hash << endl;
+    cerr << "scanned dictionary '" << s << "' from '" << fname.string() << "', hash=" << hex << fd_hash << endl;
 
   // see if we've already read this dictionary
   for (size_t id=0; id<all.read_dictionaries.size(); id++)
@@ -142,7 +142,7 @@ void parse_dictionary_argument(vw&all, string str) {
   example *ec = alloc_examples(all.p->lp.label_size, 1);
   fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
   if (fd < 0) {
-    cerr << "error: cannot re-read dictionary from file '" << fname.c_str() << "'" << ", opening failed" << endl;
+    cerr << "error: cannot re-read dictionary from file '" << fname.string() << "'" << ", opening failed" << endl;
     throw exception();
   }
   size_t def = (size_t)' ';
