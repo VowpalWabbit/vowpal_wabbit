@@ -855,13 +855,12 @@ vw& parse_args(int argc, char *argv[])
   all.vw_is_main = false;
   add_to_args(all, argc, argv);
 
-  size_t random_seed = 0;
   all.program_name = argv[0];
 
   time(&all.init_time);
 
   new_options(all, "VW options")
-    ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
+    ("random_seed", po::value<size_t>(&(all.random_seed)), "seed random number generator")
     ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring");
   add_options(all);
 
@@ -889,7 +888,7 @@ vw& parse_args(int argc, char *argv[])
   add_options(all);
 
   po::variables_map& vm = all.vm;
-  msrand48(random_seed);
+  msrand48(all.random_seed);
   parse_diagnostics(all, argc);
 
   all.sd->weighted_unlabeled_examples = all.sd->t;
