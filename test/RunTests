@@ -271,7 +271,7 @@ sub ref_file($) {
 }
 
 sub next_test() {
-    my ($cmd, $out_ref, $err_ref, $pred_ref, $pred, $cmp_ref, $cmp);
+    my ($cmd, $out_ref, $err_ref, $pred_ref, $pred, $cmp_ref, $cmp, $ws);
 
     $TestNo++;
     while (! eof(DATA)) {
@@ -318,10 +318,16 @@ sub next_test() {
             $pred_ref = ref_file(trim_spaces($line));
             next;
         }
-        if ($line =~ /\.cmp\b/) {
-            $cmp_ref = ref_file(trim_spaces($line));
+        if ($line =~ /(.+\.cmp)[\b|\s]/) {
+            $cmp_ref = ref_file(trim_spaces($1));
+
+            if ($line =~ /.*{WORD_SPLIT=(.)}.*/) {
+              $ws = $1;
+            }
             next;
         }
+
+
         # A test can also be an arbitrary (shell) command line
         # if the 1st non-space sequence is executable
         my ($first_word) = ($line =~ /^\s*(\S+)/);
@@ -361,7 +367,7 @@ sub next_test() {
     } elsif ($TimeOut) {
         $cmd = sprintf("%s %u %s", $TimeOut, $TimeOutSec, $cmd);
     }
-    ($cmd, $out_ref, $err_ref, $pred_ref, $pred, $cmp_ref, $cmp);
+    ($cmd, $out_ref, $err_ref, $pred_ref, $pred, $cmp_ref, $cmp, $ws);
 }
 
 #
@@ -423,8 +429,13 @@ sub lenient_array_compare($$) {
     return 0; # no meaningful difference
 }
 
-sub diff_lenient_float($$) {
-    my ($reffile, $outfile) = @_;
+sub diff_lenient_float($$$) {
+    my ($reffile, $outfile, $word_split) = @_;
+
+    if (!defined $word_split) {
+    $word_split = ' ';
+    }
+
     my $status = 0;
 
     my $tmpf = 'lenient-diff.tmp';
@@ -450,8 +461,8 @@ sub diff_lenient_float($$) {
             v(3, "line2: %s\n", $line2);
 
             # Break lines into tokens/words
-            my (@w1) = split(' ', $line1);
-            my (@w2) = split(' ', $line2);
+            my (@w1) = split($word_split, $line1);
+            my (@w2) = split($word_split, $line2);
             if (lenient_array_compare(\@w1, \@w2) != 0) {
                 $fuzzy_status = 1;
                 last;
@@ -479,8 +490,8 @@ sub display_diff($$) {
     mysystem($diff_cmd);
 }
 
-sub diff($$) {
-    my ($reffile, $outfile) = @_;
+sub diff {
+    my ($reffile, $outfile, $word_split) = @_;
     my $status = 0;
     $reffile = '' unless (defined $reffile);
 
@@ -509,7 +520,7 @@ sub diff($$) {
         v(2, "diff.tmp has something in it. Is it meaningful?\n");
 
         if ($opt_f && -e $reffile && -e $outfile &&
-            diff_lenient_float($reffile, $outfile) == 0) {
+            diff_lenient_float($reffile, $outfile, $word_split) == 0) {
 
             print STDERR "$0: test $TestNo: minor (<$Epsilon) precision differences ignored\n";
             $status = 0;
@@ -605,6 +616,7 @@ sub run_tests() {
 
     my ($cmd, $out_ref, $err_ref, $pred_ref, $cmp_ref);
     my ($outf, $errf, $predf, $cmpf);
+    my ($ws); # word split
 
     mkdir('models', 0755) unless (-d 'models');
 
@@ -612,7 +624,7 @@ sub run_tests() {
     unlink(glob('*.cache'));
     unlink(glob('*/*.cache'));
 
-    while (($cmd, $out_ref, $err_ref, $pred_ref, $predf, $cmp_ref, $cmpf) = next_test()) {
+    while (($cmd, $out_ref, $err_ref, $pred_ref, $predf, $cmp_ref, $cmpf, $ws) = next_test()) {
         last unless (defined $cmd);
         if (@ToTest) {
             if ($ToTest[0] != $TestNo) {
@@ -708,7 +720,7 @@ sub run_tests() {
         # -- compare pair of arbitrary files
         if (defined $cmp_ref) {
         $cmpf = '' unless (defined $cmpf);
-        $status = diff($cmp_ref, $cmpf);
+        $status = diff($cmp_ref, $cmpf, $ws);
         if ($status) {
             $ErrorCount++;
             printf STDERR "%s: test %d: FAILED: ref(%s) != any_file(%s)\n\tcmd: $cmd\n",
@@ -1175,4 +1187,4 @@ __DATA__
 # Test 88: check -q :: and -oaa inverse hash
 echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp
     train-sets/ref/inv_hash.stderr
-    pred-sets/ref/inv_hash.cmp
+    pred-sets/ref/inv_hash.cmp {WORD_SPLIT=:}
