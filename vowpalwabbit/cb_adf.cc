@@ -27,10 +27,11 @@ struct cb_adf {
   bool need_to_clear;
   vw* all;
   LEARNER::base_learner* scorer;
-  CB::cb_class* known_cost;
+  CB::cb_class known_cost;
   v_array<CB::label> cb_labels;
 
   v_array<COST_SENSITIVE::label> cs_labels;
+  v_array<COST_SENSITIVE::label> pred_scores;
 
   base_learner* base;
 
@@ -74,17 +75,19 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
 	size_t mysize = examples.size();
 	if (cs_labels.size() < examples.size()) {
 		cs_labels.resize(examples.size(), true);
-		cs_labels.end = cs_labels.end_array;
+		cs_labels.end = cs_labels.end_array;		
 	}
 
-	// initialize the example struct
-	
+	if (c.pred_scores.size() < examples.size()){
+		// resize the pred_scores.
+		c.pred_scores.resize(examples.size(), true);
+		c.pred_scores.end = c.pred_scores.end_array;
+	}		
 
 	for (size_t i = 0; i < examples.size(); i++)
 	{
 		examples[i]->l.cb.costs.erase();
-		CB::label ld = examples[i]->l.cb;
-		
+		CB::label ld = examples[i]->l.cb;		
 
 		COST_SENSITIVE::wclass wc;
 		wc.class_index = 0;
@@ -92,7 +95,9 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
 		//get cost prediction for this label
 		// num_actions should be 1 effectively.
 		// my get_cost_pred function will use 1 for 'index-1+base'			
-		wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, *(examples[i]), 1, 1);
+		wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, &(c.known_cost), *(examples[i]), 1, 1);		
+
+		c.pred_scores[i].costs.push_back(wc); // done
 
 		//add correction if we observed cost for this action and regressor is wrong
 		if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
@@ -119,14 +124,14 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
 	return (cl != nullptr && cl->cost != FLT_MAX && cl->probability > .0);
 }
 
-  CB::cb_class* get_observed_cost(CB::label ld)
+  size_t get_observed_cost(CB::label ld)
 {
   for (CB::cb_class *cl = ld.costs.begin; cl != ld.costs.end; cl++)
 	{
 		if (observed_cost(cl))
-			return cl;
+			return cl-ld.costs.begin;
 	}
-	return nullptr;
+	return -1;
 }
 
 template<bool is_learn>
@@ -165,20 +170,31 @@ void learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 {
 	// find the line/entry with cost and prob.
 	CB::label ld;
+	size_t index = -1;
+	
 	for (example **ec = examples.begin; ec != examples.end; ec++)
-	  {
-	    if ( (**ec).l.cb.costs.size() == 1 &&
-		 (**ec).l.cb.costs[0].cost != FLT_MAX &&
-		 (**ec).l.cb.costs[0].probability > 0)
-	      {
-		ld = (**ec).l.cb;
-	      }
-	  }
+	{
+		if ((**ec).l.cb.costs.size() == 1 &&
+			(**ec).l.cb.costs[0].cost != FLT_MAX &&
+			(**ec).l.cb.costs[0].probability > 0)
+		{
+			ld = (**ec).l.cb;
+			index = ec - examples.begin;
+		}
+	}
 	
-	mydata.known_cost = get_observed_cost(ld);
+	// handle -1 case.
+	if (index == -1){
+		std::cerr << "None of the examples has known cost. Exiting." << endl;
+		throw exception();
+	}
 	
-	if (mydata.known_cost == nullptr)
-	  cerr << "known cost is null." << endl;
+	mydata.known_cost = ld.costs[0];
+	mydata.known_cost.action = index;
+
+	// take care of shared example
+	if (examples[0]->l.cb.costs.size() > 0 && examples[0]->l.cb.costs[0].probability == -1.f)
+		mydata.known_cost.action--;	
 	
 	if (reduction_type == CB_TYPE_IPS)
 		gen_cs_example_ips(examples, mydata.cs_labels);
@@ -189,7 +205,6 @@ void learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 		std::cerr << "Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type << ". Exiting." << endl;
 		throw exception();
 	}
-
 	
 	call_predict_or_learn<true>(mydata,base,examples);
 }
@@ -268,7 +283,7 @@ void global_print_newline(vw& all)
 
 // how to 
 
-void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_seq)
+void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
 {
   v_array<CB::cb_class> costs = ec.l.cb.costs;
     
@@ -284,24 +299,18 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
 	  // Replace for loop with a call to Alekh's function to get cost for top 1 action (the first example in ec_seq).
 	  // need to pass in the action ID, element 0 of the array, get its label of multilabel.
 	  // input: the first element of label_v (action ID) of th top 1
-	  /*
-	  namespace MULTILABEL {
-  struct labels {
-    v_array<uint32_t> label_v;
-	  */
 	  // return the cost as one float, 
-    for (size_t j=0; j<costs.size(); j++) {
-      if (hit_loss) break;
-      if (ec.pred.multiclass == costs[j].action) {
-        loss = costs[j].cost;
-		// loss = call_Alekh_function(action ID)
+						//for (size_t j=0; j<costs.size(); j++) {
+						//  if (hit_loss) break;
+						//  if (ec.pred.multiclass == costs[j].action) {
+						//	loss = costs[j].cost;
+						//	// loss = call_Alekh_function(action ID)
 
-        hit_loss = true;
-      }
-    }
-
-	// below codes stay the same.
-
+						//	hit_loss = true;
+						//  }
+						//}
+	  
+	loss = get_unbiased_cost(&(c.known_cost), c.pred_scores[ec.pred.multiclass], ec.pred.multiclass);
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
     assert(loss >= 0);
@@ -324,7 +333,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
   CB::print_update(all, CB::example_is_test(ec), ec, ec_seq, false);
 }
 
-void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<example*>* ec_seq)
+void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>* ec_seq)
 {
   label& ld = head_ec.l.cb;
   v_array<CB::cb_class> costs = ld.costs;
@@ -337,16 +346,20 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
   v_array<uint32_t> preds = head_ec.pred.multilabels.label_v;
   
   if (!CB::example_is_test(head_ec)) {
-    size_t idx = 0;
-    for(example** ecc = ec_seq->begin; ecc != ec_seq->end;ecc++,idx++) {
-      example& ex = **ecc;
-      if(ec_is_example_header(ex)) continue;
-      if (hit_loss) break;
-      if (preds[0] == idx) {
-	loss = ex.l.cs.costs[0].x;
-	hit_loss = true;
-      }
-    }
+	
+
+	  loss = get_unbiased_cost(&(c.known_cost), c.pred_scores[head_ec.pred.multilabels.label_v[0]], head_ec.pred.multilabels.label_v[0]);
+
+ //   size_t idx = 0;
+ //   for(example** ecc = ec_seq->begin; ecc != ec_seq->end;ecc++,idx++) {
+ //     example& ex = **ecc;
+ //     if(ec_is_example_header(ex)) continue;
+ //     if (hit_loss) break;
+ //     if (preds[0] == idx) {
+	//loss = ex.l.cs.costs[0].x;
+	//hit_loss = true;
+ //     }
+ //   }
 
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
@@ -379,11 +392,11 @@ void output_example_seq(vw& all, cb_adf& data)
     bool hit_loss = false;
 
     if (data.rank_all)
-      output_rank_example(all, **(data.ec_seq.begin), hit_loss, &(data.ec_seq));
+      output_rank_example(all, data, **(data.ec_seq.begin), &(data.ec_seq));
     else
       {
 	for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
-	  output_example(all, **ecc, hit_loss, &(data.ec_seq));
+	  output_example(all, data, **ecc, &(data.ec_seq));
 	
 	if (all.raw_prediction > 0)
 	  all.print_text(all.raw_prediction, "", data.ec_seq[0]->tag);
@@ -497,7 +510,7 @@ base_learner* cb_adf_setup(vw& all)
 	}
 
 	// Push necessary flags.
-	if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0
+	if ( (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0)
 		|| all.vm.count("rank_all"))
 	{
 		if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0)
