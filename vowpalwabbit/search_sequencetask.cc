@@ -25,7 +25,7 @@ namespace SequenceTask {
       size_t prediction = Search::predictor(sch, (ptag)i+1).set_input(*ec[i]).set_oracle(oracle).set_condition_range((ptag)i, sch.get_history_length(), 'p').predict();
 
       if (sch.output().good())
-        sch.output() << prediction << ' ';
+        sch.output() << sch.pretty_label(prediction) << ' ';
     }
   }
 }

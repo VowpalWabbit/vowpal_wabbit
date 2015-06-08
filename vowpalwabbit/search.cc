@@ -2353,6 +2353,17 @@ namespace Search {
   size_t search::get_stride_shift() { return this->priv->all->reg.stride_shift;}
   uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
 
+  string search::pretty_label(action a) {
+    if (this->priv->all->sd->ldict) {
+      substring ss = this->priv->all->sd->ldict->get(a);
+      return string(ss.begin, ss.end-ss.begin);
+    } else {
+      ostringstream os;
+      os << a;
+      return os.str();
+    }
+  }
+  
   vw& search::get_vw_pointer_unsafe() { return *this->priv->all; }
   void search::set_force_oracle(bool force) { this->priv->force_oracle = force; }
 

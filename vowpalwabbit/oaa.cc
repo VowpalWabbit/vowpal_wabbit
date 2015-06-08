@@ -86,6 +86,12 @@ LEARNER::base_learner* oaa_setup(vw& all)
   
   oaa& data = calloc_or_die<oaa>();
   data.k = all.vm["oaa"].as<size_t>();
+
+  if (all.sd->ldict && (data.k != all.sd->ldict->getK())) {
+    cerr << "error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa" << endl;
+    throw exception();
+  }
+  
   data.all = &all;
   data.pred = calloc_or_die<polyprediction>(data.k);
   data.num_subsample = 0; data.subsample_order = NULL; data.subsample_id = 0;

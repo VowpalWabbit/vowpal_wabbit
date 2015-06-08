@@ -23,6 +23,7 @@ namespace po = boost::program_options;
 #include "learner.h"
 #include "allreduce.h"
 #include "v_hashmap.h"
+#include "labeldict.h"
 #include <time.h>
 
 struct version_struct {
@@ -148,6 +149,8 @@ struct shared_data {
   float min_label;//minimum label encountered
   float max_label;//maximum label encountered
 
+  labeldict* ldict;
+  
   //for holdout
   double weighted_holdout_examples;
   double weighted_holdout_examples_since_last_dump;
@@ -235,7 +238,7 @@ struct shared_data {
 	label_buf << std::right << label;
     else
 	label_buf << std::left << " unknown";
-
+    
     pred_buf << std::setw(col_current_predict) << std::right 
              << std::setfill(' ')
              << prediction;

@@ -11,9 +11,11 @@ license as described in the file LICENSE.
 
 #include "parse_regressor.h"
 #include "parser.h"
+#include "parse_primitives.h"
 #include "vw.h"
 #include "interactions.h"
 
+#include "labeldict.h"
 #include "sender.h"
 #include "nn.h"
 #include "gd.h"
@@ -63,11 +65,6 @@ bool ends_with(string const &fullString, string const &ending)
         return false;
     }
 }
-
-bool substring_equal(substring&a, substring&b) {
-  return (a.end - a.begin == b.end - b.begin) // same length
-      && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
-}  
 
 unsigned long long hash_file_contents(io_buf *io, int f) {
   unsigned long long v = 5289374183516789128;
@@ -708,6 +705,7 @@ void parse_feature_tweaks(vw& all)
 
 void parse_example_tweaks(vw& all)
 {
+  string named_labels;
   new_options(all, "Example options")
     ("testonly,t", "Ignore label information and just test")
     ("holdout_off", "no holdout data in multiple passes")
@@ -723,7 +721,8 @@ void parse_example_tweaks(vw& all)
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
     ("l1", po::value<float>(&(all.l1_lambda)), "l_1 lambda")
-    ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda");
+    ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda")
+    ("named_labels", po::value<string>(&named_labels), "use names for labels (multiclass, etc.) rather than integers, argument specified all possible labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\"");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -754,6 +753,12 @@ void parse_example_tweaks(vw& all)
   if (vm.count("min_prediction") || vm.count("max_prediction") || vm.count("testonly"))
     all.set_minmax = noop_mm;
 
+  if (vm.count("named_labels")) {
+    *all.file_options << " --named_labels " << named_labels << ' ';
+    all.sd->ldict = new labeldict(named_labels);
+    cerr << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
+  }
+  
   string loss_function = vm["loss_function"].as<string>();
   float loss_parameter = 0.0;
   if(vm.count("quantile_tau"))

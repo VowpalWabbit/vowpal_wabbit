@@ -1146,3 +1146,22 @@ __DATA__
 {VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p adf_rank.predict
     train-sets/ref/cb_adf_rank.stderr
     pred-sets/ref/cb_adf_rank.predict
+
+# Test 88: named labels at training time
+{VW} --named_labels det,noun,verb --oaa 3 -d train-sets/test_named  -k -c --passes 10 --holdout_off -f models/test_named.model
+    train-sets/ref/test_named_train.stderr
+
+# Test 89: named labels at prediction
+{VW} -i models/test_named.model -t -d train-sets/test_named -p test_named.pred
+    train-sets/ref/test_named_test.stderr
+    pred-sets/ref/test_named.predict
+
+# Test 90: named labels at training time (csoaa)
+{VW} --named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa  -k -c --passes 10 --holdout_off -f models/test_named_csoaa.model
+    train-sets/ref/test_named_csoaa_train.stderr
+
+# Test 91: named labels at prediction (csoaa)
+{VW} -i models/test_named_csoaa.model -t -d train-sets/test_named_csoaa -p test_named_csoaa.pred
+    train-sets/ref/test_named_csoaa_test.stderr
+    pred-sets/ref/test_named_csoaa.predict
+

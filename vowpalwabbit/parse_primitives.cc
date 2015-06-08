@@ -11,6 +11,11 @@ license as described in the file LICENSE.
 #include "parse_primitives.h"
 #include "hash.h"
 
+bool substring_equal(substring&a, substring&b) {
+  return (a.end - a.begin == b.end - b.begin) // same length
+      && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
+}
+
 void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty)
 {
   ret.erase();
@@ -63,3 +68,5 @@ hash_func_t getHasher(const std::string& s){
     throw std::exception();
   }
 }
+
+std::ostream& operator<<(std::ostream& os, const substring& ss) { return os << std::string(ss.begin, ss.end-ss.begin); }

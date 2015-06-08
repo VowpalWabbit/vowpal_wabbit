@@ -159,6 +159,9 @@ namespace Search {
     // get stride_shift
     size_t get_stride_shift();
 
+    // pretty print a label
+    std::string pretty_label(action a);
+    
     // for meta-tasks:
     BaseTask base_task(vector<example*>& ec) { return BaseTask(this, ec); }
     
