@@ -3,12 +3,20 @@
 # Convert TSV/CSV to VW training set format
 #
 # Supports:
-#   - Use header line for feature names (-h)
-#   - Multiclass labels auto-converted to 1..k if non-numeric
-#   - Categorical features auto-converted to vw boolean name=value
-#   - Numeric arg to allow specifiying the label column number
-#   - Auto-splitting on commas and/or tabs
-#   - Allow specifying (and overriding) the input separator as perl regexp
+#   - Optionally use header line for feature names ('-h' option)
+#   - If no  '-h' is used, will number features as 1..k based on
+#     column number
+#   - Multiclass labels will be auto-converted to 1..k if they are
+#     non-numeric e.g. Species: {setosa, versicolor, virginica}
+#   - Categorical features are auto-converted to vw boolean name=value`
+#   - Numerical features will use name:value
+#   - Numeric command-line arg allows specifiying the label column
+#     number (also: negative numbers conveniently support the
+#     "from end of line" perl convention (e.g: -1 is last column)
+#   - By default, auto-splits columns on commas and/or tabs
+#   - Allows specifying (and overriding) the input separator as perl
+#     regexp ('-s <regexp>' option)
+
 #
 # Ariel Faigon, May 2015
 #
@@ -42,17 +50,27 @@ sub usage {
                     the default is: '$FieldSep'
 
     Args:
-        If a numeric arg <label_column>> is specified, it will be
+        If a numeric arg <label_column> is specified, it will be
         used as the index (1st index is 0) of the label (target
         feature) column.
 
         A negative value can be used to specify a column position
         from the end (-1 is last column) but note that you would
-        have to pass '--' to mark the end of options in this case.
+        have to pass '--' to mark the end of options in this case
+        because -1 is option/arg ambiguous.
 
-        In addition: if the label isn't numeric, it will be
-        assumed to be a multi-class label and be converted to
-        an integer [1..k] to support vw multiclass-representation.
+        If a label isn't numeric, it will be assumed to be a
+        multi-class label and be converted to an integer [1..k]
+        (vw multiclass-representation)
+
+    Examples:
+        csv2vw -h -- -1 iris.csv
+            Use 1st line as header, last column as label
+
+        csv2vw 2 data.tsv
+            Use 1..k as column/feature names, use 3rd column
+            as the label column (base index is 0) - no header
+            assumed in input
 ";
 }
 
