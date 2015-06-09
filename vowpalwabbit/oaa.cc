@@ -119,6 +119,8 @@ LEARNER::base_learner* oaa_setup(vw& all)
   else
     l = &LEARNER::init_multiclass_learner(&data, setup_base(all),predict_or_learn<true, false>, 
 					  predict_or_learn<false, false>, all.p, data.k);
+  if (all.vm.count("oaa_subsample"))
+    l->set_learn(learn_randomized);
   l->set_finish(finish);
   
   return make_base(*l);

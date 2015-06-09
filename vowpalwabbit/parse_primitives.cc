@@ -69,4 +69,7 @@ hash_func_t getHasher(const std::string& s){
   }
 }
 
-std::ostream& operator<<(std::ostream& os, const substring& ss) { return os << std::string(ss.begin, ss.end-ss.begin); }
+std::ostream& operator<<(std::ostream& os, const substring& ss) {
+  std::string s(ss.begin, ss.end-ss.begin);
+  return os << s;
+}
