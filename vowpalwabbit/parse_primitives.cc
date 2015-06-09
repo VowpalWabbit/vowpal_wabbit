@@ -6,6 +6,8 @@ license as described in the file LICENSE.
 #include <iostream>
 #ifndef WIN32
 #include <strings.h>
+#else
+#include <string>
 #endif
 
 #include "parse_primitives.h"
