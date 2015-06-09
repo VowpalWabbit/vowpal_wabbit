@@ -45,14 +45,17 @@ else
 fi
 
 
-# A command and pattern that will unlikely to match anything but our own test
+# A command (+pattern) that is unlikely to match anything but our own test
 DaemonCmd="$VW -t -i $MODEL --daemon --num_children 1 --quiet --port $PORT"
+# libtool may wrap vw with '.libs/lt-vw' so we need to be flexible
+# on the exact process pattern we try to kill.
+DaemonPat=`echo $DaemonCmd | sed 's/^[^ ]*vw /.*vw /'`
 
 stop_daemon() {
-    # make sure we are not running, may ignore 'error' that we're not
-    # echo stopping daemon
-    $PKILL -9 -f "$DaemonCmd" 2>&1 | grep -q 'no process found'
-    # relinquish CPU by forcing some conext switches to be safe
+    # Make sure we are not running. May ignore 'error' that we're not
+    $PKILL -9 -f "$DaemonPat" 2>&1 | grep -q 'no process found'
+
+    # relinquish CPU by forcing some context switches to be safe
     # (let existing vw daemon procs die)
     wait
 }
