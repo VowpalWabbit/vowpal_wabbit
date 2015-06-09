@@ -96,11 +96,15 @@ namespace CB_ADF {
 
 	COST_SENSITIVE::wclass wc;
 	wc.class_index = 0;
+	int known_index = c.known_cost.action;
+	c.known_cost.action = 0;
 
 	//get cost prediction for this label
 	// num_actions should be 1 effectively.
 	// my get_cost_pred function will use 1 for 'index-1+base'			
-	wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, &(c.known_cost), *(examples[i]), 1, 1);		
+	wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, &(c.known_cost), *(examples[i]), 0, 2); 
+	c.known_cost.action = known_index;
+
 	if(shared)
 	  wc.class_index = i-1;
 	else
@@ -131,8 +135,7 @@ namespace CB_ADF {
   {
     CB::label ld;
     int index = -1;
-    mydata.known_cost.action = index;
-  
+
     for (example **ec = examples.begin; ec != examples.end; ec++)
       {
 	if ((**ec).l.cb.costs.size() == 1 &&
@@ -143,12 +146,19 @@ namespace CB_ADF {
 	    index = ec - examples.begin;
 	  }
       }
+
   
     // handle -1 case.
     if (index == -1){
-      std::cerr << "None of the examples has known cost. Exiting." << endl;
-      throw exception();
+      mydata.known_cost.probability = -1;
+      return;
+      //std::cerr << "None of the examples has known cost. Exiting." << endl;
+      //throw exception();
     }
+
+    bool shared = false;
+    if (has_shared_example(examples))
+      shared = true;
   
     for (CB::cb_class *cl = ld.costs.begin; cl != ld.costs.end; cl++)
       {
@@ -156,7 +166,7 @@ namespace CB_ADF {
 	mydata.known_cost.action = index;
       
 	// take care of shared example
-	if (has_shared_example(examples))
+	if(shared)
 	  mydata.known_cost.action--;	
       }
   }
@@ -195,7 +205,6 @@ namespace CB_ADF {
   template<uint32_t reduction_type>
   void learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   {
-    get_observed_cost(mydata, examples);
     if (reduction_type == CB_TYPE_IPS)
       gen_cs_example_ips(examples, mydata.cs_labels);
     else if (reduction_type == CB_TYPE_DR)
@@ -244,6 +253,7 @@ namespace CB_ADF {
   void do_actual_learning(cb_adf& data, base_learner& base)
   {
     bool isTest = test_adf_sequence(data);
+    get_observed_cost(data, data.ec_seq);
   
     if (isTest || !is_learn)
       {
@@ -345,11 +355,9 @@ namespace CB_ADF {
     float loss = 0.;
     v_array<uint32_t> preds = head_ec.pred.multilabels.label_v;
     
-    if (c.known_cost.action != -1) {
+    if (c.known_cost.probability > 0) {
 	
-
       loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, preds[0]);
-      //cout<<"Loss = "<<loss<<" known_action = "<<c.known_cost.action<<" prediction =  "<<head_ec.pred.multilabels.label_v[0]<<endl;
 
       //   size_t idx = 0;
       //   for(example** ecc = ec_seq->begin; ecc != ec_seq->end;ecc++,idx++) {
@@ -364,7 +372,7 @@ namespace CB_ADF {
 
       all.sd->sum_loss += loss;
       all.sd->sum_loss_since_last_dump += loss;
-      assert(loss >= 0);
+      //assert(loss >= 0);
     }
   
     //for (int i = 0; i < preds.size();i++)
