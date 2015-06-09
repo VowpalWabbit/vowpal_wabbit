@@ -180,14 +180,14 @@ namespace cs_test
         {
             this.example.Label = new SimpleLabel()
             {
-                Label = float.Parse(context.value.Text, CultureInfo.InvariantCulture)
+                Label = float.Parse(context.value.GetText(), CultureInfo.InvariantCulture)
             };
         }
 
-        public override void ExitFeature(VowpalWabbitParser.FeatureContext context)
+        public override void EnterFeatureSparse(VowpalWabbitParser.FeatureSparseContext context)
         {
             var index = context.index.Text;
-            var x = float.Parse(context.x.Text, CultureInfo.InvariantCulture);
+            var x = float.Parse(context.x.GetText(), CultureInfo.InvariantCulture);
 
             if (index == "const")
             {

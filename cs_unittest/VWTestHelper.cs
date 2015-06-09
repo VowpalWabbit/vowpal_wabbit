@@ -9,6 +9,7 @@ using System.Globalization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
+using Antlr4.Runtime.Atn;
 
 namespace cs_unittest
 {
@@ -18,10 +19,20 @@ namespace cs_unittest
         {
             try
             {
-                var antlrStream = new AntlrInputStream(stream);
-                var lexer = new VowpalWabbitLexer(antlrStream);
-                var tokens = new CommonTokenStream(lexer);
-                var parser = new VowpalWabbitParser(tokens);
+                // optimized for memory consumption
+                var antlrStream = new UnbufferedCharStream(stream);
+                var lexer = new VowpalWabbitLexer(antlrStream)
+                {
+                    TokenFactory = new CommonTokenFactory(copyText: true)
+                };
+
+                var tokens = new UnbufferedTokenStream(lexer);
+                var parser = new VowpalWabbitParser(tokens)
+                {
+                    BuildParseTree = false,
+                };
+                // fast than LL(*)
+                parser.Interpreter.PredictionMode = PredictionMode.Sll;
 
                 parser.AddParseListener(listener);
                 parser.AddErrorListener(new TestErrorListener());

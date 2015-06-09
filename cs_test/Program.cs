@@ -17,7 +17,7 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
-            AttributesSample.Attributes();
+            // AttributesSample.Attributes();
             //AttributesSample.RunFeaturesTest();
             //ExploreClock.Clock();
             //LabDemo.Run();
@@ -29,7 +29,8 @@ namespace cs_test
             //RunLDAPredict();
             //RunVWParse_and_VWLearn();
 
-            //Console.ReadKey();
+            new cs_unittest.Rcv1TestClass().Rcv1Test();
+            Console.ReadKey();
         }
 
 
