@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Simple library class for working with JNI (Java Native Interface)
@@ -20,26 +22,74 @@ public class NativeUtils {
     private NativeUtils() {
     }
 
-    private static String getOsFamily() {
+    /**
+     * Because JNI requires dynamic linking the version of the linux distro matters.  This will attempt to find
+     * the correct version of the linux distro.  Note that this right now tries to find if this is either
+     * Ubuntu or not, and if it's not then it assumes CentOS.  I know this is not correct for all Linux distros
+     * but hopefully this will work for most.
+     * @return The linux distro and version
+     * @th rows IOException
+     */
+    public static String getLinuxDistro() throws IOException {
+        BufferedReader reader = null;
+        String distro = null;
+        String release = null;
+        try {
+            Process process = Runtime.getRuntime().exec("lsb_release -a");
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            Pattern distroPattern = Pattern.compile("Distributor ID:\\s*(.+)");
+            Pattern releasePattern = Pattern.compile("Release:\\s*(\\d+).*");
+            Matcher matcher;
+            while ((line = reader.readLine()) != null) {
+                matcher = distroPattern.matcher(line);
+                if (matcher.matches()) {
+                    distro = matcher.group(1);
+                }
+                matcher = releasePattern.matcher(line);
+                if (matcher.matches()) {
+                    release = matcher.group(1);
+                }
+            }
+        }
+        finally {
+            reader.close();
+        }
+        if (distro == null || release == null) {
+            throw new UnsupportedEncodingException("Linux distro does not support lsb_release, cannot determine version, distro: " + distro + ", release: " + release);
+        }
+        if (distro.equalsIgnoreCase("ubuntu")) {
+            return "ubuntu." + release;
+        }
+        else {
+            return "centos." + release;
+        }
+    }
+
+    private static String getOsFamily() throws IOException {
         final String osName = System.getProperty("os.name");
         if (osName.toLowerCase().contains("mac")) {
             return "mac";
-        } else if (osName.toLowerCase().contains("linux")) {
-            return "linux";
-        } else if (osName.toLowerCase().contains("win")) {
-            return "windows";
+        }
+        else if (osName.toLowerCase().contains("linux")) {
+            return getLinuxDistro();
         }
         throw new IllegalStateException("Unsupported operating system " + osName);
     }
 
-    public static void loadOSDependentLibrary(String path) throws IOException {
+    /**
+     * Loads a library from current JAR archive by looking up platform dependent name.
+     * @param path The filename inside JAR as absolute path (beginning with '/'), e.g. /package/File.ext
+     * @throws IOException
+     */
+    public static void loadOSDependentLibrary(String path, String suffix) throws IOException {
         String osFamily = getOsFamily();
-        String osDependentLib = path + "." + osFamily + "." + System.getProperty("os.arch") + ".lib";
+        String osDependentLib = path + "." + osFamily + "." + System.getProperty("os.arch") + suffix;
         if (NativeUtils.class.getResource(osDependentLib) != null) {
             loadLibraryFromJar(osDependentLib);
         }
         else {
-            loadLibraryFromJar(path + ".lib");
+            loadLibraryFromJar(path + suffix);
         }
     }
 

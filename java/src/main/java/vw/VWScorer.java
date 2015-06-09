@@ -15,7 +15,7 @@ public class VWScorer implements Closeable {
 
     static {
         try {
-            NativeUtils.loadOSDependentLibrary("/vw_jni");
+            NativeUtils.loadOSDependentLibrary("/vw_jni", ".lib");
         }
         catch (IOException ioe) {
             logger.error("Cannot load JNI libraries!!");
@@ -24,28 +24,12 @@ public class VWScorer implements Closeable {
     }
 
     private final AtomicBoolean isClosed;
+    private final long nativePointer;
 
     public VWScorer(String command) {
         isClosed = new AtomicBoolean(false);
-        initialize(command);
+        nativePointer = initialize(command);
     }
-
-    /**
-     * Probably the only acceptable use of a finalizer.  Because this class
-     * uses native code, we have to manually clean up the native code when this
-     * object is garbage collected.
-     */
-    @Override
-    public void finalize() {
-        close();
-    }
-
-    /**
-     * Initialize vw instance with <code>command</code>
-     *
-     * @param command initialize vs instance with command
-     */
-    private native void initialize(String command);
 
     /**
      * Runs prediction on <code>example</code> and returns the prediction output.  Note that
@@ -54,7 +38,9 @@ public class VWScorer implements Closeable {
      * @param example a single vw example string
      * @return prediction output
      */
-    public native float getPrediction(String example);
+    public float getPrediction(String example) {
+        return getPrediction(example, false, nativePointer);
+    }
 
     /**
      * Runs learning on <code>example</code> and returns the prediction output.  Note that
@@ -63,7 +49,9 @@ public class VWScorer implements Closeable {
      * @param example a single vw example string
      * @return prediction output
      */
-    public native float doLearnAndGetPrediction(String example);
+    public float doLearnAndGetPrediction(String example) {
+        return getPrediction(example, true, nativePointer);
+    }
 
     /**
      * Run prediction on <code>examples</code> and returns all of the predictions.  Note that
@@ -71,7 +59,9 @@ public class VWScorer implements Closeable {
      * @param examples an array of vw example strings
      * @return predictions
      */
-    public native float[] getPredictions(String[] examples);
+    public float[] getPredictions(String[] examples) {
+        return getPredictions(examples, false, nativePointer);
+    }
 
     /**
      * Run learning on <code>examples</code> and returns all of the predictions.  Note that
@@ -79,17 +69,19 @@ public class VWScorer implements Closeable {
      * @param examples an array of vw example strings
      * @return predictions
      */
-    public native float[] doLearnAndGetPredictions(String[] examples);
+    public float[] doLearnAndGetPredictions(String[] examples) {
+        return getPredictions(examples, true, nativePointer);
+    }
 
     public void close() {
         if (!isClosed.getAndSet(true)) {
             logger.info("Shutting down VW");
-            closeInstance();
+            closeInstance(nativePointer);
         }
     }
 
-    /**
-     * Properly shutdown vw instance
-     */
-    private native void closeInstance();
+    private native long initialize(String command);
+    private native float getPrediction(String example, boolean learn, long nativePointer);
+    private native float[] getPredictions(String[] examples, boolean learn, long nativePointer);
+    private native void closeInstance(long nativePointer);
 }

@@ -12,15 +12,7 @@ extern "C" {
  * Method:    initialize
  * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_vw_VWScorer_initialize
-  (JNIEnv *, jobject, jstring);
-
-/*
- * Class:     vw_VWScorer
- * Method:    doLearnAndGetPrediction
- * Signature: (Ljava/lang/String;)F
- */
-JNIEXPORT jfloat JNICALL Java_vw_VWScorer_doLearnAndGetPrediction
+JNIEXPORT jlong JNICALL Java_vw_VWScorer_initialize
   (JNIEnv *, jobject, jstring);
 
 /*
@@ -29,7 +21,7 @@ JNIEXPORT jfloat JNICALL Java_vw_VWScorer_doLearnAndGetPrediction
  * Signature: (Ljava/lang/String;)F
  */
 JNIEXPORT jfloat JNICALL Java_vw_VWScorer_getPrediction
-  (JNIEnv *, jobject, jstring);
+  (JNIEnv *, jobject, jstring, jboolean, jlong);
 
 /*
  * Class:     vw_VWScorer
@@ -37,15 +29,7 @@ JNIEXPORT jfloat JNICALL Java_vw_VWScorer_getPrediction
  * Signature: ([Ljava/lang/String;)[F
  */
 JNIEXPORT jfloatArray JNICALL Java_vw_VWScorer_getPredictions
-  (JNIEnv *, jobject, jobjectArray);
-
-/*
- * Class:     vw_VWScorer
- * Method:    doLearnAndGetPredictions
- * Signature: ([Ljava/lang/String;)[F
- */
-JNIEXPORT jfloatArray JNICALL Java_vw_VWScorer_doLearnAndGetPredictions
-  (JNIEnv *, jobject, jobjectArray);
+  (JNIEnv *, jobject, jobjectArray, jboolean, jlong);
 
 /*
  * Class:     vw_VWScorer
@@ -53,7 +37,7 @@ JNIEXPORT jfloatArray JNICALL Java_vw_VWScorer_doLearnAndGetPredictions
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_vw_VWScorer_closeInstance
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jlong);
 
 #ifdef __cplusplus
 }
