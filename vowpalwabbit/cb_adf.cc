@@ -305,25 +305,9 @@ namespace CB_ADF {
     float loss = 0.;
 
     if (!CB::example_is_test(ec)) {
-
-      // Replace for loop with a call to Alekh's function to get cost for top 1 action (the first example in ec_seq).
-      // need to pass in the action ID, element 0 of the array, get its label of multilabel.
-      // input: the first element of label_v (action ID) of th top 1
-      // return the cost as one float, 
-      //for (size_t j=0; j<costs.size(); j++) {
-      //  if (hit_loss) break;
-      //  if (ec.pred.multiclass == costs[j].action) {
-      //	loss = costs[j].cost;
-      //	// loss = call_Alekh_function(action ID)
-
-      //	hit_loss = true;
-      //  }
-      //}
-	  
       loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, ec.pred.multiclass);
       all.sd->sum_loss += loss;
       all.sd->sum_loss_since_last_dump += loss;
-      assert(loss >= 0);
     }
   
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
@@ -358,21 +342,8 @@ namespace CB_ADF {
     if (c.known_cost.probability > 0) {
 	
       loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, preds[0]);
-
-      //   size_t idx = 0;
-      //   for(example** ecc = ec_seq->begin; ecc != ec_seq->end;ecc++,idx++) {
-      //     example& ex = **ecc;
-      //     if(ec_is_example_header(ex)) continue;
-      //     if (hit_loss) break;
-      //     if (preds[0] == idx) {
-      //loss = ex.l.cs.costs[0].x;
-      //hit_loss = true;
-      //     }
-      //   }
-
       all.sd->sum_loss += loss;
       all.sd->sum_loss_since_last_dump += loss;
-      //assert(loss >= 0);
     }
   
     //for (int i = 0; i < preds.size();i++)
