@@ -7,7 +7,9 @@ license as described in the file LICENSE.
 #include <float.h>
 #include <sstream>
 #include <fstream>
-#include <boost/filesystem.hpp>
+//#include <boost/filesystem.hpp>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "parse_regressor.h"
 #include "parser.h"
@@ -81,19 +83,36 @@ unsigned long long hash_file_contents(io_buf *io, int f) {
 }
 
 bool directory_exists(string path) {
-  boost::filesystem::path p(path);
-  return boost::filesystem::exists(p) && boost::filesystem::is_directory(p);
+  struct stat info;
+  if (stat(path.c_str(), &info) != 0)
+    return false;
+  else
+    return (info.st_mode & S_IFDIR);
+  //  boost::filesystem::path p(path);
+  //  return boost::filesystem::exists(p) && boost::filesystem::is_directory(p);
 }
 
-boost::filesystem::path find_in_path(vector<string> paths, string fname) {
-  // TODO: if fname has path separators, issue warning
+string find_in_path(vector<string> paths, string fname) {
+#ifdef _WIN32
+  string delimiter = "\\";
+#else
+  string delimiter = "/";
+#endif
+  for (string path : paths) {
+    string full = ends_with(path, delimiter) ? (path + fname) : (path + delimiter + fname);
+    ifstream f(full.c_str());
+    if (f.good())
+      return full;
+  }
+  return "";
+/*
   for (string path : paths) {
     boost::filesystem::path p(path);
     p /= fname;
     if (boost::filesystem::exists(p) && !boost::filesystem::is_directory(p))
       return p;
   }
-  return boost::filesystem::path("");
+*/
 }
 
 void parse_dictionary_argument(vw&all, string str) {
@@ -108,24 +127,24 @@ void parse_dictionary_argument(vw&all, string str) {
     s  += 2;
   }
 
-  boost::filesystem::path fname = find_in_path(all.dictionary_path, string(s));
-  if ( ! boost::filesystem::exists(fname) ) {
-    cerr << "error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path?" << endl;
+  string fname = find_in_path(all.dictionary_path, string(s));
+  if (fname == "") { //  ! boost::filesystem::exists(fname) ) {
+    cerr << "error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path" << endl;
     throw exception();
   }
 
-  bool is_gzip = ends_with(fname.string(), ".gz");
+  bool is_gzip = ends_with(fname, ".gz");
   io_buf* io = is_gzip ? new comp_io_buf : new io_buf;
-  int fd = io->open_file(fname.string().c_str(), all.stdin_off, io_buf::READ);
+  int fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
   if (fd < 0) {
-    cerr << "error: cannot read dictionary from file '" << fname.string() << "'" << ", opening failed" << endl;
+    cerr << "error: cannot read dictionary from file '" << fname << "'" << ", opening failed" << endl;
     throw exception();
   }
   unsigned long long fd_hash = hash_file_contents(io, fd);
   io->close_file();
 
   if (! all.quiet)
-    cerr << "scanned dictionary '" << s << "' from '" << fname.string() << "', hash=" << hex << fd_hash << endl;
+    cerr << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << endl;
 
   // see if we've already read this dictionary
   for (size_t id=0; id<all.read_dictionaries.size(); id++)
@@ -137,9 +156,9 @@ void parse_dictionary_argument(vw&all, string str) {
   feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
   
   example *ec = alloc_examples(all.p->lp.label_size, 1);
-  fd = io->open_file(fname.string().c_str(), all.stdin_off, io_buf::READ);
+  fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
   if (fd < 0) {
-    cerr << "error: cannot re-read dictionary from file '" << fname.string() << "'" << ", opening failed" << endl;
+    cerr << "error: cannot re-read dictionary from file '" << fname << "'" << ", opening failed" << endl;
     throw exception();
   }
   size_t def = (size_t)' ';
