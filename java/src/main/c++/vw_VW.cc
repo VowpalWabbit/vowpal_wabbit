@@ -13,10 +13,10 @@ void rethrow_cpp_exception_as_java_exception(JNIEnv *env) {
         throw;
     }
     catch(const std::bad_alloc& e) {
-        throw_java_exception(env, "java/lang/OutOfMemoryError", e.what()); 
+        throw_java_exception(env, "java/lang/OutOfMemoryError", e.what());
     }
     catch(const std::ios_base::failure& e) {
-        throw_java_exception(env, "java/io/IOException", e.what());  
+        throw_java_exception(env, "java/io/IOException", e.what());
     }
     catch(const std::exception& e) {
         throw_java_exception(env, "java/lang/Exception", e.what());

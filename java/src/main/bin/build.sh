@@ -1,18 +1,38 @@
 #!/usr/bin/env bash
 
-#brew tap phinze/homebrew-cask
-#brew install brew-cask
-#brew cask install virtualbox
-#brew install boot2docker
-#brew install docker
-#boot2docker delete
-#boot2docker init
-#boot2docker up
+brew tap phinze/homebrew-cask
+brew install brew-cask
+brew cask install virtualbox
+brew install boot2docker
+brew install docker
+boot2docker delete
+boot2docker init
+boot2docker up
 
 # After running boot2docker up this is printed out and it should be the same for everyone
-#export DOCKER_HOST=tcp://192.168.59.103:2376
-#export DOCKER_CERT_PATH=~/.boot2docker/certs/boot2docker-vm
-#export DOCKER_TLS_VERIFY=1
+export DOCKER_HOST=tcp://192.168.59.103:2376
+export DOCKER_CERT_PATH=~/.boot2docker/certs/boot2docker-vm
+export DOCKER_TLS_VERIFY=1
+
+docker run -v $(pwd):/vowpal_wabbit 32bit/ubuntu:12.04 /bin/bash -c "\
+apt-get install -qq software-properties-common; \
+apt-get update; \
+apt-get install -qq g++ make libboost-all-dev default-jdk; \
+export JAVA_HOME=/usr/lib/jvm/java-6-openjdk-i386; \
+cd /vowpal_wabbit; \
+make clean; \
+make; \
+mv java/target/vw_jni.lib java/target/vw_jni.Ubuntu.12.i386.lib"
+
+docker run -v $(pwd):/vowpal_wabbit ubuntu:12.04 /bin/bash -c "\
+apt-get install -qq software-properties-common; \
+apt-get update; \
+apt-get install -qq g++ make libboost-all-dev default-jdk; \
+export JAVA_HOME=/usr/lib/jvm/java-6-openjdk-amd64; \
+cd /vowpal_wabbit; \
+make clean; \
+make; \
+mv java/target/vw_jni.lib java/target/vw_jni.Ubuntu.12.amd64.lib"
 
 docker run -v $(pwd):/vowpal_wabbit 32bit/ubuntu:14.04 /bin/bash -c "\
 apt-get install -qq software-properties-common; \
