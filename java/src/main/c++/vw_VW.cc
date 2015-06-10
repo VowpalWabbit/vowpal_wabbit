@@ -19,7 +19,13 @@ void rethrow_cpp_exception_as_java_exception(JNIEnv *env) {
         throw_java_exception(env, "java/io/IOException", e.what());
     }
     catch(const std::exception& e) {
-        throw_java_exception(env, "java/lang/Exception", e.what());
+        const char* what = e.what();
+        std::string prefix("unrecognised option");
+
+        if (std::string(what).substr(0, prefix.size()) == prefix)
+            throw_java_exception(env, "java/lang/IllegalArgumentException", what);
+        else
+            throw_java_exception(env, "java/lang/Exception", what);
     }
     catch (...) {
         throw_java_exception(env, "java/lang/Error", "Unidentified exception => "
