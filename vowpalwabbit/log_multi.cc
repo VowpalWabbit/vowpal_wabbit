@@ -239,17 +239,17 @@ using namespace LEARNER;
     return b.nodes[current].internal;
   }
   
-  void train_node(log_multi& b, base_learner& base, example& ec, uint32_t& current, uint32_t& class_index)
+  void train_node(log_multi& b, base_learner& base, example& ec, uint32_t& current, uint32_t& class_index, uint32_t depth)
   {
     if(b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk)
       ec.l.simple.label = -1.f;
     else
       ec.l.simple.label = 1.f;
     
-    base.learn(ec, b.nodes[current].base_predictor);	
+    base.learn(ec, b.nodes[current].base_predictor);	// depth
 
     ec.l.simple.label = FLT_MAX;
-    base.predict(ec, b.nodes[current].base_predictor);
+    base.predict(ec, b.nodes[current].base_predictor); // depth
     
     b.nodes[current].Eh += (double)ec.partial_prediction;
     b.nodes[current].preds[class_index].Ehk += (double)ec.partial_prediction;
@@ -296,10 +296,12 @@ using namespace LEARNER;
 
     ec.l.simple = {FLT_MAX, 0.f, 0.f};
     uint32_t cn = 0;
+    uint32_t depth = 0;
     while(b.nodes[cn].internal)
       {
-	base.predict(ec, b.nodes[cn].base_predictor);
+	base.predict(ec, b.nodes[cn].base_predictor); // depth
 	cn = descend(b.nodes[cn], ec.pred.scalar);
+        depth ++;
       }	
     ec.pred.multiclass = b.nodes[cn].max_count_label;
     ec.l.multi = mc;
@@ -319,10 +321,12 @@ using namespace LEARNER;
 	uint32_t class_index = 0;	
 	ec.l.simple = {FLT_MAX, mc.weight, 0.f};
 	uint32_t cn = 0;
+        uint32_t depth = 0;
 	while(children(b, cn, class_index, mc.label))
 	  {	    
-	    train_node(b, base, ec, cn, class_index);
+	    train_node(b, base, ec, cn, class_index, depth);
 	    cn = descend(b.nodes[cn], ec.pred.scalar);
+            depth++;
 	  }
 	
 	b.nodes[cn].min_count++;
