@@ -1,8 +1,5 @@
 package vw;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,7 +12,6 @@ import java.util.regex.Pattern;
  * @author Adam Heirnich &lt;adam@adamh.cz&gt;, http://www.adamh.cz
  */
 public class NativeUtils {
-    private static final Logger logger = LoggerFactory.getLogger(NativeUtils.class);
     /**
      * Private constructor - this class will never be instanced
      */
@@ -191,7 +187,6 @@ public class NativeUtils {
             // Create a file to represent the lock and test.
             File lockFile = new File(tmpFile.getAbsolutePath() + lockSuffix);
             if (!lockFile.exists()) {
-                logger.info("deleting: " + tmpFile.getAbsolutePath());
                 tmpFile.delete();
             }
         }
