@@ -747,9 +747,10 @@ namespace Search {
         }
       } else { // only some actions are allowed
         cs_costs_erase(priv.cb_learner, lab);
+        float w = 1.; // array_contains<action>(3, oracle_actions, oracle_actions_cnt) ? 5.f : 1.f;
         for (size_t i=0; i<allowed_actions_cnt; i++) {
           action k = allowed_actions[i];
-          cs_cost_push_back(priv.cb_learner, lab, k, array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f );
+          cs_cost_push_back(priv.cb_learner, lab, k, (array_contains<action>(k, oracle_actions, oracle_actions_cnt)) ? 0.f : w); // 1.f );
         }
       }
     }
@@ -819,6 +820,7 @@ namespace Search {
     
     priv.base_learner->predict(ec, policy);
     uint32_t act = ec.pred.multiclass;
+    cdbg << "a=" << act << " from"; for (size_t ii=0; ii<allowed_actions_cnt; ii++) cdbg << ' ' << allowed_actions[ii]; cdbg << endl;
     a_cost = ec.partial_prediction;
     cdbg << "a_cost = " << a_cost << endl;
 
@@ -1049,7 +1051,6 @@ namespace Search {
   void generate_training_example(search_private& priv, polylabel& losses, float weight, bool add_conditioning=true, float min_loss=FLT_MAX) {  // min_loss = FLT_MAX means "please compute it for me as the actual min"; any other value means to use this
     // should we really subtract out min-loss?
     //float min_loss = FLT_MAX;
-    cdbg << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cdbg << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x; cdbg << " ], min_loss=" << min_loss << endl;
     if (priv.cb_learner) {
       if (min_loss == FLT_MAX)
         for (size_t i=0; i<losses.cb.costs.size(); i++) min_loss = MIN(min_loss, losses.cb.costs[i].cost);
@@ -1060,6 +1061,7 @@ namespace Search {
       for (size_t i=0; i<losses.cs.costs.size(); i++) losses.cs.costs[i].x = (losses.cs.costs[i].x - min_loss) * weight;
       //for (size_t i=0; i<losses.cs.costs.size(); i++) cerr << '\t' << losses.cs.costs[i].x; cerr << endl;
     }
+    //cdbg << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cdbg << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x; cdbg << " ], min_loss=" << min_loss << endl;
 
     priv.total_example_t += 1.;   // TODO: should be max-min
     
@@ -1078,7 +1080,7 @@ namespace Search {
       polylabel old_label = ec.l;
       ec.l = losses; // labels;
       if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
-      cdbg << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cdbg << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x; cdbg << " ]" << endl;
+      //cerr << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cerr << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x; cerr << " ]" << endl;
       for (size_t is_local=0; is_local<=priv.xv; is_local++) {
         int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local);
         ec.in_use = true;
@@ -1145,6 +1147,7 @@ namespace Search {
         // TODO: do we need to do something here for metatasks?
         //if (priv.beam && (priv.t < priv.beam_actions.size()))
         //  return false;
+        if (priv.rollout_method == NO_ROLLOUT) return true;
         break;
       case LEARN:
         if (priv.t+priv.meta_t < priv.learn_t) return false;  // TODO: in meta search mode with foreach feature we'll need it even here
@@ -1365,7 +1368,7 @@ namespace Search {
             // we can generate a training example _NOW_ because we're not doing rollouts
             //allowed_actions_to_losses(priv, ec_cnt, allowed_actions, allowed_actions_cnt, oracle_actions, oracle_actions_cnt, losses);
             allowed_actions_to_label(priv, ec_cnt, allowed_actions, allowed_actions_cnt, oracle_actions, oracle_actions_cnt, priv.gte_label);
-            //cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index << ':' << lab.cs.costs[i].x; cdbg << " ]" << endl;
+            //cerr << "priv.gte_label = ["; for (size_t i=0; i<priv.gte_label.cs.costs.size(); i++) cerr << ' ' << priv.gte_label.cs.costs[i].class_index << ':' << priv.gte_label.cs.costs[i].x; cerr << " ]" << endl;
             
             priv.learn_ec_ref = ecs;
             priv.learn_ec_ref_cnt = ec_cnt;
@@ -1375,7 +1378,7 @@ namespace Search {
             }
             size_t old_learner_id = priv.learn_learner_id;
             priv.learn_learner_id = learner_id;
-            generate_training_example(priv, priv.gte_label, weight, false);  // this is false because the conditioning has already been added!
+            generate_training_example(priv, priv.gte_label, 1., false);  // this is false because the conditioning has already been added!
             priv.learn_learner_id = old_learner_id;
           }
           
@@ -1625,7 +1628,7 @@ namespace Search {
       //if (priv.metatask)
       //  for (size_t aid=0; aid<priv.memo_foreach_action[tid]->size(); aid++)
       //    min_loss = MIN(min_loss, priv.memo_foreach_action[tid]->get(aid).cost);
-      generate_training_example(priv, priv.learn_losses, 1., true, min_loss);  // TODO: weight
+      generate_training_example(priv, priv.learn_losses, 1., true); // , min_loss);  // TODO: weight
       if (! priv.examples_dont_change)
         for (size_t n=0; n<priv.learn_ec_copy.size(); n++) {
           if (sch.priv->is_ldf) CS::cs_label.delete_label(&priv.learn_ec_copy[n].l.cs);
@@ -2266,6 +2269,8 @@ namespace Search {
     priv.start_clock_time = clock();
 
     if (priv.xv) priv.num_learners *= 3;
+
+    cdbg << "num_learners = " << priv.num_learners << endl;
 
     learner<search>& l = init_learner(&sch, base,
                                       search_predict_or_learn<true>,

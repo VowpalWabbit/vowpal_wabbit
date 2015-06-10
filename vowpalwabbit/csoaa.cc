@@ -29,7 +29,7 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
     base.learn(ec, i-1);
   } else
     base.predict(ec, i-1);
-  
+
   partial_prediction = ec.partial_prediction;
   if (ec.partial_prediction < score || (ec.partial_prediction == score && i < prediction)) {
     score = ec.partial_prediction;
@@ -42,6 +42,12 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
 template <bool is_learn>
 void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
   COST_SENSITIVE::label ld = ec.l.cs;
+  /*
+  if (ld.costs.size() == 1) {
+    ec.pred.multiclass = ld.costs[0].class_index;
+    return;
+  }
+  */
   uint32_t prediction = 1;
   float score = FLT_MAX;
   ec.l.simple = { 0., 0., 0. };
