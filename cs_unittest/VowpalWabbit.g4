@@ -1,4 +1,5 @@
 grammar VowpalWabbit;
+
 number returns [float value] : NUMBER;
 
 label_simple	: value=number (WS initial=number)? WS;

@@ -15,30 +15,13 @@ namespace Microsoft
 	{
 		namespace MachineLearning
 		{
-			VowpalWabbitModel::VowpalWabbitModel(System::String^ pArgs)
-				: VowpalWabbitBase(pArgs), m_instanceCount(0)
+			VowpalWabbitModel::VowpalWabbitModel(System::String^ args)
+				: VowpalWabbitBase(args), m_instanceCount(0)
 			{
 			}
 
-			vw* initialize(System::String^ pArgs, System::IO::Stream^ stream)
-			{
-				clr_io_buf io_temp(stream);
-				try
-				{
-					auto string = msclr::interop::marshal_as<std::string>(pArgs);
-					auto vw = VW::initialize(string, &io_temp);
-					initialize_parser_datastructures(*vw);
-
-					return vw;
-				}
-				catch (std::exception const& ex)
-				{
-					throw gcnew System::Exception(gcnew System::String(ex.what()));
-				}
-			}
-
-			VowpalWabbitModel::VowpalWabbitModel(System::String^ pArgs, System::IO::Stream^ stream)
-				: VowpalWabbitBase(initialize(pArgs, stream))
+			VowpalWabbitModel::VowpalWabbitModel(System::String^ args, System::IO::Stream^ stream)
+				: VowpalWabbitBase(args, stream)
 			{
 			}
 

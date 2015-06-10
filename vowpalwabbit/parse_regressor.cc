@@ -21,6 +21,7 @@ using namespace std;
 /* Define the last version where files are backward compatible. */
 #define LAST_COMPATIBLE_VERSION "6.1.3"
 #define VERSION_FILE_WITH_CUBIC "6.1.3"
+#define VERSION_FILE_WITH_RANK_IN_HEADER "7.8.0"
 #define VERSION_FILE_WITH_INTERACTIONS "7.10.2"
 
 void initialize_regressor(vw& all)
@@ -205,6 +206,17 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                     "", read,
                     "\n",1, text);
       }
+
+      if (all.model_file_ver <= VERSION_FILE_WITH_RANK_IN_HEADER)
+      { // to fix compatibility that was broken in 7.9
+          uint32_t rank = 0;
+          text_len = sprintf(buff, "rank:%d\n", (int)rank);
+          bin_text_read_write_fixed(model_file,(char*)&rank, sizeof(rank),
+                                    "", read,
+                                    buff,text_len, text);
+          if (rank != 0) // rank was used
+              cerr << "WARNING: this model file version is outdated. Unfortunately 'rank: "<< rank << "' value stored in it can't be restored automatically. Please pass it via the command line.";
+      }
       
       text_len = sprintf(buff, "lda:%d\n", (int)all.lda);
       bin_text_read_write_fixed(model_file,(char*)&all.lda, sizeof(all.lda), 
@@ -325,8 +337,9 @@ void finalize_regressor(vw& all, string reg_name)
   }
 }
 
-void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)
+void parse_regressor_args(vw& all, io_buf& io_temp)
 {
+  po::variables_map& vm = all.vm;
   vector<string> regs;
   if (vm.count("initial_regressor") || vm.count("i"))
     regs = vm["initial_regressor"].as< vector<string> >();
@@ -343,8 +356,6 @@ void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)
       }
     }
   }
-
-  save_load_header(all, io_temp, true, false);
 }
 
 void parse_mask_regressor_args(vw& all)

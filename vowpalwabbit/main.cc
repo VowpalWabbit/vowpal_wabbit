@@ -20,6 +20,11 @@ int main(int argc, char *argv[])
 {
   try {
     vw& all = parse_args(argc, argv);
+	io_buf model;
+	parse_regressor_args(all, model);
+	parse_modules(all, model);
+	parse_sources(all, model);
+
     all.vw_is_main = true;
     struct timeb t_start, t_end;
     ftime(&t_start);

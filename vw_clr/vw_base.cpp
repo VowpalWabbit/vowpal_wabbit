@@ -6,7 +6,9 @@ license as described in the file LICENSE.
 
 #include "vw_clr.h"
 #include "best_constant.h"
-
+#include "clr_io.h"
+#include "parse_regressor.h"
+#include "parse_args.h"
 namespace Microsoft
 {
 	namespace Research
@@ -18,18 +20,51 @@ namespace Microsoft
 			{
 			}
 
-			VowpalWabbitBase::VowpalWabbitBase(System::String^ pArgs)
+			VowpalWabbitBase::VowpalWabbitBase(System::String^ args)
 				: m_vw(nullptr)
 			{
 				try
 				{
-					auto string = msclr::interop::marshal_as<std::string>(pArgs);
+					auto string = msclr::interop::marshal_as<std::string>(args);
 					m_vw = VW::initialize(string);
 					initialize_parser_datastructures(*m_vw);
 				}
 				catch (std::exception const& ex)
 				{
 					throw gcnew System::Exception(gcnew System::String(ex.what()));
+				}
+			}
+
+			VowpalWabbitBase::VowpalWabbitBase(System::String^ args, System::IO::Stream^ stream)
+			{
+				clr_io_buf model(stream);
+				char** argv = nullptr;
+				int argc = 0;
+				try
+				{
+					auto string = msclr::interop::marshal_as<std::string>(args);
+					string += " --no_stdin";
+					argv = VW::get_argv_from_string(string, argc);
+
+					vw& all = parse_args(argc, argv);
+					parse_modules(all, model);
+					parse_sources(all, model);
+					initialize_parser_datastructures(all);
+
+					m_vw = &all;
+				}
+				catch (std::exception const& ex)
+				{
+					throw gcnew System::Exception(gcnew System::String(ex.what()));
+				}
+				finally
+				{
+					if (argv != nullptr)
+					{
+						for (int i = 0; i < argc; i++)
+							free(argv[i]);
+						free(argv);
+					}
 				}
 			}
 

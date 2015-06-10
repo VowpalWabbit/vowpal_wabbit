@@ -27,7 +27,7 @@ namespace cs_unittest
                 //| b_1 c_1 d_1
                 //0:0.0:0.5 | b_2 c_2 d_2
 
-                //| a_1 b_1 c_1
+                //| a_1 b_1 c_1 
                 //| a_3 b_3 c_3
 
                 var example = new Data

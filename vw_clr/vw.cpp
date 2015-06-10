@@ -5,9 +5,7 @@ license as described in the file LICENSE.
 */
 
 #include "vw_clr.h"
-#include "clr_io.h"
-#include "parse_regressor.h"
-#include "parse_args.h"
+
 
 namespace Microsoft
 {
@@ -20,33 +18,10 @@ namespace Microsoft
 			{
 			}
 
-			vw* initialize2(System::String^ pArgs, System::IO::Stream^ stream)
-			{
-				clr_io_buf io_temp(stream);
-				try
-				{
-					auto string = msclr::interop::marshal_as<std::string>(pArgs);
-					// auto vw = VW::initialize(string, &io_temp);
-
-					auto vw = VW::initialize(string);
-					initialize_parser_datastructures(*vw);
-
-					::parse_regressor_args(*vw, vw->vm, io_temp);
-					::load_input_model(*vw, io_temp);
-
-					return vw;
-				}
-				catch (std::exception const& ex)
-				{
-					throw gcnew System::Exception(gcnew System::String(ex.what()));
-				}
-			}
-
 			VowpalWabbit::VowpalWabbit(System::String^ pArgs, System::IO::Stream^ stream)
-				: VowpalWabbitBase(initialize2(pArgs, stream))
+				: VowpalWabbitBase(pArgs, stream)
 			{
 			}
-
 
 			vw* wrapped_seed_vw_model(vw* vw)
 			{

@@ -19,6 +19,7 @@ namespace cs_unittest
     public class Rcv1TestClass
     {
         [TestMethod]
+        [Ignore]
         public void Rcv1Test()
         {
             using (var gz = new GZipStream(File.OpenRead(@"D:\Data\rcv1.train.vw.gz"), CompressionMode.Decompress))

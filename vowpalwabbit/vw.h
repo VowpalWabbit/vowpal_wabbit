@@ -17,7 +17,6 @@ namespace VW {
     (2) The code is not yet reentrant.
    */
   vw* initialize(string s);
-  vw* initialize(string s, io_buf* model);
   vw* seed_vw_model(vw* vw_model, string extra_args);
 
   void cmd_string_replace_value( std::stringstream*& ss, string flag_to_replace, string new_value );

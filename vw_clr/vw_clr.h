@@ -150,7 +150,8 @@ namespace Microsoft
 			protected:
 				bool m_isDisposed;
 
-				VowpalWabbitBase(System::String^ pArgs);
+				VowpalWabbitBase(System::String^ args);
+				VowpalWabbitBase(System::String^ args, System::IO::Stream^ model);
 				VowpalWabbitBase(vw* vw);
 
 				void InternalDispose();
@@ -179,8 +180,8 @@ namespace Microsoft
 				!VowpalWabbitModel();
 
 			public:
-				VowpalWabbitModel(System::String^ pArgs);
-				VowpalWabbitModel(System::String^ pArgs, System::IO::Stream^ stream);
+				VowpalWabbitModel(System::String^ args);
+				VowpalWabbitModel(System::String^ args, System::IO::Stream^ stream);
 				virtual ~VowpalWabbitModel();
 			};
 
@@ -236,9 +237,9 @@ namespace Microsoft
 				!VowpalWabbit();
 
 			public:
-				VowpalWabbit(System::String^ pArgs);
+				VowpalWabbit(System::String^ args);
 				VowpalWabbit(VowpalWabbitModel^ model);
-				VowpalWabbit(System::String^ pArgs, System::IO::Stream^ stream);
+				VowpalWabbit(System::String^ args, System::IO::Stream^ stream);
 				virtual ~VowpalWabbit();
 
 				uint32_t HashSpace(System::String^ s);
