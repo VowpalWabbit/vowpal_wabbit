@@ -1,6 +1,6 @@
 #include "../../../../vowpalwabbit/parser.h"
 #include "../../../../vowpalwabbit/vw.h"
-#include "vw_VWScorer.h"
+#include "vw_VW.h"
 
 void throw_java_exception(JNIEnv *env, const char* name, const char* msg) {
      jclass jc = env->FindClass(name);
@@ -32,8 +32,8 @@ vw* getVW(jlong vwPtr) {
     return (vw*) vwPtr;
 }
 
-JNIEXPORT jlong JNICALL Java_vw_VWScorer_initialize(JNIEnv *env, jobject obj, jstring command) {
-    jlong vwPtr;
+JNIEXPORT jlong JNICALL Java_vw_VW_initialize(JNIEnv *env, jobject obj, jstring command) {
+    jlong vwPtr = 0;
     try {
         vwPtr = (jlong) VW::initialize(env->GetStringUTFChars(command, NULL));
     }
@@ -43,8 +43,8 @@ JNIEXPORT jlong JNICALL Java_vw_VWScorer_initialize(JNIEnv *env, jobject obj, js
     return vwPtr;
 }
 
-JNIEXPORT jfloat JNICALL Java_vw_VWScorer_getPrediction(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr) {
-    float prediction;
+JNIEXPORT jfloat JNICALL Java_vw_VW_predict(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr) {
+    float prediction = 0.0f;
     try {
         vw* vw = getVW(vwPtr);
         const char *utf_string = env->GetStringUTFChars(example_string, NULL);
@@ -68,12 +68,12 @@ JNIEXPORT jfloat JNICALL Java_vw_VWScorer_getPrediction(JNIEnv *env, jobject obj
     return prediction;
 }
 
-JNIEXPORT jfloatArray JNICALL Java_vw_VWScorer_getPredictions(JNIEnv *env, jobject obj, jobjectArray examples, jboolean learn, jlong vwPtr) {
+JNIEXPORT jfloatArray JNICALL Java_vw_VW_batchPredict(JNIEnv *env, jobject obj, jobjectArray examples, jboolean learn, jlong vwPtr) {
     size_t len = env->GetArrayLength(examples);
     float* predictions = new float[len];
     for (size_t i=0; i<len; ++i) {
         jstring example = (jstring)env->GetObjectArrayElement(examples, i);
-        predictions[i] = Java_vw_VWScorer_getPrediction(env, obj, example, learn, vwPtr);
+        predictions[i] = Java_vw_VW_predict(env, obj, example, learn, vwPtr);
         env->DeleteLocalRef(example);
     }
     jfloatArray jPredictions = env->NewFloatArray(len);
@@ -84,7 +84,7 @@ JNIEXPORT jfloatArray JNICALL Java_vw_VWScorer_getPredictions(JNIEnv *env, jobje
     return jPredictions;
 }
 
-JNIEXPORT void JNICALL Java_vw_VWScorer_closeInstance(JNIEnv *env, jobject obj, jlong vwPtr) {
+JNIEXPORT void JNICALL Java_vw_VW_closeInstance(JNIEnv *env, jobject obj, jlong vwPtr) {
     try {
         VW::finish(*getVW(vwPtr));
     }

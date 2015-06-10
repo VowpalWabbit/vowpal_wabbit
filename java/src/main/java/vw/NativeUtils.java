@@ -22,6 +22,20 @@ public class NativeUtils {
     private NativeUtils() {
     }
 
+    public static String getDistroName() throws IOException {
+        Pattern distroRegex = Pattern.compile("[^(]+\\([^(]+\\([^(]+\\(([A-Za-z\\s]+).*");
+        BufferedReader reader = new BufferedReader(new FileReader("/proc/version"));
+        String distro;
+        try {
+            Matcher line = distroRegex.matcher(reader.readLine());
+            distro = line.matches() ? line.group(1) : null;
+        }
+        finally {
+            reader.close();
+        }
+        return distro;
+    }
+
     /**
      * Because JNI requires dynamic linking the version of the linux distro matters.  This will attempt to find
      * the correct version of the linux distro.  Note that this right now tries to find if this is either
@@ -32,20 +46,15 @@ public class NativeUtils {
      */
     public static String getLinuxDistro() throws IOException {
         BufferedReader reader = null;
-        String distro = null;
         String release = null;
+        String distro = getDistroName();
         try {
-            Process process = Runtime.getRuntime().exec("lsb_release -a");
+            Process process = Runtime.getRuntime().exec("lsb_release -r");
             reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
-            Pattern distroPattern = Pattern.compile("Distributor ID:\\s*(.+)");
             Pattern releasePattern = Pattern.compile("Release:\\s*(\\d+).*");
             Matcher matcher;
             while ((line = reader.readLine()) != null) {
-                matcher = distroPattern.matcher(line);
-                if (matcher.matches()) {
-                    distro = matcher.group(1);
-                }
                 matcher = releasePattern.matcher(line);
                 if (matcher.matches()) {
                     release = matcher.group(1);
@@ -58,18 +67,14 @@ public class NativeUtils {
         if (distro == null || release == null) {
             throw new UnsupportedEncodingException("Linux distro does not support lsb_release, cannot determine version, distro: " + distro + ", release: " + release);
         }
-        if (distro.equalsIgnoreCase("ubuntu")) {
-            return "ubuntu." + release;
-        }
-        else {
-            return "centos." + release;
-        }
+
+        return distro.trim().replaceAll(" ", "_") + "." + release;
     }
 
     private static String getOsFamily() throws IOException {
         final String osName = System.getProperty("os.name");
         if (osName.toLowerCase().contains("mac")) {
-            return "mac";
+            return "Darwin";
         }
         else if (osName.toLowerCase().contains("linux")) {
             return getLinuxDistro();
