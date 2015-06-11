@@ -50,20 +50,20 @@ namespace DepParserTask {
 
     data->old_style_labels = vm.count("old_style_labels") > 0;
     
-    vw& all = srn.get_vw_pointer_unsafe();
-    const char* pair[] = {"BC", "BE", "BB", "CC", "DD", "EE", "FF", "GG", "EF", "BH", "BJ", "EL", "dB", "dC", "dD", "dE", "dF", "dG", "dd"};
-    const char* triple[] = {"EFG", "BEF", "BCE", "BCD", "BEL", "ELM", "BHI", "BCC", "BJE", "BHE", "BJK", "BEH", "BEN", "BEJ"};
-    vector<string> newpairs(pair, pair+19);
-    vector<string> newtriples(triple, triple+14);
-    all.pairs.swap(newpairs);
-    all.triples.swap(newtriples);
+    //vw& all = srn.get_vw_pointer_unsafe();
+    //const char* pair[] = {"BC", "BE", "BB", "CC", "DD", "EE", "FF", "GG", "EF", "BH", "BJ", "EL", "dB", "dC", "dD", "dE", "dF", "dG", "dd"};
+    //const char* triple[] = {"EFG", "BEF", "BCE", "BCD", "BEL", "ELM", "BHI", "BCC", "BJE", "BHE", "BJK", "BEH", "BEN", "BEJ"};
+    //vector<string> newpairs(pair, pair+19);
+    //vector<string> newtriples(triple, triple+14);
+    //all.pairs.swap(newpairs);
+    //all.triples.swap(newtriples);
 
-    for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i)
-      i->delete_v();
-    for (vector<string>::const_iterator i = all.pairs.begin(); i != all.pairs.end(); ++i)
-      all.interactions.push_back(string2v_string(*i));
-    for (vector<string>::const_iterator i = all.triples.begin(); i != all.triples.end(); ++i)
-      all.interactions.push_back(string2v_string(*i));
+    //for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i)
+    //  i->delete_v();
+    //for (vector<string>::const_iterator i = all.pairs.begin(); i != all.pairs.end(); ++i)
+    //  all.interactions.push_back(string2v_string(*i));
+    //for (vector<string>::const_iterator i = all.triples.begin(); i != all.triples.end(); ++i)
+    //  all.interactions.push_back(string2v_string(*i));
 
     srn.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
     srn.set_label_parser( COST_SENSITIVE::cs_label, [](polylabel&l) -> bool { return l.cs.costs.size() == 0; });
@@ -105,7 +105,6 @@ namespace DepParserTask {
             audit_data a = { nullptr, nullptr, f.weight_index, 1.f, true };
             ex.audit_features[tgt_ns].push_back(a);
           }
-          //add_feature(&ex, (uint32_t) v0 + additional_offset, (unsigned char)((i+1)+'A'), mask, multiplier);
         }
   }
   
@@ -351,8 +350,8 @@ namespace DepParserTask {
     while(stack.size()>1 || idx <= n){
       if(srn.predictNeedsExample())
         extract_features(srn, idx, ec);
-      get_valid_actions(valid_actions, idx, n, (uint32_t) stack.size(), stack.empty() ? 0 : stack.last());
       
+      get_valid_actions(valid_actions, idx, n, (uint32_t) stack.size(), stack.empty() ? 0 : stack.last());      
       get_gold_actions(srn, idx, n, gold_actions);
 
       // Predict the next action {SHIFT, REDUCE_LEFT, REDUCE_RIGHT}
@@ -364,7 +363,6 @@ namespace DepParserTask {
                               .set_learner_id(0)
                               .predict();
       count++;
-      //cerr << "a_id=" << a_id << endl;
       
       uint32_t t_id = 0; // gold_tags[stack.last()]; // 0;
       if (a_id != SHIFT) {
