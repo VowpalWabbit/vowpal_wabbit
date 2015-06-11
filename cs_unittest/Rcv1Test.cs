@@ -23,16 +23,19 @@ namespace cs_unittest
         public void Rcv1Test()
         {
             using (var gz = new GZipStream(File.OpenRead(@"D:\Data\rcv1.train.vw.gz"), CompressionMode.Decompress))
+            using (var reader = new StreamReader(gz))
             {
                 MyListener listener;
                 using (var vw = new VowpalWabbit<Data>("-k -f rcv1.model -c rcv1.cache"))
                 {
                     listener = new MyListener(vw);
-                    VWTestHelper.ParseInput(gz, listener);
-                }
-                // 1 |f 13:3.9656971e-02 24:3.4781646e-02 69:4.6296168e-02 85:6.1853945e-02 140:3.2349996e-02 156:1.0290844e-01 
+                    string line;
 
-                Console.WriteLine(listener.stopwatch.Elapsed);
+                    while( (line = reader.ReadLine()) != null)
+                    {
+                        VWTestHelper.ParseInput(line, listener);
+                    }
+                }
             }
         }
 
@@ -61,11 +64,6 @@ namespace cs_unittest
 
             public override void EnterExample(VowpalWabbitParser.ExampleContext context)
             {
-                if (this.lines++ > 1000)
-                {
-                    Environment.Exit(0);
-                }
-
                 this.example.Features.Clear();
             }
 

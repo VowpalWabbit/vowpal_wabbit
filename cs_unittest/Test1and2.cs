@@ -65,35 +65,36 @@ namespace cs_test
 
             Assert.AreEqual(input.Count, references.Length);
 
-            using (var stream = new MemoryStream(File.ReadAllBytes("models/0001.model")))
-            //using (var vwModel = new VowpalWabbitModel("-k -t --invariant", stream))
-            //using (var vwInMemory = new VowpalWabbit<Test1>(vwModel))
-            using (var vwInMemory = new VowpalWabbit("-k -t --invariant", stream))
+            using (var vwModel = new VowpalWabbitModel("-k -t --invariant", File.OpenRead("models/0001.model")))
+            using (var vwInMemoryShared1 = new VowpalWabbit(vwModel))
+            using (var vwInMemoryShared2 = new VowpalWabbit<Test1>(vwModel))
+            using (var vwInMemory = new VowpalWabbit("-k -t --invariant", File.OpenRead("models/0001.model")))
             using (var vwStr = new VowpalWabbit("-k -t -i models/str0001.model --invariant"))
             using (var vw = new VowpalWabbit<Test1>("-k -t -i models/0001.model --invariant"))
             {
                 for (var i = 0; i < input.Count; i++)
                 {
-                    var expected = vwStr.Predict<VowpalWabbitScalarPrediction>(input[i].Line);
-
+                    var actualStr = vwStr.Predict<VowpalWabbitScalarPrediction>(input[i].Line);
+                    var actualShared1 = vwInMemoryShared1.Predict<VowpalWabbitScalarPrediction>(input[i].Line);
+                    var actualInMemory = vwInMemory.Predict<VowpalWabbitScalarPrediction>(input[i].Line);
+                    
                     using (var example = vw.ReadExample(input[i]))
-                    //using (var exampleInMemory = vwInMemory.ReadExample(input[i]))
+                    using (var exampleInMemory2 = vwInMemoryShared2.ReadExample(input[i]))
                     {
                         var actual = example.Predict<VowpalWabbitScalarPrediction>();
-                        // var actualInMemory = exampleInMemory.Predict<VowpalWabbitScalarPrediction>();
-                        var actualInMemory = vwInMemory.Predict<VowpalWabbitScalarPrediction>(input[i].Line);
+                        var actualShared2 = exampleInMemory2.Predict<VowpalWabbitScalarPrediction>();
 
-                        Assert.AreEqual(expected.Value, actual.Value, 1e-5);
-                        Assert.AreEqual(expected.Value, actualInMemory.Value, 1e-5);
-                        
-                        Assert.AreEqual(
-                            references[i],
-                            actual.Value,
-                            1e-5,
-                            string.Format(CultureInfo.InvariantCulture, "Expected {0} vs. actual {1} at line {2}", references[i], actual.Value, i));
+                        Assert.AreEqual(references[i], actualStr.Value, 1e-5);
+                        //Assert.AreEqual(references[i], actualShared1.Value, 1e-5);
+                        Assert.AreEqual(references[i], actualInMemory.Value, 1e-5);
+                        Assert.AreEqual(references[i], actual.Value, 1e-5);
+                        //Assert.AreEqual(references[i], actualShared2.Value, 1e-5);
                     }
                 }
 
+                // VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vwInMemoryShared2.PerformanceStatistics);
+                //VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vwInMemoryShared1.PerformanceStatistics);
+                VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vwInMemory.PerformanceStatistics);
                 VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vwStr.PerformanceStatistics);
                 VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vw.PerformanceStatistics);
             }
@@ -131,7 +132,8 @@ namespace cs_test
 
     }
 
-
+    // 1|features 13:.1 15:.2 const:25
+    // 1|abc 13:.1 15:.2 co:25
     public class Test1 : IExample
     {
         [Feature(FeatureGroup = 'f', Namespace = "eatures", Name = "const", Order = 2)]
@@ -176,18 +178,23 @@ namespace cs_test
             this.action(this.example);
         }
 
+        public override void ExitNumber(VowpalWabbitParser.NumberContext context)
+        {
+            context.value = float.Parse(context.GetText(), CultureInfo.InvariantCulture);
+        }
+
         public override void ExitLabel_simple(VowpalWabbitParser.Label_simpleContext context)
         {
             this.example.Label = new SimpleLabel()
             {
-                Label = float.Parse(context.value.GetText(), CultureInfo.InvariantCulture)
+                Label = context.value.value
             };
         }
 
-        public override void EnterFeatureSparse(VowpalWabbitParser.FeatureSparseContext context)
+        public override void ExitFeatureSparse(VowpalWabbitParser.FeatureSparseContext context)
         {
             var index = context.index.Text;
-            var x = float.Parse(context.x.GetText(), CultureInfo.InvariantCulture);
+            var x = context.x.value;
 
             if (index == "const")
             {

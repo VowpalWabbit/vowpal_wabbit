@@ -49,6 +49,7 @@ namespace Microsoft
 
 			void VowpalWabbitPredictionNone::ReadFromExample(vw* vw, example* ex)
 			{
+				// no-op
 			}
 		}
 	}

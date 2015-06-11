@@ -15,34 +15,38 @@ namespace cs_unittest
 {
     internal static class VWTestHelper
     {
+        internal static void ParseInput(string text, IParseTreeListener listener)
+        {
+            ParseInput(new AntlrInputStream(text), listener);
+        }
+
         internal static void ParseInput(Stream stream, IParseTreeListener listener)
         {
-            try
-            {
-                // optimized for memory consumption
-                var antlrStream = new UnbufferedCharStream(stream);
-                var lexer = new VowpalWabbitLexer(antlrStream)
-                {
-                    TokenFactory = new CommonTokenFactory(copyText: true)
-                };
-
-                var tokens = new UnbufferedTokenStream(lexer);
-                var parser = new VowpalWabbitParser(tokens)
-                {
-                    BuildParseTree = false,
-                };
-                // fast than LL(*)
-                parser.Interpreter.PredictionMode = PredictionMode.Sll;
-
-                parser.AddParseListener(listener);
-                parser.AddErrorListener(new TestErrorListener());
-                parser.start();
-            }
-            finally
-            {
-                stream.Dispose();
-            }
+            ParseInput(new UnbufferedCharStream(stream), listener);
         }
+
+        internal static void ParseInput(ICharStream stream, IParseTreeListener listener)
+        {
+            // optimized for memory consumption
+            var lexer = new VowpalWabbitLexer(stream)
+            {
+                TokenFactory = new CommonTokenFactory(copyText: true)
+            };
+
+            var tokens = new UnbufferedTokenStream(lexer);
+            var parser = new VowpalWabbitParser(tokens)
+            {
+                // Note; don't disable, as it is required to access the line
+                // BuildParseTree = false,
+            };
+            // fast than LL(*)
+            parser.Interpreter.PredictionMode = PredictionMode.Sll;
+
+            parser.AddParseListener(listener);
+            parser.AddErrorListener(new TestErrorListener());
+            parser.start();
+        }
+
         internal static void AssertEqual(string expectedFile, VowpalWabbitPerformanceStatistics actual)
         {
             var expectedPerformanceStatistics = VWTestHelper.ReadPerformanceStatistics(expectedFile);

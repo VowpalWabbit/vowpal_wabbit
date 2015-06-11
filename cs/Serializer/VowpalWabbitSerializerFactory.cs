@@ -200,7 +200,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
                         var featureValue = Expression.Property(featureVariable, "Value");
                         if (!featureValue.Type.IsValueType || (featureValue.Type.IsGenericType && featureValue.Type.GetGenericTypeDefinition() == typeof(Nullable<>)))
                         {
-                            // CODE: feature1.Value != null ? visitor.Visit(feature1) : default(TFeatureResult);
+                            // CODE feature1.Value != null ? visitor.Visit(feature1) : default(TFeatureResult);
                             visitFeatureCall = Expression.IfThen(
                                     test: Expression.NotEqual(featureValue, Expression.Constant(null)),
                                     ifTrue: visitFeatureCall);
@@ -234,7 +234,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
                     valueParameter,
                     (PropertyInfo)ReflectionHelper.GetInfo((IExample e) => e.Label));
 
-                // CODE: value.Label == null ? null : value.Label.ToVowpalWabbitFormat();
+                // CODE value.Label == null ? null : value.Label.ToVowpalWabbitFormat();
                 label = Expression.Condition(
                     test: Expression.Equal(labelProperty, Expression.Constant(null)),
                     ifTrue: Expression.Constant(null, typeof(string)),
