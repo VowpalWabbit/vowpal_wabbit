@@ -40,10 +40,6 @@
 
     <developers>
         <developer>
-            <name>John Langford</name>
-            <email>jl@hunch.net</email>
-        </developer>
-        <developer>
             <name>Jonathan Morra</name>
             <email>jonmorra@gmail.com</email>
         </developer>
@@ -51,17 +47,17 @@
             <name>Ryan Deak</name>
             <email>r.m.deak@gmail.com</email>
         </developer>
+        <developer>
+            <name>John Langford</name>
+            <email>jl@hunch.net</email>
+        </developer>
     </developers>
-
-    <properties>
-        <junit.version>4.11</junit.version>
-    </properties>
 
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
+            <version>4.11</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
