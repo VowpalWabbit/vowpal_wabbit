@@ -7,10 +7,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * By making this class final, the JIT compiler should be able to hotspot this class as necessary.
- * Created by jmorra on 11/23/14.
+ * A JNI layer for submitting "simple" examples to VW and getting predictions back
  */
-public final class VW implements Closeable {
+public class VW implements Closeable {
     static {
         try {
             NativeUtils.loadOSDependentLibrary("/vw_jni", ".lib");
@@ -23,17 +22,22 @@ public final class VW implements Closeable {
     private final AtomicBoolean isOpen;
     private final long nativePointer;
 
+    /**
+     * Create a new VW instance that is ready to either create predictions or learn based on examples
+     * @param command The same string that is passed to VW, see
+     *                <a href="https://github.com/JohnLangford/vowpal_wabbit/wiki/Command-line-arguments">here</a>
+     *                for more information
+     */
     public VW(String command) {
         isOpen = new AtomicBoolean(true);
         nativePointer = initialize(command);
     }
 
     /**
-     * Runs prediction on <code>example</code> and returns the prediction output.  Note that
-     * this only works for "simple" VW predictions.
+     * Runs prediction on <code>example</code> and returns the prediction output.
      *
      * @param example a single vw example string
-     * @return prediction output
+     * @return A prediction
      */
     public float predict(String example) {
         if (isOpen.get()) {
@@ -43,10 +47,10 @@ public final class VW implements Closeable {
     }
 
     /**
-     * Run prediction on <code>examples</code> and returns all of the predictions.  Note that
-     * this only works for "simple" VW predictions.
+     * Run prediction on <code>examples</code> and returns all of the predictions.
+     *
      * @param examples an array of vw example strings
-     * @return predictions
+     * @return An array of predictions
      */
     public float[] predict(String[] examples) {
         if (isOpen.get()) {
@@ -56,21 +60,20 @@ public final class VW implements Closeable {
     }
 
     /**
-     * Run prediction on <code>examples</code> and returns all of the predictions.  Note that
-     * this only works for "simple" VW predictions.
+     * Run prediction on <code>examples</code> and returns all of the predictions.
+     *
      * @param examples a list of vw example strings
-     * @return predictions
+     * @return A list of predictions
      */
     public List<Float> predict(List<String> examples) {
         return convertToList(predict(examples.toArray(new String[examples.size()])));
     }
 
     /**
-     * Runs learning on <code>example</code> and returns the prediction output.  Note that
-     * this only works for "simple" VW predictions.
+     * Runs learning on <code>example</code> and returns the prediction output.
      *
      * @param example a single vw example string
-     * @return prediction output
+     * @return A prediction
      */
     public float learn(String example) {
         if (isOpen.get()) {
@@ -80,10 +83,10 @@ public final class VW implements Closeable {
     }
 
     /**
-     * Run learning on <code>examples</code> and returns all of the predictions.  Note that
-     * this only works for "simple" VW predictions.
+     * Run learning on <code>examples</code> and returns all of the predictions.
+     *
      * @param examples an array of vw example strings
-     * @return predictions
+     * @return An array of predictions
      */
     public float[] learn(String[] examples) {
         if (isOpen.get()) {
@@ -93,10 +96,10 @@ public final class VW implements Closeable {
     }
 
     /**
-     * Run prediction on <code>examples</code> and returns all of the predictions.  Note that
-     * this only works for "simple" VW predictions.
+     * Run prediction on <code>examples</code> and returns all of the predictions.
+     *
      * @param examples a list of vw example strings
-     * @return predictions
+     * @return A list of predictions
      */
     public List<Float> learn(List<String> examples) {
         return convertToList(learn(examples.toArray(new String[examples.size()])));

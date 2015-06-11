@@ -5,11 +5,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Simple library class for working with JNI (Java Native Interface)
+ * Simple library class for working with JNI (Java Native Interface),
+ * see <a href="http://adamheinrich.com/blog/2012/how-to-load-native-jni-library-from-jar/">here</a>
  *
- * @see "http://frommyplayground.com/how-to-load-native-jni-library-from-jar"
- *
- * @author Adam Heirnich &lt;adam@adamh.cz&gt;, http://www.adamh.cz
+ * @author Adam Heirnich &lt;adam@adamh.cz&gt;, <a href="http://www.adamh.cz">http://www.adamh.cz</a>
  */
 public class NativeUtils {
     /**
@@ -38,7 +37,7 @@ public class NativeUtils {
      * Ubuntu or not, and if it's not then it assumes CentOS.  I know this is not correct for all Linux distros
      * but hopefully this will work for most.
      * @return The linux distro and version
-     * @th rows IOException
+     * @throws IOException
      */
     public static String getLinuxDistro() throws IOException {
         BufferedReader reader = null;
@@ -103,7 +102,7 @@ public class NativeUtils {
      * @param path The filename inside JAR as absolute path (beginning with '/'), e.g. /package/File.ext
      * @throws IOException If temporary file creation or read/write operation fails
      * @throws IllegalArgumentException If source file (param path) does not exist
-     * @throws IllegalArgumentException If the path is not absolute or if the filename is shorter than three characters (restriction of {@see File#createTempFile(java.lang.String, java.lang.String)}).
+     * @throws IllegalArgumentException If the path is not absolute or if the filename is shorter than three characters (restriction of {@link File#createTempFile(java.lang.String, java.lang.String)}).
      */
     public static void loadLibraryFromJar(String path) throws IOException {
         if (!path.startsWith("/")) {

@@ -4,7 +4,7 @@
 
     <groupId>vw</groupId>
     <artifactId>vw-jni</artifactId>
-    <version>7.11</version>
+    <version>7.11-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Vowpal Wabbit JNI Layer</name>
     <description>
@@ -15,11 +15,10 @@
     <url>https://github.com/JohnLangford/vowpal_wabbit</url>
 
     <scm>
-    	<connection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</connection>
-    	<developerConnection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</developerConnection>
-    	<url>git@github.com:JohnLangford/vowpal_wabbit.git</url>
-      <tag>vw-jni-7.11</tag>
-  </scm>
+        <connection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</connection>
+        <developerConnection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</developerConnection>
+        <url>git@github.com:JohnLangford/vowpal_wabbit.git</url>
+    </scm>
 
     <distributionManagement>
         <snapshotRepository>
@@ -247,7 +246,7 @@
                     <nexusUrl>https://oss.sonatype.org/</nexusUrl>
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
-    	    </plugin>
+            </plugin>
         </plugins>
     </build>
 
