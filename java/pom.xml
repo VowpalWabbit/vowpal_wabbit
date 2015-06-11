@@ -4,15 +4,22 @@
 
     <groupId>vw</groupId>
     <artifactId>vw-jni</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>7.11</version>
+    <packaging>jar</packaging>
     <name>Vowpal Wabbit JNI Layer</name>
+    <description>
+        A wrapper around Vowpal Wabbit that allows use through Java.  This wrapper is designed to be self contained.  Because
+        of the use of JNI, a number of platforms are supported in this JAR.  If your platform is not supported please feel free to add it
+        by modifying src/main/bin/build.sh accordingly.
+    </description>
     <url>https://github.com/JohnLangford/vowpal_wabbit</url>
 
     <scm>
     	<connection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</connection>
     	<developerConnection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</developerConnection>
     	<url>git@github.com:JohnLangford/vowpal_wabbit.git</url>
-    </scm>
+      <tag>vw-jni-7.11</tag>
+  </scm>
 
     <distributionManagement>
         <snapshotRepository>
@@ -24,6 +31,28 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
+
+    <licenses>
+        <license>
+            <name>Vowpal Wabbit License</name>
+            <url>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>John Langford</name>
+            <email>jl@hunch.net</email>
+        </developer>
+        <developer>
+            <name>Jonathan Morra</name>
+            <email>jonmorra@gmail.com</email>
+        </developer>
+        <developer>
+            <name>Ryan Deak</name>
+            <email>r.m.deak@gmail.com</email>
+        </developer>
+    </developers>
 
     <properties>
         <junit.version>4.11</junit.version>
@@ -179,6 +208,32 @@
                         <configuration>
                             <pomFileName>java/pom.xml</pomFileName>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.1.2</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.8.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
