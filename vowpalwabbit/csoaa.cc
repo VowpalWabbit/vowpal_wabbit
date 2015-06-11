@@ -63,6 +63,7 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
       if (pred[i-1].scalar < pred[prediction-1].scalar)
         prediction = i;
     ec.partial_prediction = pred[prediction-1].scalar;
+    //cerr << "c.num_classes = " << c.num_classes << ", prediction = " << prediction << endl;
     free(pred);
   } else {
     float temp;

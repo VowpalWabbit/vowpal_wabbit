@@ -19,6 +19,7 @@ license as described in the file LICENSE.
 #include "search_meta.h"
 #include "csoaa.h"
 #include "active.h"
+#include "label_dictionary.h"
 
 using namespace LEARNER;
 using namespace std;
@@ -1624,7 +1625,7 @@ namespace Search {
           priv.learn_losses.cs.costs[i].class_index = priv.learn_allowed_actions[i];
         }
       }
-      float min_loss = 0.;
+      //float min_loss = 0.;
       //if (priv.metatask)
       //  for (size_t aid=0; aid<priv.memo_foreach_action[tid]->size(); aid++)
       //    min_loss = MIN(min_loss, priv.memo_foreach_action[tid]->get(aid).cost);
