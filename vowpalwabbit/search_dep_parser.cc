@@ -285,7 +285,7 @@ namespace DepParserTask {
       if(gold_heads[i] == last)
         action_loss[2] +=1;
 
-    // return the best action
+    // return the best actions
     size_t best_action = 1;
     size_t count = 0;
     for(size_t i=1; i<=3; i++)
