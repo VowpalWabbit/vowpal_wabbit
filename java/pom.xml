@@ -4,7 +4,7 @@
 
     <groupId>vw</groupId>
     <artifactId>vw-jni</artifactId>
-    <version>7.11-SNAPSHOT</version>
+    <version>7.10.2-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Vowpal Wabbit JNI Layer</name>
     <description>
