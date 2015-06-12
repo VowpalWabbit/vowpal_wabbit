@@ -8,9 +8,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.*;
 
 /**
  * Created by jmorra on 11/24/14.
@@ -165,9 +163,8 @@ public class VWTest {
 
     @Test
     public void testBadVWArgs() {
-        String args = "--BAD_FEATURE___ounq24tjnasdf8h";
+        final String args = "--BAD_FEATURE___ounq24tjnasdf8h";
         thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("unrecognised option '" + args + "'");
         new VW(args + " --quiet");
     }
 
