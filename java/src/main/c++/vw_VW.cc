@@ -22,6 +22,9 @@ void rethrow_cpp_exception_as_java_exception(JNIEnv *env) {
         const char* what = e.what();
         std::string prefix("unrecognised option");
 
+        std::cout << prefix << std::endl;
+        std::cout << what << std::endl;
+
         if (std::string(what).substr(0, prefix.size()) == prefix)
             throw_java_exception(env, "java/lang/IllegalArgumentException", what);
         else
