@@ -24,6 +24,8 @@ void rethrow_cpp_exception_as_java_exception(JNIEnv *env) {
         std::string prefix1("unrecognised option");
         std::string prefix2("unknown option");
 
+        std::cout << what << std::endl;
+
         if (std::string(what).substr(0, prefix1.size()) == prefix1 ||
             std::string(what).substr(0, prefix2.size()) == prefix2)
             throw_java_exception(env, "java/lang/IllegalArgumentException", what);
