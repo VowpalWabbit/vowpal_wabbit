@@ -17,7 +17,7 @@ public class NativeUtils {
     private NativeUtils() {
     }
 
-    public static String getDistroName() throws IOException {
+    private static String getDistroName() throws IOException {
         Pattern distroRegex = Pattern.compile("[^(]+\\([^(]+\\([^(]+\\(([A-Za-z\\s]+).*");
         BufferedReader reader = new BufferedReader(new FileReader("/proc/version"));
         String distro;
@@ -39,7 +39,7 @@ public class NativeUtils {
      * @return The linux distro and version
      * @throws IOException
      */
-    public static String getLinuxDistro() throws IOException {
+    private static String getLinuxDistro() throws IOException {
         BufferedReader reader = null;
         String release = null;
         String distro = getDistroName();

@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * A JNI layer for submitting "simple" examples to VW and getting predictions back
+ * A JNI layer for submitting examples to VW and getting predictions back.  It should be noted
+ * that at this time VW is NOT thread safe, and therefore neither is the JNI layer.
  */
 public class VW implements Closeable {
     static {
