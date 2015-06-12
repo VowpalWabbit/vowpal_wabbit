@@ -10,7 +10,7 @@ make_base="cd /vowpal_wabbit;
 make clean;
 make;"
 
-ubuntu_base="apt-get update;
+ubuntu_base="apt-get update -qq;
 apt-get install -qq software-properties-common g++ make libboost-all-dev default-jdk;"
 
 ubuntu_12="$ubuntu_base
