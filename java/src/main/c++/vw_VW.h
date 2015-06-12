@@ -25,14 +25,6 @@ JNIEXPORT jfloat JNICALL Java_vw_VW_predict
 
 /*
  * Class:     vw_VW
- * Method:    predict
- * Signature: ([Ljava/lang/String;)[F
- */
-JNIEXPORT jfloatArray JNICALL Java_vw_VW_batchPredict
-  (JNIEnv *, jobject, jobjectArray, jboolean, jlong);
-
-/*
- * Class:     vw_VW
  * Method:    closeInstance
  * Signature: ()V
  */

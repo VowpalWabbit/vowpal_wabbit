@@ -38,10 +38,6 @@ void rethrow_cpp_exception_as_java_exception(JNIEnv *env) {
     }
 }
 
-vw* getVW(jlong vwPtr) {
-    return (vw*) vwPtr;
-}
-
 JNIEXPORT jlong JNICALL Java_vw_VW_initialize(JNIEnv *env, jobject obj, jstring command) {
     jlong vwPtr = 0;
     try {
@@ -56,19 +52,19 @@ JNIEXPORT jlong JNICALL Java_vw_VW_initialize(JNIEnv *env, jobject obj, jstring 
 JNIEXPORT jfloat JNICALL Java_vw_VW_predict(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr) {
     float prediction = 0.0f;
     try {
-        vw* vw = getVW(vwPtr);
+        vw* vwInstance = (vw*)vwPtr;
         const char *utf_string = env->GetStringUTFChars(example_string, NULL);
-        example *vec2 = VW::read_example(*vw, utf_string);
+        example *vec2 = VW::read_example(*vwInstance, utf_string);
         if (learn)
-            vw->l->learn(*vec2);
+            vwInstance->l->learn(*vec2);
         else
-            vw->l->predict(*vec2);
-        if (vw->p->lp.parse_label == simple_label.parse_label)
+            vwInstance->l->predict(*vec2);
+        if (vwInstance->p->lp.parse_label == simple_label.parse_label)
             prediction = vec2->pred.scalar;
         else
             prediction = vec2->pred.multiclass;
 
-        VW::finish_example(*vw, vec2);
+        VW::finish_example(*vwInstance, vec2);
         env->ReleaseStringUTFChars(example_string, utf_string);
         env->DeleteLocalRef(example_string);
     }
@@ -78,25 +74,9 @@ JNIEXPORT jfloat JNICALL Java_vw_VW_predict(JNIEnv *env, jobject obj, jstring ex
     return prediction;
 }
 
-JNIEXPORT jfloatArray JNICALL Java_vw_VW_batchPredict(JNIEnv *env, jobject obj, jobjectArray examples, jboolean learn, jlong vwPtr) {
-    size_t len = env->GetArrayLength(examples);
-    float* predictions = new float[len];
-    for (size_t i=0; i<len; ++i) {
-        jstring example = (jstring)env->GetObjectArrayElement(examples, i);
-        predictions[i] = Java_vw_VW_predict(env, obj, example, learn, vwPtr);
-        env->DeleteLocalRef(example);
-    }
-    jfloatArray jPredictions = env->NewFloatArray(len);
-    env->SetFloatArrayRegion(jPredictions, 0, len, predictions);
-
-    free(predictions);
-    env->DeleteLocalRef(examples);
-    return jPredictions;
-}
-
 JNIEXPORT void JNICALL Java_vw_VW_closeInstance(JNIEnv *env, jobject obj, jlong vwPtr) {
     try {
-        VW::finish(*getVW(vwPtr));
+        VW::finish(*((vw*)vwPtr));
     }
     catch(...) {
         rethrow_cpp_exception_as_java_exception(env);

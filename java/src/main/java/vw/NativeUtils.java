@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 /**
  * Simple library class for working with JNI (Java Native Interface),
- * see <a href="http://adamheinrich.com/blog/2012/how-to-load-native-jni-library-from-jar/">here</a>
+ * see <a href="http://adamheinrich.com/blog/2012/how-to-load-native-jni-library-from-jar/">here</a>.
  *
  * @author Adam Heirnich &lt;adam@adamh.cz&gt;, <a href="http://www.adamh.cz">http://www.adamh.cz</a>
  */

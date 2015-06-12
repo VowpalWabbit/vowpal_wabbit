@@ -5,8 +5,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -34,7 +32,9 @@ public class VWTest {
                 "1 2 'second_house | price:.18 sqft:.15 age:.35 1976",
                 "0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924"};
         VW learner = new VW(" --quiet -f " + houseModel);
-        learner.learn(houseData);
+        for (String d : houseData) {
+            learner.learn(d);
+        }
         learner.close();
         houseScorer = new VW("--quiet -t -i " + houseModel);
     }
@@ -51,30 +51,6 @@ public class VWTest {
             // This will force a new string to be created every time for a fair test
             m1.learn(heightData + "");
         }
-        m1.close();
-        return System.currentTimeMillis() - start;
-    }
-
-    private long batchLoadTest(int times) {
-        VW m1 = new VW("--quiet");
-        long start = System.currentTimeMillis();
-        String[] data = new String[times];
-        for (int i=0; i<times; ++i) {
-            data[i] = heightData + "";
-        }
-        m1.learn(data);
-        m1.close();
-        return System.currentTimeMillis() - start;
-    }
-
-    private long batchListLoadTest(int times) {
-        VW m1 = new VW("--quiet");
-        long start = System.currentTimeMillis();
-        List<String> batchListData = new ArrayList<String>();
-        for (int i=0; i<times; ++i) {
-            batchListData.add(heightData + "");
-        }
-        m1.learn(batchListData);
         m1.close();
         return System.currentTimeMillis() - start;
     }
@@ -98,8 +74,6 @@ public class VWTest {
         int times = (int)1e6;
 
         System.out.println("Milliseconds for JNI layer: " + streamingLoadTest(times));
-        System.out.println("Milliseconds for JNI batch list layer: " + batchListLoadTest(times));
-        System.out.println("Milliseconds for JNI batch layer: " + batchLoadTest(times));
         System.out.println("Milliseconds for external process: " + stdLoadTest(times));
     }
 
@@ -118,46 +92,11 @@ public class VWTest {
     }
 
     @Test
-    public void testBlankMultiples() {
-        String[] input = new String[]{"", ""};
-        float[] expected = new float[]{0.075f, 0.075f};
-        float[] actual = houseScorer.predict(input);
-        assertEquals(expected.length, actual.length);
-        for (int i=0; i<expected.length; ++i) {
-            assertEquals(expected[i], actual[i], 0.001);
-        }
-    }
-
-    @Test
-    public void testPredictionMultiples() {
-        String[] input = new String[]{
-                "| price:0.23 sqft:0.25 age:0.05 2006",
-                "| price:0.23 sqft:0.25 age:0.05 2006",
-                "0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924"
-        };
-        float[] expected = new float[]{0.118f, 0.118f, 0.527f};
-        float[] actual = houseScorer.predict(input);
-        assertEquals(expected.length, actual.length);
-        for (int i=0; i<expected.length; ++i) {
-            assertEquals(expected[i], actual[i], 0.001);
-        }
-    }
-
-    @Test
     public void testLearn() {
         VW learner = new VW("--quiet");
         float firstPrediction = learner.learn("0.1 " + heightData);
         float secondPrediction = learner.learn("0.9 " + heightData);
         assertNotEquals(firstPrediction, secondPrediction, 0.001);
-        learner.close();
-    }
-
-    @Test
-    public void testLearnMultiples() {
-        String[] input = new String[]{"0.1 " + heightData, "0.9 " + heightData};
-        VW learner = new VW("--quiet");
-        float[] predictions = learner.learn(input);
-        assertNotEquals(predictions[0], predictions[1], 0.001);
         learner.close();
     }
 
@@ -206,35 +145,6 @@ public class VWTest {
     }
 
     @Test
-    public void testListPredict() {
-        List<String> input = new ArrayList<String>();
-        input.add("| price:0.23 sqft:0.25 age:0.05 2006");
-        input.add("| price:0.23 sqft:0.25 age:0.05 2006");
-        input.add("0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924");
-
-        List<Float> expected = new ArrayList<Float>();
-        expected.add(0.118f);
-        expected.add(0.118f);
-        expected.add(0.527f);
-        List<Float> actual = houseScorer.predict(input);
-        assertEquals(expected.size(), actual.size());
-        for (int i=0; i<expected.size(); ++i) {
-            assertEquals(expected.get(i), actual.get(i), 0.001);
-        }
-    }
-
-    @Test
-    public void testListLearnMultiples() {
-        List<String> input = new ArrayList<String>();
-        input.add("0.1 " + heightData);
-        input.add("0.9 " + heightData);
-        VW learner = new VW("--quiet");
-        List<Float> predictions = learner.learn(input);
-        assertNotEquals(predictions.get(0), predictions.get(1), 0.001);
-        learner.close();
-    }
-
-    @Test
     @Ignore
     public void testBadModel() {
         // Right now VW seg faults on a bad model.  Ideally we should throw an exception
@@ -260,7 +170,10 @@ public class VWTest {
         };
         String cbModel = temporaryFolder.newFile().getAbsolutePath();
         VW vw = new VW("--quiet --cb 4 -f " + cbModel);
-        float[] trainPreds = vw.learn(train);
+        float[] trainPreds = new float[train.length];
+        for (int i=0; i<train.length; ++i) {
+            trainPreds[i] = vw.learn(train[i]);
+        }
         float[] expectedTrainPreds = new float[]{1, 2, 2, 2, 2};
         vw.close();
 
@@ -272,7 +185,10 @@ public class VWTest {
                 "1:0.5 2:1:0.4 3:2 4:1.5 | c d"
         };
 
-        float[] testPreds = vw.predict(test);
+        float[] testPreds = new float[test.length];
+        for (int i=0; i<testPreds.length; ++i) {
+            testPreds[i] = vw.predict(test[i]);
+        }
         float[] expectedTestPreds = new float[]{4, 4};
         vw.close();
         assertArrayEquals(expectedTestPreds, testPreds, 0.000001f);
