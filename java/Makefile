@@ -26,7 +26,9 @@ all:
 test:
 	cd ..; $(MAKE) test
 	
-things: target/vw_jni.lib	
+things: pom_version target/vw_jni.lib	
+
+pom_version: 
 
 target/vw_jni.lib: src/main/c++/vw_VW.cc ../vowpalwabbit/main.o ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
 	mkdir -p target;

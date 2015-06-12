@@ -28,8 +28,8 @@ void rethrow_cpp_exception_as_java_exception(JNIEnv *env) {
         std::cout << what_str << std::endl;
         std::cout << prefix2 << std::endl;
         std::cout << prefix2.size() << std::endl;
-        std::cout << what_str.substr(0, prefix.size()) << std::endl;
-        std::cout << what_str.substr(0, prefix2.size()) == prefix2 << std::endl;
+        std::cout << what_str.substr(0, prefix2.size()) << std::endl;
+        std::cout << (what_str.substr(0, prefix2.size()) == prefix2) << std::endl;
 
         if (what_str.substr(0, prefix1.size()) == prefix1 ||
             what_str.substr(0, prefix2.size()) == prefix2)
