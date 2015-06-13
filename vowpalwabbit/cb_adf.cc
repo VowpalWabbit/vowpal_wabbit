@@ -89,21 +89,31 @@ namespace CB_ADF {
     if(has_shared_example(examples))
       shared = true;
 
+    int startK = 0;
+    if(shared) startK = 1;
+
     for (size_t i = 0; i < examples.size(); i++)
       {
 	examples[i]->l.cb.costs.erase();
 	CB::label ld = examples[i]->l.cb;		
 
 	COST_SENSITIVE::wclass wc;
-	wc.class_index = 0;
-	int known_index = c.known_cost.action;
-	c.known_cost.action = 0;
-
-	//get cost prediction for this label
-	// num_actions should be 1 effectively.
-	// my get_cost_pred function will use 1 for 'index-1+base'			
-	wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, &(c.known_cost), *(examples[i]), 0, 2); 
-	c.known_cost.action = known_index;
+	wc.class_index = 0;	
+	
+	if(c.known_cost.action + startK == i) {
+	  int known_index = c.known_cost.action;
+	  c.known_cost.action = 0;
+	  //get cost prediction for this label
+	  // num_actions should be 1 effectively.
+	  // my get_cost_pred function will use 1 for 'index-1+base'			
+	  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, &(c.known_cost), *(examples[i]), 0, 2);
+	  //cout<<wc.x<<" ";
+	  c.known_cost.action = known_index;
+	}
+	else {
+	  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, nullptr, *(examples[i]), 0, 2);
+	  //cout<<wc.x<<" ";
+	}
 
 	if(shared)
 	  wc.class_index = i-1;
@@ -128,6 +138,8 @@ namespace CB_ADF {
 	cs_labels[0].costs[0].class_index = 0;
 	cs_labels[0].costs[0].x = -1.f;
       }
+
+    //    cout<<endl;
 
   }
 
@@ -338,13 +350,17 @@ namespace CB_ADF {
   
     float loss = 0.;
     v_array<uint32_t> preds = head_ec.pred.multilabels.label_v;
+    bool is_test = false;
     
     if (c.known_cost.probability > 0) {
-	
+      //c.pred_scores.costs.erase();
       loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, preds[0]);
       all.sd->sum_loss += loss;
       all.sd->sum_loss_since_last_dump += loss;
     }
+    else
+      is_test = true;
+      
   
     //for (int i = 0; i < preds.size();i++)
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
@@ -360,7 +376,7 @@ namespace CB_ADF {
       all.print_text(all.raw_prediction, outputStringStream.str(), head_ec.tag);
     }
   
-    CB::print_update(all, CB::example_is_test(head_ec), head_ec, ec_seq, true);
+    CB::print_update(all, is_test, head_ec, ec_seq, true);
   }
 
   void output_example_seq(vw& all, cb_adf& data)
@@ -465,8 +481,10 @@ base_learner* cb_adf_setup(vw& all)
       type_string = all.vm["cb_type"].as<std::string>();
       *all.file_options << " --cb_type " << type_string;
 
-      if (type_string.compare("dr") == 0)
+      if (type_string.compare("dr") == 0) {
 	ld.cb_type = CB_TYPE_DR;
+	problem_multiplier = 2;
+      }
       else if (type_string.compare("ips") == 0)
 	{
 	  ld.cb_type = CB_TYPE_IPS;
