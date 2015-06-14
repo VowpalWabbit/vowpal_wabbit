@@ -50,20 +50,21 @@ namespace DepParserTask {
 
     data->old_style_labels = vm.count("old_style_labels") > 0;
     
-    //vw& all = srn.get_vw_pointer_unsafe();
-    //const char* pair[] = {"BC", "BE", "BB", "CC", "DD", "EE", "FF", "GG", "EF", "BH", "BJ", "EL", "dB", "dC", "dD", "dE", "dF", "dG", "dd"};
-    //const char* triple[] = {"EFG", "BEF", "BCE", "BCD", "BEL", "ELM", "BHI", "BCC", "BJE", "BHE", "BJK", "BEH", "BEN", "BEJ"};
-    //vector<string> newpairs(pair, pair+19);
-    //vector<string> newtriples(triple, triple+14);
-    //all.pairs.swap(newpairs);
-    //all.triples.swap(newtriples);
+    vw& all = srn.get_vw_pointer_unsafe();
+    const char* pair[] = {"BC", "BE", "BB", "CC", "DD", "EE", "FF", "GG", "EF", "BH", "BJ", "EL", "dB", "dC", "dD", "dE", "dF", "dG", "dd"};
+    const char* triple[] = {"EFG", "BEF", "BCE", "BCD", "BEL", "ELM", "BHI", "BCC", "BJE", "BHE", "BJK", "BEH", "BEN", "BEJ"};
+    vector<string> newpairs(pair, pair+19);
+    vector<string> newtriples(triple, triple+14);
+    all.pairs.swap(newpairs);
+    all.triples.swap(newtriples);
 
-    //for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i)
-    //  i->delete_v();
-    //for (vector<string>::const_iterator i = all.pairs.begin(); i != all.pairs.end(); ++i)
-    //  all.interactions.push_back(string2v_string(*i));
-    //for (vector<string>::const_iterator i = all.triples.begin(); i != all.triples.end(); ++i)
-    //  all.interactions.push_back(string2v_string(*i));
+    for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i)
+     i->delete_v();
+    all.interactions.erase();
+    for (vector<string>::const_iterator i = all.pairs.begin(); i != all.pairs.end(); ++i)
+     all.interactions.push_back(string2v_string(*i));
+    for (vector<string>::const_iterator i = all.triples.begin(); i != all.triples.end(); ++i)
+     all.interactions.push_back(string2v_string(*i));
 
     srn.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
     srn.set_label_parser( COST_SENSITIVE::cs_label, [](polylabel&l) -> bool { return l.cs.costs.size() == 0; });

@@ -14,7 +14,7 @@ STDLIBS = $(BOOST_LIBRARY) $(LIBS)
 all:
 	cd ..; $(MAKE) library_example
 
-things: ezexample_predict ezexample_train library_example recommend gd_mf_weights test_search # ezexample_predict_threaded
+things: ezexample_predict ezexample_train library_example recommend gd_mf_weights test_search search_generate # ezexample_predict_threaded
 
 ezexample_predict: ezexample_predict.cc ../vowpalwabbit/libvw.a
 	$(CXX) -g $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
@@ -30,6 +30,9 @@ library_example: library_example.cc ../vowpalwabbit/libvw.a
 
 test_search: test_search.cc ../vowpalwabbit/libvw.a
 	$(CXX) -g $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
+
+#search_generate: search_generate.cc ../vowpalwabbit/libvw.a
+#	$(CXX) -g $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
 
 recommend: recommend.cc ../vowpalwabbit/libvw.a
 	$(CXX) -g $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
