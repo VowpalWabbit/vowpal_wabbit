@@ -1,24 +1,96 @@
 package vw;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Simple library class for working with JNI (Java Native Interface)
+ * Simple library class for working with JNI (Java Native Interface),
+ * see <a href="http://adamheinrich.com/blog/2012/how-to-load-native-jni-library-from-jar/">here</a>.
  *
- * @see "http://frommyplayground.com/how-to-load-native-jni-library-from-jar"
- *
- * @author Adam Heirnich &lt;adam@adamh.cz&gt;, http://www.adamh.cz
+ * @author Adam Heirnich &lt;adam@adamh.cz&gt;, <a href="http://www.adamh.cz">http://www.adamh.cz</a>
  */
 public class NativeUtils {
-    private static final Logger logger = LoggerFactory.getLogger(NativeUtils.class);
-
     /**
      * Private constructor - this class will never be instanced
      */
     private NativeUtils() {
+    }
+
+    private static String getDistroName() throws IOException {
+        Pattern distroRegex = Pattern.compile("[^(]+\\([^(]+\\([^(]+\\(([A-Za-z\\s]+).*");
+        BufferedReader reader = new BufferedReader(new FileReader("/proc/version"));
+        String distro;
+        try {
+            Matcher line = distroRegex.matcher(reader.readLine());
+            distro = line.matches() ? line.group(1) : null;
+        }
+        finally {
+            reader.close();
+        }
+        return distro;
+    }
+
+    /**
+     * Because JNI requires dynamic linking the version of the linux distro matters.  This will attempt to find
+     * the correct version of the linux distro.  Note that this right now tries to find if this is either
+     * Ubuntu or not, and if it's not then it assumes CentOS.  I know this is not correct for all Linux distros
+     * but hopefully this will work for most.
+     * @return The linux distro and version
+     * @throws IOException
+     */
+    private static String getLinuxDistro() throws IOException {
+        BufferedReader reader = null;
+        String release = null;
+        String distro = getDistroName();
+        try {
+            Process process = Runtime.getRuntime().exec("lsb_release -r");
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            Pattern releasePattern = Pattern.compile("Release:\\s*(\\d+).*");
+            Matcher matcher;
+            while ((line = reader.readLine()) != null) {
+                matcher = releasePattern.matcher(line);
+                if (matcher.matches()) {
+                    release = matcher.group(1);
+                }
+            }
+        }
+        finally {
+            reader.close();
+        }
+        if (distro == null || release == null) {
+            throw new UnsupportedEncodingException("Linux distro does not support lsb_release, cannot determine version, distro: " + distro + ", release: " + release);
+        }
+
+        return distro.trim().replaceAll(" ", "_") + "." + release;
+    }
+
+    private static String getOsFamily() throws IOException {
+        final String osName = System.getProperty("os.name");
+        if (osName.toLowerCase().contains("mac")) {
+            return "Darwin";
+        }
+        else if (osName.toLowerCase().contains("linux")) {
+            return getLinuxDistro();
+        }
+        throw new IllegalStateException("Unsupported operating system " + osName);
+    }
+
+    /**
+     * Loads a library from current JAR archive by looking up platform dependent name.
+     * @param path The filename inside JAR as absolute path (beginning with '/'), e.g. /package/File.ext
+     * @throws IOException
+     */
+    public static void loadOSDependentLibrary(String path, String suffix) throws IOException {
+        String osFamily = getOsFamily();
+        String osDependentLib = path + "." + osFamily + "." + System.getProperty("os.arch") + suffix;
+        if (NativeUtils.class.getResource(osDependentLib) != null) {
+            loadLibraryFromJar(osDependentLib);
+        }
+        else {
+            loadLibraryFromJar(path + suffix);
+        }
     }
 
     /**
@@ -30,7 +102,7 @@ public class NativeUtils {
      * @param path The filename inside JAR as absolute path (beginning with '/'), e.g. /package/File.ext
      * @throws IOException If temporary file creation or read/write operation fails
      * @throws IllegalArgumentException If source file (param path) does not exist
-     * @throws IllegalArgumentException If the path is not absolute or if the filename is shorter than three characters (restriction of {@see File#createTempFile(java.lang.String, java.lang.String)}).
+     * @throws IllegalArgumentException If the path is not absolute or if the filename is shorter than three characters (restriction of {@link File#createTempFile(java.lang.String, java.lang.String)}).
      */
     public static void loadLibraryFromJar(String path) throws IOException {
         if (!path.startsWith("/")) {
@@ -114,7 +186,6 @@ public class NativeUtils {
             // Create a file to represent the lock and test.
             File lockFile = new File(tmpFile.getAbsolutePath() + lockSuffix);
             if (!lockFile.exists()) {
-                logger.info("deleting: " + tmpFile.getAbsolutePath());
                 tmpFile.delete();
             }
         }
