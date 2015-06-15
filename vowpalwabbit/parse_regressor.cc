@@ -228,6 +228,13 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				bin_text_read_write_fixed(model_file, (char*)all.interactions[i].begin, inter_len,
 					"", read,
 					buff, text_len, text);
+
+				if (read)
+				{
+					all.args.push_back("--interactions");
+					string str((char*)all.interactions[i].begin, text_len);
+					all.args.push_back(str);
+				}
 			}
 			bin_text_read_write_fixed(model_file, buff, 0,
 				"", read,

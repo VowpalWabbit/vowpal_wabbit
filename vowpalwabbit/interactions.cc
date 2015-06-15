@@ -60,7 +60,7 @@ v_array<v_string> expand_interactions(const vector<string>& vec, const size_t re
     {
         const size_t len = i->length();
         if (required_length > 0 && len != required_length)
-        {   // got strict requrenment of interaction length and it wasfailed.
+        {   // got strict requirement of interaction length and it was failed.
             cerr << endl << err_msg << endl;
             throw runtime_error(err_msg.c_str());
         } else
