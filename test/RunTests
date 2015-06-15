@@ -42,6 +42,7 @@ my $ErrorCount = 0;
 # fuzzy-compare easier: just split on '|' and compare numeric values
 # word by word:
 my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
+$WordSplit = "[ \t:]+";
 
 # These diff options are used for the diff we want to show the user
 # The intent is to make them easier to parse (and compare values) by a human
@@ -57,7 +58,6 @@ my $TestNo = 0;
 sub v($;@) {
     my $verbose_level = shift @_;
     return unless ($opt_v >= $verbose_level);
-
     if (@_ == 1) {
         print STDERR @_;
     } else {
@@ -272,7 +272,7 @@ sub ref_file($) {
 }
 
 sub next_test() {
-    my ($cmd, $out_ref, $err_ref, $pred_ref, $pred);
+    my ($cmd, $out_ref, $err_ref, $pred_ref, $pred, $cmp_ref, $cmp);
 
     $TestNo++;
     while (! eof(DATA)) {
@@ -289,6 +289,9 @@ sub next_test() {
                 # -p predict_file
                 $pred = $1;
             }
+            if ($cmd =~ /\s(\S+\.cmp)\b/) {
+                $cmp = $1;
+            }
             next;
         }
         if ($line =~ /{LDA}/) {
@@ -298,6 +301,9 @@ sub next_test() {
             if ($cmd =~ /\s-p\s+(\S+)/) {
                 # -p predict_file
                 $pred = $1;
+            }
+            if ($cmd =~ /\s(\S+\.cmp)\b/) {
+                $cmp = $1;
             }
             next;
         }
@@ -313,6 +319,12 @@ sub next_test() {
             $pred_ref = ref_file(trim_spaces($line));
             next;
         }
+        if ($line =~ /(.+\.cmp)[\b|\s]/) {
+            $cmp_ref = ref_file(trim_spaces($1));
+            next;
+        }
+
+
         # A test can also be an arbitrary (shell) command line
         # if the 1st non-space sequence is executable
         my ($first_word) = ($line =~ /^\s*(\S+)/);
@@ -333,6 +345,7 @@ sub next_test() {
         print STDERR "\tstdout reference:  *.stdout\n";
         print STDERR "\tstderr reference:  *.stderr\n";
         print STDERR "\tpredict reference: *.predict\n";
+        print STDERR "\tpair of files: *.cmp\n";
     }
     if (eof(DATA) && !defined $cmd) {
         return (undef, undef, undef, undef);
@@ -351,7 +364,7 @@ sub next_test() {
     } elsif ($TimeOut) {
         $cmd = sprintf("%s %u %s", $TimeOut, $TimeOutSec, $cmd);
     }
-    ($cmd, $out_ref, $err_ref, $pred_ref, $pred);
+    ($cmd, $out_ref, $err_ref, $pred_ref, $pred, $cmp_ref, $cmp);
 }
 
 #
@@ -440,8 +453,8 @@ sub diff_lenient_float($$) {
             v(3, "line2: %s\n", $line2);
 
             # Break lines into tokens/words
-            my (@w1) = split(' ', $line1);
-            my (@w2) = split(' ', $line2);
+            my (@w1) = split(/$WordSplit/o, $line1);
+            my (@w2) = split(/$WordSplit/o, $line2);
             if (lenient_array_compare(\@w1, \@w2) != 0) {
                 $fuzzy_status = 1;
                 last;
@@ -593,8 +606,8 @@ sub run_tests() {
     print STDERR "$0: '-e' to abort/exit on first failure\n"
         unless ($opt_e);
 
-    my ($cmd, $out_ref, $err_ref, $pred_ref);
-    my ($outf, $errf, $predf);
+    my ($cmd, $out_ref, $err_ref, $pred_ref, $cmp_ref);
+    my ($outf, $errf, $predf, $cmpf);
 
     mkdir('models', 0755) unless (-d 'models');
 
@@ -602,7 +615,7 @@ sub run_tests() {
     unlink(glob('*.cache'));
     unlink(glob('*/*.cache'));
 
-    while (($cmd, $out_ref, $err_ref, $pred_ref, $predf) = next_test()) {
+    while (($cmd, $out_ref, $err_ref, $pred_ref, $predf, $cmp_ref, $cmpf) = next_test()) {
         last unless (defined $cmd);
         if (@ToTest) {
             if ($ToTest[0] != $TestNo) {
@@ -681,7 +694,7 @@ sub run_tests() {
             print STDERR "$0: test $TestNo: stderr OK\n";
         }
         # -- compare predict
-        next unless (defined $pred_ref);
+        if (defined $pred_ref) {
         $predf = 'predict.tmp' unless (defined $predf);
         $status = diff($pred_ref, $predf);
         if ($status) {
@@ -695,6 +708,21 @@ sub run_tests() {
         }
     }
 
+        # -- compare pair of arbitrary files
+        if (defined $cmp_ref) {
+        $cmpf = '' unless (defined $cmpf);
+        $status = diff($cmp_ref, $cmpf);
+        if ($status) {
+            $ErrorCount++;
+            printf STDERR "%s: test %d: FAILED: ref(%s) != any_file(%s)\n\tcmd: $cmd\n",
+                $0, $TestNo, $cmp_ref, $cmpf;
+            if ($opt_y) { copy_file($cmpf, "$cmpf.test.$TestNo"); }
+            exit $status if ($opt_e);
+        } else {
+            print STDERR "$0: test $TestNo: compare files OK\n";
+        }
+        }
+    }
     if ($FullRun == 0) {
         v(1, "Partial run: not recording overall time\n");
     } elsif ($ErrorCount > 0) {
@@ -1165,3 +1193,7 @@ __DATA__
     train-sets/ref/test_named_csoaa_test.stderr
     pred-sets/ref/test_named_csoaa.predict
 
+# Test 92: check -q :: and -oaa inverse hash
+echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp && tail -n +2 inv_hash.cmp > inv_hash.cmp.new && rm inv_hash.cmp && mv inv_hash.cmp.new inv_hash.cmp
+    train-sets/ref/inv_hash.stderr
+    pred-sets/ref/inv_hash.cmp

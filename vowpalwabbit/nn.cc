@@ -653,10 +653,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     n.finished_setup = false;
     n.squared_loss = getLossFunction (all, "squared", 0);
 
-    n.xsubi = 0;
-
-    if (vm.count("random_seed"))
-      n.xsubi = vm["random_seed"].as<size_t>();
+    n.xsubi = all.random_seed;
 
     n.save_xsubi = n.xsubi;
 

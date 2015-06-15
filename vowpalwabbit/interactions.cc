@@ -152,7 +152,11 @@ bool comp_interaction (ordered_interaction a, ordered_interaction b)
     if (a.size != b.size)
         return a.size < b.size;
     else
-        return memcmp(a.data, b.data, a.size) < 0;
+    {
+        const int order = memcmp(a.data, b.data, a.size);
+        // a.pos < b.pos is additional level of ordering (`AB` must always be prefered to `BA` bcs autotests might be inconsistent).
+        return (order == 0)? a.pos < b.pos : order < 0;
+    }
 }
 
 // comparision function for std::sort to sort interactions by their position (to restore original order)

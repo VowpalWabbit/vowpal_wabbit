@@ -210,11 +210,8 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
     new(&lrq.lrpairs) 
       std::set<std::string> (all.vm["lrq"].as<vector<string> > ().begin (),
                              all.vm["lrq"].as<vector<string> > ().end ());
-    
-    size_t random_seed = 0;
-    if (all.vm.count("random_seed")) random_seed = all.vm["random_seed"].as<size_t> ();
-    
-    lrq.initial_seed = lrq.seed = random_seed | 8675309;
+     
+    lrq.initial_seed = lrq.seed = all.random_seed | 8675309;
     if (all.vm.count("lrqdropout")) 
       {
         lrq.dropout = true;

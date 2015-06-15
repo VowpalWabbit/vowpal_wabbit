@@ -26,11 +26,14 @@ all:
 test:
 	cd ..; $(MAKE) test
 	
-things: target/vw_jni.lib	
+things: pom_version target/vw_jni.lib	
 
-target/vw_jni.lib: src/main/c++/vw_VWScorer.cc ../vowpalwabbit/main.o ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
+pom_version: pom.xml
+	ver=$$(grep AC_INIT ../configure.ac | cut -d '[' -f 3 | cut -d ']' -f 1) && perl -pi -e "s/(\s*)<version>.*-SNAPSHOT/\1<version>$$ver-SNAPSHOT/" pom.xml
+
+target/vw_jni.lib: src/main/c++/vw_VW.cc ../vowpalwabbit/main.o ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
 	mkdir -p target;
-	$(CXX) -fPIC -std=c++0x -shared $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS) $(JAVA_INCLUDE)
+	$(CXX) -shared $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS) $(JAVA_INCLUDE)
 
 clean:
 	rm -f target/vw_jni.lib

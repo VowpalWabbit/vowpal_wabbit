@@ -419,6 +419,7 @@ struct vw {
   bool adaptive;//Should I use adaptive individual learning rates?
   bool normalized_updates; //Should every feature be normalized
   bool invariant_updates; //Should we use importance aware/safe updates
+  size_t random_seed;
   bool random_weights;
   bool random_positive_weights; // for initialize_regressor w/ new_mf
   bool add_constant;
