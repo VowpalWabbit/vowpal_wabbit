@@ -66,7 +66,7 @@ namespace cs_unittest
         [TestMethod]
         [DeploymentItem(@"train-sets\0002.dat", "train-sets")]
         [DeploymentItem(@"train-sets\ref\0002a.stderr", @"train-sets\ref")]
-        // pred-sets/ref/0002b.predict
+        [DeploymentItem(@"pred-sets\ref\0002b.predict", @"pred-sets\ref")]
         public void Test5()
         {
             using (var vw = new VowpalWabbit<Data>("-k --initial_t 1 --adaptive --invariant -q Tf -q ff -f models/0002a.model train-sets/0002.dat"))
@@ -84,8 +84,8 @@ namespace cs_unittest
                 VWTestHelper.AssertEqual(@"train-sets\ref\0002a.stderr", vw.PerformanceStatistics);
             }
 
-            var references = File.ReadAllLines(@"pred-sets\ref\0001.predict").Select(l => float.Parse(l, CultureInfo.InvariantCulture)).ToArray();
-
+            var references = File.ReadAllLines(@"pred-sets\ref\0002b.predict").Select(l => float.Parse(l.Split(' ')[0], CultureInfo.InvariantCulture)).ToArray();
+            var index = 0;
 
             using (var vwRef = new VowpalWabbit("-k -t --invariant -i models/0002a.model"))
             using (var vwModel = new VowpalWabbitModel("-k -t --invariant", File.OpenRead("models/0002a.model")))
@@ -102,6 +102,7 @@ namespace cs_unittest
                             var actual = ex.Predict<VowpalWabbitScalarPrediction>();
 
                             Assert.AreEqual(expected.Value, actual.Value, 1e-5);
+                            Assert.AreEqual(references[index++], actual.Value, 1e-5);
                         }
                     }));
             }

@@ -431,8 +431,9 @@ void do_actual_learning(ldf& data, base_learner& base)
   
   if(data.rank) {
     data.stored_preds[0].label_v.erase();
-    if (start_K > 0)
+    if (start_K > 0) {
       data.ec_seq[0]->pred.multilabels = data.stored_preds[0];
+    }
     for (size_t k=start_K; k<K; k++) {
       data.ec_seq[k]->pred.multilabels = data.stored_preds[k];
       data.ec_seq[0]->pred.multilabels.label_v.push_back(data.scores[k-start_K].idx);

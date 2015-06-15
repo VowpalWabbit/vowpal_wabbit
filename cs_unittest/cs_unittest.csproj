@@ -85,6 +85,10 @@
       <Link>pred-sets\ref\0001.predict</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\test\pred-sets\ref\0002b.predict">
+      <Link>pred-sets\ref\0002b.predict</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="..\test\test-sets\ref\0001.stderr">
       <Link>test-sets\ref\0001.stderr</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
