@@ -902,7 +902,6 @@ vw& parse_args(int argc, char *argv[])
 		("node", po::value<size_t>(&(all.node)), "node number in cluster parallel job");
 	add_options(all);
 
-	po::variables_map& vm = all.vm;
 	msrand48(all.random_seed);
 	parse_diagnostics(all, argc);
 
@@ -927,7 +926,8 @@ void parse_modules(vw& all, io_buf& model)
 		style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
 		options(all.opts).allow_unregistered().run();
 
-	po::variables_map& vm = po::variables_map();
+	po::variables_map& vm = all.vm;
+	vm = po::variables_map();
 
 	po::store(pos, vm);
 	po::notify(vm);
@@ -969,7 +969,7 @@ void parse_sources(vw& all, io_buf& model)
     i++;
   all.wpp = (1 << i) >> all.reg.stride_shift;
 
-  if (po::variables_map().count("help")) {
+  if (all.vm.count("help")) {
     /* upon direct query for help -- spit it out to stdout */
     cout << "\n" << all.opts << "\n";
     exit(0);
@@ -1066,6 +1066,7 @@ namespace VW {
       {
         continue;
       }
+	  auto arg = model_args[i].c_str();
       init_args << model_args[i] << " ";
     }
 

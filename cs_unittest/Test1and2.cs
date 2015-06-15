@@ -85,10 +85,10 @@ namespace cs_test
                         var actualShared2 = exampleInMemory2.Predict<VowpalWabbitScalarPrediction>();
 
                         Assert.AreEqual(references[i], actualStr.Value, 1e-5);
-                        //Assert.AreEqual(references[i], actualShared1.Value, 1e-5);
+                        Assert.AreEqual(references[i], actualShared1.Value, 1e-5);
                         Assert.AreEqual(references[i], actualInMemory.Value, 1e-5);
                         Assert.AreEqual(references[i], actual.Value, 1e-5);
-                        //Assert.AreEqual(references[i], actualShared2.Value, 1e-5);
+                        Assert.AreEqual(references[i], actualShared2.Value, 1e-5);
                     }
                 }
 
