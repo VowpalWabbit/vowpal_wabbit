@@ -481,7 +481,4 @@ with oaa:
   train: ./vw --oaa 10 -b 25 --adaptive --invariant --holdout_off -l 0.1 --nn 64 --passes 24 -k -c -d mnist-all.gz --random_seed 19 --nnmultipredict -f mnist-all64
 predict: ./vw -t -d mnist-all.gz -i mnist-all64 --nnmultipredict
 
-                     default   multipredict
-  nn  64 train       
-         predict     
 */
