@@ -14,6 +14,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class VW implements Closeable {
 
+    // This main method only exists to test the library implementation.  To test it just run
+    // java -cp target/vw-jni-*-SNAPSHOT.jar vw.VW
     public static void main(String[] args) {
         new VW("").close();
         new VW("--quiet").close();
