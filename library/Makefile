@@ -14,7 +14,7 @@ STDLIBS = $(BOOST_LIBRARY) $(LIBS)
 all:
 	cd ..; $(MAKE) library_example
 
-things: ezexample_predict ezexample_train library_example recommend gd_mf_weights test_search search_generate # ezexample_predict_threaded
+things: ezexample_predict ezexample_train library_example recommend gd_mf_weights test_search # search_generate ezexample_predict_threaded
 
 ezexample_predict: ezexample_predict.cc ../vowpalwabbit/libvw.a
 	$(CXX) -g $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
