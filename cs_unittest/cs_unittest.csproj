@@ -61,7 +61,7 @@
     <Compile Include="Test1and2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Test3.cs" />
-    <Compile Include="Test87.cs" />
+    <Compile Include="TestCbAdf.cs" />
     <Compile Include="TestBase.cs" />
     <Compile Include="TestErrorListener.cs" />
     <Compile Include="TestPooling.cs" />
