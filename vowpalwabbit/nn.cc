@@ -227,7 +227,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
           {    
             float sqrtk = sqrt ((float)n.k);
             n.outputweight.l.simple.label = (float) (frand48 () - 0.5) / sqrtk;
-            base.learn(n.outputweight, n.k);
+            base.update(n.outputweight, n.k);
             n.outputweight.l.simple.label = FLT_MAX;
           }
       }
@@ -306,8 +306,9 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
             ec.l.simple.label = GD::finalize_prediction (n.all->sd, hidden_units[i].scalar - gradhw);
+            ec.pred.scalar = hidden_units[i].scalar;
             if (ec.l.simple.label != hidden_units[i].scalar) 
-              base.learn(ec, i);
+              base.update(ec, i);
           }
         }
 
@@ -481,9 +482,6 @@ with oaa:
 predict: ./vw -t -d mnist-all.gz -i mnist-all64 --nnmultipredict
 
                      default   multipredict
-  nn  64 train        74.5s        49.1s
-         predict      15.4s        11.8s
-  nn 128 train       227.2s        97.6s
-         predict      28.7s        21.7s
-  
+  nn  64 train       
+         predict     
 */
