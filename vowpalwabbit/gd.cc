@@ -1011,7 +1011,7 @@ base_learner* setup(vw& all)
 
   learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.reg.stride_shift));
   ret.set_predict(g.predict);
-  //ret.set_multipredict(g.multipredict);
+  ret.set_multipredict(g.multipredict);
   ret.set_update(g.update);
   ret.set_save_load(save_load);
   ret.set_end_pass(end_pass);
