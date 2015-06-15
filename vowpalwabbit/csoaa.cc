@@ -18,6 +18,7 @@ using namespace COST_SENSITIVE;
 
 struct csoaa{
   uint32_t num_classes;
+  polyprediction* pred;
 };
 
 template<bool is_learn>
@@ -57,14 +58,12 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
     ec.partial_prediction = score;
   } else if (DO_MULTIPREDICT && !is_learn) {
     ec.l.simple = { FLT_MAX, 0.f, 0.f };
-    polyprediction* pred = calloc_or_die<polyprediction>(c.num_classes);  // TODO: pull this allocation out
-    base.multipredict(ec, 0, c.num_classes, pred, false);
+    base.multipredict(ec, 0, c.num_classes, c.pred, false);
     for (uint32_t i = 1; i <= c.num_classes; i++)
-      if (pred[i-1].scalar < pred[prediction-1].scalar)
+      if (c.pred[i-1].scalar < c.pred[prediction-1].scalar)
         prediction = i;
-    ec.partial_prediction = pred[prediction-1].scalar;
+    ec.partial_prediction = c.pred[prediction-1].scalar;
     //cerr << "c.num_classes = " << c.num_classes << ", prediction = " << prediction << endl;
-    free(pred);
   } else {
     float temp;
     for (uint32_t i = 1; i <= c.num_classes; i++)
@@ -82,6 +81,11 @@ void finish_example(vw& all, csoaa&, example& ec)
   VW::finish_example(all, &ec);
 }
 
+void finish(csoaa& c) {
+  free(c.pred);
+}
+
+
 base_learner* csoaa_setup(vw& all)
 {
   if (missing_option<size_t, true>(all, "csoaa", "One-against-all multiclass with <k> costs"))
@@ -89,11 +93,13 @@ base_learner* csoaa_setup(vw& all)
 
   csoaa& c = calloc_or_die<csoaa>();
   c.num_classes = (uint32_t)all.vm["csoaa"].as<size_t>();
+  c.pred = calloc_or_die<polyprediction>(c.num_classes);
   
   learner<csoaa>& l = init_learner(&c, setup_base(all), predict_or_learn<true>, 
 				   predict_or_learn<false>, c.num_classes);
   all.p->lp = cs_label;
   l.set_finish_example(finish_example);
+  l.set_finish(finish);
   base_learner* b = make_base(l);
   all.cost_sensitive = b;
   return b;
