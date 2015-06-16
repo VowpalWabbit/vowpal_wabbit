@@ -15,21 +15,11 @@ void rethrow_cpp_exception_as_java_exception(JNIEnv *env) {
     catch(const std::bad_alloc& e) {
         throw_java_exception(env, "java/lang/OutOfMemoryError", e.what());
     }
-    catch(const std::ios_base::failure& e) {
-        throw_java_exception(env, "java/io/IOException", e.what());
+    catch(const boost::program_options::error& e) {
+        throw_java_exception(env, "java/lang/IllegalArgumentException", e.what());
     }
     catch(const std::exception& e) {
-        const char* what = e.what();
-        std::string what_str = std::string(what);
-        // It would appear that this text has changed between different boost variants
-        std::string prefix1("unrecognised option");
-        std::string prefix2("unknown option");
-
-        if (what_str.substr(0, prefix1.size()) == prefix1 ||
-            what_str.substr(0, prefix2.size()) == prefix2)
-            throw_java_exception(env, "java/lang/IllegalArgumentException", what);
-        else
-            throw_java_exception(env, "java/lang/Exception", what);
+        throw_java_exception(env, "java/lang/Exception", e.what());
     }
     catch (...) {
         throw_java_exception(env, "java/lang/Error", "Unidentified exception => "
@@ -55,6 +45,7 @@ JNIEXPORT jfloat JNICALL Java_vw_VW_predict(JNIEnv *env, jobject obj, jstring ex
         vw* vwInstance = (vw*)vwPtr;
         const char *utf_string = env->GetStringUTFChars(example_string, NULL);
         example *vec2 = VW::read_example(*vwInstance, utf_string);
+
         if (learn)
             vwInstance->l->learn(*vec2);
         else
