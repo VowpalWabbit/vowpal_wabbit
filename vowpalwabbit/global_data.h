@@ -24,6 +24,7 @@ namespace po = boost::program_options;
 #include "allreduce.h"
 #include "v_hashmap.h"
 #include <time.h>
+#include "hash.h"
 
 struct version_struct {
   int major;
