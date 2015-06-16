@@ -15,8 +15,11 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class VW implements Closeable {
 
-    // This main method only exists to test the library implementation.  To test it just run
-    // java -cp target/vw-jni-*-SNAPSHOT.jar vw.VW
+    /**
+     * This main method only exists to test the library implementation.  To test it just run
+     * java -cp target/vw-jni-*-SNAPSHOT.jar vw.VW
+     * @param args No args needed.
+     */
     public static void main(String[] args) {
         new VW("").close();
         new VW("--quiet").close();
@@ -32,7 +35,12 @@ public class VW implements Closeable {
     }
 
     private boolean isOpen;
-    // Load tests have shown that a Lock is faster than synchronized (this).
+
+    /**
+     * Load tests have shown that a Lock is faster than synchronized (this).
+     * It was originally hypothesized that {@link java.util.concurrent.locks.ReadWriteLock} would be a better
+     * alternative, but at this time this is not possible cause of <a href="https://mail.google.com/mail/u/0/?ui=2&ik=cdb4bef19b&view=lg&msg=14dfe18a4f82a199#14dfe18a4f82a199_5a">this</a>.
+     */
     private final Lock lock;
     private final long nativePointer;
 
