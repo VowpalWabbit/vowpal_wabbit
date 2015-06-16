@@ -29,7 +29,7 @@ $make_base
 mv java/target/vw_jni.lib java/target/vw_jni.Ubuntu.14.amd64.lib"
 
 red_hat_6="yum update -q -y;
-yum install -q -y wget which boost-devel zlib-devel java-1.7.0-openjdk-devel;
+yum install -q -y wget which boost-devel zlib-devel java-1.7.0-openjdk-devel perl;
 cd /etc/yum.repos.d;
 wget http://people.centos.org/tru/devtools-2/devtools-2.repo;
 yum clean all;
@@ -43,7 +43,7 @@ make -f Makefile.permissive;
 rm -f Makefile.permissive
 mv java/target/vw_jni.lib java/target/vw_jni.Red_Hat.6.amd64.lib"
 
-red_hat_7="yum install -q -y gcc-c++ make boost-devel zlib-devel java-1.7.0-openjdk-devel;
+red_hat_7="yum install -q -y gcc-c++ make boost-devel zlib-devel java-1.7.0-openjdk-devel perl;
 export JAVA_HOME=/usr/lib/jvm/java-1.7.0-openjdk;
 $make_base
 mv java/target/vw_jni.lib java/target/vw_jni.Red_Hat.7.amd64.lib"
