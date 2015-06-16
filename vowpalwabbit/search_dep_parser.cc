@@ -55,6 +55,7 @@ namespace DepParserTask {
 
     for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i)
         i->delete_v();
+    all.interactions.erase();
     for (vector<string>::const_iterator i = all.pairs.begin(); i != all.pairs.end(); ++i)
         all.interactions.push_back(string2v_string(*i));
     for (vector<string>::const_iterator i = all.triples.begin(); i != all.triples.end(); ++i)
