@@ -220,15 +220,18 @@ public class VWTest {
         }
         learn.close();
 
+        int numThreads = Runtime.getRuntime().availableProcessors();
+        ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
         final VW predict = new VW("--quiet -i " + model);
-        ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        for (int i=0; i<1e5; ++i) {
+        for (int i=0; i<numThreads; ++i) {
             Runnable run = new Runnable() {
                 @Override
                 public void run() {
-                    for (Entry<String, Float> e : data.entrySet()) {
-                        float actual = predict.predict(e.getKey());
-                        assertEquals(e.getValue(), actual, 1e-6f);
+                    for (int j=0; j<1e5; ++j) {
+                        for (Entry<String, Float> e : data.entrySet()) {
+                            float actual = predict.predict(e.getKey());
+                            assertEquals(e.getValue(), actual, 1e-6f);
+                        }
                     }
                 }
             };
