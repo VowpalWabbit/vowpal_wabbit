@@ -4,7 +4,7 @@
     <title>Vowpal Wabbit</title>
     <id>Microsoft.Research.VowpalWabbit</id>
     <tags>vw vowpal wabbit john langford</tags>
-    <version>7.10.1.14</version>
+    <version>7.10.1.15</version>
     <authors>John Langford et al</authors>
     <projectUrl>https://github.com/JohnLangford/vowpal_wabbit</projectUrl>
     <licenseUrl>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</licenseUrl>

@@ -1083,8 +1083,8 @@ __DATA__
 {VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout ref --holdout_off
     train-sets/ref/search_dep_parser.stderr
 
-# Test 67: classification with data from dictionaries (eg embeddings or gazetteers) -- note that this is impossible without dictionaries because --ignore w
-{VW} -k -c -d train-sets/dictionary_test.dat --binary --ignore w --holdout_off --passes 32 --dictionary w:train-sets/dictionary_test.dict
+# Test 67: classification with data from dictionaries (eg embeddings or gazetteers) -- note that this is impossible without dictionaries because --ignore w; also test to make sure gzipped dicts work and dictionary redundancy checking works
+{VW} -k -c -d train-sets/dictionary_test.dat --binary --ignore w --holdout_off --passes 32 --dictionary w:dictionary_test.dict --dictionary w:dictionary_test.dict.gz --dictionary_path train-sets/
     train-sets/ref/dictionary_test.stderr
 
 # Test 68: Search for multiclass classification
@@ -1175,7 +1175,25 @@ __DATA__
     train-sets/ref/cb_adf_rank.stderr
     pred-sets/ref/cb_adf_rank.predict
 
-# Test 88: check -q :: and -oaa inverse hash
+# Test 88: named labels at training time
+{VW} --named_labels det,noun,verb --oaa 3 -d train-sets/test_named  -k -c --passes 10 --holdout_off -f models/test_named.model
+    train-sets/ref/test_named_train.stderr
+
+# Test 89: named labels at prediction
+{VW} -i models/test_named.model -t -d train-sets/test_named -p test_named.pred
+    train-sets/ref/test_named_test.stderr
+    pred-sets/ref/test_named.predict
+
+# Test 90: named labels at training time (csoaa)
+{VW} --named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa  -k -c --passes 10 --holdout_off -f models/test_named_csoaa.model
+    train-sets/ref/test_named_csoaa_train.stderr
+
+# Test 91: named labels at prediction (csoaa)
+{VW} -i models/test_named_csoaa.model -t -d train-sets/test_named_csoaa -p test_named_csoaa.pred
+    train-sets/ref/test_named_csoaa_test.stderr
+    pred-sets/ref/test_named_csoaa.predict
+
+# Test 92: check -q :: and -oaa inverse hash
 echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp && tail -n +2 inv_hash.cmp > inv_hash.cmp.new && rm inv_hash.cmp && mv inv_hash.cmp.new inv_hash.cmp
     train-sets/ref/inv_hash.stderr
     pred-sets/ref/inv_hash.cmp

@@ -102,6 +102,7 @@ namespace Search {
                    , const action*  allowed_actions      = nullptr
                    ,       size_t   allowed_actions_cnt  = 0
                    ,       size_t   learner_id           = 0
+                   ,       float    weight               = 0.
                    );
 
     // make an LDF prediction on a list of examples. arguments are identical to predict(...)
@@ -118,6 +119,7 @@ namespace Search {
                       , const ptag*    condition_on         = nullptr
                       , const char*    condition_on_names   = nullptr
                       ,       size_t   learner_id           = 0
+                      ,       float    weight               = 0.
                       );
 
     // some times during training, a call to "predict" doesn't
@@ -157,6 +159,9 @@ namespace Search {
     // get stride_shift
     size_t get_stride_shift();
 
+    // pretty print a label
+    std::string pretty_label(action a);
+    
     // for meta-tasks:
     BaseTask base_task(vector<example*>& ec) { return BaseTask(this, ec); }
     
@@ -228,6 +233,8 @@ namespace Search {
     predictor& set_oracle(action a);
     predictor& set_oracle(action*a, size_t action_count);
     predictor& set_oracle(v_array<action>& a);
+
+    predictor& set_weight(float w);
     
     // same as add/set_oracle but for allowed actions
     predictor& erase_alloweds();
@@ -262,6 +269,7 @@ namespace Search {
     example* ec;
     size_t ec_cnt;
     bool ec_alloced;
+    float weight;
     v_array<action> oracle_actions;    bool oracle_is_pointer;   // if we're pointing to your memory TRUE; if it's our own memory FALSE
     v_array<ptag> condition_on_tags;
     v_array<char> condition_on_names;

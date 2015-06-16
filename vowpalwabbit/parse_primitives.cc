@@ -6,12 +6,19 @@ license as described in the file LICENSE.
 #include <iostream>
 #ifndef WIN32
 #include <strings.h>
+#else
+#include <string>
 #endif
 #include <stdexcept>
 #include <sstream>
 
 #include "parse_primitives.h"
 #include "hash.h"
+
+bool substring_equal(substring&a, substring&b) {
+  return (a.end - a.begin == b.end - b.begin) // same length
+      && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
+}
 
 void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty)
 {
@@ -66,4 +73,9 @@ hash_func_t getHasher(const std::string& s){
     std::cerr << msg.str() << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
+}
+
+std::ostream& operator<<(std::ostream& os, const substring& ss) {
+  std::string s(ss.begin, ss.end-ss.begin);
+  return os << s;
 }
