@@ -4,7 +4,8 @@ import vw.jni.NativeUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A JNI layer for submitting examples to VW and getting predictions back.  It should be noted
@@ -30,7 +31,8 @@ public class VW implements Closeable {
         }
     }
 
-    private final AtomicBoolean isOpen;
+    private boolean isOpen;
+    private final Lock lock;
     private final long nativePointer;
 
     /**
@@ -40,7 +42,8 @@ public class VW implements Closeable {
      *                for more information
      */
     public VW(String command) {
-        isOpen = new AtomicBoolean(true);
+        isOpen = true;
+        lock = new ReentrantLock();
         nativePointer = initialize(command);
     }
 
@@ -51,10 +54,16 @@ public class VW implements Closeable {
      * @return A prediction
      */
     public float predict(String example) {
-        if (isOpen.get()) {
-            return predict(example, false, nativePointer);
+        lock.lock();
+        try {
+            if (isOpen) {
+                return predict(example, false, nativePointer);
+            }
+            throw new IllegalStateException("Already closed.");
         }
-        throw new IllegalStateException("Already closed.");
+        finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -64,10 +73,16 @@ public class VW implements Closeable {
      * @return A prediction
      */
     public float learn(String example) {
-        if (isOpen.get()) {
-            return predict(example, true, nativePointer);
+        lock.lock();
+        try {
+            if (isOpen) {
+                return predict(example, true, nativePointer);
+            }
+            throw new IllegalStateException("Already closed.");
         }
-        throw new IllegalStateException("Already closed.");
+        finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -75,8 +90,15 @@ public class VW implements Closeable {
      * After this is called no future calls to this object are permitted.
      */
     public void close() {
-        if (isOpen.getAndSet(false)) {
-            closeInstance(nativePointer);
+        lock.lock();
+        try {
+            if (isOpen) {
+                isOpen = false;
+                closeInstance(nativePointer);
+            }
+        }
+        finally {
+            lock.unlock();
         }
     }
 

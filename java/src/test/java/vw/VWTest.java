@@ -5,6 +5,12 @@ import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -192,5 +198,44 @@ public class VWTest {
         float[] expectedTestPreds = new float[]{4, 4};
         vw.close();
         assertArrayEquals(expectedTestPreds, testPreds, 0.000001f);
+    }
+
+    @Test
+    public void testConcurrency() throws IOException, InterruptedException {
+        final Map<String, Float> data = new TreeMap<String, Float>();
+
+        data.put("-1 | 2", -0.444651f);
+        data.put("-1 | 4", -0.448271f);
+        data.put("-1 | 6", -0.449493f);
+        data.put("-1 | 8", -0.450034f);
+        data.put("1 | 1", 0.175389f);
+        data.put("1 | 3", 0.174267f);
+        data.put("1 | 5", 0.173154f);
+        data.put("1 | 7", 0.172148f);
+
+        final String model = temporaryFolder.newFile().getAbsolutePath();
+        VW learn = new VW("--quiet --loss_function logistic -f " + model);
+        for (String d : data.keySet()) {
+            learn.learn(d);
+        }
+        learn.close();
+
+        final VW predict = new VW("--quiet -i " + model);
+        ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        for (int i=0; i<1e5; ++i) {
+            Runnable run = new Runnable() {
+                @Override
+                public void run() {
+                    for (Entry<String, Float> e : data.entrySet()) {
+                        float actual = predict.predict(e.getKey());
+                        assertEquals(e.getValue(), actual, 1e-6f);
+                    }
+                }
+            };
+            threadPool.submit(run);
+        }
+        threadPool.shutdown();
+        threadPool.awaitTermination(1, TimeUnit.DAYS);
+        predict.close();
     }
 }
