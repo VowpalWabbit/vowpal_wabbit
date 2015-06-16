@@ -467,6 +467,13 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
     norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
     
     foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, nd);
+
+    if (nanpattern(nd.pred_per_update)) {
+      nd.pred_per_update = 0;
+      cerr << "NAN prediction update in example " << all.sd->example_number + 1 << ", forcing " << nd.pred_per_update << endl;
+      return nd.pred_per_update;
+    }
+
     if(normalized) {
       g.all->normalized_sum_norm_x += ld.weight * nd.norm_x;
       g.total_weight += ld.weight;
