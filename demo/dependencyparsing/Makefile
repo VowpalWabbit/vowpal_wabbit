@@ -4,8 +4,6 @@ python_exe=python2.7
 
 train_data=wsj_train_subset
 test_data=wsj_test_subset
-train_data=wsj_train
-test_data=wsj_test
 tag=tags
 
 .SECONDARY:
@@ -28,7 +26,7 @@ clean:
 	@$(python_exe) parse_data.py $(test_data) $(test_data).vw
 
 dep.model: $(train_data).vw
-	@$(VW) --passes 3 -d $< -k -c --search_rollin mix_per_roll --search_task dep_parser --search 12 --search_alpha 1e-5  --search_rollout oracle  --holdout_off -f $@ --search_history_length 3 --search_no_caching -b 26 --root_label 8 --num_label 12 --nn 5 --ftrl_proximal --search_metatask selective_branching --search_max_branch 5
+	@$(VW) --passes 3 -d $< -k -c --search_rollin mix_per_roll --search_task dep_parser --search 12 --search_alpha 1e-5  --search_rollout oracle  --holdout_off -f $@ --search_history_length 3 --search_no_caching -b 26 --root_label 8 --num_label 12 --nn 5 --ftrl --search_metatask selective_branching --search_max_branch 5
 
 dep.test.predictions: $(test_data).vw dep.model
 	@$(VW) -d $< -t $(search_option) -i dep.model --search_metatask selective_branching --search_max_branch 5 -p $@
