@@ -86,7 +86,7 @@ struct version_struct {
     return (*this > v_tmp);
   }
   bool operator<=(version_struct v) {
-    return !(*this < v);
+    return !(*this > v);
   }
   bool operator<=(const char* v_str) {
     version_struct v_tmp(v_str);
