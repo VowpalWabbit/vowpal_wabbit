@@ -60,7 +60,8 @@ namespace Microsoft.Research.MachineLearning.Serializer
 
         TPrediction IVowpalWabbitExample.Learn<TPrediction>()
         {
-            return this.example.Learn<TPrediction>();
+            throw new NotSupportedException("As labels cannot be updated once the example is created, cached examples cannot be used for learning");
+            // return this.example.Learn<TPrediction>();
         }
 
         TPrediction IVowpalWabbitExample.Predict<TPrediction>()
