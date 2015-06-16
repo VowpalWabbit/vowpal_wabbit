@@ -57,6 +57,8 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="BaseData.cs" />
+    <Compile Include="VowpalWabbitListenerToEvents.cs" />
     <Compile Include="Rcv1Test.cs" />
     <Compile Include="Test1and2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -87,6 +89,10 @@
     </None>
     <None Include="..\test\pred-sets\ref\0002b.predict">
       <Link>pred-sets\ref\0002b.predict</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\pred-sets\ref\0002c.predict">
+      <Link>pred-sets\ref\0002c.predict</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\test-sets\ref\0001.stderr">

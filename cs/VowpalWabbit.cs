@@ -23,18 +23,18 @@ namespace Microsoft.Research.MachineLearning
     {
         protected VowpalWabbitSerializer<TExample> serializer;
 
-        public VowpalWabbit(VowpalWabbitModel model, int maxExampleCacheSize = int.MaxValue)
+        public VowpalWabbit(VowpalWabbitModel model, VowpalWabbitSerializerSettings settings = null)
             : base(model)
         {
             var visitor = new VowpalWabbitInterfaceVisitor(this);
-            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(visitor, maxExampleCacheSize);
+            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(visitor, settings);
         }
 
-        public VowpalWabbit(string arguments, int maxExampleCacheSize = int.MaxValue)
+        public VowpalWabbit(string arguments, VowpalWabbitSerializerSettings settings = null)
             : base(arguments)
         {
             var visitor = new VowpalWabbitInterfaceVisitor(this);
-            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(visitor, maxExampleCacheSize);
+            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(visitor, settings);
         }
         
         /// <summary>
@@ -73,11 +73,11 @@ namespace Microsoft.Research.MachineLearning
     {
         private VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
 
-        public VowpalWabbit(VowpalWabbitModel model, int maxExampleCacheSize = int.MaxValue)
+        public VowpalWabbit(VowpalWabbitModel model, VowpalWabbitSerializerSettings settings = null)
             : base(model)
         {
             var visitor = new VowpalWabbitInterfaceVisitor(this);
-            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(visitor, maxExampleCacheSize);
+            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(visitor, settings);
 
             if (this.actionDependentFeatureSerializer == null)
             {
@@ -85,11 +85,11 @@ namespace Microsoft.Research.MachineLearning
             }
         }
 
-        public VowpalWabbit(string arguments, int maxExampleCacheSize = int.MaxValue)
+        public VowpalWabbit(string arguments, VowpalWabbitSerializerSettings settings = null)
             : base(arguments)
         {
             var visitor = new VowpalWabbitInterfaceVisitor(this);
-            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(visitor, maxExampleCacheSize);
+            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(visitor, settings);
 
             if (this.actionDependentFeatureSerializer == null)
             {

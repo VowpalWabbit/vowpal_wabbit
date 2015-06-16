@@ -76,6 +76,7 @@
     <Compile Include="Serializer\VowpalWabbitCachedExample.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerFactory.cs" />
+    <Compile Include="Serializer\VowpalWabbitSerializerSettings.cs" />
     <Compile Include="SharedExample.cs" />
     <Compile Include="Labels\SimpleLabel.cs" />
     <Compile Include="VowpalWabbit.cs" />

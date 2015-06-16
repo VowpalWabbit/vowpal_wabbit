@@ -26,86 +26,84 @@ namespace cs_unittest
         [DeploymentItem(@"train-sets\ref\0002.stderr", @"train-sets\ref")]
         public void Test3()
         {
-            using (var vw = new VowpalWabbit<Data>("-k train-sets/0002.dat -f models/0002.model --invariant"))
-            {
-                VWTestHelper.ParseInput(
-                    File.OpenRead(@"train-sets\0002.dat"),
-                    new DataListener(x => 
-                        {
-                            using (var ex = vw.ReadExample(x))
-                            {
-                                ex.Learn<VowpalWabbitPredictionNone>();
-                            }
-                        }));
-            
-                VWTestHelper.AssertEqual(@"train-sets\ref\0002.stderr", vw.PerformanceStatistics);
-            }
+            VWTestHelper.Learn<Data, DataListener>(
+                "-k train-sets/0002.dat -f models/0002.model --invariant",
+                @"train-sets\0002.dat",
+                @"train-sets\ref\0002.stderr");
         }
 
         [TestMethod]
         [DeploymentItem(@"train-sets\0002.dat", "train-sets")]
         [DeploymentItem(@"train-sets\ref\0002.stderr", @"train-sets\ref")]
-        public void Test4()
+        [DeploymentItem(@"pred-sets\ref\0002b.predict", @"pred-sets\ref")]
+        public void Test4and6()
         {
-            using (var vw = new VowpalWabbit<Data>("-k -d train-sets/0002.dat -f models/0002.model --invariant"))
-            {
-                VWTestHelper.ParseInput(
-                    File.OpenRead(@"train-sets\0002.dat"),
-                    new DataListener(x =>
-                    {
-                        using (var ex = vw.ReadExample(x))
-                        {
-                            ex.Learn<VowpalWabbitPredictionNone>();
-                        }
-                    }));
+            VWTestHelper.Learn<Data, DataListener>(
+                "-k -d train-sets/0002.dat -f models/0002.model --invariant",
+                @"train-sets\0002.dat",
+                @"train-sets\ref\0002.stderr");
 
-                VWTestHelper.AssertEqual(@"train-sets\ref\0002.stderr", vw.PerformanceStatistics);
-            }
+            VWTestHelper.Predict<Data, DataListener>(
+                "-k -t --invariant -i models/0002.model",
+                @"train-sets\0002.dat",
+                @"pred-sets\ref\0002b.predict");
         }
 
         [TestMethod]
         [DeploymentItem(@"train-sets\0002.dat", "train-sets")]
         [DeploymentItem(@"train-sets\ref\0002a.stderr", @"train-sets\ref")]
-        [DeploymentItem(@"pred-sets\ref\0002b.predict", @"pred-sets\ref")]
         public void Test5()
         {
-            using (var vw = new VowpalWabbit<Data>("-k --initial_t 1 --adaptive --invariant -q Tf -q ff -f models/0002a.model train-sets/0002.dat"))
-            {
-                VWTestHelper.ParseInput(
-                    File.OpenRead(@"train-sets\0002.dat"),
-                    new DataListener(x =>
-                    {
-                        using (var ex = vw.ReadExample(x))
-                        {
-                            ex.Learn<VowpalWabbitPredictionNone>();
-                        }
-                    }));
+            VWTestHelper.Learn<Data, DataListener>(
+                "-k --initial_t 1 --adaptive --invariant -q Tf -q ff -f models/0002a.model",
+                @"train-sets\0002.dat",
+                @"train-sets\ref\0002a.stderr");
 
-                VWTestHelper.AssertEqual(@"train-sets\ref\0002a.stderr", vw.PerformanceStatistics);
-            }
+            VWTestHelper.Predict<Data, DataListener>(
+                "-k -t --invariant -i models/0002a.model",
+                @"train-sets\0002.dat");
+        }
 
-            var references = File.ReadAllLines(@"pred-sets\ref\0002b.predict").Select(l => float.Parse(l.Split(' ')[0], CultureInfo.InvariantCulture)).ToArray();
-            var index = 0;
+        [TestMethod]
+        [Description("using normalized adaptive updates and a low --power_t")]
+        [DeploymentItem(@"train-sets\0002.dat", "train-sets")]
+        [DeploymentItem(@"train-sets\ref\0002c.stderr", @"train-sets\ref")]
+        [DeploymentItem(@"pred-sets\ref\0002c.predict", @"pred-sets\ref")]
+        public void Test7and8()
+        {
+            VWTestHelper.Learn<Data, DataListener>(
+                "-k --power_t 0.45 -f models/0002c.model",
+                @"train-sets\0002.dat",
+                @"train-sets\ref\0002c.stderr");
 
-            using (var vwRef = new VowpalWabbit("-k -t --invariant -i models/0002a.model"))
-            using (var vwModel = new VowpalWabbitModel("-k -t --invariant", File.OpenRead("models/0002a.model")))
-            using (var vwInMemoryShared2 = new VowpalWabbit<Data>(vwModel))
-            {
-                VWTestHelper.ParseInput(
-                    File.OpenRead(@"train-sets\0002.dat"),
-                    new DataListener(x =>
-                    {
-                        var expected = vwRef.Predict<VowpalWabbitScalarPrediction>(x.Line);
+            VWTestHelper.Predict<Data, DataListener>(
+                "-k -t -i models/0002c.model",
+                @"train-sets\0002.dat",
+                @"pred-sets\ref\0002c.predict");
+        }
 
-                        using (var ex = vwInMemoryShared2.ReadExample(x))
-                        {
-                            var actual = ex.Predict<VowpalWabbitScalarPrediction>();
+        [TestMethod]
+        [Description("label-dependent features with csoaa_ldf")]
+        public void Test9()
+        {
+//            # Test 9: label-dependent features with csoaa_ldf
+//{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off
+//    train-sets/ref/cs_test.ldf.csoaa.stderr
+//    train-sets/ref/cs_test.ldf.csoaa.predict
+            //using (var vw = new VowpalWabbit<T>(args))
+            //{
+            //    var listener = new TListener();
+            //    listener.Created = x =>
+            //    {
+            //        using (var ex = vw.ReadExample(x))
+            //        {
+            //            ex.Learn<VowpalWabbitPredictionNone>();
+            //        }
+            //    };
+            //    VWTestHelper.ParseInput(File.OpenRead(inputFile), listener);
 
-                            Assert.AreEqual(expected.Value, actual.Value, 1e-5);
-                            Assert.AreEqual(references[index++], actual.Value, 1e-5);
-                        }
-                    }));
-            }
+            //    VWTestHelper.AssertEqual(stderrFile, vw.PerformanceStatistics);
+            //}
         }
     }
 }

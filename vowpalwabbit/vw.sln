@@ -55,8 +55,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{14EB6358-C1EB-47F5-A557-E0A6A87FD5DA}"
 	ProjectSection(SolutionItems) = preProject
 		cs_unittest.testsettings = cs_unittest.testsettings
-		Performance1.psess = Performance1.psess
-		Performance2.psess = Performance2.psess
 	EndProjectSection
 EndProject
 Global
@@ -233,8 +231,5 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

@@ -217,27 +217,6 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
 template<uint32_t reduction_type>
 void learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 {
-	// find the line/entry with cost and prob.
-	CB::label ld;
-	for (example **ec = examples.begin; ec != examples.end; ec++)
-	  {
-	    if ( (**ec).l.cb.costs.size() == 1 &&
-		 (**ec).l.cb.costs[0].cost != FLT_MAX &&
-		 (**ec).l.cb.costs[0].probability > 0)
-	      {
-		ld = (**ec).l.cb;
-	      }
-	  }
-	
-	mydata.known_cost = get_observed_cost(ld);
-	
-	if (mydata.known_cost == nullptr)
-	{
-		const char* msg = "known cost is null.";
-		cerr << msg << endl;
-		throw runtime_error(msg);
-	}
-
 	if(reduction_type == CB_TYPE_IPS)
 		gen_cs_example_ips(examples, mydata.cs_labels);
 	else if (reduction_type == CB_TYPE_DR)

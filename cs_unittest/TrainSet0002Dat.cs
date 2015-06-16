@@ -11,10 +11,8 @@ using System.Threading.Tasks;
 
 namespace TrainSet0002Dat
 {
-    public class Data : IExample
+    public class Data : BaseData, IExample
     {
-        public string Line { get; set; }
-
         [Feature(FeatureGroup = 'T', Name = "")]
         public string T { get; set; }
 
@@ -28,16 +26,9 @@ namespace TrainSet0002Dat
         }
     }
 
-    public class DataListener : VowpalWabbitBaseListener
+    public class DataListener : VowpalWabbitListenerToEvents<Data>
     {
         private Data example;
-
-        private Action<Data> action;
-
-        public DataListener(Action<Data> action)
-        {
-            this.action = action;
-        }
 
         public override void EnterExample(VowpalWabbitParser.ExampleContext context)
         {
@@ -50,7 +41,7 @@ namespace TrainSet0002Dat
         public override void ExitExample(VowpalWabbitParser.ExampleContext context)
         {
             this.example.Line = context.GetText();
-            this.action(this.example);
+            this.Created(this.example);
         }
 
         public override void ExitLabel_simple(VowpalWabbitParser.Label_simpleContext context)

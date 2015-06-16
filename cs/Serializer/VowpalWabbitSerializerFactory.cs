@@ -43,7 +43,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
             return (MethodInfo)ReflectionHelper.GetInfo((IVowpalWabbitVisitor<TExampleResult> e) => e.Visit((NamespaceSparse)null));
         }
 
-        public static VowpalWabbitSerializer<TExample> CreateSerializer<TExample>(VowpalWabbitInterfaceVisitor visitor, int maxExampleCacheSize)
+        public static VowpalWabbitSerializer<TExample> CreateSerializer<TExample>(VowpalWabbitInterfaceVisitor visitor, VowpalWabbitSerializerSettings settings)
         {
             var serializerFunc = CreateSerializer<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample>();
             if (serializerFunc == null)
@@ -52,7 +52,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
                 serializerFunc = (_,__) => null;
             }
 
-            return new VowpalWabbitSerializer<TExample>(ex => serializerFunc(ex, visitor), maxExampleCacheSize);
+            return new VowpalWabbitSerializer<TExample>(ex => serializerFunc(ex, visitor), settings);
         }
 
         public static Func<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult>()

@@ -10,6 +10,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Antlr4.Runtime.Atn;
+using System.Text.RegularExpressions;
 
 namespace cs_unittest
 {
@@ -45,6 +46,62 @@ namespace cs_unittest
             parser.AddParseListener(listener);
             parser.AddErrorListener(new TestErrorListener());
             parser.start();
+        }
+
+        internal static void Learn<T, TListener>(string args, string inputFile, string stderrFile)
+            where TListener : VowpalWabbitListenerToEvents<T>, new()
+        {
+            using (var vw = new VowpalWabbit<T>(args))
+            {
+                var listener = new TListener();
+                listener.Created = x => {
+                    using (var ex = vw.ReadExample(x))
+                    {
+                        ex.Learn<VowpalWabbitPredictionNone>();
+                    }
+                };
+                VWTestHelper.ParseInput(File.OpenRead(inputFile), listener);
+
+                VWTestHelper.AssertEqual(stderrFile, vw.PerformanceStatistics);
+            }
+        }
+
+        internal static void Predict<TData, TListener>(string args, string inputFile, string referenceFile = null)
+            where TData : BaseData
+            where TListener : VowpalWabbitListenerToEvents<TData>, new()
+        {
+            float[] references = null; 
+            var index = 0;
+
+            if (referenceFile != null)
+            {
+                references = File.ReadAllLines(referenceFile)
+                    .Select(l => float.Parse(l.Split(' ')[0], CultureInfo.InvariantCulture))
+                    .ToArray();
+            }
+
+            using (var vwRef = new VowpalWabbit(args))
+            using (var vwModel = new VowpalWabbitModel(args))
+            using (var vwInMemoryShared2 = new VowpalWabbit<TData>(vwModel))
+            {
+                var listener = new TListener();
+                listener.Created = x =>
+                {
+                    var expected = vwRef.Predict<VowpalWabbitScalarPrediction>(x.Line);
+
+                    using (var ex = vwInMemoryShared2.ReadExample(x))
+                    {
+                        var actual = ex.Predict<VowpalWabbitScalarPrediction>();
+
+                        Assert.AreEqual(expected.Value, actual.Value, 1e-5);
+
+                        if (references != null)
+                        {
+                            Assert.AreEqual(references[index++], actual.Value, 1e-5);
+                        }
+                    }
+                };
+            }
         }
 
         internal static void AssertEqual(string expectedFile, VowpalWabbitPerformanceStatistics actual)

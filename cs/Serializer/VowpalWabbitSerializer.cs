@@ -21,16 +21,16 @@ namespace Microsoft.Research.MachineLearning.Serializer
     /// <typeparam name="TExample">The source example type.</typeparam>
     public sealed class VowpalWabbitSerializer<TExample> : IDisposable
     {
-        private readonly int maxExampleCacheSize;
+        private readonly VowpalWabbitSerializerSettings settings;
 
         private readonly Func<TExample, IVowpalWabbitExample> serializer;
 
         private Dictionary<TExample, VowpalWabbitCachedExample<TExample>> exampleCache;
 
-        internal VowpalWabbitSerializer(Func<TExample, IVowpalWabbitExample> serializer, int maxExampleCacheSize)
+        internal VowpalWabbitSerializer(Func<TExample, IVowpalWabbitExample> serializer, VowpalWabbitSerializerSettings settings)
         {
-            this.maxExampleCacheSize = maxExampleCacheSize;
             this.serializer = serializer;
+            this.settings = settings ?? new VowpalWabbitSerializerSettings();
 
             var cacheableAttribute = (CacheableAttribute) typeof (TExample).GetCustomAttributes(typeof (CacheableAttribute), true).FirstOrDefault();
             if (cacheableAttribute == null)
@@ -38,24 +38,27 @@ namespace Microsoft.Research.MachineLearning.Serializer
                 return;
             }
 
-            if (cacheableAttribute.EqualityComparer == null)
+            if (!this.settings.EnableExampleCaching)
             {
-                this.exampleCache = new Dictionary<TExample, VowpalWabbitCachedExample<TExample>>();
-            }
-            else
-            {
-                if (!typeof (IEqualityComparer<TExample>).IsAssignableFrom(cacheableAttribute.EqualityComparer))
+                if (cacheableAttribute.EqualityComparer == null)
                 {
-                    throw new ArgumentException(
-                        string.Format(
-                            CultureInfo.InvariantCulture,
-                            "EqualityComparer ({1}) specified in [Cachable] of {0} must implement IEqualityComparer<{0}>",
-                            typeof (TExample),
-                            cacheableAttribute.EqualityComparer));
+                    this.exampleCache = new Dictionary<TExample, VowpalWabbitCachedExample<TExample>>();
                 }
+                else
+                {
+                    if (!typeof(IEqualityComparer<TExample>).IsAssignableFrom(cacheableAttribute.EqualityComparer))
+                    {
+                        throw new ArgumentException(
+                            string.Format(
+                                CultureInfo.InvariantCulture,
+                                "EqualityComparer ({1}) specified in [Cachable] of {0} must implement IEqualityComparer<{0}>",
+                                typeof(TExample),
+                                cacheableAttribute.EqualityComparer));
+                    }
 
-                var comparer = (IEqualityComparer<TExample>) Activator.CreateInstance(cacheableAttribute.EqualityComparer);
-                this.exampleCache = new Dictionary<TExample, VowpalWabbitCachedExample<TExample>>(comparer);
+                    var comparer = (IEqualityComparer<TExample>)Activator.CreateInstance(cacheableAttribute.EqualityComparer);
+                    this.exampleCache = new Dictionary<TExample, VowpalWabbitCachedExample<TExample>>(comparer);
+                }
             }
         }
 
@@ -116,7 +119,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
             }
 
             // if we reach the cache boundary, dispose the oldest example
-            if (this.exampleCache.Count > this.maxExampleCacheSize)
+            if (this.exampleCache.Count > this.settings.MaxExampleCacheSize)
             {
                 var minElement = this.exampleCache.MinBy(kv => kv.Value.LastRecentUse);
                 

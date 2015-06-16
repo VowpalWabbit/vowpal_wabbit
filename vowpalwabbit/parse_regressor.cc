@@ -140,11 +140,9 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				"", read, 
 				buff, text_len, text);
 
-		// TODO: pairs
-
       for (size_t i = 0; i < pair_len; i++)
 	{
-	  char pair[2];
+		char pair[3] = { 0, 0, 0 };
       if (!read)
         {
 				memcpy(pair, all.pairs[i].c_str(), 2);
@@ -155,10 +153,13 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				    buff, text_len, text);
 	  if (read)
 	    {
-	      string temp(pair, 2);
+	      string temp(pair);
 	      if (count(all.pairs.begin(), all.pairs.end(), temp) == 0)
 		all.pairs.push_back(temp);
-	    }
+
+			all.args.push_back("--interactions");
+			all.args.push_back(temp);
+		}
 	}
 		bin_text_read_write_fixed(model_file, buff, 0,
 				"", read,
@@ -170,11 +171,9 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				"", read, 
 			buff, text_len, text);
 
-		// TODO: triples
-
       for (size_t i = 0; i < triple_len; i++)
 	{
-	  char triple[3];
+		char triple[4] = { 0, 0, 0, 0 };
 	  if (!read)
 	    {
 	      text_len = sprintf(buff, "%s ", all.triples[i].c_str());
@@ -185,9 +184,12 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				buff, text_len, text);
 	  if (read)
 	    {
-				string temp(triple, 3);
+				string temp(triple);
 	      if (count(all.triples.begin(), all.triples.end(), temp) == 0)
 		all.triples.push_back(temp);
+
+		  all.args.push_back("--interactions");
+		  all.args.push_back(temp);
 	    }
 	}
 		bin_text_read_write_fixed(model_file, buff, 0,
@@ -201,8 +203,6 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 			bin_text_read_write_fixed(model_file, (char *)&len, sizeof(len),
                     "", read,
 				buff, text_len, text);
-
-			// TODO: interactions
 
           for (size_t i = 0; i < len; i++)
         {

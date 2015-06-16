@@ -4,6 +4,8 @@ number returns [float value] : NUMBER;
 
 label_simple	: value=number (WS initial=number)? WS;
 
+label_cbf		: value=INT ':' weight=NUMBER;
+
 namespace		: '|' name=STRING? (WS feature)+ WS?;
 
 feature			: index=(STRING | NUMBER) (':' x=number)?	# FeatureSparse
@@ -22,9 +24,9 @@ start			: (example NEWLINE)* example (NEWLINE | EOF);
 // greedy matching, if same length its matched in order
 NUMBER			: INT | FLOAT;
 
-fragment INT	: [+-]? [0-9]+ ([Ee] '-'? [0-9]+)?;
+INT	: [+-]? [0-9]+ ([Ee] '-'? [0-9]+)?;
  
-fragment FLOAT 	: [+-]? [0-9]* '.' [0-9]+ ([Ee] '-'? [0-9]+)?;
+FLOAT 	: [+-]? [0-9]* '.' [0-9]+ ([Ee] '-'? [0-9]+)?;
 
 WS				: [ \t]+;
 
