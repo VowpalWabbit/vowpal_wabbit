@@ -17,7 +17,6 @@ license as described in the file LICENSE.
 #include "vw.h"
 #include "interactions.h"
 
-#include "labeldict.h"
 #include "sender.h"
 #include "nn.h"
 #include "gd.h"
@@ -774,7 +773,7 @@ void parse_example_tweaks(vw& all)
 
   if (vm.count("named_labels")) {
     *all.file_options << " --named_labels " << named_labels << ' ';
-    all.sd->ldict = new labeldict(named_labels);
+    all.sd->ldict = new namedlabels(named_labels);
     cerr << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
   }
   

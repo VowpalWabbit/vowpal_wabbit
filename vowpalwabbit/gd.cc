@@ -337,12 +337,6 @@ float finalize_prediction(shared_data* sd, float ret)
    return temp.prediction;
  }
 
-// inline void vec_add_print(float& p, const float fx, float& fw) {
-//   p += fw * fx;
-//   float*w = &fw;
-//   cerr << '\t' << fx << ':' << fw << '@' << w[1];
-// }
-
   inline void vec_add_print(float&p, const float fx, float& fw) {
     p += fw * fx;
     cerr << " + " << fw << "*" << fx;
@@ -358,14 +352,8 @@ void predict(gd& g, base_learner&, example& ec)
     ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);
   else
     ec.partial_prediction = inline_predict(all, ec);
-  // { ec.partial_prediction = ec.l.simple.initial;
-  //   cerr << "vec_add_print: [";
-  //   foreach_feature<float,vec_add_print>(all, ec, ec.partial_prediction);
-  //   cerr << "]" << endl;
-  // }
   
   ec.partial_prediction *= (float)all.sd->contraction;
-  //bool wasNAN = nanpattern(ec.partial_prediction);
   ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
   if (audit)
     print_audit_features(all, ec);
@@ -451,8 +439,6 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
     float x2 = x * x;
     if(adaptive)
       w[adaptive] += nd.grad_squared * x2;
-    //if (nd.grad_squared * x2 > 10000)
-    //  cerr << "(large g^2 * x^2 : " << nd.grad_squared << ' ' << x << ')';
     if(normalized) {
       float x_abs = fabsf(x);
       if( x_abs > w[normalized] ) {// new scale discovered

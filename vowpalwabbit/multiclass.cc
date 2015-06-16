@@ -2,7 +2,6 @@
 #include <climits>
 #include "global_data.h"
 #include "vw.h"
-#include "labeldict.h"
 
 namespace MULTICLASS {
 

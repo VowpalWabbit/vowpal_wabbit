@@ -32,10 +32,7 @@ struct ftrl {
   
 void predict(ftrl& b, base_learner&, example& ec) {
   ec.partial_prediction = GD::inline_predict(*b.all, ec);
-  bool wasNAN = nanpattern(ec.partial_prediction);
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
-  if (b.all->audit&&wasNAN)
-    GD::print_audit_features(*b.all, ec);
 }
 
 void multipredict(ftrl& b, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions) {
@@ -101,10 +98,7 @@ void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec) {
   
   GD::foreach_feature<update_data, inner_update_pistol_state_and_predict>(*b.all, ec, b.data);
   ec.partial_prediction = b.data.predict;
-  bool wasNAN = nanpattern(ec.partial_prediction);
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
-  if (b.all->audit&&wasNAN)
-    GD::print_audit_features(*b.all, ec);
 }
 
 void update_after_prediction_proximal(ftrl& b, example& ec) {
