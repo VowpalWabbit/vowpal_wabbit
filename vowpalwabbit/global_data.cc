@@ -306,6 +306,7 @@ vw::vw()
   print = print_result;
   print_text = print_raw_text;
   lda = 0;
+  random_seed = 0;
   random_weights = false;
   per_feature_regularizer_input = "";
   per_feature_regularizer_output = "";

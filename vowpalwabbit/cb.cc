@@ -218,7 +218,6 @@ namespace CB
 	
 	if (multilabel) {
 	  std::ostringstream pred_buf;
-	  
 	  pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ')
 		   << ec.pred.multilabels.label_v[0]<<".....";			
 	  all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), 

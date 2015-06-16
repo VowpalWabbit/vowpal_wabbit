@@ -243,35 +243,11 @@ public class VWTest {
         predict.close();
     }
 
-    private void expectMultiLabelFailure(String type) {
-        thrown.expect(IllegalVWInput.class);
-        thrown.expectMessage("VW JNI layer only supports simple and multiclass predictions");
-        VW vw = new VW("--quiet " + type);
-        vw.close();
-    }
-
-    @Test
-    public void testCSOASSLDF() {
-        expectMultiLabelFailure("--csoaa_ldf 3");
-    }
-
-    @Test
-    public void testCSOASSRank() {
-        expectMultiLabelFailure("--csoaa_rank 3");
-    }
-
-    @Test
-    public void testCBADF() {
-        expectMultiLabelFailure("--cb_adf 3");
-    }
-
-    @Test
-    public void testRankAll() {
-        expectMultiLabelFailure("--rank_all 3");
-    }
-
     @Test
     public void testMultiLabel() {
-        expectMultiLabelFailure("--multilabel_oaa 3");
+        thrown.expect(IllegalVWInput.class);
+        thrown.expectMessage("VW JNI layer only supports simple and multiclass predictions");
+        VW vw = new VW("--quiet --multilabel_oaa 3");
+        vw.close();
     }
 }

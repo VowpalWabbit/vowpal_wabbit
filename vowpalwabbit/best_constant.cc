@@ -26,14 +26,8 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
 
     if ( (label1_cnt + label2_cnt) <= 0.) return false;
 
-    po::parsed_options pos = po::command_line_parser(all.args).
-            style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-            options(all.opts).allow_unregistered().run();
 
-    po::variables_map vm = po::variables_map();
-
-    po::store(pos, vm);
-    po::notify(vm);
+    po::variables_map& vm = all.vm;
 
     string funcName;
     if(vm.count("loss_function"))
