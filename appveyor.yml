@@ -12,6 +12,7 @@ build:
 # need to install nuget packages before Visual Studio starts to make ANTLR targets available.
 before_build:
 - vowpalwabbit\.nuget\nuget install -o packages cs_unittest\packages.config
+- dir vowpalwabbit\packages\Antlr4.4.3.0\build
 after_build:
 - cd cs
 - ..\vowpalwabbit\.nuget\nuget pack cs.csproj -Prop "Configuration=Release;Platform=x64" -Prop SolutionDir=..\vowpalwabbit\ -OutputDirectory bin\x64\Release

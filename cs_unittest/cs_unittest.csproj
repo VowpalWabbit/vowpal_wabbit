@@ -814,7 +814,8 @@
     <Error Condition="!Exists('$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.props')" Text="$([System.String]::Format('$(ErrorText)', '..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.props'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.targets'))" />
   </Target>
-  <Import Project="$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.targets" Condition="Exists('..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.targets')" />
+  <Import Project="$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.targets"  />
+  <!-- Condition="Exists('..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.targets')" -->
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
