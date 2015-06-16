@@ -49,8 +49,6 @@ namespace Microsoft.Research.MachineLearning
 
         protected override void Dispose(bool isDiposing)
         {
-            base.Dispose(isDiposing);
-
             if (isDiposing)
             {
                 if (this.serializer != null)
@@ -60,6 +58,9 @@ namespace Microsoft.Research.MachineLearning
                     this.serializer = null;
                 }
             }
+
+            // don't dispose VW before we can dispose all cached examples
+            base.Dispose(isDiposing);
         }
     }
 

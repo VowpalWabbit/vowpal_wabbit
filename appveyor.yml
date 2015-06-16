@@ -11,7 +11,7 @@ build:
   verbosity: detailed
 # need to install nuget packages before Visual Studio starts to make ANTLR targets available.
 before_build:
-- vowpalwabbit\.nuget\nuget install -o packages cs_unittest\packages.config
+- vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs_unittest\packages.config
 - dir vowpalwabbit\packages\Antlr4.4.3.0\build
 after_build:
 - cd cs

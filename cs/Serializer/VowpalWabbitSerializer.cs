@@ -38,7 +38,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
                 return;
             }
 
-            if (!this.settings.EnableExampleCaching)
+            if (this.settings.EnableExampleCaching)
             {
                 if (cacheableAttribute.EqualityComparer == null)
                 {

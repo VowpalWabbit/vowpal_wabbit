@@ -17,7 +17,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
     {
         public VowpalWabbitSerializerSettings()
         {
-            this.EnableExampleCaching = false;
+            this.EnableExampleCaching = true;
             this.MaxExampleCacheSize = int.MaxValue;
         }
 
