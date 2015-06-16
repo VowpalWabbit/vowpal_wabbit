@@ -3,6 +3,7 @@ package vw;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
+import vw.exception.IllegalVWInput;
 
 import java.io.*;
 import java.util.Map;
@@ -227,7 +228,7 @@ public class VWTest {
             Runnable run = new Runnable() {
                 @Override
                 public void run() {
-                    for (int j=0; j<1e5; ++j) {
+                    for (int j=0; j<5e4; ++j) {
                         for (Entry<String, Float> e : data.entrySet()) {
                             float actual = predict.predict(e.getKey());
                             assertEquals(e.getValue(), actual, 1e-6f);
@@ -240,5 +241,37 @@ public class VWTest {
         threadPool.shutdown();
         threadPool.awaitTermination(1, TimeUnit.DAYS);
         predict.close();
+    }
+
+    private void expectMultiLabelFailure(String type) {
+        thrown.expect(IllegalVWInput.class);
+        thrown.expectMessage("VW JNI layer only supports simple and multiclass predictions");
+        VW vw = new VW("--quiet " + type);
+        vw.close();
+    }
+
+    @Test
+    public void testCSOASSLDF() {
+        expectMultiLabelFailure("--csoaa_ldf 3");
+    }
+
+    @Test
+    public void testCSOASSRank() {
+        expectMultiLabelFailure("--csoaa_rank 3");
+    }
+
+    @Test
+    public void testCBADF() {
+        expectMultiLabelFailure("--cb_adf 3");
+    }
+
+    @Test
+    public void testRankAll() {
+        expectMultiLabelFailure("--rank_all 3");
+    }
+
+    @Test
+    public void testMultiLabel() {
+        expectMultiLabelFailure("--multilabel_oaa 3");
     }
 }

@@ -5,7 +5,7 @@
 void throw_java_exception(JNIEnv *env, const char* name, const char* msg) {
      jclass jc = env->FindClass(name);
      if (jc)
-        env->ThrowNew (jc, msg);
+        env->ThrowNew(jc, msg);
 }
 
 void rethrow_cpp_exception_as_java_exception(JNIEnv *env) {
@@ -31,7 +31,13 @@ void rethrow_cpp_exception_as_java_exception(JNIEnv *env) {
 JNIEXPORT jlong JNICALL Java_vw_VW_initialize(JNIEnv *env, jobject obj, jstring command) {
     jlong vwPtr = 0;
     try {
-        vwPtr = (jlong) VW::initialize(env->GetStringUTFChars(command, NULL));
+        vw* vwInstance = VW::initialize(env->GetStringUTFChars(command, NULL));
+        vwPtr = (jlong)vwInstance;
+        if (vwInstance->multilabel_prediction) {
+            Java_vw_VW_closeInstance(env, obj, vwPtr);
+            vwPtr = 0;
+            throw_java_exception(env, "vw/exception/IllegalVWInput", "VW JNI layer only supports simple and multiclass predictions");
+        }
     }
     catch(...) {
         rethrow_cpp_exception_as_java_exception(env);
@@ -50,6 +56,7 @@ JNIEXPORT jfloat JNICALL Java_vw_VW_predict(JNIEnv *env, jobject obj, jstring ex
             vwInstance->l->learn(*vec2);
         else
             vwInstance->l->predict(*vec2);
+
         if (vwInstance->p->lp.parse_label == simple_label.parse_label)
             prediction = vec2->pred.scalar;
         else

@@ -32,6 +32,7 @@ public class VW implements Closeable {
     }
 
     private boolean isOpen;
+    // Load tests have shown that a Lock is faster than synchronized (this).
     private final Lock lock;
     private final long nativePointer;
 
