@@ -46,16 +46,10 @@ namespace Microsoft.Research.MachineLearning.Serializer
         /// </summary>
         internal DateTime LastRecentUse { get; set; }
 
-        public void Dispose()
+        void IDisposable.Dispose()
         {
             // return example to cache.
             this.serializer.ReturnExampleToCache(this);
-        }
-
-
-        void IDisposable.Dispose()
-        {
-            throw new NotImplementedException();
         }
 
         TPrediction IVowpalWabbitExample.Learn<TPrediction>()

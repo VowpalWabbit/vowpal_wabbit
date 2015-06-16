@@ -58,6 +58,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="BaseData.cs" />
+    <Compile Include="TestExampleCache.cs" />
     <Compile Include="VowpalWabbitListenerToEvents.cs" />
     <Compile Include="Rcv1Test.cs" />
     <Compile Include="Test1and2.cs" />
@@ -813,8 +814,7 @@
     <Error Condition="!Exists('$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.props')" Text="$([System.String]::Format('$(ErrorText)', '..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.props'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.targets'))" />
   </Target>
-  <Import Project="$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.targets" /> 
-  <!-- Condition="Exists('..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.targets')" / -->
+  <Import Project="$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.targets" Condition="Exists('..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.targets')" />
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
@@ -822,8 +822,6 @@
   <!-- making sure it's called during AppVeyor build -->
   <!--
   <Target Name="BeforeBuild">
-	  <CallTarget Targets="Antlr4Compile" />
-	  <CallTarget Targets="Antlr4CompileAddFilesGenerated" />
   </Target>
 	-->
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

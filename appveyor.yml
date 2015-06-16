@@ -9,6 +9,9 @@ build:
   project: C:\vowpal_wabbit\vowpalwabbit\vw.sln
   parallel: true
   verbosity: detailed
+# need to install nuget packages before Visual Studio starts to make ANTLR targets available.
+before_build:
+- vowpalwabbit\.nuget\nuget install -o packages cs_unittest\packages.config
 after_build:
 - cd cs
 - ..\vowpalwabbit\.nuget\nuget pack cs.csproj -Prop "Configuration=Release;Platform=x64" -Prop SolutionDir=..\vowpalwabbit\ -OutputDirectory bin\x64\Release
