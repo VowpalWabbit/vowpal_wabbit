@@ -715,9 +715,9 @@ base_learner* csldf_setup(vw& all)
 
   all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld.is_singleline;
 
-  if (all.add_constant) {
+  /*if (all.add_constant) {
     all.add_constant = false;
-  }
+    }*/
   v_array<feature> empty_f = { nullptr, nullptr, nullptr, 0 };
   v_array<audit_data> empty_a = { nullptr, nullptr, nullptr, 0 };
   LabelDict::feature_audit empty_fa = { empty_f, empty_a };

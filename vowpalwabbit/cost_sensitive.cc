@@ -142,7 +142,7 @@ namespace COST_SENSITIVE {
         if (substring_eq(p->parse_name[0], "shared")) {
           if (p->parse_name.size() == 1) {
             f.class_index = 0;
-            f.x = -1.f;
+            f.x = -FLT_MAX;
           } else
             cerr << "shared feature vectors should not have costs" << endl;
         } else if (substring_eq(p->parse_name[0], "label")) {
@@ -268,7 +268,7 @@ namespace COST_SENSITIVE {
     v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
     if (costs.size() != 1) return false;
     if (costs[0].class_index != 0) return false;
-    if (costs[0].x >= 0) return false;
+    if (costs[0].x != -FLT_MAX) return false;
     return true;    
   }
 }
