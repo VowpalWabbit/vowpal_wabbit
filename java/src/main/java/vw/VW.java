@@ -112,6 +112,7 @@ public class VW implements Closeable {
         }
     }
 
+    public static native String version();
     private native long initialize(String command);
     private native float predict(String example, boolean learn, long nativePointer);
     private native void closeInstance(long nativePointer);

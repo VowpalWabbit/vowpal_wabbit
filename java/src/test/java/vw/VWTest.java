@@ -250,4 +250,18 @@ public class VWTest {
         VW vw = new VW("--quiet --multilabel_oaa 3");
         vw.close();
     }
+
+    @Test
+    public void testVersion() throws IOException {
+        String actualVersion = VW.version();
+        String expectedVersion;
+        BufferedReader reader = new BufferedReader(new FileReader("../vowpalwabbit/config.h"));
+        try {
+            expectedVersion = reader.readLine().replace("#define PACKAGE_VERSION ", "").replace("\"", "");
+        }
+        finally {
+            reader.close();
+        }
+        assertEquals(expectedVersion, actualVersion);
+    }
 }

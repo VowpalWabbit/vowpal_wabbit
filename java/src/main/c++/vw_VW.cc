@@ -28,6 +28,10 @@ void rethrow_cpp_exception_as_java_exception(JNIEnv *env) {
     }
 }
 
+JNIEXPORT jstring JNICALL Java_vw_VW_version(JNIEnv *env, jobject obj) {
+    return env->NewStringUTF(PACKAGE_VERSION);
+}
+
 JNIEXPORT jlong JNICALL Java_vw_VW_initialize(JNIEnv *env, jobject obj, jstring command) {
     jlong vwPtr = 0;
     try {
