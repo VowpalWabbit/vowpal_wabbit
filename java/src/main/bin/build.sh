@@ -149,6 +149,3 @@ run_docker "centos:7" "$red_hat_7"
 make clean
 make
 mv java/target/vw_jni.lib java/target/vw_jni.$(uname -s).$(uname -m).lib
-
-cd java
-mvn clean package
