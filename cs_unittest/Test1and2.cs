@@ -45,7 +45,7 @@ namespace cs_test
 
                         using (var example = vw.ReadExample(data))
                         {
-                            var actual = example.Learn<VowpalWabbitScalarPrediction>();
+                            var actual = example.LearnAndPredict<VowpalWabbitScalarPrediction>();
 
                             Assert.AreEqual(expected.Value, actual.Value, 1e-6, "Learn output differs on line: " + lineNr);
                         }

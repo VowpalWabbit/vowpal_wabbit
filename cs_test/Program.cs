@@ -28,7 +28,8 @@ namespace cs_test
             //RunFlatExampleTestEx();
             //RunLDAPredict();
             //RunVWParse_and_VWLearn();
-            new cs_unittest.Rcv1TestClass().Rcv1Test();
+
+            new cs_unittest.TestCbAdfClass().ProfilePerformance();
             Console.ReadKey();
         }
 

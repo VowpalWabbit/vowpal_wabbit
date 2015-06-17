@@ -57,7 +57,7 @@ namespace cs_unittest
                 listener.Created = x => {
                     using (var ex = vw.ReadExample(x))
                     {
-                        ex.Learn<VowpalWabbitPredictionNone>();
+                        ex.Learn();
                     }
                 };
                 VWTestHelper.ParseInput(File.OpenRead(inputFile), listener);

@@ -93,7 +93,7 @@ namespace cs_unittest
                 this.stopwatch.Start();
                 using (var vwExample = this.vw.ReadExample(this.example))
                 {
-                    vwExample.Learn<VowpalWabbitPredictionNone>();
+                    vwExample.Learn();
                 }
                 this.stopwatch.Stop();
             }

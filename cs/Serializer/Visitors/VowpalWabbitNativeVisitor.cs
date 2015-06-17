@@ -53,10 +53,14 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 
             this.namespaceBuilder = this.builder.AddNamespace(this.featureGroup);
 
-            namespaceDense.DenseFeature.Value.ForEach(
-                (v, i) => this.namespaceBuilder.AddFeature(
+            var i = 0;
+            foreach (var v in namespaceDense.DenseFeature.Value)
+            {
+                this.namespaceBuilder.AddFeature(
                     (uint) (this.namespaceHash + i),
-                    (float) Convert.ToDouble(v)));
+                    (float) Convert.ToDouble(v));
+                i++;
+            }
         }
 
         public void Visit(INamespaceSparse namespaceSparse)
@@ -71,7 +75,10 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
             this.namespaceBuilder = this.builder.AddNamespace(this.featureGroup);
 
             // Visit each feature
-            namespaceSparse.Features.ForEach(f => f.Visit());
+            foreach (var element in namespaceSparse.Features)
+            {
+                element.Visit();
+            }
         }
 
         public void Visit(IFeature<short> feature)
@@ -135,46 +142,52 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 
         public void Visit<TValue>(IFeature<IDictionary<UInt16, TValue>> feature)
         {
-            feature.Value
-                .ForEach(kvp => 
-                    this.namespaceBuilder.AddFeature(this.namespaceHash + kvp.Key, (float)Convert.ToDouble(kvp.Value)));
+            foreach (var kvp in feature.Value)
+            {
+                this.namespaceBuilder.AddFeature(this.namespaceHash + kvp.Key, (float)Convert.ToDouble(kvp.Value));
+            }
         }
 
         public void Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
         {
-            feature.Value
-                .ForEach(kvp => 
-                    this.namespaceBuilder.AddFeature(this.namespaceHash + kvp.Key, (float)Convert.ToDouble(kvp.Value)));
+            foreach (var kvp in feature.Value)
+            {
+                this.namespaceBuilder.AddFeature(this.namespaceHash + kvp.Key, (float)Convert.ToDouble(kvp.Value));
+            }
         }
 
         public void Visit<TValue>(IFeature<IDictionary<Int16, TValue>> feature)
         {
-            feature.Value
-                .ForEach(kvp => 
-                    this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + kvp.Key), (float)Convert.ToDouble(kvp.Value)));
+            foreach (var kvp in feature.Value)
+            {
+                this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + kvp.Key), (float)Convert.ToDouble(kvp.Value));
+            }
         }
 
         public void Visit<TValue>(IFeature<IDictionary<Int32, TValue>> feature)
         {
-            feature.Value
-                .ForEach(kvp => 
-                    this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + kvp.Key), (float)Convert.ToDouble(kvp.Value)));
+            foreach (var kvp in feature.Value)
+            {
+                this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + kvp.Key), (float)Convert.ToDouble(kvp.Value));
+            }
         }
 
         public void Visit(IFeature<IDictionary<Int32, float>> feature)
         {
-            feature.Value
-                .ForEach(kvp => 
-                    this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + kvp.Key), kvp.Value));
+            foreach (var kvp in feature.Value)
+            {
+                this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + kvp.Key), kvp.Value);
+            }
         }
 
         public void Visit<TKey, TValue>(IFeature<IEnumerable<KeyValuePair<TKey, TValue>>> feature)
         {
-            feature.Value
-                .ForEach(kvp => 
-                    this.namespaceBuilder.AddFeature(
+            foreach (var kvp in feature.Value)
+            {
+                this.namespaceBuilder.AddFeature(
                         this.vw.HashFeature(Convert.ToString(kvp.Key), this.namespaceHash),
-                        (float)Convert.ToDouble(kvp.Value)));
+                        (float)Convert.ToDouble(kvp.Value));
+            }
         }
 
 
@@ -190,9 +203,10 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 
         public void Visit(IFeature<IEnumerable<string>> feature)
         {
-            feature.Value
-                .ForEach(value => 
-                    this.namespaceBuilder.AddFeature(this.vw.HashFeature(value, this.namespaceHash), 1f));
+            foreach (var value in feature.Value)
+            {
+                this.namespaceBuilder.AddFeature(this.vw.HashFeature(value, this.namespaceHash), 1f);
+            }
         }
 
         public void Visit<T>(IFeature<T> feature)
@@ -209,7 +223,10 @@ namespace Microsoft.Research.MachineLearning.Serializer.Visitors
             {
                 this.builder.Label = label;
 
-                namespaces.ForEach(n => n.Visit());
+                foreach (var n in namespaces)
+                {
+                    n.Visit();
+                }
 
                 return this.builder.CreateExample();
             }

@@ -14,7 +14,7 @@ namespace Microsoft
 		{
 			void VowpalWabbitPrediction::ReadFromExample(VowpalWabbitExample^ example)
 			{
-				ReadFromExample(example->m_vw, example->m_example);
+				ReadFromExample(example->m_vw->m_vw, example->m_example);
 			}
 
 			void VowpalWabbitScalarPrediction::ReadFromExample(vw* vw, example* ex)
@@ -45,11 +45,6 @@ namespace Microsoft
 			{
 				Values = gcnew cli::array<float>(vw->lda);
 				Marshal::Copy(IntPtr(ex->topic_predictions.begin), Values, 0, vw->lda);
-			}
-
-			void VowpalWabbitPredictionNone::ReadFromExample(vw* vw, example* ex)
-			{
-				// no-op
 			}
 		}
 	}

@@ -48,8 +48,6 @@
     <Compile Include="Interfaces\IExample.cs" />
     <Compile Include="Interfaces\IObjectFactory.cs" />
     <Compile Include="Labels\ContextualBanditLabel.cs" />
-    <Compile Include="MoreLinq\MoreEnumerable.ForEach.cs" />
-    <Compile Include="MoreLinq\MoreEnumerable.ForEachIndex.cs" />
     <Compile Include="MoreLinq\MoreEnumerable.MinBy.cs" />
     <Compile Include="PooledObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

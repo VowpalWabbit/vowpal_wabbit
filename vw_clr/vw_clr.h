@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #endif
 
 #include "vw.h"
+#include <stack>
 #include "parser.h"
 
 #include <msclr\marshal_cppstd.h>
@@ -25,6 +26,7 @@ namespace Microsoft
 		namespace MachineLearning 
 		{
 			ref class VowpalWabbitExample;
+            ref class VowpalWabbitBase;
 
 			public ref class VowpalWabbitPrediction abstract
 			{
@@ -66,18 +68,16 @@ namespace Microsoft
 				property cli::array<float>^ Values;
 			};
 
-			public ref class VowpalWabbitPredictionNone : VowpalWabbitPrediction
-			{
-			public:
-				void ReadFromExample(vw* vw, example* ex) override;
-			};
-
 			public interface class IVowpalWabbitExample : public IDisposable
 			{
 			public:
+				virtual void Learn() = 0;
+				virtual void PredictAndDiscard() = 0;
+
+				// T Learn<T>()
 				generic<typename TPrediction>
 					where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-				virtual TPrediction Learn() = 0;
+				virtual TPrediction LearnAndPredict() = 0;
 
 				generic<typename TPrediction>
 					where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
@@ -91,32 +91,30 @@ namespace Microsoft
 
 			public ref class VowpalWabbitExample : public IVowpalWabbitExample
 			{
-			private:
-				generic<typename TPrediction>
-					where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-				TPrediction PredictOrLearn(bool predict);
-
 			protected:
 				!VowpalWabbitExample();
 
 			internal :
-				VowpalWabbitExample(vw* vw, example* example);
-				vw* const m_vw;
+				VowpalWabbitExample(VowpalWabbitBase^ vw, example* example);
+                initonly VowpalWabbitBase^ m_vw;
 				example* m_example;
 
 			public:
 
 				~VowpalWabbitExample();
 
+				virtual void Learn();
+				virtual void PredictAndDiscard();
+
 				generic<typename TPrediction>
 					where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-				virtual TPrediction Learn();
+				virtual TPrediction LearnAndPredict();
 
 				generic<typename TPrediction>
 					where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 				virtual TPrediction Predict();
 
-					virtual property VowpalWabbitExample^ UnderlyingExample
+				virtual property VowpalWabbitExample^ UnderlyingExample
 				{
 					VowpalWabbitExample^ get();
 				}
@@ -146,6 +144,9 @@ namespace Microsoft
 			{
 			internal:
 				vw* m_vw;
+
+                example* GetOrCreateNativeExample();
+                void ReturnExampleToPool(example*);
 				
 			protected:
 				bool m_isDisposed;
@@ -165,6 +166,8 @@ namespace Microsoft
 				{
 					VowpalWabbitPerformanceStatistics^ get();
 				}
+
+                stack<example*>* m_examples;
 			};
 
 			/// <summary>

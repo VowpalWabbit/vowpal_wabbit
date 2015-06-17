@@ -24,7 +24,7 @@ namespace cs_unittest
             {
                 using (var example = vw.ReadExample(new CachedData()))
                 {
-                    example.Learn<VowpalWabbitPredictionNone>();
+                    example.Learn();
                 }
             }
         }
@@ -39,7 +39,7 @@ namespace cs_unittest
             {
                 using (var example = vw.ReadExample(new CachedData()))
                 {
-                    example.Learn<VowpalWabbitPredictionNone>();
+                    example.Learn();
                 }
             }
         }
@@ -77,7 +77,7 @@ namespace cs_unittest
                 {
                     using (var vwExample = vw.ReadExample(example))
                     {
-                        vwExample.Learn<VowpalWabbitPredictionNone>();
+                        vwExample.Learn();
                     }
                 }
 

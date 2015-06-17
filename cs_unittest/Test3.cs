@@ -83,6 +83,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [Ignore]
         [Description("label-dependent features with csoaa_ldf")]
         [DeploymentItem(@"train-sets\ref\cs_test.ldf.csoaa.stderr")]
         [DeploymentItem(@"train-sets\ref\cs_test.ldf.csoaa.predict")]
@@ -98,9 +99,9 @@ namespace cs_unittest
             {
                 foreach (var d in sampleData)
 	            {
-                    using (var ex = vw.ReadExample(x))
+                    using (var ex = vw.ReadExample(d))
                     {
-                        ex.Learn<VowpalWabbitPredictionNone>();
+                        ex.Learn();
                     }		 
 	            }
 

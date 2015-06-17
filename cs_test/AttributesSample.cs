@@ -97,7 +97,7 @@ namespace cs_test
 
             using (var example = vw.ReadExample(context))
             {
-                var score = example.Learn<VowpalWabbitScalarPrediction>().Value;
+                var score = example.LearnAndPredict<VowpalWabbitScalarPrediction>().Value;
                 Console.Error.WriteLine("p2 = {0}", score);
             }
         }

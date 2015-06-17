@@ -1,5 +1,6 @@
 ﻿using Microsoft.Research.MachineLearning;
 using Microsoft.Research.MachineLearning.Interfaces;
+using Microsoft.Research.MachineLearning.Labels;
 using Microsoft.Research.MachineLearning.Serializer.Attributes;
 using System;
 using System.Collections.Generic;
@@ -30,7 +31,7 @@ namespace cs_unittest
             {
                 Shared = new[] { "s_1", "s_2" },
                 ActionDependentFeatures = new[] {
-                        new Cs_TestDataADF
+                        new Cs_TestCs_TestDataADF
                         {
                             Features = new[] { "a_1", "b_1", "c_1" },
                             Label = new ContextualBanditLabel
@@ -39,16 +40,16 @@ namespace cs_unittest
                                 Probability = .5f
                             }
                         },
-                        new Cs_TestDataADF { Features = new [] { "a_2","b_2","c_2" } },
-                        new Cs_TestDataADF { Features = new [] { "a_3","b_3","c_3" } },
+                        new Cs_TestCs_TestDataADF { Features = new [] { "a_2","b_2","c_2" } },
+                        new Cs_TestCs_TestDataADF { Features = new [] { "a_3","b_3","c_3" } },
                     }
             };
 
             sampleData[1] = new Cs_TestData
             {
                 ActionDependentFeatures = new[] {
-                        new Cs_TestDataADF { Features = new [] { "b_1","c_1","d_1" } },
-                        new Cs_TestDataADF 
+                        new Cs_TestCs_TestDataADF { Features = new [] { "b_1","c_1","d_1" } },
+                        new Cs_TestCs_TestDataADF 
                         { 
                             Features = new [] { "b_2", "c_2", "d_2" },
                             Label = new ContextualBanditLabel
@@ -63,8 +64,8 @@ namespace cs_unittest
             sampleData[2] = new Cs_TestData
             {
                 ActionDependentFeatures = new[] {
-                        new Cs_TestDataADF { Features = new [] { "a_1","b_1","c_1" } },
-                        new Cs_TestDataADF { Features = new [] { "a_3","b_3","c_3" } }
+                        new Cs_TestCs_TestDataADF { Features = new [] { "a_1","b_1","c_1" } },
+                        new Cs_TestCs_TestDataADF { Features = new [] { "a_3","b_3","c_3" } }
                     }
             };
 

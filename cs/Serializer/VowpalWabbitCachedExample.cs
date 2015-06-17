@@ -52,10 +52,19 @@ namespace Microsoft.Research.MachineLearning.Serializer
             this.serializer.ReturnExampleToCache(this);
         }
 
-        TPrediction IVowpalWabbitExample.Learn<TPrediction>()
+        void IVowpalWabbitExample.Learn()
         {
             throw new NotSupportedException("As labels cannot be updated once the example is created, cached examples cannot be used for learning");
-            // return this.example.Learn<TPrediction>();
+        }
+
+        TPrediction IVowpalWabbitExample.LearnAndPredict<TPrediction>()
+        {
+            throw new NotSupportedException("As labels cannot be updated once the example is created, cached examples cannot be used for learning");
+        }
+
+        void IVowpalWabbitExample.PredictAndDiscard()
+        {
+            this.example.PredictAndDiscard();
         }
 
         TPrediction IVowpalWabbitExample.Predict<TPrediction>()
