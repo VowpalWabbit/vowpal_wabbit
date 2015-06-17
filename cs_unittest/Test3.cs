@@ -84,26 +84,34 @@ namespace cs_unittest
 
         [TestMethod]
         [Description("label-dependent features with csoaa_ldf")]
+        [DeploymentItem(@"train-sets\ref\cs_test.ldf.csoaa.stderr")]
+        [DeploymentItem(@"train-sets\ref\cs_test.ldf.csoaa.predict")]
         public void Test9()
         {
+            var sampleData = TrainSetCs_testLdf.CreateSampleCbAdfData();
+
 //            # Test 9: label-dependent features with csoaa_ldf
 //{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off
 //    train-sets/ref/cs_test.ldf.csoaa.stderr
 //    train-sets/ref/cs_test.ldf.csoaa.predict
-            //using (var vw = new VowpalWabbit<T>(args))
-            //{
-            //    var listener = new TListener();
-            //    listener.Created = x =>
-            //    {
-            //        using (var ex = vw.ReadExample(x))
-            //        {
-            //            ex.Learn<VowpalWabbitPredictionNone>();
-            //        }
-            //    };
-            //    VWTestHelper.ParseInput(File.OpenRead(inputFile), listener);
+            using (var vw = new VowpalWabbit<Cs_TestData>("-k -c -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off"))
+            {
+                foreach (var d in sampleData)
+	            {
+                    using (var ex = vw.ReadExample(x))
+                    {
+                        ex.Learn<VowpalWabbitPredictionNone>();
+                    }		 
+	            }
 
-            //    VWTestHelper.AssertEqual(stderrFile, vw.PerformanceStatistics);
-            //}
+                vw.RunMultiPass();
+
+                Assert.AreEqual(
+                    File.ReadAllText(@"train-sets\ref\cs_test.ldf.csoaa.predict"),
+                    File.ReadAllText("cs_test.ldf.csoaa.predict"));
+
+                VWTestHelper.AssertEqual(@"train-sets\ref\cs_test.ldf.csoaa.stderr", vw.PerformanceStatistics);
+            }
         }
     }
 }
