@@ -36,6 +36,8 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
     score = ec.partial_prediction;
     prediction = i;
   }
+  if (ec.passthrough)
+    ec.passthrough->push_back( feature(ec.partial_prediction, i) );
 }
 
 #define DO_MULTIPREDICT true
@@ -43,12 +45,6 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
 template <bool is_learn>
 void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
   COST_SENSITIVE::label ld = ec.l.cs;
-  /*
-  if (ld.costs.size() == 1) {
-    ec.pred.multiclass = ld.costs[0].class_index;
-    return;
-  }
-  */
   uint32_t prediction = 1;
   float score = FLT_MAX;
   ec.l.simple = { 0., 0., 0. };
@@ -62,6 +58,9 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
     for (uint32_t i = 1; i <= c.num_classes; i++)
       if (c.pred[i-1].scalar < c.pred[prediction-1].scalar)
         prediction = i;
+    if (ec.passthrough)
+      for (uint32_t i = 1; i <= c.num_classes; i++)
+        ec.passthrough->push_back( feature(c.pred[i-1].scalar, i) );
     ec.partial_prediction = c.pred[prediction-1].scalar;
     //cerr << "c.num_classes = " << c.num_classes << ", prediction = " << prediction << endl;
   } else {
@@ -110,6 +109,7 @@ struct score {
   size_t idx;
 };
 
+// TODO: passthrough for ldf
 struct ldf {
   v_array<example*> ec_seq;
   LabelDict::label_feature_map label_features;  

@@ -65,6 +65,9 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   for (uint32_t i=2; i<=o.k; i++)
     if (o.pred[i-1].scalar > o.pred[prediction-1].scalar)
       prediction = i;
+  if (ec.passthrough)
+    for (uint32_t i=1; i<=o.k; i++)
+      ec.passthrough->push_back( feature(i,o.pred[i-1].scalar) );
   
   if (is_learn) {
     for (uint32_t i=1; i<=o.k; i++) {
