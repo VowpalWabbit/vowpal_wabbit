@@ -191,7 +191,6 @@
                 <configuration>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
                     <pushChanges>false</pushChanges>
-                    <localCheckout>true</localCheckout>
                     <goals>deploy</goals>
                 </configuration>
                 <executions>
