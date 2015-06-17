@@ -8,6 +8,7 @@
 
 using System.Globalization;
 using Microsoft.Research.MachineLearning.Interfaces;
+using System.Text;
 
 namespace Microsoft.Research.MachineLearning.Labels
 {
@@ -36,12 +37,15 @@ namespace Microsoft.Research.MachineLearning.Labels
         /// </summary>
         public string ToVowpalWabbitFormat()
         {
-            return string.Format(
-                CultureInfo.InvariantCulture, 
-                "{0}:{1}:{2}", 
-                this.Action, 
-                this.Cost, 
-                this.Probability);
+            var sb = new StringBuilder();
+            
+            sb.Append(this.Action.ToString(CultureInfo.InvariantCulture));
+            sb.Append(':');
+            sb.Append(this.Cost.ToString(CultureInfo.InvariantCulture));
+            sb.Append(':');
+            sb.Append(this.Probability.ToString(CultureInfo.InvariantCulture));
+            
+            return sb.ToString();
         }
     }
 }

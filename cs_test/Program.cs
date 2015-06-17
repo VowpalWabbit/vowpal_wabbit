@@ -29,7 +29,7 @@ namespace cs_test
             //RunLDAPredict();
             //RunVWParse_and_VWLearn();
 
-            new cs_unittest.TestCbAdfClass().ProfilePerformance();
+            new cs_unittest.TestCbAdfClass().ProfilePerformanceWithFloatData();
             Console.ReadKey();
         }
 

@@ -8,6 +8,7 @@
 
 using Microsoft.Research.MachineLearning.Interfaces;
 using System.Globalization;
+using System.Text;
 
 namespace Microsoft.Research.MachineLearning.Labels
 {
@@ -36,15 +37,20 @@ namespace Microsoft.Research.MachineLearning.Labels
         {
             if (Weight == null)
             {
-                return string.Format(CultureInfo.InvariantCulture, "{0}", this.Label);
+                return this.Label.ToString(CultureInfo.InvariantCulture);
             }
 
-            if (Initial == null)
+            var sb = new StringBuilder();
+            sb.Append(this.Label.ToString(CultureInfo.InvariantCulture));
+            sb.Append(' ');
+            sb.Append(this.Weight.Value.ToString(CultureInfo.InvariantCulture));
+
+            if (Initial != null)
             {
-                return string.Format(CultureInfo.InvariantCulture, "{0} {1}", this.Label, this.Weight);
+                sb.Append(' ');
+                sb.Append(this.Initial.Value.ToString(CultureInfo.InvariantCulture));
             }
-
-            return string.Format(CultureInfo.InvariantCulture, "{0} {1} {2}", this.Label, this.Weight, this.Initial);
+            return sb.ToString();
         }
     }
 }

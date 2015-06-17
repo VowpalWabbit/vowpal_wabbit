@@ -15,13 +15,28 @@ namespace cs_unittest
     [TestClass]
     public class TestCbAdfClass : TestBase
     {
-        public void ProfilePerformance()
+        public void ProfilePerformanceWithStringData()
         {
             string outModelFile = "profile_cb_adf.model";
-            using (var vw = new VowpalWabbit<Data, DataStringADF>("--cb_adf --rank_all"))
+            using (var vw = new VowpalWabbit<DataString, DataStringADF>("--cb_adf --rank_all"))
             {
-                Data[] sampleData = CreateSampleCbAdfData(1000 * 1000);
-                foreach (Data example in sampleData)
+                DataString[] sampleData = CreateStringCbAdfData(1000 * 1000);
+                foreach (DataString example in sampleData)
+                {
+                    vw.Learn(example);
+                }
+                vw.SaveModel(outModelFile);
+            }
+            File.Delete(outModelFile);
+        }
+
+        public void ProfilePerformanceWithFloatData()
+        {
+            string outModelFile = "profile_cb_adf.model";
+            using (var vw = new VowpalWabbit<DataFloat, DataFloatADF>("--cb_adf --rank_all"))
+            {
+                DataFloat[] sampleData = CreateFloatCbAdfData(1000 * 1000);
+                foreach (DataFloat example in sampleData)
                 {
                     vw.Learn(example);
                 }
@@ -33,7 +48,7 @@ namespace cs_unittest
         [TestMethod]
         public void Test87()
         {
-            using (var vw = new VowpalWabbit<Data, DataStringADF>("--cb_adf --rank_all"))
+            using (var vw = new VowpalWabbit<DataString, DataStringADF>("--cb_adf --rank_all"))
             {
                 var sampleData = CreateSampleCbAdfData();
 
@@ -66,9 +81,9 @@ namespace cs_unittest
             
             var sampleData = CreateSampleCbAdfData();
 
-            using (var vw = new VowpalWabbit<Data, DataStringADF>("--cb_adf --rank_all"))
+            using (var vw = new VowpalWabbit<DataString, DataStringADF>("--cb_adf --rank_all"))
             {
-                foreach (Data example in sampleData)
+                foreach (DataString example in sampleData)
                 {
                     vw.Learn(example);
                 }
@@ -77,9 +92,9 @@ namespace cs_unittest
             
             // Get ground truth predictions
             var expectedPredictions = new List<DataStringADF[]>();
-            using (var vw = new VowpalWabbit<Data, DataStringADF>(string.Format("-t -i {0}", cbadfModelFile)))
+            using (var vw = new VowpalWabbit<DataString, DataStringADF>(string.Format("-t -i {0}", cbadfModelFile)))
             {
-                foreach (Data example in sampleData)
+                foreach (DataString example in sampleData)
                 {
                     expectedPredictions.Add(vw.Predict(example));
                 }
@@ -87,8 +102,8 @@ namespace cs_unittest
 
             // Test synchronous VW instances using shared model
             using (var vwModel = new VowpalWabbitModel("-t", File.OpenRead(cbadfModelFile)))
-            using (var vwShared1 = new VowpalWabbit<Data, DataStringADF>(vwModel))
-            using (var vwShared2 = new VowpalWabbit<Data, DataStringADF>(vwModel))
+            using (var vwShared1 = new VowpalWabbit<DataString, DataStringADF>(vwModel))
+            using (var vwShared2 = new VowpalWabbit<DataString, DataStringADF>(vwModel))
             {
                 for (int i = 0; i < sampleData.Length; i++)
                 {
@@ -99,7 +114,7 @@ namespace cs_unittest
 
             // Test concurrent VW instances using shared model and model pool
             using (var vwModel = new VowpalWabbitModel("-t", File.OpenRead(cbadfModelFile)))
-            using (var vwPool = new ObjectPool<VowpalWabbit<Data, DataStringADF>>(new VowpalWabbitFactory<Data, DataStringADF>(vwModel)))
+            using (var vwPool = new ObjectPool<VowpalWabbit<DataString, DataStringADF>>(new VowpalWabbitFactory<DataString, DataStringADF>(vwModel)))
             {
                 Parallel.For
                 (
@@ -108,10 +123,10 @@ namespace cs_unittest
                     parallelOptions: new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount * 2 },
                     body: i =>
                     {
-                        using (PooledObject<VowpalWabbit<Data, DataStringADF>> vwObject = vwPool.Get())
+                        using (PooledObject<VowpalWabbit<DataString, DataStringADF>> vwObject = vwPool.Get())
                         {
                             var actualPredictions = new List<DataStringADF[]>();
-                            foreach (Data example in sampleData)
+                            foreach (DataString example in sampleData)
                             {
                                 actualPredictions.Add(vwObject.Value.Predict(example));
                             }
@@ -127,9 +142,9 @@ namespace cs_unittest
             }
         }
 
-        private Data[] CreateSampleCbAdfData()
+        private DataString[] CreateSampleCbAdfData()
         {
-            var sampleData = new Data[3];
+            var sampleData = new DataString[3];
 
             //shared | s_1 s_2
             //0:1.0:0.5 | a_1 b_1 c_1
@@ -142,7 +157,7 @@ namespace cs_unittest
             //| a_1 b_1 c_1 
             //| a_3 b_3 c_3
 
-            sampleData[0] = new Data
+            sampleData[0] = new DataString
             {
                 Shared = new[] { "s_1", "s_2" },
                 ActionDependentFeatures = new[] {
@@ -160,7 +175,7 @@ namespace cs_unittest
                     }
             };
 
-            sampleData[1] = new Data
+            sampleData[1] = new DataString
             {
                 ActionDependentFeatures = new[] {
                         new DataStringADF { Features = new [] { "b_1","c_1","d_1" } },
@@ -176,7 +191,7 @@ namespace cs_unittest
                     }
             };
 
-            sampleData[2] = new Data
+            sampleData[2] = new DataString
             {
                 ActionDependentFeatures = new[] {
                         new DataStringADF { Features = new [] { "a_1","b_1","c_1" } },
@@ -187,11 +202,11 @@ namespace cs_unittest
             return sampleData;
         }
 
-        private Data[] CreateSampleCbAdfData(int numSamples, int randomSeed = 0)
+        private DataString[] CreateStringCbAdfData(int numSamples, int randomSeed = 0)
         {
             var random = new Random(randomSeed);
 
-            var sampleData = new Data[numSamples];
+            var sampleData = new DataString[numSamples];
             for (int i = 0; i < numSamples; i++)
             {
                 int numActions = random.Next(2, 5);
@@ -228,7 +243,7 @@ namespace cs_unittest
                     }
                 }
 
-                sampleData[i] = new Data
+                sampleData[i] = new DataString
                 {
                     ActionDependentFeatures = adf
                 };
@@ -237,7 +252,57 @@ namespace cs_unittest
             return sampleData;
         }
 
-        public class Data : SharedExample, IActionDependentFeatureExample<DataStringADF>
+        private DataFloat[] CreateFloatCbAdfData(int numSamples, int randomSeed = 0)
+        {
+            var random = new Random(randomSeed);
+
+            var sampleData = new DataFloat[numSamples];
+            for (int i = 0; i < numSamples; i++)
+            {
+                int numActions = random.Next(2, 5);
+
+                int[] fIndex = Enumerable.Range(1, numActions).OrderBy(ind => random.Next()).Take(numActions).ToArray();
+
+                var features = new float[numActions][];
+                for (int j = 0; j < numActions; j++)
+                {
+                    features[j] = new float[] 
+                    { 
+                        (fIndex[j] + 0) / (float)numActions,
+                        (fIndex[j] + 1) / (float)numActions,
+                        (fIndex[j] + 2) / (float)numActions,
+                        (fIndex[j] + 3) / (float)numActions
+                    };
+                }
+
+                var adf = new DataFloatADF[numActions];
+
+                int labelIndex = random.Next(-1, numActions);
+
+                for (int j = 0; j < numActions; j++)
+                {
+                    adf[j] = new DataFloatADF { Features = features[j] };
+
+                    if (j == labelIndex)
+                    {
+                        adf[j].Label = new ContextualBanditLabel
+                        {
+                            Cost = (float)random.NextDouble(),
+                            Probability = (float)random.NextDouble()
+                        };
+                    }
+                }
+
+                sampleData[i] = new DataFloat
+                {
+                    ActionDependentFeatures = adf
+                };
+            }
+
+            return sampleData;
+        }
+
+        public class DataString : SharedExample, IActionDependentFeatureExample<DataStringADF>
         {
             [Feature]
             public string[] Shared { get; set; }
@@ -245,10 +310,31 @@ namespace cs_unittest
             public IReadOnlyList<DataStringADF> ActionDependentFeatures { get; set; }
         }
 
+        public class DataFloat : SharedExample, IActionDependentFeatureExample<DataFloatADF>
+        {
+            [Feature]
+            public string[] Shared { get; set; }
+
+            public IReadOnlyList<DataFloatADF> ActionDependentFeatures { get; set; }
+        }
+
         public class DataStringADF : IExample
         {
             [Feature]
             public string[] Features { get; set; }
+
+            public override string ToString()
+            {
+                return string.Join(" ", this.Features);
+            }
+
+            public ILabel Label { get; set; }
+        }
+
+        public class DataFloatADF : IExample
+        {
+            [Feature]
+            public float[] Features { get; set; }
 
             public override string ToString()
             {
