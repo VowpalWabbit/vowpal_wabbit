@@ -7,9 +7,13 @@ license as described in the file LICENSE.
 #include <float.h>
 #include <sstream>
 #include <fstream>
+//#include <boost/filesystem.hpp>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "parse_regressor.h"
 #include "parser.h"
+#include "parse_primitives.h"
 #include "vw.h"
 #include "interactions.h"
 
@@ -18,6 +22,7 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "cbify.h"
 #include "oaa.h"
+#include "boosting.h"
 #include "multilabel_oaa.h"
 #include "rand48.h"
 #include "bs.h"
@@ -63,10 +68,52 @@ bool ends_with(string const &fullString, string const &ending)
     }
 }
 
-bool substring_equal(substring&a, substring&b) {
-  return (a.end - a.begin == b.end - b.begin) // same length
-      && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
-}  
+unsigned long long hash_file_contents(io_buf *io, int f) {
+  unsigned long long v = 5289374183516789128;
+  unsigned char buf[1024];
+  while (true) {
+    size_t n = io->read_file(f, buf, 1024);
+    if (n == 0) break;
+    for (size_t i=0; i<n; i++) {
+      v *= 341789041;
+      v += buf[i];
+    }
+  }
+  return v;
+}
+
+bool directory_exists(string path) {
+  struct stat info;
+  if (stat(path.c_str(), &info) != 0)
+    return false;
+  else
+    return (info.st_mode & S_IFDIR);
+  //  boost::filesystem::path p(path);
+  //  return boost::filesystem::exists(p) && boost::filesystem::is_directory(p);
+}
+
+string find_in_path(vector<string> paths, string fname) {
+#ifdef _WIN32
+  string delimiter = "\\";
+#else
+  string delimiter = "/";
+#endif
+  for (string path : paths) {
+    string full = ends_with(path, delimiter) ? (path + fname) : (path + delimiter + fname);
+    ifstream f(full.c_str());
+    if (f.good())
+      return full;
+  }
+  return "";
+/*
+  for (string path : paths) {
+    boost::filesystem::path p(path);
+    p /= fname;
+    if (boost::filesystem::exists(p) && !boost::filesystem::is_directory(p))
+      return p;
+  }
+*/
+}
 
 void parse_dictionary_argument(vw&all, string str) {
   if (str.length() == 0) return;
@@ -80,21 +127,63 @@ void parse_dictionary_argument(vw&all, string str) {
     s  += 2;
   }
 
+  string fname = find_in_path(all.dictionary_path, string(s));
+  if (fname == "") { //  ! boost::filesystem::exists(fname) ) {
+    cerr << "error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path" << endl;
+    throw exception();
+  }
+
+  bool is_gzip = ends_with(fname, ".gz");
+  io_buf* io = is_gzip ? new comp_io_buf : new io_buf;
+  int fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
+  if (fd < 0) {
+    cerr << "error: cannot read dictionary from file '" << fname << "'" << ", opening failed" << endl;
+    throw exception();
+  }
+  unsigned long long fd_hash = hash_file_contents(io, fd);
+  io->close_file();
+
+  if (! all.quiet)
+    cerr << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << endl;
+
   // see if we've already read this dictionary
   for (size_t id=0; id<all.read_dictionaries.size(); id++)
-    if (strcmp(all.read_dictionaries[id].name, s) == 0) {
+    if (all.read_dictionaries[id].file_hash == fd_hash) {
       all.namespace_dictionaries[(size_t)ns].push_back(all.read_dictionaries[id].dict);
       return;
     }
 
   feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
   
-  // TODO: handle gzipped dictionaries
   example *ec = alloc_examples(all.p->lp.label_size, 1);
-  ifstream infile(s);
+  fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
+  if (fd < 0) {
+    cerr << "error: cannot re-read dictionary from file '" << fname << "'" << ", opening failed" << endl;
+    throw exception();
+  }
   size_t def = (size_t)' ';
-  for (string line; getline(infile, line);) {
-    char* c = (char*)line.c_str(); // we're throwing away const, which is dangerous...
+
+  int size = 2048, pos, nread;
+  char rc;
+  char*buffer = calloc_or_die<char>(size);
+  do {
+    pos = 0;
+    do {
+      nread = io->read_file(fd, &rc, 1);
+      if ((rc != EOF) && (nread > 0)) buffer[pos++] = rc;
+      if (pos >= size - 1) {
+        size *= 2;
+        buffer = (char*)realloc(buffer, size);
+        if (buffer == nullptr) {
+          cerr << "error: memory allocation failed in reading dictionary" << endl;
+          throw exception();
+        }
+      }
+    } while ( (rc != EOF) && (rc != '\n') && (nread > 0) );
+    buffer[pos] = 0;
+
+    // we now have a line in buffer
+    char* c = buffer;
     while (*c == ' ' || *c == '\t') ++c; // skip initial whitespace
     char* d = c;
     while (*d != ' ' && *d != '\t' && *d != '\n' && *d != '\0') ++d; // gobble up initial word
@@ -108,7 +197,6 @@ void parse_dictionary_argument(vw&all, string str) {
       free(word);
       continue;
     }
-    
     d--;
     *d = '|';  // set up for parser::read_line
     read_line(all, ec, d);
@@ -125,13 +213,15 @@ void parse_dictionary_argument(vw&all, string str) {
     // clear up ec
     ec->tag.erase(); ec->indices.erase();
     for (size_t i=0; i<256; i++) { ec->atomics[i].erase(); ec->audit_features[i].erase(); }
-  }
+  } while ((rc != EOF) && (nread > 0));
+  free(buffer);
+  io->close_file();
   dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
   
   cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
   all.namespace_dictionaries[(size_t)ns].push_back(map);
-  dictionary_info info = { calloc_or_die<char>(strlen(s)+1), map };
+  dictionary_info info = { calloc_or_die<char>(strlen(s)+1), fd_hash, map };
   strcpy(info.name, s);
   all.read_dictionaries.push_back(info);
 }
@@ -325,6 +415,7 @@ void parse_feature_tweaks(vw& all)
     ("affix", po::value<string>(), "generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace")
     ("spelling", po::value< vector<string> >(), "compute spelling features for a give namespace (use '_' for default namespace)")
     ("dictionary", po::value< vector<string> >(), "read a dictionary for additional features (arg either 'x:file' or just 'file')")
+    ("dictionary_path", po::value< vector<string> >(), "look in this directory for dictionaries; defaults to current directory or env{PATH}")
     ("interactions", po::value< vector<string> > (), "Create feature interactions of any level between namespaces.")
     ("permutations", "Use permutations instead of combinations for feature interactions of same namespace.")
     ("leave_duplicate_interactions", "Don't remove interactions with duplicate combinations of namespaces. For ex. this is a duplicate: '-q ab -q ba' and a lot more in '-q ::'.")
@@ -344,9 +435,11 @@ void parse_feature_tweaks(vw& all)
       
   if (vm.count("spelling")) {
     vector<string> spelling_ns = vm["spelling"].as< vector<string> >();
-    for (size_t id=0; id<spelling_ns.size(); id++)
+    for (size_t id=0; id<spelling_ns.size(); id++) {
       if (spelling_ns[id][0] == '_') all.spelling_features[(unsigned char)' '] = true;
       else all.spelling_features[(size_t)spelling_ns[id][0]] = true;
+      *all.file_options << " --spelling " << spelling_ns[id];
+    }
   }
 
   if (vm.count("affix")) {
@@ -592,11 +685,37 @@ void parse_feature_tweaks(vw& all)
 
       }
   }
-
+    
   if (vm.count("dictionary")) {
+    if (vm.count("dictionary_path"))
+      for (string path : vm["dictionary_path"].as< vector<string> >())
+        if (directory_exists(path))
+          all.dictionary_path.push_back(path);
+    if (directory_exists("."))
+      all.dictionary_path.push_back(".");
+
+    const std::string PATH = getenv( "PATH" );
+#if _WIN32
+    const char delimiter = ';';
+#else
+    const char delimiter = ':';
+#endif
+    if(!PATH.empty()) {
+      size_t previous = 0;
+      size_t index = PATH.find( delimiter );
+      while( index != string::npos ) {
+        all.dictionary_path.push_back( PATH.substr(previous, index-previous));
+        previous=index+1;
+        index = PATH.find( delimiter, previous );
+      }
+      all.dictionary_path.push_back( PATH.substr(previous) );
+    }
+    
     vector<string> dictionary_ns = vm["dictionary"].as< vector<string> >();
-    for (size_t id=0; id<dictionary_ns.size(); id++)
+    for (size_t id=0; id<dictionary_ns.size(); id++) {
       parse_dictionary_argument(all, dictionary_ns[id]);
+      *all.file_options << " --dictionary " << dictionary_ns[id];
+    }
   }
   
   if (vm.count("noconstant"))
@@ -605,6 +724,7 @@ void parse_feature_tweaks(vw& all)
 
 void parse_example_tweaks(vw& all)
 {
+  string named_labels;
   new_options(all, "Example options")
     ("testonly,t", "Ignore label information and just test")
     ("holdout_off", "no holdout data in multiple passes")
@@ -620,7 +740,8 @@ void parse_example_tweaks(vw& all)
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
     ("l1", po::value<float>(&(all.l1_lambda)), "l_1 lambda")
-    ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda");
+    ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda")
+    ("named_labels", po::value<string>(&named_labels), "use names for labels (multiclass, etc.) rather than integers, argument specified all possible labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\"");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -651,6 +772,12 @@ void parse_example_tweaks(vw& all)
   if (vm.count("min_prediction") || vm.count("max_prediction") || vm.count("testonly"))
     all.set_minmax = noop_mm;
 
+  if (vm.count("named_labels")) {
+    *all.file_options << " --named_labels " << named_labels << ' ';
+    all.sd->ldict = new namedlabels(named_labels);
+    cerr << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
+  }
+  
   string loss_function = vm["loss_function"].as<string>();
   float loss_parameter = 0.0;
   if(vm.count("quantile_tau"))
@@ -827,6 +954,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(binary_setup);
   all.reduction_stack.push_back(topk_setup);
   all.reduction_stack.push_back(oaa_setup);
+  all.reduction_stack.push_back(boosting_setup);
   all.reduction_stack.push_back(ect_setup);
   all.reduction_stack.push_back(log_multi_setup);
   all.reduction_stack.push_back(multilabel_oaa_setup);

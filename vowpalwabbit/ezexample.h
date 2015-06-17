@@ -37,6 +37,22 @@ class ezexample {
   example* get_new_example() {
     example* new_ec = VW::new_unused_example(*vw_par_ref);
     vw_par_ref->p->lp.default_label(&new_ec->l);
+    new_ec->tag.erase();
+    new_ec->indices.erase();
+    for (size_t i=0; i<256; i++) {
+      new_ec->atomics[i].erase();
+      new_ec->audit_features[i].erase();
+      new_ec->sum_feat_sq[i] = 0.;
+    }
+    new_ec->ft_offset = 0;
+    new_ec->num_features = 0;
+    new_ec->partial_prediction = 0.;
+    new_ec->updated_prediction = 0.;
+    new_ec->topic_predictions.erase();
+    new_ec->loss = 0.;
+    new_ec->example_t = 0.;
+    new_ec->total_sum_feat_sq = 0.;
+    new_ec->revert_weight = 0.;
     return new_ec;
   }
 
@@ -213,6 +229,8 @@ class ezexample {
     ec->num_features      += quadratic_features_num;
     ec->total_sum_feat_sq += quadratic_features_sqr;
   }
+
+  size_t get_num_features() { return ec->num_features; }
 
   example* get() {
     if (example_changed_since_prediction)

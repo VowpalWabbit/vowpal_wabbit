@@ -74,7 +74,6 @@ namespace CB_ADF {
       }
   }
   
-  // 
   template <bool is_learn>
   void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
   {
