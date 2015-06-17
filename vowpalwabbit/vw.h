@@ -82,6 +82,7 @@ namespace VW {
 
   //notify VW that you are done with the example.
   void finish_example(vw& all, example* ec);
+  void empty_example(vw& all, example& ec);
 
   void copy_example_data(bool audit, example*, example*, size_t, void(*copy_label)(void*,void*));
   void copy_example_data(bool audit, example*, example*);  // don't copy the label

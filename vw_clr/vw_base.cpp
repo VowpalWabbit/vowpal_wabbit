@@ -7,8 +7,10 @@ license as described in the file LICENSE.
 #include "vw_clr.h"
 #include "best_constant.h"
 #include "clr_io.h"
+#include "parser.h"
 #include "parse_regressor.h"
 #include "parse_args.h"
+
 namespace Microsoft
 {
 	namespace Research
@@ -18,10 +20,11 @@ namespace Microsoft
 			VowpalWabbitBase::VowpalWabbitBase(vw* vw)
 				: m_vw(vw)
 			{
+                m_examples = nullptr;
 			}
 
 			VowpalWabbitBase::VowpalWabbitBase(System::String^ args)
-				: m_vw(nullptr)
+                : VowpalWabbitBase((vw*)nullptr)
 			{
 				try
 				{
@@ -36,6 +39,7 @@ namespace Microsoft
 			}
 
 			VowpalWabbitBase::VowpalWabbitBase(System::String^ args, System::IO::Stream^ stream)
+                : VowpalWabbitBase((vw*)nullptr)
 			{
 				clr_io_buf model(stream);
 				char** argv = nullptr;
@@ -68,10 +72,57 @@ namespace Microsoft
 				}
 			}
 
+            example* VowpalWabbitBase::GetOrCreateNativeExample()
+            {
+                example* ex = nullptr;
+                if (m_examples != nullptr && !m_examples->empty())
+                {
+                    ex = m_examples->top();
+                    m_examples->pop();
+                }
+                else
+                {
+                    ex = VW::alloc_examples(0, 1);
+                }
+                return ex;
+            }
+
+            void VowpalWabbitBase::ReturnExampleToPool(example* ex)
+            {
+                if (m_examples == nullptr)
+                {
+                    m_examples = new stack<example*>();
+                }
+
+                VW::empty_example(*m_vw, *ex);
+
+                m_examples->push(ex);
+            }
+
 			void VowpalWabbitBase::InternalDispose()
 			{
 				try
 				{
+                    while (m_examples != nullptr && !m_examples->empty())
+                    {
+                        example* ex = m_examples->top();
+
+                        if (m_vw->multilabel_prediction)
+                        {
+                            VW::dealloc_example(m_vw->p->lp.delete_label, *ex, MULTILABEL::multilabel.delete_label);
+                        }
+                        else
+                        {
+                            VW::dealloc_example(m_vw->p->lp.delete_label, *ex);
+                        }
+
+                        ::free_it(ex);
+
+                        m_examples->pop();
+                    }
+                    delete m_examples;
+                    m_examples = nullptr;
+
 					if (m_vw)
 					{
 						release_parser_datastructures(*m_vw);

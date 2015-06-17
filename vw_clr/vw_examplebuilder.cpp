@@ -17,9 +17,9 @@ namespace Microsoft
 			VowpalWabbitExampleBuilder::VowpalWabbitExampleBuilder(VowpalWabbitBase^ vw) :
 				m_vw(vw->m_vw), m_example(nullptr), m_clrExample(nullptr)
 			{
-				m_example = VW::alloc_examples(0, 1);
+                m_example = vw->GetOrCreateNativeExample();
 				m_vw->p->lp.default_label(&m_example->l);
-				m_clrExample = gcnew VowpalWabbitExample(m_vw, m_example);
+				m_clrExample = gcnew VowpalWabbitExample(vw, m_example);
 			}
 
 			VowpalWabbitExampleBuilder::~VowpalWabbitExampleBuilder()

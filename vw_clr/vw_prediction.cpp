@@ -14,7 +14,7 @@ namespace Microsoft
 		{
 			void VowpalWabbitPrediction::ReadFromExample(VowpalWabbitExample^ example)
 			{
-				ReadFromExample(example->m_vw, example->m_example);
+				ReadFromExample(example->m_vw->m_vw, example->m_example);
 			}
 
 			void VowpalWabbitScalarPrediction::ReadFromExample(vw* vw, example* ex)

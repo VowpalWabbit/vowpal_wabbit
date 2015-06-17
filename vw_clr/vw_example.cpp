@@ -12,7 +12,7 @@ namespace Microsoft
 	{
 		namespace  MachineLearning
 		{
-			VowpalWabbitExample::VowpalWabbitExample(vw* vw, example* example) : 
+            VowpalWabbitExample::VowpalWabbitExample(VowpalWabbitBase^ vw, example* example) :
 				m_vw(vw), m_example(example)
 			{
 			}
@@ -22,18 +22,9 @@ namespace Microsoft
 				if (m_example != nullptr)
 				{
 					// make sure we're not a ring based example 
-					assert(!VW::is_ring_example(*m_vw, m_example));
+					assert(!VW::is_ring_example(*m_vw->m_vw, m_example));
 
-					if (m_vw->multilabel_prediction)
-					{
-						VW::dealloc_example(m_vw->p->lp.delete_label, *m_example, MULTILABEL::multilabel.delete_label);
-					}
-					else
-					{
-						VW::dealloc_example(m_vw->p->lp.delete_label, *m_example);
-					}
-
-					::free_it(m_example);
+                    m_vw->ReturnExampleToPool(m_example);
 
 					m_example = nullptr;
 				}
@@ -51,15 +42,15 @@ namespace Microsoft
 				try
 				{
 					if (predict)
-						m_vw->l->predict(*m_example);
+                        m_vw->m_vw->l->predict(*m_example);
 					else
-						m_vw->learn(m_example);
+                        m_vw->m_vw->learn(m_example);
 
 					auto prediction = gcnew TPrediction();
-					prediction->ReadFromExample(m_vw, m_example);
+                    prediction->ReadFromExample(m_vw->m_vw, m_example);
 
 					// as this is not a ring-based example it is not free'd
-					m_vw->l->finish_example(*m_vw, *m_example);
+                    m_vw->m_vw->l->finish_example(*m_vw->m_vw, *m_example);
 
 					return prediction;
 				}

@@ -73,9 +73,21 @@ namespace Microsoft.Research.MachineLearning
         where TExample : SharedExample, IActionDependentFeatureExample<TActionDependentFeature>
     {
         private VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
+        private VowpalWabbitExample emptyExample;
 
         public VowpalWabbit(VowpalWabbitModel model, VowpalWabbitSerializerSettings settings = null)
             : base(model)
+        {
+            this.Initialize(settings);
+        }
+
+        public VowpalWabbit(string arguments, VowpalWabbitSerializerSettings settings = null)
+            : base(arguments)
+        {
+            this.Initialize(settings);
+        }
+
+        private void Initialize(VowpalWabbitSerializerSettings settings)
         {
             var visitor = new VowpalWabbitInterfaceVisitor(this);
             this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(visitor, settings);
@@ -84,17 +96,10 @@ namespace Microsoft.Research.MachineLearning
             {
                 throw new ArgumentException(typeof(TActionDependentFeature) + " must have a least a single [Feature] defined.");
             }
-        }
 
-        public VowpalWabbit(string arguments, VowpalWabbitSerializerSettings settings = null)
-            : base(arguments)
-        {
-            var visitor = new VowpalWabbitInterfaceVisitor(this);
-            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(visitor, settings);
-
-            if (this.actionDependentFeatureSerializer == null)
+            using (var exBuilder = new VowpalWabbitExampleBuilder(this))
             {
-                throw new ArgumentException(typeof(TActionDependentFeature) + " must have a least a single [Feature] defined.");
+                this.emptyExample = exBuilder.CreateExample();
             }
         }
 
@@ -188,7 +193,7 @@ namespace Microsoft.Research.MachineLearning
                 }
 
                 // signal we're finished using an empty example
-                Learn<VowpalWabbitPredictionNone>(string.Empty);
+                this.emptyExample.Learn<VowpalWabbitPredictionNone>();
 
                 // Nasty workaround. Since the prediction result is stored in the first example
                 // and we'll have to get an actual VowpalWabbitExampt
@@ -219,8 +224,6 @@ namespace Microsoft.Research.MachineLearning
 
         protected override void Dispose(bool isDiposing)
         {
-            base.Dispose(isDiposing);
-
             if (isDiposing)
             {
                 if (this.actionDependentFeatureSerializer != null)
@@ -228,7 +231,13 @@ namespace Microsoft.Research.MachineLearning
                     this.actionDependentFeatureSerializer.Dispose();
                     this.actionDependentFeatureSerializer = null;
                 }
+                if (this.emptyExample != null)
+                {
+                    this.emptyExample.Dispose();
+                    this.emptyExample = null;
+                }
             }
+            base.Dispose(isDiposing);
         }
     }
 }

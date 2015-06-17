@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #endif
 
 #include "vw.h"
+#include <stack>
 #include "parser.h"
 
 #include <msclr\marshal_cppstd.h>
@@ -25,6 +26,7 @@ namespace Microsoft
 		namespace MachineLearning 
 		{
 			ref class VowpalWabbitExample;
+            ref class VowpalWabbitBase;
 
 			public ref class VowpalWabbitPrediction abstract
 			{
@@ -100,8 +102,8 @@ namespace Microsoft
 				!VowpalWabbitExample();
 
 			internal :
-				VowpalWabbitExample(vw* vw, example* example);
-				vw* const m_vw;
+				VowpalWabbitExample(VowpalWabbitBase^ vw, example* example);
+                initonly VowpalWabbitBase^ m_vw;
 				example* m_example;
 
 			public:
@@ -146,6 +148,10 @@ namespace Microsoft
 			{
 			internal:
 				vw* m_vw;
+
+            internal:
+                example* GetOrCreateNativeExample();
+                void ReturnExampleToPool(example*);
 				
 			protected:
 				bool m_isDisposed;
@@ -165,6 +171,8 @@ namespace Microsoft
 				{
 					VowpalWabbitPerformanceStatistics^ get();
 				}
+
+                stack<example*>* m_examples;
 			};
 
 			/// <summary>
