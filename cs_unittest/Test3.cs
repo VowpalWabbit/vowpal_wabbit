@@ -85,8 +85,8 @@ namespace cs_unittest
         [TestMethod]
         [Ignore]
         [Description("label-dependent features with csoaa_ldf")]
-        [DeploymentItem(@"train-sets\ref\cs_test.ldf.csoaa.stderr")]
-        [DeploymentItem(@"train-sets\ref\cs_test.ldf.csoaa.predict")]
+        [DeploymentItem(@"train-sets\ref\cs_test.ldf.csoaa.stderr", @"train-sets\ref")]
+        [DeploymentItem(@"train-sets\ref\cs_test.ldf.csoaa.predict", @"train-sets\ref")]
         public void Test9()
         {
             var sampleData = TrainSetCs_testLdf.CreateSampleCbAdfData();
@@ -107,12 +107,12 @@ namespace cs_unittest
 
                 vw.RunMultiPass();
 
-                Assert.AreEqual(
-                    File.ReadAllText(@"train-sets\ref\cs_test.ldf.csoaa.predict"),
-                    File.ReadAllText("cs_test.ldf.csoaa.predict"));
-
                 VWTestHelper.AssertEqual(@"train-sets\ref\cs_test.ldf.csoaa.stderr", vw.PerformanceStatistics);
             }
+
+            Assert.AreEqual(
+                File.ReadAllText(@"train-sets\ref\cs_test.ldf.csoaa.predict"),
+                File.ReadAllText("cs_test.ldf.csoaa.predict"));
         }
     }
 }
