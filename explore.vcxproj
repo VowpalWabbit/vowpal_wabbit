@@ -157,11 +157,6 @@
   <ItemGroup>
     <ClCompile Include="explore_sample.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="static\explore_static.vcxproj">
-      <Project>{ace47e98-488c-4cdf-b9f1-36337b2855ad}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
