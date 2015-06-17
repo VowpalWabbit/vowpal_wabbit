@@ -95,7 +95,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				"", read, 
 				buff, text_len, text);
       
-		if (read)
+		if (read && find(all.args.begin(), all.args.end(), "--min_prediction") == all.args.end())
 		{
 			all.args.push_back("--min_prediction");
 			all.args.push_back(boost::lexical_cast<std::string>(all.sd->min_label));
@@ -106,7 +106,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				"", read, 
 				buff, text_len, text);
       
-		if (read)
+		if (read && find(all.args.begin(), all.args.end(), "--max_prediction") == all.args.end())
 		{
 			all.args.push_back("--max_prediction");
 			all.args.push_back(boost::lexical_cast<std::string>(all.sd->max_label));
@@ -118,10 +118,10 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				"", read, 
 				buff, text_len, text);
 
-		if (read)
+		if (read && find(all.args.begin(), all.args.end(), "--bit_precision") == all.args.end())
 		{
 			all.args.push_back("--bit_precision");
-			all.args.push_back(boost::lexical_cast<std::string>(all.num_bits));
+			all.args.push_back(boost::lexical_cast<std::string>(local_num_bits));
 		}
 
       if (all.default_bits != true && all.num_bits != local_num_bits)
@@ -232,7 +232,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				if (read)
 				{
 					all.args.push_back("--interactions");
-					string str((char*)all.interactions[i].begin, text_len);
+					string str((char*)all.interactions[i].begin);
 					all.args.push_back(str);
 				}
         }
@@ -297,8 +297,6 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				all.args.push_back(boost::lexical_cast<std::string>(temp));
 	    }
 	}
-		if (read)
-	compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.quiet);
       
 		bin_text_read_write_fixed(model_file, buff, 0,
 				"", read, 
@@ -328,8 +326,6 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				all.args.push_back(boost::lexical_cast<std::string>(temp));
 	    }
 	}
-		if (read)
-	compile_gram(all.skip_strings, all.skips, (char*)"skips", all.quiet);
 		bin_text_read_write_fixed(model_file, buff, 0,
 				"", read, 
 			"\n", 1, text);
