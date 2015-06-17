@@ -348,7 +348,7 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
 template <bool is_learn>
 void do_actual_learning(ldf& data, base_learner& base)
 {
-  //cdbg << "do_actual_learning size=" << data.ec_seq.size() << endl;
+  //cout<< "do_actual_learning size=" << data.ec_seq.size() << endl;
   if (data.ec_seq.size() <= 0) return;  // nothing to do
   
   /////////////////////// handle label definitions

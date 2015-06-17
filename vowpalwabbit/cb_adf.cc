@@ -94,8 +94,8 @@ namespace CB_ADF {
     
     for (size_t i = 0; i < examples.size(); i++)
       {	
-	if(example_is_newline(*examples[i])) continue;
 	examples[i]->l.cb.costs.erase();
+	if(example_is_newline(*examples[i])) continue;
 	//CB::label ld = examples[i]->l.cb;		
 
 	COST_SENSITIVE::wclass wc;
@@ -136,6 +136,7 @@ namespace CB_ADF {
     COST_SENSITIVE::wclass wc;
     wc.class_index = 0;
     wc.x = FLT_MAX;
+    cs_labels[examples.size()-1].costs.erase();
     cs_labels[examples.size()-1].costs.push_back(wc); //trigger end of multiline example.
 
     if (shared)//take care of shared examples
@@ -207,11 +208,14 @@ namespace CB_ADF {
     // 2nd: predict for each ex
     // // call base.predict for each vw exmaple in the sequence
     for (example **ec = examples.begin; ec != examples.end; ec++) {
+      //cout<<"Number of features = "<<(**ec).num_features<<" label = "<<(**ec).l.cs.costs[0].x<<" "<<example_is_newline(**ec)<<endl;
       if (is_learn)
 	base.learn(**ec);
       else
 	base.predict(**ec);
     }
+
+    //cout<<"Prediction size = "<<(**examples.begin).pred.multilabels.label_v.size()<<endl;
   
     // 3rd: restore cb_label for each example
     // (**ec).l.cb = mydata.array.element.
@@ -357,6 +361,7 @@ namespace CB_ADF {
     float loss = 0.;
     v_array<uint32_t> preds = head_ec.pred.multilabels.label_v;
     bool is_test = false;
+    //cout<<"Preds size = "<<preds.size()<<endl;
     
     if (c.known_cost.probability > 0) {
       //c.pred_scores.costs.erase();
