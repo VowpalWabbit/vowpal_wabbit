@@ -4,7 +4,7 @@
 
     <groupId>com.github.johnlangford</groupId>
     <artifactId>vw-jni</artifactId>
-    <version>7.10.3-SNAPSHOT</version>
+    <version>7.10.2-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Vowpal Wabbit JNI Layer</name>
     <description>
@@ -18,8 +18,7 @@
         <connection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</connection>
         <developerConnection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</developerConnection>
         <url>git@github.com:JohnLangford/vowpal_wabbit.git</url>
-      <tag>HEAD</tag>
-  </scm>
+    </scm>
 
     <distributionManagement>
         <snapshotRepository>
