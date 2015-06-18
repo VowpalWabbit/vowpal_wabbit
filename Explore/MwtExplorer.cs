@@ -34,7 +34,7 @@ namespace MultiWorldTesting
         {
             int seed = uniqueKey.GetHashCode();
 
-            ExploreDecision decisionTuple = explorer.Choose_Action(seed + this.appId, context);
+            DecisionTuple decisionTuple = explorer.Choose_Action(seed + this.appId, context);
 
             if (decisionTuple.ShouldRecord)
             {

@@ -4,7 +4,7 @@ namespace MultiWorldTesting
     /// <summary>
     /// Exploration result 
     /// </summary>
-    public class ExploreDecision
+    public class DecisionTuple
     {
         /// <summary>
         /// Action chosen by exploration.

@@ -59,7 +59,7 @@ namespace MultiWorldTesting
             this.explore = explore;
         }
 
-        public ExploreDecision Choose_Action(long saltedSeed, TContext context)
+        public DecisionTuple Choose_Action(long saltedSeed, TContext context)
         {
             uint numActions = VariableActionHelper.GetNumberOfActions(context, this.numActions);
 
@@ -101,7 +101,7 @@ namespace MultiWorldTesting
                 chosenAction = actionId;
             }
 
-            return new ExploreDecision 
+            return new DecisionTuple 
             { 
                 Action = chosenAction, 
                 Probability = actionProbability, 
