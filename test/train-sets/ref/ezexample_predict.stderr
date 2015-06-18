@@ -1,5 +1,4 @@
 initializing with: '-t -q st --hash all --noconstant --ldf_override s -i models/library_train.w'
-creating quadratic features for pairs: st 
 only testing
 Num weight bits = 18
 learning rate = 10
@@ -16,5 +15,5 @@ finished run
 number of examples = 0
 weighted example sum = 0
 weighted label sum = 0
-average loss = -nan
+average loss = nan
 total feature number = 0
