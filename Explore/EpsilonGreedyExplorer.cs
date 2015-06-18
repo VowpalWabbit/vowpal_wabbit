@@ -36,18 +36,12 @@ namespace MultiWorldTesting
         public EpsilonGreedyExplorer(IPolicy<TContext> defaultPolicy, float epsilon) :
             this(defaultPolicy, epsilon, uint.MaxValue, true)
         {
-            if (!typeof(IVariableActionContext).GetTypeInfo().IsAssignableFrom(typeof(TContext).GetTypeInfo()))
-            {
-                throw new ArgumentException("The generic context type does not implement IVariableActionContext interface.");
-            }
+            VariableActionHelper.ValidateContextType<TContext>();
         }
 
         private EpsilonGreedyExplorer(IPolicy<TContext> defaultPolicy, float epsilon, uint numActions, bool explore)
         {
-            if (numActions != uint.MaxValue && numActions < 1)
-		    {
-			    throw new ArgumentException("Number of actions must be at least 1.");
-		    }
+            VariableActionHelper.ValidateNumberOfActions(numActions);
 
 		    if (epsilon < 0 || epsilon > 1)
 		    {
