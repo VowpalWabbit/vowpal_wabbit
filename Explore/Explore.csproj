@@ -38,6 +38,7 @@
   <ItemGroup>
     <Compile Include="BootstrapExplorer.cs" />
     <Compile Include="EpsilonGreedyExplorer.cs" />
+    <Compile Include="ExploreDecision.cs" />
     <Compile Include="Feature.cs" />
     <Compile Include="GenericExplorer.cs" />
     <Compile Include="Interface.cs" />
@@ -47,6 +48,7 @@
     <Compile Include="SoftmaxExplorer.cs" />
     <Compile Include="StringRecorder.cs" />
     <Compile Include="TauFirstExplorer.cs" />
+    <Compile Include="VariableActionHelper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

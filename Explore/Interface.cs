@@ -71,6 +71,18 @@ namespace MultiWorldTesting
 
     public interface IExplorer<TContext>
     {
+        /// <summary>
+        /// Determines the action to take and the probability with which it was chosen, for a
+        /// given context. 
+        /// </summary>
+        /// <param name="saltedSeed">A PRG seed based on a unique id information provided by the user.</param>
+        /// <param name="context">A user-defined context for the decision.</param>
+        /// <returns>
+        /// A <see cref="ExploreDecision"/> object including the action to take, the probability it was chosen, 
+        /// and a flag indicating whether to record this decision.
+        /// </returns>
+        ExploreDecision Choose_Action(Int64 saltedSeed, TContext context);
+
         void EnableExplore(bool explore);
     };
 

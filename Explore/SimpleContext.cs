@@ -11,7 +11,7 @@ namespace MultiWorldTesting
             this.Features = features;
 		}
 
-        public string ToString()
+        public override string ToString()
 		{
             return null;
 		}

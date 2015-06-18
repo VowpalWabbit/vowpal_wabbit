@@ -41,5 +41,11 @@ namespace MultiWorldTesting
         {
             // TODO: implement
         }
-	};
+
+        public ExploreDecision Choose_Action(long saltedSeed, TContext context)
+        {
+            // TODO: implement
+            return null;
+        }
+    };
 }
