@@ -1,4 +1,5 @@
-﻿
+﻿using System;
+
 namespace MultiWorldTesting
 {
     /// <summary>
@@ -8,6 +9,9 @@ namespace MultiWorldTesting
 	/// <typeparam name="TContext">The Context type.</typeparam>
 	public class MwtExplorer<TContext>
 	{
+        private int appId;
+	    private IRecorder<TContext> recorder;
+
 		/// <summary>
 		/// Constructor.
 		/// </summary>
@@ -15,7 +19,8 @@ namespace MultiWorldTesting
 		/// <param name="recorder">A user-specified class for recording the appropriate bits for use in evaluation and learning.</param>
         public MwtExplorer(string appId, IRecorder<TContext> recorder)
 		{
-            // TODO: implement
+            this.appId = appId.GetHashCode(); // TODO: Int64 hash needed?
+            this.recorder = recorder;
         }
 
 		/// <summary>
@@ -26,9 +31,17 @@ namespace MultiWorldTesting
 		/// <param name="context">The context upon which a decision is made. See SimpleContext above for an example.</param>
 		/// <returns>An unsigned 32-bit integer representing the 1-based chosen action.</returns>
         public uint ChooseAction(IExplorer<TContext> explorer, string uniqueKey, TContext context)
-		{
-            // TODO: implement
-            return 0;
-		}
+        {
+            int seed = uniqueKey.GetHashCode();
+
+            ExploreDecision decisionTuple = explorer.Choose_Action(seed + this.appId, context);
+
+            if (decisionTuple.ShouldRecord)
+            {
+                this.recorder.Record(context, decisionTuple.Action, decisionTuple.Probability, uniqueKey);
+            }
+
+            return decisionTuple.Action;
+        }
 	};
 }
