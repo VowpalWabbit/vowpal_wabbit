@@ -10,10 +10,6 @@ First version of client-side exploration library that includes the following exp
 - Bootstrap
 - Generic (users can specify custom weight for every action)
 
-This release supports C++ and C#. 
+This release supports C#. 
 
-For sample usage, see:
-
-C++: https://github.com/multiworldtesting/explore/blob/master/explore_sample.cpp
-
-C#: https://github.com/multiworldtesting/explore/blob/master/ExploreSample/ExploreOnlySample.cs
+For sample usage, see: https://github.com/multiworldtesting/explore-csharp/blob/master/Sample/ExploreOnlySample.cs
