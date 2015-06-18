@@ -348,10 +348,7 @@ namespace ExploreTests
                 }
                 catch (ArgumentException ex)
                 {
-                    if (ex.ParamName.ToLower() == "ctx")
-                    {
-                        numExceptionsCaught++;
-                    }
+                    numExceptionsCaught++;
                 }
             });
 
