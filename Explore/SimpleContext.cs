@@ -1,4 +1,7 @@
-﻿
+﻿using System.Linq;
+using System.Globalization;
+using System.Text;
+
 namespace MultiWorldTesting
 {
     /// <summary>
@@ -8,16 +11,14 @@ namespace MultiWorldTesting
 	{
         public SimpleContext(Feature[] features)
 		{
-            this.Features = features;
+            this.features = features;
 		}
 
         public override string ToString()
 		{
-            return null;
+            return string.Join(" ", this.features.Select(f => string.Format(CultureInfo.InvariantCulture, "{0}:{1}", f.Id, f.Value)));
 		}
 
-        public Feature[] GetFeatures() { return Features; }
-
-		internal Feature[] Features;
+		private Feature[] features;
 	};
 }
