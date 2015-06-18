@@ -23,9 +23,15 @@ namespace MultiWorldTesting
 		/// <param name="defaultPolicy">A default policy after randomization finishes.</param>
 		/// <param name="tau">The number of events to be uniform over.</param>
 		/// <param name="numActions">The number of actions to randomize over.</param>
-        public TauFirstExplorer(IPolicy<TContext> defaultPolicy, uint tau, uint numActions) :
-            this(defaultPolicy, tau, numActions, true)
-        { }
+        public TauFirstExplorer(IPolicy<TContext> defaultPolicy, uint tau, uint numActions)
+        {
+            VariableActionHelper.ValidateNumberOfActions(numActions);
+
+            this.defaultPolicy = defaultPolicy;
+            this.tau = tau;
+            this.numActions = numActions;
+            this.explore = true;
+        }
 
         /// <summary>
         /// Initializes a tau-first explorer with variable number of actions.
@@ -33,19 +39,9 @@ namespace MultiWorldTesting
         /// <param name="defaultPolicy">A default policy after randomization finishes.</param>
         /// <param name="tau">The number of events to be uniform over.</param>
         public TauFirstExplorer(IPolicy<TContext> defaultPolicy, uint tau) :
-            this(defaultPolicy, tau, uint.MaxValue, true)
+            this(defaultPolicy, tau, uint.MaxValue)
         {
             VariableActionHelper.ValidateContextType<TContext>();
-        }
-
-        private TauFirstExplorer(IPolicy<TContext> defaultPolicy, uint tau, uint numActions, bool explore)
-        {
-            VariableActionHelper.ValidateNumberOfActions(numActions);
-
-            this.defaultPolicy = defaultPolicy;
-            this.tau = tau;
-            this.numActions = numActions;
-            this.explore = explore;
         }
 
         public void UpdatePolicy(IPolicy<TContext> newPolicy)

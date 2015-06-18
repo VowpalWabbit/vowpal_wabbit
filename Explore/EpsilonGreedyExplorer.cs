@@ -24,9 +24,19 @@ namespace MultiWorldTesting
 		/// <param name="defaultPolicy">A default function which outputs an action given a context.</param>
 		/// <param name="epsilon">The probability of a random exploration.</param>
 		/// <param name="numActions">The number of actions to randomize over.</param>
-        public EpsilonGreedyExplorer(IPolicy<TContext> defaultPolicy, float epsilon, uint numActions) :
-            this(defaultPolicy, epsilon, numActions, true)
-		{ }
+        public EpsilonGreedyExplorer(IPolicy<TContext> defaultPolicy, float epsilon, uint numActions)
+		{
+            VariableActionHelper.ValidateNumberOfActions(numActions);
+
+            if (epsilon < 0 || epsilon > 1)
+            {
+                throw new ArgumentException("Epsilon must be between 0 and 1.");
+            }
+            this.defaultPolicy = defaultPolicy;
+            this.epsilon = epsilon;
+            this.numActions = numActions;
+            this.explore = true;
+        }
 
         /// <summary>
         /// Initializes an epsilon greedy explorer with variable number of actions.
@@ -34,23 +44,9 @@ namespace MultiWorldTesting
         /// <param name="defaultPolicy">A default function which outputs an action given a context.</param>
         /// <param name="epsilon">The probability of a random exploration.</param>
         public EpsilonGreedyExplorer(IPolicy<TContext> defaultPolicy, float epsilon) :
-            this(defaultPolicy, epsilon, uint.MaxValue, true)
+            this(defaultPolicy, epsilon, uint.MaxValue)
         {
             VariableActionHelper.ValidateContextType<TContext>();
-        }
-
-        private EpsilonGreedyExplorer(IPolicy<TContext> defaultPolicy, float epsilon, uint numActions, bool explore)
-        {
-            VariableActionHelper.ValidateNumberOfActions(numActions);
-
-		    if (epsilon < 0 || epsilon > 1)
-		    {
-                throw new ArgumentException("Epsilon must be between 0 and 1.");
-		    }
-            this.defaultPolicy = defaultPolicy;
-            this.epsilon = epsilon;
-            this.numActions = numActions;
-            this.explore = explore;
         }
 
         public void UpdatePolicy(IPolicy<TContext> newPolicy)

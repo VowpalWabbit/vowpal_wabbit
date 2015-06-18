@@ -1,4 +1,6 @@
 ﻿
+using System;
+using System.Collections.Generic;
 namespace MultiWorldTesting
 {
     /// <summary>
@@ -11,6 +13,10 @@ namespace MultiWorldTesting
 	/// <typeparam name="TContext">The Context type.</typeparam>
     public class GenericExplorer<TContext> : IExplorer<TContext>, IConsumeScorer<TContext>
 	{
+        private IScorer<TContext> defaultScorer;
+        private bool explore;
+        private readonly uint numActions;
+
 		/// <summary>
 		/// The constructor is the only public member, because this should be used with the MwtExplorer.
 		/// </summary>
@@ -18,32 +24,87 @@ namespace MultiWorldTesting
 		/// <param name="numActions">The number of actions to randomize over.</param>
         public GenericExplorer(IScorer<TContext> defaultScorer, uint numActions)
 		{
-            // TODO: implement
+            VariableActionHelper.ValidateNumberOfActions(numActions);
+
+            this.defaultScorer = defaultScorer;
+            this.numActions = numActions;
+            this.explore = true;
         }
 
         /// <summary>
         /// Initializes a generic explorer with variable number of actions.
         /// </summary>
         /// <param name="defaultScorer">A function which outputs the probability of each action.</param>
-        public GenericExplorer(IScorer<TContext> defaultScorer)
+        public GenericExplorer(IScorer<TContext> defaultScorer) :
+            this(defaultScorer, uint.MaxValue)
         {
-            // TODO: implement
+            VariableActionHelper.ValidateContextType<TContext>();
         }
 
         public void UpdateScorer(IScorer<TContext> newScorer)
         {
-            // TODO: implement
+            this.defaultScorer = newScorer;
         }
 
         public void EnableExplore(bool explore)
         {
-            // TODO: implement
+            this.explore = explore;
         }
 
         public ExploreDecision Choose_Action(long saltedSeed, TContext context)
         {
-            // TODO: implement
-            return null;
+            uint numActions = VariableActionHelper.GetNumberOfActions(context, this.numActions);
+
+            var random = new Random((int)saltedSeed);
+
+            // Invoke the default scorer function
+            List<float> weights = this.defaultScorer.ScoreActions(context);
+            uint numWeights = (uint)weights.Count;
+            if (numWeights != numActions)
+            {
+                throw new ArgumentException("The number of weights returned by the scorer must equal number of actions");
+            }
+
+            // Create a discrete_distribution based on the returned weights. This class handles the
+            // case where the sum of the weights is < or > 1, by normalizing agains the sum.
+            float total = 0f;
+            for (int i = 0; i < numWeights; i++)
+            {
+                if (weights[i] < 0)
+                {
+                    throw new ArgumentException("Scores must be non-negative.");
+                }
+                total += weights[i];
+            }
+            if (total == 0)
+            {
+                throw new ArgumentException("At least one score must be positive.");
+            }
+
+            float draw = (float)random.NextDouble();
+
+            float sum = 0f;
+            float actionProbability = 0f;
+            uint actionIndex = numWeights - 1;
+            for (int i = 0; i < numWeights; i++)
+            {
+                weights[i] = weights[i] / total;
+                sum += weights[i];
+                if (sum > draw)
+                {
+                    actionIndex = (uint)i;
+                    actionProbability = weights[i];
+                    break;
+                }
+            }
+
+            // action id is one-based
+            return new ExploreDecision
+            {
+                Action = actionIndex + 1,
+                Probability = actionProbability,
+                ShouldRecord = true
+            };
         }
     };
 }

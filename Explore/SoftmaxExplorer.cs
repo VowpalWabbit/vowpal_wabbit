@@ -25,9 +25,15 @@ namespace MultiWorldTesting
 		/// <param name="defaultScorer">A function which outputs a score for each action.</param>
 		/// <param name="lambda">lambda = 0 implies uniform distribution. Large lambda is equivalent to a max.</param>
 		/// <param name="numActions">The number of actions to randomize over.</param>
-        public SoftmaxExplorer(IScorer<TContext> defaultScorer, float lambda, uint numActions) :
-            this(defaultScorer, lambda, numActions, true)
-        { }
+        public SoftmaxExplorer(IScorer<TContext> defaultScorer, float lambda, uint numActions)
+        {
+            VariableActionHelper.ValidateNumberOfActions(numActions);
+
+            this.defaultScorer = defaultScorer;
+            this.lambda = lambda;
+            this.numActions = numActions;
+            this.explore = true;
+        }
 
         /// <summary>
         /// Initializes a softmax explorer with variable number of actions.
@@ -35,19 +41,9 @@ namespace MultiWorldTesting
         /// <param name="defaultScorer">A function which outputs a score for each action.</param>
         /// <param name="lambda">lambda = 0 implies uniform distribution. Large lambda is equivalent to a max.</param>
         public SoftmaxExplorer(IScorer<TContext> defaultScorer, float lambda) :
-            this(defaultScorer, lambda, uint.MaxValue, true)
+            this(defaultScorer, lambda, uint.MaxValue)
         {
             VariableActionHelper.ValidateContextType<TContext>();
-        }
-
-        private SoftmaxExplorer(IScorer<TContext> defaultScorer, float lambda, uint numActions, bool explore)
-        {
-            VariableActionHelper.ValidateNumberOfActions(numActions);
-
-            this.defaultScorer = defaultScorer;
-            this.lambda = lambda;
-            this.numActions = numActions;
-            this.explore = explore;
         }
 
         public void UpdateScorer(IScorer<TContext> newScorer)
