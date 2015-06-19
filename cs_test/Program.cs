@@ -21,16 +21,13 @@ namespace cs_test
             //AttributesSample.RunFeaturesTest();
             //ExploreClock.Clock();
             //LabDemo.Run();
-            //ExploreOnlySample.Run();
-            //RunFeaturesTest();
-            //RunParserTest();
-            //RunSpeedTest();
-            //RunFlatExampleTestEx();
+            ExploreOnlySample.Run();
+            RunFeaturesTest();
+            RunParserTest();
+            RunSpeedTest();
+            RunFlatExampleTestEx();
             //RunLDAPredict();
             //RunVWParse_and_VWLearn();
-
-            new cs_unittest.TestCbAdfClass().ProfilePerformanceWithFloatData();
-            Console.ReadKey();
         }
 
 
