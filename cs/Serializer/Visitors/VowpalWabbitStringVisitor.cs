@@ -11,9 +11,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using Microsoft.Research.MachineLearning.Serializer.Interfaces;
+using VW.Serializer.Interfaces;
 
-namespace Microsoft.Research.MachineLearning.Serializer.Visitors
+namespace VW.Serializer.Visitors
 {
     /// <summary>
     /// Front-end to serialize data into Vowpal Wabbit string format.

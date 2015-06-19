@@ -7,8 +7,8 @@
     <ProjectGuid>{E4E962AE-7056-4EB0-A8C5-8DC824A4B068}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.Research.MachineLearning</RootNamespace>
-    <AssemblyName>Microsoft.Research.MachineLearning.VowpalWabbit</AssemblyName>
+    <RootNamespace>VowpalWabbit</RootNamespace>
+    <AssemblyName>VowpalWabbit</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <RestorePackages>true</RestorePackages>

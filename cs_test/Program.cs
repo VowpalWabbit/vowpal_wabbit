@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.IO;
 
-using Microsoft.Research.MachineLearning;
+using VW;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
-using Microsoft.Research.MachineLearning.Serializer.Attributes;
+using VW.Serializer.Attributes;
 using System.Globalization;
 
 namespace cs_test

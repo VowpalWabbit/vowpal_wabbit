@@ -5,9 +5,9 @@
 //   license as described in the file LICENSE.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using Microsoft.Research.MachineLearning.Serializer.Interfaces;
+using VW.Serializer.Interfaces;
 
-namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
+namespace VW.Serializer.Intermediate
 {
     /// <summary>
     /// The intermediate namespace representation.

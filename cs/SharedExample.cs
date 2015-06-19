@@ -6,9 +6,9 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-using Microsoft.Research.MachineLearning.Interfaces;
+using VW.Interfaces;
 
-namespace Microsoft.Research.MachineLearning
+namespace VW
 {
     /// <summary>
     /// Examples used with <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> must inherit from this class.

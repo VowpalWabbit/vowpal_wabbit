@@ -8,7 +8,7 @@
 
 using System;
 
-namespace Microsoft.Research.MachineLearning.Serializer.Reflection
+namespace VW.Serializer.Reflection
 {
     /// <summary>
     /// Models a distance to a given type.

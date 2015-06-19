@@ -9,9 +9,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Microsoft.Research.MachineLearning.Interfaces;
+using VW.Interfaces;
 
-namespace Microsoft.Research.MachineLearning
+namespace VW
 {
     /// <summary>
     /// Thread-safe object pool supporting versioned updates.

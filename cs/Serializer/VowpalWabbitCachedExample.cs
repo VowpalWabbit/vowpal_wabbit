@@ -12,7 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.MachineLearning.Serializer
+namespace VW.Serializer
 {
     /// <summary>
     /// A proxy to intercept IDisposable calls to allow to safely cache the example.

@@ -6,11 +6,11 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-using Microsoft.Research.MachineLearning.Interfaces;
+using VW.Interfaces;
 using System.Globalization;
 using System.Text;
 
-namespace Microsoft.Research.MachineLearning.Labels
+namespace VW.Labels
 {
     public sealed class SimpleLabel : ILabel
     {

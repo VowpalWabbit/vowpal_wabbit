@@ -9,49 +9,43 @@ license as described in the file LICENSE.
 #include "parse_args.h"
 #include "clr_io.h"
 
-namespace Microsoft
+namespace VW
 {
-	namespace Research
+	VowpalWabbitModel::VowpalWabbitModel(System::String^ args)
+		: VowpalWabbitBase(args), m_instanceCount(0)
 	{
-		namespace MachineLearning
+	}
+
+	VowpalWabbitModel::VowpalWabbitModel(System::String^ args, System::IO::Stream^ stream)
+		: VowpalWabbitBase(args, stream)
+	{
+	}
+
+	VowpalWabbitModel::~VowpalWabbitModel()
+	{
+		this->!VowpalWabbitModel();
+	}
+
+	VowpalWabbitModel::!VowpalWabbitModel()
+	{
+		if (m_instanceCount <= 0)
 		{
-			VowpalWabbitModel::VowpalWabbitModel(System::String^ args)
-				: VowpalWabbitBase(args), m_instanceCount(0)
-			{
-			}
+			this->InternalDispose();
+		}
+	}
 
-			VowpalWabbitModel::VowpalWabbitModel(System::String^ args, System::IO::Stream^ stream)
-				: VowpalWabbitBase(args, stream)
-			{
-			}
+	void VowpalWabbitModel::IncrementReference()
+	{
+		// thread-safe increase of model reference counter
+		System::Threading::Interlocked::Increment(m_instanceCount);
+	}
 
-			VowpalWabbitModel::~VowpalWabbitModel()
-			{
-				this->!VowpalWabbitModel();
-			}
-
-			VowpalWabbitModel::!VowpalWabbitModel()
-			{
-				if (m_instanceCount <= 0)
-				{
-					this->InternalDispose();
-				}
-			}
-
-			void VowpalWabbitModel::IncrementReference()
-			{
-				// thread-safe increase of model reference counter
-				System::Threading::Interlocked::Increment(m_instanceCount);
-			}
-
-			void VowpalWabbitModel::DecrementReference()
-			{
-				// thread-safe decrease of model reference counter
-				if (System::Threading::Interlocked::Decrement(m_instanceCount) <= 0)
-				{
-					this->InternalDispose();
-				}
-			}
+	void VowpalWabbitModel::DecrementReference()
+	{
+		// thread-safe decrease of model reference counter
+		if (System::Threading::Interlocked::Decrement(m_instanceCount) <= 0)
+		{
+			this->InternalDispose();
 		}
 	}
 }

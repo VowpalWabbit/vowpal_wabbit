@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace Microsoft.Research.MachineLearning
+namespace VW
 {
     using SizeT = IntPtr;
     using VwHandle = IntPtr;

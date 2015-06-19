@@ -8,7 +8,7 @@
 
 using System;
 
-namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
+namespace VW.Serializer.Interfaces
 {
     /// <summary>
     /// A visitable feature.

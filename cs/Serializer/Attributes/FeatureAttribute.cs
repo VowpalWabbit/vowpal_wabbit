@@ -8,7 +8,7 @@
 
 using System;
 
-namespace Microsoft.Research.MachineLearning.Serializer.Attributes
+namespace VW.Serializer.Attributes
 {
     /// <summary>
     /// Annotate properties that should be serialized to Vowpal Wabbit

@@ -6,9 +6,9 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-using Microsoft.Research.MachineLearning.Interfaces;
+using VW.Interfaces;
 
-namespace Microsoft.Research.MachineLearning
+namespace VW
 {
     /// <summary>
     /// <see cref="Microsoft.Research.MachineLearning.Interfaces.IObjectFactory"/> implementation to produce <see cref="VowpalWabbit"/> instances.

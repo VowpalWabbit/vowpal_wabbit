@@ -1,4 +1,4 @@
-﻿using Microsoft.Research.MachineLearning.Labels;
+﻿using VW.Labels;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;

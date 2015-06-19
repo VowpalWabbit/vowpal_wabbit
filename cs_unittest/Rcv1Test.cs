@@ -1,7 +1,7 @@
-﻿using Microsoft.Research.MachineLearning;
-using Microsoft.Research.MachineLearning.Interfaces;
-using Microsoft.Research.MachineLearning.Labels;
-using Microsoft.Research.MachineLearning.Serializer.Attributes;
+﻿using VW;
+using VW.Interfaces;
+using VW.Labels;
+using VW.Serializer.Attributes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;

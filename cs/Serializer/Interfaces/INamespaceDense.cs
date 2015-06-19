@@ -7,7 +7,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
 
-namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
+namespace VW.Serializer.Interfaces
 {
     /// <summary>
     /// A dense namespace.

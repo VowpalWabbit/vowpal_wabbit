@@ -1,5 +1,5 @@
 ﻿using cs_test;
-using Microsoft.Research.MachineLearning;
+using VW;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;

@@ -11,9 +11,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Microsoft.Research.MachineLearning.Serializer.Interfaces;
+using VW.Serializer.Interfaces;
 
-namespace Microsoft.Research.MachineLearning.Serializer.Visitors
+namespace VW.Serializer.Visitors
 {
         /// 
     /// <summary>

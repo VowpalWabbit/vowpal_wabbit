@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.Research.MachineLearning.Serializer.Reflection
+namespace VW.Serializer.Reflection
 {
     /// <summary>
     /// Models a distance and additional matching constraints for a type.

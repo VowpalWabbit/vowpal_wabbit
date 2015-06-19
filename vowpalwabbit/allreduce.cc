@@ -9,7 +9,6 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
  */
 #include <iostream>
 #include <sstream>
-#include <stdexcept>
 #include <cstdio>
 #include <cmath>
 #include <ctime>
@@ -27,6 +26,7 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #endif
 #include <sys/timeb.h>
 #include "allreduce.h"
+#include "vw_exception.h"
 
 using namespace std;
 
@@ -36,10 +36,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock == -1)
     {
-      stringstream msg;
-      msg << "socket: " << strerror(errno);
-      cerr << msg.str() << endl;
-      throw runtime_error(msg.str().c_str());
+		THROW("socket: " << strerror(errno));
     }
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;

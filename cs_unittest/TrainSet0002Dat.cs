@@ -1,7 +1,7 @@
 ﻿using cs_unittest;
-using Microsoft.Research.MachineLearning.Interfaces;
-using Microsoft.Research.MachineLearning.Labels;
-using Microsoft.Research.MachineLearning.Serializer.Attributes;
+using VW.Interfaces;
+using VW.Labels;
+using VW.Serializer.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Globalization;

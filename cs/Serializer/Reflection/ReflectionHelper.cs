@@ -12,7 +12,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Microsoft.Research.MachineLearning.Serializer.Reflection
+namespace VW.Serializer.Reflection
 {
     internal static class ReflectionHelper
     {

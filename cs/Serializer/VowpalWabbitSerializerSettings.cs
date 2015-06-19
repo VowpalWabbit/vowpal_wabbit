@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.MachineLearning.Serializer
+namespace VW.Serializer
 {
     public class VowpalWabbitSerializerSettings
     {

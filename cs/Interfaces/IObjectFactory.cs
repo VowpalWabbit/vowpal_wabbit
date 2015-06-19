@@ -8,7 +8,7 @@
 
 using System;
 
-namespace Microsoft.Research.MachineLearning.Interfaces
+namespace VW.Interfaces
 {
     /// <summary>
     /// Disposable object factory.

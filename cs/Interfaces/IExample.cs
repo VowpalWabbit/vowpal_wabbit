@@ -6,7 +6,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-namespace Microsoft.Research.MachineLearning.Interfaces
+namespace VW.Interfaces
 {
     /// <summary>
     /// User classes that support labeling need to implement this interface.

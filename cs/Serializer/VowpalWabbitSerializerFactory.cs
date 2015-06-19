@@ -12,14 +12,14 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
-using Microsoft.Research.MachineLearning.Serializer.Attributes;
-using Microsoft.Research.MachineLearning.Serializer.Interfaces;
-using Microsoft.Research.MachineLearning.Serializer.Intermediate;
-using Microsoft.Research.MachineLearning.Serializer.Reflection;
-using Microsoft.Research.MachineLearning.Serializer.Visitors;
-using Microsoft.Research.MachineLearning.Interfaces;
+using VW.Serializer.Attributes;
+using VW.Serializer.Interfaces;
+using VW.Serializer.Intermediate;
+using VW.Serializer.Reflection;
+using VW.Serializer.Visitors;
+using VW.Interfaces;
 
-namespace Microsoft.Research.MachineLearning.Serializer
+namespace VW.Serializer
 {
     /// <summary>
     /// Factory to ease creation of serializers.

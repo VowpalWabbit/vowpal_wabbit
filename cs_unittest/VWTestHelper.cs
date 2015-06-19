@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Research.MachineLearning;
+using VW;
 using System.Globalization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Antlr4.Runtime;

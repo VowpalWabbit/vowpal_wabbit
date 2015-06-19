@@ -10,9 +10,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Microsoft.Research.MachineLearning.Serializer.Attributes;
+using VW.Serializer.Attributes;
 
-namespace Microsoft.Research.MachineLearning.Serializer
+namespace VW.Serializer
 {
     /// <summary>
     /// A serializer from a user type (TExample) to a native Vowpal Wabbit example type.

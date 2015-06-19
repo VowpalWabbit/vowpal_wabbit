@@ -8,7 +8,7 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.Research.MachineLearning.Interfaces
+namespace VW.Interfaces
 {
     /// <summary>
     /// Types supporting action dependent features must implement this interface.

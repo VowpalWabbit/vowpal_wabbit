@@ -9,7 +9,7 @@
 using System;
 using System.Linq.Expressions;
 
-namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
+namespace VW.Serializer.Intermediate
 {
     /// <summary>
     /// Feature data composed during compilation step.

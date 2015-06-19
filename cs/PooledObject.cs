@@ -8,7 +8,7 @@
 
 using System;
 
-namespace Microsoft.Research.MachineLearning
+namespace VW
 {
     /// <summary>
     /// A strongly-typed pooled object.

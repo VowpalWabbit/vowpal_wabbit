@@ -8,7 +8,7 @@
 
 using System;
 
-namespace Microsoft.Research.MachineLearning.Serializer.Attributes
+namespace VW.Serializer.Attributes
 {
     /// <summary>
     /// Annotate an example class that's generated output should be cached.

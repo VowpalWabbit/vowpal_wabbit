@@ -9,11 +9,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Research.MachineLearning.Interfaces;
-using Microsoft.Research.MachineLearning.Serializer;
-using Microsoft.Research.MachineLearning.Serializer.Visitors;
+using VW.Interfaces;
+using VW.Serializer;
+using VW.Serializer.Visitors;
 
-namespace Microsoft.Research.MachineLearning
+namespace VW
 {
     /// <summary>
     /// A wrapper for Vowpal Wabbit using a native serializer transferring data using the library interface.

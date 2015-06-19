@@ -7,10 +7,10 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System.Globalization;
-using Microsoft.Research.MachineLearning.Interfaces;
+using VW.Interfaces;
 using System.Text;
 
-namespace Microsoft.Research.MachineLearning.Labels
+namespace VW.Labels
 {
     /// <summary>
     /// A contextual bandit label.

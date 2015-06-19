@@ -7,9 +7,9 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
-using Microsoft.Research.MachineLearning.Interfaces;
+using VW.Interfaces;
 
-namespace Microsoft.Research.MachineLearning
+namespace VW
 {
     /// <summary>
     /// Base implementation of <see cref="IObjectFactory{T}"/> for Vowpal Wabbit instances spawn of <see cref="VowpalWabbitModel"/>.

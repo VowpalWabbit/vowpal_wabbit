@@ -6,7 +6,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
+namespace VW.Serializer.Interfaces
 {
     /// <summary>
     /// Intermediate representation of a property annotated as <see cref="Microsoft.Research.MachineLearning.Serializer.Attributes.FeatureAttribute"/>.

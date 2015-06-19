@@ -6,7 +6,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-namespace Microsoft.Research.MachineLearning.Interfaces
+namespace VW.Interfaces
 {
     /// <summary>
     /// Interface implemented by all valid VowpalWabbit labels.

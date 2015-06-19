@@ -6,7 +6,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-namespace Microsoft.Research.MachineLearning.Serializer.Interfaces
+namespace VW.Serializer.Interfaces
 {
     /// <summary>
     /// Front-end for serialization.

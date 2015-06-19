@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Microsoft.Research.MachineLearning.Serializer.Attributes;
-using Microsoft.Research.MachineLearning.Serializer;
-using Microsoft.Research.MachineLearning.Serializer.Visitors;
-using Microsoft.Research.MachineLearning;
-using Microsoft.Research.MachineLearning.Interfaces;
-using Microsoft.Research.MachineLearning.Labels;
+using VW.Serializer.Attributes;
+using VW.Serializer;
+using VW.Serializer.Visitors;
+using VW;
+using VW.Interfaces;
+using VW.Labels;
 
 namespace cs_test
 {

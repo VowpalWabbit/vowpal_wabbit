@@ -1,8 +1,8 @@
 ﻿using cs_unittest;
-using Microsoft.Research.MachineLearning;
-using Microsoft.Research.MachineLearning.Interfaces;
-using Microsoft.Research.MachineLearning.Labels;
-using Microsoft.Research.MachineLearning.Serializer.Attributes;
+using VW;
+using VW.Interfaces;
+using VW.Labels;
+using VW.Serializer.Attributes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -63,7 +63,7 @@ namespace cs_test
                 VWTestHelper.AssertEqual(@"train-sets\ref\0001.stderr", vw.PerformanceStatistics);
             }
 
-            Assert.AreEqual(input.Count, references.Length);
+            Assert.AreEqual(input.Count, references.Length); 
 
             using (var vwModel = new VowpalWabbitModel("-k -t --invariant", File.OpenRead("models/0001.model")))
             using (var vwInMemoryShared1 = new VowpalWabbit(vwModel))

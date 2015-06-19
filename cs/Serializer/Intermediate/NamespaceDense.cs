@@ -8,9 +8,9 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Research.MachineLearning.Serializer.Interfaces;
+using VW.Serializer.Interfaces;
 
-namespace Microsoft.Research.MachineLearning.Serializer.Intermediate
+namespace VW.Serializer.Intermediate
 {
     /// <summary>
     /// The intermediate representation of a dense namespace.
