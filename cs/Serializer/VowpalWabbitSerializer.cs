@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using MoreLinq;
 using Microsoft.Research.MachineLearning.Serializer.Attributes;
 
 namespace Microsoft.Research.MachineLearning.Serializer
@@ -78,7 +77,7 @@ namespace Microsoft.Research.MachineLearning.Serializer
             VowpalWabbitCachedExample<TExample> result;
             if (this.exampleCache.TryGetValue(example, out result))
             {
-                result.LastRecentUse = DateTime.Now;
+                result.LastRecentUse = DateTime.UtcNow;
             }
             else
             {
@@ -121,10 +120,22 @@ namespace Microsoft.Research.MachineLearning.Serializer
             // if we reach the cache boundary, dispose the oldest example
             if (this.exampleCache.Count > this.settings.MaxExampleCacheSize)
             {
-                var minElement = this.exampleCache.MinBy(kv => kv.Value.LastRecentUse);
-                
-                this.exampleCache.Remove(minElement.Key);
-                minElement.Value.UnderlyingExample.Dispose();
+                var enumerator = this.exampleCache.GetEnumerator();
+
+                // this.settings.MaxExampleCacheSize is >= 1
+                enumerator.MoveNext();
+
+                var min = enumerator.Current;
+                while (enumerator.MoveNext())
+                {
+                    if (min.Value.LastRecentUse > enumerator.Current.Value.LastRecentUse)
+                    {
+                        min = enumerator.Current;
+                    }
+                }
+
+                this.exampleCache.Remove(min.Key);
+                min.Value.UnderlyingExample.Dispose();
             }
         }
     }

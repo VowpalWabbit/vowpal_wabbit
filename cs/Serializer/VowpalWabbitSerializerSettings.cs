@@ -15,10 +15,12 @@ namespace Microsoft.Research.MachineLearning.Serializer
 {
     public class VowpalWabbitSerializerSettings
     {
+        private int maxExampleCacheSize;
+
         public VowpalWabbitSerializerSettings()
         {
             this.EnableExampleCaching = true;
-            this.MaxExampleCacheSize = int.MaxValue;
+            this.maxExampleCacheSize = int.MaxValue;
         }
 
         /// <summary>
@@ -29,6 +31,19 @@ namespace Microsoft.Research.MachineLearning.Serializer
         /// <summary>
         /// Bounds the example cache. Defaults to int.MaxValue.
         /// </summary>
-        public int MaxExampleCacheSize { get; set; }
+        public int MaxExampleCacheSize
+        {
+            get { return this.maxExampleCacheSize; }
+
+            set
+            {
+                if (value < 1)
+                {
+                    throw new ArgumentOutOfRangeException("MaxExampleCacheSize must be >= 1");
+                }
+
+                this.maxExampleCacheSize = value;
+            }
+        }
     }
 }

@@ -12,7 +12,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Research.MachineLearning.Serializer.Interfaces;
-using MoreLinq;
 
 namespace Microsoft.Research.MachineLearning.Serializer.Visitors
 {

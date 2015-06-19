@@ -61,11 +61,14 @@ namespace cs_unittest
 
             for (int i = 0; i < 1000; i++)
             {
-                examples.Add(new CachedData
+                var cachedData = new CachedData
                 {
                     Label = new SimpleLabel { Label = 2 },
                     Feature = 10 + random.NextDouble()
-                });
+                };
+
+                examples.Add(cachedData);
+                examples.Add(cachedData);
             }
 
             using (var vw = new VowpalWabbit<CachedData>("-k -c --passes 10", new VowpalWabbitSerializerSettings
@@ -86,7 +89,7 @@ namespace cs_unittest
             }
 
             using (var vwModel = new VowpalWabbitModel("-t", File.OpenRead("model1")))
-            using (var vwCached = new VowpalWabbit<CachedData>(vwModel, new VowpalWabbitSerializerSettings { EnableExampleCaching = true }))
+            using (var vwCached = new VowpalWabbit<CachedData>(vwModel, new VowpalWabbitSerializerSettings { EnableExampleCaching = true, MaxExampleCacheSize = 5 }))
             using (var vw = new VowpalWabbit<CachedData>(vwModel, new VowpalWabbitSerializerSettings { EnableExampleCaching = false }))
             {
                 foreach (var example in examples)
