@@ -7,7 +7,7 @@ class vw_exception : public std::exception
 
 public:
 	vw_exception();
-	vw_exception(vw_exception&);
+	vw_exception(const vw_exception&);
 	
 	template<typename T>
 	vw_exception(T msg)
@@ -15,7 +15,7 @@ public:
 		message << msg;
 	}
 
-	virtual const char * what() const;
+	virtual const char * what() const _NOEXCEPT;
 	
 	template<typename T>
 	friend vw_exception& operator<<(vw_exception& os, T msg)
@@ -26,4 +26,4 @@ public:
 };
 
 // for use with file and line numbers
-#define THROW(args) { vw_exception __err; __err.message << args; throw __err; }
+#define THROW(args) { vw_exception __err; __err << args; throw __err; }

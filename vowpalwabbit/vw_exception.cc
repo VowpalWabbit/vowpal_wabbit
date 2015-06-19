@@ -4,7 +4,7 @@ vw_exception::vw_exception()
 {
 }
 
-vw_exception::vw_exception(vw_exception& ex) : message(ex.message.str())
+vw_exception::vw_exception(const vw_exception& ex) : message(ex.message.str())
 {
 }
 
@@ -18,7 +18,7 @@ vw_exception::vw_exception(vw_exception& ex) : message(ex.message.str())
 //	return message;
 //}
 
-const char * vw_exception::what() const
+const char * vw_exception::what() const _NOEXCEPT
 {
 	return message.str().c_str();
 }
