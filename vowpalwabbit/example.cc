@@ -93,25 +93,6 @@ void copy_example_data(bool audit, example* dst, example* src, size_t label_size
   copy_example_label(dst, src, label_size, copy_label);
 }
 
-  
-void clear_example_data(example& ec) {
-  ec.tag.end = ec.tag.begin;
-  ec.topic_predictions.end = ec.topic_predictions.begin;
-  for (size_t j = 0; j < 256; j++) {
-    ec.atomics[j].end = ec.atomics[j].begin;
-    if (ec.audit_features[j].begin != ec.audit_features[j].end_array) {
-      for (audit_data* temp = ec.audit_features[j].begin; temp != ec.audit_features[j].end; temp++)
-        if (temp->alloced) {
-          free(temp->space);
-          free(temp->feature);
-          temp->alloced = false;
-        }
-      ec.audit_features[j].erase();
-    }
-  }
-  ec.indices.end = ec.indices.begin;
-}
-
 }
 
 struct features_and_source 

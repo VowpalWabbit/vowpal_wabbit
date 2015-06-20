@@ -29,10 +29,8 @@ void predict_or_learn(expreplay& er, LEARNER::base_learner& base, example& ec) {
   }
   
   size_t n = (size_t)(frand48() * (float)er.N);
-  if (er.filled[n]) {
+  if (er.filled[n])
     base.learn(er.buf[n]);
-    //VW::clear_example_data(er.buf[n]);
-  }
 
   er.filled[n] = true;
   VW::copy_example_data(er.all->audit, &er.buf[n], &ec); // don't copy the label
@@ -53,7 +51,6 @@ void end_pass(expreplay& er) {
     if (er.filled[n]) {
       // TODO: if er.replay_count > 1 do we need to play these more?
       er.base->learn(er.buf[n]);
-      //VW::clear_example_data(er.buf[n]);
       er.filled[n] = false;
     }
 }
