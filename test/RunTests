@@ -1197,3 +1197,12 @@ __DATA__
 echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp && tail -n +2 inv_hash.cmp > inv_hash.cmp.new && rm inv_hash.cmp && mv inv_hash.cmp.new inv_hash.cmp
     train-sets/ref/inv_hash.stderr
     pred-sets/ref/inv_hash.cmp
+
+# Test 93: experience replay version of test 1
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off --replay_b 100
+    train-sets/ref/0001-replay.stderr
+
+# Test 94: named labels at training time (csoaa) with experience replay
+{VW} --named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa  -k -c --passes 10 --holdout_off -f models/test_named_csoaa.model --replay_c 100
+    train-sets/ref/test_named_csoaa_train-replay.stderr
+
