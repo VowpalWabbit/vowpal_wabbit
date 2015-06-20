@@ -30,6 +30,7 @@ namespace COST_SENSITIVE {
   void output_example(vw& all, example& ec);
   extern label_parser cs_label;
 
+  bool is_test_label(label& ld);
   bool example_is_test(example& ec);
 
   void print_update(vw& all, bool is_test, example& ec, const v_array<example*> *ec_seq, bool multilabel = false);

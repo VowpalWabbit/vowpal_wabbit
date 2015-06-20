@@ -55,12 +55,14 @@ void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(vo
 void copy_example_data(bool audit, example* dst, example* src)
 {
   //std::cerr << "copy_example_data dst = " << dst << std::endl;
-  copy_array(dst->tag, src->tag);
+  copy_array_memcpy(dst->tag, src->tag);
   dst->example_counter = src->example_counter;
 
-  copy_array(dst->indices, src->indices);
-  for (size_t i=0; i<256; i++)
-    copy_array(dst->atomics[i], src->atomics[i]);
+  copy_array_memcpy(dst->indices, src->indices);
+  //  for (size_t i=0; i<256; i++)
+  for (unsigned char*c = src->indices.begin; c != src->indices.end; ++c)
+    copy_array_memcpy(dst->atomics[*c], src->atomics[*c]);
+    //copy_array_memcpy(dst->atomics[i], src->atomics[i]);
   dst->ft_offset = src->ft_offset;
 
   if (audit)
@@ -75,7 +77,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   
   dst->num_features = src->num_features;
   dst->partial_prediction = src->partial_prediction;
-  copy_array(dst->topic_predictions, src->topic_predictions);
+  copy_array_memcpy(dst->topic_predictions, src->topic_predictions);
   dst->loss = src->loss;
   dst->example_t = src->example_t;
   memcpy(dst->sum_feat_sq, src->sum_feat_sq, 256 * sizeof(float));
@@ -90,6 +92,26 @@ void copy_example_data(bool audit, example* dst, example* src, size_t label_size
   copy_example_data(audit, dst, src);
   copy_example_label(dst, src, label_size, copy_label);
 }
+
+  
+void clear_example_data(example& ec) {
+  ec.tag.end = ec.tag.begin;
+  ec.topic_predictions.end = ec.topic_predictions.begin;
+  for (size_t j = 0; j < 256; j++) {
+    ec.atomics[j].end = ec.atomics[j].begin;
+    if (ec.audit_features[j].begin != ec.audit_features[j].end_array) {
+      for (audit_data* temp = ec.audit_features[j].begin; temp != ec.audit_features[j].end; temp++)
+        if (temp->alloced) {
+          free(temp->space);
+          free(temp->feature);
+          temp->alloced = false;
+        }
+      ec.audit_features[j].erase();
+    }
+  }
+  ec.indices.end = ec.indices.begin;
+}
+
 }
 
 struct features_and_source 
