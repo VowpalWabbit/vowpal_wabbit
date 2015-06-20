@@ -22,6 +22,7 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "cbify.h"
 #include "oaa.h"
+#include "boosting.h"
 #include "multilabel_oaa.h"
 #include "rand48.h"
 #include "bs.h"
@@ -957,6 +958,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>);
   all.reduction_stack.push_back(topk_setup);
   all.reduction_stack.push_back(oaa_setup);
+  all.reduction_stack.push_back(boosting_setup);
   all.reduction_stack.push_back(ect_setup);
   all.reduction_stack.push_back(log_multi_setup);
   all.reduction_stack.push_back(multilabel_oaa_setup);
