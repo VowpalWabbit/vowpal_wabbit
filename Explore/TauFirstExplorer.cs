@@ -58,7 +58,7 @@ namespace MultiWorldTesting
         {
             uint numActions = VariableActionHelper.GetNumberOfActions(context, this.numActions);
 
-            var random = new Random((int)saltedSeed);
+            var random = new PRG(saltedSeed);
 
             uint chosenAction = 0;
             float actionProbability = 0f;
@@ -67,7 +67,7 @@ namespace MultiWorldTesting
             if (this.tau > 0 && this.explore)
             {
                 this.tau--;
-                uint actionId = (uint)random.Next(1, (int)numActions + 1);
+                uint actionId = random.UniformInt(1, numActions);
                 actionProbability = 1f / numActions;
                 chosenAction = actionId;
                 shouldRecordDecision = true;

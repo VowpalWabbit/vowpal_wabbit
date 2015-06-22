@@ -55,7 +55,7 @@ namespace MultiWorldTesting
         {
             uint numActions = VariableActionHelper.GetNumberOfActions(context, this.numActions);
 
-            var random = new Random((int)saltedSeed);
+            var random = new PRG(saltedSeed);
 
             // Invoke the default scorer function
             List<float> weights = this.defaultScorer.ScoreActions(context);
@@ -81,7 +81,7 @@ namespace MultiWorldTesting
                 throw new ArgumentException("At least one score must be positive.");
             }
 
-            float draw = (float)random.NextDouble();
+            float draw = random.UniformUnitInterval();
 
             float sum = 0f;
             float actionProbability = 0f;

@@ -60,7 +60,7 @@ namespace MultiWorldTesting
         {
             uint numActions = VariableActionHelper.GetNumberOfActions(context, this.numActions);
 
-            var random = new Random((int)saltedSeed);
+            var random = new PRG(saltedSeed);
 
             // Invoke the default scorer function
             List<float> scores = this.defaultScorer.ScoreActions(context);
@@ -99,7 +99,7 @@ namespace MultiWorldTesting
                     total += scores[i];
                 }
 
-                float draw = (float)random.NextDouble();
+                float draw = random.UniformUnitInterval();
 
                 float sum = 0f;
                 actionProbability = 0f;

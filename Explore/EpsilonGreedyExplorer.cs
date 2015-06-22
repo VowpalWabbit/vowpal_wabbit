@@ -63,7 +63,7 @@ namespace MultiWorldTesting
         {
             uint numActions = VariableActionHelper.GetNumberOfActions(context, this.numActions);
 
-            var random = new Random((int)saltedSeed);
+            var random = new PRG(saltedSeed);
 
             // Invoke the default policy function to get the action
             uint chosenAction = this.defaultPolicy.ChooseAction(context);
@@ -78,14 +78,14 @@ namespace MultiWorldTesting
             float actionProbability = 0f;
             float baseProbability = epsilon / numActions; // uniform probability
 
-            if (random.NextDouble() < 1f - epsilon)
+            if (random.UniformUnitInterval() < 1f - epsilon)
             {
                 actionProbability = 1f - epsilon + baseProbability;
             }
             else
             {
                 // Get uniform random 1-based action ID
-                uint actionId = (uint)random.Next(1, (int)numActions + 1);
+                uint actionId = (uint)random.UniformInt(1, numActions);
 
                 if (actionId == chosenAction)
                 {

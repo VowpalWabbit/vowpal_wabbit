@@ -63,10 +63,10 @@ namespace MultiWorldTesting
         {
             uint numActions = VariableActionHelper.GetNumberOfActions(context, this.numActions);
 
-            var random = new Random((int)saltedSeed);
+            var random = new PRG(saltedSeed);
 
             // Select bag
-            uint chosenBag = (uint)random.Next(0, (int)this.bags);
+            uint chosenBag = random.UniformInt(0, this.bags - 1);
 
             // Invoke the default policy function to get the action
             uint chosenAction = 0;
