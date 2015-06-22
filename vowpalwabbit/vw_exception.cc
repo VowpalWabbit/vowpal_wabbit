@@ -2,7 +2,7 @@
 
 namespace VW {
 
-	vw_exception::vw_exception(const char* pfile, int plineNumber, std::string& pmessage)
+	vw_exception::vw_exception(const char* pfile, int plineNumber, std::string pmessage)
 		: file(pfile), lineNumber(plineNumber), message(pmessage)
 	{
 	}

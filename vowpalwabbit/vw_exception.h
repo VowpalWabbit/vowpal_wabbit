@@ -22,7 +22,7 @@ namespace VW {
 		int lineNumber;
 
 	public:
-		vw_exception(const char* file, int lineNumber, std::string& message);
+		vw_exception(const char* file, int lineNumber, std::string message);
 
 		vw_exception(const vw_exception& ex);
 
