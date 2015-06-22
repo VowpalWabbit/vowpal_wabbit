@@ -33,40 +33,32 @@ namespace VW
 
 	void VowpalWabbitExample::Learn()
 	{
-		try
-		{
+		TRYCATCHRETHROW
+		(
 			m_vw->m_vw->learn(m_example);
 
 			// as this is not a ring-based example it is not free'd
 			m_vw->m_vw->l->finish_example(*m_vw->m_vw, *m_example);
-		}
-		catch (std::exception const& ex)
-		{
-			throw gcnew System::Exception(gcnew System::String(ex.what()));
-		}
+		)
 	}
 
 	void VowpalWabbitExample::PredictAndDiscard()
 	{
-		try
-		{
+		TRYCATCHRETHROW
+		(
 			m_vw->m_vw->l->predict(*m_example);
 
 			// as this is not a ring-based example it is not free'd
 			m_vw->m_vw->l->finish_example(*m_vw->m_vw, *m_example);
-		}
-		catch (std::exception const& ex)
-		{
-			throw gcnew System::Exception(gcnew System::String(ex.what()));
-		}
+		)
 	}
 
 	generic<typename TPrediction>
 		where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 	TPrediction VowpalWabbitExample::LearnAndPredict()
 	{
-		try
-		{
+		TRYCATCHRETHROW
+		(
 			m_vw->m_vw->learn(m_example);
 
 			auto prediction = gcnew TPrediction();
@@ -76,19 +68,15 @@ namespace VW
 			m_vw->m_vw->l->finish_example(*m_vw->m_vw, *m_example);
 
 			return prediction;
-		}
-		catch (std::exception const& ex)
-		{
-			throw gcnew System::Exception(gcnew System::String(ex.what()));
-		}
+		)
 	}
 
 	generic<typename TPrediction>
 		where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 	TPrediction VowpalWabbitExample::Predict()
 	{
-		try
-		{
+		TRYCATCHRETHROW
+		(
 			m_vw->m_vw->l->predict(*m_example);
 
 			auto prediction = gcnew TPrediction();
@@ -98,11 +86,7 @@ namespace VW
 			m_vw->m_vw->l->finish_example(*m_vw->m_vw, *m_example);
 
 			return prediction;
-		}
-		catch (std::exception const& ex)
-		{
-			throw gcnew System::Exception(gcnew System::String(ex.what()));
-		}
+		)
 	}
 
 	VowpalWabbitExample^ VowpalWabbitExample::UnderlyingExample::get()

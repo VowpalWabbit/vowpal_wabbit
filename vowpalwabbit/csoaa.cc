@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include "label_dictionary.h"
 #include "vw.h"
 #include "gd.h" // GD::foreach_feature() needed in subtract_example()
+#include "vw_exception.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -154,11 +155,8 @@ int score_comp(const void* p1, const void* p2) {
     bool is_lab = ec_is_label_definition(*ec_seq[0]);
     for (size_t i=1; i<ec_seq.size(); i++) {
       if (is_lab != ec_is_label_definition(*ec_seq[i])) {
-        if (!((i == ec_seq.size()-1) && (example_is_newline(*ec_seq[i])))) {
-	  const char* msg = "error: mixed label definition and examples in ldf data!";
-          cerr << msg << endl;
-          throw runtime_error(msg);
-        }
+        if (!((i == ec_seq.size()-1) && (example_is_newline(*ec_seq[i])))) 
+		  THROW("error: mixed label definition and examples in ldf data!");
       }
     }
     return is_lab;
@@ -244,12 +242,8 @@ bool check_ldf_sequence(ldf& data, size_t start_K)
       isTest = true;
       cerr << "warning: ldf example has mix of train/test data; assuming test" << endl;
     }
-    if (ec_is_example_header(*ec)) {
-      stringstream msg;
-      msg << "warning: example headers at position " << k << ": can only have in initial position!";
-      cerr << msg.str() << endl;
-      throw runtime_error(msg.str().c_str());
-    }
+    if (ec_is_example_header(*ec))
+	  THROW("warning: example headers at position " << k << ": can only have in initial position!");
   }
   return isTest;
 }
@@ -652,11 +646,9 @@ void predict_or_learn(ldf& data, base_learner& base, example &ec) {
     assert(ec.l.cs.costs.size() > 0); // headers not allowed with singleline
     make_single_prediction(data, base, ec);
   } else if (ec_is_label_definition(ec)) {
-    if (data.ec_seq.size() > 0) {
-      const char* msg = "error: label definition encountered in data block";
-      cerr << msg << endl;
-      throw runtime_error(msg);
-    }
+    if (data.ec_seq.size() > 0) 
+	  THROW("error: label definition encountered in data block");
+
     data.ec_seq.push_back(&ec);
     do_actual_learning<is_learn>(data, base);
     data.need_to_clear = true;
@@ -717,11 +709,9 @@ base_learner* csldf_setup(vw& all)
   } else if (ldf_arg.compare("multiline-classifier") == 0 || ldf_arg.compare("mc") == 0) {
     ld.treat_as_classifier = true;
   } else {
-    if (all.training) {
-      const char* msg = "ldf requires either m/multiline or mc/multiline-classifier, except in test-mode which can be s/sc/singleline/singleline-classifier";
-      cerr << msg << endl;
-      throw runtime_error(msg);
-    }
+    if (all.training) 
+	  THROW("ldf requires either m/multiline or mc/multiline-classifier, except in test-mode which can be s/sc/singleline/singleline-classifier");
+
     if (ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0) {
       ld.treat_as_classifier = false;
       ld.is_singleline = true;

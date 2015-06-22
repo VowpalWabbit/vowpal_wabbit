@@ -310,7 +310,6 @@
     <ClCompile Include="csoaa.cc" />
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
-    <ClCompile Include="vw_exception.cc" />
     <ClCompile Include="gd.cc" />
     <ClCompile Include="interactions.cc" />
     <ClCompile Include="ftrl.cc" />

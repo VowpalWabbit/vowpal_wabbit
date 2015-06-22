@@ -1,5 +1,6 @@
 #include <float.h>
 #include "reductions.h"
+#include "vw_exception.h"
 
 struct scorer{ vw* all; }; // for set_minmax, loss
 
@@ -73,12 +74,8 @@ LEARNER::base_learner* scorer_setup(vw& all)
       multipredict_f = multipredict<glf1>;
     }
   else
-    {
-      stringstream msg;
-      msg << "Unknown link function: " << link;
-      cerr << msg.str() << endl;
-      throw runtime_error(msg.str().c_str());
-    }
+    THROW("Unknown link function: " << link);
+
   l->set_multipredict(multipredict_f);
   l->set_update(update);
   all.scorer = make_base(*l);

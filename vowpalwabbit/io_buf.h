@@ -16,6 +16,7 @@ license as described in the file LICENSE.
 #include <sstream>
 #include <errno.h>
 #include <stdexcept>
+#include "vw_exception.h"
 
 using namespace std;
 
@@ -92,12 +93,7 @@ class io_buf {
       ret = -1;
     }
     if (ret == -1 && *name != '\0')
-      {
-	std::stringstream msg;
-	msg << "can't open: " << name << ", error = " << strerror(errno);
-	cerr << msg.str() << endl;
-	throw std::runtime_error(msg.str().c_str());
-      }
+	  THROW("can't open: " << name << ", error = " << strerror(errno));
     
     return ret;
   }

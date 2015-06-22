@@ -1,7 +1,7 @@
 #include "float.h"
 #include "gd.h"
 #include "vw.h"
-
+#include "vw_exception.h"
 namespace COST_SENSITIVE {
 
   void name_value(substring &s, v_array<substring>& name, float &v)
@@ -15,14 +15,9 @@ namespace COST_SENSITIVE {
       break;
     case 2:
       v = float_of_substring(name[1]);
-      if ( nanpattern(v))
-	{
-	  stringstream msg;
-	  msg << "error NaN value for: ";
-	  msg.write(name[0].begin, name[0].end - name[0].begin);
-	  cerr << msg.str() << " terminating." << endl;
-	  throw runtime_error(msg.str().c_str());
-	}
+	  if (nanpattern(v))
+	    THROW("error NaN value for: " << name[0]);
+
       break;
     default:
       cerr << "example with a wierd name.  What is '";

@@ -11,6 +11,7 @@
 #include "label_dictionary.h"
 #include "vw.h"
 #include "cb_algs.h"
+#include "vw_exception.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -221,12 +222,7 @@ namespace CB_ADF {
     else if (reduction_type == CB_TYPE_DR)
       gen_cs_example_dr<true>(mydata, examples, mydata.cs_labels);
     else
-      {
-	    stringstream msg;
-	    msg << "Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type;
-	    std::cerr << msg.str() << ". Exiting." << endl;
-	    throw runtime_error(msg.str().c_str());
-      }
+      THROW("Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type);
 	
     call_predict_or_learn<true>(mydata,base,examples);
   }
@@ -238,32 +234,20 @@ namespace CB_ADF {
       example *ec = data.ec_seq[k];
     
       if (ec->l.cb.costs.size() > 1)
-	{
-      	const char* msg = "cb_adf: badly formatted example, only one cost can be known.";
-	cerr << msg << endl;	
-	throw runtime_error(msg);
-	}
+	    THROW("cb_adf: badly formatted example, only one cost can be known.");
     
       if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)      
 	count += 1;
     
-      if (CB::ec_is_example_header(*ec)) {
-      stringstream msg;
-      msg << "warning: example headers at position " << k << ": can only have in initial position!"; 
-      cerr << msg.str() << endl;
-      throw runtime_error(msg.str().c_str());
-      }
+	  if (CB::ec_is_example_header(*ec))
+		  THROW("warning: example headers at position " << k << ": can only have in initial position!");
     }
     if (count == 0)
       return true;
     else if (count == 1)
       return false;
     else
-      {
-      const char* msg = "cb_adf: badly formatted example, only one line can have a cost";
-      cerr << msg << endl;
-      throw runtime_error(msg);
-      }
+      THROW("cb_adf: badly formatted example, only one line can have a cost");
   }
 
   template <bool is_learn>
@@ -288,10 +272,7 @@ namespace CB_ADF {
 	    learn<CB_TYPE_DR>(data, base, data.ec_seq);
 	  }
 	else
-	  {
-	    std::cerr << "Unknown cb_type specified for contextual bandit learning: " << data.cb_type << ". Exiting." << endl;
-	    throw exception();
-	  }
+	  THROW("Unknown cb_type specified for contextual bandit learning: " << data.cb_type);
       }
   }
 

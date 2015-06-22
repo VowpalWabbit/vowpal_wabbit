@@ -47,5 +47,8 @@
     <ClCompile Include="clr_io.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="vw_exception.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

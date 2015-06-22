@@ -17,6 +17,7 @@ using namespace std;
 
 #include "rand48.h"
 #include "global_data.h"
+#include "vw_exception.h"
 
 /* Define the last version where files are backward compatible. */
 #define LAST_COMPATIBLE_VERSION "6.1.3"
@@ -36,10 +37,7 @@ void initialize_regressor(vw& all)
   all.reg.weight_vector = calloc_or_die<weight>(length << all.reg.stride_shift);
   if (all.reg.weight_vector == nullptr)
     {
-      stringstream msg;
-      msg << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>";
-      cerr << msg.str() << endl;
-      throw runtime_error(msg.str().c_str());
+      THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
     } else
   if (all.initial_weight != 0.)
     {
@@ -77,13 +75,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 			  "", read, 
 			  buff, text_len, text);
       all.model_file_ver = buff2; //stord in all to check save_resume fix in gd
-      if (all.model_file_ver < LAST_COMPATIBLE_VERSION)
-            {
-			stringstream msg;
-			msg << "Model has possibly incompatible version! " << all.model_file_ver.to_string();
-			cout << msg.str() << endl;
-			throw runtime_error(msg.str().c_str());
-            }
+	  if (all.model_file_ver < LAST_COMPATIBLE_VERSION)
+		  THROW("Model has possibly incompatible version! " << all.model_file_ver.to_string());
       
       char model = 'm';
 		bin_text_read_write_fixed(model_file, &model, 1,
@@ -124,13 +117,9 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 			all.args.push_back(boost::lexical_cast<std::string>(local_num_bits));
 		}
 
-      if (all.default_bits != true && all.num_bits != local_num_bits)
-	{
-			stringstream msg;
-			msg << "vw: -b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model";
-			cout << msg.str() << endl;
-			throw runtime_error(msg.str().c_str());
-	}
+		if (all.default_bits != true && all.num_bits != local_num_bits)
+			THROW("-b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model");
+
       all.default_bits = false;
       all.num_bits = local_num_bits;
       

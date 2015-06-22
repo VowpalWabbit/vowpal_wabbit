@@ -20,14 +20,10 @@ namespace VW
 
 	vw* wrapped_seed_vw_model(vw* vw)
 	{
-		try
-		{
+		TRYCATCHRETHROW
+		(
 			return VW::seed_vw_model(vw, "");
-		}
-		catch (std::exception const& ex)
-		{
-			throw gcnew System::Exception(gcnew System::String(ex.what()));
-		}
+		)
 	}
 
 	VowpalWabbit::VowpalWabbit(VowpalWabbitModel^ model)
@@ -58,29 +54,20 @@ namespace VW
 
 	uint32_t VowpalWabbit::HashSpace(System::String^ s)
 	{
-		auto string = msclr::interop::marshal_as<std::string>(s);
-
-		try
-		{
+		TRYCATCHRETHROW
+		(
+			auto string = msclr::interop::marshal_as<std::string>(s);
 			return VW::hash_space(*m_vw, string);
-		}
-		catch (std::exception const& ex)
-		{
-			throw gcnew System::Exception(gcnew System::String(ex.what()));
-		}
+		)
 	}
 
 	uint32_t VowpalWabbit::HashFeature(System::String^ s, unsigned long u)
 	{
-		try
-		{
+		TRYCATCHRETHROW
+		(
 			auto string = msclr::interop::marshal_as<std::string>(s);
 			return VW::hash_feature(*m_vw, string, u);
-		}
-		catch (std::exception const& ex)
-		{
-			throw gcnew System::Exception(gcnew System::String(ex.what()));
-		}
+		)
 	}
 
 	generic<typename TPrediction>
@@ -91,8 +78,8 @@ namespace VW
 		auto lineHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
 
 		example* ex = nullptr;
-		try
-		{
+		TRYCATCHRETHROW
+		(
 			ex = VW::read_example(*m_vw, reinterpret_cast<char*>(lineHandle.AddrOfPinnedObject().ToPointer()));
 
 			if (predict)
@@ -107,11 +94,7 @@ namespace VW
 			ex = nullptr;
 
 			return prediction;
-		}
-		catch (std::exception const& ex)
-		{
-			throw gcnew System::Exception(gcnew System::String(ex.what()));
-		}
+		)
 		finally
 		{
 			lineHandle.Free();
@@ -139,6 +122,6 @@ namespace VW
 
 	void VowpalWabbit::Driver()
 	{
-		LEARNER::generic_driver(*m_vw);
+		TRYCATCHRETHROW(LEARNER::generic_driver(*m_vw));
 	}
 }

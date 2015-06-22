@@ -51,6 +51,7 @@ namespace po = boost::program_options;
 #include "constant.h"
 #include "vw.h"
 #include "interactions.h"
+#include "vw_exception.h"
 
 using namespace std;
 
@@ -170,16 +171,11 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
 
   uint32_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
-  if(v_length>29){
-    const char* msg = "cache version too long, cache file is probably invalid";
-    cerr << msg << endl;
-    throw runtime_error(msg);
-  }
-  else if (v_length == 0) {
-    const char* msg= "cache version too short, cache file is probably invalid";
-    cerr << msg << endl;
-    throw runtime_error(msg);
-  }
+  if (v_length > 29)
+	  THROW("cache version too long, cache file is probably invalid";);
+
+  if (v_length == 0)
+	  THROW("cache version too short, cache file is probably invalid");
     
   t.erase();
   if (t.size() < v_length)
@@ -196,17 +192,10 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
 
   char temp;
   if (buf->read_file(filepointer, &temp, 1) < 1) 
-    {
-      const char* msg = "failed to read";
-      cout << msg << endl;
-      throw runtime_error(msg);
-    }
+	  THROW("failed to read");
+
   if (temp != 'c')
-    {
-      const char* msg = "data file is not a cache file";
-      cout << msg << endl;
-      throw runtime_error(msg);
-    }
+     THROW("data file is not a cache file");
 
   t.delete_v();
   
@@ -271,12 +260,7 @@ void reset_source(vw& all, size_t numbits)
 	  socklen_t size = sizeof(client_address);
 	  int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
 	  if (f < 0)
-	    {
-	      stringstream msg;
-	      msg << "accept: " << strerror(errno);
-	      cerr << msg.str() << endl;
-	      throw runtime_error(msg.str().c_str());
-	    }
+	    THROW("accept: " << strerror(errno));
 	  
 	  // note: breaking cluster parallel online learning by dropping support for id
 	  
@@ -295,11 +279,8 @@ void reset_source(vw& all, size_t numbits)
 	for (size_t i = 0; i < input->files.size();i++)
 	  {
 	    input->reset_file(input->files[i]);
-	    if (cache_numbits(input, input->files[i]) < numbits) {
-	      const char* msg = "argh, a bug in caching of some sort!  Exiting" ;
-	      cout << msg << endl;
-	      throw runtime_error(msg);
-	    }
+		if (cache_numbits(input, input->files[i]) < numbits)
+			THROW("argh, a bug in caching of some sort!");
 	  }
       }
     }
@@ -444,20 +425,11 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 
       // attempt to bind to socket
       if ( ::bind(all.p->bound_sock,(sockaddr*)&address, sizeof(address)) < 0 )
-	{
-	  stringstream msg;
-	  msg << "bind: " << strerror(errno);
-	  cerr << msg.str() << endl;
-	  throw runtime_error(msg.str().c_str());
-	}
+		THROW("bind: " << strerror(errno));
 
       // listen on socket
-      if (listen(all.p->bound_sock, 1) < 0) {
-        stringstream msg;
-	msg << "listen: " << strerror(errno);
-	cerr << msg.str() << endl;
-	throw runtime_error(msg.str().c_str());
-      }
+	  if (listen(all.p->bound_sock, 1) < 0)
+		  THROW("listen: " << strerror(errno));
 
       // write port file
       if (all.vm.count("port_file"))
@@ -470,34 +442,24 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	  ofstream port_file;
 	  port_file.open(all.vm["port_file"].as<string>().c_str());
 	  if (!port_file.is_open())
-	    {
-	      const char* msg = "error writing port file";
-	      cerr << msg << endl;
-	      throw runtime_error(msg);
-	    }
+		  THROW("error writing port file: " << all.vm["port_file"].as<string>());
+
 	  port_file << ntohs(address.sin_port) << endl;
 	  port_file.close();
 	}
 
       // background process
       if (!all.active && daemon(1,1))
-	{
-	  stringstream msg;
-	  msg << "daemon: " << strerror(errno);
-	  cerr << msg.str() << endl;
-	  throw runtime_error(msg.str().c_str());
-	}
+		THROW("daemon: " << strerror(errno));
+
       // write pid file
       if (all.vm.count("pid_file"))
 	{
 	  ofstream pid_file;
 	  pid_file.open(all.vm["pid_file"].as<string>().c_str());
 	  if (!pid_file.is_open())
-	    {
-	      const char* msg = "error writing pid file";
-	      cerr << msg << endl;
-	      throw runtime_error(msg);
-	    }
+		  THROW("error writing pid file");
+
 	  pid_file << getpid() << endl;
 	  pid_file.close();
 	}
@@ -505,7 +467,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       if (all.daemon && !all.active)
 	{
 #ifdef _WIN32
-		throw runtime_error("not supported on windows");
+		THROW("not supported on windows");
 #else
 		fclose(stdin);
 	  // weights will be shared across processes, accessible to children
@@ -587,13 +549,8 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       if (!all.quiet)
 	cerr << "calling accept" << endl;
       int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
-      if (f < 0)
-	{
-	  stringstream msg;
-	  msg << "accept: " << strerror(errno);
-	  cerr << msg.str() << endl;
-	  throw runtime_error(msg.str().c_str());
-	}
+	  if (f < 0)
+		  THROW("accept: " << strerror(errno));
       
       all.p->label_sock = f;
       all.print = print_result;
@@ -652,12 +609,9 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	}
     }
   
-  if (passes > 1 && !all.p->resettable)
-    {
-	  const char* msg = "need a cache file for multiple passes : try using --cache_file";
-      cerr << all.program_name << ": " << msg << endl;  
-      throw runtime_error(msg);
-    }
+	if (passes > 1 && !all.p->resettable)
+		THROW("need a cache file for multiple passes : try using --cache_file");
+
   all.p->input->count = all.p->input->files.size();
   if (!quiet && !all.daemon)
     cerr << "num sources = " << all.p->input->files.size() << endl;

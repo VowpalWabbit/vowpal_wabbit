@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 #include "parse_args.h"
 #include "accumulate.h"
 #include "best_constant.h"
+#include "vw_exception.h"
 
 using namespace std;
 
@@ -90,6 +91,8 @@ int main(int argc, char *argv[])
     }
 
     VW::finish(all);
+  } catch (VW::vw_exception& e) {
+	  cerr << "vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what();
   } catch (exception& e) {
     // vw is implemented as a library, so we use 'throw runtime_error()'
     // error 'handling' everywhere.  To reduce stderr pollution

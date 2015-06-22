@@ -10,6 +10,7 @@ license as described in the file LICENSE.
 #include "parser.h"
 #include "parse_regressor.h"
 #include "parse_args.h"
+#include "vw_exception.h"
 
 namespace VW
 {
@@ -22,16 +23,12 @@ namespace VW
 	VowpalWabbitBase::VowpalWabbitBase(System::String^ args)
         : VowpalWabbitBase((vw*)nullptr)
 	{
-		try
-		{
+		TRYCATCHRETHROW
+		(
 			auto string = msclr::interop::marshal_as<std::string>(args);
 			m_vw = VW::initialize(string);
 			initialize_parser_datastructures(*m_vw);
-		}
-		catch (std::exception const& ex)
-		{
-			throw gcnew System::Exception(gcnew System::String(ex.what()));
-		}
+		)
 	}
 
 	VowpalWabbitBase::VowpalWabbitBase(System::String^ args, System::IO::Stream^ stream)
@@ -40,8 +37,9 @@ namespace VW
 		clr_io_buf model(stream);
 		char** argv = nullptr;
 		int argc = 0;
-		try
-		{
+		
+		TRYCATCHRETHROW
+		(
 			auto string = msclr::interop::marshal_as<std::string>(args);
 			string += " --no_stdin";
 			argv = VW::get_argv_from_string(string, argc);
@@ -52,11 +50,7 @@ namespace VW
 			initialize_parser_datastructures(all);
 
 			m_vw = &all;
-		}
-		catch (std::exception const& ex)
-		{
-			throw gcnew System::Exception(gcnew System::String(ex.what()));
-		}
+		)
 		finally
 		{
 			if (argv != nullptr)
@@ -78,7 +72,7 @@ namespace VW
         }
         else
         {
-            ex = VW::alloc_examples(0, 1);
+            TRYCATCHRETHROW(ex = VW::alloc_examples(0, 1));
         }
         return ex;
     }
@@ -90,15 +84,15 @@ namespace VW
             m_examples = new stack<example*>();
         }
 
-        VW::empty_example(*m_vw, *ex);
+		TRYCATCHRETHROW(VW::empty_example(*m_vw, *ex));
 
         m_examples->push(ex);
     }
 
 	void VowpalWabbitBase::InternalDispose()
 	{
-		try
-		{
+		TRYCATCHRETHROW
+		(
 			if (m_examples != nullptr)
 			{
 				while (!m_examples->empty())
@@ -129,22 +123,21 @@ namespace VW
 				VW::finish(*m_vw);
 				m_vw = nullptr;
 			}
-		}
-		catch (std::exception const& ex)
-		{
-			throw gcnew System::Exception(gcnew System::String(ex.what()));
-		}
+		)
 	}
 
 	void VowpalWabbitBase::RunMultiPass()
 	{
 		if (m_vw->numpasses > 1)
 		{
-			adjust_used_index(*m_vw);
-			m_vw->do_reset_source = true;
-			VW::start_parser(*m_vw, false);
-			LEARNER::generic_driver(*m_vw);
-			VW::end_parser(*m_vw);
+			TRYCATCHRETHROW
+			(
+				adjust_used_index(*m_vw);
+				m_vw->do_reset_source = true;
+				VW::start_parser(*m_vw, false);
+				LEARNER::generic_driver(*m_vw);
+				VW::end_parser(*m_vw);
+			)
 		}
 	}
 
@@ -174,14 +167,10 @@ namespace VW
 
 		auto name = msclr::interop::marshal_as<std::string>(filename);
 
-		try
-		{
+		TRYCATCHRETHROW
+		(
 			VW::save_predictor(*m_vw, name);
-		}
-		catch (std::exception const& ex)
-		{
-			throw gcnew System::Exception(gcnew System::String(ex.what()));
-		}
+		)
 	}
 
 	VowpalWabbitPerformanceStatistics^ VowpalWabbitBase::PerformanceStatistics::get()

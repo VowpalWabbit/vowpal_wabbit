@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 
 #include "global_data.h"
 #include "gd.h"
+#include "vw_exception.h"
 
 using namespace std;
 
@@ -39,10 +40,7 @@ size_t really_read(int sock, void* in, size_t count)
       else
 	if (r < 0)
 	  {
-	    stringstream msg;
-	    msg << "read(" << sock << "," << count << "-" << done << "): " << strerror(errno);
-	    cerr << msg.str() << endl;
-	    throw runtime_error(msg.str().c_str());
+	    THROW("read(" << sock << "," << count << "-" << done << "): " << strerror(errno));
 	  }
 	else
 	  {
@@ -71,10 +69,7 @@ void send_prediction(int sock, global_prediction p)
 #endif
 	  < (int)sizeof(p))
     {
-      stringstream msg;
-      msg << "send_prediction write(" << sock << "): " << strerror(errno);
-      cerr << msg.str() << endl;
-      throw runtime_error(msg.str().c_str());
+      THROW("send_prediction write(" << sock << "): " << strerror(errno));
     }
 }
 

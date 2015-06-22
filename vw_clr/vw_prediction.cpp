@@ -10,23 +10,26 @@ namespace VW
 {
 	void VowpalWabbitPrediction::ReadFromExample(VowpalWabbitExample^ example)
 	{
+		// dispatch to sub classes
 		ReadFromExample(example->m_vw->m_vw, example->m_example);
 	}
 
 	void VowpalWabbitScalarPrediction::ReadFromExample(vw* vw, example* ex)
 	{
-		Value = VW::get_prediction(ex);
+		TRYCATCHRETHROW(Value = VW::get_prediction(ex));
 	}
 
 	void VowpalWabbitCostSensitivePrediction::ReadFromExample(vw* vw, example* ex)
 	{
-		Value = VW::get_cost_sensitive_prediction(ex);
+		TRYCATCHRETHROW(Value = VW::get_cost_sensitive_prediction(ex));
 	}
 
 	void VowpalWabbitMultilabelPrediction::ReadFromExample(vw* vw, example* ex)
 	{
 		size_t length;
-		uint32_t* labels = VW::get_multilabel_predictions(ex, length);
+		uint32_t* labels;
+		
+		TRYCATCHRETHROW(labels = VW::get_multilabel_predictions(ex, length));
 
 		if (length > Int32::MaxValue)
 		{

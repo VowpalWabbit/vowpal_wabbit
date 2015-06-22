@@ -24,6 +24,7 @@ license as described in the file LICENSE.
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include"vw_exception.h"
 
 using namespace std;
 
@@ -46,32 +47,20 @@ int open_socket(const char* host)
     he = gethostbyname(host);
 
   if (he == nullptr)
-    {
-      stringstream msg;
-      msg << "gethostbyname(" << host << "): " << strerror(errno);
-      cerr << msg.str() << endl;
-      throw runtime_error(msg.str().c_str());
-    }
+	THROW("gethostbyname(" << host << "): " << strerror(errno));
+
   int sd = (int)socket(PF_INET, SOCK_STREAM, 0);
   if (sd == -1)
-    {
-      stringstream msg;
-      msg << "socket: " << strerror(errno);
-      cerr << msg.str() << endl;
-      throw runtime_error(msg.str().c_str());
-    }
+	THROW("socket: " << strerror(errno));
+
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
   far_end.sin_port = htons(port);
   far_end.sin_addr = *(in_addr*)(he->h_addr);
   memset(&far_end.sin_zero, '\0',8);
   if (connect(sd,(sockaddr*)&far_end, sizeof(far_end)) == -1)
-    {
-      stringstream msg;
-      msg << "connect(" << host << ':' << port << "): " << strerror(errno);
-      cerr << msg.str() << endl;
-      throw runtime_error(msg.str().c_str());
-    }
+    THROW("connect(" << host << ':' << port << "): " << strerror(errno));
+
   char id = '\0';
   if (
 #ifdef _WIN32

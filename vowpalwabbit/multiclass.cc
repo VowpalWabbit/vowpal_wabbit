@@ -2,6 +2,7 @@
 #include <climits>
 #include "global_data.h"
 #include "vw.h"
+#include "vw_exception.h"
 
 namespace MULTICLASS {
 
@@ -78,13 +79,8 @@ namespace MULTICLASS {
       cerr << "words.size() = " << words.size() << endl;
     }
     if (ld->label == 0)
-      {
-		  stringstream msg;
-		  msg << "label 0 is not allowed for multiclass.  Valid labels are {1,k}";
-		  if (sd->ldict) msg << endl << "this likely happened because you specified an invalid label with named labels";
-		  cout << msg.str() << endl;
-		  throw runtime_error(msg.str().c_str());
-      }
+		  THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}" <<
+			  (sd->ldict ? "\nthis likely happened because you specified an invalid label with named labels" : ""));
   }
 
   label_parser mc_label = {default_label, parse_label, 

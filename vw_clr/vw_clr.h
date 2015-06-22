@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 #include <stack>
 #include "parser.h"
+#include "vw_exception.h"
 
 #include <msclr\marshal_cppstd.h>
 
@@ -147,8 +148,8 @@ namespace VW
 	protected:
 		bool m_isDisposed;
 
-		VowpalWabbitBase(System::String^ args);
-		VowpalWabbitBase(System::String^ args, System::IO::Stream^ model);
+		VowpalWabbitBase(String^ args);
+		VowpalWabbitBase(String^ args, System::IO::Stream^ model);
 		VowpalWabbitBase(vw* vw);
 
 		void InternalDispose();
@@ -156,7 +157,7 @@ namespace VW
 	public:
 		void RunMultiPass();
 		void SaveModel();
-		void SaveModel(System::String^ filename);
+		void SaveModel(String^ filename);
 
 		property VowpalWabbitPerformanceStatistics^ PerformanceStatistics
 		{
@@ -179,8 +180,8 @@ namespace VW
 		!VowpalWabbitModel();
 
 	public:
-		VowpalWabbitModel(System::String^ args);
-		VowpalWabbitModel(System::String^ args, System::IO::Stream^ stream);
+		VowpalWabbitModel(String^ args);
+		VowpalWabbitModel(String^ args, System::IO::Stream^ stream);
 		virtual ~VowpalWabbitModel();
 	};
 
@@ -212,9 +213,9 @@ namespace VW
 
 		VowpalWabbitExample^ CreateExample();
 
-		property System::String^ Label
+		property String^ Label
 		{
-			void set(System::String^ value);
+			void set(String^ value);
 		}
 
 		VowpalWabbitNamespaceBuilder^ AddNamespace(System::Byte featureGroup);
@@ -230,28 +231,55 @@ namespace VW
 
 		generic<typename TPrediction>
 			where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-		TPrediction PredictOrLearn(System::String^ line, bool predict);
+		TPrediction PredictOrLearn(String^ line, bool predict);
 
 	protected:
 		!VowpalWabbit();
 
 	public:
-		VowpalWabbit(System::String^ args);
+		VowpalWabbit(String^ args);
 		VowpalWabbit(VowpalWabbitModel^ model);
-		VowpalWabbit(System::String^ args, System::IO::Stream^ stream);
+		VowpalWabbit(String^ args, System::IO::Stream^ stream);
 		virtual ~VowpalWabbit();
 
-		uint32_t HashSpace(System::String^ s);
-		uint32_t HashFeature(System::String^ s, unsigned long u);
+		uint32_t HashSpace(String^ s);
+		uint32_t HashFeature(String^ s, unsigned long u);
 
 		generic<typename TPrediction>
 			where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-		TPrediction Learn(System::String^ line);
+		TPrediction Learn(String^ line);
 
 		generic<typename TPrediction>
 			where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-		TPrediction Predict(System::String^ line);
+		TPrediction Predict(String^ line);
 
 		void Driver();
 	};
+
+	public ref class VowpalWabbitException : Exception
+	{
+	private:
+		String^ m_filename;
+		Int32 m_lineNumber;
+
+	public:
+		VowpalWabbitException(const vw_exception& ex);
+
+		property String^ Filename
+		{
+			String^ get();
+		}
+
+		property Int32 LineNumber
+		{
+			Int32 get();
+		}
+	};
 }
+
+#define TRYCATCHRETHROW(block) \
+try { block; } \
+catch (VW::vw_exception const& ex) \
+{ throw gcnew VW::VowpalWabbitException(ex); } \
+catch (std::exception const& ex) \
+{ throw gcnew System::Exception(gcnew System::String(ex.what())); }

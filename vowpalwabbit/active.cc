@@ -144,7 +144,7 @@ base_learner* active_setup(vw& all)
   
   if (count(all.args.begin(), all.args.end(),"--lda") != 0)
     {//can't have lda base learner
-		throw vw_exception("error: you can't combine lda and active learning");
+		THROW("error: you can't combine lda and active learning");
     }
 
   base_learner* base = setup_base(all);

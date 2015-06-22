@@ -155,6 +155,7 @@
     <ClCompile Include="vw.cpp" />
     <ClCompile Include="vw_example.cpp" />
     <ClCompile Include="vw_examplebuilder.cpp" />
+    <ClCompile Include="vw_exception.cpp" />
     <ClCompile Include="vw_model.cpp" />
     <ClCompile Include="vw_prediction.cpp" />
   </ItemGroup>

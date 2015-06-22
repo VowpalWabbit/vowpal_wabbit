@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 #include "rand48.h"
 #include "bs.h"
+#include "vw_exception.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -202,10 +203,7 @@ using namespace LEARNER;
         bs_predict_vote(ec, d.pred_vec);
         break;
       default:
-	std::stringstream msg;
-	msg << "Unknown bs_type specified: " << d.bs_type << ".";
-        std::cerr << msg.str() << " Exiting." << endl;
-        throw runtime_error(msg.str().c_str());
+		  THROW("Unknown bs_type specified: " << d.bs_type);
     }
 
     if (shouldOutput) 
