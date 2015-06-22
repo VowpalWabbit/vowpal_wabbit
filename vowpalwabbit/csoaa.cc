@@ -156,7 +156,7 @@ int score_comp(const void* p1, const void* p2) {
     for (size_t i=1; i<ec_seq.size(); i++) {
       if (is_lab != ec_is_label_definition(*ec_seq[i])) {
         if (!((i == ec_seq.size()-1) && (example_is_newline(*ec_seq[i])))) 
-		  THROW("error: mixed label definition and examples in ldf data!");
+		  THROW("error: mixed label definition and examples in ldf data!")
       }
     }
     return is_lab;
@@ -243,7 +243,7 @@ bool check_ldf_sequence(ldf& data, size_t start_K)
       cerr << "warning: ldf example has mix of train/test data; assuming test" << endl;
     }
     if (ec_is_example_header(*ec))
-	  THROW("warning: example headers at position " << k << ": can only have in initial position!");
+	  THROW("warning: example headers at position " << k << ": can only have in initial position!")
   }
   return isTest;
 }
@@ -647,7 +647,7 @@ void predict_or_learn(ldf& data, base_learner& base, example &ec) {
     make_single_prediction(data, base, ec);
   } else if (ec_is_label_definition(ec)) {
     if (data.ec_seq.size() > 0) 
-	  THROW("error: label definition encountered in data block");
+	  THROW("error: label definition encountered in data block")
 
     data.ec_seq.push_back(&ec);
     do_actual_learning<is_learn>(data, base);
@@ -710,7 +710,7 @@ base_learner* csldf_setup(vw& all)
     ld.treat_as_classifier = true;
   } else {
     if (all.training) 
-	  THROW("ldf requires either m/multiline or mc/multiline-classifier, except in test-mode which can be s/sc/singleline/singleline-classifier");
+	  THROW("ldf requires either m/multiline or mc/multiline-classifier, except in test-mode which can be s/sc/singleline/singleline-classifier")
 
     if (ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0) {
       ld.treat_as_classifier = false;

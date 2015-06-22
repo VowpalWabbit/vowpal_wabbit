@@ -8,6 +8,7 @@
 #include "cost_sensitive.h"
 #include "label_dictionary.h"   // for add_example_namespaces_from_example
 #include "vw.h"
+#include "vw_exception.h"
 
 #define val_namespace 100 // valency and distance feature space
 #define offset_const 344429
@@ -152,7 +153,7 @@ namespace DepParserTask {
         stack.pop();
         return idx;
     }
-    throw exception();
+    THROW("transition_hybrid failed")
   }
   
   void extract_features(Search::search& srn, uint32_t idx,  vector<example*> &ec) {
@@ -322,12 +323,9 @@ namespace DepParserTask {
         head = (costs.size() == 0) ? 0 : costs[0].class_index;
         tag  = (costs.size() <= 1) ? data->root_label : costs[1].class_index;
       }
-      if (tag > data->num_label) {
-        stringstream msg;
-	msg << "invalid label " << tag << " which is > num actions=" << data->num_label;
-	cerr << msg.str() << endl;
-	throw runtime_error(msg.str().c_str());
-      }
+	  if (tag > data->num_label)
+		  THROW("invalid label " << tag << " which is > num actions=" << data->num_label)
+
       gold_heads.push_back(head);
       gold_tags.push_back(tag);
       heads[i+1] = 0;

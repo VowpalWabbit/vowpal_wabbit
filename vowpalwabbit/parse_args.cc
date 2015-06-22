@@ -130,14 +130,14 @@ void parse_dictionary_argument(vw&all, string str) {
 
   string fname = find_in_path(all.dictionary_path, string(s));
   if (fname == "") { //  ! boost::filesystem::exists(fname) ) {
-	  THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path");
+	  THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path")
   }
 
   bool is_gzip = ends_with(fname, ".gz");
   io_buf* io = is_gzip ? new comp_io_buf : new io_buf;
   int fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
   if (fd < 0)
-	THROW("error: cannot read dictionary from file '" << fname << "'" << ", opening failed");
+	THROW("error: cannot read dictionary from file '" << fname << "'" << ", opening failed")
 
   unsigned long long fd_hash = hash_file_contents(io, fd);
   io->close_file();
@@ -157,7 +157,7 @@ void parse_dictionary_argument(vw&all, string str) {
   example *ec = VW::alloc_examples(all.p->lp.label_size, 1);
   fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
   if (fd < 0)
-	THROW("error: cannot re-read dictionary from file '" << fname << "'" << ", opening failed");
+	THROW("error: cannot re-read dictionary from file '" << fname << "'" << ", opening failed")
 
   size_t def = (size_t)' ';
 
@@ -173,7 +173,7 @@ void parse_dictionary_argument(vw&all, string str) {
         size *= 2;
         buffer = (char*)realloc(buffer, size);
         if (buffer == nullptr) 
-		  THROW("error: memory allocation failed in reading dictionary");
+		  THROW("error: memory allocation failed in reading dictionary")
       }
     } while ( (rc != EOF) && (rc != '\n') && (nread > 0) );
     buffer[pos] = 0;
@@ -234,7 +234,7 @@ void parse_affix_argument(vw&all, string str) {
     if (q[0] == '+') { q++; }
     else if (q[0] == '-') { prefix = 0; q++; }
     if ((q[0] < '1') || (q[0] > '7')) 
-	  THROW("malformed affix argument (length must be 1..7): " << p);
+	  THROW("malformed affix argument (length must be 1..7): " << p)
 
     uint16_t len = (uint16_t)(q[0] - '0');
     uint16_t ns = (uint16_t)' ';  // default namespace
@@ -242,10 +242,10 @@ void parse_affix_argument(vw&all, string str) {
       if (valid_ns(q[1]))
         ns = (uint16_t)q[1];
       else 
-		THROW("malformed affix argument (invalid namespace): " << p);
+		THROW("malformed affix argument (invalid namespace): " << p)
 
       if (q[2] != 0) 
-		THROW("malformed affix argument (too long): " << p);
+		THROW("malformed affix argument (too long): " << p)
     }
 
     uint16_t afx = (len << 1) | (prefix & 0x1);
@@ -356,7 +356,7 @@ void parse_source(vw& all)
     all.stdin_off = true;
   
   if ( (vm.count("total") || vm.count("node") || vm.count("unique_id")) && !(vm.count("total") && vm.count("node") && vm.count("unique_id")) )
-    THROW("you must specificy unique_id, total, and node if you specify any");
+    THROW("you must specificy unique_id, total, and node if you specify any")
   
   if (vm.count("daemon") || vm.count("pid_file") || (vm.count("port") && !all.active) ) {
     all.daemon = true;
@@ -376,7 +376,7 @@ void parse_source(vw& all)
     all.data_filename = "";
 
   if ((vm.count("cache") || vm.count("cache_file")) && vm.count("invert_hash"))
-    THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.");
+    THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.")
 
   if(!all.holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
     {
@@ -435,7 +435,7 @@ void parse_feature_tweaks(vw& all)
 
   if(vm.count("ngram")){
     if(vm.count("sort_features"))
-      THROW("ngram is incompatible with sort_features.");
+      THROW("ngram is incompatible with sort_features.")
 
     all.ngram_strings = vm["ngram"].as< vector<string> >();
     compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.quiet);
@@ -444,7 +444,7 @@ void parse_feature_tweaks(vw& all)
   if(vm.count("skips"))
     {
       if(!vm.count("ngram"))
-		THROW("You can not skip unless ngram is > 1");
+		THROW("You can not skip unless ngram is > 1")
 
       all.skip_strings = vm["skips"].as<vector<string> >();
       compile_gram(all.skip_strings, all.skips, (char*)"skips", all.quiet);
@@ -460,12 +460,12 @@ void parse_feature_tweaks(vw& all)
     {
       uint32_t new_bits = (uint32_t)vm["bit_precision"].as< size_t>();
       if (all.default_bits == false && new_bits != all.num_bits)
-		THROW("Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work.");
+		THROW("Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work.")
 
       all.default_bits = false;
       all.num_bits = new_bits;
       if (all.num_bits > min(31, sizeof(size_t)*8 - 3))
-		THROW("Only " << min(31, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up.");
+		THROW("Only " << min(31, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up.")
     }
 
   all.permutations = vm.count("permutations");
@@ -633,7 +633,7 @@ void parse_feature_tweaks(vw& all)
           }
 
           if (!operator_found)
-			THROW("argument of --redefine is malformed. Valid format is N:=S, :=S or N:=");
+			THROW("argument of --redefine is malformed. Valid format is N:=S, :=S or N:=")
 
           if (++operator_pos > 3) // seek operator end
               cerr << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('" << new_namespace << "') will be used as target namespace." << endl;

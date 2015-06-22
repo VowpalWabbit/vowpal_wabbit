@@ -72,7 +72,7 @@ namespace VW
         }
         else
         {
-            TRYCATCHRETHROW(ex = VW::alloc_examples(0, 1));
+            TRYCATCHRETHROW(ex = VW::alloc_examples(0, 1))
         }
         return ex;
     }
@@ -84,7 +84,7 @@ namespace VW
             m_examples = new stack<example*>();
         }
 
-		TRYCATCHRETHROW(VW::empty_example(*m_vw, *ex));
+		TRYCATCHRETHROW(VW::empty_example(*m_vw, *ex))
 
         m_examples->push(ex);
     }

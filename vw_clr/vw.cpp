@@ -122,6 +122,6 @@ namespace VW
 
 	void VowpalWabbit::Driver()
 	{
-		TRYCATCHRETHROW(LEARNER::generic_driver(*m_vw));
+		TRYCATCHRETHROW(LEARNER::generic_driver(*m_vw))
 	}
 }

@@ -222,7 +222,7 @@ namespace CB_ADF {
     else if (reduction_type == CB_TYPE_DR)
       gen_cs_example_dr<true>(mydata, examples, mydata.cs_labels);
     else
-      THROW("Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type);
+      THROW("Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type)
 	
     call_predict_or_learn<true>(mydata,base,examples);
   }
@@ -234,20 +234,20 @@ namespace CB_ADF {
       example *ec = data.ec_seq[k];
     
       if (ec->l.cb.costs.size() > 1)
-	    THROW("cb_adf: badly formatted example, only one cost can be known.");
+	    THROW("cb_adf: badly formatted example, only one cost can be known.")
     
       if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)      
 	count += 1;
     
 	  if (CB::ec_is_example_header(*ec))
-		  THROW("warning: example headers at position " << k << ": can only have in initial position!");
+		  THROW("warning: example headers at position " << k << ": can only have in initial position!")
     }
     if (count == 0)
       return true;
     else if (count == 1)
       return false;
     else
-      THROW("cb_adf: badly formatted example, only one line can have a cost");
+      THROW("cb_adf: badly formatted example, only one line can have a cost")
   }
 
   template <bool is_learn>
@@ -272,7 +272,7 @@ namespace CB_ADF {
 	    learn<CB_TYPE_DR>(data, base, data.ec_seq);
 	  }
 	else
-	  THROW("Unknown cb_type specified for contextual bandit learning: " << data.cb_type);
+	  THROW("Unknown cb_type specified for contextual bandit learning: " << data.cb_type)
       }
   }
 

@@ -1,14 +1,19 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+*/
+
 #pragma once
 #include <stdexcept>
 #include <sstream>
-#include "v_array.h"
 
 namespace VW {
 
 	class vw_exception : public std::exception
 	{
 	private:
-		std::stringstream message;
+		std::string message;
 
 		// source file exception was thrown
 		const char* file;
@@ -17,33 +22,23 @@ namespace VW {
 		int lineNumber;
 
 	public:
-		vw_exception(const char* pfile, int plineNumber) 
-			: file(pfile), lineNumber(plineNumber) 
-		{ }
+		vw_exception(const char* file, int lineNumber, std::string& message);
 
-		vw_exception(const vw_exception& ex)
-			: message(ex.message.str()), file(ex.file), lineNumber(ex.lineNumber)
-		{ }
+		vw_exception(const vw_exception& ex);
 
-		virtual const char * what() const _NOEXCEPT
-		{ return message.str().c_str(); }
+		virtual const char* what() const _NOEXCEPT;
 
-		const char* Filename() const 
-		{ return file; }
+		const char* Filename() const;
 
-		int LineNumber() const 
-		{ return lineNumber; }
-
-		std::ostream& stream()
-		{ return message;}
+		int LineNumber() const;
 	};
 
 // ease error handling and also log filename and line number
 #define THROW(args) \
 	{ \
-	VW::vw_exception __err(__FILE__, __LINE__); \
-	__err.stream() << args; \
-	throw __err; \
+		std::stringstream __msg; \
+		__msg << args; \
+		throw VW::vw_exception(__FILE__, __LINE__, __msg.str()); \
 	}
 
 }

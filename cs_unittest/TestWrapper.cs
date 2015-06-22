@@ -32,8 +32,10 @@ namespace cs_unittest
 
                 Assert.Fail("Excepted exception not thrown");
             }
-            catch (Exception e)
+            catch (VowpalWabbitException e)
             {
+                Assert.IsFalse(string.IsNullOrEmpty(e.Filename));
+                Assert.AreNotEqual(0, e.LineNumber);
                 Assert.IsTrue(e.Message.Contains("No such file or directory"), e.Message);
             }
         }

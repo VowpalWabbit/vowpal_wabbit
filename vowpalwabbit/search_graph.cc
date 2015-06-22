@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 #include "search_graph.h"
 #include "vw.h"
 #include "gd.h"
+#include "vw_exception.h"
 
 /*
 example format:
@@ -184,11 +185,9 @@ namespace GraphTask {
       if (example_is_edge(ec[i]))
         D.E++;
       else { // it's a node!
-        if (D.E > 0) {
-	  const char* msg = "error: got a node after getting edges!";
-	  cerr << msg << endl;
-	  throw runtime_error(msg);
-	}
+        if (D.E > 0)
+		  THROW("error: got a node after getting edges!")
+
         D.N++;
         if (ec[i]->l.cs.costs.size() > 0) {
           D.true_counts[ec[i]->l.cs.costs[0].class_index] += 1.;
@@ -196,22 +195,15 @@ namespace GraphTask {
       }
       }
 
-    if ((D.N == 0) && (D.E > 0)) { 
-		const char* msg = "error: got edges without any nodes (perhaps ring_size is too small?)!";
-		cerr << msg << endl;
-		throw runtime_error(msg);
-	}
+    if ((D.N == 0) && (D.E > 0)) 
+		THROW("error: got edges without any nodes (perhaps ring_size is too small?)!")
 
     D.adj = vector<vector<size_t>>(D.N, vector<size_t>(0));
 
     for (size_t i=D.N; i<ec.size(); i++) {
       for (size_t n=0; n<ec[i]->l.cs.costs.size(); n++) {
-        if (ec[i]->l.cs.costs[n].class_index > D.N) {
-          stringstream msg;
-	  msg << "error: edge source points to too large of a node id: " << (ec[i]->l.cs.costs[n].class_index) << " > " << D.N;
-	  cerr << msg.str() << endl;
-	  throw runtime_error(msg.str().c_str());
-        }
+        if (ec[i]->l.cs.costs[n].class_index > D.N)
+			THROW("error: edge source points to too large of a node id: " << (ec[i]->l.cs.costs[n].class_index) << " > " << D.N)
       }
       for (size_t n=0; n<ec[i]->l.cs.costs.size(); n++) {
         size_t nn = ec[i]->l.cs.costs[n].class_index;
