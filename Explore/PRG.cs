@@ -3,7 +3,7 @@
 namespace MultiWorldTesting
 {
     /// <summary>
-    /// Translated implemetation of C++ random generator in explore-cpp
+    /// Translated implemetation of C++ random generator in explore-cpp.
     /// </summary>
     public class PRG
     {
