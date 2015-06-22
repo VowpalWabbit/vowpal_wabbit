@@ -9,7 +9,7 @@ namespace MultiWorldTesting
 	/// <typeparam name="TContext">The Context type.</typeparam>
 	public class MwtExplorer<TContext>
 	{
-        private int appId;
+        private ulong appId;
 	    private IRecorder<TContext> recorder;
 
 		/// <summary>
@@ -19,7 +19,7 @@ namespace MultiWorldTesting
 		/// <param name="recorder">A user-specified class for recording the appropriate bits for use in evaluation and learning.</param>
         public MwtExplorer(string appId, IRecorder<TContext> recorder)
 		{
-            this.appId = appId.GetHashCode(); // TODO: Int64 hash needed?
+            this.appId = MurMurHash3.ComputeIdHash(appId);
             this.recorder = recorder;
         }
 
@@ -32,7 +32,7 @@ namespace MultiWorldTesting
 		/// <returns>An unsigned 32-bit integer representing the 1-based chosen action.</returns>
         public uint ChooseAction(IExplorer<TContext> explorer, string uniqueKey, TContext context)
         {
-            int seed = uniqueKey.GetHashCode();
+            ulong seed = MurMurHash3.ComputeIdHash(uniqueKey);
 
             DecisionTuple decisionTuple = explorer.Choose_Action(seed + this.appId, context);
 

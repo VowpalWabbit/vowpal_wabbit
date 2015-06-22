@@ -51,7 +51,7 @@ namespace MultiWorldTesting
             this.explore = explore;
         }
 
-        public DecisionTuple Choose_Action(long saltedSeed, TContext context)
+        public DecisionTuple Choose_Action(ulong saltedSeed, TContext context)
         {
             uint numActions = VariableActionHelper.GetNumberOfActions(context, this.numActions);
 

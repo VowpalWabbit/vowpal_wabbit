@@ -1,5 +1,4 @@
-﻿using System.IO;
-
+﻿
 namespace MultiWorldTesting
 {
     /// <summary>
@@ -7,6 +6,31 @@ namespace MultiWorldTesting
     /// </summary>
     public static class MurMurHash3
     {
+        /// <summary>
+        /// Computes hash code for the specified string or converts it to integer if applicable.
+        /// </summary>
+        /// <param name="s">The string to hash.</param>
+        /// <returns>The computed hash code or converted integer for the string.</returns>
+        public static ulong ComputeIdHash(string s)
+        {
+            int sInt = 0;
+            if (int.TryParse(s, out sInt))
+            {
+                return (ulong)sInt;
+            }
+            else
+            {
+                // get raw bytes from string
+                byte[] sBytes = new byte[s.Length];
+                for (int i = 0; i < s.Length; i++)
+                {
+                    sBytes[i] = (byte)s[i];
+                }
+
+                return (ulong)MurMurHash3.UniformHash(sBytes, 0);
+            }
+        }
+
         public static uint UniformHash(byte[] keys, uint seed)
         {
             const uint c1 = 0xcc9e2d51;

@@ -346,7 +346,7 @@ namespace ExploreTests
                 {
                     action();
                 }
-                catch (ArgumentException ex)
+                catch (ArgumentException)
                 {
                     numExceptionsCaught++;
                 }
