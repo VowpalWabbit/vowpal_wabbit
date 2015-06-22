@@ -88,7 +88,7 @@ namespace Search {
   struct action_repr {
     action a;
     v_array<feature> repr;
-    action_repr(action _a, v_array<feature>&_repr) : a(_a), repr(_repr) {}
+    action_repr(action _a, v_array<feature>&_repr) : a(_a), repr(v_init<feature>()) { copy_array(repr, _repr); }
     action_repr(action _a) : a(_a), repr(v_init<feature>()) {}
   };
   
@@ -547,6 +547,10 @@ namespace Search {
       //assert( fabs(priv_beta - priv.beta) < 1e-2 );
       if (priv.beta > 1) priv.beta = 1;
     }
+    for (action_repr* ar = priv.ptag_to_action.begin; ar != priv.ptag_to_action.end; ++ar) {
+      ar->repr.delete_v();
+      cdbg << "delete_v" << endl;
+    }      
     priv.ptag_to_action.erase();
     
     if (! priv.cb_learner) { // was: if rollout_all_actions
@@ -1082,7 +1086,7 @@ namespace Search {
       ec.example_t = priv.total_example_t;
       polylabel old_label = ec.l;
       ec.l = losses; // labels;
-      if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin); // TODO: a_repr in learn_condition_on_act
+      if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
       //cerr << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cerr << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x; cerr << " ]" << endl;
       for (size_t is_local=0; is_local<=priv.xv; is_local++) {
         int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local);
@@ -1344,7 +1348,6 @@ namespace Search {
         ensure_size(priv.condition_on_actions, condition_on_cnt);
         for (size_t i=0; i<condition_on_cnt; i++)
           priv.condition_on_actions[i] = ((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size())) ? priv.ptag_to_action[condition_on[i]] : 0;
-        // TODO: store floats
 
         bool not_test = priv.all->training && !ecs[0].test_only;
 
@@ -1353,7 +1356,7 @@ namespace Search {
           priv.total_cache_hits++; 
         else { // we need to predict, and then cache, and maybe run foreach_action          
           size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 1 : 0;
-          priv.last_action_repr = v_init<feature>();  // TODO: move this elsewhere
+          priv.last_action_repr.erase();
           if (priv.auto_condition_features)
             for (size_t n=start_K; n<ec_cnt; n++)
               add_example_conditioning(priv, ecs[n], condition_on_cnt, condition_on_names, priv.condition_on_actions.begin);
@@ -1812,6 +1815,8 @@ namespace Search {
     priv.bad_string_stream = new stringstream();
     priv.bad_string_stream->clear(priv.bad_string_stream->badbit);
 
+    priv.last_action_repr = v_init<feature>();
+
     priv.beta = 0.5;
     priv.alpha = 1e-10f;
 
@@ -1871,9 +1876,10 @@ namespace Search {
     if (priv.cb_learner) priv.gte_label.cb.costs.delete_v();
     else                 priv.gte_label.cs.costs.delete_v();
 
-    priv.condition_on_actions.delete_v(); // TODO: delete floats
+    priv.condition_on_actions.delete_v();
     priv.learn_allowed_actions.delete_v();
     priv.ldf_test_label.costs.delete_v();
+    priv.last_action_repr.delete_v();
 
     if (priv.cb_learner)
       priv.allowed_actions_cache->cb.costs.delete_v();
@@ -1881,6 +1887,8 @@ namespace Search {
       priv.allowed_actions_cache->cs.costs.delete_v();
 
     priv.train_trajectory.delete_v();
+    for (action_repr* ar = priv.ptag_to_action.begin; ar != priv.ptag_to_action.end; ++ar)
+      ar->repr.delete_v();
     priv.ptag_to_action.delete_v();
     clear_memo_foreach_action(priv);
     priv.memo_foreach_action.delete_v();
@@ -2311,7 +2319,14 @@ namespace Search {
     float a_cost = 0.;
     action a = search_predict(*priv, &ec, 1, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, allowed_actions, allowed_actions_cnt, learner_id, a_cost, weight);
     if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
-    if (mytag != 0) push_at(priv->ptag_to_action, action_repr(a, priv->last_action_repr), mytag); // TODO: need to include a_repr
+    if (mytag != 0) {
+      if (mytag < priv->ptag_to_action.size()) {
+        cdbg << "delete_v at " << mytag << endl;
+        priv->ptag_to_action[mytag].repr.delete_v();
+      }
+      push_at(priv->ptag_to_action, action_repr(a, priv->last_action_repr), mytag);
+      cdbg << "push_at " << mytag << endl;
+    }
     if (priv->auto_hamming_loss)
       loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));
     cdbg << "predict returning " << a << endl;
@@ -2323,7 +2338,7 @@ namespace Search {
     action a = search_predict(*priv, ecs, ec_cnt, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, nullptr, 0, learner_id, a_cost, weight);
     if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
     if ((mytag != 0) && ecs[a].l.cs.costs.size() > 0)
-      push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, priv->last_action_repr), mytag); // TODO: need to include a_repr
+      push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, priv->last_action_repr), mytag);
     if (priv->auto_hamming_loss)
       loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));
     cdbg << "predict returning " << a << endl;
