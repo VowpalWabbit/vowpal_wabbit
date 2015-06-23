@@ -11,6 +11,7 @@
 *.suo
 *.sdf
 *.vcxproj.user
+*.csproj.user
 *.so
 
 # doxygen output folders
