@@ -58,6 +58,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="BaseData.cs" />
+    <Compile Include="RunTests.cs" />
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TrainSetCs_testLdf.cs" />
     <Compile Include="VowpalWabbitListenerToEvents.cs" />
@@ -95,6 +96,10 @@
     </None>
     <None Include="..\test\pred-sets\ref\0002c.predict">
       <Link>pred-sets\ref\0002c.predict</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\RunTests">
+      <Link>RunTests</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\test-sets\ref\0001.stderr">
