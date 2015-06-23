@@ -36,21 +36,39 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
     score = ec.partial_prediction;
     prediction = i;
   }
-  if (ec.passthrough)
+  if (ec.passthrough) {
+    //cerr << "1: ec.passthrough->push_back( " << i << ':' << ec.partial_prediction << " )" << endl;
     ec.passthrough->push_back( feature(ec.partial_prediction, i) );
+  }
 }
 
 #define DO_MULTIPREDICT true
 
 template <bool is_learn>
 void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
+  //cerr << "------------- passthrough" << endl;
   COST_SENSITIVE::label ld = ec.l.cs;
   uint32_t prediction = 1;
   float score = FLT_MAX;
   ec.l.simple = { 0., 0., 0. };
   if (ld.costs.size() > 0) {
-    for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++)
+    size_t last = 0;
+    for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++) {
+      if (ec.passthrough && (last+1 != cl->class_index))
+        for (last=last+1; last<cl->class_index; last++) {
+          //cerr << "3: ec.passthrough->push_back( " << last << ':' << 0 << " )" << endl;
+          ec.passthrough->push_back( feature(0., last) );
+        }
+
       inner_loop<is_learn>(base, ec, cl->class_index, cl->x, prediction, score, cl->partial_prediction);
+      last = cl->class_index;
+    }
+    if (ec.passthrough)
+      for (last=last+1; last<=c.num_classes; last++) {
+        //cerr << "4: ec.passthrough->push_back( " << last << ':' << 0 << " )" << endl;
+        ec.passthrough->push_back( feature(0., last) );
+      }
+    
     ec.partial_prediction = score;
   } else if (DO_MULTIPREDICT && !is_learn) {
     ec.l.simple = { FLT_MAX, 0.f, 0.f };
@@ -59,8 +77,10 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
       if (c.pred[i-1].scalar < c.pred[prediction-1].scalar)
         prediction = i;
     if (ec.passthrough)
-      for (uint32_t i = 1; i <= c.num_classes; i++)
+      for (uint32_t i = 1; i <= c.num_classes; i++) {
+        //cerr << "2: ec.passthrough->push_back( " << i << ':' << c.pred[i-1].scalar << " )" << endl;
         ec.passthrough->push_back( feature(c.pred[i-1].scalar, i) );
+      }
     ec.partial_prediction = c.pred[prediction-1].scalar;
     //cerr << "c.num_classes = " << c.num_classes << ", prediction = " << prediction << endl;
   } else {
