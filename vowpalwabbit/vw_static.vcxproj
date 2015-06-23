@@ -239,7 +239,6 @@
     <ClInclude Include="csoaa.h" />
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
-    <ClInclude Include="vw_exception.h" />
     <ClInclude Include="gd.h" />
     <ClInclude Include="interactions.h" />
     <ClInclude Include="ftrl.h" />
@@ -292,6 +291,7 @@
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
     <ClInclude Include="vw.h" />
+    <ClInclude Include="vw_exception.h" />
     <ClInclude Include="v_array.h" />
     <ClInclude Include="v_hashmap.h" />
   </ItemGroup>
