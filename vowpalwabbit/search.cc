@@ -1511,7 +1511,7 @@ namespace Search {
   }
   
   template <bool is_learn>
-  void train_single_example(search& sch, bool is_test_ex) {
+  void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex) {
     search_private& priv = *sch.priv;
     vw&all = *priv.all;
     bool ran_test = false;  // we must keep track so that even if we skip test, we still update # of examples seen
@@ -1548,7 +1548,7 @@ namespace Search {
     }
 
     // if we're not training, then we're done!
-    if ((!is_learn) || is_test_ex || priv.ec_seq[0]->test_only || (!priv.all->training))
+    if ((!is_learn) || is_test_ex || is_holdout_ex || priv.ec_seq[0]->test_only || (!priv.all->training))
       return;
 
     // SPEEDUP: if the oracle was never called, we can skip this!
@@ -1649,8 +1649,12 @@ namespace Search {
       return;  // nothing to do :)
 
     bool is_test_ex = false;
-    for (size_t i=0; i<priv.ec_seq.size(); i++)
-      if (priv.ec_seq[i]->test_only || priv.label_is_test(priv.ec_seq[i]->l)) { is_test_ex = true; break; }
+    bool is_holdout_ex = false;
+    for (size_t i=0; i<priv.ec_seq.size(); i++) {
+      is_test_ex |= priv.label_is_test(priv.ec_seq[i]->l);
+      is_holdout_ex |= priv.ec_seq[i]->test_only;
+      if (is_test_ex && is_holdout_ex) break;
+    }
 
     if (priv.task->run_setup) priv.task->run_setup(sch, priv.ec_seq);
 
@@ -1669,7 +1673,7 @@ namespace Search {
     }
 
     add_neighbor_features(priv);
-    train_single_example<is_learn>(sch, is_test_ex);
+    train_single_example<is_learn>(sch, is_test_ex, is_holdout_ex);
     del_neighbor_features(priv);
 
     if (priv.task->run_takedown) priv.task->run_takedown(sch, priv.ec_seq);
