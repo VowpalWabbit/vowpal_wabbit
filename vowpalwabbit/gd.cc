@@ -250,7 +250,6 @@ namespace GD
 
   }
 
-
 void print_features(vw& all, example& ec)
 {
   weight* weights = all.reg.weight_vector;
@@ -338,6 +337,12 @@ float finalize_prediction(shared_data* sd, float ret)
    return temp.prediction;
  }
 
+  inline void vec_add_print(float&p, const float fx, float& fw) {
+    p += fw * fx;
+    cerr << " + " << fw << "*" << fx;
+  }
+  
+  
 template<bool l1, bool audit>
 void predict(gd& g, base_learner&, example& ec)
 {
@@ -346,7 +351,7 @@ void predict(gd& g, base_learner&, example& ec)
   if (l1)
     ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);
   else
-    ec.partial_prediction = inline_predict(all, ec);    
+    ec.partial_prediction = inline_predict(all, ec);
   
   ec.partial_prediction *= (float)all.sd->contraction;
   ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
@@ -455,7 +460,8 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
     nd.pred_per_update += x2 * w[spare];
   }
 }
-  
+
+  bool global_print_features = false;
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
   float get_pred_per_update(gd& g, example& ec)
   {//We must traverse the features in _precisely_ the same order as during training.
@@ -465,8 +471,9 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
     if (grad_squared == 0) return 1.;
     
     norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
-    
+
     foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, nd);
+
     if(normalized) {
       g.all->normalized_sum_norm_x += ld.weight * nd.norm_x;
       g.total_weight += ld.weight;

@@ -24,6 +24,7 @@ namespace po = boost::program_options;
 #include "allreduce.h"
 #include "v_hashmap.h"
 #include <time.h>
+#include "hash.h"
 
 struct version_struct {
   int major;
@@ -86,7 +87,7 @@ struct version_struct {
     return (*this > v_tmp);
   }
   bool operator<=(version_struct v) {
-    return !(*this < v);
+    return !(*this > v);
   }
   bool operator<=(const char* v_str) {
     version_struct v_tmp(v_str);
@@ -125,7 +126,71 @@ struct regressor {
 typedef v_hashmap< substring, v_array<feature>* > feature_dict;
 struct dictionary_info {
   char* name;
+  unsigned long long file_hash;
   feature_dict* dict;
+};
+
+class namedlabels {
+  private:
+
+  v_array<substring> id2name;
+  v_hashmap<substring,uint32_t> name2id;
+  uint32_t K;
+
+  public:
+
+  namedlabels(string label_list) {
+    id2name = v_init<substring>();
+    substring ss = { (char*)label_list.c_str(), nullptr };
+    ss.end = ss.begin + label_list.length();
+    tokenize(',', ss, id2name);
+
+    K = id2name.size();
+    name2id.init(4 * K + 1, 0, substring_equal);
+    for (size_t k=0; k<K; k++) {
+      substring& l = id2name[k];
+      size_t hash = uniform_hash((unsigned char*)l.begin, l.end-l.begin, 378401);
+      uint32_t id = name2id.get(l, hash);
+      if (id != 0) {
+        cerr << "error: label dictionary initialized with multiple occurances of: ";
+        for (char*c=l.begin; c!=l.end; c++) cerr << *c;
+        cerr << endl;
+        throw exception();
+      }
+      size_t len = l.end - l.begin;
+      substring l_copy = { calloc_or_die<char>(len), nullptr };
+      memcpy(l_copy.begin, l.begin, len * sizeof(char));
+      l_copy.end = l_copy.begin + len;
+      name2id.put(l_copy, hash, k+1);
+    }
+  }
+
+  ~namedlabels() {
+    for (size_t i=0; i<id2name.size(); ++i)
+      free(id2name[i].begin);
+    id2name.delete_v();
+  }
+
+  uint32_t getK() { return K; }
+  
+  uint32_t get(substring& s) {
+    size_t hash = uniform_hash((unsigned char*)s.begin, s.end-s.begin, 378401);
+    uint32_t v  =  name2id.get(s, hash);
+    if (v == 0) {
+      cerr << "warning: missing named label '";
+      for (char*c = s.begin; c != s.end; c++) cerr << *c;
+      cerr << '\'' << endl;
+    }
+    return v;
+  }
+
+  substring get(uint32_t v) {
+    if ((v == 0) || (v > K)) {
+      substring ss = {nullptr,nullptr};
+      return ss;
+    } else
+      return id2name[v-1];
+  }
 };
 
 struct shared_data {
@@ -147,6 +212,8 @@ struct shared_data {
   float min_label;//minimum label encountered
   float max_label;//maximum label encountered
 
+  namedlabels* ldict;
+  
   //for holdout
   double weighted_holdout_examples;
   double weighted_holdout_examples_since_last_dump;
@@ -234,7 +301,7 @@ struct shared_data {
 	label_buf << std::right << label;
     else
 	label_buf << std::left << " unknown";
-
+    
     pred_buf << std::setw(col_current_predict) << std::right 
              << std::setfill(' ')
              << prediction;
@@ -403,6 +470,7 @@ struct vw {
   uint32_t limit[256];//count to limit features by
   uint32_t affix_features[256]; // affixes to generate (up to 8 per namespace)
   bool     spelling_features[256]; // generate spelling features for which namespace
+  vector<string> dictionary_path;  // where to look for dictionaries
   vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
   vector<dictionary_info> read_dictionaries; // which dictionaries have we read?
   
@@ -414,6 +482,7 @@ struct vw {
   bool adaptive;//Should I use adaptive individual learning rates?
   bool normalized_updates; //Should every feature be normalized
   bool invariant_updates; //Should we use importance aware/safe updates
+  size_t random_seed;
   bool random_weights;
   bool random_positive_weights; // for initialize_regressor w/ new_mf
   bool add_constant;

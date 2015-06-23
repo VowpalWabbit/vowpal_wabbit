@@ -32,14 +32,14 @@ goto :eof
 :usage
 echo Error in script usage. The correct usage is:
 echo     %0 [option]
-echo where [option] is: x86 ^| x64 
+echo where [option] is: x86 ^| x64
 echo:
 echo For example:
 echo     %0 x86
 goto :eof
 
 :missing
-echo The varhiable "VSINSTALLDIR"  is missing.  Visual Studio 2013 might not be installed.
+echo The variable "VSINSTALLDIR"  is missing.  Visual Studio 2013 might not be installed.
 goto :eof
 
 :eof

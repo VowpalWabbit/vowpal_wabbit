@@ -10,6 +10,4 @@ LEARNER::base_learner* csldf_setup(vw& all);
 
 namespace LabelDict { 
   bool ec_is_example_header(example& ec);// example headers look like "0:-1" or just "shared"
-  void add_example_namespaces_from_example(example& target, example& source, bool audit);
-  void del_example_namespaces_from_example(example& target, example& source, bool audit);
 }

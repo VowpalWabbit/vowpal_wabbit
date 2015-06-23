@@ -27,6 +27,7 @@ namespace CB_ALGS {
       }
     
     ec.l.simple = simple_temp;
+    polyprediction p = ec.pred;
 
     if (is_learn && simple_temp.label != FLT_MAX)
       scorer->learn(ec, index-1+base);
@@ -34,6 +35,7 @@ namespace CB_ALGS {
       scorer->predict(ec, index-1+base);
     
     float pred = ec.pred.scalar;
+    ec.pred = p;
     
     ec.l.cb = ld;
 

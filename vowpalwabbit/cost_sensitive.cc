@@ -127,40 +127,50 @@ namespace COST_SENSITIVE {
     return (strncmp(ss.begin, str, len_ss) == 0);
   }
 
-  void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
+  void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
   {
     label* ld = (label*)v;
-
     ld->costs.erase();
+
+    // handle shared and label first
+    if (words.size() == 1) {
+      float fx;
+      name_value(words[0], p->parse_name, fx);
+      bool eq_shared = substring_eq(p->parse_name[0], "***shared***");
+      bool eq_label  = substring_eq(p->parse_name[0], "***label***");
+      if (! sd->ldict) {
+        eq_shared |= substring_eq(p->parse_name[0], "shared");
+        eq_label  |= substring_eq(p->parse_name[0], "label");
+      }
+      if (eq_shared || eq_label) {
+        if (p->parse_name.size() != 1) cerr << "shared feature vectors and label feature vectors should not have costs on: " << words[0] << endl;
+        else {
+          wclass f = { eq_shared ? -1.f : 0.f, 0, 0., 0.};
+          ld->costs.push_back(f);
+          return;
+        }
+      }
+    }
+
+    // otherwise this is a "real" example
     for (unsigned int i = 0; i < words.size(); i++) {
       wclass f = {0.,0,0.,0.};
       name_value(words[i], p->parse_name, f.x);
       
-      if (p->parse_name.size() == 0)
-        cerr << "invalid cost: specification -- no names!" << endl;
-      else {
-        if (substring_eq(p->parse_name[0], "shared")) {
-          if (p->parse_name.size() == 1) {
-            f.class_index = 0;
-            f.x = -1.f;
-          } else
-            cerr << "shared feature vectors should not have costs" << endl;
-        } else if (substring_eq(p->parse_name[0], "label")) {
-          if (p->parse_name.size() == 2) {
-            f.class_index = 0;
-            // f.x is already set properly
-          } else
-            cerr << "label feature vectors must have label ids" << endl;
-        } else {
-          if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3) {
-            f.class_index = (uint32_t)hashstring(p->parse_name[0], 0);
-            if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
-              f.x = FLT_MAX;
-          } else 
-            cerr << "malformed cost specification on '" << (p->parse_name[0].begin) << "'" << endl;
-        }
-        ld->costs.push_back(f);
+      if (p->parse_name.size() == 0) {
+        cerr << "invalid cost: specification -- no names on: " << words[i] << endl;
+        throw exception();
       }
+
+      if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3) {
+        f.class_index = sd->ldict ? sd->ldict->get(p->parse_name[0]) : (uint32_t)hashstring(p->parse_name[0], 0);
+        if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
+          f.x = FLT_MAX;
+      } else {
+        cerr << "malformed cost specification on '" << (p->parse_name[0].begin) << "'" << endl;
+        throw exception();
+      }
+      ld->costs.push_back(f);
     }
   }
 
@@ -199,11 +209,15 @@ namespace COST_SENSITIVE {
         else
           label_buf = " known";
 
-	if (multilabel) {
+	if (multilabel || all.sd->ldict) {
 	  std::ostringstream pred_buf;
 	  
-	  pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ')
-		   << ec.pred.multilabels.label_v[0]<<".....";			
+	  pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ');
+          if (all.sd->ldict) {
+            if (multilabel) pred_buf << all.sd->ldict->get(ec.pred.multilabels.label_v[0]);
+            else            pred_buf << all.sd->ldict->get(ec.pred.multiclass);
+          } else            pred_buf << ec.pred.multilabels.label_v[0];
+          if (multilabel) pred_buf <<".....";
 	  all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), 
 			       num_current_features, all.progress_add, all.progress_arg);;
 	}
@@ -239,7 +253,12 @@ namespace COST_SENSITIVE {
     all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
     
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
+      if (! all.sd->ldict)
+        all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
+      else {
+        substring ss_pred = all.sd->ldict->get(ec.pred.multiclass);
+        all.print_text(*sink, string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
+      }
 
     if (all.raw_prediction > 0) {
       stringstream outputStringStream;

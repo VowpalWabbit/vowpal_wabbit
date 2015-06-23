@@ -21,6 +21,7 @@ using namespace std;
 /* Define the last version where files are backward compatible. */
 #define LAST_COMPATIBLE_VERSION "6.1.3"
 #define VERSION_FILE_WITH_CUBIC "6.1.3"
+#define VERSION_FILE_WITH_RANK_IN_HEADER "7.8.0"
 #define VERSION_FILE_WITH_INTERACTIONS "7.10.2"
 
 void initialize_regressor(vw& all)
@@ -198,6 +199,26 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
           bin_text_read_write_fixed(model_file,buff,0,
                     "", read,
                     "\n",1, text);
+      }
+
+      if (all.model_file_ver <= VERSION_FILE_WITH_RANK_IN_HEADER)
+      { // to fix compatibility that was broken in 7.9
+          uint32_t rank = 0;
+          text_len = sprintf(buff, "rank:%d\n", (int)rank);
+          bin_text_read_write_fixed(model_file,(char*)&rank, sizeof(rank),
+                                    "", read,
+                                    buff,text_len, text);
+          if (rank != 0)
+          {
+            if (std::find(all.args.begin(), all.args.end(), "--rank") == all.args.end())
+            {
+                all.args.push_back("--rank");
+                sprintf(buff, "%d", (int)rank);
+                all.args.push_back(buff);
+            } else
+                cerr << "WARNING: this model file contains 'rank: " << rank << "' value but it will be ignored as another value specified via the command line." << endl;
+          }
+
       }
       
       text_len = sprintf(buff, "lda:%d\n", (int)all.lda);
