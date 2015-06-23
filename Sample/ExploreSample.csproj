@@ -13,7 +13,7 @@
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup>
-    <OutputPath>..\bin\$(Platform)\$(Configuration)</OutputPath>
+    <OutputPath>$(SolutionDir)bin\$(Platform)\$(Configuration)</OutputPath>
       <PlatformTarget>AnyCPU</PlatformTarget>
       <ErrorReport>prompt</ErrorReport>
       <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
