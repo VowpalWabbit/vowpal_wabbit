@@ -361,7 +361,7 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
 template <bool is_learn>
 void do_actual_learning(ldf& data, base_learner& base)
 {
-  //cdbg << "do_actual_learning size=" << data.ec_seq.size() << endl;
+  //cout<< "do_actual_learning size=" << data.ec_seq.size() << endl;
   if (data.ec_seq.size() <= 0) return;  // nothing to do
   
   /////////////////////// handle label definitions
@@ -728,9 +728,9 @@ base_learner* csldf_setup(vw& all)
 
   all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld.is_singleline;
 
-  if (all.add_constant) {
+  /*if (all.add_constant) {
     all.add_constant = false;
-  }
+    }*/
   v_array<feature> empty_f = { nullptr, nullptr, nullptr, 0 };
   v_array<audit_data> empty_a = { nullptr, nullptr, nullptr, 0 };
   LabelDict::feature_audit empty_fa = { empty_f, empty_a };
