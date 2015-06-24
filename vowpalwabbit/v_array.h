@@ -154,18 +154,6 @@ template<class T> void copy_array(v_array<T>& dst, v_array<T>& src)
   push_many(dst, src.begin, src.size());
 }
 
-template<class T> void copy_array_memcpy(v_array<T>& dst, v_array<T>&src) {
-  size_t N = src.size();
-  if (N == 0)
-    dst.end = dst.begin;
-  else {
-    if (dst.size() < N)
-      dst.resize(N, false);
-    memcpy(dst.begin, src.begin, N * sizeof(T));
-    dst.end = dst.begin + N;
-  }
-}
-
 template<class T> void copy_array(v_array<T>& dst, v_array<T>& src, T(*copy_item)(T&))
 {
   dst.erase();
