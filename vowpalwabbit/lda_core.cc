@@ -31,7 +31,7 @@ license as described in the file LICENSE.
 #if BOOST_VERSION >= 105600
 #include <boost/align/is_aligned.hpp>
 #endif
- 
+  
 
 enum lda_math_mode { USE_SIMD, USE_PRECISE, USE_FAST_APPROX };
 
@@ -150,7 +150,7 @@ namespace ldamath
   }
 
 #if !defined(VW_NO_INLINE_SIMD)
- 
+  
 #if defined(__SSE2__) || defined(__SSE3__) || defined(__SSE4_1__)
 
 // Include headers for the various SSE versions:
@@ -696,7 +696,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
   }
 }
 
-void learn_batch(lda &l, bool do_m_step = true)
+void learn_batch(lda &l)
 {
   if (l.sorted_features.empty()) {
     // This can happen when the socket connection is dropped by the client.
@@ -732,14 +732,9 @@ void learn_batch(lda &l, bool do_m_step = true)
 
   sort(l.sorted_features.begin(), l.sorted_features.end());
 
-  if (!do_m_step) {
-    eta = 0;
-  }
-  else {
-    eta = l.all->eta * l.powf((float)l.example_t, -l.all->power_t);
-    eta *= l.lda_D / batch_size;
-  }
+  eta = l.all->eta * l.powf((float)l.example_t, -l.all->power_t);
   minuseta = 1.0f - eta;
+  eta *= l.lda_D / batch_size;
   l.decay_levels.push_back(l.decay_levels.last() + log(minuseta));
 
   l.digammas.erase();
@@ -781,34 +776,33 @@ void learn_batch(lda &l, bool do_m_step = true)
     return_simple_example(*l.all, nullptr, *l.examples[d]);
   }
 
-  if (do_m_step) {
-	  for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back();) {
-		  index_feature *next = s + 1;
-		  while (next <= &l.sorted_features.back() && next->f.weight_index == s->f.weight_index)
-			  next++;
+  for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back();) {
+    index_feature *next = s + 1;
+    while (next <= &l.sorted_features.back() && next->f.weight_index == s->f.weight_index)
+      next++;
 
-		  float *word_weights = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
-		  for (size_t k = 0; k < l.all->lda; k++) {
-			  float new_value = minuseta * word_weights[k];
-			  word_weights[k] = new_value;
-		  }
+    float *word_weights = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
+    for (size_t k = 0; k < l.all->lda; k++) {
+      float new_value = minuseta * word_weights[k];
+      word_weights[k] = new_value;
+    }
 
-		  for (; s != next; s++) {
-			  float *v_s = &(l.v[s->document * l.all->lda]);
-			  float *u_for_w = &weights[(s->f.weight_index & l.all->reg.weight_mask) + l.all->lda + 1];
-			  float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
-			  for (size_t k = 0; k < l.all->lda; k++) {
-				  float new_value = u_for_w[k] * v_s[k] * c_w;
-				  l.total_new[k] += new_value;
-				  word_weights[k] += new_value;
-			  }
-		  }
-	  }
-	  for (size_t k = 0; k < l.all->lda; k++) {
-		  l.total_lambda[k] *= minuseta;
-		  l.total_lambda[k] += l.total_new[k];
-	  }
+    for (; s != next; s++) {
+      float *v_s = &(l.v[s->document * l.all->lda]);
+      float *u_for_w = &weights[(s->f.weight_index & l.all->reg.weight_mask) + l.all->lda + 1];
+      float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
+      for (size_t k = 0; k < l.all->lda; k++) {
+        float new_value = u_for_w[k] * v_s[k] * c_w;
+        l.total_new[k] += new_value;
+        word_weights[k] += new_value;
+      }
+    }
   }
+  for (size_t k = 0; k < l.all->lda; k++) {
+    l.total_lambda[k] *= minuseta;
+    l.total_lambda[k] += l.total_new[k];
+  }
+
   l.sorted_features.resize(0);
 
   l.examples.erase();
@@ -829,30 +823,16 @@ void learn(lda &l, LEARNER::base_learner &, example &ec)
     }
   }
   if (++num_ex == l.minibatch)
-    learn_batch(l, true);
+    learn_batch(l);
 }
 
 // placeholder
-void predict(lda &l, LEARNER::base_learner &, example &ec)
-{
-	size_t num_ex = l.examples.size();
-	l.examples.push_back(&ec);
-	l.doc_lengths.push_back(0);
-	for (unsigned char *i = ec.indices.begin; i != ec.indices.end; i++) {
-		feature *f = ec.atomics[*i].begin;
-		for (; f != ec.atomics[*i].end; f++) {
-			index_feature temp = { (uint32_t)num_ex, *f };
-			l.sorted_features.push_back(temp);
-			l.doc_lengths[num_ex] += (int)f->x;
-		}
-	}
-	learn_batch(l, false);
-}
+void predict(lda &l, LEARNER::base_learner &base, example &ec) { learn(l, base, ec); }
 
 void end_pass(lda &l)
 {
   if (l.examples.size())
-    learn_batch(l, l.all->training);
+    learn_batch(l);
 }
 
 void end_examples(lda &l)
@@ -928,9 +908,6 @@ LEARNER::base_learner *lda_setup(vw &all)
   ld.all = &all;
   ld.example_t = all.initial_t;
   ld.mmode = vm["math-mode"].as<lda_math_mode>();
-
-  // Add lda_alpha to options serialized as part of the regressor
-  *all.file_options << " --lda_alpha " << ld.lda_alpha;
 
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
   all.reg.stride_shift = (size_t)temp;
