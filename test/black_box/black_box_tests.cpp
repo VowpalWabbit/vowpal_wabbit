@@ -36,7 +36,17 @@ void prg_test(Value& v)
 
 void hash_test(Value& v)
 {
+    const char* outputFile = v["OutputFile"].GetString();
 
+    ofstream out_file(outputFile);
+
+    Value& values = v["Values"];
+    for (SizeType i = 0; i < values.Size(); i++)
+    {
+        string value(values[i].GetString());
+
+        out_file << HashUtils::Compute_Id_Hash(value) << endl;
+    }
 }
 
 void explore_test(Value& v)
@@ -73,16 +83,6 @@ int _tmain(int argc, _TCHAR* argv[])
             break;
         }
     }
-    //Value& s = d["stars"];
-    //s.SetInt(s.GetInt() + 1);
 
-    //// 3. Stringify the DOM
-    //StringBuffer buffer;
-    //Writer<StringBuffer> writer(buffer);
-    //d.Accept(writer);
-
-    //// Output {"project":"rapidjson","stars":11}
-    //std::cout << buffer.GetString() << std::endl;
-
-	return 0;
+    return 0;
 }
