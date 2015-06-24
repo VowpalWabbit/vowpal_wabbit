@@ -120,6 +120,59 @@ namespace VW
 		return PredictOrLearn<TPrediction>(line, true);
 	}
 
+	void VowpalWabbit::Learn(String^ line)
+	{
+		auto bytes = System::Text::Encoding::UTF8->GetBytes(line);
+		auto lineHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
+
+		example* ex = nullptr;
+		TRYCATCHRETHROW
+		(
+			ex = VW::read_example(*m_vw, reinterpret_cast<char*>(lineHandle.AddrOfPinnedObject().ToPointer()));
+
+			m_vw->learn(ex);
+
+			m_vw->l->finish_example(*m_vw, *ex);
+			ex = nullptr;
+		)
+		finally
+		{
+			lineHandle.Free();
+
+			if (ex != nullptr)
+			{
+				VW::finish_example(*m_vw, ex);
+			}
+		}
+	}
+
+	void VowpalWabbit::Predict(String^ line)
+	{
+		auto bytes = System::Text::Encoding::UTF8->GetBytes(line);
+		auto lineHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
+
+		example* ex = nullptr;
+		TRYCATCHRETHROW
+		(
+			ex = VW::read_example(*m_vw, reinterpret_cast<char*>(lineHandle.AddrOfPinnedObject().ToPointer()));
+	
+			m_vw->l->predict(*ex);
+
+			m_vw->l->finish_example(*m_vw, *ex);
+			ex = nullptr;
+		)
+		finally
+		{
+			lineHandle.Free();
+
+			if (ex != nullptr)
+			{
+				VW::finish_example(*m_vw, ex);
+			}
+		}
+	}
+
+
 	void VowpalWabbit::Driver()
 	{
 		TRYCATCHRETHROW(LEARNER::generic_driver(*m_vw))

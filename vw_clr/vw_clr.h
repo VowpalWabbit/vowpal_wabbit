@@ -245,6 +245,9 @@ namespace VW
 		uint32_t HashSpace(String^ s);
 		uint32_t HashFeature(String^ s, unsigned long u);
 
+		void Learn(String^ line);
+		void Predict(String^ line);
+
 		generic<typename TPrediction>
 			where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 		TPrediction Learn(String^ line);
