@@ -419,6 +419,20 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
     generate_interactions<R, S, T, feature, dummy_func<R> > (all, ec, dat, ec.atomics);
 }
 
-} // end of namespace
+// C(n,k) = n!/(k!(n-k)!)
 
+inline long long choose(long long n, long long k) {
+    if (k > n) return 0;
+    if (k<0) return 0;
+    if (k==n) return 1;
+    if (k==0 && n!=0) return 1;
+    long long r = 1;
+    for (long long d = 1; d <= k; ++d) {
+      r *= n--;
+      r /= d;
+    }
+    return r;
+}
+
+} // end of namespace
 
