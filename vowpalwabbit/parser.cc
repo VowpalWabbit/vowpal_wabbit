@@ -895,7 +895,7 @@ namespace VW{
 	uint32_t index = features[i].name;
 	ret->indices.push_back(index);
 	for (size_t j = 0; j < features[i].len; j++)
-	  {	    
+	  {
 	    ret->sum_feat_sq[index] += features[i].fs[j].x * features[i].fs[j].x;
 	    ret->atomics[index].push_back(features[i].fs[j]);
 	  }

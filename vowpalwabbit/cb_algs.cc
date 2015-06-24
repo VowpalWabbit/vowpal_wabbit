@@ -224,8 +224,9 @@ struct cb {
       c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->cost - wc.x)*(c.known_cost->cost - wc.x) - c.avg_loss_regressors );
       c.last_pred_reg = wc.x;
       c.last_correct_cost = c.known_cost->cost;
-      wc.x += (c.known_cost->cost - wc.x) / c.known_cost->probability;
+      wc.x += (c.known_cost->cost - wc.x) / c.known_cost->probability;      
     }
+    //cout<<"Prediction = "<<wc.x<<" ";
     cs_ld.costs.push_back( wc );
     
   }
@@ -249,6 +250,7 @@ struct cb {
       //in this case generate cost-sensitive example with only allowed actions
       for( cb_class* cl = ld.costs.begin; cl != ld.costs.end; cl++ )
 	gen_cs_label<is_learn>(c, ec, cs_ld, cl->action);
+    //cout<<endl;
   }
 
   template <bool is_learn>

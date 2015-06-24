@@ -71,7 +71,7 @@ namespace CB_ADF {
     if (has_shared_example(examples))//take care of shared examples
       {
 	cs_labels[0].costs[0].class_index = 0;
-	cs_labels[0].costs[0].x = -1.f;
+	cs_labels[0].costs[0].x = -FLT_MAX;
       }
   }
   
@@ -95,7 +95,8 @@ namespace CB_ADF {
     for (size_t i = 0; i < examples.size(); i++)
       {
 	examples[i]->l.cb.costs.erase();
-	CB::label ld = examples[i]->l.cb;		
+	if(example_is_newline(*examples[i])) continue;
+	//CB::label ld = examples[i]->l.cb;		
 
 	COST_SENSITIVE::wclass wc;
 	wc.class_index = 0;	
@@ -107,12 +108,10 @@ namespace CB_ADF {
 	  // num_actions should be 1 effectively.
 	  // my get_cost_pred function will use 1 for 'index-1+base'			
 	  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, &(c.known_cost), *(examples[i]), 0, 2);
-	  //cout<<wc.x<<" ";
 	  c.known_cost.action = known_index;
 	}
 	else {
 	  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, nullptr, *(examples[i]), 0, 2);
-	  //cout<<wc.x<<" ";
 	}
 
 	if(shared)
@@ -123,23 +122,30 @@ namespace CB_ADF {
 	wc.class_index = 0;
 
 	//add correction if we observed cost for this action and regressor is wrong
-	if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
+	if (c.known_cost.probability != -1 && c.known_cost.action + startK == i)
 	  {			
-	    wc.x += (ld.costs[0].cost - wc.x) / ld.costs[0].probability;
+	    wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
 	  }
 
+	//cout<<"Action "<<c.known_cost.action<<" Cost "<<c.known_cost.cost<<" Probability "<<c.known_cost.probability<<endl;
+	
+	//cout<<"Prediction = "<<wc.x<<" ";
 	cs_labels[i].costs.erase();
 	cs_labels[i].costs.push_back(wc);
       }
-    cs_labels[examples.size() - 1].costs[0].x = FLT_MAX; //trigger end of multiline example.
+    COST_SENSITIVE::wclass wc;
+    wc.class_index = 0;
+    wc.x = FLT_MAX;
+    cs_labels[examples.size()-1].costs.erase();
+    cs_labels[examples.size()-1].costs.push_back(wc); //trigger end of multiline example.
 
     if (shared)//take care of shared examples
       {
 	cs_labels[0].costs[0].class_index = 0;
-	cs_labels[0].costs[0].x = -1.f;
+	cs_labels[0].costs[0].x = -FLT_MAX;
       }
 
-    //    cout<<endl;
+    //cout<<endl;
 
   }
 
@@ -201,11 +207,15 @@ namespace CB_ADF {
   
     // 2nd: predict for each ex
     // // call base.predict for each vw exmaple in the sequence
-    for (example **ec = examples.begin; ec != examples.end; ec++)
+    for (example **ec = examples.begin; ec != examples.end; ec++) {
+      //cout<<"Number of features = "<<(**ec).num_features<<" label = "<<(**ec).l.cs.costs[0].x<<" "<<example_is_newline(**ec)<<endl;
       if (is_learn)
 	base.learn(**ec);
       else
 	base.predict(**ec);
+    }
+
+    //cout<<"Prediction size = "<<(**examples.begin).pred.multilabels.label_v.size()<<endl;
   
     // 3rd: restore cb_label for each example
     // (**ec).l.cb = mydata.array.element.
@@ -337,6 +347,7 @@ namespace CB_ADF {
     float loss = 0.;
     v_array<uint32_t> preds = head_ec.pred.multilabels.label_v;
     bool is_test = false;
+    //cout<<"Preds size = "<<preds.size()<<endl;
     
     if (c.known_cost.probability > 0) {
       //c.pred_scores.costs.erase();

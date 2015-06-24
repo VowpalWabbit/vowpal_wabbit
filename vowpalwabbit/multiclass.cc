@@ -109,9 +109,9 @@ namespace MULTICLASS {
 
   void finish_example(vw& all, example& ec)
   {
-    float loss = 1;
-    if (ec.l.multi.label == (uint32_t)ec.pred.multiclass)
-      loss = 0;
+    float loss = 0;
+    if (ec.l.multi.label != (uint32_t)ec.pred.multiclass)
+      loss = ec.l.multi.weight;
     
     all.sd->update(ec.test_only, loss, ec.l.multi.weight, ec.num_features);
     
