@@ -7,6 +7,7 @@ shallow_clone: true
 clone_folder: C:\vowpal_wabbit
 build:
   project: C:\vowpal_wabbit\vowpalwabbit\vw.sln
+  parallel: true
   verbosity: detailed
 # need to install nuget packages before Visual Studio starts to make ANTLR targets available.
 before_build:
