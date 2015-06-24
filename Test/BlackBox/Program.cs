@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace BlackBoxTests
 {
@@ -65,7 +66,10 @@ namespace BlackBoxTests
 
         static void TestHash(JObject config)
         {
+            var values = config["Values"].ToObject<string[]>();
+            var outputFile = config["OutputFile"].Value<string>();
 
+            File.AppendAllLines(outputFile, values.Select(v => MurMurHash3.ComputeIdHash(v).ToString()));
         }
 
         static void TestExplore(JObject config)
