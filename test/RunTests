@@ -820,12 +820,12 @@ __DATA__
     pred-sets/ref/0002c.predict
 
 # Test 9: label-dependent features with csoaa_ldf
-{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off
+{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off --noconstant
     train-sets/ref/cs_test.ldf.csoaa.stderr
     train-sets/ref/cs_test.ldf.csoaa.predict
 
 # Test 10: label-dependent features with wap_ldf
-{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.wap.predict --passes 10 --invariant --wap_ldf multiline --holdout_off
+{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.wap.predict --passes 10 --invariant --wap_ldf multiline --holdout_off --noconstant
     train-sets/ref/cs_test.ldf.wap.stderr
     train-sets/ref/cs_test.ldf.wap.predict
 
@@ -985,11 +985,11 @@ __DATA__
     train-sets/ref/search_small2.stderr
 
 # Test 46: search sequence labeling, ldf train
-{VW} -k -c -d train-sets/sequence_data --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.ldf.model
+{VW} -k -c -d train-sets/sequence_data --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.ldf.model --noconstant
     train-sets/ref/sequence_data.ldf.train.stderr
 
-# Test 47: search sequence labeling, ldf test
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data.predict
+# Test 47: search sequence labeling, ldf test 
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data.predict --noconstant
     train-sets/ref/sequence_data.ldf.test.stderr
     train-sets/ref/sequence_data.ldf.test.predict
 
@@ -1097,7 +1097,7 @@ __DATA__
     train-sets/ref/sequence_data.nonldf.beam.test.predict
 
 # Test 70: (see Test 46/47) search sequence labeling, ldf test, with selective branching
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data_beam.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data_beam.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10 --noconstant
     train-sets/ref/sequence_data.ldf.beam.test.stderr
     train-sets/ref/sequence_data.ldf.beam.test.predict
 
@@ -1157,7 +1157,7 @@ __DATA__
     train-sets/ref/redefine.stderr
 
 # Test 84: check cb_adf
-{VW} --cb_adf train-sets/cb_test.ldf 
+{VW} --cb_adf train-sets/cb_test.ldf --noconstant
     train-sets/ref/cb_adf.stderr
 
 # Test 85: check multilabel_oaa
@@ -1166,12 +1166,12 @@ __DATA__
     pred-sets/ref/multilabel.predict
 
 # Test 86: check --csoaa_rank on csoaa_ldf
-{VW} --csoaa_ldf multiline --csoaa_rank train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict
+{VW} --csoaa_ldf multiline --csoaa_rank train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict --noconstant
     train-sets/ref/multilabel_ldf.stderr
     pred-sets/ref/multilabel_ldf.predict
 
 # Test 87: check --rank_all on csoaa_ldf
-{VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p adf_rank.predict
+{VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p adf_rank.predict --noconstant
     train-sets/ref/cb_adf_rank.stderr
     pred-sets/ref/cb_adf_rank.predict
 
@@ -1197,3 +1197,16 @@ __DATA__
 echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp && tail -n +2 inv_hash.cmp > inv_hash.cmp.new && rm inv_hash.cmp && mv inv_hash.cmp.new inv_hash.cmp
     train-sets/ref/inv_hash.stderr
     pred-sets/ref/inv_hash.cmp
+
+#Test 93:  check cb_adf with doubly robust option
+{VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p cb_adf_dr.predict --cb_type dr
+    train-sets/ref/cb_adf_dr.stderr
+    pred-sets/ref/cb_adf_dr.predict
+
+# Test 94: experience replay version of test 1
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off --replay_b 100
+    train-sets/ref/0001-replay.stderr
+
+# Test 95: named labels at training time (csoaa) with experience replay
+{VW} --named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa  -k -c --passes 10 --holdout_off -f models/test_named_csoaa.model --replay_c 100
+    train-sets/ref/test_named_csoaa_train-replay.stderr

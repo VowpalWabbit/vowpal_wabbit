@@ -21,6 +21,8 @@ struct csoaa{
   polyprediction* pred;
 };
 
+float passthrough_transform(float a) { return expf(a); }
+
 template<bool is_learn>
 inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
                        uint32_t& prediction, float& score, float& partial_prediction) {
@@ -36,10 +38,8 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
     score = ec.partial_prediction;
     prediction = i;
   }
-  if (ec.passthrough) {
-    //cerr << "1: ec.passthrough->push_back( " << i << ':' << ec.partial_prediction << " )" << endl;
+  if (ec.passthrough)
     ec.passthrough->push_back( feature(ec.partial_prediction, i) );
-  }
 }
 
 #define DO_MULTIPREDICT true
@@ -50,25 +50,11 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
   COST_SENSITIVE::label ld = ec.l.cs;
   uint32_t prediction = 1;
   float score = FLT_MAX;
+  size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
   ec.l.simple = { 0., 0., 0. };
   if (ld.costs.size() > 0) {
-    size_t last = 0;
-    for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++) {
-      if (ec.passthrough && (last+1 != cl->class_index))
-        for (last=last+1; last<cl->class_index; last++) {
-          //cerr << "3: ec.passthrough->push_back( " << last << ':' << 0 << " )" << endl;
-          ec.passthrough->push_back( feature(0., last) );
-        }
-
+    for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++)
       inner_loop<is_learn>(base, ec, cl->class_index, cl->x, prediction, score, cl->partial_prediction);
-      last = cl->class_index;
-    }
-    if (ec.passthrough)
-      for (last=last+1; last<=c.num_classes; last++) {
-        //cerr << "4: ec.passthrough->push_back( " << last << ':' << 0 << " )" << endl;
-        ec.passthrough->push_back( feature(0., last) );
-      }
-    
     ec.partial_prediction = score;
   } else if (DO_MULTIPREDICT && !is_learn) {
     ec.l.simple = { FLT_MAX, 0.f, 0.f };
@@ -76,20 +62,31 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
     for (uint32_t i = 1; i <= c.num_classes; i++)
       if (c.pred[i-1].scalar < c.pred[prediction-1].scalar)
         prediction = i;
-    if (ec.passthrough)
-      for (uint32_t i = 1; i <= c.num_classes; i++) {
-        //cerr << "2: ec.passthrough->push_back( " << i << ':' << c.pred[i-1].scalar << " )" << endl;
+    if (ec.passthrough) {
+      for (uint32_t i = 1; i <= c.num_classes; i++)
         ec.passthrough->push_back( feature(c.pred[i-1].scalar, i) );
-      }
+    }
     ec.partial_prediction = c.pred[prediction-1].scalar;
-    //cerr << "c.num_classes = " << c.num_classes << ", prediction = " << prediction << endl;
   } else {
     float temp;
     for (uint32_t i = 1; i <= c.num_classes; i++)
       inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp);
-    ec.partial_prediction = score;
   }
-
+  if (ec.passthrough) {
+    uint32_t second_best = 1;
+    float    second_best_cost = FLT_MAX;
+    for (size_t i=pt_start; i<ec.passthrough->size(); i++)
+      if ((i != prediction) && (ec.passthrough->get(i).x < second_best_cost)) {
+        second_best_cost = ec.passthrough->get(i).x;
+        second_best = ec.passthrough->get(i).weight_index;
+        ec.passthrough->get(i).x = passthrough_transform(ec.passthrough->get(i).x);
+      }
+    float margin = ec.partial_prediction - second_best_cost;
+    ec.passthrough->push_back( feature(1., second_best * 4892051 + 8491) );
+    ec.passthrough->push_back( feature(margin, second_best * 4892051 + 8491) );
+    ec.passthrough->push_back( feature(margin, 48391) );
+  }
+    
   ec.pred.multiclass = prediction;
   ec.l.cs = ld;
 }
@@ -381,7 +378,7 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
 template <bool is_learn>
 void do_actual_learning(ldf& data, base_learner& base)
 {
-  //cdbg << "do_actual_learning size=" << data.ec_seq.size() << endl;
+  //cout<< "do_actual_learning size=" << data.ec_seq.size() << endl;
   if (data.ec_seq.size() <= 0) return;  // nothing to do
   
   /////////////////////// handle label definitions
@@ -748,9 +745,9 @@ base_learner* csldf_setup(vw& all)
 
   all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld.is_singleline;
 
-  if (all.add_constant) {
+  /*if (all.add_constant) {
     all.add_constant = false;
-  }
+    }*/
   v_array<feature> empty_f = { nullptr, nullptr, nullptr, 0 };
   v_array<audit_data> empty_a = { nullptr, nullptr, nullptr, 0 };
   LabelDict::feature_audit empty_fa = { empty_f, empty_a };

@@ -638,9 +638,9 @@ namespace Search {
       for (size_t i=0; i<I; i++)
         if (condition_on_actions[i].repr.size() > 0) {
           char name = condition_on_names[i];
-          uint32_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name);
           for (size_t k=0; k<condition_on_actions[i].repr.size(); k++)
             if ((condition_on_actions[i].repr[k].x > 1e-10) || (condition_on_actions[i].repr[k].x < -1e-10)) {
+              uint32_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + condition_on_actions[i].repr[k].weight_index);
               if (priv.all->audit) {
                 priv.dat_new_feature_audit_ss.str("");
                 priv.dat_new_feature_audit_ss.clear();
@@ -648,10 +648,10 @@ namespace Search {
               }
               
               priv.dat_new_feature_ec  = &ec;
-              priv.dat_new_feature_idx = (fid + k) * quadratic_constant;
+              priv.dat_new_feature_idx = fid;
               priv.dat_new_feature_namespace = conditioning_namespace;
               priv.dat_new_feature_value = condition_on_actions[i].repr[k].x;
-              add_new_feature(priv, 1., priv.dat_new_feature_idx); // 4308927 << priv.all->reg.stride_shift);
+              add_new_feature(priv, 1., 4398201 << priv.all->reg.stride_shift);
             }
         }
     
@@ -1523,7 +1523,7 @@ namespace Search {
   }
   
   template <bool is_learn>
-  void train_single_example(search& sch, bool is_test_ex) {
+  void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex) {
     search_private& priv = *sch.priv;
     vw&all = *priv.all;
     bool ran_test = false;  // we must keep track so that even if we skip test, we still update # of examples seen
@@ -1560,7 +1560,7 @@ namespace Search {
     }
 
     // if we're not training, then we're done!
-    if ((!is_learn) || is_test_ex || priv.ec_seq[0]->test_only || (!priv.all->training))
+    if ((!is_learn) || is_test_ex || is_holdout_ex || priv.ec_seq[0]->test_only || (!priv.all->training))
       return;
 
     // SPEEDUP: if the oracle was never called, we can skip this!
@@ -1661,8 +1661,12 @@ namespace Search {
       return;  // nothing to do :)
 
     bool is_test_ex = false;
-    for (size_t i=0; i<priv.ec_seq.size(); i++)
-      if (priv.ec_seq[i]->test_only || priv.label_is_test(priv.ec_seq[i]->l)) { is_test_ex = true; break; }
+    bool is_holdout_ex = false;
+    for (size_t i=0; i<priv.ec_seq.size(); i++) {
+      is_test_ex |= priv.label_is_test(priv.ec_seq[i]->l);
+      is_holdout_ex |= priv.ec_seq[i]->test_only;
+      if (is_test_ex && is_holdout_ex) break;
+    }
 
     if (priv.task->run_setup) priv.task->run_setup(sch, priv.ec_seq);
 
@@ -1681,7 +1685,7 @@ namespace Search {
     }
 
     add_neighbor_features(priv);
-    train_single_example<is_learn>(sch, is_test_ex);
+    train_single_example<is_learn>(sch, is_test_ex, is_holdout_ex);
     del_neighbor_features(priv);
 
     if (priv.task->run_takedown) priv.task->run_takedown(sch, priv.ec_seq);

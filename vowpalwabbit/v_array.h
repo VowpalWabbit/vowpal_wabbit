@@ -148,13 +148,25 @@ inline size_t min(size_t a, size_t b)
 template<class T> 
 inline v_array<T> v_init() { return {nullptr, nullptr, nullptr, 0};}
 
-template<class T> void copy_array(v_array<T>& dst, v_array<T> src)
+template<class T> void copy_array(v_array<T>& dst, v_array<T>& src)
 {
   dst.erase();
   push_many(dst, src.begin, src.size());
 }
 
-template<class T> void copy_array(v_array<T>& dst, v_array<T> src, T(*copy_item)(T&))
+template<class T> void copy_array_memcpy(v_array<T>& dst, v_array<T>&src) {
+  size_t N = src.size();
+  if (N == 0)
+    dst.end = dst.begin;
+  else {
+    if (dst.size() < N)
+      dst.resize(N, false);
+    memcpy(dst.begin, src.begin, N * sizeof(T));
+    dst.end = dst.begin + N;
+  }
+}
+
+template<class T> void copy_array(v_array<T>& dst, v_array<T>& src, T(*copy_item)(T&))
 {
   dst.erase();
   for (T*item = src.begin; item != src.end; ++item)

@@ -55,12 +55,14 @@ void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(vo
 void copy_example_data(bool audit, example* dst, example* src)
 {
   //std::cerr << "copy_example_data dst = " << dst << std::endl;
-  copy_array(dst->tag, src->tag);
+  copy_array_memcpy(dst->tag, src->tag);
   dst->example_counter = src->example_counter;
 
-  copy_array(dst->indices, src->indices);
-  for (size_t i=0; i<256; i++)
-    copy_array(dst->atomics[i], src->atomics[i]);
+  copy_array_memcpy(dst->indices, src->indices);
+  //  for (size_t i=0; i<256; i++)
+  for (unsigned char*c = src->indices.begin; c != src->indices.end; ++c)
+    copy_array_memcpy(dst->atomics[*c], src->atomics[*c]);
+    //copy_array_memcpy(dst->atomics[i], src->atomics[i]);
   dst->ft_offset = src->ft_offset;
 
   if (audit)
@@ -75,7 +77,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   
   dst->num_features = src->num_features;
   dst->partial_prediction = src->partial_prediction;
-  copy_array(dst->topic_predictions, src->topic_predictions);
+  copy_array_memcpy(dst->topic_predictions, src->topic_predictions);
   if (src->passthrough == nullptr) dst->passthrough = nullptr;
   else {
     dst->passthrough = new v_array<feature>;
@@ -96,6 +98,7 @@ void copy_example_data(bool audit, example* dst, example* src, size_t label_size
   copy_example_data(audit, dst, src);
   copy_example_label(dst, src, label_size, copy_label);
 }
+
 }
 
 struct features_and_source 

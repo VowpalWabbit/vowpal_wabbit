@@ -1,4 +1,4 @@
-package vw;
+package vw.jni;
 
 import java.io.*;
 import java.util.regex.Matcher;

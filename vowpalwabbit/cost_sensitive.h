@@ -19,7 +19,7 @@ namespace COST_SENSITIVE {
   };
 /* if class_index > 0, then this this a "normal" example
    if class_index == 0, then:
-     if x < 0 then this is a 'shared' example
+     if x == -FLT_MAX then this is a 'shared' example
      if x > 0 then this is a label feature vector for (size_t)x
 */
 
@@ -30,6 +30,7 @@ namespace COST_SENSITIVE {
   void output_example(vw& all, example& ec);
   extern label_parser cs_label;
 
+  bool is_test_label(label& ld);
   bool example_is_test(example& ec);
 
   void print_update(vw& all, bool is_test, example& ec, const v_array<example*> *ec_seq, bool multilabel = false);
