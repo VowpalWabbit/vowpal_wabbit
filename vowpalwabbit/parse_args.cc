@@ -32,6 +32,7 @@ license as described in the file LICENSE.
 #include "cb_algs.h"
 #include "cb_adf.h"
 #include "scorer.h"
+#include "expreplay.h"
 #include "search.h"
 #include "bfgs.h"
 #include "lda_core.h"
@@ -941,6 +942,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(bfgs_setup);
 
   //Score Users
+  all.reduction_stack.push_back(ExpReplay::expreplay_setup<'b', simple_label>);
   all.reduction_stack.push_back(active_setup);
   all.reduction_stack.push_back(nn_setup);
   all.reduction_stack.push_back(mf_setup);
@@ -952,18 +954,23 @@ void parse_reductions(vw& all)
 
   //Reductions
   all.reduction_stack.push_back(binary_setup);
+
+  all.reduction_stack.push_back(ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>);
   all.reduction_stack.push_back(topk_setup);
   all.reduction_stack.push_back(oaa_setup);
   all.reduction_stack.push_back(boosting_setup);
   all.reduction_stack.push_back(ect_setup);
   all.reduction_stack.push_back(log_multi_setup);
   all.reduction_stack.push_back(multilabel_oaa_setup);
+
   all.reduction_stack.push_back(csoaa_setup);
   all.reduction_stack.push_back(interact_setup);
   all.reduction_stack.push_back(csldf_setup);
   all.reduction_stack.push_back(cb_algs_setup);
   all.reduction_stack.push_back(cb_adf_setup);
   all.reduction_stack.push_back(cbify_setup);
+
+  all.reduction_stack.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   all.reduction_stack.push_back(Search::setup);
   all.reduction_stack.push_back(bs_setup);
 

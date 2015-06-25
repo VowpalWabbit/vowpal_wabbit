@@ -1202,3 +1202,11 @@ echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} --oaa 3 -q :: --invert_has
 {VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p cb_adf_dr.predict --cb_type dr
     train-sets/ref/cb_adf_dr.stderr
     pred-sets/ref/cb_adf_dr.predict
+
+# Test 94: experience replay version of test 1
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off --replay_b 100
+    train-sets/ref/0001-replay.stderr
+
+# Test 95: named labels at training time (csoaa) with experience replay
+{VW} --named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa  -k -c --passes 10 --holdout_off -f models/test_named_csoaa.model --replay_c 100
+    train-sets/ref/test_named_csoaa_train-replay.stderr

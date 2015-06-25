@@ -59,8 +59,10 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->example_counter = src->example_counter;
 
   copy_array(dst->indices, src->indices);
-  for (size_t i=0; i<256; i++)
-    copy_array(dst->atomics[i], src->atomics[i]);
+  //  for (size_t i=0; i<256; i++)
+  for (unsigned char*c = src->indices.begin; c != src->indices.end; ++c)
+    copy_array(dst->atomics[*c], src->atomics[*c]);
+    //copy_array(dst->atomics[i], src->atomics[i]);
   dst->ft_offset = src->ft_offset;
 
   if (audit)
@@ -90,6 +92,7 @@ void copy_example_data(bool audit, example* dst, example* src, size_t label_size
   copy_example_data(audit, dst, src);
   copy_example_label(dst, src, label_size, copy_label);
 }
+
 }
 
 struct features_and_source 

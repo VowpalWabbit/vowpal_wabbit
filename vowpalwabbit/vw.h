@@ -75,6 +75,7 @@ namespace VW {
 
   void copy_example_data(bool audit, example*, example*, size_t, void(*copy_label)(void*,void*));
   void copy_example_data(bool audit, example*, example*);  // don't copy the label
+  void clear_example_data(example&);  // don't clear the label
 
   // after export_example, must call releaseFeatureSpace to free native memory
   primitive_feature_space* export_example(vw& all, example* e, size_t& len);
