@@ -9,7 +9,7 @@ clone_folder: C:\vowpal_wabbit
 build_script:
 - cd c:\vowpal_wabbit
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs_unittest\packages.config
-- "C:\Program Files (x86)\MSBuild\12.0\Bin\MSBuild.exe" "C:\vowpal_wabbit\vowpalwabbit\vw.sln" /m /verbosity:normal
+- '"C:\Program Files (x86)\MSBuild\12.0\Bin\MSBuild.exe" "C:\vowpal_wabbit\vowpalwabbit\vw.sln" /m /verbosity:normal'
 - cd c:\vowpal_wabbit\cs
 - ..\vowpalwabbit\.nuget\nuget pack cs.csproj -Prop "Configuration=Release;Platform=x64" -Prop SolutionDir=..\vowpalwabbit\ -OutputDirectory bin\x64\Release
 test_script:
