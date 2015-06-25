@@ -84,3 +84,11 @@ demo/ocr/run.*
 !**/packages/build/
 # Uncomment if necessary however generally it will be regenerated when needed
 !**/packages/repositories.config
+
+# QT
+VW.config
+VW.creator
+VW.creator.user
+VW.files
+VW.includes
+

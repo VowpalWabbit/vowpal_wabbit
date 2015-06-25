@@ -296,7 +296,7 @@ void ft_cnt(eval_gen_data& dat, float fx, uint32_t )
 #endif
 
 // lookup table of factorials up tu 21!
-size_t fast_factorial[] = {1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600,6227020800,87178291200,1307674368000,
+long long int fast_factorial[] = {1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600,6227020800,87178291200,1307674368000,
                              20922789888000,355687428096000,6402373705728000,121645100408832000,2432902008176640000};
 const size_t size_fast_factorial = sizeof(fast_factorial)/sizeof(*fast_factorial);
 
@@ -436,19 +436,18 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
 
                     size_t n;
-                    if (cnt_ft_weight_non_1 == 0) // number of generated simple combinations is C(n,k) = n!/(n-k)!/k!
+                    if (cnt_ft_weight_non_1 == 0) // number of generated simple combinations is C(n,k)
                     {
-                        n = factor(ft_size, ft_size-order_of_inter);
-                        n /= factor(order_of_inter); // k!
+                        n = choose(ft_size, order_of_inter);
                     } else {
                         n = 0.;
                         for (size_t l = 0; l <= order_of_inter; ++l)
                         {
                             //C(l+m-1, l) * C(n-m, k-l)
-                            size_t num = (l==0)?1:factor(l+cnt_ft_weight_non_1-1, cnt_ft_weight_non_1-1)/factor(l);
+                            size_t num = (l==0)?1:choose(l+cnt_ft_weight_non_1-1, l);
 
                             if (ft_size - cnt_ft_weight_non_1 >= order_of_inter-l)
-                                num *= factor(ft_size - cnt_ft_weight_non_1, ft_size - cnt_ft_weight_non_1 - order_of_inter + l)/factor(order_of_inter-l);
+                                num *= choose(ft_size - cnt_ft_weight_non_1, order_of_inter-l);
                             else num = 0;
 
                             n +=  num;
