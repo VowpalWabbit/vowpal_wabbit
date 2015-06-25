@@ -11,7 +11,7 @@ license as described in the file LICENSE.
 #ifndef _NOEXCEPT
 // _NOEXCEPT is required on Mac OS
 // making sure other platforms don't barf
-#define _NOEXCEPT
+#define _NOEXCEPT throw () 
 #endif
 
 namespace VW {
@@ -31,6 +31,8 @@ namespace VW {
 		vw_exception(const char* file, int lineNumber, std::string message);
 
 		vw_exception(const vw_exception& ex);
+
+		~vw_exception() _NOEXCEPT;
 
 		virtual const char* what() const _NOEXCEPT;
 

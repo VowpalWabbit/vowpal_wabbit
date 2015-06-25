@@ -12,6 +12,10 @@ namespace VW {
 	{
 	}
 
+	vw_exception::~vw_exception() _NOEXCEPT
+	{
+	}
+
 	const char* vw_exception::what() const _NOEXCEPT
 	{
 		return message.c_str();
