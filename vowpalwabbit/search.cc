@@ -1013,7 +1013,7 @@ namespace Search {
     if (priv.no_caching) return do_store;
     if (mytag == 0) return do_store; // don't attempt to cache when tag is zero
 
-    size_t sz  = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + sizeof(size_t) + condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(char));
+    size_t sz  = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + sizeof(size_t) + condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(uint32_t) + sizeof(char));
     for (size_t i=0; i<condition_on_cnt; i++)
       sz += sizeof(float) * condition_on_actions[i].pp.size();
     if (sz % 4 != 0) sz = 4 * (sz / 4 + 1); // make sure sz aligns to 4 so that uniform_hash does the right thing
@@ -1024,14 +1024,15 @@ namespace Search {
     *here = mytag;             here += sizeof(ptag);
     *here = policy;            here += sizeof(int);
     *here = (unsigned char)learner_id;        here += sizeof(size_t);
-    *here = (unsigned char)condition_on_cnt;  here += (unsigned char)sizeof(size_t);
+    *here = (unsigned char)condition_on_cnt;  here += sizeof(size_t);
     for (size_t i=0; i<condition_on_cnt; i++) {
       uint32_t nf = condition_on_actions[i].pp.size();
       *here = condition_on[i];           here += sizeof(ptag);
       *here = condition_on_actions[i].a; here += sizeof(action);
       *here = nf;                        here += sizeof(uint32_t);
-      for (uint32_t j=0; j<nf; j++)
+      for (uint32_t j=0; j<nf; j++) {
         *here = condition_on_actions[i].pp[j]; here += sizeof(float);
+      }
       *here = condition_on_names[i];     here += sizeof(char);  // SPEEDUP: should we align this at 4?
     }
     uint32_t hash = uniform_hash(item, sz, 3419);
