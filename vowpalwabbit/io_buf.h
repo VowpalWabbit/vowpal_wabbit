@@ -93,7 +93,7 @@ class io_buf {
       ret = -1;
     }
     if (ret == -1 && *name != '\0')
-	  THROW("can't open: " << name << ", error = " << strerror(errno))
+      THROW("can't open: " << name << ", error = " << strerror(errno));
     
     return ret;
   }
@@ -190,7 +190,7 @@ inline size_t bin_read_fixed(io_buf& i, char* data, size_t len, const char* read
 	memcpy(data,p,len);
       else
 	if (memcmp(data,p,len) != 0)
-		  THROW(read_message)
+	  THROW(read_message);
       return ret;
     }
   return 0;
@@ -201,7 +201,7 @@ inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_messa
   uint32_t obj_len;
   size_t ret = bin_read_fixed(i,(char*)&obj_len,sizeof(obj_len),"");
   if (obj_len > len || ret < sizeof(uint32_t))
-    THROW("bad model format!")
+    THROW("bad model format!");
 
   ret += bin_read_fixed(i,data,obj_len,read_message);
 

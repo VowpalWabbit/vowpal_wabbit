@@ -195,7 +195,7 @@ template<class K, class V> class v_hashmap{
 
       // check to make sure we haven't cycled around -- this is a bug!
       if (last_position == first_position) 
-		THROW("error: v_hashmap did not grow enough!")
+	THROW("error: v_hashmap did not grow enough!");
     }
   }
 
@@ -219,7 +219,7 @@ template<class K, class V> class v_hashmap{
 
       // check to make sure we haven't cycled around -- this is a bug!
       if (last_position == first_position)
-		THROW("error: v_hashmap did not grow enough!")
+	THROW("error: v_hashmap did not grow enough!");
     }
   }
     

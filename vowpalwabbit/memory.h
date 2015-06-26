@@ -13,7 +13,7 @@ T* calloc_or_die(size_t nmemb)
     const char* msg = "internal error: memory allocation failed; dying!";
 	// use low-level function since we're already out of memory.
 	fputs(msg, stderr);
-    throw std::runtime_error(msg);
+    THROW(msg);
   }
   return (T*)data;
 }

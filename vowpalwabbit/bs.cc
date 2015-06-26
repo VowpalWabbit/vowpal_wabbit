@@ -203,7 +203,7 @@ using namespace LEARNER;
         bs_predict_vote(ec, d.pred_vec);
         break;
       default:
-		  THROW("Unknown bs_type specified: " << d.bs_type)
+	THROW("Unknown bs_type specified: " << d.bs_type);
     }
 
     if (shouldOutput) 

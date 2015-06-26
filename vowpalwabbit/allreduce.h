@@ -68,7 +68,7 @@ template <class T> void pass_up(char* buffer, size_t left_read_pos, size_t right
     //going to pass up this chunk of data to the parent
     int write_size = send(parent_sock, buffer+parent_sent_pos, (int)my_bufsize, 0);
     if(write_size < 0) 
-		THROW("Write to parent failed " << my_bufsize << " " << write_size << " " << parent_sent_pos << " " << left_read_pos << " " << right_read_pos)
+      THROW("Write to parent failed " << my_bufsize << " " << write_size << " " << parent_sent_pos << " " << left_read_pos << " " << right_read_pos);
     
     parent_sent_pos += write_size;
   }
@@ -108,19 +108,19 @@ template <class T, void (*f)(T&, const T&)>void reduce(char* buffer, const size_
 
       if(child_read_pos[0] < n || child_read_pos[1] < n) {
 	if (max_fd > 0 && select((int)max_fd,&fds, nullptr, nullptr, nullptr) == -1)
-	    THROW("select: " << strerror(errno))
+	  THROW("select: " << strerror(errno));
 
 	for(int i = 0;i < 2;i++) {
 	  if(child_sockets[i] != -1 && FD_ISSET(child_sockets[i],&fds)) {
 	    //there is data to be left from left child
 	    if(child_read_pos[i] == n) 
-	      THROW("I think child has no data to send but he thinks he has "<<FD_ISSET(child_sockets[0],&fds)<<" "<<FD_ISSET(child_sockets[1],&fds))
+	      THROW("I think child has no data to send but he thinks he has "<<FD_ISSET(child_sockets[0],&fds)<<" "<<FD_ISSET(child_sockets[1],&fds));
 
 
 	    size_t count = min(ar_buf_size,n - child_read_pos[i]);
 	    int read_size = recv(child_sockets[i], child_read_buf[i] + child_unprocessed[i], (int)count, 0);
 		if (read_size == -1)
-			THROW("recv from child: " << strerror(errno))
+		  THROW("recv from child: " << strerror(errno));
 
 	    addbufs<T, f>((T*)buffer + child_read_pos[i]/sizeof(T), (T*)child_read_buf[i], (child_read_pos[i] + read_size)/sizeof(T) - child_read_pos[i]/sizeof(T));
 

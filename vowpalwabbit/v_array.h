@@ -42,9 +42,9 @@ template<class T> struct v_array {
 	  size_t old_len = end-begin;
 	  T* temp = (T *)realloc(begin, sizeof(T) * length);
 	  if ((temp == nullptr) && ((sizeof(T)*length) > 0))
-	  {
-		  THROW("realloc of " << length << " failed in resize().  out of memory?")
-	  }
+	    {
+	      THROW("realloc of " << length << " failed in resize().  out of memory?"); 
+	    }
 	  else
 	    begin = temp;
           if (zero_everything && (old_len < length))

@@ -475,7 +475,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
       b.regularizers = calloc_or_die<weight>(2*length);
       
       if (b.regularizers == nullptr)
-		THROW("Failed to allocate weight array: try decreasing -b <bits>")
+	THROW("Failed to allocate weight array: try decreasing -b <bits>");
 
       for(uint32_t i = 0; i < length; i++) 
 	b.regularizers[2*i] = weights[stride*i+W_COND] + regularization;
@@ -899,7 +899,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 	{
 	  b.regularizers = calloc_or_die<weight>(2*length);
 	  if (b.regularizers == nullptr)
-	      THROW( "Failed to allocate regularizers array: try decreasing -b <bits>")
+	    THROW( "Failed to allocate regularizers array: try decreasing -b <bits>");
 	}
       int m = b.m;
       
@@ -1000,8 +1000,8 @@ base_learner* bfgs_setup(vw& all)
       cerr << "**without** curvature calculation" << endl;
   }
   if (all.numpasses < 2)
-	THROW("you must make at least 2 passes to use BFGS")
-
+    THROW("you must make at least 2 passes to use BFGS");
+	  
   all.bfgs = true;
   all.reg.stride_shift = 2;
 

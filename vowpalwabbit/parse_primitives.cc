@@ -69,7 +69,7 @@ hash_func_t getHasher(const std::string& s){
   else if(s=="all")
     return hashall;
   else
-	THROW("Unknown hash function: " << s)
+    THROW("Unknown hash function: " << s);
 }
 
 std::ostream& operator<<(std::ostream& os, const substring& ss) {

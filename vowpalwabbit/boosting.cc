@@ -409,10 +409,8 @@ LEARNER::base_learner* boosting_setup(vw& all)
 	    predict_or_learn_adaptive<false>, data.N);
 	l->set_save_load(save_load_sampling);
     }
-    else {
-		THROW("Unrecognized boosting algorithm: \'" << *data.alg <<
-            "\' Bailing!");
-    }
+    else 
+      THROW("Unrecognized boosting algorithm: \'" << *data.alg << "\' Bailing!");
 
     l->set_finish(finish);
     l->set_finish_example(return_example);
