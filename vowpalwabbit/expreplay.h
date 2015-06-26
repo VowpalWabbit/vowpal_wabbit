@@ -59,7 +59,7 @@ template<label_parser& lp>
 void finish(expreplay& er) {
   for (size_t n=0; n<er.N; n++) {
     lp.delete_label(&er.buf[n].l);
-    dealloc_example(NULL, er.buf[n], NULL);  // TODO: need to free label
+    VW::dealloc_example(NULL, er.buf[n], NULL);  // TODO: need to free label
   }
   free(er.buf);
   free(er.filled);
@@ -88,7 +88,7 @@ LEARNER::base_learner* expreplay_setup(vw& all) {
   expreplay& er = calloc_or_die<expreplay>();
   er.all = &all;
   er.N   = N;
-  er.buf = alloc_examples(1, er.N);
+  er.buf = VW::alloc_examples(1, er.N);
 
   if (er_level == 'c')
     for (size_t n=0; n<er.N; n++)

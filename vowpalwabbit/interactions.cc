@@ -275,7 +275,7 @@ void sort_and_filter_duplicate_interactions(v_array<v_string>& vec, bool filter_
  */
 
 
-// thecode under DEBUG_EVAL_COUNT_OF_GEN_FT below is an alternative way of implementation of eval_count_of_generated_ft()
+// the code under DEBUG_EVAL_COUNT_OF_GEN_FT below is an alternative way of implementation of eval_count_of_generated_ft()
 // it just calls generate_interactions() with small function which counts generated features and sums their squared weights
 // it's replaced with more fast (?) analytic solution but keeps just in case and for doublecheck.
 
@@ -402,7 +402,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
                     {
                         const float x = ft->x*ft->x;
 
-                        if ( ft->x == 1.0 || !feature_self_interactions_for_weight_other_than_1) // must compare  ft->x
+                        if ( !PROCESS_SELF_INTERACTIONS(ft->x) )
                         {
                             for (size_t i = order_of_inter-1; i > 0; --i)
                                 results[i] += results[i-1]*x;

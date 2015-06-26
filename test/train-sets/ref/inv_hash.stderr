@@ -10,8 +10,8 @@ Reading datafile =
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-1.000000 1.000000            1            1.0        3        1       22
-1.000000 1.000000            2            2.0        2        3       11
+1.000000 1.000000            1            1.0        3        1       28
+1.000000 1.000000            2            2.0        2        3       15
 
 finished run
 number of examples per pass = 2
@@ -19,4 +19,4 @@ passes used = 1
 weighted example sum = 2.000000
 weighted label sum = 0.000000
 average loss = 1.000000
-total feature number = 33
+total feature number = 43
