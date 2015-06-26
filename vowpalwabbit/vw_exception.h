@@ -43,7 +43,7 @@ class vw_exception : public std::exception {
 #define THROW(args) \
   { \
     std::stringstream __msg; \
-    __msg << args << std::endl; \
+    __msg << args; \
     throw VW::vw_exception(__FILE__, __LINE__, __msg.str()); \
   }
 
