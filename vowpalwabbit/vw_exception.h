@@ -44,7 +44,7 @@ namespace VW {
 #define THROW(args) \
 	{ \
 		std::stringstream __msg; \
-		__msg << args; \
+		__msg << args << std::endl; \
 		throw VW::vw_exception(__FILE__, __LINE__, __msg.str()); \
 	}
 
