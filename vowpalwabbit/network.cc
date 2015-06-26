@@ -20,6 +20,7 @@ license as described in the file LICENSE.
 #endif
 #include <string.h>
 
+#include <stdlib.h>
 #include <string>
 #include <iostream>
 #include <sstream>

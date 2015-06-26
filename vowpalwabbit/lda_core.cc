@@ -420,7 +420,7 @@ namespace ldamath
   inline void expdigammify_2(vw &all, T *gamma, T *norm, const T threshold)
   {
     std::transform(gamma, gamma + all.lda, norm, gamma, [threshold](float g, float n) {
-      return std::fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n));
+      return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n));
     });
   }
   template <> inline void expdigammify_2<float, USE_SIMD>(vw &all, float *gamma, float *norm, const float threshold)
@@ -753,7 +753,7 @@ void learn_batch(lda &l)
     float *weights_for_w = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
     float decay_component =
         l.decay_levels.end[-2] - l.decay_levels.end[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
-    float decay = std::fmin(1.0f, std::exp(decay_component));
+    float decay = fmin(1.0f, std::exp(decay_component));
     float *u_for_w = weights_for_w + l.all->lda + 1;
 
     weights_for_w[l.all->lda] = (float)l.example_t;
@@ -841,7 +841,7 @@ void end_examples(lda &l)
     weight *weights_for_w = &(l.all->reg.weight_vector[i << l.all->reg.stride_shift]);
     float decay_component =
         l.decay_levels.last() - l.decay_levels.end[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
-    float decay = std::fmin(1.f, std::exp(decay_component));
+    float decay = fmin(1.f, std::exp(decay_component));
     for (size_t k = 0; k < l.all->lda; k++)
       weights_for_w[k] *= decay;
   }
