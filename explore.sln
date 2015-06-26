@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Explore", "Explore\Explore.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackBoxTests", "Test\BlackBox\BlackBoxTests.csproj", "{149D8ED5-D25F-4175-855D-0B6A412043D6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestCommon", "Test\Common\TestCommon.csproj", "{56D4D5D8-3677-420A-864B-1C9AB9F6480F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{149D8ED5-D25F-4175-855D-0B6A412043D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{149D8ED5-D25F-4175-855D-0B6A412043D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{149D8ED5-D25F-4175-855D-0B6A412043D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56D4D5D8-3677-420A-864B-1C9AB9F6480F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56D4D5D8-3677-420A-864B-1C9AB9F6480F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56D4D5D8-3677-420A-864B-1C9AB9F6480F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56D4D5D8-3677-420A-864B-1C9AB9F6480F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -58,6 +58,10 @@
       <Project>{6d245816-6016-49b6-9e37-a0bf0d2a736a}</Project>
       <Name>Explore</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Common\TestCommon.csproj">
+      <Project>{56d4d5d8-3677-420a-864b-1c9ab9f6480f}</Project>
+      <Name>TestCommon</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using TestCommon;
 
 namespace BlackBoxTests
 {
@@ -31,7 +32,7 @@ namespace BlackBoxTests
                         TestHash(config);
                         break;
                     case 2:
-                        TestExplore(config);
+                        TestEpsilonGreedy(config);
                         break;
                 }
             }
@@ -72,16 +73,85 @@ namespace BlackBoxTests
             File.AppendAllLines(outputFile, values.Select(v => MurMurHash3.ComputeIdHash(v).ToString()));
         }
 
-        static void TestExplore(JObject config)
-        { 
-            
+        static void TestEpsilonGreedy(JObject config)
+        {
+            var outputFile = config["OutputFile"].Value<string>();
+            var appId = config["AppId"].Value<string>();
+            var numActions = config["NumberOfActions"].Value<uint>();
+            var experimentalUnitIdList = config["ExperimentalUnitIdList"].ToObject<string[]>();
+            var epsilon = config["Epsilon"].Value<float>();
+            JToken configPolicy = config["PolicyConfiguration"];
+            var policyType = configPolicy["PolicyType"].Value<int>();
+
+            switch (config["ContextType"].Value<int>())
+            {
+                case 0: // fixed action context
+                {
+                    var contextList = Enumerable
+                        .Range(0, experimentalUnitIdList.Length)
+                        .Select(i => new RegularTestContext { Id = i })
+                        .ToArray();
+
+                    ExploreEpsilonGreedy<RegularTestContext>(appId, policyType, configPolicy, epsilon, 
+                        numActions, experimentalUnitIdList, contextList, outputFile);
+                    
+                    break;
+                }
+                case 1: // variable action context
+                {
+                    var contextList = Enumerable
+                        .Range(0, experimentalUnitIdList.Length)
+                        .Select(i => new VariableActionTestContext(numActions) { Id = i })
+                        .ToArray();
+
+                    ExploreEpsilonGreedy<VariableActionTestContext>(appId, policyType, configPolicy, epsilon,
+                        numActions, experimentalUnitIdList, contextList, outputFile);
+
+                    break;
+                }
+            }
         }
-    }
 
-    class TestTuple
-    {
-        public uint Item1 { get; set; }
-        public uint Item2 { get; set; }
+        static void ExploreEpsilonGreedy<TContext>
+        (
+            string appId,
+            int policyType,
+            JToken configPolicy,
+            float epsilon,
+            uint numActions,
+            string[] experimentalUnitIdList,
+            TContext[] contextList,
+            string outputFile
+        )
+            where TContext : IStringContext
+        {
+            var recorder = new StringRecorder<TContext>();
+            var mwt = new MwtExplorer<TContext>(appId, recorder);
 
+            bool isVariableActionContext = typeof(IVariableActionContext).IsAssignableFrom(typeof(TContext));
+
+            switch (policyType)
+            {
+                case 0: // fixed policy
+                {
+                    var policyAction = configPolicy["Action"].Value<uint>();
+
+                    var policy = new TestPolicy<TContext> { ActionToChoose = policyAction };
+
+                    var explorer = isVariableActionContext ?
+                        new EpsilonGreedyExplorer<TContext>(policy, epsilon, numActions) :
+                        new EpsilonGreedyExplorer<TContext>(policy, epsilon);
+
+                    for (int i = 0; i < experimentalUnitIdList.Length; i++)
+                    {
+                        mwt.ChooseAction(explorer, experimentalUnitIdList[i], contextList[i]);
+                    }
+
+                    File.AppendAllText(outputFile, recorder.GetRecording());
+
+                    break;
+                }
+            }
+        }
     }
 }

@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MultiWorldTesting;
 using System.Collections.Generic;
 using System.Linq;
+using TestCommon;
 
 namespace ExploreTests
 {
@@ -19,9 +20,9 @@ namespace ExploreTests
         {
             uint numActions = 10;
             float epsilon = 0f;
-            var policy = new TestPolicy<TestContext>();
-            var testContext = new TestContext();
-            var explorer = new EpsilonGreedyExplorer<TestContext>(policy, epsilon, numActions);
+            var policy = new TestPolicy<RegularTestContext>();
+            var testContext = new RegularTestContext();
+            var explorer = new EpsilonGreedyExplorer<RegularTestContext>(policy, epsilon, numActions);
 
             EpsilonGreedyWithContext(numActions, testContext, policy, explorer);
         }
@@ -31,15 +32,15 @@ namespace ExploreTests
         {
             uint numActions = 10;
             float epsilon = 0f;
-            var policy = new TestPolicy<TestVarContext>();
-            var testContext = new TestVarContext(numActions);
-            var explorer = new EpsilonGreedyExplorer<TestVarContext>(policy, epsilon);
+            var policy = new TestPolicy<VariableActionTestContext>();
+            var testContext = new VariableActionTestContext(numActions);
+            var explorer = new EpsilonGreedyExplorer<VariableActionTestContext>(policy, epsilon);
 
             EpsilonGreedyWithContext(numActions, testContext, policy, explorer);
         }
 
         private static void EpsilonGreedyWithContext<TContext>(uint numActions, TContext testContext, TestPolicy<TContext> policy, IExplorer<TContext> explorer)
-            where TContext : TestContext
+            where TContext : RegularTestContext
         {
             string uniqueKey = "ManagedTestId";
             TestRecorder<TContext> recorder = new TestRecorder<TContext>();
@@ -73,9 +74,9 @@ namespace ExploreTests
         {
             uint numActions = 10;
             uint tau = 0;
-            TestContext testContext = new TestContext() { Id = 100 };
-            var policy = new TestPolicy<TestContext>();
-            var explorer = new TauFirstExplorer<TestContext>(policy, tau, numActions);
+            RegularTestContext testContext = new RegularTestContext() { Id = 100 };
+            var policy = new TestPolicy<RegularTestContext>();
+            var explorer = new TauFirstExplorer<RegularTestContext>(policy, tau, numActions);
             TauFirstWithContext(numActions, testContext, policy, explorer);
         }
 
@@ -84,14 +85,14 @@ namespace ExploreTests
         {
             uint numActions = 10;
             uint tau = 0;
-            var testContext = new TestVarContext(numActions) { Id = 100 };
-            var policy = new TestPolicy<TestVarContext>();
-            var explorer = new TauFirstExplorer<TestVarContext>(policy, tau);
+            var testContext = new VariableActionTestContext(numActions) { Id = 100 };
+            var policy = new TestPolicy<VariableActionTestContext>();
+            var explorer = new TauFirstExplorer<VariableActionTestContext>(policy, tau);
             TauFirstWithContext(numActions, testContext, policy, explorer);
         }
 
         private static void TauFirstWithContext<TContext>(uint numActions, TContext testContext, TestPolicy<TContext> policy, IExplorer<TContext> explorer)
-            where TContext : TestContext
+            where TContext : RegularTestContext
         {
             string uniqueKey = "ManagedTestId";
 
@@ -120,15 +121,15 @@ namespace ExploreTests
         {
             uint numActions = 10;
             uint numbags = 2;
-            TestContext testContext1 = new TestContext() { Id = 99 };
-            TestContext testContext2 = new TestContext() { Id = 100 };
+            RegularTestContext testContext1 = new RegularTestContext() { Id = 99 };
+            RegularTestContext testContext2 = new RegularTestContext() { Id = 100 };
 
-            var policies = new TestPolicy<TestContext>[numbags];
+            var policies = new TestPolicy<RegularTestContext>[numbags];
             for (int i = 0; i < numbags; i++)
             {
-                policies[i] = new TestPolicy<TestContext>(i * 2);
+                policies[i] = new TestPolicy<RegularTestContext>(i * 2);
             }
-            var explorer = new BootstrapExplorer<TestContext>(policies, numActions);
+            var explorer = new BootstrapExplorer<RegularTestContext>(policies, numActions);
 
             BootstrapWithContext(numActions, testContext1, testContext2, policies, explorer);
         }
@@ -138,21 +139,21 @@ namespace ExploreTests
         {
             uint numActions = 10;
             uint numbags = 2;
-            var testContext1 = new TestVarContext(numActions) { Id = 99 };
-            var testContext2 = new TestVarContext(numActions) { Id = 100 };
+            var testContext1 = new VariableActionTestContext(numActions) { Id = 99 };
+            var testContext2 = new VariableActionTestContext(numActions) { Id = 100 };
 
-            var policies = new TestPolicy<TestVarContext>[numbags];
+            var policies = new TestPolicy<VariableActionTestContext>[numbags];
             for (int i = 0; i < numbags; i++)
             {
-                policies[i] = new TestPolicy<TestVarContext>(i * 2);
+                policies[i] = new TestPolicy<VariableActionTestContext>(i * 2);
             }
-            var explorer = new BootstrapExplorer<TestVarContext>(policies);
+            var explorer = new BootstrapExplorer<VariableActionTestContext>(policies);
 
             BootstrapWithContext(numActions, testContext1, testContext2, policies, explorer);
         }
 
         private static void BootstrapWithContext<TContext>(uint numActions, TContext testContext1, TContext testContext2, TestPolicy<TContext>[] policies, IExplorer<TContext> explorer)
-            where TContext : TestContext
+            where TContext : RegularTestContext
         {
             string uniqueKey = "ManagedTestId";
 
@@ -189,14 +190,14 @@ namespace ExploreTests
             float lambda = 0.5f;
             uint numActionsCover = 100;
             float C = 5;
-            var scorer = new TestScorer<TestContext>(numActions);
-            var explorer = new SoftmaxExplorer<TestContext>(scorer, lambda, numActions);
+            var scorer = new TestScorer<RegularTestContext>(numActions);
+            var explorer = new SoftmaxExplorer<RegularTestContext>(scorer, lambda, numActions);
             
             uint numDecisions = (uint)(numActions * Math.Log(numActions * 1.0) + Math.Log(numActionsCover * 1.0 / numActions) * C * numActions);
-            var contexts = new TestContext[numDecisions];
+            var contexts = new RegularTestContext[numDecisions];
             for (int i = 0; i < numDecisions; i++)
             {
-                contexts[i] = new TestContext { Id = i };
+                contexts[i] = new RegularTestContext { Id = i };
             }
 
             SoftmaxWithContext(numActions, explorer, contexts);
@@ -209,21 +210,21 @@ namespace ExploreTests
             float lambda = 0.5f;
             uint numActionsCover = 100;
             float C = 5;
-            var scorer = new TestScorer<TestVarContext>(numActions);
-            var explorer = new SoftmaxExplorer<TestVarContext>(scorer, lambda);
+            var scorer = new TestScorer<VariableActionTestContext>(numActions);
+            var explorer = new SoftmaxExplorer<VariableActionTestContext>(scorer, lambda);
             
             uint numDecisions = (uint)(numActions * Math.Log(numActions * 1.0) + Math.Log(numActionsCover * 1.0 / numActions) * C * numActions);
-            var contexts = new TestVarContext[numDecisions];
+            var contexts = new VariableActionTestContext[numDecisions];
             for (int i = 0; i < numDecisions; i++)
             {
-                contexts[i] = new TestVarContext(numActions) { Id = i };
+                contexts[i] = new VariableActionTestContext(numActions) { Id = i };
             }
             
             SoftmaxWithContext(numActions, explorer, contexts);
         }
 
         private static void SoftmaxWithContext<TContext>(uint numActions, IExplorer<TContext> explorer, TContext[] contexts)
-            where TContext : TestContext
+            where TContext : RegularTestContext
         {
             var recorder = new TestRecorder<TContext>();
             var mwtt = new MwtExplorer<TContext>("mwt", recorder);
@@ -256,16 +257,16 @@ namespace ExploreTests
         {
             uint numActions = 10;
             float lambda = 0.5f;
-            var recorder = new TestRecorder<TestContext>();
-            var scorer = new TestScorer<TestContext>(numActions, uniform: false);
+            var recorder = new TestRecorder<RegularTestContext>();
+            var scorer = new TestScorer<RegularTestContext>(numActions, uniform: false);
 
-            var mwtt = new MwtExplorer<TestContext>("mwt", recorder);
-            var explorer = new SoftmaxExplorer<TestContext>(scorer, lambda, numActions);
+            var mwtt = new MwtExplorer<RegularTestContext>("mwt", recorder);
+            var explorer = new SoftmaxExplorer<RegularTestContext>(scorer, lambda, numActions);
 
             Random rand = new Random();
-            mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = 100 });
-            mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = 101 });
-            mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = 102 });
+            mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new RegularTestContext() { Id = 100 });
+            mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new RegularTestContext() { Id = 101 });
+            mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new RegularTestContext() { Id = 102 });
 
             var interactions = recorder.GetAllInteractions();
             
@@ -279,7 +280,7 @@ namespace ExploreTests
             }
 
             // Verify that policy action is chosen all the time
-            TestContext context = new TestContext { Id = 100 };
+            RegularTestContext context = new RegularTestContext { Id = 100 };
             List<float> scores = scorer.ScoreActions(context);
             float maxScore = 0;
             uint highestScoreAction = 0;
@@ -295,7 +296,7 @@ namespace ExploreTests
             explorer.EnableExplore(false);
             for (int i = 0; i < 1000; i++)
             {
-                uint chosenAction = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new TestContext() { Id = (int)i });
+                uint chosenAction = mwtt.ChooseAction(explorer, rand.NextDouble().ToString(), new RegularTestContext() { Id = (int)i });
                 Assert.AreEqual(highestScoreAction, chosenAction);
             }
         }
@@ -304,9 +305,9 @@ namespace ExploreTests
         public void Generic()
         {
             uint numActions = 10;
-            TestScorer<TestContext> scorer = new TestScorer<TestContext>(numActions);
-            TestContext testContext = new TestContext() { Id = 100 };
-            var explorer = new GenericExplorer<TestContext>(scorer, numActions);
+            TestScorer<RegularTestContext> scorer = new TestScorer<RegularTestContext>(numActions);
+            RegularTestContext testContext = new RegularTestContext() { Id = 100 };
+            var explorer = new GenericExplorer<RegularTestContext>(scorer, numActions);
             GenericWithContext(numActions, testContext, explorer);
         }
 
@@ -314,14 +315,14 @@ namespace ExploreTests
         public void GenericFixedActionUsingVariableActionInterface()
         {
             uint numActions = 10;
-            var scorer = new TestScorer<TestVarContext>(numActions);
-            var testContext = new TestVarContext(numActions) { Id = 100 };
-            var explorer = new GenericExplorer<TestVarContext>(scorer);
+            var scorer = new TestScorer<VariableActionTestContext>(numActions);
+            var testContext = new VariableActionTestContext(numActions) { Id = 100 };
+            var explorer = new GenericExplorer<VariableActionTestContext>(scorer);
             GenericWithContext(numActions, testContext, explorer);
         }
 
         private static void GenericWithContext<TContext>(uint numActions, TContext testContext, IExplorer<TContext> explorer)
-            where TContext : TestContext
+            where TContext : RegularTestContext
         {
             string uniqueKey = "ManagedTestId";
             var recorder = new TestRecorder<TContext>();
@@ -353,42 +354,42 @@ namespace ExploreTests
             });
 
             tryCatchArgumentException(() => {
-                var mwt = new MwtExplorer<TestContext>("test", new TestRecorder<TestContext>());
-                var policy = new TestPolicy<TestContext>();
-                var explorer = new EpsilonGreedyExplorer<TestContext>(policy, 0.2f);
-                mwt.ChooseAction(explorer, "key", new TestContext());
+                var mwt = new MwtExplorer<RegularTestContext>("test", new TestRecorder<RegularTestContext>());
+                var policy = new TestPolicy<RegularTestContext>();
+                var explorer = new EpsilonGreedyExplorer<RegularTestContext>(policy, 0.2f);
+                mwt.ChooseAction(explorer, "key", new RegularTestContext());
             });
             tryCatchArgumentException(() =>
             {
-                var mwt = new MwtExplorer<TestContext>("test", new TestRecorder<TestContext>());
-                var policy = new TestPolicy<TestContext>();
-                var explorer = new TauFirstExplorer<TestContext>(policy, 10);
-                mwt.ChooseAction(explorer, "key", new TestContext());
+                var mwt = new MwtExplorer<RegularTestContext>("test", new TestRecorder<RegularTestContext>());
+                var policy = new TestPolicy<RegularTestContext>();
+                var explorer = new TauFirstExplorer<RegularTestContext>(policy, 10);
+                mwt.ChooseAction(explorer, "key", new RegularTestContext());
             });
             tryCatchArgumentException(() =>
             {
-                var mwt = new MwtExplorer<TestContext>("test", new TestRecorder<TestContext>());
-                var policies = new TestPolicy<TestContext>[2];
+                var mwt = new MwtExplorer<RegularTestContext>("test", new TestRecorder<RegularTestContext>());
+                var policies = new TestPolicy<RegularTestContext>[2];
                 for (int i = 0; i < 2; i++)
                 {
-                    policies[i] = new TestPolicy<TestContext>(i * 2);
+                    policies[i] = new TestPolicy<RegularTestContext>(i * 2);
                 }
-                var explorer = new BootstrapExplorer<TestContext>(policies);
-                mwt.ChooseAction(explorer, "key", new TestContext());
+                var explorer = new BootstrapExplorer<RegularTestContext>(policies);
+                mwt.ChooseAction(explorer, "key", new RegularTestContext());
             });
             tryCatchArgumentException(() =>
             {
-                var mwt = new MwtExplorer<TestContext>("test", new TestRecorder<TestContext>());
-                var scorer = new TestScorer<TestContext>(10);
-                var explorer = new SoftmaxExplorer<TestContext>(scorer, 0.5f);
-                mwt.ChooseAction(explorer, "key", new TestContext());
+                var mwt = new MwtExplorer<RegularTestContext>("test", new TestRecorder<RegularTestContext>());
+                var scorer = new TestScorer<RegularTestContext>(10);
+                var explorer = new SoftmaxExplorer<RegularTestContext>(scorer, 0.5f);
+                mwt.ChooseAction(explorer, "key", new RegularTestContext());
             });
             tryCatchArgumentException(() =>
             {
-                var mwt = new MwtExplorer<TestContext>("test", new TestRecorder<TestContext>());
-                var scorer = new TestScorer<TestContext>(10);
-                var explorer = new GenericExplorer<TestContext>(scorer);
-                mwt.ChooseAction(explorer, "key", new TestContext());
+                var mwt = new MwtExplorer<RegularTestContext>("test", new TestRecorder<RegularTestContext>());
+                var scorer = new TestScorer<RegularTestContext>(10);
+                var explorer = new GenericExplorer<RegularTestContext>(scorer);
+                mwt.ChooseAction(explorer, "key", new RegularTestContext());
             });
 
             Assert.AreEqual(numExceptionsExpected, numExceptionsCaught);
@@ -413,32 +414,6 @@ namespace ExploreTests
         public string UniqueKey;
     }
 
-    class TestContext 
-    {
-        private int id;
-
-        public int Id
-        {
-            get { return id; }
-            set { id = value; }
-        }
-    }
-
-    class TestVarContext : TestContext, IVariableActionContext
-    {
-        public TestVarContext(uint numberOfActions) 
-        {
-            NumberOfActions = numberOfActions;
-        }
-
-        public uint GetNumberOfActions()
-        {
-            return NumberOfActions;
-        }
-
-        public uint NumberOfActions { get; set; }
-    }
-
     class TestRecorder<Ctx> : IRecorder<Ctx>
     {
         public void Record(Ctx context, UInt32 action, float probability, string uniqueKey)
@@ -458,39 +433,6 @@ namespace ExploreTests
         }
 
         private List<TestInteraction<Ctx>> interactions = new List<TestInteraction<Ctx>>();
-    }
-
-    class TestPolicy<TContext> : IPolicy<TContext>
-    {
-        public TestPolicy() : this(-1) { }
-
-        public TestPolicy(int index)
-        {
-            this.index = index;
-        }
-
-        public uint ChooseAction(TContext context)
-        {
-            return 5;
-        }
-
-        private int index;
-    }
-
-    class TestSimplePolicy : IPolicy<SimpleContext>
-    {
-        public uint ChooseAction(SimpleContext context)
-        {
-            return 1;
-        }
-    }
-
-    class StringPolicy : IPolicy<SimpleContext>
-    {
-        public uint ChooseAction(SimpleContext context)
-        {
-            return 1;
-        }
     }
 
     class TestScorer<Ctx> : IScorer<Ctx>
