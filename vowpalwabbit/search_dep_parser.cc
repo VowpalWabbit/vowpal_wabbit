@@ -31,7 +31,7 @@ namespace DepParserTask {
   const action REDUCE_RIGHT = 2;
   const action REDUCE_LEFT  = 3;
   
-  void initialize(Search::search& srn, size_t& num_actions, po::variables_map& vm) {
+  void initialize(Search::search& srn, size_t& /*num_actions*/, po::variables_map& vm) {
     task_data *data = new task_data();
     data->action_loss.resize(4,true);
     data->ex = NULL;
@@ -216,18 +216,19 @@ namespace DepParserTask {
       additional_offset += j* 1023;
       add_feature(ex, temp[j]+ additional_offset , val_namespace, mask, multiplier);
     }
-
-    size_t count=0;
+    
+    size_t count=0;        
     for (unsigned char* ns = data->ex->indices.begin; ns != data->ex->indices.end; ns++) {
       data->ex->sum_feat_sq[(int)*ns] = (float) data->ex->atomics[(int)*ns].size();
       count+= data->ex->atomics[(int)*ns].size();
     }
-    for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
-      count += data->ex->atomics[(int)(*i)[0]].size()* data->ex->atomics[(int)(*i)[1]].size();	
-    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
-      count += data->ex->atomics[(int)(*i)[0]].size()*data->ex->atomics[(int)(*i)[1]].size()*data->ex->atomics[(int)(*i)[2]].size();	
-    data->ex->num_features = count;
-    data->ex->total_sum_feat_sq = (float) count;
+
+    size_t new_count;
+    float new_weight;
+    INTERACTIONS::eval_count_of_generated_ft(all, *data->ex, new_count, new_weight);
+
+    data->ex->num_features = count + new_count;
+    data->ex->total_sum_feat_sq = (float) count + new_weight;
   }
 
   void get_valid_actions(v_array<uint32_t> & valid_action, uint32_t idx, uint32_t n, uint32_t stack_depth, uint32_t state) {
