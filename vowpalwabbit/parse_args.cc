@@ -146,9 +146,9 @@ void parse_dictionary_argument(vw&all, string str) {
     cerr << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << endl;
 
   // see if we've already read this dictionary
-  for (size_t id=0; id<all.read_dictionaries.size(); id++)
-    if (all.read_dictionaries[id].file_hash == fd_hash) {
-      all.namespace_dictionaries[(size_t)ns].push_back(all.read_dictionaries[id].dict);
+  for (size_t id=0; id<all.loaded_dictionaries.size(); id++)
+    if (all.loaded_dictionaries[id].file_hash == fd_hash) {
+      all.namespace_dictionaries[(size_t)ns].push_back(all.loaded_dictionaries[id].dict);
       return;
     }
 
@@ -219,7 +219,7 @@ void parse_dictionary_argument(vw&all, string str) {
   all.namespace_dictionaries[(size_t)ns].push_back(map);
   dictionary_info info = { calloc_or_die<char>(strlen(s)+1), fd_hash, map };
   strcpy(info.name, s);
-  all.read_dictionaries.push_back(info);
+  all.loaded_dictionaries.push_back(info);
 }
 
 void parse_affix_argument(vw&all, string str) {
@@ -1324,11 +1324,11 @@ namespace VW {
       if (all.final_prediction_sink[i] != 1)
 	io_buf::close_file_or_socket(all.final_prediction_sink[i]);
     all.final_prediction_sink.delete_v();
-    for (size_t i=0; i<all.read_dictionaries.size(); i++) {
-      free(all.read_dictionaries[i].name);
-      all.read_dictionaries[i].dict->iter(delete_dictionary_entry);
-      all.read_dictionaries[i].dict->delete_v();
-      delete all.read_dictionaries[i].dict;
+    for (size_t i=0; i<all.loaded_dictionaries.size(); i++) {
+      free(all.loaded_dictionaries[i].name);
+      all.loaded_dictionaries[i].dict->iter(delete_dictionary_entry);
+      all.loaded_dictionaries[i].dict->delete_v();
+      delete all.loaded_dictionaries[i].dict;
     }
     delete all.loss;
 

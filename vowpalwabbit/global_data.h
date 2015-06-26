@@ -468,7 +468,7 @@ struct vw {
   bool     spelling_features[256]; // generate spelling features for which namespace
   vector<string> dictionary_path;  // where to look for dictionaries
   vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
-  vector<dictionary_info> read_dictionaries; // which dictionaries have we read?
+  vector<dictionary_info> loaded_dictionaries; // which dictionaries have we loaded from a file to memory?
   
   bool multilabel_prediction;
   bool audit;//should I print lots of debugging information?
