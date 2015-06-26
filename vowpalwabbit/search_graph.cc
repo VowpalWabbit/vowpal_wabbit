@@ -304,7 +304,7 @@ namespace GraphTask {
     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
       int i0 = (int)(*i)[0];
       int i1 = (int)(*i)[1];
-      if ((i0 == neighbor_namespace) || (i1 == neighbor_namespace)) {
+      if ((i0 == (int)neighbor_namespace) || (i1 == (int)neighbor_namespace)) {
         ec[n]->num_features      += ec[n]->atomics[i0].size() * ec[n]->atomics[i1].size();
         ec[n]->total_sum_feat_sq += ec[n]->sum_feat_sq[i0]*ec[n]->sum_feat_sq[i1];
       }
