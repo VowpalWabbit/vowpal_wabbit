@@ -221,7 +221,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				if (read)
 				{
 					all.args.push_back("--interactions");
-					string str((char*)all.interactions[i].begin);
+					string str((char*)all.interactions[i].begin, inter_len);
 					all.args.push_back(str);
 				}
         }
