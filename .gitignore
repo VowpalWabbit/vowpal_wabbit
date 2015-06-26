@@ -24,6 +24,7 @@ vowpalwabbit/stamp-*
 Makefile
 config.status
 test/*.predict
+test/*.cmp
 *.log
 *.o
 *.a

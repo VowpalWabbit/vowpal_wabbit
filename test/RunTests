@@ -1161,7 +1161,7 @@ __DATA__
     train-sets/ref/cb_adf.stderr
 
 # Test 85: check multilabel_oaa
-{VW} --multilabel_oaa 10 train-sets/multilabel -p multilabel.pred
+{VW} --multilabel_oaa 10 train-sets/multilabel -p multilabel.predict
     train-sets/ref/multilabel.stderr
     pred-sets/ref/multilabel.predict
 
@@ -1180,7 +1180,7 @@ __DATA__
     train-sets/ref/test_named_train.stderr
 
 # Test 89: named labels at prediction
-{VW} -i models/test_named.model -t -d train-sets/test_named -p test_named.pred
+{VW} -i models/test_named.model -t -d train-sets/test_named -p test_named.predict
     train-sets/ref/test_named_test.stderr
     pred-sets/ref/test_named.predict
 
@@ -1189,7 +1189,7 @@ __DATA__
     train-sets/ref/test_named_csoaa_train.stderr
 
 # Test 91: named labels at prediction (csoaa)
-{VW} -i models/test_named_csoaa.model -t -d train-sets/test_named_csoaa -p test_named_csoaa.pred
+{VW} -i models/test_named_csoaa.model -t -d train-sets/test_named_csoaa -p test_named_csoaa.predict
     train-sets/ref/test_named_csoaa_test.stderr
     pred-sets/ref/test_named_csoaa.predict
 
