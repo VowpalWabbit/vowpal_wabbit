@@ -4,6 +4,8 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <cstring>
 #include <cerrno>
@@ -28,14 +30,18 @@ int open_socket(const char* host, unsigned short port)
 
   if (he == nullptr)
     {
-      cerr << "gethostbyname(" << host << "): " << strerror(errno) << endl;
-      throw exception();
+      stringstream msg;
+      msg << "gethostbyname(" << host << "): " << strerror(errno);
+      cerr << msg.str() << endl;
+      throw runtime_error(msg.str().c_str());
     }
   int sd = socket(PF_INET, SOCK_STREAM, 0);
   if (sd == -1)
     {
-      cerr << "socket: " << strerror(errno) << endl;
-      throw exception();
+      stringstream msg;
+      msg << "socket: " << strerror(errno);
+      cerr << msg.str() << endl;
+      throw runtime_error(msg.str().c_str());
     }
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
@@ -44,8 +50,10 @@ int open_socket(const char* host, unsigned short port)
   memset(&far_end.sin_zero, '\0',8);
   if (connect(sd,(sockaddr*)&far_end, sizeof(far_end)) == -1)
     {
-      cerr << "connect(" << host << ':' << port << "): " << strerror(errno) << endl;
-      throw exception();
+      stringstream msg;
+      msg << "connect(" << host << ':' << port << "): " << strerror(errno);
+      cerr << msg.str() << endl;
+      throw runtime_error(msg.str().c_str());
     }
   return sd;
 }
@@ -86,8 +94,9 @@ int main(int argc, char* argv[]){
     size_t id=0;
     ret=send(s,&id,sizeof(id),0);
     if(ret<0){
-        cerr << "Could not perform handshake!" << endl;
-        throw exception();
+        const char* msg = "Could not perform handshake!";
+        cerr << msg << endl;
+        throw runtime_error(msg);
     }
     
     while(getline(cin,line)){
@@ -97,13 +106,15 @@ int main(int argc, char* argv[]){
         const char* sp = strchr(cstr,' ');
         ret=send(s,sp+1,len-(sp+1-cstr),0);
         if(ret<0){
-            cerr << "Could not send unlabeled data!" << endl;
-            throw exception();
+            const char* msg = "Could not send unlabeled data!";
+            cerr << msg << endl;
+            throw runtime_error(msg);
         }
         ret=recvall(s, buf, 256);
         if(ret<0){
-            cerr << "Could not receive queries!" << endl;
-            throw exception();
+	    const char* msg = "Could not receive queries!";
+            cerr << msg << endl;
+            throw runtime_error(msg);
         }
         buf[ret]='\0';
         toks=&buf[0];
@@ -123,13 +134,15 @@ int main(int argc, char* argv[]){
         len = line.size();
         ret = send(s,cstr,len,0);
         if(ret<0){
-            cerr << "Could not send labeled data!" << endl;
-            throw exception();
+	    const char* msg = "Could not send labeled data!";
+            cerr << msg << endl;
+            throw runtime_error(msg);
         }
         ret=recvall(s, buf, 256);
         if(ret<0){
-            cerr << "Could not receive predictions!" << endl;
-            throw exception();
+	    const char* msg = "Could not receive predictions!";
+            cerr << msg << endl;
+            throw runtime_error(msg);
         }
     }
     close(s);

@@ -21,22 +21,29 @@ int main(int argc, char *argv[])
   cerr << "p2 = " << vec2->pred.scalar << endl;
   VW::finish_example(*model, vec2);
 
-  vector< VW::feature_space > ec_info;
-  vector<feature> s_features, t_features;
+  VW::primitive_feature_space features[2];
+  VW::primitive_feature_space *s = features, *t = features + 1;
+  s->name = 's';
+  t->name = 't'; 
+
   uint32_t s_hash = VW::hash_space(*model, "s");
   uint32_t t_hash = VW::hash_space(*model, "t");
-  s_features.push_back( vw_feature_from_string(*model, "p^the_man", s_hash, 1.0) );
-  s_features.push_back( vw_feature_from_string(*model, "w^the", s_hash, 1.0) );
-  s_features.push_back( vw_feature_from_string(*model, "w^man", s_hash, 1.0) );
-  t_features.push_back( vw_feature_from_string(*model, "p^le_homme", t_hash, 1.0) );
-  t_features.push_back( vw_feature_from_string(*model, "w^le", t_hash, 1.0) );
-  t_features.push_back( vw_feature_from_string(*model, "w^homme", t_hash, 1.0) );
-  ec_info.push_back( VW::feature_space('s', s_features) );
-  ec_info.push_back( VW::feature_space('t', t_features) );
-  example* vec3 = VW::import_example(*model, ec_info);
+  s->fs = new feature[3];
+  s->len = 3;
+  t->fs = new feature[3];
+  t->len = 3;
+
+  s->fs[0] = vw_feature_from_string(*model, "p^the_man", s_hash, 1.0);
+  s->fs[1] = vw_feature_from_string(*model, "w^the", s_hash, 1.0);
+  s->fs[2] = vw_feature_from_string(*model, "w^man", s_hash, 1.0);
+  t->fs[0] = vw_feature_from_string(*model, "p^le_homme", t_hash, 1.0);
+  t->fs[1] = vw_feature_from_string(*model, "w^le", t_hash, 1.0);
+  t->fs[2] = vw_feature_from_string(*model, "w^homme", t_hash, 1.0);
+  example* vec3 = VW::import_example(*model, "", features, 2);
     
   model->learn(vec3);
   cerr << "p3 = " << vec3->pred.scalar << endl;
+  // TODO: this does not invoke m_vw->l->finish_example()
   VW::finish_example(*model, vec3);
 
   VW::finish(*model);

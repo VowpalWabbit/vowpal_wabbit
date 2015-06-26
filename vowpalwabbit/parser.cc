@@ -51,6 +51,7 @@ namespace po = boost::program_options;
 #include "constant.h"
 #include "vw.h"
 #include "interactions.h"
+#include "vw_exception.h"
 
 using namespace std;
 
@@ -170,14 +171,11 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
 
   uint32_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
-  if(v_length>29){
-    cerr << "cache version too long, cache file is probably invalid" << endl;
-    throw exception();
-  }
-  else if (v_length == 0) {
-    cerr << "cache version too short, cache file is probably invalid" << endl;
-    throw exception();
-  }
+  if (v_length > 29)
+	  THROW("cache version too long, cache file is probably invalid";)
+
+  if (v_length == 0)
+	  THROW("cache version too short, cache file is probably invalid")
     
   t.erase();
   if (t.size() < v_length)
@@ -194,15 +192,10 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
 
   char temp;
   if (buf->read_file(filepointer, &temp, 1) < 1) 
-    {
-      cout << "failed to read" << endl;
-      throw exception();
-    }
+	  THROW("failed to read")
+
   if (temp != 'c')
-    {
-      cout << "data file is not a cache file" << endl;
-      throw exception();
-    }
+     THROW("data file is not a cache file")
 
   t.delete_v();
   
@@ -267,10 +260,7 @@ void reset_source(vw& all, size_t numbits)
 	  socklen_t size = sizeof(client_address);
 	  int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
 	  if (f < 0)
-	    {
-	      cerr << "accept: " << strerror(errno) << endl;
-	      throw exception();
-	    }
+	    THROW("accept: " << strerror(errno))
 	  
 	  // note: breaking cluster parallel online learning by dropping support for id
 	  
@@ -289,10 +279,8 @@ void reset_source(vw& all, size_t numbits)
 	for (size_t i = 0; i < input->files.size();i++)
 	  {
 	    input->reset_file(input->files[i]);
-	    if (cache_numbits(input, input->files[i]) < numbits) {
-	      cerr << "argh, a bug in caching of some sort!  Exiting\n" ;
-	      throw exception();
-	    }
+		if (cache_numbits(input, input->files[i]) < numbits)
+			THROW("argh, a bug in caching of some sort!")
 	  }
       }
     }
@@ -412,8 +400,10 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 #endif
       all.p->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
       if (all.p->bound_sock < 0) {
-	cerr << "socket: " << strerror(errno) << endl;
-	throw exception();
+	stringstream msg;
+	msg << "socket: " << strerror(errno);
+	cerr << msg.str() << endl;
+	throw runtime_error(msg.str().c_str());
       }
 
       int on = 1;
@@ -435,16 +425,11 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 
       // attempt to bind to socket
       if ( ::bind(all.p->bound_sock,(sockaddr*)&address, sizeof(address)) < 0 )
-	{
-	  cerr << "bind: " << strerror(errno) << endl;
-	  throw exception();
-	}
+		THROW("bind: " << strerror(errno))
 
       // listen on socket
-      if (listen(all.p->bound_sock, 1) < 0) {
-        cerr << "listen: " << strerror(errno) << endl;
-        throw exception();
-      }
+	  if (listen(all.p->bound_sock, 1) < 0)
+		  THROW("listen: " << strerror(errno))
 
       // write port file
       if (all.vm.count("port_file"))
@@ -457,30 +442,24 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	  ofstream port_file;
 	  port_file.open(all.vm["port_file"].as<string>().c_str());
 	  if (!port_file.is_open())
-	    {
-	      cerr << "error writing port file" << endl;
-	      throw exception();
-	    }
+		  THROW("error writing port file: " << all.vm["port_file"].as<string>())
+
 	  port_file << ntohs(address.sin_port) << endl;
 	  port_file.close();
 	}
 
       // background process
       if (!all.active && daemon(1,1))
-	{
-	  cerr << "daemon: " << strerror(errno) << endl;
-	  throw exception();
-	}
+		THROW("daemon: " << strerror(errno))
+
       // write pid file
       if (all.vm.count("pid_file"))
 	{
 	  ofstream pid_file;
 	  pid_file.open(all.vm["pid_file"].as<string>().c_str());
 	  if (!pid_file.is_open())
-	    {
-	      cerr << "error writing pid file" << endl;
-	      throw exception();
-	    }
+		  THROW("error writing pid file")
+
 	  pid_file << getpid() << endl;
 	  pid_file.close();
 	}
@@ -488,7 +467,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       if (all.daemon && !all.active)
 	{
 #ifdef _WIN32
-		throw exception();
+		THROW("not supported on windows")
 #else
 		fclose(stdin);
 	  // weights will be shared across processes, accessible to children
@@ -570,11 +549,8 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       if (!all.quiet)
 	cerr << "calling accept" << endl;
       int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
-      if (f < 0)
-	{
-	  cerr << "accept: " << strerror(errno) << endl;
-	  throw exception();
-	}
+	  if (f < 0)
+		  THROW("accept: " << strerror(errno))
       
       all.p->label_sock = f;
       all.print = print_result;
@@ -612,21 +588,30 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	  string temp = all.data_filename;
 	  if (!quiet)
 	    cerr << "Reading datafile = " << temp << endl;
-	  int f = all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
-	  if (f == -1 && temp.size() != 0)
+	  try
+	  {
+	    all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
+	  }
+	  catch (exception const& ex)
 	    {
+		  if (temp.size() != 0)
+		  {
 			cerr << "can't open '" << temp << "', sailing on!" << endl;
 	    }
+		  else
+		  {
+			  throw ex;
+		  }
+	  }
+
 	  all.p->reader = read_features;
 	  all.p->resettable = all.p->write_cache;
 	}
     }
   
-  if (passes > 1 && !all.p->resettable)
-    {
-      cerr << all.program_name << ": need a cache file for multiple passes: try using --cache_file" << endl;  
-      throw exception();
-    }
+	if (passes > 1 && !all.p->resettable)
+		THROW("need a cache file for multiple passes : try using --cache_file")
+
   all.p->input->count = all.p->input->files.size();
   if (!quiet && !all.daemon)
     cerr << "num sources = " << all.p->input->files.size() << endl;
@@ -662,6 +647,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 	  size_t new_index = atomics[i].weight_index;
 	  for (size_t n = 1; n < gram_mask.size(); n++)
 	    new_index = new_index*quadratic_constant + atomics[i+gram_mask[n]].weight_index;
+
 	  feature f = {1.,(uint32_t)(new_index)};
 	  atomics.push_back(f);
 	  if ((all.audit || all.hash_inv) && audits.size() >= initial_length)
@@ -672,6 +658,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 		  feature_name += string("^");
 		  feature_name += string(audits[i+gram_mask[n]].feature);
 		}
+
 	      string feature_space = string(audits[i].space);
 	      
 	      audit_data a_feature = {nullptr,nullptr,new_index, 1., true};
@@ -737,6 +724,7 @@ example* get_unused_example(vw& all)
     }
 }
 
+namespace VW {
 bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
 {
   if (do_read && all.p->reader(&all, ae) <= 0)
@@ -751,6 +739,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
       cache_features(*(all.p->output), ae, (uint32_t)all.parse_mask);
     }
   return true;
+}
 }
 
 void end_pass_example(vw& all, example* ae)
@@ -850,7 +839,7 @@ void setup_example(vw& all, example* ae)
   INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
   ae->num_features += new_features_cnt;
   ae->total_sum_feat_sq += new_features_sum_feat_sq;
-
+  
 }
 }
 
@@ -893,30 +882,14 @@ namespace VW{
     ec->l.simple.initial = base;
   }
 
-  example* import_example(vw& all, vector<feature_space> vf)
+  example* import_example(vw& all, string label, primitive_feature_space* features, size_t len)
   {
     example* ret = get_unused_example(all);
     all.p->lp.default_label(&ret->l);
-    for (size_t i = 0; i < vf.size();i++)
-      {
-	uint32_t index = vf[i].first;
-	ret->indices.push_back(index);
-	for (size_t j = 0; j < vf[i].second.size(); j++)
-	  {	    
-	    ret->sum_feat_sq[index] += vf[i].second[j].x * vf[i].second[j].x;
-	    ret->atomics[index].push_back(vf[i].second[j]);
-	  }
-      }
-	parse_atomic_example(all,ret,false);
-    setup_example(all, ret);
-    all.p->end_parsed_examples++;
-    return ret;
-  }
 
-  example* import_example(vw& all, primitive_feature_space* features, size_t len)
-  {
-    example* ret = get_unused_example(all);
-    all.p->lp.default_label(&ret->l);
+	if (label.length() > 0)
+		parse_example_label(all, *ret, label);
+
     for (size_t i = 0; i < len;i++)
       {
 	uint32_t index = features[i].name;
@@ -927,9 +900,9 @@ namespace VW{
 	    ret->atomics[index].push_back(features[i].fs[j]);
 	  }
       }
-    parse_atomic_example(all,ret,false); // all.p->parsed_examples++;
+    VW::parse_atomic_example(all,ret,false); 
     setup_example(all, ret);
-    
+	all.p->end_parsed_examples++;
     return ret;
   }
 
@@ -1008,6 +981,10 @@ namespace VW{
 
   void finish_example(vw& all, example* ec)
   {
+	// only return examples to the pool that are from the pool and not externally allocated
+	if (!is_ring_example(all, ec))
+      return;
+
     mutex_lock(&all.p->output_lock);
     all.p->local_example_number++;
     condition_variable_signal(&all.p->output_done);
@@ -1039,7 +1016,7 @@ void *main_parse_loop(void *in)
 	  {
             example* ae = get_unused_example(*all);
 	    if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
-		   && parse_atomic_example(*all, ae) )
+		   && VW::parse_atomic_example(*all, ae) )
 	     {
 	       VW::setup_example(*all, ae);
 	       example_number++;
@@ -1128,7 +1105,7 @@ float get_cost_sensitive_prediction(example* ec)
        return (float)ec->pred.multiclass;
 }
 
-uint32_t* get_multilabel_predictions(vw&, example* ec, size_t& len)
+uint32_t* get_multilabel_predictions(example* ec, size_t& len)
 {
     MULTILABEL::labels labels = ec->pred.multilabels;
     len = labels.label_v.size();
@@ -1205,10 +1182,10 @@ void free_parser(vw& all)
   
   if (all.multilabel_prediction)
     for (size_t i = 0; i < all.p->ring_size; i++) 
-      dealloc_example(all.p->lp.delete_label, all.p->examples[i], MULTILABEL::multilabel.delete_label);
+      VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i], MULTILABEL::multilabel.delete_label);
   else
     for (size_t i = 0; i < all.p->ring_size; i++) 
-      dealloc_example(all.p->lp.delete_label, all.p->examples[i]);
+      VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i]);
   free(all.p->examples);
   
   io_buf* output = all.p->output;
@@ -1237,5 +1214,10 @@ void end_parser(vw& all)
   ::CloseHandle(all.parse_thread);
   #endif
   release_parser_datastructures(all);
+}
+
+bool is_ring_example(vw& all, example* ae)
+{
+	return all.p->examples <= ae && ae < all.p->examples + all.p->ring_size;
 }
 }

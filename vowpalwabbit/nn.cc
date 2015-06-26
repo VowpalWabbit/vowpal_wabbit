@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "rand48.h"
 #include "gd.h"
+#include "vw.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -376,9 +377,9 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     free(n.dropped_out);
     free(n.hidden_units_pred);
     free(n.hiddenbias_pred);
-    dealloc_example (nullptr, n.output_layer);
-    dealloc_example (nullptr, n.hiddenbias);
-    dealloc_example (nullptr, n.outputweight);
+	VW::dealloc_example(nullptr, n.output_layer);
+	VW::dealloc_example(nullptr, n.hiddenbias);
+	VW::dealloc_example(nullptr, n.outputweight);
   }
 
   base_learner* nn_setup(vw& all)

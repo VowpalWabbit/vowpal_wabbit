@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 #include "example.h"
 #include "parse_primitives.h"
 #include "vw.h"
+#include "vw_exception.h"
 
 using namespace LEARNER;
 
@@ -108,11 +109,7 @@ namespace CB
 	tokenize(':', words[i], p->parse_name);
 
         if( p->parse_name.size() < 1 || p->parse_name.size() > 3 )
-        {
-          cerr << "malformed cost specification!" << endl;
-	  cerr << "terminating." << endl;
-          throw exception();
-        }
+			THROW("malformed cost specification: " << p->parse_name)
 
         f.partial_prediction = 0.;
         f.action = (uint32_t)hashstring(p->parse_name[0], 0);
@@ -122,12 +119,7 @@ namespace CB
 	  f.cost = float_of_substring(p->parse_name[1]);
 	
         if ( nanpattern(f.cost))
-        {
-	  cerr << "error NaN cost for action: ";
-	  cerr.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
-	  cerr << " terminating." << endl;
-	  throw exception();
-        }
+			THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0])
       
 
         f.probability = .0;
@@ -135,12 +127,7 @@ namespace CB
           f.probability = float_of_substring(p->parse_name[2]);
 	
         if ( nanpattern(f.probability))
-        {
-	  cerr << "error NaN probability for action: ";
-	  cerr.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
-	  cerr << " terminating." << endl;
-	  throw exception();
-        }
+			THROW("error NaN probability (" << p->parse_name[2] << " for action: " << p->parse_name[0])
         
         if( f.probability > 1.0 )
         {
@@ -282,10 +269,7 @@ namespace CB_EVAL
     CB_EVAL::label* ld = (CB_EVAL::label*)v;
     
     if (words.size() < 2)
-      {
-	cout << "Evaluation can not happen without an action and an exploration" << endl;
-	throw exception();
-      }
+		THROW("Evaluation can not happen without an action and an exploration")
     
     ld->action = (uint32_t)hashstring(words[0], 0);    
     

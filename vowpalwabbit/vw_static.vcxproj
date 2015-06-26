@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -24,7 +24,7 @@
     <RootNamespace>vw_static</RootNamespace>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">.\</SolutionDir>
   </PropertyGroup>
-  <Import Project="$(SolutionDir)Build.props" />
+  <Import Project="$(SolutionDir)\Build.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -291,6 +291,7 @@
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
     <ClInclude Include="vw.h" />
+    <ClInclude Include="vw_exception.h" />
     <ClInclude Include="v_array.h" />
     <ClInclude Include="v_hashmap.h" />
   </ItemGroup>
@@ -360,6 +361,7 @@
     <ClCompile Include="svrg.cc" />
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
+    <ClCompile Include="vw_exception.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

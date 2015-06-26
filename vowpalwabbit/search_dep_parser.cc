@@ -7,6 +7,8 @@
 #include "gd.h"
 #include "cost_sensitive.h"
 #include "label_dictionary.h"   // for add_example_namespaces_from_example
+#include "vw.h"
+#include "vw_exception.h"
 
 #define val_namespace 100 // valency and distance feature space
 #define offset_const 344429
@@ -42,7 +44,7 @@ namespace DepParserTask {
         ("old_style_labels", "Use old hack of label information");
     srn.add_program_options(vm, dparser_opts);
 
-    data->ex = alloc_examples(sizeof(polylabel), 1);
+    data->ex = VW::alloc_examples(sizeof(polylabel), 1);
     data->ex->indices.push_back(val_namespace);
     for(size_t i=1; i<14; i++)
       data->ex->indices.push_back((unsigned char)i+'A');
@@ -59,13 +61,13 @@ namespace DepParserTask {
     all.triples.swap(newtriples);
 
     for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i)
-     i->delete_v();
+        i->delete_v();
     all.interactions.erase();
     for (vector<string>::const_iterator i = all.pairs.begin(); i != all.pairs.end(); ++i)
-     all.interactions.push_back(string2v_string(*i));
+        all.interactions.push_back(string2v_string(*i));
     for (vector<string>::const_iterator i = all.triples.begin(); i != all.triples.end(); ++i)
-     all.interactions.push_back(string2v_string(*i));
-
+        all.interactions.push_back(string2v_string(*i));
+    
     srn.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
     srn.set_label_parser( COST_SENSITIVE::cs_label, [](polylabel&l) -> bool { return l.cs.costs.size() == 0; });
   }
@@ -80,7 +82,7 @@ namespace DepParserTask {
     data->tags.delete_v();
     data->temp.delete_v();
     data->action_loss.delete_v();
-    dealloc_example(COST_SENSITIVE::cs_label.delete_label, *data->ex);
+	VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, *data->ex);
     free(data->ex);
     for (size_t i=0; i<6; i++) data->children[i].delete_v();
     delete data;
@@ -92,7 +94,7 @@ namespace DepParserTask {
     if (audit) {
       audit_data a = { nullptr, nullptr, f.weight_index, 1.f, true };
       ex.audit_features[(int)ns].push_back(a);
-    }
+  }
   }
 
   void add_all_features(example& ex, example& src, unsigned char tgt_ns, size_t mask, uint32_t multiplier, uint32_t offset, bool audit=false) {
@@ -125,8 +127,8 @@ namespace DepParserTask {
     v_array<uint32_t> &heads=data->heads, &stack=data->stack, &gold_heads=data->gold_heads, &gold_tags=data->gold_tags, &tags = data->tags;
     v_array<uint32_t> *children = data->children;
     if (a_id == SHIFT) {
-      stack.push_back(idx);
-      return idx+1;
+        stack.push_back(idx);
+        return idx+1;
     } else if (a_id == REDUCE_RIGHT) {
       uint32_t last   = stack.last();
       size_t   hd     = stack[ stack.size() - 2 ];
@@ -136,9 +138,9 @@ namespace DepParserTask {
       children[1][hd] ++;
       tags[last]      = t_id;
       srn.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);
-      assert(! stack.empty());
-      stack.pop();
-      return idx;
+        assert(! stack.empty());
+        stack.pop();
+        return idx;
     } else if (a_id == REDUCE_LEFT) {
       uint32_t last    = stack.last();
       heads[last]      = idx;
@@ -147,11 +149,11 @@ namespace DepParserTask {
       children[0][idx] ++;
       tags[last]       = t_id;
       srn.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);
-      assert(! stack.empty());
-      stack.pop();
-      return idx;
+        assert(! stack.empty());
+        stack.pop();
+        return idx;
     }
-    throw exception();
+    THROW("transition_hybrid failed")
   }
   
   void extract_features(Search::search& srn, uint32_t idx,  vector<example*> &ec) {
@@ -196,7 +198,7 @@ namespace DepParserTask {
         add_feature(ex, (uint32_t) 438129041 + additional_offset, (unsigned char)((i+1)+'A'), mask, multiplier);
       else
         add_all_features(ex, *ec_buf[i], 'A'+i+1, mask, multiplier, additional_offset, false);
-    }
+          }
 
     // Other features
     temp.resize(10,true);
@@ -209,12 +211,12 @@ namespace DepParserTask {
     for(size_t i=8; i<10; i++)
       temp[i] = (idx <=n && children[i-6][idx]!=0)? tags[children[i-6][idx]] : 15;	
 
-    size_t additional_offset = val_namespace*offset_const; 
-    for(int j=0; j< 10;j++) {
+    uint32_t additional_offset = val_namespace*offset_const; 
+    for(uint32_t j=0; j< 10;j++) {
       additional_offset += j* 1023;
       add_feature(ex, temp[j]+ additional_offset , val_namespace, mask, multiplier);
     }
-    
+
     size_t count=0;
     for (unsigned char* ns = data->ex->indices.begin; ns != data->ex->indices.end; ns++) {
       data->ex->sum_feat_sq[(int)*ns] = (float) data->ex->atomics[(int)*ns].size();
@@ -222,8 +224,8 @@ namespace DepParserTask {
     }
     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
       count += data->ex->atomics[(int)(*i)[0]].size()* data->ex->atomics[(int)(*i)[1]].size();	
-        for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
-          count += data->ex->atomics[(int)(*i)[0]].size()*data->ex->atomics[(int)(*i)[1]].size()*data->ex->atomics[(int)(*i)[2]].size();	
+    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
+      count += data->ex->atomics[(int)(*i)[0]].size()*data->ex->atomics[(int)(*i)[1]].size()*data->ex->atomics[(int)(*i)[2]].size();	
     data->ex->num_features = count;
     data->ex->total_sum_feat_sq = (float) count;
   }
@@ -251,7 +253,7 @@ namespace DepParserTask {
     v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions;
     size_t size = stack.size();
     uint32_t last = (size==0) ? 0 : stack.last();
-    
+
     if (is_valid(1,valid_actions) &&( stack.empty() || gold_heads[idx] == last)) {
       gold_actions.push_back(1);
       return;
@@ -262,7 +264,7 @@ namespace DepParserTask {
       return;
     }
 
-    for(size_t i = 1; i<= 3; i++)
+    for(uint32_t i = 1; i<= 3; i++)
       action_loss[i] = (is_valid(i,valid_actions))?0:100;
 
     for(uint32_t i = 0; i<size-1; i++)
@@ -321,10 +323,9 @@ namespace DepParserTask {
         head = (costs.size() == 0) ? 0 : costs[0].class_index;
         tag  = (costs.size() <= 1) ? data->root_label : costs[1].class_index;
       }
-      if (tag > data->num_label) {
-        cerr << "invalid label " << tag << " which is > num actions=" << data->num_label << endl;
-        throw exception();
-      }
+	  if (tag > data->num_label)
+		  THROW("invalid label " << tag << " which is > num actions=" << data->num_label)
+
       gold_heads.push_back(head);
       gold_tags.push_back(tag);
       heads[i+1] = 0;
@@ -344,7 +345,7 @@ namespace DepParserTask {
     for(size_t i=0; i<6; i++)
       for(size_t j=0; j<n+1; j++)
         data->children[i][j] = 0;
-
+    
     v_array<action> gold_actions = v_init<action>();
     int count=1;
     uint32_t idx = ((data->root_label==0)?1:2);
@@ -380,7 +381,7 @@ namespace DepParserTask {
     }
 
     heads[stack.last()] = 0;
-    tags[stack.last()] = data->root_label;
+    tags[stack.last()] = (uint32_t)data->root_label;
     srn.loss((gold_heads[stack.last()] != heads[stack.last()]));
     if (srn.output().good())
       for(size_t i=1; i<=n; i++)

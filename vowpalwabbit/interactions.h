@@ -58,13 +58,13 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 // 2 template functions to pass T() proper argument (feature idx in regressor, or its coefficient)
 
 template <class R, void (*T)(R&, const float, float&)>
-inline void call_T( R& dat, weight* weight_vector, const size_t weight_mask, const float ft_weight, const size_t ft_idx)
+inline void call_T( R& dat, weight* weight_vector, const size_t weight_mask, const float ft_weight, const uint32_t ft_idx)
 {
     T(dat, ft_weight, weight_vector[ft_idx & weight_mask]);
 }
 
 template <class R, void (*T)(R&, float, uint32_t)>
-inline void call_T( R& dat, weight* /*weight_vector*/, const size_t /*weight_mask*/, const float ft_weight, const size_t ft_idx)
+inline void call_T( R& dat, weight* /*weight_vector*/, const size_t /*weight_mask*/, const float ft_weight, const uint32_t ft_idx)
 {
     T(dat, ft_weight, ft_idx);
 }

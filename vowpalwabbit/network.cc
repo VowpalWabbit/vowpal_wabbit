@@ -22,6 +22,9 @@ license as described in the file LICENSE.
 
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include"vw_exception.h"
 
 using namespace std;
 
@@ -44,26 +47,20 @@ int open_socket(const char* host)
     he = gethostbyname(host);
 
   if (he == nullptr)
-    {
-      cerr << "gethostbyname(" << host << "): " << strerror(errno) << endl;
-      throw exception();
-    }
+	THROW("gethostbyname(" << host << "): " << strerror(errno))
+
   int sd = (int)socket(PF_INET, SOCK_STREAM, 0);
   if (sd == -1)
-    {
-      cerr << "socket: " << strerror(errno) << endl;
-      throw exception();
-    }
+	THROW("socket: " << strerror(errno))
+
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
   far_end.sin_port = htons(port);
   far_end.sin_addr = *(in_addr*)(he->h_addr);
   memset(&far_end.sin_zero, '\0',8);
   if (connect(sd,(sockaddr*)&far_end, sizeof(far_end)) == -1)
-    {
-      cerr << "connect(" << host << ':' << port << "): " << strerror(errno) << endl;
-      throw exception();
-    }
+    THROW("connect(" << host << ':' << port << "): " << strerror(errno))
+
   char id = '\0';
   if (
 #ifdef _WIN32

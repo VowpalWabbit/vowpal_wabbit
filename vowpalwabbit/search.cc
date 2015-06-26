@@ -20,6 +20,7 @@ license as described in the file LICENSE.
 #include "csoaa.h"
 #include "active.h"
 #include "label_dictionary.h"
+#include "vw_exception.h"
 
 using namespace LEARNER;
 using namespace std;
@@ -453,11 +454,10 @@ namespace Search {
 
   void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns) {
     if ((ec.indices.size() == 0) || (ec.indices.last() != ns)) {
-      std::cerr << "internal error (bug): expecting top namespace to be '" << ns << "' but it was ";
-      if (ec.indices.size() == 0) std::cerr << "empty";
-      else std::cerr << (size_t)ec.indices.last();
-      std::cerr << endl;
-      throw exception();
+		if (ec.indices.size() == 0)
+			THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was empty")
+		else
+			THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " << (size_t)ec.indices.last())
     }
     ec.num_features -= ec.atomics[ns].size();
     ec.total_sum_feat_sq -= ec.sum_feat_sq[ns];
@@ -986,8 +986,7 @@ namespace Search {
 
     case NO_ROLLOUT:
     default:
-        std::cerr << "internal error (bug): trying to rollin or rollout with NO_ROLLOUT" << endl;
-        throw exception();
+	THROW("internal error (bug): trying to rollin or rollout with NO_ROLLOUT")
     }
   }
   
@@ -1401,8 +1400,7 @@ namespace Search {
       return a;
     }
 
-    std::cerr << "error: predict called in unknown state" << endl;
-    throw exception();
+    THROW("error: predict called in unknown state")
   }
   
   inline bool cmp_size_t(const size_t a, const size_t b) { return a < b; }
@@ -1841,7 +1839,7 @@ namespace Search {
     priv.task = nullptr;
     sch.task_data = nullptr;
 
-    priv.empty_example = alloc_examples(sizeof(CS::label), 1);
+    priv.empty_example = VW::alloc_examples(sizeof(CS::label), 1);
     CS::cs_label.default_label(&priv.empty_example->l.cs);
     priv.empty_example->in_use = true;
     CS::cs_label.default_label(&priv.empty_cs_label);
@@ -1879,7 +1877,7 @@ namespace Search {
     clear_memo_foreach_action(priv);
     priv.memo_foreach_action.delete_v();
 
-    dealloc_example(CS::cs_label.delete_label, *(priv.empty_example));
+    VW::dealloc_example(CS::cs_label.delete_label, *(priv.empty_example));
     free(priv.empty_example);
 
     priv.ec_seq.clear();
@@ -1888,7 +1886,7 @@ namespace Search {
     if (! priv.examples_dont_change) {
       void (*delete_label)(void*) = priv.is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
       for(example*ec = priv.learn_ec_copy.begin; ec!=priv.learn_ec_copy.end; ++ec)
-        dealloc_example(delete_label, *ec);
+		  VW::dealloc_example(delete_label, *ec);
       priv.learn_ec_copy.delete_v();
     }
     priv.learn_condition_on_names.delete_v();
@@ -1922,7 +1920,7 @@ namespace Search {
     } else if (strlen(required_error_string)>0) {
       std::cerr << required_error_string << endl;
       if (! vm.count("help"))
-        throw exception();
+        THROW(required_error_string)
     }
   }
 
@@ -1955,10 +1953,8 @@ namespace Search {
 
   v_array<CS::label> read_allowed_transitions(action A, const char* filename) {
     FILE *f = fopen(filename, "r");
-    if (f == nullptr) {
-      std::cerr << "error: could not read file " << filename << " (" << strerror(errno) << "); assuming all transitions are valid" << endl;
-      throw exception();
-    }
+	if (f == nullptr)
+		THROW("error: could not read file " << filename << " (" << strerror(errno) << "); assuming all transitions are valid")
 
     bool* bg = (bool*)malloc((A+1)*(A+1) * sizeof(bool));
     int rd,from,to,count=0;
@@ -2115,10 +2111,8 @@ namespace Search {
       priv.passes_per_policy = all.numpasses;
       if (priv.current_policy > 1) priv.current_policy = 1;
     } else if (interpolation_string.compare("policy") == 0) {
-    } else {
-      std::cerr << "error: --search_interpolation must be 'data' or 'policy'" << endl;
-      throw exception();
-    }
+    } else 
+		THROW("error: --search_interpolation must be 'data' or 'policy'")
 
     if (vm.count("search_rollout")) rollout_string = vm["search_rollout"].as<string>();
     if (vm.count("search_rollin" )) rollin_string  = vm["search_rollin" ].as<string>();
@@ -2128,19 +2122,15 @@ namespace Search {
     else if ((rollout_string.compare("mix_per_state") == 0))                                                   priv.rollout_method = MIX_PER_STATE;
     else if ((rollout_string.compare("mix_per_roll") == 0) || (rollout_string.compare("mix") == 0))            priv.rollout_method = MIX_PER_ROLL;
     else if ((rollout_string.compare("none") == 0))          { priv.rollout_method = NO_ROLLOUT; priv.no_caching = true; if (!all.quiet) std::cerr << "no rollout!" << endl; }
-    else {
-      std::cerr << "error: --search_rollout must be 'learn', 'ref', 'mix', 'mix_per_state' or 'none'" << endl;
-      throw exception();
-    }
+    else 
+		THROW("error: --search_rollout must be 'learn', 'ref', 'mix', 'mix_per_state' or 'none'")
 
     if      ((rollin_string.compare("policy") == 0)       || (rollin_string.compare("learn") == 0))          priv.rollin_method = POLICY;
     else if ((rollin_string.compare("oracle") == 0)       || (rollin_string.compare("ref") == 0))            priv.rollin_method = ORACLE;
     else if ((rollin_string.compare("mix_per_state") == 0))                                                  priv.rollin_method = MIX_PER_STATE;
-    else if ((rollin_string.compare("mix_per_roll") == 0) || (rollin_string.compare("mix") == 0))            priv.rollin_method = MIX_PER_ROLL;
-    else {
-      std::cerr << "error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'" << endl;
-      throw exception();
-    }
+	else if ((rollin_string.compare("mix_per_roll") == 0) || (rollin_string.compare("mix") == 0))            priv.rollin_method = MIX_PER_ROLL;
+	else
+		THROW("error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'")
 
     check_option<size_t>(priv.A, all, vm, "search", false, size_equal,
                          "warning: you specified a different number of actions through --search than the one loaded from predictor. using loaded value of: ", "");
@@ -2218,10 +2208,8 @@ namespace Search {
         break;
       }
     if (priv.task == nullptr) {
-      if (! vm.count("help")) {
-        std::cerr << "fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list" << endl;
-        throw exception();
-      }
+      if (! vm.count("help")) 
+		  THROW("fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list")
     }
     priv.metatask = nullptr;
     for (search_metatask** mytask = all_metatasks; *mytask != nullptr; mytask++)
@@ -2389,9 +2377,9 @@ namespace Search {
     if (ec_alloced) {
       if (is_ldf)
         for (size_t i=0; i<ec_cnt; i++)
-          dealloc_example(CS::cs_label.delete_label, ec[i]);
+          VW::dealloc_example(CS::cs_label.delete_label, ec[i]);
       else
-        dealloc_example(nullptr, *ec);
+		  VW::dealloc_example(nullptr, *ec);
       free(ec);
     }
   }
@@ -2430,18 +2418,19 @@ namespace Search {
 	if (temp != nullptr)
 	  ec = temp;
 	else
-	  {
-	    std::cerr << "realloc failed in search.cc " << endl;
-	    throw exception();
-	  }
+	  THROW("realloc failed in search.cc")
       }
     else            ec = calloc_or_die<example>(input_length);
     ec_cnt = input_length;
     ec_alloced = true;
   }
   void predictor::set_input_at(size_t posn, example&ex) {
-    if (!ec_alloced) { std::cerr << "call to set_input_at without previous call to set_input_length" << endl; throw exception(); }
-    if (posn >= ec_cnt) { std::cerr << "call to set_input_at with too large a position" << endl; throw exception(); }
+    if (!ec_alloced)
+		THROW("call to set_input_at without previous call to set_input_length")
+
+	if (posn >= ec_cnt)
+		THROW("call to set_input_at with too large a position: posn (" << posn << ") >= ec_cnt(" << ec_cnt << ")")
+
     VW::copy_example_data(false, ec+posn, &ex, CS::cs_label.label_size, CS::cs_label.copy_label); // TODO: the false is "audit"
   }
 

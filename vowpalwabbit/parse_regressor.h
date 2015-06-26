@@ -12,7 +12,7 @@ namespace po = boost::program_options;
 
 using namespace std;
 
-void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp);
+void parse_regressor_args(vw& all, io_buf& io_temp);
 
 void finalize_regressor(vw& all, std::string reg_name);
 void initialize_regressor(vw& all);

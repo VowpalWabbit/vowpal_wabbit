@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 #include <float.h>
 #include "reductions.h"
 #include "rand48.h"
+#include "vw_exception.h"
 
 struct oaa {
   size_t k;
@@ -98,10 +99,8 @@ LEARNER::base_learner* oaa_setup(vw& all)
   oaa& data = *data_ptr;
   data.k = all.vm["oaa"].as<size_t>();
 
-  if (all.sd->ldict && (data.k != all.sd->ldict->getK())) {
-    cerr << "error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa" << endl;
-    throw exception();
-  }
+  if (all.sd->ldict && (data.k != all.sd->ldict->getK())) 
+	  THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
   
   data.all = &all;
   data.pred = calloc_or_die<polyprediction>(data.k);

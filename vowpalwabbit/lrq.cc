@@ -2,6 +2,7 @@
 #include <float.h>
 #include "reductions.h"
 #include "rand48.h"
+#include "vw_exception.h"
 
 using namespace LEARNER;
 
@@ -237,10 +238,9 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
          ++i)
       {
         if(!all.quiet){
-          if (( i->length() < 3 ) || ! valid_int (i->c_str () + 2)) {
-            cerr << endl << "error, low-rank quadratic features must involve two sets and a rank.\n";
-            throw exception();
-          }
+          if (( i->length() < 3 ) || ! valid_int (i->c_str () + 2)) 
+			THROW("error, low-rank quadratic features must involve two sets and a rank.")
+
           cerr << *i << " ";
         }
         // TODO: colon-syntax

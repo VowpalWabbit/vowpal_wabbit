@@ -145,23 +145,20 @@ class namedlabels {
     ss.end = ss.begin + label_list.length();
     tokenize(',', ss, id2name);
 
-    K = id2name.size();
+    K = (uint32_t)id2name.size();
     name2id.init(4 * K + 1, 0, substring_equal);
     for (size_t k=0; k<K; k++) {
       substring& l = id2name[k];
       size_t hash = uniform_hash((unsigned char*)l.begin, l.end-l.begin, 378401);
       uint32_t id = name2id.get(l, hash);
       if (id != 0) {
-        cerr << "error: label dictionary initialized with multiple occurances of: ";
-        for (char*c=l.begin; c!=l.end; c++) cerr << *c;
-        cerr << endl;
-        throw exception();
+        THROW("error: label dictionary initialized with multiple occurances of: " << l)
       }
       size_t len = l.end - l.begin;
       substring l_copy = { calloc_or_die<char>(len), nullptr };
       memcpy(l_copy.begin, l.begin, len * sizeof(char));
       l_copy.end = l_copy.begin + len;
-      name2id.put(l_copy, hash, k+1);
+      name2id.put(l_copy, hash, (uint32_t)(k+1));
     }
   }
 

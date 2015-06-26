@@ -1,4 +1,5 @@
 #include "interactions.h"
+#include "vw_exception.h"
 
 namespace INTERACTIONS
 {
@@ -60,14 +61,12 @@ v_array<v_string> expand_interactions(const vector<string>& vec, const size_t re
     {
         const size_t len = i->length();
         if (required_length > 0 && len != required_length)
-        {   // got strict requrenment of interaction length and it wasfailed.
-            cerr << endl << err_msg << endl;
-            throw exception();
+        {   // got strict requirement of interaction length and it was failed.
+            THROW(err_msg)
         } else
             if (len < 2)
             { // regardles of required_length value this check is always performed
-                cerr << endl << "error, feature interactions must involve at least two namespaces." << endl;
-                throw exception();
+	           THROW("error, feature interactions must involve at least two namespaces" << endl << err_msg)
             }
 
 

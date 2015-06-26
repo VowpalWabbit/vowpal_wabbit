@@ -279,7 +279,7 @@ void print_features(vw& all, example& ec)
         for (audit_data* a = ns.begin; a != ns.end; ++a)
         {
             audit_interaction(dat, a);
-            audit_feature(dat, a->x, a->weight_index + ec.ft_offset);
+            audit_feature(dat, a->x, (uint32_t)a->weight_index + ec.ft_offset);
             audit_interaction(dat, NULL);
         }
       }
@@ -351,7 +351,7 @@ void predict(gd& g, base_learner&, example& ec)
   if (l1)
     ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);
   else
-    ec.partial_prediction = inline_predict(all, ec);
+    ec.partial_prediction = inline_predict(all, ec);    
   
   ec.partial_prediction *= (float)all.sd->contraction;
   ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
@@ -387,7 +387,7 @@ void multipredict(gd& g, base_learner&, example& ec, size_t count, size_t step, 
       print_audit_features(all, ec);
       ec.ft_offset += (uint32_t)step;
     }
-    ec.ft_offset -= (uint32_t)step*count;
+    ec.ft_offset -= (uint32_t)(step*count);
   }
 }
 
@@ -460,7 +460,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
     nd.pred_per_update += x2 * w[spare];
   }
 }
-
+  
   bool global_print_features = false;
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
   float get_pred_per_update(gd& g, example& ec)
@@ -471,7 +471,7 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
     if (grad_squared == 0) return 1.;
     
     norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
-
+    
     foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, nd);
 
     if(normalized) {

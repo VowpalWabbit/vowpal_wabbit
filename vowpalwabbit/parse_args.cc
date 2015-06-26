@@ -55,6 +55,7 @@ license as described in the file LICENSE.
 #include "parse_example.h"
 #include "best_constant.h"
 #include "interact.h"
+#include "vw_exception.h"
 
 using namespace std;
 //
@@ -78,7 +79,7 @@ unsigned long long hash_file_contents(io_buf *io, int f) {
     for (size_t i=0; i<n; i++) {
       v *= 341789041;
       v += buf[i];
-    }
+}  
   }
   return v;
 }
@@ -130,17 +131,15 @@ void parse_dictionary_argument(vw&all, string str) {
 
   string fname = find_in_path(all.dictionary_path, string(s));
   if (fname == "") { //  ! boost::filesystem::exists(fname) ) {
-    cerr << "error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path" << endl;
-    throw exception();
+	  THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path")
   }
 
   bool is_gzip = ends_with(fname, ".gz");
   io_buf* io = is_gzip ? new comp_io_buf : new io_buf;
   int fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
-  if (fd < 0) {
-    cerr << "error: cannot read dictionary from file '" << fname << "'" << ", opening failed" << endl;
-    throw exception();
-  }
+  if (fd < 0)
+	THROW("error: cannot read dictionary from file '" << fname << "'" << ", opening failed")
+
   unsigned long long fd_hash = hash_file_contents(io, fd);
   io->close_file();
 
@@ -156,12 +155,11 @@ void parse_dictionary_argument(vw&all, string str) {
 
   feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
   
-  example *ec = alloc_examples(all.p->lp.label_size, 1);
+  example *ec = VW::alloc_examples(all.p->lp.label_size, 1);
   fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
-  if (fd < 0) {
-    cerr << "error: cannot re-read dictionary from file '" << fname << "'" << ", opening failed" << endl;
-    throw exception();
-  }
+  if (fd < 0)
+	THROW("error: cannot re-read dictionary from file '" << fname << "'" << ", opening failed")
+
   size_t def = (size_t)' ';
 
   int size = 2048, pos, nread;
@@ -175,10 +173,8 @@ void parse_dictionary_argument(vw&all, string str) {
       if (pos >= size - 1) {
         size *= 2;
         buffer = (char*)realloc(buffer, size);
-        if (buffer == nullptr) {
-          cerr << "error: memory allocation failed in reading dictionary" << endl;
-          throw exception();
-        }
+        if (buffer == nullptr) 
+		  THROW("error: memory allocation failed in reading dictionary")
       }
     } while ( (rc != EOF) && (rc != '\n') && (nread > 0) );
     buffer[pos] = 0;
@@ -217,7 +213,7 @@ void parse_dictionary_argument(vw&all, string str) {
   } while ((rc != EOF) && (nread > 0));
   free(buffer);
   io->close_file();
-  dealloc_example(all.p->lp.delete_label, *ec);
+  VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
   
   cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
@@ -238,23 +234,19 @@ void parse_affix_argument(vw&all, string str) {
     uint16_t prefix = 1;
     if (q[0] == '+') { q++; }
     else if (q[0] == '-') { prefix = 0; q++; }
-    if ((q[0] < '1') || (q[0] > '7')) {
-      cerr << "malformed affix argument (length must be 1..7): " << p << endl;
-      throw exception();
-    }
+    if ((q[0] < '1') || (q[0] > '7')) 
+	  THROW("malformed affix argument (length must be 1..7): " << p)
+
     uint16_t len = (uint16_t)(q[0] - '0');
     uint16_t ns = (uint16_t)' ';  // default namespace
     if (q[1] != 0) {
       if (valid_ns(q[1]))
         ns = (uint16_t)q[1];
-      else {
-        cerr << "malformed affix argument (invalid namespace): " << p << endl;
-        throw exception();
-      }
-      if (q[2] != 0) {
-        cerr << "malformed affix argument (too long): " << p << endl;
-        throw exception();
-      }
+      else 
+		THROW("malformed affix argument (invalid namespace): " << p)
+
+      if (q[2] != 0) 
+		THROW("malformed affix argument (too long): " << p)
     }
 
     uint16_t afx = (len << 1) | (prefix & 0x1);
@@ -365,10 +357,7 @@ void parse_source(vw& all)
     all.stdin_off = true;
   
   if ( (vm.count("total") || vm.count("node") || vm.count("unique_id")) && !(vm.count("total") && vm.count("node") && vm.count("unique_id")) )
-    {
-      cout << "you must specificy unique_id, total, and node if you specify any" << endl;
-      throw exception();
-    }
+    THROW("you must specificy unique_id, total, and node if you specify any")
   
   if (vm.count("daemon") || vm.count("pid_file") || (vm.count("port") && !all.active) ) {
     all.daemon = true;
@@ -388,10 +377,7 @@ void parse_source(vw& all)
     all.data_filename = "";
 
   if ((vm.count("cache") || vm.count("cache_file")) && vm.count("invert_hash"))
-    {
-      cout << "invert_hash is incompatible with a cache file.  Use it in single pass mode only." << endl;
-      throw exception();
-    }
+    THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.")
 
   if(!all.holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
     {
@@ -450,10 +436,7 @@ void parse_feature_tweaks(vw& all)
 
   if(vm.count("ngram")){
     if(vm.count("sort_features"))
-      {
-	cerr << "ngram is incompatible with sort_features.  " << endl;
-	throw exception();
-      }
+      THROW("ngram is incompatible with sort_features.")
 
     all.ngram_strings = vm["ngram"].as< vector<string> >();
     compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.quiet);
@@ -462,10 +445,7 @@ void parse_feature_tweaks(vw& all)
   if(vm.count("skips"))
     {
       if(!vm.count("ngram"))
-	{
-	  cout << "You can not skip unless ngram is > 1" << endl;
-	  throw exception();
-	}
+		THROW("You can not skip unless ngram is > 1")
 
       all.skip_strings = vm["skips"].as<vector<string> >();
       compile_gram(all.skip_strings, all.skips, (char*)"skips", all.quiet);
@@ -481,97 +461,95 @@ void parse_feature_tweaks(vw& all)
     {
       uint32_t new_bits = (uint32_t)vm["bit_precision"].as< size_t>();
       if (all.default_bits == false && new_bits != all.num_bits)
-	{
-	  cout << "Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work." << endl;
-	  throw exception();
-	}
+		THROW("Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work.")
+
       all.default_bits = false;
       all.num_bits = new_bits;
       if (all.num_bits > min(31, sizeof(size_t)*8 - 3))
-	{
-	  cout << "Only " << min(31, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
-	  throw exception();
-	}
+		THROW("Only " << min(31, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up.")
     }
 
   all.permutations = vm.count("permutations");
 
-  // prepare namespace interactions
-  v_array<v_string> expanded_interactions = v_init<v_string>();
-
-  if (vm.count("quadratic"))
+  // dont re-expand interactions if they are already populated by the model
+  if (all.interactions.size() == 0) 
   {
-      const vector<string> vec_arg = vm["quadratic"].as< vector<string> >();
-      if (!all.quiet)
-      {
-          cerr << "creating quadratic features for pairs: ";
-          for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
-              if (!all.quiet) cerr << *i << " ";
-      }
-      expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
-
-      if (!all.quiet) cerr << endl;
+     // prepare namespace interactions
+     v_array<v_string> expanded_interactions = v_init<v_string>();
+     
+     if (vm.count("quadratic"))
+     {
+         const vector<string> vec_arg = vm["quadratic"].as< vector<string> >();
+         if (!all.quiet)
+         {
+             cerr << "creating quadratic features for pairs: ";
+             for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+                 if (!all.quiet) cerr << *i << " ";
+         }
+         expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
+     
+         if (!all.quiet) cerr << endl;
+     }
+     
+     if (vm.count("cubic"))
+     {
+         vector<string> vec_arg = vm["cubic"].as< vector<string> >();
+         if (!all.quiet)
+         {
+             cerr << "creating cubic features for triples: ";
+             for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+                 if (!all.quiet) cerr << *i << " ";
+         }
+     
+         v_array<v_string> exp_cubic = INTERACTIONS::expand_interactions(vec_arg, 3, "error, cubic features must involve three sets.");
+         push_many(expanded_interactions, exp_cubic.begin, exp_cubic.size());
+         exp_cubic.delete_v();
+     
+         if (!all.quiet) cerr << endl;
+     }
+     
+     if (vm.count("interactions"))
+     {
+         vector<string> vec_arg = vm["interactions"].as< vector<string> >();
+         if (!all.quiet)
+         {
+             cerr << "creating features for following interactions: ";
+             for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+                 if (!all.quiet) cerr << *i << " ";
+         }
+     
+         v_array<v_string> exp_inter = INTERACTIONS::expand_interactions(vec_arg, 0, "");
+         push_many(expanded_interactions, exp_inter.begin, exp_inter.size());
+         exp_inter.delete_v();
+     
+         if (!all.quiet) cerr << endl;
+     }
+     
+     if (expanded_interactions.size() > 0)
+     {
+     
+         size_t removed_cnt;
+         size_t sorted_cnt;
+         INTERACTIONS::sort_and_filter_duplicate_interactions(expanded_interactions, !vm.count("leave_duplicate_interactions"), removed_cnt, sorted_cnt);
+     
+         if (removed_cnt > 0)
+             cerr << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.' << endl << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
+         if (sorted_cnt > 0)
+             cerr << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
+     
+         all.interactions = expanded_interactions;
+     
+         // copy interactions of size 2 and 3 to old vectors for backward compatibility
+         for (v_string* i = expanded_interactions.begin; i != expanded_interactions.end; ++i)
+         {
+             const size_t len = i->size();
+             if (len == 2)
+                 all.pairs.push_back(v_string2string(*i));
+             else if (len == 3)
+                 all.triples.push_back(v_string2string(*i));
+         }
+     }
   }
-
-  if (vm.count("cubic"))
-  {
-      vector<string> vec_arg = vm["cubic"].as< vector<string> >();
-      if (!all.quiet)
-      {
-          cerr << "creating cubic features for triples: ";
-          for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
-              if (!all.quiet) cerr << *i << " ";
-      }
-
-      v_array<v_string> exp_cubic = INTERACTIONS::expand_interactions(vec_arg, 3, "error, cubic features must involve three sets.");
-      push_many(expanded_interactions, exp_cubic.begin, exp_cubic.size());
-      exp_cubic.delete_v();
-
-      if (!all.quiet) cerr << endl;
-  }
-
-  if (vm.count("interactions"))
-  {
-      vector<string> vec_arg = vm["interactions"].as< vector<string> >();
-      if (!all.quiet)
-      {
-          cerr << "creating features for following interactions: ";
-          for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
-              if (!all.quiet) cerr << *i << " ";
-      }
-
-      v_array<v_string> exp_inter = INTERACTIONS::expand_interactions(vec_arg, 0, "");
-      push_many(expanded_interactions, exp_inter.begin, exp_inter.size());
-      exp_inter.delete_v();
-
-      if (!all.quiet) cerr << endl;
-  }
-
-  if (expanded_interactions.size() > 0)
-  {
-
-      size_t removed_cnt;
-      size_t sorted_cnt;
-      INTERACTIONS::sort_and_filter_duplicate_interactions(expanded_interactions, !vm.count("leave_duplicate_interactions"), removed_cnt, sorted_cnt);
-
-      if (removed_cnt > 0)
-          cerr << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.' << endl << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
-      if (sorted_cnt > 0)
-          cerr << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
-
-      all.interactions = expanded_interactions;
-
-      // copy interactions of size 2 and 3 to old vectors for backward compatibility
-      for (v_string* i = expanded_interactions.begin; i != expanded_interactions.end; ++i)
-      {
-          const size_t len = i->size();
-          if (len == 2)
-              all.pairs.push_back(v_string2string(*i));
-          else if (len == 3)
-              all.triples.push_back(v_string2string(*i));
-      }
-  }
-
 
   for (size_t i = 0; i < 256; i++)
     all.ignore[i] = false;
@@ -656,10 +634,7 @@ void parse_feature_tweaks(vw& all)
           }
 
           if (!operator_found)
-          {
-              cerr << "argument of --redefine is malformed. Valid format is N:=S, :=S or N:=" << endl;
-              throw exception();
-          }
+			THROW("argument of --redefine is malformed. Valid format is N:=S, :=S or N:=")
 
           if (++operator_pos > 3) // seek operator end
               cerr << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('" << new_namespace << "') will be used as target namespace." << endl;
@@ -686,7 +661,7 @@ void parse_feature_tweaks(vw& all)
 
       }
   }
-    
+
   if (vm.count("dictionary")) {
     if (vm.count("dictionary_path"))
       for (string path : vm["dictionary_path"].as< vector<string> >())
@@ -1002,7 +977,7 @@ vw& parse_args(int argc, char *argv[])
   new_options(all, "Update options")
     ("learning_rate,l", po::value<float>(&(all.eta)), "Set learning rate")
     ("power_t", po::value<float>(&(all.power_t)), "t power value")
-    ("decay_learning_rate",    po::value<float>(&(all.eta_decay_rate)),
+		("decay_learning_rate", po::value<float>(&(all.eta_decay_rate)),
      "Set Decay factor for learning_rate between passes")
     ("initial_t", po::value<double>(&((all.sd->t))), "initial t value")
     ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights.");
@@ -1017,21 +992,23 @@ vw& parse_args(int argc, char *argv[])
 
   new_options(all, "Parallelization options")
     ("span_server", po::value<string>(&(all.span_server)), "Location of server for setting up spanning tree")
-    ("unique_id", po::value<size_t>(&(all.unique_id)),"unique id used for cluster parallel jobs")
-    ("total", po::value<size_t>(&(all.total)),"total number of nodes used in cluster parallel job")
-    ("node", po::value<size_t>(&(all.node)),"node number in cluster parallel job");
+		("unique_id", po::value<size_t>(&(all.unique_id)), "unique id used for cluster parallel jobs")
+		("total", po::value<size_t>(&(all.total)), "total number of nodes used in cluster parallel job")
+		("node", po::value<size_t>(&(all.node)), "node number in cluster parallel job");
   add_options(all);
 
-  po::variables_map& vm = all.vm;
   msrand48(all.random_seed);
   parse_diagnostics(all, argc);
 
   all.sd->weighted_unlabeled_examples = all.sd->t;
   all.initial_t = (float)all.sd->t;
 
-  //Input regressor header
-  io_buf io_temp;
-  parse_regressor_args(all, vm, io_temp);
+	return all;
+}
+
+void parse_modules(vw& all, io_buf& model)
+{
+	save_load_header(all, model, true, false);
   
   int temp_argc = 0;
   char** temp_argv = VW::get_argv_from_string(all.file_options->str(), temp_argc);
@@ -1044,6 +1021,7 @@ vw& parse_args(int argc, char *argv[])
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(all.opts).allow_unregistered().run();
 
+	po::variables_map& vm = all.vm;
   vm = po::variables_map();
 
   po::store(pos, vm);
@@ -1069,8 +1047,11 @@ vw& parse_args(int argc, char *argv[])
       if (all.numpasses > 1)
 	cerr << "decay_learning_rate = " << all.eta_decay_rate << endl;
     }
+}
 
-  load_input_model(all, io_temp);
+void parse_sources(vw& all, io_buf& model)
+{
+  load_input_model(all, model);
 
   parse_source(all);
 
@@ -1083,14 +1064,13 @@ vw& parse_args(int argc, char *argv[])
     i++;
   all.wpp = (1 << i) >> all.reg.stride_shift;
 
-  if (vm.count("help")) {
+  if (all.vm.count("help")) {
     /* upon direct query for help -- spit it out to stdout */
     cout << "\n" << all.opts << "\n";
     exit(0);
   }
-
-  return all;
 }
+
 
 namespace VW {
   void cmd_string_replace_value( std::stringstream*& ss, string flag_to_replace, string new_value )
@@ -1151,6 +1131,10 @@ namespace VW {
     char** argv = get_argv_from_string(s,argc);
 
     vw& all = parse_args(argc, argv);
+	io_buf model;
+	parse_regressor_args(all, model);
+	parse_modules(all, model);
+	parse_sources(all, model);
 
     initialize_parser_datastructures(all);
     

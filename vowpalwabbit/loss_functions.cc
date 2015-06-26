@@ -10,6 +10,7 @@ license as described in the file LICENSE.
 using namespace std;
 
 #include "global_data.h"
+#include "vw_exception.h"
 
 class squaredloss : public loss_function {
 public:
@@ -312,7 +313,6 @@ loss_function* getLossFunction(vw& all, string funcName, float function_paramete
   } else if(funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0) {
     return new quantileloss(function_parameter);
   } else {
-    cout << "Invalid loss function name: \'" << funcName << "\' Bailing!" << endl;
-    throw exception();
+    THROW("Invalid loss function name: \'" << funcName << "\' Bailing!")
   }
 }
