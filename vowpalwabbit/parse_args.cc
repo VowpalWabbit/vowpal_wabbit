@@ -124,7 +124,7 @@ void parse_dictionary_argument(vw&all, string str) {
 
   char ns = ' ';
   const char*s  = str.c_str();
-  if ((str.length() > 3) && (str[1] == ':')) {
+  if ((str.length() > 2) && (str[1] == ':')) {
     ns = str[0];
     s  += 2;
   }
