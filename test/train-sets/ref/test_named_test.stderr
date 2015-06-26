@@ -1,6 +1,6 @@
 only testing
 parsed 3 named labels
-predictions = test_named.pred
+predictions = test_named.predict
 Num weight bits = 18
 learning rate = 10
 initial_t = 1
