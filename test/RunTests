@@ -1210,3 +1210,8 @@ echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} --oaa 3 -q :: --invert_has
 # Test 95: named labels at training time (csoaa) with experience replay
 {VW} --named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa  -k -c --passes 10 --holdout_off -f models/test_named_csoaa.model --replay_c 100
     train-sets/ref/test_named_csoaa_train-replay.stderr
+
+# Test 96: backwards compatibility
+echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} -i simple_model --audit 
+   test-sets/ref/backwards.stderr
+   test-sets/ref/backwards.stdout
