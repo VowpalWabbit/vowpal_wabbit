@@ -74,7 +74,7 @@ LEARNER::base_learner* scorer_setup(vw& all)
       multipredict_f = multipredict<glf1>;
     }
   else
-    THROW("Unknown link function: " << link)
+    THROW("Unknown link function: " << link);
 
   l->set_multipredict(multipredict_f);
   l->set_update(update);

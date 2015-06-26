@@ -36,24 +36,19 @@ void initialize_regressor(vw& all)
   all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
   all.reg.weight_vector = calloc_or_die<weight>(length << all.reg.stride_shift);
   if (all.reg.weight_vector == nullptr)
-    {
-      THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>")
-    } else
-  if (all.initial_weight != 0.)
-    {
-     for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
-       all.reg.weight_vector[j] = all.initial_weight;      
-    } else
-  if (all.random_positive_weights)
-    {
-      for (size_t j = 0; j < length; j++)
-	all.reg.weight_vector[j << all.reg.stride_shift] = (float)(0.1 * frand48());
-    } else      
-  if (all.random_weights)
-    {
-      for (size_t j = 0; j < length; j++)
-	all.reg.weight_vector[j << all.reg.stride_shift] = (float)(frand48() - 0.5);
-    }
+    { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
+  else
+    if (all.initial_weight != 0.)
+      for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
+	all.reg.weight_vector[j] = all.initial_weight;      
+    else
+      if (all.random_positive_weights)
+	for (size_t j = 0; j < length; j++)
+	  all.reg.weight_vector[j << all.reg.stride_shift] = (float)(0.1 * frand48());
+      else      
+	if (all.random_weights)
+	  for (size_t j = 0; j < length; j++)
+	    all.reg.weight_vector[j << all.reg.stride_shift] = (float)(frand48() - 0.5);
 }
 
 const size_t buf_size = 512;
@@ -75,8 +70,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 			  "", read, 
 			  buff, text_len, text);
       all.model_file_ver = buff2; //stord in all to check save_resume fix in gd
-	  if (all.model_file_ver < LAST_COMPATIBLE_VERSION)
-		  THROW("Model has possibly incompatible version! " << all.model_file_ver.to_string())
+      if (all.model_file_ver < LAST_COMPATIBLE_VERSION)
+	THROW("Model has possibly incompatible version! " << all.model_file_ver.to_string());
       
       char model = 'm';
 		bin_text_read_write_fixed(model_file, &model, 1,
@@ -118,7 +113,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 		}
 
 		if (all.default_bits != true && all.num_bits != local_num_bits)
-			THROW("-b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model")
+		  THROW("-b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model");
 
       all.default_bits = false;
       all.num_bits = local_num_bits;

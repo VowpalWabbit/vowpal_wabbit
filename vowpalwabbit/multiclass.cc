@@ -79,8 +79,7 @@ namespace MULTICLASS {
       cerr << "words.size() = " << words.size() << endl;
     }
     if (ld->label == 0)
-		  THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}" <<
-			  (sd->ldict ? "\nthis likely happened because you specified an invalid label with named labels" : ""));
+      THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}" << (sd->ldict ? "\nthis likely happened because you specified an invalid label with named labels" : ""));
   }
 
   label_parser mc_label = {default_label, parse_label, 

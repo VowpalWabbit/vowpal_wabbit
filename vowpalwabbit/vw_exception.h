@@ -19,14 +19,13 @@ namespace VW {
 	class vw_exception : public std::exception
 	{
 	private:
-		std::string message;
-
 		// source file exception was thrown
 		const char* file;
 
+		std::string message;
+
 		// line number exception was thrown
 		int lineNumber;
-
 	public:
 		vw_exception(const char* file, int lineNumber, std::string message);
 

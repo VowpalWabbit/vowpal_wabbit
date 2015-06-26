@@ -61,15 +61,13 @@ v_array<v_string> expand_interactions(const vector<string>& vec, const size_t re
     {
         const size_t len = i->length();
         if (required_length > 0 && len != required_length)
-        {   // got strict requirement of interaction length and it was failed.
-            THROW(err_msg)
-        } else
-            if (len < 2)
-            { // regardles of required_length value this check is always performed
-	           THROW("error, feature interactions must involve at least two namespaces" << endl << err_msg)
-            }
-
-
+	  // got strict requirement of interaction length and it was failed.
+	  { THROW(err_msg); }
+	else
+	  if (len < 2)
+	    // regardles of required_length value this check is always performed
+	    THROW("error, feature interactions must involve at least two namespaces" << err_msg);
+	      
         v_string ns = string2v_string(*i);
         v_string temp = v_init<unsigned char>();
         expand_namespacse_with_recursion(ns, res, temp, 0);

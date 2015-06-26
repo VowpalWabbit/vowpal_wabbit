@@ -40,7 +40,7 @@ size_t really_read(int sock, void* in, size_t count)
       else
 	if (r < 0)
 	  {
-	    THROW("read(" << sock << "," << count << "-" << done << "): " << strerror(errno))
+	    THROW("read(" << sock << "," << count << "-" << done << "): " << strerror(errno));
 	  }
 	else
 	  {
@@ -68,9 +68,7 @@ void send_prediction(int sock, global_prediction p)
 	  write(sock, &p, sizeof(p))
 #endif
 	  < (int)sizeof(p))
-    {
-      THROW("send_prediction write(" << sock << "): " << strerror(errno))
-    }
+    THROW("send_prediction write(" << sock << "): " << strerror(errno));
 }
 
 void binary_print_result(int f, float res, float weight, v_array<char>)

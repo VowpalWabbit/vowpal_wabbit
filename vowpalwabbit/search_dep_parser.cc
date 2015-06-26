@@ -153,7 +153,7 @@ namespace DepParserTask {
         stack.pop();
         return idx;
     }
-    THROW("transition_hybrid failed")
+    THROW("transition_hybrid failed");
   }
   
   void extract_features(Search::search& srn, uint32_t idx,  vector<example*> &ec) {
@@ -325,7 +325,7 @@ namespace DepParserTask {
         tag  = (costs.size() <= 1) ? data->root_label : costs[1].class_index;
       }
 	  if (tag > data->num_label)
-		  THROW("invalid label " << tag << " which is > num actions=" << data->num_label)
+	    THROW("invalid label " << tag << " which is > num actions=" << data->num_label);
 
       gold_heads.push_back(head);
       gold_tags.push_back(tag);

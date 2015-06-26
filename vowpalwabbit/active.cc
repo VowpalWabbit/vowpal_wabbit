@@ -143,9 +143,7 @@ base_learner* active_setup(vw& all)
     data.active_c0 = all.vm["mellowness"].as<float>();
   
   if (count(all.args.begin(), all.args.end(),"--lda") != 0)
-    {//can't have lda base learner
-		THROW("error: you can't combine lda and active learning")
-    }
+    THROW("error: you can't combine lda and active learning");
 
   base_learner* base = setup_base(all);
   

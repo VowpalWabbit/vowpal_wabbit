@@ -273,7 +273,7 @@ struct cb {
         gen_cs_example_dr<is_learn>(c,ec,ld,c.cb_cs_ld);
         break;
       default:
-        THROW("Unknown cb_type specified for contextual bandit learning: " << c.cb_type)
+        THROW("Unknown cb_type specified for contextual bandit learning: " << c.cb_type);
     }
 
     if (c.cb_type != CB_TYPE_DM)
@@ -291,9 +291,9 @@ struct cb {
       }
   }
 
-  void predict_eval(cb&, base_learner&, example&) {
-    THROW("can not use a test label for evaluation")
-  }
+void predict_eval(cb&, base_learner&, example&) {
+  THROW("can not use a test label for evaluation");
+}
 
   void learn_eval(cb& c, base_learner&, example& ec) {
     CB_EVAL::label ld = ec.l.cb_eval;
@@ -399,7 +399,7 @@ float get_unbiased_cost(CB::cb_class* known_cost, COST_SENSITIVE::label& scores,
       else if (type_string.compare("dm") == 0)
 	{
 	  if (eval)
-	    THROW( "direct method can not be used for evaluation --- it is biased.")
+	    THROW( "direct method can not be used for evaluation --- it is biased.");
 
 	  c.cb_type = CB_TYPE_DM;
 	  problem_multiplier = 1;

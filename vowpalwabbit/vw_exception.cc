@@ -3,12 +3,12 @@
 namespace VW {
 
 	vw_exception::vw_exception(const char* pfile, int plineNumber, std::string pmessage)
-		: file(pfile), lineNumber(plineNumber), message(pmessage)
+	  : file(pfile), message(pmessage), lineNumber(plineNumber)
 	{
 	}
 
 	vw_exception::vw_exception(const vw_exception& ex)
-		: message(ex.message), file(ex.file), lineNumber(ex.lineNumber)
+	  : file(ex.file), message(ex.message), lineNumber(ex.lineNumber)
 	{
 	}
 
