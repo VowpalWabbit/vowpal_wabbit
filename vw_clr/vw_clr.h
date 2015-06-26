@@ -259,6 +259,7 @@ namespace VW
 		void Driver();
 	};
 
+	[Serializable]
 	public ref class VowpalWabbitException : Exception
 	{
 	private:
