@@ -64,23 +64,7 @@ namespace cs_unittest
                 @"train-sets\0002.dat");
         }
 
-        [TestMethod]
-        [Description("using normalized adaptive updates and a low --power_t")]
-        [DeploymentItem(@"train-sets\0002.dat", "train-sets")]
-        [DeploymentItem(@"train-sets\ref\0002c.stderr", @"train-sets\ref")]
-        [DeploymentItem(@"pred-sets\ref\0002c.predict", @"pred-sets\ref")]
-        public void Test7and8()
-        {
-            VWTestHelper.Learn<Data, DataListener>(
-                "-k --power_t 0.45 -f models/0002c.model",
-                @"train-sets\0002.dat",
-                @"train-sets\ref\0002c.stderr");
 
-            VWTestHelper.Predict<Data, DataListener>(
-                "-k -t -i models/0002c.model",
-                @"train-sets\0002.dat",
-                @"pred-sets\ref\0002c.predict");
-        }
 
         [TestMethod]
         [Ignore]

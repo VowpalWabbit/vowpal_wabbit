@@ -275,7 +275,7 @@ namespace VW.Serializer
                 Expression.Block(variables.Union(namespaceVariables), body),
                 valueParameter,
                 visitorParameter);
-
+            
             var typeBuilder = moduleBuilder.DefineType("VowpalWabbitSerializer" + Guid.NewGuid().ToString().Replace('-', '_'));
 
             // Create our method builder for this type builder

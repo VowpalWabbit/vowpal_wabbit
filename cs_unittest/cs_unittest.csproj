@@ -60,6 +60,7 @@
     <Compile Include="BaseData.cs" />
     <Compile Include="RunTests.cs" />
     <Compile Include="TestExampleCache.cs" />
+    <Compile Include="Tests7and8.cs" />
     <Compile Include="TrainSetCs_testLdf.cs" />
     <Compile Include="VowpalWabbitListenerToEvents.cs" />
     <Compile Include="Rcv1Test.cs" />
