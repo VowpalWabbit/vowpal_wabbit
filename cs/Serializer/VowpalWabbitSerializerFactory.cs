@@ -107,7 +107,7 @@ namespace VW.Serializer
                     Expression.Equal(valueParameter, Expression.Constant(null)), 
                     Expression.Throw(Expression.New(ArgumentNullExceptionConstructorInfo, Expression.Constant("value")))));
 
-            // CODE if (value == null) throw new ArgumentNullException("value");
+            // CODE if (value == null) throw new ArgumentNullException("visitor");
             body.Add(Expression.IfThen(
                     Expression.Equal(visitorParameter, Expression.Constant(null)),
                     Expression.Throw(Expression.New(ArgumentNullExceptionConstructorInfo, Expression.Constant("visitor")))));
@@ -267,7 +267,7 @@ namespace VW.Serializer
                     label,
                     Expression.NewArrayInit(
                         typeof(IVisitableNamespace),
-                        namespaceVariables.ToArray())));
+                        namespaceVariables.ToArray<Expression>())));
 
 
             // CODE (example, visitor) => { ... }
