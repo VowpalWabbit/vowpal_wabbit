@@ -22,8 +22,9 @@ using namespace std;
 /* Define the last version where files are backward compatible. */
 #define LAST_COMPATIBLE_VERSION "6.1.3"
 #define VERSION_FILE_WITH_CUBIC "6.1.3"
-#define VERSION_FILE_WITH_RANK_IN_HEADER "7.8.0"
-#define VERSION_FILE_WITH_INTERACTIONS "7.10.2"
+#define VERSION_FILE_WITH_RANK_IN_HEADER "7.8.0" // varsion since which rank was moved to vw::file_options
+#define VERSION_FILE_WITH_INTERACTIONS "7.10.2" // first version that saves interacions among pairs and triples
+#define VERSION_FILE_WITH_INTERACTIONS_IN_FO "7.10.3" // since this ver -q, --cubic and --interactions are stored in vw::file_options
 
 void initialize_regressor(vw& all)
 {
@@ -118,111 +119,111 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       all.default_bits = false;
       all.num_bits = local_num_bits;
       
-      uint32_t pair_len = (uint32_t)all.pairs.size();
-      text_len = sprintf(buff, "%d pairs: ", (int)pair_len);
-		bin_text_read_write_fixed(model_file, (char *)&pair_len, sizeof(pair_len),
-				"", read, 
-				buff, text_len, text);
+      if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
+      {  // -q, --cubic and --interactions are saved in vw::file_options
+          uint32_t pair_len = (uint32_t)all.pairs.size();
+          text_len = sprintf(buff, "%d pairs: ", (int)pair_len);
+          bin_text_read_write_fixed(model_file, (char *)&pair_len, sizeof(pair_len),
+                                    "", read,
+                                    buff, text_len, text);
 
-      for (size_t i = 0; i < pair_len; i++)
-	{
-		char pair[3] = { 0, 0, 0 };
-      if (!read)
-        {
-				memcpy(pair, all.pairs[i].c_str(), 2);
-          text_len = sprintf(buff, "%s ", all.pairs[i].c_str());
-        }
-			bin_text_read_write_fixed(model_file, pair, 2,
-				    "", read,
-				    buff, text_len, text);
-	  if (read)
-	    {
-	      string temp(pair);
-	      if (count(all.pairs.begin(), all.pairs.end(), temp) == 0)
-		all.pairs.push_back(temp);
-
-			all.args.push_back("--interactions");
-			all.args.push_back(temp);
-		}
-	}
-		bin_text_read_write_fixed(model_file, buff, 0,
-				"", read,
-			"\n", 1, text);
-      
-      uint32_t triple_len = (uint32_t)all.triples.size();
-      text_len = sprintf(buff, "%d triples: ", (int)triple_len);
-		bin_text_read_write_fixed(model_file, (char *)&triple_len, sizeof(triple_len),
-				"", read, 
-			buff, text_len, text);
-
-      for (size_t i = 0; i < triple_len; i++)
-	{
-		char triple[4] = { 0, 0, 0, 0 };
-	  if (!read)
-	    {
-	      text_len = sprintf(buff, "%s ", all.triples[i].c_str());
-	      memcpy(triple, all.triples[i].c_str(), 3);
-	    }
-			bin_text_read_write_fixed(model_file, triple, 3,
-				    "", read,
-				buff, text_len, text);
-	  if (read)
-	    {
-				string temp(triple);
-	      if (count(all.triples.begin(), all.triples.end(), temp) == 0)
-		all.triples.push_back(temp);
-
-		  all.args.push_back("--interactions");
-		  all.args.push_back(temp);
-	    }
-	}
-		bin_text_read_write_fixed(model_file, buff, 0,
-				"", read, 
-			"\n", 1, text);
-
-      if (all.model_file_ver >= VERSION_FILE_WITH_INTERACTIONS)
-      {
-          uint32_t len = (uint32_t)all.interactions.size();
-          text_len = sprintf(buff, "%d interactions: ", (int)len);
-			bin_text_read_write_fixed(model_file, (char *)&len, sizeof(len),
-                    "", read,
-				buff, text_len, text);
-
-          for (size_t i = 0; i < len; i++)
-        {
-          uint32_t inter_len = 0;
-          if (!read)
-            {
-					inter_len = (uint32_t)all.interactions[i].size();
-              text_len = sprintf(buff, "len: %d ", inter_len);
-            }
-          bin_text_read_write_fixed(model_file, (char *)&inter_len, sizeof(inter_len),
-                        "", read,
-					buff, text_len, text);
-          if (read)
+          for (size_t i = 0; i < pair_len; i++)
           {
-              v_string s = v_init<unsigned char>();
-              s.resize(inter_len);
-              s.end += inter_len;
-              all.interactions.push_back(s);
-				}
-				else
-              text_len = sprintf(buff, "interaction: %.*s ", inter_len, all.interactions[i].begin);
+              char pair[3] = { 0, 0, 0 };
+              if (!read)
+              {
+                  memcpy(pair, all.pairs[i].c_str(), 2);
+                  text_len = sprintf(buff, "%s ", all.pairs[i].c_str());
+              }
 
-          bin_text_read_write_fixed(model_file, (char*)all.interactions[i].begin, inter_len,
-                        "", read,
-					buff, text_len, text);
+              bin_text_read_write_fixed(model_file, pair, 2,
+                                        "", read,
+                                        buff, text_len, text);
+              if (read)
+              {
+                  string temp(pair);
+                  if (count(all.pairs.begin(), all.pairs.end(), temp) == 0)
+                      all.pairs.push_back(temp);
+              }
+          }
 
-				if (read)
-				{
-					all.args.push_back("--interactions");
-					string str((char*)all.interactions[i].begin, inter_len);
-					all.args.push_back(str);
-				}
-        }
-			bin_text_read_write_fixed(model_file, buff, 0,
-                    "", read,
-				"\n", 1, text);
+          bin_text_read_write_fixed(model_file, buff, 0,
+                                    "", read,
+                                    "\n", 1, text);
+
+          uint32_t triple_len = (uint32_t)all.triples.size();
+          text_len = sprintf(buff, "%d triples: ", (int)triple_len);
+          bin_text_read_write_fixed(model_file, (char *)&triple_len, sizeof(triple_len),
+                                    "", read,
+                                    buff, text_len, text);
+
+          for (size_t i = 0; i < triple_len; i++)
+          {
+              char triple[4] = { 0, 0, 0, 0 };
+              if (!read)
+              {
+                  text_len = sprintf(buff, "%s ", all.triples[i].c_str());
+                  memcpy(triple, all.triples[i].c_str(), 3);
+              }
+              bin_text_read_write_fixed(model_file, triple, 3,
+                                        "", read,
+                                        buff, text_len, text);
+              if (read)
+              {
+                  string temp(triple);
+                  if (count(all.triples.begin(), all.triples.end(), temp) == 0)
+                      all.triples.push_back(temp);
+              }
+          }
+          bin_text_read_write_fixed(model_file, buff, 0,
+                                    "", read,
+                                    "\n", 1, text);
+
+          if (all.model_file_ver >= VERSION_FILE_WITH_INTERACTIONS) // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO (previous if)
+          { // the only version that saves interacions among pairs and triples
+              uint32_t len = (uint32_t)all.interactions.size();
+              text_len = sprintf(buff, "%d interactions: ", (int)len);
+              bin_text_read_write_fixed(model_file, (char *)&len, sizeof(len),
+                                        "", read,
+                                        buff, text_len, text);
+
+              for (size_t i = 0; i < len; i++)
+              {
+                  uint32_t inter_len = 0;
+                  if (!read)
+                  {
+                      inter_len = (uint32_t)all.interactions[i].size();
+                      text_len = sprintf(buff, "len: %d ", inter_len);
+                  }
+                  bin_text_read_write_fixed(model_file, (char *)&inter_len, sizeof(inter_len),
+                                            "", read,
+                                            buff, text_len, text);
+                  if (read)
+                  {
+                      v_string s = v_init<unsigned char>();
+                      s.resize(inter_len);
+                      s.end += inter_len;
+                      all.interactions.push_back(s);
+                  }
+                  else
+                      text_len = sprintf(buff, "interaction: %.*s ", inter_len, all.interactions[i].begin);
+
+                  bin_text_read_write_fixed(model_file, (char*)all.interactions[i].begin, inter_len,
+                                            "", read,
+                                            buff, text_len, text);
+
+              }
+
+              bin_text_read_write_fixed(model_file, buff, 0,
+                                        "", read,
+                                        "\n", 1, text);
+          } else { // < VERSION_FILE_WITH_INTERACTIONS
+              //pairs and triples may be restored but not reflected in interactions
+              for (size_t i = 0; i < all.pairs.size(); i++)
+                  all.interactions.push_back(string2v_string(all.pairs[i]));
+              for (size_t i = 0; i < all.triples.size(); i++)
+                  all.interactions.push_back(string2v_string(all.triples[i]));
+          }
       }
 
       if (all.model_file_ver <= VERSION_FILE_WITH_RANK_IN_HEADER)
