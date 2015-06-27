@@ -52,20 +52,11 @@ namespace VW.Serializer
             var serializerFunc = CreateSerializer<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample>();
             if (serializerFunc == null)
             {
-                Log2();
                 // if no features are found, no serializer is generated
                 serializerFunc = (_,__) => null;
             }
-            
-            return new VowpalWabbitSerializer<TExample>(ex =>
-            {
-                Log2(message: "before serializerfunc: " + serializerFunc);
 
-                var r = serializerFunc(ex, visitor);
-
-                Log2(message: "after serializerfunc");
-                return r;
-            }, settings);
+            return new VowpalWabbitSerializer<TExample>(ex => serializerFunc(ex, visitor), settings);
         }
 
         public static Func<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult>()
@@ -93,18 +84,13 @@ namespace VW.Serializer
             return newSerializer;
         }
 
-        public static void Log2([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0, string message = "")
-        {
-            File.AppendAllText(@"c:\vowpal_wabbit\test.log", filePath + ":" + lineNumber + ": " + message + "\n");
+        //public static Expression Log([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0)
+        //{
+        //    var file = Expression.Constant(@"c:\vowpal_wabbit\test.log");
+        //    var logMethod = (MethodInfo)ReflectionHelper.GetInfo((string a) => File.AppendAllText(a,a));
 
-        }
-        public static Expression Log([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0)
-        {
-            var file = Expression.Constant(@"c:\vowpal_wabbit\test.log");
-            var logMethod = (MethodInfo)ReflectionHelper.GetInfo((string a) => File.AppendAllText(a,a));
-
-            return Expression.Call(logMethod, file, Expression.Constant(filePath + ":" + lineNumber + "\n"));
-        }
+        //    return Expression.Call(logMethod, file, Expression.Constant(filePath + ":" + lineNumber + "\n"));
+        //}
 
         private static Func<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult>(ModuleBuilder moduleBuilder)
             where TVisitor : IVowpalWabbitVisitor<TExampleResult>
@@ -126,21 +112,17 @@ namespace VW.Serializer
 
             var body = new List<Expression>();
 
-            body.Add(Log());
+            //// CODE if (value == null) throw new ArgumentNullException("value");
+            ////body.Add(Log());
+            //body.Add(Expression.IfThen(
+            //        Expression.Equal(valueParameter, Expression.Constant(null)), 
+            //        Expression.Throw(Expression.New(ArgumentNullExceptionConstructorInfo, Expression.Constant("value")))));
 
-            // CODE if (value == null) throw new ArgumentNullException("value");
-            body.Add(Expression.IfThen(
-                    Expression.Equal(valueParameter, Expression.Constant(null)), 
-                    Expression.Throw(Expression.New(ArgumentNullExceptionConstructorInfo, Expression.Constant("value")))));
-
-            body.Add(Log());
-
-            // CODE if (value == null) throw new ArgumentNullException("visitor");
-            body.Add(Expression.IfThen(
-                    Expression.Equal(visitorParameter, Expression.Constant(null)),
-                    Expression.Throw(Expression.New(ArgumentNullExceptionConstructorInfo, Expression.Constant("visitor")))));
-
-            body.Add(Log());
+            //// CODE if (value == null) throw new ArgumentNullException("visitor");
+            //body.Add(Log());
+            //body.Add(Expression.IfThen(
+            //        Expression.Equal(visitorParameter, Expression.Constant(null)),
+            //        Expression.Throw(Expression.New(ArgumentNullExceptionConstructorInfo, Expression.Constant("visitor")))));
 
 
             var variables = new List<ParameterExpression>();
@@ -186,11 +168,11 @@ namespace VW.Serializer
                     namespaceVariables.Add(namespaceVariable);
 
                     // CODE namespace = new Namespace<float> { ... };
-                    body.Add(Log());
+                    //body.Add(Log());
                     body.Add(Expression.Assign(namespaceVariable, namespaceDense));
 
                     // CODE namespace.Visit = () => visitor.Visit(namespace)
-                    body.Add(Log());
+                    //body.Add(Log());
                     body.Add(Expression.Assign(
                             Expression.Property(namespaceVariable, namespaceType.GetProperty("Visit")),
                             Expression.Lambda<Action>(
@@ -212,7 +194,7 @@ namespace VW.Serializer
                         featureVariables.Add(featureVariable);
 
                         // CODE feature = new Feature<float> { ... };
-                        body.Add(Log());
+                        //body.Add(Log());
                         body.Add(Expression.Assign(featureVariable, feature.NewFeatureExpression));
                     }
 
@@ -229,11 +211,11 @@ namespace VW.Serializer
                     namespaceVariables.Add(namespaceVariable);
 
                     // CODE namespace = new NamespaceSparse { ... }
-                    body.Add(Log());
+                    //body.Add(Log());
                     body.Add(Expression.Assign(namespaceVariable, namespaceSparse));
 
                     // loop unrolling to have dispatch onto the correct Visit<T>
-                    for (int i = 0; i < features.Count; i++)
+                    for (var i = 0; i < features.Count; i++)
                     {
                         var feature = features[i];
                         var featureVariable = featureVariables[i];
@@ -254,7 +236,7 @@ namespace VW.Serializer
                         }
 
                         // CODE feature.Visit = visitor.Visit;
-                        body.Add(Log());
+                        //body.Add(Log());
                         body.Add(
                             Expression.Assign(
                                 Expression.Property(featureVariable, featureVariable.Type.GetProperty("Visit")),
@@ -262,7 +244,7 @@ namespace VW.Serializer
                     }
 
                     // CODE namespace.Visit = () => { visitor.Visit(namespace); });
-                    body.Add(Log());
+                    //body.Add(Log());
                     body.Add(
                         Expression.Assign(
                             Expression.Property(
@@ -297,7 +279,7 @@ namespace VW.Serializer
             }
 
             // CODE return visitor.Visit(label, new[] { ns1, ns2, ... })
-            body.Add(Log());
+            //body.Add(Log());
             body.Add(
                 Expression.Call(
                     visitorParameter,
