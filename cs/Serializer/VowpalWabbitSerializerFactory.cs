@@ -75,7 +75,6 @@ namespace VW.Serializer
             
             var newSerializer = CreateSerializer<TExample, TVisitor, TExampleResult>(dynMod);
 
-            Console.WriteLine("Caching serializer: " + cacheKey);
             SerializerCache[cacheKey] = newSerializer;
 
             return newSerializer;

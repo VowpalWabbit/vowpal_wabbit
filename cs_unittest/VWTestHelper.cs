@@ -54,8 +54,14 @@ namespace cs_unittest
             using (var vw = new VowpalWabbit<T>(args))
             {
                 var listener = new TListener();
-                listener.Created = x => {
-                    using (var ex = vw.ReadExample(x))
+                listener.Created = data => 
+                {
+                    if (data == null)
+                    {
+                        Assert.Fail("got empty example");
+                    }
+
+                    using (var ex = vw.ReadExample(data))
                     {
                         ex.Learn();
                     }
