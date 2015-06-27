@@ -52,11 +52,18 @@ namespace VW.Serializer
             var serializerFunc = CreateSerializer<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample>();
             if (serializerFunc == null)
             {
+                Log2();
                 // if no features are found, no serializer is generated
                 serializerFunc = (_,__) => null;
             }
             
-            return new VowpalWabbitSerializer<TExample>(ex => serializerFunc(ex, visitor), settings);
+            return new VowpalWabbitSerializer<TExample>(ex =>
+            {
+                Log2(message: "before serializerfunc: " + serializerFunc);
+                var r = serializerFunc(ex, visitor);
+                Log2(message: "after serializerfunc");
+                return r;
+            }, settings);
         }
 
         public static Func<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult>()
@@ -84,6 +91,11 @@ namespace VW.Serializer
             return newSerializer;
         }
 
+        public static void Log2([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0, string message = "")
+        {
+            File.AppendAllText(@"c:\vowpal_wabbit\test.log", filePath + ":" + lineNumber + ": " + message + "\n");
+
+        }
         public static Expression Log([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0)
         {
             var file = Expression.Constant(@"c:\vowpal_wabbit\test.log");
