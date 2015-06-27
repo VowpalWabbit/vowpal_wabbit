@@ -34,10 +34,14 @@ float collision_cleanup(feature* feature_map, size_t& len) {
   
 audit_data copy_audit_data(audit_data &src) {
   audit_data dst;
-  dst.space = calloc_or_die<char>(strlen(src.space)+1);
-  strcpy(dst.space, src.space);
-  dst.feature = calloc_or_die<char>(strlen(src.feature)+1);
-  strcpy(dst.feature, src.feature);
+  if (src.space != NULL) {
+    dst.space = calloc_or_die<char>(strlen(src.space)+1);
+    strcpy(dst.space, src.space);
+  }
+  if (src.feature != NULL) {
+    dst.feature = calloc_or_die<char>(strlen(src.feature)+1);
+    strcpy(dst.feature, src.feature);
+  }
   dst.weight_index = src.weight_index;
   dst.x = src.x;
   dst.alloced = src.alloced;
