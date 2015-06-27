@@ -479,7 +479,18 @@ void parse_feature_tweaks(vw& all)
        (vm.count("quadratic") || vm.count("cubic") || vm.count("interactions")) ) )
          ||
        interactions_settings_doubled /*settings were restored from model file to file_options and overriden by params from command line*/)
+  {
       cerr << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line.\n";
+
+      // in case arrays were already filled in with values from old model file - reset them
+      if (!all.pairs.empty()) all.pairs.clear();
+      if (!all.triples.empty()) all.triples.clear();
+      if (all.interactions.size() > 0)
+      {
+          for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i) i->delete_v();
+          all.interactions.delete_v();
+      }
+  }
 
   if (vm.count("quadratic"))
   {
@@ -551,9 +562,9 @@ void parse_feature_tweaks(vw& all)
       if (sorted_cnt > 0)
           cerr << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
 
+
       if (all.interactions.size() > 0)
-      {   // all.interactions may be already initialized by old model file. It will be overwritten in case user specified new -q, --cubic, --interactios args
-          // destroy all interactions and array of them
+      { // should be empty, but just in case...
           for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i) i->delete_v();
           all.interactions.delete_v();
       }
