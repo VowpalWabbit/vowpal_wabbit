@@ -27,11 +27,13 @@ namespace VW.Serializer
     public static class VowpalWabbitSerializerFactory
     {
         /// <summary>
-        /// AppDomain, example and example result type based serializer cache.
+        /// Example and example result type based serializer cache.
         /// </summary>
-        private static readonly Dictionary<Tuple<int, Type, Type>, object> SerializerCache = new Dictionary<Tuple<int, Type, Type>, object>();
+        private static readonly Dictionary<Tuple<Type, Type>, object> SerializerCache = new Dictionary<Tuple<Type, Type>, object>();
 
         private static readonly string SerializeMethodName = "Serialize";
+
+        private static readonly ConstructorInfo ArgumentNullExceptionConstructorInfo = (ConstructorInfo)ReflectionHelper.GetInfo((ArgumentNullException t) => new ArgumentNullException(""));
 
         private static MethodInfo IVowpalWabbitVisitorVisitWithLabelMethod<TExampleResult>()
         {
@@ -58,7 +60,7 @@ namespace VW.Serializer
         public static Func<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult>()
             where TVisitor : IVowpalWabbitVisitor<TExampleResult>
         {
-            var cacheKey = Tuple.Create(AppDomain.CurrentDomain.Id, typeof(TExample), typeof(TVisitor));
+            var cacheKey = Tuple.Create(typeof(TExample), typeof(TVisitor));
             object serializer;
 
             if (SerializerCache.TryGetValue(cacheKey, out serializer))
@@ -99,6 +101,17 @@ namespace VW.Serializer
             var featuresByNamespace = allFeatures.GroupBy(f => new { f.Namespace, f.FeatureGroup, f.IsDense }, f => f);
 
             var body = new List<Expression>();
+
+            // CODE if (value == null) throw new ArgumentNullException("value");
+            body.Add(Expression.IfThen(
+                    Expression.Equal(valueParameter, Expression.Constant(null)), 
+                    Expression.Throw(Expression.New(ArgumentNullExceptionConstructorInfo, Expression.Constant("value")))));
+
+            // CODE if (value == null) throw new ArgumentNullException("value");
+            body.Add(Expression.IfThen(
+                    Expression.Equal(visitorParameter, Expression.Constant(null)),
+                    Expression.Throw(Expression.New(ArgumentNullExceptionConstructorInfo, Expression.Constant("visitor")))));
+
             var variables = new List<ParameterExpression>();
             var namespaceVariables = new List<ParameterExpression>();
 
@@ -106,7 +119,6 @@ namespace VW.Serializer
             {
                 var features = ns.OrderBy(f => f.Order).ToList();
 
-                var baseNamespaceType = typeof(Namespace);
                 var baseNamespaceInits = new List<MemberAssignment> 
                 {
                     Expression.Bind(
