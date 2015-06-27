@@ -281,8 +281,7 @@ namespace VW
 	};
 }
 
-#define TRYCATCHRETHROW(block) \
-try { block; } \
+#define CATCHRETHROW \
 catch (VW::vw_exception const& ex) \
 { throw gcnew VW::VowpalWabbitException(ex); } \
 catch (std::exception const& ex) \

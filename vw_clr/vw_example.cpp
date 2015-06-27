@@ -33,32 +33,34 @@ namespace VW
 
 	void VowpalWabbitExample::Learn()
 	{
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			m_vw->m_vw->learn(m_example);
 
 			// as this is not a ring-based example it is not free'd
 			m_vw->m_vw->l->finish_example(*m_vw->m_vw, *m_example);
-		)
+		}
+		CATCHRETHROW
 	}
 
 	void VowpalWabbitExample::PredictAndDiscard()
 	{
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			m_vw->m_vw->l->predict(*m_example);
 
 			// as this is not a ring-based example it is not free'd
 			m_vw->m_vw->l->finish_example(*m_vw->m_vw, *m_example);
-		)
+		}
+		CATCHRETHROW
 	}
 
 	generic<typename TPrediction>
 		where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 	TPrediction VowpalWabbitExample::LearnAndPredict()
 	{
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			m_vw->m_vw->learn(m_example);
 
 			auto prediction = gcnew TPrediction();
@@ -68,15 +70,16 @@ namespace VW
 			m_vw->m_vw->l->finish_example(*m_vw->m_vw, *m_example);
 
 			return prediction;
-		)
+		}
+		CATCHRETHROW
 	}
 
 	generic<typename TPrediction>
 		where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 	TPrediction VowpalWabbitExample::Predict()
 	{
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			m_vw->m_vw->l->predict(*m_example);
 
 			auto prediction = gcnew TPrediction();
@@ -86,7 +89,8 @@ namespace VW
 			m_vw->m_vw->l->finish_example(*m_vw->m_vw, *m_example);
 
 			return prediction;
-		)
+		}
+		CATCHRETHROW
 	}
 
 	VowpalWabbitExample^ VowpalWabbitExample::UnderlyingExample::get()

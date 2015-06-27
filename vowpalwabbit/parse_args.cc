@@ -1212,8 +1212,22 @@ namespace VW {
 	  cerr << endl << "total queries = " << all.sd->queries << endl;
         cerr << endl;
         }
-    
-    finalize_regressor(all, all.final_regressor_name);
+
+	// implement finally.
+	// finalize_regressor can throw if it can't write the file.
+	// we still want to free up all the memory.
+	vw_exception finalize_regressor_exception(__FILE__, __LINE__, "empty");
+	bool finalize_regressor_exception_thrown = false;
+	try
+	{
+		finalize_regressor(all, all.final_regressor_name);
+	}
+	catch (vw_exception& e)
+	{
+		finalize_regressor_exception = e;
+		finalize_regressor_exception_thrown = true;
+	}
+
     all.l->finish();
     free_it(all.l);
     if (all.reg.weight_vector != nullptr && !all.seeded) // don't free weight vector if it is shared with another instance
@@ -1246,5 +1260,8 @@ namespace VW {
     all.interactions.delete_v();
 
     if (delete_all) delete &all;
+
+	if (finalize_regressor_exception_thrown)
+		throw finalize_regressor_exception;
   }
 }

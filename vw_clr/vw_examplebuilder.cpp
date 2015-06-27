@@ -39,12 +39,13 @@ namespace VW
 		if (m_clrExample == nullptr)
 			return nullptr;
 
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			// finalize example
 			VW::parse_atomic_example(*m_vw, m_example, false);
 			VW::setup_example(*m_vw, m_example);
-		)
+		}
+		CATCHRETHROW
 
 		// hand memory management off to VowpalWabbitExample
 		auto ret = m_clrExample;
@@ -62,10 +63,11 @@ namespace VW
 		auto bytes = System::Text::Encoding::UTF8->GetBytes(value);
 		auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
 				
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			VW::parse_example_label(*m_vw, *m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
-		)
+		}
+		CATCHRETHROW
 		finally
 		{
 			valueHandle.Free();

@@ -20,10 +20,11 @@ namespace VW
 
 	vw* wrapped_seed_vw_model(vw* vw)
 	{
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			return VW::seed_vw_model(vw, "");
-		)
+		}
+		CATCHRETHROW
 	}
 
 	VowpalWabbit::VowpalWabbit(VowpalWabbitModel^ model)
@@ -54,20 +55,22 @@ namespace VW
 
 	uint32_t VowpalWabbit::HashSpace(System::String^ s)
 	{
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			auto string = msclr::interop::marshal_as<std::string>(s);
 			return VW::hash_space(*m_vw, string);
-		)
+		}
+		CATCHRETHROW
 	}
 
 	uint32_t VowpalWabbit::HashFeature(System::String^ s, unsigned long u)
 	{
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			auto string = msclr::interop::marshal_as<std::string>(s);
 			return VW::hash_feature(*m_vw, string, u);
-		)
+		}
+		CATCHRETHROW
 	}
 
 	generic<typename TPrediction>
@@ -78,8 +81,8 @@ namespace VW
 		auto lineHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
 
 		example* ex = nullptr;
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			ex = VW::read_example(*m_vw, reinterpret_cast<char*>(lineHandle.AddrOfPinnedObject().ToPointer()));
 
 			if (predict)
@@ -94,7 +97,8 @@ namespace VW
 			ex = nullptr;
 
 			return prediction;
-		)
+		}
+		CATCHRETHROW
 		finally
 		{
 			lineHandle.Free();
@@ -126,15 +130,16 @@ namespace VW
 		auto lineHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
 
 		example* ex = nullptr;
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			ex = VW::read_example(*m_vw, reinterpret_cast<char*>(lineHandle.AddrOfPinnedObject().ToPointer()));
 
 			m_vw->learn(ex);
 
 			m_vw->l->finish_example(*m_vw, *ex);
 			ex = nullptr;
-		)
+		}
+		CATCHRETHROW
 		finally
 		{
 			lineHandle.Free();
@@ -152,15 +157,16 @@ namespace VW
 		auto lineHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
 
 		example* ex = nullptr;
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			ex = VW::read_example(*m_vw, reinterpret_cast<char*>(lineHandle.AddrOfPinnedObject().ToPointer()));
-	
+
 			m_vw->l->predict(*ex);
 
 			m_vw->l->finish_example(*m_vw, *ex);
 			ex = nullptr;
-		)
+		}
+		CATCHRETHROW
 		finally
 		{
 			lineHandle.Free();
@@ -175,6 +181,10 @@ namespace VW
 
 	void VowpalWabbit::Driver()
 	{
-		TRYCATCHRETHROW(LEARNER::generic_driver(*m_vw))
+		try
+		{
+			LEARNER::generic_driver(*m_vw);
+		}
+		CATCHRETHROW
 	}
 }

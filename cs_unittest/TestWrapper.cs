@@ -27,8 +27,8 @@ namespace cs_unittest
             {
                 if (Directory.Exists("models"))
                     Directory.Delete("models", true);
-                new VowpalWabbit<Test1>("-k -l 20 --initial_t 128000 --power_t 1 -f models/0001.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off")
-                    .Dispose();
+                var vw = new VowpalWabbit<Test1>("-k -l 20 --initial_t 128000 --power_t 1 -f models/0001.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off");
+                vw.Dispose();
 
                 Assert.Fail("Excepted exception not thrown");
             }
