@@ -1,13 +1,9 @@
-﻿using cs_unittest;
+﻿using System.Collections.Generic;
+using System.Globalization;
+using cs_unittest;
 using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TrainSet0002Dat
 {

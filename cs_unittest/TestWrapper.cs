@@ -1,12 +1,7 @@
-﻿using cs_test;
-using VW;
+﻿using System.IO;
+using cs_test;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using VW;
 
 namespace cs_unittest
 {

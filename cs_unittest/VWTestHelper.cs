@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using VW;
-using System.Globalization;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Antlr4.Runtime;
-using Antlr4.Runtime.Tree;
 using Antlr4.Runtime.Atn;
-using System.Text.RegularExpressions;
+using Antlr4.Runtime.Tree;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using VW;
 
 namespace cs_unittest
 {
@@ -68,7 +64,7 @@ namespace cs_unittest
                 };
                 VWTestHelper.ParseInput(File.OpenRead(inputFile), listener);
 
-                VWTestHelper.AssertEqual(stderrFile, vw.PerformanceStatistics);
+                AssertEqual(stderrFile, vw.PerformanceStatistics);
             }
         }
 
@@ -112,7 +108,7 @@ namespace cs_unittest
 
         internal static void AssertEqual(string expectedFile, VowpalWabbitPerformanceStatistics actual)
         {
-            var expectedPerformanceStatistics = VWTestHelper.ReadPerformanceStatistics(expectedFile);
+            var expectedPerformanceStatistics = ReadPerformanceStatistics(expectedFile);
             AssertEqual(expectedPerformanceStatistics, actual);
         }
 

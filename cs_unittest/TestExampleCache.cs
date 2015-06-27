@@ -1,15 +1,12 @@
-﻿using VW;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using VW;
 using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer;
 using VW.Serializer.Attributes;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace cs_unittest
 {

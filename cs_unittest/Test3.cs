@@ -1,20 +1,7 @@
-﻿using Antlr4.Runtime;
-using Antlr4.Runtime.Tree;
-using cs_test;
-using VW;
-using VW.Interfaces;
-using VW.Labels;
-using VW.Serializer.Attributes;
+﻿using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TrainSet0002Dat;
+using VW;
 
 namespace cs_unittest
 {
@@ -64,7 +51,23 @@ namespace cs_unittest
                 @"train-sets\0002.dat");
         }
 
+        [TestMethod]
+        [Description("using normalized adaptive updates and a low --power_t")]
+        [DeploymentItem(@"train-sets\0002.dat", "train-sets")]
+        [DeploymentItem(@"train-sets\ref\0002c.stderr", @"train-sets\ref")]
+        [DeploymentItem(@"pred-sets\ref\0002c.predict", @"pred-sets\ref")]
+        public void Test7and8()
+        {
+            VWTestHelper.Learn<Data, DataListener>(
+                "-k --power_t 0.45 -f models/0002c.model",
+                @"train-sets\0002.dat",
+                @"train-sets\ref\0002c.stderr");
 
+            VWTestHelper.Predict<Data, DataListener>(
+                "-k -t -i models/0002c.model",
+                @"train-sets\0002.dat",
+                @"pred-sets\ref\0002c.predict");
+        }
 
         [TestMethod]
         [Ignore]
