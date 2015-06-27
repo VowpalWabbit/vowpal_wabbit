@@ -27,9 +27,9 @@ namespace VW.Serializer
     public static class VowpalWabbitSerializerFactory
     {
         /// <summary>
-        /// Example and Example Result type based serializer cache.
+        /// AppDomain, example and example result type based serializer cache.
         /// </summary>
-        private static readonly Dictionary<Tuple<Type, Type>, object> SerializerCache = new Dictionary<Tuple<Type, Type>, object>();
+        private static readonly Dictionary<Tuple<int, Type, Type>, object> SerializerCache = new Dictionary<Tuple<int, Type, Type>, object>();
 
         private static readonly string SerializeMethodName = "Serialize";
 
@@ -51,14 +51,14 @@ namespace VW.Serializer
                 // if no features are found, no serializer is generated
                 serializerFunc = (_,__) => null;
             }
-
+            
             return new VowpalWabbitSerializer<TExample>(ex => serializerFunc(ex, visitor), settings);
         }
 
         public static Func<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult>()
             where TVisitor : IVowpalWabbitVisitor<TExampleResult>
         {
-            var cacheKey = Tuple.Create(typeof(TExample), typeof(TVisitor));
+            var cacheKey = Tuple.Create(AppDomain.CurrentDomain.Id, typeof(TExample), typeof(TVisitor));
             object serializer;
 
             if (SerializerCache.TryGetValue(cacheKey, out serializer))
@@ -75,6 +75,7 @@ namespace VW.Serializer
             
             var newSerializer = CreateSerializer<TExample, TVisitor, TExampleResult>(dynMod);
 
+            Console.WriteLine("Caching serializer: " + cacheKey);
             SerializerCache[cacheKey] = newSerializer;
 
             return newSerializer;
