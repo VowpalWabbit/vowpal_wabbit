@@ -60,7 +60,9 @@ namespace VW.Serializer
             return new VowpalWabbitSerializer<TExample>(ex =>
             {
                 Log2(message: "before serializerfunc: " + serializerFunc);
+
                 var r = serializerFunc(ex, visitor);
+
                 Log2(message: "after serializerfunc");
                 return r;
             }, settings);
