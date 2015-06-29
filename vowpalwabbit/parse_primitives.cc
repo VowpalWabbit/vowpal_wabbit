@@ -9,9 +9,12 @@ license as described in the file LICENSE.
 #else
 #include <string>
 #endif
+#include <stdexcept>
+#include <sstream>
 
 #include "parse_primitives.h"
 #include "hash.h"
+#include "vw_exception.h"
 
 bool substring_equal(substring&a, substring&b) {
   return (a.end - a.begin == b.end - b.begin) // same length
@@ -65,13 +68,29 @@ hash_func_t getHasher(const std::string& s){
     return hashstring;
   else if(s=="all")
     return hashall;
-  else{
-    std::cerr << "Unknown hash function: " << s.c_str() << ". Exiting " << std::endl;
-    throw std::exception();
-  }
+  else
+    THROW("Unknown hash function: " << s);
 }
 
 std::ostream& operator<<(std::ostream& os, const substring& ss) {
   std::string s(ss.begin, ss.end-ss.begin);
   return os << s;
+}
+
+std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss) {
+	auto it = ss.begin;
+
+	if (it == ss.end)
+	{
+		return os;
+	}
+
+	os << *it;
+	
+	for (it++; it != ss.end; it++) {
+		os << ",";
+		os << *it;
+	}
+
+	return os;
 }

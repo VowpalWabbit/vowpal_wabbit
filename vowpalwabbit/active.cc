@@ -4,6 +4,7 @@
 #include "float.h"
 #include "vw.h"
 #include "active.h"
+#include "vw_exception.h"
 
 using namespace LEARNER;
 
@@ -142,10 +143,7 @@ base_learner* active_setup(vw& all)
     data.active_c0 = all.vm["mellowness"].as<float>();
   
   if (count(all.args.begin(), all.args.end(),"--lda") != 0)
-    {//can't have lda base learner
-      cout << "error: you can't combine lda and active learning" << endl;
-      throw exception();
-    }
+    THROW("error: you can't combine lda and active learning");
 
   base_learner* base = setup_base(all);
   

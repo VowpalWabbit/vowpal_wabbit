@@ -7,6 +7,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/*
+ * Class:     vw_VW
+ * Method:    version
+ * Signature: ()V
+ */
+JNIEXPORT jstring JNICALL Java_vw_VW_version
+  (JNIEnv *, jobject);
+
 /*
  * Class:     vw_VW
  * Method:    initialize

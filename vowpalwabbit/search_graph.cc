@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 #include "search_graph.h"
 #include "vw.h"
 #include "gd.h"
+#include "vw_exception.h"
 
 /*
 example format:
@@ -107,7 +108,7 @@ namespace GraphTask {
     if (vm.count("search_graph_directed"))       D->directed = true;
 
     if (D->num_loops <= 1) { D->num_loops = 1; D->separate_learners = false; }
-
+    
     D->K = num_actions;
     D->numN = (D->directed+1) * (D->K+1);
     cerr << "K=" << D->K << ", numN=" << D->numN << endl;
@@ -184,24 +185,25 @@ namespace GraphTask {
       if (example_is_edge(ec[i]))
         D.E++;
       else { // it's a node!
-        if (D.E > 0) { cerr << "error: got a node after getting edges!" << endl; throw exception(); }
+        if (D.E > 0)
+	  THROW("error: got a node after getting edges!");
+
         D.N++;
         if (ec[i]->l.cs.costs.size() > 0) {
           D.true_counts[ec[i]->l.cs.costs[0].class_index] += 1.;
           D.true_counts_total += 1.;
-        }
+      }
       }
 
-    if ((D.N == 0) && (D.E > 0)) { cerr << "error: got edges without any nodes (perhaps ring_size is too small?)!" << endl; throw exception(); }
+    if ((D.N == 0) && (D.E > 0)) 
+      THROW("error: got edges without any nodes (perhaps ring_size is too small?)!");
 
     D.adj = vector<vector<size_t>>(D.N, vector<size_t>(0));
 
     for (size_t i=D.N; i<ec.size(); i++) {
       for (size_t n=0; n<ec[i]->l.cs.costs.size(); n++) {
-        if (ec[i]->l.cs.costs[n].class_index > D.N) {
-          cerr << "error: edge source points to too large of a node id: " << (ec[i]->l.cs.costs[n].class_index) << " > " << D.N << endl;
-          throw exception();
-        }
+        if (ec[i]->l.cs.costs[n].class_index > D.N)
+	  THROW("error: edge source points to too large of a node id: " << (ec[i]->l.cs.costs[n].class_index) << " > " << D.N);
       }
       for (size_t n=0; n<ec[i]->l.cs.costs.size(); n++) {
         size_t nn = ec[i]->l.cs.costs[n].class_index;
@@ -302,7 +304,7 @@ namespace GraphTask {
     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
       int i0 = (int)(*i)[0];
       int i1 = (int)(*i)[1];
-      if ((i0 == neighbor_namespace) || (i1 == neighbor_namespace)) {
+      if ((i0 == (int)neighbor_namespace) || (i1 == (int)neighbor_namespace)) {
         ec[n]->num_features      += ec[n]->atomics[i0].size() * ec[n]->atomics[i1].size();
         ec[n]->total_sum_feat_sq += ec[n]->sum_feat_sq[i0]*ec[n]->sum_feat_sq[i1];
       }
@@ -317,7 +319,7 @@ namespace GraphTask {
     ec[n]->atomics[neighbor_namespace].erase();
     ec[n]->sum_feat_sq[neighbor_namespace] = 0.;
   }
-
+  
 #define IDX(i,j) ( (i) * (D.K+1) + j )
 
   float macro_f(task_data& D) {

@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 #include "reductions.h"
 #include "cb_algs.h"
+#include "vw_exception.h"
 
 using namespace LEARNER;
 
@@ -272,8 +273,7 @@ struct cb {
         gen_cs_example_dr<is_learn>(c,ec,ld,c.cb_cs_ld);
         break;
       default:
-        std::cerr << "Unknown cb_type specified for contextual bandit learning: " << c.cb_type << ". Exiting." << endl;
-        throw exception();
+        THROW("Unknown cb_type specified for contextual bandit learning: " << c.cb_type);
     }
 
     if (c.cb_type != CB_TYPE_DM)
@@ -291,10 +291,9 @@ struct cb {
       }
   }
 
-  void predict_eval(cb&, base_learner&, example&) {
-    cout << "can not use a test label for evaluation" << endl;
-    throw exception();
-  }
+void predict_eval(cb&, base_learner&, example&) {
+  THROW("can not use a test label for evaluation");
+}
 
   void learn_eval(cb& c, base_learner&, example& ec) {
     CB_EVAL::label ld = ec.l.cb_eval;
@@ -400,10 +399,8 @@ float get_unbiased_cost(CB::cb_class* known_cost, COST_SENSITIVE::label& scores,
       else if (type_string.compare("dm") == 0)
 	{
 	  if (eval)
-	    {
-	      cout << "direct method can not be used for evaluation --- it is biased." << endl;
-	      throw exception();
-	    }
+	    THROW( "direct method can not be used for evaluation --- it is biased.");
+
 	  c.cb_type = CB_TYPE_DM;
 	  problem_multiplier = 1;
 	}

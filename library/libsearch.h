@@ -17,14 +17,14 @@ using namespace std;
 template<class INPUT, class OUTPUT> class SearchTask {
   public:
   SearchTask(vw& vw_obj) : vw_obj(vw_obj), sch(*(Search::search*)vw_obj.searchstr) {
-    bogus_example = alloc_examples(vw_obj.p->lp.label_size, 1);
+    bogus_example = VW::alloc_examples(vw_obj.p->lp.label_size, 1);
     read_line(vw_obj, bogus_example, (char*)"1 | x");
-    parse_atomic_example(vw_obj, bogus_example, false);
+    VW::parse_atomic_example(vw_obj, bogus_example, false);
     VW::setup_example(vw_obj, bogus_example);
 
-    blank_line = alloc_examples(vw_obj.p->lp.label_size, 1);
+    blank_line = VW::alloc_examples(vw_obj.p->lp.label_size, 1);
     read_line(vw_obj, blank_line, (char*)"");
-    parse_atomic_example(vw_obj, blank_line, false);
+    VW::parse_atomic_example(vw_obj, blank_line, false);
     VW::setup_example(vw_obj, blank_line);
     
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
@@ -36,8 +36,8 @@ template<class INPUT, class OUTPUT> class SearchTask {
     d->extra_data2 = NULL;
   }
   ~SearchTask() {
-    dealloc_example(vw_obj.p->lp.delete_label, *bogus_example); free(bogus_example);
-    dealloc_example(vw_obj.p->lp.delete_label, *blank_line);    free(blank_line);
+    VW::dealloc_example(vw_obj.p->lp.delete_label, *bogus_example); free(bogus_example);
+    VW::dealloc_example(vw_obj.p->lp.delete_label, *blank_line);    free(blank_line);
   }
 
   virtual void _run(Search::search&sch, INPUT& input_example, OUTPUT& output) {}  // YOU MUST DEFINE THIS FUNCTION!

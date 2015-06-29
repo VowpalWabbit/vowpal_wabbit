@@ -2,6 +2,7 @@
 #include <climits>
 #include "global_data.h"
 #include "vw.h"
+#include "vw_exception.h"
 
 namespace MULTICLASS {
 
@@ -78,11 +79,7 @@ namespace MULTICLASS {
       cerr << "words.size() = " << words.size() << endl;
     }
     if (ld->label == 0)
-      {
-	cerr << "label 0 is not allowed for multiclass.  Valid labels are {1,k}" << endl;
-        if (sd->ldict) cerr << "this likely happened because you specified an invalid label with named labels" << endl;
-	throw exception();
-      }
+      THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}" << (sd->ldict ? "\nthis likely happened because you specified an invalid label with named labels" : ""));
   }
 
   label_parser mc_label = {default_label, parse_label, 
@@ -96,8 +93,8 @@ namespace MULTICLASS {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
         if (! all.sd->ldict)
-          all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.multi.label, ec.pred.multiclass,
-                               ec.num_features, all.progress_add, all.progress_arg);
+	all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.multi.label, ec.pred.multiclass,
+			     ec.num_features, all.progress_add, all.progress_arg);
         else {
           substring ss_label = all.sd->ldict->get(ec.l.multi.label);
           substring ss_pred  = all.sd->ldict->get(ec.pred.multiclass);
@@ -105,8 +102,8 @@ namespace MULTICLASS {
                                !ss_label.begin ? "unknown" : string(ss_label.begin, ss_label.end - ss_label.begin),
                                !ss_pred.begin  ? "unknown" : string(ss_pred.begin, ss_pred.end - ss_pred.begin),
                                ec.num_features, all.progress_add, all.progress_arg);
-        }
       }
+  }
   }
 
   void finish_example(vw& all, example& ec)
@@ -119,7 +116,7 @@ namespace MULTICLASS {
     
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       if (! all.sd->ldict)
-        all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
+      all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
       else {
         substring ss_pred = all.sd->ldict->get(ec.pred.multiclass);
         all.print_text(*sink, string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);

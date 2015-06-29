@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text;
 using System.IO;
 
-using Microsoft.Research.MachineLearning;
+using VW;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using VW.Serializer.Attributes;
+using System.Globalization;
 
 namespace cs_test
 {
@@ -15,6 +17,8 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
+            // AttributesSample.Attributes();
+            //AttributesSample.RunFeaturesTest();
             //ExploreClock.Clock();
             //LabDemo.Run();
             ExploreOnlySample.Run();
@@ -22,9 +26,10 @@ namespace cs_test
             RunParserTest();
             RunSpeedTest();
             RunFlatExampleTestEx();
-    //      RunLDAPredict();
+            //RunLDAPredict();
             //RunVWParse_and_VWLearn();
         }
+
 
         private static void RunFeaturesTest()
         {

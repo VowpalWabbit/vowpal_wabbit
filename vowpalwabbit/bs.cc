@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 #include "rand48.h"
 #include "bs.h"
+#include "vw_exception.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -103,7 +104,8 @@ using namespace LEARNER;
           if(pred_vec_int[i] == current_label)
             sum_labels += pred_vec[i]; */
     }
-    delete pred_vec_int;
+	// TODO: unique_ptr would also handle exception case
+    delete[] pred_vec_int;
 
     // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()
     ec.pred.scalar = (float)current_label;
@@ -201,8 +203,7 @@ using namespace LEARNER;
         bs_predict_vote(ec, d.pred_vec);
         break;
       default:
-        std::cerr << "Unknown bs_type specified: " << d.bs_type << ". Exiting." << endl;
-        throw exception();
+	THROW("Unknown bs_type specified: " << d.bs_type);
     }
 
     if (shouldOutput) 

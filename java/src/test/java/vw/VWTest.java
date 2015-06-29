@@ -3,8 +3,15 @@ package vw;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
+import vw.exception.IllegalVWInput;
 
 import java.io.*;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -192,5 +199,69 @@ public class VWTest {
         float[] expectedTestPreds = new float[]{4, 4};
         vw.close();
         assertArrayEquals(expectedTestPreds, testPreds, 0.000001f);
+    }
+
+    @Test
+    public void testConcurrency() throws IOException, InterruptedException {
+        final Map<String, Float> data = new TreeMap<String, Float>();
+
+        data.put("-1 | 2", -0.444651f);
+        data.put("-1 | 4", -0.448271f);
+        data.put("-1 | 6", -0.449493f);
+        data.put("-1 | 8", -0.450034f);
+        data.put("1 | 1", 0.175389f);
+        data.put("1 | 3", 0.174267f);
+        data.put("1 | 5", 0.173154f);
+        data.put("1 | 7", 0.172148f);
+
+        final String model = temporaryFolder.newFile().getAbsolutePath();
+        VW learn = new VW("--quiet --loss_function logistic -f " + model);
+        for (String d : data.keySet()) {
+            learn.learn(d);
+        }
+        learn.close();
+
+        int numThreads = Runtime.getRuntime().availableProcessors();
+        ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
+        final VW predict = new VW("--quiet -i " + model);
+        for (int i=0; i<numThreads; ++i) {
+            Runnable run = new Runnable() {
+                @Override
+                public void run() {
+                    for (int j=0; j<5e4; ++j) {
+                        for (Entry<String, Float> e : data.entrySet()) {
+                            float actual = predict.predict(e.getKey());
+                            assertEquals(e.getValue(), actual, 1e-6f);
+                        }
+                    }
+                }
+            };
+            threadPool.submit(run);
+        }
+        threadPool.shutdown();
+        threadPool.awaitTermination(1, TimeUnit.DAYS);
+        predict.close();
+    }
+
+    @Test
+    public void testMultiLabel() {
+        thrown.expect(IllegalVWInput.class);
+        thrown.expectMessage("VW JNI layer only supports simple and multiclass predictions");
+        VW vw = new VW("--quiet --multilabel_oaa 3");
+        vw.close();
+    }
+
+    @Test
+    public void testVersion() throws IOException {
+        String actualVersion = VW.version();
+        String expectedVersion;
+        BufferedReader reader = new BufferedReader(new FileReader("../vowpalwabbit/config.h"));
+        try {
+            expectedVersion = reader.readLine().replace("#define PACKAGE_VERSION ", "").replace("\"", "");
+        }
+        finally {
+            reader.close();
+        }
+        assertEquals(expectedVersion, actualVersion);
     }
 }

@@ -3,6 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
+
 #pragma once
 #include <iostream>
 #include <stdlib.h>
@@ -15,6 +16,8 @@ license as described in the file LICENSE.
 #else
 #define __INLINE inline
 #endif
+
+#include "vw_exception.h"
 
 const size_t erase_point = ~ ((1 << 10) -1);
 
@@ -38,10 +41,10 @@ template<class T> struct v_array {
 	{
 	  size_t old_len = end-begin;
 	  T* temp = (T *)realloc(begin, sizeof(T) * length);
-	  if ((temp == nullptr) && ((sizeof(T)*length) > 0)) {
-	    std::cerr << "realloc of " << length << " failed in resize().  out of memory?" << std::endl;
-	    throw std::exception();
-	  }
+	  if ((temp == nullptr) && ((sizeof(T)*length) > 0))
+	    {
+	      THROW("realloc of " << length << " failed in resize().  out of memory?"); 
+	    }
 	  else
 	    begin = temp;
           if (zero_everything && (old_len < length))

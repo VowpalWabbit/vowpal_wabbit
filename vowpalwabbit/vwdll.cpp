@@ -64,11 +64,11 @@ extern "C"
 		VW::finish(*pointer);
 	}
 
-	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ImportExample(VW_HANDLE handle, VW_FEATURE_SPACE* features, size_t len)
+	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ImportExample(VW_HANDLE handle, const char * label, VW_FEATURE_SPACE* features, size_t len)
 	{
 		vw * pointer = static_cast<vw*>(handle);
 		VW::primitive_feature_space * f = reinterpret_cast<VW::primitive_feature_space*>( features );
-		return static_cast<VW_EXAMPLE>(VW::import_example(*pointer, f, len));
+		return static_cast<VW_EXAMPLE>(VW::import_example(*pointer, label, f, len));
 	}
 	
 	VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_ExportExample(VW_HANDLE handle, VW_EXAMPLE e, size_t * plen)
@@ -147,10 +147,9 @@ extern "C"
 		return VW::get_cost_sensitive_prediction(static_cast<example*>(e));
 	}
 
-    VW_DLL_MEMBER void* VW_CALLING_CONV VW_GetMultilabelPredictions(VW_HANDLE handle, VW_EXAMPLE e, size_t* plen)
+    VW_DLL_MEMBER void* VW_CALLING_CONV VW_GetMultilabelPredictions(VW_EXAMPLE e, size_t* plen)
     {
-        vw* pointer = static_cast<vw*>(handle);
-        return VW::get_multilabel_predictions(*pointer, static_cast<example*>(e), *plen);
+        return VW::get_multilabel_predictions(static_cast<example*>(e), *plen);
     }
 
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetTagLength(VW_EXAMPLE e)
@@ -249,6 +248,13 @@ extern "C"
 	{
 		example* ex = static_cast<example*>(e);
 		return VW::add_label(ex, label, weight, base);
+	}
+
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_AddStringLabel(VW_HANDLE handle, VW_EXAMPLE e, const char* label)
+	{
+		vw * pointer = static_cast<vw*>(handle);
+		example* ex = static_cast<example*>(e);
+		VW::parse_example_label(*pointer, *ex, label);
 	}
 
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_Learn(VW_HANDLE handle, VW_EXAMPLE e)

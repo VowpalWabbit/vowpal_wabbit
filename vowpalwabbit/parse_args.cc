@@ -55,6 +55,7 @@ license as described in the file LICENSE.
 #include "parse_example.h"
 #include "best_constant.h"
 #include "interact.h"
+#include "vw_exception.h"
 
 using namespace std;
 //
@@ -78,7 +79,7 @@ unsigned long long hash_file_contents(io_buf *io, int f) {
     for (size_t i=0; i<n; i++) {
       v *= 341789041;
       v += buf[i];
-    }
+}  
   }
   return v;
 }
@@ -123,24 +124,21 @@ void parse_dictionary_argument(vw&all, string str) {
 
   char ns = ' ';
   const char*s  = str.c_str();
-  if ((str.length() > 3) && (str[1] == ':')) {
+  if ((str.length() > 2) && (str[1] == ':')) {
     ns = str[0];
     s  += 2;
   }
 
   string fname = find_in_path(all.dictionary_path, string(s));
-  if (fname == "") { //  ! boost::filesystem::exists(fname) ) {
-    cerr << "error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path" << endl;
-    throw exception();
-  }
+  if (fname == "")  
+    THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path");
 
   bool is_gzip = ends_with(fname, ".gz");
   io_buf* io = is_gzip ? new comp_io_buf : new io_buf;
   int fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
-  if (fd < 0) {
-    cerr << "error: cannot read dictionary from file '" << fname << "'" << ", opening failed" << endl;
-    throw exception();
-  }
+  if (fd < 0)
+    THROW("error: cannot read dictionary from file '" << fname << "'" << ", opening failed");
+
   unsigned long long fd_hash = hash_file_contents(io, fd);
   io->close_file();
 
@@ -156,12 +154,11 @@ void parse_dictionary_argument(vw&all, string str) {
 
   feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
   
-  example *ec = alloc_examples(all.p->lp.label_size, 1);
+  example *ec = VW::alloc_examples(all.p->lp.label_size, 1);
   fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
-  if (fd < 0) {
-    cerr << "error: cannot re-read dictionary from file '" << fname << "'" << ", opening failed" << endl;
-    throw exception();
-  }
+  if (fd < 0)
+    THROW("error: cannot re-read dictionary from file '" << fname << "'" << ", opening failed");
+
   size_t def = (size_t)' ';
 
   int size = 2048, pos, nread;
@@ -175,10 +172,8 @@ void parse_dictionary_argument(vw&all, string str) {
       if (pos >= size - 1) {
         size *= 2;
         buffer = (char*)realloc(buffer, size);
-        if (buffer == nullptr) {
-          cerr << "error: memory allocation failed in reading dictionary" << endl;
-          throw exception();
-        }
+        if (buffer == nullptr) 
+	  THROW("error: memory allocation failed in reading dictionary");
       }
     } while ( (rc != EOF) && (rc != '\n') && (nread > 0) );
     buffer[pos] = 0;
@@ -217,7 +212,7 @@ void parse_dictionary_argument(vw&all, string str) {
   } while ((rc != EOF) && (nread > 0));
   free(buffer);
   io->close_file();
-  dealloc_example(all.p->lp.delete_label, *ec);
+  VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
   
   cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
@@ -238,23 +233,19 @@ void parse_affix_argument(vw&all, string str) {
     uint16_t prefix = 1;
     if (q[0] == '+') { q++; }
     else if (q[0] == '-') { prefix = 0; q++; }
-    if ((q[0] < '1') || (q[0] > '7')) {
-      cerr << "malformed affix argument (length must be 1..7): " << p << endl;
-      throw exception();
-    }
+    if ((q[0] < '1') || (q[0] > '7')) 
+      THROW("malformed affix argument (length must be 1..7): " << p);
+
     uint16_t len = (uint16_t)(q[0] - '0');
     uint16_t ns = (uint16_t)' ';  // default namespace
     if (q[1] != 0) {
       if (valid_ns(q[1]))
         ns = (uint16_t)q[1];
-      else {
-        cerr << "malformed affix argument (invalid namespace): " << p << endl;
-        throw exception();
-      }
-      if (q[2] != 0) {
-        cerr << "malformed affix argument (too long): " << p << endl;
-        throw exception();
-      }
+      else 
+	THROW("malformed affix argument (invalid namespace): " << p);
+
+      if (q[2] != 0) 
+	THROW("malformed affix argument (too long): " << p);
     }
 
     uint16_t afx = (len << 1) | (prefix & 0x1);
@@ -365,10 +356,7 @@ void parse_source(vw& all)
     all.stdin_off = true;
   
   if ( (vm.count("total") || vm.count("node") || vm.count("unique_id")) && !(vm.count("total") && vm.count("node") && vm.count("unique_id")) )
-    {
-      cout << "you must specificy unique_id, total, and node if you specify any" << endl;
-      throw exception();
-    }
+    THROW("you must specificy unique_id, total, and node if you specify any");
   
   if (vm.count("daemon") || vm.count("pid_file") || (vm.count("port") && !all.active) ) {
     all.daemon = true;
@@ -388,10 +376,7 @@ void parse_source(vw& all)
     all.data_filename = "";
 
   if ((vm.count("cache") || vm.count("cache_file")) && vm.count("invert_hash"))
-    {
-      cout << "invert_hash is incompatible with a cache file.  Use it in single pass mode only." << endl;
-      throw exception();
-    }
+    THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.");
 
   if(!all.holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
     {
@@ -399,6 +384,8 @@ void parse_source(vw& all)
       cerr<<"Making holdout_set_off=true since output regularizer specified\n";
     }
 }
+
+bool interactions_settings_doubled = false; // local setting setted in parse_modules()
 
 void parse_feature_tweaks(vw& all)
 {
@@ -450,10 +437,7 @@ void parse_feature_tweaks(vw& all)
 
   if(vm.count("ngram")){
     if(vm.count("sort_features"))
-      {
-	cerr << "ngram is incompatible with sort_features.  " << endl;
-	throw exception();
-      }
+      THROW("ngram is incompatible with sort_features.");
 
     all.ngram_strings = vm["ngram"].as< vector<string> >();
     compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.quiet);
@@ -462,10 +446,7 @@ void parse_feature_tweaks(vw& all)
   if(vm.count("skips"))
     {
       if(!vm.count("ngram"))
-	{
-	  cout << "You can not skip unless ngram is > 1" << endl;
-	  throw exception();
-	}
+	THROW("You can not skip unless ngram is > 1");
 
       all.skip_strings = vm["skips"].as<vector<string> >();
       compile_gram(all.skip_strings, all.skips, (char*)"skips", all.quiet);
@@ -481,17 +462,12 @@ void parse_feature_tweaks(vw& all)
     {
       uint32_t new_bits = (uint32_t)vm["bit_precision"].as< size_t>();
       if (all.default_bits == false && new_bits != all.num_bits)
-	{
-	  cout << "Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work." << endl;
-	  throw exception();
-	}
+	THROW("Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work.");
+
       all.default_bits = false;
       all.num_bits = new_bits;
       if (all.num_bits > min(31, sizeof(size_t)*8 - 3))
-	{
-	  cout << "Only " << min(31, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
-	  throw exception();
-	}
+	THROW("Only " << min(31, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up.");
     }
 
   all.permutations = vm.count("permutations");
@@ -499,14 +475,35 @@ void parse_feature_tweaks(vw& all)
   // prepare namespace interactions
   v_array<v_string> expanded_interactions = v_init<v_string>();
 
+  if ( ( ((!all.pairs.empty() || !all.triples.empty() || !all.interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
+       (vm.count("quadratic") || vm.count("cubic") || vm.count("interactions")) ) )
+         ||
+       interactions_settings_doubled /*settings were restored from model file to file_options and overriden by params from command line*/)
+  {
+      cerr << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line.\n";
+
+      // in case arrays were already filled in with values from old model file - reset them
+      if (!all.pairs.empty()) all.pairs.clear();
+      if (!all.triples.empty()) all.triples.clear();
+      if (all.interactions.size() > 0)
+      {
+          for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i) i->delete_v();
+          all.interactions.delete_v();
+      }
+  }
+
   if (vm.count("quadratic"))
   {
       const vector<string> vec_arg = vm["quadratic"].as< vector<string> >();
       if (!all.quiet)
       {
           cerr << "creating quadratic features for pairs: ";
+
           for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+          {
               if (!all.quiet) cerr << *i << " ";
+              *all.file_options << " --quadratic " << *i;
+          }
       }
       expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
 
@@ -520,7 +517,10 @@ void parse_feature_tweaks(vw& all)
       {
           cerr << "creating cubic features for triples: ";
           for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+          {
               if (!all.quiet) cerr << *i << " ";
+              *all.file_options << " --cubic " << *i;
+          }
       }
 
       v_array<v_string> exp_cubic = INTERACTIONS::expand_interactions(vec_arg, 3, "error, cubic features must involve three sets.");
@@ -537,7 +537,10 @@ void parse_feature_tweaks(vw& all)
       {
           cerr << "creating features for following interactions: ";
           for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+          {
               if (!all.quiet) cerr << *i << " ";
+              *all.file_options << " --interactions " << *i;
+          }
       }
 
       v_array<v_string> exp_inter = INTERACTIONS::expand_interactions(vec_arg, 0, "");
@@ -558,6 +561,13 @@ void parse_feature_tweaks(vw& all)
           cerr << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.' << endl << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
       if (sorted_cnt > 0)
           cerr << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
+
+
+      if (all.interactions.size() > 0)
+      { // should be empty, but just in case...
+          for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i) i->delete_v();
+          all.interactions.delete_v();
+      }
 
       all.interactions = expanded_interactions;
 
@@ -656,10 +666,7 @@ void parse_feature_tweaks(vw& all)
           }
 
           if (!operator_found)
-          {
-              cerr << "argument of --redefine is malformed. Valid format is N:=S, :=S or N:=" << endl;
-              throw exception();
-          }
+	    THROW("argument of --redefine is malformed. Valid format is N:=S, :=S or N:=");
 
           if (++operator_pos > 3) // seek operator end
               cerr << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('" << new_namespace << "') will be used as target namespace." << endl;
@@ -686,7 +693,7 @@ void parse_feature_tweaks(vw& all)
 
       }
   }
-    
+
   if (vm.count("dictionary")) {
     if (vm.count("dictionary_path"))
       for (string path : vm["dictionary_path"].as< vector<string> >())
@@ -977,10 +984,29 @@ void parse_reductions(vw& all)
   all.l = setup_base(all);
 }
 
-void add_to_args(vw& all, int argc, char* argv[])
+void add_to_args(vw& all, int argc, char* argv[], int excl_param_count = 0, const char* excl_params[] = NULL)
 {
+  bool skip_next = false;
+
   for (int i = 1; i < argc; i++)
+  {
+    if (skip_next)
+    {
+        skip_next = false;
+        continue;
+    }
+
+    for (int j = 0; j < excl_param_count; j++)
+        if (std::strcmp(argv[i], excl_params[j]) == 0)
+        {
+            skip_next = true; //skip param arguement
+            break;
+        }
+
+    if (skip_next) continue;
+
     all.args.push_back(string(argv[i]));
+  }
 }
 
 vw& parse_args(int argc, char *argv[])
@@ -1002,7 +1028,7 @@ vw& parse_args(int argc, char *argv[])
   new_options(all, "Update options")
     ("learning_rate,l", po::value<float>(&(all.eta)), "Set learning rate")
     ("power_t", po::value<float>(&(all.power_t)), "t power value")
-    ("decay_learning_rate",    po::value<float>(&(all.eta_decay_rate)),
+        ("decay_learning_rate", po::value<float>(&(all.eta_decay_rate)),
      "Set Decay factor for learning_rate between passes")
     ("initial_t", po::value<double>(&((all.sd->t))), "initial t value")
     ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights.");
@@ -1017,33 +1043,61 @@ vw& parse_args(int argc, char *argv[])
 
   new_options(all, "Parallelization options")
     ("span_server", po::value<string>(&(all.span_server)), "Location of server for setting up spanning tree")
-    ("unique_id", po::value<size_t>(&(all.unique_id)),"unique id used for cluster parallel jobs")
-    ("total", po::value<size_t>(&(all.total)),"total number of nodes used in cluster parallel job")
-    ("node", po::value<size_t>(&(all.node)),"node number in cluster parallel job");
+        ("unique_id", po::value<size_t>(&(all.unique_id)), "unique id used for cluster parallel jobs")
+        ("total", po::value<size_t>(&(all.total)), "total number of nodes used in cluster parallel job")
+        ("node", po::value<size_t>(&(all.node)), "node number in cluster parallel job");
   add_options(all);
 
-  po::variables_map& vm = all.vm;
   msrand48(all.random_seed);
   parse_diagnostics(all, argc);
 
   all.sd->weighted_unlabeled_examples = all.sd->t;
   all.initial_t = (float)all.sd->t;
 
-  //Input regressor header
-  io_buf io_temp;
-  parse_regressor_args(all, vm, io_temp);
-  
+    return all;
+}
+
+bool check_interaction_settings_collision(vw& all)
+{
+    bool args_has_inter = std::find(all.args.begin(), all.args.end(), std::string("-q")) != all.args.end();
+    args_has_inter = args_has_inter || ( std::find(all.args.begin(), all.args.end(), std::string("--quadratic")) != all.args.end() );
+    args_has_inter = args_has_inter || ( std::find(all.args.begin(), all.args.end(), std::string("--cubic")) != all.args.end() );
+    args_has_inter = args_has_inter || ( std::find(all.args.begin(), all.args.end(), std::string("--interactions")) != all.args.end() );
+
+    if (!args_has_inter) return false;
+
+    // we don't use -q to save pairs in all.file_options, so only 3 options checked
+    bool opts_has_inter = all.file_options->str().find("--quadratic") != std::string::npos;
+    opts_has_inter = opts_has_inter || (all.file_options->str().find("--cubic") != std::string::npos);
+    opts_has_inter = opts_has_inter || (all.file_options->str().find("--interactions") != std::string::npos);
+
+    return opts_has_inter;
+}
+
+void parse_modules(vw& all, io_buf& model)
+{
+    save_load_header(all, model, true, false);
+
+  interactions_settings_doubled = check_interaction_settings_collision(all);
+
   int temp_argc = 0;
   char** temp_argv = VW::get_argv_from_string(all.file_options->str(), temp_argc);
-  add_to_args(all, temp_argc, temp_argv);
+
+  if (interactions_settings_doubled)
+  {   //remove
+      const char* interaction_params[] = {"--quadratic", "--cubic", "--interactions"};
+      add_to_args(all, temp_argc, temp_argv, 3, interaction_params);
+  } else
+      add_to_args(all, temp_argc, temp_argv);
   for (int i = 0; i < temp_argc; i++)
     free(temp_argv[i]);
   free(temp_argv);
-  
+
   po::parsed_options pos = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(all.opts).allow_unregistered().run();
 
+    po::variables_map& vm = all.vm;
   vm = po::variables_map();
 
   po::store(pos, vm);
@@ -1055,7 +1109,7 @@ vw& parse_args(int argc, char *argv[])
   parse_example_tweaks(all); //example manipulation
 
   parse_output_model(all);
-  
+
   parse_output_preds(all);
 
   parse_reductions(all);
@@ -1067,10 +1121,13 @@ vw& parse_args(int argc, char *argv[])
       cerr << "initial_t = " << all.sd->t << endl;
       cerr << "power_t = " << all.power_t << endl;
       if (all.numpasses > 1)
-	cerr << "decay_learning_rate = " << all.eta_decay_rate << endl;
+    cerr << "decay_learning_rate = " << all.eta_decay_rate << endl;
     }
+}
 
-  load_input_model(all, io_temp);
+void parse_sources(vw& all, io_buf& model)
+{
+  load_input_model(all, model);
 
   parse_source(all);
 
@@ -1083,14 +1140,13 @@ vw& parse_args(int argc, char *argv[])
     i++;
   all.wpp = (1 << i) >> all.reg.stride_shift;
 
-  if (vm.count("help")) {
+  if (all.vm.count("help")) {
     /* upon direct query for help -- spit it out to stdout */
     cout << "\n" << all.opts << "\n";
     exit(0);
   }
-
-  return all;
 }
+
 
 namespace VW {
   void cmd_string_replace_value( std::stringstream*& ss, string flag_to_replace, string new_value )
@@ -1110,10 +1166,10 @@ namespace VW {
       //now pos is position where value starts
       //find position of next space
       size_t pos_after_value = cmd.find(" ",pos);
-      if(pos_after_value == string::npos) 
+      if(pos_after_value == string::npos)
         //we reach the end of the string, so replace the all characters after pos by new_value
         cmd.replace(pos,cmd.size()-pos,new_value);
-      else 
+      else
         //replace characters between pos and pos_after_value by new_value
         cmd.replace(pos,pos_after_value-pos,new_value);
       ss->str(cmd);
@@ -1133,8 +1189,8 @@ namespace VW {
     char** argv = calloc_or_die<char*>(foo.size());
     for (size_t i = 0; i < foo.size(); i++)
       {
-	*(foo[i].end) = '\0';
-	argv[i] = calloc_or_die<char>(foo[i].end-foo[i].begin+1);
+    *(foo[i].end) = '\0';
+    argv[i] = calloc_or_die<char>(foo[i].end-foo[i].begin+1);
         sprintf(argv[i],"%s",foo[i].begin);
       }
 
@@ -1151,9 +1207,13 @@ namespace VW {
     char** argv = get_argv_from_string(s,argc);
 
     vw& all = parse_args(argc, argv);
+    io_buf model;
+    parse_regressor_args(all, model);
+    parse_modules(all, model);
+    parse_sources(all, model);
 
     initialize_parser_datastructures(all);
-    
+
     for(int i = 0; i < argc; i++)
       free(argv[i]);
     free(argv);
@@ -1181,7 +1241,7 @@ namespace VW {
     }
 
     vw* new_model = VW::initialize(init_args.str().c_str());
-    
+
     // reference model states stored in the specified VW instance
     new_model->reg = vw_model->reg; // regressor
     new_model->sd = vw_model->sd; // shared data
@@ -1196,7 +1256,7 @@ namespace VW {
     A->delete_v();
     delete A;
   }
-  
+
   void finish(vw& all, bool delete_all)
   {
     if (!all.quiet)
@@ -1212,24 +1272,24 @@ namespace VW {
         cerr << endl << "weighted example sum = " << all.sd->weighted_examples;
         cerr << endl << "weighted label sum = " << all.sd->weighted_labels;
         if(all.holdout_set_off || (all.sd->holdout_best_loss == FLT_MAX))
-	  cerr << endl << "average loss = " << all.sd->sum_loss / all.sd->weighted_examples;
-	else
-	  cerr << endl << "average loss = " << all.sd->holdout_best_loss << " h";
+      cerr << endl << "average loss = " << all.sd->sum_loss / all.sd->weighted_examples;
+    else
+      cerr << endl << "average loss = " << all.sd->holdout_best_loss << " h";
 
         float best_constant; float best_constant_loss;
         if (get_best_constant(all, best_constant, best_constant_loss))
-	  {
+      {
             cerr << endl << "best constant = " << best_constant;
             if (best_constant_loss != FLT_MIN)
-	      cerr << endl << "best constant's loss = " << best_constant_loss;
-	  }
-	
+          cerr << endl << "best constant's loss = " << best_constant_loss;
+      }
+
         cerr << endl << "total feature number = " << all.sd->total_features;
         if (all.sd->queries > 0)
-	  cerr << endl << "total queries = " << all.sd->queries << endl;
+      cerr << endl << "total queries = " << all.sd->queries << endl;
         cerr << endl;
         }
-    
+
     finalize_regressor(all, all.final_regressor_name);
     all.l->finish();
     free_it(all.l);
@@ -1248,7 +1308,7 @@ namespace VW {
     delete all.file_options;
     for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
       if (all.final_prediction_sink[i] != 1)
-	io_buf::close_file_or_socket(all.final_prediction_sink[i]);
+    io_buf::close_file_or_socket(all.final_prediction_sink[i]);
     all.final_prediction_sink.delete_v();
     for (size_t i=0; i<all.read_dictionaries.size(); i++) {
       free(all.read_dictionaries[i].name);

@@ -30,6 +30,8 @@ namespace VW {
 
   void start_parser(vw& all, bool do_init = true);
   void end_parser(vw& all);
+  bool is_ring_example(vw& all, example* ae);
+  bool parse_atomic_example(vw& all, example* ae, bool do_read);
 
   typedef pair< unsigned char, vector<feature> > feature_space; //just a helper definition.
   struct primitive_feature_space { //just a helper definition.
@@ -48,8 +50,16 @@ namespace VW {
   //The more complex way to create an example.
 
   //after you create and fill feature_spaces, get an example with everything filled in.
-  example* import_example(vw& all, primitive_feature_space* features, size_t len);
-  example* import_example(vw& all, vector< feature_space > ec_info);
+  example* import_example(vw& all, string label, primitive_feature_space* features, size_t len);
+
+  // callers must free memory using release_example
+  // this interface must be used with care as finish_example is a no-op for these examples.
+  // thus any delay introduced when freeing examples must be at least as long as the one
+  // introduced by all.l->finish_example implementations. 
+  // e.g. multiline examples as used by cb_adf must not be released before the finishing newline example.
+  example *alloc_examples(size_t, size_t);
+  void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*) = nullptr);
+
   void parse_example_label(vw&all, example&ec, string label);
   void setup_example(vw& all, example* ae);
   example* new_unused_example(vw& all);
@@ -60,7 +70,7 @@ namespace VW {
   float get_initial(example*ec);
   float get_prediction(example*ec);
   float get_cost_sensitive_prediction(example*ec);
-  uint32_t* get_multilabel_predictions(vw& all, example* ec, size_t& len);
+  uint32_t* get_multilabel_predictions(example* ec, size_t& len);
   size_t get_tag_length(example* ec);
   const char* get_tag(example* ec);
   size_t get_feature_number(example* ec);
@@ -72,6 +82,7 @@ namespace VW {
 
   //notify VW that you are done with the example.
   void finish_example(vw& all, example* ec);
+  void empty_example(vw& all, example& ec);
 
   void copy_example_data(bool audit, example*, example*, size_t, void(*copy_label)(void*,void*));
   void copy_example_data(bool audit, example*, example*);  // don't copy the label

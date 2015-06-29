@@ -31,14 +31,14 @@ namespace GD{
     polyprediction* p = mp.pred;
 
     fi &= mask;
-    uint32_t top = fi + (mp.count-1) * mp.step;
+    uint32_t top = fi + (uint32_t)((mp.count-1) * mp.step); 
     if (top <= mask) {
       weight* last = w + top;
       w += fi;
       for (; w <= last; w += mp.step, ++p)
         p->scalar += fx * *w;
     } else  // TODO: this could be faster by unrolling into two loops
-      for (size_t c=0; c<mp.count; ++c, fi += mp.step, ++p) {
+      for (size_t c=0; c<mp.count; ++c, fi += (uint32_t)mp.step, ++p) {
         fi &= mask;
         p->scalar += fx * w[fi];
       }

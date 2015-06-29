@@ -1,4 +1,5 @@
 #include "interactions.h"
+#include "vw_exception.h"
 
 namespace INTERACTIONS
 {
@@ -60,17 +61,13 @@ v_array<v_string> expand_interactions(const vector<string>& vec, const size_t re
     {
         const size_t len = i->length();
         if (required_length > 0 && len != required_length)
-        {   // got strict requrenment of interaction length and it wasfailed.
-            cerr << endl << err_msg << endl;
-            throw exception();
-        } else
-            if (len < 2)
-            { // regardles of required_length value this check is always performed
-                cerr << endl << "error, feature interactions must involve at least two namespaces." << endl;
-                throw exception();
-            }
-
-
+	  // got strict requirement of interaction length and it was failed.
+	  { THROW(err_msg); }
+	else
+	  if (len < 2)
+	    // regardles of required_length value this check is always performed
+	    THROW("error, feature interactions must involve at least two namespaces" << err_msg);
+	      
         v_string ns = string2v_string(*i);
         v_string temp = v_init<unsigned char>();
         expand_namespacse_with_recursion(ns, res, temp, 0);
@@ -276,7 +273,7 @@ void sort_and_filter_duplicate_interactions(v_array<v_string>& vec, bool filter_
  */
 
 
-// thecode under DEBUG_EVAL_COUNT_OF_GEN_FT below is an alternative way of implementation of eval_count_of_generated_ft()
+// the code under DEBUG_EVAL_COUNT_OF_GEN_FT below is an alternative way of implementation of eval_count_of_generated_ft()
 // it just calls generate_interactions() with small function which counts generated features and sums their squared weights
 // it's replaced with more fast (?) analytic solution but keeps just in case and for doublecheck.
 
@@ -297,7 +294,7 @@ void ft_cnt(eval_gen_data& dat, float fx, uint32_t )
 #endif
 
 // lookup table of factorials up tu 21!
-size_t fast_factorial[] = {1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600,6227020800,87178291200,1307674368000,
+long long int fast_factorial[] = {1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600,6227020800,87178291200,1307674368000,
                              20922789888000,355687428096000,6402373705728000,121645100408832000,2432902008176640000};
 const size_t size_fast_factorial = sizeof(fast_factorial)/sizeof(*fast_factorial);
 
@@ -403,7 +400,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
                     {
                         const float x = ft->x*ft->x;
 
-                        if ( ft->x == 1.0 || !feature_self_interactions_for_weight_other_than_1) // must compare  ft->x
+                        if ( !PROCESS_SELF_INTERACTIONS(ft->x) )
                         {
                             for (size_t i = order_of_inter-1; i > 0; --i)
                                 results[i] += results[i-1]*x;
@@ -437,19 +434,18 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
 
                     size_t n;
-                    if (cnt_ft_weight_non_1 == 0) // number of generated simple combinations is C(n,k) = n!/(n-k)!/k!
+                    if (cnt_ft_weight_non_1 == 0) // number of generated simple combinations is C(n,k)
                     {
-                        n = factor(ft_size, ft_size-order_of_inter);
-                        n /= factor(order_of_inter); // k!
+                        n = choose(ft_size, order_of_inter);
                     } else {
                         n = 0.;
                         for (size_t l = 0; l <= order_of_inter; ++l)
                         {
                             //C(l+m-1, l) * C(n-m, k-l)
-                            size_t num = (l==0)?1:factor(l+cnt_ft_weight_non_1-1, cnt_ft_weight_non_1-1)/factor(l);
+                            size_t num = (l==0)?1:choose(l+cnt_ft_weight_non_1-1, l);
 
                             if (ft_size - cnt_ft_weight_non_1 >= order_of_inter-l)
-                                num *= factor(ft_size - cnt_ft_weight_non_1, ft_size - cnt_ft_weight_non_1 - order_of_inter + l)/factor(order_of_inter-l);
+                                num *= choose(ft_size - cnt_ft_weight_non_1, order_of_inter-l);
                             else num = 0;
 
                             n +=  num;

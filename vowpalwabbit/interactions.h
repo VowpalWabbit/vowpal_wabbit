@@ -35,12 +35,16 @@ void sort_and_filter_duplicate_interactions(v_array<v_string> &vec, bool filter_
 
 
 /*
-* By default include interactions of feature with itself if its weight != weight^2.
-* For ex. interaction 'aa' with 3 features in namespace a: {1,2,3} generates
-* simple combinations of features {12,13,23}. But if weight of feature 2 != 1.0 then
-* features {12, 13, 22, 23} will be generated. For 'aaa' it will be {123, 222, 223}
+* By default include interactions of feature with itself.
+* This approach produces slightly more interactions but it's safier
+* for some cases, as discussed in issues/698
+* Previous behaviour was: include interactions of feature with itself only if its weight != weight^2.
+*
 */
-const bool feature_self_interactions_for_weight_other_than_1 = true;
+const bool feature_self_interactions = true;
+// must return logical expression
+/*old: ft_weight != 1.0 && feature_self_interactions_for_weight_other_than_1*/
+#define PROCESS_SELF_INTERACTIONS(ft_weight) feature_self_interactions
 
 
 
@@ -58,13 +62,13 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 // 2 template functions to pass T() proper argument (feature idx in regressor, or its coefficient)
 
 template <class R, void (*T)(R&, const float, float&)>
-inline void call_T( R& dat, weight* weight_vector, const size_t weight_mask, const float ft_weight, const size_t ft_idx)
+inline void call_T( R& dat, weight* weight_vector, const size_t weight_mask, const float ft_weight, const uint32_t ft_idx)
 {
     T(dat, ft_weight, weight_vector[ft_idx & weight_mask]);
 }
 
 template <class R, void (*T)(R&, float, uint32_t)>
-inline void call_T( R& dat, weight* /*weight_vector*/, const size_t /*weight_mask*/, const float ft_weight, const size_t ft_idx)
+inline void call_T( R& dat, weight* /*weight_vector*/, const size_t /*weight_mask*/, const float ft_weight, const uint32_t ft_idx)
 {
     T(dat, ft_weight, ft_idx);
 }
@@ -159,7 +163,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                         call_audit<R ,audit_func>(dat, fst);
                         // next index differs for permutations and simple combinations
                         const feature_class* snd = (!same_namespace) ? features_data[snd_ns].begin :
-                                                                 (fst->x != 1. && feature_self_interactions_for_weight_other_than_1) ? fst : fst+1;
+                                                                 (PROCESS_SELF_INTERACTIONS(fst->x)) ? fst : fst+1;
                         const float& ft_weight = fst->x;
                         for (; snd < snd_end; ++snd)
                         {                            
@@ -204,7 +208,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
 
                                 // next index differs for permutations and simple combinations
                                 const feature_class* snd = (!same_namespace1) ? features_data[snd_ns].begin :
-                                                                          (fst->x != 1. && feature_self_interactions_for_weight_other_than_1) ? fst : fst+1;
+                                                                          (PROCESS_SELF_INTERACTIONS(fst->x)) ? fst : fst+1;
 
                                 const uint32_t halfhash1 = FNV_prime * fst->weight_index;
                                 const float& ft_weight = fst->x;
@@ -219,7 +223,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
 
                                     // next index differs for permutations and simple combinations
                                     const feature_class* thr = (!same_namespace2) ? features_data[thr_ns].begin :
-                                                                              (snd->x != 1. && feature_self_interactions_for_weight_other_than_1) ? snd : snd+1;
+                                                                              (PROCESS_SELF_INTERACTIONS(snd->x)) ? snd : snd+1;
 
                                     for (; thr < thr_end; ++thr)
                                     {
@@ -293,8 +297,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                         {                            
                             size_t& loop_end = fgd2->loop_end;
 
-                            if ((*fgd2->ft_arr)[loop_end-margin].x == 1. || // if special case at end of array then we can't exclude more than existing margin
-                                    !feature_self_interactions_for_weight_other_than_1)  // and we have to
+                            if (!PROCESS_SELF_INTERACTIONS((*fgd2->ft_arr)[loop_end-margin].x))
                             {
                                 ++margin; // otherwise margin can 't be increased
                                 if ( (must_skip_interaction = (loop_end < margin)) ) break;
@@ -349,7 +352,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                             // unless feature has weight w and w != w*w. E.g. w != 0 and w != 1. Features with w == 0 are already
                             // filtered out in parce_args.cc::maybeFeature().
 
-                            next_data->loop_idx = ((cur_feature->x != 1.) && feature_self_interactions_for_weight_other_than_1) ? cur_data->loop_idx : cur_data->loop_idx + 1;
+                            next_data->loop_idx = (PROCESS_SELF_INTERACTIONS(cur_feature->x)) ? cur_data->loop_idx : cur_data->loop_idx + 1;
                         }
                         else
                             next_data->loop_idx = 0;
@@ -419,6 +422,20 @@ inline void generate_interactions(vw& all, example& ec, R& dat)
     generate_interactions<R, S, T, feature, dummy_func<R> > (all, ec, dat, ec.atomics);
 }
 
-} // end of namespace
+// C(n,k) = n!/(k!(n-k)!)
 
+inline long long choose(long long n, long long k) {
+    if (k > n) return 0;
+    if (k<0) return 0;
+    if (k==n) return 1;
+    if (k==0 && n!=0) return 1;
+    long long r = 1;
+    for (long long d = 1; d <= k; ++d) {
+      r *= n--;
+      r /= d;
+    }
+    return r;
+}
+
+} // end of namespace
 
