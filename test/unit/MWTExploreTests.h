@@ -43,14 +43,21 @@ template <class TContext>
 class TestPolicy : public IPolicy<TContext>
 {
 public:
-    TestPolicy(int params, int num_actions) : m_params(params), m_num_actions(num_actions) { }
+    TestPolicy() : this(-1, -1) { }
+    TestPolicy(int params, int num_actions) : m_params(params), m_num_actions(num_actions), m_action_to_choose(-1) {}
     u32 Choose_Action(TContext& context)
     {
-        return m_params % m_num_actions + 1; // action id is one-based
+        return (m_action_to_choose != -1) ? m_action_to_choose : m_params % m_num_actions + 1; // action id is one-based
     }
+    void Set_Action_To_Choose(int action)
+    {
+        m_action_to_choose = action;
+    }
+
 private:
     int m_params;
     int m_num_actions;
+    int m_action_to_choose;
 };
 
 template <class TContext>
