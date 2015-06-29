@@ -139,8 +139,8 @@ namespace BlackBoxTests
                     var policy = new TestPolicy<TContext> { ActionToChoose = policyAction };
 
                     var explorer = isVariableActionContext ?
-                        new EpsilonGreedyExplorer<TContext>(policy, epsilon, numActions) :
-                        new EpsilonGreedyExplorer<TContext>(policy, epsilon);
+                        new EpsilonGreedyExplorer<TContext>(policy, epsilon) :
+                        new EpsilonGreedyExplorer<TContext>(policy, epsilon, numActions);
 
                     for (int i = 0; i < experimentalUnitIdList.Length; i++)
                     {
