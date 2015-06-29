@@ -14,10 +14,12 @@
     </description>
     <url>https://github.com/JohnLangford/vowpal_wabbit</url>
 
+    <!-- Please note that I would like to link to the main repo but I cannot until I have write permissions. -->
+    <!-- The main repo can be found at https://github.com/JohnLangford/vowpal_wabbit -->
     <scm>
-        <connection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</connection>
-        <developerConnection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</developerConnection>
-        <url>git@github.com:JohnLangford/vowpal_wabbit.git</url>
+        <connection>scm:git:git@github.com:jmorra/vowpal_wabbit.git</connection>
+        <developerConnection>scm:git:git@github.com:jmorra/vowpal_wabbit.git</developerConnection>
+        <url>https://github.com/jmorra/vowpal_wabbit</url>
     </scm>
 
     <distributionManagement>
