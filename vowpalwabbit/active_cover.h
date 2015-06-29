@@ -28,28 +28,6 @@ public:
 	virtual ~active_cover_weights()
 	{ }
 
-	/* 
-	float update_lambda(size_t i, float delta)
-	{
-		return (lambda[i] += delta);
-	}
-	
-	float update_lambda_num(size_t i, float delta)
-	{
-		return (lambda_num[i] += delta);
-	}
-	
-	float update_lambda_den(size_t i, float delta)
-	{
-		return (lambda_den[i] += delta);
-	}
-	
-	float get_lambda(size_t i)
-	{
-		return lambda[i];
-	}	
-	*/
-
 
 	float update(weight_type_t type, size_t i, float delta)
 	{
@@ -93,16 +71,12 @@ struct active_cover
 	float active_c0;
 	float alpha;
 	bool no_beta;
-	bool print_used;
 	bool oracular;
 	float predicted_label_weight;
 
-	//uint32_t k;  
-	
 	active_cover_weights* weights;
 	vw* all;//statistics, loss
 	LEARNER::base_learner* l; 
-	//COST_SENSITIVE::label cs_label;
 };
 
 LEARNER::base_learner* active_cover_setup(vw& all);

@@ -33,7 +33,7 @@ float get_threshold(float sum_loss, float t, float c0, float alpha)
 	else
 	{
 		float avg_loss = sum_loss/t;
-		float threshold = sqrt(c0*avg_loss/t)	+ max(2*alpha,4.0)*c0*log(t)/t;
+		float threshold = sqrt(c0*avg_loss/t) + max(2*alpha,4.0)*c0*log(t)/t;
 		return threshold;
 	}
 }
@@ -52,7 +52,6 @@ float query_decision(active_cover& a, base_learner& l, example& ec, float predic
 	float lambda, max_lambda = -1;
 	size_t n_dis = 0;
 
-	//cout << "init q2 =  " << q2;
 	for(size_t i = 0; i < cover_size; i++)
 	{
 		l.predict(ec,i+1);
@@ -61,7 +60,6 @@ float query_decision(active_cover& a, base_learner& l, example& ec, float predic
 		n_dis += (sign(ec.pred.scalar) != sign(prediction)) ? 1 : 0;
 		max_lambda = max(lambda, max_lambda); 
 	}
-	//cout << ", end q2 =  " << q2 << ", n_dis = " << n_dis << ", max lambda = " << max_lambda << endl;
 
 	float p = sqrt(q2)/(1+sqrt(q2));		
 
@@ -70,8 +68,6 @@ float query_decision(active_cover& a, base_learner& l, example& ec, float predic
 		std::cout << "p: " << p << ". Set to 1. Max lambda = "<<  max_lambda <<endl;
 		p = 1;
 	}
-
-	//cout << "p: " << p << ", pmin: " << pmin << endl;
 
 	if(frand48() <= p)
 	{
@@ -83,47 +79,6 @@ float query_decision(active_cover& a, base_learner& l, example& ec, float predic
 	}
 }
 
-/*
-uint32_t get_min_cost_label(COST_SENSITIVE::label& cs_label)
-{
-	uint32_t m_label;
-	float cost = FLT_MAX;		
-	for(uint32_t j=0; j<cs_label.costs.size(); j++)
-	{
-		if(cs_label.costs[j].x < cost)
-		{
-			m_label = cs_label.costs[j].class_index;
-			cost = cs_label.costs[j].x;
-		}
-	}
-
-	return m_label;
-}
-*/
-
-/*
-void create_cost(example& ec, size_t k, bool in_dis, float s, float prediction, float threshold, float beta, float importance)
-{
-	size_t iter = ec.example_counter;
-	float c = 2*threshold*beta*beta*(iter-1);
-	uint32_t class_label = get_min_cost_label(ec.l.cs);
-
-	for(uint32_t j = 0; j < k; j++)
-	{
-		ec.l.cs.costs[j].x = 0;
-		if(in_dis)
-		{
-			bool add_s = (s>0 && (j+1) != predict_class) || (s<0 && (j+1) == predict_class);
-			ec.l.cs.costs[j].x += fabs(s)*((float)add_s);
-			ec.l.cs.costs[j].x += max(importance,0)*c*((float)((j+1) != class_label)); 	
-		}
-		else
-		{
-			ec.l.cs.costs[j].x += c*((float)((j+1) != predict_class));
-		}
-	}	
-}
-*/
 
 float get_cost(float target_label, float ec_true_label, float prediction, bool in_dis, float s,  float threshold, float beta, float importance, float t)
 {
@@ -144,32 +99,6 @@ float get_cost(float target_label, float ec_true_label, float prediction, bool i
 	return cost;
 }
 
-void print_example(active_cover& a, example& ec)
-{
-	label_data& ld = ec.l.simple;
-	if (ld.label != FLT_MAX)
-	{
-		cout << ld.label << " ";
-		if (ld.weight != 1 || ld.initial != 0)
-		{
-			cout << ld.weight << " ";
-			if (ld.initial != 0)
-			{
-				cout << ld.initial << " ";
-			}
-		}
-	}
-	/*if (ec.tag.size() > 0)
-	{
-		cout << '\'';
-		cout.write(ec.tag.begin, ec.tag.size());
-	}*/
-	cout << ec.example_t << "| ";
-	GD::foreach_feature<vw, print_feature>(*(a.all), ec, *a.all);
-	cout << endl;
-}
-
-
 
 template <bool is_learn>
 void predict_or_learn_active_cover(active_cover& a, base_learner& base, example& ec) 
@@ -184,13 +113,11 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 		float ec_input_weight = ec.l.simple.weight; 
 		float ec_input_label = ec.l.simple.label;
 
-		//cout << "example_t = " << ec.example_t << ", sum_loss = " << all.sd->sum_loss << endl;
 
 		// Compute threshold defining allowed set A
 		float threshold = get_threshold(all.sd->sum_loss, t, a.active_c0, a.alpha);
 	
 		// Make query decision	
-		
 		float importance = 1; 
 		float pmin = 1;
 		bool in_dis = true; 
@@ -202,9 +129,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 			pmin = get_pmin(all.sd->sum_loss, t); 
 			if(in_dis)
 			{
-				//cout << "sum_loss: " << all.sd->sum_loss << ", pmin: " << pmin << endl;
 				importance = (a.oracular) ? 1 : query_decision(a, base, ec, prediction, pmin);
-				// importance = 1;
 			}
 		}
 
@@ -215,11 +140,6 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 		{
 			ec.l.simple.label = sign(prediction);
 			ec.l.simple.weight = ec_input_weight * a.predicted_label_weight;
-			//cout << "not in dis, example_t: " << ec.example_t << ", weight: " << ec.l.simple.weight << ", pre-learn label: " << ec.l.simple.label << endl;
-			if(a.print_used)
-			{
-				print_example(a, ec);
-			}
 			base.learn(ec, 0);
 			
 		}
@@ -228,11 +148,6 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 			all.sd->queries += 1;
 			ec.l.simple.weight = ec_input_weight * importance;
 			ec.l.simple.label = ec_input_label;
-			//cout << "in dis, example_t: " << ec.example_t << ", weight: " << ec.l.simple.weight << ", pre-learn label: " << ec.l.simple.label << endl;
-			if(a.print_used)
-			{
-				print_example(a, ec);
-			}
 			base.learn(ec, 0);
 		}
 		else // skipped example
@@ -305,16 +220,12 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 	
 			a.weights->update(LAMBDA, i, lambda_delta);
 				
-		
-			//cout << "i = " << i << ", lambda = " << a.weights->get(LAMBDA,i) <<", lambda_delta = " << lambda_delta << ", cost = " << cost << ", cost_delta = " << cost_delta << ", num_delta = " << num_delta  <<endl;
 		}
 
 		// Restoring the weight, the label, and the prediction
 		ec.l.simple.weight = ec_output_weight;
 		ec.l.simple.label = ec_output_label;
 		ec.pred.scalar = prediction;
-		//ec.loss = ec_loss;
-		//cout << "true label = " << ec_input_label << ", used label = " << ec_output_label << ", weight = " << ec_output_weight << ", prediction = " << prediction << endl;
 	}
 }
 
