@@ -95,9 +95,9 @@ namespace Search {
 
   struct actionpp { // action++ stores an action and any number of "intermediate" floats
     action a;
-    v_array<float> pp;
-    actionpp(action _a, v_array<float> _pp) : a(_a), pp(_pp) {}
-    actionpp(action _a) : a(_a) { pp = v_init<float>(); }
+    //    v_array<float> pp;
+    //    actionpp(action _a, v_array<float> _pp) : a(_a), pp(_pp) {}
+    actionpp(action _a) : a(_a) { } // pp = v_init<float>(); }
   };
   
   struct search_private {
@@ -626,6 +626,7 @@ namespace Search {
       }
     }
 
+    /*
     for (size_t i=0; i<I; i++)
       if (condition_on_actions[i].pp.size() > 0) {
         char name = condition_on_names[i];
@@ -639,7 +640,8 @@ namespace Search {
           // TODO: audit
         }
       }
-
+    */
+    
     size_t sz = ec.atomics[conditioning_namespace].size();
     if ((sz > 0) && (ec.sum_feat_sq[conditioning_namespace] > 0.)) {
       ec.indices.push_back(conditioning_namespace);
@@ -1015,8 +1017,8 @@ namespace Search {
     if (mytag == 0) return do_store; // don't attempt to cache when tag is zero
 
     size_t sz  = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + sizeof(size_t) + condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(char));
-    for (size_t i=0; i<condition_on_cnt; i++)
-      sz += sizeof(float) * condition_on_actions[i].pp.size();
+    //for (size_t i=0; i<condition_on_cnt; i++)
+    //  sz += sizeof(float) * condition_on_actions[i].pp.size();
     if (sz % 4 != 0) sz = 4 * (sz / 4 + 1); // make sure sz aligns to 4 so that uniform_hash does the right thing
 
     unsigned char* item = calloc_or_die<unsigned char>(sz);
@@ -1027,12 +1029,13 @@ namespace Search {
     *here = (unsigned char)learner_id;        here += sizeof(size_t);
     *here = (unsigned char)condition_on_cnt;  here += (unsigned char)sizeof(size_t);
     for (size_t i=0; i<condition_on_cnt; i++) {
-      uint32_t nf = condition_on_actions[i].pp.size();
+      //uint32_t nf = condition_on_actions[i].pp.size();
       *here = condition_on[i];           here += sizeof(ptag);
       *here = condition_on_actions[i].a; here += sizeof(action);
-      *here = nf;                        here += sizeof(uint32_t);
-      for (uint32_t j=0; j<nf; j++)
-        *here = condition_on_actions[i].pp[j]; here += sizeof(float);
+      //*here = nf;                        here += sizeof(uint32_t);
+      // for (uint32_t j=0; j<nf; j++) {
+      //   *here = condition_on_actions[i].pp[j]; here += sizeof(float);
+      // }
       *here = condition_on_names[i];     here += sizeof(char);  // SPEEDUP: should we align this at 4?
     }
     uint32_t hash = uniform_hash(item, sz, 3419);
