@@ -28,6 +28,11 @@ namespace VW.Serializer
 
         internal VowpalWabbitSerializer(Func<TExample, IVowpalWabbitExample> serializer, VowpalWabbitSerializerSettings settings)
         {
+            if (serializer == null)
+            {
+                throw new ArgumentNullException("serializer");
+            }
+
             this.serializer = serializer;
             this.settings = settings ?? new VowpalWabbitSerializerSettings();
 

@@ -1,20 +1,7 @@
-﻿using Antlr4.Runtime;
-using Antlr4.Runtime.Tree;
-using cs_test;
-using VW;
-using VW.Interfaces;
-using VW.Labels;
-using VW.Serializer.Attributes;
+﻿using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TrainSet0002Dat;
+using VW;
 
 namespace cs_unittest
 {
