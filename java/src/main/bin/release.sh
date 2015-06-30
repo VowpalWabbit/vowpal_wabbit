@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 # The goal of this is to emulate the maven release plugin with the added
 # steps necessary
