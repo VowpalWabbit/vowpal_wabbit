@@ -4,7 +4,7 @@
 
     <groupId>com.github.johnlangford</groupId>
     <artifactId>vw-jni</artifactId>
-    <version>8.1-SNAPSHOT</version>
+    <version>8.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Vowpal Wabbit JNI Layer</name>
     <description>
@@ -17,11 +17,10 @@
     <!-- Please note that I would like to link to the main repo but I cannot until I have write permissions. -->
     <!-- The main repo can be found at https://github.com/JohnLangford/vowpal_wabbit -->
     <scm>
-        <connection>scm:git:git@github.com:jmorra/vowpal_wabbit.git</connection>
-        <developerConnection>scm:git:git@github.com:jmorra/vowpal_wabbit.git</developerConnection>
-        <url>git@github.com:jmorra/vowpal_wabbit.git</url>
-    <tag>HEAD</tag>
-  </scm>
+        <connection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</connection>
+        <developerConnection>scm:git@github.com:JohnLangford/vowpal_wabbit.git</developerConnection>
+        <url>git@github.com:JohnLangford/vowpal_wabbit.git</url>
+    </scm>
 
     <distributionManagement>
         <snapshotRepository>
@@ -176,33 +175,6 @@
                                     </includes>
                                 </resource>
                             </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
-                <version>2.5</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.apache.maven.scm</groupId>
-                        <artifactId>maven-scm-provider-gitexe</artifactId>
-                        <version>1.8.1</version>
-                    </dependency>
-                </dependencies>
-                <configuration>
-                    <releaseProfiles>release</releaseProfiles>
-                    <goals>deploy</goals>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>default</id>
-                        <goals>
-                            <goal>perform</goal>
-                        </goals>
-                        <configuration>
-                            <pomFileName>java/pom.xml</pomFileName>
                         </configuration>
                     </execution>
                 </executions>
