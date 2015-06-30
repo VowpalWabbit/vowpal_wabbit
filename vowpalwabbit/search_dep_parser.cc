@@ -30,8 +30,12 @@ namespace DepParserTask {
   const action SHIFT        = 1;
   const action REDUCE_RIGHT = 2;
   const action REDUCE_LEFT  = 3;
-  
+
+  bool bool_equal(bool a, bool b) {return a==b; }
+  bool size_equal(size_t a, size_t b) { return a==b; }
+
   void initialize(Search::search& srn, size_t& /*num_actions*/, po::variables_map& vm) {
+    vw& all = srn.get_vw_pointer_unsafe();
     task_data *data = new task_data();
     data->action_loss.resize(4,true);
     data->ex = NULL;
@@ -42,6 +46,14 @@ namespace DepParserTask {
         ("root_label", po::value<size_t>(&(data->root_label))->default_value(8), "Ensure that there is only one root in each sentence")
         ("num_label", po::value<size_t>(&(data->num_label))->default_value(12), "Number of arc labels")
         ("old_style_labels", "Use old hack of label information");
+
+    check_option<size_t>(data->root_label, all, vm, "root_label", false, size_equal,
+                         "warning: you specified a different value for --root_label than the one loaded from regressor. proceeding with loaded value: ", "");
+    check_option<size_t>(data->num_label, all, vm, "num_label", false, size_equal,
+                         "warning: you specified a different value for --num_label than the one loaded from regressor. proceeding with loaded value: ", "");
+    check_option<bool>(data->old_style_labels, all, vm, "old_style_labels", false, bool_equal,
+                         "warning: you specified a different value for --old_style_labels than the one loaded from regressor. proceeding with loaded value: ", "");
+
     srn.add_program_options(vm, dparser_opts);
 
     data->ex = VW::alloc_examples(sizeof(polylabel), 1);
@@ -51,8 +63,7 @@ namespace DepParserTask {
     data->ex->indices.push_back(constant_namespace);
 
     data->old_style_labels = vm.count("old_style_labels") > 0;
-    
-    vw& all = srn.get_vw_pointer_unsafe();
+    	
     const char* pair[] = {"BC", "BE", "BB", "CC", "DD", "EE", "FF", "GG", "EF", "BH", "BJ", "EL", "dB", "dC", "dD", "dE", "dF", "dG", "dd"};
     const char* triple[] = {"EFG", "BEF", "BCE", "BCD", "BEL", "ELM", "BHI", "BCC", "BJE", "BHE", "BJK", "BEH", "BEN", "BEJ"};
     vector<string> newpairs(pair, pair+19);
