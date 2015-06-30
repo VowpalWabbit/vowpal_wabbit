@@ -385,6 +385,8 @@ void parse_source(vw& all)
     }
 }
 
+bool interactions_settings_doubled = false; // local setting setted in parse_modules()
+
 void parse_feature_tweaks(vw& all)
 {
   new_options(all, "Feature options")
@@ -470,21 +472,39 @@ void parse_feature_tweaks(vw& all)
 
   all.permutations = vm.count("permutations");
 
-  // dont re-expand interactions if they are already populated by the model
-  if (all.interactions.size() == 0) 
-  {
      // prepare namespace interactions
      v_array<v_string> expanded_interactions = v_init<v_string>();
      
+  if ( ( ((!all.pairs.empty() || !all.triples.empty() || !all.interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
+       (vm.count("quadratic") || vm.count("cubic") || vm.count("interactions")) ) )
+         ||
+       interactions_settings_doubled /*settings were restored from model file to file_options and overriden by params from command line*/)
+  {
+      cerr << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line.\n";
+
+      // in case arrays were already filled in with values from old model file - reset them
+      if (!all.pairs.empty()) all.pairs.clear();
+      if (!all.triples.empty()) all.triples.clear();
+      if (all.interactions.size() > 0)
+      {
+          for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i) i->delete_v();
+          all.interactions.delete_v();
+      }
+  }
+
      if (vm.count("quadratic"))
      {
          const vector<string> vec_arg = vm["quadratic"].as< vector<string> >();
          if (!all.quiet)
          {
              cerr << "creating quadratic features for pairs: ";
+
              for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+          {
                  if (!all.quiet) cerr << *i << " ";
+              *all.file_options << " --quadratic " << *i;
          }
+      }
          expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
      
          if (!all.quiet) cerr << endl;
@@ -497,8 +517,11 @@ void parse_feature_tweaks(vw& all)
          {
              cerr << "creating cubic features for triples: ";
              for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+          {
                  if (!all.quiet) cerr << *i << " ";
+              *all.file_options << " --cubic " << *i;
          }
+      }
      
          v_array<v_string> exp_cubic = INTERACTIONS::expand_interactions(vec_arg, 3, "error, cubic features must involve three sets.");
          push_many(expanded_interactions, exp_cubic.begin, exp_cubic.size());
@@ -514,8 +537,11 @@ void parse_feature_tweaks(vw& all)
          {
              cerr << "creating features for following interactions: ";
              for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+          {
                  if (!all.quiet) cerr << *i << " ";
+              *all.file_options << " --interactions " << *i;
          }
+      }
      
          v_array<v_string> exp_inter = INTERACTIONS::expand_interactions(vec_arg, 0, "");
          push_many(expanded_interactions, exp_inter.begin, exp_inter.size());
@@ -536,6 +562,13 @@ void parse_feature_tweaks(vw& all)
          if (sorted_cnt > 0)
              cerr << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
      
+
+      if (all.interactions.size() > 0)
+      { // should be empty, but just in case...
+          for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i) i->delete_v();
+          all.interactions.delete_v();
+      }
+
          all.interactions = expanded_interactions;
      
          // copy interactions of size 2 and 3 to old vectors for backward compatibility
@@ -548,7 +581,7 @@ void parse_feature_tweaks(vw& all)
                  all.triples.push_back(v_string2string(*i));
          }
      }
-  }
+
 
   for (size_t i = 0; i < 256; i++)
     all.ignore[i] = false;
@@ -951,10 +984,29 @@ void parse_reductions(vw& all)
   all.l = setup_base(all);
 }
 
-void add_to_args(vw& all, int argc, char* argv[])
+void add_to_args(vw& all, int argc, char* argv[], int excl_param_count = 0, const char* excl_params[] = NULL)
 {
+  bool skip_next = false;
+
   for (int i = 1; i < argc; i++)
+  {
+    if (skip_next)
+    {
+        skip_next = false;
+        continue;
+    }
+
+    for (int j = 0; j < excl_param_count; j++)
+        if (std::strcmp(argv[i], excl_params[j]) == 0)
+        {
+            skip_next = true; //skip param arguement
+            break;
+        }
+
+    if (skip_next) continue;
+
     all.args.push_back(string(argv[i]));
+}
 }
 
 vw& parse_args(int argc, char *argv[])
@@ -1005,12 +1057,37 @@ vw& parse_args(int argc, char *argv[])
 	return all;
 }
 
+bool check_interaction_settings_collision(vw& all)
+{
+    bool args_has_inter = std::find(all.args.begin(), all.args.end(), std::string("-q")) != all.args.end();
+    args_has_inter = args_has_inter || ( std::find(all.args.begin(), all.args.end(), std::string("--quadratic")) != all.args.end() );
+    args_has_inter = args_has_inter || ( std::find(all.args.begin(), all.args.end(), std::string("--cubic")) != all.args.end() );
+    args_has_inter = args_has_inter || ( std::find(all.args.begin(), all.args.end(), std::string("--interactions")) != all.args.end() );
+
+    if (!args_has_inter) return false;
+
+    // we don't use -q to save pairs in all.file_options, so only 3 options checked
+    bool opts_has_inter = all.file_options->str().find("--quadratic") != std::string::npos;
+    opts_has_inter = opts_has_inter || (all.file_options->str().find("--cubic") != std::string::npos);
+    opts_has_inter = opts_has_inter || (all.file_options->str().find("--interactions") != std::string::npos);
+
+    return opts_has_inter;
+}
+
 void parse_modules(vw& all, io_buf& model)
 {
 	save_load_header(all, model, true, false);
   
+  interactions_settings_doubled = check_interaction_settings_collision(all);
+
   int temp_argc = 0;
   char** temp_argv = VW::get_argv_from_string(all.file_options->str(), temp_argc);
+
+  if (interactions_settings_doubled)
+  {   //remove
+      const char* interaction_params[] = {"--quadratic", "--cubic", "--interactions"};
+      add_to_args(all, temp_argc, temp_argv, 3, interaction_params);
+  } else
   add_to_args(all, temp_argc, temp_argv);
   for (int i = 0; i < temp_argc; i++)
     free(temp_argv[i]);
@@ -1212,7 +1289,7 @@ namespace VW {
 	  cerr << endl << "total queries = " << all.sd->queries << endl;
         cerr << endl;
         }
-
+    
 	// implement finally.
 	// finalize_regressor can throw if it can't write the file.
 	// we still want to free up all the memory.
@@ -1220,7 +1297,7 @@ namespace VW {
 	bool finalize_regressor_exception_thrown = false;
 	try
 	{
-		finalize_regressor(all, all.final_regressor_name);
+    finalize_regressor(all, all.final_regressor_name);
 	}
 	catch (vw_exception& e)
 	{
