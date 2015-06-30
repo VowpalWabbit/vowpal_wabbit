@@ -4,7 +4,7 @@
 
     <groupId>com.github.johnlangford</groupId>
     <artifactId>vw-jni</artifactId>
-    <version>8.0-SNAPSHOT</version>
+    <version>8.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Vowpal Wabbit JNI Layer</name>
     <description>
@@ -19,8 +19,8 @@
     <scm>
         <connection>scm:git:git@github.com:jmorra/vowpal_wabbit.git</connection>
         <developerConnection>scm:git:git@github.com:jmorra/vowpal_wabbit.git</developerConnection>
-        <url>scm:git:git@github.com:jmorra/vowpal_wabbit.git</url>
-      <tag>vw-jni-8.0</tag>
+        <url>git@github.com:jmorra/vowpal_wabbit.git</url>
+    <tag>HEAD</tag>
   </scm>
 
     <distributionManagement>
@@ -192,8 +192,6 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <useReleaseProfile>false</useReleaseProfile>
                     <releaseProfiles>release</releaseProfiles>
                     <goals>deploy</goals>
                 </configuration>
