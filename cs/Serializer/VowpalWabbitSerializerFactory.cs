@@ -84,12 +84,18 @@ namespace VW.Serializer
             return newSerializer;
         }
 
-        //public static Expression Log([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0)
+        //public static Expression Log([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0, Expression expression = null)
         //{
         //    var file = Expression.Constant(@"c:\vowpal_wabbit\test.log");
-        //    var logMethod = (MethodInfo)ReflectionHelper.GetInfo((string a) => File.AppendAllText(a,a));
+        //    var logMethod = (MethodInfo)ReflectionHelper.GetInfo((string a) => File.AppendAllText(a, a));
+        //    var toString = (MethodInfo)ReflectionHelper.GetInfo((object a) => a.ToString());
 
-        //    return Expression.Call(logMethod, file, Expression.Constant(filePath + ":" + lineNumber + "\n"));
+        //    if (expression == null)
+        //        return Expression.Call(logMethod, file, Expression.Constant(filePath + ":" + lineNumber + "\n"));
+
+        //    return Expression.Block(
+        //        Expression.Call(logMethod, file, Expression.Constant(filePath + ":" + lineNumber + "\n")),
+        //        Expression.Call(logMethod, file, Expression.Call(expression, toString)));
         //}
 
         private static Func<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult>(ModuleBuilder moduleBuilder)
@@ -113,9 +119,9 @@ namespace VW.Serializer
             var body = new List<Expression>();
 
             //// CODE if (value == null) throw new ArgumentNullException("value");
-            ////body.Add(Log());
+            //body.Add(Log());
             //body.Add(Expression.IfThen(
-            //        Expression.Equal(valueParameter, Expression.Constant(null)), 
+            //        Expression.Equal(valueParameter, Expression.Constant(null)),
             //        Expression.Throw(Expression.New(ArgumentNullExceptionConstructorInfo, Expression.Constant("value")))));
 
             //// CODE if (value == null) throw new ArgumentNullException("visitor");
@@ -188,7 +194,7 @@ namespace VW.Serializer
 
                     foreach (var feature in features)
                     {
-                        var featureVariable = Expression.Parameter(feature.FeatureType, feature.Name);
+                        var featureVariable = Expression.Parameter(feature.FeatureType, feature.PropertyName);
 
                         variables.Add(featureVariable);
                         featureVariables.Add(featureVariable);
@@ -313,7 +319,7 @@ namespace VW.Serializer
 
             return (Func<TExample, TVisitor, TExampleResult>)Delegate.CreateDelegate(
                 typeof(Func<TExample, TVisitor, TExampleResult>),
-                dynType.GetMethod(SerializeMethodName));
+                dynType.GetMethod(SerializeMethodName));                                        
         }
 
         internal static bool IsValidDenseFeatureValueElementType(Type elemType)
@@ -357,7 +363,7 @@ namespace VW.Serializer
         private static IList<FeatureExpression> ExtractFeaturesCompiled(Expression valueExpression, string parentNamespace, char? parentFeatureGroup)
         {
             var props = valueExpression.Type.GetProperties(BindingFlags.Instance | BindingFlags.GetProperty | BindingFlags.Public);
-
+                                                                         
             var localFeatures = from p in props
                                 let attr = (FeatureAttribute)p.GetCustomAttributes(typeof(FeatureAttribute), true).FirstOrDefault()
                                 where attr != null
@@ -370,6 +376,7 @@ namespace VW.Serializer
                                 select new FeatureExpression
                                 {
                                     Name = name,
+                                    PropertyName = p.Name,
                                     Namespace = namespaceValue,
                                     Enumerize = attr.Enumerize,
                                     FeatureGroup = featureGroup,
@@ -386,7 +393,9 @@ namespace VW.Serializer
                                        Expression.Bind(featureType.GetProperty("Value"), propertyExpression),
                                        Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Namespace), Expression.Constant(namespaceValue, typeof(string))),
                                        Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.FeatureGroup),
-                                            featureGroup == null ? Expression.Constant(null, typeof(char?)) : Expression.Constant((char)featureGroup)))
+                                            featureGroup == null ? (Expression)Expression.Constant(null, typeof(char?)) :
+                                            Expression.New((ConstructorInfo)ReflectionHelper.GetInfo((char v) => new char?(v)), Expression.Constant((char)featureGroup)))
+                                       )
                                 };
 
             // Recurse
