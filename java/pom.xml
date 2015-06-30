@@ -13,10 +13,10 @@
         by modifying src/main/bin/build.sh accordingly.
     </description>
     <url>https://github.com/JohnLangford/vowpal_wabbit</url>
-    
+
     <scm>
         <connection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</connection>
-        <developerConnection>scm:git@github.com:JohnLangford/vowpal_wabbit.git</developerConnection>
+        <developerConnection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</developerConnection>
         <url>git@github.com:JohnLangford/vowpal_wabbit.git</url>
     </scm>
 
