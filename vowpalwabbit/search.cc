@@ -1015,15 +1015,10 @@ namespace Search {
     if (priv.no_caching) return do_store;
     if (mytag == 0) return do_store; // don't attempt to cache when tag is zero
 
-<<<<<<< HEAD
     size_t sz  = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + sizeof(size_t) + condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(char));
     //for (size_t i=0; i<condition_on_cnt; i++)
     //  sz += sizeof(float) * condition_on_actions[i].pp.size();
-=======
-    size_t sz  = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + sizeof(size_t) + condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(uint32_t) + sizeof(char));
-    for (size_t i=0; i<condition_on_cnt; i++)
-      sz += sizeof(float) * condition_on_actions[i].pp.size();
->>>>>>> a81a07d364bcdac2fb0a5ab73130c19b8e4533b9
+    //size_t sz  = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + sizeof(size_t) + condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(uint32_t) + sizeof(char));
     if (sz % 4 != 0) sz = 4 * (sz / 4 + 1); // make sure sz aligns to 4 so that uniform_hash does the right thing
 
     unsigned char* item = calloc_or_die<unsigned char>(sz);
