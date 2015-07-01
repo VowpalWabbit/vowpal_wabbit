@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -24,7 +24,7 @@
     <RootNamespace>vw_static</RootNamespace>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">.\</SolutionDir>
   </PropertyGroup>
-  <Import Project="$(SolutionDir)Build.props" />
+  <Import Project="$(SolutionDir)\Build.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -240,6 +240,7 @@
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
     <ClInclude Include="gd.h" />
+    <ClInclude Include="interactions.h" />
     <ClInclude Include="ftrl.h" />
     <ClInclude Include="label_dictionary.h" />
     <ClInclude Include="memory.h" />
@@ -265,6 +266,7 @@
     <ClInclude Include="noop.h" />
     <ClInclude Include="print.h" />
     <ClInclude Include="oaa.h" />
+    <ClInclude Include="boosting.h" />
     <ClInclude Include="bs.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="parse_args.h" />
@@ -289,6 +291,7 @@
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
     <ClInclude Include="vw.h" />
+    <ClInclude Include="vw_exception.h" />
     <ClInclude Include="v_array.h" />
     <ClInclude Include="v_hashmap.h" />
   </ItemGroup>
@@ -308,6 +311,7 @@
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
     <ClCompile Include="gd.cc" />
+    <ClCompile Include="interactions.cc" />
     <ClCompile Include="ftrl.cc" />
     <ClCompile Include="interact.cc" />
     <ClCompile Include="kernel_svm.cc" />
@@ -334,6 +338,7 @@
     <ClCompile Include="noop.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="oaa.cc" />
+    <ClCompile Include="boosting.cc" />
     <ClCompile Include="bs.cc" />
     <ClCompile Include="parser.cc" />
     <ClCompile Include="parse_args.cc" />
@@ -356,6 +361,7 @@
     <ClCompile Include="svrg.cc" />
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
+    <ClCompile Include="vw_exception.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

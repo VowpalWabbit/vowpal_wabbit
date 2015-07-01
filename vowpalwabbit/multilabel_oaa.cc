@@ -8,12 +8,12 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "vw.h"
 
-struct oaa {
+struct multi_oaa {
   size_t k;
 };
 
 template <bool is_learn>
-void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
+void predict_or_learn(multi_oaa& o, LEARNER::base_learner& base, example& ec) {
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
   preds.label_v.erase();
@@ -42,21 +42,21 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   ec.l.multilabels = multilabels;
 }
 
-  void finish_example(vw& all, oaa& c, example& ec)
-  {
-    MULTILABEL::output_example(all, ec);
-    VW::finish_example(all, &ec);
-  }
+void finish_example(vw& all, multi_oaa&, example& ec)
+{
+  MULTILABEL::output_example(all, ec);
+  VW::finish_example(all, &ec);
+}
 
 LEARNER::base_learner* multilabel_oaa_setup(vw& all)
 {
   if (missing_option<size_t, true>(all, "multilabel_oaa", "One-against-all multilabel with <k> labels")) 
     return nullptr;
   
-  oaa& data = calloc_or_die<oaa>();
+  multi_oaa& data = calloc_or_die<multi_oaa>();
   data.k = all.vm["multilabel_oaa"].as<size_t>();
   
-  LEARNER::learner<oaa>& l = LEARNER::init_learner(&data, setup_base(all), predict_or_learn<true>, 
+  LEARNER::learner<multi_oaa>& l = LEARNER::init_learner(&data, setup_base(all), predict_or_learn<true>,
 						   predict_or_learn<false>, data.k);
   l.set_finish_example(finish_example);
   all.p->lp = MULTILABEL::multilabel;

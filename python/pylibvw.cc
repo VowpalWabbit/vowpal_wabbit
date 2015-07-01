@@ -64,14 +64,14 @@ void my_delete_example(void*voidec) {
   example* ec = (example*) voidec;
   size_t labelType = (ec->tag.size() == 0) ? lDEFAULT : ec->tag[0];
   label_parser* lp = get_label_parser(NULL, labelType);
-  dealloc_example(lp ? lp->delete_label : NULL, *ec);
+  VW::dealloc_example(lp ? lp->delete_label : NULL, *ec);
   free(ec);
 }
 
 
 example* my_empty_example0(vw_ptr vw, size_t labelType) {
   label_parser* lp = get_label_parser(&*vw, labelType);
-  example* ec = alloc_examples(lp->label_size, 1);
+  example* ec = VW::alloc_examples(lp->label_size, 1);
   lp->default_label(&ec->l);
   if (labelType == lCOST_SENSITIVE) {
     COST_SENSITIVE::wclass zero = { 0., 1, 0., 0. };
@@ -91,7 +91,7 @@ example_ptr my_empty_example(vw_ptr vw, size_t labelType) {
 example_ptr my_read_example(vw_ptr all, size_t labelType, char*str) {
   example*ec = my_empty_example0(all, labelType);
   read_line(*all, ec, str);
-  parse_atomic_example(*all, ec, false);
+  VW::parse_atomic_example(*all, ec, false);
   VW::setup_example(*all, ec);
   ec->example_counter = labelType;
   ec->tag.erase();

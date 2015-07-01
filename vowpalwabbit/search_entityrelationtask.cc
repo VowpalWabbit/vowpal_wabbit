@@ -34,7 +34,7 @@ namespace EntityRelationTask {
   };
 
 
-  void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
+  void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm) {
     task_data * my_task_data = new task_data();
     po::options_description sspan_opts("entity relation options");
     sspan_opts.add_options()
@@ -62,7 +62,7 @@ namespace EntityRelationTask {
     if(my_task_data->search_order != 3 && my_task_data->search_order != 4 ) {
       sch.set_options(0);
     } else {
-      example* ldf_examples = alloc_examples(sizeof(CS::label), 10);
+      example* ldf_examples = VW::alloc_examples(sizeof(CS::label), 10);
       CS::wclass default_wclass = { 0., 0, 0., 0. };
       for (size_t a=0; a<10; a++) {
         ldf_examples[a].l.cs.costs.push_back(default_wclass);
@@ -84,7 +84,7 @@ namespace EntityRelationTask {
     my_task_data->y_allowed_relation.delete_v();
     if(my_task_data->search_order == 3) {
       for (size_t a=0; a<10; a++)
-        dealloc_example(CS::cs_label.delete_label, my_task_data->ldf_entity[a]);
+        VW::dealloc_example(CS::cs_label.delete_label, my_task_data->ldf_entity[a]);
       free(my_task_data->ldf_entity);
     }
     delete my_task_data;
@@ -119,7 +119,7 @@ namespace EntityRelationTask {
     id2 = atoi(s2.c_str());
   }
   
-  size_t predict_entity(Search::search&sch, example* ex, v_array<size_t>& predictions, ptag my_tag, bool isLdf=false){
+  size_t predict_entity(Search::search&sch, example* ex, v_array<size_t>& /*predictions*/, ptag my_tag, bool isLdf=false){
 	  	
     task_data* my_task_data = sch.get_task_data<task_data>();
     size_t prediction;

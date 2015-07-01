@@ -2,6 +2,7 @@
 #include <climits>
 #include "global_data.h"
 #include "vw.h"
+#include "vw_exception.h"
 
 namespace MULTICLASS {
 
@@ -56,9 +57,9 @@ namespace MULTICLASS {
     ld->weight = 1.;
   }
 
-  void delete_label(void* v) {}
+  void delete_label(void*) {}
 
-  void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
+  void parse_label(parser*, shared_data*sd, void* v, v_array<substring>& words)
   {
     label_t* ld = (label_t*)v;
 
@@ -66,11 +67,11 @@ namespace MULTICLASS {
     case 0:
       break;
     case 1:
-      ld->label = int_of_substring(words[0]);
+      ld->label = sd->ldict ? sd->ldict->get(words[0]) : int_of_substring(words[0]);
       ld->weight = 1.0;
       break;
     case 2:
-      ld->label = int_of_substring(words[0]);
+      ld->label = sd->ldict ? sd->ldict->get(words[0]) : int_of_substring(words[0]);
       ld->weight = float_of_substring(words[1]);
       break;
     default:
@@ -78,10 +79,7 @@ namespace MULTICLASS {
       cerr << "words.size() = " << words.size() << endl;
     }
     if (ld->label == 0)
-      {
-	cout << "label 0 is not allowed for multiclass.  Valid labels are {1,k}" << endl;
-	throw exception();
-      }
+      THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}" << (sd->ldict ? "\nthis likely happened because you specified an invalid label with named labels" : ""));
   }
 
   label_parser mc_label = {default_label, parse_label, 
@@ -94,22 +92,35 @@ namespace MULTICLASS {
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
-        //std::cerr << "@" << (uint32_t)difftime(time(0), all.init_time) << "s\t";
+        if (! all.sd->ldict)
 	all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.multi.label, ec.pred.multiclass,
 			     ec.num_features, all.progress_add, all.progress_arg);
+        else {
+          substring ss_label = all.sd->ldict->get(ec.l.multi.label);
+          substring ss_pred  = all.sd->ldict->get(ec.pred.multiclass);
+          all.sd->print_update(all.holdout_set_off, all.current_pass,
+                               !ss_label.begin ? "unknown" : string(ss_label.begin, ss_label.end - ss_label.begin),
+                               !ss_pred.begin  ? "unknown" : string(ss_pred.begin, ss_pred.end - ss_pred.begin),
+                               ec.num_features, all.progress_add, all.progress_arg);
       }
+  }
   }
 
   void finish_example(vw& all, example& ec)
   {
-    float loss = 1;
-    if (ec.l.multi.label == (uint32_t)ec.pred.multiclass)
-      loss = 0;
+    float loss = 0;
+    if (ec.l.multi.label != (uint32_t)ec.pred.multiclass)
+      loss = ec.l.multi.weight;
     
     all.sd->update(ec.test_only, loss, ec.l.multi.weight, ec.num_features);
     
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+      if (! all.sd->ldict)
       all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
+      else {
+        substring ss_pred = all.sd->ldict->get(ec.pred.multiclass);
+        all.print_text(*sink, string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
+      }
     
     MULTICLASS::print_update(all, ec);
     VW::finish_example(all, &ec);

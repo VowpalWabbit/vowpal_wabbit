@@ -30,12 +30,12 @@ struct ftrl {
   struct update_data data;  
 };
   
-void predict(ftrl& b, base_learner& base, example& ec) {
+void predict(ftrl& b, base_learner&, example& ec) {
   ec.partial_prediction = GD::inline_predict(*b.all, ec);
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
 
-void multipredict(ftrl& b, base_learner& base, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions) {
+void multipredict(ftrl& b, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions) {
   vw& all = *b.all;
   for (size_t c=0; c<count; c++)
     pred[c].scalar = ec.l.simple.initial;
@@ -93,7 +93,7 @@ void inner_update_pistol_post(update_data& d, float x, float& wref) {
   w[W_G2] += fabs(gradient);
 }
 
-void update_state_and_predict_pistol(ftrl& b, base_learner& base, example& ec) {
+void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec) {
   b.data.predict = 0;
   
   GD::foreach_feature<update_data, inner_update_pistol_state_and_predict>(*b.all, ec, b.data);

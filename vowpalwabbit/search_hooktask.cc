@@ -37,7 +37,7 @@ namespace HookTask {
     delete td;
   }
 
-  void run(Search::search& sch, vector<example*>& ec) {
+  void run(Search::search& sch, vector<example*>& /*ec*/) {
     task_data *td = sch.get_task_data<task_data>();
     if (td->run_f)
       td->run_f(sch);
@@ -45,12 +45,12 @@ namespace HookTask {
       cerr << "warning: HookTask::structured_predict called before hook is set" << endl;
   }
 
-  void run_setup(Search::search& sch, vector<example*>& ec) {
+  void run_setup(Search::search& sch, vector<example*>& /*ec*/) {
     task_data *td = sch.get_task_data<task_data>();
     if (td->run_setup_f) td->run_setup_f(sch);
   }
 
-  void run_takedown(Search::search& sch, vector<example*>& ec) {
+  void run_takedown(Search::search& sch, vector<example*>& /*ec*/) {
     task_data *td = sch.get_task_data<task_data>();
     if (td->run_takedown_f) td->run_takedown_f(sch);
   }

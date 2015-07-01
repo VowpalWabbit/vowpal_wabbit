@@ -16,6 +16,7 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "rand48.h"
 #include "reductions.h"
+#include "vw_exception.h"
 
 using namespace std;
 
@@ -71,10 +72,8 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 		}
 	  }
       }
-  if (all.triples.begin() != all.triples.end()) {
-    cerr << "cannot use triples in matrix factorization" << endl;
-    throw exception();
-  }
+  if (all.triples.begin() != all.triples.end()) 
+    THROW("cannot use triples in matrix factorization");
   cout << endl;
 }
 
@@ -138,10 +137,8 @@ float mf_predict(gdmf& d, example& ec)
 	}
     }
 
-  if (all.triples.begin() != all.triples.end()) {
-    cerr << "cannot use triples in matrix factorization" << endl;
-    throw exception();
-  }
+  if (all.triples.begin() != all.triples.end()) 
+    THROW("cannot use triples in matrix factorization");
 
   // ec.topic_predictions has linear, x_dot_l_1, x_dot_r_1, x_dot_l_2, x_dot_r_2, ... 
 
@@ -210,10 +207,8 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
 	    
 	  }
       }
-    if (all.triples.begin() != all.triples.end()) {
-      cerr << "cannot use triples in matrix factorization" << endl;
-      throw exception();
-    }
+    if (all.triples.begin() != all.triples.end()) 
+      THROW("cannot use triples in matrix factorization");
   }  
   
   void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
@@ -293,7 +288,7 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
 
   void predict(gdmf& d, base_learner&, example& ec) { mf_predict(d,ec); }
 
-  void learn(gdmf& d, base_learner& base, example& ec)
+  void learn(gdmf& d, base_learner&, example& ec)
   {
     vw& all = *d.all;
  
@@ -318,26 +313,14 @@ base_learner* gd_mf_setup(vw& all)
   all.reg.stride_shift = (size_t) temp;
   all.random_weights = true;
   
-  if ( all.vm.count("adaptive") )
-    {
-      cerr << "adaptive is not implemented for matrix factorization" << endl;
-      throw exception();
-    }
-  if ( all.vm.count("normalized") )
-    {
-      cerr << "normalized is not implemented for matrix factorization" << endl;
-      throw exception();
-    }
-  if ( all.vm.count("exact_adaptive_norm") )
-    {
-      cerr << "normalized adaptive updates is not implemented for matrix factorization" << endl;
-      throw exception();
-    }
+  if (all.vm.count("adaptive"))
+    THROW("adaptive is not implemented for matrix factorization");
+  if (all.vm.count("normalized"))
+    THROW("normalized is not implemented for matrix factorization");
+  if (all.vm.count("exact_adaptive_norm"))
+    THROW("normalized adaptive updates is not implemented for matrix factorization");
   if (all.vm.count("bfgs") || all.vm.count("conjugate_gradient"))
-    {
-      cerr << "bfgs is not implemented for matrix factorization" << endl;
-      throw exception();
-    }	
+    THROW("bfgs is not implemented for matrix factorization");
 
   if(!all.holdout_set_off)
   {

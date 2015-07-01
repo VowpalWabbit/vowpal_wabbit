@@ -24,8 +24,13 @@ struct substring {
   char *end;
 };
 
+std::ostream& operator<<(std::ostream& os, const substring& ss);
+std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss);
+
 //chop up the string into a v_array of substring.
 void tokenize(char delim, substring s, v_array<substring> &ret, bool allow_empty=false);
+
+bool substring_equal(substring&a, substring&b);
 
 inline char* safe_index(char *start, char v, char *max)
 {

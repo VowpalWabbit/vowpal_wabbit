@@ -74,7 +74,7 @@ public:
 
 struct vw_recorder : public IRecorder<vw_context>
 {
-  void Record(vw_context& context, u32 a, float p, string unique_key)
+  void Record(vw_context& context, u32 a, float p, string /*unique_key*/)
   {
     action = a;
     probability = p;

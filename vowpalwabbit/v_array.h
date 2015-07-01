@@ -3,6 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
+
 #pragma once
 #include <iostream>
 #include <stdlib.h>
@@ -15,6 +16,8 @@ license as described in the file LICENSE.
 #else
 #define __INLINE inline
 #endif
+
+#include "vw_exception.h"
 
 const size_t erase_point = ~ ((1 << 10) -1);
 
@@ -38,10 +41,10 @@ template<class T> struct v_array {
 	{
 	  size_t old_len = end-begin;
 	  T* temp = (T *)realloc(begin, sizeof(T) * length);
-	  if ((temp == nullptr) && ((sizeof(T)*length) > 0)) {
-	    std::cerr << "realloc of " << length << " failed in resize().  out of memory?" << std::endl;
-	    throw std::exception();
-	  }
+	  if ((temp == nullptr) && ((sizeof(T)*length) > 0))
+	    {
+	      THROW("realloc of " << length << " failed in resize().  out of memory?"); 
+	    }
 	  else
 	    begin = temp;
           if (zero_everything && (old_len < length))
@@ -148,13 +151,13 @@ inline size_t min(size_t a, size_t b)
 template<class T> 
 inline v_array<T> v_init() { return {nullptr, nullptr, nullptr, 0};}
 
-template<class T> void copy_array(v_array<T>& dst, v_array<T> src)
+template<class T> void copy_array(v_array<T>& dst, v_array<T>& src)
 {
   dst.erase();
   push_many(dst, src.begin, src.size());
 }
 
-template<class T> void copy_array(v_array<T>& dst, v_array<T> src, T(*copy_item)(T&))
+template<class T> void copy_array(v_array<T>& dst, v_array<T>& src, T(*copy_item)(T&))
 {
   dst.erase();
   for (T*item = src.begin; item != src.end; ++item)
@@ -203,4 +206,22 @@ template<class T,class U>std::ostream& operator<<(std::ostream& os, const v_arra
   for (std::pair<T,U>* i=v.begin; i!=v.end; ++i) os << ' ' << i->first << ':' << i->second;
   os << " ]";
   return os;
+}
+
+typedef v_array<unsigned char> v_string;
+
+inline v_string string2v_string(const std::string& s)
+{
+    v_string res = v_init<unsigned char>();
+    if (!s.empty())
+        push_many(res, (unsigned  char*)s.data(), s.size());
+    return res;
+}
+
+inline std::string v_string2string(const v_string& v_s)
+{
+    std::string res;
+    for (unsigned char* i = v_s.begin; i != v_s.end; ++i)
+        res.push_back(*i);
+    return res;
 }

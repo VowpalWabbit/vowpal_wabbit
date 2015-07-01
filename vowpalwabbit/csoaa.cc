@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include "label_dictionary.h"
 #include "vw.h"
 #include "gd.h" // GD::foreach_feature() needed in subtract_example()
+#include "vw_exception.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -18,6 +19,7 @@ using namespace COST_SENSITIVE;
 
 struct csoaa{
   uint32_t num_classes;
+  polyprediction* pred;
 };
 
 template<bool is_learn>
@@ -25,11 +27,11 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
                        uint32_t& prediction, float& score, float& partial_prediction) {
   if (is_learn) {
     ec.l.simple.label = cost;
-    ec.l.simple.weight = (cost == FLT_MAX) ? 0. : 1.;
+    ec.l.simple.weight = (cost == FLT_MAX) ? 0.f : 1.f;
     base.learn(ec, i-1);
   } else
     base.predict(ec, i-1);
-  
+
   partial_prediction = ec.partial_prediction;
   if (ec.partial_prediction < score || (ec.partial_prediction == score && i < prediction)) {
     score = ec.partial_prediction;
@@ -42,6 +44,12 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
 template <bool is_learn>
 void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
   COST_SENSITIVE::label ld = ec.l.cs;
+  /*
+  if (ld.costs.size() == 1) {
+    ec.pred.multiclass = ld.costs[0].class_index;
+    return;
+  }
+  */
   uint32_t prediction = 1;
   float score = FLT_MAX;
   ec.l.simple = { 0., 0., 0. };
@@ -51,13 +59,12 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
     ec.partial_prediction = score;
   } else if (DO_MULTIPREDICT && !is_learn) {
     ec.l.simple = { FLT_MAX, 0.f, 0.f };
-    polyprediction* pred = calloc_or_die<polyprediction>(c.num_classes);
-    base.multipredict(ec, 0, c.num_classes, pred, false);
+    base.multipredict(ec, 0, c.num_classes, c.pred, false);
     for (uint32_t i = 1; i <= c.num_classes; i++)
-      if (pred[i-1].scalar < pred[prediction-1].scalar)
+      if (c.pred[i-1].scalar < c.pred[prediction-1].scalar)
         prediction = i;
-    ec.partial_prediction = pred[prediction-1].scalar;
-    free(pred);
+    ec.partial_prediction = c.pred[prediction-1].scalar;
+    //cerr << "c.num_classes = " << c.num_classes << ", prediction = " << prediction << endl;
   } else {
     float temp;
     for (uint32_t i = 1; i <= c.num_classes; i++)
@@ -75,6 +82,11 @@ void finish_example(vw& all, csoaa&, example& ec)
   VW::finish_example(all, &ec);
 }
 
+void finish(csoaa& c) {
+  free(c.pred);
+}
+
+
 base_learner* csoaa_setup(vw& all)
 {
   if (missing_option<size_t, true>(all, "csoaa", "One-against-all multiclass with <k> costs"))
@@ -82,11 +94,13 @@ base_learner* csoaa_setup(vw& all)
 
   csoaa& c = calloc_or_die<csoaa>();
   c.num_classes = (uint32_t)all.vm["csoaa"].as<size_t>();
+  c.pred = calloc_or_die<polyprediction>(c.num_classes);
   
   learner<csoaa>& l = init_learner(&c, setup_base(all), predict_or_learn<true>, 
 				   predict_or_learn<false>, c.num_classes);
   all.p->lp = cs_label;
   l.set_finish_example(finish_example);
+  l.set_finish(finish);
   base_learner* b = make_base(l);
   all.cost_sensitive = b;
   return b;
@@ -141,10 +155,8 @@ int score_comp(const void* p1, const void* p2) {
     bool is_lab = ec_is_label_definition(*ec_seq[0]);
     for (size_t i=1; i<ec_seq.size(); i++) {
       if (is_lab != ec_is_label_definition(*ec_seq[i])) {
-        if (!((i == ec_seq.size()-1) && (example_is_newline(*ec_seq[i])))) {
-          cerr << "error: mixed label definition and examples in ldf data!" << endl;
-          throw exception();
-        }
+        if (!((i == ec_seq.size()-1) && (example_is_newline(*ec_seq[i])))) 
+	  THROW("error: mixed label definition and examples in ldf data!");
       }
     }
     return is_lab;
@@ -180,7 +192,7 @@ void subtract_example(vw& all, example *ec, example *ecsub)
   ec->total_sum_feat_sq += ec->sum_feat_sq[wap_ldf_namespace];
 }
 
-void unsubtract_example(vw& all, example *ec)
+void unsubtract_example(example *ec)
 {
   if (ec->indices.size() == 0) {
     cerr << "internal error (bug): trying to unsubtract_example, but there are no namespaces!" << endl;
@@ -230,10 +242,8 @@ bool check_ldf_sequence(ldf& data, size_t start_K)
       isTest = true;
       cerr << "warning: ldf example has mix of train/test data; assuming test" << endl;
     }
-    if (ec_is_example_header(*ec)) {
-      cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
-      throw exception();
-    }
+    if (ec_is_example_header(*ec))
+      THROW("warning: example headers at position " << k << ": can only have in initial position!");
   }
   return isTest;
 }
@@ -280,7 +290,7 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
       ec1->partial_prediction = 0.;
       subtract_example(*data.all, ec1, ec2);
       base.learn(*ec1);
-      unsubtract_example(*data.all, ec1);
+      unsubtract_example(ec1);
         
       LabelDict::del_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index, data.all->audit || data.all->hash_inv);
     }
@@ -348,7 +358,7 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
 template <bool is_learn>
 void do_actual_learning(ldf& data, base_learner& base)
 {
-  //cdbg << "do_actual_learning size=" << data.ec_seq.size() << endl;
+  //cout<< "do_actual_learning size=" << data.ec_seq.size() << endl;
   if (data.ec_seq.size() <= 0) return;  // nothing to do
   
   /////////////////////// handle label definitions
@@ -428,8 +438,9 @@ void do_actual_learning(ldf& data, base_learner& base)
   
   if(data.rank) {
     data.stored_preds[0].label_v.erase();
-    if (start_K > 0)
+    if (start_K > 0) {
       data.ec_seq[0]->pred.multilabels = data.stored_preds[0];
+    }
     for (size_t k=start_K; k<K; k++) {
       data.ec_seq[k]->pred.multilabels = data.stored_preds[k];
       data.ec_seq[0]->pred.multilabels.label_v.push_back(data.scores[k-start_K].idx);
@@ -635,10 +646,9 @@ void predict_or_learn(ldf& data, base_learner& base, example &ec) {
     assert(ec.l.cs.costs.size() > 0); // headers not allowed with singleline
     make_single_prediction(data, base, ec);
   } else if (ec_is_label_definition(ec)) {
-    if (data.ec_seq.size() > 0) {
-      cerr << "error: label definition encountered in data block" << endl;
-      throw exception();
-    }
+    if (data.ec_seq.size() > 0) 
+      THROW("error: label definition encountered in data block");
+
     data.ec_seq.push_back(&ec);
     do_actual_learning<is_learn>(data, base);
     data.need_to_clear = true;
@@ -699,10 +709,9 @@ base_learner* csldf_setup(vw& all)
   } else if (ldf_arg.compare("multiline-classifier") == 0 || ldf_arg.compare("mc") == 0) {
     ld.treat_as_classifier = true;
   } else {
-    if (all.training) {
-      cerr << "ldf requires either m/multiline or mc/multiline-classifier, except in test-mode which can be s/sc/singleline/singleline-classifier" << endl;
-      throw exception();
-    }
+    if (all.training) 
+      THROW("ldf requires either m/multiline or mc/multiline-classifier, except in test-mode which can be s/sc/singleline/singleline-classifier");
+
     if (ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0) {
       ld.treat_as_classifier = false;
       ld.is_singleline = true;
@@ -714,9 +723,9 @@ base_learner* csldf_setup(vw& all)
 
   all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld.is_singleline;
 
-  if (all.add_constant) {
+  /*if (all.add_constant) {
     all.add_constant = false;
-  }
+    }*/
   v_array<feature> empty_f = { nullptr, nullptr, nullptr, 0 };
   v_array<audit_data> empty_a = { nullptr, nullptr, nullptr, 0 };
   LabelDict::feature_audit empty_fa = { empty_f, empty_a };

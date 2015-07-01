@@ -45,7 +45,7 @@ namespace MULTILABEL {
     return total;
   }
 
-  float weight(void* v)
+  float weight(void*)
   {
     return 1.;
   }
@@ -91,7 +91,7 @@ namespace MULTILABEL {
     }
   }
 
-  void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
+  void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
   {
     labels* ld = (labels*)v;
 
@@ -146,7 +146,7 @@ label_parser multilabel = {default_label, parse_label,
       }
   }
 
-  void print_multilabel(int f, labels& mls, v_array<char>& tag)
+  void print_multilabel(int f, labels& mls, v_array<char>&)
   {
     if (f >= 0)
       {

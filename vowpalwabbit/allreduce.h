@@ -26,6 +26,7 @@ typedef SOCKET socket_t;
 typedef int socket_t;
 #define CLOSESOCK close
 #endif
+#include "vw_exception.h"
 
 using namespace std;
 
@@ -60,16 +61,15 @@ template <class T, void (*f)(T&, const T&)> void addbufs(T* buf1, const T* buf2,
 
 void all_reduce_init(const string master_location, const size_t unique_id, const size_t total, const size_t node, node_socks& socks);
 
-template <class T> void pass_up(char* buffer, size_t left_read_pos, size_t right_read_pos, size_t& parent_sent_pos, socket_t parent_sock, size_t n) {
+template <class T> void pass_up(char* buffer, size_t left_read_pos, size_t right_read_pos, size_t& parent_sent_pos, socket_t parent_sock, size_t /*n*/) {
   size_t my_bufsize = min(ar_buf_size, min(left_read_pos, right_read_pos) / sizeof(T) * sizeof(T) - parent_sent_pos);
 
   if(my_bufsize > 0) {
     //going to pass up this chunk of data to the parent
     int write_size = send(parent_sock, buffer+parent_sent_pos, (int)my_bufsize, 0);
-    if(write_size < 0) {
-      cerr<<"Write to parent failed "<<my_bufsize<<" "<<write_size<<" "<<parent_sent_pos<<" "<<left_read_pos<<" "<<right_read_pos<<endl ;
-      throw exception();
-    }
+    if(write_size < 0) 
+      THROW("Write to parent failed " << my_bufsize << " " << write_size << " " << parent_sent_pos << " " << left_read_pos << " " << right_read_pos);
+    
     parent_sent_pos += write_size;
   }
 
@@ -108,26 +108,19 @@ template <class T, void (*f)(T&, const T&)>void reduce(char* buffer, const size_
 
       if(child_read_pos[0] < n || child_read_pos[1] < n) {
 	if (max_fd > 0 && select((int)max_fd,&fds, nullptr, nullptr, nullptr) == -1)
-	  {
-	    cerr << "select: " << strerror(errno) << endl;
-	    throw exception();
-	  }
+	  THROW("select: " << strerror(errno));
 
 	for(int i = 0;i < 2;i++) {
 	  if(child_sockets[i] != -1 && FD_ISSET(child_sockets[i],&fds)) {
 	    //there is data to be left from left child
-	    if(child_read_pos[i] == n) {
-	      cerr<<"I think child has no data to send but he thinks he has "<<FD_ISSET(child_sockets[0],&fds)<<" "<<FD_ISSET(child_sockets[1],&fds)<<endl;
-	      throw exception();
-	    }
+	    if(child_read_pos[i] == n) 
+	      THROW("I think child has no data to send but he thinks he has "<<FD_ISSET(child_sockets[0],&fds)<<" "<<FD_ISSET(child_sockets[1],&fds));
 
 
 	    size_t count = min(ar_buf_size,n - child_read_pos[i]);
 	    int read_size = recv(child_sockets[i], child_read_buf[i] + child_unprocessed[i], (int)count, 0);
-	    if(read_size == -1) {
-	      cerr << "recv from child: " << strerror(errno) << endl;
-	      throw exception();
-	    }
+		if (read_size == -1)
+		  THROW("recv from child: " << strerror(errno));
 
 	    addbufs<T, f>((T*)buffer + child_read_pos[i]/sizeof(T), (T*)child_read_buf[i], (child_read_pos[i] + read_size)/sizeof(T) - child_read_pos[i]/sizeof(T));
 

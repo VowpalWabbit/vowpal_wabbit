@@ -104,16 +104,16 @@ LEARNER::base_learner* interact_setup(vw& all)
 {
   if(missing_option<string, true>(all, "interact", "Put weights on feature products from namespaces <n1> and <n2>"))
     return nullptr;
-  interact& data = calloc_or_die<interact>();
   string s = all.vm["interact"].as<string>();
   if(s.length() != 2) {
     cerr<<"Need two namespace arguments to interact!! EXITING\n";
     return nullptr;
   }
-  else {
-    data.n1 = (unsigned char) s[0];
-    data.n2 = (unsigned char) s[1];
-  }
+  
+  interact& data = calloc_or_die<interact>();
+  
+  data.n1 = (unsigned char) s[0];
+  data.n2 = (unsigned char) s[1];
   cout<<"Interacting namespaces "<<data.n1<<" and "<<data.n2<<endl;
   data.all = &all;
 

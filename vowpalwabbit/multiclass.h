@@ -22,6 +22,6 @@ namespace MULTICLASS
 
   template <class T> void finish_example(vw& all, T&, example& ec) { finish_example(all, ec); }
 
-  inline int label_is_test(label_t* ld)
+  inline bool label_is_test(label_t* ld)
   { return ld->label == (uint32_t)-1; }
 }

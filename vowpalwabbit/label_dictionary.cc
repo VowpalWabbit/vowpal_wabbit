@@ -91,7 +91,7 @@ namespace LabelDict {
     size_t lab_hash = hash_lab(lab);
     feature_audit& res = lfm.get(lab, lab_hash);
     if (res.features.size() == 0) return;
-    del_example_namespace(ec, 'l', res.features, audit ? &res.audit : nullptr);
+	del_example_namespace(ec, 'l', res.features, audit);
   }
 
   void set_label_features(label_feature_map& lfm, size_t lab, v_array<feature>&features, v_array<audit_data>* audit) {

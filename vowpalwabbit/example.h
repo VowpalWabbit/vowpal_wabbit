@@ -105,13 +105,15 @@ flat_example* flatten_example(vw& all, example *ec);
 flat_example* flatten_sort_example(vw& all, example *ec);
 void free_flatten_example(flat_example* fec);
 
-example *alloc_examples(size_t,size_t);
-void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*) = nullptr);
-
 inline int example_is_newline(example& ec)
 {
   // if only index is constant namespace or no index
   return ((ec.indices.size() == 0) || 
           ((ec.indices.size() == 1) &&
            (ec.indices.last() == constant_namespace)));
+}
+
+inline bool valid_ns(char c)
+{
+	return !(c == '|' || c == ':');
 }

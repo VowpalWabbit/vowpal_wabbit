@@ -17,17 +17,17 @@ namespace DebugMT {
   void run(Search::search& sch, vector<example*>& ec) {
     sch.base_task(ec)
         .foreach_action(
-            [](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {
+            [](Search::search& /*sch*/, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {
               cerr << "==DebugMT== foreach_action(t=" << t << ", min_cost=" << min_cost << ", a=" << a << ", taken=" << taken << ", a_cost=" << a_cost << ")" << endl;
             })
 
         .post_prediction(
-            [](Search::search& sch, size_t t, action a, float a_cost) -> void {
+            [](Search::search& /*sch*/, size_t t, action a, float a_cost) -> void {
               cerr << "==DebugMT== post_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")" << endl;
             })
 
         .maybe_override_prediction(
-            [](Search::search& sch, size_t t, action& a, float& a_cost) -> bool {
+            [](Search::search& /*sch*/, size_t t, action& a, float& a_cost) -> bool {
               cerr << "==DebugMT== maybe_override_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")" << endl;
               return false;
             })
@@ -75,7 +75,7 @@ namespace SelectiveBranchingMT {
     }
   };
   
-  void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
+  void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm) {
     size_t max_branches = 2;
     size_t kbest = 0;
     po::options_description opts("selective branching options");
@@ -115,7 +115,7 @@ namespace SelectiveBranchingMT {
               cdbg << "adding branch: " << delta << " -> " << branch << endl;
             })
         .post_prediction(
-            [](Search::search& sch, size_t t, action a, float a_cost) -> void {
+            [](Search::search& sch, size_t /*t*/, action a, float a_cost) -> void {
               task_data& d = *sch.get_metatask_data<task_data>();
               d.trajectory.push_back( make_pair(a,a_cost) );
               d.total_cost += a_cost;
@@ -149,7 +149,7 @@ namespace SelectiveBranchingMT {
       
       cdbg << "*** BRANCH " << i << " *** " << d.branches[i].first << " : " << d.branches[i].second << endl;
       sch.base_task(ec)
-          .foreach_action([](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {})
+          .foreach_action([](Search::search& /*sch*/, size_t /*t*/, float /*min_cost*/, action /*a*/, bool /*taken*/, float /*a_cost*/) -> void {})
           .maybe_override_prediction(
               [](Search::search& sch, size_t t, action& a, float& a_cost) -> bool {
                 task_data& d = *sch.get_metatask_data<task_data>();
@@ -160,7 +160,7 @@ namespace SelectiveBranchingMT {
                 return true;
               })
           .post_prediction(
-              [](Search::search& sch, size_t t, action a, float a_cost) -> void {
+              [](Search::search& sch, size_t /*t*/, action a, float a_cost) -> void {
                 task_data& d = *sch.get_metatask_data<task_data>();
                 d.trajectory.push_back( make_pair(a,a_cost) );
                 d.total_cost += a_cost;
@@ -194,7 +194,7 @@ namespace SelectiveBranchingMT {
     d.cur_branch = 0;
     d.output_string = nullptr;
     sch.base_task(ec)
-        .foreach_action([](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {})
+        .foreach_action([](Search::search& /*sch*/, size_t /*t*/, float /*min_cost*/, action /*a*/, bool /*taken*/, float /*a_cost*/) -> void {})
         .maybe_override_prediction(
             [](Search::search& sch, size_t t, action& a, float& a_cost) -> bool {
               task_data& d = *sch.get_metatask_data<task_data>();

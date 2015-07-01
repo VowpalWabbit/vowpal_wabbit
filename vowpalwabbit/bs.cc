@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 #include "rand48.h"
 #include "bs.h"
+#include "vw_exception.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -103,6 +104,8 @@ using namespace LEARNER;
           if(pred_vec_int[i] == current_label)
             sum_labels += pred_vec[i]; */
     }
+	// TODO: unique_ptr would also handle exception case
+    delete[] pred_vec_int;
 
     // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()
     ec.pred.scalar = (float)current_label;
@@ -111,7 +114,7 @@ using namespace LEARNER;
     ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.l.simple.weight;
   }
 
-  void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub)
+  void print_result(int f, float res, v_array<char> tag, float lb, float ub)
   {
     if (f >= 0)
     {
@@ -156,7 +159,7 @@ using namespace LEARNER;
     }
 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      print_result(*sink, ec.pred.scalar, 0, ec.tag, d.lb, d.ub);
+      print_result(*sink, ec.pred.scalar, ec.tag, d.lb, d.ub);
   
     print_update(all, ec);
   }
@@ -200,8 +203,7 @@ using namespace LEARNER;
         bs_predict_vote(ec, d.pred_vec);
         break;
       default:
-        std::cerr << "Unknown bs_type specified: " << d.bs_type << ". Exiting." << endl;
-        throw exception();
+	THROW("Unknown bs_type specified: " << d.bs_type);
     }
 
     if (shouldOutput) 

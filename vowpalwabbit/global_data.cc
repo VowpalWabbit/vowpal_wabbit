@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 
 #include "global_data.h"
 #include "gd.h"
+#include "vw_exception.h"
 
 using namespace std;
 
@@ -39,8 +40,7 @@ size_t really_read(int sock, void* in, size_t count)
       else
 	if (r < 0)
 	  {
-	    cerr << "read(" << sock << "," << count << "-" << done << "): " << strerror(errno) << endl;
-	    throw exception();
+	    THROW("read(" << sock << "," << count << "-" << done << "): " << strerror(errno));
 	  }
 	else
 	  {
@@ -68,13 +68,10 @@ void send_prediction(int sock, global_prediction p)
 	  write(sock, &p, sizeof(p))
 #endif
 	  < (int)sizeof(p))
-    {
-      cerr << "send_prediction write(" << sock << "): " << strerror(errno) << endl;
-      throw exception();
-    }
+    THROW("send_prediction write(" << sock << "): " << strerror(errno));
 }
 
-void binary_print_result(int f, float res, float weight, v_array<char> tag)
+void binary_print_result(int f, float res, float weight, v_array<char>)
 {
   if (f >= 0)
     {
@@ -92,7 +89,7 @@ int print_tag(std::stringstream& ss, v_array<char> tag)
   return tag.begin != tag.end;
 }
 
-void print_result(int f, float res, float weight, v_array<char> tag)
+void print_result(int f, float res, float, v_array<char> tag)
 {
   if (f >= 0)
     {
@@ -128,7 +125,7 @@ void print_raw_text(int f, string s, v_array<char> tag)
     }
 }
 
-void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag)
+void print_lda_result(vw& all, int f, float* res, float, v_array<char> tag)
 {
   if (f >= 0)
     {
@@ -156,7 +153,7 @@ void set_mm(shared_data* sd, float label)
     sd->max_label = max(sd->max_label, label);
 }
 
-void noop_mm(shared_data* sd, float label)
+void noop_mm(shared_data*, float)
 {}
 
 void vw::learn(example* ec)
@@ -306,6 +303,7 @@ vw::vw()
   print = print_result;
   print_text = print_raw_text;
   lda = 0;
+  random_seed = 0;
   random_weights = false;
   per_feature_regularizer_input = "";
   per_feature_regularizer_output = "";
@@ -339,6 +337,8 @@ vw::vw()
       affix_features[i] = 0;
       spelling_features[i] = 0;
     }
+
+  interactions = v_init<v_string>();
 
   //by default use invariant normalized adaptive updates
   adaptive = true;

@@ -1,0 +1,31 @@
+# YAML FILE
+### FORMAT ###
+#namespaceA:
+#  varName:
+#    - nameVar1
+#    - nameVar2
+#  keepSpace:
+#    - false
+#
+#namespaceB:
+#  varName:
+#    - nameVar1
+#    - nameVar2
+#  keepSpace:
+#    - true
+
+
+sepal:
+  varName: 
+    - Sepal.|Length
+    - Sepal.Width
+  keepSpace:
+    - false
+
+
+petal:
+  varName: 
+    - Petal.Length
+    - Petal.Width
+  keepSpace:
+    - false

@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 #include "parse_args.h"
 #include "accumulate.h"
 #include "best_constant.h"
+#include "vw_exception.h"
 
 using namespace std;
 
@@ -20,6 +21,11 @@ int main(int argc, char *argv[])
 {
   try {
     vw& all = parse_args(argc, argv);
+	io_buf model;
+	parse_regressor_args(all, model);
+	parse_modules(all, model);
+	parse_sources(all, model);
+
     all.vw_is_main = true;
     struct timeb t_start, t_end;
     ftime(&t_start);
@@ -85,8 +91,10 @@ int main(int argc, char *argv[])
     }
 
     VW::finish(all);
+  } catch (VW::vw_exception& e) {
+    cerr << "vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << endl;
   } catch (exception& e) {
-    // vw is implemented as a library, so we use 'throw exception()'
+    // vw is implemented as a library, so we use 'throw runtime_error()'
     // error 'handling' everywhere.  To reduce stderr pollution
     // everything gets caught here & the error message is printed
     // sans the excess exception noise, and core dump.

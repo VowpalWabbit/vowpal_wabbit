@@ -10,6 +10,7 @@ license as described in the file LICENSE.
 using namespace std;
 
 #include "global_data.h"
+#include "vw_exception.h"
 
 class squaredloss : public loss_function {
 public:
@@ -70,7 +71,7 @@ public:
       prediction = sd->max_label;
     return 2.f * (prediction-label);
   }
-  float second_derivative(shared_data* sd, float prediction, float label)
+  float second_derivative(shared_data* sd, float prediction, float)
   {
     if (prediction <= sd->max_label && prediction >= sd->min_label)
       return 2.;
@@ -95,7 +96,7 @@ public:
   }
 
   float getUnsafeUpdate(float prediction, float label,float eta_t,float pred_per_update) {
-    return 2.f*(label - prediction)*eta_t/pred_per_update;
+    return 2.f*eta_t*(label - prediction)/pred_per_update;
   }
   
   float getRevertingWeight(shared_data* sd, float prediction, float eta_t){
@@ -111,7 +112,7 @@ public:
   {
     return 2.f * (prediction-label);
   }
-  float second_derivative(shared_data*, float prediction, float label)
+  float second_derivative(shared_data*, float, float)
   {
     return 2.;
   }
@@ -156,7 +157,7 @@ public:
     return (label*prediction >= 1) ? 0 : -label;
   }
 
-  float second_derivative(shared_data*, float prediction, float label)
+  float second_derivative(shared_data*, float, float)
   {
     return 0.;
   }
@@ -287,7 +288,7 @@ public:
     return fd*fd;
   }
 
-  float second_derivative(shared_data*, float prediction, float label)
+  float second_derivative(shared_data*, float, float)
   {
     return 0.;
   }
@@ -311,8 +312,6 @@ loss_function* getLossFunction(vw& all, string funcName, float function_paramete
     return new logloss();
   } else if(funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0) {
     return new quantileloss(function_parameter);
-  } else {
-    cout << "Invalid loss function name: \'" << funcName << "\' Bailing!" << endl;
-    throw exception();
-  }
+  } else 
+    THROW("Invalid loss function name: \'" << funcName << "\' Bailing!");
 }

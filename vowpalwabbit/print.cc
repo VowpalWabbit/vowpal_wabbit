@@ -14,7 +14,7 @@ void print_feature(vw& all, float value, float& weight)
   cout << " ";
 }
 
-void learn(print& p, LEARNER::base_learner& base, example& ec)
+void learn(print& p, LEARNER::base_learner&, example& ec)
 {
   label_data& ld = ec.l.simple;
   if (ld.label != FLT_MAX)

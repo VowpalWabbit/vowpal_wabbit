@@ -384,7 +384,7 @@ struct svm_params {
     }
   }
   
-  void predict(svm_params& params, base_learner &base, example& ec) {
+  void predict(svm_params& params, base_learner &, example& ec) {
     flat_example* fec = flatten_sort_example(*(params.all),&ec);    
     if(fec) {
       svm_example* sec = &calloc_or_die<svm_example>(); 
@@ -392,6 +392,8 @@ struct svm_params {
       float score;
       predict(params, &sec, &score, 1);
       ec.pred.scalar = score;
+      sec->~svm_example();
+      free(sec);
     }
   }
 
@@ -722,7 +724,7 @@ struct svm_params {
     //cerr<<params.model->support_vec[0]->example_counter<<endl;
   }
 
-  void learn(svm_params& params, base_learner& base, example& ec) {
+  void learn(svm_params& params, base_learner&, example& ec) {
     flat_example* fec = flatten_sort_example(*(params.all),&ec);
     // for(int i = 0;i < fec->feature_map_len;i++)
     //   cout<<i<<":"<<fec->feature_map[i].x<<" "<<fec->feature_map[i].weight_index<<" ";

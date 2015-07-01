@@ -505,12 +505,18 @@ sub best_hyperparam($$$) {
 sub fullpath($) {
     my $exe = shift;
     # I'm told on Windows, the PATH separator is ';' instead of ':'
-    foreach my $dir (split(/[:;]/, $ENV{PATH}), '.') {
+    my ($path_sep, $ext) = (':', '');
+    if ($^O =~ /MSWin/i) {
+        $path_sep = ';';
+        $ext = '.exe';
+    }
+    foreach my $dir (split($path_sep, $ENV{PATH}), '.') {
         my $fp = "$dir/$exe";
         return $fp if (-x $fp);
         # On windows, the executable may be called 'vw.exe'
-        if ($^O =~ /(MS|Win)/i) {
-            $fp = "$dir/$exe.exe";
+        # so try that as well
+        if ($ext) {
+            $fp = "$dir/$exe$ext";
             return $fp if (-x $fp);
         }
     }
@@ -606,15 +612,19 @@ sub process_args {
             unless (0 < $tolerance and $tolerance < 1.0);
     }
     if (! -x $ARGV[0]) {
+        # Not directly executable, look along PATH:
         my $fp = fullpath($ARGV[0]);
-        if (-x $fp) {
+        if ($fp && -x $fp) {
             $ARGV[0] = $fp;
         }
     }
-    usage("Couldn't locate '$ARGV[0]'. Need a vw executable. Is \$PATH correct?")
-        unless (-x $ARGV[0]);
+    # retry after looking along PATH, warn if still no go
+    if (! -x $ARGV[0]) {
+        warn "Couldn't find '$ARGV[0]' executable: " .
+             "(is \$PATH correct?)" . "Will try anyway.\n";
+    }
 
-    # --- Now @ARGV contains the vw command
+    # --- Now @ARGV contains the full vw command
 
     # --quiet prevents progress from being detected so don't allow it
     my @saved_argv = @ARGV; @ARGV = ();
