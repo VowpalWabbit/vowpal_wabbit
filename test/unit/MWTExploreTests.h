@@ -10,13 +10,21 @@ using namespace MultiWorldTesting;
 
 class TestContext
 {
+public:
+    TestContext() : Id(-1) { }
 
+    string To_String()
+    {
+        return to_string(Id);
+    }
+
+    int Id;
 };
 
 class TestVarContext : public TestContext, public IVariableActionContext
 {
 public:
-    TestVarContext(u32 num_actions)
+    TestVarContext(u32 num_actions) : Id(-1)
     {
         m_num_actions = num_actions;
     }
@@ -25,6 +33,13 @@ public:
     {
         return m_num_actions;
     }
+
+    string To_String()
+    {
+        return to_string(Id);
+    }
+
+    int Id;
 
 private:
     u32 m_num_actions;
@@ -43,7 +58,7 @@ template <class TContext>
 class TestPolicy : public IPolicy<TContext>
 {
 public:
-    TestPolicy() : this(-1, -1) { }
+    TestPolicy() : TestPolicy(-1, -1) { }
     TestPolicy(int params, int num_actions) : m_params(params), m_num_actions(num_actions), m_action_to_choose(-1) {}
     u32 Choose_Action(TContext& context)
     {

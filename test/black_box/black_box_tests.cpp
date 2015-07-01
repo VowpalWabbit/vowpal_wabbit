@@ -52,13 +52,25 @@ void hash_test(Value& v)
 }
 
 template <typename Ctx>
+EpsilonGreedyExplorer<Ctx>* CreateEpsilonExplorer(IPolicy<Ctx>& policy, float epsilon, u32 num_actions, std::true_type)
+{
+    return new EpsilonGreedyExplorer<Ctx>(policy, epsilon);
+}
+
+template <typename Ctx>
+EpsilonGreedyExplorer<Ctx>* CreateEpsilonExplorer(IPolicy<Ctx>& policy, float epsilon, u32 num_actions, std::false_type)
+{
+    return new EpsilonGreedyExplorer<Ctx>(policy, epsilon, num_actions);
+}
+
+template <typename Ctx>
 void explore_epsilon_greedy(
     const char* app_id, 
     int policy_type, 
     Value& config_policy, 
     float epsilon, 
     u32 num_actions, 
-    vector<string> experimental_unit_ids, 
+    Value& experimental_unit_ids, 
     vector<Ctx> contexts, 
     const char* output_file)
 {
@@ -66,8 +78,6 @@ void explore_epsilon_greedy(
 
     StringRecorder<Ctx> recorder;
     MwtExplorer<Ctx> mwt(std::string(app_id), recorder);
-
-    bool is_variable_action_context = std::is_base_of<IVariableActionContext, Ctx>::value;
 
     switch (policy_type)
     {
@@ -80,13 +90,11 @@ void explore_epsilon_greedy(
 
             unique_ptr<EpsilonGreedyExplorer<Ctx>> explorer;
 
-            explorer.reset(is_variable_action_context ?
-                new EpsilonGreedyExplorer<Ctx>(policy, epsilon) :
-                new EpsilonGreedyExplorer<Ctx>(policy, epsilon, num_actions));
+            explorer.reset(CreateEpsilonExplorer(policy, epsilon, num_actions, std::is_base_of<IVariableActionContext, Ctx>()));
 
-            for (size_t i = 0; i < experimental_unit_ids.size(); i++)
+            for (SizeType i = 0; i < experimental_unit_ids.Size(); i++)
             {
-                mwt.Choose_Action(*explorer.get(), experimental_unit_ids.at(i), contexts.at(i));
+                mwt.Choose_Action(*explorer.get(), string(experimental_unit_ids[i].GetString()), contexts.at(i));
             }
 
             out_file << recorder.Get_Recording() << endl;
@@ -98,24 +106,44 @@ void explore_epsilon_greedy(
 
 void epsilon_greedy_test(Value& v)
 {
-    const char* outputFile = v["OutputFile"].GetString();
+    const char* output_file = v["OutputFile"].GetString();
     const char* app_id = v["AppId"].GetString();
-    u32 numActions = v["NumberOfActions"].GetUint();
+    u32 num_actions = v["NumberOfActions"].GetUint();
 
-    //var experimentalUnitIdList = config["ExperimentalUnitIdList"].ToObject<string[]>();
+    Value& experimental_unit_id_list = v["ExperimentalUnitIdList"];
     
     float epsilon = v["Epsilon"].GetDouble();
-    //JToken configPolicy = config["PolicyConfiguration"];
-    int policy_type = v["PolicyType"].GetInt();
+    Value& config_policy = v["PolicyConfiguration"];
+    int policy_type = config_policy["PolicyType"].GetInt();
 
     switch (v["ContextType"].GetInt())
     {
         case 0: // fixed action context
         {
+            vector<TestContext> contexts;
+            for (SizeType i = 0; i < experimental_unit_id_list.Size(); i++)
+            {
+                TestContext tc;
+                tc.Id = i;
+                contexts.push_back(tc);
+            }
+
+            explore_epsilon_greedy(app_id, policy_type, config_policy, epsilon, num_actions, experimental_unit_id_list, contexts, output_file);
+
             break;
         }
         case 1: // variable action context
         {
+            vector<TestVarContext> contexts;
+            for (SizeType i = 0; i < experimental_unit_id_list.Size(); i++)
+            {
+                TestVarContext tc(num_actions);
+                tc.Id = i;
+                contexts.push_back(tc);
+            }
+
+            explore_epsilon_greedy(app_id, policy_type, config_policy, epsilon, num_actions, experimental_unit_id_list, contexts, output_file);
+
             break;
         }
     }
