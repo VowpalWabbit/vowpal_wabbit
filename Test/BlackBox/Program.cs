@@ -37,6 +37,9 @@ namespace BlackBoxTests
                     case 3:
                         TestTauFirst(config);
                         break;
+                    case 4:
+                        TestSoftmax(config);
+                        break;
                 }
             }
         }
@@ -155,6 +158,46 @@ namespace BlackBoxTests
             }
         }
 
+        // TODO: refactor
+        static void TestSoftmax(JObject config)
+        {
+            var outputFile = config["OutputFile"].Value<string>();
+            var appId = config["AppId"].Value<string>();
+            var numActions = config["NumberOfActions"].Value<uint>();
+            var experimentalUnitIdList = config["ExperimentalUnitIdList"].ToObject<string[]>();
+            var lambda = config["Lambda"].Value<float>();
+            JToken configScorer = config["ScorerConfiguration"];
+            var scorerType = configScorer["ScorerType"].Value<int>();
+
+            switch (config["ContextType"].Value<int>())
+            {
+                case 0: // fixed action context
+                {
+                    var contextList = Enumerable
+                        .Range(0, experimentalUnitIdList.Length)
+                        .Select(i => new RegularTestContext { Id = i })
+                        .ToArray();
+
+                    ExploreSoftmax<RegularTestContext>(appId, scorerType, configScorer, lambda,
+                        numActions, experimentalUnitIdList, contextList, outputFile);
+
+                    break;
+                }
+                case 1: // variable action context
+                {
+                    var contextList = Enumerable
+                        .Range(0, experimentalUnitIdList.Length)
+                        .Select(i => new VariableActionTestContext(numActions) { Id = i })
+                        .ToArray();
+
+                    ExploreSoftmax<VariableActionTestContext>(appId, scorerType, configScorer, lambda,
+                        numActions, experimentalUnitIdList, contextList, outputFile);
+
+                    break;
+                }
+            }
+        }
+
         static void ExploreEpsilonGreedy<TContext>
         (
             string appId,
@@ -236,6 +279,67 @@ namespace BlackBoxTests
 
                         break;
                     }
+            }
+        }
+
+        static void ExploreSoftmax<TContext>
+        (
+            string appId,
+            int policyType,
+            JToken configPolicy,
+            float lambda,
+            uint numActions,
+            string[] experimentalUnitIdList,
+            TContext[] contextList,
+            string outputFile
+        )
+            where TContext : IStringContext
+        {
+            var recorder = new StringRecorder<TContext>();
+            var mwt = new MwtExplorer<TContext>(appId, recorder);
+
+            bool isVariableActionContext = typeof(IVariableActionContext).IsAssignableFrom(typeof(TContext));
+
+            switch (policyType)
+            {
+                case 0: // fixed all-equal scorer
+                {
+                    var scorerScore = configPolicy["Score"].Value<int>();
+
+                    var scorer = new TestScorer<TContext>(scorerScore, numActions);
+
+                    var explorer = isVariableActionContext ?
+                        new SoftmaxExplorer<TContext>(scorer, lambda) :
+                        new SoftmaxExplorer<TContext>(scorer, lambda, numActions);
+
+                    for (int i = 0; i < experimentalUnitIdList.Length; i++)
+                    {
+                        mwt.ChooseAction(explorer, experimentalUnitIdList[i], contextList[i]);
+                    }
+
+                    File.AppendAllText(outputFile, recorder.GetRecording());
+
+                    break;
+                }
+                case 1: // integer-progression scorer
+                {
+                    var scorerStartScore = configPolicy["Start"].Value<int>();
+
+                    var scorer = new TestScorer<TContext>(scorerStartScore, numActions, uniform: false);
+
+                    var explorer = isVariableActionContext ?
+                        new SoftmaxExplorer<TContext>(scorer, lambda) :
+                        new SoftmaxExplorer<TContext>(scorer, lambda, numActions);
+
+                    for (int i = 0; i < experimentalUnitIdList.Length; i++)
+                    {
+                        mwt.ChooseAction(explorer, experimentalUnitIdList[i], contextList[i]);
+                    }
+
+                    File.AppendAllText(outputFile, recorder.GetRecording());
+
+                    break;
+                }
             }
         }
     }

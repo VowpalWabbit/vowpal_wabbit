@@ -190,7 +190,7 @@ namespace ExploreTests
             float lambda = 0.5f;
             uint numActionsCover = 100;
             float C = 5;
-            var scorer = new TestScorer<RegularTestContext>(numActions);
+            var scorer = new TestScorer<RegularTestContext>(1, numActions);
             var explorer = new SoftmaxExplorer<RegularTestContext>(scorer, lambda, numActions);
             
             uint numDecisions = (uint)(numActions * Math.Log(numActions * 1.0) + Math.Log(numActionsCover * 1.0 / numActions) * C * numActions);
@@ -210,7 +210,7 @@ namespace ExploreTests
             float lambda = 0.5f;
             uint numActionsCover = 100;
             float C = 5;
-            var scorer = new TestScorer<VariableActionTestContext>(numActions);
+            var scorer = new TestScorer<VariableActionTestContext>(1, numActions);
             var explorer = new SoftmaxExplorer<VariableActionTestContext>(scorer, lambda);
             
             uint numDecisions = (uint)(numActions * Math.Log(numActions * 1.0) + Math.Log(numActionsCover * 1.0 / numActions) * C * numActions);
@@ -258,7 +258,7 @@ namespace ExploreTests
             uint numActions = 10;
             float lambda = 0.5f;
             var recorder = new TestRecorder<RegularTestContext>();
-            var scorer = new TestScorer<RegularTestContext>(numActions, uniform: false);
+            var scorer = new TestScorer<RegularTestContext>(1, numActions, uniform: false);
 
             var mwtt = new MwtExplorer<RegularTestContext>("mwt", recorder);
             var explorer = new SoftmaxExplorer<RegularTestContext>(scorer, lambda, numActions);
@@ -305,7 +305,7 @@ namespace ExploreTests
         public void Generic()
         {
             uint numActions = 10;
-            TestScorer<RegularTestContext> scorer = new TestScorer<RegularTestContext>(numActions);
+            TestScorer<RegularTestContext> scorer = new TestScorer<RegularTestContext>(1, numActions);
             RegularTestContext testContext = new RegularTestContext() { Id = 100 };
             var explorer = new GenericExplorer<RegularTestContext>(scorer, numActions);
             GenericWithContext(numActions, testContext, explorer);
@@ -315,7 +315,7 @@ namespace ExploreTests
         public void GenericFixedActionUsingVariableActionInterface()
         {
             uint numActions = 10;
-            var scorer = new TestScorer<VariableActionTestContext>(numActions);
+            var scorer = new TestScorer<VariableActionTestContext>(1, numActions);
             var testContext = new VariableActionTestContext(numActions) { Id = 100 };
             var explorer = new GenericExplorer<VariableActionTestContext>(scorer);
             GenericWithContext(numActions, testContext, explorer);
@@ -380,14 +380,14 @@ namespace ExploreTests
             tryCatchArgumentException(() =>
             {
                 var mwt = new MwtExplorer<RegularTestContext>("test", new TestRecorder<RegularTestContext>());
-                var scorer = new TestScorer<RegularTestContext>(10);
+                var scorer = new TestScorer<RegularTestContext>(1, 10);
                 var explorer = new SoftmaxExplorer<RegularTestContext>(scorer, 0.5f);
                 mwt.ChooseAction(explorer, "key", new RegularTestContext());
             });
             tryCatchArgumentException(() =>
             {
                 var mwt = new MwtExplorer<RegularTestContext>("test", new TestRecorder<RegularTestContext>());
-                var scorer = new TestScorer<RegularTestContext>(10);
+                var scorer = new TestScorer<RegularTestContext>(1, 10);
                 var explorer = new GenericExplorer<RegularTestContext>(scorer);
                 mwt.ChooseAction(explorer, "key", new RegularTestContext());
             });
@@ -433,27 +433,5 @@ namespace ExploreTests
         }
 
         private List<TestInteraction<Ctx>> interactions = new List<TestInteraction<Ctx>>();
-    }
-
-    class TestScorer<Ctx> : IScorer<Ctx>
-    {
-        public TestScorer(uint numActions, bool uniform = true)
-        {
-            this.uniform = uniform;
-            this.numActions = numActions;
-        }
-        public List<float> ScoreActions(Ctx context)
-        {
-            if (uniform)
-            {
-                return Enumerable.Repeat<float>(1.0f / numActions, (int)numActions).ToList();
-            }
-            else
-            {
-                return Array.ConvertAll<int, float>(Enumerable.Range(1, (int)numActions).ToArray(), Convert.ToSingle).ToList();
-            }
-        }
-        private uint numActions;
-        private bool uniform;
     }
 }

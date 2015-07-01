@@ -1,4 +1,7 @@
 ﻿using MultiWorldTesting;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace TestCommon
 {
@@ -14,7 +17,7 @@ namespace TestCommon
 
         public uint ChooseAction(TContext context)
         {
-            return (this.ActionToChoose != -1) ? this.ActionToChoose : 5;
+            return (this.ActionToChoose != uint.MaxValue) ? this.ActionToChoose : 5;
         }
 
         public uint ActionToChoose { get; set; }
@@ -35,6 +38,30 @@ namespace TestCommon
         {
             return 1;
         }
+    }
+
+    public class TestScorer<Ctx> : IScorer<Ctx>
+    {
+        public TestScorer(int param, uint numActions, bool uniform = true)
+        {
+            this.param = param;
+            this.uniform = uniform;
+            this.numActions = numActions;
+        }
+        public List<float> ScoreActions(Ctx context)
+        {
+            if (uniform)
+            {
+                return Enumerable.Repeat<float>(param, (int)numActions).ToList();
+            }
+            else
+            {
+                return Array.ConvertAll<int, float>(Enumerable.Range(param, (int)numActions).ToArray(), Convert.ToSingle).ToList();
+            }
+        }
+        private int param;
+        private uint numActions;
+        private bool uniform;
     }
 
     public class RegularTestContext : IStringContext
