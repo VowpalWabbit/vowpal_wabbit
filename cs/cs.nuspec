@@ -4,9 +4,9 @@
     <title>Vowpal Wabbit</title>
     <id>VowpalWabbit</id>
     <tags>vw vowpal wabbit john langford</tags>
-    <version>8.0.0.5</version>
+    <version>8.0.0.6</version>
     <authors>John Langford et al</authors>
-    <projectUrl>https://github.com/JohnLangford/vowpal_wabbit</projectUrl>
+    <projectUrl>https://github.com/JohnLangford/vowpal_wabbit/wiki/C%23-Binding</projectUrl>
     <licenseUrl>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Official Vowpal Wabbit library including C# interface</description>
