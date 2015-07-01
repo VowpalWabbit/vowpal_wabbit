@@ -59,7 +59,7 @@ void explore_epsilon_greedy(
     float epsilon, 
     u32 num_actions, 
     vector<string> experimental_unit_ids, 
-    vector<TContext> contexts, 
+    vector<Ctx> contexts, 
     const char* output_file)
 {
     ofstream out_file(output_file);
