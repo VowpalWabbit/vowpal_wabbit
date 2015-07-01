@@ -34,6 +34,9 @@ namespace BlackBoxTests
                     case 2:
                         TestEpsilonGreedy(config);
                         break;
+                    case 3:
+                        TestTauFirst(config);
+                        break;
                 }
             }
         }
@@ -112,6 +115,46 @@ namespace BlackBoxTests
             }
         }
 
+        // TODO: refactor
+        static void TestTauFirst(JObject config)
+        {
+            var outputFile = config["OutputFile"].Value<string>();
+            var appId = config["AppId"].Value<string>();
+            var numActions = config["NumberOfActions"].Value<uint>();
+            var experimentalUnitIdList = config["ExperimentalUnitIdList"].ToObject<string[]>();
+            var tau = config["Tau"].Value<uint>();
+            JToken configPolicy = config["PolicyConfiguration"];
+            var policyType = configPolicy["PolicyType"].Value<int>();
+
+            switch (config["ContextType"].Value<int>())
+            {
+                case 0: // fixed action context
+                    {
+                        var contextList = Enumerable
+                            .Range(0, experimentalUnitIdList.Length)
+                            .Select(i => new RegularTestContext { Id = i })
+                            .ToArray();
+
+                        ExploreTauFirst<RegularTestContext>(appId, policyType, configPolicy, tau,
+                            numActions, experimentalUnitIdList, contextList, outputFile);
+
+                        break;
+                    }
+                case 1: // variable action context
+                    {
+                        var contextList = Enumerable
+                            .Range(0, experimentalUnitIdList.Length)
+                            .Select(i => new VariableActionTestContext(numActions) { Id = i })
+                            .ToArray();
+
+                        ExploreTauFirst<VariableActionTestContext>(appId, policyType, configPolicy, tau,
+                            numActions, experimentalUnitIdList, contextList, outputFile);
+
+                        break;
+                    }
+            }
+        }
+
         static void ExploreEpsilonGreedy<TContext>
         (
             string appId,
@@ -151,6 +194,48 @@ namespace BlackBoxTests
 
                     break;
                 }
+            }
+        }
+
+        static void ExploreTauFirst<TContext>
+        (
+            string appId,
+            int policyType,
+            JToken configPolicy,
+            uint tau,
+            uint numActions,
+            string[] experimentalUnitIdList,
+            TContext[] contextList,
+            string outputFile
+        )
+            where TContext : IStringContext
+        {
+            var recorder = new StringRecorder<TContext>();
+            var mwt = new MwtExplorer<TContext>(appId, recorder);
+
+            bool isVariableActionContext = typeof(IVariableActionContext).IsAssignableFrom(typeof(TContext));
+
+            switch (policyType)
+            {
+                case 0: // fixed policy
+                    {
+                        var policyAction = configPolicy["Action"].Value<uint>();
+
+                        var policy = new TestPolicy<TContext> { ActionToChoose = policyAction };
+
+                        var explorer = isVariableActionContext ?
+                            new TauFirstExplorer<TContext>(policy, tau) :
+                            new TauFirstExplorer<TContext>(policy, tau, numActions);
+
+                        for (int i = 0; i < experimentalUnitIdList.Length; i++)
+                        {
+                            mwt.ChooseAction(explorer, experimentalUnitIdList[i], contextList[i]);
+                        }
+
+                        File.AppendAllText(outputFile, recorder.GetRecording());
+
+                        break;
+                    }
             }
         }
     }
