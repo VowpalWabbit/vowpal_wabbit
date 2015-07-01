@@ -25,67 +25,142 @@ namespace VW
 	ref class VowpalWabbitExample;
     ref class VowpalWabbitBase;
 
+	/// <summary>
+	/// Base-class for prediction results. 
+	/// </summary>
 	public ref class VowpalWabbitPrediction abstract
 	{
 	public:
+		/// <summary>
+		/// Extracts data and forwards to <see cref="ReadFromExample(vw*, example*)" />
+		/// </summary>
 		void ReadFromExample(VowpalWabbitExample^ example);
-
+		
+		/// <summary>
+		/// Subclasses must extract the prediction result from the example.
+		/// </summary>
 		virtual void ReadFromExample(vw* vw, example* ex) abstract;
 	};
 
+	/// <summary>
+	/// A scalar prediction result.
+	/// </summary>
 	public ref class VowpalWabbitScalarPrediction : VowpalWabbitPrediction
 	{
 	public:
+		/// <summary>
+		/// Extracts prediction results from example.
+		/// </summary>
 		void ReadFromExample(vw* vw, example* ex) override;
 
+		/// <summary>
+		/// The scalar prediction.
+		/// </summary>
 		property float Value;
 	};
 
+	/// <summary>
+	/// A cost sensitive prediction result.
+	/// </summary>
 	public ref class VowpalWabbitCostSensitivePrediction : VowpalWabbitPrediction
 	{
 	public:
+		/// <summary>
+		/// Extracts prediction results from example.
+		/// </summary>
 		void ReadFromExample(vw* vw, example* ex) override;
 
+		/// <summary>
+		/// The cost sensitive prediction.
+		/// </summary>
 		property float Value;
 	};
 
+	/// <summary>
+	/// A multi label prediction result.
+	/// </summary>
 	public ref class VowpalWabbitMultilabelPrediction : VowpalWabbitPrediction
 	{
 	public:
+		/// <summary>
+		/// Extracts prediction results from example.
+		/// </summary>
 		void ReadFromExample(vw* vw, example* ex) override;
 
+		/// <summary>
+		/// The predicted labels.
+		/// </summary>
 		property cli::array<int>^ Values;
 	};
 
+	/// <summary>
+	/// A topic prediction result.
+	/// </summary>
 	public ref class VowpalWabbitTopicPrediction : VowpalWabbitPrediction
 	{
 	public:
+		/// <summary>
+		/// Extracts prediction results from example.
+		/// </summary>
 		void ReadFromExample(vw* vw, example* ex) override;
 
+		/// <summary>
+		/// The predicted topics.
+		/// </summary>
 		property cli::array<float>^ Values;
 	};
 
+	/// <summary>
+	/// Interface defining a vowpal wabbit example. 
+	/// </summary>
 	public interface class IVowpalWabbitExample : public IDisposable
 	{
 	public:
+		/// <summary>
+		/// The associated <see cref="VowpalWabbitBase"/> instance learns from this example.
+		/// </summary>
 		virtual void Learn() = 0;
+
+		/// <summary>
+		/// The associated <see cref="VowpalWabbitBase"/> instance predicts an outcome using this example and discards the result.
+		/// </summary>
+		/// <remarks>Used with multi-line examples.</remarks>
 		virtual void PredictAndDiscard() = 0;
 
-		// T Learn<T>()
+		/// <summary>
+		/// The associated <see cref="VowpalWabbitBase"/> instance learns from this example and returns the prediction result for this example.
+		/// </summary>
+		/// <returns>The prediction result.</returns>
+		/// <typeparam name="TPrediction">The prediction result type.</typeparam>
 		generic<typename TPrediction>
 			where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 		virtual TPrediction LearnAndPredict() = 0;
 
+		/// <summary>
+		/// The associated <see cref="VowpalWabbitBase"/> instance predicts an outcome using this example.
+		/// </summary>
+		/// <returns>The prediction result.</returns>
+		/// <typeparam name="TPrediction">The prediction result type.</typeparam>
 		generic<typename TPrediction>
 			where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
 		virtual TPrediction Predict() = 0;
 
+		/// <summary>
+		/// The underlying <see cref="VowpalWabbitExample"/> this instance wraps.
+		/// </summary>
 		virtual property VowpalWabbitExample^ UnderlyingExample
 		{
 			VowpalWabbitExample^ get() = 0;
 		}
 	};
 
+	/// <summary>
+	/// A CLR representation of a vowpal wabbit example.
+	/// </summary>
+	/// <remarks>
+	/// Underlying memory is allocated by native code, but examples are not part of the ring.
+	/// To optimize performance each <see cref="VowpalWabbitBase"/> instance maintains an example pool.
+	/// </remarks>
 	public ref class VowpalWabbitExample : public IVowpalWabbitExample
 	{
 	protected:

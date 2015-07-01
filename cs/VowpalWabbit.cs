@@ -197,7 +197,6 @@ namespace VW
 
                 // Nasty workaround. Since the prediction result is stored in the first example
                 // and we'll have to get an actual VowpalWabbitExampt
-                // 
                 var firstExample = examples.FirstOrDefault();
                 if (firstExample == null)
                 {
