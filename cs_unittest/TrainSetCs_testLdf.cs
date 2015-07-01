@@ -1,12 +1,8 @@
-﻿using VW;
+﻿using System.Collections.Generic;
+using VW;
 using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace cs_unittest
 {

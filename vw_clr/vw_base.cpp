@@ -23,12 +23,13 @@ namespace VW
 	VowpalWabbitBase::VowpalWabbitBase(System::String^ args)
         : VowpalWabbitBase((vw*)nullptr)
 	{
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			auto string = msclr::interop::marshal_as<std::string>(args);
 			m_vw = VW::initialize(string);
 			initialize_parser_datastructures(*m_vw);
-		)
+		}
+		CATCHRETHROW
 	}
 
 	VowpalWabbitBase::VowpalWabbitBase(System::String^ args, System::IO::Stream^ stream)
@@ -38,8 +39,8 @@ namespace VW
 		char** argv = nullptr;
 		int argc = 0;
 		
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			auto string = msclr::interop::marshal_as<std::string>(args);
 			string += " --no_stdin";
 			argv = VW::get_argv_from_string(string, argc);
@@ -50,7 +51,8 @@ namespace VW
 			initialize_parser_datastructures(all);
 
 			m_vw = &all;
-		)
+		}
+		CATCHRETHROW
 		finally
 		{
 			if (argv != nullptr)
@@ -72,7 +74,11 @@ namespace VW
         }
         else
         {
-            TRYCATCHRETHROW(ex = VW::alloc_examples(0, 1))
+			try
+			{
+				ex = VW::alloc_examples(0, 1);
+			}
+			CATCHRETHROW
         }
         return ex;
     }
@@ -84,15 +90,19 @@ namespace VW
             m_examples = new stack<example*>();
         }
 
-		TRYCATCHRETHROW(VW::empty_example(*m_vw, *ex))
+		try
+		{
+			VW::empty_example(*m_vw, *ex);
+		}
+		CATCHRETHROW
 
         m_examples->push(ex);
     }
 
 	void VowpalWabbitBase::InternalDispose()
 	{
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			if (m_examples != nullptr)
 			{
 				while (!m_examples->empty())
@@ -116,28 +126,34 @@ namespace VW
 				m_examples = nullptr;
 			}
 
-			if (m_vw)
+			if (m_vw != nullptr)
 			{
 				release_parser_datastructures(*m_vw);
 
-				VW::finish(*m_vw);
+				// make sure don't try to free m_vw twice in case VW::finish throws.
+				vw* vw_tmp = m_vw;
 				m_vw = nullptr;
+				VW::finish(*vw_tmp);
 			}
-		)
+			
+			// don't add code here as in the case of VW::finish thrown an exception it won't be called
+		}
+		CATCHRETHROW
 	}
 
 	void VowpalWabbitBase::RunMultiPass()
 	{
 		if (m_vw->numpasses > 1)
 		{
-			TRYCATCHRETHROW
-			(
+			try
+			{
 				adjust_used_index(*m_vw);
 				m_vw->do_reset_source = true;
 				VW::start_parser(*m_vw, false);
 				LEARNER::generic_driver(*m_vw);
 				VW::end_parser(*m_vw);
-			)
+			}
+			CATCHRETHROW
 		}
 	}
 
@@ -167,10 +183,11 @@ namespace VW
 
 		auto name = msclr::interop::marshal_as<std::string>(filename);
 
-		TRYCATCHRETHROW
-		(
+		try
+		{
 			VW::save_predictor(*m_vw, name);
-		)
+		}
+		CATCHRETHROW
 	}
 
 	VowpalWabbitPerformanceStatistics^ VowpalWabbitBase::PerformanceStatistics::get()

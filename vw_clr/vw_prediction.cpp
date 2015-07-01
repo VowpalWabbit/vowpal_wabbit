@@ -16,12 +16,20 @@ namespace VW
 
 	void VowpalWabbitScalarPrediction::ReadFromExample(vw* vw, example* ex)
 	{
-		TRYCATCHRETHROW(Value = VW::get_prediction(ex))
+		try
+		{
+			Value = VW::get_prediction(ex);
+		}
+		CATCHRETHROW
 	}
 
 	void VowpalWabbitCostSensitivePrediction::ReadFromExample(vw* vw, example* ex)
 	{
-		TRYCATCHRETHROW(Value = VW::get_cost_sensitive_prediction(ex))
+		try
+		{
+			Value = VW::get_cost_sensitive_prediction(ex);
+		}
+		CATCHRETHROW
 	}
 
 	void VowpalWabbitMultilabelPrediction::ReadFromExample(vw* vw, example* ex)
@@ -29,7 +37,11 @@ namespace VW
 		size_t length;
 		uint32_t* labels;
 		
-		TRYCATCHRETHROW(labels = VW::get_multilabel_predictions(ex, length))
+		try
+		{
+			labels = VW::get_multilabel_predictions(ex, length);
+		}
+		CATCHRETHROW
 
 		if (length > Int32::MaxValue)
 		{
