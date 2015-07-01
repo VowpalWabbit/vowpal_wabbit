@@ -47,6 +47,14 @@ namespace VW.Serializer
             return (MethodInfo)ReflectionHelper.GetInfo((IVowpalWabbitVisitor<TExampleResult> e) => e.Visit((NamespaceSparse)null));
         }
 
+
+        /// <summary>
+        /// Compiles a serializers for the given example user type.
+        /// </summary>
+        /// <typeparam name="TExample">The example user type.</typeparam>
+        /// <param name="visitor">The visitor to be used for serialization.</param>
+        /// <param name="settings">The serializer settings.</param>
+        /// <returns>A serializer for the given user example type.</returns>
         public static VowpalWabbitSerializer<TExample> CreateSerializer<TExample>(VowpalWabbitInterfaceVisitor visitor, VowpalWabbitSerializerSettings settings)
         {
             var serializerFunc = CreateSerializer<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample>();
@@ -59,6 +67,13 @@ namespace VW.Serializer
             return new VowpalWabbitSerializer<TExample>(ex => serializerFunc(ex, visitor), settings);
         }
 
+        /// <summary>
+        /// Compiles a serializers for the given example user type.
+        /// </summary>
+        /// <typeparam name="TExample">The example user type.</typeparam>
+        /// <typeparam name="TVisitor">The visitor to be used for serialization.</typeparam>
+        /// <typeparam name="TExampleResult">The resulting serialization type.</typeparam>
+        /// <returns>A serializer for the given user example type.</returns>
         public static Func<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult>()
             where TVisitor : IVowpalWabbitVisitor<TExampleResult>
         {

@@ -13,8 +13,8 @@ namespace VW
 	{
 	}
 
-	VowpalWabbit::VowpalWabbit(System::String^ pArgs, System::IO::Stream^ stream)
-		: VowpalWabbitBase(pArgs, stream)
+	VowpalWabbit::VowpalWabbit(System::String^ pArgs, System::IO::Stream^ model)
+		: VowpalWabbitBase(pArgs, model)
 	{
 	}
 

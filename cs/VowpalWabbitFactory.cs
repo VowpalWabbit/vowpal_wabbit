@@ -11,14 +11,22 @@ using VW.Interfaces;
 namespace VW
 {
     /// <summary>
-    /// <see cref="Microsoft.Research.MachineLearning.Interfaces.IObjectFactory"/> implementation to produce <see cref="VowpalWabbit"/> instances.
+    /// <see cref="IObjectFactory{VowpalWabbit}"/> implementation to produce <see cref="VowpalWabbit"/> instances.
     /// </summary>
     public class VowpalWabbitFactory : VowpalWabbitFactoryBase<VowpalWabbit>
     {
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbitFactory"/> instance.
+        /// </summary>
+        /// <param name="model">The shared model.</param>
         public VowpalWabbitFactory(VowpalWabbitModel model) : base(model)
         {
         }
 
+        /// <summary>
+        /// Creates a new <see cref="VowpalWabbit"/> instance using the shared model.
+        /// </summary>
+        /// <returns>A new <see cref="VowpalWabbit"/> instance.</returns>
         public override VowpalWabbit Create()
         {
             return new VowpalWabbit(this.model);
@@ -26,15 +34,23 @@ namespace VW
     }
 
     /// <summary>
-    /// <see cref="Microsoft.Research.MachineLearning.Interfaces.IObjectFactory"/> implementation to produce <see cref="VowpalWabbit{TExample}"/> instances.
+    /// <see cref="IObjectFactory{TVowpalWabbit}"/> implementation to produce <see cref="VowpalWabbit{TExample}"/> instances.
     /// </summary>
     public class VowpalWabbitFactory<TExample> : VowpalWabbitFactoryBase<VowpalWabbit<TExample>>
     {
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbitFactory{TExample}"/> instance.
+        /// </summary>
+        /// <param name="model">The shared model.</param>
         public VowpalWabbitFactory(VowpalWabbitModel model)
             : base(model)
         {
         }
 
+        /// <summary>
+        /// Creates a new <see cref="VowpalWabbit{TExample}"/> instance using the shared model.
+        /// </summary>
+        /// <returns>A new <see cref="VowpalWabbit{TExample}"/> instance.</returns>
         public override VowpalWabbit<TExample> Create()
         {
             return new VowpalWabbit<TExample>(this.model);
@@ -42,16 +58,24 @@ namespace VW
     }
 
     /// <summary>
-    /// <see cref="Microsoft.Research.MachineLearning.Interfaces.IObjectFactory"/> implementation to produce <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> instances.
+    /// <see cref="IObjectFactory{TVowpalWabbit}"/> implementation to produce <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> instances.
     /// </summary>
     public class VowpalWabbitFactory<TExample, TActionDependentFeature> : VowpalWabbitFactoryBase<VowpalWabbit<TExample, TActionDependentFeature>>
         where TExample : SharedExample, IActionDependentFeatureExample<TActionDependentFeature>
     {
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbitFactory{TExample, TActionDependentFeature}"/> instance.
+        /// </summary>
+        /// <param name="model">The shared model.</param>
         public VowpalWabbitFactory(VowpalWabbitModel model)
             : base(model)
         {
         }
 
+        /// <summary>
+        /// Creates a new <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> instance using the shared model.
+        /// </summary>
+        /// <returns>A new <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> instance.</returns>
         public override VowpalWabbit<TExample, TActionDependentFeature> Create()
         {
             return new VowpalWabbit<TExample, TActionDependentFeature>(this.model);

@@ -37,11 +37,20 @@ namespace VW.Serializer.Visitors
 
         private VowpalWabbitNamespaceBuilder namespaceBuilder;
 
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbitInterfaceVisitor"/> instance.
+        /// </summary>
+        /// <param name="vw">The associated vowpal wabbit instance.</param>
         public VowpalWabbitInterfaceVisitor(VowpalWabbit vw)
         {
             this.vw = vw;
         }
 
+        /// <summary>
+        /// Transfers namespace data to native space.
+        /// </summary>
+        /// <typeparam name="T">The feature type.</typeparam>
+        /// <param name="namespaceDense">The dense namespace.</param>
         public void Visit<T>(INamespaceDense<T> namespaceDense)
         {
             this.featureGroup = (byte)(namespaceDense.FeatureGroup ?? 0);
@@ -62,6 +71,10 @@ namespace VW.Serializer.Visitors
             }
         }
 
+        /// <summary>
+        /// Transfers namespace data to native space.
+        /// </summary>
+        /// <param name="namespaceSparse">The sparse namespace.</param>
         public void Visit(INamespaceSparse namespaceSparse)
         {
             // compute shared namespace hash
@@ -80,36 +93,64 @@ namespace VW.Serializer.Visitors
             }
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit(IFeature<short> feature)
         {
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), feature.Value);
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit(IFeature<short?> feature)
         {
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), (short)feature.Value);
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit(IFeature<int> feature)
         {
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), feature.Value);
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit(IFeature<int?> feature)
         {
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), (int)feature.Value);
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit(IFeature<float> feature)
         {
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), feature.Value);
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit(IFeature<float?> feature)
         {
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), (float)feature.Value);
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit(IFeature<double> feature)
         {
 #if DEBUG
@@ -121,6 +162,10 @@ namespace VW.Serializer.Visitors
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), (float)feature.Value);
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit(IFeature<double?> feature)
         {
 #if DEBUG
@@ -132,6 +177,10 @@ namespace VW.Serializer.Visitors
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), (float)feature.Value);
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void VisitEnumerize<T>(IFeature<T> feature)
         {
             var strValue = Convert.ToString(feature.Value);
@@ -139,6 +188,10 @@ namespace VW.Serializer.Visitors
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name + strValue, this.namespaceHash), 1f);
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit<TValue>(IFeature<IDictionary<UInt16, TValue>> feature)
         {
             foreach (var kvp in feature.Value)
@@ -147,6 +200,10 @@ namespace VW.Serializer.Visitors
             }
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
         {
             foreach (var kvp in feature.Value)
@@ -155,6 +212,10 @@ namespace VW.Serializer.Visitors
             }
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit<TValue>(IFeature<IDictionary<Int16, TValue>> feature)
         {
             foreach (var kvp in feature.Value)
@@ -163,6 +224,10 @@ namespace VW.Serializer.Visitors
             }
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit<TValue>(IFeature<IDictionary<Int32, TValue>> feature)
         {
             foreach (var kvp in feature.Value)
@@ -171,6 +236,10 @@ namespace VW.Serializer.Visitors
             }
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit(IFeature<IDictionary<Int32, float>> feature)
         {
             foreach (var kvp in feature.Value)
@@ -179,6 +248,10 @@ namespace VW.Serializer.Visitors
             }
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit<TKey, TValue>(IFeature<IEnumerable<KeyValuePair<TKey, TValue>>> feature)
         {
             foreach (var kvp in feature.Value)
@@ -189,7 +262,10 @@ namespace VW.Serializer.Visitors
             }
         }
 
-
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit(IFeature<IDictionary> feature)
         {
             foreach (DictionaryEntry item in feature.Value)
@@ -200,6 +276,10 @@ namespace VW.Serializer.Visitors
             }
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit(IFeature<IEnumerable<string>> feature)
         {
             foreach (var value in feature.Value)
@@ -208,6 +288,10 @@ namespace VW.Serializer.Visitors
             }
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit<T>(IFeature<T> feature)
         {
             var strValue = typeof(T).IsEnum ? 
@@ -216,6 +300,12 @@ namespace VW.Serializer.Visitors
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name + strValue, this.namespaceHash), 1f);
         }
 
+        /// <summary>
+        /// Transfers namespace data to native space.
+        /// </summary>
+        /// <param name="label">The label.</param>
+        /// <param name="namespaces">The namespaces.</param>
+        /// <returns>The populated vowpal wabbit example.</returns>
         public VowpalWabbitExample Visit(string label, IVisitableNamespace[] namespaces)
         {
             using (this.builder = new VowpalWabbitExampleBuilder(this.vw))

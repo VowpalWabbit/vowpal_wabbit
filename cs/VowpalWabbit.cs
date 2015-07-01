@@ -21,8 +21,16 @@ namespace VW
     /// <typeparam name="TExample">The user example type.</typeparam>
     public class VowpalWabbit<TExample> : VowpalWabbit
     {
+        /// <summary>
+        /// The serializer for the example user type.
+        /// </summary>
         protected VowpalWabbitSerializer<TExample> serializer;
 
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbit{TExample}"/> instance.
+        /// </summary>
+        /// <param name="model">The shared model.</param>
+        /// <param name="settings">The serializer settings.</param>
         public VowpalWabbit(VowpalWabbitModel model, VowpalWabbitSerializerSettings settings = null)
             : base(model)
         {
@@ -30,6 +38,11 @@ namespace VW
             this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(visitor, settings);
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbit{TExample}"/> instance.
+        /// </summary>
+        /// <param name="arguments">Command line arguments</param>
+        /// <param name="settings">The serializer settings.</param>
         public VowpalWabbit(string arguments, VowpalWabbitSerializerSettings settings = null)
             : base(arguments)
         {
@@ -47,6 +60,10 @@ namespace VW
             return this.serializer.Serialize(example);    
         }
 
+        /// <summary>
+        /// Cleanup.
+        /// </summary>
+        /// <param name="isDiposing">See IDiposable pattern.</param>
         protected override void Dispose(bool isDiposing)
         {
             if (isDiposing)
@@ -75,12 +92,22 @@ namespace VW
         private VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
         private VowpalWabbitExample emptyExample;
 
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> instance.
+        /// </summary>
+        /// <param name="model">The shared model.</param>
+        /// <param name="settings">The serializer settings.</param>
         public VowpalWabbit(VowpalWabbitModel model, VowpalWabbitSerializerSettings settings = null)
             : base(model)
         {
             this.Initialize(settings);
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> instance.
+        /// </summary>
+        /// <param name="arguments">Command line arguments</param>
+        /// <param name="settings">The serializer settings.</param>
         public VowpalWabbit(string arguments, VowpalWabbitSerializerSettings settings = null)
             : base(arguments)
         {
@@ -221,6 +248,10 @@ namespace VW
             }
         }
 
+        /// <summary>
+        /// Cleanup.
+        /// </summary>
+        /// <param name="isDiposing">See IDiposable pattern.</param>
         protected override void Dispose(bool isDiposing)
         {
             if (isDiposing)

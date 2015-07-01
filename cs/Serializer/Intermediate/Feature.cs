@@ -43,7 +43,6 @@ namespace VW.Serializer.Intermediate
     /// The typed representation of the feature.
     /// </summary>
     /// <typeparam name="T">Type of feature value.</typeparam>
-    /// <typeparam name="TResult">Result type produved by visitor.</typeparam>
     public sealed class Feature<T> : Feature, IFeature<T>, IVisitableFeature
     {
         /// <summary>

@@ -13,10 +13,16 @@ using System.Threading.Tasks;
 
 namespace VW.Serializer
 {
+    /// <summary>
+    /// Serializer settings.
+    /// </summary>
     public class VowpalWabbitSerializerSettings
     {
         private int maxExampleCacheSize;
 
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbitSerializerSettings"/> instance.
+        /// </summary>
         public VowpalWabbitSerializerSettings()
         {
             this.EnableExampleCaching = true;

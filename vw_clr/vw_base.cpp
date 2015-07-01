@@ -176,6 +176,7 @@ namespace VW
 		}
 
         System::String^ directoryName = System::IO::Path::GetDirectoryName(filename);
+
         if (!System::String::IsNullOrEmpty(directoryName))
         {
             System::IO::Directory::CreateDirectory(directoryName);

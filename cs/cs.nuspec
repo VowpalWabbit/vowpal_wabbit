@@ -4,19 +4,20 @@
     <title>Vowpal Wabbit</title>
     <id>VowpalWabbit</id>
     <tags>vw vowpal wabbit john langford</tags>
-    <version>8.0.0.3</version>
+    <version>8.0.0.4</version>
     <authors>John Langford et al</authors>
     <projectUrl>https://github.com/JohnLangford/vowpal_wabbit</projectUrl>
     <licenseUrl>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Official Vowpal Wabbit library including C# interface</description>
-    <copyright>Copyright (C) Microsoft Corp 2012-2014, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved.</copyright>
+    <copyright>Copyright (C) Microsoft Corp 2012-2015, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved.</copyright>
     <dependencies />
   </metadata>
   <files>
 	  <!-- despite warning this is still required -->
 	  <file src="bin\$Platform$\$Configuration$\*.dll" target="lib\net45" />
-	  <file src="bin\$Platform$\$Configuration$\*.pdb" target="lib\net45" />
+    <file src="bin\$Platform$\$Configuration$\*.pdb" target="lib\net45" />
+    <file src="bin\$Platform$\$Configuration$\*.xml" target="lib\net45" />
 	  <file src="**\*.cs" target="src\cs" exclude="**\obj\**\*.cs" />
 	  <file src="..\vw_clr\*.cpp" target="src\vw_clr" />
 	  <file src="..\vw_clr\*.h" target="src\vw_clr" />
