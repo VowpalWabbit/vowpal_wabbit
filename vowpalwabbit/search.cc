@@ -1914,7 +1914,7 @@ namespace Search {
   bool uint32_equal(uint32_t a, uint32_t b) { return a==b; }
   bool size_equal(size_t a, size_t b) { return a==b; }
 
-  template<typename T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool /*default_to_cmdline*/, bool(*/*equal*/)(T,T), const char* /*mismatch_error_string*/, const char* required_error_string) {
+  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) {
     if (vm.count(opt_name)) {
       ret = vm[opt_name].as<T>();
       *all.file_options << " --" << opt_name << " " << ret;
