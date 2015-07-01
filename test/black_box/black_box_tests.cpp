@@ -2,7 +2,7 @@
 #include "..\unit\MWTExploreTests.h"
 #include <vector>
 
-void prg_test(Value& v)
+void test_prg(Value& v)
 {
     u64 seed = v["Seed"].GetUint64();
     int iterations = v["Iterations"].GetInt();
@@ -36,7 +36,7 @@ void prg_test(Value& v)
     }
 }
 
-void hash_test(Value& v)
+void test_hash(Value& v)
 {
     const char* outputFile = v["OutputFile"].GetString();
 
@@ -61,6 +61,18 @@ template <typename Ctx>
 EpsilonGreedyExplorer<Ctx>* CreateEpsilonExplorer(IPolicy<Ctx>& policy, float epsilon, u32 num_actions, std::false_type)
 {
     return new EpsilonGreedyExplorer<Ctx>(policy, epsilon, num_actions);
+}
+
+template <typename Ctx>
+TauFirstExplorer<Ctx>* CreateTauFirstExplorer(IPolicy<Ctx>& policy, u32 tau, u32 num_actions, std::true_type)
+{
+    return new TauFirstExplorer<Ctx>(policy, tau);
+}
+
+template <typename Ctx>
+TauFirstExplorer<Ctx>* CreateTauFirstExplorer(IPolicy<Ctx>& policy, u32 tau, u32 num_actions, std::false_type)
+{
+    return new TauFirstExplorer<Ctx>(policy, tau, num_actions);
 }
 
 template <typename Ctx>
@@ -104,7 +116,48 @@ void explore_epsilon_greedy(
     }
 }
 
-void epsilon_greedy_test(Value& v)
+template <typename Ctx>
+void explore_tau_first(
+    const char* app_id,
+    int policy_type,
+    Value& config_policy,
+    u32 tau,
+    u32 num_actions,
+    Value& experimental_unit_ids,
+    vector<Ctx> contexts,
+    const char* output_file)
+{
+    ofstream out_file(output_file);
+
+    StringRecorder<Ctx> recorder;
+    MwtExplorer<Ctx> mwt(std::string(app_id), recorder);
+
+    switch (policy_type)
+    {
+    case 0: // fixed policy
+    {
+        u32 policy_action = config_policy["Action"].GetUint();
+
+        TestPolicy<Ctx> policy;
+        policy.Set_Action_To_Choose(policy_action);
+
+        unique_ptr<TauFirstExplorer<Ctx>> explorer;
+
+        explorer.reset(CreateTauFirstExplorer(policy, tau, num_actions, std::is_base_of<IVariableActionContext, Ctx>()));
+
+        for (SizeType i = 0; i < experimental_unit_ids.Size(); i++)
+        {
+            mwt.Choose_Action(*explorer.get(), string(experimental_unit_ids[i].GetString()), contexts.at(i));
+        }
+
+        out_file << recorder.Get_Recording() << endl;
+
+        break;
+    }
+    }
+}
+
+void test_epsilon_greedy(Value& v)
 {
     const char* output_file = v["OutputFile"].GetString();
     const char* app_id = v["AppId"].GetString();
@@ -149,6 +202,52 @@ void epsilon_greedy_test(Value& v)
     }
 }
 
+// TODO: refactor
+void test_tau_first(Value& v)
+{
+    const char* output_file = v["OutputFile"].GetString();
+    const char* app_id = v["AppId"].GetString();
+    u32 num_actions = v["NumberOfActions"].GetUint();
+
+    Value& experimental_unit_id_list = v["ExperimentalUnitIdList"];
+
+    u32 tau = v["Tau"].GetUint();
+    Value& config_policy = v["PolicyConfiguration"];
+    int policy_type = config_policy["PolicyType"].GetInt();
+
+    switch (v["ContextType"].GetInt())
+    {
+    case 0: // fixed action context
+    {
+        vector<TestContext> contexts;
+        for (SizeType i = 0; i < experimental_unit_id_list.Size(); i++)
+        {
+            TestContext tc;
+            tc.Id = i;
+            contexts.push_back(tc);
+        }
+
+        explore_tau_first(app_id, policy_type, config_policy, tau, num_actions, experimental_unit_id_list, contexts, output_file);
+
+        break;
+    }
+    case 1: // variable action context
+    {
+        vector<TestVarContext> contexts;
+        for (SizeType i = 0; i < experimental_unit_id_list.Size(); i++)
+        {
+            TestVarContext tc(num_actions);
+            tc.Id = i;
+            contexts.push_back(tc);
+        }
+
+        explore_tau_first(app_id, policy_type, config_policy, tau, num_actions, experimental_unit_id_list, contexts, output_file);
+
+        break;
+    }
+    }
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
     if (argc != 2)
@@ -168,13 +267,16 @@ int _tmain(int argc, _TCHAR* argv[])
         switch (d[i]["Type"].GetInt())
         {
         case 0:
-            prg_test(d[i]);
+            test_prg(d[i]);
             break;
         case 1:
-            hash_test(d[i]);
+            test_hash(d[i]);
             break;
         case 2:
-            epsilon_greedy_test(d[i]);
+            test_epsilon_greedy(d[i]);
+            break;
+        case 3:
+            test_tau_first(d[i]);
             break;
         }
     }
