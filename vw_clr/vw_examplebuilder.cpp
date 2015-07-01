@@ -55,7 +55,7 @@ namespace VW
 		return ret;
 	}
 
-	void VowpalWabbitExampleBuilder::Label::set(System::String^ value)
+	void VowpalWabbitExampleBuilder::Label::set(String^ value)
 	{
 		if (value == nullptr)
 			return;
@@ -74,7 +74,13 @@ namespace VW
 		}
 	}
 
-	VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(System::Byte featureGroup)
+
+	VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(Char featureGroup)
+	{
+		return AddNamespace((Byte)featureGroup);
+	}
+
+	VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(Byte featureGroup)
 	{
 		uint32_t index = featureGroup;
 		m_example->indices.push_back(index);

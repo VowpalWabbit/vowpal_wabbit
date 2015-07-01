@@ -475,7 +475,13 @@ namespace VW
 		/// <summary>
 		/// Creates and adds a new namespace to this example.
 		/// </summary>
-		VowpalWabbitNamespaceBuilder^ AddNamespace(System::Byte featureGroup);
+		VowpalWabbitNamespaceBuilder^ AddNamespace(Byte featureGroup);
+
+		/// <summary>
+		/// Creates and adds a new namespace to this example.
+		/// </summary>
+		/// <remarks>Casts to System::Byte.</remarks>
+		VowpalWabbitNamespaceBuilder^ AddNamespace(Char featureGroup);
 	};
 
 	/// <summary>

@@ -31,7 +31,7 @@ namespace VW.Serializer.Visitors
         /// </summary>
         private uint namespaceHash;
 
-        private byte featureGroup;
+        private char featureGroup;
 
         private VowpalWabbitExampleBuilder builder;
 
@@ -53,7 +53,7 @@ namespace VW.Serializer.Visitors
         /// <param name="namespaceDense">The dense namespace.</param>
         public void Visit<T>(INamespaceDense<T> namespaceDense)
         {
-            this.featureGroup = (byte)(namespaceDense.FeatureGroup ?? 0);
+            this.featureGroup = namespaceDense.FeatureGroup ?? '\0';
 
             this.namespaceHash = namespaceDense.Name == null ? 
                 this.vw.HashSpace(this.featureGroup.ToString()) :
@@ -82,7 +82,7 @@ namespace VW.Serializer.Visitors
                 this.vw.HashSpace(namespaceSparse.FeatureGroup.ToString()) :
                 this.vw.HashSpace(namespaceSparse.FeatureGroup + namespaceSparse.Name);
 
-            this.featureGroup = (byte)(namespaceSparse.FeatureGroup ?? 0);
+            this.featureGroup = namespaceSparse.FeatureGroup ?? '\0';
 
             this.namespaceBuilder = this.builder.AddNamespace(this.featureGroup);
 
