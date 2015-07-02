@@ -1312,8 +1312,7 @@ namespace VW {
 
     all.l->finish();
     free_it(all.l);
-    if (all.reg.weight_vector != nullptr && !
-all.seeded) // don't free weight vector if it is shared with another instance
+    if (all.reg.weight_vector != nullptr && !all.seeded) // don't free weight vector if it is shared with another instance
       free(all.reg.weight_vector);
     free_parser(all);
     finalize_source(all.p);
