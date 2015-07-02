@@ -226,6 +226,7 @@
     <IntDir>$(SolutionDir)$(PlatformShortName)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemGroup>
+    <ClInclude Include="active_cover.h" />
     <ClInclude Include="autolink.h" />
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="active.h" />
@@ -296,6 +297,7 @@
     <ClInclude Include="v_hashmap.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="active_cover.cc" />
     <ClCompile Include="autolink.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="active.cc" />
