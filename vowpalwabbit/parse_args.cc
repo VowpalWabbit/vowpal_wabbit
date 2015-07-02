@@ -21,7 +21,6 @@ license as described in the file LICENSE.
 #include "nn.h"
 #include "gd.h"
 #include "cbify.h"
-#include "cb_adf.h"
 #include "oaa.h"
 #include "boosting.h"
 #include "multilabel_oaa.h"
@@ -31,6 +30,7 @@ license as described in the file LICENSE.
 #include "ect.h"
 #include "csoaa.h"
 #include "cb_algs.h"
+#include "cb_adf.h"
 #include "scorer.h"
 #include "expreplay.h"
 #include "search.h"
@@ -1016,6 +1016,7 @@ vw& parse_args(int argc, char *argv[])
 {
   vw& all = *(new vw());
 
+  all.vw_is_main = false;
   add_to_args(all, argc, argv);
 
   all.program_name = argv[0];
@@ -1311,7 +1312,7 @@ namespace VW {
 
     all.l->finish();
     free_it(all.l);
-    if (all.reg.weight_vector != nullptr)
+    if (all.reg.weight_vector != nullptr && !all.seeded)
       free(all.reg.weight_vector);
     free_parser(all);
     finalize_source(all.p);
