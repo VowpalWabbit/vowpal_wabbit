@@ -1,5 +1,4 @@
 #include <errno.h>
-#include "gd.h"
 #include "reductions.h"
 #include "rand48.h"
 #include "float.h"
@@ -9,8 +8,6 @@
 using namespace LEARNER;
 
 inline float sign(float w){ if (w < 0.) return -1.; else  return 1.;}
-inline float fmax(float a, float b){if(a > b) return a; else return b;}
-inline float fmin(float a, float b){if(a < b) return a; else return b;}
 
 bool dis_test(vw& all, example& ec, float prediction, float threshold)
 {
