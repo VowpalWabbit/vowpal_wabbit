@@ -4,7 +4,6 @@
 #include "rand48.h"
 #include "float.h"
 #include "vw.h"
-#include "print.h"
 #include "active_cover.h"
 
 using namespace LEARNER;
@@ -139,7 +138,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 		if(!in_dis) // Use predicted label 
 		{
 			ec.l.simple.label = sign(prediction);
-			ec.l.simple.weight = ec_input_weight * a.predicted_label_weight;
+			ec.l.simple.weight = ec_input_weight;
 			base.learn(ec, 0);
 			
 		}
@@ -161,7 +160,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 		// Update the cost-sensitive learners in the cover and their weights
 
 		float q2 = 4*pmin*pmin; 
-		float beta = (a.no_beta) ? 0 : sqrt(a.alpha/a.active_c0)/10.0;
+		float beta = sqrt(a.alpha/a.active_c0)/10.0;
 		float p, s, cost, cost_delta, num_delta, den_delta, lambda_delta;
 		float num, den;
 		float ec_output_label = ec.l.simple.label;
@@ -238,14 +237,10 @@ base_learner* active_cover_setup(vw& all)
 	}
 	
 	new_options(all, "Active Learning with cover options")
-    	//("simulation", "active learning simulation mode")
     	("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8.")
     	("alpha", po::value<float>(), "active learning variance upper bound parameter alpha. Default 1.")
     	("cover", po::value<float>(), "cover size. Default 20.")
-    	("predicted_label_weight", po::value<float>(), "Weight on predicted labels. Should be no larger than 1. Default 1.")
-    	("oracular", "Use Oracular-CAL style query or not. Default false.")
-    	("no_beta", "Do not use beta. Default false.")
-    	("print_used", "print used examples with weights. Default false.");
+    	("oracular", "Use Oracular-CAL style query or not. Default false.");
 	add_options(all);
 
 
@@ -254,9 +249,6 @@ base_learner* active_cover_setup(vw& all)
 	data.alpha = 1;
 	data.all = &all;
 	data.oracular = false;
-	data.no_beta = false;
-	data.print_used = false;
-	data.predicted_label_weight = 1.0;
 
  	size_t cover_size = 20;
 	if(all.vm.count("mellowness"))
@@ -274,28 +266,12 @@ base_learner* active_cover_setup(vw& all)
 		cover_size = all.vm["cover"].as<float>();
 	}
 
-	if(all.vm.count("print_used"))
-	{
-		data.print_used = true;
-	}
-	
 	if(all.vm.count("oracular"))
 	{
 		data.oracular = true;
 		cover_size = 0;
 	}
 	
-	if(all.vm.count("no_beta"))
-	{
-		data.no_beta = true;
-	}
-	
-	if(all.vm.count("predicted_label_weight"))
-	{
-		data.predicted_label_weight = all.vm["predicted_label_weight"].as<float>();;
-	}
-
-
 	*all.file_options <<" --active_cover --cover "<< cover_size;
   	base_learner* base = setup_base(all);
  

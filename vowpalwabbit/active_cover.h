@@ -70,9 +70,7 @@ struct active_cover
 	// active learning algorithm parameters
 	float active_c0;
 	float alpha;
-	bool no_beta;
 	bool oracular;
-	float predicted_label_weight;
 
 	active_cover_weights* weights;
 	vw* all;//statistics, loss

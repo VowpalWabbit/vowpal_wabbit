@@ -76,7 +76,6 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
 		}
 		else if(a.oracular)
 		{
-			ec.l.simple.weight *= a.predicted_label_weight;
 			ec.l.simple.label = sign(ec.pred.scalar);
 			base.learn(ec);
 		}
@@ -180,7 +179,6 @@ base_learner* active_setup(vw& all)
 	new_options(all, "Active Learning options")
     	("simulation", "active learning simulation mode")
     	("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8")
-    	("predicted_label_weight", po::value<float>(), "weight on predicted labels. effective only with oracular. Should be no larger than 1. Default 1.")
     	("oracular", "using oracular CAL. Default false");
 	add_options(all);
   
@@ -188,18 +186,12 @@ base_learner* active_setup(vw& all)
 	data.active_c0 = 8;
 	data.oracular = false;
 	data.all=&all;
-	data.predicted_label_weight = 1.0; 
  
 	if (all.vm.count("mellowness"))
 	{
 		data.active_c0 = all.vm["mellowness"].as<float>();
 	}
 	
-	if (all.vm.count("predicted_label_weight"))
-	{
-		data.predicted_label_weight = all.vm["predicted_label_weight"].as<float>();
-	}
-	 
 	if (all.vm.count("oracular"))
 	{
 		data.oracular = true;

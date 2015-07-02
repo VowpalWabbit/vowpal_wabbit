@@ -21,6 +21,7 @@ license as described in the file LICENSE.
 #include "nn.h"
 #include "gd.h"
 #include "cbify.h"
+#include "cb_adf.h"
 #include "oaa.h"
 #include "boosting.h"
 #include "multilabel_oaa.h"
@@ -1289,7 +1290,7 @@ namespace VW {
         if (all.sd->queries > 0)
 	  cerr << endl << "total queries = " << all.sd->queries << endl;
         if (all.sd->n_in_dis > 0)
-	  cerr << "n_in_dis = " << all.sd->n_in_dis << endl;
+	  cerr << "number of examples in disagreement regions = " << all.sd->n_in_dis << endl;
         cerr << endl;
         }
     

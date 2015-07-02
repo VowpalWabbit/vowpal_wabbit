@@ -1,0 +1,33 @@
+final_regressor = models/active_cover.model
+Num weight bits = 29
+learning rate = 10
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/rcv1_small.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.000000 0.000000            1            1.0  -1.0000  -1.0000      128
+0.000000 0.000000            2            2.0  -1.0000  -1.0000       44
+0.198047 0.327943            4            5.0  -1.0000  -1.0000      190
+0.304449 0.403229            7           10.5  unknown  -1.0000       56
+0.151627 0.000000           16           21.1  unknown  -1.0000       43
+0.179133 0.205668           34           42.9  -1.0000  -1.0000       78
+0.193437 0.207203           67           87.5  -1.0000   1.0000       82
+0.180942 0.168567          136          175.8  unknown   1.0000       52
+0.141208 0.101617          273          352.2  unknown   1.0000       57
+0.123273 0.105361          551          704.8  -1.0000  -1.0000      194
+
+finished run
+number of examples per pass = 1000
+passes used = 1
+weighted example sum = 1231.308099
+weighted label sum = -64.990724
+average loss = 0.111695
+best constant = -0.131977
+best constant's loss = 0.690975
+total feature number = 78739
+total queries = 755
+number of examples in disagreement regions = 1000
+

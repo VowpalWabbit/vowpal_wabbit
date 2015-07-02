@@ -1215,3 +1215,30 @@ echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} --oaa 3 -q :: --invert_has
 echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} -i simple_model --invert_hash inv_hash.cmp && tail -n +2 inv_hash.cmp 
    test-sets/ref/backwards.stderr
    test-sets/ref/backwards.stdout
+
+# Test 97: active cover
+{VW} --loss_function logistic --binary -b 29 --active_cover --cover 5 -l 10 --alpha 1 --mellowness 1 -d train-sets/rcv1_small.dat -f models/active_cover.model
+   train-sets/ref/active_cover.stderr
+
+# Test 98: active cover (predict)
+{VW} -i models/active_cover.model --binary -t -d test-sets/rcv1_small_test.data -p active_cover.predict 
+   test-sets/ref/active_cover.stderr
+   pred-sets/ref/active_cover.predict
+
+# Test 99: active cover oracular
+{VW} --loss_function logistic --binary -b 29 --active_cover --oracular -l 10 --alpha 1 --mellowness 0.1 train-sets/rcv1_small.dat -f models/active_cover_oracular.model
+   train-sets/ref/active_cover_oracular.stderr
+
+# Test 100: active cover oracular (predict) 
+{VW} -i models/active_cover_oracular.model --binary -t test-sets/rcv1_small_test.data -p active_cover_oracular.predict
+   test-sets/ref/active_cover_oracular.stderr
+   pred-sets/ref/active_cover_oracular.predict
+
+# Test 101: active simulation oracular
+{VW} --loss_function logistic --binary --active --simulation --oracular -l 10 --mellowness 0.01 train-sets/rcv1_small.dat -f models/active_simulation_oracular.model
+   train-sets/ref/active_simulation_oracular.stderr
+
+# Test 102: active simulation oracular (predict) 
+{VW} -i models/active_simulation_oracular.model --binary -t test-sets/rcv1_small_test.data -p active_simulation_oracular.predict
+   test-sets/ref/active_simulation_oracular.stderr
+   pred-sets/ref/active_simulation_oracular.predict

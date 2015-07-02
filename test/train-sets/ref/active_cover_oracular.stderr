@@ -1,0 +1,33 @@
+final_regressor = models/active_cover_oracular.model
+Num weight bits = 29
+learning rate = 10
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/rcv1_small.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.000000 0.000000            1            1.0  -1.0000  -1.0000      128
+0.000000 0.000000            2            2.0  -1.0000  -1.0000       44
+0.250000 0.500000            4            4.0  -1.0000  -1.0000      190
+0.375000 0.500000            8            8.0   1.0000  -1.0000       34
+0.312500 0.250000           16           16.0   1.0000   1.0000       43
+0.343750 0.375000           32           32.0  -1.0000   1.0000       47
+0.281250 0.218750           64           64.0   1.0000   1.0000       54
+0.226562 0.171875          128          128.0  -1.0000  -1.0000       67
+0.167969 0.109375          256          256.0   1.0000   1.0000       86
+0.126953 0.085938          512          512.0  -1.0000  -1.0000      104
+
+finished run
+number of examples per pass = 1000
+passes used = 1
+weighted example sum = 1000.000000
+weighted label sum = -124.000000
+average loss = 0.112000
+best constant = -0.249283
+best constant's loss = 0.685439
+total feature number = 78739
+total queries = 372
+number of examples in disagreement regions = 372
+
