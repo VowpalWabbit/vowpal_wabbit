@@ -1,5 +1,4 @@
 #include <errno.h>
-#include "gd.h"
 #include "reductions.h"
 #include "rand48.h"
 #include "float.h"
@@ -9,8 +8,6 @@
 using namespace LEARNER;
 
 inline float sign(float w){ if (w < 0.) return -1.; else  return 1.;}
-inline float max(float a, float b){if(a > b) return a; else return b;}
-inline float min(float a, float b){if(a < b) return a; else return b;}
 
 bool dis_test(vw& all, example& ec, float prediction, float threshold)
 {
@@ -32,7 +29,7 @@ float get_threshold(float sum_loss, float t, float c0, float alpha)
 	else
 	{
 		float avg_loss = sum_loss/t;
-		float threshold = sqrt(c0*avg_loss/t) + max(2*alpha,4.0)*c0*log(t)/t;
+		float threshold = sqrt(c0*avg_loss/t) + fmax(2*alpha,4.0)*c0*log(t)/t;
 		return threshold;
 	}
 }
@@ -40,7 +37,7 @@ float get_threshold(float sum_loss, float t, float c0, float alpha)
 float get_pmin(float sum_loss, float t)
 {
 	float avg_loss = sum_loss/t;
-	float pmin = min(1.0/(sqrt(t*avg_loss)+log(t)),0.5);
+	float pmin = fmin(1.0/(sqrt(t*avg_loss)+log(t)),0.5);
 	return pmin; // treating n*eps_n = 1
 }
 
@@ -57,7 +54,7 @@ float query_decision(active_cover& a, base_learner& l, example& ec, float predic
 		lambda = a.weights->get(LAMBDA, i);
 		q2 += (sign(ec.pred.scalar) != sign(prediction)) ? lambda : 0;
 		n_dis += (sign(ec.pred.scalar) != sign(prediction)) ? 1 : 0;
-		max_lambda = max(lambda, max_lambda); 
+		max_lambda = fmax(lambda, max_lambda); 
 	}
 
 	float p = sqrt(q2)/(1+sqrt(q2));		
@@ -88,7 +85,7 @@ float get_cost(float target_label, float ec_true_label, float prediction, bool i
 	{
 		bool add_s = (s>0 && sign(target_label) != sign(prediction)) || (s<0 && sign(target_label) == sign(prediction));
 		cost += (add_s) ? fabs(s) : 0;
-		cost += (sign(target_label) != sign(ec_true_label)) ? max(importance,0)*c : 0; 	
+		cost += (sign(target_label) != sign(ec_true_label)) ? fmax(importance,0)*c : 0; 	
 	}
 	else
 	{
@@ -186,7 +183,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 			}
 
 			// Set importance weight to be the cost difference
-			ec.l.simple.weight = ec_input_weight * max(fabs(cost_delta),0.00001);
+			ec.l.simple.weight = ec_input_weight * fmax(fabs(cost_delta),0.00001);
 
 			// Update learner and weight
 			base.learn(ec,i+1);
@@ -194,7 +191,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 
 			// Update numerator of lambda			
 			num_delta = (sign(ec.pred.scalar) == sign(prediction)) ? cost : (cost - cost_delta);
-			num_delta += (in_dis) ? min(s,0) : 0;
+			num_delta += (in_dis) ? fmin(s,0) : 0;
 			num_delta *= -2;			
 			num = a.weights->update(LAMBDA_NUM, i, num_delta);
 	
