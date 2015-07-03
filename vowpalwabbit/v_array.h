@@ -135,7 +135,6 @@ template<class T> struct v_array {
  }
 };
 
-
 #ifdef _WIN32
 #undef max
 #undef min

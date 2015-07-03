@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 
 namespace SequenceTask         { Search::search_task task = { "sequence",          run, initialize, nullptr,   nullptr,  nullptr     }; }
 namespace SequenceSpanTask     { Search::search_task task = { "sequencespan",      run, initialize, finish, setup, takedown }; }
+namespace SequenceTaskCostToGo { Search::search_task task = { "sequence_ctg",      run, initialize, nullptr,   nullptr,  nullptr     }; }
 namespace ArgmaxTask           { Search::search_task task = { "argmax",            run, initialize, nullptr,   nullptr,  nullptr     }; }
 namespace SequenceTask_DemoLDF { Search::search_task task = { "sequence_demoldf",  run, initialize, finish, nullptr,  nullptr     }; }
 
@@ -194,6 +195,36 @@ namespace SequenceSpanTask {
           sch.output() << ((D.encoding == BIO) ? last_prediction : bilou_to_bio(last_prediction)) << ' ';
       }
     }
+  }
+}
+
+namespace SequenceTaskCostToGo {
+  void initialize(Search::search& sch, size_t& num_actions, po::variables_map& /*vm*/) {
+    sch.set_options( Search::AUTO_CONDITION_FEATURES  |    // automatically add history features to our examples, please
+                     Search::AUTO_HAMMING_LOSS        |    // please just use hamming loss on individual predictions -- we won't declare loss
+                     Search::EXAMPLES_DONT_CHANGE     |    // we don't do any internal example munging
+                     Search::ACTION_COSTS             |    // we'll provide cost-per-action (rather than oracle)
+                     0);
+    sch.set_task_data<size_t>(&num_actions);
+  }
+
+  void run(Search::search& sch, vector<example*>& ec) {
+    size_t K = * sch.get_task_data<size_t>();
+    float*costs = calloc_or_die<float>(K);
+    for (size_t i=0; i<ec.size(); i++) {
+      action oracle     = ec[i]->l.multi.label;
+      for (size_t k=0; k<K; k++) costs[k] = 1.;
+      costs[oracle-1] = 0.;
+      size_t prediction =
+          Search::predictor(sch, (ptag)i+1)
+          .set_input(*ec[i])
+          .set_allowed(nullptr, costs, K)
+          .set_condition_range((ptag)i, sch.get_history_length(), 'p')
+          .predict();
+      if (sch.output().good())
+        sch.output() << sch.pretty_label(prediction) << ' ';
+    }
+    free(costs);
   }
 }
 

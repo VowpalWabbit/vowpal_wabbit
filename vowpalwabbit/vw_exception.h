@@ -49,3 +49,8 @@ namespace VW {
 	}
 
 }
+
+#define VW_ASSERT(condition, args) \
+  if (! (condition)) {             \
+    THROW(args); \
+  }
