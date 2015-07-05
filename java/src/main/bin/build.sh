@@ -38,9 +38,9 @@ ln -s /opt/rh/devtoolset-2/root/usr/bin/* /usr/local/bin/;
 export JAVA_HOME=/usr/lib/jvm/java-1.7.0-openjdk.x86_64;
 cd /vowpal_wabbit;
 make clean;
-cat Makefile | sed 's/-fPIC/-fpermissive -fPIC/g' > Makefile.permissive
+cat Makefile | sed 's/-fPIC/-fpermissive -fPIC/g' > Makefile.permissive;
 make -f Makefile.permissive;
-rm -f Makefile.permissive
+rm -f Makefile.permissive;
 mv java/target/vw_jni.lib java/target/vw_jni.Red_Hat.6.amd64.lib"
 
 red_hat_7="yum install -q -y gcc-c++ make boost-devel zlib-devel java-1.7.0-openjdk-devel perl;

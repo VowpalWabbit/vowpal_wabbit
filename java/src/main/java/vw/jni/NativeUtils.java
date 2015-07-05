@@ -80,7 +80,8 @@ public class NativeUtils {
     /**
      * Loads a library from current JAR archive by looking up platform dependent name.
      * @param path The filename inside JAR as absolute path (beginning with '/'), e.g. /package/File.ext
-     * @throws IOException
+     * @param suffix The suffix to be appended to the name
+     * @throws IOException If temporary file creation or read/write operation fails
      */
     public static void loadOSDependentLibrary(String path, String suffix) throws IOException {
         String osFamily = getOsFamily();
