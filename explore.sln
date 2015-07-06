@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "explore_tests", "test\unit\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "black_box_tests", "test\black_box\black_box_tests.vcxproj", "{0133F6C8-6A10-458B-A270-A0ABEAA7D3EB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{CBD4851A-D484-438B-AC77-30CFF5BF1032}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -44,5 +46,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5AE3AA40-BEB0-4979-8166-3B885172C430} = {CBD4851A-D484-438B-AC77-30CFF5BF1032}
+		{0133F6C8-6A10-458B-A270-A0ABEAA7D3EB} = {CBD4851A-D484-438B-AC77-30CFF5BF1032}
 	EndGlobalSection
 EndGlobal
