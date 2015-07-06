@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackBoxTests", "Test\Black
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestCommon", "Test\Common\TestCommon.csproj", "{56D4D5D8-3677-420A-864B-1C9AB9F6480F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{F26BEACD-C816-449B-BD99-841BF1A0F469}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{CB0C6B20-560C-4822-8EF6-DA999A64B542} = {F26BEACD-C816-449B-BD99-841BF1A0F469}
+		{149D8ED5-D25F-4175-855D-0B6A412043D6} = {F26BEACD-C816-449B-BD99-841BF1A0F469}
+		{56D4D5D8-3677-420A-864B-1C9AB9F6480F} = {F26BEACD-C816-449B-BD99-841BF1A0F469}
 	EndGlobalSection
 EndGlobal
