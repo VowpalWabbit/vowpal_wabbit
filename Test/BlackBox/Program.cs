@@ -40,6 +40,9 @@ namespace BlackBoxTests
                     case 4:
                         TestSoftmax(config);
                         break;
+                    case 5:
+                        TestGeneric(config);
+                        break;
                 }
             }
         }
@@ -198,6 +201,45 @@ namespace BlackBoxTests
             }
         }
 
+        // TODO: refactor
+        static void TestGeneric(JObject config)
+        {
+            var outputFile = config["OutputFile"].Value<string>();
+            var appId = config["AppId"].Value<string>();
+            var numActions = config["NumberOfActions"].Value<uint>();
+            var experimentalUnitIdList = config["ExperimentalUnitIdList"].ToObject<string[]>();
+            JToken configScorer = config["ScorerConfiguration"];
+            var scorerType = configScorer["ScorerType"].Value<int>();
+
+            switch (config["ContextType"].Value<int>())
+            {
+                case 0: // fixed action context
+                {
+                    var contextList = Enumerable
+                        .Range(0, experimentalUnitIdList.Length)
+                        .Select(i => new RegularTestContext { Id = i })
+                        .ToArray();
+
+                    ExploreGeneric<RegularTestContext>(appId, scorerType, configScorer,
+                        numActions, experimentalUnitIdList, contextList, outputFile);
+
+                    break;
+                }
+                case 1: // variable action context
+                {
+                    var contextList = Enumerable
+                        .Range(0, experimentalUnitIdList.Length)
+                        .Select(i => new VariableActionTestContext(numActions) { Id = i })
+                        .ToArray();
+
+                    ExploreGeneric<VariableActionTestContext>(appId, scorerType, configScorer,
+                        numActions, experimentalUnitIdList, contextList, outputFile);
+
+                    break;
+                }
+            }
+        }
+
         static void ExploreEpsilonGreedy<TContext>
         (
             string appId,
@@ -330,6 +372,66 @@ namespace BlackBoxTests
                     var explorer = isVariableActionContext ?
                         new SoftmaxExplorer<TContext>(scorer, lambda) :
                         new SoftmaxExplorer<TContext>(scorer, lambda, numActions);
+
+                    for (int i = 0; i < experimentalUnitIdList.Length; i++)
+                    {
+                        mwt.ChooseAction(explorer, experimentalUnitIdList[i], contextList[i]);
+                    }
+
+                    File.AppendAllText(outputFile, recorder.GetRecording());
+
+                    break;
+                }
+            }
+        }
+
+        static void ExploreGeneric<TContext>
+        (
+            string appId,
+            int policyType,
+            JToken configPolicy,
+            uint numActions,
+            string[] experimentalUnitIdList,
+            TContext[] contextList,
+            string outputFile
+        )
+        where TContext : IStringContext
+        {
+            var recorder = new StringRecorder<TContext>();
+            var mwt = new MwtExplorer<TContext>(appId, recorder);
+
+            bool isVariableActionContext = typeof(IVariableActionContext).IsAssignableFrom(typeof(TContext));
+
+            switch (policyType)
+            {
+                case 0: // fixed all-equal scorer
+                {
+                    var scorerScore = configPolicy["Score"].Value<int>();
+
+                    var scorer = new TestScorer<TContext>(scorerScore, numActions);
+
+                    var explorer = isVariableActionContext ?
+                        new GenericExplorer<TContext>(scorer) :
+                        new GenericExplorer<TContext>(scorer, numActions);
+
+                    for (int i = 0; i < experimentalUnitIdList.Length; i++)
+                    {
+                        mwt.ChooseAction(explorer, experimentalUnitIdList[i], contextList[i]);
+                    }
+
+                    File.AppendAllText(outputFile, recorder.GetRecording());
+
+                    break;
+                }
+                case 1: // integer-progression scorer
+                {
+                    var scorerStartScore = configPolicy["Start"].Value<int>();
+
+                    var scorer = new TestScorer<TContext>(scorerStartScore, numActions, uniform: false);
+
+                    var explorer = isVariableActionContext ?
+                        new GenericExplorer<TContext>(scorer) :
+                        new GenericExplorer<TContext>(scorer, numActions);
 
                     for (int i = 0; i < experimentalUnitIdList.Length; i++)
                     {
