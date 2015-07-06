@@ -88,6 +88,18 @@ SoftmaxExplorer<Ctx>* CreateSoftmaxExplorer(IScorer<Ctx>& scorer, float lambda, 
 }
 
 template <typename Ctx>
+GenericExplorer<Ctx>* CreateGenericExplorer(IScorer<Ctx>& scorer, u32 num_actions, std::true_type)
+{
+    return new GenericExplorer<Ctx>(scorer);
+}
+
+template <typename Ctx>
+GenericExplorer<Ctx>* CreateGenericExplorer(IScorer<Ctx>& scorer, u32 num_actions, std::false_type)
+{
+    return new GenericExplorer<Ctx>(scorer, num_actions);
+}
+
+template <typename Ctx>
 void explore_epsilon_greedy(
     const char* app_id, 
     int policy_type, 
@@ -215,6 +227,65 @@ void explore_softmax(
             unique_ptr<SoftmaxExplorer<Ctx>> explorer;
 
             explorer.reset(CreateSoftmaxExplorer(scorer, lambda, num_actions, std::is_base_of<IVariableActionContext, Ctx>()));
+
+            for (SizeType i = 0; i < experimental_unit_ids.Size(); i++)
+            {
+                mwt.Choose_Action(*explorer.get(), string(experimental_unit_ids[i].GetString()), contexts.at(i));
+            }
+
+            out_file << recorder.Get_Recording() << endl;
+
+            break;
+        }
+    }
+}
+
+// TODO: refactor
+template <typename Ctx>
+void explore_generic(
+    const char* app_id,
+    int scorer_type,
+    Value& config_scorer,
+    u32 num_actions,
+    Value& experimental_unit_ids,
+    vector<Ctx> contexts,
+    const char* output_file)
+{
+    ofstream out_file(output_file);
+
+    StringRecorder<Ctx> recorder;
+    MwtExplorer<Ctx> mwt(std::string(app_id), recorder);
+
+    switch (scorer_type)
+    {
+        case 0: // all-equal fixed scorer
+        {
+            int scorer_score = config_scorer["Score"].GetInt();
+
+            TestScorer<Ctx> scorer(scorer_score, num_actions);
+
+            unique_ptr<GenericExplorer<Ctx>> explorer;
+
+            explorer.reset(CreateGenericExplorer(scorer, num_actions, std::is_base_of<IVariableActionContext, Ctx>()));
+
+            for (SizeType i = 0; i < experimental_unit_ids.Size(); i++)
+            {
+                mwt.Choose_Action(*explorer.get(), string(experimental_unit_ids[i].GetString()), contexts.at(i));
+            }
+
+            out_file << recorder.Get_Recording() << endl;
+
+            break;
+        }
+        case 1: // integer progression scorer
+        {
+            int scorer_start_score = config_scorer["Start"].GetInt();
+
+            TestScorer<Ctx> scorer(scorer_start_score, num_actions, false);
+
+            unique_ptr<GenericExplorer<Ctx>> explorer;
+
+            explorer.reset(CreateGenericExplorer(scorer, num_actions, std::is_base_of<IVariableActionContext, Ctx>()));
 
             for (SizeType i = 0; i < experimental_unit_ids.Size(); i++)
             {
@@ -365,6 +436,50 @@ void test_softmax(Value& v)
     }
 }
 
+void test_generic(Value& v)
+{
+    const char* output_file = v["OutputFile"].GetString();
+    const char* app_id = v["AppId"].GetString();
+    u32 num_actions = v["NumberOfActions"].GetUint();
+
+    Value& experimental_unit_id_list = v["ExperimentalUnitIdList"];
+
+    Value& config_scorer = v["ScorerConfiguration"];
+    int scorer_type = config_scorer["ScorerType"].GetInt();
+
+    switch (v["ContextType"].GetInt())
+    {
+        case 0: // fixed action context
+        {
+            vector<TestContext> contexts;
+            for (SizeType i = 0; i < experimental_unit_id_list.Size(); i++)
+            {
+                TestContext tc;
+                tc.Id = i;
+                contexts.push_back(tc);
+            }
+
+            explore_generic(app_id, scorer_type, config_scorer, num_actions, experimental_unit_id_list, contexts, output_file);
+
+            break;
+        }
+        case 1: // variable action context
+        {
+            vector<TestVarContext> contexts;
+            for (SizeType i = 0; i < experimental_unit_id_list.Size(); i++)
+            {
+                TestVarContext tc(num_actions);
+                tc.Id = i;
+                contexts.push_back(tc);
+            }
+
+            explore_generic(app_id, scorer_type, config_scorer, num_actions, experimental_unit_id_list, contexts, output_file);
+
+            break;
+        }
+    }
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
     if (argc != 2)
@@ -397,6 +512,9 @@ int _tmain(int argc, _TCHAR* argv[])
             break;
         case 4:
             test_softmax(d[i]);
+            break;
+        case 5:
+            test_generic(d[i]);
             break;
         }
     }
