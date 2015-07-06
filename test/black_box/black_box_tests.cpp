@@ -100,6 +100,18 @@ GenericExplorer<Ctx>* CreateGenericExplorer(IScorer<Ctx>& scorer, u32 num_action
 }
 
 template <typename Ctx>
+BootstrapExplorer<Ctx>* CreateBootstrapExplorer(vector<unique_ptr<IPolicy<Ctx>>>& policies, u32 num_actions, std::true_type)
+{
+    return new BootstrapExplorer<Ctx>(policies);
+}
+
+template <typename Ctx>
+BootstrapExplorer<Ctx>* CreateBootstrapExplorer(vector<unique_ptr<IPolicy<Ctx>>>& policies, u32 num_actions, std::false_type)
+{
+    return new BootstrapExplorer<Ctx>(policies, num_actions);
+}
+
+template <typename Ctx>
 void explore_epsilon_greedy(
     const char* app_id, 
     int policy_type, 
@@ -299,6 +311,54 @@ void explore_generic(
     }
 }
 
+// TODO: refactor
+template <typename Ctx>
+void explore_bootstrap(
+    const char* app_id,
+    Value& config_policies,
+    u32 num_actions,
+    Value& experimental_unit_ids,
+    vector<Ctx> contexts,
+    const char* output_file)
+{
+    ofstream out_file(output_file);
+
+    StringRecorder<Ctx> recorder;
+    MwtExplorer<Ctx> mwt(std::string(app_id), recorder);
+
+    vector<unique_ptr<IPolicy<Ctx>>> policies;
+
+    for (SizeType i = 0; i < config_policies.Size(); i++)
+    {
+        Value& config_policy = config_policies[i];
+        switch (config_policy["PolicyType"].GetInt())
+        {
+            case 0: // fixed policy
+            {
+                u32 policy_action = config_policy["Action"].GetUint();
+
+                auto policy = new TestPolicy<Ctx>();
+                policy->Set_Action_To_Choose(policy_action);
+
+                policies.push_back(unique_ptr<IPolicy<Ctx>>(policy));
+
+                break;
+            }
+        }
+    }
+
+    unique_ptr<BootstrapExplorer<Ctx>> explorer;
+
+    explorer.reset(CreateBootstrapExplorer(policies, num_actions, std::is_base_of<IVariableActionContext, Ctx>()));
+
+    for (SizeType i = 0; i < experimental_unit_ids.Size(); i++)
+    {
+        mwt.Choose_Action(*explorer.get(), string(experimental_unit_ids[i].GetString()), contexts.at(i));
+    }
+
+    out_file << recorder.Get_Recording() << endl;
+}
+
 void test_epsilon_greedy(Value& v)
 {
     const char* output_file = v["OutputFile"].GetString();
@@ -480,6 +540,49 @@ void test_generic(Value& v)
     }
 }
 
+void test_bootstrap(Value& v)
+{
+    const char* output_file = v["OutputFile"].GetString();
+    const char* app_id = v["AppId"].GetString();
+    u32 num_actions = v["NumberOfActions"].GetUint();
+
+    Value& experimental_unit_id_list = v["ExperimentalUnitIdList"];
+
+    Value& config_policies = v["PolicyConfigurations"];
+
+    switch (v["ContextType"].GetInt())
+    {
+        case 0: // fixed action context
+        {
+            vector<TestContext> contexts;
+            for (SizeType i = 0; i < experimental_unit_id_list.Size(); i++)
+            {
+                TestContext tc;
+                tc.Id = i;
+                contexts.push_back(tc);
+            }
+
+            explore_bootstrap(app_id, config_policies, num_actions, experimental_unit_id_list, contexts, output_file);
+
+            break;
+        }
+        case 1: // variable action context
+        {
+            vector<TestVarContext> contexts;
+            for (SizeType i = 0; i < experimental_unit_id_list.Size(); i++)
+            {
+                TestVarContext tc(num_actions);
+                tc.Id = i;
+                contexts.push_back(tc);
+            }
+
+            explore_bootstrap(app_id, config_policies, num_actions, experimental_unit_id_list, contexts, output_file);
+
+            break;
+        }
+    }
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
     if (argc != 2)
@@ -515,6 +618,9 @@ int _tmain(int argc, _TCHAR* argv[])
             break;
         case 5:
             test_generic(d[i]);
+            break;
+        case 6:
+            test_bootstrap(d[i]);
             break;
         }
     }
