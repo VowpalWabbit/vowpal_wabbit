@@ -1215,3 +1215,8 @@ echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} --oaa 3 -q :: --invert_has
 echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} -i simple_model --invert_hash inv_hash.cmp && tail -n +2 inv_hash.cmp 
    test-sets/ref/backwards.stderr
    test-sets/ref/backwards.stdout
+
+# Test 97: action costs, no rollout
+{VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout none --search_task sequence_ctg --search 5 --holdout_off
+    train-sets/ref/sequence_data.ctg.train.stderr
+

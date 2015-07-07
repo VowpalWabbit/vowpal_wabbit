@@ -21,6 +21,12 @@ namespace SequenceSpanTask {
   extern Search::search_task task;
 }
 
+namespace SequenceTaskCostToGo {
+  void initialize(Search::search&, size_t&, po::variables_map&);
+  void run(Search::search&, vector<example*>&);
+  extern Search::search_task task;
+}
+
 namespace ArgmaxTask {
   void initialize(Search::search&, size_t&, po::variables_map&);
   void run(Search::search&, vector<example*>&);

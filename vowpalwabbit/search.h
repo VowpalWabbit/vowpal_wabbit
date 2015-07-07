@@ -18,7 +18,7 @@ namespace Search {
   struct search_private;
   struct search_task;
 
-  extern uint32_t AUTO_CONDITION_FEATURES, AUTO_HAMMING_LOSS, EXAMPLES_DONT_CHANGE, IS_LDF, NO_CACHING;
+  extern uint32_t AUTO_CONDITION_FEATURES, AUTO_HAMMING_LOSS, EXAMPLES_DONT_CHANGE, IS_LDF, NO_CACHING, ACTION_COSTS;
 
   struct search;
   
@@ -91,7 +91,18 @@ namespace Search {
     //                           tells us how long condition_on is
     //   allowed_actions       an array of actions that are allowed at this step, or
     //                           nullptr if everything is allowed
-    //   allowed_actions_cnt   the length of allowed_actions
+    //   allowed_actions_cnt   the length of allowed_actions (0 if allowed_actions is null)
+    //   allowed_actions_cost  if you can precompute the cost-under-rollout-by-ref for each
+    //                           allowed action, and the underlying algorithm can use this
+    //                           (i.e., rollout=none or rollout=mix_per_roll and we're on
+    //                           a rollout-by-ref), then fill this in and rollouts will be
+    //                           avoided. note: if you provide allowed_actions_cost,
+    //                           then oracle_actions will be ignored (might as well pass
+    //                           nullptr). if allowed_actions
+    //                           is a nullptr, then allowed_actions_cost should be a vector
+    //                           of length equal to the total number of actions ("A"); otherwise
+    //                           it should be of length allowed_actions_cnt. only valid
+    //                           if ACTION_COSTS is specified as an option.
     //   learner_id            the id for the underlying learner to use (via set_num_learners)
     action predict(        example& ec
                    ,       ptag     my_tag
@@ -101,6 +112,7 @@ namespace Search {
                    , const char*    condition_on_names   = nullptr   // strlen(condition_on_names) should == |condition_on|
                    , const action*  allowed_actions      = nullptr
                    ,       size_t   allowed_actions_cnt  = 0
+                   , const float*   allowed_actions_cost = nullptr
                    ,       size_t   learner_id           = 0
                    ,       float    weight               = 0.
                    );
@@ -110,7 +122,8 @@ namespace Search {
     //   * ecs/ec_cnt replace ec. ecs is the list of examples the make up a single
     //     LDF example, and ec_cnt is its length
     //   * there are no more "allowed_actions" because that is implicit in the LDF
-    //     example structure
+    //     example structure. additionally, allowed_actions_cost should be stored
+    //     in the label structure for ecs (if ACTION_COSTS is set as an option)
     action predictLDF(        example* ecs
                       ,       size_t   ec_cnt
                       ,       ptag     my_tag
@@ -247,6 +260,15 @@ namespace Search {
     predictor& set_allowed(action*a, size_t action_count);
     predictor& set_allowed(v_array<action>& a);
 
+    // set/add allowed but with per-actions costs specified
+    predictor& add_allowed(action a, float cost);
+    predictor& add_allowed(action*a, float*costs, size_t action_count);
+    predictor& add_allowed(v_array< pair<action,float> >& a);
+    
+    predictor& set_allowed(action a, float cost);
+    predictor& set_allowed(action*a, float*costs, size_t action_count);
+    predictor& set_allowed(v_array< pair<action,float> >& a);
+
     // add a tag to condition on with a name, or set the conditioning
     // variables (i.e., erase previous ones)
     predictor& add_condition(ptag tag, char name);
@@ -274,12 +296,13 @@ namespace Search {
     v_array<ptag> condition_on_tags;
     v_array<char> condition_on_names;
     v_array<action> allowed_actions;   bool allowed_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
+    v_array<float> allowed_actions_cost;   bool allowed_cost_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
     size_t learner_id;
     search&sch;
 
-    void make_new_pointer(v_array<action>& A, size_t new_size);
-    predictor& add_to(v_array<action>& A, bool& A_is_ptr, action a, bool clear_first);
-    predictor& add_to(v_array<action>&A, bool& A_is_ptr, action*a, size_t action_count, bool clear_first);
+    template<class T> void make_new_pointer(v_array<T>& A, size_t new_size);
+    template<class T> predictor& add_to(v_array<T>& A, bool& A_is_ptr, T a, bool clear_first);
+    template<class T> predictor& add_to(v_array<T>&A, bool& A_is_ptr, T*a, size_t count, bool clear_first);
     void free_ec();
     
     // prevent the user from doing something stupid :) ... ugh needed to turn this off for python :(
