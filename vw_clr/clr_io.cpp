@@ -4,8 +4,6 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
 */
 
-#define _CRT_SECURE_NO_WARNINGS
-
 #include <msclr\marshal_cppstd.h>
 #include "clr_io.h"
 

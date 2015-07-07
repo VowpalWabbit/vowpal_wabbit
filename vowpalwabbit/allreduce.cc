@@ -35,7 +35,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
 
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock == -1)
-    THROW("socket: " << strerror(errno));
+    THROWERRNO("socket");
 
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
@@ -47,12 +47,12 @@ socket_t sock_connect(const uint32_t ip, const int port) {
   {
     char dotted_quad[INET_ADDRSTRLEN];
     if (nullptr == inet_ntop(AF_INET, &(far_end.sin_addr), dotted_quad, INET_ADDRSTRLEN))
-      THROW("inet_ntop: " << strerror(errno));
+      THROWERRNO("inet_ntop");
 
     char hostname[NI_MAXHOST];
     char servInfo[NI_MAXSERV];
     if (getnameinfo((sockaddr *) &far_end, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV))
-      THROW("getnameinfo(" << dotted_quad << "): " << strerror(errno));
+      THROWERRNO("getnameinfo(" << dotted_quad << ")");
 
     cerr << "connecting to " << dotted_quad << " = " << hostname << ':' << ntohs(port) << endl;
   }
@@ -80,7 +80,7 @@ socket_t getsock()
 {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock < 0)
-    THROW("socket: " << strerror(errno));
+    THROWERRNO("socket");
 
   // SO_REUSEADDR will allow port rebinding on Windows, causing multiple instances
   // of VW on the same machine to potentially contact the wrong tree node.
@@ -111,7 +111,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   struct hostent* master = gethostbyname(master_location.c_str());
 
   if (master == nullptr)
-    THROW("gethostbyname(" << master_location << "): " << strerror(errno));
+    THROWERRNO("gethostbyname(" << master_location << ")");
 
   socks.current_master = master_location;
 
@@ -167,7 +167,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
           address.sin_port = netport;
         }
         else
-          THROW("bind: " << strerror(errno));
+          THROWERRNO("bind");
       }
       else
       {
@@ -216,7 +216,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
     socklen_t size = sizeof(child_address);
     socket_t f = accept(sock,(sockaddr*)&child_address,&size);
     if (f < 0)
-      THROW("accept: " << strerror(errno));
+      THROWERRNO("accept");
 
     // char hostname[NI_MAXHOST];
     // char servInfo[NI_MAXSERV];

@@ -7,6 +7,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using VW.Interfaces;
+using VW.Serializer;
 
 namespace VW
 {
@@ -39,12 +40,19 @@ namespace VW
     public class VowpalWabbitFactory<TExample> : VowpalWabbitFactoryBase<VowpalWabbit<TExample>>
     {
         /// <summary>
+        /// Serializer settings.
+        /// </summary>
+        private VowpalWabbitSerializerSettings settings;
+
+        /// <summary>
         /// Initializes a new <see cref="VowpalWabbitFactory{TExample}"/> instance.
         /// </summary>
         /// <param name="model">The shared model.</param>
-        public VowpalWabbitFactory(VowpalWabbitModel model)
+        /// <param name="settings">The serializer settings.</param>
+        public VowpalWabbitFactory(VowpalWabbitModel model, VowpalWabbitSerializerSettings settings = null)
             : base(model)
         {
+            this.settings = settings;
         }
 
         /// <summary>
@@ -53,7 +61,7 @@ namespace VW
         /// <returns>A new <see cref="VowpalWabbit{TExample}"/> instance.</returns>
         public override VowpalWabbit<TExample> Create()
         {
-            return new VowpalWabbit<TExample>(this.model);
+            return new VowpalWabbit<TExample>(this.model, this.settings);
         }
     }
 
@@ -64,12 +72,19 @@ namespace VW
         where TExample : SharedExample, IActionDependentFeatureExample<TActionDependentFeature>
     {
         /// <summary>
+        /// Serializer settings.
+        /// </summary>
+        private VowpalWabbitSerializerSettings settings;
+
+        /// <summary>
         /// Initializes a new <see cref="VowpalWabbitFactory{TExample, TActionDependentFeature}"/> instance.
         /// </summary>
         /// <param name="model">The shared model.</param>
-        public VowpalWabbitFactory(VowpalWabbitModel model)
+        /// <param name="settings">The serializer settings.</param>
+        public VowpalWabbitFactory(VowpalWabbitModel model, VowpalWabbitSerializerSettings settings = null)
             : base(model)
         {
+            this.settings = settings;
         }
 
         /// <summary>
@@ -78,7 +93,7 @@ namespace VW
         /// <returns>A new <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> instance.</returns>
         public override VowpalWabbit<TExample, TActionDependentFeature> Create()
         {
-            return new VowpalWabbit<TExample, TActionDependentFeature>(this.model);
+            return new VowpalWabbit<TExample, TActionDependentFeature>(this.model, this.settings);
         }
     }
 }

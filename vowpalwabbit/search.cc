@@ -1944,7 +1944,7 @@ namespace Search {
   v_array<CS::label> read_allowed_transitions(action A, const char* filename) {
     FILE *f = fopen(filename, "r");
 	if (f == nullptr)
-	  THROW("error: could not read file " << filename << " (" << strerror(errno) << "); assuming all transitions are valid");
+	  THROWERRNO("error: could not read file " << filename << "; assuming all transitions are valid");
 
     bool* bg = (bool*)malloc((A+1)*(A+1) * sizeof(bool));
     int rd,from,to,count=0;
