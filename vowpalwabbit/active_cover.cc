@@ -29,7 +29,7 @@ float get_threshold(float sum_loss, float t, float c0, float alpha)
 	else
 	{
 		float avg_loss = sum_loss/t;
-		float threshold = sqrt(c0*avg_loss/t) + ((float) fmax(2*alpha,4.0)*c0*log(t)/t);
+		float threshold = sqrt(c0*avg_loss/t) + ((float)fmax(2*alpha,4.0)*c0*log(t)/t);
 		return threshold;
 	}
 }
@@ -260,7 +260,7 @@ base_learner* active_cover_setup(vw& all)
 
 	if(all.vm.count("cover"))
 	{
-		cover_size = all.vm["cover"].as<size_t>();
+		cover_size = (size_t)all.vm["cover"].as<float>();
 	}
 
 	if(all.vm.count("oracular"))
