@@ -1471,6 +1471,8 @@ namespace Search {
   inline bool cmp_size_t(const size_t a, const size_t b) { return a < b; }
   inline bool cmp_size_t_pair(const pair<size_t,size_t>& a, const pair<size_t,size_t>& b) { return ((a.first == b.first) && (a.second < b.second)) || (a.first < b.first); }
 
+  inline size_t absdiff(size_t a, size_t b) { return (a < b) ? (b-a) : (a-b); }
+  
   void hoopla_permute(size_t* B, size_t* end) {
     // from Curtis IPL 2004, "Darts and hoopla board design"
     // first sort
@@ -1484,10 +1486,10 @@ namespace Search {
     size_t i   = 0, j  = N-1;  // which parts of B have we already covered? [0,i] and [j,N-1]
     while (i+1 < j) {
       // there are four options depending on where things get placed
-      size_t d1 = abs(A[lo] - B[i+1]);  // put B[i+1] at the bottom
-      size_t d2 = abs(A[lo] - B[j-1]);  // put B[j-1] at the bottom
-      size_t d3 = abs(A[hi] - B[i+1]);  // put B[i+1] at the top
-      size_t d4 = abs(A[hi] - B[j-1]);  // put B[j-1] at the top
+      size_t d1 = absdiff(A[lo], B[i+1]);  // put B[i+1] at the bottom
+      size_t d2 = absdiff(A[lo], B[j-1]);  // put B[j-1] at the bottom
+      size_t d3 = absdiff(A[hi], B[i+1]);  // put B[i+1] at the top
+      size_t d4 = absdiff(A[hi], B[j-1]);  // put B[j-1] at the top
       size_t mx = max(max(d1,d2),max(d3,d4));
       if      (d1 >= mx) A[--lo] = B[++i];
       else if (d2 >= mx) A[--lo] = B[--j];
