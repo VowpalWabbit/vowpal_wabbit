@@ -74,18 +74,26 @@ namespace Search {
     size_t max_bias_ngram_length;   // add a "bias" feature for each ngram up to and including this length. eg., if it's 1, then you get a single feature for each conditional
     size_t max_quad_ngram_length;   // add bias *times* input features for each ngram up to and including this length
     float  feature_value;           // how much weight should the conditional features get?
+    bool   use_passthrough_repr;    // should we ask lower-level reductions for their internal state?
   };
 
   struct scored_action {
     action a;  // the action
     float  s;  // the predicted cost of this action
-    scored_action(action _a, float _s) : a(_a), s(_s) {}
-    scored_action() { a = (action)-1; s = 0.; }
+    //v_array<feature> repr;
+    scored_action(action _a = (action)-1, float _s = 0) : a(_a), s(_s) {} // , repr(v_init<feature>()) {}
+    //scored_action(action _a, float _s, v_array<feature>& _repr) : a(_a), s(_s), repr(_repr) {}
+    //scored_action() { a = (action)-1; s = 0.; }
   };
   std::ostream& operator << (std::ostream& os, const scored_action& x) { os << x.a << ':' << x.s; return os; }
-  
-  typedef v_array<scored_action> action_prefix;
 
+  struct action_repr {
+    action a;
+    v_array<feature> repr;
+    action_repr(action _a, v_array<feature>&_repr) : a(_a), repr(v_init<feature>()) { copy_array(repr, _repr); }
+    action_repr(action _a) : a(_a), repr(v_init<feature>()) {}
+  };
+  
   struct action_cache {
     float min_cost;
     action k;
@@ -95,13 +103,6 @@ namespace Search {
   };
   std::ostream& operator << (std::ostream& os, const action_cache& x) { os << x.k << ':' << x.cost; if (x.is_opt) os << '*'; return os; }
 
-  struct actionpp { // action++ stores an action and any number of "intermediate" floats
-    action a;
-    //    v_array<float> pp;
-    //    actionpp(action _a, v_array<float> _pp) : a(_a), pp(_pp) {}
-    actionpp(action _a) : a(_a) { } // pp = v_init<float>(); }
-  };
-  
   struct search_private {
     vw* all;
 
@@ -132,12 +133,13 @@ namespace Search {
     example* learn_ec_ref;         // reference to example at learn_t, when there's no example munging
     size_t learn_ec_ref_cnt;       // how many are there (for LDF mode only; otherwise 1)
     v_array<ptag> learn_condition_on;      // a copy of the tags used for conditioning at the training position
-    v_array<actionpp>learn_condition_on_act;// the actions taken
+    v_array<action_repr>learn_condition_on_act;// the actions taken
     v_array<char>   learn_condition_on_names;// the names of the actions
     v_array<action> learn_allowed_actions; // which actions were allowed at training time?
-    v_array<action> ptag_to_action;// tag to action mapping for conditioning
+    v_array<action_repr> ptag_to_action;// tag to action mapping for conditioning
     vector<action> test_action_sequence; // if test-mode was run, what was the corresponding action sequence; it's a vector cuz we might expose it to the library
     action learn_oracle_action;    // store an oracle action for debugging purposes
+    v_array<feature> last_action_repr;
     
     polylabel* allowed_actions_cache;
     
@@ -207,7 +209,7 @@ namespace Search {
     string rawOutputString;
     stringstream* rawOutputStringStream;
     CS::label ldf_test_label;
-    v_array<actionpp> condition_on_actions;
+    v_array<action_repr> condition_on_actions;
     v_array<size_t> timesteps;
     polylabel learn_losses;
     polylabel gte_label;
@@ -442,6 +444,7 @@ namespace Search {
     size_t idx2 = ((idx & mask) >> ss) & mask;
     feature f = { val * priv.dat_new_feature_value,
                   (uint32_t) (((priv.dat_new_feature_idx + idx2) << ss) ) };
+    cdbg << "adding: " << f.weight_index << ':' << f.x << endl;
     priv.dat_new_feature_ec->atomics[priv.dat_new_feature_namespace].push_back(f);
     priv.dat_new_feature_ec->sum_feat_sq[priv.dat_new_feature_namespace] += f.x * f.x;
     if (priv.all->audit) {
@@ -547,6 +550,10 @@ namespace Search {
       //assert( fabs(priv_beta - priv.beta) < 1e-2 );
       if (priv.beta > 1) priv.beta = 1;
     }
+    for (action_repr* ar = priv.ptag_to_action.begin; ar != priv.ptag_to_action.end; ++ar) {
+      ar->repr.delete_v();
+      cdbg << "delete_v" << endl;
+    }      
     priv.ptag_to_action.erase();
     
     if (! priv.cb_learner) { // was: if rollout_all_actions
@@ -583,7 +590,8 @@ namespace Search {
     return false;
   }
 
-  void add_example_conditioning(search_private& priv, example& ec, size_t condition_on_cnt, const char* condition_on_names, actionpp* condition_on_actions) {
+  // priv.learn_condition_on_act or priv.condition_on_actions
+  void add_example_conditioning(search_private& priv, example& ec, size_t condition_on_cnt, const char* condition_on_names, action_repr* condition_on_actions) {
     if (condition_on_cnt == 0) return;
 
     uint32_t extra_offset=0;
@@ -629,21 +637,26 @@ namespace Search {
       }
     }
 
-    /*
-    for (size_t i=0; i<I; i++)
-      if (condition_on_actions[i].pp.size() > 0) {
-        char name = condition_on_names[i];
-        uint32_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name);
-        for (size_t k=0; k<condition_on_actions[i].pp.size(); k++) {
-          priv.dat_new_feature_ec  = &ec;
-          priv.dat_new_feature_idx = (fid + k) * quadratic_constant;
-          priv.dat_new_feature_namespace = conditioning_namespace;
-          priv.dat_new_feature_value = condition_on_actions[i].pp[k];
-          add_new_feature(priv, condition_on_actions[i].pp[k], 4308927 << priv.all->reg.stride_shift);
-          // TODO: audit
+    if (priv.acset.use_passthrough_repr)
+      for (size_t i=0; i<I; i++)
+        if (condition_on_actions[i].repr.size() > 0) {
+          char name = condition_on_names[i];
+          for (size_t k=0; k<condition_on_actions[i].repr.size(); k++)
+            if ((condition_on_actions[i].repr[k].x > 1e-10) || (condition_on_actions[i].repr[k].x < -1e-10)) {
+              uint32_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + condition_on_actions[i].repr[k].weight_index);
+              if (priv.all->audit) {
+                priv.dat_new_feature_audit_ss.str("");
+                priv.dat_new_feature_audit_ss.clear();
+                priv.dat_new_feature_audit_ss << "passthrough_repr_" << i << '_' << k;
+              }
+              
+              priv.dat_new_feature_ec  = &ec;
+              priv.dat_new_feature_idx = fid;
+              priv.dat_new_feature_namespace = conditioning_namespace;
+              priv.dat_new_feature_value = condition_on_actions[i].repr[k].x;
+              add_new_feature(priv, 1., 4398201 << priv.all->reg.stride_shift);
+            }
         }
-      }
-    */
     
     size_t sz = ec.atomics[conditioning_namespace].size();
     if ((sz > 0) && (ec.sum_feat_sq[conditioning_namespace] > 0.)) {
@@ -879,13 +892,14 @@ namespace Search {
       ec.l.cs = priv.empty_cs_label;
 
     cdbg << "allowed_actions_cnt=" << allowed_actions_cnt << ", ec.l = ["; for (size_t i=0; i<ec.l.cs.costs.size(); i++) cdbg << ' ' << ec.l.cs.costs[i].class_index << ':' << ec.l.cs.costs[i].x; cdbg << " ]" << endl;
+
     
     priv.base_learner->predict(ec, policy);
     uint32_t act = ec.pred.multiclass;
     cdbg << "a=" << act << " from"; if (allowed_actions) { for (size_t ii=0; ii<allowed_actions_cnt; ii++) cdbg << ' ' << allowed_actions[ii]; } cdbg << endl;
     a_cost = ec.partial_prediction;
     cdbg << "a_cost = " << a_cost << endl;
-
+    
     if (override_action != (action)-1)
       act = override_action;
 
@@ -1051,11 +1065,6 @@ namespace Search {
     }
   }
   
-  void record_action(search_private& priv, ptag mytag, action a) {
-    if (mytag == 0) return;
-    push_at(priv.ptag_to_action, a, mytag);
-  }
-
   bool cached_item_equivalent(unsigned char*& A, unsigned char*& B) {
     size_t sz_A = *A;
     size_t sz_B = *B;
@@ -1063,22 +1072,20 @@ namespace Search {
     return memcmp(A, B, sz_A) == 0;
   }
 
-  void free_key(unsigned char* mem, scored_action) { free(mem); }
+  void free_key(unsigned char* mem, scored_action) { free(mem); } // sa.repr.delete_v(); }
   void clear_cache_hash_map(search_private& priv) {
     priv.cache_hash_map.iter(free_key);
     priv.cache_hash_map.clear();
   }
   
   // returns true if found and do_store is false. if do_store is true, always returns true.
-  bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on, const char* condition_on_names, actionpp* condition_on_actions, size_t condition_on_cnt, int policy, size_t learner_id, action &a, bool do_store, float& a_cost) {
+  bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on, const char* condition_on_names, action_repr* condition_on_actions, size_t condition_on_cnt, int policy, size_t learner_id, action &a, bool do_store, float& a_cost) {
     if (priv.no_caching) return do_store;
     if (mytag == 0) return do_store; // don't attempt to cache when tag is zero
 
     size_t sz  = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + sizeof(size_t) + condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(char));
-    //for (size_t i=0; i<condition_on_cnt; i++)
-    //  sz += sizeof(float) * condition_on_actions[i].pp.size();
-    //size_t sz  = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + sizeof(size_t) + condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(uint32_t) + sizeof(char));
-    if (sz % 4 != 0) sz = 4 * (sz / 4 + 1); // make sure sz aligns to 4 so that uniform_hash does the right thing
+    if (sz % 4 != 0)
+      sz += 4 - (sz % 4); // make sure sz aligns to 4 so that uniform_hash does the right thing
 
     unsigned char* item = calloc_or_die<unsigned char>(sz);
     unsigned char* here = item;
@@ -1088,14 +1095,9 @@ namespace Search {
     *here = (unsigned char)learner_id;        here += sizeof(size_t);
     *here = (unsigned char)condition_on_cnt;  here += sizeof(size_t);
     for (size_t i=0; i<condition_on_cnt; i++) {
-      //uint32_t nf = condition_on_actions[i].pp.size();
-      *here = condition_on[i];           here += sizeof(ptag);
-      *here = condition_on_actions[i].a; here += sizeof(action);
-      //*here = nf;                        here += sizeof(uint32_t);
-      // for (uint32_t j=0; j<nf; j++) {
-      //   *here = condition_on_actions[i].pp[j]; here += sizeof(float);
-      // }
-      *here = condition_on_names[i];     here += sizeof(char);  // SPEEDUP: should we align this at 4?
+      *here = condition_on[i];             here += sizeof(ptag);
+      *here = condition_on_actions[i].a;   here += sizeof(action);
+      *here = condition_on_names[i];       here += sizeof(char);  // SPEEDUP: should we align this at 4?
     }
     uint32_t hash = uniform_hash(item, sz, 3419);
 
@@ -1324,8 +1326,8 @@ namespace Search {
           
           for (size_t i=0; i<condition_on_cnt; i++)
             push_at(priv.learn_condition_on_act
-                    , actionpp(((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size())) ? priv.ptag_to_action[condition_on[i]] : 0)
-                    , i);  // TODO pp
+                    , action_repr(((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size())) ? priv.ptag_to_action[condition_on[i]] : 0)
+                    , i);
 
           if (condition_on_names == nullptr) {
             ensure_size(priv.learn_condition_on_names, 1);
@@ -1405,24 +1407,35 @@ namespace Search {
 
         ensure_size(priv.condition_on_actions, condition_on_cnt);
         for (size_t i=0; i<condition_on_cnt; i++)
-          priv.condition_on_actions[i].a = ((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size())) ? priv.ptag_to_action[condition_on[i]] : 0;
-        // TODO: store floats
+          priv.condition_on_actions[i] = ((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size())) ? priv.ptag_to_action[condition_on[i]] : 0;
 
         bool not_test = priv.all->training && !ecs[0].test_only;
 
         if ((!skip) && (!need_fea) && not_test && cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, learner_id, a, false, a_cost))
           // if this succeeded, 'a' has the right action
-          priv.total_cache_hits++;
-        else { // we need to predict, and then cache, and maybe run foreach_action
+          priv.total_cache_hits++; 
+        else { // we need to predict, and then cache, and maybe run foreach_action          
           size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 1 : 0;
+          priv.last_action_repr.erase();
           if (priv.auto_condition_features)
             for (size_t n=start_K; n<ec_cnt; n++)
               add_example_conditioning(priv, ecs[n], condition_on_cnt, condition_on_names, priv.condition_on_actions.begin);
 
-          if (((!skip) && (policy >= 0)) || need_fea)   // only make a prediction if we're going to use the output
+          if (((!skip) && (policy >= 0)) || need_fea) {  // only make a prediction if we're going to use the output
+            if (priv.auto_condition_features && priv.acset.use_passthrough_repr) {
+              if (priv.is_ldf)  { cerr << "search cannot use state representations in ldf mode" << endl; throw exception(); }
+              if (ecs[0].passthrough) { cerr << "search cannot passthrough" << endl; throw exception(); }
+              ecs[0].passthrough = &priv.last_action_repr;
+            }
+            
             a = priv.is_ldf ? single_prediction_LDF(priv, ecs, ec_cnt, learner, a_cost, need_fea ? a : (action)-1)
                             : single_prediction_notLDF(priv, *ecs, learner, allowed_actions, allowed_actions_cnt, allowed_actions_cost, a_cost, need_fea ? a : (action)-1);
 
+            cdbg << "passthrough = ["; for (size_t kk=0; kk<priv.last_action_repr.size(); kk++) cdbg << ' ' << priv.last_action_repr[kk].weight_index << ':' << priv.last_action_repr[kk].x; cdbg << " ]" << endl;
+            
+            ecs[0].passthrough = nullptr;
+          }
+          
           if (need_fea) {
             // TODO this
 
@@ -1558,11 +1571,6 @@ namespace Search {
   };
 
   
-  void free_action_prefix(action_prefix* px) {
-    px->delete_v();
-    delete px;
-  }
-
   void free_final_item(final_item* p) {
     p->prefix->delete_v();
     delete p->prefix;
@@ -1910,6 +1918,8 @@ namespace Search {
     priv.bad_string_stream = new stringstream();
     priv.bad_string_stream->clear(priv.bad_string_stream->badbit);
 
+    priv.last_action_repr = v_init<feature>();
+
     priv.beta = 0.5;
     priv.alpha = 1e-10f;
 
@@ -1936,6 +1946,7 @@ namespace Search {
     priv.acset.max_bias_ngram_length = 1;
     priv.acset.max_quad_ngram_length = 0;
     priv.acset.feature_value = 1.;
+    priv.acset.use_passthrough_repr = false;
 
     scored_action sa((action)-1,0.);
     priv.cache_hash_map.set_default_value(sa);
@@ -1968,9 +1979,10 @@ namespace Search {
     if (priv.cb_learner) priv.gte_label.cb.costs.delete_v();
     else                 priv.gte_label.cs.costs.delete_v();
 
-    priv.condition_on_actions.delete_v(); // TODO: delete floats
+    priv.condition_on_actions.delete_v();
     priv.learn_allowed_actions.delete_v();
     priv.ldf_test_label.costs.delete_v();
+    priv.last_action_repr.delete_v();
 
     if (priv.cb_learner)
       priv.allowed_actions_cache->cb.costs.delete_v();
@@ -1978,6 +1990,8 @@ namespace Search {
       priv.allowed_actions_cache->cs.costs.delete_v();
 
     priv.train_trajectory.delete_v();
+    for (action_repr* ar = priv.ptag_to_action.begin; ar != priv.ptag_to_action.end; ++ar)
+      ar->repr.delete_v();
     priv.ptag_to_action.delete_v();
     clear_memo_foreach_action(priv);
     priv.memo_foreach_action.delete_v();
@@ -2030,7 +2044,8 @@ namespace Search {
     new_options(vw, "Search Auto-conditioning Options")
         ("search_max_bias_ngram_length",   po::value<size_t>(), "add a \"bias\" feature for each ngram up to and including this length. eg., if it's 1 (default), then you get a single feature for each conditional")
         ("search_max_quad_ngram_length",   po::value<size_t>(), "add bias *times* input features for each ngram up to and including this length (def: 0)")
-        ("search_condition_feature_value", po::value<float> (), "how much weight should the conditional features get? (def: 1.)");
+        ("search_condition_feature_value", po::value<float> (), "how much weight should the conditional features get? (def: 1.)")
+        ("search_use_passthrough_repr",                         "should we use lower-level reduction _internal state_ as additional features? (def: no)");
     add_options(vw);
 
     po::variables_map& vm = vw.vm;
@@ -2043,6 +2058,8 @@ namespace Search {
 
     check_option<float> (acset.feature_value, vw, vm, "search_condition_feature_value", false, float_equal,
                          "warning: you specified a different value for --search_condition_feature_value than the one loaded from regressor. proceeding with loaded value: ", "");
+
+    check_option(acset.use_passthrough_repr, vw, vm, "search_use_passthrough_repr", false, "warning: you specified a different value for --search_use_passthrough_repr than the one loaded from regressor. proceeding with loaded value: ");
   }
 
   v_array<CS::label> read_allowed_transitions(action A, const char* filename) {
@@ -2343,8 +2360,7 @@ namespace Search {
       handle_condition_options(all, priv.acset);
 
       // turn off auto-condition if it's irrelevant
-      if (((priv.acset.max_bias_ngram_length == 0) && (priv.acset.max_quad_ngram_length == 0)) ||
-          (priv.acset.feature_value == 0.f)) {
+      if ((priv.history_length == 0) || (priv.acset.feature_value == 0.f)) {
         std::cerr << "warning: turning off AUTO_CONDITION_FEATURES because settings make it useless" << endl;
         priv.auto_condition_features = false;
       }
@@ -2394,7 +2410,14 @@ namespace Search {
     float a_cost = 0.;
     action a = search_predict(*priv, &ec, 1, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, allowed_actions, allowed_actions_cnt, allowed_actions_cost, learner_id, a_cost, weight);
     if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
-    if (mytag != 0) push_at(priv->ptag_to_action, a, mytag);
+    if (mytag != 0) {
+      if (mytag < priv->ptag_to_action.size()) {
+        cdbg << "delete_v at " << mytag << endl;
+        priv->ptag_to_action[mytag].repr.delete_v();
+      }
+      push_at(priv->ptag_to_action, action_repr(a, priv->last_action_repr), mytag);
+      cdbg << "push_at " << mytag << endl;
+    }
     if (priv->auto_hamming_loss)
       loss( priv->use_action_costs
             ? action_cost_loss(a, allowed_actions, allowed_actions_cost, allowed_actions_cnt)
@@ -2409,7 +2432,7 @@ namespace Search {
     action a = search_predict(*priv, ecs, ec_cnt, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, nullptr, 0, nullptr, learner_id, a_cost, weight);
     if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
     if ((mytag != 0) && ecs[a].l.cs.costs.size() > 0)
-      push_at(priv->ptag_to_action, ecs[a].l.cs.costs[0].class_index, mytag);
+      push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, priv->last_action_repr), mytag);
     if (priv->auto_hamming_loss)
       loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt)); // TODO: action costs
     cdbg << "predict returning " << a << endl;

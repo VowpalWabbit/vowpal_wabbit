@@ -82,6 +82,12 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->num_features = src->num_features;
   dst->partial_prediction = src->partial_prediction;
   copy_array(dst->topic_predictions, src->topic_predictions);
+  if (src->passthrough == nullptr) dst->passthrough = nullptr;
+  else {
+    dst->passthrough = new v_array<feature>;
+    *dst->passthrough = v_init<feature>();
+    copy_array(* dst->passthrough, *src->passthrough);
+  }
   dst->loss = src->loss;
   dst->example_t = src->example_t;
   memcpy(dst->sum_feat_sq, src->sum_feat_sq, 256 * sizeof(float));
@@ -199,6 +205,10 @@ void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_predic
   ec.tag.delete_v();
       
   ec.topic_predictions.delete_v();
+  if (ec.passthrough) {
+    ec.passthrough->delete_v();
+    delete ec.passthrough;
+  }
 
   for (size_t j = 0; j < 256; j++)
     {
