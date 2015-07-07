@@ -145,7 +145,7 @@ void parse_dictionary_argument(vw&all, string str) {
   io->close_file();
 
   if (! all.quiet)
-    cerr << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << oct << endl;
+    cerr << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << dec << endl;
 
   // see if we've already read this dictionary
   for (size_t id=0; id<all.read_dictionaries.size(); id++)
