@@ -17,5 +17,5 @@ test_script:
     if($env:PLATFORM -eq "x64")
 
     {
-       vstest.console /logger:Appveyor /Platform:x64 /inIsolation c:\vowpal_wabbit\cs_unittest\bin\x64\Release\cs_unittest.dll
+       vstest.console /Platform:x64 /inIsolation c:\vowpal_wabbit\cs_unittest\bin\x64\Release\cs_unittest.dll
     }

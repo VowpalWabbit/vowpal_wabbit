@@ -20,6 +20,8 @@ namespace VW.Serializer.Intermediate
 
         internal Type FeatureValueType { get; set; }
 
+        internal string PropertyName { get; set; }
+
         internal string Name { get; set; }
 
         internal string Namespace { get; set; }

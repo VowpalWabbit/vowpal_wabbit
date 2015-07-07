@@ -30,19 +30,27 @@ namespace DepParserTask {
   const action SHIFT        = 1;
   const action REDUCE_RIGHT = 2;
   const action REDUCE_LEFT  = 3;
-  
-  void initialize(Search::search& srn, size_t& /*num_actions*/, po::variables_map& vm) {
+
+  void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm) {
+    vw& all = sch.get_vw_pointer_unsafe();
     task_data *data = new task_data();
     data->action_loss.resize(4,true);
     data->ex = NULL;
-    srn.set_num_learners(3);
-    srn.set_task_data<task_data>(data);
-    po::options_description dparser_opts("dependency parser options");
-    dparser_opts.add_options()
+    sch.set_num_learners(3);
+    sch.set_task_data<task_data>(data);
+    
+	new_options(all, "Dependency Parser Options")		
         ("root_label", po::value<size_t>(&(data->root_label))->default_value(8), "Ensure that there is only one root in each sentence")
         ("num_label", po::value<size_t>(&(data->num_label))->default_value(12), "Number of arc labels")
         ("old_style_labels", "Use old hack of label information");
-    srn.add_program_options(vm, dparser_opts);
+	add_options(all);
+
+	check_option<size_t>(data->root_label, all, vm, "root_label", false, size_equal,
+                         "warning: you specified a different value for --root_label than the one loaded from regressor. proceeding with loaded value: ", "");
+    check_option<size_t>(data->num_label, all, vm, "num_label", false, size_equal,
+                         "warning: you specified a different value for --num_label than the one loaded from regressor. proceeding with loaded value: ", "");
+    check_option(data->old_style_labels, all, vm, "old_style_labels", false,
+                         "warning: you specified a different value for --old_style_labels than the one loaded from regressor. proceeding with loaded value: ");
 
     data->ex = VW::alloc_examples(sizeof(polylabel), 1);
     data->ex->indices.push_back(val_namespace);
@@ -51,8 +59,7 @@ namespace DepParserTask {
     data->ex->indices.push_back(constant_namespace);
 
     data->old_style_labels = vm.count("old_style_labels") > 0;
-    
-    vw& all = srn.get_vw_pointer_unsafe();
+    	
     const char* pair[] = {"BC", "BE", "BB", "CC", "DD", "EE", "FF", "GG", "EF", "BH", "BJ", "EL", "dB", "dC", "dD", "dE", "dF", "dG", "dd"};
     const char* triple[] = {"EFG", "BEF", "BCE", "BCD", "BEL", "ELM", "BHI", "BCC", "BJE", "BHE", "BJK", "BEH", "BEN", "BEJ"};
     vector<string> newpairs(pair, pair+19);
@@ -68,12 +75,12 @@ namespace DepParserTask {
     for (vector<string>::const_iterator i = all.triples.begin(); i != all.triples.end(); ++i)
         all.interactions.push_back(string2v_string(*i));
     
-    srn.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
-    srn.set_label_parser( COST_SENSITIVE::cs_label, [](polylabel&l) -> bool { return l.cs.costs.size() == 0; });
+    sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
+    sch.set_label_parser( COST_SENSITIVE::cs_label, [](polylabel&l) -> bool { return l.cs.costs.size() == 0; });
   }
 
-  void finish(Search::search& srn) {
-    task_data *data = srn.get_task_data<task_data>();
+  void finish(Search::search& sch) {
+    task_data *data = sch.get_task_data<task_data>();
     data->valid_actions.delete_v();
     data->gold_heads.delete_v();
     data->gold_tags.delete_v();
@@ -122,8 +129,8 @@ namespace DepParserTask {
   }
 
   // arc-hybrid System.
-  uint32_t transition_hybrid(Search::search& srn, uint32_t a_id, uint32_t idx, uint32_t t_id) {
-    task_data *data = srn.get_task_data<task_data>();
+  uint32_t transition_hybrid(Search::search& sch, uint32_t a_id, uint32_t idx, uint32_t t_id) {
+    task_data *data = sch.get_task_data<task_data>();
     v_array<uint32_t> &heads=data->heads, &stack=data->stack, &gold_heads=data->gold_heads, &gold_tags=data->gold_tags, &tags = data->tags;
     v_array<uint32_t> *children = data->children;
     if (a_id == SHIFT) {
@@ -137,7 +144,7 @@ namespace DepParserTask {
       children[4][hd] = last;
       children[1][hd] ++;
       tags[last]      = t_id;
-      srn.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);
+      sch.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);
         assert(! stack.empty());
         stack.pop();
         return idx;
@@ -148,7 +155,7 @@ namespace DepParserTask {
       children[2][idx] = last;
       children[0][idx] ++;
       tags[last]       = t_id;
-      srn.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);
+      sch.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);
         assert(! stack.empty());
         stack.pop();
         return idx;
@@ -156,11 +163,11 @@ namespace DepParserTask {
     THROW("transition_hybrid failed");
   }
   
-  void extract_features(Search::search& srn, uint32_t idx,  vector<example*> &ec) {
-    vw& all = srn.get_vw_pointer_unsafe();
-    task_data *data = srn.get_task_data<task_data>();
+  void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec) {
+    vw& all = sch.get_vw_pointer_unsafe();
+    task_data *data = sch.get_task_data<task_data>();
     reset_ex(data->ex);
-    size_t mask = srn.get_mask();
+    size_t mask = sch.get_mask();
     uint32_t multiplier = all.wpp << all.reg.stride_shift;
     v_array<uint32_t> &stack = data->stack, &tags = data->tags, *children = data->children, &temp=data->temp;
     example **ec_buf = data->ec_buf;
@@ -248,9 +255,9 @@ namespace DepParserTask {
     return false;
   }
 
-  void get_gold_actions(Search::search &srn, uint32_t idx, uint32_t n, v_array<action>& gold_actions){
+  void get_gold_actions(Search::search &sch, uint32_t idx, uint32_t n, v_array<action>& gold_actions){
     gold_actions.erase();
-    task_data *data = srn.get_task_data<task_data>();
+    task_data *data = sch.get_task_data<task_data>();
     v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions;
     size_t size = stack.size();
     uint32_t last = (size==0) ? 0 : stack.last();
@@ -303,8 +310,8 @@ namespace DepParserTask {
       }
   }
 
-  void setup(Search::search& srn, vector<example*>& ec) {
-    task_data *data = srn.get_task_data<task_data>();
+  void setup(Search::search& sch, vector<example*>& ec) {
+    task_data *data = sch.get_task_data<task_data>();
     v_array<uint32_t> &gold_heads=data->gold_heads, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags;
     uint32_t n = (uint32_t) ec.size();
     heads.resize(n+1, true);
@@ -336,8 +343,8 @@ namespace DepParserTask {
       data->children[i].resize(n+1, true);
   }    
   
-  void run(Search::search& srn, vector<example*>& ec) {
-    task_data *data = srn.get_task_data<task_data>();
+  void run(Search::search& sch, vector<example*>& ec) {
+    task_data *data = sch.get_task_data<task_data>();
     v_array<uint32_t> &stack=data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags;
     uint32_t n = (uint32_t) ec.size();
 
@@ -351,18 +358,18 @@ namespace DepParserTask {
     int count=1;
     uint32_t idx = ((data->root_label==0)?1:2);
     while(stack.size()>1 || idx <= n){
-      if(srn.predictNeedsExample())
-        extract_features(srn, idx, ec);
+      if(sch.predictNeedsExample())
+        extract_features(sch, idx, ec);
       
       get_valid_actions(valid_actions, idx, n, (uint32_t) stack.size(), stack.empty() ? 0 : stack.last());      
-      get_gold_actions(srn, idx, n, gold_actions);
+      get_gold_actions(sch, idx, n, gold_actions);
 
       // Predict the next action {SHIFT, REDUCE_LEFT, REDUCE_RIGHT}
-      uint32_t a_id= Search::predictor(srn, (ptag) count)
+      uint32_t a_id= Search::predictor(sch, (ptag) count)
                               .set_input(*(data->ex))
                               .set_oracle(gold_actions)
                               .set_allowed(valid_actions)
-                              .set_condition_range(count-1, srn.get_history_length(), 'p')
+                              .set_condition_range(count-1, sch.get_history_length(), 'p')
                               .set_learner_id(0)
                               .predict();
       count++;
@@ -370,22 +377,22 @@ namespace DepParserTask {
       uint32_t t_id = 0; // gold_tags[stack.last()]; // 0;
       if (a_id != SHIFT) {
         uint32_t gold_label = gold_tags[stack.last()];
-        t_id = Search::predictor(srn, (ptag) count)
+        t_id = Search::predictor(sch, (ptag) count)
                         .set_input(*(data->ex))
                         .set_oracle(gold_label)
-                        .set_condition_range(count-1, srn.get_history_length(), 'p')
+                        .set_condition_range(count-1, sch.get_history_length(), 'p')
                         .set_learner_id(a_id-1)
                         .predict();
       }
       count++;
-      idx = transition_hybrid(srn, a_id, idx, t_id);
+      idx = transition_hybrid(sch, a_id, idx, t_id);
     }
 
     heads[stack.last()] = 0;
     tags[stack.last()] = (uint32_t)data->root_label;
-    srn.loss((gold_heads[stack.last()] != heads[stack.last()]));
-    if (srn.output().good())
+    sch.loss((gold_heads[stack.last()] != heads[stack.last()]));
+    if (sch.output().good())
       for(size_t i=1; i<=n; i++)
-        srn.output() << (heads[i])<<":"<<tags[i] << endl;
+        sch.output() << (heads[i])<<":"<<tags[i] << endl;
   }
 }
