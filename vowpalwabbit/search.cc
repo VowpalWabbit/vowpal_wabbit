@@ -121,6 +121,7 @@ namespace Search {
     int mix_per_roll_policy;       // for MIX_PER_ROLL, we need to choose a policy to use; this is where it's stored (-2 means "not selected yet")
     bool no_caching;               // turn off caching
     size_t rollout_num_steps;      // how many calls of "loss" before we stop really predicting on rollouts and switch to oracle (0 means "infinite")
+    bool linear_ordering;          // insist that examples are generated in linear order (rather that the default hoopla permutation)
     bool (*label_is_test)(polylabel&); // tell me if the label data from an example is test
     
     size_t t;                      // current search step
@@ -143,7 +144,7 @@ namespace Search {
     size_t learn_t;                // what time step are we learning on?
     size_t learn_a_idx;            // what action index are we trying?
     bool done_with_all_actions;    // set to true when there are no more learn_a_idx to go
-
+    
     float test_loss;               // loss incurred when run INIT_TEST
     float learn_loss;              // loss incurred when run LEARN
     float train_loss;              // loss incurred when run INIT_TRAIN
@@ -1406,9 +1407,40 @@ namespace Search {
 
     THROW("error: predict called in unknown state");
   }
-  
+
   inline bool cmp_size_t(const size_t a, const size_t b) { return a < b; }
   inline bool cmp_size_t_pair(const pair<size_t,size_t>& a, const pair<size_t,size_t>& b) { return ((a.first == b.first) && (a.second < b.second)) || (a.first < b.first); }
+
+  void hoopla_permute(size_t* B, size_t* end) {
+    // from Curtis IPL 2004, "Darts and hoopla board design"
+    // first sort
+    size_t N = end - B;
+    std::sort(B, end, cmp_size_t);
+    // make some temporary space
+    size_t* A = (size_t*)calloc((N+1)*2, sizeof(size_t));
+    A[N  ] = B[0];    // arbitrarily choose the maximum in the middle
+    A[N+1] = B[N-1];  // so the maximum goes next to it
+    size_t lo  = N, hi = N+1;  // which parts of A have we filled in? [lo,hi]
+    size_t i   = 0, j  = N-1;  // which parts of B have we already covered? [0,i] and [j,N-1]
+    while (i+1 < j) {
+      // there are four options depending on where things get placed
+      size_t d1 = abs(A[lo] - B[i+1]);  // put B[i+1] at the bottom
+      size_t d2 = abs(A[lo] - B[j-1]);  // put B[j-1] at the bottom
+      size_t d3 = abs(A[hi] - B[i+1]);  // put B[i+1] at the top
+      size_t d4 = abs(A[hi] - B[j-1]);  // put B[j-1] at the top
+      size_t mx = max(max(d1,d2),max(d3,d4));
+      if      (d1 >= mx) A[--lo] = B[++i];
+      else if (d2 >= mx) A[--lo] = B[--j];
+      else if (d3 >= mx) A[++hi] = B[++i];
+      else               A[++hi] = B[--j];
+    }
+    // copy it back to B
+    memcpy(B, A+lo, N*sizeof(size_t));
+    // clean up
+    free(A);
+  }
+
+  
   void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps) {
     timesteps.erase();
 
@@ -1451,6 +1483,9 @@ namespace Search {
       }
       std::sort(timesteps.begin, timesteps.end, cmp_size_t);
     }
+
+    if (! priv.linear_ordering)
+      hoopla_permute(timesteps.begin, timesteps.end);
   }
   
   struct final_item {
@@ -1779,7 +1814,8 @@ namespace Search {
     priv.state = INITIALIZE;
     priv.learn_learner_id = 0;
     priv.mix_per_roll_policy = -2;
-
+    priv.linear_ordering = false;
+    
     priv.t = 0;
     priv.T = 0;
     priv.learn_ec_ref = nullptr;
@@ -2057,6 +2093,7 @@ namespace Search {
         ("search_no_caching",                             "turn off the built-in caching ability (makes things slower, but technically more safe)")
         ("search_xv",                                     "train two separate policies, alternating prediction/learning")
         ("search_perturb_oracle",    po::value<float>(),  "perturb the oracle on rollin with this probability (def: 0)")
+        ("search_linear_ordering",                        "insist on generating examples in linear order (def: hoopla permutation)")
         ;
     add_options(all);
     po::variables_map& vm = all.vm;
@@ -2094,6 +2131,7 @@ namespace Search {
     if (vm.count("search_passes_per_policy"))       priv.passes_per_policy    = vm["search_passes_per_policy"].as<size_t>();
     if (vm.count("search_xv"))                      priv.xv       = true;
     if (vm.count("search_perturb_oracle"))          priv.perturb_oracle       = vm["search_perturb_oracle"].as<float>();
+    if (vm.count("search_linear_ordering"))         priv.linear_ordering      = true;
 
     if (vm.count("search_alpha"))                   priv.alpha                = vm["search_alpha"            ].as<float>();
     if (vm.count("search_beta"))                    priv.beta                 = vm["search_beta"             ].as<float>();
@@ -2132,9 +2170,9 @@ namespace Search {
     if      ((rollin_string.compare("policy") == 0)       || (rollin_string.compare("learn") == 0))          priv.rollin_method = POLICY;
     else if ((rollin_string.compare("oracle") == 0)       || (rollin_string.compare("ref") == 0))            priv.rollin_method = ORACLE;
     else if ((rollin_string.compare("mix_per_state") == 0))                                                  priv.rollin_method = MIX_PER_STATE;
-	else if ((rollin_string.compare("mix_per_roll") == 0) || (rollin_string.compare("mix") == 0))            priv.rollin_method = MIX_PER_ROLL;
-	else
-	  THROW("error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'");
+    else if ((rollin_string.compare("mix_per_roll") == 0) || (rollin_string.compare("mix") == 0))            priv.rollin_method = MIX_PER_ROLL;
+    else
+      THROW("error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'");
 
     check_option<size_t>(priv.A, all, vm, "search", false, size_equal,
                          "warning: you specified a different number of actions through --search than the one loaded from predictor. using loaded value of: ", "");
