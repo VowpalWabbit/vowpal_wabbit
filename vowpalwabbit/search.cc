@@ -170,7 +170,7 @@ namespace Search {
     float  beta;                   // interpolation rate
     float  alpha;                  // parameter used to adapt beta for dagger (see above comment), should be in (0,1)
 
-    RollMethod rollout_method;     // 0=policy, 1=oracle, 2=mix_per_state, 3=mix_per_roll
+    RollMethod rollout_method;
     RollMethod rollin_method;
     float subsample_timesteps;     // train at every time step or just a (random) subset?
     bool xv;           // train three separate policies -- two for providing examples to the other and a third training on the union (which will be used at test time -- TODO)
@@ -1428,7 +1428,7 @@ namespace Search {
           }
           
           if (gte_here) {
-            cdbg << "INIT_TRAIN, NO_ROLLOUT, at least one oracle_actions" << endl;
+            cdbg << "INIT_TRAIN, NO_ROLLOUT, at least one oracle_actions, a=" << a << endl;
             // we can generate a training example _NOW_ because we're not doing rollouts
             //allowed_actions_to_losses(priv, ec_cnt, allowed_actions, allowed_actions_cnt, oracle_actions, oracle_actions_cnt, losses);
             allowed_actions_to_label(priv, ec_cnt, allowed_actions, allowed_actions_cnt, allowed_actions_cost, oracle_actions, oracle_actions_cnt, priv.gte_label);
@@ -1670,6 +1670,7 @@ namespace Search {
       // for each action, roll out to get a loss
       while (! priv.done_with_all_actions) {
         reset_search_structure(priv);
+          
         priv.state = LEARN;
         priv.learn_t = priv.timesteps[tid];
         cdbg << "-------------------------------------------------------------------------------------" << endl;
