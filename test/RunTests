@@ -838,11 +838,11 @@ __DATA__
     train-sets/ref/multiclass.stderr
 
 # Test 13: Run search (dagger) on wsj_small for 6 passes extra features
-{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 6 --search_task sequence --search 45 --search_alpha 1e-6 --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 --holdout_off
+{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 6 --search_task sequence --search 45 --search_alpha 1e-6 --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 --holdout_off --search_linear_ordering
     train-sets/ref/search_wsj.stderr
 
 # Test 14: Run search (searn) on wsj_small for 6 passes extra features
-{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 6 --search_task sequence --search 45 --search_alpha 1e-6 --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 --holdout_off --search_passes_per_policy 3 --search_interpolation policy
+{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 6 --search_task sequence --search 45 --search_alpha 1e-6 --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 --holdout_off --search_passes_per_policy 3 --search_interpolation policy --search_linear_ordering
     train-sets/ref/search_wsj2.dat.stdout
     train-sets/ref/search_wsj2.dat.stderr
 
@@ -861,7 +861,7 @@ __DATA__
     train-sets/ref/wiki1K.stderr
 
 # Test 18: Run search on seq_small for 12 passes, 4 passes per policy
-{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --search 4 --search_task sequence --holdout_off
+{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --search 4 --search_task sequence --holdout_off --search_linear_ordering
     train-sets/ref/search_small.stderr
 
 # Test 19: neural network 3-parity with 2 hidden units
@@ -972,7 +972,7 @@ __DATA__
     train-sets/ref/lda-2pass-hang.stderr
 
 # Test 43: search sequence labeling, non-ldf train
-{VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off -f models/sequence_data.model
+{VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off -f models/sequence_data.model --search_linear_ordering
     train-sets/ref/sequence_data.nonldf.train.stderr
 
 # Test 44: search sequence labeling, non-ldf test
@@ -981,11 +981,11 @@ __DATA__
     train-sets/ref/sequence_data.nonldf.test.predict
 
 # Test 45: make sure that history works
-{VW} -k -c -d train-sets/seq_small2 --passes 4 --search 4 --search_task sequence --holdout_off
+{VW} -k -c -d train-sets/seq_small2 --passes 4 --search 4 --search_task sequence --holdout_off --search_linear_ordering
     train-sets/ref/search_small2.stderr
 
 # Test 46: search sequence labeling, ldf train
-{VW} -k -c -d train-sets/sequence_data --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.ldf.model --noconstant
+{VW} -k -c -d train-sets/sequence_data --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.ldf.model --noconstant --search_linear_ordering
     train-sets/ref/sequence_data.ldf.train.stderr
 
 # Test 47: search sequence labeling, ldf test 
@@ -994,7 +994,7 @@ __DATA__
     train-sets/ref/sequence_data.ldf.test.predict
 
 # Test 48: search sequence SPAN labeling BIO, non-ldf train, no rollouts
-{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout none --search_task sequencespan --search 7 --holdout_off -f models/sequencespan_data.model
+{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout none --search_task sequencespan --search 7 --holdout_off -f models/sequencespan_data.model --search_linear_ordering
     train-sets/ref/sequencespan_data.nonldf.train.stderr
 
 # Test 49: search sequence SPAN labeling BIO, non-ldf test
@@ -1003,16 +1003,16 @@ __DATA__
     train-sets/ref/sequencespan_data.nonldf.test.predict
 
 # Test 50: search sequence SPAN labeling BILOU, non-ldf train
-{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequencespan --search_span_bilou --search 7 --holdout_off -f models/sequencespan_data.model
+{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequencespan --search_span_bilou --search 7 --holdout_off -f models/sequencespan_data.model --search_linear_ordering
     train-sets/ref/sequencespan_data.nonldf-bilou.train.stderr
 
 # Test 51: search sequence SPAN labeling BILOU, non-ldf test
-{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.predict
+{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.predict --search_linear_ordering
     train-sets/ref/sequencespan_data.nonldf-bilou.test.stderr
     train-sets/ref/sequencespan_data.nonldf-bilou.test.predict
 
 # Test 52: silly test for "argmax" task
-{VW} -d train-sets/argmax_data -k -c --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task argmax --search 2 --holdout_off
+{VW} -d train-sets/argmax_data -k -c --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task argmax --search 2 --holdout_off --search_linear_ordering
     train-sets/ref/argmax_data.stderr
 
 # Test 53: (holdout-broken regression)
@@ -1076,11 +1076,11 @@ __DATA__
     train-sets/ref/ksvm_train.rbf.predict
 
 # Test 65: Run search (dagger) on an entity-relation recognitions data set, er_small, for 6 passes with constraints
-{VW} -k -c -d train-sets/er_small.vw --passes 6 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8 
+{VW} -k -c -d train-sets/er_small.vw --passes 6 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8  --search_linear_ordering
     train-sets/ref/search_er.stderr
 
 # Test 66: Train a depenency parser with search (dagger) on wsj_small.dparser.vw.gz for 2 passes
-{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout ref --holdout_off
+{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout ref --holdout_off --search_linear_ordering
     train-sets/ref/search_dep_parser.stderr
 
 # Test 67: classification with data from dictionaries (eg embeddings or gazetteers) -- note that this is impossible without dictionaries because --ignore w; also test to make sure gzipped dicts work and dictionary redundancy checking works
@@ -1088,16 +1088,16 @@ __DATA__
     train-sets/ref/dictionary_test.stderr
 
 # Test 68: Search for multiclass classification
-{VW} -k -c -d train-sets/multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off
+{VW} -k -c -d train-sets/multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off --search_linear_ordering
 	train-sets/ref/search_multiclass.stderr
 
 # Test 69: (see Test 43/Test 44): search sequence labeling, with selective branching
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data_beam.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data_beam.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10 --search_linear_ordering
     train-sets/ref/sequence_data.nonldf.beam.test.stderr
     train-sets/ref/sequence_data.nonldf.beam.test.predict
 
 # Test 70: (see Test 46/47) search sequence labeling, ldf test, with selective branching
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data_beam.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10 --noconstant
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data_beam.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10 --noconstant --search_linear_ordering
     train-sets/ref/sequence_data.ldf.beam.test.stderr
     train-sets/ref/sequence_data.ldf.beam.test.predict
 
@@ -1217,6 +1217,6 @@ echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} -i simple_model --invert_h
    test-sets/ref/backwards.stdout
 
 # Test 97: action costs, no rollout
-{VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout none --search_task sequence_ctg --search 5 --holdout_off
+{VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout none --search_task sequence_ctg --search 5 --holdout_off --search_linear_ordering
     train-sets/ref/sequence_data.ctg.train.stderr
 
