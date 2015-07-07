@@ -29,7 +29,7 @@ float get_threshold(float sum_loss, float t, float c0, float alpha)
 	else
 	{
 		float avg_loss = sum_loss/t;
-		float threshold = sqrt(c0*avg_loss/t) + fmax(2*alpha,4.0)*c0*log(t)/t;
+		float threshold = sqrt(c0*avg_loss/t) + ((float) fmax(2*alpha,4.0)*c0*log(t)/t);
 		return threshold;
 	}
 }
@@ -37,7 +37,7 @@ float get_threshold(float sum_loss, float t, float c0, float alpha)
 float get_pmin(float sum_loss, float t)
 {
 	float avg_loss = sum_loss/t;
-	float pmin = fmin(1.0/(sqrt(t*avg_loss)+log(t)),0.5);
+	float pmin = (float) fmin(1.0/(sqrt(t*avg_loss)+log(t)),0.5);
 	return pmin; // treating n*eps_n = 1
 }
 
@@ -85,7 +85,7 @@ float get_cost(float target_label, float ec_true_label, float prediction, bool i
 	{
 		bool add_s = (s>0 && sign(target_label) != sign(prediction)) || (s<0 && sign(target_label) == sign(prediction));
 		cost += (add_s) ? fabs(s) : 0;
-		cost += (sign(target_label) != sign(ec_true_label)) ? fmax(importance,0)*c : 0; 	
+		cost += (sign(target_label) != sign(ec_true_label)) ? ((float) fmax(importance,0)*c) : 0; 	
 	}
 	else
 	{
@@ -111,7 +111,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 
 
 		// Compute threshold defining allowed set A
-		float threshold = get_threshold(all.sd->sum_loss, t, a.active_c0, a.alpha);
+		float threshold = get_threshold((float)all.sd->sum_loss, t, a.active_c0, a.alpha);
 	
 		// Make query decision	
 		float importance = 1; 
@@ -122,7 +122,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 		{
 			// Test if ec is in DIS(A)
 			in_dis = dis_test(all, ec, prediction, threshold);
-			pmin = get_pmin(all.sd->sum_loss, t); 
+			pmin = get_pmin((float)all.sd->sum_loss, t); 
 			if(in_dis)
 			{
 				importance = (a.oracular) ? 1 : query_decision(a, base, ec, prediction, pmin);
@@ -157,7 +157,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 		// Update the cost-sensitive learners in the cover and their weights
 
 		float q2 = 4*pmin*pmin; 
-		float beta = sqrt(a.alpha/a.active_c0)/10.0;
+		float beta = (float)(sqrt(a.alpha/a.active_c0)/10.0);
 		float p, s, cost, cost_delta, num_delta, den_delta, lambda_delta;
 		float num, den;
 		float ec_output_label = ec.l.simple.label;
@@ -173,17 +173,17 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 
 			// Set up costs	
 			cost = get_cost(sign(prediction), ec_input_label, prediction, in_dis, s, threshold, beta, importance, t);
-			cost_delta = cost - get_cost(-1.0*sign(prediction), ec_input_label, prediction, in_dis, s, threshold, beta, importance, t);
+			cost_delta = cost - get_cost((float)-1.0*sign(prediction), ec_input_label, prediction, in_dis, s, threshold, beta, importance, t);
 
 			// Choose min-cost label as the label
 			ec.l.simple.label = sign(prediction);
 			if(cost_delta > 0)
 			{
-				ec.l.simple.label = -1.0*sign(prediction);
+				ec.l.simple.label = (float)-1.0*sign(prediction);
 			}
 
 			// Set importance weight to be the cost difference
-			ec.l.simple.weight = ec_input_weight * fmax(fabs(cost_delta),0.00001);
+			ec.l.simple.weight = ec_input_weight * ((float)fmax(fabs(cost_delta),0.00001));
 
 			// Update learner and weight
 			base.learn(ec,i+1);
@@ -191,7 +191,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 
 			// Update numerator of lambda			
 			num_delta = (sign(ec.pred.scalar) == sign(prediction)) ? cost : (cost - cost_delta);
-			num_delta += (in_dis) ? fmin(s,0) : 0;
+			num_delta += (in_dis) ? (float)fmin(s,0) : 0;
 			num_delta *= -2;			
 			num = a.weights->update(LAMBDA_NUM, i, num_delta);
 	
@@ -203,7 +203,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 			}
 
 			// Update denominator of lambda
-			den_delta = (sign(ec.pred.scalar) != sign(prediction) && in_dis) ? 1.0/pow(q2,1.5) : 0;
+			den_delta = (sign(ec.pred.scalar) != sign(prediction) && in_dis) ? (float)(1.0/pow(q2,1.5)) : 0;
 			den = a.weights->update(LAMBDA_DEN, i, den_delta);
 
 			// Update lambda
@@ -260,7 +260,7 @@ base_learner* active_cover_setup(vw& all)
 
 	if(all.vm.count("cover"))
 	{
-		cover_size = all.vm["cover"].as<float>();
+		cover_size = all.vm["cover"].as<size_t>();
 	}
 
 	if(all.vm.count("oracular"))
