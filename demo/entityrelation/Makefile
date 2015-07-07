@@ -28,7 +28,7 @@ er.model: ER_train.vw
 	@$(VW) -b 24 -c -d $< --search 10 --passes 10 --search_task entity_relation ${search_option} -f er.model
 
 er.test.predictions: ER_test.vw er.model
-	@$(VW) -b 24 -c -d $< -t $(search_option) -i er.model -p $@
+	@$(VW) -c -d $< -t -i er.model -p $@
 
 er.perf: ER_test.vw  er.test.predictions python.check
 	@$(eval_script)  $< er.test.predictions
