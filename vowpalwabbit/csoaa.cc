@@ -21,7 +21,10 @@ struct csoaa{
   polyprediction* pred;
 };
 
-float passthrough_transform(float a) { return expf(a); }
+inline void passthrough(example& ec, uint32_t idx, float val) {
+  if (ec.passthrough)
+    ec.passthrough->push_back( feature( val, idx * 3849018347 + 3891 ) );
+}
 
 template<bool is_learn>
 inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
@@ -38,8 +41,7 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
     score = ec.partial_prediction;
     prediction = i;
   }
-  if (ec.passthrough)
-    ec.passthrough->push_back( feature(ec.partial_prediction, i) );
+  passthrough(ec, i, ec.partial_prediction);
 }
 
 #define DO_MULTIPREDICT true
@@ -59,12 +61,10 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
   } else if (DO_MULTIPREDICT && !is_learn) {
     ec.l.simple = { FLT_MAX, 0.f, 0.f };
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
-    for (uint32_t i = 1; i <= c.num_classes; i++)
+    for (uint32_t i = 1; i <= c.num_classes; i++) {
+      passthrough(ec, i, c.pred[i-1].scalar);
       if (c.pred[i-1].scalar < c.pred[prediction-1].scalar)
         prediction = i;
-    if (ec.passthrough) {
-      for (uint32_t i = 1; i <= c.num_classes; i++)
-        ec.passthrough->push_back( feature(c.pred[i-1].scalar, i) );
     }
     ec.partial_prediction = c.pred[prediction-1].scalar;
   } else {
@@ -73,18 +73,21 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
       inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp);
   }
   if (ec.passthrough) {
-    uint32_t second_best = 1;
+    uint32_t second_best = 0;
     float    second_best_cost = FLT_MAX;
-    for (size_t i=pt_start; i<ec.passthrough->size(); i++)
-      if ((i != prediction) && (ec.passthrough->get(i).x < second_best_cost)) {
-        second_best_cost = ec.passthrough->get(i).x;
-        second_best = ec.passthrough->get(i).weight_index;
-        ec.passthrough->get(i).x = passthrough_transform(ec.passthrough->get(i).x);
+    for (size_t i=0; i<ec.passthrough->size() - pt_start; i++) {
+      float  val = ec.passthrough->get(pt_start + i).x;
+      if ((val > ec.partial_prediction) && (val < second_best_cost)) {
+        second_best_cost = val;
+        second_best = ec.passthrough->get(pt_start + i).weight_index;
       }
-    float margin = ec.partial_prediction - second_best_cost;
-    ec.passthrough->push_back( feature(1., second_best * 4892051 + 8491) );
-    ec.passthrough->push_back( feature(margin, second_best * 4892051 + 8491) );
-    ec.passthrough->push_back( feature(margin, 48391) );
+    }
+    if (second_best_cost < FLT_MAX) {
+      float margin = second_best_cost - ec.partial_prediction;
+      passthrough(ec, 4391897, margin);
+      passthrough(ec, 3281 * second_best, 1.);
+    } else
+      passthrough(ec, 849109313, 1.);
   }
     
   ec.pred.multiclass = prediction;
