@@ -231,7 +231,7 @@ class Generator : public SearchTask<input, output> {
 
       // characters thus far
       ex(vw_namespace('c'));
-      for (char c : out) ex("c=" + c);
+      for (char c : out) ex("c=" + string(1,c));
       ex("c=$");
 
       // words thus far
@@ -253,12 +253,12 @@ class Generator : public SearchTask<input, output> {
         ex(vw_namespace('d'));
         char best_char = '~'; float best_count = 0.;
         for (auto xx : next) {
-          if (xx.cw > 0.) ex("c=" + xx.c, xx.cw);
+          if (xx.cw > 0.) ex("c=" + string(1,xx.c), xx.cw);
           if (xx.sw > 0.) ex("mc=" + xx.s, xx.sw);
           if (xx.sw > best_count) { best_count = xx.sw; best_char = xx.c; }
         }
         if (best_count > 0.)
-          ex("best=" + best_char, best_count);
+          ex("best=" + string(1,best_char), best_count);
       }
       
       // input
