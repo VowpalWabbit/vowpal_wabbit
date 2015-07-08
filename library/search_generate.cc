@@ -185,11 +185,13 @@ typedef string output;
 
 #define minf(a,b) (((a) < (b)) ? (a) : (b))
 
+float max_cost = 100.;
+
 float get_or_one(vector< pair<char,size_t> >& v, char c) {
   // TODO: could binary search
   for (auto& p : v)
     if (p.first == c)
-      return minf(100., (float)p.second);
+      return minf(max_cost, (float)p.second);
   return 1.;
 }
 
@@ -293,7 +295,7 @@ class Generator : public SearchTask<input, output> {
       v_array< pair<action,float> > allowed = v_init< pair<action,float> >();
       std::sort(all.begin(), all.end());
       for (action a=1; a<=29; a++)
-        allowed.push_back( make_pair(a, get_or_one(all, action2char(a))) );
+        allowed.push_back( make_pair(a, get_or_one(all, action2char(a)) ));
       char c = action2char( Search::predictor(sch, m)
                             .set_input(* ex.get())
                             .set_allowed(allowed)
@@ -335,6 +337,7 @@ void run_easy(vw& vw_obj) {
     input("grande maison", "big house")
   };
   for (size_t i=0; i<10000; i++) {
+    if (i == 9999) max_cost = 1.;
     if (i % 10 == 0) cerr << '.';
     for (auto x : training_data)
       task.learn(x, out);
