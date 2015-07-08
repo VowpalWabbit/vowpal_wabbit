@@ -1124,7 +1124,6 @@ namespace Search {
       if (min_loss == FLT_MAX)
         for (size_t i=0; i<losses.cs.costs.size(); i++) min_loss = MIN(min_loss, losses.cs.costs[i].x);
       for (size_t i=0; i<losses.cs.costs.size(); i++) losses.cs.costs[i].x = (losses.cs.costs[i].x - min_loss) * weight;
-      //for (size_t i=0; i<losses.cs.costs.size(); i++) cerr << '\t' << losses.cs.costs[i].x; cerr << endl;
     }
     //cdbg << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cdbg << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x; cdbg << " ], min_loss=" << min_loss << endl;
 
@@ -1145,7 +1144,6 @@ namespace Search {
       polylabel old_label = ec.l;
       ec.l = losses; // labels;
       if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
-      //cerr << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cerr << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x; cerr << " ]" << endl;
       for (size_t is_local=0; is_local<=priv.xv; is_local++) {
         int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local);
         ec.in_use = true;
@@ -1423,8 +1421,8 @@ namespace Search {
 
           if (((!skip) && (policy >= 0)) || need_fea) {  // only make a prediction if we're going to use the output
             if (priv.auto_condition_features && priv.acset.use_passthrough_repr) {
-              if (priv.is_ldf)  { cerr << "search cannot use state representations in ldf mode" << endl; throw exception(); }
-              if (ecs[0].passthrough) { cerr << "search cannot passthrough" << endl; throw exception(); }
+              if (priv.is_ldf)  { std::cerr << "search cannot use state representations in ldf mode" << endl; throw exception(); }
+              if (ecs[0].passthrough) { std::cerr << "search cannot passthrough" << endl; throw exception(); }
               ecs[0].passthrough = &priv.last_action_repr;
             }
             
