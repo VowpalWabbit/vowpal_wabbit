@@ -591,8 +591,7 @@ int _tmain(int argc, _TCHAR* argv[])
     }
 
     ifstream json_file(argv[1]);
-    string json_file_content;
-    while (json_file >> json_file_content) { }
+    string json_file_content((istreambuf_iterator<char>(json_file)), istreambuf_iterator<char>());
 
     Document d;
     d.Parse(json_file_content.c_str());
