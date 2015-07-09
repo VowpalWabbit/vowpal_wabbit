@@ -18,6 +18,12 @@ namespace MultiWorldTesting
         /// <returns>The computed hash code or converted integer for the string.</returns>
         public static ulong ComputeIdHash(string str)
         {
+            int sInt = 0;
+            if (int.TryParse(str, out sInt))
+            {
+                return (ulong)sInt;
+            }
+
             uint length = 0;
             uint seed = 0;
 
@@ -128,6 +134,77 @@ namespace MultiWorldTesting
             h1 ^= (uint)length;
 
             return fmix(h1);
+        }
+
+        /// <summary>
+        /// Computes hash code for the specified string or converts it to integer if applicable.
+        /// </summary>
+        /// <param name="s">The string to hash.</param>
+        /// <returns>The computed hash code or converted integer for the string.</returns>
+        /// <remarks>
+        /// If strings are known to be ASCII only, this overload can be used for faster performance.
+        /// </remarks>
+        public static ulong ComputeIdHashAscii(string s)
+        {
+            int sInt = 0;
+            if (int.TryParse(s, out sInt))
+            {
+                return (ulong)sInt;
+            }
+            else
+            {
+                // get raw bytes from string
+                byte[] keys = new byte[s.Length];
+                for (int j = 0; j < s.Length; j++)
+                {
+                    keys[j] = (byte)s[j];
+                }
+
+                uint h1 = 0;
+                uint k1 = 0;
+
+                int length = keys.Length;
+                int i = 0;
+                while (i <= length - 4)
+                {
+                    // convert byte array to integer
+                    k1 = (uint)(keys[i] | keys[i + 1] << 8 | keys[i + 2] << 16 | keys[i + 3] << 24);
+
+                    k1 *= c1;
+                    k1 = rotl32(k1, 15);
+                    k1 *= c2;
+
+                    h1 ^= k1;
+                    h1 = rotl32(h1, 13);
+                    h1 = h1 * 5 + 0xe6546b64;
+
+                    i += 4;
+                }
+
+                k1 = 0;
+                int tail = length - length % 4;
+                switch (length & 3)
+                {
+                    case 3:
+                        k1 ^= (uint)(keys[tail + 2] << 16);
+                        goto case 2;
+                    case 2:
+                        k1 ^= (uint)(keys[tail + 1] << 8);
+                        goto case 1;
+                    case 1:
+                        k1 ^= (uint)(keys[tail]);
+                        k1 *= c1;
+                        k1 = rotl32(k1, 15);
+                        k1 *= c2;
+                        h1 ^= k1;
+                        break;
+                }
+
+                // finalization
+                h1 ^= (uint)length;
+
+                return fmix(h1);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
