@@ -253,12 +253,12 @@ namespace VW
 	/// <param name="s">String to be hashed.</param>
 	/// <param name="u">Hash offset.</param>
 	/// <returns>The resulting hash code.</returns>
-	uint32_t hashall(String^ s, unsigned long u)
+	size_t hashall(String^ s, unsigned long u)
 	{
 		// get raw bytes from string
 		auto keys = Encoding::UTF8->GetBytes(s);
 
-		uint32_t h1 = 0;
+		uint32_t h1 = u;
 		uint32_t k1 = 0;
 
 		const uint32_t c1 = 0xcc9e2d51;
@@ -311,14 +311,14 @@ namespace VW
 	/// <param name="s">String to be hashed.</param>
 	/// <param name="u">Hash offset.</param>
 	/// <returns>The resulting hash code.</returns>
-	uint32_t hashstring(String^ s, unsigned long u)
+	size_t hashstring(String^ s, unsigned long u)
 	{
 		s = s->Trim();
 
 		int sInt = 0;
 		if (int::TryParse(s, sInt))
 		{
-			return (uint32_t)sInt;
+			return sInt + u;
 		}
 		else
 		{
@@ -326,7 +326,7 @@ namespace VW
 		}
 	}
 
-	Func<String^, unsigned long, uint32_t>^ VowpalWabbitBase::GetHasher()
+	Func<String^, unsigned long, size_t>^ VowpalWabbitBase::GetHasher()
 	{
 		//feature manipulation
 		string hash_function("strings");
@@ -337,11 +337,11 @@ namespace VW
 
 		if (hash_function == "strings")
 		{
-			return gcnew Func<String^, unsigned long, uint32_t>(&hashstring);
+			return gcnew Func<String^, unsigned long, size_t>(&hashstring);
 		}
 		else if (hash_function == "all")
 		{
-			return gcnew Func<String^, unsigned long, uint32_t>(&hashall);
+			return gcnew Func<String^, unsigned long, size_t>(&hashall);
 
 		}
 		else
@@ -352,12 +352,26 @@ namespace VW
 
 	uint32_t VowpalWabbitBase::HashSpace(String^ s)
 	{
-		return m_hasher(s, hash_base);
+		auto newHash = m_hasher(s, hash_base);
+
+#ifdef DEBUG
+		auto oldHash = HashSpaceNative(s);
+		assert(newHash == oldHash);
+#endif
+
+		return (uint32_t)newHash;
 	}
 
 	uint32_t VowpalWabbitBase::HashFeature(String^ s, unsigned long u)
 	{
-		return m_hasher(s, u);
+		auto newHash = m_hasher(s, u) & m_vw->parse_mask;
+
+#ifdef DEBUG
+		auto oldHash = HashFeatureNative(s, u);
+		assert(newHash == oldHash);
+#endif
+
+		return (uint32_t)newHash;
 	}
 
 	uint32_t VowpalWabbitBase::HashSpaceNative(String^ s)

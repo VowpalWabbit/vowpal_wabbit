@@ -97,7 +97,8 @@ namespace cs_unittest
             "7NdgIl223apO       ",
             "aaas hu as 撒 asfasd	阿萨",
             "oof Ồ hử hị ộ ở ỗ õ ẽ uyễn \r \t \n \\    ",
-            "934625             "
+            "934625             ",
+            "123"
         };
 
         [TestMethod]
@@ -115,7 +116,7 @@ namespace cs_unittest
 
             using (var vw = new VowpalWabbit<Data>(args))
             {
-                for (int i = 0; i < 100000; i++)
+                for (int i = 0; i < 10000; i++)
                 {
                     foreach (var item in data)
                     {

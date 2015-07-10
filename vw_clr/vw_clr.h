@@ -273,12 +273,12 @@ namespace VW
 		/// <remarks>
 		/// Avoiding if-else for hash function selection. Delegates outperform function pointers according to http://stackoverflow.com/questions/13443250/performance-of-c-cli-function-pointers-versus-net-delegates
 		/// </remarks>
-		initonly Func<String^, unsigned long, uint32_t>^ m_hasher;
+		initonly Func<String^, unsigned long, size_t>^ m_hasher;
 
 		/// <summary>
 		/// Select the right hash method based on args.
 		/// </summary>
-		Func<String^, unsigned long, uint32_t>^ GetHasher();
+		Func<String^, unsigned long, size_t>^ GetHasher();
 
 	internal:
 		/// <summary>
