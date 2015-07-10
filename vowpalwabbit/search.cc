@@ -1792,6 +1792,14 @@ namespace Search {
     priv.base_learner = &base;
     bool is_real_example = true;
 
+    if (priv.auto_condition_features) {
+      // turn off auto-condition if it's irrelevant
+      if ((priv.history_length == 0) || (priv.acset.feature_value == 0.f)) {
+        std::cerr << "warning: turning off AUTO_CONDITION_FEATURES because settings make it useless" << endl;
+        priv.auto_condition_features = false;
+      }
+    }
+    
     if (example_is_newline(ec) || priv.ec_seq.size() >= all->p->ring_size - 2) {
       if (priv.ec_seq.size() >= all->p->ring_size - 2) // -2 to give some wiggle room
         std::cerr << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << std::endl;
@@ -2353,16 +2361,8 @@ namespace Search {
 
     if (vm.count("search_allowed_transitions"))     read_allowed_transitions((action)priv.A, vm["search_allowed_transitions"].as<string>().c_str());
 
-    // set up auto-history if they want it
-    if (priv.auto_condition_features) {
-      handle_condition_options(all, priv.acset);
-
-      // turn off auto-condition if it's irrelevant
-      if ((priv.history_length == 0) || (priv.acset.feature_value == 0.f)) {
-        std::cerr << "warning: turning off AUTO_CONDITION_FEATURES because settings make it useless" << endl;
-        priv.auto_condition_features = false;
-      }
-    }
+    // set up auto-history (used to only do this if AUTO_CONDITION_FEATURES was on, but that doesn't work for hooktask)
+    handle_condition_options(all, priv.acset);
 
     if (!priv.allow_current_policy) // if we're not dagger
       all.check_holdout_every_n_passes = priv.passes_per_policy;
@@ -2665,6 +2665,13 @@ namespace Search {
     }
     return *this;
   }
+  predictor& predictor::add_allowed(vector< pair<action,float> >& a) {
+    for (size_t i=0; i<a.size(); i++) {
+      add_to(allowed_actions,      allowed_is_pointer,      a[i].first,  false);
+      add_to(allowed_actions_cost, allowed_cost_is_pointer, a[i].second, false);
+    }
+    return *this;
+  }
 
   predictor& predictor::set_allowed(action a, float cost) {
     add_to(allowed_actions_cost, allowed_cost_is_pointer, cost, true);
@@ -2676,6 +2683,7 @@ namespace Search {
     return add_to(allowed_actions, allowed_is_pointer, a, action_count, true);
   }
   predictor& predictor::set_allowed(v_array< pair<action,float> >& a) { erase_alloweds(); return add_allowed(a); }
+  predictor& predictor::set_allowed(vector< pair<action,float> >& a) { erase_alloweds(); return add_allowed(a); }
 
   
   predictor& predictor::add_condition(ptag tag, char name) { condition_on_tags.push_back(tag); condition_on_names.push_back(name); return *this; }

@@ -33,6 +33,8 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
   if (is_learn) {
     ec.l.simple.label = cost;
     ec.l.simple.weight = (cost == FLT_MAX) ? 0.f : 1.f;
+    //ec.l.simple.label = (cost <= 0.) ? -1. : 1.;
+    //ec.l.simple.weight = (cost == FLT_MAX) ? 0. : (cost <= 0.) ? 1. : cost;
     base.learn(ec, i-1);
   } else
     base.predict(ec, i-1);

@@ -41,18 +41,24 @@ class Trie {
       delete t;
   }
 
+  Trie* step(const char c) {
+    size_t id = char2action(c) - 1;
+    if (children.size() <= id) return nullptr;
+    return children[id];
+  }
+  
   void insert(const char*str, size_t c=1) {
     if (str == nullptr || *str == 0) {
       terminus += c;
-      count+=c;
+      count    += c;
     } else {
+      count += c;
       size_t id = char2action(*str) - 1;
       while (children.size() <= id)
         children.push_back(nullptr);
       if (children[id] == nullptr)
         children[id] = new Trie();
       children[id]->insert(str+1, c);
-      count += c;
     }
   }
 
@@ -69,7 +75,7 @@ class Trie {
     if (prefix == nullptr || *prefix == 0) {
       next.clear();
       float c = 1. / (float)count;
-      next.push_back( nextstr('$', c * (float)terminus, max_string, log(1. + (float)max_count)) );
+      next.push_back( nextstr('$', log(1. + c * (float)terminus), max_string, log(1. + (float)max_count)) );
       for (size_t id=0; id<children.size(); id++)
         if (children[id])
           next.push_back( nextstr(action2char(id+1), c*(float)children[id]->count, children[id]->max_string, log(1.+ (float)children[id]->max_count)) );
@@ -93,6 +99,14 @@ class Trie {
           max_string = children[id]->max_string;
         }
       }
+  }
+
+  void print(char c='^', size_t indent=0) {
+    cerr << string(indent*2, ' ');
+    cerr << '\'' << c << "' " << count << " [max_string=" << max_string << " max_count=" << max_count << "]" << endl;
+    for (size_t i=0; i<children.size(); i++)
+      if (children[i])
+        children[i]->print(action2char(i+1), indent+1);
   }
   
  private:
@@ -126,6 +140,7 @@ class IncrementalEditDistance {
                          cur_row[n-1] + del_cost );
       prev_row_min = min(prev_row_min, cur_row[n]);
     }
+    // swap cur_row and prev_row
     size_t* tmp = cur_row;
     cur_row = prev_row;
     prev_row = tmp;
@@ -138,15 +153,20 @@ class IncrementalEditDistance {
     for (size_t n=0; n<=N; n++) {
       if (prev_row[n] == prev_row_min)
         A.push_back( (n < N) ? target[n] : '$' );
-      // TODO: i think cost of $ is wrong!
     }
     return A;
   }
 
-  vector< pair<char,size_t> > all_next() {
-    vector< pair<char,size_t> > B;
-    for (size_t n=0; n<=N; n++)
-      B.push_back( make_pair((n < N) ? target[n] : '$', prev_row[n] - prev_row_min) );
+  float minf(float a, float b) { return (a < b) ? a : b; }
+  
+  vector< pair<action,float> > all_next() {
+    vector< pair<action,float> > B;
+    for (size_t a=1; a<=29; a++)
+      B.push_back( make_pair(a, 1.) );
+    B[ char2action('$')-1 ].second = minf(100., (float)(prev_row[N] - prev_row_min));
+    for (size_t n=0; n<N; n++)
+      if (prev_row[n] == prev_row_min)
+        B[ char2action(target[n])-1 ].second = 0.;
     return B;
   }
 
@@ -207,6 +227,8 @@ class Generator : public SearchTask<input, output> {
   void _run(Search::search& sch, input& in, output& out) {
     IncrementalEditDistance ied(in.out);
 
+    Trie* cdict = dict;
+    
     v_array<action> ref = v_init<action>();
     int N = in.in.length();
     out = "^";
@@ -247,9 +269,9 @@ class Generator : public SearchTask<input, output> {
       ex("w=" + tmp);
 
       // do we match the trie?
-      if (dict) {
+      if (cdict) {
         next.clear();
-        dict->get_next(tmp.c_str(), next);
+        cdict->get_next(nullptr, next);
         ex(vw_namespace('d'));
         char best_char = '~'; float best_count = 0.;
         for (auto xx : next) {
@@ -291,19 +313,16 @@ class Generator : public SearchTask<input, output> {
                             .predict() );
       */
 
-      vector< pair<char,size_t> > all = ied.all_next();
-      v_array< pair<action,float> > allowed = v_init< pair<action,float> >();
-      std::sort(all.begin(), all.end());
-      for (action a=1; a<=29; a++)
-        allowed.push_back( make_pair(a, get_or_one(all, action2char(a)) ));
+      vector< pair<action,float> > all = ied.all_next();
       char c = action2char( Search::predictor(sch, m)
                             .set_input(* ex.get())
-                            .set_allowed(allowed)
+                            .set_allowed(all)
                             .predict() );
 
       if (c == '$') break;
       out += c;
       ied.append(c);
+      if (cdict) cdict = cdict->step(c);
     }
 
     dist = ied.finish_distance();
@@ -317,7 +336,8 @@ class Generator : public SearchTask<input, output> {
   Trie* dict;
 };
 
-void run_easy(vw& vw_obj) {
+void run_easy() {
+  vw& vw_obj = *VW::initialize("--search 29 --quiet --search_task hook --ring_size 1024 --search_rollin learn --search_rollout none");
   Generator task(vw_obj);
   output out("");
 
@@ -336,8 +356,8 @@ void run_easy(vw& vw_obj) {
     input("petite fleur", "little flower"),
     input("grande maison", "big house")
   };
-  for (size_t i=0; i<10000; i++) {
-    if (i == 9999) max_cost = 1.;
+  for (size_t i=0; i<100; i++) {
+    //if (i == 9999) max_cost = 1.;
     if (i % 10 == 0) cerr << '.';
     for (auto x : training_data)
       task.learn(x, out);
@@ -358,8 +378,16 @@ Trie load_dictionary(const char* fname) {
   ifstream h(fname);
   Trie t;
   string line;
-  while (getline(h,line))
-    t.insert(line.c_str());
+  while (getline(h,line)) {
+    const char* str = line.c_str();
+    char* space = (char*)strchr(str, ' ');
+    if (space) {
+      *space = 0;
+      space++;
+      t.insert(space, atof(str));
+    } else
+      t.insert(str);
+  }
   return t;
 }
 
@@ -402,18 +430,19 @@ void run_istream(Generator& gen, const char* fname, bool is_learn=true, size_t p
 
 void train() {
   // initialize VW as usual, but use 'hook' as the search_task
-  string init_str("--search 29 -b 28 --quiet --search_task hook --ring_size 1024 -f my_model --search_rollin learn --search_rollout none -q i: --ngram i15 --skips i5 --ngram c15 --ngram w6 --skips c3 --skips w3"); // -q si -q wi -q ci -q di
-  vw& vw_obj = *VW::initialize(init_str);
-  cerr << init_str << endl;
-  //run(vw_obj);
   Trie dict = load_dictionary("phrase-table.vocab");
   dict.build_max();
-  Generator gen(vw_obj, &dict);
-  for (size_t pass=1; pass<=50; pass++) {
+  //dict.print();
+  
+  string init_str("--search 29 -b 28 --quiet --search_task hook --ring_size 1024 --search_rollin learn --search_rollout none -q i: --ngram i15 --skips i5 --ngram c15 --ngram w6 --skips c3 --skips w3"); //  --search_use_passthrough_repr"); // -q si -q wi -q ci -q di  -f my_model
+  vw& vw_obj = *VW::initialize(init_str);
+  cerr << init_str << endl;
+  Generator gen(vw_obj, nullptr); // &dict);
+  for (size_t pass=1; pass<=20; pass++) {
     cerr << "===== pass " << pass << " =====" << endl;
-    run_istream(gen, "phrase-table-split2.tr", true);
-    run_istream(gen, "phrase-table-split2.tr", false, 1500);
-    run_istream(gen, "phrase-table-split2.te", false, 1500);
+    run_istream(gen, "phrase-table.tr", true);
+    run_istream(gen, "phrase-table.tr", false, 300000);
+    run_istream(gen, "phrase-table.te", false, 100000);
   }
   VW::finish(vw_obj);
 }
@@ -425,6 +454,21 @@ void predict() {
 }
 
 int main(int argc, char *argv[]) {
+  /*
+  string target(argv[1]);
+  cerr << "target = " << target << endl;
+  IncrementalEditDistance ied(target);
+  cerr << "^: ";
+  for (size_t i=0; i<=strlen(argv[2]); i++) {
+    vector< pair<action,float> > next = ied.all_next();
+    for (auto& p : next)
+      cerr << action2char(p.first) << ' ' << p.second << "\t";
+    cerr << endl;
+    cerr << argv[2][i] << ": ";
+    ied.append(argv[2][i]);
+  }
+  cerr << endl;
+  */
   /*
   string target("abcde");
   IncrementalEditDistance ied(target);
@@ -439,9 +483,8 @@ int main(int argc, char *argv[]) {
   cerr << "final: " << ied.distance() << "\t" << ied.out() << endl;
   return 0;
   */
-  //train();
+  train();
   //predict();
-  vw& vw_obj = *VW::initialize("--search 29 --quiet --search_task hook --ring_size 1024 --search_rollin learn --search_rollout none");
-  run_easy(vw_obj);
+  //run_easy();
 }
 

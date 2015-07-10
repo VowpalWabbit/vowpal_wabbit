@@ -264,10 +264,12 @@ namespace Search {
     predictor& add_allowed(action a, float cost);
     predictor& add_allowed(action*a, float*costs, size_t action_count);
     predictor& add_allowed(v_array< pair<action,float> >& a);
+    predictor& add_allowed(vector< pair<action,float> >& a);
     
     predictor& set_allowed(action a, float cost);
     predictor& set_allowed(action*a, float*costs, size_t action_count);
     predictor& set_allowed(v_array< pair<action,float> >& a);
+    predictor& set_allowed(vector< pair<action,float> >& a);
 
     // add a tag to condition on with a name, or set the conditioning
     // variables (i.e., erase previous ones)
