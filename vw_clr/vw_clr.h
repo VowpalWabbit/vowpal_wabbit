@@ -267,6 +267,19 @@ namespace VW
 		/// </summary>
 		stack<example*>* m_examples;
 
+		/// <summary>
+		/// The selected hasher method.
+		/// </summary>
+		/// <remarks>
+		/// Avoiding if-else for hash function selection. Delegates outperform function pointers according to http://stackoverflow.com/questions/13443250/performance-of-c-cli-function-pointers-versus-net-delegates
+		/// </remarks>
+		initonly Func<String^, unsigned long, uint32_t>^ m_hasher;
+
+		/// <summary>
+		/// Select the right hash method based on args.
+		/// </summary>
+		Func<String^, unsigned long, uint32_t>^ GetHasher();
+
 	internal:
 		/// <summary>
 		/// The native vowpal wabbit data structure.
@@ -339,6 +352,40 @@ namespace VW
 		{
 			VowpalWabbitPerformanceStatistics^ get();
 		}
+
+		/// <summary>
+		/// Hashes the given namespace <paramref name="s"/>.
+		/// </summary>
+		/// <param name="s">String to be hashed.</param>
+		/// <returns>The resulting hash code.</returns>
+		/// <remarks>The hash code depends on the vowpal wabbit instance as different has functions can be configured.</remarks>
+		uint32_t HashSpaceNative(String^ s);
+
+		/// <summary>
+		/// Hashes the given namespace <paramref name="s"/>.
+		/// </summary>
+		/// <param name="s">String to be hashed.</param>
+		/// <returns>The resulting hash code.</returns>
+		/// <remarks>The hash code depends on the vowpal wabbit instance as different has functions can be configured.</remarks>
+		uint32_t HashSpace(String^ s);
+
+		/// <summary>
+		/// Hash the given feature <paramref name="s"/>.
+		/// </summary>
+		/// <param name="s">String to be hashed.</param>
+		/// <param name="u">Hash offset.</param>
+		/// <returns>The resulting hash code.</returns>
+		/// <remarks>The hash code depends on the vowpal wabbit instance as different has functions can be configured.</remarks>
+		uint32_t HashFeatureNative(String^ s, unsigned long u);
+
+		/// <summary>
+		/// Hash the given feature <paramref name="s"/>.
+		/// </summary>
+		/// <param name="s">String to be hashed.</param>
+		/// <param name="u">Hash offset.</param>
+		/// <returns>The resulting hash code.</returns>
+		/// <remarks>The hash code depends on the vowpal wabbit instance as different has functions can be configured.</remarks>
+		uint32_t HashFeature(String^s, unsigned long u);
 	};
 
 	/// <summary>
@@ -537,23 +584,6 @@ namespace VW
 		virtual ~VowpalWabbit();
 
 		/// <summary>
-		/// Hashes the given namespace <paramref name="s"/>.
-		/// </summary>
-		/// <param name="s">String to be hashed.</param>
-		/// <returns>The resulting hash code.</returns>
-		/// <remarks>The hash code depends on the vowpal wabbit instance as different has functions can be configured.</remarks>
-		uint32_t HashSpace(String^ s);
-
-		/// <summary>
-		/// Hash the given feature <paramref name="s"/>.
-		/// </summary>
-		/// <param name="s">String to be hashed.</param>
-		/// <param name="u">Hash offset.</param>
-		/// <returns>The resulting hash code.</returns>
-		/// <remarks>The hash code depends on the vowpal wabbit instance as different has functions can be configured.</remarks>
-		uint32_t HashFeature(String^ s, unsigned long u);
-
-		/// <summary>
 		/// Learns from the given example.
 		/// </summary>
 		/// <param name="line">The example in vowpal wabbit string format.</param>
@@ -602,12 +632,12 @@ namespace VW
 		/// <summary>
 		/// The source filename in which the wrapped exception occurred.
 		/// </summary>
-		String^ m_filename;
+		initonly String^ m_filename;
 
 		/// <summary>
 		/// The line number in which the wrapped exception occurred.
 		/// </summary>
-		Int32 m_lineNumber;
+		initonly Int32 m_lineNumber;
 
 	public:
 		/// <summary>

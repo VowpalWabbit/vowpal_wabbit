@@ -6,14 +6,16 @@ license as described in the file LICENSE.
 
 #include "vw_clr.h"
 
+using namespace System;
+
 namespace VW
 {
-	VowpalWabbit::VowpalWabbit(System::String^ pArgs)
+	VowpalWabbit::VowpalWabbit(String^ pArgs)
 		: VowpalWabbitBase(pArgs)
 	{
 	}
 
-	VowpalWabbit::VowpalWabbit(System::String^ pArgs, System::IO::Stream^ model)
+	VowpalWabbit::VowpalWabbit(String^ pArgs, System::IO::Stream^ model)
 		: VowpalWabbitBase(pArgs, model)
 	{
 	}
@@ -53,29 +55,9 @@ namespace VW
 		}
 	}
 
-	uint32_t VowpalWabbit::HashSpace(System::String^ s)
-	{
-		try
-		{
-			auto string = msclr::interop::marshal_as<std::string>(s);
-			return VW::hash_space(*m_vw, string);
-		}
-		CATCHRETHROW
-	}
-
-	uint32_t VowpalWabbit::HashFeature(System::String^ s, unsigned long u)
-	{
-		try
-		{
-			auto string = msclr::interop::marshal_as<std::string>(s);
-			return VW::hash_feature(*m_vw, string, u);
-		}
-		CATCHRETHROW
-	}
-
 	generic<typename TPrediction>
 		where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-	TPrediction VowpalWabbit::PredictOrLearn(System::String^ line, bool predict)
+	TPrediction VowpalWabbit::PredictOrLearn(String^ line, bool predict)
 	{
 		auto bytes = System::Text::Encoding::UTF8->GetBytes(line);
 		auto lineHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
@@ -112,14 +94,14 @@ namespace VW
 
 	generic<typename TPrediction>
 		where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-	TPrediction VowpalWabbit::Learn(System::String^ line)
+	TPrediction VowpalWabbit::Learn(String^ line)
 	{
 		return PredictOrLearn<TPrediction>(line, false);
 	}
 
 	generic<typename TPrediction>
 		where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-	TPrediction VowpalWabbit::Predict(System::String^ line)
+	TPrediction VowpalWabbit::Predict(String^ line)
 	{
 		return PredictOrLearn<TPrediction>(line, true);
 	}
