@@ -408,7 +408,6 @@ private:
         float action_probability = 0.f;
         float base_probability = epsilon / num_actions; // uniform probability
 
-        // TODO: check this random generation
         if (random_generator.Uniform_Unit_Interval() < 1.f - epsilon)
         {
             action_probability = 1.f - epsilon + base_probability;
@@ -1351,7 +1350,6 @@ private:
         float action_probability = 0.f;
         float base_probability = epsilon / num_actions; // uniform probability
 
-        // TODO: check this random generation
         if (random_generator.Uniform_Unit_Interval() < 1.f - epsilon)
         {
             action_probability = 1.f - epsilon + base_probability;
