@@ -7,6 +7,7 @@
 
 using namespace std;
 using namespace MultiWorldTesting;
+using namespace MultiWorldTesting::SingleAction;
 
 /// Example of a custom context.
 class MyContext

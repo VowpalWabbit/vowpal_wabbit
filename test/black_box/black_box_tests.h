@@ -12,3 +12,4 @@
 using namespace std;
 using namespace rapidjson;
 using namespace MultiWorldTesting;
+using namespace MultiWorldTesting::SingleAction;

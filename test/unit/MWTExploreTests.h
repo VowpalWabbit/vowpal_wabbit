@@ -7,6 +7,7 @@
 #include <sstream>
 
 using namespace MultiWorldTesting;
+using namespace MultiWorldTesting::SingleAction;
 
 class TestContext
 {
