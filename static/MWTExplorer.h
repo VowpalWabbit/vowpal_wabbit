@@ -15,9 +15,6 @@
 #include <limits.h>
 #include <tuple>
 
-#define PORTING_INTERFACE private
-#define MWT_NAMESPACE namespace MultiWorldTesting
-
 using namespace std;
 
 #include "utility.h"
@@ -34,6 +31,55 @@ using namespace std;
 //! Interface for C++ version of Multiworld Testing library.
 //! For sample usage see: https://github.com/sidsen/vowpal_wabbit/blob/v0/explore/explore_sample.cpp
 namespace MultiWorldTesting {
+
+/*!
+*  \addtogroup CoreCpp
+*  @{
+*/
+namespace Core {
+
+static inline void Explore_Epsilon_Greedy(
+    u32& out_action,
+    float& out_probability,
+    bool& out_should_log,
+    u32 num_actions,
+    bool explore,
+    float default_epsilon,
+    u64 salted_seed)
+{
+    PRG::prg random_generator(salted_seed);
+
+    float epsilon = explore ? default_epsilon : 0.f;
+
+    out_probability = 0.f;
+    float base_probability = epsilon / num_actions; // uniform probability
+
+    if (random_generator.Uniform_Unit_Interval() < 1.f - epsilon)
+    {
+        out_probability = 1.f - epsilon + base_probability;
+    }
+    else
+    {
+        // Get uniform random action ID
+        u32 actionId = random_generator.Uniform_Int(1, num_actions);
+
+        if (actionId == out_action)
+        {
+            // IF it matches the one chosen by the default policy
+            // then increase the probability
+            out_probability = 1.f - epsilon + base_probability;
+        }
+        else
+        {
+            // Otherwise it's just the uniform probability
+            out_probability = base_probability;
+        }
+        out_action = actionId;
+    }
+    out_should_log = true;
+}
+
+} /*! @} End of CoreCpp group*/
 
 /*!
 *  \addtogroup SingleActionCpp
@@ -393,8 +439,6 @@ private:
     {
         u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
 
-        PRG::prg random_generator(salted_seed);
-
         // Invoke the default policy function to get the action
         u32 chosen_action = m_default_policy.Choose_Action(context);
 
@@ -403,35 +447,12 @@ private:
             throw std::invalid_argument("Action chosen by default policy is not within valid range.");
         }
 
-        float epsilon = m_explore ? m_epsilon : 0.f;
-
         float action_probability = 0.f;
-        float base_probability = epsilon / num_actions; // uniform probability
+        bool should_log = false;
 
-        if (random_generator.Uniform_Unit_Interval() < 1.f - epsilon)
-        {
-            action_probability = 1.f - epsilon + base_probability;
-        }
-        else
-        {
-            // Get uniform random action ID
-            u32 actionId = random_generator.Uniform_Int(1, num_actions);
+        Core::Explore_Epsilon_Greedy(chosen_action, action_probability, should_log, num_actions, m_explore, m_epsilon, salted_seed);
 
-            if (actionId == chosen_action)
-            {
-                // IF it matches the one chosen by the default policy
-                // then increase the probability
-                action_probability = 1.f - epsilon + base_probability;
-            }
-            else
-            {
-                // Otherwise it's just the uniform probability
-                action_probability = base_probability;
-            }
-            chosen_action = actionId;
-        }
-
-        return std::tuple<u32, float, bool>(chosen_action, action_probability, true);
+        return std::tuple<u32, float, bool>(chosen_action, action_probability, should_log);
     }
 
 private:
@@ -941,7 +962,7 @@ public:
         }
     }
 
-PORTING_INTERFACE:
+private:
     u32 Get_Number_Of_Actions(IExplorer<Ctx>& explorer, Ctx& context)
     {
         return explorer.Get_Number_Of_Actions(context);
@@ -998,7 +1019,7 @@ public:
     virtual void Enable_Explore(bool explore) = 0;
     virtual ~IExplorer() { }
 
-PORTING_INTERFACE:
+private:
     virtual u32 Get_Number_Of_Actions(Ctx& context) = 0;
 };
 
@@ -1339,45 +1360,23 @@ public:
 private:
     std::tuple<float, bool> Choose_Action(u64 salted_seed, Ctx& context, u32* actions, u32 num_actions)
     {
-        PRG::prg random_generator(salted_seed);
-
         // Invoke the default policy function to get the action
         m_default_policy.Choose_Action(context, actions, num_actions);
         ::Validate_Actions(actions, num_actions);
 
-        float epsilon = m_explore ? m_epsilon : 0.f;
-
+        u32 chosen_action = actions[0];
         float action_probability = 0.f;
-        float base_probability = epsilon / num_actions; // uniform probability
+        bool should_log = false;
 
-        if (random_generator.Uniform_Unit_Interval() < 1.f - epsilon)
-        {
-            action_probability = 1.f - epsilon + base_probability;
-        }
-        else
-        {
-            // Get uniform random action ID
-            u32 actionId = random_generator.Uniform_Int(1, num_actions);
+        Core::Explore_Epsilon_Greedy(chosen_action, action_probability, should_log, num_actions, m_explore, m_epsilon, salted_seed);
 
-            if (actionId == actions[0])
-            {
-                // IF it matches the one chosen by the default policy
-                // then increase the probability
-                action_probability = 1.f - epsilon + base_probability;
-            }
-            else
-            {
-                // Otherwise it's just the uniform probability
-                action_probability = base_probability;
-
-                ::Put_Action_To_List(actionId, actions, num_actions);
-            }
-        }
+        // Put chosen action at the top of the list, swapping out the current top.
+        ::Put_Action_To_List(chosen_action, actions, num_actions);
 
         return std::tuple<float, bool>(action_probability, true);
     }
 
-PORTING_INTERFACE:
+private:
 
     u32 Get_Number_Of_Actions(Ctx& context)
     {
@@ -1515,7 +1514,7 @@ private:
         return std::tuple<float, bool>(action_probability, true);
     }
 
-PORTING_INTERFACE:
+private:
 
     u32 Get_Number_Of_Actions(Ctx& context)
     {
@@ -1615,7 +1614,7 @@ private:
         return std::tuple<float, bool>(action_probability, true);
     }
 
-PORTING_INTERFACE:
+private:
 
     u32 Get_Number_Of_Actions(Ctx& context)
     {
@@ -1729,7 +1728,7 @@ private:
         return std::tuple<float, bool>(action_probability, log_action);
     }
 
-PORTING_INTERFACE:
+private:
 
     u32 Get_Number_Of_Actions(Ctx& context)
     {
@@ -1862,7 +1861,7 @@ private:
         return std::tuple<float, bool>(action_probability, true);
     }
 
-PORTING_INTERFACE:
+private:
 
     u32 Get_Number_Of_Actions(Ctx& context)
     {

@@ -40,7 +40,7 @@ typedef unsigned char    byte;
 *  @{
 */
 
-MWT_NAMESPACE {
+namespace MultiWorldTesting {
 
 //
 // MurmurHash3, by Austin Appleby
