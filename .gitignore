@@ -5,6 +5,7 @@
 **/Release
 **/dll
 **/ipch
+**/TestResults
 
 # VS files
 *.opensdf

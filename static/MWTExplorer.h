@@ -1244,7 +1244,7 @@ static void Sample_Without_Replacement(u32* actions, vector<float>& probs, u32 s
     }
 }
 
-void Validate_Actions(u32* actions, u32 num_actions)
+static void Validate_Actions(u32* actions, u32 num_actions)
 {
     unique_ptr<bool> exists_ptr(new bool[num_actions + 1]());
 
@@ -1263,7 +1263,7 @@ void Validate_Actions(u32* actions, u32 num_actions)
     }
 };
 
-void Put_Action_To_List(u32 action, u32* actions, u32 num_actions)
+static void Put_Action_To_List(u32 action, u32* actions, u32 num_actions)
 {
     for (u32 i = 0; i < num_actions; i++)
     {

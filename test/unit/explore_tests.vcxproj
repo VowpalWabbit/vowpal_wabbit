@@ -94,9 +94,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="MWTExploreTests.h" />
+    <ClInclude Include="MWTExploreTestsMultiAction.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MWTExploreTests.cpp" />
+    <ClCompile Include="MWTExploreTestsMultiAction.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

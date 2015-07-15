@@ -2,6 +2,8 @@
 #include "..\unit\MWTExploreTests.h"
 #include <vector>
 
+using namespace vw_explore_tests_single_action;
+
 void test_prg(Value& v)
 {
     u64 seed = v["Seed"].GetUint64();
