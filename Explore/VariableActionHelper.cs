@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace MultiWorldTesting
+namespace MultiWorldTesting.SingleAction
 {
     internal static class VariableActionHelper
     {

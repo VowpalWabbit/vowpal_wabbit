@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using MultiWorldTesting;
+using MultiWorldTesting.SingleAction;
 using System.Collections.Generic;
 using System.Linq;
 using TestCommon;

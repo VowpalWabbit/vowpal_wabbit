@@ -1,5 +1,5 @@
 ﻿
-namespace MultiWorldTesting
+namespace MultiWorldTesting.SingleAction
 {
     /// <summary>
     /// Exploration result 

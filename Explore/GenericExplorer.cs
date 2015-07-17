@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace MultiWorldTesting
+namespace MultiWorldTesting.SingleAction
 {
     /// <summary>
 	/// The generic exploration class.

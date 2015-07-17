@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace MultiWorldTesting
+namespace MultiWorldTesting.SingleAction
 {
     /// <summary>
 	/// A sample context class that stores a vector of Features.

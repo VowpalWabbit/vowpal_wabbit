@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace MultiWorldTesting
+namespace MultiWorldTesting.SingleAction
 {
     /// <summary>
 	/// The epsilon greedy exploration class.

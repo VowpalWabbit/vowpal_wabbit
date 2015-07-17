@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace MultiWorldTesting
+namespace MultiWorldTesting.SingleAction
 {
     /// <summary>
 	/// The bootstrap exploration class.
