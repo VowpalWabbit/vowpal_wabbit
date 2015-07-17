@@ -50,6 +50,7 @@
     <Compile Include="SoftmaxExplorer.cs" />
     <Compile Include="StringRecorder.cs" />
     <Compile Include="TauFirstExplorer.cs" />
+    <Compile Include="MultiActionHelper.cs" />
     <Compile Include="VariableActionHelper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />

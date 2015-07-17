@@ -1,16 +1,11 @@
 ﻿
-namespace MultiWorldTesting.SingleAction
+namespace MultiWorldTesting.Core
 {
     /// <summary>
     /// Exploration result 
     /// </summary>
-    public class DecisionTuple
+    public class BaseDecisionTuple
     {
-        /// <summary>
-        /// Action chosen by exploration.
-        /// </summary>
-        public uint Action { get; set; }
-
         /// <summary>
         /// Probability of choosing the action.
         /// </summary>
@@ -20,5 +15,37 @@ namespace MultiWorldTesting.SingleAction
         /// Whether to record/log the exploration result. 
         /// </summary>
         public bool ShouldRecord { get; set; }
+    }
+}
+
+namespace MultiWorldTesting.SingleAction
+{
+    using MultiWorldTesting.Core;
+
+    /// <summary>
+    /// Exploration result 
+    /// </summary>
+    public class DecisionTuple : BaseDecisionTuple
+    {
+        /// <summary>
+        /// Action chosen by exploration.
+        /// </summary>
+        public uint Action { get; set; }
+    }
+}
+
+namespace MultiWorldTesting.MultiAction
+{
+    using MultiWorldTesting.Core;
+
+    /// <summary>
+    /// Exploration result 
+    /// </summary>
+    public class DecisionTuple : BaseDecisionTuple
+    {
+        /// <summary>
+        /// List of actions chosen by exploration.
+        /// </summary>
+        public uint[] Actions { get; set; }
     }
 }
