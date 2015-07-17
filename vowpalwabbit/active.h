@@ -6,6 +6,7 @@ struct active {
 	float active_c0;
 	vw* all;//statistics, loss
 	bool oracular;
+	size_t max_labels;	
 };
 
 float query_decision(active& a, example& ec, float k);

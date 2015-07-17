@@ -83,6 +83,11 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
 		{
 			ec.l.simple.label = FLT_MAX;
 		}
+
+		if(!(a.max_labels > all.sd->queries))
+		{
+			set_done(all);
+		}
 	}
 }
   
@@ -167,7 +172,8 @@ void return_active_example(vw& all, active& a, example& ec)
 	output_and_account_example(all, a, ec);
 	VW::finish_example(all,&ec);
 }
-  
+ 
+ 
 base_learner* active_setup(vw& all)
 {
 	//parse and set arguments
@@ -176,13 +182,16 @@ base_learner* active_setup(vw& all)
 		return nullptr;
 	}
 	
+	active& data = calloc_or_die<active>();
+	data.max_labels = (size_t)-1;
+
 	new_options(all, "Active Learning options")
     	("simulation", "active learning simulation mode")
     	("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8")
-    	("oracular", "using oracular CAL. Default false");
+    	("oracular", "using oracular CAL. Default false")
+    	("labels", po::value<size_t>(&(data.max_labels)), "maximum number of label requests.");
 	add_options(all);
   
-	active& data = calloc_or_die<active>();
 	data.active_c0 = 8;
 	data.oracular = false;
 	data.all=&all;
