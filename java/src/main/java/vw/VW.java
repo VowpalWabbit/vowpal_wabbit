@@ -21,19 +21,12 @@ public class VW implements Closeable {
      * java -cp target/vw-jni-*-SNAPSHOT.jar vw.VW
      * @param args No args needed.
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         new VW("").close();
         new VW("--quiet").close();
     }
 
-    static {
-        try {
-            NativeUtils.loadOSDependentLibrary("/vw_jni", ".lib");
-        }
-        catch (IOException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
+    private static boolean loadedNativeLibrary = false;
 
     private boolean isOpen;
 
@@ -52,8 +45,36 @@ public class VW implements Closeable {
      *                for more information
      */
     public VW(String command) {
-        isOpen = true;
+        this(command, true);
+    }
+
+    /**
+     * Create a new VW instance that is ready to either create predictions or learn based on examples
+     * @param command The same string that is passed to VW, see
+     *                <a href="https://github.com/JohnLangford/vowpal_wabbit/wiki/Command-line-arguments">here</a>
+     *                for more information
+     * @param loadNativeLibrary Whether or not to load the native libraries packaged with the jar.  If this is set
+     *                          to false it's the responsibility of the caller to load the appropriate VW JNI layer
+     *                          with either {@link java.lang.System#loadLibrary(String)} or {@link java.lang.System#load(String)}.
+     */
+    public VW(String command, boolean loadNativeLibrary) {
         lock = new ReentrantLock();
+        lock.lock();
+        try {
+            if (loadNativeLibrary && !loadedNativeLibrary) {
+                NativeUtils.loadOSDependentLibrary("/vw_jni", ".lib");
+                loadedNativeLibrary = true;
+            }
+        }
+        catch (IOException e) {
+            // Here I've chosen to rethrow the exception as an unchecked exception because if the native
+            // library cannot be loaded then the exception is not recoverable from.
+            throw new RuntimeException(e);
+        }
+        finally {
+            lock.unlock();
+        }
+        isOpen = true;
         nativePointer = initialize(command);
     }
 

@@ -9,15 +9,22 @@ import java.util.regex.Pattern;
  * see <a href="http://adamheinrich.com/blog/2012/how-to-load-native-jni-library-from-jar/">here</a>.
  *
  * @author Adam Heirnich &lt;adam@adamh.cz&gt;, <a href="http://www.adamh.cz">http://www.adamh.cz</a>
+ * @author Jon Morra
  */
 public class NativeUtils {
+
     /**
      * Private constructor - this class will never be instanced
      */
     private NativeUtils() {
     }
 
-    private static String getDistroName() throws IOException {
+    /**
+     * This will read from /proc/version to attempt to find the Linux distribution.
+     * @return The Linux distribution or null if the version cannot be found.
+     * @throws IOException If an I/O error occurs
+     */
+    public static String getDistroName() throws IOException {
         Pattern distroRegex = Pattern.compile("[^(]+\\([^(]+\\([^(]+\\(([A-Za-z\\s]+).*");
         BufferedReader reader = new BufferedReader(new FileReader("/proc/version"));
         String distro;
@@ -32,17 +39,12 @@ public class NativeUtils {
     }
 
     /**
-     * Because JNI requires dynamic linking the version of the linux distro matters.  This will attempt to find
-     * the correct version of the linux distro.  Note that this right now tries to find if this is either
-     * Ubuntu or not, and if it's not then it assumes CentOS.  I know this is not correct for all Linux distros
-     * but hopefully this will work for most.
-     * @return The linux distro and version
-     * @throws IOException
+     * This will attempt to find the Linux version by making use of {@code lsb_release -r}
+     * @return The Linux version or null if the version cannot be determined.
+     * @throws IOException If an I/O error occurs
      */
-    private static String getLinuxDistro() throws IOException {
+    public static String getLinuxVersion() throws IOException {
         BufferedReader reader = null;
-        String release = null;
-        String distro = getDistroName();
         try {
             Process process = Runtime.getRuntime().exec("lsb_release -r");
             reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -52,27 +54,41 @@ public class NativeUtils {
             while ((line = reader.readLine()) != null) {
                 matcher = releasePattern.matcher(line);
                 if (matcher.matches()) {
-                    release = matcher.group(1);
+                    return matcher.group(1);
                 }
             }
         }
         finally {
             reader.close();
         }
-        if (distro == null || release == null) {
-            throw new UnsupportedEncodingException("Linux distro does not support lsb_release, cannot determine version, distro: " + distro + ", release: " + release);
-        }
-
-        return distro.trim().replaceAll(" ", "_") + "." + release;
+        return null;
     }
 
-    private static String getOsFamily() throws IOException {
+    /**
+     * Returns the system dependent OS family.  In the case of a Linux OS it will combine
+     * {@link NativeUtils#getDistroName()} and {@link NativeUtils#getLinuxVersion()}.
+     * @return A system dependent string identifying the OS.
+     * @throws UnsupportedEncodingException If an error occurs while determining the Linux specific
+     *          information.
+     * @throws IOException If an I/O error occurs
+     * @throws IllegalStateException If the os.name property returns an unsupported OS.
+     */
+    public static String getOsFamily() throws IOException {
         final String osName = System.getProperty("os.name");
         if (osName.toLowerCase().contains("mac")) {
             return "Darwin";
         }
         else if (osName.toLowerCase().contains("linux")) {
-            return getLinuxDistro();
+            String distro = getDistroName();
+            if (distro == null) {
+                throw new UnsupportedEncodingException("Cannot determine linux distribution");
+            }
+
+            String version = getLinuxVersion();
+            if (version == null) {
+                throw new UnsupportedOperationException("Cannot determine linux version");
+            }
+            return distro.trim().replaceAll(" ", "_") + "." + version;
         }
         throw new IllegalStateException("Unsupported operating system " + osName);
     }
@@ -81,6 +97,8 @@ public class NativeUtils {
      * Loads a library from current JAR archive by looking up platform dependent name.
      * @param path The filename inside JAR as absolute path (beginning with '/'), e.g. /package/File.ext
      * @param suffix The suffix to be appended to the name
+     * @throws UnsupportedEncodingException If an error occurs while determining the Linux specific
+     *          information.
      * @throws IOException If temporary file creation or read/write operation fails
      */
     public static void loadOSDependentLibrary(String path, String suffix) throws IOException {
