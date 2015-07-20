@@ -942,7 +942,7 @@ namespace VW{
     v_array<substring> words = v_init<substring>();
     char* cstr = (char*)label.c_str();
     substring str = { cstr, cstr+label.length() };
-    words.push_back(str);
+    tokenize(' ', str, words);
     all.p->lp.parse_label(all.p, all.sd, &ec.l, words);
     words.erase();
     words.delete_v();

@@ -347,10 +347,10 @@ class cost_sensitive_label(abstract_label):
         self.prediction = ex.get_costsensitive_prediction()
         self.costs = []
         for i in range(ex.get_costsensitive_num_costs):
-            wc = wclass(ex.get_costsensitive_class(),
-                        ex.get_costsensitive_cost(),
-                        ex.get_costsensitive_partial_prediction(),
-                        ex.get_costsensitive_wap_value())
+            wc = wclass(ex.get_costsensitive_class(i),
+                        ex.get_costsensitive_cost(i),
+                        ex.get_costsensitive_partial_prediction(i),
+                        ex.get_costsensitive_wap_value(i))
             self.costs.append(wc)
 
     def __str__(self):
@@ -373,10 +373,10 @@ class cbandits_label(abstract_label):
         self.prediction = ex.get_cbandits_prediction()
         self.costs = []
         for i in range(ex.get_cbandits_num_costs):
-            wc = wclass(ex.get_cbandits_class(),
-                        ex.get_cbandits_cost(),
-                        ex.get_cbandits_partial_prediction(),
-                        ex.get_cbandits_probability())
+            wc = wclass(ex.get_cbandits_class(i),
+                        ex.get_cbandits_cost(i),
+                        ex.get_cbandits_partial_prediction(i),
+                        ex.get_cbandits_probability(i))
             self.costs.append(wc)
 
     def __str__(self):
