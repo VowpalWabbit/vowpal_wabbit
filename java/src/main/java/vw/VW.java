@@ -27,7 +27,7 @@ public class VW implements Closeable {
     }
 
     private static boolean loadedNativeLibrary = false;
-
+    private static Lock staticLock = new ReentrantLock();
     private boolean isOpen;
 
     /**
@@ -58,10 +58,19 @@ public class VW implements Closeable {
      *                          with either {@link java.lang.System#loadLibrary(String)} or {@link java.lang.System#load(String)}.
      */
     public VW(String command, boolean loadNativeLibrary) {
+        if (loadNativeLibrary) {
+            loadNativeLibrary();
+        }
+        isOpen = true;
         lock = new ReentrantLock();
-        lock.lock();
+        nativePointer = initialize(command);
+    }
+
+    private static void loadNativeLibrary() {
+        // By making use of a static lock here we make sure this code is only executed once globally.
+        staticLock.lock();
         try {
-            if (loadNativeLibrary && !loadedNativeLibrary) {
+            if (!loadedNativeLibrary) {
                 NativeUtils.loadOSDependentLibrary("/vw_jni", ".lib");
                 loadedNativeLibrary = true;
             }
@@ -72,10 +81,8 @@ public class VW implements Closeable {
             throw new RuntimeException(e);
         }
         finally {
-            lock.unlock();
+            staticLock.unlock();
         }
-        isOpen = true;
-        nativePointer = initialize(command);
     }
 
     /**
