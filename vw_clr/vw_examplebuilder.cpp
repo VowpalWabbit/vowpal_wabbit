@@ -95,7 +95,18 @@ namespace VW
 
 	void VowpalWabbitNamespaceBuilder::AddFeature(uint32_t weight_index, float x)
 	{
+		// filter out 0-values
+		if (x == 0)
+		{
+			return;
+		}
+
 		*m_sum_feat_sq += x * x;
 		m_atomic->push_back({ x, weight_index });
+	}
+
+	void VowpalWabbitNamespaceBuilder::PreAllocate(int size)
+	{
+		m_atomic->resize((m_atomic->end - m_atomic->begin) + size);
 	}
 }

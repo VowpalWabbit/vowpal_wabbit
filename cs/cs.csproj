@@ -71,6 +71,11 @@
     <Compile Include="Serializer\Reflection\TypeDistance.cs" />
     <Compile Include="Serializer\Reflection\TypeMatch.cs" />
     <Compile Include="Serializer\Visitors\VowpalWabbitNativeVisitor.cs" />
+    <Compile Include="Serializer\Visitors\VowpalWabbitNativeVisitorExt.cs">
+      <DependentUpon>VowpalWabbitNativeVisitorExt.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
     <Compile Include="Serializer\Visitors\VowpalWabbitStringVisitor.cs" />
     <Compile Include="Serializer\VowpalWabbitCachedExample.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
@@ -91,6 +96,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cs.nuspec" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Serializer\Visitors\VowpalWabbitNativeVisitorExt.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>VowpalWabbitNativeVisitorExt.cs</LastGenOutput>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />

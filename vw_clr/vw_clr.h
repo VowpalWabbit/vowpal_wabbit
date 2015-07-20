@@ -465,6 +465,12 @@ namespace VW
 		/// <param name="weight_index">The weight index.</param>
 		/// <param name="x">The value.</param>
 		void AddFeature(uint32_t weight_index, float x);
+
+		/// <summary>
+		/// Pre-allocate features of <paramref name="size"/>.
+		/// </summary>
+		/// <param name="size">The number of features to pre-allocate.</param>
+		void PreAllocate(int size);
 	};
 
 	/// <summary>

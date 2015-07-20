@@ -86,29 +86,29 @@ namespace VW
     /// </summary>
     /// <typeparam name="TExample">The user example type.</typeparam>
     /// <typeparam name="TActionDependentFeature">The user action dependent feature type.</typeparam>
-    public sealed class VowpalWabbit<TExample, TActionDependentFeature> : VowpalWabbit<TExample>
+    public class VowpalWabbitPredictor<TExample, TActionDependentFeature> : VowpalWabbit<TExample>
         where TExample : SharedExample, IActionDependentFeatureExample<TActionDependentFeature>
     {
-        private VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
-        private VowpalWabbitExample emptyExample;
+        protected VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
+        protected VowpalWabbitExample emptyExample;
 
         /// <summary>
-        /// Initializes a new <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> instance.
+        /// Initializes a new <see cref="VowpalWabbitPredictor{TExample,TActionDependentFeature}"/> instance.
         /// </summary>
         /// <param name="model">The shared model.</param>
         /// <param name="settings">The serializer settings.</param>
-        public VowpalWabbit(VowpalWabbitModel model, VowpalWabbitSerializerSettings settings = null)
+        public VowpalWabbitPredictor(VowpalWabbitModel model, VowpalWabbitSerializerSettings settings = null)
             : base(model)
         {
             this.Initialize(settings);
         }
 
         /// <summary>
-        /// Initializes a new <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> instance.
+        /// Initializes a new <see cref="VowpalWabbitPredictor{TExample,TActionDependentFeature}"/> instance.
         /// </summary>
         /// <param name="arguments">Command line arguments</param>
         /// <param name="settings">The serializer settings.</param>
-        public VowpalWabbit(string arguments, VowpalWabbitSerializerSettings settings = null)
+        public VowpalWabbitPredictor(string arguments, VowpalWabbitSerializerSettings settings = null)
             : base(arguments)
         {
             this.Initialize(settings);
@@ -131,18 +131,6 @@ namespace VW
         }
 
         /// <summary>
-        /// Simplify learning of examples with action dependent features. 
-        /// </summary>
-        /// <param name="example">The user example</param>
-        /// <returns>An ordered subset of predicted action dependent features.</returns>
-        public TActionDependentFeature[] Learn(TExample example)
-        {
-            var multiLabelPredictions = this.LearnIndex(example);
-
-            return ReShuffle(example, multiLabelPredictions);
-        }
-
-        /// <summary>
         /// Simplify prediction of examples with action dependent features.
         /// </summary>
         /// <param name="example">The user example.</param>
@@ -153,8 +141,14 @@ namespace VW
 
             return ReShuffle(example, multiLabelPredictions);
         }
- 
-        private static TActionDependentFeature[] ReShuffle(TExample example, int[] multiLabelPredictions)
+
+        /// <summary>
+        /// Reshuffles the the action dependent features based on indices returned by native space.
+        /// </summary>
+        /// <param name="example">The example used for prediction.</param>
+        /// <param name="multiLabelPredictions">The indices used to reshuffle.</param>
+        /// <returns>The action dependent features ordered by <paramref name="multiLabelPredictions"/></returns>
+        protected static TActionDependentFeature[] ReShuffle(TExample example, int[] multiLabelPredictions)
         {
             // re-shuffle
             var result = new TActionDependentFeature[multiLabelPredictions.Length];
@@ -230,16 +224,119 @@ namespace VW
         }
 
         /// <summary>
+        /// Cleanup.
+        /// </summary>
+        /// <param name="isDiposing">See IDiposable pattern.</param>
+        protected override void Dispose(bool isDiposing)
+        {
+            if (isDiposing)
+            {
+                if (this.actionDependentFeatureSerializer != null)
+                {
+                    this.actionDependentFeatureSerializer.Dispose();
+                    this.actionDependentFeatureSerializer = null;
+                }
+                if (this.emptyExample != null)
+                {
+                    this.emptyExample.Dispose();
+                    this.emptyExample = null;
+                }
+            }
+            base.Dispose(isDiposing);
+        }
+    }
+    /// <summary>
+    /// A wrapper around Vowpal Wabbit to simplify action dependent feature scenarios.
+    /// </summary>
+    /// <typeparam name="TExample">The user example type.</typeparam>
+    /// <typeparam name="TActionDependentFeature">The user action dependent feature type.</typeparam>
+    public sealed class VowpalWabbit<TExample, TActionDependentFeature> : VowpalWabbitPredictor<TExample, TActionDependentFeature>
+        where TExample : SharedExample, IActionDependentFeatureExample<TActionDependentFeature>
+        where TActionDependentFeature : IExample
+    {
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> instance.
+        /// </summary>
+        /// <param name="model">The shared model.</param>
+        /// <param name="settings">The serializer settings.</param>
+        public VowpalWabbit(VowpalWabbitModel model, VowpalWabbitSerializerSettings settings = null)
+            : base(model, settings)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> instance.
+        /// </summary>
+        /// <param name="arguments">Command line arguments</param>
+        /// <param name="settings">The serializer settings.</param>
+        public VowpalWabbit(string arguments, VowpalWabbitSerializerSettings settings = null)
+            : base(arguments, settings)
+        {
+        }
+
+        /// <summary>
         /// Simplify learning of examples with action dependent features. 
         /// </summary>
-        /// <param name="example">The user example</param>
-        /// <returns>An ordered subset of predicted action indexes.</returns>
-        public int[] LearnIndex(TExample example)
+        /// <param name="example">The user example.</param>
+        public void Learn(TExample example)
         {
-            // shared |userlda :.1 |che a:.1 
-            // `doc1 |lda :.1 :.2 [1]
-            // `doc2 |lda :.2 :.3 [2]
-            // <new line>
+            var examples = new List<IVowpalWabbitExample>();
+
+            try
+            {
+                // contains prediction results
+                var sharedExample = this.serializer.Serialize(example);
+                // check if we have shared features
+                if (sharedExample != null)
+                {
+                    examples.Add(sharedExample);
+                    sharedExample.Learn();
+                }
+
+                // leave as loop (vs. linq) so if the serializer throws an exception, anything allocated so far can be free'd
+                foreach (var actionDependentFeature in example.ActionDependentFeatures)
+                {
+                    var adfExample = this.actionDependentFeatureSerializer.Serialize(actionDependentFeature);
+                    examples.Add(adfExample);
+
+                    adfExample.Learn();
+                }
+
+                // signal we're finished using an empty example
+                this.emptyExample.Learn();
+            }
+            finally
+            {
+                // dispose examples
+                // Note: must not dispose examples before final example
+                // as the learning algorithm (such as cbf) keeps a reference 
+                // to the example
+                foreach (var e in examples)
+                {
+                    e.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Simplify learning of examples with action dependent features. 
+        /// </summary>
+        /// <param name="example">The user example.</param>
+        /// <returns>An ordered subset of predicted action dependent features.</returns>
+        public TActionDependentFeature[] LearnAndPredict(TExample example)
+        {
+            var multiLabelPredictions = this.LearnAndPredictIndex(example);
+
+            return ReShuffle(example, multiLabelPredictions);
+        }
+
+        /// <summary>
+        /// Simplify learning of examples with action dependent features. 
+        /// </summary>
+        /// <param name="example">The user example.</param>
+        /// <returns>An ordered subset of predicted action indexes.</returns>
+        public int[] LearnAndPredictIndex(TExample example)
+        {
             var examples = new List<IVowpalWabbitExample>();
 
             try
@@ -289,28 +386,6 @@ namespace VW
                     e.Dispose();
                 }
             }
-        }
-
-        /// <summary>
-        /// Cleanup.
-        /// </summary>
-        /// <param name="isDiposing">See IDiposable pattern.</param>
-        protected override void Dispose(bool isDiposing)
-        {
-            if (isDiposing)
-            {
-                if (this.actionDependentFeatureSerializer != null)
-                {
-                    this.actionDependentFeatureSerializer.Dispose();
-                    this.actionDependentFeatureSerializer = null;
-                }
-                if (this.emptyExample != null)
-                {
-                    this.emptyExample.Dispose();
-                    this.emptyExample = null;
-                }
-            }
-            base.Dispose(isDiposing);
         }
     }
 }

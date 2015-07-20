@@ -19,7 +19,7 @@ namespace VW.Serializer.Visitors
     /// <summary>
     /// Front-end to serialize data into Vowpal Wabbit native C++ structures.
     /// </summary>
-    public sealed class VowpalWabbitInterfaceVisitor : IVowpalWabbitVisitor<VowpalWabbitExample>
+    public sealed partial class VowpalWabbitInterfaceVisitor : IVowpalWabbitVisitor<VowpalWabbitExample>
     {
         /// <summary>
         /// The Vowpal Wabbit instance all examples are associated with.
@@ -60,6 +60,7 @@ namespace VW.Serializer.Visitors
                 this.vw.HashSpace(this.featureGroup + namespaceDense.Name);
 
             this.namespaceBuilder = this.builder.AddNamespace(this.featureGroup);
+            this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
             foreach (var v in namespaceDense.DenseFeature.Value)
@@ -97,52 +98,8 @@ namespace VW.Serializer.Visitors
         /// Transfers feature data to native space.
         /// </summary>
         /// <param name="feature">The feature.</param>
-        public void Visit(IFeature<short> feature)
-        {
-            this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), feature.Value);
-        }
-
-        /// <summary>
-        /// Transfers feature data to native space.
-        /// </summary>
-        /// <param name="feature">The feature.</param>
-        public void Visit(IFeature<short?> feature)
-        {
-            this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), (short)feature.Value);
-        }
-
-        /// <summary>
-        /// Transfers feature data to native space.
-        /// </summary>
-        /// <param name="feature">The feature.</param>
-        public void Visit(IFeature<int> feature)
-        {
-            this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), feature.Value);
-        }
-
-        /// <summary>
-        /// Transfers feature data to native space.
-        /// </summary>
-        /// <param name="feature">The feature.</param>
-        public void Visit(IFeature<int?> feature)
-        {
-            this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), (int)feature.Value);
-        }
-
-        /// <summary>
-        /// Transfers feature data to native space.
-        /// </summary>
-        /// <param name="feature">The feature.</param>
-        public void Visit(IFeature<float> feature)
-        {
-            this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), feature.Value);
-        }
-
-        /// <summary>
-        /// Transfers feature data to native space.
-        /// </summary>
-        /// <param name="feature">The feature.</param>
-        public void Visit(IFeature<float?> feature)
+        /// <remarks>Values are cast to float and therefore precision is lost.</remarks>
+        public void Visit(IFeature<decimal> feature)
         {
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), (float)feature.Value);
         }
@@ -151,31 +108,12 @@ namespace VW.Serializer.Visitors
         /// Transfers feature data to native space.
         /// </summary>
         /// <param name="feature">The feature.</param>
-        public void Visit(IFeature<double> feature)
+        /// <remarks>Values are cast to float and therefore precision is lost.</remarks>
+        public void Visit(IFeature<decimal?> feature)
         {
-#if DEBUG
-            if (feature.Value > float.MaxValue || feature.Value < float.MinValue)
-            {
-                Trace.TraceWarning("Precision lost for feature value: " + feature.Value);
-            }
-#endif
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), (float)feature.Value);
         }
 
-        /// <summary>
-        /// Transfers feature data to native space.
-        /// </summary>
-        /// <param name="feature">The feature.</param>
-        public void Visit(IFeature<double?> feature)
-        {
-#if DEBUG
-            if (feature.Value > float.MaxValue || feature.Value < float.MinValue)
-            {
-                Trace.TraceWarning("Precision lost for feature value: " + feature.Value);
-            }
-#endif
-            this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), (float)feature.Value);
-        }
 
         /// <summary>
         /// Transfers feature data to native space.
@@ -186,66 +124,6 @@ namespace VW.Serializer.Visitors
             var strValue = Convert.ToString(feature.Value);
 
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name + strValue, this.namespaceHash), 1f);
-        }
-
-        /// <summary>
-        /// Transfers feature data to native space.
-        /// </summary>
-        /// <param name="feature">The feature.</param>
-        public void Visit<TValue>(IFeature<IDictionary<UInt16, TValue>> feature)
-        {
-            foreach (var kvp in feature.Value)
-            {
-                this.namespaceBuilder.AddFeature(this.namespaceHash + kvp.Key, (float)Convert.ToDouble(kvp.Value));
-            }
-        }
-
-        /// <summary>
-        /// Transfers feature data to native space.
-        /// </summary>
-        /// <param name="feature">The feature.</param>
-        public void Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
-        {
-            foreach (var kvp in feature.Value)
-            {
-                this.namespaceBuilder.AddFeature(this.namespaceHash + kvp.Key, (float)Convert.ToDouble(kvp.Value));
-            }
-        }
-
-        /// <summary>
-        /// Transfers feature data to native space.
-        /// </summary>
-        /// <param name="feature">The feature.</param>
-        public void Visit<TValue>(IFeature<IDictionary<Int16, TValue>> feature)
-        {
-            foreach (var kvp in feature.Value)
-            {
-                this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + kvp.Key), (float)Convert.ToDouble(kvp.Value));
-            }
-        }
-
-        /// <summary>
-        /// Transfers feature data to native space.
-        /// </summary>
-        /// <param name="feature">The feature.</param>
-        public void Visit<TValue>(IFeature<IDictionary<Int32, TValue>> feature)
-        {
-            foreach (var kvp in feature.Value)
-            {
-                this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + kvp.Key), (float)Convert.ToDouble(kvp.Value));
-            }
-        }
-
-        /// <summary>
-        /// Transfers feature data to native space.
-        /// </summary>
-        /// <param name="feature">The feature.</param>
-        public void Visit(IFeature<IDictionary<Int32, float>> feature)
-        {
-            foreach (var kvp in feature.Value)
-            {
-                this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + kvp.Key), kvp.Value);
-            }
         }
 
         /// <summary>

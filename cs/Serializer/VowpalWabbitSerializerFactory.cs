@@ -88,10 +88,13 @@ namespace VW.Serializer
             // Create dynamic assembly
             var asmName = new AssemblyName("VowpalWabbitSerializer." + typeof(TExample).Name + "." + typeof(TVisitor));
             var dynAsm = AppDomain.CurrentDomain.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
-            
+
             // Create a dynamic module and type
+//#if !DEBUG
+            //var dynMod = dynAsm.DefineDynamicModule("VowpalWabbitSerializerModule", asmName.Name + ".dll", true);
+//#else
             var dynMod = dynAsm.DefineDynamicModule("VowpalWabbitSerializerModule");
-            
+//#endif       
             var newSerializer = CreateSerializer<TExample, TVisitor, TExampleResult>(dynMod);
 
             SerializerCache[cacheKey] = newSerializer;
@@ -328,8 +331,12 @@ namespace VW.Serializer
 
             // compared to Compile this looks rather ugly, but there is a feature-bug 
             // that adds a security check to every call of the Serialize method
+//#if !DEBUG
+            //var debugInfoGenerator = DebugInfoGenerator.CreatePdbGenerator();
+            //visit.CompileToMethod(methodBuilder, debugInfoGenerator);
+//#else
             visit.CompileToMethod(methodBuilder);
-            
+//#endif
             var dynType = typeBuilder.CreateType();
 
             return (Func<TExample, TVisitor, TExampleResult>)Delegate.CreateDelegate(
@@ -341,6 +348,13 @@ namespace VW.Serializer
         {
             return elemType == typeof(double)
                     || elemType == typeof(float)
+                    || elemType == typeof(byte)
+                    || elemType == typeof(sbyte)
+                    || elemType == typeof(char)
+                    || elemType == typeof(decimal)
+                    || elemType == typeof(UInt16)
+                    || elemType == typeof(UInt32)
+                    || elemType == typeof(UInt64)
                     || elemType == typeof(Int16)
                     || elemType == typeof(Int32)
                     || elemType == typeof(Int64);
