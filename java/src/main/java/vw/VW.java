@@ -21,13 +21,13 @@ public class VW implements Closeable {
      * java -cp target/vw-jni-*-SNAPSHOT.jar vw.VW
      * @param args No args needed.
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         new VW("").close();
         new VW("--quiet").close();
     }
 
-    private static boolean loadedNativeLibrary = false;
-    private static Lock staticLock = new ReentrantLock();
+    private volatile static boolean loadedNativeLibrary = false;
+    private static final Lock STATIC_LOCK = new ReentrantLock();
     private boolean isOpen;
 
     /**
@@ -45,43 +45,45 @@ public class VW implements Closeable {
      *                for more information
      */
     public VW(String command) {
-        this(command, true);
-    }
-
-    /**
-     * Create a new VW instance that is ready to either create predictions or learn based on examples
-     * @param command The same string that is passed to VW, see
-     *                <a href="https://github.com/JohnLangford/vowpal_wabbit/wiki/Command-line-arguments">here</a>
-     *                for more information
-     * @param loadNativeLibrary Whether or not to load the native libraries packaged with the jar.  If this is set
-     *                          to false it's the responsibility of the caller to load the appropriate VW JNI layer
-     *                          with either {@link java.lang.System#loadLibrary(String)} or {@link java.lang.System#load(String)}.
-     */
-    public VW(String command, boolean loadNativeLibrary) {
-        if (loadNativeLibrary) {
-            loadNativeLibrary();
-        }
         isOpen = true;
         lock = new ReentrantLock();
-        nativePointer = initialize(command);
+        // This allows the user to instead of using the prepackaged JNI layer load their own external JNI layer.
+        // This means that if a user wants to use this code with an OS that is not supported they would follow the following steps
+        // 1.  Download VW
+        // 2.  Build VW for the OS they wish to support
+        // 3.  Call either System.load(xxx) or System.loadLibrary(xxx)
+        // After doing this then the first UnsatisfiedLinkError will never occur.  If a user wishes to use the prepackaed
+        // JNI layer then the first time this object is constructed the UnsatisfiedLinkError will throw and the native libraries
+        // will be loaded and every other time it will not.
+        long currentNativePointer;
+        try {
+            currentNativePointer = initialize(command);
+        }
+        catch (UnsatisfiedLinkError e) {
+            loadNativeLibrary();
+            currentNativePointer = initialize(command);
+        }
+        nativePointer = currentNativePointer;
     }
 
     private static void loadNativeLibrary() {
         // By making use of a static lock here we make sure this code is only executed once globally.
-        staticLock.lock();
-        try {
-            if (!loadedNativeLibrary) {
-                NativeUtils.loadOSDependentLibrary("/vw_jni", ".lib");
-                loadedNativeLibrary = true;
+        if (!loadedNativeLibrary) {
+            STATIC_LOCK.lock();
+            try {
+                if (!loadedNativeLibrary) {
+                    NativeUtils.loadOSDependentLibrary("/vw_jni", ".lib");
+                    loadedNativeLibrary = true;
+                }
             }
-        }
-        catch (IOException e) {
-            // Here I've chosen to rethrow the exception as an unchecked exception because if the native
-            // library cannot be loaded then the exception is not recoverable from.
-            throw new RuntimeException(e);
-        }
-        finally {
-            staticLock.unlock();
+            catch (IOException e) {
+                // Here I've chosen to rethrow the exception as an unchecked exception because if the native
+                // library cannot be loaded then the exception is not recoverable from.
+                throw new RuntimeException(e);
+            }
+            finally {
+                STATIC_LOCK.unlock();
+            }
         }
     }
 
