@@ -53,7 +53,7 @@ namespace cs_unittest
 
                 var example = sampleData[0];
 
-                var result = vw.Learn(example);
+                var result = vw.LearnAndPredict(example);
 
                 ReferenceEquals(example.ActionDependentFeatures[0], result[0]);
                 ReferenceEquals(example.ActionDependentFeatures[1], result[1]);
@@ -61,7 +61,7 @@ namespace cs_unittest
 
                 example = sampleData[1];
 
-                result = vw.Learn(example);
+                result = vw.LearnAndPredict(example);
                 ReferenceEquals(example.ActionDependentFeatures[0], result[1]);
                 ReferenceEquals(example.ActionDependentFeatures[1], result[0]);
 
