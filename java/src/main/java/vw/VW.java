@@ -37,6 +37,7 @@ public class VW implements Closeable {
      */
     private final Lock lock;
     private final long nativePointer;
+    private final String command;
 
     /**
      * Create a new VW instance that is ready to either create predictions or learn based on examples.
@@ -62,6 +63,7 @@ public class VW implements Closeable {
             loadNativeLibrary();
             currentNativePointer = initialize(command);
         }
+        this.command = command;
         nativePointer = currentNativePointer;
     }
 
@@ -84,6 +86,14 @@ public class VW implements Closeable {
                 STATIC_LOCK.unlock();
             }
         }
+    }
+
+    /**
+     * Gets the command this instance was initialized with.
+     * @return The initialization command.
+     */
+    public String getCommand() {
+        return command;
     }
 
     /**
