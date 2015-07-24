@@ -76,26 +76,32 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec) {
     cout<<f1[i].weight_index<<":"<<f1[i].x<<" ";
     cout<<endl;*/
   
-  bool shift = 0;
-  for(size_t i = 0; i < ec.indices.size(); i++) {
-    if(shift) 
-      ec.indices[i-1] = ec.indices[i];
-    if(ec.indices[i] == in.n2) shift = 1;
+  // remove 2nd namespace
+  int n2_i = -1;
+  for (size_t i = 0; i < ec.indices.size(); i++) {
+	  if (ec.indices[i] == in.n2) {
+		  n2_i = (int)i;
+		  memmove(&ec.indices[n2_i], &ec.indices[n2_i+1], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));
+		  ec.indices.decr();
+		  break;
+	  } 
   }
-  ec.indices.decr();
-  
+  assert(n2_i >= 0);
 
   base.predict(ec);
   if(is_learn)
     base.learn(ec);
   
-  ec.indices.push_back(in.n2);
+  // re-insert namespace into the right position
+  ec.indices.incr();
+  memmove(&ec.indices[n2_i + 1], &ec.indices[n2_i], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));
+  ec.indices[n2_i] = in.n2;
+
   ec.atomics[in.n1].erase();
   push_many(ec.atomics[in.n1], in.feat_store.begin, in.feat_store.size());  
   ec.total_sum_feat_sq = in.total_sum_feat_sq;
   ec.sum_feat_sq[in.n1] = in.n1_feat_sq;
   ec.num_features = in.num_features;
-  
 }
 
 void finish(interact& in) {in.feat_store.delete_v();}
