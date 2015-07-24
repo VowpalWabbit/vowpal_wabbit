@@ -1221,6 +1221,9 @@ static void Sample_Without_Replacement(u32* actions, vector<float>& probs, u32 s
         }
     }
 
+    unique_ptr<bool> exists_ptr(new bool[size + 1]());
+    bool* exists = exists_ptr.get();
+
     // sample without replacement
     u32 running_index = 0;
     u32 running_action = 0;
@@ -1237,18 +1240,8 @@ static void Sample_Without_Replacement(u32* actions, vector<float>& probs, u32 s
             {
                 running_action = (u32)(i + 1);
 
-                // TODO: make this more efficient
                 // check for duplicate
-                bool exists = false;
-                for (u32 j = 0; j <= running_index; j++)
-                {
-                    if (actions[j] == running_action)
-                    {
-                        exists = true;
-                        break;
-                    }
-                }
-                if (exists)
+                if (exists[running_action])
                 {
                     continue;
                 }
@@ -1259,6 +1252,7 @@ static void Sample_Without_Replacement(u32* actions, vector<float>& probs, u32 s
                     top_action_probability = probs[i];
                 }
                 actions[running_index++] = running_action;
+                exists[running_action] = true;
                 break;
             }
         }
