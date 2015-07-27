@@ -80,7 +80,7 @@ namespace MultiWorldTesting.MultiAction
         {
             ulong seed = MurMurHash3.ComputeIdHash(uniqueKey);
 
-            DecisionTuple decisionTuple = explorer.Choose_Action(seed + this.appId, context);
+            DecisionTuple decisionTuple = explorer.ChooseAction(seed + this.appId, context);
 
             if (decisionTuple.ShouldRecord)
             {
