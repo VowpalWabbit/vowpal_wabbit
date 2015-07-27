@@ -49,6 +49,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="MultiActionTest.cs" />
     <Compile Include="MWTExploreTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

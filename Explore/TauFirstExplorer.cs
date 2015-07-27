@@ -111,7 +111,7 @@ namespace MultiWorldTesting.MultiAction
         private uint tau;
         private bool explore;
         private readonly uint numActions;
-        private readonly object lockObject;
+        private readonly object lockObject = new object();
 
         /// <summary>
         /// The constructor is the only public member, because this should be used with the MwtExplorer.

@@ -228,6 +228,8 @@ namespace MultiWorldTesting.MultiAction
             }
             else
             {
+                // avoid linq to optimize perf
+                chosenActions = new uint[numActions];
                 for (i = 0; i < numActions; i++)
                 {
                     chosenActions[i] = (uint)(i + 1);

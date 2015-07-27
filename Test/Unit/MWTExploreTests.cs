@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TestCommon;
 
-namespace ExploreTests
+namespace ExploreTests.SingleAction
 {
     [TestClass]
     public class MWTExploreTests
