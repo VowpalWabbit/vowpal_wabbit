@@ -166,7 +166,7 @@ public class VWTest {
         // that the Java layer could do something about
         thrown.expect(Exception.class);
         thrown.expectMessage("bad model format!");
-        VW vw = new VW("--quiet -i src/test/resources/vw_7.8.model");
+        VW vw = new VW("--quiet -i src/test/resources/vw_bad.model");
         vw.close();
     }
 
