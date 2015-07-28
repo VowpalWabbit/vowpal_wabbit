@@ -152,13 +152,21 @@ public class VWTest {
     }
 
     @Test
+    public void testOldModel() {
+        thrown.expect(Exception.class);
+        thrown.expectMessage("bad model format!");
+        VW vw = new VW("--quiet -i src/test/resources/vw_7.8.model");
+        vw.close();
+    }
+
+    @Test
     @Ignore
     public void testBadModel() {
         // Right now VW seg faults on a bad model.  Ideally we should throw an exception
         // that the Java layer could do something about
         thrown.expect(Exception.class);
-        thrown.expectMessage("bad VW model");
-        VW vw = new VW("--quiet -i src/test/resources/vw_bad.model");
+        thrown.expectMessage("bad model format!");
+        VW vw = new VW("--quiet -i src/test/resources/vw_7.8.model");
         vw.close();
     }
 
