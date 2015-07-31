@@ -9,7 +9,7 @@
 namespace VW.Serializer.Interfaces
 {
     /// <summary>
-    /// Intermediate representation of a property annotated as <see cref="Microsoft.Research.MachineLearning.Serializer.Attributes.FeatureAttribute"/>.
+    /// Intermediate representation of a property annotated as <see cref="VW.Serializer.Attributes.FeatureAttribute"/>.
     /// </summary>
     public interface IFeature
     {

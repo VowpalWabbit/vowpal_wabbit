@@ -48,7 +48,7 @@ namespace VW
         /// </summary>
         /// <param name="factory">
         /// An optional factory to create pooled objects on demand. 
-        /// <see cref="ObjectPool{T}.get"/> will throw if the factory is still null when called.
+        /// <see cref="Get()"/> will throw if the factory is still null when called.
         /// </param>
         public ObjectPool(IObjectFactory<T> factory = null)
         {
@@ -188,6 +188,9 @@ namespace VW
             pooledObject.Value.Dispose();
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             this.Dispose(true);

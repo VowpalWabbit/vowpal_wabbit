@@ -161,7 +161,7 @@ void parse_dictionary_argument(vw&all, string str) {
 
   size_t def = (size_t)' ';
 
-  int size = 2048, pos, nread;
+  size_t size = 2048, pos, nread;
   char rc;
   char*buffer = calloc_or_die<char>(size);
   do {

@@ -18,6 +18,6 @@ namespace VW.Serializer.Interfaces
         /// <summary>
         /// The list of features.
         /// </summary>
-        IFeature<IEnumerable<T>> DenseFeature { get; }
+        IFeature<IReadOnlyCollection<T>> DenseFeature { get; }
     }
 }

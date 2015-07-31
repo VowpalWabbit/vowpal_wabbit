@@ -11,16 +11,25 @@ license as described in the file LICENSE.
 #include "parse_regressor.h"
 #include "parse_args.h"
 #include "vw_exception.h"
+#include "hash.h"
+
+using namespace System;
+using namespace System::Text;
 
 namespace VW
 {
 	VowpalWabbitBase::VowpalWabbitBase(vw* vw)
 		: m_vw(vw)
 	{
-        m_examples = nullptr;
+		m_examples = nullptr;
+
+		if (m_vw != nullptr)
+		{
+			m_hasher = GetHasher();
+		}
 	}
 
-	VowpalWabbitBase::VowpalWabbitBase(System::String^ args)
+	VowpalWabbitBase::VowpalWabbitBase(String^ args)
         : VowpalWabbitBase((vw*)nullptr)
 	{
 		try
@@ -28,11 +37,13 @@ namespace VW
 			auto string = msclr::interop::marshal_as<std::string>(args);
 			m_vw = VW::initialize(string);
 			initialize_parser_datastructures(*m_vw);
+
+			m_hasher = GetHasher();
 		}
 		CATCHRETHROW
 	}
 
-	VowpalWabbitBase::VowpalWabbitBase(System::String^ args, System::IO::Stream^ stream)
+	VowpalWabbitBase::VowpalWabbitBase(String^ args, System::IO::Stream^ stream)
         : VowpalWabbitBase((vw*)nullptr)
 	{
 		clr_io_buf model(stream);
@@ -51,6 +62,8 @@ namespace VW
 			initialize_parser_datastructures(all);
 
 			m_vw = &all;
+
+			m_hasher = GetHasher();
 		}
 		CATCHRETHROW
 		finally
@@ -168,15 +181,16 @@ namespace VW
         this->SaveModel(gcnew String(name.c_str()));
 	}
 
-	void VowpalWabbitBase::SaveModel(System::String^ filename)
+	void VowpalWabbitBase::SaveModel(String^ filename)
 	{
-		if (System::String::IsNullOrEmpty(filename))
+		if (String::IsNullOrEmpty(filename))
 		{
 			return;
 		}
 
-        System::String^ directoryName = System::IO::Path::GetDirectoryName(filename);
-        if (!System::String::IsNullOrEmpty(directoryName))
+        String^ directoryName = System::IO::Path::GetDirectoryName(filename);
+
+        if (!String::IsNullOrEmpty(directoryName))
         {
             System::IO::Directory::CreateDirectory(directoryName);
         }
@@ -230,5 +244,165 @@ namespace VW
 		stats->TotalNumberOfFeatures = m_vw->sd->total_features;
 
 		return stats;
+	}
+
+
+	/// <summary>
+	/// Hashes the given value <paramref name="s"/>.
+	/// </summary>
+	/// <param name="s">String to be hashed.</param>
+	/// <param name="u">Hash offset.</param>
+	/// <returns>The resulting hash code.</returns>
+	size_t hashall(String^ s, unsigned long u)
+	{
+		// get raw bytes from string
+		auto keys = Encoding::UTF8->GetBytes(s);
+
+		uint32_t h1 = u;
+		uint32_t k1 = 0;
+
+		const uint32_t c1 = 0xcc9e2d51;
+		const uint32_t c2 = 0x1b873593;
+
+		int length = keys->Length;
+		int i = 0;
+		while (i <= length - 4)
+		{
+			// convert byte array to integer
+			k1 = (uint32_t)(keys[i] | keys[i + 1] << 8 | keys[i + 2] << 16 | keys[i + 3] << 24);
+
+			k1 *= c1;
+			k1 = ROTL32(k1, 15);
+			k1 *= c2;
+
+			h1 ^= k1;
+			h1 = ROTL32(h1, 13);
+			h1 = h1 * 5 + 0xe6546b64;
+
+			i += 4;
+		}
+
+		k1 = 0;
+		int tail = length - length % 4;
+		switch (length & 3)
+		{
+		case 3:
+			k1 ^= (uint32_t)(keys[tail + 2] << 16);
+		case 2:
+			k1 ^= (uint32_t)(keys[tail + 1] << 8);
+		case 1:
+			k1 ^= (uint32_t)(keys[tail]);
+			k1 *= c1;
+			k1 = ROTL32(k1, 15);
+			k1 *= c2;
+			h1 ^= k1;
+			break;
+		}
+
+		// finalization
+		h1 ^= (uint32_t)length;
+
+		return MURMUR_HASH_3::fmix(h1);
+	}
+
+	/// <summary>
+	/// Hashes the given value <paramref name="s"/>.
+	/// </summary>
+	/// <param name="s">String to be hashed.</param>
+	/// <param name="u">Hash offset.</param>
+	/// <returns>The resulting hash code.</returns>
+	size_t hashstring(String^ s, unsigned long u)
+	{
+		s = s->Trim();
+
+		int sInt = 0;
+		if (int::TryParse(s, sInt))
+		{
+			return sInt + u;
+		}
+		else
+		{
+			return hashall(s, u);
+		}
+	}
+
+	Func<String^, unsigned long, size_t>^ VowpalWabbitBase::GetHasher()
+	{
+		//feature manipulation
+		string hash_function("strings");
+		if (m_vw->vm.count("hash"))
+		{
+			hash_function = m_vw->vm["hash"].as<string>();
+		}
+
+		if (hash_function == "strings")
+		{
+			return gcnew Func<String^, unsigned long, size_t>(&hashstring);
+		}
+		else if (hash_function == "all")
+		{
+			return gcnew Func<String^, unsigned long, size_t>(&hashall);
+
+		}
+		else
+		{
+			THROW("Unsupported hash function: " << hash_function);
+		}
+	}
+
+	uint32_t VowpalWabbitBase::HashSpace(String^ s)
+	{
+		auto newHash = m_hasher(s, hash_base);
+
+#ifdef DEBUG
+		auto oldHash = HashSpaceNative(s);
+		assert(newHash == oldHash);
+#endif
+
+		return (uint32_t)newHash;
+	}
+
+	uint32_t VowpalWabbitBase::HashFeature(String^ s, unsigned long u)
+	{
+		auto newHash = m_hasher(s, u) & m_vw->parse_mask;
+
+#ifdef DEBUG
+		auto oldHash = HashFeatureNative(s, u);
+		assert(newHash == oldHash);
+#endif
+
+		return (uint32_t)newHash;
+	}
+
+	uint32_t VowpalWabbitBase::HashSpaceNative(String^ s)
+	{
+		auto bytes = System::Text::Encoding::UTF8->GetBytes(s);
+		auto handle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
+
+		try
+		{
+			return VW::hash_space(*m_vw, reinterpret_cast<char*>(handle.AddrOfPinnedObject().ToPointer()));
+		}
+		CATCHRETHROW
+			finally
+		{
+			handle.Free();
+		}
+	}
+
+	uint32_t VowpalWabbitBase::HashFeatureNative(String^ s, unsigned long u)
+	{
+		auto bytes = System::Text::Encoding::UTF8->GetBytes(s);
+		auto handle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
+
+		try
+		{
+			return VW::hash_feature(*m_vw, reinterpret_cast<char*>(handle.AddrOfPinnedObject().ToPointer()), u);
+		}
+		CATCHRETHROW
+			finally
+		{
+			handle.Free();
+		}
 	}
 }

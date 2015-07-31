@@ -55,7 +55,7 @@ namespace VW
 		return ret;
 	}
 
-	void VowpalWabbitExampleBuilder::Label::set(System::String^ value)
+	void VowpalWabbitExampleBuilder::Label::set(String^ value)
 	{
 		if (value == nullptr)
 			return;
@@ -74,7 +74,13 @@ namespace VW
 		}
 	}
 
-	VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(System::Byte featureGroup)
+
+	VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(Char featureGroup)
+	{
+		return AddNamespace((Byte)featureGroup);
+	}
+
+	VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(Byte featureGroup)
 	{
 		uint32_t index = featureGroup;
 		m_example->indices.push_back(index);
@@ -89,7 +95,18 @@ namespace VW
 
 	void VowpalWabbitNamespaceBuilder::AddFeature(uint32_t weight_index, float x)
 	{
+		// filter out 0-values
+		if (x == 0)
+		{
+			return;
+		}
+
 		*m_sum_feat_sq += x * x;
 		m_atomic->push_back({ x, weight_index });
+	}
+
+	void VowpalWabbitNamespaceBuilder::PreAllocate(int size)
+	{
+		m_atomic->resize((m_atomic->end - m_atomic->begin) + size);
 	}
 }

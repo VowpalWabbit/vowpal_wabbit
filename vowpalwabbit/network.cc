@@ -48,11 +48,11 @@ int open_socket(const char* host)
     he = gethostbyname(host);
 
   if (he == nullptr)
-    THROW("gethostbyname(" << host << "): " << strerror(errno));
+    THROWERRNO("gethostbyname(" << host << ")");
 
   int sd = (int)socket(PF_INET, SOCK_STREAM, 0);
   if (sd == -1)
-    THROW("socket: " << strerror(errno));
+    THROWERRNO("socket");
 
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
@@ -60,7 +60,7 @@ int open_socket(const char* host)
   far_end.sin_addr = *(in_addr*)(he->h_addr);
   memset(&far_end.sin_zero, '\0',8);
   if (connect(sd,(sockaddr*)&far_end, sizeof(far_end)) == -1)
-    THROW("connect(" << host << ':' << port << "): " << strerror(errno));
+    THROWERRNO("connect(" << host << ':' << port << ")");
 
   char id = '\0';
   if (
