@@ -27,6 +27,7 @@ namespace VW {
     Call finish() after you are done with the vw instance.  This cleans up memory usage.
    */
   void finish(vw& all, bool delete_all=true);
+  void sync_stats(vw& all);
 
   void start_parser(vw& all, bool do_init = true);
   void end_parser(vw& all);

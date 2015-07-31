@@ -29,7 +29,7 @@ namespace cs_unittest
         [TestMethod]
         public void TestExampleCacheDisabledForLearning()
         {
-            using (var vw = new VowpalWabbit<CachedData>(string.Empty, new VowpalWabbitSerializerSettings
+            using (var vw = new VowpalWabbit<CachedData>(string.Empty, new VowpalWabbitSettings
                 {
                     EnableExampleCaching = false
                 }))
@@ -68,7 +68,7 @@ namespace cs_unittest
                 examples.Add(cachedData);
             }
 
-            using (var vw = new VowpalWabbit<CachedData>("-k -c --passes 10", new VowpalWabbitSerializerSettings
+            using (var vw = new VowpalWabbit<CachedData>("-k -c --passes 10", new VowpalWabbitSettings
             {
                 EnableExampleCaching = false
             }))
@@ -86,8 +86,8 @@ namespace cs_unittest
             }
 
             using (var vwModel = new VowpalWabbitModel("-t", File.OpenRead("model1")))
-            using (var vwCached = new VowpalWabbit<CachedData>(vwModel, new VowpalWabbitSerializerSettings { EnableExampleCaching = true, MaxExampleCacheSize = 5 }))
-            using (var vw = new VowpalWabbit<CachedData>(vwModel, new VowpalWabbitSerializerSettings { EnableExampleCaching = false }))
+            using (var vwCached = new VowpalWabbit<CachedData>(vwModel, new VowpalWabbitSettings { EnableExampleCaching = true, MaxExampleCacheSize = 5 }))
+            using (var vw = new VowpalWabbit<CachedData>(vwModel, new VowpalWabbitSettings { EnableExampleCaching = false }))
             {
                 foreach (var example in examples)
                 {

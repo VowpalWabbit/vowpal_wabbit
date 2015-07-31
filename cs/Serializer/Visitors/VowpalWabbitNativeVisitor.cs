@@ -11,6 +11,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using VW.Interfaces;
 using VW.Serializer.Interfaces;
 
 namespace VW.Serializer.Visitors
@@ -19,12 +20,12 @@ namespace VW.Serializer.Visitors
     /// <summary>
     /// Front-end to serialize data into Vowpal Wabbit native C++ structures.
     /// </summary>
-    public sealed partial class VowpalWabbitInterfaceVisitor : IVowpalWabbitVisitor<VowpalWabbitExample>
+    public sealed partial class VowpalWabbitInterfaceVisitor //: IVowpalWabbitVisitor<VowpalWabbitExample>
     {
         /// <summary>
         /// The Vowpal Wabbit instance all examples are associated with.
         /// </summary>
-        private readonly VowpalWabbit vw;
+        private VowpalWabbitNative vw;
 
         /// <summary>
         /// Performance improvement. Calculated hash once per namespace.
@@ -41,7 +42,7 @@ namespace VW.Serializer.Visitors
         /// Initializes a new <see cref="VowpalWabbitInterfaceVisitor"/> instance.
         /// </summary>
         /// <param name="vw">The associated vowpal wabbit instance.</param>
-        public VowpalWabbitInterfaceVisitor(VowpalWabbit vw)
+        public VowpalWabbitInterfaceVisitor(VowpalWabbitNative vw)
         {
             this.vw = vw;
         }
@@ -184,11 +185,11 @@ namespace VW.Serializer.Visitors
         /// <param name="label">The label.</param>
         /// <param name="namespaces">The namespaces.</param>
         /// <returns>The populated vowpal wabbit example.</returns>
-        public VowpalWabbitExample Visit(string label, IVisitableNamespace[] namespaces)
+        public VowpalWabbitExample Visit(ILabel label, IVisitableNamespace[] namespaces)
         {
             using (this.builder = new VowpalWabbitExampleBuilder(this.vw))
             {
-                this.builder.Label = label;
+                this.builder.Label = label.ToVowpalWabbitFormat();
 
                 foreach (var n in namespaces)
                 {

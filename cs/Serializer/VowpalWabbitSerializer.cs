@@ -10,7 +10,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using VW.Interfaces;
 using VW.Serializer.Attributes;
+using VW.Serializer.Visitors;
 
 namespace VW.Serializer
 {
@@ -20,13 +22,13 @@ namespace VW.Serializer
     /// <typeparam name="TExample">The source example type.</typeparam>
     public sealed class VowpalWabbitSerializer<TExample> : IDisposable
     {
-        private readonly VowpalWabbitSerializerSettings settings;
+        private readonly VowpalWabbitSettings settings;
 
-        private readonly Func<TExample, IVowpalWabbitExample> serializer;
+        private readonly Func<VowpalWabbitNative, TExample, ILabel, IVowpalWabbitExample> serializer;
 
         private Dictionary<TExample, VowpalWabbitCachedExample<TExample>> exampleCache;
 
-        internal VowpalWabbitSerializer(Func<TExample, IVowpalWabbitExample> serializer, VowpalWabbitSerializerSettings settings)
+        internal VowpalWabbitSerializer(Func<VowpalWabbitNative, TExample, ILabel, IVowpalWabbitExample> serializer, VowpalWabbitSettings settings)
         {
             if (serializer == null)
             {
@@ -34,7 +36,7 @@ namespace VW.Serializer
             }
 
             this.serializer = serializer;
-            this.settings = settings ?? new VowpalWabbitSerializerSettings();
+            this.settings = settings ?? new VowpalWabbitSettings();
 
             var cacheableAttribute = (CacheableAttribute) typeof (TExample).GetCustomAttributes(typeof (CacheableAttribute), true).FirstOrDefault();
             if (cacheableAttribute == null)
@@ -72,11 +74,11 @@ namespace VW.Serializer
         /// <param name="example">The example to serialize.</param>
         /// <returns>The serialized example.</returns>
         /// <remarks>If TExample is annotated using the Cachable attribute, examples are returned from cache.</remarks>
-        public IVowpalWabbitExample Serialize(TExample example)
+        public IVowpalWabbitExample Serialize(VowpalWabbitNative vw, TExample example, ILabel label = null)
         {
-            if (this.exampleCache == null)
+            if (this.exampleCache == null || label != null)
             {
-                return this.serializer(example);
+                return this.serializer(vw, example, label);
             }
 
             VowpalWabbitCachedExample<TExample> result;
@@ -86,9 +88,11 @@ namespace VW.Serializer
             }
             else
             {
-                result = new VowpalWabbitCachedExample<TExample>(this, this.serializer(example));
+                result = new VowpalWabbitCachedExample<TExample>(this, this.serializer(example, label));
                 this.exampleCache.Add(example, result);
             }
+
+            // TODO: support Label != null here and update cached example using new label
 
             return result;
         }

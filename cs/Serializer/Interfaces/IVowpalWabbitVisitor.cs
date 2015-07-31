@@ -6,6 +6,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+using VW.Interfaces;
 namespace VW.Serializer.Interfaces
 {
     /// <summary>
@@ -20,7 +21,7 @@ namespace VW.Serializer.Interfaces
         /// <param name="label">The Vowpal Wabbit label serialized in the string format.</param>
         /// <param name="namespaces">All discovered namespaces.</param>
         /// <returns>The resulting example representation.</returns>
-        TResultExample Visit(string label, IVisitableNamespace[] namespaces);
+        TResultExample Visit(ILabel label, IVisitableNamespace[] namespaces);
 
         /// <summary>
         /// Invoked for each namespace.

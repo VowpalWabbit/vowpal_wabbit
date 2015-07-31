@@ -226,6 +226,9 @@
     <IntDir>$(SolutionDir)$(PlatformShortName)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemGroup>
+    <ClCompile Include="allreduce_threads.cc">
+      <FileType>CppHeader</FileType>
+    </ClCompile>
     <ClInclude Include="autolink.h" />
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="active.h" />
@@ -299,7 +302,7 @@
     <ClCompile Include="autolink.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="active.cc" />
-    <ClCompile Include="allreduce.cc" />
+    <ClCompile Include="allreduce_sockets.cc" />
     <ClCompile Include="binary.cc" />
     <ClCompile Include="bfgs.cc" />
     <ClCompile Include="cache.cc" />

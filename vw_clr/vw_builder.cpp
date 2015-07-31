@@ -4,16 +4,15 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
 */
 
-#include "vw_clr.h"
-#include "vw.h"
+#include "vw_builder.h"
 #include "parser.h"
 
 namespace VW
 {
-	VowpalWabbitExampleBuilder::VowpalWabbitExampleBuilder(VowpalWabbitBase^ vw) :
-		m_vw(vw->m_vw), m_example(nullptr), m_clrExample(nullptr)
+	VowpalWabbitExampleBuilder::VowpalWabbitExampleBuilder(IVowpalWabbitNative^ vw) :
+		m_vw(vw->Underlying->m_vw), m_example(nullptr), m_clrExample(nullptr)
 	{
-        m_example = vw->GetOrCreateNativeExample();
+		m_example = vw->Underlying->GetOrCreateNativeExample();
 		m_vw->p->lp.default_label(&m_example->l);
 		m_clrExample = gcnew VowpalWabbitExample(vw, m_example);
 	}

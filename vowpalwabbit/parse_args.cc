@@ -56,6 +56,8 @@ license as described in the file LICENSE.
 #include "best_constant.h"
 #include "interact.h"
 #include "vw_exception.h"
+#include "accumulate.h"
+#include "allreduce.h"
 
 using namespace std;
 //
@@ -1042,11 +1044,22 @@ vw& parse_args(int argc, char *argv[])
   add_options(all);
 
   new_options(all, "Parallelization options")
-    ("span_server", po::value<string>(&(all.span_server)), "Location of server for setting up spanning tree")
-		("unique_id", po::value<size_t>(&(all.unique_id)), "unique id used for cluster parallel jobs")
-		("total", po::value<size_t>(&(all.total)), "total number of nodes used in cluster parallel job")
-		("node", po::value<size_t>(&(all.node)), "node number in cluster parallel job");
+    ("span_server", po::value<string>(), "Location of server for setting up spanning tree")
+    ("threads", "Enable multi-threading")
+		("unique_id", po::value<size_t>()->default_value(0), "unique id used for cluster parallel jobs")
+		("total", po::value<size_t>()->default_value(1), "total number of nodes used in cluster parallel job")
+		("node", po::value<size_t>()->default_value(0), "node number in cluster parallel job");
   add_options(all);
+
+  po::variables_map& vm = all.vm;
+  if (vm.count("span_server")) {
+	  all.all_reduce_type = AllReduceType::Socket;
+	  all.all_reduce = new AllReduceSockets(
+		  vm["span_server"].as<string>(),
+		  vm["unique_id"].as<size_t>(),
+		  vm["total"].as<size_t>(),
+		  vm["node"].as<size_t>());
+  }
 
   msrand48(all.random_seed);
   parse_diagnostics(all, argc);
@@ -1257,6 +1270,24 @@ namespace VW {
     delete A;
   }
   
+  void sync_stats(vw& all)
+  {
+	  if (all.all_reduce != nullptr) {
+		  float loss = (float)all.sd->sum_loss;
+		  all.sd->sum_loss = (double)accumulate_scalar(all, loss);
+		  float weighted_examples = (float)all.sd->weighted_examples;
+		  all.sd->weighted_examples = (double)accumulate_scalar(all, weighted_examples);
+		  float weighted_labels = (float)all.sd->weighted_labels;
+		  all.sd->weighted_labels = (double)accumulate_scalar(all, weighted_labels);
+		  float weighted_unlabeled_examples = (float)all.sd->weighted_unlabeled_examples;
+		  all.sd->weighted_unlabeled_examples = (double)accumulate_scalar(all, weighted_unlabeled_examples);
+		  float example_number = (float)all.sd->example_number;
+		  all.sd->example_number = (uint64_t)accumulate_scalar(all, example_number);
+		  float total_features = (float)all.sd->total_features;
+		  all.sd->total_features = (uint64_t)accumulate_scalar(all, total_features);
+	  }
+  }
+
   void finish(vw& all, bool delete_all)
   {
     if (!all.quiet)
@@ -1331,6 +1362,8 @@ namespace VW {
       delete all.read_dictionaries[i].dict;
     }
     delete all.loss;
+
+	delete all.all_reduce;
 
     // destroy all interactions and array of them
     for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i) i->delete_v();

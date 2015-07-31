@@ -157,18 +157,28 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="clr_io.h" />
+    <ClInclude Include="vw_interface.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="vowpalwabbit.h" />
+    <ClInclude Include="vw_base.h" />
+    <ClInclude Include="vw_builder.h" />
     <ClInclude Include="vw_clr.h" />
+    <ClInclude Include="vw_example.h" />
+    <ClInclude Include="vw_model.h" />
+    <ClInclude Include="vw_prediction.h" />
+    <ClInclude Include="vw_settings.h" />
+    <ClInclude Include="vw_threaded.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="clr_io.cpp" />
     <ClCompile Include="vw_base.cpp" />
-    <ClCompile Include="vw.cpp" />
+    <ClCompile Include="vowpalwabbit.cpp" />
     <ClCompile Include="vw_example.cpp" />
-    <ClCompile Include="vw_examplebuilder.cpp" />
+    <ClCompile Include="vw_builder.cpp" />
     <ClCompile Include="vw_exception.cpp" />
     <ClCompile Include="vw_model.cpp" />
     <ClCompile Include="vw_prediction.cpp" />
+    <ClCompile Include="vw_threaded.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\vowpalwabbit\vw_static.vcxproj">

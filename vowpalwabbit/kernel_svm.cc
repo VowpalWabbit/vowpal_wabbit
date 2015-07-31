@@ -24,6 +24,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 #include <map>
 #include "memory.h"
+#include "allreduce.h"
 
 #define SVM_KER_LIN 0
 #define SVM_KER_RBF 1
@@ -547,14 +548,14 @@ struct svm_params {
       
     }
 
-    size_t* sizes = calloc_or_die<size_t>(all.total);
-    sizes[all.node] = b->space.end - b->space.begin;
+    size_t* sizes = calloc_or_die<size_t>(all.all_reduce->total);
+    sizes[all.all_reduce->node] = b->space.end - b->space.begin;
     //cerr<<"Sizes = "<<sizes[all.node]<<" ";
-    all_reduce<size_t, add_size_t>(sizes, all.total, all.span_server, all.unique_id, all.total, all.node, all.socks);
+    all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
 
     size_t prev_sum = 0, total_sum = 0;
-    for(size_t i = 0;i < all.total;i++) {
-      if(i <= (all.node - 1))
+    for(size_t i = 0;i < all.all_reduce->total;i++) {
+      if(i <= (all.all_reduce->node - 1))
 	prev_sum += sizes[i];
       total_sum += sizes[i];
     }
@@ -564,7 +565,7 @@ struct svm_params {
       queries = calloc_or_die<char>(total_sum);
       memcpy(queries + prev_sum, b->space.begin, b->space.end - b->space.begin);
       b->space.delete_v();
-      all_reduce<char, copy_char>(queries, total_sum, all.span_server, all.unique_id, all.total, all.node, all.socks);
+      all_reduce<char, copy_char>(all, queries, total_sum);
 
       b->space.begin = queries;
       b->space.end = b->space.begin;
@@ -592,7 +593,7 @@ struct svm_params {
 	num_read += b->space.end - b->space.begin;
 	if(num_read == prev_sum)
 	  params.local_begin = i+1;
-	if(num_read == prev_sum + sizes[all.node])
+	if(num_read == prev_sum + sizes[all.all_reduce->node])
 	  params.local_end = i;	
       }
     }
@@ -840,7 +841,7 @@ LEARNER::base_learner* kernel_svm_setup(vw &all) {
   if(vm.count("subsample"))
     params.subsample = vm["subsample"].as<std::size_t>();
   else if(params.para_active)
-    params.subsample = (size_t)ceil(params.pool_size / all.total);
+    params.subsample = (size_t)ceil(params.pool_size / all.all_reduce->total);
   else
     params.subsample = 1;
   

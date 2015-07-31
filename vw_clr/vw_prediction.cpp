@@ -4,7 +4,9 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
 */
 
-#include "vw_clr.h"
+#include "vw_prediction.h"
+#include "vw_example.h"
+#include "vw_base.h"
 
 namespace VW
 {

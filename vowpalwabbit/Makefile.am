@@ -1,6 +1,6 @@
 lib_LTLIBRARIES = liballreduce.la libvw.la libvw_c_wrapper.la
 
-liballreduce_la_SOURCES = allreduce.cc
+liballreduce_la_SOURCES = allreduce_sockets.cc allreduce_threads.cc
 
 bin_PROGRAMS = vw active_interactor
 

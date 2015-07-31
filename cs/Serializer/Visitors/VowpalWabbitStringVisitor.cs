@@ -11,121 +11,150 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using VW.Interfaces;
 using VW.Serializer.Interfaces;
 
 namespace VW.Serializer.Visitors
 {
-    ///// <summary>
-    ///// Front-end to serialize data into Vowpal Wabbit string format.
-    ///// </summary>
-    ////public sealed class VowpalWabbitStringVisitor : IVowpalWabbitVisitor<string, string, string>
-    ////{
-    ////    private string VisitNamespace(INamespace @namespace)
-    ////    {
-    ////        return string.Format(
-    ////            CultureInfo.InvariantCulture,
-    ////            "|{0}{1}",
-    ////            @namespace.FeatureGroup,
-    ////            @namespace.Name);
-    ////    }
+    /// <summary>
+    /// Front-end to serialize data into Vowpal Wabbit string format.
+    /// </summary>
+    public sealed class VowpalWabbitStringVisitor // : IVowpalWabbitVisitor<string>
+    {
+        private StringBuilder builder;
 
-    ////    public string Visit<T>(INamespaceDense<T> namespaceDense)
-    ////    {
-    ////        return string.Format(
-    ////            CultureInfo.InvariantCulture,
-    ////            "{0} {1}",
-    ////            this.VisitNamespace(namespaceDense),
-    ////            string.Join(" ", namespaceDense.DenseFeature.Value.Select(v => ":" + v)));
-    ////    }
+        public void Visit<T>(INamespaceDense<T> namespaceDense)
+        {
+            this.builder.AppendFormat(
+                CultureInfo.InvariantCulture,
+                " |{0}{1}",
+                namespaceDense.FeatureGroup,
+                namespaceDense.Name);
 
+            var i = 0;
+            foreach (var value in namespaceDense.DenseFeature.Value)
+            {
+                this.builder.AppendFormat(
+                    CultureInfo.InvariantCulture,
+                    " {0}:{1}",
+                    i,
+                    value);
 
-    ////    public string Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature)
-    ////    {
-    ////        return this.Visit(feature, key => Convert.ToString(key));
-    ////    }
+                i++;
+            }
+        }
 
-    ////    private string Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature, Func<TKey, string> keyMapper)
-    ////    {
-    ////        return string.Join(" ",
-    ////            feature.Value.Select(kvp => string.Format(
-    ////                CultureInfo.InvariantCulture,
-    ////                "{0}:{1}",
-    ////                keyMapper(kvp.Key),
-    ////                kvp.Value)));
-    ////    }
+        public void Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature)
+        {
+            this.Visit(feature, key => Convert.ToString(key));
+        }
 
-    ////    public string Visit(IFeature<string> feature)
-    ////    {
-    ////        return this.Visit<string>(feature);
-    ////    }
+        private void Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature, Func<TKey, string> keyMapper)
+        {
+            var first = true;
+            foreach (var kvp in feature.Value)
+            {
+                if (!first)
+                {
+                    this.builder.Append(" ");
+                    first = false;
+                }
+                this.builder.AppendFormat(
+                    CultureInfo.InvariantCulture,
+                    " {0}:{1}",
+                    keyMapper(kvp.Key),
+                    kvp.Value);
+            }
+        }
 
-    ////    public string Visit<TValue>(IFeature<IEnumerable<TValue>> feature)
-    ////    {
-    ////        return string.Join(" ", 
-    ////            feature.Value.Select((value, i) =>
-    ////                string.Format(
-    ////                    CultureInfo.InvariantCulture,
-    ////                    "{0}:{1}",
-    ////                    i,
-    ////                    value)));
-    ////    }
+        public void Visit<TValue>(IFeature<IEnumerable<TValue>> feature)
+        {
+            var i = 0;
+            foreach (var value in feature.Value)
+            {
+                if (i > 0)
+                {
+                    this.builder.Append(" ");
+                }
+                this.builder.AppendFormat(
+                    CultureInfo.InvariantCulture,
+                    " {0}:{1}",
+                    i,
+                    value);
 
-    ////    public string VisitEnumerize<T>(IFeature<T> feature)
-    ////    {
-    ////        return string.Format(
-    ////            CultureInfo.InvariantCulture,
-    ////            "{0}_{1}",
-    ////            feature.Name,
-    ////            feature.Value);
-    ////    }
+                i++;
+            }
+        }
 
-    ////    public string Visit<T>(IFeature<T> feature)
-    ////    {
-    ////        // can't specify constraints to narrow for enums
-    ////        var valueType = typeof(T);
-    ////        if (valueType.IsEnum)
-    ////        {
-    ////            return string.Format(
-    ////                CultureInfo.InvariantCulture, 
-    ////                "{0}_{1}", 
-    ////                feature.Name, 
-    ////                Enum.GetName(valueType, feature.Value));
-    ////        }
+        public void VisitEnumerize<T>(IFeature<T> feature)
+        {
+            this.builder.AppendFormat(
+                CultureInfo.InvariantCulture,
+                " {0}_{1}",
+                feature.Name,
+                feature.Value);
+        }
 
-    ////        return string.Format(
-    ////            CultureInfo.InvariantCulture, 
-    ////            "{0}:{1}", 
-    ////            feature.Name, 
-    ////            feature.Value);
-    ////    }
+        public void Visit<T>(IFeature<T> feature)
+        {
+            // can't specify constraints to narrow for enums
+            var valueType = typeof(T);
+            if (valueType.IsEnum)
+            {
+                this.builder.AppendFormat(
+                    CultureInfo.InvariantCulture,
+                    " {0}{1}",
+                    feature.Name,
+                    Enum.GetName(valueType, feature.Value));
+            }
+            else if (VowpalWabbitSerializerFactory.IsValidDenseFeatureValueElementType(typeof(T)))
+            {
+                this.builder.AppendFormat(
+                    CultureInfo.InvariantCulture,
+                    " {0}:{1}",
+                    feature.Name,
+                    feature.Value);
+            }
+            else
+            {
+                this.builder.AppendFormat(
+                  CultureInfo.InvariantCulture,
+                  " {0}{1}",
+                  feature.Name,
+                  feature.Value);
+            }
+        }
 
-    ////    public string Visit(INamespaceSparse<string> namespaceSparse)
-    ////    {
-    ////        var featureResults = from feature in namespaceSparse.Features
-    ////                             let result = feature.Visit()
-    ////                             where result != null
-    ////                             select result;
+        public void Visit(INamespaceSparse namespaceSparse)
+        {
+            this.builder.AppendFormat(
+                CultureInfo.InvariantCulture,
+                " |{0}{1}",
+                namespaceSparse.FeatureGroup,
+                namespaceSparse.Name);
 
-    ////        return string.Format(
-    ////            CultureInfo.InvariantCulture,
-    ////            "{0} {1}",
-    ////                VisitNamespace(namespaceSparse),
-    ////                string.Join(" ", featureResults));
-    ////    }
+            foreach (var feature in namespaceSparse.Features)
+            {
+                feature.Visit();
+            }
+        }
 
-    ////    public string Visit(string label, IVisitableNamespace<string>[] namespaces)
-    ////    {
-    ////        // see https://github.com/JohnLangford/vowpal_wabbit/wiki/Input-format 
-    ////        // prefix with label
-    ////        var sb = new StringBuilder();
-    ////        if (!string.IsNullOrEmpty(label))
-    ////        {
-    ////            sb.Append(label).Append(' ');
-    ////        }
+        public string Visit(ILabel label, IVisitableNamespace[] namespaces)
+        {
+            // see https://github.com/JohnLangford/vowpal_wabbit/wiki/Input-format 
+            // prefix with label
+            this.builder = new StringBuilder();
+            if (label != null)
+            {
+                builder.Append(label.ToVowpalWabbitFormat());
+            }
 
-    ////        sb.Append(string.Join(" ", namespaces.Select(n => n.Visit())));
+            foreach (var n in namespaces)
+            {
+                n.Visit();
+            }
 
-    ////        return sb.ToString();
-    ////    }
-    ////}
+            return this.builder.ToString();
+        }
+    }
 }

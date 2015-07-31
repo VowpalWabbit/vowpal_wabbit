@@ -136,11 +136,11 @@ namespace GD
     vw& all = *g.all;
     
     sync_weights(all);
-    if(all.span_server != "") {
+    if(all.all_reduce != nullptr) {
       if(all.adaptive)
-	accumulate_weighted_avg(all, all.span_server, all.reg);
+	accumulate_weighted_avg(all, all.reg);
       else 
-        accumulate_avg(all, all.span_server, all.reg, 0);	      
+        accumulate_avg(all, all.reg, 0);	      
     }
     all.eta *= all.eta_decay_rate;
     if (all.save_per_pass)
