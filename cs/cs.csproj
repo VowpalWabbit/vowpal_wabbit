@@ -76,7 +76,6 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
-    <Compile Include="Serializer\Visitors\VowpalWabbitStringVisitor.cs" />
     <Compile Include="Serializer\VowpalWabbitCachedExample.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerFactory.cs" />
