@@ -24,9 +24,6 @@
     <ClInclude Include="clr_io.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vw_threaded.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="vw_base.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -69,9 +66,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vw_exception.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vw_threaded.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vowpalwabbit.cpp">

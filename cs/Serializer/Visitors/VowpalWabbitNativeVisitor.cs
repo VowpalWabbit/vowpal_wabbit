@@ -20,12 +20,12 @@ namespace VW.Serializer.Visitors
     /// <summary>
     /// Front-end to serialize data into Vowpal Wabbit native C++ structures.
     /// </summary>
-    public sealed partial class VowpalWabbitInterfaceVisitor //: IVowpalWabbitVisitor<VowpalWabbitExample>
+    public partial struct VowpalWabbitInterfaceVisitor
     {
         /// <summary>
         /// The Vowpal Wabbit instance all examples are associated with.
         /// </summary>
-        private VowpalWabbitNative vw;
+        private readonly VowpalWabbit vw;
 
         /// <summary>
         /// Performance improvement. Calculated hash once per namespace.
@@ -42,9 +42,13 @@ namespace VW.Serializer.Visitors
         /// Initializes a new <see cref="VowpalWabbitInterfaceVisitor"/> instance.
         /// </summary>
         /// <param name="vw">The associated vowpal wabbit instance.</param>
-        public VowpalWabbitInterfaceVisitor(VowpalWabbitNative vw)
+        public VowpalWabbitInterfaceVisitor(VowpalWabbit vw)
         {
             this.vw = vw;
+            this.builder = null;
+            this.namespaceBuilder = null;
+            this.featureGroup = '\0';
+            this.namespaceHash = 0;
         }
 
         /// <summary>
@@ -189,7 +193,8 @@ namespace VW.Serializer.Visitors
         {
             using (this.builder = new VowpalWabbitExampleBuilder(this.vw))
             {
-                this.builder.Label = label.ToVowpalWabbitFormat();
+                if (label != null)
+                    this.builder.ParseLabel(label.ToVowpalWabbitFormat());
 
                 foreach (var n in namespaces)
                 {

@@ -855,7 +855,7 @@ namespace VW{
   {
     example* ret = get_unused_example(all);
 
-    read_line(all, ret, example_line);
+    VW::read_line(all, ret, example_line);
 	parse_atomic_example(all,ret,false);
     setup_example(all, ret);
     all.p->end_parsed_examples++;

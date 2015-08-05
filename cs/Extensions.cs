@@ -14,17 +14,33 @@ namespace VW
         /// <param name="example">The example used for prediction.</param>
         /// <param name="multiLabelPredictions">The indices used to reshuffle.</param>
         /// <returns>The action dependent features ordered by <paramref name="multiLabelPredictions"/></returns>
-        public static T[] Permutate<T>(this IReadOnlyCollection<T> that, int[] permutation)
+        public static T[] Subset<T>(this IEnumerable<T> that, int[] permutation)
         {
             // re-shuffle
-            var result = new T[that.Length];
-            for (var i = 0; i < that.Length; i++)
-            {
-                // VW multi-label indicies are 0-based
-                result[i] = example.ActionDependentFeatures[permutation[i]];
-            }
+            var result = new T[permutation.Length];
+            var i = 0;
+            foreach (var item in that)
+	        {
+               result[permutation[i]] = item; 
+               i++;
+	        }
 
             return result;
+        }
+
+
+        public static int IndexOf<T>(this IEnumerable<T> that, Predicate<T> predicate)
+        {
+            var i = 0;
+            foreach (var t in that)
+            {
+                if (predicate(t))
+                {
+                    return i;
+                }
+                i++;
+            }
+            return -1;
         }
     }
 }

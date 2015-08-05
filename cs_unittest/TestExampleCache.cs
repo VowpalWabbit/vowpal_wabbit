@@ -13,31 +13,35 @@ namespace cs_unittest
     [TestClass]
     public class TestExampleCacheCases : TestBase
     {
+#if DEBUG
         [TestMethod]
         [ExpectedException(typeof(NotSupportedException))]
         public void TestExampleCacheForLearning()
         {
             using (var vw = new VowpalWabbit<CachedData>(string.Empty))
             {
-                using (var example = vw.ReadExample(new CachedData()))
-                {
-                    example.Learn();
-                }
+                vw.Learn(new CachedData(), new SimpleLabel());
             }
         }
+#else
+        [TestMethod]
+        [ExpectedException(typeof(NullReferenceException))]
+        public void TestExampleCacheForLearning()
+        {
+            using (var vw = new VowpalWabbit<CachedData>(string.Empty))
+            {
+                vw.Learn(new CachedData(), new SimpleLabel());
+            }
+        }
+#endif
 
         [TestMethod]
         public void TestExampleCacheDisabledForLearning()
         {
-            using (var vw = new VowpalWabbit<CachedData>(string.Empty, new VowpalWabbitSettings
-                {
-                    EnableExampleCaching = false
-                }))
+            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(enableExampleCaching: false)))
             {
-                using (var example = vw.ReadExample(new CachedData()))
-                {
-                    example.Learn();
-                }
+                vw.Learn(new CachedData(), new SimpleLabel());
+
             }
         }
 
@@ -68,45 +72,35 @@ namespace cs_unittest
                 examples.Add(cachedData);
             }
 
-            using (var vw = new VowpalWabbit<CachedData>("-k -c --passes 10", new VowpalWabbitSettings
-            {
-                EnableExampleCaching = false
-            }))
+            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings("-k -c --passes 10", enableExampleCaching: false)))
             {
                 foreach (var example in examples)
                 {
-                    using (var vwExample = vw.ReadExample(example))
-                    {
-                        vwExample.Learn();
-                    }
+                    vw.Learn(example, example.Label);
                 }
 
-                vw.RunMultiPass();
-                vw.SaveModel("model1");
+                vw.Native.RunMultiPass();
+                vw.Native.SaveModel("model1");
             }
 
-            using (var vwModel = new VowpalWabbitModel("-t", File.OpenRead("model1")))
-            using (var vwCached = new VowpalWabbit<CachedData>(vwModel, new VowpalWabbitSettings { EnableExampleCaching = true, MaxExampleCacheSize = 5 }))
-            using (var vw = new VowpalWabbit<CachedData>(vwModel, new VowpalWabbitSettings { EnableExampleCaching = false }))
+            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-t", modelStream: File.OpenRead("model1"))))
+            using (var vwCached = new VowpalWabbit<CachedData>(new VowpalWabbitSettings( model: vwModel, enableExampleCaching: true, maxExampleCacheSize: 5 )))
+            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(model: vwModel, enableExampleCaching: false )))
             {
                 foreach (var example in examples)
                 {
-                    using (var vwCachedExample = vwCached.ReadExample(example))
-                    using (var vwExample = vw.ReadExample(example))
-                    {
-                        var cachedPrediction = vwCachedExample.Predict<VowpalWabbitScalarPrediction>();
-                        var prediction = vwExample.Predict<VowpalWabbitScalarPrediction>();
+                    var cachedPrediction = vwCached.Predict(example, VowpalWabbitPredictionType.Scalar);
+                    var prediction = vw.Predict(example, VowpalWabbitPredictionType.Scalar);
 
-                        Assert.AreEqual(prediction.Value, cachedPrediction.Value);
-                        Assert.AreEqual(example.Label.Label, Math.Round(prediction.Value));
-                    }
+                    Assert.AreEqual(prediction, cachedPrediction);
+                    Assert.AreEqual(example.Label.Label, Math.Round(prediction));
                 }
             }
         }
     }
      
     [Cacheable]
-    public class CachedData : IExample
+    public class CachedData 
     {
         [Feature]
         public double Feature { get; set; }
@@ -115,11 +109,6 @@ namespace cs_unittest
         {
             get;
             set;
-        }
-
-        ILabel IExample.Label
-        {
-            get { return this.Label; }
         }
     }
 }

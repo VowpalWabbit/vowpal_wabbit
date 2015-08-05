@@ -51,7 +51,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions.cs" />
-    <Compile Include="Interfaces\IVowpalWabbitManager.cs" />
     <Compile Include="Labels\ContextualBanditLabel.cs" />
     <Compile Include="ObjectFactory.cs" />
     <Compile Include="PooledObject.cs" />
@@ -65,7 +64,6 @@
     <Compile Include="Serializer\Interfaces\INamespaceSparse.cs" />
     <Compile Include="Serializer\Interfaces\IVisitableFeature.cs" />
     <Compile Include="Serializer\Interfaces\IVisitableNamespace.cs" />
-    <Compile Include="Serializer\Interfaces\IVowpalWabbitVisitor.cs" />
     <Compile Include="Serializer\Intermediate\Feature.cs" />
     <Compile Include="Serializer\Intermediate\FeatureExpression.cs" />
     <Compile Include="Serializer\Intermediate\Namespace.cs" />
@@ -81,17 +79,16 @@
       <AutoGen>True</AutoGen>
     </Compile>
     <Compile Include="Serializer\Visitors\VowpalWabbitStringVisitor.cs" />
-    <Compile Include="Serializer\VowpalWabbitCachedExample.cs" />
     <Compile Include="Serializer\VowpalWabbitDebugExample.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerFactory.cs" />
-    <Compile Include="SharedExample.cs" />
+    <Compile Include="Labels\SharedLabel.cs" />
     <Compile Include="Labels\SimpleLabel.cs" />
     <Compile Include="VowpalWabbit.cs" />
     <Compile Include="ObjectPool.cs" />
     <Compile Include="VowpalWabbitAsync.cs" />
-    <Compile Include="VowpalWabbitFactory.cs" />
-    <Compile Include="VowpalWabbitManager.cs" />
+    <Compile Include="VowpalWabbitThreadedPrediction.cs" />
+    <Compile Include="VowpalWabbitThreadedLearning.cs" />
     <Compile Include="VowpalWabbitMultiLine.cs" />
   </ItemGroup>
   <ItemGroup>

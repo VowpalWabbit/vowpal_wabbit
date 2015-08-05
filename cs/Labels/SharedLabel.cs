@@ -8,7 +8,7 @@
 
 using VW.Interfaces;
 
-namespace VW
+namespace VW.Labels
 {
     /// <summary>
     /// Examples used with <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> must inherit from this class.

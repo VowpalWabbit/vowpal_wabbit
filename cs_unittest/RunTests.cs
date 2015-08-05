@@ -103,7 +103,7 @@ namespace cs_unittest
                     var lineNr = 0;
                     // TODO: check for -p predict
                     // TODO: need to check which prediction label it will be
-                    using (var vw = new VowpalWabbit(argsBuilder.ToString()))
+                    using (var vw = new VowpalWabbit(new VowpalWabbitSettings(arguments: argsBuilder.ToString())))
                     {
                         foreach (var dataLine in File.ReadLines(dataFile))
                         {
@@ -114,11 +114,11 @@ namespace cs_unittest
                                 float actualValue;
                                 if (testing)
                                 {
-                                    actualValue = vw.Predict<VowpalWabbitScalarPrediction>(dataLine).Value;
+                                    actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Scalar);
                                 }
                                 else
                                 {
-                                    actualValue = vw.Learn<VowpalWabbitScalarPrediction>(dataLine).Value;
+                                    actualValue = vw.Learn(dataLine, VowpalWabbitPredictionType.Scalar);
                                 }
 
                                 //Assert.AreEqual(

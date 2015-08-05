@@ -45,6 +45,8 @@ namespace VW
 		/// <param name="args">Command line arguments.</param>
 		VowpalWabbitModel(VowpalWabbitSettings^ args);
 
+		VowpalWabbitModel(String^ args);
+
 		/// <summary>
 		/// Cleanup.
 		/// </summary>

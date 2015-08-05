@@ -12,150 +12,256 @@ using System.IO;
 using System.Linq;
 using VW;
 using VW.Interfaces;
+using VW.Labels;
 using VW.Serializer;
 using VW.Serializer.Visitors;
 
 namespace VW
 {
-    ///*
-    //public interface IVowpalWabbitSource
-    //{
-    //    IVowpalWabbitNative Acquire();
-
-    //    void Release(IVowpalWabbitNative vw);
-    //    /*
-    //    VowpalWabbit<TExample> Create<TExample>();
-
-    //    VowpalWabbit<TExample, TActionDependentFeature> Create<TExample, TActionDependentFeature>();
-    //     * */
-    //}
-
-    ///// <summary>
-    ///// A wrapper for Vowpal Wabbit using a native serializer transferring data using the library interface.
-    ///// </summary>
-    ///// <typeparam name="TExample">The user example type.</typeparam>
-    //public class VowpalWabbit : VowpalWabbitNative, IVowpalWabbitSource
-    //{
-    //    /// <summary>
-    //    /// Initializes a new <see cref="VowpalWabbit{TExample}"/> instance.
-    //    /// </summary>
-    //    public VowpalWabbit(VowpalWabbitSettings settings) : base(settings)
-    //    {
-    //    }
-
-    //    public VowpalWabbit<TExample> Create<TExample>()
-    //    {
-    //        return new VowpalWabbit<TExample>(this.vw);
-    //    }
-
-    //    public VowpalWabbit<TExample, TActionDependentFeature> Create<TExample, TActionDependentFeature>()
-    //    {
-    //        return new VowpalWabbit<TExample, TActionDependentFeature>(this, this.Settings);
-    //    }
-
-    //    public IVowpalWabbitNative Acquire()
-    //    {
-    //        return this;
-    //    }
-
-    //    public void Release(IVowpalWabbitNative vw)
-    //    {
-    //    }
-    //}
-    //*/
-    //public class VowpalWabbit<TExample> : IDisposable
-    //{
-    //    /// <summary>
-    //    /// The serializer for the example user type.
-    //    /// </summary>
-    //    private readonly VowpalWabbitSerializer<TExample> serializer;
-
-    //    /// <param name="settings">The serializer settings.</param>
-    //    internal VowpalWabbit(VowpalWabbitSettings settings)
-    //    {
-    //        this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(settings);
-    //    }
-
-    //    /// <summary>
-    //    /// Serializes <paramref name="example"/> into VowpalWabbit.
-    //    /// </summary>
-    //    /// <param name="example">The example to be read.</param>
-    //    /// <returns>A native Vowpal Wabbit representation of the example.</returns>
-    //    public IVowpalWabbitExample ReadExample(VowpalWabbitInterfaceVisitor visitor, TExample example, ILabel label = null)
-    //    {
-    //        return this.serializer.Serialize(example, label);    
-    //    }
-
-    //    /// <summary>
-    //    /// Cleanup.
-    //    /// </summary>
-    //    /// <param name="isDiposing">See IDiposable pattern.</param>
-    //    protected override void Dispose(bool isDiposing)
-    //    {
-    //        if (isDiposing)
-    //        {
-    //            if (this.serializer != null)
-    //            {
-    //                // free cached examples
-    //                this.serializer.Dispose();
-    //                this.serializer = null;
-    //            }
-    //        }
-
-    //        // don't dispose VW before we can dispose all cached examples
-    //        base.Dispose(isDiposing);
-    //    }
-    //}
-
-    public class VowpalWabbit<TExample, TActionDependentFeature> : IDisposable
+    public class VowpalWabbit<TExample> : IDisposable
     {
-        /// <summary>
-        /// The serializer for the example user type.
-        /// </summary>
-        private readonly VowpalWabbitSerializer<TExample> serializer;
+        private VowpalWabbit vw;
 
-        private readonly VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
+        private VowpalWabbitSerializer<TExample> serializer;
 
-        /// <param name="settings">The serializer settings.</param>
-        internal VowpalWabbit(VowpalWabbitSettings settings)
+        private readonly VowpalWabbitSerializer<TExample> learnSerializer;
+
+        public VowpalWabbit(String args) : this(new VowpalWabbit(args))
+        { }
+
+        public VowpalWabbit(VowpalWabbitSettings settings)
+            : this(new VowpalWabbit(settings))
+        { }
+
+        public VowpalWabbit(VowpalWabbit vw)
         {
-            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(settings);
+            this.vw = vw;
+            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
 
-            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(settings);
+            this.learnSerializer = this.serializer.CachesExamples ? null : this.serializer;
+        }
 
-            if (this.actionDependentFeatureSerializer == null)
+        public void Learn(TExample example, ILabel label)
+        {
+#if DEBUG
+            // hot path
+            if (this.learnSerializer == null)
             {
-                throw new ArgumentException(typeof(TActionDependentFeature) + " must have a least a single [Feature] defined.");
+                throw new NotSupportedException("Cached examples cannot be used for learning");
             }
+#endif
 
-            using (var exBuilder = new VowpalWabbitExampleBuilder(vowpalWabbit))
+            // in release this throws NullReferenceException instead of producing silently wrong results
+            using (var ex = this.learnSerializer.Serialize(this.vw, example, label))
             {
-                this.emptyExample = exBuilder.CreateExample();
+                this.vw.Learn(ex);
             }
         }
 
+        public TPrediction Learn<TPrediction>(TExample example, ILabel label, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory)
+        {
+#if DEBUG
+            // hot path
+            if (this.learnSerializer == null)
+            {
+                throw new NotSupportedException("Cached examples cannot be used for learning");
+            }
+#endif
+            using (var ex = this.learnSerializer.Serialize(this.vw, example, label))
+            {
+                return this.vw.Learn(ex, predictionFactory);
+            }
+        }
 
+        public void Predict(TExample example, ILabel label = null)
+        {
+            using (var ex = this.serializer.Serialize(this.vw, example, label))
+            {
+                this.vw.Learn(ex);
+            }
+        }
+
+        public TPrediction Predict<TPrediction>(TExample example, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
+        {
+            using (var ex = this.serializer.Serialize(this.vw, example, label))
+            {
+                return this.vw.Learn(ex, predictionFactory);
+            }
+        }
+
+        public VowpalWabbit Native { get { return this.vw; } }
 
         /// <summary>
-        /// Cleanup.
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-        /// <param name="isDiposing">See IDiposable pattern.</param>
-        protected override void Dispose(bool isDiposing)
+
+        public void Dispose()
         {
-            if (isDiposing)
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
             {
+                if (this.vw != null)
+                {
+                    this.vw.Dispose();
+                    this.vw = null;
+                }
+
+                if (this.serializer != null)
+                {
+                    this.serializer.Dispose();
+                    this.serializer = null;
+                }
+            }
+        }
+    }
+
+    public class VowpalWabbit<TExample, TActionDependentFeature> : IDisposable
+    {
+        private VowpalWabbit vw;
+
+        private VowpalWabbitSerializer<TExample> serializer;
+
+        private VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
+
+        private readonly VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureLearnSerializer;
+
+        public VowpalWabbit(VowpalWabbit vw)
+        {
+            this.vw = vw;
+            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
+            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings);
+            this.actionDependentFeatureLearnSerializer = this.actionDependentFeatureSerializer.CachesExamples ? null : this.actionDependentFeatureSerializer;
+        }
+
+        public VowpalWabbit(String args)
+            : this(new VowpalWabbit(args))
+        { }
+
+        public VowpalWabbit(VowpalWabbitSettings settings)
+            : this(new VowpalWabbit(settings))
+        { }
+
+
+        public VowpalWabbit Native { get { return this.vw; } }
+
+
+        public void Learn(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        {
+#if DEBUG
+            // hot path
+            if (this.actionDependentFeatureLearnSerializer == null)
+            {
+                throw new NotSupportedException("Cached examples cannot be used for learning");
+            }
+#endif
+
+            VowpalWabbitMultiLine.Learn(
+                this.vw,
+                this.serializer,
+                this.actionDependentFeatureLearnSerializer,
+                example,
+                actionDependentFeatures,
+                index,
+                label);
+        }
+
+        public TActionDependentFeature[] LearnAndPredict(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        {
+#if DEBUG
+            // hot path
+            if (this.actionDependentFeatureLearnSerializer == null)
+            {
+                throw new NotSupportedException("Cached examples cannot be used for learning");
+            }
+#endif
+
+            return VowpalWabbitMultiLine.LearnAndPredict(
+                this.vw,
+                this.serializer,
+                this.actionDependentFeatureLearnSerializer,
+                example,
+                actionDependentFeatures,
+                index,
+                label);
+        }
+
+        public int[] LearnAndPredictIndex(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        {
+#if DEBUG
+            // hot path
+            if (this.actionDependentFeatureLearnSerializer == null)
+            {
+                throw new NotSupportedException("Cached examples cannot be used for learning");
+            }
+#endif
+
+            return VowpalWabbitMultiLine.LearnAndPredictIndex(
+                this.vw,
+                this.serializer,
+                this.actionDependentFeatureLearnSerializer,
+                example,
+                actionDependentFeatures,
+                index,
+                label);
+        }
+
+        public int[] PredictIndex(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures)
+        {
+            return VowpalWabbitMultiLine.PredictIndex(
+                this.vw,
+                this.serializer,
+                this.actionDependentFeatureSerializer,
+                example,
+                actionDependentFeatures);
+        }
+
+        public TActionDependentFeature[] Predict(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures)
+        {
+            return VowpalWabbitMultiLine.Predict(
+                this.vw,
+                this.serializer,
+                this.actionDependentFeatureSerializer,
+                example,
+                actionDependentFeatures);
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (this.vw != null)
+                {
+                    this.vw.Dispose();
+                    this.vw = null;
+                }
+
+                if (this.serializer != null)
+                {
+                    this.serializer.Dispose();
+                    this.serializer = null;
+                }
+
                 if (this.actionDependentFeatureSerializer != null)
                 {
                     this.actionDependentFeatureSerializer.Dispose();
                     this.actionDependentFeatureSerializer = null;
                 }
-                if (this.emptyExample != null)
-                {
-                    this.emptyExample.Dispose();
-                    this.emptyExample = null;
-                }
             }
-            base.Dispose(isDiposing);
         }
     }
 }

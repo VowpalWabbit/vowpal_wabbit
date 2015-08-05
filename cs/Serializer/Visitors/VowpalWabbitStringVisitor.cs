@@ -19,7 +19,7 @@ namespace VW.Serializer.Visitors
     /// <summary>
     /// Front-end to serialize data into Vowpal Wabbit string format.
     /// </summary>
-    public sealed class VowpalWabbitStringVisitor // : IVowpalWabbitVisitor<string>
+    public struct VowpalWabbitStringVisitor 
     {
         private StringBuilder builder;
 

@@ -15,7 +15,7 @@ using VW.Serializer.Interfaces;
 
 namespace VW.Serializer.Visitors
 {
-    public sealed partial class VowpalWabbitInterfaceVisitor : IVowpalWabbitVisitor<VowpalWabbitExample>
+    public partial struct VowpalWabbitInterfaceVisitor
     {
 		<# foreach(var t in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16), typeof(UInt32), typeof(float) }) { #>
 	    /// <summary>

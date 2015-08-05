@@ -9,6 +9,7 @@ license as described in the file LICENSE.
 #include "vw_clr.h"
 #include "vw_base.h"
 #include "vw_example.h"
+#include "vowpalwabbit.h"
 
 namespace VW
 {
@@ -56,20 +57,12 @@ namespace VW
 	public ref class VowpalWabbitExampleBuilder
 	{
 	private:
-		/// <summary>
-		/// The parent vowpal wabbit instance.
-		/// </summary>
 		vw* const m_vw;
-
-		/// <summary>
-		/// The resulting native example data structure.
-		/// </summary>
-		example* m_example;
 
 		/// <summary>
 		/// The resulting CLR example data structure.
 		/// </summary>
-		VowpalWabbitExample^ m_clrExample;
+		VowpalWabbitExample^ m_example;
 
 	protected:
 		/// <summary>
@@ -82,7 +75,7 @@ namespace VW
 		/// Initializes a new <see cref="VowpalWabbitExampleBuilder"/> instance. 
 		/// </summary>
 		/// <param name="vw">The parent vowpal wabbit instance.</param>
-		VowpalWabbitExampleBuilder(IVowpalWabbitNative^ vw);
+		VowpalWabbitExampleBuilder(VowpalWabbit^ vw);
 
 		/// <summary>
 		/// Cleanup.
@@ -95,12 +88,9 @@ namespace VW
 		VowpalWabbitExample^ CreateExample();
 
 		/// <summary>
-		/// Sets the lael for the resulting example.  
+		/// Sets the label for the resulting example.  
 		/// </summary>
-		property String^ Label
-		{
-			void set(String^ value);
-		}
+		void ParseLabel(String^ value);
 
 		/// <summary>
 		/// Creates and adds a new namespace to this example.

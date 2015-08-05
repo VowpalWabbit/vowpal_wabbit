@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 #include "vw_base.h"
 #include "vw_model.h"
 #include "vw_prediction.h"
+#include "vw_example.h"
 
 #include "clr_io.h"
 #include "vw_exception.h"
@@ -15,6 +16,7 @@ license as described in the file LICENSE.
 #include "parse_regressor.h"
 
 using namespace System;
+using namespace System::Collections::Generic;
 using namespace System::Text;
 
 namespace VW
@@ -28,6 +30,7 @@ namespace VW
 		}
 
 		m_settings = settings;
+		m_examples = gcnew Stack<VowpalWabbitExample^>;
 
 		try
 		{
@@ -53,12 +56,12 @@ namespace VW
 
 					try
 					{
-						string += " --no_stdin";
+						string.append(" --no_stdin");
 						argv = VW::get_argv_from_string(string, argc);
 
-						vw& all = parse_args(argc, argv);
-						parse_modules(all, model);
-						parse_sources(all, model);
+						m_vw = &parse_args(argc, argv);
+						parse_modules(*m_vw, model);
+						parse_sources(*m_vw, model);
 					}
 					finally
 					{
@@ -73,8 +76,6 @@ namespace VW
 
 				initialize_parser_datastructures(*m_vw);
 			}
-
-			m_hasher = GetHasher();
 		}
 		CATCHRETHROW
 	}
@@ -104,43 +105,44 @@ namespace VW
 		return m_settings;
 	}
 
-    example* VowpalWabbitBase::GetOrCreateNativeExample()
+	VowpalWabbitExample^ VowpalWabbitBase::GetOrCreateNativeExample()
     {
-        example* ex = nullptr;
-        if (m_examples != nullptr && !m_examples->empty())
-        {
-            ex = m_examples->top();
-            m_examples->pop();
-        }
-        else
-        {
+		if (m_examples->Count == 0)
+		{
 			try
 			{
-				ex = VW::alloc_examples(0, 1);
+				auto ex = VW::alloc_examples(0, 1);
+				m_vw->p->lp.default_label(&ex->l);
+				return gcnew VowpalWabbitExample(this, ex);
 			}
 			CATCHRETHROW
-        }
-        return ex;
-    }
+		}
 
-    void VowpalWabbitBase::ReturnExampleToPool(example* ex)
-    {
-		// make sure we're not a ring based example 
-		assert(!VW::is_ring_example(*m_vw, ex));
-
-        if (m_examples == nullptr)
-        {
-            m_examples = new stack<example*>();
-        }
+		auto ex = m_examples->Pop();
 
 		try
 		{
-			VW::empty_example(*m_vw, *ex);
+			VW::empty_example(*m_vw, *ex->m_example);
+			m_vw->p->lp.default_label(&ex->m_example->l);
+
+			return ex;
 		}
 		CATCHRETHROW
-
-        m_examples->push(ex);
     }
+
+	void VowpalWabbitBase::ReturnExampleToPool(VowpalWabbitExample^ ex)
+	{
+#if DEBUG
+		if (m_vw == nullptr)
+		{
+			throw gcnew ObjectDisposedException("VowpalWabbitExample was not properly disposed as the owner is already disposed");
+		}
+#endif
+		// make sure we're not a ring based example 
+		assert(!VW::is_ring_example(*m_vw, ex->m_example));
+
+        m_examples->Push(ex);
+     }
 
 	void VowpalWabbitBase::InternalDispose()
 	{
@@ -148,24 +150,33 @@ namespace VW
 		{
 			if (m_examples != nullptr)
 			{
-				while (!m_examples->empty())
+				for each (auto ex in m_examples)
 				{
-					example* ex = m_examples->top();
-
 					if (m_vw->multilabel_prediction)
 					{
-						VW::dealloc_example(m_vw->p->lp.delete_label, *ex, MULTILABEL::multilabel.delete_label);
+						VW::dealloc_example(m_vw->p->lp.delete_label, *ex->m_example, MULTILABEL::multilabel.delete_label);
 					}
 					else
 					{
-						VW::dealloc_example(m_vw->p->lp.delete_label, *ex);
+						VW::dealloc_example(m_vw->p->lp.delete_label, *ex->m_example);
 					}
 
-					::free_it(ex);
+					::free_it(ex->m_example);
+				
+					// cleanup pointers in example chain
+					auto inner = ex;
+					while ((inner = inner->InnerExample) != nullptr)
+					{
+						inner->m_owner = nullptr;
+						inner->m_example = nullptr;
+					}
 
-					m_examples->pop();
+					ex->m_example = nullptr;
+					
+					// avoid that this example is returned again
+					ex->m_owner = nullptr;
 				}
-				delete m_examples;
+
 				m_examples = nullptr;
 			}
 
@@ -182,108 +193,5 @@ namespace VW
 			// don't add code here as in the case of VW::finish thrown an exception it won't be called
 		}
 		CATCHRETHROW
-	}
-
-	/// <summary>
-	/// Hashes the given value <paramref name="s"/>.
-	/// </summary>
-	/// <param name="s">String to be hashed.</param>
-	/// <param name="u">Hash offset.</param>
-	/// <returns>The resulting hash code.</returns>
-	size_t hashall(String^ s, unsigned long u)
-	{
-		// get raw bytes from string
-		auto keys = Encoding::UTF8->GetBytes(s);
-
-		uint32_t h1 = u;
-		uint32_t k1 = 0;
-
-		const uint32_t c1 = 0xcc9e2d51;
-		const uint32_t c2 = 0x1b873593;
-
-		int length = keys->Length;
-		int i = 0;
-		while (i <= length - 4)
-		{
-			// convert byte array to integer
-			k1 = (uint32_t)(keys[i] | keys[i + 1] << 8 | keys[i + 2] << 16 | keys[i + 3] << 24);
-
-			k1 *= c1;
-			k1 = ROTL32(k1, 15);
-			k1 *= c2;
-
-			h1 ^= k1;
-			h1 = ROTL32(h1, 13);
-			h1 = h1 * 5 + 0xe6546b64;
-
-			i += 4;
-		}
-
-		k1 = 0;
-		int tail = length - length % 4;
-		switch (length & 3)
-		{
-		case 3:
-			k1 ^= (uint32_t)(keys[tail + 2] << 16);
-		case 2:
-			k1 ^= (uint32_t)(keys[tail + 1] << 8);
-		case 1:
-			k1 ^= (uint32_t)(keys[tail]);
-			k1 *= c1;
-			k1 = ROTL32(k1, 15);
-			k1 *= c2;
-			h1 ^= k1;
-			break;
-		}
-
-		// finalization
-		h1 ^= (uint32_t)length;
-
-		return MURMUR_HASH_3::fmix(h1);
-	}
-
-	/// <summary>
-	/// Hashes the given value <paramref name="s"/>.
-	/// </summary>
-	/// <param name="s">String to be hashed.</param>
-	/// <param name="u">Hash offset.</param>
-	/// <returns>The resulting hash code.</returns>
-	size_t hashstring(String^ s, unsigned long u)
-	{
-		s = s->Trim();
-
-		int sInt = 0;
-		if (int::TryParse(s, sInt))
-		{
-			return sInt + u;
-		}
-		else
-		{
-			return hashall(s, u);
-		}
-	}
-
-	Func<String^, unsigned long, size_t>^ VowpalWabbitBase::GetHasher()
-	{
-		//feature manipulation
-		string hash_function("strings");
-		if (m_vw->vm.count("hash"))
-		{
-			hash_function = m_vw->vm["hash"].as<string>();
-		}
-
-		if (hash_function == "strings")
-		{
-			return gcnew Func<String^, unsigned long, size_t>(&hashstring);
-		}
-		else if (hash_function == "all")
-		{
-			return gcnew Func<String^, unsigned long, size_t>(&hashall);
-
-		}
-		else
-		{
-			THROW("Unsupported hash function: " << hash_function);
-		}
 	}
 }

@@ -15,104 +15,128 @@ using VW.Serializer;
 
 namespace VW
 {
-    public class VowpalWabbitPredictionManager : IDisposable
+    public class VowpalWabbitThreadedPrediction<TExample> : VowpalWabbitThreadedPredictionBase<VowpalWabbit<TExample>>
     {
-        private ObjectPool<VowpalWabbitModel, VowpalWabbitNative> vwPool;
-
-        public VowpalWabbitPredictionManager(VowpalWabbitSettings settings)
+        public VowpalWabbitThreadedPrediction(VowpalWabbitModel model)
+            : base(model)
         {
-            this.Settings = settings;
-            this.vwPool = new ObjectPool<VowpalWabbitModel, VowpalWabbitNative>();
         }
 
-        public VowpalWabbitSettings Settings
+        protected override VowpalWabbit<TExample> InternalCreate(VowpalWabbit vw)
         {
-            get;
-            private set;
+            return new VowpalWabbit<TExample>(vw);
+        }
+    }
+
+    public class VowpalWabbitThreadedPrediction<TExample, TActionDependentFeature> : VowpalWabbitThreadedPredictionBase<VowpalWabbit<TExample, TActionDependentFeature>>
+    {
+        public VowpalWabbitThreadedPrediction(VowpalWabbitModel model)
+            : base(model)
+        {
         }
 
-        public VowpalWabbit<TExample> GetOrCreate<TExample>()
+        protected override VowpalWabbit<TExample, TActionDependentFeature> InternalCreate(VowpalWabbit vw)
         {
-            typeof(TExample)
+            return new VowpalWabbit<TExample, TActionDependentFeature>(vw);
+        }
+    }
+
+    public abstract class VowpalWabbitThreadedPredictionBase<TVowpalWabbit> : IDisposable
+        where TVowpalWabbit : IDisposable
+    {
+        private ObjectPool<VowpalWabbitModel, TVowpalWabbit> vwPool;
+
+        public VowpalWabbitThreadedPredictionBase(VowpalWabbitModel model)
+        {
+            this.vwPool = new ObjectPool<VowpalWabbitModel, TVowpalWabbit>(
+                ObjectFactory.Create(
+                    model, 
+                    m => this.InternalCreate(new VowpalWabbit(m.Settings.ShallowCopy(model: m)))));
         }
 
-        public void UpdateModel(Stream model)
-        {
-            var modelSettings = new VowpalWabbitSettings
-            {
-                Arguments = this.Settings.Arguments,
-                ModelStream = model
-            };
-
-            this.UpdateModel(new VowpalWabbitModel(modelSettings));
-        }
-
-        public void UpdateModel(string filename)
-        {
-            var modelSettings = this.Settings.ShallowCopy();
-
-            modelSettings.Arguments += " -i " + filename;
-            modelSettings.ParallelOptions = null;
-
-
-            this.UpdateModel(new VowpalWabbitModel(modelSettings));
-        }
+        protected abstract TVowpalWabbit InternalCreate(VowpalWabbit vw);
 
         public void UpdateModel(VowpalWabbitModel model)
         {
-            var childSettings = model.ShallowCopy();
-            childSettings.Model = model;
+            this.vwPool.UpdateFactory(ObjectFactory.Create(
+                model, 
+                m => this.InternalCreate(new VowpalWabbit(m.Settings.ShallowCopy(model: m)))));
+        }
 
-            this.vwPool.UpdateFactory(ObjectFactory.Create(model, model => new VowpalWabbitNative(childSettings)));
+        public PooledObject<VowpalWabbitModel, TVowpalWabbit> Get()
+        {
+            return this.vwPool.Get();
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (this.vwPool != null)
+                {
+                    this.vwPool.Dispose();
+                    this.vwPool = null;
+                }
+            }
         }
     }
 
-    public static class VowpalWabbitFactory
-    {
-        public static VowpalWabbitNative Create(VowpalWabbitSettings settings)
-        {
-            //if (settings.ParallelOptions == null)
-            //{
-            //    return new VowpalWabbit(settings);
-            //}
-            //else 
-            return null;
-        }
+    //public static class VowpalWabbitFactory
+    //{
+    //    public static VowpalWabbit Create(VowpalWabbitSettings settings)
+    //    {
+    //        //if (settings.ParallelOptions == null)
+    //        //{
+    //        //    return new VowpalWabbit(settings);
+    //        //}
+    //        //else 
+    //        return null;
+    //    }
 
-        public static VowpalWabbit<TExample> Create<TExample>(VowpalWabbitSettings settings)
-        {
-            return null;
-        }
+    //    public static VowpalWabbit<TExample> Create<TExample>(VowpalWabbitSettings settings)
+    //    {
+    //        return null;
+    //    }
 
-        public static VowpalWabbit<TExample, TActionDependentFeature> Create<TExample, TActionDependentFeature>(VowpalWabbitSettings settings)
-        {
-            return null;
+    //    public static VowpalWabbit<TExample, TActionDependentFeature> Create<TExample, TActionDependentFeature>(VowpalWabbitSettings settings)
+    //    {
+    //        return null;
 
-        }
+    //    }
 
-        public static VowpalWabbitManager Create(VowpalWabbitSettings settings)
-        {
-            return new VowpalWabbitManager(settings);
-        }
+    //    public static VowpalWabbitManager Create(VowpalWabbitSettings settings)
+    //    {
+    //        return new VowpalWabbitManager(settings);
+    //    }
 
-        //    where TExample : SharedExample, IActionDependentFeatureExample<TActionDependentFeature>
-        //    where TActionDependentFeature : IExample;
+    //    //    where TExample : SharedExample, IActionDependentFeatureExample<TActionDependentFeature>
+    //    //    where TActionDependentFeature : IExample;
 
-        //public IVowpalWabbitPredictor CreatePredictor(VowpalWabbitSettings settings);
+    //    //public IVowpalWabbitPredictor CreatePredictor(VowpalWabbitSettings settings);
 
         
-        //    where TExample : IExample;
+    //    //    where TExample : IExample;
 
-        //public IVowpalWabbitPredictor<TExample> CreatePredictor<TExample>(VowpalWabbitSettings settings);
+    //    //public IVowpalWabbitPredictor<TExample> CreatePredictor<TExample>(VowpalWabbitSettings settings);
 
-        //public IVowpalWabbit<TExample, TActionDependentFeature> Create<TExample, TActionDependentFeature>(VowpalWabbitSettings settings)
-        //    where TExample : SharedExample, IActionDependentFeatureExample<TActionDependentFeature>
-        //    where TActionDependentFeature : IExample;
+    //    //public IVowpalWabbit<TExample, TActionDependentFeature> Create<TExample, TActionDependentFeature>(VowpalWabbitSettings settings)
+    //    //    where TExample : SharedExample, IActionDependentFeatureExample<TActionDependentFeature>
+    //    //    where TActionDependentFeature : IExample;
 
-        //public IVowpalWabbitPredictor<TExample, TActionDependentFeature> CreatePredictor<TExample, TActionDependentFeature>(VowpalWabbitSettings settings)
-        //    where TExample : SharedExample, IActionDependentFeatureExample<TActionDependentFeature>;
+    //    //public IVowpalWabbitPredictor<TExample, TActionDependentFeature> CreatePredictor<TExample, TActionDependentFeature>(VowpalWabbitSettings settings)
+    //    //    where TExample : SharedExample, IActionDependentFeatureExample<TActionDependentFeature>;
 
-    }
+    //}
 
 
 

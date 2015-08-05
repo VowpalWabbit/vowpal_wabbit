@@ -61,6 +61,7 @@ namespace VW {
   example *alloc_examples(size_t, size_t);
   void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*) = nullptr);
 
+  void read_line(vw& all, example* ex, char* line);
   void parse_example_label(vw&all, example&ec, string label);
   void setup_example(vw& all, example* ae);
   example* new_unused_example(vw& all);

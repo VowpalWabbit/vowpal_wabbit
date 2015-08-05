@@ -20,15 +20,22 @@ namespace VW.Serializer
     /// A serializer from a user type (TExample) to a native Vowpal Wabbit example type.
     /// </summary>
     /// <typeparam name="TExample">The source example type.</typeparam>
-    public sealed class VowpalWabbitSerializer<TExample> : IDisposable
+    public sealed class VowpalWabbitSerializer<TExample> : IDisposable, IVowpalWabbitExamplePool
     {
+        private class CacheEntry
+        {
+            internal VowpalWabbitExample Example;
+
+            internal DateTime LastRecentUse;
+        }
+
         private readonly VowpalWabbitSettings settings;
 
-        private readonly Func<VowpalWabbitNative, TExample, ILabel, IVowpalWabbitExample> serializer;
+        private readonly Func<VowpalWabbit, TExample, ILabel, VowpalWabbitExample> serializer;
 
-        private Dictionary<TExample, VowpalWabbitCachedExample<TExample>> exampleCache;
+        private Dictionary<TExample, CacheEntry> exampleCache;
 
-        internal VowpalWabbitSerializer(Func<VowpalWabbitNative, TExample, ILabel, IVowpalWabbitExample> serializer, VowpalWabbitSettings settings)
+        internal VowpalWabbitSerializer(Func<VowpalWabbit, TExample, ILabel, VowpalWabbitExample> serializer, VowpalWabbitSettings settings)
         {
             if (serializer == null)
             {
@@ -48,7 +55,7 @@ namespace VW.Serializer
             {
                 if (cacheableAttribute.EqualityComparer == null)
                 {
-                    this.exampleCache = new Dictionary<TExample, VowpalWabbitCachedExample<TExample>>();
+                    this.exampleCache = new Dictionary<TExample, CacheEntry>();
                 }
                 else
                 {
@@ -63,9 +70,14 @@ namespace VW.Serializer
                     }
 
                     var comparer = (IEqualityComparer<TExample>)Activator.CreateInstance(cacheableAttribute.EqualityComparer);
-                    this.exampleCache = new Dictionary<TExample, VowpalWabbitCachedExample<TExample>>(comparer);
+                    this.exampleCache = new Dictionary<TExample, CacheEntry>(comparer);
                 }
             }
+        }
+
+        public bool CachesExamples
+        {
+            get { return this.exampleCache != null; }
         }
 
         /// <summary>
@@ -74,33 +86,36 @@ namespace VW.Serializer
         /// <param name="example">The example to serialize.</param>
         /// <returns>The serialized example.</returns>
         /// <remarks>If TExample is annotated using the Cachable attribute, examples are returned from cache.</remarks>
-        public IVowpalWabbitExample Serialize(VowpalWabbitNative vw, TExample example, ILabel label = null)
+        public VowpalWabbitExample Serialize(VowpalWabbit vw, TExample example, ILabel label = null)
         {
             if (this.exampleCache == null || label != null)
             {
                 return this.serializer(vw, example, label);
             }
 
-            VowpalWabbitCachedExample<TExample> result;
+            CacheEntry result;
             if (this.exampleCache.TryGetValue(example, out result))
             {
                 result.LastRecentUse = DateTime.UtcNow;
             }
             else
             {
-                result = new VowpalWabbitCachedExample<TExample>(this, this.serializer(example, label));
+                result = new CacheEntry 
+                {
+                    Example =  new VowpalWabbitExample(this, this.serializer(vw, example, label)),
+                    LastRecentUse = DateTime.UtcNow
+                };
                 this.exampleCache.Add(example, result);
             }
 
             // TODO: support Label != null here and update cached example using new label
 
-            return result;
+            return result.Example;
         }
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-
         public void Dispose()
         {
             this.Dispose(true);
@@ -115,7 +130,7 @@ namespace VW.Serializer
                 {
                     foreach (var example in this.exampleCache.Values)
                     {
-                        example.UnderlyingExample.Dispose();
+                        example.Example.InnerExample.Dispose();
                     }
 
                     this.exampleCache = null;
@@ -123,7 +138,7 @@ namespace VW.Serializer
             }
         }
 
-        internal void ReturnExampleToCache(VowpalWabbitCachedExample<TExample> example)
+		public void ReturnExampleToPool(VowpalWabbitExample ex)
         {
             if (this.exampleCache == null)
             {
@@ -148,7 +163,7 @@ namespace VW.Serializer
                 }
 
                 this.exampleCache.Remove(min.Key);
-                min.Value.UnderlyingExample.Dispose();
+                min.Value.Example.InnerExample.Dispose();
             }
         }
     }

@@ -9,18 +9,18 @@ using System.Threading.Tasks.Dataflow;
 
 namespace VW
 {
-    public class VowpalWabbitManager : IDisposable
+    public class VowpalWabbitThreadedLearning : IDisposable
     {
-        internal VowpalWabbitThreaded[] vws;
+        internal VowpalWabbit[] vws;
 
-        internal readonly ActionBlock<Action<VowpalWabbitThreaded>>[] actionBlocks;
+        internal readonly ActionBlock<Action<VowpalWabbit>>[] actionBlocks;
 
-        private readonly IObserver<Action<VowpalWabbitThreaded>>[] observers;
+        private readonly IObserver<Action<VowpalWabbit>>[] observers;
 
         /// <summary>
         /// Invoked right after the root node performed AllReduce with the other instances.
         /// </summary>
-        private readonly ConcurrentList<Action<VowpalWabbitNative>> syncActions;
+        private readonly ConcurrentList<Action<VowpalWabbit>> syncActions;
 
         private Task[] completionTasks;
 
@@ -28,7 +28,9 @@ namespace VW
 
         private readonly Random random = new Random(42);
 
-        public VowpalWabbitManager(VowpalWabbitSettings settings)
+        private readonly Func<uint, int> exampleDistributor;
+
+        public VowpalWabbitThreadedLearning(VowpalWabbitSettings settings)
         {
             if (settings.ParallelOptions == null)
             {
@@ -37,49 +39,60 @@ namespace VW
 
             this.Settings = settings;
 
-            if (this.Settings.CancellationToken == null)
+            if (this.Settings.ParallelOptions.CancellationToken == null)
             {
-                this.Settings.CancellationToken = new CancellationToken();
+                this.Settings.ParallelOptions.CancellationToken = new CancellationToken();
+            }
+
+            switch (this.Settings.ExampleDistribution)
+            {
+                case VowpalWabbitExampleDistribution.UniformRandom:
+                    this.exampleDistributor = _ => this.random.Next(this.observers.Length);
+                    break;
+                case VowpalWabbitExampleDistribution.RoundRobin:
+                    this.exampleDistributor = localExampleCount => (int)(localExampleCount % this.observers.Length);
+                    break;
             }
 
             this.exampleCount = 0;
-            this.syncActions = new ConcurrentList<Action<VowpalWabbitNative>>();
+            this.syncActions = new ConcurrentList<Action<VowpalWabbit>>();
 
-            this.vws = new VowpalWabbitThreaded[settings.ParallelOptions];
-            this.actionBlocks = new ActionBlock<Action<VowpalWabbitThreaded>>[settings.ParallelOptions];
-            this.observers = new IObserver<Action<VowpalWabbitThreaded>>[settings.ParallelOptions];
+            this.vws = new VowpalWabbit[settings.ParallelOptions.MaxDegreeOfParallelism];
+            this.actionBlocks = new ActionBlock<Action<VowpalWabbit>>[settings.ParallelOptions.MaxDegreeOfParallelism];
+            this.observers = new IObserver<Action<VowpalWabbit>>[settings.ParallelOptions.MaxDegreeOfParallelism];
 
             // setup AllReduce chain
             // root closure
             {
-                var vw = this.vws[0] = new VowpalWabbitThreaded(settings, 0);
+                var vw = this.vws[0] = new VowpalWabbit(settings.ShallowCopy(node: 0));
                 uint unitCount = 0; // unitCount <= example count due to multiline examples!
 
-                var actionBlock = this.actionBlocks[0] = new ActionBlock<Action<VowpalWabbitThreaded>>(
+                var actionBlock = this.actionBlocks[0] = new ActionBlock<Action<VowpalWabbit>>(
                     action => action(vw),
                     new ExecutionDataflowBlockOptions
                     {
                         MaxDegreeOfParallelism = 1,
                         TaskScheduler = settings.ParallelOptions.TaskScheduler,
                         CancellationToken = settings.ParallelOptions.CancellationToken,
-                        BoundedCapacity = settings.MaxExampleQueueLengthPerInstance
+                        BoundedCapacity = (int)settings.MaxExampleQueueLengthPerInstance
                     });
             }
 
-            for (int i = 1; i < settings.ParallelOptions; i++)
+            var childSettings = settings.ShallowCopy(root: this.vws[0]);
+            for (int i = 1; i < settings.ParallelOptions.MaxDegreeOfParallelism; i++)
             {
                 // closure vars
-                var vw = new VowpalWabbitThreaded(settings, this.vws[i - 1], i);
+                var vw = new VowpalWabbit(childSettings.ShallowCopy(node: (uint)i));
                 uint unitCount = 0; // unitCount <= example count due to multiline examples!
 
-                var actionBlock = this.actionBlocks[i] = new ActionBlock<Action<VowpalWabbitThreaded>>(
+                var actionBlock = this.actionBlocks[i] = new ActionBlock<Action<VowpalWabbit>>(
                     action => action(vw),
                     new ExecutionDataflowBlockOptions
                     {
                         MaxDegreeOfParallelism = 1,
                         TaskScheduler = settings.ParallelOptions.TaskScheduler,
                         CancellationToken = settings.ParallelOptions.CancellationToken,
-                        BoundedCapacity = settings.MaxExampleQueueLengthPerInstance
+                        BoundedCapacity = (int)settings.MaxExampleQueueLengthPerInstance
                     });
             }
 
@@ -91,7 +104,7 @@ namespace VW
             {
                 var vw = this.vws[0];
                 this.completionTasks[0] = this.actionBlocks[0].Completion
-                    .ContinueWith(() =>
+                    .ContinueWith(_ =>
                     {
                         // perform final AllReduce
                         vw.EndOfPass();
@@ -101,8 +114,7 @@ namespace VW
                         {
                             syncAction(vw);
                         }
-                    })
-                    .ConfigureAwait(false);
+                    });
             }
 
             for (int i = 1; i < this.vws.Length; i++)
@@ -110,27 +122,25 @@ namespace VW
                 // perform final AllReduce
                 var vw = this.vws[i];
                 this.completionTasks[i] = this.actionBlocks[i].Completion
-                    .ContinueWith(() => vw.EndOfPass(), this.Settings.ParallelOptions.CancellationToken)
-                    .ConfigureAwait(false);
+                    .ContinueWith(_ => vw.EndOfPass(), this.Settings.ParallelOptions.CancellationToken);
             }
         }
 
         public VowpalWabbitAsync<TExample> Create<TExample>()
         {
-            return new VowpalWabbitAsync<TExample>(this, this.vws);
+            return new VowpalWabbitAsync<TExample>(this);
         }
 
-        public VowpalWabbit<TExample, TActionDependentFeature> Create<TExample, TActionDependentFeature>()
+        public VowpalWabbitAsync<TExample, TActionDependentFeature> Create<TExample, TActionDependentFeature>()
         {
-            return new VowpalWabbitAsync<TExample, TActionDependentFeature>(this, this.vws);
+            return new VowpalWabbitAsync<TExample, TActionDependentFeature>(this);
         }
 
-        private void CheckEndOfPass()
+        private uint CheckEndOfPass()
         {
-            // get next node using round-robin
             var exampleCount = (uint)Interlocked.Increment(ref this.exampleCount);
             
-            if (exampleCount % this.Settings.ExampleCountPerRun.Length == 0)
+            if (exampleCount % this.Settings.ExampleCountPerRun == 0)
             {
                 this.observers[0].OnNext(vw =>
                 {
@@ -147,30 +157,29 @@ namespace VW
                 for (int i = 1; i < this.observers.Length; i++)
                 {
                     // perform AllReduce
-                    this.observers[0].OnNext(vw => vw.EndOfPass());
+                    this.observers[i].OnNext(vw => vw.EndOfPass());
                 }
             }
 
+            return exampleCount;
         }
 
-        public void Post(Action<VowpalWabbitThreaded> action)
+        public void Post(Action<VowpalWabbit> action)
         {
-            this.CheckEndOfPass();
+            var exampleCount = this.CheckEndOfPass();
 
-            // randomly distribute data
-            var index = random.Next(this.observers.Length);
-            this.observers[index].OnNext(action);
+            // dispatch
+            this.observers[this.exampleDistributor(exampleCount)].OnNext(action);
         }
-        
-        internal Task<T> Post<T>(Func<VowpalWabbitThreaded, T> func)
+
+        internal Task<T> Post<T>(Func<VowpalWabbit, T> func)
         {
-            this.CheckEndOfPass();
+            var exampleCount = this.CheckEndOfPass();
 
             var completionSource = new TaskCompletionSource<T>();
 
-            // randomly distribute data
-            var index = random.Next(this.observers.Length);
-            this.observers[index].OnNext(vw => 
+            // dispatch
+            this.observers[this.exampleDistributor(exampleCount)].OnNext(vw => 
             {
                 try 
 	            {
@@ -187,14 +196,23 @@ namespace VW
 
         public void Learn(string line)
         {
-            this.Post(vw => vw.Learn(line));
+            this.Post(vw => 
+            {
+                using (var builder = new VowpalWabbitExampleBuilder(vw))
+                {
+                    using (var ex = vw.ParseLine(line))
+                    {
+                        vw.Learn(ex);
+                    }
+                }
+            });
         }
 
         public Task<VowpalWabbitPerformanceStatistics> PerformanceStatistics
         {
             get 
             {
-                var completionSource = new TaskCompletionSource<void>();
+                var completionSource = new TaskCompletionSource<VowpalWabbitPerformanceStatistics>();
 
                 this.syncActions.Add(vw => completionSource.SetResult(vw.PerformanceStatistics));
 
@@ -211,29 +229,32 @@ namespace VW
             {
                 actionBlock.Complete();
             }
+
+            return Task.WhenAll(this.actionBlocks.Select(a => a.Completion));
+
         }
 
-        public async Task SaveModel()
+        public Task SaveModel()
         {
-            var completionSource = new TaskCompletionSource<void>();
+            var completionSource = new TaskCompletionSource<bool>();
 
             this.syncActions.Add(vw => 
             {
                 vw.SaveModel();
-                completionSource.SetResult();
+                completionSource.SetResult(true);
             });
 
             return completionSource.Task;
         }
 
-        public async Task SaveModel(string filename)
+        public Task SaveModel(string filename)
         {
-            var completionSource = new TaskCompletionSource<void>();
+            var completionSource = new TaskCompletionSource<bool>();
 
             this.syncActions.Add(vw => 
             {
                 vw.SaveModel();
-                completionSource.SetResult();
+                completionSource.SetResult(true);
             });
 
             return completionSource.Task;
@@ -262,7 +283,7 @@ namespace VW
                 {
                     // mark completion
                     this.Complete()
-                        .Wait(this.Settings.ParallelOptions.CancellationToken)
+                        .Wait(this.Settings.ParallelOptions.CancellationToken);
 
                     // wait for all actionblocks to finish
                     Task.WhenAll(this.completionTasks)

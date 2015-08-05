@@ -21,6 +21,12 @@ namespace VW
 		}
 	}
 
+	VowpalWabbitModel::VowpalWabbitModel(String^ args)
+		: VowpalWabbitModel(gcnew VowpalWabbitSettings(args))
+	{
+	}
+
+
 	VowpalWabbitModel::~VowpalWabbitModel()
 	{
 		this->!VowpalWabbitModel();

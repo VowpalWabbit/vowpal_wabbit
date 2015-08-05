@@ -11,89 +11,69 @@ license as described in the file LICENSE.
 namespace VW
 {
 	ref class VowpalWabbitExample;
-
-	/// <summary>
-	/// Base-class for prediction results. 
-	/// </summary>
-	public ref class VowpalWabbitPrediction abstract
+	ref class VowpalWabbit;
+	
+	generic<typename T>
+	public interface class IVowpalWabbitPredictionFactory
 	{
 	public:
-		/// <summary>
-		/// Extracts data and forwards to <see cref="ReadFromExample(vw*, example*)" />
-		/// </summary>
-		void ReadFromExample(VowpalWabbitExample^ example);
-
-		/// <summary>
-		/// Subclasses must extract the prediction result from the example.
-		/// </summary>
-		virtual void ReadFromExample(vw* vw, example* ex) abstract;
+		T Create(vw* vw, example* ex);
 	};
 
 	/// <summary>
 	/// A scalar prediction result.
 	/// </summary>
-	public ref class VowpalWabbitScalarPrediction : VowpalWabbitPrediction
+	public ref class VowpalWabbitScalarPredictionFactory sealed : IVowpalWabbitPredictionFactory<float>
 	{
 	public:
 		/// <summary>
 		/// Extracts prediction results from example.
 		/// </summary>
-		void ReadFromExample(vw* vw, example* ex) override;
-
-		/// <summary>
-		/// The scalar prediction.
-		/// </summary>
-		property float Value;
+		virtual float Create(vw* vw, example* ex) sealed;
 	};
 
 	/// <summary>
 	/// A cost sensitive prediction result.
 	/// </summary>
-	public ref class VowpalWabbitCostSensitivePrediction : VowpalWabbitPrediction
+	public ref class VowpalWabbitCostSensitivePredictionFactory sealed : IVowpalWabbitPredictionFactory<float>
 	{
 	public:
 		/// <summary>
-		/// Extracts prediction results from example.
+		/// Extracts prediction results from example. The cost sensitive prediction.
 		/// </summary>
-		void ReadFromExample(vw* vw, example* ex) override;
-
-		/// <summary>
-		/// The cost sensitive prediction.
-		/// </summary>
-		property float Value;
+		virtual float Create(vw* vw, example* ex) sealed;
 	};
 
 	/// <summary>
 	/// A multi label prediction result.
 	/// </summary>
-	public ref class VowpalWabbitMultilabelPrediction : VowpalWabbitPrediction
+	public ref class VowpalWabbitMultilabelPredictionFactory sealed : IVowpalWabbitPredictionFactory<cli::array<int>^>
 	{
 	public:
 		/// <summary>
-		/// Extracts prediction results from example.
+		/// Extracts prediction results from example. The
 		/// </summary>
-		void ReadFromExample(vw* vw, example* ex) override;
-
-		/// <summary>
-		/// The predicted labels.
-		/// </summary>
-		property cli::array<int>^ Values;
+		virtual cli::array<int>^ Create(vw* vw, example* ex) sealed;
 	};
 
 	/// <summary>
 	/// A topic prediction result.
 	/// </summary>
-	public ref class VowpalWabbitTopicPrediction : VowpalWabbitPrediction
+	public ref class VowpalWabbitTopicPredictionFactory sealed : IVowpalWabbitPredictionFactory<cli::array<float>^>
 	{
 	public:
 		/// <summary>
-		/// Extracts prediction results from example.
+		/// Extracts prediction results from example. The predicted topics.
 		/// </summary>
-		void ReadFromExample(vw* vw, example* ex) override;
+		virtual cli::array<float>^ Create(vw* vw, example* ex) sealed;
+	};
 
-		/// <summary>
-		/// The predicted topics.
-		/// </summary>
-		property cli::array<float>^ Values;
+	public ref class VowpalWabbitPredictionType sealed abstract
+	{
+	public:
+		static initonly VowpalWabbitScalarPredictionFactory^ Scalar = gcnew VowpalWabbitScalarPredictionFactory;
+		static initonly VowpalWabbitCostSensitivePredictionFactory^ CostSensitive = gcnew VowpalWabbitCostSensitivePredictionFactory;
+		static initonly VowpalWabbitMultilabelPredictionFactory^ Multilabel = gcnew VowpalWabbitMultilabelPredictionFactory;
+		static initonly VowpalWabbitTopicPredictionFactory^ Topic = gcnew VowpalWabbitTopicPredictionFactory;
 	};
 }

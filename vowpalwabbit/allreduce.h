@@ -29,7 +29,6 @@ typedef int socket_t;
 #include "vw_exception.h"
 #include "vw.h"
 
-#include <mutex>
 
 using namespace std;
 
@@ -86,54 +85,75 @@ namespace std
 	class promise;
 
 	class condition_variable;
+
+	class mutex;
 }
 
 class AllReduceThreads : public AllReduce
 {
 private:
-	AllReduceThreads* all;
+	// TODO: rename
+	AllReduceThreads* root;
 
-	std::mutex* m;
-	std::condition_variable* cv;
+	std::mutex* m_mutex;
+	std::condition_variable* m_cv;
 
-	/*
-	AllReduceThreads* child;
+	void** buffers;
 
-	promise<Data*>* reduce_child;
-	promise<void>* broadcast;
+	uint32_t count;
 
-	Data* get_child_data();
+	void waitForSynchronization();
 
-	void pass_up_and_wait_for_broadcast(void* buffer, size_t n);
-
-	void notify_child();
-	*/
 public:
 	AllReduceThreads(size_t ptotal, const size_t pnode);
 
-	AllReduceThreads(AllReduceThreads* pparent, size_t ptotal, const size_t pnode);
+	AllReduceThreads(AllReduceThreads* root, size_t ptotal, const size_t pnode);
 
 	~AllReduceThreads();
 
 	template <class T, void(*f)(T&, const T&)> void all_reduce(T* buffer, const size_t n)
 	{
-		Data* left_data;
-		if (child != nullptr)
+		// register buffer
+		T** buffers = (T**)root->buffers;
+		buffers[node] = buffer;
+		waitForSynchronization();
+		
+		size_t blockSize = n / total;
+		size_t index;
+		size_t end;
+
+		if (blockSize == 0)
 		{
-			left_data = get_child_data();
-			addbufs<T,f>(buffer, (T*)left_data->buffer, left_data->length / sizeof(T));
+			if (node < n)
+			{
+				index = node;
+				end = node + 1;
+			}
+			else
+			{
+				// more threads than bytes --> don't do any work
+				index = end = 0;
+			}
 		}
-	
-		if (parent != nullptr)
+		else
 		{
-			pass_up_and_wait_for_broadcast((void*)buffer, n * sizeof(T));
+			index = node * blockSize;
+			end = (node + 1) * blockSize;
 		}
 
-		if (child != nullptr)
+		for (; index < end; index++)
 		{
-			memcpy(left_data->buffer, buffer, min(n * sizeof(T), left_data->length));
-			notify_child();
+			// Perform transposed AllReduce to help data locallity
+			T temp = buffers[0][index];
+			for (int i = 1; i < total; i++)
+				f(temp, buffers[i][index]);
+
+			// Broadcast back
+			for (int i = 0; i < total; i++)
+				buffers[i][index] = temp;
 		}
+
+		waitForSynchronization();
 	}
 };
 

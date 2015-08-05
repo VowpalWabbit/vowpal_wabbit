@@ -9,124 +9,47 @@ license as described in the file LICENSE.
 #include "best_constant.h"
 #include "parser.h"
 #include "hash.h"
+#include "vw_example.h"
+#include "allreduce.h"
+#include "vw_builder.h"
 
 using namespace System;
 using namespace System::Text;
 
 namespace VW
 {
-	VowpalWabbitNative::VowpalWabbitNative(VowpalWabbitSettings^ pArgs)
-		: VowpalWabbitBase(pArgs)
+	VowpalWabbit::VowpalWabbit(VowpalWabbitSettings^ args)
+		: VowpalWabbitBase(args)
 	{
-	}
-
-	generic<typename TPrediction>
-		where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-	TPrediction VowpalWabbitNative::PredictOrLearn(String^ line, bool predict)
-	{
-		auto bytes = System::Text::Encoding::UTF8->GetBytes(line);
-		auto lineHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
-
-		example* ex = nullptr;
-		try
+		if (args->ParallelOptions != nullptr)
 		{
-			ex = VW::read_example(*m_vw, reinterpret_cast<char*>(lineHandle.AddrOfPinnedObject().ToPointer()));
+			m_vw->all_reduce_type = AllReduceType::Thread;
 
-			if (predict)
-				m_vw->l->predict(*ex);
+			if (args->Root == nullptr)
+			{
+				m_vw->all_reduce = new AllReduceThreads(args->ParallelOptions->MaxDegreeOfParallelism, args->Node);
+			}
 			else
-				m_vw->learn(ex);
-
-			auto prediction = gcnew TPrediction();
-			prediction->ReadFromExample(m_vw, ex);
-
-			m_vw->l->finish_example(*m_vw, *ex);
-			ex = nullptr;
-
-			return prediction;
-		}
-		CATCHRETHROW
-		finally
-		{
-			lineHandle.Free();
-
-			if (ex != nullptr)
 			{
-				VW::finish_example(*m_vw, ex);
+				auto parent_all_reduce = (AllReduceThreads*)args->Root->m_vw->all_reduce;
+
+				m_vw->all_reduce = new AllReduceThreads(parent_all_reduce, args->ParallelOptions->MaxDegreeOfParallelism, args->Node);
 			}
 		}
-	}
-
-	generic<typename TPrediction>
-		where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-	TPrediction VowpalWabbitNative::LearnAndPredict(String^ line)
-	{
-		return PredictOrLearn<TPrediction>(line, false);
-	}
-
-	generic<typename TPrediction>
-		where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-	TPrediction VowpalWabbitNative::Predict(String^ line)
-	{
-		return PredictOrLearn<TPrediction>(line, true);
-	}
-
-	void VowpalWabbitNative::Learn(String^ line)
-	{
-		auto bytes = System::Text::Encoding::UTF8->GetBytes(line);
-		auto lineHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
-
-		example* ex = nullptr;
+		
 		try
 		{
-			ex = VW::read_example(*m_vw, reinterpret_cast<char*>(lineHandle.AddrOfPinnedObject().ToPointer()));
-
-			m_vw->learn(ex);
-
-			m_vw->l->finish_example(*m_vw, *ex);
-			ex = nullptr;
+			m_hasher = GetHasher();
 		}
 		CATCHRETHROW
-		finally
-		{
-			lineHandle.Free();
-
-			if (ex != nullptr)
-			{
-				VW::finish_example(*m_vw, ex);
-			}
-		}
 	}
 
-	void VowpalWabbitNative::PredictAndDiscard(String^ line)
+	VowpalWabbit::VowpalWabbit(String^ args)
+		: VowpalWabbit(gcnew VowpalWabbitSettings(args))
 	{
-		auto bytes = System::Text::Encoding::UTF8->GetBytes(line);
-		auto lineHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
-
-		example* ex = nullptr;
-		try
-		{
-			ex = VW::read_example(*m_vw, reinterpret_cast<char*>(lineHandle.AddrOfPinnedObject().ToPointer()));
-
-			m_vw->l->predict(*ex);
-
-			m_vw->l->finish_example(*m_vw, *ex);
-			ex = nullptr;
-		}
-		CATCHRETHROW
-		finally
-		{
-			lineHandle.Free();
-
-			if (ex != nullptr)
-			{
-				VW::finish_example(*m_vw, ex);
-			}
-		}
 	}
 
-
-	void VowpalWabbitNative::Driver()
+	void VowpalWabbit::Driver()
 	{
 		try
 		{
@@ -135,12 +58,13 @@ namespace VW
 		CATCHRETHROW
 	}
 
-	void VowpalWabbitNative::RunMultiPass()
+	void VowpalWabbit::RunMultiPass()
 	{
 		if (m_vw->numpasses > 1)
 		{
 			try
 			{
+				// m_vw->p->used_index = m_vw->p->begin_parsed_examples + 1;
 				adjust_used_index(*m_vw);
 				m_vw->do_reset_source = true;
 				VW::start_parser(*m_vw, false);
@@ -151,7 +75,7 @@ namespace VW
 		}
 	}
 
-	void VowpalWabbitNative::SaveModel()
+	void VowpalWabbit::SaveModel()
 	{
 		string name = m_vw->final_regressor_name;
 		if (name.empty())
@@ -162,7 +86,7 @@ namespace VW
 		this->SaveModel(gcnew String(name.c_str()));
 	}
 
-	void VowpalWabbitNative::SaveModel(String^ filename)
+	void VowpalWabbit::SaveModel(String^ filename)
 	{
 		if (String::IsNullOrEmpty(filename))
 		{
@@ -185,7 +109,7 @@ namespace VW
 		CATCHRETHROW
 	}
 
-	VowpalWabbitPerformanceStatistics^ VowpalWabbitNative::PerformanceStatistics::get()
+	VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
 	{
 		// see parse_args.cc:finish(...)
 
@@ -227,7 +151,7 @@ namespace VW
 		return stats;
 	}
 
-	uint32_t VowpalWabbitNative::HashSpace(String^ s)
+	uint32_t VowpalWabbit::HashSpace(String^ s)
 	{
 		auto newHash = m_hasher(s, hash_base);
 
@@ -239,7 +163,7 @@ namespace VW
 		return (uint32_t)newHash;
 	}
 
-	uint32_t VowpalWabbitNative::HashFeature(String^ s, unsigned long u)
+	uint32_t VowpalWabbit::HashFeature(String^ s, unsigned long u)
 	{
 		auto newHash = m_hasher(s, u) & m_vw->parse_mask;
 
@@ -251,7 +175,7 @@ namespace VW
 		return (uint32_t)newHash;
 	}
 
-	uint32_t VowpalWabbitNative::HashSpaceNative(String^ s)
+	uint32_t VowpalWabbit::HashSpaceNative(String^ s)
 	{
 		auto bytes = System::Text::Encoding::UTF8->GetBytes(s);
 		auto handle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
@@ -267,7 +191,7 @@ namespace VW
 		}
 	}
 
-	uint32_t VowpalWabbitNative::HashFeatureNative(String^ s, unsigned long u)
+	uint32_t VowpalWabbit::HashFeatureNative(String^ s, unsigned long u)
 	{
 		auto bytes = System::Text::Encoding::UTF8->GetBytes(s);
 		auto handle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
@@ -283,60 +207,268 @@ namespace VW
 		}
 	}
 
-	void VowpalWabbitNative::Learn(example* ex)
+	VowpalWabbitExample^ VowpalWabbit::ParseLine(String^ line)
+	{
+		auto ex = GetOrCreateNativeExample();
+		auto bytes = System::Text::Encoding::UTF8->GetBytes(line);
+		auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
+
+		try
+		{
+			try
+			{
+				VW::read_line(*m_vw, ex->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
+
+				// finalize example
+				VW::parse_atomic_example(*m_vw, ex->m_example, false);
+				VW::setup_example(*m_vw, ex->m_example);
+
+				return ex;
+			}
+			catch (...)
+			{
+				delete ex;
+				throw;
+			}
+		}
+		CATCHRETHROW
+		finally
+		{
+			valueHandle.Free();
+		}
+	}
+
+	void VowpalWabbit::Learn(VowpalWabbitExample^ ex)
 	{
 		try
 		{
-			m_vw->learn(ex);
+			m_vw->learn(ex->m_example);
 
 			// as this is not a ring-based example it is not free'd
-			m_vw->l->finish_example(*m_vw, *ex);
+			m_vw->l->finish_example(*m_vw, *ex->m_example);
 		}
 		CATCHRETHROW
 	}
 
-	void VowpalWabbitNative::PredictAndDiscard(example* ex)
+	generic<typename T>
+	T VowpalWabbit::Learn(VowpalWabbitExample^ ex, IVowpalWabbitPredictionFactory<T>^ predictionFactory)
 	{
 		try
 		{
-			m_vw->l->predict(*ex);
+			m_vw->learn(ex->m_example);
+
+			auto prediction = predictionFactory->Create(m_vw, ex->m_example);
 
 			// as this is not a ring-based example it is not free'd
-			m_vw->l->finish_example(*m_vw, *ex);
+			m_vw->l->finish_example(*m_vw, *ex->m_example);
+
+			return prediction;
 		}
 		CATCHRETHROW
 	}
 
-	void VowpalWabbitNative::LearnAndPredict(example* ex, VowpalWabbitPrediction^ result)
+	void VowpalWabbit::Predict(VowpalWabbitExample^ ex)
 	{
 		try
 		{
-			m_vw->learn(ex);
-
-			result->ReadFromExample(m_vw, ex);
+			m_vw->l->predict(*ex->m_example);
 
 			// as this is not a ring-based example it is not free'd
-			m_vw->l->finish_example(*m_vw, *ex);
+			m_vw->l->finish_example(*m_vw, *ex->m_example);
 		}
 		CATCHRETHROW
 	}
 
-	void VowpalWabbitNative::Predict(example* ex, VowpalWabbitPrediction^ result)
+	generic<typename T>
+	T VowpalWabbit::Predict(VowpalWabbitExample^ ex, IVowpalWabbitPredictionFactory<T>^ predictionFactory)
 	{
 		try
 		{
-			m_vw->l->predict(*ex);
+			m_vw->l->predict(*ex->m_example);
 
-			result->ReadFromExample(m_vw, ex);
+			auto prediction = predictionFactory->Create(m_vw, ex->m_example);
 
 			// as this is not a ring-based example it is not free'd
-			m_vw->l->finish_example(*m_vw, *ex);
+			m_vw->l->finish_example(*m_vw, *ex->m_example);
+
+			return prediction;
 		}
 		CATCHRETHROW
 	}
 
-	VowpalWabbitNative^ VowpalWabbitNative::Underlying::get()
+
+	void VowpalWabbit::Learn(String^ line)
 	{
-		return this;
+		VowpalWabbitExample^ example = nullptr;
+
+		try
+		{
+			example = ParseLine(line);
+			Learn(example);
+		}
+		finally
+		{
+			delete example;
+		}
+	}
+
+	void VowpalWabbit::Predict(String^ line)
+	{
+		VowpalWabbitExample^ example = nullptr;
+
+		try
+		{
+			example = ParseLine(line);
+			Predict(example);
+		}
+		finally
+		{
+			delete example;
+		}
+	}
+	
+	generic<typename TPrediction>
+	TPrediction VowpalWabbit::Learn(String^ line, IVowpalWabbitPredictionFactory<TPrediction>^ predictionFactory)
+	{
+		VowpalWabbitExample^ example = nullptr;
+
+		try
+		{
+			example = ParseLine(line);
+			return Learn(example, predictionFactory);
+		}
+		finally
+		{
+			delete example;
+		}
+	}
+
+	generic<typename T>
+	T VowpalWabbit::Predict(String^ line, IVowpalWabbitPredictionFactory<T>^ predictionFactory)
+	{
+		VowpalWabbitExample^ example = nullptr;
+
+		try
+		{
+			example = ParseLine(line);
+			return Predict(example, predictionFactory);
+		}
+		finally
+		{
+			delete example;
+		}
+	}
+
+	void VowpalWabbit::EndOfPass()
+	{
+		try
+		{
+			m_vw->l->end_pass();
+			sync_stats(*m_vw);
+		}
+		CATCHRETHROW
+	}
+
+	/// <summary>
+	/// Hashes the given value <paramref name="s"/>.
+	/// </summary>
+	/// <param name="s">String to be hashed.</param>
+	/// <param name="u">Hash offset.</param>
+	/// <returns>The resulting hash code.</returns>
+	size_t hashall(String^ s, unsigned long u)
+	{
+		// get raw bytes from string
+		auto keys = Encoding::UTF8->GetBytes(s);
+
+		uint32_t h1 = u;
+		uint32_t k1 = 0;
+
+		const uint32_t c1 = 0xcc9e2d51;
+		const uint32_t c2 = 0x1b873593;
+
+		int length = keys->Length;
+		int i = 0;
+		while (i <= length - 4)
+		{
+			// convert byte array to integer
+			k1 = (uint32_t)(keys[i] | keys[i + 1] << 8 | keys[i + 2] << 16 | keys[i + 3] << 24);
+
+			k1 *= c1;
+			k1 = ROTL32(k1, 15);
+			k1 *= c2;
+
+			h1 ^= k1;
+			h1 = ROTL32(h1, 13);
+			h1 = h1 * 5 + 0xe6546b64;
+
+			i += 4;
+		}
+
+		k1 = 0;
+		int tail = length - length % 4;
+		switch (length & 3)
+		{
+		case 3:
+			k1 ^= (uint32_t)(keys[tail + 2] << 16);
+		case 2:
+			k1 ^= (uint32_t)(keys[tail + 1] << 8);
+		case 1:
+			k1 ^= (uint32_t)(keys[tail]);
+			k1 *= c1;
+			k1 = ROTL32(k1, 15);
+			k1 *= c2;
+			h1 ^= k1;
+			break;
+		}
+
+		// finalization
+		h1 ^= (uint32_t)length;
+
+		return MURMUR_HASH_3::fmix(h1);
+	}
+
+	/// <summary>
+	/// Hashes the given value <paramref name="s"/>.
+	/// </summary>
+	/// <param name="s">String to be hashed.</param>
+	/// <param name="u">Hash offset.</param>
+	/// <returns>The resulting hash code.</returns>
+	size_t hashstring(String^ s, unsigned long u)
+	{
+		s = s->Trim();
+
+		int sInt = 0;
+		if (int::TryParse(s, sInt))
+		{
+			return sInt + u;
+		}
+		else
+		{
+			return hashall(s, u);
+		}
+	}
+
+	Func<String^, unsigned long, size_t>^ VowpalWabbit::GetHasher()
+	{
+		//feature manipulation
+		string hash_function("strings");
+		if (m_vw->vm.count("hash"))
+		{
+			hash_function = m_vw->vm["hash"].as<string>();
+		}
+
+		if (hash_function == "strings")
+		{
+			return gcnew Func<String^, unsigned long, size_t>(&hashstring);
+		}
+		else if (hash_function == "all")
+		{
+			return gcnew Func<String^, unsigned long, size_t>(&hashall);
+
+		}
+		else
+		{
+			THROW("Unsupported hash function: " << hash_function);
+		}
 	}
 }

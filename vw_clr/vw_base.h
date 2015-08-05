@@ -8,8 +8,10 @@ license as described in the file LICENSE.
 
 #include "vw_clr.h"
 #include <stack>
+#include "vw_interface.h"
 
 using namespace std;
+using namespace System::Collections::Generic;
 
 namespace VW
 {
@@ -23,21 +25,14 @@ namespace VW
 	/// Since the model class must delay diposal of <see cref="m_vw"/> until all referencing
 	/// VowpalWabbit instances are disposed, the base class does not dispose <see cref="m_vw"/>.
 	/// </remarks>
-	public ref class VowpalWabbitBase abstract 
+	public ref class VowpalWabbitBase abstract : IVowpalWabbitExamplePool
 	{
 	private:
 		VowpalWabbitModel^ m_model;
 
 		VowpalWabbitSettings^ m_settings;
 
-		/// <summary>
-		/// The CLR maintained, but natively allocated example pool.
-		/// </summary>
-		stack<example*>* m_examples;
-		/// <summary>
-		/// Select the right hash method based on args.
-		/// </summary>
-		Func<String^, unsigned long, size_t>^ GetHasher();
+		Stack<VowpalWabbitExample^>^ m_examples;
 
 	internal:
 		/// <summary>
@@ -49,22 +44,10 @@ namespace VW
 		/// Gets or creates a native example from a CLR maintained, but natively allocated pool.
 		/// </summary>
 		/// <returns>A ready to use cleared native example data structure.</returns>
-		example* GetOrCreateNativeExample();
-
-		/// <summary>
-		/// Puts a native example data structure back into the pool.
-		/// </summary>
-		/// <param name="ex">The example to be returned.</param>
-		void ReturnExampleToPool(example* ex);
+		VowpalWabbitExample^ GetOrCreateNativeExample();
 
 	protected:
-		/// <summary>
-		/// The selected hasher method.
-		/// </summary>
-		/// <remarks>
-		/// Avoiding if-else for hash function selection. Delegates outperform function pointers according to http://stackoverflow.com/questions/13443250/performance-of-c-cli-function-pointers-versus-net-delegates
-		/// </remarks>
-		initonly Func<String^, unsigned long, size_t>^ m_hasher;
+
 
 		/// <summary>
 		/// True if all nativedata structures are disposed.
@@ -97,5 +80,11 @@ namespace VW
 		{
 			VowpalWabbitSettings^ get();
 		}
+
+		/// <summary>
+		/// Puts a native example data structure back into the pool.
+		/// </summary>
+		/// <param name="ex">The example to be returned.</param>
+		virtual void ReturnExampleToPool(VowpalWabbitExample^ ex);
 	};
 }

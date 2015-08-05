@@ -167,7 +167,6 @@
     <ClInclude Include="vw_model.h" />
     <ClInclude Include="vw_prediction.h" />
     <ClInclude Include="vw_settings.h" />
-    <ClInclude Include="vw_threaded.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="clr_io.cpp" />
@@ -178,7 +177,6 @@
     <ClCompile Include="vw_exception.cpp" />
     <ClCompile Include="vw_model.cpp" />
     <ClCompile Include="vw_prediction.cpp" />
-    <ClCompile Include="vw_threaded.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\vowpalwabbit\vw_static.vcxproj">

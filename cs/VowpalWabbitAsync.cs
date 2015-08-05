@@ -11,11 +11,11 @@ namespace VW
 {
     public class VowpalWabbitAsync<TExample> : IDisposable
     {
-        private VowpalWabbitManager manager;
+        private VowpalWabbitThreadedLearning manager;
 
         private VowpalWabbitSerializer<TExample>[] serializers;
 
-        internal VowpalWabbitAsync(VowpalWabbitManager manager)
+        internal VowpalWabbitAsync(VowpalWabbitThreadedLearning manager)
         {
             // create a serializer for each instance - maintaining separate example caches
             this.serializers = Enumerable
@@ -28,44 +28,42 @@ namespace VW
         {
             manager.Post(vw =>
             {
-                using (var nativeExample = this.serializers[vw.NodeId].Serialize(new VowpalWabbitInterfaceVisitor(vw), example, label))
+                using (var ex = this.serializers[vw.Settings.Node].Serialize(vw, example, label))
                 {
-                    nativeExample.Learn();
+                    vw.Learn(ex);
                 }
             });
         }
 
-        public Task<TPrediction> LearnAndPredict<TPrediction>(TExample example, ILabel label)
-            where TPrediction : class, VowpalWabbitPrediction, new()
-        {
-            return manager.Post(vw =>
-            {
-                using (var nativeExample = this.serializers[vw.NodeId].Serialize(new VowpalWabbitInterfaceVisitor(vw), example, label))
-                {
-                    return nativeExample.LearnAndPredict();
-                }
-            });
-        }
-
-        public Task<TPrediction> Predict<TPrediction>(TExample example)
-            where TPrediction : class, VowpalWabbitPrediction, new()
-        {
-            return manager.Post(vw =>
-            {
-                using (var nativeExample = this.serializers[vw.NodeId].Serialize(new VowpalWabbitInterfaceVisitor(vw), example))
-                {
-                    return nativeExample.Predict();
-                }
-            });
-        }
-
-        public void PredictAndDiscard(TExample example)
+        public void Predict(TExample example)
         {
             manager.Post(vw =>
             {
-                using (var nativeExample = this.serializers[vw.NodeId].Serialize(new VowpalWabbitInterfaceVisitor(vw), example))
+                using (var ex = this.serializers[vw.Settings.Node].Serialize(vw, example))
                 {
-                    nativeExample.PredictAndDiscard();
+                    vw.Predict(ex);
+                }
+            });
+        }
+
+        public Task<TPrediction> Learn<TPrediction>(TExample example, ILabel label, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory)
+        {
+            return manager.Post(vw =>
+            {
+                using (var ex = this.serializers[vw.Settings.Node].Serialize(vw, example, label))
+                {
+                    return vw.Learn(ex, predictionFactory);
+                }
+            });
+        }
+
+        public Task<TPrediction> Predict<TPrediction>(TExample example, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory)
+        {
+            return manager.Post(vw =>
+            {
+                using (var ex = this.serializers[vw.Settings.Node].Serialize(vw, example))
+                {
+                    return vw.Predict(ex, predictionFactory);
                 }
             });
         }
@@ -82,14 +80,14 @@ namespace VW
 
         private void Dispose(bool disposing)
         {
-            if (isDiposing)
+            if (disposing)
             {
                 if (this.serializers != null)
                 {
                     foreach (var serializer in this.serializers)
                     {
                         // free cached examples
-                        this.serializer.Dispose();
+                        serializer.Dispose();
                     }
 
                     this.serializers = null;
@@ -103,13 +101,13 @@ namespace VW
 
     public class VowpalWabbitAsync<TExample, TActionDependentFeature>
     {
-        private VowpalWabbitManager manager;
+        private VowpalWabbitThreadedLearning manager;
 
         private VowpalWabbitSerializer<TExample>[] serializers;
 
         private VowpalWabbitSerializer<TActionDependentFeature>[] actionDependentFeatureSerializers;
 
-        internal VowpalWabbitAsync(VowpalWabbitManager manager, VowpalWabbitThreaded[] vws)
+        internal VowpalWabbitAsync(VowpalWabbitThreadedLearning manager)
         {
             // create a serializer for each instance - maintaining separate example caches
             this.serializers = Enumerable
@@ -127,24 +125,36 @@ namespace VW
         {
             manager.Post(vw => VowpalWabbitMultiLine.Learn(
                 vw, 
-                this.serializers[vw.NodeId], 
-                this.actionDependentFeatureSerializers[vw.NodeId], 
+                this.serializers[vw.Settings.Node], 
+                this.actionDependentFeatureSerializers[vw.Settings.Node], 
                 example, 
                 actionDependentFeatures, 
                 index, 
                 label));
-
-            // build learn threading, predict threading, single instance
         }
 
         public Task<int[]> LearnAndPredictIndex(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
-            return manager.Post(vw => vws[vw.NodeId].LearnAndPredictIndex(example, actionDependentFeatures, index, label));
+            return manager.Post(vw => VowpalWabbitMultiLine.LearnAndPredictIndex(
+                vw,
+                this.serializers[vw.Settings.Node],
+                this.actionDependentFeatureSerializers[vw.Settings.Node],
+                example,
+                actionDependentFeatures,
+                index,
+                label));
         }
 
-        public TActionDependentFeature[] LearnAndPredict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        public Task<TActionDependentFeature[]> LearnAndPredict(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
-            return manager.Post(vw => vws[vw.NodeId].LearnAndPredict(example, actionDependentFeatures, index, label));
+            return manager.Post(vw => VowpalWabbitMultiLine.LearnAndPredict(
+                vw,
+                this.serializers[vw.Settings.Node],
+                this.actionDependentFeatureSerializers[vw.Settings.Node],
+                example,
+                actionDependentFeatures,
+                index,
+                label));
         }
     }
 

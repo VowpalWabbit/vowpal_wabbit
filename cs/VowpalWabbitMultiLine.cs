@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VW.Interfaces;
+using VW.Labels;
 using VW.Serializer;
 using VW.Serializer.Visitors;
 
@@ -15,7 +16,7 @@ namespace VW
         /// Simplify learning of examples with action dependent features. 
         /// </summary>
         public static void Learn<TExample, TActionDependentFeature>(
-            VowpalWabbitNative vw, 
+            VowpalWabbit vw, 
             VowpalWabbitSerializer<TExample> serializer,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example, 
@@ -23,35 +24,35 @@ namespace VW
             int index, 
             ILabel label)
         {
-            var visitor = new VowpalWabbitInterfaceVisitor(vw);
-            var examples = new List<IVowpalWabbitExample>();
+            var examples = new List<VowpalWabbitExample>();
 
             try
             {
                 // contains prediction results
-                var sharedExample = serializer.Serialize(visitor, example, SharedLabel.SharedLabel);
+                var sharedExample = serializer.Serialize(vw, example, SharedLabel.Singleton);
                 // check if we have shared features
                 if (sharedExample != null)
                 {
                     examples.Add(sharedExample);
-                    sharedExample.Learn();
+                    vw.Learn(sharedExample);
                 }
 
                 var i = 0;
                 foreach (var actionDependentFeature in actionDependentFeatures)
                 {
-                    var adfExample = actionDependentFeatureSerializer.Serialize(actionDependentFeature, i == index ? label : null);
+                    var adfExample = actionDependentFeatureSerializer.Serialize(vw, actionDependentFeature, i == index ? label : null);
                     examples.Add(adfExample);
 
-                    adfExample.Learn();
+                    vw.Learn(adfExample);
 
                     i++;
                 }
 
                 // signal we're finished using an empty example
-                // TODO: move empty example into VowpalWabbitNative
-                emptyExample.Learn();
+                // TODO: move empty example into VowpalWabbit
+                vw.Learn(string.Empty);
 
+                // Dump input file for command line learning
                 //File.AppendAllLines(@"c:\temp\msn.txt",
                 //    examples.OfType<VowpalWabbitDebugExample>()
                 //        .Select(e => e.VowpalWabbitString)
@@ -76,39 +77,39 @@ namespace VW
         /// <param name="example">The user example.</param>
         /// <returns>An ordered subset of predicted action indexes.</returns>
         public static int[] LearnAndPredictIndex<TExample, TActionDependentFeature>(
-            VowpalWabbitNative vw,
+            VowpalWabbit vw,
             VowpalWabbitSerializer<TExample> serializer,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer, 
             TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, 
             int index, 
             ILabel label)
         {
-            var examples = new List<IVowpalWabbitExample>();
+            var examples = new List<VowpalWabbitExample>();
 
             try
             {
                 // contains prediction results
-                var sharedExample = this.serializer.Serialize(example);
+                var sharedExample = serializer.Serialize(vw, example);
                 // check if we have shared features
                 if (sharedExample != null)
                 {
                     examples.Add(sharedExample);
-                    sharedExample.Learn();
+                    vw.Learn(sharedExample);
                 }
 
                 // leave as loop (vs. linq) so if the serializer throws an exception, anything allocated so far can be free'd
                 var i = 0;
                 foreach (var actionDependentFeature in actionDependentFeatures)
                 {
-                    var adfExample = this.actionDependentFeatureSerializer.Serialize(actionDependentFeature, i == index ? label : null);
+                    var adfExample = actionDependentFeatureSerializer.Serialize(vw, actionDependentFeature, i == index ? label : null);
                     examples.Add(adfExample);
 
-                    adfExample.Learn();
+                    vw.Learn(adfExample);
                     i++;
                 }
 
                 // signal we're finished using an empty example
-                this.emptyExample.Learn();
+                vw.Learn(string.Empty);
 
                 // Nasty workaround. Since the prediction result is stored in the first example
                 // and we'll have to get an actual VowpalWabbitExampt
@@ -118,10 +119,7 @@ namespace VW
                     return null;
                 }
 
-                var prediction = new VowpalWabbitMultilabelPrediction();
-                prediction.ReadFromExample(firstExample.UnderlyingExample);
-
-                return prediction.Values;
+                return firstExample.GetPrediction(vw, VowpalWabbitPredictionType.Multilabel);
             }
             finally
             {
@@ -142,16 +140,16 @@ namespace VW
         /// <param name="example">The user example.</param>
         /// <returns>An ordered subset of predicted action dependent features.</returns>
         public static TActionDependentFeature[] LearnAndPredict<TExample, TActionDependentFeature>(
-            VowpalWabbitNative vw,
+            VowpalWabbit vw,
             VowpalWabbitSerializer<TExample> serializer,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example, 
-            IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, 
+            IEnumerable<TActionDependentFeature> actionDependentFeatures, 
             int index, 
             ILabel label)
         {
-            var multiLabelPredictions = this.LearnAndPredictIndex(example, actionDependentFeatures, index, label);
-            return actionDependentFeatures.Permutate(multiLabelPredictions);
+            var multiLabelPredictions = LearnAndPredictIndex(vw, serializer, actionDependentFeatureSerializer, example, actionDependentFeatures, index, label);
+            return actionDependentFeatures.Subset(multiLabelPredictions);
         }
 
         /// <summary>
@@ -159,8 +157,8 @@ namespace VW
         /// </summary>
         /// <param name="example">The user example.</param>
         /// <returns>An ordered subset of predicted action indexes.</returns>
-        public static int[] PredictIndex(
-            VowpalWabbitNative vw,
+        public static int[] PredictIndex<TExample, TActionDependentFeature>(
+            VowpalWabbit vw,
             VowpalWabbitSerializer<TExample> serializer,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer, 
             TExample example, 
@@ -170,30 +168,30 @@ namespace VW
             // `doc1 |lda :.1 :.2 [1]
             // `doc2 |lda :.2 :.3 [2]
             // <new line>
-            var examples = new List<IVowpalWabbitExample>();
+            var examples = new List<VowpalWabbitExample>();
 
             try
             {
                 // contains prediction results
-                var sharedExample = this.serializer.Serialize(example);
+                var sharedExample = serializer.Serialize(vw, example);
                 // check if we have shared features
                 if (sharedExample != null)
                 {
                     examples.Add(sharedExample);
-                    sharedExample.PredictAndDiscard();
+                    vw.Predict(sharedExample);
                 }
 
                 // leave as loop (vs. linq) so if the serializer throws an exception, anything allocated so far can be free'd
                 foreach (var actionDependentFeature in actionDependentFeatures)
                 {
-                    var adfExample = this.actionDependentFeatureSerializer.Serialize(actionDependentFeature);
+                    var adfExample = actionDependentFeatureSerializer.Serialize(vw, actionDependentFeature);
                     examples.Add(adfExample);
 
-                    adfExample.PredictAndDiscard();
+                    vw.Predict(adfExample);
                 }
 
                 // signal we're finished using an empty example
-                this.emptyExample.PredictAndDiscard();
+                vw.Predict(string.Empty);
 
                 // Nasty workaround. Since the prediction result is stored in the first example
                 // and we'll have to get an actual VowpalWabbitExampt
@@ -203,10 +201,7 @@ namespace VW
                     return null;
                 }
 
-                var prediction = new VowpalWabbitMultilabelPrediction();
-                prediction.ReadFromExample(firstExample.UnderlyingExample);
-
-                return prediction.Values;
+                return firstExample.GetPrediction(vw, VowpalWabbitPredictionType.Multilabel);
             }
             finally
             {
@@ -227,14 +222,14 @@ namespace VW
         /// <param name="example">The user example.</param>
         /// <returns>An ordered subset of predicted action dependent features.</returns>
         public static TActionDependentFeature[] Predict<TExample, TActionDependentFeature>(
-            VowpalWabbitNative vw,
+            VowpalWabbit vw,
             VowpalWabbitSerializer<TExample> serializer,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer, 
-            TExample example, 
-            IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures)
+            TExample example,
+            IEnumerable<TActionDependentFeature> actionDependentFeatures)
         {
-            var multiLabelPredictions = this.PredictIndex(example, actionDependentFeatures);
-            return actionDependentFeatures.Permutate(multiLabelPredictions);
+            var multiLabelPredictions = PredictIndex(vw, serializer, actionDependentFeatureSerializer, example, actionDependentFeatures);
+            return actionDependentFeatures.Subset(multiLabelPredictions);
         }
     }
 }

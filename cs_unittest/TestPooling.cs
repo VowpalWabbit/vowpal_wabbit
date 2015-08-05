@@ -14,14 +14,14 @@ namespace cs_unittest
         [ExpectedException(typeof(InvalidOperationException))]
         public void ObjectPoolTestEmptyFactory()
         {
-            new ObjectPool<Disposable>().Get();
+            new ObjectPool<Disposable, Disposable>().Get();
         }
 
         [TestMethod]
         [ExpectedException(typeof(ObjectDisposedException))]
         public void ObjectPoolTestDisposed1()
         {
-            var objectPool = new ObjectPool<Disposable>(new Disposable());
+            var objectPool = new ObjectPool<Disposable, Disposable>(ObjectFactory.Create(new Disposable(), d => d.Create()));
             objectPool.Dispose();
             objectPool.Get();
         }
@@ -30,16 +30,16 @@ namespace cs_unittest
         [ExpectedException(typeof(ObjectDisposedException))]
         public void ObjectPoolTestDisposed2()
         {
-            var objectPool = new ObjectPool<Disposable>(new Disposable());
+            var objectPool = new ObjectPool<Disposable, Disposable>(ObjectFactory.Create(new Disposable(), d => d.Create()));
             objectPool.Dispose();
-            objectPool.UpdateFactory(new Disposable());
+            objectPool.UpdateFactory(ObjectFactory.Create(new Disposable(), d => d.Create()));
         }
 
         [TestMethod]
         public void ObjectPoolTestDangling()
         {
             var factory = new Disposable();
-            var objectPool = new ObjectPool<Disposable>(factory);
+            var objectPool = new ObjectPool<Disposable, Disposable>(ObjectFactory.Create(factory, d => d.Create()));
             var p1 = objectPool.Get();
             objectPool.Dispose();
 
@@ -57,13 +57,13 @@ namespace cs_unittest
         {
             var factory1 = new Disposable();
             var factory2 = new Disposable();
-            var objectPool = new ObjectPool<Disposable>();
+            var objectPool = new ObjectPool<Disposable, Disposable>();
 
-            objectPool.UpdateFactory(factory1);
+            objectPool.UpdateFactory(ObjectFactory.Create(factory1, d => d.Create()));
             var p3 = objectPool.Get();
             p3.Dispose();
 
-            objectPool.UpdateFactory(factory2);
+            objectPool.UpdateFactory(ObjectFactory.Create(factory2, d => d.Create()));
             Assert.IsTrue(factory1.Disposed);
 
             var p1 = objectPool.Get();
@@ -90,7 +90,7 @@ namespace cs_unittest
         public void ObjectPoolTestConcurrency()
         {
             var factories = new List<Disposable> { new Disposable() };
-            var objectPool = new ObjectPool<Disposable>(factories[0]);
+            var objectPool = new ObjectPool<Disposable, Disposable>(ObjectFactory.Create(factories[0], d => d.Create()));
 
             var t1 = new Thread(() =>
             {
@@ -117,7 +117,7 @@ namespace cs_unittest
                 for (int i = 0; i < 20; i++)
                 {
                     var f = new Disposable();
-                    objectPool.UpdateFactory(f);
+                    objectPool.UpdateFactory(ObjectFactory.Create(f, d => d.Create()));
                     Thread.Sleep(20);
                 }
             });
@@ -141,9 +141,9 @@ namespace cs_unittest
         }
 
 
-        public class Disposable : IDisposable, IObjectFactory<Disposable>
+        public class Disposable : IDisposable
         {
-            public Disposable()
+            public Disposable() 
             {
                 this.Children = new List<Disposable>();
             }

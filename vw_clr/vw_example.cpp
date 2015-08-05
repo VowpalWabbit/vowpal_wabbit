@@ -4,25 +4,26 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
 */
 
-#include "vw_base.h"
+#include "vowpalwabbit.h"
 #include "vw_example.h"
 #include "vw_prediction.h"
 
 namespace VW
 {
-	VowpalWabbitExample::VowpalWabbitExample(IVowpalWabbitNative^ vw, example* example) :
-		m_vw(vw->Underlying), m_example(example)
+	VowpalWabbitExample::VowpalWabbitExample(IVowpalWabbitExamplePool^ owner, example* example) :
+		m_owner(owner), m_example(example), m_innerExample(nullptr)
+	{
+	}
+
+	VowpalWabbitExample::VowpalWabbitExample(IVowpalWabbitExamplePool^ owner, VowpalWabbitExample^ example) :
+		m_owner(owner), m_example(example->m_example), m_innerExample(example)
 	{
 	}
 
 	VowpalWabbitExample::!VowpalWabbitExample()
 	{
-		if (m_example != nullptr)
-		{
-            m_vw->ReturnExampleToPool(m_example);
-
-			m_example = nullptr;
-		}
+		if (m_owner != nullptr)
+			m_owner->ReturnExampleToPool(this);
 	}
 
 	VowpalWabbitExample::~VowpalWabbitExample()
@@ -30,40 +31,19 @@ namespace VW
 		this->!VowpalWabbitExample();
 	}
 
-	void VowpalWabbitExample::Learn()
+	VowpalWabbitExample^ VowpalWabbitExample::InnerExample::get()
 	{
-		m_vw->Learn(m_example);
+		return m_innerExample;
 	}
 
-	void VowpalWabbitExample::PredictAndDiscard()
+	IVowpalWabbitExamplePool^ VowpalWabbitExample::Owner::get()
 	{
-		m_vw->PredictAndDiscard(m_example);
+		return m_owner;
 	}
 
-	generic<typename TPrediction>
-		where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-	TPrediction VowpalWabbitExample::LearnAndPredict()
+	generic<typename T>
+	T VowpalWabbitExample::GetPrediction(VowpalWabbit^ vw, IVowpalWabbitPredictionFactory<T>^ factory)
 	{
-		auto prediction = gcnew TPrediction();
-		
-		m_vw->LearnAndPredict(m_example, prediction);
-
-		return prediction;
-	}
-
-	generic<typename TPrediction>
-		where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-	TPrediction VowpalWabbitExample::Predict()
-	{
-		auto prediction = gcnew TPrediction();
-
-		m_vw->Predict(m_example, prediction);
-
-		return prediction;
-	}
-
-	VowpalWabbitExample^ VowpalWabbitExample::UnderlyingExample::get()
-	{
-		return this;
+		return factory->Create(vw->m_vw, m_example);
 	}
 }

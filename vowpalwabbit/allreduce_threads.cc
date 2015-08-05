@@ -11,46 +11,48 @@ This implements the allreduce function using threads.
 
 using namespace std;
 AllReduceThreads::AllReduceThreads(size_t ptotal, const size_t pnode)
-	: AllReduce(ptotal, pnode) // , child(nullptr), parent(nullptr),
+	: AllReduce(ptotal, pnode)  // , child(nullptr), parent(nullptr),
 	// reduce_child(new promise<Data*>),
 	// broadcast(new promise<void>)
 {
+	root = this;
+	m_mutex = new std::mutex;
+	m_cv = new std::condition_variable;
+	buffers = new void*[total];
 }
 
-AllReduceThreads::AllReduceThreads(AllReduceThreads* pparent, size_t ptotal, const size_t pnode)
-	: AllReduce(ptotal, pnode), child(nullptr), parent(pparent),
-	reduce_child(new promise<Data*>),
-	broadcast(new promise<void>)
+AllReduceThreads::AllReduceThreads(AllReduceThreads* proot, size_t ptotal, const size_t pnode)
+: AllReduce(ptotal, pnode), root(proot), count(0), m_mutex(nullptr), m_cv(nullptr), buffers(nullptr)
 {
-	pparent->child = this;
 }
+
+//AllReduceThreads::AllReduceThreads(AllReduceThreads* pparent, size_t ptotal, const size_t pnode)
+//	: AllReduce(ptotal, pnode), child(nullptr), parent(pparent),
+//	reduce_child(new promise<Data*>),
+//	broadcast(new promise<void>)
+//{
+//	pparent->child = this;
+//}
 
 AllReduceThreads::~AllReduceThreads()
 {
-	delete reduce_child;
-	delete broadcast;
+	delete m_mutex;
+	delete m_cv;
+	delete buffers;
 }
 
-Data* AllReduceThreads::get_child_data()
+void AllReduceThreads::waitForSynchronization()
 {
-	auto reduce_future = reduce_child->get_future();
-	reduce_future.wait();
-	auto left_data = reduce_future.get();
-	*reduce_child = promise<Data*>();
-
-	return left_data;
-}
-
-void AllReduceThreads::pass_up_and_wait_for_broadcast(void* buffer, size_t n)
-{
-	Data d = { buffer, n };
-	parent->reduce_child->set_value(&d);
-
-	parent->broadcast->get_future().wait();
-	*parent->broadcast = promise<void>();
-}
-
-void AllReduceThreads::notify_child()
-{
-	broadcast->set_value();
+	std::unique_lock<std::mutex> l(*root->m_mutex);
+	count++;
+		
+	if (count == total)
+	{
+		root->m_cv->notify_all();
+		count = 0;
+	}
+	else
+	{
+		m_cv->wait(l);
+	}
 }
