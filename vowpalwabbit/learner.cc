@@ -53,11 +53,11 @@ namespace LEARNER
 	  }
       }
     if (all.early_terminate) //drain any extra examples from parser and call end_examples
-      while ( all.early_terminate == false )
-	{
-	  if ((ec = VW::get_example(all.p)) != nullptr)//semiblocking operation.
+    {
+      while ((ec = VW::get_example(all.p)) != nullptr) //semiblocking operation.
 	    VW::finish_example(all, ec);
-	  else if (parser_done(all.p))
+
+       if (parser_done(all.p))
 	    {
 	      all.l->end_examples();
 	      return;

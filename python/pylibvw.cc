@@ -105,7 +105,11 @@ void my_finish_example(vw_ptr all, example_ptr ec) {
 }
 
 void my_learn(vw_ptr all, example_ptr ec) {
-  all->learn(ec.get());
+  if (ec->test_only) {
+    all->l->predict(*ec);
+  } else {
+    all->learn(ec.get());
+  }
 }
 
 float my_learn_string(vw_ptr all, char*str) {
