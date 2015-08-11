@@ -54,23 +54,23 @@ float multiply(v_array<feature>& f_dest, v_array<feature>& f_src2, interact& in)
 
 template <bool is_learn, bool print_all>
 void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec) {
-  v_array<feature> f1 = ec.atomics[in.n1];
-  v_array<feature> f2 = ec.atomics[in.n2];
+  v_array<feature>* f1 = &ec.atomics[in.n1];
+  v_array<feature>* f2 = &ec.atomics[in.n2];
 
   in.num_features = ec.num_features;
   in.total_sum_feat_sq = ec.total_sum_feat_sq;
   in.n1_feat_sq = ec.sum_feat_sq[in.n1];
   ec.total_sum_feat_sq -= in.n1_feat_sq;
   ec.total_sum_feat_sq -= ec.sum_feat_sq[in.n2];
-  ec.num_features -= f1.size();
-  ec.num_features -= f2.size();
+  ec.num_features -= f1->size();
+  ec.num_features -= f2->size();
   
   in.feat_store.erase();
-  push_many(in.feat_store, f1.begin, f1.size());
+  push_many(in.feat_store, f1->begin, f1->size());
   
-  ec.sum_feat_sq[in.n1] = multiply(f1, f2, in);
+  ec.sum_feat_sq[in.n1] = multiply(*f1, *f2, in);
   ec.total_sum_feat_sq += ec.sum_feat_sq[in.n1];
-  ec.num_features += f1.size();
+  ec.num_features += f1->size();
   
   /*for(size_t i = 0;i < f1.size();i++)
     cout<<f1[i].weight_index<<":"<<f1[i].x<<" ";

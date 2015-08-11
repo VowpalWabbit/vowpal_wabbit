@@ -190,7 +190,7 @@ namespace CB_ADF {
   }
 
   template<bool is_learn>
-  void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*> examples)
+  void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   {
     // m2: still save, store, and restore
     // starting with 3 for loops
