@@ -34,7 +34,7 @@ namespace VW {
 #ifdef _WIN32
 #include <Windows.h>
 
-	void mylog(const char* filename, int linenumber, const char* fmt, ...)
+	void vw_trace(const char* filename, int linenumber, const char* fmt, ...)
 	{
 		char buffer[4 * 1024];
 		int offset = sprintf_s(buffer, sizeof(buffer), "%s:%d (%d): ", filename, linenumber, GetCurrentThreadId());
