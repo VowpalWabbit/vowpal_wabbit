@@ -24,16 +24,17 @@ namespace VW
 		if (args->ParallelOptions != nullptr)
 		{
 			m_vw->all_reduce_type = AllReduceType::Thread;
+			auto total = args->ParallelOptions->MaxDegreeOfParallelism;
 
 			if (args->Root == nullptr)
 			{
-				m_vw->all_reduce = new AllReduceThreads(args->ParallelOptions->MaxDegreeOfParallelism, args->Node);
+				m_vw->all_reduce = new AllReduceThreads(total, args->Node);
 			}
 			else
 			{
 				auto parent_all_reduce = (AllReduceThreads*)args->Root->m_vw->all_reduce;
 
-				m_vw->all_reduce = new AllReduceThreads(parent_all_reduce, args->ParallelOptions->MaxDegreeOfParallelism, args->Node);
+				m_vw->all_reduce = new AllReduceThreads(parent_all_reduce, total, args->Node);
 			}
 		}
 		
@@ -207,37 +208,6 @@ namespace VW
 		}
 	}
 
-	VowpalWabbitExample^ VowpalWabbit::ParseLine(String^ line)
-	{
-		auto ex = GetOrCreateNativeExample();
-		auto bytes = System::Text::Encoding::UTF8->GetBytes(line);
-		auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
-
-		try
-		{
-			try
-			{
-				VW::read_line(*m_vw, ex->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
-
-				// finalize example
-				VW::parse_atomic_example(*m_vw, ex->m_example, false);
-				VW::setup_example(*m_vw, ex->m_example);
-
-				return ex;
-			}
-			catch (...)
-			{
-				delete ex;
-				throw;
-			}
-		}
-		CATCHRETHROW
-		finally
-		{
-			valueHandle.Free();
-		}
-	}
-
 	void VowpalWabbit::Learn(VowpalWabbitExample^ ex)
 	{
 		try
@@ -296,9 +266,46 @@ namespace VW
 		CATCHRETHROW
 	}
 
+	VowpalWabbitExample^ VowpalWabbit::ParseLine(String^ line)
+	{
+		auto ex = GetOrCreateNativeExample();
+		auto bytes = System::Text::Encoding::UTF8->GetBytes(line);
+		auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
+
+		try
+		{
+			try
+			{
+				VW::read_line(*m_vw, ex->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
+
+				// finalize example
+				VW::parse_atomic_example(*m_vw, ex->m_example, false);
+				VW::setup_example(*m_vw, ex->m_example);
+
+				return ex;
+			}
+			catch (...)
+			{
+				delete ex;
+				throw;
+			}
+		}
+		CATCHRETHROW
+		finally
+		{
+			valueHandle.Free();
+		}
+	}
 
 	void VowpalWabbit::Learn(String^ line)
 	{
+#if _DEBUG
+		if (String::IsNullOrEmpty(line))
+		{
+			throw gcnew ArgumentException("lines must not be empty. For multi-line examples use Learn(IEnumerable<string>) overload.");
+		}
+#endif
+
 		VowpalWabbitExample^ example = nullptr;
 
 		try
@@ -314,6 +321,13 @@ namespace VW
 
 	void VowpalWabbit::Predict(String^ line)
 	{
+#if _DEBUG
+		if (String::IsNullOrEmpty(line))
+		{
+			throw gcnew ArgumentException("lines must not be empty. For multi-line examples use Predict(IEnumerable<string>) overload.");
+		}
+#endif
+
 		VowpalWabbitExample^ example = nullptr;
 
 		try
@@ -326,10 +340,17 @@ namespace VW
 			delete example;
 		}
 	}
-	
+
 	generic<typename TPrediction>
 	TPrediction VowpalWabbit::Learn(String^ line, IVowpalWabbitPredictionFactory<TPrediction>^ predictionFactory)
 	{
+#if _DEBUG
+		if (String::IsNullOrEmpty(line))
+		{
+			throw gcnew ArgumentException("lines must not be empty. For multi-line examples use Learn(IEnumerable<string>) overload.");
+		}
+#endif
+
 		VowpalWabbitExample^ example = nullptr;
 
 		try
@@ -346,6 +367,13 @@ namespace VW
 	generic<typename T>
 	T VowpalWabbit::Predict(String^ line, IVowpalWabbitPredictionFactory<T>^ predictionFactory)
 	{
+#if _DEBUG
+		if (String::IsNullOrEmpty(line)) 
+		{
+			throw gcnew ArgumentException("lines must not be empty. For multi-line examples use Learn(IEnumerable<string>) overload.");
+		}
+#endif
+
 		VowpalWabbitExample^ example = nullptr;
 
 		try
@@ -356,6 +384,120 @@ namespace VW
 		finally
 		{
 			delete example;
+		}
+	}
+
+	void VowpalWabbit::Learn(IEnumerable<String^>^ lines)
+	{
+		auto examples = gcnew List<VowpalWabbitExample^>;
+
+		try
+		{
+			for each (auto line in lines)
+			{
+				auto ex = ParseLine(line);
+				examples->Add(ex);
+
+				Learn(ex);
+			}
+
+			auto empty = GetOrCreateEmptyExample();
+			examples->Add(empty);
+			Learn(empty);
+		}
+		finally
+		{
+			for each (auto ex in examples)
+			{
+				delete ex;
+			}
+		}
+	}
+
+	void VowpalWabbit::Predict(IEnumerable<String^>^ lines)
+	{
+		auto examples = gcnew List<VowpalWabbitExample^>;
+
+		try
+		{
+			for each (auto line in lines)
+			{
+				auto ex = ParseLine(line);
+				examples->Add(ex);
+
+				Predict(ex);
+			}
+
+			auto empty = GetOrCreateEmptyExample();
+			examples->Add(empty);
+			Predict(empty);
+		}
+		finally
+		{
+			for each (auto ex in examples)
+			{
+				delete ex;
+			}
+		}
+	}
+
+	generic<typename T>
+	T VowpalWabbit::Learn(IEnumerable<String^>^ lines, IVowpalWabbitPredictionFactory<T>^ predictionFactory)
+	{
+		auto examples = gcnew List<VowpalWabbitExample^>;
+
+		try
+		{
+			for each (auto line in lines)
+			{
+				auto ex = ParseLine(line);
+				examples->Add(ex);
+
+				Learn(ex);
+			}
+
+			auto empty = GetOrCreateEmptyExample();
+			examples->Add(empty);
+			Learn(empty);
+
+			return examples[0]->GetPrediction(this, predictionFactory);
+		}
+		finally
+		{
+			for each (auto ex in examples)
+			{
+				delete ex;
+			}
+		}
+	}
+
+	generic<typename T>
+	T VowpalWabbit::Predict(IEnumerable<String^>^ lines, IVowpalWabbitPredictionFactory<T>^ predictionFactory)
+	{
+		auto examples = gcnew List<VowpalWabbitExample^>;
+
+		try
+		{
+			for each (auto line in lines)
+			{
+				auto ex = ParseLine(line);
+				examples->Add(ex);
+
+				Predict(ex);
+			}
+
+			auto empty = GetOrCreateEmptyExample();
+			examples->Add(empty);
+			Predict(empty);
+
+			return examples[0]->GetPrediction(this, predictionFactory);
+		}
+		finally
+		{
+			for each (auto ex in examples)
+			{
+				delete ex;
+			}
 		}
 	}
 

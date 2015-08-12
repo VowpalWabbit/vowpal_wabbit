@@ -14,7 +14,7 @@ namespace cs_unittest
         [ExpectedException(typeof(InvalidOperationException))]
         public void ObjectPoolTestEmptyFactory()
         {
-            new ObjectPool<Disposable, Disposable>().Get();
+            new ObjectPool<Disposable, Disposable>().GetOrCreate();
         }
 
         [TestMethod]
@@ -23,7 +23,7 @@ namespace cs_unittest
         {
             var objectPool = new ObjectPool<Disposable, Disposable>(ObjectFactory.Create(new Disposable(), d => d.Create()));
             objectPool.Dispose();
-            objectPool.Get();
+            objectPool.GetOrCreate();
         }
 
         [TestMethod]
@@ -40,7 +40,7 @@ namespace cs_unittest
         {
             var factory = new Disposable();
             var objectPool = new ObjectPool<Disposable, Disposable>(ObjectFactory.Create(factory, d => d.Create()));
-            var p1 = objectPool.Get();
+            var p1 = objectPool.GetOrCreate();
             objectPool.Dispose();
 
             Assert.IsTrue(factory.Disposed);
@@ -60,19 +60,19 @@ namespace cs_unittest
             var objectPool = new ObjectPool<Disposable, Disposable>();
 
             objectPool.UpdateFactory(ObjectFactory.Create(factory1, d => d.Create()));
-            var p3 = objectPool.Get();
+            var p3 = objectPool.GetOrCreate();
             p3.Dispose();
 
             objectPool.UpdateFactory(ObjectFactory.Create(factory2, d => d.Create()));
             Assert.IsTrue(factory1.Disposed);
 
-            var p1 = objectPool.Get();
-            var p2 = objectPool.Get();
+            var p1 = objectPool.GetOrCreate();
+            var p2 = objectPool.GetOrCreate();
 
             p1.Dispose();
             p2.Dispose();
 
-            p1 = objectPool.Get();
+            p1 = objectPool.GetOrCreate();
             p1.Dispose();
 
             objectPool.Dispose();
@@ -96,7 +96,7 @@ namespace cs_unittest
             {
                 for (int i = 0; i < 500; i++)
                 {
-                    var p = objectPool.Get();
+                    var p = objectPool.GetOrCreate();
                     Thread.Sleep(5);
                     p.Dispose();
                 }
@@ -106,7 +106,7 @@ namespace cs_unittest
             {
                 for (int i = 0; i < 500; i++)
                 {
-                    var p = objectPool.Get();
+                    var p = objectPool.GetOrCreate();
                     Thread.Sleep(7);
                     p.Dispose();
                 }

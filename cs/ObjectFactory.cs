@@ -11,7 +11,11 @@ using System;
 namespace VW
 {
     public static class ObjectFactory
-    {
+    {    /// <summary>
+        /// Disposable object factory.
+        /// </summary>
+        /// <typeparam name="TContext">The disposable context needed to create objects of <typeparamref name="TObject"/>.</typeparam>
+        /// <typeparam name="TObject">The type of the objects to be created.</typeparam>
         public static ObjectFactory<TContext, TObject> Create<TContext, TObject>(TContext context, Func<TContext, TObject> creator)
             where TContext : IDisposable
         {

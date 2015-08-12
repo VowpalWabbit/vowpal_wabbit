@@ -42,6 +42,14 @@
     <Reference Include="Antlr4.Runtime.net45">
       <HintPath>..\vowpalwabbit\packages\Antlr4.Runtime.4.3.0\lib\net45\Antlr4.Runtime.net45.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Content.Recommendations.LinearAlgebra, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\vowpalwabbit\packages\Microsoft.Content.Recommendations.LinearAlgebra.1.0.0.0\lib\net45\Microsoft.Content.Recommendations.LinearAlgebra.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\vowpalwabbit\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <Choose>
@@ -58,7 +66,9 @@
   </Choose>
   <ItemGroup>
     <Compile Include="BaseData.cs" />
+    <Compile Include="CbAdfData.cs" />
     <Compile Include="RunTests.cs" />
+    <Compile Include="TestAllReduce.cs" />
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestManagedHash.cs" />
     <Compile Include="TrainSetCs_testLdf.cs" />
@@ -771,7 +781,9 @@
       <Link>train-sets\ref\zero.stdout</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
     <Antlr4 Include="VowpalWabbit.g4">
       <Generator>MSBuild:Compile</Generator>
       <Listener>True</Listener>

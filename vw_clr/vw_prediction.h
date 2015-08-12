@@ -17,6 +17,11 @@ namespace VW
 	public interface class IVowpalWabbitPredictionFactory
 	{
 	public:
+		/// <summary>
+		/// Creates a new prediction result from an example and the associated VW instance.
+		/// </summary>
+		/// <returns>A prediction result.</returns>
+		/// <remarks>Implementation must be thread-safe</remarks>
 		T Create(vw* vw, example* ex);
 	};
 

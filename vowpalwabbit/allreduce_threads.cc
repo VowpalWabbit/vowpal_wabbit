@@ -10,49 +10,53 @@ This implements the allreduce function using threads.
 #include <future>
 
 using namespace std;
-AllReduceThreads::AllReduceThreads(size_t ptotal, const size_t pnode)
-	: AllReduce(ptotal, pnode)  // , child(nullptr), parent(nullptr),
-	// reduce_child(new promise<Data*>),
-	// broadcast(new promise<void>)
+
+AllReduceSync::AllReduceSync(const size_t total) : m_total(total), m_count(0)
 {
-	root = this;
-	m_mutex = new std::mutex;
-	m_cv = new std::condition_variable;
+	m_mutex = new mutex;
+	m_cv = new condition_variable;
 	buffers = new void*[total];
 }
 
-AllReduceThreads::AllReduceThreads(AllReduceThreads* proot, size_t ptotal, const size_t pnode)
-: AllReduce(ptotal, pnode), root(proot), count(0), m_mutex(nullptr), m_cv(nullptr), buffers(nullptr)
-{
-}
-
-//AllReduceThreads::AllReduceThreads(AllReduceThreads* pparent, size_t ptotal, const size_t pnode)
-//	: AllReduce(ptotal, pnode), child(nullptr), parent(pparent),
-//	reduce_child(new promise<Data*>),
-//	broadcast(new promise<void>)
-//{
-//	pparent->child = this;
-//}
-
-AllReduceThreads::~AllReduceThreads()
+AllReduceSync::~AllReduceSync()
 {
 	delete m_mutex;
 	delete m_cv;
 	delete buffers;
 }
 
-void AllReduceThreads::waitForSynchronization()
+void AllReduceSync::waitForSynchronization()
 {
-	std::unique_lock<std::mutex> l(*root->m_mutex);
-	count++;
-		
-	if (count == total)
+	std::unique_lock<std::mutex> l(*m_mutex);
+	m_count++;
+
+	if (m_count >= m_total)
 	{
-		root->m_cv->notify_all();
-		count = 0;
+		assert(m_count == m_total);
+
+		m_cv->notify_all();
+		m_count = 0;
 	}
 	else
 	{
 		m_cv->wait(l);
+	}
+}
+
+AllReduceThreads::AllReduceThreads(AllReduceThreads* root, const size_t ptotal, const size_t pnode)
+	: AllReduce(ptotal, pnode), m_sync(root->m_sync), m_syncOwner(false)
+{
+}
+
+AllReduceThreads::AllReduceThreads(const size_t ptotal, const size_t pnode)
+	: AllReduce(ptotal, pnode), m_sync(new AllReduceSync(ptotal)), m_syncOwner(true)
+{
+}
+
+AllReduceThreads::~AllReduceThreads()
+{
+	if (m_syncOwner)
+	{
+		delete m_sync;
 	}
 }

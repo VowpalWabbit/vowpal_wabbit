@@ -13,7 +13,6 @@ namespace VW
 		m_vw(vw->m_vw), m_example(nullptr)
 	{
 		m_example = vw->GetOrCreateNativeExample();
-		m_vw->p->lp.default_label(&m_example->m_example->l);
 	}
 
 	VowpalWabbitExampleBuilder::~VowpalWabbitExampleBuilder()

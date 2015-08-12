@@ -81,6 +81,8 @@ namespace VW
 			VowpalWabbitSettings^ get();
 		}
 
+		VowpalWabbitExample^ GetOrCreateEmptyExample();
+		
 		/// <summary>
 		/// Puts a native example data structure back into the pool.
 		/// </summary>

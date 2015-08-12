@@ -49,7 +49,7 @@ namespace VW
         /// </summary>
         /// <param name="factory">
         /// An optional factory to create pooled objects on demand. 
-        /// <see cref="Get()"/> will throw if the factory is still null when called.
+        /// <see cref="GetOrCreate()"/> will throw if the factory is still null when called.
         /// </param>
         public ObjectPool(ObjectFactory<TContext, TObject> factory = null)
         {
@@ -104,7 +104,7 @@ namespace VW
         /// if the pool is empty.
         /// </summary>
         /// <remarks>This method is thread-safe.</remarks>
-        public PooledObject<TContext, TObject> Get()
+        public PooledObject<TContext, TObject> GetOrCreate()
         {
             int localVersion;
             ObjectFactory<TContext, TObject> localFactory;

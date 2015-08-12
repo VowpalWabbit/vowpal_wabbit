@@ -19,21 +19,38 @@ struct interact {
 
 float multiply(v_array<feature>& f_dest, v_array<feature>& f_src2, interact& in) {
   f_dest.erase();
-  v_array<feature> f_src1 = in.feat_store;
+  v_array<feature>& f_src1 = in.feat_store;
   vw* all = in.all;
   size_t weight_mask = all->reg.weight_mask;
   size_t base_id1 = f_src1[0].weight_index & weight_mask;
   size_t base_id2 = f_src2[0].weight_index & weight_mask;
   
+  // TODO: hash of n1, n2 should be stored
+  // if n1[0], n2[0] is missing, things are wrong
   feature f;
   f.weight_index = f_src1[0].weight_index;
   f.x = f_src1[0].x*f_src2[0].x;
   float sum_sq = f.x*f.x;
   f_dest.push_back(f);
 
+#ifdef _DEBUG
+  size_t prev_id1 = 0;
+  size_t prev_id2 = 0;
+#endif
+
   for(size_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();) {
+	  // calculating the relative offset from the namespace offset used to match features
     size_t cur_id1 = (size_t)(((f_src1[i1].weight_index & weight_mask) - base_id1) & weight_mask);
     size_t cur_id2 = (size_t)(((f_src2[i2].weight_index & weight_mask) - base_id2) & weight_mask);
+
+#ifdef _DEBUG
+	// checking for sorting requirement
+	assert(cur_id1 >= prev_id1);
+	assert(cur_id2 >= prev_id2);
+
+	prev_id1 = cur_id1;
+	prev_id2 = cur_id2;
+#endif
 
     if(cur_id1 == cur_id2) {
       feature f;
@@ -112,7 +129,7 @@ LEARNER::base_learner* interact_setup(vw& all)
     return nullptr;
   string s = all.vm["interact"].as<string>();
   if(s.length() != 2) {
-    cerr<<"Need two namespace arguments to interact!! EXITING\n";
+	  cerr<<"Need two namespace arguments to interact!! EXITING\n";
     return nullptr;
   }
   

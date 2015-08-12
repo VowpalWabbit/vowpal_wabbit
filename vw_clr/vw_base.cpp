@@ -130,14 +130,38 @@ namespace VW
 		CATCHRETHROW
     }
 
+	VowpalWabbitExample^ VowpalWabbitBase::GetOrCreateEmptyExample()
+	{
+		VowpalWabbitExample^ ex = nullptr;
+
+		try
+		{
+			ex = GetOrCreateNativeExample();
+
+			char empty = '\0';
+			VW::read_line(*m_vw, ex->m_example, &empty);
+
+			VW::parse_atomic_example(*m_vw, ex->m_example, false);
+			VW::setup_example(*m_vw, ex->m_example);
+
+			return ex;
+		}
+		catch(...)
+		{
+			delete ex;
+			throw;
+		}
+	}
+
 	void VowpalWabbitBase::ReturnExampleToPool(VowpalWabbitExample^ ex)
 	{
-#if DEBUG
+#if _DEBUG
 		if (m_vw == nullptr)
 		{
 			throw gcnew ObjectDisposedException("VowpalWabbitExample was not properly disposed as the owner is already disposed");
 		}
 #endif
+
 		// make sure we're not a ring based example 
 		assert(!VW::is_ring_example(*m_vw, ex->m_example));
 
@@ -148,49 +172,56 @@ namespace VW
 	{
 		try
 		{
-			if (m_examples != nullptr)
-			{
-				for each (auto ex in m_examples)
-				{
-					if (m_vw->multilabel_prediction)
-					{
-						VW::dealloc_example(m_vw->p->lp.delete_label, *ex->m_example, MULTILABEL::multilabel.delete_label);
-					}
-					else
-					{
-						VW::dealloc_example(m_vw->p->lp.delete_label, *ex->m_example);
-					}
-
-					::free_it(ex->m_example);
-				
-					// cleanup pointers in example chain
-					auto inner = ex;
-					while ((inner = inner->InnerExample) != nullptr)
-					{
-						inner->m_owner = nullptr;
-						inner->m_example = nullptr;
-					}
-
-					ex->m_example = nullptr;
-					
-					// avoid that this example is returned again
-					ex->m_owner = nullptr;
-				}
-
-				m_examples = nullptr;
-			}
-
 			if (m_vw != nullptr)
 			{
-				release_parser_datastructures(*m_vw);
+				auto multilabel_prediction = m_vw->multilabel_prediction;
+				auto delete_label = m_vw->p->lp.delete_label;
 
-				// make sure don't try to free m_vw twice in case VW::finish throws.
-				vw* vw_tmp = m_vw;
-				m_vw = nullptr;
-				VW::finish(*vw_tmp);
+				if (m_examples != nullptr)
+				{
+					for each (auto ex in m_examples)
+					{
+						if (multilabel_prediction)
+						{
+							VW::dealloc_example(delete_label, *ex->m_example, MULTILABEL::multilabel.delete_label);
+						}
+						else
+						{
+							VW::dealloc_example(delete_label, *ex->m_example);
+						}
+
+						::free_it(ex->m_example);
+
+						// cleanup pointers in example chain
+						auto inner = ex;
+						while ((inner = inner->InnerExample) != nullptr)
+						{
+							inner->m_owner = nullptr;
+							inner->m_example = nullptr;
+						}
+
+						ex->m_example = nullptr;
+
+						// avoid that this example is returned again
+						ex->m_owner = nullptr;
+					}
+
+					m_examples = nullptr;
+				}
+
+				if (m_vw != nullptr)
+				{
+					release_parser_datastructures(*m_vw);
+
+					// make sure don't try to free m_vw twice in case VW::finish throws.
+					vw* vw_tmp = m_vw;
+					m_vw = nullptr;
+					VW::finish(*vw_tmp);
+				}
 			}
-			
-			// don't add code here as in the case of VW::finish thrown an exception it won't be called
+
+
+			// don't add code here as in the case of VW::finish throws an exception it won't be called
 		}
 		CATCHRETHROW
 	}

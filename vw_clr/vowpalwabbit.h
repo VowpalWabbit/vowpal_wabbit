@@ -36,13 +36,19 @@ namespace VW
 		/// </remarks>
 		initonly Func<String^, unsigned long, size_t>^ m_hasher;
 
+		VowpalWabbitExample^ ParseLine(String^ line);
+
 	public:
 		/// <summary>
-		/// Initializes a new <see cref="VowpalWabbitBase"/> instance. 
+		/// Initializes a new <see cref="VowpalWabbit"/> instance. 
+		/// </summary>
+		/// <param name="settings">The settings.</param>
+		VowpalWabbit(VowpalWabbitSettings^ settings);
+
+		/// <summary>
+		/// Initializes a new <see cref="VowpalWabbit"/> instance. 
 		/// </summary>
 		/// <param name="args">Command line arguments.</param>
-		VowpalWabbit(VowpalWabbitSettings^ args);
-
 		VowpalWabbit(String^ args);
 
 		/// <summary>
@@ -68,8 +74,6 @@ namespace VW
 		{
 			VowpalWabbitPerformanceStatistics^ get();
 		}
-
-		VowpalWabbitExample^ ParseLine(String^ line);
 
 		/// <summary>
 		/// Hashes the given namespace <paramref name="s"/>.
@@ -110,8 +114,7 @@ namespace VW
 		/// </summary>
 		/// <returns>The prediction result.</returns>
 		/// <typeparam name="TPrediction">The prediction result type.</typeparam>
-		generic<typename T>
-		T Learn(VowpalWabbitExample^ ex, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
+		generic<typename T> T Learn(VowpalWabbitExample^ ex, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
 
 		void Learn(VowpalWabbitExample^ ex);
 
@@ -122,18 +125,23 @@ namespace VW
 		/// <typeparam name="TPrediction">The prediction result type.</typeparam>
 		void Predict(VowpalWabbitExample^ ex);
 
-		generic<typename T>
-		T Predict(VowpalWabbitExample^ ex, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
+		generic<typename T> T Predict(VowpalWabbitExample^ ex, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
 
 		void Learn(String^ line);
 
 		void Predict(String^ line);
 
-		generic<typename T>
-		T Learn(String^ line, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
+		generic<typename T> T Learn(String^ line, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
 
-		generic<typename T>
-		T Predict(String^ line, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
+		generic<typename T> T Predict(String^ line, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
+
+		void Learn(IEnumerable<String^>^ lines);
+
+		void Predict(IEnumerable<String^>^ lines);
+
+		generic<typename T> T Learn(IEnumerable<String^>^ lines, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
+
+		generic<typename T> T Predict(IEnumerable<String^>^ lines, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
 
 		void EndOfPass();
 

@@ -122,7 +122,7 @@ namespace cs_unittest
                     parallelOptions: new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount * 2 },
                     body: i =>
                     {
-                        using (var vwObject = vwPool.Get())
+                        using (var vwObject = vwPool.GetOrCreate())
                         {
                             var actualPredictions = new List<DataStringADF[]>();
                             foreach (DataString example in sampleData)

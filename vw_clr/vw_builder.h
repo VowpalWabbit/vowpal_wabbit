@@ -28,6 +28,7 @@ namespace VW
 		/// Features.
 		/// </summary>
 		v_array<feature>* m_atomic;
+
 	internal:
 		/// <summary>
 		/// Initializes a new <see cref="VowpalWabbitNamespaceBuilder"/> instance.

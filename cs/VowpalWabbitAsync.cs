@@ -93,15 +93,12 @@ namespace VW
                     this.serializers = null;
                 }
             }
-
-            // don't dispose VW before we can dispose all cached examples
-            // base.Dispose(isDiposing);
         }
     }
 
-    public class VowpalWabbitAsync<TExample, TActionDependentFeature>
+    public class VowpalWabbitAsync<TExample, TActionDependentFeature> : IDisposable
     {
-        private VowpalWabbitThreadedLearning manager;
+        private readonly VowpalWabbitThreadedLearning manager;
 
         private VowpalWabbitSerializer<TExample>[] serializers;
 
@@ -109,6 +106,8 @@ namespace VW
 
         internal VowpalWabbitAsync(VowpalWabbitThreadedLearning manager)
         {
+            this.manager = manager;
+
             // create a serializer for each instance - maintaining separate example caches
             this.serializers = Enumerable
                 .Range(0, manager.Settings.ParallelOptions.MaxDegreeOfParallelism)
@@ -156,6 +155,42 @@ namespace VW
                 index,
                 label));
         }
-    }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (this.serializers != null)
+                {
+                    foreach (var serializer in this.serializers)
+                    {
+                        // free cached examples
+                        serializer.Dispose();
+                    }
+
+                    this.serializers = null;
+                }
+
+                if (this.actionDependentFeatureSerializers != null)
+                {
+                    foreach (var serializer in this.actionDependentFeatureSerializers)
+                    {
+                        // free cached examples
+                        serializer.Dispose();
+                    }
+
+                    this.actionDependentFeatureSerializers = null;
+                }
+            }
+        }
+    }
 }

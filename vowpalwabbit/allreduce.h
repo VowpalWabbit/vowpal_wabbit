@@ -89,34 +89,43 @@ namespace std
 	class mutex;
 }
 
-class AllReduceThreads : public AllReduce
+class AllReduceSync
 {
 private:
-	// TODO: rename
-	AllReduceThreads* root;
+	mutex* m_mutex;
+	condition_variable* m_cv;
 
-	std::mutex* m_mutex;
-	std::condition_variable* m_cv;
+	uint32_t m_count;
+	size_t m_total;
 
-	void** buffers;
-
-	uint32_t count;
+public:
+	AllReduceSync(const size_t total);
+	~AllReduceSync();
 
 	void waitForSynchronization();
 
-public:
-	AllReduceThreads(size_t ptotal, const size_t pnode);
+	void** buffers;
+};
 
-	AllReduceThreads(AllReduceThreads* root, size_t ptotal, const size_t pnode);
+class AllReduceThreads : public AllReduce
+{
+private:
+	AllReduceSync* m_sync;
+	bool m_syncOwner;
+
+public:
+	AllReduceThreads(AllReduceThreads* root, const size_t ptotal, const size_t pnode);
+
+	AllReduceThreads(const size_t ptotal, const size_t pnode);
 
 	~AllReduceThreads();
 
 	template <class T, void(*f)(T&, const T&)> void all_reduce(T* buffer, const size_t n)
 	{
 		// register buffer
-		T** buffers = (T**)root->buffers;
+		T** buffers = (T**)m_sync->buffers;
 		buffers[node] = buffer;
-		waitForSynchronization();
+		m_sync->waitForSynchronization();
 		
 		size_t blockSize = n / total;
 		size_t index;
@@ -144,16 +153,17 @@ public:
 		for (; index < end; index++)
 		{
 			// Perform transposed AllReduce to help data locallity
-			T temp = buffers[0][index];
+			T& temp = buffers[0][index];
+
 			for (int i = 1; i < total; i++)
 				f(temp, buffers[i][index]);
 
 			// Broadcast back
-			for (int i = 0; i < total; i++)
+			for (int i = 1; i < total; i++)
 				buffers[i][index] = temp;
 		}
 
-		waitForSynchronization();
+		m_sync->waitForSynchronization();
 	}
 };
 

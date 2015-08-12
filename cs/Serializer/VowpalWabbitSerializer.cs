@@ -102,14 +102,13 @@ namespace VW.Serializer
             {
                 result = new CacheEntry 
                 {
-                    Example =  new VowpalWabbitExample(this, this.serializer(vw, example, label)),
+                    Example =  new VowpalWabbitExample(owner: this, example: this.serializer(vw, example, label)),
                     LastRecentUse = DateTime.UtcNow
                 };
                 this.exampleCache.Add(example, result);
             }
 
             // TODO: support Label != null here and update cached example using new label
-
             return result.Example;
         }
 

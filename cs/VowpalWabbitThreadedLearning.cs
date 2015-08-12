@@ -65,7 +65,6 @@ namespace VW
             // root closure
             {
                 var vw = this.vws[0] = new VowpalWabbit(settings.ShallowCopy(node: 0));
-                uint unitCount = 0; // unitCount <= example count due to multiline examples!
 
                 var actionBlock = this.actionBlocks[0] = new ActionBlock<Action<VowpalWabbit>>(
                     action => action(vw),
@@ -78,12 +77,10 @@ namespace VW
                     });
             }
 
-            var childSettings = settings.ShallowCopy(root: this.vws[0]);
             for (int i = 1; i < settings.ParallelOptions.MaxDegreeOfParallelism; i++)
             {
                 // closure vars
-                var vw = new VowpalWabbit(childSettings.ShallowCopy(node: (uint)i));
-                uint unitCount = 0; // unitCount <= example count due to multiline examples!
+                var vw = this.vws[i] = new VowpalWabbit(settings.ShallowCopy(root: this.vws[0], node: (uint)i));
 
                 var actionBlock = this.actionBlocks[i] = new ActionBlock<Action<VowpalWabbit>>(
                     action => action(vw),
@@ -196,16 +193,12 @@ namespace VW
 
         public void Learn(string line)
         {
-            this.Post(vw => 
-            {
-                using (var builder = new VowpalWabbitExampleBuilder(vw))
-                {
-                    using (var ex = vw.ParseLine(line))
-                    {
-                        vw.Learn(ex);
-                    }
-                }
-            });
+            this.Post(vw => vw.Learn(line));
+        }
+
+        public void Learn(IEnumerable<string> lines)
+        {
+            this.Post(vw => vw.Learn(lines));
         }
 
         public Task<VowpalWabbitPerformanceStatistics> PerformanceStatistics
@@ -230,7 +223,7 @@ namespace VW
                 actionBlock.Complete();
             }
 
-            return Task.WhenAll(this.actionBlocks.Select(a => a.Completion));
+            return Task.WhenAll(this.completionTasks);
 
         }
 
@@ -253,7 +246,7 @@ namespace VW
 
             this.syncActions.Add(vw => 
             {
-                vw.SaveModel();
+                vw.SaveModel(filename);
                 completionSource.SetResult(true);
             });
 
@@ -337,7 +330,10 @@ namespace VW
             {
                 lock (this.lockObject)
                 {
-                    return this.items.ToArray();
+                    var ret =  this.items.ToArray();
+                    this.items.Clear();
+
+                    return ret;
                 }
             }
         }

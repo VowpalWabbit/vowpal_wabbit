@@ -49,8 +49,9 @@ namespace VW
                 }
 
                 // signal we're finished using an empty example
-                // TODO: move empty example into VowpalWabbit
-                vw.Learn(string.Empty);
+                var empty = vw.GetOrCreateEmptyExample();
+                examples.Add(empty);
+                vw.Learn(empty);
 
                 // Dump input file for command line learning
                 //File.AppendAllLines(@"c:\temp\msn.txt",
@@ -109,7 +110,9 @@ namespace VW
                 }
 
                 // signal we're finished using an empty example
-                vw.Learn(string.Empty);
+                var empty = vw.GetOrCreateEmptyExample();
+                examples.Add(empty);
+                vw.Learn(empty);
 
                 // Nasty workaround. Since the prediction result is stored in the first example
                 // and we'll have to get an actual VowpalWabbitExampt
@@ -191,7 +194,9 @@ namespace VW
                 }
 
                 // signal we're finished using an empty example
-                vw.Predict(string.Empty);
+                var empty = vw.GetOrCreateEmptyExample();
+                examples.Add(empty);
+                vw.Predict(empty);
 
                 // Nasty workaround. Since the prediction result is stored in the first example
                 // and we'll have to get an actual VowpalWabbitExampt
