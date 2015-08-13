@@ -100,7 +100,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ws2_32.lib;$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /v /i  /r  /y  "$(SolutionDir)\$(PlatformShortName)\$(Configuration)"  "$(SolutionDir)$(Configuration)"</Command>
