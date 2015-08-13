@@ -50,6 +50,14 @@ namespace VW.Serializer.Visitors
             this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
+
+            // support anchor feature
+            if(namespaceDense.DenseFeature.AddAnchor)
+            {
+                this.namespaceBuilder.AddFeature(this.namespaceHash, 1);
+                i++;
+            }
+
             foreach (var v in namespaceDense.DenseFeature.Value)
             {
                 this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + i), v);
@@ -89,6 +97,14 @@ namespace VW.Serializer.Visitors
             this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
+
+            // support anchor feature
+            if(namespaceDense.DenseFeature.AddAnchor)
+            {
+                this.namespaceBuilder.AddFeature(this.namespaceHash, 1);
+                i++;
+            }
+
             foreach (var v in namespaceDense.DenseFeature.Value)
             {
                 this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + i), v);
@@ -128,6 +144,14 @@ namespace VW.Serializer.Visitors
             this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
+
+            // support anchor feature
+            if(namespaceDense.DenseFeature.AddAnchor)
+            {
+                this.namespaceBuilder.AddFeature(this.namespaceHash, 1);
+                i++;
+            }
+
             foreach (var v in namespaceDense.DenseFeature.Value)
             {
                 this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + i), v);
@@ -167,6 +191,14 @@ namespace VW.Serializer.Visitors
             this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
+
+            // support anchor feature
+            if(namespaceDense.DenseFeature.AddAnchor)
+            {
+                this.namespaceBuilder.AddFeature(this.namespaceHash, 1);
+                i++;
+            }
+
             foreach (var v in namespaceDense.DenseFeature.Value)
             {
                 this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + i), v);
@@ -206,6 +238,14 @@ namespace VW.Serializer.Visitors
             this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
+
+            // support anchor feature
+            if(namespaceDense.DenseFeature.AddAnchor)
+            {
+                this.namespaceBuilder.AddFeature(this.namespaceHash, 1);
+                i++;
+            }
+
             foreach (var v in namespaceDense.DenseFeature.Value)
             {
                 this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + i), v);
@@ -245,6 +285,14 @@ namespace VW.Serializer.Visitors
             this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
+
+            // support anchor feature
+            if(namespaceDense.DenseFeature.AddAnchor)
+            {
+                this.namespaceBuilder.AddFeature(this.namespaceHash, 1);
+                i++;
+            }
+
             foreach (var v in namespaceDense.DenseFeature.Value)
             {
                 this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + i), v);
@@ -284,6 +332,14 @@ namespace VW.Serializer.Visitors
             this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
+
+            // support anchor feature
+            if(namespaceDense.DenseFeature.AddAnchor)
+            {
+                this.namespaceBuilder.AddFeature(this.namespaceHash, 1);
+                i++;
+            }
+
             foreach (var v in namespaceDense.DenseFeature.Value)
             {
                 this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + i), v);

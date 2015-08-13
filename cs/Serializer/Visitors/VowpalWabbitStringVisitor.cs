@@ -32,6 +32,14 @@ namespace VW.Serializer.Visitors
                 namespaceDense.Name);
 
             var i = 0;
+
+            // support anchor feature
+            if (namespaceDense.DenseFeature.AddAnchor)
+            {
+                this.builder.Append(" 0:1");
+                i++;
+            }
+
             foreach (var value in namespaceDense.DenseFeature.Value)
             {
                 this.builder.AppendFormat(

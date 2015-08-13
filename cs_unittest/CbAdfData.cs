@@ -38,13 +38,13 @@ namespace cs_unittest.cbadf
         [Feature]
         public int Num { get; set; }
 
-        [Feature(FeatureGroup = 'x')]
+        [Feature(FeatureGroup = 'x', AddAnchor = true)]
         public float[] Vector { get; set; }
     }
 
     public class CbAdfAction
     {
-        [Feature(FeatureGroup = 'y')]
+        [Feature(FeatureGroup = 'y', AddAnchor = true)]
         public float[] Vector { get; set; }
     }
 }

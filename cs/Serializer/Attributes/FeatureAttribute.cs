@@ -22,6 +22,7 @@ namespace VW.Serializer.Attributes
         public FeatureAttribute()
         {
             this.Enumerize = false;
+            this.AddAnchor = false;
         }
 
         /// <summary>
@@ -36,6 +37,14 @@ namespace VW.Serializer.Attributes
         /// </summary>
         /// <remarks>Defaults to false.</remarks>
         public bool Enumerize { get; set; }
+
+        /// <summary>
+        /// If true, an anchoring feature (0:1) will be inserted at front.
+        /// This is required if --interact is used to mark the beginning of the feature namespace,
+        /// as 0-valued features are removed.
+        /// </summary>
+        /// <remarks>Defaults to false.</remarks>
+        public bool AddAnchor { get; set; }
 
         /// <summary>
         /// Cope with potential null values.
