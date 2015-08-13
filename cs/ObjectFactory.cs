@@ -14,32 +14,32 @@ namespace VW
     {    /// <summary>
         /// Disposable object factory.
         /// </summary>
-        /// <typeparam name="TContext">The disposable context needed to create objects of <typeparamref name="TObject"/>.</typeparam>
+        /// <typeparam name="TSource">The disposable context needed to create objects of <typeparamref name="TObject"/>.</typeparam>
         /// <typeparam name="TObject">The type of the objects to be created.</typeparam>
-        public static ObjectFactory<TContext, TObject> Create<TContext, TObject>(TContext context, Func<TContext, TObject> creator)
-            where TContext : IDisposable
+        public static ObjectFactory<TSource, TObject> Create<TSource, TObject>(TSource context, Func<TSource, TObject> creator)
+            where TSource : IDisposable
         {
-            return new ObjectFactory<TContext,TObject>(context, creator);
+            return new ObjectFactory<TSource,TObject>(context, creator);
         }
     }
 
     /// <summary>
     /// Disposable object factory.
     /// </summary>
-    /// <typeparam name="TContext">The disposable context needed to create objects of <typeparamref name="TObject"/>.</typeparam>
+    /// <typeparam name="TSource">The disposable context needed to create objects of <typeparamref name="TObject"/>.</typeparam>
     /// <typeparam name="TObject">The type of the objects to be created.</typeparam>
-    public class ObjectFactory<TContext, TObject> : IDisposable
-        where TContext : IDisposable
+    public class ObjectFactory<TSource, TObject> : IDisposable
+        where TSource : IDisposable
     {
-        private readonly Func<TContext, TObject> creator;
+        private readonly Func<TSource, TObject> creator;
         
-        private TContext context;
+        private TSource source;
 
         private bool disposed;
 
-        internal ObjectFactory(TContext context, Func<TContext, TObject> creator)
+        internal ObjectFactory(TSource source, Func<TSource, TObject> creator)
         {
-            this.context = context;
+            this.source = source;
             this.creator = creator;
             this.disposed = false;
         }
@@ -49,7 +49,7 @@ namespace VW
         /// </summary>
         public TObject Create()
         {
-            return this.creator(context);
+            return this.creator(source);
         }
 
         /// <summary>
@@ -67,8 +67,8 @@ namespace VW
             {
                 if (!disposed)
                 {
-                    this.context.Dispose();
-                    this.context = default(TContext);
+                    this.source.Dispose();
+                    this.source = default(TSource);
                     this.disposed = true;
                 }
             }

@@ -16,9 +16,9 @@ namespace VW
     /// <summary>
     /// Thread-safe object pool supporting versioned updates.
     /// </summary>
-    public class ObjectPool<TContext, TObject> : IDisposable
+    public class ObjectPool<TSource, TObject> : IDisposable
         where TObject : IDisposable
-        where TContext : IDisposable
+        where TSource : IDisposable
     {
         /// <summary>
         /// Lock resources
@@ -33,7 +33,7 @@ namespace VW
         /// <summary>
         /// Used to create new pooled objects.
         /// </summary>
-        private ObjectFactory<TContext, TObject> factory;
+        private ObjectFactory<TSource, TObject> factory;
 
         /// <summary>
         /// The actual pool.
@@ -42,7 +42,7 @@ namespace VW
         /// To maximize reuse of previously cached items within the pooled objects.
         /// (e.g. cached action dependent features)
         /// </remarks>
-        private Stack<PooledObject<TContext, TObject>> pool; 
+        private Stack<PooledObject<TSource, TObject>> pool; 
 
         /// <summary>
         /// Initializes a new ObjectPool.
@@ -51,10 +51,10 @@ namespace VW
         /// An optional factory to create pooled objects on demand. 
         /// <see cref="GetOrCreate()"/> will throw if the factory is still null when called.
         /// </param>
-        public ObjectPool(ObjectFactory<TContext, TObject> factory = null)
+        public ObjectPool(ObjectFactory<TSource, TObject> factory = null)
         {
             this.rwLockSlim = new ReaderWriterLockSlim();
-            this.pool = new Stack<PooledObject<TContext, TObject>>();
+            this.pool = new Stack<PooledObject<TSource, TObject>>();
             this.factory = factory;
         }
 
@@ -62,10 +62,10 @@ namespace VW
         /// Updates the object factory in a thread-safe manner.
         /// </summary>
         /// <param name="factory">The new object factory to be used.</param>
-        public void UpdateFactory(ObjectFactory<TContext, TObject> factory)
+        public void UpdateFactory(ObjectFactory<TSource, TObject> factory)
         {
-            Stack<PooledObject<TContext, TObject>> oldPool;
-            ObjectFactory<TContext, TObject> oldFactory;
+            Stack<PooledObject<TSource, TObject>> oldPool;
+            ObjectFactory<TSource, TObject> oldFactory;
 
             this.rwLockSlim.EnterWriteLock();
             try
@@ -79,7 +79,7 @@ namespace VW
                 oldFactory = this.factory;
                 this.factory = factory;
                 oldPool = this.pool;
-                this.pool = new Stack<PooledObject<TContext, TObject>>();
+                this.pool = new Stack<PooledObject<TSource, TObject>>();
             }
             finally
             {
@@ -104,10 +104,10 @@ namespace VW
         /// if the pool is empty.
         /// </summary>
         /// <remarks>This method is thread-safe.</remarks>
-        public PooledObject<TContext, TObject> GetOrCreate()
+        public PooledObject<TSource, TObject> GetOrCreate()
         {
             int localVersion;
-            ObjectFactory<TContext, TObject> localFactory;
+            ObjectFactory<TSource, TObject> localFactory;
 
             this.rwLockSlim.EnterUpgradeableReadLock();
             try
@@ -152,10 +152,10 @@ namespace VW
             }
 
             // invoke the factory outside of the lock
-            return new PooledObject<TContext, TObject>(this, localVersion, localFactory.Create());
+            return new PooledObject<TSource, TObject>(this, localVersion, localFactory.Create());
         }
 
-        internal void ReturnObject(PooledObject<TContext, TObject> pooledObject)
+        internal void ReturnObject(PooledObject<TSource, TObject> pooledObject)
         {
             this.rwLockSlim.EnterUpgradeableReadLock();
             try

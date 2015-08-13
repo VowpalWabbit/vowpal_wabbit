@@ -278,6 +278,5 @@ namespace VW
 #ifdef _WIN32
 		WSACleanup();
 #endif
-		printf("MARKUS\n");
 	}
 }

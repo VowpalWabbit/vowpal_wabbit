@@ -66,7 +66,7 @@ namespace cs_unittest
                     {
                         var block = new List<string>();
 
-                        block.Add(stringSerializer(vw1, d.Item1, SharedLabel.Singleton));
+                        block.Add(stringSerializer(vw1, d.Item1, SharedLabel.Instance));
                         block.AddRange(d.Item2.Select((a, i) => stringSerializerAdf(vw1, a, i == d.Item3.Action ? d.Item3 : null)));
 
                         stringData.Add(block);

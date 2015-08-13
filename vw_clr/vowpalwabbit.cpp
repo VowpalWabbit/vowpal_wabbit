@@ -65,7 +65,6 @@ namespace VW
 		{
 			try
 			{
-				// m_vw->p->used_index = m_vw->p->begin_parsed_examples + 1;
 				adjust_used_index(*m_vw);
 				m_vw->do_reset_source = true;
 				VW::start_parser(*m_vw, false);

@@ -9,19 +9,20 @@ namespace VW
     public static class Extensions
     {
         /// <summary>
-        /// Reshuffles the the action dependent features based on indices returned by native space.
+        /// Returns the elements specified by indicies/
         /// </summary>
-        /// <param name="example">The example used for prediction.</param>
-        /// <param name="multiLabelPredictions">The indices used to reshuffle.</param>
-        /// <returns>The action dependent features ordered by <paramref name="multiLabelPredictions"/></returns>
-        public static T[] Subset<T>(this IEnumerable<T> that, int[] permutation)
+        /// <typeparam name="T">The element type.</typeparam>
+        /// <param name="that">The enumerable source.</param>
+        /// <param name="indicies">The indicies to be selected.</param>
+        /// <returns>The subset of elements.</returns>
+        public static T[] Subset<T>(this IEnumerable<T> that, int[] indicies)
         {
             // re-shuffle
-            var result = new T[permutation.Length];
+            var result = new T[indicies.Length];
             var i = 0;
             foreach (var item in that)
 	        {
-               result[permutation[i]] = item; 
+               result[indicies[i]] = item; 
                i++;
 	        }
 

@@ -23,48 +23,13 @@ namespace cs_test
             //AttributesSample.RunFeaturesTest();
             //ExploreClock.Clock();
             //LabDemo.Run();
-            //ExploreOnlySample.Run();
-            //RunFeaturesTest();
-            //RunParserTest();
-            //RunSpeedTest();
-            //RunFlatExampleTestEx();
+            ExploreOnlySample.Run();
+            RunFeaturesTest();
+            RunParserTest();
+            RunSpeedTest();
+            RunFlatExampleTestEx();
             //RunLDAPredict();
             //RunVWParse_and_VWLearn();
-
-            var settings = new VowpalWabbitSettings("--cb_adf --rank_all --interact xy",
-                parallelOptions: new ParallelOptions
-                {
-                    MaxDegreeOfParallelism = 4
-                },
-                exampleCountPerRun: 100,
-                exampleDistribution: VowpalWabbitExampleDistribution.UniformRandom);
-
-            using (var vw = new VowpalWabbitThreadedLearning(settings))
-            {
-                var vwManaged = vw.Create<CbAdfShared, CbAdfAction>();
-
-                var learners = new List<Task>();
-                for (int i = 0; i < 8; i++)
-			    {
-                    learners.Add(Task.Factory.StartNew(() => 
-                    {
-                        foreach (var d in Enumerable.Range(1, 200).Select(_ => Generator.GenerateShared(1)))
-                        {
-                            vwManaged.Learn(d.Item1, d.Item2, (int)d.Item3.Action, d.Item3);
-                        }
-                    }));
-			    }
-
-                Task.WhenAll(learners).Wait();
-
-                // important to enqueue the request before Complete() is called
-                var statsTask = vw.PerformanceStatistics;
-
-                vw.Complete().Wait();
-            }
-
-            Console.WriteLine("\n\nD O N E");
-            Console.ReadKey();
         }
 
 

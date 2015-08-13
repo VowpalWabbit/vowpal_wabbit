@@ -103,7 +103,7 @@ namespace cs_unittest
                     var lineNr = 0;
                     // TODO: check for -p predict
                     // TODO: need to check which prediction label it will be
-                    using (var vw = new VowpalWabbit(new VowpalWabbitSettings(arguments: argsBuilder.ToString())))
+                    using (var vw = new VowpalWabbit(argsBuilder.ToString()))
                     {
                         foreach (var dataLine in File.ReadLines(dataFile))
                         {

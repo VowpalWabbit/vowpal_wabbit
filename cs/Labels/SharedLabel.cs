@@ -17,7 +17,7 @@ namespace VW.Labels
     /// </summary>
     public sealed class SharedLabel : ILabel
     {
-        public static readonly SharedLabel Singleton = new SharedLabel();
+        public static readonly SharedLabel Instance = new SharedLabel();
 
         private SharedLabel()
         {

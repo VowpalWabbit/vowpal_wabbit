@@ -29,7 +29,7 @@ namespace VW
             try
             {
                 // contains prediction results
-                var sharedExample = serializer.Serialize(vw, example, SharedLabel.Singleton);
+                var sharedExample = serializer.Serialize(vw, example, SharedLabel.Instance);
                 // check if we have shared features
                 if (sharedExample != null)
                 {

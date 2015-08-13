@@ -84,7 +84,7 @@ namespace cs_unittest
             }
 
             using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-t", modelStream: File.OpenRead("model1"))))
-            using (var vwCached = new VowpalWabbit<CachedData>(new VowpalWabbitSettings( model: vwModel, enableExampleCaching: true, maxExampleCacheSize: 5 )))
+            using (var vwCached = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(model: vwModel, enableExampleCaching: true, maxExampleCacheSize: 5 )))
             using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(model: vwModel, enableExampleCaching: false )))
             {
                 foreach (var example in examples)

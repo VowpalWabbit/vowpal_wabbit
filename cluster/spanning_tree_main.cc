@@ -58,8 +58,6 @@ int main(int argc, char* argv[]) {
     }
   
 	spanningTree.Run();
-
-	// spanningTree.Start();
   }
   catch (VW::vw_exception& e) 
   {

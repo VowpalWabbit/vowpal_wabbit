@@ -153,14 +153,14 @@ public:
 		for (; index < end; index++)
 		{
 			// Perform transposed AllReduce to help data locallity
-			T& temp = buffers[0][index];
+			T& first = buffers[0][index];
 
 			for (int i = 1; i < total; i++)
-				f(temp, buffers[i][index]);
+				f(first, buffers[i][index]);
 
 			// Broadcast back
 			for (int i = 1; i < total; i++)
-				buffers[i][index] = temp;
+				buffers[i][index] = first;
 		}
 
 		m_sync->waitForSynchronization();
