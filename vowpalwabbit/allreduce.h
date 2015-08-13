@@ -70,6 +70,7 @@ public:
 	AllReduce(size_t ptotal, const size_t pnode)
 		: total(ptotal), node(pnode)
 	{
+		assert(node >= 0 && node < total);
 	}
 };
 
@@ -95,11 +96,18 @@ private:
 	mutex* m_mutex;
 	condition_variable* m_cv;
 
+	// number of threads reached the barrier
 	uint32_t m_count;
+	
+	// total number of threads we wait for
 	size_t m_total;
+
+	// current wait-barrier-run required to protect against spurious wakeups of m_cv->wait(...)
+	bool m_run;
 
 public:
 	AllReduceSync(const size_t total);
+
 	~AllReduceSync();
 
 	void waitForSynchronization();
@@ -147,7 +155,7 @@ public:
 		else
 		{
 			index = node * blockSize;
-			end = (node + 1) * blockSize;
+			end = node == total - 1 ? n : (node + 1) * blockSize;
 		}
 
 		for (; index < end; index++)
