@@ -165,7 +165,7 @@
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /v /i  /r  /y  "$(SolutionDir)\$(PlatformShortName)\$(Configuration)"  "$(SolutionDir)$(Configuration)"</Command>
+      <Command>xcopy /v /i  /r  /y  "$(SolutionDir)\$(PlatformShortName)\$(Configuration)\spanning_tree.*"  "$(SolutionDir)$(Configuration)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
