@@ -63,6 +63,7 @@
     <Compile Include="TestAllReduce.cs" />
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestManagedHash.cs" />
+    <Compile Include="TestModelLoading.cs" />
     <Compile Include="TrainSetCs_testLdf.cs" />
     <Compile Include="VowpalWabbitListenerToEvents.cs" />
     <Compile Include="Rcv1Test.cs" />
@@ -773,6 +774,10 @@
       <Link>train-sets\ref\zero.stdout</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="model-sets\7.10.2_corrupted.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="model-sets\8.0.0_ok.model" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
