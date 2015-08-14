@@ -8,33 +8,34 @@ license as described in the file LICENSE.
 #include <winsock2.h>
 #endif
 
+//return a pointer to the next n bytes.  n must be smaller than the maximum size.
 size_t buf_read(io_buf &i, char* &pointer, size_t n)
-{//return a pointer to the next n bytes.  n must be smaller than the maximum size.
-  if (i.space.end + n <= i.endloaded)
+{
+    if (i.space.end + n <= i.endloaded)
     {
-      pointer = i.space.end;
-      i.space.end += n;
-      return n;
+        pointer = i.space.end;
+        i.space.end += n;
+        return n;
     }
-  else // out of bytes, so refill.
+    else // out of bytes, so refill.
     {
-      if (i.space.end != i.space.begin) //There exists room to shift.
-	{ // Out of buffer so swap to beginning.
-	  size_t left = i.endloaded - i.space.end;
-	  memmove(i.space.begin, i.space.end, left);
-	  i.space.end = i.space.begin;
-	  i.endloaded = i.space.begin+left;
-	}
-      if (i.fill(i.files[i.current]) > 0)
-	return buf_read(i,pointer,n);// more bytes are read.
-      else if (++i.current < i.files.size()) 
-	return buf_read(i,pointer,n);// No more bytes, so go to next file and try again.
-      else
-	{//no more bytes to read, return all that we have left.
-	  pointer = i.space.end;
-	  i.space.end = i.endloaded;
-	  return i.endloaded - pointer;
-	}
+        if (i.space.end != i.space.begin) //There exists room to shift.
+        { // Out of buffer so swap to beginning.
+            size_t left = i.endloaded - i.space.end;
+            memmove(i.space.begin, i.space.end, left);
+            i.space.end = i.space.begin;
+            i.endloaded = i.space.begin + left;
+        }
+        if (i.fill(i.files[i.current]) > 0)
+            return buf_read(i, pointer, n);// more bytes are read.
+        else if (++i.current < i.files.size())
+            return buf_read(i, pointer, n);// No more bytes, so go to next file and try again.
+        else
+        {//no more bytes to read, return all that we have left.
+            pointer = i.space.end;
+            i.space.end = i.endloaded;
+            return i.endloaded - pointer;
+        }
     }
 }
 
