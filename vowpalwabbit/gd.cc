@@ -576,7 +576,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
     { 
         weight* v;
         char buff[512];
-        size_t buf_size = sizeof(buff) / sizeof(char);
+        size_t buf_size = sizeof(buff);
         int text_len;
         typedef std::map< std::string, size_t> str_int_map;
 
@@ -623,7 +623,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
             {
                 c++;
                 char buff[512];
-                size_t buf_size = sizeof(buff) / sizeof(char);
+                size_t buf_size = sizeof(buff);
                 int text_len;
 
                 text_len = sprintf_s(buff, buf_size, "%d", i);
@@ -646,7 +646,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
     //vw& all = *g.all;
 
     char buff[512];
-    size_t buf_size = sizeof(buff) / sizeof(char);
+    size_t buf_size = sizeof(buff);
 
     uint32_t text_len = sprintf_s(buff, buf_size, "initial_t %f\n", all.initial_t);
     bin_text_read_write_fixed(model_file, (char*)&all.initial_t, sizeof(all.initial_t),
@@ -788,7 +788,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
             {
                 c++;
                 char buff[512];
-                size_t buf_size = sizeof(buff) / sizeof(char);
+                size_t buf_size = sizeof(buff);
 
                 int text_len = sprintf_s(buff, buf_size, "%d", i);
                 brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i),
@@ -846,7 +846,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     {
       bool resume = all.save_resume;
       char buff[512];
-      size_t buf_size = sizeof(buff) / sizeof(char);
+      size_t buf_size = sizeof(buff);
       uint32_t text_len = sprintf_s(buff, buf_size, ":%d\n", resume);
       bin_text_read_write_fixed(model_file,(char *)&resume, sizeof (resume),
 				"", read,
