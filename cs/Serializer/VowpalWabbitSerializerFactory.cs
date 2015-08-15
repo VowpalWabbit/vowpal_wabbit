@@ -20,17 +20,12 @@ using VW.Serializer.Visitors;
 using VW.Interfaces;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Diagnostics.Contracts;
 
 namespace VW.Serializer
 {
     /// <summary>
     /// Factory to ease creation of serializers.
-    /// 
-    /// Visit(ILabel label, IVisitableNamespace[] namespaces) Invoked for each example. Implementors must dispatch by calling <see cref="IVisitableNamespace.Visit()"/>.
-    /// Visit<T>(INamespaceDense<T> namespaceDense); Invoked for each namespace.
-    /// void Visit(INamespaceSparse namespaceSparse); Invoked for each namespace.
-    /// void Visit<T>(IFeature<T> feature); Invoked for each feature.
-    /// void VisitEnumerize<T>(IFeature<T> feature); Invoked for each feature which is additionally flagged by the enumerize option.
     /// </summary>
     public static class VowpalWabbitSerializerFactory
     {
@@ -47,25 +42,34 @@ namespace VW.Serializer
         /// Compiles a serializers for the given example user type.
         /// </summary>
         /// <typeparam name="TExample">The example user type.</typeparam>
-        /// <param name="visitor">The visitor to be used for serialization.</param>
         /// <param name="settings">The serializer settings.</param>
         /// <returns>A serializer for the given user example type.</returns>
         public static VowpalWabbitSerializer<TExample> CreateSerializer<TExample>(VowpalWabbitSettings settings)
         {
             var serializerFunc = CreateSerializer<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample>();
+
+#if DEBUG
+            var stringSerializerFunc = CreateSerializer<TExample, VowpalWabbitStringVisitor, string>();
+
+            Func<VowpalWabbit, TExample, ILabel, VowpalWabbitExample> wrappedSerializerFunc;
+            if (serializerFunc == null)
+            {
+                // if no features are found, no serializer is generated
+                wrappedSerializerFunc = (_,__,___) => null;
+            }
+            else
+            {
+                wrappedSerializerFunc = (vw, example, label) => new VowpalWabbitDebugExample(serializerFunc(vw, example, label), stringSerializerFunc(vw, example, label));
+            }
+
+            return new VowpalWabbitSerializer<TExample>(wrappedSerializerFunc, settings);
+#else
             if (serializerFunc == null)
             {
                 // if no features are found, no serializer is generated
                 serializerFunc = (_,__,___) => null;
             }
 
-#if DEBUG
-            var stringSerializerFunc = CreateSerializer<TExample, VowpalWabbitStringVisitor, string>();
-
-            return new VowpalWabbitSerializer<TExample>(
-                (vw, example, label) => new VowpalWabbitDebugExample(serializerFunc(vw, example, label), stringSerializerFunc(vw, example, label)),
-                settings);
-#else
             return new VowpalWabbitSerializer<TExample>(serializerFunc, settings);
 #endif
         }
@@ -78,8 +82,9 @@ namespace VW.Serializer
         /// <typeparam name="TExampleResult">The resulting serialization type.</typeparam>
         /// <returns>A serializer for the given user example type.</returns>
         public static Func<VowpalWabbit, TExample, ILabel, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult>()
-            // where TVisitor : IVowpalWabbitVisitor<TExampleResult>
         {
+            Contract.Ensures(Contract.Result<Func<VowpalWabbit, TExample, ILabel, TExampleResult>>() != null);
+
             var cacheKey = Tuple.Create(typeof(TExample), typeof(TVisitor));
             object serializer;
 

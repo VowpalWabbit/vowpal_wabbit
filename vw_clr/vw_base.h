@@ -28,10 +28,19 @@ namespace VW
 	public ref class VowpalWabbitBase abstract : IVowpalWabbitExamplePool
 	{
 	private:
+		/// <summary>
+		/// The settings used for this instance.
+		/// </summary>
+		initonly VowpalWabbitSettings^ m_settings;
+		
+		/// <summary>
+		/// An optional shared model.
+		/// </summary>
 		VowpalWabbitModel^ m_model;
-
-		VowpalWabbitSettings^ m_settings;
-
+		
+		/// <summary>
+		/// Example pool.
+		/// </summary>
 		Stack<VowpalWabbitExample^>^ m_examples;
 
 	internal:
@@ -47,8 +56,6 @@ namespace VW
 		VowpalWabbitExample^ GetOrCreateNativeExample();
 
 	protected:
-
-
 		/// <summary>
 		/// True if all nativedata structures are disposed.
 		/// </summary>
@@ -76,17 +83,24 @@ namespace VW
 		/// </summary>
 		virtual ~VowpalWabbitBase();
 
-		virtual property VowpalWabbitSettings^ Settings
+		/// <summary>
+		/// The settings used for this instance.
+		/// </summary>
+		property VowpalWabbitSettings^ Settings
 		{
 			VowpalWabbitSettings^ get();
 		}
 
+		/// <summary>
+		/// Gets or creates an empty example.
+		/// </summary>
+		/// <returns>An initialized and empty example</returns>
 		VowpalWabbitExample^ GetOrCreateEmptyExample();
 		
 		/// <summary>
 		/// Puts a native example data structure back into the pool.
 		/// </summary>
-		/// <param name="ex">The example to be returned.</param>
-		virtual void ReturnExampleToPool(VowpalWabbitExample^ ex);
+		/// <param name="example">The example to be returned.</param>
+		virtual void ReturnExampleToPool(VowpalWabbitExample^ example) sealed;
 	};
 }

@@ -17,7 +17,7 @@ namespace VW.Serializer.Attributes
     public sealed class FeatureAttribute : Attribute
     {
         /// <summary>
-        /// Initializes a new instance of the FeatureAttribte class.
+        /// Initializes a new instance of the <see cref="FeatureAttribute"/> class.
         /// </summary>
         public FeatureAttribute()
         {

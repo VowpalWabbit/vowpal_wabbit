@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using VW;
@@ -18,34 +19,78 @@ using VW.Serializer.Visitors;
 
 namespace VW
 {
+    /// <summary>
+    /// VW wrapper supporting data ingest using declarative serializer infrastructure.
+    /// </summary>
+    /// <typeparam name="TExample">The user type to be serialized.</typeparam>
     public class VowpalWabbit<TExample> : IDisposable
     {
+        /// <summary>
+        /// Native vw instance.
+        /// </summary>
         private VowpalWabbit vw;
 
+        /// <summary>
+        /// The example serializer.
+        /// </summary>
         private VowpalWabbitSerializer<TExample> serializer;
 
+        /// <summary>
+        /// The serializer used for learning. It's only set if the serializer is non-caching.
+        /// By having a second field there is one less check that has to be done in the hot path.
+        /// </summary>
         private readonly VowpalWabbitSerializer<TExample> learnSerializer;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VowpalWabbit{TExample}"/> class.
+        /// </summary>
+        /// <param name="args">Command line arguments passed to native instance.</param>
         public VowpalWabbit(String args) : this(new VowpalWabbit(args))
-        { }
+        { 
+        }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VowpalWabbit{TExample}"/> class.
+        /// </summary>
+        /// <param name="settings">Arguments passed to native instance.</param>
         public VowpalWabbit(VowpalWabbitSettings settings)
             : this(new VowpalWabbit(settings))
-        { }
+        { 
+        }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VowpalWabbit{TExample}"/> class.
+        /// </summary>
+        /// <param name="vw">The native instance to wrap.</param>
+        /// <remarks>This instance takes ownership of <paramref name="vw"/> instance and disposes it.</remarks>
         public VowpalWabbit(VowpalWabbit vw)
         {
+            if (vw == null)
+            {
+                throw new ArgumentNullException("vw");
+            }
+            Contract.Ensures(this.serializer != null);
+            Contract.EndContractBlock();
+
             this.vw = vw;
             this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
 
+            // have a 2nd member to throw NullReferenceException in release instead of silently producing wrong results.
             this.learnSerializer = this.serializer.CachesExamples ? null : this.serializer;
         }
 
+        /// <summary>
+        /// Learns from the given example.
+        /// </summary>
+        /// <param name="example">The example to learn.</param>
+        /// <param name="label">The label for this <paramref name="example"/>.</param>
         public void Learn(TExample example, ILabel label)
         {
+            Contract.Requires(example != null);
+            Contract.Requires(label != null);
+
 #if DEBUG
-            // hot path
-            if (this.learnSerializer == null)
+            if (this.serializer.CachesExamples)
             {
                 throw new NotSupportedException("Cached examples cannot be used for learning");
             }
@@ -58,37 +103,70 @@ namespace VW
             }
         }
 
+        /// <summary>
+        /// Learn from the given example and return the current prediction for it.
+        /// </summary>
+        /// <typeparam name="TPrediction">The prediction type.</typeparam>
+        /// <param name="example">The example to learn.</param>
+        /// <param name="label">The label for this <paramref name="example"/>.</param>
+        /// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
+        /// <returns>The prediction for the given <paramref name="example"/>.</returns>
         public TPrediction Learn<TPrediction>(TExample example, ILabel label, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory)
         {
+            Contract.Requires(example != null);
+            Contract.Requires(label != null);
+            Contract.Requires(predictionFactory != null);
+
 #if DEBUG
-            // hot path
-            if (this.learnSerializer == null)
+            // only in debug, since it's a hot path
+            if (this.serializer.CachesExamples)
             {
                 throw new NotSupportedException("Cached examples cannot be used for learning");
             }
 #endif
+
             using (var ex = this.learnSerializer.Serialize(this.vw, example, label))
             {
                 return this.vw.Learn(ex, predictionFactory);
             }
         }
 
+        /// <summary>
+        /// Predicts for the given example.
+        /// </summary>
+        /// <param name="example">The example to predict for.</param>
+        /// <param name="label">This label can be used to weight the example.</param>
         public void Predict(TExample example, ILabel label = null)
         {
+            Contract.Requires(example != null);
+            
             using (var ex = this.serializer.Serialize(this.vw, example, label))
             {
                 this.vw.Learn(ex);
             }
         }
 
+        /// <summary>
+        /// Predicts for the given example.
+        /// </summary>
+        /// <typeparam name="TPrediction">The prediction type.</typeparam>
+        /// <param name="example">The example to predict for.</param>
+        /// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
+        /// <param name="label">This label can be used to weight the example.</param>
         public TPrediction Predict<TPrediction>(TExample example, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
         {
+            Contract.Requires(example != null);
+            Contract.Requires(predictionFactory != null);
+
             using (var ex = this.serializer.Serialize(this.vw, example, label))
             {
                 return this.vw.Learn(ex, predictionFactory);
             }
         }
 
+        /// <summary>
+        /// The wrapped VW instance.
+        /// </summary>
         public VowpalWabbit Native { get { return this.vw; } }
 
         /// <summary>
@@ -120,8 +198,16 @@ namespace VW
         }
     }
 
+    /// <summary>
+    /// VW wrapper for multiline ingest.
+    /// </summary>
+    /// <typeparam name="TExample">The user type of the shared feature.</typeparam>
+    /// <typeparam name="TActionDependentFeature">The user type for each action dependent feature.</typeparam>
     public class VowpalWabbit<TExample, TActionDependentFeature> : IDisposable
     {
+        /// <summary>
+        /// The wrapper vw instance.
+        /// </summary>
         private VowpalWabbit vw;
 
         private VowpalWabbitSerializer<TExample> serializer;
@@ -130,35 +216,63 @@ namespace VW
 
         private readonly VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureLearnSerializer;
 
-        public VowpalWabbit(VowpalWabbit vw)
-        {
-            this.vw = vw;
-            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
-            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings);
-            this.actionDependentFeatureLearnSerializer = this.actionDependentFeatureSerializer.CachesExamples ? null : this.actionDependentFeatureSerializer;
-        }
-
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> class.
+        /// </summary>
+        /// <param name="args">Command line arguments passed to native instance.</param>
         public VowpalWabbit(String args)
             : this(new VowpalWabbit(args))
         { }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> class.
+        /// </summary>
+        /// <param name="settings">Arguments passed to native instance.</param>
         public VowpalWabbit(VowpalWabbitSettings settings)
             : this(new VowpalWabbit(settings))
         { }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> class.
+        /// </summary>
+        /// <param name="vw">The native instance to wrap.</param>
+        /// <remarks>This instance takes ownership of <paramref name="vw"/> instance and disposes it.</remarks>
+        public VowpalWabbit(VowpalWabbit vw)
+        {
+            if (vw == null)
+            {
+                throw new ArgumentNullException("vw");
+            }
+            Contract.EndContractBlock();
 
+            this.vw = vw;
+            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
+            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings);
+
+            Contract.Assert(this.actionDependentFeatureSerializer != null);
+
+            // have a 2nd member to throw NullReferenceException in release instead of silently producing wrong results.
+            this.actionDependentFeatureLearnSerializer = this.actionDependentFeatureSerializer.CachesExamples ? null : this.actionDependentFeatureSerializer;
+        }
+
+        /// <summary>
+        /// The wrapped VW instance.
+        /// </summary>
         public VowpalWabbit Native { get { return this.vw; } }
 
-
+        /// <summary>
+        /// Learn from the given example and return the current prediction for it.
+        /// </summary>
+        /// <param name="example">The shared example.</param>
+        /// <param name="actionDependentFeatures">The action dependent features.</param>
+        /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
+        /// <param name="label">The label for the example to learn.</param>
         public void Learn(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
-#if DEBUG
-            // hot path
-            if (this.actionDependentFeatureLearnSerializer == null)
-            {
-                throw new NotSupportedException("Cached examples cannot be used for learning");
-            }
-#endif
+            Contract.Requires(example != null);
+            Contract.Requires(actionDependentFeatures != null);
+            Contract.Requires(index >= 0);
+            Contract.Requires(label != null);
 
             VowpalWabbitMultiLine.Learn(
                 this.vw,
@@ -170,15 +284,20 @@ namespace VW
                 label);
         }
 
+        /// <summary>
+        /// Learn from the given example and return the current prediction for it.
+        /// </summary>
+        /// <param name="example">The shared example.</param>
+        /// <param name="actionDependentFeatures">The action dependent features.</param>
+        /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
+        /// <param name="label">The label for the example to learn.</param>
+        /// <returns>The ranked prediction for the given examples.</returns>
         public TActionDependentFeature[] LearnAndPredict(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
-#if DEBUG
-            // hot path
-            if (this.actionDependentFeatureLearnSerializer == null)
-            {
-                throw new NotSupportedException("Cached examples cannot be used for learning");
-            }
-#endif
+            Contract.Requires(example != null);
+            Contract.Requires(actionDependentFeatures != null);
+            Contract.Requires(index >= 0);
+            Contract.Requires(label != null);
 
             return VowpalWabbitMultiLine.LearnAndPredict(
                 this.vw,
@@ -190,15 +309,20 @@ namespace VW
                 label);
         }
 
+        /// <summary>
+        /// Learn from the given example and return the current prediction for it.
+        /// </summary>
+        /// <param name="example">The shared example.</param>
+        /// <param name="actionDependentFeatures">The action dependent features.</param>
+        /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
+        /// <param name="label">The label for the example to learn.</param>
+        /// <returns>The ranked prediction for the given examples.</returns>
         public int[] LearnAndPredictIndex(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
-#if DEBUG
-            // hot path
-            if (this.actionDependentFeatureLearnSerializer == null)
-            {
-                throw new NotSupportedException("Cached examples cannot be used for learning");
-            }
-#endif
+            Contract.Requires(example != null);
+            Contract.Requires(actionDependentFeatures != null);
+            Contract.Requires(index >= 0);
+            Contract.Requires(label != null);
 
             return VowpalWabbitMultiLine.LearnAndPredictIndex(
                 this.vw,
@@ -210,8 +334,17 @@ namespace VW
                 label);
         }
 
+        /// <summary>
+        /// Predict for the given examples and return the current prediction for it.
+        /// </summary>
+        /// <param name="example">The shared example.</param>
+        /// <param name="actionDependentFeatures">The action dependent features.</param>
+        /// <returns>The ranked prediction for the given examples.</returns>
         public int[] PredictIndex(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures)
         {
+            Contract.Requires(example != null);
+            Contract.Requires(actionDependentFeatures != null);
+
             return VowpalWabbitMultiLine.PredictIndex(
                 this.vw,
                 this.serializer,
@@ -220,8 +353,17 @@ namespace VW
                 actionDependentFeatures);
         }
 
+        /// <summary>
+        /// Learn from the given example and return the current prediction for it.
+        /// </summary>
+        /// <param name="example">The shared example.</param>
+        /// <param name="actionDependentFeatures">The action dependent features.</param>
+        /// <returns>The ranked prediction for the given examples.</returns>
         public TActionDependentFeature[] Predict(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures)
         {
+            Contract.Requires(example != null);
+            Contract.Requires(actionDependentFeatures != null);
+
             return VowpalWabbitMultiLine.Predict(
                 this.vw,
                 this.serializer,

@@ -13,6 +13,9 @@ namespace VW
 	ref class VowpalWabbitExample;
 	ref class VowpalWabbit;
 	
+	/// <summary>
+	/// Interface for prediction factories enabling read-out of various prediction results in an extendable manner.
+	/// </summary>
 	generic<typename T>
 	public interface class IVowpalWabbitPredictionFactory
 	{
@@ -21,7 +24,7 @@ namespace VW
 		/// Creates a new prediction result from an example and the associated VW instance.
 		/// </summary>
 		/// <returns>A prediction result.</returns>
-		/// <remarks>Implementation must be thread-safe</remarks>
+		/// <remarks>Implementation must be thread-safe.</remarks>
 		T Create(vw* vw, example* ex);
 	};
 
@@ -44,7 +47,7 @@ namespace VW
 	{
 	public:
 		/// <summary>
-		/// Extracts prediction results from example. The cost sensitive prediction.
+		/// Extracts cost sensitive prediction results from example.
 		/// </summary>
 		virtual float Create(vw* vw, example* ex) sealed;
 	};
@@ -56,7 +59,7 @@ namespace VW
 	{
 	public:
 		/// <summary>
-		/// Extracts prediction results from example. The
+		/// Extracts multilabel prediction results from example.
 		/// </summary>
 		virtual cli::array<int>^ Create(vw* vw, example* ex) sealed;
 	};
@@ -72,13 +75,31 @@ namespace VW
 		/// </summary>
 		virtual cli::array<float>^ Create(vw* vw, example* ex) sealed;
 	};
-
+	
+	/// <summary>
+	/// Provides convenient collection of all prediction types.
+	/// </summary>
 	public ref class VowpalWabbitPredictionType sealed abstract
 	{
 	public:
+		/// <summary>
+		/// Use for scalar predictions.
+		/// </summary>
 		static initonly VowpalWabbitScalarPredictionFactory^ Scalar = gcnew VowpalWabbitScalarPredictionFactory;
+
+		/// <summary>
+		/// Use for cost sensitive predictions.
+		/// </summary>
 		static initonly VowpalWabbitCostSensitivePredictionFactory^ CostSensitive = gcnew VowpalWabbitCostSensitivePredictionFactory;
+
+		/// <summary>
+		/// Use for multi label predictions.
+		/// </summary>
 		static initonly VowpalWabbitMultilabelPredictionFactory^ Multilabel = gcnew VowpalWabbitMultilabelPredictionFactory;
+
+		/// <summary>
+		/// Use for LDA topic predictions.
+		/// </summary>
 		static initonly VowpalWabbitTopicPredictionFactory^ Topic = gcnew VowpalWabbitTopicPredictionFactory;
 	};
 }
