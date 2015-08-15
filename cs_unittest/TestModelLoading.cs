@@ -10,6 +10,7 @@ using VW;
 namespace cs_unittest
 {
     [TestClass]
+    [Ignore]
     public class TestModelLoading
     {
         [TestMethod]

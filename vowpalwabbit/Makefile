@@ -1,7 +1,7 @@
 BINARIES = vw active_interactor
 MANPAGES = vw.1
 
-VWLIBS := -L. -l vw -l allreduce
+VWLIBS := -L. -l vw 
 STDLIBS = $(BOOST_LIBRARY) $(LIBS)
 
 all:
@@ -34,13 +34,10 @@ vw_DEPS = $(patsubst %.cc,%.d,$(vw_SOURCES))
 %.o:	 %.cc
 	$(CXX) $(FLAGS) -c $< -o $@
 
-liballreduce.a:	allreduce.o
-	ar rcs $@ $<
-
 libvw.a: $(filter-out vw.o,$(vw_OBJECTS))
 	ar rcs $@ $+
 
-vw: main.o libvw.a liballreduce.a
+vw: main.o libvw.a 
 	$(CXX) $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
 
 active_interactor: active_interactor.cc
@@ -50,7 +47,7 @@ install: $(BINARIES)
 	cp $(BINARIES) /usr/local/bin; cd cluster; $(MAKE) install
 
 clean:
-	rm -f  *.o *.d $(BINARIES) *~ $(MANPAGES) libvw.a liballreduce.a
+	rm -f  *.o *.d $(BINARIES) *~ $(MANPAGES) libvw.a 
 
 python: vw
 	cd .. ; $(MAKE) python

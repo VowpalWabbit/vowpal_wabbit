@@ -96,12 +96,12 @@ private:
 	mutex* m_mutex;
 	condition_variable* m_cv;
 
-	// number of threads reached the barrier
-	uint32_t m_count;
-	
 	// total number of threads we wait for
 	size_t m_total;
 
+	// number of threads reached the barrier
+	uint32_t m_count;
+	
 	// current wait-barrier-run required to protect against spurious wakeups of m_cv->wait(...)
 	bool m_run;
 
@@ -163,11 +163,11 @@ public:
 			// Perform transposed AllReduce to help data locallity
 			T& first = buffers[0][index];
 
-			for (int i = 1; i < total; i++)
+			for (size_t i = 1; i < total; i++)
 				f(first, buffers[i][index]);
 
 			// Broadcast back
-			for (int i = 1; i < total; i++)
+			for (size_t i = 1; i < total; i++)
 				buffers[i][index] = first;
 		}
 
