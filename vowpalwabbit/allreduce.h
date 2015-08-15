@@ -96,12 +96,12 @@ private:
 	mutex* m_mutex;
 	condition_variable* m_cv;
 
-	// number of threads reached the barrier
-	uint32_t m_count;
-	
 	// total number of threads we wait for
 	size_t m_total;
 
+	// number of threads reached the barrier
+	uint32_t m_count;
+	
 	// current wait-barrier-run required to protect against spurious wakeups of m_cv->wait(...)
 	bool m_run;
 

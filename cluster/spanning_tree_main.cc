@@ -23,6 +23,9 @@ int getpid()
 
 #include <iostream>
 #include <fstream>
+#include <string.h>
+#include <stdlib.h>
+#include <errno.h>
 
 using namespace std;
 using namespace VW;
