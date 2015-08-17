@@ -91,8 +91,14 @@ void parse_simple_label(parser*, shared_data*, void* v, v_array<substring>& word
     ld->initial = float_of_substring(words[2]);
     break;
   default:
-    cerr << "malformed example!\n";
+    cerr << "malformed example: [Label] [Importance] [Tag]|" << endl;
     cerr << "words.size() = " << words.size() << endl;
+    
+    for(unsigned int i=0; i<words.size(); ++i) {
+      cerr << "words[" << i << "]:";
+      print_substring(words[i]);
+      cerr << endl;
+    }
   }
   count_label(ld->label);
 }
