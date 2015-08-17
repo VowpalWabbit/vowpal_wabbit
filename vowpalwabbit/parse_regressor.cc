@@ -251,12 +251,6 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				"", read, 
 			buff, text_len, text);
 
-		if (read && all.lda > 0)
-		{
-			all.args.push_back("--lda");
-			all.args.push_back(boost::lexical_cast<std::string>(all.lda));
-		}
-      
       uint32_t ngram_len = (uint32_t)all.ngram_strings.size();
       text_len = sprintf(buff, "%d ngram: ", (int)ngram_len);
 		bin_text_read_write_fixed(model_file, (char *)&ngram_len, sizeof(ngram_len),
