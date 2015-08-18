@@ -101,7 +101,7 @@ struct feature_gen_data
 
 // macros below may be adjusted to change the way synthetic feature weight is calculated
 // beware - its result must be non-zero
-#define INTER_WEIGHT_OP(weight1, weight2) weight1*weight2
+ inline float INTER_WEIGHT_OP(float weight1, float weight2) { return weight1*weight2; }
 
 // uncomment line below to disable usage of inner 'for' loops for pair and triple interactions
 // end switch to usage of non-recursive feature generation algorithm for interactions of any length
