@@ -99,6 +99,9 @@ struct feature_gen_data
 //    feature_gen_data(): loop_idx(0), x(1.), loop_end(0), self_interaction(false) {}
 };
 
+// macros below may be adjusted to change the way synthetic feature weight is calculated
+// beware - its result must be non-zero
+#define INTER_WEIGHT_OP(weight1, weight2) weight1*weight2
 
 // uncomment line below to disable usage of inner 'for' loops for pair and triple interactions
 // end switch to usage of non-recursive feature generation algorithm for interactions of any length
@@ -169,7 +172,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                         {                            
                             call_audit<R, audit_func>(dat, snd);
                             //  const size_t ft_idx = ((snd->weight_index /*>> stride_shift*/) ^ halfhash) /*<< stride_shift*/;                            
-                            call_T<R, T> (dat, weight_vector, weight_mask, ft_weight*snd->x, (snd->weight_index^halfhash) + offset);                            
+                            call_T<R, T> (dat, weight_vector, weight_mask, INTER_WEIGHT_OP(ft_weight,snd->x), (snd->weight_index^halfhash) + offset);
                             call_audit<R, audit_func>(dat, nullptr);
                         } // end for(snd)
 
@@ -219,7 +222,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                                     call_audit<R, audit_func>(dat, snd);
 
                                     const uint32_t halfhash2 = FNV_prime * (halfhash1 ^ snd->weight_index);
-                                    const float ft_weight1 =  ft_weight * snd->x;
+                                    const float ft_weight1 = INTER_WEIGHT_OP(ft_weight, snd->x);
 
                                     // next index differs for permutations and simple combinations
                                     const feature_class* thr = (!same_namespace2) ? features_data[thr_ns].begin :
@@ -229,7 +232,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                                     {
                                         call_audit<R, audit_func>(dat, thr);
 //                                        const size_t ft_idx = ((thr->weight_index /*>> stride_shift*/)^ halfhash2) /*<< stride_shift*/;
-                                        call_T<R, T> (dat, weight_vector, weight_mask, ft_weight1 * thr->x, (thr->weight_index^halfhash2) + offset);
+                                        call_T<R, T> (dat, weight_vector, weight_mask, INTER_WEIGHT_OP(ft_weight1,thr->x), (thr->weight_index^halfhash2) + offset);
                                         call_audit<R, audit_func>(dat, nullptr);
                                     } // end for (thr)
                                    call_audit<R, audit_func>(dat, nullptr);
@@ -369,7 +372,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                         {
                             // feature2 xor (16777619*feature1)                            
                             next_data->hash = FNV_prime * (cur_data->hash ^ cur_feature->weight_index);
-                            next_data->x = cur_feature->x * cur_data->x;
+                            next_data->x = INTER_WEIGHT_OP(cur_feature->x, cur_data->x);
                         }
 
                         ++cur_data;
@@ -384,7 +387,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                         for (feature_class* f = start; f != end; ++f)
                         {
                             call_audit<R, audit_func>(dat, f);
-                            call_T<R, T> (dat, weight_vector, weight_mask, fgd2->x * f->x, (fgd2->hash^f->weight_index) + offset );
+                            call_T<R, T> (dat, weight_vector, weight_mask, INTER_WEIGHT_OP(fgd2->x, f->x), (fgd2->hash^f->weight_index) + offset );
                             call_audit<R, audit_func>(dat, nullptr);
                         }
 
