@@ -19,6 +19,7 @@ using namespace std;
 #include "rand48.h"
 #include "global_data.h"
 #include "vw_exception.h"
+#include "vw_validate.h"
 
 /* Define the last version where files are backward compatible. */
 #define LAST_COMPATIBLE_VERSION "6.1.3"
@@ -101,6 +102,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
             "", read,
             buff, text_len, text);
 
+        VW::validate_min_max_label(all);
+
         if (read && find(all.args.begin(), all.args.end(), "--max_prediction") == all.args.end())
         {
             all.args.push_back("--max_prediction");
@@ -119,13 +122,12 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
             all.args.push_back(boost::lexical_cast<std::string>(local_num_bits));
         }
 
-        if (all.default_bits != true && all.num_bits != local_num_bits)
-        {
-            THROW("-b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model");
-        }
+        VW::validate_default_bits(all, local_num_bits);
 
         all.default_bits = false;
         all.num_bits = local_num_bits;
+
+        VW::validate_num_bits(all);
 
         if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
         {  // -q, --cubic and --interactions are saved in vw::file_options
@@ -135,6 +137,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                 "", read,
                 buff, text_len, text);
 
+            // TODO: validate pairs?
             for (size_t i = 0; i < pair_len; i++)
             {
                 char pair[3] = { 0, 0, 0 };
@@ -165,6 +168,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                 "", read,
                 buff, text_len, text);
 
+            // TODO: validate triples?
             for (size_t i = 0; i < triple_len; i++)
             {
                 char triple[4] = { 0, 0, 0, 0 };
@@ -262,12 +266,14 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
             "", read,
             buff, text_len, text);
 
+        // TODO: validate lda?
         if (read && all.lda > 0)
         {
             all.args.push_back("--lda");
             all.args.push_back(boost::lexical_cast<std::string>(all.lda));
         }
 
+        // TODO: validate ngram_len?
         uint32_t ngram_len = (uint32_t)all.ngram_strings.size();
         text_len = sprintf_s(buff, buf_size, "%d ngram: ", (int)ngram_len);
         bin_text_read_write_fixed(model_file, (char *)&ngram_len, sizeof(ngram_len),
@@ -298,6 +304,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
             "", read,
             "\n", 1, text);
 
+        // TODO: validate skips?
         uint32_t skip_len = (uint32_t)all.skip_strings.size();
         text_len = sprintf_s(buff, buf_size, "%d skip: ", (int)skip_len);
         bin_text_read_write_fixed(model_file, (char *)&skip_len, sizeof(skip_len),
@@ -311,6 +318,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                 text_len = sprintf_s(buff, buf_size, "%s ", all.skip_strings[i].c_str());
                 memcpy(skip, all.skip_strings[i].c_str(), min(3, all.skip_strings[i].size()));
             }
+
             bin_text_read_write_fixed(model_file, skip, 3,
                 "", read,
                 buff, text_len, text);
