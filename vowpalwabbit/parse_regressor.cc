@@ -20,13 +20,7 @@ using namespace std;
 #include "global_data.h"
 #include "vw_exception.h"
 #include "vw_validate.h"
-
-/* Define the last version where files are backward compatible. */
-#define LAST_COMPATIBLE_VERSION "6.1.3"
-#define VERSION_FILE_WITH_CUBIC "6.1.3"
-#define VERSION_FILE_WITH_RANK_IN_HEADER "7.8.0" // varsion since which rank was moved to vw::file_options
-#define VERSION_FILE_WITH_INTERACTIONS "7.10.2" // first version that saves interacions among pairs and triples
-#define VERSION_FILE_WITH_INTERACTIONS_IN_FO "7.10.3" // since this ver -q, --cubic and --interactions are stored in vw::file_options
+#include "vw_versions.h"
 
 void initialize_regressor(vw& all)
 {
@@ -76,10 +70,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
             buff, text_len, text);
         all.model_file_ver = buff2; //stord in all to check save_resume fix in gd
 
-        if (all.model_file_ver < LAST_COMPATIBLE_VERSION || all.model_file_ver > PACKAGE_VERSION)
-        {
-            THROW("Model has possibly incompatible version! " << all.model_file_ver.to_string());
-        }
+        VW::validate_version(all);
 
         char model = 'm';
         bin_text_read_write_fixed(model_file, &model, 1,
