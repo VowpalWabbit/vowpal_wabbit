@@ -343,6 +343,19 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         {
             all.file_options->str(buff2);
         }
+
+        uint32_t check_sum = uniform_hash(model_file.space.begin, model_file.space.size(), 0);
+        uint32_t check_sum_saved = check_sum;
+
+        text_len = sprintf_s(buff, buf_size, "Checksum: %d\n", check_sum);
+        bin_text_read_write(model_file, (char*)&check_sum, sizeof(check_sum),
+            "", read,
+            buff, text_len, text);
+
+        if (check_sum_saved != check_sum)
+        {
+            THROW("Checksum is inconsistent, model is possibly corrupted.");
+        }
     }
 
 }
