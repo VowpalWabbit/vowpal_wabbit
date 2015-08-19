@@ -15,11 +15,15 @@ namespace cs_unittest
         [TestMethod]
         [DeploymentItem(@"model-sets\7.10.2_corrupted.model", "model-sets")]
         [DeploymentItem(@"model-sets\8.0.0_ok.model", "model-sets")]
+        [DeploymentItem(@"model-sets\8.0.1_rcv1_ok.model", "model-sets")]
+        [DeploymentItem(@"model-sets\8.0.1.test_named_ok.model", "model-sets")]
         [DeploymentItem(@"model-sets\8.0.1_hash_ok.model", "model-sets")]
         public void TestLoadModel()
         {
             InternalTestModel(@"model-sets/7.10.2_corrupted.model", false);
             InternalTestModel(@"model-sets/8.0.0_ok.model", true);
+            InternalTestModel(@"model-sets/8.0.1.test_named_ok.model", true);
+            InternalTestModel(@"model-sets/8.0.1_rcv1_ok.model", true);
             InternalTestModel(@"model-sets/8.0.1_hash_ok.model", true);
         }
 
