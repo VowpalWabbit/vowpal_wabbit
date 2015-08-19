@@ -20,6 +20,7 @@ using VW.Serializer.Visitors;
 using VW.Interfaces;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Diagnostics.Contracts;
 
 namespace VW.Serializer
 {
@@ -37,34 +38,40 @@ namespace VW.Serializer
 
         private static readonly ConstructorInfo ArgumentNullExceptionConstructorInfo = (ConstructorInfo)ReflectionHelper.GetInfo((ArgumentNullException t) => new ArgumentNullException(""));
 
-        private static MethodInfo IVowpalWabbitVisitorVisitWithLabelMethod<TExampleResult>()
-        {
-            return (MethodInfo)ReflectionHelper.GetInfo((IVowpalWabbitVisitor<TExampleResult> e) => e.Visit("", (IVisitableNamespace[])null));
-        }
-
-        private static MethodInfo IVowpalWabbitVisitorVisitMethod<TExampleResult>()
-        {
-            return (MethodInfo)ReflectionHelper.GetInfo((IVowpalWabbitVisitor<TExampleResult> e) => e.Visit((NamespaceSparse)null));
-        }
-
-
         /// <summary>
         /// Compiles a serializers for the given example user type.
         /// </summary>
         /// <typeparam name="TExample">The example user type.</typeparam>
-        /// <param name="visitor">The visitor to be used for serialization.</param>
         /// <param name="settings">The serializer settings.</param>
         /// <returns>A serializer for the given user example type.</returns>
-        public static VowpalWabbitSerializer<TExample> CreateSerializer<TExample>(VowpalWabbitInterfaceVisitor visitor, VowpalWabbitSerializerSettings settings)
+        public static VowpalWabbitSerializer<TExample> CreateSerializer<TExample>(VowpalWabbitSettings settings)
         {
             var serializerFunc = CreateSerializer<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample>();
+
+#if DEBUG
+            var stringSerializerFunc = CreateSerializer<TExample, VowpalWabbitStringVisitor, string>();
+
+            Func<VowpalWabbit, TExample, ILabel, VowpalWabbitExample> wrappedSerializerFunc;
             if (serializerFunc == null)
             {
                 // if no features are found, no serializer is generated
-                serializerFunc = (_,__) => null;
+                wrappedSerializerFunc = (_,__,___) => null;
+            }
+            else
+            {
+                wrappedSerializerFunc = (vw, example, label) => new VowpalWabbitDebugExample(serializerFunc(vw, example, label), stringSerializerFunc(vw, example, label));
             }
 
-            return new VowpalWabbitSerializer<TExample>(ex => serializerFunc(ex, visitor), settings);
+            return new VowpalWabbitSerializer<TExample>(wrappedSerializerFunc, settings);
+#else
+            if (serializerFunc == null)
+            {
+                // if no features are found, no serializer is generated
+                serializerFunc = (_,__,___) => null;
+            }
+
+            return new VowpalWabbitSerializer<TExample>(serializerFunc, settings);
+#endif
         }
 
         /// <summary>
@@ -74,15 +81,16 @@ namespace VW.Serializer
         /// <typeparam name="TVisitor">The visitor to be used for serialization.</typeparam>
         /// <typeparam name="TExampleResult">The resulting serialization type.</typeparam>
         /// <returns>A serializer for the given user example type.</returns>
-        public static Func<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult>()
-            where TVisitor : IVowpalWabbitVisitor<TExampleResult>
+        public static Func<VowpalWabbit, TExample, ILabel, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult>()
         {
+            Contract.Ensures(Contract.Result<Func<VowpalWabbit, TExample, ILabel, TExampleResult>>() != null);
+
             var cacheKey = Tuple.Create(typeof(TExample), typeof(TVisitor));
             object serializer;
 
             if (SerializerCache.TryGetValue(cacheKey, out serializer))
             {
-                return (Func<TExample, TVisitor, TExampleResult>)serializer;
+                return (Func<VowpalWabbit, TExample, ILabel, TExampleResult>)serializer;
             }
 
             // Create dynamic assembly
@@ -95,7 +103,7 @@ namespace VW.Serializer
 //#else
             var dynMod = dynAsm.DefineDynamicModule("VowpalWabbitSerializerModule");
 //#endif       
-            var newSerializer = CreateSerializer<TExample, TVisitor, TExampleResult>(dynMod);
+            var newSerializer = CreateSerializer<TVisitor, TExample, TExampleResult>(dynMod);
 
             SerializerCache[cacheKey] = newSerializer;
 
@@ -116,14 +124,16 @@ namespace VW.Serializer
         //        Expression.Call(logMethod, file, Expression.Call(expression, toString)));
         //}
 
-        private static Func<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult>(ModuleBuilder moduleBuilder)
-            where TVisitor : IVowpalWabbitVisitor<TExampleResult>
+        private static Func<VowpalWabbit, TExample, ILabel, TExampleResult> CreateSerializer<TVisitor, TExample, TExampleResult>(ModuleBuilder moduleBuilder)
+            // where TVisitor : IVowpalWabbitVisitor<TExampleResult>
         {
             var valueType = typeof(TExample);
 
             // define functions input parameter
             var valueParameter = Expression.Parameter(valueType, "value");
-            var visitorParameter = Expression.Parameter(typeof(TVisitor), "visitor");
+            var labelParameter = Expression.Parameter(typeof(ILabel), "label");
+            var vwParameter = Expression.Parameter(typeof(VowpalWabbit), "vw");
+            var visitorParameter = Expression.Variable(typeof(TVisitor), "visitor");
 
             // find all features and group by namespace
             var allFeatures = ExtractFeaturesCompiled(valueParameter, null, null).ToList();
@@ -147,9 +157,21 @@ namespace VW.Serializer
             //body.Add(Expression.IfThen(
             //        Expression.Equal(visitorParameter, Expression.Constant(null)),
             //        Expression.Throw(Expression.New(ArgumentNullExceptionConstructorInfo, Expression.Constant("visitor")))));
+            
+            var visitorCtor = typeof(TVisitor).GetConstructor(new[] { typeof(VowpalWabbit) });
+            if (visitorCtor != null)
+            {
+                // visitor = new TVisitor(vw)
+                body.Add(Expression.Assign(visitorParameter,
+                    Expression.New(visitorCtor, vwParameter)));
+            }
+            else
+            {
+                // visitor = new TVisitor()
+                body.Add(Expression.Assign(visitorParameter, Expression.New(typeof(TVisitor))));
+            }
 
-
-            var variables = new List<ParameterExpression>();
+            var variables = new List<ParameterExpression>() { visitorParameter };
             var namespaceVariables = new List<ParameterExpression>();
 
             foreach (var ns in featuresByNamespace)
@@ -269,6 +291,8 @@ namespace VW.Serializer
 
                     // CODE namespace.Visit = () => { visitor.Visit(namespace); });
                     //body.Add(Log());
+                    // return (MethodInfo)ReflectionHelper.GetInfo((IVowpalWabbitVisitor<TExampleResult> e) => e.Visit((NamespaceSparse)null));
+                    var visitMethod = typeof(TVisitor).GetMethod("Visit", new[] { typeof(INamespaceSparse) });
                     body.Add(
                         Expression.Assign(
                             Expression.Property(
@@ -277,48 +301,31 @@ namespace VW.Serializer
                             Expression.Lambda<Action>(
                                 Expression.Call(
                                     visitorParameter,
-                                    IVowpalWabbitVisitorVisitMethod<TExampleResult>(),
+                                    visitMethod,
                                     namespaceVariable))));
                 }
             }
 
-            Expression label;
-            if (typeof(IExample).IsAssignableFrom(typeof(TExample)))
-            {
-                var labelProperty = Expression.Property(
-                    valueParameter,
-                    (PropertyInfo)ReflectionHelper.GetInfo((IExample e) => e.Label));
-
-                // CODE value.Label == null ? null : value.Label.ToVowpalWabbitFormat();
-                label = Expression.Condition(
-                    test: Expression.Equal(labelProperty, Expression.Constant(null)),
-                    ifTrue: Expression.Constant(null, typeof(string)),
-                    ifFalse: Expression.Call(
-                        labelProperty,
-                        (MethodInfo)ReflectionHelper.GetInfo((ILabel l) => l.ToVowpalWabbitFormat()))); 
-            }
-            else
-            {
-                label = Expression.Constant(null, typeof(string));
-            }
 
             // CODE return visitor.Visit(label, new[] { ns1, ns2, ... })
             //body.Add(Log());
+            var visitWithLabelMethod = typeof(TVisitor).GetMethod("Visit", new[] { typeof(ILabel), typeof(IVisitableNamespace[]) });
             body.Add(
                 Expression.Call(
                     visitorParameter,
-                    IVowpalWabbitVisitorVisitWithLabelMethod<TExampleResult>(),
-                    label,
+                    visitWithLabelMethod,
+                    labelParameter,
                     Expression.NewArrayInit(
                         typeof(IVisitableNamespace),
                         namespaceVariables.ToArray<Expression>())));
 
 
             // CODE (example, visitor) => { ... }
-            var visit = Expression.Lambda<Func<TExample, TVisitor, TExampleResult>>(
+            var visit = Expression.Lambda<Func<VowpalWabbit, TExample, ILabel, TExampleResult>>(
                 Expression.Block(variables.Union(namespaceVariables), body),
+                vwParameter,
                 valueParameter,
-                visitorParameter);
+                labelParameter);
             
             var typeBuilder = moduleBuilder.DefineType("VowpalWabbitSerializer" + Guid.NewGuid().ToString().Replace('-', '_'));
 
@@ -327,7 +334,7 @@ namespace VW.Serializer
                 SerializeMethodName,
                 MethodAttributes.Public | MethodAttributes.Static,
                 typeof(void),
-                new[] { typeof(TExample), typeof(TVisitor) });
+                new[] { typeof(VowpalWabbit), typeof(TExample), typeof(ILabel) });
 
             // compared to Compile this looks rather ugly, but there is a feature-bug 
             // that adds a security check to every call of the Serialize method
@@ -339,8 +346,8 @@ namespace VW.Serializer
 //#endif
             var dynType = typeBuilder.CreateType();
 
-            return (Func<TExample, TVisitor, TExampleResult>)Delegate.CreateDelegate(
-                typeof(Func<TExample, TVisitor, TExampleResult>),
+            return (Func<VowpalWabbit, TExample, ILabel, TExampleResult>)Delegate.CreateDelegate(
+                typeof(Func<VowpalWabbit, TExample, ILabel, TExampleResult>),
                 dynType.GetMethod(SerializeMethodName));                                        
         }
 
@@ -408,6 +415,7 @@ namespace VW.Serializer
                                     PropertyName = p.Name,
                                     Namespace = namespaceValue,
                                     Enumerize = attr.Enumerize,
+                                    AddAnchor = attr.AddAnchor,
                                     FeatureGroup = featureGroup,
                                     FeatureType = featureType,
                                     FeatureValueType = featureValueType,
@@ -419,6 +427,7 @@ namespace VW.Serializer
                                        Expression.New(featureType),
                                        Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Name), Expression.Constant(name)),
                                        Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Enumerize), Expression.Constant(attr.Enumerize)),
+                                       Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.AddAnchor), Expression.Constant(attr.AddAnchor)),
                                        Expression.Bind(featureType.GetProperty("Value"), propertyExpression),
                                        Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Namespace), Expression.Constant(namespaceValue, typeof(string))),
                                        Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.FeatureGroup),

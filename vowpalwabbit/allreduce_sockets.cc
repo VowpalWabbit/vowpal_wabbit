@@ -98,7 +98,7 @@ socket_t getsock()
   return sock;
 }
 
-void all_reduce_init(const string master_location, const size_t unique_id, const size_t total, const size_t node, node_socks& socks)
+void AllReduceSockets::all_reduce_init()
 {
 #ifdef _WIN32
   WSAData wsaData;
@@ -108,12 +108,12 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
 
 
 
-  struct hostent* master = gethostbyname(master_location.c_str());
+  struct hostent* master = gethostbyname(span_server.c_str());
 
   if (master == nullptr)
-    THROWERRNO("gethostbyname(" << master_location << ")");
+    THROWERRNO("gethostbyname(" << span_server << ")");
 
-  socks.current_master = master_location;
+  socks.current_master = span_server;
 
   uint32_t master_ip = * ((uint32_t*)master->h_addr);
   int port = 26543;
@@ -230,48 +230,46 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
 }
 
 
-void pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos, const socket_t * child_sockets) {
+void AllReduceSockets::pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos) {
 
   size_t my_bufsize = min(ar_buf_size, (parent_read_pos - children_sent_pos));
 
   if(my_bufsize > 0) {
     //going to pass up this chunk of data to the children
-    if(child_sockets[0] != -1 && send(child_sockets[0], buffer+children_sent_pos, (int)my_bufsize, 0) < (int)my_bufsize)
+    if(socks.children[0] != -1 && send(socks.children[0], buffer+children_sent_pos, (int)my_bufsize, 0) < (int)my_bufsize)
       cerr<<"Write to left child failed\n";
-    if(child_sockets[1] != -1 && send(child_sockets[1], buffer+children_sent_pos, (int)my_bufsize, 0) < (int)my_bufsize)
+    if(socks.children[1] != -1 && send(socks.children[1], buffer+children_sent_pos, (int)my_bufsize, 0) < (int)my_bufsize)
       cerr<<"Write to right child failed\n";
 
     children_sent_pos += my_bufsize;
   }
 }
 
-
-
-void broadcast(char* buffer, const size_t n, const socket_t parent_sock, const socket_t * child_sockets) {
+void AllReduceSockets::broadcast(char* buffer, const size_t n) {
 
    size_t parent_read_pos = 0; //First unread float from parent
    size_t children_sent_pos = 0; //First unsent float to children
   //parent_sent_pos <= left_read_pos
   //parent_sent_pos <= right_read_pos
 
-   if(parent_sock == -1) {
+   if(socks.parent == -1) {
      parent_read_pos = n;
    }
-   if(child_sockets[0] == -1 && child_sockets[1] == -1)
+   if(socks.children[0] == -1 && socks.children[1] == -1)
      children_sent_pos = n;
 
    while (parent_read_pos < n || children_sent_pos < n)
     {
-      pass_down(buffer, parent_read_pos, children_sent_pos, child_sockets);
+      pass_down(buffer, parent_read_pos, children_sent_pos);
       if(parent_read_pos >= n && children_sent_pos >= n) break;
 
-      if (parent_sock != -1) {
+      if (socks.parent != -1) {
 	//there is data to be read from the parent
 	if(parent_read_pos == n) 
 	  THROW("I think parent has no data to send but he thinks he has");
 
 	size_t count = min(ar_buf_size,n-parent_read_pos);
-	int read_size = recv(parent_sock, buffer + parent_read_pos, (int)count, 0);
+	int read_size = recv(socks.parent, buffer + parent_read_pos, (int)count, 0);
 	if(read_size == -1) {
 	  cerr <<" recv from parent: " << strerror(errno) << endl;
 	}

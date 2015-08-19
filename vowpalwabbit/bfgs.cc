@@ -529,17 +529,17 @@ int process_pass(vw& all, bfgs& b) {
   /* A) FIRST PASS FINISHED: INITIALIZE FIRST LINE SEARCH *************/
   /********************************************************************/ 
     if (b.first_pass) {
-      if(all.span_server != "")
+      if(all.all_reduce != nullptr)
 	{
-	  accumulate(all, all.span_server, all.reg, W_COND); //Accumulate preconditioner
+	  accumulate(all, all.reg, W_COND); //Accumulate preconditioner
 	  float temp = (float)b.importance_weight_sum;
-	  b.importance_weight_sum = accumulate_scalar(all, all.span_server, temp);
+	  b.importance_weight_sum = accumulate_scalar(all, temp);
 	}
       finalize_preconditioner(all, b, all.l2_lambda);
-      if(all.span_server != "") {
+      if(all.all_reduce != nullptr) {
 	float temp = (float)b.loss_sum;
-	b.loss_sum = accumulate_scalar(all, all.span_server, temp);  //Accumulate loss_sums
-	accumulate(all, all.span_server, all.reg, 1); //Accumulate gradients from all nodes
+	b.loss_sum = accumulate_scalar(all, temp);  //Accumulate loss_sums
+	accumulate(all, all.reg, 1); //Accumulate gradients from all nodes
       }
       if (all.l2_lambda > 0.)
 	b.loss_sum += add_regularization(all, b, all.l2_lambda);
@@ -570,10 +570,10 @@ int process_pass(vw& all, bfgs& b) {
   /********************************************************************/ 
 	      if (b.gradient_pass) // We just finished computing all gradients
 		{
-		  if(all.span_server != "") {
+		  if(all.all_reduce != nullptr) {
 		    float t = (float)b.loss_sum;
-		    b.loss_sum = accumulate_scalar(all, all.span_server, t);  //Accumulate loss_sums
-		    accumulate(all, all.span_server, all.reg, 1); //Accumulate gradients from all nodes
+		    b.loss_sum = accumulate_scalar(all, t);  //Accumulate loss_sums
+		    accumulate(all, all.reg, 1); //Accumulate gradients from all nodes
 		  }
 		  if (all.l2_lambda > 0.)
 		    b.loss_sum += add_regularization(all, b, all.l2_lambda);
@@ -667,9 +667,9 @@ int process_pass(vw& all, bfgs& b) {
   /********************************************************************/ 
 	      else // just finished all second gradients
 		{
-		  if(all.span_server != "") {
+		  if(all.all_reduce != nullptr) {
 		    float t = (float)b.curvature;
-		    b.curvature = accumulate_scalar(all, all.span_server, t);  //Accumulate curvatures
+		    b.curvature = accumulate_scalar(all, t);  //Accumulate curvatures
 		  }
 		  if (all.l2_lambda > 0.)
 		    b.curvature += regularizer_direction_magnitude(all, b, all.l2_lambda);
@@ -705,8 +705,8 @@ int process_pass(vw& all, bfgs& b) {
     
     if (b.output_regularizer)//need to accumulate and place the regularizer.
       {
-	if(all.span_server != "")
-	  accumulate(all, all.span_server, all.reg, W_COND); //Accumulate preconditioner
+	if(all.all_reduce != nullptr)
+	  accumulate(all, all.reg, W_COND); //Accumulate preconditioner
 	//preconditioner_to_regularizer(all, b, all.l2_lambda);
       }
     ftime(&b.t_end_global);

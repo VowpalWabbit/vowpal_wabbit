@@ -9,6 +9,8 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using VW.Serializer.Attributes;
 using System.Globalization;
+using cs_unittest.cbadf;
+using System.Threading.Tasks;
 
 namespace cs_test
 {

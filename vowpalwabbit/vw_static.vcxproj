@@ -226,6 +226,9 @@
     <IntDir>$(SolutionDir)$(PlatformShortName)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemGroup>
+    <ClCompile Include="allreduce_threads.cc">
+      <FileType>CppHeader</FileType>
+    </ClCompile>
     <ClInclude Include="autolink.h" />
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="active.h" />
@@ -285,6 +288,7 @@
     <ClInclude Include="search_dep_parser.h" />
     <ClInclude Include="sender.h" />
     <ClInclude Include="simple_label.h" />
+    <ClInclude Include="spanning_tree.h" />
     <ClInclude Include="stagewise_poly.h" />
     <ClInclude Include="svrg.h" />
     <ClInclude Include="targetver.h" />
@@ -299,7 +303,7 @@
     <ClCompile Include="autolink.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="active.cc" />
-    <ClCompile Include="allreduce.cc" />
+    <ClCompile Include="allreduce_sockets.cc" />
     <ClCompile Include="binary.cc" />
     <ClCompile Include="bfgs.cc" />
     <ClCompile Include="cache.cc" />
@@ -357,6 +361,7 @@
     <ClCompile Include="search_dep_parser.cc" />
     <ClCompile Include="sender.cc" />
     <ClCompile Include="simple_label.cc" />
+    <ClCompile Include="spanning_tree.cc" />
     <ClCompile Include="stagewise_poly.cc" />
     <ClCompile Include="svrg.cc" />
     <ClCompile Include="topk.cc" />
