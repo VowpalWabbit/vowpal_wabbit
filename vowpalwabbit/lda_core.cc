@@ -926,6 +926,9 @@ LEARNER::base_learner *lda_setup(vw &all)
     all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
   }
 
+  *all.file_options << " --lda_alpha " << ld.lda_alpha;
+  *all.file_options << " --lda_rho " << ld.lda_rho;
+
   ld.v.resize(all.lda * ld.minibatch);
 
   ld.decay_levels.push_back(0.f);
