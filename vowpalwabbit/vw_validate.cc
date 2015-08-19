@@ -1,5 +1,6 @@
 #pragma once
 
+#include "global_data.h"
 #include "vw_validate.h"
 #include "vw_versions.h"
 
@@ -10,6 +11,14 @@ namespace VW
         if (all.model_file_ver < LAST_COMPATIBLE_VERSION || all.model_file_ver > PACKAGE_VERSION)
         {
             THROW("Model has possibly incompatible version! " << all.model_file_ver.to_string());
+        }
+    }
+
+    void validate_unexpected_eof(size_t nbytes)
+    {
+        if (nbytes == 0)
+        {
+            THROW("Unexpected end of model file encountered.");
         }
     }
 

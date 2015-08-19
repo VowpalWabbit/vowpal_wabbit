@@ -1337,8 +1337,11 @@ namespace VW {
 		finalize_regressor_exception_thrown = true;
 	}
 
-    all.l->finish();
-    free_it(all.l);
+    if (all.l != nullptr)
+    {
+        all.l->finish();
+        free_it(all.l);
+    }
     if (all.reg.weight_vector != nullptr && !all.seeded) // don't free weight vector if it is shared with another instance
       free(all.reg.weight_vector);
     free_parser(all);
