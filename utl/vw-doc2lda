@@ -1,0 +1,69 @@
+#!/usr/bin/perl -w
+# vim: ts=4 sw=4 et
+#
+# Convert one document to one line that can be fed as one example to vw LDA
+#
+use Getopt::Std;
+use vars qw($opt_f);
+
+getopts('f') || die "Usage: $0 [-f] <file>\n";
+
+# We always need to ignore non-words and lowercase everything 
+my $PRECMD = q{tr -cs '[:alpha:]' '\012' <} . "$ARGV[0]" .
+             q{ |tr '[:upper:]' '[:lower:]'};
+
+# This optional step '-f' converts the list of words in the order
+# of their appearance in the doc, into a sorted BY-FREQUENCY
+# list with counts.  Pass -f to get it.
+my $POSTCMD = $opt_f ? '|sort |uniq -c |sort -n' : '';
+
+#
+# Remove stop-words & convert output from the shell pipe-line:
+#       <count1>  <word1>
+#       <count2>  <word2>
+#       ...
+# into one line per doc for VW consumption:
+#       | <word1>:<count1> <word2>:<count2> ...
+#
+my %StopWord = ();
+my $StopWords = "the be to of and a in that have i it for not on
+        with he as you do at this but his by from they we say her she or
+        an will my one all would there their what so up out if about who
+        get which go me when make can like time no just him know take
+        into your some could them see other than then its how our any
+        these us are is has using used also such may";
+@StopWords = split(/\s+/, $StopWords);
+@StopWord{@StopWords} = 1;
+
+sub skip_word($) {
+    my $word = shift;
+    return 1 if (exists $StopWord{$word});
+    # All 1-char words are also considered stop-words
+    return 1 if (length($word) < 2);
+    0;
+}
+
+print '|';
+
+open(my $inp, "$PRECMD $POSTCMD |");
+while (<$inp>) {
+    my ($word, $count) = ('', 1);
+    if (/^\s*(\d+)\s+(\S+)\s*$/) {
+        ($word, $count) = ($2, $1);
+    } elsif (/^(\S+)$/) {
+        ($word, $count) = ($1, 1);
+    } else {
+        next;
+    }
+
+    next if skip_word($word);
+    if ($count > 1) {
+        printf " %s:%s", $word, $count;
+    } else {
+        printf " %s", $word;
+    }
+}
+close($inp);
+
+print "\n";
+
