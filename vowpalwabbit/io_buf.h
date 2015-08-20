@@ -257,7 +257,7 @@ inline size_t bin_text_read_write_validate_eof(io_buf& io, char* data, uint32_t 
     const char* text_data, uint32_t text_len, bool text)
 {
     size_t nbytes = bin_text_read_write(io, data, len, read_message, read, text_data, text_len, text);
-    if (len > 0)
+    if (read && len > 0)
     {
         VW::validate_unexpected_eof(nbytes);
     }
@@ -290,7 +290,7 @@ inline size_t bin_text_read_write_fixed_validate_eof(io_buf& io, char* data, uin
     const char* text_data, uint32_t text_len, bool text)
 {
     size_t nbytes = bin_text_read_write_fixed(io, data, len, read_message, read, text_data, text_len, text);
-    if (len > 0) // only validate bytes read/write if expected length > 0
+    if (read && len > 0) // only validate bytes read/write if expected length > 0
     {
         VW::validate_unexpected_eof(nbytes);
     }
