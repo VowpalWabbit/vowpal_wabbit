@@ -69,10 +69,12 @@ test/RunTests.last.times
 *.suo
 *.sdf
 *.vcxproj.user
+*.csproj.user
 *.so
 demo/mnist/infimnist
 demo/ocr/letter.*
 demo/ocr/run.*
+**/TestResults
 
 # IntelliJ
 *.idea
@@ -80,7 +82,7 @@ demo/ocr/run.*
 # Ignore NuGet Packages
 *.nupkg
 # Ignore the packages folder
-**/packages/*
+**/packages
 # except build/, which is used as an MSBuild target.
 !**/packages/build/
 # Uncomment if necessary however generally it will be regenerated when needed

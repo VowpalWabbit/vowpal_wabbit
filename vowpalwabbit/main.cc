@@ -49,12 +49,12 @@ char **split_commandline(const char *cmdline, int *argc)
 
 		*argc = p.we_wordc;
 
-		if (!(argv = calloc(*argc, sizeof(char *))))
+		if (!(argv = (char**)calloc(*argc, sizeof(char *))))
 		{
 			goto fail;
 		}
 
-		for (i = 0; i < p.we_wordc; i++)
+		for (i = 0; i < (int)p.we_wordc; i++)
 		{
 			if (!(argv[i] = strdup(p.we_wordv[i])))
 			{
