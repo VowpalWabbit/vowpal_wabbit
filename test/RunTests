@@ -695,32 +695,32 @@ sub run_tests() {
         }
         # -- compare predict
         if (defined $pred_ref) {
-        $predf = 'predict.tmp' unless (defined $predf);
-        $status = diff($pred_ref, $predf);
-        if ($status) {
-            $ErrorCount++;
-            printf STDERR "%s: test %d: FAILED: ref(%s) != predict(%s)\n\tcmd: $cmd\n",
-                $0, $TestNo, $pred_ref, $predf;
-            if ($opt_y) { copy_file($predf, "$predf.test.$TestNo"); }
-            exit $status if ($opt_e);
-        } else {
-            print STDERR "$0: test $TestNo: predict OK\n";
+            $predf = 'predict.tmp' unless (defined $predf);
+            $status = diff($pred_ref, $predf);
+            if ($status) {
+                $ErrorCount++;
+                printf STDERR "%s: test %d: FAILED: ref(%s) != predict(%s)\n\tcmd: $cmd\n",
+                    $0, $TestNo, $pred_ref, $predf;
+                if ($opt_y) { copy_file($predf, "$predf.test.$TestNo"); }
+                exit $status if ($opt_e);
+            } else {
+                print STDERR "$0: test $TestNo: predict OK\n";
+            }
         }
-    }
 
         # -- compare pair of arbitrary files
         if (defined $cmp_ref) {
-        $cmpf = '' unless (defined $cmpf);
-        $status = diff($cmp_ref, $cmpf);
-        if ($status) {
-            $ErrorCount++;
-            printf STDERR "%s: test %d: FAILED: ref(%s) != any_file(%s)\n\tcmd: $cmd\n",
-                $0, $TestNo, $cmp_ref, $cmpf;
-            if ($opt_y) { copy_file($cmpf, "$cmpf.test.$TestNo"); }
-            exit $status if ($opt_e);
-        } else {
-            print STDERR "$0: test $TestNo: compare files OK\n";
-        }
+            $cmpf = '' unless (defined $cmpf);
+            $status = diff($cmp_ref, $cmpf);
+            if ($status) {
+                $ErrorCount++;
+                printf STDERR "%s: test %d: FAILED: ref(%s) != any_file(%s)\n\tcmd: $cmd\n",
+                    $0, $TestNo, $cmp_ref, $cmpf;
+                if ($opt_y) { copy_file($cmpf, "$cmpf.test.$TestNo"); }
+                exit $status if ($opt_e);
+            } else {
+                print STDERR "$0: test $TestNo: compare files OK\n";
+            }
         }
     }
     if ($FullRun == 0) {
