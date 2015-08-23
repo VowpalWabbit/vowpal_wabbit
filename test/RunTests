@@ -1194,7 +1194,7 @@ __DATA__
     pred-sets/ref/test_named_csoaa.predict
 
 # Test 92: check -q :: and -oaa inverse hash
-echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp && tail -n +2 inv_hash.cmp > inv_hash.cmp.new && rm inv_hash.cmp && mv inv_hash.cmp.new inv_hash.cmp
+printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp && tail -n +2 inv_hash.cmp > inv_hash.cmp.new && rm inv_hash.cmp && mv inv_hash.cmp.new inv_hash.cmp
     train-sets/ref/inv_hash.stderr
     pred-sets/ref/inv_hash.cmp
 
@@ -1212,6 +1212,7 @@ echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} --oaa 3 -q :: --invert_has
     train-sets/ref/test_named_csoaa_train-replay.stderr
 
 # Test 96: backwards compatibility
-echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} -i simple_model --invert_hash inv_hash.cmp && tail -n +2 inv_hash.cmp 
+printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} -i simple_model --invert_hash inv_hash.cmp && tail -n +2 inv_hash.cmp 
    test-sets/ref/backwards.stderr
    test-sets/ref/backwards.stdout
+
