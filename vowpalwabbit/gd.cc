@@ -756,7 +756,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 	    {
 	      assert (i< length);		
 	      v = &(all.reg.weight_vector[stride*i]);
-	      if (! g->adaptive && ! g->normalized)
+	      if (g == NULL || (! g->adaptive && ! g->normalized))
 		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
 	      else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
 		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v)*2, "");
@@ -776,7 +776,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 	      int text_len = sprintf(buff, "%d", i);
 	      brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i),
 					 buff, text_len, text);
-	      if (! g->adaptive && ! g->normalized)
+	      if (g == NULL || (! g->adaptive && ! g->normalized))
 		{
 		  text_len = sprintf(buff, ":%f\n", *v);
 		  brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
