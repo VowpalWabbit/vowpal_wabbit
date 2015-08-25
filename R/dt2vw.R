@@ -164,8 +164,7 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag 
     formatDataVW = paste0(formatDataVW, collapse = ' |')
   }
   
-  formatDataVW = paste0("sprintf('", formatDataVW, "',",argexpr, ")")
-  
+  formatDataVW = paste0("sprintf2('", formatDataVW, "',",argexpr, ")")
   ###   FORMATTING USING THE DATA.TABLE DYNAMICS TO OBTAIN THE FINAL VW DATA STRING
   temp = data[, eval(parse(text = formatDataVW))]
   temp = paste0(temp, collapse = '\n')
@@ -175,3 +174,47 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag 
   writeLines(temp,con = con)
   close(con)
 }
+
+
+## Work around the "only 100 arguments are allowed" error
+## in base::sprintf(). Only works with 'fmt' of length 1.
+## Work around the "only 100 arguments are allowed" error
+## in base::sprintf(). Only works with 'fmt' of length 1.
+sprintf2 <- function(fmt, ...)
+{
+  MAX_NVAL <- 99L
+  args <- list(...)
+  if (length(args) <= MAX_NVAL)
+    return(sprintf(fmt, ...))
+  stopifnot(length(fmt) == 1L)
+  not_a_spec_at <- gregexpr("%%", fmt, fixed=TRUE)[[1L]]
+  not_a_spec_at <- c(not_a_spec_at, not_a_spec_at + 1L)
+  spec_at <- setdiff(gregexpr("%", fmt, fixed=TRUE)[[1L]], not_a_spec_at)
+  nspec <- length(spec_at)
+  if (length(args) < nspec)
+    stop("too few arguments")
+  if (nspec <= MAX_NVAL) {
+    break_points <- integer(0)
+  } else {
+    break_points <- seq(MAX_NVAL + 1L, nspec, by=MAX_NVAL)
+  }
+  break_from <- c(1L, break_points)
+  break_to <- c(break_points - 1L, nspec)
+  fmt_break_at <- spec_at[break_points]
+  fmt_chunks <- substr(rep.int(fmt, length(fmt_break_at) + 1L),
+                       c(1L, fmt_break_at),
+                       c(fmt_break_at - 1L, nchar(fmt)))
+  ans_chunks <- mapply(
+    function(fmt_chunk, from, to)
+      do.call(sprintf, c(list(fmt_chunk), args[from:to])),
+    fmt_chunks,
+    break_from,
+    break_to
+  )
+  paste(apply(ans_chunks,1, paste, collapse = ""), collapse = "\n")
+}
+
+
+
+
+
