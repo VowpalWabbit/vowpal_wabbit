@@ -133,11 +133,11 @@ public:
 		// Perform transposed AllReduce to help data locallity
 		T& first = buffers[0][index];
 
-		for (int i = 1; i < total; i++)
+		for (size_t i = 1; i < total; i++)
 			f(first, buffers[i][index]);
 
 		// Broadcast back
-		for (int i = 1; i < total; i++)
+		for (size_t i = 1; i < total; i++)
 			buffers[i][index] = first;
 	}
 
