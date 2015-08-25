@@ -846,7 +846,7 @@ void parse_output_preds(vw& all)
     if (!all.quiet) {
       cerr << "raw predictions = " <<  vm["raw_predictions"].as< string >() << endl;
       if (vm.count("binary"))
-        cerr << "Warning: --raw has no defined value when --binary specified, expect no output" << endl;
+        cerr << "Warning: --raw_predictions has no defined value when --binary specified, expect no output" << endl;
     }
     if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
       all.raw_prediction = 1;//stdout
