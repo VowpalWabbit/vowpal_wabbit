@@ -96,12 +96,12 @@ private:
 	mutex* m_mutex;
 	condition_variable* m_cv;
 
-	// number of threads reached the barrier
-	uint32_t m_count;
-	
 	// total number of threads we wait for
 	size_t m_total;
 
+	// number of threads reached the barrier
+	uint32_t m_count;
+	
 	// current wait-barrier-run required to protect against spurious wakeups of m_cv->wait(...)
 	bool m_run;
 
@@ -158,13 +158,13 @@ public:
 			{
 				all_reduce_column<T, f>(buffers, node);
 			}
-		}
+			}
 		else
 		{
 			index = node * blockSize;
 			end = (node + 1) * blockSize;
 
-			for (; index < end; index++)
+		for (; index < end; index++)
 				all_reduce_column<T, f>(buffers, index);
 
 			// do all-reduce on left over column (n - 1 - node)

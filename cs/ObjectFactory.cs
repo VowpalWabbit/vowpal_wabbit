@@ -10,8 +10,12 @@ using System;
 
 namespace VW
 {
+    /// <summary>
+    /// Helper to conveniently create <see cref="ObjectFactory{TSource,TObject}"/>.
+    /// </summary>
     public static class ObjectFactory
-    {    /// <summary>
+    {   
+        /// <summary>
         /// Disposable object factory.
         /// </summary>
         /// <typeparam name="TSource">The disposable context needed to create objects of <typeparamref name="TObject"/>.</typeparam>

@@ -44,6 +44,11 @@ namespace VW
 	generic<typename T>
 	T VowpalWabbitExample::GetPrediction(VowpalWabbit^ vw, IVowpalWabbitPredictionFactory<T>^ factory)
 	{
+#ifdef _DEBUG
+		if (vw == nullptr)
+			throw gcnew ArgumentNullException("vw");
+#endif
+
 		return factory->Create(vw->m_vw, m_example);
 	}
 }

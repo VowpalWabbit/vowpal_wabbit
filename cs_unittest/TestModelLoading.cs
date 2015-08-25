@@ -15,19 +15,27 @@ namespace cs_unittest
         [TestMethod]
         [DeploymentItem(@"model-sets\7.10.2_corrupted.model", "model-sets")]
         [DeploymentItem(@"model-sets\8.0.0_ok.model", "model-sets")]
+        [DeploymentItem(@"model-sets\8.0.1_rcv1_ok.model", "model-sets")]
+        [DeploymentItem(@"model-sets\8.0.1.test_named_ok.model", "model-sets")]
+        [DeploymentItem(@"model-sets\8.0.1_hash_ok.model", "model-sets")]
         public void TestLoadModel()
         {
             InternalTestModel(@"model-sets/7.10.2_corrupted.model", false);
             InternalTestModel(@"model-sets/8.0.0_ok.model", true);
+            InternalTestModel(@"model-sets/8.0.1.test_named_ok.model", true);
+            InternalTestModel(@"model-sets/8.0.1_rcv1_ok.model", true);
+            InternalTestModel(@"model-sets/8.0.1_hash_ok.model", true);
         }
 
         [TestMethod]
-        [DeploymentItem(@"model-sets\rcv1.model", "model-sets")]
-        [DeploymentItem(@"model-sets\test_named.model", "model-sets")]
+        [DeploymentItem(@"model-sets\8.0.1_rcv1_ok.model", "model-sets")]
+        [DeploymentItem(@"model-sets\8.0.1.test_named_ok.model", "model-sets")]
+        [DeploymentItem(@"model-sets\8.0.1_hash_ok.model", "model-sets")]
         public void TestLoadModelRandomCorrupt()
         {
-            InternalTestModelRandomCorrupt("model-sets/test_named.model");
-            InternalTestModelRandomCorrupt("model-sets/rcv1.model");
+            InternalTestModelRandomCorrupt("model-sets/8.0.1.test_named_ok.model");
+            InternalTestModelRandomCorrupt("model-sets/8.0.1_rcv1_ok.model");
+            InternalTestModelRandomCorrupt("model-sets/8.0.1_hash_ok.model");
         }
 
         private void InternalTestModel(string modelFile, bool shouldPass)
@@ -72,11 +80,7 @@ namespace cs_unittest
                         Assert.IsTrue(false);
                     }
                 }
-                catch (VowpalWabbitException ex)
-                {
-                    Assert.IsTrue(true);
-                }
-                catch (Exception ex)
+                catch (Exception) // an exception should be caught unless AV is encountered in which case the test will fail
                 {
                     Assert.IsTrue(true);
                 }

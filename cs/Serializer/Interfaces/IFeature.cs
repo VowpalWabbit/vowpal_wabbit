@@ -6,6 +6,10 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Diagnostics.Contracts;
+using VW.Serializer.Contracts;
+
 namespace VW.Serializer.Interfaces
 {
     /// <summary>
