@@ -18,7 +18,7 @@ license as described in the file LICENSE.
 
 bool substring_equal(substring&a, substring&b) {
   return (a.end - a.begin == b.end - b.begin) // same length
-      && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
+         && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
 }
 
 void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty)
@@ -28,18 +28,18 @@ void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty
   for (; s.begin != s.end; s.begin++) {
     if (*s.begin == delim) {
       if (allow_empty || (s.begin != last))
-	{
-	  substring temp = {last, s.begin};
-	  ret.push_back(temp);
-	}
+      {
+        substring temp = {last, s.begin};
+        ret.push_back(temp);
+      }
       last = s.begin+1;
     }
   }
   if (allow_empty || (s.begin != last))
-    {
-      substring final = {last, s.begin};
-      ret.push_back(final);
-    }
+  {
+    substring final = {last, s.begin};
+    ret.push_back(final);
+  }
 }
 
 size_t hashstring (substring s, uint32_t h)
@@ -61,9 +61,11 @@ size_t hashstring (substring s, uint32_t h)
 }
 
 size_t hashall (substring s, uint32_t h)
-{ return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h); }
+{
+  return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h);
+}
 
-hash_func_t getHasher(const std::string& s){
+hash_func_t getHasher(const std::string& s) {
   if (s=="strings")
     return hashstring;
   else if(s=="all")
@@ -78,19 +80,19 @@ std::ostream& operator<<(std::ostream& os, const substring& ss) {
 }
 
 std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss) {
-	auto it = ss.begin;
+  auto it = ss.begin;
 
-	if (it == ss.end)
-	{
-		return os;
-	}
+  if (it == ss.end)
+  {
+    return os;
+  }
 
-	os << *it;
-	
-	for (it++; it != ss.end; it++) {
-		os << ",";
-		os << *it;
-	}
+  os << *it;
 
-	return os;
+  for (it++; it != ss.end; it++) {
+    os << ",";
+    os << *it;
+  }
+
+  return os;
 }

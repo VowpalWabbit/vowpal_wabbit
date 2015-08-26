@@ -10,8 +10,8 @@ license as described in the file LICENSE.
 #include <string.h>
 #include "v_array.h"
 
-template<class K, class V> class v_hashmap{
- public:
+template<class K, class V> class v_hashmap {
+public:
 
   struct hash_elem {
     bool   occupied;
@@ -34,8 +34,10 @@ template<class K, class V> class v_hashmap{
     return dat.end_array-dat.begin;
   }
 
-  void set_default_value(V def) { default_value = def; }
-  
+  void set_default_value(V def) {
+    default_value = def;
+  }
+
   void init_dat(size_t min_size, V def, bool (*eq)(void*,K&,K&), void *eq_dat = nullptr) {
     dat = v_init<hash_elem>();
     if (min_size < 1023) min_size = 1023;
@@ -76,17 +78,35 @@ template<class K, class V> class v_hashmap{
     last_position = 0;
     num_occupants = 0;
   }
-  
-  v_hashmap(size_t min_size, V def, bool (*eq)(void*,K&,K&), void*eq_dat=nullptr) { init_dat(min_size, def, eq, eq_dat); }
-  v_hashmap(size_t min_size, V def, bool (*eq)(K&,K&))                         { init(min_size, def, eq); }
-  v_hashmap() { init(1023, nullptr); }
-  
-  void set_equivalent(bool (*eq)(void*,K&,K&), void*eq_dat=nullptr) { equivalent = eq; eq_data = eq_dat; equivalent_no_data = nullptr; }
-  void set_equivalent(bool (*eq)(K&,K&)) { equivalent_no_data = eq; eq_data = nullptr; equivalent = nullptr; }
 
-  void delete_v() { dat.delete_v(); }
-  
-  ~v_hashmap() { delete_v(); }
+  v_hashmap(size_t min_size, V def, bool (*eq)(void*,K&,K&), void*eq_dat=nullptr) {
+    init_dat(min_size, def, eq, eq_dat);
+  }
+  v_hashmap(size_t min_size, V def, bool (*eq)(K&,K&))                         {
+    init(min_size, def, eq);
+  }
+  v_hashmap() {
+    init(1023, nullptr);
+  }
+
+  void set_equivalent(bool (*eq)(void*,K&,K&), void*eq_dat=nullptr) {
+    equivalent = eq;
+    eq_data = eq_dat;
+    equivalent_no_data = nullptr;
+  }
+  void set_equivalent(bool (*eq)(K&,K&)) {
+    equivalent_no_data = eq;
+    eq_data = nullptr;
+    equivalent = nullptr;
+  }
+
+  void delete_v() {
+    dat.delete_v();
+  }
+
+  ~v_hashmap() {
+    delete_v();
+  }
 
   void clear() {
     if (num_occupants == 0) return;
@@ -149,7 +169,7 @@ template<class K, class V> class v_hashmap{
     for (hash_elem* e=dat.begin; e!=dat.end_array; e++)
       if (e->occupied)
         tmp.push_back(*e);
-    
+
     // double the size and clear
     //std::cerr<<"doubling to "<<(base_size()*2) << " units == " << (base_size()*2*sizeof(hash_elem)) << " bytes / " << ((size_t)-1)<<std::endl;
     dat.resize(base_size()*2, true);
@@ -172,7 +192,7 @@ template<class K, class V> class v_hashmap{
     else
       return equivalent_no_data(key, key2);
   }
-  
+
   V& get(K key, size_t hash) {
     size_t sz  = base_size();
     size_t first_position = hash % sz;
@@ -194,8 +214,8 @@ template<class K, class V> class v_hashmap{
         last_position = 0;
 
       // check to make sure we haven't cycled around -- this is a bug!
-      if (last_position == first_position) 
-	THROW("error: v_hashmap did not grow enough!");
+      if (last_position == first_position)
+        THROW("error: v_hashmap did not grow enough!");
     }
   }
 
@@ -219,10 +239,10 @@ template<class K, class V> class v_hashmap{
 
       // check to make sure we haven't cycled around -- this is a bug!
       if (last_position == first_position)
-	THROW("error: v_hashmap did not grow enough!");
+        THROW("error: v_hashmap did not grow enough!");
     }
   }
-    
+
 
   // only call put_after_get(key, hash, val) if you've already
   // run get(key, hash).  if you haven't already run get, then
@@ -246,7 +266,9 @@ template<class K, class V> class v_hashmap{
     put_after_get(key, hash, val);
   }
 
-  size_t size() { return num_occupants; }
+  size_t size() {
+    return num_occupants;
+  }
 };
 
 void test_v_hashmap();
