@@ -105,6 +105,8 @@
     <Compile Include="Serializer\Contracts\INamespaceSparseContract.cs" />
     <Compile Include="Serializer\Contracts\IVisitableFeatureContract.cs" />
     <Compile Include="Serializer\Contracts\IVisitableNamespaceContract.cs" />
+    <Compile Include="Serializer\Inspectors\AnnotationInspector.cs" />
+    <Compile Include="Serializer\Inspectors\InspectionHelper.cs" />
     <Compile Include="Serializer\Interfaces\IFeature.cs" />
     <Compile Include="Interfaces\ILabel.cs" />
     <Compile Include="Serializer\Interfaces\INamespace.cs" />
@@ -129,6 +131,7 @@
     <Compile Include="Serializer\Visitors\VowpalWabbitStringVisitor.cs" />
     <Compile Include="Serializer\VowpalWabbitDebugExample.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
+    <Compile Include="Serializer\VowpalWabbitSerializerCompiler.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerFactory.cs" />
     <Compile Include="Labels\SharedLabel.cs" />
     <Compile Include="Labels\SimpleLabel.cs" />

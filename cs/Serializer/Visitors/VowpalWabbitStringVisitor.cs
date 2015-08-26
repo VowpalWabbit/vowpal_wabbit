@@ -13,6 +13,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using VW.Interfaces;
+using VW.Serializer.Inspectors;
 using VW.Serializer.Interfaces;
 
 #pragma warning disable 1591
@@ -131,7 +132,7 @@ namespace VW.Serializer.Visitors
                     feature.Name,
                     Enum.GetName(valueType, feature.Value));
             }
-            else if (VowpalWabbitSerializerFactory.IsValidDenseFeatureValueElementType(typeof(T)))
+            else if (InspectionHelper.IsValidDenseFeatureValueElementType(typeof(T)))
             {
                 this.builder.AppendFormat(
                     CultureInfo.InvariantCulture,

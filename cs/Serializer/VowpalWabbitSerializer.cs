@@ -8,9 +8,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using VW.Interfaces;
 using VW.Serializer.Attributes;
 using VW.Serializer.Visitors;
@@ -50,7 +52,7 @@ namespace VW.Serializer
         private readonly Dictionary<VowpalWabbitExample, CacheEntry> reverseLookup;
 #endif
 
-        internal VowpalWabbitSerializer(Func<VowpalWabbit, TExample, ILabel, VowpalWabbitExample> serializer, VowpalWabbitSettings settings)
+        internal VowpalWabbitSerializer(Func<VowpalWabbit, TExample, ILabel, VowpalWabbitExample> serializer, Expression serializerExpression, VowpalWabbitSettings settings)
         {
             if (serializer == null)
             {
@@ -60,6 +62,7 @@ namespace VW.Serializer
             Contract.EndContractBlock();
 
             this.serializer = serializer;
+            this.NativeSerializerExpression = serializerExpression;
             this.settings = settings ?? new VowpalWabbitSettings();
 
             var cacheableAttribute = (CacheableAttribute) typeof (TExample).GetCustomAttributes(typeof (CacheableAttribute), true).FirstOrDefault();
@@ -95,6 +98,15 @@ namespace VW.Serializer
 #endif
             }
         }
+
+        /// <summary>
+        /// Useful for debugging.
+        /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public Expression NativeSerializerExpression { get; private set; }
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public Expression StringSerializerExpression { get; set; }
 
         /// <summary>
         /// True if this instance caches examples, false otherwise.
