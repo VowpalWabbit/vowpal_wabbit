@@ -39,7 +39,17 @@ setup(
     url="https://github.com/JohnLangford/vowpal_wabbit",
     maintainer="trbs",
     maintainer_email="trbs@trbs.net",
-    description="test",
+    description="The Vowpal Wabbit (VW) project is a fast out-of-core learning system.",
+    long_description="""PIP Installable version of Vowpal Wabbit.
+
+You need to have boost (libboost-program-options-dev and libboost-python-dev) and python
+development packages installed on your system for it to build correctly. See the Vowpal Wabbit
+side for more information about building VW.
+
+Since the pyvw wrapper bundled with Vowpal Wabbit links statically to libvw.a this package will
+always build it's own library and (currently) cannot use the system installed libvw.so provided
+by distribution packages.
+""",
     package_dir={'': 'python'},
     py_modules=['pyvw'],
     ext_modules=[pylibvw],
