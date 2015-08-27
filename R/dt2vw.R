@@ -17,7 +17,7 @@
                                     #variables like '_', or same variables perceived differently life "_var" and "var" 
 
 
-dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag = NULL, hard_parse = F)
+dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag = NULL, hard_parse = F, append = F)
 {
   #required packages
   require(data.table)
@@ -103,7 +103,23 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag 
     else
       Header[[namespaceName]][!Index[[namespaceName]]] = paste0("eval(parse(text = 'parsingVar(",
                                                                 Header[[namespaceName]][!Index[[namespaceName]]],
-                                                                ", keepSpace = F, hard_parse = hard_parse)'))") 
+                                                                ", keepSpace = F, hard_parse = hard_parse)'))")
+#     print(Index)
+#     print(names(Index))
+#     uu = Index[[names(Index)[1]]]
+#     print(uu)
+#     print(names(uu))
+  }
+  
+  sapply(Index, FUN = function(x){sapply(names(x), FUN = function(y){if(x[[y]] == F){
+                                                    set(data, i=NULL, y, paste0(y,"_",data[[y]]))
+                                                    }})})
+
+  ### modifying the categorical variables to the format: NameVar_Value
+  for(nm in names(Index))
+  {
+    
+    
   }
   
   ###   FIRST PART OF THE VW DATA FORMAT: target, weight, tag
@@ -170,7 +186,10 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag 
   temp = paste0(temp, collapse = '\n')
  
   ###   WRITING THE DATA TO A FILE
-  con = file(fileName,"w")
+  if(!append)
+    con = file(fileName,"w")
+  else 
+    con = file(fileName,"a")
   writeLines(temp,con = con)
   close(con)
 }
