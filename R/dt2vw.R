@@ -104,23 +104,12 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag 
       Header[[namespaceName]][!Index[[namespaceName]]] = paste0("eval(parse(text = 'parsingVar(",
                                                                 Header[[namespaceName]][!Index[[namespaceName]]],
                                                                 ", keepSpace = F, hard_parse = hard_parse)'))")
-#     print(Index)
-#     print(names(Index))
-#     uu = Index[[names(Index)[1]]]
-#     print(uu)
-#     print(names(uu))
   }
   
+  #appending the name of the variable to its value for each categorical variable
   sapply(Index, FUN = function(x){sapply(names(x), FUN = function(y){if(x[[y]] == F){
                                                     set(data, i=NULL, y, paste0(y,"_",data[[y]]))
                                                     }})})
-
-  ### modifying the categorical variables to the format: NameVar_Value
-  for(nm in names(Index))
-  {
-    
-    
-  }
   
   ###   FIRST PART OF THE VW DATA FORMAT: target, weight, tag
   formatDataVW = ''
