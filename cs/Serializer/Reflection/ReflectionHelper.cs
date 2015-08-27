@@ -19,7 +19,7 @@ namespace VW.Serializer.Reflection
     /// <summary>
     /// Reflection helper to find methods on visitors.
     /// </summary>
-    internal static class ReflectionHelper
+    public static class ReflectionHelper
     {
         /// <summary>
         /// TODO: replace me with Roslyn once it's released and just generate string code. This way the overload resolution is properly done.
@@ -56,7 +56,7 @@ namespace VW.Serializer.Reflection
             var bestCandidate = methods.FirstOrDefault();
             if (bestCandidate == null)
             {
-                throw new MissingMethodException("Not method found matching: " + valueType);
+                return null;
             }
 
             MethodInfo method = bestCandidate.Method;

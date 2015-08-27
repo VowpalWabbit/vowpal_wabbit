@@ -72,17 +72,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <LinkKeyFile>..\vw_key.snk</LinkKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>VowpalWabbitCore</TargetName>
+    <LinkKeyFile>..\vw_key.snk</LinkKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <LinkKeyFile>..\vw_key.snk</LinkKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>VowpalWabbitCore</TargetName>
+    <WindowsMetadataLinkKeyFile>
+    </WindowsMetadataLinkKeyFile>
+    <LinkKeyFile>..\vw_key.snk</LinkKeyFile>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

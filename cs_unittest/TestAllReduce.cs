@@ -50,7 +50,7 @@ namespace cs_unittest
 
             var stringSerializer = VowpalWabbitSerializerFactory.CreateSerializer<CbAdfShared, VowpalWabbitStringVisitor, string>().Result;
             var stringSerializerAdf = VowpalWabbitSerializerFactory.CreateSerializer<CbAdfAction, VowpalWabbitStringVisitor, string>().Result;
-
+             
             var stringData = new List<List<string>>();
 
             VowpalWabbitPerformanceStatistics statsExpected;

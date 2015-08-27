@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -35,22 +36,32 @@ namespace VW.Serializer
         private static readonly ConstructorInfo ArgumentNullExceptionConstructorInfo = (ConstructorInfo)ReflectionHelper.GetInfo((ArgumentNullException t) => new ArgumentNullException(""));
 
         private readonly List<FeatureExpression> allFeatures;
+        private readonly List<Type> featurizerTypes;
         private readonly List<Expression> body;
         private readonly List<ParameterExpression> variables;
-        private readonly List<ParameterExpression> namespaceVariables; 
+        private readonly List<ParameterExpression> namespaceVariables;
         
         private ParameterExpression valueParameter;
         private ParameterExpression labelParameter;
         private ParameterExpression vwParameter;
-        private ParameterExpression visitorParameter;
+        private ParameterExpression mainVisitorParameter;
+        private List<ParameterExpression> featurizers;
 
-        internal VowpalWabbitSerializerCompiler(List<FeatureExpression> allFeatures)
+        internal VowpalWabbitSerializerCompiler(List<FeatureExpression> allFeatures, List<Type> featurizerTypes)
         {
             this.allFeatures = allFeatures;
+            this.featurizerTypes = featurizerTypes ?? new List<Type>(0);
+
+            var overrideFeaturizerTypes = this.allFeatures
+                .Where(f => f.OverrideSerializeMethod != null)
+                .Select(f => f.OverrideSerializeMethod.DeclaringType);
+
+            this.featurizerTypes = this.featurizerTypes.Union(overrideFeaturizerTypes).Distinct().ToList();
 
             this.body = new List<Expression>();
             this.variables = new List<ParameterExpression>();
             this.namespaceVariables = new List<ParameterExpression>();
+            this.featurizers = new List<ParameterExpression>();
 
             this.CreateParameters();
             this.CreateVisitor();
@@ -115,24 +126,50 @@ namespace VW.Serializer
             this.valueParameter = Expression.Parameter(typeof(TExample), "value");
             this.labelParameter = Expression.Parameter(typeof(ILabel), "label");
             this.vwParameter = Expression.Parameter(typeof(VowpalWabbit), "vw");
-            this.visitorParameter = Expression.Variable(typeof(TVisitor), "visitor");
+            this.mainVisitorParameter = Expression.Variable(typeof(TVisitor), "visitor");
+            this.variables.Add(this.mainVisitorParameter);
 
-            this.variables.Add(this.visitorParameter);
+            if (this.featurizerTypes != null)
+            {
+                foreach (var visitorType in this.featurizerTypes)
+                {
+                    var parameter = Expression.Parameter(visitorType);
+
+                    this.featurizers.Add(parameter);
+                    this.variables.Add(parameter);
+                }
+            }
+        }
+
+        private void CreateVisitor(ParameterExpression visitorParameter, params Expression[] constructorParameters)
+        {
+            var paramSubset = new List<Expression>(constructorParameters);
+
+            // search for different constructors
+            while (paramSubset.Count > 0)
+            {
+                var visitorCtor = visitorParameter.Type.GetConstructor(paramSubset.Select(p => p.Type).ToArray());
+                if (visitorCtor != null)
+                {
+                    // CODE visitor = new TVisitor(vw)
+                    this.body.Add(Expression.Assign(visitorParameter, Expression.New(visitorCtor, paramSubset)));
+                    return;
+                }
+
+                paramSubset.RemoveAt(paramSubset.Count - 1);
+            }
+
+            // CODE visitor = new TVisitor()
+            this.body.Add(Expression.Assign(visitorParameter, Expression.New(visitorParameter.Type)));
         }
 
         private void CreateVisitor()
         {
-            var visitorCtor = typeof(TVisitor).GetConstructor(new[] { typeof(VowpalWabbit) });
-            if (visitorCtor != null)
+            this.CreateVisitor(this.mainVisitorParameter, this.vwParameter);
+
+            foreach (var featurizer in this.featurizers)
             {
-                // CODE visitor = new TVisitor(vw)
-                this.body.Add(Expression.Assign(this.visitorParameter,
-                    Expression.New(visitorCtor, this.vwParameter)));
-            }
-            else
-            {
-                // CODE visitor = new TVisitor()
-                this.body.Add(Expression.Assign(this.visitorParameter, Expression.New(typeof(TVisitor))));
+                this.CreateVisitor(featurizer, this.vwParameter, this.mainVisitorParameter);
             }
         }
 
@@ -173,7 +210,7 @@ namespace VW.Serializer
             var visitWithLabelMethod = typeof(TVisitor).GetMethod("Visit", new[] { typeof(ILabel), typeof(IVisitableNamespace[]) });
             this.body.Add(
                 Expression.Call(
-                    this.visitorParameter,
+                    this.mainVisitorParameter,
                     visitWithLabelMethod,
                     this.labelParameter,
                     Expression.NewArrayInit(
@@ -182,7 +219,7 @@ namespace VW.Serializer
 
             // CODE (example, visitor) => { ... }
             this.ResultExpression = Expression.Lambda<Func<VowpalWabbit, TExample, ILabel, TExampleResult>>(
-                Expression.Block(this.variables.Union(namespaceVariables), this.body),
+                Expression.Block(this.variables.Union(this.namespaceVariables), this.body),
                 this.vwParameter,
                 this.valueParameter,
                 this.labelParameter);
@@ -232,15 +269,37 @@ namespace VW.Serializer
             //body.Add(Log());
             this.body.Add(Expression.Assign(namespaceVariable, namespaceDense));
 
+            // find the first featurizer that supports this feature type
+            foreach (var featurizer in this.featurizers)
+            {
+                if (this.CreateDenseFeatureVisit(featurizer, namespaceVariable))
+                {
+                    return;
+                }
+            }
+
+            this.CreateDenseFeatureVisit(this.mainVisitorParameter, namespaceVariable);
+        }
+
+        private bool CreateDenseFeatureVisit(ParameterExpression visitor, ParameterExpression namespaceVariable)
+        {
+            var method = ReflectionHelper.FindMethod(visitor.Type, "Visit", namespaceVariable.Type);
+            if (method == null)
+            {
+                return false;
+            }
+
             // CODE namespace.Visit = () => visitor.Visit(namespace)
             //body.Add(Log());
             this.body.Add(Expression.Assign(
-                    Expression.Property(namespaceVariable, namespaceType.GetProperty("Visit")),
+                    Expression.Property(namespaceVariable, namespaceVariable.Type.GetProperty("Visit")),
                     Expression.Lambda<Action>(
                         Expression.Call(
-                            this.visitorParameter,
-                            ReflectionHelper.FindMethod(typeof(TVisitor), "Visit", namespaceType),
+                            visitor,
+                            method,
                             namespaceVariable))));
+
+            return true;
         }
 
         private void CreateSparseFeaturesVisits(string @namespace, char? featureGroup, List<FeatureExpression> features)
@@ -282,19 +341,28 @@ namespace VW.Serializer
                 var feature = features[i];
                 var featureVariable = featureVariables[i];
 
-                // CODE: visitor.Visit(feature1); 
-                Expression visitFeatureCall = Expression.Call(
-                            visitorParameter,
-                            ReflectionHelper.FindMethod(typeof(TVisitor), feature.Enumerize ? "VisitEnumerize" : "Visit", featureVariable.Type),
-                            featureVariable);
+                Expression visitFeatureCall = this.CreateFeatureVisitFromOverride(feature, featureVariable);
 
-                var featureValue = Expression.Property(featureVariable, "Value");
-                if (!featureValue.Type.IsValueType || (featureValue.Type.IsGenericType && featureValue.Type.GetGenericTypeDefinition() == typeof(Nullable<>)))
+                if (visitFeatureCall == null)
                 {
-                    // CODE feature1.Value != null ? visitor.Visit(feature1) : default(TFeatureResult);
-                    visitFeatureCall = Expression.IfThen(
-                            test: Expression.NotEqual(featureValue, Expression.Constant(null)),
-                            ifTrue: visitFeatureCall);
+                    foreach (var featurizer in this.featurizers)
+                    {
+                        visitFeatureCall = this.CreateFeatureVisit(feature, featurizer, featureVariable);
+                        if (visitFeatureCall != null)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                if (visitFeatureCall == null)
+                {
+                    visitFeatureCall = CreateFeatureVisit(feature, this.mainVisitorParameter, featureVariable);
+                }
+
+                if (visitFeatureCall == null)
+                {
+                    throw new NotSupportedException("Feature type is not supported: " + featureVariable.Type);
                 }
 
                 // CODE feature.Visit = visitor.Visit;
@@ -316,9 +384,57 @@ namespace VW.Serializer
                         (PropertyInfo)ReflectionHelper.GetInfo((NamespaceSparse n) => n.Visit)),
                     Expression.Lambda<Action>(
                         Expression.Call(
-                            this.visitorParameter,
+                            this.mainVisitorParameter,
                             visitMethod,
                             namespaceVariable))));
+        }
+
+        private Expression CreateFeatureVisitFromOverride(FeatureExpression feature, ParameterExpression featureVariable)
+        {
+            var method = feature.OverrideSerializeMethod;
+            if (method == null)
+            {
+                return null;
+            }
+
+            var overrideFeaturizer = this.featurizers.FirstOrDefault(f => f.Type == method.DeclaringType);
+            if (overrideFeaturizer == null)
+            {
+                throw new ArgumentException("Featurizer missing");
+            }
+
+            return CreateFeatureVisit(overrideFeaturizer, featureVariable, method);
+        }
+
+        private Expression CreateFeatureVisit(FeatureExpression feature, ParameterExpression visitorParameter, ParameterExpression featureVariable)
+        {
+            var method = ReflectionHelper.FindMethod(visitorParameter.Type, feature.Enumerize ? "VisitEnumerize" : "Visit", featureVariable.Type);
+            if (method == null)
+            {
+                return null;
+            }
+
+            return CreateFeatureVisit(visitorParameter, featureVariable, method);
+        }
+
+        private static Expression CreateFeatureVisit(ParameterExpression visitorParameter, ParameterExpression featureVariable, MethodInfo method)
+        {
+            // CODE: visitor.Visit(feature1); 
+            Expression visitFeatureCall = Expression.Call(
+                        visitorParameter,
+                        method,
+                        featureVariable);
+
+            var featureValue = Expression.Property(featureVariable, "Value");
+            if (!featureValue.Type.IsValueType || (featureValue.Type.IsGenericType && featureValue.Type.GetGenericTypeDefinition() == typeof(Nullable<>)))
+            {
+                // CODE feature1.Value != null ? visitor.Visit(feature1) : default(TFeatureResult);
+                visitFeatureCall = Expression.IfThen(
+                        test: Expression.NotEqual(featureValue, Expression.Constant(null)),
+                        ifTrue: visitFeatureCall);
+            }
+
+            return visitFeatureCall;
         }
 
         //public static Expression Log([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0, Expression expression = null)

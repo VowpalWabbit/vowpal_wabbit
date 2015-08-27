@@ -20,7 +20,7 @@ namespace VW.Serializer.Visitors
     /// <summary>
     /// Front-end to serialize data into Vowpal Wabbit native C++ structures.
     /// </summary>
-    public partial struct VowpalWabbitInterfaceVisitor
+    public partial class VowpalWabbitInterfaceVisitor
     {
         /// <summary>
         /// The Vowpal Wabbit instance all examples are associated with.
@@ -53,6 +53,12 @@ namespace VW.Serializer.Visitors
             this.featureGroup = '\0';
             this.namespaceHash = 0;
         }
+
+        public uint NamespaceHash { get { return this.namespaceHash; } }
+
+        public VowpalWabbitExampleBuilder Builder { get { return this.builder; } }
+
+        public VowpalWabbitNamespaceBuilder NamespaceBuilder { get { return this.namespaceBuilder; } }
 
         /// <summary>
         /// Transfers namespace data to native space.

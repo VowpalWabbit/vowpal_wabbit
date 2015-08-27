@@ -42,9 +42,9 @@ namespace VW.Serializer
         /// <typeparam name="TExample">The example user type.</typeparam>
         /// <param name="settings">The serializer settings.</param>
         /// <returns>A serializer for the given user example type.</returns>
-        public static VowpalWabbitSerializer<TExample> CreateSerializer<TExample>(VowpalWabbitSettings settings, List<FeatureExpression> allFeatures = null)
+        public static VowpalWabbitSerializer<TExample> CreateSerializer<TExample>(VowpalWabbitSettings settings, List<FeatureExpression> allFeatures = null, List<Type> customFeaturizer = null)
         {
-            var serializer = CreateSerializer<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample>(allFeatures);
+            var serializer = CreateSerializer<TExample, VowpalWabbitInterfaceVisitor, VowpalWabbitExample>(allFeatures, customFeaturizer);
 
 #if DEBUG
             var stringSerializer = CreateSerializer<TExample, VowpalWabbitStringVisitor, string>();
@@ -75,7 +75,7 @@ namespace VW.Serializer
 #endif
         }
 
-        internal static VowpalWabbitSerializerCompiler<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult>(List<FeatureExpression> allFeatures = null)
+        internal static VowpalWabbitSerializerCompiler<TExample, TVisitor, TExampleResult> CreateSerializer<TExample, TVisitor, TExampleResult>(List<FeatureExpression> allFeatures = null, List<Type> customFeaturizer = null)
         {
             Tuple<Type, Type> cacheKey = null;
             if (allFeatures == null)
@@ -97,7 +97,7 @@ namespace VW.Serializer
                 return null;
             }
 
-            var newSerializer = new VowpalWabbitSerializerCompiler<TExample, TVisitor, TExampleResult>(allFeatures);
+            var newSerializer = new VowpalWabbitSerializerCompiler<TExample, TVisitor, TExampleResult>(allFeatures, customFeaturizer);
 
             if (cacheKey != null)
             {

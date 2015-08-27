@@ -28,7 +28,8 @@ namespace VW.Serializer.Intermediate
             bool enumerize = false, 
             string variableName = null, 
             int? order = null,
-            bool addAnchor = false)
+            bool addAnchor = false,
+            MethodInfo overrideSerializeMethod = null)
         {
             if (featureType == null)
                 throw new ArgumentNullException("featureType");
@@ -50,6 +51,7 @@ namespace VW.Serializer.Intermediate
             this.VariableName = variableName ?? name;
             this.Order = order ?? 1;
             this.AddAnchor = addAnchor;
+            this.OverrideSerializeMethod = overrideSerializeMethod;
 
             this.DenseFeatureValueElementType = InspectionHelper.GetDenseFeatureValueElementType(featureType);
             this.IsDense = this.DenseFeatureValueElementType != null;
@@ -77,6 +79,8 @@ namespace VW.Serializer.Intermediate
         public string Namespace { get; private set; }
 
         public char? FeatureGroup { get; private set; }
+
+        public MethodInfo OverrideSerializeMethod { get; private set; }
 
         public bool IsDense { get; private set; }
 

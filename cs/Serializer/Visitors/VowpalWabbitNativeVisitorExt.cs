@@ -16,7 +16,7 @@ using VW.Serializer.Interfaces;
 
 namespace VW.Serializer.Visitors
 {
-    public partial struct VowpalWabbitInterfaceVisitor
+    public partial class VowpalWabbitInterfaceVisitor
     {
 			    /// <summary>
         /// Transfers feature data to native space.

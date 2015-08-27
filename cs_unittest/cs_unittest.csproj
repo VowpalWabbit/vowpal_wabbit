@@ -38,6 +38,12 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>vw_key.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Antlr4.Runtime.net45">
       <HintPath>..\vowpalwabbit\packages\Antlr4.Runtime.4.3.0\lib\net45\Antlr4.Runtime.net45.dll</HintPath>
@@ -64,6 +70,7 @@
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestManagedHash.cs" />
     <Compile Include="TestModelLoading.cs" />
+    <Compile Include="TestSerializer.cs" />
     <Compile Include="TrainSetCs_testLdf.cs" />
     <Compile Include="VowpalWabbitListenerToEvents.cs" />
     <Compile Include="Rcv1Test.cs" />
@@ -797,6 +804,7 @@
       <Listener>True</Listener>
       <Visitor>False</Visitor>
     </Antlr4>
+    <None Include="vw_key.snk" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\test\train-sets\cb_test.ldf">
