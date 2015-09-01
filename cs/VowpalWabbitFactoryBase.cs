@@ -14,18 +14,33 @@ namespace VW
     /// <summary>
     /// Base implementation of <see cref="IObjectFactory{T}"/> for Vowpal Wabbit instances spawn of <see cref="VowpalWabbitModel"/>.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public abstract class VowpalWabbitFactoryBase<T> : IObjectFactory<T>
+    /// <typeparam name="TVowpalWabbit">The vowpal wabbit wrapper type.</typeparam>
+    public abstract class VowpalWabbitFactoryBase<TVowpalWabbit> : IObjectFactory<TVowpalWabbit>   
+        where TVowpalWabbit : VowpalWabbit
     {
+        /// <summary>
+        /// The shared model.
+        /// </summary>
         protected VowpalWabbitModel model;
 
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbitFactoryBase{TVowpalWabbit}"/> instance.
+        /// </summary>
+        /// <param name="model">The shared model.</param>
         public VowpalWabbitFactoryBase(VowpalWabbitModel model)
         {
             this.model = model;
         }
 
-        public abstract T Create();
+        /// <summary>
+        /// Creates a new <see cref="VowpalWabbit"/> instance using the shared model.
+        /// </summary>
+        /// <returns>A new <see cref="VowpalWabbit"/> instance.</returns>
+        public abstract TVowpalWabbit Create();
 
+        /// <summary>
+        /// Cleanup.
+        /// </summary>
         public void Dispose()
         {
             this.Dispose(true);

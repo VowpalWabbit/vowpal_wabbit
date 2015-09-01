@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -71,7 +72,7 @@ namespace VW.Serializer.Reflection
                 method = method.MakeGenericMethod(actualTypes);
                 //Debug.WriteLine("\t specializing: " + method);
             }
-            //Debug.WriteLine("");
+            //Debug.WriteLine("Method: {0} for {1} {2}", method, name, valueType);
 
             return method;
         }

@@ -69,7 +69,7 @@ namespace VW
 			// as this is not a ring-based example it is not free'd
 			m_vw->m_vw->l->finish_example(*m_vw->m_vw, *m_example);
 
-			return prediction;
+			return prediction; 
 		}
 		CATCHRETHROW
 	}

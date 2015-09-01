@@ -12,6 +12,9 @@ using System.Text;
 
 namespace VW.Labels
 {
+    /// <summary>
+    /// Helper to ease construction of simple label.
+    /// </summary>
     public sealed class SimpleLabel : ILabel
     {
         /// <summary>
@@ -35,6 +38,7 @@ namespace VW.Labels
         /// <remarks>see simple_label.cc: parse_simple_label</remarks>
         public string ToVowpalWabbitFormat()
         {
+            // Note: this code was inspected closely as it is on the hot performance path.
             if (Weight == null)
             {
                 return this.Label.ToString(CultureInfo.InvariantCulture);

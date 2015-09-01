@@ -93,6 +93,10 @@ namespace VW.Serializer
             return result;
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+
         public void Dispose()
         {
             this.Dispose(true);

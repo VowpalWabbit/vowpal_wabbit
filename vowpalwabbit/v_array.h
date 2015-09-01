@@ -32,6 +32,12 @@ template<class T> struct v_array {
   T pop() { return *(--end);}
   bool empty() { return begin == end;}
   void decr() { end--;}
+  void incr() 
+  {
+	  if (end == end_array)
+		  resize(2 * (end_array - begin) + 3);
+	  end++; 
+  }
   T& operator[](size_t i) { return begin[i]; }
   T& get(size_t i) { return begin[i]; }
   inline size_t size(){return end-begin;}

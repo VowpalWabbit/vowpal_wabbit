@@ -93,7 +93,7 @@ class io_buf {
       ret = -1;
     }
     if (ret == -1 && *name != '\0')
-      THROW("can't open: " << name << ", error = " << strerror(errno));
+      THROWERRNO("can't open: " << name);
     
     return ret;
   }
@@ -151,9 +151,12 @@ class io_buf {
   static ssize_t write_file_or_socket(int f, const void* buf, size_t nbytes);
 
   virtual void flush() {
-	  if (write_file(files[0], space.begin, space.size()) != (int) space.size())
-      std::cerr << "error, failed to write example\n";
-    space.end = space.begin; }
+	if (files.size() > 0) {
+		if (write_file(files[0], space.begin, space.size()) != (int)space.size())
+			std::cerr << "error, failed to write example\n";
+		space.end = space.begin;
+	}
+  }
 
   virtual bool close_file(){
     if(files.size()>0){

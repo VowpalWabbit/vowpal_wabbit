@@ -108,7 +108,7 @@ template <class T, void (*f)(T&, const T&)>void reduce(char* buffer, const size_
 
       if(child_read_pos[0] < n || child_read_pos[1] < n) {
 	if (max_fd > 0 && select((int)max_fd,&fds, nullptr, nullptr, nullptr) == -1)
-	  THROW("select: " << strerror(errno));
+	  THROWERRNO("select");
 
 	for(int i = 0;i < 2;i++) {
 	  if(child_sockets[i] != -1 && FD_ISSET(child_sockets[i],&fds)) {
@@ -120,7 +120,7 @@ template <class T, void (*f)(T&, const T&)>void reduce(char* buffer, const size_
 	    size_t count = min(ar_buf_size,n - child_read_pos[i]);
 	    int read_size = recv(child_sockets[i], child_read_buf[i] + child_unprocessed[i], (int)count, 0);
 		if (read_size == -1)
-		  THROW("recv from child: " << strerror(errno));
+		  THROWERRNO("recv from child");
 
 	    addbufs<T, f>((T*)buffer + child_read_pos[i]/sizeof(T), (T*)child_read_buf[i], (child_read_pos[i] + read_size)/sizeof(T) - child_read_pos[i]/sizeof(T));
 
