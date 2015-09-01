@@ -5,6 +5,7 @@ license as described in the file LICENSE.
  */
 #include <sstream>
 #include <float.h>
+#include <math.h>
 #include "reductions.h"
 #include "rand48.h"
 #include "vw_exception.h"
@@ -84,15 +85,11 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   }
 
   if (is_probabilities) {
-    //ec.pred.probs.erase();
-    //ec.pred.probs.push_back(0); // dummy
     float sum_prob = 0;
     for (uint32_t i=0; i<o.k; i++) {
       // probability of class (i+1) = logistic_link_function(raw_prediction)
       float prob = 1.f / (1.f + exp(- o.pred[i].scalar));
       o.probs[i] = prob;
-      //ec.pred.probs[i] = prob;
-      //ec.pred.probs.push_back(prob);
       sum_prob += prob;
     }
     // make sure that the probabilities sum up (exactly) to one
@@ -100,11 +97,10 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
       o.probs[i] /= sum_prob;
     // copy probs pointer to the example.
     // TODO: shouldn't we do a deep copy and free(ec.pred.probs) in finish_example()?
-    ec.pred.probs = o.probs;
-  } else {
-    ec.pred.multiclass = prediction;
+    ec.probs = o.probs;
   }
 
+  ec.pred.multiclass = prediction;
   ec.l.multi = mc_label_data;
 }
 
@@ -113,11 +109,30 @@ void finish(oaa&o) { free(o.pred); free(o.subsample_order); }
 
 // TODO: partial code duplication with multiclass.cc:finish_example
 void finish_example_probabilities(vw& all, oaa& o, example& ec) {
-  float loss = 0;
+  float zero_one_loss = 0;
   if (ec.l.multi.label != (uint32_t)ec.pred.multiclass)
-    loss = ec.l.multi.weight;
+    zero_one_loss = ec.l.multi.weight;
+  // TODO:
+  // What to do if the correct label is unknown, i.e. (uint32_t)-1?
+  //   Suggestion: increase all.sd->weighted_unlabeled_examples???,
+  //               but not sd.example_number, so the average loss is not influenced.
+  // What to do if the correct_class_prob==0?
+  //   Suggestion: have some maximal multiclass_log_loss limit, e.g. 999.
+  float multiclass_log_loss = 999; // -log(0) = plus infinity
+  float correct_class_prob = 0;
+  if (ec.l.multi.label <= o.k) // prevent segmentation fault if labeĺ==(uint32_t)-1
+    correct_class_prob = ec.probs[ec.l.multi.label-1];
+  if (correct_class_prob > 0)
+    multiclass_log_loss = -log(correct_class_prob) * ec.l.multi.weight;
 
-  all.sd->update(ec.test_only, loss, ec.l.multi.weight, ec.num_features);
+  all.sd->update(ec.test_only, zero_one_loss, ec.l.multi.weight, ec.num_features);
+  //all.sd->update(ec.test_only, multiclass_log_loss, ec.l.multi.weight, ec.num_features);
+
+  if (ec.test_only){
+    all.sd->holdout_multiclass_log_loss += multiclass_log_loss;
+  } else {
+    all.sd->multiclass_log_loss += multiclass_log_loss;
+  }
 
   char temp_str[10];
   ostringstream outputStringStream;
@@ -130,7 +145,7 @@ void finish_example_probabilities(vw& all, oaa& o, example& ec) {
       } else {
         outputStringStream << i+1;
       }
-      sprintf(temp_str, "%f", ec.pred.probs[i]); // 0.123 -> 0.123000
+      sprintf(temp_str, "%f", ec.probs[i]); // 0.123 -> 0.123000
       outputStringStream << ':' << temp_str;
     }
     all.print_text(*sink, outputStringStream.str(), ec.tag);
