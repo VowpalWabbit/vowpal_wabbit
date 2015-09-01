@@ -108,7 +108,8 @@ public class NativeUtils {
             loadLibraryFromJar(osDependentLib);
         }
         else {
-            loadLibraryFromJar(path + suffix);
+            // If we cannot find an OS dependent library then try and load a library in a system independent fashion.
+            System.loadLibrary(path.replaceFirst("/", ""));
         }
     }
 
