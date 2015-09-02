@@ -581,7 +581,8 @@ sub process_args {
         # Allow users to pass args to the eval script,
         # assume first non-space sequence is the command
         my ($first_word) = ($opt_e =~ /^\s*(\S+)/);
-        usage("-e $opt_e: $!") unless (-e $first_word && -x $first_word);
+        my $is_ex = (-e $first_word && -x $first_word) || qx{which $first_word};
+        usage("-e $opt_e: command not found") unless $is_ex;
         warn "Using external evaluation plug-in: '$opt_e'\n";
     }
 

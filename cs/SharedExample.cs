@@ -19,6 +19,9 @@ namespace VW
     {
         private static readonly SharedLabel sharedLabel = new SharedLabel();
 
+        /// <summary>
+        /// Gets the fixed label required for multi-line examples.
+        /// </summary>
         public ILabel Label
         {
             get { return sharedLabel; }

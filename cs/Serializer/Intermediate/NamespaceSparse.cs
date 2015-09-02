@@ -16,8 +16,14 @@ namespace VW.Serializer.Intermediate
     /// </summary>
     public sealed class NamespaceSparse : Namespace, INamespaceSparse, IVisitableNamespace
     {
+        /// <summary>
+        /// Gets or sets the visit action.
+        /// </summary>
         public Action Visit { get; set; }
 
+        /// <summary>
+        /// Gets or sets the features.
+        /// </summary>
         public IVisitableFeature[] Features { get; set; }
     }
 }

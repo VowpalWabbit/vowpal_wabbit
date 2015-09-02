@@ -38,13 +38,13 @@ void sort_and_filter_duplicate_interactions(v_array<v_string> &vec, bool filter_
 * By default include interactions of feature with itself.
 * This approach produces slightly more interactions but it's safier
 * for some cases, as discussed in issues/698
-* Previous behaviour was: include interactions of feature with itself only if its weight != weight^2.
+* Previous behaviour was: include interactions of feature with itself only if its value != value^2.
 *
 */
 const bool feature_self_interactions = true;
 // must return logical expression
-/*old: ft_weight != 1.0 && feature_self_interactions_for_weight_other_than_1*/
-#define PROCESS_SELF_INTERACTIONS(ft_weight) feature_self_interactions
+/*old: ft_value != 1.0 && feature_self_interactions_for_value_other_than_1*/
+#define PROCESS_SELF_INTERACTIONS(ft_value) feature_self_interactions
 
 
 
@@ -54,23 +54,23 @@ const uint32_t FNV_prime = 16777619;
 
 
 
-// function estimates how many new features will be generated for example and ther sum(weight^2).
-void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, float& new_features_weight);
+// function estimates how many new features will be generated for example and ther sum(value^2).
+void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, float& new_features_value);
 
 
 
 // 2 template functions to pass T() proper argument (feature idx in regressor, or its coefficient)
 
 template <class R, void (*T)(R&, const float, float&)>
-inline void call_T( R& dat, weight* weight_vector, const size_t weight_mask, const float ft_weight, const uint32_t ft_idx)
+inline void call_T( R& dat, weight* weight_vector, const size_t weight_mask, const float ft_value, const uint32_t ft_idx)
 {
-    T(dat, ft_weight, weight_vector[ft_idx & weight_mask]);
+    T(dat, ft_value, weight_vector[ft_idx & weight_mask]);
 }
 
 template <class R, void (*T)(R&, float, uint32_t)>
-inline void call_T( R& dat, weight* /*weight_vector*/, const size_t /*weight_mask*/, const float ft_weight, const uint32_t ft_idx)
+inline void call_T( R& dat, weight* /*weight_vector*/, const size_t /*weight_mask*/, const float ft_value, const uint32_t ft_idx)
 {
-    T(dat, ft_weight, ft_idx);
+    T(dat, ft_value, ft_idx);
 }
 
 template <class R, void (*audit_func)(R&, const audit_data*)>
@@ -91,7 +91,7 @@ struct feature_gen_data
 {
     size_t loop_idx;          // current feature id in namespace
     uint32_t hash;            // hash of feature interactions of previous namespaces in the list
-    float x;                  // weight of feature interactions of previous namespaces in the list
+    float x;                  // value of feature interactions of previous namespaces in the list
     size_t loop_end;          // last feature id. May be less than number of features if namespace involved in interaction more than once
                               // calculated at preprocessing together with same_ns
     size_t self_interaction;  // namespace interacting with itself    
@@ -99,6 +99,11 @@ struct feature_gen_data
 //    feature_gen_data(): loop_idx(0), x(1.), loop_end(0), self_interaction(false) {}
 };
 
+// The inline function below may be adjusted to change the way
+// synthetic (interaction) features' values are calculated, e.g.,
+// fabs(value1-value2) or even value1>value2?1.0:-1.0
+// Beware - its result must be non-zero.
+ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value2; }
 
 // uncomment line below to disable usage of inner 'for' loops for pair and triple interactions
 // end switch to usage of non-recursive feature generation algorithm for interactions of any length
@@ -164,12 +169,12 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                         // next index differs for permutations and simple combinations
                         const feature_class* snd = (!same_namespace) ? features_data[snd_ns].begin :
                                                                  (PROCESS_SELF_INTERACTIONS(fst->x)) ? fst : fst+1;
-                        const float& ft_weight = fst->x;
+                        const float& ft_value = fst->x;
                         for (; snd < snd_end; ++snd)
                         {                            
                             call_audit<R, audit_func>(dat, snd);
                             //  const size_t ft_idx = ((snd->weight_index /*>> stride_shift*/) ^ halfhash) /*<< stride_shift*/;                            
-                            call_T<R, T> (dat, weight_vector, weight_mask, ft_weight*snd->x, (snd->weight_index^halfhash) + offset);                            
+                            call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value,snd->x), (snd->weight_index^halfhash) + offset);
                             call_audit<R, audit_func>(dat, nullptr);
                         } // end for(snd)
 
@@ -211,7 +216,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                                                                           (PROCESS_SELF_INTERACTIONS(fst->x)) ? fst : fst+1;
 
                                 const uint32_t halfhash1 = FNV_prime * fst->weight_index;
-                                const float& ft_weight = fst->x;
+                                const float& ft_value = fst->x;
 
                                 for (; snd < snd_end; ++snd)
                                 {
@@ -219,7 +224,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                                     call_audit<R, audit_func>(dat, snd);
 
                                     const uint32_t halfhash2 = FNV_prime * (halfhash1 ^ snd->weight_index);
-                                    const float ft_weight1 =  ft_weight * snd->x;
+                                    const float ft_value1 = INTERACTION_VALUE(ft_value, snd->x);
 
                                     // next index differs for permutations and simple combinations
                                     const feature_class* thr = (!same_namespace2) ? features_data[thr_ns].begin :
@@ -229,7 +234,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                                     {
                                         call_audit<R, audit_func>(dat, thr);
 //                                        const size_t ft_idx = ((thr->weight_index /*>> stride_shift*/)^ halfhash2) /*<< stride_shift*/;
-                                        call_T<R, T> (dat, weight_vector, weight_mask, ft_weight1 * thr->x, (thr->weight_index^halfhash2) + offset);
+                                        call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value1,thr->x), (thr->weight_index^halfhash2) + offset);
                                         call_audit<R, audit_func>(dat, nullptr);
                                     } // end for (thr)
                                    call_audit<R, audit_func>(dat, nullptr);
@@ -349,7 +354,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                         if (next_data->self_interaction)
                         {
                             // if next namespace is same, we should start with loop_idx + 1 to avoid feature interaction with itself
-                            // unless feature has weight w and w != w*w. E.g. w != 0 and w != 1. Features with w == 0 are already
+                            // unless feature has value x and x != x*x. E.g. x != 0 and x != 1. Features with x == 0 are already
                             // filtered out in parce_args.cc::maybeFeature().
 
                             next_data->loop_idx = (PROCESS_SELF_INTERACTIONS(cur_feature->x)) ? cur_data->loop_idx : cur_data->loop_idx + 1;
@@ -369,7 +374,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                         {
                             // feature2 xor (16777619*feature1)                            
                             next_data->hash = FNV_prime * (cur_data->hash ^ cur_feature->weight_index);
-                            next_data->x = cur_feature->x * cur_data->x;
+                            next_data->x = INTERACTION_VALUE(cur_feature->x, cur_data->x);
                         }
 
                         ++cur_data;
@@ -384,7 +389,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                         for (feature_class* f = start; f != end; ++f)
                         {
                             call_audit<R, audit_func>(dat, f);
-                            call_T<R, T> (dat, weight_vector, weight_mask, fgd2->x * f->x, (fgd2->hash^f->weight_index) + offset );
+                            call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(fgd2->x, f->x), (fgd2->hash^f->weight_index) + offset );
                             call_audit<R, audit_func>(dat, nullptr);
                         }
 

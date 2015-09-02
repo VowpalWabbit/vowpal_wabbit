@@ -425,11 +425,11 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 
       // attempt to bind to socket
       if ( ::bind(all.p->bound_sock,(sockaddr*)&address, sizeof(address)) < 0 )
-	THROW("bind: " << strerror(errno));
+	THROWERRNO("bind");
       
       // listen on socket
       if (listen(all.p->bound_sock, 1) < 0)
-	THROW("listen: " << strerror(errno));
+	THROWERRNO("listen");
 	  
 	  // write port file
 	  if (all.vm.count("port_file"))
@@ -450,7 +450,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 
       // background process
       if (!all.active && daemon(1,1))
-	THROW("daemon: " << strerror(errno));
+	THROWERRNO("daemon");
 
       // write pid file
       if (all.vm.count("pid_file"))
@@ -550,7 +550,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	cerr << "calling accept" << endl;
       int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
       if (f < 0)
-	THROW("accept: " << strerror(errno));
+	THROWERRNO("accept");
       
       all.p->label_sock = f;
       all.print = print_result;

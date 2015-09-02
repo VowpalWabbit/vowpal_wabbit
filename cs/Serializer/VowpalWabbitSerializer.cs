@@ -28,6 +28,11 @@ namespace VW.Serializer
 
         internal VowpalWabbitSerializer(Func<TExample, IVowpalWabbitExample> serializer, VowpalWabbitSerializerSettings settings)
         {
+            if (serializer == null)
+            {
+                throw new ArgumentNullException("serializer");
+            }
+
             this.serializer = serializer;
             this.settings = settings ?? new VowpalWabbitSerializerSettings();
 
@@ -87,6 +92,10 @@ namespace VW.Serializer
 
             return result;
         }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
 
         public void Dispose()
         {

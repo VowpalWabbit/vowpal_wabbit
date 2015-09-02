@@ -13,10 +13,10 @@ namespace EntityRelationTask { Search::search_task task = { "entity_relation", r
 
 
 namespace EntityRelationTask {
+  using namespace Search;
   namespace CS = COST_SENSITIVE;
 
   void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount);
-  //enum SearchOrder { EntityFirst, Mix, Skip };
 
   struct task_data {
     float relation_none_cost;
@@ -27,25 +27,39 @@ namespace EntityRelationTask {
     bool allow_skip;
     v_array<uint32_t> y_allowed_entity;
     v_array<uint32_t> y_allowed_relation;
-    int search_order;
+    size_t search_order;
     example* ldf_entity;
     example* ldf_relation;
-    //SearchOrder search_order;
   };
 
 
   void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm) {
+    vw& all = sch.get_vw_pointer_unsafe();
     task_data * my_task_data = new task_data();
-    po::options_description sspan_opts("entity relation options");
-    sspan_opts.add_options()
+    sch.set_task_data<task_data>(my_task_data);
+		
+	new_options(all, "Entity Relation Options")		
         ("relation_cost", po::value<float>(&(my_task_data->relation_cost))->default_value(1.0), "Relation Cost")
         ("entity_cost", po::value<float>(&(my_task_data->entity_cost))->default_value(1.0), "Entity Cost")
         ("constraints", "Use Constraints")
         ("relation_none_cost", po::value<float>(&(my_task_data->relation_none_cost))->default_value(0.5), "None Relation Cost")
         ("skip_cost", po::value<float>(&(my_task_data->skip_cost))->default_value(0.01f), "Skip Cost (only used when search_order = skip")
-        ("search_order", po::value<int>(&(my_task_data->search_order))->default_value(0), "Search Order 0: EntityFirst 1: Mix 2: Skip 3: EntityFirst(LDF)" );
-    sch.add_program_options(vm, sspan_opts);
-    
+        ("search_order", po::value<size_t>(&(my_task_data->search_order))->default_value(0), "Search Order 0: EntityFirst 1: Mix 2: Skip 3: EntityFirst(LDF)" );
+	add_options(all);
+
+	check_option<size_t>(my_task_data->search_order, all, vm, "search_order", false, size_equal,
+                         "warning: you specified a different value for --search_order than the one loaded from regressor. proceeding with loaded value: ", "");
+	check_option<float>(my_task_data->relation_cost, all, vm, "relation_cost", false, float_equal,
+                         "warning: you specified a different value for --relation_cost than the one loaded from regressor. proceeding with loaded value: ", "");
+	check_option<float>(my_task_data->entity_cost, all, vm, "entity_cost", false, float_equal,
+                         "warning: you specified a different value for --entity_cost than the one loaded from regressor. proceeding with loaded value: ", "");
+	check_option<float>(my_task_data->relation_none_cost, all, vm, "relation_none_cost", false, float_equal,
+                         "warning: you specified a different value for --relation_none_cost than the one loaded from regressor. proceeding with loaded value: ", "");
+	check_option<float>(my_task_data->skip_cost, all, vm, "skip_cost", false, float_equal,
+                         "warning: you specified a different value for --skip_cost than the one loaded from regressor. proceeding with loaded value: ", "");
+    check_option(my_task_data->constraints, all, vm, "constraints", false,
+                         "warning: you specified a different value for --constraints than the one loaded from regressor. proceeding with loaded value: ");
+
     // setup entity and relation labels
     // Entity label 1:E_Other 2:E_Peop 3:E_Org 4:E_Loc
     // Relation label 5:R_Live_in 6:R_OrgBased_in 7:R_Located_in 8:R_Work_For 9:R_Kill 10:R_None
@@ -75,7 +89,7 @@ namespace EntityRelationTask {
     sch.set_num_learners(2);
     if(my_task_data->search_order == 4)
       sch.set_num_learners(3);
-    sch.set_task_data<task_data>(my_task_data);
+
   }
 
   void finish(Search::search& sch) {
@@ -168,6 +182,7 @@ namespace EntityRelationTask {
       hist[1] = (uint32_t)predictions[id2];
     } else {
       hist[0] = 0;
+      hist[1] = 0;
     }
     for(size_t j=0; j< my_task_data->y_allowed_relation.size(); j++){
       if(!my_task_data->constraints || hist[0] == 0  || check_constraints(hist[0], hist[1], my_task_data->y_allowed_relation[j])){

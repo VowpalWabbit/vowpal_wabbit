@@ -274,7 +274,7 @@ void sort_and_filter_duplicate_interactions(v_array<v_string>& vec, bool filter_
 
 
 // the code under DEBUG_EVAL_COUNT_OF_GEN_FT below is an alternative way of implementation of eval_count_of_generated_ft()
-// it just calls generate_interactions() with small function which counts generated features and sums their squared weights
+// it just calls generate_interactions() with small function which counts generated features and sums their squared values
 // it's replaced with more fast (?) analytic solution but keeps just in case and for doublecheck.
 
 //#define DEBUG_EVAL_COUNT_OF_GEN_FT
@@ -282,14 +282,14 @@ void sort_and_filter_duplicate_interactions(v_array<v_string>& vec, bool filter_
 struct eval_gen_data
 {
     size_t& new_features_cnt;
-    float& new_features_weight;
-    eval_gen_data(size_t& features_cnt, float& features_weight): new_features_cnt(features_cnt), new_features_weight(features_weight) {}
+    float& new_features_value;
+    eval_gen_data(size_t& features_cnt, float& features_value): new_features_cnt(features_cnt), new_features_value(features_value) {}
 };
 
 void ft_cnt(eval_gen_data& dat, float fx, uint32_t )
 {
     ++ dat.new_features_cnt;
-    dat.new_features_weight += fx * fx;
+    dat.new_features_value += fx * fx;
 }
 #endif
 
@@ -316,12 +316,12 @@ inline size_t factor(const size_t n, const size_t start_from = 1)
 
 
 
-// returns number of new features that will be generated for example and sum of their squared weights
+// returns number of new features that will be generated for example and sum of their squared values
 
-void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, float& new_features_weight)
+void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, float& new_features_value)
 {
     new_features_cnt = 0;
-    new_features_weight = 0.;
+    new_features_value = 0.;
 
     v_array<float> results = v_init<float>();
 
@@ -343,7 +343,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
             if (num_features_in_inter == 0) continue;
 
             new_features_cnt += num_features_in_inter;
-            new_features_weight += sum_feat_sq_in_inter;
+            new_features_value += sum_feat_sq_in_inter;
         }
 
 
@@ -351,8 +351,8 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
         #ifdef DEBUG_EVAL_COUNT_OF_GEN_FT
         size_t correct_features_cnt = 0;
-        float correct_features_weight = 0.;
-        eval_gen_data dat(correct_features_cnt, correct_features_weight);
+        float correct_features_value = 0.;
+        eval_gen_data dat(correct_features_cnt, correct_features_value);
         generate_interactions<eval_gen_data, uint32_t, ft_cnt>(all, ec, dat);
         #endif
 
@@ -380,22 +380,22 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
                     // namespace is same for whole block
                     v_array<feature>& features = ec.atomics[(const int)*ns];
 
-                    // count number of features with weight != 1.;
-                    size_t cnt_ft_weight_non_1 = 0;
+                    // count number of features with value != 1.;
+                    size_t cnt_ft_value_non_1 = 0;
 
 
-                    // in this block we shall calculate number of generated features and sum of their weights
+                    // in this block we shall calculate number of generated features and sum of their values
                     // keeping in mind rules applicable for simple combinations instead of permutations
 
 
 
-                    // let's calculate sum of their squared weight for whole block
+                    // let's calculate sum of their squared value for whole block
 
                     // ensure results as big as order_of_inter and empty.
                     for (size_t i = 0; i < results.size(); ++i) results[i] = 0.;
                     while (results.size() < order_of_inter) results.push_back(0.);
 
-                    // recurrent weight calculations
+                    // recurrent value calculations
                     for (feature* ft = features.begin; ft != features.end; ++ft)
                     {
                         const float x = ft->x*ft->x;
@@ -412,7 +412,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
                             for (size_t i = 1; i < order_of_inter; ++i)
                                 results[i] += results[i-1]*x;
 
-                            ++cnt_ft_weight_non_1;
+                            ++cnt_ft_value_non_1;
                         }
 
                     }
@@ -424,9 +424,9 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
                     // if number of features is less than  order of interaction then go to the next interaction
                     // as you can't make simple combination of interaction 'aaa' if a contains < 3 features.
-                    // unless one of them has weight != 1. and we are counting them.
+                    // unless one of them has value != 1. and we are counting them.
                     const size_t ft_size = features.size();
-                    if (cnt_ft_weight_non_1 == 0 && ft_size < order_of_inter)
+                    if (cnt_ft_value_non_1 == 0 && ft_size < order_of_inter)
                     {
                         num_features_in_inter = 0;
                         break;
@@ -434,7 +434,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
 
                     size_t n;
-                    if (cnt_ft_weight_non_1 == 0) // number of generated simple combinations is C(n,k)
+                    if (cnt_ft_value_non_1 == 0) // number of generated simple combinations is C(n,k)
                     {
                         n = choose(ft_size, order_of_inter);
                     } else {
@@ -442,10 +442,10 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
                         for (size_t l = 0; l <= order_of_inter; ++l)
                         {
                             //C(l+m-1, l) * C(n-m, k-l)
-                            size_t num = (l==0)?1:choose(l+cnt_ft_weight_non_1-1, l);
+                            size_t num = (l==0)?1:choose(l+cnt_ft_value_non_1-1, l);
 
-                            if (ft_size - cnt_ft_weight_non_1 >= order_of_inter-l)
-                                num *= choose(ft_size - cnt_ft_weight_non_1, order_of_inter-l);
+                            if (ft_size - cnt_ft_value_non_1 >= order_of_inter-l)
+                                num *= choose(ft_size - cnt_ft_value_non_1, order_of_inter-l);
                             else num = 0;
 
                             n +=  num;
@@ -464,14 +464,14 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
             if (num_features_in_inter == 0) continue; //signal that values should be ignored (as default value is 1)
 
             new_features_cnt += num_features_in_inter;
-            new_features_weight += sum_feat_sq_in_inter;
+            new_features_value += sum_feat_sq_in_inter;
         }
 
         #ifdef DEBUG_EVAL_COUNT_OF_GEN_FT
         if (correct_features_cnt != new_features_cnt)
             cerr << "Incorrect new features count " << new_features_cnt << " must be " << correct_features_cnt << endl;
-        if (fabs(correct_features_weight - new_features_weight) > 1e-5)
-            cerr << "Incorrect new features weight " << new_features_weight << " must be " << correct_features_weight << endl;
+        if (fabs(correct_features_value - new_features_value) > 1e-5)
+            cerr << "Incorrect new features value " << new_features_value << " must be " << correct_features_value << endl;
         #endif
 
     }

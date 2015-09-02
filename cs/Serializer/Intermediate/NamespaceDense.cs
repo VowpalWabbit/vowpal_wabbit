@@ -26,6 +26,6 @@ namespace VW.Serializer.Intermediate
         /// <summary>
         /// The dense feature data.
         /// </summary>
-        public IFeature<IEnumerable<TFeature>> DenseFeature { get; set; }
+        public IFeature<IReadOnlyCollection<TFeature>> DenseFeature { get; set; }
     }
 }

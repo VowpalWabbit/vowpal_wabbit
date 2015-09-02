@@ -146,9 +146,9 @@ void parse_dictionary_argument(vw&all, string str) {
     cerr << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << endl;
 
   // see if we've already read this dictionary
-  for (size_t id=0; id<all.read_dictionaries.size(); id++)
-    if (all.read_dictionaries[id].file_hash == fd_hash) {
-      all.namespace_dictionaries[(size_t)ns].push_back(all.read_dictionaries[id].dict);
+  for (size_t id=0; id<all.loaded_dictionaries.size(); id++)
+    if (all.loaded_dictionaries[id].file_hash == fd_hash) {
+      all.namespace_dictionaries[(size_t)ns].push_back(all.loaded_dictionaries[id].dict);
       return;
     }
 
@@ -161,7 +161,7 @@ void parse_dictionary_argument(vw&all, string str) {
 
   size_t def = (size_t)' ';
 
-  int size = 2048, pos, nread;
+  size_t size = 2048, pos, nread;
   char rc;
   char*buffer = calloc_or_die<char>(size);
   do {
@@ -219,7 +219,7 @@ void parse_dictionary_argument(vw&all, string str) {
   all.namespace_dictionaries[(size_t)ns].push_back(map);
   dictionary_info info = { calloc_or_die<char>(strlen(s)+1), fd_hash, map };
   strcpy(info.name, s);
-  all.read_dictionaries.push_back(info);
+  all.loaded_dictionaries.push_back(info);
 }
 
 void parse_affix_argument(vw&all, string str) {
@@ -472,9 +472,9 @@ void parse_feature_tweaks(vw& all)
 
   all.permutations = vm.count("permutations");
 
-  // prepare namespace interactions
-  v_array<v_string> expanded_interactions = v_init<v_string>();
-
+     // prepare namespace interactions
+     v_array<v_string> expanded_interactions = v_init<v_string>();
+     
   if ( ( ((!all.pairs.empty() || !all.triples.empty() || !all.interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
        (vm.count("quadratic") || vm.count("cubic") || vm.count("interactions")) ) )
          ||
@@ -492,76 +492,76 @@ void parse_feature_tweaks(vw& all)
       }
   }
 
-  if (vm.count("quadratic"))
-  {
-      const vector<string> vec_arg = vm["quadratic"].as< vector<string> >();
-      if (!all.quiet)
-      {
-          cerr << "creating quadratic features for pairs: ";
+     if (vm.count("quadratic"))
+     {
+         const vector<string> vec_arg = vm["quadratic"].as< vector<string> >();
+         if (!all.quiet)
+         {
+             cerr << "creating quadratic features for pairs: ";
 
-          for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+             for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
           {
-              if (!all.quiet) cerr << *i << " ";
+                 if (!all.quiet) cerr << *i << " ";
               *all.file_options << " --quadratic " << *i;
-          }
+         }
       }
-      expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
-
-      if (!all.quiet) cerr << endl;
-  }
-
-  if (vm.count("cubic"))
-  {
-      vector<string> vec_arg = vm["cubic"].as< vector<string> >();
-      if (!all.quiet)
-      {
-          cerr << "creating cubic features for triples: ";
-          for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+         expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
+     
+         if (!all.quiet) cerr << endl;
+     }
+     
+     if (vm.count("cubic"))
+     {
+         vector<string> vec_arg = vm["cubic"].as< vector<string> >();
+         if (!all.quiet)
+         {
+             cerr << "creating cubic features for triples: ";
+             for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
           {
-              if (!all.quiet) cerr << *i << " ";
+                 if (!all.quiet) cerr << *i << " ";
               *all.file_options << " --cubic " << *i;
-          }
+         }
       }
-
-      v_array<v_string> exp_cubic = INTERACTIONS::expand_interactions(vec_arg, 3, "error, cubic features must involve three sets.");
-      push_many(expanded_interactions, exp_cubic.begin, exp_cubic.size());
-      exp_cubic.delete_v();
-
-      if (!all.quiet) cerr << endl;
-  }
-
-  if (vm.count("interactions"))
-  {
-      vector<string> vec_arg = vm["interactions"].as< vector<string> >();
-      if (!all.quiet)
-      {
-          cerr << "creating features for following interactions: ";
-          for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+     
+         v_array<v_string> exp_cubic = INTERACTIONS::expand_interactions(vec_arg, 3, "error, cubic features must involve three sets.");
+         push_many(expanded_interactions, exp_cubic.begin, exp_cubic.size());
+         exp_cubic.delete_v();
+     
+         if (!all.quiet) cerr << endl;
+     }
+     
+     if (vm.count("interactions"))
+     {
+         vector<string> vec_arg = vm["interactions"].as< vector<string> >();
+         if (!all.quiet)
+         {
+             cerr << "creating features for following interactions: ";
+             for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
           {
-              if (!all.quiet) cerr << *i << " ";
+                 if (!all.quiet) cerr << *i << " ";
               *all.file_options << " --interactions " << *i;
-          }
+         }
       }
-
-      v_array<v_string> exp_inter = INTERACTIONS::expand_interactions(vec_arg, 0, "");
-      push_many(expanded_interactions, exp_inter.begin, exp_inter.size());
-      exp_inter.delete_v();
-
-      if (!all.quiet) cerr << endl;
-  }
-
-  if (expanded_interactions.size() > 0)
-  {
-
-      size_t removed_cnt;
-      size_t sorted_cnt;
-      INTERACTIONS::sort_and_filter_duplicate_interactions(expanded_interactions, !vm.count("leave_duplicate_interactions"), removed_cnt, sorted_cnt);
-
-      if (removed_cnt > 0)
-          cerr << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.' << endl << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
-      if (sorted_cnt > 0)
-          cerr << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
-
+     
+         v_array<v_string> exp_inter = INTERACTIONS::expand_interactions(vec_arg, 0, "");
+         push_many(expanded_interactions, exp_inter.begin, exp_inter.size());
+         exp_inter.delete_v();
+     
+         if (!all.quiet) cerr << endl;
+     }
+     
+     if (expanded_interactions.size() > 0)
+     {
+     
+         size_t removed_cnt;
+         size_t sorted_cnt;
+         INTERACTIONS::sort_and_filter_duplicate_interactions(expanded_interactions, !vm.count("leave_duplicate_interactions"), removed_cnt, sorted_cnt);
+     
+         if (removed_cnt > 0)
+             cerr << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.' << endl << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
+         if (sorted_cnt > 0)
+             cerr << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
+     
 
       if (all.interactions.size() > 0)
       { // should be empty, but just in case...
@@ -569,18 +569,18 @@ void parse_feature_tweaks(vw& all)
           all.interactions.delete_v();
       }
 
-      all.interactions = expanded_interactions;
-
-      // copy interactions of size 2 and 3 to old vectors for backward compatibility
-      for (v_string* i = expanded_interactions.begin; i != expanded_interactions.end; ++i)
-      {
-          const size_t len = i->size();
-          if (len == 2)
-              all.pairs.push_back(v_string2string(*i));
-          else if (len == 3)
-              all.triples.push_back(v_string2string(*i));
-      }
-  }
+         all.interactions = expanded_interactions;
+     
+         // copy interactions of size 2 and 3 to old vectors for backward compatibility
+         for (v_string* i = expanded_interactions.begin; i != expanded_interactions.end; ++i)
+         {
+             const size_t len = i->size();
+             if (len == 2)
+                 all.pairs.push_back(v_string2string(*i));
+             else if (len == 3)
+                 all.triples.push_back(v_string2string(*i));
+         }
+     }
 
 
   for (size_t i = 0; i < 256; i++)
@@ -846,7 +846,7 @@ void parse_output_preds(vw& all)
     if (!all.quiet) {
       cerr << "raw predictions = " <<  vm["raw_predictions"].as< string >() << endl;
       if (vm.count("binary"))
-        cerr << "Warning: --raw has no defined value when --binary specified, expect no output" << endl;
+        cerr << "Warning: --raw_predictions has no defined value when --binary specified, expect no output" << endl;
     }
     if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
       all.raw_prediction = 1;//stdout
@@ -1006,7 +1006,7 @@ void add_to_args(vw& all, int argc, char* argv[], int excl_param_count = 0, cons
     if (skip_next) continue;
 
     all.args.push_back(string(argv[i]));
-  }
+}
 }
 
 vw& parse_args(int argc, char *argv[])
@@ -1028,7 +1028,7 @@ vw& parse_args(int argc, char *argv[])
   new_options(all, "Update options")
     ("learning_rate,l", po::value<float>(&(all.eta)), "Set learning rate")
     ("power_t", po::value<float>(&(all.power_t)), "t power value")
-        ("decay_learning_rate", po::value<float>(&(all.eta_decay_rate)),
+		("decay_learning_rate", po::value<float>(&(all.eta_decay_rate)),
      "Set Decay factor for learning_rate between passes")
     ("initial_t", po::value<double>(&((all.sd->t))), "initial t value")
     ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights.");
@@ -1043,9 +1043,9 @@ vw& parse_args(int argc, char *argv[])
 
   new_options(all, "Parallelization options")
     ("span_server", po::value<string>(&(all.span_server)), "Location of server for setting up spanning tree")
-        ("unique_id", po::value<size_t>(&(all.unique_id)), "unique id used for cluster parallel jobs")
-        ("total", po::value<size_t>(&(all.total)), "total number of nodes used in cluster parallel job")
-        ("node", po::value<size_t>(&(all.node)), "node number in cluster parallel job");
+		("unique_id", po::value<size_t>(&(all.unique_id)), "unique id used for cluster parallel jobs")
+		("total", po::value<size_t>(&(all.total)), "total number of nodes used in cluster parallel job")
+		("node", po::value<size_t>(&(all.node)), "node number in cluster parallel job");
   add_options(all);
 
   msrand48(all.random_seed);
@@ -1054,7 +1054,7 @@ vw& parse_args(int argc, char *argv[])
   all.sd->weighted_unlabeled_examples = all.sd->t;
   all.initial_t = (float)all.sd->t;
 
-    return all;
+	return all;
 }
 
 bool check_interaction_settings_collision(vw& all)
@@ -1076,8 +1076,8 @@ bool check_interaction_settings_collision(vw& all)
 
 void parse_modules(vw& all, io_buf& model)
 {
-    save_load_header(all, model, true, false);
-
+	save_load_header(all, model, true, false);
+  
   interactions_settings_doubled = check_interaction_settings_collision(all);
 
   int temp_argc = 0;
@@ -1088,16 +1088,16 @@ void parse_modules(vw& all, io_buf& model)
       const char* interaction_params[] = {"--quadratic", "--cubic", "--interactions"};
       add_to_args(all, temp_argc, temp_argv, 3, interaction_params);
   } else
-      add_to_args(all, temp_argc, temp_argv);
+  add_to_args(all, temp_argc, temp_argv);
   for (int i = 0; i < temp_argc; i++)
     free(temp_argv[i]);
   free(temp_argv);
-
+  
   po::parsed_options pos = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(all.opts).allow_unregistered().run();
 
-    po::variables_map& vm = all.vm;
+	po::variables_map& vm = all.vm;
   vm = po::variables_map();
 
   po::store(pos, vm);
@@ -1109,7 +1109,7 @@ void parse_modules(vw& all, io_buf& model)
   parse_example_tweaks(all); //example manipulation
 
   parse_output_model(all);
-
+  
   parse_output_preds(all);
 
   parse_reductions(all);
@@ -1121,7 +1121,7 @@ void parse_modules(vw& all, io_buf& model)
       cerr << "initial_t = " << all.sd->t << endl;
       cerr << "power_t = " << all.power_t << endl;
       if (all.numpasses > 1)
-    cerr << "decay_learning_rate = " << all.eta_decay_rate << endl;
+	cerr << "decay_learning_rate = " << all.eta_decay_rate << endl;
     }
 }
 
@@ -1166,10 +1166,10 @@ namespace VW {
       //now pos is position where value starts
       //find position of next space
       size_t pos_after_value = cmd.find(" ",pos);
-      if(pos_after_value == string::npos)
+      if(pos_after_value == string::npos) 
         //we reach the end of the string, so replace the all characters after pos by new_value
         cmd.replace(pos,cmd.size()-pos,new_value);
-      else
+      else 
         //replace characters between pos and pos_after_value by new_value
         cmd.replace(pos,pos_after_value-pos,new_value);
       ss->str(cmd);
@@ -1189,8 +1189,8 @@ namespace VW {
     char** argv = calloc_or_die<char*>(foo.size());
     for (size_t i = 0; i < foo.size(); i++)
       {
-    *(foo[i].end) = '\0';
-    argv[i] = calloc_or_die<char>(foo[i].end-foo[i].begin+1);
+	*(foo[i].end) = '\0';
+	argv[i] = calloc_or_die<char>(foo[i].end-foo[i].begin+1);
         sprintf(argv[i],"%s",foo[i].begin);
       }
 
@@ -1207,13 +1207,13 @@ namespace VW {
     char** argv = get_argv_from_string(s,argc);
 
     vw& all = parse_args(argc, argv);
-    io_buf model;
-    parse_regressor_args(all, model);
-    parse_modules(all, model);
-    parse_sources(all, model);
+	io_buf model;
+	parse_regressor_args(all, model);
+	parse_modules(all, model);
+	parse_sources(all, model);
 
     initialize_parser_datastructures(all);
-
+    
     for(int i = 0; i < argc; i++)
       free(argv[i]);
     free(argv);
@@ -1241,7 +1241,7 @@ namespace VW {
     }
 
     vw* new_model = VW::initialize(init_args.str().c_str());
-
+    
     // reference model states stored in the specified VW instance
     new_model->reg = vw_model->reg; // regressor
     new_model->sd = vw_model->sd; // shared data
@@ -1256,7 +1256,7 @@ namespace VW {
     A->delete_v();
     delete A;
   }
-
+  
   void finish(vw& all, bool delete_all)
   {
     if (!all.quiet)
@@ -1272,25 +1272,39 @@ namespace VW {
         cerr << endl << "weighted example sum = " << all.sd->weighted_examples;
         cerr << endl << "weighted label sum = " << all.sd->weighted_labels;
         if(all.holdout_set_off || (all.sd->holdout_best_loss == FLT_MAX))
-      cerr << endl << "average loss = " << all.sd->sum_loss / all.sd->weighted_examples;
-    else
-      cerr << endl << "average loss = " << all.sd->holdout_best_loss << " h";
+	  cerr << endl << "average loss = " << all.sd->sum_loss / all.sd->weighted_examples;
+	else
+	  cerr << endl << "average loss = " << all.sd->holdout_best_loss << " h";
 
         float best_constant; float best_constant_loss;
         if (get_best_constant(all, best_constant, best_constant_loss))
-      {
+	  {
             cerr << endl << "best constant = " << best_constant;
             if (best_constant_loss != FLT_MIN)
-          cerr << endl << "best constant's loss = " << best_constant_loss;
-      }
-
+	      cerr << endl << "best constant's loss = " << best_constant_loss;
+	  }
+	
         cerr << endl << "total feature number = " << all.sd->total_features;
         if (all.sd->queries > 0)
-      cerr << endl << "total queries = " << all.sd->queries << endl;
+	  cerr << endl << "total queries = " << all.sd->queries << endl;
         cerr << endl;
         }
-
+    
+	// implement finally.
+	// finalize_regressor can throw if it can't write the file.
+	// we still want to free up all the memory.
+	vw_exception finalize_regressor_exception(__FILE__, __LINE__, "empty");
+	bool finalize_regressor_exception_thrown = false;
+	try
+	{
     finalize_regressor(all, all.final_regressor_name);
+	}
+	catch (vw_exception& e)
+	{
+		finalize_regressor_exception = e;
+		finalize_regressor_exception_thrown = true;
+	}
+
     all.l->finish();
     free_it(all.l);
     if (all.reg.weight_vector != nullptr && !all.seeded) // don't free weight vector if it is shared with another instance
@@ -1308,13 +1322,13 @@ namespace VW {
     delete all.file_options;
     for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
       if (all.final_prediction_sink[i] != 1)
-    io_buf::close_file_or_socket(all.final_prediction_sink[i]);
+	io_buf::close_file_or_socket(all.final_prediction_sink[i]);
     all.final_prediction_sink.delete_v();
-    for (size_t i=0; i<all.read_dictionaries.size(); i++) {
-      free(all.read_dictionaries[i].name);
-      all.read_dictionaries[i].dict->iter(delete_dictionary_entry);
-      all.read_dictionaries[i].dict->delete_v();
-      delete all.read_dictionaries[i].dict;
+    for (size_t i=0; i<all.loaded_dictionaries.size(); i++) {
+      free(all.loaded_dictionaries[i].name);
+      all.loaded_dictionaries[i].dict->iter(delete_dictionary_entry);
+      all.loaded_dictionaries[i].dict->delete_v();
+      delete all.loaded_dictionaries[i].dict;
     }
     delete all.loss;
 
@@ -1323,5 +1337,8 @@ namespace VW {
     all.interactions.delete_v();
 
     if (delete_all) delete &all;
+
+	if (finalize_regressor_exception_thrown)
+		throw finalize_regressor_exception;
   }
 }

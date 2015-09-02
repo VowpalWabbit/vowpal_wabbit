@@ -1,5 +1,5 @@
 only testing
-predictions = 0022.predict.tmp
+predictions = 0022.predict
 Num weight bits = 16
 learning rate = 10
 initial_t = 1

@@ -1,12 +1,8 @@
-﻿using VW.Labels;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Text;
-using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TrainSet0002Dat;
+using VW.Labels;
 
 namespace cs_unittest
 {

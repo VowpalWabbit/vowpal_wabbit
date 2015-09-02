@@ -40,6 +40,32 @@ namespace VW {
 		int LineNumber() const;
 	};
 
+#ifdef _WIN32
+#define THROWERRNO(args) \
+	{ \
+		std::stringstream __msg; \
+		__msg << args; \
+		char __errmsg[256]; \
+		if (strerror_s(__errmsg, sizeof __errmsg, errno) != 0) \
+			__msg << ", errno = unknown"; \
+		else \
+			__msg << ", errno = " << __errmsg; \
+		throw VW::vw_exception(__FILE__, __LINE__, __msg.str()); \
+	} 
+#else
+#define THROWERRNO(args) \
+	{ \
+		std::stringstream __msg; \
+		__msg << args; \
+		char __errmsg[256]; \
+		if (strerror_r(errno, __errmsg, sizeof __errmsg) != 0) \
+			__msg << "errno = unknown"; \
+		else \
+			__msg << "errno = " << __errmsg; \
+		throw VW::vw_exception(__FILE__, __LINE__, __msg.str()); \
+	}
+#endif
+
 // ease error handling and also log filename and line number
 #define THROW(args) \
 	{ \
