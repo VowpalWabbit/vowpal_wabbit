@@ -1055,7 +1055,7 @@ example* get_example(parser* p)
   if (p->end_parsed_examples != p->used_index) {
     size_t ring_index = p->used_index++ % p->ring_size;
     if (!(p->examples+ring_index)->in_use)
-      cout << p->used_index << " " << p->end_parsed_examples << " " << ring_index << endl;
+      cout << "error: example should be in_use " << p->used_index << " " << p->end_parsed_examples << " " << ring_index << endl;
     assert((p->examples+ring_index)->in_use);
     mutex_unlock(&p->examples_lock);
     

@@ -415,7 +415,6 @@ namespace CB_ADF {
       }        
       clear_seq_and_finish_examples(all, data);
       data.need_to_clear = false;
-      if (ec.in_use) VW::finish_example(all, &ec);
     }
   }
 
