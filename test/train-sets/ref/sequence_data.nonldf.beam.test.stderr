@@ -1,5 +1,5 @@
 only testing
-predictions = sequence_data_beam.predict
+predictions = sequence_data.nonldf.beam.test.predict
 Num weight bits = 18
 learning rate = 10
 initial_t = 1
