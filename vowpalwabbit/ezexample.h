@@ -8,12 +8,13 @@ typedef uint32_t fid;
 
 struct vw_namespace {
   char namespace_letter;
-public: vw_namespace(const char c) : namespace_letter(c) {}
+public:
+  vw_namespace(const char c) : namespace_letter(c) {}
 };
 
 
 class ezexample {
- private:
+private:
   vw*vw_ref;
   vw*vw_par_ref;   // an extra parser if we're multithreaded
   bool is_multiline;
@@ -61,7 +62,8 @@ class ezexample {
     vw_par_ref = (this_vw_parser == nullptr) ? this_vw : this_vw_parser;
     is_multiline = multiline;
 
-    str[0] = 0; str[1] = 0;
+    str[0] = 0;
+    str[1] = 0;
     current_seed = 0;
     current_ns = 0;
 
@@ -73,7 +75,7 @@ class ezexample {
     example_changed_since_prediction = true;
   }
 
-  
+
   void setup_for_predict() {
     static example* empty_example = is_multiline ? VW::read_example(*vw_par_ref, (char*)"") : nullptr;
     if (example_changed_since_prediction) {
@@ -84,13 +86,13 @@ class ezexample {
     }
   }
 
- public:
+public:
 
   // REAL FUNCTIONALITY
   // create a new ezexample by asking the vw parser for an example
   ezexample(vw*this_vw, bool multiline=false, vw*this_vw_parser=nullptr) {
     setup_new_ezexample(this_vw, multiline, this_vw_parser);
-    example_copies = v_init<example*>();    
+    example_copies = v_init<example*>();
     ec = get_new_example();
     we_create_ec = true;
 
@@ -116,7 +118,7 @@ class ezexample {
       current_seed = VW::hash_space(*vw_ref, str);
     }
   }
-  
+
   ~ezexample() { // calls finish_example *only* if we created our own example!
     if (ec->in_use)
       VW::finish_example(*vw_par_ref, ec);
@@ -181,7 +183,9 @@ class ezexample {
     return fint;
   }
 
-  inline fid addf(fid fint, float v) { return addf(current_ns, fint, v); }
+  inline fid addf(fid fint, float v) {
+    return addf(current_ns, fint, v);
+  }
 
   // copy an entire namespace from this other example, you can even give it a new namespace name if you want!
   void add_other_example_ns(example& other, char other_ns, char to_ns) {
@@ -198,8 +202,12 @@ class ezexample {
     add_other_example_ns(other, ns, ns);
   }
 
-  void add_other_example_ns(ezexample& other, char other_ns, char to_ns) { add_other_example_ns(*other.ec, other_ns, to_ns); }
-  void add_other_example_ns(ezexample& other, char ns                  ) { add_other_example_ns(*other.ec, ns); }
+  void add_other_example_ns(ezexample& other, char other_ns, char to_ns) {
+    add_other_example_ns(*other.ec, other_ns, to_ns);
+  }
+  void add_other_example_ns(ezexample& other, char ns                  ) {
+    add_other_example_ns(*other.ec, ns);
+  }
 
   inline ezexample& set_label(string label) {
     VW::parse_example_label(*vw_par_ref, *ec, label);
@@ -220,24 +228,26 @@ class ezexample {
 
     for (vector<string>::iterator i = vw_ref->pairs.begin(); i != vw_ref->pairs.end(); i++) {
       quadratic_features_num
-        += (ec->atomics[(int)(*i)[0]].end - ec->atomics[(int)(*i)[0]].begin)
-        *  (ec->atomics[(int)(*i)[1]].end - ec->atomics[(int)(*i)[1]].begin);
+      += (ec->atomics[(int)(*i)[0]].end - ec->atomics[(int)(*i)[0]].begin)
+         *  (ec->atomics[(int)(*i)[1]].end - ec->atomics[(int)(*i)[1]].begin);
       quadratic_features_sqr
-        += ec->sum_feat_sq[(int)(*i)[0]]
-        *  ec->sum_feat_sq[(int)(*i)[1]];
+      += ec->sum_feat_sq[(int)(*i)[0]]
+         *  ec->sum_feat_sq[(int)(*i)[1]];
     }
     ec->num_features      += quadratic_features_num;
     ec->total_sum_feat_sq += quadratic_features_sqr;
   }
 
-  size_t get_num_features() { return ec->num_features; }
+  size_t get_num_features() {
+    return ec->num_features;
+  }
 
   example* get() {
     if (example_changed_since_prediction)
       mini_setup_example();
     return ec;
   }
-  
+
   float predict() {
     setup_for_predict();
     return ec->pred.scalar;
@@ -284,46 +294,124 @@ class ezexample {
       example_copies.erase();
     }
   }
-    
+
 
   // HELPER FUNCTIONALITY
 
-  inline fid hash(string fstr)         { return VW::hash_feature(*vw_ref, fstr, current_seed); }
-  inline fid hash(char*  fstr)         { return VW::hash_feature_cstr(*vw_ref, fstr, current_seed); }
-  inline fid hash(char c, string fstr) { str[0] = c; return VW::hash_feature(*vw_ref, fstr, VW::hash_space(*vw_ref, str)); }
-  inline fid hash(char c, char*  fstr) { str[0] = c; return VW::hash_feature_cstr(*vw_ref, fstr, VW::hash_space(*vw_ref, str)); }
+  inline fid hash(string fstr)         {
+    return VW::hash_feature(*vw_ref, fstr, current_seed);
+  }
+  inline fid hash(char*  fstr)         {
+    return VW::hash_feature_cstr(*vw_ref, fstr, current_seed);
+  }
+  inline fid hash(char c, string fstr) {
+    str[0] = c;
+    return VW::hash_feature(*vw_ref, fstr, VW::hash_space(*vw_ref, str));
+  }
+  inline fid hash(char c, char*  fstr) {
+    str[0] = c;
+    return VW::hash_feature_cstr(*vw_ref, fstr, VW::hash_space(*vw_ref, str));
+  }
 
-  inline fid addf(fid    fint           ) { return addf(fint      , 1.0); }
-  inline fid addf(string fstr, float val) { return addf(hash(fstr), val); }
-  inline fid addf(string fstr           ) { return addf(hash(fstr), 1.0); }
+  inline fid addf(fid    fint           ) {
+    return addf(fint      , 1.0);
+  }
+  inline fid addf(string fstr, float val) {
+    return addf(hash(fstr), val);
+  }
+  inline fid addf(string fstr           ) {
+    return addf(hash(fstr), 1.0);
+  }
 
-  inline fid addf(char ns, fid    fint           ) { return addf(ns, fint          , 1.0); }
-  inline fid addf(char ns, string fstr, float val) { return addf(ns, hash(ns, fstr), val); }
-  inline fid addf(char ns, string fstr           ) { return addf(ns, hash(ns, fstr), 1.0); }
+  inline fid addf(char ns, fid    fint           ) {
+    return addf(ns, fint          , 1.0);
+  }
+  inline fid addf(char ns, string fstr, float val) {
+    return addf(ns, hash(ns, fstr), val);
+  }
+  inline fid addf(char ns, string fstr           ) {
+    return addf(ns, hash(ns, fstr), 1.0);
+  }
 
-  inline ezexample& operator()(const vw_namespace&n) { addns(n.namespace_letter); return *this; }
-  
-  inline ezexample& operator()(fid         fint           ) { addf(fint, 1.0); return *this; }
-  inline ezexample& operator()(string      fstr           ) { addf(fstr, 1.0); return *this; }
-  inline ezexample& operator()(const char* fstr           ) { addf(fstr, 1.0); return *this; }
-  inline ezexample& operator()(fid         fint, float val) { addf(fint, val); return *this; }
-  inline ezexample& operator()(string      fstr, float val) { addf(fstr, val); return *this; }
-  inline ezexample& operator()(const char* fstr, float val) { addf(fstr, val); return *this; }
+  inline ezexample& operator()(const vw_namespace&n) {
+    addns(n.namespace_letter);
+    return *this;
+  }
 
-  inline ezexample& operator()(char ns, fid         fint           ) { addf(ns, fint, 1.0); return *this; }
-  inline ezexample& operator()(char ns, string      fstr           ) { addf(ns, fstr, 1.0); return *this; }
-  inline ezexample& operator()(char ns, const char* fstr           ) { addf(ns, fstr, 1.0); return *this; }
-  inline ezexample& operator()(char ns, fid         fint, float val) { addf(ns, fint, val); return *this; }
-  inline ezexample& operator()(char ns, string      fstr, float val) { addf(ns, fstr, val); return *this; }
-  inline ezexample& operator()(char ns, const char* fstr, float val) { addf(ns, fstr, val); return *this; }
+  inline ezexample& operator()(fid         fint           ) {
+    addf(fint, 1.0);
+    return *this;
+  }
+  inline ezexample& operator()(string      fstr           ) {
+    addf(fstr, 1.0);
+    return *this;
+  }
+  inline ezexample& operator()(const char* fstr           ) {
+    addf(fstr, 1.0);
+    return *this;
+  }
+  inline ezexample& operator()(fid         fint, float val) {
+    addf(fint, val);
+    return *this;
+  }
+  inline ezexample& operator()(string      fstr, float val) {
+    addf(fstr, val);
+    return *this;
+  }
+  inline ezexample& operator()(const char* fstr, float val) {
+    addf(fstr, val);
+    return *this;
+  }
 
-  inline ezexample& operator()(  example&other, char other_ns, char to_ns) { add_other_example_ns(other, other_ns, to_ns); return *this; }
-  inline ezexample& operator()(  example&other, char ns                  ) { add_other_example_ns(other, ns);              return *this; }
-  inline ezexample& operator()(ezexample&other, char other_ns, char to_ns) { add_other_example_ns(other, other_ns, to_ns); return *this; }
-  inline ezexample& operator()(ezexample&other, char ns                  ) { add_other_example_ns(other, ns);              return *this; }
+  inline ezexample& operator()(char ns, fid         fint           ) {
+    addf(ns, fint, 1.0);
+    return *this;
+  }
+  inline ezexample& operator()(char ns, string      fstr           ) {
+    addf(ns, fstr, 1.0);
+    return *this;
+  }
+  inline ezexample& operator()(char ns, const char* fstr           ) {
+    addf(ns, fstr, 1.0);
+    return *this;
+  }
+  inline ezexample& operator()(char ns, fid         fint, float val) {
+    addf(ns, fint, val);
+    return *this;
+  }
+  inline ezexample& operator()(char ns, string      fstr, float val) {
+    addf(ns, fstr, val);
+    return *this;
+  }
+  inline ezexample& operator()(char ns, const char* fstr, float val) {
+    addf(ns, fstr, val);
+    return *this;
+  }
+
+  inline ezexample& operator()(  example&other, char other_ns, char to_ns) {
+    add_other_example_ns(other, other_ns, to_ns);
+    return *this;
+  }
+  inline ezexample& operator()(  example&other, char ns                  ) {
+    add_other_example_ns(other, ns);
+    return *this;
+  }
+  inline ezexample& operator()(ezexample&other, char other_ns, char to_ns) {
+    add_other_example_ns(other, other_ns, to_ns);
+    return *this;
+  }
+  inline ezexample& operator()(ezexample&other, char ns                  ) {
+    add_other_example_ns(other, ns);
+    return *this;
+  }
 
 
-  inline ezexample& operator--() { remns(); return *this; }
+  inline ezexample& operator--() {
+    remns();
+    return *this;
+  }
 
-  inline float      operator()() { return predict(); }
+  inline float      operator()() {
+    return predict();
+  }
 };

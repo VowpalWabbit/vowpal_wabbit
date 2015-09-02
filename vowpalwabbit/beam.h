@@ -54,8 +54,8 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
   else return 0;
 }
 
- template<class T> class beam {
- private:
+template<class T> class beam {
+private:
   size_t beam_size;   // the beam size -- how many active elements can we have
   size_t count;       // how many elements do we have currently -- should be == to A.size()
   float  pruning_coefficient;  // prune anything with cost >= pruning_coefficient * best, set to FLT_MAX to not do coefficient-based pruning
@@ -68,15 +68,15 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
   //  v_array<v_array<beam_element<T>*>> recomb_buckets;
 
   //  static size_t NUM_RECOMB_BUCKETS = 10231;
-  
+
   bool (*is_equivalent)(T*,T*);  // test if two items are equivalent; nullptr means don't do hypothesis recombination
-  
- public:
+
+public:
   beam(size_t beam_size, float prune_coeff=FLT_MAX, bool (*test_equiv)(T*,T*)=nullptr, bool kbest=false)
-      : beam_size(beam_size)
-      , pruning_coefficient(prune_coeff)
-      , do_kbest(kbest)
-      , is_equivalent(test_equiv)
+    : beam_size(beam_size)
+    , pruning_coefficient(prune_coeff)
+    , do_kbest(kbest)
+    , is_equivalent(test_equiv)
   {
     count = 0;
     worst_cost  = -FLT_MAX;
@@ -91,7 +91,9 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
     if (beam_size == 1) do_kbest = false;  // automatically turn of kbest
   }
 
-  inline bool might_insert(float cost) { return (cost <= prune_if_gt) && ((count < beam_size) || (cost < worst_cost)); }
+  inline bool might_insert(float cost) {
+    return (cost <= prune_if_gt) && ((count < beam_size) || (cost < worst_cost));
+  }
 
   bool insert(T*data, float cost, uint32_t hash) { // returns TRUE iff element was actually added
     if (!might_insert(cost)) return false;
@@ -110,7 +112,7 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
     //       add_recomb_friend(recomb_buckets[i][equiv_pos], be);
     //   }
     // }
-    
+
     if (beam_size < BEAM_CONSTANT_SIZE) {
       // find the worst item and directly replace it
       size_t worst_idx = 0;
@@ -124,7 +126,7 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
         }
       if (cost >= worst_idx_cost)
         return false;
-      
+
       A[worst_idx].hash = hash;
       A[worst_idx].cost = cost;
       A[worst_idx].data = data;
@@ -144,7 +146,7 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
       A.push_back(be);
       count++;
     }
-    
+
     if (cost < best_cost) {
       best_cost = cost;
       best_cost_data = data;
@@ -162,7 +164,7 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
     while ((ret != A.end) && (!ret->active)) ++ret;
     return (ret == A.end) ? nullptr : ret;
   }
-   
+
   beam_element<T>* pop_best_item() {
     if (count == 0)
       return nullptr;
@@ -187,10 +189,10 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
       prune_if_gt = FLT_MAX;
       best_cost_data = nullptr;
     }
-    
+
     return ret;
   }
-   
+
   void do_recombination() {
     qsort(A.begin, A.size(), sizeof(beam_element<T>), compare_on_hash_then_cost);
     size_t start = 0;
@@ -217,7 +219,7 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
       start = end;
     }
   }
-  
+
   void compact(void (*free_data)(T*)=nullptr) {
     if (is_equivalent) do_recombination();
     qsort(A.begin, A.size(), sizeof(beam_element<T>), compare_on_cost); // TODO: quick select
@@ -261,14 +263,24 @@ inline int compare_on_hash_then_cost(const void *void_a, const void *void_b) {
     assert(A.size() == 0);
     A.delete_v();
   }
-  
-  beam_element<T> * begin() { return A.begin; }
-  beam_element<T> * end()   { return A.end; }
-  size_t         size()  { return count; }
-  bool           empty() { return A.empty(); }
-  size_t         get_beam_size() { return beam_size; }
-   
- private:
+
+  beam_element<T> * begin() {
+    return A.begin;
+  }
+  beam_element<T> * end()   {
+    return A.end;
+  }
+  size_t         size()  {
+    return count;
+  }
+  bool           empty() {
+    return A.empty();
+  }
+  size_t         get_beam_size() {
+    return beam_size;
+  }
+
+private:
   // void add_recomb_friend(beam_element<T> *better, beam_element<T> *worse) {
   //   assert( better->cost <= worse->cost );
   //   if (better->recomb_friends == nullptr) {

@@ -22,9 +22,13 @@ float merand48(uint64_t& initial)
 
 uint64_t v = c;
 
-void msrand48(uint64_t initial) { v = initial; }
+void msrand48(uint64_t initial) {
+  v = initial;
+}
 
-float frand48() { return merand48(v); }
+float frand48() {
+  return merand48(v);
+}
 
 float frand48_noadvance()
 {

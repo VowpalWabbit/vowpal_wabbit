@@ -26,7 +26,9 @@ const size_t dictionary_namespace  = 135; // this is \x87
 struct feature {
   float x;
   uint32_t weight_index;
-  bool operator==(feature j){return weight_index == j.weight_index;}
+  bool operator==(feature j) {
+    return weight_index == j.weight_index;
+  }
 };
 
 struct audit_data {
@@ -53,7 +55,7 @@ typedef union {
 } polyprediction;
 
 struct example // core example datatype.
-{//output prediction
+{ //output prediction
   polyprediction pred;
 
   // input fields
@@ -63,9 +65,9 @@ struct example // core example datatype.
   v_array<unsigned char> indices;
   v_array<feature> atomics[256]; // raw parsed data
   uint32_t ft_offset;
-  
+
   //helpers
-  v_array<audit_data> audit_features[256];  
+  v_array<audit_data> audit_features[256];
   size_t num_features;//precomputed, cause it's fast&easy.
   float partial_prediction;//shared data for prediction.
   float updated_prediction;//estimated post-update prediction.
@@ -82,23 +84,23 @@ struct example // core example datatype.
   bool in_use; //in use or not (for the parser)
 };
 
- struct vw;  
- 
-struct flat_example 
+struct vw;
+
+struct flat_example
 {
   polylabel l;
 
   size_t tag_len;
-  char* tag;//An identifier for the example.  
-  
-  size_t example_counter;  
-  uint32_t ft_offset;  
+  char* tag;//An identifier for the example.
+
+  size_t example_counter;
+  uint32_t ft_offset;
   float global_weight;
-  
-  size_t num_features;//precomputed, cause it's fast&easy.  
+
+  size_t num_features;//precomputed, cause it's fast&easy.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
   size_t feature_map_len;
-  feature* feature_map; //map to store sparse feature vectors  
+  feature* feature_map; //map to store sparse feature vectors
 };
 
 flat_example* flatten_example(vw& all, example *ec);
@@ -108,12 +110,12 @@ void free_flatten_example(flat_example* fec);
 inline int example_is_newline(example& ec)
 {
   // if only index is constant namespace or no index
-  return ((ec.indices.size() == 0) || 
+  return ((ec.indices.size() == 0) ||
           ((ec.indices.size() == 1) &&
            (ec.indices.last() == constant_namespace)));
 }
 
 inline bool valid_ns(char c)
 {
-	return !(c == '|' || c == ':');
+  return !(c == '|' || c == ':');
 }
