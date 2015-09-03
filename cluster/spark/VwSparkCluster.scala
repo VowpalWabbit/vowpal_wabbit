@@ -1,15 +1,21 @@
 import java.net.InetAddress
+import org.apache.spark.Logging
 
-import org.apache.commons.io.IOUtils
-import org.apache.spark.rdd.RDD
-import org.apache.spark.{Logging, SparkContext}
-
+/**
+ * The goal of this class is to provide as easy method to pipe data through an external command.  It is done by combining
+ * a {@link PipedOutputStream} with a {@link PipedInputStream} to create a single pipe to feed data through.  This is
+ * done asynchronously so data can be read and written to at the same time.
+ * Created by jmorra on 1/22/15.
+ */
 object PipeUtils {
+  import java.io._
+
   import scala.concurrent.ExecutionContext.Implicits.global
   import scala.concurrent.Future
   import scala.language.postfixOps
   import scala.sys.process._
-  import java.io._
+
+  private[this] val DEFAULT_BUFFER_SIZE = 1 << 20
   /**
    * This implicit class will allow easy access to streaming through external processes.  This
    * should work on a line by line basis just like Spark's pipe command.
@@ -17,25 +23,22 @@ object PipeUtils {
    * @param s: The input stream
    */
   implicit class IteratorStream(s: TraversableOnce[String]) {
+    def pipe(cmd: String, bufferSize: Int = DEFAULT_BUFFER_SIZE): Stream[String] = cmd #< iter2is(s, bufferSize) lines
+    def pipeSeq(cmd: Seq[String], bufferSize: Int = DEFAULT_BUFFER_SIZE): Stream[String] = cmd #< iter2is(s, bufferSize) lines
+    def run(cmd: String, bufferSize: Int = DEFAULT_BUFFER_SIZE): String = cmd #< iter2is(s, bufferSize) !!
 
-    def pipe(cmd: String): Stream[String] = cmd #< iter2is(s) lines
-    def pipe(cmd: Seq[String]): Stream[String] = cmd #< iter2is(s) lines
-    def run(cmd: String): String = cmd #< iter2is(s) !!
-
-    private[this] val BUFFER_SIZE = 1024*1024
-
-    private[this] def iter2is[A](it: TraversableOnce[A]): InputStream = {
+    private[this] def iter2is[A](it: TraversableOnce[A], bufferSize: Int): InputStream = {
       // What is written to the output stream will appear in the input stream.
       val pos = new PipedOutputStream
 
-      val pis = new PipedInputStream(pos, BUFFER_SIZE)
-      val w = new PrintWriter(new BufferedOutputStream(pos, BUFFER_SIZE), false)
+      val pis = new PipedInputStream(pos, bufferSize)
+      val w = new PrintWriter(new BufferedOutputStream(pos, bufferSize), false)
 
       // Scala 2.11 (scala 2.10, use 'future').  Executes asynchronously.
       // Fill the stream, then close.
       Future {
-        it.foreach(w.println)
-        w.close
+        try it.foreach(w.println)
+        finally w.close
       }
 
       // Return possibly before pis is fully written to.
@@ -54,6 +57,9 @@ case class VwSparkCluster(
   defaultParallelism: Int = 2) extends Logging {
 
   import java.io._
+  import org.apache.commons.io.IOUtils
+  import org.apache.spark.rdd.RDD
+  import org.apache.spark.SparkContext
   import scala.sys.process._
 
   /**
