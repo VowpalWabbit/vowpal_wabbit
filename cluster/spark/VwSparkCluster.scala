@@ -7,7 +7,7 @@ import org.apache.spark.Logging
  * done asynchronously so data can be read and written to at the same time.
  * Created by jmorra on 1/22/15.
  */
-object PipeUtils {
+class PipeUtils(bufferSize: Int = 1 << 20) {
   import java.io._
 
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -15,7 +15,6 @@ object PipeUtils {
   import scala.language.postfixOps
   import scala.sys.process._
 
-  private[this] val DEFAULT_BUFFER_SIZE = 1 << 20
   /**
    * This implicit class will allow easy access to streaming through external processes.  This
    * should work on a line by line basis just like Spark's pipe command.
@@ -23,11 +22,11 @@ object PipeUtils {
    * @param s: The input stream
    */
   implicit class IteratorStream(s: TraversableOnce[String]) {
-    def pipe(cmd: String, bufferSize: Int = DEFAULT_BUFFER_SIZE): Stream[String] = cmd #< iter2is(s, bufferSize) lines
-    def pipeSeq(cmd: Seq[String], bufferSize: Int = DEFAULT_BUFFER_SIZE): Stream[String] = cmd #< iter2is(s, bufferSize) lines
-    def run(cmd: String, bufferSize: Int = DEFAULT_BUFFER_SIZE): String = cmd #< iter2is(s, bufferSize) !!
+    def pipe(cmd: String): Stream[String] = cmd #< iter2is(s) lines
+    def pipe(cmd: Seq[String]): Stream[String] = cmd #< iter2is(s) lines
+    def run(cmd: String): String = cmd #< iter2is(s) !!
 
-    private[this] def iter2is[A](it: TraversableOnce[A], bufferSize: Int): InputStream = {
+    private[this] def iter2is[A](it: TraversableOnce[A]): InputStream = {
       // What is written to the output stream will appear in the input stream.
       val pos = new PipedOutputStream
 
@@ -53,6 +52,7 @@ object PipeUtils {
  * Created by jmorra on 8/19/15.
  */
 case class VwSparkCluster(
+  pipeUtils: PipeUtils = new PipeUtils,
   ipAddress: String = InetAddress.getLocalHost.getHostAddress,
   defaultParallelism: Int = 2) extends Logging {
 
@@ -61,6 +61,7 @@ case class VwSparkCluster(
   import org.apache.spark.rdd.RDD
   import org.apache.spark.SparkContext
   import scala.sys.process._
+  import pipeUtils._
 
   /**
    * This will learn a VW model in cluster mode.  If you notice that this command never starts and just stalls then the parallelism
@@ -151,8 +152,6 @@ case class VwSparkCluster(
    * @return an Array of the bytes of the VW model ONLY if this is the 0th partition, else None.
    */
   def runVWOnPartition(vwBaseCmd: String, data: Iterator[String], partition: Int): Option[Array[Byte]] = {
-    import PipeUtils._
-
     val cacheFile = if (vwBaseCmd.contains("--passes ")) {
       val c = File.createTempFile("vw-cache", ".cache")
       c.deleteOnExit
