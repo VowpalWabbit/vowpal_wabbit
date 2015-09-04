@@ -104,8 +104,11 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   ec.l.multi = mc_label_data;
 }
 
-void finish(oaa&o) { free(o.pred); free(o.subsample_order); }
+void finish(oaa&o) {
+  free(o.pred);
+  free(o.subsample_order);
   free(o.probs);
+}
 
 // TODO: partial code duplication with multiclass.cc:finish_example
 void finish_example_probabilities(vw& all, oaa& o, example& ec) {
