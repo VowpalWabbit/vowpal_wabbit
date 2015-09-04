@@ -10,15 +10,15 @@ struct example;
 struct vw;
 
 namespace MULTILABEL {
-  struct labels {
-    v_array<uint32_t> label_v;
-  };
-  
-  void output_example(vw& all, example& ec);
-  extern label_parser multilabel;
+struct labels {
+  v_array<uint32_t> label_v;
+};
 
-  bool example_is_test(example& ec);
+void output_example(vw& all, example& ec);
+extern label_parser multilabel;
 
-  void print_update(vw& all, bool is_test, example& ec, const v_array<example*> *ec_seq);
-  void print_multilabel(int f, labels& mls, v_array<char>& tag);
+bool example_is_test(example& ec);
+
+void print_update(vw& all, bool is_test, example& ec, const v_array<example*> *ec_seq);
+void print_multilabel(int f, labels& mls, v_array<char>& tag);
 }

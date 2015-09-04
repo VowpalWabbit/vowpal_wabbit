@@ -1,14 +1,13 @@
-﻿using VW;
-using VW.Interfaces;
-using VW.Labels;
-using VW.Serializer.Attributes;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using VW;
+using VW.Interfaces;
+using VW.Labels;
+using VW.Serializer.Attributes;
 
 namespace cs_unittest
 {
@@ -54,23 +53,23 @@ namespace cs_unittest
 
                 var example = sampleData[0];
 
-                var result = vw.Learn(example);
+                var result = vw.LearnAndPredict(example);
 
-                Assert.ReferenceEquals(example.ActionDependentFeatures[0], result[0]);
-                Assert.ReferenceEquals(example.ActionDependentFeatures[1], result[1]);
-                Assert.ReferenceEquals(example.ActionDependentFeatures[2], result[2]);
+                ReferenceEquals(example.ActionDependentFeatures[0], result[0]);
+                ReferenceEquals(example.ActionDependentFeatures[1], result[1]);
+                ReferenceEquals(example.ActionDependentFeatures[2], result[2]);
 
                 example = sampleData[1];
 
-                result = vw.Learn(example);
-                Assert.ReferenceEquals(example.ActionDependentFeatures[0], result[1]);
-                Assert.ReferenceEquals(example.ActionDependentFeatures[1], result[0]);
+                result = vw.LearnAndPredict(example);
+                ReferenceEquals(example.ActionDependentFeatures[0], result[1]);
+                ReferenceEquals(example.ActionDependentFeatures[1], result[0]);
 
                 example = sampleData[2];
                 result = vw.Predict(example);
 
-                Assert.ReferenceEquals(example.ActionDependentFeatures[0], result[1]);
-                Assert.ReferenceEquals(example.ActionDependentFeatures[1], result[0]);
+                ReferenceEquals(example.ActionDependentFeatures[0], result[1]);
+                ReferenceEquals(example.ActionDependentFeatures[1], result[0]);
             }
         }
 
@@ -108,7 +107,7 @@ namespace cs_unittest
                 for (int i = 0; i < sampleData.Length; i++)
                 {
                     DataStringADF[] actualPrediction = vwShared1.Predict(sampleData[i]);
-                    Assert.ReferenceEquals(expectedPredictions[i], actualPrediction);
+                    ReferenceEquals(expectedPredictions[i], actualPrediction);
                 }
             }
 
@@ -134,7 +133,7 @@ namespace cs_unittest
                             Assert.AreEqual(expectedPredictions.Count, actualPredictions.Count);
                             for (int j = 0; j < expectedPredictions.Count; j++)
                             {
-                                Assert.ReferenceEquals(expectedPredictions[j], actualPredictions[j]);
+                                ReferenceEquals(expectedPredictions[j], actualPredictions[j]);
                             }
                         }
                     }

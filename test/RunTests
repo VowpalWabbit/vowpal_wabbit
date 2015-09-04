@@ -7,10 +7,12 @@
 #
 # See __DATA__ below for how to add more tests
 #
-require 5.014;
+require 5.008;
 use warnings;
 
 use Getopt::Std;
+use File::Basename;
+
 use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f
             $opt_E $opt_o $opt_w $opt_y $opt_t
             $opt_v $opt_V);
@@ -18,13 +20,12 @@ use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f
 my $Epsilon = 1e-4;
 
 my $VW;
-my $LDA;
 
 # External utilities we use. See init() for Windows specific actions.
 my $Diff = 'diff';
 my $Cat = 'cat';
 
-$ENV{'PATH'} .= ':test:.:vowpalwabbit:../vowpalwabbit';
+$ENV{'PATH'} .= ':test:../vowpalwabbit:vowpalwabbit:.';
 
 # -V prefixes valgrind like this, we should adjust the default
 # options over time to what looks most useful.
@@ -221,7 +222,6 @@ sub init() {
     @ARGV = @exe_args;
 
     $VW = which_vw();
-    $LDA = which_lda();
 
     my $timeout = `which timeout 2>/dev/null`;
     if ($timeout =~ /timeout$/) {
@@ -249,8 +249,9 @@ sub copy_file {
 
 sub trim_spaces($) {
     my $str = shift;
-    $str =~ s/^\s+//;
-    $str =~ s/\s+$//;
+    $str =~ s/^\s+//s;
+    $str =~ s/\s+$//s;
+    $str =~ s/\n+$//s;
     $str;
 }
 
@@ -271,42 +272,38 @@ sub ref_file($) {
     $file;
 }
 
-sub next_test() {
-    my ($cmd, $out_ref, $err_ref, $pred_ref, $pred, $cmp_ref, $cmp);
-
-    $TestNo++;
+sub next_paragraph() {
+    my $paragraph = '';
     while (! eof(DATA)) {
         my $line = <DATA>;
-        last if (defined($line) && $line =~ /^\s*$/);
 
-        next if ($line =~ /^\s*#/);  # skip comment lines
+        if ($paragraph and ($line =~ /^\s*$/ || eof(DATA))) {
+            # end of paragraph
+            chomp($paragraph);
+            $paragraph = trim_spaces($paragraph);
+            return $paragraph;
+        }
 
-        if ($line =~ /{VW}/) {
-            # The command line
-            $cmd = trim_spaces($line);
-            $cmd =~ s/{VW}/$VW/;
-            if ($cmd =~ /\s-p\s+(\S+)/) {
-                # -p predict_file
-                $pred = $1;
-            }
-            if ($cmd =~ /\s(\S+\.cmp)\b/) {
-                $cmp = $1;
-            }
-            next;
+        next if ($line =~ /^\s*$/);
+        next if ($line =~ /^\s*#/);     # skip comment lines
+
+        if ($line =~ /\\$/) {           # support line continuation
+            $line =~ s/\\\n/ /;
         }
-        if ($line =~ /{LDA}/) {
-            # The command line
-            $cmd = trim_spaces($line);
-            $cmd =~ s/{LDA}/$LDA/;
-            if ($cmd =~ /\s-p\s+(\S+)/) {
-                # -p predict_file
-                $pred = $1;
-            }
-            if ($cmd =~ /\s(\S+\.cmp)\b/) {
-                $cmp = $1;
-            }
-            next;
-        }
+        $paragraph .= $line;
+    }
+}
+
+sub next_test() {
+    my ($cmd, $out_ref, $err_ref, @other_ref);
+
+    $TestNo++;
+    my $paragraph = next_paragraph();
+    my @lines = split("\n", $paragraph);
+
+    # The command line must be first
+    $cmd = shift @lines;
+    foreach my $line (@lines) {
         if ($line =~ m/\.stdout\b/) {
             $out_ref = ref_file(trim_spaces($line));
             next;
@@ -315,41 +312,29 @@ sub next_test() {
             $err_ref = ref_file(trim_spaces($line));
             next;
         }
-        if ($line =~ /\.predict\b/) {
-            $pred_ref = ref_file(trim_spaces($line));
-            next;
-        }
-        if ($line =~ /(.+\.cmp)[\b|\s]/) {
-            $cmp_ref = ref_file(trim_spaces($1));
-            next;
-        }
 
-
-        # A test can also be an arbitrary (shell) command line
-        # if the 1st non-space sequence is executable
-        my ($first_word) = ($line =~ /^\s*(\S+)/);
-        if (defined $first_word && -x $first_word) {
-            $cmd = trim_spaces($line);
+        # any other reference file
+        $line = ref_file(trim_spaces($line));
+        if (-e $line) {
+            push(@other_ref, $line);
+        } else {
+            unless ($opt_y) {
+                printf STDERR "__DATA__: line $.: " .
+                          "non-existent reference file: %s\n", $line;
+            }
             next;
         }
-        # if we get here it is some unrecognized pattern
-        if (! -e $first_word) {
-            # 1st word must exist, either as a reference-file
-            # or some command
-            printf STDERR "$0: %s: %s\n", $first_word, $!;
-        }
-        printf STDERR "$0: failed to run test line:\n\t%s\n", $line;
-        print STDERR "$0: test lines must be one of the following:\n";
-        print STDERR "\tshell command to run\n";
-        print STDERR "\tvw command to run: {VW} ...\n";
-        print STDERR "\tstdout reference:  *.stdout\n";
-        print STDERR "\tstderr reference:  *.stderr\n";
-        print STDERR "\tpredict reference: *.predict\n";
-        print STDERR "\tpair of files: *.cmp\n";
     }
+
     if (eof(DATA) && !defined $cmd) {
         return (undef, undef, undef, undef);
     }
+
+    if ($cmd =~ /{VW}/) {
+         $cmd = trim_spaces($cmd);
+         $cmd =~ s/{VW}/$VW/g;
+    }
+
     unless (defined $cmd) {
         die "$0: test $TestNo: command is undefined\n";
     }
@@ -364,7 +349,7 @@ sub next_test() {
     } elsif ($TimeOut) {
         $cmd = sprintf("%s %u %s", $TimeOut, $TimeOutSec, $cmd);
     }
-    ($cmd, $out_ref, $err_ref, $pred_ref, $pred, $cmp_ref, $cmp);
+    ($cmd, $out_ref, $err_ref, @other_ref);
 }
 
 #
@@ -615,7 +600,7 @@ sub run_tests() {
     unlink(glob('*.cache'));
     unlink(glob('*/*.cache'));
 
-    while (($cmd, $out_ref, $err_ref, $pred_ref, $predf, $cmp_ref, $cmpf) = next_test()) {
+    while (($cmd, $out_ref, $err_ref, @more_refs) = next_test()) {
         last unless (defined $cmd);
         if (@ToTest) {
             if ($ToTest[0] != $TestNo) {
@@ -626,10 +611,15 @@ sub run_tests() {
             }
         }
 
-        ($outf, $errf) = ('stdout.tmp', 'stderr.tmp');
-        unlink $outf, $errf;    # just in case, to be safer
+        $outf = (defined($out_ref) && -f $out_ref)
+                    ? basename($out_ref)
+                    : '/dev/null';
 
-        # run the test
+        $errf = (defined($err_ref) && -f $err_ref)
+                    ? basename($err_ref)
+                    : '/dev/null';
+
+        # Run the test
         print STDERR "Test $TestNo: ($cmd) >$outf 2>$errf\n" if ($opt_c);
         mysystem("($cmd) >$outf 2>$errf");
         my $full_status = $?;
@@ -666,7 +656,8 @@ sub run_tests() {
             $ErrorCount++;
             printf STDERR "%s: test %d: FAILED: ref(%s) != stdout(%s)\n\tcmd: $cmd\n",
                 $0, $TestNo, $out_ref, $outf;
-            if ($opt_y) { copy_file($outf, $outf . '.test' . $TestNo); }
+
+            copy_file($outf, "$outf.test$TestNo") if ($opt_y);
             exit $status if ($opt_e);
         } else {
             if (defined $out_ref) {
@@ -688,39 +679,38 @@ sub run_tests() {
             $ErrorCount++;
             printf STDERR "%s: test %d: FAILED: ref(%s) != stderr(%s)\n\tcmd: $cmd\n",
                 $0, $TestNo, $err_ref, $errf;
-            if ($opt_y) { copy_file($errf, "$errf.test.$TestNo"); }
+
+            copy_file($errf, "$errf.test$TestNo") if ($opt_y);
             exit $status if ($opt_e);
         } else {
             print STDERR "$0: test $TestNo: stderr OK\n";
         }
-        # -- compare predict
-        if (defined $pred_ref) {
-        $predf = 'predict.tmp' unless (defined $predf);
-        $status = diff($pred_ref, $predf);
-        if ($status) {
-            $ErrorCount++;
-            printf STDERR "%s: test %d: FAILED: ref(%s) != predict(%s)\n\tcmd: $cmd\n",
-                $0, $TestNo, $pred_ref, $predf;
-            if ($opt_y) { copy_file($predf, "$predf.test.$TestNo"); }
-            exit $status if ($opt_e);
-        } else {
-            print STDERR "$0: test $TestNo: predict OK\n";
-        }
-    }
 
-        # -- compare pair of arbitrary files
-        if (defined $cmp_ref) {
-        $cmpf = '' unless (defined $cmpf);
-        $status = diff($cmp_ref, $cmpf);
-        if ($status) {
-            $ErrorCount++;
-            printf STDERR "%s: test %d: FAILED: ref(%s) != any_file(%s)\n\tcmd: $cmd\n",
-                $0, $TestNo, $cmp_ref, $cmpf;
-            if ($opt_y) { copy_file($cmpf, "$cmpf.test.$TestNo"); }
-            exit $status if ($opt_e);
-        } else {
-            print STDERR "$0: test $TestNo: compare files OK\n";
-        }
+        # -- compare all other reference files
+        if (@more_refs) {
+            foreach my $ref_path (@more_refs) {
+                my $ref_base = basename($ref_path);
+                # Verify that it exists on the shell line
+                unless ($cmd =~ /$ref_base/) {
+                    printf STDERR "%s: test %d: FAILED: " .
+                        "no match for '%s' in command: '%s'\n" .
+                        "Unable to compare output to reference file\n",
+                                $0, $TestNo, $ref_base, $cmd;
+                    $ErrorCount++;
+                    exit $status if ($opt_e);
+                    next;
+                }
+                $status = diff($ref_path, $ref_base);
+                if ($status) {
+                    $ErrorCount++;
+                    printf STDERR "%s: test %d: FAILED: ref(%s) != (%s)\n\tcmd: $cmd\n",
+                    $0, $TestNo, $ref_path, $ref_base;
+                    copy_file($ref_base, $ref_path) if ($opt_y);
+                    exit $status if ($opt_e);
+                } else {
+                    print STDERR "$0: test $TestNo: $ref_base OK\n";
+                }
+            }
         }
     }
     if ($FullRun == 0) {
@@ -741,53 +731,90 @@ exit $ErrorCount;
 
 #
 # Add tests below the __DATA__ line
-# Each test is a series of lines, terminated by an empty line (or EOF)
 #
-# Each test is comprised of:
-#   1st line-item is the command to run, {VW} represents the vw
-#   executable.
+# Each test is a sequence of non-blank lines, terminated
+# by an empty line (or EOF), essentially a paragraph.
 #
-#   By default, 'vw' in the parent dir (../vw) is tested.
-#   To run against a different reference executable, just pass the
-#   executable as an argument to RunTests
+# Each paragraph/test should look like:
 #
-# The next (output) line-items are reference files to compare outputs to:
-#    The expected (reference file) standard output
-#    The expected (reference file) standard error
-#    The expected (reference file) for predictions (-p ...)
-#    [The above reference files can come in any order.
-#     Their 'type' is determined by their extensions:
-#            .stdout  .stderr  .predict
-#    ]
+#   1st line: shell command to run.
+
+#   2nd-to-Nth line: one-or-more reference files to compare outputs to.
+#   ONE reference file per line
+#   (Note: we indent these lines just for readability.)
 #
-# All filenames are relative to this (test) directory
+#   You may break very long lines using \ at EOL.
 #
-# The temporary output file-names (as opposed to the reference ones)
-# are implicit:
-#    (stdout.tmp  stderr.tmp  predict.tmp)
-# Except: if -p ... appears in the command, it will be used as the
-# (explicit) predictions file.
+#   # -------------------------------------
+#   shell command which may include {VW} ...
+#       reference/file1
+#       reference/file2
+#       ...more reference files...
+#
+#   # -------------------------------------
+#
+#   shell-command can be anything accepted by bash, including pipes,
+#   redirections, etc., even a sequence of shell-commands separated by ';'
+#
+#   Inside any shell command, all (optional) appearances of {VW}
+#   will be substituted by the vw executable under test.
+#
+#   By default, 'vw' under our parent dir (../vowpalwabbit/vw) is tested.
+#   To run against a different reference executable, pass the
+#   wanted executable as an argument to RunTests
+#
+# The output line-items are reference files to compare outputs to:
+#   - *.stdout: expected (reference file) standard output
+#   - *.stderr: expected (reference file) standard error
+#   - Any other relative path, pointing to a reference file to compare
+#     to, this allows adding references to any explicitly named file
+#     appearing on the shell-line, the only requirement is that the
+#     _basename_ (path stripped of directory) of the reference file
+#     would exactly match its respective file in the shell-command.
+#
+# For example:
+#
+#   #-------------------------------------------------------
+#   # Test 237
+#   {VW} ... -p test75.predict --readable_model test75.rmodel
+#       test/train-sets/ref/test75.stderr
+#       test/pred-sets/ref/test75.predict
+#       test/whatever/ref/test75.rmodel
+#
+#   #-------------------------------------------------------
+#
+# All reference filenames are relative to this (test) directory
+#
+# Only the STDOUT and STDERR streams in the shell command
+# are implicit (so only their reference files need to be specified):
+# The implicit names would be matched only by their extension
+# as opposed to the full basename of the file.
+#
+# The two implicit names are:
+#       TestXXX.stdout
+#       TestXXX.stderr
 #
 # Windows note:
 #
-# Due to differences in Random-Number-Generators in Windows,
-# floating-point outputs may differ in some tests (not all).
+#   Due to differences in Random-Number-Generators in Windows,
+#   floating-point outputs may differ in some tests (not all).
 #
-# To minimize the need for changes (leverage existing tests and
-# reference files as much as possible), on Windows we check for
-# existance of files with '-mswin' suffix:
-#   *.stderr-mswin
-#   *.stdout-mswin
-#   *.predict-mswin
-# and if any of them exists, we use it instead.
+#   To minimize the need for changes (leverage existing tests and
+#   reference files as much as possible), on Windows we check for
+#   existence of files with '-mswin' suffix:
+#       *.stderr-mswin
+#       *.stdout-mswin
+#   and if any of them exists, we use it instead.
 #
 __DATA__
 # Test 1:
-{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off
-    train-sets/ref/0001.stderr
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat \
+    -f models/0001.model -c --passes 8 --invariant \
+    --ngram 3 --skips 1 --holdout_off
+        train-sets/ref/0001.stderr
 
 # Test 2: checking predictions as well
-{VW} -k -t train-sets/0001.dat -i models/0001.model -p 001.predict.tmp --invariant
+{VW} -k -t train-sets/0001.dat -i models/0001.model -p 0001.predict --invariant
     test-sets/ref/0001.stderr
     pred-sets/ref/0001.predict
 
@@ -838,13 +865,19 @@ __DATA__
     train-sets/ref/multiclass.stderr
 
 # Test 13: Run search (dagger) on wsj_small for 6 passes extra features
-{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 6 --search_task sequence --search 45 --search_alpha 1e-6 --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 --holdout_off
-    train-sets/ref/search_wsj.stderr
+{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 6 \
+    --search_task sequence --search 45 --search_alpha 1e-6 \
+    --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 \
+    --holdout_off
+        train-sets/ref/search_wsj.stderr
 
 # Test 14: Run search (searn) on wsj_small for 6 passes extra features
-{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 6 --search_task sequence --search 45 --search_alpha 1e-6 --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 --holdout_off --search_passes_per_policy 3 --search_interpolation policy
-    train-sets/ref/search_wsj2.dat.stdout
-    train-sets/ref/search_wsj2.dat.stderr
+{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 6 \
+    --search_task sequence --search 45 --search_alpha 1e-6 \
+    --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 \
+    --holdout_off --search_passes_per_policy 3 --search_interpolation policy
+        train-sets/ref/search_wsj2.dat.stdout
+        train-sets/ref/search_wsj2.dat.stderr
 
 # Test 15: LBFGS on zero derivative input
 {VW} -k -c -d train-sets/zero.dat --loss_function=squared -b 20 --bfgs --mem 7 --passes 5 --l2 1.0 --holdout_off
@@ -857,7 +890,7 @@ __DATA__
     train-sets/ref/rcv1_small.stderr
 
 # Test 17: Run LDA with 100 topics on 1000 Wikipedia articles
-{LDA} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 train-sets/wiki256.dat
+{VW} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 train-sets/wiki256.dat
     train-sets/ref/wiki1K.stderr
 
 # Test 18: Run search on seq_small for 12 passes, 4 passes per policy
@@ -869,7 +902,7 @@ __DATA__
     train-sets/ref/3parity.stderr
 
 # Test 20: neural network 3-parity with 2 hidden units (predict)
-{VW} -d train-sets/3parity --hash all -t -i models/0021.model -p 0022.predict.tmp
+{VW} -d train-sets/3parity --hash all -t -i models/0021.model -p 0022.predict
     pred-sets/ref/0022.stderr
     pred-sets/ref/0022.predict
 
@@ -878,9 +911,12 @@ __DATA__
     train-sets/ref/xxor.stderr
 
 # Test 22: matrix factorization -- training
-{VW} -k -d train-sets/ml100k_small_train -b 16 -q ui --rank 10 --l2 2e-6 --learning_rate 0.05 --passes 2 --decay_learning_rate 0.97 --power_t 0 -f models/movielens.reg -c --loss_function classic --holdout_off
-    train-sets/ref/ml100k_small.stdout
-    train-sets/ref/ml100k_small.stderr
+{VW} -k -d train-sets/ml100k_small_train -b 16 -q ui --rank 10 \
+    --l2 2e-6 --learning_rate 0.05 --passes 2 \
+    --decay_learning_rate 0.97 --power_t 0 -f models/movielens.reg \
+    -c --loss_function classic --holdout_off
+        train-sets/ref/ml100k_small.stdout
+        train-sets/ref/ml100k_small.stderr
 
 # Test 23: matrix factorization -- testing
 {VW} -i models/movielens.reg -t -d test-sets/ml100k_small_test
@@ -932,7 +968,7 @@ __DATA__
     train-sets/ref/topk-train.stderr
 
 # Test 34: train model for topk recommender
-{VW} -P 1 -d train-sets/topk.vw -i topk.model --top 2 -p topk.predict
+{VW} -P 1 -d train-sets/topk.vw -i topk.model --top 2 -p topk-rec.predict
     train-sets/ref/topk-rec.stderr
     train-sets/ref/topk-rec.predict
 
@@ -976,7 +1012,7 @@ __DATA__
     train-sets/ref/sequence_data.nonldf.train.stderr
 
 # Test 44: search sequence labeling, non-ldf test
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.predict
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.nonldf.test.predict
     train-sets/ref/sequence_data.nonldf.test.stderr
     train-sets/ref/sequence_data.nonldf.test.predict
 
@@ -985,29 +1021,37 @@ __DATA__
     train-sets/ref/search_small2.stderr
 
 # Test 46: search sequence labeling, ldf train
-{VW} -k -c -d train-sets/sequence_data --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.ldf.model --noconstant
-    train-sets/ref/sequence_data.ldf.train.stderr
+{VW} -k -c -d train-sets/sequence_data --passes 20 \
+    --search_rollout ref --search_alpha 1e-8 \
+    --search_task sequence_demoldf --csoaa_ldf m --search 5 \
+    --holdout_off -f models/sequence_data.ldf.model --noconstant
+        train-sets/ref/sequence_data.ldf.train.stderr
 
 # Test 47: search sequence labeling, ldf test 
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data.predict --noconstant
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data.ldf.test.predict --noconstant
     train-sets/ref/sequence_data.ldf.test.stderr
     train-sets/ref/sequence_data.ldf.test.predict
 
 # Test 48: search sequence SPAN labeling BIO, non-ldf train, no rollouts
-{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout none --search_task sequencespan --search 7 --holdout_off -f models/sequencespan_data.model
-    train-sets/ref/sequencespan_data.nonldf.train.stderr
+{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant \
+    --search_rollout none --search_task sequencespan --search 7 \
+    --holdout_off -f models/sequencespan_data.model
+        train-sets/ref/sequencespan_data.nonldf.train.stderr
 
 # Test 49: search sequence SPAN labeling BIO, non-ldf test
-{VW} -d train-sets/sequencespan_data -t -i models/sequencespan_data.model -p sequencespan_data.predict
+{VW} -d train-sets/sequencespan_data -t -i models/sequencespan_data.model -p sequencespan_data.nonldf.test.predict
     train-sets/ref/sequencespan_data.nonldf.test.stderr
     train-sets/ref/sequencespan_data.nonldf.test.predict
 
 # Test 50: search sequence SPAN labeling BILOU, non-ldf train
-{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequencespan --search_span_bilou --search 7 --holdout_off -f models/sequencespan_data.model
-    train-sets/ref/sequencespan_data.nonldf-bilou.train.stderr
+{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant \
+    --search_rollout ref --search_alpha 1e-8 --search_task sequencespan \
+    --search_span_bilou --search 7 --holdout_off \
+    -f models/sequencespan_data.model
+        train-sets/ref/sequencespan_data.nonldf-bilou.train.stderr
 
 # Test 51: search sequence SPAN labeling BILOU, non-ldf test
-{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.predict
+{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.nonldf-bilou.test.predict
     train-sets/ref/sequencespan_data.nonldf-bilou.test.stderr
     train-sets/ref/sequencespan_data.nonldf-bilou.test.predict
 
@@ -1061,7 +1105,7 @@ __DATA__
     test-sets/ref/vw-daemon.stdout
 
 # Test 62: SVM linear kernel
-{VW} --ksvm --l2 1 --reprocess 5 -b 18 -p linear.predict -d train-sets/rcv1_smaller.dat
+{VW} --ksvm --l2 1 --reprocess 5 -b 18 -p ksvm_train.linear.predict -d train-sets/rcv1_smaller.dat
     train-sets/ref/ksvm_train.linear.stderr
     train-sets/ref/ksvm_train.linear.predict
 
@@ -1075,15 +1119,20 @@ __DATA__
     train-sets/ref/ksvm_train.rbf.stderr
     train-sets/ref/ksvm_train.rbf.predict
 
-# Test 65: Run search (dagger) on an entity-relation recognitions data set, er_small, for 6 passes with constraints
+# Test 65: Run search (dagger) on an entity-relation recognitions data set,
+# er_small, for 6 passes with constraints
 {VW} -k -c -d train-sets/er_small.vw --passes 6 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8 
     train-sets/ref/search_er.stderr
 
-# Test 66: Train a depenency parser with search (dagger) on wsj_small.dparser.vw.gz for 2 passes
+# Test 66: Train a depenency parser with search (dagger)
+# on wsj_small.dparser.vw.gz for 2 passes
 {VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout ref --holdout_off
     train-sets/ref/search_dep_parser.stderr
 
-# Test 67: classification with data from dictionaries (eg embeddings or gazetteers) -- note that this is impossible without dictionaries because --ignore w; also test to make sure gzipped dicts work and dictionary redundancy checking works
+# Test 67: classification with data from dictionaries
+# (eg embeddings or gazetteers) -- note that this is impossible without
+# dictionaries because --ignore w; also test to make sure gzipped dicts
+# work and dictionary redundancy checking works
 {VW} -k -c -d train-sets/dictionary_test.dat --binary --ignore w --holdout_off --passes 32 --dictionary w:dictionary_test.dict --dictionary w:dictionary_test.dict.gz --dictionary_path train-sets/
     train-sets/ref/dictionary_test.stderr
 
@@ -1092,12 +1141,12 @@ __DATA__
 	train-sets/ref/search_multiclass.stderr
 
 # Test 69: (see Test 43/Test 44): search sequence labeling, with selective branching
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data_beam.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.nonldf.beam.test.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10
     train-sets/ref/sequence_data.nonldf.beam.test.stderr
     train-sets/ref/sequence_data.nonldf.beam.test.predict
 
 # Test 70: (see Test 46/47) search sequence labeling, ldf test, with selective branching
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data_beam.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10 --noconstant
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data.ldf.beam.test.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10 --noconstant
     train-sets/ref/sequence_data.ldf.beam.test.stderr
     train-sets/ref/sequence_data.ldf.beam.test.predict
 
@@ -1111,7 +1160,7 @@ __DATA__
     train-sets/ref/0001_ftrl.stderr
 
 # Test 73: test FTRL-Proximal
-{VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p ftrl_001.predict.tmp
+{VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl.predict
     test-sets/ref/0001_ftrl.stderr
     pred-sets/ref/0001_ftrl.predict
 
@@ -1148,7 +1197,7 @@ __DATA__
     train-sets/ref/ftrl_pistol.stderr
 
 # Test 82: test FTRL-PiSTOL
-{VW} -k -t train-sets/0001.dat -i models/ftrl_pistol.model -p ftrl_pistol.predict.tmp
+{VW} -k -t train-sets/0001.dat -i models/ftrl_pistol.model -p ftrl_pistol.predict
     test-sets/ref/ftrl_pistol.stderr
     pred-sets/ref/ftrl_pistol.predict    
     
@@ -1171,7 +1220,7 @@ __DATA__
     pred-sets/ref/multilabel_ldf.predict
 
 # Test 87: check --rank_all on csoaa_ldf
-{VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p adf_rank.predict --noconstant
+{VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p cb_adf_rank.predict --noconstant
     train-sets/ref/cb_adf_rank.stderr
     pred-sets/ref/cb_adf_rank.predict
 
@@ -1194,7 +1243,11 @@ __DATA__
     pred-sets/ref/test_named_csoaa.predict
 
 # Test 92: check -q :: and -oaa inverse hash
-echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp && tail -n +2 inv_hash.cmp > inv_hash.cmp.new && rm inv_hash.cmp && mv inv_hash.cmp.new inv_hash.cmp
+printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
+    {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp && \
+        tail -n +2 inv_hash.cmp > inv_hash.cmp.new && \
+            rm inv_hash.cmp && \
+                mv inv_hash.cmp.new inv_hash.cmp
     train-sets/ref/inv_hash.stderr
     pred-sets/ref/inv_hash.cmp
 
@@ -1204,14 +1257,21 @@ echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} --oaa 3 -q :: --invert_has
     pred-sets/ref/cb_adf_dr.predict
 
 # Test 94: experience replay version of test 1
-{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off --replay_b 100
-    train-sets/ref/0001-replay.stderr
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat \
+    -f models/0001.model -c --passes 8 --invariant \
+    --ngram 3 --skips 1 --holdout_off --replay_b 100
+        train-sets/ref/0001-replay.stderr
 
 # Test 95: named labels at training time (csoaa) with experience replay
-{VW} --named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa  -k -c --passes 10 --holdout_off -f models/test_named_csoaa.model --replay_c 100
-    train-sets/ref/test_named_csoaa_train-replay.stderr
+{VW} --named_labels det,noun,verb --csoaa 3 \
+    -d train-sets/test_named_csoaa -k -c --passes 10 --holdout_off \
+    -f models/test_named_csoaa.model --replay_c 100
+        train-sets/ref/test_named_csoaa_train-replay.stderr
 
 # Test 96: backwards compatibility
-echo -e '3 |f a b c |e x y z\n2 |f a y c |e x' | {VW} -i simple_model --invert_hash inv_hash.cmp && tail -n +2 inv_hash.cmp 
+printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
+    {VW} -i simple_model --invert_hash inv_hash.cmp && \
+        tail -n +2 inv_hash.cmp 
    test-sets/ref/backwards.stderr
    test-sets/ref/backwards.stdout
+

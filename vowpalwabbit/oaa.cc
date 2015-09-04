@@ -30,7 +30,7 @@ void learn_randomized(oaa& o, LEARNER::base_learner& base, example& ec) {
 
   size_t prediction = ld.label;
   float best_partial_prediction = ec.partial_prediction;
-  
+
   ec.l.simple.label = -1.;
   ec.l.simple.weight *= ((float)o.k) / (float)o.num_subsample;
   size_t p = o.subsample_id;
@@ -66,21 +66,21 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
   for (uint32_t i=2; i<=o.k; i++)
     if (o.pred[i-1].scalar > o.pred[prediction-1].scalar)
       prediction = i;
-  
+
   if (is_learn) {
     for (uint32_t i=1; i<=o.k; i++) {
       ec.l.simple = { (mc_label_data.label == i) ? 1.f : -1.f, mc_label_data.weight, 0.f };
       ec.pred.scalar = o.pred[i-1].scalar;
       base.update(ec, i-1);
     }
-  } 
+  }
 
   if (print_all) {
     outputStringStream << "1:" << o.pred[0].scalar;
     for (uint32_t i=2; i<=o.k; i++) outputStringStream << ' ' << i << ':' << o.pred[i-1].scalar;
     o.all->print_text(o.all->raw_prediction, outputStringStream.str(), ec.tag);
   }
-  
+
   ec.pred.multiclass = prediction;
   ec.l.multi = mc_label_data;
 }
@@ -89,20 +89,20 @@ void finish(oaa&o) { free(o.pred); free(o.subsample_order); }
 
 LEARNER::base_learner* oaa_setup(vw& all)
 {
-  if (missing_option<size_t, true>(all, "oaa", "One-against-all multiclass with <k> labels")) 
+  if (missing_option<size_t, true>(all, "oaa", "One-against-all multiclass with <k> labels"))
     return nullptr;
   new_options(all, "oaa options")
-      ("oaa_subsample", po::value<size_t>(), "subsample this number of negative examples when learning");
+  ("oaa_subsample", po::value<size_t>(), "subsample this number of negative examples when learning");
   add_options(all);
-  
+
   oaa* data_ptr = calloc_or_die<oaa>(1);
   oaa& data = *data_ptr;
   data.k = all.vm["oaa"].as<size_t>();
 
-  if (all.sd->ldict && (data.k != all.sd->ldict->getK())) 
-	  THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
-  
-  data.all = &all;
+  if (all.sd->ldict && (data.k != all.sd->ldict->getK()))
+    THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
+
+    data.all = &all;
   data.pred = calloc_or_die<polyprediction>(data.k);
   data.num_subsample = 0;
   data.subsample_order = nullptr;
@@ -123,17 +123,17 @@ LEARNER::base_learner* oaa_setup(vw& all)
       }
     }
   }
-  
+
   LEARNER::learner<oaa>* l;
   if (all.raw_prediction > 0)
-    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all), predict_or_learn<true, true>, 
-					  predict_or_learn<false, true>, all.p, data.k);
+    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all), predict_or_learn<true, true>,
+                                          predict_or_learn<false, true>, all.p, data.k);
   else
-    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all),predict_or_learn<true, false>, 
-					  predict_or_learn<false, false>, all.p, data.k);
+    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all),predict_or_learn<true, false>,
+                                          predict_or_learn<false, false>, all.p, data.k);
   if (data.num_subsample > 0)
     l->set_learn(learn_randomized);
   l->set_finish(finish);
-  
+
   return make_base(*l);
 }

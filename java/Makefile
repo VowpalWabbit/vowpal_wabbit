@@ -29,7 +29,9 @@ test:
 things: pom_version target/vw_jni.lib	
 
 pom_version: pom.xml
-	ver=$$(grep AC_INIT ../configure.ac | cut -d '[' -f 3 | cut -d ']' -f 1) && perl -pi -e "s/(\s*)<version>.*-SNAPSHOT/\1<version>$$ver-SNAPSHOT/" pom.xml
+	ver=$$(grep AC_INIT ../configure.ac | cut -d '[' -f 3 | cut -d ']' -f 1) && \
+	newVer=$$(perl -e "@a=split('\.', '$$ver'); \$$a[2]++; print(join('.', @a))") && \
+	perl -pi -e "s/(\s*)<version>.*-SNAPSHOT/\1<version>$$newVer-SNAPSHOT/" pom.xml
 
 target/vw_jni.lib: src/main/c++/vw_VW.cc ../vowpalwabbit/main.o ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
 	mkdir -p target;

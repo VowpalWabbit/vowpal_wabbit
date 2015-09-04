@@ -16,6 +16,9 @@ namespace VW.Interfaces
     /// <typeparam name="T">Type of each action dependent feature.</typeparam>
     public interface IActionDependentFeatureExample<out T>
     {
+        /// <summary>
+        /// Gets the action dependent features of this example.
+        /// </summary>
         IReadOnlyList<T> ActionDependentFeatures { get; }
     }
 }

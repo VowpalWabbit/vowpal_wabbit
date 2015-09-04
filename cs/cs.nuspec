@@ -2,25 +2,25 @@
 <package>
   <metadata>
     <title>Vowpal Wabbit</title>
-    <id>Microsoft.Research.VowpalWabbit</id>
+    <id>VowpalWabbit</id>
     <tags>vw vowpal wabbit john langford</tags>
-    <version>7.10.1.16</version>
+    <version>8.0.0.11</version>
     <authors>John Langford et al</authors>
-    <projectUrl>https://github.com/JohnLangford/vowpal_wabbit</projectUrl>
+    <projectUrl>https://github.com/JohnLangford/vowpal_wabbit/wiki/C%23-Binding</projectUrl>
     <licenseUrl>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Official Vowpal Wabbit library including C# interface</description>
-    <copyright>Copyright (C) Microsoft Corp 2012-2014, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved.</copyright>
-    <releaseNotes>Vowpal Wabbit 7.10.1</releaseNotes>
+    <copyright>Copyright (C) Microsoft Corp 2012-2015, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved.</copyright>
     <dependencies />
   </metadata>
   <files>
 	  <!-- despite warning this is still required -->
 	  <file src="bin\$Platform$\$Configuration$\*.dll" target="lib\net45" />
-	  <file src="bin\$Platform$\$Configuration$\*.pdb" target="lib\net45" />
-	  <file src="**\*.cs" target="src\cs" />
+    <file src="bin\$Platform$\$Configuration$\*.pdb" target="lib\net45" />
+    <file src="bin\$Platform$\$Configuration$\*.xml" target="lib\net45" />
+	  <file src="**\*.cs" target="src\cs" exclude="**\obj\**\*.cs" />
 	  <file src="..\vw_clr\*.cpp" target="src\vw_clr" />
-      <file src="..\vw_clr\*.h" target="src\vw_clr" />
+	  <file src="..\vw_clr\*.h" target="src\vw_clr" />
 	  <file src="..\vowpalwabbit\*.cc" target="src\vowpalwabbit" />
 	  <file src="..\vowpalwabbit\*.h" target="src\vowpalwabbit" />
   </files>

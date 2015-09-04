@@ -39,20 +39,20 @@ int open_socket(const char* host)
   short unsigned int port = 26542;
   hostent* he;
   if (colon != nullptr)
-    {
-      port = atoi(colon+1);
-      string hostname(host,colon-host);
-      he = gethostbyname(hostname.c_str());
-    }
+  {
+    port = atoi(colon+1);
+    string hostname(host,colon-host);
+    he = gethostbyname(hostname.c_str());
+  }
   else
     he = gethostbyname(host);
 
   if (he == nullptr)
-    THROW("gethostbyname(" << host << "): " << strerror(errno));
+    THROWERRNO("gethostbyname(" << host << ")");
 
   int sd = (int)socket(PF_INET, SOCK_STREAM, 0);
   if (sd == -1)
-    THROW("socket: " << strerror(errno));
+    THROWERRNO("socket");
 
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
@@ -60,16 +60,16 @@ int open_socket(const char* host)
   far_end.sin_addr = *(in_addr*)(he->h_addr);
   memset(&far_end.sin_zero, '\0',8);
   if (connect(sd,(sockaddr*)&far_end, sizeof(far_end)) == -1)
-    THROW("connect(" << host << ':' << port << "): " << strerror(errno));
+    THROWERRNO("connect(" << host << ':' << port << ")");
 
   char id = '\0';
   if (
 #ifdef _WIN32
-      _write(sd, &id, sizeof(id)) < (int)sizeof(id)
+    _write(sd, &id, sizeof(id)) < (int)sizeof(id)
 #else
-      write(sd, &id, sizeof(id)) < (int)sizeof(id)
+    write(sd, &id, sizeof(id)) < (int)sizeof(id)
 #endif
-      )
+  )
     cerr << "write failed!" << endl;
   return sd;
 }

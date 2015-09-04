@@ -35,7 +35,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
 
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock == -1)
-    THROW("socket: " << strerror(errno));
+    THROWERRNO("socket");
 
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
@@ -47,12 +47,12 @@ socket_t sock_connect(const uint32_t ip, const int port) {
   {
     char dotted_quad[INET_ADDRSTRLEN];
     if (nullptr == inet_ntop(AF_INET, &(far_end.sin_addr), dotted_quad, INET_ADDRSTRLEN))
-      THROW("inet_ntop: " << strerror(errno));
+      THROWERRNO("inet_ntop");
 
     char hostname[NI_MAXHOST];
     char servInfo[NI_MAXSERV];
     if (getnameinfo((sockaddr *) &far_end, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV))
-      THROW("getnameinfo(" << dotted_quad << "): " << strerror(errno));
+      THROWERRNO("getnameinfo(" << dotted_quad << ")");
 
     cerr << "connecting to " << dotted_quad << " = " << hostname << ':' << ntohs(port) << endl;
   }
@@ -60,17 +60,17 @@ socket_t sock_connect(const uint32_t ip, const int port) {
   size_t count = 0;
   int ret;
   while ( (ret =connect(sock,(sockaddr*)&far_end, sizeof(far_end))) == -1 && count < 100)
-    {
-      count++;
-      stringstream msg;
-      msg << "connect attempt " << count << " failed: " << strerror(errno);
-      cerr << msg.str() << endl;
+  {
+    count++;
+    stringstream msg;
+    msg << "connect attempt " << count << " failed: " << strerror(errno);
+    cerr << msg.str() << endl;
 #ifdef _WIN32
-      Sleep(1);
+    Sleep(1);
 #else
-      sleep(1);
+    sleep(1);
 #endif
-    }
+  }
   if (ret == -1)
     THROW("cannot connect");
   return sock;
@@ -80,14 +80,14 @@ socket_t getsock()
 {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock < 0)
-    THROW("socket: " << strerror(errno));
+    THROWERRNO("socket");
 
   // SO_REUSEADDR will allow port rebinding on Windows, causing multiple instances
   // of VW on the same machine to potentially contact the wrong tree node.
 #ifndef _WIN32
-    int on = 1;
-    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-      cerr << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
+  int on = 1;
+  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
+    cerr << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 #endif
 
   // Enable TCP Keep Alive to prevent socket leaks
@@ -111,7 +111,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   struct hostent* master = gethostbyname(master_location.c_str());
 
   if (master == nullptr)
-    THROW("gethostbyname(" << master_location << "): " << strerror(errno));
+    THROWERRNO("gethostbyname(" << master_location << ")");
 
   socks.current_master = master_location;
 
@@ -132,7 +132,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   if (recv(master_sock, (char*)&ok, sizeof(ok), 0) < (int)sizeof(ok))
     cerr << "read ok failed!" << endl;
   else cerr << "read ok=" << ok << endl;
-  if (!ok) 
+  if (!ok)
     THROW("mapper already connected");
 
   uint16_t kid_count;
@@ -142,7 +142,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   if(recv(master_sock, (char*)&kid_count, sizeof(kid_count), 0) < (int)sizeof(kid_count))
     cerr << "read kid_count failed!" << endl;
   else cerr << "read kid_count=" << kid_count << endl;
-  
+
   socket_t sock = -1;
   short unsigned int netport = htons(26544);
   if(kid_count > 0) {
@@ -167,7 +167,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
           address.sin_port = netport;
         }
         else
-          THROW("bind: " << strerror(errno));
+          THROWERRNO("bind");
       }
       else
       {
@@ -200,7 +200,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   if(recv(master_sock, (char*)&parent_port, sizeof(parent_port), 0) < (int)sizeof(parent_port))
     cerr << "read parent_port failed!" << endl;
   else cerr << "read parent_port=" << parent_port << endl;
-  
+
   CLOSESOCK(master_sock);
 
   if(parent_ip != (uint32_t)-1) {
@@ -216,7 +216,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
     socklen_t size = sizeof(child_address);
     socket_t f = accept(sock,(sockaddr*)&child_address,&size);
     if (f < 0)
-      THROW("accept: " << strerror(errno));
+      THROWERRNO("accept");
 
     // char hostname[NI_MAXHOST];
     // char servInfo[NI_MAXSERV];
@@ -249,33 +249,33 @@ void pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent
 
 void broadcast(char* buffer, const size_t n, const socket_t parent_sock, const socket_t * child_sockets) {
 
-   size_t parent_read_pos = 0; //First unread float from parent
-   size_t children_sent_pos = 0; //First unsent float to children
+  size_t parent_read_pos = 0; //First unread float from parent
+  size_t children_sent_pos = 0; //First unsent float to children
   //parent_sent_pos <= left_read_pos
   //parent_sent_pos <= right_read_pos
 
-   if(parent_sock == -1) {
-     parent_read_pos = n;
-   }
-   if(child_sockets[0] == -1 && child_sockets[1] == -1)
-     children_sent_pos = n;
+  if(parent_sock == -1) {
+    parent_read_pos = n;
+  }
+  if(child_sockets[0] == -1 && child_sockets[1] == -1)
+    children_sent_pos = n;
 
-   while (parent_read_pos < n || children_sent_pos < n)
-    {
-      pass_down(buffer, parent_read_pos, children_sent_pos, child_sockets);
-      if(parent_read_pos >= n && children_sent_pos >= n) break;
+  while (parent_read_pos < n || children_sent_pos < n)
+  {
+    pass_down(buffer, parent_read_pos, children_sent_pos, child_sockets);
+    if(parent_read_pos >= n && children_sent_pos >= n) break;
 
-      if (parent_sock != -1) {
-	//there is data to be read from the parent
-	if(parent_read_pos == n) 
-	  THROW("I think parent has no data to send but he thinks he has");
+    if (parent_sock != -1) {
+      //there is data to be read from the parent
+      if(parent_read_pos == n)
+        THROW("I think parent has no data to send but he thinks he has");
 
-	size_t count = min(ar_buf_size,n-parent_read_pos);
-	int read_size = recv(parent_sock, buffer + parent_read_pos, (int)count, 0);
-	if(read_size == -1) {
-	  cerr <<" recv from parent: " << strerror(errno) << endl;
-	}
-	parent_read_pos += read_size;
+      size_t count = min(ar_buf_size,n-parent_read_pos);
+      int read_size = recv(parent_sock, buffer + parent_read_pos, (int)count, 0);
+      if(read_size == -1) {
+        cerr <<" recv from parent: " << strerror(errno) << endl;
       }
+      parent_read_pos += read_size;
     }
+  }
 }

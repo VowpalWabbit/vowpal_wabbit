@@ -15,7 +15,7 @@ namespace VW.Serializer.Interfaces
     public interface IVowpalWabbitVisitor<TResultExample>
     {
         /// <summary>
-        /// Invoked for each example. Implementors must dispatch by calling <see cref="IVisitableNamespace{TResultNamespace}.Visit"/>.
+        /// Invoked for each example. Implementors must dispatch by calling <see cref="IVisitableNamespace.Visit()"/>.
         /// </summary>
         /// <param name="label">The Vowpal Wabbit label serialized in the string format.</param>
         /// <param name="namespaces">All discovered namespaces.</param>
