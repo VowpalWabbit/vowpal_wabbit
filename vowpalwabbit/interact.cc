@@ -24,7 +24,7 @@ float multiply(v_array<feature>& f_dest, v_array<feature>& f_src2, interact& in)
   size_t weight_mask = all->reg.weight_mask;
   size_t base_id1 = f_src1[0].weight_index & weight_mask;
   size_t base_id2 = f_src2[0].weight_index & weight_mask;
-  
+
   feature f;
   f.weight_index = f_src1[0].weight_index;
   f.x = f_src1[0].x*f_src2[0].x;
@@ -47,7 +47,7 @@ float multiply(v_array<feature>& f_dest, v_array<feature>& f_src2, interact& in)
     else if(cur_id1 < cur_id2)
       i1++;
     else
-      i2++;    
+      i2++;
   }
   return sum_sq;
 }
@@ -64,41 +64,41 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec) {
   ec.total_sum_feat_sq -= ec.sum_feat_sq[in.n2];
   ec.num_features -= f1.size();
   ec.num_features -= f2.size();
-  
+
   in.feat_store.erase();
   push_many(in.feat_store, f1.begin, f1.size());
-  
+
   ec.sum_feat_sq[in.n1] = multiply(f1, f2, in);
   ec.total_sum_feat_sq += ec.sum_feat_sq[in.n1];
   ec.num_features += f1.size();
-  
+
   /*for(size_t i = 0;i < f1.size();i++)
     cout<<f1[i].weight_index<<":"<<f1[i].x<<" ";
     cout<<endl;*/
-  
+
   // remove 2nd namespace
   int n2_i = -1;
   for (size_t i = 0; i < ec.indices.size(); i++) {
-	  if (ec.indices[i] == in.n2) {
-		  n2_i = (int)i;
-		  memmove(&ec.indices[n2_i], &ec.indices[n2_i+1], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));
-		  ec.indices.decr();
-		  break;
-	  } 
+    if (ec.indices[i] == in.n2) {
+      n2_i = (int)i;
+      memmove(&ec.indices[n2_i], &ec.indices[n2_i+1], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));
+      ec.indices.decr();
+      break;
+    }
   }
   assert(n2_i >= 0);
 
   base.predict(ec);
   if(is_learn)
     base.learn(ec);
-  
+
   // re-insert namespace into the right position
   ec.indices.incr();
   memmove(&ec.indices[n2_i + 1], &ec.indices[n2_i], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));
   ec.indices[n2_i] = in.n2;
 
   ec.atomics[in.n1].erase();
-  push_many(ec.atomics[in.n1], in.feat_store.begin, in.feat_store.size());  
+  push_many(ec.atomics[in.n1], in.feat_store.begin, in.feat_store.size());
   ec.total_sum_feat_sq = in.total_sum_feat_sq;
   ec.sum_feat_sq[in.n1] = in.n1_feat_sq;
   ec.num_features = in.num_features;
@@ -106,7 +106,7 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec) {
 
 void finish(interact& in) {in.feat_store.delete_v();}
 
-LEARNER::base_learner* interact_setup(vw& all) 
+LEARNER::base_learner* interact_setup(vw& all)
 {
   if(missing_option<string, true>(all, "interact", "Put weights on feature products from namespaces <n1> and <n2>"))
     return nullptr;
@@ -115,9 +115,9 @@ LEARNER::base_learner* interact_setup(vw& all)
     cerr<<"Need two namespace arguments to interact!! EXITING\n";
     return nullptr;
   }
-  
+
   interact& data = calloc_or_die<interact>();
-  
+
   data.n1 = (unsigned char) s[0];
   data.n2 = (unsigned char) s[1];
   cout<<"Interacting namespaces "<<data.n1<<" and "<<data.n2<<endl;

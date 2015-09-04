@@ -62,7 +62,7 @@ struct version_struct {
     version_struct v_tmp(v_str);
     return (*this != v_tmp);
   }
-  bool operator>=(version_struct v){
+  bool operator>=(version_struct v) {
     if(major < v.major) return false;
     if(major > v.major) return true;
     if(minor < v.minor) return false;
@@ -131,13 +131,13 @@ struct dictionary_info {
 };
 
 class namedlabels {
-  private:
+private:
 
   v_array<substring> id2name;
   v_hashmap<substring,uint32_t> name2id;
   uint32_t K;
 
-  public:
+public:
 
   namedlabels(string label_list) {
     id2name = v_init<substring>();
@@ -151,7 +151,7 @@ class namedlabels {
       substring& l = id2name[k];
       size_t hash = uniform_hash((unsigned char*)l.begin, l.end-l.begin, 378401);
       uint32_t id = name2id.get(l, hash);
-      if (id != 0) 
+      if (id != 0)
         THROW("error: label dictionary initialized with multiple occurances of: " << l);
       size_t len = l.end - l.begin;
       substring l_copy = { calloc_or_die<char>(len), nullptr };
@@ -168,7 +168,7 @@ class namedlabels {
   }
 
   uint32_t getK() { return K; }
-  
+
   uint32_t get(substring& s) {
     size_t hash = uniform_hash((unsigned char*)s.begin, s.end-s.begin, 378401);
     uint32_t v  =  name2id.get(s, hash);
@@ -209,7 +209,7 @@ struct shared_data {
   float max_label;//maximum label encountered
 
   namedlabels* ldict;
-  
+
   //for holdout
   double weighted_holdout_examples;
   double weighted_holdout_examples_since_last_dump;
@@ -238,76 +238,76 @@ struct shared_data {
   void update(bool test_example, float loss, float weight, size_t num_features)
   {
     if(test_example)
-      {
-	weighted_holdout_examples += weight;//test weight seen
-	weighted_holdout_examples_since_last_dump += weight;
-	weighted_holdout_examples_since_last_pass += weight;
-	holdout_sum_loss += loss;
-	holdout_sum_loss_since_last_dump += loss;
-	holdout_sum_loss_since_last_pass += loss;//since last pass
-      }
+    {
+      weighted_holdout_examples += weight;//test weight seen
+      weighted_holdout_examples_since_last_dump += weight;
+      weighted_holdout_examples_since_last_pass += weight;
+      holdout_sum_loss += loss;
+      holdout_sum_loss_since_last_dump += loss;
+      holdout_sum_loss_since_last_pass += loss;//since last pass
+    }
     else
-      {
-	weighted_examples += weight;
-	sum_loss += loss;
-	sum_loss_since_last_dump += loss;
-	total_features += num_features;
-	example_number++;
-      }
+    {
+      weighted_examples += weight;
+      sum_loss += loss;
+      sum_loss_since_last_dump += loss;
+      total_features += num_features;
+      example_number++;
+    }
   }
 
   inline void update_dump_interval(bool progress_add, float progress_arg) {
     sum_loss_since_last_dump = 0.0;
     old_weighted_examples = weighted_examples;
-    if (progress_add)  
+    if (progress_add)
       dump_interval = (float)weighted_examples + progress_arg;
-    else 
+    else
       dump_interval = (float)weighted_examples * progress_arg;
   }
 
   void print_update(bool holdout_set_off, size_t current_pass, float label, float prediction,
-		    size_t num_features, bool progress_add, float progress_arg)
+                    size_t num_features, bool progress_add, float progress_arg)
   {
     std::ostringstream label_buf, pred_buf;
 
     label_buf << std::setw(col_current_label)
               << std::setfill(' ');
     if (label < FLT_MAX)
-	label_buf << std::setprecision(prec_current_label) << std::fixed << std::right << label;
+      label_buf << std::setprecision(prec_current_label) << std::fixed << std::right << label;
     else
-	label_buf << std::left << " unknown";
+      label_buf << std::left << " unknown";
 
     pred_buf << std::setw(col_current_predict) << std::setprecision(prec_current_predict)
-	     << std::fixed << std::right
+             << std::fixed << std::right
              << std::setfill(' ')
-	     << prediction;
+             << prediction;
 
     print_update(holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features,
-		 progress_add, progress_arg);
+                 progress_add, progress_arg);
   }
 
   void print_update(bool holdout_set_off, size_t current_pass, uint32_t label, uint32_t prediction,
-		    size_t num_features, bool progress_add, float progress_arg)
+                    size_t num_features, bool progress_add, float progress_arg)
   {
     std::ostringstream label_buf, pred_buf;
 
     label_buf << std::setw(col_current_label)
               << std::setfill(' ');
     if (label < INT_MAX)
-	label_buf << std::right << label;
+      label_buf << std::right << label;
     else
-	label_buf << std::left << " unknown";
-    
-    pred_buf << std::setw(col_current_predict) << std::right 
+      label_buf << std::left << " unknown";
+
+    pred_buf << std::setw(col_current_predict) << std::right
              << std::setfill(' ')
              << prediction;
 
     print_update(holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features,
-		 progress_add, progress_arg);
+                 progress_add, progress_arg);
   }
 
   void print_update(bool holdout_set_off, size_t current_pass, const std::string &label, uint32_t prediction,
-		    size_t num_features, bool progress_add, float progress_arg)
+                    size_t num_features, bool progress_add, float progress_arg)
   {
     std::ostringstream pred_buf;
 
@@ -315,11 +315,11 @@ struct shared_data {
              << prediction;
 
     print_update(holdout_set_off, current_pass, label, pred_buf.str(), num_features,
-		 progress_add, progress_arg);
+                 progress_add, progress_arg);
   }
 
   void print_update(bool holdout_set_off, size_t current_pass, const std::string &label, const std::string &prediction,
-		    size_t num_features, bool progress_add, float progress_arg)
+                    size_t num_features, bool progress_add, float progress_arg)
   {
     std::streamsize saved_w = std::cerr.width();
     std::streamsize saved_prec = std::cerr.precision();
@@ -327,48 +327,48 @@ struct shared_data {
     bool holding_out = false;
 
     if(!holdout_set_off && current_pass >= 1)
-      {
-	if(holdout_sum_loss == 0. && weighted_holdout_examples == 0.)
-	  std::cerr << std::setw(col_avg_loss) << std::left << " unknown";
-	else
-	  std::cerr << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::fixed << std::right
-		    << (holdout_sum_loss / weighted_holdout_examples);
+    {
+      if(holdout_sum_loss == 0. && weighted_holdout_examples == 0.)
+        std::cerr << std::setw(col_avg_loss) << std::left << " unknown";
+      else
+        std::cerr << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::fixed << std::right
+                  << (holdout_sum_loss / weighted_holdout_examples);
 
-	std::cerr << " ";
+      std::cerr << " ";
 
-	if(holdout_sum_loss_since_last_dump == 0. && weighted_holdout_examples_since_last_dump == 0.)
-	  std::cerr << std::setw(col_since_last) << std::left << " unknown";
-	else
-	  std::cerr << std::setw(col_since_last) << std::setprecision(prec_since_last) << std::fixed << std::right
-		    << (holdout_sum_loss_since_last_dump/weighted_holdout_examples_since_last_dump);
-	
-	weighted_holdout_examples_since_last_dump = 0;
-	holdout_sum_loss_since_last_dump = 0.0;
+      if(holdout_sum_loss_since_last_dump == 0. && weighted_holdout_examples_since_last_dump == 0.)
+        std::cerr << std::setw(col_since_last) << std::left << " unknown";
+      else
+        std::cerr << std::setw(col_since_last) << std::setprecision(prec_since_last) << std::fixed << std::right
+                  << (holdout_sum_loss_since_last_dump/weighted_holdout_examples_since_last_dump);
 
-	holding_out = true;
-      }
+      weighted_holdout_examples_since_last_dump = 0;
+      holdout_sum_loss_since_last_dump = 0.0;
+
+      holding_out = true;
+    }
     else
-      {
-	std::cerr << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::right << std::fixed
-		  << (sum_loss / weighted_examples)
-		  << " "
-	          << std::setw(col_since_last) << std::setprecision(prec_avg_loss) << std::right << std::fixed
-		  << (sum_loss_since_last_dump / (weighted_examples - old_weighted_examples));
-      }
+    {
+      std::cerr << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::right << std::fixed
+                << (sum_loss / weighted_examples)
+                << " "
+                << std::setw(col_since_last) << std::setprecision(prec_avg_loss) << std::right << std::fixed
+                << (sum_loss_since_last_dump / (weighted_examples - old_weighted_examples));
+    }
 
     std::cerr << " "
-	      << std::setw(col_example_counter) << std::right << example_number
-	      << " "
-	      << std::setw(col_example_weight) << std::setprecision(prec_example_weight) << std::right << weighted_examples
-	      << " "
+              << std::setw(col_example_counter) << std::right << example_number
+              << " "
+              << std::setw(col_example_weight) << std::setprecision(prec_example_weight) << std::right << weighted_examples
+              << " "
               << std::setw(col_current_label) << std::right << label
               << " "
-	      << std::setw(col_current_predict) << std::right << prediction
-	      << " "
-	      << std::setw(col_current_features) << std::right << num_features;
+              << std::setw(col_current_predict) << std::right << prediction
+              << " "
+              << std::setw(col_current_features) << std::right << num_features;
 
     if (holding_out)
-	std::cerr << " h";
+      std::cerr << " h";
 
     std::cerr << std::endl;
     std::cerr.flush();
@@ -469,7 +469,7 @@ struct vw {
   vector<string> dictionary_path;  // where to look for dictionaries
   vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
   vector<dictionary_info> loaded_dictionaries; // which dictionaries have we loaded from a file to memory?
-  
+
   bool multilabel_prediction;
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress progress-printing of updates?
@@ -551,7 +551,7 @@ void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool q
 void compile_limits(vector<string> limits, uint32_t* dest, bool quiet);
 int print_tag(std::stringstream& ss, v_array<char> tag);
 void add_options(vw& all, po::options_description& opts);
-inline po::options_description_easy_init new_options(vw& all, std::string name = "\0") 
+inline po::options_description_easy_init new_options(vw& all, std::string name = "\0")
 {
   all.new_opts = new po::options_description(name);
   return all.new_opts->add_options();
@@ -564,7 +564,7 @@ template <class T> bool missing_option(vw& all, const char* name, const char* de
   return no_new_options(all);
 }
 template <class T, bool keep> bool missing_option(vw& all, const char* name,
-						  const char* description)
+    const char* description)
 {
   if (missing_option<T>(all, name, description))
     return true;

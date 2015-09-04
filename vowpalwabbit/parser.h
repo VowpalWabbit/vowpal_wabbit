@@ -23,14 +23,14 @@ struct parser {
   hash_func_t hasher;
   bool resettable; //Whether or not the input can be reset.
   io_buf* output; //Where to output the cache.
-  bool write_cache; 
+  bool write_cache;
   bool sort_features;
   bool sorted_cache;
 
   size_t ring_size;
   uint64_t begin_parsed_examples; // The index of the beginning parsed example.
   uint64_t end_parsed_examples; // The index of the fully parsed example.
-  uint64_t local_example_number; 
+  uint64_t local_example_number;
   uint32_t in_pass_counter;
   example* examples;
   uint64_t used_index;
@@ -40,7 +40,7 @@ struct parser {
   CV example_unused;
   MUTEX output_lock;
   CV output_done;
-  
+
   bool done;
   v_array<size_t> gram_mask;
 
