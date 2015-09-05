@@ -15,7 +15,7 @@ namespace VW.Serializer.Interfaces
     /// A sparse namespace.
     /// </summary>
     [ContractClass(typeof(INamespaceSparseContract))]
-    public interface INamespaceSparse : INamespace
+    public interface INamespaceSparse // : IMetaNamespace
     {
         /// <summary>
         /// The features of the namespace.

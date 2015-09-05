@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -29,54 +30,191 @@ namespace VW.Serializer
     /// <typeparam name="TVisitor">The visitor to be used for serialization.</typeparam>
     /// <typeparam name="TExampleResult">The resulting serialization type.</typeparam>
     /// <returns>A serializer for the given user example type.</returns>
-    internal sealed class VowpalWabbitSerializerCompiler<TExample, TVisitor, TExampleResult>
+    internal sealed class VowpalWabbitSerializerCompiler<TExample, TExampleResult>
     {
+        internal class FeatureExpressionInternal
+        {
+            internal FeatureExpression Source;
+
+            internal readonly List<ParameterExpression> Additional = new List<ParameterExpression>();
+
+            internal MethodInfo FeaturizeMethod;
+
+            internal Expression<Action> Visit; 
+        }
+
         private static readonly string SerializeMethodName = "Serialize";
 
         private static readonly ConstructorInfo ArgumentNullExceptionConstructorInfo = (ConstructorInfo)ReflectionHelper.GetInfo((ArgumentNullException t) => new ArgumentNullException(""));
 
-        private readonly List<FeatureExpression> allFeatures;
+        private readonly FeatureExpressionInternal[] allFeatures;
         private readonly List<Type> featurizerTypes;
         private readonly List<Expression> body;
+        private readonly List<Expression> perExampleBody;
         private readonly List<ParameterExpression> variables;
         private readonly List<ParameterExpression> namespaceVariables;
         
         private ParameterExpression valueParameter;
         private ParameterExpression labelParameter;
         private ParameterExpression vwParameter;
-        private ParameterExpression mainVisitorParameter;
-        private List<ParameterExpression> featurizers;
+        //private ParameterExpression mainVisitorParameter;
+        private readonly List<ParameterExpression> featurizers;
+        private readonly List<ParameterExpression> metaFeatures;
 
         internal VowpalWabbitSerializerCompiler(List<FeatureExpression> allFeatures, List<Type> featurizerTypes)
         {
-            this.allFeatures = allFeatures;
-            this.featurizerTypes = featurizerTypes ?? new List<Type>(0);
+            if (allFeatures == null || allFeatures.Count == 0)
+                throw new ArgumentException("allFeatures");
 
-            var overrideFeaturizerTypes = this.allFeatures
-                .Where(f => f.OverrideSerializeMethod != null)
-                .Select(f => f.OverrideSerializeMethod.DeclaringType);
+            if (featurizerTypes == null || featurizerTypes.Count == 0)
+                throw new ArgumentException("featurizerTypes");
 
-            this.featurizerTypes = this.featurizerTypes.Union(overrideFeaturizerTypes).Distinct().ToList();
+            Contract.EndContractBlock();
+
+            this.allFeatures = allFeatures.Select(f => new FeatureExpressionInternal { Source = f }).ToArray();
+            this.featurizerTypes = this.featurizerTypes;
+
+            var overrideFeaturizerTypes = allFeatures
+                .Select(f => f.OverrideSerializeMethod)
+                .Where(o => o != null)
+                .Select(o => o.DeclaringType);
 
             this.body = new List<Expression>();
+            this.perExampleBody = new List<Expression>();
             this.variables = new List<ParameterExpression>();
             this.namespaceVariables = new List<ParameterExpression>();
             this.featurizers = new List<ParameterExpression>();
+            this.metaFeatures = new List<ParameterExpression>();
 
-            this.CreateParameters();
             this.CreateVisitor();
+            // TODO: override featurizers
+            this.ResolveFeatureBindings();
+            this.CreateParameters();
+
+            this.CreateNamespaces();
             this.CreateFeatures();
+
+            this.CreateFeatureVisits();
+
             this.CreateLambda();
+            this.CreateMetaLambda();
             this.Compile();
         }
 
-        internal Expression<Func<VowpalWabbit, TExample, ILabel, TExampleResult>> ResultExpression
+        private void CreateFeatureVisits()
+        {
+            foreach (var feature in this.allFeatures)
+            {
+                // CODE () => visitor.Visit(vw, namespace, feature, value);
+                // TODO: check what parameters this item actually wants
+
+                feature.Visit = Expression.Lambda<Action>(
+                    // vw VowpalWabbit
+                    // Namespace
+                    // additionalparameters
+                    // 
+                    )
+            }
+        }
+
+        private void ResolveFeatureBindings()
+        {
+            foreach (var feature in this.allFeatures)
+            {
+                feature.FeaturizeMethod = feature.Source.FindMethod(this.featurizerTypes);
+                
+                if (feature.FeaturizeMethod == null)
+                {
+                    // TODO: implement ToString
+                    throw new ArgumentException("Unable to find featurize method for " + feature);
+                }
+            }
+
+        }
+
+        private void CreateNamespaces()
+        {
+            var featuresByNamespace = this.allFeatures.GroupBy(f => new { f.Source.Namespace, f.Source.FeatureGroup, f.Source.IsDense }, f => f);
+            foreach (var ns in featuresByNamespace)
+            {
+
+                // each feature can have 2 additional parameters (namespace + feature)
+                // Visit(VowpalWabbit, CustomNamespace, CustomFeature)
+
+                // create default namespace object
+                var namespaceVariable = Expression.Variable(namespaceType);
+                this.namespaceVariables.Add(namespaceVariable);
+
+                var bindings = CreateNamespaceAndFeatureGroupBinding(feature.Namespace, feature.FeatureGroup);
+                this.body.Add(Expression.Assign(namespaceVariable, Expression.MemberInit(Expression.New(typeof(Namespace)), bindings)));
+
+                // find all parameters types that have a ctor(Namespace ns)
+                var customNamespaceTypes = ns.SelectMany(f => f.FeaturizeMethod
+                                                        .GetParameters()
+                                                        .Where(p => typeof(ICustomNamespace).IsAssignableFrom(p.ParameterType)))
+                                             .Distinct();
+
+                var customNamespaceVariables = new List<ParameterExpression>();
+                foreach (var customNamespaceType in customNamespaceTypes)
+                {
+                    var customNamespaceVariable = Expression.Variable(customNamespaceType);
+                    customNamespaceVariables.Add(customNamespaceVariable);
+
+                    // CODE var ns = new CustomNamespaceType();
+                    this.body.Add(Expression.Assign(customNamespaceVariable, Expression.New(customNamespaceType)));
+
+                    // CODE ns.Initialize(vw, nsPlain)
+                    this.body.Add(Expression.Call(customNamespaceVariable, 
+                        ReflectionHelper.GetInfo((ICustomNamespace ns) => ns.Initialize(null, null)), 
+                        this.vwParameter, 
+                        namespaceVariable));
+                }
+
+                this.namespaceVariables.AddRange(customNamespaceVariables);
+
+                foreach (var feature in ns)
+	            {
+                    feature.Additional.Add(namespaceVariable);
+                    // find custom namespace variables that match the type
+                    feature.Additional.AddRange(customNamespaceVariables.Where(c => feature.FeaturizeMethod.GetParameters().FirstOrDefault(pi => pi.ParameterType == c)));
+	            }
+            }
+        }
+
+        //if (ns.Key.IsDense)
+                //{
+                //    // Dense namespace
+                //    if (features.Count != 1)
+                //    {
+                //        throw new NotSupportedException("Only a single dense vector is supported per namespace");
+                //    }
+
+                //    var feature = features.First();
+
+                // var namespaceType = typeof(NamespaceDense<>).MakeGenericType(feature.DenseFeatureValueElementType);
+
+                // bindings.Add(Expression.Bind(namespaceType.GetProperty("DenseFeature"), feature.CreateFeatureExpression(this.valueParameter)));
+
+                    // CODE namespace = new Namespace { ... };
+                    //body.Add(Log());
+                //}
+                //else
+                //{
+                //    CreateSparseFeaturesVisits(ns.Key.Namespace, ns.Key.FeatureGroup, features);
+                //}
+
+        private void CreateMetaLambda()
+        {
+            // CODE: return (VowpalWabbit vw) => func(...);
+        }
+
+        internal Expression<Func<VowpalWabbit, Func<TExample, ILabel, TExampleResult>>> ResultExpression
         {
             get;
             private set;
         }
 
-        internal Func<VowpalWabbit, TExample, ILabel, TExampleResult> Result
+        internal Func<VowpalWabbit, Func<TExample, ILabel, TExampleResult>> Result
         {
             get;
             private set;
@@ -126,8 +264,8 @@ namespace VW.Serializer
             this.valueParameter = Expression.Parameter(typeof(TExample), "value");
             this.labelParameter = Expression.Parameter(typeof(ILabel), "label");
             this.vwParameter = Expression.Parameter(typeof(VowpalWabbit), "vw");
-            this.mainVisitorParameter = Expression.Variable(typeof(TVisitor), "visitor");
-            this.variables.Add(this.mainVisitorParameter);
+            //this.mainVisitorParameter = Expression.Variable(typeof(TVisitor), "visitor");
+            //this.variables.Add(this.mainVisitorParameter);
 
             if (this.featurizerTypes != null)
             {
@@ -175,6 +313,39 @@ namespace VW.Serializer
 
         private void CreateFeatures()
         {
+            foreach (var feature in this.allFeatures)
+            {
+                var featureVariable = Expression.Variable(feature.Source.VariableName);
+                this.variables.Add(featureVariable);
+                feature.Additional.Add(featureVariable);    
+
+                // CODE: var featurePlain = new Feature { ... };
+                this.body.Add(Expression.Assign(featureVariable, 
+                        Expression.MemberInit(
+                                    Expression.New(Feature),
+                                    Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Name), Expression.Constant(feature.Source.Name, typeof(string))),
+                                    Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Enumerize), Expression.Constant(feature.Source.Enumerize)),
+                                    Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.AddAnchor), Expression.Constant(feature.Source.AddAnchor)),
+                                    Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Namespace), Expression.Constant(feature.Source.Namespace, typeof(string))),
+                                    Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Source.FeatureGroup),
+                                        this.FeatureGroup == null ? (Expression)Expression.Constant(null, typeof(char?)) :
+                                        Expression.New((ConstructorInfo)ReflectionHelper.GetInfo((char v) => new char?(v)), Expression.Constant((char)feature.Source.FeatureGroup))))));
+                
+                var customFeatureTypes = feature.FeaturizeMethod.GetParameters().Where(pi => typeof(ICustomFeature).IsAssignableFrom(pi.ParameterType));
+                foreach (var customFeatureType in customFeatureTypes)
+                {
+                    var customFeatureVariable = Expression.Variable(customFeatureType);
+                    this.variables.Add(customFeatureVariable);
+                    feature.Additional.Add(customFeatureVariable);
+
+                    // CODE var customFeature = new CustomFeatureType();
+                    this.body.Add(Expression.Assign(customFeatureVariable, Expression.New(customFeatureType)));
+                    // CODE customFeature.Initialize(vw, featurePlain);
+                    this.body.Add(Expression.Call(customFeatureVariable,
+                                    ReflectionHelper.GetInfo((ICustomFeature f) => f.Initialize(null, null)), this.vwParameter, featureVariable));
+                }
+            }
+
             //// CODE if (value == null) throw new ArgumentNullException("value");
             //body.Add(Log());
             //body.Add(Expression.IfThen(
@@ -187,20 +358,20 @@ namespace VW.Serializer
             //        Expression.Equal(visitorParameter, Expression.Constant(null)),
             //        Expression.Throw(Expression.New(ArgumentNullExceptionConstructorInfo, Expression.Constant("visitor")))));
 
-            var featuresByNamespace = allFeatures.GroupBy(f => new { f.Namespace, f.FeatureGroup, f.IsDense }, f => f);
-            foreach (var ns in featuresByNamespace)
-            {
-                var features = ns.OrderBy(f => f.Order).ToList();
+            //var featuresByNamespace = allFeatures.GroupBy(f => new { f.Namespace, f.FeatureGroup, f.IsDense }, f => f);
+            //foreach (var ns in featuresByNamespace)
+            //{
+            //    var features = ns.OrderBy(f => f.Order).ToList();
 
-                if (ns.Key.IsDense)
-                {
-                    CreateDenseFeatureVisits(features);
-                }
-                else
-                {
-                    CreateSparseFeaturesVisits(ns.Key.Namespace, ns.Key.FeatureGroup, features);
-                }
-            }
+            //    if (ns.Key.IsDense)
+            //    {
+            //        CreateDenseFeatureVisits(features);
+            //    }
+            //    else
+            //    {
+            //        CreateSparseFeaturesVisits(ns.Key.Namespace, ns.Key.FeatureGroup, features);
+            //    }
+            //}
         }
 
         private void CreateLambda()
@@ -247,27 +418,7 @@ namespace VW.Serializer
 
         private void CreateDenseFeatureVisits(List<FeatureExpression> features)
         {
-            // Dense namespace
-            if (features.Count != 1)
-            {
-                throw new NotSupportedException("Only a single dense vector is supported per namespace");
-            }
-
-            var feature = features.First();
-
-            var namespaceType = typeof(NamespaceDense<>).MakeGenericType(feature.DenseFeatureValueElementType);
-
-            var bindings = CreateNamespaceAndFeatureGroupBinding(feature.Namespace, feature.FeatureGroup);
-            bindings.Add(Expression.Bind(namespaceType.GetProperty("DenseFeature"), feature.CreateFeatureExpression(valueParameter)));
-
-            var namespaceDense = Expression.MemberInit(Expression.New(namespaceType), bindings);
-
-            var namespaceVariable = Expression.Variable(namespaceType);
-            namespaceVariables.Add(namespaceVariable);
-
-            // CODE namespace = new Namespace<float> { ... };
-            //body.Add(Log());
-            this.body.Add(Expression.Assign(namespaceVariable, namespaceDense));
+            // TODO: INSERT ns lookup variable
 
             // find the first featurizer that supports this feature type
             foreach (var featurizer in this.featurizers)
@@ -316,7 +467,7 @@ namespace VW.Serializer
 
                 // CODE feature = new Feature<float> { ... };
                 //body.Add(Log());
-                this.body.Add(Expression.Assign(featureVariable, feature.CreateFeatureExpression(valueParameter)));
+                this.body.Add(Expression.Assign(featureVariable, feature.CreateFeatureExpression(this.valueParameter)));
             }
 
             // features belong to the same namespace

@@ -58,6 +58,14 @@ namespace VW.Serializer.Visitors
             }
         }
 
+        public void Visit(IFeature<string> feature)
+        {
+            Contract.Requires(feature != null);
+            
+            // TODO: either replace spaces, throw a warning or ignore, quoting???
+            this.builder.Append(' ').Append(feature.Value);
+        }
+
         public void Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature)
         {
             Contract.Requires(feature != null);

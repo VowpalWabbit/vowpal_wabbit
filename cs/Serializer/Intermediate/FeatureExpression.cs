@@ -7,6 +7,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -34,8 +35,9 @@ namespace VW.Serializer.Intermediate
             if (featureType == null)
                 throw new ArgumentNullException("featureType");
 
-            if (name == null)
-                throw new ArgumentNullException("name");
+            // actually it's optional for custom types
+            //if (string.IsNullOrEmpty(name))
+            //    throw new ArgumentNullException("name");
 
             if (valueExpressionFactory == null)
                 throw new ArgumentNullException("valueExpressionFactory");
@@ -94,21 +96,43 @@ namespace VW.Serializer.Intermediate
 
         public int Order { get; private set; }
 
-        internal MemberInitExpression CreateFeatureExpression(Expression valueExpression)
+        internal MethodInfo FindMethod(IEnumerable<Type> visitors)
         {
+            if (this.OverrideSerializeMethod != null)
+            {
+                return this.OverrideSerializeMethod;
+            }
 
-            // CODE new Feature<T> { Namespace = ..., ... } 
-            return Expression.MemberInit(
-                    Expression.New(IntermediateFeatureType),
-                    Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Name), Expression.Constant(this.Name)),
-                    Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Enumerize), Expression.Constant(this.Enumerize)),
-                    Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.AddAnchor), Expression.Constant(this.AddAnchor)),
-                    Expression.Bind(IntermediateFeatureType.GetProperty("Value"), this.ValueExpressionFactory(valueExpression)),
-                    Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Namespace), Expression.Constant(this.Namespace, typeof(string))),
-                    Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.FeatureGroup),
-                        this.FeatureGroup == null ? (Expression)Expression.Constant(null, typeof(char?)) :
-                        Expression.New((ConstructorInfo)ReflectionHelper.GetInfo((char v) => new char?(v)), Expression.Constant((char)this.FeatureGroup)))
-                    );
+            foreach (var visitor in visitors)
+            {
+                // find visitor.Visit(ValueType, ...);
+                var method = ReflectionHelper.FindMethod(visitor, Enumerize ? "VisitEnumerize" : "Visit", this.FeatureType);
+                
+                if (method != null)
+                {
+                    return method;
+                }
+            }
+
+            return null;
         }
+
+        //internal MemberInitExpression CreateFeatureExpression(Expression valueExpression)
+        //{
+        //    var e = this.ValueExpressionFactory(valueExpression);
+
+        //    // CODE new Feature<T> { Namespace = ..., ... } 
+        //    return Expression.MemberInit(
+        //            Expression.New(IntermediateFeatureType),
+        //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.Name), Expression.Constant(this.Name, typeof(string))),
+        //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.Enumerize), Expression.Constant(this.Enumerize)),
+        //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.AddAnchor), Expression.Constant(this.AddAnchor)),
+        //            //Expression.Bind(IntermediateFeatureType.GetProperty("Value"), e),
+        //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.Namespace), Expression.Constant(this.Namespace, typeof(string))),
+        //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.FeatureGroup),
+        //                this.FeatureGroup == null ? (Expression)Expression.Constant(null, typeof(char?)) :
+        //                Expression.New((ConstructorInfo)ReflectionHelper.GetInfo((char v) => new char?(v)), Expression.Constant((char)this.FeatureGroup)))
+        //            );
+        //}
     }
 }

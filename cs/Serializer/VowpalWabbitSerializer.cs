@@ -52,6 +52,13 @@ namespace VW.Serializer
         private readonly Dictionary<VowpalWabbitExample, CacheEntry> reverseLookup;
 #endif
 
+        public VowpalWabbitSerializerForVWInstance CreateSerializer(VowpalWabbit vw)
+        {
+            // TODO: run 2nd lambda that creates the instance that holds all the meta data once (essentially doing all the hash once)
+            // TODO: create expression of Func<VW, Func<TExample, ILabel, VowpalWabbitExample>>
+            // the first func is the closure for static method data!!! a bit sick already. 
+        }
+
         internal VowpalWabbitSerializer(Func<VowpalWabbit, TExample, ILabel, VowpalWabbitExample> serializer, Expression serializerExpression, VowpalWabbitSettings settings)
         {
             if (serializer == null)

@@ -16,7 +16,7 @@ namespace VW.Serializer.Interfaces
     /// A visitable namespace.
     /// </summary>
     [ContractClass(typeof(IVisitableNamespaceContract))]
-    public interface IVisitableNamespace : INamespace
+    public interface IVisitableNamespace // : IMetaNamespace
     {
         /// <summary>
         /// Dispatch to the best matching overload of Visit() for this namespace.

@@ -14,9 +14,46 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using VW.Interfaces;
 using VW.Serializer.Interfaces;
+using VW.Serializer.Intermediate;
 
 namespace VW.Serializer.Visitors
 {
+    public sealed class NativeMetaFeature 
+    {
+        private readonly uint namespaceHash;
+
+        private readonly uint featureHash;
+
+        public NativeMetaFeature(VowpalWabbit vw, MetaFeature feature)
+        {
+            this.namespaceHash = feature.Name == null ?
+                vw.HashSpace(feature.FeatureGroup.ToString()) :
+                vw.HashSpace(feature.FeatureGroup + feature.Name);
+
+            if (feature.Name != null)
+            {
+                var name = feature.Name;
+                
+                if (feature.Enumerize)
+                    name += Convert.ToString(feature.Value);
+
+                this.featureHash = vw.HashFeature(feature.Name, this.namespaceHash)
+            }
+
+            // TODO: think on when to initialize the Meta Data, since with every serialize call the vw instance can potentially change!
+        }
+
+        public uint FeatureHash
+        {
+            get { return this.featureHash; }
+        }
+
+        public uint NamespaceHash
+        {
+            get { return this.namespaceHash; }
+        }
+    }
+
     /// <summary>
     /// Front-end to serialize data into Vowpal Wabbit native C++ structures.
     /// </summary>

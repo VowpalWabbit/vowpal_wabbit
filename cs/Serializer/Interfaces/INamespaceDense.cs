@@ -16,7 +16,7 @@ namespace VW.Serializer.Interfaces
     /// </summary>
     /// <typeparam name="T">The element type of the dense features.</typeparam>
     [ContractClass(typeof(INamespaceDenseContract<>))]
-    public interface INamespaceDense<out T> : INamespace
+    public interface INamespaceDense<out T> // : IMetaNamespace
     {
         /// <summary>
         /// The list of features.

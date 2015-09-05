@@ -113,6 +113,8 @@
     <Compile Include="Serializer\Contracts\IVisitableNamespaceContract.cs" />
     <Compile Include="Serializer\Inspectors\AnnotationInspector.cs" />
     <Compile Include="Serializer\Inspectors\InspectionHelper.cs" />
+    <Compile Include="Serializer\Interfaces\ICustomFeature.cs" />
+    <Compile Include="Serializer\Interfaces\ICustomNamespace.cs" />
     <Compile Include="Serializer\Interfaces\IFeature.cs" />
     <Compile Include="Interfaces\ILabel.cs" />
     <Compile Include="Serializer\Interfaces\INamespace.cs" />

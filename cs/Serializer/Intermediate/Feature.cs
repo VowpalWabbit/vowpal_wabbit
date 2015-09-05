@@ -14,7 +14,7 @@ namespace VW.Serializer.Intermediate
     /// <summary>
     /// The intermediate feature representation.
     /// </summary>
-    public class Feature : IFeature
+    public sealed class Feature : IFeature
     {
         /// <summary>
         /// The targeted namespace.
@@ -47,20 +47,20 @@ namespace VW.Serializer.Intermediate
         public bool AddAnchor { get; set; }
     }
 
-    /// <summary>
-    /// The typed representation of the feature.
-    /// </summary>
-    /// <typeparam name="T">Type of feature value.</typeparam>
-    public sealed class Feature<T> : Feature, IFeature<T>, IVisitableFeature
-    {
-        /// <summary>
-        /// The actual value
-        /// </summary>
-        public T Value { get; set; }
+    ///// <summary>
+    ///// The typed representation of the feature.
+    ///// </summary>
+    ///// <typeparam name="T">Type of feature value.</typeparam>
+    //public sealed class Feature<T> : IFeature<T>, IVisitableFeature // Feature, 
+    //{
+    //    /// <summary>
+    //    /// The actual value
+    //    /// </summary>
+    //    public T Value { get; set; }
 
-        /// <summary>
-        /// Compiled func to enable automatic double dispatch.
-        /// </summary>
-        public Action Visit { get; set; }
-    }
+    //    /// <summary>
+    //    /// Compiled func to enable automatic double dispatch.
+    //    /// </summary>
+    //    public Action Visit { get; set; }
+    //}
 }

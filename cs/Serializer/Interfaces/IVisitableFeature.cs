@@ -16,7 +16,7 @@ namespace VW.Serializer.Interfaces
     /// A visitable feature.
     /// </summary>
     [ContractClass(typeof(IVisitableFeatureContract))]
-    public interface IVisitableFeature : IFeature
+    public interface IVisitableFeature // : IMetaFeature
     {
         /// <summary>
         /// Dispatch to the best matching overload of Visit() for this feature.

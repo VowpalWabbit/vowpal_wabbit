@@ -57,13 +57,24 @@ namespace VW.Serializer
             }
             else
             {
-                wrappedSerializerFunc = (vw, example, label) => new VowpalWabbitDebugExample(serializer.Result(vw, example, label), stringSerializer.Result(vw, example, label));
+                if (stringSerializer != null)
+                {
+                    wrappedSerializerFunc = (vw, example, label) => new VowpalWabbitDebugExample(serializer.Result(vw, example, label), stringSerializer.Result(vw, example, label));
+                }
+                else
+                {
+                    wrappedSerializerFunc = (vw, example, label) => new VowpalWabbitDebugExample(serializer.Result(vw, example, label), string.Empty);
+                }
             }
 
-            return new VowpalWabbitSerializer<TExample>(wrappedSerializerFunc, serializer.ResultExpression, settings)
+            var ret = new VowpalWabbitSerializer<TExample>(wrappedSerializerFunc, serializer.ResultExpression, settings);
+
+            if (stringSerializer != null)
             {
-                StringSerializerExpression = stringSerializer.ResultExpression
-            };
+                ret.StringSerializerExpression = stringSerializer.ResultExpression;
+            }
+
+            return ret;
 #else
             if (serializerFunc == null)
             {

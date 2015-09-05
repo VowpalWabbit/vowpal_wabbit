@@ -78,6 +78,7 @@ namespace cs_unittest
             var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(new VW.VowpalWabbitSettings(), new List<FeatureExpression>
             {
                 new FeatureExpression(typeof(CustomClass), "Feature", 
+                    // TODO: looks a bit awkward for an API. The compiler needs to know what property to access to copy the value into the Feature<T> object
                     valueExpression => Expression.Property(valueExpression, (PropertyInfo)ReflectionHelper.GetInfo((MyContext m) => m.Feature)),
                     overrideSerializeMethod: (MethodInfo)ReflectionHelper.GetInfo((CustomFeaturizer c) => c.Visit(null)))
             });
