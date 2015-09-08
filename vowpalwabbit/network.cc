@@ -39,11 +39,11 @@ int open_socket(const char* host)
   short unsigned int port = 26542;
   hostent* he;
   if (colon != nullptr)
-    {
-      port = atoi(colon+1);
-      string hostname(host,colon-host);
-      he = gethostbyname(hostname.c_str());
-    }
+  {
+    port = atoi(colon+1);
+    string hostname(host,colon-host);
+    he = gethostbyname(hostname.c_str());
+  }
   else
     he = gethostbyname(host);
 
@@ -65,11 +65,11 @@ int open_socket(const char* host)
   char id = '\0';
   if (
 #ifdef _WIN32
-      _write(sd, &id, sizeof(id)) < (int)sizeof(id)
+    _write(sd, &id, sizeof(id)) < (int)sizeof(id)
 #else
-      write(sd, &id, sizeof(id)) < (int)sizeof(id)
+    write(sd, &id, sizeof(id)) < (int)sizeof(id)
 #endif
-      )
+  )
     cerr << "write failed!" << endl;
   return sd;
 }

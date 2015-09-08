@@ -105,7 +105,7 @@ const char* curv_message = "Zero or negative curvature detected.\n"
       "and further decrease in the objective cannot be reliably detected.\n";
 
 void zero_derivative(vw& all)
-{//set derivative to 0.
+{ //set derivative to 0.
   uint32_t length = 1 << all.num_bits;
   size_t stride_shift = all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
@@ -114,7 +114,7 @@ void zero_derivative(vw& all)
 }
 
 void zero_preconditioner(vw& all)
-{//set derivative to 0.
+{ //set derivative to 0.
   uint32_t length = 1 << all.num_bits;
   size_t stride_shift = all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
@@ -201,7 +201,7 @@ float dot_with_direction(vw& all, example& ec)
 }
 
 double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer)
-{//compute direction magnitude
+{ //compute direction magnitude
   double ret = 0.;
   
   if (regularizer == 0.)
@@ -221,7 +221,7 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer)
 }
 
 float direction_magnitude(vw& all)
-{//compute direction magnitude
+{ //compute direction magnitude
   double ret = 0.;
   uint32_t length = 1 << all.num_bits;
   size_t stride_shift = all.reg.stride_shift;
@@ -409,7 +409,7 @@ double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous
 
 
 double add_regularization(vw& all, bfgs& b, float regularization)
-{//compute the derivative difference
+{ //compute the derivative difference
   double ret = 0.;
   uint32_t length = 1 << all.num_bits;
   size_t stride_shift = all.reg.stride_shift;
@@ -562,7 +562,8 @@ int process_pass(vw& all, bfgs& b) {
 	if (!all.quiet)
 	  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, b.step_size);
 	b.predictions.erase();
-	update_weight(all, b.step_size);		     		           }
+      update_weight(all, b.step_size);
+    }
     }
     else
   /********************************************************************/
@@ -577,9 +578,9 @@ int process_pass(vw& all, bfgs& b) {
 		  }
 		  if (all.l2_lambda > 0.)
 		    b.loss_sum += add_regularization(all, b, all.l2_lambda);
-		  if (!all.quiet){
-                    if(!all.holdout_set_off && b.current_pass >= 1){
-                      if(all.sd->holdout_sum_loss_since_last_pass == 0. && all.sd->weighted_holdout_examples_since_last_pass == 0.){
+      if (!all.quiet) {
+        if(!all.holdout_set_off && b.current_pass >= 1) {
+          if(all.sd->holdout_sum_loss_since_last_pass == 0. && all.sd->weighted_holdout_examples_since_last_pass == 0.) {
                         fprintf(stderr, "%2lu ", (long unsigned int)b.current_pass+1);
                         fprintf(stderr, "h unknown    ");
                       }                      
@@ -606,7 +607,7 @@ int process_pass(vw& all, bfgs& b) {
   /* B1) LINE SEARCH FAILED *******************************************/
   /********************************************************************/ 
 		  else if (b.backstep_on && (wolfe1<b.wolfe1_bound || b.loss_sum > b.previous_loss_sum))
-		    {// curvature violated, or we stepped too far last time: step back
+      { // curvature violated, or we stepped too far last time: step back
 		      ftime(&b.t_end_global);
 		      b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm)); 
 		      float ratio = (b.step_size==0.f) ? 0.f : (float)new_step/(float)b.step_size;
@@ -802,7 +803,7 @@ void end_pass(bfgs& b)
 	     set_done(*all);
 	   }
            
-       }else{//reaching convergence in the previous pass
+    } else { //reaching convergence in the previous pass
         if(b.output_regularizer) 
            preconditioner_to_regularizer(*all, b, (*all).l2_lambda);
         b.current_pass ++;

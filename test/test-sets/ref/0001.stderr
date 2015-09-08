@@ -1,7 +1,7 @@
 Generating 3-grams for all namespaces.
 Generating 1-skips for all namespaces.
 only testing
-predictions = 001.predict.tmp
+predictions = 0001.predict
 Num weight bits = 18
 learning rate = 10
 initial_t = 1

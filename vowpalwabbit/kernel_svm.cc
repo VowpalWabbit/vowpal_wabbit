@@ -264,7 +264,7 @@ struct svm_params {
     if(read)
       model->support_vec.resize(model->num_support);
 
-    for(uint32_t i = 0;i < model->num_support;i++) {
+  for(uint32_t i = 0; i < model->num_support; i++) {
       if(read) {
 	save_load_flat_example(model_file, read, fec);
 	svm_example* tmp= &calloc_or_die<svm_example>();
@@ -371,7 +371,7 @@ struct svm_params {
 
   float dense_dot(float* v1, v_array<float> v2, size_t n) {
     float dot_prod = 0.;
-    for(size_t i = 0;i < n;i++)
+  for(size_t i = 0; i < n; i++)
       dot_prod += v1[i]*v2[i];
     return dot_prod;
   }
@@ -379,7 +379,7 @@ struct svm_params {
 
   void predict (svm_params& params, svm_example** ec_arr, float* scores, size_t n) { 
     svm_model* model = params.model;
-    for(size_t i = 0;i < n; i++) {
+  for(size_t i = 0; i < n; i++) {
       ec_arr[i]->compute_kernels(params);
       scores[i] = dense_dot(ec_arr[i]->krow.begin, model->alpha, model->num_support)/params.lambda;
     }
@@ -404,7 +404,7 @@ struct svm_params {
     size_t max_pos = 0;
     //cerr<<"Subopt ";
     double max_val = 0;
-    for(size_t i = 0;i < model->num_support;i++) {
+  for(size_t i = 0; i < model->num_support; i++) {
       label_data& ld = model->support_vec[i]->ex.l.simple;
       double tmp = model->alpha[i]*ld.label;                  
       
@@ -506,7 +506,7 @@ struct svm_params {
       ai = alpha_old + diff;
     }
     
-    for(size_t i = 0;i < model->num_support; i++) {
+  for(size_t i = 0; i < model->num_support; i++) {
       label_data& ldi = model->support_vec[i]->ex.l.simple;
       model->delta[i] += diff*inprods[i]*ldi.label/params.lambda;
     }
@@ -538,7 +538,7 @@ struct svm_params {
     char* queries;
     flat_example* fec;
 
-    for(size_t i = 0;i < params.pool_pos;i++) {
+  for(size_t i = 0; i < params.pool_pos; i++) {
       if(!train_pool[i])
 	continue;
       
@@ -554,8 +554,8 @@ struct svm_params {
     all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
 
     size_t prev_sum = 0, total_sum = 0;
-    for(size_t i = 0;i < all.all_reduce->total;i++) {
-      if(i <= (all.all_reduce->node - 1))
+  for(size_t i = 0; i < all.total; i++) {
+    if(i <= (all.node - 1))
 	prev_sum += sizes[i];
       total_sum += sizes[i];
     }
@@ -574,7 +574,7 @@ struct svm_params {
       size_t num_read = 0;
       params.pool_pos = 0;
       
-      for(size_t i = 0;i < params.pool_size; i++) {	
+    for(size_t i = 0; i < params.pool_size; i++) {
 	if(!save_load_flat_example(*b, true, fec)) {
 	  params.pool[i] = &calloc_or_die<svm_example>();
 	  params.pool[i]->init_svm_example(fec);
@@ -610,7 +610,7 @@ struct svm_params {
     //cerr<<"In train "<<params.all->training<<endl;
     
     bool* train_pool = calloc_or_die<bool>(params.pool_size);
-    for(size_t i = 0;i < params.pool_size;i++)
+  for(size_t i = 0; i < params.pool_size; i++)
       train_pool[i] = false;
     
     float* scores = calloc_or_die<float>(params.pool_pos);
@@ -621,7 +621,7 @@ struct svm_params {
     if(params.active) {           
       if(params.active_pool_greedy) { 
 	multimap<double, size_t> scoremap;
-	for(size_t i = 0;i < params.pool_pos; i++)
+      for(size_t i = 0; i < params.pool_pos; i++)
 	  scoremap.insert(pair<const double, const size_t>(fabs(scores[i]),i));
 
 	multimap<double, size_t>::iterator iter = scoremap.begin();
@@ -631,7 +631,7 @@ struct svm_params {
 	//cerr<<endl;
 	iter = scoremap.begin();
 	
-	for(size_t train_size = 1;iter != scoremap.end() && train_size <= params.subsample;train_size++) {
+      for(size_t train_size = 1; iter != scoremap.end() && train_size <= params.subsample; train_size++) {
 	  //cerr<<train_size<<" "<<iter->second<<" "<<iter->first<<endl;
 	  train_pool[iter->second] = 1;
 	  iter++;	  
@@ -639,7 +639,7 @@ struct svm_params {
       }
       else {
 
-	for(size_t i = 0;i < params.pool_pos;i++) {
+      for(size_t i = 0; i < params.pool_pos; i++) {
 	  float queryp = 2.0f/(1.0f + expf((float)(params.active_c*fabs(scores[i]))*(float)pow(params.pool[i]->ex.example_counter,0.5f)));
 	  if(rand() < queryp) {
 	    svm_example* fec = params.pool[i];
@@ -653,7 +653,7 @@ struct svm_params {
 
     
     if(params.para_active) {
-      for(size_t i = 0;i < params.pool_pos;i++)
+    for(size_t i = 0; i < params.pool_pos; i++)
 	if(!train_pool[i])
 	  delete params.pool[i];
       sync_queries(*(params.all), params, train_pool);
@@ -663,7 +663,7 @@ struct svm_params {
       
       svm_model* model = params.model;
       
-      for(size_t i = 0;i < params.pool_pos;i++) {
+    for(size_t i = 0; i < params.pool_pos; i++) {
 	//cerr<<"process: "<<i<<" "<<train_pool[i]<<endl;;
 	int model_pos = -1;
 	if(params.active) {
@@ -683,7 +683,7 @@ struct svm_params {
 	  //cerr<<model_pos<<":alpha = "<<model->alpha[model_pos]<<endl;
 
 	  double* subopt = calloc_or_die<double>(model->num_support);
-	  for(size_t j = 0;j < params.reprocess;j++) {
+        for(size_t j = 0; j < params.reprocess; j++) {
 	    if(model->num_support == 0) break;
 	    //cerr<<"reprocess: ";
 	    int randi = 1;//rand()%2;
@@ -712,7 +712,7 @@ struct svm_params {
 
     }
     else
-      for(size_t i = 0;i < params.pool_pos;i++)
+    for(size_t i = 0; i < params.pool_pos; i++)
 	delete params.pool[i];
 	
     // cerr<<params.model->support_vec[0]->example_counter<<endl;
@@ -756,7 +756,7 @@ struct svm_params {
 
   void free_svm_model(svm_model* model)
   {
-    for(size_t i = 0;i < model->num_support; i++) {
+  for(size_t i = 0; i < model->num_support; i++) {
       model->support_vec[i]->~svm_example();
       free(model->support_vec[i]);
       model->support_vec[i] = 0;

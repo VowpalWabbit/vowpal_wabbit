@@ -28,8 +28,8 @@ export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64;
 $make_base
 mv java/target/vw_jni.lib java/target/vw_jni.Ubuntu.14.amd64.lib"
 
-red_hat_6="yum update -q -y;
-yum install -q -y wget which boost-devel zlib-devel java-1.7.0-openjdk-devel perl;
+early_red_hat="yum update -q -y
+yum install -q -y wget which zlib-devel java-1.7.0-openjdk-devel perl;
 cd /etc/yum.repos.d;
 wget http://people.centos.org/tru/devtools-2/devtools-2.repo;
 yum clean all;
@@ -37,8 +37,20 @@ yum install -q -y devtoolset-2-gcc devtoolset-2-gcc-c++ devtoolset-2-binutils;
 ln -s /opt/rh/devtoolset-2/root/usr/bin/* /usr/local/bin/;
 export JAVA_HOME=/usr/lib/jvm/java-1.7.0-openjdk.x86_64;
 cd /vowpal_wabbit;
+cat Makefile | sed 's/-fPIC/-fpermissive -fPIC/g' > Makefile.permissive;"
+
+red_hat_5="$early_red_hat
+yum install -q -y make epel-release;
+yum install -q -y boost141-devel;
 make clean;
-cat Makefile | sed 's/-fPIC/-fpermissive -fPIC/g' > Makefile.permissive;
+cat Makefile.permissive | sed 's/BOOST_LIBRARY = -L \/usr\/lib/BOOST_LIBRARY = -L \/usr\/lib64\/boost141/g' | sed 's/BOOST_INCLUDE = -I \/usr\/include/BOOST_INCLUDE = -I \/usr\/include\/boost141/g' > Makefile.permissive.boost141;
+make -f Makefile.permissive.boost141;
+rm -f Makefile.permissive Makefile.permissive.boost141;
+mv java/target/vw_jni.lib java/target/vw_jni.Red_Hat.5.amd64.lib"
+
+red_hat_6="$early_red_hat
+yum install -q -y boost-devel;
+make clean;
 make -f Makefile.permissive;
 rm -f Makefile.permissive;
 mv java/target/vw_jni.lib java/target/vw_jni.Red_Hat.6.amd64.lib"
@@ -143,6 +155,14 @@ export DOCKER_TLS_VERIFY=1
 run_docker "ubuntu:12.04" "$ubuntu_12"
 run_docker "32bit/ubuntu:14.04" "$ubuntu_14_32"
 run_docker "ubuntu:14.04" "$ubuntu_14"
+
+# This is VERY IMPORTANT for CentOS 5.  CentOS 5 ships with a Boost version that is too old to be used with VW.  As a result
+# users who wish to run on CentOS 5 MUST upgrade their boost to version 1.41.  That should ideally be done with the following
+# two commands:
+# sudo yum install epel-release
+# sudo yum install boost141-devel
+run_docker "centos:5" "$red_hat_5"
+
 run_docker "centos:6" "$red_hat_6"
 run_docker "centos:7" "$red_hat_7"
 

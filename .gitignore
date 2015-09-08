@@ -94,3 +94,9 @@ VW.files
 VW.includes
 
 /cs/Serializer/Visitors/VowpalWabbitNativeVisitorExt.cs
+# Python package
+build/**
+dist/**
+pyvw.egg-info/**
+python/pyvw.egg-info/**
+

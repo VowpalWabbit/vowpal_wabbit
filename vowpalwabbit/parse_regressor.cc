@@ -39,16 +39,13 @@ void initialize_regressor(vw& all)
   all.reg.weight_vector = calloc_or_die<weight>(length << all.reg.stride_shift);
   if (all.reg.weight_vector == nullptr)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
-  else
-    if (all.initial_weight != 0.)
+  else if (all.initial_weight != 0.)
       for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
 	all.reg.weight_vector[j] = all.initial_weight;      
-    else
-      if (all.random_positive_weights)
+  else if (all.random_positive_weights)
 	for (size_t j = 0; j < length; j++)
 	  all.reg.weight_vector[j << all.reg.stride_shift] = (float)(0.1 * frand48());
-      else      
-	if (all.random_weights)
+  else if (all.random_weights)
 	  for (size_t j = 0; j < length; j++)
 	    all.reg.weight_vector[j << all.reg.stride_shift] = (float)(frand48() - 0.5);
 }
@@ -128,7 +125,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       all.num_bits = local_num_bits;
       
       if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
-      {  // -q, --cubic and --interactions are saved in vw::file_options
+    { // -q, --cubic and --interactions are saved in vw::file_options
           uint32_t pair_len = (uint32_t)all.pairs.size();
             text_len = sprintf_s(buff, buf_size, "%d pairs: ", (int)pair_len);
           bin_text_read_write_fixed(model_file, (char *)&pair_len, sizeof(pair_len),
@@ -371,14 +368,14 @@ void save_predictor(vw& all, string reg_name, size_t current_pass)
 
 void finalize_regressor(vw& all, string reg_name)
 {
-  if (!all.early_terminate){
+  if (!all.early_terminate) {
     if (all.per_feature_regularizer_output.length() > 0)
       dump_regressor(all, all.per_feature_regularizer_output, false);
     else
       dump_regressor(all, reg_name, false);
     if (all.per_feature_regularizer_text.length() > 0)
       dump_regressor(all, all.per_feature_regularizer_text, true);
-    else{
+    else {
       dump_regressor(all, all.text_regressor_name, true);
       all.print_invert = true;
       dump_regressor(all, all.inv_hash_regressor_name, true);
@@ -414,9 +411,9 @@ void parse_mask_regressor_args(vw& all)
   if (vm.count("feature_mask")) {
     size_t length = ((size_t)1) << all.num_bits;  
     string mask_filename = vm["feature_mask"].as<string>();
-    if (vm.count("initial_regressor")){ 
+    if (vm.count("initial_regressor")) {
       vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
-      if(mask_filename == init_filename[0]){//-i and -mask are from same file, just generate mask
+      if(mask_filename == init_filename[0]) { //-i and -mask are from same file, just generate mask
         return;
       }
     }
@@ -439,7 +436,7 @@ void parse_mask_regressor_args(vw& all)
       io_temp.close_file();
 
       // Re-zero the weights, in case weights of initial regressor use different indices
-      for (size_t j = 0; j < length; j++){
+      for (size_t j = 0; j < length; j++) {
         all.reg.weight_vector[j << all.reg.stride_shift] = 0.;
       }
     } else {

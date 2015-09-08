@@ -27,7 +27,7 @@ size_t read_cached_simple_label(shared_data* sd, void* v, io_buf& cache)
   label_data* ld = (label_data*) v;
   char *c;
   size_t total = sizeof(ld->label)+sizeof(ld->weight)+sizeof(ld->initial);
-  if (buf_read(cache, c, total) < total) 
+  if (buf_read(cache, c, total) < total)
     return 0;
   c = bufread_simple_label(sd, ld,c);
 
@@ -92,7 +92,7 @@ void parse_simple_label(parser*, shared_data*, void* v, v_array<substring>& word
     break;
   default:
     cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
-    for(unsigned int i=0; i<words.size(); ++i) 
+    for(unsigned int i=0; i<words.size(); ++i)
       print_substring(words[i]);
     cout << endl;
   }
@@ -100,18 +100,19 @@ void parse_simple_label(parser*, shared_data*, void* v, v_array<substring>& word
 }
 
 label_parser simple_label = {default_simple_label, parse_simple_label,
-				   cache_simple_label, read_cached_simple_label, 
-				   delete_simple_label, get_weight,  
-                                   nullptr,
-				   sizeof(label_data)};
+                             cache_simple_label, read_cached_simple_label,
+                             delete_simple_label, get_weight,
+                             nullptr,
+                             sizeof(label_data)
+                            };
 
 void print_update(vw& all, example& ec)
 {
   if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
-    {
-      all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar, 
-			   ec.num_features, all.progress_add, all.progress_arg);
-    }
+  {
+    all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
+                         ec.num_features, all.progress_add, all.progress_arg);
+  }
 }
 
 void output_and_account_example(vw& all, example& ec)
@@ -125,13 +126,13 @@ void output_and_account_example(vw& all, example& ec)
 
   all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
   for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
-    {
-      int f = (int)all.final_prediction_sink[i];
-      if (all.lda > 0)
-	print_lda_result(all, f,ec.topic_predictions.begin,0.,ec.tag);
-      else
-	all.print(f, ec.pred.scalar, 0, ec.tag);
-    }
+  {
+    int f = (int)all.final_prediction_sink[i];
+    if (all.lda > 0)
+      print_lda_result(all, f,ec.topic_predictions.begin,0.,ec.tag);
+    else
+      all.print(f, ec.pred.scalar, 0, ec.tag);
+  }
 
   print_update(all, ec);
 }
@@ -161,5 +162,5 @@ bool summarize_holdout_set(vw& all, size_t& no_win_counter)
 
   if ((thisLoss != FLT_MAX) || (isfinite(all.sd->holdout_best_loss))) // it's only a loss if we're not infinite when the previous one wasn't infinite
     no_win_counter++;
-  return false;          
-} 
+  return false;
+}
