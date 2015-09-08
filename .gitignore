@@ -93,3 +93,4 @@ VW.creator.user
 VW.files
 VW.includes
 
+/cs/Serializer/Visitors/VowpalWabbitNativeVisitorExt.cs
