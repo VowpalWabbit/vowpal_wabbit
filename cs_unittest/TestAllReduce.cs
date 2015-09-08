@@ -48,9 +48,9 @@ namespace cs_unittest
         {
             var data = Enumerable.Range(1, 500).Select(_ => Generator.GenerateShared(20)).ToList();
 
-            var stringSerializer = VowpalWabbitSerializerFactory.CreateSerializer<CbAdfShared, VowpalWabbitStringVisitor, string>();
-            var stringSerializerAdf = VowpalWabbitSerializerFactory.CreateSerializer<CbAdfAction, VowpalWabbitStringVisitor, string>();
-
+            var stringSerializer = VowpalWabbitSerializerFactory.CreateSerializer<CbAdfShared, VowpalWabbitStringVisitor, string>().Result;
+            var stringSerializerAdf = VowpalWabbitSerializerFactory.CreateSerializer<CbAdfAction, VowpalWabbitStringVisitor, string>().Result;
+             
             var stringData = new List<List<string>>();
 
             VowpalWabbitPerformanceStatistics statsExpected;

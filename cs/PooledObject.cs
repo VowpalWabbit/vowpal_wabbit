@@ -13,14 +13,15 @@ namespace VW
     /// <summary>
     /// A strongly-typed pooled object.
     /// </summary>
-    /// <typeparam name="T">Type of object to pool.</typeparam>
-    public sealed class PooledObject<TContext, TObject> : IDisposable
-        where TContext : IDisposable
+    /// <typeparam name="TSource">The disposable context needed to create objects of <typeparamref name="TObject"/>.</typeparam>
+    /// <typeparam name="TObject">The type of the objects to be created.</typeparam>
+    public sealed class PooledObject<TSource, TObject> : IDisposable
+        where TSource : IDisposable
         where TObject : IDisposable
     {
-        private readonly ObjectPool<TContext, TObject> pool;
+        private readonly ObjectPool<TSource, TObject> pool;
 
-        internal PooledObject(ObjectPool<TContext, TObject> pool, int version, TObject value)
+        internal PooledObject(ObjectPool<TSource, TObject> pool, int version, TObject value)
         {
             this.pool = pool;
             this.Value = value;

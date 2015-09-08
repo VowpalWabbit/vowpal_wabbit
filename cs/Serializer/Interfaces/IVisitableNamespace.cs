@@ -7,13 +7,16 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics.Contracts;
+using VW.Serializer.Contracts;
 
 namespace VW.Serializer.Interfaces
 {
     /// <summary>
     /// A visitable namespace.
     /// </summary>
-    public interface IVisitableNamespace : INamespace
+    [ContractClass(typeof(IVisitableNamespaceContract))]
+    public interface IVisitableNamespace // : IMetaNamespace
     {
         /// <summary>
         /// Dispatch to the best matching overload of Visit() for this namespace.

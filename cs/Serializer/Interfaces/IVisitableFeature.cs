@@ -7,13 +7,16 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics.Contracts;
+using VW.Serializer.Contracts;
 
 namespace VW.Serializer.Interfaces
 {
     /// <summary>
     /// A visitable feature.
     /// </summary>
-    public interface IVisitableFeature : IFeature
+    [ContractClass(typeof(IVisitableFeatureContract))]
+    public interface IVisitableFeature // : IMetaFeature
     {
         /// <summary>
         /// Dispatch to the best matching overload of Visit() for this feature.

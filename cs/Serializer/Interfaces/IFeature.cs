@@ -6,6 +6,11 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.Contracts;
+using VW.Serializer.Contracts;
+
 namespace VW.Serializer.Interfaces
 {
     /// <summary>
@@ -44,15 +49,15 @@ namespace VW.Serializer.Interfaces
         bool AddAnchor { get; }
     }
 
-    /// <summary>
-    /// The typed representation of the feature.
-    /// </summary>
-    /// <typeparam name="T">Type of feature value.</typeparam>
-    public interface IFeature<out T> : IFeature
-    {
-        /// <summary>
-        /// The actual value of the feature.
-        /// </summary>
-        T Value { get; }
-    }
+    ///// <summary>
+    ///// The typed representation of the feature.
+    ///// </summary>
+    ///// <typeparam name="T">Type of feature value.</typeparam>
+    //public interface IFeature<out T> // : IFeature
+    //{
+    //    /// <summary>
+    //    /// The actual value of the feature.
+    //    /// </summary>
+    //    T Value { get; }
+    //}
 }

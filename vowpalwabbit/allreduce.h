@@ -128,6 +128,19 @@ public:
 
 	~AllReduceThreads();
 
+	template <class T, void(*f)(T&, const T&)> inline void all_reduce_column(T** buffers, size_t index)
+	{
+		// Perform transposed AllReduce to help data locallity
+		T& first = buffers[0][index];
+
+		for (size_t i = 1; i < total; i++)
+			f(first, buffers[i][index]);
+
+		// Broadcast back
+		for (size_t i = 1; i < total; i++)
+			buffers[i][index] = first;
+	}
+
 	template <class T, void(*f)(T&, const T&)> void all_reduce(T* buffer, const size_t n)
 	{
 		// register buffer
@@ -143,32 +156,20 @@ public:
 		{
 			if (node < n)
 			{
-				index = node;
-				end = node + 1;
+				all_reduce_column<T, f>(buffers, node);
 			}
-			else
-			{
-				// more threads than bytes --> don't do any work
-				index = end = 0;
 			}
-		}
 		else
 		{
 			index = node * blockSize;
-			end = node == total - 1 ? n : (node + 1) * blockSize;
-		}
+			end = (node + 1) * blockSize;
 
 		for (; index < end; index++)
-		{
-			// Perform transposed AllReduce to help data locallity
-			T& first = buffers[0][index];
+				all_reduce_column<T, f>(buffers, index);
 
-			for (size_t i = 1; i < total; i++)
-				f(first, buffers[i][index]);
-
-			// Broadcast back
-			for (size_t i = 1; i < total; i++)
-				buffers[i][index] = first;
+			// do all-reduce on left over column (n - 1 - node)
+			if (node < n % total)
+				all_reduce_column<T, f>(buffers, n - 1 - node);
 		}
 
 		m_sync->waitForSynchronization();

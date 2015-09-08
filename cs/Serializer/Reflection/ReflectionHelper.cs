@@ -9,29 +9,37 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
 namespace VW.Serializer.Reflection
 {
-    internal static class ReflectionHelper
+    /// <summary>
+    /// Reflection helper to find methods on visitors.
+    /// </summary>
+    public static class ReflectionHelper
     {
         /// <summary>
         /// TODO: replace me with Roslyn once it's released and just generate string code. This way the overload resolution is properly done.
         /// </summary>
         /// <remarks>This is a simple heuristic for overload resolution, not the full thing.</remarks>
-        internal static MethodInfo FindMethod(Type objectType, string name, Type valueType)
+        public static MethodInfo FindMethod(Type objectType, string name, Type valueType)
         {
+            Contract.Ensures(objectType != null);
+            Contract.Ensures(name != null);
+            Contract.Ensures(valueType != null);
+
             // let's find the "best" match:
             // order by 
             //  1. distance (0 = assignable, 1 = using generic) --> ascending
             //  2. # of interfaces implemented. the more the better (the more specific we are) --> descending
             //  3. # of open generics. the less the better (the more specific we are) --> ascending
             var methods = from m in objectType.GetMethods(BindingFlags.Instance | BindingFlags.Public)
-                          where m.Name == name
+                          where m.Name == name && methodPredicate(m)
                           let parameters = m.GetParameters()
-                          where parameters.Length == 1
+                          where parameters.Length >= 1
                           let methodParameter = parameters[0].ParameterType
                           let output = new
                           {
@@ -48,7 +56,7 @@ namespace VW.Serializer.Reflection
             var bestCandidate = methods.FirstOrDefault();
             if (bestCandidate == null)
             {
-                throw new MissingMethodException("Not method found matching: " + valueType);
+                return null;
             }
 
             MethodInfo method = bestCandidate.Method;
