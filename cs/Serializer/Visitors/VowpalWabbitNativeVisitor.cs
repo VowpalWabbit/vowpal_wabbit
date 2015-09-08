@@ -148,7 +148,7 @@ namespace VW.Serializer.Visitors
                 this.vw.HashSpace(namespaceSparse.FeatureGroup.ToString()) :
                 this.vw.HashSpace(namespaceSparse.FeatureGroup + namespaceSparse.Name);
 
-            this.featureGroup = namespaceSparse.FeatureGroup ?? '\0';
+            this.featureGroup = namespaceSparse.FeatureGroup ?? ' ';
 
             this.namespaceBuilder = this.builder.AddNamespace(this.featureGroup);
 

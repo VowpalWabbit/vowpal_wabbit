@@ -85,5 +85,7 @@ namespace VW
 		{
 			IVowpalWabbitExamplePool^ get();
 		}
+
+		String^ Diff(VowpalWabbit^ vw, VowpalWabbitExample^ other, bool sameOrder);
 	};
 }

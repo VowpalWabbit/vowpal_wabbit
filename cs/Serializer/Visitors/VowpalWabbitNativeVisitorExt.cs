@@ -46,13 +46,16 @@ namespace VW.Serializer.Visitors
 			Contract.Requires(namespaceDense != null);
 			Contract.Requires(namespaceDense.DenseFeature != null);
 
-            this.featureGroup = namespaceDense.FeatureGroup ?? '\0';
+            this.featureGroup = namespaceDense.FeatureGroup ?? ' ';
 
             this.namespaceHash = namespaceDense.Name == null ? 
                 this.vw.HashSpace(this.featureGroup.ToString()) :
                 this.vw.HashSpace(this.featureGroup + namespaceDense.Name);
 
             this.namespaceBuilder = this.builder.AddNamespace(this.featureGroup);
+
+			// TODO: check for null, still add Anchor feature
+
             this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
@@ -98,13 +101,16 @@ namespace VW.Serializer.Visitors
 			Contract.Requires(namespaceDense != null);
 			Contract.Requires(namespaceDense.DenseFeature != null);
 
-            this.featureGroup = namespaceDense.FeatureGroup ?? '\0';
+            this.featureGroup = namespaceDense.FeatureGroup ?? ' ';
 
             this.namespaceHash = namespaceDense.Name == null ? 
                 this.vw.HashSpace(this.featureGroup.ToString()) :
                 this.vw.HashSpace(this.featureGroup + namespaceDense.Name);
 
             this.namespaceBuilder = this.builder.AddNamespace(this.featureGroup);
+
+			// TODO: check for null, still add Anchor feature
+
             this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
@@ -150,13 +156,16 @@ namespace VW.Serializer.Visitors
 			Contract.Requires(namespaceDense != null);
 			Contract.Requires(namespaceDense.DenseFeature != null);
 
-            this.featureGroup = namespaceDense.FeatureGroup ?? '\0';
+            this.featureGroup = namespaceDense.FeatureGroup ?? ' ';
 
             this.namespaceHash = namespaceDense.Name == null ? 
                 this.vw.HashSpace(this.featureGroup.ToString()) :
                 this.vw.HashSpace(this.featureGroup + namespaceDense.Name);
 
             this.namespaceBuilder = this.builder.AddNamespace(this.featureGroup);
+
+			// TODO: check for null, still add Anchor feature
+
             this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
@@ -202,13 +211,16 @@ namespace VW.Serializer.Visitors
 			Contract.Requires(namespaceDense != null);
 			Contract.Requires(namespaceDense.DenseFeature != null);
 
-            this.featureGroup = namespaceDense.FeatureGroup ?? '\0';
+            this.featureGroup = namespaceDense.FeatureGroup ?? ' ';
 
             this.namespaceHash = namespaceDense.Name == null ? 
                 this.vw.HashSpace(this.featureGroup.ToString()) :
                 this.vw.HashSpace(this.featureGroup + namespaceDense.Name);
 
             this.namespaceBuilder = this.builder.AddNamespace(this.featureGroup);
+
+			// TODO: check for null, still add Anchor feature
+
             this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
@@ -254,13 +266,16 @@ namespace VW.Serializer.Visitors
 			Contract.Requires(namespaceDense != null);
 			Contract.Requires(namespaceDense.DenseFeature != null);
 
-            this.featureGroup = namespaceDense.FeatureGroup ?? '\0';
+            this.featureGroup = namespaceDense.FeatureGroup ?? ' ';
 
             this.namespaceHash = namespaceDense.Name == null ? 
                 this.vw.HashSpace(this.featureGroup.ToString()) :
                 this.vw.HashSpace(this.featureGroup + namespaceDense.Name);
 
             this.namespaceBuilder = this.builder.AddNamespace(this.featureGroup);
+
+			// TODO: check for null, still add Anchor feature
+
             this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
@@ -306,13 +321,16 @@ namespace VW.Serializer.Visitors
 			Contract.Requires(namespaceDense != null);
 			Contract.Requires(namespaceDense.DenseFeature != null);
 
-            this.featureGroup = namespaceDense.FeatureGroup ?? '\0';
+            this.featureGroup = namespaceDense.FeatureGroup ?? ' ';
 
             this.namespaceHash = namespaceDense.Name == null ? 
                 this.vw.HashSpace(this.featureGroup.ToString()) :
                 this.vw.HashSpace(this.featureGroup + namespaceDense.Name);
 
             this.namespaceBuilder = this.builder.AddNamespace(this.featureGroup);
+
+			// TODO: check for null, still add Anchor feature
+
             this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
@@ -358,13 +376,16 @@ namespace VW.Serializer.Visitors
 			Contract.Requires(namespaceDense != null);
 			Contract.Requires(namespaceDense.DenseFeature != null);
 
-            this.featureGroup = namespaceDense.FeatureGroup ?? '\0';
+            this.featureGroup = namespaceDense.FeatureGroup ?? ' ';
 
             this.namespaceHash = namespaceDense.Name == null ? 
                 this.vw.HashSpace(this.featureGroup.ToString()) :
                 this.vw.HashSpace(this.featureGroup + namespaceDense.Name);
 
             this.namespaceBuilder = this.builder.AddNamespace(this.featureGroup);
+
+			// TODO: check for null, still add Anchor feature
+
             this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
