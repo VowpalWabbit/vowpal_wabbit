@@ -18,28 +18,23 @@ using namespace System::Text;
 
 namespace VW
 {
-	VowpalWabbit::VowpalWabbit(VowpalWabbitSettings^ settings)
-		: VowpalWabbitBase(settings)
+	VowpalWabbit::VowpalWabbit(VowpalWabbitSettings^ args)
+		: VowpalWabbitBase(args)
 	{
-		if (settings == nullptr)
-		{
-			throw gcnew ArgumentNullException("settings");
-		}
-
-		if (settings->ParallelOptions != nullptr)
+		if (args->ParallelOptions != nullptr)
 		{
 			m_vw->all_reduce_type = AllReduceType::Thread;
-			auto total = settings->ParallelOptions->MaxDegreeOfParallelism;
+			auto total = args->ParallelOptions->MaxDegreeOfParallelism;
 
-			if (settings->Root == nullptr)
+			if (args->Root == nullptr)
 			{
-				m_vw->all_reduce = new AllReduceThreads(total, settings->Node);
+				m_vw->all_reduce = new AllReduceThreads(total, args->Node);
 			}
 			else
 			{
-				auto parent_all_reduce = (AllReduceThreads*)settings->Root->m_vw->all_reduce;
+				auto parent_all_reduce = (AllReduceThreads*)args->Root->m_vw->all_reduce;
 
-				m_vw->all_reduce = new AllReduceThreads(parent_all_reduce, total, settings->Node);
+				m_vw->all_reduce = new AllReduceThreads(parent_all_reduce, total, args->Node);
 			}
 		}
 		
@@ -87,7 +82,6 @@ namespace VW
 		{
 			return;
 		}
-
 		// this results in extra marshaling but should be fine here
 		this->SaveModel(gcnew String(name.c_str()));
 	}
@@ -95,7 +89,9 @@ namespace VW
 	void VowpalWabbit::SaveModel(String^ filename)
 	{
 		if (String::IsNullOrEmpty(filename))
-			throw gcnew ArgumentException("Filename must not be null or empty");
+		{
+			return;
+		}
 
 		String^ directoryName = System::IO::Path::GetDirectoryName(filename);
 
@@ -171,7 +167,7 @@ namespace VW
 	{
 		auto newHash = m_hasher(s, u) & m_vw->parse_mask;
 
-#ifdef _DEBUG
+#ifdef DEBUG
 		auto oldHash = HashFeatureNative(s, u);
 		assert(newHash == oldHash);
 #endif
@@ -213,11 +209,6 @@ namespace VW
 
 	void VowpalWabbit::Learn(VowpalWabbitExample^ ex)
 	{
-#if _DEBUG
-		if (ex == nullptr)
-			throw gcnew ArgumentNullException("ex");
-#endif
-
 		try
 		{
 			m_vw->learn(ex->m_example);
@@ -231,14 +222,6 @@ namespace VW
 	generic<typename T>
 	T VowpalWabbit::Learn(VowpalWabbitExample^ ex, IVowpalWabbitPredictionFactory<T>^ predictionFactory)
 	{
-#if _DEBUG
-		if (ex == nullptr)
-			throw gcnew ArgumentNullException("ex");
-
-		if (nullptr == predictionFactory)
-			throw gcnew ArgumentNullException("predictionFactory");
-#endif
-
 		try
 		{
 			m_vw->learn(ex->m_example);
@@ -255,10 +238,6 @@ namespace VW
 
 	void VowpalWabbit::Predict(VowpalWabbitExample^ ex)
 	{
-#if _DEBUG
-		if (ex == nullptr)
-			throw gcnew ArgumentNullException("ex");
-#endif
 		try
 		{
 			m_vw->l->predict(*ex->m_example);
@@ -272,11 +251,6 @@ namespace VW
 	generic<typename T>
 	T VowpalWabbit::Predict(VowpalWabbitExample^ ex, IVowpalWabbitPredictionFactory<T>^ predictionFactory)
 	{
-#if _DEBUG
-		if (ex == nullptr)
-			throw gcnew ArgumentNullException("ex");
-#endif
-
 		try
 		{
 			m_vw->l->predict(*ex->m_example);
@@ -293,11 +267,6 @@ namespace VW
 
 	VowpalWabbitExample^ VowpalWabbit::ParseLine(String^ line)
 	{
-#if _DEBUG
-		if (line == nullptr)
-			throw gcnew ArgumentNullException("line");
-#endif
-
 		auto ex = GetOrCreateNativeExample();
 		auto bytes = System::Text::Encoding::UTF8->GetBytes(line);
 		auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
@@ -331,7 +300,9 @@ namespace VW
 	{
 #if _DEBUG
 		if (String::IsNullOrEmpty(line))
+		{
 			throw gcnew ArgumentException("lines must not be empty. For multi-line examples use Learn(IEnumerable<string>) overload.");
+		}
 #endif
 
 		VowpalWabbitExample^ example = nullptr;
@@ -351,7 +322,9 @@ namespace VW
 	{
 #if _DEBUG
 		if (String::IsNullOrEmpty(line))
+		{
 			throw gcnew ArgumentException("lines must not be empty. For multi-line examples use Predict(IEnumerable<string>) overload.");
+		}
 #endif
 
 		VowpalWabbitExample^ example = nullptr;
@@ -372,7 +345,9 @@ namespace VW
 	{
 #if _DEBUG
 		if (String::IsNullOrEmpty(line))
+		{
 			throw gcnew ArgumentException("lines must not be empty. For multi-line examples use Learn(IEnumerable<string>) overload.");
+		}
 #endif
 
 		VowpalWabbitExample^ example = nullptr;
@@ -393,7 +368,9 @@ namespace VW
 	{
 #if _DEBUG
 		if (String::IsNullOrEmpty(line)) 
+		{
 			throw gcnew ArgumentException("lines must not be empty. For multi-line examples use Learn(IEnumerable<string>) overload.");
+		}
 #endif
 
 		VowpalWabbitExample^ example = nullptr;
@@ -411,11 +388,6 @@ namespace VW
 
 	void VowpalWabbit::Learn(IEnumerable<String^>^ lines)
 	{
-#if _DEBUG
-		if (lines == nullptr)
-			throw gcnew ArgumentNullException("lines");
-#endif
-
 		auto examples = gcnew List<VowpalWabbitExample^>;
 
 		try
@@ -443,11 +415,6 @@ namespace VW
 
 	void VowpalWabbit::Predict(IEnumerable<String^>^ lines)
 	{
-#if _DEBUG
-		if (lines == nullptr)
-			throw gcnew ArgumentNullException("lines");
-#endif
-
 		auto examples = gcnew List<VowpalWabbitExample^>;
 
 		try
@@ -476,11 +443,6 @@ namespace VW
 	generic<typename T>
 	T VowpalWabbit::Learn(IEnumerable<String^>^ lines, IVowpalWabbitPredictionFactory<T>^ predictionFactory)
 	{
-#if _DEBUG
-		if (lines == nullptr)
-			throw gcnew ArgumentNullException("lines");
-#endif
-
 		auto examples = gcnew List<VowpalWabbitExample^>;
 
 		try
@@ -511,11 +473,6 @@ namespace VW
 	generic<typename T>
 	T VowpalWabbit::Predict(IEnumerable<String^>^ lines, IVowpalWabbitPredictionFactory<T>^ predictionFactory)
 	{
-#if _DEBUG
-		if (lines == nullptr)
-			throw gcnew ArgumentNullException("lines");
-#endif
-
 		auto examples = gcnew List<VowpalWabbitExample^>;
 
 		try
@@ -648,6 +605,7 @@ namespace VW
 		else if (hash_function == "all")
 		{
 			return gcnew Func<String^, unsigned long, size_t>(&hashall);
+
 		}
 		else
 		{

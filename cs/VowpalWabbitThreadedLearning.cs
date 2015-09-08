@@ -1,15 +1,6 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="VowpalWabbitThreadedLearning.cs">
-//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
-//   individual contributors. All rights reserved.  Released under a BSD
-//   license as described in the file LICENSE.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -18,36 +9,12 @@ using System.Threading.Tasks.Dataflow;
 
 namespace VW
 {
-    /// <summary>
-    /// VW wrapper supporting multi-core learning by utilizing thread-based allreduce.
-    /// </summary>
     public class VowpalWabbitThreadedLearning : IDisposable
     {
-        /// <summary>
-        /// Random generator used by uniform random example distributor.
-        /// </summary>
-        /// <remarks>Initialized with static seed to enable reproducability.</remarks>
-        private readonly Random random = new Random(42);
+        internal VowpalWabbit[] vws;
 
-        /// <summary>
-        /// Configurable example distribution function choosing the vw instance for the next example.
-        /// </summary>
-        private readonly Func<uint, int> exampleDistributor;
+        internal readonly ActionBlock<Action<VowpalWabbit>>[] actionBlocks;
 
-        /// <summary>
-        /// Native vw instances setup for thread-based allreduce
-        /// </summary>
-        private VowpalWabbit[] vws;
-
-        /// <summary>
-        /// Worker threads with a nice message queue infront that will start blocking once it's too full.
-        /// </summary>
-        private readonly ActionBlock<Action<VowpalWabbit>>[] actionBlocks;
-
-        /// <summary>
-        /// The <see cref="actionBlocks"/> only offer non-blocking methods. Getting observers and calling OnNext() enables 
-        /// blocking once the queue is full.
-        /// </summary>
         private readonly IObserver<Action<VowpalWabbit>>[] observers;
 
         /// <summary>
@@ -55,32 +22,20 @@ namespace VW
         /// </summary>
         private readonly ConcurrentList<Action<VowpalWabbit>> syncActions;
 
-        /// <summary>
-        /// Task enable waiting for clients on completion after all action blocks have finished (incl. cleanup).
-        /// </summary>
         private Task[] completionTasks;
 
-        /// <summary>
-        /// Number of examples seen sofar. Used by round robin example distributor.
-        /// </summary>
         private int exampleCount;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="VowpalWabbitThreadedLearning"/> class.
-        /// </summary>
-        /// <param name="settings">Common settings used for vw instances.</param>
+        private readonly Random random = new Random(42);
+
+        private readonly Func<uint, int> exampleDistributor;
+
         public VowpalWabbitThreadedLearning(VowpalWabbitSettings settings)
         {
-            if (settings == null)
-            {
-                throw new ArgumentNullException("settings");
-            }
-
             if (settings.ParallelOptions == null)
             {
-                throw new ArgumentNullException("settings.ParallelOptions must be set");
+                throw new ArgumentException("settings.ParallelOptions must be set");
             }
-            Contract.EndContractBlock();
 
             this.Settings = settings;
 
@@ -168,23 +123,11 @@ namespace VW
             }
         }
 
-        /// <summary>
-        /// Creates a new instance of <see cref="VowpalWabbitAsync{TExample}"/> to feed examples of type <typeparamref name="TExample"/>.
-        /// </summary>
-        /// <typeparam name="TExample">The user example type.</typeparam>
-        /// <returns>A new instance of <see cref="VowpalWabbitAsync{TExample}"/>.</returns>
         public VowpalWabbitAsync<TExample> Create<TExample>()
         {
             return new VowpalWabbitAsync<TExample>(this);
         }
 
-        /// <summary>
-        /// Creates a new instance of <see cref="VowpalWabbitAsync{TExample,TActionDependentFeature}"/> to feed multi-line
-        /// examples of type <typeparamref name="TExample"/> and <typeparamref name="TActionDependentFeature"/>.
-        /// </summary>
-        /// <typeparam name="TExample">The user example type.</typeparam>
-        /// <typeparam name="TActionDependentFeature">The user action dependent feature type.</typeparam>
-        /// <returns>A new instance of <see cref="VowpalWabbitAsync{TExample,TActionDependentFeature}"/>.</returns>
         public VowpalWabbitAsync<TExample, TActionDependentFeature> Create<TExample, TActionDependentFeature>()
         {
             return new VowpalWabbitAsync<TExample, TActionDependentFeature>(this);
@@ -218,15 +161,8 @@ namespace VW
             return exampleCount;
         }
 
-        /// <summary>
-        /// Enqueues an action to be executed on one of vw instances.
-        /// </summary>
-        /// <param name="action">The action to be executed (e.g. Learn/Predict/...).</param>
-        /// <remarks>If number of actions waiting to be executed has reached <see name="VowpalWabbitSettings.MaxExampleQueueLengthPerInstance"/> this method blocks.</remarks>
         public void Post(Action<VowpalWabbit> action)
         {
-            Contract.Requires(action != null);
-
             var exampleCount = this.CheckEndOfPass();
 
             // dispatch
@@ -235,8 +171,6 @@ namespace VW
 
         internal Task<T> Post<T>(Func<VowpalWabbit, T> func)
         {
-            Contract.Requires(func!= null);
-
             var exampleCount = this.CheckEndOfPass();
 
             var completionSource = new TaskCompletionSource<T>();
@@ -257,32 +191,16 @@ namespace VW
             return completionSource.Task;
         }
 
-        /// <summary>
-        /// Learns from the given example.
-        /// </summary>
-        /// <param name="line">The example to learn.</param>
         public void Learn(string line)
         {
-            Contract.Requires(line != null);
-
             this.Post(vw => vw.Learn(line));
         }
 
-        /// <summary>
-        /// Learns from the given example.
-        /// </summary>
-        /// <param name="lines">The multi-line example to learn.</param>
         public void Learn(IEnumerable<string> lines)
         {
-            Contract.Requires(lines != null);
-
             this.Post(vw => vw.Learn(lines));
         }
 
-        /// <summary>
-        /// Synchronized performance statistics.
-        /// </summary>
-        /// <remarks>The task is only completed after synchronization of all instances, triggered <see cref="VowpalWabbitSettings.ExampleCountPerRun"/> example.</remarks>
         public Task<VowpalWabbitPerformanceStatistics> PerformanceStatistics
         {
             get 
@@ -295,10 +213,6 @@ namespace VW
             }
         }
 
-        /// <summary>
-        /// Signal that no more examples are send.
-        /// </summary>
-        /// <returns>Task completes once the learning and cleanup is done.</returns>
         public Task Complete()
         {
             // make sure no more sync actions are added, which might otherwise never been called
@@ -313,10 +227,6 @@ namespace VW
 
         }
 
-        /// <summary>
-        /// Saves a model as part of the synchronization.
-        /// </summary>
-        /// <returns>Task compeletes once the model is saved.</returns>
         public Task SaveModel()
         {
             var completionSource = new TaskCompletionSource<bool>();
@@ -330,14 +240,8 @@ namespace VW
             return completionSource.Task;
         }
 
-        /// <summary>
-        /// Saves a model as part of the synchronization.
-        /// </summary>
-        /// <returns>Task compeletes once the model is saved.</returns>
         public Task SaveModel(string filename)
         {
-            Contract.Requires(!string.IsNullOrEmpty(filename));
-
             var completionSource = new TaskCompletionSource<bool>();
 
             this.syncActions.Add(vw => 
@@ -349,9 +253,6 @@ namespace VW
             return completionSource.Task;
         }
 
-        /// <summary>
-        /// The settings shared across all instances.
-        /// </summary>
         public VowpalWabbitSettings Settings
         {
             get;
@@ -396,10 +297,6 @@ namespace VW
             }
         }
 
-        /// <summary>
-        /// Thread-safe list implementation.
-        /// </summary>
-        /// <typeparam name="T">The element type.</typeparam>
         private class ConcurrentList<T>
         {
             private bool completed = false;

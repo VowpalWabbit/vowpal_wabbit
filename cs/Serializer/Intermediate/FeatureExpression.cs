@@ -7,132 +7,40 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Linq.Expressions;
-using System.Reflection;
-using VW.Serializer.Inspectors;
-using VW.Serializer.Reflection;
 
 namespace VW.Serializer.Intermediate
 {
     /// <summary>
     /// Feature data composed during compilation step.
     /// </summary>
-    public sealed class FeatureExpression
+    internal sealed class FeatureExpression
     {
-        public FeatureExpression(Type featureType, 
-            string name, 
-            Func<Expression, Expression> valueExpressionFactory, 
-            string @namespace = null, 
-            char? featureGroup = null, 
-            bool enumerize = false, 
-            string variableName = null, 
-            int? order = null,
-            bool addAnchor = false,
-            MethodInfo overrideSerializeMethod = null)
-        {
-            if (featureType == null)
-                throw new ArgumentNullException("featureType");
+        internal Type FeatureType { get; set; }
 
-            // actually it's optional for custom types
-            //if (string.IsNullOrEmpty(name))
-            //    throw new ArgumentNullException("name");
+        internal Type FeatureValueType { get; set; }
 
-            if (valueExpressionFactory == null)
-                throw new ArgumentNullException("valueExpressionFactory");
+        internal string PropertyName { get; set; }
 
-            Contract.EndContractBlock();
+        internal string Name { get; set; }
 
-            this.FeatureType = featureType;
-            this.Name = name;
-            this.ValueExpressionFactory = valueExpressionFactory;
-            this.Namespace = @namespace;
-            this.FeatureGroup = featureGroup;
-            this.Enumerize = enumerize;
-            this.VariableName = variableName ?? name;
-            this.Order = order ?? 1;
-            this.AddAnchor = addAnchor;
-            this.OverrideSerializeMethod = overrideSerializeMethod;
+        internal string Namespace { get; set; }
 
-            this.DenseFeatureValueElementType = InspectionHelper.GetDenseFeatureValueElementType(featureType);
-            this.IsDense = this.DenseFeatureValueElementType != null;
-            this.IntermediateFeatureType = typeof(Feature<>).MakeGenericType(featureType);
-        }
+        internal char? FeatureGroup { get; set; }
 
-        /// <summary>
-        /// Serializer variable name.
-        /// </summary>
-        /// <remarks>Useful to debug</remarks>
-        public string VariableName { get; private set; }
+        internal bool IsDense { get { return this.DenseFeatureValueElementType != null; } }
 
-        /// <summary>
-        /// The type of the feature.
-        /// </summary>
-        public Type FeatureType { get; private set; }
+        internal bool Enumerize { get; set; }
 
-        internal Type IntermediateFeatureType { get; private set; }
+        internal bool AddAnchor { get; set; }
 
-        /// <summary>
-        /// The Name of the feature.
-        /// </summary>
-        public string Name { get; private set; }
+        internal MemberInitExpression NewFeatureExpression { get; set; }
 
-        public string Namespace { get; private set; }
+        internal MemberExpression PropertyExpression { get; set; }
 
-        public char? FeatureGroup { get; private set; }
+        internal Type DenseFeatureValueElementType { get; set; }
 
-        public MethodInfo OverrideSerializeMethod { get; private set; }
-
-        public bool IsDense { get; private set; }
-
-        public bool Enumerize { get; private set; }
-
-        public bool AddAnchor { get; private set; }
-
-        public Func<Expression, Expression> ValueExpressionFactory { get; private set; }
-
-        public Type DenseFeatureValueElementType { get; private set; }
-
-        public int Order { get; private set; }
-
-        internal MethodInfo FindMethod(IEnumerable<Type> visitors)
-        {
-            if (this.OverrideSerializeMethod != null)
-            {
-                return this.OverrideSerializeMethod;
-            }
-
-            foreach (var visitor in visitors)
-            {
-                // find visitor.Visit(ValueType, ...);
-                var method = ReflectionHelper.FindMethod(visitor, Enumerize ? "VisitEnumerize" : "Visit", this.FeatureType);
-                
-                if (method != null)
-                {
-                    return method;
-                }
-            }
-
-            return null;
-        }
-
-        //internal MemberInitExpression CreateFeatureExpression(Expression valueExpression)
-        //{
-        //    var e = this.ValueExpressionFactory(valueExpression);
-
-        //    // CODE new Feature<T> { Namespace = ..., ... } 
-        //    return Expression.MemberInit(
-        //            Expression.New(IntermediateFeatureType),
-        //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.Name), Expression.Constant(this.Name, typeof(string))),
-        //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.Enumerize), Expression.Constant(this.Enumerize)),
-        //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.AddAnchor), Expression.Constant(this.AddAnchor)),
-        //            //Expression.Bind(IntermediateFeatureType.GetProperty("Value"), e),
-        //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.Namespace), Expression.Constant(this.Namespace, typeof(string))),
-        //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.FeatureGroup),
-        //                this.FeatureGroup == null ? (Expression)Expression.Constant(null, typeof(char?)) :
-        //                Expression.New((ConstructorInfo)ReflectionHelper.GetInfo((char v) => new char?(v)), Expression.Constant((char)this.FeatureGroup)))
-        //            );
-        //}
+        internal int Order { get; set; }
     }
+
 }

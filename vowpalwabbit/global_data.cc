@@ -271,11 +271,6 @@ vw::vw()
   p->emptylines_separate_examples = false;
   p->lp = simple_label;
 
-  l = nullptr;
-  scorer = nullptr;
-  cost_sensitive = nullptr;
-  loss = nullptr;
-
   reg_mode = 0;
   current_pass = 0;
   reduction_stack=v_init<LEARNER::base_learner* (*)(vw&)>();

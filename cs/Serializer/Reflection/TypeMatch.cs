@@ -8,7 +8,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Linq;
 
 namespace VW.Serializer.Reflection
@@ -27,9 +26,6 @@ namespace VW.Serializer.Reflection
         internal TypeMatch(int distance, Type genericType, Type actualType)
             : this(distance)
         {
-            Contract.Requires(genericType != null);
-            Contract.Requires(actualType != null);
-
             this.GenericTypes = new Dictionary<Type, Type> 
                 {
                     { genericType, actualType }
@@ -39,8 +35,6 @@ namespace VW.Serializer.Reflection
         internal TypeMatch(int distance, IEnumerable<TypeMatch> typeMatches)
             : this(distance)
         {
-            Contract.Requires(typeMatches != null);
-
             this.GenericTypes = typeMatches
                 .Where(tm => tm.GenericTypes != null)
                 .SelectMany(tm => tm.GenericTypes)

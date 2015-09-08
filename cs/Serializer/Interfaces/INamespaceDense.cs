@@ -6,8 +6,6 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using VW.Serializer.Contracts;
 
 namespace VW.Serializer.Interfaces
 {
@@ -15,8 +13,7 @@ namespace VW.Serializer.Interfaces
     /// A dense namespace.
     /// </summary>
     /// <typeparam name="T">The element type of the dense features.</typeparam>
-    [ContractClass(typeof(INamespaceDenseContract<>))]
-    public interface INamespaceDense<out T> // : IMetaNamespace
+    public interface INamespaceDense<out T> : INamespace
     {
         /// <summary>
         /// The list of features.

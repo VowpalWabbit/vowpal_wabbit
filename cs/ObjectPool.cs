@@ -8,17 +8,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Threading;
+using VW.Interfaces;
 
 namespace VW
 {
     /// <summary>
     /// Thread-safe object pool supporting versioned updates.
     /// </summary>
-    /// <typeparam name="TSource">The disposable context needed to create objects of <typeparamref name="TObject"/>.</typeparam>
-    /// <typeparam name="TObject">The type of the objects to be created.</typeparam>
     public class ObjectPool<TSource, TObject> : IDisposable
         where TObject : IDisposable
         where TSource : IDisposable
@@ -160,8 +157,6 @@ namespace VW
 
         internal void ReturnObject(PooledObject<TSource, TObject> pooledObject)
         {
-            Contract.Ensures(pooledObject != null);
-
             this.rwLockSlim.EnterUpgradeableReadLock();
             try
             {

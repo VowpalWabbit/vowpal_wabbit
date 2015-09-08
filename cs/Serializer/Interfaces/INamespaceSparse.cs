@@ -6,16 +6,12 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-using System.Diagnostics.Contracts;
-using VW.Serializer.Contracts;
-
 namespace VW.Serializer.Interfaces
 {
     /// <summary>
     /// A sparse namespace.
     /// </summary>
-    [ContractClass(typeof(INamespaceSparseContract))]
-    public interface INamespaceSparse // : IMetaNamespace
+    public interface INamespaceSparse : INamespace
     {
         /// <summary>
         /// The features of the namespace.

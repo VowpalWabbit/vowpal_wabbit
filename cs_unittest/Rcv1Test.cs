@@ -45,6 +45,8 @@ namespace cs_unittest
 
             private VowpalWabbit<Data> vw;
 
+            private int lines;
+
             public MyListener(VowpalWabbit<Data> vw)
             {
                 this.vw = vw;

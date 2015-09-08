@@ -89,6 +89,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(BoostIncludeDir);$(IncludePath)</IncludePath>
+    <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -204,6 +206,7 @@
       <DebugInformationFormat Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ProgramDatabase</DebugInformationFormat>
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MultiThreadedDLL</RuntimeLibrary>
       <MultiProcessorCompilation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</MultiProcessorCompilation>
+      <EnablePREfast Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</EnablePREfast>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(BoostLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -229,7 +232,6 @@
     <ClCompile Include="allreduce_threads.cc">
       <FileType>CppHeader</FileType>
     </ClCompile>
-    <ClCompile Include="vw_validate.cc" />
     <ClInclude Include="autolink.h" />
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="active.h" />
@@ -295,10 +297,8 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
-    <ClInclude Include="vw_validate.h" />
     <ClInclude Include="vw.h" />
     <ClInclude Include="vw_exception.h" />
-    <ClInclude Include="vw_versions.h" />
     <ClInclude Include="v_array.h" />
     <ClInclude Include="v_hashmap.h" />
   </ItemGroup>

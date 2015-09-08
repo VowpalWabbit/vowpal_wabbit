@@ -8,15 +8,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
 using System.Text;
 using VW.Interfaces;
-using VW.Serializer.Inspectors;
 using VW.Serializer.Interfaces;
-
-#pragma warning disable 1591
 
 namespace VW.Serializer.Visitors
 {
@@ -29,8 +25,6 @@ namespace VW.Serializer.Visitors
 
         public void Visit<T>(INamespaceDense<T> namespaceDense)
         {
-            Contract.Requires(namespaceDense != null);
-
             this.builder.AppendFormat(
                 CultureInfo.InvariantCulture,
                 " |{0}{1}",
@@ -58,26 +52,13 @@ namespace VW.Serializer.Visitors
             }
         }
 
-        public void Visit(IFeature<string> feature)
-        {
-            Contract.Requires(feature != null);
-            
-            // TODO: either replace spaces, throw a warning or ignore, quoting???
-            this.builder.Append(' ').Append(feature.Value);
-        }
-
         public void Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature)
         {
-            Contract.Requires(feature != null);
-
             this.Visit(feature, key => Convert.ToString(key));
         }
 
         private void Visit<TKey, TValue>(IFeature<IDictionary<TKey, TValue>> feature, Func<TKey, string> keyMapper)
         {
-            Contract.Requires(feature != null);
-            Contract.Requires(keyMapper != null);
-
             var first = true;
             foreach (var kvp in feature.Value)
             {
@@ -96,8 +77,6 @@ namespace VW.Serializer.Visitors
 
         public void Visit<TValue>(IFeature<IEnumerable<TValue>> feature)
         {
-            Contract.Requires(feature != null);
-
             var i = 0;
             foreach (var value in feature.Value)
             {
@@ -117,8 +96,6 @@ namespace VW.Serializer.Visitors
 
         public void VisitEnumerize<T>(IFeature<T> feature)
         {
-            Contract.Requires(feature != null);
-
             this.builder.AppendFormat(
                 CultureInfo.InvariantCulture,
                 " {0}_{1}",
@@ -128,8 +105,6 @@ namespace VW.Serializer.Visitors
 
         public void Visit<T>(IFeature<T> feature)
         {
-            Contract.Requires(feature != null);
-
             // can't specify constraints to narrow for enums
             var valueType = typeof(T);
             if (valueType.IsEnum)
@@ -140,7 +115,7 @@ namespace VW.Serializer.Visitors
                     feature.Name,
                     Enum.GetName(valueType, feature.Value));
             }
-            else if (InspectionHelper.IsValidDenseFeatureValueElementType(typeof(T)))
+            else if (VowpalWabbitSerializerFactory.IsValidDenseFeatureValueElementType(typeof(T)))
             {
                 this.builder.AppendFormat(
                     CultureInfo.InvariantCulture,
@@ -160,8 +135,6 @@ namespace VW.Serializer.Visitors
 
         public void Visit(INamespaceSparse namespaceSparse)
         {
-            Contract.Requires(namespaceSparse != null);
-
             this.builder.AppendFormat(
                 CultureInfo.InvariantCulture,
                 " |{0}{1}",
@@ -176,8 +149,6 @@ namespace VW.Serializer.Visitors
 
         public string Visit(ILabel label, IVisitableNamespace[] namespaces)
         {
-            Contract.Requires(namespaces != null);
-
             // see https://github.com/JohnLangford/vowpal_wabbit/wiki/Input-format 
             // prefix with label
             this.builder = new StringBuilder();

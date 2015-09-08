@@ -58,7 +58,6 @@ license as described in the file LICENSE.
 #include "vw_exception.h"
 #include "accumulate.h"
 #include "allreduce.h"
-#include "vw_validate.h"
 
 using namespace std;
 //
@@ -469,8 +468,8 @@ void parse_feature_tweaks(vw& all)
 
       all.default_bits = false;
       all.num_bits = new_bits;
-
-      VW::validate_num_bits(all);
+      if (all.num_bits > min(31, sizeof(size_t)*8 - 3))
+	THROW("Only " << min(31, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up.");
     }
 
   all.permutations = vm.count("permutations");
@@ -1337,11 +1336,8 @@ namespace VW {
 		finalize_regressor_exception_thrown = true;
 	}
 
-    if (all.l != nullptr)
-    {
-        all.l->finish();
-        free_it(all.l);
-    }
+    all.l->finish();
+    free_it(all.l);
     if (all.reg.weight_vector != nullptr && !all.seeded) // don't free weight vector if it is shared with another instance
       free(all.reg.weight_vector);
     free_parser(all);

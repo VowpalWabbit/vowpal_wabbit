@@ -1180,16 +1180,13 @@ void free_parser(vw& all)
   if(all.ngram_strings.size() > 0)
     all.p->gram_mask.delete_v();
   
-  if (all.p->examples != nullptr)
-  {
-      if (all.multilabel_prediction)
-          for (size_t i = 0; i < all.p->ring_size; i++)
-              VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i], MULTILABEL::multilabel.delete_label);
-      else
-          for (size_t i = 0; i < all.p->ring_size; i++)
-              VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i]);
-      free(all.p->examples);
-  }
+  if (all.multilabel_prediction)
+    for (size_t i = 0; i < all.p->ring_size; i++) 
+      VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i], MULTILABEL::multilabel.delete_label);
+  else
+    for (size_t i = 0; i < all.p->ring_size; i++) 
+      VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i]);
+  free(all.p->examples);
   
   io_buf* output = all.p->output;
   if (output != nullptr)

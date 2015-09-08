@@ -58,7 +58,6 @@ namespace LEARNER
   };
   
   void generic_driver(vw& all);
-  void generic_driver(std::vector<vw*> alls);
   
   inline void noop_sl(void*, io_buf&, bool, bool) {}
   inline void noop(void*) {}
