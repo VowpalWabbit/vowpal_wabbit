@@ -233,7 +233,7 @@ private:
 	  THROWERRNO("select");
 
       for(int i = 0; i < 2; i++) {
-        if(child_sockets[i] != -1 && FD_ISSET(child_sockets[i],&fds)) {
+        if(socks.children[i] != -1 && FD_ISSET(socks.children[i],&fds)) {
 	    //there is data to be left from left child
 						if (child_read_pos[i] == n)
 							THROW("I think child has no data to send but he thinks he has " << FD_ISSET(socks.children[0], &fds) << " " << FD_ISSET(socks.children[1], &fds));

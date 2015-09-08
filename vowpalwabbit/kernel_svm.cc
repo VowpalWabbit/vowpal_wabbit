@@ -554,8 +554,8 @@ struct svm_params {
     all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
 
     size_t prev_sum = 0, total_sum = 0;
-  for(size_t i = 0; i < all.total; i++) {
-    if(i <= (all.node - 1))
+  for(size_t i = 0; i < all.all_reduce->total; i++) {
+    if(i <= (all.all_reduce->node - 1))
 	prev_sum += sizes[i];
       total_sum += sizes[i];
     }
