@@ -1,5 +1,5 @@
 only testing
-predictions = sequencespan_data.predict
+predictions = sequencespan_data.nonldf-bilou.test.predict
 switching to BILOU encoding for sequence span labeling
 Num weight bits = 18
 learning rate = 10

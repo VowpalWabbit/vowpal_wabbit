@@ -95,4 +95,10 @@ VW.creator.user
 VW.files
 VW.includes
 
+# Python package
+build/**
+dist/**
+pyvw.egg-info/**
+python/pyvw.egg-info/**
+
 /cs/Serializer/Visitors/VowpalWabbitNativeVisitorExt.cs

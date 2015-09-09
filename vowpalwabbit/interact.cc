@@ -131,7 +131,7 @@ LEARNER::base_learner* interact_setup(vw& all)
     return nullptr;
   string s = all.vm["interact"].as<string>();
   if(s.length() != 2) {
-	  cerr<<"Need two namespace arguments to interact!! EXITING\n";
+    cerr<<"Need two namespace arguments to interact!! EXITING\n";
     return nullptr;
   }
   

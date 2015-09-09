@@ -55,7 +55,7 @@ namespace GD
   void sync_weights(vw& all);
 
   inline float quake_InvSqrt(float x)
-  {    // Carmack/Quake/SGI fast method:
+{ // Carmack/Quake/SGI fast method:
 	  float xhalf = 0.5f * x;
 	  int i = *(int*)&x; // store floating-point bits in integer
 	  i = 0x5f3759d5 - (i >> 1); // initial guess for Newton's method
@@ -170,9 +170,9 @@ namespace GD
     friend bool operator<(const string_value& first, const string_value& second);
   };
 
-  inline float sign(float w){ if (w < 0.) return -1.; else  return 1.;}
+inline float sign(float w) { if (w < 0.) return -1.; else  return 1.;}
 
-  inline float trunc_weight(const float w, const float gravity){
+inline float trunc_weight(const float w, const float gravity) {
      return (gravity < fabsf(w)) ? w - sign(w) * gravity : 0.f;
    }
 
@@ -239,7 +239,7 @@ namespace GD
       { //for invert_hash
 
           if (dat.offset != 0)
-          {   // otherwise --oaa output no features for class > 0.
+    { // otherwise --oaa output no features for class > 0.
               ostringstream tempstream;
               tempstream << '[' << (dat.offset >> stride_shift) << ']';
               ns_pre += tempstream.str();
@@ -288,7 +288,7 @@ void print_features(vw& all, example& ec)
       INTERACTIONS::generate_interactions<audit_results, const uint32_t, audit_feature, audit_data, audit_interaction >(all, ec, dat, ec.audit_features);
 
       sort(dat.results.begin(),dat.results.end());
-      if(all.audit){
+    if(all.audit) {
         for (vector<string_value>::const_iterator sv = dat.results.begin(); sv!= dat.results.end(); ++sv)
             cout << '\t' << (*sv).s;
         cout << endl;
@@ -435,7 +435,7 @@ void multipredict(gd& g, base_learner&, example& ec, size_t count, size_t step, 
 
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
-  if(feature_mask_off || fw != 0.){
+  if(feature_mask_off || fw != 0.) {
     weight* w = &fw;
     float x2 = x * x;
     if(adaptive)
@@ -465,7 +465,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
   bool global_print_features = false;
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
   float get_pred_per_update(gd& g, example& ec)
-  {//We must traverse the features in _precisely_ the same order as during training.
+{ //We must traverse the features in _precisely_ the same order as during training.
     label_data& ld = ec.l.simple;
     vw& all = *g.all;
     float grad_squared = all.loss->getSquareGrad(ec.pred.scalar, ld.label) * ld.weight;
@@ -488,7 +488,7 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
 
   template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 float compute_update(gd& g, example& ec)
-{//invariant: not a test label, importance weight > 0
+{ //invariant: not a test label, importance weight > 0
   label_data& ld = ec.l.simple;
   vw& all = *g.all;
   
@@ -532,7 +532,7 @@ float compute_update(gd& g, example& ec)
 
   template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 void update(gd& g, base_learner&, example& ec)
-{//invariant: not a test label, importance weight > 0
+{ //invariant: not a test label, importance weight > 0
   float update;
   if ( (update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (g, ec)) != 0.)
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
@@ -543,7 +543,7 @@ void update(gd& g, base_learner&, example& ec)
 
   template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
   void learn(gd& g, base_learner& base, example& ec)
-  {//invariant: not a test label, importance weight > 0
+{ //invariant: not a test label, importance weight > 0
   assert(ec.in_use);
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.l.simple.weight > 0.);
@@ -571,9 +571,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
   uint32_t i = 0;
   size_t brw = 1;
 
-    //write readable model with feature names
-    if (all.print_invert)
-    { 
+  if(all.print_invert) { //write readable model with feature names
     weight* v;
     char buff[512];
         size_t buf_size = sizeof(buff);
@@ -800,15 +798,15 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 					     buff, text_len, text);
 		}
 	      else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
-		{//either adaptive or normalized
-                    text_len = sprintf_s(buff, buf_size, ":%f %f\n", *v, *(v + 1));
-                    brw += bin_text_write_fixed(model_file, (char *)v, 2 * sizeof(*v),
+        { //either adaptive or normalized
+          text_len = sprintf(buff, ":%f %f\n", *v, *(v+1));
+          brw+= bin_text_write_fixed(model_file,(char *)v, 2*sizeof (*v),
 					     buff, text_len, text);
 		}
 	      else
-		{//adaptive and normalized
-                    text_len = sprintf_s(buff, buf_size, ":%f %f %f\n", *v, *(v + 1), *(v + 2));
-                    brw += bin_text_write_fixed(model_file, (char *)v, 3 * sizeof(*v),
+        { //adaptive and normalized
+          text_len = sprintf(buff, ":%f %f %f\n", *v, *(v+1), *(v+2));
+          brw+= bin_text_write_fixed(model_file,(char *)v, 3*sizeof (*v),
 					     buff, text_len, text);
 		}
 	    }
@@ -968,7 +966,7 @@ base_learner* setup(vw& all)
   }
 
   if( !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) ) )
-    {//nondefault
+  { //nondefault
       all.adaptive = all.training && vm.count("adaptive");
       g.adaptive = all.adaptive;
       all.invariant_updates = all.training && vm.count("invariant");
@@ -979,7 +977,7 @@ base_learner* setup(vw& all)
 	all.eta = 10; //default learning rate to 10 for non default update rule
       
       //if not using normalized or adaptive, default initial_t to 1 instead of 0
-      if(!all.adaptive && !all.normalized_updates){
+    if(!all.adaptive && !all.normalized_updates) {
 	if (!vm.count("initial_t")) {
 	  all.sd->t = 1.f;
 	  all.sd->weighted_unlabeled_examples = 1.f;
@@ -997,13 +995,17 @@ base_learner* setup(vw& all)
   
   if (all.reg_mode % 2)
     if (all.audit || all.hash_inv) {
-      g.predict = predict<true, true>;   g.multipredict = multipredict<true, true>; }
+      g.predict = predict<true, true>;   g.multipredict = multipredict<true, true>;
+    }
     else {
-      g.predict = predict<true, false>;  g.multipredict = multipredict<true, false>; }
+      g.predict = predict<true, false>;  g.multipredict = multipredict<true, false>;
+    }
   else if (all.audit || all.hash_inv) {
-    g.predict = predict<false, true>;    g.multipredict = multipredict<false, true>; }
+    g.predict = predict<false, true>;    g.multipredict = multipredict<false, true>;
+  }
   else {
-    g.predict = predict<false, false>;   g.multipredict = multipredict<false, false>; }
+    g.predict = predict<false, false>;   g.multipredict = multipredict<false, false>;
+  }
 
   uint32_t stride;
   if (all.power_t == 0.5)

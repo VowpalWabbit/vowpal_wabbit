@@ -135,11 +135,13 @@ namespace LEARNER
       //called anytime saving or loading needs to happen. Autorecursive.
       inline void save_load(io_buf& io, bool read, bool text) 
       { save_load_fd.save_load_f(save_load_fd.data, io, read, text); 
-	if (save_load_fd.base) save_load_fd.base->save_load(io, read, text); }
+    if (save_load_fd.base) save_load_fd.base->save_load(io, read, text);
+  }
       inline void set_save_load(void (*sl)(T&, io_buf&, bool, bool))
       { save_load_fd.save_load_f = (tsl)sl; 
 	save_load_fd.data = learn_fd.data; 
-	save_load_fd.base = learn_fd.base;}
+    save_load_fd.base = learn_fd.base;
+  }
       
       //called to clean up state.  Autorecursive.
       void set_finish(void (*f)(T&)) 
@@ -154,16 +156,18 @@ namespace LEARNER
 	}
       }
       
-      void end_pass(){ 
+  void end_pass() {
 	end_pass_fd.func(end_pass_fd.data);
-	if (end_pass_fd.base) end_pass_fd.base->end_pass(); }//autorecursive
+    if (end_pass_fd.base) end_pass_fd.base->end_pass();
+  }//autorecursive
       void set_end_pass(void (*f)(T&)) 
       {end_pass_fd = tuple_dbf(learn_fd.data, learn_fd.base, (tfunc)f);}
       
       //called after parsing of examples is complete.  Autorecursive.
       void end_examples() 
       { end_examples_fd.func(end_examples_fd.data); 
-	if (end_examples_fd.base) end_examples_fd.base->end_examples(); }  
+    if (end_examples_fd.base) end_examples_fd.base->end_examples();
+  }
       void set_end_examples(void (*f)(T&)) 
       {end_examples_fd = tuple_dbf(learn_fd.data,learn_fd.base, (tfunc)f);}
       
@@ -176,8 +180,9 @@ namespace LEARNER
       inline void finish_example(vw& all, example& ec) 
       { finish_example_fd.finish_example_f(all, finish_example_fd.data, ec);}
       void set_finish_example(void (*f)(vw& all, T&, example&))
-      {finish_example_fd.data = learn_fd.data;
-	finish_example_fd.finish_example_f = (tend_example)f;}
+  { finish_example_fd.data = learn_fd.data;
+    finish_example_fd.finish_example_f = (tend_example)f;
+  }
       
       friend learner<T>& init_learner<>(T*, void (*learn)(T&, base_learner&, example&), size_t);
       friend learner<T>& init_learner<>(T*, base_learner*, void (*l)(T&, base_learner&, example&), 
