@@ -496,17 +496,17 @@ void parse_feature_tweaks(vw& all)
   {
     const vector<string> vec_arg = vm["quadratic"].as< vector<string> >();
     if (!all.quiet)
-    {
       cerr << "creating quadratic features for pairs: ";
-
-      for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+    
+    for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
       {
-        if (!all.quiet) cerr << *i << " ";
-        *all.file_options << " --quadratic " << *i;
+	if (!all.quiet) 
+	  cerr << *i << " ";
+	*all.file_options << " --quadratic " << *i;
       }
-    }
+    
     expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
-
+    
     if (!all.quiet) cerr << endl;
   }
 
