@@ -23,6 +23,8 @@ typedef SOCKET socket_t;
 #include <netdb.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <string.h>
 typedef int socket_t;
 #define CLOSESOCK close
 #endif
