@@ -27,8 +27,7 @@ typedef int socket_t;
 #define CLOSESOCK close
 #endif
 #include "vw_exception.h"
-#include "vw.h"
-
+#include <assert.h>
 
 using namespace std;
 
@@ -76,7 +75,7 @@ public:
 
 struct Data {
 	void* buffer;
-	size_t length; 
+	size_t length;
 };
 
 namespace std
@@ -101,7 +100,7 @@ private:
 
 	// number of threads reached the barrier
 	uint32_t m_count;
-	
+
 	// current wait-barrier-run required to protect against spurious wakeups of m_cv->wait(...)
 	bool m_run;
 
@@ -134,7 +133,7 @@ public:
 		T** buffers = (T**)m_sync->buffers;
 		buffers[node] = buffer;
 		m_sync->waitForSynchronization();
-		
+
 		size_t blockSize = n / total;
 		size_t index;
 		size_t end;
@@ -192,7 +191,7 @@ private:
 			int write_size = send(socks.parent, buffer + parent_sent_pos, (int)my_bufsize, 0);
 			if (write_size < 0)
       THROW("Write to parent failed " << my_bufsize << " " << write_size << " " << parent_sent_pos << " " << left_read_pos << " " << right_read_pos);
-    
+
     parent_sent_pos += write_size;
   }
 }
@@ -282,17 +281,3 @@ public:
 		broadcast((char*)buffer, n*sizeof(T));
 }
 };
-
-template <class T, void (*f)(T&, const T&)> void all_reduce(vw& all, T* buffer, const size_t n)
-{
-	switch (all.all_reduce_type)
-{
-	case AllReduceType::Socket:
-		((AllReduceSockets*)all.all_reduce)->all_reduce<T, f>(buffer, n);
-		break;
-
-	case AllReduceType::Thread:
-		((AllReduceThreads*)all.all_reduce)->all_reduce<T, f>(buffer, n);
-		break;
-	}
-}

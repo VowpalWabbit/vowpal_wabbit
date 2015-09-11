@@ -13,8 +13,8 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <cmath>
 #include <stdint.h>
 #include "global_data.h"
-#include "allreduce.h"
-   
+#include "vw_allreduce.h"
+
 using namespace std;
 
 void add_float(float& c1, const float& c2) { c1 += c2; }
@@ -81,26 +81,26 @@ void accumulate_weighted_avg(vw& all, regressor& reg) {
 
   for(uint32_t i = 0; i < length; i++)
     local_weights[i] = weights[stride*i+1];
-  
+
   //First compute weights for averaging
   all_reduce<float, add_float>(all, local_weights, length);
-  
+
   for(uint32_t i = 0; i < length; i++) //Compute weighted versions
     if(local_weights[i] > 0) {
       float ratio = weights[stride*i+1]/local_weights[i];
-      local_weights[i] = weights[stride*i] * ratio;      
+      local_weights[i] = weights[stride*i] * ratio;
       weights[stride*i] *= ratio;
-      weights[stride*i+1] *= ratio; //A crude max      
-      if (all.normalized_updates)	
+      weights[stride*i+1] *= ratio; //A crude max
+      if (all.normalized_updates)
 	weights[stride*i+all.normalized_idx] *= ratio; //A crude max
     }
     else {
       local_weights[i] = 0;
       weights[stride*i] = 0;
     }
-  
+
   all_reduce<float, add_float>(all, weights, length*stride);
-  
+
   delete[] local_weights;
 }
 

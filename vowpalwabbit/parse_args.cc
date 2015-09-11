@@ -57,7 +57,7 @@ license as described in the file LICENSE.
 #include "interact.h"
 #include "vw_exception.h"
 #include "accumulate.h"
-#include "allreduce.h"
+#include "vw_allreduce.h"
 
 using namespace std;
 //
@@ -502,11 +502,11 @@ void parse_feature_tweaks(vw& all)
 
       for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
       {
-	if (!all.quiet) 
+	if (!all.quiet)
 	  cerr << *i << " ";
         *all.file_options << " --quadratic " << *i;
       }
-    
+
     expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
 
     if (!all.quiet) cerr << endl;
