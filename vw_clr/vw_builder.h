@@ -29,15 +29,23 @@ namespace VW
 		/// </summary>
 		v_array<feature>* m_atomic;
 
+    unsigned char m_index;
+
+    example* m_example;
+
+    !VowpalWabbitNamespaceBuilder();
+
 	internal:
 		/// <summary>
 		/// Initializes a new <see cref="VowpalWabbitNamespaceBuilder"/> instance.
 		/// </summary>
 		/// <param name="sum_feat_sq">Pointer into sum squares array owned by <see cref="VowpalWabbitExample"/>.</param>
 		/// <param name="atomic">Pointer into atomics owned by <see cref="VowpalWabbitExample"/>.</param>
-		VowpalWabbitNamespaceBuilder(float* sum_feat_sq, v_array<feature>* atomic);
+    VowpalWabbitNamespaceBuilder(float* sum_feat_sq, v_array<feature>* atomic, unsigned char index, example* m_example);
 
 	public:
+    ~VowpalWabbitNamespaceBuilder();
+
 		/// <summary>
 		/// Add feature entry.
 		/// </summary>
@@ -76,7 +84,7 @@ namespace VW
 
 	public:
 		/// <summary>
-		/// Initializes a new <see cref="VowpalWabbitExampleBuilder"/> instance. 
+		/// Initializes a new <see cref="VowpalWabbitExampleBuilder"/> instance.
 		/// </summary>
 		/// <param name="vw">The parent vowpal wabbit instance.</param>
 		VowpalWabbitExampleBuilder(VowpalWabbit^ vw);
@@ -92,7 +100,7 @@ namespace VW
 		VowpalWabbitExample^ CreateExample();
 
 		/// <summary>
-		/// Sets the label for the resulting example.  
+		/// Sets the label for the resulting example.
 		/// </summary>
 		void ParseLabel(String^ value);
 

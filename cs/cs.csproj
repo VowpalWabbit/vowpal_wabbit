@@ -138,6 +138,8 @@
     </Compile>
     <Compile Include="Serializer\Visitors\VowpalWabbitStringVisitor.cs" />
     <Compile Include="Serializer\VowpalWabbitDebugExample.cs" />
+    <Compile Include="Serializer\VowpalWabbitDefaultMarshaller.cs" />
+    <Compile Include="Serializer\VowpalWabbitMarshallingContext.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerCompiler.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerFactory.cs" />

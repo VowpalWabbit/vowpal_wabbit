@@ -7,36 +7,29 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Linq.Expressions;
 using VW.Serializer.Interfaces;
 
 namespace VW.Serializer.Intermediate
 {
-    /// <summary>
-    /// The intermediate feature representation.
-    /// </summary>
-    public sealed class Feature : IFeature
+    public class Feature
     {
-        /// <summary>
-        /// The targeted namespace.
-        /// </summary>
-        public string Namespace { get; set; }
+        protected Feature(string name, bool addAnchor)
+        {
+            if (name == null)
+            {
+                throw new ArgumentNullException("name");
+            }
 
-        /// <summary>
-        /// The targeted feature group.
-        /// </summary>
-        public char? FeatureGroup { get; set; }
+            this.Name = name;
+            this.AddAnchor = addAnchor;
+            // TODO: this.Name += Convert.ToString(feature.Value);
+        }
 
         /// <summary>
         /// The origin property name is used as the feature name.
         /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        /// If true, features will be converted to string and then hashed.
-        /// In VW line format: Age:15 (Enumerize=false), Age_15 (Enumerize=true)
-        /// Defaults to false.
-        /// </summary>
-        public bool Enumerize { get; set; }
+        public string Name { get; private set; }
 
         /// <summary>
         /// If true, an anchoring feature (0:1) will be inserted at front.
@@ -44,14 +37,83 @@ namespace VW.Serializer.Intermediate
         /// as 0-valued features are removed.
         /// </summary>
         /// <remarks>Defaults to false.</remarks>
-        public bool AddAnchor { get; set; }
+        public bool AddAnchor { get; private set; }
     }
+
+    /// <summary>
+    /// The intermediate feature representation.
+    /// </summary>
+    public sealed class NumericFeature : Feature // : IFeature
+    {
+        public Feature(VowpalWabbit vw, Namespace ns, string name, bool addAnchor)
+            : base(name, addAnchor)
+        {
+            this.FeatureHash = vw.HashFeature(this.Name, ns.NamespaceHash);
+            // TODO: this.Name += Convert.ToString(feature.Value);
+        }
+
+        ///// If true, features will be converted to string and then hashed.
+        ///// In VW line format: Age:15 (Enumerize=false), Age_15 (Enumerize=true)
+        ///// Defaults to false.
+        ///// </summary>
+        //public bool Enumerize { get; private set; }
+
+
+
+        public uint FeatureHash { get; private set; }
+    }
+
+/*
+    public sealed class Feature : BaseFeature
+    {
+        private readonly VowpalWabbit vw;
+
+        private readonly Namespace ns;
+
+        public EnumerizedFeature(VowpalWabbit vw, Namespace ns, string name, bool addAnchor)
+            : base(name, addAnchor)
+        {
+            this.vw = vw;
+            this.ns = ns;
+        }
+
+        public uint FeatureHash<T>(T value)
+        {
+            return this.vw.HashFeature(this.Name + Convert.ToString(value), this.ns.NamespaceHash);
+        }
+    }
+
+    // TODO: inline Enum to switch()
+    //public sealed class EnumerizedFeature<T> : BaseFeature
+    //{
+    //    private uint[] hashes;
+
+    //    public EnumerizedEnumFeature(VowpalWabbit vw, Namespace ns, string name, bool addAnchor)
+    //        : base(name, addAnchor)
+    //    {
+    //        if (!typeof(T).IsEnum)
+    //        {
+    //            throw new ArgumentException(string.Format("Type {0} must be enum", typeof(T)));
+    //        }
+
+    //        this.vw = vw;
+    //        this.ns = ns;
+    //        Expression.sw
+    //        Enum.GetNames(typeof(T))
+    //            Enum.g
+    //    }
+
+    //    public uint FeatureHash(T value)
+    //    {
+    //        return this.vw.HashFeature(this.Name + Convert.ToString(value), this.ns.NamespaceHash);
+    //    }
+    //}
 
     ///// <summary>
     ///// The typed representation of the feature.
     ///// </summary>
     ///// <typeparam name="T">Type of feature value.</typeparam>
-    //public sealed class Feature<T> : IFeature<T>, IVisitableFeature // Feature, 
+    //public sealed class Feature<T> : IFeature<T>, IVisitableFeature // Feature,
     //{
     //    /// <summary>
     //    /// The actual value

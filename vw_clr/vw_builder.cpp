@@ -60,10 +60,10 @@ namespace VW
 	{
 		if (value == nullptr)
 			return;
-				
+
 		auto bytes = System::Text::Encoding::UTF8->GetBytes(value);
 		auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
-				
+
 		try
 		{
 			VW::parse_example_label(*m_vw, *m_example->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
@@ -89,12 +89,27 @@ namespace VW
 		return gcnew VowpalWabbitNamespaceBuilder(ex->sum_feat_sq + index, ex->atomics + index);
 	}
 
-	VowpalWabbitNamespaceBuilder::VowpalWabbitNamespaceBuilder(float* sum_feat_sq, v_array<feature>* atomic)
-		: m_sum_feat_sq(sum_feat_sq), m_atomic(atomic)
-	{
-	}
+  VowpalWabbitNamespaceBuilder::VowpalWabbitNamespaceBuilder(float* sum_feat_sq, v_array<feature>* atomic,
+    unsigned char index, example* example)
+    : m_sum_feat_sq(sum_feat_sq), m_atomic(atomic), m_index(index), m_example(example)
+  {
+  }
 
-	void VowpalWabbitNamespaceBuilder::AddFeature(uint32_t weight_index, float x)
+  VowpalWabbitNamespaceBuilder::~VowpalWabbitNamespaceBuilder()
+  {
+    this->!VowpalWabbitNamespaceBuilder();
+  }
+
+  VowpalWabbitNamespaceBuilder::!VowpalWabbitNamespaceBuilder()
+  {
+    if (m_atomic->size() > 0)
+    {
+      unsigned char temp = m_index;
+      m_example->indices.push_back(temp);
+    }
+  }
+
+  void VowpalWabbitNamespaceBuilder::AddFeature(uint32_t weight_index, float x)
 	{
 		// filter out 0-values
 		if (x == 0)

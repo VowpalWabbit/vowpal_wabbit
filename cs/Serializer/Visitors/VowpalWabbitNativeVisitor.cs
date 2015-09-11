@@ -18,7 +18,7 @@ using VW.Serializer.Intermediate;
 
 namespace VW.Serializer.Visitors
 {
-    public sealed class NativeMetaFeature 
+    public sealed class NativeMetaFeature
     {
         private readonly uint namespaceHash;
 
@@ -30,15 +30,7 @@ namespace VW.Serializer.Visitors
                 vw.HashSpace(feature.FeatureGroup.ToString()) :
                 vw.HashSpace(feature.FeatureGroup + feature.Name);
 
-            if (feature.Name != null)
-            {
-                var name = feature.Name;
-                
-                if (feature.Enumerize)
-                    name += Convert.ToString(feature.Value);
 
-                this.featureHash = vw.HashFeature(feature.Name, this.namespaceHash)
-            }
 
             // TODO: think on when to initialize the Meta Data, since with every serialize call the vw instance can potentially change!
         }
@@ -48,10 +40,7 @@ namespace VW.Serializer.Visitors
             get { return this.featureHash; }
         }
 
-        public uint NamespaceHash
-        {
-            get { return this.namespaceHash; }
-        }
+
     }
 
     /// <summary>
@@ -110,7 +99,7 @@ namespace VW.Serializer.Visitors
 
             this.featureGroup = namespaceDense.FeatureGroup ?? '\0';
 
-            this.namespaceHash = namespaceDense.Name == null ? 
+            this.namespaceHash = namespaceDense.Name == null ?
                 this.vw.HashSpace(this.featureGroup.ToString()) :
                 this.vw.HashSpace(this.featureGroup + namespaceDense.Name);
 
@@ -144,7 +133,7 @@ namespace VW.Serializer.Visitors
             Contract.Requires(namespaceSparse != null);
 
             // compute shared namespace hash
-            this.namespaceHash = namespaceSparse.Name == null ? 
+            this.namespaceHash = namespaceSparse.Name == null ?
                 this.vw.HashSpace(namespaceSparse.FeatureGroup.ToString()) :
                 this.vw.HashSpace(namespaceSparse.FeatureGroup + namespaceSparse.Name);
 
@@ -253,10 +242,10 @@ namespace VW.Serializer.Visitors
         {
             Contract.Requires(feature != null);
 
-            var strValue = typeof(T).IsEnum ? 
+            var strValue = typeof(T).IsEnum ?
                 Enum.GetName(typeof(T), feature.Value) : Convert.ToString(feature.Value);
 
-            this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name + strValue, this.namespaceHash), 1f);
+            1this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name + strValue, this.namespaceHash), 1f);
         }
 
         /// <summary>

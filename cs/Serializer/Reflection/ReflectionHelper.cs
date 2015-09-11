@@ -25,22 +25,24 @@ namespace VW.Serializer.Reflection
         /// TODO: replace me with Roslyn once it's released and just generate string code. This way the overload resolution is properly done.
         /// </summary>
         /// <remarks>This is a simple heuristic for overload resolution, not the full thing.</remarks>
-        public static MethodInfo FindMethod(Type objectType, string name, Type valueType)
+        public static MethodInfo FindMethod(Type objectType, string name, Type[] fixedParameterTypes, Type valueType)
         {
-            Contract.Ensures(objectType != null);
-            Contract.Ensures(name != null);
-            Contract.Ensures(valueType != null);
+            Contract.Requires(objectType != null);
+            Contract.Requires(name != null);
+            Contract.Requires(fixedParameterTypes != null);
+            Contract.Requires(valueType != null);
 
             // let's find the "best" match:
-            // order by 
+            // order by
             //  1. distance (0 = assignable, 1 = using generic) --> ascending
             //  2. # of interfaces implemented. the more the better (the more specific we are) --> descending
             //  3. # of open generics. the less the better (the more specific we are) --> ascending
             var methods = from m in objectType.GetMethods(BindingFlags.Instance | BindingFlags.Public)
                           where m.Name == name && methodPredicate(m)
                           let parameters = m.GetParameters()
-                          where parameters.Length >= 1
-                          let methodParameter = parameters[0].ParameterType
+                          where parameters.Length == fixedParameterTypes.Length + 1
+                          where parameters.Take(fixedParameterTypes.Length).SequenceEqual(fixedParameterTypes)
+                          let methodParameter = parameters.Last().ParameterType
                           let output = new
                           {
                               Method = m,
@@ -99,8 +101,8 @@ namespace VW.Serializer.Reflection
 
             if (candidate.IsGenericType)
             {
-                // try to find a match that is assignable... 
-                // 
+                // try to find a match that is assignable...
+                //
                 var genericCandidate = candidate.GetGenericTypeDefinition();
 
                 var bestMatches =
@@ -167,10 +169,10 @@ namespace VW.Serializer.Reflection
                 {
                     return binaryExpression.Method;
                 }
-                
+
                 throw new NotSupportedException();
             }
-            
+
             var methodExpression = expression as MemberExpression;
             if (methodExpression != null)
             {

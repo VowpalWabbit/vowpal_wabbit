@@ -21,13 +21,13 @@ namespace VW.Serializer.Intermediate
     /// </summary>
     public sealed class FeatureExpression
     {
-        public FeatureExpression(Type featureType, 
-            string name, 
-            Func<Expression, Expression> valueExpressionFactory, 
-            string @namespace = null, 
-            char? featureGroup = null, 
-            bool enumerize = false, 
-            string variableName = null, 
+        public FeatureExpression(Type featureType,
+            string name,
+            Func<Expression, Expression> valueExpressionFactory,
+            string @namespace = null,
+            char? featureGroup = null,
+            bool enumerize = false,
+            string variableName = null,
             int? order = null,
             bool addAnchor = false,
             MethodInfo overrideSerializeMethod = null)
@@ -57,7 +57,7 @@ namespace VW.Serializer.Intermediate
 
             this.DenseFeatureValueElementType = InspectionHelper.GetDenseFeatureValueElementType(featureType);
             this.IsDense = this.DenseFeatureValueElementType != null;
-            this.IntermediateFeatureType = typeof(Feature<>).MakeGenericType(featureType);
+            // this.IntermediateFeatureType = typeof(Feature<>).MakeGenericType(featureType);
         }
 
         /// <summary>
@@ -105,13 +105,35 @@ namespace VW.Serializer.Intermediate
 
             foreach (var visitor in visitors)
             {
+                // find visitor.MarshalFeature(VowpalWabbitMarshallingContext context, Namespace ns, <NumericFeature|Feature> feature, <valueType> value)
+
                 // find visitor.Visit(ValueType, ...);
-                var method = ReflectionHelper.FindMethod(visitor, Enumerize ? "VisitEnumerize" : "Visit", this.FeatureType);
-                
-                if (method != null)
+                //var method = ReflectionHelper.FindMethod(visitor, Enumerize ? "VisitEnumerize" : "Visit", this.FeatureType);
+                MethodInfo method = null;
+
+                if (!this.Enumerize)
                 {
-                    return method;
+                    method = ReflectionHelper.FindMethod(
+                        visitor,
+                        "MarshalFeature",
+                        new[] { typeof(VowpalWabbitMarshallingContext), typeof(Namespace), typeof(NumericFeature) },
+                        this.FeatureType);
+
+                    if (method != null)
+                    {
+                        return method;
+                    }
                 }
+                else
+                {
+                    // search for special
+                }
+
+                return ReflectionHelper.FindMethod(
+                        visitor,
+                        "MarshalFeature",
+                        new[] { typeof(VowpalWabbitMarshallingContext), typeof(Namespace), typeof(Feature) },
+                        this.FeatureType);
             }
 
             return null;
@@ -121,7 +143,7 @@ namespace VW.Serializer.Intermediate
         //{
         //    var e = this.ValueExpressionFactory(valueExpression);
 
-        //    // CODE new Feature<T> { Namespace = ..., ... } 
+        //    // CODE new Feature<T> { Namespace = ..., ... }
         //    return Expression.MemberInit(
         //            Expression.New(IntermediateFeatureType),
         //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.Name), Expression.Constant(this.Name, typeof(string))),

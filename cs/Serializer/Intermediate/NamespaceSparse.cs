@@ -11,19 +11,19 @@ using VW.Serializer.Interfaces;
 
 namespace VW.Serializer.Intermediate
 {
-    /// <summary>
-    /// The intermediate representation of a sparse namespace.
-    /// </summary>
-    public sealed class NamespaceSparse : Namespace, INamespaceSparse, IVisitableNamespace
-    {
-        /// <summary>
-        /// Gets or sets the visit action.
-        /// </summary>
-        public Action Visit { get; set; }
+    ///// <summary>
+    ///// The intermediate representation of a sparse namespace.
+    ///// </summary>
+    //public sealed class NamespaceSparse : Namespace, INamespaceSparse, IVisitableNamespace
+    //{
+    //    /// <summary>
+    //    /// Gets or sets the visit action.
+    //    /// </summary>
+    //    public Action Visit { get; set; }
 
-        /// <summary>
-        /// Gets or sets the features.
-        /// </summary>
-        public IVisitableFeature[] Features { get; set; }
-    }
+    //    /// <summary>
+    //    /// Gets or sets the features.
+    //    /// </summary>
+    //    public IVisitableFeature[] Features { get; set; }
+    //}
 }
