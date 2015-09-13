@@ -40,11 +40,11 @@ struct node_socks {
   {
     if(current_master != "") {
       if(parent != -1)
-	CLOSESOCK(this->parent);
+        CLOSESOCK(this->parent);
       if(children[0] != -1)
-	CLOSESOCK(this->children[0]);
+        CLOSESOCK(this->children[0]);
       if(children[1] != -1)
-	CLOSESOCK(this->children[1]);
+        CLOSESOCK(this->children[1]);
     }
   }
   node_socks ()
@@ -55,7 +55,7 @@ struct node_socks {
 
 
 template <class T, void (*f)(T&, const T&)> void addbufs(T* buf1, const T* buf2, const size_t n) {
-  for(size_t i = 0;i < n;i++)
+  for(size_t i = 0; i < n; i++)
     f(buf1[i], buf2[i]);
 }
 
@@ -67,9 +67,9 @@ template <class T> void pass_up(char* buffer, size_t left_read_pos, size_t right
   if(my_bufsize > 0) {
     //going to pass up this chunk of data to the parent
     int write_size = send(parent_sock, buffer+parent_sent_pos, (int)my_bufsize, 0);
-    if(write_size < 0) 
+    if(write_size < 0)
       THROW("Write to parent failed " << my_bufsize << " " << write_size << " " << parent_sent_pos << " " << left_read_pos << " " << right_read_pos);
-    
+
     parent_sent_pos += write_size;
   }
 
@@ -100,48 +100,48 @@ template <class T, void (*f)(T&, const T&)>void reduce(char* buffer, const size_
   }
 
   while (parent_sent_pos < n || child_read_pos[0] < n || child_read_pos[1] < n)
-    {
-      if(parent_sock != -1)
-	pass_up<T>(buffer, child_read_pos[0], child_read_pos[1], parent_sent_pos, parent_sock, n);
+  {
+    if(parent_sock != -1)
+      pass_up<T>(buffer, child_read_pos[0], child_read_pos[1], parent_sent_pos, parent_sock, n);
 
-      if(parent_sent_pos >= n && child_read_pos[0] >= n && child_read_pos[1] >= n) break;
+    if(parent_sent_pos >= n && child_read_pos[0] >= n && child_read_pos[1] >= n) break;
 
-      if(child_read_pos[0] < n || child_read_pos[1] < n) {
-	if (max_fd > 0 && select((int)max_fd,&fds, nullptr, nullptr, nullptr) == -1)
-	  THROWERRNO("select");
+    if(child_read_pos[0] < n || child_read_pos[1] < n) {
+      if (max_fd > 0 && select((int)max_fd,&fds, nullptr, nullptr, nullptr) == -1)
+        THROWERRNO("select");
 
-	for(int i = 0;i < 2;i++) {
-	  if(child_sockets[i] != -1 && FD_ISSET(child_sockets[i],&fds)) {
-	    //there is data to be left from left child
-	    if(child_read_pos[i] == n) 
-	      THROW("I think child has no data to send but he thinks he has "<<FD_ISSET(child_sockets[0],&fds)<<" "<<FD_ISSET(child_sockets[1],&fds));
+      for(int i = 0; i < 2; i++) {
+        if(child_sockets[i] != -1 && FD_ISSET(child_sockets[i],&fds)) {
+          //there is data to be left from left child
+          if(child_read_pos[i] == n)
+            THROW("I think child has no data to send but he thinks he has "<<FD_ISSET(child_sockets[0],&fds)<<" "<<FD_ISSET(child_sockets[1],&fds));
 
 
-	    size_t count = min(ar_buf_size,n - child_read_pos[i]);
-	    int read_size = recv(child_sockets[i], child_read_buf[i] + child_unprocessed[i], (int)count, 0);
-		if (read_size == -1)
-		  THROWERRNO("recv from child");
+          size_t count = min(ar_buf_size,n - child_read_pos[i]);
+          int read_size = recv(child_sockets[i], child_read_buf[i] + child_unprocessed[i], (int)count, 0);
+          if (read_size == -1)
+            THROWERRNO("recv from child");
 
-	    addbufs<T, f>((T*)buffer + child_read_pos[i]/sizeof(T), (T*)child_read_buf[i], (child_read_pos[i] + read_size)/sizeof(T) - child_read_pos[i]/sizeof(T));
+          addbufs<T, f>((T*)buffer + child_read_pos[i]/sizeof(T), (T*)child_read_buf[i], (child_read_pos[i] + read_size)/sizeof(T) - child_read_pos[i]/sizeof(T));
 
-	    child_read_pos[i] += read_size;
-	    int old_unprocessed = child_unprocessed[i];
-	    child_unprocessed[i] = child_read_pos[i] % (int)sizeof(T);
-	    for(int j = 0;j < child_unprocessed[i];j++) {
-	      child_read_buf[i][j] = child_read_buf[i][((old_unprocessed + read_size)/(int)sizeof(T))*sizeof(T)+j];
-	    }
+          child_read_pos[i] += read_size;
+          int old_unprocessed = child_unprocessed[i];
+          child_unprocessed[i] = child_read_pos[i] % (int)sizeof(T);
+          for(int j = 0; j < child_unprocessed[i]; j++) {
+            child_read_buf[i][j] = child_read_buf[i][((old_unprocessed + read_size)/(int)sizeof(T))*sizeof(T)+j];
+          }
 
-	    if(child_read_pos[i] == n) //Done reading parent
-	      FD_CLR(child_sockets[i],&fds);
-	  }
-	  else if(child_sockets[i] != -1 && child_read_pos[i] != n)
-	    FD_SET(child_sockets[i],&fds);
-	}
+          if(child_read_pos[i] == n) //Done reading parent
+            FD_CLR(child_sockets[i],&fds);
+        }
+        else if(child_sockets[i] != -1 && child_read_pos[i] != n)
+          FD_SET(child_sockets[i],&fds);
       }
-      if(parent_sock == -1 && child_read_pos[0] == n && child_read_pos[1] == n)
-	parent_sent_pos = n;
-
     }
+    if(parent_sock == -1 && child_read_pos[0] == n && child_read_pos[1] == n)
+      parent_sent_pos = n;
+
+  }
 
 }
 

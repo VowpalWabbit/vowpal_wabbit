@@ -15,33 +15,32 @@ using namespace std;
 class squaredloss : public loss_function {
 public:
   squaredloss() {
-    
+
   }
-  
+
   float getLoss(shared_data* sd, float prediction, float label) {
     if (prediction <= sd->max_label && prediction >= sd->min_label)
-      {
-	float example_loss = (prediction - label) * (prediction - label);
-	return example_loss;
-      }
+    {
+      float example_loss = (prediction - label) * (prediction - label);
+      return example_loss;
+    }
     else if (prediction < sd->min_label)
       if (label == sd->min_label)
-	return 0.;
+        return 0.;
       else
-	return (float) ((label - sd->min_label) * (label - sd->min_label) 
-	  + 2. * (label-sd->min_label) * (sd->min_label - prediction));
-    else 
-      if (label == sd->max_label)
-	return 0.;
-      else
-	return float((sd->max_label - label) * (sd->max_label - label) 
-	  + 2. * (sd->max_label - label) * (prediction - sd->max_label));
+        return (float) ((label - sd->min_label) * (label - sd->min_label)
+                        + 2. * (label-sd->min_label) * (sd->min_label - prediction));
+    else if (label == sd->max_label)
+      return 0.;
+    else
+      return float((sd->max_label - label) * (sd->max_label - label)
+                   + 2. * (sd->max_label - label) * (prediction - sd->max_label));
   }
-  
-  float getUpdate(float prediction, float label, float eta_t, float pred_per_update) 
+
+  float getUpdate(float prediction, float label, float eta_t, float pred_per_update)
   {
-    if (eta_t < 1e-6){ 
-      /* When exp(-eta_t)~= 1 we replace 1-exp(-eta_t) 
+    if (eta_t < 1e-6) {
+      /* When exp(-eta_t)~= 1 we replace 1-exp(-eta_t)
        * with its first order Taylor expansion around 0
        * to avoid catastrophic cancellation.
        */
@@ -54,12 +53,12 @@ public:
     return 2.f*(label - prediction)*eta_t/pred_per_update;
   }
 
-  float getRevertingWeight(shared_data* sd, float prediction, float eta_t){
+  float getRevertingWeight(shared_data* sd, float prediction, float eta_t) {
     float t = 0.5f*(sd->min_label+sd->max_label);
     float alternative = (prediction > t) ? sd->min_label : sd->max_label;
     return log((alternative-prediction)/(alternative-t))/eta_t;
   }
-  
+
   float getSquareGrad(float prediction, float label) {
     return 4.f*(prediction - label) * (prediction - label);
   }
@@ -75,22 +74,22 @@ public:
   {
     if (prediction <= sd->max_label && prediction >= sd->min_label)
       return 2.;
-    else 
+    else
       return 0.;
-  } 
+  }
 };
 
 class classic_squaredloss : public loss_function {
 public:
   classic_squaredloss() {
-    
+
   }
-  
+
   float getLoss(shared_data*, float prediction, float label) {
     float example_loss = (prediction - label) * (prediction - label);
     return example_loss;
   }
-  
+
   float getUpdate(float prediction, float label,float eta_t, float pred_per_update) {
     return 2.f*eta_t*(label - prediction)/pred_per_update;
   }
@@ -98,8 +97,8 @@ public:
   float getUnsafeUpdate(float prediction, float label,float eta_t,float pred_per_update) {
     return 2.f*eta_t*(label - prediction)/pred_per_update;
   }
-  
-  float getRevertingWeight(shared_data* sd, float prediction, float eta_t){
+
+  float getRevertingWeight(shared_data* sd, float prediction, float eta_t) {
     float t = 0.5f*(sd->min_label+sd->max_label);
     float alternative = (prediction > t) ? sd->min_label : sd->max_label;
     return (t-prediction)/((alternative-prediction)*eta_t);
@@ -122,16 +121,16 @@ public:
 class hingeloss : public loss_function {
 public:
   hingeloss() {
-    
+
   }
-  
+
   float getLoss(shared_data*, float prediction, float label) {
     if (label != -1.f && label != 1.f)
       cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << endl;
     float e = 1 - label*prediction;
     return (e > 0) ? e : 0;
   }
-  
+
   float getUpdate(float prediction, float label,float eta_t, float pred_per_update) {
     if(label*prediction >= 1) return 0;
     float err = 1 - label*prediction;
@@ -143,7 +142,7 @@ public:
     return label * eta_t/pred_per_update;
   }
 
-  float getRevertingWeight(shared_data*, float prediction, float eta_t){
+  float getRevertingWeight(shared_data*, float prediction, float eta_t) {
     return fabs(prediction)/eta_t;
   }
 
@@ -166,19 +165,19 @@ public:
 class logloss : public loss_function {
 public:
   logloss() {
-    
+
   }
-  
+
   float getLoss(shared_data*, float prediction, float label) {
     if (label != -1.f && label != 1.f)
       cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << endl;
     return log(1 + exp(-label * prediction));
   }
-  
+
   float getUpdate(float prediction, float label, float eta_t, float pred_per_update) {
     float w,x;
     float d = exp(label * prediction);
-    if(eta_t < 1e-6){
+    if(eta_t < 1e-6) {
       /* As with squared loss, for small eta_t we replace the update
        * with its first order Taylor expansion to avoid numerical problems
        */
@@ -193,9 +192,9 @@ public:
     float d = exp(label * prediction);
     return label*eta_t/((1+d)*pred_per_update);
   }
-  
-  inline float wexpmx(float x){
-    /* This piece of code is approximating W(exp(x))-x. 
+
+  inline float wexpmx(float x) {
+    /* This piece of code is approximating W(exp(x))-x.
      * W is the Lambert W function: W(z)*exp(W(z))=z.
      * The absolute error of this approximation is less than 9e-5.
      * Faster/better approximations can be substituted here.
@@ -206,8 +205,8 @@ public:
     double u = 2.*t*(t+2.*r/3.); //magic
     return (float)(w*(1.+r/t*(u-r)/(u-2.*r))-x); //more magic
   }
-  
-  float getRevertingWeight(shared_data*, float prediction, float eta_t){
+
+  float getRevertingWeight(shared_data*, float prediction, float eta_t) {
     float z = -fabs(prediction);
     return (1-z-exp(z))/eta_t;
   }
@@ -226,7 +225,7 @@ public:
   float second_derivative(shared_data*, float prediction, float label)
   {
     float p = 1 / (1+exp(label*prediction));
-    
+
     return p*(1-p);
   }
 };
@@ -235,7 +234,7 @@ class quantileloss : public loss_function {
 public:
   quantileloss(float &tau_) : tau(tau_) {
   }
-  
+
   float getLoss(shared_data*, float prediction, float label) {
     float e = label - prediction;
     if(e > 0) {
@@ -243,9 +242,9 @@ public:
     } else {
       return -(1 - tau) * e;
     }
-    
+
   }
-  
+
   float getUpdate(float prediction, float label, float eta_t, float pred_per_update) {
     float err = label - prediction;
     if(err == 0) return 0;
@@ -265,20 +264,20 @@ public:
     if(err > 0) return tau*eta_t/pred_per_update;
     return -(1-tau)*eta_t/pred_per_update;
   }
-  
-  float getRevertingWeight(shared_data* sd, float prediction, float eta_t){
+
+  float getRevertingWeight(shared_data* sd, float prediction, float eta_t) {
     float v,t;
     t = 0.5f*(sd->min_label+ sd->max_label);
     if(prediction > t)
       v = -(1-tau);
-     else
+    else
       v = tau;
     return (t - prediction)/(eta_t*v);
   }
 
   float first_derivative(shared_data*, float prediction, float label)
   {
-    float e = label - prediction; 
+    float e = label - prediction;
     if(e == 0) return 0;
     return e > 0 ? -tau : (1-tau);
   }
@@ -297,21 +296,21 @@ public:
 };
 
 loss_function* getLossFunction(vw& all, string funcName, float function_parameter) {
-  if(funcName.compare("squared") == 0 || funcName.compare("Huber") == 0) 
+  if(funcName.compare("squared") == 0 || funcName.compare("Huber") == 0)
     return new squaredloss();
   else if(funcName.compare("classic") == 0)
     return new classic_squaredloss();
-  else if(funcName.compare("hinge") == 0) 
+  else if(funcName.compare("hinge") == 0)
     return new hingeloss();
   else if(funcName.compare("logistic") == 0) {
     if (all.set_minmax != noop_mm)
-      {
-	all.sd->min_label = -50;
-	all.sd->max_label = 50;
-      }
+    {
+      all.sd->min_label = -50;
+      all.sd->max_label = 50;
+    }
     return new logloss();
   } else if(funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0) {
     return new quantileloss(function_parameter);
-  } else 
+  } else
     THROW("Invalid loss function name: \'" << funcName << "\' Bailing!");
 }

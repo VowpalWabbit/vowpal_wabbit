@@ -5,7 +5,7 @@
 #include "rand48.h"
 
 namespace ExpReplay {
-  
+
 struct expreplay {
   vw* all;
   size_t N;      //how big is the buffer?
@@ -27,7 +27,7 @@ void predict_or_learn(expreplay& er, LEARNER::base_learner& base, example& ec) {
     if (er.filled[n])
       base.learn(er.buf[n]);
   }
-  
+
   size_t n = (size_t)(frand48() * (float)er.N);
   if (er.filled[n])
     base.learn(er.buf[n]);
@@ -77,10 +77,10 @@ LEARNER::base_learner* expreplay_setup(vw& all) {
 
   string replay_count_string = replay_string;
   replay_count_string += "_count";
-  
+
   size_t rc = 1;
   new_options(all, "Experience Replay options")
-      (replay_count_string.c_str(), po::value<size_t>(&rc)->default_value(1), "how many times (in expectation) should each example be played (default: 1 = permuting)");
+  (replay_count_string.c_str(), po::value<size_t>(&rc)->default_value(1), "how many times (in expectation) should each example be played (default: 1 = permuting)");
   add_options(all);
 
   if (N == 0) return nullptr;
@@ -96,10 +96,10 @@ LEARNER::base_learner* expreplay_setup(vw& all) {
 
   er.filled = calloc_or_die<bool>(er.N);
   er.replay_count = rc;
-    
+
   if (! all.quiet)
     cerr << "experience replay level=" << er_level << ", buffer=" << er.N << ", replay count=" << er.replay_count << endl;
-  
+
   LEARNER::base_learner* base = setup_base(all);
   LEARNER::learner<expreplay>* l = &init_learner(&er, base, predict_or_learn<true,lp>, predict_or_learn<false,lp>);
   l->set_finish(finish<lp>);
