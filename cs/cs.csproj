@@ -7,7 +7,7 @@
     <ProjectGuid>{E4E962AE-7056-4EB0-A8C5-8DC824A4B068}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>VowpalWabbit</RootNamespace>
+    <RootNamespace>VW</RootNamespace>
     <AssemblyName>VowpalWabbit</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -39,6 +39,10 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Threading.Tasks.Dataflow, Version=4.5.24.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\vowpalwabbit\packages\Microsoft.Tpl.Dataflow.4.5.24\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -46,10 +50,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Interfaces\IActionDependentFeatures.cs" />
-    <Compile Include="Interfaces\IExample.cs" />
-    <Compile Include="Interfaces\IObjectFactory.cs" />
+    <Compile Include="Extensions.cs" />
     <Compile Include="Labels\ContextualBanditLabel.cs" />
+    <Compile Include="ObjectFactory.cs" />
     <Compile Include="PooledObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializer\Attributes\CacheableAttribute.cs" />
@@ -61,7 +64,6 @@
     <Compile Include="Serializer\Interfaces\INamespaceSparse.cs" />
     <Compile Include="Serializer\Interfaces\IVisitableFeature.cs" />
     <Compile Include="Serializer\Interfaces\IVisitableNamespace.cs" />
-    <Compile Include="Serializer\Interfaces\IVowpalWabbitVisitor.cs" />
     <Compile Include="Serializer\Intermediate\Feature.cs" />
     <Compile Include="Serializer\Intermediate\FeatureExpression.cs" />
     <Compile Include="Serializer\Intermediate\Namespace.cs" />
@@ -76,16 +78,18 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
-    <Compile Include="Serializer\VowpalWabbitCachedExample.cs" />
+    <Compile Include="Serializer\Visitors\VowpalWabbitStringVisitor.cs" />
+    <Compile Include="Serializer\VowpalWabbitDebugExample.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerFactory.cs" />
-    <Compile Include="Serializer\VowpalWabbitSerializerSettings.cs" />
-    <Compile Include="SharedExample.cs" />
+    <Compile Include="Labels\SharedLabel.cs" />
     <Compile Include="Labels\SimpleLabel.cs" />
     <Compile Include="VowpalWabbit.cs" />
     <Compile Include="ObjectPool.cs" />
-    <Compile Include="VowpalWabbitFactory.cs" />
-    <Compile Include="VowpalWabbitFactoryBase.cs" />
+    <Compile Include="VowpalWabbitAsync.cs" />
+    <Compile Include="VowpalWabbitThreadedPrediction.cs" />
+    <Compile Include="VowpalWabbitThreadedLearning.cs" />
+    <Compile Include="VowpalWabbitMultiLine.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\vw_clr\vw_clr.vcxproj">
@@ -95,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cs.nuspec" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
@@ -113,6 +118,9 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
   </Target>
+  <PropertyGroup>
+    <PreBuildEvent>$(ProjectDir)\transform_all.bat $(ProjectDir)</PreBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

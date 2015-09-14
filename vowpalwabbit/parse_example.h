@@ -11,4 +11,6 @@ license as described in the file LICENSE.
 //example processing
 
 int read_features(void* a, example* ex);// read example from  preset buffers.
-void read_line(vw& all, example* ex, char* line);//read example from the line.
+namespace VW {
+	void read_line(vw& all, example* ex, char* line);//read example from the line.
+}

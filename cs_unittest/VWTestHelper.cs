@@ -50,21 +50,18 @@ namespace cs_unittest
             using (var vw = new VowpalWabbit<T>(args))
             {
                 var listener = new TListener();
-                listener.Created = data => 
+                listener.Created = (data, label) => 
                 {
                     if (data == null)
                     {
                         Assert.Fail("got empty example");
                     }
 
-                    using (var ex = vw.ReadExample(data))
-                    {
-                        ex.Learn();
-                    }
+                    vw.Learn(data, label);
                 };
                 VWTestHelper.ParseInput(File.OpenRead(inputFile), listener);
 
-                AssertEqual(stderrFile, vw.PerformanceStatistics);
+                AssertEqual(stderrFile, vw.Native.PerformanceStatistics);
             }
         }
 
@@ -84,23 +81,20 @@ namespace cs_unittest
 
             using (var vwRef = new VowpalWabbit(args))
             using (var vwModel = new VowpalWabbitModel(args))
-            using (var vwInMemoryShared2 = new VowpalWabbit<TData>(vwModel))
+            using (var vwInMemoryShared2 = new VowpalWabbit<TData>(new VowpalWabbitSettings(model: vwModel)))
             {
                 var listener = new TListener();
-                listener.Created = x =>
+                listener.Created = (x, label) =>
                 {
-                    var expected = vwRef.Predict<VowpalWabbitScalarPrediction>(x.Line);
+                    var expected = vwRef.Predict(x.Line, VowpalWabbitPredictionType.Scalar);
 
-                    using (var ex = vwInMemoryShared2.ReadExample(x))
+                    var actual = vwInMemoryShared2.Predict(x, VowpalWabbitPredictionType.Scalar, label); 
+
+                    Assert.AreEqual(expected, actual, 1e-5);
+
+                    if (references != null)
                     {
-                        var actual = ex.Predict<VowpalWabbitScalarPrediction>();
-
-                        Assert.AreEqual(expected.Value, actual.Value, 1e-5);
-
-                        if (references != null)
-                        {
-                            Assert.AreEqual(references[index++], actual.Value, 1e-5);
-                        }
+                        Assert.AreEqual(references[index++], actual, 1e-5);
                     }
                 };
             }

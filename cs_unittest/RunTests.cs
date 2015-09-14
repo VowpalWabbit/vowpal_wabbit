@@ -114,11 +114,11 @@ namespace cs_unittest
                                 float actualValue;
                                 if (testing)
                                 {
-                                    actualValue = vw.Predict<VowpalWabbitScalarPrediction>(dataLine).Value;
+                                    actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Scalar);
                                 }
                                 else
                                 {
-                                    actualValue = vw.Learn<VowpalWabbitScalarPrediction>(dataLine).Value;
+                                    actualValue = vw.Learn(dataLine, VowpalWabbitPredictionType.Scalar);
                                 }
 
                                 //Assert.AreEqual(
