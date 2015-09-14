@@ -28,7 +28,7 @@ license as described in the file LICENSE.
 
 using namespace std;
 using namespace LEARNER;
-//todo: 
+//todo:
 //4. Factor various state out of vw&
 namespace GD
 {
@@ -91,7 +91,7 @@ namespace GD
 
     return x;
   }
-  
+
   template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
   inline void update_feature(float& update, float x, float& fw)
   {
@@ -104,12 +104,12 @@ namespace GD
       }
   }
 
-  //this deals with few nonzero features vs. all nonzero features issues.  
+  //this deals with few nonzero features vs. all nonzero features issues.
   template<bool sqrt_rate, size_t adaptive, size_t normalized>
   float average_update(gd& g)
   {
     if (normalized) {
-      if (sqrt_rate) 
+      if (sqrt_rate)
 	{
 	  float avg_norm = (float) g.total_weight / (float) g.all->normalized_sum_norm_x;
 	  if (adaptive)
@@ -117,12 +117,12 @@ namespace GD
 	  else
 	    return avg_norm;
 	}
-      else 
+      else
 	return powf( (float) g.all->normalized_sum_norm_x / (float) g.total_weight, g.neg_norm_power);
     }
     return 1.f;
   }
-  
+
   template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
   void train(gd& g, example& ec, float update)
   {
@@ -135,7 +135,7 @@ namespace GD
   void end_pass(gd& g)
   {
     vw& all = *g.all;
-    
+
     sync_weights(all);
     if (all.all_reduce != nullptr) {
         if (all.adaptive)
@@ -145,10 +145,10 @@ namespace GD
     }
     all.eta *= all.eta_decay_rate;
     if (all.save_per_pass)
-      save_predictor(all, all.final_regressor_name, all.current_pass);   
-    
+      save_predictor(all, all.final_regressor_name, all.current_pass);
+
     all.current_pass++;
-    
+
     if(!all.holdout_set_off)
       {
         if(summarize_holdout_set(all, g.no_win_counter))
@@ -254,13 +254,13 @@ inline float trunc_weight(const float w, const float gravity) {
 void print_features(vw& all, example& ec)
 {
   weight* weights = all.reg.weight_vector;
-  
+
   if (all.lda > 0)
     {
       size_t count = 0;
       for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
 	count += ec.atomics[*i].size();
-      for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
+      for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
 	for (audit_data *f = ec.audit_features[*i].begin; f != ec.audit_features[*i].end; f++)
 	  {
 	    cout << '\t' << f->space << '^' << f->feature << ':' << ((f->weight_index >> all.reg.stride_shift) & all.parse_mask) << ':' << f->x;
@@ -305,7 +305,7 @@ void print_audit_features(vw& all, example& ec)
   print_features(all, ec);
 }
 
-float finalize_prediction(shared_data* sd, float ret) 
+float finalize_prediction(shared_data* sd, float ret)
 {
   if ( nanpattern(ret))
     {
@@ -326,7 +326,7 @@ float finalize_prediction(shared_data* sd, float ret)
    float prediction;
    float gravity;
  };
- 
+
  inline void vec_add_trunc(trunc_data& p, const float fx, float& fw) {
    p.prediction += trunc_weight(fw, p.gravity) * fx;
  }
@@ -342,18 +342,18 @@ float finalize_prediction(shared_data* sd, float ret)
     p += fw * fx;
     cerr << " + " << fw << "*" << fx;
   }
-  
-  
+
+
 template<bool l1, bool audit>
 void predict(gd& g, base_learner&, example& ec)
 {
   vw& all = *g.all;
-  
+
   if (l1)
     ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);
   else
-    ec.partial_prediction = inline_predict(all, ec);    
-  
+    ec.partial_prediction = inline_predict(all, ec);
+
   ec.partial_prediction *= (float)all.sd->contraction;
   ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
   if (audit)
@@ -367,7 +367,7 @@ inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, ui
     w += mp.step;
   }
 }
-  
+
 template<bool l1, bool audit>
 void multipredict(gd& g, base_learner&, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions) {
   vw& all = *g.all;
@@ -392,7 +392,7 @@ void multipredict(gd& g, base_learner&, example& ec, size_t count, size_t step, 
   }
 }
 
-  
+
   struct power_data {
     float minus_power_t;
     float neg_norm_power;
@@ -405,7 +405,7 @@ void multipredict(gd& g, base_learner&, example& ec, size_t count, size_t step, 
     float rate_decay = 1.f;
     if(adaptive) {
       if (sqrt_rate)
-	{  
+	{
 	  rate_decay = InvSqrt(w[adaptive]);
 	  }
       else
@@ -445,11 +445,11 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
       if( x_abs > w[normalized] ) {// new scale discovered
 	if( w[normalized] > 0. ) {//If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
 	  if (sqrt_rate) {
-	    float rescale = w[normalized]/x_abs;	    
+	    float rescale = w[normalized]/x_abs;
 	    w[0] *= (adaptive ? rescale : rescale*rescale);
 	  }
 	  else {
-	    float rescale = x_abs/w[normalized];	    
+	    float rescale = x_abs/w[normalized];
 	    w[0] *= powf(rescale*rescale, nd.pd.neg_norm_power);
 	  }
 	}
@@ -461,7 +461,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
     nd.pred_per_update += x2 * w[spare];
   }
 }
-  
+
   bool global_print_features = false;
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
   float get_pred_per_update(gd& g, example& ec)
@@ -470,9 +470,9 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
     vw& all = *g.all;
     float grad_squared = all.loss->getSquareGrad(ec.pred.scalar, ld.label) * ld.weight;
     if (grad_squared == 0) return 1.;
-    
+
     norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
-    
+
     foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, nd);
 
     if(normalized) {
@@ -482,7 +482,7 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g);
       nd.pred_per_update *= g.update_multiplier;
     }
-    
+
     return nd.pred_per_update;
   }
 
@@ -491,7 +491,7 @@ float compute_update(gd& g, example& ec)
 { //invariant: not a test label, importance weight > 0
   label_data& ld = ec.l.simple;
   vw& all = *g.all;
-  
+
   float update = 0.;
   ec.updated_prediction = ec.pred.scalar;
   if (all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) > 0.)
@@ -502,7 +502,7 @@ float compute_update(gd& g, example& ec)
       else
 	pred_per_update = ec.total_sum_feat_sq;
       float delta_pred = pred_per_update * all.eta * ld.weight;
-      if(!adaptive) 
+      if(!adaptive)
 	{
 	  float t = (float)(ec.example_t - all.sd->weighted_holdout_examples);
 	  delta_pred *= powf(t, g.neg_power_t);
@@ -514,7 +514,7 @@ float compute_update(gd& g, example& ec)
 
       // changed from ec.partial_prediction to ld.prediction
       ec.updated_prediction += pred_per_update * update;
-      
+
       if (all.reg_mode && fabs(update) > 1e-8) {
 	double dev1 = all.loss->first_derivative(all.sd, ec.pred.scalar, ld.label);
 	double eta_bar = (fabs(dev1) > 1e-8) ? (-update / dev1) : 0.0;
@@ -524,7 +524,7 @@ float compute_update(gd& g, example& ec)
 	all.sd->gravity += eta_bar * all.l1_lambda;
       }
     }
-  
+
   if (sparse_l2)
     update -= g.sparse_l2 * ec.pred.scalar;
   return update;
@@ -536,7 +536,7 @@ void update(gd& g, base_learner&, example& ec)
   float update;
   if ( (update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (g, ec)) != 0.)
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
-  
+
   if (g.all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
     sync_weights(*g.all);
 }
@@ -828,12 +828,12 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 	  for (size_t j = 1; j < stride*length; j+=stride)
 	    {
 	      all.reg.weight_vector[j] = all.initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
-	      //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be 
-	      //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients 
+	      //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be
+	      //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients
 	      //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
 	    }
 	}
-      
+
       if (g.initial_constant != 0.0)
         VW::set_weight(all, constant, 0, g.initial_constant);
     }
@@ -918,7 +918,7 @@ uint32_t ceil_log_2(uint32_t v)
 {
   if (v==0)
     return 0;
-  else 
+  else
     return 1 + ceil_log_2(v >> 1);
 }
 
@@ -955,12 +955,12 @@ base_learner* setup(vw& all)
   if(!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
-    if(vm.count("early_terminate"))      
-      g.early_stop_thres = vm["early_terminate"].as< size_t>();     
+    if(vm.count("early_terminate"))
+      g.early_stop_thres = vm["early_terminate"].as< size_t>();
   }
 
   if (vm.count("constant")) {
-      g.initial_constant = vm["constant"].as<float>();     
+      g.initial_constant = vm["constant"].as<float>();
   }
 
   if( !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) ) )
@@ -970,10 +970,10 @@ base_learner* setup(vw& all)
       all.invariant_updates = all.training && vm.count("invariant");
       all.normalized_updates = all.training && vm.count("normalized");
       g.normalized = all.normalized_updates;
-      
+
       if(!vm.count("learning_rate") && !vm.count("l") && !(all.adaptive && all.normalized_updates))
 	all.eta = 10; //default learning rate to 10 for non default update rule
-      
+
       //if not using normalized or adaptive, default initial_t to 1 instead of 0
     if(!all.adaptive && !all.normalized_updates) {
 	if (!vm.count("initial_t")) {
@@ -984,13 +984,13 @@ base_learner* setup(vw& all)
 	all.eta *= powf((float)(all.sd->t), all.power_t);
       }
     }
-  
+
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
 	 << " adjust --decay_learning_rate larger to avoid this." << endl;
 
 
-  
+
   if (all.reg_mode % 2)
     if (all.audit || all.hash_inv) {
       g.predict = predict<true, true>;   g.multipredict = multipredict<true, true>;
