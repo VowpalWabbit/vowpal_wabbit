@@ -20,7 +20,7 @@ using namespace std;
 #include "vw_exception.h"
 
 /* Define the last version where files are backward compatible. */
-#define LAST_COMPATIBLE_VERSION "6.1.3"
+#define LAST_COMPATIBLE_VERSION "7.6.0"
 #define VERSION_FILE_WITH_CUBIC "6.1.3"
 #define VERSION_FILE_WITH_RANK_IN_HEADER "7.8.0" // varsion since which rank was moved to vw::file_options
 #define VERSION_FILE_WITH_INTERACTIONS "7.10.2" // first version that saves interacions among pairs and triples
@@ -434,4 +434,3 @@ void save_predictor(vw& all, string reg_name)
   dump_regressor(all, reg_name, false);
 }
 }
-
