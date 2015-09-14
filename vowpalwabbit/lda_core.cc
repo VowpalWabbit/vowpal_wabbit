@@ -33,7 +33,7 @@ license as described in the file LICENSE.
 #if BOOST_VERSION >= 105600
 #include <boost/align/is_aligned.hpp>
 #endif
-  
+
 
 enum lda_math_mode { USE_SIMD, USE_PRECISE, USE_FAST_APPROX };
 
@@ -86,73 +86,73 @@ struct lda {
 
 namespace
 {
-  inline bool is_aligned16(void *ptr)
-  {
+inline bool is_aligned16(void *ptr)
+{
 #if BOOST_VERSION >= 105600
-    return boost::alignment::is_aligned(16, ptr);
+  return boost::alignment::is_aligned(16, ptr);
 #else
-    return ((reinterpret_cast<uintptr_t>(ptr) & 0x0f) == 0);
+  return ((reinterpret_cast<uintptr_t>(ptr) & 0x0f) == 0);
 #endif
-  }
+}
 }
 
 namespace ldamath
 {
-  inline float fastlog2(float x)
-  {
-    uint32_t mx;
-    memcpy(&mx, &x, sizeof(uint32_t));
-    mx = (mx & 0x007FFFFF) | (0x7e << 23);
+inline float fastlog2(float x)
+{
+  uint32_t mx;
+  memcpy(&mx, &x, sizeof(uint32_t));
+  mx = (mx & 0x007FFFFF) | (0x7e << 23);
 
-    float mx_f;
-    memcpy(&mx_f, &mx, sizeof(float));
+  float mx_f;
+  memcpy(&mx_f, &mx, sizeof(float));
 
-    uint32_t vx;
-    memcpy(&vx, &x, sizeof(uint32_t));
+  uint32_t vx;
+  memcpy(&vx, &x, sizeof(uint32_t));
 
-    float y = static_cast<float>(vx);
-    y *= 1.0f / (float)(1 << 23);
+  float y = static_cast<float>(vx);
+  y *= 1.0f / (float)(1 << 23);
 
-    return y - 124.22544637f - 1.498030302f * mx_f - 1.72587999f / (0.3520887068f + mx_f);
-  }
+  return y - 124.22544637f - 1.498030302f * mx_f - 1.72587999f / (0.3520887068f + mx_f);
+}
 
-  inline float fastlog(float x) { return 0.69314718f * fastlog2(x); }
+inline float fastlog(float x) { return 0.69314718f * fastlog2(x); }
 
-  inline float fastpow2(float p)
-  {
-    float offset = (p < 0) * 1.0f;
-    float clipp = (p < -126.0) ? -126.0f : p;
-    int w = (int)clipp;
-    float z = clipp - w + offset;
-    uint32_t approx = (uint32_t) ((1 << 23) * (clipp + 121.2740838f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z));
+inline float fastpow2(float p)
+{
+  float offset = (p < 0) * 1.0f;
+  float clipp = (p < -126.0) ? -126.0f : p;
+  int w = (int)clipp;
+  float z = clipp - w + offset;
+  uint32_t approx = (uint32_t) ((1 << 23) * (clipp + 121.2740838f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z));
 
-    float v;
-    memcpy(&v, &approx, sizeof(uint32_t));
-    return v;
-  }
+  float v;
+  memcpy(&v, &approx, sizeof(uint32_t));
+  return v;
+}
 
-  inline float fastexp(float p) { return fastpow2(1.442695040f * p); }
+inline float fastexp(float p) { return fastpow2(1.442695040f * p); }
 
-  inline float fastpow(float x, float p) { return fastpow2(p * fastlog2(x)); }
+inline float fastpow(float x, float p) { return fastpow2(p * fastlog2(x)); }
 
-  inline float fastlgamma(float x)
-  {
-    float logterm = fastlog(x * (1.0f + x) * (2.0f + x));
-    float xp3 = 3.0f + x;
+inline float fastlgamma(float x)
+{
+  float logterm = fastlog(x * (1.0f + x) * (2.0f + x));
+  float xp3 = 3.0f + x;
 
-    return -2.081061466f - x + 0.0833333f / xp3 - logterm + (2.5f + x) * fastlog(xp3);
-  }
+  return -2.081061466f - x + 0.0833333f / xp3 - logterm + (2.5f + x) * fastlog(xp3);
+}
 
-  inline float fastdigamma(float x)
-  {
-    float twopx = 2.0f + x;
-    float logterm = fastlog(twopx);
+inline float fastdigamma(float x)
+{
+  float twopx = 2.0f + x;
+  float logterm = fastlog(twopx);
 
-    return -(1.0f + 2.0f * x) / (x * (1.0f + x)) - (13.0f + 6.0f * x) / (12.0f * twopx * twopx) + logterm;
-  }
+  return -(1.0f + 2.0f * x) / (x * (1.0f + x)) - (13.0f + 6.0f * x) / (12.0f * twopx * twopx) + logterm;
+}
 
 #if !defined(VW_NO_INLINE_SIMD)
-  
+
 #if defined(__SSE2__) || defined(__SSE3__) || defined(__SSE4_1__)
 
 // Include headers for the various SSE versions:
@@ -168,174 +168,174 @@ namespace ldamath
 
 #define HAVE_SIMD_MATHMODE
 
-  typedef __m128 v4sf;
-  typedef __m128i v4si;
+typedef __m128 v4sf;
+typedef __m128i v4si;
 
-  inline v4sf v4si_to_v4sf(v4si x) { return _mm_cvtepi32_ps(x); }
+inline v4sf v4si_to_v4sf(v4si x) { return _mm_cvtepi32_ps(x); }
 
-  inline v4si v4sf_to_v4si(v4sf x) { return _mm_cvttps_epi32(x); }
+inline v4si v4sf_to_v4si(v4sf x) { return _mm_cvttps_epi32(x); }
 
-  // Extract v[idx]
-  template <const int idx> float v4sf_index(const v4sf x)
-  {
+// Extract v[idx]
+template <const int idx> float v4sf_index(const v4sf x)
+{
 #if defined(__SSE4_1__)
-    float ret;
-    uint32_t val;
+  float ret;
+  uint32_t val;
 
-    val = _mm_extract_ps(x, idx);
-    // Portably convert uint32_t bit pattern to float. Optimizers will generally
-    // make this disappear.
-    memcpy(&ret, &val, sizeof(uint32_t));
-    return ret;
+  val = _mm_extract_ps(x, idx);
+  // Portably convert uint32_t bit pattern to float. Optimizers will generally
+  // make this disappear.
+  memcpy(&ret, &val, sizeof(uint32_t));
+  return ret;
 #else
-    return _mm_cvtss_f32(_mm_shuffle_ps(x, x, _MM_SHUFFLE(idx, idx, idx, idx)));
+  return _mm_cvtss_f32(_mm_shuffle_ps(x, x, _MM_SHUFFLE(idx, idx, idx, idx)));
 #endif
+}
+
+// Specialization for the 0'th element
+template <> float v4sf_index<0>(const v4sf x) { return _mm_cvtss_f32(x); }
+
+inline const v4sf v4sfl(const float x) { return _mm_set1_ps(x); }
+
+inline const v4si v4sil(const uint32_t x) { return _mm_set1_epi32(x); }
+
+inline v4sf vfastpow2(const v4sf p)
+{
+  v4sf ltzero = _mm_cmplt_ps(p, v4sfl(0.0f));
+  v4sf offset = _mm_and_ps(ltzero, v4sfl(1.0f));
+  v4sf lt126 = _mm_cmplt_ps(p, v4sfl(-126.0f));
+  v4sf clipp = _mm_andnot_ps(lt126, p) + _mm_and_ps(lt126, v4sfl(-126.0f));
+  v4si w = v4sf_to_v4si(clipp);
+  v4sf z = clipp - v4si_to_v4sf(w) + offset;
+
+  const v4sf c_121_2740838 = v4sfl(121.2740838f);
+  const v4sf c_27_7280233 = v4sfl(27.7280233f);
+  const v4sf c_4_84252568 = v4sfl(4.84252568f);
+  const v4sf c_1_49012907 = v4sfl(1.49012907f);
+
+  v4sf v = v4sfl(1 << 23) * (clipp + c_121_2740838 + c_27_7280233 / (c_4_84252568 - z) - c_1_49012907 * z);
+
+  return _mm_castsi128_ps(v4sf_to_v4si(v));
+}
+
+inline v4sf vfastexp(const v4sf p)
+{
+  const v4sf c_invlog_2 = v4sfl(1.442695040f);
+
+  return vfastpow2(c_invlog_2 * p);
+}
+
+inline v4sf vfastlog2(v4sf x)
+{
+  v4si vx_i = _mm_castps_si128(x);
+  v4sf mx_f = _mm_castsi128_ps(_mm_or_si128(_mm_and_si128(vx_i, v4sil(0x007FFFFF)), v4sil(0x3f000000)));
+  v4sf y = v4si_to_v4sf(vx_i) * v4sfl(1.1920928955078125e-7f);
+
+  const v4sf c_124_22551499 = v4sfl(124.22551499f);
+  const v4sf c_1_498030302 = v4sfl(1.498030302f);
+  const v4sf c_1_725877999 = v4sfl(1.72587999f);
+  const v4sf c_0_3520087068 = v4sfl(0.3520887068f);
+
+  return y - c_124_22551499 - c_1_498030302 * mx_f - c_1_725877999 / (c_0_3520087068 + mx_f);
+}
+
+inline v4sf vfastlog(v4sf x)
+{
+  const v4sf c_0_69314718 = v4sfl(0.69314718f);
+
+  return c_0_69314718 * vfastlog2(x);
+}
+
+inline v4sf vfastdigamma(v4sf x)
+{
+  v4sf twopx = v4sfl(2.0f) + x;
+  v4sf logterm = vfastlog(twopx);
+
+  return (v4sfl(-48.0f) + x * (v4sfl(-157.0f) + x * (v4sfl(-127.0f) - v4sfl(30.0f) * x))) /
+         (v4sfl(12.0f) * x * (v4sfl(1.0f) + x) * twopx * twopx) +
+         logterm;
+}
+
+void vexpdigammify(vw &all, float *gamma, const float underflow_threshold)
+{
+  float extra_sum = 0.0f;
+  v4sf sum = v4sfl(0.0f);
+  float *fp;
+  const float *fpend = gamma + all.lda;
+
+  // Iterate through the initial part of the array that isn't 128-bit SIMD
+  // aligned.
+  for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp) {
+    extra_sum += *fp;
+    *fp = fastdigamma(*fp);
   }
 
-  // Specialization for the 0'th element
-  template <> float v4sf_index<0>(const v4sf x) { return _mm_cvtss_f32(x); }
-
-  inline const v4sf v4sfl(const float x) { return _mm_set1_ps(x); }
-
-  inline const v4si v4sil(const uint32_t x) { return _mm_set1_epi32(x); }
-
-  inline v4sf vfastpow2(const v4sf p)
-  {
-    v4sf ltzero = _mm_cmplt_ps(p, v4sfl(0.0f));
-    v4sf offset = _mm_and_ps(ltzero, v4sfl(1.0f));
-    v4sf lt126 = _mm_cmplt_ps(p, v4sfl(-126.0f));
-    v4sf clipp = _mm_andnot_ps(lt126, p) + _mm_and_ps(lt126, v4sfl(-126.0f));
-    v4si w = v4sf_to_v4si(clipp);
-    v4sf z = clipp - v4si_to_v4sf(w) + offset;
-
-    const v4sf c_121_2740838 = v4sfl(121.2740838f);
-    const v4sf c_27_7280233 = v4sfl(27.7280233f);
-    const v4sf c_4_84252568 = v4sfl(4.84252568f);
-    const v4sf c_1_49012907 = v4sfl(1.49012907f);
-
-    v4sf v = v4sfl(1 << 23) * (clipp + c_121_2740838 + c_27_7280233 / (c_4_84252568 - z) - c_1_49012907 * z);
-
-    return _mm_castsi128_ps(v4sf_to_v4si(v));
+  // Rip through the aligned portion...
+  for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4) {
+    v4sf arg = _mm_load_ps(fp);
+    sum += arg;
+    arg = vfastdigamma(arg);
+    _mm_store_ps(fp, arg);
   }
 
-  inline v4sf vfastexp(const v4sf p)
-  {
-    const v4sf c_invlog_2 = v4sfl(1.442695040f);
-
-    return vfastpow2(c_invlog_2 * p);
+  for (; fp < fpend; ++fp) {
+    extra_sum += *fp;
+    *fp = fastdigamma(*fp);
   }
-
-  inline v4sf vfastlog2(v4sf x)
-  {
-    v4si vx_i = _mm_castps_si128(x);
-    v4sf mx_f = _mm_castsi128_ps(_mm_or_si128(_mm_and_si128(vx_i, v4sil(0x007FFFFF)), v4sil(0x3f000000)));
-    v4sf y = v4si_to_v4sf(vx_i) * v4sfl(1.1920928955078125e-7f);
-
-    const v4sf c_124_22551499 = v4sfl(124.22551499f);
-    const v4sf c_1_498030302 = v4sfl(1.498030302f);
-    const v4sf c_1_725877999 = v4sfl(1.72587999f);
-    const v4sf c_0_3520087068 = v4sfl(0.3520887068f);
-
-    return y - c_124_22551499 - c_1_498030302 * mx_f - c_1_725877999 / (c_0_3520087068 + mx_f);
-  }
-
-  inline v4sf vfastlog(v4sf x)
-  {
-    const v4sf c_0_69314718 = v4sfl(0.69314718f);
-
-    return c_0_69314718 * vfastlog2(x);
-  }
-
-  inline v4sf vfastdigamma(v4sf x)
-  {
-    v4sf twopx = v4sfl(2.0f) + x;
-    v4sf logterm = vfastlog(twopx);
-
-    return (v4sfl(-48.0f) + x * (v4sfl(-157.0f) + x * (v4sfl(-127.0f) - v4sfl(30.0f) * x))) /
-               (v4sfl(12.0f) * x * (v4sfl(1.0f) + x) * twopx * twopx) +
-           logterm;
-  }
-
-  void vexpdigammify(vw &all, float *gamma, const float underflow_threshold)
-  {
-    float extra_sum = 0.0f;
-    v4sf sum = v4sfl(0.0f);
-    float *fp;
-    const float *fpend = gamma + all.lda;
-
-    // Iterate through the initial part of the array that isn't 128-bit SIMD
-    // aligned.
-    for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp) {
-      extra_sum += *fp;
-      *fp = fastdigamma(*fp);
-    }
-
-    // Rip through the aligned portion...
-    for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4) {
-      v4sf arg = _mm_load_ps(fp);
-      sum += arg;
-      arg = vfastdigamma(arg);
-      _mm_store_ps(fp, arg);
-    }
-
-    for (; fp < fpend; ++fp) {
-      extra_sum += *fp;
-      *fp = fastdigamma(*fp);
-    }
 
 #if defined(__SSE3__) || defined(__SSE4_1__)
-    // Do two horizontal adds on sum, extract the total from the 0 element:
-    sum = _mm_hadd_ps(sum, sum);
-    sum = _mm_hadd_ps(sum, sum);
-    extra_sum += v4sf_index<0>(sum);
+  // Do two horizontal adds on sum, extract the total from the 0 element:
+  sum = _mm_hadd_ps(sum, sum);
+  sum = _mm_hadd_ps(sum, sum);
+  extra_sum += v4sf_index<0>(sum);
 #else
-    extra_sum += v4sf_index<0>(sum) + v4sf_index<1>(sum) + v4sf_index<2>(sum) + v4sf_index<3>(sum);
+  extra_sum += v4sf_index<0>(sum) + v4sf_index<1>(sum) + v4sf_index<2>(sum) + v4sf_index<3>(sum);
 #endif
 
-    extra_sum = fastdigamma(extra_sum);
-    sum = v4sfl(extra_sum);
+  extra_sum = fastdigamma(extra_sum);
+  sum = v4sfl(extra_sum);
 
-    for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp) {
-      *fp = fmax(underflow_threshold, fastexp(*fp - extra_sum));
-    }
-
-    for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4) {
-      v4sf arg = _mm_load_ps(fp);
-      arg -= sum;
-      arg = vfastexp(arg);
-      arg = _mm_max_ps(v4sfl(underflow_threshold), arg);
-      _mm_store_ps(fp, arg);
-    }
-
-    for (; fp < fpend; ++fp) {
-      *fp = fmax(underflow_threshold, fastexp(*fp - extra_sum));
-    }
+  for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp) {
+    *fp = fmax(underflow_threshold, fastexp(*fp - extra_sum));
   }
 
-  void vexpdigammify_2(vw &all, float *gamma, const float *norm, const float underflow_threshold)
-  {
-    float *fp;
-    const float *np;
-    const float *fpend = gamma + all.lda;
-
-    for (fp = gamma, np = norm; fp < fpend && !is_aligned16(fp); ++fp, ++np) {
-      *fp = fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
-    }
-
-   for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4, np += 4) {
-      v4sf arg = _mm_load_ps(fp);
-      arg = vfastdigamma(arg);
-      v4sf vnorm = _mm_loadu_ps(np);
-      arg -= vnorm;
-      arg = vfastexp(arg);
-      arg = _mm_max_ps(v4sfl(underflow_threshold), arg);
-      _mm_store_ps(fp, arg);
-    }
-
-    for (; fp < fpend; ++fp, ++np) {
-      *fp = fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
-    }
+  for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4) {
+    v4sf arg = _mm_load_ps(fp);
+    arg -= sum;
+    arg = vfastexp(arg);
+    arg = _mm_max_ps(v4sfl(underflow_threshold), arg);
+    _mm_store_ps(fp, arg);
   }
+
+  for (; fp < fpend; ++fp) {
+    *fp = fmax(underflow_threshold, fastexp(*fp - extra_sum));
+  }
+}
+
+void vexpdigammify_2(vw &all, float *gamma, const float *norm, const float underflow_threshold)
+{
+  float *fp;
+  const float *np;
+  const float *fpend = gamma + all.lda;
+
+  for (fp = gamma, np = norm; fp < fpend && !is_aligned16(fp); ++fp, ++np) {
+    *fp = fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
+  }
+
+  for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4, np += 4) {
+    v4sf arg = _mm_load_ps(fp);
+    arg = vfastdigamma(arg);
+    v4sf vnorm = _mm_loadu_ps(np);
+    arg -= vnorm;
+    arg = vfastexp(arg);
+    arg = _mm_max_ps(v4sfl(underflow_threshold), arg);
+    _mm_store_ps(fp, arg);
+  }
+
+  for (; fp < fpend; ++fp, ++np) {
+    *fp = fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
+  }
+}
 
 #else
 // PLACEHOLDER for future ARM NEON code
@@ -344,96 +344,96 @@ namespace ldamath
 
 #endif // !VW_NO_INLINE_SIMD
 
-  // Templates for common code shared between the three math modes (SIMD, fast approximations
-  // and accurate).
-  //
-  // The generic template takes a type and a specialization flag, mtype.
-  //
-  // mtype == USE_PRECISE: Use the accurate computation for lgamma, digamma.
-  // mtype == USE_FAST_APPROX: Use the fast approximations for lgamma, digamma.
-  // mtype == USE_SIMD: Use CPU SIMD instruction
-  //
-  // The generic template is specialized for the particular accuracy setting.
+// Templates for common code shared between the three math modes (SIMD, fast approximations
+// and accurate).
+//
+// The generic template takes a type and a specialization flag, mtype.
+//
+// mtype == USE_PRECISE: Use the accurate computation for lgamma, digamma.
+// mtype == USE_FAST_APPROX: Use the fast approximations for lgamma, digamma.
+// mtype == USE_SIMD: Use CPU SIMD instruction
+//
+// The generic template is specialized for the particular accuracy setting.
 
-  // Log gamma:
-  template <typename T, const lda_math_mode mtype> inline T lgamma(T x)
-  {
-    BOOST_STATIC_ASSERT_MSG(true, "ldamath::lgamma is not defined for this type and math mode.");
-  }
+// Log gamma:
+template <typename T, const lda_math_mode mtype> inline T lgamma(T x)
+{
+  BOOST_STATIC_ASSERT_MSG(true, "ldamath::lgamma is not defined for this type and math mode.");
+}
 
-  // Digamma:
-  template <typename T, const lda_math_mode mtype> inline T digamma(T x)
-  {
-    BOOST_STATIC_ASSERT_MSG(true, "ldamath::digamma is not defined for this type and math mode.");
-  }
+// Digamma:
+template <typename T, const lda_math_mode mtype> inline T digamma(T x)
+{
+  BOOST_STATIC_ASSERT_MSG(true, "ldamath::digamma is not defined for this type and math mode.");
+}
 
-  // Exponential
-  template <typename T, lda_math_mode mtype> inline T exponential(T x)
-  {
-    BOOST_STATIC_ASSERT_MSG(true, "ldamath::exponential is not defined for this type and math mode.");
-  }
+// Exponential
+template <typename T, lda_math_mode mtype> inline T exponential(T x)
+{
+  BOOST_STATIC_ASSERT_MSG(true, "ldamath::exponential is not defined for this type and math mode.");
+}
 
-  // Powf
-  template <typename T, lda_math_mode mtype> inline T powf(T x, T p)
-  {
-    BOOST_STATIC_ASSERT_MSG(true, "ldamath::powf is not defined for this type and math mode.");
-  }
+// Powf
+template <typename T, lda_math_mode mtype> inline T powf(T x, T p)
+{
+  BOOST_STATIC_ASSERT_MSG(true, "ldamath::powf is not defined for this type and math mode.");
+}
 
-  // High accuracy float specializations:
+// High accuracy float specializations:
 
-  template <> inline float lgamma<float, USE_PRECISE>(float x) { return boost::math::lgamma(x); }
-  template <> inline float digamma<float, USE_PRECISE>(float x) { return boost::math::digamma(x); }
-  template <> inline float exponential<float, USE_PRECISE>(float x) { return std::exp(x); }
-  template <> inline float powf<float, USE_PRECISE>(float x, float p) { return std::pow(x, p); }
+template <> inline float lgamma<float, USE_PRECISE>(float x) { return boost::math::lgamma(x); }
+template <> inline float digamma<float, USE_PRECISE>(float x) { return boost::math::digamma(x); }
+template <> inline float exponential<float, USE_PRECISE>(float x) { return std::exp(x); }
+template <> inline float powf<float, USE_PRECISE>(float x, float p) { return std::pow(x, p); }
 
-  // Fast approximation float specializations:
+// Fast approximation float specializations:
 
-  template <> inline float lgamma<float, USE_FAST_APPROX>(float x) { return fastlgamma(x); }
-  template <> inline float digamma<float, USE_FAST_APPROX>(float x) { return fastdigamma(x); }
-  template <> inline float exponential<float, USE_FAST_APPROX>(float x) { return fastexp(x); }
-  template <> inline float powf<float, USE_FAST_APPROX>(float x, float p) { return fastpow(x, p); }
+template <> inline float lgamma<float, USE_FAST_APPROX>(float x) { return fastlgamma(x); }
+template <> inline float digamma<float, USE_FAST_APPROX>(float x) { return fastdigamma(x); }
+template <> inline float exponential<float, USE_FAST_APPROX>(float x) { return fastexp(x); }
+template <> inline float powf<float, USE_FAST_APPROX>(float x, float p) { return fastpow(x, p); }
 
-  // SIMD specializations:
+// SIMD specializations:
 
-  template <> inline float lgamma<float, USE_SIMD>(float x) { return lgamma<float, USE_FAST_APPROX>(x); }
-  template <> inline float digamma<float, USE_SIMD>(float x) { return digamma<float, USE_FAST_APPROX>(x); }
-  template <> inline float exponential<float, USE_SIMD>(float x) { return exponential<float, USE_FAST_APPROX>(x); }
-  template <> inline float powf<float, USE_SIMD>(float x, float p) { return powf<float, USE_FAST_APPROX>(x, p); }
+template <> inline float lgamma<float, USE_SIMD>(float x) { return lgamma<float, USE_FAST_APPROX>(x); }
+template <> inline float digamma<float, USE_SIMD>(float x) { return digamma<float, USE_FAST_APPROX>(x); }
+template <> inline float exponential<float, USE_SIMD>(float x) { return exponential<float, USE_FAST_APPROX>(x); }
+template <> inline float powf<float, USE_SIMD>(float x, float p) { return powf<float, USE_FAST_APPROX>(x, p); }
 
-  template <typename T, const lda_math_mode mtype> inline void expdigammify(vw &all, T *gamma, T threshold, T initial)
-  {
-    T sum = digamma<T, mtype>(std::accumulate(gamma, gamma + all.lda, initial));
+template <typename T, const lda_math_mode mtype> inline void expdigammify(vw &all, T *gamma, T threshold, T initial)
+{
+  T sum = digamma<T, mtype>(std::accumulate(gamma, gamma + all.lda, initial));
 
-    std::transform(gamma, gamma + all.lda, gamma, [sum, threshold](T g) {
-      return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - sum));
-    });
-  }
-  template <> inline void expdigammify<float, USE_SIMD>(vw &all, float *gamma, float threshold, float)
-  {
+  std::transform(gamma, gamma + all.lda, gamma, [sum, threshold](T g) {
+    return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - sum));
+  });
+}
+template <> inline void expdigammify<float, USE_SIMD>(vw &all, float *gamma, float threshold, float)
+{
 #if defined(HAVE_SIMD_MATHMODE)
-    vexpdigammify(all, gamma, threshold);
+  vexpdigammify(all, gamma, threshold);
 #else
-    // Do something sensible if SIMD math isn't available:
-    expdigammify<float, USE_FAST_APPROX>(all, gamma, threshold, 0.0);
+  // Do something sensible if SIMD math isn't available:
+  expdigammify<float, USE_FAST_APPROX>(all, gamma, threshold, 0.0);
 #endif
-  }
+}
 
-  template <typename T, const lda_math_mode mtype>
-  inline void expdigammify_2(vw &all, T *gamma, T *norm, const T threshold)
-  {
-    std::transform(gamma, gamma + all.lda, norm, gamma, [threshold](float g, float n) {
-      return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n));
-    });
-  }
-  template <> inline void expdigammify_2<float, USE_SIMD>(vw &all, float *gamma, float *norm, const float threshold)
-  {
+template <typename T, const lda_math_mode mtype>
+inline void expdigammify_2(vw &all, T *gamma, T *norm, const T threshold)
+{
+  std::transform(gamma, gamma + all.lda, norm, gamma, [threshold](float g, float n) {
+    return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n));
+  });
+}
+template <> inline void expdigammify_2<float, USE_SIMD>(vw &all, float *gamma, float *norm, const float threshold)
+{
 #if defined(HAVE_SIMD_MATHMODE)
-    vexpdigammify_2(all, gamma, norm, threshold);
+  vexpdigammify_2(all, gamma, norm, threshold);
 #else
-    // Do something sensible if SIMD math isn't available:
-    expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, threshold);
+  // Do something sensible if SIMD math isn't available:
+  expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, threshold);
 #endif
-  }
+}
 } // namespace ldamath
 
 float lda::digamma(float x)
@@ -519,10 +519,10 @@ void lda::expdigammify_2(vw &all, float *gamma, float *norm)
     ldamath::expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, underflow_threshold());
     break;
   case USE_PRECISE:
-	  ldamath::expdigammify_2<float, USE_PRECISE>(all, gamma, norm, underflow_threshold());
+    ldamath::expdigammify_2<float, USE_PRECISE>(all, gamma, norm, underflow_threshold());
     break;
   case USE_SIMD:
-	  ldamath::expdigammify_2<float, USE_SIMD>(all, gamma, norm, underflow_threshold());
+    ldamath::expdigammify_2<float, USE_SIMD>(all, gamma, norm, underflow_threshold());
     break;
   default:
     std::cerr << "lda::expdigammify_2: Trampled or invalid math mode, aborting" << std::endl;
@@ -539,8 +539,8 @@ static inline float average_diff(vw &all, float *oldgamma, float *newgamma)
   // thing as the "plain old" for loop. clang does a good job of reducing the
   // common subexpressions.
   sum = std::inner_product(oldgamma, oldgamma + all.lda, newgamma, 0.0f,
-                           [](float accum, float absdiff) { return accum + absdiff; },
-                           [](float old_g, float new_g) { return std::abs(old_g - new_g); });
+  [](float accum, float absdiff) { return accum + absdiff; },
+  [](float old_g, float new_g) { return std::abs(old_g - new_g); });
 
   normalizer = std::accumulate(newgamma, newgamma + all.lda, 0.0f);
   return sum / normalizer;
@@ -575,9 +575,9 @@ static inline float find_cw(lda &l, float *u_for_w, float *v)
 
 namespace
 {
-  // Effectively, these are static and not visible outside the compilation unit.
-  v_array<float> new_gamma = v_init<float>();
-  v_array<float> old_gamma = v_init<float>();
+// Effectively, these are static and not visible outside the compilation unit.
+v_array<float> new_gamma = v_init<float>();
+v_array<float> old_gamma = v_init<float>();
 }
 
 // Returns an estimate of the part of the variational bound that
@@ -754,7 +754,7 @@ void learn_batch(lda &l)
     last_weight_index = s->f.weight_index;
     float *weights_for_w = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
     float decay_component =
-        l.decay_levels.end[-2] - l.decay_levels.end[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
+      l.decay_levels.end[-2] - l.decay_levels.end[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
     float decay = fmin(1.0f, std::exp(decay_component));
     float *u_for_w = weights_for_w + l.all->lda + 1;
 
@@ -842,7 +842,7 @@ void end_examples(lda &l)
   for (size_t i = 0; i < l.all->length(); i++) {
     weight *weights_for_w = &(l.all->reg.weight_vector[i << l.all->reg.stride_shift]);
     float decay_component =
-        l.decay_levels.last() - l.decay_levels.end[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
+      l.decay_levels.last() - l.decay_levels.end[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
     float decay = fmin(1.f, std::exp(decay_component));
     for (size_t k = 0; k < l.all->lda; k++)
       weights_for_w[k] *= decay;
@@ -887,11 +887,11 @@ LEARNER::base_learner *lda_setup(vw &all)
     return nullptr;
   new_options(all, "Lda options")("lda_alpha", po::value<float>()->default_value(0.1f),
                                   "Prior on sparsity of per-document topic weights")(
-      "lda_rho", po::value<float>()->default_value(0.1f), "Prior on sparsity of topic distributions")(
-      "lda_D", po::value<float>()->default_value(10000.),
-      "Number of documents")("lda_epsilon", po::value<float>()->default_value(0.001f), "Loop convergence threshold")(
-      "minibatch", po::value<size_t>()->default_value(1), "Minibatch size, for LDA")(
-      "math-mode", po::value<lda_math_mode>()->default_value(USE_SIMD), "Math mode: simd, accuracy, fast-approx");
+                                    "lda_rho", po::value<float>()->default_value(0.1f), "Prior on sparsity of topic distributions")(
+                                      "lda_D", po::value<float>()->default_value(10000.),
+                                      "Number of documents")("lda_epsilon", po::value<float>()->default_value(0.001f), "Loop convergence threshold")(
+                                        "minibatch", po::value<size_t>()->default_value(1), "Minibatch size, for LDA")(
+                                          "math-mode", po::value<lda_math_mode>()->default_value(USE_SIMD), "Math mode: simd, accuracy, fast-approx");
   add_options(all);
   po::variables_map &vm = all.vm;
 

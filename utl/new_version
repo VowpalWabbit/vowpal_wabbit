@@ -1,4 +1,6 @@
 #set internal version number in configure.ac before tagging.
+astyle --lineend=linux --indent=spaces=2 --keep-one-line-blocks --keep-one-line-statements vowpalwabbit/*.cc vowpalwabbit/*.h
+git commit -a -m "consistent indentation with astyle (before releasing $1)"
 git branch $1
 git checkout $1
 ./autogen.sh

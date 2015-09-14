@@ -1,5 +1,5 @@
 only testing
-predictions = ftrl_001.predict.tmp
+predictions = 0001_ftrl.predict
 Num weight bits = 18
 learning rate = 10
 initial_t = 1

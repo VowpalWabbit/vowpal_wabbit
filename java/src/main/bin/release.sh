@@ -37,6 +37,7 @@ java/src/main/bin/build.sh
 if [ ! -f java/target/vw_jni.Ubuntu.12.amd64.lib ] ||
     [ ! -f java/target/vw_jni.Ubuntu.14.amd64.lib ] ||
     [ ! -f java/target/vw_jni.Ubuntu.14.i386.lib ] ||
+    [ ! -f java/target/vw_jni.Red_Hat.5.amd64.lib ] ||
     [ ! -f java/target/vw_jni.Red_Hat.6.amd64.lib ] ||
     [ ! -f java/target/vw_jni.Red_Hat.7.amd64.lib ] ||
     [ ! -f java/target/vw_jni.Darwin.x86_64.lib ]; then

@@ -11,17 +11,17 @@ struct vw;
 
 namespace MULTICLASS
 {
-  struct label_t {
-    uint32_t label;
-    float weight;
-  };
-  
-  extern label_parser mc_label;
-  
-  void finish_example(vw& all, example& ec);
+struct label_t {
+  uint32_t label;
+  float weight;
+};
 
-  template <class T> void finish_example(vw& all, T&, example& ec) { finish_example(all, ec); }
+extern label_parser mc_label;
 
-  inline bool label_is_test(label_t* ld)
-  { return ld->label == (uint32_t)-1; }
+void finish_example(vw& all, example& ec);
+
+template <class T> void finish_example(vw& all, T&, example& ec) { finish_example(all, ec); }
+
+inline bool label_is_test(label_t* ld)
+{ return ld->label == (uint32_t)-1; }
 }

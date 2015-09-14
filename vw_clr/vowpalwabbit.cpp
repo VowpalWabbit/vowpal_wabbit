@@ -10,7 +10,7 @@ license as described in the file LICENSE.
 #include "parser.h"
 #include "hash.h"
 #include "vw_example.h"
-#include "allreduce.h"
+#include "vw_allreduce.h"
 #include "vw_builder.h"
 
 using namespace System;

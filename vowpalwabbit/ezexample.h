@@ -13,7 +13,7 @@ public: vw_namespace(const char c) : namespace_letter(c) {}
 
 
 class ezexample {
- private:
+private:
   vw*vw_ref;
   vw*vw_par_ref;   // an extra parser if we're multithreaded
   bool is_multiline;
@@ -73,7 +73,7 @@ class ezexample {
     example_changed_since_prediction = true;
   }
 
-  
+
   void setup_for_predict() {
     static example* empty_example = is_multiline ? VW::read_example(*vw_par_ref, (char*)"") : nullptr;
     if (example_changed_since_prediction) {
@@ -84,13 +84,13 @@ class ezexample {
     }
   }
 
- public:
+public:
 
   // REAL FUNCTIONALITY
   // create a new ezexample by asking the vw parser for an example
   ezexample(vw*this_vw, bool multiline=false, vw*this_vw_parser=nullptr) {
     setup_new_ezexample(this_vw, multiline, this_vw_parser);
-    example_copies = v_init<example*>();    
+    example_copies = v_init<example*>();
     ec = get_new_example();
     we_create_ec = true;
 
@@ -116,7 +116,7 @@ class ezexample {
       current_seed = VW::hash_space(*vw_ref, str);
     }
   }
-  
+
   ~ezexample() { // calls finish_example *only* if we created our own example!
     if (ec->in_use)
       VW::finish_example(*vw_par_ref, ec);
@@ -220,11 +220,11 @@ class ezexample {
 
     for (vector<string>::iterator i = vw_ref->pairs.begin(); i != vw_ref->pairs.end(); i++) {
       quadratic_features_num
-        += (ec->atomics[(int)(*i)[0]].end - ec->atomics[(int)(*i)[0]].begin)
-        *  (ec->atomics[(int)(*i)[1]].end - ec->atomics[(int)(*i)[1]].begin);
+      += (ec->atomics[(int)(*i)[0]].end - ec->atomics[(int)(*i)[0]].begin)
+         *  (ec->atomics[(int)(*i)[1]].end - ec->atomics[(int)(*i)[1]].begin);
       quadratic_features_sqr
-        += ec->sum_feat_sq[(int)(*i)[0]]
-        *  ec->sum_feat_sq[(int)(*i)[1]];
+      += ec->sum_feat_sq[(int)(*i)[0]]
+         *  ec->sum_feat_sq[(int)(*i)[1]];
     }
     ec->num_features      += quadratic_features_num;
     ec->total_sum_feat_sq += quadratic_features_sqr;
@@ -237,7 +237,7 @@ class ezexample {
       mini_setup_example();
     return ec;
   }
-  
+
   float predict() {
     setup_for_predict();
     return ec->pred.scalar;
@@ -284,7 +284,7 @@ class ezexample {
       example_copies.erase();
     }
   }
-    
+
 
   // HELPER FUNCTIONALITY
 
@@ -302,7 +302,7 @@ class ezexample {
   inline fid addf(char ns, string fstr           ) { return addf(ns, hash(ns, fstr), 1.0); }
 
   inline ezexample& operator()(const vw_namespace&n) { addns(n.namespace_letter); return *this; }
-  
+
   inline ezexample& operator()(fid         fint           ) { addf(fint, 1.0); return *this; }
   inline ezexample& operator()(string      fstr           ) { addf(fstr, 1.0); return *this; }
   inline ezexample& operator()(const char* fstr           ) { addf(fstr, 1.0); return *this; }

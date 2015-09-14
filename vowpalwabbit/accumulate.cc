@@ -13,7 +13,7 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <cmath>
 #include <stdint.h>
 #include "global_data.h"
-#include "allreduce.h"
+#include "vw_allreduce.h"
 
 using namespace std;
 
@@ -24,11 +24,11 @@ void accumulate(vw& all, regressor& reg, size_t o) {
   size_t stride = 1 << all.reg.stride_shift;
   float* local_grad = new float[length];
   weight* weights = reg.weight_vector;
-  for(uint32_t i = 0;i < length;i++) 
+  for(uint32_t i = 0; i < length; i++)
     local_grad[i] = weights[stride*i+o];
 
   all_reduce<float, add_float>(all, local_grad, length);
-  for(uint32_t i = 0;i < length;i++) 
+  for (uint32_t i = 0; i < length; i++)
     weights[stride*i+o] = local_grad[i];
   delete[] local_grad;
 }
@@ -46,25 +46,25 @@ void accumulate_avg(vw& all, regressor& reg, size_t o) {
   weight* weights = reg.weight_vector;
   float numnodes = (float)all.all_reduce->total;
 
-  for(uint32_t i = 0;i < length;i++) 
+  for(uint32_t i = 0; i < length; i++)
     local_grad[i] = weights[stride*i+o];
 
   all_reduce<float, add_float>(all, local_grad, length);
-  for(uint32_t i = 0;i < length;i++) 
+  for (uint32_t i = 0; i < length; i++)
     weights[stride*i+o] = local_grad[i]/numnodes;
   delete[] local_grad;
 }
 
 float max_elem(float* arr, int length) {
   float max = arr[0];
-  for(int i = 1;i < length;i++)
+  for(int i = 1; i < length; i++)
     if(arr[i] > max) max = arr[i];
   return max;
 }
 
 float min_elem(float* arr, int length) {
   float min = arr[0];
-  for(int i = 1;i < length;i++)
+  for(int i = 1; i < length; i++)
     if(arr[i] < min && arr[i] > 0.001) min = arr[i];
   return min;
 }
@@ -79,28 +79,28 @@ void accumulate_weighted_avg(vw& all, regressor& reg) {
   weight* weights = reg.weight_vector;
   float* local_weights = new float[length];
 
-  for(uint32_t i = 0;i < length;i++) 
+  for(uint32_t i = 0; i < length; i++)
     local_weights[i] = weights[stride*i+1];
-  
+
   //First compute weights for averaging
   all_reduce<float, add_float>(all, local_weights, length);
-  
-  for(uint32_t i = 0;i < length;i++) //Compute weighted versions
+
+  for(uint32_t i = 0; i < length; i++) //Compute weighted versions
     if(local_weights[i] > 0) {
       float ratio = weights[stride*i+1]/local_weights[i];
-      local_weights[i] = weights[stride*i] * ratio;      
+      local_weights[i] = weights[stride*i] * ratio;
       weights[stride*i] *= ratio;
-      weights[stride*i+1] *= ratio; //A crude max      
-      if (all.normalized_updates)	
+      weights[stride*i+1] *= ratio; //A crude max
+      if (all.normalized_updates)
 	weights[stride*i+all.normalized_idx] *= ratio; //A crude max
     }
     else {
       local_weights[i] = 0;
       weights[stride*i] = 0;
     }
-  
+
   all_reduce<float, add_float>(all, weights, length*stride);
-  
+
   delete[] local_weights;
 }
 

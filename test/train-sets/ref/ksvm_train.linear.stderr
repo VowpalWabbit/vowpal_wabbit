@@ -1,5 +1,5 @@
 using l2 regularization = 1
-predictions = linear.predict
+predictions = ksvm_train.linear.predict
 Lambda = 1
 Kernel = linear
 Num weight bits = 18
