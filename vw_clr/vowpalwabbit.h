@@ -114,35 +114,92 @@ namespace VW
 		/// </summary>
 		/// <returns>The prediction result.</returns>
 		/// <typeparam name="TPrediction">The prediction result type.</typeparam>
-		generic<typename T> T Learn(VowpalWabbitExample^ ex, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
-
-		void Learn(VowpalWabbitExample^ ex);
+		generic<typename T> T Learn(VowpalWabbitExample^ example, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
 
 		/// <summary>
-		/// The associated <see cref="VowpalWabbitBase"/> instance predicts an outcome using this example.
+		/// Predicts for the given example.
 		/// </summary>
-		/// <returns>The prediction result.</returns>
-		/// <typeparam name="TPrediction">The prediction result type.</typeparam>
-		void Predict(VowpalWabbitExample^ ex);
+		/// <typeparam name="T">The prediction type.</typeparam>
+		/// <param name="example">Example to predict for.</param>
+		/// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
+		/// <returns>The prediction for the given <paramref name="example"/>.</returns>
+		generic<typename T> T Predict(VowpalWabbitExample^ example, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
 
-		generic<typename T> T Predict(VowpalWabbitExample^ ex, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
+		/// <summary>
+		/// Learns from the given example.
+		/// </summary>
+		/// <param name="example">Example to learn from.</param>
+		void Learn(VowpalWabbitExample^ example);
 
+		/// <summary>
+		/// Predicts for the given example.
+		/// </summary>
+		/// <param name="example">Example to predict for.</param>
+		void Predict(VowpalWabbitExample^ example);
+
+		/// <summary>
+		/// Learns from string data.
+		/// </summary>
+		/// <param name="line">Data in vw string format.</param>
 		void Learn(String^ line);
 
+		/// <summary>
+		/// Predicts for string data.
+		/// </summary>
+		/// <param name="line">Data in vw string format.</param>
 		void Predict(String^ line);
 
+		/// <summary>
+		/// Learns from string data.
+		/// </summary>
+		/// <typeparam name="T">The prediction type.</typeparam>
+		/// <param name="line">Data in vw string format.</param>
+		/// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
+		/// <returns>The prediction for the given <paramref name="line"/>.</returns>
 		generic<typename T> T Learn(String^ line, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
 
+		/// <summary>
+		/// Predicts for string data.
+		/// </summary>
+		/// <typeparam name="T">The prediction type.</typeparam>
+		/// <param name="line">Data in vw string format.</param>
+		/// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
+		/// <returns>The prediction for the given <paramref name="line"/>.</returns>
 		generic<typename T> T Predict(String^ line, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
 
+		/// <summary>
+		/// Learns from multi-line examples.
+		/// </summary>
+		/// <param name="lines">Data in vw string format.</param>
 		void Learn(IEnumerable<String^>^ lines);
 
+		/// <summary>
+		/// Predicts for multi-line examples.
+		/// </summary>
+		/// <param name="lines">Data in vw string format.</param>
 		void Predict(IEnumerable<String^>^ lines);
 
+		/// <summary>
+		/// Learns from multi-line examples.
+		/// </summary>
+		/// <typeparam name="T">The prediction type.</typeparam>
+		/// <param name="lines">Data in vw string format.</param>
+		/// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
+		/// <returns>The prediction for the given <paramref name="lines"/>.</returns>
 		generic<typename T> T Learn(IEnumerable<String^>^ lines, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
 
+		/// <summary>
+		/// Predicts for the given lines.
+		/// </summary>
+		/// <typeparam name="T">The prediction type.</typeparam>
+		/// <param name="lines">Data in vw string format.</param>
+		/// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
+		/// <returns>The prediction for the given <paramref name="lines"/>.</returns>
 		generic<typename T> T Predict(IEnumerable<String^>^ lines, IVowpalWabbitPredictionFactory<T>^ predictionFactory);
 
+		/// <summary>
+		/// Signals the end of a pass.
+		/// </summary>
 		void EndOfPass();
 
 		/// <summary>

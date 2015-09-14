@@ -21,7 +21,7 @@ using namespace System::Runtime::InteropServices;
 namespace VW
 {
 	/// <summary>
-	/// Collected erformance statistics.
+	/// Collected performance statistics.
 	/// </summary>
 	public ref class VowpalWabbitPerformanceStatistics
 	{

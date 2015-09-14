@@ -12,20 +12,20 @@ license as described in the file LICENSE.
 
 namespace VW
 {
-	VowpalWabbitModel::VowpalWabbitModel(VowpalWabbitSettings^ args)
-		: VowpalWabbitBase(args), m_instanceCount(0)
+	VowpalWabbitModel::VowpalWabbitModel(VowpalWabbitSettings^ settings)
+		: VowpalWabbitBase(settings), m_instanceCount(0)
 	{
-		if (args->Model != nullptr)
-		{
-			throw gcnew ArgumentException("VowpalWabbitModel cannot be initialized from another model");
-		}
+		if (settings == nullptr)
+			throw gcnew ArgumentNullException("settings");
+
+		if (settings->Model != nullptr)
+			throw gcnew ArgumentNullException("VowpalWabbitModel cannot be initialized from another model");
 	}
 
 	VowpalWabbitModel::VowpalWabbitModel(String^ args)
 		: VowpalWabbitModel(gcnew VowpalWabbitSettings(args))
 	{
 	}
-
 
 	VowpalWabbitModel::~VowpalWabbitModel()
 	{

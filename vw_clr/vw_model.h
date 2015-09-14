@@ -12,13 +12,13 @@ license as described in the file LICENSE.
 namespace VW
 {
 	/// <summary>
-	/// VowpalWabbit model wrapper.
+	/// VowpalWabbit model wrapper used in multi-threaded scenarios.
 	/// </summary>
 	public ref class VowpalWabbitModel : public VowpalWabbitBase
 	{
 	private:
 		/// <summary>
-		/// Reference count.
+		/// Reference count to native data structure.
 		/// </summary>
 		System::Int32 m_instanceCount;
 
@@ -42,9 +42,10 @@ namespace VW
 		/// <summary>
 		/// Initializes a new <see cref="VowpalWabbitModel"/> instance. 
 		/// </summary>
-		/// <param name="args">Command line arguments.</param>
-		VowpalWabbitModel(VowpalWabbitSettings^ args);
+		/// <param name="settings">Arguments passed to native instance.</param>
+		VowpalWabbitModel(VowpalWabbitSettings^ settings);
 
+		/// <param name="args">Command line arguments passed to native instance.</param>
 		VowpalWabbitModel(String^ args);
 
 		/// <summary>
