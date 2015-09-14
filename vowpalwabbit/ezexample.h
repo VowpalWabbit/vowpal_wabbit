@@ -118,10 +118,10 @@ public:
   }
 
   ~ezexample() { // calls finish_example *only* if we created our own example!
-    if (ec->in_use)
+    if (ec->in_use && VW::is_ring_example(*vw_par_ref, ec))
       VW::finish_example(*vw_par_ref, ec);
     for (example**ecc=example_copies.begin; ecc!=example_copies.end; ecc++)
-      if ((*ecc)->in_use)
+      if ((*ecc)->in_use && VW::is_ring_example(*vw_par_ref, ec))
         VW::finish_example(*vw_par_ref, *ecc);
     example_copies.erase();
     free(example_copies.begin);
