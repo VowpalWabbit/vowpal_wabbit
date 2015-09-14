@@ -23,16 +23,16 @@ void predict_or_learn(multi_oaa& o, LEARNER::base_learner& base, example& ec) {
   for (uint32_t i = 0; i < o.k; i++) {
     if (is_learn) {
       ec.l.simple.label = -1.f;
-      if (multilabels.label_v.size() > multilabel_index 
-	  && multilabels.label_v[multilabel_index] == i)
-	{
-	  ec.l.simple.label = 1.f;
-	  multilabel_index++;
-	}
+      if (multilabels.label_v.size() > multilabel_index
+          && multilabels.label_v[multilabel_index] == i)
+      {
+        ec.l.simple.label = 1.f;
+        multilabel_index++;
+      }
       base.learn(ec, i);
     } else
       base.predict(ec, i);
-    if (ec.pred.scalar > 0.) 
+    if (ec.pred.scalar > 0.)
       preds.label_v.push_back(i);
   }
   if (is_learn && multilabel_index < multilabels.label_v.size())
@@ -50,14 +50,14 @@ void finish_example(vw& all, multi_oaa&, example& ec)
 
 LEARNER::base_learner* multilabel_oaa_setup(vw& all)
 {
-  if (missing_option<size_t, true>(all, "multilabel_oaa", "One-against-all multilabel with <k> labels")) 
+  if (missing_option<size_t, true>(all, "multilabel_oaa", "One-against-all multilabel with <k> labels"))
     return nullptr;
-  
+
   multi_oaa& data = calloc_or_die<multi_oaa>();
   data.k = all.vm["multilabel_oaa"].as<size_t>();
-  
+
   LEARNER::learner<multi_oaa>& l = LEARNER::init_learner(&data, setup_base(all), predict_or_learn<true>,
-						   predict_or_learn<false>, data.k);
+                                   predict_or_learn<false>, data.k);
   l.set_finish_example(finish_example);
   all.p->lp = MULTILABEL::multilabel;
   all.multilabel_prediction = true;

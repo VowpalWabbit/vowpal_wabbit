@@ -19,8 +19,8 @@ struct svrg
   int stage_size;               // Number of data passes per stage.
   int prev_pass;                // To detect that we're in a new pass.
   int stable_grad_count;        // Number of data points that
-                                // contributed to the stable gradient
-                                // calculation.
+  // contributed to the stable gradient
+  // calculation.
 
   // The VW process' global state.
   vw* all;
@@ -59,7 +59,7 @@ void predict(svrg& s, base_learner&, example& ec)
 float gradient_scalar(const svrg& s, const example& ec, float pred)
 {
   return s.all->loss->first_derivative(s.all->sd, pred, ec.l.simple.label)
-    * ec.l.simple.weight;
+         * ec.l.simple.weight;
 }
 
 // -- Updates, taking inner steps vs. accumulating a full gradient --
@@ -162,7 +162,7 @@ base_learner* svrg_setup(vw& all)
     return NULL;
   }
   new_options(all, "SVRG options")
-    ("stage_size", po::value<int>()->default_value(1), "Number of passes per SVRG stage");
+  ("stage_size", po::value<int>()->default_value(1), "Number of passes per SVRG stage");
   add_options(all);
 
   svrg& s = calloc_or_die<svrg>();

@@ -44,7 +44,7 @@ class io_buf {
   static const int READ = 1;
   static const int WRITE = 2;
 
-  void init(){
+  void init() {
     space = v_init<char>();
     files = v_init<int>();
     currentname = v_init<char>();
@@ -56,9 +56,9 @@ class io_buf {
     endloaded = space.begin;
   }
 
-  virtual int open_file(const char* name, bool stdin_off, int flag=READ){
+  virtual int open_file(const char* name, bool stdin_off, int flag=READ) {
     int ret = -1;
-    switch(flag){
+    switch(flag) {
     case READ:
       if (*name != '\0')
 	{
@@ -99,7 +99,7 @@ class io_buf {
     return ret;
   }
 
-  virtual void reset_file(int f){
+  virtual void reset_file(int f) {
 #ifdef _WIN32
 	_lseek(f, 0, SEEK_SET);
 #else
@@ -113,16 +113,16 @@ class io_buf {
     init();
   }
 
-  virtual ~io_buf(){
+  virtual ~io_buf() {
     files.delete_v();
     space.delete_v();
   }
 
-  void set(char *p){space.end = p;}
+  void set(char *p) {space.end = p;}
 
-  virtual size_t num_files(){ return files.size();}
+  virtual size_t num_files() { return files.size();}
 
-  virtual ssize_t read_file(int f, void* buf, size_t nbytes){
+  virtual ssize_t read_file(int f, void* buf, size_t nbytes) {
     return read_file_or_socket(f, buf, nbytes);
   }
 
@@ -159,8 +159,8 @@ class io_buf {
 	}
   }
 
-  virtual bool close_file(){
-    if(files.size()>0){
+  virtual bool close_file() {
+    if(files.size()>0) {
       close_file_or_socket(files.pop());
       return true;
     }
@@ -171,7 +171,7 @@ class io_buf {
 
   static void close_file_or_socket(int f);
 
-  void close_files(){
+  void close_files() {
     while(close_file());
   }
 
@@ -192,8 +192,7 @@ inline size_t bin_read_fixed(io_buf& i, char* data, size_t len, const char* read
       size_t ret = buf_read(i,p,len);
       if (*read_message == '\0')
 	memcpy(data,p,len);
-      else
-	if (memcmp(data,p,len) != 0)
+    else if (memcmp(data,p,len) != 0)
 	  THROW(read_message);
       return ret;
     }
@@ -235,8 +234,7 @@ inline size_t bin_text_write(io_buf& io, char* data, uint32_t len,
 {
   if (text)
     return bin_write_fixed (io, text_data, text_len);
-  else 
-    if (len > 0)
+  else if (len > 0)
       return bin_write (io, data, len);
   return 0;
 }

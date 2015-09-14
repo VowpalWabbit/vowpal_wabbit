@@ -10,11 +10,11 @@ license as described in the file LICENSE.
 #include <stdio.h>
 
 #if (ZLIB_VERNUM < 0x1252)
-	typedef void* gzFile;
+typedef void* gzFile;
 #else
-	struct gzFile_s;
-	typedef struct gzFile_s *gzFile;    
-#endif 
+struct gzFile_s;
+typedef struct gzFile_s *gzFile;
+#endif
 
 class comp_io_buf : public io_buf
 {
@@ -24,7 +24,7 @@ public:
   virtual int open_file(const char* name, bool stdin_off, int flag = READ);
 
   virtual void reset_file(int f);
-  
+
   virtual ssize_t read_file(int f, void* buf, size_t nbytes);
 
   virtual size_t num_files();

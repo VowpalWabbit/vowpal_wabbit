@@ -56,99 +56,99 @@ namespace CB_ADF {
 
   void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
   {
-	  if (cs_labels.size() < examples.size()) {
-		  cs_labels.resize(examples.size(), true);
-		  cs_labels.end = cs_labels.end_array;
-	  }
-	  for (size_t i = 0; i < examples.size(); i++)
-	  {
-		  CB::label ld = examples[i]->l.cb;
+    if (cs_labels.size() < examples.size()) {
+      cs_labels.resize(examples.size(), true);
+      cs_labels.end = cs_labels.end_array;
+    }
+    for (size_t i = 0; i < examples.size(); i++)
+      {
+	CB::label ld = examples[i]->l.cb;
 
-		  COST_SENSITIVE::wclass wc;
-		  wc.class_index = 0;
+	COST_SENSITIVE::wclass wc;
+	wc.class_index = 0;
 		  if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
-			  wc.x = ld.costs[0].cost / ld.costs[0].probability;
-		  else
-			  wc.x = 0.f;
-		  cs_labels[i].costs.erase();
-		  cs_labels[i].costs.push_back(wc);
-	  }
+	  wc.x = ld.costs[0].cost / ld.costs[0].probability;
+	else 
+	  wc.x = 0.f;
+	cs_labels[i].costs.erase();
+	cs_labels[i].costs.push_back(wc);
+      }
 	  cs_labels[examples.size() - 1].costs[0].x = FLT_MAX; //trigger end of multiline example.
 
-	  if (has_shared_example(examples))//take care of shared examples
-	  {
-		  cs_labels[0].costs[0].class_index = 0;
-		  cs_labels[0].costs[0].x = -FLT_MAX;
-	  }
+    if (has_shared_example(examples))//take care of shared examples
+      {
+	cs_labels[0].costs[0].class_index = 0;
+	cs_labels[0].costs[0].x = -FLT_MAX;
+      }
   }
   
   template <bool is_learn>
   void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
   {
-	  //size_t mysize = examples.size();
-	  if (cs_labels.size() < examples.size()) {
-		  cs_labels.resize(examples.size(), true);
-		  cs_labels.end = cs_labels.end_array;
-	  }
+    //size_t mysize = examples.size();
+    if (cs_labels.size() < examples.size()) {
+      cs_labels.resize(examples.size(), true);
+      cs_labels.end = cs_labels.end_array;		
+    }
 
-	  c.pred_scores.costs.erase();
+    c.pred_scores.costs.erase();
 	  bool shared = has_shared_example(examples);
 
-	  int startK = 0;
+    int startK = 0;
 	  if (shared) startK = 1;
 
-	  for (size_t i = 0; i < examples.size(); i++)
-	  {
+    for (size_t i = 0; i < examples.size(); i++)
+      {
 		  if (example_is_newline(*examples[i])) continue;
 
-		  COST_SENSITIVE::wclass wc;
-		  wc.class_index = 0;
-
+	COST_SENSITIVE::wclass wc;
+	wc.class_index = 0;	
+	
 		  if (c.known_cost.action + startK == i) {
-			  int known_index = c.known_cost.action;
-			  c.known_cost.action = 0;
-			  //get cost prediction for this label
-			  // num_actions should be 1 effectively.
-			  // my get_cost_pred function will use 1 for 'index-1+base'			
-			  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, &(c.known_cost), *(examples[i]), 0, 2);
-			  c.known_cost.action = known_index;
-		  }
-		  else {
-			  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, nullptr, *(examples[i]), 0, 2);
-		  }
+	  int known_index = c.known_cost.action;
+	  c.known_cost.action = 0;
+	  //get cost prediction for this label
+	  // num_actions should be 1 effectively.
+	  // my get_cost_pred function will use 1 for 'index-1+base'			
+	  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, &(c.known_cost), *(examples[i]), 0, 2);
+	  c.known_cost.action = known_index;
+	}
+	else {
+	  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, nullptr, *(examples[i]), 0, 2);
+	}
 
 		  if (shared)
 			  wc.class_index = i - 1;
-		  else
-			  wc.class_index = i;
-		  c.pred_scores.costs.push_back(wc); // done
-		  wc.class_index = 0;
+	else
+	  wc.class_index = i;
+	c.pred_scores.costs.push_back(wc); // done
+	wc.class_index = 0;
 
-		  //add correction if we observed cost for this action and regressor is wrong
-		  if (c.known_cost.probability != -1 && c.known_cost.action + startK == i)
-		  {
-			  wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
-		  }
-
-		  //cout<<"Action "<<c.known_cost.action<<" Cost "<<c.known_cost.cost<<" Probability "<<c.known_cost.probability<<endl;
-
-		  //cout<<"Prediction = "<<wc.x<<" ";
-		  cs_labels[i].costs.erase();
-		  cs_labels[i].costs.push_back(wc);
+	//add correction if we observed cost for this action and regressor is wrong
+	if (c.known_cost.probability != -1 && c.known_cost.action + startK == i)
+	  {			
+	    wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
 	  }
-	  COST_SENSITIVE::wclass wc;
-	  wc.class_index = 0;
-	  wc.x = FLT_MAX;
+
+	//cout<<"Action "<<c.known_cost.action<<" Cost "<<c.known_cost.cost<<" Probability "<<c.known_cost.probability<<endl;
+	
+	//cout<<"Prediction = "<<wc.x<<" ";
+	cs_labels[i].costs.erase();
+	cs_labels[i].costs.push_back(wc);
+      }
+    COST_SENSITIVE::wclass wc;
+    wc.class_index = 0;
+    wc.x = FLT_MAX;
 	  cs_labels[examples.size() - 1].costs.erase();
 	  cs_labels[examples.size() - 1].costs.push_back(wc); //trigger end of multiline example.
 
-	  if (shared)//take care of shared examples
-	  {
-		  cs_labels[0].costs[0].class_index = 0;
-		  cs_labels[0].costs[0].x = -FLT_MAX;
-	  }
+    if (shared)//take care of shared examples
+      {
+	cs_labels[0].costs[0].class_index = 0;
+	cs_labels[0].costs[0].x = -FLT_MAX;
+      }
 
-	  //cout<<endl;
+    //cout<<endl;
 
   }
 
@@ -170,7 +170,7 @@ namespace CB_ADF {
 
   
     // handle -1 case.
-    if (index == -1){
+  if (index == -1) {
       mydata.known_cost.probability = -1;
       return;
       //std::cerr << "None of the examples has known cost. Exiting." << endl;
@@ -195,18 +195,18 @@ namespace CB_ADF {
   template<bool is_learn>
   void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   {
-	  // m2: still save, store, and restore
-	  // starting with 3 for loops
-	  // first of all, clear the container mydata.array.
-	  mydata.cb_labels.erase();
-
-	  // 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.
-	  size_t index = 0;
-	  for (example **ec = examples.begin; ec != examples.end; ec++)
-	  {
-		  mydata.cb_labels.push_back((**ec).l.cb);
-		  (**ec).l.cs = mydata.cs_labels[index++];
-	  }
+    // m2: still save, store, and restore
+    // starting with 3 for loops
+    // first of all, clear the container mydata.array.
+    mydata.cb_labels.erase();
+  
+    // 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.
+    size_t index = 0;
+    for (example **ec = examples.begin; ec != examples.end; ec++)
+      {
+	mydata.cb_labels.push_back((**ec).l.cb);
+	(**ec).l.cs = mydata.cs_labels[index++]; 
+      }
   
     // 2nd: predict for each ex
     // // call base.predict for each vw exmaple in the sequence
@@ -219,12 +219,12 @@ namespace CB_ADF {
     }
 
     //cout<<"Prediction size = "<<(**examples.begin).pred.multilabels.label_v.size()<<endl;
-
-	// 3rd: restore cb_label for each example
-	// (**ec).l.cb = mydata.array.element.
-	size_t i = 0;
-	for (example **ec = examples.begin; ec != examples.end; ec++)
-		(**ec).l.cb = mydata.cb_labels[i++];
+  
+    // 3rd: restore cb_label for each example
+    // (**ec).l.cb = mydata.array.element.
+    size_t i = 0;
+    for (example **ec = examples.begin; ec != examples.end; ec++)
+      (**ec).l.cb = mydata.cb_labels[i++];
   }
 
   template<uint32_t reduction_type>
@@ -233,10 +233,10 @@ namespace CB_ADF {
 	  switch (reduction_type)
 	  {
 	  case CB_TYPE_IPS:
-		  gen_cs_example_ips(examples, mydata.cs_labels);
+      gen_cs_example_ips(examples, mydata.cs_labels);
 		  break;
 	  case CB_TYPE_DR:
-		  gen_cs_example_dr<true>(mydata, examples, mydata.cs_labels);
+      gen_cs_example_dr<true>(mydata, examples, mydata.cs_labels);
 		  break;
 	  default:
 		  THROW("Unknown cb_type specified for contextual bandit learning: " << reduction_type);
@@ -282,16 +282,16 @@ namespace CB_ADF {
     else
       {
 		  switch (data.cb_type)
-		  {
+	  {
 		  case CB_TYPE_IPS:
-			  learn<CB_TYPE_IPS>(data, base, data.ec_seq);
+	    learn<CB_TYPE_IPS>(data, base, data.ec_seq);
 			  break;
 		  case CB_TYPE_DR:
-			  learn<CB_TYPE_DR>(data, base, data.ec_seq);
+	    learn<CB_TYPE_DR>(data, base, data.ec_seq);
 			  break;
 		  default:
 			  THROW("Unknown cb_type specified for contextual bandit learning: " << data.cb_type);
-		  }
+	  }
       }
   }
 
@@ -316,7 +316,7 @@ namespace CB_ADF {
     
     if (example_is_newline(ec)) return;
     // the shared example
-	if (CB::ec_is_example_header(ec)) return;
+    if (CB::ec_is_example_header(ec)) return;
 
     all.sd->total_features += ec.num_features;
 
@@ -425,7 +425,6 @@ namespace CB_ADF {
       }        
       clear_seq_and_finish_examples(all, data);
       data.need_to_clear = false;
-      if (ec.in_use) VW::finish_example(all, &ec);
     }
   }
 
@@ -457,7 +456,7 @@ namespace CB_ADF {
       data.ec_seq.push_back(&ec);
       do_actual_learning<is_learn>(data, base);
       // using flag to clear, because ec_seq is used in finish_example
-	  data.need_to_clear = true;
+      data.need_to_clear = true;
     } else {
       if (data.need_to_clear) {  // should only happen if we're NOT driving
 	data.ec_seq.erase();
