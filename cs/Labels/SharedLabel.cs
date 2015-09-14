@@ -8,31 +8,24 @@
 
 using VW.Interfaces;
 
-namespace VW
+namespace VW.Labels
 {
     /// <summary>
     /// Examples used with <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> must inherit from this class.
     /// In multi-line scenarios the first example can contain a set of shared features. This first example must be 
     /// marked using a 'shared' label.
     /// </summary>
-    public abstract class SharedExample : IExample
+    public sealed class SharedLabel : ILabel
     {
-        private static readonly SharedLabel sharedLabel = new SharedLabel();
+        public static readonly SharedLabel Instance = new SharedLabel();
 
-        /// <summary>
-        /// Gets the fixed label required for multi-line examples.
-        /// </summary>
-        public ILabel Label
+        private SharedLabel()
         {
-            get { return sharedLabel; }
         }
 
-        internal class SharedLabel : ILabel
+        public string ToVowpalWabbitFormat()
         {
-            public string ToVowpalWabbitFormat()
-            {
-                return "shared";
-            }
+            return "shared";
         }
     }
 }

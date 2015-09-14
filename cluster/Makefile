@@ -1,4 +1,4 @@
-CXX = $(shell which clang++)
+CXX = $(shell which g++)
 ifneq ($(CXX),)
   #$(warning Using clang: "$(CXX)")
   ARCH = -D__extern_always_inline=inline
@@ -12,6 +12,8 @@ ifeq ($(CXX),)
   $(error No compiler found)
 endif
 
+FLAGS += -I ../vowpalwabbit -std=c++0x 
+
 all:	spanning_tree
 
 %.o:	 %.cc  %.h
@@ -20,7 +22,7 @@ all:	spanning_tree
 %.o:	 %.cc
 	$(CXX) $(FLAGS) -c $< -o $@
 
-spanning_tree: spanning_tree.o
+spanning_tree: spanning_tree_main.o ../vowpalwabbit/spanning_tree.o ../vowpalwabbit/vw_exception.o
 	$(CXX) $(FLAGS) -o $@ $+ 
 
 install: spanning_tree

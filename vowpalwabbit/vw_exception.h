@@ -41,6 +41,12 @@ public:
 };
 
 #ifdef _WIN32
+	void vw_trace(const char* filename, int linenumber, const char* fmt, ...);
+
+	// useful when hunting down release mode bugs
+#define VW_TRACE(fmt, ...) VW::vw_trace(__FILE__, __LINE__, fmt, __VA_ARGS__)
+
+
 #define THROWERRNO(args) \
 	{ \
 		std::stringstream __msg; \

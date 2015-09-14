@@ -87,34 +87,29 @@ namespace cs_test
             var context = new FeatureTestContext
             {
                 S = new[] { "p^the_man", "w^thew^man\u0394", "w^man" },
-                T = new[] { "p^un_homme", "w^un", "w^homme" },
-                Label = new SimpleLabel { Label = 1f }
+                T = new[] { "p^un_homme", "w^un", "w^homme" }
             };
 
             var vw = new VowpalWabbit<FeatureTestContext>("-q st --noconstant --quiet");
 
-            vw.Learn<VowpalWabbitScalarPrediction>("1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme"); 
+            vw.Native.Learn("1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme"); 
 
-            using (var example = vw.ReadExample(context))
-            {
-                var score = example.LearnAndPredict<VowpalWabbitScalarPrediction>().Value;
-                Console.Error.WriteLine("p2 = {0}", score);
-            }
+            var prediction = vw.Learn(context, new SimpleLabel { Label = 1f }, VowpalWabbitPredictionType.Scalar);
+
+            Console.Error.WriteLine("p2 = {0}", prediction);
         }
     }
 
-    public class FeatureTestContext : IExample
+    public class FeatureTestContext
     {
         [Feature(FeatureGroup = 's')]
         public IEnumerable<string> S { get; set; }
 
         [Feature(FeatureGroup = 't')]
         public IEnumerable<string> T { get; set; }
-
-        public ILabel Label { get; set; }
     }
 
-    public class UserContext : IActionDependentFeatureExample<DocumentFeature>
+    public class UserContext
     {
         [Feature(Namespace = "otheruser", FeatureGroup = 'o')]
         public UserFeature User { get; set; }

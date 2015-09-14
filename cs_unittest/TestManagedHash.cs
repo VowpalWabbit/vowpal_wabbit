@@ -114,7 +114,7 @@ namespace cs_unittest
             var stopWatchNative = new Stopwatch();
             var stopWatchManaged = new Stopwatch();
 
-            using (var vw = new VowpalWabbit<Data>(args))
+            using (var vw = new VowpalWabbit(args))
             {
                 for (int i = 0; i < 10000; i++)
                 {
@@ -123,7 +123,7 @@ namespace cs_unittest
                         stopWatchNative.Start();
                         var nativeHash = vw.HashSpaceNative(item);
                         stopWatchNative.Stop();
-
+                         
                         stopWatchManaged.Start();
                         var managedHash = vw.HashSpace(item);
                         stopWatchManaged.Stop();

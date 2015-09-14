@@ -24,6 +24,33 @@
     <ClInclude Include="clr_io.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="vw_base.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vw_model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vowpalwabbit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vw_prediction.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vw_example.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vw_builder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vw_interface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vw_settings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spanning_tree_clr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="vw_example.cpp">
@@ -35,12 +62,6 @@
     <ClCompile Include="vw_model.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vw.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vw_examplebuilder.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="vw_prediction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -48,6 +69,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vw_exception.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vowpalwabbit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vw_builder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spanning_tree_clr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

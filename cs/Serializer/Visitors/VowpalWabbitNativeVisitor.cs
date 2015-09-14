@@ -11,6 +11,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using VW.Interfaces;
 using VW.Serializer.Interfaces;
 
 namespace VW.Serializer.Visitors
@@ -19,7 +20,7 @@ namespace VW.Serializer.Visitors
     /// <summary>
     /// Front-end to serialize data into Vowpal Wabbit native C++ structures.
     /// </summary>
-    public sealed partial class VowpalWabbitInterfaceVisitor : IVowpalWabbitVisitor<VowpalWabbitExample>
+    public partial struct VowpalWabbitInterfaceVisitor
     {
         /// <summary>
         /// The Vowpal Wabbit instance all examples are associated with.
@@ -44,6 +45,10 @@ namespace VW.Serializer.Visitors
         public VowpalWabbitInterfaceVisitor(VowpalWabbit vw)
         {
             this.vw = vw;
+            this.builder = null;
+            this.namespaceBuilder = null;
+            this.featureGroup = '\0';
+            this.namespaceHash = 0;
         }
 
         /// <summary>
@@ -63,6 +68,14 @@ namespace VW.Serializer.Visitors
             this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
+
+            // support anchor feature
+            if(namespaceDense.DenseFeature.AddAnchor)
+            {
+                this.namespaceBuilder.AddFeature(this.namespaceHash, 1);
+                i++;
+            }
+
             foreach (var v in namespaceDense.DenseFeature.Value)
             {
                 this.namespaceBuilder.AddFeature(
@@ -184,11 +197,12 @@ namespace VW.Serializer.Visitors
         /// <param name="label">The label.</param>
         /// <param name="namespaces">The namespaces.</param>
         /// <returns>The populated vowpal wabbit example.</returns>
-        public VowpalWabbitExample Visit(string label, IVisitableNamespace[] namespaces)
+        public VowpalWabbitExample Visit(ILabel label, IVisitableNamespace[] namespaces)
         {
             using (this.builder = new VowpalWabbitExampleBuilder(this.vw))
             {
-                this.builder.Label = label;
+                if (label != null)
+                    this.builder.ParseLabel(label.ToVowpalWabbitFormat());
 
                 foreach (var n in namespaces)
                 {

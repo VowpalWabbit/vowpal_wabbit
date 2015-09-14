@@ -69,7 +69,7 @@ namespace cs_unittest
         }
     }
 
-    public class Cs_TestData : SharedExample, IActionDependentFeatureExample<Cs_TestCs_TestDataADF>
+    public class Cs_TestData 
     {
         [Feature]
         public string[] Shared { get; set; }
@@ -77,7 +77,7 @@ namespace cs_unittest
         public IReadOnlyList<Cs_TestCs_TestDataADF> ActionDependentFeatures { get; set; }
     }
 
-    public class Cs_TestCs_TestDataADF : IExample
+    public class Cs_TestCs_TestDataADF
     {
         [Feature]
         public string[] Features { get; set; }
