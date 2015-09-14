@@ -14,7 +14,7 @@ namespace VW.Interfaces
     public interface ILabel
     {
         /// <summary>
-        /// Serialize to Vowpal Wabbit string format.
+        /// Serialize to Vowpal Wabbit string format. 
         /// </summary>
         string ToVowpalWabbitFormat();
     }

@@ -12,6 +12,11 @@ namespace VW
 	VowpalWabbitExampleBuilder::VowpalWabbitExampleBuilder(VowpalWabbit^ vw) :
 		m_vw(vw->m_vw), m_example(nullptr)
 	{
+#ifdef _DEBUG
+		if (vw == nullptr)
+			throw gcnew ArgumentNullException("vw");
+#endif
+
 		m_example = vw->GetOrCreateNativeExample();
 	}
 

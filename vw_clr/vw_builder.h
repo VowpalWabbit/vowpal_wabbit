@@ -58,10 +58,13 @@ namespace VW
 	public ref class VowpalWabbitExampleBuilder
 	{
 	private:
+		/// <summary>
+		/// The native vowpal wabbit data structure.
+		/// </summary>
 		vw* const m_vw;
 
 		/// <summary>
-		/// The resulting CLR example data structure.
+		/// The produced CLR example data structure.
 		/// </summary>
 		VowpalWabbitExample^ m_example;
 
@@ -104,5 +107,4 @@ namespace VW
 		/// <remarks>Casts to System::Byte.</remarks>
 		VowpalWabbitNamespaceBuilder^ AddNamespace(Char featureGroup);
 	};
-
 }

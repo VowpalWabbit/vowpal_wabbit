@@ -13,6 +13,11 @@ namespace VW
 {
 	float VowpalWabbitScalarPredictionFactory::Create(vw* vw, example* ex)
 	{
+#if _DEBUG
+		if (ex == nullptr)
+			throw gcnew ArgumentNullException("ex");
+#endif
+
 		try
 		{
 			return VW::get_prediction(ex);
@@ -22,6 +27,11 @@ namespace VW
 
 	float VowpalWabbitCostSensitivePredictionFactory::Create(vw* vw, example* ex)
 	{
+#if _DEBUG
+		if (ex == nullptr)
+			throw gcnew ArgumentNullException("ex");
+#endif
+
 		try
 		{
 			return VW::get_cost_sensitive_prediction(ex);
@@ -31,6 +41,11 @@ namespace VW
 
 	cli::array<int>^ VowpalWabbitMultilabelPredictionFactory::Create(vw* vw, example* ex)
 	{
+#if _DEBUG
+		if (ex == nullptr)
+			throw gcnew ArgumentNullException("ex");
+#endif
+
 		size_t length;
 		uint32_t* labels;
 		
@@ -53,6 +68,14 @@ namespace VW
 
 	cli::array<float>^ VowpalWabbitTopicPredictionFactory::Create(vw* vw, example* ex)
 	{
+#if _DEBUG
+		if (vw == nullptr)
+			throw gcnew ArgumentNullException("vw");
+
+		if (ex == nullptr)
+			throw gcnew ArgumentNullException("ex");
+#endif
+
 		auto values = gcnew cli::array<float>(vw->lda);
 		Marshal::Copy(IntPtr(ex->topic_predictions.begin), values, 0, vw->lda);
 

@@ -22,14 +22,8 @@ using namespace System::Text;
 namespace VW
 {
 	VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
-		: m_examples(nullptr), m_vw(nullptr), m_model(nullptr)
+		: m_examples(nullptr), m_vw(nullptr), m_model(nullptr), m_settings(settings != nullptr ? settings : gcnew VowpalWabbitSettings)
 	{
-		if (settings == nullptr)
-		{
-			settings = gcnew VowpalWabbitSettings;
-		}
-
-		m_settings = settings;
 		m_examples = gcnew Stack<VowpalWabbitExample^>;
 
 		try
@@ -42,7 +36,7 @@ namespace VW
 				m_vw = VW::seed_vw_model(m_model->m_vw, string);
 				m_model->IncrementReference();
 			}
-			else 
+			else
 			{
 				if (settings->ModelStream == nullptr)
 				{
@@ -157,12 +151,13 @@ namespace VW
 	{
 #if _DEBUG
 		if (m_vw == nullptr)
-		{
 			throw gcnew ObjectDisposedException("VowpalWabbitExample was not properly disposed as the owner is already disposed");
-		}
+
+		if (ex == nullptr)
+			throw gcnew ArgumentNullException("ex");
 #endif
 
-		// make sure we're not a ring based example 
+		// make sure we're not a ring based example
 		assert(!VW::is_ring_example(*m_vw, ex->m_example));
 
         m_examples->Push(ex);

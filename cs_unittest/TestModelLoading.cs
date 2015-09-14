@@ -73,17 +73,11 @@ namespace cs_unittest
                         Assert.IsTrue(false);
                     }
                 }
-                catch (VowpalWabbitException ex)
-                {
-                    Assert.IsTrue(true);
-                }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     Assert.IsTrue(true);
                 }
             }
         }
     }
-
-    
 }
