@@ -55,7 +55,7 @@ namespace VW.Serializer
             if (serializerFunc == null)
             {
                 // if no features are found, no serializer is generated
-                wrappedSerializerFunc = (_,__,___) => null;
+                wrappedSerializerFunc = (a,b,c) => null;
             }
             else
             {
@@ -67,7 +67,7 @@ namespace VW.Serializer
             if (serializerFunc == null)
             {
                 // if no features are found, no serializer is generated
-                serializerFunc = (_,__,___) => null;
+                serializerFunc = (a,b,c) => null;
             }
 
             return new VowpalWabbitSerializer<TExample>(serializerFunc, settings);
@@ -102,7 +102,7 @@ namespace VW.Serializer
             //var dynMod = dynAsm.DefineDynamicModule("VowpalWabbitSerializerModule", asmName.Name + ".dll", true);
 //#else
             var dynMod = dynAsm.DefineDynamicModule("VowpalWabbitSerializerModule");
-//#endif       
+//#endif
             var newSerializer = CreateSerializer<TVisitor, TExample, TExampleResult>(dynMod);
 
             SerializerCache[cacheKey] = newSerializer;
@@ -157,7 +157,7 @@ namespace VW.Serializer
             //body.Add(Expression.IfThen(
             //        Expression.Equal(visitorParameter, Expression.Constant(null)),
             //        Expression.Throw(Expression.New(ArgumentNullExceptionConstructorInfo, Expression.Constant("visitor")))));
-            
+
             var visitorCtor = typeof(TVisitor).GetConstructor(new[] { typeof(VowpalWabbit) });
             if (visitorCtor != null)
             {
@@ -178,7 +178,7 @@ namespace VW.Serializer
             {
                 var features = ns.OrderBy(f => f.Order).ToList();
 
-                var baseNamespaceInits = new List<MemberAssignment> 
+                var baseNamespaceInits = new List<MemberAssignment>
                 {
                     Expression.Bind(
                         ReflectionHelper.GetInfo((Namespace n) => n.Name),
@@ -189,7 +189,7 @@ namespace VW.Serializer
                 {
                     baseNamespaceInits.Add(
                         Expression.Bind(
-                            ReflectionHelper.GetInfo((Namespace n) => n.FeatureGroup), 
+                            ReflectionHelper.GetInfo((Namespace n) => n.FeatureGroup),
                             Expression.Convert(Expression.Constant((char)ns.Key.FeatureGroup), typeof(char?))));
                 }
 
@@ -206,7 +206,7 @@ namespace VW.Serializer
 
                     var namespaceDense = Expression.MemberInit(
                         Expression.New(namespaceType),
-                        baseNamespaceInits.Union(new[] { 
+                        baseNamespaceInits.Union(new[] {
                             Expression.Bind(namespaceType.GetProperty("DenseFeature"), feature.NewFeatureExpression)
                         }));
 
@@ -247,7 +247,7 @@ namespace VW.Serializer
                     // CODE new NamespaceSparse { Features = new[] { feature1, feature2, ... } }
                     var namespaceSparse = Expression.MemberInit(
                         Expression.New(typeof(NamespaceSparse)),
-                        baseNamespaceInits.Union(new[] { 
+                        baseNamespaceInits.Union(new[] {
                             Expression.Bind(
                                 ReflectionHelper.GetInfo((NamespaceSparse n) => n.Features),
                                 Expression.NewArrayInit(typeof(IVisitableFeature), featureVariables))
@@ -266,7 +266,7 @@ namespace VW.Serializer
                         var feature = features[i];
                         var featureVariable = featureVariables[i];
 
-                        // CODE: visitor.Visit(feature1); 
+                        // CODE: visitor.Visit(feature1);
                         Expression visitFeatureCall = Expression.Call(
                                     visitorParameter,
                                     ReflectionHelper.FindMethod(typeof(TVisitor), feature.Enumerize ? "VisitEnumerize" : "Visit", featureVariable.Type),
@@ -326,7 +326,7 @@ namespace VW.Serializer
                 vwParameter,
                 valueParameter,
                 labelParameter);
-            
+
             var typeBuilder = moduleBuilder.DefineType("VowpalWabbitSerializer" + Guid.NewGuid().ToString().Replace('-', '_'));
 
             // Create our method builder for this type builder
@@ -336,7 +336,7 @@ namespace VW.Serializer
                 typeof(void),
                 new[] { typeof(VowpalWabbit), typeof(TExample), typeof(ILabel) });
 
-            // compared to Compile this looks rather ugly, but there is a feature-bug 
+            // compared to Compile this looks rather ugly, but there is a feature-bug
             // that adds a security check to every call of the Serialize method
 //#if !DEBUG
             //var debugInfoGenerator = DebugInfoGenerator.CreatePdbGenerator();
@@ -348,7 +348,7 @@ namespace VW.Serializer
 
             return (Func<VowpalWabbit, TExample, ILabel, TExampleResult>)Delegate.CreateDelegate(
                 typeof(Func<VowpalWabbit, TExample, ILabel, TExampleResult>),
-                dynType.GetMethod(SerializeMethodName));                                        
+                dynType.GetMethod(SerializeMethodName));
         }
 
         internal static bool IsValidDenseFeatureValueElementType(Type elemType)
@@ -399,7 +399,7 @@ namespace VW.Serializer
         private static IList<FeatureExpression> ExtractFeaturesCompiled(Expression valueExpression, string parentNamespace, char? parentFeatureGroup)
         {
             var props = valueExpression.Type.GetProperties(BindingFlags.Instance | BindingFlags.GetProperty | BindingFlags.Public);
-                                                                         
+
             var localFeatures = from p in props
                                 let attr = (FeatureAttribute)p.GetCustomAttributes(typeof(FeatureAttribute), true).FirstOrDefault()
                                 where attr != null
@@ -422,7 +422,7 @@ namespace VW.Serializer
                                     DenseFeatureValueElementType = GetDenseFeatureValueElementType(featureValueType),
                                     PropertyExpression = propertyExpression,
                                     Order = attr.Order,
-                                    // CODE new Feature<T> { Namespace = ..., ... } 
+                                    // CODE new Feature<T> { Namespace = ..., ... }
                                     NewFeatureExpression = Expression.MemberInit(
                                        Expression.New(featureType),
                                        Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Name), Expression.Constant(name)),

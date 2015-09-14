@@ -73,10 +73,6 @@ namespace cs_unittest
                         Assert.IsTrue(false);
                     }
                 }
-                catch (VowpalWabbitException)
-                {
-                    Assert.IsTrue(true);
-                }
                 catch (Exception)
                 {
                     Assert.IsTrue(true);
@@ -84,6 +80,4 @@ namespace cs_unittest
             }
         }
     }
-
-    
 }

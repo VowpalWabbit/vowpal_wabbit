@@ -42,7 +42,7 @@ namespace VW
 				m_vw->all_reduce = new AllReduceThreads(parent_all_reduce, total, settings->Node);
 			}
 		}
-		
+
 		try
 		{
 			m_hasher = GetHasher();
@@ -215,7 +215,9 @@ namespace VW
 	{
 #if _DEBUG
 		if (ex == nullptr)
+		{
 			throw gcnew ArgumentNullException("ex");
+		}
 #endif
 
 		try
@@ -392,7 +394,7 @@ namespace VW
 	T VowpalWabbit::Predict(String^ line, IVowpalWabbitPredictionFactory<T>^ predictionFactory)
 	{
 #if _DEBUG
-		if (String::IsNullOrEmpty(line)) 
+		if (String::IsNullOrEmpty(line))
 			throw gcnew ArgumentException("lines must not be empty. For multi-line examples use Learn(IEnumerable<string>) overload.");
 #endif
 
