@@ -272,6 +272,17 @@ inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len,
   return 0;
 }
 
+//a unified function for read(in binary), write(in binary), and write(in text)
+inline size_t bin_text_read_write_fixed(io_buf& io, char* data, uint32_t len,
+                                        const char* read_message, bool read,
+                                        const char* text_data, uint32_t text_len, bool text)
+{
+  if (read)
+    return bin_read_fixed(io, data, len, read_message);
+  else
+    return bin_text_write_fixed(io, data, len, text_data, text_len, text);
+}
+
 inline size_t bin_text_read_write_fixed_validate_eof(io_buf& io, char* data, uint32_t len,
     const char* read_message, bool read,
     const char* text_data, uint32_t text_len, bool text)
@@ -282,15 +293,4 @@ inline size_t bin_text_read_write_fixed_validate_eof(io_buf& io, char* data, uin
         VW::validate_unexpected_eof(nbytes);
     }
     return nbytes;
-}
-
-//a unified function for read(in binary), write(in binary), and write(in text)
-inline size_t bin_text_read_write_fixed(io_buf& io, char* data, uint32_t len,
-                                        const char* read_message, bool read,
-                                        const char* text_data, uint32_t text_len, bool text)
-{
-  if (read)
-    return bin_read_fixed(io, data, len, read_message);
-  else
-    return bin_text_write_fixed(io, data, len, text_data, text_len, text);
 }
