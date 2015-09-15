@@ -232,7 +232,7 @@
     <ClCompile Include="allreduce_threads.cc">
       <FileType>CppHeader</FileType>
     </ClCompile>
-    <ClInclude Include="vw_validate.cc" />
+    <ClCompile Include="vw_validate.cc" />
     <ClInclude Include="autolink.h" />
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="active.h" />
