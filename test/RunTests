@@ -584,6 +584,15 @@ sub check_for_time_regression() {
                 $cuser1, $csystem1, $overall_time1, $pct_change;
 }
 
+# only unlink relative path, plain files
+# e.g. avoids trying to unlink /dev/null when running as root
+sub safe_unlink($) {
+    my $file = shift;
+    return 0 if ($file =~ m{^/});
+    return 0 unless (-f $file);
+    unlink($file);
+}
+
 sub run_tests() {
     print STDERR "$0: '-D' to see any diff output\n"
         unless ($opt_D);
@@ -665,7 +674,7 @@ sub run_tests() {
         } else {
             if (defined $out_ref) {
                 print STDERR "$0: test $TestNo: stdout OK\n";
-                unlink($outf);
+                safe_unlink($outf);
             } else {
                 v(1, "$0: test $TestNo: stdout OK (no reference)\n");
             }
@@ -688,7 +697,7 @@ sub run_tests() {
             exit $status if ($opt_e);
         } else {
             print STDERR "$0: test $TestNo: stderr OK\n";
-            unlink($errf);
+            safe_unlink($errf);
         }
 
         # -- compare all other reference files
