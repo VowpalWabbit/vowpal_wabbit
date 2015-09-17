@@ -38,7 +38,7 @@ allreduce_OBJECTS = $(patsubst %.cc,%.o,$(allreduce_SOURCES))
 	$(CXX) $(FLAGS) -c $< -o $@
 
 liballreduce.a: $(allreduce_OBJECTS)
-	ar rcs $@ $<
+	ar rcs $@ $+
 
 libvw.a: $(filter-out vw.o,$(vw_OBJECTS))
 	ar rcs $@ $+
