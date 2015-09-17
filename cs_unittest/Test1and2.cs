@@ -9,6 +9,7 @@ using VW;
 using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer.Attributes;
+using System.Threading;
 
 namespace cs_test
 {
@@ -31,67 +32,68 @@ namespace cs_test
             {
                 var lineNr = 0;
                 VWTestHelper.ParseInput(
-                    File.OpenRead(@"train-sets\0001.dat"), 
+                    File.OpenRead(@"train-sets\0001.dat"),
                     new MyListener(data =>
                     {
                         input.Add(data);
 
-                        var expected = vwStr.Learn<VowpalWabbitScalarPrediction>(data.Line);
+                        var expected = vwStr.Learn(data.Line, VowpalWabbitPredictionType.Scalar);
+                        var actual = vw.Learn(data, data.Label, VowpalWabbitPredictionType.Scalar);
 
-                        using (var example = vw.ReadExample(data))
-                        {
-                            var actual = example.LearnAndPredict<VowpalWabbitScalarPrediction>();
-
-                            Assert.AreEqual(expected.Value, actual.Value, 1e-6, "Learn output differs on line: " + lineNr);
-                        }
+                        Assert.AreEqual(expected, actual, 1e-6, "Learn output differs on line: " + lineNr);
 
                         lineNr++;
                     }));
 
                 vwStr.RunMultiPass();
-                vw.RunMultiPass();
+                vw.Native.RunMultiPass();
 
                 vwStr.SaveModel("models/str0001.model");
-                vw.SaveModel("models/0001.model");
-                 
+                vw.Native.SaveModel("models/0001.model");
+
                 VWTestHelper.AssertEqual(@"train-sets\ref\0001.stderr", vwStr.PerformanceStatistics);
-                VWTestHelper.AssertEqual(@"train-sets\ref\0001.stderr", vw.PerformanceStatistics);
+                VWTestHelper.AssertEqual(@"train-sets\ref\0001.stderr", vw.Native.PerformanceStatistics);
             }
 
-            Assert.AreEqual(input.Count, references.Length); 
+            Assert.AreEqual(input.Count, references.Length);
 
-            using (var vwModel = new VowpalWabbitModel("-k -t --invariant", File.OpenRead("models/0001.model")))
-            using (var vwInMemoryShared1 = new VowpalWabbit(vwModel))
-            using (var vwInMemoryShared2 = new VowpalWabbit<Test1>(vwModel))
-            using (var vwInMemory = new VowpalWabbit("-k -t --invariant", File.OpenRead("models/0001.model")))
+            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-k -t --invariant", modelStream: File.OpenRead("models/0001.model"))))
+            using (var vwInMemoryShared1 = new VowpalWabbit(new VowpalWabbitSettings(model: vwModel)))
+            using (var vwInMemoryShared2 = new VowpalWabbit<Test1>(new VowpalWabbitSettings(model: vwModel)))
+            using (var vwInMemory = new VowpalWabbit(new VowpalWabbitSettings("-k -t --invariant", modelStream: File.OpenRead("models/0001.model"))))
             using (var vwStr = new VowpalWabbit("-k -t -i models/str0001.model --invariant"))
+            using (var vwNative = new VowpalWabbit("-k -t -i models/0001.model --invariant"))
             using (var vw = new VowpalWabbit<Test1>("-k -t -i models/0001.model --invariant"))
+            using (var vwModel2 = new VowpalWabbitModel("-k -t --invariant -i models/0001.model"))
+            using (var vwInMemoryShared3 = new VowpalWabbit<Test1>(new VowpalWabbitSettings(model: vwModel2)))  
             {
                 for (var i = 0; i < input.Count; i++)
                 {
-                    var actualStr = vwStr.Predict<VowpalWabbitScalarPrediction>(input[i].Line);
-                    var actualShared1 = vwInMemoryShared1.Predict<VowpalWabbitScalarPrediction>(input[i].Line);
-                    var actualInMemory = vwInMemory.Predict<VowpalWabbitScalarPrediction>(input[i].Line);
-                    
-                    using (var example = vw.ReadExample(input[i]))
-                    using (var exampleInMemory2 = vwInMemoryShared2.ReadExample(input[i]))
-                    {
-                        var actual = example.Predict<VowpalWabbitScalarPrediction>();
-                        var actualShared2 = exampleInMemory2.Predict<VowpalWabbitScalarPrediction>();
+                    var actualStr = vwStr.Predict(input[i].Line, VowpalWabbitPredictionType.Scalar);
+                    var actualNative = vwNative.Predict(input[i].Line, VowpalWabbitPredictionType.Scalar);
+                    var actualInMemory = vwInMemory.Predict(input[i].Line, VowpalWabbitPredictionType.Scalar);
 
-                        Assert.AreEqual(references[i], actualStr.Value, 1e-5);
-                        Assert.AreEqual(references[i], actualShared1.Value, 1e-5);
-                        Assert.AreEqual(references[i], actualInMemory.Value, 1e-5);
-                        Assert.AreEqual(references[i], actual.Value, 1e-5);
-                        Assert.AreEqual(references[i], actualShared2.Value, 1e-5);
-                    }
+                    var actual = vw.Predict(input[i], VowpalWabbitPredictionType.Scalar, input[i].Label);
+                    var actualShared1 = vwInMemoryShared1.Predict(input[i].Line, VowpalWabbitPredictionType.Scalar);
+                    var actualShared2 = vwInMemoryShared2.Predict(input[i], VowpalWabbitPredictionType.Scalar, input[i].Label);
+                    var actualShared3 = vwInMemoryShared3.Predict(input[i], VowpalWabbitPredictionType.Scalar, input[i].Label);
+
+                    Assert.AreEqual(references[i], actualStr, 1e-5);
+                    Assert.AreEqual(references[i], actualNative, 1e-5);
+                    Assert.AreEqual(references[i], actualInMemory, 1e-5);
+                    Assert.AreEqual(references[i], actual, 1e-5);
+                    Assert.AreEqual(references[i], actualShared1, 1e-5);
+                    Assert.AreEqual(references[i], actualShared2, 1e-5);
+                    Assert.AreEqual(references[i], actualShared3, 1e-5);
                 }
 
-                // VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vwInMemoryShared2.PerformanceStatistics);
+                // due to shared usage the counters don't match up
+                //VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vwInMemoryShared2.Native.PerformanceStatistics);
                 //VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vwInMemoryShared1.PerformanceStatistics);
+
                 VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vwInMemory.PerformanceStatistics);
                 VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vwStr.PerformanceStatistics);
-                VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vw.PerformanceStatistics);
+                VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vw.Native.PerformanceStatistics);
             }
         }
 
@@ -129,7 +131,7 @@ namespace cs_test
 
     // 1|features 13:.1 15:.2 const:25
     // 1|abc 13:.1 15:.2 co:25
-    public class Test1 : IExample
+    public class Test1
     {
         [Feature(FeatureGroup = 'f', Namespace = "eatures", Name = "const", Order = 2)]
         public float Constant { get; set; }

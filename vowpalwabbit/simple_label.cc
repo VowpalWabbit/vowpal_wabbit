@@ -147,8 +147,8 @@ bool summarize_holdout_set(vw& all, size_t& no_win_counter)
 {
   float thisLoss = (all.sd->weighted_holdout_examples_since_last_pass > 0) ? (float)(all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass) : FLT_MAX;
 
-  if (all.span_server != "")
-    thisLoss = accumulate_scalar(all, all.span_server, thisLoss);
+  if (all.all_reduce != nullptr)
+    thisLoss = accumulate_scalar(all, thisLoss);
 
   all.sd->weighted_holdout_examples_since_last_pass = 0;
   all.sd->holdout_sum_loss_since_last_pass = 0;

@@ -14,6 +14,9 @@ namespace VW
 {
 	clr_io_buf::clr_io_buf(Stream^ stream) : m_stream(stream)
 	{
+		if (stream == nullptr) 
+			throw gcnew ArgumentNullException("stream");
+		
 		files.push_back(0);
 	}
 

@@ -4,36 +4,48 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
 */
 
-#include "vw_clr.h"
+#include "vw_prediction.h"
+#include "vw_example.h"
+#include "vw_base.h"
+#include "vowpalwabbit.h"
 
 namespace VW
 {
-	void VowpalWabbitPrediction::ReadFromExample(VowpalWabbitExample^ example)
+	float VowpalWabbitScalarPredictionFactory::Create(vw* vw, example* ex)
 	{
-		// dispatch to sub classes
-		ReadFromExample(example->m_vw->m_vw, example->m_example);
-	}
+#if _DEBUG
+		if (ex == nullptr)
+			throw gcnew ArgumentNullException("ex");
+#endif
 
-	void VowpalWabbitScalarPrediction::ReadFromExample(vw* vw, example* ex)
-	{
 		try
 		{
-			Value = VW::get_prediction(ex);
+			return VW::get_prediction(ex);
 		}
 		CATCHRETHROW
 	}
 
-	void VowpalWabbitCostSensitivePrediction::ReadFromExample(vw* vw, example* ex)
+	float VowpalWabbitCostSensitivePredictionFactory::Create(vw* vw, example* ex)
 	{
+#if _DEBUG
+		if (ex == nullptr)
+			throw gcnew ArgumentNullException("ex");
+#endif
+
 		try
 		{
-			Value = VW::get_cost_sensitive_prediction(ex);
+			return VW::get_cost_sensitive_prediction(ex);
 		}
 		CATCHRETHROW
 	}
 
-	void VowpalWabbitMultilabelPrediction::ReadFromExample(vw* vw, example* ex)
+	cli::array<int>^ VowpalWabbitMultilabelPredictionFactory::Create(vw* vw, example* ex)
 	{
+#if _DEBUG
+		if (ex == nullptr)
+			throw gcnew ArgumentNullException("ex");
+#endif
+
 		size_t length;
 		uint32_t* labels;
 		
@@ -48,13 +60,25 @@ namespace VW
 			throw gcnew ArgumentOutOfRangeException("Multi-label predictions too large");
 		}
 
-		Values = gcnew cli::array<int>((int)length);
-		Marshal::Copy(IntPtr(labels), Values, 0, (int)length);
+		auto values = gcnew cli::array<int>((int)length);
+		Marshal::Copy(IntPtr(labels), values, 0, (int)length);
+
+		return values;
 	}
 
-	void VowpalWabbitTopicPrediction::ReadFromExample(vw* vw, example* ex)
+	cli::array<float>^ VowpalWabbitTopicPredictionFactory::Create(vw* vw, example* ex)
 	{
-		Values = gcnew cli::array<float>(vw->lda);
-		Marshal::Copy(IntPtr(ex->topic_predictions.begin), Values, 0, vw->lda);
+#if _DEBUG
+		if (vw == nullptr)
+			throw gcnew ArgumentNullException("vw");
+
+		if (ex == nullptr)
+			throw gcnew ArgumentNullException("ex");
+#endif
+
+		auto values = gcnew cli::array<float>(vw->lda);
+		Marshal::Copy(IntPtr(ex->topic_predictions.begin), values, 0, vw->lda);
+
+		return values;
 	}
 }

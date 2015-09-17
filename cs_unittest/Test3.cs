@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TrainSet0002Dat;
 using VW;
@@ -78,23 +79,23 @@ namespace cs_unittest
         {
             var sampleData = TrainSetCs_testLdf.CreateSampleCbAdfData();
 
-//            # Test 9: label-dependent features with csoaa_ldf
-//{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off
-//    train-sets/ref/cs_test.ldf.csoaa.stderr
-//    train-sets/ref/cs_test.ldf.csoaa.predict
-            using (var vw = new VowpalWabbit<Cs_TestData>("-k -c -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off"))
+            //            # Test 9: label-dependent features with csoaa_ldf
+            //{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off
+            //    train-sets/ref/cs_test.ldf.csoaa.stderr
+            //    train-sets/ref/cs_test.ldf.csoaa.predict
+            using (var vw = new VowpalWabbit<Cs_TestData, Cs_TestCs_TestDataADF>("-k -c -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off"))
             {
                 foreach (var d in sampleData)
-	            {
-                    using (var ex = vw.ReadExample(d))
-                    {
-                        ex.Learn();
-                    }		 
-	            }
+                {
+                    var index = d.ActionDependentFeatures.IndexOf(a => a.Label != null);
+                    var label = d.ActionDependentFeatures[index].Label;
 
-                vw.RunMultiPass();
+                    vw.Learn(d, d.ActionDependentFeatures, index, label); 
+                }
 
-                VWTestHelper.AssertEqual(@"train-sets\ref\cs_test.ldf.csoaa.stderr", vw.PerformanceStatistics);
+                vw.Native.RunMultiPass();
+
+                VWTestHelper.AssertEqual(@"train-sets\ref\cs_test.ldf.csoaa.stderr", vw.Native.PerformanceStatistics);
             }
 
             Assert.AreEqual(

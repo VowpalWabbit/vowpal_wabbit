@@ -7,12 +7,15 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics.Contracts;
+using VW.Serializer.Contracts;
 
 namespace VW.Serializer.Interfaces
 {
     /// <summary>
     /// A visitable feature.
     /// </summary>
+    [ContractClass(typeof(IVisitableFeatureContract))]
     public interface IVisitableFeature : IFeature
     {
         /// <summary>

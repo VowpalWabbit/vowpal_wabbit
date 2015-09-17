@@ -9,12 +9,16 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
 namespace VW.Serializer.Reflection
 {
+    /// <summary>
+    /// Reflection helper to find methods on visitors.
+    /// </summary>
     internal static class ReflectionHelper
     {
         /// <summary>
@@ -23,6 +27,10 @@ namespace VW.Serializer.Reflection
         /// <remarks>This is a simple heuristic for overload resolution, not the full thing.</remarks>
         internal static MethodInfo FindMethod(Type objectType, string name, Type valueType)
         {
+            Contract.Ensures(objectType != null);
+            Contract.Ensures(name != null);
+            Contract.Ensures(valueType != null);
+
             // let's find the "best" match:
             // order by 
             //  1. distance (0 = assignable, 1 = using generic) --> ascending
