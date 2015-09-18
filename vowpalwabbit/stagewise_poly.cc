@@ -5,7 +5,7 @@
 #include "accumulate.h"
 #include "reductions.h"
 #include "vw.h"
-#include "allreduce.h"
+#include "vw_allreduce.h"
 
 //#define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
 
@@ -593,7 +593,7 @@ using namespace LEARNER;
 #endif //DEBUG
 
     vw &all = *poly.all;
-    if (all.all_reduce != nullptr) { 
+    if (all.all_reduce != nullptr) {
       /*
        * The following is inconsistent with the transplant code in
        * synthetic_create_rec(), which clears parent bits on depth mismatches.
@@ -664,7 +664,7 @@ using namespace LEARNER;
   {
     if (missing_option(all, true, "stage_poly", "use stagewise polynomial feature learning"))
       return nullptr;
-    
+
     new_options(all, "Stagewise poly options")
       ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
       ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")
