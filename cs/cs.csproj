@@ -130,18 +130,16 @@
     <Compile Include="Serializer\Reflection\ReflectionHelper.cs" />
     <Compile Include="Serializer\Reflection\TypeDistance.cs" />
     <Compile Include="Serializer\Reflection\TypeMatch.cs" />
-    <Compile Include="Serializer\Visitors\VowpalWabbitNativeVisitor.cs" />
-    <Compile Include="Serializer\Visitors\VowpalWabbitNativeVisitorExt.cs">
-      <DependentUpon>VowpalWabbitNativeVisitorExt.tt</DependentUpon>
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-    </Compile>
-    <Compile Include="Serializer\Visitors\VowpalWabbitStringVisitor.cs" />
     <Compile Include="Serializer\VowpalWabbitDebugExample.cs" />
     <Compile Include="Serializer\VowpalWabbitDefaultMarshaller.cs" />
-    <Compile Include="Serializer\VowpalWabbitMarshallingContext.cs" />
+    <Compile Include="Serializer\VowpalWabbitDefaultMarshallerExt.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>VowpalWabbitDefaultMarshallerExt.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Serializer\VowpalWabbitMarshalContext.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
-    <Compile Include="Serializer\VowpalWabbitSerializerCompiler.cs" />
+    <Compile Include="Serializer\VowpalWabbitSerializerCompiled.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerFactory.cs" />
     <Compile Include="Labels\SharedLabel.cs" />
     <Compile Include="Labels\SimpleLabel.cs" />
@@ -168,9 +166,12 @@
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Serializer\Visitors\VowpalWabbitNativeVisitorExt.tt">
+    <Folder Include="Serializer\Visitors\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Serializer\VowpalWabbitDefaultMarshallerExt.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>VowpalWabbitNativeVisitorExt.cs</LastGenOutput>
+      <LastGenOutput>VowpalWabbitDefaultMarshallerExt.cs</LastGenOutput>
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

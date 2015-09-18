@@ -66,10 +66,7 @@ namespace VW
 	public ref class VowpalWabbitExampleBuilder
 	{
 	private:
-		/// <summary>
-		/// The native vowpal wabbit data structure.
-		/// </summary>
-		vw* const m_vw;
+    initonly VowpalWabbit^ m_vw;
 
 		/// <summary>
 		/// The produced CLR example data structure.

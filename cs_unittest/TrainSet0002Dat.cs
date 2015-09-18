@@ -37,7 +37,7 @@ namespace TrainSet0002Dat
         public override void ExitExample(VowpalWabbitParser.ExampleContext context)
         {
             this.example.Line = context.GetText();
-            this.Created(this.example, this.example.Label);
+            this.Created(this.example.Line, this.example, this.example.Label);
         }
 
         public override void ExitLabel_simple(VowpalWabbitParser.Label_simpleContext context)

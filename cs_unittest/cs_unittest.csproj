@@ -72,6 +72,7 @@
     <Compile Include="TestModelLoading.cs" />
     <Compile Include="TestSerializer.cs" />
     <Compile Include="TrainSetCs_testLdf.cs" />
+    <Compile Include="VowpalWabbitExampleValidator.cs" />
     <Compile Include="VowpalWabbitListenerToEvents.cs" />
     <Compile Include="Rcv1Test.cs" />
     <Compile Include="Test1and2.cs" />

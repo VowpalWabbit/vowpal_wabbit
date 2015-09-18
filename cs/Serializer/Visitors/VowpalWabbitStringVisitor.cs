@@ -140,7 +140,7 @@ namespace VW.Serializer.Visitors
                     feature.Name,
                     Enum.GetName(valueType, feature.Value));
             }
-            else if (InspectionHelper.IsValidDenseFeatureValueElementType(typeof(T)))
+            else if (InspectionHelper.IsNumericType(typeof(T)))
             {
                 this.builder.AppendFormat(
                     CultureInfo.InvariantCulture,

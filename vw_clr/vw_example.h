@@ -11,13 +11,41 @@ license as described in the file LICENSE.
 
 namespace VW
 {
-	/// <summary>
+  ref class VowpalWabbitExample;
+
+  public interface class IVowpalWabbitLabelComparator
+  {
+  public:
+    String^ Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2);
+  };
+
+  public ref class VowpalWabbitSimpleLabelComparator sealed : IVowpalWabbitLabelComparator
+  {
+  public:
+    virtual String^ Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2) sealed;
+  };
+
+  public ref class VowpalWabbitContextualBanditLabelComparator sealed : IVowpalWabbitLabelComparator
+  {
+  public:
+    virtual String^ Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2) sealed;
+  };
+
+  public ref class VowpalWabbitLabelComparator sealed abstract
+  {
+  public:
+    static initonly VowpalWabbitSimpleLabelComparator^ Simple = gcnew VowpalWabbitSimpleLabelComparator;
+
+    static initonly VowpalWabbitContextualBanditLabelComparator^ ContextualBandit = gcnew VowpalWabbitContextualBanditLabelComparator;
+  };
+
+  /// <summary>
 	/// A CLR representation of a vowpal wabbit example.
 	/// </summary>
 	/// <remarks>
 	/// Underlying memory is allocated by native code, but examples are not part of the ring.
 	/// </remarks>
-	public ref class VowpalWabbitExample 
+	public ref class VowpalWabbitExample
 	{
 	private:
 		/// <summary>
@@ -86,6 +114,6 @@ namespace VW
 			IVowpalWabbitExamplePool^ get();
 		}
 
-		String^ Diff(VowpalWabbit^ vw, VowpalWabbitExample^ other, bool sameOrder);
+    String^ Diff(VowpalWabbit^ vw, VowpalWabbitExample^ other, IVowpalWabbitLabelComparator^ labelComparator);
 	};
 }

@@ -15,7 +15,6 @@ using VW;
 using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer;
-using VW.Serializer.Visitors;
 
 namespace VW
 {
@@ -35,6 +34,8 @@ namespace VW
         /// </summary>
         private VowpalWabbitSerializer<TExample> serializer;
 
+        private VowpalWabbitSerializerCompiled<TExample> compiledSerializer;
+
         /// <summary>
         /// The serializer used for learning. It's only set if the serializer is non-caching.
         /// By having a second field there is one less check that has to be done in the hot path.
@@ -46,7 +47,7 @@ namespace VW
         /// </summary>
         /// <param name="args">Command line arguments passed to native instance.</param>
         public VowpalWabbit(String args) : this(new VowpalWabbit(args))
-        { 
+        {
         }
 
         /// <summary>
@@ -55,7 +56,7 @@ namespace VW
         /// <param name="settings">Arguments passed to native instance.</param>
         public VowpalWabbit(VowpalWabbitSettings settings)
             : this(new VowpalWabbit(settings))
-        { 
+        {
         }
 
         /// <summary>
@@ -73,10 +74,19 @@ namespace VW
             Contract.EndContractBlock();
 
             this.vw = vw;
-            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
+            this.compiledSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>();
+            this.serializer = this.compiledSerializer.Create(vw);
 
             // have a 2nd member to throw NullReferenceException in release instead of silently producing wrong results.
             this.learnSerializer = this.serializer.CachesExamples ? null : this.serializer;
+        }
+
+        public VowpalWabbitSerializerCompiled<TExample> Serializer
+        {
+            get
+            {
+                return this.compiledSerializer;
+            }
         }
 
         /// <summary>
@@ -97,7 +107,7 @@ namespace VW
 #endif
 
             // in release this throws NullReferenceException instead of producing silently wrong results
-            using (var ex = this.learnSerializer.Serialize(this.vw, example, label))
+            using (var ex = this.learnSerializer.Serialize(example, label))
             {
                 this.vw.Learn(ex);
             }
@@ -125,7 +135,7 @@ namespace VW
             }
 #endif
 
-            using (var ex = this.learnSerializer.Serialize(this.vw, example, label))
+            using (var ex = this.learnSerializer.Serialize(example, label))
             {
                 return this.vw.Learn(ex, predictionFactory);
             }
@@ -139,8 +149,8 @@ namespace VW
         public void Predict(TExample example, ILabel label = null)
         {
             Contract.Requires(example != null);
-            
-            using (var ex = this.serializer.Serialize(this.vw, example, label))
+
+            using (var ex = this.serializer.Serialize(example, label))
             {
                 this.vw.Learn(ex);
             }
@@ -158,7 +168,7 @@ namespace VW
             Contract.Requires(example != null);
             Contract.Requires(predictionFactory != null);
 
-            using (var ex = this.serializer.Serialize(this.vw, example, label))
+            using (var ex = this.serializer.Serialize(example, label))
             {
                 return this.vw.Learn(ex, predictionFactory);
             }
@@ -246,8 +256,8 @@ namespace VW
             Contract.EndContractBlock();
 
             this.vw = vw;
-            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
-            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings);
+            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>().Create(vw);
+            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>().Create(vw);
 
             Contract.Assert(this.actionDependentFeatureSerializer != null);
 

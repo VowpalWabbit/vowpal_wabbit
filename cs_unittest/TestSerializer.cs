@@ -12,7 +12,6 @@ using VW.Serializer.Attributes;
 using VW.Serializer.Interfaces;
 using VW.Serializer.Intermediate;
 using VW.Serializer.Reflection;
-using VW.Serializer.Visitors;
 
 namespace cs_unittest
 {
@@ -31,23 +30,21 @@ namespace cs_unittest
 
     public class CustomFeaturizer
     {
-        private VowpalWabbit vw;
+        //private VowpalWabbitInterfaceVisitor visitor;
 
-        private VowpalWabbitInterfaceVisitor visitor;
+        //public CustomFeaturizer(VowpalWabbit vw, VowpalWabbitInterfaceVisitor visitor)
+        //{
+        //    this.vw = vw;
+        //    this.visitor = visitor;
+        //}
 
-        public CustomFeaturizer(VowpalWabbit vw, VowpalWabbitInterfaceVisitor visitor)
+        public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, CustomClass value)
         {
-            this.vw = vw;
-            this.visitor = visitor;
-        }
+            //Assert.AreEqual(5, feature.Value.X);
+            //Assert.IsNotNull(this.vw);
+            //Assert.IsNotNull(this.visitor);
 
-        public void Visit(IFeature<CustomClass> feature)
-        {
-            Assert.AreEqual(5, feature.Value.X);
-            Assert.IsNotNull(this.vw);
-            Assert.IsNotNull(this.visitor);
-
-            feature.Value.HasVisited = true;
+            //feature.Value.HasVisited = true;
         }
     }
 
@@ -57,12 +54,14 @@ namespace cs_unittest
         [TestMethod]
         public void TestCustomFeaturizer()
         {
-            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(new VW.VowpalWabbitSettings(), customFeaturizer: new List<Type> { typeof(CustomFeaturizer) });
 
             var context = new MyContext() { Feature = new CustomClass() { X = 5 }};
             using (var vw = new VowpalWabbit(""))
             {
-                var example = serializer.Serialize(vw, context);
+                var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(customFeaturizer: new List<Type> { typeof(CustomFeaturizer) })
+                    .Create(vw);
+
+                var example = serializer.Serialize(context);
 
                 Assert.IsNotNull(example);
 
@@ -75,18 +74,17 @@ namespace cs_unittest
         [TestMethod]
         public void TestCustomFeaturizerOverideMethod()
         {
-            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(new VW.VowpalWabbitSettings(), new List<FeatureExpression>
-            {
-                new FeatureExpression(typeof(CustomClass), "Feature", 
-                    // TODO: looks a bit awkward for an API. The compiler needs to know what property to access to copy the value into the Feature<T> object
-                    valueExpression => Expression.Property(valueExpression, (PropertyInfo)ReflectionHelper.GetInfo((MyContext m) => m.Feature)),
-                    overrideSerializeMethod: (MethodInfo)ReflectionHelper.GetInfo((CustomFeaturizer c) => c.Visit(null)))
-            });
-
             var context = new MyContext() { Feature = new CustomClass() { X = 5 } };
             using (var vw = new VowpalWabbit(""))
             {
-                var example = serializer.Serialize(vw, context);
+                var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(new List<FeatureExpression>
+                {
+                    new FeatureExpression(typeof(CustomClass), "Feature",
+                        // TODO: looks a bit awkward for an API. The compiler needs to know what property to access to copy the value into the Feature<T> object
+                        valueExpression => Expression.Property(valueExpression, (PropertyInfo)ReflectionHelper.GetInfo((MyContext m) => m.Feature)),
+                        overrideSerializeMethod: (MethodInfo)ReflectionHelper.GetInfo((CustomFeaturizer c) => c.MarshalFeature(null, null, null, null)))
+                }).Create(vw);
+                var example = serializer.Serialize(context);
 
                 Assert.IsNotNull(example);
 

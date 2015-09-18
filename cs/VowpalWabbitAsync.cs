@@ -14,7 +14,6 @@ using System.Text;
 using System.Threading.Tasks;
 using VW.Interfaces;
 using VW.Serializer;
-using VW.Serializer.Visitors;
 
 namespace VW
 {
@@ -42,10 +41,11 @@ namespace VW
             this.manager = manager;
 
             // create a serializer for each instance - maintaining separate example caches
-            this.serializers = Enumerable
-                .Range(0, manager.Settings.ParallelOptions.MaxDegreeOfParallelism)
-                .Select(_ => VowpalWabbitSerializerFactory.CreateSerializer<TExample>(manager.Settings))
-                .ToArray();
+            // TODO
+            //this.serializers = Enumerable
+            //    .Range(0, manager.Settings.ParallelOptions.MaxDegreeOfParallelism)
+            //    .Select(_ => VowpalWabbitSerializerFactory.CreateSerializer<TExample>())
+            //    .ToArray();
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace VW
 
             manager.Post(vw =>
             {
-                using (var ex = this.serializers[vw.Settings.Node].Serialize(vw, example, label))
+                using (var ex = this.serializers[vw.Settings.Node].Serialize(example, label))
                 {
                     vw.Learn(ex);
                 }
@@ -85,7 +85,7 @@ namespace VW
 
             manager.Post(vw =>
             {
-                using (var ex = this.serializers[vw.Settings.Node].Serialize(vw, example))
+                using (var ex = this.serializers[vw.Settings.Node].Serialize(example))
                 {
                     vw.Predict(ex);
                 }
@@ -108,10 +108,10 @@ namespace VW
             Contract.Requires(example != null);
             Contract.Requires(label != null);
             Contract.Requires(predictionFactory != null);
-            
+
             return manager.Post(vw =>
             {
-                using (var ex = this.serializers[vw.Settings.Node].Serialize(vw, example, label))
+                using (var ex = this.serializers[vw.Settings.Node].Serialize(example, label))
                 {
                     return vw.Learn(ex, predictionFactory);
                 }
@@ -135,7 +135,7 @@ namespace VW
 
             return manager.Post(vw =>
             {
-                using (var ex = this.serializers[vw.Settings.Node].Serialize(vw, example))
+                using (var ex = this.serializers[vw.Settings.Node].Serialize(example))
                 {
                     return vw.Predict(ex, predictionFactory);
                 }
@@ -221,15 +221,16 @@ namespace VW
             this.manager = manager;
 
             // create a serializer for each instance - maintaining separate example caches
-            this.serializers = Enumerable
-                .Range(0, manager.Settings.ParallelOptions.MaxDegreeOfParallelism)
-                .Select(_ => VowpalWabbitSerializerFactory.CreateSerializer<TExample>(manager.Settings))
-                .ToArray();
+            // TODO:
+            //this.serializers = Enumerable
+            //    .Range(0, manager.Settings.ParallelOptions.MaxDegreeOfParallelism)
+            //    .Select(_ => VowpalWabbitSerializerFactory.CreateSerializer<TExample>(manager.Settings))
+            //    .ToArray();
 
-            this.actionDependentFeatureSerializers = Enumerable
-                .Range(0, manager.Settings.ParallelOptions.MaxDegreeOfParallelism)
-                .Select(_ => VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(manager.Settings))
-                .ToArray();
+            //this.actionDependentFeatureSerializers = Enumerable
+            //    .Range(0, manager.Settings.ParallelOptions.MaxDegreeOfParallelism)
+            //    .Select(_ => VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(manager.Settings))
+            //    .ToArray();
         }
 
         /// <summary>
@@ -247,12 +248,12 @@ namespace VW
             Contract.Requires(label != null);
 
             manager.Post(vw => VowpalWabbitMultiLine.Learn(
-                vw, 
-                this.serializers[vw.Settings.Node], 
-                this.actionDependentFeatureSerializers[vw.Settings.Node], 
-                example, 
-                actionDependentFeatures, 
-                index, 
+                vw,
+                this.serializers[vw.Settings.Node],
+                this.actionDependentFeatureSerializers[vw.Settings.Node],
+                example,
+                actionDependentFeatures,
+                index,
                 label));
         }
 

@@ -3,17 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VW;
 
 namespace VW.Serializer
 {
-    public class VowpalWabbitMarshallingContext : IDisposable
+    public class VowpalWabbitMarshalContext : IDisposable
     {
-        public VowpalWabbitMarshallingContext(VowpalWabbit vw)
+        // TODO: add boolean to configure string example production yes/no
+        public VowpalWabbitMarshalContext(VowpalWabbit vw)
         {
             this.VW = vw;
-            this.StringExample = new StringBuilder();
 
-            this.ExampleBuilder = new VowpalWabbitExampleBuilder(vw)
+            this.StringExample = new StringBuilder();
+            this.ExampleBuilder = new VowpalWabbitExampleBuilder(vw);
         }
 
         public VowpalWabbit VW { get; private set; }
@@ -32,8 +34,20 @@ namespace VW.Serializer
 
         public void Dispose()
         {
-            // TODO: dispose context
-            // TOOD: dispose examplebuilder
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (this.ExampleBuilder != null)
+                {
+                    this.ExampleBuilder.Dispose();
+                    this.ExampleBuilder = null;
+                }
+            }
         }
     }
 }

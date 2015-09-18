@@ -16,6 +16,8 @@ using VW.Serializer.Reflection;
 
 namespace VW.Serializer.Intermediate
 {
+    public delegate Expression NewFeatureExpressionDelegate(Expression vw, Expression @namespace);
+
     /// <summary>
     /// Feature data composed during compilation step.
     /// </summary>
@@ -24,6 +26,7 @@ namespace VW.Serializer.Intermediate
         public FeatureExpression(Type featureType,
             string name,
             Func<Expression, Expression> valueExpressionFactory,
+            NewFeatureExpressionDelegate featureExpressionFactory = null,
             string @namespace = null,
             char? featureGroup = null,
             bool enumerize = false,
@@ -47,6 +50,7 @@ namespace VW.Serializer.Intermediate
             this.FeatureType = featureType;
             this.Name = name;
             this.ValueExpressionFactory = valueExpressionFactory;
+            this.FeatureExpressionFactory = featureExpressionFactory;
             this.Namespace = @namespace;
             this.FeatureGroup = featureGroup;
             this.Enumerize = enumerize;
@@ -92,6 +96,8 @@ namespace VW.Serializer.Intermediate
 
         public Func<Expression, Expression> ValueExpressionFactory { get; private set; }
 
+        public NewFeatureExpressionDelegate FeatureExpressionFactory { get; private set; }
+
         public Type DenseFeatureValueElementType { get; private set; }
 
         public int Order { get; private set; }
@@ -116,7 +122,7 @@ namespace VW.Serializer.Intermediate
                     method = ReflectionHelper.FindMethod(
                         visitor,
                         "MarshalFeature",
-                        new[] { typeof(VowpalWabbitMarshallingContext), typeof(Namespace), typeof(NumericFeature) },
+                        new[] { typeof(VowpalWabbitMarshalContext), typeof(Namespace), typeof(NumericFeature) },
                         this.FeatureType);
 
                     if (method != null)
@@ -132,7 +138,7 @@ namespace VW.Serializer.Intermediate
                 return ReflectionHelper.FindMethod(
                         visitor,
                         "MarshalFeature",
-                        new[] { typeof(VowpalWabbitMarshallingContext), typeof(Namespace), typeof(Feature) },
+                        new[] { typeof(VowpalWabbitMarshalContext), typeof(Namespace), typeof(Feature) },
                         this.FeatureType);
             }
 

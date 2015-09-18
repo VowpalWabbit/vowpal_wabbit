@@ -17,7 +17,8 @@ namespace cs_unittest
             VWTestHelper.Learn<Data, DataListener>(
                 "-k train-sets/0002.dat -f models/0002.model --invariant",
                 @"train-sets\0002.dat",
-                @"train-sets\ref\0002.stderr");
+                @"train-sets\ref\0002.stderr",
+                VowpalWabbitLabelComparator.Simple);
         }
 
         [TestMethod]
@@ -29,11 +30,13 @@ namespace cs_unittest
             VWTestHelper.Learn<Data, DataListener>(
                 "-k -d train-sets/0002.dat -f models/0002.model --invariant",
                 @"train-sets\0002.dat",
-                @"train-sets\ref\0002.stderr");
+                @"train-sets\ref\0002.stderr",
+                VowpalWabbitLabelComparator.Simple);
 
             VWTestHelper.Predict<Data, DataListener>(
                 "-k -t --invariant -i models/0002.model",
                 @"train-sets\0002.dat",
+                VowpalWabbitLabelComparator.Simple,
                 @"pred-sets\ref\0002b.predict");
         }
 
@@ -45,11 +48,13 @@ namespace cs_unittest
             VWTestHelper.Learn<Data, DataListener>(
                 "-k --initial_t 1 --adaptive --invariant -q Tf -q ff -f models/0002a.model",
                 @"train-sets\0002.dat",
-                @"train-sets\ref\0002a.stderr");
+                @"train-sets\ref\0002a.stderr",
+                VowpalWabbitLabelComparator.Simple);
 
             VWTestHelper.Predict<Data, DataListener>(
                 "-k -t --invariant -i models/0002a.model",
-                @"train-sets\0002.dat");
+                @"train-sets\0002.dat",
+                VowpalWabbitLabelComparator.Simple);
         }
 
         [TestMethod]
@@ -62,11 +67,13 @@ namespace cs_unittest
             VWTestHelper.Learn<Data, DataListener>(
                 "-k --power_t 0.45 -f models/0002c.model",
                 @"train-sets\0002.dat",
-                @"train-sets\ref\0002c.stderr");
+                @"train-sets\ref\0002c.stderr",
+                VowpalWabbitLabelComparator.Simple);
 
             VWTestHelper.Predict<Data, DataListener>(
                 "-k -t -i models/0002c.model",
                 @"train-sets\0002.dat",
+                VowpalWabbitLabelComparator.Simple,
                 @"pred-sets\ref\0002c.predict");
         }
 
@@ -90,7 +97,7 @@ namespace cs_unittest
                     var index = d.ActionDependentFeatures.IndexOf(a => a.Label != null);
                     var label = d.ActionDependentFeatures[index].Label;
 
-                    vw.Learn(d, d.ActionDependentFeatures, index, label); 
+                    vw.Learn(d, d.ActionDependentFeatures, index, label);
                 }
 
                 vw.Native.RunMultiPass();

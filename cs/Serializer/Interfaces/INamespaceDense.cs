@@ -11,16 +11,16 @@ using VW.Serializer.Contracts;
 
 namespace VW.Serializer.Interfaces
 {
-    /// <summary>
-    /// A dense namespace.
-    /// </summary>
-    /// <typeparam name="T">The element type of the dense features.</typeparam>
-    [ContractClass(typeof(INamespaceDenseContract<>))]
-    public interface INamespaceDense<out T> // : IMetaNamespace
-    {
-        /// <summary>
-        /// The list of features.
-        /// </summary>
-        IFeature<IReadOnlyCollection<T>> DenseFeature { get; }
-    }
+    ///// <summary>
+    ///// A dense namespace.
+    ///// </summary>
+    ///// <typeparam name="T">The element type of the dense features.</typeparam>
+    //[ContractClass(typeof(INamespaceDenseContract<>))]
+    //public interface INamespaceDense<out T> // : IMetaNamespace
+    //{
+    //    /// <summary>
+    //    /// The list of features.
+    //    /// </summary>
+    //    IFeature<IReadOnlyCollection<T>> DenseFeature { get; }
+    //}
 }

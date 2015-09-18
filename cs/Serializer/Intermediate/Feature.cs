@@ -14,7 +14,7 @@ namespace VW.Serializer.Intermediate
 {
     public class Feature
     {
-        protected Feature(string name, bool addAnchor)
+        public Feature(string name, bool addAnchor)
         {
             if (name == null)
             {
@@ -45,7 +45,7 @@ namespace VW.Serializer.Intermediate
     /// </summary>
     public sealed class NumericFeature : Feature // : IFeature
     {
-        public Feature(VowpalWabbit vw, Namespace ns, string name, bool addAnchor)
+        public NumericFeature(VowpalWabbit vw, Namespace ns, string name, bool addAnchor)
             : base(name, addAnchor)
         {
             this.FeatureHash = vw.HashFeature(this.Name, ns.NamespaceHash);
@@ -63,6 +63,38 @@ namespace VW.Serializer.Intermediate
         public uint FeatureHash { get; private set; }
     }
 
+    // TODO: inline Enum to switch()
+    public sealed class EnumerizedFeature<T> : Feature
+    {
+        private VowpalWabbit vw;
+        private Namespace ns;
+        private Func<T, uint> enumHashing;
+
+        public EnumerizedFeature(VowpalWabbit vw, Namespace ns, string name, bool addAnchor, Func<EnumerizedFeature<T>, Func<T, uint>> enumHashing)
+            : base(name, addAnchor)
+        {
+            if (!typeof(T).IsEnum)
+            {
+                throw new ArgumentException(string.Format("Type {0} must be enum", typeof(T)));
+            }
+
+            this.vw = vw;
+            this.ns = ns;
+            this.enumHashing = enumHashing(this);
+        }
+
+        public uint FeatureHashCached(T value)
+        {
+            return this.enumHashing(value);
+        }
+
+        public uint FeatureHash(T value)
+        {
+            return this.vw.HashFeature(
+                this.Name + Enum.GetName(typeof(T), value),
+                this.ns.NamespaceHash);
+        }
+    }
 /*
     public sealed class Feature : BaseFeature
     {
@@ -83,31 +115,7 @@ namespace VW.Serializer.Intermediate
         }
     }
 
-    // TODO: inline Enum to switch()
-    //public sealed class EnumerizedFeature<T> : BaseFeature
-    //{
-    //    private uint[] hashes;
 
-    //    public EnumerizedEnumFeature(VowpalWabbit vw, Namespace ns, string name, bool addAnchor)
-    //        : base(name, addAnchor)
-    //    {
-    //        if (!typeof(T).IsEnum)
-    //        {
-    //            throw new ArgumentException(string.Format("Type {0} must be enum", typeof(T)));
-    //        }
-
-    //        this.vw = vw;
-    //        this.ns = ns;
-    //        Expression.sw
-    //        Enum.GetNames(typeof(T))
-    //            Enum.g
-    //    }
-
-    //    public uint FeatureHash(T value)
-    //    {
-    //        return this.vw.HashFeature(this.Name + Convert.ToString(value), this.ns.NamespaceHash);
-    //    }
-    //}
 
     ///// <summary>
     ///// The typed representation of the feature.
@@ -125,4 +133,5 @@ namespace VW.Serializer.Intermediate
     //    /// </summary>
     //    public Action Visit { get; set; }
     //}
+ */
 }

@@ -10,6 +10,7 @@ using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer.Attributes;
 using System.Threading;
+using VW.Serializer;
 
 namespace cs_test
 {
@@ -28,7 +29,9 @@ namespace cs_test
             var input = new List<Test1>();
 
             using (var vwStr = new VowpalWabbit(" -k -c test1and2.str --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off"))
-            using (var vw = new VowpalWabbit<Test1>(" -k -c test1and2 --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off"))
+            using (var vw = new VowpalWabbit<Test1>(new VowpalWabbitSettings(" -k -c test1and2 --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off",
+                enableExampleCaching: false)))
+            using (var vwValidate = new VowpalWabbitExampleValidator<Test1>("-l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off"))
             {
                 var lineNr = 0;
                 VWTestHelper.ParseInput(
@@ -36,6 +39,8 @@ namespace cs_test
                     new MyListener(data =>
                     {
                         input.Add(data);
+
+                        vwValidate.Validate(data.Line, data, data.Label, VowpalWabbitLabelComparator.Simple);
 
                         var expected = vwStr.Learn(data.Line, VowpalWabbitPredictionType.Scalar);
                         var actual = vw.Learn(data, data.Label, VowpalWabbitPredictionType.Scalar);
@@ -65,7 +70,7 @@ namespace cs_test
             using (var vwNative = new VowpalWabbit("-k -t -i models/0001.model --invariant"))
             using (var vw = new VowpalWabbit<Test1>("-k -t -i models/0001.model --invariant"))
             using (var vwModel2 = new VowpalWabbitModel("-k -t --invariant -i models/0001.model"))
-            using (var vwInMemoryShared3 = new VowpalWabbit<Test1>(new VowpalWabbitSettings(model: vwModel2)))  
+            using (var vwInMemoryShared3 = new VowpalWabbit<Test1>(new VowpalWabbitSettings(model: vwModel2)))
             {
                 for (var i = 0; i < input.Count; i++)
                 {
@@ -115,7 +120,7 @@ namespace cs_test
         //            var data = new Rcv1CbEval()
         //            {
         //                Words = parts[1].Split(' ')
-        //            }; 
+        //            };
 
         //            using(var example = vw.ReadExample(data))
         //            {
@@ -125,7 +130,7 @@ namespace cs_test
         //        }
         //    }
         //}
-        
+
 
     }
 
@@ -147,7 +152,7 @@ namespace cs_test
     public class Rcv1CbEval
     {
         [Feature]
-        public string[] Words { get; set; } 
+        public string[] Words { get; set; }
     }
 
     public class MyListener : VowpalWabbitBaseListener

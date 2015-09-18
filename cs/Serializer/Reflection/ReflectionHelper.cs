@@ -38,10 +38,11 @@ namespace VW.Serializer.Reflection
             //  2. # of interfaces implemented. the more the better (the more specific we are) --> descending
             //  3. # of open generics. the less the better (the more specific we are) --> ascending
             var methods = from m in objectType.GetMethods(BindingFlags.Instance | BindingFlags.Public)
-                          where m.Name == name && methodPredicate(m)
+                          where m.Name == name
                           let parameters = m.GetParameters()
                           where parameters.Length == fixedParameterTypes.Length + 1
-                          where parameters.Take(fixedParameterTypes.Length).SequenceEqual(fixedParameterTypes)
+                          where parameters.Take(fixedParameterTypes.Length).Select(pi => pi.ParameterType)
+                            .SequenceEqual(fixedParameterTypes)
                           let methodParameter = parameters.Last().ParameterType
                           let output = new
                           {
@@ -63,6 +64,7 @@ namespace VW.Serializer.Reflection
 
             MethodInfo method = bestCandidate.Method;
 
+            //Debug.WriteLine("Method Search");
             //foreach (var item in methods)
             //{
             //    Debug.WriteLine(string.Format("Distance={0} Interfaces={1} OpenGenerics={2} Method={3}",

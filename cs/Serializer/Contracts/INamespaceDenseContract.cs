@@ -12,26 +12,26 @@ using VW.Serializer.Interfaces;
 
 namespace VW.Serializer.Contracts
 {
-    [ContractClassFor(typeof(INamespaceDense<>))]
-    internal abstract class INamespaceDenseContract<T> : INamespaceDense<T>
-    {
-        public IFeature<IReadOnlyCollection<T>> DenseFeature
-        {
-	        get 
-            {
-                Contract.Ensures(Contract.Result<IFeature<IReadOnlyCollection<T>>>() != null);
-                return null;
-            }
-        }
+    //[ContractClassFor(typeof(INamespaceDense<>))]
+    //internal abstract class INamespaceDenseContract<T> : INamespaceDense<T>
+    //{
+    //    public IFeature<IReadOnlyCollection<T>> DenseFeature
+    //    {
+    //        get
+    //        {
+    //            Contract.Ensures(Contract.Result<IFeature<IReadOnlyCollection<T>>>() != null);
+    //            return null;
+    //        }
+    //    }
 
-        public abstract string Name
-        {
-            get;
-        }
+    //    public abstract string Name
+    //    {
+    //        get;
+    //    }
 
-        public abstract char? FeatureGroup
-        {
-            get;
-        }
-    }
+    //    public abstract char? FeatureGroup
+    //    {
+    //        get;
+    //    }
+    //}
 }

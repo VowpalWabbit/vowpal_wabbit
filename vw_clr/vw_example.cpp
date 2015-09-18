@@ -52,258 +52,225 @@ namespace VW
 		return factory->Create(vw->m_vw, m_example);
 	}
 
-	System::String^ VowpalWabbitExample::Diff(VowpalWabbit^ vw, VowpalWabbitExample^ other, bool sameOrder)
+  void FormatIndices(example* a, System::Text::StringBuilder^ sb)
+  {
+    for (auto i = a->indices.begin; i != a->indices.end; i++)
+    {
+      if (*i == 0)
+        sb->Append("NULL:0,");
+      else
+        sb->AppendFormat("'{0}':{1},", gcnew System::Char(*i), (int)*i);
+    }
+  }
+
+  System::String^ FormatIndices(example* a, example *b)
+  {
+    auto sb = gcnew System::Text::StringBuilder();
+
+    sb->AppendFormat("Namespace indicies differ: {0} vs {1}. this.indices: [",
+      a->indices.size(),
+      b->indices.size());
+
+    FormatIndices(a, sb);
+
+    sb->Append("] other.indices: [");
+
+    FormatIndices(b, sb);
+
+    sb->Append("]");
+
+    return sb->ToString();
+  }
+
+  System::String^ FormatFeature(vw* vw, feature* f1, feature* f2)
+  {
+    auto masked_weight_index1 = f1->weight_index & vw->reg.weight_mask;
+    auto masked_weight_index2 = f1->weight_index & vw->reg.weight_mask;
+
+    return System::String::Format(
+      "Feature differ: this(weight_index = {0}/{4}, x = {1}) vs other(weight_index = {2}/{5}, x = {3})",
+      masked_weight_index1, gcnew System::Single(f1->x),
+      masked_weight_index2, gcnew System::Single(f2->x),
+      f1->weight_index,
+      f2->weight_index);
+  }
+
+  bool FloatEqual(float a, float b)
+  {
+    if (a == 0 && b == 0)
+    {
+      return true;
+    }
+
+    return abs(a - b) / max(a, b) < 0.01;
+  }
+
+  System::String^ CompareFeatures(vw* vw, v_array<feature>& fa, v_array<feature>& fb)
+  {
+    vector<feature*> fa_missing;
+    for (auto k = fa.begin, l = fb.begin; k != fa.end; k++)
+    {
+      auto masked_weight_index = k->weight_index & vw->reg.weight_mask;
+
+      auto other_masked_weight_index = l->weight_index & vw->reg.weight_mask;
+      if (masked_weight_index == other_masked_weight_index && FloatEqual(k->x, l->x))
+        l++;
+      else
+      {
+        // fallback to search
+        auto l_old = l;
+        bool found = false;
+        for (l = fb.begin; l != fb.end; l++)
+        {
+          auto other_masked_weight_index = l->weight_index & vw->reg.weight_mask;
+
+          if (masked_weight_index == other_masked_weight_index)
+          {
+            if (!FloatEqual(k->x, l->x))
+            {
+              return FormatFeature(vw, k, l);
+            }
+            else
+            {
+              found = true;
+              break;
+            }
+          }
+        }
+
+        if (!found)
+        {
+          fa_missing.push_back(&*k);
+        }
+
+        l = l_old + 1;
+      }
+    }
+
+    if (!fa_missing.empty())
+    {
+      auto diff = gcnew System::Text::StringBuilder("missing: ");
+      for each (feature* k in fa_missing)
+      {
+        diff->AppendFormat("this.weight_index = {0}, x = {1}, ",
+          k->weight_index & vw->reg.weight_mask,
+          k->x);
+      }
+
+      return diff->ToString();
+    }
+
+    return nullptr;
+  }
+
+  System::String^ VowpalWabbitExample::Diff(VowpalWabbit^ vw, VowpalWabbitExample^ other, IVowpalWabbitLabelComparator^ labelComparator)
 	{
-		auto otherSameType = dynamic_cast<VowpalWabbitExample^>(other);
-
-		if (otherSameType == nullptr)
-		{
-			return gcnew System::String("Can't compare examples of different types.");
-		}
-
 		auto a = this->m_example;
-		auto b = otherSameType->m_example;
-		if (a->indices.size() != b->indices.size())
-		{
-			return System::String::Format("Indicies length differ: {0} vs {1}",
-				a->indices.size(),
-				b->indices.size());
-		}
+		auto b = other->m_example;
 
-		for (auto i = a->indices.begin, j = b->indices.begin; i != a->indices.end; i++)
-		{
-			if (sameOrder)
-			{
-				if (*i != *j)
-				{
-					return gcnew System::String("Can't find index.");
-				}
-				j++;
-			}
-			else
-			{
-				// search index
-				j = b->indices.begin;
-				bool found = false;
-				for (; j != b->indices.end; j++)
-				{
-					if (*i == *j)
-					{
-						found = true;
-						break;
-					}
-				}
+    if (a->indices.size() != b->indices.size())
+    {
+      return FormatIndices(a, b);
+    }
 
-				if (!found)
-				{
-					System::String^ s = gcnew System::String("this: ");
+    for (auto i = a->indices.begin, j = b->indices.begin; i != a->indices.end; i++)
+    {
+      if (*i == *j)
+        j++;
+      else
+      {
+        // fall back on search
+        auto j_old = j;
 
-					for (auto x = a->indices.begin; x != a->indices.end; x++)
-					{
-						System::String^ sc;
+        j = b->indices.begin;
+        bool found = false;
+        for (; j != b->indices.end; j++)
+        {
+          if (*i == *j)
+          {
+            found = true;
+            break;
+          }
+        }
 
-						if (*x == 0)
-							sc = gcnew System::String("NULL");
-						else
-							sc = gcnew System::String((char*)&*x, 0, 1);
+        if (!found)
+          return FormatIndices(a, b);
 
-						s += System::String::Format("{0}:'{1}',", *x, sc);
-					}
-
-					s += "\n";
-
-					for (auto x = b->indices.begin; x != b->indices.end; x++)
-					{
-						System::String^ sc;
-
-						if (*x == 0)
-							sc = gcnew System::String("NULL");
-						else
-							sc = gcnew System::String((char*)&*x, 0, 1);
-
-						s += System::String::Format("{0}:'{1}',", *x, sc);
-					}
-
-					return System::String::Format("Can't find index: {0}", s);
-				}
-			}
+        j = j_old + 1;
+      }
 
 			// compare features
 			auto fa = a->atomics[*i];
 			auto fb = b->atomics[*i];
 
 			if (fa.size() != fb.size())
-			{
-				return gcnew System::String("Feature length differ");
-			}
+        return System::String::Format("Feature length differ {0} vs {1}", fa.size(), fb.size());
 
-			vector<feature*> fa_missing;
-			for (auto k = fa.begin, l = fb.begin; k != fa.end; k++)
-			{
-				auto masked_weight_index = k->weight_index & vw->m_vw->reg.weight_mask;
+      auto diff = CompareFeatures(vw->m_vw, fa, fb);
+      if (diff != nullptr)
+        return diff;
 
-				if (sameOrder)
-				{
-					auto other_masked_weight_index = l->weight_index & vw->m_vw->reg.weight_mask;
-					if (!(masked_weight_index == other_masked_weight_index && abs(k->x - l->x) < 1e-5))
-					{
-						return System::String::Format(
-							"Feature differ: this(weight_index = {0}, x = {1}) vs other(weight_index = {2}, x = {3})",
-							masked_weight_index, k->x,
-							other_masked_weight_index, l->x);
-					}
-
-					l++;
-				}
-				else
-				{
-					bool found = false;
-					for (l = fb.begin; l != fb.end; l++)
-					{
-						auto other_masked_weight_index = l->weight_index & vw->m_vw->reg.weight_mask;
-
-						if (masked_weight_index == other_masked_weight_index)
-						{
-							//if (abs(k->x - l->x) > 1e-5)
-							if (abs(k->x - l->x) / max(k->x, l->x) > 0.01)
-							{
-								return System::String::Format(
-									"Feature differ: this(weight_index = {0}/{4}, x = {1}) vs other(weight_index = {2}/{5}, x = {3})",
-									masked_weight_index, gcnew System::Single(k->x),
-									other_masked_weight_index, gcnew System::Single(l->x),
-									k->weight_index,
-									l->weight_index);
-							}
-							else
-							{
-								found = true;
-								break;
-							}
-						}
-					}
-
-					if (!found)
-					{
-						fa_missing.push_back(&*k);
-						// return System::String::Format("Can't find feature: this.weight_index = {0}, x = {1}", k->weight_index, k->x);
-					}
-				}
-			}
-			vector<feature*> fb_missing;
-			for (auto k = fb.begin, l = fa.begin; k != fb.end; k++)
-			{
-				auto masked_weight_index = k->weight_index & vw->m_vw->reg.weight_mask;
-
-				if (sameOrder)
-				{
-					auto other_masked_weight_index = l->weight_index & vw->m_vw->reg.weight_mask;
-					if (!(masked_weight_index == other_masked_weight_index && abs(k->x - l->x) < 1e-5))
-					{
-						return System::String::Format(
-							"Feature differ: other(weight_index = {0}, x = {1}) vs this(weight_index = {2}, x = {3})",
-							masked_weight_index, k->x,
-							other_masked_weight_index, l->x);
-					}
-
-					l++;
-				}
-				else
-				{
-					bool found = false;
-					for (l = fa.begin; l != fa.end; l++)
-					{
-						auto other_masked_weight_index = l->weight_index & vw->m_vw->reg.weight_mask;
-
-						if (masked_weight_index == other_masked_weight_index)
-						{
-							if (abs(k->x - l->x) / max(k->x, l->x) > 0.01)
-								//if (abs(k->x - l->x) > 1e-5)
-							{
-								return System::String::Format(
-									"Feature differ: this(weight_index = {0}/{4}, x = {1}) vs other(weight_index = {2}/{5}, x = {3})",
-									masked_weight_index, gcnew System::Single(k->x),
-									other_masked_weight_index, gcnew System::Single(l->x),
-									k->weight_index,
-									l->weight_index);
-							}
-							else
-							{
-								found = true;
-								break;
-							}
-						}
-					}
-
-					if (!found)
-					{
-						fb_missing.push_back(&*k);
-						// return System::String::Format("Can't find feature: this.weight_index = {0}, x = {1}", k->weight_index, k->x);
-					}
-				}
-			}
-
-			if (!fa_missing.empty() || !fb_missing.empty())
-			{
-				System::String^ diff = gcnew System::String("missing: ");
-				for each (feature* k in fa_missing)
-				{
-					diff += System::String::Format("this.weight_index = {0}, x = {1}, ",
-						k->weight_index & vw->m_vw->reg.weight_mask,
-						k->x);
-				}
-
-				diff += "\n";
-
-				for each (feature* k in fb_missing)
-				{
-					diff += System::String::Format("other.weight_index = {0}, x = {1}, ",
-						k->weight_index & vw->m_vw->reg.weight_mask,
-						k->x);
-				}
-
-				return diff;
-			}
+      diff = CompareFeatures(vw->m_vw, fb, fa);
+      if (diff != nullptr)
+        return diff;
 		}
 
-		// TODO: introduce parameter to check different kind of labels
-		//auto s1 = a->l.simple;
-		//auto s2 = b->l.simple;
-
-		//if (!(s1.initial == s2.initial &&
-		//	s1.label == s2.label &&
-		//	s1.weight == s2.weight))
-		//{
-		//	return gcnew System::String("Label differ");
-		//}
-
-		auto s1 = a->l.cb;
-		auto s2 = b->l.cb;
-
-		if (s1.costs.size() != s2.costs.size())
-		{
-			return System::String::Format("Cost size differ: {0} vs {1}", s1.costs.size(), s2.costs.size());
-		}
-
-		for (size_t i = 0; i < s1.costs.size(); i++)
-		{
-			auto c1 = s1.costs[i];
-			auto c2 = s2.costs[i];
-			if (c1.action != c2.action)
-			{
-				return System::String::Format("Action differ: {0} vs {1}", c1.action, c2.action);
-			}
-
-			if (c1.cost != c2.cost)
-			{
-				return System::String::Format("Cost differ: {0} vs {1}", c1.cost, c2.cost);
-			}
-
-			if (abs(c1.probability - c2.probability) / max(c1.probability, c2.probability) > 0.01)
-			{
-				return System::String::Format("Probability differ: {0} vs {1}", c1.probability, c2.probability);
-			}
-		}
+		// Compare the label
+    auto diff = labelComparator->Diff(this, other);
+    if (diff != nullptr)
+      return diff;
 
 		return nullptr;
 	}
+
+  String^ VowpalWabbitSimpleLabelComparator::Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2)
+  {
+    auto s1 = ex1->m_example->l.simple;
+    auto s2 = ex2->m_example->l.simple;
+
+    if (!(FloatEqual(s1.initial, s2.initial) &&
+      FloatEqual(s1.label, s2.label) &&
+      FloatEqual(s1.weight, s2.weight)))
+    {
+      return System::String::Format("Label differ. label {0} vs {1}. initial {2} vs {3}. weight {4} vs {5}",
+        s1.label, s2.label,
+        s1.initial, s2.initial,
+        s1.weight, s2.weight);
+    }
+
+    return nullptr;
+  }
+
+  String^ VowpalWabbitContextualBanditLabelComparator::Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2)
+  {
+    auto s1 = ex1->m_example->l.cb;
+    auto s2 = ex2->m_example->l.cb;
+
+    if (s1.costs.size() != s2.costs.size())
+    {
+      return System::String::Format("Cost size differ: {0} vs {1}", s1.costs.size(), s2.costs.size());
+    }
+
+    for (size_t i = 0; i < s1.costs.size(); i++)
+    {
+      auto c1 = s1.costs[i];
+      auto c2 = s2.costs[i];
+      if (c1.action != c2.action)
+      {
+        return System::String::Format("Action differ: {0} vs {1}", c1.action, c2.action);
+      }
+
+      if (c1.cost != c2.cost)
+      {
+        return System::String::Format("Cost differ: {0} vs {1}", c1.cost, c2.cost);
+      }
+
+      if (abs(c1.probability - c2.probability) / max(c1.probability, c2.probability) > 0.01)
+      {
+        return System::String::Format("Probability differ: {0} vs {1}", c1.probability, c2.probability);
+      }
+    }
+
+    return nullptr;
+  }
 }

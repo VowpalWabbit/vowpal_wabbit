@@ -245,7 +245,7 @@ namespace VW.Serializer.Visitors
             var strValue = typeof(T).IsEnum ?
                 Enum.GetName(typeof(T), feature.Value) : Convert.ToString(feature.Value);
 
-            1this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name + strValue, this.namespaceHash), 1f);
+            this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name + strValue, this.namespaceHash), 1f);
         }
 
         /// <summary>

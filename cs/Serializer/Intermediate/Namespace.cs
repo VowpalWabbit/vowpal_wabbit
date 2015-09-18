@@ -40,7 +40,7 @@ namespace VW.Serializer.Intermediate
         /// <summary>
         /// Gets or sets the feature group.
         /// </summary>
-        public char? FeatureGroup { get; private set; }
+        public char FeatureGroup { get; private set; }
 
         public uint NamespaceHash { get; private set; }
 

@@ -31,9 +31,9 @@ namespace VW.Serializer.Inspectors
                                 let attr = (FeatureAttribute)p.GetCustomAttributes(typeof(FeatureAttribute), true).FirstOrDefault()
                                 where attr != null
                                 select new FeatureExpression(
-                                    featureType: p.PropertyType, 
+                                    featureType: p.PropertyType,
                                     name: attr.Name ?? p.Name,
-                                    valueExpressionFactory:   valueExpression => Expression.Property(valueExpressionFactory(valueExpression), p),
+                                    valueExpressionFactory: valueExpression => Expression.Property(valueExpressionFactory(valueExpression), p),
                                     @namespace: attr.Namespace ?? parentNamespace,
                                     featureGroup: attr.InternalFeatureGroup ?? parentFeatureGroup,
                                     enumerize: attr.Enumerize,

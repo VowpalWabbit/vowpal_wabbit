@@ -1,4 +1,13 @@
-﻿using System;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="VowpalWabbitDefaultMarshaller.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Globalization;
@@ -10,28 +19,32 @@ using VW.Serializer.Intermediate;
 
 namespace VW.Serializer
 {
-    public class VowpalWabbitDefaultMarshaller
+    public partial class VowpalWabbitDefaultMarshaller
     {
         private readonly bool disableStringExampleGeneration;
+
+        public VowpalWabbitDefaultMarshaller()
+        {
+        }
 
         public VowpalWabbitDefaultMarshaller(bool disableStringExampleGeneration)
         {
             this.disableStringExampleGeneration = disableStringExampleGeneration;
         }
 
-        public void MarshalFeature<T>(VowpalWabbitMarshallingContext context, Namespace ns, Feature feature, Action<T> value)
+        public void MarshalFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, T value)
         {
             Contract.Requires(context != null);
             Contract.Requires(ns != null);
             Contract.Requires(feature != null);
 
             // TODO: handle enum
-            var featureString = feature.Name + Convert.ToString(value());
+            var featureString = feature.Name + Convert.ToString(value);
             var featureHash = context.VW.HashFeature(featureString, ns.NamespaceHash);
 
             context.NamespaceBuilder.AddFeature(featureHash, 1f);
 
-            if (disableStringExampleGeneration)
+            if (this.disableStringExampleGeneration)
             {
                 return;
             }
@@ -42,67 +55,116 @@ namespace VW.Serializer
                 featureString);
         }
 
-        public void MarshalFeature(VowpalWabbitMarshallingContext context, Namespace ns, NumericFeature feature, int value)
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
+        public void MarshalFeature<TKey, TValue>(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IEnumerable<KeyValuePair<TKey, TValue>> value)
         {
-            context.NamespaceBuilder.AddFeature(feature.FeatureHash, value);
+            Contract.Requires(context != null);
+            Contract.Requires(ns != null);
+            Contract.Requires(feature != null);
 
-            if (disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.AppendFormat(
-                CultureInfo.InvariantCulture,
-                " {0}:{1}",
-                feature.Name,
-                value);
-        }
-
-        public void MarshalFeature(VowpalWabbitMarshallingContext context, Namespace ns, NumericFeature feature, float[] value)
-        {
             if (value == null)
             {
                 return;
             }
 
-            context.NamespaceBuilder.PreAllocate(value.Count);
-
-            var i = 0;
-
-            // support anchor feature
-            if (feature.AddAnchor)
+            foreach (var kvp in value)
             {
-                this.namespaceBuilder.AddFeature(ns.NamespaceHash, 1);
-                i++;
+                context.NamespaceBuilder.AddFeature(
+                        context.VW.HashFeature(Convert.ToString(kvp.Key), ns.NamespaceHash),
+                        (float)Convert.ToDouble(kvp.Value));
             }
 
-            foreach (var v in value)
-            {
-                context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + i), v);
-                i++;
-            }
-
-            if (disableStringExampleGeneration)
+            if (this.disableStringExampleGeneration)
             {
                 return;
             }
 
-            // support anchor feature
-            i = 0;
-            if (feature.AddAnchor)
+            foreach (var kvp in value)
             {
-                context.StringExample.Append(" 0:1");
-                i++;
-            }
-
-            foreach (var v in value)
-            {
-                context.StringExample.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1}", i, v);
-                i++;
+                // TODO: not sure if negative numbers will work
+                context.StringExample.AppendFormat(
+                    CultureInfo.InvariantCulture,
+                    " {0}:{1}",
+                    Convert.ToString(kvp.Key),
+                    (float)Convert.ToDouble(kvp.Value));
             }
         }
 
-        public void MarshalNamespace(VowpalWabbitMarshallingContext context, Namespace ns, Action featureVisits)
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
+        public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IDictionary value)
+        {
+            Contract.Requires(context != null);
+            Contract.Requires(ns != null);
+            Contract.Requires(feature != null);
+
+            if (value == null)
+            {
+                return;
+            }
+
+            foreach (DictionaryEntry item in value)
+            {
+                context.NamespaceBuilder.AddFeature(
+                    context.VW.HashFeature(Convert.ToString(item.Key), ns.NamespaceHash),
+                    (float)Convert.ToDouble(item.Value));
+            }
+
+            if (this.disableStringExampleGeneration)
+            {
+                return;
+            }
+
+            foreach (DictionaryEntry item in value)
+            {
+                context.StringExample.AppendFormat(
+                    CultureInfo.InvariantCulture,
+                    " {0}:{1}",
+                    Convert.ToString(item.Key),
+                    (float)Convert.ToDouble(item.Value));
+            }
+        }
+
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
+        public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IEnumerable<string> value)
+        {
+            Contract.Requires(context != null);
+            Contract.Requires(ns != null);
+            Contract.Requires(feature != null);
+
+            if (value == null)
+            {
+                return;
+            }
+
+            foreach (var item in value)
+            {
+                context.NamespaceBuilder.AddFeature(context.VW.HashFeature(item, ns.NamespaceHash), 1f);
+            }
+
+            if (this.disableStringExampleGeneration)
+            {
+                return;
+            }
+
+            foreach (var item in value)
+            {
+                context.StringExample.AppendFormat(
+                    CultureInfo.InvariantCulture,
+                    " {0}",
+                    item);
+            }
+        }
+
+        public void MarshalNamespace(VowpalWabbitMarshalContext context, Namespace ns, Action featureVisits)
         {
             try
             {
@@ -111,14 +173,14 @@ namespace VW.Serializer
 
                 var position = 0;
                 var stringExample = context.StringExample;
-                if (!disableStringExampleGeneration)
+                if (!this.disableStringExampleGeneration)
                 {
                     position = stringExample.Append(ns.NamespaceString).Length;
                 }
 
                 featureVisits();
 
-                if (!disableStringExampleGeneration)
+                if (!this.disableStringExampleGeneration)
                 {
                     if (position == stringExample.Length)
                     {
@@ -137,16 +199,16 @@ namespace VW.Serializer
             }
         }
 
-        public void MarshalLabel(VowpalWabbitMarshallingContext context, ILabel label)
+        public void MarshalLabel(VowpalWabbitMarshalContext context, ILabel label)
         {
             if (label == null)
             {
                 return;
             }
 
-            context.ExampleBuilder.builder.ParseLabel(label.ToVowpalWabbitFormat());
+            context.ExampleBuilder.ParseLabel(label.ToVowpalWabbitFormat());
 
-            if (disableStringExampleGeneration)
+            if (this.disableStringExampleGeneration)
             {
                 return;
             }

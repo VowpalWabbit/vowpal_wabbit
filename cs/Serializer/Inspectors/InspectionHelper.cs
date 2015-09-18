@@ -14,7 +14,7 @@ namespace VW.Serializer.Inspectors
 {
     public static class InspectionHelper
     {
-        public static bool IsValidDenseFeatureValueElementType(Type elemType)
+        public static bool IsNumericType(Type elemType)
         {
             return elemType == typeof(double)
                     || elemType == typeof(float)
@@ -37,7 +37,7 @@ namespace VW.Serializer.Inspectors
                 var elemType = type.GetElementType();
 
                 // numeric types
-                if (IsValidDenseFeatureValueElementType(elemType))
+                if (IsNumericType(elemType))
                 {
                     return elemType;
                 }
@@ -50,7 +50,7 @@ namespace VW.Serializer.Inspectors
                     .First(it => it.IsGenericType && it.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                     .GetGenericArguments()[0];
 
-                if (IsValidDenseFeatureValueElementType(elemType))
+                if (IsNumericType(elemType))
                 {
                     return elemType;
                 }
