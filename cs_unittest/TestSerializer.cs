@@ -30,21 +30,16 @@ namespace cs_unittest
 
     public class CustomFeaturizer
     {
-        //private VowpalWabbitInterfaceVisitor visitor;
-
-        //public CustomFeaturizer(VowpalWabbit vw, VowpalWabbitInterfaceVisitor visitor)
-        //{
-        //    this.vw = vw;
-        //    this.visitor = visitor;
-        //}
-
         public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, CustomClass value)
         {
-            //Assert.AreEqual(5, feature.Value.X);
-            //Assert.IsNotNull(this.vw);
-            //Assert.IsNotNull(this.visitor);
+            Assert.IsNotNull(context);
+            Assert.IsNotNull(ns);
+            Assert.IsNotNull(feature);
+            Assert.IsNotNull(value);
 
-            //feature.Value.HasVisited = true;
+            Assert.AreEqual(5, value.X);
+
+            value.HasVisited = true;
         }
     }
 

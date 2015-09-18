@@ -16,6 +16,15 @@ namespace VW.Serializer.Inspectors
     {
         public static bool IsNumericType(Type elemType)
         {
+            return IsNumericTypeInternal(elemType) ||
+                   (elemType != null
+                    && elemType.IsGenericType
+                    &&  elemType.GetGenericTypeDefinition() == typeof(Nullable<>)
+                    && IsNumericTypeInternal(elemType.GetGenericArguments()[0]));
+        }
+
+        private static bool IsNumericTypeInternal(Type elemType)
+        {
             return elemType == typeof(double)
                     || elemType == typeof(float)
                     || elemType == typeof(byte)

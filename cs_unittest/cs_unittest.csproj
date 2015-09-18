@@ -69,6 +69,7 @@
     <Compile Include="TestAllReduce.cs" />
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestManagedHash.cs" />
+    <Compile Include="TestMarshalling.cs" />
     <Compile Include="TestModelLoading.cs" />
     <Compile Include="TestNull.cs" />
     <Compile Include="TestSerializer.cs" />

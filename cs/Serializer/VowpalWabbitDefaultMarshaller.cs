@@ -38,7 +38,6 @@ namespace VW.Serializer
             Contract.Requires(ns != null);
             Contract.Requires(feature != null);
 
-            // TODO: handle enum
             var featureString = feature.Name + Convert.ToString(value);
             var featureHash = context.VW.HashFeature(featureString, ns.NamespaceHash);
 
@@ -53,6 +52,26 @@ namespace VW.Serializer
                 CultureInfo.InvariantCulture,
                 " {0}",
                 featureString);
+        }
+
+        public void MarshalFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, EnumerizedFeature<T> feature, T value)
+        {
+            Contract.Requires(context != null);
+            Contract.Requires(ns != null);
+            Contract.Requires(feature != null);
+
+            context.NamespaceBuilder.AddFeature(feature.FeatureHash(value), 1f);
+
+            if (this.disableStringExampleGeneration)
+            {
+                return;
+            }
+
+            context.StringExample.AppendFormat(
+                CultureInfo.InvariantCulture,
+                " {0}{1}",
+                feature.Name,
+                value);
         }
 
         public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, String value)

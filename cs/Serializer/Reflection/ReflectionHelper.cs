@@ -25,12 +25,11 @@ namespace VW.Serializer.Reflection
         /// TODO: replace me with Roslyn once it's released and just generate string code. This way the overload resolution is properly done.
         /// </summary>
         /// <remarks>This is a simple heuristic for overload resolution, not the full thing.</remarks>
-        public static MethodInfo FindMethod(Type objectType, string name, Type[] fixedParameterTypes, Type valueType)
+        public static MethodInfo FindMethod(Type objectType, string name, params Type[] parameterTypes)
         {
             Contract.Requires(objectType != null);
             Contract.Requires(name != null);
-            Contract.Requires(fixedParameterTypes != null);
-            Contract.Requires(valueType != null);
+            Contract.Requires(parameterTypes != null);
 
             // let's find the "best" match:
             // order by
@@ -40,21 +39,23 @@ namespace VW.Serializer.Reflection
             var methods = from m in objectType.GetMethods(BindingFlags.Instance | BindingFlags.Public)
                           where m.Name == name
                           let parameters = m.GetParameters()
-                          where parameters.Length == fixedParameterTypes.Length + 1
-                          where parameters.Take(fixedParameterTypes.Length).Select(pi => pi.ParameterType)
-                            .SequenceEqual(fixedParameterTypes)
-                          let methodParameter = parameters.Last().ParameterType
-                          let output = new
+                          where parameters.Length == parameterTypes.Length
+                          let output = parameterTypes.Zip(parameters, (valueType, methodParameter) => Distance(methodParameter.ParameterType, valueType)).ToArray()
+                          where output.All(o => o != null)
+                          let distance = output.Sum(o => o.Distance)
+                          let interfacesImplemented = output.Sum(o => o.InterfacesImplemented)
+                          let genericTypeCount = output.Sum(o => o.GenericTypes.Count)
+                          orderby
+                           distance,
+                           interfacesImplemented descending,
+                           genericTypeCount
+                          select new
                           {
                               Method = m,
-                              Distance = Distance(methodParameter, valueType)
-                          }
-                          where output.Distance != null
-                          orderby
-                           output.Distance.Distance,
-                           output.Distance.InterfacesImplemented descending,
-                           output.Distance.GenericTypes.Count
-                          select output;
+                              Distance = distance,
+                              InterfacesImplemented = interfacesImplemented,
+                              GenericTypes = output.Select(o => o.GenericTypes)
+                          };
 
             var bestCandidate = methods.FirstOrDefault();
             if (bestCandidate == null)
@@ -64,27 +65,27 @@ namespace VW.Serializer.Reflection
 
             MethodInfo method = bestCandidate.Method;
 
-            //Debug.WriteLine("Method Search");
-            //foreach (var item in methods)
-            //{
-            //    Debug.WriteLine(string.Format("Distance={0} Interfaces={1} OpenGenerics={2} Method={3}",
-            //        item.Distance.Distance,
-            //        item.Distance.InterfacesImplemented,
-            //        item.Distance.GenericTypes.Count,
-            //        item.Method));
-            //}
+            Debug.WriteLine("Method Search");
+            foreach (var item in methods)
+            {
+                Debug.WriteLine(string.Format("Distance={0} Interfaces={1} OpenGenerics={2} Method={3}",
+                    item.Distance,
+                    item.InterfacesImplemented,
+                    item.GenericTypes.Count(gt => gt.Count > 0),
+                    item.Method));
+            }
 
             if (method.IsGenericMethod)
             {
                 var actualTypes = method
-                    .GetGenericArguments()
-                    .Select(t => bestCandidate.Distance.GenericTypes[t])
+                    .GetGenericArguments().Zip(bestCandidate.GenericTypes.Where(gt => gt.Count > 0), (t, gt) => gt[t])
+                    // .SelectMany(t => bestCandidate.GenericTypes.Select(gt => gt[t])) // .GenericTypes[t]
                     .ToArray();
 
                 method = method.MakeGenericMethod(actualTypes);
                 //Debug.WriteLine("\t specializing: " + method);
             }
-            //Debug.WriteLine("Method: {0} for {1} {2}", method, name, valueType);
+            Debug.WriteLine("Method: {0} for {1} {2}", method, name, string.Join(",", parameterTypes.Select(t => t.ToString())));
 
             return method;
         }

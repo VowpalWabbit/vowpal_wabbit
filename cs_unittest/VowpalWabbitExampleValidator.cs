@@ -29,7 +29,7 @@ namespace cs_unittest
             this.serializer = vw.Serializer.Func(this.vw.Native);
         }
 
-        public void Validate(string line, TExample example, ILabel label)
+        public void Validate(string line, TExample example, ILabel label = null)
         {
             IVowpalWabbitLabelComparator comparator;
 

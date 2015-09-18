@@ -20,7 +20,7 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
-            new TestCbAdfClass().TestSharedModel();
+            new TestCbAdfClass().Test87();
             // AttributesSample.Attributes();
             //AttributesSample.RunFeaturesTest();
             //ExploreClock.Clock();

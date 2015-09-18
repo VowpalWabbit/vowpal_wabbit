@@ -63,7 +63,6 @@ namespace VW.Serializer.Intermediate
         public uint FeatureHash { get; private set; }
     }
 
-    // TODO: inline Enum to switch()
     public sealed class EnumerizedFeature<T> : Feature
     {
         private VowpalWabbit vw;
@@ -83,12 +82,12 @@ namespace VW.Serializer.Intermediate
             this.enumHashing = enumHashing(this);
         }
 
-        public uint FeatureHashCached(T value)
+        public uint FeatureHash(T value)
         {
             return this.enumHashing(value);
         }
 
-        public uint FeatureHash(T value)
+        public uint FeatureHashInternal(T value)
         {
             return this.vw.HashFeature(
                 this.Name + Enum.GetName(typeof(T), value),

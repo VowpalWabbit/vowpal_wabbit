@@ -74,12 +74,15 @@ namespace VW.Serializer
             this.allFeatures = allFeatures.Select(f => new FeatureExpressionInternal { Source = f }).ToArray();
 
             this.featurizerTypes = featurizerTypes == null ? new List<Type>() : new List<Type>(featurizerTypes);
-            this.featurizerTypes.Add(typeof(VowpalWabbitDefaultMarshaller));
 
             var overrideFeaturizerTypes = allFeatures
                 .Select(f => f.OverrideSerializeMethod)
                 .Where(o => o != null)
                 .Select(o => o.DeclaringType);
+            this.featurizerTypes.AddRange(overrideFeaturizerTypes);
+
+            // add as last
+            this.featurizerTypes.Add(typeof(VowpalWabbitDefaultMarshaller));
 
             this.body = new List<Expression>();
             this.perExampleBody = new List<Expression>();
@@ -111,28 +114,6 @@ namespace VW.Serializer
             return new VowpalWabbitSerializer<TExample>(this, vw);
         }
 
-        //private void CreateVisitor(ParameterExpression visitorParameter, params Expression[] constructorParameters)
-        //{
-        //    //var paramSubset = new List<Expression>(constructorParameters);
-
-        //    //// search for different constructors
-        //    //while (paramSubset.Count > 0)
-        //    //{
-        //    //    var visitorCtor = visitorParameter.Type.GetConstructor(paramSubset.Select(p => p.Type).ToArray());
-        //    //    if (visitorCtor != null)
-        //    //    {
-        //    //        // CODE visitor = new TVisitor(vw)
-        //    //        this.body.Add(Expression.Assign(visitorParameter, Expression.New(visitorCtor, paramSubset)));
-        //    //        return;
-        //    //    }
-
-        //    //    paramSubset.RemoveAt(paramSubset.Count - 1);
-        //    //}
-
-        //    // CODE visitor = new TVisitor()
-        //    this.body.Add(Expression.Assign(visitorParameter, Expression.New(visitorParameter.Type)));
-        //}
-
         private void CreateVisitors()
         {
             foreach (var featurizerType in this.featurizerTypes)
@@ -162,47 +143,67 @@ namespace VW.Serializer
 
         private Expression CreateFeature(FeatureExpression feature, Expression @namespace)
         {
-            if (feature.Enumerize)
+            if (feature.FeatureType.IsEnum ||
+                (feature.FeatureType.IsGenericType && feature.FeatureType.GetGenericTypeDefinition() == typeof(Nullable<>) && feature.FeatureType.GetGenericArguments()[0].IsEnum))
             {
-                if (feature.FeatureType.IsEnum)
+                var enumerizeFeatureType = typeof(EnumerizedFeature<>).MakeGenericType(feature.FeatureType);
+                var featureParameter = Expression.Parameter(enumerizeFeatureType);
+                var valueParameter = Expression.Parameter(feature.FeatureType);
+
+                var body = new List<Expression>();
+
+                // TODO: break recursion in IsNumeric
+                // handle Nullable<...>
+
+                var hashVariables = new List<ParameterExpression>();
+                foreach (var value in Enum.GetValues(feature.FeatureType))
                 {
-                    var enumerizeFeatureType = typeof(EnumerizedFeature<>).MakeGenericType(feature.FeatureType);
-                    var featureParameter = Expression.Parameter(enumerizeFeatureType);
-                    var valueParameter = Expression.Parameter(feature.FeatureType);
+                    var hashVar = Expression.Variable(typeof(uint));
+                    hashVariables.Add(hashVar);
 
-                    var body = new List<Expression>();
-
-                    var hashVariables = new List<ParameterExpression>();
-                    foreach (var value in Enum.GetValues(feature.FeatureType))
-                    {
-                        var hashVar = Expression.Variable(typeof(uint));
-                        hashVariables.Add(hashVar);
-
-                        // CODE hashVar = feature.FeatureHashInternal(value);
-                        body.Add(Expression.Assign(hashVar,
-                            Expression.Call(featureParameter,
-                                enumerizeFeatureType.GetMethod("FeatureHash"),
-                                Expression.Constant(value))));
-                    }
-
-                    // expand the switch(value) { case enum1: return hash1; .... }
-                    var hashSwitch = Expression.Switch(valueParameter,
-                        Enum.GetValues(feature.FeatureType)
-                            .OfType<Type>()
-                            .Zip(hashVariables, (value, hash) => Expression.SwitchCase(hash, Expression.Constant(value)))
-                            .ToArray());
-
-                    // CODE return value => switch(value) { .... }
-                    body.Add(Expression.Lambda(hashSwitch, valueParameter));
-
-                    return Expression.New(
-                            enumerizeFeatureType.GetConstructor(Type.EmptyTypes),
-                            this.vwParameter,
-                            @namespace,
-                            Expression.Constant(feature.Name, typeof(string)),
-                            Expression.Constant(feature.AddAnchor),
-                            Expression.Lambda(Expression.Block(hashVariables, body), featureParameter));
+                    // CODE hashVar = feature.FeatureHashInternal(value);
+                    body.Add(Expression.Assign(hashVar,
+                        Expression.Call(featureParameter,
+                            enumerizeFeatureType.GetMethod("FeatureHashInternal"),
+                            Expression.Constant(value))));
                 }
+
+                // expand the switch(value) { case enum1: return hash1; .... }
+                var hashSwitch = Expression.Switch(valueParameter,
+                    Enum.GetValues(feature.FeatureType)
+                        .OfType<Type>()
+                        .Zip(hashVariables, (value, hash) => Expression.SwitchCase(hash, Expression.Constant(value)))
+                        .ToArray());
+
+                // CODE return value => switch(value) { .... }
+                body.Add(Expression.Lambda(hashSwitch, valueParameter));
+
+                return CreateNew(
+                        enumerizeFeatureType,
+                        this.vwParameter,
+                        @namespace,
+                        Expression.Constant(feature.Name, typeof(string)),
+                        Expression.Constant(feature.AddAnchor),
+                        Expression.Lambda(Expression.Block(hashVariables, body), featureParameter));
+            }
+            else if (feature.Enumerize)
+            {
+                var enumerizeFeatureType = typeof(EnumerizedFeature<>).MakeGenericType(feature.FeatureType);
+                var featureParameter = Expression.Parameter(enumerizeFeatureType);
+                var valueParameter = Expression.Parameter(feature.FeatureType);
+
+                var forward = Expression.Lambda(Expression.Call(featureParameter,
+                            enumerizeFeatureType.GetMethod("FeatureHashInternal"),
+                            valueParameter), valueParameter);
+
+                return CreateNew(
+                        enumerizeFeatureType,
+                        this.vwParameter,
+                        @namespace,
+                        Expression.Constant(feature.Name, typeof(string)),
+                        Expression.Constant(feature.AddAnchor),
+                        Expression.Lambda(forward, featureParameter));
+
             }
             else if (InspectionHelper.IsNumericType(feature.FeatureType) ||
                 InspectionHelper.IsNumericType(InspectionHelper.GetDenseFeatureValueElementType(feature.FeatureType)))
@@ -317,30 +318,6 @@ namespace VW.Serializer
                 this.CreateFeaturizerCall("MarshalNamespace", this.contextParameter, namespaceVariable, featureVisitLambda);
             }
         }
-
-        // TODO:
-        //if (ns.Key.IsDense)
-                //{
-                //    // Dense namespace
-                //    if (features.Count != 1)
-                //    {
-                //        throw new NotSupportedException("Only a single dense vector is supported per namespace");
-                //    }
-
-                //    var feature = features.First();
-
-                // var namespaceType = typeof(NamespaceDense<>).MakeGenericType(feature.DenseFeatureValueElementType);
-
-                // bindings.Add(Expression.Bind(namespaceType.GetProperty("DenseFeature"), feature.CreateFeatureExpression(this.valueParameter)));
-
-                    // CODE namespace = new Namespace { ... };
-                    //body.Add(Log());
-                //}
-                //else
-                //{
-                //    CreateSparseFeaturesVisits(ns.Key.Namespace, ns.Key.FeatureGroup, features);
-                //}
-
 
         private void CreateFeaturizerCall(string methodName, params Expression[] parameters)
         {

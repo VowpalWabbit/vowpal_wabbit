@@ -162,7 +162,11 @@ namespace VW
                 if (sharedExample != null)
                 {
                     examples.Add(sharedExample);
-                    vw.Learn(sharedExample);
+
+                    if (!sharedExample.IsNewLine)
+                    {
+                        vw.Learn(sharedExample);
+                    }
                 }
 
                 // leave as loop (vs. linq) so if the serializer throws an exception, anything allocated so far can be free'd

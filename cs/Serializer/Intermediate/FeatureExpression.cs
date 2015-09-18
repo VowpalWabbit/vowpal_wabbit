@@ -122,7 +122,9 @@ namespace VW.Serializer.Intermediate
                     method = ReflectionHelper.FindMethod(
                         visitor,
                         "MarshalFeature",
-                        new[] { typeof(VowpalWabbitMarshalContext), typeof(Namespace), typeof(NumericFeature) },
+                        typeof(VowpalWabbitMarshalContext),
+                        typeof(Namespace),
+                        typeof(NumericFeature),
                         this.FeatureType);
 
                     if (method != null)
@@ -132,14 +134,32 @@ namespace VW.Serializer.Intermediate
                 }
                 else
                 {
-                    // search for special
-                }
-
-                return ReflectionHelper.FindMethod(
+                    method = ReflectionHelper.FindMethod(
                         visitor,
                         "MarshalFeature",
-                        new[] { typeof(VowpalWabbitMarshalContext), typeof(Namespace), typeof(Feature) },
+                        typeof(VowpalWabbitMarshalContext),
+                        typeof(Namespace),
+                        typeof(EnumerizedFeature<>).MakeGenericType(this.FeatureType),
                         this.FeatureType);
+
+                    if (method != null)
+                    {
+                        return method;
+                    }
+                }
+
+                method = ReflectionHelper.FindMethod(
+                        visitor,
+                        "MarshalFeature",
+                        typeof(VowpalWabbitMarshalContext),
+                        typeof(Namespace),
+                        typeof(Feature),
+                        this.FeatureType);
+
+                if (method != null)
+                {
+                    return method;
+                }
             }
 
             return null;
