@@ -448,6 +448,7 @@ sub diff_lenient_float($$) {
         close $sdiff;
         $status = $fuzzy_status;
     }
+    unlink($tmpf) if ($status == 0);
     $status;
 }
 
@@ -488,13 +489,14 @@ sub diff($$) {
 
     # Actually run the diff
     my $diff_cmd = "$Diff $DiffOpts $reffile $outfile";
-    mysystem("$diff_cmd >diff.tmp");
+    my $diftmp = 'diff.tmp';
+    mysystem("$diff_cmd >$diftmp");
     $status = $? >> 8;
-    v(2, "$diff_cmd >diff.tmp: status=$status\n");
+    v(2, "$diff_cmd >$diftmp: status=$status\n");
  
-    if (-s 'diff.tmp') {
+    if (-s "$diftmp") {
         # There's some difference
-        v(2, "diff.tmp has something in it. Is it meaningful?\n");
+        v(2, "$diftmp has something in it. Is it meaningful?\n");
 
         if ($opt_f && -e $reffile && -e $outfile &&
             diff_lenient_float($reffile, $outfile) == 0) {
@@ -525,6 +527,7 @@ sub diff($$) {
             }
         }
     }
+    unlink($diftmp) if ($status == 0);
     $status;
 }
 
@@ -579,6 +582,15 @@ sub check_for_time_regression() {
     printf STDERR
         "$0 runtime: user %g, system %g, total %g sec (%+.2f%% vs. last)\n",
                 $cuser1, $csystem1, $overall_time1, $pct_change;
+}
+
+# only unlink relative path, plain files
+# e.g. avoids trying to unlink /dev/null when running as root
+sub safe_unlink($) {
+    my $file = shift;
+    return 0 if ($file =~ m{^/});
+    return 0 unless (-f $file);
+    unlink($file);
 }
 
 sub run_tests() {
@@ -662,6 +674,7 @@ sub run_tests() {
         } else {
             if (defined $out_ref) {
                 print STDERR "$0: test $TestNo: stdout OK\n";
+                safe_unlink($outf);
             } else {
                 v(1, "$0: test $TestNo: stdout OK (no reference)\n");
             }
@@ -684,6 +697,7 @@ sub run_tests() {
             exit $status if ($opt_e);
         } else {
             print STDERR "$0: test $TestNo: stderr OK\n";
+            safe_unlink($errf);
         }
 
         # -- compare all other reference files
@@ -709,6 +723,7 @@ sub run_tests() {
                     exit $status if ($opt_e);
                 } else {
                     print STDERR "$0: test $TestNo: $ref_base OK\n";
+                    unlink($ref_base);
                 }
             }
         }

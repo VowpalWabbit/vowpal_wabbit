@@ -36,7 +36,7 @@ namespace VW
 				m_vw = VW::seed_vw_model(m_model->m_vw, string);
 				m_model->IncrementReference();
 			}
-			else 
+			else
 			{
 				if (settings->ModelStream == nullptr)
 				{
@@ -157,7 +157,7 @@ namespace VW
 			throw gcnew ArgumentNullException("ex");
 #endif
 
-		// make sure we're not a ring based example 
+		// make sure we're not a ring based example
 		assert(!VW::is_ring_example(*m_vw, ex->m_example));
 
         m_examples->Push(ex);

@@ -1,4 +1,6 @@
-lib_LTLIBRARIES = libvw.la libvw_c_wrapper.la
+lib_LTLIBRARIES = liballreduce.la libvw.la libvw_c_wrapper.la
+
+liballreduce_la_SOURCES = allreduce_sockets.cc allreduce_threads.cc vw_exception.cc
 
 bin_PROGRAMS = vw active_interactor
 
@@ -6,6 +8,10 @@ libvw_la_SOURCES = hash.cc global_data.cc io_buf.cc parse_regressor.cc parse_pri
 
 
 libvw_c_wrapper_la_SOURCES = vwdll.cpp
+
+# accumulate.cc uses all_reduce
+libvw_la_LIBADD = liballreduce.la
+
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 
@@ -48,7 +54,7 @@ AM_CXXFLAGS += $(CXXOPTIMIZE)
 vw_SOURCES = main.cc
 vw_CXXFLAGS = $(AM_CXXFLAGS)
 
-vw_LDADD = libvw.la
-vw_DEPENDENCIES = libvw.la
+vw_LDADD = libvw.la liballreduce.la
+vw_DEPENDENCIES = libvw.la liballreduce.la
 
 active_interactor_SOURCES = active_interactor.cc
