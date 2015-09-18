@@ -23,12 +23,13 @@ typedef SOCKET socket_t;
 #include <netdb.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <string.h>
 typedef int socket_t;
 #define CLOSESOCK close
 #endif
 #include "vw_exception.h"
-#include "vw.h"
-
+#include <assert.h>
 
 using namespace std;
 
@@ -76,9 +77,10 @@ public:
 
 struct Data {
 	void* buffer;
-	size_t length; 
+	size_t length;
 };
 
+#ifndef __APPLE__
 namespace std
 {
 	// forward declare promise as C++/CLI doesn't allow usage in header files
@@ -89,6 +91,7 @@ namespace std
 
 	class mutex;
 }
+#endif
 
 class AllReduceSync
 {
@@ -101,7 +104,7 @@ private:
 
 	// number of threads reached the barrier
 	uint32_t m_count;
-	
+
 	// current wait-barrier-run required to protect against spurious wakeups of m_cv->wait(...)
 	bool m_run;
 
@@ -128,26 +131,13 @@ public:
 
 	~AllReduceThreads();
 
-	template <class T, void(*f)(T&, const T&)> inline void all_reduce_column(T** buffers, size_t index)
-	{
-		// Perform transposed AllReduce to help data locallity
-		T& first = buffers[0][index];
-
-		for (size_t i = 1; i < total; i++)
-			f(first, buffers[i][index]);
-
-		// Broadcast back
-		for (size_t i = 1; i < total; i++)
-			buffers[i][index] = first;
-	}
-
 	template <class T, void(*f)(T&, const T&)> void all_reduce(T* buffer, const size_t n)
 	{
 		// register buffer
 		T** buffers = (T**)m_sync->buffers;
 		buffers[node] = buffer;
 		m_sync->waitForSynchronization();
-		
+
 		size_t blockSize = n / total;
 		size_t index;
 		size_t end;
@@ -156,20 +146,32 @@ public:
 		{
 			if (node < n)
 			{
-				all_reduce_column<T, f>(buffers, node);
+				index = node;
+				end = node + 1;
 			}
+			else
+			{
+				// more threads than bytes --> don't do any work
+				index = end = 0;
 			}
+		}
 		else
 		{
 			index = node * blockSize;
-			end = (node + 1) * blockSize;
+			end = node == total - 1 ? n : (node + 1) * blockSize;
+		}
 
 		for (; index < end; index++)
-				all_reduce_column<T, f>(buffers, index);
+		{
+			// Perform transposed AllReduce to help data locallity
+			T& first = buffers[0][index];
 
-			// do all-reduce on left over column (n - 1 - node)
-			if (node < n % total)
-				all_reduce_column<T, f>(buffers, n - 1 - node);
+			for (size_t i = 1; i < total; i++)
+				f(first, buffers[i][index]);
+
+			// Broadcast back
+			for (size_t i = 1; i < total; i++)
+				buffers[i][index] = first;
 		}
 
 		m_sync->waitForSynchronization();
@@ -193,7 +195,7 @@ private:
 			int write_size = send(socks.parent, buffer + parent_sent_pos, (int)my_bufsize, 0);
 			if (write_size < 0)
       THROW("Write to parent failed " << my_bufsize << " " << write_size << " " << parent_sent_pos << " " << left_read_pos << " " << right_read_pos);
-    
+
     parent_sent_pos += write_size;
   }
 }
@@ -233,8 +235,8 @@ private:
 				if (max_fd > 0 && select((int)max_fd, &fds, nullptr, nullptr, nullptr) == -1)
 	  THROWERRNO("select");
 
-				for (int i = 0;i < 2;i++) {
-					if (socks.children[i] != -1 && FD_ISSET(socks.children[i], &fds)) {
+      for(int i = 0; i < 2; i++) {
+        if(socks.children[i] != -1 && FD_ISSET(socks.children[i],&fds)) {
 	    //there is data to be left from left child
 						if (child_read_pos[i] == n)
 							THROW("I think child has no data to send but he thinks he has " << FD_ISSET(socks.children[0], &fds) << " " << FD_ISSET(socks.children[1], &fds));
@@ -250,8 +252,8 @@ private:
 	    child_read_pos[i] += read_size;
 	    int old_unprocessed = child_unprocessed[i];
 	    child_unprocessed[i] = child_read_pos[i] % (int)sizeof(T);
-						for (int j = 0;j < child_unprocessed[i];j++) {
-							child_read_buf[i][j] = child_read_buf[i][((old_unprocessed + read_size) / (int)sizeof(T))*sizeof(T) + j];
+          for(int j = 0; j < child_unprocessed[i]; j++) {
+            child_read_buf[i][j] = child_read_buf[i][((old_unprocessed + read_size)/(int)sizeof(T))*sizeof(T)+j];
 	    }
 
 						if (child_read_pos[i] == n) //Done reading parent
@@ -283,17 +285,3 @@ public:
 		broadcast((char*)buffer, n*sizeof(T));
 }
 };
-
-template <class T, void (*f)(T&, const T&)> void all_reduce(vw& all, T* buffer, const size_t n)
-{
-	switch (all.all_reduce_type)
-{
-	case AllReduceType::Socket:
-		((AllReduceSockets*)all.all_reduce)->all_reduce<T, f>(buffer, n);
-		break;
-
-	case AllReduceType::Thread:
-		((AllReduceThreads*)all.all_reduce)->all_reduce<T, f>(buffer, n);
-		break;
-	}
-}
