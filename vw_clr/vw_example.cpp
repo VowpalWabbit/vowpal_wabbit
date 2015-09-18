@@ -52,6 +52,11 @@ namespace VW
 		return factory->Create(vw->m_vw, m_example);
 	}
 
+  bool VowpalWabbitExample::IsNewLine::get()
+  {
+    return example_is_newline(*m_example);
+  }
+
   void FormatIndices(example* a, System::Text::StringBuilder^ sb)
   {
     for (auto i = a->indices.begin; i != a->indices.end; i++)
@@ -215,10 +220,13 @@ namespace VW
         return diff;
 		}
 
-		// Compare the label
-    auto diff = labelComparator->Diff(this, other);
-    if (diff != nullptr)
-      return diff;
+    if (labelComparator != nullptr)
+    {
+      // Compare the label
+      auto diff = labelComparator->Diff(this, other);
+      if (diff != nullptr)
+        return diff;
+    }
 
 		return nullptr;
 	}

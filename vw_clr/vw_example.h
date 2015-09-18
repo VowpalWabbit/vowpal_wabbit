@@ -114,6 +114,11 @@ namespace VW
 			IVowpalWabbitExamplePool^ get();
 		}
 
+    property bool IsNewLine
+    {
+      bool get();
+    }
+
     String^ Diff(VowpalWabbit^ vw, VowpalWabbitExample^ other, IVowpalWabbitLabelComparator^ labelComparator);
 	};
 }

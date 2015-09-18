@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VW;
 using VW.Interfaces;
+using VW.Labels;
 using VW.Serializer;
 
 namespace cs_unittest
@@ -28,8 +29,27 @@ namespace cs_unittest
             this.serializer = vw.Serializer.Func(this.vw.Native);
         }
 
-        public void Validate(string line, TExample example, ILabel label, IVowpalWabbitLabelComparator comparator)
+        public void Validate(string line, TExample example, ILabel label)
         {
+            IVowpalWabbitLabelComparator comparator;
+
+            if (label == null)
+            {
+                comparator = null;
+            }
+            else if (label is SimpleLabel || label == SharedLabel.Instance)
+            {
+                comparator = VowpalWabbitLabelComparator.Simple;
+            }
+            else if (label is ContextualBanditLabel)
+            {
+                comparator = VowpalWabbitLabelComparator.ContextualBandit;
+            }
+            else
+            {
+                throw new ArgumentException("Label type not supported: " + label.GetType());
+            }
+
             using (var context = new VowpalWabbitMarshalContext(this.vw.Native))
             {
                 // validate string serializer

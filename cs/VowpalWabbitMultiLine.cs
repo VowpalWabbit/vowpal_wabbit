@@ -29,7 +29,7 @@ namespace VW
             VowpalWabbitSerializer<TExample> serializer,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
-            IEnumerable<TActionDependentFeature> actionDependentFeatures,
+            IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int index,
             ILabel label)
         {
@@ -50,6 +50,7 @@ namespace VW
 #endif
 
             var examples = new List<VowpalWabbitExample>();
+            bool allADFExamplesEmpty = true;
 
             try
             {
@@ -59,7 +60,11 @@ namespace VW
                 if (sharedExample != null)
                 {
                     examples.Add(sharedExample);
-                    vw.Learn(sharedExample);
+
+                    if (!sharedExample.IsNewLine)
+                    {
+                        vw.Learn(sharedExample);
+                    }
                 }
 
                 var i = 0;
@@ -70,9 +75,18 @@ namespace VW
 
                     examples.Add(adfExample);
 
-                    vw.Learn(adfExample);
+                    if (!adfExample.IsNewLine)
+                    {
+                        vw.Learn(adfExample);
+                        allADFExamplesEmpty = false;
+                    }
 
                     i++;
+                }
+
+                if (allADFExamplesEmpty)
+                {
+                    return;
                 }
 
                 // signal we're finished using an empty example
@@ -117,7 +131,7 @@ namespace VW
             VowpalWabbitSerializer<TExample> serializer,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
-            IEnumerable<TActionDependentFeature> actionDependentFeatures,
+            IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int index,
             ILabel label)
         {
@@ -138,6 +152,7 @@ namespace VW
 #endif
 
             var examples = new List<VowpalWabbitExample>();
+            var numNonEmptyADFExamples = 0;
 
             try
             {
@@ -157,10 +172,20 @@ namespace VW
                     var adfExample = actionDependentFeatureSerializer.Serialize(actionDependentFeature, i == index ? label : null);
                     Contract.Assert(adfExample != null);
 
-                    examples.Add(adfExample);
+                    if (!adfExample.IsNewLine)
+                    {
+                        examples.Add(adfExample);
+                        vw.Learn(adfExample);
 
-                    vw.Learn(adfExample);
+                        numNonEmptyADFExamples++;
+                    }
+
                     i++;
+                }
+
+                if (numNonEmptyADFExamples == 0)
+                {
+                    return Enumerable.Range(0, actionDependentFeatures.Count).ToArray();
                 }
 
                 // signal we're finished using an empty example
@@ -168,15 +193,7 @@ namespace VW
                 examples.Add(empty);
                 vw.Learn(empty);
 
-                // Nasty workaround. Since the prediction result is stored in the first example
-                // and we'll have to get an actual VowpalWabbitExampt
-                var firstExample = examples.FirstOrDefault();
-                if (firstExample == null)
-                {
-                    return null;
-                }
-
-                return firstExample.GetPrediction(vw, VowpalWabbitPredictionType.Multilabel);
+                return GetPrediction<TActionDependentFeature>(vw, actionDependentFeatures, examples, numNonEmptyADFExamples);
             }
             finally
             {
@@ -209,7 +226,7 @@ namespace VW
             VowpalWabbitSerializer<TExample> serializer,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
-            IEnumerable<TActionDependentFeature> actionDependentFeatures,
+            IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int index,
             ILabel label)
         {
@@ -249,7 +266,7 @@ namespace VW
             VowpalWabbitSerializer<TExample> serializer,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
-            IEnumerable<TActionDependentFeature> actionDependentFeatures)
+            IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures)
         {
             Contract.Requires(vw != null);
             Contract.Requires(serializer != null);
@@ -262,6 +279,7 @@ namespace VW
             // `doc2 |lda :.2 :.3 [2]
             // <new line>
             var examples = new List<VowpalWabbitExample>();
+            var numNonEmptyADFExamples = 0;
 
             try
             {
@@ -271,7 +289,11 @@ namespace VW
                 if (sharedExample != null)
                 {
                     examples.Add(sharedExample);
-                    vw.Predict(sharedExample);
+
+                    if (!sharedExample.IsNewLine)
+                    {
+                        vw.Predict(sharedExample);
+                    }
                 }
 
                 // leave as loop (vs. linq) so if the serializer throws an exception, anything allocated so far can be free'd
@@ -282,7 +304,16 @@ namespace VW
 
                     examples.Add(adfExample);
 
-                    vw.Predict(adfExample);
+                    if (!adfExample.IsNewLine)
+                    {
+                        vw.Predict(adfExample);
+                        numNonEmptyADFExamples++;
+                    }
+                }
+
+                if (numNonEmptyADFExamples == 0)
+                {
+                    return Enumerable.Range(0, actionDependentFeatures.Count).ToArray();
                 }
 
                 // signal we're finished using an empty example
@@ -290,15 +321,7 @@ namespace VW
                 examples.Add(empty);
                 vw.Predict(empty);
 
-                // Nasty workaround. Since the prediction result is stored in the first example
-                // and we'll have to get an actual VowpalWabbitExampt
-                var firstExample = examples.FirstOrDefault();
-                if (firstExample == null)
-                {
-                    return null;
-                }
-
-                return firstExample.GetPrediction(vw, VowpalWabbitPredictionType.Multilabel);
+                return GetPrediction<TActionDependentFeature>(vw, actionDependentFeatures, examples, numNonEmptyADFExamples);
             }
             finally
             {
@@ -329,7 +352,7 @@ namespace VW
             VowpalWabbitSerializer<TExample> serializer,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
-            IEnumerable<TActionDependentFeature> actionDependentFeatures)
+            IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures)
         {
             Contract.Requires(vw != null);
             Contract.Requires(serializer != null);
@@ -339,6 +362,53 @@ namespace VW
 
             var multiLabelPredictions = PredictIndex(vw, serializer, actionDependentFeatureSerializer, example, actionDependentFeatures);
             return actionDependentFeatures.Subset(multiLabelPredictions);
+        }
+
+        private static int[] GetPrediction<TActionDependentFeature>(VowpalWabbit vw, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, List<VowpalWabbitExample> examples, int numNonEmptyADFExamples)
+        {
+            // Nasty workaround. Since the prediction result is stored in the first example
+            // and we'll have to get an actual VowpalWabbitExampt
+            var firstExample = examples.FirstOrDefault(e => !e.IsNewLine);
+            if (firstExample == null)
+            {
+                return Enumerable.Range(0, actionDependentFeatures.Count).ToArray();
+            }
+
+            var values = firstExample.GetPrediction(vw, VowpalWabbitPredictionType.Multilabel);
+
+            if (values.Length == actionDependentFeatures.Count)
+            {
+                return values;
+            }
+
+            if (values.Length != numNonEmptyADFExamples)
+            {
+                throw new InvalidOperationException("Number of predictions returned unequal number of examples fed");
+            }
+
+            // defaults to false
+            var present = new bool[values.Length];
+            // mark elements present in "bitset"
+            foreach (var index in values)
+            {
+                present[index] = true;
+            }
+
+            // copy existing predictions to enlarged array
+            var result = new int[actionDependentFeatures.Count];
+            Array.Copy(values, result, values.Length);
+
+            // append the ones that are not present in the prediction list
+            var startIndex = values.Length;
+            for (int i = 0; i < present.Length; i++)
+            {
+                if (!present[i])
+                {
+                    result[startIndex++] = i;
+                }
+            }
+
+            return result;
         }
     }
 }

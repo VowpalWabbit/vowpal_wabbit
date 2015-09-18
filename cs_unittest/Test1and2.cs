@@ -40,7 +40,7 @@ namespace cs_test
                     {
                         input.Add(data);
 
-                        vwValidate.Validate(data.Line, data, data.Label, VowpalWabbitLabelComparator.Simple);
+                        vwValidate.Validate(data.Line, data, data.Label);
 
                         var expected = vwStr.Learn(data.Line, VowpalWabbitPredictionType.Scalar);
                         var actual = vw.Learn(data, data.Label, VowpalWabbitPredictionType.Scalar);

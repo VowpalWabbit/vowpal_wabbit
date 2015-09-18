@@ -204,7 +204,8 @@ namespace VW.Serializer
                             Expression.Lambda(Expression.Block(hashVariables, body), featureParameter));
                 }
             }
-            else if (InspectionHelper.IsNumericType(feature.FeatureType))
+            else if (InspectionHelper.IsNumericType(feature.FeatureType) ||
+                InspectionHelper.IsNumericType(InspectionHelper.GetDenseFeatureValueElementType(feature.FeatureType)))
             {
                 // CODE: new NumericFeature(vw, namespace, "Name", "AddAnchor");
                 return CreateNew(

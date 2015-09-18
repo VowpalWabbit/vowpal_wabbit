@@ -11,6 +11,7 @@ using VW.Serializer.Attributes;
 using System.Globalization;
 using cs_unittest.cbadf;
 using System.Threading.Tasks;
+using cs_unittest;
 
 namespace cs_test
 {
@@ -19,15 +20,16 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
+            new TestCbAdfClass().TestSharedModel();
             // AttributesSample.Attributes();
             //AttributesSample.RunFeaturesTest();
             //ExploreClock.Clock();
             //LabDemo.Run();
-            ExploreOnlySample.Run();
-            RunFeaturesTest();
-            RunParserTest();
-            RunSpeedTest();
-            RunFlatExampleTestEx();
+            //ExploreOnlySample.Run();
+            //RunFeaturesTest();
+            //RunParserTest();
+            //RunSpeedTest();
+            //RunFlatExampleTestEx();
             //RunLDAPredict();
             //RunVWParse_and_VWLearn();
         }
@@ -35,7 +37,7 @@ namespace cs_test
 
         private static void RunFeaturesTest()
         {
-            // this usually requires that the library script to update train.w or its moral equivalent needs to have been run 
+            // this usually requires that the library script to update train.w or its moral equivalent needs to have been run
             IntPtr vw = VowpalWabbitInterface.Initialize("-q st --noconstant --quiet");
             IntPtr example = VowpalWabbitInterface.ReadExample(vw, "1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
             float score = VowpalWabbitInterface.Learn(vw, example);
@@ -194,7 +196,7 @@ namespace cs_test
                 UInt32 tag_len = (UInt32)VowpalWabbitInterface.GetTagLength(example);
                 byte[] tag = new byte[tag_len];
                 if (tag_len > 0)
-                    Marshal.Copy(VowpalWabbitInterface.GetTag(example), tag, 0, (int)tag_len); 
+                    Marshal.Copy(VowpalWabbitInterface.GetTag(example), tag, 0, (int)tag_len);
 
                 UInt32 num_features = (UInt32)VowpalWabbitInterface.GetFeatureNumber(example);
                 VowpalWabbitInterface.FEATURE[] f;
@@ -253,7 +255,7 @@ namespace cs_test
                 VowpalWabbitInterface.ReleaseFeatureSpace(featureSpacePtr, (IntPtr)featureSpaceLen);
             }
         }
-    
+
         private static void RunLDAPredict()
         {
             IntPtr vw = VowpalWabbitInterface.Initialize("-i wiki1k.model -t --quiet");
@@ -263,7 +265,7 @@ namespace cs_test
 
             for (int i = 0; i < 10; i++)
             {
-                float topicPrediction = VowpalWabbitInterface.GetTopicPrediction(example, (IntPtr)i); 
+                float topicPrediction = VowpalWabbitInterface.GetTopicPrediction(example, (IntPtr)i);
                 Console.Write("{0} ", topicPrediction);
             }
             Console.Write("\n");

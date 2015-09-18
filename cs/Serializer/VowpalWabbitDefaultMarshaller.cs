@@ -55,6 +55,27 @@ namespace VW.Serializer
                 featureString);
         }
 
+        public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, String value)
+        {
+            Contract.Requires(context != null);
+            Contract.Requires(ns != null);
+            Contract.Requires(feature != null);
+
+            if (string.IsNullOrWhiteSpace(value))
+                return;
+
+            var featureHash = context.VW.HashFeature(value, ns.NamespaceHash);
+
+            context.NamespaceBuilder.AddFeature(featureHash, 1f);
+
+            if (this.disableStringExampleGeneration)
+            {
+                return;
+            }
+
+            context.StringExample.Append(' ').Append(value);
+        }
+
         /// <summary>
         /// Transfers feature data to native space.
         /// </summary>

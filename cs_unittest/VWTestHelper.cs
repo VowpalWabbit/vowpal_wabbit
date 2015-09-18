@@ -45,7 +45,7 @@ namespace cs_unittest
             parser.start();
         }
 
-        internal static void Learn<T, TListener>(string args, string inputFile, string stderrFile, IVowpalWabbitLabelComparator comparator)
+        internal static void Learn<T, TListener>(string args, string inputFile, string stderrFile)
             where TListener : VowpalWabbitListenerToEvents<T>, new()
         {
             using (var vw = new VowpalWabbit<T>(args))
@@ -59,7 +59,7 @@ namespace cs_unittest
                         Assert.Fail("got empty example");
                     }
 
-                    validate.Validate(line, data, label, comparator);
+                    validate.Validate(line, data, label);
                     vw.Learn(data, label);
                 };
                 VWTestHelper.ParseInput(File.OpenRead(inputFile), listener);
@@ -68,7 +68,7 @@ namespace cs_unittest
             }
         }
 
-        internal static void Predict<TData, TListener>(string args, string inputFile, IVowpalWabbitLabelComparator comparator, string referenceFile = null)
+        internal static void Predict<TData, TListener>(string args, string inputFile, string referenceFile = null)
             where TData : BaseData
             where TListener : VowpalWabbitListenerToEvents<TData>, new()
         {
@@ -91,7 +91,7 @@ namespace cs_unittest
                 var listener = new TListener();
                 listener.Created = (line, x, label) =>
                 {
-                    validate.Validate(line, x, label, comparator);
+                    validate.Validate(line, x, label);
 
                     var expected = vwRef.Predict(x.Line, VowpalWabbitPredictionType.Scalar);
 

@@ -44,28 +44,43 @@ namespace cs_unittest
             File.Delete(outModelFile);
         }
 
+        private void Validate(VowpalWabbitExampleValidator<DataString> vwSharedValidation, VowpalWabbitExampleValidator<DataStringADF> vwADFValidation, DataString example)
+        {
+            vwSharedValidation.Validate(example.Line, example, SharedLabel.Instance);
+            for (int i = 0; i < example.ActionDependentFeatures.Count; i++)
+            {
+                var adf = example.ActionDependentFeatures[i];
+                vwADFValidation.Validate(adf.Line, adf, i == example.SelectedActionIndex ? example.Label : null);
+            }
+        }
+
         [TestMethod]
         public void Test87()
         {
             using (var vw = new VowpalWabbit<DataString, DataStringADF>("--cb_adf --rank_all"))
+            using (var vwSharedValidation = new VowpalWabbitExampleValidator<DataString>("--cb_adf --rank_all"))
+            using (var vwADFValidation = new VowpalWabbitExampleValidator<DataStringADF>("--cb_adf --rank_all"))
             {
                 var sampleData = CreateSampleCbAdfData();
 
                 var example = sampleData[0];
+                Validate(vwSharedValidation, vwADFValidation, example);
 
                 var result = vw.LearnAndPredict(example, example.ActionDependentFeatures, example.SelectedActionIndex, example.Label);
-
                 ReferenceEquals(example.ActionDependentFeatures[0], result[0]);
                 ReferenceEquals(example.ActionDependentFeatures[1], result[1]);
                 ReferenceEquals(example.ActionDependentFeatures[2], result[2]);
 
                 example = sampleData[1];
+                Validate(vwSharedValidation, vwADFValidation, example);
 
                 result = vw.LearnAndPredict(example, example.ActionDependentFeatures, example.SelectedActionIndex, example.Label);
                 ReferenceEquals(example.ActionDependentFeatures[0], result[1]);
                 ReferenceEquals(example.ActionDependentFeatures[1], result[0]);
 
                 example = sampleData[2];
+                Validate(vwSharedValidation, vwADFValidation, example);
+
                 result = vw.Predict(example, example.ActionDependentFeatures);
 
                 ReferenceEquals(example.ActionDependentFeatures[0], result[1]);
@@ -81,9 +96,12 @@ namespace cs_unittest
             var sampleData = CreateSampleCbAdfData();
 
             using (var vw = new VowpalWabbit<DataString, DataStringADF>("--cb_adf --rank_all"))
+            using (var vwSharedValidation = new VowpalWabbitExampleValidator<DataString>("--cb_adf --rank_all"))
+            using (var vwADFValidation = new VowpalWabbitExampleValidator<DataStringADF>("--cb_adf --rank_all"))
             {
                 foreach (DataString example in sampleData)
                 {
+                    Validate(vwSharedValidation, vwADFValidation, example);
                     vw.Learn(example, example.ActionDependentFeatures, example.SelectedActionIndex, example.Label);
                 }
                 vw.Native.SaveModel(cbadfModelFile);
@@ -153,20 +171,30 @@ namespace cs_unittest
             //| b_1 c_1 d_1
             //0:0.0:0.5 | b_2 c_2 d_2
 
-            //| a_1 b_1 c_1 
+            //| a_1 b_1 c_1
             //| a_3 b_3 c_3
 
             sampleData[0] = new DataString
             {
+                Line = "shared | s_1 s_2",
                 Shared = new[] { "s_1", "s_2" },
                 ActionDependentFeatures = new[] {
                         new DataStringADF
                         {
+                            Line = "0:1.0:0.5 | a_1 b_1 c_1",
                             Features = new[] { "a_1", "b_1", "c_1" },
-                            
+
                         },
-                        new DataStringADF { Features = new [] { "a_2","b_2","c_2" } },
-                        new DataStringADF { Features = new [] { "a_3","b_3","c_3" } },
+                        new DataStringADF
+                        {
+                            Line = "| a_2 b_2 c_2",
+                            Features = new [] { "a_2","b_2","c_2" }
+                        },
+                        new DataStringADF
+                        {
+                            Line = "| a_3 b_3 c_3",
+                            Features = new [] { "a_3","b_3","c_3" }
+                        },
                     },
                 SelectedActionIndex = 0,
                 Label = new ContextualBanditLabel
@@ -178,10 +206,16 @@ namespace cs_unittest
 
             sampleData[1] = new DataString
             {
+                Line = string.Empty,
                 ActionDependentFeatures = new[] {
-                        new DataStringADF { Features = new [] { "b_1","c_1","d_1" } },
-                        new DataStringADF 
-                        { 
+                        new DataStringADF
+                        {
+                            Line = "| b_1 c_1 d_1",
+                            Features = new [] { "b_1","c_1","d_1" }
+                        },
+                        new DataStringADF
+                        {
+                            Line = "0:0.0:0.5 | b_2 c_2 d_2",
                             Features = new [] { "b_2", "c_2", "d_2" }
                         },
                     },
@@ -195,9 +229,18 @@ namespace cs_unittest
 
             sampleData[2] = new DataString
             {
+                Line = string.Empty,
                 ActionDependentFeatures = new[] {
-                        new DataStringADF { Features = new [] { "a_1","b_1","c_1" } },
-                        new DataStringADF { Features = new [] { "a_3","b_3","c_3" } }
+                        new DataStringADF
+                        {
+                            Line = "| a_1 b_1 c_1 ",
+                            Features = new [] { "a_1","b_1","c_1" }
+                        },
+                        new DataStringADF
+                        {
+                            Line = "| a_3 b_3 c_3",
+                            Features = new [] { "a_3","b_3","c_3" }
+                        }
                     }
             };
 
@@ -218,8 +261,8 @@ namespace cs_unittest
                 var features = new string[numActions][];
                 for (int j = 0; j < numActions; j++)
                 {
-                    features[j] = new string[] 
-                    { 
+                    features[j] = new string[]
+                    {
                         "a_" + fIndex[j],
                         "b_" + fIndex[j],
                         "c_" + fIndex[j],
@@ -263,8 +306,8 @@ namespace cs_unittest
                 var features = new float[numActions][];
                 for (int j = 0; j < numActions; j++)
                 {
-                    features[j] = new float[] 
-                    { 
+                    features[j] = new float[]
+                    {
                         (fIndex[j] + 0) / (float)numActions,
                         (fIndex[j] + 1) / (float)numActions,
                         (fIndex[j] + 2) / (float)numActions,
@@ -296,6 +339,8 @@ namespace cs_unittest
 
         public class DataString
         {
+            public string Line { get; set; }
+
             [Feature]
             public string[] Shared { get; set; }
 
@@ -320,6 +365,8 @@ namespace cs_unittest
 
         public class DataStringADF
         {
+            public string Line { get; set; }
+
             [Feature]
             public string[] Features { get; set; }
 

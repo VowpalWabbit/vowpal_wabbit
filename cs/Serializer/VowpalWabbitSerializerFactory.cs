@@ -34,58 +34,6 @@ namespace VW.Serializer
         /// </summary>
         private static readonly Dictionary<Type, object> SerializerCache = new Dictionary<Type, object>();
 
-//        /// <summary>
-//        /// Compiles a serializers for the given example user type.
-//        /// </summary>
-//        /// <typeparam name="TExample">The example user type.</typeparam>
-//        /// <param name="settings">The serializer settings.</param>
-//        /// <returns>A serializer for the given user example type.</returns>
-//        public static VowpalWabbitSerializerCompiled<TExample> CreateSerializer<TExample>(VowpalWabbitSettings settings, List<FeatureExpression> allFeatures = null, List<Type> customFeaturizer = null)
-//        {
-//            var serializer = CreateSerializer<TExample>(allFeatures, customFeaturizer);
-
-//            return new VowpalWabbitSerializer<TExample>(vw, serializer, settings);
-
-////#if DEBUG
-////            var stringSerializer = CreateSerializer<TExample, string>();
-
-////            Func<VowpalWabbit, TExample, ILabel, VowpalWabbitExample> wrappedSerializerFunc;
-////            if (serializer == null)
-////            {
-////                // if no features are found, no serializer is generated
-////                wrappedSerializerFunc = (_, __, ___) => null;
-////            }
-////            else
-////            {
-////                if (stringSerializer != null)
-////                {
-////                    wrappedSerializerFunc = (vw, example, label) => new VowpalWabbitDebugExample(serializer.Result(vw, example, label), stringSerializer.Result(vw, example, label));
-////                }
-////                else
-////                {
-////                    wrappedSerializerFunc = (vw, example, label) => new VowpalWabbitDebugExample(serializer.Result(vw, example, label), string.Empty);
-////                }
-////            }
-
-////            var ret = new VowpalWabbitSerializer<TExample>(wrappedSerializerFunc, serializer.ResultExpression, settings);
-
-////            if (stringSerializer != null)
-////            {
-////                ret.StringSerializerExpression = stringSerializer.ResultExpression;
-////            }
-
-////            return ret;
-////#else
-////            if (serializerFunc == null)
-////            {
-////                // if no features are found, no serializer is generated
-////                serializerFunc = (_,__,___) => null;
-////            }
-
-////            return new VowpalWabbitSerializer<TExample>(serializerFunc, serializer.ResultExpression, settings);
-////#endif
-//        }
-
         public static VowpalWabbitSerializerCompiled<TExample> CreateSerializer<TExample>(List<FeatureExpression> allFeatures = null, List<Type> customFeaturizer = null)
         {
             Type cacheKey = null;

@@ -219,18 +219,17 @@ namespace VW
             Contract.EndContractBlock();
 
             this.manager = manager;
-
+            
             // create a serializer for each instance - maintaining separate example caches
-            // TODO:
-            //this.serializers = Enumerable
-            //    .Range(0, manager.Settings.ParallelOptions.MaxDegreeOfParallelism)
-            //    .Select(_ => VowpalWabbitSerializerFactory.CreateSerializer<TExample>(manager.Settings))
-            //    .ToArray();
+            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>();
+            this.serializers = this.manager.VowpalWabbits
+                .Select(vw => serializer.Create(vw))
+                .ToArray();
 
-            //this.actionDependentFeatureSerializers = Enumerable
-            //    .Range(0, manager.Settings.ParallelOptions.MaxDegreeOfParallelism)
-            //    .Select(_ => VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(manager.Settings))
-            //    .ToArray();
+            var adfSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>();
+            this.actionDependentFeatureSerializers = this.manager.VowpalWabbits
+                .Select(vw => adfSerializer.Create(vw))
+                .ToArray();
         }
 
         /// <summary>
@@ -240,7 +239,7 @@ namespace VW
         /// <param name="actionDependentFeatures">The action dependent features.</param>
         /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
         /// <param name="label">The label for the example to learn.</param>
-        public void Learn(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        public void Learn(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
@@ -265,7 +264,7 @@ namespace VW
         /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
         /// <param name="label">The label for the example to learn.</param>
         /// <returns>The ranked prediction for the given examples.</returns>
-        public Task<int[]> LearnAndPredictIndex(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        public Task<int[]> LearnAndPredictIndex(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
@@ -291,7 +290,7 @@ namespace VW
         /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
         /// <param name="label">The label for the example to learn.</param>
         /// <returns>The ranked prediction for the given examples.</returns>
-        public Task<TActionDependentFeature[]> LearnAndPredict(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        public Task<TActionDependentFeature[]> LearnAndPredict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
