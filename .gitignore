@@ -100,3 +100,4 @@ dist/**
 pyvw.egg-info/**
 python/pyvw.egg-info/**
 
+.Rproj.user
