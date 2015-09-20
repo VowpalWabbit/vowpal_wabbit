@@ -5,6 +5,9 @@ library(ggplot2)
 library(data.table)
 library(pROC)
 
+# create a folder called data
+system(‘mkdir data’)
+
 source('../dt2vw.R')
 source('vw.R')
 
