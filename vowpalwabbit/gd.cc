@@ -433,38 +433,42 @@ void multipredict(gd& g, base_learner&, example& ec, size_t count, size_t step, 
     power_data pd;
   };
 
-template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
-  if(feature_mask_off || fw != 0.) {
-    weight* w = &fw;
-    if (x > 0) // If x is to small, then 1/(x*x) = nan
-      x = x + 1e-9;
-    else
-      x = x - 1e-9;
-    float x2 = x * x;
-    if(adaptive)
-      w[adaptive] += nd.grad_squared * x2;
-    if(normalized) {
-      float x_abs = fabsf(x);
-      if( x_abs > w[normalized] ) {// new scale discovered
-	if( w[normalized] > 0. ) {//If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
-	  if (sqrt_rate) {
-	    float rescale = w[normalized]/x_abs;
-	    w[0] *= (adaptive ? rescale : rescale*rescale);
-	  }
-	  else {
-	    float rescale = x_abs/w[normalized];
-	    w[0] *= powf(rescale*rescale, nd.pd.neg_norm_power);
-	  }
-	}
-	w[normalized] = x_abs;
+  const float x_min = 1.084202e-19;
+  const float x2_min = x_min*x_min;
+
+  template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
+  inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
+    if(feature_mask_off || fw != 0.) {
+      weight* w = &fw;
+      float x2 = x * x;
+      if (x2 < x2_min)
+        {
+          x = (x>0)? x_min:-x_min;
+          x2 = x2_min;
+        }
+      if(adaptive)
+        w[adaptive] += nd.grad_squared * x2;
+      if(normalized) {
+        float x_abs = fabsf(x);
+        if( x_abs > w[normalized] ) {// new scale discovered
+          if( w[normalized] > 0. ) {//If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
+            if (sqrt_rate) {
+              float rescale = w[normalized]/x_abs;
+              w[0] *= (adaptive ? rescale : rescale*rescale);
+            }
+            else {
+              float rescale = x_abs/w[normalized];
+              w[0] *= powf(rescale*rescale, nd.pd.neg_norm_power);
+            }
+          }
+          w[normalized] = x_abs;
+        }
+        nd.norm_x += x2 / (w[normalized] * w[normalized]);
       }
-      nd.norm_x += x2 / (w[normalized] * w[normalized]);
+      w[spare] = compute_rate_decay<sqrt_rate, adaptive, normalized>(nd.pd, fw);
+      nd.pred_per_update += x2 * w[spare];
     }
-    w[spare] = compute_rate_decay<sqrt_rate, adaptive, normalized>(nd.pd, fw);
-    nd.pred_per_update += x2 * w[spare];
   }
-}
 
   bool global_print_features = false;
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
