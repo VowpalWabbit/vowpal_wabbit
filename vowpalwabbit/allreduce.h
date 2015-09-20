@@ -80,6 +80,7 @@ struct Data {
 	size_t length;
 };
 
+#ifndef __APPLE__
 namespace std
 {
 	// forward declare promise as C++/CLI doesn't allow usage in header files
@@ -90,6 +91,7 @@ namespace std
 
 	class mutex;
 }
+#endif
 
 class AllReduceSync
 {

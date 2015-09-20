@@ -31,11 +31,15 @@ typedef int socket_t;
 
 #endif
 
+#ifdef __APPLE__
+#include <future>
+#else
 namespace std
 {
 	template<typename T>
 	class future;
 }
+#endif
 
 namespace VW
 {

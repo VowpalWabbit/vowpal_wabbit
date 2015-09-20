@@ -798,19 +798,19 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 					 buff, text_len, text);
 	      if (g == NULL || (! g->adaptive && ! g->normalized))
 		{
-                    text_len = sprintf_s(buff, buf_size, ":%f\n", *v);
+                    text_len = sprintf_s(buff, buf_size, ":%g\n", *v);
                     brw += bin_text_write_fixed(model_file, (char *)v, sizeof(*v),
 					     buff, text_len, text);
 		}
 	      else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
         { //either adaptive or normalized
-          text_len = sprintf(buff, ":%f %f\n", *v, *(v+1));
+          text_len = sprintf(buff, ":%g %g\n", *v, *(v+1));
           brw+= bin_text_write_fixed(model_file,(char *)v, 2*sizeof (*v),
 					     buff, text_len, text);
 		}
 	      else
         { //adaptive and normalized
-          text_len = sprintf(buff, ":%f %f %f\n", *v, *(v+1), *(v+2));
+          text_len = sprintf(buff, ":%g %g %g\n", *v, *(v+1), *(v+2));
           brw+= bin_text_write_fixed(model_file,(char *)v, 3*sizeof (*v),
 					     buff, text_len, text);
 		}
