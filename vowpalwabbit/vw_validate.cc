@@ -20,14 +20,6 @@ namespace VW
         }
     }
 
-    void validate_unexpected_eof(size_t nbytes)
-    {
-        if (nbytes == 0)
-        {
-            THROW("Unexpected end of model file encountered.");
-        }
-    }
-
     void validate_min_max_label(vw& all)
     {
         if (all.sd->max_label < all.sd->min_label)
