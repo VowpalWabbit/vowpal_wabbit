@@ -43,23 +43,23 @@ gdcmd="./vw -b 20
         -f sgd.vwmodel
         --cache_file temp.cache
         --span_server $submit_host
-        --loss_function=logistic" 
+        --loss_function=logistic"
 
 # BFGS step
 mapred_job_id=`expr $mapred_job_id \* 2` #create new nonce
-bfgscmd="./vw   -b 20
+bfgscmd="./vw
         --total $nmappers
         --node $mapper
         --unique_id $mapred_job_id
         --cache_file temp.cache
         --bfgs
-        --mem 5 
+        --mem 5
         --passes 2
         --save_per_pass
         --readable_model bfgs.rmodel
-        --span_server $submit_host 
-        -f bfgs.vwmodel 
-        -i sgd.vwmodel 
+        --span_server $submit_host
+        -f bfgs.vwmodel
+        -i sgd.vwmodel
         --loss_function=logistic"
 
 if [ "$mapper" == '000000' ]
@@ -77,10 +77,10 @@ then
         cat > /dev/null
     fi
 
-    if [ $? -ne 0 ] 
+    if [ $? -ne 0 ]
     then
        exit 5
-    fi 
+    fi
 
     # store models and output in hdfs
     hadoop fs -put -f sgd.vwmodel* $output_dir || true
@@ -96,14 +96,14 @@ else
         $gdcmd
         echo "BFGS ..."
         $bfgscmd
-    else    
+    else
         echo "Dryrrun"
         echo $gdcmd
         echo $bfgscmd
         cat > /dev/null
     fi
 
-    if [ $? -ne 0 ]    
+    if [ $? -ne 0 ]
     then
        exit 6
     fi
