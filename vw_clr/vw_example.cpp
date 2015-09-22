@@ -4,26 +4,26 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
 */
 
-#include "vw_clr.h"
+#include "vowpalwabbit.h"
+#include "vw_example.h"
+#include "vw_prediction.h"
 
 namespace VW
 {
-    VowpalWabbitExample::VowpalWabbitExample(VowpalWabbitBase^ vw, example* example) :
-		m_vw(vw), m_example(example)
+	VowpalWabbitExample::VowpalWabbitExample(IVowpalWabbitExamplePool^ owner, example* example) :
+		m_owner(owner), m_example(example), m_innerExample(nullptr)
+	{
+	}
+
+	VowpalWabbitExample::VowpalWabbitExample(IVowpalWabbitExamplePool^ owner, VowpalWabbitExample^ example) :
+		m_owner(owner), m_example(example->m_example), m_innerExample(example)
 	{
 	}
 
 	VowpalWabbitExample::!VowpalWabbitExample()
 	{
-		if (m_example != nullptr)
-		{
-			// make sure we're not a ring based example 
-			assert(!VW::is_ring_example(*m_vw->m_vw, m_example));
-
-            m_vw->ReturnExampleToPool(m_example);
-
-			m_example = nullptr;
-		}
+		if (m_owner != nullptr)
+			m_owner->ReturnExampleToPool(this);
 	}
 
 	VowpalWabbitExample::~VowpalWabbitExample()
@@ -31,70 +31,24 @@ namespace VW
 		this->!VowpalWabbitExample();
 	}
 
-	void VowpalWabbitExample::Learn()
+	VowpalWabbitExample^ VowpalWabbitExample::InnerExample::get()
 	{
-		try
-		{
-			m_vw->m_vw->learn(m_example);
-
-			// as this is not a ring-based example it is not free'd
-			m_vw->m_vw->l->finish_example(*m_vw->m_vw, *m_example);
-		}
-		CATCHRETHROW
+		return m_innerExample;
 	}
 
-	void VowpalWabbitExample::PredictAndDiscard()
+	IVowpalWabbitExamplePool^ VowpalWabbitExample::Owner::get()
 	{
-		try
-		{
-			m_vw->m_vw->l->predict(*m_example);
-
-			// as this is not a ring-based example it is not free'd
-			m_vw->m_vw->l->finish_example(*m_vw->m_vw, *m_example);
-		}
-		CATCHRETHROW
+		return m_owner;
 	}
 
-	generic<typename TPrediction>
-		where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-	TPrediction VowpalWabbitExample::LearnAndPredict()
+	generic<typename T>
+	T VowpalWabbitExample::GetPrediction(VowpalWabbit^ vw, IVowpalWabbitPredictionFactory<T>^ factory)
 	{
-		try
-		{
-			m_vw->m_vw->learn(m_example);
+#ifdef _DEBUG
+		if (vw == nullptr)
+			throw gcnew ArgumentNullException("vw");
+#endif
 
-			auto prediction = gcnew TPrediction();
-			prediction->ReadFromExample(m_vw->m_vw, m_example);
-
-			// as this is not a ring-based example it is not free'd
-			m_vw->m_vw->l->finish_example(*m_vw->m_vw, *m_example);
-
-			return prediction; 
-		}
-		CATCHRETHROW
-	}
-
-	generic<typename TPrediction>
-		where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-	TPrediction VowpalWabbitExample::Predict()
-	{
-		try
-		{
-			m_vw->m_vw->l->predict(*m_example);
-
-			auto prediction = gcnew TPrediction();
-			prediction->ReadFromExample(m_vw->m_vw, m_example);
-
-			// as this is not a ring-based example it is not free'd
-			m_vw->m_vw->l->finish_example(*m_vw->m_vw, *m_example);
-
-			return prediction;
-		}
-		CATCHRETHROW
-	}
-
-	VowpalWabbitExample^ VowpalWabbitExample::UnderlyingExample::get()
-	{
-		return this;
+		return factory->Create(vw->m_vw, m_example);
 	}
 }

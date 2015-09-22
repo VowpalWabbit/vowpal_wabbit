@@ -127,7 +127,7 @@ make CXX='clang++ -static' clean vw test     # ignore warnings
 OSX requires _glibtools_, which is available via the [brew](http://brew.sh) or
 [MacPorts](https://www.macports.org) package managers.
 
-### Complete brew install of 7.10
+### Complete brew install of 8.0
 ```
 brew install vowpal-wabbit
 ```

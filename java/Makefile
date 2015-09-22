@@ -3,7 +3,7 @@ ifeq ($(JAVA_HOME),)
   exit 1
 endif
 
-VWLIBS := -L../vowpalwabbit -l vw -l allreduce
+VWLIBS := -L../vowpalwabbit -l vw
 STDLIBS = $(BOOST_LIBRARY) $(LIBS)
 JAVA_INCLUDE = -I $(JAVA_HOME)/include
 
@@ -33,7 +33,7 @@ pom_version: pom.xml
 	newVer=$$(perl -e "@a=split('\.', '$$ver'); \$$a[2]++; print(join('.', @a))") && \
 	perl -pi -e "s/(\s*)<version>.*-SNAPSHOT/\1<version>$$newVer-SNAPSHOT/" pom.xml
 
-target/vw_jni.lib: src/main/c++/vw_VW.cc ../vowpalwabbit/main.o ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
+target/vw_jni.lib: src/main/c++/vw_VW.cc ../vowpalwabbit/main.o ../vowpalwabbit/libvw.a
 	mkdir -p target;
 	$(CXX) -shared $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS) $(JAVA_INCLUDE)
 

@@ -286,7 +286,6 @@ vw::vw()
   default_bits = true;
   daemon = false;
   num_children = 10;
-  span_server = "";
   save_resume = false;
 
   random_positive_weights = false;
@@ -324,9 +323,7 @@ vw::vw()
   initial_weight = 0.0;
   initial_constant = 0.0;
 
-  unique_id = 0;
-  total = 1;
-  node = 0;
+  all_reduce = nullptr;
 
   for (size_t i = 0; i < 256; i++)
   {

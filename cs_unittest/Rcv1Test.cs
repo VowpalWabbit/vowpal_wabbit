@@ -27,7 +27,7 @@ namespace cs_unittest
                     listener = new MyListener(vw);
                     string line;
 
-                    while( (line = reader.ReadLine()) != null)
+                    while ((line = reader.ReadLine()) != null)
                     {
                         VWTestHelper.ParseInput(line, listener);
                     }
@@ -41,9 +41,9 @@ namespace cs_unittest
 
             private Data example;
 
-            private VowpalWabbit<Data> vw;
+            private SimpleLabel label;
 
-            private int lines;
+            private VowpalWabbit<Data> vw;
 
             public MyListener(VowpalWabbit<Data> vw)
             {
@@ -60,6 +60,7 @@ namespace cs_unittest
 
             public override void EnterExample(VowpalWabbitParser.ExampleContext context)
             {
+                this.label = null;
                 this.example.Features.Clear();
             }
 
@@ -72,13 +73,13 @@ namespace cs_unittest
             {
                 this.example.Features.Add(
                     new KeyValuePair<string, float>(
-                        context.index.Text, 
+                        context.index.Text,
                         context.x.value));
             }
 
             public override void ExitLabel_simple(VowpalWabbitParser.Label_simpleContext context)
             {
-                this.example.Label = new SimpleLabel
+                this.label = new SimpleLabel
                 {
                     Label = context.value.value
                 };
@@ -87,20 +88,15 @@ namespace cs_unittest
             public override void ExitExample(VowpalWabbitParser.ExampleContext context)
             {
                 this.stopwatch.Start();
-                using (var vwExample = this.vw.ReadExample(this.example))
-                {
-                    vwExample.Learn();
-                }
+                this.vw.Learn(this.example, this.label);
                 this.stopwatch.Stop();
             }
         }
 
-        public class Data : IExample
+        public class Data
         {
             [Feature(FeatureGroup = 'f')]
             public IList<KeyValuePair<string, float>> Features { get; set; }
-
-            public ILabel Label { get; set; }
         }
     }
 }

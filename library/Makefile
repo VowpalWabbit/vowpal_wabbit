@@ -8,7 +8,7 @@
 #  $(error Please run 'make' at the top level only)
 #endif
 
-VWLIBS = -L ../vowpalwabbit -l vw -l allreduce
+VWLIBS = -L ../vowpalwabbit -l vw 
 STDLIBS = $(BOOST_LIBRARY) $(LIBS)
 
 all:

@@ -95,6 +95,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -112,6 +113,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -153,6 +155,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(SolutionDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -162,11 +165,22 @@
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /v /i  /r  /y  "$(SolutionDir)\$(PlatformShortName)\$(Configuration)"  "$(SolutionDir)$(Configuration)"</Command>
+      <Command>xcopy /v /i  /r  /y  "$(SolutionDir)\$(PlatformShortName)\$(Configuration)\spanning_tree.*"  "$(SolutionDir)$(Configuration)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="spanning_tree.cc" />
+    <ClCompile Include="..\vowpalwabbit\spanning_tree.cc" />
+    <ClCompile Include="..\vowpalwabbit\vw_exception.cc" />
+    <ClCompile Include="spanning_tree_main.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\vowpalwabbit\vw_static.vcxproj">
+      <Project>{1e205806-7f80-47dd-a38d-fc08083f3592}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\vowpalwabbit\spanning_tree.h" />
+    <ClInclude Include="..\vowpalwabbit\vw_exception.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

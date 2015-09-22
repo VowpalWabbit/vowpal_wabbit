@@ -21,7 +21,6 @@ namespace po = boost::program_options;
 #include "example.h"
 #include "config.h"
 #include "learner.h"
-#include "allreduce.h"
 #include "v_hashmap.h"
 #include <time.h>
 #include "hash.h"
@@ -384,6 +383,14 @@ struct shared_data {
   }
 };
 
+enum AllReduceType
+{
+	Socket,
+	Thread
+};
+
+class AllReduce;
+
 struct vw {
   shared_data* sd;
 
@@ -393,8 +400,8 @@ struct vw {
 #else
   HANDLE parse_thread;
 #endif
-
-  node_socks socks;
+  AllReduceType all_reduce_type;
+  AllReduce* all_reduce;
 
   LEARNER::base_learner* l;//the top level learner
   LEARNER::base_learner* scorer;//a scoring function
@@ -500,7 +507,6 @@ struct vw {
 
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;
-  std::string span_server;
 
   size_t length () { return ((size_t)1) << num_bits; };
 
@@ -509,9 +515,6 @@ struct vw {
   //Prediction output
   v_array<int> final_prediction_sink; // set to send global predictions to.
   int raw_prediction; // file descriptors for text output.
-  size_t unique_id; //unique id for each node in the network, id == 0 means extra io.
-  size_t total; //total number of nodes
-  size_t node; //node id number
 
   void (*print)(int,float,float,v_array<char>);
   void (*print_text)(int, string, v_array<char>);
