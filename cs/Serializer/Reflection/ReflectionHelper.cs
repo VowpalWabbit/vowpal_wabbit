@@ -44,11 +44,10 @@ namespace VW.Serializer.Reflection
                           where output.All(o => o != null)
                           let distance = output.Sum(o => o.Distance)
                           let interfacesImplemented = output.Sum(o => o.InterfacesImplemented)
-                          let genericTypeCount = output.Sum(o => o.GenericTypes.Count)
                           orderby
                            distance,
                            interfacesImplemented descending,
-                           genericTypeCount
+                           m.GetGenericArguments().Length
                           select new
                           {
                               Method = m,
@@ -77,15 +76,25 @@ namespace VW.Serializer.Reflection
 
             if (method.IsGenericMethod)
             {
-                var actualTypes = method
-                    .GetGenericArguments().Zip(bestCandidate.GenericTypes.Where(gt => gt.Count > 0), (t, gt) => gt[t])
-                    // .SelectMany(t => bestCandidate.GenericTypes.Select(gt => gt[t])) // .GenericTypes[t]
-                    .ToArray();
+                var mergedGenericTypes = bestCandidate.GenericTypes.SelectMany(d => d).ToLookup(kvp => kvp.Key, kvp => kvp.Value);
+
+                // consistency check
+                foreach (var gt in mergedGenericTypes)
+                {
+                    var refElem = gt.First();
+                    if (gt.Any(t => t != refElem))
+                    {
+                        throw new NotSupportedException("Inconsistent generic argument mapping: " + string.Join(",", gt));
+                    }
+                }
+
+                // map generic arguments to actual argument
+                var actualTypes = method.GetGenericArguments().Select(t => mergedGenericTypes[t].First()).ToArray();
 
                 method = method.MakeGenericMethod(actualTypes);
                 //Debug.WriteLine("\t specializing: " + method);
             }
-            Debug.WriteLine("Method: {0} for {1} {2}", method, name, string.Join(",", parameterTypes.Select(t => t.ToString())));
+            //Debug.WriteLine("Method: {0} for {1} {2}", method, name, string.Join(",", parameterTypes.Select(t => t.ToString())));
 
             return method;
         }

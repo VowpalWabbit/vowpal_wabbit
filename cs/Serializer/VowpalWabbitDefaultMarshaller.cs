@@ -54,7 +54,8 @@ namespace VW.Serializer
                 featureString);
         }
 
-        public void MarshalFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, EnumerizedFeature<T> feature, T value)
+
+        public void MarshalEnumFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, EnumerizedFeature<T> feature, T value)
         {
             Contract.Requires(context != null);
             Contract.Requires(ns != null);
@@ -72,6 +73,23 @@ namespace VW.Serializer
                 " {0}{1}",
                 feature.Name,
                 value);
+        }
+
+        public void MarshalEnumerizeFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, T value)
+        {
+            Contract.Requires(context != null);
+            Contract.Requires(ns != null);
+            Contract.Requires(feature != null);
+
+            var stringValue = feature.Name + value.ToString();
+            context.NamespaceBuilder.AddFeature(context.VW.HashFeature(stringValue, ns.NamespaceHash), 1f);
+
+            if (this.disableStringExampleGeneration)
+            {
+                return;
+            }
+
+            context.StringExample.Append(' ').Append(stringValue);
         }
 
         public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, String value)

@@ -94,6 +94,8 @@ namespace VW.Serializer.Intermediate
                 this.ns.NamespaceHash);
         }
     }
+
+
 /*
     public sealed class Feature : BaseFeature
     {

@@ -47,7 +47,18 @@ namespace VW.Serializer.Intermediate
 
             Contract.EndContractBlock();
 
-            this.FeatureType = featureType;
+            if(featureType.IsGenericType &&
+               featureType.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                this.IsNullable = true;
+                this.FeatureType = featureType.GetGenericArguments()[0];
+            }
+            else
+            {
+                this.IsNullable = false;
+                this.FeatureType = featureType;
+            }
+
             this.Name = name;
             this.ValueExpressionFactory = valueExpressionFactory;
             this.FeatureExpressionFactory = featureExpressionFactory;
@@ -61,8 +72,26 @@ namespace VW.Serializer.Intermediate
 
             this.DenseFeatureValueElementType = InspectionHelper.GetDenseFeatureValueElementType(featureType);
             this.IsDense = this.DenseFeatureValueElementType != null;
-            // this.IntermediateFeatureType = typeof(Feature<>).MakeGenericType(featureType);
+
+            this.IsNumeric = InspectionHelper.IsNumericType(this.FeatureType) ||
+                InspectionHelper.IsNumericType(InspectionHelper.GetDenseFeatureValueElementType(this.FeatureType));
+
+            //// handle nullable features
+            //if (this.FeatureType.IsEnum)
+            //{
+            //    this.IsEnum = true;
+            //    this.EnumType = this.FeatureType;
+            //}
+            //else if(this.FeatureType.IsGenericType &&
+            //        this.FeatureType.GetGenericTypeDefinition() == typeof(Nullable<>) &&
+            //        .IsEnum)
+            //{
+            //    this.IsEnum = true;
+            //    this.EnumType = this.FeatureType.GetGenericArguments()[0];
+            //}
         }
+
+        public bool IsNullable { get; private set; }
 
         /// <summary>
         /// Serializer variable name.
@@ -74,6 +103,8 @@ namespace VW.Serializer.Intermediate
         /// The type of the feature.
         /// </summary>
         public Type FeatureType { get; private set; }
+
+        //public Type EnumType { get; private set; }
 
         internal Type IntermediateFeatureType { get; private set; }
 
@@ -90,6 +121,8 @@ namespace VW.Serializer.Intermediate
 
         public bool IsDense { get; private set; }
 
+        //public bool IsEnum { get; private set; }
+
         public bool Enumerize { get; private set; }
 
         public bool AddAnchor { get; private set; }
@@ -102,68 +135,7 @@ namespace VW.Serializer.Intermediate
 
         public int Order { get; private set; }
 
-        internal MethodInfo FindMethod(IEnumerable<Type> visitors)
-        {
-            if (this.OverrideSerializeMethod != null)
-            {
-                return this.OverrideSerializeMethod;
-            }
-
-            foreach (var visitor in visitors)
-            {
-                // find visitor.MarshalFeature(VowpalWabbitMarshallingContext context, Namespace ns, <NumericFeature|Feature> feature, <valueType> value)
-
-                // find visitor.Visit(ValueType, ...);
-                //var method = ReflectionHelper.FindMethod(visitor, Enumerize ? "VisitEnumerize" : "Visit", this.FeatureType);
-                MethodInfo method = null;
-
-                if (!this.Enumerize)
-                {
-                    method = ReflectionHelper.FindMethod(
-                        visitor,
-                        "MarshalFeature",
-                        typeof(VowpalWabbitMarshalContext),
-                        typeof(Namespace),
-                        typeof(NumericFeature),
-                        this.FeatureType);
-
-                    if (method != null)
-                    {
-                        return method;
-                    }
-                }
-                else
-                {
-                    method = ReflectionHelper.FindMethod(
-                        visitor,
-                        "MarshalFeature",
-                        typeof(VowpalWabbitMarshalContext),
-                        typeof(Namespace),
-                        typeof(EnumerizedFeature<>).MakeGenericType(this.FeatureType),
-                        this.FeatureType);
-
-                    if (method != null)
-                    {
-                        return method;
-                    }
-                }
-
-                method = ReflectionHelper.FindMethod(
-                        visitor,
-                        "MarshalFeature",
-                        typeof(VowpalWabbitMarshalContext),
-                        typeof(Namespace),
-                        typeof(Feature),
-                        this.FeatureType);
-
-                if (method != null)
-                {
-                    return method;
-                }
-            }
-
-            return null;
-        }
+        public bool IsNumeric { get; private set; }
 
         //internal MemberInitExpression CreateFeatureExpression(Expression valueExpression)
         //{

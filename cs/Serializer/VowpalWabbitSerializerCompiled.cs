@@ -100,9 +100,6 @@ namespace VW.Serializer
             this.CreateFeaturizerCall("MarshalLabel", this.contextParameter, this.labelParameter);
 
             this.CreateNamespacesAndFeatures();
-            //this.CreateFeatures();
-
-            // this.CreateFeatureVisits();
 
             this.CreateLambda();
             // this.CreateLambda();
@@ -127,33 +124,74 @@ namespace VW.Serializer
             }
         }
 
+        private MethodInfo ResolveFeatureMarshalMethod(FeatureExpression feature)
+        {
+            if (feature.OverrideSerializeMethod != null)
+            {
+                return feature.OverrideSerializeMethod;
+            }
+
+            string methodName;
+            Type metaFeatureType;
+
+            if (feature.FeatureType.IsEnum)
+            {
+                methodName = "MarshalEnumFeature";
+                metaFeatureType = typeof(EnumerizedFeature<>).MakeGenericType(feature.FeatureType);
+            }
+            else if (feature.Enumerize)
+            {
+                methodName = "MarshalEnumerizeFeature";
+                metaFeatureType = typeof(Feature);
+            }
+            else if (feature.IsNumeric)
+            {
+                methodName = "MarshalFeature";
+                metaFeatureType = typeof(NumericFeature);
+            }
+            else
+            {
+                methodName = "MarshalFeature";
+                metaFeatureType = typeof(Feature);
+            }
+
+            // find visitor.MarshalFeature(VowpalWabbitMarshallingContext context, Namespace ns, <NumericFeature|Feature> feature, <valueType> value)
+            var method = this.featurizerTypes.Select(visitor =>
+                ReflectionHelper.FindMethod(
+                        visitor,
+                        methodName,
+                        typeof(VowpalWabbitMarshalContext),
+                        typeof(Namespace),
+                        metaFeatureType,
+                        feature.FeatureType))
+                .FirstOrDefault(m => m != null);
+
+            if (method == null)
+            {
+                // TODO: implement ToString
+                throw new ArgumentException("Unable to find featurize method for " + feature);
+            }
+
+            return method;
+        }
+
         private void ResolveFeatureMarshallingMethods()
         {
             foreach (var feature in this.allFeatures)
             {
-                feature.FeaturizeMethod = feature.Source.FindMethod(this.featurizerTypes);
-
-                if (feature.FeaturizeMethod == null)
-                {
-                    // TODO: implement ToString
-                    throw new ArgumentException("Unable to find featurize method for " + feature);
-                }
+                feature.FeaturizeMethod = this.ResolveFeatureMarshalMethod(feature.Source);
             }
         }
 
         private Expression CreateFeature(FeatureExpression feature, Expression @namespace)
         {
-            if (feature.FeatureType.IsEnum ||
-                (feature.FeatureType.IsGenericType && feature.FeatureType.GetGenericTypeDefinition() == typeof(Nullable<>) && feature.FeatureType.GetGenericArguments()[0].IsEnum))
+            if (feature.FeatureType.IsEnum)
             {
                 var enumerizeFeatureType = typeof(EnumerizedFeature<>).MakeGenericType(feature.FeatureType);
                 var featureParameter = Expression.Parameter(enumerizeFeatureType);
                 var valueParameter = Expression.Parameter(feature.FeatureType);
 
                 var body = new List<Expression>();
-
-                // TODO: break recursion in IsNumeric
-                // handle Nullable<...>
 
                 var hashVariables = new List<ParameterExpression>();
                 foreach (var value in Enum.GetValues(feature.FeatureType))
@@ -168,12 +206,17 @@ namespace VW.Serializer
                             Expression.Constant(value))));
                 }
 
+                var cases =  Enum.GetValues(feature.FeatureType)
+                        .Cast<object>()
+                        .Zip(hashVariables, (value, hash) => Expression.SwitchCase(
+                            hash,
+                            Expression.Constant(value, feature.FeatureType)))
+                        .ToArray();
+
                 // expand the switch(value) { case enum1: return hash1; .... }
                 var hashSwitch = Expression.Switch(valueParameter,
-                    Enum.GetValues(feature.FeatureType)
-                        .OfType<Type>()
-                        .Zip(hashVariables, (value, hash) => Expression.SwitchCase(hash, Expression.Constant(value)))
-                        .ToArray());
+                    Expression.Block(Expression.Throw(Expression.New(typeof(NotSupportedException))), Expression.Constant((uint)0, typeof(uint))),
+                    cases);
 
                 // CODE return value => switch(value) { .... }
                 body.Add(Expression.Lambda(hashSwitch, valueParameter));
@@ -186,27 +229,7 @@ namespace VW.Serializer
                         Expression.Constant(feature.AddAnchor),
                         Expression.Lambda(Expression.Block(hashVariables, body), featureParameter));
             }
-            else if (feature.Enumerize)
-            {
-                var enumerizeFeatureType = typeof(EnumerizedFeature<>).MakeGenericType(feature.FeatureType);
-                var featureParameter = Expression.Parameter(enumerizeFeatureType);
-                var valueParameter = Expression.Parameter(feature.FeatureType);
-
-                var forward = Expression.Lambda(Expression.Call(featureParameter,
-                            enumerizeFeatureType.GetMethod("FeatureHashInternal"),
-                            valueParameter), valueParameter);
-
-                return CreateNew(
-                        enumerizeFeatureType,
-                        this.vwParameter,
-                        @namespace,
-                        Expression.Constant(feature.Name, typeof(string)),
-                        Expression.Constant(feature.AddAnchor),
-                        Expression.Lambda(forward, featureParameter));
-
-            }
-            else if (InspectionHelper.IsNumericType(feature.FeatureType) ||
-                InspectionHelper.IsNumericType(InspectionHelper.GetDenseFeatureValueElementType(feature.FeatureType)))
+            else if (!feature.Enumerize && feature.IsNumeric)
             {
                 // CODE: new NumericFeature(vw, namespace, "Name", "AddAnchor");
                 return CreateNew(
@@ -307,9 +330,32 @@ namespace VW.Serializer
                     // TODO: optimize
                     var featurizer = this.featurizers.First(f => f.Type == feature.FeaturizeMethod.ReflectedType);
 
-                    // this.vwParameter
-                    featureVisits.Add(Expression.Call(featurizer, feature.FeaturizeMethod, this.contextParameter, namespaceVariable, featureVariable,
-                        feature.Source.ValueExpressionFactory(this.exampleParameter)));
+                    var valueVariable = feature.Source.ValueExpressionFactory(this.exampleParameter);
+
+                    if (feature.Source.IsNullable)
+                    {
+                        // if (value != null) featurzier.MarshalXXX(vw, context, ns, feature, (FeatureType)value);
+                        featureVisits.Add(Expression.IfThen(
+                            Expression.NotEqual(valueVariable, Expression.Constant(null)),
+                                Expression.Call(
+                                     featurizer,
+                                     feature.FeaturizeMethod,
+                                     this.contextParameter,
+                                     namespaceVariable,
+                                     featureVariable,
+                                     Expression.Convert(valueVariable, feature.Source.FeatureType))));
+                    }
+                    else
+                    {
+                        // featurzier.MarshalXXX(vw, context, ns, feature, value);
+                        featureVisits.Add(Expression.Call(
+                            featurizer,
+                            feature.FeaturizeMethod,
+                            this.contextParameter,
+                            namespaceVariable,
+                            featureVariable,
+                            valueVariable));
+                    }
 	            }
 
                 var featureVisitLambda = Expression.Lambda(Expression.Block(featureVisits));
