@@ -76,7 +76,7 @@ JNIEXPORT jfloat JNICALL Java_vw_VW_predict(JNIEnv *env, jobject obj, jstring ex
     return prediction;
 }
 
-JNIEXPORT jfloatArray JNICALL Java_vw_VW_getTopicPredictions(JNIEnv *env, jobject obj, jstring example_string, jlong vwPtr) {
+JNIEXPORT jfloatArray JNICALL Java_vw_VW_multipredict(JNIEnv *env, jobject obj, jstring example_string, jlong vwPtr) {
   jfloatArray r = env->NewFloatArray(0);
   try {
     vw* vwInstance = (vw*)vwPtr;
