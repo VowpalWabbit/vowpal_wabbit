@@ -58,6 +58,8 @@ license as described in the file LICENSE.
 #include "vw_exception.h"
 #include "accumulate.h"
 #include "vw_allreduce.h"
+#include "RPNewton.h"
+#include "OjaNewton.h"
 
 using namespace std;
 //
@@ -947,6 +949,8 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(noop_setup);
   all.reduction_stack.push_back(lda_setup);
   all.reduction_stack.push_back(bfgs_setup);
+  all.reduction_stack.push_back(RPNewton_setup);
+  all.reduction_stack.push_back(OjaNewton_setup);
 
   //Score Users
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'b', simple_label>);

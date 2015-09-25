@@ -270,6 +270,7 @@
     <ClInclude Include="network.h" />
     <ClInclude Include="nn.h" />
     <ClInclude Include="noop.h" />
+    <ClInclude Include="OjaNewton.h" />
     <ClInclude Include="print.h" />
     <ClInclude Include="oaa.h" />
     <ClInclude Include="boosting.h" />
@@ -280,6 +281,7 @@
     <ClInclude Include="parse_primitives.h" />
     <ClInclude Include="parse_regressor.h" />
     <ClInclude Include="rand48.h" />
+    <ClInclude Include="RPNewton.h" />
     <ClInclude Include="scorer.h" />
     <ClInclude Include="search.h" />
     <ClInclude Include="search_sequencetask.h" />
@@ -344,6 +346,7 @@
     <ClCompile Include="network.cc" />
     <ClCompile Include="nn.cc" />
     <ClCompile Include="noop.cc" />
+    <ClCompile Include="OjaNewton.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="oaa.cc" />
     <ClCompile Include="boosting.cc" />
@@ -354,6 +357,7 @@
     <ClCompile Include="parse_primitives.cc" />
     <ClCompile Include="parse_regressor.cc" />
     <ClCompile Include="rand48.cc" />
+    <ClCompile Include="RPNewton.cc" />
     <ClCompile Include="scorer.cc" />
     <ClCompile Include="search.cc" />
     <ClCompile Include="search_graph.cc" />
@@ -365,6 +369,7 @@
     <ClCompile Include="search_dep_parser.cc" />
     <ClCompile Include="sender.cc" />
     <ClCompile Include="simple_label.cc" />
+    <ClCompile Include="Source.cpp" />
     <ClCompile Include="spanning_tree.cc" />
     <ClCompile Include="stagewise_poly.cc" />
     <ClCompile Include="svrg.cc" />

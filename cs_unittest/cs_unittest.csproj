@@ -59,6 +59,7 @@
   <ItemGroup>
     <Compile Include="BaseData.cs" />
     <Compile Include="CbAdfData.cs" />
+    <Compile Include="Class1.cs" />
     <Compile Include="RunTests.cs" />
     <Compile Include="TestAllReduce.cs" />
     <Compile Include="TestExampleCache.cs" />
