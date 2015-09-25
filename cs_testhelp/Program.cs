@@ -15,7 +15,15 @@ namespace cs_testhelp
         {
             var vwRoot = mainArgs[0];
 
-            var lines = File.ReadAllLines(vwRoot + @"\test\RunTests")
+            var inputFile = vwRoot + @"\test\RunTests";
+            var outputFile = vwRoot + @"\cs_unittest\TestAll.cs";
+
+            if (File.GetLastWriteTimeUtc(inputFile) == File.GetLastWriteTimeUtc(outputFile))
+            {
+                return;
+            }
+
+            var lines = File.ReadAllLines(inputFile)
                 .SkipWhile(l => l != "__DATA__")
                 .ToList();
 
@@ -32,7 +40,7 @@ namespace cs_testhelp
 
             var testCode = new Dictionary<int, Tuple<string, string>>();
 
-            using (var cs = new StreamWriter(vwRoot + @"\cs_unittest\TestAll.cs"))
+            using (var cs = new StreamWriter(outputFile))
             {
                 Environment.CurrentDirectory = vwRoot + @"\test";
 
@@ -222,8 +230,9 @@ namespace cs_unittest
                 }
 
                 cs.WriteLine("} }");
-
             }
+
+            File.SetLastWriteTimeUtc(outputFile, File.GetLastWriteTimeUtc(inputFile));
         }
 
         static string comment = string.Empty;
