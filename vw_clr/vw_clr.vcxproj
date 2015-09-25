@@ -166,6 +166,7 @@
   <ItemGroup>
     <ClInclude Include="clr_io.h" />
     <ClInclude Include="spanning_tree_clr.h" />
+    <ClInclude Include="vw_arguments.h" />
     <ClInclude Include="vw_interface.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="vowpalwabbit.h" />

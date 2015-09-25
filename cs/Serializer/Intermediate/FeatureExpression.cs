@@ -38,10 +38,6 @@ namespace VW.Serializer.Intermediate
             if (featureType == null)
                 throw new ArgumentNullException("featureType");
 
-            // actually it's optional for custom types
-            //if (string.IsNullOrEmpty(name))
-            //    throw new ArgumentNullException("name");
-
             if (valueExpressionFactory == null)
                 throw new ArgumentNullException("valueExpressionFactory");
 
@@ -71,24 +67,9 @@ namespace VW.Serializer.Intermediate
             this.OverrideSerializeMethod = overrideSerializeMethod;
 
             this.DenseFeatureValueElementType = InspectionHelper.GetDenseFeatureValueElementType(featureType);
-            this.IsDense = this.DenseFeatureValueElementType != null;
 
             this.IsNumeric = InspectionHelper.IsNumericType(this.FeatureType) ||
                 InspectionHelper.IsNumericType(InspectionHelper.GetDenseFeatureValueElementType(this.FeatureType));
-
-            //// handle nullable features
-            //if (this.FeatureType.IsEnum)
-            //{
-            //    this.IsEnum = true;
-            //    this.EnumType = this.FeatureType;
-            //}
-            //else if(this.FeatureType.IsGenericType &&
-            //        this.FeatureType.GetGenericTypeDefinition() == typeof(Nullable<>) &&
-            //        .IsEnum)
-            //{
-            //    this.IsEnum = true;
-            //    this.EnumType = this.FeatureType.GetGenericArguments()[0];
-            //}
         }
 
         public bool IsNullable { get; private set; }
@@ -119,10 +100,6 @@ namespace VW.Serializer.Intermediate
 
         public MethodInfo OverrideSerializeMethod { get; private set; }
 
-        public bool IsDense { get; private set; }
-
-        //public bool IsEnum { get; private set; }
-
         public bool Enumerize { get; private set; }
 
         public bool AddAnchor { get; private set; }
@@ -136,23 +113,5 @@ namespace VW.Serializer.Intermediate
         public int Order { get; private set; }
 
         public bool IsNumeric { get; private set; }
-
-        //internal MemberInitExpression CreateFeatureExpression(Expression valueExpression)
-        //{
-        //    var e = this.ValueExpressionFactory(valueExpression);
-
-        //    // CODE new Feature<T> { Namespace = ..., ... }
-        //    return Expression.MemberInit(
-        //            Expression.New(IntermediateFeatureType),
-        //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.Name), Expression.Constant(this.Name, typeof(string))),
-        //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.Enumerize), Expression.Constant(this.Enumerize)),
-        //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.AddAnchor), Expression.Constant(this.AddAnchor)),
-        //            //Expression.Bind(IntermediateFeatureType.GetProperty("Value"), e),
-        //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.Namespace), Expression.Constant(this.Namespace, typeof(string))),
-        //            Expression.Bind(ReflectionHelper.GetInfo((MetaFeature f) => f.FeatureGroup),
-        //                this.FeatureGroup == null ? (Expression)Expression.Constant(null, typeof(char?)) :
-        //                Expression.New((ConstructorInfo)ReflectionHelper.GetInfo((char v) => new char?(v)), Expression.Constant((char)this.FeatureGroup)))
-        //            );
-        //}
     }
 }

@@ -53,13 +53,6 @@ namespace VW.Serializer
 
         private readonly Action<VowpalWabbitMarshalContext, TExample, ILabel> serializerFunc;
 
-        //public VowpalWabbitSerializerForVWInstance CreateSerializer(VowpalWabbit vw)
-        //{
-        //    // TODO: run 2nd lambda that creates the instance that holds all the meta data once (essentially doing all the hash once)
-        //    // TODO: create expression of Func<VW, Func<TExample, ILabel, VowpalWabbitExample>>
-        //    // the first func is the closure for static method data!!! a bit sick already.
-        //}
-
         internal VowpalWabbitSerializer(VowpalWabbitSerializerCompiled<TExample> serializer, VowpalWabbit vw)
         {
             if (serializer == null)
@@ -107,15 +100,6 @@ namespace VW.Serializer
 #endif
             }
         }
-
-        ///// <summary>
-        ///// Useful for debugging.
-        ///// </summary>
-        //[EditorBrowsable(EditorBrowsableState.Never)]
-        //public Expression NativeSerializerExpression { get; private set; }
-
-        //[EditorBrowsable(EditorBrowsableState.Never)]
-        //public Expression StringSerializerExpression { get; set; }
 
         /// <summary>
         /// True if this instance caches examples, false otherwise.

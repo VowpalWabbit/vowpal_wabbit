@@ -18,7 +18,6 @@ using System.Text;
 using System.Threading.Tasks;
 using VW.Interfaces;
 using VW.Serializer.Inspectors;
-using VW.Serializer.Interfaces;
 using VW.Serializer.Intermediate;
 using VW.Serializer.Reflection;
 
@@ -255,15 +254,8 @@ namespace VW.Serializer
 
         private void CreateNamespacesAndFeatures()
         {
-            // TODO: using(...)
-            // CODE context = new VowpalWabbitMarshallingContext(vw)
-            //this.perExampleBody.Add(Expression.Assign(this.contextParameter,
-            //    CreateNew(
-            //        typeof(VowpalWabbitMarshallingContext),
-            //        this.vwParameter)));
-
             var featuresByNamespace = this.allFeatures.GroupBy(
-                f => new { f.Source.Namespace, f.Source.FeatureGroup, f.Source.IsDense },
+                f => new { f.Source.Namespace, f.Source.FeatureGroup },
                 f => f);
 
             foreach (var ns in featuresByNamespace)
@@ -275,9 +267,6 @@ namespace VW.Serializer
                 var namespaceVariable = Expression.Variable(typeof(Namespace), "ns_" + ns.Key.FeatureGroup + ns.Key.Namespace);
                 this.variables.Add(namespaceVariable);
 
-                //var bindings = CreateNamespaceAndFeatureGroupBinding(feature.Namespace, feature.FeatureGroup);
-                //this.body.Add(Expression.Assign(namespaceVariable, Expression.MemberInit(Expression.New(typeof(Namespace)), bindings)));
-
                 // CODE ns = new Namespace(vw, name, featureGroup);
                 this.body.Add(Expression.Assign(namespaceVariable,
                     CreateNew(
@@ -287,36 +276,9 @@ namespace VW.Serializer
                         ns.Key.FeatureGroup == null ? (Expression)Expression.Constant(null, typeof(char?)) :
                          Expression.New((ConstructorInfo)ReflectionHelper.GetInfo((char v) => new char?(v)), Expression.Constant((char)ns.Key.FeatureGroup)))));
 
-                // find all parameters types that have a ctor(Namespace ns)
-                //var customNamespaceTypes = ns.SelectMany(f => f.FeaturizeMethod
-                //                                        .GetParameters()
-                //                                        .Where(p => typeof(ICustomNamespace).IsAssignableFrom(p.ParameterType)))
-                //                             .Distinct();
-
-                //var customNamespaceVariables = new List<ParameterExpression>();
-                //foreach (var customNamespaceType in customNamespaceTypes)
-                //{
-                //    var customNamespaceVariable = Expression.Variable(customNamespaceType);
-                //    customNamespaceVariables.Add(customNamespaceVariable);
-
-                //    // CODE var ns = new CustomNamespaceType();
-                //    this.body.Add(Expression.Assign(customNamespaceVariable, Expression.New(customNamespaceType)));
-
-                //    // CODE ns.Initialize(vw, nsPlain)
-                //    this.body.Add(Expression.Call(customNamespaceVariable,
-                //        ReflectionHelper.GetInfo((ICustomNamespace ns) => ns.Initialize(null, null)),
-                //        this.vwParameter,
-                //        namespaceVariable));
-                //}
-
-                //this.namespaceVariables.AddRange(customNamespaceVariables);
                 var featureVisits = new List<Expression>(ns.Count());
-
                 foreach (var feature in ns.OrderBy(f => f.Source.Order))
 	            {
-                    //feature.Additional.Add(this.vwParameter);
-                    //feature.Additional.Add(namespaceVariable);
-
                     var newFeature = feature.Source.FeatureExpressionFactory != null ?
                         feature.Source.FeatureExpressionFactory(this.vwParameter, namespaceVariable) :
                         this.CreateFeature(feature.Source, namespaceVariable);
@@ -388,13 +350,10 @@ namespace VW.Serializer
             this.body.Add(
                 Expression.Lambda(
                     typeof(Action<VowpalWabbitMarshalContext, TExample, ILabel>),
-                    //Expression.Assign(this.contextParameter, Expression.Constant(null,  typeof(VowpalWabbitMarshallingContext))),
                     Expression.Block(this.perExampleBody),
                     this.contextParameter, this.exampleParameter, this.labelParameter));
 
             // CODE return (vw) => { ... return (ex, label) => { ... } }
-            // this.body.Add(Expression.Lambda(Expression.Block(new[] { this.contextParameter }, this.body), this.vwParameter));
-
             this.SourceExpression = Expression.Lambda<Func<VowpalWabbit, Action<VowpalWabbitMarshalContext, TExample, ILabel>>>(
                 Expression.Block(this.variables, this.body), this.vwParameter);
         }
@@ -458,296 +417,5 @@ namespace VW.Serializer
             this.labelParameter = Expression.Parameter(typeof(ILabel), "label");
 
         }
-
-        //private void CreateFeatures()
-        //{
-        //    foreach (var feature in this.allFeatures)
-        //    {
-        //        var featureVariable = Expression.Variable(feature.Source.VariableName);
-        //        this.variables.Add(featureVariable);
-        //        feature.Additional.Add(featureVariable);
-
-        //        // CODE: var featurePlain = new Feature { ... };
-        //        this.body.Add(Expression.Assign(featureVariable,
-        //                Expression.MemberInit(
-        //                            Expression.New(Feature),
-        //                            Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Name), Expression.Constant(feature.Source.Name, typeof(string))),
-        //                            Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Enumerize), Expression.Constant(feature.Source.Enumerize)),
-        //                            Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.AddAnchor), Expression.Constant(feature.Source.AddAnchor)),
-        //                            Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Namespace), Expression.Constant(feature.Source.Namespace, typeof(string))),
-        //                            Expression.Bind(ReflectionHelper.GetInfo((Feature f) => f.Source.FeatureGroup),
-        //                                this.FeatureGroup == null ? (Expression)Expression.Constant(null, typeof(char?)) :
-        //                                Expression.New((ConstructorInfo)ReflectionHelper.GetInfo((char v) => new char?(v)), Expression.Constant((char)feature.Source.FeatureGroup))))));
-
-        //        var customFeatureTypes = feature.FeaturizeMethod.GetParameters().Where(pi => typeof(ICustomFeature).IsAssignableFrom(pi.ParameterType));
-        //        foreach (var customFeatureType in customFeatureTypes)
-        //        {
-        //            var customFeatureVariable = Expression.Variable(customFeatureType);
-        //            this.variables.Add(customFeatureVariable);
-        //            feature.Additional.Add(customFeatureVariable);
-
-        //            // CODE var customFeature = new CustomFeatureType();
-        //            this.body.Add(Expression.Assign(customFeatureVariable, Expression.New(customFeatureType)));
-        //            // CODE customFeature.Initialize(vw, featurePlain);
-        //            this.body.Add(Expression.Call(customFeatureVariable,
-        //                            ReflectionHelper.GetInfo((ICustomFeature f) => f.Initialize(null, null)), this.vwParameter, featureVariable));
-        //        }
-        //    }
-
-            //// CODE if (value == null) throw new ArgumentNullException("value");
-            //body.Add(Log());
-            //body.Add(Expression.IfThen(
-            //        Expression.Equal(valueParameter, Expression.Constant(null)),
-            //        Expression.Throw(Expression.New(ArgumentNullExceptionConstructorInfo, Expression.Constant("value")))));
-
-            //// CODE if (value == null) throw new ArgumentNullException("visitor");
-            //body.Add(Log());
-            //body.Add(Expression.IfThen(
-            //        Expression.Equal(visitorParameter, Expression.Constant(null)),
-            //        Expression.Throw(Expression.New(ArgumentNullExceptionConstructorInfo, Expression.Constant("visitor")))));
-
-            //var featuresByNamespace = allFeatures.GroupBy(f => new { f.Namespace, f.FeatureGroup, f.IsDense }, f => f);
-            //foreach (var ns in featuresByNamespace)
-            //{
-            //    var features = ns.OrderBy(f => f.Order).ToList();
-
-            //    if (ns.Key.IsDense)
-            //    {
-            //        CreateDenseFeatureVisits(features);
-            //    }
-            //    else
-            //    {
-            //        CreateSparseFeaturesVisits(ns.Key.Namespace, ns.Key.FeatureGroup, features);
-            //    }
-            //}
-        //}
-
-        //private void CreateLambda()
-        //{
-        //    // CODE return visitor.Visit(label, new[] { ns1, ns2, ... })
-        //    //body.Add(Log());
-        //    var visitWithLabelMethod = typeof(TVisitor).GetMethod("Visit", new[] { typeof(ILabel), typeof(IVisitableNamespace[]) });
-        //    this.body.Add(
-        //        Expression.Call(
-        //            this.mainVisitorParameter,
-        //            visitWithLabelMethod,
-        //            this.labelParameter,
-        //            Expression.NewArrayInit(
-        //                typeof(IVisitableNamespace),
-        //                namespaceVariables.ToArray<Expression>())));
-
-        //    // CODE (example, visitor) => { ... }
-        //    this.ResultExpression = Expression.Lambda<Func<VowpalWabbit, TExample, ILabel, VowpalWabbitMarshallingContext>>(
-        //        Expression.Block(this.variables.Union(this.namespaceVariables), this.body),
-        //        this.vwParameter,
-        //        this.exampleParamter,
-        //        this.labelParameter);
-        //}
-
-        //private static List<MemberAssignment> CreateNamespaceAndFeatureGroupBinding(string @namespace, char? featureGroup)
-        //{
-        //    var baseNamespaceInits = new List<MemberAssignment>
-        //        {
-        //            Expression.Bind(
-        //                ReflectionHelper.GetInfo((Namespace n) => n.Name),
-        //                Expression.Constant(@namespace, typeof(string)))
-        //        };
-
-        //    if (featureGroup != null)
-        //    {
-        //        baseNamespaceInits.Add(
-        //            Expression.Bind(
-        //                ReflectionHelper.GetInfo((Namespace n) => n.FeatureGroup),
-        //                Expression.Convert(Expression.Constant((char)featureGroup), typeof(char?))));
-        //    }
-
-        //    return baseNamespaceInits;
-        //}
-
-        //private void CreateDenseFeatureVisits(List<FeatureExpression> features)
-        //{
-        //    // TODO: INSERT ns lookup variable
-
-        //    // find the first featurizer that supports this feature type
-        //    foreach (var featurizer in this.featurizers)
-        //    {
-        //        if (this.CreateDenseFeatureVisit(featurizer, namespaceVariable))
-        //        {
-        //            return;
-        //        }
-        //    }
-
-        //    this.CreateDenseFeatureVisit(this.mainVisitorParameter, namespaceVariable);
-        //}
-
-        //private bool CreateDenseFeatureVisit(ParameterExpression visitor, ParameterExpression namespaceVariable)
-        //{
-        //    var method = ReflectionHelper.FindMethod(visitor.Type, "Visit", namespaceVariable.Type);
-        //    if (method == null)
-        //    {
-        //        return false;
-        //    }
-
-        //    // CODE namespace.Visit = () => visitor.Visit(namespace)
-        //    //body.Add(Log());
-        //    this.body.Add(Expression.Assign(
-        //            Expression.Property(namespaceVariable, namespaceVariable.Type.GetProperty("Visit")),
-        //            Expression.Lambda<Action>(
-        //                Expression.Call(
-        //                    visitor,
-        //                    method,
-        //                    namespaceVariable))));
-
-        //    return true;
-        //}
-
-        //private void CreateSparseFeaturesVisits(string @namespace, char? featureGroup, List<FeatureExpression> features)
-        //{
-        //    // Sparse namespace
-        //    var featureVariables = new List<ParameterExpression>();
-
-        //    foreach (var feature in features)
-        //    {
-        //        var featureVariable = Expression.Parameter(feature.IntermediateFeatureType, feature.VariableName);
-
-        //        variables.Add(featureVariable);
-        //        featureVariables.Add(featureVariable);
-
-        //        // CODE feature = new Feature<float> { ... };
-        //        //body.Add(Log());
-        //        this.body.Add(Expression.Assign(featureVariable, feature.CreateFeatureExpression(this.exampleParamter)));
-        //    }
-
-        //    // features belong to the same namespace
-        //    var bindings = CreateNamespaceAndFeatureGroupBinding(@namespace, featureGroup);
-        //    bindings.Add(Expression.Bind(
-        //                        ReflectionHelper.GetInfo((NamespaceSparse n) => n.Features),
-        //                        Expression.NewArrayInit(typeof(IVisitableFeature), featureVariables)));
-
-        //    // CODE new NamespaceSparse { Features = new[] { feature1, feature2, ... } }
-        //    var namespaceSparse = Expression.MemberInit(Expression.New(typeof(NamespaceSparse)), bindings);
-
-        //    var namespaceVariable = Expression.Variable(typeof(NamespaceSparse), "namespaceSparse");
-        //    namespaceVariables.Add(namespaceVariable);
-
-        //    // CODE namespace = new NamespaceSparse { ... }
-        //    //body.Add(Log());
-        //    this.body.Add(Expression.Assign(namespaceVariable, namespaceSparse));
-
-        //    // loop unrolling to have dispatch onto the correct Visit<T>
-        //    for (var i = 0; i < features.Count; i++)
-        //    {
-        //        var feature = features[i];
-        //        var featureVariable = featureVariables[i];
-
-        //        Expression visitFeatureCall = this.CreateFeatureVisitFromOverride(feature, featureVariable);
-
-        //        if (visitFeatureCall == null)
-        //        {
-        //            foreach (var featurizer in this.featurizers)
-        //            {
-        //                visitFeatureCall = this.CreateFeatureVisit(feature, featurizer, featureVariable);
-        //                if (visitFeatureCall != null)
-        //                {
-        //                    break;
-        //                }
-        //            }
-        //        }
-
-        //        if (visitFeatureCall == null)
-        //        {
-        //            visitFeatureCall = CreateFeatureVisit(feature, this.mainVisitorParameter, featureVariable);
-        //        }
-
-        //        if (visitFeatureCall == null)
-        //        {
-        //            throw new NotSupportedException("Feature type is not supported: " + featureVariable.Type);
-        //        }
-
-        //        // CODE feature.Visit = visitor.Visit;
-        //        //body.Add(Log());
-        //        this.body.Add(
-        //            Expression.Assign(
-        //                Expression.Property(featureVariable, featureVariable.Type.GetProperty("Visit")),
-        //                Expression.Lambda<Action>(visitFeatureCall)));
-        //    }
-
-        //    // CODE namespace.Visit = () => { visitor.Visit(namespace); });
-        //    //body.Add(Log());
-        //    // return (MethodInfo)ReflectionHelper.GetInfo((IVowpalWabbitVisitor<VowpalWabbitMarshallingContext> e) => e.Visit((NamespaceSparse)null));
-        //    var visitMethod = typeof(TVisitor).GetMethod("Visit", new[] { typeof(INamespaceSparse) });
-        //    this.body.Add(
-        //        Expression.Assign(
-        //            Expression.Property(
-        //                namespaceVariable,
-        //                (PropertyInfo)ReflectionHelper.GetInfo((NamespaceSparse n) => n.Visit)),
-        //            Expression.Lambda<Action>(
-        //                Expression.Call(
-        //                    this.mainVisitorParameter,
-        //                    visitMethod,
-        //                    namespaceVariable))));
-        //}
-
-        //private Expression CreateFeatureVisitFromOverride(FeatureExpression feature, ParameterExpression featureVariable)
-        //{
-        //    var method = feature.OverrideSerializeMethod;
-        //    if (method == null)
-        //    {
-        //        return null;
-        //    }
-
-        //    var overrideFeaturizer = this.featurizers.FirstOrDefault(f => f.Type == method.DeclaringType);
-        //    if (overrideFeaturizer == null)
-        //    {
-        //        throw new ArgumentException("Featurizer missing");
-        //    }
-
-        //    return CreateFeatureVisit(overrideFeaturizer, featureVariable, method);
-        //}
-
-        //private Expression CreateFeatureVisit(FeatureExpression feature, ParameterExpression visitorParameter, ParameterExpression featureVariable)
-        //{
-        //    var method = ReflectionHelper.FindMethod(visitorParameter.Type, feature.Enumerize ? "VisitEnumerize" : "Visit", featureVariable.Type);
-        //    if (method == null)
-        //    {
-        //        return null;
-        //    }
-
-        //    return CreateFeatureVisit(visitorParameter, featureVariable, method);
-        //}
-
-        //private static Expression CreateFeatureVisit(ParameterExpression visitorParameter, ParameterExpression featureVariable, MethodInfo method)
-        //{
-        //    // CODE: visitor.Visit(feature1);
-        //    Expression visitFeatureCall = Expression.Call(
-        //                visitorParameter,
-        //                method,
-        //                featureVariable);
-
-        //    var featureValue = Expression.Property(featureVariable, "Value");
-        //    if (!featureValue.Type.IsValueType || (featureValue.Type.IsGenericType && featureValue.Type.GetGenericTypeDefinition() == typeof(Nullable<>)))
-        //    {
-        //        // CODE feature1.Value != null ? visitor.Visit(feature1) : default(TFeatureResult);
-        //        visitFeatureCall = Expression.IfThen(
-        //                test: Expression.NotEqual(featureValue, Expression.Constant(null)),
-        //                ifTrue: visitFeatureCall);
-        //    }
-
-        //    return visitFeatureCall;
-        //}
-
-        //public static Expression Log([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0, Expression expression = null)
-        //{
-        //    var file = Expression.Constant(@"c:\vowpal_wabbit\test.log");
-        //    var logMethod = (MethodInfo)ReflectionHelper.GetInfo((string a) => File.AppendAllText(a, a));
-        //    var toString = (MethodInfo)ReflectionHelper.GetInfo((object a) => a.ToString());
-
-        //    if (expression == null)
-        //        return Expression.Call(logMethod, file, Expression.Constant(filePath + ":" + lineNumber + "\n"));
-
-        //    return Expression.Block(
-        //        Expression.Call(logMethod, file, Expression.Constant(filePath + ":" + lineNumber + "\n")),
-        //        Expression.Call(logMethod, file, Expression.Call(expression, toString)));
-        //}
     }
 }

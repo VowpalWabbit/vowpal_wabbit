@@ -1,19 +1,19 @@
-﻿using System.Globalization;
-// --------------------------------------------------------------------------------------------------------------------
+﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="Namespace.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
 //   license as described in the file LICENSE.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using VW.Serializer.Interfaces;
+
+using System.Globalization;
 
 namespace VW.Serializer.Intermediate
 {
     /// <summary>
     /// The intermediate namespace representation.
     /// </summary>
-    public sealed class Namespace // : INamespace
+    public sealed class Namespace
     {
         public Namespace(VowpalWabbit vw, string name, char? featureGroup)
         {

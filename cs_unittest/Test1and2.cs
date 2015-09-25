@@ -18,6 +18,7 @@ namespace cs_test
     public class Test1and2Class : TestBase
     {
         [TestMethod]
+        [TestCategory("Command line through marshalling")]
         [DeploymentItem(@"train-sets\0001.dat", "train-sets")]
         [DeploymentItem(@"train-sets\ref\0001.stderr", @"train-sets\ref")]
         [DeploymentItem(@"test-sets\ref\0001.stderr", @"test-sets\ref")]
@@ -40,7 +41,7 @@ namespace cs_test
                     {
                         input.Add(data);
 
-                        vwValidate.Validate(data.Line, data, data.Label); 
+                        vwValidate.Validate(data.Line, data, data.Label);
 
                         var expected = vwStr.Learn(data.Line, VowpalWabbitPredictionType.Scalar);
                         var actual = vw.Learn(data, data.Label, VowpalWabbitPredictionType.Scalar);

@@ -55,6 +55,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Command line through marshalling")]
         public void Test87()
         {
             using (var vw = new VowpalWabbit<DataString, DataStringADF>("--cb_adf --rank_all"))

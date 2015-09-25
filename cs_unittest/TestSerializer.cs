@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using VW;
 using VW.Serializer;
 using VW.Serializer.Attributes;
-using VW.Serializer.Interfaces;
 using VW.Serializer.Intermediate;
 using VW.Serializer.Reflection;
 

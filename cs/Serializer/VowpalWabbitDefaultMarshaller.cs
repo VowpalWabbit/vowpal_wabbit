@@ -54,7 +54,6 @@ namespace VW.Serializer
                 featureString);
         }
 
-
         public void MarshalEnumFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, EnumerizedFeature<T> feature, T value)
         {
             Contract.Requires(context != null);

@@ -9,6 +9,7 @@ license as described in the file LICENSE.
 #include "vw_clr.h"
 #include <stack>
 #include "vw_interface.h"
+#include "vw_arguments.h"
 
 using namespace std;
 using namespace System::Collections::Generic;
@@ -32,16 +33,18 @@ namespace VW
 		/// The settings used for this instance.
 		/// </summary>
 		initonly VowpalWabbitSettings^ m_settings;
-		
+
 		/// <summary>
 		/// An optional shared model.
 		/// </summary>
 		VowpalWabbitModel^ m_model;
-		
+
 		/// <summary>
 		/// Example pool.
 		/// </summary>
 		Stack<VowpalWabbitExample^>^ m_examples;
+
+    VowpalWabbitArguments^ m_arguments;
 
 	internal:
 		/// <summary>
@@ -62,7 +65,7 @@ namespace VW
 		bool m_isDisposed;
 
 		/// <summary>
-		/// Initializes a new <see cref="VowpalWabbitBase"/> instance. 
+		/// Initializes a new <see cref="VowpalWabbitBase"/> instance.
 		/// </summary>
 		/// <param name="settings">Command line arguments.</param>
 		VowpalWabbitBase(VowpalWabbitSettings^ settings);
@@ -73,7 +76,7 @@ namespace VW
 		!VowpalWabbitBase();
 
 		/// <summary>
-		/// Internal dipose using reference counting to delay disposal of shared native data structures. 
+		/// Internal dipose using reference counting to delay disposal of shared native data structures.
 		/// </summary>
 		void InternalDispose();
 
@@ -91,12 +94,17 @@ namespace VW
 			VowpalWabbitSettings^ get();
 		}
 
+    property VowpalWabbitArguments^ Arguments
+    {
+      VowpalWabbitArguments^ get();
+    }
+
 		/// <summary>
 		/// Gets or creates an empty example.
 		/// </summary>
 		/// <returns>An initialized and empty example</returns>
 		VowpalWabbitExample^ GetOrCreateEmptyExample();
-		
+
 		/// <summary>
 		/// Puts a native example data structure back into the pool.
 		/// </summary>

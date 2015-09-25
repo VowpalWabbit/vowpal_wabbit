@@ -65,7 +65,8 @@
   <ItemGroup>
     <Compile Include="BaseData.cs" />
     <Compile Include="CbAdfData.cs" />
-    <Compile Include="RunTests.cs" />
+    <Compile Include="TestAll.cs" />
+    <Compile Include="TestAllExt.cs" />
     <Compile Include="TestAllReduce.cs" />
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestManagedHash.cs" />
@@ -112,34 +113,41 @@
       <Link>pred-sets\ref\0002c.predict</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\test\RunTests">
-      <Link>RunTests</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="..\test\test-sets\ref\0001.stderr">
       <Link>test-sets\ref\0001.stderr</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\test-sets\ref\0001_ftrl.stderr">
       <Link>test-sets\ref\0001_ftrl.stderr</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\test-sets\ref\0002b.stderr">
       <Link>test-sets\ref\0002b.stderr</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\test-sets\ref\0002c.stderr">
       <Link>test-sets\ref\0002c.stderr</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\test-sets\ref\ftrl_pistol.stderr">
       <Link>test-sets\ref\ftrl_pistol.stderr</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\test-sets\ref\ml100k_small.stderr">
       <Link>test-sets\ref\ml100k_small.stderr</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\test-sets\ref\ml100k_small.stdout">
       <Link>test-sets\ref\ml100k_small.stdout</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\test-sets\ref\vw-daemon.stdout">
       <Link>test-sets\ref\vw-daemon.stdout</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\0001-trimmed.dat">
+      <Link>train-sets\0001-trimmed.dat</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\0001.dat">
       <Link>train-sets\0001.dat</Link>
@@ -147,6 +155,7 @@
     </None>
     <None Include="..\test\train-sets\0001.multi.dat">
       <Link>train-sets\0001.multi.dat</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\0002.dat">
       <Link>train-sets\0002.dat</Link>
@@ -154,78 +163,118 @@
     </None>
     <None Include="..\test\train-sets\0080.dat">
       <Link>train-sets\0080.dat</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\3parity">
       <Link>train-sets\3parity</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\affix_test.dat">
       <Link>train-sets\affix_test.dat</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\argmax_data">
       <Link>train-sets\argmax_data</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\big-constant.dat">
       <Link>train-sets\big-constant.dat</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\chunk_to_features.pl">
       <Link>train-sets\chunk_to_features.pl</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\cs_test">
       <Link>train-sets\cs_test</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\cs_test.pred">
       <Link>train-sets\cs_test.pred</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\dictionary_test.dat">
       <Link>train-sets\dictionary_test.dat</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\dictionary_test.dict">
       <Link>train-sets\dictionary_test.dict</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\dictionary_test.dict.gz">
+      <Link>train-sets\dictionary_test.dict.gz</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\er_small.vw">
       <Link>train-sets\er_small.vw</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\eval_chunking.pl">
       <Link>train-sets\eval_chunking.pl</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\frank.dat">
       <Link>train-sets\frank.dat</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\lda-2pass-hang.dat">
       <Link>train-sets\lda-2pass-hang.dat</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\library_train">
       <Link>train-sets\library_train</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\ml100k_small_train">
       <Link>train-sets\ml100k_small_train</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\multiclass">
       <Link>train-sets\multiclass</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\multiclass.sch">
       <Link>train-sets\multiclass.sch</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\multilabel">
       <Link>train-sets\multilabel</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\ner.cdict">
       <Link>train-sets\ner.cdict</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\ner.pred">
       <Link>train-sets\ner.pred</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\ner.test.gz">
       <Link>train-sets\ner.test.gz</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\ner.tm">
       <Link>train-sets\ner.tm</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\ner.train.gz">
       <Link>train-sets\ner.train.gz</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\rcv1_cb_eval">
       <Link>train-sets\rcv1_cb_eval</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\rcv1_raw_cb_small.vw">
+      <Link>train-sets\rcv1_raw_cb_small.vw</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\rcv1_small.dat">
+      <Link>train-sets\rcv1_small.dat</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\rcv1_smaller.dat">
+      <Link>train-sets\rcv1_smaller.dat</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\ref\0001.stderr">
@@ -784,6 +833,67 @@
       <Link>train-sets\ref\zero.stdout</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\test\train-sets\sequencespan_data">
+      <Link>train-sets\sequencespan_data</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\sequence_data">
+      <Link>train-sets\sequence_data</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\seq_small">
+      <Link>train-sets\seq_small</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\seq_small.tm1">
+      <Link>train-sets\seq_small.tm1</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\seq_small2">
+      <Link>train-sets\seq_small2</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\test_named">
+      <Link>train-sets\test_named</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\test_named_csoaa">
+      <Link>train-sets\test_named_csoaa</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\topk.vw">
+      <Link>train-sets\topk.vw</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\wiki256.dat">
+      <Link>train-sets\wiki256.dat</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\wsj.classes">
+      <Link>train-sets\wsj.classes</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\wsj.train.tm2">
+      <Link>train-sets\wsj.train.tm2</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\wsj_small.dat.gz">
+      <Link>train-sets\wsj_small.dat.gz</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\wsj_small.dparser.vw.gz">
+      <Link>train-sets\wsj_small.dparser.vw.gz</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\xxor.dat">
+      <Link>train-sets\xxor.dat</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\zero.dat">
+      <Link>train-sets\zero.dat</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
     <None Include="model-sets\7.10.2_corrupted.model">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -808,6 +918,9 @@
       <Visitor>False</Visitor>
     </Antlr4>
     <None Include="vw_key.snk" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\test\train-sets\cb_test.ldf">
@@ -863,7 +976,7 @@
   <Target Name="BeforeBuild">
   </Target>
 	-->
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="AfterBuild">
   </Target>

@@ -26,3 +26,7 @@ indent_style = tab
 
 [*.md]
 trim_trailing_whitespace = false
+
+# If not set this breaks class feature blocks
+[*.tt]
+insert_final_newline = false

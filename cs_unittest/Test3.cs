@@ -10,6 +10,7 @@ namespace cs_unittest
     public class Test3Class : TestBase
     {
         [TestMethod]
+        [TestCategory("Command line through marshalling")]
         [DeploymentItem(@"train-sets\0002.dat", "train-sets")]
         [DeploymentItem(@"train-sets\ref\0002.stderr", @"train-sets\ref")]
         public void Test3()
@@ -21,6 +22,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Command line through marshalling")]
         [DeploymentItem(@"train-sets\0002.dat", "train-sets")]
         [DeploymentItem(@"train-sets\ref\0002.stderr", @"train-sets\ref")]
         [DeploymentItem(@"pred-sets\ref\0002b.predict", @"pred-sets\ref")]
@@ -38,6 +40,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Command line through marshalling")]
         [DeploymentItem(@"train-sets\0002.dat", "train-sets")]
         [DeploymentItem(@"train-sets\ref\0002a.stderr", @"train-sets\ref")]
         public void Test5()
@@ -53,6 +56,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Command line through marshalling")]
         [Description("using normalized adaptive updates and a low --power_t")]
         [DeploymentItem(@"train-sets\0002.dat", "train-sets")]
         [DeploymentItem(@"train-sets\ref\0002c.stderr", @"train-sets\ref")]

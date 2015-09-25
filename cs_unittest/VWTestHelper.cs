@@ -137,9 +137,14 @@ namespace cs_unittest
         internal static VowpalWabbitPerformanceStatistics ReadPerformanceStatistics(string filename)
         {
             var lines = File.ReadAllLines(filename);
+            var numExamples = FindULongEntry(lines, "number of examples per pass = ");
+
+            if (numExamples == 0)
+                numExamples = FindULongEntry(lines, "number of examples = ");
+
             var stats = new VowpalWabbitPerformanceStatistics()
             {
-                NumberOfExamplesPerPass = FindULongEntry(lines, "number of examples per pass = "),
+                NumberOfExamplesPerPass = numExamples,
                 TotalNumberOfFeatures = FindULongEntry(lines, "total feature number = "),
                 AverageLoss = FindDoubleEntry(lines, "average loss = "),
                 BestConstant = FindDoubleEntry(lines, "best constant = "),

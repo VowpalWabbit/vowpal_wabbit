@@ -28,48 +28,57 @@ namespace VW
 
 		try
 		{
-			auto string = msclr::interop::marshal_as<std::string>(settings->Arguments);
+      try
+      {
+        auto string = msclr::interop::marshal_as<std::string>(settings->Arguments);
 
-			if (settings->Model != nullptr)
-			{
-				m_model = settings->Model;
-				m_vw = VW::seed_vw_model(m_model->m_vw, string);
-				m_model->IncrementReference();
-			}
-			else
-			{
-				if (settings->ModelStream == nullptr)
-				{
-					m_vw = VW::initialize(string);
-				}
-				else
-				{
-					clr_io_buf model(settings->ModelStream);
-					char** argv = nullptr;
-					int argc = 0;
+        if (settings->Model != nullptr)
+        {
+          m_model = settings->Model;
+          m_vw = VW::seed_vw_model(m_model->m_vw, string);
+          m_model->IncrementReference();
+        }
+        else
+        {
+          if (settings->ModelStream == nullptr)
+          {
+            m_vw = VW::initialize(string);
+          }
+          else
+          {
+            clr_io_buf model(settings->ModelStream);
+            char** argv = nullptr;
+            int argc = 0;
 
-					try
-					{
-						string.append(" --no_stdin");
-						argv = VW::get_argv_from_string(string, argc);
+            try
+            {
+              string.append(" --no_stdin");
+              argv = VW::get_argv_from_string(string, argc);
 
-						m_vw = &parse_args(argc, argv);
-						parse_modules(*m_vw, model);
-						parse_sources(*m_vw, model);
-					}
-					finally
-					{
-						if (argv != nullptr)
-						{
-							for (int i = 0; i < argc; i++)
-								free(argv[i]);
-							free(argv);
-						}
-					}
-				}
+              m_vw = &parse_args(argc, argv);
+              parse_modules(*m_vw, model);
+              parse_sources(*m_vw, model);
+            }
+            finally
+            {
+              if (argv != nullptr)
+              {
+                for (int i = 0; i < argc; i++)
+                  free(argv[i]);
+                free(argv);
+              }
+            }
+          }
 
-				initialize_parser_datastructures(*m_vw);
-			}
+          initialize_parser_datastructures(*m_vw);
+        }
+      }
+      catch (...)
+      {
+        // memory leak, but better than crashing
+        m_vw = nullptr;
+        throw;
+      }
 		}
 		CATCHRETHROW
 	}
@@ -99,8 +108,18 @@ namespace VW
 		return m_settings;
 	}
 
-	VowpalWabbitExample^ VowpalWabbitBase::GetOrCreateNativeExample()
+  VowpalWabbitArguments^ VowpalWabbitBase::Arguments::get()
+  {
+    if (m_arguments == nullptr)
     {
+      m_arguments = gcnew VowpalWabbitArguments(m_vw);
+    }
+
+    return m_arguments;
+  }
+
+	VowpalWabbitExample^ VowpalWabbitBase::GetOrCreateNativeExample()
+  {
 		if (m_examples->Count == 0)
 		{
 			try

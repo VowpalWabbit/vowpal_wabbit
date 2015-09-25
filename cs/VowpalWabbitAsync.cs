@@ -41,11 +41,10 @@ namespace VW
             this.manager = manager;
 
             // create a serializer for each instance - maintaining separate example caches
-            // TODO
-            //this.serializers = Enumerable
-            //    .Range(0, manager.Settings.ParallelOptions.MaxDegreeOfParallelism)
-            //    .Select(_ => VowpalWabbitSerializerFactory.CreateSerializer<TExample>())
-            //    .ToArray();
+            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>();
+            this.serializers = this.manager.VowpalWabbits
+                .Select(vw => serializer.Create(vw))
+                .ToArray();
         }
 
         /// <summary>
@@ -219,7 +218,7 @@ namespace VW
             Contract.EndContractBlock();
 
             this.manager = manager;
-            
+
             // create a serializer for each instance - maintaining separate example caches
             var serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>();
             this.serializers = this.manager.VowpalWabbits

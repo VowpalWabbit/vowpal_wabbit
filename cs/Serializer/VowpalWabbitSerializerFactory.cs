@@ -13,7 +13,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using VW.Serializer.Attributes;
-using VW.Serializer.Interfaces;
 using VW.Serializer.Intermediate;
 using VW.Serializer.Reflection;
 using VW.Interfaces;

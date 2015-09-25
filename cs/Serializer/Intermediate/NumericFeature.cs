@@ -1,26 +1,24 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="INamespace.cs">
+// <copyright file="NumericFeature.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
 //   license as described in the file LICENSE.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-namespace VW.Serializer.Interfaces
+namespace VW.Serializer.Intermediate
 {
     /// <summary>
-    /// Intermediate representation of a namespace.
+    /// The intermediate feature representation.
     /// </summary>
-    public interface INamespace
+    public sealed class NumericFeature : Feature
     {
-        /// <summary>
-        /// The namespace name.
-        /// </summary>
-        string Name { get; }
+        public NumericFeature(VowpalWabbit vw, Namespace ns, string name, bool addAnchor)
+            : base(name, addAnchor)
+        {
+            this.FeatureHash = vw.HashFeature(this.Name, ns.NamespaceHash);
+        }
 
-        /// <summary>
-        /// The regular VW string interface interprets the first character of the namespace as the feature group. 
-        /// </summary>
-        char? FeatureGroup { get; }
+        public uint FeatureHash { get; private set; }
     }
 }
