@@ -121,10 +121,10 @@ public class VW implements Closeable {
       if (isOpen) {
         return multipredict(example, nativePointer);
       }
+      throw new IllegalStateException("Already closed.");
     } finally {
       lock.unlock();
     }
-    return new float[] {};
   }
 
     /**
