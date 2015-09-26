@@ -94,7 +94,6 @@ JNIEXPORT jfloatArray JNICALL Java_vw_VW_multipredict(JNIEnv *env, jobject obj, 
     env->SetFloatArrayRegion(r, 0, vwInstance->lda, weights);
     delete weights;
 
-    ec->in_use = true; // temporary workaround for issue #800
     VW::finish_example(*vwInstance, ec);
     env->ReleaseStringUTFChars(example_string, utf_string);
     env->DeleteLocalRef(example_string);
