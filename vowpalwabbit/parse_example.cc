@@ -49,6 +49,13 @@ public:
 
   ~TC_parser() { }
 
+  inline void parserWarning(const char* message, char* begin, char* pos, const char* message2)
+  {
+      cout << message << std::string(begin, pos - begin).c_str() << message2
+           << "\nExample #" << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\""
+           << endl;
+  }
+
   inline float featureValue() {
     if(*reading_head == ' ' || *reading_head == '\t' || *reading_head == '|' || reading_head == endLine || *reading_head == '\r')
       return 1.;
@@ -58,17 +65,17 @@ public:
       char *end_read = nullptr;
       v = parseFloat(reading_head,&end_read);
       if(end_read == reading_head) {
-        cout << "malformed example !\nFloat expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+        parserWarning("malformed example !\nFloat expected after : \"", beginLine, reading_head, "\"");
       }
       if(nanpattern(v)) {
         v = 0.f;
-        cout << "warning: invalid feature value:\"" << std::string(reading_head, end_read - reading_head).c_str() << "\" read as NaN. Replacing with 0." << endl;
+        parserWarning("warning: invalid feature value:\"", reading_head, end_read, "\" read as NaN. Replacing with 0.");
       }
       reading_head = end_read;
       return v;
     } else {
       // syntax error
-      cout << "malformed example !\n'|' , ':' , space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+      parserWarning("malformed example !\n'|' , ':' , space or EOL expected after : \"", beginLine, reading_head, "\"");
       return 0.f;
     }
   }
@@ -209,23 +216,23 @@ public:
       char *end_read = nullptr;
       cur_channel_v = parseFloat(reading_head,&end_read);
       if(end_read == reading_head) {
-        cout << "malformed example !\nFloat expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+        parserWarning("malformed example !\nFloat expected after : \"", beginLine, reading_head, "\"");
       }
       if(nanpattern(cur_channel_v)) {
         cur_channel_v = 1.f;
-        cout << "warning: invalid namespace value:\"" << std::string(reading_head, end_read - reading_head).c_str() << "\" read as NaN. Replacing with 1." << endl;
+        parserWarning("warning: invalid namespace value:\"", reading_head, end_read, "\" read as NaN. Replacing with 1.");
       }
       reading_head = end_read;
     } else {
       // syntax error
-      cout << "malformed example !\n'|' , ':' , space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+      parserWarning("malformed example !\n'|' , ':' , space or EOL expected after : \"", beginLine, reading_head, "\"");
     }
   }
 
   inline void nameSpaceInfo() {
     if(reading_head == endLine ||*reading_head == '|' || *reading_head == ' ' || *reading_head == '\t' || *reading_head == ':' || *reading_head == '\r') {
       // syntax error
-      cout << "malformed example !\nString expected after : " << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+      parserWarning("malformed example !\nString expected after : \"", beginLine, reading_head, "\"");
     } else {
       // NameSpaceInfo --> 'String' NameSpaceInfoValue
       index = (unsigned char)(*reading_head);
@@ -254,7 +261,7 @@ public:
     }
     if(!(*reading_head == '|' || reading_head == endLine || *reading_head == '\r')) {
       //syntax error
-      cout << "malformed example !\n'|' , space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str() << "\"" << endl;
+      parserWarning("malformed example !\n'|' , space or EOL expected after : \"", beginLine, reading_head, "\"");
     }
   }
 
@@ -284,7 +291,7 @@ public:
       listFeatures();
     } else {
       // syntax error
-      cout << "malformed example !\n'|' , String, space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+      parserWarning("malformed example !\n'|' , String, space or EOL expected after : \"", beginLine, reading_head, "\"");
     }
     if(new_index && ae->atomics[index].begin != ae->atomics[index].end)
       ae->indices.push_back(index);
@@ -298,7 +305,7 @@ public:
     if(reading_head != endLine && *reading_head != '\r')
     {
       // syntax error
-      cout << "malformed example !\n'|' or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+      parserWarning("malformed example !\n'|' or EOL expected after : \"", beginLine, reading_head, "\"");
     }
   }
 
