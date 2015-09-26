@@ -12,7 +12,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
+import java.util.regex.Pattern;
 import static org.junit.Assert.*;
 
 /**
@@ -28,6 +28,16 @@ public class VWTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    @BeforeClass
+    public static void globalSetup() throws IOException {
+        try {
+            System.load(new File(".").getCanonicalPath() + "/target/vw_jni.lib");
+        }
+        catch (UnsatisfiedLinkError ignored) {
+            // Do nothing as this means that the library should be loaded as part of the jar
+        }
+    }
 
     @Before
     public void setup() throws IOException {
@@ -262,14 +272,24 @@ public class VWTest {
     @Test
     public void testVersion() throws IOException {
         String actualVersion = VW.version();
-        String expectedVersion;
+        final String pkgVersion = "#define PACKAGE_VERSION ";
         BufferedReader reader = new BufferedReader(new FileReader("../vowpalwabbit/config.h"));
         try {
-            expectedVersion = reader.readLine().replace("#define PACKAGE_VERSION ", "").replace("\"", "");
+        	String line = null;
+            while(null != (line = reader.readLine()) && !line.startsWith(pkgVersion)) {
+                continue;
+            }
+            
+            if (null != line) {
+                final String expectedVersion = line.replace(pkgVersion, "").replace("\"", "");
+                assertEquals(expectedVersion, actualVersion);
+            }
+            else {
+                fail("Couldn't find #define PACKAGE_VERSION in config.h");
+            }
         }
         finally {
             reader.close();
         }
-        assertEquals(expectedVersion, actualVersion);
     }
 }
