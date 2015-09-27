@@ -1290,3 +1290,12 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
    test-sets/ref/backwards.stderr
    test-sets/ref/backwards.stdout
 
+# Test 97: --probabilities --oaa
+perl -pE 's/^0/2/;s/^-1/4/' train-sets/0001.multi.dat | {VW} --probabilities --oaa=4 --loss_function=logistic -p oaa_probabilities.predict
+   train-sets/ref/oaa_probabilities.stderr
+   pred-sets/ref/oaa_probabilities.predict
+
+# Test 98: --probabilities --csoaa_ldf=mc
+{VW} -d train-sets/cs_test.ldf --probabilities --csoaa_ldf=mc --loss_function=logistic -p csoaa_ldf_probabilities.predict
+   train-sets/ref/csoaa_ldf_probabilities.stderr
+   pred-sets/ref/csoaa_ldf_probabilities.predict

@@ -55,6 +55,8 @@ typedef union {
 struct example // core example datatype.
 { //output prediction
   polyprediction pred;
+  float* probs; // for --probabilities --oaa
+  float prob; // for --probabilities --csoaa_ldf=mc
 
   // input fields
   polylabel l;

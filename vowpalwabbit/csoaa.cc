@@ -454,6 +454,23 @@ void do_actual_learning(ldf& data, base_learner& base)
   if (start_K > 0)
     for (size_t k=1; k<K; k++)
       LabelDict::del_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0], (data.all->audit || data.all->hash_inv));
+
+  ////////////////////// compute probabilities
+  if (data.all->probabilities) {
+    float sum_prob = 0;
+    for (size_t k=start_K; k<K; k++) {
+      // probability(correct_class) = 1 / (1+exp(-score)), where score is higher for better classes,
+      // but partial_prediction is lower for better classes (we are predicting the cost),
+      // so we need to take score = -partial_prediction,
+      // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
+      float prob = 1.f / (1.f + exp(data.ec_seq[k]->partial_prediction));
+      data.ec_seq[k]->prob = prob;
+      sum_prob += prob;
+    }
+    // make sure that the probabilities sum up (exactly) to one
+    for (size_t k=start_K; k<K; k++)
+      data.ec_seq[k]->prob /= sum_prob;
+  }
 }
 
 void global_print_newline(vw& all)
@@ -497,7 +514,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
   }
 
   for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-    all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
+    all.print(*sink, all.probabilities ? ec.prob : (float)ec.pred.multiclass, 0, ec.tag);
 
   if (all.raw_prediction > 0) {
     string outputString;
@@ -562,7 +579,8 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
 
 void output_example_seq(vw& all, ldf& data)
 {
-  if ((data.ec_seq.size() > 0) && !ec_seq_is_label_definition(data.ec_seq)) {
+  size_t K = data.ec_seq.size();
+  if ((K > 0) && !ec_seq_is_label_definition(data.ec_seq)) {
     all.sd->weighted_examples += 1;
     all.sd->example_number++;
 
@@ -576,6 +594,36 @@ void output_example_seq(vw& all, ldf& data)
     if (!data.is_singleline && (all.raw_prediction > 0)) {
       v_array<char> empty = { nullptr, nullptr, nullptr, 0 };
       all.print_text(all.raw_prediction, "", empty);
+    }
+
+    if (all.probabilities){
+      size_t start_K = ec_is_example_header(*data.ec_seq[0]) ? 1 : 0;
+      float  min_cost = FLT_MAX;
+      size_t correct_class_k = start_K;
+
+      for (size_t k=start_K; k<K; k++) {
+        float ec_cost = data.ec_seq[k]->l.cs.costs[0].x;
+        if (ec_cost < min_cost) {
+          min_cost = ec_cost;
+          correct_class_k = k;
+        }
+      }
+
+      float multiclass_log_loss = 999; // -log(0) = plus infinity
+      float correct_class_prob = data.ec_seq[correct_class_k]->prob;
+      if (correct_class_prob > 0)
+        multiclass_log_loss = -log(correct_class_prob);
+
+      // TODO: How to detect if we should update holdout or normal loss?
+      // (ec.test_only) OR (COST_SENSITIVE::example_is_test(ec))
+      // What should be the "ec"? data.ec_seq[0]?
+      // Based on parse_args.cc (where "average multiclass log loss") is printed,
+      // I decided to try yet another way: (!all.holdout_set_off).
+      if (!all.holdout_set_off) {
+        all.sd->holdout_multiclass_log_loss += multiclass_log_loss;
+      } else {
+        all.sd->multiclass_log_loss += multiclass_log_loss;
+      }
     }
   }
 }
