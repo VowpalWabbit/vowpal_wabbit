@@ -323,14 +323,13 @@ namespace Search {
         THROW(required_error_string);
     }
   }
-}
-
-void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string);
-bool string_equal(string a, string b);
-bool float_equal(float a, float b);
-bool uint32_equal(uint32_t a, uint32_t b);
-bool size_equal(size_t a, size_t b);
-
-// our interface within VW
-LEARNER::base_learner* setup(vw&);
+  
+  void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string);
+  bool string_equal(string a, string b);
+  bool float_equal(float a, float b);
+  bool uint32_equal(uint32_t a, uint32_t b);
+  bool size_equal(size_t a, size_t b);
+  
+  // our interface within VW
+  LEARNER::base_learner* setup(vw&);
 }
