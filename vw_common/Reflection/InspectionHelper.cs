@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace VW.Serializer.Inspectors
+namespace VW.Reflection
 {
     public static class InspectionHelper
     {

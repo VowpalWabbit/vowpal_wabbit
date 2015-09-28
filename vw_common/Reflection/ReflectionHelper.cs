@@ -14,7 +14,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace VW.Serializer.Reflection
+namespace VW.Reflection
 {
     /// <summary>
     /// Reflection helper to find methods on visitors.

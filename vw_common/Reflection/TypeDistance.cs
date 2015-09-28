@@ -8,7 +8,7 @@
 
 using System;
 
-namespace VW.Serializer.Reflection
+namespace VW.Reflection
 {
     /// <summary>
     /// Models a distance to a given type.

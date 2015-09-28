@@ -9,8 +9,10 @@ license as described in the file LICENSE.
 #include <msclr\marshal_cppstd.h>
 
 using namespace System;
+using namespace System::Collections::Generic;
 using namespace System::IO;
 using namespace System::Threading::Tasks;
+using namespace VW::Serializer;
 
 namespace VW
 {
@@ -39,6 +41,9 @@ namespace VW
 		uint32_t m_node;
 		VowpalWabbit^ m_root;
 		VowpalWabbitExampleDistribution m_exampleDistribution;
+    bool m_enableStringExampleGeneration;
+    List<FeatureExpression^>^ m_allFeatures;
+    List<Type^>^ m_customFeaturizer;
 
 	public:
 		VowpalWabbitSettings() :
@@ -69,7 +74,10 @@ namespace VW
 			[System::Runtime::InteropServices::Optional] Nullable<uint32_t> exampleCountPerRun,
 			[System::Runtime::InteropServices::Optional] Nullable<uint32_t> node,
 			[System::Runtime::InteropServices::Optional] VowpalWabbit^ root,
-			[System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitExampleDistribution> exampleDistribution)
+			[System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitExampleDistribution> exampleDistribution,
+      [System::Runtime::InteropServices::Optional] Nullable<bool> enableStringExampleGeneration,
+      [System::Runtime::InteropServices::Optional] List<FeatureExpression^>^ allFeatures,
+      [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer)
 			: VowpalWabbitSettings()
 		{
 			if (arguments != nullptr)
@@ -79,6 +87,8 @@ namespace VW
 			m_modelStream = modelStream;
 			m_parallelOptions = parallelOptions;
 			m_root = root;
+      m_allFeatures = allFeatures;
+      m_customFeaturizer = customFeaturizer;
 
 			if (enableExampleCaching.HasValue)
 				m_enableExampleCaching = enableExampleCaching.Value;
@@ -97,6 +107,9 @@ namespace VW
 
 			if (exampleDistribution.HasValue)
 				m_exampleDistribution = exampleDistribution.Value;
+
+      if (enableStringExampleGeneration.HasValue)
+        m_enableStringExampleGeneration = enableStringExampleGeneration.Value;
 		}
 
 		/// <summary>
@@ -143,7 +156,7 @@ namespace VW
 		/// <summary>
 		/// Set to true to disable example caching when used with a serializer. Defaults to true.
 		/// </summary>
-		property bool EnableExampleCaching		
+		property bool EnableExampleCaching
 		{
 			bool get()
 			{
@@ -154,7 +167,7 @@ namespace VW
 		/// <summary>
 		/// Maximum number of serialized examples cached. Defaults to UINT32_MAX.
 		/// </summary>
-		property uint32_t MaxExampleCacheSize		
+		property uint32_t MaxExampleCacheSize
 		{
 			uint32_t get()
 			{
@@ -210,6 +223,30 @@ namespace VW
 			}
 		}
 
+    property bool EnableStringExampleGeneration
+    {
+      bool get()
+      {
+        return m_enableStringExampleGeneration;
+      }
+    }
+
+    property List<FeatureExpression^>^ AllFeatures
+    {
+      List<FeatureExpression^>^ get()
+      {
+        return m_allFeatures;
+      }
+    }
+
+    property List<Type^>^ CustomFeaturizer
+    {
+      List<Type^>^ get()
+      {
+        return m_customFeaturizer;
+      }
+    }
+
 		VowpalWabbitSettings^ ShallowCopy(
 			[System::Runtime::InteropServices::Optional] String^ arguments,
 			[System::Runtime::InteropServices::Optional] Stream^ modelStream,
@@ -221,7 +258,10 @@ namespace VW
 			[System::Runtime::InteropServices::Optional] Nullable<uint32_t> exampleCountPerRun,
 			[System::Runtime::InteropServices::Optional] Nullable<uint32_t> node,
 			[System::Runtime::InteropServices::Optional] VowpalWabbit^ root,
-			[System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitExampleDistribution> exampleDistribution)
+			[System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitExampleDistribution> exampleDistribution,
+      [System::Runtime::InteropServices::Optional] Nullable<bool> enableStringExampleGeneration,
+      [System::Runtime::InteropServices::Optional] List<FeatureExpression^>^ allFeatures,
+      [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer)
 		{
 			auto copy = gcnew VowpalWabbitSettings();
 
@@ -245,10 +285,10 @@ namespace VW
 			copy->m_exampleCountPerRun = exampleCountPerRun.HasValue ? exampleCountPerRun.Value : ExampleCountPerRun;
 			copy->m_node = node.HasValue ? node.Value : Node;
 			copy->m_root = root == nullptr ? Root : root;
-			copy->m_exampleDistribution = exampleDistribution.HasValue ? exampleDistribution.Value : ExampleDistribution;
+      copy->m_exampleDistribution = exampleDistribution.HasValue ? exampleDistribution.Value : ExampleDistribution;
+      copy->m_enableStringExampleGeneration = enableStringExampleGeneration.HasValue ? enableStringExampleGeneration.Value : EnableStringExampleGeneration;
 
 			return copy;
 		}
 	};
-
 }

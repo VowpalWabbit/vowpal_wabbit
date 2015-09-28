@@ -11,10 +11,9 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq.Expressions;
 using System.Reflection;
-using VW.Serializer.Inspectors;
-using VW.Serializer.Reflection;
+using VW.Reflection;
 
-namespace VW.Serializer.Intermediate
+namespace VW.Serializer
 {
     public delegate Expression NewFeatureExpressionDelegate(Expression vw, Expression @namespace);
 

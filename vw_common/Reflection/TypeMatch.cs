@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
 
-namespace VW.Serializer.Reflection
+namespace VW.Reflection
 {
     /// <summary>
     /// Models a distance and additional matching constraints for a type.
@@ -30,7 +30,7 @@ namespace VW.Serializer.Reflection
             Contract.Requires(genericType != null);
             Contract.Requires(actualType != null);
 
-            this.GenericTypes = new Dictionary<Type, Type> 
+            this.GenericTypes = new Dictionary<Type, Type>
                 {
                     { genericType, actualType }
                 };

@@ -41,7 +41,7 @@ namespace VW
             this.manager = manager;
 
             // create a serializer for each instance - maintaining separate example caches
-            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>();
+            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(manager.Settings);
             this.serializers = this.manager.VowpalWabbits
                 .Select(vw => serializer.Create(vw))
                 .ToArray();
@@ -220,12 +220,12 @@ namespace VW
             this.manager = manager;
 
             // create a serializer for each instance - maintaining separate example caches
-            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>();
+            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(manager.Settings);
             this.serializers = this.manager.VowpalWabbits
                 .Select(vw => serializer.Create(vw))
                 .ToArray();
 
-            var adfSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>();
+            var adfSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(manager.Settings);
             this.actionDependentFeatureSerializers = this.manager.VowpalWabbits
                 .Select(vw => adfSerializer.Create(vw))
                 .ToArray();

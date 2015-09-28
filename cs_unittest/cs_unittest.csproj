@@ -99,6 +99,10 @@
       <Project>{85e55ae0-3784-4968-9271-c81af560e1c1}</Project>
       <Name>vw_clr</Name>
     </ProjectReference>
+    <ProjectReference Include="..\vw_common\vw_common.csproj">
+      <Project>{e621e022-c1f8-433f-905a-ab9a3de072b7}</Project>
+      <Name>vw_common</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\test\pred-sets\ref\0001.predict">

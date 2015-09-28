@@ -74,7 +74,7 @@ namespace VW
             Contract.EndContractBlock();
 
             this.vw = vw;
-            this.compiledSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>();
+            this.compiledSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
             this.serializer = this.compiledSerializer.Create(vw);
 
             // have a 2nd member to throw NullReferenceException in release instead of silently producing wrong results.
@@ -256,8 +256,8 @@ namespace VW
             Contract.EndContractBlock();
 
             this.vw = vw;
-            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>().Create(vw);
-            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>().Create(vw);
+            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings).Create(vw);
+            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings).Create(vw);
 
             Contract.Assert(this.actionDependentFeatureSerializer != null);
 

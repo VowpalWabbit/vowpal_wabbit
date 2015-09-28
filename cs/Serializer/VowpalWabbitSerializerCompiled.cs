@@ -17,9 +17,8 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using VW.Interfaces;
-using VW.Serializer.Inspectors;
+using VW.Reflection;
 using VW.Serializer.Intermediate;
-using VW.Serializer.Reflection;
 
 namespace VW.Serializer
 {

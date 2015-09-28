@@ -7,10 +7,10 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using VW;
+using VW.Reflection;
 using VW.Serializer;
 using VW.Serializer.Attributes;
 using VW.Serializer.Intermediate;
-using VW.Serializer.Reflection;
 
 namespace cs_unittest
 {
@@ -52,7 +52,7 @@ namespace cs_unittest
             var context = new MyContext() { Feature = new CustomClass() { X = 5 }};
             using (var vw = new VowpalWabbit(""))
             {
-                var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(customFeaturizer: new List<Type> { typeof(CustomFeaturizer) })
+                var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(new VowpalWabbitSettings(customFeaturizer: new List<Type> { typeof(CustomFeaturizer) }))
                     .Create(vw);
 
                 var example = serializer.Serialize(context);
@@ -71,13 +71,13 @@ namespace cs_unittest
             var context = new MyContext() { Feature = new CustomClass() { X = 5 } };
             using (var vw = new VowpalWabbit(""))
             {
-                var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(new List<FeatureExpression>
+                var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(new VowpalWabbitSettings(allFeatures: new List<FeatureExpression>
                 {
                     new FeatureExpression(typeof(CustomClass), "Feature",
                         // TODO: looks a bit awkward for an API. The compiler needs to know what property to access to copy the value into the Feature<T> object
                         valueExpression => Expression.Property(valueExpression, (PropertyInfo)ReflectionHelper.GetInfo((MyContext m) => m.Feature)),
                         overrideSerializeMethod: (MethodInfo)ReflectionHelper.GetInfo((CustomFeaturizer c) => c.MarshalFeature(null, null, null, null)))
-                }).Create(vw);
+                })).Create(vw);
                 var example = serializer.Serialize(context);
 
                 Assert.IsNotNull(example);

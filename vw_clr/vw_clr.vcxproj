@@ -77,7 +77,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>VowpalWabbitCore</TargetName>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
     <LinkKeyFile>..\vw_key.snk</LinkKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -115,7 +115,7 @@
       <AdditionalIncludeDirectories>$(BoostIncludeDir);$(SolutionDir)win32;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <EnablePREfast>true</EnablePREfast>
+      <EnablePREfast>false</EnablePREfast>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -192,6 +192,9 @@
   <ItemGroup>
     <ProjectReference Include="..\vowpalwabbit\vw_static.vcxproj">
       <Project>{1e205806-7f80-47dd-a38d-fc08083f3592}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\vw_common\vw_common.csproj">
+      <Project>{e621e022-c1f8-433f-905a-ab9a3de072b7}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

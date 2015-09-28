@@ -14,7 +14,7 @@ using System.Reflection;
 using VW.Serializer.Attributes;
 using VW.Serializer.Intermediate;
 
-namespace VW.Serializer.Inspectors
+namespace VW.Serializer
 {
     internal static class AnnotationInspector
     {
