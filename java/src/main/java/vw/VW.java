@@ -7,7 +7,8 @@ package vw;
  * data found <a href="https://microbenchmarks.appspot.com/runs/817d246a-5f90-478a-bc27-d5912d2ff874#r:scenario.benchmarkSpec.methodName,scenario.benchmarkSpec.parameters.loss,scenario.benchmarkSpec.parameters.mutabilityPolicy,scenario.benchmarkSpec.parameters.nExamples">here</a>.
  * Please note that close MUST be called in order to free up the memory on the C side.
  */
-public final class VW extends VWGenericBase<Float> {
+public final class VW {
+    private VW(){}
 
     /**
      * This main method only exists to test the library implementation.  To test it just run
@@ -15,51 +16,9 @@ public final class VW extends VWGenericBase<Float> {
      * @param args No args needed.
      */
     public static void main(String[] args) {
-        new VW("").close();
-        new VW("--quiet").close();
-    }
-
-    public VW(String command) {
-        super(command);
-    }
-
-    public Float predict(final String example, final boolean learn, final long nativePointer) {
-        return predictFloat(example, learn, nativePointer);
-    }
-
-    private float learnOrPredict(final String example, final boolean learn) {
-        lock.lock();
-        try {
-            if (isOpen()) {
-                return predictFloat(example, learn, nativePointer);
-            }
-            throw new IllegalStateException("Already closed.");
-        }
-        finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Runs prediction on <code>example</code> and returns the prediction output.
-     *
-     * @param example a single vw example string
-     * @return A prediction
-     */
-    public float predictSpecialized(final String example) {
-        return learnOrPredict(example, false);
-    }
-
-    /**
-     * Runs learning on <code>example</code> and returns the prediction output.
-     *
-     * @param example a single vw example string
-     * @return A prediction
-     */
-    public float learnSpecialized(final String example) {
-        return learnOrPredict(example, true);
+        new VWScalarPredictor("").close();
+        new VWScalarPredictor("--quiet").close();
     }
 
     public static native String version();
-    private native float predictFloat(String example, boolean learn, long nativePointer);
 }

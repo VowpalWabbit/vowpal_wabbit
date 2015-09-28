@@ -15,14 +15,6 @@ extern "C" {
 JNIEXPORT jstring JNICALL Java_vw_VW_version
   (JNIEnv *, jclass);
 
-/*
- * Class:     vw_VW
- * Method:    predictFloat
- * Signature: (Ljava/lang/String;ZJ)F
- */
-JNIEXPORT jfloat JNICALL Java_vw_VW_predictFloat
-  (JNIEnv *, jobject, jstring, jboolean, jlong);
-
 #ifdef __cplusplus
 }
 #endif
