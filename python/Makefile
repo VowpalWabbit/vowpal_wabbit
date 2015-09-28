@@ -14,9 +14,9 @@ PYTHON_LDFLAGS = $(shell python$(PYTHON_VERSION)-config --ldflags)
 
 PYTHON_LIBS = -l boost_python
 ifeq (,$(wildcard ../vowpalwabbit/vw.so))
-  VWLIBS = ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
+  VWLIBS = ../vowpalwabbit/libvw.a
 else
-  VWLIBS = -L ../vowpalwabbit -l vw -l allreduce
+  VWLIBS = -L ../vowpalwabbit -l vw
 endif
 PYLIBVW = pylibvw.so
 

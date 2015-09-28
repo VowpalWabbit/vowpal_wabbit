@@ -10,16 +10,17 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Linq;
+using VW.Interfaces;
 using VW.Serializer.Interfaces;
 
 namespace VW.Serializer.Visitors
 {
-        /// 
     /// <summary>
     /// Front-end to serialize data into Vowpal Wabbit native C++ structures.
     /// </summary>
-    public sealed class VowpalWabbitInterfaceVisitor : IVowpalWabbitVisitor<VowpalWabbitExample>
+    public partial struct VowpalWabbitInterfaceVisitor
     {
         /// <summary>
         /// The Vowpal Wabbit instance all examples are associated with.
@@ -31,28 +32,57 @@ namespace VW.Serializer.Visitors
         /// </summary>
         private uint namespaceHash;
 
-        private byte featureGroup;
+        private char featureGroup;
 
+        /// <summary>
+        /// Used to build examples. Builder is allocated deallocated in Visit.
+        /// </summary>
         private VowpalWabbitExampleBuilder builder;
 
         private VowpalWabbitNamespaceBuilder namespaceBuilder;
 
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbitInterfaceVisitor"/> instance.
+        /// </summary>
+        /// <param name="vw">The associated vowpal wabbit instance.</param>
         public VowpalWabbitInterfaceVisitor(VowpalWabbit vw)
         {
             this.vw = vw;
+            this.builder = null;
+            this.namespaceBuilder = null;
+            this.featureGroup = '\0';
+            this.namespaceHash = 0;
         }
 
+        /// <summary>
+        /// Transfers namespace data to native space.
+        /// </summary>
+        /// <typeparam name="T">The feature type.</typeparam>
+        /// <param name="namespaceDense">The dense namespace.</param>
         public void Visit<T>(INamespaceDense<T> namespaceDense)
         {
-            this.featureGroup = (byte)(namespaceDense.FeatureGroup ?? 0);
+            Contract.Requires(namespaceDense != null);
+            Contract.Requires(namespaceDense.DenseFeature != null);
+            Contract.Requires(namespaceDense.DenseFeature.Value != null);
+
+            this.featureGroup = namespaceDense.FeatureGroup ?? '\0';
 
             this.namespaceHash = namespaceDense.Name == null ? 
                 this.vw.HashSpace(this.featureGroup.ToString()) :
                 this.vw.HashSpace(this.featureGroup + namespaceDense.Name);
 
             this.namespaceBuilder = this.builder.AddNamespace(this.featureGroup);
+            this.namespaceBuilder.PreAllocate(namespaceDense.DenseFeature.Value.Count);
 
             var i = 0;
+
+            // support anchor feature
+            if(namespaceDense.DenseFeature.AddAnchor)
+            {
+                this.namespaceBuilder.AddFeature(this.namespaceHash, 1);
+                i++;
+            }
+
             foreach (var v in namespaceDense.DenseFeature.Value)
             {
                 this.namespaceBuilder.AddFeature(
@@ -62,14 +92,20 @@ namespace VW.Serializer.Visitors
             }
         }
 
+        /// <summary>
+        /// Transfers namespace data to native space.
+        /// </summary>
+        /// <param name="namespaceSparse">The sparse namespace.</param>
         public void Visit(INamespaceSparse namespaceSparse)
         {
+            Contract.Requires(namespaceSparse != null);
+
             // compute shared namespace hash
             this.namespaceHash = namespaceSparse.Name == null ? 
                 this.vw.HashSpace(namespaceSparse.FeatureGroup.ToString()) :
                 this.vw.HashSpace(namespaceSparse.FeatureGroup + namespaceSparse.Name);
 
-            this.featureGroup = (byte)(namespaceSparse.FeatureGroup ?? 0);
+            this.featureGroup = namespaceSparse.FeatureGroup ?? '\0';
 
             this.namespaceBuilder = this.builder.AddNamespace(this.featureGroup);
 
@@ -80,107 +116,52 @@ namespace VW.Serializer.Visitors
             }
         }
 
-        public void Visit(IFeature<short> feature)
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
+        /// <remarks>Values are cast to float and therefore precision is lost.</remarks>
+        public void Visit(IFeature<decimal> feature)
         {
-            this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), feature.Value);
-        }
+            Contract.Requires(feature != null);
 
-        public void Visit(IFeature<short?> feature)
-        {
-            this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), (short)feature.Value);
-        }
-
-        public void Visit(IFeature<int> feature)
-        {
-            this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), feature.Value);
-        }
-
-        public void Visit(IFeature<int?> feature)
-        {
-            this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), (int)feature.Value);
-        }
-
-        public void Visit(IFeature<float> feature)
-        {
-            this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), feature.Value);
-        }
-
-        public void Visit(IFeature<float?> feature)
-        {
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), (float)feature.Value);
         }
 
-        public void Visit(IFeature<double> feature)
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
+        /// <remarks>Values are cast to float and therefore precision is lost.</remarks>
+        public void Visit(IFeature<decimal?> feature)
         {
-#if DEBUG
-            if (feature.Value > float.MaxValue || feature.Value < float.MinValue)
-            {
-                Trace.TraceWarning("Precision lost for feature value: " + feature.Value);
-            }
-#endif
+            Contract.Requires(feature != null);
+
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), (float)feature.Value);
         }
 
-        public void Visit(IFeature<double?> feature)
-        {
-#if DEBUG
-            if (feature.Value > float.MaxValue || feature.Value < float.MinValue)
-            {
-                Trace.TraceWarning("Precision lost for feature value: " + feature.Value);
-            }
-#endif
-            this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name, this.namespaceHash), (float)feature.Value);
-        }
-
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void VisitEnumerize<T>(IFeature<T> feature)
         {
+            Contract.Requires(feature != null);
+
             var strValue = Convert.ToString(feature.Value);
 
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name + strValue, this.namespaceHash), 1f);
         }
 
-        public void Visit<TValue>(IFeature<IDictionary<UInt16, TValue>> feature)
-        {
-            foreach (var kvp in feature.Value)
-            {
-                this.namespaceBuilder.AddFeature(this.namespaceHash + kvp.Key, (float)Convert.ToDouble(kvp.Value));
-            }
-        }
-
-        public void Visit<TValue>(IFeature<IDictionary<UInt32, TValue>> feature)
-        {
-            foreach (var kvp in feature.Value)
-            {
-                this.namespaceBuilder.AddFeature(this.namespaceHash + kvp.Key, (float)Convert.ToDouble(kvp.Value));
-            }
-        }
-
-        public void Visit<TValue>(IFeature<IDictionary<Int16, TValue>> feature)
-        {
-            foreach (var kvp in feature.Value)
-            {
-                this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + kvp.Key), (float)Convert.ToDouble(kvp.Value));
-            }
-        }
-
-        public void Visit<TValue>(IFeature<IDictionary<Int32, TValue>> feature)
-        {
-            foreach (var kvp in feature.Value)
-            {
-                this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + kvp.Key), (float)Convert.ToDouble(kvp.Value));
-            }
-        }
-
-        public void Visit(IFeature<IDictionary<Int32, float>> feature)
-        {
-            foreach (var kvp in feature.Value)
-            {
-                this.namespaceBuilder.AddFeature((uint)(this.namespaceHash + kvp.Key), kvp.Value);
-            }
-        }
-
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
+        [ContractVerification(false)]
         public void Visit<TKey, TValue>(IFeature<IEnumerable<KeyValuePair<TKey, TValue>>> feature)
         {
+            Contract.Requires(feature != null);
+
             foreach (var kvp in feature.Value)
             {
                 this.namespaceBuilder.AddFeature(
@@ -189,9 +170,15 @@ namespace VW.Serializer.Visitors
             }
         }
 
-
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit(IFeature<IDictionary> feature)
         {
+            Contract.Requires(feature != null);
+            Contract.Requires(feature.Value != null);
+
             foreach (DictionaryEntry item in feature.Value)
             {
                 this.namespaceBuilder.AddFeature(
@@ -200,27 +187,49 @@ namespace VW.Serializer.Visitors
             }
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
+        [ContractVerification(false)]
         public void Visit(IFeature<IEnumerable<string>> feature)
         {
+            Contract.Requires(feature != null);
+
             foreach (var value in feature.Value)
             {
                 this.namespaceBuilder.AddFeature(this.vw.HashFeature(value, this.namespaceHash), 1f);
             }
         }
 
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="feature">The feature.</param>
         public void Visit<T>(IFeature<T> feature)
         {
+            Contract.Requires(feature != null);
+
             var strValue = typeof(T).IsEnum ? 
                 Enum.GetName(typeof(T), feature.Value) : Convert.ToString(feature.Value);
 
             this.namespaceBuilder.AddFeature(this.vw.HashFeature(feature.Name + strValue, this.namespaceHash), 1f);
         }
 
-        public VowpalWabbitExample Visit(string label, IVisitableNamespace[] namespaces)
+        /// <summary>
+        /// Transfers namespace data to native space.
+        /// </summary>
+        /// <param name="label">The label.</param>
+        /// <param name="namespaces">The namespaces.</param>
+        /// <returns>The populated vowpal wabbit example.</returns>
+        public VowpalWabbitExample Visit(ILabel label, IVisitableNamespace[] namespaces)
         {
+            Contract.Requires(namespaces != null);
+
             using (this.builder = new VowpalWabbitExampleBuilder(this.vw))
             {
-                this.builder.Label = label;
+                if (label != null)
+                    this.builder.ParseLabel(label.ToVowpalWabbitFormat());
 
                 foreach (var n in namespaces)
                 {

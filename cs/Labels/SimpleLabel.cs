@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="IVowpalWabbitVisitor.cs">
+// <copyright file="SimpleLabel.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
 //   license as described in the file LICENSE.
@@ -12,6 +12,9 @@ using System.Text;
 
 namespace VW.Labels
 {
+    /// <summary>
+    /// Helper to ease construction of simple label.
+    /// </summary>
     public sealed class SimpleLabel : ILabel
     {
         /// <summary>
@@ -35,6 +38,7 @@ namespace VW.Labels
         /// <remarks>see simple_label.cc: parse_simple_label</remarks>
         public string ToVowpalWabbitFormat()
         {
+            // Note: this code was inspected closely as it is on the hot performance path.
             if (Weight == null)
             {
                 return this.Label.ToString(CultureInfo.InvariantCulture);

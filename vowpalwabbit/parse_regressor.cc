@@ -9,6 +9,7 @@ using namespace std;
 
 #ifndef _WIN32
 #include <unistd.h>
+#define sprintf_s snprintf
 #endif
 #include <stdlib.h>
 #include <stdint.h>
@@ -20,7 +21,7 @@ using namespace std;
 #include "vw_exception.h"
 
 /* Define the last version where files are backward compatible. */
-#define LAST_COMPATIBLE_VERSION "6.1.3"
+#define LAST_COMPATIBLE_VERSION "7.6.0"
 #define VERSION_FILE_WITH_CUBIC "6.1.3"
 #define VERSION_FILE_WITH_RANK_IN_HEADER "7.8.0" // varsion since which rank was moved to vw::file_options
 #define VERSION_FILE_WITH_INTERACTIONS "7.10.2" // first version that saves interacions among pairs and triples
@@ -38,16 +39,13 @@ void initialize_regressor(vw& all)
   all.reg.weight_vector = calloc_or_die<weight>(length << all.reg.stride_shift);
   if (all.reg.weight_vector == nullptr)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
-  else
-    if (all.initial_weight != 0.)
+  else if (all.initial_weight != 0.)
       for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
 	all.reg.weight_vector[j] = all.initial_weight;      
-    else
-      if (all.random_positive_weights)
+  else if (all.random_positive_weights)
 	for (size_t j = 0; j < length; j++)
 	  all.reg.weight_vector[j << all.reg.stride_shift] = (float)(0.1 * frand48());
-      else      
-	if (all.random_weights)
+  else if (all.random_weights)
 	  for (size_t j = 0; j < length; j++)
 	    all.reg.weight_vector[j << all.reg.stride_shift] = (float)(frand48() - 0.5);
 }
@@ -63,23 +61,28 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
   if (model_file.files.size() > 0)
     {
 		uint32_t v_length = (uint32_t)version.to_string().length() + 1;
-      text_len = sprintf(buff, "Version %s\n", version.to_string().c_str());
-		memcpy(buff2, version.to_string().c_str(), v_length);
+        text_len = sprintf_s(buff, buf_size, "Version %s\n", version.to_string().c_str());
+        memcpy(buff2, version.to_string().c_str(), min(v_length, buf_size));
       if (read)
+        {
 	v_length = buf_size;
+        }
       bin_text_read_write(model_file, buff2, v_length, 
 			  "", read, 
 			  buff, text_len, text);
       all.model_file_ver = buff2; //stord in all to check save_resume fix in gd
-      if (all.model_file_ver < LAST_COMPATIBLE_VERSION)
+
+        if (all.model_file_ver < LAST_COMPATIBLE_VERSION || all.model_file_ver > PACKAGE_VERSION)
+        {
 	THROW("Model has possibly incompatible version! " << all.model_file_ver.to_string());
+        }
       
       char model = 'm';
 		bin_text_read_write_fixed(model_file, &model, 1,
 				"file is not a model file", read, 
 				"", 0, text);
       
-      text_len = sprintf(buff, "Min label:%f\n", all.sd->min_label);
+        text_len = sprintf_s(buff, buf_size, "Min label:%f\n", all.sd->min_label);
 		bin_text_read_write_fixed(model_file, (char*)&all.sd->min_label, sizeof(all.sd->min_label),
 				"", read, 
 				buff, text_len, text);
@@ -90,7 +93,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 			all.args.push_back(boost::lexical_cast<std::string>(all.sd->min_label));
 		}
 
-      text_len = sprintf(buff, "Max label:%f\n", all.sd->max_label);
+        text_len = sprintf_s(buff, buf_size, "Max label:%f\n", all.sd->max_label);
 		bin_text_read_write_fixed(model_file, (char*)&all.sd->max_label, sizeof(all.sd->max_label),
 				"", read, 
 				buff, text_len, text);
@@ -101,7 +104,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 			all.args.push_back(boost::lexical_cast<std::string>(all.sd->max_label));
 		}
 
-      text_len = sprintf(buff, "bits:%d\n", (int)all.num_bits);
+        text_len = sprintf_s(buff, buf_size, "bits:%d\n", (int)all.num_bits);
       uint32_t local_num_bits = all.num_bits;
 		bin_text_read_write_fixed(model_file, (char *)&local_num_bits, sizeof(local_num_bits),
 				"", read, 
@@ -114,15 +117,17 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 		}
 
 		if (all.default_bits != true && all.num_bits != local_num_bits)
+        {
 		  THROW("-b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model");
+        }
 
       all.default_bits = false;
       all.num_bits = local_num_bits;
       
       if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
-      {  // -q, --cubic and --interactions are saved in vw::file_options
+    { // -q, --cubic and --interactions are saved in vw::file_options
           uint32_t pair_len = (uint32_t)all.pairs.size();
-          text_len = sprintf(buff, "%d pairs: ", (int)pair_len);
+            text_len = sprintf_s(buff, buf_size, "%d pairs: ", (int)pair_len);
           bin_text_read_write_fixed(model_file, (char *)&pair_len, sizeof(pair_len),
                                     "", read,
                                     buff, text_len, text);
@@ -133,7 +138,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
               if (!read)
               {
                   memcpy(pair, all.pairs[i].c_str(), 2);
-                  text_len = sprintf(buff, "%s ", all.pairs[i].c_str());
+                    text_len = sprintf_s(buff, buf_size, "%s ", all.pairs[i].c_str());
               }
 
               bin_text_read_write_fixed(model_file, pair, 2,
@@ -152,7 +157,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                                     "\n", 1, text);
 
           uint32_t triple_len = (uint32_t)all.triples.size();
-          text_len = sprintf(buff, "%d triples: ", (int)triple_len);
+            text_len = sprintf_s(buff, buf_size, "%d triples: ", (int)triple_len);
           bin_text_read_write_fixed(model_file, (char *)&triple_len, sizeof(triple_len),
                                     "", read,
                                     buff, text_len, text);
@@ -162,7 +167,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
               char triple[4] = { 0, 0, 0, 0 };
               if (!read)
               {
-                  text_len = sprintf(buff, "%s ", all.triples[i].c_str());
+                    text_len = sprintf_s(buff, buf_size, "%s ", all.triples[i].c_str());
                   memcpy(triple, all.triples[i].c_str(), 3);
               }
               bin_text_read_write_fixed(model_file, triple, 3,
@@ -182,7 +187,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
           if (all.model_file_ver >= VERSION_FILE_WITH_INTERACTIONS) // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO (previous if)
           { // the only version that saves interacions among pairs and triples
               uint32_t len = (uint32_t)all.interactions.size();
-              text_len = sprintf(buff, "%d interactions: ", (int)len);
+                text_len = sprintf_s(buff, buf_size, "%d interactions: ", (int)len);
               bin_text_read_write_fixed(model_file, (char *)&len, sizeof(len),
                                         "", read,
                                         buff, text_len, text);
@@ -193,7 +198,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                   if (!read)
                   {
                       inter_len = (uint32_t)all.interactions[i].size();
-                      text_len = sprintf(buff, "len: %d ", inter_len);
+                        text_len = sprintf_s(buff, buf_size, "len: %d ", inter_len);
                   }
                   bin_text_read_write_fixed(model_file, (char *)&inter_len, sizeof(inter_len),
                                             "", read,
@@ -206,7 +211,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                       all.interactions.push_back(s);
                   }
                   else
-                      text_len = sprintf(buff, "interaction: %.*s ", inter_len, all.interactions[i].begin);
+                        text_len = sprintf_s(buff, buf_size, "interaction: %.*s ", inter_len, all.interactions[i].begin);
 
                   bin_text_read_write_fixed(model_file, (char*)all.interactions[i].begin, inter_len,
                                             "", read,
@@ -217,7 +222,9 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
               bin_text_read_write_fixed(model_file, buff, 0,
                                         "", read,
                                         "\n", 1, text);
-          } else { // < VERSION_FILE_WITH_INTERACTIONS
+            }
+            else // < VERSION_FILE_WITH_INTERACTIONS
+            {
               //pairs and triples may be restored but not reflected in interactions
               for (size_t i = 0; i < all.pairs.size(); i++)
                   all.interactions.push_back(string2v_string(all.pairs[i]));
@@ -229,36 +236,31 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       if (all.model_file_ver <= VERSION_FILE_WITH_RANK_IN_HEADER)
       { // to fix compatibility that was broken in 7.9
           uint32_t rank = 0;
-          text_len = sprintf(buff, "rank:%d\n", (int)rank);
+            text_len = sprintf_s(buff, buf_size, "rank:%d\n", (int)rank);
 			bin_text_read_write_fixed(model_file, (char*)&rank, sizeof(rank),
                                     "", read,
-                                    buff,text_len, text);
+                buff, text_len, text);
           if (rank != 0)
           {
             if (std::find(all.args.begin(), all.args.end(), "--rank") == all.args.end())
             {
                 all.args.push_back("--rank");
-                sprintf(buff, "%d", (int)rank);
+                    sprintf_s(buff, buf_size, "%d", (int)rank);
                 all.args.push_back(buff);
-            } else
+                }
+                else
                 cerr << "WARNING: this model file contains 'rank: " << rank << "' value but it will be ignored as another value specified via the command line." << endl;
           }
 
       }
       
-      text_len = sprintf(buff, "lda:%d\n", (int)all.lda);
+        text_len = sprintf_s(buff, buf_size, "lda:%d\n", (int)all.lda);
 		bin_text_read_write_fixed(model_file, (char*)&all.lda, sizeof(all.lda),
 				"", read, 
 			buff, text_len, text);
 
-		if (read && all.lda > 0)
-		{
-			all.args.push_back("--lda");
-			all.args.push_back(boost::lexical_cast<std::string>(all.lda));
-		}
-      
       uint32_t ngram_len = (uint32_t)all.ngram_strings.size();
-      text_len = sprintf(buff, "%d ngram: ", (int)ngram_len);
+        text_len = sprintf_s(buff, buf_size, "%d ngram: ", (int)ngram_len);
 		bin_text_read_write_fixed(model_file, (char *)&ngram_len, sizeof(ngram_len),
 				"", read, 
 			buff, text_len, text);
@@ -267,7 +269,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 			// have '\0' at the end for sure
 			char ngram[4] = { 0, 0, 0, 0 };
 	  if (!read) {
-	    text_len = sprintf(buff, "%s ", all.ngram_strings[i].c_str());
+                text_len = sprintf_s(buff, buf_size, "%s ", all.ngram_strings[i].c_str());
 	    memcpy(ngram, all.ngram_strings[i].c_str(), min(3, all.ngram_strings[i].size()));
 	  }
 			bin_text_read_write_fixed(model_file, ngram, 3,
@@ -288,15 +290,16 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 			"\n", 1, text);
       
       uint32_t skip_len = (uint32_t)all.skip_strings.size();
-      text_len = sprintf(buff, "%d skip: ", (int)skip_len);
+        text_len = sprintf_s(buff, buf_size, "%d skip: ", (int)skip_len);
 		bin_text_read_write_fixed(model_file, (char *)&skip_len, sizeof(skip_len),
 				"", read, 
 			buff, text_len, text);
+
       for (size_t i = 0; i < skip_len; i++)
 	{
 			char skip[4] = { 0, 0, 0, 0 };
 	  if (!read) {
-	    text_len = sprintf(buff, "%s ", all.skip_strings[i].c_str());
+                text_len = sprintf_s(buff, buf_size, "%s ", all.skip_strings[i].c_str());
 	    memcpy(skip, all.skip_strings[i].c_str(), min(3, all.skip_strings[i].size()));
 	  }
 			bin_text_read_write_fixed(model_file, skip, 3,
@@ -315,16 +318,23 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				"", read, 
 			"\n", 1, text);
       
-      text_len = sprintf(buff, "options:%s\n", all.file_options->str().c_str());
+        text_len = sprintf_s(buff, buf_size, "options:%s\n", all.file_options->str().c_str());
 		uint32_t len = (uint32_t)all.file_options->str().length() + 1;
-		memcpy(buff2, all.file_options->str().c_str(), len);
+        memcpy(buff2, all.file_options->str().c_str(), min(len, buf_size));
+        
       if (read)
+        {
 	len = buf_size;
+        }
+        
 		bin_text_read_write(model_file, buff2, len,
 			  "", read,
 			  buff, text_len, text);
+        
       if (read)
+        {
 	all.file_options->str(buff2);
+    }
     }
 
 }
@@ -358,14 +368,14 @@ void save_predictor(vw& all, string reg_name, size_t current_pass)
 
 void finalize_regressor(vw& all, string reg_name)
 {
-  if (!all.early_terminate){
+  if (!all.early_terminate) {
     if (all.per_feature_regularizer_output.length() > 0)
       dump_regressor(all, all.per_feature_regularizer_output, false);
     else
       dump_regressor(all, reg_name, false);
     if (all.per_feature_regularizer_text.length() > 0)
       dump_regressor(all, all.per_feature_regularizer_text, true);
-    else{
+    else {
       dump_regressor(all, all.text_regressor_name, true);
       all.print_invert = true;
       dump_regressor(all, all.inv_hash_regressor_name, true);
@@ -401,9 +411,9 @@ void parse_mask_regressor_args(vw& all)
   if (vm.count("feature_mask")) {
     size_t length = ((size_t)1) << all.num_bits;  
     string mask_filename = vm["feature_mask"].as<string>();
-    if (vm.count("initial_regressor")){ 
+    if (vm.count("initial_regressor")) {
       vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
-      if(mask_filename == init_filename[0]){//-i and -mask are from same file, just generate mask
+      if(mask_filename == init_filename[0]) { //-i and -mask are from same file, just generate mask
         return;
       }
     }
@@ -426,7 +436,7 @@ void parse_mask_regressor_args(vw& all)
       io_temp.close_file();
 
       // Re-zero the weights, in case weights of initial regressor use different indices
-      for (size_t j = 0; j < length; j++){
+      for (size_t j = 0; j < length; j++) {
         all.reg.weight_vector[j << all.reg.stride_shift] = 0.;
       }
     } else {
@@ -443,4 +453,3 @@ namespace VW
 		dump_regressor(all, reg_name, false);
 	}
 }
-

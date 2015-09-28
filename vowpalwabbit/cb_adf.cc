@@ -17,8 +17,11 @@ using namespace std;
 using namespace LEARNER;
 using namespace CB;
 
+// doubly robust
 #define CB_TYPE_DR 0
+// direct method
 #define CB_TYPE_DM 1
+// inverse propensity scoring
 #define CB_TYPE_IPS 2
 
 struct cb_adf {
@@ -29,9 +32,13 @@ struct cb_adf {
   vw* all;
   LEARNER::base_learner* scorer;
   CB::cb_class known_cost;
+
+  // contextual bandit
   v_array<CB::label> cb_labels;
 
+  // cost sensitive
   v_array<COST_SENSITIVE::label> cs_labels;
+  
   COST_SENSITIVE::label pred_scores;
 
   base_learner* base;
@@ -59,14 +66,14 @@ namespace CB_ADF {
 
 	COST_SENSITIVE::wclass wc;
 	wc.class_index = 0;
-	if ( ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)  
+		  if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
 	  wc.x = ld.costs[0].cost / ld.costs[0].probability;
 	else 
 	  wc.x = 0.f;
 	cs_labels[i].costs.erase();
 	cs_labels[i].costs.push_back(wc);
       }
-    cs_labels[examples.size()-1].costs[0].x = FLT_MAX; //trigger end of multiline example.
+	  cs_labels[examples.size() - 1].costs[0].x = FLT_MAX; //trigger end of multiline example.
 
     if (has_shared_example(examples))//take care of shared examples
       {
@@ -85,23 +92,19 @@ namespace CB_ADF {
     }
 
     c.pred_scores.costs.erase();
-    bool shared = false;
-    if(has_shared_example(examples))
-      shared = true;
+	  bool shared = has_shared_example(examples);
 
     int startK = 0;
-    if(shared) startK = 1;
+	  if (shared) startK = 1;
 
     for (size_t i = 0; i < examples.size(); i++)
       {
-	examples[i]->l.cb.costs.erase();
-	if(example_is_newline(*examples[i])) continue;
-	//CB::label ld = examples[i]->l.cb;		
+		  if (example_is_newline(*examples[i])) continue;
 
 	COST_SENSITIVE::wclass wc;
 	wc.class_index = 0;	
 	
-	if(c.known_cost.action + startK == i) {
+		  if (c.known_cost.action + startK == i) {
 	  int known_index = c.known_cost.action;
 	  c.known_cost.action = 0;
 	  //get cost prediction for this label
@@ -114,8 +117,8 @@ namespace CB_ADF {
 	  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, nullptr, *(examples[i]), 0, 2);
 	}
 
-	if(shared)
-	  wc.class_index = i-1;
+		  if (shared)
+			  wc.class_index = i - 1;
 	else
 	  wc.class_index = i;
 	c.pred_scores.costs.push_back(wc); // done
@@ -136,8 +139,8 @@ namespace CB_ADF {
     COST_SENSITIVE::wclass wc;
     wc.class_index = 0;
     wc.x = FLT_MAX;
-    cs_labels[examples.size()-1].costs.erase();
-    cs_labels[examples.size()-1].costs.push_back(wc); //trigger end of multiline example.
+	  cs_labels[examples.size() - 1].costs.erase();
+	  cs_labels[examples.size() - 1].costs.push_back(wc); //trigger end of multiline example.
 
     if (shared)//take care of shared examples
       {
@@ -167,7 +170,7 @@ namespace CB_ADF {
 
   
     // handle -1 case.
-    if (index == -1){
+  if (index == -1) {
       mydata.known_cost.probability = -1;
       return;
       //std::cerr << "None of the examples has known cost. Exiting." << endl;
@@ -190,7 +193,7 @@ namespace CB_ADF {
   }
 
   template<bool is_learn>
-  void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*> examples)
+  void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   {
     // m2: still save, store, and restore
     // starting with 3 for loops
@@ -227,12 +230,17 @@ namespace CB_ADF {
   template<uint32_t reduction_type>
   void learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   {
-	if(reduction_type == CB_TYPE_IPS)
+	  switch (reduction_type)
+	  {
+	  case CB_TYPE_IPS:
       gen_cs_example_ips(examples, mydata.cs_labels);
-    else if (reduction_type == CB_TYPE_DR)
+		  break;
+	  case CB_TYPE_DR:
       gen_cs_example_dr<true>(mydata, examples, mydata.cs_labels);
-    else
-      THROW("Unknown cb_type specified for contextual bandit learning: " << mydata.cb_type);
+		  break;
+	  default:
+		  THROW("Unknown cb_type specified for contextual bandit learning: " << reduction_type);
+	  }
 	
     call_predict_or_learn<true>(mydata,base,examples);
   }
@@ -273,16 +281,17 @@ namespace CB_ADF {
       }
     else
       {
-	if (data.cb_type == CB_TYPE_IPS)
+		  switch (data.cb_type)
 	  {
+		  case CB_TYPE_IPS:
 	    learn<CB_TYPE_IPS>(data, base, data.ec_seq);
-	  }
-	else if (data.cb_type == CB_TYPE_DR)
-	  {
+			  break;
+		  case CB_TYPE_DR:
 	    learn<CB_TYPE_DR>(data, base, data.ec_seq);
+			  break;
+		  default:
+			  THROW("Unknown cb_type specified for contextual bandit learning: " << data.cb_type);
 	  }
-	else
-	  THROW("Unknown cb_type specified for contextual bandit learning: " << data.cb_type);
       }
   }
 
@@ -306,6 +315,7 @@ namespace CB_ADF {
     v_array<CB::cb_class> costs = ec.l.cb.costs;
     
     if (example_is_newline(ec)) return;
+    // the shared example
     if (CB::ec_is_example_header(ec)) return;
 
     all.sd->total_features += ec.num_features;
@@ -415,7 +425,6 @@ namespace CB_ADF {
       }        
       clear_seq_and_finish_examples(all, data);
       data.need_to_clear = false;
-      if (ec.in_use) VW::finish_example(all, &ec);
     }
   }
 
@@ -441,11 +450,12 @@ namespace CB_ADF {
     vw* all = data.all;
     data.base = &base;
     bool is_test_ec = CB::example_is_test(ec);
-    bool need_to_break = data.ec_seq.size() >= all->p->ring_size - 2;
+    bool need_to_break = VW::is_ring_example(*all, &ec) && (data.ec_seq.size() >= all->p->ring_size - 2);
 
     if ((example_is_newline(ec) && is_test_ec) || need_to_break) {
       data.ec_seq.push_back(&ec);
       do_actual_learning<is_learn>(data, base);
+      // using flag to clear, because ec_seq is used in finish_example
       data.need_to_clear = true;
     } else {
       if (data.need_to_clear) {  // should only happen if we're NOT driving
@@ -470,6 +480,7 @@ base_learner* cb_adf_setup(vw& all)
 
   ld.all = &all;
 
+  // number of weight vectors needed
   size_t problem_multiplier = 1;//default for IPS
   if (all.vm.count("cb_type"))
     {

@@ -36,14 +36,21 @@ namespace VW.Serializer.Intermediate
         /// In VW line format: Age:15 (Enumerize=false), Age_15 (Enumerize=true)
         /// Defaults to false.
         /// </summary>
-        public bool Enumerize { get; set;  }
+        public bool Enumerize { get; set; }
+
+        /// <summary>
+        /// If true, an anchoring feature (0:1) will be inserted at front.
+        /// This is required if --interact is used to mark the beginning of the feature namespace,
+        /// as 0-valued features are removed.
+        /// </summary>
+        /// <remarks>Defaults to false.</remarks>
+        public bool AddAnchor { get; set; }
     }
 
     /// <summary>
     /// The typed representation of the feature.
     /// </summary>
     /// <typeparam name="T">Type of feature value.</typeparam>
-    /// <typeparam name="TResult">Result type produved by visitor.</typeparam>
     public sealed class Feature<T> : Feature, IFeature<T>, IVisitableFeature
     {
         /// <summary>
@@ -54,6 +61,6 @@ namespace VW.Serializer.Intermediate
         /// <summary>
         /// Compiled func to enable automatic double dispatch.
         /// </summary>
-        public Action Visit { get; set;  }
+        public Action Visit { get; set; }
     }
 }

@@ -7,12 +7,12 @@ T* calloc_or_die(size_t nmemb)
 {
   if (nmemb == 0)
     return nullptr;
-  
+
   void* data = calloc(nmemb, sizeof(T));
   if (data == nullptr) {
     const char* msg = "internal error: memory allocation failed; dying!";
-	// use low-level function since we're already out of memory.
-	fputs(msg, stderr);
+    // use low-level function since we're already out of memory.
+    fputs(msg, stderr);
     THROW(msg);
   }
   return (T*)data;

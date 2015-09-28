@@ -23,6 +23,9 @@ vw_SOURCES = $(shell grep libvw_la_SOURCES Makefile.am | cut -d '=' -f 2)
 vw_OBJECTS = $(patsubst %.cc,%.o,$(vw_SOURCES))
 vw_DEPS = $(patsubst %.cc,%.d,$(vw_SOURCES))
 
+allreduce_SOURCES = $(shell grep liballreduce_la_SOURCES Makefile.am | cut -d '=' -f 2)
+allreduce_OBJECTS = $(patsubst %.cc,%.o,$(allreduce_SOURCES))
+
 %.d:	%.cc config.h
 	$(CXX) -std=c++0x -MM $< > $@
 
@@ -34,7 +37,7 @@ vw_DEPS = $(patsubst %.cc,%.d,$(vw_SOURCES))
 %.o:	 %.cc
 	$(CXX) $(FLAGS) -c $< -o $@
 
-liballreduce.a:	allreduce.o
+liballreduce.a: $(allreduce_OBJECTS)
 	ar rcs $@ $<
 
 libvw.a: $(filter-out vw.o,$(vw_OBJECTS))

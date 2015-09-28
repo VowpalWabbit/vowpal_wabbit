@@ -1,8 +1,8 @@
 bin_PROGRAMS = library_example ezexample_train ezexample_predict
-EXAMPLE_LIBS = ../vowpalwabbit/libvw.la ../vowpalwabbit/liballreduce.la
+EXAMPLE_LIBS = ../vowpalwabbit/libvw.la 
 
 library_example_SOURCES = library_example.cc
-library_example_LDADD = ../vowpalwabbit/libvw.la ../vowpalwabbit/liballreduce.la
+library_example_LDADD = ../vowpalwabbit/libvw.la 
 
 ezexample_train_SOURCES = ezexample_train.cc
 ezexample_train_LDADD = ${EXAMPLE_LIBS}

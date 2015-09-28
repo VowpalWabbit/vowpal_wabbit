@@ -27,6 +27,7 @@ namespace VW {
     Call finish() after you are done with the vw instance.  This cleans up memory usage.
    */
   void finish(vw& all, bool delete_all=true);
+  void sync_stats(vw& all);
 
   void start_parser(vw& all, bool do_init = true);
   void end_parser(vw& all);
@@ -60,6 +61,7 @@ namespace VW {
   example *alloc_examples(size_t, size_t);
   void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*) = nullptr);
 
+  void read_line(vw& all, example* ex, char* line);
   void parse_example_label(vw&all, example&ec, string label);
   void setup_example(vw& all, example* ae);
   example* new_unused_example(vw& all);

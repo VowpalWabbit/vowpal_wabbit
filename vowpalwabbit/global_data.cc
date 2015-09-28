@@ -28,26 +28,25 @@ size_t really_read(int sock, void* in, size_t count)
   size_t done = 0;
   int r = 0;
   while (done < count)
-    {
-      if ((r =
+  {
+    if ((r =
 #ifdef _WIN32
-		  recv(sock,buf,(unsigned int)(count-done),0)
+           recv(sock,buf,(unsigned int)(count-done),0)
 #else
-		  read(sock,buf,(unsigned int)(count-done))
+           read(sock,buf,(unsigned int)(count-done))
 #endif
-		  ) == 0)
-	return 0;
-      else
-	if (r < 0)
-	  {
-	    THROW("read(" << sock << "," << count << "-" << done << "): " << strerror(errno));
-	  }
-	else
-	  {
-	    done += r;
-	    buf += r;
-	  }
+        ) == 0)
+      return 0;
+    else if (r < 0)
+    {
+      THROWERRNO("read(" << sock << "," << count << "-" << done << ")");
     }
+    else
+    {
+      done += r;
+      buf += r;
+    }
+  }
   return done;
 }
 
@@ -63,26 +62,26 @@ void send_prediction(int sock, global_prediction p)
 {
   if (
 #ifdef _WIN32
-	  send(sock, reinterpret_cast<const char*>(&p), sizeof(p), 0)
+    send(sock, reinterpret_cast<const char*>(&p), sizeof(p), 0)
 #else
-	  write(sock, &p, sizeof(p))
+    write(sock, &p, sizeof(p))
 #endif
-	  < (int)sizeof(p))
-    THROW("send_prediction write(" << sock << "): " << strerror(errno));
+    < (int)sizeof(p))
+    THROWERRNO("send_prediction write(" << sock << ")");
 }
 
 void binary_print_result(int f, float res, float weight, v_array<char>)
 {
   if (f >= 0)
-    {
-      global_prediction ps = {res, weight};
-      send_prediction(f, ps);
-    }
+  {
+    global_prediction ps = {res, weight};
+    send_prediction(f, ps);
+  }
 }
 
 int print_tag(std::stringstream& ss, v_array<char> tag)
 {
-  if (tag.begin != tag.end){
+  if (tag.begin != tag.end) {
     ss << ' ';
     ss.write(tag.begin, sizeof(char)*tag.size());
   }
@@ -92,20 +91,20 @@ int print_tag(std::stringstream& ss, v_array<char> tag)
 void print_result(int f, float res, float, v_array<char> tag)
 {
   if (f >= 0)
+  {
+    char temp[30];
+    sprintf(temp, "%f", res);
+    std::stringstream ss;
+    ss << temp;
+    print_tag(ss, tag);
+    ss << '\n';
+    ssize_t len = ss.str().size();
+    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+    if (t != len)
     {
-      char temp[30];
-      sprintf(temp, "%f", res);
-      std::stringstream ss;
-      ss << temp;
-      print_tag(ss, tag);
-      ss << '\n';
-      ssize_t len = ss.str().size();
-      ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
-      if (t != len)
-        {
-          cerr << "write error: " << strerror(errno) << endl;
-        }
+      cerr << "write error: " << strerror(errno) << endl;
     }
+  }
 }
 
 void print_raw_text(int f, string s, v_array<char> tag)
@@ -120,30 +119,30 @@ void print_raw_text(int f, string s, v_array<char> tag)
   ssize_t len = ss.str().size();
   ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
   if (t != len)
-    {
-      cerr << "write error: " << strerror(errno) << endl;
-    }
+  {
+    cerr << "write error: " << strerror(errno) << endl;
+  }
 }
 
 void print_lda_result(vw& all, int f, float* res, float, v_array<char> tag)
 {
   if (f >= 0)
+  {
+    std::stringstream ss;
+    char temp[30];
+    for (size_t k = 0; k < all.lda; k++)
     {
-      std::stringstream ss;
-      char temp[30];
-      for (size_t k = 0; k < all.lda; k++)
-	{
-	  sprintf(temp, "%f ", res[k]);
-          ss << temp;
-	}
-      print_tag(ss, tag);
-      ss << '\n';
-      ssize_t len = ss.str().size();
-      ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
-
-      if (t != len)
-        cerr << "write error: " << strerror(errno) << endl;
+      sprintf(temp, "%f ", res[k]);
+      ss << temp;
     }
+    print_tag(ss, tag);
+    ss << '\n';
+    ssize_t len = ss.str().size();
+    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+
+    if (t != len)
+      cerr << "write error: " << strerror(errno) << endl;
+  }
 }
 
 void set_mm(shared_data* sd, float label)
@@ -164,49 +163,49 @@ void vw::learn(example* ec)
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)
 {
   for (size_t i = 0; i < grams.size(); i++)
+  {
+    string ngram = grams[i];
+    if ( isdigit(ngram[0]) )
     {
-      string ngram = grams[i];
-      if ( isdigit(ngram[0]) )
-	{
-	  int n = atoi(ngram.c_str());
-	  if (!quiet)
-	    cerr << "Generating " << n << "-" << descriptor << " for all namespaces." << endl;
-	  for (size_t j = 0; j < 256; j++)
-	    dest[j] = n;
-	}
-      else if ( ngram.size() == 1)
-	cout << "You must specify the namespace index before the n" << endl;
-      else {
-	int n = atoi(ngram.c_str()+1);
-	dest[(uint32_t)ngram[0]] = n;
-	if (!quiet)
-	  cerr << "Generating " << n << "-" << descriptor << " for " << ngram[0] << " namespaces." << endl;
-      }
+      int n = atoi(ngram.c_str());
+      if (!quiet)
+        cerr << "Generating " << n << "-" << descriptor << " for all namespaces." << endl;
+      for (size_t j = 0; j < 256; j++)
+        dest[j] = n;
     }
+    else if ( ngram.size() == 1)
+      cout << "You must specify the namespace index before the n" << endl;
+    else {
+      int n = atoi(ngram.c_str()+1);
+      dest[(uint32_t)ngram[0]] = n;
+      if (!quiet)
+        cerr << "Generating " << n << "-" << descriptor << " for " << ngram[0] << " namespaces." << endl;
+    }
+  }
 }
 
 void compile_limits(vector<string> limits, uint32_t* dest, bool quiet)
 {
   for (size_t i = 0; i < limits.size(); i++)
+  {
+    string limit = limits[i];
+    if ( isdigit(limit[0]) )
     {
-      string limit = limits[i];
-      if ( isdigit(limit[0]) )
-	{
-	  int n = atoi(limit.c_str());
-	  if (!quiet)
-	    cerr << "limiting to " << n << "features for each namespace." << endl;
-	  for (size_t j = 0; j < 256; j++)
-	    dest[j] = n;
-	}
-      else if ( limit.size() == 1)
-	cout << "You must specify the namespace index before the n" << endl;
-      else {
-	int n = atoi(limit.c_str()+1);
-	dest[(uint32_t)limit[0]] = n;
-	if (!quiet)
-	  cerr << "limiting to " << n << " for namespaces " << limit[0] << endl;
-      }
+      int n = atoi(limit.c_str());
+      if (!quiet)
+        cerr << "limiting to " << n << "features for each namespace." << endl;
+      for (size_t j = 0; j < 256; j++)
+        dest[j] = n;
     }
+    else if ( limit.size() == 1)
+      cout << "You must specify the namespace index before the n" << endl;
+    else {
+      int n = atoi(limit.c_str()+1);
+      dest[(uint32_t)limit[0]] = n;
+      if (!quiet)
+        cerr << "limiting to " << n << " for namespaces " << limit[0] << endl;
+    }
+  }
 }
 
 void add_options(vw& all, po::options_description& opts)
@@ -214,11 +213,11 @@ void add_options(vw& all, po::options_description& opts)
   all.opts.add(opts);
   //parse local opts once for notifications.
   po::parsed_options parsed = po::command_line_parser(all.args).
-    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(opts).allow_unregistered().run();
+                              style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+                              options(opts).allow_unregistered().run();
   po::variables_map new_vm;
   po::store(parsed, new_vm);
-  po::notify(new_vm); 
+  po::notify(new_vm);
 
   for (po::variables_map::iterator it=new_vm.begin(); it!=new_vm.end(); ++it)
     all.vm.insert(*it);
@@ -234,15 +233,15 @@ bool no_new_options(vw& all)
 {
   //parse local opts once for notifications.
   po::parsed_options parsed = po::command_line_parser(all.args).
-    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(*all.new_opts).allow_unregistered().run();
+                              style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+                              options(*all.new_opts).allow_unregistered().run();
   po::variables_map new_vm;
   po::store(parsed, new_vm);
   all.opts.add(*all.new_opts);
   delete all.new_opts;
   for (po::variables_map::iterator it=new_vm.begin(); it!=new_vm.end(); ++it)
     all.vm.insert(*it);
-  
+
   if (new_vm.size() == 0) // required are missing;
     return true;
   else
@@ -287,7 +286,6 @@ vw::vw()
   default_bits = true;
   daemon = false;
   num_children = 10;
-  span_server = "";
   save_resume = false;
 
   random_positive_weights = false;
@@ -309,11 +307,11 @@ vw::vw()
   per_feature_regularizer_output = "";
   per_feature_regularizer_text = "";
 
-  #ifdef _WIN32
+#ifdef _WIN32
   stdout_fileno = _fileno(stdout);
-  #else
+#else
   stdout_fileno = fileno(stdout);
-  #endif
+#endif
 
   searchstr = nullptr;
 
@@ -325,18 +323,16 @@ vw::vw()
   initial_weight = 0.0;
   initial_constant = 0.0;
 
-  unique_id = 0;
-  total = 1;
-  node = 0;
+  all_reduce = nullptr;
 
   for (size_t i = 0; i < 256; i++)
-    {
-      ngram[i] = 0;
-      skips[i] = 0;
-      limit[i] = INT_MAX;
-      affix_features[i] = 0;
-      spelling_features[i] = 0;
-    }
+  {
+    ngram[i] = 0;
+    skips[i] = 0;
+    limit[i] = INT_MAX;
+    affix_features[i] = 0;
+    spelling_features[i] = 0;
+  }
 
   interactions = v_init<v_string>();
 

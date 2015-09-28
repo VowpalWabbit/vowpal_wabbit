@@ -7,12 +7,15 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics.Contracts;
+using VW.Serializer.Contracts;
 
 namespace VW.Serializer.Interfaces
 {
     /// <summary>
     /// A visitable namespace.
     /// </summary>
+    [ContractClass(typeof(IVisitableNamespaceContract))]
     public interface IVisitableNamespace : INamespace
     {
         /// <summary>

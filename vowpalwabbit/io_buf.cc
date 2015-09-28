@@ -8,8 +8,9 @@ license as described in the file LICENSE.
 #include <winsock2.h>
 #endif
 
+//return a pointer to the next n bytes.  n must be smaller than the maximum size.
 size_t buf_read(io_buf &i, char* &pointer, size_t n)
-{//return a pointer to the next n bytes.  n must be smaller than the maximum size.
+{ //return a pointer to the next n bytes.  n must be smaller than the maximum size.
   if (i.space.end + n <= i.endloaded)
     {
       pointer = i.space.end;
@@ -23,14 +24,14 @@ size_t buf_read(io_buf &i, char* &pointer, size_t n)
 	  size_t left = i.endloaded - i.space.end;
 	  memmove(i.space.begin, i.space.end, left);
 	  i.space.end = i.space.begin;
-	  i.endloaded = i.space.begin+left;
+            i.endloaded = i.space.begin + left;
 	}
       if (i.fill(i.files[i.current]) > 0)
-	return buf_read(i,pointer,n);// more bytes are read.
+            return buf_read(i, pointer, n);// more bytes are read.
       else if (++i.current < i.files.size()) 
-	return buf_read(i,pointer,n);// No more bytes, so go to next file and try again.
+            return buf_read(i, pointer, n);// No more bytes, so go to next file and try again.
       else
-	{//no more bytes to read, return all that we have left.
+    { //no more bytes to read, return all that we have left.
 	  pointer = i.space.end;
 	  i.space.end = i.endloaded;
 	  return i.endloaded - pointer;
@@ -51,7 +52,7 @@ bool isbinary(io_buf &i) {
 }
 
 size_t readto(io_buf &i, char* &pointer, char terminal)
-{//Return a pointer to the bytes before the terminal.  Must be less than the buffer size.
+{ //Return a pointer to the bytes before the terminal.  Must be less than the buffer size.
   pointer = i.space.end;
   while (pointer < i.endloaded && *pointer != terminal)
     pointer++;
@@ -87,7 +88,7 @@ size_t readto(io_buf &i, char* &pointer, char terminal)
 }
 
 void buf_write(io_buf &o, char* &pointer, size_t n)
-{//return a pointer to the next n bytes to write into.
+{ //return a pointer to the next n bytes to write into.
   if (o.space.end + n <= o.space.end_array)
     {
       pointer = o.space.end;

@@ -13,10 +13,10 @@ namespace cs_unittest
         public void TestAntlr()
         {
             var listener = new DataListener();
-            listener.Created = x =>
+            listener.Created = (x, plabel) =>
             {
                 Assert.AreEqual("PFF", x.T);
-                var label = x.Label as SimpleLabel;
+                var label = plabel as SimpleLabel;
                 Assert.AreEqual(0.521144, label.Label, 1e-5);
                 Assert.AreEqual(1, label.Initial);
 
@@ -28,9 +28,9 @@ namespace cs_unittest
             var line1 = "0.521144 1 PFF/20091028|T PFF |f t1:-0.0236849 t5:-0.10215 r5:0.727735 t10:-0.0387662 r10:0.911208 t20:-0.00777943 r20:0.952668 t40:0.014542 r40:0.832479 t60:0.00395449 r60:0.724504 t90:0.0281418 r90:0.784653";
             VWTestHelper.ParseInput(new MemoryStream(Encoding.UTF8.GetBytes(line1)), listener);
 
-            listener.Created = x =>
+            listener.Created = (x, plabel) =>
             {
-                var label = x.Label as SimpleLabel;
+                var label = plabel as SimpleLabel;
                 Assert.AreEqual(1, label.Label, 1e-5);
 
                 Assert.AreEqual(49, x.F.Count);
