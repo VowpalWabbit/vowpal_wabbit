@@ -7,6 +7,18 @@ import java.io.IOException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * The base class for VW predictors.  This class is responsible for:
+ *
+ * <ol>
+ * <li>Loading the native library.</li>
+ * <li>Initializing the VW predictor on the <em>C</em> side.</li>
+ * <li>Closing the VW predictor and cleaning up the memory on the <em>C</em> side.</li>
+ * <li>Bookkeeping, such as keeping the <em>C</em> memory pointer.</li>
+ * </ol>
+ *
+ *
+ */
 abstract class VWBase implements Closeable {
     private volatile static boolean loadedNativeLibrary = false;
     private static final Lock STATIC_LOCK = new ReentrantLock();

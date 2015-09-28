@@ -1,9 +1,19 @@
 package vw;
 
-import java.io.IOException;
-
 /**
  * Created by deak on 9/27/15.
+ *
+ * This abstract base class allows the authors of new model wrappers to just write
+ * java code like the following:
+ *
+ * <code>
+ * public final class SomeLearner extends VWGenericBase<float[]> {
+ *   public LDA(String command) { super(command); }
+ *   protected native float[] predict(String example, boolean learn, long nativePointer);
+ * }
+ * </code>
+ *
+ * Then the author can simply concentrate on writing the <em>JNI</em> C code.
  */
 abstract class VWGenericBase<T> extends VWBase implements VWGeneric<T> {
     protected VWGenericBase(final String command) {
