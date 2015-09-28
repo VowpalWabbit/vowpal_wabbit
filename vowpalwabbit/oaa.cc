@@ -69,7 +69,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
 
   if (ec.passthrough)
     for (uint32_t i=1; i<=o.k; i++)
-      ec.passthrough->push_back( feature(o.pred[i-1].scalar, i * 3480327 + 89319) );
+      add_passthrough_feature(ec, i, o.pred[i-1].scalar);
 
   if (is_learn) {
     for (uint32_t i=1; i<=o.k; i++) {

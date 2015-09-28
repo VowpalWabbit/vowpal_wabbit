@@ -22,11 +22,6 @@ struct csoaa {
   polyprediction* pred;
 };
 
-inline void passthrough(example& ec, uint32_t idx, float val) {
-  if (ec.passthrough)
-    ec.passthrough->push_back( feature( val, idx * 3849018347 + 3891 ) );
-}
-
 template<bool is_learn>
 inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
                        uint32_t& prediction, float& score, float& partial_prediction) {
@@ -44,7 +39,7 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
     score = ec.partial_prediction;
     prediction = i;
   }
-  passthrough(ec, i, ec.partial_prediction);
+  add_passthrough_feature(ec, i, ec.partial_prediction);
 }
 
 #define DO_MULTIPREDICT true
@@ -65,7 +60,7 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
     ec.l.simple = { FLT_MAX, 0.f, 0.f };
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
     for (uint32_t i = 1; i <= c.num_classes; i++) {
-      passthrough(ec, i, c.pred[i-1].scalar);
+      add_passthrough_feature(ec, i, c.pred[i-1].scalar);
       if (c.pred[i-1].scalar < c.pred[prediction-1].scalar)
         prediction = i;
     }
@@ -87,10 +82,10 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
     }
     if (second_best_cost < FLT_MAX) {
       float margin = second_best_cost - ec.partial_prediction;
-      passthrough(ec, 4391897, margin);
-      passthrough(ec, 3281 * second_best, 1.);
+      add_passthrough_feature(ec, constant*2, margin);
+      add_passthrough_feature(ec, constant*2+1 + second_best, 1.);
     } else
-      passthrough(ec, 849109313, 1.);
+      add_passthrough_feature(ec, constant*3, 1.);
   }
     
   ec.pred.multiclass = prediction;

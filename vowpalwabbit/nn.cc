@@ -179,8 +179,8 @@ struct nn {
 
       if (ec.passthrough)
         for (unsigned int i = 0; i < n.k; ++i) {
-          ec.passthrough->push_back( feature(hiddenbias_pred[i].scalar, 348017*i*2) );
-          ec.passthrough->push_back( feature(hidden_units[i].scalar   , 348017*i*2+1) );
+          add_passthrough_feature(ec, i*2,   hiddenbias_pred[i].scalar);
+          add_passthrough_feature(ec, i*2+1, hidden_units[i].scalar);
         }
     }
     

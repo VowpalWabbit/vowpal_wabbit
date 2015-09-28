@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include "multilabel.h"
 #include "cost_sensitive.h"
 #include "cb.h"
+#include "constant.h"
 
 const size_t wap_ldf_namespace  = 126;
 const size_t history_namespace  = 127;
@@ -119,3 +120,10 @@ inline bool valid_ns(char c)
 {
   return !(c == '|' || c == ':');
 }
+
+inline void add_passthrough_feature_magic(example& ec, uint32_t magic, uint32_t i, float x) {
+  if (ec.passthrough)
+    ec.passthrough->push_back( feature(x, (i + magic) * quadratic_constant) );
+}
+
+#define add_passthrough_feature(ec, i, x) add_passthrough_feature_magic(ec, __FILE__[0]*483901+__FILE__[1]*3417+__FILE__[2]*8490177, i, x);
