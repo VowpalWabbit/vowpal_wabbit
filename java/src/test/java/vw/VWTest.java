@@ -45,7 +45,9 @@ public class VWTest {
         try {
             final String lib = new File(".").getCanonicalPath() + "/target/vw_jni.lib";
             System.load(lib);
-            System.out.println("loaded libs: " + loadedLibs());
+            final List<String> libs = loadedLibs();
+            assertTrue(libs.contains(lib));
+            System.out.println("loaded libs: " + libs);
         }
         catch (UnsatisfiedLinkError ignored) {
             // Do nothing as this means that the library should be loaded as part of the jar

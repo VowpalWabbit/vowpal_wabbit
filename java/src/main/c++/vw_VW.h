@@ -17,10 +17,10 @@ JNIEXPORT jstring JNICALL Java_vw_VW_version
 
 /*
  * Class:     vw_VW
- * Method:    predict_specialized
+ * Method:    predictFloat
  * Signature: (Ljava/lang/String;ZJ)F
  */
-JNIEXPORT jfloat JNICALL Java_vw_VW_predict_1specialized
+JNIEXPORT jfloat JNICALL Java_vw_VW_predictFloat
   (JNIEnv *, jobject, jstring, jboolean, jlong);
 
 #ifdef __cplusplus

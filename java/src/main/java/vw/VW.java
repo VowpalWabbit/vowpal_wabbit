@@ -24,14 +24,14 @@ public final class VW extends VWGenericBase<Float> {
     }
 
     public Float predict(final String example, final boolean learn, final long nativePointer) {
-        return predict_specialized(example, learn, nativePointer);
+        return predictFloat(example, learn, nativePointer);
     }
 
     private float learnOrPredict(final String example, final boolean learn) {
         lock.lock();
         try {
             if (isOpen()) {
-                return predict_specialized(example, learn, nativePointer);
+                return predictFloat(example, learn, nativePointer);
             }
             throw new IllegalStateException("Already closed.");
         }
@@ -61,5 +61,5 @@ public final class VW extends VWGenericBase<Float> {
     }
 
     public static native String version();
-    private static native float predict_specialized(String example, boolean learn, long nativePointer);
+    private native float predictFloat(String example, boolean learn, long nativePointer);
 }

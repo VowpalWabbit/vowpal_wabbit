@@ -8,7 +8,7 @@ JNIEXPORT jstring JNICALL Java_vw_VW_version(JNIEnv *env, jobject obj) {
     return env->NewStringUTF(PACKAGE_VERSION);
 }
 
-JNIEXPORT jfloat JNICALL Java_vw_VW_predict_1specialized(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr) {
+JNIEXPORT jfloat JNICALL Java_vw_VW_predictFloat(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr) {
     float prediction = 0.0f;
     try {
         vw* vwInstance = (vw*)vwPtr;

@@ -1,7 +1,7 @@
+#include <jni.h>
+
 #ifndef _Included_vw_errors
 #define _Included_vw_errors
-
-#include <jni.h>
 
 #ifdef __cplusplus
 extern "C" {
