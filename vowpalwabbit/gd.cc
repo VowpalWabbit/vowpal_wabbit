@@ -469,8 +469,8 @@ void multipredict(gd& g, base_learner&, example& ec, size_t count, size_t step, 
       nd.pred_per_update += x2 * w[spare];
     }
   }
-}
 
+  bool global_print_features = false;
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
   float get_pred_per_update(gd& g, example& ec)
 { //We must traverse the features in _precisely_ the same order as during training.

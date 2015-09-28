@@ -1141,7 +1141,7 @@ __DATA__
 
 # Test 66: Train a depenency parser with search (dagger)
 # on wsj_small.dparser.vw.gz for 2 passes
-{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout ref --holdout_off
+{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout ref --holdout_off --search_linear_ordering
     train-sets/ref/search_dep_parser.stderr
 
 # Test 67: classification with data from dictionaries
