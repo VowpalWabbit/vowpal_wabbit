@@ -1,55 +1,14 @@
 #include "../../../../vowpalwabbit/parser.h"
 #include "../../../../vowpalwabbit/vw.h"
+#include "vw_errors.h"
 #include "vw_VW.h"
 
-void throw_java_exception(JNIEnv *env, const char* name, const char* msg) {
-     jclass jc = env->FindClass(name);
-     if (jc)
-        env->ThrowNew(jc, msg);
-}
-
-void rethrow_cpp_exception_as_java_exception(JNIEnv *env) {
-    try {
-        throw;
-    }
-    catch(const std::bad_alloc& e) {
-        throw_java_exception(env, "java/lang/OutOfMemoryError", e.what());
-    }
-    catch(const boost::program_options::error& e) {
-        throw_java_exception(env, "java/lang/IllegalArgumentException", e.what());
-    }
-    catch(const std::exception& e) {
-        throw_java_exception(env, "java/lang/Exception", e.what());
-    }
-    catch (...) {
-        throw_java_exception(env, "java/lang/Error", "Unidentified exception => "
-                                   "rethrow_cpp_exception_as_java_exception "
-                                   "may require some completion...");
-    }
-}
 
 JNIEXPORT jstring JNICALL Java_vw_VW_version(JNIEnv *env, jobject obj) {
     return env->NewStringUTF(PACKAGE_VERSION);
 }
 
-JNIEXPORT jlong JNICALL Java_vw_VW_initialize(JNIEnv *env, jobject obj, jstring command) {
-    jlong vwPtr = 0;
-    try {
-        vw* vwInstance = VW::initialize(env->GetStringUTFChars(command, NULL));
-        vwPtr = (jlong)vwInstance;
-        if (vwInstance->multilabel_prediction) {
-            Java_vw_VW_closeInstance(env, obj, vwPtr);
-            vwPtr = 0;
-            throw_java_exception(env, "vw/exception/IllegalVWInput", "VW JNI layer only supports simple and multiclass predictions");
-        }
-    }
-    catch(...) {
-        rethrow_cpp_exception_as_java_exception(env);
-    }
-    return vwPtr;
-}
-
-JNIEXPORT jfloat JNICALL Java_vw_VW_predict(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr) {
+JNIEXPORT jfloat JNICALL Java_vw_VW_predict_1specialized(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr) {
     float prediction = 0.0f;
     try {
         vw* vwInstance = (vw*)vwPtr;
@@ -74,13 +33,4 @@ JNIEXPORT jfloat JNICALL Java_vw_VW_predict(JNIEnv *env, jobject obj, jstring ex
         rethrow_cpp_exception_as_java_exception(env);
     }
     return prediction;
-}
-
-JNIEXPORT void JNICALL Java_vw_VW_closeInstance(JNIEnv *env, jobject obj, jlong vwPtr) {
-    try {
-        VW::finish(*((vw*)vwPtr));
-    }
-    catch(...) {
-        rethrow_cpp_exception_as_java_exception(env);
-    }
 }

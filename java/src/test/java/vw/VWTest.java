@@ -6,9 +6,9 @@ import org.junit.rules.TemporaryFolder;
 import vw.exception.IllegalVWInput;
 
 import java.io.*;
-import java.util.Map;
+import java.lang.reflect.Field;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +22,18 @@ public class VWTest {
     private final String heightData = "|f height:0.23 weight:0.25 width:0.05";
     private VW houseScorer;
 
+    private static List<String> loadedLibs() {
+        try {
+            final Field libs = ClassLoader.class.getDeclaredField("loadedLibraryNames");
+            libs.setAccessible(true);
+            final Vector<String> libraries = (Vector<String>) libs.get(ClassLoader.getSystemClassLoader());
+            return libraries;
+        }
+        catch (Exception e) {
+            return new ArrayList<String>();
+        }
+    }
+
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
@@ -31,7 +43,9 @@ public class VWTest {
     @BeforeClass
     public static void globalSetup() throws IOException {
         try {
-            System.load(new File(".").getCanonicalPath() + "/target/vw_jni.lib");
+            final String lib = new File(".").getCanonicalPath() + "/target/vw_jni.lib";
+            System.load(lib);
+            System.out.println("loaded libs: " + loadedLibs());
         }
         catch (UnsatisfiedLinkError ignored) {
             // Do nothing as this means that the library should be loaded as part of the jar
@@ -274,7 +288,7 @@ public class VWTest {
         final String pkgVersion = "#define PACKAGE_VERSION ";
         BufferedReader reader = new BufferedReader(new FileReader("../vowpalwabbit/config.h"));
         try {
-        	String line = null;
+            String line = null;
             while(null != (line = reader.readLine()) && !line.startsWith(pkgVersion)) {
                 continue;
             }
