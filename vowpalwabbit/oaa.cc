@@ -97,10 +97,11 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
       o.probs[i] /= sum_prob;
     // copy probs pointer to the example.
     // TODO: shouldn't we do a deep copy and free(ec.pred.probs) in finish_example()?
-    ec.probs = o.probs;
+    ec.pred.probs = o.probs;
+  } else {
+    ec.pred.multiclass = prediction;
   }
 
-  ec.pred.multiclass = prediction;
   ec.l.multi = mc_label_data;
 }
 
@@ -112,7 +113,7 @@ void finish(oaa&o) {
 
 // TODO: partial code duplication with multiclass.cc:finish_example
 void finish_example_probabilities(vw& all, oaa& o, example& ec) {
-  float zero_one_loss = 0;
+  float zero_one_loss = 0; //XXXXXXX
   if (ec.l.multi.label != (uint32_t)ec.pred.multiclass)
     zero_one_loss = ec.l.multi.weight;
   // TODO:
@@ -124,7 +125,7 @@ void finish_example_probabilities(vw& all, oaa& o, example& ec) {
   float multiclass_log_loss = 999; // -log(0) = plus infinity
   float correct_class_prob = 0;
   if (ec.l.multi.label <= o.k) // prevent segmentation fault if labeĺ==(uint32_t)-1
-    correct_class_prob = ec.probs[ec.l.multi.label-1];
+    correct_class_prob = ec.pred.probs[ec.l.multi.label-1];
   if (correct_class_prob > 0)
     multiclass_log_loss = -log(correct_class_prob) * ec.l.multi.weight;
 
@@ -148,7 +149,7 @@ void finish_example_probabilities(vw& all, oaa& o, example& ec) {
       } else {
         outputStringStream << i+1;
       }
-      sprintf(temp_str, "%f", ec.probs[i]); // 0.123 -> 0.123000
+      sprintf(temp_str, "%f", ec.pred.probs[i]); // 0.123 -> 0.123000
       outputStringStream << ':' << temp_str;
     }
     all.print_text(*sink, outputStringStream.str(), ec.tag);

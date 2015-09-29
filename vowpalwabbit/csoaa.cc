@@ -464,12 +464,12 @@ void do_actual_learning(ldf& data, base_learner& base)
       // so we need to take score = -partial_prediction,
       // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
       float prob = 1.f / (1.f + exp(data.ec_seq[k]->partial_prediction));
-      data.ec_seq[k]->prob = prob;
+      data.ec_seq[k]->pred.prob = prob;
       sum_prob += prob;
     }
     // make sure that the probabilities sum up (exactly) to one
     for (size_t k=start_K; k<K; k++)
-      data.ec_seq[k]->prob /= sum_prob;
+      data.ec_seq[k]->pred.prob /= sum_prob;
   }
 }
 
@@ -514,7 +514,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
   }
 
   for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-    all.print(*sink, all.probabilities ? ec.prob : (float)ec.pred.multiclass, 0, ec.tag);
+    all.print(*sink, all.probabilities ? ec.pred.prob : (float)ec.pred.multiclass, 0, ec.tag);
 
   if (all.raw_prediction > 0) {
     string outputString;
@@ -610,7 +610,7 @@ void output_example_seq(vw& all, ldf& data)
       }
 
       float multiclass_log_loss = 999; // -log(0) = plus infinity
-      float correct_class_prob = data.ec_seq[correct_class_k]->prob;
+      float correct_class_prob = data.ec_seq[correct_class_k]->pred.prob;
       if (correct_class_prob > 0)
         multiclass_log_loss = -log(correct_class_prob);
 
