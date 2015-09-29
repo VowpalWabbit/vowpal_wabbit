@@ -260,7 +260,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 			ec.l.simple.label = -1.f*sign(cost_delta)*sign(prediction);
 			ec.l.simple.weight = ec_input_weight * fmax(fabs(cost_delta),0.00001);
 
-			// Update learner and weight
+			// Update learner 
 			base.learn(ec,i+1);
 			base.predict(ec,i+1);
 

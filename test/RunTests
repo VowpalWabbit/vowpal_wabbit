@@ -1299,3 +1299,6 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
    test-sets/ref/active_cover.stderr
    pred-sets/ref/active_cover.predict
 
+# Test 99: active cover oracular
+{VW} --loss_function logistic --binary --active_cover --oracular -d ./train-sets/rcv1_small.dat
+   train-sets/ref/active_cover_oracular.stderr
