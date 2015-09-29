@@ -10,7 +10,7 @@ using namespace LEARNER;
 
 inline float sign(float w){ if (w < 0.) return -1.; else  return 1.;}
 
-float get_active_coin_bias(float k, float avg_loss, float g, float c0, bool oracular)
+float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 {
   float b,sb,rs,sl;
   b=(float)(c0*(log(k+1.)+0.0001)/(k+0.0001));
