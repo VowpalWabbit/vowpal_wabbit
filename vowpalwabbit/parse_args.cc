@@ -347,7 +347,6 @@ void parse_source(vw& all)
   // Be friendly: if -d was left out, treat positional param as data file
   po::positional_options_description p;
   p.add("data", -1);
-  
   po::parsed_options pos = po::command_line_parser(all.args).
                            style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
                            options(all.opts).positional(p).run();

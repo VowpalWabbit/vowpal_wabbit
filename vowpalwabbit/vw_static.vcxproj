@@ -229,16 +229,13 @@
     <IntDir>$(SolutionDir)$(PlatformShortName)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemGroup>
-<<<<<<< HEAD
-    <ClInclude Include="active_cover.h" />
-=======
     <ClCompile Include="allreduce_threads.cc">
       <FileType>CppHeader</FileType>
     </ClCompile>
->>>>>>> a750913235243fa1c4fe9776e25ce75ea1b1767f
     <ClInclude Include="autolink.h" />
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="active.h" />
+    <ClInclude Include="active_cover.h" />
     <ClInclude Include="allreduce.h" />
     <ClInclude Include="bfgs.h" />
     <ClInclude Include="binary.h" />
