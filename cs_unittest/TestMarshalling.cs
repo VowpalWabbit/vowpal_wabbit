@@ -92,6 +92,82 @@ namespace cs_unittest
                 vw.Validate("| Custom2", new ExampleCustomType { Custom = new CustomType { value = 2 } });
             }
         }
+
+        [TestMethod]
+        [TestCategory("Marshal")]
+        public void TestComplexType()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<UserContext>(string.Empty))
+            {
+                vw.Validate("|ootheruser AgeAdult PAge25 Views:3421 Boston 6:2.4", new UserContext {
+                    User = new UserFeatures
+                    {
+                        Age = Age.Adult,
+                        Gender = Gender.Male,
+                        Location = "Boston",
+                        PAge = 25,
+                        Views = 4321,
+                        Dict = new Dictionary<int, float>
+                        {
+                            { 6, 2.4f }
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    public class UserContext
+    {
+        [Feature(Namespace = "otheruser", FeatureGroup = 'o')]
+        public UserFeatures User { get; set; }
+
+        [Feature(Namespace = "userlda", FeatureGroup = 'u', AddAnchor = true)]
+        public FeatureVector UserLDAVector { get; set; }
+
+        public IReadOnlyList<Document> ActionDependentFeatures { get; set; }
+    }
+
+    public class Document
+    {
+        [Feature]
+        public string Id { get; set; }
+
+        [Feature(Namespace = "doclda", FeatureGroup = 'd', AddAnchor = true)]
+        public FeatureVector LDAVector { get; set; }
+    }
+
+    public class FeatureVector
+    {
+        [Feature(AddAnchor = true)]
+        public float[] Vectors { get; set; }
+    }
+
+    public class UserFeatures
+    {
+        [Feature]
+        public Age? Age { get; set; }
+
+        [Feature(Enumerize = true)]
+        public int? PAge { get; set; }
+
+        [Feature]
+        public Gender? Gender { get; set; }
+
+        [Feature]
+        public string Location { get; set; }
+
+        [Feature]
+        public long Views { get; set; }
+
+        [Feature]
+        public Dictionary<int, float> Dict { get; set; }
+    }
+
+    public enum Gender
+    {
+        Female,
+        Male
     }
 
     public class CustomType

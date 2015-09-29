@@ -18,7 +18,7 @@ namespace cs_testhelp
             var inputFile = vwRoot + @"\test\RunTests";
             var outputFile = vwRoot + @"\cs_unittest\TestAll.cs";
 
-            if (File.GetLastWriteTimeUtc(inputFile) == File.GetLastWriteTimeUtc(outputFile))
+            if (File.Exists(outputFile) && File.GetLastWriteTimeUtc(inputFile) == File.GetLastWriteTimeUtc(outputFile))
             {
                 return;
             }
