@@ -11,9 +11,7 @@ license as described in the file LICENSE.
 #endif
 
 #include "vw.h"
-#include <stack>
-#include "parser.h"
-#include "vw_exception.h"
+#include "vw_settings.h"
 
 #include <msclr\marshal_cppstd.h>
 
@@ -22,101 +20,9 @@ using namespace System::Runtime::InteropServices;
 
 namespace VW
 {
-	ref class VowpalWabbitExample;
-    ref class VowpalWabbitBase;
-
-	public ref class VowpalWabbitPrediction abstract
-	{
-	public:
-		void ReadFromExample(VowpalWabbitExample^ example);
-
-		virtual void ReadFromExample(vw* vw, example* ex) abstract;
-	};
-
-	public ref class VowpalWabbitScalarPrediction : VowpalWabbitPrediction
-	{
-	public:
-		void ReadFromExample(vw* vw, example* ex) override;
-
-		property float Value;
-	};
-
-	public ref class VowpalWabbitCostSensitivePrediction : VowpalWabbitPrediction
-	{
-	public:
-		void ReadFromExample(vw* vw, example* ex) override;
-
-		property float Value;
-	};
-
-	public ref class VowpalWabbitMultilabelPrediction : VowpalWabbitPrediction
-	{
-	public:
-		void ReadFromExample(vw* vw, example* ex) override;
-
-		property cli::array<int>^ Values;
-	};
-
-	public ref class VowpalWabbitTopicPrediction : VowpalWabbitPrediction
-	{
-	public:
-		void ReadFromExample(vw* vw, example* ex) override;
-
-		property cli::array<float>^ Values;
-	};
-
-	public interface class IVowpalWabbitExample : public IDisposable
-	{
-	public:
-		virtual void Learn() = 0;
-		virtual void PredictAndDiscard() = 0;
-
-		// T Learn<T>()
-		generic<typename TPrediction>
-			where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-		virtual TPrediction LearnAndPredict() = 0;
-
-		generic<typename TPrediction>
-			where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-		virtual TPrediction Predict() = 0;
-
-		virtual property VowpalWabbitExample^ UnderlyingExample
-		{
-			VowpalWabbitExample^ get() = 0;
-		}
-	};
-
-	public ref class VowpalWabbitExample : public IVowpalWabbitExample
-	{
-	protected:
-		!VowpalWabbitExample();
-
-	internal :
-		VowpalWabbitExample(VowpalWabbitBase^ vw, example* example);
-        initonly VowpalWabbitBase^ m_vw;
-		example* m_example;
-
-	public:
-
-		~VowpalWabbitExample();
-
-		virtual void Learn();
-		virtual void PredictAndDiscard();
-
-		generic<typename TPrediction>
-			where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-		virtual TPrediction LearnAndPredict();
-
-		generic<typename TPrediction>
-			where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-		virtual TPrediction Predict();
-
-		virtual property VowpalWabbitExample^ UnderlyingExample
-		{
-			VowpalWabbitExample^ get();
-		}
-	};
-			
+	/// <summary>
+	/// Collected performance statistics.
+	/// </summary>
 	public ref class VowpalWabbitPerformanceStatistics
 	{
 	public:
@@ -135,145 +41,45 @@ namespace VW
 		property double BestConstantLoss;
 	};
 
-	// Since the model class must delay diposal of m_vw until all referencing
-	// VowpalWabbit instances are disposed, the base class does not dispose m_vw
-	public ref class VowpalWabbitBase abstract
-	{
-	internal:
-		vw* m_vw;
-
-        example* GetOrCreateNativeExample();
-        void ReturnExampleToPool(example*);
-				
-	protected:
-		bool m_isDisposed;
-
-		VowpalWabbitBase(String^ args);
-		VowpalWabbitBase(String^ args, System::IO::Stream^ model);
-		VowpalWabbitBase(vw* vw);
-
-		void InternalDispose();
-
-	public:
-		void RunMultiPass();
-		void SaveModel();
-		void SaveModel(String^ filename);
-
-		property VowpalWabbitPerformanceStatistics^ PerformanceStatistics
-		{
-			VowpalWabbitPerformanceStatistics^ get();
-		}
-
-        stack<example*>* m_examples;
-	};
-
 	/// <summary>
-	/// VowpalWabbit model wrapper.
+	/// A managed wrapper for native vowpal wabbit exceptions.
 	/// </summary>
-	public ref class VowpalWabbitModel : public VowpalWabbitBase
-	{
-	internal:
-		System::Int32 m_instanceCount;
-
-		void IncrementReference();
-		void DecrementReference();
-		!VowpalWabbitModel();
-
-	public:
-		VowpalWabbitModel(String^ args);
-		VowpalWabbitModel(String^ args, System::IO::Stream^ stream);
-		virtual ~VowpalWabbitModel();
-	};
-
-	public ref class VowpalWabbitNamespaceBuilder
-	{
-	private:
-		float* m_sum_feat_sq;
-		v_array<feature>* m_atomic;
-	internal:
-		VowpalWabbitNamespaceBuilder(float* sum_feat_sq, v_array<feature>* atomic);
-
-	public:
-		void AddFeature(uint32_t weight_index, float x);
-	};
-
-	public ref class VowpalWabbitExampleBuilder
-	{
-	private:
-		vw* const m_vw;
-		example* m_example;
-		VowpalWabbitExample^ m_clrExample;
-
-	protected:
-		!VowpalWabbitExampleBuilder();
-
-	public:
-		VowpalWabbitExampleBuilder(VowpalWabbitBase^ vw);
-		~VowpalWabbitExampleBuilder();
-
-		VowpalWabbitExample^ CreateExample();
-
-		property String^ Label
-		{
-			void set(String^ value);
-		}
-
-		VowpalWabbitNamespaceBuilder^ AddNamespace(System::Byte featureGroup);
-	};
-
-	/// <summary>
-	/// VowpalWabbit wrapper
-	/// </summary>
-	public ref class VowpalWabbit : VowpalWabbitBase
-	{
-	private:
-		VowpalWabbitModel^ m_model;
-
-		generic<typename TPrediction>
-			where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-		TPrediction PredictOrLearn(String^ line, bool predict);
-
-	protected:
-		!VowpalWabbit();
-
-	public:
-		VowpalWabbit(String^ args);
-		VowpalWabbit(VowpalWabbitModel^ model);
-		VowpalWabbit(String^ args, System::IO::Stream^ stream);
-		virtual ~VowpalWabbit();
-
-		uint32_t HashSpace(String^ s);
-		uint32_t HashFeature(String^ s, unsigned long u);
-
-		void Learn(String^ line);
-		void Predict(String^ line);
-
-		generic<typename TPrediction>
-			where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-		TPrediction Learn(String^ line);
-
-		generic<typename TPrediction>
-			where TPrediction : VowpalWabbitPrediction, gcnew(), ref class
-		TPrediction Predict(String^ line);
-
-		void Driver();
-	};
-
+	/// <remarks>
+	/// As the default managed exception wrapping any native exception doesn't even capture exception::what()
+	/// this wrapper was created.
+	/// </remarks>
 	[Serializable]
 	public ref class VowpalWabbitException : Exception
 	{
 	private:
-		String^ m_filename;
-		Int32 m_lineNumber;
+		/// <summary>
+		/// The source filename in which the wrapped exception occurred.
+		/// </summary>
+		initonly String^ m_filename;
+
+		/// <summary>
+		/// The line number in which the wrapped exception occurred.
+		/// </summary>
+		initonly Int32 m_lineNumber;
 
 	public:
+		/// <summary>
+		/// Initializes a new instance of <see cref="VowpalWabbitException"/>.
+		/// </summary>
+		/// <param name="ex">The native vowpal wabbit exception</param>
 		VowpalWabbitException(const vw_exception& ex);
 
+		/// <summary>
+		/// Gets the source filename in which the wrapped exception occurred.
+		/// </summary>
 		property String^ Filename
 		{
 			String^ get();
 		}
 
+		/// <summary>
+		/// Gets the line number in which the wrapped exception occurred.
+		/// </summary>
 		property Int32 LineNumber
 		{
 			Int32 get();

@@ -72,24 +72,10 @@ int main(int argc, char *argv[])
 
     ftime(&t_end);
     double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
-    if(!all.quiet && all.span_server != "")
+    if(!all.quiet && all.all_reduce != nullptr)
         cerr<<"Net time taken by process = "<<net_time/(double)(1000)<<" seconds\n";
 
-    if(all.span_server != "") {
-        float loss = (float)all.sd->sum_loss;
-        all.sd->sum_loss = (double)accumulate_scalar(all, all.span_server, loss);
-        float weighted_examples = (float)all.sd->weighted_examples;
-        all.sd->weighted_examples = (double)accumulate_scalar(all, all.span_server, weighted_examples);
-        float weighted_labels = (float)all.sd->weighted_labels;
-        all.sd->weighted_labels = (double)accumulate_scalar(all, all.span_server, weighted_labels);
-        float weighted_unlabeled_examples = (float)all.sd->weighted_unlabeled_examples;
-        all.sd->weighted_unlabeled_examples = (double)accumulate_scalar(all, all.span_server, weighted_unlabeled_examples);
-        float example_number = (float)all.sd->example_number;
-        all.sd->example_number = (uint64_t)accumulate_scalar(all, all.span_server, example_number);
-        float total_features = (float)all.sd->total_features;
-        all.sd->total_features = (uint64_t)accumulate_scalar(all, all.span_server, total_features);
-    }
-
+	VW::sync_stats(all);
     VW::finish(all);
   } catch (VW::vw_exception& e) {
     cerr << "vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << endl;

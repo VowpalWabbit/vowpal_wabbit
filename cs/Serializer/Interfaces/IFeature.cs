@@ -6,10 +6,14 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Diagnostics.Contracts;
+using VW.Serializer.Contracts;
+
 namespace VW.Serializer.Interfaces
 {
     /// <summary>
-    /// Intermediate representation of a property annotated as <see cref="Microsoft.Research.MachineLearning.Serializer.Attributes.FeatureAttribute"/>.
+    /// Intermediate representation of a property annotated as <see cref="VW.Serializer.Attributes.FeatureAttribute"/>.
     /// </summary>
     public interface IFeature
     {
@@ -34,6 +38,14 @@ namespace VW.Serializer.Interfaces
         /// Defaults to false.
         /// </summary>
         bool Enumerize { get; }
+
+        /// <summary>
+        /// If true, an anchoring feature (0:1) will be inserted at front.
+        /// This is required if --interact is used to mark the beginning of the feature namespace,
+        /// as 0-valued features are removed.
+        /// </summary>
+        /// <remarks>Defaults to false.</remarks>
+        bool AddAnchor { get; }
     }
 
     /// <summary>

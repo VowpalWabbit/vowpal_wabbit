@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 
 [![Build Status](https://travis-ci.org/JohnLangford/vowpal_wabbit.png)](https://travis-ci.org/JohnLangford/vowpal_wabbit)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/JohnLangford/vowpal_wabbit?branch=master&svg=true)](https://ci.appveyor.com/project/JohnLangford/vowpal-wabbit)
+[![Coverage Status](https://coveralls.io/repos/JohnLangford/vowpal_wabbit/badge.svg)](https://coveralls.io/r/JohnLangford/vowpal_wabbit)
 
 This is the *vowpal wabbit* fast online learning code.  For Windows, look at README.windows.txt
 
@@ -126,7 +127,7 @@ make CXX='clang++ -static' clean vw test     # ignore warnings
 OSX requires _glibtools_, which is available via the [brew](http://brew.sh) or
 [MacPorts](https://www.macports.org) package managers.
 
-### Complete brew install of 7.10
+### Complete brew install of 8.0
 ```
 brew install vowpal-wabbit
 ```

@@ -13,13 +13,15 @@ namespace VW
     /// <summary>
     /// A strongly-typed pooled object.
     /// </summary>
-    /// <typeparam name="T">Type of object to pool.</typeparam>
-    public sealed class PooledObject<T> : IDisposable
-        where T : IDisposable
+    /// <typeparam name="TSource">The disposable context needed to create objects of <typeparamref name="TObject"/>.</typeparam>
+    /// <typeparam name="TObject">The type of the objects to be created.</typeparam>
+    public sealed class PooledObject<TSource, TObject> : IDisposable
+        where TSource : IDisposable
+        where TObject : IDisposable
     {
-        private readonly ObjectPool<T> pool;
+        private readonly ObjectPool<TSource, TObject> pool;
 
-        internal PooledObject(ObjectPool<T> pool, int version, T value)
+        internal PooledObject(ObjectPool<TSource, TObject> pool, int version, TObject value)
         {
             this.pool = pool;
             this.Value = value;
@@ -29,7 +31,7 @@ namespace VW
         /// <summary>
         /// The actual value.
         /// </summary>
-        public T Value { get; private set; }
+        public TObject Value { get; private set; }
 
         /// <summary>
         /// Factory version used to create Value.

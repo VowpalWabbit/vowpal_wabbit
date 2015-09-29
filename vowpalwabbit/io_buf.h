@@ -31,7 +31,7 @@ using namespace std;
 #endif
 
 class io_buf {
- public:
+public:
   v_array<char> space; //space.begin = beginning of loaded values.  space.end = end of read or written values.
   v_array<int> files;
   size_t count; // maximum number of file descriptors.
@@ -39,11 +39,11 @@ class io_buf {
   char* endloaded; //end of loaded values
   v_array<char> currentname;
   v_array<char> finalname;
-  
+
   static const int READ = 1;
   static const int WRITE = 2;
 
-  void init(){
+  void init() {
     space = v_init<char>();
     files = v_init<int>();
     currentname = v_init<char>();
@@ -55,34 +55,34 @@ class io_buf {
     endloaded = space.begin;
   }
 
-  virtual int open_file(const char* name, bool stdin_off, int flag=READ){
+  virtual int open_file(const char* name, bool stdin_off, int flag=READ) {
     int ret = -1;
-    switch(flag){
+    switch(flag) {
     case READ:
       if (*name != '\0')
-	{
+      {
 #ifdef _WIN32
-	  // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
-	  _sopen_s(&ret, name, _O_RDONLY|_O_BINARY|_O_SEQUENTIAL, _SH_DENYWR, 0);
+        // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
+        _sopen_s(&ret, name, _O_RDONLY|_O_BINARY|_O_SEQUENTIAL, _SH_DENYWR, 0);
 #else
-	  ret = open(name, O_RDONLY|O_LARGEFILE);
+        ret = open(name, O_RDONLY|O_LARGEFILE);
 #endif
-	}
+      }
       else if (!stdin_off)
 #ifdef _WIN32
-	ret = _fileno(stdin);
+        ret = _fileno(stdin);
 #else
-      ret = fileno(stdin);
+        ret = fileno(stdin);
 #endif
       if(ret!=-1)
-	files.push_back(ret);
+        files.push_back(ret);
       break;
 
     case WRITE:
 #ifdef _WIN32
-		_sopen_s(&ret, name, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
+      _sopen_s(&ret, name, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
 #else
-		ret = open(name, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
+      ret = open(name, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
 #endif
       if(ret!=-1)
         files.push_back(ret);
@@ -93,14 +93,14 @@ class io_buf {
       ret = -1;
     }
     if (ret == -1 && *name != '\0')
-      THROW("can't open: " << name << ", error = " << strerror(errno));
-    
+      THROWERRNO("can't open: " << name);
+
     return ret;
   }
 
-  virtual void reset_file(int f){
+  virtual void reset_file(int f) {
 #ifdef _WIN32
-	_lseek(f, 0, SEEK_SET);
+    _lseek(f, 0, SEEK_SET);
 #else
     lseek(f, 0, SEEK_SET);
 #endif
@@ -112,16 +112,16 @@ class io_buf {
     init();
   }
 
-  virtual ~io_buf(){
+  virtual ~io_buf() {
     files.delete_v();
     space.delete_v();
   }
 
-  void set(char *p){space.end = p;}
+  void set(char *p) {space.end = p;}
 
-  virtual size_t num_files(){ return files.size();}
+  virtual size_t num_files() { return files.size();}
 
-  virtual ssize_t read_file(int f, void* buf, size_t nbytes){
+  virtual ssize_t read_file(int f, void* buf, size_t nbytes) {
     return read_file_or_socket(f, buf, nbytes);
   }
 
@@ -129,17 +129,17 @@ class io_buf {
 
   size_t fill(int f) {
     if (space.end_array - endloaded == 0)
-      {
-	size_t offset = endloaded - space.begin;
-	space.resize(2 * (space.end_array - space.begin));
-	endloaded = space.begin+offset;
-      }
+    {
+      size_t offset = endloaded - space.begin;
+      space.resize(2 * (space.end_array - space.begin));
+      endloaded = space.begin+offset;
+    }
     ssize_t num_read = read_file(f, endloaded, space.end_array - endloaded);
     if (num_read >= 0)
-      {
-	endloaded = endloaded+num_read;
-	return num_read;
-      }
+    {
+      endloaded = endloaded+num_read;
+      return num_read;
+    }
     else
       return 0;
   }
@@ -151,12 +151,15 @@ class io_buf {
   static ssize_t write_file_or_socket(int f, const void* buf, size_t nbytes);
 
   virtual void flush() {
-	  if (write_file(files[0], space.begin, space.size()) != (int) space.size())
-      std::cerr << "error, failed to write example\n";
-    space.end = space.begin; }
+    if (files.size() > 0) {
+      if (write_file(files[0], space.begin, space.size()) != (int)space.size())
+        std::cerr << "error, failed to write example\n";
+      space.end = space.begin;
+    }
+  }
 
-  virtual bool close_file(){
-    if(files.size()>0){
+  virtual bool close_file() {
+    if(files.size()>0) {
       close_file_or_socket(files.pop());
       return true;
     }
@@ -167,7 +170,7 @@ class io_buf {
 
   static void close_file_or_socket(int f);
 
-  void close_files(){
+  void close_files() {
     while(close_file());
   }
 
@@ -183,16 +186,15 @@ size_t readto(io_buf &i, char* &pointer, char terminal);
 inline size_t bin_read_fixed(io_buf& i, char* data, size_t len, const char* read_message)
 {
   if (len > 0)
-    {
-      char* p;
-      size_t ret = buf_read(i,p,len);
-      if (*read_message == '\0')
-	memcpy(data,p,len);
-      else
-	if (memcmp(data,p,len) != 0)
-	  THROW(read_message);
-      return ret;
-    }
+  {
+    char* p;
+    size_t ret = buf_read(i,p,len);
+    if (*read_message == '\0')
+      memcpy(data,p,len);
+    else if (memcmp(data,p,len) != 0)
+      THROW(read_message);
+    return ret;
+  }
   return 0;
 }
 
@@ -211,11 +213,11 @@ inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_messa
 inline size_t bin_write_fixed(io_buf& o, const char* data, uint32_t len)
 {
   if (len > 0)
-    {
-      char* p;
-      buf_write (o, p, len);
-      memcpy (p, data, len);
-    }
+  {
+    char* p;
+    buf_write (o, p, len);
+    memcpy (p, data, len);
+  }
   return len;
 }
 
@@ -226,21 +228,20 @@ inline size_t bin_write(io_buf& o, const char* data, uint32_t len)
   return (len + sizeof(len));
 }
 
-inline size_t bin_text_write(io_buf& io, char* data, uint32_t len, 
-		      const char* text_data, uint32_t text_len, bool text)
+inline size_t bin_text_write(io_buf& io, char* data, uint32_t len,
+                             const char* text_data, uint32_t text_len, bool text)
 {
   if (text)
     return bin_write_fixed (io, text_data, text_len);
-  else 
-    if (len > 0)
-      return bin_write (io, data, len);
+  else if (len > 0)
+    return bin_write (io, data, len);
   return 0;
 }
 
 //a unified function for read(in binary), write(in binary), and write(in text)
-inline size_t bin_text_read_write(io_buf& io, char* data, uint32_t len, 
-			 const char* read_message, bool read, 
-			 const char* text_data, uint32_t text_len, bool text)
+inline size_t bin_text_read_write(io_buf& io, char* data, uint32_t len,
+                                  const char* read_message, bool read,
+                                  const char* text_data, uint32_t text_len, bool text)
 {
   if (read)
     return bin_read(io, data, len, read_message);
@@ -248,20 +249,20 @@ inline size_t bin_text_read_write(io_buf& io, char* data, uint32_t len,
     return bin_text_write(io,data,len, text_data, text_len, text);
 }
 
-inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len, 
-		      const char* text_data, uint32_t text_len, bool text)
+inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len,
+                                   const char* text_data, uint32_t text_len, bool text)
 {
   if (text)
     return bin_write_fixed (io, text_data, text_len);
-  else 
+  else
     return bin_write_fixed (io, data, len);
   return 0;
 }
 
 //a unified function for read(in binary), write(in binary), and write(in text)
-inline size_t bin_text_read_write_fixed(io_buf& io, char* data, uint32_t len, 
-			       const char* read_message, bool read, 
-			       const char* text_data, uint32_t text_len, bool text)
+inline size_t bin_text_read_write_fixed(io_buf& io, char* data, uint32_t len,
+                                        const char* read_message, bool read,
+                                        const char* text_data, uint32_t text_len, bool text)
 {
   if (read)
     return bin_read_fixed(io, data, len, read_message);

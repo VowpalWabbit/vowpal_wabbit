@@ -159,7 +159,7 @@ parser* new_parser()
   return &ret;
 }
 
-void set_compressed(parser* par){
+void set_compressed(parser* par) {
   finalize_source(par);
   par->input = new comp_io_buf;
   par->output = new comp_io_buf;
@@ -276,7 +276,7 @@ void reset_source(vw& all, size_t numbits)
 	  }
 	}
       else {
-	for (size_t i = 0; i < input->files.size();i++)
+      for (size_t i = 0; i < input->files.size(); i++)
 	  {
 	    input->reset_file(input->files[i]);
 	    if (cache_numbits(input, input->files[i]) < numbits)
@@ -305,7 +305,7 @@ void finalize_source(parser* p)
 void make_write_cache(vw& all, string &newname, bool quiet)
 {
   io_buf* output = all.p->output;
-  if (output->files.size() != 0){
+  if (output->files.size() != 0) {
     cerr << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
     return;
   }
@@ -350,7 +350,7 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
 	try {
         f = all.p->input->open_file(caches[i].c_str(), all.stdin_off, io_buf::READ);
 	}
-	catch (exception e){ f = -1;}
+      catch (exception e) { f = -1;}
       if (f == -1)
 	make_write_cache(all, caches[i], quiet);
       else {
@@ -425,11 +425,11 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 
       // attempt to bind to socket
       if ( ::bind(all.p->bound_sock,(sockaddr*)&address, sizeof(address)) < 0 )
-	THROW("bind: " << strerror(errno));
+	THROWERRNO("bind");
       
       // listen on socket
       if (listen(all.p->bound_sock, 1) < 0)
-	THROW("listen: " << strerror(errno));
+	THROWERRNO("listen");
 	  
 	  // write port file
 	  if (all.vm.count("port_file"))
@@ -450,7 +450,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 
       // background process
       if (!all.active && daemon(1,1))
-	THROW("daemon: " << strerror(errno));
+	THROWERRNO("daemon");
 
       // write pid file
       if (all.vm.count("pid_file"))
@@ -550,7 +550,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 	cerr << "calling accept" << endl;
       int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
       if (f < 0)
-	THROW("accept: " << strerror(errno));
+	THROWERRNO("accept");
       
       all.p->label_sock = f;
       all.print = print_result;
@@ -762,7 +762,7 @@ void feature_limit(vw& all, example* ex)
       }
 }
 
-namespace VW{
+namespace VW {
 void setup_example(vw& all, example* ae)
 {
   ae->partial_prediction = 0.;
@@ -792,7 +792,7 @@ void setup_example(vw& all, example* ae)
       
       for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	if (all.ignore[*i])
-	  {//delete namespace
+      { //delete namespace
 	    ae->atomics[*i].erase();
 	    memmove(i,i+1,(ae->indices.end - (i+1))*sizeof(*i));
 	    ae->indices.end--;
@@ -843,7 +843,7 @@ void setup_example(vw& all, example* ae)
 }
 }
 
-namespace VW{
+namespace VW {
   example* new_unused_example(vw& all) { 
     example* ec = get_unused_example(all);
     all.p->lp.default_label(&ec->l);
@@ -855,7 +855,7 @@ namespace VW{
   {
     example* ret = get_unused_example(all);
 
-    read_line(all, ret, example_line);
+    VW::read_line(all, ret, example_line);
 	parse_atomic_example(all,ret,false);
     setup_example(all, ret);
     all.p->end_parsed_examples++;
@@ -890,7 +890,7 @@ namespace VW{
 	if (label.length() > 0)
 		parse_example_label(all, *ret, label);
 
-    for (size_t i = 0; i < len;i++)
+  for (size_t i = 0; i < len; i++)
       {
 	uint32_t index = features[i].name;
 	ret->indices.push_back(index);
@@ -933,7 +933,7 @@ namespace VW{
   
   void releaseFeatureSpace(primitive_feature_space* features, size_t len)
   {
-    for (size_t i = 0; i < len;i++)
+  for (size_t i = 0; i < len; i++)
       delete features[i].fs;
     delete (features);
   }
@@ -1048,14 +1048,14 @@ void *main_parse_loop(void *in)
 	return 0L;
 }
 
-namespace VW{
+namespace VW {
 example* get_example(parser* p)
 {
   mutex_lock(&p->examples_lock);
   if (p->end_parsed_examples != p->used_index) {
     size_t ring_index = p->used_index++ % p->ring_size;
     if (!(p->examples+ring_index)->in_use)
-      cout << p->used_index << " " << p->end_parsed_examples << " " << ring_index << endl;
+      cout << "error: example should be in_use " << p->used_index << " " << p->end_parsed_examples << " " << ring_index << endl;
     assert((p->examples+ring_index)->in_use);
     mutex_unlock(&p->examples_lock);
     

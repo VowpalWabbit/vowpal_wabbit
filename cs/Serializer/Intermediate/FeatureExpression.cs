@@ -32,6 +32,8 @@ namespace VW.Serializer.Intermediate
 
         internal bool Enumerize { get; set; }
 
+        internal bool AddAnchor { get; set; }
+
         internal MemberInitExpression NewFeatureExpression { get; set; }
 
         internal MemberExpression PropertyExpression { get; set; }

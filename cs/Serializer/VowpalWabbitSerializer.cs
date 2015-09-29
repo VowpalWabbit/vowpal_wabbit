@@ -8,9 +8,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
+using VW.Interfaces;
 using VW.Serializer.Attributes;
+using VW.Serializer.Visitors;
 
 namespace VW.Serializer
 {
@@ -18,23 +21,46 @@ namespace VW.Serializer
     /// A serializer from a user type (TExample) to a native Vowpal Wabbit example type.
     /// </summary>
     /// <typeparam name="TExample">The source example type.</typeparam>
-    public sealed class VowpalWabbitSerializer<TExample> : IDisposable
+    public sealed class VowpalWabbitSerializer<TExample> : IDisposable, IVowpalWabbitExamplePool
     {
-        private readonly VowpalWabbitSerializerSettings settings;
+        private class CacheEntry
+        {
+            internal VowpalWabbitExample Example;
 
-        private readonly Func<TExample, IVowpalWabbitExample> serializer;
+            internal DateTime LastRecentUse;
 
-        private Dictionary<TExample, VowpalWabbitCachedExample<TExample>> exampleCache;
+#if DEBUG
+            internal bool InUse;
+#endif
+        }
 
-        internal VowpalWabbitSerializer(Func<TExample, IVowpalWabbitExample> serializer, VowpalWabbitSerializerSettings settings)
+        private readonly VowpalWabbitSettings settings;
+
+        private readonly Func<VowpalWabbit, TExample, ILabel, VowpalWabbitExample> serializer;
+
+        private Dictionary<TExample, CacheEntry> exampleCache;
+
+#if DEBUG
+        /// <summary>
+        /// Reverse lookup from native example to cache entry to enable proper usage.
+        /// </summary>
+        /// <remarks>
+        /// To avoid any performance impact this is only enabled in debug mode.
+        /// </remarks>
+        private readonly Dictionary<VowpalWabbitExample, CacheEntry> reverseLookup;
+#endif
+
+        internal VowpalWabbitSerializer(Func<VowpalWabbit, TExample, ILabel, VowpalWabbitExample> serializer, VowpalWabbitSettings settings)
         {
             if (serializer == null)
             {
                 throw new ArgumentNullException("serializer");
             }
+            Contract.Ensures(this.settings != null);
+            Contract.EndContractBlock();
 
             this.serializer = serializer;
-            this.settings = settings ?? new VowpalWabbitSerializerSettings();
+            this.settings = settings ?? new VowpalWabbitSettings();
 
             var cacheableAttribute = (CacheableAttribute) typeof (TExample).GetCustomAttributes(typeof (CacheableAttribute), true).FirstOrDefault();
             if (cacheableAttribute == null)
@@ -46,7 +72,7 @@ namespace VW.Serializer
             {
                 if (cacheableAttribute.EqualityComparer == null)
                 {
-                    this.exampleCache = new Dictionary<TExample, VowpalWabbitCachedExample<TExample>>();
+                    this.exampleCache = new Dictionary<TExample, CacheEntry>();
                 }
                 else
                 {
@@ -61,38 +87,78 @@ namespace VW.Serializer
                     }
 
                     var comparer = (IEqualityComparer<TExample>)Activator.CreateInstance(cacheableAttribute.EqualityComparer);
-                    this.exampleCache = new Dictionary<TExample, VowpalWabbitCachedExample<TExample>>(comparer);
+                    this.exampleCache = new Dictionary<TExample, CacheEntry>(comparer);
                 }
+
+#if DEBUG
+                this.reverseLookup = new Dictionary<VowpalWabbitExample, CacheEntry>(new ReferenceEqualityComparer<VowpalWabbitExample>());
+#endif
             }
+        }
+
+        /// <summary>
+        /// True if this instance caches examples, false otherwise.
+        /// </summary>
+        public bool CachesExamples
+        {
+            get { return this.exampleCache != null; }
         }
 
         /// <summary>
         /// Serialize the example.
         /// </summary>
+        /// <param name="vw">The vw instance.</param>
         /// <param name="example">The example to serialize.</param>
+        /// <param name="label">The label to be serialized.</param>
         /// <returns>The serialized example.</returns>
         /// <remarks>If TExample is annotated using the Cachable attribute, examples are returned from cache.</remarks>
-        public IVowpalWabbitExample Serialize(TExample example)
+        public VowpalWabbitExample Serialize(VowpalWabbit vw, TExample example, ILabel label = null)
         {
-            if (this.exampleCache == null)
+            Contract.Requires(vw != null);
+            Contract.Requires(example != null);
+
+            if (this.exampleCache == null || label != null)
             {
-                return this.serializer(example);
+                return this.serializer(vw, example, label);
             }
 
-            VowpalWabbitCachedExample<TExample> result;
+            CacheEntry result;
             if (this.exampleCache.TryGetValue(example, out result))
             {
                 result.LastRecentUse = DateTime.UtcNow;
+
+#if DEBUG
+                if (result.InUse)
+                {
+                    throw new ArgumentException("Cached example already in use.");
+                }
+#endif
             }
             else
             {
-                result = new VowpalWabbitCachedExample<TExample>(this, this.serializer(example));
+                result = new CacheEntry 
+                {
+                    Example =  new VowpalWabbitExample(owner: this, example: this.serializer(vw, example, label)),
+                    LastRecentUse = DateTime.UtcNow
+                };
                 this.exampleCache.Add(example, result);
+
+#if DEBUG
+                this.reverseLookup.Add(result.Example, result);
+#endif
             }
 
-            return result;
+#if DEBUG
+            result.InUse = true;
+#endif
+
+            // TODO: support Label != null here and update cached example using new label
+            return result.Example;
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             this.Dispose(true);
@@ -107,7 +173,7 @@ namespace VW.Serializer
                 {
                     foreach (var example in this.exampleCache.Values)
                     {
-                        example.UnderlyingExample.Dispose();
+                        example.Example.InnerExample.Dispose();
                     }
 
                     this.exampleCache = null;
@@ -115,12 +181,31 @@ namespace VW.Serializer
             }
         }
 
-        internal void ReturnExampleToCache(VowpalWabbitCachedExample<TExample> example)
+        /// <summary>
+        /// Accepts an example back into this pool.
+        /// </summary>
+        /// <param name="example">The example to be returned.</param>
+		public void ReturnExampleToPool(VowpalWabbitExample example)
         {
             if (this.exampleCache == null)
             {
                 throw new ObjectDisposedException("VowpalWabbitSerializer");
             }
+
+#if DEBUG
+            CacheEntry cacheEntry;
+            if (!this.reverseLookup.TryGetValue(example, out cacheEntry))
+            {
+                throw new ArgumentException("Example is not found in pool");
+            }
+
+            if (!cacheEntry.InUse)
+            {
+                throw new ArgumentException("Unused example returned");
+            }
+
+            cacheEntry.InUse = false;
+#endif
 
             // if we reach the cache boundary, dispose the oldest example
             if (this.exampleCache.Count > this.settings.MaxExampleCacheSize)
@@ -139,8 +224,25 @@ namespace VW.Serializer
                     }
                 }
 
+#if DEBUG
+                this.reverseLookup.Remove(min.Value.Example);
+#endif
+
                 this.exampleCache.Remove(min.Key);
-                min.Value.UnderlyingExample.Dispose();
+                min.Value.Example.InnerExample.Dispose();
+            }
+        }
+
+        private class ReferenceEqualityComparer<T> : IEqualityComparer<T>
+        {
+            public bool Equals(T x, T y)
+            {
+                return object.ReferenceEquals(x, y);
+            }
+
+            public int GetHashCode(T obj)
+            {
+                return obj.GetHashCode();
             }
         }
     }

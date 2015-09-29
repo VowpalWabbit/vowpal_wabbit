@@ -5,19 +5,25 @@ license as described in the file LICENSE.
 */
 
 #include "vw_clr.h"
+#include "vw_model.h"
 #include "parse_regressor.h"
 #include "parse_args.h"
 #include "clr_io.h"
 
 namespace VW
 {
-	VowpalWabbitModel::VowpalWabbitModel(System::String^ args)
-		: VowpalWabbitBase(args), m_instanceCount(0)
+	VowpalWabbitModel::VowpalWabbitModel(VowpalWabbitSettings^ settings)
+		: VowpalWabbitBase(settings), m_instanceCount(0)
 	{
+		if (settings == nullptr)
+			throw gcnew ArgumentNullException("settings");
+
+		if (settings->Model != nullptr)
+			throw gcnew ArgumentNullException("VowpalWabbitModel cannot be initialized from another model");
 	}
 
-	VowpalWabbitModel::VowpalWabbitModel(System::String^ args, System::IO::Stream^ stream)
-		: VowpalWabbitBase(args, stream)
+	VowpalWabbitModel::VowpalWabbitModel(String^ args)
+		: VowpalWabbitModel(gcnew VowpalWabbitSettings(args))
 	{
 	}
 

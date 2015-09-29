@@ -5,8 +5,9 @@
 #include "accumulate.h"
 #include "reductions.h"
 #include "vw.h"
+#include "vw_allreduce.h"
 
-//#define MAGIC_ARGUMENT //MAY IT NEVER DIE
+//#define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
 
 using namespace std;
 using namespace LEARNER;
@@ -532,7 +533,7 @@ using namespace LEARNER;
           && ( (poly.batch_sz_double && !(ec.example_counter % poly.next_batch_sz))
             || (!poly.batch_sz_double && !(ec.example_counter % poly.batch_sz)))) {
         poly.next_batch_sz *= 2; //no effect when !poly.batch_sz_double
-        poly.update_support = (poly.all->span_server == "" || poly.numpasses == 1);
+        poly.update_support = (poly.all->all_reduce == nullptr || poly.numpasses == 1);
       }
       poly.last_example_counter = ec.example_counter;
     } else
@@ -579,7 +580,7 @@ using namespace LEARNER;
 
   void end_pass(stagewise_poly &poly)
   {
-    if (!!poly.batch_sz || (poly.all->span_server != "" && poly.numpasses > 1))
+    if (!!poly.batch_sz || (poly.all->all_reduce != nullptr && poly.numpasses > 1))
       return;
 
     uint64_t sum_sparsity_inc = poly.sum_sparsity - poly.sum_sparsity_sync;
@@ -592,19 +593,18 @@ using namespace LEARNER;
 #endif //DEBUG
 
     vw &all = *poly.all;
-    if (all.span_server != "") {
+    if (all.all_reduce != nullptr) {
       /*
        * The following is inconsistent with the transplant code in
        * synthetic_create_rec(), which clears parent bits on depth mismatches.
        * But it's unclear what the right behavior is in general for either
        * case...
        */
-      all_reduce<uint8_t, reduce_min_max>(poly.depthsbits, depthsbits_sizeof(poly),
-          all.span_server, all.unique_id, all.total, all.node, all.socks);
+      all_reduce<uint8_t, reduce_min_max>(all, poly.depthsbits, depthsbits_sizeof(poly));
 
-      sum_input_sparsity_inc = (uint64_t)accumulate_scalar(all, all.span_server, (float)sum_input_sparsity_inc);
-      sum_sparsity_inc = (uint64_t)accumulate_scalar(all, all.span_server, (float)sum_sparsity_inc);
-      num_examples_inc = (uint64_t)accumulate_scalar(all, all.span_server, (float)num_examples_inc);
+      sum_input_sparsity_inc = (uint64_t)accumulate_scalar(all, (float)sum_input_sparsity_inc);
+      sum_sparsity_inc = (uint64_t)accumulate_scalar(all, (float)sum_sparsity_inc);
+      num_examples_inc = (uint64_t)accumulate_scalar(all, (float)num_examples_inc);
     }
 
     poly.sum_input_sparsity_sync = poly.sum_input_sparsity_sync + sum_input_sparsity_inc;
@@ -664,7 +664,7 @@ using namespace LEARNER;
   {
     if (missing_option(all, true, "stage_poly", "use stagewise polynomial feature learning"))
       return nullptr;
-    
+
     new_options(all, "Stagewise poly options")
       ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
       ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")
