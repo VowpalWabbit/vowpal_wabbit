@@ -30,6 +30,7 @@ namespace cs_testhelp
             var skipList = new[] { 13, 14, 18, 25, 26, 33, 16, 17, 19, 20, 24, 31, 32 };
             var dependencies = new Dictionary<int, int[]>
             {
+                { 2, new[] { 1 } },
                 { 6, new[] { 4 } },
                 { 8, new[] { 7 } },
                 { 20, new[] { 19 } },

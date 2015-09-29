@@ -23,10 +23,6 @@ namespace VW.Serializer
     {
         private readonly bool disableStringExampleGeneration;
 
-        public VowpalWabbitDefaultMarshaller()
-        {
-        }
-
         public VowpalWabbitDefaultMarshaller(bool disableStringExampleGeneration)
         {
             this.disableStringExampleGeneration = disableStringExampleGeneration;

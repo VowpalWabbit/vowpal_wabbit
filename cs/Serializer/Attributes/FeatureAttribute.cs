@@ -56,7 +56,7 @@ namespace VW.Serializer.Attributes
         /// </summary>
         public char FeatureGroup
         {
-            get { return InternalFeatureGroup ?? (char)0; }
+            get { return InternalFeatureGroup ?? ' '; }
             set { this.InternalFeatureGroup = value; }
         }
 

@@ -7,6 +7,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics.Contracts;
 using System.Linq.Expressions;
 
 namespace VW.Serializer.Intermediate
@@ -19,6 +20,7 @@ namespace VW.Serializer.Intermediate
             {
                 throw new ArgumentNullException("name");
             }
+            Contract.EndContractBlock();
 
             this.Name = name;
             this.AddAnchor = addAnchor;

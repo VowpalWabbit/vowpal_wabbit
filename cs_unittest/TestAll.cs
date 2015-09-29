@@ -34,9 +34,23 @@ VWTestHelper.AssertEqual("train-sets/ref/0001.stderr", vw.PerformanceStatistics)
 		[Description("checking predictions as well")]
 		[TestCategory("Command line")]
 [DeploymentItem(@"train-sets/0001.dat",@"train-sets")]
+[DeploymentItem(@"train-sets/ref/0001.stderr", @"train-sets\ref")]
+
+[DeploymentItem(@"train-sets/0001.dat",@"train-sets")]
 [DeploymentItem(@"test-sets/ref/0001.stderr", @"test-sets\ref")]
 
 public void CommandLine_Test2() {
+
+			using (var vw = new VowpalWabbit("-k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off"))
+            {
+				foreach (var dataLine in File.ReadLines("train-sets/0001.dat"))
+				{
+vw.Learn(dataLine);
+}
+vw.RunMultiPass();
+VWTestHelper.AssertEqual("train-sets/ref/0001.stderr", vw.PerformanceStatistics);
+}
+
 
 			using (var vw = new VowpalWabbit("-k -t train-sets/0001.dat -i models/0001.model -p 0001.predict --invariant"))
             {

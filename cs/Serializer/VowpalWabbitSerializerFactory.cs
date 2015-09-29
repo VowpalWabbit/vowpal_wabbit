@@ -42,12 +42,16 @@ namespace VW.Serializer
             }
             else
             {
-                cacheKey = typeof(TExample);
-                object serializer;
-
-                if (SerializerCache.TryGetValue(cacheKey, out serializer))
+                // only cache non-string generating serializer
+                if (!settings.EnableStringExampleGeneration)
                 {
-                    return (VowpalWabbitSerializerCompiled<TExample>)serializer;
+                    cacheKey = typeof(TExample);
+                    object serializer;
+
+                    if (SerializerCache.TryGetValue(cacheKey, out serializer))
+                    {
+                        return (VowpalWabbitSerializerCompiled<TExample>)serializer;
+                    }
                 }
 
                 // TOOD: enhance caching based on feature list & featurizer set
@@ -60,7 +64,10 @@ namespace VW.Serializer
                 return null;
             }
 
-            var newSerializer = new VowpalWabbitSerializerCompiled<TExample>(allFeatures, settings == null ? null : settings.CustomFeaturizer);
+            var newSerializer = new VowpalWabbitSerializerCompiled<TExample>(
+                allFeatures,
+                settings == null ? null : settings.CustomFeaturizer,
+                !settings.EnableStringExampleGeneration);
 
             if (cacheKey != null)
             {

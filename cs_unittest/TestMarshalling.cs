@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,6 +13,7 @@ namespace cs_unittest
     public class TestMarshalling
     {
         [TestMethod]
+        [TestCategory("Marshal")]
         public void TestEnumerize()
         {
             using(var vw = new VowpalWabbitExampleValidator<ExampleEnum>(string.Empty))
@@ -23,6 +25,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Marshal")]
         public void TestString()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleString>(string.Empty))
@@ -33,6 +36,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Marshal")]
         public void TestStringFeatureGroup()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleString2>(string.Empty))
@@ -43,6 +47,7 @@ namespace cs_unittest
 
         [TestMethod]
         [ExpectedException(typeof(AssertFailedException))]
+        [TestCategory("Marshal")]
         public void TestStringNamespace()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleString3>(string.Empty))
@@ -54,6 +59,7 @@ namespace cs_unittest
 
         [TestMethod]
         [ExpectedException(typeof(AssertFailedException))]
+        [TestCategory("Marshal")]
         public void TestStringInvalid()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleString>(string.Empty))
@@ -62,7 +68,54 @@ namespace cs_unittest
                 vw.Validate("| abc New York", new ExampleString() { Location = "New York" });
             }
         }
+
+        [TestMethod]
+        [TestCategory("Marshal")]
+        public void TestDictionary()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<ExampleDictionary>(string.Empty))
+            {
+                var ex = new ExampleDictionary() { Dict = new Dictionary<object, object>() };
+                ex.Dict.Add("Age", 25);
+                ex.Dict.Add("Location", 1.2);
+
+                vw.Validate("| Age:25 Location:1.2", ex);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Marshal")]
+        public void TestCustomType()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<ExampleCustomType>(string.Empty))
+            {
+                vw.Validate("| Custom2", new ExampleCustomType { Custom = new CustomType { value = 2 } });
+            }
+        }
     }
+
+    public class CustomType
+    {
+        public int value;
+
+        public override string ToString()
+        {
+            return value.ToString();
+        }
+    }
+
+    public class ExampleCustomType
+    {
+        [Feature]
+        public CustomType Custom { get; set; }
+    }
+
+    public class ExampleDictionary
+    {
+        [Feature]
+        public IDictionary Dict { get; set; }
+    }
+
 
     public class ExampleEnum
     {

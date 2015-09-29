@@ -53,7 +53,8 @@ namespace VW
 			m_maxExampleQueueLengthPerInstance(UINT32_MAX),
 			m_enableExampleCaching(true),
 			// default to the statistically more safe option
-			m_exampleDistribution(VowpalWabbitExampleDistribution::UniformRandom)
+			m_exampleDistribution(VowpalWabbitExampleDistribution::UniformRandom),
+      m_enableStringExampleGeneration(false)
 		{
 		}
 

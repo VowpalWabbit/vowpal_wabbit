@@ -25,7 +25,7 @@ namespace cs_unittest
             // remove cache file
             args = Regex.Replace(args, @"-c\s+([^ -]+)?", " ");
 
-            this.vw = new VowpalWabbit<TExample>(new VowpalWabbitSettings(args));
+            this.vw = new VowpalWabbit<TExample>(new VowpalWabbitSettings(args, enableStringExampleGeneration: true));
             this.serializer = vw.Serializer.Func(this.vw.Native);
         }
 

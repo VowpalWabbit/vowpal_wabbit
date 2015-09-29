@@ -61,13 +61,15 @@ namespace VW.Serializer
         //private ParameterExpression mainVisitorParameter;
         private readonly List<ParameterExpression> featurizers;
         private readonly List<ParameterExpression> metaFeatures;
+        private readonly bool disableStringExampleGeneration;
 
-        internal VowpalWabbitSerializerCompiled(IReadOnlyList<FeatureExpression> allFeatures, IReadOnlyList<Type> featurizerTypes)
+        internal VowpalWabbitSerializerCompiled(IReadOnlyList<FeatureExpression> allFeatures, IReadOnlyList<Type> featurizerTypes, bool disableStringExampleGeneration)
         {
             if (allFeatures == null || allFeatures.Count == 0)
                 throw new ArgumentException("allFeatures");
-
             Contract.EndContractBlock();
+
+            this.disableStringExampleGeneration = disableStringExampleGeneration;
 
             this.allFeatures = allFeatures.Select(f => new FeatureExpressionInternal { Source = f }).ToArray();
 
@@ -118,7 +120,16 @@ namespace VW.Serializer
                 this.featurizers.Add(featurizer);
                 this.variables.Add(featurizer);
 
-                this.body.Add(Expression.Assign(featurizer, Expression.New(featurizerType)));
+                // CODE new FeaturizerType(disableStringExampleGeneration)
+                var newExpr = CreateNew(featurizerType, Expression.Constant(disableStringExampleGeneration));
+                if (newExpr == null)
+                {
+                    // CODE new FeaturizerType()
+                    newExpr = Expression.New(featurizerType);
+                }
+
+                // featurizer = new ...
+                this.body.Add(Expression.Assign(featurizer, newExpr));
             }
         }
 
@@ -246,9 +257,11 @@ namespace VW.Serializer
 
         private static Expression CreateNew(Type type, params Expression[] constructorParameters)
         {
-            return Expression.New(
-                type.GetConstructor(constructorParameters.Select(e => e.Type).ToArray()),
-                constructorParameters);
+            var ctor = type.GetConstructor(constructorParameters.Select(e => e.Type).ToArray());
+            if (ctor == null)
+                return null;
+
+            return Expression.New(ctor, constructorParameters);
         }
 
         private void CreateNamespacesAndFeatures()
