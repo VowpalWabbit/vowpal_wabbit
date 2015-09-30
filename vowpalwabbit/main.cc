@@ -24,111 +24,6 @@ using namespace std;
 #include <wordexp.h>
 #endif
 
-// see http://stackoverflow.com/questions/1706551/parse-string-into-argv-argc
-char **split_commandline(const char *cmdline, int *argc)
-{
-       int i;
-       char **argv = NULL;
-       assert(argc);
-
-       if (!cmdline)
-       {
-               return NULL;
-       }
-
-       // Posix.
-#ifndef _WIN32
-       {
-               wordexp_t p;
-
-               // Note! This expands shell variables.
-               if (wordexp(cmdline, &p, 0))
-               {
-                       return NULL;
-               }
-
-               *argc = p.we_wordc;
-
-               if (!(argv = (char**)calloc(*argc, sizeof(char *))))
-               {
-                       goto fail;
-               }
-
-               for (i = 0; i < (int)p.we_wordc; i++)
-               {
-                       if (!(argv[i] = strdup(p.we_wordv[i])))
-                       {
-                               goto fail;
-                       }
-               }
-
-               wordfree(&p);
-
-               return argv;
-       fail:
-               wordfree(&p);
-       }
-#else // WIN32
-       {
-               wchar_t **wargs = NULL;
-               size_t needed = 0;
-               wchar_t *cmdlinew = NULL;
-               size_t len = strlen(cmdline) + 1;
-
-               if (!(cmdlinew = (wchar_t*)calloc(len, sizeof(wchar_t))))
-                       goto fail;
-
-               if (!MultiByteToWideChar(CP_ACP, 0, cmdline, -1, cmdlinew, (int)len))
-                       goto fail;
-
-               if (!(wargs = CommandLineToArgvW(cmdlinew, argc)))
-                       goto fail;
-
-               if (!(argv = (char**)calloc(*argc, sizeof(char *))))
-                       goto fail;
-
-               // Convert from wchar_t * to ANSI char *
-               for (i = 0; i < *argc; i++)
-               {
-                       // Get the size needed for the target buffer.
-                       // CP_ACP = Ansi Codepage.
-                       needed = WideCharToMultiByte(CP_ACP, 0, wargs[i], -1,
-                               NULL, 0, NULL, NULL);
-
-                       if (!(argv[i] = (char*)malloc(needed)))
-                               goto fail;
-
-                       // Do the conversion.
-                       needed = WideCharToMultiByte(CP_ACP, 0, wargs[i], -1,
-                               argv[i], (int)needed, NULL, NULL);
-               }
-
-               if (wargs) LocalFree(wargs);
-               if (cmdlinew) free(cmdlinew);
-               return argv;
-
-       fail:
-               if (wargs) LocalFree(wargs);
-               if (cmdlinew) free(cmdlinew);
-       }
-#endif // WIN32
-
-       if (argv)
-       {
-               for (i = 0; i < *argc; i++)
-               {
-                       if (argv[i])
-                       {
-                               free(argv[i]);
-                       }
-               }
-
-               free(argv);
-       }
-
-       return NULL;
-}
-
 vw& setup(int argc, char* argv[])
 {
     vw& all = parse_args(argc, argv);
@@ -199,7 +94,7 @@ int main(int argc, char *argv[])
         const char* new_args = str.c_str();
 
         int l_argc;
-        char** l_argv = split_commandline(new_args, &l_argc);
+        char** l_argv = VW::get_argv_from_string(new_args, l_argc);
 
         alls.push_back(&setup(l_argc, l_argv));
       }
@@ -213,7 +108,7 @@ int main(int argc, char *argv[])
 
     struct timeb t_start, t_end;
     ftime(&t_start);
-    
+
     VW::start_parser(all);
     if (alls.size() == 1)
       LEARNER::generic_driver(all);
@@ -223,7 +118,7 @@ int main(int argc, char *argv[])
     VW::end_parser(all);
 
     ftime(&t_end);
-    double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
+    double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm));
     if(!all.quiet && all.all_reduce != nullptr)
         cerr<<"Net time taken by process = "<<net_time/(double)(1000)<<" seconds\n";
 
