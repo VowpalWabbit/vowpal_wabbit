@@ -23,7 +23,7 @@ all:	spanning_tree
 	$(CXX) $(FLAGS) -c $< -o $@
 
 spanning_tree: spanning_tree_main.o ../vowpalwabbit/spanning_tree.o ../vowpalwabbit/vw_exception.o
-	$(CXX) $(FLAGS) -o $@ $+ 
+	$(CXX) $(FLAGS) -o $@ $+ $(LIBS) 
 
 install: spanning_tree
 	cp spanning_tree /usr/local/bin
