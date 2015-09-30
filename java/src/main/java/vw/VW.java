@@ -42,10 +42,10 @@ public class VW implements Closeable {
     /**
      * Create a new VW instance that is ready to either create predictions or learn based on examples.
      * This allows the user to instead of using the prepackaged JNI layer to load their own external JNI layer.
-     * This means that if a user wants to use this code with an OS that is not supported they would follow the following steps:<br/>
-     * 1.  Download VW<br/>
-     * 2.  Build VW for the OS they wish to support<br/>
-     * 3.  Call either {@link System#load(String)} or {@link System#loadLibrary(String)}<br/>
+     * This means that if a user wants to use this code with an OS that is not supported they would follow the following steps:<br>
+     * 1.  Download VW<br>
+     * 2.  Build VW for the OS they wish to support<br>
+     * 3.  Call either {@link System#load(String)} or {@link System#loadLibrary(String)}<br>
      * If a user wishes to use the prepackaged JNI libraries (which is encouraged) then no additional steps need to be taken.
      * @param command The same string that is passed to VW, see
      *                <a href="https://github.com/JohnLangford/vowpal_wabbit/wiki/Command-line-arguments">here</a>
