@@ -149,10 +149,6 @@
       <Link>test-sets\ref\vw-daemon.stdout</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\test\train-sets\0001-trimmed.dat">
-      <Link>train-sets\0001-trimmed.dat</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="..\test\train-sets\0001.dat">
       <Link>train-sets\0001.dat</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
