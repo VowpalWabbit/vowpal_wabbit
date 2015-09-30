@@ -87,17 +87,23 @@ namespace VW
     return sb->ToString();
   }
 
-  System::String^ FormatFeature(vw* vw, feature* f1, feature* f2)
+  System::String^ FormatFeature(vw* vw, feature* f1)
   {
     auto masked_weight_index1 = f1->weight_index & vw->reg.weight_mask;
-    auto masked_weight_index2 = f1->weight_index & vw->reg.weight_mask;
 
     return System::String::Format(
-      "Feature differ: this(weight_index = {0}/{4}, x = {1}) vs other(weight_index = {2}/{5}, x = {3})",
-      masked_weight_index1, gcnew System::Single(f1->x),
-      masked_weight_index2, gcnew System::Single(f2->x),
+      "weight_index = {0}/{1}, x = {2}",
+      masked_weight_index1,
       f1->weight_index,
-      f2->weight_index);
+      gcnew System::Single(f1->x));
+  }
+
+  System::String^ FormatFeature(vw* vw, feature* f1, feature* f2)
+  {
+    return System::String::Format(
+      "Feature differ: this({0}) vs other({1})",
+      FormatFeature(vw, f1),
+      FormatFeature(vw, f2));
   }
 
   bool FloatEqual(float a, float b)
@@ -108,6 +114,15 @@ namespace VW
     }
 
     return abs(a - b) / max(a, b) < 0.01;
+  }
+
+  System::String^ FormatFeatures(vw* vw, v_array<feature>& arr)
+  {
+    auto sb = gcnew System::Text::StringBuilder();
+    for (auto f = arr.begin; f != arr.end; f++)
+      sb->Append(FormatFeature(vw, f))->Append(" ");
+
+    return sb->ToString();
   }
 
   System::String^ CompareFeatures(vw* vw, v_array<feature>& fa, v_array<feature>& fb)
@@ -209,7 +224,8 @@ namespace VW
 			auto fb = b->atomics[*i];
 
 			if (fa.size() != fb.size())
-        return System::String::Format("Feature length differ {0} vs {1}", fa.size(), fb.size());
+        return System::String::Format("Feature length differ {0} vs {1}. this({2}) vs other({3})",
+          fa.size(), fb.size(), FormatFeatures(vw->m_vw, fa), FormatFeatures(vw->m_vw, fb));
 
       auto diff = CompareFeatures(vw->m_vw, fa, fb);
       if (diff != nullptr)

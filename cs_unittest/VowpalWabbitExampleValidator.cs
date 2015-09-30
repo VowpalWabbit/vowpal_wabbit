@@ -62,10 +62,10 @@ namespace cs_unittest
                 using (var strConvertedExample = this.vw.Native.ParseLine(context.StringExample.ToString()))
                 using (var nativeExample = context.ExampleBuilder.CreateExample())
                 {
-                    var diff = strExample.Diff(this.vw.Native, nativeExample, comparator);
-                    Assert.IsNull(diff, diff);
+                    var diff = strExample.Diff(this.vw.Native, strConvertedExample, comparator);
+                    Assert.IsNull(diff, diff + " generated string: '" + context.StringExample + "'");
 
-                    diff = strExample.Diff(this.vw.Native, strConvertedExample, comparator);
+                    diff = strExample.Diff(this.vw.Native, nativeExample, comparator);
                     Assert.IsNull(diff, diff);
                 }
             }

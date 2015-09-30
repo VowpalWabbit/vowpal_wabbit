@@ -20,10 +20,26 @@ namespace VW.Serializer
     {
         internal static List<FeatureExpression> ExtractFeatures(Type type)
         {
-            return ExtractFeatures(type, null, null, valueExpression => valueExpression);
+            var validExpressions = new Stack<Func<Expression,Expression>>();
+
+            // CODE example != null
+            validExpressions.Push(valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)));
+
+            return ExtractFeatures(
+                type,
+                null,
+                null,
+                // CODE example
+                valueExpression => valueExpression,
+                validExpressions);
         }
 
-        private static List<FeatureExpression> ExtractFeatures(Type type, string parentNamespace, char? parentFeatureGroup, Func<Expression, Expression> valueExpressionFactory)
+        private static List<FeatureExpression> ExtractFeatures(
+            Type type,
+            string parentNamespace,
+            char? parentFeatureGroup,
+            Func<Expression, Expression> valueExpressionFactory,
+            Stack<Func<Expression, Expression>> valueValidExpressionFactories)
         {
             var props = type.GetProperties(BindingFlags.Instance | BindingFlags.GetProperty | BindingFlags.Public);
 
@@ -33,7 +49,10 @@ namespace VW.Serializer
                                 select new FeatureExpression(
                                     featureType: p.PropertyType,
                                     name: attr.Name ?? p.Name,
+                                    // CODE example.Property
                                     valueExpressionFactory: valueExpression => Expression.Property(valueExpressionFactory(valueExpression), p),
+                                    // @Reverse: make sure conditions are specified in the right order
+                                    valueValidExpressionFactories: valueValidExpressionFactories.Reverse().ToList(),
                                     @namespace: attr.Namespace ?? parentNamespace,
                                     featureGroup: attr.InternalFeatureGroup ?? parentFeatureGroup,
                                     enumerize: attr.Enumerize,
@@ -45,7 +64,11 @@ namespace VW.Serializer
             return localFeatures
                 .SelectMany(f =>
                 {
-                    var subFeatures = ExtractFeatures(f.FeatureType, f.Namespace, f.FeatureGroup, f.ValueExpressionFactory);
+                    // CODE example.Prop1.Prop2 != null
+                    valueValidExpressionFactories.Push(valueExpression => Expression.NotEqual(f.ValueExpressionFactory(valueExpression), Expression.Constant(null)));
+                    var subFeatures = ExtractFeatures(f.FeatureType, f.Namespace, f.FeatureGroup, f.ValueExpressionFactory, valueValidExpressionFactories);
+                    valueValidExpressionFactories.Pop();
+
                     return subFeatures.Count == 0 ? new List<FeatureExpression>{ f } : subFeatures;
                 })
                 .ToList();

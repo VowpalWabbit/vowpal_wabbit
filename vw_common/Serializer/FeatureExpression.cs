@@ -25,6 +25,7 @@ namespace VW.Serializer
         public FeatureExpression(Type featureType,
             string name,
             Func<Expression, Expression> valueExpressionFactory,
+            List<Func<Expression, Expression>> valueValidExpressionFactories = null,
             NewFeatureExpressionDelegate featureExpressionFactory = null,
             string @namespace = null,
             char? featureGroup = null,
@@ -56,6 +57,7 @@ namespace VW.Serializer
 
             this.Name = name;
             this.ValueExpressionFactory = valueExpressionFactory;
+            this.ValueValidExpressionFactories = valueValidExpressionFactories;
             this.FeatureExpressionFactory = featureExpressionFactory;
             this.Namespace = @namespace;
             this.FeatureGroup = featureGroup;
@@ -103,7 +105,15 @@ namespace VW.Serializer
 
         public bool AddAnchor { get; private set; }
 
+        /// <summary>
+        /// Factory to extract the value for a given feature from the example object (input argument).
+        /// </summary>
         public Func<Expression, Expression> ValueExpressionFactory { get; private set; }
+
+        /// <summary>
+        /// Factories to provide validation before invoking the expression created through <see cref="ValueExpressionFactory"/>.
+        /// </summary>
+        public List<Func<Expression, Expression>> ValueValidExpressionFactories { get; private set; }
 
         public NewFeatureExpressionDelegate FeatureExpressionFactory { get; private set; }
 

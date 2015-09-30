@@ -99,7 +99,7 @@ namespace cs_unittest
         {
             using (var vw = new VowpalWabbitExampleValidator<UserContext>(string.Empty))
             {
-                vw.Validate("|ootheruser AgeAdult PAge25 Views:3421 Boston 6:2.4", new UserContext {
+                vw.Validate("|ootheruser AgeAdult GenderMale PAge25 Views:4321 Boston 6:2.4", new UserContext {
                     User = new UserFeatures
                     {
                         Age = Age.Adult,
@@ -112,6 +112,26 @@ namespace cs_unittest
                             { 6, 2.4f }
                         }
                     }
+                });
+
+                vw.Validate("|uuserlda :1 :2 :3", new UserContext
+                {
+                    UserLDAVector = new FeatureVector { Vectors = new[] { 2f, 3f } }
+                });
+            }
+
+            using (var vw = new VowpalWabbitExampleValidator<Document>(string.Empty))
+            {
+                vw.Validate("| abc |ddoclda :1 :4 :5", new Document
+                    {
+                        Id = "abc",
+                        LDAVector = new FeatureVector { Vectors = new[] { 4f, 5f } }
+                    });
+
+                vw.Validate("| abc |ddoclda :1", new Document
+                {
+                    Id = "abc",
+                    LDAVector = new FeatureVector { Vectors = new float[0] }
                 });
             }
         }

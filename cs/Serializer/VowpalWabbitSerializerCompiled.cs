@@ -305,11 +305,11 @@ namespace VW.Serializer
                     var featurizer = this.featurizers.First(f => f.Type == feature.FeaturizeMethod.ReflectedType);
 
                     var valueVariable = feature.Source.ValueExpressionFactory(this.exampleParameter);
-
+                    Expression featureVisit;
                     if (feature.Source.IsNullable)
                     {
                         // if (value != null) featurzier.MarshalXXX(vw, context, ns, feature, (FeatureType)value);
-                        featureVisits.Add(Expression.IfThen(
+                        featureVisit = Expression.IfThen(
                             Expression.NotEqual(valueVariable, Expression.Constant(null)),
                                 Expression.Call(
                                      featurizer,
@@ -317,19 +317,33 @@ namespace VW.Serializer
                                      this.contextParameter,
                                      namespaceVariable,
                                      featureVariable,
-                                     Expression.Convert(valueVariable, feature.Source.FeatureType))));
+                                     Expression.Convert(valueVariable, feature.Source.FeatureType)));
                     }
                     else
                     {
                         // featurzier.MarshalXXX(vw, context, ns, feature, value);
-                        featureVisits.Add(Expression.Call(
+                        featureVisit = Expression.Call(
                             featurizer,
                             feature.FeaturizeMethod,
                             this.contextParameter,
                             namespaceVariable,
                             featureVariable,
-                            valueVariable));
+                            valueVariable);
                     }
+
+                    if (feature.Source.ValueValidExpressionFactories != null && feature.Source.ValueValidExpressionFactories.Count > 0)
+                    {
+                        // CODE condition1 && condition2 && condition3 ...
+                        var condition = feature.Source.ValueValidExpressionFactories
+                            .Skip(1)
+                            .Aggregate(
+                                feature.Source.ValueValidExpressionFactories.First()(this.exampleParameter),
+                                (cond, factory) => Expression.AndAlso(cond, factory(this.exampleParameter)));
+
+                        featureVisit = Expression.IfThen(condition, featureVisit);
+                    }
+
+                    featureVisits.Add(featureVisit);
 	            }
 
                 var featureVisitLambda = Expression.Lambda(Expression.Block(featureVisits));
