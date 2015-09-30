@@ -95,6 +95,10 @@
       <Project>{e4e962ae-7056-4eb0-a8c5-8dc824a4b068}</Project>
       <Name>cs</Name>
     </ProjectReference>
+    <ProjectReference Include="..\cs_testhelp\cs_testhelp.csproj">
+      <Project>{b7122114-828e-4d86-b79e-4037c74c5f69}</Project>
+      <Name>cs_testhelp</Name>
+    </ProjectReference>
     <ProjectReference Include="..\vw_clr\vw_clr.vcxproj">
       <Project>{85e55ae0-3784-4968-9271-c81af560e1c1}</Project>
       <Name>vw_clr</Name>
