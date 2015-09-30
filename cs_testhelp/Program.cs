@@ -27,7 +27,7 @@ namespace cs_testhelp
                 .SkipWhile(l => l != "__DATA__")
                 .ToList();
 
-            var skipList = new[] { 13, 14, 18, 25, 26, 33, 16, 17, 19, 20, 24, 31, 32 };
+            var skipList = new[] { 13, 14, 18, 25, 26, 33, 16, 17, 19, 20, 24, 31, 32, 34 };
             var dependencies = new Dictionary<int, int[]>
             {
                 { 2, new[] { 1 } },
@@ -70,13 +70,26 @@ namespace cs_unittest
                             continue;
                         }
 
-
+                        Console.WriteLine("Running test # " + nr);
                         VowpalWabbitArguments arguments;
                         try
                         {
                             using (var vw = new VowpalWabbit(args))
                             {
                                 arguments = vw.Arguments;
+
+                                foreach (var dataLine in File.ReadLines(arguments.Data))
+                                {
+                                    if (arguments.TestOnly)
+                                        vw.Predict(dataLine);
+                                    else
+                                        vw.Learn(dataLine);
+                                }
+
+                                if (arguments.NumPasses > 0)
+                                {
+                                    vw.RunMultiPass();
+                                }
                             }
                         }
                         catch (Exception e)

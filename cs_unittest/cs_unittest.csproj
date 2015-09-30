@@ -967,8 +967,7 @@
   <Import Project="$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.targets" />
   <!-- Condition="Exists('..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.targets')" -->
   <PropertyGroup>
-    <PreBuildEvent>
-    </PreBuildEvent>
+    <PreBuildEvent>$(ProjectDir)..\cs_testhelp\bin\$(Configuration)\cs_testhelp.exe $(ProjectDir)..</PreBuildEvent>
   </PropertyGroup>
   <!-- making sure it's called during AppVeyor build -->
   <!--
