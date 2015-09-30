@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include "vw_example.h"
 
 #include "clr_io.h"
+#include "clr_io_memory.h"
 #include "vw_exception.h"
 #include "parse_args.h"
 #include "parse_regressor.h"
@@ -43,31 +44,12 @@ namespace VW
           if (settings->ModelStream == nullptr)
           {
             m_vw = VW::initialize(string);
+            initialize_parser_datastructures(*m_vw);
           }
           else
           {
             clr_io_buf model(settings->ModelStream);
-            char** argv = nullptr;
-            int argc = 0;
-
-            try
-            {
-              string.append(" --no_stdin");
-              argv = VW::get_argv_from_string(string, argc);
-
-              m_vw = &parse_args(argc, argv);
-              parse_modules(*m_vw, model);
-              parse_sources(*m_vw, model);
-            }
-            finally
-            {
-              if (argv != nullptr)
-              {
-                for (int i = 0; i < argc; i++)
-                  free(argv[i]);
-                free(argv);
-              }
-            }
+            InitializeFromModel(string, model);
           }
 
           initialize_parser_datastructures(*m_vw);
@@ -82,6 +64,32 @@ namespace VW
 		}
 		CATCHRETHROW
 	}
+
+  void VowpalWabbitBase::InitializeFromModel(string args, io_buf& model)
+  {
+    char** argv = nullptr;
+    int argc = 0;
+
+    try
+    {
+      args.append(" --no_stdin");
+      argv = VW::get_argv_from_string(args, argc);
+
+      m_vw = &parse_args(argc, argv);
+      parse_modules(*m_vw, model);
+      parse_sources(*m_vw, model);
+      initialize_parser_datastructures(*m_vw);
+    }
+    finally
+    {
+      if (argv != nullptr)
+      {
+        for (int i = 0; i < argc; i++)
+          free(argv[i]);
+        free(argv);
+      }
+    }
+  }
 
 	VowpalWabbitBase::~VowpalWabbitBase()
 	{
@@ -239,4 +247,33 @@ namespace VW
 		}
 		CATCHRETHROW
 	}
+
+  void VowpalWabbitBase::Reload()
+  {
+    if (m_settings->ParallelOptions != nullptr)
+    {
+      throw gcnew NotSupportedException("Cannot reload model if AllRecude is enabled.");
+    }
+
+    clr_io_memory_buf mem_buf;
+
+    try
+    {
+      VW::save_predictor(*m_vw, mem_buf);
+      mem_buf.flush();
+
+      release_parser_datastructures(*m_vw);
+
+      // make sure don't try to free m_vw twice in case VW::finish throws.
+      vw* vw_tmp = m_vw;
+      m_vw = nullptr;
+      VW::finish(*vw_tmp);
+
+      // reload from model
+      // seek to beginning
+      mem_buf.reset_file(0);
+      InitializeFromModel("", mem_buf);
+    }
+    CATCHRETHROW
+  }
 }

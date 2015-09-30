@@ -46,6 +46,8 @@ namespace VW
 
     VowpalWabbitArguments^ m_arguments;
 
+    void InitializeFromModel(string args, io_buf& model);
+
 	internal:
 		/// <summary>
 		/// The native vowpal wabbit data structure.
@@ -110,5 +112,7 @@ namespace VW
 		/// </summary>
 		/// <param name="example">The example to be returned.</param>
 		virtual void ReturnExampleToPool(VowpalWabbitExample^ example) sealed;
+
+    void Reload();
 	};
 }

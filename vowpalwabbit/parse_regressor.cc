@@ -36,7 +36,7 @@ void initialize_regressor(vw& all)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
       for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
-	all.reg.weight_vector[j] = all.initial_weight;      
+	all.reg.weight_vector[j] = all.initial_weight;
   else if (all.random_positive_weights)
 	for (size_t j = 0; j < length; j++)
 	  all.reg.weight_vector[j << all.reg.stride_shift] = (float)(0.1 * frand48());
@@ -63,22 +63,22 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 	v_length = buf_size;
         }
         bin_text_read_write_validate_eof(model_file, buff2, v_length,
-			  "", read, 
+			  "", read,
 			  buff, text_len, text);
       all.model_file_ver = buff2; //stord in all to check save_resume fix in gd
-      
+
         VW::validate_version(all);
 
       char model = 'm';
         bin_text_read_write_fixed_validate_eof(model_file, &model, 1,
-				"file is not a model file", read, 
+				"file is not a model file", read,
 				"", 0, text);
-      
+
         text_len = sprintf_s(buff, buf_size, "Min label:%f\n", all.sd->min_label);
         bin_text_read_write_fixed_validate_eof(model_file, (char*)&all.sd->min_label, sizeof(all.sd->min_label),
-				"", read, 
+				"", read,
 				buff, text_len, text);
-      
+
 		if (read && find(all.args.begin(), all.args.end(), "--min_prediction") == all.args.end())
 		{
 			all.args.push_back("--min_prediction");
@@ -87,9 +87,9 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 
         text_len = sprintf_s(buff, buf_size, "Max label:%f\n", all.sd->max_label);
         bin_text_read_write_fixed_validate_eof(model_file, (char*)&all.sd->max_label, sizeof(all.sd->max_label),
-				"", read, 
+				"", read,
 				buff, text_len, text);
-      
+
         VW::validate_min_max_label(all);
 
 		if (read && find(all.args.begin(), all.args.end(), "--max_prediction") == all.args.end())
@@ -101,7 +101,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         text_len = sprintf_s(buff, buf_size, "bits:%d\n", (int)all.num_bits);
       uint32_t local_num_bits = all.num_bits;
         bin_text_read_write_fixed_validate_eof(model_file, (char *)&local_num_bits, sizeof(local_num_bits),
-				"", read, 
+				"", read,
 				buff, text_len, text);
 
 		if (read && find(all.args.begin(), all.args.end(), "--bit_precision") == all.args.end())
@@ -114,7 +114,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 
       all.default_bits = false;
       all.num_bits = local_num_bits;
-      
+
         VW::validate_num_bits(all);
 
       if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
@@ -248,17 +248,17 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
           }
 
       }
-      
+
         text_len = sprintf_s(buff, buf_size, "lda:%d\n", (int)all.lda);
         bin_text_read_write_fixed_validate_eof(model_file, (char*)&all.lda, sizeof(all.lda),
-				"", read, 
+				"", read,
 			buff, text_len, text);
 
         // TODO: validate ngram_len?
       uint32_t ngram_len = (uint32_t)all.ngram_strings.size();
         text_len = sprintf_s(buff, buf_size, "%d ngram: ", (int)ngram_len);
         bin_text_read_write_fixed_validate_eof(model_file, (char *)&ngram_len, sizeof(ngram_len),
-				"", read, 
+				"", read,
 			buff, text_len, text);
       for (size_t i = 0; i < ngram_len; i++)
 	{
@@ -280,16 +280,16 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				all.args.push_back(boost::lexical_cast<std::string>(temp));
 	    }
 	}
-      
+
         bin_text_read_write_fixed_validate_eof(model_file, buff, 0,
-				"", read, 
+				"", read,
 			"\n", 1, text);
-      
+
         // TODO: validate skips?
       uint32_t skip_len = (uint32_t)all.skip_strings.size();
         text_len = sprintf_s(buff, buf_size, "%d skip: ", (int)skip_len);
         bin_text_read_write_fixed_validate_eof(model_file, (char *)&skip_len, sizeof(skip_len),
-				"", read, 
+				"", read,
 			buff, text_len, text);
 
       for (size_t i = 0; i < skip_len; i++)
@@ -313,22 +313,22 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 	    }
 	}
         bin_text_read_write_fixed_validate_eof(model_file, buff, 0,
-				"", read, 
+				"", read,
 			"\n", 1, text);
-      
+
         text_len = sprintf_s(buff, buf_size, "options:%s\n", all.file_options->str().c_str());
 		uint32_t len = (uint32_t)all.file_options->str().length() + 1;
         memcpy(buff2, all.file_options->str().c_str(), min(len, buf_size));
-        
+
       if (read)
         {
 	len = buf_size;
         }
-        
+
         bin_text_read_write_validate_eof(model_file, buff2, len,
 			  "", read,
 			  buff, text_len, text);
-        
+
       if (read)
         {
 	all.file_options->str(buff2);
@@ -354,6 +354,12 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 
 }
 
+void dump_regressor(vw& all, io_buf& buf, bool as_text)
+{
+  save_load_header(all, buf, false, as_text);
+  all.l->save_load(buf, false, as_text);
+}
+
 void dump_regressor(vw& all, string reg_name, bool as_text)
 {
   if (reg_name == string(""))
@@ -362,9 +368,8 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
   io_buf io_temp;
 
   io_temp.open_file(start_name.c_str(), all.stdin_off, io_buf::WRITE);
-  
-  save_load_header(all, io_temp, false, as_text);
-  all.l->save_load(io_temp, false, as_text);
+
+  dump_regressor(all, io_temp, as_text);
 
   io_temp.flush(); // close_file() should do this for me ...
   io_temp.close_file();
@@ -424,7 +429,7 @@ void parse_mask_regressor_args(vw& all)
 {
   po::variables_map& vm = all.vm;
   if (vm.count("feature_mask")) {
-    size_t length = ((size_t)1) << all.num_bits;  
+    size_t length = ((size_t)1) << all.num_bits;
     string mask_filename = vm["feature_mask"].as<string>();
     if (vm.count("initial_regressor")) {
       vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
@@ -432,7 +437,7 @@ void parse_mask_regressor_args(vw& all)
         return;
       }
     }
-    
+
     //all other cases, including from different file, or -i does not exist, need to read in the mask file
     io_buf io_temp_mask;
     io_temp_mask.open_file(mask_filename.c_str(), false, io_buf::READ);
@@ -467,5 +472,10 @@ namespace VW
 	{
 		dump_regressor(all, reg_name, false);
 	}
+
+  void save_predictor(vw& all, io_buf& buf)
+  {
+    dump_regressor(all, buf, false);
+  }
 }
 
