@@ -64,15 +64,15 @@ namespace VW.Reflection
 
             MethodInfo method = bestCandidate.Method;
 
-            Debug.WriteLine("Method Search");
-            foreach (var item in methods)
-            {
-                Debug.WriteLine(string.Format("Distance={0} Interfaces={1} OpenGenerics={2} Method={3}",
-                    item.Distance,
-                    item.InterfacesImplemented,
-                    item.GenericTypes.Count(gt => gt.Count > 0),
-                    item.Method));
-            }
+            //Debug.WriteLine("Method Search");
+            //foreach (var item in methods)
+            //{
+            //    Debug.WriteLine(string.Format("Distance={0} Interfaces={1} OpenGenerics={2} Method={3}",
+            //        item.Distance,
+            //        item.InterfacesImplemented,
+            //        item.GenericTypes.Count(gt => gt.Count > 0),
+            //        item.Method));
+            //}
 
             if (method.IsGenericMethod)
             {
