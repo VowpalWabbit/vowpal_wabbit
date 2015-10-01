@@ -1,9 +1,9 @@
 #include "../../../../vowpalwabbit/parser.h"
 #include "../../../../vowpalwabbit/vw.h"
 #include "vw_errors.h"
-#include "vw_VWScalarPredictor.h"
+#include "vw_learner_VWFloatLearner.h"
 
-JNIEXPORT jfloat JNICALL Java_vw_VWScalarPredictor_predictFloat(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr) {
+JNIEXPORT jfloat JNICALL Java_vw_learner_VWFloatLearner_predictFloat(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr) {
     float prediction = 0.0f;
     try {
         vw* vwInstance = (vw*)vwPtr;

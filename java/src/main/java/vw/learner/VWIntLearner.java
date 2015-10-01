@@ -1,17 +1,11 @@
-package vw;
+package vw.learner;
 
 /**
- * Created by deak on 9/28/15.
- *
+ * Created by deak on 10/1/15.
  */
-public class VWScalarPredictor extends VWGenericBase<Float> {
-
-    public VWScalarPredictor(String command) {
+final public class VWIntLearner extends VWBase {
+    public VWIntLearner(String command) {
         super(command);
-    }
-
-    public Float predict(final String example, final boolean learn, final long nativePointer) {
-        return predictFloat(example, learn, nativePointer);
     }
 
     /**
@@ -22,11 +16,11 @@ public class VWScalarPredictor extends VWGenericBase<Float> {
      * @param learn whether the learn prior to returning the prediction.
      * @return an <em>UNBOXED</em> prediction.
      */
-    private float learnOrPredict(final String example, final boolean learn) {
+    private int learnOrPredict(final String example, final boolean learn) {
         lock.lock();
         try {
             if (isOpen()) {
-                return predictFloat(example, learn, nativePointer);
+                return predictInt(example, learn, nativePointer);
             }
             throw new IllegalStateException("Already closed.");
         }
@@ -41,7 +35,7 @@ public class VWScalarPredictor extends VWGenericBase<Float> {
      * @param example a single vw example string
      * @return A prediction
      */
-    public float predictSpecialized(final String example) {
+    public int predict(final String example) {
         return learnOrPredict(example, false);
     }
 
@@ -51,9 +45,9 @@ public class VWScalarPredictor extends VWGenericBase<Float> {
      * @param example a single vw example string
      * @return A prediction
      */
-    public float learnSpecialized(final String example) {
+    public int learn(final String example) {
         return learnOrPredict(example, true);
     }
 
-    private native float predictFloat(String example, boolean learn, long nativePointer);
+    private native int predictInt(String example, boolean learn, long nativePointer);
 }

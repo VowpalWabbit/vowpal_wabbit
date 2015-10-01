@@ -1,4 +1,4 @@
-package vw;
+package vw.learner;
 
 /**
  * Created by deak on 9/27/15.

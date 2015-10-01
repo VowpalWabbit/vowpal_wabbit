@@ -1,9 +1,9 @@
 #include "../../../../vowpalwabbit/parser.h"
 #include "../../../../vowpalwabbit/vw.h"
 #include "vw_errors.h"
-#include "vw_LDA.h"
+#include "vw_learner_VWTopicLearner.h"
 
-JNIEXPORT jfloatArray JNICALL Java_vw_LDA_predict(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr) {
+JNIEXPORT jfloatArray JNICALL Java_vw_learner_VWTopicLearner_predict(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr) {
     jfloatArray r = env->NewFloatArray(0);
     try {
         vw* vwInstance = (vw*)vwPtr;

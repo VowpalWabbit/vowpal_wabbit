@@ -1,4 +1,4 @@
-package vw;
+package vw.learner;
 
 import vw.jni.NativeUtils;
 

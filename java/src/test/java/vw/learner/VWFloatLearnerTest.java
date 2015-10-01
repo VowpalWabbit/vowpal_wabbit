@@ -1,8 +1,9 @@
-package vw;
+package vw.learner;
 
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
+import vw.VW;
 import vw.exception.IllegalVWInput;
 
 import java.io.*;
@@ -17,10 +18,10 @@ import static org.junit.Assert.*;
 /**
  * Created by jmorra on 11/24/14.
  */
-public class VWScalarPredictorTest {
+public class VWFloatLearnerTest {
     private String houseModel;
     private final String heightData = "|f height:0.23 weight:0.25 width:0.05";
-    private VWScalarPredictor houseScorer;
+    private VWFloatLearner houseScorer;
 
     private static List<String> loadedLibs() {
         try {
@@ -65,12 +66,12 @@ public class VWScalarPredictorTest {
                 "0 | price:.23 sqft:.25 age:.05 2006",
                 "1 2 'second_house | price:.18 sqft:.15 age:.35 1976",
                 "0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924"};
-        VWScalarPredictor learner = new VWScalarPredictor(" --quiet -f " + houseModel);
+        VWFloatLearner learner = new VWFloatLearner(" --quiet -f " + houseModel);
         for (String d : houseData) {
             learner.learn(d);
         }
         learner.close();
-        houseScorer = new VWScalarPredictor("--quiet -t -i " + houseModel);
+        houseScorer = new VWFloatLearner("--quiet -t -i " + houseModel);
     }
 
     @After
@@ -79,7 +80,7 @@ public class VWScalarPredictorTest {
     }
 
     private long streamingLoadTest(int times) {
-        VWScalarPredictor m1 = new VWScalarPredictor("--quiet");
+        VWFloatLearner m1 = new VWFloatLearner("--quiet");
         long start = System.currentTimeMillis();
         for (int i=0; i<times; ++i) {
             // This will force a new string to be created every time for a fair test
@@ -127,7 +128,7 @@ public class VWScalarPredictorTest {
 
     @Test
     public void testLearn() {
-        VWScalarPredictor learner = new VWScalarPredictor("--quiet");
+        VWFloatLearner learner = new VWFloatLearner("--quiet");
         float firstPrediction = learner.learn("0.1 " + heightData);
         float secondPrediction = learner.learn("0.9 " + heightData);
         assertNotEquals(firstPrediction, secondPrediction, 0.001);
@@ -138,14 +139,14 @@ public class VWScalarPredictorTest {
     public void testBadVWArgs() {
         final String args = "--BAD_FEATURE___ounq24tjnasdf8h";
         thrown.expect(IllegalArgumentException.class);
-        new VWScalarPredictor(args + " --quiet");
+        new VWFloatLearner(args + " --quiet");
     }
 
     @Test
     public void testManySamples() {
         File model = new File("basic.model");
         model.deleteOnExit();
-        VWScalarPredictor m = new VWScalarPredictor("--quiet --loss_function logistic --link logistic -f " + model.getAbsolutePath());
+        VWFloatLearner m = new VWFloatLearner("--quiet --loss_function logistic --link logistic -f " + model.getAbsolutePath());
         for (int i=0; i<100; ++i) {
             m.learn("-1 | ");
             m.learn("1 | ");
@@ -153,14 +154,14 @@ public class VWScalarPredictorTest {
         m.close();
 
         float expVwOutput = 0.50419676f;
-        m = new VWScalarPredictor("--quiet -i " + model.getAbsolutePath());
+        m = new VWFloatLearner("--quiet -i " + model.getAbsolutePath());
         assertEquals(expVwOutput, m.predict("| "), 0.0001);
     }
 
     @Test
     public void twoModelTest() {
-        VWScalarPredictor m1 = new VWScalarPredictor("--quiet");
-        VWScalarPredictor m2 = new VWScalarPredictor("--quiet");
+        VWFloatLearner m1 = new VWFloatLearner("--quiet");
+        VWFloatLearner m2 = new VWFloatLearner("--quiet");
 
         float a = m1.predict("-1 | ");
         m1.close();
@@ -173,7 +174,7 @@ public class VWScalarPredictorTest {
     public void testAlreadyClosed() {
         thrown.expect(IllegalStateException.class);
         thrown.expectMessage("Already closed.");
-        VWScalarPredictor s = new VWScalarPredictor("--quiet");
+        VWFloatLearner s = new VWFloatLearner("--quiet");
         s.close();
         s.predict("1 | ");
     }
@@ -182,7 +183,7 @@ public class VWScalarPredictorTest {
     public void testOldModel() {
         thrown.expect(Exception.class);
         thrown.expectMessage("bad model format!");
-        VWScalarPredictor vw = new VWScalarPredictor("--quiet -i src/test/resources/vw_7.8.model");
+        VWFloatLearner vw = new VWFloatLearner("--quiet -i src/test/resources/vw_7.8.model");
         vw.close();
     }
 
@@ -193,7 +194,7 @@ public class VWScalarPredictorTest {
         // that the Java layer could do something about
         thrown.expect(Exception.class);
         thrown.expectMessage("bad model format!");
-        VWScalarPredictor vw = new VWScalarPredictor("--quiet -i src/test/resources/vw_bad.model");
+        VWFloatLearner vw = new VWFloatLearner("--quiet -i src/test/resources/vw_bad.model");
         vw.close();
     }
 
@@ -211,7 +212,7 @@ public class VWScalarPredictorTest {
                 "3:1.5:0.7 | a d"
         };
         String cbModel = temporaryFolder.newFile().getAbsolutePath();
-        VWScalarPredictor vw = new VWScalarPredictor("--quiet --cb 4 -f " + cbModel);
+        VWFloatLearner vw = new VWFloatLearner("--quiet --cb 4 -f " + cbModel);
         float[] trainPreds = new float[train.length];
         for (int i=0; i<train.length; ++i) {
             trainPreds[i] = vw.learn(train[i]);
@@ -221,7 +222,7 @@ public class VWScalarPredictorTest {
 
         assertArrayEquals(expectedTrainPreds, trainPreds, 0.00001f);
 
-        vw = new VWScalarPredictor("--quiet -t -i " + cbModel);
+        vw = new VWFloatLearner("--quiet -t -i " + cbModel);
         String[] test = new String[]{
                 "1:2 3:5 4:1:0.6 | a c d",
                 "1:0.5 2:1:0.4 3:2 4:1.5 | c d"
@@ -250,7 +251,7 @@ public class VWScalarPredictorTest {
         data.put("1 | 7", 0.172148f);
 
         final String model = temporaryFolder.newFile().getAbsolutePath();
-        VWScalarPredictor learn = new VWScalarPredictor("--quiet --loss_function logistic -f " + model);
+        VWFloatLearner learn = new VWFloatLearner("--quiet --loss_function logistic -f " + model);
         for (String d : data.keySet()) {
             learn.learn(d);
         }
@@ -258,7 +259,7 @@ public class VWScalarPredictorTest {
 
         int numThreads = Runtime.getRuntime().availableProcessors();
         ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
-        final VWScalarPredictor predict = new VWScalarPredictor("--quiet -i " + model);
+        final VWFloatLearner predict = new VWFloatLearner("--quiet -i " + model);
         for (int i=0; i<numThreads; ++i) {
             Runnable run = new Runnable() {
                 @Override
@@ -282,7 +283,7 @@ public class VWScalarPredictorTest {
     public void testMultiLabel() {
         thrown.expect(IllegalVWInput.class);
         thrown.expectMessage("VW JNI layer only supports simple and multiclass predictions");
-        VWScalarPredictor vw = new VWScalarPredictor("--quiet --multilabel_oaa 3");
+        VWFloatLearner vw = new VWFloatLearner("--quiet --multilabel_oaa 3");
         vw.close();
     }
 

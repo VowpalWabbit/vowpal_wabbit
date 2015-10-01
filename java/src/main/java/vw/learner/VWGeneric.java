@@ -1,4 +1,4 @@
-package vw;
+package vw.learner;
 
 import java.io.Closeable;
 
