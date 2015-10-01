@@ -47,7 +47,7 @@ namespace VW
         public void Learn(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
             VowpalWabbitMultiLine.Execute(this.vws[0], this.serializer, this.actionDependentFeatureSerializer, example, actionDependentFeatures,
-                (examples, _) =>
+                (examples, _, __) =>
                 {
                     foreach (var vw in this.vws)
                     {

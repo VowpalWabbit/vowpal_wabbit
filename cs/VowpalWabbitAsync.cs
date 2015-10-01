@@ -263,32 +263,6 @@ namespace VW
         /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
         /// <param name="label">The label for the example to learn.</param>
         /// <returns>The ranked prediction for the given examples.</returns>
-        public Task<int[]> LearnAndPredictIndex(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
-        {
-            Contract.Requires(example != null);
-            Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(index >= 0);
-            Contract.Requires(label != null);
-            Contract.Ensures(Contract.Result<Task<int[]>>() != null);
-
-            return manager.Post(vw => VowpalWabbitMultiLine.LearnAndPredictIndex(
-                vw,
-                this.serializers[vw.Settings.Node],
-                this.actionDependentFeatureSerializers[vw.Settings.Node],
-                example,
-                actionDependentFeatures,
-                index,
-                label));
-        }
-
-        /// <summary>
-        /// Learn from the given example and return the current prediction for it.
-        /// </summary>
-        /// <param name="example">The shared example.</param>
-        /// <param name="actionDependentFeatures">The action dependent features.</param>
-        /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
-        /// <param name="label">The label for the example to learn.</param>
-        /// <returns>The ranked prediction for the given examples.</returns>
         public Task<TActionDependentFeature[]> LearnAndPredict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
             Contract.Requires(example != null);
