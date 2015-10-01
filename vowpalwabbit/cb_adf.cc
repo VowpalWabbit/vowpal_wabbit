@@ -96,19 +96,19 @@ namespace CB_ADF {
     }
 
     c.pred_scores.costs.erase();
-	  bool shared = has_shared_example(examples);
-
+    bool shared = has_shared_example(examples);
+    
     int startK = 0;
-	  if (shared) startK = 1;
-
+    if (shared) startK = 1;
+    
     for (size_t i = 0; i < examples.size(); i++)
       {
-		  if (example_is_newline(*examples[i])) continue;
-
+	if (example_is_newline(*examples[i])) continue;
+	
 	COST_SENSITIVE::wclass wc;
 	wc.class_index = 0;	
 	
-		  if (c.known_cost.action + startK == i) {
+	if (c.known_cost.action + startK == i) {
 	  int known_index = c.known_cost.action;
 	  c.known_cost.action = 0;
 	  //get cost prediction for this label
@@ -117,17 +117,16 @@ namespace CB_ADF {
 	  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, &(c.known_cost), *(examples[i]), 0, 2);
 	  c.known_cost.action = known_index;
 	}
-	else {
+	else 
 	  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, nullptr, *(examples[i]), 0, 2);
-	}
-
-		  if (shared)
-			  wc.class_index = i - 1;
+	
+	if (shared)
+	  wc.class_index = i - 1;
 	else
 	  wc.class_index = i;
 	c.pred_scores.costs.push_back(wc); // done
 	wc.class_index = 0;
-
+	
 	//add correction if we observed cost for this action and regressor is wrong
 	if (c.known_cost.probability != -1 && c.known_cost.action + startK == i)
 	  {			
