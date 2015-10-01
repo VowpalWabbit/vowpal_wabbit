@@ -139,7 +139,7 @@ LEARNER::base_learner* interact_setup(vw& all)
   
   data.n1 = (unsigned char) s[0];
   data.n2 = (unsigned char) s[1];
-  cout<<"Interacting namespaces "<<data.n1<<" and "<<data.n2<<endl;
+  cerr <<"Interacting namespaces "<<data.n1<<" and "<<data.n2<<endl;
   data.all = &all;
 
   LEARNER::learner<interact>* l;
