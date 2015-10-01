@@ -4,21 +4,9 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include "io_buf.h"
-#include "hash.h"
 #ifdef WIN32
 #include <winsock2.h>
 #endif
-
-void debug_output(const char* szFormat, ...)
-{
-    char szBuff[1024];
-    va_list arg;
-    va_start(arg, szFormat);
-    _vsnprintf(szBuff, sizeof(szBuff), szFormat, arg);
-    va_end(arg);
-
-    OutputDebugStringA(szBuff);
-}
 
 //return a pointer to the next n bytes.  n must be smaller than the maximum size.
 size_t buf_read(io_buf &i, char* &pointer, size_t n)
@@ -27,14 +15,6 @@ size_t buf_read(io_buf &i, char* &pointer, size_t n)
     {
         pointer = i.space.end;
         i.space.end += n;
-
-        // compute hash for check-sum
-        if (i.verify_hash)
-        {
-            i.hash = uniform_hash(pointer, n, i.hash);
-            debug_output("------ hash: %d", i.hash);
-        }
-
         return n;
     }
     else // out of bytes, so refill.
@@ -54,14 +34,6 @@ size_t buf_read(io_buf &i, char* &pointer, size_t n)
         { //no more bytes to read, return all that we have left.
             pointer = i.space.end;
             i.space.end = i.endloaded;
-
-            // compute hash for check-sum
-            if (i.verify_hash)
-            {
-                i.hash = uniform_hash(pointer, i.endloaded - pointer, i.hash);
-                debug_output("------ hash: %d", i.hash);
-            }
-
             return i.endloaded - pointer;
         }
     }
@@ -122,13 +94,6 @@ void buf_write(io_buf &o, char* &pointer, size_t n)
     {
       pointer = o.space.end;
       o.space.end += n;
-
-      // compute hash for check-sum
-      if (o.verify_hash)
-      {
-          o.hash = uniform_hash(pointer, n, o.hash);
-          debug_output("------ hash: %d", o.hash);
-      }
     }
   else // Time to dump the file
     {

@@ -16,6 +16,7 @@ license as described in the file LICENSE.
 #include <sstream>
 #include <errno.h>
 #include <stdexcept>
+#include "hash.h"
 #include "vw_exception.h"
 #include "vw_validate.h"
 
@@ -221,6 +222,13 @@ inline size_t bin_read_fixed(io_buf& i, char* data, size_t len, const char* read
   {
     char* p;
     size_t ret = buf_read(i,p,len);
+
+    // compute hash for check-sum
+    if (i.verify_hash)
+    {
+        i.hash = uniform_hash(p, len, i.hash);
+    }
+
     if (*read_message == '\0')
       memcpy(data,p,len);
     else if (memcmp(data,p,len) != 0)
@@ -249,6 +257,12 @@ inline size_t bin_write_fixed(io_buf& o, const char* data, uint32_t len)
     char* p;
     buf_write (o, p, len);
     memcpy (p, data, len);
+
+    // compute hash for check-sum
+    if (o.verify_hash)
+    {
+      o.hash = uniform_hash(p, len, o.hash);
+    }
   }
   return len;
 }
