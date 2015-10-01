@@ -18,12 +18,6 @@ license as described in the file LICENSE.
 
 using namespace std;
 
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <wordexp.h>
-#endif
-
 vw& setup(int argc, char* argv[])
 {
     vw& all = parse_args(argc, argv);
