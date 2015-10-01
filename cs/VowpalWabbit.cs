@@ -350,7 +350,7 @@ namespace VW
         /// <param name="example">The shared example.</param>
         /// <param name="actionDependentFeatures">The action dependent features.</param>
         /// <returns>The ranked prediction for the given examples.</returns>
-        public int[] PredictIndex(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures)
+        public int[] PredictIndex(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int? index = null, ILabel label = null)
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
@@ -360,7 +360,9 @@ namespace VW
                 this.serializer,
                 this.actionDependentFeatureSerializer,
                 example,
-                actionDependentFeatures);
+                actionDependentFeatures,
+                index,
+                label);
         }
 
         /// <summary>
@@ -369,7 +371,7 @@ namespace VW
         /// <param name="example">The shared example.</param>
         /// <param name="actionDependentFeatures">The action dependent features.</param>
         /// <returns>The ranked prediction for the given examples.</returns>
-        public TActionDependentFeature[] Predict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures)
+        public TActionDependentFeature[] Predict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int? index = null, ILabel label = null)
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
@@ -379,7 +381,9 @@ namespace VW
                 this.serializer,
                 this.actionDependentFeatureSerializer,
                 example,
-                actionDependentFeatures);
+                actionDependentFeatures,
+                index,
+                label);
         }
 
         /// <summary>

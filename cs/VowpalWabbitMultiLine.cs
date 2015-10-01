@@ -24,6 +24,89 @@ namespace VW
         /// <summary>
         /// Simplify learning of examples with action dependent features.
         /// </summary>
+        public static void Execute<TExample, TActionDependentFeature>(
+            VowpalWabbit vw,
+            VowpalWabbitSerializer<TExample> serializer,
+            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
+            TExample example,
+            IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
+            Action<List<VowpalWabbitExample>, List<TActionDependentFeature>> predictOrLearn,
+            int? index = null,
+            ILabel label = null)
+        {
+            Contract.Requires(vw != null);
+            Contract.Requires(serializer != null);
+            Contract.Requires(actionDependentFeatureSerializer != null);
+            Contract.Requires(example != null);
+            Contract.Requires(actionDependentFeatures != null);
+            Contract.Requires(index >= 0);
+            Contract.Requires(label != null);
+
+            var examples = new List<VowpalWabbitExample>(actionDependentFeatures.Count + 1);
+            var validExamples = new List<VowpalWabbitExample>(actionDependentFeatures.Count + 1);
+            var validActionDependentFeatures = new List<TActionDependentFeature>(actionDependentFeatures.Count + 1);
+
+            try
+            {
+                // contains prediction results
+                var sharedExample = serializer.Serialize(example, SharedLabel.Instance);
+                // check if we have shared features
+                if (sharedExample != null)
+                {
+                    examples.Add(sharedExample);
+
+                    if (!sharedExample.IsNewLine)
+                    {
+                        validExamples.Add(sharedExample);
+                    }
+                }
+
+                var i = 0;
+                foreach (var actionDependentFeature in actionDependentFeatures)
+                {
+                    var adfExample = actionDependentFeatureSerializer.Serialize(actionDependentFeature,
+                        index != null && i == index ? label : null);
+                    Contract.Assert(adfExample != null);
+
+                    examples.Add(adfExample);
+
+                    if (!adfExample.IsNewLine)
+                    {
+                        validExamples.Add(adfExample);
+                        validActionDependentFeatures.Add(actionDependentFeature);
+                    }
+
+                    i++;
+                }
+
+                if (validActionDependentFeatures.Count == 0)
+                {
+                    return;
+                }
+
+                // signal we're finished using an empty example
+                var empty = vw.GetOrCreateEmptyExample();
+                examples.Add(empty);
+                validExamples.Add(empty);
+
+                predictOrLearn(validExamples, validActionDependentFeatures);
+            }
+            finally
+            {
+                // dispose examples
+                // Note: must not dispose examples before final example
+                // as the learning algorithm (such as cbf) keeps a reference
+                // to the example
+                foreach (var e in examples)
+                {
+                    e.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Simplify learning of examples with action dependent features.
+        /// </summary>
         public static void Learn<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
             VowpalWabbitSerializer<TExample> serializer,
@@ -41,76 +124,21 @@ namespace VW
             Contract.Requires(index >= 0);
             Contract.Requires(label != null);
 
-#if DEBUG
-            // only in debug, since it's a hot path
-            if (actionDependentFeatureSerializer.CachesExamples)
-            {
-                throw new NotSupportedException("Cached examples cannot be used for learning");
-            }
-#endif
-
-            var examples = new List<VowpalWabbitExample>();
-            bool allADFExamplesEmpty = true;
-
-            try
-            {
-                // contains prediction results
-                var sharedExample = serializer.Serialize(example, SharedLabel.Instance);
-                // check if we have shared features
-                if (sharedExample != null)
+            Execute(
+                vw,
+                serializer,
+                actionDependentFeatureSerializer,
+                example,
+                actionDependentFeatures,
+                (examples, _) =>
                 {
-                    examples.Add(sharedExample);
-
-                    if (!sharedExample.IsNewLine)
+                    foreach (var ex in examples)
                     {
-                        vw.Learn(sharedExample);
+                        vw.Learn(ex);
                     }
-                }
-
-                var i = 0;
-                foreach (var actionDependentFeature in actionDependentFeatures)
-                {
-                    var adfExample = actionDependentFeatureSerializer.Serialize(actionDependentFeature, i == index ? label : null);
-                    Contract.Assert(adfExample != null);
-
-                    examples.Add(adfExample);
-
-                    if (!adfExample.IsNewLine)
-                    {
-                        vw.Learn(adfExample);
-                        allADFExamplesEmpty = false;
-                    }
-
-                    i++;
-                }
-
-                if (allADFExamplesEmpty)
-                {
-                    return;
-                }
-
-                // signal we're finished using an empty example
-                var empty = vw.GetOrCreateEmptyExample();
-                examples.Add(empty);
-                vw.Learn(empty);
-
-                // Dump input file for command line learning
-                //File.AppendAllLines(@"c:\temp\msn.txt",
-                //    examples.OfType<VowpalWabbitDebugExample>()
-                //        .Select(e => e.VowpalWabbitString)
-                //        .Union(new[] { "" }));
-            }
-            finally
-            {
-                // dispose examples
-                // Note: must not dispose examples before final example
-                // as the learning algorithm (such as cbf) keeps a reference
-                // to the example
-                foreach (var e in examples)
-                {
-                    e.Dispose();
-                }
-            }
+                },
+                index,
+                label);
         }
 
         /// <summary>
@@ -143,73 +171,28 @@ namespace VW
             Contract.Requires(index >= 0);
             Contract.Requires(label != null);
 
-#if DEBUG
-            // only in debug, since it's a hot path
-            if (actionDependentFeatureSerializer.CachesExamples)
-            {
-                throw new NotSupportedException("Cached examples cannot be used for learning");
-            }
-#endif
+            int[] predictions = null;
 
-            var examples = new List<VowpalWabbitExample>();
-            var numNonEmptyADFExamples = 0;
-
-            try
-            {
-                // contains prediction results
-                var sharedExample = serializer.Serialize(example, SharedLabel.Instance);
-                // check if we have shared features
-                if (sharedExample != null)
+            Execute(
+                vw,
+                serializer,
+                actionDependentFeatureSerializer,
+                example,
+                actionDependentFeatures,
+                (examples, validActionDependentFeatures) =>
                 {
-                    examples.Add(sharedExample);
-
-                    if (!sharedExample.IsNewLine)
+                    foreach (var ex in examples)
                     {
-                        vw.Learn(sharedExample);
-                    }
-                }
-
-                // leave as loop (vs. linq) so if the serializer throws an exception, anything allocated so far can be free'd
-                var i = 0;
-                foreach (var actionDependentFeature in actionDependentFeatures)
-                {
-                    var adfExample = actionDependentFeatureSerializer.Serialize(actionDependentFeature, i == index ? label : null);
-                    Contract.Assert(adfExample != null);
-
-                    if (!adfExample.IsNewLine)
-                    {
-                        examples.Add(adfExample);
-                        vw.Learn(adfExample);
-
-                        numNonEmptyADFExamples++;
+                        vw.Learn(ex);
                     }
 
-                    i++;
-                }
+                    predictions = VowpalWabbitMultiLine.GetPrediction(vw, actionDependentFeatures, examples);
+                },
+                index,
+                label);
 
-                if (numNonEmptyADFExamples == 0)
-                {
-                    return Enumerable.Range(0, actionDependentFeatures.Count).ToArray();
-                }
-
-                // signal we're finished using an empty example
-                var empty = vw.GetOrCreateEmptyExample();
-                examples.Add(empty);
-                vw.Learn(empty);
-
-                return GetPrediction<TActionDependentFeature>(vw, actionDependentFeatures, examples, numNonEmptyADFExamples);
-            }
-            finally
-            {
-                // dispose examples
-                // Note: must not dispose examples before final example
-                // as the learning algorithm (such as cbf) keeps a reference
-                // to the example
-                foreach (var e in examples)
-                {
-                    e.Dispose();
-                }
-            }
+            // default to the input list
+            return predictions ?? Enumerable.Range(0, actionDependentFeatures.Count).ToArray();
         }
 
         /// <summary>
@@ -242,16 +225,30 @@ namespace VW
             Contract.Requires(index >= 0);
             Contract.Requires(label != null);
 
-#if DEBUG
-            // only in debug, since it's a hot path
-            if (actionDependentFeatureSerializer.CachesExamples)
-            {
-                throw new NotSupportedException("Cached examples cannot be used for learning");
-            }
-#endif
+            TActionDependentFeature[] predictions = null;
 
-            var multiLabelPredictions = LearnAndPredictIndex(vw, serializer, actionDependentFeatureSerializer, example, actionDependentFeatures, index, label);
-            return actionDependentFeatures.Subset(multiLabelPredictions);
+            Execute(
+                vw,
+                serializer,
+                actionDependentFeatureSerializer,
+                example,
+                actionDependentFeatures,
+                (examples, validActionDependentFeatures) =>
+                {
+                    foreach (var ex in examples)
+                    {
+                        vw.Learn(ex);
+                    }
+
+                    var indices = VowpalWabbitMultiLine.GetPrediction(vw, actionDependentFeatures, examples);
+
+                    predictions = validActionDependentFeatures.Subset(indices);
+                },
+                index,
+                label);
+
+            // default to the input list
+            return predictions ?? actionDependentFeatures.ToArray();
         }
 
         /// <summary>
@@ -270,7 +267,9 @@ namespace VW
             VowpalWabbitSerializer<TExample> serializer,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
-            IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures)
+            IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
+            int? index = null,
+            ILabel label = null)
         {
             Contract.Requires(vw != null);
             Contract.Requires(serializer != null);
@@ -278,66 +277,28 @@ namespace VW
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
 
-            // shared |userlda :.1 |che a:.1
-            // `doc1 |lda :.1 :.2 [1]
-            // `doc2 |lda :.2 :.3 [2]
-            // <new line>
-            var examples = new List<VowpalWabbitExample>();
-            var numNonEmptyADFExamples = 0;
+            int[] predictions = null;
 
-            try
-            {
-                // contains prediction results
-                var sharedExample = serializer.Serialize(example, SharedLabel.Instance);
-                // check if we have shared features
-                if (sharedExample != null)
+            Execute(
+                vw,
+                serializer,
+                actionDependentFeatureSerializer,
+                example,
+                actionDependentFeatures,
+                (examples, validActionDependentFeatures) =>
                 {
-                    examples.Add(sharedExample);
-
-                    if (!sharedExample.IsNewLine)
+                    foreach (var ex in examples)
                     {
-                        vw.Predict(sharedExample);
+                        vw.Predict(ex);
                     }
-                }
 
-                // leave as loop (vs. linq) so if the serializer throws an exception, anything allocated so far can be free'd
-                foreach (var actionDependentFeature in actionDependentFeatures)
-                {
-                    var adfExample = actionDependentFeatureSerializer.Serialize(actionDependentFeature);
-                    Contract.Assert(adfExample != null);
+                    predictions = VowpalWabbitMultiLine.GetPrediction(vw, actionDependentFeatures, examples);
+                },
+                index,
+                label);
 
-                    examples.Add(adfExample);
-
-                    if (!adfExample.IsNewLine)
-                    {
-                        vw.Predict(adfExample);
-                        numNonEmptyADFExamples++;
-                    }
-                }
-
-                if (numNonEmptyADFExamples == 0)
-                {
-                    return Enumerable.Range(0, actionDependentFeatures.Count).ToArray();
-                }
-
-                // signal we're finished using an empty example
-                var empty = vw.GetOrCreateEmptyExample();
-                examples.Add(empty);
-                vw.Predict(empty);
-
-                return GetPrediction<TActionDependentFeature>(vw, actionDependentFeatures, examples, numNonEmptyADFExamples);
-            }
-            finally
-            {
-                // dispose examples
-                // Note: must not dispose examples before final example
-                // as the learning algorithm (such as cbf) keeps a reference
-                // to the example
-                foreach (var e in examples)
-                {
-                    e.Dispose();
-                }
-            }
+            // default to the input list
+            return predictions ?? Enumerable.Range(0, actionDependentFeatures.Count).ToArray();
         }
 
         /// <summary>
@@ -356,7 +317,9 @@ namespace VW
             VowpalWabbitSerializer<TExample> serializer,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
-            IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures)
+            IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
+            int? index = null,
+            ILabel label = null)
         {
             Contract.Requires(vw != null);
             Contract.Requires(serializer != null);
@@ -364,15 +327,37 @@ namespace VW
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
 
-            var multiLabelPredictions = PredictIndex(vw, serializer, actionDependentFeatureSerializer, example, actionDependentFeatures);
-            return actionDependentFeatures.Subset(multiLabelPredictions);
+            TActionDependentFeature[] predictions = null;
+
+            Execute(
+                vw,
+                serializer,
+                actionDependentFeatureSerializer,
+                example,
+                actionDependentFeatures,
+                (examples, validActionDependentFeatures) =>
+                {
+                    foreach (var ex in examples)
+                    {
+                        vw.Predict(ex);
+                    }
+
+                    var indices = VowpalWabbitMultiLine.GetPrediction(vw, actionDependentFeatures, examples);
+
+                    predictions = validActionDependentFeatures.Subset(indices);
+                },
+                index,
+                label);
+
+            // default to the input list
+            return predictions ?? actionDependentFeatures.ToArray();
         }
 
-        private static int[] GetPrediction<TActionDependentFeature>(VowpalWabbit vw, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, List<VowpalWabbitExample> examples, int numNonEmptyADFExamples)
+        public static int[] GetPrediction<TActionDependentFeature>(VowpalWabbit vw, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, List<VowpalWabbitExample> examples)
         {
             // Nasty workaround. Since the prediction result is stored in the first example
             // and we'll have to get an actual VowpalWabbitExampt
-            var firstExample = examples.FirstOrDefault(e => !e.IsNewLine);
+            var firstExample = examples.FirstOrDefault();
             if (firstExample == null)
             {
                 return Enumerable.Range(0, actionDependentFeatures.Count).ToArray();
@@ -385,7 +370,7 @@ namespace VW
                 return values;
             }
 
-            if (values.Length != numNonEmptyADFExamples)
+            if (values.Length != examples.Count)
             {
                 throw new InvalidOperationException("Number of predictions returned unequal number of examples fed");
             }

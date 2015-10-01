@@ -46,67 +46,17 @@ namespace VW
         /// <param name="label">The label for the example to learn.</param>
         public void Learn(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
-            var examples = new List<VowpalWabbitExample>();
-            bool allADFExamplesEmpty = true;
-
-            try
-            {
-                // contains prediction results
-                var sharedExample = serializer.Serialize(example, SharedLabel.Instance);
-                // check if we have shared features
-                if (sharedExample != null)
+            VowpalWabbitMultiLine.Execute(this.vws[0], this.serializer, this.actionDependentFeatureSerializer, example, actionDependentFeatures,
+                (examples, _) =>
                 {
-                    examples.Add(sharedExample);
-                }
-
-                var i = 0;
-                foreach (var actionDependentFeature in actionDependentFeatures)
-                {
-                    var adfExample = actionDependentFeatureSerializer.Serialize(actionDependentFeature, i == index ? label : null);
-                    Contract.Assert(adfExample != null);
-
-                    examples.Add(adfExample);
-
-                    if (!adfExample.IsNewLine)
+                    foreach (var vw in this.vws)
                     {
-                        allADFExamplesEmpty = false;
+                        foreach (var ex in examples.Where(ex => !ex.IsNewLine))
+                        {
+                            vw.Learn(ex);
+                        }
                     }
-
-                    i++;
-                }
-
-                if (allADFExamplesEmpty)
-                {
-                    return;
-                }
-
-                var empty = this.vws[0].GetOrCreateEmptyExample();
-
-                // sweep
-                foreach (var vw in this.vws)
-                {
-                    foreach (var ex in examples.Where(ex => !ex.IsNewLine))
-                    {
-                        vw.Learn(ex);
-                    }
-
-                    // signal we're finished using an empty example
-                    vw.Learn(empty);
-                }
-
-                examples.Add(empty);
-            }
-            finally
-            {
-                // dispose examples
-                // Note: must not dispose examples before final example
-                // as the learning algorithm (such as cbf) keeps a reference
-                // to the example
-                foreach (var e in examples)
-                {
-                    e.Dispose();
-                }
-            }
+                }, index, label);
         }
 
         public void Dispose()
