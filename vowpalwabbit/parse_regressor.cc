@@ -55,6 +55,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 
     if (model_file.files.size() > 0)
     {
+        model_file.verify_hash = true;
+
         size_t bytes_read_write = 0;
 
         uint32_t v_length = (uint32_t)version.to_string().length() + 1;
@@ -339,7 +341,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         // Read/write checksum if required by version
         if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_HASH)
         {
-            uint32_t check_sum = uniform_hash(model_file.space.begin, bytes_read_write, 0);
+            uint32_t check_sum = model_file.hash;
             uint32_t check_sum_saved = check_sum;
 
             text_len = sprintf_s(buff, buf_size, "Checksum: %d\n", check_sum);
@@ -349,9 +351,11 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 
             if (check_sum_saved != check_sum)
             {
-                THROW("Checksum is inconsistent, model is possibly corrupted.");
+                THROW("Checksum is inconsistent, file is possibly corrupted.");
             }
         }
+
+        model_file.verify_hash = false;
     }
 
 }

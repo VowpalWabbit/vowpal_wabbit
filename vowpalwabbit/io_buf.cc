@@ -4,38 +4,66 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include "io_buf.h"
+#include "hash.h"
 #ifdef WIN32
 #include <winsock2.h>
 #endif
 
+void debug_output(const char* szFormat, ...)
+{
+    char szBuff[1024];
+    va_list arg;
+    va_start(arg, szFormat);
+    _vsnprintf(szBuff, sizeof(szBuff), szFormat, arg);
+    va_end(arg);
+
+    OutputDebugStringA(szBuff);
+}
+
 //return a pointer to the next n bytes.  n must be smaller than the maximum size.
 size_t buf_read(io_buf &i, char* &pointer, size_t n)
 { //return a pointer to the next n bytes.  n must be smaller than the maximum size.
-  if (i.space.end + n <= i.endloaded)
+    if (i.space.end + n <= i.endloaded)
     {
-      pointer = i.space.end;
-      i.space.end += n;
-      return n;
+        pointer = i.space.end;
+        i.space.end += n;
+
+        // compute hash for check-sum
+        if (i.verify_hash)
+        {
+            i.hash = uniform_hash(pointer, n, i.hash);
+            debug_output("------ hash: %d", i.hash);
+        }
+
+        return n;
     }
-  else // out of bytes, so refill.
+    else // out of bytes, so refill.
     {
-      if (i.space.end != i.space.begin) //There exists room to shift.
-	{ // Out of buffer so swap to beginning.
-	  size_t left = i.endloaded - i.space.end;
-	  memmove(i.space.begin, i.space.end, left);
-	  i.space.end = i.space.begin;
+        if (i.space.end != i.space.begin) //There exists room to shift.
+        { // Out of buffer so swap to beginning.
+            size_t left = i.endloaded - i.space.end;
+            memmove(i.space.begin, i.space.end, left);
+            i.space.end = i.space.begin;
             i.endloaded = i.space.begin + left;
-	}
-      if (i.fill(i.files[i.current]) > 0)
+        }
+        if (i.fill(i.files[i.current]) > 0) // read more bytes from current file if present
             return buf_read(i, pointer, n);// more bytes are read.
-      else if (++i.current < i.files.size()) 
+        else if (++i.current < i.files.size())
             return buf_read(i, pointer, n);// No more bytes, so go to next file and try again.
-      else
-    { //no more bytes to read, return all that we have left.
-	  pointer = i.space.end;
-	  i.space.end = i.endloaded;
-	  return i.endloaded - pointer;
-	}
+        else
+        { //no more bytes to read, return all that we have left.
+            pointer = i.space.end;
+            i.space.end = i.endloaded;
+
+            // compute hash for check-sum
+            if (i.verify_hash)
+            {
+                i.hash = uniform_hash(pointer, i.endloaded - pointer, i.hash);
+                debug_output("------ hash: %d", i.hash);
+            }
+
+            return i.endloaded - pointer;
+        }
     }
 }
 
@@ -88,11 +116,19 @@ size_t readto(io_buf &i, char* &pointer, char terminal)
 }
 
 void buf_write(io_buf &o, char* &pointer, size_t n)
-{ //return a pointer to the next n bytes to write into.
+{ 
+  //return a pointer to the next n bytes to write into.
   if (o.space.end + n <= o.space.end_array)
     {
       pointer = o.space.end;
       o.space.end += n;
+
+      // compute hash for check-sum
+      if (o.verify_hash)
+      {
+          o.hash = uniform_hash(pointer, n, o.hash);
+          debug_output("------ hash: %d", o.hash);
+      }
     }
   else // Time to dump the file
     {

@@ -31,15 +31,39 @@ using namespace std;
 #include <sys/stat.h>
 #endif
 
+/* The i/o buffer can be conceptualized as an array below:
+**  _______________________________________________________________________________________
+** |__________|__________|__________|__________|__________|__________|__________|__________|   **
+** space.begin           space.end             space.endloaded                  space.endarray **
+**
+** space.begin     = the beginning of the loaded values in the buffer
+** space.end       = the end of the last-read point in the buffer
+** space.endloaded = the end of the loaded values from file
+** space.endarray  = the end of the allocated space for the array
+**
+** The values are ordered so that:
+** space.begin <= space.end <= space.endloaded <= space.endarray
+**
+** Initially space.begin == space.end since no values have been read.
+**
+** The interval [space.end, space.endloaded] may be shifted down to space.begin
+** if the requested number of bytes to be read is larger than the interval size.
+** This is done to avoid reallocating arrays as much as possible.
+*/
+
 class io_buf {
 public:
-  v_array<char> space; //space.begin = beginning of loaded values.  space.end = end of read or written values.
+  v_array<char> space; //space.begin = beginning of loaded values.  space.end = end of read or written values from/to the buffer.
   v_array<int> files;
   size_t count; // maximum number of file descriptors.
   size_t current; //file descriptor currently being used.
-  char* endloaded; //end of loaded values
+  char* endloaded; //end of loaded values from file or socket
   v_array<char> currentname;
   v_array<char> finalname;
+  
+  // used to check-sum i/o files for corruption detection
+  bool verify_hash;
+  uint32_t hash;
 
   static const int READ = 1;
   static const int WRITE = 2;
@@ -54,6 +78,8 @@ public:
     current = 0;
     count = 0;
     endloaded = space.begin;
+    verify_hash = false;
+    hash = 0;
   }
 
   virtual int open_file(const char* name, bool stdin_off, int flag=READ) {
@@ -128,21 +154,26 @@ public:
 
   static ssize_t read_file_or_socket(int f, void* buf, size_t nbytes);
 
-  size_t fill(int f) {
-    if (space.end_array - endloaded == 0)
-    {
-      size_t offset = endloaded - space.begin;
-      space.resize(2 * (space.end_array - space.begin));
-      endloaded = space.begin+offset;
-    }
-    ssize_t num_read = read_file(f, endloaded, space.end_array - endloaded);
-    if (num_read >= 0)
-    {
-      endloaded = endloaded+num_read;
-      return num_read;
-    }
-    else
-      return 0;
+  size_t fill(int f) 
+  {
+      // if the loaded values have reached the allocated space
+      if (space.end_array - endloaded == 0)
+      {
+          // reallocate to twice as much space
+          size_t offset = endloaded - space.begin;
+          space.resize(2 * (space.end_array - space.begin));
+          endloaded = space.begin + offset;
+      }
+      // read more bytes from file up to the remaining allocated space
+      ssize_t num_read = read_file(f, endloaded, space.end_array - endloaded);
+      if (num_read >= 0)
+      {
+          // if some bytes were actually loaded, update the end of loaded values
+          endloaded = endloaded + num_read;
+          return num_read;
+      }
+      else
+          return 0;
   }
 
   virtual ssize_t write_file(int f, const void* buf, size_t nbytes) {
