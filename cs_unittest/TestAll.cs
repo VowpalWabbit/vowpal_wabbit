@@ -291,7 +291,7 @@ namespace cs_unittest
         [DeploymentItem(@"train-sets/xxor.dat", @"train-sets")]
         [DeploymentItem(@"train-sets/ref/xxor.stderr", @"train-sets\ref")]
 
-        public void CommandLine_Test21()
+        public void CommandLine_Test21() 
         {
 
             using (var vw = new VowpalWabbit("-k -c -f models/xxor.model train-sets/xxor.dat --cubic abc --passes 100 --holdout_off --progress 1.33333"))
