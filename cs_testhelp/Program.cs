@@ -18,16 +18,19 @@ namespace cs_testhelp
             var inputFile = vwRoot + @"\test\RunTests";
             var outputFile = vwRoot + @"\cs_unittest\TestAll.cs";
 
-            if (File.Exists(outputFile) && File.GetLastWriteTimeUtc(inputFile) == File.GetLastWriteTimeUtc(outputFile))
-            {
-                return;
-            }
+            // useful for automatic update. since there is a MSBuild bug ignoring dependencies, this is disabled
+            //if (File.Exists(outputFile) && File.GetLastWriteTimeUtc(inputFile) == File.GetLastWriteTimeUtc(outputFile))
+            //{
+            //    return;
+            //}
 
             var lines = File.ReadAllLines(inputFile)
                 .SkipWhile(l => l != "__DATA__")
                 .ToList();
 
-            var skipList = new[] { 13, 14, 18, 25, 26, 33, 16, 17, 19, 20, 24, 31, 32, 34 };
+            var skipList = new[] { 13, 14, 18, 25, 26, 33, 16, 17, 19, 20, 24, 31, 32, 34, 43, 44, 45, 46, 47, 48, 49,
+                50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 65, 66, 67, 68, 69, 70 };
+
             var dependencies = new Dictionary<int, int[]>
             {
                 { 2, new[] { 1 } },
@@ -94,7 +97,7 @@ namespace cs_unittest
                         }
                         catch (Exception e)
                         {
-                            cs.WriteLine("// Unable to parse command line: " + e.Message);
+                            cs.WriteLine("/* Unable to parse command line: " + e.Message + " */");
                             Reset();
                             continue;
                         }
@@ -210,7 +213,7 @@ namespace cs_unittest
                         nr = int.Parse(match.Groups["nr"].Value);
                         comment = match.Groups["comment"].Value;
 
-                        if (nr > 40 || skipList.Contains(nr))
+                        if (skipList.Contains(nr))
                         {
                             skipTest = true;
                         }

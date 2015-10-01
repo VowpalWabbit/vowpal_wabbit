@@ -98,7 +98,6 @@
     <ProjectReference Include="..\cs_testhelp\cs_testhelp.csproj">
       <Project>{b7122114-828e-4d86-b79e-4037c74c5f69}</Project>
       <Name>cs_testhelp</Name>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\vw_clr\vw_clr.vcxproj">
       <Project>{85e55ae0-3784-4968-9271-c81af560e1c1}</Project>
@@ -280,6 +279,10 @@
     </None>
     <None Include="..\test\train-sets\rcv1_smaller.dat">
       <Link>train-sets\rcv1_smaller.dat</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\ref\0001-replay.stderr">
+      <Link>train-sets\ref\0001-replay.stderr</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\ref\0001.stderr">
@@ -770,6 +773,26 @@
       <Link>train-sets\ref\stage_poly.s100.stderr</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\test\train-sets\ref\test_named_csoaa_test.stderr">
+      <Link>train-sets\ref\test_named_csoaa_test.stderr</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\ref\test_named_csoaa_train-replay.stderr">
+      <Link>train-sets\ref\test_named_csoaa_train-replay.stderr</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\ref\test_named_csoaa_train.stderr">
+      <Link>train-sets\ref\test_named_csoaa_train.stderr</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\ref\test_named_test.stderr">
+      <Link>train-sets\ref\test_named_test.stderr</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\ref\test_named_train.stderr">
+      <Link>train-sets\ref\test_named_train.stderr</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="..\test\train-sets\ref\topk-rec.predict">
       <Link>train-sets\ref\topk-rec.predict</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -972,7 +995,8 @@
   <Import Project="$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.targets" />
   <!-- Condition="Exists('..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.targets')" -->
   <PropertyGroup>
-    <PreBuildEvent>"$(ProjectDir)..\cs_testhelp\bin\$(Configuration)\cs_testhelp.exe" $(ProjectDir)..</PreBuildEvent>
+    <PreBuildEvent>
+    </PreBuildEvent>
   </PropertyGroup>
   <!-- making sure it's called during AppVeyor build -->
   <!--
