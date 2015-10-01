@@ -574,27 +574,6 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [Description("--lda --passes 2 hang regression")]
-        [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/lda-2pass-hang.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/lda-2pass-hang.stderr", @"train-sets\ref")]
-
-        public void CommandLine_Test42()
-        {
-
-            using (var vw = new VowpalWabbit("-k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off"))
-            {
-                foreach (var dataLine in File.ReadLines("train-sets/lda-2pass-hang.dat"))
-                {
-                    vw.Learn(dataLine);
-                }
-                vw.RunMultiPass();
-                VWTestHelper.AssertEqual("train-sets/ref/lda-2pass-hang.stderr", vw.PerformanceStatistics);
-            }
-
-        }
-
-        [TestMethod]
         [Description("SVM linear kernel")]
         [TestCategory("Command line")]
         [DeploymentItem(@"train-sets/rcv1_smaller.dat", @"train-sets")]
@@ -653,27 +632,6 @@ namespace cs_unittest
                 }
                 vw.RunMultiPass();
                 VWTestHelper.AssertEqual("train-sets/ref/ksvm_train.rbf.stderr", vw.PerformanceStatistics);
-            }
-
-        }
-
-        [TestMethod]
-        [Description("autolink")]
-        [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/0002.autolink.stderr", @"train-sets\ref")]
-
-        public void CommandLine_Test71()
-        {
-
-            using (var vw = new VowpalWabbit("-d train-sets/0002.dat --autolink 1 --examples 100 -p 0002.autolink.predict"))
-            {
-                foreach (var dataLine in File.ReadLines("train-sets/0002.dat"))
-                {
-                    var actualValue = vw.Learn(dataLine, VowpalWabbitPredictionType.Scalar);
-                }
-                vw.RunMultiPass();
-                VWTestHelper.AssertEqual("train-sets/ref/0002.autolink.stderr", vw.PerformanceStatistics);
             }
 
         }
@@ -779,27 +737,6 @@ namespace cs_unittest
                 }
                 vw.RunMultiPass();
                 VWTestHelper.AssertEqual("train-sets/ref/cbify_epsilon.stderr", vw.PerformanceStatistics);
-            }
-
-        }
-
-        [TestMethod]
-        [Description("cbify, tau first")]
-        [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/multiclass", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/cbify_first.stderr", @"train-sets\ref")]
-
-        public void CommandLine_Test77()
-        {
-
-            using (var vw = new VowpalWabbit("--cbify 10 --first 5 train-sets/multiclass "))
-            {
-                foreach (var dataLine in File.ReadLines("train-sets/multiclass"))
-                {
-                    vw.Learn(dataLine);
-                }
-                vw.RunMultiPass();
-                VWTestHelper.AssertEqual("train-sets/ref/cbify_first.stderr", vw.PerformanceStatistics);
             }
 
         }

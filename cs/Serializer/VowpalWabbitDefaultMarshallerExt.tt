@@ -23,10 +23,13 @@ namespace VW.Serializer
     public partial class VowpalWabbitDefaultMarshaller
     {
 		<# foreach(var t in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16), typeof(UInt32), typeof(float), typeof(Int64), typeof(UInt64), typeof(double) }) { #>
-	    /// <summary>
+		/// <summary>
         /// Transfers feature data to native space.
         /// </summary>
-        /// <param name="feature">The feature.</param>
+		/// <param name="context">The marshalling context.</param>
+		/// <param name="ns">The namespace description.</param>
+		/// <param name="feature">The feature description.</param>
+		/// <param name="value">The feature value.</param>
         public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, NumericFeature feature, <#=t#> value)
         {
             Contract.Requires(context != null);
@@ -59,7 +62,10 @@ namespace VW.Serializer
 		/// <summary>
         /// Transfers feature data to native space.
         /// </summary>
-        /// <param name="feature">The feature.</param>
+		/// <param name="context">The marshalling context.</param>
+		/// <param name="ns">The namespace description.</param>
+		/// <param name="feature">The feature description.</param>
+		/// <param name="value">The feature value.</param>
         public void Visit(VowpalWabbitMarshalContext context, Namespace ns, NumericFeature feature, <#=t#>? value)
         {
             Contract.Requires(context != null);
@@ -85,6 +91,13 @@ namespace VW.Serializer
                 value);
         }
 
+		/// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+		/// <param name="context">The marshalling context.</param>
+		/// <param name="ns">The namespace description.</param>
+		/// <param name="feature">The feature description.</param>
+		/// <param name="value">The feature value.</param>
         public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, NumericFeature feature, <#=t#>[] value)
         {
             if (value == null)
@@ -145,7 +158,10 @@ namespace VW.Serializer
 		/// <summary>
         /// Transfers feature data to native space.
         /// </summary>
-        /// <param name="feature">The feature.</param>
+		/// <param name="context">The marshalling context.</param>
+		/// <param name="ns">The namespace description.</param>
+		/// <param name="feature">The feature description.</param>
+		/// <param name="value">The feature value.</param>
 		[ContractVerification(false)]
 		public void MarshalFeature<TValue>(VowpalWabbitMarshalContext context, Namespace ns, NumericFeature feature, IDictionary<<#=t#>, TValue> value)
         {
@@ -184,7 +200,10 @@ namespace VW.Serializer
 		/// <summary>
         /// Transfers feature data to native space.
         /// </summary>
-        /// <param name="feature">The feature.</param>
+		/// <param name="context">The marshalling context.</param>
+		/// <param name="ns">The namespace description.</param>
+		/// <param name="feature">The feature description.</param>
+		/// <param name="value">The feature value.</param>
 		[ContractVerification(false)]
         public void Visit(VowpalWabbitMarshalContext context, Namespace ns, NumericFeature feature, IDictionary<<#=t#>, <#=s#>> value)
         {
