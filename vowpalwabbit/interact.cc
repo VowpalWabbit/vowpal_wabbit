@@ -97,9 +97,10 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec) {
 
   if (!contains_valid_namespaces(*f1, *f2, in))
   {
-    base.predict(ec);
     if (is_learn)
       base.learn(ec);
+    else
+      base.predict(ec);
 
     return;
   }
