@@ -114,7 +114,14 @@ namespace cs_unittest
             {
                 foreach (DataString example in sampleData)
                 {
-                    expectedPredictions.Add(vw.Predict(example, example.ActionDependentFeatures));
+                    var pred = vw.Predict(example, example.ActionDependentFeatures);
+
+                    if (pred == null)
+                        expectedPredictions.Add(null);
+                    else
+                    {
+                        expectedPredictions.Add(pred.Select(p => p.Item2).ToArray());
+                    }
                 }
             }
 
@@ -125,8 +132,12 @@ namespace cs_unittest
             {
                 for (int i = 0; i < sampleData.Length; i++)
                 {
-                    DataStringADF[] actualPrediction = vwShared1.Predict(sampleData[i], sampleData[i].ActionDependentFeatures);
-                    ReferenceEquals(expectedPredictions[i], actualPrediction);
+                    var actualPrediction = vwShared1.Predict(sampleData[i], sampleData[i].ActionDependentFeatures);
+
+                    if (actualPrediction == null)
+                        ReferenceEquals(expectedPredictions[i], actualPrediction);
+                    else
+                        ReferenceEquals(expectedPredictions[i], actualPrediction.Select(p => p.Item2).ToArray());
                 }
             }
 
@@ -146,7 +157,7 @@ namespace cs_unittest
                             var actualPredictions = new List<DataStringADF[]>();
                             foreach (DataString example in sampleData)
                             {
-                                actualPredictions.Add(vwObject.Value.Predict(example, example.ActionDependentFeatures));
+                                actualPredictions.Add(vwObject.Value.Predict(example, example.ActionDependentFeatures).Select(p => p.Item2).ToArray());
                             }
 
                             Assert.AreEqual(expectedPredictions.Count, actualPredictions.Count);

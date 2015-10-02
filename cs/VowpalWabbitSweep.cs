@@ -85,7 +85,8 @@ namespace VW
                             this.vws[i].Predict(ex);
                         }
 
-                        result[i - fromInclusive] = VowpalWabbitMultiLine.GetPrediction(this.vws[i], examples, validActionDependentFeatures, emptyActionDependentFeatures);
+                        result[i - fromInclusive] = VowpalWabbitMultiLine.GetPrediction(this.vws[i], examples, validActionDependentFeatures, emptyActionDependentFeatures)
+                            .Select(p => p.Item2).ToArray();
                     }
                 }, index, label);
 

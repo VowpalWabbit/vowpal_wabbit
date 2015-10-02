@@ -302,7 +302,7 @@ namespace VW
         /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
         /// <param name="label">The label for the example to learn.</param>
         /// <returns>The ranked prediction for the given examples.</returns>
-        public TActionDependentFeature[] LearnAndPredict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        public Tuple<int, TActionDependentFeature>[] LearnAndPredict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
@@ -325,7 +325,7 @@ namespace VW
         /// <param name="example">The shared example.</param>
         /// <param name="actionDependentFeatures">The action dependent features.</param>
         /// <returns>The ranked prediction for the given examples.</returns>
-        public TActionDependentFeature[] Predict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int? index = null, ILabel label = null)
+        public Tuple<int, TActionDependentFeature>[] Predict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int? index = null, ILabel label = null)
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
