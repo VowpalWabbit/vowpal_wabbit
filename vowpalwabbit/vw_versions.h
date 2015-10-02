@@ -13,3 +13,4 @@ license as described in the file LICENSE.
 #define VERSION_FILE_WITH_INTERACTIONS "7.10.2" // first version that saves interacions among pairs and triples
 #define VERSION_FILE_WITH_INTERACTIONS_IN_FO "7.10.3" // since this ver -q, --cubic and --interactions are stored in vw::file_options
 #define VERSION_FILE_WITH_HEADER_HASH "8.0.1" // first version with header hash used for validating model content
+#define VERSION_FILE_WITH_HEADER_CHAINED_HASH "8.0.2" // first version with header's chained hash used for more reliably validating model content
