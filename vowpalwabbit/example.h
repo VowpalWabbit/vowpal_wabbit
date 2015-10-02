@@ -123,7 +123,7 @@ inline bool valid_ns(char c)
 
 inline void add_passthrough_feature_magic(example& ec, uint32_t magic, uint32_t i, float x) {
   if (ec.passthrough)
-    ec.passthrough->push_back( feature(x, (i + magic) * quadratic_constant) );
+    ec.passthrough->push_back( feature(x, (FNV_prime * magic) ^ i) );
 }
 
 #define add_passthrough_feature(ec, i, x) add_passthrough_feature_magic(ec, __FILE__[0]*483901+__FILE__[1]*3417+__FILE__[2]*8490177, i, x);
