@@ -48,7 +48,7 @@ namespace VW
 
 		size_t length;
 		uint32_t* labels;
-		
+
 		try
 		{
 			labels = VW::get_multilabel_predictions(ex, length);
@@ -61,7 +61,11 @@ namespace VW
 		}
 
 		auto values = gcnew cli::array<int>((int)length);
-		Marshal::Copy(IntPtr(labels), values, 0, (int)length);
+
+    if (length > 0)
+    {
+      Marshal::Copy(IntPtr(labels), values, 0, (int)length);
+    }
 
 		return values;
 	}
