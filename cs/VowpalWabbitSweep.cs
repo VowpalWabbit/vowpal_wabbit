@@ -13,15 +13,15 @@ namespace VW
 {
     public class VowpalWabbitSweep<TExample, TActionDependentFeature> : IDisposable
     {
-        private const int NumberOfVWInstancesSharingExamples = 5;
+        private const int NumberOfVWInstancesSharingExamples = 3;
 
         private VowpalWabbit[] vws;
 
         private List<VowpalWabbitSettings> settings;
 
-        private VowpalWabbitSerializer<TExample> serializer;
+        private VowpalWabbitSerializer<TExample>[] serializers;
 
-        private VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
+        private VowpalWabbitSerializer<TActionDependentFeature>[] actionDependentFeatureSerializers;
 
         public VowpalWabbitSweep(List<VowpalWabbitSettings> settings)
         {
@@ -30,15 +30,23 @@ namespace VW
 
             Contract.EndContractBlock();
 
+            // TODO: check that the sweeps are not across incompatible options.
             this.settings = settings;
             this.vws = settings.Select(setting => new VowpalWabbit(setting)).ToArray();
 
-            // TODO: check that the sweeps are not across incompatible options.
-            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(settings[0]).Create(this.vws[0]);
-            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(settings[0]).Create(this.vws[0]);
+            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(settings[0]);
+            this.serializers = this.vws.Select(vw => serializer.Create(vw)).ToArray();
+
+            var actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(settings[0]);
+            this.actionDependentFeatureSerializers = this.vws.Select(vw => actionDependentFeatureSerializer.Create(vw)).ToArray();
         }
 
         public VowpalWabbit[] VowpalWabbits { get { return this.vws; } }
+
+        public OrderablePartitioner<Tuple<int, int>> CreatePartitioner()
+        {
+            return Partitioner.Create(0, this.vws.Length, Math.Min(this.vws.Length, NumberOfVWInstancesSharingExamples));
+        }
 
         /// <summary>
         /// Learn from the given example and return the current prediction for it.
@@ -47,53 +55,39 @@ namespace VW
         /// <param name="actionDependentFeatures">The action dependent features.</param>
         /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
         /// <param name="label">The label for the example to learn.</param>
-        public void Learn(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        public void Learn(int fromInclusive, int toExclusive, TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
-            var partitioner = Partitioner.Create(0, this.vws.Length, Math.Min(this.vws.Length, NumberOfVWInstancesSharingExamples));
-
-            Parallel.ForEach(
-                partitioner,
-                new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
-                range =>
+            VowpalWabbitMultiLine.Execute(this.vws[fromInclusive], this.serializers[fromInclusive], this.actionDependentFeatureSerializers[fromInclusive], example, actionDependentFeatures,
+                (examples, _, __) =>
                 {
-                    VowpalWabbitMultiLine.Execute(this.vws[range.Item1], this.serializer, this.actionDependentFeatureSerializer, example, actionDependentFeatures,
-                        (examples, _, __) =>
+                    for (int i = fromInclusive; i < toExclusive; i++)
+                    {
+                        foreach (var ex in examples)
                         {
-                            for (int i = range.Item1; i < range.Item2; i++)
-                            {
-                                foreach (var ex in examples.Where(ex => !ex.IsNewLine))
-                                {
-                                    this.vws[i].Learn(ex);
-                                }
-                            }
-                        }, index, label);
-                });
+                            this.vws[i].Learn(ex);
+                        }
+                    }
+                }, index, label);
         }
 
-        public TActionDependentFeature[][] Predict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        public TActionDependentFeature[][] Predict(int fromInclusive, int toExclusive, TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
-            var partitioner = Partitioner.Create(0, this.vws.Length, Math.Min(this.vws.Length, NumberOfVWInstancesSharingExamples));
+            var result = new TActionDependentFeature[toExclusive - fromInclusive][];
 
-            var result = new TActionDependentFeature[this.vws.Length][];
-
-            var p = Parallel.ForEach(
-                partitioner,
-                new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
-                range =>
+            VowpalWabbitMultiLine.Execute(this.vws[fromInclusive], this.serializers[fromInclusive], this.actionDependentFeatureSerializers[fromInclusive], example, actionDependentFeatures,
+                (examples, validActionDependentFeatures, emptyActionDependentFeatures) =>
                 {
-                    VowpalWabbitMultiLine.Execute(this.vws[range.Item1], this.serializer, this.actionDependentFeatureSerializer, example, actionDependentFeatures,
-                        (examples, validActionDependentFeatures, emptyActionDependentFeatures) =>
+                    for (int i = fromInclusive; i < toExclusive; i++)
+                    {
+                        // feed all examples for this block
+                        foreach (var ex in examples)
                         {
-                            for (int i = range.Item1; i < range.Item2; i++)
-                            {
-                                foreach (var ex in examples.Where(ex => !ex.IsNewLine))
-                                {
-                                    this.vws[i].Predict(ex);
-                                    result[i] = VowpalWabbitMultiLine.GetPrediction(this.vws[i], examples, validActionDependentFeatures, emptyActionDependentFeatures);
-                                }
-                            }
-                        }, index, label);
-                });
+                            this.vws[i].Predict(ex);
+                        }
+
+                        result[i - fromInclusive] = VowpalWabbitMultiLine.GetPrediction(this.vws[i], examples, validActionDependentFeatures, emptyActionDependentFeatures);
+                    }
+                }, index, label);
 
             return result;
         }
@@ -118,16 +112,24 @@ namespace VW
                     this.vws = null;
                 }
 
-                if (this.serializer != null)
+                if (this.serializers != null)
                 {
-                    this.serializer.Dispose();
-                    this.serializer = null;
+                    foreach (var s in this.serializers)
+                    {
+                        s.Dispose();
+                    }
+
+                    this.serializers = null;
                 }
 
-                if (this.actionDependentFeatureSerializer != null)
+                if (this.actionDependentFeatureSerializers != null)
                 {
-                    this.actionDependentFeatureSerializer.Dispose();
-                    this.actionDependentFeatureSerializer = null;
+                    foreach (var s in this.actionDependentFeatureSerializers)
+                    {
+                        s.Dispose();
+                    }
+
+                    this.actionDependentFeatureSerializers = null;
                 }
             }
         }
