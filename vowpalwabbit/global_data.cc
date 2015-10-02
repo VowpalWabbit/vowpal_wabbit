@@ -152,8 +152,7 @@ void set_mm(shared_data* sd, float label)
     sd->max_label = max(sd->max_label, label);
 }
 
-void noop_mm(shared_data*, float)
-{}
+void noop_mm(shared_data*, float) {}
 
 void vw::learn(example* ec)
 {

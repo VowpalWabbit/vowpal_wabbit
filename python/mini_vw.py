@@ -18,8 +18,11 @@ def mini_vw(inputFile, numPasses, otherArgs):
                 ex = vw.example(l)
                 vw.learn(ex)
                 ex.finish()
+		print ex.get_loss()
         h.close()
     vw.finish()
+    print vw.get_sum_loss()
+    print vw.get_weighted_examples()
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:

@@ -1290,15 +1290,24 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
    test-sets/ref/backwards.stderr
    test-sets/ref/backwards.stdout
 
-# Test 97: active cover
+# Test 97: 
+{VW} -d train-sets/0001.dat -f models/0097.model --save_resume
+        train-sets/ref/0097.stderr
+
+# Test 98: checking predictions as well
+{VW} train-sets/0001.dat -i models/0097.model -p 0098.predict
+    test-sets/ref/0098.stderr
+    pred-sets/ref/0098.predict
+
+# Test 99: active cover
 {VW} --loss_function logistic --binary -b 29 --active_cover -d train-sets/rcv1_small.dat -f models/active_cover.model
    train-sets/ref/active_cover.stderr
 
-# Test 98: active cover (predict)
+# Test 100: active cover (predict)
 {VW} -i models/active_cover.model --binary -t -d test-sets/rcv1_small_test.data -p active_cover.predict 
    test-sets/ref/active_cover.stderr
    pred-sets/ref/active_cover.predict
 
-# Test 99: active cover oracular
+# Test 101: active cover oracular
 {VW} --loss_function logistic --binary --active_cover --oracular -d ./train-sets/rcv1_small.dat
    train-sets/ref/active_cover_oracular.stderr
