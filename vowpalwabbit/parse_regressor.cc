@@ -76,51 +76,39 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         {
 	THROW("Model has possibly incompatible version! " << all.model_file_ver.to_string());
         }
-      
-      char model = 'm';
-		bin_text_read_write_fixed(model_file, &model, 1,
-				"file is not a model file", read, 
-				"", 0, text);
-      
+	
+	char model = 'm';
+	bin_text_read_write_fixed(model_file, &model, 1,
+					  "file is not a model file", read, 
+				  "", 0, text);
+	
         text_len = sprintf_s(buff, buf_size, "Min label:%f\n", all.sd->min_label);
-		bin_text_read_write_fixed(model_file, (char*)&all.sd->min_label, sizeof(all.sd->min_label),
-				"", read, 
-				buff, text_len, text);
-      
-		if (read && find(all.args.begin(), all.args.end(), "--min_prediction") == all.args.end())
-		{
-			all.args.push_back("--min_prediction");
-			all.args.push_back(boost::lexical_cast<std::string>(all.sd->min_label));
-		}
-
-        text_len = sprintf_s(buff, buf_size, "Max label:%f\n", all.sd->max_label);
-		bin_text_read_write_fixed(model_file, (char*)&all.sd->max_label, sizeof(all.sd->max_label),
-				"", read, 
-				buff, text_len, text);
-      
-		if (read && find(all.args.begin(), all.args.end(), "--max_prediction") == all.args.end())
-		{
-			all.args.push_back("--max_prediction");
-			all.args.push_back(boost::lexical_cast<std::string>(all.sd->max_label));
-		}
-
-        text_len = sprintf_s(buff, buf_size, "bits:%d\n", (int)all.num_bits);
-      uint32_t local_num_bits = all.num_bits;
-		bin_text_read_write_fixed(model_file, (char *)&local_num_bits, sizeof(local_num_bits),
-				"", read, 
-				buff, text_len, text);
-
-		if (read && find(all.args.begin(), all.args.end(), "--bit_precision") == all.args.end())
-		{
-			all.args.push_back("--bit_precision");
-			all.args.push_back(boost::lexical_cast<std::string>(local_num_bits));
-		}
-
-		if (all.default_bits != true && all.num_bits != local_num_bits)
-        {
-		  THROW("-b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model");
-        }
-
+	bin_text_read_write_fixed(model_file, (char*)&all.sd->min_label, sizeof(all.sd->min_label),
+				  "", read, 
+				  buff, text_len, text);
+	
+	text_len = sprintf_s(buff, buf_size, "Max label:%f\n", all.sd->max_label);
+	bin_text_read_write_fixed(model_file, (char*)&all.sd->max_label, sizeof(all.sd->max_label),
+				  "", read, 
+				  buff, text_len, text);
+	
+	text_len = sprintf_s(buff, buf_size, "bits:%d\n", (int)all.num_bits);
+	uint32_t local_num_bits = all.num_bits;
+	bin_text_read_write_fixed(model_file, (char *)&local_num_bits, sizeof(local_num_bits),
+				  "", read, 
+					  buff, text_len, text);
+	
+	if (read && find(all.args.begin(), all.args.end(), "--bit_precision") == all.args.end())
+	  {
+	    all.args.push_back("--bit_precision");
+	    all.args.push_back(boost::lexical_cast<std::string>(local_num_bits));
+	  }
+	
+	if (all.default_bits != true && all.num_bits != local_num_bits)
+	  {
+	    THROW("-b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model");
+	  }
+		
       all.default_bits = false;
       all.num_bits = local_num_bits;
       

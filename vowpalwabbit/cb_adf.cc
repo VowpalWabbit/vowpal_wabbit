@@ -60,13 +60,17 @@ namespace CB_ADF {
       cs_labels.resize(examples.size(), true);
       cs_labels.end = cs_labels.end_array;
     }
+    bool shared = has_shared_example(examples);
     for (size_t i = 0; i < examples.size(); i++)
       {
 	CB::label ld = examples[i]->l.cb;
-
+	
 	COST_SENSITIVE::wclass wc;
-	wc.class_index = 0;
-		  if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
+	if (shared && i > 0)
+	  wc.class_index = i-1;
+	else
+	  wc.class_index = 0;
+	if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
 	  wc.x = ld.costs[0].cost / ld.costs[0].probability;
 	else 
 	  wc.x = 0.f;
@@ -75,7 +79,7 @@ namespace CB_ADF {
       }
 	  cs_labels[examples.size() - 1].costs[0].x = FLT_MAX; //trigger end of multiline example.
 
-    if (has_shared_example(examples))//take care of shared examples
+    if (shared)//take care of shared examples
       {
 	cs_labels[0].costs[0].class_index = 0;
 	cs_labels[0].costs[0].x = -FLT_MAX;
@@ -92,19 +96,19 @@ namespace CB_ADF {
     }
 
     c.pred_scores.costs.erase();
-	  bool shared = has_shared_example(examples);
-
+    bool shared = has_shared_example(examples);
+    
     int startK = 0;
-	  if (shared) startK = 1;
-
+    if (shared) startK = 1;
+    
     for (size_t i = 0; i < examples.size(); i++)
       {
-		  if (example_is_newline(*examples[i])) continue;
-
+	if (example_is_newline(*examples[i])) continue;
+	
 	COST_SENSITIVE::wclass wc;
 	wc.class_index = 0;	
 	
-		  if (c.known_cost.action + startK == i) {
+	if (c.known_cost.action + startK == i) {
 	  int known_index = c.known_cost.action;
 	  c.known_cost.action = 0;
 	  //get cost prediction for this label
@@ -113,17 +117,16 @@ namespace CB_ADF {
 	  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, &(c.known_cost), *(examples[i]), 0, 2);
 	  c.known_cost.action = known_index;
 	}
-	else {
+	else 
 	  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, nullptr, *(examples[i]), 0, 2);
-	}
-
-		  if (shared)
-			  wc.class_index = i - 1;
+	
+	if (shared)
+	  wc.class_index = i - 1;
 	else
 	  wc.class_index = i;
 	c.pred_scores.costs.push_back(wc); // done
 	wc.class_index = 0;
-
+	
 	//add correction if we observed cost for this action and regressor is wrong
 	if (c.known_cost.probability != -1 && c.known_cost.action + startK == i)
 	  {			
@@ -323,7 +326,13 @@ namespace CB_ADF {
     float loss = 0.;
 
     if (!CB::example_is_test(ec)) {
-      loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, ec.pred.multiclass);
+      uint32_t action = ec.pred.multiclass;
+      if (ec_seq != nullptr)
+	for (size_t i = 0; i < (*ec_seq).size(); i++)
+	  if ((*ec_seq)[i]->pred.multiclass != 0)
+	    action = (*ec_seq)[i]->pred.multiclass;
+
+      loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, action);
       all.sd->sum_loss += loss;
       all.sd->sum_loss_since_last_dump += loss;
     }
@@ -355,7 +364,7 @@ namespace CB_ADF {
     all.sd->total_features += head_ec.num_features;
   
     float loss = 0.;
-    v_array<uint32_t> preds = head_ec.pred.multilabels.label_v;
+    v_array<uint32_t>& preds = head_ec.pred.multilabels.label_v;
     bool is_test = false;
     //cout<<"Preds size = "<<preds.size()<<endl;
     

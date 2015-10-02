@@ -181,6 +181,7 @@ void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* e
     size_t num_current_features = ec.num_features;
     // for csoaa_ldf we want features from the whole (multiline example),
     // not only from one line (the first one) represented by ec
+    size_t pred = ec.pred.multiclass;
     if (ec_seq != nullptr)
     {
       num_current_features = 0;
@@ -194,9 +195,12 @@ void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* e
       if (costs.size() == 1 && costs[0].action == 0 && costs[0].cost < 0) ecc++;
 
       for (; ecc!=ec_seq->end; ecc++)
-        num_current_features += (*ecc)->num_features;
+	{
+	  num_current_features += (*ecc)->num_features;
+	  if ((*ecc)->pred.multiclass != 0)
+	    pred = (*ecc)->pred.multiclass;
+	}
     }
-
     std::string label_buf;
     if (is_test)
       label_buf = " unknown";
@@ -206,12 +210,12 @@ void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* e
     if (multilabel) {
       std::ostringstream pred_buf;
       pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ')
-               << ec.pred.multilabels.label_v[0]<<".....";
+               << ec.pred.multilabels.label_v[0]<<"...";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
                            num_current_features, all.progress_add, all.progress_arg);;
     }
     else
-      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, ec.pred.multiclass,
+      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred,
                            num_current_features, all.progress_add, all.progress_arg);
   }
 }

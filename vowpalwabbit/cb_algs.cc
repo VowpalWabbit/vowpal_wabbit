@@ -314,19 +314,12 @@ void learn_eval(cb& c, base_learner&, example& ec) {
 float get_unbiased_cost(CB::cb_class* known_cost, COST_SENSITIVE::label& scores, uint32_t action) {
   float loss = 0.;
 
-  //cout<<scores.costs.size()<<endl;
-
   for (COST_SENSITIVE::wclass *cl = scores.costs.begin; cl != scores.costs.end; cl++)
     if (cl->class_index == action)
       loss = cl->x;
 
   if (known_cost->action == action)
     loss += (known_cost->cost - loss) / known_cost->probability;
-
-  //cout<<"loss = "<<loss<<endl;
-
-  //if (chosen_loss == FLT_MAX)
-  //cerr << "warning: cb predicted an invalid class" << endl;
 
   return loss;
 }
