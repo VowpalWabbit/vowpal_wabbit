@@ -20,7 +20,7 @@ final public class VWIntLearner extends VWBase {
         lock.lock();
         try {
             if (isOpen()) {
-                return predictInt(example, learn, nativePointer);
+                return predict(example, learn, nativePointer);
             }
             throw new IllegalStateException("Already closed.");
         }
@@ -49,5 +49,5 @@ final public class VWIntLearner extends VWBase {
         return learnOrPredict(example, true);
     }
 
-    private native int predictInt(String example, boolean learn, long nativePointer);
+    private native int predict(String example, boolean learn, long nativePointer);
 }

@@ -4,15 +4,16 @@ import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import vw.VW;
-import vw.exception.IllegalVWInput;
+import vw.VWTestHelper;
 
 import java.io.*;
-import java.lang.reflect.Field;
-import java.util.*;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assert.*;
 
 /**
@@ -23,20 +24,6 @@ public class VWFloatLearnerTest {
     private final String heightData = "|f height:0.23 weight:0.25 width:0.05";
     private VWFloatLearner houseScorer;
 
-    private static List<String> loadedLibs() {
-        try {
-            final Field libs = ClassLoader.class.getDeclaredField("loadedLibraryNames");
-            libs.setAccessible(true);
-
-            @SuppressWarnings("unchecked")
-            final Vector<String> libraries = (Vector<String>) libs.get(ClassLoader.getSystemClassLoader());
-            return libraries;
-        }
-        catch (Exception e) {
-            return new ArrayList<String>();
-        }
-    }
-
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
@@ -45,16 +32,7 @@ public class VWFloatLearnerTest {
 
     @BeforeClass
     public static void globalSetup() throws IOException {
-        try {
-            final String lib = new File(".").getCanonicalPath() + "/target/vw_jni.lib";
-            System.load(lib);
-            final List<String> libs = loadedLibs();
-            assertTrue(libs.contains(lib));
-            System.out.println("loaded libs: " + libs);
-        }
-        catch (UnsatisfiedLinkError ignored) {
-            // Do nothing as this means that the library should be loaded as part of the jar
-        }
+        VWTestHelper.loadLibrary();
     }
 
     @Before
@@ -199,45 +177,6 @@ public class VWFloatLearnerTest {
     }
 
     @Test
-    public void testContextualBandits() throws IOException {
-        // Note that the expected values in this test were obtained by running
-        // vw from the command line as follows
-        // echo -e "1:2:0.4 | a c\n3:0.5:0.2 | b d\n4:1.2:0.5 | a b c\n2:1:0.3 | b c\n3:1.5:0.7 | a d" | ../vowpalwabbit/vw --cb 4 -f cb.model -p cb.train.out
-        // echo -e "1:2 3:5 4:1:0.6 | a c d\n1:0.5 2:1:0.4 3:2 4:1.5 | c d" | ../vowpalwabbit/vw -i cb.model -t -p cb.out
-        String[] train = new String[]{
-                "1:2:0.4 | a c",
-                "3:0.5:0.2 | b d",
-                "4:1.2:0.5 | a b c",
-                "2:1:0.3 | b c",
-                "3:1.5:0.7 | a d"
-        };
-        String cbModel = temporaryFolder.newFile().getAbsolutePath();
-        VWFloatLearner vw = new VWFloatLearner("--quiet --cb 4 -f " + cbModel);
-        float[] trainPreds = new float[train.length];
-        for (int i=0; i<train.length; ++i) {
-            trainPreds[i] = vw.learn(train[i]);
-        }
-        float[] expectedTrainPreds = new float[]{1, 2, 2, 2, 2};
-        vw.close();
-
-        assertArrayEquals(expectedTrainPreds, trainPreds, 0.00001f);
-
-        vw = new VWFloatLearner("--quiet -t -i " + cbModel);
-        String[] test = new String[]{
-                "1:2 3:5 4:1:0.6 | a c d",
-                "1:0.5 2:1:0.4 3:2 4:1.5 | c d"
-        };
-
-        float[] testPreds = new float[test.length];
-        for (int i=0; i<testPreds.length; ++i) {
-            testPreds[i] = vw.predict(test[i]);
-        }
-        float[] expectedTestPreds = new float[]{4, 4};
-        vw.close();
-        assertArrayEquals(expectedTestPreds, testPreds, 0.000001f);
-    }
-
-    @Test
     public void testConcurrency() throws IOException, InterruptedException {
         final Map<String, Float> data = new TreeMap<String, Float>();
 
@@ -277,14 +216,6 @@ public class VWFloatLearnerTest {
         threadPool.shutdown();
         threadPool.awaitTermination(1, TimeUnit.DAYS);
         predict.close();
-    }
-
-    @Test
-    public void testMultiLabel() {
-        thrown.expect(IllegalVWInput.class);
-        thrown.expectMessage("VW JNI layer only supports simple and multiclass predictions");
-        VWFloatLearner vw = new VWFloatLearner("--quiet --multilabel_oaa 3");
-        vw.close();
     }
 
     @Test

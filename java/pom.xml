@@ -155,8 +155,6 @@
                 </executions>
                 <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                    <forkCount>1</forkCount>
-                    <argLine>-Djava.library.path=${basedir}/target</argLine>
                 </configuration>
             </plugin>
             <plugin>
