@@ -1,4 +1,3 @@
-# Demostrate usage of vw.R and dt2vw.R
 rm(list = ls(all = TRUE)); gc()
 
 # setwd('rvw_example')
@@ -6,20 +5,43 @@ library(ggplot2)
 library(data.table)
 library(pROC)
 
-source('dt2vw.R')
+# create a folder called data
+system(‘mkdir data’)
+
+source('../dt2vw.R')
 source('vw.R')
+
+# Function used to select variables for each namespace
+get_feature_type <- function(X, threshold = 50, verbose = FALSE) {
+  q_levels <- function (x)
+  {
+    if (data.table::is.data.table(x)) {
+      unlist(x[, lapply(.SD, function(x) length(unique(x)))])
+    }
+    else {
+      apply(x, 2, function(x) length(unique(x)))
+    }
+  }
+  
+  lvs = q_levels(X)
+  fact_vars = names(lvs[lvs < threshold])
+  num_vars = names(lvs[lvs >= threshold])
+  if (verbose) {
+    print(data.frame(lvs))
+  }
+  list(fact_vars = fact_vars, num_vars = num_vars)
+}
 
 # setwd where the data would be
 setwd('data')
 
 dt = diamonds
+dt = setDT(dt)
 target = 'y'
-data_types = handy::get_feature_type(dt[, setdiff(names(dt), target), with=F], threshold = 50)
+data_types = get_feature_type(dt[, setdiff(names(dt), target), with=F], threshold = 50)
 namespaces = list(n = list(varName = data_types$num_vars, keepSpace=F),
                   c = list(varName = data_types$fact_vars, keepSpace=F))
 
-
-dt = setDT(dt)
 dt$y = with(dt, ifelse(y < 5.71, 1, -1))
 dt2vw(dt, 'diamonds.vw', namespaces, target=target, weight=NULL)
 system('head -3 diamonds.vw')
@@ -47,7 +69,6 @@ model = "mdl.vw"
 
 # Shows files in the working directory: /data
 list.files()
-print(auc)
 
 auc = vw(training_data, validation_data, loss = "logistic",
          model, b = 25, learning_rate = 0.5, passes = 1,
@@ -56,6 +77,8 @@ auc = vw(training_data, validation_data, loss = "logistic",
          validation_labels = validation_labels, verbose = TRUE, do_evaluation = TRUE,
          use_perf=FALSE, plot_roc=TRUE)
 
+print(auc)
+# [1] 0.9944229
 
 # AUC using pROC - Saving plots to disk
 ### create a parameter grid
@@ -65,6 +88,7 @@ grid = expand.grid(l1=c(1e-07, 1e-08),
                    extra=c('--nn 10', ''))
 
 
+cat('Running grid search\n')
 pdf('ROCs.pdf')
 aucs <- lapply(1:nrow(grid), function(i){
   g = grid[i, ]

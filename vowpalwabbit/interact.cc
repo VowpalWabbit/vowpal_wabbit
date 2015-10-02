@@ -42,7 +42,7 @@ bool contains_valid_namespaces(v_array<feature>& f_src1, v_array<feature>& f_src
 
 float multiply(v_array<feature>& f_dest, v_array<feature>& f_src2, interact& in) {
   f_dest.erase();
-  v_array<feature> f_src1 = in.feat_store;
+  v_array<feature>& f_src1 = in.feat_store;
   vw* all = in.all;
   size_t weight_mask = all->reg.weight_mask;
   size_t base_id1 = f_src1[0].weight_index & weight_mask;
@@ -148,7 +148,7 @@ LEARNER::base_learner* interact_setup(vw& all)
   }
 
   interact& data = calloc_or_die<interact>();
-  
+
   data.n1 = (unsigned char) s[0];
   data.n2 = (unsigned char) s[1];
   cerr <<"Interacting namespaces "<<data.n1<<" and "<<data.n2<<endl;
