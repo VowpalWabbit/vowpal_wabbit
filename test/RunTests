@@ -909,7 +909,7 @@ __DATA__
     train-sets/ref/wiki1K.stderr
 
 # Test 18: Run search on seq_small for 12 passes, 4 passes per policy
-{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --search 4 --search_task sequence --holdout_off --search_linear_ordering
+{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --search 4 --search_task sequence --holdout_off
     train-sets/ref/search_small.stderr
 
 # Test 19: neural network 3-parity with 2 hidden units
@@ -1023,7 +1023,7 @@ __DATA__
     train-sets/ref/lda-2pass-hang.stderr
 
 # Test 43: search sequence labeling, non-ldf train
-{VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off -f models/sequence_data.model --search_linear_ordering
+{VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off -f models/sequence_data.model
     train-sets/ref/sequence_data.nonldf.train.stderr
 
 # Test 44: search sequence labeling, non-ldf test
@@ -1032,7 +1032,7 @@ __DATA__
     train-sets/ref/sequence_data.nonldf.test.predict
 
 # Test 45: make sure that history works
-{VW} -k -c -d train-sets/seq_small2 --passes 4 --search 4 --search_task sequence --holdout_off --search_linear_ordering
+{VW} -k -c -d train-sets/seq_small2 --passes 4 --search 4 --search_task sequence --holdout_off
     train-sets/ref/search_small2.stderr
 
 # Test 46: search sequence labeling, ldf train
@@ -1071,7 +1071,7 @@ __DATA__
     train-sets/ref/sequencespan_data.nonldf-bilou.test.predict
 
 # Test 52: silly test for "argmax" task
-{VW} -d train-sets/argmax_data -k -c --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task argmax --search 2 --holdout_off --search_linear_ordering
+{VW} -d train-sets/argmax_data -k -c --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task argmax --search 2 --holdout_off
     train-sets/ref/argmax_data.stderr
 
 # Test 53: (holdout-broken regression)
@@ -1152,7 +1152,7 @@ __DATA__
     train-sets/ref/dictionary_test.stderr
 
 # Test 68: Search for multiclass classification
-{VW} -k -c -d train-sets/multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off --search_linear_ordering
+{VW} -k -c -d train-sets/multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off
 	train-sets/ref/search_multiclass.stderr
 
 # Test 69: (see Test 43/Test 44): search sequence labeling, with selective branching
@@ -1300,6 +1300,6 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     pred-sets/ref/0098.predict
 
 # Test 99: action costs, no rollout
-{VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout none --search_task sequence_ctg --search 5 --holdout_off --search_linear_ordering
+{VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout none --search_task sequence_ctg --search 5 --holdout_off
     train-sets/ref/sequence_data.ctg.train.stderr
 
