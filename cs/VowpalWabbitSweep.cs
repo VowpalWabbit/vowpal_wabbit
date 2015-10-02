@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -12,6 +13,8 @@ namespace VW
 {
     public class VowpalWabbitSweep<TExample, TActionDependentFeature> : IDisposable
     {
+        private const int NumberOfVWInstancesSharingExamples = 5;
+
         private VowpalWabbit[] vws;
 
         private List<VowpalWabbitSettings> settings;
@@ -46,17 +49,53 @@ namespace VW
         /// <param name="label">The label for the example to learn.</param>
         public void Learn(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
-            VowpalWabbitMultiLine.Execute(this.vws[0], this.serializer, this.actionDependentFeatureSerializer, example, actionDependentFeatures,
-                (examples, _, __) =>
+            var partitioner = Partitioner.Create(0, this.vws.Length, Math.Min(this.vws.Length, NumberOfVWInstancesSharingExamples));
+
+            Parallel.ForEach(
+                partitioner,
+                new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
+                range =>
                 {
-                    foreach (var vw in this.vws)
-                    {
-                        foreach (var ex in examples.Where(ex => !ex.IsNewLine))
+                    VowpalWabbitMultiLine.Execute(this.vws[range.Item1], this.serializer, this.actionDependentFeatureSerializer, example, actionDependentFeatures,
+                        (examples, _, __) =>
                         {
-                            vw.Learn(ex);
-                        }
-                    }
-                }, index, label);
+                            for (int i = range.Item1; i < range.Item2; i++)
+                            {
+                                foreach (var ex in examples.Where(ex => !ex.IsNewLine))
+                                {
+                                    this.vws[i].Learn(ex);
+                                }
+                            }
+                        }, index, label);
+                });
+        }
+
+        public TActionDependentFeature[][] Predict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        {
+            var partitioner = Partitioner.Create(0, this.vws.Length, Math.Min(this.vws.Length, NumberOfVWInstancesSharingExamples));
+
+            var result = new TActionDependentFeature[this.vws.Length][];
+
+            var p = Parallel.ForEach(
+                partitioner,
+                new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
+                range =>
+                {
+                    VowpalWabbitMultiLine.Execute(this.vws[range.Item1], this.serializer, this.actionDependentFeatureSerializer, example, actionDependentFeatures,
+                        (examples, validActionDependentFeatures, emptyActionDependentFeatures) =>
+                        {
+                            for (int i = range.Item1; i < range.Item2; i++)
+                            {
+                                foreach (var ex in examples.Where(ex => !ex.IsNewLine))
+                                {
+                                    this.vws[i].Predict(ex);
+                                    result[i] = VowpalWabbitMultiLine.GetPrediction(this.vws[i], examples, validActionDependentFeatures, emptyActionDependentFeatures);
+                                }
+                            }
+                        }, index, label);
+                });
+
+            return result;
         }
 
         public void Dispose()
