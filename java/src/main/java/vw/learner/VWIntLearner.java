@@ -9,11 +9,10 @@ final public class VWIntLearner extends VWBase {
     }
 
     /**
-     * <code>learnOrPredict</code>, <code>predictSpecialized</code> and <code>learnSpecialized</code>
-     * functions mimic the functionality in VWGenericBase<Float> but are required if we don't want to
-     * box the floats like they are boxed in the <code>predict(example, learn, nativePointer)</code>.
+     * <code>learnOrPredict</code> allows the ability to return an unboxed prediction.  This will reduce the overhead
+     * of this function call.
      * @param example an example
-     * @param learn whether the learn prior to returning the prediction.
+     * @param learn whether to call the learn or predict VW functions.
      * @return an <em>UNBOXED</em> prediction.
      */
     private int learnOrPredict(final String example, final boolean learn) {
