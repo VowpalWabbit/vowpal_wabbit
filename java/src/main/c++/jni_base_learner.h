@@ -1,8 +1,13 @@
 #ifndef VW_BASE_LEARNER_H
 #define VW_BASE_LEARNER_H
 
+#include <jni.h>
+
+void throw_java_exception(JNIEnv *env, const char* name, const char* msg);
+void rethrow_cpp_exception_as_java_exception(JNIEnv *env);
+
 template<class T>
-T VW_Base(
+T base_predict(
         JNIEnv *env,
         jobject obj,
         jstring example_string,

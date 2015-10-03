@@ -1,6 +1,6 @@
 #include "../../../../vowpalwabbit/parser.h"
 #include "../../../../vowpalwabbit/vw.h"
-#include "vw_errors.h"
+#include "jni_base_learner.h"
 #include "vw_learner_VWBase.h"
 
 

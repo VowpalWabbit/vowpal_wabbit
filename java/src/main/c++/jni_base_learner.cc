@@ -1,7 +1,7 @@
 #include "../../../../vowpalwabbit/parser.h"
 #include "../../../../vowpalwabbit/vw.h"
 
-#include "vw_errors.h"
+#include "jni_base_learner.h"
 
 void throw_java_exception(JNIEnv *env, const char* name, const char* msg) {
      jclass jc = env->FindClass(name);

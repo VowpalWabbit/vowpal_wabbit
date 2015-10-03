@@ -1,8 +1,7 @@
 #include "../../../../vowpalwabbit/parser.h"
 #include "../../../../vowpalwabbit/vw.h"
-#include "vw_errors.h"
+#include "jni_base_learner.h"
 #include "vw_learner_VWFloatArrayLearner.h"
-#include "vw_base_learner.h"
 
 JNIEXPORT jfloatArray JNICALL Java_vw_learner_VWFloatArrayLearner_predict(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr) {
     auto predictor = [env](example* vec) {
@@ -12,5 +11,5 @@ JNIEXPORT jfloatArray JNICALL Java_vw_learner_VWFloatArrayLearner_predict(JNIEnv
         env->SetFloatArrayRegion(r, 0, num_predictions, predictions.begin);
         return r;
     };
-    return VW_Base<jfloatArray>(env, obj, example_string, learn, vwPtr, predictor);
+    return base_predict<jfloatArray>(env, obj, example_string, learn, vwPtr, predictor);
 }
