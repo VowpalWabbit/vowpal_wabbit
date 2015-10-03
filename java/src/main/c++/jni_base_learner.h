@@ -30,7 +30,6 @@ T base_predict(
         VW::finish_example(*vwInstance, vec);
         env->ReleaseStringUTFChars(example_string, utf_string);
         env->DeleteLocalRef(example_string);
-        return result;
     } catch (...) {
         rethrow_cpp_exception_as_java_exception(env);
     }
