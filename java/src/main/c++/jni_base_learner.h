@@ -31,7 +31,7 @@ T base_predict(
         else
             vwInstance->l->predict(*vec);
 
-        result = predictor(vec);
+        result = predictor(vec, env);
 
         VW::finish_example(*vwInstance, vec);
         env->ReleaseStringUTFChars(example_string, utf_string);
