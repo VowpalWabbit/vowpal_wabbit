@@ -1,8 +1,8 @@
 /*
-CoPyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+  CoPyright (c) by respective owners including Yahoo!, Microsoft, and
+  individual contributors. All rights reserved.  Released under a BSD (revised)
+  license as described in the file LICENSE.
+*/
 #include "search_multiclasstask.h"
 
 namespace MulticlassTask { Search::search_task task = { "multiclasstask", run, initialize, finish, nullptr, nullptr };  }
@@ -42,7 +42,7 @@ void run(Search::search& sch, vector<example*>& ec) {
     size_t mask = 1<<(my_task_data->num_level-i-1);
     size_t y_allowed_size = (label+mask +1 <= my_task_data->max_label)?2:1;
     action oracle = (((gold_label-1)&mask)>0)+1;
-    size_t prediction = sch.predict(*ec[0], 0, &oracle, 1, nullptr, nullptr, my_task_data->y_allowed.begin, y_allowed_size, learner_id); // TODO: do we really need y_allowed?
+    size_t prediction = sch.predict(*ec[0], 0, &oracle, 1, nullptr, nullptr, my_task_data->y_allowed.begin, y_allowed_size, nullptr, learner_id); // TODO: do we really need y_allowed?
     learner_id= (learner_id << 1) + prediction;
     if(prediction == 2)
       label += mask;
