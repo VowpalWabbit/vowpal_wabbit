@@ -83,6 +83,38 @@ class vw(pylibvw.vw):
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
 
+    def predict(self, ec, labelType=pylibvw.vw.lBinary):
+        """Just make a prediction on this example; ec can either be an example
+        object or a string (in which case it is parsed and then predicted on).
+
+        returns the float/scalar partial prediction from this example, unless
+        label type is overridden in which case the appropriate return type is
+        guessed and used."""
+        newEC = False
+        if isinstance(ec, str):
+            if labelType == pylibvw.vw.lBinary:
+                return self.predict_string(ec)  # the partial prediction is sufficient
+            else:
+                ec = self.example(ec, labelType)
+                ec.setup_done = True
+                newEC = True
+
+        if hasattr(ec, 'setup_done') and not ec.setup_done:
+            ec.setup_example()
+        pylibvw.vw.predict(self, ec)
+
+        pred = None
+        if   labelType == pylibvw.vw.lBinary:           pred = simple_label(ec)
+        elif labelType == pylibvw.vw.lMulticlass:       pred = multiclass_label(ec)
+        elif labelType == pylibvw.vw.lCostSensitive:    pred = cost_sensitive_label(ec)
+        elif labelType == pylibvw.vw.lContextualBandit: pred = cbandits_label(ec)
+        else: raise Exception('cannot extract unknown label type')
+
+        if newEC:
+            ec.finish()
+
+        return pred
+
     def finish(self):
         """stop VW by calling finish (and, eg, write weights to disk)"""
         if not self.finished:
@@ -315,9 +347,12 @@ class simple_label(abstract_label):
 class multiclass_label(abstract_label):
     def __init__(self, label=1, weight=1., prediction=1):
         abstract_label.__init__(self)
-        self.label      = label
-        self.weight     = weight
-        self.prediction = prediction
+        if isinstance(label, example):
+            self.from_example(label)
+        else:
+            self.label      = label
+            self.weight     = weight
+            self.prediction = prediction
 
     def from_example(self, ex):
         self.label      = ex.get_multiclass_label()
@@ -340,8 +375,11 @@ class cost_sensitive_label(abstract_label):
     
     def __init__(self, costs=[], prediction=0):
         abstract_label.__init__(self)
-        self.costs = costs
-        self.prediction = prediction
+        if isinstance(costs, example):
+            self.from_example(costs)
+        else:
+            self.costs = costs
+            self.prediction = prediction
 
     def from_example(self, ex):
         self.prediction = ex.get_costsensitive_prediction()
@@ -366,8 +404,11 @@ class cbandits_label(abstract_label):
     
     def __init__(self, costs=[], prediction=0):
         abstract_label.__init__(self)
-        self.costs = costs
-        self.prediction = prediction
+        if isinstance(costs, example):
+            self.from_example(costs)
+        else:
+            self.costs = costs
+            self.prediction = prediction
 
     def from_example(self, ex):
         self.prediction = ex.get_cbandits_prediction()
