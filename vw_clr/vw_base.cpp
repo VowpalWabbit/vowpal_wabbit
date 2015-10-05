@@ -276,4 +276,9 @@ namespace VW
     }
     CATCHRETHROW
   }
+
+  bool VowpalWabbitBase::AreFeaturesCompatible(VowpalWabbitBase^ other)
+  {
+    return VW::are_features_compatible(*m_vw, *other->m_vw);
+  }
 }

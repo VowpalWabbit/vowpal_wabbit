@@ -114,5 +114,7 @@ namespace VW
 		virtual void ReturnExampleToPool(VowpalWabbitExample^ example) sealed;
 
     void Reload();
+
+    bool AreFeaturesCompatible(VowpalWabbitBase^ other);
 	};
 }

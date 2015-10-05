@@ -22,6 +22,7 @@ namespace VW {
   void cmd_string_replace_value( std::stringstream*& ss, string flag_to_replace, string new_value );
 
   char** get_argv_from_string(string s, int& argc);
+  bool are_features_compatible(vw& vw1, vw& vw2);
 
   /*
     Call finish() after you are done with the vw instance.  This cleans up memory usage.

@@ -10,6 +10,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace System;
+using namespace System::Collections::Generic;
 
 namespace VW
 {

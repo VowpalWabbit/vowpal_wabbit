@@ -34,6 +34,9 @@ namespace VW
             this.settings = settings;
             this.vws = settings.Select(setting => new VowpalWabbit(setting)).ToArray();
 
+            if (this.vws.Skip(1).Any(vw => !vw.AreFeaturesCompatible(this.vws[0])))
+                throw new ArgumentException("Feature settings are not compatible for sweeping");
+
             var serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(settings[0]);
             this.serializers = this.vws.Select(vw => serializer.Create(vw)).ToArray();
 

@@ -10,6 +10,7 @@ license as described in the file LICENSE.
 //#include <boost/filesystem.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <algorithm>
 
 #include "parse_regressor.h"
 #include "parser.h"
@@ -82,7 +83,7 @@ unsigned long long hash_file_contents(io_buf *io, int f) {
     for (size_t i=0; i<n; i++) {
       v *= 341789041;
       v += buf[i];
-}  
+}
   }
   return v;
 }
@@ -133,7 +134,7 @@ void parse_dictionary_argument(vw&all, string str) {
   }
 
   string fname = find_in_path(all.dictionary_path, string(s));
-  if (fname == "")  
+  if (fname == "")
     THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path");
 
   bool is_gzip = ends_with(fname, ".gz");
@@ -156,7 +157,7 @@ void parse_dictionary_argument(vw&all, string str) {
     }
 
   feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
-  
+
   example *ec = VW::alloc_examples(all.p->lp.label_size, 1);
   fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
   if (fd < 0)
@@ -175,7 +176,7 @@ void parse_dictionary_argument(vw&all, string str) {
       if (pos >= size - 1) {
         size *= 2;
         buffer = (char*)realloc(buffer, size);
-        if (buffer == nullptr) 
+        if (buffer == nullptr)
 	  THROW("error: memory allocation failed in reading dictionary");
       }
     } while ( (rc != EOF) && (rc != '\n') && (nread > 0) );
@@ -217,7 +218,7 @@ void parse_dictionary_argument(vw&all, string str) {
   io->close_file();
   VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
-  
+
   cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
   all.namespace_dictionaries[(size_t)ns].push_back(map);
   dictionary_info info = { calloc_or_die<char>(strlen(s)+1), fd_hash, map };
@@ -236,7 +237,7 @@ void parse_affix_argument(vw&all, string str) {
     uint16_t prefix = 1;
     if (q[0] == '+') { q++; }
     else if (q[0] == '-') { prefix = 0; q++; }
-    if ((q[0] < '1') || (q[0] > '7')) 
+    if ((q[0] < '1') || (q[0] > '7'))
       THROW("malformed affix argument (length must be 1..7): " << p);
 
     uint16_t len = (uint16_t)(q[0] - '0');
@@ -244,10 +245,10 @@ void parse_affix_argument(vw&all, string str) {
     if (q[1] != 0) {
       if (valid_ns(q[1]))
         ns = (uint16_t)q[1];
-      else 
+      else
 	THROW("malformed affix argument (invalid namespace): " << p);
 
-      if (q[2] != 0) 
+      if (q[2] != 0)
 	THROW("malformed affix argument (too long): " << p);
     }
 
@@ -321,7 +322,7 @@ void parse_diagnostics(vw& all, int argc)
         all.sd->dump_interval = 1.0;
       }
     }
-  }  
+  }
 
   if (vm.count("audit")) {
     all.audit = true;
@@ -345,7 +346,7 @@ void parse_source(vw& all)
   add_options(all);
 
   // Be friendly: if -d was left out, treat positional param as data file
-  po::positional_options_description p;  
+  po::positional_options_description p;
   p.add("data", -1);
   po::parsed_options pos = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
@@ -353,17 +354,17 @@ void parse_source(vw& all)
   all.vm = po::variables_map();
   po::store(pos, all.vm);
   po::variables_map& vm = all.vm;
- 
+
   //begin input source
   if (vm.count("no_stdin"))
     all.stdin_off = true;
-  
+
   if ( (vm.count("total") || vm.count("node") || vm.count("unique_id")) && !(vm.count("total") && vm.count("node") && vm.count("unique_id")) )
     THROW("you must specificy unique_id, total, and node if you specify any");
-  
+
   if (vm.count("daemon") || vm.count("pid_file") || (vm.count("port") && !all.active) ) {
     all.daemon = true;
-    
+
     // allow each child to process up to 1e5 connections
     all.numpasses = (size_t) 1e5;
   }
@@ -389,7 +390,37 @@ void parse_source(vw& all)
 }
 
 bool interactions_settings_doubled = false; // local setting setted in parse_modules()
+namespace VW
+{
+  bool are_features_compatible(vw& vw1, vw& vw2)
+  {
+    if (!(
+      vw1.p->hasher == vw2.p->hasher &&
+      equal(vw1.spelling_features, vw1.spelling_features + (sizeof(vw1.spelling_features) / sizeof(bool)), vw2.spelling_features) &&
+      equal(vw1.affix_features, vw1.affix_features + (sizeof(vw1.affix_features) / sizeof(uint32_t)), vw2.affix_features) &&
+      equal(vw1.ngram, vw1.ngram + (sizeof(vw1.ngram) / sizeof(uint32_t)), vw2.ngram) &&
+      equal(vw1.skips, vw1.skips + (sizeof(vw1.skips) / sizeof(uint32_t)), vw2.skips) &&
+      equal(vw1.limit, vw1.limit + (sizeof(vw1.limit) / sizeof(uint32_t)), vw2.limit) &&
+      vw1.num_bits == vw2.num_bits &&
+      vw1.permutations == vw1.permutations &&
+      vw1.interactions.size() == vw2.interactions.size() &&
+      vw1.ignore_some == vw2.ignore_some &&
+      equal(vw1.ignore, vw1.ignore + (sizeof(vw1.ignore) / sizeof(bool)), vw2.ignore)  &&
+      vw1.redefine_some == vw2.redefine_some &&
+      equal(vw1.redefine, vw1.redefine + (sizeof(vw1.redefine) / sizeof(unsigned char)), vw2.redefine) &&
+      vw1.add_constant == vw2.add_constant &&
+      vw1.dictionary_path.size() == vw2.dictionary_path.size() &&
+      equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin())
+      ))
+      return false;
 
+    for (auto i = vw1.interactions.begin, j = vw2.interactions.begin; i != vw1.interactions.end; i++, j++)
+      if (v_string2string(*i) != v_string2string(*j))
+        return false;
+
+    return true;
+  }
+}
 void parse_feature_tweaks(vw& all)
 {
   new_options(all, "Feature options")
@@ -420,10 +451,10 @@ void parse_feature_tweaks(vw& all)
 
   //feature manipulation
   string hash_function("strings");
-  if(vm.count("hash")) 
+  if(vm.count("hash"))
     hash_function = vm["hash"].as<string>();
   all.p->hasher = getHasher(hash_function);
-      
+
   if (vm.count("spelling")) {
     vector<string> spelling_ns = vm["spelling"].as< vector<string> >();
     for (size_t id=0; id<spelling_ns.size(); id++) {
@@ -477,7 +508,7 @@ void parse_feature_tweaks(vw& all)
 
      // prepare namespace interactions
      v_array<v_string> expanded_interactions = v_init<v_string>();
-     
+
   if ( ( ((!all.pairs.empty() || !all.triples.empty() || !all.interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
        (vm.count("quadratic") || vm.count("cubic") || vm.count("interactions")) ) )
          ||
@@ -503,16 +534,16 @@ void parse_feature_tweaks(vw& all)
 
              for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
           {
-	if (!all.quiet) 
+	if (!all.quiet)
 	  cerr << *i << " ";
               *all.file_options << " --quadratic " << *i;
          }
-    
+
          expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
-     
+
          if (!all.quiet) cerr << endl;
      }
-     
+
      if (vm.count("cubic"))
      {
          vector<string> vec_arg = vm["cubic"].as< vector<string> >();
@@ -525,14 +556,14 @@ void parse_feature_tweaks(vw& all)
               *all.file_options << " --cubic " << *i;
          }
       }
-     
+
          v_array<v_string> exp_cubic = INTERACTIONS::expand_interactions(vec_arg, 3, "error, cubic features must involve three sets.");
          push_many(expanded_interactions, exp_cubic.begin, exp_cubic.size());
          exp_cubic.delete_v();
-     
+
          if (!all.quiet) cerr << endl;
      }
-     
+
      if (vm.count("interactions"))
      {
          vector<string> vec_arg = vm["interactions"].as< vector<string> >();
@@ -545,26 +576,26 @@ void parse_feature_tweaks(vw& all)
               *all.file_options << " --interactions " << *i;
          }
       }
-     
+
          v_array<v_string> exp_inter = INTERACTIONS::expand_interactions(vec_arg, 0, "");
          push_many(expanded_interactions, exp_inter.begin, exp_inter.size());
          exp_inter.delete_v();
-     
+
          if (!all.quiet) cerr << endl;
      }
-     
+
      if (expanded_interactions.size() > 0)
      {
-     
+
          size_t removed_cnt;
          size_t sorted_cnt;
          INTERACTIONS::sort_and_filter_duplicate_interactions(expanded_interactions, !vm.count("leave_duplicate_interactions"), removed_cnt, sorted_cnt);
-     
+
          if (removed_cnt > 0)
              cerr << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.' << endl << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
          if (sorted_cnt > 0)
              cerr << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
-     
+
 
       if (all.interactions.size() > 0)
       { // should be empty, but just in case...
@@ -573,7 +604,7 @@ void parse_feature_tweaks(vw& all)
       }
 
          all.interactions = expanded_interactions;
-     
+
          // copy interactions of size 2 and 3 to old vectors for backward compatibility
          for (v_string* i = expanded_interactions.begin; i != expanded_interactions.end; ++i)
          {
@@ -589,7 +620,7 @@ void parse_feature_tweaks(vw& all)
   for (size_t i = 0; i < 256; i++)
     all.ignore[i] = false;
   all.ignore_some = false;
-  
+
   if (vm.count("ignore"))
     {
       all.ignore_some = true;
@@ -672,7 +703,7 @@ void parse_feature_tweaks(vw& all)
           if (++operator_pos > 3) // seek operator end
               cerr << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('" << new_namespace << "') will be used as target namespace." << endl;
 
-          all.redefine_some = true;         
+          all.redefine_some = true;
 
           // case ':=S' doesn't require any additional code as new_namespace = ' ' by default
 
@@ -719,14 +750,14 @@ void parse_feature_tweaks(vw& all)
       }
       all.dictionary_path.push_back( PATH.substr(previous) );
     }
-    
+
     vector<string> dictionary_ns = vm["dictionary"].as< vector<string> >();
     for (size_t id=0; id<dictionary_ns.size(); id++) {
       parse_dictionary_argument(all, dictionary_ns[id]);
       *all.file_options << " --dictionary " << dictionary_ns[id];
     }
   }
-  
+
   if (vm.count("noconstant"))
     all.add_constant = false;
 }
@@ -773,7 +804,7 @@ void parse_example_tweaks(vw& all)
 
   if(vm.count("sort_features"))
     all.p->sort_features = true;
-  
+
   if (vm.count("min_prediction"))
     all.sd->min_label = vm["min_prediction"].as<float>();
   if (vm.count("max_prediction"))
@@ -786,7 +817,7 @@ void parse_example_tweaks(vw& all)
     all.sd->ldict = new namedlabels(named_labels);
     cerr << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
   }
-  
+
   string loss_function = vm["loss_function"].as<string>();
   float loss_parameter = 0.0;
   if(vm.count("quantile_tau"))
@@ -874,7 +905,7 @@ void parse_output_model(vw& all)
     ("save_resume", "save extra state so learning can be resumed later with new data")
     ("save_per_pass", "Save the model after every pass over data")
     ("output_feature_regularizer_binary", po::value< string >(&(all.per_feature_regularizer_output)), "Per feature regularization output file")
-    ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text");  
+    ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -929,7 +960,7 @@ LEARNER::base_learner* setup_base(vw& all)
   LEARNER::base_learner* ret = all.reduction_stack.pop()(all);
   if (ret == nullptr)
     return setup_base(all);
-  else 
+  else
     return ret;
 }
 
@@ -1089,7 +1120,7 @@ bool check_interaction_settings_collision(vw& all)
 void parse_modules(vw& all, io_buf& model)
 {
 	save_load_header(all, model, true, false);
-  
+
   interactions_settings_doubled = check_interaction_settings_collision(all);
 
   int temp_argc = 0;
@@ -1104,7 +1135,7 @@ void parse_modules(vw& all, io_buf& model)
   for (int i = 0; i < temp_argc; i++)
     free(temp_argv[i]);
   free(temp_argv);
-  
+
   po::parsed_options pos = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(all.opts).allow_unregistered().run();
@@ -1121,7 +1152,7 @@ void parse_modules(vw& all, io_buf& model)
   parse_example_tweaks(all); //example manipulation
 
   parse_output_model(all);
-  
+
   parse_output_preds(all);
 
   parse_reductions(all);
@@ -1178,10 +1209,10 @@ namespace VW {
       //now pos is position where value starts
       //find position of next space
       size_t pos_after_value = cmd.find(" ",pos);
-      if(pos_after_value == string::npos) 
+      if(pos_after_value == string::npos)
         //we reach the end of the string, so replace the all characters after pos by new_value
         cmd.replace(pos,cmd.size()-pos,new_value);
-      else 
+      else
         //replace characters between pos and pos_after_value by new_value
         cmd.replace(pos,pos_after_value-pos,new_value);
       ss->str(cmd);
@@ -1225,7 +1256,7 @@ namespace VW {
 	parse_sources(all, model);
 
     initialize_parser_datastructures(all);
-    
+
     for(int i = 0; i < argc; i++)
       free(argv[i]);
     free(argv);
@@ -1253,7 +1284,7 @@ namespace VW {
     }
 
     vw* new_model = VW::initialize(init_args.str().c_str());
-    
+
     // reference model states stored in the specified VW instance
     new_model->reg = vw_model->reg; // regressor
     new_model->sd = vw_model->sd; // shared data
@@ -1268,7 +1299,7 @@ namespace VW {
     A->delete_v();
     delete A;
   }
-  
+
   void sync_stats(vw& all)
   {
 	  if (all.all_reduce != nullptr) {
@@ -1313,13 +1344,13 @@ namespace VW {
             if (best_constant_loss != FLT_MIN)
 	      cerr << endl << "best constant's loss = " << best_constant_loss;
 	  }
-	
+
         cerr << endl << "total feature number = " << all.sd->total_features;
         if (all.sd->queries > 0)
 	  cerr << endl << "total queries = " << all.sd->queries << endl;
         cerr << endl;
         }
-    
+
 	// implement finally.
 	// finalize_regressor can throw if it can't write the file.
 	// we still want to free up all the memory.
