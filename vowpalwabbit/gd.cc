@@ -796,7 +796,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
                 int text_len = sprintf_s(buff, buf_size, "%d", i);
                 brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i),
 					 buff, text_len, text);
-	      if (g == NULL || (! g->adaptive && ! g->normalized))
+		if (g == nullptr || (! g->adaptive && ! g->normalized))
 		{
                     text_len = sprintf_s(buff, buf_size, ":%g\n", *v);
                     brw += bin_text_write_fixed(model_file, (char *)v, sizeof(*v),
@@ -948,6 +948,8 @@ base_learner* setup(vw& all)
   g.sparse_l2 = vm["sparse_l2"].as<float>();
   g.neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
   g.neg_power_t = - all.power_t;
+  g.adaptive = all.adaptive;
+  g.normalized = all.normalized_updates;
 
   if(all.initial_t > 0)//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all.initial_t) previous fake datapoints all with norm 1
     {
@@ -970,13 +972,11 @@ base_learner* setup(vw& all)
       g.initial_constant = vm["constant"].as<float>();
   }
 
-  if( !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) ) )
+  if( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") )
   { //nondefault
       all.adaptive = all.training && vm.count("adaptive");
-      g.adaptive = all.adaptive;
       all.invariant_updates = all.training && vm.count("invariant");
       all.normalized_updates = all.training && vm.count("normalized");
-      g.normalized = all.normalized_updates;
 
       if(!vm.count("learning_rate") && !vm.count("l") && !(all.adaptive && all.normalized_updates))
 	all.eta = 10; //default learning rate to 10 for non default update rule
