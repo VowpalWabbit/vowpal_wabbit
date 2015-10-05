@@ -106,7 +106,7 @@ sub command_failed($) {
     my $exitcode = 0;
     if ($?) {
         $exitcode = $? >> 8;
-        my $signal = $? & 127; 
+        my $signal = $? & 127;
         my $core = ''; if ($? & 128) { $core = ' (core dumped)'; }
         if ($signal) {
             printf STDERR
@@ -493,7 +493,7 @@ sub diff($$) {
     mysystem("$diff_cmd >$diftmp");
     $status = $? >> 8;
     v(2, "$diff_cmd >$diftmp: status=$status\n");
- 
+
     if (-s "$diftmp") {
         # There's some difference
         v(2, "$diftmp has something in it. Is it meaningful?\n");
@@ -939,7 +939,7 @@ __DATA__
     test-sets/ref/ml100k_small.stderr
 
 # Test 24: active-learning -- training
-{VW} -k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 
+{VW} -k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10
     train-sets/ref/active-simulation.t24.stderr
 
 # Test 25: bagging -- training regressor
@@ -1042,7 +1042,7 @@ __DATA__
     --holdout_off -f models/sequence_data.ldf.model --noconstant
         train-sets/ref/sequence_data.ldf.train.stderr
 
-# Test 47: search sequence labeling, ldf test 
+# Test 47: search sequence labeling, ldf test
 {VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data.ldf.test.predict --noconstant
     train-sets/ref/sequence_data.ldf.test.stderr
     train-sets/ref/sequence_data.ldf.test.predict
@@ -1136,12 +1136,12 @@ __DATA__
 
 # Test 65: Run search (dagger) on an entity-relation recognitions data set,
 # er_small, for 6 passes with constraints
-{VW} -k -c -d train-sets/er_small.vw --passes 6 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8 
+{VW} -k -c -d train-sets/er_small.vw --passes 6 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8
     train-sets/ref/search_er.stderr
 
 # Test 66: Train a depenency parser with search (dagger)
 # on wsj_small.dparser.vw.gz for 2 passes
-{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout ref --holdout_off
+{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout ref --holdout_off --search_linear_ordering
     train-sets/ref/search_dep_parser.stderr
 
 # Test 67: classification with data from dictionaries
@@ -1183,24 +1183,24 @@ __DATA__
 {VW} -d train-sets/rcv1_cb_eval --cb 2 --eval
     train-sets/ref/rcv1_cb_eval.stderr
 
-# Test 75: Log_multi 
-{VW} --log_multi 10 train-sets/multiclass 
+# Test 75: Log_multi
+{VW} --log_multi 10 train-sets/multiclass
     train-sets/ref/log_multi.stderr
 
 # Test 76: cbify, epsilon-greedy
-{VW} --cbify 10 --epsilon 0.05 train-sets/multiclass 
+{VW} --cbify 10 --epsilon 0.05 train-sets/multiclass
     train-sets/ref/cbify_epsilon.stderr
 
 # Test 77: cbify, tau first
-{VW} --cbify 10 --first 5 train-sets/multiclass 
+{VW} --cbify 10 --first 5 train-sets/multiclass
     train-sets/ref/cbify_first.stderr
 
 # Test 78: cbify, bag
-{VW} --cbify 10 --bag 7 train-sets/multiclass 
+{VW} --cbify 10 --bag 7 train-sets/multiclass
     train-sets/ref/cbify_bag.stderr
 
 # Test 79: cbify, cover
-{VW} --cbify 10 --cover 3 train-sets/multiclass 
+{VW} --cbify 10 --cover 3 train-sets/multiclass
     train-sets/ref/cbify_cover.stderr
 
 # Test 80: lrq empty namespace
@@ -1214,8 +1214,8 @@ __DATA__
 # Test 82: test FTRL-PiSTOL
 {VW} -k -t train-sets/0001.dat -i models/ftrl_pistol.model -p ftrl_pistol.predict
     test-sets/ref/ftrl_pistol.stderr
-    pred-sets/ref/ftrl_pistol.predict    
-    
+    pred-sets/ref/ftrl_pistol.predict
+
 # Test 83: check redefine functionality
 {VW} -k -d train-sets/0080.dat --redefine := --redefine y:=: --redefine x:=arma --ignore x -q yy
     train-sets/ref/redefine.stderr
@@ -1286,11 +1286,11 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 # Test 96: backwards compatibility
 printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     {VW} -i simple_model --invert_hash inv_hash.cmp && \
-        tail -n +2 inv_hash.cmp 
+        tail -n +2 inv_hash.cmp
    test-sets/ref/backwards.stderr
    test-sets/ref/backwards.stdout
 
-# Test 97: 
+# Test 97:
 {VW} -d train-sets/0001.dat -f models/0097.model --save_resume
         train-sets/ref/0097.stderr
 
@@ -1303,3 +1303,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} train-sets/0001.dat -i models/0097.model -p 0099.predict
     test-sets/ref/0099.stderr
     pred-sets/ref/0099.predict
+
+# Test 100: action costs, no rollout
+{VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout none --search_task sequence_ctg --search 5 --holdout_off
+    train-sets/ref/sequence_data.ctg.train.stderr

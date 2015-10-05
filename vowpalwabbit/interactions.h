@@ -48,12 +48,6 @@ const bool feature_self_interactions = true;
 
 
 
-// FNV-like hash constant for 32bit
-// http://www.isthe.com/chongo/tech/comp/fnv/#FNV-param
-const uint32_t FNV_prime = 16777619;
-
-
-
 // function estimates how many new features will be generated for example and ther sum(value^2).
 void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, float& new_features_value);
 
