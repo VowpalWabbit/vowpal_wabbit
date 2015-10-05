@@ -1298,3 +1298,8 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} train-sets/0001.dat -i models/0097.model -p 0098.predict
     test-sets/ref/0098.stderr
     pred-sets/ref/0098.predict
+
+# Test 99: checking predictions with testing
+{VW} train-sets/0001.dat -i models/0097.model -p 0099.predict
+    test-sets/ref/0099.stderr
+    pred-sets/ref/0099.predict
