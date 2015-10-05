@@ -67,6 +67,10 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec) {
     if (o.pred[i-1].scalar > o.pred[prediction-1].scalar)
       prediction = i;
 
+  if (ec.passthrough)
+    for (uint32_t i=1; i<=o.k; i++)
+      add_passthrough_feature(ec, i, o.pred[i-1].scalar);
+
   if (is_learn) {
     for (uint32_t i=1; i<=o.k; i++) {
       ec.l.simple = { (mc_label_data.label == i) ? 1.f : -1.f, mc_label_data.weight, 0.f };

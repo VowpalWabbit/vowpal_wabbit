@@ -777,11 +777,11 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 	      if (g == NULL || (! g->adaptive && ! g->normalized))
 		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
 	      else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
-                    brw += bin_read_fixed(model_file, (char*)v, sizeof(*v) * 2, "");
+		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v) * 2, "");
 	      else //adaptive and normalized
-                    brw += bin_read_fixed(model_file, (char*)v, sizeof(*v) * 3, "");
+		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v) * 3, "");
 	      if (!all.training)
-                    v[1] = v[2] = 0.;
+		v[1] = v[2] = 0.;
 	    }
 	}
       else // write binary or text
@@ -972,13 +972,11 @@ base_learner* setup(vw& all)
       g.initial_constant = vm["constant"].as<float>();
   }
 
-  if( !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) ) )
+  if( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") )
   { //nondefault
       all.adaptive = all.training && vm.count("adaptive");
-      g.adaptive = all.adaptive;
       all.invariant_updates = all.training && vm.count("invariant");
       all.normalized_updates = all.training && vm.count("normalized");
-      g.normalized = all.normalized_updates;
 
       if(!vm.count("learning_rate") && !vm.count("l") && !(all.adaptive && all.normalized_updates))
 	all.eta = 10; //default learning rate to 10 for non default update rule

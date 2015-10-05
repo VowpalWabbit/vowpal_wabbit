@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include "multilabel.h"
 #include "cost_sensitive.h"
 #include "cb.h"
+#include "constant.h"
 
 const size_t wap_ldf_namespace  = 126;
 const size_t history_namespace  = 127;
@@ -26,7 +27,8 @@ const size_t dictionary_namespace  = 135; // this is \x87
 struct feature {
   float x;
   uint32_t weight_index;
-  bool operator==(feature j) {return weight_index == j.weight_index;}
+  bool operator==(feature j){return weight_index == j.weight_index;}
+  feature(float x=0., uint32_t weight_index=0) : x(x), weight_index(weight_index) {}
 };
 
 struct audit_data {
@@ -75,7 +77,8 @@ struct example // core example datatype.
   float sum_feat_sq[256];//helper for total_sum_feat_sq.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
   float revert_weight;
-
+  v_array<feature>* passthrough; // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
+  
   bool test_only;
   bool end_pass;//special example indicating end of pass.
   bool sorted;//Are the features sorted or not?
@@ -117,3 +120,10 @@ inline bool valid_ns(char c)
 {
   return !(c == '|' || c == ':');
 }
+
+inline void add_passthrough_feature_magic(example& ec, uint32_t magic, uint32_t i, float x) {
+  if (ec.passthrough)
+    ec.passthrough->push_back( feature(x, (FNV_prime * magic) ^ i) );
+}
+
+#define add_passthrough_feature(ec, i, x) add_passthrough_feature_magic(ec, __FILE__[0]*483901+__FILE__[1]*3417+__FILE__[2]*8490177, i, x);
