@@ -3,77 +3,10 @@
 #include "rand48.h"
 #include "float.h"
 #include "vw.h"
-#include "active_cover.h"
 
 using namespace LEARNER;
 
 inline float sign(float w){ if (w < 0.f) return -1.f; else  return 1.f;}
-
-enum weight_type_t 
-{
-	LAMBDA_NUM,
-	LAMBDA_DEN,
-	LAMBDA
-};
-
-const static size_t N_WEIGHT_TYPES = 3;
-
-class active_cover_weights 
-{	
-
-public:
-	active_cover_weights(size_t s) : size(s)
-	{
-
-		weights = v_init<float>();
-		weights.resize(N_WEIGHT_TYPES*s);
-		for(size_t i=0; i<(N_WEIGHT_TYPES*s); i++)
-		{
-			weights.push_back(0);
-		} 
-	}
-
-	~active_cover_weights();
-
-	float update(weight_type_t type, size_t i, float delta)
-	{
-		weights[type*size+i] += delta;
-		return weights[type*size+i];
-	}
-	
-	float set(weight_type_t type, size_t i, float new_value)
-	{
-		weights[type*size+i] = new_value;
-		return weights[type*size+i];
-	}
-
-	float get(weight_type_t type, size_t i)
-	{
-		return weights[type*size+i];
-	}
-	
-	size_t get_size()
-	{
-		return size;
-	}
-
-	void reset(weight_type_t type, size_t i)
-	{
-		weights[type*size+i] = 0;
-	}
-
-	void reset()
-	{
-		for(size_t i=0; i<weights.size(); i++)
-		{
-			weights[i] = 0;
-		}
-	}
-
-private:	
-	size_t size;
-	v_array<float> weights;
-};
 
 struct active_cover
 {
@@ -82,8 +15,11 @@ struct active_cover
 	float alpha;
 	float beta_scale;
 	bool oracular;
+	size_t cover_size;
 
-	active_cover_weights* weights;
+	float* lambda_n;
+	float* lambda_d;
+
 	vw* all;//statistics, loss
 	LEARNER::base_learner* l; 
 };
@@ -150,15 +86,14 @@ float query_decision(active_cover& a, base_learner& l, example& ec, float predic
 		return 1.f;
 	}
 
-	size_t cover_size = a.weights->get_size();	
 	float p, q2 = 4.f*pmin*pmin;
 
-	for(size_t i = 0; i < cover_size; i++)
+	for(size_t i = 0; i < a.cover_size; i++)
 	{
 		l.predict(ec,i+1);
-		q2 += ((float)(sign(ec.pred.scalar) != sign(prediction)))*a.weights->get(LAMBDA,i);
+		q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i]/a.lambda_d[i]);
 	}
-
+		
 	p = sqrt(q2)/(1+sqrt(q2));		
 
 	if(nanpattern(p))
@@ -222,8 +157,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 		// Update the learners in the cover and their weights
 		float q2 = 4.f*pmin*pmin; 
 		float beta = (float)(sqrt(a.alpha/a.active_c0)/a.beta_scale);
-		float p, s, cost, cost_delta, num_delta, den_delta, lambda;
-		float num, den;
+		float p, s, cost, cost_delta;
 		float ec_output_label = ec.l.simple.label;
 		float ec_output_weight = ec.l.simple.weight;
 		float r = 2.f*threshold*beta*beta*t;
@@ -241,12 +175,8 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 			cost_delta = -r;
 		}
 
-		size_t cover_size = a.weights->get_size();
-		for(size_t i = 0; i < cover_size; i++)
+		for(size_t i = 0; i < a.cover_size; i++)
 		{
-			// Incorporating weights of previous learners in the cover
-			q2 += ((float)(i > 0 && sign(ec.pred.scalar) != sign(prediction))) * a.weights->get(LAMBDA,i-1);
-			
 			// Update cost
 			if(in_dis)
 			{
@@ -265,29 +195,16 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 			base.predict(ec,i+1);
 
 			// Update numerator of lambda			
-			num_delta = 2.f*((float)(sign(ec.pred.scalar) != sign(prediction))) * cost_delta;	
-			num = a.weights->update(LAMBDA_NUM, i, num_delta);
-			
-			if(num < 0.f)
-			{
-				a.weights->reset(LAMBDA_NUM, i);
-				num = a.weights->get(LAMBDA_NUM, i);
-			}
-
+			a.lambda_n[i] += 2.f*((float)(sign(ec.pred.scalar) != sign(prediction))) * cost_delta;
+			a.lambda_n[i] = fmax(a.lambda_n[i], 0.f);		
+	
 			// Update denominator of lambda
-			den_delta = ((float)(sign(ec.pred.scalar) != sign(prediction) && in_dis)) / pow(q2,1.5);
-			den = a.weights->update(LAMBDA_DEN, i, den_delta);
+			a.lambda_d[i] += ((float)(sign(ec.pred.scalar) != sign(prediction) && in_dis)) / pow(q2,1.5);
+			
+			// Accumulating weights of learners in the cover
+			q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i]/a.lambda_d[i]);
 
-			// Update lambda
-			lambda = num/den;
-			if(nanpattern(lambda))
-			{
-				lambda = 0.f;
-			}
-
-			a.weights->set(LAMBDA, i, lambda);
 		}
-
 
 		// Restoring the weight, the label, and the prediction
 		ec.l.simple.weight = ec_output_weight;
@@ -318,8 +235,8 @@ base_learner* active_cover_setup(vw& all)
 	data.beta_scale = sqrt(10.f);
 	data.all = &all;
 	data.oracular = false;
+	data.cover_size = 12;
 
- 	size_t cover_size = 12;
 	if(all.vm.count("mellowness"))
 	{
 		data.active_c0 = all.vm["mellowness"].as<float>();
@@ -337,13 +254,13 @@ base_learner* active_cover_setup(vw& all)
 
 	if(all.vm.count("cover"))
 	{
-		cover_size = (size_t)all.vm["cover"].as<float>();
+		data.cover_size = (size_t)all.vm["cover"].as<float>();
 	}
 
 	if(all.vm.count("oracular"))
 	{
 		data.oracular = true;
-		cover_size = 0;
+		data.cover_size = 0;
 	}
   
 	if (count(all.args.begin(), all.args.end(),"--lda") != 0)
@@ -357,18 +274,21 @@ base_learner* active_cover_setup(vw& all)
 	    THROW("error: you can't use --active_cover and --active at the same time");
 	}
 
-	*all.file_options <<" --active_cover --cover "<< cover_size;
+	*all.file_options <<" --active_cover --cover "<< data.cover_size;
   	base_learner* base = setup_base(all);
- 
-	data.weights = new active_cover_weights(cover_size);
 
-	for(size_t i = 0; i < cover_size; i++)
+	data.lambda_n = new float[data.cover_size];
+	data.lambda_d = new float[data.cover_size];
+
+	for(size_t i = 0; i < data.cover_size; i++)
 	{
-		data.weights->set(LAMBDA_DEN, i, 1.0/8.0);
+		data.lambda_n[i] = 0.f;
+		data.lambda_d[i] = 1.f/8.f;
 	}
+
   	//Create new learner
   	learner<active_cover>* l;
-	l = &init_learner(&data, base, predict_or_learn_active_cover<true>, predict_or_learn_active_cover<false>, cover_size + 1);
+	l = &init_learner(&data, base, predict_or_learn_active_cover<true>, predict_or_learn_active_cover<false>, data.cover_size + 1);
   
 	return make_base(*l);
 }
