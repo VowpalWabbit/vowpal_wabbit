@@ -156,11 +156,10 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 
 		// Update the learners in the cover and their weights
 		float q2 = 4.f*pmin*pmin; 
-		float beta = (float)(sqrt(a.alpha/a.active_c0)/a.beta_scale);
 		float p, s, cost, cost_delta;
 		float ec_output_label = ec.l.simple.label;
 		float ec_output_weight = ec.l.simple.weight;
-		float r = 2.f*threshold*beta*beta*t;
+		float r = 2.f*threshold*t*a.alpha/a.active_c0/a.beta_scale;
 			
 		// Set up costs	
 		//cost = cost of predicting erm's prediction
@@ -188,7 +187,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 			// Choose min-cost label as the label
 			// Set importance weight to be the cost difference
 			ec.l.simple.label = -1.f*sign(cost_delta)*sign(prediction);
-			ec.l.simple.weight = ec_input_weight * fmax(fabs(cost_delta),0.00001);
+			ec.l.simple.weight = ec_input_weight*fabs(cost_delta);
 
 			// Update learner 
 			base.learn(ec,i+1);
@@ -232,7 +231,7 @@ base_learner* active_cover_setup(vw& all)
 	active_cover& data = calloc_or_die<active_cover>();
 	data.active_c0 = 8.f;
 	data.alpha = 1.f;
-	data.beta_scale = sqrt(10.f);
+	data.beta_scale = 10.f; // this is actually beta_scale^2
 	data.all = &all;
 	data.oracular = false;
 	data.cover_size = 12;
@@ -250,6 +249,7 @@ base_learner* active_cover_setup(vw& all)
 	if(all.vm.count("beta_scale"))
 	{
 		data.beta_scale = all.vm["beta_scale"].as<float>();
+		data.beta_scale *= data.beta_scale;
 	}
 
 	if(all.vm.count("cover"))
@@ -269,7 +269,7 @@ base_learner* active_cover_setup(vw& all)
 	}
 
 
-  	if (count(all.args.begin(), all.args.end(),"--active ") != 0)
+  	if (count(all.args.begin(), all.args.end(),"--active") != 0)
 	{
 	    THROW("error: you can't use --active_cover and --active at the same time");
 	}
