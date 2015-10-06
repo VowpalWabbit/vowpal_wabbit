@@ -115,6 +115,6 @@ namespace VW
 
     void Reload();
 
-    bool AreFeaturesCompatible(VowpalWabbitBase^ other);
+    String^ AreFeaturesCompatible(VowpalWabbitBase^ other);
 	};
 }

@@ -392,33 +392,61 @@ void parse_source(vw& all)
 bool interactions_settings_doubled = false; // local setting setted in parse_modules()
 namespace VW
 {
-  bool are_features_compatible(vw& vw1, vw& vw2)
+  const char* are_features_compatible(vw& vw1, vw& vw2)
   {
-    if (!(
-      vw1.p->hasher == vw2.p->hasher &&
-      equal(vw1.spelling_features, vw1.spelling_features + (sizeof(vw1.spelling_features) / sizeof(bool)), vw2.spelling_features) &&
-      equal(vw1.affix_features, vw1.affix_features + (sizeof(vw1.affix_features) / sizeof(uint32_t)), vw2.affix_features) &&
-      equal(vw1.ngram, vw1.ngram + (sizeof(vw1.ngram) / sizeof(uint32_t)), vw2.ngram) &&
-      equal(vw1.skips, vw1.skips + (sizeof(vw1.skips) / sizeof(uint32_t)), vw2.skips) &&
-      equal(vw1.limit, vw1.limit + (sizeof(vw1.limit) / sizeof(uint32_t)), vw2.limit) &&
-      vw1.num_bits == vw2.num_bits &&
-      vw1.permutations == vw1.permutations &&
-      vw1.interactions.size() == vw2.interactions.size() &&
-      vw1.ignore_some == vw2.ignore_some &&
-      equal(vw1.ignore, vw1.ignore + (sizeof(vw1.ignore) / sizeof(bool)), vw2.ignore)  &&
-      vw1.redefine_some == vw2.redefine_some &&
-      equal(vw1.redefine, vw1.redefine + (sizeof(vw1.redefine) / sizeof(unsigned char)), vw2.redefine) &&
-      vw1.add_constant == vw2.add_constant &&
-      vw1.dictionary_path.size() == vw2.dictionary_path.size() &&
-      equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin())
-      ))
-      return false;
+    if (vw1.p->hasher != vw2.p->hasher)
+      return "hasher";
+
+    if (!equal(vw1.spelling_features, vw1.spelling_features + (sizeof(vw1.spelling_features) / sizeof(bool)), vw2.spelling_features))
+      return "spelling_features";
+
+    if (!equal(vw1.affix_features, vw1.affix_features + (sizeof(vw1.affix_features) / sizeof(uint32_t)), vw2.affix_features))
+      return "affix_features";
+
+    if (!equal(vw1.ngram, vw1.ngram + (sizeof(vw1.ngram) / sizeof(uint32_t)), vw2.ngram))
+      return "ngram";
+
+    if (!equal(vw1.skips, vw1.skips + (sizeof(vw1.skips) / sizeof(uint32_t)), vw2.skips))
+      return "skips";
+
+    if (!equal(vw1.limit, vw1.limit + (sizeof(vw1.limit) / sizeof(uint32_t)), vw2.limit))
+      return "limit";
+
+    if (vw1.num_bits != vw2.num_bits)
+      return "num_bits";
+
+    if (vw1.permutations != vw1.permutations)
+      return "permutations";
+
+    if (vw1.interactions.size() != vw2.interactions.size())
+      return "interactions size";
+
+    if (vw1.ignore_some != vw2.ignore_some)
+      return "ignore_some";
+
+    if (vw1.ignore_some && !equal(vw1.ignore, vw1.ignore + (sizeof(vw1.ignore) / sizeof(bool)), vw2.ignore))
+      return "ignore";
+
+    if (vw1.redefine_some != vw2.redefine_some)
+      return "redefine_some";
+
+    if (vw1.redefine_some && !equal(vw1.redefine, vw1.redefine + (sizeof(vw1.redefine) / sizeof(unsigned char)), vw2.redefine))
+      return "redefine";
+
+    if (vw1.add_constant != vw2.add_constant)
+      return "add_constant";
+
+    if (vw1.dictionary_path.size() != vw2.dictionary_path.size())
+      return "dictionary_path size";
+
+    if (!equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
+      return "dictionary_path";
 
     for (auto i = vw1.interactions.begin, j = vw2.interactions.begin; i != vw1.interactions.end; i++, j++)
       if (v_string2string(*i) != v_string2string(*j))
-        return false;
+        return "interaction mismatch";
 
-    return true;
+    return nullptr;
   }
 }
 void parse_feature_tweaks(vw& all)
