@@ -13,7 +13,7 @@ namespace VW
 {
     public class VowpalWabbitSweep<TExample, TActionDependentFeature> : IDisposable
     {
-        private const int NumberOfVWInstancesSharingExamples = 3;
+        private const int NumberOfVWInstancesSharingExamples = 1;
 
         private VowpalWabbit[] vws;
 
@@ -34,8 +34,9 @@ namespace VW
             this.settings = settings;
             this.vws = settings.Select(setting => new VowpalWabbit(setting)).ToArray();
 
-            if (this.vws.Skip(1).Any(vw => !vw.AreFeaturesCompatible(this.vws[0])))
-                throw new ArgumentException("Feature settings are not compatible for sweeping");
+            var diffs = this.vws.Skip(1).Select(vw => vw.AreFeaturesCompatible(this.vws[0])).Where(e => e != null).ToList();
+            if (diffs.Count > 0)
+                throw new ArgumentException("Feature settings are not compatible for sweeping: " + string.Join(",", diffs));
 
             var serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(settings[0]);
             this.serializers = this.vws.Select(vw => serializer.Create(vw)).ToArray();

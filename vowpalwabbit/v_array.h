@@ -141,7 +141,6 @@ public:
   }
 };
 
-
 #ifdef _WIN32
 #undef max
 #undef min

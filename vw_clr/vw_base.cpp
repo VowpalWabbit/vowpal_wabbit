@@ -277,8 +277,10 @@ namespace VW
     CATCHRETHROW
   }
 
-  bool VowpalWabbitBase::AreFeaturesCompatible(VowpalWabbitBase^ other)
+  String^ VowpalWabbitBase::AreFeaturesCompatible(VowpalWabbitBase^ other)
   {
-    return VW::are_features_compatible(*m_vw, *other->m_vw);
+    auto diff = VW::are_features_compatible(*m_vw, *other->m_vw);
+
+    return diff == nullptr ? nullptr : gcnew String(diff);
   }
 }
