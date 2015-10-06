@@ -147,7 +147,7 @@ void parse_dictionary_argument(vw&all, string str) {
   io->close_file();
 
   if (! all.quiet)
-    cerr << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << endl;
+    cerr << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << dec << endl;
 
   // see if we've already read this dictionary
   for (size_t id=0; id<all.loaded_dictionaries.size(); id++)
@@ -218,8 +218,10 @@ void parse_dictionary_argument(vw&all, string str) {
   io->close_file();
   VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
+  
+  if (! all.quiet)
+    cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
 
-  cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
   all.namespace_dictionaries[(size_t)ns].push_back(map);
   dictionary_info info = { calloc_or_die<char>(strlen(s)+1), fd_hash, map };
   strcpy(info.name, s);

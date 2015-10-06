@@ -1,5 +1,4 @@
 final_regressor = models/sequencespan_data.model
-no rollout!
 Num weight bits = 18
 learning rate = 10
 initial_t = 1
