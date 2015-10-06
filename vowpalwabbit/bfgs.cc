@@ -836,9 +836,9 @@ void learn(bfgs& b, base_learner& base, example& ec)
 void finish(bfgs& b)
 {
   b.predictions.delete_v();
-  free(b.mem);
-  free(b.rho);
-  free(b.alpha);
+  delete[] b.mem;
+  delete[] b.rho;
+  delete[] b.alpha;
 }
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
@@ -905,9 +905,9 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
       int m = b.m;
 
       b.mem_stride = (m==0) ? CG_EXTRA : 2*m;
-      b.mem = (float*) malloc(sizeof(float)*all->length()*(b.mem_stride));
-      b.rho = (double*) malloc(sizeof(double)*m);
-      b.alpha = (double*) malloc(sizeof(double)*m);
+      b.mem = new float[all->length()*(b.mem_stride)];
+      b.rho = new double[m];
+      b.alpha = new double[m];
 
       if (!all->quiet)
 	{
