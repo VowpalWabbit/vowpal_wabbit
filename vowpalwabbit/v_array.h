@@ -181,7 +181,7 @@ template<class T> void push_many(v_array<T>& v, const T* begin, size_t num)
 
 template<class T> void calloc_reserve(v_array<T>& v, size_t length)
 {
-  v.begin = (T *)calloc(length, sizeof(T));
+  v.begin = calloc_or_die<T>(length);
   v.end = v.begin;
   v.end_array = v.begin + length;
 }
