@@ -218,6 +218,16 @@ namespace CB_ADF {
     size_t i = 0;
     for (example **ec = examples.begin; ec != examples.end; ec++)
       (**ec).l.cb = mydata.cb_labels[i++];
+
+    if (!mydata.rank_all)
+      {
+	uint32_t action = 0;
+	for (size_t i = 0; i < examples.size(); i++)
+	  if (!CB::ec_is_example_header(*examples[i]) && !example_is_newline(*examples[i]))
+	    if (examples[i]->pred.multiclass != 0)
+	      action = examples[i]->pred.multiclass;
+	examples[0]->pred.multiclass = action;
+      }
   }
 
   template<uint32_t reduction_type>
@@ -313,17 +323,10 @@ namespace CB_ADF {
 
     float loss = 0.;
 
-    uint32_t action = 0;
+    uint32_t action = ec.pred.multiclass;
     for (size_t i = 0; i < (*ec_seq).size(); i++)
-      {
-	if (!CB::ec_is_example_header(*(*ec_seq)[i]))
-	  {
-	    if ((*ec_seq)[i]->pred.multiclass != 0)
-	      action = (*ec_seq)[i]->pred.multiclass;
-	    num_features += (*ec_seq)[i]->num_features;
-	  }
-      }
-    
+      if (!CB::ec_is_example_header(*(*ec_seq)[i]))
+	num_features += (*ec_seq)[i]->num_features;
     
     all.sd->total_features += num_features;
 
