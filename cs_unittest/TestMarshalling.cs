@@ -67,6 +67,7 @@ namespace cs_unittest
             {
                 // this is an example of incompatibility between C# and VowpalWabbit string format due to missing escape syntax
                 vw.Validate("| New_York_State", new ExampleStringEscape() { Value = "New York State" });
+                vw.Validate("| new_York_state", new ExampleStringEscape() { Value = "new York state" });
             }
         }
 
