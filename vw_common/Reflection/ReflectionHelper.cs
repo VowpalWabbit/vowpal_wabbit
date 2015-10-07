@@ -44,10 +44,11 @@ namespace VW.Reflection
                           where output.All(o => o != null)
                           let distance = output.Sum(o => o.Distance)
                           let interfacesImplemented = output.Sum(o => o.InterfacesImplemented)
+                          let generics = output.Sum(o => o.GenericTypes.Count)
                           orderby
                            distance,
-                           interfacesImplemented descending,
-                           m.GetGenericArguments().Length
+                           generics,
+                           interfacesImplemented descending
                           select new
                           {
                               Method = m,
@@ -101,14 +102,28 @@ namespace VW.Reflection
 
         internal static TypeMatch Distance(Type candidate, Type valueType)
         {
+            if (candidate == valueType)
+            {
+                return new TypeMatch(0)
+                {
+                    InterfacesImplemented = candidate.GetInterfaces().Count()
+                };
+            }
+
             if (candidate.IsAssignableFrom(valueType))
             {
-                return new TypeMatch(0);
+                return new TypeMatch(1)
+                {
+                    InterfacesImplemented = candidate.GetInterfaces().Count()
+                };
             }
 
             if (candidate.IsGenericParameter && candidate.GetGenericParameterConstraints().All(c => c.IsAssignableFrom(valueType)))
             {
-                return new TypeMatch(1, candidate, valueType);
+                return new TypeMatch(2, candidate, valueType)
+                {
+                    InterfacesImplemented = candidate.GetInterfaces().Count()
+                };
             }
 
             if (candidate.IsGenericType)

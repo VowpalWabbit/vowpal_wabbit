@@ -7,6 +7,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using VW.Serializer;
 
 namespace VW.Serializer.Attributes
 {
@@ -23,6 +24,7 @@ namespace VW.Serializer.Attributes
         {
             this.Enumerize = false;
             this.AddAnchor = false;
+            this.StringProcessing = StringProcessing.Split;
         }
 
         /// <summary>
@@ -70,5 +72,7 @@ namespace VW.Serializer.Attributes
         /// Specify the serialization order.
         /// </summary>
         public int Order { get; set; }
+
+        public StringProcessing StringProcessing { get; set; }
     }
 }

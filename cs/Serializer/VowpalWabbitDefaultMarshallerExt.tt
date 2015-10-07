@@ -66,38 +66,6 @@ namespace VW.Serializer
 		/// <param name="ns">The namespace description.</param>
 		/// <param name="feature">The feature description.</param>
 		/// <param name="value">The feature value.</param>
-        public void Visit(VowpalWabbitMarshalContext context, Namespace ns, NumericFeature feature, <#=t#>? value)
-        {
-            Contract.Requires(context != null);
-            Contract.Requires(ns != null);
-            Contract.Requires(feature != null);
-
-			if (value == null)
-			{
-				return;
-			}
-
-			context.NamespaceBuilder.AddFeature(feature.FeatureHash, (float)value);
-
-			if (disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.AppendFormat(
-                CultureInfo.InvariantCulture,
-                " {0}:{1}",
-                feature.Name,
-                value);
-        }
-
-		/// <summary>
-        /// Transfers feature data to native space.
-        /// </summary>
-		/// <param name="context">The marshalling context.</param>
-		/// <param name="ns">The namespace description.</param>
-		/// <param name="feature">The feature description.</param>
-		/// <param name="value">The feature value.</param>
         public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, NumericFeature feature, <#=t#>[] value)
         {
             if (value == null)
@@ -155,46 +123,6 @@ namespace VW.Serializer
 
 		<# foreach(var t in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16) }) { #>
 
-		/// <summary>
-        /// Transfers feature data to native space.
-        /// </summary>
-		/// <param name="context">The marshalling context.</param>
-		/// <param name="ns">The namespace description.</param>
-		/// <param name="feature">The feature description.</param>
-		/// <param name="value">The feature value.</param>
-		[ContractVerification(false)]
-		public void MarshalFeature<TValue>(VowpalWabbitMarshalContext context, Namespace ns, NumericFeature feature, IDictionary<<#=t#>, TValue> value)
-        {
-            Contract.Requires(context != null);
-            Contract.Requires(ns != null);
-            Contract.Requires(feature != null);
-
-			if (value == null)
-			{
-				return;
-			}
-
-            foreach (var kvp in value)
-            {
-				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)Convert.ToDouble(kvp.Value));
-            }
-
-			if (disableStringExampleGeneration)
-            {
-                return;
-            }
-
-			foreach (var kvp in value)
-            {
-				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
-                    " {0}:{2}",
-                    kvp.Key,
-                    kvp.Value);
-			}
-        }
-
 		<# foreach(var s in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16), typeof(UInt32), typeof(float), typeof(Int64), typeof(UInt64), typeof(double) }) { #>
 
 		/// <summary>
@@ -205,7 +133,7 @@ namespace VW.Serializer
 		/// <param name="feature">The feature description.</param>
 		/// <param name="value">The feature value.</param>
 		[ContractVerification(false)]
-        public void Visit(VowpalWabbitMarshalContext context, Namespace ns, NumericFeature feature, IDictionary<<#=t#>, <#=s#>> value)
+        public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IDictionary<<#=t#>, <#=s#>> value)
         {
             Contract.Requires(context != null);
             Contract.Requires(ns != null);
@@ -240,7 +168,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.StringExample.AppendFormat(
                     CultureInfo.InvariantCulture,
-                    " {0}:{2}",
+                    " {0}:{1}",
                     kvp.Key,
                     kvp.Value);
 			}

@@ -15,7 +15,9 @@ namespace cs_unittest
     internal sealed class VowpalWabbitExampleValidator<TExample> : IDisposable
     {
         private VowpalWabbit<TExample> vw;
+        private VowpalWabbit<TExample> vwNative;
         private Action<VowpalWabbitMarshalContext, TExample, ILabel> serializer;
+        private Action<VowpalWabbitMarshalContext, TExample, ILabel> serializerNative;
 
         internal VowpalWabbitExampleValidator(string args)
         {
@@ -26,7 +28,10 @@ namespace cs_unittest
             args = Regex.Replace(args, @"-c\s+([^ -]+)?", " ");
 
             this.vw = new VowpalWabbit<TExample>(new VowpalWabbitSettings(args, enableStringExampleGeneration: true));
-            this.serializer = vw.Serializer.Func(this.vw.Native);
+            this.serializer = this.vw.Serializer.Func(this.vw.Native);
+
+            this.vwNative = new VowpalWabbit<TExample>(new VowpalWabbitSettings(args));
+            this.serializerNative = this.vwNative.Serializer.Func(this.vwNative.Native);
         }
 
         public void Validate(string line, TExample example, ILabel label = null)
@@ -51,16 +56,18 @@ namespace cs_unittest
             }
 
             using (var context = new VowpalWabbitMarshalContext(this.vw.Native))
+            using (var contextNative = new VowpalWabbitMarshalContext(this.vwNative.Native))
             {
                 // validate string serializer
                 this.serializer(context, example, label);
+                this.serializerNative(contextNative, example, label);
 
                 // natively parsed string example compared against:
                 // (1) natively build example
                 // (2) string serialized & natively parsed string example
                 using (var strExample = this.vw.Native.ParseLine(line))
                 using (var strConvertedExample = this.vw.Native.ParseLine(context.StringExample.ToString()))
-                using (var nativeExample = context.ExampleBuilder.CreateExample())
+                using (var nativeExample = contextNative.ExampleBuilder.CreateExample())
                 {
                     var diff = strExample.Diff(this.vw.Native, strConvertedExample, comparator);
                     Assert.IsNull(diff, diff + " generated string: '" + context.StringExample + "'");
@@ -85,6 +92,12 @@ namespace cs_unittest
                 {
                     this.vw.Dispose();
                     this.vw = null;
+                }
+
+                if (this.vwNative != null)
+                {
+                    this.vwNative.Dispose();
+                    this.vwNative = null;
                 }
             }
         }

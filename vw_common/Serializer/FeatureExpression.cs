@@ -33,6 +33,7 @@ namespace VW.Serializer
             string variableName = null,
             int? order = null,
             bool addAnchor = false,
+            StringProcessing stringProcessing = StringProcessing.Split,
             MethodInfo overrideSerializeMethod = null)
         {
             if (featureType == null)
@@ -65,6 +66,7 @@ namespace VW.Serializer
             this.VariableName = variableName ?? name;
             this.Order = order ?? 1;
             this.AddAnchor = addAnchor;
+            this.StringProcessing = stringProcessing;
             this.OverrideSerializeMethod = overrideSerializeMethod;
 
             this.DenseFeatureValueElementType = InspectionHelper.GetDenseFeatureValueElementType(featureType);
@@ -122,5 +124,7 @@ namespace VW.Serializer
         public int Order { get; private set; }
 
         public bool IsNumeric { get; private set; }
+
+        public StringProcessing StringProcessing { get; private set; }
     }
 }
