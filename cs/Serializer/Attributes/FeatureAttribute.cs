@@ -24,7 +24,7 @@ namespace VW.Serializer.Attributes
         {
             this.Enumerize = false;
             this.AddAnchor = false;
-            this.StringProcess = StringProcessing.Split;
+            this.StringProcessing = StringProcessing.Split;
         }
 
         /// <summary>
@@ -73,6 +73,6 @@ namespace VW.Serializer.Attributes
         /// </summary>
         public int Order { get; set; }
 
-        public StringProcessing StringProcess { get; set; }
+        public StringProcessing StringProcessing { get; set; }
     }
 }

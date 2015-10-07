@@ -92,6 +92,9 @@ namespace cs_unittest
                 ex.Dict.Add("Location", 1.2);
 
                 vw.Validate("| Age:25 Location:1.2", ex);
+
+                ex.Dict = null;
+                vw.Validate("", ex);
             }
         }
 
@@ -102,6 +105,37 @@ namespace cs_unittest
             using (var vw = new VowpalWabbitExampleValidator<ExampleCustomType>(string.Empty))
             {
                 vw.Validate("| Custom2", new ExampleCustomType { Custom = new CustomType { value = 2 } });
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Marshal")]
+        public void TestEnumerableString()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<ExampleEnumerable>(string.Empty))
+            {
+                vw.Validate("| A New_York B", new ExampleEnumerable { Value = new[] { "A", "New_York", "B" } });
+
+                vw.Validate("", new ExampleEnumerable());
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Marshal")]
+        public void TestEnumerableKV()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<ExampleEnumerableKV>(string.Empty))
+            {
+                vw.Validate("| A:2 B:3", new ExampleEnumerableKV
+                {
+                    Value = new []
+                    {
+                        new KeyValuePair<string, float>("A", 2),
+                        new KeyValuePair<string, float>("B", 3)
+                    }
+                });
+
+                vw.Validate("", new ExampleEnumerableKV());
             }
         }
 
@@ -151,13 +185,13 @@ namespace cs_unittest
 
     public class ExampleStringEscape
     {
-        [Feature(StringProcess = StringProcessing.Escape)]
+        [Feature(StringProcessing = StringProcessing.Escape)]
         public String Value { get; set; }
     }
 
     public class ExampleStringSplit
     {
-        [Feature(StringProcess = StringProcessing.Split)]
+        [Feature(StringProcessing = StringProcessing.Split)]
         public String Value { get; set; }
     }
 
@@ -236,6 +270,17 @@ namespace cs_unittest
         public IDictionary Dict { get; set; }
     }
 
+    public class ExampleEnumerable
+    {
+        [Feature]
+        public IEnumerable<string> Value { get; set; }
+    }
+
+    public class ExampleEnumerableKV
+    {
+        [Feature]
+        public IEnumerable<KeyValuePair<string, float>> Value { get; set; }
+    }
 
     public class ExampleEnum
     {

@@ -71,6 +71,11 @@
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestManagedHash.cs" />
     <Compile Include="TestMarshalling.cs" />
+    <Compile Include="TestMarshalNumeric.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>TestMarshalNumeric.tt</DependentUpon>
+    </Compile>
     <Compile Include="TestModelLoading.cs" />
     <Compile Include="TestNull.cs" />
     <Compile Include="TestSerializer.cs" />
@@ -961,6 +966,10 @@
     <Content Include="..\test\train-sets\cs_test_multilabel.ldf">
       <Link>train-sets\cs_test_multilabel.ldf</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestMarshalNumeric.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>TestMarshalNumeric.cs</LastGenOutput>
     </Content>
   </ItemGroup>
   <Choose>

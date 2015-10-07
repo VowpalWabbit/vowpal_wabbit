@@ -59,7 +59,7 @@ namespace VW.Serializer
                                     variableName: p.Name,
                                     order: attr.Order,
                                     addAnchor: attr.AddAnchor,
-                                    stringProcessing: attr.StringProcess);
+                                    stringProcessing: attr.StringProcessing);
 
             // Recurse
             return localFeatures

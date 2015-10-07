@@ -152,7 +152,7 @@ namespace VW.Serializer
             {
                 context.NamespaceBuilder.AddFeature(
                         context.VW.HashFeature(Convert.ToString(kvp.Key), ns.NamespaceHash),
-                        (float)Convert.ToDouble(kvp.Value));
+                        (float)Convert.ToDouble(kvp.Value, CultureInfo.InvariantCulture));
             }
 
             if (this.disableStringExampleGeneration)
@@ -167,7 +167,7 @@ namespace VW.Serializer
                     CultureInfo.InvariantCulture,
                     " {0}:{1}",
                     Convert.ToString(kvp.Key),
-                    (float)Convert.ToDouble(kvp.Value));
+                    (float)Convert.ToDouble(kvp.Value, CultureInfo.InvariantCulture));
             }
         }
 
@@ -190,7 +190,7 @@ namespace VW.Serializer
             {
                 context.NamespaceBuilder.AddFeature(
                     context.VW.HashFeature(Convert.ToString(item.Key), ns.NamespaceHash),
-                    (float)Convert.ToDouble(item.Value));
+                    (float)Convert.ToDouble(item.Value, CultureInfo.InvariantCulture));
             }
 
             if (this.disableStringExampleGeneration)
@@ -204,7 +204,7 @@ namespace VW.Serializer
                     CultureInfo.InvariantCulture,
                     " {0}:{1}",
                     Convert.ToString(item.Key),
-                    (float)Convert.ToDouble(item.Value));
+                    (float)Convert.ToDouble(item.Value, CultureInfo.InvariantCulture));
             }
         }
 
@@ -225,7 +225,7 @@ namespace VW.Serializer
 
             foreach (var item in value)
             {
-                context.NamespaceBuilder.AddFeature(context.VW.HashFeature(item, ns.NamespaceHash), 1f);
+                context.NamespaceBuilder.AddFeature(context.VW.HashFeature(item.Replace(' ', '_'), ns.NamespaceHash), 1f);
             }
 
             if (this.disableStringExampleGeneration)
