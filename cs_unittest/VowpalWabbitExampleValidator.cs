@@ -38,11 +38,11 @@ namespace cs_unittest
         {
             IVowpalWabbitLabelComparator comparator;
 
-            if (label == null)
+            if (label == null || label == SharedLabel.Instance)
             {
                 comparator = null;
             }
-            else if (label is SimpleLabel || label == SharedLabel.Instance)
+            else if (label is SimpleLabel)
             {
                 comparator = VowpalWabbitLabelComparator.Simple;
             }

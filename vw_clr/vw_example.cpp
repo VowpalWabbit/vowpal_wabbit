@@ -108,12 +108,12 @@ namespace VW
 
   bool FloatEqual(float a, float b)
   {
-    if (a == 0 && b == 0)
+    if (abs(a) < 1e-20 && abs(b) < 1e-20)
     {
       return true;
     }
 
-    return abs(a - b) / max(a, b) < 0.01;
+    return abs(a - b) / max(a, b) < 0.0001;
   }
 
   System::String^ FormatFeatures(vw* vw, v_array<feature>& arr)
