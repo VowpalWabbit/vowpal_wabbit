@@ -291,7 +291,7 @@ namespace cs_unittest
         [DeploymentItem(@"train-sets/xxor.dat", @"train-sets")]
         [DeploymentItem(@"train-sets/ref/xxor.stderr", @"train-sets\ref")]
 
-        public void CommandLine_Test21() 
+        public void CommandLine_Test21()
         {
 
             using (var vw = new VowpalWabbit("-k -c -f models/xxor.model train-sets/xxor.dat --cubic abc --passes 100 --holdout_off --progress 1.33333"))
@@ -661,10 +661,24 @@ namespace cs_unittest
         [Description("test FTRL-Proximal")]
         [TestCategory("Command line")]
         [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        [DeploymentItem(@"train-sets/ref/0001_ftrl.stderr", @"train-sets\ref")]
+
+        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
         [DeploymentItem(@"test-sets/ref/0001_ftrl.stderr", @"test-sets\ref")]
 
         public void CommandLine_Test73()
         {
+
+            using (var vw = new VowpalWabbit("-k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 1 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2"))
+            {
+                foreach (var dataLine in File.ReadLines("train-sets/0001.dat"))
+                {
+                    vw.Learn(dataLine);
+                }
+                vw.RunMultiPass();
+                VWTestHelper.AssertEqual("train-sets/ref/0001_ftrl.stderr", vw.PerformanceStatistics);
+            }
+
 
             using (var vw = new VowpalWabbit("-k -t train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl.predict"))
             {
@@ -708,7 +722,7 @@ namespace cs_unittest
         public void CommandLine_Test75()
         {
 
-            using (var vw = new VowpalWabbit("--log_multi 10 train-sets/multiclass "))
+            using (var vw = new VowpalWabbit("--log_multi 10 train-sets/multiclass"))
             {
                 foreach (var dataLine in File.ReadLines("train-sets/multiclass"))
                 {
@@ -729,7 +743,7 @@ namespace cs_unittest
         public void CommandLine_Test76()
         {
 
-            using (var vw = new VowpalWabbit("--cbify 10 --epsilon 0.05 train-sets/multiclass "))
+            using (var vw = new VowpalWabbit("--cbify 10 --epsilon 0.05 train-sets/multiclass"))
             {
                 foreach (var dataLine in File.ReadLines("train-sets/multiclass"))
                 {
@@ -750,7 +764,7 @@ namespace cs_unittest
         public void CommandLine_Test78()
         {
 
-            using (var vw = new VowpalWabbit("--cbify 10 --bag 7 train-sets/multiclass "))
+            using (var vw = new VowpalWabbit("--cbify 10 --bag 7 train-sets/multiclass"))
             {
                 foreach (var dataLine in File.ReadLines("train-sets/multiclass"))
                 {
@@ -771,7 +785,7 @@ namespace cs_unittest
         public void CommandLine_Test79()
         {
 
-            using (var vw = new VowpalWabbit("--cbify 10 --cover 3 train-sets/multiclass "))
+            using (var vw = new VowpalWabbit("--cbify 10 --cover 3 train-sets/multiclass"))
             {
                 foreach (var dataLine in File.ReadLines("train-sets/multiclass"))
                 {
@@ -824,7 +838,41 @@ namespace cs_unittest
             }
 
         }
-        // Skipping inconsistent test -t without .predict file
+
+        [TestMethod]
+        [Description("test FTRL-PiSTOL")]
+        [TestCategory("Command line")]
+        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        [DeploymentItem(@"train-sets/ref/ftrl_pistol.stderr", @"train-sets\ref")]
+
+        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        [DeploymentItem(@"test-sets/ref/ftrl_pistol.stderr", @"test-sets\ref")]
+
+        public void CommandLine_Test82()
+        {
+
+            using (var vw = new VowpalWabbit("-k -d train-sets/0001.dat -f models/ftrl_pistol.model --passes 1 --pistol"))
+            {
+                foreach (var dataLine in File.ReadLines("train-sets/0001.dat"))
+                {
+                    vw.Learn(dataLine);
+                }
+                vw.RunMultiPass();
+                VWTestHelper.AssertEqual("train-sets/ref/ftrl_pistol.stderr", vw.PerformanceStatistics);
+            }
+
+
+            using (var vw = new VowpalWabbit("-k -t train-sets/0001.dat -i models/ftrl_pistol.model -p ftrl_pistol.predict"))
+            {
+                foreach (var dataLine in File.ReadLines("train-sets/0001.dat"))
+                {
+                    var actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Scalar);
+                }
+                vw.RunMultiPass();
+                VWTestHelper.AssertEqual("test-sets/ref/ftrl_pistol.stderr", vw.PerformanceStatistics);
+            }
+
+        }
 
         [TestMethod]
         [Description("check redefine functionality")]
@@ -941,5 +989,26 @@ namespace cs_unittest
         }
         /* Unable to parse command line: Empty path name is not legal.
         Parameter name: path */
+
+        [TestMethod]
+        [Description("")]
+        [TestCategory("Command line")]
+        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        [DeploymentItem(@"train-sets/ref/0097.stderr", @"train-sets\ref")]
+
+        public void CommandLine_Test97()
+        {
+
+            using (var vw = new VowpalWabbit("-d train-sets/0001.dat -f models/0097.model --save_resume"))
+            {
+                foreach (var dataLine in File.ReadLines("train-sets/0001.dat"))
+                {
+                    vw.Learn(dataLine);
+                }
+                vw.RunMultiPass();
+                VWTestHelper.AssertEqual("train-sets/ref/0097.stderr", vw.PerformanceStatistics);
+            }
+
+        }
     }
 }

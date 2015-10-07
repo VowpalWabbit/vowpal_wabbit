@@ -30,24 +30,17 @@ namespace cs_testhelp
 
             var skipList = new[] { 13, 14, 18, 25, 26, 33, 16, 17, 19, 20, 24, 31, 32, 34, 43, 44, 45, 46, 47, 48, 49,
                 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 65, 66, 67, 68, 69, 70,
-                42, 71, 77 };
+                42, 71, 77, 98, 99 };
 
-            var dependencies = new Dictionary<int, int[]>
-            {
-                { 2, new[] { 1 } },
-                { 6, new[] { 4 } },
-                { 8, new[] { 7 } },
-                { 20, new[] { 19 } },
-                { 28, new[] { 27 } },
-                { 31, new[] { 30 } },
-                { 32, new[] { 30, 31 } }
-            };
+            var outputModels = new Dictionary<string, int>();
+            var dependencies = new Dictionary<int, int[]>();
 
             var testCode = new Dictionary<int, Tuple<string, string>>();
 
             using (var cs = new StreamWriter(outputFile))
             {
                 Environment.CurrentDirectory = vwRoot + @"\test";
+                Directory.CreateDirectory("models");
 
                 cs.WriteLine(@"
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -81,6 +74,15 @@ namespace cs_unittest
                             using (var vw = new VowpalWabbit(args))
                             {
                                 arguments = vw.Arguments;
+
+                                // resolve dependencies
+                                outputModels[arguments.FinalRegressor] = nr;
+
+                                var initialRegressors = arguments.InitialRegressors;
+                                if (initialRegressors != null)
+                                {
+                                    dependencies.Add(nr, initialRegressors.Select(r => outputModels[r]).ToArray());
+                                }
 
                                 foreach (var dataLine in File.ReadLines(arguments.Data))
                                 {
