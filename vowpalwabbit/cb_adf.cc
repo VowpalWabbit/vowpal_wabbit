@@ -47,20 +47,13 @@ struct cb_adf {
 };
 
 namespace CB_ADF {
-
-  bool has_shared_example(v_array<example*> examples) {
-    if (examples[0]->l.cb.costs.size() > 0 && examples[0]->l.cb.costs[0].probability == -1.f)
-      return true;
-    return false;
-  }
-
   void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
   {
     if (cs_labels.size() < examples.size()) {
       cs_labels.resize(examples.size(), true);
       cs_labels.end = cs_labels.end_array;
     }
-    bool shared = has_shared_example(examples);
+    bool shared = CB::ec_is_example_header(*examples[0]);
     for (size_t i = 0; i < examples.size(); i++)
       {
 	CB::label ld = examples[i]->l.cb;
@@ -96,8 +89,8 @@ namespace CB_ADF {
     }
 
     c.pred_scores.costs.erase();
-    bool shared = has_shared_example(examples);
     
+    bool shared = CB::ec_is_example_header(*examples[0]);
     int startK = 0;
     if (shared) startK = 1;
     
@@ -181,7 +174,7 @@ namespace CB_ADF {
     }
 
     bool shared = false;
-    if (has_shared_example(examples))
+    if (CB::ec_is_example_header(*examples[0]))
       shared = true;
   
     for (CB::cb_class *cl = ld.costs.begin; cl != ld.costs.end; cl++)
@@ -214,15 +207,12 @@ namespace CB_ADF {
     // 2nd: predict for each ex
     // // call base.predict for each vw exmaple in the sequence
     for (example **ec = examples.begin; ec != examples.end; ec++) {
-      //cout<<"Number of features = "<<(**ec).num_features<<" label = "<<(**ec).l.cs.costs[0].x<<" "<<example_is_newline(**ec)<<endl;
       if (is_learn)
 	base.learn(**ec);
       else
 	base.predict(**ec);
     }
 
-    //cout<<"Prediction size = "<<(**examples.begin).pred.multilabels.label_v.size()<<endl;
-  
     // 3rd: restore cb_label for each example
     // (**ec).l.cb = mydata.array.element.
     size_t i = 0;
@@ -233,21 +223,21 @@ namespace CB_ADF {
   template<uint32_t reduction_type>
   void learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   {
-	  switch (reduction_type)
-	  {
-	  case CB_TYPE_IPS:
-      gen_cs_example_ips(examples, mydata.cs_labels);
-		  break;
-	  case CB_TYPE_DR:
-      gen_cs_example_dr<true>(mydata, examples, mydata.cs_labels);
-		  break;
-	  default:
-		  THROW("Unknown cb_type specified for contextual bandit learning: " << reduction_type);
-	  }
-	
+    switch (reduction_type)
+      {
+      case CB_TYPE_IPS:
+	gen_cs_example_ips(examples, mydata.cs_labels);
+	break;
+      case CB_TYPE_DR:
+	gen_cs_example_dr<true>(mydata, examples, mydata.cs_labels);
+	break;
+      default:
+	THROW("Unknown cb_type specified for contextual bandit learning: " << reduction_type);
+      }
+    
     call_predict_or_learn<true>(mydata,base,examples);
   }
-
+  
   bool test_adf_sequence(cb_adf& data)
   {
     uint32_t count = 0;
@@ -261,7 +251,8 @@ namespace CB_ADF {
 	count += 1;
       
       if (CB::ec_is_example_header(*ec))
-	THROW("warning: example headers at position " << k << ": can only have in initial position!");
+	if (k != 0)
+	  THROW("warning: example headers at position " << k << ": can only have in initial position!"); 
     }
     if (count == 0)
       return true;
@@ -315,43 +306,52 @@ namespace CB_ADF {
 
   void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
   {
-    v_array<CB::cb_class> costs = ec.l.cb.costs;
-    
     if (example_is_newline(ec)) return;
     // the shared example
-    if (CB::ec_is_example_header(ec)) return;
 
-    all.sd->total_features += ec.num_features;
+    size_t num_features = 0;
 
     float loss = 0.;
 
-    if (!CB::example_is_test(ec)) {
-      uint32_t action = ec.pred.multiclass;
-      if (ec_seq != nullptr)
-	for (size_t i = 0; i < (*ec_seq).size(); i++)
-	  if ((*ec_seq)[i]->pred.multiclass != 0)
-	    action = (*ec_seq)[i]->pred.multiclass;
+    uint32_t action = 0;
+    for (size_t i = 0; i < (*ec_seq).size(); i++)
+      {
+	if (!CB::ec_is_example_header(*(*ec_seq)[i]))
+	  {
+	    if ((*ec_seq)[i]->pred.multiclass != 0)
+	      action = (*ec_seq)[i]->pred.multiclass;
+	    num_features += (*ec_seq)[i]->num_features;
+	  }
+      }
+    
+    
+    all.sd->total_features += num_features;
 
+    bool is_test = false;
+    if (c.known_cost.probability > 0) {
       loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, action);
       all.sd->sum_loss += loss;
       all.sd->sum_loss_since_last_dump += loss;
     }
-  
+    else
+      is_test = true;
+
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
+      all.print(*sink, (float)action, 0, ec.tag);
 
     if (all.raw_prediction > 0) {
       string outputString;
       stringstream outputStringStream(outputString);
+      v_array<CB::cb_class> costs = ec.l.cb.costs;
+    
       for (size_t i = 0; i < costs.size(); i++) {
 	if (i > 0) outputStringStream << ' ';
 	outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
       }
-      //outputStringStream << endl;
       all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
     }
     
-    CB::print_update(all, CB::example_is_test(ec), ec, ec_seq, false);
+    CB::print_update(all, is_test, ec, ec_seq, false);
   }
 
   void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>* ec_seq)
@@ -361,15 +361,18 @@ namespace CB_ADF {
   
     if (example_is_newline(head_ec)) return;
   
-    all.sd->total_features += head_ec.num_features;
+    size_t num_features = 0;
+    for (size_t i = 0; i < (*ec_seq).size(); i++)
+      if (!CB::ec_is_example_header(*(*ec_seq)[i]))
+	num_features += (*ec_seq)[i]->num_features;
+    
+    all.sd->total_features += num_features;
   
     float loss = 0.;
     v_array<uint32_t>& preds = head_ec.pred.multilabels.label_v;
     bool is_test = false;
-    //cout<<"Preds size = "<<preds.size()<<endl;
     
     if (c.known_cost.probability > 0) {
-      //c.pred_scores.costs.erase();
       loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, preds[0]);
       all.sd->sum_loss += loss;
       all.sd->sum_loss_since_last_dump += loss;
@@ -407,8 +410,7 @@ namespace CB_ADF {
 	output_rank_example(all, data, **(data.ec_seq.begin), &(data.ec_seq));
       else
 	{
-	  for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
-	    output_example(all, data, **ecc, &(data.ec_seq));
+	  output_example(all, data, **(data.ec_seq.begin), &(data.ec_seq));
 	
 	  if (all.raw_prediction > 0)
 	    all.print_text(all.raw_prediction, "", data.ec_seq[0]->tag);
