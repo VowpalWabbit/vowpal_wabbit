@@ -47,20 +47,13 @@ struct cb_adf {
 };
 
 namespace CB_ADF {
-
-  bool has_shared_example(v_array<example*> examples) {
-    if (examples[0]->l.cb.costs.size() > 0 && examples[0]->l.cb.costs[0].probability == -1.f)
-      return true;
-    return false;
-  }
-
   void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
   {
     if (cs_labels.size() < examples.size()) {
       cs_labels.resize(examples.size(), true);
       cs_labels.end = cs_labels.end_array;
     }
-    bool shared = has_shared_example(examples);
+    bool shared = CB::ec_is_example_header(*examples[0]);
     for (size_t i = 0; i < examples.size(); i++)
       {
 	CB::label ld = examples[i]->l.cb;
@@ -96,8 +89,8 @@ namespace CB_ADF {
     }
 
     c.pred_scores.costs.erase();
-    bool shared = has_shared_example(examples);
     
+    bool shared = CB::ec_is_example_header(*examples[0]);
     int startK = 0;
     if (shared) startK = 1;
     
@@ -181,7 +174,7 @@ namespace CB_ADF {
     }
 
     bool shared = false;
-    if (has_shared_example(examples))
+    if (CB::ec_is_example_header(*examples[0]))
       shared = true;
   
     for (CB::cb_class *cl = ld.costs.begin; cl != ld.costs.end; cl++)
