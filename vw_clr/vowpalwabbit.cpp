@@ -561,10 +561,34 @@ namespace VW
 	/// <param name="s">String to be hashed.</param>
 	/// <param name="u">Hash offset.</param>
 	/// <returns>The resulting hash code.</returns>
+  //template<bool replaceSpace>
 	size_t hashall(String^ s, unsigned long u)
 	{
 		// get raw bytes from string
 		auto keys = Encoding::UTF8->GetBytes(s);
+    int length = keys->Length;
+
+    // TOOD: benchmark and verify correctness
+    //if (replaceSpace)
+    //{
+    //  for (int j = 0; j < length;)
+    //  {
+    //    var k = keys[j];
+    //    if (k == ' ')
+    //    {
+    //      keys[j] = '_';
+    //    }
+
+    //    j++;
+
+    //    // take care of UTF-8 multi-byte characters
+    //    while (k & 0xC == 0xC)
+    //    {
+    //      j++;
+    //      k <<= 1;
+    //    }
+    //  }
+    //}
 
 		uint32_t h1 = u;
 		uint32_t k1 = 0;
@@ -572,7 +596,6 @@ namespace VW
 		const uint32_t c1 = 0xcc9e2d51;
 		const uint32_t c2 = 0x1b873593;
 
-		int length = keys->Length;
 		int i = 0;
 		while (i <= length - 4)
 		{

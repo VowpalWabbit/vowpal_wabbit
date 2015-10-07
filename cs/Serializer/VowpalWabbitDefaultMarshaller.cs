@@ -87,7 +87,7 @@ namespace VW.Serializer
             context.StringExample.Append(' ').Append(stringValue);
         }
 
-        public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, String value)
+        public void MarshalFeatureStringEscape(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, string value)
         {
             Contract.Requires(context != null);
             Contract.Requires(ns != null);
@@ -96,8 +96,10 @@ namespace VW.Serializer
             if (string.IsNullOrWhiteSpace(value))
                 return;
 
-            var featureHash = context.VW.HashFeature(value, ns.NamespaceHash);
+            // safe escape spaces
+            value = value.Replace(' ', '_');
 
+            var featureHash = context.VW.HashFeature(value, ns.NamespaceHash);
             context.NamespaceBuilder.AddFeature(featureHash, 1f);
 
             if (this.disableStringExampleGeneration)
@@ -106,6 +108,29 @@ namespace VW.Serializer
             }
 
             context.StringExample.Append(' ').Append(value);
+        }
+
+        public void MarshalFeatureStringSplit(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return;
+
+            var words = value.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var s in words)
+            {
+                var featureHash = context.VW.HashFeature(s, ns.NamespaceHash);
+                context.NamespaceBuilder.AddFeature(featureHash, 1f);
+            }
+
+            if (this.disableStringExampleGeneration)
+            {
+                return;
+            }
+
+            foreach (var s in words)
+            {
+                context.StringExample.Append(' ').Append(s);
+            }
         }
 
         /// <summary>

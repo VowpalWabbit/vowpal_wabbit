@@ -36,7 +36,6 @@ namespace VW
 		/// </remarks>
 		initonly Func<String^, unsigned long, size_t>^ m_hasher;
 
-
 	public:
 		/// <summary>
 		/// Initializes a new <see cref="VowpalWabbit"/> instance.
@@ -108,7 +107,7 @@ namespace VW
 		/// <param name="u">Hash offset.</param>
 		/// <returns>The resulting hash code.</returns>
 		/// <remarks>The hash code depends on the vowpal wabbit instance as different has functions can be configured.</remarks>
-		uint32_t HashFeature(String^s, unsigned long u);
+		uint32_t HashFeature(String^ s, unsigned long u);
 
 		/// <summary>
 		/// The associated <see cref="VowpalWabbitBase"/> instance learns from this example and returns the prediction result for this example.

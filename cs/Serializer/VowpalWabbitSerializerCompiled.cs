@@ -143,7 +143,22 @@ namespace VW.Serializer
             string methodName;
             Type metaFeatureType;
 
-            if (feature.FeatureType.IsEnum)
+            if (feature.FeatureType == typeof(string))
+            {
+                switch(feature.StringProcessing)
+                {
+                    case StringProcessing.Escape:
+                        methodName = "MarshalFeatureStringEscape";
+                        break;
+                    case StringProcessing.Split:
+                        methodName = "MarshalFeatureStringSplit";
+                        break;
+                    default:
+                        throw new ArgumentException("feature.StringProcessing is not supported: " + feature.StringProcessing);
+                }
+                metaFeatureType = typeof(Feature);
+            }
+            else if (feature.FeatureType.IsEnum)
             {
                 methodName = "MarshalEnumFeature";
                 metaFeatureType = typeof(EnumerizedFeature<>).MakeGenericType(feature.FeatureType);

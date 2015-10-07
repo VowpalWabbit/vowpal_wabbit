@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VW.Serializer;
 using VW.Serializer.Attributes;
 
 namespace cs_unittest
@@ -57,15 +58,26 @@ namespace cs_unittest
             }
         }
 
+
         [TestMethod]
-        [ExpectedException(typeof(AssertFailedException))]
         [TestCategory("Marshal")]
-        public void TestStringInvalid()
+        public void TestStringEscape()
         {
-            using (var vw = new VowpalWabbitExampleValidator<ExampleString>(string.Empty))
+            using (var vw = new VowpalWabbitExampleValidator<ExampleStringEscape>(string.Empty))
             {
                 // this is an example of incompatibility between C# and VowpalWabbit string format due to missing escape syntax
-                vw.Validate("| abc New York", new ExampleString() { Location = "New York" });
+                vw.Validate("| New_York_State", new ExampleStringEscape() { Value = "New York State" });
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Marshal")]
+        public void TestStringSplit()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<ExampleStringSplit>(string.Empty))
+            {
+                // this is an example of incompatibility between C# and VowpalWabbit string format due to missing escape syntax
+                vw.Validate("| New York State", new ExampleStringSplit() { Value = "New York State" });
             }
         }
 
@@ -135,6 +147,18 @@ namespace cs_unittest
                 });
             }
         }
+    }
+
+    public class ExampleStringEscape
+    {
+        [Feature(StringProcess = StringProcessing.Escape)]
+        public String Value { get; set; }
+    }
+
+    public class ExampleStringSplit
+    {
+        [Feature(StringProcess = StringProcessing.Split)]
+        public String Value { get; set; }
     }
 
     public class UserContext
