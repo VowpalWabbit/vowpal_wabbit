@@ -218,7 +218,7 @@ void parse_dictionary_argument(vw&all, string str) {
   io->close_file();
   VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
-  
+
   if (! all.quiet)
     cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
 
@@ -929,13 +929,14 @@ void parse_output_preds(vw& all)
 void parse_output_model(vw& all)
 {
   new_options(all, "Output model")
-  ("final_regressor,f", po::value< string >(), "Final regressor")
-  ("readable_model", po::value< string >(), "Output human-readable final regressor with numeric features")
-  ("invert_hash", po::value< string >(), "Output human-readable final regressor with feature names.  Computationally expensive.")
-  ("save_resume", "save extra state so learning can be resumed later with new data")
-  ("save_per_pass", "Save the model after every pass over data")
-  ("output_feature_regularizer_binary", po::value< string >(&(all.per_feature_regularizer_output)), "Per feature regularization output file")
-  ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text");
+    ("final_regressor,f", po::value< string >(), "Final regressor")
+    ("readable_model", po::value< string >(), "Output human-readable final regressor with numeric features")
+    ("invert_hash", po::value< string >(), "Output human-readable final regressor with feature names.  Computationally expensive.")
+    ("save_resume", "save extra state so learning can be resumed later with new data")
+    ("save_per_pass", "Save the model after every pass over data")
+    ("output_feature_regularizer_binary", po::value< string >(&(all.per_feature_regularizer_output)), "Per feature regularization output file")
+    ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text")
+    ("id", "User supplied ID embedded into the final regressor");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -960,6 +961,9 @@ void parse_output_model(vw& all)
 
   if (vm.count("save_resume"))
     all.save_resume = true;
+
+  if (vm.count("id"))
+    all.id = vm["id"].as<string>();
 }
 
 void load_input_model(vw& all, io_buf& io_temp)
@@ -1374,13 +1378,13 @@ void finish(vw& all, bool delete_all)
             if (best_constant_loss != FLT_MIN)
 	      cerr << endl << "best constant's loss = " << best_constant_loss;
 	  }
-	
+
         cerr << endl << "total feature number = " << all.sd->total_features;
         if (all.sd->queries > 0)
 	  cerr << endl << "total queries = " << all.sd->queries << endl;
         cerr << endl;
         }
-    
+
 	// implement finally.
 	// finalize_regressor can throw if it can't write the file.
 	// we still want to free up all the memory.
