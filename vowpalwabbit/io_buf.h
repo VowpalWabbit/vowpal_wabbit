@@ -16,6 +16,7 @@ license as described in the file LICENSE.
 #include <sstream>
 #include <errno.h>
 #include <stdexcept>
+#include "hash.h"
 #include "vw_exception.h"
 #include "vw_validate.h"
 
@@ -31,16 +32,40 @@ using namespace std;
 #include <sys/stat.h>
 #endif
 
+/* The i/o buffer can be conceptualized as an array below:
+**  _______________________________________________________________________________________
+** |__________|__________|__________|__________|__________|__________|__________|__________|   **
+** space.begin           space.end             space.endloaded                  space.endarray **
+**
+** space.begin     = the beginning of the loaded values in the buffer
+** space.end       = the end of the last-read point in the buffer
+** space.endloaded = the end of the loaded values from file
+** space.endarray  = the end of the allocated space for the array
+**
+** The values are ordered so that:
+** space.begin <= space.end <= space.endloaded <= space.endarray
+**
+** Initially space.begin == space.end since no values have been read.
+**
+** The interval [space.end, space.endloaded] may be shifted down to space.begin
+** if the requested number of bytes to be read is larger than the interval size.
+** This is done to avoid reallocating arrays as much as possible.
+*/
+
 class io_buf {
- public:
-  v_array<char> space; //space.begin = beginning of loaded values.  space.end = end of read or written values.
+public:
+  v_array<char> space; //space.begin = beginning of loaded values.  space.end = end of read or written values from/to the buffer.
   v_array<int> files;
   size_t count; // maximum number of file descriptors.
   size_t current; //file descriptor currently being used.
-  char* endloaded; //end of loaded values
+  char* endloaded; //end of loaded values from file or socket
   v_array<char> currentname;
   v_array<char> finalname;
-  
+
+  // used to check-sum i/o files for corruption detection
+  bool verify_hash;
+  uint32_t hash;
+
   static const int READ = 1;
   static const int WRITE = 2;
 
@@ -54,6 +79,8 @@ class io_buf {
     current = 0;
     count = 0;
     endloaded = space.begin;
+    verify_hash = false;
+    hash = 0;
   }
 
   virtual int open_file(const char* name, bool stdin_off, int flag=READ) {
@@ -61,29 +88,29 @@ class io_buf {
     switch(flag) {
     case READ:
       if (*name != '\0')
-	{
+      {
 #ifdef _WIN32
-	  // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
-	  _sopen_s(&ret, name, _O_RDONLY|_O_BINARY|_O_SEQUENTIAL, _SH_DENYWR, 0);
+        // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
+        _sopen_s(&ret, name, _O_RDONLY|_O_BINARY|_O_SEQUENTIAL, _SH_DENYWR, 0);
 #else
-	  ret = open(name, O_RDONLY|O_LARGEFILE);
+        ret = open(name, O_RDONLY|O_LARGEFILE);
 #endif
-	}
+      }
       else if (!stdin_off)
 #ifdef _WIN32
-	ret = _fileno(stdin);
+        ret = _fileno(stdin);
 #else
-      ret = fileno(stdin);
+        ret = fileno(stdin);
 #endif
       if(ret!=-1)
-	files.push_back(ret);
+        files.push_back(ret);
       break;
 
     case WRITE:
 #ifdef _WIN32
-		_sopen_s(&ret, name, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
+      _sopen_s(&ret, name, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
 #else
-		ret = open(name, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
+      ret = open(name, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
 #endif
       if(ret!=-1)
         files.push_back(ret);
@@ -95,13 +122,13 @@ class io_buf {
     }
     if (ret == -1 && *name != '\0')
       THROWERRNO("can't open: " << name);
-    
+
     return ret;
   }
 
   virtual void reset_file(int f) {
 #ifdef _WIN32
-	_lseek(f, 0, SEEK_SET);
+    _lseek(f, 0, SEEK_SET);
 #else
     lseek(f, 0, SEEK_SET);
 #endif
@@ -128,19 +155,24 @@ class io_buf {
 
   static ssize_t read_file_or_socket(int f, void* buf, size_t nbytes);
 
-  size_t fill(int f) {
+  size_t fill(int f) 
+  {
+      // if the loaded values have reached the allocated space
     if (space.end_array - endloaded == 0)
-      {
-	size_t offset = endloaded - space.begin;
-	space.resize(2 * (space.end_array - space.begin));
-	endloaded = space.begin+offset;
-      }
+    {
+          // reallocate to twice as much space
+      size_t offset = endloaded - space.begin;
+      space.resize(2 * (space.end_array - space.begin));
+          endloaded = space.begin + offset;
+    }
+      // read more bytes from file up to the remaining allocated space
     ssize_t num_read = read_file(f, endloaded, space.end_array - endloaded);
     if (num_read >= 0)
-      {
-	endloaded = endloaded+num_read;
-	return num_read;
-      }
+    {
+          // if some bytes were actually loaded, update the end of loaded values
+          endloaded = endloaded + num_read;
+      return num_read;
+    }
     else
       return 0;
   }
@@ -152,11 +184,11 @@ class io_buf {
   static ssize_t write_file_or_socket(int f, const void* buf, size_t nbytes);
 
   virtual void flush() {
-	if (files.size() > 0) {
-		if (write_file(files[0], space.begin, space.size()) != (int)space.size())
-			std::cerr << "error, failed to write example\n";
-		space.end = space.begin;
-	}
+    if (files.size() > 0) {
+      if (write_file(files[0], space.begin, space.size()) != (int)space.size())
+        std::cerr << "error, failed to write example\n";
+      space.end = space.begin;
+    }
   }
 
   virtual bool close_file() {
@@ -187,15 +219,20 @@ size_t readto(io_buf &i, char* &pointer, char terminal);
 inline size_t bin_read_fixed(io_buf& i, char* data, size_t len, const char* read_message)
 {
   if (len > 0)
-    {
-      char* p;
-      size_t ret = buf_read(i,p,len);
-      if (*read_message == '\0')
-	memcpy(data,p,len);
+  {
+    char* p;
+    size_t ret = buf_read(i,p,len);
+
+    // compute hash for check-sum
+    if (i.verify_hash)
+        i.hash = uniform_hash(p, len, i.hash);
+
+    if (*read_message == '\0')
+      memcpy(data,p,len);
     else if (memcmp(data,p,len) != 0)
-	  THROW(read_message);
-      return ret;
-    }
+      THROW(read_message);
+    return ret;
+  }
   return 0;
 }
 
@@ -214,11 +251,15 @@ inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_messa
 inline size_t bin_write_fixed(io_buf& o, const char* data, uint32_t len)
 {
   if (len > 0)
-    {
-      char* p;
-      buf_write (o, p, len);
-      memcpy (p, data, len);
-    }
+  {
+    char* p;
+    buf_write (o, p, len);
+    memcpy (p, data, len);
+
+    // compute hash for check-sum
+    if (o.verify_hash)
+      o.hash = uniform_hash(p, len, o.hash);
+  }
   return len;
 }
 
@@ -229,20 +270,20 @@ inline size_t bin_write(io_buf& o, const char* data, uint32_t len)
   return (len + sizeof(len));
 }
 
-inline size_t bin_text_write(io_buf& io, char* data, uint32_t len, 
-		      const char* text_data, uint32_t text_len, bool text)
+inline size_t bin_text_write(io_buf& io, char* data, uint32_t len,
+                             const char* text_data, uint32_t text_len, bool text)
 {
   if (text)
     return bin_write_fixed (io, text_data, text_len);
   else if (len > 0)
-      return bin_write (io, data, len);
+    return bin_write (io, data, len);
   return 0;
 }
 
 //a unified function for read(in binary), write(in binary), and write(in text)
-inline size_t bin_text_read_write(io_buf& io, char* data, uint32_t len, 
-			 const char* read_message, bool read, 
-			 const char* text_data, uint32_t text_len, bool text)
+inline size_t bin_text_read_write(io_buf& io, char* data, uint32_t len,
+                                  const char* read_message, bool read,
+                                  const char* text_data, uint32_t text_len, bool text)
 {
   if (read)
     return bin_read(io, data, len, read_message);
@@ -257,7 +298,10 @@ inline size_t bin_text_read_write_validate_eof(io_buf& io, char* data, uint32_t 
     size_t nbytes = bin_text_read_write(io, data, len, read_message, read, text_data, text_len, text);
     if (read && len > 0)
     {
-        VW::validate_unexpected_eof(nbytes);
+        if (nbytes == 0)
+        {
+            THROW("Unexpected end of file encountered.");
+        }
     }
     return nbytes;
 }
@@ -267,15 +311,15 @@ inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len,
 {
   if (text)
     return bin_write_fixed (io, text_data, text_len);
-  else 
+  else
     return bin_write_fixed (io, data, len);
   return 0;
 }
 
 //a unified function for read(in binary), write(in binary), and write(in text)
-inline size_t bin_text_read_write_fixed(io_buf& io, char* data, uint32_t len, 
-			       const char* read_message, bool read, 
-			       const char* text_data, uint32_t text_len, bool text)
+inline size_t bin_text_read_write_fixed(io_buf& io, char* data, uint32_t len,
+                                        const char* read_message, bool read,
+                                        const char* text_data, uint32_t text_len, bool text)
 {
   if (read)
     return bin_read_fixed(io, data, len, read_message);
@@ -290,7 +334,10 @@ inline size_t bin_text_read_write_fixed_validate_eof(io_buf& io, char* data, uin
     size_t nbytes = bin_text_read_write_fixed(io, data, len, read_message, read, text_data, text_len, text);
     if (read && len > 0) // only validate bytes read/write if expected length > 0
     {
-        VW::validate_unexpected_eof(nbytes);
+        if (nbytes == 0)
+        {
+            THROW("Unexpected end of file encountered.");
+        }
     }
     return nbytes;
 }

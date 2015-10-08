@@ -40,17 +40,23 @@ namespace cs_unittest
 
         private void InternalTestModel(string modelFile, bool shouldPass)
         {
+            bool passed = false;
             try
             {
                 using (var vw = new VowpalWabbitModel(string.Format("--quiet -t -i {0}", modelFile)))
                 {
                     // should only reach this point if model is valid
-                    Assert.IsTrue(shouldPass);
+                    passed = true;
                 }
             }
             catch (VowpalWabbitException ex)
             {
                 Assert.IsTrue(ex.Message.Contains("corrupted"));
+            }
+
+            if (shouldPass)
+            {
+                Assert.IsTrue(passed);
             }
         }
 

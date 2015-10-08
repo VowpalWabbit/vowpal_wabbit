@@ -2,7 +2,7 @@
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
-*/
+ */
 #include <sstream>
 #include <float.h>
 #include "reductions.h"
@@ -54,11 +54,28 @@ float multiply(v_array<feature>& f_dest, v_array<feature>& f_src2, interact& in)
   float sum_sq = f.x*f.x;
   f_dest.push_back(f);
 
-  for (size_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();) {
+  size_t prev_id1 = 0;
+  size_t prev_id2 = 0;
+
+  for(size_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();) {
+	  // calculating the relative offset from the namespace offset used to match features
     size_t cur_id1 = (size_t)(((f_src1[i1].weight_index & weight_mask) - base_id1) & weight_mask);
     size_t cur_id2 = (size_t)(((f_src2[i2].weight_index & weight_mask) - base_id2) & weight_mask);
 
-    if (cur_id1 == cur_id2) {
+	// checking for sorting requirement
+    if (cur_id1 < prev_id1)
+    {
+      cout << "interact features are out of order: " << cur_id1 << " > " << prev_id1 << ". Skipping features." << endl;
+      return 0;
+    }
+
+    if (cur_id2 < prev_id2)
+    {
+      cout << "interact features are out of order: " << cur_id2 << " > " << prev_id2 << ". Skipping features." << endl;
+      return 0;
+    }
+
+    if(cur_id1 == cur_id2) {
       feature f;
       f.weight_index = f_src1[i1].weight_index;
       f.x = f_src1[i1].x*f_src2[i2].x;
@@ -105,18 +122,18 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec) {
   ec.num_features += f1->size();
 
   /*for(size_t i = 0;i < f1.size();i++)
-  cout<<f1[i].weight_index<<":"<<f1[i].x<<" ";
-  cout<<endl;*/
+    cout<<f1[i].weight_index<<":"<<f1[i].x<<" ";
+    cout<<endl;*/
 
   // remove 2nd namespace
   int n2_i = -1;
   for (size_t i = 0; i < ec.indices.size(); i++) {
-    if (ec.indices[i] == in.n2) {
-      n2_i = (int)i;
+	  if (ec.indices[i] == in.n2) {
+		  n2_i = (int)i;
       memmove(&ec.indices[n2_i], &ec.indices[n2_i + 1], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));
-      ec.indices.decr();
-      break;
-    }
+		  ec.indices.decr();
+		  break;
+	  }
   }
 
   base.predict(ec);
