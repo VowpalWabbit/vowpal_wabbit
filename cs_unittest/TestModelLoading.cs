@@ -38,6 +38,30 @@ namespace cs_unittest
             InternalTestModelRandomCorrupt("model-sets/8.0.1_hash_ok.model");
         }
 
+        [TestMethod]
+        public void TestID()
+        {
+            using (var vw = new VowpalWabbit("--id abc"))
+            {
+                Assert.AreEqual("abc", vw.ID);
+
+                vw.SaveModel("model");
+
+                vw.ID = "def";
+                vw.SaveModel("model.1");
+            }
+
+            using (var vw = new VowpalWabbit("-i model"))
+            {
+                Assert.AreEqual("abc", vw.ID);
+            }
+
+            using (var vw = new VowpalWabbit("-i model.1"))
+            {
+                Assert.AreEqual("def", vw.ID);
+            }
+        }
+
         private void InternalTestModel(string modelFile, bool shouldPass)
         {
             bool passed = false;

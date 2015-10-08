@@ -283,4 +283,14 @@ namespace VW
 
     return diff == nullptr ? nullptr : gcnew String(diff);
   }
+
+  String^ VowpalWabbitBase::ID::get()
+  {
+    return gcnew String(m_vw->id.c_str());
+  }
+
+  void VowpalWabbitBase::ID::set(String^ value)
+  {
+    m_vw->id = msclr::interop::marshal_as<std::string>(value);
+  }
 }

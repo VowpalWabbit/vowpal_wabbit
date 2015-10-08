@@ -936,7 +936,7 @@ void parse_output_model(vw& all)
     ("save_per_pass", "Save the model after every pass over data")
     ("output_feature_regularizer_binary", po::value< string >(&(all.per_feature_regularizer_output)), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text")
-    ("id", "User supplied ID embedded into the final regressor");
+    ("id", po::value< string >(&(all.id)), "User supplied ID embedded into the final regressor");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -961,9 +961,6 @@ void parse_output_model(vw& all)
 
   if (vm.count("save_resume"))
     all.save_resume = true;
-
-  if (vm.count("id"))
-    all.id = vm["id"].as<string>();
 }
 
 void load_input_model(vw& all, io_buf& io_temp)

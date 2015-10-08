@@ -36,7 +36,7 @@ void initialize_regressor(vw& all)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
       for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
-	all.reg.weight_vector[j] = all.initial_weight;      
+	all.reg.weight_vector[j] = all.initial_weight;
   else if (all.random_positive_weights)
 	for (size_t j = 0; j < length; j++)
 	  all.reg.weight_vector[j << all.reg.stride_shift] = (float)(0.1 * frand48());
@@ -67,7 +67,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         bytes_read_write += bin_text_read_write_validate_eof(model_file, buff2, v_length,
             "", read,
             buff, text_len, text);
-        all.model_file_ver = buff2; //stord in all to check save_resume fix in gd
+        all.model_file_ver = buff2; //stored in all to check save_resume fix in gd
 
         VW::validate_version(all);
 
@@ -75,7 +75,22 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         {
             model_file.verify_hash = true;
         }
-      
+
+        if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
+        {
+          v_length = (uint32_t)all.id.length() + 1;
+          text_len = sprintf_s(buff, buf_size, "Version %s\n", all.id.c_str());
+          memcpy(buff2, all.id.c_str(), min(v_length, buf_size));
+          if (read)
+          {
+            v_length = buf_size;
+          }
+          bytes_read_write += bin_text_read_write_validate_eof(model_file, buff2, v_length,
+            "", read,
+            buff, text_len, text);
+          all.id = buff2;
+        }
+
         char model = 'm';
         bytes_read_write += bin_text_read_write_fixed_validate_eof(model_file, &model, 1,
             "file is not a model file", read,
@@ -321,16 +336,16 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         text_len = sprintf_s(buff, buf_size, "options:%s\n", all.file_options->str().c_str());
         uint32_t len = (uint32_t)all.file_options->str().length() + 1;
         memcpy(buff2, all.file_options->str().c_str(), min(len, buf_size));
-        
+
         if (read)
         {
             len = buf_size;
         }
-        
+
         bytes_read_write += bin_text_read_write_validate_eof(model_file, buff2, len,
             "", read,
             buff, text_len, text);
-        
+
         if (read)
         {
             all.file_options->str(buff2);
@@ -339,7 +354,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         // Read/write checksum if required by version
         if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_HASH)
         {
-            uint32_t check_sum = (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH) ? 
+            uint32_t check_sum = (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH) ?
                 model_file.hash :
                 uniform_hash(model_file.space.begin, bytes_read_write, 0);
 
@@ -378,7 +393,7 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
   io_buf io_temp;
 
   io_temp.open_file(start_name.c_str(), all.stdin_off, io_buf::WRITE);
-  
+
   dump_regressor(all, io_temp, as_text);
 
   io_temp.flush(); // close_file() should do this for me ...
@@ -439,7 +454,7 @@ void parse_mask_regressor_args(vw& all)
 {
   po::variables_map& vm = all.vm;
   if (vm.count("feature_mask")) {
-    size_t length = ((size_t)1) << all.num_bits;  
+    size_t length = ((size_t)1) << all.num_bits;
     string mask_filename = vm["feature_mask"].as<string>();
     if (vm.count("initial_regressor")) {
       vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
@@ -447,7 +462,7 @@ void parse_mask_regressor_args(vw& all)
         return;
       }
     }
-    
+
     //all other cases, including from different file, or -i does not exist, need to read in the mask file
     io_buf io_temp_mask;
     io_temp_mask.open_file(mask_filename.c_str(), false, io_buf::READ);

@@ -426,7 +426,7 @@ struct vw {
   bool hessian_on;
 
   bool save_resume;
-  std::string id;
+  string id;
 
   version_struct model_file_ver;
   double normalized_sum_norm_x;
