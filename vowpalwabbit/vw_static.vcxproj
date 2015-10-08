@@ -308,8 +308,8 @@
     <ClInclude Include="vw.h" />
     <ClInclude Include="vw_allreduce.h" />
     <ClInclude Include="vw_exception.h" />
-    <ClInclude Include="vw_versions.h" />
     <ClInclude Include="v_array.h" />
+    <ClInclude Include="vw_versions.h" />
     <ClInclude Include="v_hashmap.h" />
   </ItemGroup>
   <ItemGroup>

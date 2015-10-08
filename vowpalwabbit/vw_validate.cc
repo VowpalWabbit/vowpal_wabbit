@@ -1,3 +1,9 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+*/
+
 #pragma once
 
 #include "global_data.h"
@@ -11,14 +17,6 @@ namespace VW
         if (all.model_file_ver < LAST_COMPATIBLE_VERSION || all.model_file_ver > PACKAGE_VERSION)
         {
             THROW("Model has possibly incompatible version! " << all.model_file_ver.to_string());
-        }
-    }
-
-    void validate_unexpected_eof(size_t nbytes)
-    {
-        if (nbytes == 0)
-        {
-            THROW("Unexpected end of model file encountered.");
         }
     }
 

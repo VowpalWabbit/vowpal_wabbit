@@ -142,6 +142,14 @@
       <Link>test-sets\ref\0002c.stderr</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\test\test-sets\ref\0098.stderr">
+      <Link>test-sets\ref\0098.stderr</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\test-sets\ref\0099.stderr">
+      <Link>test-sets\ref\0099.stderr</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="..\test\test-sets\ref\ftrl_pistol.stderr">
       <Link>test-sets\ref\ftrl_pistol.stderr</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -336,6 +344,10 @@
     </None>
     <None Include="..\test\train-sets\ref\0080.stderr">
       <Link>train-sets\ref\0080.stderr</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\test\train-sets\ref\0097.stderr">
+      <Link>train-sets\ref\0097.stderr</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\test\train-sets\ref\3parity.stderr">
@@ -1011,7 +1023,7 @@
   <Target Name="BeforeBuild">
   </Target>
 	-->
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="AfterBuild">
   </Target>

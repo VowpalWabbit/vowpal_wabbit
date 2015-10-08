@@ -101,6 +101,12 @@ namespace VW
       VowpalWabbitArguments^ get();
     }
 
+    property String^ ID
+    {
+      String^ get();
+      void set(String^ id);
+    }
+
 		/// <summary>
 		/// Gets or creates an empty example.
 		/// </summary>

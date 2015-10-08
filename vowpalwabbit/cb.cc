@@ -186,11 +186,7 @@ void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq,
       // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
       for (size_t i = 0; i < (*ec_seq).size(); i++)
 	if (!CB::ec_is_example_header(*(*ec_seq)[i]))
-	  {
-	    if ((*ec_seq)[i]->pred.multiclass != 0)
-	      pred = (*ec_seq)[i]->pred.multiclass;
-	    num_features += (*ec_seq)[i]->num_features;
-	  }
+	  num_features += (*ec_seq)[i]->num_features;
     }
     std::string label_buf;
     if (is_test)

@@ -140,7 +140,7 @@ namespace GD
     if (all.all_reduce != nullptr) {
         if (all.adaptive)
             accumulate_weighted_avg(all, all.reg);
-      else
+      else 
             accumulate_avg(all, all.reg, 0);
     }
     all.eta *= all.eta_decay_rate;
@@ -595,12 +595,12 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
                 text_len = sprintf_s(buff, buf_size, ":%ld:%f\n", it->second, *v);
                 brw += bin_text_write_fixed(model_file, (char *)v, sizeof(*v),
 					 buff, text_len, true);
-      }
+      }	
     }
     return;
-  }
+  } 
 
-  do
+  do 
     {
       brw = 1;
       weight* v;
@@ -620,7 +620,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 	}
       else// write binary or text
 	{
-
+                      
          v = &(all.reg.weight_vector[stride*i]);
 	 if (*v != 0.)
 	    {
@@ -632,7 +632,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
                 text_len = sprintf_s(buff, buf_size, "%d", i);
                 brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i),
 					 buff, text_len, text);
-
+	      
                 text_len = sprintf_s(buff, buf_size, ":%f\n", *v);
                 brw += bin_text_write_fixed(model_file, (char *)v, sizeof(*v),
 					 buff, text_len, text);
@@ -650,7 +650,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 
   char buff[512];
     size_t buf_size = sizeof(buff);
-
+  
     uint32_t text_len = sprintf_s(buff, buf_size, "initial_t %f\n", all.initial_t);
     bin_text_read_write_fixed(model_file, (char*)&all.initial_t, sizeof(all.initial_t),
 			    "", read,
@@ -693,7 +693,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 
     text_len = sprintf_s(buff, buf_size, "weighted_examples %f\n", all.sd->weighted_examples);
     bin_text_read_write_fixed(model_file, (char*)&all.sd->weighted_examples, sizeof(all.sd->weighted_examples),
-			    "", read,
+			    "", read, 
 			    buff, text_len, text);
 
     text_len = sprintf_s(buff, buf_size, "weighted_labels %f\n", all.sd->weighted_labels);
@@ -703,12 +703,12 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 
     text_len = sprintf_s(buff, buf_size, "weighted_unlabeled_examples %f\n", all.sd->weighted_unlabeled_examples);
     bin_text_read_write_fixed(model_file, (char*)&all.sd->weighted_unlabeled_examples, sizeof(all.sd->weighted_unlabeled_examples),
-			    "", read,
+			    "", read, 
 			    buff, text_len, text);
-
+  
     text_len = sprintf_s(buff, buf_size, "example_number %u\n", (uint32_t)all.sd->example_number);
     bin_text_read_write_fixed(model_file, (char*)&all.sd->example_number, sizeof(all.sd->example_number),
-			    "", read,
+			    "", read, 
 			    buff, text_len, text);
 
     text_len = sprintf_s(buff, buf_size, "total_features %u\n", (uint32_t)all.sd->total_features);
@@ -752,6 +752,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
       all.sd->example_number = 0;
       all.sd->total_features = 0;
     }
+  
 
   uint32_t length = 1 << all.num_bits;
   uint32_t stride = 1 << all.reg.stride_shift;
@@ -804,13 +805,13 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		  }
 		else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
 		  { //either adaptive or normalized
-		    text_len = sprintf(buff, ":%g %g\n", *v, *(v+1));
+	  text_len = sprintf_s(buff, buf_size, ":%g %g\n", *v, *(v+1));
 		    brw+= bin_text_write_fixed(model_file,(char *)v, 2*sizeof (*v),
 					       buff, text_len, text);
 		  }
 		else
 		  { //adaptive and normalized
-		    text_len = sprintf(buff, ":%g %g %g\n", *v, *(v+1), *(v+2));
+          text_len = sprintf_s(buff, buf_size, ":%g %g %g\n", *v, *(v+1), *(v+2));
 		    brw+= bin_text_write_fixed(model_file,(char *)v, 3*sizeof (*v),
 					       buff, text_len, text);
 		  }
