@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 #endif
 
 #include "vw_exception.h"
+#include "memory.h"
 
 const size_t erase_point = ~ ((1 << 10) -1);
 
