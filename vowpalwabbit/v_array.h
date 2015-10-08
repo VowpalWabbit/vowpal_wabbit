@@ -80,6 +80,10 @@ public:
       resize(2 * (end_array-begin) + 3);
     *(end++) = new_ele;
   }
+  void push_back_unchecked(const T &new_ele)
+  {
+    *(end++) = new_ele;
+  }
   size_t find_sorted(const T& ele)  //index of the smallest element >= ele, return true if element is in the array
   {
     size_t size = end - begin;

@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 
 #include "vw_builder.h"
 #include "parser.h"
+// #include "primitives.h"
 
 namespace VW
 {
@@ -104,6 +105,24 @@ namespace VW
       unsigned char temp = m_index;
       m_example->indices.push_back(temp);
     }
+  }
+
+  void VowpalWabbitNamespaceBuilder::AddFeaturesUnchecked(uint32_t weight_index_base, float* begin, float* end)
+  {
+    // TODO: remove m_sum_feat_sq
+    // *m_sum_feat_sq += sum_of_squares(begin, end);
+
+    for (; begin != end; begin++)
+    {
+      float x = *begin;
+      if (x != 0)
+      {
+        *m_sum_feat_sq += x * x;
+        m_atomic->push_back_unchecked({ x, weight_index_base });
+      }
+      weight_index_base++;
+    }
+
   }
 
   void VowpalWabbitNamespaceBuilder::AddFeature(uint32_t weight_index, float x)
