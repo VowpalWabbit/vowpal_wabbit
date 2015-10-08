@@ -539,10 +539,9 @@ void parse_feature_tweaks(vw& all)
 
       for (vector<string>::iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
       {
-	if (!all.quiet)
-	  cerr << *i << " ";
         *all.file_options << " --quadratic " << *i;
         *i = spoof_hex_encoded_namespaces(*i);
+        if (!all.quiet) cerr << *i << " ";
       }
 
     expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
@@ -557,10 +556,10 @@ void parse_feature_tweaks(vw& all)
     {
       cerr << "creating cubic features for triples: ";
       for (vector<string>::iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
-      {
-        if (!all.quiet) cerr << *i << " ";
+      {        
         *all.file_options << " --cubic " << *i;
         *i = spoof_hex_encoded_namespaces(*i);
+        if (!all.quiet) cerr << *i << " ";
       }
     }
 
@@ -578,10 +577,10 @@ void parse_feature_tweaks(vw& all)
     {
       cerr << "creating features for following interactions: ";
       for (vector<string>::iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
-      {
-        if (!all.quiet) cerr << *i << " ";
+      {        
         *all.file_options << " --interactions " << *i;
         *i = spoof_hex_encoded_namespaces(*i);
+        if (!all.quiet) cerr << *i << " ";
       }
     }
 
