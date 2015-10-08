@@ -79,7 +79,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
         {
           v_length = (uint32_t)all.id.length() + 1;
-          text_len = sprintf_s(buff, buf_size, "Version %s\n", all.id.c_str());
+          text_len = sprintf_s(buff, buf_size, "Id %s\n", all.id.c_str());
           memcpy(buff2, all.id.c_str(), min(v_length, buf_size));
           if (read)
           {
