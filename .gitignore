@@ -100,3 +100,6 @@ dist/**
 pyvw.egg-info/**
 python/pyvw.egg-info/**
 
+/COPYING
+/README
+/compile
