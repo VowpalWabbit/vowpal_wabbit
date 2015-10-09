@@ -961,6 +961,12 @@ void parse_output_model(vw& all)
 
   if (vm.count("save_resume"))
     all.save_resume = true;
+
+  if (vm.count("id") && find(all.args.begin(), all.args.end(), "--id") == all.args.end())
+  {
+      all.args.push_back("--id");
+      all.args.push_back(vm["id"].as<string>());
+  }
 }
 
 void load_input_model(vw& all, io_buf& io_temp)
