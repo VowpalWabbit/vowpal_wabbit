@@ -31,7 +31,7 @@ use Getopt::Long;
 use Scalar::Util qw(looks_like_number);
 use List::Util qw(first);
 
-our ($o_verbose, $o_help, $o_header, $o_namespace, $o_tag, $o_label, $o_exclude, $o_split, $o_dense, $o_output);
+our ($o_verbose, $o_help, $o_header, $o_namespace, $o_tag, $o_prefix, $o_label, $o_exclude, $o_split, $o_dense, $o_output);
 
 my $FieldSep = qr{[,\t]};
 my $ExcludePat = qr/^\s+$/;	# Match all empty feature names
@@ -60,6 +60,7 @@ sub usage {
         --tag <tag_column>       column providing the example identifier
         --label <label_column>   column providing the label (class) for
                                  the example
+        --tag-prefix <str>       prefix all tags with given string
         --exclude <regexp>       pattern for matching column names to be excluded
         --split <column>         column name (or index) to be used as a dataset
                                  splitting factor
@@ -82,13 +83,20 @@ sub usage {
         labels and be converted to an integer [1..k] (vw multiclass-representation)
 
     Examples:
-        $0 -h --label -1 iris.csv
+        $0 --header --label -1 iris.csv
             Use 1st line as header, last column as label
 
         $0 2 data.tsv
             Use 1..k as column/feature names, use 3rd column
             as the label column (base index is 0) - no header
             assumed in input
+
+        $0 --header --tag Tag --namespace \(\\w\\d\).+data.tsv
+            Use 1st line as a header, idetifying examples by the
+            content of column names 'Tag' and grouping other
+            columns in namespaces which match the <letter><digit>
+            pattern given.
+			
 ";
 }
 
@@ -98,6 +106,7 @@ sub init {
 				'header:s' => \$o_header,
 				'namespace=s' => \$o_namespace,
 				'tag=s' => \$o_tag,
+				'tag-prefix=s' => \$o_prefix,
 				'label=s' => \$o_label,
 				'exclude=s' => \$o_exclude,
 				'split=s' => \$o_split,
@@ -111,6 +120,7 @@ sub init {
 	verbose("Header line is taken from: %s\n", $o_header) if (defined $o_header);
 	verbose("Namespace pattern is: %s\n", qr/$o_namespace/) if (defined $o_namespace);
 	verbose("Tag's column is: %s\n", $o_tag) if (defined $o_tag);
+	verbose("Tag's prefix: %s\n", $o_prefix) if (defined $o_prefix);
 	verbose("Label's column is: %s\n", $o_label) if (defined $o_label);
 
 	$ExcludePat = qr/$o_exclude/ if (defined $o_exclude);
@@ -260,6 +270,7 @@ while (<>) {
 	$label = label2k($label) unless (looks_like_number($label));
 	
 	my $tag = defined $TagCol ? $RowFeatures[$TagCol] : $LineNo;
+	$tag = $o_prefix . $tag if (defined $o_prefix);
 	
     printf $fh "%s %s", $label, $tag;
 	foreach my $ns (keys %Namespaces) {
