@@ -40,7 +40,7 @@ public:
   }
   T& operator[](size_t i) { return begin[i]; }
   T& get(size_t i) { return begin[i]; }
-  inline size_t size() {return end-begin;}
+  inline const size_t size() {return end-begin;}
   void resize(size_t length, bool zero_everything=false)
   {
     if ((size_t)(end_array-begin) != length)
