@@ -34,11 +34,11 @@ use List::Util qw(first);
 our ($o_verbose, $o_help, $o_header, $o_namespace, $o_tag, $o_prefix, $o_label, $o_exclude, $o_split, $o_dense, $o_output);
 
 my $FieldSep = qr{[,\t]};
-my $ExcludePat = qr/^\s+$/;	# Match all empty feature names
-my $LabelCol = 0;			# Label column to use - after processing user input
-my $TagCol = undef;			# Tag column to use - after processing user input
-my $SplitCol = undef;		# Split column for examples splitting in datasets
-my $LineNo = 0;				# Could be used instead of tag, if none is provided
+my $ExcludePat = qr/^\s+$/;    # Match all empty feature names
+my $LabelCol = 0;            # Label column to use - after processing user input
+my $TagCol = undef;            # Tag column to use - after processing user input
+my $SplitCol = undef;        # Split column for examples splitting in datasets
+my $LineNo = 0;                # Could be used instead of tag, if none is provided
 
 sub verbose {
     return unless $o_verbose;
@@ -73,7 +73,7 @@ sub usage {
         Input file(s) are read sequentially considering they come one after another
         in terms of rows. Providing '--header' option automatically skips the furst
         line of every file.
-	
+    
         Both <tag_column> and <label_column> can be strings, in which case this is
         column's name or integers, in which case they are treated as column indeces
         (starting from 0). If the value is negative - it is treated as a column
@@ -96,42 +96,42 @@ sub usage {
             content of column names 'Tag' and grouping other
             columns in namespaces which match the <letter><digit>
             pattern given.
-			
+            
 ";
 }
 
 sub init {
-	GetOptions( 'verbose' => \$o_verbose,
-				'help' => \$o_help,
-				'header:s' => \$o_header,
-				'namespace=s' => \$o_namespace,
-				'tag=s' => \$o_tag,
-				'tag-prefix=s' => \$o_prefix,
-				'label=s' => \$o_label,
-				'exclude=s' => \$o_exclude,
-				'split=s' => \$o_split,
-				'dense' => \$o_dense,
-				'output=s' => \$o_output,
-				'delimiter=s' => \$FieldSep
-	) or usage();
+    GetOptions( 'verbose' => \$o_verbose,
+                'help' => \$o_help,
+                'header:s' => \$o_header,
+                'namespace=s' => \$o_namespace,
+                'tag=s' => \$o_tag,
+                'tag-prefix=s' => \$o_prefix,
+                'label=s' => \$o_label,
+                'exclude=s' => \$o_exclude,
+                'split=s' => \$o_split,
+                'dense' => \$o_dense,
+                'output=s' => \$o_output,
+                'delimiter=s' => \$FieldSep
+    ) or usage();
 
-	usage() if (defined $o_help);
+    usage() if (defined $o_help);
 
-	verbose("Header line is taken from: %s\n", $o_header) if (defined $o_header);
-	verbose("Namespace pattern is: %s\n", qr/$o_namespace/) if (defined $o_namespace);
-	verbose("Tag's column is: %s\n", $o_tag) if (defined $o_tag);
-	verbose("Tag's prefix: %s\n", $o_prefix) if (defined $o_prefix);
-	verbose("Label's column is: %s\n", $o_label) if (defined $o_label);
+    verbose("Header line is taken from: %s\n", $o_header) if (defined $o_header);
+    verbose("Namespace pattern is: %s\n", qr/$o_namespace/) if (defined $o_namespace);
+    verbose("Tag's column is: %s\n", $o_tag) if (defined $o_tag);
+    verbose("Tag's prefix: %s\n", $o_prefix) if (defined $o_prefix);
+    verbose("Label's column is: %s\n", $o_label) if (defined $o_label);
 
-	$ExcludePat = qr/$o_exclude/ if (defined $o_exclude);
-	verbose("Exclude columns matching pattern: %s\n", $ExcludePat);
-	
-	verbose("Split output based on column: %s\n", $o_split) if (defined $o_split);
-	verbose("Outputing dense matrix\n") if (defined $o_dense);
-	verbose("Output file(s) name: %s\n", $o_output) if (defined $o_output);
-	verbose("Column separator: %s\n", $FieldSep);
-	
-	die ("Splitting asked, but no output is provided!\n") if ((defined $o_split and !defined($o_output)) or (!defined($o_split) and defined($o_output)));
+    $ExcludePat = qr/$o_exclude/ if (defined $o_exclude);
+    verbose("Exclude columns matching pattern: %s\n", $ExcludePat);
+    
+    verbose("Split output based on column: %s\n", $o_split) if (defined $o_split);
+    verbose("Outputing dense matrix\n") if (defined $o_dense);
+    verbose("Output file(s) name: %s\n", $o_output) if (defined $o_output);
+    verbose("Column separator: %s\n", $FieldSep);
+    
+    die ("Splitting asked, but no output is provided!\n") if ((defined $o_split and !defined($o_output)) or (!defined($o_split) and defined($o_output)));
 }
 
 my %Label2KMap;
@@ -140,94 +140,94 @@ my $MaxK = 0;
 sub label2k($) {
     my $label = shift;
     return $Label2KMap{$label} if (exists $Label2KMap{$label});
-	
-	$MaxK++;
+    
+    $MaxK++;
     $Label2KMap{$label} = $MaxK;
-	
-	verbose("New multi-class added: %s\n", $label);
-	
+    
+    verbose("New multi-class added: %s\n", $label);
+    
     $MaxK;
 }
 
-my @RowFeatures = ();	# Temporary read (first) line
+my @RowFeatures = ();    # Temporary read (first) line
 
 sub columnIdx($) {
-	my $col = shift;
-	
-	if (looks_like_number($col)) {
-		if ($col < 0) {
-			$col = $#RowFeatures + 1 + $col;
-		}
-		
-		unless (0 <= $col and $col <= $#RowFeatures) {
-			die "Label Column: '$col' is out of range for [0 .. $#RowFeatures]\n";
-		}
-	}
-	elsif (defined($o_header)) {
-		my $name = $col;
-		$col = first { $RowFeatures[$_] eq $name } 0 .. $#RowFeatures;
-		die ("Given column name '$name' not found!") unless(defined $col);
-	}
-	else {
-		die ("Specified column name: '$col' with no headers mode.");
-	}
-	
-	$col;
+    my $col = shift;
+    
+    if (looks_like_number($col)) {
+        if ($col < 0) {
+            $col = $#RowFeatures + 1 + $col;
+        }
+        
+        unless (0 <= $col and $col <= $#RowFeatures) {
+            die "Label Column: '$col' is out of range for [0 .. $#RowFeatures]\n";
+        }
+    }
+    elsif (defined($o_header)) {
+        my $name = $col;
+        $col = first { $RowFeatures[$_] eq $name } 0 .. $#RowFeatures;
+        die ("Given column name '$name' not found!") unless(defined $col);
+    }
+    else {
+        die ("Specified column name: '$col' with no headers mode.");
+    }
+    
+    $col;
 }
 
-my %Namespaces;			# Namespace mapping
-my @FeatureNames = ();	# Names of the features, based on the column index
+my %Namespaces;            # Namespace mapping
+my @FeatureNames = ();    # Names of the features, based on the column index
 
 sub buildFeatures() {
-	unless (defined $o_namespace) {
-		$Namespaces{'f'} = [ () ]; # i.e. create the default namespace
-		verbose ("Creating default namespace: 'f'\n");
-	}
-	
-	foreach my $i (0 .. $#FeatureNames) {
-		my $ns = '';
-		my $feature = $FeatureNames[$i];
-		
-		next if ($feature =~ $ExcludePat);
-		if (defined $o_namespace) {
-			($ns) = ($feature =~ qr/$o_namespace/);
-			$ns = 'f' unless (defined $ns);
-			verbose ("Creating new namespace: '%s'\n", $ns) unless (exists $Namespaces{$ns});
-		}
-		else {
-			$ns = 'f';
-		}
-		
-		push (@{$Namespaces{$ns}}, $i);
-	}
+    unless (defined $o_namespace) {
+        $Namespaces{'f'} = [ () ]; # i.e. create the default namespace
+        verbose ("Creating default namespace: 'f'\n");
+    }
+    
+    foreach my $i (0 .. $#FeatureNames) {
+        my $ns = '';
+        my $feature = $FeatureNames[$i];
+        
+        next if ($feature =~ $ExcludePat);
+        if (defined $o_namespace) {
+            ($ns) = ($feature =~ qr/$o_namespace/);
+            $ns = 'f' unless (defined $ns);
+            verbose ("Creating new namespace: '%s'\n", $ns) unless (exists $Namespaces{$ns});
+        }
+        else {
+            $ns = 'f';
+        }
+        
+        push (@{$Namespaces{$ns}}, $i);
+    }
 }
 
 my %SplitFiles;
 
 sub outputHandle($) {
-	my $split = shift;
-	
-	if (defined $split) {
-		$split =~ s/^\s+|\s+$//g; # i.e. - trim
-	}
-	else {
-		$split = "_";
-	}
-	
-	return $SplitFiles{$split} if (exists $SplitFiles{$split});
-	
-	my $fname = $o_output . '.' . $split . '.vw';
-	open (my $ff, ">", $fname) or die ("Failed to open split-output: $fname");
-	verbose("New dataset output openned: %s\n", $split);
-	$SplitFiles{$split} = $ff;
-	
-	$ff;
+    my $split = shift;
+    
+    if (defined $split) {
+        $split =~ s/^\s+|\s+$//g; # i.e. - trim
+    }
+    else {
+        $split = "_";
+    }
+    
+    return $SplitFiles{$split} if (exists $SplitFiles{$split});
+    
+    my $fname = $o_output . '.' . $split . '.vw';
+    open (my $ff, ">", $fname) or die ("Failed to open split-output: $fname");
+    verbose("New dataset output openned: %s\n", $split);
+    $SplitFiles{$split} = $ff;
+    
+    $ff;
 }
 
 sub closeOutputs() {
-	foreach my $split (keys %SplitFiles) {
-		close $SplitFiles{$split};
-	}
+    foreach my $split (keys %SplitFiles) {
+        close $SplitFiles{$split};
+    }
 }
 
 #
@@ -238,71 +238,71 @@ init();
 while (<>) {
     chomp;
     @RowFeatures = split($FieldSep);
-	
-	#deal with the first line - header ot not, we have things to do.
+    
+    #deal with the first line - header ot not, we have things to do.
     if ($. == 1) {
         my @feature_indexes = (0 .. $#RowFeatures);
-		
-		$LabelCol = defined $o_label ? columnIdx($o_label) : 0;
-		verbose("Actual label column index is: %d (out of %d)\n", $LabelCol, $#RowFeatures);
+        
+        $LabelCol = defined $o_label ? columnIdx($o_label) : 0;
+        verbose("Actual label column index is: %d (out of %d)\n", $LabelCol, $#RowFeatures);
 
-		$TagCol = defined $o_tag ? columnIdx($o_tag) : undef;
-		verbose("Actual tag column index is: %d (out of %d)\n", $TagCol, $#RowFeatures) if (defined $TagCol);
+        $TagCol = defined $o_tag ? columnIdx($o_tag) : undef;
+        verbose("Actual tag column index is: %d (out of %d)\n", $TagCol, $#RowFeatures) if (defined $TagCol);
 
-		$SplitCol = defined $o_split ? columnIdx($o_split) : undef;
-		verbose("Actual split column idex is: %d (out of %d)\n", $SplitCol, $#RowFeatures) if (defined $SplitCol);
+        $SplitCol = defined $o_split ? columnIdx($o_split) : undef;
+        verbose("Actual split column idex is: %d (out of %d)\n", $SplitCol, $#RowFeatures) if (defined $SplitCol);
 
         if (defined $o_header) {
             @FeatureNames = @RowFeatures[@feature_indexes];
-			buildFeatures();
+            buildFeatures();
             next;
         } else {
             @FeatureNames = @feature_indexes;
-			buildFeatures();
+            buildFeatures();
         }
     }
 
-	$LineNo++;
-	
-	my $fh = defined $SplitCol ? outputHandle($RowFeatures[$SplitCol]) : STDOUT;
+    $LineNo++;
+    
+    my $fh = defined $SplitCol ? outputHandle($RowFeatures[$SplitCol]) : STDOUT;
 
-	my $label = $RowFeatures[$LabelCol] || 'undef';
-	$label = label2k($label) unless (looks_like_number($label));
-	
-	my $tag = defined $TagCol ? $RowFeatures[$TagCol] : $LineNo;
-	$tag = $o_prefix . $tag if (defined $o_prefix);
-	
+    my $label = $RowFeatures[$LabelCol] || 'undef';
+    $label = label2k($label) unless (looks_like_number($label));
+    
+    my $tag = defined $TagCol ? $RowFeatures[$TagCol] : $LineNo;
+    $tag = $o_prefix . $tag if (defined $o_prefix);
+    
     printf $fh "%s %s", $label, $tag;
-	foreach my $ns (keys %Namespaces) {
-		my $nsput = 0;
-		my $sep = undef;
-		
-		foreach my $i (@{$Namespaces{$ns}}) {
-			my $val = $RowFeatures[$i];
-			next unless (defined $val);
-			next if ($i == $LabelCol);
-			next if (defined($TagCol) and $i == $TagCol);
-			next if (defined($SplitCol) and $i == $SplitCol);
-			
-			unless (looks_like_number($val)) {
-				$sep = '=';
-			}
-			elsif (defined($o_dense) or $val != 0) {
-				$sep = ':';
-			}
-			else {
-				next;
-			}
-			
-			unless ($nsput) {
-				printf $fh "|%s ", $ns;
-				$nsput = 1;
-			}
-			
-			printf $fh "%s%s%s ", $FeatureNames[$i], $sep, $val;
-		}
-	}
-	
+    foreach my $ns (keys %Namespaces) {
+        my $nsput = 0;
+        my $sep = undef;
+        
+        foreach my $i (@{$Namespaces{$ns}}) {
+            my $val = $RowFeatures[$i];
+            next unless (defined $val);
+            next if ($i == $LabelCol);
+            next if (defined($TagCol) and $i == $TagCol);
+            next if (defined($SplitCol) and $i == $SplitCol);
+            
+            unless (looks_like_number($val)) {
+                $sep = '=';
+            }
+            elsif (defined($o_dense) or $val != 0) {
+                $sep = ':';
+            }
+            else {
+                next;
+            }
+            
+            unless ($nsput) {
+                printf $fh "|%s ", $ns;
+                $nsput = 1;
+            }
+            
+            printf $fh "%s%s%s ", $FeatureNames[$i], $sep, $val;
+        }
+    }
+    
     print $fh "\n";
 }
 
