@@ -1307,3 +1307,8 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 # Test 100: action costs, no rollout
 {VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout none --search_task sequence_ctg --search 5 --holdout_off
     train-sets/ref/sequence_data.ctg.train.stderr
+
+# Test 101: bfgs output feature regularizer (extended Test 16)
+{VW} -k -c -d train-sets/rcv1_small.dat --loss_function=logistic -b 20 --bfgs --mem 7 --passes 20 --termination 0.001 --l2 1.0 --holdout_off --output_feature_regularizer_text r.txt
+    train-sets/ref/rcv1_small.stdout
+    train-sets/ref/rcv1_small.stderr
