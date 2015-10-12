@@ -799,6 +799,9 @@ void end_pass(bfgs& b)
                cerr<<"Early termination reached w.r.t. holdout set error";
              }
 	   } if (b.final_pass == b.current_pass) {
+	     if (b.output_regularizer)
+	       preconditioner_to_regularizer(*all, b, (*all).l2_lambda);
+		   
 	     finalize_regressor(*all, all->final_regressor_name);
 	     set_done(*all);
 	   }
