@@ -804,12 +804,21 @@ void end_pass(bfgs& b)
 	   }
 
     } else { //reaching convergence in the previous pass
-        if(b.output_regularizer)
-           preconditioner_to_regularizer(*all, b, (*all).l2_lambda);
+        //if(b.output_regularizer)
+        //   preconditioner_to_regularizer(*all, b, (*all).l2_lambda);
         b.current_pass ++;
       }
 
   }
+}
+
+void end_examples(bfgs& b)
+{
+	vw* all = b.all;
+	if(b.output_regularizer)
+	{
+		preconditioner_to_regularizer(*all, b, (*all).l2_lambda);
+	}
 }
 
 // placeholder
@@ -1011,6 +1020,7 @@ base_learner* bfgs_setup(vw& all)
   l.set_save_load(save_load);
   l.set_init_driver(init_driver);
   l.set_end_pass(end_pass);
+  l.set_end_examples(end_examples);
   l.set_finish(finish);
 
   return make_base(l);
