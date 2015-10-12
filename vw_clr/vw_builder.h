@@ -16,7 +16,7 @@ namespace VW
 	/// <summary>
 	/// Helper class to ease construction of native vowpal wabbit namespace data structure.
 	/// </summary>
-	public ref class VowpalWabbitNamespaceBuilder
+  public ref class VowpalWabbitNamespaceBuilder
 	{
 	private:
 		/// <summary>
@@ -32,6 +32,8 @@ namespace VW
     unsigned char m_index;
 
     example* m_example;
+
+    // float(*m_sum_of_squares)(float*, float*);
 
     !VowpalWabbitNamespaceBuilder();
 
@@ -52,6 +54,8 @@ namespace VW
 		/// <param name="weight_index">The weight index.</param>
 		/// <param name="x">The value.</param>
 		void AddFeature(uint32_t weight_index, float x);
+
+    void AddFeaturesUnchecked(uint32_t weight_index_base, float* begin, float* end);
 
 		/// <summary>
 		/// Pre-allocate features of <paramref name="size"/>.

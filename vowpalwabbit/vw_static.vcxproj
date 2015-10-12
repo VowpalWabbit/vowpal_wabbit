@@ -207,6 +207,10 @@
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MultiThreadedDLL</RuntimeLibrary>
       <MultiProcessorCompilation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</MultiProcessorCompilation>
       <EnablePREfast Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EnablePREfast>
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotSet</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotSet</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotSet</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotSet</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(BoostLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -232,6 +236,7 @@
     <ClCompile Include="allreduce_threads.cc">
       <FileType>CppHeader</FileType>
     </ClCompile>
+    <ClCompile Include="primitives.cc" />
     <ClCompile Include="vw_validate.cc" />
     <ClInclude Include="autolink.h" />
     <ClInclude Include="accumulate.h" />
@@ -298,6 +303,7 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
+    <ClInclude Include="primitives.h" />
     <ClInclude Include="vw_validate.h" />
     <ClInclude Include="vw.h" />
     <ClInclude Include="vw_allreduce.h" />

@@ -38,11 +38,9 @@ namespace VW
             if (diffs.Count > 0)
                 throw new ArgumentException("Feature settings are not compatible for sweeping: " + string.Join(",", diffs));
 
-            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(settings[0]);
-            this.serializers = this.vws.Select(vw => serializer.Create(vw)).ToArray();
+            this.serializers = this.vws.Select(vw => VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings).Create(vw)).ToArray();
 
-            var actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(settings[0]);
-            this.actionDependentFeatureSerializers = this.vws.Select(vw => actionDependentFeatureSerializer.Create(vw)).ToArray();
+            this.actionDependentFeatureSerializers = this.vws.Select(vw => VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings).Create(vw)).ToArray();
         }
 
         public VowpalWabbit[] VowpalWabbits { get { return this.vws; } }

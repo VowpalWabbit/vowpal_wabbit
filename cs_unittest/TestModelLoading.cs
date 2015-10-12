@@ -60,6 +60,36 @@ namespace cs_unittest
             {
                 Assert.AreEqual("def", vw.ID);
             }
+
+            using (var vwm = new VowpalWabbitModel("-i model.1"))
+            {
+                Assert.AreEqual("def", vwm.ID);
+                using (var vw = new VowpalWabbit(new VowpalWabbitSettings(model: vwm)))
+                {
+                    Assert.AreEqual("def", vw.ID);
+                    Assert.AreEqual(vwm.ID, vw.ID);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestReload()
+        {
+            using (var vw = new VowpalWabbit(""))
+            {
+                vw.SaveModel("model");
+                vw.Reload();
+            }
+
+            using (var vw = new VowpalWabbit(""))
+            {
+                vw.ID = "def";
+                vw.SaveModel("model.1");
+
+                vw.Reload();
+
+                Assert.AreEqual("def", vw.ID);
+            }
         }
 
         private void InternalTestModel(string modelFile, bool shouldPass)

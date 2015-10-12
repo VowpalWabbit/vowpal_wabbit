@@ -79,7 +79,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
         {
           v_length = (uint32_t)all.id.length() + 1;
-          text_len = sprintf_s(buff, buf_size, "Version %s\n", all.id.c_str());
+          text_len = sprintf_s(buff, buf_size, "Id %s\n", all.id.c_str());
           memcpy(buff2, all.id.c_str(), min(v_length, buf_size));
           if (read)
           {
@@ -89,6 +89,12 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
             "", read,
             buff, text_len, text);
           all.id = buff2;
+
+          if (read && find(all.args.begin(), all.args.end(), "--id") == all.args.end())
+          {
+            all.args.push_back("--id");
+            all.args.push_back(all.id);
+          }
         }
 
         char model = 'm';
@@ -374,6 +380,10 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
         {
             model_file.verify_hash = false;
+
+            // reset the hash so that the io_buf can be re-used for loading
+            // as it is done for Reload()
+            model_file.hash = 0;
         }
     }
 
