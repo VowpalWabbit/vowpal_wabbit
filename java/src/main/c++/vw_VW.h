@@ -32,6 +32,9 @@ JNIEXPORT jlong JNICALL Java_vw_VW_initialize
 JNIEXPORT jfloat JNICALL Java_vw_VW_predict
   (JNIEnv *, jobject, jstring, jboolean, jlong);
 
+JNIEXPORT jfloatArray JNICALL Java_vw_VW_multipredict
+  (JNIEnv *, jobject, jstring, jlong);
+
 /*
  * Class:     vw_VW
  * Method:    closeInstance

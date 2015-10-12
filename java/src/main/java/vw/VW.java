@@ -115,6 +115,18 @@ public class VW implements Closeable {
         }
     }
 
+  public float[] multipredict(String example) {
+    lock.lock();
+    try {
+      if (isOpen) {
+        return multipredict(example, nativePointer);
+      }
+      throw new IllegalStateException("Already closed.");
+    } finally {
+      lock.unlock();
+    }
+  }
+
     /**
      * Runs learning on <code>example</code> and returns the prediction output.
      *
@@ -154,5 +166,6 @@ public class VW implements Closeable {
     public static native String version();
     private native long initialize(String command);
     private native float predict(String example, boolean learn, long nativePointer);
+    private native float[] multipredict(String example, long nativePointer);
     private native void closeInstance(long nativePointer);
 }
