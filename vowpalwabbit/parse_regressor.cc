@@ -380,6 +380,10 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
         {
             model_file.verify_hash = false;
+
+            // reset the hash so that the io_buf can be re-used for loading
+            // as it is done for Reload()
+            model_file.hash = 0;
         }
     }
 

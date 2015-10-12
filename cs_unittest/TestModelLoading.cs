@@ -72,6 +72,26 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
+        public void TestReload()
+        {
+            using (var vw = new VowpalWabbit(""))
+            {
+                vw.SaveModel("model");
+                vw.Reload();
+            }
+
+            using (var vw = new VowpalWabbit(""))
+            {
+                vw.ID = "def";
+                vw.SaveModel("model.1");
+
+                vw.Reload();
+
+                Assert.AreEqual("def", vw.ID);
+            }
+        }
+
         private void InternalTestModel(string modelFile, bool shouldPass)
         {
             bool passed = false;
