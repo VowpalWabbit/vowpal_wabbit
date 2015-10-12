@@ -11,13 +11,17 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Official Vowpal Wabbit library including C# interface</description>
     <copyright>Copyright (C) Microsoft Corp 2012-2015, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved.</copyright>
-    <dependencies />
+    <dependencies>
+      <group>
+        <dependency id="Microsoft.Tpl.Dataflow" version="4.5.24" />
+      </group>
+    </dependencies>
   </metadata>
   <files>
 	  <!-- despite warning this is still required -->
-	  <file src="bin\$Platform$\$Configuration$\*.dll" target="lib\net45" />
-    <file src="bin\$Platform$\$Configuration$\*.pdb" target="lib\net45" />
-    <file src="bin\$Platform$\$Configuration$\*.xml" target="lib\net45" />
+	  <file src="bin\$Platform$\$Configuration$\VowpalWabbit*.dll" target="lib\net45" />
+    <file src="bin\$Platform$\$Configuration$\VowpalWabbit*.pdb" target="lib\net45" />
+    <file src="bin\$Platform$\$Configuration$\VowpalWabbit*.xml" target="lib\net45" />
 	  <file src="**\*.cs" target="src\cs" exclude="**\obj\**\*.cs" />
 	  <file src="..\vw_clr\*.cpp" target="src\vw_clr" />
 	  <file src="..\vw_clr\*.h" target="src\vw_clr" />
