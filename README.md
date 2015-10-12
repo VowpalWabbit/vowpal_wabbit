@@ -145,10 +145,10 @@ brew install boost --with-python
 $ port install libtool autoconf automake
 
 ## Build Boost for Mac OS X 10.8 and below
-$ port install boost +no_single +no_static +openmpi +python27 configure.cxx_stdlib=libc++ configure.cxx=clang++
+$ port install boost +no_single -no_static +openmpi +python27 configure.cxx_stdlib=libc++ configure.cxx=clang++
 
 ## Build Boost for Mac OS X 10.9 and above
-$ port install boost +no_single +no_static +openmpi +python27
+$ port install boost +no_single -no_static +openmpi +python27
 ```
 
 *Mac OS X 10.8 and below*: ``configure.cxx_stdlib=libc++`` and ``configure.cxx=clang++`` ensure that ``clang++`` uses

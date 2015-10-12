@@ -1,15 +1,16 @@
 rm(list = ls(all = TRUE)); gc()
 
 # setwd('rvw_example')
-library(ggplot2)
-library(data.table)
-library(pROC)
+# library(ggplot2)
+# library(data.table)
+# library(pROC)
+library(r.vw)
 
 # create a folder called data
-system(‘mkdir data’)
+system('mkdir data')
 
-source('../dt2vw.R')
-source('vw.R')
+#source('dt2vw.R')
+#source('rvw_example/vw.R')
 
 # Function used to select variables for each namespace
 get_feature_type <- function(X, threshold = 50, verbose = FALSE) {
@@ -22,7 +23,7 @@ get_feature_type <- function(X, threshold = 50, verbose = FALSE) {
       apply(x, 2, function(x) length(unique(x)))
     }
   }
-  
+
   lvs = q_levels(X)
   fact_vars = names(lvs[lvs < threshold])
   num_vars = names(lvs[lvs >= threshold])
@@ -36,7 +37,7 @@ get_feature_type <- function(X, threshold = 50, verbose = FALSE) {
 setwd('data')
 
 dt = diamonds
-dt = setDT(dt)
+dt = data.table::setDT(dt)
 target = 'y'
 data_types = get_feature_type(dt[, setdiff(names(dt), target), with=F], threshold = 50)
 namespaces = list(n = list(varName = data_types$num_vars, keepSpace=F),
@@ -94,13 +95,13 @@ aucs <- lapply(1:nrow(grid), function(i){
   g = grid[i, ]
   auc = vw(training_data=training_data, # files relative paths
            validation_data=validation_data,
-           validation_labels=validation_labels, model=model, 
+           validation_labels=validation_labels, model=model,
            # grid options
            loss='logistic', b=25, learning_rate=g[['eta']],
            passes=2, l1=g[['l1']], l2=g[['l2']],
            early_terminate=2, extra=g[['extra']],
            # ROC-AUC related options
-           use_perf=FALSE, plot_roc=TRUE, 
+           use_perf=FALSE, plot_roc=TRUE,
            do_evaluation = TRUE # If false doesn't compute AUC, use only for prediction
            )
   auc

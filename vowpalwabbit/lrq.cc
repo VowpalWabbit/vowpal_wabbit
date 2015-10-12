@@ -3,6 +3,7 @@
 #include "reductions.h"
 #include "rand48.h"
 #include "vw_exception.h"
+#include "parse_args.h" // for spoof_hex_encoded_namespaces
 
 using namespace LEARNER;
 
@@ -208,9 +209,11 @@ base_learner* lrq_setup(vw& all)
   LRQstate& lrq = calloc_or_die<LRQstate>();
   size_t maxk = 0;
   lrq.all = &all;
-  new(&lrq.lrpairs)
-  std::set<std::string> (all.vm["lrq"].as<vector<string> > ().begin (),
-                         all.vm["lrq"].as<vector<string> > ().end ());
+
+  vector<string> arg = all.vm["lrq"].as<vector<string> > ();
+  for (size_t i = 0; i < arg.size(); i++) arg[i] = spoof_hex_encoded_namespaces( arg[i] );
+
+  new(&lrq.lrpairs) std::set<std::string> (arg.begin (), arg.end ());
 
   lrq.initial_seed = lrq.seed = all.random_seed | 8675309;
   if (all.vm.count("lrqdropout"))

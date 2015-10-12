@@ -93,7 +93,10 @@ void print_result(int f, float res, float, v_array<char> tag)
   if (f >= 0)
   {
     char temp[30];
-    sprintf(temp, "%f", res);
+    if (floorf(res) != res)
+       sprintf(temp, "%f", res);
+    else
+       sprintf(temp, "%d", (uint32_t) res);
     std::stringstream ss;
     ss << temp;
     print_tag(ss, tag);
@@ -176,7 +179,7 @@ void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool q
       cout << "You must specify the namespace index before the n" << endl;
     else {
       int n = atoi(ngram.c_str()+1);
-      dest[(uint32_t)ngram[0]] = n;
+      dest[(uint32_t)(unsigned char)*ngram.c_str()] = n;
       if (!quiet)
         cerr << "Generating " << n << "-" << descriptor << " for " << ngram[0] << " namespaces." << endl;
     }

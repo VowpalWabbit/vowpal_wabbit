@@ -165,41 +165,28 @@ bool example_is_test(example& ec)
   return true;
 }
 
-bool ec_is_example_header(example& ec)  // example headers look like "0:-1" or just "shared"
+bool ec_is_example_header(example& ec)  // example headers just have "shared"
 {
   v_array<CB::cb_class> costs = ec.l.cb.costs;
   if (costs.size() != 1) return false;
-  if (costs[0].action != 0) return false;
-  if (costs[0].cost >= 0) return false;
-  return true;
+  if (costs[0].probability == -1.f) return true;
+  return false;
 }
 
-void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* ec_seq, bool multilabel)
+void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq, bool multilabel)
 {
   if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
-    size_t num_current_features = ec.num_features;
-    // for csoaa_ldf we want features from the whole (multiline example),
-    // not only from one line (the first one) represented by ec
+    size_t num_features = ec.num_features;
+
     size_t pred = ec.pred.multiclass;
     if (ec_seq != nullptr)
     {
-      num_current_features = 0;
-      // If the first example is "shared", don't include its features.
-      // These should be already included in each example (TODO: including quadratic and cubic).
+      num_features = 0;
       // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
-      example** ecc=ec_seq->begin;
-      example& first_ex = **ecc;
-
-      v_array<CB::cb_class> costs = first_ex.l.cb.costs;
-      if (costs.size() == 1 && costs[0].action == 0 && costs[0].cost < 0) ecc++;
-
-      for (; ecc!=ec_seq->end; ecc++)
-	{
-	  num_current_features += (*ecc)->num_features;
-	  if ((*ecc)->pred.multiclass != 0)
-	    pred = (*ecc)->pred.multiclass;
-	}
+      for (size_t i = 0; i < (*ec_seq).size(); i++)
+	if (!CB::ec_is_example_header(*(*ec_seq)[i]))
+	  num_features += (*ec_seq)[i]->num_features;
     }
     std::string label_buf;
     if (is_test)
@@ -212,11 +199,11 @@ void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* e
       pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ')
                << ec.pred.multilabels.label_v[0]<<"...";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
-                           num_current_features, all.progress_add, all.progress_arg);;
+                           num_features, all.progress_add, all.progress_arg);;
     }
     else
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred,
-                           num_current_features, all.progress_add, all.progress_arg);
+                           num_features, all.progress_add, all.progress_arg);
   }
 }
 }

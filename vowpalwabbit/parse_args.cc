@@ -51,6 +51,7 @@ license as described in the file LICENSE.
 #include "log_multi.h"
 #include "stagewise_poly.h"
 #include "active.h"
+#include "active_cover.h"
 #include "kernel_svm.h"
 #include "parse_example.h"
 #include "best_constant.h"
@@ -392,12 +393,42 @@ void parse_source(vw& all)
 
 bool interactions_settings_doubled = false; // local setting setted in parse_modules()
 
+// return a copy of string replacing \x00 sequences in it
+string spoof_hex_encoded_namespaces(const string& arg)
+{
+    string res;
+    int pos = 0;
+    while (pos < (int)arg.size()-3)
+    {
+        if (arg[pos] == '\\' && arg[pos+1] == 'x')
+        {
+            string substr = arg.substr(pos+2,2);
+            char* p;
+            unsigned char c = (unsigned char) strtoul(substr.c_str(), &p, 16);
+            if (*p == '\0')
+            {
+                res.push_back(c);
+                pos += 4;
+            } else {
+                cerr << "Possibly malformed hex representation of a namespace: '\\x" << substr << "'\n";
+                res.push_back(arg[pos++]);
+            }
+        } else
+            res.push_back(arg[pos++]);
+    }
+
+    while (pos < (int)arg.size()) //copy last 2 characters
+        res.push_back(arg[pos++]);
+
+    return res;
+}
+
 void parse_feature_tweaks(vw& all)
 {
   new_options(all, "Feature options")
   ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
-  ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
-  ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
+  ("ignore", po::value< vector<string> >(), "ignore namespaces beginning with character <arg>")
+  ("keep", po::value< vector<string> >(), "keep namespaces beginning with character <arg>")
   ("redefine", po::value< vector<string> >(), "redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in form 'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a wildcard in S.")
   ("bit_precision,b", po::value<size_t>(), "number of bits in the feature table")
   ("noconstant", "Don't add a constant feature")
@@ -429,6 +460,7 @@ void parse_feature_tweaks(vw& all)
   if (vm.count("spelling")) {
     vector<string> spelling_ns = vm["spelling"].as< vector<string> >();
     for (size_t id=0; id<spelling_ns.size(); id++) {
+      spelling_ns[id] = spoof_hex_encoded_namespaces(spelling_ns[id]);
       if (spelling_ns[id][0] == '_') all.spelling_features[(unsigned char)' '] = true;
       else all.spelling_features[(size_t)spelling_ns[id][0]] = true;
       *all.file_options << " --spelling " << spelling_ns[id];
@@ -436,7 +468,7 @@ void parse_feature_tweaks(vw& all)
   }
 
   if (vm.count("affix")) {
-    parse_affix_argument(all, vm["affix"].as<string>());
+    parse_affix_argument(all, spoof_hex_encoded_namespaces(vm["affix"].as<string>()));
     *all.file_options << " --affix " << vm["affix"].as<string>();
   }
 
@@ -445,6 +477,8 @@ void parse_feature_tweaks(vw& all)
       THROW("ngram is incompatible with sort_features.");
 
     all.ngram_strings = vm["ngram"].as< vector<string> >();
+    for (size_t i = 0; i < all.ngram_strings.size(); i++)
+        all.ngram_strings[i] = spoof_hex_encoded_namespaces(all.ngram_strings[i]);
     compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.quiet);
   }
 
@@ -454,6 +488,8 @@ void parse_feature_tweaks(vw& all)
       THROW("You can not skip unless ngram is > 1");
 
     all.skip_strings = vm["skips"].as<vector<string> >();
+    for (size_t i = 0; i < all.skip_strings.size(); i++)
+        all.skip_strings[i] = spoof_hex_encoded_namespaces(all.skip_strings[i]);
     compile_gram(all.skip_strings, all.skips, (char*)"skips", all.quiet);
   }
 
@@ -499,15 +535,15 @@ void parse_feature_tweaks(vw& all)
 
   if (vm.count("quadratic"))
   {
-    const vector<string> vec_arg = vm["quadratic"].as< vector<string> >();
+    vector<string> vec_arg = vm["quadratic"].as< vector<string> >();
     if (!all.quiet)
       cerr << "creating quadratic features for pairs: ";
 
-      for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+      for (vector<string>::iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
       {
-	if (!all.quiet)
-	  cerr << *i << " ";
         *all.file_options << " --quadratic " << *i;
+        *i = spoof_hex_encoded_namespaces(*i);
+        if (!all.quiet) cerr << *i << " ";
       }
 
     expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
@@ -521,10 +557,11 @@ void parse_feature_tweaks(vw& all)
     if (!all.quiet)
     {
       cerr << "creating cubic features for triples: ";
-      for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
-      {
-        if (!all.quiet) cerr << *i << " ";
+      for (vector<string>::iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+      {        
         *all.file_options << " --cubic " << *i;
+        *i = spoof_hex_encoded_namespaces(*i);
+        if (!all.quiet) cerr << *i << " ";
       }
     }
 
@@ -541,10 +578,11 @@ void parse_feature_tweaks(vw& all)
     if (!all.quiet)
     {
       cerr << "creating features for following interactions: ";
-      for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
-      {
-        if (!all.quiet) cerr << *i << " ";
+      for (vector<string>::iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+      {        
         *all.file_options << " --interactions " << *i;
+        *i = spoof_hex_encoded_namespaces(*i);
+        if (!all.quiet) cerr << *i << " ";
       }
     }
 
@@ -596,16 +634,21 @@ void parse_feature_tweaks(vw& all)
   {
     all.ignore_some = true;
 
-    vector<unsigned char> ignore = vm["ignore"].as< vector<unsigned char> >();
-    for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end(); i++)
+    vector<string> ignore = vm["ignore"].as< vector<string> >();
+    for (vector<string>::iterator i = ignore.begin(); i != ignore.end(); i++)
     {
-      all.ignore[*i] = true;
+        *i = spoof_hex_encoded_namespaces(*i);
+        for (string::const_iterator j = i->begin(); j != i->end(); j++)
+            all.ignore[(size_t)(unsigned char)*j] = true;
+
     }
+
     if (!all.quiet)
     {
       cerr << "ignoring namespaces beginning with: ";
-      for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end(); i++)
-        cerr << *i << " ";
+      for (vector<string>::iterator i = ignore.begin(); i != ignore.end(); i++)
+          for (string::const_iterator j = i->begin(); j != i->end(); j++)
+              cerr << *j << " ";
 
       cerr << endl;
     }
@@ -618,18 +661,22 @@ void parse_feature_tweaks(vw& all)
 
     all.ignore_some = true;
 
-    vector<unsigned char> keep = vm["keep"].as< vector<unsigned char> >();
-    for (vector<unsigned char>::iterator i = keep.begin(); i != keep.end(); i++)
+    vector<string> keep = vm["keep"].as< vector<string> >();
+    for (vector<string>::iterator i = keep.begin(); i != keep.end(); i++)
     {
-      all.ignore[*i] = false;
+        *i = spoof_hex_encoded_namespaces(*i);
+        for (string::const_iterator j = i->begin(); j != i->end(); j++)
+            all.ignore[(size_t)(unsigned char)*j] = false;
     }
+
     if (!all.quiet)
     {
-      cerr << "using namespaces beginning with: ";
-      for (vector<unsigned char>::iterator i = keep.begin(); i != keep.end(); i++)
-        cerr << *i << " ";
+        cerr << "using namespaces beginning with: ";
+        for (vector<string>::iterator i = keep.begin(); i != keep.end(); i++)
+            for (string::const_iterator j = i->begin(); j != i->end(); j++)
+                cerr << *j << " ";
 
-      cerr << endl;
+        cerr << endl;
     }
   }
 
@@ -648,7 +695,7 @@ void parse_feature_tweaks(vw& all)
     vector< string > arg_list = vm["redefine"].as< vector< string > >();
     for (vector<string>::iterator arg_iter = arg_list.begin(); arg_iter != arg_list.end(); arg_iter++)
     {
-      string arg = *arg_iter;
+      string arg = spoof_hex_encoded_namespaces(*arg_iter);
       size_t arg_len = arg.length();
 
       size_t operator_pos = 0; //keeps operator pos + 1 to stay unsigned type
@@ -954,6 +1001,7 @@ void parse_reductions(vw& all)
   //Score Users
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'b', simple_label>);
   all.reduction_stack.push_back(active_setup);
+  all.reduction_stack.push_back(active_cover_setup);
   all.reduction_stack.push_back(nn_setup);
   all.reduction_stack.push_back(mf_setup);
   all.reduction_stack.push_back(autolink_setup);

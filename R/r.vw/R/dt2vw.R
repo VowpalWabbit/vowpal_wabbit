@@ -1,69 +1,67 @@
-#data[data.table]:                  data.table format (to be transformed)
-#fileName[string]:                  file name of the resulting data in VW-friendly format
-#namespaces[list / yaml file]:      name of each namespace and each variable for each namespace
-                                    #can be a R list, or a YAML file
-                                    #example namespace with the IRIS database:
-                                    # namespaces = list(sepal = list(varName = c('Sepal.Length', 'Sepal.Width'), keepSpace=F),
-                                    #                   petal = list(varName = c('Petal.Length', 'Petal.Width'), keepSpace=F))
-                                    # this creates 2 namespaces (sepal and petal) containing the variables defined by varName.
-                                    # keepSpace allows to keep or remove spaces in categorical variables
-                                    #example: "FERRARI 4Si" ==> "FERRARI_4Si" with keepSpace = F
-                                    #                       ==> "FERRARI 4Si" with keepSpace = T (interpreted
-                                    #                            by VW as two distinct categorical variables)
-#target[string]:                    target of the data (target)
-#weight[string]:                    weight of each line of the dataset (importance)
-#tag[string]:                       tag of each line of the dataset
-#hard_parse[bool]:                  if equals true, parses the data more strictly to avoid feeding VW with false categorical
-                                    #variables like '_', or same variables perceived differently life "_var" and "var" 
-
-
+#'Create a vw data file from a R data.frame object
+#'
+#'@param data [data.table] data.table format (to be transformed)
+#'@param fileName [string] file name of the resulting data in VW-friendly format
+#'@param namespaces [list / yaml file] name of each namespace and each variable for each namespace
+#'can be a R list, or a YAML file example namespace with the IRIS database:
+#'namespaces = list(sepal = list(varName = c('Sepal.Length', 'Sepal.Width'), keepSpace=F),
+#'petal = list(varName = c('Petal.Length', 'Petal.Width'), keepSpace=F))
+#'this creates 2 namespaces (sepal and petal) containing the variables defined by varName.
+#'keepSpace allows to keep or remove spaces in categorical variables
+#'example: "FERRARI 4Si" ==> "FERRARI_4Si" with keepSpace = F
+#'==> "FERRARI 4Si" with keepSpace = T (interpreted
+#'by VW as two distinct categorical variables)
+#'@param target [string]  target of the data (target)
+#'@param weight [string] weight of each line of the dataset (importance)
+#'@param tag [string] tag of each line of the dataset
+#'@param hard_parse [bool] if equals true, parses the data more strictly to avoid feeding VW with false categorical
+#'variables like '_', or same variables perceived differently life "_var" and "var"
+#'@import data.table
+#'@export
 dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag = NULL, hard_parse = F, append = F)
 {
-  #required packages
-  require(data.table)
-  
-  if(class(data)[1] != "data.table")
-    data = data.table(data)
-  
+
+  data = setDT(data)
+
   #change target if its boolean to take values in {-1,1}
   if(is.logical(data[[target]]) | sum(levels(factor(data[[target]])) == levels(factor(c(0,1)))) == 2)
   {
     data[[target]][data[[target]] == TRUE] = 1
     data[[target]][data[[target]] == FALSE] = -1
   }
-  
+
   #if namespaces = NULL, define a unique namespace
   if(is.null(namespaces))
   {
     all_vars = colnames(data)[!colnames(data) %in% c(target, weight, tag)]
-    namespaces <- list(A = list(varName = all_vars, keepSpace=F)) 
+    namespaces <- list(A = list(varName = all_vars, keepSpace=F))
   }
-   
+
   #parse variable names
   specChar = '\\(|\\)|\\||\\:'
   specCharSpace = '\\(|\\)|\\||\\:| '
-  
+
   parsingNames <- function(x)
   {
     ret = c()
     for(el in x)
       ret = append(ret, gsub(specCharSpace,'_', el))
-    ret      
+    ret
   }
-  
+
   #parse categorical variables
   parsingVar <- function(x, keepSpace, hard_parse)
-  {           
+  {
     #remove leading and trailing spaces, then remove special characters then remove isolated underscores.
-    if(!keepSpace) 
+    if(!keepSpace)
       spch = specCharSpace
     else
       spch = specChar
-    
+
     if(hard_parse)
       gsub('(^_( *|_*)+)|(^_$)|(( *|_*)+_$)|( +_+ +)',' ', gsub(specChar,'_', gsub('(^ +)|( +$)', '',x)))
     else
-      gsub(spch, '_', x)  
+      gsub(spch, '_', x)
   }
 
   ###   NAMESPACE LOAD WITH A YAML FILE
@@ -71,9 +69,9 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag 
   {
     print("###############  USING YAML FILE FOR LOADING THE NAMESPACES  ###############")
     library(yaml)
-    namespaces = yaml.load_file(namespaces) 
+    namespaces = yaml.load_file(namespaces)
   }
-  
+
   ###   AVOIDING DATA FORMAT PROBLEMS
   setnames(data, names(data), parsingNames(names(data)))
   names(namespaces) <- parsingNames(names(namespaces))
@@ -81,40 +79,40 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag 
   target = parsingNames(target)
   if(!is.null(tag)) tag = parsingNames(tag)
   if(!is.null(weight)) weight = parsingNames(weight)
-  
-  
-  ###   INITIALIZING THE HEADER AND INDEX 
+
+
+  ###   INITIALIZING THE HEADER AND INDEX
   #Header: list of variables'name for each namespace
   #Index: check if the variable is numerical (->TRUE) or categorical (->FALSE)
   Header = list()
   Index = list()
-  
+
   for(namespaceName in names(namespaces))
   {
-    Index[[namespaceName]] = sapply(data[,namespaces[[namespaceName]][['varName']],with=F], is.numeric)  
+    Index[[namespaceName]] = sapply(data[,namespaces[[namespaceName]][['varName']],with=F], is.numeric)
     #Header[[namespaceName]][Index[[namespaceName]]] = namespaces[[namespaceName]][['varName']][Index[[namespaceName]]]
     Header[[namespaceName]] = namespaces[[namespaceName]][['varName']]
-    
+
     ###   ESCAPE THE CATEGORICAL VARIABLES
     if(namespaces[[namespaceName]]$keepSpace)
       Header[[namespaceName]][!Index[[namespaceName]]] = paste0("eval(parse(text = 'parsingVar(",
                                                                 Header[[namespaceName]][!Index[[namespaceName]]],
-                                                                ", keepSpace = T, hard_parse = hard_parse)'))") 
+                                                                ", keepSpace = T, hard_parse = hard_parse)'))")
     else
       Header[[namespaceName]][!Index[[namespaceName]]] = paste0("eval(parse(text = 'parsingVar(",
                                                                 Header[[namespaceName]][!Index[[namespaceName]]],
                                                                 ", keepSpace = F, hard_parse = hard_parse)'))")
   }
-  
+
   #appending the name of the variable to its value for each categorical variable
   sapply(Index, FUN = function(x){sapply(names(x), FUN = function(y){if(x[[y]] == F){
                                                     set(data, i=NULL, y, paste0(y,"_",data[[y]]))
                                                     }})})
-  
+
   ###   FIRST PART OF THE VW DATA FORMAT: target, weight, tag
   formatDataVW = ''
-  argexpr = character(0)  
-  
+  argexpr = character(0)
+
   ### Label can be null, no training is performed
   if(!is.null(target))
   {
@@ -143,8 +141,8 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag 
       argexpr = target
     }
   }
-   
-  ###   ADDING THE FORMAT FOR THE VARIABLES OF EACH NAMESPACE, AND CREATING THE ARGUMENT VECTOR 
+
+  ###   ADDING THE FORMAT FOR THE VARIABLES OF EACH NAMESPACE, AND CREATING THE ARGUMENT VECTOR
   for(namespaceName in names(namespaces))
   {
     header = Header[[namespaceName]]
@@ -153,12 +151,12 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag 
     formatCategorical = paste0(rep("%s", sum(!index)), collapse = " ")
 
     formatDataVW = c(formatDataVW, paste0(namespaceName, ' ', formatNumeric, formatCategorical))
-     
+
     paramexpr = paste0(c(header[index], header[!index] ), collapse=', ')
 
-    argexpr = paste0(c(argexpr, paramexpr), collapse = ', ')    
+    argexpr = paste0(c(argexpr, paramexpr), collapse = ', ')
   }
-  
+
   ###   FULL VW DATA STRING (NOT FORMATTED YET) : (%target %weight |A num1:%f %s |B num2:%f %s)
   if (!is.null(tag))
   {
@@ -168,16 +166,16 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag 
   {
     formatDataVW = paste0(formatDataVW, collapse = ' |')
   }
-  
+
   formatDataVW = paste0("sprintf2('", formatDataVW, "',",argexpr, ")")
   ###   FORMATTING USING THE DATA.TABLE DYNAMICS TO OBTAIN THE FINAL VW DATA STRING
   temp = data[, eval(parse(text = formatDataVW))]
   temp = paste0(temp, collapse = '\n')
- 
+
   ###   WRITING THE DATA TO A FILE
   if(!append)
     con = file(fileName,"w")
-  else 
+  else
     con = file(fileName,"a")
   writeLines(temp,con = con)
   close(con)

@@ -1,6 +1,7 @@
 #include <string>
 #include "reductions.h"
 #include "rand48.h"
+#include "parse_args.h" // for spoof_hex_encoded_namespaces
 
 using namespace LEARNER;
 
@@ -135,7 +136,7 @@ LEARNER::base_learner* lrqfa_setup(vw& all) {
   LRQFAstate& lrq = calloc_or_die<LRQFAstate>();
   lrq.all = &all;
 
-  string lrqopt = all.vm["lrqfa"].as<string>();
+  string lrqopt = spoof_hex_encoded_namespaces( all.vm["lrqfa"].as<string>() );
   size_t last_index = lrqopt.find_last_not_of("0123456789");
   new(&lrq.field_name) string(lrqopt.substr(0, last_index+1)); // make sure there is no duplicates
   lrq.k = atoi(lrqopt.substr(last_index+1).c_str());
