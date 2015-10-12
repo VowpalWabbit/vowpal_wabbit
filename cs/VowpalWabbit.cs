@@ -75,6 +75,12 @@ namespace VW
 
             this.vw = vw;
             this.compiledSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
+
+            if (this.compiledSerializer == null)
+            {
+                throw new ArgumentException("No features found for " + typeof(TExample));
+            }
+
             this.serializer = this.compiledSerializer.Create(vw);
 
             // have a 2nd member to throw NullReferenceException in release instead of silently producing wrong results.
