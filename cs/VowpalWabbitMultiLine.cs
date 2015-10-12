@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Text;
 using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer;
@@ -21,6 +22,42 @@ namespace VW
     /// </summary>
     public static class VowpalWabbitMultiLine
     {
+        public static string SerializeToString<TExample, TActionDependentFeature>(
+            VowpalWabbit vw,
+            VowpalWabbitSerializer<TExample> serializer,
+            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
+            TExample example,
+            IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
+            int? index = null,
+            ILabel label = null)
+        {
+            var stringExample = new StringBuilder();
+
+            var sharedExample = serializer.SerializeToString(example, SharedLabel.Instance);
+
+            // check if we have shared features
+            if (!string.IsNullOrWhiteSpace(sharedExample))
+            {
+                stringExample.AppendLine(sharedExample);
+            }
+
+            var i = 0;
+            foreach (var actionDependentFeature in actionDependentFeatures)
+            {
+                var adfExample = actionDependentFeatureSerializer.SerializeToString(actionDependentFeature,
+                    index != null && i == index ? label : null);
+
+                if (!string.IsNullOrWhiteSpace(adfExample))
+                {
+                    stringExample.AppendLine(adfExample);
+                }
+
+                i++;
+            }
+
+            return stringExample.ToString();
+        }
+
         /// <summary>
         /// Simplify learning of examples with action dependent features.
         /// </summary>

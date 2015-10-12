@@ -61,6 +61,9 @@ namespace VW
         /// <param name="label">The label for the example to learn.</param>
         public void Learn(int fromInclusive, int toExclusive, TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
+            if (fromInclusive != toExclusive - 1)
+                throw new ArgumentException("fromInclusive");
+
             VowpalWabbitMultiLine.Execute(this.vws[fromInclusive], this.serializers[fromInclusive], this.actionDependentFeatureSerializers[fromInclusive], example, actionDependentFeatures,
                 (examples, _, __) =>
                 {
@@ -76,6 +79,9 @@ namespace VW
 
         public TActionDependentFeature[][] Predict(int fromInclusive, int toExclusive, TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
+            if (fromInclusive != toExclusive - 1)
+                throw new ArgumentException("fromInclusive");
+
             var result = new TActionDependentFeature[toExclusive - fromInclusive][];
 
             VowpalWabbitMultiLine.Execute(this.vws[fromInclusive], this.serializers[fromInclusive], this.actionDependentFeatureSerializers[fromInclusive], example, actionDependentFeatures,

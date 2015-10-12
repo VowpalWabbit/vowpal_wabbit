@@ -109,6 +109,17 @@ namespace VW.Serializer
             get { return this.exampleCache != null; }
         }
 
+        public string SerializeToString(TExample example, ILabel label = null)
+        {
+            Contract.Requires(example != null);
+
+            using (var context = new VowpalWabbitMarshalContext(vw))
+            {
+                this.serializerFunc(context, example, label);
+                return context.StringExample.ToString();
+            }
+        }
+
         /// <summary>
         /// Serialize the example.
         /// </summary>
@@ -119,7 +130,6 @@ namespace VW.Serializer
         /// <remarks>If TExample is annotated using the Cachable attribute, examples are returned from cache.</remarks>
         public VowpalWabbitExample Serialize(TExample example, ILabel label = null)
         {
-            //Contract.Requires(vw != null);
             Contract.Requires(example != null);
 
             if (this.exampleCache == null || label != null)
