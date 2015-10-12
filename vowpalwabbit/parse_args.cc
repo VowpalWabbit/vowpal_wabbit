@@ -51,6 +51,7 @@ license as described in the file LICENSE.
 #include "log_multi.h"
 #include "stagewise_poly.h"
 #include "active.h"
+#include "active_cover.h"
 #include "kernel_svm.h"
 #include "parse_example.h"
 #include "best_constant.h"
@@ -953,6 +954,7 @@ void parse_reductions(vw& all)
   //Score Users
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'b', simple_label>);
   all.reduction_stack.push_back(active_setup);
+  all.reduction_stack.push_back(active_cover_setup);
   all.reduction_stack.push_back(nn_setup);
   all.reduction_stack.push_back(mf_setup);
   all.reduction_stack.push_back(autolink_setup);

@@ -1307,3 +1307,16 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 # Test 100: action costs, no rollout
 {VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout none --search_task sequence_ctg --search 5 --holdout_off
     train-sets/ref/sequence_data.ctg.train.stderr
+
+# Test 101: active cover
+{VW} --loss_function logistic --binary -b 29 --active_cover -d train-sets/rcv1_small.dat -f models/active_cover.model
+    train-sets/ref/active_cover.stderr
+
+# Test 102: active cover (predict)
+{VW} -i models/active_cover.model --binary -t -d test-sets/rcv1_small_test.data -p active_cover.predict 
+    test-sets/ref/active_cover.stderr
+    pred-sets/ref/active_cover.predict
+
+# Test 103: active cover oracular
+{VW} --loss_function logistic --binary --active_cover --oracular -d ./train-sets/rcv1_small.dat
+    train-sets/ref/active_cover_oracular.stderr
