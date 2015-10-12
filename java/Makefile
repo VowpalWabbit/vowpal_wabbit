@@ -36,6 +36,7 @@ pom_version: pom.xml
 target/vw_jni.lib: src/main/c++/vw_VW.cc ../vowpalwabbit/main.o ../vowpalwabbit/libvw.a
 	mkdir -p target;
 	$(CXX) -shared $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS) $(JAVA_INCLUDE)
+	osf=$$(perl script/os_info.pl osfamily) && mv target/vw_jni.lib target/vw_jni.$$osf.lib
 
 clean:
-	rm -f target/vw_jni.lib
+	rm -f target/vw_jni\.*.lib
