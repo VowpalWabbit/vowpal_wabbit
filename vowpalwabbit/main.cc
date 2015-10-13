@@ -14,12 +14,12 @@ license as described in the file LICENSE.
 #include "accumulate.h"
 #include "best_constant.h"
 #include "vw_exception.h"
+#include <fstream>
 
 using namespace std;
 
-int main(int argc, char *argv[])
+vw& setup(int argc, char* argv[])
 {
-  try {
     vw& all = parse_args(argc, argv);
 	io_buf model;
 	parse_regressor_args(all, model);
@@ -27,10 +27,8 @@ int main(int argc, char *argv[])
 	parse_sources(all, model);
 
     all.vw_is_main = true;
-    struct timeb t_start, t_end;
-    ftime(&t_start);
-    
-    if (!all.quiet && !all.bfgs && !all.searchstr)
+
+	if (!all.quiet && !all.bfgs && !all.searchstr)
         {
         	std::cerr << std::left
         	          << std::setw(shared_data::col_avg_loss) << std::left << "average"
@@ -66,17 +64,62 @@ int main(int argc, char *argv[])
         		  << std::endl;
         }
 
+	return all;
+}
+
+int main(int argc, char *argv[])
+{
+  try {
+    // support multiple vw instances for training of the same datafile for the same instance
+    vector<vw*> alls;
+    if (argc == 3 && !strcmp(argv[1], "--args"))
+    {
+      std::fstream arg_file(argv[2]);
+
+      int line_count = 1;
+      std::string line;
+      while (std::getline(arg_file, line))
+      {
+        std::stringstream sstr;
+        sstr << line << " -f model." << (line_count++);
+
+        std::cout << sstr.str() << endl;
+        auto str = sstr.str();
+        const char* new_args = str.c_str();
+
+        int l_argc;
+        char** l_argv = VW::get_argv_from_string(new_args, l_argc);
+
+        alls.push_back(&setup(l_argc, l_argv));
+      }
+    }
+    else
+    {
+      alls.push_back(&setup(argc, argv));
+    }
+
+    vw& all = *alls[0];
+
+    struct timeb t_start, t_end;
+    ftime(&t_start);
+
     VW::start_parser(all);
-    LEARNER::generic_driver(all);
+    if (alls.size() == 1)
+      LEARNER::generic_driver(all);
+    else
+      LEARNER::generic_driver(alls);
+
     VW::end_parser(all);
 
     ftime(&t_end);
-    double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
+    double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm));
     if(!all.quiet && all.all_reduce != nullptr)
         cerr<<"Net time taken by process = "<<net_time/(double)(1000)<<" seconds\n";
 
-	VW::sync_stats(all);
-    VW::finish(all);
+    for (auto v : alls) {
+      VW::sync_stats(*v);
+      VW::finish(*v);
+    }
   } catch (VW::vw_exception& e) {
     cerr << "vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << endl;
   } catch (exception& e) {
