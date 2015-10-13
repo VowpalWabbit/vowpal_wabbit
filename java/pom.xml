@@ -75,6 +75,15 @@
                 </includes>
             </testResource>
         </testResources>
+
+        <extensions>
+          <extension>
+            <groupId>kr.motd.maven</groupId>
+            <artifactId>os-maven-plugin</artifactId>
+            <version>1.4.0.Final</version>
+          </extension>
+        </extensions>
+        
         <plugins>
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
@@ -157,30 +166,26 @@
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                 </configuration>
             </plugin>
+
             <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>2.7</version>
-                <executions>
-                    <execution>
-                        <id>copy-resources</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${project.build.directory}</directory>
-                                    <includes>
-                                        <include>vw_jni.*lib</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
+              <groupId>com.coderplus.maven.plugins</groupId>
+              <artifactId>copy-rename-maven-plugin</artifactId>
+              <version>1.0</version>
+              <executions>
+                <execution>
+                  <id>copy-file</id>
+                  <phase>generate-sources</phase>
+                  <goals>
+                    <goal>copy</goal>
+                  </goals>
+                  <configuration>
+                    <sourceFile>${project.build.directory}/vw_jni.lib</sourceFile>
+                    <destinationFile>${project.build.outputDirectory}/vw_jni-${os.detected.release}_${os.detected.release.version}_${os.arch}.lib</destinationFile>
+                  </configuration>
+                </execution>
+              </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
