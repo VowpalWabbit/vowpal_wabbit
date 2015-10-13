@@ -807,7 +807,6 @@ void end_pass(bfgs& b)
     }
 }
 
-
 // placeholder
 void predict(bfgs& b, base_learner&, example& ec)
 {
