@@ -52,6 +52,7 @@ license as described in the file LICENSE.
 #include "log_multi.h"
 #include "stagewise_poly.h"
 #include "active.h"
+#include "active_cover.h"
 #include "kernel_svm.h"
 #include "parse_example.h"
 #include "best_constant.h"
@@ -218,7 +219,7 @@ void parse_dictionary_argument(vw&all, string str) {
   io->close_file();
   VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
-
+  
   if (! all.quiet)
     cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
 
@@ -451,12 +452,42 @@ namespace VW
     return nullptr;
   }
 }
+// return a copy of string replacing \x00 sequences in it
+string spoof_hex_encoded_namespaces(const string& arg)
+{
+    string res;
+    int pos = 0;
+    while (pos < (int)arg.size()-3)
+    {
+        if (arg[pos] == '\\' && arg[pos+1] == 'x')
+        {
+            string substr = arg.substr(pos+2,2);
+            char* p;
+            unsigned char c = (unsigned char) strtoul(substr.c_str(), &p, 16);
+            if (*p == '\0')
+            {
+                res.push_back(c);
+                pos += 4;
+            } else {
+                cerr << "Possibly malformed hex representation of a namespace: '\\x" << substr << "'\n";
+                res.push_back(arg[pos++]);
+            }
+        } else
+            res.push_back(arg[pos++]);
+    }
+
+    while (pos < (int)arg.size()) //copy last 2 characters
+        res.push_back(arg[pos++]);
+
+    return res;
+}
+
 void parse_feature_tweaks(vw& all)
 {
   new_options(all, "Feature options")
   ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
-  ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
-  ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
+  ("ignore", po::value< vector<string> >(), "ignore namespaces beginning with character <arg>")
+  ("keep", po::value< vector<string> >(), "keep namespaces beginning with character <arg>")
   ("redefine", po::value< vector<string> >(), "redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in form 'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a wildcard in S.")
   ("bit_precision,b", po::value<size_t>(), "number of bits in the feature table")
   ("noconstant", "Don't add a constant feature")
@@ -488,6 +519,7 @@ void parse_feature_tweaks(vw& all)
   if (vm.count("spelling")) {
     vector<string> spelling_ns = vm["spelling"].as< vector<string> >();
     for (size_t id=0; id<spelling_ns.size(); id++) {
+      spelling_ns[id] = spoof_hex_encoded_namespaces(spelling_ns[id]);
       if (spelling_ns[id][0] == '_') all.spelling_features[(unsigned char)' '] = true;
       else all.spelling_features[(size_t)spelling_ns[id][0]] = true;
       *all.file_options << " --spelling " << spelling_ns[id];
@@ -495,7 +527,7 @@ void parse_feature_tweaks(vw& all)
   }
 
   if (vm.count("affix")) {
-    parse_affix_argument(all, vm["affix"].as<string>());
+    parse_affix_argument(all, spoof_hex_encoded_namespaces(vm["affix"].as<string>()));
     *all.file_options << " --affix " << vm["affix"].as<string>();
   }
 
@@ -504,6 +536,8 @@ void parse_feature_tweaks(vw& all)
       THROW("ngram is incompatible with sort_features.");
 
     all.ngram_strings = vm["ngram"].as< vector<string> >();
+    for (size_t i = 0; i < all.ngram_strings.size(); i++)
+        all.ngram_strings[i] = spoof_hex_encoded_namespaces(all.ngram_strings[i]);
     compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.quiet);
   }
 
@@ -513,6 +547,8 @@ void parse_feature_tweaks(vw& all)
       THROW("You can not skip unless ngram is > 1");
 
     all.skip_strings = vm["skips"].as<vector<string> >();
+    for (size_t i = 0; i < all.skip_strings.size(); i++)
+        all.skip_strings[i] = spoof_hex_encoded_namespaces(all.skip_strings[i]);
     compile_gram(all.skip_strings, all.skips, (char*)"skips", all.quiet);
   }
 
@@ -523,16 +559,16 @@ void parse_feature_tweaks(vw& all)
   }
 
   if (vm.count("bit_precision"))
-    {
-      uint32_t new_bits = (uint32_t)vm["bit_precision"].as< size_t>();
-      if (all.default_bits == false && new_bits != all.num_bits)
-	THROW("Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work.");
+  {
+    uint32_t new_bits = (uint32_t)vm["bit_precision"].as< size_t>();
+    if (all.default_bits == false && new_bits != all.num_bits)
+      THROW("Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work.");
 
-      all.default_bits = false;
-      all.num_bits = new_bits;
+    all.default_bits = false;
+    all.num_bits = new_bits;
 
       VW::validate_num_bits(all);
-    }
+  }
 
   all.permutations = vm.count("permutations");
 
@@ -558,15 +594,15 @@ void parse_feature_tweaks(vw& all)
 
   if (vm.count("quadratic"))
   {
-    const vector<string> vec_arg = vm["quadratic"].as< vector<string> >();
+    vector<string> vec_arg = vm["quadratic"].as< vector<string> >();
     if (!all.quiet)
       cerr << "creating quadratic features for pairs: ";
 
-      for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+      for (vector<string>::iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
       {
-	if (!all.quiet)
-	  cerr << *i << " ";
         *all.file_options << " --quadratic " << *i;
+        *i = spoof_hex_encoded_namespaces(*i);
+        if (!all.quiet) cerr << *i << " ";
       }
 
     expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
@@ -580,10 +616,11 @@ void parse_feature_tweaks(vw& all)
     if (!all.quiet)
     {
       cerr << "creating cubic features for triples: ";
-      for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+      for (vector<string>::iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
       {
-        if (!all.quiet) cerr << *i << " ";
         *all.file_options << " --cubic " << *i;
+        *i = spoof_hex_encoded_namespaces(*i);
+        if (!all.quiet) cerr << *i << " ";
       }
     }
 
@@ -600,10 +637,11 @@ void parse_feature_tweaks(vw& all)
     if (!all.quiet)
     {
       cerr << "creating features for following interactions: ";
-      for (vector<string>::const_iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+      for (vector<string>::iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
       {
-        if (!all.quiet) cerr << *i << " ";
         *all.file_options << " --interactions " << *i;
+        *i = spoof_hex_encoded_namespaces(*i);
+        if (!all.quiet) cerr << *i << " ";
       }
     }
 
@@ -655,16 +693,21 @@ void parse_feature_tweaks(vw& all)
   {
     all.ignore_some = true;
 
-    vector<unsigned char> ignore = vm["ignore"].as< vector<unsigned char> >();
-    for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end(); i++)
+    vector<string> ignore = vm["ignore"].as< vector<string> >();
+    for (vector<string>::iterator i = ignore.begin(); i != ignore.end(); i++)
     {
-      all.ignore[*i] = true;
+        *i = spoof_hex_encoded_namespaces(*i);
+        for (string::const_iterator j = i->begin(); j != i->end(); j++)
+            all.ignore[(size_t)(unsigned char)*j] = true;
+
     }
+
     if (!all.quiet)
     {
       cerr << "ignoring namespaces beginning with: ";
-      for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end(); i++)
-        cerr << *i << " ";
+      for (vector<string>::iterator i = ignore.begin(); i != ignore.end(); i++)
+          for (string::const_iterator j = i->begin(); j != i->end(); j++)
+              cerr << *j << " ";
 
       cerr << endl;
     }
@@ -677,16 +720,20 @@ void parse_feature_tweaks(vw& all)
 
     all.ignore_some = true;
 
-    vector<unsigned char> keep = vm["keep"].as< vector<unsigned char> >();
-    for (vector<unsigned char>::iterator i = keep.begin(); i != keep.end(); i++)
+    vector<string> keep = vm["keep"].as< vector<string> >();
+    for (vector<string>::iterator i = keep.begin(); i != keep.end(); i++)
     {
-      all.ignore[*i] = false;
+        *i = spoof_hex_encoded_namespaces(*i);
+        for (string::const_iterator j = i->begin(); j != i->end(); j++)
+            all.ignore[(size_t)(unsigned char)*j] = false;
     }
+
     if (!all.quiet)
     {
       cerr << "using namespaces beginning with: ";
-      for (vector<unsigned char>::iterator i = keep.begin(); i != keep.end(); i++)
-        cerr << *i << " ";
+        for (vector<string>::iterator i = keep.begin(); i != keep.end(); i++)
+            for (string::const_iterator j = i->begin(); j != i->end(); j++)
+                cerr << *j << " ";
 
       cerr << endl;
     }
@@ -707,7 +754,7 @@ void parse_feature_tweaks(vw& all)
     vector< string > arg_list = vm["redefine"].as< vector< string > >();
     for (vector<string>::iterator arg_iter = arg_list.begin(); arg_iter != arg_list.end(); arg_iter++)
     {
-      string arg = *arg_iter;
+      string arg = spoof_hex_encoded_namespaces(*arg_iter);
       size_t arg_len = arg.length();
 
       size_t operator_pos = 0; //keeps operator pos + 1 to stay unsigned type
@@ -929,12 +976,12 @@ void parse_output_preds(vw& all)
 void parse_output_model(vw& all)
 {
   new_options(all, "Output model")
-    ("final_regressor,f", po::value< string >(), "Final regressor")
-    ("readable_model", po::value< string >(), "Output human-readable final regressor with numeric features")
-    ("invert_hash", po::value< string >(), "Output human-readable final regressor with feature names.  Computationally expensive.")
-    ("save_resume", "save extra state so learning can be resumed later with new data")
-    ("save_per_pass", "Save the model after every pass over data")
-    ("output_feature_regularizer_binary", po::value< string >(&(all.per_feature_regularizer_output)), "Per feature regularization output file")
+  ("final_regressor,f", po::value< string >(), "Final regressor")
+  ("readable_model", po::value< string >(), "Output human-readable final regressor with numeric features")
+  ("invert_hash", po::value< string >(), "Output human-readable final regressor with feature names.  Computationally expensive.")
+  ("save_resume", "save extra state so learning can be resumed later with new data")
+  ("save_per_pass", "Save the model after every pass over data")
+  ("output_feature_regularizer_binary", po::value< string >(&(all.per_feature_regularizer_output)), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text")
     ("id", po::value< string >(&(all.id)), "User supplied ID embedded into the final regressor");
   add_options(all);
@@ -1020,6 +1067,7 @@ void parse_reductions(vw& all)
   //Score Users
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'b', simple_label>);
   all.reduction_stack.push_back(active_setup);
+  all.reduction_stack.push_back(active_cover_setup);
   all.reduction_stack.push_back(nn_setup);
   all.reduction_stack.push_back(mf_setup);
   all.reduction_stack.push_back(autolink_setup);
@@ -1359,65 +1407,65 @@ void finish(vw& all, bool delete_all)
 {
   if (!all.quiet)
   {
-        cerr.precision(6);
-        cerr << endl << "finished run";
-        if(all.current_pass == 0)
-            cerr << endl << "number of examples = " << all.sd->example_number;
+    cerr.precision(6);
+    cerr << endl << "finished run";
+    if(all.current_pass == 0)
+      cerr << endl << "number of examples = " << all.sd->example_number;
     else {
-            cerr << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
-            cerr << endl << "passes used = " << all.current_pass;
-        }
-        cerr << endl << "weighted example sum = " << all.sd->weighted_examples;
-        cerr << endl << "weighted label sum = " << all.sd->weighted_labels;
-        if(all.holdout_set_off || (all.sd->holdout_best_loss == FLT_MAX))
-	  cerr << endl << "average loss = " << all.sd->sum_loss / all.sd->weighted_examples;
-	else
-	  cerr << endl << "average loss = " << all.sd->holdout_best_loss << " h";
+      cerr << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
+      cerr << endl << "passes used = " << all.current_pass;
+    }
+    cerr << endl << "weighted example sum = " << all.sd->weighted_examples;
+    cerr << endl << "weighted label sum = " << all.sd->weighted_labels;
+    if(all.holdout_set_off || (all.sd->holdout_best_loss == FLT_MAX))
+      cerr << endl << "average loss = " << all.sd->sum_loss / all.sd->weighted_examples;
+    else
+      cerr << endl << "average loss = " << all.sd->holdout_best_loss << " h";
 
-        float best_constant; float best_constant_loss;
-        if (get_best_constant(all, best_constant, best_constant_loss))
-	  {
-            cerr << endl << "best constant = " << best_constant;
-            if (best_constant_loss != FLT_MIN)
-	      cerr << endl << "best constant's loss = " << best_constant_loss;
-	  }
+    float best_constant; float best_constant_loss;
+    if (get_best_constant(all, best_constant, best_constant_loss))
+    {
+      cerr << endl << "best constant = " << best_constant;
+      if (best_constant_loss != FLT_MIN)
+        cerr << endl << "best constant's loss = " << best_constant_loss;
+    }
 
-        cerr << endl << "total feature number = " << all.sd->total_features;
-        if (all.sd->queries > 0)
-	  cerr << endl << "total queries = " << all.sd->queries << endl;
-        cerr << endl;
-        }
+    cerr << endl << "total feature number = " << all.sd->total_features;
+    if (all.sd->queries > 0)
+      cerr << endl << "total queries = " << all.sd->queries << endl;
+    cerr << endl;
+  }
 
-	// implement finally.
-	// finalize_regressor can throw if it can't write the file.
-	// we still want to free up all the memory.
-	vw_exception finalize_regressor_exception(__FILE__, __LINE__, "empty");
-	bool finalize_regressor_exception_thrown = false;
-	try
-	{
+  // implement finally.
+  // finalize_regressor can throw if it can't write the file.
+  // we still want to free up all the memory.
+  vw_exception finalize_regressor_exception(__FILE__, __LINE__, "empty");
+  bool finalize_regressor_exception_thrown = false;
+  try
+  {
     finalize_regressor(all, all.final_regressor_name);
-	}
-	catch (vw_exception& e)
-	{
-		finalize_regressor_exception = e;
-		finalize_regressor_exception_thrown = true;
-	}
+  }
+  catch (vw_exception& e)
+  {
+    finalize_regressor_exception = e;
+    finalize_regressor_exception_thrown = true;
+  }
 
     if (all.l != nullptr)
     {
-        all.l->finish();
-        free_it(all.l);
+  all.l->finish();
+  free_it(all.l);
     }
-    if (all.reg.weight_vector != nullptr && !all.seeded) // don't free weight vector if it is shared with another instance
-      free(all.reg.weight_vector);
-    free_parser(all);
-    finalize_source(all.p);
-    all.p->parse_name.erase();
-    all.p->parse_name.delete_v();
-    free(all.p);
-    if (!all.seeded)
-    {
-      free(all.sd);
+  if (all.reg.weight_vector != nullptr && !all.seeded) // don't free weight vector if it is shared with another instance
+    free(all.reg.weight_vector);
+  free_parser(all);
+  finalize_source(all.p);
+  all.p->parse_name.erase();
+  all.p->parse_name.delete_v();
+  free(all.p);
+  if (!all.seeded)
+  {
+    free(all.sd);
   }
   all.reduction_stack.delete_v();
   delete all.file_options;

@@ -179,7 +179,7 @@ void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool q
       cout << "You must specify the namespace index before the n" << endl;
     else {
       int n = atoi(ngram.c_str()+1);
-      dest[(uint32_t)ngram[0]] = n;
+      dest[(uint32_t)(unsigned char)*ngram.c_str()] = n;
       if (!quiet)
         cerr << "Generating " << n << "-" << descriptor << " for " << ngram[0] << " namespaces." << endl;
     }

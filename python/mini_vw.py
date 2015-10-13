@@ -18,7 +18,8 @@ def mini_vw(inputFile, numPasses, otherArgs):
                 ex = vw.example(l)
                 vw.learn(ex)
                 ex.finish()
-        h.close()
+        
+	h.close()
     vw.finish()
 
 if __name__ == '__main__':

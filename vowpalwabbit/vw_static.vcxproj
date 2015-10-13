@@ -236,6 +236,7 @@
     <ClCompile Include="allreduce_threads.cc">
       <FileType>CppHeader</FileType>
     </ClCompile>
+    <ClInclude Include="active_cover.h" />
     <ClCompile Include="primitives.cc" />
     <ClCompile Include="vw_validate.cc" />
     <ClInclude Include="autolink.h" />
@@ -313,6 +314,7 @@
     <ClInclude Include="v_hashmap.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="active_cover.cc" />
     <ClCompile Include="autolink.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="active.cc" />
