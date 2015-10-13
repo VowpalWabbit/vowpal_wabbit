@@ -52,6 +52,7 @@ library/library_example
 library/recommend
 library/gd_mf_weights
 library/test_search
+library/search_generate
 test/RunTests.last.times
 *.dSYM
 
