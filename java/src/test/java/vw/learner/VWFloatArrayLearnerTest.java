@@ -9,7 +9,7 @@ import vw.VWTestHelper;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * Created by jmorra on 10/2/15.
@@ -54,6 +54,7 @@ public class VWFloatArrayLearnerTest {
         VWFloatArrayLearner v = rehydrateModel();
         float[] vector = v.predict("| 1:1 2:2 3:3");
         assertNotNull(vector);
+        assertTrue("predictions vector length > 0", vector.length > 0);
     }
 
     private void writeVwModelToDisk() {
