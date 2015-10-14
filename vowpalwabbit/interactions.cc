@@ -209,7 +209,7 @@ void sort_and_filter_duplicate_interactions(v_array<v_string>& vec, bool filter_
     ordered_interaction oi;
     size_t size = v->size();
     // copy memory
-    oi.data = (unsigned char* )malloc(size);
+    oi.data = calloc_or_throw<unsigned char>(size);
     memcpy(oi.data, v->begin, size);
 
     // sort charcters in interaction string

@@ -903,10 +903,10 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
       int m = b.m;
 
       b.mem_stride = (m==0) ? CG_EXTRA : 2*m;
-      b.mem = (float*) malloc(sizeof(float)*all->length()*(b.mem_stride));
-      b.rho = (double*) malloc(sizeof(double)*m);
-      b.alpha = (double*) malloc(sizeof(double)*m);
-
+      b.mem = calloc_or_throw<float>(all->length()*b.mem_stride);
+      b.rho = calloc_or_throw<double>(m);
+      b.alpha = calloc_or_throw<double>(m);
+      
       if (!all->quiet)
 	{
 	  fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b.mem_stride)+(sizeof(weight) << all->reg.stride_shift)) >> 20);
