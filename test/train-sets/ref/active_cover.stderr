@@ -1,5 +1,5 @@
 final_regressor = models/active_cover.model
-Num weight bits = 29
+Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
@@ -15,19 +15,19 @@ loss     last          counter         weight    label  predict features
 0.144068 0.000000           15           22.2  unknown  -1.0000      151
 0.129214 0.114645           33           44.8  unknown  -1.0000       37
 0.192205 0.254253           64           90.2   1.0000  -1.0000       54
-0.216840 0.241377          131          180.8   1.0000  -1.0000      172
-0.157884 0.100530          243          366.6  -1.0000  -1.0000      183
-0.135885 0.113914          459          733.6  unknown  -1.0000       81
-0.120388 0.104935          941         1469.4   1.0000   1.0000      149
+0.219754 0.247257          131          180.6   1.0000  -1.0000      172
+0.158519 0.099338          236          367.4   1.0000   1.0000      119
+0.137724 0.117050          471          736.9  -1.0000  -1.0000       74
+0.110018 0.082384          968         1475.7   1.0000   1.0000       45
 
 finished run
 number of examples per pass = 1000
 passes used = 1
-weighted example sum = 1573.603806
-weighted label sum = 60.857229
-average loss = 0.113336
-best constant = 0.136417
-best constant's loss = 0.690826
+weighted example sum = 1534.280176
+weighted label sum = 75.726384
+average loss = 0.108158
+best constant = 0.178806
+best constant's loss = 0.689167
 total feature number = 78739
-total queries = 317
+total queries = 312
 
