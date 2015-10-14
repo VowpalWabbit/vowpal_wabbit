@@ -3,14 +3,14 @@ package vw.learner;
 import java.io.Closeable;
 
 /**
- * Created by deak on 9/27/15.
- *
  * This is the main generic interface to which all VW predictors should adhere.  VW predictors
  * may provided <em>additional methods</em> when the cost of boxing a primitive to an object is
  * too expensive.
  *
  * The recommended way of using this interface is to extend <code>VWGenericBase</code>.
  * See its documentation for more details.
+ *
+ * @author deak
  */
 public interface VWGeneric<T> extends Closeable {
 
