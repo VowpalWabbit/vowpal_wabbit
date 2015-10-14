@@ -9,8 +9,8 @@ ifneq ($(CXX),)
 else
   CXX = clang++
   $(warning Using clang++)
-ARCH = $(shell test `g++ -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2` \< 4.3 && echo -march=nocona || echo -march=native)
 endif
+ARCH = $(shell test `$CXX -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2` \< 4.3 && echo -march=nocona || echo -march=native)
 
 ifeq ($(CXX),)
   $(warning No compiler found)
