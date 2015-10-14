@@ -588,7 +588,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
     for(str_int_map::iterator it = all.name_index_map.begin(); it != all.name_index_map.end(); ++it) {
       v = &(all.reg.weight_vector[stride*it->second]);
       if(*v != 0.) {
-        text_len = sprintf(buff, "%s", (char*)it->first.c_str());
+        text_len = sprintf_s(buff, buf_size, "%s", (char*)it->first.c_str());
         brw = bin_text_write_fixed(model_file, (char*)it->first.c_str(), sizeof(*it->first.c_str()),
 					 buff, text_len, true);
 
@@ -777,11 +777,11 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 	      if (g == NULL || (! g->adaptive && ! g->normalized))
 		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
 	      else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
-		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v) * 2, "");
+                    brw += bin_read_fixed(model_file, (char*)v, sizeof(*v) * 2, "");
 	      else //adaptive and normalized
-		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v) * 3, "");
+                    brw += bin_read_fixed(model_file, (char*)v, sizeof(*v) * 3, "");
 	      if (!all.training)
-		v[1] = v[2] = 0.;
+                    v[1] = v[2] = 0.;
 	    }
 	}
       else // write binary or text
@@ -792,28 +792,28 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 	      c++;
 	      char buff[512];
                 size_t buf_size = sizeof(buff);
-		
+
                 int text_len = sprintf_s(buff, buf_size, "%d", i);
                 brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i),
-					   buff, text_len, text);
+					 buff, text_len, text);
 		if (g == nullptr || (! g->adaptive && ! g->normalized))
-		  {
+		{
                     text_len = sprintf_s(buff, buf_size, ":%g\n", *v);
                     brw += bin_text_write_fixed(model_file, (char *)v, sizeof(*v),
-						buff, text_len, text);
-		  }
-		else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
-		  { //either adaptive or normalized
-		    text_len = sprintf(buff, ":%g %g\n", *v, *(v+1));
-		    brw+= bin_text_write_fixed(model_file,(char *)v, 2*sizeof (*v),
-					       buff, text_len, text);
-		  }
-		else
-		  { //adaptive and normalized
-		    text_len = sprintf(buff, ":%g %g %g\n", *v, *(v+1), *(v+2));
-		    brw+= bin_text_write_fixed(model_file,(char *)v, 3*sizeof (*v),
-					       buff, text_len, text);
-		  }
+					     buff, text_len, text);
+		}
+	      else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
+        { //either adaptive or normalized
+	  text_len = sprintf_s(buff, buf_size, ":%g %g\n", *v, *(v+1));
+          brw+= bin_text_write_fixed(model_file,(char *)v, 2*sizeof (*v),
+					     buff, text_len, text);
+		}
+	      else
+        { //adaptive and normalized
+          text_len = sprintf_s(buff, buf_size, ":%g %g %g\n", *v, *(v+1), *(v+2));
+          brw+= bin_text_write_fixed(model_file,(char *)v, 3*sizeof (*v),
+					     buff, text_len, text);
+		}
 	    }
 	}
       if (!read)

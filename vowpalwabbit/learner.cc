@@ -13,15 +13,8 @@ void dispatch_example(vw& all, example& ec)
 
 namespace LEARNER
 {
-void generic_driver(vw& all)
+void process_example(vw& all, example* ec)
 {
-  example* ec = nullptr;
-
-  all.l->init_driver();
-  while ( all.early_terminate == false )
-  {
-    if ((ec = VW::get_example(all.p)) != nullptr)//semiblocking operation.
-    {
       if (ec->indices.size() > 1) // 1+ nonconstant feature. (most common case first)
         dispatch_example(all, *ec);
       else if (ec->end_pass)
@@ -45,6 +38,19 @@ void generic_driver(vw& all)
       }
       else // empty example
         dispatch_example(all, *ec);
+    
+}
+
+template <class T, void(*f)(T, example*)> void generic_driver(vw& all, T context)
+{
+  example* ec = nullptr;
+
+  all.l->init_driver();
+  while ( all.early_terminate == false )
+  {
+    if ((ec = VW::get_example(all.p)) != nullptr)//semiblocking operation.
+    {
+        f(context, ec);
     }
     else if (parser_done(all.p))
     {
@@ -63,5 +69,28 @@ void generic_driver(vw& all)
       return;
     }
   }
+}
+
+void process_multiple(vector<vw*> alls, example* ec)
+{
+  // start with last as the first instance will free the example as it is the owner
+  for (auto it = alls.rbegin(); it != alls.rend(); ++it) {
+    process_example(**it, ec);
+  }
+}
+
+void generic_driver(vector<vw*> alls)
+{
+  generic_driver<vector<vw*>, process_multiple>(**alls.begin(), alls);
+
+  // skip first as it already called end_examples()
+  auto it = alls.begin();
+  for (it++; it != alls.end(); it++)
+    (*it)->l->end_examples();
+}
+
+void generic_driver(vw& all)
+{
+  generic_driver<vw&, process_example>(all, all);
 }
 }

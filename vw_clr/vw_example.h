@@ -54,7 +54,7 @@ namespace VW
 		/// <summary>
 		/// Initializes a new instance of <see cref="VowpalWabbitExample"/>.
 		/// </summary>
-		/// <param name="owner">The parent instance. Examples cannot be shared between <see cref="VowpalWabbitBase"/> instances.</param>
+		/// <param name="owner">The parent instance. Examples cannot be shared between <see cref="IVowpalWabbitExamplePool"/> instances.</param>
 		/// <param name="example">The inner example this instance wraps.</param>
 		VowpalWabbitExample(IVowpalWabbitExamplePool^ owner, VowpalWabbitExample^ example);
 
