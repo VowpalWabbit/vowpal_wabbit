@@ -3,7 +3,7 @@
 #include <iostream>
 
 template<class T>
-T* calloc_or_die(size_t nmemb)
+T* calloc_or_throw(size_t nmemb)
 {
   if (nmemb == 0)
     return nullptr;
@@ -18,7 +18,7 @@ T* calloc_or_die(size_t nmemb)
   return (T*)data;
 }
 
-template<class T> T& calloc_or_die()
-{ return *calloc_or_die<T>(1); }
+template<class T> T& calloc_or_throw()
+{ return *calloc_or_throw<T>(1); }
 
 inline void free_it(void* ptr) { if (ptr != nullptr) free(ptr); }

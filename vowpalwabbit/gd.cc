@@ -939,7 +939,7 @@ base_learner* setup(vw& all)
     ("sparse_l2", po::value<float>()->default_value(0.f), "use per feature normalized updates");
   add_options(all);
   po::variables_map& vm = all.vm;
-  gd& g = calloc_or_die<gd>();
+  gd& g = calloc_or_throw<gd>();
   g.all = &all;
   g.all->normalized_sum_norm_x = 0;
   g.no_win_counter = 0;

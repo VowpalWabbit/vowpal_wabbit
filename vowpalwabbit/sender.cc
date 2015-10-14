@@ -96,7 +96,7 @@ LEARNER::base_learner* sender_setup(vw& all)
   if (missing_option<string, true>(all, "sendto", "send examples to <host>"))
     return nullptr;
 
-  sender& s = calloc_or_die<sender>();
+  sender& s = calloc_or_throw<sender>();
   s.sd = -1;
   if (all.vm.count("sendto"))
   {
@@ -105,7 +105,7 @@ LEARNER::base_learner* sender_setup(vw& all)
   }
 
   s.all = &all;
-  s.delay_ring = calloc_or_die<example*>(all.p->ring_size);
+  s.delay_ring = calloc_or_throw<example*>(all.p->ring_size);
 
   LEARNER::learner<sender>& l = init_learner(&s, learn, 1);
   l.set_finish(finish);

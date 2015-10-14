@@ -108,9 +108,9 @@ base_learner* csoaa_setup(vw& all)
   if (missing_option<size_t, true>(all, "csoaa", "One-against-all multiclass with <k> costs"))
     return nullptr;
 
-  csoaa& c = calloc_or_die<csoaa>();
+  csoaa& c = calloc_or_throw<csoaa>();
   c.num_classes = (uint32_t)all.vm["csoaa"].as<size_t>();
-  c.pred = calloc_or_die<polyprediction>(c.num_classes);
+  c.pred = calloc_or_throw<polyprediction>(c.num_classes);
 
   learner<csoaa>& l = init_learner(&c, setup_base(all), predict_or_learn<true>,
                                    predict_or_learn<false>, c.num_classes);
@@ -698,7 +698,7 @@ base_learner* csldf_setup(vw& all)
   add_options(all);
 
   po::variables_map& vm = all.vm;
-  ldf& ld = calloc_or_die<ldf>();
+  ldf& ld = calloc_or_throw<ldf>();
 
   ld.all = &all;
   ld.need_to_clear = true;

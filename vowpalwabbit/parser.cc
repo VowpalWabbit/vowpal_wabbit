@@ -147,7 +147,7 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
 
 parser* new_parser()
 {
-  parser& ret = calloc_or_die<parser>();
+  parser& ret = calloc_or_throw<parser>();
   ret.input = new io_buf;
   ret.output = new io_buf;
   ret.local_example_number = 0;
@@ -1135,7 +1135,7 @@ void initialize_examples(vw& all)
   all.p->end_parsed_examples = 0;
   all.p->done = false;
 
-  all.p->examples = calloc_or_die<example>(all.p->ring_size);
+  all.p->examples = calloc_or_throw<example>(all.p->ring_size);
 
   for (size_t i = 0; i < all.p->ring_size; i++)
     {

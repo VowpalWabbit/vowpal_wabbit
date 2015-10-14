@@ -167,7 +167,7 @@ void parse_dictionary_argument(vw&all, string str) {
 
   size_t size = 2048, pos, nread;
   char rc;
-  char*buffer = calloc_or_die<char>(size);
+  char*buffer = calloc_or_throw<char>(size);
   do {
     pos = 0;
     do {
@@ -189,7 +189,7 @@ void parse_dictionary_argument(vw&all, string str) {
     while (*d != ' ' && *d != '\t' && *d != '\n' && *d != '\0') ++d; // gobble up initial word
     if (d == c) continue; // no word
     if (*d != ' ' && *d != '\t') continue; // reached end of line
-    char* word = calloc_or_die<char>(d-c);
+    char* word = calloc_or_throw<char>(d-c);
     memcpy(word, c, d-c);
     substring ss = { word, word + (d - c) };
     uint32_t hash = uniform_hash( ss.begin, ss.end-ss.begin, quadratic_constant);
@@ -223,14 +223,14 @@ void parse_dictionary_argument(vw&all, string str) {
     cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
 
   all.namespace_dictionaries[(size_t)ns].push_back(map);
-  dictionary_info info = { calloc_or_die<char>(strlen(s)+1), fd_hash, map };
+  dictionary_info info = { calloc_or_throw<char>(strlen(s)+1), fd_hash, map };
   strcpy(info.name, s);
   all.loaded_dictionaries.push_back(info);
 }
 
 void parse_affix_argument(vw&all, string str) {
   if (str.length() == 0) return;
-  char* cstr = calloc_or_die<char>(str.length()+1);
+  char* cstr = calloc_or_throw<char>(str.length()+1);
   strcpy(cstr, str.c_str());
 
   char*p = strtok(cstr, ",");
@@ -1240,7 +1240,7 @@ void cmd_string_replace_value( std::stringstream*& ss, string flag_to_replace, s
 
 char** get_argv_from_string(string s, int& argc)
 {
-  char* c = calloc_or_die<char>(s.length()+3);
+  char* c = calloc_or_throw<char>(s.length()+3);
   c[0] = 'b';
   c[1] = ' ';
   strcpy(c+2, s.c_str());
@@ -1248,11 +1248,11 @@ char** get_argv_from_string(string s, int& argc)
   v_array<substring> foo = v_init<substring>();
   tokenize(' ', ss, foo);
 
-  char** argv = calloc_or_die<char*>(foo.size());
+  char** argv = calloc_or_throw<char*>(foo.size());
   for (size_t i = 0; i < foo.size(); i++)
   {
     *(foo[i].end) = '\0';
-    argv[i] = calloc_or_die<char>(foo[i].end-foo[i].begin+1);
+    argv[i] = calloc_or_throw<char>(foo[i].end-foo[i].begin+1);
     sprintf(argv[i],"%s",foo[i].begin);
   }
 

@@ -371,7 +371,7 @@ LEARNER::base_learner* boosting_setup(vw& all)
   // 	    using sampling rather than importance weighting)
   add_options(all);
 
-  boosting& data = calloc_or_die<boosting>();
+  boosting& data = calloc_or_throw<boosting>();
   data.N = (uint32_t)all.vm["boosting"].as<size_t>();
   cerr << "Number of weak learners = " << data.N << endl;
   data.gamma = all.vm["gamma"].as<float>();

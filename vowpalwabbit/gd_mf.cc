@@ -302,7 +302,7 @@ base_learner* gd_mf_setup(vw& all)
   if (missing_option<uint32_t, true>(all, "rank", "rank for matrix factorization."))
     return nullptr;
 
-  gdmf& data = calloc_or_die<gdmf>();
+  gdmf& data = calloc_or_throw<gdmf>();
   data.all = &all;
   data.rank = all.vm["rank"].as<uint32_t>();
   data.no_win_counter = 0;

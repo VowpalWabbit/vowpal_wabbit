@@ -490,7 +490,7 @@ base_learner* cb_adf_setup(vw& all)
     ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}");
   add_options(all);		
 
-  cb_adf& ld = calloc_or_die<cb_adf>();
+  cb_adf& ld = calloc_or_throw<cb_adf>();
 
   ld.all = &all;
 

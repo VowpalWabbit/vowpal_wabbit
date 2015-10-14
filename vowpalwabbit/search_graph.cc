@@ -112,10 +112,10 @@ void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm)
   D->K = num_actions;
   D->numN = (D->directed+1) * (D->K+1);
   cerr << "K=" << D->K << ", numN=" << D->numN << endl;
-  D->neighbor_predictions = calloc_or_die<float>(D->numN);
+  D->neighbor_predictions = calloc_or_throw<float>(D->numN);
 
-  D->confusion_matrix = calloc_or_die<uint32_t>( (D->K+1)*(D->K+1) );
-  D->true_counts = calloc_or_die<float>(D->K+1);
+  D->confusion_matrix = calloc_or_throw<uint32_t>( (D->K+1)*(D->K+1) );
+  D->true_counts = calloc_or_throw<float>(D->K+1);
   D->true_counts_total = (float)(D->K+1);
   for (size_t k=0; k<=D->K; k++) D->true_counts[k] = 1.;
 

@@ -96,7 +96,7 @@ struct svm_params {
   {
     krow.delete_v();
     // free flatten example contents
-    flat_example *fec = &calloc_or_die<flat_example>();
+    flat_example *fec = &calloc_or_throw<flat_example>();
     *fec = ex;
     free_flatten_example(fec); // free contents of flat example and frees fec.
   }
@@ -212,17 +212,17 @@ struct svm_params {
   int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec) {
     size_t brw = 1;
     if(read) {
-      fec = &calloc_or_die<flat_example>();
+      fec = &calloc_or_throw<flat_example>();
       brw = bin_read_fixed(model_file, (char*) fec, sizeof(flat_example), "");
 
       if(brw > 0) {
 	if(fec->tag_len > 0) {
-	  fec->tag = calloc_or_die<char>(fec->tag_len);
+	  fec->tag = calloc_or_throw<char>(fec->tag_len);
 	  brw = bin_read_fixed(model_file, (char*) fec->tag, fec->tag_len*sizeof(char), "");
 	  if(!brw) return 2;
 	}
 	if(fec->feature_map_len > 0) {
-	  fec->feature_map = calloc_or_die<feature>(fec->feature_map_len);
+	  fec->feature_map = calloc_or_throw<feature>(fec->feature_map_len);
 	  brw = bin_read_fixed(model_file, (char*) fec->feature_map, fec->feature_map_len*sizeof(feature), ""); 	  if(!brw) return 3;
 	}
       }
@@ -267,7 +267,7 @@ struct svm_params {
   for(uint32_t i = 0; i < model->num_support; i++) {
       if(read) {
 	save_load_flat_example(model_file, read, fec);
-	svm_example* tmp= &calloc_or_die<svm_example>();
+	svm_example* tmp= &calloc_or_throw<svm_example>();
 	tmp->init_svm_example(fec);
 	model->support_vec.push_back(tmp);
       }
@@ -388,7 +388,7 @@ struct svm_params {
   void predict(svm_params& params, base_learner &, example& ec) {
     flat_example* fec = flatten_sort_example(*(params.all),&ec);
     if(fec) {
-      svm_example* sec = &calloc_or_die<svm_example>();
+      svm_example* sec = &calloc_or_throw<svm_example>();
       sec->init_svm_example(fec);
       float score;
       predict(params, &sec, &score, 1);
@@ -548,7 +548,7 @@ struct svm_params {
 
     }
 
-    size_t* sizes = calloc_or_die<size_t>(all.all_reduce->total);
+    size_t* sizes = calloc_or_throw<size_t>(all.all_reduce->total);
     sizes[all.all_reduce->node] = b->space.end - b->space.begin;
     //cerr<<"Sizes = "<<sizes[all.node]<<" ";
     all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
@@ -562,7 +562,7 @@ struct svm_params {
 
     //cerr<<total_sum<<" "<<prev_sum<<endl;
     if(total_sum > 0) {
-      queries = calloc_or_die<char>(total_sum);
+      queries = calloc_or_throw<char>(total_sum);
       memcpy(queries + prev_sum, b->space.begin, b->space.end - b->space.begin);
       b->space.delete_v();
       all_reduce<char, copy_char>(all, queries, total_sum);
@@ -576,7 +576,7 @@ struct svm_params {
 
     for(size_t i = 0; i < params.pool_size; i++) {
 	if(!save_load_flat_example(*b, true, fec)) {
-	  params.pool[i] = &calloc_or_die<svm_example>();
+	  params.pool[i] = &calloc_or_throw<svm_example>();
 	  params.pool[i]->init_svm_example(fec);
 	  train_pool[i] = true;
 	  params.pool_pos++;
@@ -609,11 +609,11 @@ struct svm_params {
 
     //cerr<<"In train "<<params.all->training<<endl;
 
-    bool* train_pool = calloc_or_die<bool>(params.pool_size);
+    bool* train_pool = calloc_or_throw<bool>(params.pool_size);
   for(size_t i = 0; i < params.pool_size; i++)
       train_pool[i] = false;
 
-    float* scores = calloc_or_die<float>(params.pool_pos);
+    float* scores = calloc_or_throw<float>(params.pool_pos);
     predict(params, params.pool, scores, params.pool_pos);
     //cout<<scores[0]<<endl;
 
@@ -682,7 +682,7 @@ struct svm_params {
 	  bool overshoot = update(params, model_pos);
 	  //cerr<<model_pos<<":alpha = "<<model->alpha[model_pos]<<endl;
 
-	  double* subopt = calloc_or_die<double>(model->num_support);
+	  double* subopt = calloc_or_throw<double>(model->num_support);
         for(size_t j = 0; j < params.reprocess; j++) {
 	    if(model->num_support == 0) break;
 	    //cerr<<"reprocess: ";
@@ -731,7 +731,7 @@ struct svm_params {
     //   cout<<i<<":"<<fec->feature_map[i].x<<" "<<fec->feature_map[i].weight_index<<" ";
     // cout<<endl;
     if(fec) {
-      svm_example* sec = &calloc_or_die<svm_example>();
+      svm_example* sec = &calloc_or_throw<svm_example>();
       sec->init_svm_example(fec);
       float score = 0;
       predict(params, &sec, &score, 1);
@@ -804,8 +804,8 @@ LEARNER::base_learner* kernel_svm_setup(vw &all) {
   delete all.loss;
   all.loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
-  svm_params& params = calloc_or_die<svm_params>();
-  params.model = &calloc_or_die<svm_model>();
+  svm_params& params = calloc_or_throw<svm_params>();
+  params.model = &calloc_or_throw<svm_model>();
   params.model->num_support = 0;
   //params.curcache = 0;
   params.maxcache = 1024*1024*1024;
@@ -835,7 +835,7 @@ LEARNER::base_learner* kernel_svm_setup(vw &all) {
   else
     params.pool_size = 1;
 
-  params.pool = calloc_or_die<svm_example*>(params.pool_size);
+  params.pool = calloc_or_throw<svm_example*>(params.pool_size);
   params.pool_pos = 0;
 
   if(vm.count("subsample"))
@@ -870,7 +870,7 @@ LEARNER::base_learner* kernel_svm_setup(vw &all) {
       *all.file_options <<" --bandwidth "<<bandwidth;
     }
     cerr<<"bandwidth = "<<bandwidth<<endl;
-    params.kernel_params = &calloc_or_die<double>();
+    params.kernel_params = &calloc_or_throw<double>();
     *((float*)params.kernel_params) = bandwidth;
   }
   else if(kernel_type.compare("poly") == 0) {
@@ -881,7 +881,7 @@ LEARNER::base_learner* kernel_svm_setup(vw &all) {
       *all.file_options <<" --degree "<<degree;
     }
     cerr<<"degree = "<<degree<<endl;
-    params.kernel_params = &calloc_or_die<int>();
+    params.kernel_params = &calloc_or_throw<int>();
     *((int*)params.kernel_params) = degree;
   }
   else

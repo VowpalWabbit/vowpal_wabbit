@@ -165,7 +165,7 @@ LEARNER::base_learner* interact_setup(vw& all)
     return nullptr;
   }
   
-  interact& data = calloc_or_die<interact>();
+  interact& data = calloc_or_throw<interact>();
   
   data.n1 = (unsigned char) s[0];
   data.n2 = (unsigned char) s[1];

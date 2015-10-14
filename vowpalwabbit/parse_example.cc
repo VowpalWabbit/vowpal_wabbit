@@ -18,7 +18,7 @@ char* copy(char* base)
 {
   size_t len = 0;
   while (base[len++] != '\0');
-  char* ret = calloc_or_die<char>(len);
+  char* ret = calloc_or_throw<char>(len);
   memcpy(ret,base,len);
   return ret;
 }
@@ -190,7 +190,7 @@ public:
               for (feature*f = feats->begin; f != feats->end; ++f) {
                 uint32_t id = f->weight_index;
                 size_t len = 2 + (feature_name.end-feature_name.begin) + 1 + (size_t)ceil(log10(id)) + 1;
-                char* str = calloc_or_die<char>(len);
+                char* str = calloc_or_throw<char>(len);
                 str[0] = index;
                 str[1] = '_';
                 char *c = str+2;
@@ -279,7 +279,7 @@ public:
       {
         if (base != nullptr)
           free(base);
-        base = calloc_or_die<char>(2);
+        base = calloc_or_throw<char>(2);
         base[0] = ' ';
         base[1] = '\0';
       }

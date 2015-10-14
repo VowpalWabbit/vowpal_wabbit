@@ -153,7 +153,7 @@ public:
       if (id != 0)
         THROW("error: label dictionary initialized with multiple occurances of: " << l);
       size_t len = l.end - l.begin;
-      substring l_copy = { calloc_or_die<char>(len), nullptr };
+      substring l_copy = { calloc_or_throw<char>(len), nullptr };
       memcpy(l_copy.begin, l.begin, len * sizeof(char));
       l_copy.end = l_copy.begin + len;
       name2id.put(l_copy, hash, (uint32_t)(k+1));

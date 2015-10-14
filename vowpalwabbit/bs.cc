@@ -227,7 +227,7 @@ base_learner* bs_setup(vw& all)
                                         "prediction type {mean,vote}");
   add_options(all);
 
-  bs& data = calloc_or_die<bs>();
+  bs& data = calloc_or_throw<bs>();
   data.ub = FLT_MAX;
   data.lb = -FLT_MAX;
   data.B = (uint32_t)all.vm["bootstrap"].as<size_t>();
