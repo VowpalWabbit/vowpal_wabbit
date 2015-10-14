@@ -662,9 +662,9 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 	      string feature_space = string(audits[i].space);
 	      
 	      audit_data a_feature = {nullptr,nullptr,new_index, 1., true};
-	      a_feature.space = (char*)malloc(feature_space.length()+1);
+	      a_feature.space = new char[feature_space.length()+1];
 	      strcpy(a_feature.space, feature_space.c_str());
-	      a_feature.feature = (char*)malloc(feature_name.length()+1);
+	      a_feature.feature = new char[feature_name.length()+1];
 	      strcpy(a_feature.feature, feature_name.c_str());
 	      audits.push_back(a_feature);
 	    }
@@ -959,8 +959,8 @@ namespace VW {
 	    {
 	      if (temp->alloced)
 		{
-		  free(temp->space);
-		  free(temp->feature);
+		  delete[] temp->space;
+		  delete[] temp->feature;
 		  temp->alloced=false;
 		}
 	    }
