@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 #endif
 
 #include "vw_exception.h"
+#include "memory.h"
 
 const size_t erase_point = ~ ((1 << 10) -1);
 
@@ -180,7 +181,7 @@ template<class T> void push_many(v_array<T>& v, const T* begin, size_t num)
 
 template<class T> void calloc_reserve(v_array<T>& v, size_t length)
 {
-  v.begin = (T *)calloc(length, sizeof(T));
+  v.begin = calloc_or_throw<T>(length);
   v.end = v.begin;
   v.end_array = v.begin + length;
 }
