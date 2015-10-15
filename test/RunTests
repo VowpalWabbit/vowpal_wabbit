@@ -41,6 +41,8 @@ my $ErrorCount = 0;
 # These --side-by-side diff opts are used to make the
 # fuzzy-compare easier: just split on '|' and compare numeric values
 # word by word:
+# NOTE: -W 160 is sufficient for most outputs.
+#       --bfgs prints widest (134 chars-per-line)
 my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
 $WordSplit = "[ \t:]+";
 
@@ -379,7 +381,14 @@ sub lenient_array_compare($$) {
     my (@w2) = @$w2_ref;
 
     # print STDERR "lenient_array_compare: (@w1) (@w2)\n";
-    return 1 if ($#w1 != $#w2); # arrays not of same size
+    if ($#w1 != $#w2) { # arrays not of same size
+        if ($opt_v > 3) {
+            v(4, "#-of-words in two arrays are different: %d != %d\n", scalar(@w1), scalar(@w2));
+            v(4, "line1: "); for (my $i=0; $i <= $#w1; $i++) { v(4, " word[%d]='%s'", $i, $w1[$i]) }; v(4, "\n");
+            v(4, "line2: "); for (my $i=0; $i <= $#w1; $i++) { v(4, " word[%d]='%s'\n", $i, $w2[$i]) }; v(4, "\n");
+        }
+        return 1;
+    }
     my $nelem = scalar @w1;
     for (my $i = 0; $i < $nelem; $i++) {
         my ($word1, $word2) = ($w1[$i], $w2[$i]);
@@ -449,6 +458,9 @@ sub diff_lenient_float($$) {
                 rename($tmpf, $save_diff_file);
                 return 1;
             }
+            # strip leading spaces if any (happens with --bfgs)
+            $line1 =~ s/^\s+//;
+            $line2 =~ s/^\s+//;
             v(3, "line1: %s\n", $line1);
             v(3, "line2: %s\n", $line2);
 
