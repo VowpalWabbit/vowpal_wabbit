@@ -385,7 +385,7 @@ sub lenient_array_compare($$) {
         if ($opt_v > 3) {
             v(4, "#-of-words in two arrays are different: %d != %d\n", scalar(@w1), scalar(@w2));
             v(4, "line1: "); for (my $i=0; $i <= $#w1; $i++) { v(4, " word[%d]='%s'", $i, $w1[$i]) }; v(4, "\n");
-            v(4, "line2: "); for (my $i=0; $i <= $#w1; $i++) { v(4, " word[%d]='%s'", $i, $w2[$i]) }; v(4, "\n");
+            v(4, "line2: "); for (my $i=0; $i <= $#w2; $i++) { v(4, " word[%d]='%s'", $i, $w2[$i]) }; v(4, "\n");
         }
         return 1;
     }
