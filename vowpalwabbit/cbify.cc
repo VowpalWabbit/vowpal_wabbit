@@ -372,7 +372,7 @@ base_learner* cbify_setup(vw& all)
   add_options(all);
 
   po::variables_map& vm = all.vm;
-  cbify& data = calloc_or_die<cbify>();
+  cbify& data = calloc_or_throw<cbify>();
   data.k = (uint32_t)vm["cbify"].as<size_t>();
 
   if (count(all.args.begin(), all.args.end(),"--cb") == 0)

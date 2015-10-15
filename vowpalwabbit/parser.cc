@@ -147,7 +147,7 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
 
 parser* new_parser()
 {
-  parser& ret = calloc_or_die<parser>();
+  parser& ret = calloc_or_throw<parser>();
   ret.input = new io_buf;
   ret.output = new io_buf;
   ret.local_example_number = 0;
@@ -662,9 +662,9 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 	      string feature_space = string(audits[i].space);
 	      
 	      audit_data a_feature = {nullptr,nullptr,new_index, 1., true};
-	      a_feature.space = new char[feature_space.length()+1];
+	      a_feature.space = calloc_or_throw<char>(feature_space.length()+1);
 	      strcpy(a_feature.space, feature_space.c_str());
-	      a_feature.feature = new char[feature_name.length()+1];
+	      a_feature.feature = calloc_or_throw<char>(feature_name.length()+1);
 	      strcpy(a_feature.feature, feature_name.c_str());
 	      audits.push_back(a_feature);
 	    }
@@ -959,8 +959,8 @@ namespace VW {
 	    {
 	      if (temp->alloced)
 		{
-		  delete[] temp->space;
-		  delete[] temp->feature;
+		  free(temp->space);
+		  free(temp->feature);
 		  temp->alloced=false;
 		}
 	    }
@@ -1135,7 +1135,7 @@ void initialize_examples(vw& all)
   all.p->end_parsed_examples = 0;
   all.p->done = false;
 
-  all.p->examples = calloc_or_die<example>(all.p->ring_size);
+  all.p->examples = calloc_or_throw<example>(all.p->ring_size);
 
   for (size_t i = 0; i < all.p->ring_size; i++)
     {
@@ -1182,13 +1182,13 @@ void free_parser(vw& all)
   
   if (all.p->examples != nullptr)
   {
-  if (all.multilabel_prediction)
-    for (size_t i = 0; i < all.p->ring_size; i++) 
-      VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i], MULTILABEL::multilabel.delete_label);
-  else
-    for (size_t i = 0; i < all.p->ring_size; i++) 
-      VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i]);
-  free(all.p->examples);
+      if (all.multilabel_prediction)
+          for (size_t i = 0; i < all.p->ring_size; i++)
+              VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i], MULTILABEL::multilabel.delete_label);
+      else
+          for (size_t i = 0; i < all.p->ring_size; i++)
+              VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i]);
+      free(all.p->examples);
   }
   
   io_buf* output = all.p->output;

@@ -85,7 +85,7 @@ LEARNER::base_learner* expreplay_setup(vw& all) {
 
   if (N == 0) return nullptr;
 
-  expreplay& er = calloc_or_die<expreplay>();
+  expreplay& er = calloc_or_throw<expreplay>();
   er.all = &all;
   er.N   = N;
   er.buf = VW::alloc_examples(1, er.N);
@@ -94,7 +94,7 @@ LEARNER::base_learner* expreplay_setup(vw& all) {
     for (size_t n=0; n<er.N; n++)
       er.buf[n].l.cs.costs = v_init<COST_SENSITIVE::wclass>();
 
-  er.filled = calloc_or_die<bool>(er.N);
+  er.filled = calloc_or_throw<bool>(er.N);
   er.replay_count = rc;
 
   if (! all.quiet)

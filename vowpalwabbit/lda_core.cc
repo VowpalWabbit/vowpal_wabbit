@@ -897,7 +897,7 @@ LEARNER::base_learner *lda_setup(vw &all)
 
   all.lda = vm["lda"].as<uint32_t>();
 
-  lda &ld = calloc_or_die<lda>();
+  lda &ld = calloc_or_throw<lda>();
 
   ld.topics = all.lda;
   ld.lda_alpha = vm["lda_alpha"].as<float>();

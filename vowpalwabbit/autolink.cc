@@ -40,7 +40,7 @@ LEARNER::base_learner* autolink_setup(vw& all)
   if (missing_option<size_t, true>(all, "autolink", "create link function with polynomial d"))
     return nullptr;
 
-  autolink& data = calloc_or_die<autolink>();
+  autolink& data = calloc_or_throw<autolink>();
   data.d = (uint32_t)all.vm["autolink"].as<size_t>();
   data.stride_shift = all.reg.stride_shift;
 

@@ -135,7 +135,7 @@ base_learner* active_setup(vw& all)
   ("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8");
   add_options(all);
 
-  active& data = calloc_or_die<active>();
+  active& data = calloc_or_throw<active>();
   data.active_c0 = 8;
   data.all=&all;
 

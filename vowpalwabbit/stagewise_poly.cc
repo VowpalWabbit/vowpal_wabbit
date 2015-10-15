@@ -124,7 +124,7 @@ using namespace LEARNER;
 
   void depthsbits_create(stagewise_poly &poly)
   {
-    poly.depthsbits = calloc_or_die<uint8_t>(2 * poly.all->length());
+    poly.depthsbits = calloc_or_throw<uint8_t>(2 * poly.all->length());
     for (uint32_t i = 0; i < poly.all->length() * 2; i += 2) {
       poly.depthsbits[i] = default_depth;
       poly.depthsbits[i+1] = indicator_bit;
@@ -242,7 +242,7 @@ using namespace LEARNER;
       cout << ", new size " << poly.sd_len << endl;
 #endif //DEBUG
       free(poly.sd); //okay for null.
-      poly.sd = calloc_or_die<sort_data>(poly.sd_len);
+      poly.sd = calloc_or_throw<sort_data>(poly.sd_len);
     }
     assert(len <= poly.sd_len);
   }
@@ -676,7 +676,7 @@ using namespace LEARNER;
     add_options(all);
 
     po::variables_map &vm = all.vm;
-    stagewise_poly& poly = calloc_or_die<stagewise_poly>();
+    stagewise_poly& poly = calloc_or_throw<stagewise_poly>();
     poly.all = &all;
     depthsbits_create(poly);
     sort_data_create(poly);

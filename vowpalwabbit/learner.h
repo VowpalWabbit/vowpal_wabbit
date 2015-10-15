@@ -193,7 +193,7 @@ template<class T>
 learner<T>& init_learner(T* dat, void (*learn)(T&, base_learner&, example&),
                          size_t params_per_weight)
 { // the constructor for all learning algorithms.
-  learner<T>& ret = calloc_or_die<learner<T> >();
+  learner<T>& ret = calloc_or_throw<learner<T> >();
   ret.weights = 1;
   ret.increment = params_per_weight;
   ret.end_pass_fd.func = noop;
@@ -219,7 +219,7 @@ learner<T>& init_learner(T* dat, base_learner* base,
                          void (*learn)(T&, base_learner&, example&),
                          void (*predict)(T&, base_learner&, example&), size_t ws)
 { //the reduction constructor, with separate learn and predict functions
-  learner<T>& ret = calloc_or_die<learner<T> >();
+  learner<T>& ret = calloc_or_throw<learner<T> >();
   ret = *(learner<T>*)base;
 
   ret.learn_fd.data = dat;

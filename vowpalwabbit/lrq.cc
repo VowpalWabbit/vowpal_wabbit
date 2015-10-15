@@ -206,7 +206,7 @@ base_learner* lrq_setup(vw& all)
   if(!all.vm.count("lrq"))
     return nullptr;
 
-  LRQstate& lrq = calloc_or_die<LRQstate>();
+  LRQstate& lrq = calloc_or_throw<LRQstate>();
   size_t maxk = 0;
   lrq.all = &all;
 

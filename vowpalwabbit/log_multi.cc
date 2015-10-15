@@ -494,7 +494,7 @@ base_learner* log_multi_setup(vw& all)	//learner setup
 
   po::variables_map& vm = all.vm;
 
-  log_multi& data = calloc_or_die<log_multi>();
+  log_multi& data = calloc_or_throw<log_multi>();
   data.k = (uint32_t)vm["log_multi"].as<size_t>();
   data.swap_resist = 4;
 

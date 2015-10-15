@@ -472,7 +472,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
   weight* weights = all.reg.weight_vector;
   if (b.regularizers == nullptr)
     {
-      b.regularizers = calloc_or_die<weight>(2*length);
+      b.regularizers = calloc_or_throw<weight>(2*length);
 
       if (b.regularizers == nullptr)
 	THROW("Failed to allocate weight array: try decreasing -b <bits>");
@@ -831,9 +831,9 @@ void learn(bfgs& b, base_learner& base, example& ec)
 void finish(bfgs& b)
 {
   b.predictions.delete_v();
-  delete[] b.mem;
-  delete[] b.rho;
-  delete[] b.alpha;
+  free(b.mem);
+  free(b.rho);
+  free(b.alpha);
 }
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
@@ -896,16 +896,16 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
       initialize_regressor(*all);
       if (all->per_feature_regularizer_input != "")
 	{
-	  b.regularizers = calloc_or_die<weight>(2*length);
+	  b.regularizers = calloc_or_throw<weight>(2*length);
 	  if (b.regularizers == nullptr)
 	    THROW( "Failed to allocate regularizers array: try decreasing -b <bits>");
 	}
       int m = b.m;
 
       b.mem_stride = (m==0) ? CG_EXTRA : 2*m;
-      b.mem = new float[all->length()*(b.mem_stride)];
-      b.rho = new double[m];
-      b.alpha = new double[m];
+      b.mem = calloc_or_throw<float>(all->length()*b.mem_stride);
+      b.rho = calloc_or_throw<double>(m);
+      b.alpha = calloc_or_throw<double>(m);
 
       if (!all->quiet)
 	{
@@ -965,7 +965,7 @@ base_learner* bfgs_setup(vw& all)
   add_options(all);
 
   po::variables_map& vm = all.vm;
-  bfgs& b = calloc_or_die<bfgs>();
+  bfgs& b = calloc_or_throw<bfgs>();
   b.all = &all;
   b.m = vm["mem"].as<uint32_t>();
   b.rel_threshold = vm["termination"].as<float>();

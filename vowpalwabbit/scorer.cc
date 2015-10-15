@@ -49,7 +49,7 @@ LEARNER::base_learner* scorer_setup(vw& all)
   ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity, logistic or glf1");
   add_options(all);
   po::variables_map& vm = all.vm;
-  scorer& s = calloc_or_die<scorer>();
+  scorer& s = calloc_or_throw<scorer>();
   s.all = &all;
 
   LEARNER::base_learner* base = setup_base(all);

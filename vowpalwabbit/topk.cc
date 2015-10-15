@@ -103,7 +103,7 @@ LEARNER::base_learner* topk_setup(vw& all)
   if (missing_option<size_t, false>(all, "top", "top k recommendation"))
     return nullptr;
 
-  topk& data = calloc_or_die<topk>();
+  topk& data = calloc_or_throw<topk>();
   data.B = (uint32_t)all.vm["top"].as<size_t>();
 
   LEARNER::learner<topk>& l = init_learner(&data, setup_base(all), predict_or_learn<true>,

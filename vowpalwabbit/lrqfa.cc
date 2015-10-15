@@ -133,7 +133,7 @@ LEARNER::base_learner* lrqfa_setup(vw& all) {
   if (missing_option<string>(all, "lrqfa", "use low rank quadratic features with field aware weights"))
     return nullptr;
 
-  LRQFAstate& lrq = calloc_or_die<LRQFAstate>();
+  LRQFAstate& lrq = calloc_or_throw<LRQFAstate>();
   lrq.all = &all;
 
   string lrqopt = spoof_hex_encoded_namespaces( all.vm["lrqfa"].as<string>() );

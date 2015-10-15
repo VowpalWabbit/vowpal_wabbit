@@ -210,7 +210,7 @@ namespace SequenceTaskCostToGo {
 
   void run(Search::search& sch, vector<example*>& ec) {
     size_t K = * sch.get_task_data<size_t>();
-    float*costs = calloc_or_die<float>(K);
+    float*costs = calloc_or_throw<float>(K);
     for (size_t i=0; i<ec.size(); i++) {
       action oracle     = ec[i]->l.multi.label;
       for (size_t k=0; k<K; k++) costs[k] = 1.;
@@ -301,7 +301,7 @@ void initialize(Search::search& sch, size_t& num_actions, po::variables_map& /*v
     lab.costs.push_back(default_wclass);
   }
 
-  task_data* data = &calloc_or_die<task_data>();
+  task_data* data = &calloc_or_throw<task_data>();
   data->ldf_examples = ldf_examples;
   data->num_actions  = num_actions;
 

@@ -165,7 +165,7 @@ base_learner* ftrl_setup(vw& all) {
 
   po::variables_map& vm = all.vm;
 
-  ftrl& b = calloc_or_die<ftrl>();
+  ftrl& b = calloc_or_throw<ftrl>();
   b.all = &all;
 
   void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;

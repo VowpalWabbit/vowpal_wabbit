@@ -449,8 +449,8 @@ namespace Search {
     priv.dat_new_feature_ec->sum_feat_sq[priv.dat_new_feature_namespace] += f.x * f.x;
     if (priv.all->audit) {
       audit_data a = { nullptr, nullptr, f.weight_index, f.x, true };
-      a.space   = calloc_or_die<char>(priv.dat_new_feature_feature_space->length()+1);
-      a.feature = calloc_or_die<char>(priv.dat_new_feature_audit_ss.str().length() + 32);
+      a.space   = calloc_or_throw<char>(priv.dat_new_feature_feature_space->length()+1);
+      a.feature = calloc_or_throw<char>(priv.dat_new_feature_audit_ss.str().length() + 32);
       strcpy(a.space, priv.dat_new_feature_feature_space->c_str());
       int num = sprintf(a.feature, "fid=%lu_", (idx & mask) >> ss);
       strcpy(a.feature+num, priv.dat_new_feature_audit_ss.str().c_str());
@@ -1087,7 +1087,7 @@ namespace Search {
     if (sz % 4 != 0)
       sz += 4 - (sz % 4); // make sure sz aligns to 4 so that uniform_hash does the right thing
 
-    unsigned char* item = calloc_or_die<unsigned char>(sz);
+    unsigned char* item = calloc_or_throw<unsigned char>(sz);
     unsigned char* here = item;
     *here = (unsigned char)sz; here += sizeof(size_t);
     *here = mytag;             here += sizeof(ptag);
@@ -1490,7 +1490,7 @@ namespace Search {
     size_t N = end - B;
     std::sort(B, end, cmp_size_t);
     // make some temporary space
-    size_t* A = (size_t*)calloc((N+1)*2, sizeof(size_t));
+    size_t* A = calloc_or_throw<size_t>((N+1)*2);
     A[N  ] = B[0];    // arbitrarily choose the maximum in the middle
     A[N+1] = B[N-1];  // so the maximum goes next to it
     size_t lo  = N, hi = N+1;  // which parts of A have we filled in? [lo,hi]
@@ -2070,10 +2070,10 @@ namespace Search {
 
   v_array<CS::label> read_allowed_transitions(action A, const char* filename) {
     FILE *f = fopen(filename, "r");
-	if (f == nullptr)
-	  THROW("error: could not read file " << filename << " (" << strerror(errno) << "); assuming all transitions are valid");
-
-    bool* bg = (bool*)malloc((A+1)*(A+1) * sizeof(bool));
+    if (f == nullptr)
+      THROW("error: could not read file " << filename << " (" << strerror(errno) << "); assuming all transitions are valid");
+    
+    bool* bg = calloc_or_throw<bool>((A+1)*(A+1));
     int rd,from,to,count=0;
     while ((rd = fscanf(f, "%d:%d", &from, &to)) > 0) {
       if ((from < 0) || (from > (int)A)) { std::cerr << "warning: ignoring transition from " << from << " because it's out of the range [0," << A << "]" << endl; }
@@ -2184,7 +2184,7 @@ namespace Search {
         if (all.args[i] == "--search_task" && all.args[i+1] != "hook")
           all.args.erase(all.args.begin() + i, all.args.begin() + i + 2);
 
-    search& sch = calloc_or_die<search>();
+    search& sch = calloc_or_throw<search>();
     sch.priv = new search_private();
     search_initialize(&all, sch);
     search_private& priv = *sch.priv;
@@ -2258,7 +2258,7 @@ namespace Search {
                          "warning: you specified a different history length through --search_history_length than the one loaded from predictor. using loaded value of: ", "");
 
     //check if the base learner is contextual bandit, in which case, we dont rollout all actions.
-    priv.allowed_actions_cache = &calloc_or_die<polylabel>();
+    priv.allowed_actions_cache = &calloc_or_throw<polylabel>();
     if (vm.count("cb")) {
       priv.cb_learner = true;
       CB::cb_label.default_label(priv.allowed_actions_cache);
@@ -2556,7 +2556,7 @@ namespace Search {
 	else
 	  THROW("realloc failed in search.cc");
       }
-    else            ec = calloc_or_die<example>(input_length);
+    else            ec = calloc_or_throw<example>(input_length);
     ec_cnt = input_length;
     ec_alloced = true;
   }
@@ -2574,7 +2574,7 @@ namespace Search {
   void predictor::make_new_pointer(v_array<T>& A, size_t new_size) {
     size_t old_size      = A.size();
     T* old_pointer  = A.begin;
-    A.begin     = calloc_or_die<T>(new_size);
+    A.begin     = calloc_or_throw<T>(new_size);
     A.end       = A.begin + new_size;
     A.end_array = A.end;
     memcpy(A.begin, old_pointer, old_size * sizeof(T));

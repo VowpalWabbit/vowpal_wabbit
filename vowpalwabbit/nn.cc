@@ -400,7 +400,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     add_options(all);
     
     po::variables_map& vm = all.vm;
-    nn& n = calloc_or_die<nn>();
+    nn& n = calloc_or_throw<nn>();
     n.all = &all;
     //first parse for number of hidden units
     n.k = (uint32_t)vm["nn"].as<size_t>();
@@ -452,10 +452,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     n.save_xsubi = n.xsubi;
 
-    n.hidden_units = calloc_or_die<float>(n.k);
-    n.dropped_out = calloc_or_die<bool>(n.k);
-    n.hidden_units_pred = calloc_or_die<polyprediction>(n.k);
-    n.hiddenbias_pred = calloc_or_die<polyprediction>(n.k);
+    n.hidden_units = calloc_or_throw<float>(n.k);
+    n.dropped_out = calloc_or_throw<bool>(n.k);
+    n.hidden_units_pred = calloc_or_throw<polyprediction>(n.k);
+    n.hiddenbias_pred = calloc_or_throw<polyprediction>(n.k);
     
     base_learner* base = setup_base(all);
     n.increment = base->increment;//Indexing of output layer is odd.

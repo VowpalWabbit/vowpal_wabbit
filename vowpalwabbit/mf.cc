@@ -188,7 +188,7 @@ base_learner* mf_setup(vw& all) {
   if (missing_option<size_t, true>(all, "new_mf", "rank for reduction-based matrix factorization"))
     return nullptr;
 
-  mf& data = calloc_or_die<mf>();
+  mf& data = calloc_or_throw<mf>();
   data.all = &all;
   data.rank = (uint32_t)all.vm["new_mf"].as<size_t>();
 

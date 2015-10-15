@@ -99,7 +99,7 @@ LEARNER::base_learner* oaa_setup(vw& all)
   ("oaa_subsample", po::value<size_t>(), "subsample this number of negative examples when learning");
   add_options(all);
 
-  oaa* data_ptr = calloc_or_die<oaa>(1);
+  oaa* data_ptr = calloc_or_throw<oaa>(1);
   oaa& data = *data_ptr;
   data.k = all.vm["oaa"].as<size_t>();
 
@@ -107,7 +107,7 @@ LEARNER::base_learner* oaa_setup(vw& all)
     THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
 
     data.all = &all;
-  data.pred = calloc_or_die<polyprediction>(data.k);
+  data.pred = calloc_or_throw<polyprediction>(data.k);
   data.num_subsample = 0;
   data.subsample_order = nullptr;
   data.subsample_id = 0;
@@ -117,7 +117,7 @@ LEARNER::base_learner* oaa_setup(vw& all)
       data.num_subsample = 0;
       cerr << "oaa is turning off subsampling because your parameter >= K" << endl;
     } else {
-      data.subsample_order = calloc_or_die<uint32_t>(data.k);
+      data.subsample_order = calloc_or_throw<uint32_t>(data.k);
       for (size_t i=0; i<data.k; i++) data.subsample_order[i] = (uint32_t) i;
       for (size_t i=0; i<data.k; i++) {
         size_t j = (size_t)(frand48() * (float)(data.k-i)) + i;

@@ -209,7 +209,7 @@ void sort_and_filter_duplicate_interactions(v_array<v_string>& vec, bool filter_
     ordered_interaction oi;
     size_t size = v->size();
     // copy memory
-    oi.data = new unsigned char[size];
+    oi.data = calloc_or_throw<unsigned char>(size);
     memcpy(oi.data, v->begin, size);
 
     // sort charcters in interaction string
@@ -256,7 +256,7 @@ void sort_and_filter_duplicate_interactions(v_array<v_string>& vec, bool filter_
     pos++;
     // sorted data is copied, not moved, bcs i'm lazy to write assignment operator between these two types.
     // thus we always must free it
-    delete[] oi->data;
+    free(oi->data);
   }
 
   vec_sorted.delete_v(); // sorted array destroyed. It's data partially copied to the new array, partially destroyed

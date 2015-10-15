@@ -165,7 +165,7 @@ base_learner* svrg_setup(vw& all)
   ("stage_size", po::value<int>()->default_value(1), "Number of passes per SVRG stage");
   add_options(all);
 
-  svrg& s = calloc_or_die<svrg>();
+  svrg& s = calloc_or_throw<svrg>();
   s.all = &all;
   s.stage_size = all.vm["stage_size"].as<int>();
   s.prev_pass = -1;

@@ -357,7 +357,7 @@ base_learner* ect_setup(vw& all)
   ("error", po::value<size_t>()->default_value(0), "error in ECT");
   add_options(all);
 
-  ect& data = calloc_or_die<ect>();
+  ect& data = calloc_or_throw<ect>();
   data.k = (int)all.vm["ect"].as<size_t>();
   data.errors = (uint32_t)all.vm["error"].as<size_t>();
   //append error flag to options_from_file so it is saved in regressor file later

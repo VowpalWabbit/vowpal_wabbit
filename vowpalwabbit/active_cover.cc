@@ -228,7 +228,7 @@ base_learner* active_cover_setup(vw& all)
     	("oracular", "Use Oracular-CAL style query or not. Default false.");
 	add_options(all);
 
-	active_cover& data = calloc_or_die<active_cover>();
+	active_cover& data = calloc_or_throw<active_cover>();
 	data.active_c0 = 8.f;
 	data.alpha = 1.f;
 	data.beta_scale = 10.f; // this is actually beta_scale^2

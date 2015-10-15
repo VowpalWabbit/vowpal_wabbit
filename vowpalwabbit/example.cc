@@ -35,11 +35,11 @@ float collision_cleanup(feature* feature_map, size_t& len) {
 audit_data copy_audit_data(audit_data &src) {
   audit_data dst;
   if (src.space != NULL) {
-    dst.space = calloc_or_die<char>(strlen(src.space)+1);
+    dst.space = calloc_or_throw<char>(strlen(src.space)+1);
     strcpy(dst.space, src.space);
   }
   if (src.feature != NULL) {
-    dst.feature = calloc_or_die<char>(strlen(src.feature)+1);
+    dst.feature = calloc_or_throw<char>(strlen(src.feature)+1);
     strcpy(dst.feature, src.feature);
   }
   dst.weight_index = src.weight_index;
@@ -143,13 +143,13 @@ void return_features(feature* f)
 
 flat_example* flatten_example(vw& all, example *ec)
 {
-  flat_example& fec = calloc_or_die<flat_example>();
+  flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
 
   fec.tag_len = ec->tag.size();
   if (fec.tag_len >0)
   {
-    fec.tag = calloc_or_die<char>(fec.tag_len+1);
+    fec.tag = calloc_or_throw<char>(fec.tag_len+1);
     memcpy(fec.tag,ec->tag.begin, fec.tag_len);
   }
 
@@ -185,7 +185,7 @@ void free_flatten_example(flat_example* fec)
 namespace VW {
 example *alloc_examples(size_t, size_t count = 1)
 {
-  example* ec = calloc_or_die<example>(count);
+  example* ec = calloc_or_throw<example>(count);
   if (ec == nullptr) return nullptr;
   for (size_t i=0; i<count; i++) {
     ec[i].in_use = true;

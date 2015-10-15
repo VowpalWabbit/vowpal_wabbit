@@ -166,12 +166,11 @@ public class VWFloatLearnerTest {
     }
 
     @Test
-    @Ignore
     public void testBadModel() {
         // Right now VW seg faults on a bad model.  Ideally we should throw an exception
         // that the Java layer could do something about
         thrown.expect(Exception.class);
-        thrown.expectMessage("bad model format!");
+        thrown.expectMessage("Model content is corrupted, weight vector index 1347768914 must be less than total vector length 262144");
         VWFloatLearner vw = new VWFloatLearner("--quiet -i src/test/resources/vw_bad.model");
         vw.close();
     }

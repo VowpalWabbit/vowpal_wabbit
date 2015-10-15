@@ -53,7 +53,7 @@ LEARNER::base_learner* multilabel_oaa_setup(vw& all)
   if (missing_option<size_t, true>(all, "multilabel_oaa", "One-against-all multilabel with <k> labels"))
     return nullptr;
 
-  multi_oaa& data = calloc_or_die<multi_oaa>();
+  multi_oaa& data = calloc_or_throw<multi_oaa>();
   data.k = all.vm["multilabel_oaa"].as<size_t>();
 
   LEARNER::learner<multi_oaa>& l = LEARNER::init_learner(&data, setup_base(all), predict_or_learn<true>,

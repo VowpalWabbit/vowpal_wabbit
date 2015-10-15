@@ -372,7 +372,7 @@ base_learner* cb_algs_setup(vw& all)
   ("eval", "Evaluate a policy rather than optimizing.");
   add_options(all);
 
-  cb& c = calloc_or_die<cb>();
+  cb& c = calloc_or_throw<cb>();
   c.num_actions = (uint32_t)all.vm["cb"].as<size_t>();
 
   bool eval = false;
