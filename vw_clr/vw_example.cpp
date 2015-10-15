@@ -113,7 +113,7 @@ namespace VW
       return true;
     }
 
-    return abs(a - b) / max(a, b) < 0.0001;
+    return abs(a - b) / max(a, b) < 1e-6;
   }
 
   System::String^ FormatFeatures(vw* vw, v_array<feature>& arr)

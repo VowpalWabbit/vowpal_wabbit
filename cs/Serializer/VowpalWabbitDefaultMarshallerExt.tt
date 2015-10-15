@@ -54,7 +54,7 @@ namespace VW.Serializer
 
             context.StringExample.AppendFormat(
                 CultureInfo.InvariantCulture,
-                " {0}:{1}",
+                " {0}:{1:E20}",
                 feature.Name,
                 value);
         }
@@ -128,7 +128,7 @@ namespace VW.Serializer
 
             foreach (var v in value)
             {
-                context.StringExample.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1}", i, v);
+                context.StringExample.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
                 i++;
             }
         }
@@ -182,7 +182,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.StringExample.AppendFormat(
                     CultureInfo.InvariantCulture,
-                    " {0}:{1}",
+                    " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
 			}
