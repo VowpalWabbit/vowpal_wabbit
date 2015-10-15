@@ -5,22 +5,23 @@
 #ifndef _Included_vw_learner_VWBase
 #define _Included_vw_learner_VWBase
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
-/*
- * Class:     vw_learner_VWBase
- * Method:    initialize
- * Signature: (Ljava/lang/String;)J
- */
-JNIEXPORT jlong JNICALL Java_vw_learner_VWBase_initialize
+  /*
+   * Class:     vw_learner_VWBase
+   * Method:    initialize
+   * Signature: (Ljava/lang/String;)J
+   */
+  JNIEXPORT jlong JNICALL Java_vw_learner_VWBase_initialize
   (JNIEnv *, jobject, jstring);
 
-/*
- * Class:     vw_learner_VWBase
- * Method:    closeInstance
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_vw_learner_VWBase_closeInstance
+  /*
+   * Class:     vw_learner_VWBase
+   * Method:    closeInstance
+   * Signature: (J)V
+   */
+  JNIEXPORT void JNICALL Java_vw_learner_VWBase_closeInstance
   (JNIEnv *, jobject, jlong);
 
 #ifdef __cplusplus

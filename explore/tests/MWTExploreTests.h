@@ -15,8 +15,7 @@ class TestContext
 
 template <class Ctx>
 struct TestInteraction
-{
-  Ctx& Context;
+{ Ctx& Context;
   u32 Action;
   float Probability;
   string Unique_Key;
@@ -27,8 +26,7 @@ class TestPolicy : public IPolicy<TestContext>
 public:
   TestPolicy(int params, int num_actions) : m_params(params), m_num_actions(num_actions) { }
   u32 Choose_Action(TestContext& context)
-  {
-    return m_params % m_num_actions + 1; // action id is one-based
+  { return m_params % m_num_actions + 1; // action id is one-based
   }
 private:
   int m_params;
@@ -43,20 +41,15 @@ public:
   { }
 
   vector<float> Score_Actions(TestContext& context)
-  {
-    vector<float> scores;
+  { vector<float> scores;
     if (m_uniform)
-    {
-      for (u32 i = 0; i < m_num_actions; i++)
-      {
-        scores.push_back(m_params);
+    { for (u32 i = 0; i < m_num_actions; i++)
+      { scores.push_back(m_params);
       }
     }
     else
-    {
-      for (u32 i = 0; i < m_num_actions; i++)
-      {
-        scores.push_back(m_params + i);
+    { for (u32 i = 0; i < m_num_actions; i++)
+      { scores.push_back(m_params + i);
       }
     }
     return scores;
@@ -75,11 +68,9 @@ public:
   { }
 
   vector<float> Score_Actions(TestContext& context)
-  {
-    vector<float> scores;
+  { vector<float> scores;
     for (u32 i = 0; i < m_num_actions; i++)
-    {
-      scores.push_back((float)m_value);
+    { scores.push_back((float)m_value);
     }
     return scores;
   }
@@ -93,11 +84,9 @@ class TestSimpleScorer : public IScorer<SimpleContext>
 public:
   TestSimpleScorer(int params, int num_actions) : m_params(params), m_num_actions(num_actions) { }
   vector<float> Score_Actions(SimpleContext& context)
-  {
-    vector<float> scores;
+  { vector<float> scores;
     for (u32 i = 0; i < m_num_actions; i++)
-    {
-      scores.push_back(m_params);
+    { scores.push_back(m_params);
     }
     return scores;
   }
@@ -111,8 +100,7 @@ class TestSimplePolicy : public IPolicy<SimpleContext>
 public:
   TestSimplePolicy(int params, int num_actions) : m_params(params), m_num_actions(num_actions) { }
   u32 Choose_Action(SimpleContext& context)
-  {
-    return m_params % m_num_actions + 1; // action id is one-based
+  { return m_params % m_num_actions + 1; // action id is one-based
   }
 private:
   int m_params;
@@ -123,13 +111,11 @@ class TestSimpleRecorder : public IRecorder<SimpleContext>
 {
 public:
   virtual void Record(SimpleContext& context, u32 action, float probability, string unique_key)
-  {
-    m_interactions.push_back({ context, action, probability, unique_key });
+  { m_interactions.push_back( { context, action, probability, unique_key });
   }
 
   vector<TestInteraction<SimpleContext>> Get_All_Interactions()
-  {
-    return m_interactions;
+  { return m_interactions;
   }
 
 private:
@@ -141,8 +127,7 @@ class TestBadPolicy : public IPolicy<TestContext>
 {
 public:
   u32 Choose_Action(TestContext& context)
-  {
-    return 100;
+  { return 100;
   }
 };
 
@@ -150,13 +135,11 @@ class TestRecorder : public IRecorder<TestContext>
 {
 public:
   virtual void Record(TestContext& context, u32 action, float probability, string unique_key)
-  {
-    m_interactions.push_back({ context, action, probability, unique_key });
+  { m_interactions.push_back( { context, action, probability, unique_key });
   }
 
   vector<TestInteraction<TestContext>> Get_All_Interactions()
-  {
-    return m_interactions;
+  { return m_interactions;
   }
 
 private:

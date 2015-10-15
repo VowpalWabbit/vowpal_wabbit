@@ -5,14 +5,15 @@
 #ifndef _Included_vw_VW
 #define _Included_vw_VW
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
-/*
- * Class:     vw_VW
- * Method:    version
- * Signature: ()Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_vw_VW_version
+  /*
+   * Class:     vw_VW
+   * Method:    version
+   * Signature: ()Ljava/lang/String;
+   */
+  JNIEXPORT jstring JNICALL Java_vw_VW_version
   (JNIEnv *, jclass);
 
 #ifdef __cplusplus

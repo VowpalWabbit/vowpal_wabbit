@@ -14,7 +14,8 @@ license as described in the file LICENSE.
 #define _NOEXCEPT throw ()
 #endif
 
-namespace VW {
+namespace VW
+{
 
 class vw_exception : public std::exception
 {
@@ -41,9 +42,9 @@ public:
 };
 
 #ifdef _WIN32
-  void vw_trace(const char* filename, int linenumber, const char* fmt, ...);
+void vw_trace(const char* filename, int linenumber, const char* fmt, ...);
 
-  // useful when hunting down release mode bugs
+// useful when hunting down release mode bugs
 #define VW_TRACE(fmt, ...) VW::vw_trace(__FILE__, __LINE__, fmt, __VA_ARGS__)
 
 

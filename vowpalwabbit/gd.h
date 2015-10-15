@@ -12,7 +12,8 @@
 #include "constant.h"
 #include "interactions.h"
 
-namespace GD {
+namespace GD
+{
 LEARNER::base_learner* setup(vw& all);
 
 struct gd;
@@ -22,24 +23,31 @@ void print_audit_features(vw&, example& ec);
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
 void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, GD::gd *g = nullptr);
 
-struct multipredict_info { size_t count; size_t step; polyprediction* pred; regressor* reg; /* & for l1: */ float gravity; };
+struct multipredict_info
+{ size_t count;
+  size_t step;
+  polyprediction* pred;
+  regressor* reg; /* & for l1: */
+  float gravity;
+};
 
-inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint32_t fi) {
-  if ((-1e-10 < fx) && (fx < 1e-10)) return;
+inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint32_t fi)
+{ if ((-1e-10 < fx) && (fx < 1e-10)) return;
   weight*w    = mp.reg->weight_vector;
   size_t mask = mp.reg->weight_mask;
   polyprediction* p = mp.pred;
 
   fi &= mask;
   uint32_t top = fi + (uint32_t)((mp.count-1) * mp.step);
-  if (top <= mask) {
-    weight* last = w + top;
+  if (top <= mask)
+  { weight* last = w + top;
     w += fi;
     for (; w <= last; w += mp.step, ++p)
       p->scalar += fx **w;
-  } else  // TODO: this could be faster by unrolling into two loops
-    for (size_t c=0; c<mp.count; ++c, fi += (uint32_t)mp.step, ++p) {
-      fi &= mask;
+  }
+  else    // TODO: this could be faster by unrolling into two loops
+    for (size_t c=0; c<mp.count; ++c, fi += (uint32_t)mp.step, ++p)
+    { fi &= mask;
       p->scalar += fx * w[fi];
     }
 }
@@ -47,16 +55,14 @@ inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint32_t
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
 template <class R, void (*T)(R&, const float, float&)>
 inline void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R& dat, uint32_t offset=0, float mult=1.)
-{
-  for (feature* f = begin; f != end; ++f)
+{ for (feature* f = begin; f != end; ++f)
     T(dat, mult*f->x, weight_vector[(f->weight_index + offset) & weight_mask]);
 }
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_index)
 template <class R, void (*T)(R&, float, uint32_t)>
 void foreach_feature(weight* /*weight_vector*/, size_t /*weight_mask*/, feature* begin, feature* end, R&dat, uint32_t offset=0, float mult=1.)
-{
-  for (feature* f = begin; f != end; ++f)
+{ for (feature* f = begin; f != end; ++f)
     T(dat, mult*f->x, f->weight_index + offset);
 }
 
@@ -64,8 +70,7 @@ void foreach_feature(weight* /*weight_vector*/, size_t /*weight_mask*/, feature*
 // where S is EITHER float& feature_weight OR uint32_t feature_index
 template <class R, class S, void (*T)(R&, float, S)>
 inline void foreach_feature(vw& all, example& ec, R& dat)
-{
-  uint32_t offset = ec.ft_offset;
+{ uint32_t offset = ec.ft_offset;
 
   for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
     foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[*i].begin, ec.atomics[*i].end, dat, offset);
@@ -76,15 +81,15 @@ inline void foreach_feature(vw& all, example& ec, R& dat)
 // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x, feature_weight)
 template <class R, void (*T)(R&, float, float&)>
 inline void foreach_feature(vw& all, example& ec, R& dat)
-{
-  foreach_feature<R,float&,T>(all, ec, dat);
+{ foreach_feature<R,float&,T>(all, ec, dat);
 }
 
- inline void vec_add(float& p, const float fx, float& fw) { p += fw * fx; }
+inline void vec_add(float& p, const float fx, float& fw)
+{ p += fw * fx;
+}
 
 inline float inline_predict(vw& all, example& ec)
-{
-  float temp = ec.l.simple.initial;
+{ float temp = ec.l.simple.initial;
   foreach_feature<float, vec_add>(all, ec, temp);
   return temp;
 }

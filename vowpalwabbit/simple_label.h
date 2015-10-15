@@ -9,8 +9,8 @@ license as described in the file LICENSE.
 struct example;
 struct vw;
 
-struct label_data {
-  float label;
+struct label_data
+{ float label;
   float weight;
   float initial;
 };

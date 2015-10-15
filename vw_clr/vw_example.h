@@ -11,79 +11,77 @@ license as described in the file LICENSE.
 
 namespace VW
 {
+/// <summary>
+/// A CLR representation of a vowpal wabbit example.
+/// </summary>
+/// <remarks>
+/// Underlying memory is allocated by native code, but examples are not part of the ring.
+/// </remarks>
+public ref class VowpalWabbitExample
+{
+private:
   /// <summary>
-  /// A CLR representation of a vowpal wabbit example.
+  /// Reference to an optional underlying example.
   /// </summary>
-  /// <remarks>
-  /// Underlying memory is allocated by native code, but examples are not part of the ring.
-  /// </remarks>
-  public ref class VowpalWabbitExample
-  {
-  private:
-    /// <summary>
-    /// Reference to an optional underlying example.
-    /// </summary>
-    /// <remarks>If this instance owns <see name="m_example"/> this is null.</remarks>
-    initonly VowpalWabbitExample^ m_innerExample;
+  /// <remarks>If this instance owns <see name="m_example"/> this is null.</remarks>
+  initonly VowpalWabbitExample^ m_innerExample;
 
-  protected:
-    /// <summary>
-    /// Returns native example data structure to owning instance.
-    /// </summary>
-    !VowpalWabbitExample();
+protected:
+  /// <summary>
+  /// Returns native example data structure to owning instance.
+  /// </summary>
+  !VowpalWabbitExample();
 
-  internal:
-    /// <summary>
-    /// Initializes a new instance of <see cref="VowpalWabbitExample"/>.
-    /// </summary>
-    /// <param name="owner">The parent instance. Examples cannot be shared between vw instances.</param>
-    /// <param name="example">The already allocated example structure</param>
-    VowpalWabbitExample(IVowpalWabbitExamplePool^ owner, example* example);
+internal:
+  /// <summary>
+  /// Initializes a new instance of <see cref="VowpalWabbitExample"/>.
+  /// </summary>
+  /// <param name="owner">The parent instance. Examples cannot be shared between vw instances.</param>
+  /// <param name="example">The already allocated example structure</param>
+  VowpalWabbitExample(IVowpalWabbitExamplePool^ owner, example* example);
 
-    /// <summary>
-    /// The native example data structure.
-    /// </summary>
-    example* m_example;
+  /// <summary>
+  /// The native example data structure.
+  /// </summary>
+  example* m_example;
 
-    /// <summary>
-    /// The owner of this example.
-    /// </summary>
-    IVowpalWabbitExamplePool^ m_owner;
+  /// <summary>
+  /// The owner of this example.
+  /// </summary>
+  IVowpalWabbitExamplePool^ m_owner;
 
-  public:
-    /// <summary>
-    /// Initializes a new instance of <see cref="VowpalWabbitExample"/>.
-    /// </summary>
-    /// <param name="owner">The parent instance. Examples cannot be shared between <see cref="IVowpalWabbitExamplePool"/> instances.</param>
-    /// <param name="example">The inner example this instance wraps.</param>
-    VowpalWabbitExample(IVowpalWabbitExamplePool^ owner, VowpalWabbitExample^ example);
+public:
+  /// <summary>
+  /// Initializes a new instance of <see cref="VowpalWabbitExample"/>.
+  /// </summary>
+  /// <param name="owner">The parent instance. Examples cannot be shared between <see cref="IVowpalWabbitExamplePool"/> instances.</param>
+  /// <param name="example">The inner example this instance wraps.</param>
+  VowpalWabbitExample(IVowpalWabbitExamplePool^ owner, VowpalWabbitExample^ example);
 
-    /// <summary>
-    /// Returns native example data structure to owning pool.
-    /// </summary>
-    ~VowpalWabbitExample();
+  /// <summary>
+  /// Returns native example data structure to owning pool.
+  /// </summary>
+  ~VowpalWabbitExample();
 
-    /// <summary>
-    /// Extracts the prediction from this example using the given prediction factory.
-    /// </summary>
-    /// <returns>The prediction stored in this example.</returns>
-    generic<typename T>
-    T GetPrediction(VowpalWabbit^ vw, IVowpalWabbitPredictionFactory<T>^ factory);
+  /// <summary>
+  /// Extracts the prediction from this example using the given prediction factory.
+  /// </summary>
+  /// <returns>The prediction stored in this example.</returns>
+  generic<typename T>
+  T GetPrediction(VowpalWabbit^ vw, IVowpalWabbitPredictionFactory<T>^ factory);
 
-    /// <summary>
-    /// An optional inner example this example wraps.
-    /// </summary>
-    property VowpalWabbitExample^ InnerExample
-    {
-      VowpalWabbitExample^ get();
-    }
+  /// <summary>
+  /// An optional inner example this example wraps.
+  /// </summary>
+  property VowpalWabbitExample^ InnerExample
+  { VowpalWabbitExample^ get();
+  }
 
-    /// <summary>
-    /// The owner of this example.
-    /// </summary>
-    property IVowpalWabbitExamplePool^ Owner
-    {
-      IVowpalWabbitExamplePool^ get();
-    }
-  };
+  /// <summary>
+  /// The owner of this example.
+  /// </summary>
+  property IVowpalWabbitExamplePool^ Owner
+  { IVowpalWabbitExamplePool^ get();
+  }
+};
 }

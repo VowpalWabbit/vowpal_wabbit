@@ -8,6 +8,7 @@ LEARNER::base_learner* csoaa_setup(vw& all);
 
 LEARNER::base_learner* csldf_setup(vw& all);
 
-namespace LabelDict {
+namespace LabelDict
+{
 bool ec_is_example_header(example& ec);// example headers look like "0:-1" or just "shared"
 }
