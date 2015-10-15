@@ -182,6 +182,24 @@ namespace cs_unittest
                 });
             }
         }
+
+
+        [TestMethod]
+        [TestCategory("Marshal")]
+        public void TestEnumerizePosition()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<ExampleEnumerize>(string.Empty))
+            {
+                vw.Validate("| Position0", new ExampleEnumerize { Position = 0 });
+                vw.Validate("| Position2", new ExampleEnumerize { Position = 2 });
+            }
+        }
+    }
+
+    public class ExampleEnumerize
+    {
+        [Feature(Enumerize = true)]
+        public int Position { get; set; }
     }
 
     public class ExampleStringEscape

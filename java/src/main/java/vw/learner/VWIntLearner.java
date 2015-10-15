@@ -1,7 +1,7 @@
 package vw.learner;
 
 /**
- * Created by deak on 10/1/15.
+ * @author deak
  */
 final public class VWIntLearner extends VWBase {
     public VWIntLearner(String command) {

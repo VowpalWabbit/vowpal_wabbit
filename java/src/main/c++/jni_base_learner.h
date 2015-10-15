@@ -20,7 +20,7 @@ T base_predict(
         jboolean learn,
         jlong vwPtr,
         const F &predictor) {
-    T result;
+    T result = 0;
     try {
         vw* vwInstance = (vw*)vwPtr;
         const char *utf_string = env->GetStringUTFChars(example_string, NULL);
