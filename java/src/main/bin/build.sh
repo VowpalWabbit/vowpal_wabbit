@@ -82,9 +82,9 @@ yellow() {
 die() { red $2; exit $1; }
 
 # -----------------------------------------------------------------------------
-#  Check that the OS is OS X.  If not, die.  If so, check that brew is 
-#  installed.  If brew is not installed, ask the user if they want to install.  
-#  If so, attempt to install.  After attempting install, check for existence.  
+#  Check that the OS is OS X.  If not, die.  If so, check that brew is
+#  installed.  If brew is not installed, ask the user if they want to install.
+#  If so, attempt to install.  After attempting install, check for existence.
 #  If it still doesn't exist, fail.
 # -----------------------------------------------------------------------------
 check_brew_installed() {
@@ -92,13 +92,13 @@ check_brew_installed() {
   if [[ "$os" != "Darwin" ]]; then
     die $__not_darwin "Build script only supported on OS X.  OS=${os}.  Aborting ..."
   else
-    if ! brew help 1>/dev/null 2>/dev/null; then 
+    if ! brew help 1>/dev/null 2>/dev/null; then
       red "brew not installed.  To install: Y or N?"
       read should_install
       if [[ "Y" == "${should_install^^}" ]]; then
         ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
       fi
-      if ! brew help 1>/dev/null 2>/dev/null; then 
+      if ! brew help 1>/dev/null 2>/dev/null; then
         die $__brew_not_installed "brew not installed.  Aborting ..."
       fi
     fi
@@ -106,7 +106,7 @@ check_brew_installed() {
 }
 
 install_brew_cask() {
-  if ! brew cask 1>/dev/null 2>/dev/null; then 
+  if ! brew cask 1>/dev/null 2>/dev/null; then
     yellow "Installing brew-cask..."
     brew install caskroom/cask/brew-cask
   fi
@@ -129,6 +129,16 @@ install_cask_app() {
 }
 
 run_docker() {
+  # Ideally we should only have to do this once, but it doesn't seem robust, while this is slower
+  # it works every time
+  boot2docker delete
+  boot2docker init
+  boot2docker up
+
+  # After running boot2docker up this is printed out and it should be the same for everyone
+  export DOCKER_HOST=tcp://192.168.59.103:2376
+  export DOCKER_CERT_PATH=~/.boot2docker/certs/boot2docker-vm
+  export DOCKER_TLS_VERIFY=1
   local machine=$1
   local script=$2
   docker run -v $(pwd):/vowpal_wabbit $machine /bin/bash -c "$script"
@@ -143,14 +153,6 @@ install_brew_cask
 install_cask_app "virtualbox"
 install_brew_app "boot2docker"
 install_brew_app "docker"
-boot2docker delete
-boot2docker init
-boot2docker up
-
-# After running boot2docker up this is printed out and it should be the same for everyone
-export DOCKER_HOST=tcp://192.168.59.103:2376
-export DOCKER_CERT_PATH=~/.boot2docker/certs/boot2docker-vm
-export DOCKER_TLS_VERIFY=1
 
 run_docker "ubuntu:12.04" "$ubuntu_12"
 run_docker "32bit/ubuntu:14.04" "$ubuntu_14_32"
