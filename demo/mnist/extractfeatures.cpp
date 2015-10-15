@@ -5,7 +5,7 @@
 #include <iostream>
 #include <string>
 
-int 
+int
 main (void)
 {
   using std::cin;
@@ -33,8 +33,8 @@ main (void)
   uint32_t rc = n_rows * n_columns;
   unsigned char buf[rc];
 
-  for (cin.read (reinterpret_cast<char*> (buf), rc); 
-       ! cin.eof (); 
+  for (cin.read (reinterpret_cast<char*> (buf), rc);
+       ! cin.eof ();
        cin.read (reinterpret_cast<char*> (buf), rc))
     {
       cout << "|p";

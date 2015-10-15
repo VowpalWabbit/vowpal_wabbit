@@ -132,7 +132,7 @@ void AllReduceSockets::all_reduce_init()
   if (recv(master_sock, (char*)&ok, sizeof(ok), 0) < (int)sizeof(ok))
     cerr << "read ok failed!" << endl;
   else cerr << "read ok=" << ok << endl;
-  if (!ok) 
+  if (!ok)
     THROW("mapper already connected");
 
   uint16_t kid_count;
@@ -142,7 +142,7 @@ void AllReduceSockets::all_reduce_init()
   if(recv(master_sock, (char*)&kid_count, sizeof(kid_count), 0) < (int)sizeof(kid_count))
     cerr << "read kid_count failed!" << endl;
   else cerr << "read kid_count=" << kid_count << endl;
-  
+
   socket_t sock = -1;
   short unsigned int netport = htons(26544);
   if(kid_count > 0) {
@@ -200,7 +200,7 @@ void AllReduceSockets::all_reduce_init()
   if(recv(master_sock, (char*)&parent_port, sizeof(parent_port), 0) < (int)sizeof(parent_port))
     cerr << "read parent_port failed!" << endl;
   else cerr << "read parent_port=" << parent_port << endl;
-  
+
   CLOSESOCK(master_sock);
 
   if(parent_ip != (uint32_t)-1) {
@@ -264,16 +264,16 @@ void AllReduceSockets::broadcast(char* buffer, const size_t n) {
       if(parent_read_pos >= n && children_sent_pos >= n) break;
 
       if (socks.parent != -1) {
-	//there is data to be read from the parent
-	if(parent_read_pos == n) 
-	  THROW("I think parent has no data to send but he thinks he has");
+  //there is data to be read from the parent
+  if(parent_read_pos == n)
+    THROW("I think parent has no data to send but he thinks he has");
 
-	size_t count = min(ar_buf_size,n-parent_read_pos);
-	int read_size = recv(socks.parent, buffer + parent_read_pos, (int)count, 0);
-	if(read_size == -1) {
-	  cerr <<" recv from parent: " << strerror(errno) << endl;
-	}
-	parent_read_pos += read_size;
+  size_t count = min(ar_buf_size,n-parent_read_pos);
+  int read_size = recv(socks.parent, buffer + parent_read_pos, (int)count, 0);
+  if(read_size == -1) {
+    cerr <<" recv from parent: " << strerror(errno) << endl;
+  }
+  parent_read_pos += read_size;
       }
     }
 }

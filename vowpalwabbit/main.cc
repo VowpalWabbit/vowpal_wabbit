@@ -21,50 +21,50 @@ using namespace std;
 vw& setup(int argc, char* argv[])
 {
     vw& all = parse_args(argc, argv);
-	io_buf model;
-	parse_regressor_args(all, model);
-	parse_modules(all, model);
-	parse_sources(all, model);
+  io_buf model;
+  parse_regressor_args(all, model);
+  parse_modules(all, model);
+  parse_sources(all, model);
 
     all.vw_is_main = true;
 
-	if (!all.quiet && !all.bfgs && !all.searchstr)
+  if (!all.quiet && !all.bfgs && !all.searchstr)
         {
-        	std::cerr << std::left
-        	          << std::setw(shared_data::col_avg_loss) << std::left << "average"
-        		  << " "
-        		  << std::setw(shared_data::col_since_last) << std::left << "since"
-        		  << " "
-			  << std::right
-        		  << std::setw(shared_data::col_example_counter) << "example"
-        		  << " "
-        		  << std::setw(shared_data::col_example_weight) << "example"
-        		  << " "
-        		  << std::setw(shared_data::col_current_label) << "current"
-        		  << " "
-        		  << std::setw(shared_data::col_current_predict) << "current"
-        		  << " "
-        		  << std::setw(shared_data::col_current_features) << "current"
-        		  << std::endl;
-        	std::cerr << std::left
-        	          << std::setw(shared_data::col_avg_loss) << std::left << "loss"
-        		  << " "
-        		  << std::setw(shared_data::col_since_last) << std::left << "last"
-        		  << " "
-			  << std::right
-        		  << std::setw(shared_data::col_example_counter) << "counter"
-        		  << " "
-        		  << std::setw(shared_data::col_example_weight) << "weight"
-        		  << " "
-        		  << std::setw(shared_data::col_current_label) << "label"
-        		  << " "
-        		  << std::setw(shared_data::col_current_predict) << "predict"
-        		  << " "
-        		  << std::setw(shared_data::col_current_features) << "features"
-        		  << std::endl;
+          std::cerr << std::left
+                    << std::setw(shared_data::col_avg_loss) << std::left << "average"
+              << " "
+              << std::setw(shared_data::col_since_last) << std::left << "since"
+              << " "
+        << std::right
+              << std::setw(shared_data::col_example_counter) << "example"
+              << " "
+              << std::setw(shared_data::col_example_weight) << "example"
+              << " "
+              << std::setw(shared_data::col_current_label) << "current"
+              << " "
+              << std::setw(shared_data::col_current_predict) << "current"
+              << " "
+              << std::setw(shared_data::col_current_features) << "current"
+              << std::endl;
+          std::cerr << std::left
+                    << std::setw(shared_data::col_avg_loss) << std::left << "loss"
+              << " "
+              << std::setw(shared_data::col_since_last) << std::left << "last"
+              << " "
+        << std::right
+              << std::setw(shared_data::col_example_counter) << "counter"
+              << " "
+              << std::setw(shared_data::col_example_weight) << "weight"
+              << " "
+              << std::setw(shared_data::col_current_label) << "label"
+              << " "
+              << std::setw(shared_data::col_current_predict) << "predict"
+              << " "
+              << std::setw(shared_data::col_current_features) << "features"
+              << std::endl;
         }
 
-	return all;
+  return all;
 }
 
 int main(int argc, char *argv[])

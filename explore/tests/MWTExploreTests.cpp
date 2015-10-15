@@ -137,7 +137,7 @@ namespace vw_explore_tests
 
 			chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(2), my_context);
 			Assert::AreEqual(expected_action1, chosen_action);
-			
+
 			vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
 			float expected_probs[2] = { .5f, .5f };
 			this->Test_Interactions(interactions, 2, expected_probs);
@@ -197,7 +197,7 @@ namespace vw_explore_tests
 			for (i = 0; i < num_actions; i++)
 			{
 				Assert::IsTrue(actions[i] > 0);
-			}		
+			}
 			float* expected_probs = new float[num_decisions];
 			for (i = 0; i < num_decisions; i++)
 			{
@@ -597,7 +597,7 @@ namespace vw_explore_tests
 		{
 		}
 
-	private: 
+	private:
 		// Test end-to-end using StringRecorder with no crash
 		template <class Exp>
 		void End_To_End(MwtExplorer<SimpleContext>& mwt, Exp& explorer, StringRecorder<SimpleContext>& recorder)

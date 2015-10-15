@@ -5,7 +5,7 @@ license as described in the file LICENSE.
  */
 #pragma once
 
-#include <sys/types.h>  // defines size_t 
+#include <sys/types.h>  // defines size_t
 
 // Platform-specific functions and macros
 #if defined(_MSC_VER)                       // Microsoft Visual Studio
@@ -16,7 +16,7 @@ license as described in the file LICENSE.
 #   define BIG_CONSTANT(x) (x)
 
 #else                                       // Other compilers
-#   include <stdint.h>   // defines uint32_t etc 
+#   include <stdint.h>   // defines uint32_t etc
 
 inline uint32_t rotl32(uint32_t x, int8_t r)
 {

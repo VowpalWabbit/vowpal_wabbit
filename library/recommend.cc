@@ -61,7 +61,7 @@ void bf_add(char *bf, char *line) {
 }
 void bf_info(char *bf, FILE *f) {
         unsigned i, on=0;
-        for(i=0; i<num_bits(b); i++) 
+        for(i=0; i<num_bits(b); i++)
                 if (BIT_TEST(bf,i)) on++;
 
         fprintf(f, "%.2f%% saturation\n%lu bf bit size\n", on*100.0/num_bits(b), num_bits(b));
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 
         try {
                 po::store(po::parse_command_line(argc, argv, desc), vm);
-                po::notify(vm);    
+                po::notify(vm);
         }
         catch(exception & e)
         {
@@ -163,12 +163,12 @@ int main(int argc, char *argv[])
         {
                 bf_add(bf,buf);
                 banned++;
-        }                
+        }
 
         /* print saturation etc */
         if (verbose)
         {
-                bf_info(bf,stderr); 
+                bf_info(bf,stderr);
                 fprintf(stderr, "%d banned pairs\n", banned);
         }
 
@@ -184,13 +184,13 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "predicting...\n");
                 fprintf(stderr, "%12s %8s %8s %8s %12s %s %s\n", "pair", "user", "item", "rec", "skipped", "userfile", "itemfile");
         }
-        while ((read = getline(&u, &len, fU)) != -1) 
+        while ((read = getline(&u, &len, fU)) != -1)
         {
                 users++;
                 u[strlen(u)-1] = 0; // chop
                 rewind(fI);
                 items=0;
-                while ((read = getline(&i, &len, fI)) != -1) 
+                while ((read = getline(&i, &len, fI)) != -1)
                 {
                         items++;
                         pairs++;
@@ -212,8 +212,8 @@ int main(int argc, char *argv[])
                                 const string str(estr);
 
                                 if(pr_queue.size() < (size_t)topk)
-                                {        
-				  pr_queue.push(make_pair(ex->pred.scalar, str));
+                                {
+          pr_queue.push(make_pair(ex->pred.scalar, str));
                                 }
                                 else if(pr_queue.top().first < ex->pred.scalar)
                                 {

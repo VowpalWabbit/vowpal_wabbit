@@ -47,7 +47,7 @@ class MyScorer : public IScorer<MyContext>
 public:
 	MyScorer(u32 num_actions) : m_num_actions(num_actions)
 	{
-	
+
 	}
 	vector<float> Score_Actions(MyContext& context)
 	{
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
 		cerr << "arguments: {greedy,tau-first,bootstrap,softmax,generic}" << endl;
 		exit(1);
 	}
-	
+
 	// Arguments for individual explorers
 	if (strcmp(argv[1], "greedy") == 0)
 	{
@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
 	}
 	else if (strcmp(argv[1], "softmax") == 0)
 	{
-		// Initialize Softmax explore algorithm using MyScorer 
+		// Initialize Softmax explore algorithm using MyScorer
 		MyRecorder recorder;
 		MwtExplorer<MyContext> mwt("salt", recorder);
 
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
 	}
 	else if (strcmp(argv[1], "generic") == 0)
 	{
-		// Initialize Generic explore algorithm using MyScorer 
+		// Initialize Generic explore algorithm using MyScorer
 		MyRecorder recorder;
 		MwtExplorer<MyContext> mwt("appid", recorder);
 

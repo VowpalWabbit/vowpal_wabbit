@@ -15,92 +15,92 @@ using namespace System::Collections::Generic;
 
 namespace VW
 {
-	ref class VowpalWabbitPrediction;
-	ref class VowpalWabbitModel;
+  ref class VowpalWabbitPrediction;
+  ref class VowpalWabbitModel;
 
-	/// <summary>
-	/// A base wrapper around vowpal wabbit machine learning instance.
-	/// </summary>
-	/// <remarks>
-	/// Since the model class must delay diposal of <see cref="m_vw"/> until all referencing
-	/// VowpalWabbit instances are disposed, the base class does not dispose <see cref="m_vw"/>.
-	/// </remarks>
-	public ref class VowpalWabbitBase abstract : IVowpalWabbitExamplePool
-	{
-	private:
-		/// <summary>
-		/// The settings used for this instance.
-		/// </summary>
-		initonly VowpalWabbitSettings^ m_settings;
-		
-		/// <summary>
-		/// An optional shared model.
-		/// </summary>
-		VowpalWabbitModel^ m_model;
-		
-		/// <summary>
-		/// Example pool.
-		/// </summary>
-		Stack<VowpalWabbitExample^>^ m_examples;
+  /// <summary>
+  /// A base wrapper around vowpal wabbit machine learning instance.
+  /// </summary>
+  /// <remarks>
+  /// Since the model class must delay diposal of <see cref="m_vw"/> until all referencing
+  /// VowpalWabbit instances are disposed, the base class does not dispose <see cref="m_vw"/>.
+  /// </remarks>
+  public ref class VowpalWabbitBase abstract : IVowpalWabbitExamplePool
+  {
+  private:
+    /// <summary>
+    /// The settings used for this instance.
+    /// </summary>
+    initonly VowpalWabbitSettings^ m_settings;
 
-	internal:
-		/// <summary>
-		/// The native vowpal wabbit data structure.
-		/// </summary>
-		vw* m_vw;
+    /// <summary>
+    /// An optional shared model.
+    /// </summary>
+    VowpalWabbitModel^ m_model;
 
-		/// <summary>
-		/// Gets or creates a native example from a CLR maintained, but natively allocated pool.
-		/// </summary>
-		/// <returns>A ready to use cleared native example data structure.</returns>
-		VowpalWabbitExample^ GetOrCreateNativeExample();
+    /// <summary>
+    /// Example pool.
+    /// </summary>
+    Stack<VowpalWabbitExample^>^ m_examples;
 
-	protected:
-		/// <summary>
-		/// True if all nativedata structures are disposed.
-		/// </summary>
-		bool m_isDisposed;
+  internal:
+    /// <summary>
+    /// The native vowpal wabbit data structure.
+    /// </summary>
+    vw* m_vw;
 
-		/// <summary>
-		/// Initializes a new <see cref="VowpalWabbitBase"/> instance. 
-		/// </summary>
-		/// <param name="settings">Command line arguments.</param>
-		VowpalWabbitBase(VowpalWabbitSettings^ settings);
+    /// <summary>
+    /// Gets or creates a native example from a CLR maintained, but natively allocated pool.
+    /// </summary>
+    /// <returns>A ready to use cleared native example data structure.</returns>
+    VowpalWabbitExample^ GetOrCreateNativeExample();
 
-		/// <summary>
-		/// Cleanup.
-		/// </summary>
-		!VowpalWabbitBase();
+  protected:
+    /// <summary>
+    /// True if all nativedata structures are disposed.
+    /// </summary>
+    bool m_isDisposed;
 
-		/// <summary>
-		/// Internal dipose using reference counting to delay disposal of shared native data structures. 
-		/// </summary>
-		void InternalDispose();
+    /// <summary>
+    /// Initializes a new <see cref="VowpalWabbitBase"/> instance.
+    /// </summary>
+    /// <param name="settings">Command line arguments.</param>
+    VowpalWabbitBase(VowpalWabbitSettings^ settings);
 
-	public:
-		/// <summary>
-		/// Cleanup.
-		/// </summary>
-		virtual ~VowpalWabbitBase();
+    /// <summary>
+    /// Cleanup.
+    /// </summary>
+    !VowpalWabbitBase();
 
-		/// <summary>
-		/// The settings used for this instance.
-		/// </summary>
-		property VowpalWabbitSettings^ Settings
-		{
-			VowpalWabbitSettings^ get();
-		}
+    /// <summary>
+    /// Internal dipose using reference counting to delay disposal of shared native data structures.
+    /// </summary>
+    void InternalDispose();
 
-		/// <summary>
-		/// Gets or creates an empty example.
-		/// </summary>
-		/// <returns>An initialized and empty example</returns>
-		VowpalWabbitExample^ GetOrCreateEmptyExample();
-		
-		/// <summary>
-		/// Puts a native example data structure back into the pool.
-		/// </summary>
-		/// <param name="example">The example to be returned.</param>
-		virtual void ReturnExampleToPool(VowpalWabbitExample^ example) sealed;
-	};
+  public:
+    /// <summary>
+    /// Cleanup.
+    /// </summary>
+    virtual ~VowpalWabbitBase();
+
+    /// <summary>
+    /// The settings used for this instance.
+    /// </summary>
+    property VowpalWabbitSettings^ Settings
+    {
+      VowpalWabbitSettings^ get();
+    }
+
+    /// <summary>
+    /// Gets or creates an empty example.
+    /// </summary>
+    /// <returns>An initialized and empty example</returns>
+    VowpalWabbitExample^ GetOrCreateEmptyExample();
+
+    /// <summary>
+    /// Puts a native example data structure back into the pool.
+    /// </summary>
+    /// <param name="example">The example to be returned.</param>
+    virtual void ReturnExampleToPool(VowpalWabbitExample^ example) sealed;
+  };
 }

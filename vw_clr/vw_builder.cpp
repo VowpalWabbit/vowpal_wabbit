@@ -60,10 +60,10 @@ namespace VW
 	{
 		if (value == nullptr)
 			return;
-				
+
 		auto bytes = System::Text::Encoding::UTF8->GetBytes(value);
 		auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
-				
+
 		try
 		{
 			VW::parse_example_label(*m_vw, *m_example->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));

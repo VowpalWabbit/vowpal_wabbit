@@ -56,7 +56,7 @@ namespace VW {
   // callers must free memory using release_example
   // this interface must be used with care as finish_example is a no-op for these examples.
   // thus any delay introduced when freeing examples must be at least as long as the one
-  // introduced by all.l->finish_example implementations. 
+  // introduced by all.l->finish_example implementations.
   // e.g. multiline examples as used by cb_adf must not be released before the finishing newline example.
   example *alloc_examples(size_t, size_t);
   void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*) = nullptr);

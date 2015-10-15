@@ -16,15 +16,15 @@
 
 // This interface now provides "wide" functions for compatibility with .NET interop
 // The default functions assume a wide (16 bit char pointer) that is converted to a utf8-string and passed to
-// a function which takes a narrow (8 bit char pointer) function. Both are exposed in the c/c++ API 
-// so that programs using 8 bit wide characters can use the direct call without conversion and 
+// a function which takes a narrow (8 bit char pointer) function. Both are exposed in the c/c++ API
+// so that programs using 8 bit wide characters can use the direct call without conversion and
 //  programs using 16 bit characters can use the default wide versions of the functions.
 // "Ansi versions  (FcnA instead of Fcn) have only been written for functions which handle strings.
 
 // a future optimization would be to write an inner version of hash feature which either hashed the
 // wide string directly (and live with the different hash values) or incorporate the UTF-16 to UTF-8 conversion
 // in the hashing to avoid allocating an intermediate string.
- 
+
 extern "C"
 {
 #ifdef USE_CODECVT
@@ -43,7 +43,7 @@ extern "C"
 		vw* all = VW::initialize(s);
 		return static_cast<VW_HANDLE>(all);
 	}
-	
+
 	VW_DLL_MEMBER void      VW_CALLING_CONV VW_Finish_Passes(VW_HANDLE handle)
 	{
 		vw * pointer = static_cast<vw*>(handle);
@@ -53,7 +53,7 @@ extern "C"
 			pointer->do_reset_source = true;
 			VW::start_parser(*pointer,false);
 			LEARNER::generic_driver(*pointer);
-			VW::end_parser(*pointer); 
+			VW::end_parser(*pointer);
 			}
 	}
 
@@ -70,7 +70,7 @@ extern "C"
 		VW::primitive_feature_space * f = reinterpret_cast<VW::primitive_feature_space*>( features );
 		return static_cast<VW_EXAMPLE>(VW::import_example(*pointer, label, f, len));
 	}
-	
+
 	VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_ExportExample(VW_HANDLE handle, VW_EXAMPLE e, size_t * plen)
 	{
 		vw* pointer = static_cast<vw*>(handle);
@@ -97,7 +97,7 @@ extern "C"
 		// BUGBUG: I really dislike this const_cast. should VW really change the input string?
 		return static_cast<VW_EXAMPLE>(VW::read_example(*pointer, const_cast<char*>(line)));
 	}
-	
+
 	VW_DLL_MEMBER void VW_CALLING_CONV VW_StartParser(VW_HANDLE handle, bool do_init)
 	{
 		vw * pointer = static_cast<vw*>(handle);
@@ -236,7 +236,7 @@ extern "C"
 		string str(s);
 		return VW::hash_feature(*pointer, str, u);
 	}
-	
+
     VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStaticA(const char * s, unsigned long u, const char * h = "strings", unsigned int num_bits = 18)
     {
         string str(s);
@@ -265,7 +265,7 @@ extern "C"
 		return VW::get_prediction(ex);
 	}
 
-	VW_DLL_MEMBER float VW_CALLING_CONV VW_Predict(VW_HANDLE handle, VW_EXAMPLE e) 
+	VW_DLL_MEMBER float VW_CALLING_CONV VW_Predict(VW_HANDLE handle, VW_EXAMPLE e)
 	{
 		vw * pointer = static_cast<vw*>(handle);
 		example * ex = static_cast<example*>(e);

@@ -30,7 +30,7 @@ public:
     {
       vector<double>::iterator it = m_referenceValues.begin();
       ezexample ex(&m_vw, false, m_vw_parser);
-      
+
       ex(vw_namespace('s'))
         ("p^the_man")
         ("w^the")

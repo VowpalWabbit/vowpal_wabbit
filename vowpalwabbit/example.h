@@ -78,7 +78,7 @@ struct example // core example datatype.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
   float revert_weight;
   v_array<feature>* passthrough; // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
-  
+
   bool test_only;
   bool end_pass;//special example indicating end of pass.
   bool sorted;//Are the features sorted or not?

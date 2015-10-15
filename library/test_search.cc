@@ -107,7 +107,7 @@ void test_buildin_task() {
     for (size_t i=0; i<V.size(); i++)
       VW::finish_example(vw_obj, V[i]);
   }
-  
+
   VW::finish(vw_obj);
 }
 

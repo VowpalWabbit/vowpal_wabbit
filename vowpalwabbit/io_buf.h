@@ -61,7 +61,7 @@ public:
   char* endloaded; //end of loaded values from file or socket
   v_array<char> currentname;
   v_array<char> finalname;
-  
+
   // used to check-sum i/o files for corruption detection
   bool verify_hash;
   uint32_t hash;
@@ -155,7 +155,7 @@ public:
 
   static ssize_t read_file_or_socket(int f, void* buf, size_t nbytes);
 
-  size_t fill(int f) 
+  size_t fill(int f)
   {
       // if the loaded values have reached the allocated space
       if (space.end_array - endloaded == 0)

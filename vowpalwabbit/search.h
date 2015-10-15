@@ -21,7 +21,7 @@ namespace Search {
   extern uint32_t AUTO_CONDITION_FEATURES, AUTO_HAMMING_LOSS, EXAMPLES_DONT_CHANGE, IS_LDF, NO_CACHING, ACTION_COSTS;
 
   struct search;
-  
+
   class BaseTask {
     public:
     BaseTask(search* _sch, vector<example*>& _ec) : sch(_sch), ec(_ec) { _foreach_action = nullptr; _post_prediction = nullptr; _maybe_override_prediction = nullptr; _with_output_string = nullptr; _final_run = false; }
@@ -30,9 +30,9 @@ namespace Search {
     inline BaseTask& maybe_override_prediction(bool (*f)(search&,size_t,action&,float&)) { _maybe_override_prediction = f; return *this; }
     inline BaseTask& with_output_string(void (*f)(search&,stringstream&)) { _with_output_string = f; return *this; }
     inline BaseTask& final_run() { _final_run = true; return *this; }
-    
+
     void Run();
-    
+
     // data
     search* sch;
     vector<example*>& ec;
@@ -42,7 +42,7 @@ namespace Search {
     bool (*_maybe_override_prediction)(search&,size_t,action&,float&);
     void (*_with_output_string)(search&,stringstream&);
   };
-  
+
   struct search {
     // INTERFACE
     // for managing task-specific data that you want on the heap:
@@ -63,7 +63,7 @@ namespace Search {
 
     // for adding command-line options
     void add_program_options(po::variables_map& vw, po::options_description& opts);
-    
+
     // for explicitly declaring a loss incrementally
     void loss(float incr_loss);
 
@@ -150,13 +150,13 @@ namespace Search {
     // your subsequent call to predictLDF(), and skip the feature
     // values.
     bool   predictNeedsExample();
-    
+
     // get the value specified by --search_history_length
     uint32_t get_history_length();
 
     // check if the user declared ldf mode
     bool is_ldf();
-    
+
     // where you should write output
     std::stringstream& output();
 
@@ -174,17 +174,17 @@ namespace Search {
 
     // pretty print a label
     std::string pretty_label(action a);
-    
+
     // for meta-tasks:
     BaseTask base_task(vector<example*>& ec) { return BaseTask(this, ec); }
-    
+
     // internal data that you don't get to see!
     search_private* priv;
     void*           task_data;  // your task data!
     void*           metatask_data;  // your metatask data!
     const char*     task_name;
     const char*     metatask_name;
-    
+
     vw& get_vw_pointer_unsafe();   // although you should rarely need this, some times you need a poiter to the vw data structure :(
     void set_force_oracle(bool force);  // if the library wants to force search to use the oracle, set this to true
   };
@@ -213,7 +213,7 @@ namespace Search {
     void (*run_setup)(search&,std::vector<example*>&);
     void (*run_takedown)(search&,std::vector<example*>&);
   };
-  
+
   // to make calls to "predict" (and "predictLDF") cleaner when you
   // want to use crazy combinations of arguments
   class predictor {
@@ -248,14 +248,14 @@ namespace Search {
     predictor& set_oracle(v_array<action>& a);
 
     predictor& set_weight(float w);
-    
+
     // same as add/set_oracle but for allowed actions
     predictor& erase_alloweds();
 
     predictor& add_allowed(action a);
     predictor& add_allowed(action*a, size_t action_count);
     predictor& add_allowed(v_array<action>& a);
-    
+
     predictor& set_allowed(action a);
     predictor& set_allowed(action*a, size_t action_count);
     predictor& set_allowed(v_array<action>& a);
@@ -265,7 +265,7 @@ namespace Search {
     predictor& add_allowed(action*a, float*costs, size_t action_count);
     predictor& add_allowed(v_array< pair<action,float> >& a);
     predictor& add_allowed(vector< pair<action,float> >& a);
-    
+
     predictor& set_allowed(action a, float cost);
     predictor& set_allowed(action*a, float*costs, size_t action_count);
     predictor& set_allowed(v_array< pair<action,float> >& a);
@@ -286,7 +286,7 @@ namespace Search {
 
     // make a prediction
     action predict();
-    
+
     private:
     bool is_ldf;
     ptag my_tag;
@@ -306,12 +306,12 @@ namespace Search {
     template<class T> predictor& add_to(v_array<T>& A, bool& A_is_ptr, T a, bool clear_first);
     template<class T> predictor& add_to(v_array<T>&A, bool& A_is_ptr, T*a, size_t count, bool clear_first);
     void free_ec();
-    
+
     // prevent the user from doing something stupid :) ... ugh needed to turn this off for python :(
     //predictor(const predictor&P);
     //predictor&operator=(const predictor&P);
   };
-  
+
   // some helper functions you might find helpful
   template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) {
     if (vm.count(opt_name)) {
@@ -323,13 +323,13 @@ namespace Search {
         THROW(required_error_string);
     }
   }
-  
+
   void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string);
   bool string_equal(string a, string b);
   bool float_equal(float a, float b);
   bool uint32_equal(uint32_t a, uint32_t b);
   bool size_equal(size_t a, size_t b);
-  
+
   // our interface within VW
   LEARNER::base_learner* setup(vw&);
 }
