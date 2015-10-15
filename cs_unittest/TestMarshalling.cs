@@ -33,6 +33,7 @@ namespace cs_unittest
             {
                 vw.Validate("|abc London", new ExampleString() { Location = "London" });
                 vw.Validate("", new ExampleString() { });
+                vw.Validate("", new ExampleString() { Location = "" });
             }
         }
 

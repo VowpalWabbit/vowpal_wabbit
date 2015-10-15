@@ -108,7 +108,8 @@ namespace VW
 
   bool FloatEqual(float a, float b)
   {
-    if (abs(a) < 1e-20 && abs(b) < 1e-20)
+    if ((abs(a) < 1e-20 && abs(b) < 1e-20) ||
+      (isinf(a) && isinf(b)))
     {
       return true;
     }

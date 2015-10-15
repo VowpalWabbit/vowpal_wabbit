@@ -31,15 +31,22 @@ namespace VW.Serializer
     /// <returns>A serializer for the given user example type.</returns>
     public sealed class VowpalWabbitSerializerCompiled<TExample>
     {
-        internal class FeatureExpressionInternal
+        internal sealed class FeatureExpressionInternal
         {
             internal FeatureExpression Source;
 
             internal readonly List<ParameterExpression> Additional = new List<ParameterExpression>();
 
-            internal MethodInfo FeaturizeMethod;
+            internal MarshalMethod MarshalMethod;
 
             internal Expression<Action> Visit;
+        }
+
+        internal sealed class MarshalMethod
+        {
+            internal MethodInfo Method;
+
+            internal Type MetaFeatureType;
         }
 
         private static readonly string SerializeMethodName = "Serialize";
@@ -133,15 +140,20 @@ namespace VW.Serializer
             }
         }
 
-        private MethodInfo ResolveFeatureMarshalMethod(FeatureExpression feature)
+
+        private MarshalMethod ResolveFeatureMarshalMethod(FeatureExpression feature)
         {
             if (feature.OverrideSerializeMethod != null)
             {
-                return feature.OverrideSerializeMethod;
+                return new MarshalMethod
+                {
+                    Method = feature.OverrideSerializeMethod,
+                    MetaFeatureType = feature.OverrideSerializeMethod.GetParameters().Select(p => p.ParameterType).First(t => typeof(Feature).IsAssignableFrom(t))
+                };
             }
 
             string methodName;
-            Type metaFeatureType;
+            Type[] metaFeatureTypeCandidates;
 
             if (feature.FeatureType == typeof(string))
             {
@@ -156,63 +168,68 @@ namespace VW.Serializer
                     default:
                         throw new ArgumentException("feature.StringProcessing is not supported: " + feature.StringProcessing);
                 }
-                metaFeatureType = typeof(Feature);
+                metaFeatureTypeCandidates = new [] { typeof(Feature) };
             }
             else if (feature.FeatureType.IsEnum)
             {
                 methodName = "MarshalEnumFeature";
-                metaFeatureType = typeof(EnumerizedFeature<>).MakeGenericType(feature.FeatureType);
+                metaFeatureTypeCandidates = new [] { typeof(EnumerizedFeature<>).MakeGenericType(feature.FeatureType) };
             }
             else if (feature.Enumerize)
             {
                 methodName = "MarshalEnumerizeFeature";
-                metaFeatureType = typeof(Feature);
-            }
-            else if (feature.IsPreHashable)
-            {
-                methodName = "MarshalFeature";
-                metaFeatureType = typeof(PreHashedFeature);
+                metaFeatureTypeCandidates = new [] { typeof(Feature) };
             }
             else
             {
+                // probe for PreHashedFeature marshal method, than fallback
                 methodName = "MarshalFeature";
-                metaFeatureType = typeof(Feature);
+                metaFeatureTypeCandidates = new [] { typeof(PreHashedFeature), typeof(Feature) };
             }
 
-            // find visitor.MarshalFeature(VowpalWabbitMarshallingContext context, Namespace ns, <PreHashedFeature|Feature> feature, <valueType> value)
-            var method = this.featurizerTypes.Select(visitor =>
-                ReflectionHelper.FindMethod(
-                        visitor,
-                        methodName,
-                        typeof(VowpalWabbitMarshalContext),
-                        typeof(Namespace),
-                        metaFeatureType,
-                        feature.FeatureType))
-                .FirstOrDefault(m => m != null);
-
-            if (method == null)
+            foreach (var metaFeatureType in metaFeatureTypeCandidates)
             {
-                // TODO: implement ToString
-                throw new ArgumentException("Unable to find featurize method for " + feature);
+                // find visitor.MarshalFeature(VowpalWabbitMarshallingContext context, Namespace ns, <PreHashedFeature|Feature> feature, <valueType> value)
+                var method = this.featurizerTypes.Select(visitor =>
+                    ReflectionHelper.FindMethod(
+                            visitor,
+                            methodName,
+                            typeof(VowpalWabbitMarshalContext),
+                            typeof(Namespace),
+                            metaFeatureType,
+                            feature.FeatureType))
+                    .FirstOrDefault(m => m != null);
+
+                if (method != null)
+                {
+                    return new MarshalMethod
+                    {
+                        Method = method,
+                        MetaFeatureType = metaFeatureType
+                    };
+                }
             }
 
-            return method;
+            // TODO: implement ToString
+            throw new ArgumentException("Unable to find featurize method for " + feature);
         }
 
         private void ResolveFeatureMarshallingMethods()
         {
             foreach (var feature in this.allFeatures)
             {
-                feature.FeaturizeMethod = this.ResolveFeatureMarshalMethod(feature.Source);
+                feature.MarshalMethod = this.ResolveFeatureMarshalMethod(feature.Source);
             }
         }
 
-        private Expression CreateFeature(FeatureExpression feature, Expression @namespace)
+        private Expression CreateFeature(FeatureExpressionInternal featureInternal, Expression @namespace)
         {
-            if (feature.FeatureType.IsEnum)
+            FeatureExpression feature = featureInternal.Source;
+            var metaFeatureType = featureInternal.MarshalMethod.MetaFeatureType;
+
+            if (metaFeatureType.IsGenericType && metaFeatureType.GetGenericTypeDefinition() == typeof(EnumerizedFeature<>))
             {
-                var enumerizeFeatureType = typeof(EnumerizedFeature<>).MakeGenericType(feature.FeatureType);
-                var featureParameter = Expression.Parameter(enumerizeFeatureType);
+                var featureParameter = Expression.Parameter(metaFeatureType);
                 var valueParameter = Expression.Parameter(feature.FeatureType);
 
                 var body = new List<Expression>();
@@ -226,7 +243,7 @@ namespace VW.Serializer
                     // CODE hashVar = feature.FeatureHashInternal(value);
                     body.Add(Expression.Assign(hashVar,
                         Expression.Call(featureParameter,
-                            enumerizeFeatureType.GetMethod("FeatureHashInternal"),
+                            metaFeatureType.GetMethod("FeatureHashInternal"),
                             Expression.Constant(value))));
                 }
 
@@ -246,14 +263,14 @@ namespace VW.Serializer
                 body.Add(Expression.Lambda(hashSwitch, valueParameter));
 
                 return CreateNew(
-                        enumerizeFeatureType,
+                        metaFeatureType,
                         this.vwParameter,
                         @namespace,
                         Expression.Constant(feature.Name, typeof(string)),
                         Expression.Constant(feature.AddAnchor),
                         Expression.Lambda(Expression.Block(hashVariables, body), featureParameter));
             }
-            else if (!feature.Enumerize && feature.IsPreHashable)
+            else if (metaFeatureType == typeof(PreHashedFeature))
             {
                 // CODE: new PreHashedFeature(vw, namespace, "Name", "AddAnchor");
                 return CreateNew(
@@ -263,11 +280,11 @@ namespace VW.Serializer
                         Expression.Constant(feature.Name, typeof(string)),
                         Expression.Constant(feature.AddAnchor));
             }
-
-            return CreateNew(
-                typeof(Feature),
-                Expression.Constant(feature.Name, typeof(string)),
-                Expression.Constant(feature.AddAnchor));
+            else
+                return CreateNew(
+                    metaFeatureType,
+                    Expression.Constant(feature.Name, typeof(string)),
+                    Expression.Constant(feature.AddAnchor));
         }
 
         private static Expression CreateNew(Type type, params Expression[] constructorParameters)
@@ -308,7 +325,7 @@ namespace VW.Serializer
 	            {
                     var newFeature = feature.Source.FeatureExpressionFactory != null ?
                         feature.Source.FeatureExpressionFactory(this.vwParameter, namespaceVariable) :
-                        this.CreateFeature(feature.Source, namespaceVariable);
+                        this.CreateFeature(feature, namespaceVariable);
 
                     var featureVariable = Expression.Variable(newFeature.Type, "feature_" + feature.Source.Name);
                     this.variables.Add(featureVariable);
@@ -317,7 +334,7 @@ namespace VW.Serializer
                     this.body.Add(Expression.Assign(featureVariable, newFeature));
 
                     // TODO: optimize
-                    var featurizer = this.featurizers.First(f => f.Type == feature.FeaturizeMethod.ReflectedType);
+                    var featurizer = this.featurizers.First(f => f.Type == feature.MarshalMethod.Method.ReflectedType);
 
                     var valueVariable = feature.Source.ValueExpressionFactory(this.exampleParameter);
                     Expression featureVisit;
@@ -328,7 +345,7 @@ namespace VW.Serializer
                             Expression.NotEqual(valueVariable, Expression.Constant(null)),
                                 Expression.Call(
                                      featurizer,
-                                     feature.FeaturizeMethod,
+                                     feature.MarshalMethod.Method,
                                      this.contextParameter,
                                      namespaceVariable,
                                      featureVariable,
@@ -339,7 +356,7 @@ namespace VW.Serializer
                         // featurzier.MarshalXXX(vw, context, ns, feature, value);
                         featureVisit = Expression.Call(
                             featurizer,
-                            feature.FeaturizeMethod,
+                            feature.MarshalMethod.Method,
                             this.contextParameter,
                             namespaceVariable,
                             featureVariable,

@@ -71,6 +71,7 @@
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestManagedHash.cs" />
     <Compile Include="TestMarshalling.cs" />
+    <Compile Include="TestMarshallingOverflow.cs" />
     <Compile Include="TestMarshalNumeric.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

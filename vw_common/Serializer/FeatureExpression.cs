@@ -70,10 +70,6 @@ namespace VW.Serializer
             this.OverrideSerializeMethod = overrideSerializeMethod;
 
             this.DenseFeatureValueElementType = InspectionHelper.GetDenseFeatureValueElementType(featureType);
-
-            this.IsPreHashable = InspectionHelper.IsNumericType(this.FeatureType) ||
-                InspectionHelper.IsNumericType(InspectionHelper.GetDenseFeatureValueElementType(this.FeatureType)) ||
-                this.FeatureType == typeof(bool);
         }
 
         public bool IsNullable { get; private set; }
@@ -123,8 +119,6 @@ namespace VW.Serializer
         public Type DenseFeatureValueElementType { get; private set; }
 
         public int Order { get; private set; }
-
-        public bool IsPreHashable { get; private set; }
 
         public StringProcessing StringProcessing { get; private set; }
     }
