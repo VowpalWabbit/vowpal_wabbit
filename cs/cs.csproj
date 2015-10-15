@@ -114,7 +114,7 @@
     <Compile Include="Serializer\Intermediate\EnumerizedFeature.cs" />
     <Compile Include="Serializer\Intermediate\Feature.cs" />
     <Compile Include="Serializer\Intermediate\Namespace.cs" />
-    <Compile Include="Serializer\Intermediate\NumericFeature.cs" />
+    <Compile Include="Serializer\Intermediate\PreHashedFeature.cs" />
     <Compile Include="Serializer\VowpalWabbitDefaultMarshaller.cs" />
     <Compile Include="Serializer\VowpalWabbitDefaultMarshallerExt.cs">
       <AutoGen>True</AutoGen>

@@ -50,6 +50,30 @@ namespace VW.Serializer
                 featureString);
         }
 
+        public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, bool value)
+        {
+            Contract.Requires(context != null);
+            Contract.Requires(ns != null);
+            Contract.Requires(feature != null);
+
+            if (!value)
+            {
+                return;
+            }
+
+            context.NamespaceBuilder.AddFeature(feature.FeatureHash, 1f);
+
+            if (this.disableStringExampleGeneration)
+            {
+                return;
+            }
+
+            context.StringExample.AppendFormat(
+                CultureInfo.InvariantCulture,
+                " {0}",
+                feature.Name);
+        }
+
         public void MarshalEnumFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, EnumerizedFeature<T> feature, T value)
         {
             Contract.Requires(context != null);

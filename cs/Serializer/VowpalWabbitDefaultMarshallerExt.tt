@@ -30,7 +30,7 @@ namespace VW.Serializer
 		/// <param name="ns">The namespace description.</param>
 		/// <param name="feature">The feature description.</param>
 		/// <param name="value">The feature value.</param>
-        public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, NumericFeature feature, <#=t#> value)
+        public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, <#=t#> value)
         {
             Contract.Requires(context != null);
             Contract.Requires(ns != null);
@@ -66,7 +66,7 @@ namespace VW.Serializer
 		/// <param name="ns">The namespace description.</param>
 		/// <param name="feature">The feature description.</param>
 		/// <param name="value">The feature value.</param>
-        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, NumericFeature feature, <#=t#>[] value)
+        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, <#=t#>[] value)
         {
             if (value == null)
             {

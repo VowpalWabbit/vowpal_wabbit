@@ -168,10 +168,10 @@ namespace VW.Serializer
                 methodName = "MarshalEnumerizeFeature";
                 metaFeatureType = typeof(Feature);
             }
-            else if (feature.IsNumeric)
+            else if (feature.IsPreHashable)
             {
                 methodName = "MarshalFeature";
-                metaFeatureType = typeof(NumericFeature);
+                metaFeatureType = typeof(PreHashedFeature);
             }
             else
             {
@@ -179,7 +179,7 @@ namespace VW.Serializer
                 metaFeatureType = typeof(Feature);
             }
 
-            // find visitor.MarshalFeature(VowpalWabbitMarshallingContext context, Namespace ns, <NumericFeature|Feature> feature, <valueType> value)
+            // find visitor.MarshalFeature(VowpalWabbitMarshallingContext context, Namespace ns, <PreHashedFeature|Feature> feature, <valueType> value)
             var method = this.featurizerTypes.Select(visitor =>
                 ReflectionHelper.FindMethod(
                         visitor,
@@ -253,11 +253,11 @@ namespace VW.Serializer
                         Expression.Constant(feature.AddAnchor),
                         Expression.Lambda(Expression.Block(hashVariables, body), featureParameter));
             }
-            else if (!feature.Enumerize && feature.IsNumeric)
+            else if (!feature.Enumerize && feature.IsPreHashable)
             {
-                // CODE: new NumericFeature(vw, namespace, "Name", "AddAnchor");
+                // CODE: new PreHashedFeature(vw, namespace, "Name", "AddAnchor");
                 return CreateNew(
-                        typeof(NumericFeature),
+                        typeof(PreHashedFeature),
                         this.vwParameter,
                         @namespace,
                         Expression.Constant(feature.Name, typeof(string)),

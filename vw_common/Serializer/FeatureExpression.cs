@@ -71,8 +71,9 @@ namespace VW.Serializer
 
             this.DenseFeatureValueElementType = InspectionHelper.GetDenseFeatureValueElementType(featureType);
 
-            this.IsNumeric = InspectionHelper.IsNumericType(this.FeatureType) ||
-                InspectionHelper.IsNumericType(InspectionHelper.GetDenseFeatureValueElementType(this.FeatureType));
+            this.IsPreHashable = InspectionHelper.IsNumericType(this.FeatureType) ||
+                InspectionHelper.IsNumericType(InspectionHelper.GetDenseFeatureValueElementType(this.FeatureType)) ||
+                this.FeatureType == typeof(bool);
         }
 
         public bool IsNullable { get; private set; }
@@ -123,7 +124,7 @@ namespace VW.Serializer
 
         public int Order { get; private set; }
 
-        public bool IsNumeric { get; private set; }
+        public bool IsPreHashable { get; private set; }
 
         public StringProcessing StringProcessing { get; private set; }
     }

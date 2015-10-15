@@ -194,6 +194,23 @@ namespace cs_unittest
                 vw.Validate("| Position2", new ExampleEnumerize { Position = 2 });
             }
         }
+
+        [TestMethod]
+        [TestCategory("Marshal")]
+        public void TestBool()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<ExampleBoolean>(string.Empty))
+            {
+                vw.Validate("| OnOff", new ExampleBoolean { OnOff = true });
+                vw.Validate("| ", new ExampleBoolean { OnOff = false });
+            }
+        }
+    }
+
+    public class ExampleBoolean
+    {
+        [Feature]
+        public bool OnOff { get; set; }
     }
 
     public class ExampleEnumerize
