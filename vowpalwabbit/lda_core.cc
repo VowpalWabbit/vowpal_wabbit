@@ -633,6 +633,7 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, exa
   ec->topic_predictions.erase();
   ec->topic_predictions.resize(l.topics);
   memcpy(ec->topic_predictions.begin, new_gamma.begin, l.topics * sizeof(float));
+  ec->topic_predictions.end = ec->topic_predictions.begin + l.topics;
 
   score += theta_kl(l, Elogtheta, new_gamma.begin);
 
