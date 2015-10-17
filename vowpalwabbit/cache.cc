@@ -19,11 +19,12 @@ char* run_len_decode(char *p, uint32_t& i)
   return p;
 }
 
-inline int32_t ZigZagDecode(uint32_t n) { return (n >> 1) ^ -static_cast<int32_t>(n & 1); }
+inline int32_t ZigZagDecode(uint32_t n)
+{ return (n >> 1) ^ -static_cast<int32_t>(n & 1);
+}
 
 size_t read_cached_tag(io_buf& cache, example* ae)
-{
-  char* c;
+{ char* c;
   size_t tag_size;
   if (buf_read(cache, c, sizeof(tag_size)) < sizeof(tag_size))
     return 0;
@@ -38,15 +39,16 @@ size_t read_cached_tag(io_buf& cache, example* ae)
   return tag_size+sizeof(tag_size);
 }
 
-struct one_float { float f; }
+struct one_float
+{ float f;
+}
 #ifndef _WIN32
 __attribute__((packed))
 #endif
 ;
 
 int read_cached_features(void* in, example* ec)
-{
-  vw* all = (vw*)in;
+{ vw* all = (vw*)in;
   example* ae = (example*)ec;
   ae->sorted = all->p->sorted_cache;
   io_buf* input = all->p->input;
@@ -65,11 +67,10 @@ int read_cached_features(void* in, example* ec)
 
   all->p->input->set(c);
   for (; num_indices > 0; num_indices--)
-  {
-    size_t temp;
+  { size_t temp;
     unsigned char index = 0;
-    if((temp = buf_read(*input,c,sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t)) {
-      cerr << "truncated example! " << temp << " " << char_size + sizeof(size_t) << endl;
+    if((temp = buf_read(*input,c,sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
+    { cerr << "truncated example! " << temp << " " << char_size + sizeof(size_t) << endl;
       return 0;
     }
 
@@ -82,8 +83,8 @@ int read_cached_features(void* in, example* ec)
     c += sizeof(size_t);
     all->p->input->set(c);
     total += storage;
-    if (buf_read(*input,c,storage) < storage) {
-      cerr << "truncated example! wanted: " << storage << " bytes" << endl;
+    if (buf_read(*input,c,storage) < storage)
+    { cerr << "truncated example! wanted: " << storage << " bytes" << endl;
       return 0;
     }
 
@@ -92,13 +93,12 @@ int read_cached_features(void* in, example* ec)
     uint32_t last = 0;
 
     for (; c!= end;)
-    {
-      feature f = {1., 0};
+    { feature f = {1., 0};
       c = run_len_decode(c,f.weight_index);
       if (f.weight_index & neg_1)
         f.x = -1.;
-      else if (f.weight_index & general)	    {
-        f.x = ((one_float *)c)->f;
+      else if (f.weight_index & general)
+      { f.x = ((one_float *)c)->f;
         c += sizeof(float);
       }
       *our_sum_feat_sq += f.x*f.x;
@@ -120,22 +120,20 @@ int read_cached_features(void* in, example* ec)
 char* run_len_encode(char *p, size_t i)
 { // store an int 7 bits at a time.
   while (i >= 128)
-  {
-    *(p++) = (i & 127) | 128;
+  { *(p++) = (i & 127) | 128;
     i = i >> 7;
   }
   *(p++) = (i & 127);
   return p;
 }
 
-inline uint32_t ZigZagEncode(int32_t n) {
-  uint32_t ret = (n << 1) ^ (n >> 31);
+inline uint32_t ZigZagEncode(int32_t n)
+{ uint32_t ret = (n << 1) ^ (n >> 31);
   return ret;
 }
 
 void output_byte(io_buf& cache, unsigned char s)
-{
-  char *c;
+{ char *c;
 
   buf_write(cache, c, 1);
   *(c++) = s;
@@ -143,8 +141,7 @@ void output_byte(io_buf& cache, unsigned char s)
 }
 
 void output_features(io_buf& cache, unsigned char index, feature* begin, feature* end, uint32_t mask)
-{
-  char* c;
+{ char* c;
   size_t storage = (end-begin) * int_size;
   for (feature* i = begin; i != end; i++)
     if (i->x != 1. && i->x != -1.)
@@ -159,8 +156,7 @@ void output_features(io_buf& cache, unsigned char index, feature* begin, feature
   uint32_t last = 0;
 
   for (feature* i = begin; i != end; i++)
-  {
-    uint32_t cache_index = (i->weight_index) & mask;
+  { uint32_t cache_index = (i->weight_index) & mask;
     int32_t s_diff = (cache_index - last);
     size_t diff = ZigZagEncode(s_diff) << 2;
     last = cache_index;
@@ -168,8 +164,8 @@ void output_features(io_buf& cache, unsigned char index, feature* begin, feature
       c = run_len_encode(c, diff);
     else if (i->x == -1.)
       c = run_len_encode(c, diff | neg_1);
-    else {
-      c = run_len_encode(c, diff | general);
+    else
+    { c = run_len_encode(c, diff | general);
       memcpy(c, &i->x, sizeof(i->x));
       c += sizeof(i->x);
     }
@@ -179,8 +175,7 @@ void output_features(io_buf& cache, unsigned char index, feature* begin, feature
 }
 
 void cache_tag(io_buf& cache, v_array<char> tag)
-{
-  char *c;
+{ char *c;
   buf_write(cache, c, sizeof(size_t)+tag.size());
   *(size_t*)c = tag.size();
   c += sizeof(size_t);
@@ -190,8 +185,7 @@ void cache_tag(io_buf& cache, v_array<char> tag)
 }
 
 void cache_features(io_buf& cache, example* ae, uint32_t mask)
-{
-  cache_tag(cache,ae->tag);
+{ cache_tag(cache,ae->tag);
   output_byte(cache, (unsigned char) ae->indices.size());
   for (unsigned char* b = ae->indices.begin; b != ae->indices.end; b++)
     output_features(cache, *b, ae->atomics[*b].begin,ae->atomics[*b].end, mask);

@@ -6,7 +6,8 @@ license as described in the file LICENSE.
 #pragma once
 #include "search.h"
 
-namespace GraphTask {
+namespace GraphTask
+{
 void initialize(Search::search&, size_t&, po::variables_map&);
 void finish(Search::search&);
 void setup(Search::search&, vector<example*>&);

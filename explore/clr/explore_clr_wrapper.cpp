@@ -13,6 +13,7 @@ using namespace System::Runtime::InteropServices;
 using namespace msclr::interop;
 using namespace NativeMultiWorldTesting;
 
-namespace MultiWorldTesting {
+namespace MultiWorldTesting
+{
 
 }

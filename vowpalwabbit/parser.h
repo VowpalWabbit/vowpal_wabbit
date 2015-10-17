@@ -13,8 +13,8 @@ namespace po = boost::program_options;
 
 struct vw;
 
-struct parser {
-  v_array<substring> channels;//helper(s) for text parsing
+struct parser
+{ v_array<substring> channels;//helper(s) for text parsing
   v_array<substring> words;
   v_array<substring> name;
 

@@ -9,13 +9,16 @@ license as described in the file LICENSE.
 struct example;
 struct vw;
 
-namespace COST_SENSITIVE {
-struct wclass {
-  float x;
+namespace COST_SENSITIVE
+{
+struct wclass
+{ float x;
   uint32_t class_index;
   float partial_prediction;  // a partial prediction: new!
   float wap_value;  // used for wap to store values derived from costs
-  bool operator==(wclass j) {return class_index == j.class_index;}
+  bool operator==(wclass j)
+  { return class_index == j.class_index;
+  }
 };
 /* if class_index > 0, then this this a "normal" example
    if class_index == 0, then:
@@ -23,8 +26,8 @@ struct wclass {
      if x > 0 then this is a label feature vector for (size_t)x
 */
 
-struct label {
-  v_array<wclass> costs;
+struct label
+{ v_array<wclass> costs;
 };
 
 void output_example(vw& all, example& ec);

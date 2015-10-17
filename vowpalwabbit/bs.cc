@@ -19,8 +19,8 @@ license as described in the file LICENSE.
 using namespace std;
 using namespace LEARNER;
 
-struct bs {
-  uint32_t B; //number of bootstrap rounds
+struct bs
+{ uint32_t B; //number of bootstrap rounds
   size_t bs_type;
   float lb;
   float ub;
@@ -29,8 +29,7 @@ struct bs {
 };
 
 void bs_predict_mean(vw& all, example& ec, vector<double> &pred_vec)
-{
-  ec.pred.scalar = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
+{ ec.pred.scalar = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
   ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.l.simple.weight;
 }
 
@@ -44,12 +43,11 @@ void bs_predict_vote(example& ec, vector<double> &pred_vec)
   int* pred_vec_int = new int[pred_vec.size()];
 
   for(unsigned int i=0; i<pred_vec.size(); i++)
-  {
-    pred_vec_int[i] = (int)floor(pred_vec[i]+0.5); // could be added: link(), min_label/max_label, cutoff between true/false for binary
+  { pred_vec_int[i] = (int)floor(pred_vec[i]+0.5); // could be added: link(), min_label/max_label, cutoff between true/false for binary
 
-    if(multivote_detected == false) { // distinct(votes)>2 detection bloc
-      if(i == 0) {
-        init_label = pred_vec_int[i];
+    if(multivote_detected == false)   // distinct(votes)>2 detection bloc
+    { if(i == 0)
+      { init_label = pred_vec_int[i];
         current_label = pred_vec_int[i];
       }
       else if(init_label != current_label && pred_vec_int[i] != current_label
@@ -57,41 +55,40 @@ void bs_predict_vote(example& ec, vector<double> &pred_vec)
         multivote_detected = true; // more than 2 distinct votes detected
     }
 
-    if (counter == 0) {
-      counter = 1;
+    if (counter == 0)
+    { counter = 1;
       current_label = pred_vec_int[i];
     }
-    else {
-      if(pred_vec_int[i] == current_label)
+    else
+    { if(pred_vec_int[i] == current_label)
         counter++;
-      else {
-        counter--;
+      else
+      { counter--;
       }
     }
   }
 
-  if(counter > 0 && multivote_detected) { // remove this condition for: "avg on votes" and getLoss()
-    counter = 0;
+  if(counter > 0 && multivote_detected)   // remove this condition for: "avg on votes" and getLoss()
+  { counter = 0;
     for(unsigned int i=0; i<pred_vec.size(); i++)
-      if(pred_vec_int[i] == current_label) {
-        counter++;
+      if(pred_vec_int[i] == current_label)
+      { counter++;
         // sum_labels += pred_vec[i]; // uncomment for: "avg on votes" and getLoss()
       }
     if(counter*2 > pred_vec.size())
       majority_found = true;
   }
 
-  if(multivote_detected && majority_found == false) { // then find most frequent element - if tie: smallest tie label
-    std::sort(pred_vec_int, pred_vec_int+pred_vec.size());
+  if(multivote_detected && majority_found == false)   // then find most frequent element - if tie: smallest tie label
+  { std::sort(pred_vec_int, pred_vec_int+pred_vec.size());
     int tmp_label = pred_vec_int[0];
     counter = 1;
     for(unsigned int i=1, temp_count=1; i<pred_vec.size(); i++)
-    {
-      if(tmp_label == pred_vec_int[i])
+    { if(tmp_label == pred_vec_int[i])
         temp_count++;
-      else {
-        if(temp_count > counter) {
-          current_label = tmp_label;
+      else
+      { if(temp_count > counter)
+        { current_label = tmp_label;
           counter = temp_count;
         }
         tmp_label = pred_vec_int[i];
@@ -115,10 +112,8 @@ void bs_predict_vote(example& ec, vector<double> &pred_vec)
 }
 
 void print_result(int f, float res, v_array<char> tag, float lb, float ub)
-{
-  if (f >= 0)
-  {
-    char temp[30];
+{ if (f >= 0)
+  { char temp[30];
     sprintf(temp, "%f", res);
     std::stringstream ss;
     ss << temp;
@@ -138,20 +133,17 @@ void print_result(int f, float res, v_array<char> tag, float lb, float ub)
 }
 
 void output_example(vw& all, bs& d, example& ec)
-{
-  label_data& ld = ec.l.simple;
+{ label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ec.loss, ld.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)
     all.sd->weighted_labels += ld.label * ld.weight;
 
   if(all.final_prediction_sink.size() != 0)//get confidence interval only when printing out predictions
-  {
-    d.lb = FLT_MAX;
+  { d.lb = FLT_MAX;
     d.ub = -FLT_MAX;
     for (unsigned i = 0; i < d.pred_vec.size(); i++)
-    {
-      if(d.pred_vec[i] > d.ub)
+    { if(d.pred_vec[i] > d.ub)
         d.ub = (float)d.pred_vec[i];
       if(d.pred_vec[i] < d.lb)
         d.lb = (float)d.pred_vec[i];
@@ -166,8 +158,7 @@ void output_example(vw& all, bs& d, example& ec)
 
 template <bool is_learn>
 void predict_or_learn(bs& d, base_learner& base, example& ec)
-{
-  vw& all = *d.all;
+{ vw& all = *d.all;
   bool shouldOutput = all.raw_prediction > 0;
 
   float weight_temp = ec.l.simple.weight;
@@ -176,8 +167,7 @@ void predict_or_learn(bs& d, base_learner& base, example& ec)
   d.pred_vec.clear();
 
   for (size_t i = 1; i <= d.B; i++)
-  {
-    ec.l.simple.weight = weight_temp * (float) BS::weight_gen();
+  { ec.l.simple.weight = weight_temp * (float) BS::weight_gen();
 
     if (is_learn)
       base.learn(ec, i-1);
@@ -186,8 +176,8 @@ void predict_or_learn(bs& d, base_learner& base, example& ec)
 
     d.pred_vec.push_back(ec.pred.scalar);
 
-    if (shouldOutput) {
-      if (i > 1) outputStringStream << ' ';
+    if (shouldOutput)
+    { if (i > 1) outputStringStream << ' ';
       outputStringStream << i << ':' << ec.partial_prediction;
     }
   }
@@ -195,15 +185,14 @@ void predict_or_learn(bs& d, base_learner& base, example& ec)
   ec.l.simple.weight = weight_temp;
 
   switch(d.bs_type)
-  {
-  case BS_TYPE_MEAN:
-    bs_predict_mean(all, ec, d.pred_vec);
-    break;
-  case BS_TYPE_VOTE:
-    bs_predict_vote(ec, d.pred_vec);
-    break;
-  default:
-    THROW("Unknown bs_type specified: " << d.bs_type);
+  { case BS_TYPE_MEAN:
+      bs_predict_mean(all, ec, d.pred_vec);
+      break;
+    case BS_TYPE_VOTE:
+      bs_predict_vote(ec, d.pred_vec);
+      break;
+    default:
+      THROW("Unknown bs_type specified: " << d.bs_type);
   }
 
   if (shouldOutput)
@@ -211,17 +200,16 @@ void predict_or_learn(bs& d, base_learner& base, example& ec)
 }
 
 void finish_example(vw& all, bs& d, example& ec)
-{
-  output_example(all, d, ec);
+{ output_example(all, d, ec);
   VW::finish_example(all, &ec);
 }
 
 void finish(bs& d)
-{ d.pred_vec.~vector(); }
+{ d.pred_vec.~vector();
+}
 
 base_learner* bs_setup(vw& all)
-{
-  if (missing_option<size_t, true>(all, "bootstrap", "k-way bootstrap by online importance resampling"))
+{ if (missing_option<size_t, true>(all, "bootstrap", "k-way bootstrap by online importance resampling"))
     return nullptr;
   new_options(all, "Bootstrap options")("bs_type", po::value<string>(),
                                         "prediction type {mean,vote}");
@@ -234,17 +222,16 @@ base_learner* bs_setup(vw& all)
 
   std::string type_string("mean");
   if (all.vm.count("bs_type"))
-  {
-    type_string = all.vm["bs_type"].as<std::string>();
+  { type_string = all.vm["bs_type"].as<std::string>();
 
-    if (type_string.compare("mean") == 0) {
-      data.bs_type = BS_TYPE_MEAN;
+    if (type_string.compare("mean") == 0)
+    { data.bs_type = BS_TYPE_MEAN;
     }
-    else if (type_string.compare("vote") == 0) {
-      data.bs_type = BS_TYPE_VOTE;
+    else if (type_string.compare("vote") == 0)
+    { data.bs_type = BS_TYPE_VOTE;
     }
-    else {
-      std::cerr << "warning: bs_type must be in {'mean','vote'}; resetting to mean." << std::endl;
+    else
+    { std::cerr << "warning: bs_type must be in {'mean','vote'}; resetting to mean." << std::endl;
       data.bs_type = BS_TYPE_MEAN;
     }
   }

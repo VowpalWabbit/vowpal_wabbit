@@ -13,10 +13,12 @@
 #define val_namespace 100 // valency and distance feature space
 #define offset_const 344429
 
-namespace DepParserTask         {  Search::search_task task = { "dep_parser", run, initialize, finish, setup, nullptr};  }
+namespace DepParserTask
+{  Search::search_task task = { "dep_parser", run, initialize, finish, setup, nullptr};
+}
 
-struct task_data {
-  example *ex;
+struct task_data
+{ example *ex;
   size_t root_label, num_label;
   v_array<uint32_t> valid_actions, action_loss, gold_heads, gold_tags, stack, heads, tags, temp;
   v_array<uint32_t> children[6]; // [0]:num_left_arcs, [1]:num_right_arcs; [2]: leftmost_arc, [3]: second_leftmost_arc, [4]:rightmost_arc, [5]: second_rightmost_arc
@@ -24,15 +26,16 @@ struct task_data {
   bool old_style_labels;
 };
 
-namespace DepParserTask {
+namespace DepParserTask
+{
 using namespace Search;
 
 const action SHIFT        = 1;
 const action REDUCE_RIGHT = 2;
 const action REDUCE_LEFT  = 3;
 
-void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm) {
-  vw& all = sch.get_vw_pointer_unsafe();
+void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm)
+{ vw& all = sch.get_vw_pointer_unsafe();
   task_data *data = new task_data();
   data->action_loss.resize(4,true);
   data->ex = NULL;
@@ -79,8 +82,8 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
   sch.set_label_parser( COST_SENSITIVE::cs_label, [](polylabel&l) -> bool { return l.cs.costs.size() == 0; });
 }
 
-void finish(Search::search& sch) {
-  task_data *data = sch.get_task_data<task_data>();
+void finish(Search::search& sch)
+{ task_data *data = sch.get_task_data<task_data>();
   data->valid_actions.delete_v();
   data->gold_heads.delete_v();
   data->gold_tags.delete_v();
@@ -95,49 +98,50 @@ void finish(Search::search& sch) {
   delete data;
 }
 
-void inline add_feature(example& ex, uint32_t idx, unsigned char ns, size_t mask, uint32_t multiplier, bool audit=false) {
-  feature f = {1.0f, (idx * multiplier) & (uint32_t)mask};
+void inline add_feature(example& ex, uint32_t idx, unsigned char ns, size_t mask, uint32_t multiplier, bool audit=false)
+{ feature f = {1.0f, (idx * multiplier) & (uint32_t)mask};
   ex.atomics[(int)ns].push_back(f);
-  if (audit) {
-    audit_data a = { nullptr, nullptr, f.weight_index, 1.f, true };
+  if (audit)
+  { audit_data a = { nullptr, nullptr, f.weight_index, 1.f, true };
     ex.audit_features[(int)ns].push_back(a);
   }
 }
 
-void add_all_features(example& ex, example& src, unsigned char tgt_ns, size_t mask, uint32_t multiplier, uint32_t offset, bool audit=false) {
-  for (unsigned char* ns = src.indices.begin; ns != src.indices.end; ++ns)
+void add_all_features(example& ex, example& src, unsigned char tgt_ns, size_t mask, uint32_t multiplier, uint32_t offset, bool audit=false)
+{ for (unsigned char* ns = src.indices.begin; ns != src.indices.end; ++ns)
     if(*ns != constant_namespace) // ignore constant_namespace
-      for (size_t k=0; k<src.atomics[*ns].size(); k++) {
-        uint32_t i = src.atomics[*ns][k].weight_index / multiplier;
+      for (size_t k=0; k<src.atomics[*ns].size(); k++)
+      { uint32_t i = src.atomics[*ns][k].weight_index / multiplier;
         feature  f = { 1., ((i + offset) * multiplier) & (uint32_t)mask };
         ex.atomics[tgt_ns].push_back(f);
-        if (audit) {
-          audit_data a = { nullptr, nullptr, f.weight_index, 1.f, true };
+        if (audit)
+        { audit_data a = { nullptr, nullptr, f.weight_index, 1.f, true };
           ex.audit_features[tgt_ns].push_back(a);
         }
       }
 }
 
-void inline reset_ex(example *ex, bool audit=false) {
-  ex->num_features = 0;
+void inline reset_ex(example *ex, bool audit=false)
+{ ex->num_features = 0;
   ex->total_sum_feat_sq = 0;
-  for(unsigned char *ns = ex->indices.begin; ns!=ex->indices.end; ns++) {
-    ex->sum_feat_sq[(int)*ns] = 0;
+  for(unsigned char *ns = ex->indices.begin; ns!=ex->indices.end; ns++)
+  { ex->sum_feat_sq[(int)*ns] = 0;
     ex->atomics[(int)*ns].erase();
     if (audit) ex->audit_features[(int)*ns].erase();
   }
 }
 
 // arc-hybrid System.
-uint32_t transition_hybrid(Search::search& sch, uint32_t a_id, uint32_t idx, uint32_t t_id) {
-  task_data *data = sch.get_task_data<task_data>();
+uint32_t transition_hybrid(Search::search& sch, uint32_t a_id, uint32_t idx, uint32_t t_id)
+{ task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &heads=data->heads, &stack=data->stack, &gold_heads=data->gold_heads, &gold_tags=data->gold_tags, &tags = data->tags;
   v_array<uint32_t> *children = data->children;
-  if (a_id == SHIFT) {
-    stack.push_back(idx);
+  if (a_id == SHIFT)
+  { stack.push_back(idx);
     return idx+1;
-  } else if (a_id == REDUCE_RIGHT) {
-    uint32_t last   = stack.last();
+  }
+  else if (a_id == REDUCE_RIGHT)
+  { uint32_t last   = stack.last();
     size_t   hd     = stack[ stack.size() - 2 ];
     heads[last]     = hd;
     children[5][hd] = children[4][hd];
@@ -148,8 +152,9 @@ uint32_t transition_hybrid(Search::search& sch, uint32_t a_id, uint32_t idx, uin
     assert(! stack.empty());
     stack.pop();
     return idx;
-  } else if (a_id == REDUCE_LEFT) {
-    uint32_t last    = stack.last();
+  }
+  else if (a_id == REDUCE_LEFT)
+  { uint32_t last    = stack.last();
     heads[last]      = idx;
     children[3][idx] = children[2][idx];
     children[2][idx] = last;
@@ -163,8 +168,8 @@ uint32_t transition_hybrid(Search::search& sch, uint32_t a_id, uint32_t idx, uin
   THROW("transition_hybrid failed");
 }
 
-void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec) {
-  vw& all = sch.get_vw_pointer_unsafe();
+void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec)
+{ vw& all = sch.get_vw_pointer_unsafe();
   task_data *data = sch.get_task_data<task_data>();
   reset_ex(data->ex);
   size_t mask = sch.get_mask();
@@ -199,8 +204,8 @@ void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec) 
   ec_buf[12] = (stack.size()>1 && *(stack.end-2)!=0 && children[2][*(stack.end-2)]!=0) ? ec[children[2][*(stack.end-2)]-1] : 0;
 
   // unigram features
-  for(size_t i=0; i<13; i++) {
-    uint32_t additional_offset = (uint32_t)(i*offset_const);
+  for(size_t i=0; i<13; i++)
+  { uint32_t additional_offset = (uint32_t)(i*offset_const);
     if (!ec_buf[i])
       add_feature(ex, (uint32_t) 438129041 + additional_offset, (unsigned char)((i+1)+'A'), mask, multiplier);
     else
@@ -219,14 +224,14 @@ void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec) 
     temp[i] = (idx <=n && children[i-6][idx]!=0)? tags[children[i-6][idx]] : 15;
 
   uint32_t additional_offset = val_namespace*offset_const;
-  for(uint32_t j=0; j< 10; j++) {
-    additional_offset += j* 1023;
+  for(uint32_t j=0; j< 10; j++)
+  { additional_offset += j* 1023;
     add_feature(ex, temp[j]+ additional_offset , val_namespace, mask, multiplier);
   }
 
   size_t count=0;
-  for (unsigned char* ns = data->ex->indices.begin; ns != data->ex->indices.end; ns++) {
-    data->ex->sum_feat_sq[(int)*ns] = (float) data->ex->atomics[(int)*ns].size();
+  for (unsigned char* ns = data->ex->indices.begin; ns != data->ex->indices.end; ns++)
+  { data->ex->sum_feat_sq[(int)*ns] = (float) data->ex->atomics[(int)*ns].size();
     count+= data->ex->atomics[(int)*ns].size();
   }
 
@@ -238,8 +243,8 @@ void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec) 
   data->ex->total_sum_feat_sq = (float) count + new_weight;
 }
 
-void get_valid_actions(v_array<uint32_t> & valid_action, uint32_t idx, uint32_t n, uint32_t stack_depth, uint32_t state) {
-  valid_action.erase();
+void get_valid_actions(v_array<uint32_t> & valid_action, uint32_t idx, uint32_t n, uint32_t stack_depth, uint32_t state)
+{ valid_action.erase();
   if(idx<=n) // SHIFT
     valid_action.push_back( SHIFT );
   if(stack_depth >=2) // RIGHT
@@ -248,27 +253,27 @@ void get_valid_actions(v_array<uint32_t> & valid_action, uint32_t idx, uint32_t 
     valid_action.push_back( REDUCE_LEFT );
 }
 
-bool is_valid(uint32_t action, v_array<uint32_t> valid_actions) {
-  for(size_t i=0; i< valid_actions.size(); i++)
+bool is_valid(uint32_t action, v_array<uint32_t> valid_actions)
+{ for(size_t i=0; i< valid_actions.size(); i++)
     if(valid_actions[i] == action)
       return true;
   return false;
 }
 
-void get_gold_actions(Search::search &sch, uint32_t idx, uint32_t n, v_array<action>& gold_actions) {
-  gold_actions.erase();
+void get_gold_actions(Search::search &sch, uint32_t idx, uint32_t n, v_array<action>& gold_actions)
+{ gold_actions.erase();
   task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions;
   size_t size = stack.size();
   uint32_t last = (size==0) ? 0 : stack.last();
 
-  if (is_valid(1,valid_actions) &&( stack.empty() || gold_heads[idx] == last)) {
-    gold_actions.push_back(1);
+  if (is_valid(1,valid_actions) &&( stack.empty() || gold_heads[idx] == last))
+  { gold_actions.push_back(1);
     return;
   }
 
-  if (is_valid(3,valid_actions) && gold_heads[last] == idx) {
-    gold_actions.push_back(3);
+  if (is_valid(3,valid_actions) && gold_heads[last] == idx)
+  { gold_actions.push_back(3);
     return;
   }
 
@@ -299,19 +304,20 @@ void get_gold_actions(Search::search &sch, uint32_t idx, uint32_t n, v_array<act
   size_t best_action = 1;
   size_t count = 0;
   for(size_t i=1; i<=3; i++)
-    if(action_loss[i] < action_loss[best_action]) {
-      best_action= i;
+    if(action_loss[i] < action_loss[best_action])
+    { best_action= i;
       count = 1;
       gold_actions.erase();
       gold_actions.push_back(i);
-    } else if (action_loss[i] == action_loss[best_action]) {
-      count++;
+    }
+    else if (action_loss[i] == action_loss[best_action])
+    { count++;
       gold_actions.push_back(i);
     }
 }
 
-void setup(Search::search& sch, vector<example*>& ec) {
-  task_data *data = sch.get_task_data<task_data>();
+void setup(Search::search& sch, vector<example*>& ec)
+{ task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &gold_heads=data->gold_heads, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags;
   uint32_t n = (uint32_t) ec.size();
   heads.resize(n+1, true);
@@ -320,15 +326,16 @@ void setup(Search::search& sch, vector<example*>& ec) {
   gold_heads.push_back(0);
   gold_tags.erase();
   gold_tags.push_back(0);
-  for (size_t i=0; i<n; i++) {
-    v_array<COST_SENSITIVE::wclass>& costs = ec[i]->l.cs.costs;
+  for (size_t i=0; i<n; i++)
+  { v_array<COST_SENSITIVE::wclass>& costs = ec[i]->l.cs.costs;
     uint32_t head,tag;
-    if (data->old_style_labels) {
-      uint32_t label = costs[0].class_index;
+    if (data->old_style_labels)
+    { uint32_t label = costs[0].class_index;
       head = (label & 255) -1;
       tag  = label >> 8;
-    } else {
-      head = (costs.size() == 0) ? 0 : costs[0].class_index;
+    }
+    else
+    { head = (costs.size() == 0) ? 0 : costs[0].class_index;
       tag  = (costs.size() <= 1) ? data->root_label : costs[1].class_index;
     }
     if (tag > data->num_label)
@@ -343,8 +350,8 @@ void setup(Search::search& sch, vector<example*>& ec) {
     data->children[i].resize(n+1, true);
 }
 
-void run(Search::search& sch, vector<example*>& ec) {
-  task_data *data = sch.get_task_data<task_data>();
+void run(Search::search& sch, vector<example*>& ec)
+{ task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &stack=data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags;
   uint32_t n = (uint32_t) ec.size();
 
@@ -357,8 +364,8 @@ void run(Search::search& sch, vector<example*>& ec) {
   v_array<action> gold_actions = v_init<action>();
   int count=1;
   uint32_t idx = ((data->root_label==0)?1:2);
-  while(stack.size()>1 || idx <= n) {
-    if(sch.predictNeedsExample())
+  while(stack.size()>1 || idx <= n)
+  { if(sch.predictNeedsExample())
       extract_features(sch, idx, ec);
 
     get_valid_actions(valid_actions, idx, n, (uint32_t) stack.size(), stack.empty() ? 0 : stack.last());
@@ -375,8 +382,8 @@ void run(Search::search& sch, vector<example*>& ec) {
     count++;
 
     uint32_t t_id = 0; // gold_tags[stack.last()]; // 0;
-    if (a_id != SHIFT) {
-      uint32_t gold_label = gold_tags[stack.last()];
+    if (a_id != SHIFT)
+    { uint32_t gold_label = gold_tags[stack.last()];
       t_id = Search::predictor(sch, (ptag) count)
              .set_input(*(data->ex))
              .set_oracle(gold_label)

@@ -6,7 +6,8 @@ license as described in the file LICENSE.
 #pragma once
 #include "search.h"
 
-namespace DepParserTask {
+namespace DepParserTask
+{
 void initialize(Search::search&, size_t&, po::variables_map&);
 void finish(Search::search&);
 void run(Search::search&, vector<example*>&);

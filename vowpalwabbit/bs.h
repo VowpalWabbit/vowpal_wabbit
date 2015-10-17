@@ -12,8 +12,7 @@ LEARNER::base_learner* bs_setup(vw& all);
 namespace BS
 {
 inline uint32_t weight_gen()//sampling from Poisson with rate 1
-{
-  float temp = frand48();
+{ float temp = frand48();
   if(temp<=0.3678794411714423215955) return 0;
   if(temp<=0.735758882342884643191)  return 1;
   if(temp<=0.919698602928605803989)  return 2;

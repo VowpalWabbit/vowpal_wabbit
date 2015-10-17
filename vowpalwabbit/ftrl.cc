@@ -14,8 +14,8 @@ using namespace LEARNER;
 #define W_G2 2   // accumulated gradient information
 #define W_MX 3   // maximum absolute value
 
-struct update_data {
-  float update;
+struct update_data
+{ float update;
   float ftrl_alpha;
   float ftrl_beta;
   float l1_lambda;
@@ -23,20 +23,20 @@ struct update_data {
   float predict;
 };
 
-struct ftrl {
-  vw* all; //features, finalize, l1, l2,
+struct ftrl
+{ vw* all; //features, finalize, l1, l2,
   float ftrl_alpha;
   float ftrl_beta;
   struct update_data data;
 };
 
-void predict(ftrl& b, base_learner&, example& ec) {
-  ec.partial_prediction = GD::inline_predict(*b.all, ec);
+void predict(ftrl& b, base_learner&, example& ec)
+{ ec.partial_prediction = GD::inline_predict(*b.all, ec);
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
 
-void multipredict(ftrl& b, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions) {
-  vw& all = *b.all;
+void multipredict(ftrl& b, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
+{ vw& all = *b.all;
   for (size_t c=0; c<count; c++)
     pred[c].scalar = ec.l.simple.initial;
   GD::multipredict_info mp = { count, step, pred, &all.reg, (float)all.sd->gravity };
@@ -49,10 +49,13 @@ void multipredict(ftrl& b, base_learner&, example& ec, size_t count, size_t step
       pred[c].scalar = GD::finalize_prediction(all.sd, pred[c].scalar);
 }
 
-inline float sign(float w) { if (w < 0.) return -1.; else  return 1.;}
+inline float sign(float w)
+{ if (w < 0.) return -1.;
+  else  return 1.;
+}
 
-void inner_update_proximal(update_data& d, float x, float& wref) {
-  float* w = &wref;
+void inner_update_proximal(update_data& d, float x, float& wref)
+{ float* w = &wref;
   float gradient = d.update * x;
   float ng2 = w[W_G2] + gradient * gradient;
   float sqrt_ng2 = sqrtf(ng2);
@@ -65,14 +68,14 @@ void inner_update_proximal(update_data& d, float x, float& wref) {
   float fabs_zt = w[W_ZT] * flag;
   if (fabs_zt <= d.l1_lambda)
     w[W_XT] = 0.;
-  else {
-    float step = 1/(d.l2_lambda + (d.ftrl_beta + sqrt_wW_G2)/d.ftrl_alpha);
+  else
+  { float step = 1/(d.l2_lambda + (d.ftrl_beta + sqrt_wW_G2)/d.ftrl_alpha);
     w[W_XT] = step * flag * (d.l1_lambda - fabs_zt);
   }
 }
 
-void inner_update_pistol_state_and_predict(update_data& d, float x, float& wref) {
-  float* w = &wref;
+void inner_update_pistol_state_and_predict(update_data& d, float x, float& wref)
+{ float* w = &wref;
 
   float fabs_x = fabs(x);
   if (fabs_x > w[W_MX])
@@ -85,38 +88,38 @@ void inner_update_pistol_state_and_predict(update_data& d, float x, float& wref)
   d.predict +=  w[W_XT]*x;
 }
 
-void inner_update_pistol_post(update_data& d, float x, float& wref) {
-  float* w = &wref;
+void inner_update_pistol_post(update_data& d, float x, float& wref)
+{ float* w = &wref;
   float gradient = d.update * x;
 
   w[W_ZT] += -gradient;
   w[W_G2] += fabs(gradient);
 }
 
-void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec) {
-  b.data.predict = 0;
+void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec)
+{ b.data.predict = 0;
 
   GD::foreach_feature<update_data, inner_update_pistol_state_and_predict>(*b.all, ec, b.data);
   ec.partial_prediction = b.data.predict;
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
 
-void update_after_prediction_proximal(ftrl& b, example& ec) {
-  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label)
+void update_after_prediction_proximal(ftrl& b, example& ec)
+{ b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label)
                   *ec.l.simple.weight;
 
   GD::foreach_feature<update_data, inner_update_proximal>(*b.all, ec, b.data);
 }
 
-void update_after_prediction_pistol(ftrl& b, example& ec) {
-  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label)
+void update_after_prediction_pistol(ftrl& b, example& ec)
+{ b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label)
                   *ec.l.simple.weight;
 
   GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
 
-void learn_proximal(ftrl& a, base_learner& base, example& ec) {
-  assert(ec.in_use);
+void learn_proximal(ftrl& a, base_learner& base, example& ec)
+{ assert(ec.in_use);
 
   // predict
   predict(a, base, ec);
@@ -125,8 +128,8 @@ void learn_proximal(ftrl& a, base_learner& base, example& ec) {
   update_after_prediction_proximal(a,ec);
 }
 
-void learn_pistol(ftrl& a, base_learner& base, example& ec) {
-  assert(ec.in_use);
+void learn_pistol(ftrl& a, base_learner& base, example& ec)
+{ assert(ec.in_use);
 
   // update state based on the example and predict
   update_state_and_predict_pistol(a, base, ec);
@@ -135,13 +138,13 @@ void learn_pistol(ftrl& a, base_learner& base, example& ec) {
   update_after_prediction_pistol(a,ec);
 }
 
-void save_load(ftrl& b, io_buf& model_file, bool read, bool text) {
-  vw* all = b.all;
+void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
+{ vw* all = b.all;
   if (read)
     initialize_regressor(*all);
 
-  if (model_file.files.size() > 0) {
-    bool resume = all->save_resume;
+  if (model_file.files.size() > 0)
+  { bool resume = all->save_resume;
     char buff[512];
     uint32_t text_len = sprintf(buff, ":%d\n", resume);
     bin_text_read_write_fixed(model_file,(char *)&resume, sizeof (resume), "", read, buff, text_len, text);
@@ -153,8 +156,8 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text) {
   }
 }
 
-base_learner* ftrl_setup(vw& all) {
-  if (missing_option(all, false, "ftrl", "FTRL: Follow the Proximal Regularized Leader") &&
+base_learner* ftrl_setup(vw& all)
+{ if (missing_option(all, false, "ftrl", "FTRL: Follow the Proximal Regularized Leader") &&
       missing_option(all, false, "pistol", "FTRL: Parameter-free Stochastic Learning"))
     return nullptr;
 
@@ -171,8 +174,8 @@ base_learner* ftrl_setup(vw& all) {
   void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
 
   string algorithm_name;
-  if (vm.count("ftrl")) {
-    algorithm_name = "Proximal-FTRL";
+  if (vm.count("ftrl"))
+  { algorithm_name = "Proximal-FTRL";
     learn_ptr=learn_proximal;
     if (vm.count("ftrl_alpha"))
       b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
@@ -182,8 +185,9 @@ base_learner* ftrl_setup(vw& all) {
       b.ftrl_beta = vm["ftrl_beta"].as<float>();
     else
       b.ftrl_beta = 0.1f;
-  } else if (vm.count("pistol")) {
-    algorithm_name = "PiSTOL";
+  }
+  else if (vm.count("pistol"))
+  { algorithm_name = "PiSTOL";
     learn_ptr=learn_pistol;
     if (vm.count("ftrl_alpha"))
       b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
@@ -201,8 +205,8 @@ base_learner* ftrl_setup(vw& all) {
 
   all.reg.stride_shift = 2; // NOTE: for more parameter storage
 
-  if (!all.quiet) {
-    cerr << "Enabling FTRL based optimization" << endl;
+  if (!all.quiet)
+  { cerr << "Enabling FTRL based optimization" << endl;
     cerr << "Algorithm used: " << algorithm_name << endl;
     cerr << "ftrl_alpha = " << b.ftrl_alpha << endl;
     cerr << "ftrl_beta = " << b.ftrl_beta << endl;

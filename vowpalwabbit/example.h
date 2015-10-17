@@ -24,23 +24,25 @@ const size_t spelling_namespace  = 133;   // this is \x85
 const size_t conditioning_namespace = 134;// this is \x86
 const size_t dictionary_namespace  = 135; // this is \x87
 
-struct feature {
-  float x;
+struct feature
+{ float x;
   uint32_t weight_index;
-  bool operator==(feature j){return weight_index == j.weight_index;}
+  bool operator==(feature j)
+  { return weight_index == j.weight_index;
+  }
   feature(float x=0., uint32_t weight_index=0) : x(x), weight_index(weight_index) {}
 };
 
-struct audit_data {
-  char* space;
+struct audit_data
+{ char* space;
   char* feature;
   size_t weight_index;
   float x;
   bool alloced;
 };
 
-typedef union {
-  label_data simple;
+typedef union
+{ label_data simple;
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
   CB::label cb;
@@ -48,8 +50,8 @@ typedef union {
   MULTILABEL::labels multilabels;
 } polylabel;
 
-typedef union {
-  float scalar;
+typedef union
+{ float scalar;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
 } polyprediction;
@@ -78,7 +80,7 @@ struct example // core example datatype.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
   float revert_weight;
   v_array<feature>* passthrough; // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
-  
+
   bool test_only;
   bool end_pass;//special example indicating end of pass.
   bool sorted;//Are the features sorted or not?
@@ -88,8 +90,7 @@ struct example // core example datatype.
 struct vw;
 
 struct flat_example
-{
-  polylabel l;
+{ polylabel l;
 
   size_t tag_len;
   char* tag;//An identifier for the example.
@@ -109,20 +110,18 @@ flat_example* flatten_sort_example(vw& all, example *ec);
 void free_flatten_example(flat_example* fec);
 
 inline int example_is_newline(example& ec)
-{
-  // if only index is constant namespace or no index
+{ // if only index is constant namespace or no index
   return ((ec.indices.size() == 0) ||
           ((ec.indices.size() == 1) &&
            (ec.indices.last() == constant_namespace)));
 }
 
 inline bool valid_ns(char c)
-{
-  return !(c == '|' || c == ':');
+{ return !(c == '|' || c == ':');
 }
 
-inline void add_passthrough_feature_magic(example& ec, uint32_t magic, uint32_t i, float x) {
-  if (ec.passthrough)
+inline void add_passthrough_feature_magic(example& ec, uint32_t magic, uint32_t i, float x)
+{ if (ec.passthrough)
     ec.passthrough->push_back( feature(x, (FNV_prime * magic) ^ i) );
 }
 
