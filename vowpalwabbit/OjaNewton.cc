@@ -31,8 +31,8 @@ struct OjaNewton {
 
   float *ev;
   float *b;
-  float **A;
-  float **GZ;
+  double **A;
+  double **GZ;
 
   example **buffer;
   float *weight_buffer;
@@ -123,12 +123,17 @@ struct OjaNewton {
         }
       }
 
-      float norm = 0;
+      double norm = 0;
       for (int j = 0; j <= i; j++) {
+	double temp = 0;
         for (int k = 0; k <= i; k++) {
-          norm += A[i][j] * GZ[j][k] * A[i][k];
+          temp += GZ[j][k] * A[i][k];
+//          cout << "GZ = " << GZ[j][k] << " A[i][k] = " << A[i][k] << endl;
         }
+//        cout << "temp = " << temp << " A[i][j] = " << A[i][j] << endl;
+        norm += A[i][j]*temp;
       }
+//      cout << "norm = " << norm << endl;
       norm = sqrt(norm);
 
       for (int j = 0; j <= i; j++) {
@@ -166,7 +171,7 @@ void predict(OjaNewton& ON, base_learner&, example& ec) {
   ON.data.prediction = 0;
   GD::foreach_feature<update_data, make_pred>(*ON.all, ec, ON.data);
   ec.partial_prediction = ON.data.prediction;
-  cout << ON.data.prediction << endl;
+//  cout << ON.data.prediction << endl;
   ec.pred.scalar = GD::finalize_prediction(ON.all->sd, ec.partial_prediction);
 }
 
@@ -321,11 +326,11 @@ base_learner* OjaNewton_setup(vw& all) {
 
   ON.ev = calloc_or_die<float>(ON.m);
   ON.b = calloc_or_die<float>(ON.m);
-  ON.A = calloc_or_die<float*>(ON.m);
-  ON.GZ = calloc_or_die<float*>(ON.m);
+  ON.A = calloc_or_die<double*>(ON.m);
+  ON.GZ = calloc_or_die<double*>(ON.m);
   for (int i = 0; i < ON.m; i++) {
-    ON.A[i] = calloc_or_die<float>(ON.m);
-    ON.GZ[i] = calloc_or_die<float>(ON.m);
+    ON.A[i] = calloc_or_die<double>(ON.m);
+    ON.GZ[i] = calloc_or_die<double>(ON.m);
     ON.A[i][i] = 1;
     ON.GZ[i][i] = 1;
   }
