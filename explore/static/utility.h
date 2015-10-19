@@ -40,7 +40,8 @@ typedef unsigned char    byte;
 *  @{
 */
 
-MWT_NAMESPACE {
+MWT_NAMESPACE
+{
 
 //
 // MurmurHash3, by Austin Appleby
@@ -77,8 +78,7 @@ MWT_NAMESPACE {
 #   include <stdint.h>   /* defines uint32_t etc */
 
   inline uint32_t rotl32(uint32_t x, int8_t r)
-  {
-    return (x << r) | (x >> (32 - r));
+  { return (x << r) | (x >> (32 - r));
   }
 
 #   define ROTL32(x,y)     rotl32(x,y)
@@ -86,160 +86,148 @@ MWT_NAMESPACE {
 
 #endif                                      // !defined(_MSC_VER)
 
-struct murmur_hash {
+  struct murmur_hash {
 
-  //-----------------------------------------------------------------------------
-  // Block read - if your platform needs to do endian-swapping or can only
-  // handle aligned reads, do the conversion here
+    //-----------------------------------------------------------------------------
+    // Block read - if your platform needs to do endian-swapping or can only
+    // handle aligned reads, do the conversion here
 private:
-  static inline uint32_t getblock(const uint32_t * p, int i)
-  {
-    return p[i];
-  }
+    static inline uint32_t getblock(const uint32_t * p, int i)
+    { return p[i];
+    }
 
-  //-----------------------------------------------------------------------------
-  // Finalization mix - force all bits of a hash block to avalanche
+    //-----------------------------------------------------------------------------
+    // Finalization mix - force all bits of a hash block to avalanche
 
-  static inline uint32_t fmix(uint32_t h)
-  {
-    h ^= h >> 16;
-    h *= 0x85ebca6b;
-    h ^= h >> 13;
-    h *= 0xc2b2ae35;
-    h ^= h >> 16;
+    static inline uint32_t fmix(uint32_t h)
+    { h ^= h >> 16;
+      h *= 0x85ebca6b;
+      h ^= h >> 13;
+      h *= 0xc2b2ae35;
+      h ^= h >> 16;
 
-    return h;
-  }
+      return h;
+    }
 
-  //-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
 public:
-  uint32_t uniform_hash(const void * key, size_t len, uint32_t seed)
-  {
-    const uint8_t * data = (const uint8_t*)key;
-    const int nblocks = (int)len / 4;
+    uint32_t uniform_hash(const void * key, size_t len, uint32_t seed)
+    { const uint8_t * data = (const uint8_t*)key;
+      const int nblocks = (int)len / 4;
 
-    uint32_t h1 = seed;
+      uint32_t h1 = seed;
 
-    const uint32_t c1 = 0xcc9e2d51;
-    const uint32_t c2 = 0x1b873593;
+      const uint32_t c1 = 0xcc9e2d51;
+      const uint32_t c2 = 0x1b873593;
 
-    // --- body
-    const uint32_t * blocks = (const uint32_t *)(data + nblocks * 4);
+      // --- body
+      const uint32_t * blocks = (const uint32_t *)(data + nblocks * 4);
 
-    for (int i = -nblocks; i; i++) {
-      uint32_t k1 = getblock(blocks, i);
+      for (int i = -nblocks; i; i++)
+      { uint32_t k1 = getblock(blocks, i);
 
-      k1 *= c1;
-      k1 = ROTL32(k1, 15);
-      k1 *= c2;
+        k1 *= c1;
+        k1 = ROTL32(k1, 15);
+        k1 *= c2;
 
-      h1 ^= k1;
-      h1 = ROTL32(h1, 13);
-      h1 = h1 * 5 + 0xe6546b64;
+        h1 ^= k1;
+        h1 = ROTL32(h1, 13);
+        h1 = h1 * 5 + 0xe6546b64;
+      }
+
+      // --- tail
+      const uint8_t * tail = (const uint8_t*)(data + nblocks * 4);
+
+      uint32_t k1 = 0;
+
+      switch (len & 3)
+      { case 3: k1 ^= tail[2] << 16;
+        case 2: k1 ^= tail[1] << 8;
+        case 1: k1 ^= tail[0];
+          k1 *= c1; k1 = ROTL32(k1, 15); k1 *= c2; h1 ^= k1;
+      }
+
+      // --- finalization
+      h1 ^= len;
+
+      return fmix(h1);
     }
+  };
 
-    // --- tail
-    const uint8_t * tail = (const uint8_t*)(data + nblocks * 4);
-
-    uint32_t k1 = 0;
-
-    switch (len & 3) {
-    case 3: k1 ^= tail[2] << 16;
-    case 2: k1 ^= tail[1] << 8;
-    case 1: k1 ^= tail[0];
-      k1 *= c1; k1 = ROTL32(k1, 15); k1 *= c2; h1 ^= k1;
+  class HashUtils
+  { public:
+    static u64 Compute_Id_Hash(const std::string& unique_id)
+    { size_t ret = 0;
+      const char *p = unique_id.c_str();
+      while (*p != '\0')
+        if (*p >= '0' && *p <= '9')
+          ret = 10 * ret + *(p++) - '0';
+        else
+        { murmur_hash foo;
+          return foo.uniform_hash(unique_id.c_str(), unique_id.size(), 0);
+        }
+      return ret;
     }
+  };
 
-    // --- finalization
-    h1 ^= len;
+  const size_t max_int = 100000;
+  const float max_float = max_int;
+  const float min_float = 0.00001f;
+  const size_t max_digits = (size_t) roundf((float) (-log(min_float) / log(10.)));
 
-    return fmix(h1);
-  }
-};
-
-class HashUtils
-{
-public:
-  static u64 Compute_Id_Hash(const std::string& unique_id)
-  {
-    size_t ret = 0;
-    const char *p = unique_id.c_str();
-    while (*p != '\0')
-    if (*p >= '0' && *p <= '9')
-      ret = 10 * ret + *(p++) - '0';
-    else
-    {
-      murmur_hash foo;
-      return foo.uniform_hash(unique_id.c_str(), unique_id.size(), 0);
+  class NumberUtils
+  { public:
+    template<bool trailing_zeros>
+    static void print_mantissa(char*& begin, float f)
+    { // helper for print_float
+      char values[10];
+      size_t v = (size_t)f;
+      size_t digit = 0;
+      size_t first_nonzero = 0;
+      for (size_t max = 1; max <= v; ++digit)
+      { size_t max_next = max * 10;
+        char v_mod = (char) (v % max_next / max);
+        if (!trailing_zeros && v_mod != '\0' && first_nonzero == 0)
+          first_nonzero = digit;
+        values[digit] = '0' + v_mod;
+        max = max_next;
+      }
+      if (!trailing_zeros)
+        for (size_t i = max_digits; i > digit; i--)
+          *begin++ = '0';
+      while (digit > first_nonzero)
+        *begin++ = values[--digit];
     }
-    return ret;
-  }
-};
-
-const size_t max_int = 100000;
-const float max_float = max_int;
-const float min_float = 0.00001f;
-const size_t max_digits = (size_t) roundf((float) (-log(min_float) / log(10.)));
-
-class NumberUtils
-{
-public:
-  template<bool trailing_zeros>
-  static void print_mantissa(char*& begin, float f)
-  { // helper for print_float
-    char values[10];
-    size_t v = (size_t)f;
-    size_t digit = 0;
-    size_t first_nonzero = 0;
-    for (size_t max = 1; max <= v; ++digit)
-    {
-      size_t max_next = max * 10;
-      char v_mod = (char) (v % max_next / max);
-      if (!trailing_zeros && v_mod != '\0' && first_nonzero == 0)
-        first_nonzero = digit;
-      values[digit] = '0' + v_mod;
-      max = max_next;
-    }
-    if (!trailing_zeros)
-      for (size_t i = max_digits; i > digit; i--)
-        *begin++ = '0';
-    while (digit > first_nonzero)
-      *begin++ = values[--digit];
-  }
 
     static void print_float(char* begin, size_t size, float f)
-  {
-    bool sign = false;
-    if (f < 0.f)
-      sign = true;
-    float unsigned_f = fabsf(f);
-    if (unsigned_f < max_float && unsigned_f > min_float)
-    {
-      if (sign)
-        *begin++ = '-';
-      print_mantissa<true>(begin, unsigned_f);
-      unsigned_f -= (size_t)unsigned_f;
-      unsigned_f *= max_int;
-      if (unsigned_f >= 1.f)
-      {
-        *begin++ = '.';
-        print_mantissa<false>(begin, unsigned_f);
+    { bool sign = false;
+      if (f < 0.f)
+        sign = true;
+      float unsigned_f = fabsf(f);
+      if (unsigned_f < max_float && unsigned_f > min_float)
+      { if (sign)
+          *begin++ = '-';
+        print_mantissa<true>(begin, unsigned_f);
+        unsigned_f -= (size_t)unsigned_f;
+        unsigned_f *= max_int;
+        if (unsigned_f >= 1.f)
+        { *begin++ = '.';
+          print_mantissa<false>(begin, unsigned_f);
+        }
       }
-    }
-    else if (unsigned_f == 0.)
-      *begin++ = '0';
-    else
-    {
-      sprintf_s(begin, size, "%g", f);
+      else if (unsigned_f == 0.)
+        *begin++ = '0';
+      else
+      { sprintf_s(begin, size, "%g", f);
+        return;
+      }
+      *begin = '\0';
       return;
     }
-    *begin = '\0';
-    return;
-  }
-};
+  };
 
 //A quick implementation similar to drand48 for cross-platform compatibility
-namespace PRG {
+  namespace PRG {
   const uint64_t a = 0xeece66d5deece66dULL;
   const uint64_t c = 2147483647;
 
@@ -251,32 +239,29 @@ namespace PRG {
   };
 
   struct prg {
-  private:
+private:
     uint64_t v;
-  public:
+public:
     prg() { v = c; }
     prg(uint64_t initial) { v = initial; }
 
     float merand48(uint64_t& initial)
-    {
-      initial = a * initial + c;
+    { initial = a * initial + c;
       int_float temp;
       temp.i = ((initial >> 25) & 0x7FFFFF) | bias;
       return temp.f - 1;
     }
 
     float Uniform_Unit_Interval()
-    {
-      return merand48(v);
+    { return merand48(v);
     }
 
     uint32_t Uniform_Int(uint32_t low, uint32_t high)
-    {
-      merand48(v);
+    { merand48(v);
       uint32_t ret = low + ((v >> 25) % (high - low + 1));
       return ret;
     }
   };
-}
+  }
 }
 /*! @} End of Doxygen Groups*/

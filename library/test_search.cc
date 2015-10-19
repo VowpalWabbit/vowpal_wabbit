@@ -5,26 +5,27 @@
 #include "../vowpalwabbit/search_sequencetask.h"
 #include "libsearch.h"
 
-struct wt {
-  string word;
+struct wt
+{ string word;
   uint32_t tag;
   wt(string w, uint32_t t) : word(w), tag(t) {}
 };
 
-class SequenceLabelerTask : public SearchTask< vector<wt>, vector<uint32_t> > {
-  public:
+class SequenceLabelerTask : public SearchTask< vector<wt>, vector<uint32_t> >
+{
+public:
   SequenceLabelerTask(vw& vw_obj)
-      : SearchTask< vector<wt>, vector<uint32_t> >(vw_obj) {  // must run parent constructor!
-    sch.set_options( Search::AUTO_HAMMING_LOSS | Search::AUTO_CONDITION_FEATURES );
+    : SearchTask< vector<wt>, vector<uint32_t> >(vw_obj)    // must run parent constructor!
+  { sch.set_options( Search::AUTO_HAMMING_LOSS | Search::AUTO_CONDITION_FEATURES );
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     cerr << "num_actions = " << d->num_actions << endl;
   }
 
   // using vanilla vw interface
-  void _run(Search::search& sch, vector<wt> & input_example, vector<uint32_t> & output) {
-    output.clear();
-    for (size_t i=0; i<input_example.size(); i++) {
-      example* ex = VW::read_example(vw_obj, "1 |w " + input_example[i].word);
+  void _run(Search::search& sch, vector<wt> & input_example, vector<uint32_t> & output)
+  { output.clear();
+    for (size_t i=0; i<input_example.size(); i++)
+    { example* ex = VW::read_example(vw_obj, "1 |w " + input_example[i].word);
       action p  = Search::predictor(sch, i+1).set_input(*ex).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
       VW::finish_example(vw_obj, ex);
       output.push_back(p);
@@ -32,10 +33,10 @@ class SequenceLabelerTask : public SearchTask< vector<wt>, vector<uint32_t> > {
   }
 
   // using ezexample
-  void _run2(Search::search& sch, vector<wt> & input_example, vector<uint32_t> & output) {
-    output.clear();
-    for (size_t i=0; i<input_example.size(); i++) {
-      ezexample ex(&vw_obj);
+  void _run2(Search::search& sch, vector<wt> & input_example, vector<uint32_t> & output)
+  { output.clear();
+    for (size_t i=0; i<input_example.size(); i++)
+    { ezexample ex(&vw_obj);
       ex(vw_namespace('w'))(input_example[i].word);  // add the feature
       action p  = Search::predictor(sch, i+1).set_input(*ex.get()).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
       output.push_back(p);
@@ -44,8 +45,8 @@ class SequenceLabelerTask : public SearchTask< vector<wt>, vector<uint32_t> > {
 
 };
 
-void run(vw& vw_obj) {
-  // we put this in its own scope so that its destructor on
+void run(vw& vw_obj)
+{ // we put this in its own scope so that its destructor on
   // SequenceLabelerTask gets called *before* VW::finish gets called;
   // otherwise we'll get a segfault :(. i'm not sure what to do about
   // this :(.
@@ -70,27 +71,27 @@ void run(vw& vw_obj) {
 }
 
 
-void train() {
-  // initialize VW as usual, but use 'hook' as the search_task
+void train()
+{ // initialize VW as usual, but use 'hook' as the search_task
   vw& vw_obj = *VW::initialize("--search 4 --quiet --search_task hook --ring_size 1024 -f my_model");
   run(vw_obj);
   VW::finish(vw_obj);
 }
 
-void predict() {
-  vw& vw_obj = *VW::initialize("--quiet -t --ring_size 1024 -i my_model");
+void predict()
+{ vw& vw_obj = *VW::initialize("--quiet -t --ring_size 1024 -i my_model");
   run(vw_obj);
   VW::finish(vw_obj);
 }
 
-void test_buildin_task() {
-  // train a model on the command line
+void test_buildin_task()
+{ // train a model on the command line
   int ret = system("../vowpalwabbit/vw -k -c --holdout_off --passes 20 --search 4 --search_task sequence -d sequence.data -f sequence.model");
   if (ret != 0) cerr << "../vowpalwabbit/vw failed" << endl;
 
   // now, load that model using the BuiltInTask library
   vw& vw_obj = *VW::initialize("-t -i sequence.model --search_task hook");
-  {  // create a new scope for the task object
+  { // create a new scope for the task object
     BuiltInTask task(vw_obj, &SequenceTask::task);
     vector<example*> V;
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
@@ -111,8 +112,8 @@ void test_buildin_task() {
   VW::finish(vw_obj);
 }
 
-int main(int argc, char *argv[]) {
-  train();
+int main(int argc, char *argv[])
+{ train();
   predict();
   test_buildin_task();
 }

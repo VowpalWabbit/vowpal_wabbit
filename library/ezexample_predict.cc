@@ -6,8 +6,7 @@
 using namespace std;
 
 int main(int argc, char *argv[])
-{
-  string init_string = "-t -q st --hash all --noconstant --ldf_override s -i ";
+{ string init_string = "-t -q st --hash all --noconstant --ldf_override s -i ";
   if (argc > 1)
     init_string += argv[1];
   else
@@ -18,17 +17,16 @@ int main(int argc, char *argv[])
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE -- THIS READS IN A MODEL FROM train.w
   vw* vw = VW::initialize(init_string); // "-t -q st --hash all --noconstant --ldf_override s -i train.w");
 
-  {
-    // HAL'S SPIFFY INTERFACE USING C++ CRAZINESS
+  { // HAL'S SPIFFY INTERFACE USING C++ CRAZINESS
     ezexample ex(vw, false);  // don't need multiline
     ex(vw_namespace('s'))
-      ("p^the_man")
-      ("w^the")
-      ("w^man")
-      (vw_namespace('t'))
-      ("p^le_homme")
-      ("w^le")
-      ("w^homme");
+    ("p^the_man")
+    ("w^the")
+    ("w^man")
+    (vw_namespace('t'))
+    ("p^le_homme")
+    ("w^le")
+    ("w^homme");
     ex.set_label("1");
     cerr << ex.predict_partial() << endl;
 
@@ -36,16 +34,16 @@ int main(int argc, char *argv[])
 
     --ex;   // remove the most recent namespace
     ex(vw_namespace('t'))
-      ("p^un_homme")
-      ("w^un")
-      ("w^homme");
+    ("p^un_homme")
+    ("w^un")
+    ("w^homme");
     ex.set_label("2");
     cerr << ex.predict_partial() << endl;
 
     --ex;   // remove the most recent namespace, and add features with explicit ns
     ex('t', "p^un_homme")
-      ('t', "w^un")
-      ('t', "w^homme");
+    ('t', "w^un")
+    ('t', "w^homme");
     ex.set_label("2");
     cerr << ex.predict_partial() << endl;
   }

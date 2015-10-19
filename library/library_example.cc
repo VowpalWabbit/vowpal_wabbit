@@ -6,15 +6,13 @@ using namespace std;
 
 
 inline feature vw_feature_from_string(vw& v, string fstr, unsigned long seed, float val)
-{
-  uint32_t foo = VW::hash_feature(v, fstr, seed);
+{ uint32_t foo = VW::hash_feature(v, fstr, seed);
   feature f = { val, foo};
   return f;
 }
 
 int main(int argc, char *argv[])
-{
-  vw* model = VW::initialize("--hash all -q st --noconstant -i train.w -f train2.vw");
+{ vw* model = VW::initialize("--hash all -q st --noconstant -i train.w -f train2.vw");
 
   example *vec2 = VW::read_example(*model, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   model->learn(vec2);
@@ -56,12 +54,11 @@ int main(int argc, char *argv[])
   size_t len=0;
   VW::primitive_feature_space* pfs = VW::export_example(*model2, vec2, len);
   for (size_t i = 0; i < len; i++)
-    {
-      cout << "namespace = " << pfs[i].name;
-      for (size_t j = 0; j < pfs[i].len; j++)
-        cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":" << VW::get_weight(*model2, pfs[i].fs[j].weight_index, 0);
-      cout << endl;
-    }
+  { cout << "namespace = " << pfs[i].name;
+    for (size_t j = 0; j < pfs[i].len; j++)
+      cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":" << VW::get_weight(*model2, pfs[i].fs[j].weight_index, 0);
+    cout << endl;
+  }
 
   VW::finish_example(*model2, vec2);
   VW::finish(*model2);

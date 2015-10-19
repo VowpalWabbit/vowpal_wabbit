@@ -22,30 +22,27 @@ using namespace std;
 
 using namespace LEARNER;
 
-struct gdmf {
-  vw* all;//regressor, printing
+struct gdmf
+{ vw* all;//regressor, printing
   uint32_t rank;
   size_t no_win_counter;
   size_t early_stop_thres;
 };
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
-{
-  vw& all = *d.all;
+{ vw& all = *d.all;
   weight* weights = all.reg.weight_vector;
   size_t mask = all.reg.weight_mask;
   for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
     if (ec.audit_features[*i].begin != ec.audit_features[*i].end)
       for (audit_data *f = ec.audit_features[*i].begin; f != ec.audit_features[*i].end; f++)
-      {
-        cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index <<"(" << ((f->weight_index + offset) & mask)  << ")" << ':' << f->x;
+      { cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index <<"(" << ((f->weight_index + offset) & mask)  << ")" << ':' << f->x;
 
         cout << ':' << weights[(f->weight_index + offset) & mask];
       }
     else
       for (feature *f = ec.atomics[*i].begin; f != ec.atomics[*i].end; f++)
-      {
-        size_t index = (f->weight_index + offset) & all.reg.weight_mask;
+      { size_t index = (f->weight_index + offset) & all.reg.weight_mask;
 
         cout << "\tConstant:";
         cout << ((index >> all.reg.stride_shift) & all.parse_mask) << ':' << f->x;
@@ -53,14 +50,11 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
       }
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end(); i++)
     if (ec.atomics[(int)(*i)[0]].size() > 0 && ec.atomics[(int)(*i)[1]].size() > 0)
-    {
-      /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
+    { /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
       for (size_t k = 1; k <= d.rank; k++)
-      {
-        for (audit_data* f = ec.audit_features[(int)(*i)[0]].begin; f!= ec.audit_features[(int)(*i)[0]].end; f++)
+      { for (audit_data* f = ec.audit_features[(int)(*i)[0]].begin; f!= ec.audit_features[(int)(*i)[0]].end; f++)
           for (audit_data* f2 = ec.audit_features[(int)(*i)[1]].begin; f2!= ec.audit_features[(int)(*i)[1]].end; f2++)
-          {
-            cout << '\t' << f->space << k << '^' << f->feature << ':' << ((f->weight_index+k)&mask)
+          { cout << '\t' << f->space << k << '^' << f->feature << ':' << ((f->weight_index+k)&mask)
                  <<"(" << ((f->weight_index + offset +k) & mask)  << ")" << ':' << f->x;
             cout << ':' << weights[(f->weight_index + offset + k) & mask];
 
@@ -78,20 +72,17 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 }
 
 void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
-{
-  print_result(d.all->stdout_fileno,ec.pred.scalar,-1,ec.tag);
+{ print_result(d.all->stdout_fileno,ec.pred.scalar,-1,ec.tag);
   mf_print_offset_features(d, ec, offset);
 }
 
 float mf_predict(gdmf& d, example& ec)
-{
-  vw& all = *d.all;
+{ vw& all = *d.all;
   label_data& ld = ec.l.simple;
   float prediction = ld.initial;
 
   for (vector<string>::iterator i = d.all->pairs.begin(); i != d.all->pairs.end(); i++)
-  {
-    ec.num_features -= ec.atomics[(int)(*i)[0]].size() * ec.atomics[(int)(*i)[1]].size();
+  { ec.num_features -= ec.atomics[(int)(*i)[0]].size() * ec.atomics[(int)(*i)[1]].size();
     ec.num_features += ec.atomics[(int)(*i)[0]].size() * d.rank;
     ec.num_features += ec.atomics[(int)(*i)[1]].size() * d.rank;
   }
@@ -112,12 +103,9 @@ float mf_predict(gdmf& d, example& ec)
 
   // interaction terms
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end(); i++)
-  {
-    if (ec.atomics[(int)(*i)[0]].size() > 0 && ec.atomics[(int)(*i)[1]].size() > 0)
-    {
-      for (uint32_t k = 1; k <= d.rank; k++)
-      {
-        // x_l * l^k
+  { if (ec.atomics[(int)(*i)[0]].size() > 0 && ec.atomics[(int)(*i)[1]].size() > 0)
+    { for (uint32_t k = 1; k <= d.rank; k++)
+      { // x_l * l^k
         // l^k is from index+1 to index+d.rank
         //float x_dot_l = sd_offset_add(weights, mask, ec.atomics[(int)(*i)[0]].begin, ec.atomics[(int)(*i)[0]].end, k);
         float x_dot_l = 0.;
@@ -159,14 +147,12 @@ float mf_predict(gdmf& d, example& ec)
 
 
 void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float update, float regularization)
-{
-  for (feature* f = begin; f!= end; f++)
+{ for (feature* f = begin; f!= end; f++)
     weights[(f->weight_index + offset) & mask] += update * f->x - regularization * weights[(f->weight_index + offset) & mask];
 }
 
 void mf_train(gdmf& d, example& ec)
-{
-  vw& all = *d.all;
+{ vw& all = *d.all;
   weight* weights = all.reg.weight_vector;
   size_t mask = all.reg.weight_mask;
   label_data& ld = ec.l.simple;
@@ -184,22 +170,19 @@ void mf_train(gdmf& d, example& ec)
 
   // quadratic update
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end(); i++)
-  {
-    if (ec.atomics[(int)(*i)[0]].size() > 0 && ec.atomics[(int)(*i)[1]].size() > 0)
+  { if (ec.atomics[(int)(*i)[0]].size() > 0 && ec.atomics[(int)(*i)[1]].size() > 0)
     {
 
       // update l^k weights
       for (size_t k = 1; k <= d.rank; k++)
-      {
-        // r^k \cdot x_r
+      { // r^k \cdot x_r
         float r_dot_x = ec.topic_predictions[2*k];
         // l^k <- l^k + update * (r^k \cdot x_r) * x_l
         sd_offset_update(weights, mask, ec.atomics[(int)(*i)[0]].begin, ec.atomics[(int)(*i)[0]].end, k, update*r_dot_x, regularization);
       }
       // update r^k weights
       for (size_t k = 1; k <= d.rank; k++)
-      {
-        // l^k \cdot x_l
+      { // l^k \cdot x_l
         float l_dot_x = ec.topic_predictions[2*k-1];
         // r^k <- r^k + update * (l^k \cdot x_l) * x_r
         sd_offset_update(weights, mask, ec.atomics[(int)(*i)[1]].begin, ec.atomics[(int)(*i)[1]].end, k+d.rank, update*l_dot_x, regularization);
@@ -212,29 +195,25 @@ void mf_train(gdmf& d, example& ec)
 }
 
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
-{
-  vw* all = d.all;
+{ vw* all = d.all;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride_shift = all->reg.stride_shift;
 
   if(read)
-  {
-    initialize_regressor(*all);
+  { initialize_regressor(*all);
     if(all->random_weights)
       for (size_t j = 0; j < (length << stride_shift); j++)
         all->reg.weight_vector[j] = (float) (0.1 * frand48());
   }
 
   if (model_file.files.size() > 0)
-  {
-    uint32_t i = 0;
+  { uint32_t i = 0;
     uint32_t text_len;
     char buff[512];
     size_t brw = 1;
 
     do
-    {
-      brw = 0;
+    { brw = 0;
       size_t K = d.rank*2+1;
 
       text_len = sprintf(buff, "%d ", i);
@@ -243,8 +222,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
                                        buff, text_len, text);
       if (brw != 0)
         for (uint32_t k = 0; k < K; k++)
-        {
-          uint32_t ndx = (i << stride_shift)+k;
+        { uint32_t ndx = (i << stride_shift)+k;
 
           weight* v = &(all->reg.weight_vector[ndx]);
           text_len = sprintf(buff, "%f ", *v);
@@ -266,8 +244,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 }
 
 void end_pass(gdmf& d)
-{
-  vw* all = d.all;
+{ vw* all = d.all;
 
   all->eta *= all->eta_decay_rate;
   if (all->save_per_pass)
@@ -276,8 +253,7 @@ void end_pass(gdmf& d)
   all->current_pass++;
 
   if(!all->holdout_set_off)
-  {
-    if(summarize_holdout_set(*all, d.no_win_counter))
+  { if(summarize_holdout_set(*all, d.no_win_counter))
       finalize_regressor(*all, all->final_regressor_name);
     if((d.early_stop_thres == d.no_win_counter) &&
         ((all->check_holdout_every_n_passes <= 1) ||
@@ -289,8 +265,7 @@ void end_pass(gdmf& d)
 void predict(gdmf& d, base_learner&, example& ec) { mf_predict(d,ec); }
 
 void learn(gdmf& d, base_learner&, example& ec)
-{
-  vw& all = *d.all;
+{ vw& all = *d.all;
 
   mf_predict(d, ec);
   if (all.training && ec.l.simple.label != FLT_MAX)
@@ -298,8 +273,7 @@ void learn(gdmf& d, base_learner&, example& ec)
 }
 
 base_learner* gd_mf_setup(vw& all)
-{
-  if (missing_option<uint32_t, true>(all, "rank", "rank for matrix factorization."))
+{ if (missing_option<uint32_t, true>(all, "rank", "rank for matrix factorization."))
     return nullptr;
 
   gdmf& data = calloc_or_throw<gdmf>();
@@ -323,8 +297,7 @@ base_learner* gd_mf_setup(vw& all)
     THROW("bfgs is not implemented for matrix factorization");
 
   if(!all.holdout_set_off)
-  {
-    all.sd->holdout_best_loss = FLT_MAX;
+  { all.sd->holdout_best_loss = FLT_MAX;
     if(all.vm.count("early_terminate"))
       data.early_stop_thres = all.vm["early_terminate"].as< size_t>();
   }
@@ -333,8 +306,8 @@ base_learner* gd_mf_setup(vw& all)
     all.eta = 10; //default learning rate to 10 for non default update rule
 
   //default initial_t to 1 instead of 0
-  if(!all.vm.count("initial_t")) {
-    all.sd->t = 1.f;
+  if(!all.vm.count("initial_t"))
+  { all.sd->t = 1.f;
     all.sd->weighted_unlabeled_examples = 1.f;
     all.initial_t = 1.f;
   }

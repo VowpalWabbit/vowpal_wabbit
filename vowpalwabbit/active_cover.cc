@@ -6,11 +6,10 @@
 
 using namespace LEARNER;
 
-inline float sign(float w){ if (w < 0.f) return -1.f; else  return 1.f;}
+inline float sign(float w) { if (w < 0.f) return -1.f; else  return 1.f;}
 
 struct active_cover
-{
-  // active learning algorithm parameters
+{ // active learning algorithm parameters
   float active_c0;
   float alpha;
   float beta_scale;
@@ -25,10 +24,8 @@ struct active_cover
 };
 
 bool dis_test(vw& all, example& ec, float prediction, float threshold)
-{
-  if(ec.example_t <= 3)
-  {
-    return true;
+{ if(ec.example_t <= 3)
+  { return true;
   }
 
   // Get loss difference
@@ -42,25 +39,20 @@ bool dis_test(vw& all, example& ec, float prediction, float threshold)
 }
 
 float get_threshold(float sum_loss, float t, float c0, float alpha)
-{
-  if(t < 3.f)
-  {
-    return 1.f;
+{ if(t < 3.f)
+  { return 1.f;
   }
   else
-  {
-    float avg_loss = sum_loss/t;
+  { float avg_loss = sum_loss/t;
     float threshold = sqrt(c0*avg_loss/t) + fmax(2.f*alpha,4.f)*c0*log(t)/t;
     return threshold;
   }
 }
 
 float get_pmin(float sum_loss, float t)
-{
-  // t = ec.example_t - 1
+{ // t = ec.example_t - 1
   if(t<=2.f)
-  {
-    return 1.f;
+  { return 1.f;
   }
 
   float avg_loss = sum_loss/t;
@@ -72,54 +64,45 @@ float query_decision(active_cover& a, base_learner& l, example& ec, float predic
 {
 
   if(ec.example_t <= 3)
-  {
-    return 1.f;
+  { return 1.f;
   }
 
   if(!in_dis)
-  {
-    return -1.f;
+  { return -1.f;
   }
 
   if(a.oracular)
-  {
-    return 1.f;
+  { return 1.f;
   }
 
   float p, q2 = 4.f*pmin*pmin;
 
   for(size_t i = 0; i < a.cover_size; i++)
-  {
-    l.predict(ec,i+1);
+  { l.predict(ec,i+1);
     q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i]/a.lambda_d[i]);
   }
 
   p = sqrt(q2)/(1+sqrt(q2));
 
   if(nanpattern(p))
-  {
-    p = 1.f;
+  { p = 1.f;
   }
 
   if(frand48() <= p)
-  {
-    return 1.f/p;
+  { return 1.f/p;
   }
   else
-  {
-    return -1.f;
+  { return -1.f;
   }
 }
 
 
 template <bool is_learn>
 void predict_or_learn_active_cover(active_cover& a, base_learner& base, example& ec)
-{
- 	base.predict(ec, 0);
+{ base.predict(ec, 0);
 
   if (is_learn)
-  {
-    vw& all = *a.all;
+  { vw& all = *a.all;
 
     float prediction = ec.pred.scalar;
     float t = ec.example_t - ec.l.simple.weight;
@@ -134,22 +117,19 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 
     // Query (or not)
     if(!in_dis) // Use predicted label
-    {
-      ec.l.simple.label = sign(prediction);
+    { ec.l.simple.label = sign(prediction);
       ec.l.simple.weight = ec_input_weight;
       base.learn(ec, 0);
 
     }
     else if(importance > 0) // Use importance-weighted example
-    {
-      all.sd->queries += 1;
+    { all.sd->queries += 1;
       ec.l.simple.weight = ec_input_weight * importance;
       ec.l.simple.label = ec_input_label;
       base.learn(ec, 0);
     }
     else // skipped example
-    {
-      // Make sure the loss computation does not include
+    { // Make sure the loss computation does not include
       // skipped examples
       ec.l.simple.label = FLT_MAX;
     }
@@ -165,21 +145,17 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
     //cost = cost of predicting erm's prediction
     //cost_delta = cost - cost of predicting the opposite label
     if(in_dis)
-    {
-      cost = r*(fmax(importance,0.f))*((float)(sign(prediction) != sign(ec_input_label)));
+    { cost = r*(fmax(importance,0.f))*((float)(sign(prediction) != sign(ec_input_label)));
     }
     else
-    {
-      cost = 0.f;
+    { cost = 0.f;
       cost_delta = -r;
     }
 
     for(size_t i = 0; i < a.cover_size; i++)
-    {
-      // Update cost
+    { // Update cost
       if(in_dis)
-      {
-        p = sqrt(q2)/(1.f + sqrt(q2));
+      { p = sqrt(q2)/(1.f + sqrt(q2));
         s = 2.f*a.alpha*a.alpha - 1.f/p;
         cost_delta = 2.f*cost - r*(fmax(importance,0.f)) - s;
       }
@@ -213,19 +189,17 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 }
 
 base_learner* active_cover_setup(vw& all)
-{
-  //parse and set arguments
+{ //parse and set arguments
   if(missing_option(all, false, "active_cover", "enable active learning with cover"))
-  {
-    return nullptr;
+  { return nullptr;
   }
 
   new_options(all, "Active Learning with cover options")
-      ("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8.")
-      ("alpha", po::value<float>(), "active learning variance upper bound parameter alpha. Default 1.")
-      ("beta_scale", po::value<float>(), "active learning variance upper bound parameter beta_scale. Default sqrt(10).")
-      ("cover", po::value<float>(), "cover size. Default 12.")
-      ("oracular", "Use Oracular-CAL style query or not. Default false.");
+  ("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8.")
+  ("alpha", po::value<float>(), "active learning variance upper bound parameter alpha. Default 1.")
+  ("beta_scale", po::value<float>(), "active learning variance upper bound parameter beta_scale. Default sqrt(10).")
+  ("cover", po::value<float>(), "cover size. Default 12.")
+  ("oracular", "Use Oracular-CAL style query or not. Default false.");
   add_options(all);
 
   active_cover& data = calloc_or_throw<active_cover>();
@@ -237,57 +211,49 @@ base_learner* active_cover_setup(vw& all)
   data.cover_size = 12;
 
   if(all.vm.count("mellowness"))
-  {
-    data.active_c0 = all.vm["mellowness"].as<float>();
+  { data.active_c0 = all.vm["mellowness"].as<float>();
   }
 
   if(all.vm.count("alpha"))
-  {
-    data.alpha = all.vm["alpha"].as<float>();
+  { data.alpha = all.vm["alpha"].as<float>();
   }
 
   if(all.vm.count("beta_scale"))
-  {
-    data.beta_scale = all.vm["beta_scale"].as<float>();
+  { data.beta_scale = all.vm["beta_scale"].as<float>();
     data.beta_scale *= data.beta_scale;
   }
 
   if(all.vm.count("cover"))
-  {
-    data.cover_size = (size_t)all.vm["cover"].as<float>();
+  { data.cover_size = (size_t)all.vm["cover"].as<float>();
   }
 
   if(all.vm.count("oracular"))
-  {
-    data.oracular = true;
+  { data.oracular = true;
     data.cover_size = 0;
   }
 
   if (count(all.args.begin(), all.args.end(),"--lda") != 0)
-  {
-      THROW("error: you can't combine lda and active learning");
+  { THROW("error: you can't combine lda and active learning");
   }
 
 
-    if (count(all.args.begin(), all.args.end(),"--active") != 0)
-  {
-      THROW("error: you can't use --active_cover and --active at the same time");
+  if (count(all.args.begin(), all.args.end(),"--active") != 0)
+  { THROW("error: you can't use --active_cover and --active at the same time");
   }
 
   *all.file_options <<" --active_cover --cover "<< data.cover_size;
-    base_learner* base = setup_base(all);
+  base_learner* base = setup_base(all);
 
   data.lambda_n = new float[data.cover_size];
   data.lambda_d = new float[data.cover_size];
 
   for(size_t i = 0; i < data.cover_size; i++)
-  {
-    data.lambda_n[i] = 0.f;
+  { data.lambda_n[i] = 0.f;
     data.lambda_d[i] = 1.f/8.f;
   }
 
-    //Create new learner
-    learner<active_cover>* l;
+  //Create new learner
+  learner<active_cover>* l;
   l = &init_learner(&data, base, predict_or_learn_active_cover<true>, predict_or_learn_active_cover<false>, data.cover_size + 1);
 
   return make_base(*l);
