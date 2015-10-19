@@ -154,10 +154,10 @@ using namespace LEARNER;
   {
     //note: intentionally leaving out ft_offset.
     assert(wid % stride_shift(poly, 1) == 0);
-	if ((poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & cycle_bit) > 0)
-		return true;
-	else
-		return false;
+  if ((poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & cycle_bit) > 0)
+    return true;
+  else
+    return false;
   }
 
   inline void cycle_toggle(stagewise_poly &poly, uint32_t wid)
@@ -551,16 +551,16 @@ using namespace LEARNER;
 
   void reduce_min_max(uint8_t &v1,const uint8_t &v2)
   {
-	  bool parent_or_depth;
-	  if (v1 & indicator_bit)
-		  parent_or_depth = true;
-	  else
-		  parent_or_depth = false;
-	  bool p_or_d2;
-	  if (v2 & indicator_bit)
-		  p_or_d2 = true;
-	  else
-		  p_or_d2 = false;
+    bool parent_or_depth;
+    if (v1 & indicator_bit)
+      parent_or_depth = true;
+    else
+      parent_or_depth = false;
+    bool p_or_d2;
+    if (v2 & indicator_bit)
+      p_or_d2 = true;
+    else
+      p_or_d2 = false;
     if(parent_or_depth != p_or_d2) {
 #ifdef DEBUG
       cout << "Reducing parent with depth!!!!!";

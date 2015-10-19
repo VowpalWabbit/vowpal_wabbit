@@ -10,18 +10,18 @@ license as described in the file LICENSE.
 
 namespace VW
 {
-	public ref class SpanningTreeClr
-	{
-	private:
-		SpanningTree* m_spanningTree;
+  public ref class SpanningTreeClr
+  {
+  private:
+    SpanningTree* m_spanningTree;
 
-	public:
-		SpanningTreeClr();
+  public:
+    SpanningTreeClr();
 
-		~SpanningTreeClr();
+    ~SpanningTreeClr();
 
-		void Start();
-		void Run();
-		void Stop();
-	};
+    void Start();
+    void Run();
+    void Stop();
+  };
 }

@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
   VW::primitive_feature_space features[2];
   VW::primitive_feature_space *s = features, *t = features + 1;
   s->name = 's';
-  t->name = 't'; 
+  t->name = 't';
 
   uint32_t s_hash = VW::hash_space(*model, "s");
   uint32_t t_hash = VW::hash_space(*model, "t");
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
   t->fs[1] = vw_feature_from_string(*model, "w^le", t_hash, 1.0);
   t->fs[2] = vw_feature_from_string(*model, "w^homme", t_hash, 1.0);
   example* vec3 = VW::import_example(*model, "", features, 2);
-    
+
   model->learn(vec3);
   cerr << "p3 = " << vec3->pred.scalar << endl;
   // TODO: this does not invoke m_vw->l->finish_example()
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
       for (size_t j = 0; j < pfs[i].len; j++)
         cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":" << VW::get_weight(*model2, pfs[i].fs[j].weight_index, 0);
       cout << endl;
-    }   
+    }
 
   VW::finish_example(*model2, vec2);
   VW::finish(*model2);

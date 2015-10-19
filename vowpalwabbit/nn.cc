@@ -37,10 +37,10 @@ struct nn {
 
   float* hidden_units;
   bool* dropped_out;
-  
+
   polyprediction* hidden_units_pred;
   polyprediction* hiddenbias_pred;
-  
+
   vw* all;//many things
 };
 
@@ -85,7 +85,7 @@ struct nn {
         output.weight_index += (uint32_t)n.increment;
       }
 
-    if (! n.inpass) 
+    if (! n.inpass)
       {
         n.output_layer.atomics[nn_output_namespace].push_back(output);
         ++n.output_layer.num_features;
@@ -143,7 +143,7 @@ struct nn {
     polyprediction* hidden_units = n.hidden_units_pred;
     polyprediction* hiddenbias_pred = n.hiddenbias_pred;
     bool* dropped_out = n.dropped_out;
-  
+
     ostringstream outputStringStream;
 
     n.all->set_minmax = noop_mm;
@@ -162,7 +162,7 @@ struct nn {
 
     if (recompute_hidden) {
       base.multipredict(n.hiddenbias, 0, n.k, hiddenbias_pred, true);
-    
+
       for (unsigned int i = 0; i < n.k; ++i)
         // avoid saddle point at 0
         if (hiddenbias_pred[i].scalar == 0)
@@ -183,7 +183,7 @@ struct nn {
           add_passthrough_feature(ec, i*2+1, hidden_units[i].scalar);
         }
     }
-    
+
     if (shouldOutput)
       for (unsigned int i = 0; i < n.k; ++i ) {
         if (i > 0) outputStringStream << ' ';
@@ -217,21 +217,21 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     for (unsigned int i = 0; i < n.k; ++i)
       {
-        float sigmah = 
+        float sigmah =
           (dropped_out[i]) ? 0.0f : dropscale * fasttanh (hidden_units[i].scalar);
         n.output_layer.atomics[nn_output_namespace][i].x = sigmah;
 
         n.output_layer.total_sum_feat_sq += sigmah * sigmah;
         n.output_layer.sum_feat_sq[nn_output_namespace] += sigmah * sigmah;
 
-        n.outputweight.atomics[nn_output_namespace][0].weight_index = 
+        n.outputweight.atomics[nn_output_namespace][0].weight_index =
           n.output_layer.atomics[nn_output_namespace][i].weight_index;
         base.predict(n.outputweight, n.k);
         float wf = n.outputweight.pred.scalar;
 
         // avoid saddle point at 0
         if (wf == 0)
-          {    
+          {
             float sqrtk = sqrt ((float)n.k);
             n.outputweight.l.simple.label = (float) (frand48 () - 0.5) / sqrtk;
             base.update(n.outputweight, n.k);
@@ -245,7 +245,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     n.all->sd->max_label = save_max_label;
 
     if (n.inpass) {
-      // TODO: this is not correct if there is something in the 
+      // TODO: this is not correct if there is something in the
       // nn_output_namespace but at least it will not leak memory
       // in that case
 
@@ -255,9 +255,9 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       ec.sum_feat_sq[nn_output_namespace] = n.output_layer.sum_feat_sq[nn_output_namespace];
       ec.total_sum_feat_sq += n.output_layer.sum_feat_sq[nn_output_namespace];
       if (is_learn)
-	base.learn(ec, n.k);
+  base.learn(ec, n.k);
       else
-	base.predict(ec, n.k);
+  base.predict(ec, n.k);
       n.output_layer.partial_prediction = ec.partial_prediction;
       n.output_layer.loss = ec.loss;
       ec.total_sum_feat_sq -= n.output_layer.sum_feat_sq[nn_output_namespace];
@@ -271,9 +271,9 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n.output_layer.partial_prediction = 0;
       n.output_layer.example_t = ec.example_t;
       if (is_learn)
-	base.learn(n.output_layer, n.k);
+  base.learn(n.output_layer, n.k);
       else
-	base.predict(n.output_layer, n.k);
+  base.predict(n.output_layer, n.k);
       ec.l = n.output_layer.l;
     }
 
@@ -283,11 +283,11 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       outputStringStream << ' ' << n.output_layer.partial_prediction;
       n.all->print_text(n.all->raw_prediction, outputStringStream.str(), ec.tag);
     }
-    
+
     if (is_learn && n.all->training && ld.label != FLT_MAX) {
-      float gradient = n.all->loss->first_derivative(n.all->sd, 
-						     n.prediction,
-						     ld.label);
+      float gradient = n.all->loss->first_derivative(n.all->sd,
+                 n.prediction,
+                 ld.label);
 
       if (fabs (gradient) > 0) {
         n.all->loss = n.squared_loss;
@@ -303,10 +303,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
         for (unsigned int i = 0; i < n.k; ++i) {
           if (! dropped_out[i]) {
-            float sigmah = 
+            float sigmah =
               n.output_layer.atomics[nn_output_namespace][i].x / dropscale;
             float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-            n.outputweight.atomics[nn_output_namespace][0].weight_index = 
+            n.outputweight.atomics[nn_output_namespace][0].weight_index =
               n.output_layer.atomics[nn_output_namespace][i].weight_index;
             base.predict(n.outputweight, n.k);
             float nu = n.outputweight.pred.scalar;
@@ -314,7 +314,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
             ec.l.simple.label = GD::finalize_prediction (n.all->sd, hidden_units[i].scalar - gradhw);
             ec.pred.scalar = hidden_units[i].scalar;
-            if (ec.l.simple.label != hidden_units[i].scalar) 
+            if (ec.l.simple.label != hidden_units[i].scalar)
               base.update(ec, i);
           }
         }
@@ -383,9 +383,9 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     free(n.dropped_out);
     free(n.hidden_units_pred);
     free(n.hiddenbias_pred);
-	VW::dealloc_example(nullptr, n.output_layer);
-	VW::dealloc_example(nullptr, n.hiddenbias);
-	VW::dealloc_example(nullptr, n.outputweight);
+  VW::dealloc_example(nullptr, n.output_layer);
+  VW::dealloc_example(nullptr, n.hiddenbias);
+  VW::dealloc_example(nullptr, n.outputweight);
   }
 
   base_learner* nn_setup(vw& all)
@@ -398,7 +398,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       ("dropout", "Train or test sigmoidal feedforward network using dropout.")
       ("meanfield", "Train or test sigmoidal feedforward network using mean field.");
     add_options(all);
-    
+
     po::variables_map& vm = all.vm;
     nn& n = calloc_or_throw<nn>();
     n.all = &all;
@@ -417,21 +417,21 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     if (n.multitask && ! all.quiet)
       std::cerr << "using multitask sharing for neural network "
-                << (all.training ? "training" : "testing") 
+                << (all.training ? "training" : "testing")
                 << std::endl;
-    
+
     if ( vm.count("meanfield") ) {
       n.dropout = false;
-      if (! all.quiet) 
-        std::cerr << "using mean field for neural network " 
-                  << (all.training ? "training" : "testing") 
+      if (! all.quiet)
+        std::cerr << "using mean field for neural network "
+                  << (all.training ? "training" : "testing")
                   << std::endl;
     }
 
-    if (n.dropout) 
+    if (n.dropout)
       if (! all.quiet)
         std::cerr << "using dropout for neural network "
-                  << (all.training ? "training" : "testing") 
+                  << (all.training ? "training" : "testing")
                   << std::endl;
 
     if (vm.count ("inpass")) {
@@ -442,7 +442,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     if (n.inpass && ! all.quiet)
       std::cerr << "using input passthrough for neural network "
-                << (all.training ? "training" : "testing") 
+                << (all.training ? "training" : "testing")
                 << std::endl;
 
     n.finished_setup = false;
@@ -456,19 +456,19 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     n.dropped_out = calloc_or_throw<bool>(n.k);
     n.hidden_units_pred = calloc_or_throw<polyprediction>(n.k);
     n.hiddenbias_pred = calloc_or_throw<polyprediction>(n.k);
-    
+
     base_learner* base = setup_base(all);
     n.increment = base->increment;//Indexing of output layer is odd.
     learner<nn>&l = init_learner(&n, base,
-                                 predict_or_learn_multi<true,true>, 
+                                 predict_or_learn_multi<true,true>,
                                  predict_or_learn_multi<false,true>,
                                  n.k+1);
     if (n.multitask)
-      l.set_multipredict(multipredict);      
+      l.set_multipredict(multipredict);
     l.set_finish(finish);
     l.set_finish_example(finish_example);
     l.set_end_pass(end_pass);
-    
+
     return make_base(l);
   }
 

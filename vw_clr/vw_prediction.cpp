@@ -48,7 +48,7 @@ namespace VW
 
 		size_t length;
 		uint32_t* labels;
-		
+
 		try
 		{
 			labels = VW::get_multilabel_predictions(ex, length);

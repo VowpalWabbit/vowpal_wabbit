@@ -86,7 +86,7 @@ example* my_empty_example0(vw_ptr vw, size_t labelType) {
 example_ptr my_empty_example(vw_ptr vw, size_t labelType) {
   example* ec = my_empty_example0(vw, labelType);
   return boost::shared_ptr<example>(ec, my_delete_example);
-}  
+}
 
 example_ptr my_read_example(vw_ptr all, size_t labelType, char*str) {
   example*ec = my_empty_example0(all, labelType);
@@ -291,7 +291,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae) {
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
   ae->loss = 0.;
-  
+
   if (all.ignore_some) {
     cerr << "error: cannot unsetup example when some namespaces are ignored!" << endl;
     throw exception();
@@ -301,7 +301,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae) {
     cerr << "error: cannot unsetup example when ngrams are in use!" << endl;
     throw exception();
   }
-  
+
   if (all.add_constant) {
     ae->atomics[constant_namespace].erase();
     ae->audit_features[constant_namespace].erase();
@@ -428,7 +428,7 @@ void verify_search_set_properly(search_ptr sch) {
     cerr << "set_structured_predict_hook: trying to set hook when search task is not 'hook'!" << endl;
     throw exception();
   }
-}  
+}
 
 uint32_t search_get_num_actions(search_ptr sch) {
   verify_search_set_properly(sch);
@@ -562,7 +562,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
   // This will enable user-defined docstrings and python signatures,
   // while disabling the C++ signatures
   py::docstring_options local_docstring_options(true, true, false);
-  
+
   // define the vw class
   py::class_<vw, vw_ptr>("vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
       .def("__init__", py::make_constructor(my_initialize))
@@ -632,7 +632,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("erase_namespace", &ex_erase_namespace, "Remove all the features from a given namespace")
 
       .def("set_label_string", &ex_set_label_string, "(Re)assign the label of this example to this string")
-      
+
       .def("get_simplelabel_label", &ex_get_simplelabel_label, "Assuming a simple_label label type, return the corresponding label (class/regression target/etc.)")
       .def("get_simplelabel_weight", &ex_get_simplelabel_weight, "Assuming a simple_label label type, return the importance weight")
       .def("get_simplelabel_initial", &ex_get_simplelabel_initial, "Assuming a simple_label label type, return the initial (baseline) prediction")
@@ -675,7 +675,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("set_tag", &my_set_tag, "change the tag of this prediction")
       .def("predict", &Search::predictor::predict, "make a prediction")
       ;
-  
+
   py::class_<Search::search, search_ptr>("search")
       .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
       .def("set_num_learners", &Search::search::set_num_learners, "Set the total number of learners you want to train")
@@ -695,7 +695,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("po_get_int", &po_get_int, "Same as po_get, but specialized for integer return values.")
 
       .def("get_predictor", &get_predictor, "Get a predictor object that can be used for making predictions; requires a tag argument to tag the prediction.")
-      
+
       .def_readonly("AUTO_CONDITION_FEATURES", Search::AUTO_CONDITION_FEATURES, "Tell search to automatically add features based on conditioned-on variables")
       .def_readonly("AUTO_HAMMING_LOSS", Search::AUTO_HAMMING_LOSS, "Tell search to automatically compute hamming loss over predictions")
       .def_readonly("EXAMPLES_DONT_CHANGE", Search::EXAMPLES_DONT_CHANGE, "Tell search that on a single structured 'run', you don't change the examples you pass to predict")

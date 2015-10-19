@@ -46,7 +46,7 @@ class Trie {
     if (children.size() <= id) return nullptr;
     return children[id];
   }
-  
+
   void insert(const char*str, size_t c=1) {
     if (str == nullptr || *str == 0) {
       terminus += c;
@@ -70,7 +70,7 @@ class Trie {
     if (children[id] == nullptr) return 0;
     return children[id]->contains(str+1);
   }
-  
+
   void get_next(const char*prefix, vector<nextstr>& next) {
     if (prefix == nullptr || *prefix == 0) {
       next.clear();
@@ -108,7 +108,7 @@ class Trie {
       if (children[i])
         children[i]->print(action2char(i+1), indent+1);
   }
-  
+
  private:
   size_t terminus;   // count of words that end here?
   size_t count;      // count of all words under here (including us)
@@ -158,7 +158,7 @@ class IncrementalEditDistance {
   }
 
   float minf(float a, float b) { return (a < b) ? a : b; }
-  
+
   vector< pair<action,float> > all_next() {
     vector< pair<action,float> > B;
     for (size_t a=1; a<=29; a++)
@@ -178,9 +178,9 @@ class IncrementalEditDistance {
     while (n >= 0 && prev_row[n] > prev_row_min) n--;
     return (N-n) * ins_cost + prev_row_min;
   }
-    
+
   ~IncrementalEditDistance() { delete prev_row; delete cur_row; }
-  
+
   private:
   size_t* prev_row;
   size_t* cur_row;
@@ -228,7 +228,7 @@ class Generator : public SearchTask<input, output> {
     IncrementalEditDistance ied(in.out);
 
     Trie* cdict = dict;
-    
+
     v_array<action> ref = v_init<action>();
     int N = in.in.length();
     out = "^";
@@ -242,7 +242,7 @@ class Generator : public SearchTask<input, output> {
           ("out", (float)m);
       if (N != m)
         ex("diff", (float)(N-m));
-      
+
       // suffixes thus far
       ex(vw_namespace('s'));
       string tmp("$");
@@ -282,7 +282,7 @@ class Generator : public SearchTask<input, output> {
         if (best_count > 0.)
           ex("best=" + string(1,best_char), best_count);
       }
-      
+
       // input
       /*
       ex(vw_namespace('i'));
@@ -300,7 +300,7 @@ class Generator : public SearchTask<input, output> {
         } else tmp += c;
       }
       ex("w=" + tmp);
-      
+
       ref.erase();
 
       /*
@@ -330,7 +330,7 @@ class Generator : public SearchTask<input, output> {
   }
 
   size_t get_dist() { return dist; }
-  
+
  private:
   size_t dist;
   Trie* dict;
@@ -433,7 +433,7 @@ void train() {
   Trie dict = load_dictionary("phrase-table.vocab");
   dict.build_max();
   //dict.print();
-  
+
   string init_str("--search 29 -b 28 --quiet --search_task hook --ring_size 1024 --search_rollin learn --search_rollout none -q i: --ngram i15 --skips i5 --ngram c15 --ngram w6 --skips c3 --skips w3"); //  --search_use_passthrough_repr"); // -q si -q wi -q ci -q di  -f my_model
   vw& vw_obj = *VW::initialize(init_str);
   cerr << init_str << endl;

@@ -44,7 +44,7 @@ void Clock_Explore()
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
 		StringRecorder<SimpleContext> recorder;
 		MwtExplorer<SimpleContext> mwt("test", recorder);
-	        MySimplePolicy default_policy; 
+	        MySimplePolicy default_policy;
 		EpsilonGreedyExplorer<SimpleContext> explorer(default_policy, epsilon, num_actions);
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
 		time_init += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
@@ -58,7 +58,7 @@ void Clock_Explore()
 		t2 = high_resolution_clock::now();
 		time_choose += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
 	}
-	
+
 	cout << "# iterations: " << num_iter << ", # interactions: " << num_interactions << ", # context features: " << num_features << endl;
 	cout << "--- PER ITERATION ---" << endl;
 	cout << "Init: " << (double)time_init / num_iter << " micro" << endl;

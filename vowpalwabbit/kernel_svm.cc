@@ -104,7 +104,7 @@ struct svm_params {
 
   float
   kernel_function(const flat_example* fec1, const flat_example* fec2,
-		  void* params, size_t kernel_type);
+      void* params, size_t kernel_type);
 
   int
   svm_example::compute_kernels(svm_params& params)
@@ -115,20 +115,20 @@ struct svm_params {
 
     if (krow.size() < n)
       {
-	//computing new kernel values and caching them
-	//if(params->curcache + n > params->maxcache)
-	//trim_cache(params);
-	num_kernel_evals += krow.size();
-	//cerr<<"Kernels ";
-	for (size_t i=krow.size(); i<n; i++)
-	  {
-	    svm_example *sec = model->support_vec[i];
-	    float kv = kernel_function(&ex, &(sec->ex), params.kernel_params, params.kernel_type);
-	    krow.push_back(kv);
-	    alloc += 1;
-	    //cerr<<kv<<" ";
-	  }
-	//cerr<<endl;
+  //computing new kernel values and caching them
+  //if(params->curcache + n > params->maxcache)
+  //trim_cache(params);
+  num_kernel_evals += krow.size();
+  //cerr<<"Kernels ";
+  for (size_t i=krow.size(); i<n; i++)
+    {
+      svm_example *sec = model->support_vec[i];
+      float kv = kernel_function(&ex, &(sec->ex), params.kernel_params, params.kernel_type);
+      krow.push_back(kv);
+      alloc += 1;
+      //cerr<<kv<<" ";
+    }
+  //cerr<<endl;
       }
     else
       num_cache_evals += n;
@@ -159,9 +159,9 @@ struct svm_params {
     float svi_delta = model->delta[svi];
     for (size_t i=svi; i>0; --i)
       {
-	model->support_vec[i] = model->support_vec[i-1];
-	model->alpha[i] = model->alpha[i-1];
-	model->delta[i] = model->delta[i-1];
+  model->support_vec[i] = model->support_vec[i-1];
+  model->alpha[i] = model->alpha[i-1];
+  model->delta[i] = model->delta[i-1];
       }
     model->support_vec[0] = svi_e;
     model->alpha[0] = svi_alpha;
@@ -169,24 +169,24 @@ struct svm_params {
     // rotate cache
     for (size_t j=0; j<n; j++)
       {
-	svm_example *e = model->support_vec[j];
-	size_t rowsize = e->krow.size();
-	if (svi < rowsize)
-	  {
-	    float kv = e->krow[svi];
-	    for (size_t i=svi; i>0; --i)
-	      e->krow[i] = e->krow[i-1];
-	    e->krow[0] = kv;
-	  }
-	else
-	  {
-	    float kv = svi_e->krow[j];
-	    e->krow.push_back(0);
-	    alloc += 1;
-	    for (size_t i=e->krow.size()-1; i>0; --i)
-	      e->krow[i] = e->krow[i-1];
-	    e->krow[0] = kv;
-	  }
+  svm_example *e = model->support_vec[j];
+  size_t rowsize = e->krow.size();
+  if (svi < rowsize)
+    {
+      float kv = e->krow[svi];
+      for (size_t i=svi; i>0; --i)
+        e->krow[i] = e->krow[i-1];
+      e->krow[0] = kv;
+    }
+  else
+    {
+      float kv = svi_e->krow[j];
+      e->krow.push_back(0);
+      alloc += 1;
+      for (size_t i=e->krow.size()-1; i>0; --i)
+        e->krow[i] = e->krow[i-1];
+      e->krow[0] = kv;
+    }
       }
     return alloc;
   }
@@ -200,10 +200,10 @@ struct svm_params {
     int alloc = 0;
     for (size_t i=0; i<n; i++)
       {
-	svm_example *e = model->support_vec[i];
-	sz -= (int)e->krow.size();
-	if (sz < 0)
-	  alloc += e->clear_kernels();
+  svm_example *e = model->support_vec[i];
+  sz -= (int)e->krow.size();
+  if (sz < 0)
+    alloc += e->clear_kernels();
       }
     return alloc;
   }
@@ -216,15 +216,15 @@ struct svm_params {
       brw = bin_read_fixed(model_file, (char*) fec, sizeof(flat_example), "");
 
       if(brw > 0) {
-	if(fec->tag_len > 0) {
-	  fec->tag = calloc_or_throw<char>(fec->tag_len);
-	  brw = bin_read_fixed(model_file, (char*) fec->tag, fec->tag_len*sizeof(char), "");
-	  if(!brw) return 2;
-	}
-	if(fec->feature_map_len > 0) {
-	  fec->feature_map = calloc_or_throw<feature>(fec->feature_map_len);
-	  brw = bin_read_fixed(model_file, (char*) fec->feature_map, fec->feature_map_len*sizeof(feature), ""); 	  if(!brw) return 3;
-	}
+  if(fec->tag_len > 0) {
+    fec->tag = calloc_or_throw<char>(fec->tag_len);
+    brw = bin_read_fixed(model_file, (char*) fec->tag, fec->tag_len*sizeof(char), "");
+    if(!brw) return 2;
+  }
+  if(fec->feature_map_len > 0) {
+    fec->feature_map = calloc_or_throw<feature>(fec->feature_map_len);
+    brw = bin_read_fixed(model_file, (char*) fec->feature_map, fec->feature_map_len*sizeof(feature), ""); 	  if(!brw) return 3;
+  }
       }
       else return 1;
     }
@@ -232,16 +232,16 @@ struct svm_params {
       brw = bin_write_fixed(model_file, (char*) fec, sizeof(flat_example));
 
       if(brw > 0) {
-	if(fec->tag_len > 0) {
-	  brw = bin_write_fixed(model_file, (char*) fec->tag, (uint32_t)fec->tag_len*sizeof(char));
-	  if(!brw) {
-	    cerr<<fec->tag_len<<" "<<fec->tag<<endl;
-	    return 2;
-	  }
-	}
-	if(fec->feature_map_len > 0) {
-	  brw = bin_write_fixed(model_file, (char*) fec->feature_map, (uint32_t)fec->feature_map_len*sizeof(feature));    	  if(!brw) return 3;
-	}
+  if(fec->tag_len > 0) {
+    brw = bin_write_fixed(model_file, (char*) fec->tag, (uint32_t)fec->tag_len*sizeof(char));
+    if(!brw) {
+      cerr<<fec->tag_len<<" "<<fec->tag<<endl;
+      return 2;
+    }
+  }
+  if(fec->feature_map_len > 0) {
+    brw = bin_write_fixed(model_file, (char*) fec->feature_map, (uint32_t)fec->feature_map_len*sizeof(feature));    	  if(!brw) return 3;
+  }
       }
       else return 1;
     }
@@ -257,7 +257,7 @@ struct svm_params {
     if (model_file.files.size() == 0) return;
 
     bin_text_read_write_fixed(model_file,(char*)&(model->num_support), sizeof(model->num_support),
-			      "", read, "", 0, text);
+            "", read, "", 0, text);
     //cerr<<"Read num support "<<model->num_support<<endl;
 
     flat_example* fec;
@@ -266,14 +266,14 @@ struct svm_params {
 
   for(uint32_t i = 0; i < model->num_support; i++) {
       if(read) {
-	save_load_flat_example(model_file, read, fec);
-	svm_example* tmp= &calloc_or_throw<svm_example>();
-	tmp->init_svm_example(fec);
-	model->support_vec.push_back(tmp);
+  save_load_flat_example(model_file, read, fec);
+  svm_example* tmp= &calloc_or_throw<svm_example>();
+  tmp->init_svm_example(fec);
+  model->support_vec.push_back(tmp);
       }
       else {
-	fec = &(model->support_vec[i]->ex);
-	save_load_flat_example(model_file, read, fec);
+  fec = &(model->support_vec[i]->ex);
+  save_load_flat_example(model_file, read, fec);
       }
     }
     //cerr<<endl;
@@ -283,11 +283,11 @@ struct svm_params {
     if(read)
       model->alpha.resize(model->num_support);
     bin_text_read_write_fixed(model_file, (char*)model->alpha.begin, (uint32_t)model->num_support*sizeof(float),
-			      "", read, "", 0, text);
+            "", read, "", 0, text);
     if(read)
       model->delta.resize(model->num_support);
     bin_text_read_write_fixed(model_file, (char*)model->delta.begin, (uint32_t)model->num_support*sizeof(float),
-			      "", read, "", 0, text);
+            "", read, "", 0, text);
 
     // cerr<<"In save_load\n";
     // for(int i = 0;i < model->num_support;i++)
@@ -321,22 +321,22 @@ struct svm_params {
       if(ec1pos < ec2pos) continue;
 
       while(ec1pos > ec2pos && idx2 < fec2->feature_map_len) {
-	ec2f++;
-	idx2++;
-	if(idx2 < fec2->feature_map_len)
-	  ec2pos = ec2f->weight_index;
+  ec2f++;
+  idx2++;
+  if(idx2 < fec2->feature_map_len)
+    ec2pos = ec2f->weight_index;
       }
 
       if(ec1pos == ec2pos) {
-	//cerr<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<<endl;
-	numint++;
-	dotprod += f->x*ec2f->x;
-	//cerr<<f->x<<" "<<ec2f->x<<" "<<dotprod<<" ";
-	ec2f++;
-	idx2++;
-	//cerr<<idx2<<" ";
-	if(idx2 < fec2->feature_map_len)
-	  ec2pos = ec2f->weight_index;
+  //cerr<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<<endl;
+  numint++;
+  dotprod += f->x*ec2f->x;
+  //cerr<<f->x<<" "<<ec2f->x<<" "<<dotprod<<" ";
+  ec2f++;
+  idx2++;
+  //cerr<<idx2<<" ";
+  if(idx2 < fec2->feature_map_len)
+    ec2pos = ec2f->weight_index;
       }
     }
     //cerr<<endl;
@@ -409,15 +409,15 @@ struct svm_params {
       double tmp = model->alpha[i]*ld.label;
 
       if((tmp < ld.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
-	subopt[i] = fabs(model->delta[i]);
+  subopt[i] = fabs(model->delta[i]);
       else
-	subopt[i] = 0;
+  subopt[i] = 0;
 
-	if(subopt[i] > max_val) {
-	  max_val = subopt[i];
-	  max_pos = i;
-	}
-	//cerr<<subopt[i]<<" ";
+  if(subopt[i] > max_val) {
+    max_val = subopt[i];
+    max_pos = i;
+  }
+  //cerr<<subopt[i]<<" ";
       }
     //cerr<<endl;
     return max_pos;
@@ -431,9 +431,9 @@ struct svm_params {
     svm_example* svi_e = model->support_vec[svi];
     for (size_t i=svi; i<model->num_support-1; ++i)
       {
-	model->support_vec[i] = model->support_vec[i+1];
-	model->alpha[i] = model->alpha[i+1];
-	model->delta[i] = model->delta[i+1];
+  model->support_vec[i] = model->support_vec[i+1];
+  model->alpha[i] = model->alpha[i+1];
+  model->delta[i] = model->delta[i+1];
       }
     svi_e->~svm_example();
     free(svi_e);
@@ -445,15 +445,15 @@ struct svm_params {
     int alloc = 0;
     for (size_t j=0; j<model->num_support; j++)
       {
-	svm_example *e = model->support_vec[j];
-	size_t rowsize = e->krow.size();
-	if (svi < rowsize)
-	  {
-	    for (size_t i=svi; i<rowsize-1; i++)
-	      e->krow[i] = e->krow[i+1];
-	    e->krow.pop();
-	    alloc -= 1;
-	  }
+  svm_example *e = model->support_vec[j];
+  size_t rowsize = e->krow.size();
+  if (svi < rowsize)
+    {
+      for (size_t i=svi; i<rowsize-1; i++)
+        e->krow[i] = e->krow[i+1];
+      e->krow.pop();
+      alloc -= 1;
+    }
       }
     return alloc;
   }
@@ -540,7 +540,7 @@ struct svm_params {
 
   for(size_t i = 0; i < params.pool_pos; i++) {
       if(!train_pool[i])
-	continue;
+  continue;
 
       fec = &(params.pool[i]->ex);
       save_load_flat_example(*b, false, fec);
@@ -556,7 +556,7 @@ struct svm_params {
     size_t prev_sum = 0, total_sum = 0;
   for(size_t i = 0; i < all.all_reduce->total; i++) {
     if(i <= (all.all_reduce->node - 1))
-	prev_sum += sizes[i];
+  prev_sum += sizes[i];
       total_sum += sizes[i];
     }
 
@@ -575,26 +575,26 @@ struct svm_params {
       params.pool_pos = 0;
 
     for(size_t i = 0; i < params.pool_size; i++) {
-	if(!save_load_flat_example(*b, true, fec)) {
-	  params.pool[i] = &calloc_or_throw<svm_example>();
-	  params.pool[i]->init_svm_example(fec);
-	  train_pool[i] = true;
-	  params.pool_pos++;
-	  // for(int j = 0;j < fec->feature_map_len;j++)
-	  //   cerr<<fec->feature_map[j].weight_index<<":"<<fec->feature_map[j].x<<" ";
-	  // cerr<<endl;
-	  // params.pool[i]->in_use = true;
-	  // params.current_t += ((label_data*) params.pool[i]->ld)->weight;
-	  // params.pool[i]->example_t = params.current_t;
-	}
-	else
-	  break;
+  if(!save_load_flat_example(*b, true, fec)) {
+    params.pool[i] = &calloc_or_throw<svm_example>();
+    params.pool[i]->init_svm_example(fec);
+    train_pool[i] = true;
+    params.pool_pos++;
+    // for(int j = 0;j < fec->feature_map_len;j++)
+    //   cerr<<fec->feature_map[j].weight_index<<":"<<fec->feature_map[j].x<<" ";
+    // cerr<<endl;
+    // params.pool[i]->in_use = true;
+    // params.current_t += ((label_data*) params.pool[i]->ld)->weight;
+    // params.pool[i]->example_t = params.current_t;
+  }
+  else
+    break;
 
-	num_read += b->space.end - b->space.begin;
-	if(num_read == prev_sum)
-	  params.local_begin = i+1;
-	if(num_read == prev_sum + sizes[all.all_reduce->node])
-	  params.local_end = i;
+  num_read += b->space.end - b->space.begin;
+  if(num_read == prev_sum)
+    params.local_begin = i+1;
+  if(num_read == prev_sum + sizes[all.all_reduce->node])
+    params.local_end = i;
       }
     }
     if(fec)
@@ -620,33 +620,33 @@ struct svm_params {
 
     if(params.active) {
       if(params.active_pool_greedy) {
-	multimap<double, size_t> scoremap;
+  multimap<double, size_t> scoremap;
       for(size_t i = 0; i < params.pool_pos; i++)
-	  scoremap.insert(pair<const double, const size_t>(fabs(scores[i]),i));
+    scoremap.insert(pair<const double, const size_t>(fabs(scores[i]),i));
 
-	multimap<double, size_t>::iterator iter = scoremap.begin();
-	//cerr<<params.pool_size<<" "<<"Scoremap: ";
-	//for(;iter != scoremap.end();iter++)
-	//cerr<<iter->first<<" "<<iter->second<<" "<<((label_data*)params.pool[iter->second]->ld)->label<<"\t";
-	//cerr<<endl;
-	iter = scoremap.begin();
+  multimap<double, size_t>::iterator iter = scoremap.begin();
+  //cerr<<params.pool_size<<" "<<"Scoremap: ";
+  //for(;iter != scoremap.end();iter++)
+  //cerr<<iter->first<<" "<<iter->second<<" "<<((label_data*)params.pool[iter->second]->ld)->label<<"\t";
+  //cerr<<endl;
+  iter = scoremap.begin();
 
       for(size_t train_size = 1; iter != scoremap.end() && train_size <= params.subsample; train_size++) {
-	  //cerr<<train_size<<" "<<iter->second<<" "<<iter->first<<endl;
-	  train_pool[iter->second] = 1;
-	  iter++;
-	}
+    //cerr<<train_size<<" "<<iter->second<<" "<<iter->first<<endl;
+    train_pool[iter->second] = 1;
+    iter++;
+  }
       }
       else {
 
       for(size_t i = 0; i < params.pool_pos; i++) {
-	  float queryp = 2.0f/(1.0f + expf((float)(params.active_c*fabs(scores[i]))*(float)pow(params.pool[i]->ex.example_counter,0.5f)));
-	  if(rand() < queryp) {
-	    svm_example* fec = params.pool[i];
-	    fec->ex.l.simple.weight *= 1/queryp;
-	    train_pool[i] = 1;
-	  }
-	}
+    float queryp = 2.0f/(1.0f + expf((float)(params.active_c*fabs(scores[i]))*(float)pow(params.pool[i]->ex.example_counter,0.5f)));
+    if(rand() < queryp) {
+      svm_example* fec = params.pool[i];
+      fec->ex.l.simple.weight *= 1/queryp;
+      train_pool[i] = 1;
+    }
+  }
       }
       //free(scores);
     }
@@ -654,8 +654,8 @@ struct svm_params {
 
     if(params.para_active) {
     for(size_t i = 0; i < params.pool_pos; i++)
-	if(!train_pool[i])
-	  delete params.pool[i];
+  if(!train_pool[i])
+    delete params.pool[i];
       sync_queries(*(params.all), params, train_pool);
     }
 
@@ -664,56 +664,56 @@ struct svm_params {
       svm_model* model = params.model;
 
     for(size_t i = 0; i < params.pool_pos; i++) {
-	//cerr<<"process: "<<i<<" "<<train_pool[i]<<endl;;
-	int model_pos = -1;
-	if(params.active) {
-	  if(train_pool[i]) {
-	    //cerr<<"i = "<<i<<"train_pool[i] = "<<train_pool[i]<<" "<<params.pool[i]->example_counter<<endl;
-	    model_pos = add(params, params.pool[i]);
-	  }
-	}
-	else
-	  model_pos = add(params, params.pool[i]);
+  //cerr<<"process: "<<i<<" "<<train_pool[i]<<endl;;
+  int model_pos = -1;
+  if(params.active) {
+    if(train_pool[i]) {
+      //cerr<<"i = "<<i<<"train_pool[i] = "<<train_pool[i]<<" "<<params.pool[i]->example_counter<<endl;
+      model_pos = add(params, params.pool[i]);
+    }
+  }
+  else
+    model_pos = add(params, params.pool[i]);
 
-	//cerr<<"Added: "<<model_pos<<" "<<model->support_vec[model_pos]->example_counter<<endl;
-	//cout<<"After adding in train "<<model->num_support<<endl;
+  //cerr<<"Added: "<<model_pos<<" "<<model->support_vec[model_pos]->example_counter<<endl;
+  //cout<<"After adding in train "<<model->num_support<<endl;
 
-	if(model_pos >= 0) {
-	  bool overshoot = update(params, model_pos);
-	  //cerr<<model_pos<<":alpha = "<<model->alpha[model_pos]<<endl;
+  if(model_pos >= 0) {
+    bool overshoot = update(params, model_pos);
+    //cerr<<model_pos<<":alpha = "<<model->alpha[model_pos]<<endl;
 
-	  double* subopt = calloc_or_throw<double>(model->num_support);
+    double* subopt = calloc_or_throw<double>(model->num_support);
         for(size_t j = 0; j < params.reprocess; j++) {
-	    if(model->num_support == 0) break;
-	    //cerr<<"reprocess: ";
-	    int randi = 1;//rand()%2;
-	    if(randi) {
-	      size_t max_pos = suboptimality(model, subopt);
-	      if(subopt[max_pos] > 0) {
-		if(!overshoot && max_pos == (size_t)model_pos && max_pos > 0 && j == 0)
-		  cerr<<"Shouldn't reprocess right after process!!!\n";
-		//cerr<<max_pos<<" "<<subopt[max_pos]<<endl;
-		// cerr<<params.model->support_vec[0]->example_counter<<endl;
-		if(max_pos*model->num_support <= params.maxcache)
-		  make_hot_sv(params, max_pos);
-		update(params, max_pos);
-	      }
-	    }
-	    else {
-	      size_t rand_pos = rand()%model->num_support;
-	      update(params, rand_pos);
-	    }
-	  }
-	  //cerr<<endl;
-	  // cerr<<params.model->support_vec[0]->example_counter<<endl;
-	  free(subopt);
-	}
+      if(model->num_support == 0) break;
+      //cerr<<"reprocess: ";
+      int randi = 1;//rand()%2;
+      if(randi) {
+        size_t max_pos = suboptimality(model, subopt);
+        if(subopt[max_pos] > 0) {
+    if(!overshoot && max_pos == (size_t)model_pos && max_pos > 0 && j == 0)
+      cerr<<"Shouldn't reprocess right after process!!!\n";
+    //cerr<<max_pos<<" "<<subopt[max_pos]<<endl;
+    // cerr<<params.model->support_vec[0]->example_counter<<endl;
+    if(max_pos*model->num_support <= params.maxcache)
+      make_hot_sv(params, max_pos);
+    update(params, max_pos);
+        }
+      }
+      else {
+        size_t rand_pos = rand()%model->num_support;
+        update(params, rand_pos);
+      }
+    }
+    //cerr<<endl;
+    // cerr<<params.model->support_vec[0]->example_counter<<endl;
+    free(subopt);
+  }
       }
 
     }
     else
     for(size_t i = 0; i < params.pool_pos; i++)
-	delete params.pool[i];
+  delete params.pool[i];
 
     // cerr<<params.model->support_vec[0]->example_counter<<endl;
     // for(int i = 0;i < params.pool_size;i++)
@@ -739,17 +739,17 @@ struct svm_params {
       ec.loss = max(0.f, 1.f - score*ec.l.simple.label);
       params.loss_sum += ec.loss;
       if(params.all->training && ec.example_counter % 100 == 0)
-	trim_cache(params);
+  trim_cache(params);
       if(params.all->training && ec.example_counter % 1000 == 0 && ec.example_counter >= 2) {
-	cerr<<"Number of support vectors = "<<params.model->num_support<<endl;
-	cerr<<"Number of kernel evaluations = "<<num_kernel_evals<<" "<<"Number of cache queries = "<<num_cache_evals<<" loss sum = "<<params.loss_sum<<" "<<params.model->alpha[params.model->num_support-1]<<" "<<params.model->alpha[params.model->num_support-2]<<endl;
+  cerr<<"Number of support vectors = "<<params.model->num_support<<endl;
+  cerr<<"Number of kernel evaluations = "<<num_kernel_evals<<" "<<"Number of cache queries = "<<num_cache_evals<<" loss sum = "<<params.loss_sum<<" "<<params.model->alpha[params.model->num_support-1]<<" "<<params.model->alpha[params.model->num_support-2]<<endl;
       }
       params.pool[params.pool_pos] = sec;
       params.pool_pos++;
 
       if(params.pool_pos == params.pool_size) {
-	train(params);
-	params.pool_pos = 0;
+  train(params);
+  params.pool_pos = 0;
       }
     }
   }

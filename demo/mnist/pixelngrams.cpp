@@ -51,7 +51,7 @@ vhd_ngrams (unsigned char*const buf,
 
 }
 
-int 
+int
 main (void)
 {
   using std::cin;
@@ -90,8 +90,8 @@ main (void)
 
           ::memset (buf, 0, n_rows * n_columns * sizeof (buf[0]));
 
-          while (::sscanf (line.c_str () + start, 
-                           "%u:%u%n", 
+          while (::sscanf (line.c_str () + start,
+                           "%u:%u%n",
                            &feature, &value, &increment) >= 2)
             {
               buf[feature] = value;
@@ -120,7 +120,7 @@ main (void)
 
               offset += 13;
             }
-    
+
           cout << endl << flush;
         }
     }

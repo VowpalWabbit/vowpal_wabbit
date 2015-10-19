@@ -56,13 +56,13 @@ int main(int argc, char *argv[])
   size_t loc = vwparams.find(target);
   const char* location = vwparams.c_str()+loc+target.size();
   size_t rank = atoi(location);
-  
+
   // global model params
   unsigned char left_ns = model->pairs[0][0];
   unsigned char right_ns = model->pairs[0][1];
   weight* weights = model->reg.weight_vector;
   size_t mask = model->reg.weight_mask;
-  
+
   // const char *filename = argv[0];
   FILE* file = fopen(infile.c_str(), "r");
   char* line = NULL;
@@ -85,33 +85,33 @@ int main(int argc, char *argv[])
 
       // write out features for left namespace
       if (ec->audit_features[left_ns].begin != ec->audit_features[left_ns].end)
-	{
-	  for (audit_data *f = ec->audit_features[left_ns].begin; f != ec->audit_features[left_ns].end; f++)
-	    {
-	      left_linear << f->feature << '\t' << weights[f->weight_index & mask];
+  {
+    for (audit_data *f = ec->audit_features[left_ns].begin; f != ec->audit_features[left_ns].end; f++)
+      {
+        left_linear << f->feature << '\t' << weights[f->weight_index & mask];
 
-	      left_quadratic << f->feature;
-	      for (size_t k = 1; k <= rank; k++)
-		left_quadratic << '\t' << weights[(f->weight_index + k) & mask];
-	    }
-	  left_linear << endl;
-	  left_quadratic << endl;
-	}
+        left_quadratic << f->feature;
+        for (size_t k = 1; k <= rank; k++)
+    left_quadratic << '\t' << weights[(f->weight_index + k) & mask];
+      }
+    left_linear << endl;
+    left_quadratic << endl;
+  }
 
       // write out features for right namespace
       if (ec->audit_features[right_ns].begin != ec->audit_features[right_ns].end)
-	{
-	  for (audit_data *f = ec->audit_features[right_ns].begin; f != ec->audit_features[right_ns].end; f++)
-	    {
-	      right_linear << f->feature << '\t' << weights[f->weight_index & mask];
+  {
+    for (audit_data *f = ec->audit_features[right_ns].begin; f != ec->audit_features[right_ns].end; f++)
+      {
+        right_linear << f->feature << '\t' << weights[f->weight_index & mask];
 
-	      right_quadratic << f->feature;
-	      for (size_t k = 1; k <= rank; k++)
-		right_quadratic << '\t' << weights[(f->weight_index + k + rank) & mask];
-	    }
-	  right_linear << endl;
-	  right_quadratic << endl;
-	}
+        right_quadratic << f->feature;
+        for (size_t k = 1; k <= rank; k++)
+    right_quadratic << '\t' << weights[(f->weight_index + k + rank) & mask];
+      }
+    right_linear << endl;
+    right_quadratic << endl;
+  }
 
       VW::finish_example(*model, ec);
     }

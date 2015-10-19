@@ -14,7 +14,7 @@ namespace
     }
 }
 
-int 
+int
 main (void)
 {
   using namespace std;
@@ -50,7 +50,7 @@ main (void)
                                  16 * codec (pp) +
                                   4 * codec (p) +
                                       codec (c);
-                
+
               cout << " " << offset + val << ":1";
               offset += 256;
             }

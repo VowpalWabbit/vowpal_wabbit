@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     init_string += "train.w";
 
   cerr << "initializing with: '" << init_string << "'" << endl;
-  
+
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE -- THIS READS IN A MODEL FROM train.w
   vw* vw = VW::initialize(init_string); // "-t -q st --hash all --noconstant --ldf_override s -i train.w");
 

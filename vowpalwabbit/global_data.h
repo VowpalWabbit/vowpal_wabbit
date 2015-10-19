@@ -382,8 +382,8 @@ struct shared_data {
 
 enum AllReduceType
 {
-	Socket,
-	Thread
+  Socket,
+  Thread
 };
 
 class AllReduce;

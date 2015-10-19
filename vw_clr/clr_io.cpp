@@ -14,9 +14,9 @@ namespace VW
 {
 	clr_io_buf::clr_io_buf(Stream^ stream) : m_stream(stream)
 	{
-		if (stream == nullptr) 
+		if (stream == nullptr)
 			throw gcnew ArgumentNullException("stream");
-		
+
 		files.push_back(0);
 	}
 
@@ -46,7 +46,7 @@ namespace VW
 	{
 		return 1;
 	}
-		
+
 	ssize_t clr_io_buf::write_file(int file, const void* buf, size_t nbytes)
 	{
 		auto buffer = gcnew array<unsigned char>((int)nbytes);

@@ -92,7 +92,7 @@ void accumulate_weighted_avg(vw& all, regressor& reg) {
       weights[stride*i] *= ratio;
       weights[stride*i+1] *= ratio; //A crude max
       if (all.normalized_updates)
-	weights[stride*i+all.normalized_idx] *= ratio; //A crude max
+  weights[stride*i+all.normalized_idx] *= ratio; //A crude max
     }
     else {
       local_weights[i] = 0;

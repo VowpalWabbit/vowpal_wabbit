@@ -26,7 +26,7 @@ template<class INPUT, class OUTPUT> class SearchTask {
     VW::read_line(vw_obj, blank_line, (char*)"");
     VW::parse_atomic_example(vw_obj, blank_line, false);
     VW::setup_example(vw_obj, blank_line);
-    
+
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     d->run_f = _search_run_fn;
     d->run_setup_f = _search_setup_fn;
@@ -50,7 +50,7 @@ template<class INPUT, class OUTPUT> class SearchTask {
   protected:
   vw& vw_obj;
   Search::search& sch;
-  
+
   private:
   example* bogus_example, *blank_line;
 
@@ -61,7 +61,7 @@ template<class INPUT, class OUTPUT> class SearchTask {
     vw_obj.learn(bogus_example);
     vw_obj.learn(blank_line);   // this will cause our search_run_fn hook to get called
   }
-  
+
   static void _search_run_fn(Search::search&sch) {
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     if ((d->run_object == NULL) || (d->extra_data == NULL) || (d->extra_data2 == NULL)) {
@@ -79,7 +79,7 @@ template<class INPUT, class OUTPUT> class SearchTask {
     }
     ((SearchTask*)d->run_object)->_setup(sch, *(INPUT*)d->extra_data, *(OUTPUT*)d->extra_data2);
   }
-  
+
   static void _search_takedown_fn(Search::search&sch) {
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     if ((d->run_object == NULL) || (d->extra_data == NULL) || (d->extra_data2 == NULL)) {
@@ -88,7 +88,7 @@ template<class INPUT, class OUTPUT> class SearchTask {
     }
     ((SearchTask*)d->run_object)->_takedown(sch, *(INPUT*)d->extra_data, *(OUTPUT*)d->extra_data2);
   }
-  
+
 };
 
 
@@ -109,7 +109,7 @@ class BuiltInTask : public SearchTask< vector<example*>, vector<uint32_t> > {
     my_task->run(sch, input_example);
     sch.get_test_action_sequence(output);
   }
-  
+
   protected:
   Search::search_task* my_task;
 };

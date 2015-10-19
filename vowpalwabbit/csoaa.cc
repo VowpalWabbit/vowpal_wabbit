@@ -87,7 +87,7 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec) {
     } else
       add_passthrough_feature(ec, constant*3, 1.);
   }
-    
+
   ec.pred.multiclass = prediction;
   ec.l.cs = ld;
 }
@@ -463,13 +463,13 @@ void do_actual_learning(ldf& data, base_learner& base)
       data.ec_seq[0]->pred.multilabels.label_v.push_back(data.scores[k-start_K].idx);
     }
   }
-  else 
+  else
     { // Mark the predicted subexample with its class_index, all other with 0
       for (size_t k=start_K; k<K; k++)
-	if (k == predicted_K)
-	  data.ec_seq[k]->pred.multiclass =  data.ec_seq[k]->l.cs.costs[0].class_index;
-	else
-	  data.ec_seq[k]->pred.multiclass =  0;
+  if (k == predicted_K)
+    data.ec_seq[k]->pred.multiclass =  data.ec_seq[k]->l.cs.costs[0].class_index;
+  else
+    data.ec_seq[k]->pred.multiclass =  0;
     }
   /////////////////////// remove header
   if (start_K > 0)

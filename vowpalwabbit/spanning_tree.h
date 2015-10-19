@@ -36,30 +36,30 @@ typedef int socket_t;
 #else
 namespace std
 {
-	template<typename T>
-	class future;
+  template<typename T>
+  class future;
 }
 #endif
 
 namespace VW
 {
-	class SpanningTree
-	{
-	private:
-		bool m_stop;
-		socket_t sock;
-		short unsigned int port;
+  class SpanningTree
+  {
+  private:
+    bool m_stop;
+    socket_t sock;
+    short unsigned int port;
 
-		// future to signal end of thread running. 
-		// Need a pointer since C++/CLI doesn't like futures yet
-		std::future<void>* m_future;
+    // future to signal end of thread running.
+    // Need a pointer since C++/CLI doesn't like futures yet
+    std::future<void>* m_future;
 
-	public:
-		SpanningTree();
-		~SpanningTree();
+  public:
+    SpanningTree();
+    ~SpanningTree();
 
-		void Start();
-		void Run();
-		void Stop();
-	};
+    void Start();
+    void Run();
+    void Stop();
+  };
 }
