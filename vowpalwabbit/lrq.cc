@@ -194,6 +194,8 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
   }
 }
 
+void finish(LRQstate& lrq) { lrq.lrpairs.~set<string>(); }
+
 base_learner* lrq_setup(vw& all)
 { //parse and set arguments
   if (missing_option<vector<string>>(all, "lrq", "use low rank quadratic features"))
@@ -260,6 +262,7 @@ base_learner* lrq_setup(vw& all)
   learner<LRQstate>& l = init_learner(&lrq, setup_base(all), predict_or_learn<true>,
                                       predict_or_learn<false>, 1 + maxk);
   l.set_end_pass(reset_seed);
+  l.set_finish(finish);
 
   // TODO: leaks memory ?
   return make_base(l);
