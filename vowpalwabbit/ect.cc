@@ -310,6 +310,8 @@ void finish(ect& e)
       e.all_levels[l][t].delete_v();
     e.all_levels[l].delete_v();
   }
+  e.all_levels.delete_v();
+
   e.final_nodes.delete_v();
 
   e.up_directions.delete_v();
