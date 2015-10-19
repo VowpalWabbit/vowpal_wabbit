@@ -607,6 +607,7 @@ void finish(stagewise_poly &poly)
 #endif //DEBUG
 
   poly.synth_ec.atomics[tree_atomics].delete_v();
+  poly.synth_ec.indices.delete_v();
   sort_data_destroy(poly);
   depthsbits_destroy(poly);
 }

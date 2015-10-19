@@ -351,8 +351,11 @@ void save_node_stats(log_multi& d)
   fclose(fp);
 }
 
-void finish(log_multi&)
+void finish(log_multi& b)
 { //save_node_stats(b);
+  for (size_t i = 0; i < b.nodes.size(); i++)
+    b.nodes[i].preds.delete_v();
+  b.nodes.delete_v();
 }
 
 void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
