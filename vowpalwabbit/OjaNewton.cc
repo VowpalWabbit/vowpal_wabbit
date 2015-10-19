@@ -60,13 +60,14 @@ struct OjaNewton {
   void update_eigenvalues(float gamma)
   {
     for (int i = 0; i < m; i++) {
+      float gamma_i = fmin(gamma * (5*i+1), .1);
       float tmp = data.AZx[i] * data.sketch;
 
       if (t == 1) {
-        ev[i] = gamma * tmp * tmp;
+        ev[i] = gamma_i * tmp * tmp;
       }
       else {
-        ev[i] = (1 - gamma) * t * ev[i] / (t - 1) + gamma * t * tmp * tmp;
+        ev[i] = (1 - gamma_i) * t * ev[i] / (t - 1) + gamma_i * t * tmp * tmp;
       }
     }
   }
@@ -74,7 +75,9 @@ struct OjaNewton {
   void compute_beta(float gamma)
   {
     for (int i = 0; i < m; i++) {
-      data.beta[i] = (gamma * (5 * i + 1)) * data.AZx[i] * data.sketch;
+      float gamma_i = fmin(gamma * (5*i+1), 0.1);
+
+      data.beta[i] = gamma_i * data.AZx[i] * data.sketch;
       for (int j = 0; j < i; j++) {
         data.beta[i] -= A[i][j] * data.beta[j];
       }
@@ -171,7 +174,7 @@ void predict(OjaNewton& ON, base_learner&, example& ec) {
   ON.data.prediction = 0;
   GD::foreach_feature<update_data, make_pred>(*ON.all, ec, ON.data);
   ec.partial_prediction = ON.data.prediction;
-//  cout << ON.data.prediction << endl;
+  //cout << ON.data.prediction << endl;
   ec.pred.scalar = GD::finalize_prediction(ON.all->sd, ec.partial_prediction);
 }
 
