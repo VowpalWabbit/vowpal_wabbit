@@ -125,6 +125,9 @@ struct dictionary_info
   feature_dict* dict;
 };
 
+inline void deleter(substring ss, uint32_t label)
+{ free_it(ss.begin); }
+
 class namedlabels
 {
 private:
@@ -137,11 +140,14 @@ public:
 
   namedlabels(string label_list)
   { id2name = v_init<substring>();
-    substring ss = { (char*)label_list.c_str(), nullptr };
+    char* temp = calloc_or_throw<char>(1+label_list.length());
+    strncpy(temp, label_list.c_str(), strlen(label_list.c_str()));
+    substring ss = { temp, nullptr };
     ss.end = ss.begin + label_list.length();
     tokenize(',', ss, id2name);
 
     K = (uint32_t)id2name.size();
+    name2id.delete_v();//delete automatically allocated vector.
     name2id.init(4 * K + 1, 0, substring_equal);
     for (size_t k=0; k<K; k++)
     { substring& l = id2name[k];
@@ -158,10 +164,14 @@ public:
   }
 
   ~namedlabels()
-  { for (size_t i=0; i<id2name.size(); ++i)
-      free(id2name[i].begin);
-    id2name.delete_v();
-  }
+    {
+      if (id2name.size()>0)
+	free(id2name[0].begin);
+      cout << "in namedlabels delete" << endl;
+      name2id.iter(deleter);
+      name2id.delete_v();
+      id2name.delete_v();
+    }
 
   uint32_t getK() { return K; }
 

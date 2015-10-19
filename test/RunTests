@@ -29,7 +29,7 @@ $ENV{'PATH'} .= ':test:../vowpalwabbit:vowpalwabbit:.';
 
 # -V prefixes valgrind like this, we should adjust the default
 # options over time to what looks most useful.
-my $Valgrind = 'valgrind --quiet --error-exitcode=100 --track-origins=yes';
+my $Valgrind = 'valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full';
 
 # -- timeout is part of GNU coreutils, some systems may not have it
 my $TimeOut = '';

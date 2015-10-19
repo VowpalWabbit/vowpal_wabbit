@@ -1344,8 +1344,10 @@ void finish(vw& all, bool delete_all)
   all.p->parse_name.delete_v();
   free(all.p);
   if (!all.seeded)
-  { free(all.sd);
-  }
+    {
+      delete(all.sd->ldict);
+      free(all.sd); 
+    }
   all.reduction_stack.delete_v();
   delete all.file_options;
   for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
