@@ -29,7 +29,7 @@ $ENV{'PATH'} .= ':test:../vowpalwabbit:vowpalwabbit:.';
 
 # -V prefixes valgrind like this, we should adjust the default
 # options over time to what looks most useful.
-my $Valgrind = 'valgrind --quiet --error-exitcode=100 --track-origins=yes';
+my $Valgrind = 'valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full';
 
 # -- timeout is part of GNU coreutils, some systems may not have it
 my $TimeOut = '';
@@ -42,6 +42,8 @@ my $ErrorCount = 0;
 # These --side-by-side diff opts are used to make the
 # fuzzy-compare easier: just split on '|' and compare numeric values
 # word by word:
+# NOTE: -W 160 is sufficient for most outputs.
+#       --bfgs prints widest (134 chars-per-line)
 my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
 $WordSplit = "[ \t:]+";
 
@@ -364,7 +366,14 @@ sub lenient_array_compare($$) {
     my (@w2) = @$w2_ref;
 
     # print STDERR "lenient_array_compare: (@w1) (@w2)\n";
-    return 1 if ($#w1 != $#w2); # arrays not of same size
+    if ($#w1 != $#w2) { # arrays not of same size
+        if ($opt_v > 3) {
+            v(4, "#-of-words in two arrays are different: %d != %d\n", scalar(@w1), scalar(@w2));
+            v(4, "line1: "); for (my $i=0; $i <= $#w1; $i++) { v(4, " word[%d]='%s'", $i, $w1[$i]) }; v(4, "\n");
+            v(4, "line2: "); for (my $i=0; $i <= $#w2; $i++) { v(4, " word[%d]='%s'", $i, $w2[$i]) }; v(4, "\n");
+        }
+        return 1;
+    }
     my $nelem = scalar @w1;
     for (my $i = 0; $i < $nelem; $i++) {
         my ($word1, $word2) = ($w1[$i], $w2[$i]);
@@ -434,6 +443,9 @@ sub diff_lenient_float($$) {
                 rename($tmpf, $save_diff_file);
                 return 1;
             }
+            # strip leading spaces if any (happens with --bfgs)
+            $line1 =~ s/^\s+//;
+            $line2 =~ s/^\s+//;
             v(3, "line1: %s\n", $line1);
             v(3, "line2: %s\n", $line2);
 
@@ -1309,7 +1321,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/sequence_data.ctg.train.stderr
 
 # Test 101: active cover
-{VW} --loss_function logistic --binary -b 29 --active_cover -d train-sets/rcv1_small.dat -f models/active_cover.model
+{VW} --loss_function logistic --binary --active_cover -d train-sets/rcv1_mini.dat -f models/active_cover.model
     train-sets/ref/active_cover.stderr
 
 # Test 102: active cover (predict)

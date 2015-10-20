@@ -6,24 +6,25 @@ license as described in the file LICENSE.
 #include <stdint.h>
 #include "gd.h"
 
-int compare_feature(const void* p1, const void* p2) {
-  feature* f1 = (feature*) p1;
+int compare_feature(const void* p1, const void* p2)
+{ feature* f1 = (feature*) p1;
   feature* f2 = (feature*) p2;
   if(f1->weight_index < f2->weight_index) return -1;
   else if(f1->weight_index > f2->weight_index) return 1;
   else return 0;
 }
 
-float collision_cleanup(feature* feature_map, size_t& len) {
+float collision_cleanup(feature* feature_map, size_t& len)
+{
 
   int pos = 0;
   float sum_sq = 0.;
 
-  for(uint32_t i = 1; i < len; i++) {
-    if(feature_map[i].weight_index == feature_map[pos].weight_index)
+  for(uint32_t i = 1; i < len; i++)
+  { if(feature_map[i].weight_index == feature_map[pos].weight_index)
       feature_map[pos].x += feature_map[i].x;
-    else {
-      sum_sq += feature_map[pos].x*feature_map[pos].x;
+    else
+    { sum_sq += feature_map[pos].x*feature_map[pos].x;
       feature_map[++pos] = feature_map[i];
     }
   }
@@ -32,14 +33,14 @@ float collision_cleanup(feature* feature_map, size_t& len) {
   return sum_sq;
 }
 
-audit_data copy_audit_data(audit_data &src) {
-  audit_data dst;
-  if (src.space != NULL) {
-    dst.space = calloc_or_die<char>(strlen(src.space)+1);
+audit_data copy_audit_data(audit_data &src)
+{ audit_data dst;
+  if (src.space != NULL)
+  { dst.space = calloc_or_throw<char>(strlen(src.space)+1);
     strcpy(dst.space, src.space);
   }
-  if (src.feature != NULL) {
-    dst.feature = calloc_or_die<char>(strlen(src.feature)+1);
+  if (src.feature != NULL)
+  { dst.feature = calloc_or_throw<char>(strlen(src.feature)+1);
     strcpy(dst.feature, src.feature);
   }
   dst.weight_index = src.weight_index;
@@ -48,17 +49,17 @@ audit_data copy_audit_data(audit_data &src) {
   return dst;
 }
 
-namespace VW {
-void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(void*,void*)) {
-  if (copy_label)
+namespace VW
+{
+void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(void*,void*))
+{ if (copy_label)
     copy_label(&dst->l, &src->l);   // TODO: we really need to delete_label on dst :(
   else
     dst->l = src->l;
 }
 
 void copy_example_data(bool audit, example* dst, example* src)
-{
-  //std::cerr << "copy_example_data dst = " << dst << std::endl;
+{ //std::cerr << "copy_example_data dst = " << dst << std::endl;
   copy_array(dst->tag, src->tag);
   dst->example_counter = src->example_counter;
 
@@ -70,10 +71,10 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->ft_offset = src->ft_offset;
 
   if (audit)
-    for (size_t i=0; i<256; i++) {
-      for (size_t j=0; j<dst->audit_features[i].size(); j++)
-        if (dst->audit_features[i][j].alloced) {
-          free(dst->audit_features[i][j].space);
+    for (size_t i=0; i<256; i++)
+    { for (size_t j=0; j<dst->audit_features[i].size(); j++)
+        if (dst->audit_features[i][j].alloced)
+        { free(dst->audit_features[i][j].space);
           free(dst->audit_features[i][j].feature);
         }
       copy_array(dst->audit_features[i], src->audit_features[i], copy_audit_data);
@@ -83,8 +84,8 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->partial_prediction = src->partial_prediction;
   copy_array(dst->topic_predictions, src->topic_predictions);
   if (src->passthrough == nullptr) dst->passthrough = nullptr;
-  else {
-    dst->passthrough = new v_array<feature>;
+  else
+  { dst->passthrough = new v_array<feature>;
     *dst->passthrough = v_init<feature>();
     copy_array(* dst->passthrough, *src->passthrough);
   }
@@ -99,31 +100,30 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->in_use = src->in_use;
 }
 
-void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void(*copy_label)(void*,void*)) {
-  copy_example_data(audit, dst, src);
+void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void(*copy_label)(void*,void*))
+{ copy_example_data(audit, dst, src);
   copy_example_label(dst, src, label_size, copy_label);
 }
 
 }
 
 struct features_and_source
-{
-  v_array<feature> feature_map; //map to store sparse feature vectors
+{ v_array<feature> feature_map; //map to store sparse feature vectors
   uint32_t stride_shift;
   uint32_t mask;
   weight* base;
   vw* all;
 };
 
-void vec_store(features_and_source& p, float fx, uint32_t fi) {
-  feature f = {fx, (uint32_t)(fi >> p.stride_shift) & p.mask};
+void vec_store(features_and_source& p, float fx, uint32_t fi)
+{ feature f = {fx, (uint32_t)(fi >> p.stride_shift) & p.mask};
   p.feature_map.push_back(f);
 }
 
-namespace VW {
-feature* get_features(vw& all, example* ec, size_t& feature_map_len)
+namespace VW
 {
-  features_and_source fs;
+feature* get_features(vw& all, example* ec, size_t& feature_map_len)
+{ features_and_source fs;
   fs.stride_shift = all.reg.stride_shift;
   fs.mask = (uint32_t)all.reg.weight_mask >> all.reg.stride_shift;
   fs.base = all.reg.weight_vector;
@@ -135,21 +135,18 @@ feature* get_features(vw& all, example* ec, size_t& feature_map_len)
 }
 
 void return_features(feature* f)
-{
-  if (f != nullptr)
+{ if (f != nullptr)
     free(f);
 }
 }
 
 flat_example* flatten_example(vw& all, example *ec)
-{
-  flat_example& fec = calloc_or_die<flat_example>();
+{ flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
 
   fec.tag_len = ec->tag.size();
   if (fec.tag_len >0)
-  {
-    fec.tag = calloc_or_die<char>(fec.tag_len+1);
+  { fec.tag = calloc_or_throw<char>(fec.tag_len+1);
     memcpy(fec.tag,ec->tag.begin, fec.tag_len);
   }
 
@@ -163,8 +160,7 @@ flat_example* flatten_example(vw& all, example *ec)
 }
 
 flat_example* flatten_sort_example(vw& all, example *ec)
-{
-  flat_example* fec = flatten_example(all, ec);
+{ flat_example* fec = flatten_example(all, ec);
   qsort(fec->feature_map, fec->feature_map_len, sizeof(feature), compare_feature);
   fec->total_sum_feat_sq = collision_cleanup(fec->feature_map, fec->feature_map_len);
   return fec;
@@ -173,8 +169,7 @@ flat_example* flatten_sort_example(vw& all, example *ec)
 void free_flatten_example(flat_example* fec)
 { //note: The label memory should be freed by by freeing the original example.
   if (fec)
-  {
-    if (fec->feature_map_len > 0)
+  { if (fec->feature_map_len > 0)
       free(fec->feature_map);
     if (fec->tag_len > 0)
       free(fec->tag);
@@ -182,13 +177,13 @@ void free_flatten_example(flat_example* fec)
   }
 }
 
-namespace VW {
-example *alloc_examples(size_t, size_t count = 1)
+namespace VW
 {
-  example* ec = calloc_or_die<example>(count);
+example *alloc_examples(size_t, size_t count = 1)
+{ example* ec = calloc_or_throw<example>(count);
   if (ec == nullptr) return nullptr;
-  for (size_t i=0; i<count; i++) {
-    ec[i].in_use = true;
+  for (size_t i=0; i<count; i++)
+  { ec[i].in_use = true;
     ec[i].ft_offset = 0;
     //  std::cerr << "  alloc_example.indices.begin=" << ec->indices.begin << " end=" << ec->indices.end << " // ld = " << ec->ld << "\t|| me = " << ec << std::endl;
   }
@@ -196,8 +191,7 @@ example *alloc_examples(size_t, size_t count = 1)
 }
 
 void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*))
-{
-  if (delete_label)
+{ if (delete_label)
     delete_label(&ec.l);
 
   if (delete_prediction)
@@ -206,21 +200,19 @@ void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_predic
   ec.tag.delete_v();
 
   ec.topic_predictions.delete_v();
-  if (ec.passthrough) {
-    ec.passthrough->delete_v();
+  if (ec.passthrough)
+  { ec.passthrough->delete_v();
     delete ec.passthrough;
   }
 
   for (size_t j = 0; j < 256; j++)
-  {
-    ec.atomics[j].delete_v();
+  { ec.atomics[j].delete_v();
 
     if (ec.audit_features[j].begin != ec.audit_features[j].end_array)
-    {
-      for (audit_data* temp = ec.audit_features[j].begin;
+    { for (audit_data* temp = ec.audit_features[j].begin;
            temp != ec.audit_features[j].end; temp++)
-        if (temp->alloced) {
-          free(temp->space);
+        if (temp->alloced)
+        { free(temp->space);
           free(temp->feature);
           temp->alloced = false;
         }

@@ -25,90 +25,86 @@ namespace po = boost::program_options;
 #include <time.h>
 #include "hash.h"
 
-struct version_struct {
-  int major;
+struct version_struct
+{ int major;
   int minor;
   int rev;
   version_struct(int maj = 0, int min = 0, int rv = 0)
-  {
-    major = maj;
+  { major = maj;
     minor = min;
     rev = rv;
   }
   version_struct(const char* v_str)
-  {
-    from_string(v_str);
+  { from_string(v_str);
   }
-  void operator=(version_struct v) {
-    major = v.major;
+  void operator=(version_struct v)
+  { major = v.major;
     minor = v.minor;
     rev = v.rev;
   }
-  void operator=(const char* v_str) {
-    from_string(v_str);
+  void operator=(const char* v_str)
+  { from_string(v_str);
   }
-  bool operator==(version_struct v) {
-    return (major == v.major && minor == v.minor && rev == v.rev);
+  bool operator==(version_struct v)
+  { return (major == v.major && minor == v.minor && rev == v.rev);
   }
-  bool operator==(const char* v_str) {
-    version_struct v_tmp(v_str);
+  bool operator==(const char* v_str)
+  { version_struct v_tmp(v_str);
     return (*this == v_tmp);
   }
-  bool operator!=(version_struct v) {
-    return !(*this == v);
+  bool operator!=(version_struct v)
+  { return !(*this == v);
   }
-  bool operator!=(const char* v_str) {
-    version_struct v_tmp(v_str);
+  bool operator!=(const char* v_str)
+  { version_struct v_tmp(v_str);
     return (*this != v_tmp);
   }
-  bool operator>=(version_struct v) {
-    if(major < v.major) return false;
+  bool operator>=(version_struct v)
+  { if(major < v.major) return false;
     if(major > v.major) return true;
     if(minor < v.minor) return false;
     if(minor > v.minor) return true;
     if(rev >= v.rev ) return true;
     return false;
   }
-  bool operator>=(const char* v_str) {
-    version_struct v_tmp(v_str);
+  bool operator>=(const char* v_str)
+  { version_struct v_tmp(v_str);
     return (*this >= v_tmp);
   }
-  bool operator>(version_struct v) {
-    if(major < v.major) return false;
+  bool operator>(version_struct v)
+  { if(major < v.major) return false;
     if(major > v.major) return true;
     if(minor < v.minor) return false;
     if(minor > v.minor) return true;
     if(rev > v.rev ) return true;
     return false;
   }
-  bool operator>(const char* v_str) {
-    version_struct v_tmp(v_str);
+  bool operator>(const char* v_str)
+  { version_struct v_tmp(v_str);
     return (*this > v_tmp);
   }
-  bool operator<=(version_struct v) {
-    return !(*this > v);
+  bool operator<=(version_struct v)
+  { return !(*this > v);
   }
-  bool operator<=(const char* v_str) {
-    version_struct v_tmp(v_str);
+  bool operator<=(const char* v_str)
+  { version_struct v_tmp(v_str);
     return (*this <= v_tmp);
   }
-  bool operator<(version_struct v) {
-    return !(*this >= v);
+  bool operator<(version_struct v)
+  { return !(*this >= v);
   }
-  bool operator<(const char* v_str) {
-    version_struct v_tmp(v_str);
+  bool operator<(const char* v_str)
+  { version_struct v_tmp(v_str);
     return (*this < v_tmp);
   }
   std::string to_string() const
-  {
-    char v_str[128];
+  { char v_str[128];
     std::sprintf(v_str,"%d.%d.%d",major,minor,rev);
     std::string s = v_str;
     return s;
   }
   void from_string(const char* str)
-  {
-    std::sscanf(str,"%d.%d.%d",&major,&minor,&rev);
+  { std::sscanf(str,"%d.%d.%d",&major,&minor,&rev);
   }
 };
 
@@ -116,20 +112,24 @@ const version_struct version(PACKAGE_VERSION);
 
 typedef float weight;
 
-struct regressor {
-  weight* weight_vector;
+struct regressor
+{ weight* weight_vector;
   size_t weight_mask; // (stride*(1 << num_bits) -1)
   uint32_t stride_shift;
 };
 
 typedef v_hashmap< substring, v_array<feature>* > feature_dict;
-struct dictionary_info {
-  char* name;
+struct dictionary_info
+{ char* name;
   unsigned long long file_hash;
   feature_dict* dict;
 };
 
-class namedlabels {
+inline void deleter(substring ss, uint32_t label)
+{ free_it(ss.begin); }
+
+class namedlabels
+{
 private:
 
   v_array<substring> id2name;
@@ -138,58 +138,66 @@ private:
 
 public:
 
-  namedlabels(string label_list) {
-    id2name = v_init<substring>();
-    substring ss = { (char*)label_list.c_str(), nullptr };
+  namedlabels(string label_list)
+  { id2name = v_init<substring>();
+    char* temp = calloc_or_throw<char>(1+label_list.length());
+    strncpy(temp, label_list.c_str(), strlen(label_list.c_str()));
+    substring ss = { temp, nullptr };
     ss.end = ss.begin + label_list.length();
     tokenize(',', ss, id2name);
 
     K = (uint32_t)id2name.size();
+    name2id.delete_v();//delete automatically allocated vector.
     name2id.init(4 * K + 1, 0, substring_equal);
-    for (size_t k=0; k<K; k++) {
-      substring& l = id2name[k];
+    for (size_t k=0; k<K; k++)
+    { substring& l = id2name[k];
       size_t hash = uniform_hash((unsigned char*)l.begin, l.end-l.begin, 378401);
       uint32_t id = name2id.get(l, hash);
       if (id != 0)
         THROW("error: label dictionary initialized with multiple occurances of: " << l);
       size_t len = l.end - l.begin;
-      substring l_copy = { calloc_or_die<char>(len), nullptr };
+      substring l_copy = { calloc_or_throw<char>(len), nullptr };
       memcpy(l_copy.begin, l.begin, len * sizeof(char));
       l_copy.end = l_copy.begin + len;
       name2id.put(l_copy, hash, (uint32_t)(k+1));
     }
   }
 
-  ~namedlabels() {
-    for (size_t i=0; i<id2name.size(); ++i)
-      free(id2name[i].begin);
-    id2name.delete_v();
-  }
+  ~namedlabels()
+    {
+      if (id2name.size()>0)
+	free(id2name[0].begin);
+      cout << "in namedlabels delete" << endl;
+      name2id.iter(deleter);
+      name2id.delete_v();
+      id2name.delete_v();
+    }
 
   uint32_t getK() { return K; }
 
-  uint32_t get(substring& s) {
-    size_t hash = uniform_hash((unsigned char*)s.begin, s.end-s.begin, 378401);
+  uint32_t get(substring& s)
+  { size_t hash = uniform_hash((unsigned char*)s.begin, s.end-s.begin, 378401);
     uint32_t v  =  name2id.get(s, hash);
-    if (v == 0) {
-      cerr << "warning: missing named label '";
+    if (v == 0)
+    { cerr << "warning: missing named label '";
       for (char*c = s.begin; c != s.end; c++) cerr << *c;
       cerr << '\'' << endl;
     }
     return v;
   }
 
-  substring get(uint32_t v) {
-    if ((v == 0) || (v > K)) {
-      substring ss = {nullptr,nullptr};
+  substring get(uint32_t v)
+  { if ((v == 0) || (v > K))
+    { substring ss = {nullptr,nullptr};
       return ss;
-    } else
+    }
+    else
       return id2name[v-1];
   }
 };
 
-struct shared_data {
-  size_t queries;
+struct shared_data
+{ size_t queries;
 
   uint64_t example_number;
   uint64_t total_features;
@@ -235,10 +243,8 @@ struct shared_data {
   static const int col_current_features = 8;
 
   void update(bool test_example, float loss, float weight, size_t num_features)
-  {
-    if(test_example)
-    {
-      weighted_holdout_examples += weight;//test weight seen
+  { if(test_example)
+    { weighted_holdout_examples += weight;//test weight seen
       weighted_holdout_examples_since_last_dump += weight;
       weighted_holdout_examples_since_last_pass += weight;
       holdout_sum_loss += loss;
@@ -246,8 +252,7 @@ struct shared_data {
       holdout_sum_loss_since_last_pass += loss;//since last pass
     }
     else
-    {
-      weighted_examples += weight;
+    { weighted_examples += weight;
       sum_loss += loss;
       sum_loss_since_last_dump += loss;
       total_features += num_features;
@@ -255,8 +260,8 @@ struct shared_data {
     }
   }
 
-  inline void update_dump_interval(bool progress_add, float progress_arg) {
-    sum_loss_since_last_dump = 0.0;
+  inline void update_dump_interval(bool progress_add, float progress_arg)
+  { sum_loss_since_last_dump = 0.0;
     old_weighted_examples = weighted_examples;
     if (progress_add)
       dump_interval = (float)weighted_examples + progress_arg;
@@ -266,8 +271,7 @@ struct shared_data {
 
   void print_update(bool holdout_set_off, size_t current_pass, float label, float prediction,
                     size_t num_features, bool progress_add, float progress_arg)
-  {
-    std::ostringstream label_buf, pred_buf;
+  { std::ostringstream label_buf, pred_buf;
 
     label_buf << std::setw(col_current_label)
               << std::setfill(' ');
@@ -287,8 +291,7 @@ struct shared_data {
 
   void print_update(bool holdout_set_off, size_t current_pass, uint32_t label, uint32_t prediction,
                     size_t num_features, bool progress_add, float progress_arg)
-  {
-    std::ostringstream label_buf, pred_buf;
+  { std::ostringstream label_buf, pred_buf;
 
     label_buf << std::setw(col_current_label)
               << std::setfill(' ');
@@ -307,8 +310,7 @@ struct shared_data {
 
   void print_update(bool holdout_set_off, size_t current_pass, const std::string &label, uint32_t prediction,
                     size_t num_features, bool progress_add, float progress_arg)
-  {
-    std::ostringstream pred_buf;
+  { std::ostringstream pred_buf;
 
     pred_buf << std::setw(col_current_predict) << std::right << std::setfill(' ')
              << prediction;
@@ -319,15 +321,13 @@ struct shared_data {
 
   void print_update(bool holdout_set_off, size_t current_pass, const std::string &label, const std::string &prediction,
                     size_t num_features, bool progress_add, float progress_arg)
-  {
-    std::streamsize saved_w = std::cerr.width();
+  { std::streamsize saved_w = std::cerr.width();
     std::streamsize saved_prec = std::cerr.precision();
     std::ostream::fmtflags saved_f = std::cerr.flags();
     bool holding_out = false;
 
     if(!holdout_set_off && current_pass >= 1)
-    {
-      if(holdout_sum_loss == 0. && weighted_holdout_examples == 0.)
+    { if(holdout_sum_loss == 0. && weighted_holdout_examples == 0.)
         std::cerr << std::setw(col_avg_loss) << std::left << " unknown";
       else
         std::cerr << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::fixed << std::right
@@ -347,8 +347,7 @@ struct shared_data {
       holding_out = true;
     }
     else
-    {
-      std::cerr << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::right << std::fixed
+    { std::cerr << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::right << std::fixed
                 << (sum_loss / weighted_examples)
                 << " "
                 << std::setw(col_since_last) << std::setprecision(prec_avg_loss) << std::right << std::fixed
@@ -382,14 +381,14 @@ struct shared_data {
 
 enum AllReduceType
 {
-	Socket,
-	Thread
+  Socket,
+  Thread
 };
 
 class AllReduce;
 
-struct vw {
-  shared_data* sd;
+struct vw
+{ shared_data* sd;
 
   parser* p;
 #ifndef _WIN32
@@ -555,21 +554,18 @@ void compile_limits(vector<string> limits, uint32_t* dest, bool quiet);
 int print_tag(std::stringstream& ss, v_array<char> tag);
 void add_options(vw& all, po::options_description& opts);
 inline po::options_description_easy_init new_options(vw& all, std::string name = "\0")
-{
-  all.new_opts = new po::options_description(name);
+{ all.new_opts = new po::options_description(name);
   return all.new_opts->add_options();
 }
 bool no_new_options(vw& all);
 bool missing_option(vw& all, bool keep, const char* name, const char* description);
 template <class T> bool missing_option(vw& all, const char* name, const char* description)
-{
-  new_options(all)(name, po::value<T>(), description);
+{ new_options(all)(name, po::value<T>(), description);
   return no_new_options(all);
 }
 template <class T, bool keep> bool missing_option(vw& all, const char* name,
     const char* description)
-{
-  if (missing_option<T>(all, name, description))
+{ if (missing_option<T>(all, name, description))
     return true;
   if (keep)
     *all.file_options << " --" << name << " " << all.vm[name].as<T>();

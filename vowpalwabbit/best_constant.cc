@@ -5,8 +5,7 @@ float first_observed_label = FLT_MAX;
 float second_observed_label = FLT_MAX;
 
 bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
-{
-  if (    first_observed_label == FLT_MAX || // no non-test labels observed or function was never called
+{ if (    first_observed_label == FLT_MAX || // no non-test labels observed or function was never called
           (all.loss == nullptr) || (all.sd == nullptr)) return false;
 
   float label1 = first_observed_label; // observed labels might be inside [sd->Min_label, sd->Max_label], so can't use Min/Max
@@ -17,11 +16,11 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
   float label2_cnt;
 
   if (label1 != label2)
-  {
-    float weighted_labeled_examples = (float)(all.sd->weighted_examples - all.sd->weighted_unlabeled_examples + all.initial_t);
+  { float weighted_labeled_examples = (float)(all.sd->weighted_examples - all.sd->weighted_unlabeled_examples + all.initial_t);
     label1_cnt = (float) (all.sd->weighted_labels - label2*weighted_labeled_examples)/(label1 - label2);
     label2_cnt = weighted_labeled_examples - label1_cnt;
-  } else
+  }
+  else
     return false;
 
   if ( (label1_cnt + label2_cnt) <= 0.) return false;
@@ -36,18 +35,22 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
     funcName = "squared";
 
   if(funcName.compare("squared") == 0 || funcName.compare("Huber") == 0 || funcName.compare("classic") == 0)
-  {
-    best_constant = (float) all.sd->weighted_labels / (float) (all.sd->weighted_examples - all.sd->weighted_unlabeled_examples + all.initial_t); //GENERIC. WAS: (label1*label1_cnt + label2*label2_cnt) / (label1_cnt + label2_cnt);
+  { best_constant = (float) all.sd->weighted_labels / (float) (all.sd->weighted_examples - all.sd->weighted_unlabeled_examples + all.initial_t); //GENERIC. WAS: (label1*label1_cnt + label2*label2_cnt) / (label1_cnt + label2_cnt);
 
-  } else if (is_more_than_two_labels_observed) {
-    //loss functions below don't have generic formuas for constant yet.
+  }
+  else if (is_more_than_two_labels_observed)
+  { //loss functions below don't have generic formuas for constant yet.
     return false;
 
-  } else if(funcName.compare("hinge") == 0) {
+  }
+  else if(funcName.compare("hinge") == 0)
+  {
 
     best_constant = label2_cnt <= label1_cnt ? -1.f: 1.f;
 
-  } else if(funcName.compare("logistic") == 0) {
+  }
+  else if(funcName.compare("logistic") == 0)
+  {
 
     label1 = -1.; //override {-50, 50} to get proper loss
     label2 =  1.;
@@ -57,7 +60,9 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
     else
       best_constant = log(label2_cnt/label1_cnt);
 
-  } else if(funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0) {
+  }
+  else if(funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0)
+  {
 
     float tau = 0.5;
     if(vm.count("quantile_tau"))
@@ -66,12 +71,12 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
     float q = tau*(label1_cnt + label2_cnt);
     if (q < label2_cnt) best_constant = label2;
     else best_constant = label1;
-  } else
+  }
+  else
     return false;
 
   if (!is_more_than_two_labels_observed)
-  {
-    best_constant_loss =  (label1_cnt>0)?all.loss->getLoss(all.sd, best_constant, label1) * label1_cnt:0.0;
+  { best_constant_loss =  (label1_cnt>0)?all.loss->getLoss(all.sd, best_constant, label1) * label1_cnt:0.0;
     best_constant_loss += (label2_cnt>0)?all.loss->getLoss(all.sd, best_constant, label2) * label2_cnt:0.0;
     best_constant_loss /= label1_cnt + label2_cnt;
   }

@@ -9,9 +9,10 @@ license as described in the file LICENSE.
 struct example;
 struct vw;
 
-namespace MULTILABEL {
-struct labels {
-  v_array<uint32_t> label_v;
+namespace MULTILABEL
+{
+struct labels
+{ v_array<uint32_t> label_v;
 };
 
 void output_example(vw& all, example& ec);

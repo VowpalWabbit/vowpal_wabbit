@@ -10,7 +10,8 @@ license as described in the file LICENSE.
 struct shared_data;
 struct vw;
 
-class loss_function {
+class loss_function
+{
 
 public :
   /*

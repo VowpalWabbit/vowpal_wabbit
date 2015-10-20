@@ -5,8 +5,7 @@
 struct print { vw* all; }; //regressor, feature loop
 
 void print_feature(vw& all, float value, float& weight)
-{
-  size_t index = &weight - all.reg.weight_vector;
+{ size_t index = &weight - all.reg.weight_vector;
 
   cout << index;
   if (value != 1.)
@@ -15,21 +14,17 @@ void print_feature(vw& all, float value, float& weight)
 }
 
 void learn(print& p, LEARNER::base_learner&, example& ec)
-{
-  label_data& ld = ec.l.simple;
+{ label_data& ld = ec.l.simple;
   if (ld.label != FLT_MAX)
-  {
-    cout << ld.label << " ";
+  { cout << ld.label << " ";
     if (ld.weight != 1 || ld.initial != 0)
-    {
-      cout << ld.weight << " ";
+    { cout << ld.weight << " ";
       if (ld.initial != 0)
         cout << ld.initial << " ";
     }
   }
   if (ec.tag.size() > 0)
-  {
-    cout << '\'';
+  { cout << '\'';
     cout.write(ec.tag.begin, ec.tag.size());
   }
   cout << "| ";
@@ -38,10 +33,9 @@ void learn(print& p, LEARNER::base_learner&, example& ec)
 }
 
 LEARNER::base_learner* print_setup(vw& all)
-{
-  if (missing_option(all, true, "print", "print examples")) return nullptr;
+{ if (missing_option(all, true, "print", "print examples")) return nullptr;
 
-  print& p = calloc_or_die<print>();
+  print& p = calloc_or_throw<print>();
   p.all = &all;
 
   size_t length = ((size_t)1) << all.num_bits;

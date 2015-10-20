@@ -233,6 +233,7 @@
       <FileType>CppHeader</FileType>
     </ClCompile>
     <ClInclude Include="active_cover.h" />
+    <ClCompile Include="vw_validate.cc" />
     <ClInclude Include="autolink.h" />
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="active.h" />
@@ -298,10 +299,12 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
+    <ClInclude Include="vw_validate.h" />
     <ClInclude Include="vw.h" />
     <ClInclude Include="vw_allreduce.h" />
     <ClInclude Include="vw_exception.h" />
     <ClInclude Include="v_array.h" />
+    <ClInclude Include="vw_versions.h" />
     <ClInclude Include="v_hashmap.h" />
   </ItemGroup>
   <ItemGroup>

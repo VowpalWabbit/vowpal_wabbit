@@ -11,8 +11,8 @@ using namespace MultiWorldTesting;
 
 struct cbify;
 
-struct vw_context {
-  cbify& data;
+struct vw_context
+{ cbify& data;
   base_learner& l;
   example& e;
   bool recorded;
@@ -26,8 +26,7 @@ public:
   vw_policy(size_t i) : m_index(i) { }
 
   u32 Choose_Action(vw_context& ctx)
-  {
-    ctx.l.predict(ctx.e, m_index);
+  { ctx.l.predict(ctx.e, m_index);
     ctx.recorded = false;
     return (u32)(ctx.e.pred.multiclass);
   }
@@ -44,8 +43,7 @@ class vw_cover : public IScorer<vw_context>
 public:
   vw_cover(float eps, size_t s, u32 num_a) :
     epsilon(eps), size(s), num_actions(num_a), counter(1)
-  {
-    probabilities = v_init<float>();
+  { probabilities = v_init<float>();
     probabilities.resize(num_actions + 1);
     predictions = v_init<uint32_t>();
     predictions.resize(s);
@@ -55,8 +53,7 @@ public:
   { }
 
   v_array<float>& Get_Scores()
-  {
-    probabilities.erase();
+  { probabilities.erase();
     for (size_t i = 0; i < num_actions; i++)
       probabilities.push_back(0);
     return probabilities;
@@ -73,10 +70,8 @@ public:
 };
 
 struct vw_recorder : public IRecorder<vw_context>
-{
-  void Record(vw_context& context, u32 a, float p, string /*unique_key*/)
-  {
-    action = a;
+{ void Record(vw_context& context, u32 a, float p, string /*unique_key*/)
+  { action = a;
     probability = p;
     context.recorded = true;
   }
@@ -87,8 +82,8 @@ struct vw_recorder : public IRecorder<vw_context>
   { }
 };
 
-struct cbify {
-  uint32_t k;
+struct cbify
+{ uint32_t k;
 
   CB::label cb_label;
   COST_SENSITIVE::label cs_label;
@@ -111,16 +106,14 @@ struct cbify {
 };
 
 float loss(uint32_t label, uint32_t final_prediction)
-{
-  if (label != final_prediction)
+{ if (label != final_prediction)
     return 1.;
   else
     return 0.;
 }
 
 vector<float> vw_cover::Score_Actions(vw_context& ctx)
-{
-  float additive_probability = 1.f / (float)size;
+{ float additive_probability = 1.f / (float)size;
   for (size_t i = 0; i < size; i++)
   { //get predicted cost-sensitive predictions
     if (i == 0)
@@ -157,8 +150,7 @@ void predict_or_learn_first(cbify& data, base_learner& base, example& ec)
   uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer, to_string((unsigned long long)ec.example_counter), vwc);
 
   if (vwc.recorded && is_learn)
-  {
-    CB::cb_class l = {loss(ld.label, action), action, data.recorder->probability };
+  { CB::cb_class l = {loss(ld.label, action), action, data.recorder->probability };
     data.cb_label.costs.push_back(l);
     ec.l.cb = data.cb_label;
     base.learn(ec);
@@ -179,8 +171,8 @@ void predict_or_learn_greedy(cbify& data, base_learner& base, example& ec)
   vw_context vwc = {data, base, ec};
   uint32_t action = data.mwt_explorer->Choose_Action(*data.greedy_explorer, to_string((unsigned long long)ec.example_counter), vwc);
 
-  if (is_learn) {
-    CB::cb_class l = { loss(ld.label, action), action, data.recorder->probability };
+  if (is_learn)
+  { CB::cb_class l = { loss(ld.label, action), action, data.recorder->probability };
     data.cb_label.costs.push_back(l);
     ec.l.cb = data.cb_label;
     base.learn(ec);
@@ -203,15 +195,13 @@ void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
   uint32_t action = data.mwt_explorer->Choose_Action(*data.bootstrap_explorer, to_string((unsigned long long)ec.example_counter), context);
 
   if (is_learn)
-  {
-    CB::cb_class l = {loss(ld.label, action),
+  { CB::cb_class l = {loss(ld.label, action),
                       action, data.recorder->probability
                      };
     data.cb_label.costs.push_back(l);
     ec.l.cb = data.cb_label;
     for (size_t i = 0; i < data.policies.size(); i++)
-    {
-      uint32_t count = BS::weight_gen();
+    { uint32_t count = BS::weight_gen();
       for (uint32_t j = 0; j < count; j++)
         base.learn(ec,i);
     }
@@ -221,19 +211,16 @@ void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
 }
 
 void safety(v_array<float>& distribution, float min_prob)
-{
-  float added_mass = 0.;
+{ float added_mass = 0.;
   for (uint32_t i = 0; i < distribution.size(); i++)
     if (distribution[i] > 0 && distribution[i] <= min_prob)
-    {
-      added_mass += min_prob - distribution[i];
+    { added_mass += min_prob - distribution[i];
       distribution[i] = min_prob;
     }
 
   float ratio = 1.f / (1.f + added_mass);
   if (ratio < 0.999)
-  {
-    for (uint32_t i = 0; i < distribution.size(); i++)
+  { for (uint32_t i = 0; i < distribution.size(); i++)
       if (distribution[i] > min_prob)
         distribution[i] = distribution[i] * ratio;
     safety(distribution, min_prob);
@@ -241,8 +228,7 @@ void safety(v_array<float>& distribution, float min_prob)
 }
 
 void gen_cs_label(cbify& c, CB::cb_class& known_cost, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t label)
-{
-  COST_SENSITIVE::wclass wc;
+{ COST_SENSITIVE::wclass wc;
 
   //get cost prediction for this label
   wc.x = CB_ALGS::get_cost_pred<false>(c.reg, &known_cost, ec, label, c.k);
@@ -265,8 +251,7 @@ void predict_or_learn_cover(cbify& data, base_learner& base, example& ec)
 
   data.cs_label.costs.erase();
   for (uint32_t j = 0; j < data.k; j++)
-  {
-    COST_SENSITIVE::wclass wc;
+  { COST_SENSITIVE::wclass wc;
 
     //get cost prediction for this label
     wc.x = FLT_MAX;
@@ -292,8 +277,7 @@ void predict_or_learn_cover(cbify& data, base_learner& base, example& ec)
   uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, to_string((unsigned long long)ec.example_counter), cp);
 
   if (is_learn)
-  {
-    data.cb_label.costs.erase();
+  { data.cb_label.costs.erase();
     float probability = data.recorder->probability;
     CB::cb_class l = {loss(ld.label, action),
                       action, probability
@@ -318,8 +302,7 @@ void predict_or_learn_cover(cbify& data, base_learner& base, example& ec)
     for (size_t i = 0; i < cover_size; i++)
     { //get predicted cost-sensitive predictions
       for (uint32_t j = 0; j < data.k; j++)
-      {
-        float pseudo_cost = data.cs_label.costs[j].x - epsilon * min_prob / (max(scores[j], min_prob) / norm) + 1;
+      { float pseudo_cost = data.cs_label.costs[j].x - epsilon * min_prob / (max(scores[j], min_prob) / norm) + 1;
         data.second_cs_label.costs[j].class_index = j+1;
         data.second_cs_label.costs[j].x = pseudo_cost;
       }
@@ -351,8 +334,7 @@ void finish(cbify& data)
   delete_it(data.mwt_explorer);
   delete_it(data.recorder);
   if (data.cover != nullptr)
-  {
-    data.cover->predictions.delete_v();
+  { data.cover->predictions.delete_v();
     data.cover->probabilities.delete_v();
   }
   delete_it(data.cover);
@@ -372,12 +354,11 @@ base_learner* cbify_setup(vw& all)
   add_options(all);
 
   po::variables_map& vm = all.vm;
-  cbify& data = calloc_or_die<cbify>();
+  cbify& data = calloc_or_throw<cbify>();
   data.k = (uint32_t)vm["cbify"].as<size_t>();
 
   if (count(all.args.begin(), all.args.end(),"--cb") == 0)
-  {
-    all.args.push_back("--cb");
+  { all.args.push_back("--cb");
     stringstream ss;
     ss << vm["cbify"].as<size_t>();
     all.args.push_back(ss.str());
@@ -388,8 +369,7 @@ base_learner* cbify_setup(vw& all)
   data.recorder = new vw_recorder();
   data.mwt_explorer = new MwtExplorer<vw_context>("vw", *data.recorder);
   if (vm.count("cover"))
-  {
-    size_t cover = (uint32_t)vm["cover"].as<size_t>();
+  { size_t cover = (uint32_t)vm["cover"].as<size_t>();
     data.cs = all.cost_sensitive;
     data.second_cs_label.costs.resize(data.k);
     data.second_cs_label.costs.end = data.second_cs_label.costs.begin+data.k;
@@ -402,8 +382,7 @@ base_learner* cbify_setup(vw& all)
                                  predict_or_learn_cover<false>, all.p, cover + 1);
   }
   else if (vm.count("bag"))
-  {
-    size_t bags = (uint32_t)vm["bag"].as<size_t>();
+  { size_t bags = (uint32_t)vm["bag"].as<size_t>();
     for (size_t i = 0; i < bags; i++)
       data.policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
     data.bootstrap_explorer = new BootstrapExplorer<vw_context>(data.policies, (u32)data.k);
@@ -411,16 +390,14 @@ base_learner* cbify_setup(vw& all)
                                  predict_or_learn_bag<false>, all.p, bags);
   }
   else if (vm.count("first") )
-  {
-    uint32_t tau = (uint32_t)vm["first"].as<size_t>();
+  { uint32_t tau = (uint32_t)vm["first"].as<size_t>();
     data.policy = new vw_policy(0);
     data.tau_explorer = new TauFirstExplorer<vw_context>(*data.policy, (u32)tau, (u32)data.k);
     l = &init_multiclass_learner(&data, base, predict_or_learn_first<true>,
                                  predict_or_learn_first<false>, all.p, 1);
   }
   else
-  {
-    float epsilon = 0.05f;
+  { float epsilon = 0.05f;
     if (vm.count("epsilon"))
       epsilon = vm["epsilon"].as<float>();
     data.policy = new vw_policy(0);

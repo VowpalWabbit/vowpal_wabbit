@@ -5,6 +5,7 @@ lda:0
 0 ngram: 
 0 skip: 
 options: --quadratic :: --oaa 3
+Checksum: 611888967
 :0
 Constant:202096:-0.061159
 Constant[1]:202097:0.019265

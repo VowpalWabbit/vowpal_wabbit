@@ -6,15 +6,13 @@ using namespace std;
 
 
 inline feature vw_feature_from_string(vw& v, string fstr, unsigned long seed, float val)
-{
-  uint32_t foo = VW::hash_feature(v, fstr, seed);
+{ uint32_t foo = VW::hash_feature(v, fstr, seed);
   feature f = { val, foo};
   return f;
 }
 
 int main(int argc, char *argv[])
-{
-  vw* model = VW::initialize("--hash all -q st --noconstant -i train.w -f train2.vw");
+{ vw* model = VW::initialize("--hash all -q st --noconstant -i train.w -f train2.vw");
 
   example *vec2 = VW::read_example(*model, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   model->learn(vec2);
@@ -24,7 +22,7 @@ int main(int argc, char *argv[])
   VW::primitive_feature_space features[2];
   VW::primitive_feature_space *s = features, *t = features + 1;
   s->name = 's';
-  t->name = 't'; 
+  t->name = 't';
 
   uint32_t s_hash = VW::hash_space(*model, "s");
   uint32_t t_hash = VW::hash_space(*model, "t");
@@ -40,7 +38,7 @@ int main(int argc, char *argv[])
   t->fs[1] = vw_feature_from_string(*model, "w^le", t_hash, 1.0);
   t->fs[2] = vw_feature_from_string(*model, "w^homme", t_hash, 1.0);
   example* vec3 = VW::import_example(*model, "", features, 2);
-    
+
   model->learn(vec3);
   cerr << "p3 = " << vec3->pred.scalar << endl;
   // TODO: this does not invoke m_vw->l->finish_example()
@@ -56,12 +54,11 @@ int main(int argc, char *argv[])
   size_t len=0;
   VW::primitive_feature_space* pfs = VW::export_example(*model2, vec2, len);
   for (size_t i = 0; i < len; i++)
-    {
-      cout << "namespace = " << pfs[i].name;
-      for (size_t j = 0; j < pfs[i].len; j++)
-        cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":" << VW::get_weight(*model2, pfs[i].fs[j].weight_index, 0);
-      cout << endl;
-    }   
+  { cout << "namespace = " << pfs[i].name;
+    for (size_t j = 0; j < pfs[i].len; j++)
+      cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":" << VW::get_weight(*model2, pfs[i].fs[j].weight_index, 0);
+    cout << endl;
+  }
 
   VW::finish_example(*model2, vec2);
   VW::finish(*model2);
