@@ -3,12 +3,11 @@
 #include "jni_base_learner.h"
 #include "vw_learner_VWIntArrayLearner.h"
 
-jintArray intArrayPredictor(vw* vwInstance, example* vec, JNIEnv *env)
+jintArray intArrayPredictor(example* vec, JNIEnv *env)
 { v_array<uint32_t> predictions = vec->pred.multilabels.label_v;
   size_t num_predictions = predictions.size();
   jintArray r = env->NewIntArray(num_predictions);
   env->SetIntArrayRegion(r, 0, num_predictions, (int*)predictions.begin);
-  VW::finish_example(*vwInstance, vec);
   return r;
 }
 

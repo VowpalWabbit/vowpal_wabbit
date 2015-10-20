@@ -31,7 +31,12 @@ T base_predict(
     else
       vwInstance->l->predict(*vec);
 
-    result = predictor(vwInstance, vec, env);
+    result = predictor(vec, env);
+
+    // The LDA algorithm calls finish_example because it's a minibatch algorithm.
+    // All other learner types will require finish_example to be called.
+    if (!vwInstance->lda)
+        VW::finish_example(*vwInstance, vec);
 
     env->ReleaseStringUTFChars(example_string, utf_string);
     env->DeleteLocalRef(example_string);
