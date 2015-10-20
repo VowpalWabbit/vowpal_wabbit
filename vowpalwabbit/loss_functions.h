@@ -27,6 +27,7 @@ public :
   virtual float getUpdate(float prediction, float label, float eta_t, float norm) = 0;
   virtual float getUnsafeUpdate(float prediction, float label, float eta_t, float norm) = 0;
   virtual float getRevertingWeight(shared_data*, float prediction, float eta_t) = 0;
+  virtual float finalize_reverting_weight(float w) = 0;
   virtual float getSquareGrad(float prediction, float label) = 0;
   virtual float first_derivative(shared_data*, float prediction, float label) = 0;
   virtual float second_derivative(shared_data*, float prediction, float label) = 0;

@@ -478,13 +478,59 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
 	THROW("Failed to allocate weight array: try decreasing -b <bits>");
 
       for(uint32_t i = 0; i < length; i++)
-	b.regularizers[2*i] = weights[stride*i+W_COND] + regularization;
+      {
+	b.regularizers[2*i] = regularization;
+        if(weights[stride*i+W_COND] > 0.f)
+        {
+          b.regularizers[2*i] += 1.f / weights[stride*i+W_COND]; 
+        }
+      }
     }
   else
+  {
     for(uint32_t i = 0; i < length; i++)
-      b.regularizers[2*i] = weights[stride*i+W_COND] + b.regularizers[2*i];
+    {
+       if(weights[stride*i+W_COND] > 0.f)
+       {
+          b.regularizers[2*i] += 1.f / weights[stride*i+W_COND];
+       }
+    }
+  }
+
   for(uint32_t i = 0; i < length; i++)
+  {
       b.regularizers[2*i+1] = weights[stride*i];
+  }
+}
+
+/*
+void regularizer_to_preconditioner(vw& all, bfgs& b)
+{
+  uint32_t length = 1 << all.num_bits;
+  size_t stride = 1 << all.reg.stride_shift;
+  weight* weights = all.reg.weight_vector;
+  if (b.regularizers != nullptr)
+  {
+     for(uint32_t i = 0; i < length; i++)
+     {
+        weights[stride*i+W_COND] = b.regularizers[2*i];
+     }
+  }
+}
+*/
+void regularizer_to_weight(vw& all, bfgs& b)
+{
+  uint32_t length = 1 << all.num_bits;
+  size_t stride = 1 << all.reg.stride_shift;
+  weight* weights = all.reg.weight_vector;
+  if (b.regularizers != nullptr)
+  {
+     for(uint32_t i = 0; i < length; i++)
+     {
+        weights[stride*i+W_COND] = b.regularizers[2*i];
+        weights[stride*i] = b.regularizers[2*i+1];
+     }
+  }
 }
 
 void zero_state(vw& all)
@@ -525,6 +571,7 @@ void update_weight(vw& all, float step_size)
 int process_pass(vw& all, bfgs& b) {
   int status = LEARN_OK;
 
+      finalize_preconditioner(all, b, all.l2_lambda);
   /********************************************************************/
   /* A) FIRST PASS FINISHED: INITIALIZE FIRST LINE SEARCH *************/
   /********************************************************************/
@@ -535,7 +582,7 @@ int process_pass(vw& all, bfgs& b) {
 	  float temp = (float)b.importance_weight_sum;
 	  b.importance_weight_sum = accumulate_scalar(all, temp);
 	}
-      finalize_preconditioner(all, b, all.l2_lambda);
+      //finalize_preconditioner(all, b, all.l2_lambda);
       if(all.all_reduce != nullptr) {
 	float temp = (float)b.loss_sum;
 	b.loss_sum = accumulate_scalar(all, temp);  //Accumulate loss_sums
@@ -702,7 +749,7 @@ int process_pass(vw& all, bfgs& b) {
 		}//now start computing derivatives.
     b.current_pass++;
     b.first_pass = false;
-    b.preconditioner_pass = false;
+    //b.preconditioner_pass = false;
 
     if (b.output_regularizer)//need to accumulate and place the regularizer.
       {
@@ -782,11 +829,12 @@ void end_pass(bfgs& b)
 	  if (status != LEARN_OK && b.final_pass > b.current_pass) {
 	    b.final_pass = b.current_pass;
 	  }
-	  
-	  if (b.output_regularizer && b.final_pass == b.current_pass) {
-	    zero_preconditioner(*all);
-	    b.preconditioner_pass = true;
-	  }
+	  else
+	  {
+            // Not converged yet.
+            // Reset preconditioner to zero so that it is correctly recomputed in the next pass
+            zero_preconditioner(*all);
+          }
 	  
 	  if(!all->holdout_set_off)
 	    {
@@ -807,11 +855,26 @@ void end_pass(bfgs& b)
     }
 }
 
+inline void scaled_norm(float& p, const float fx, float& fw) { p += 2.f*fx*fx/fw;}
+
 // placeholder
 void predict(bfgs& b, base_learner&, example& ec)
 {
   vw* all = b.all;
   ec.pred.scalar = bfgs_predict(*all,ec);
+
+  if(b.regularizers != nullptr)
+  {
+     float norm = 0.f;		
+
+     regularizer_to_weight(*all, b);
+
+     ec.ft_offset += W_COND;
+     GD::foreach_feature<float,scaled_norm>(*all, ec, norm);
+     ec.ft_offset -= W_COND;
+
+     ec.revert_weight = (*all).loss->finalize_reverting_weight(fabs(ec.pred.scalar) / norm);
+  }
 }
 
 void learn(bfgs& b, base_learner& base, example& ec)
@@ -882,6 +945,13 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 	i++;
     }
   while ((!read && i < length) || (read && brw >0));
+
+  if(read)
+  {
+     regularizer_to_weight(all, b);
+  }
+
+
 }
 
 
@@ -999,7 +1069,7 @@ base_learner* bfgs_setup(vw& all)
     else
       cerr << "**without** curvature calculation" << endl;
   }
-  if (all.numpasses < 2)
+  if (all.numpasses < 2 && all.training)
     THROW("you must make at least 2 passes to use BFGS");
 
   all.bfgs = true;

@@ -347,6 +347,7 @@ float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
 float ex_get_simplelabel_weight(example_ptr ec) { return ec->l.simple.weight; }
 float ex_get_simplelabel_initial(example_ptr ec) { return ec->l.simple.initial; }
 float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar; }
+float ex_get_reverting_weight(example_ptr ec) { return ec->revert_weight; }
 
 uint32_t ex_get_multiclass_label(example_ptr ec) { return ec->l.multi.label; }
 float ex_get_multiclass_weight(example_ptr ec) { return ec->l.multi.weight; }
@@ -637,6 +638,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("get_simplelabel_weight", &ex_get_simplelabel_weight, "Assuming a simple_label label type, return the importance weight")
       .def("get_simplelabel_initial", &ex_get_simplelabel_initial, "Assuming a simple_label label type, return the initial (baseline) prediction")
       .def("get_simplelabel_prediction", &ex_get_simplelabel_prediction, "Assuming a simple_label label type, return the final prediction")
+      .def("get_reverting_weight", &ex_get_reverting_weight, "Return the reverting weight")
       .def("get_multiclass_label", &ex_get_multiclass_label, "Assuming a multiclass label type, get the true label")
       .def("get_multiclass_weight", &ex_get_multiclass_weight, "Assuming a multiclass label type, get the importance weight")
       .def("get_multiclass_prediction", &ex_get_multiclass_prediction, "Assuming a multiclass label type, get the prediction")
