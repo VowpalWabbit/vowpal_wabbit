@@ -50,7 +50,7 @@ namespace CB_ADF
 {
 void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
 { if (cs_labels.size() < examples.size())
-  { cs_labels.resize(examples.size(), true);
+  { cs_labels.resize(examples.size());
     cs_labels.end = cs_labels.end_array;
   }
   bool shared = CB::ec_is_example_header(*examples[0]);
@@ -81,7 +81,7 @@ template <bool is_learn>
 void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
 { //size_t mysize = examples.size();
   if (cs_labels.size() < examples.size())
-  { cs_labels.resize(examples.size(), true);
+  { cs_labels.resize(examples.size());
     cs_labels.end = cs_labels.end_array;
   }
 

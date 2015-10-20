@@ -54,7 +54,7 @@ public:
   void init(size_t min_size, V def, bool (*eq)(K&,K&))
   { dat = v_array<hash_elem>();
     if (min_size < 1023) min_size = 1023;
-    dat.resize(min_size, true); // resize sets to 0 ==> occupied=false
+    dat.resize(min_size); // resize sets to 0 ==> occupied=false
 
     default_value = def;
     equivalent = nullptr;
@@ -68,7 +68,7 @@ public:
   void init(size_t min_size, bool (*eq)(K&,K&))
   { dat = v_array<hash_elem>();
     if (min_size < 1023) min_size = 1023;
-    dat.resize(min_size, true); // resize sets to 0 ==> occupied=false
+    dat.resize(min_size); // resize sets to 0 ==> occupied=false
 
     equivalent = nullptr;
     equivalent_no_data = eq;
@@ -146,14 +146,14 @@ public:
   { //    printf("doubling size!\n");
     // remember the old occupants
     v_array<hash_elem>tmp = v_array<hash_elem>();
-    tmp.resize(num_occupants+10, true);
+    tmp.resize(num_occupants+10);
     for (hash_elem* e=dat.begin; e!=dat.end_array; e++)
       if (e->occupied)
         tmp.push_back(*e);
 
     // double the size and clear
     //std::cerr<<"doubling to "<<(base_size()*2) << " units == " << (base_size()*2*sizeof(hash_elem)) << " bytes / " << ((size_t)-1)<<std::endl;
-    dat.resize(base_size()*2, true);
+    dat.resize(base_size()*2);
     memset(dat.begin, 0, base_size()*sizeof(hash_elem));
 
     // re-insert occupants

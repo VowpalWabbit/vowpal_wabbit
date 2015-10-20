@@ -154,6 +154,8 @@ void parse_dictionary_argument(vw&all, string str)
   for (size_t id=0; id<all.loaded_dictionaries.size(); id++)
     if (all.loaded_dictionaries[id].file_hash == fd_hash)
     { all.namespace_dictionaries[(size_t)ns].push_back(all.loaded_dictionaries[id].dict);
+      io->close_file();
+      delete io;
       return;
     }
 
@@ -219,9 +221,10 @@ void parse_dictionary_argument(vw&all, string str)
   while ((rc != EOF) && (nread > 0));
   free(buffer);
   io->close_file();
+  delete io;
   VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
-
+  
   if (! all.quiet)
     cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
 
