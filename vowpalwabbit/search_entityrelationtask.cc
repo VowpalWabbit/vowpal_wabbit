@@ -192,10 +192,10 @@ size_t predict_relation(Search::search&sch, example* ex, v_array<size_t>& predic
     hist[1] = 0;
   }
   for(size_t j=0; j< my_task_data->y_allowed_relation.size(); j++)
-  { if(!my_task_data->constraints || hist[0] == 0  || check_constraints(hist[0], hist[1], my_task_data->y_allowed_relation[j]))
-    { constrained_relation_labels.push_back(my_task_data->y_allowed_relation[j]);
+    { if(!my_task_data->constraints || hist[0] == 0  || check_constraints(hist[0], hist[1], my_task_data->y_allowed_relation[j]))
+	constrained_relation_labels.push_back(my_task_data->y_allowed_relation[j]);
+      
     }
-  }
 
   size_t prediction;
   if(my_task_data->allow_skip)
@@ -242,6 +242,7 @@ size_t predict_relation(Search::search&sch, example* ex, v_array<size_t>& predic
     }
   }
   sch.loss(loss);
+  constrained_relation_labels.delete_v();
   return prediction;
 }
 
@@ -359,6 +360,7 @@ void run(Search::search& sch, vector<example*>& ec)
   { if (sch.output().good())
       sch.output() << predictions[i] << ' ';
   }
+  predictions.delete_v();
 }
 // this is totally bogus for the example -- you'd never actually do this!
 void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount)
