@@ -542,16 +542,49 @@ int process_pass(vw& all, bfgs& b)
   /********************************************************************/
     if (b.first_pass) {
       if(all.all_reduce != nullptr)
-	{
-	  accumulate(all, all.reg, W_COND); //Accumulate preconditioner
+	{ accumulate(all, all.reg, W_COND); //Accumulate preconditioner
 	  float temp = (float)b.importance_weight_sum;
 	  b.importance_weight_sum = accumulate_scalar(all, temp);
 	}
       //finalize_preconditioner(all, b, all.l2_lambda);
-      if(all.all_reduce != nullptr) {
-	float temp = (float)b.loss_sum;
+      if(all.all_reduce != nullptr) 
+      {	float temp = (float)b.loss_sum;
 	b.loss_sum = accumulate_scalar(all, temp);  //Accumulate loss_sums
 	accumulate(all, all.reg, 1); //Accumulate gradients from all nodes
+      }
+    if (all.l2_lambda > 0.)
+      b.loss_sum += add_regularization(all, b, all.l2_lambda);
+    if (!all.quiet)
+      fprintf(stderr, "%2lu %-10.5f\t", (long unsigned int)b.current_pass+1, b.loss_sum / b.importance_weight_sum);
+
+    b.previous_loss_sum = b.loss_sum;
+    b.loss_sum = 0.;
+    b.example_number = 0;
+    b.curvature = 0;
+    bfgs_iter_start(all, b, b.mem, b.lastj, b.importance_weight_sum, b.origin);
+    if (b.first_hessian_on)
+    { b.gradient_pass = false;//now start computing curvature
+    }
+    else
+    { b.step_size = 0.5;
+      float d_mag = direction_magnitude(all);
+      ftime(&b.t_end_global);
+      b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
+      if (!all.quiet)
+        fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, b.step_size);
+      b.predictions.erase();
+      update_weight(all, b.step_size);
+    }
+  }
+  else
+    /********************************************************************/
+    /* B) GRADIENT CALCULATED *******************************************/
+    /********************************************************************/
+    if (b.gradient_pass) // We just finished computing all gradients
+    { if(all.all_reduce != nullptr)
+      { float t = (float)b.loss_sum;
+        b.loss_sum = accumulate_scalar(all, t);  //Accumulate loss_sums
+        accumulate(all, all.reg, 1); //Accumulate gradients from all nodes
       }
       if (all.l2_lambda > 0.)
         b.loss_sum += add_regularization(all, b, all.l2_lambda);
@@ -643,26 +676,23 @@ int process_pass(vw& all, bfgs& b)
   /* C) NOT FIRST PASS, CURVATURE CALCULATED **************************/
   /********************************************************************/
       else // just finished all second gradients
-	{
-	  if(all.all_reduce != nullptr) {
-	    float t = (float)b.curvature;
+	{ if(all.all_reduce != nullptr) 
+          { float t = (float)b.curvature;
 	    b.curvature = accumulate_scalar(all, t);  //Accumulate curvatures
 	  }
 	  if (all.l2_lambda > 0.)
 	    b.curvature += regularizer_direction_magnitude(all, b, all.l2_lambda);
 	  float dd = (float)derivative_in_direction(all, b, b.mem, b.origin);
 	  if (b.curvature == 0. && dd != 0.)
-	    {
-	      fprintf(stdout, "%s", curv_message);
+	  { fprintf(stdout, "%s", curv_message);
 	      b.step_size=0.0;
 	      status = LEARN_CURV;
-	    }
+	  }
 	  else if ( dd == 0.)
-	    {
-	      fprintf(stdout, "Derivative 0 detected.\n");
-	      b.step_size=0.0;
-	      status = LEARN_CONV;
-	    }
+	  { fprintf(stdout, "Derivative 0 detected.\n");
+	    b.step_size=0.0;
+	    status = LEARN_CONV;
+	   }
 	  else
 	    b.step_size = - dd/(float)b.curvature;
 
@@ -730,20 +760,16 @@ void end_pass(bfgs& b)
 { vw* all = b.all;
 
   if (b.current_pass <= b.final_pass)
-    {
-      if(b.current_pass < b.final_pass)
-	{
-          int status = process_pass(*all, b);
+    {if(b.current_pass < b.final_pass)
+      { int status = process_pass(*all, b);
 	  
           //reaching the max number of passes regardless of convergence
           if(b.final_pass == b.current_pass)
-	    {
-	      cerr<<"Maximum number of passes reached. ";
+          { cerr<<"Maximum number of passes reached. ";
 	      if(!b.output_regularizer)
-                cerr<<"If you want to optimize further, increase the number of passes\n";
+               cerr<<"If you want to optimize further, increase the number of passes\n";
 	      if(b.output_regularizer)
-		{
-		  cerr<<"\nRegular model file has been created. ";
+		{ cerr<<"\nRegular model file has been created. ";
 		  cerr<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
 		  b.output_regularizer = false;
 		}
@@ -761,12 +787,10 @@ void end_pass(bfgs& b)
           }
 	  
 	  if(!all->holdout_set_off)
-	    {
-	      if(summarize_holdout_set(*all, b.no_win_counter))
+	    {if(summarize_holdout_set(*all, b.no_win_counter))
 		finalize_regressor(*all, all->final_regressor_name);
 	      if(b.early_stop_thres == b.no_win_counter)
-		{
-		  set_done(*all);
+		{ set_done(*all);
 		  cerr<<"Early termination reached w.r.t. holdout set error";
 		}
 	    } if (b.final_pass == b.current_pass) {
@@ -774,12 +798,10 @@ void end_pass(bfgs& b)
 	    set_done(*all);
 	  }
 	  
-	} else  //reaching convergence in the previous pass
-        b.current_pass ++;
+	} 
+        else  //reaching convergence in the previous pass
+          b.current_pass ++;
     }
-    else    //reaching convergence in the previous pass
-      b.current_pass ++;
-  }
 }
 
 inline void scaled_norm(float& p, const float fx, float& fw) { p += 2.f*fx*fx/fw;}
