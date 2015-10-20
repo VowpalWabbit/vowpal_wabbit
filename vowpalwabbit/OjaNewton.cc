@@ -13,11 +13,12 @@ using namespace LEARNER;
 struct update_data {
     struct OjaNewton *ON;
     float g;
-    float sketch;
+    float sketch_cnt;
     float norm2_x;
     float *Zx;
     float *AZx;
-    float *beta;
+    float *delta;
+    float bdelta;
     float prediction;
 };
 
@@ -32,7 +33,7 @@ struct OjaNewton {
     float *ev;
     float *b;
     double **A;
-    double **GZ;
+    double **K;
 
     example **buffer;
     float *weight_buffer;
@@ -57,42 +58,44 @@ struct OjaNewton {
         }
     }
 
-    void update_eigenvalues(float gamma)
+    void update_eigenvalues()
     {
         for (int i = 1; i <= m; i++) {
-            float gamma_i = fmin(gamma * (10*i), .1);
-            float tmp = data.AZx[i] * data.sketch;
+            float gamma = fmin(20.0 * i / t, .1);
+            float tmp = data.AZx[i] * data.sketch_cnt;
 
             if (t == 1) {
-                ev[i] = gamma_i * tmp * tmp;
+                ev[i] = gamma * tmp * tmp;
             }
             else {
-                ev[i] = (1 - gamma_i) * t * ev[i] / (t - 1) + gamma_i * t * tmp * tmp;
+                ev[i] = (1 - gamma) * t * ev[i] / (t - 1) + gamma * t * tmp * tmp;
             }
         }
     }
 
-    void compute_beta(float gamma)
+    void compute_delta()
     {
+        data.bdelta = 0;
         for (int i = 1; i <= m; i++) {
-            float gamma_i = fmin(gamma * (10*i), 0.1);
+            float gamma = fmin(20.0 * i / t, .1);
             
-            data.beta[i] = gamma_i * data.AZx[i] * data.sketch;
+            data.delta[i] = gamma * data.AZx[i] * data.sketch_cnt;
             for (int j = 1; j < i; j++) {
-                data.beta[i] -= A[i][j] * data.beta[j];
+                data.delta[i] -= A[i][j] * data.delta[j];
             }
-            data.beta[i] /= A[i][i];
+            data.delta[i] /= A[i][i];
+            data.bdelta += data.delta[i] * b[i];
         }
     }
 
-    void update_GZ()
+    void update_K()
     {
-        float tmp = data.norm2_x * data.sketch * data.sketch;
+        float tmp = data.norm2_x * data.sketch_cnt * data.sketch_cnt;
         for (int i = 1; i <= m; i++) {
             for (int j = 1; j <= m; j++) {
-                GZ[i][j] += data.beta[i] * data.Zx[j] * data.sketch;
-                GZ[i][j] += data.beta[j] * data.Zx[i] * data.sketch;
-                GZ[i][j] += data.beta[i] * data.beta[j] * tmp;
+                K[i][j] += data.delta[i] * data.Zx[j] * data.sketch_cnt;
+                K[i][j] += data.delta[j] * data.Zx[i] * data.sketch_cnt;
+                K[i][j] += data.delta[i] * data.delta[j] * tmp;
             }
         }
     }
@@ -107,7 +110,7 @@ struct OjaNewton {
             for (int j = 1; j < i; j++) {
                 zv[j] = 0;
                 for (int k = 1; k <= i; k++) {
-                    zv[j] += A[i][k] * GZ[k][j];
+                    zv[j] += A[i][k] * K[k][j];
                 }
             }
 
@@ -128,7 +131,7 @@ struct OjaNewton {
             for (int j = 1; j <= i; j++) {
 	        double temp = 0;
                 for (int k = 1; k <= i; k++) {
-                    temp += GZ[j][k] * A[i][k];
+                    temp += K[j][k] * A[i][k];
                 }
                 norm += A[i][j]*temp;
             }
@@ -146,9 +149,11 @@ struct OjaNewton {
     void update_b()
     {
         for (int j = 1; j <= m; j++) {
+            float tmp = 0;
             for (int i = j; i <= m; i++) {
-                b[j] += ev[i] * data.AZx[i] * A[i][j] / (alpha * (alpha + ev[i]));
+                tmp += ev[i] * data.AZx[i] * A[i][j] / (alpha * (alpha + ev[i]));
             }
+            b[j] += tmp * data.g;
         }
     }
 };
@@ -177,13 +182,13 @@ void predict(OjaNewton& ON, base_learner&, example& ec) {
 
 void update_Z_and_wbar(update_data& data, float x, float& wref) {
     float* w = &wref;
-    float s = data.sketch * x;
+    float s = data.sketch_cnt * x;
     int m = data.ON->m;
 
     for (int i = 1; i <= m; i++) {
-        w[i] += data.beta[i] * s;
-        w[0] -= data.beta[i] * s * data.ON->b[i];
+        w[i] += data.delta[i] * s;
     }
+    w[0] -= s * data.bdelta;
 }
 
 void compute_Zx_and_norm(update_data& data, float x, float& wref) {
@@ -200,7 +205,7 @@ void update_wbar_and_Zx(update_data& data, float x, float& wref) {
     float g = data.g * x;
 
     for (int i = 1; i <= data.ON->m; i++) {
-        data.Zx[i] += w[i] * g;
+        data.Zx[i] += w[i] * x;
     }
     w[0] -= g / data.ON->alpha;
 }
@@ -222,19 +227,17 @@ void learn(OjaNewton& ON, base_learner& base, example& ec) {
     if (ON.cnt == ON.epoch_size) {
         for (int k = 0; k < ON.epoch_size; k++, ON.t++) {
             example& ex = *(ON.buffer[k]);
-            data.sketch = ON.weight_buffer[k];
+            data.sketch_cnt = ON.weight_buffer[k];
 
             data.norm2_x = 0;
             memset(data.Zx, 0, sizeof(float)* (ON.m+1));
             GD::foreach_feature<update_data, compute_Zx_and_norm>(*ON.all, ex, data);
             ON.compute_AZx();
 
-            float gamma = 1.0 / ON.t;
+            ON.update_eigenvalues();
+            ON.compute_delta();
 
-            ON.update_eigenvalues(gamma);
-            ON.compute_beta(gamma);
-
-            ON.update_GZ();
+            ON.update_K();
 
             GD::foreach_feature<update_data, update_Z_and_wbar>(*ON.all, ex, data);
         }
@@ -314,12 +317,12 @@ base_learner* OjaNewton_setup(vw& all) {
     ON.ev = calloc_or_die<float>(ON.m+1);
     ON.b = calloc_or_die<float>(ON.m+1);
     ON.A = calloc_or_die<double*>(ON.m+1);
-    ON.GZ = calloc_or_die<double*>(ON.m+1);
+    ON.K = calloc_or_die<double*>(ON.m+1);
     for (int i = 1; i <= ON.m; i++) {
         ON.A[i] = calloc_or_die<double>(ON.m+1);
-        ON.GZ[i] = calloc_or_die<double>(ON.m+1);
+        ON.K[i] = calloc_or_die<double>(ON.m+1);
         ON.A[i][i] = 1;
-        ON.GZ[i][i] = 1;
+        ON.K[i][i] = 1;
     }
 
     ON.buffer = calloc_or_die<example*>(ON.epoch_size);
@@ -328,7 +331,7 @@ base_learner* OjaNewton_setup(vw& all) {
     ON.data.ON = &ON;
     ON.data.Zx = calloc_or_die<float>(ON.m+1);
     ON.data.AZx = calloc_or_die<float>(ON.m+1);
-    ON.data.beta = calloc_or_die<float>(ON.m+1);
+    ON.data.delta = calloc_or_die<float>(ON.m+1);
 
     all.reg.stride_shift = ceil(log2(ON.m + 1));
 
