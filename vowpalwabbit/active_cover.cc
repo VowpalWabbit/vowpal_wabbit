@@ -188,12 +188,17 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
   }
 }
 
+void finish(active_cover& ac)
+{
+  delete[] ac.lambda_n;
+  delete[] ac.lambda_d;
+}
+
 base_learner* active_cover_setup(vw& all)
 { //parse and set arguments
   if(missing_option(all, false, "active_cover", "enable active learning with cover"))
-  { return nullptr;
-  }
-
+    return nullptr;
+  
   new_options(all, "Active Learning with cover options")
   ("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8.")
   ("alpha", po::value<float>(), "active learning variance upper bound parameter alpha. Default 1.")
@@ -253,8 +258,8 @@ base_learner* active_cover_setup(vw& all)
   }
 
   //Create new learner
-  learner<active_cover>* l;
-  l = &init_learner(&data, base, predict_or_learn_active_cover<true>, predict_or_learn_active_cover<false>, data.cover_size + 1);
+  learner<active_cover>& l = init_learner(&data, base, predict_or_learn_active_cover<true>, predict_or_learn_active_cover<false>, data.cover_size + 1);
+  l.set_finish(finish);
 
-  return make_base(*l);
+  return make_base(l);
 }

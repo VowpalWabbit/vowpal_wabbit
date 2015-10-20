@@ -35,7 +35,7 @@ const action REDUCE_LEFT  = 3;
 void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm)
 { vw& all = sch.get_vw_pointer_unsafe();
   task_data *data = new task_data();
-  data->action_loss.resize(4,true);
+  data->action_loss.resize(4);
   data->ex = NULL;
   sch.set_num_learners(3);
   sch.set_task_data<task_data>(data);
@@ -211,7 +211,7 @@ void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec)
   }
 
   // Other features
-  temp.resize(10,true);
+  temp.resize(10);
   temp[0] = empty ? 0: (idx >n? 1: 2+min(5, idx - last));
   temp[1] = empty? 1: 1+min(5, children[0][last]);
   temp[2] = empty? 1: 1+min(5, children[1][last]);
@@ -318,8 +318,8 @@ void setup(Search::search& sch, vector<example*>& ec)
 { task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &gold_heads=data->gold_heads, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags;
   uint32_t n = (uint32_t) ec.size();
-  heads.resize(n+1, true);
-  tags.resize(n+1, true);
+  heads.resize(n+1);
+  tags.resize(n+1);
   gold_heads.erase();
   gold_heads.push_back(0);
   gold_tags.erase();
@@ -345,7 +345,7 @@ void setup(Search::search& sch, vector<example*>& ec)
     tags[i+1] = -1;
   }
   for(size_t i=0; i<6; i++)
-    data->children[i].resize(n+1, true);
+    data->children[i].resize(n+1);
 }
 
 void run(Search::search& sch, vector<example*>& ec)
@@ -392,7 +392,7 @@ void run(Search::search& sch, vector<example*>& ec)
     count++;
     idx = transition_hybrid(sch, a_id, idx, t_id);
   }
-
+  gold_actions.delete_v();
   heads[stack.last()] = 0;
   tags[stack.last()] = (uint32_t)data->root_label;
   sch.loss((gold_heads[stack.last()] != heads[stack.last()]));

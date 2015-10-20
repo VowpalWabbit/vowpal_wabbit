@@ -826,7 +826,7 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
 template<class T>
 void ensure_size(v_array<T>& A, size_t sz)
 { if ((size_t)(A.end_array - A.begin) < sz)
-    A.resize(sz*2+1, true);
+    A.resize(sz*2+1);
   A.end = A.begin + sz;
 }
 
@@ -841,7 +841,7 @@ template<class T> void push_at(v_array<T>& v, T item, size_t pos)
     }
     else
     { // there's not enough memory
-      v.resize(2 * pos + 3, true);
+      v.resize(2 * pos + 3);
       v.begin[pos] = item;
       v.end = v.begin + pos + 1;
     }
