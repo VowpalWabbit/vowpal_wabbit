@@ -85,7 +85,6 @@ struct OjaNewton {
                 data.delta[i] -= A[i][j] * data.delta[j];
             }
             data.delta[i] /= A[i][i];
-            //data.delta[i] /= D[i];
             data.bdelta += data.delta[i] * b[i];
         }
     }
@@ -98,6 +97,7 @@ struct OjaNewton {
                 K[i][j] += data.delta[i] * data.Zx[j] * data.sketch_cnt;
                 K[i][j] += data.delta[j] * data.Zx[i] * data.sketch_cnt;
                 K[i][j] += data.delta[i] * data.delta[j] * tmp;
+                printf("K[%d][%d] = %f\n", i, j, K[i][j]); 
             }
         }
     }
@@ -144,6 +144,7 @@ struct OjaNewton {
 
             for (int j = 1; j <= i; j++) {
                 A[i][j] /= norm;
+                printf("A[%d][%d] = %f\n", i, j, A[i][j]);
             }
         }
 
@@ -159,6 +160,24 @@ struct OjaNewton {
                 tmp += ev[i] * data.AZx[i] * A[i][j] / (alpha * (alpha + ev[i]));
             }
             b[j] += tmp * data.g;
+        }
+    }
+
+    void update_D()
+    {
+        for (int j = 1; j <= m; j++) {
+            float scale = fabs(A[j][j]);
+            for (int i = j+1; i <= m; i++) 
+                scale = fmin(fabs(A[i][j]), scale);
+            cout << "scale = " << scale << endl;
+            if (scale < 1e-10) continue;
+            for (int i = 1; i <= m; i++) {
+                A[i][j] /= scale;
+                K[j][i] *= scale;
+                K[i][j] *= scale;
+            }
+            b[j] /= scale;
+            D[j] *= scale;
         }
     }
 };
@@ -248,7 +267,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec) {
         }
 
         ON.update_A();
-
+        ON.update_D();
     }
 
     memset(data.Zx, 0, sizeof(float)* (ON.m+1));
