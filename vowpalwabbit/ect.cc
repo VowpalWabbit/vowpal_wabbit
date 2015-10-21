@@ -225,8 +225,10 @@ void ect_train(ect& e, base_learner& base, example& ec)
 
     ec.l.simple = simple_temp;
     base.learn(ec, id-e.k);
+    float old_weight = ec.weight;
     ec.weight = 0.;
     base.learn(ec, id-e.k);//inefficient, we should extract final prediction exactly.
+    ec.weight = old_weight;
 
     bool won = ec.pred.scalar * simple_temp.label > 0;
 
