@@ -40,6 +40,8 @@ struct OjaNewton {
     float *weight_buffer;
     struct update_data data;
 
+    float learning_rate_cnt;
+
     void initialize_Z()
     {
         size_t stride_shift = all->reg.stride_shift;
@@ -62,8 +64,8 @@ struct OjaNewton {
     void update_eigenvalues()
     {
         for (int i = 1; i <= m; i++) {
-            float gamma = fmin(20.0 * i / t, .1);
-            float tmp = data.AZx[i] * data.sketch_cnt;
+            double gamma = fmin(learning_rate_cnt * i / t, .1);
+            double tmp = data.AZx[i] * data.sketch_cnt;
 
             if (t == 1) {
                 ev[i] = gamma * tmp * tmp;
@@ -78,13 +80,14 @@ struct OjaNewton {
     {
         data.bdelta = 0;
         for (int i = 1; i <= m; i++) {
-            float gamma = fmin(20.0 * i / t, .1);
+            double gamma = fmin(learning_rate_cnt * i / t, .1);
             
             data.delta[i] = gamma * data.AZx[i] * data.sketch_cnt;
             for (int j = 1; j < i; j++) {
                 data.delta[i] -= A[i][j] * data.delta[j];
             }
             data.delta[i] /= A[i][i];
+            printf("delta[%d] = %f\n", i, data.delta[i]);
             data.bdelta += data.delta[i] * b[i];
         }
     }
@@ -178,6 +181,7 @@ struct OjaNewton {
             }
             b[j] /= scale;
             D[j] *= scale;
+            printf("D[%d] = %f\n", j, D[j]);
         }
     }
 };
@@ -267,7 +271,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec) {
         }
 
         ON.update_A();
-        ON.update_D();
+        if (ON.t % (ON.epoch_size * 100) == 0) ON.update_D();
     }
 
     memset(data.Zx, 0, sizeof(float)* (ON.m+1));
@@ -312,7 +316,8 @@ base_learner* OjaNewton_setup(vw& all) {
     new_options(all, "OjaNewton options")
         ("sketch_size", po::value<int>(), "size of sketch")
         ("epoch_size", po::value<int>(), "size of epoch")
-        ("alpha", po::value<float>(), "mutiplicative constant for indentiy");
+        ("alpha", po::value<float>(), "mutiplicative constant for indentiy")
+        ("learning_rate_cnt", po::value<float>(), "constant for the learning rate 1/t");
     add_options(all);
 
     po::variables_map& vm = all.vm;
@@ -334,6 +339,12 @@ base_learner* OjaNewton_setup(vw& all) {
         ON.alpha = vm["alpha"].as<float>();
     else
         ON.alpha = 1.0;
+
+    if (vm.count("learning_rate_cnt"))
+        ON.learning_rate_cnt = vm["learning_rate_cnt"].as<float>();
+    else
+        ON.learning_rate_cnt = 10;
+
 
     ON.cnt = 0;
     ON.t = 1;
