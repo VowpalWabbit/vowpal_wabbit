@@ -12,35 +12,35 @@ using namespace LEARNER;
 
 struct update_data {
     struct OjaNewton *ON;
-    float g;
-    float sketch_cnt;
-    float norm2_x;
-    float *Zx;
-    float *AZx;
-    float *delta;
-    float bdelta;
-    float prediction;
+    double g;
+    double sketch_cnt;
+    double norm2_x;
+    double *Zx;
+    double *AZx;
+    double *delta;
+    double bdelta;
+    double prediction;
 };
 
 struct OjaNewton {
     vw* all;
     int m;
     int epoch_size;
-    float alpha;
+    double alpha;
     int cnt;
     int t;
 
-    float *ev;
-    float *b;
+    double *ev;
+    double *b;
     double *D;
     double **A;
     double **K;
 
     example **buffer;
-    float *weight_buffer;
+    double *weight_buffer;
     struct update_data data;
 
-    float learning_rate_cnt;
+    double learning_rate_cnt;
 
     void initialize_Z()
     {
@@ -94,7 +94,7 @@ struct OjaNewton {
 
     void update_K()
     {
-        float tmp = data.norm2_x * data.sketch_cnt * data.sketch_cnt;
+        double tmp = data.norm2_x * data.sketch_cnt * data.sketch_cnt;
         for (int i = 1; i <= m; i++) {
             for (int j = 1; j <= m; j++) {
                 K[i][j] += data.delta[i] * data.Zx[j] * data.sketch_cnt;
@@ -107,8 +107,8 @@ struct OjaNewton {
 
     void update_A()
     {
-        float *zv = calloc_or_die<float>(m+1);
-        float *vv = calloc_or_die<float>(m+1);
+        double *zv = calloc_or_die<double>(m+1);
+        double *vv = calloc_or_die<double>(m+1);
 
         for (int i = 1; i <= m; i++) {
 
@@ -158,7 +158,7 @@ struct OjaNewton {
     void update_b()
     {
         for (int j = 1; j <= m; j++) {
-            float tmp = 0;
+            double tmp = 0;
             for (int i = j; i <= m; i++) {
                 tmp += ev[i] * data.AZx[i] * A[i][j] / (alpha * (alpha + ev[i]));
             }
@@ -169,7 +169,7 @@ struct OjaNewton {
     void update_D()
     {
         for (int j = 1; j <= m; j++) {
-            float scale = fabs(A[j][j]);
+            double scale = fabs(A[j][j]);
             for (int i = j+1; i <= m; i++) 
                 scale = fmin(fabs(A[i][j]), scale);
             cout << "scale = " << scale << endl;
@@ -210,7 +210,7 @@ void predict(OjaNewton& ON, base_learner&, example& ec) {
 
 void update_Z_and_wbar(update_data& data, float x, float& wref) {
     float* w = &wref;
-    float s = data.sketch_cnt * x;
+    double s = data.sketch_cnt * x;
     int m = data.ON->m;
 
     for (int i = 1; i <= m; i++) {
@@ -230,7 +230,7 @@ void compute_Zx_and_norm(update_data& data, float x, float& wref) {
 
 void update_wbar_and_Zx(update_data& data, float x, float& wref) {
     float* w = &wref;
-    float g = data.g * x;
+    double g = data.g * x;
 
     for (int i = 1; i <= data.ON->m; i++) {
         data.Zx[i] += w[i] * x * data.ON->D[i];
@@ -258,7 +258,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec) {
             data.sketch_cnt = ON.weight_buffer[k];
 
             data.norm2_x = 0;
-            memset(data.Zx, 0, sizeof(float)* (ON.m+1));
+            memset(data.Zx, 0, sizeof(double)* (ON.m+1));
             GD::foreach_feature<update_data, compute_Zx_and_norm>(*ON.all, ex, data);
             ON.compute_AZx();
 
@@ -274,7 +274,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec) {
         if (ON.t % (ON.epoch_size * 100) == 0) ON.update_D();
     }
 
-    memset(data.Zx, 0, sizeof(float)* (ON.m+1));
+    memset(data.Zx, 0, sizeof(double)* (ON.m+1));
     GD::foreach_feature<update_data, update_wbar_and_Zx>(*ON.all, ec, data);
     ON.compute_AZx();
 
@@ -316,8 +316,8 @@ base_learner* OjaNewton_setup(vw& all) {
     new_options(all, "OjaNewton options")
         ("sketch_size", po::value<int>(), "size of sketch")
         ("epoch_size", po::value<int>(), "size of epoch")
-        ("alpha", po::value<float>(), "mutiplicative constant for indentiy")
-        ("learning_rate_cnt", po::value<float>(), "constant for the learning rate 1/t");
+        ("alpha", po::value<double>(), "mutiplicative constant for indentiy")
+        ("learning_rate_cnt", po::value<double>(), "constant for the learning rate 1/t");
     add_options(all);
 
     po::variables_map& vm = all.vm;
@@ -336,12 +336,12 @@ base_learner* OjaNewton_setup(vw& all) {
         ON.epoch_size = 1;
 
     if (vm.count("alpha"))
-        ON.alpha = vm["alpha"].as<float>();
+        ON.alpha = vm["alpha"].as<double>();
     else
         ON.alpha = 1.0;
 
     if (vm.count("learning_rate_cnt"))
-        ON.learning_rate_cnt = vm["learning_rate_cnt"].as<float>();
+        ON.learning_rate_cnt = vm["learning_rate_cnt"].as<double>();
     else
         ON.learning_rate_cnt = 10;
 
@@ -349,8 +349,8 @@ base_learner* OjaNewton_setup(vw& all) {
     ON.cnt = 0;
     ON.t = 1;
 
-    ON.ev = calloc_or_die<float>(ON.m+1);
-    ON.b = calloc_or_die<float>(ON.m+1);
+    ON.ev = calloc_or_die<double>(ON.m+1);
+    ON.b = calloc_or_die<double>(ON.m+1);
     ON.D = calloc_or_die<double>(ON.m+1);
     ON.A = calloc_or_die<double*>(ON.m+1);
     ON.K = calloc_or_die<double*>(ON.m+1);
@@ -363,12 +363,12 @@ base_learner* OjaNewton_setup(vw& all) {
     }
 
     ON.buffer = calloc_or_die<example*>(ON.epoch_size);
-    ON.weight_buffer = calloc_or_die<float>(ON.epoch_size);
+    ON.weight_buffer = calloc_or_die<double>(ON.epoch_size);
 
     ON.data.ON = &ON;
-    ON.data.Zx = calloc_or_die<float>(ON.m+1);
-    ON.data.AZx = calloc_or_die<float>(ON.m+1);
-    ON.data.delta = calloc_or_die<float>(ON.m+1);
+    ON.data.Zx = calloc_or_die<double>(ON.m+1);
+    ON.data.AZx = calloc_or_die<double>(ON.m+1);
+    ON.data.delta = calloc_or_die<double>(ON.m+1);
 
     all.reg.stride_shift = ceil(log2(ON.m + 1));
 
