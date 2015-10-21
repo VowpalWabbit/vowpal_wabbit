@@ -32,6 +32,7 @@ struct OjaNewton {
 
     float *ev;
     float *b;
+    double *D;
     double **A;
     double **K;
 
@@ -61,7 +62,7 @@ struct OjaNewton {
     void update_eigenvalues()
     {
         for (int i = 1; i <= m; i++) {
-            float gamma = fmin(10.0 * i / t, .1);
+            float gamma = fmin(20.0 * i / t, .1);
             float tmp = data.AZx[i] * data.sketch_cnt;
 
             if (t == 1) {
@@ -77,13 +78,14 @@ struct OjaNewton {
     {
         data.bdelta = 0;
         for (int i = 1; i <= m; i++) {
-            float gamma = fmin(10.0 * i / t, .1);
+            float gamma = fmin(20.0 * i / t, .1);
             
             data.delta[i] = gamma * data.AZx[i] * data.sketch_cnt;
             for (int j = 1; j < i; j++) {
                 data.delta[i] -= A[i][j] * data.delta[j];
             }
             data.delta[i] /= A[i][i];
+            //data.delta[i] /= D[i];
             data.bdelta += data.delta[i] * b[i];
         }
     }
@@ -171,7 +173,7 @@ void make_pred(update_data& data, float x, float& wref) {
 
     data.prediction += w[0] * x;
     for (int i = 1; i <= m; i++) {
-        data.prediction += w[i] * data.ON->b[i] * x;
+        data.prediction += w[i] * x * data.ON->D[i] * data.ON->b[i];
     }
 }
 
@@ -189,7 +191,7 @@ void update_Z_and_wbar(update_data& data, float x, float& wref) {
     int m = data.ON->m;
 
     for (int i = 1; i <= m; i++) {
-        w[i] += data.delta[i] * s;
+        w[i] += data.delta[i] * s / data.ON->D[i];
     }
     w[0] -= s * data.bdelta;
 }
@@ -198,7 +200,7 @@ void compute_Zx_and_norm(update_data& data, float x, float& wref) {
     float* w = &wref;
 
     for (int i = 1; i <= data.ON->m; i++) {
-        data.Zx[i] += w[i] * x;
+        data.Zx[i] += w[i] * x * data.ON->D[i];
     }
     data.norm2_x += x * x;
 }
@@ -208,7 +210,7 @@ void update_wbar_and_Zx(update_data& data, float x, float& wref) {
     float g = data.g * x;
 
     for (int i = 1; i <= data.ON->m; i++) {
-        data.Zx[i] += w[i] * x;
+        data.Zx[i] += w[i] * x * data.ON->D[i];
     }
     w[0] -= g / data.ON->alpha;
 }
@@ -319,6 +321,7 @@ base_learner* OjaNewton_setup(vw& all) {
 
     ON.ev = calloc_or_die<float>(ON.m+1);
     ON.b = calloc_or_die<float>(ON.m+1);
+    ON.D = calloc_or_die<double>(ON.m+1);
     ON.A = calloc_or_die<double*>(ON.m+1);
     ON.K = calloc_or_die<double*>(ON.m+1);
     for (int i = 1; i <= ON.m; i++) {
@@ -326,6 +329,7 @@ base_learner* OjaNewton_setup(vw& all) {
         ON.K[i] = calloc_or_die<double>(ON.m+1);
         ON.A[i][i] = 1;
         ON.K[i][i] = 1;
+        ON.D[i] = 1;
     }
 
     ON.buffer = calloc_or_die<example*>(ON.epoch_size);
