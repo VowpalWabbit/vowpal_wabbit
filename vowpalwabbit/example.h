@@ -60,6 +60,8 @@ struct example // core example datatype.
 
   // input fields
   polylabel l;
+
+  float weight;//a relative importance weight for the example, default = 1
   v_array<char> tag;//An identifier for the example.
   size_t example_counter;
   v_array<unsigned char> indices;

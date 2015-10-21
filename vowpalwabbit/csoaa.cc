@@ -27,9 +27,9 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
                        uint32_t& prediction, float& score, float& partial_prediction)
 { if (is_learn)
   { ec.l.simple.label = cost;
-    ec.l.simple.weight = (cost == FLT_MAX) ? 0.f : 1.f;
+    ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
     //ec.l.simple.label = (cost <= 0.) ? -1. : 1.;
-    //ec.l.simple.weight = (cost == FLT_MAX) ? 0. : (cost <= 0.) ? 1. : cost;
+    //ec.weight = (cost == FLT_MAX) ? 0. : (cost <= 0.) ? 1. : cost;
     base.learn(ec, i-1);
   }
   else
@@ -230,8 +230,6 @@ void make_single_prediction(ldf& data, base_learner& base, example& ec)
   label_data simple_label;
   simple_label.initial = 0.;
   simple_label.label = FLT_MAX;
-  simple_label.weight = 0.;
-  ec.partial_prediction = 0.;
 
   LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index, data.all->audit || data.all->hash_inv);
 
@@ -298,7 +296,7 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
       ec1->example_t = data.csoaa_example_t;
       simple_label.initial = 0.;
       simple_label.label = (costs1[0].x < costs2[0].x) ? -1.0f : 1.0f;
-      simple_label.weight = value_diff;
+      ec1->weight = value_diff;
       ec1->partial_prediction = 0.;
       subtract_example(*data.all, ec1, ec2);
       base.learn(*ec1);
@@ -340,18 +338,17 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
     ec->example_t = data.csoaa_example_t;
 
     simple_label.initial = 0.;
-    simple_label.weight = 1.;
+    ec->weight = 1.;
     if (!data.treat_as_classifier)   // treat like regression
-    { simple_label.label = costs[0].x;
-    }
+      simple_label.label = costs[0].x;
     else     // treat like classification
     { if (costs[0].x <= min_cost)
       { simple_label.label = -1.;
-        simple_label.weight = max_cost - min_cost;
+        ec->weight = max_cost - min_cost;
       }
       else
       { simple_label.label = 1.;
-        simple_label.weight = costs[0].x - min_cost;
+        ec->weight = costs[0].x - min_cost;
       }
     }
     ec->l.simple = simple_label;

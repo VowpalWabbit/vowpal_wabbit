@@ -25,14 +25,14 @@ void learn_randomized(oaa& o, LEARNER::base_learner& base, example& ec)
 
   stringstream outputStringStream;
 
-  ec.l.simple = { 1., ld.weight, 0.f }; // truth
+  ec.l.simple = { 1., 0.f, 0.f }; // truth
   base.learn(ec, ld.label-1);
 
   size_t prediction = ld.label;
   float best_partial_prediction = ec.partial_prediction;
 
   ec.l.simple.label = -1.;
-  ec.l.simple.weight *= ((float)o.k) / (float)o.num_subsample;
+  ec.weight *= ((float)o.k) / (float)o.num_subsample;
   size_t p = o.subsample_id;
   size_t count = 0;
   while (count < o.num_subsample)
@@ -61,7 +61,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
   stringstream outputStringStream;
   uint32_t prediction = 1;
 
-  ec.l.simple = { FLT_MAX, mc_label_data.weight, 0.f };
+  ec.l.simple = { FLT_MAX, 0.f, 0.f };
   base.multipredict(ec, 0, o.k, o.pred, true);
   for (uint32_t i=2; i<=o.k; i++)
     if (o.pred[i-1].scalar > o.pred[prediction-1].scalar)
@@ -73,7 +73,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
 
   if (is_learn)
   { for (uint32_t i=1; i<=o.k; i++)
-    { ec.l.simple = { (mc_label_data.label == i) ? 1.f : -1.f, mc_label_data.weight, 0.f };
+    { ec.l.simple = { (mc_label_data.label == i) ? 1.f : -1.f, 0.f, 0.f };
       ec.pred.scalar = o.pred[i-1].scalar;
       base.update(ec, i-1);
     }

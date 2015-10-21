@@ -137,7 +137,7 @@ float mf_predict(gdmf& d, example& ec)
   ec.pred.scalar = GD::finalize_prediction(all.sd, ec.partial_prediction);
 
   if (ld.label != FLT_MAX)
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ld.weight;
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
 
   if (all.audit)
     mf_print_audit_features(d, ec, 0);
@@ -159,7 +159,7 @@ void mf_train(gdmf& d, example& ec)
 
   // use final prediction to get update size
   // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
-  float eta_t = all.eta/pow(ec.example_t,all.power_t) / 3.f * ld.weight;
+  float eta_t = all.eta/pow(ec.example_t,all.power_t) / 3.f * ec.weight;
   float update = all.loss->getUpdate(ec.pred.scalar, ld.label, eta_t, 1.); //ec.total_sum_feat_sq);
 
   float regularization = eta_t * all.l2_lambda;

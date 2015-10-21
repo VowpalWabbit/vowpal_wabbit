@@ -103,14 +103,14 @@ void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec)
 
 void update_after_prediction_proximal(ftrl& b, example& ec)
 { b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label)
-                  *ec.l.simple.weight;
+                  *ec.weight;
 
   GD::foreach_feature<update_data, inner_update_proximal>(*b.all, ec, b.data);
 }
 
 void update_after_prediction_pistol(ftrl& b, example& ec)
 { b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label)
-                  *ec.l.simple.weight;
+                  *ec.weight;
 
   GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }

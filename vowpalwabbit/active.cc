@@ -43,13 +43,13 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
   if (is_learn)
   { vw& all = *a.all;
 
-    float k = ec.example_t - ec.l.simple.weight;
+    float k = ec.example_t - ec.weight;
     ec.revert_weight = all.loss->getRevertingWeight(all.sd, ec.pred.scalar, all.eta/powf(k,all.power_t));
     float importance = query_decision(a, ec.revert_weight, k);
 
     if(importance > 0)
     { all.sd->queries += 1;
-      ec.l.simple.weight *= importance;
+      ec.weight *= importance;
       base.learn(ec);
     }
     else
@@ -95,10 +95,10 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
 void output_and_account_example(vw& all, active& a, example& ec)
 { label_data& ld = ec.l.simple;
 
-  all.sd->update(ec.test_only, ec.loss, ld.weight, ec.num_features);
+  all.sd->update(ec.test_only, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)
-    all.sd->weighted_labels += ld.label * ld.weight;
-  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ld.weight : 0;
+    all.sd->weighted_labels += ld.label * ec.weight;
+  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
 
   float ai=-1;
   if(ld.label == FLT_MAX)

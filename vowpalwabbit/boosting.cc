@@ -61,7 +61,7 @@ void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec)
   float final_prediction = 0;
 
   float s = 0;
-  float u = ld.weight;
+  float u = ec.weight;
 
   if (is_learn) o.t++;
 
@@ -81,8 +81,8 @@ void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec)
       float w = c * pow((double)(0.5 + o.gamma),
                         (double)k) * pow((double)0.5 - o.gamma,(double)(o.N-(i+1)-k));
 
-      // update ld.weight, weight for learner i (starting from 0)
-      ld.weight = u * w;
+      // update ec.weight, weight for learner i (starting from 0)
+      ec.weight = u * w;
 
       base.predict(ec, i);
 
@@ -99,13 +99,13 @@ void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec)
     }
   }
 
-  ld.weight = u;
+  ec.weight = u;
   ec.pred.scalar = sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
   else
-    ec.loss = ld.weight;
+    ec.loss = ec.weight;
 }
 
 //-----------------------------------------------------------------
@@ -118,7 +118,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example
   float final_prediction = 0;
 
   float s = 0;
-  float u = ld.weight;
+  float u = ec.weight;
 
   if (is_learn) o.t++;
   float eta = 4 / sqrt(o.t);
@@ -129,7 +129,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example
     if (is_learn)
     { float w = 1 / (1 + exp(s));
 
-      ld.weight = u * w;
+      ec.weight = u * w;
 
       base.predict(ec, i);
       float z;
@@ -155,13 +155,13 @@ void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example
     }
   }
 
-  ld.weight = u;
+  ec.weight = u;
   ec.pred.scalar = sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
   else
-    ec.loss = ld.weight;
+    ec.loss = ec.weight;
 }
 
 template <bool is_learn>
@@ -172,7 +172,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
 
   float s = 0;
   float v_normalization = 0, v_partial_sum = 0;
-  float u = ld.weight;
+  float u = ec.weight;
 
   if (is_learn) o.t++;
   float eta = 4 / sqrt(o.t);
@@ -185,7 +185,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
     if (is_learn)
     { float w = 1 / (1 + exp(s));
 
-      ld.weight = u * w;
+      ec.weight = u * w;
 
       base.predict(ec, i);
       float z;
@@ -237,13 +237,13 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
     }
   }
 
-  ld.weight = u;
+  ec.weight = u;
   ec.pred.scalar = sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
   else
-    ec.loss = ld.weight;
+    ec.loss = ec.weight;
 }
 
 

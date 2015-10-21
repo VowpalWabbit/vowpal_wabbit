@@ -53,8 +53,8 @@ void output_example(vw& all, topk& d, example& ec)
 { label_data& ld = ec.l.simple;
 
   if (ld.label != FLT_MAX)
-    all.sd->weighted_labels += ld.label * ld.weight;
-  all.sd->weighted_examples += ld.weight;
+    all.sd->weighted_labels += ld.label * ec.weight;
+  all.sd->weighted_examples += ec.weight;
   all.sd->sum_loss += ec.loss;
   all.sd->sum_loss_since_last_dump += ec.loss;
   all.sd->total_features += ec.num_features;

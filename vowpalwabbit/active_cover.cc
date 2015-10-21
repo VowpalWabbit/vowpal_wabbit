@@ -29,7 +29,7 @@ bool dis_test(vw& all, example& ec, float prediction, float threshold)
   }
 
   // Get loss difference
-  float k = ec.example_t - ec.l.simple.weight;
+  float k = ec.example_t - ec.weight;
   ec.revert_weight = all.loss->getRevertingWeight(all.sd, prediction, all.eta/powf(k,all.power_t));
   float loss_delta = ec.revert_weight/k;
 
@@ -105,8 +105,8 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
   { vw& all = *a.all;
 
     float prediction = ec.pred.scalar;
-    float t = ec.example_t - ec.l.simple.weight;
-    float ec_input_weight = ec.l.simple.weight;
+    float t = ec.example_t - ec.weight;
+    float ec_input_weight = ec.weight;
     float ec_input_label = ec.l.simple.label;
 
     // Compute threshold defining allowed set A
@@ -118,13 +118,13 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
     // Query (or not)
     if(!in_dis) // Use predicted label
     { ec.l.simple.label = sign(prediction);
-      ec.l.simple.weight = ec_input_weight;
+      ec.weight = ec_input_weight;
       base.learn(ec, 0);
 
     }
     else if(importance > 0) // Use importance-weighted example
     { all.sd->queries += 1;
-      ec.l.simple.weight = ec_input_weight * importance;
+      ec.weight = ec_input_weight * importance;
       ec.l.simple.label = ec_input_label;
       base.learn(ec, 0);
     }
@@ -138,7 +138,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
     float q2 = 4.f*pmin*pmin;
     float p, s, cost, cost_delta;
     float ec_output_label = ec.l.simple.label;
-    float ec_output_weight = ec.l.simple.weight;
+    float ec_output_weight = ec.weight;
     float r = 2.f*threshold*t*a.alpha/a.active_c0/a.beta_scale;
 
     // Set up costs
@@ -163,7 +163,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
       // Choose min-cost label as the label
       // Set importance weight to be the cost difference
       ec.l.simple.label = -1.f*sign(cost_delta)*sign(prediction);
-      ec.l.simple.weight = ec_input_weight*fabs(cost_delta);
+      ec.weight = ec_input_weight*fabs(cost_delta);
 
       // Update learner
       base.learn(ec,i+1);
@@ -182,7 +182,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
     }
 
     // Restoring the weight, the label, and the prediction
-    ec.l.simple.weight = ec_output_weight;
+    ec.weight = ec_output_weight;
     ec.l.simple.label = ec_output_label;
     ec.pred.scalar = prediction;
   }

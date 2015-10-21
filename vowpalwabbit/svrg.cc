@@ -55,7 +55,7 @@ void predict(svrg& s, base_learner&, example& ec)
 
 float gradient_scalar(const svrg& s, const example& ec, float pred)
 { return s.all->loss->first_derivative(s.all->sd, pred, ec.l.simple.label)
-         * ec.l.simple.weight;
+         * ec.weight;
 }
 
 // -- Updates, taking inner steps vs. accumulating a full gradient --

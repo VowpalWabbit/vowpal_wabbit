@@ -143,6 +143,7 @@ void return_features(feature* f)
 flat_example* flatten_example(vw& all, example *ec)
 { flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
+  fec.l.simple.weight = ec->weight;
 
   fec.tag_len = ec->tag.size();
   if (fec.tag_len >0)

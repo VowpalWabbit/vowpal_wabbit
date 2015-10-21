@@ -94,7 +94,7 @@ void finish_setup (nn& n, vw& all)
   n.hiddenbias.atomics[constant_namespace].push_back(temp);
   n.hiddenbias.total_sum_feat_sq++;
   n.hiddenbias.l.simple.label = FLT_MAX;
-  n.hiddenbias.l.simple.weight = 1;
+  n.hiddenbias.weight = 1;
   n.hiddenbias.in_use = true;
 
   memset (&n.outputweight, 0, sizeof (n.outputweight));
@@ -103,7 +103,7 @@ void finish_setup (nn& n, vw& all)
   n.outputweight.atomics[nn_output_namespace][0].x = 1;
   n.outputweight.total_sum_feat_sq++;
   n.outputweight.l.simple.label = FLT_MAX;
-  n.outputweight.l.simple.weight = 1;
+  n.outputweight.weight = 1;
   n.outputweight.in_use = true;
 
   n.finished_setup = true;

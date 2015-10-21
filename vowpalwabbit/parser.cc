@@ -727,8 +727,9 @@ void setup_example(vw& all, example* ae)
 
   if (all.p->emptylines_separate_examples && example_is_newline(*ae))
     all.p->in_pass_counter++;
-
-  all.sd->t += all.p->lp.get_weight(&ae->l);
+  
+  ae->weight = all.p->lp.get_weight(&ae->l);
+  all.sd->t += ae->weight;
   ae->example_t = (float)all.sd->t;
 
 
@@ -823,8 +824,8 @@ void add_constant_feature(vw& vw, example*ec)
 
 void add_label(example* ec, float label, float weight, float base)
 { ec->l.simple.label = label;
-  ec->l.simple.weight = weight;
   ec->l.simple.initial = base;
+  ec->weight = weight;
 }
 
 example* import_example(vw& all, string label, primitive_feature_space* features, size_t len)
@@ -1001,28 +1002,22 @@ example* get_example(parser* p)
 }
 
 float get_topic_prediction(example* ec, size_t i)
-{ return ec->topic_predictions[i];
-}
+{ return ec->topic_predictions[i]; }
 
 float get_label(example* ec)
-{ return ec->l.simple.label;
-}
+{ return ec->l.simple.label; }
 
 float get_importance(example* ec)
-{ return ec->l.simple.weight;
-}
+{ return ec->weight; }
 
 float get_initial(example* ec)
-{ return ec->l.simple.initial;
-}
+{ return ec->l.simple.initial; }
 
 float get_prediction(example* ec)
-{ return ec->pred.scalar;
-}
+{ return ec->pred.scalar; }
 
 float get_cost_sensitive_prediction(example* ec)
-{ return (float)ec->pred.multiclass;
-}
+{ return (float)ec->pred.multiclass; }
 
 uint32_t* get_multilabel_predictions(example* ec, size_t& len)
 { MULTILABEL::labels labels = ec->pred.multilabels;

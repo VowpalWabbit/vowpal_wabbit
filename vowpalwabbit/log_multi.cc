@@ -295,7 +295,7 @@ void learn(log_multi& b, base_learner& base, example& ec)
     uint32_t start_pred = ec.pred.multiclass;
 
     uint32_t class_index = 0;
-    ec.l.simple = {FLT_MAX, mc.weight, 0.f};
+    ec.l.simple = {FLT_MAX, 0.f, 0.f};
     uint32_t cn = 0;
     uint32_t depth = 0;
     while(children(b, cn, class_index, mc.label))
