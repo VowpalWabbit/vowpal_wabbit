@@ -61,7 +61,7 @@ struct OjaNewton {
     void update_eigenvalues()
     {
         for (int i = 1; i <= m; i++) {
-            float gamma = fmin(20.0 * i / t, .1);
+            float gamma = fmin(10.0 * i / t, .1);
             float tmp = data.AZx[i] * data.sketch_cnt;
 
             if (t == 1) {
@@ -77,7 +77,7 @@ struct OjaNewton {
     {
         data.bdelta = 0;
         for (int i = 1; i <= m; i++) {
-            float gamma = fmin(20.0 * i / t, .1);
+            float gamma = fmin(10.0 * i / t, .1);
             
             data.delta[i] = gamma * data.AZx[i] * data.sketch_cnt;
             for (int j = 1; j < i; j++) {
@@ -132,9 +132,12 @@ struct OjaNewton {
 	        double temp = 0;
                 for (int k = 1; k <= i; k++) {
                     temp += K[j][k] * A[i][k];
+                    //cout << "K = " << K[j][k] << endl;
+                    //cout << "A = " << A[i][k] << endl;
                 }
                 norm += A[i][j]*temp;
             }
+            //cout << norm << endl;
             norm = sqrt(norm);
 
             for (int j = 1; j <= i; j++) {
