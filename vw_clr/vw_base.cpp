@@ -248,7 +248,7 @@ namespace VW
 		CATCHRETHROW
 	}
 
-  void VowpalWabbitBase::Reload()
+  void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] String^ args)
   {
     if (m_settings->ParallelOptions != nullptr)
     {
@@ -256,6 +256,11 @@ namespace VW
     }
 
     clr_io_memory_buf mem_buf;
+
+    if (args == nullptr)
+      args = String::Empty;
+
+    auto stringArgs = msclr::interop::marshal_as<std::string>(args);
 
     try
     {
@@ -272,7 +277,7 @@ namespace VW
       // reload from model
       // seek to beginning
       mem_buf.reset_file(0);
-      InitializeFromModel("", mem_buf);
+      InitializeFromModel(stringArgs.c_str(), mem_buf);
     }
     CATCHRETHROW
   }

@@ -119,7 +119,7 @@ namespace VW
 		/// <param name="example">The example to be returned.</param>
 		virtual void ReturnExampleToPool(VowpalWabbitExample^ example) sealed;
 
-    void Reload();
+    void Reload([System::Runtime::InteropServices::Optional] String^ args);
 
     String^ AreFeaturesCompatible(VowpalWabbitBase^ other);
 	};
