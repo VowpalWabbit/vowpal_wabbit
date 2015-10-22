@@ -99,6 +99,25 @@ void print_update(vw& all, example &ec)
   }
 }
 
+void print_update_with_probability(vw& all, example &ec, uint32_t prediction)
+{ if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  { char temp_str[10];
+    sprintf(temp_str, "%d(%2.0f%%)", prediction, 100*ec.pred.probs[prediction-1]);
+    if (! all.sd->ldict)
+      all.sd->print_update(all.holdout_set_off, all.current_pass, std::to_string(ec.l.multi.label), temp_str,
+                           ec.num_features, all.progress_add, all.progress_arg);
+    else
+    { substring ss_label = all.sd->ldict->get(ec.l.multi.label);
+      substring ss_pred  = all.sd->ldict->get(prediction);
+      all.sd->print_update(all.holdout_set_off, all.current_pass,
+                           !ss_label.begin ? "unknown" : string(ss_label.begin, ss_label.end - ss_label.begin),
+                           !ss_pred.begin  ? "unknown" : string(ss_pred.begin, ss_pred.end - ss_pred.begin),
+                           ec.num_features, all.progress_add, all.progress_arg);
+    }
+  }
+}
+
+
 void finish_example(vw& all, example& ec)
 { float loss = 0;
   if (ec.l.multi.label != (uint32_t)ec.pred.multiclass)

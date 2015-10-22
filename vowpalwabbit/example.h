@@ -52,6 +52,7 @@ typedef union
 { float scalar;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
+  float* probs; // for --probabilities --oaa
 } polyprediction;
 
 struct example // core example datatype.

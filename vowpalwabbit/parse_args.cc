@@ -1318,6 +1318,12 @@ void finish(vw& all, bool delete_all)
       cerr << endl << "average loss = " << all.sd->sum_loss / all.sd->weighted_examples;
     else
       cerr << endl << "average loss = " << all.sd->holdout_best_loss << " h";
+    if (all.probabilities)
+    { if (all.holdout_set_off)
+        cerr << endl << "average multiclass log loss = " << all.sd->multiclass_log_loss / all.sd->weighted_examples;
+      else
+        cerr << endl << "average multiclass log loss = " << all.sd->holdout_multiclass_log_loss / all.sd->weighted_examples << " h";
+    }
 
     float best_constant; float best_constant_loss;
     if (get_best_constant(all, best_constant, best_constant_loss))
