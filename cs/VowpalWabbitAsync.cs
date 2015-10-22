@@ -269,7 +269,6 @@ namespace VW
             Contract.Requires(actionDependentFeatures != null);
             Contract.Requires(index >= 0);
             Contract.Requires(label != null);
-            Contract.Ensures(Contract.Result<Task<TActionDependentFeature[]>>() != null);
 
             return manager.Post(vw => VowpalWabbitMultiLine.LearnAndPredict(
                 vw,

@@ -1322,6 +1322,8 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
 
   vw* new_model = VW::initialize(init_args.str().c_str());
 
+  free_it(new_model->reg.weight_vector);
+
   // reference model states stored in the specified VW instance
   new_model->reg = vw_model->reg; // regressor
   new_model->sd = vw_model->sd; // shared data

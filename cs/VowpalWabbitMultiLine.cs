@@ -39,8 +39,6 @@ namespace VW
             Contract.Requires(actionDependentFeatureSerializer != null);
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(index >= 0);
-            Contract.Requires(label != null);
 
             var examples = new List<VowpalWabbitExample>(actionDependentFeatures.Count + 1);
             var validExamples = new List<VowpalWabbitExample>(actionDependentFeatures.Count + 1);

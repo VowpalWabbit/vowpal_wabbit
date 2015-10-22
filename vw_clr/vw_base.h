@@ -44,9 +44,14 @@ namespace VW
 		/// </summary>
 		Stack<VowpalWabbitExample^>^ m_examples;
 
-    VowpalWabbitArguments^ m_arguments;
+		VowpalWabbitArguments^ m_arguments;
 
-    void InitializeFromModel(string args, io_buf& model);
+		void InitializeFromModel(string args, io_buf& model);
+
+		/// <summary>
+		/// Reference count to native data structure.
+		/// </summary>
+		System::Int32 m_instanceCount;
 
 	internal:
 		/// <summary>
@@ -59,6 +64,16 @@ namespace VW
 		/// </summary>
 		/// <returns>A ready to use cleared native example data structure.</returns>
 		VowpalWabbitExample^ GetOrCreateNativeExample();
+
+		/// <summary>
+		/// Thread-safe increment of reference count.
+		/// </summary>
+		void IncrementReference();
+
+		/// <summary>
+		/// Thread-safe decrement of reference count.
+		/// </summary>
+		void DecrementReference();
 
 	protected:
 		/// <summary>

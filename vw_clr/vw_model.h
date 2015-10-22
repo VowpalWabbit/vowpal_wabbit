@@ -16,28 +16,6 @@ namespace VW
 	/// </summary>
 	public ref class VowpalWabbitModel : public VowpalWabbitBase
 	{
-	private:
-		/// <summary>
-		/// Reference count to native data structure.
-		/// </summary>
-		System::Int32 m_instanceCount;
-
-	internal:
-		/// <summary>
-		/// Thread-safe increment of reference count.
-		/// </summary>
-		void IncrementReference();
-
-		/// <summary>
-		/// Thread-safe decrement of reference count.
-		/// </summary>
-		void DecrementReference();
-
-		/// <summary>
-		/// Cleanup.
-		/// </summary>
-		!VowpalWabbitModel();
-
 	public:
 		/// <summary>
 		/// Initializes a new <see cref="VowpalWabbitModel"/> instance. 
@@ -47,10 +25,5 @@ namespace VW
 
 		/// <param name="args">Command line arguments passed to native instance.</param>
 		VowpalWabbitModel(String^ args);
-
-		/// <summary>
-		/// Cleanup.
-		/// </summary>
-		virtual ~VowpalWabbitModel();
 	};
 }
