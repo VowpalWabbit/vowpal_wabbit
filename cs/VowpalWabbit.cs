@@ -199,16 +199,16 @@ namespace VW
         {
             if (disposing)
             {
-                if (this.vw != null)
-                {
-                    this.vw.Dispose();
-                    this.vw = null;
-                }
-
                 if (this.serializer != null)
                 {
                     this.serializer.Dispose();
                     this.serializer = null;
+                }
+
+                if (this.vw != null)
+                {
+                    this.vw.Dispose();
+                    this.vw = null;
                 }
             }
         }
@@ -287,8 +287,8 @@ namespace VW
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(index >= 0);
-            Contract.Requires(label != null);
+            //Contract.Requires(index >= 0);
+            //Contract.Requires(label != null);
 
             VowpalWabbitMultiLine.Learn(
                 this.vw,

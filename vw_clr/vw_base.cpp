@@ -23,7 +23,7 @@ using namespace System::Text;
 namespace VW
 {
 	VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
-		: m_examples(nullptr), m_vw(nullptr), m_model(nullptr), m_settings(settings != nullptr ? settings : gcnew VowpalWabbitSettings)
+		: m_examples(nullptr), m_vw(nullptr), m_model(nullptr), m_settings(settings != nullptr ? settings : gcnew VowpalWabbitSettings), m_instanceCount(0)
 	{
 		m_examples = gcnew Stack<VowpalWabbitExample^>;
 
@@ -98,17 +98,90 @@ namespace VW
 
 	VowpalWabbitBase::!VowpalWabbitBase()
 	{
-		if (m_model != nullptr)
+		if (m_instanceCount <= 0)
 		{
-			// this object doesn't own the VW instance
-			m_model->DecrementReference();
-			m_model = nullptr;
-		}
-		else
-		{
-			// this object owns the VW instance.
 			this->InternalDispose();
 		}
+	}
+
+	void VowpalWabbitBase::IncrementReference()
+	{
+		// thread-safe increase of model reference counter
+		System::Threading::Interlocked::Increment(m_instanceCount);
+	}
+
+	void VowpalWabbitBase::DecrementReference()
+	{
+		// thread-safe decrease of model reference counter
+		if (System::Threading::Interlocked::Decrement(m_instanceCount) <= 0)
+		{
+			this->InternalDispose();
+		}
+	}
+
+	void VowpalWabbitBase::InternalDispose()
+	{
+		if (m_vw != nullptr)
+		{
+			// de-allocate example pools that are managed for each even shared instances
+			auto multilabel_prediction = m_vw->multilabel_prediction;
+			auto delete_label = m_vw->p->lp.delete_label;
+
+			if (m_examples != nullptr)
+			{
+				for each (auto ex in m_examples)
+				{
+					if (multilabel_prediction)
+					{
+						VW::dealloc_example(delete_label, *ex->m_example, MULTILABEL::multilabel.delete_label);
+					}
+					else
+					{
+						VW::dealloc_example(delete_label, *ex->m_example);
+					}
+
+					::free_it(ex->m_example);
+
+					// cleanup pointers in example chain
+					auto inner = ex;
+					while ((inner = inner->InnerExample) != nullptr)
+					{
+						inner->m_owner = nullptr;
+						inner->m_example = nullptr;
+					}
+
+					ex->m_example = nullptr;
+
+					// avoid that this example is returned again
+					ex->m_owner = nullptr;
+				}
+
+				m_examples = nullptr;
+			}
+
+			if (m_model != nullptr)
+			{
+				// this object doesn't own the VW instance
+				m_model->DecrementReference();
+				m_model = nullptr;
+			}
+		}
+
+		try
+		{
+			if (m_vw != nullptr)
+			{
+				release_parser_datastructures(*m_vw);
+
+				// make sure don't try to free m_vw twice in case VW::finish throws.
+				vw* vw_tmp = m_vw;
+				m_vw = nullptr;
+				VW::finish(*vw_tmp);
+			}
+
+			// don't add code here as in the case of VW::finish throws an exception it won't be called
+		}
+		CATCHRETHROW
 	}
 
 	VowpalWabbitSettings^ VowpalWabbitBase::Settings::get()
@@ -187,66 +260,13 @@ namespace VW
 		// make sure we're not a ring based example
 		assert(!VW::is_ring_example(*m_vw, ex->m_example));
 
-        m_examples->Push(ex);
-     }
-
-	void VowpalWabbitBase::InternalDispose()
-	{
-		try
-		{
-			if (m_vw != nullptr)
-			{
-				auto multilabel_prediction = m_vw->multilabel_prediction;
-				auto delete_label = m_vw->p->lp.delete_label;
-
-				if (m_examples != nullptr)
-				{
-					for each (auto ex in m_examples)
-					{
-						if (multilabel_prediction)
-						{
-							VW::dealloc_example(delete_label, *ex->m_example, MULTILABEL::multilabel.delete_label);
-						}
-						else
-						{
-							VW::dealloc_example(delete_label, *ex->m_example);
-						}
-
-						::free_it(ex->m_example);
-
-						// cleanup pointers in example chain
-						auto inner = ex;
-						while ((inner = inner->InnerExample) != nullptr)
-						{
-							inner->m_owner = nullptr;
-							inner->m_example = nullptr;
-						}
-
-						ex->m_example = nullptr;
-
-						// avoid that this example is returned again
-						ex->m_owner = nullptr;
-					}
-
-					m_examples = nullptr;
-				}
-
-				if (m_vw != nullptr)
-				{
-					release_parser_datastructures(*m_vw);
-
-					// make sure don't try to free m_vw twice in case VW::finish throws.
-					vw* vw_tmp = m_vw;
-					m_vw = nullptr;
-					VW::finish(*vw_tmp);
-				}
-			}
-
-
-			// don't add code here as in the case of VW::finish throws an exception it won't be called
-		}
-		CATCHRETHROW
-	}
+		if (m_examples != nullptr)
+			m_examples->Push(ex);
+#if _DEBUG
+		else // this should not happen as m_vw is already set to null
+			throw gcnew ObjectDisposedException("VowpalWabbitExample was disposed after the owner is disposed");
+#endif
+    }
 
   void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] String^ args)
   {
