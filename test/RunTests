@@ -281,6 +281,7 @@ sub next_paragraph() {
 
         if ($paragraph and ($line =~ /^\s*$/ || eof(DATA))) {
             # end of paragraph
+            $paragraph .= $line if eof(DATA) && $line !~ /^\s*#/;
             chomp($paragraph);
             $paragraph = trim_spaces($paragraph);
             return $paragraph;
@@ -294,6 +295,7 @@ sub next_paragraph() {
         }
         $paragraph .= $line;
     }
+    return;
 }
 
 sub next_test() {
