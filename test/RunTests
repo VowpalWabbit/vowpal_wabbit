@@ -295,7 +295,7 @@ sub next_paragraph() {
         }
         $paragraph .= $line;
     }
-    return;
+    return $paragraph;
 }
 
 sub next_test() {
