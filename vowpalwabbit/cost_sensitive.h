@@ -18,7 +18,7 @@ struct wclass
   float wap_value;  // used for wap to store values derived from costs
   bool operator==(wclass j) {return class_index == j.class_index;}
 };
-/* if class_index > 0, then this this a "normal" example
+/* if class_index > 0, then this is a "normal" example
    if class_index == 0, then:
      if x == -FLT_MAX then this is a 'shared' example
      if x > 0 then this is a label feature vector for (size_t)x
