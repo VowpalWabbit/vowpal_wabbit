@@ -19,6 +19,9 @@ namespace VW.Serializer.Intermediate
             this.FeatureHash = vw.HashFeature(this.Name, ns.NamespaceHash);
         }
 
+        /// <summary>
+        /// The pre-hashed feature hash.
+        /// </summary>
         public uint FeatureHash { get; private set; }
     }
 }

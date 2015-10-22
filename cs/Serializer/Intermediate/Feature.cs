@@ -12,16 +12,13 @@ using System.Linq.Expressions;
 
 namespace VW.Serializer.Intermediate
 {
+    /// <summary>
+    /// The base feature description.
+    /// </summary>
     public class Feature
     {
         public Feature(string name, bool addAnchor)
         {
-            if (name == null)
-            {
-                throw new ArgumentNullException("name");
-            }
-            Contract.EndContractBlock();
-
             this.Name = name;
             this.AddAnchor = addAnchor;
         }

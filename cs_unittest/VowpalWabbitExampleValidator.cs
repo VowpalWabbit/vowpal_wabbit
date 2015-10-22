@@ -18,6 +18,7 @@ namespace cs_unittest
         private VowpalWabbit<TExample> vwNative;
         private Action<VowpalWabbitMarshalContext, TExample, ILabel> serializer;
         private Action<VowpalWabbitMarshalContext, TExample, ILabel> serializerNative;
+        private VowpalWabbitSerializer<TExample> factorySerializer;
 
         internal VowpalWabbitExampleValidator(string args)
         {
@@ -32,6 +33,8 @@ namespace cs_unittest
 
             this.vwNative = new VowpalWabbit<TExample>(new VowpalWabbitSettings(args));
             this.serializerNative = this.vwNative.Serializer.Func(this.vwNative.Native);
+
+            this.factorySerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(new VowpalWabbitSettings(enableStringExampleGeneration: true)).Create(this.vw.Native);
         }
 
         public void Validate(string line, TExample example, ILabel label = null)
@@ -68,12 +71,19 @@ namespace cs_unittest
                 using (var strExample = this.vw.Native.ParseLine(line))
                 using (var strConvertedExample = this.vw.Native.ParseLine(context.StringExample.ToString()))
                 using (var nativeExample = contextNative.ExampleBuilder.CreateExample())
+                using (var nativeExampleWithString = this.factorySerializer.Serialize(example, label))
                 {
                     var diff = strExample.Diff(this.vw.Native, strConvertedExample, comparator);
                     Assert.IsNull(diff, diff + " generated string: '" + context.StringExample + "'");
 
                     diff = strExample.Diff(this.vw.Native, nativeExample, comparator);
                     Assert.IsNull(diff, diff);
+
+                    if (!strExample.IsNewLine)
+                    {
+                        Assert.IsFalse(string.IsNullOrEmpty(nativeExampleWithString.VowpalWabbitString));
+                        Assert.IsFalse(string.IsNullOrEmpty(this.factorySerializer.SerializeToString(example, label)));
+                    }
                 }
             }
         }
@@ -98,6 +108,12 @@ namespace cs_unittest
                 {
                     this.vwNative.Dispose();
                     this.vwNative = null;
+                }
+
+                if (this.factorySerializer != null)
+                {
+                    this.factorySerializer.Dispose();
+                    this.factorySerializer = null;
                 }
             }
         }

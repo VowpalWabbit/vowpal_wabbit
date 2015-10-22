@@ -15,6 +15,12 @@ namespace VW.Serializer.Intermediate
     /// </summary>
     public sealed class Namespace
     {
+        /// <summary>
+        /// Initializes a new namespace instance.
+        /// </summary>
+        /// <param name="vw">VopwpalWabbit instance used for hashing.</param>
+        /// <param name="name">The namespace name.</param>
+        /// <param name="featureGroup">Defaults to space, if null.</param>
         public Namespace(VowpalWabbit vw, string name, char? featureGroup)
         {
             this.Name = name;
@@ -42,8 +48,14 @@ namespace VW.Serializer.Intermediate
         /// </summary>
         public char FeatureGroup { get; private set; }
 
+        /// <summary>
+        /// The pre-calculated hash.
+        /// </summary>
         public uint NamespaceHash { get; private set; }
 
+        /// <summary>
+        /// The string representation of the namespace.
+        /// </summary>
         public string NamespaceString { get; private set; }
     }
 }

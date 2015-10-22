@@ -1,4 +1,12 @@
-﻿using System;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="VowpalWabbitMarshalContext.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,9 +15,15 @@ using VW;
 
 namespace VW.Serializer
 {
+    /// <summary>
+    /// Context containing state during example marshalling.
+    /// </summary>
     public class VowpalWabbitMarshalContext : IDisposable
     {
-        // TODO: add boolean to configure string example production yes/no
+        /// <summary>
+        /// /// Initializes a new instance of the <see cref="VowpalWabbitMarshalContext"/> class.
+        /// </summary>
+        /// <param name="vw">The VW instance the example will be imported to.</param>
         public VowpalWabbitMarshalContext(VowpalWabbit vw)
         {
             this.VW = vw;
@@ -18,6 +32,9 @@ namespace VW.Serializer
             this.ExampleBuilder = new VowpalWabbitExampleBuilder(vw);
         }
 
+        /// <summary>
+        /// The VW instance the produce example will be imported to.
+        /// </summary>
         public VowpalWabbit VW { get; private set; }
 
         /// <summary>
@@ -26,12 +43,18 @@ namespace VW.Serializer
         public StringBuilder StringExample { get; private set; }
 
         /// <summary>
-        /// Used to build examples. Builder is allocated deallocated in Visit.
+        /// Used to build examples.
         /// </summary>
         public VowpalWabbitExampleBuilder ExampleBuilder { get; private set; }
 
+        /// <summary>
+        /// Used to build a namespace.
+        /// </summary>
         public VowpalWabbitNamespaceBuilder NamespaceBuilder { get; set; }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             this.Dispose(true);

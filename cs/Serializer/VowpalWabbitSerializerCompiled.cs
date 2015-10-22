@@ -113,6 +113,8 @@ namespace VW.Serializer
             this.Compile();
         }
 
+        internal bool DisableStringExampleGeneration { get { return this.disableStringExampleGeneration; } }
+
         public VowpalWabbitSerializer<TExample> Create(VowpalWabbit vw)
         {
             return new VowpalWabbitSerializer<TExample>(this, vw);

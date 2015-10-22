@@ -31,6 +31,16 @@ namespace VW
             int? index = null,
             ILabel label = null)
         {
+            if (serializer.EnableStringExampleGeneration)
+            {
+                throw new ArgumentException("Serializer must be compiled using EnableStringExampleGeneration = true");
+            }
+
+            if (actionDependentFeatureSerializer.EnableStringExampleGeneration)
+            {
+                throw new ArgumentException("Action dependent serializer must be compiled using EnableStringExampleGeneration = true");
+            }
+
             var stringExample = new StringBuilder();
 
             var sharedExample = serializer.SerializeToString(example, SharedLabel.Instance);
@@ -76,8 +86,6 @@ namespace VW
             Contract.Requires(actionDependentFeatureSerializer != null);
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(index >= 0);
-            Contract.Requires(label != null);
 
             var examples = new List<VowpalWabbitExample>(actionDependentFeatures.Count + 1);
             var validExamples = new List<VowpalWabbitExample>(actionDependentFeatures.Count + 1);
