@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include "vw_example.h"
 #include "vw_allreduce.h"
 #include "vw_builder.h"
+#include "clr_io.h"
 
 using namespace System;
 using namespace System::Text;
@@ -112,6 +113,20 @@ namespace VW
 		}
 		CATCHRETHROW
 	}
+
+  void VowpalWabbit::SaveModel(Stream^ stream)
+  {
+    if (stream == nullptr)
+      throw gcnew ArgumentException("stream");
+
+    try
+    {
+      VW::clr_io_buf buf(stream);
+
+      VW::save_predictor(*m_vw, buf);
+    }
+    CATCHRETHROW
+  }
 
 	VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
 	{

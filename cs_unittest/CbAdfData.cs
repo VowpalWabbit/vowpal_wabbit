@@ -16,7 +16,7 @@ namespace cs_unittest.cbadf
         {
             return Tuple.Create(
                 new CbAdfShared
-                { 
+                {
                     Num = rand.Next(100),
                     Vector = Enumerable.Range(1, 500).Select(_ => (float)rand.NextDouble()).ToArray()
                 },
@@ -24,7 +24,7 @@ namespace cs_unittest.cbadf
                 {
                     Vector = Enumerable.Range(1, 500).Select(__ => (float)rand.NextDouble()).ToArray()
                 }).ToList(),
-                new ContextualBanditLabel 
+                new ContextualBanditLabel
                 {
                     Action = (uint)rand.Next(numActions),
                     Cost = rand.Next(1),

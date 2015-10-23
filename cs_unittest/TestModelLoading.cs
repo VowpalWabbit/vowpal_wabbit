@@ -39,6 +39,31 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [DeploymentItem(@"model-sets\8.0.1_rcv1_ok.model", "model-sets")]
+        public void TestLoadModelInMemory()
+        {
+            using (var vw = new VowpalWabbit(@"-i model-sets\8.0.1_rcv1_ok.model"))
+            {
+                var memStream = new MemoryStream();
+                vw.SaveModel(memStream);
+
+                vw.SaveModel("native.model");
+
+                using (var file = File.Create("managed.file.model"))
+                {
+                    vw.SaveModel(file);
+                }
+
+                var nativeModel = File.ReadAllBytes("native.model");
+                var managedFileModel = File.ReadAllBytes("managed.file.model");
+                var managedModel = memStream.ToArray();
+
+                Assert.IsTrue(nativeModel.SequenceEqual(managedModel));
+                Assert.IsTrue(nativeModel.SequenceEqual(managedFileModel));
+            }
+        }
+
+        [TestMethod]
         public void TestID()
         {
             using (var vw = new VowpalWabbit("--id abc"))

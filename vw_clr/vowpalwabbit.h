@@ -65,6 +65,8 @@ namespace VW
 		/// <param name="filename">The destination filename for the model.</param>
 		void SaveModel(String^ filename);
 
+    void SaveModel(Stream^ stream);
+
 		/// <summary>
 		/// Gets Collected performance statistics.
 		/// </summary>

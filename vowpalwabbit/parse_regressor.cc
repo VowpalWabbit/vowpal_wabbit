@@ -393,6 +393,9 @@ void dump_regressor(vw& all, io_buf& buf, bool as_text)
 {
   save_load_header(all, buf, false, as_text);
   all.l->save_load(buf, false, as_text);
+
+  buf.flush(); // close_file() should do this for me ...
+  buf.close_file();
 }
 
 void dump_regressor(vw& all, string reg_name, bool as_text)
@@ -406,8 +409,6 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
 
   dump_regressor(all, io_temp, as_text);
 
-  io_temp.flush(); // close_file() should do this for me ...
-  io_temp.close_file();
   remove(reg_name.c_str());
   rename(start_name.c_str(),reg_name.c_str());
 }
