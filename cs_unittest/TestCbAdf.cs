@@ -54,6 +54,29 @@ namespace cs_unittest
             }
         }
 
+        public static void TestMemoryLeak()
+        {
+            string outModelFile = "cb_adf_mem_leak.model";
+            using (var vw = new VowpalWabbit<DataString, DataStringADF>("--cb_adf --rank_all"))
+            {
+                DataString[] sampleData = CreateStringCbAdfData(1000);
+                foreach (DataString example in sampleData)
+                {
+                    vw.Learn(example, example.ActionDependentFeatures, example.SelectedActionIndex, example.Label);
+                }
+                vw.Native.SaveModel(outModelFile);
+            }
+
+            var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings(string.Format("--quiet -t -i {0}", outModelFile), maxExampleCacheSize: 1024));
+            var pool = new VowpalWabbitThreadedPrediction<DataString, DataStringADF>(vwModel);
+
+            while (true)
+            {
+                vwModel = new VowpalWabbitModel(new VowpalWabbitSettings(string.Format("--quiet -t -i {0}", outModelFile), maxExampleCacheSize: 1024));
+                pool.UpdateModel(vwModel);
+            }
+        }
+
         [TestMethod]
         [TestCategory("Command line through marshalling")]
         public void Test87()
@@ -259,7 +282,7 @@ namespace cs_unittest
             return sampleData;
         }
 
-        private DataString[] CreateStringCbAdfData(int numSamples, int randomSeed = 0)
+        private static DataString[] CreateStringCbAdfData(int numSamples, int randomSeed = 0)
         {
             var random = new Random(randomSeed);
 
