@@ -28,7 +28,7 @@ namespace cs_unittest
         [ExpectedException(typeof(NullReferenceException))]
         public void TestExampleCacheForLearning()
         {
-            using (var vw = new VowpalWabbit<CachedData>(string.Empty))
+            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(string.Empty, enableExampleCaching: true)))
             {
                 vw.Learn(new CachedData(), new SimpleLabel());
             }

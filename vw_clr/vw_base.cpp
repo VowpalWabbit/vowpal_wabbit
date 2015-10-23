@@ -44,15 +44,12 @@ namespace VW
           if (settings->ModelStream == nullptr)
           {
             m_vw = VW::initialize(string);
-            initialize_parser_datastructures(*m_vw);
           }
           else
           {
             clr_io_buf model(settings->ModelStream);
             InitializeFromModel(string, model);
           }
-
-          initialize_parser_datastructures(*m_vw);
         }
       }
       catch (...)
