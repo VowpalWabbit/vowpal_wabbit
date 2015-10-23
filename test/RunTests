@@ -274,28 +274,24 @@ sub ref_file($) {
     $file;
 }
 
-sub next_paragraph() {
+sub next_paragraph {
     my $paragraph = '';
-    while (! eof(DATA)) {
-        my $line = <DATA>;
 
-        if ($paragraph and ($line =~ /^\s*$/ || eof(DATA))) {
-            # end of paragraph
-            $paragraph .= $line if eof(DATA) && $line !~ /^\s*#/;
-            chomp($paragraph);
-            $paragraph = trim_spaces($paragraph);
-            return $paragraph;
-        }
-
-        next if ($line =~ /^\s*$/);
-        next if ($line =~ /^\s*#/);     # skip comment lines
-
+    while ($line = <DATA>) {
+        next if $line =~ /^\s*#/;       # skip comment lines
         if ($line =~ /\\$/) {           # support line continuation
             $line =~ s/\\\n/ /;
         }
-        $paragraph .= $line;
+        $paragraph .= $line if $line =~ /\w/;
+
+        if ($paragraph and ($line =~ /^\s*$/ || eof(DATA))) {
+            # end of paragraph
+            chomp $paragraph;
+            $paragraph = trim_spaces($paragraph);
+            return $paragraph;
+        }
     }
-    return $paragraph;
+    return;
 }
 
 sub next_test() {
@@ -303,6 +299,7 @@ sub next_test() {
 
     $TestNo++;
     my $paragraph = next_paragraph();
+    return (undef, undef, undef, undef) if !defined $paragraph;
     my @lines = split("\n", $paragraph);
 
     # The command line must be first
