@@ -177,8 +177,79 @@ struct OjaNewton {
             }
             b[j] /= scale;
             D[j] *= scale;
-            printf("D[%d] = %f\n", j, D[j]);
+            //printf("D[%d] = %f\n", j, D[j]);
         }
+    }
+
+    void check()
+    {
+    	double max_norm = 0;
+        for (int i = 1; i <= m; i++)
+            for (int j = i; j <= m ;j++)
+                max_norm = fmax(max_norm, fabs(K[i][j]));
+        if (max_norm < 1e7) return;
+        
+        // implicit -> explicit representation
+        printf("begin conversion: t = %d, norm(K) = %f\n", t, max_norm);
+ 
+        double *tmp = calloc_or_die<double>(m+1);    
+
+        // first step: K <- AKA'
+        
+        // K <- AK
+        for (int j = 1; j <= m; j++) {
+            memset(tmp, 0, sizeof(double) * (m+1));
+            
+            for (int i = 1; i <= m; i++) {
+                for (int h = 1; h <= m; h++) {
+                    tmp[i] += A[i][h] * K[h][j];
+                }
+            } 
+
+            for (int i = 1; i <= m; i++)
+                K[i][j] = tmp[i];
+        }
+        // K <- KA'
+        for (int i = 1; i <= m; i++) {
+            memset(tmp, 0, sizeof(double) * (m+1));
+            
+            for (int j = 1; j <= m; j++)
+                for (int h = 1; h <= m; h++)
+                    tmp[j] += K[i][h] * A[j][h];
+
+            for (int j = 1; j <= m; j++)
+                K[i][j] = tmp[j];
+        }
+
+        //second step: w[0] <- w[0] + (DZ)'b, b <- 0.
+
+        uint32_t length = 1 << all->num_bits;
+        size_t stride_shift = all->reg.stride_shift;
+        weight* weights = all->reg.weight_vector;
+
+        for (int i = 0; i < length; i++)
+            for (int j = 1; j <= m; j++)
+            weights[(i << stride_shift)] += weights[(i << stride_shift) + j] * b[j] * D[j];
+
+        memset(b, 0, sizeof(double) * (m+1));
+
+        //third step: Z <- ADZ, A, D <- Identity
+        for (int i = 0; i < length; i++) {
+            memset(tmp, 0, sizeof(double) * (m+1));
+            
+            for (int j = 1; j <= m; j++)
+                for (int h = 1; h <= m; h++)
+                    tmp[j] += A[j][h] * D[h] * weights[(i << stride_shift) + h];
+            for (int j = 1; j <= m; j++)
+                weights[(i << stride_shift) + j] = tmp[j];
+        }
+
+        for (int i = 1; i <= m; i++) {
+            memset(A[i], 0, sizeof(double) * (m+1));
+            D[i] = 1;
+            A[i][i] = 1;
+        }
+        free(tmp);
     }
 };
 
@@ -275,6 +346,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec) {
     ON.compute_AZx();
 
     ON.update_b();
+    ON.check();
 
     if (ON.cnt == ON.epoch_size) {
         ON.cnt = 0;
