@@ -117,7 +117,6 @@ void end_pass(nn& n)
 template<bool is_learn, bool recompute_hidden>
 void predict_or_learn_multi(nn& n, base_learner& base, example& ec)
 { bool shouldOutput = n.all->raw_prediction > 0;
-
   if (! n.finished_setup)
     finish_setup (n, *(n.all));
 
@@ -163,7 +162,7 @@ void predict_or_learn_multi(nn& n, base_learner& base, example& ec)
         base.learn(n.hiddenbias, i);
         n.hiddenbias.l.simple.label = FLT_MAX;
       }
-
+    
     base.multipredict(ec, 0, n.k, hidden_units, true);
 
     for (unsigned int i = 0; i < n.k; ++i )
@@ -258,6 +257,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   else
   { n.output_layer.ft_offset = ec.ft_offset;
     n.output_layer.l = ec.l;
+    n.output_layer.weight = ec.weight;
     n.output_layer.partial_prediction = 0;
     n.output_layer.example_t = ec.example_t;
     if (is_learn)

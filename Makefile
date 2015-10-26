@@ -102,7 +102,7 @@ active_interactor:
 	cd vowpalwabbit; $(MAKE)
 
 library_example: vw
-	cd library; $(MAKE) things
+	cd library; $(MAKE) -j $(NPROCS) things
 
 #Target-specific flags for a profiling build.  (Copied from line 70)
 library_example_gcov: FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) -pg  -fPIC #-DVW_LDA_NO_S

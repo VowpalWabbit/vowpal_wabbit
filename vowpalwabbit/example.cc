@@ -90,6 +90,7 @@ void copy_example_data(bool audit, example* dst, example* src)
     copy_array(* dst->passthrough, *src->passthrough);
   }
   dst->loss = src->loss;
+  dst->weight = src->weight;
   dst->example_t = src->example_t;
   memcpy(dst->sum_feat_sq, src->sum_feat_sq, 256 * sizeof(float));
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
