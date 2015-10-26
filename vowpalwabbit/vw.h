@@ -4,6 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
+#include <vld.h>
 #include "global_data.h"
 #include "example.h"
 #include "hash.h"
