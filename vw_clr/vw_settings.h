@@ -288,6 +288,8 @@ namespace VW
 			copy->m_root = root == nullptr ? Root : root;
       copy->m_exampleDistribution = exampleDistribution.HasValue ? exampleDistribution.Value : ExampleDistribution;
       copy->m_enableStringExampleGeneration = enableStringExampleGeneration.HasValue ? enableStringExampleGeneration.Value : EnableStringExampleGeneration;
+      copy->m_allFeatures = allFeatures == nullptr ? AllFeatures : allFeatures;
+      copy->m_customFeaturizer = customFeaturizer == nullptr ? CustomFeaturizer : customFeaturizer;
 
 			return copy;
 		}

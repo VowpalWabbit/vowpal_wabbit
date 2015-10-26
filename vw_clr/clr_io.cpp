@@ -70,7 +70,7 @@ namespace VW
 
 	bool clr_io_buf::close_file()
 	{
-		m_stream->Close();
+    // don't close stream on purpose. Caller of SaveModel should have control when to close.
 		return true;
 	}
 }
