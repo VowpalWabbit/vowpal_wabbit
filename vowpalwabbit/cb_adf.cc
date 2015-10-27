@@ -299,7 +299,7 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   gen_cs_example_MTR(mydata, examples, mydata.mtr_ec_seq, mydata.mtr_cs_labels);
   uint32_t nf = examples[mydata.mtr_example]->num_features;
   float old_weight = examples[mydata.mtr_example]->weight;
-  examples[mydata.mtr_example]->weight *= 1. / examples[mydata.mtr_example]->l.cb.costs[0].probability * (mydata.event_sum / mydata.action_sum);
+  examples[mydata.mtr_example]->weight *= 1. / examples[mydata.mtr_example]->l.cb.costs[0].probability * ((float)mydata.event_sum / (float)mydata.action_sum);
   call_predict_or_learn<true>(mydata, base, mydata.mtr_ec_seq, mydata.cb_labels, mydata.mtr_cs_labels);
   examples[mydata.mtr_example]->num_features = nf;
   examples[mydata.mtr_example]->weight = old_weight;
