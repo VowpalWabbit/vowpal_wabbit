@@ -9,7 +9,7 @@ license as described in the file LICENSE.
 namespace SequenceTask         { Search::search_task task = { "sequence",          run, initialize, nullptr,   nullptr,  nullptr     }; }
 namespace SequenceSpanTask     { Search::search_task task = { "sequencespan",      run, initialize, finish, setup, takedown }; }
 namespace SequenceTaskCostToGo { Search::search_task task = { "sequence_ctg",      run, initialize, nullptr,   nullptr,  nullptr     }; }
-namespace ArgmaxTask           { Search::search_task task = { "argmax",            run, initialize, nullptr,   nullptr,  nullptr     }; }
+namespace ArgmaxTask           { Search::search_task task = { "argmax",            run, initialize, finish,   nullptr,  nullptr     }; }
 namespace SequenceTask_DemoLDF { Search::search_task task = { "sequence_demoldf",  run, initialize, finish, nullptr,  nullptr     }; }
 
 namespace SequenceTask {
@@ -256,8 +256,13 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
                      Search::EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
 }
 
-void run(Search::search& sch, vector<example*>& ec) {
-  task_data& D = *sch.get_task_data<task_data>();
+void finish(Search::search& sch)
+{ task_data* D = sch.get_task_data<task_data>();
+  delete D;
+}
+
+void run(Search::search& sch, vector<example*>& ec)
+{ task_data& D = *sch.get_task_data<task_data>();
   uint32_t max_prediction = 1;
   uint32_t max_label = 1;
 
