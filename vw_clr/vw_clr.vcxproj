@@ -183,6 +183,7 @@
     <ClInclude Include="clr_io.h" />
     <ClInclude Include="clr_io_memory.h" />
     <ClInclude Include="spanning_tree_clr.h" />
+    <ClInclude Include="vld_clr.h" />
     <ClInclude Include="vw_arguments.h" />
     <ClInclude Include="vw_interface.h" />
     <ClInclude Include="resource.h" />
@@ -199,6 +200,7 @@
     <ClCompile Include="clr_io.cpp" />
     <ClCompile Include="clr_io_memory.cpp" />
     <ClCompile Include="spanning_tree_clr.cpp" />
+    <ClCompile Include="vld_clr.cpp" />
     <ClCompile Include="vw_base.cpp" />
     <ClCompile Include="vowpalwabbit.cpp" />
     <ClCompile Include="vw_example.cpp" />
