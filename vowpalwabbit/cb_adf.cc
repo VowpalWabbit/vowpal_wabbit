@@ -46,6 +46,8 @@ struct cb_adf
   v_array<COST_SENSITIVE::label> mtr_cs_labels;
   v_array<example*> mtr_ec_seq;
   MULTILABEL::labels mtr_multilabels;
+  uint64_t action_sum;
+  uint64_t event_sum;
 
   COST_SENSITIVE::label pred_scores;
 
@@ -236,6 +238,10 @@ void learn_DR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 { 
   mtr_ec_seq.erase();
   bool shared = CB::ec_is_example_header(*(ec_seq[0]));
+  data.action_sum += ec_seq.size()-2; //-1 for shared -1 for end example
+  if (!shared)
+    data.action_sum += 1;
+  data.event_sum++;
   uint32_t keep_count = 0;
   
   for (size_t i = 0; i < ec_seq.size(); i++)
@@ -293,7 +299,7 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   gen_cs_example_MTR(mydata, examples, mydata.mtr_ec_seq, mydata.mtr_cs_labels);
   uint32_t nf = examples[mydata.mtr_example]->num_features;
   float old_weight = examples[mydata.mtr_example]->weight;
-  examples[mydata.mtr_example]->weight *= 1. / examples[mydata.mtr_example]->l.cb.costs[0].probability;
+  examples[mydata.mtr_example]->weight *= 1. / examples[mydata.mtr_example]->l.cb.costs[0].probability * (mydata.event_sum / mydata.action_sum);
   call_predict_or_learn<true>(mydata, base, mydata.mtr_ec_seq, mydata.cb_labels, mydata.mtr_cs_labels);
   examples[mydata.mtr_example]->num_features = nf;
   examples[mydata.mtr_example]->weight = old_weight;
