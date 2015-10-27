@@ -109,6 +109,11 @@ namespace VW.Serializer
             get { return this.exampleCache != null; }
         }
 
+        public bool EnableStringExampleGeneration
+        {
+            get { return !this.serializer.DisableStringExampleGeneration; }
+        }
+
         public string SerializeToString(TExample example, ILabel label = null)
         {
             Contract.Requires(example != null);
@@ -137,7 +142,13 @@ namespace VW.Serializer
                 using (var context = new VowpalWabbitMarshalContext(vw))
                 {
                     this.serializerFunc(context, example, label);
-                    return context.ExampleBuilder.CreateExample();
+
+                    var vwExample = context.ExampleBuilder.CreateExample();
+
+                    if (this.EnableStringExampleGeneration)
+                        vwExample.VowpalWabbitString = context.StringExample.ToString();
+
+                    return vwExample;
                 }
             }
 

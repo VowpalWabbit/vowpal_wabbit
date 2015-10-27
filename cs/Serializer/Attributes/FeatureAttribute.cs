@@ -73,6 +73,9 @@ namespace VW.Serializer.Attributes
         /// </summary>
         public int Order { get; set; }
 
+        /// <summary>
+        /// Configures string pre-processing before hashing. All options are compatible with VW string format.
+        /// </summary>
         public StringProcessing StringProcessing { get; set; }
     }
 }

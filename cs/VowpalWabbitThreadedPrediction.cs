@@ -6,14 +6,6 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.IO;
-using System.Threading.Tasks;
-using VW.Interfaces;
-using VW.Serializer;
-
 namespace VW
 {
     /// <summary>

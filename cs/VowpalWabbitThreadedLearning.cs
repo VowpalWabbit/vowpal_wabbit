@@ -7,11 +7,9 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -72,22 +70,16 @@ namespace VW
         public VowpalWabbitThreadedLearning(VowpalWabbitSettings settings)
         {
             if (settings == null)
-            {
                 throw new ArgumentNullException("settings");
-            }
 
             if (settings.ParallelOptions == null)
-            {
                 throw new ArgumentNullException("settings.ParallelOptions must be set");
-            }
             Contract.EndContractBlock();
 
             this.Settings = settings;
 
             if (this.Settings.ParallelOptions.CancellationToken == null)
-            {
                 this.Settings.ParallelOptions.CancellationToken = new CancellationToken();
-            }
 
             switch (this.Settings.ExampleDistribution)
             {
@@ -168,6 +160,9 @@ namespace VW
             }
         }
 
+        /// <summary>
+        /// VowpalWabbit instances participating in AllReduce.
+        /// </summary>
         public VowpalWabbit[] VowpalWabbits
         {
             get { return this.vws; }

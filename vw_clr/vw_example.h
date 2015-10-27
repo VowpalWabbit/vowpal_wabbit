@@ -45,6 +45,7 @@ namespace VW
 	/// <remarks>
 	/// Underlying memory is allocated by native code, but examples are not part of the ring.
 	/// </remarks>
+	[System::Diagnostics::DebuggerDisplay("{m_string}")]
 	public ref class VowpalWabbitExample
 	{
 	private:
@@ -77,6 +78,11 @@ namespace VW
 		/// The owner of this example.
 		/// </summary>
 		IVowpalWabbitExamplePool^ m_owner;
+
+		/// <summary>
+		/// The optional string version of the example.
+		/// </summary>
+		String^ m_string;
 
 	public:
 		/// <summary>
@@ -112,6 +118,15 @@ namespace VW
 		property IVowpalWabbitExamplePool^ Owner
 		{
 			IVowpalWabbitExamplePool^ get();
+		}
+
+		/// <summary>
+		/// The corresponding VowpalWabbitString for this example.
+		/// </summary>
+		property String^ VowpalWabbitString
+		{
+			String^ get();
+			void set(String^ value);
 		}
 
     property bool IsNewLine

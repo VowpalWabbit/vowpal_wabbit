@@ -16,7 +16,7 @@ namespace VW
 	}
 
 	VowpalWabbitExample::VowpalWabbitExample(IVowpalWabbitExamplePool^ owner, VowpalWabbitExample^ example) :
-		m_owner(owner), m_example(example->m_example), m_innerExample(example)
+		m_owner(owner), m_example(example->m_example), m_innerExample(example), m_string(example->m_string)
 	{
 	}
 
@@ -50,6 +50,16 @@ namespace VW
 #endif
 
 		return factory->Create(vw->m_vw, m_example);
+	}
+	
+	String^ VowpalWabbitExample::VowpalWabbitString::get()
+	{
+		return m_string;
+	}
+
+	void VowpalWabbitExample::VowpalWabbitString::set(String^ value)
+	{
+		m_string = value;
 	}
 
   bool VowpalWabbitExample::IsNewLine::get()
