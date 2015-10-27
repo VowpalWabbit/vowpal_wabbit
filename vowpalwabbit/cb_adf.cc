@@ -72,7 +72,7 @@ void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::labe
     if (shared && i > 0)
       wc.class_index = i-1;
     else
-      wc.class_index = 0;
+      wc.class_index = i;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
       wc.x = ld.costs[0].cost / ld.costs[0].probability;
     else
@@ -124,16 +124,11 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
     else
       wc.class_index = i;
     c.pred_scores.costs.push_back(wc); // done
-    wc.class_index = 0;
 
     //add correction if we observed cost for this action and regressor is wrong
     if (c.known_cost.probability != -1 && c.known_cost.action + startK == i)
     { wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
     }
-
-    //cout<<"Action "<<c.known_cost.action<<" Cost "<<c.known_cost.cost<<" Probability "<<c.known_cost.probability<<endl;
-
-    //cout<<"Prediction = "<<wc.x<<" ";
     cs_labels[i].costs.erase();
     cs_labels[i].costs.push_back(wc);
   }
@@ -147,9 +142,6 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
   { cs_labels[0].costs[0].class_index = 0;
     cs_labels[0].costs[0].x = -FLT_MAX;
   }
-
-  //cout<<endl;
-
 }
 
 void get_observed_cost(cb_adf& mydata, v_array<example*>& examples)
@@ -216,11 +208,11 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
 
   if (!mydata.rank_all)
     { uint32_t action = 0;
-      for (size_t i = 0; i < mydata.ec_seq.size(); i++)
-	if (!CB::ec_is_example_header(*mydata.ec_seq[i]) && !example_is_newline(*mydata.ec_seq[i]))
-	  if (mydata.ec_seq[i]->pred.multiclass != 0)
-	    action = mydata.ec_seq[i]->pred.multiclass;
-      mydata.ec_seq[0]->pred.multiclass = action;
+      for (size_t i = 0; i < examples.size(); i++)
+	if (!CB::ec_is_example_header(*examples[i]) && !example_is_newline(*examples[i]))
+	  if (examples[i]->pred.multiclass != 0)
+	    action = examples[i]->pred.multiclass;
+      examples[0]->pred.multiclass = action;
     }
 }
 
