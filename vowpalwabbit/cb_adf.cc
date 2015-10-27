@@ -41,9 +41,11 @@ struct cb_adf
   // cost sensitive
   v_array<COST_SENSITIVE::label> cs_labels;
 
-// mtr
+  // mtr
+  uint32_t mtr_example;
   v_array<COST_SENSITIVE::label> mtr_cs_labels;
   v_array<example*> mtr_ec_seq;
+  MULTILABEL::labels mtr_multilabels;
 
   COST_SENSITIVE::label pred_scores;
 
@@ -211,13 +213,13 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
     (**ec).l.cb = cb_labels[i++];
 
   if (!mydata.rank_all)
-  { uint32_t action = 0;
-    for (size_t i = 0; i < examples.size(); i++)
-      if (!CB::ec_is_example_header(*examples[i]) && !example_is_newline(*examples[i]))
-        if (examples[i]->pred.multiclass != 0)
-          action = examples[i]->pred.multiclass;
-    examples[0]->pred.multiclass = action;
-  }
+    { uint32_t action = 0;
+      for (size_t i = 0; i < mydata.ec_seq.size(); i++)
+	if (!CB::ec_is_example_header(*mydata.ec_seq[i]) && !example_is_newline(*mydata.ec_seq[i]))
+	  if (mydata.ec_seq[i]->pred.multiclass != 0)
+	    action = mydata.ec_seq[i]->pred.multiclass;
+      mydata.ec_seq[0]->pred.multiclass = action;
+    }
 }
 
 void learn_IPS(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
@@ -230,7 +232,7 @@ void learn_DR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   call_predict_or_learn<true>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
 }
 
-  void gen_cs_example_MTR(v_array<example*>& ec_seq, v_array<example*>& mtr_ec_seq, v_array<COST_SENSITIVE::label>& mtr_cs_labels)
+  void gen_cs_example_MTR(cb_adf& data, v_array<example*>& ec_seq, v_array<example*>& mtr_ec_seq, v_array<COST_SENSITIVE::label>& mtr_cs_labels)
 { 
   mtr_ec_seq.erase();
   bool shared = CB::ec_is_example_header(*(ec_seq[0]));
@@ -250,6 +252,7 @@ void learn_DR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
       else if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
 	{
 	  wc.x = ld.costs[0].cost;
+	  data.mtr_example = i;
 	  keep_example = true;
 	}
       
@@ -268,15 +271,36 @@ void learn_DR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
     }
 }
 
+  template<class T> void swap(T& ele1, T& ele2)
+  {
+    T temp = ele2;
+    ele2 = ele1;
+    ele1 = temp;
+  }
+
 void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 { //first get the prediction to return
   gen_cs_example_ips(examples, mydata.cs_labels);
   call_predict_or_learn<false>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
+  uint32_t action = 0;
+  if (!mydata.rank_all) //preserve prediction
+    action = examples[0]->pred.multiclass;
+  else
+    swap(examples[0]->pred.multilabels, mydata.mtr_multilabels);
   //second train on _one_ action (which requires up to 3 examples).
   //We must go through the cost sensitive classifier layer to get
   //proper feature handling.
-  gen_cs_example_MTR(examples, mydata.mtr_ec_seq, mydata.mtr_cs_labels);
+  gen_cs_example_MTR(mydata, examples, mydata.mtr_ec_seq, mydata.mtr_cs_labels);
+  uint32_t nf = examples[mydata.mtr_example]->num_features;
+  float old_weight = examples[mydata.mtr_example]->weight;
+  examples[mydata.mtr_example]->weight *= 1. / examples[mydata.mtr_example]->l.cb.costs[0].probability;
   call_predict_or_learn<true>(mydata, base, mydata.mtr_ec_seq, mydata.cb_labels, mydata.mtr_cs_labels);
+  examples[mydata.mtr_example]->num_features = nf;
+  examples[mydata.mtr_example]->weight = old_weight;
+  if (!mydata.rank_all) //restore prediction
+    examples[0]->pred.multiclass = action;
+  else
+    swap(examples[0]->pred.multilabels, mydata.mtr_multilabels);
 }
 
 bool test_adf_sequence(cb_adf& data)
@@ -480,6 +504,7 @@ void finish(cb_adf& data)
   for(size_t i = 0; i < data.mtr_cs_labels.size(); i++)
     data.mtr_cs_labels[i].costs.delete_v();
   data.mtr_cs_labels.delete_v();
+  data.mtr_multilabels.label_v.delete_v();
   data.pred_scores.costs.delete_v();
 }
 
