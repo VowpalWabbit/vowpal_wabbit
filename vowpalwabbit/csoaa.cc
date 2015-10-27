@@ -338,17 +338,17 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
     ec->example_t = data.csoaa_example_t;
 
     simple_label.initial = 0.;
-    ec->weight = 1.;
+    float old_weight = ec->weight;
     if (!data.treat_as_classifier)   // treat like regression
       simple_label.label = costs[0].x;
     else     // treat like classification
     { if (costs[0].x <= min_cost)
       { simple_label.label = -1.;
-        ec->weight = max_cost - min_cost;
+        ec->weight = old_weight * (max_cost - min_cost);
       }
       else
       { simple_label.label = 1.;
-        ec->weight = costs[0].x - min_cost;
+        ec->weight = old_weight * (costs[0].x - min_cost);
       }
     }
     ec->l.simple = simple_label;
@@ -357,6 +357,7 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index, data.all->audit || data.all->hash_inv);
     base.learn(*ec);
     LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index, data.all->audit || data.all->hash_inv);
+    ec->weight = old_weight;
 
     // restore original cost-sensitive label, sum of importance weights and partial_prediction
     ec->l.cs = save_cs_label;
