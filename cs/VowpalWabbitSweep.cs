@@ -1,4 +1,12 @@
-﻿using System;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="VowpalWabbitSweep.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -11,6 +19,13 @@ using VW.Serializer;
 
 namespace VW
 {
+    /// <summary>
+    /// Sweeping wrapper for multiline examples. Designed to re-use allocated examples
+    /// across multiple Vowpal Wabbit instances. So far plain parallelization yielded
+    /// faster training times at least on a 20 core machine.
+    /// </summary>
+    /// <typeparam name="TExample">User example type.</typeparam>
+    /// <typeparam name="TActionDependentFeature">Action dependent feature type.</typeparam>
     public class VowpalWabbitSweep<TExample, TActionDependentFeature> : IDisposable
     {
         private const int NumberOfVWInstancesSharingExamples = 1;

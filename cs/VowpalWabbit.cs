@@ -330,7 +330,7 @@ namespace VW
         /// <param name="example">The shared example.</param>
         /// <param name="actionDependentFeatures">The action dependent features.</param>
         /// <returns>The ranked prediction for the given examples.</returns>
-        public Tuple<int, TActionDependentFeature>[] Predict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int? index = null, ILabel label = null)
+        public ActionDependentFeature<TActionDependentFeature>[] Predict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int? index = null, ILabel label = null)
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);

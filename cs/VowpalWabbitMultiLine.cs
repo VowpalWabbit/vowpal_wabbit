@@ -22,21 +22,45 @@ namespace VW
     /// </summary>
     public static class VowpalWabbitMultiLine
     {
+        /// <summary>
+        /// String serialization helper.
+        /// </summary>
+        /// <typeparam name="TExample">User example type.</typeparam>
+        /// <typeparam name="TActionDependentFeature">Action dependent feature type.</typeparam>
+        /// <param name="vw"></param>
+        /// <param name="example"></param>
+        /// <param name="actionDependentFeatures"></param>
+        /// <param name="index"></param>
+        /// <param name="label"></param>
+        /// <param name="serializer">Optional serializer. Defaults to attribute extraction.</param>
+        /// <param name="actionDependentFeatureSerializer">">Optional serializer. Defaults to attribute extraction.</param>
+        /// <returns>The VW native formatted string.</returns>
         public static string SerializeToString<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
-            VowpalWabbitSerializer<TExample> serializer,
-            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int? index = null,
-            ILabel label = null)
+            ILabel label = null,
+            VowpalWabbitSerializer<TExample> serializer = null,
+            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer = null)
         {
-            if (serializer.EnableStringExampleGeneration)
+            if (vw == null)
+                throw new ArgumentNullException("vw");
+
+            if (serializer == null)
+            {
+                serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(new VowpalWabbitSettings(enableStringExampleGeneration: true)).Create(vw);
+            }
+            else if (!serializer.EnableStringExampleGeneration)
             {
                 throw new ArgumentException("Serializer must be compiled using EnableStringExampleGeneration = true");
             }
 
-            if (actionDependentFeatureSerializer.EnableStringExampleGeneration)
+            if (actionDependentFeatureSerializer == null)
+            {
+                actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(new VowpalWabbitSettings(enableStringExampleGeneration: true)).Create(vw);
+            }
+            else if (!actionDependentFeatureSerializer.EnableStringExampleGeneration)
             {
                 throw new ArgumentException("Action dependent serializer must be compiled using EnableStringExampleGeneration = true");
             }
@@ -68,16 +92,54 @@ namespace VW
             return stringExample.ToString();
         }
 
+        public delegate void LearnOrPredictAction<TActionDependentFeature>(
+            IReadOnlyList<VowpalWabbitExample> validExamples, 
+            IReadOnlyList<ActionDependentFeature<TActionDependentFeature>> validActionDependentFeatures,
+            IReadOnlyList<ActionDependentFeature<TActionDependentFeature>> emptyActionDependentFeatures);
+
+        /// <summary>
+        /// A tuple of an action dependent feature and the corresponding index.
+        /// </summary>
+        /// <typeparam name="TActionDependentFeature">The action dependent feature type.</typeparam>
+        public sealed class ActionDependentFeature<TActionDependentFeature>
+        {
+            internal ActionDependentFeature(int index, TActionDependentFeature feature)
+            {
+                this.Index = index;
+                this.Feature = feature;
+            }
+
+            /// <summary>
+            /// The index within the multi-line example.
+            /// </summary>
+            public int Index { get; private set; }
+
+            /// <summary>
+            /// The feature object.
+            /// </summary>
+            public TActionDependentFeature Feature { get; private set; }
+        }
+
         /// <summary>
         /// Simplify learning of examples with action dependent features.
         /// </summary>
+        /// <typeparam name="TExample">User example type.</typeparam>
+        /// <typeparam name="TActionDependentFeature">Action dependent feature type.</typeparam>
+        /// <param name="vw">The VowpalWabbit instances.</param>
+        /// <param name="serializer">The example serializer.</param>
+        /// <param name="actionDependentFeatureSerializer">The action dependent feature serializer.</param>
+        /// <param name="example">The example.</param>
+        /// <param name="actionDependentFeatures">The action dependent features.</param>
+        /// <param name="predictOrLearn">An action executed once the set of valid examples is determined. </param>
+        /// <param name="index">The optional index of the action dependent feature this label belongs too.</param>
+        /// <param name="label">The optional label to be used for learning or evaluation.</param>
         public static void Execute<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
             VowpalWabbitSerializer<TExample> serializer,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
-            Action<List<VowpalWabbitExample>, List<Tuple<int, TActionDependentFeature>>, List<Tuple<int, TActionDependentFeature>>> predictOrLearn,
+            LearnOrPredictAction<TActionDependentFeature> predictOrLearn,
             int? index = null,
             ILabel label = null)
         {
@@ -89,8 +151,8 @@ namespace VW
 
             var examples = new List<VowpalWabbitExample>(actionDependentFeatures.Count + 1);
             var validExamples = new List<VowpalWabbitExample>(actionDependentFeatures.Count + 1);
-            var validActionDependentFeatures = new List<Tuple<int, TActionDependentFeature>>(actionDependentFeatures.Count + 1);
-            var emptyActionDependentFeatures = new List<Tuple<int, TActionDependentFeature>>(actionDependentFeatures.Count + 1);
+            var validActionDependentFeatures = new List<ActionDependentFeature<TActionDependentFeature>>(actionDependentFeatures.Count + 1);
+            var emptyActionDependentFeatures = new List<ActionDependentFeature<TActionDependentFeature>>(actionDependentFeatures.Count + 1);
 
             try
             {
@@ -119,11 +181,11 @@ namespace VW
                     if (!adfExample.IsNewLine)
                     {
                         validExamples.Add(adfExample);
-                        validActionDependentFeatures.Add(Tuple.Create(i, actionDependentFeature));
+                        validActionDependentFeatures.Add(new ActionDependentFeature<TActionDependentFeature>(i, actionDependentFeature));
                     }
                     else
                     {
-                        emptyActionDependentFeatures.Add(Tuple.Create(i, actionDependentFeature));
+                        emptyActionDependentFeatures.Add(new ActionDependentFeature<TActionDependentFeature>(i, actionDependentFeature));
                     }
 
                     i++;
@@ -204,7 +266,7 @@ namespace VW
         /// <param name="index">The index of action dependent feature to label.</param>
         /// <param name="label">The label for the selected action dependent feature.</param>
         /// <returns>An ranked subset of predicted actions.</returns>
-        public static Tuple<int, TActionDependentFeature>[] LearnAndPredict<TExample, TActionDependentFeature>(
+        public static ActionDependentFeature<TActionDependentFeature>[] LearnAndPredict<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
             VowpalWabbitSerializer<TExample> serializer,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
@@ -256,7 +318,7 @@ namespace VW
         /// <param name="example">The user example.</param>
         /// <param name="actionDependentFeatures">The action dependent features.</param>
         /// <returns>An ranked subset of predicted actions.</returns>
-        public static Tuple<int, TActionDependentFeature>[] Predict<TExample, TActionDependentFeature>(
+        public static ActionDependentFeature<TActionDependentFeature>[] Predict<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
             VowpalWabbitSerializer<TExample> serializer,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
@@ -295,11 +357,21 @@ namespace VW
             return predictions ?? actionDependentFeatures.Select((o, i) => Tuple.Create(i, o)).ToArray();
         }
 
-        public static Tuple<int, TActionDependentFeature>[] GetPrediction<TActionDependentFeature>(
+        /// <summary>
+        /// Extracts the prediction, orders the action depdendent feature objects accordingly and appends the 
+        /// action dependent feature objcts that did produce empty examples at the end.
+        /// </summary>
+        /// <typeparam name="TActionDependentFeature">The action dependent feature type.</typeparam>
+        /// <param name="vw"The Vowpal Wabbit instance.></param>
+        /// <param name="examples">The list of examples.</param>
+        /// <param name="validActionDependentFeatures">The list of non-empty action dependent feature objects.</param>
+        /// <param name="emptyActionDependentFeatures">The list of empty action dependent feature objects.</param>
+        /// <returns></returns>
+        public static ActionDependentFeature<TActionDependentFeature>[] GetPrediction<TActionDependentFeature>(
             VowpalWabbit vw,
             List<VowpalWabbitExample> examples,
-            List<Tuple<int, TActionDependentFeature>> validActionDependentFeatures,
-            List<Tuple<int, TActionDependentFeature>> emptyActionDependentFeatures)
+            IReadOnlyList<ActionDependentFeature<TActionDependentFeature>> validActionDependentFeatures,
+            IReadOnlyList<ActionDependentFeature<TActionDependentFeature>> emptyActionDependentFeatures)
         {
             // Since the prediction result is stored in the first example
             // and we'll have to get an actual VowpalWabbitExampt
@@ -316,7 +388,7 @@ namespace VW
                 throw new InvalidOperationException("Number of predictions returned unequal number of examples fed");
             }
 
-            var result = new Tuple<int, TActionDependentFeature>[validActionDependentFeatures.Count + emptyActionDependentFeatures.Count];
+            var result = new ActionDependentFeature<TActionDependentFeature>[validActionDependentFeatures.Count + emptyActionDependentFeatures.Count];
 
             int i = 0;
             foreach (var index in values)
