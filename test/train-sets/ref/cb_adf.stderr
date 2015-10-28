@@ -8,7 +8,7 @@ num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 2.000000 2.000000            1            1.0    known        0       15
-1.000000 0.000000            2            2.0    known        0        6
+1.000000 0.000000            2            2.0    known        1        6
 
 finished run
 number of examples per pass = 3
