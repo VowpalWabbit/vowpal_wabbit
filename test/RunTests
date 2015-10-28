@@ -1324,13 +1324,17 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/active_cover.stderr
 
 # Test 102: active cover (predict)
-{VW} -i models/active_cover.model --binary -t -d test-sets/rcv1_small_test.data -p active_cover.predict 
+{VW} -i models/active_cover.model --binary -t -d test-sets/rcv1_small_test.data -p active_cover.predict
     test-sets/ref/active_cover.stderr
     pred-sets/ref/active_cover.predict
 
 # Test 103: active cover oracular
 {VW} --loss_function logistic --binary --active_cover --oracular -d ./train-sets/rcv1_small.dat
     train-sets/ref/active_cover_oracular.stderr
+
+# Test 104: check cb_adf
+{VW} --cb_adf train-sets/cb_test.ldf --cb_type mtr --noconstant
+    train-sets/ref/cb_adf_mtr.stderr
 
 # Test 105: train FTRL-Proximal early stopping
 {VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache
