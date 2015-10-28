@@ -59,7 +59,7 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   size_t total = sizeof(size_t);
   if (buf_read(cache, c, (int)total) < total)
     return 0;
-  c = bufread_label(ld,c, cache);
+  bufread_label(ld,c, cache);
 
   return total;
 }
