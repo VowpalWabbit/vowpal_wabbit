@@ -5,10 +5,9 @@
 #include <iostream>
 #include <string>
 
-int 
+int
 main (void)
-{
-  using std::cin;
+{ using std::cin;
   using std::cout;
   using std::endl;
   using std::setprecision;
@@ -33,20 +32,18 @@ main (void)
   uint32_t rc = n_rows * n_columns;
   unsigned char buf[rc];
 
-  for (cin.read (reinterpret_cast<char*> (buf), rc); 
-       ! cin.eof (); 
+  for (cin.read (reinterpret_cast<char*> (buf), rc);
+       ! cin.eof ();
        cin.read (reinterpret_cast<char*> (buf), rc))
-    {
-      cout << "|p";
+  { cout << "|p";
 
-      for (unsigned int p = 0; p < n_rows * n_columns; ++p)
-        {
-          if (buf[p])
-            cout << " " << p << ":" << setprecision (8) << static_cast<double>(buf[p])/256.0;
-        }
-
-      cout << endl;
+    for (unsigned int p = 0; p < n_rows * n_columns; ++p)
+    { if (buf[p])
+        cout << " " << p << ":" << setprecision (8) << static_cast<double>(buf[p])/256.0;
     }
+
+    cout << endl;
+  }
 
   return 0;
 }

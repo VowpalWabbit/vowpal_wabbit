@@ -93,32 +93,9 @@ namespace VW
         }
 
         public delegate void LearnOrPredictAction<TActionDependentFeature>(
-            IReadOnlyList<VowpalWabbitExample> validExamples, 
+            IReadOnlyList<VowpalWabbitExample> validExamples,
             IReadOnlyList<ActionDependentFeature<TActionDependentFeature>> validActionDependentFeatures,
             IReadOnlyList<ActionDependentFeature<TActionDependentFeature>> emptyActionDependentFeatures);
-
-        /// <summary>
-        /// A tuple of an action dependent feature and the corresponding index.
-        /// </summary>
-        /// <typeparam name="TActionDependentFeature">The action dependent feature type.</typeparam>
-        public sealed class ActionDependentFeature<TActionDependentFeature>
-        {
-            internal ActionDependentFeature(int index, TActionDependentFeature feature)
-            {
-                this.Index = index;
-                this.Feature = feature;
-            }
-
-            /// <summary>
-            /// The index within the multi-line example.
-            /// </summary>
-            public int Index { get; private set; }
-
-            /// <summary>
-            /// The feature object.
-            /// </summary>
-            public TActionDependentFeature Feature { get; private set; }
-        }
 
         /// <summary>
         /// Simplify learning of examples with action dependent features.
@@ -283,7 +260,7 @@ namespace VW
             Contract.Requires(index >= 0);
             Contract.Requires(label != null);
 
-            Tuple<int, TActionDependentFeature>[] predictions = null;
+            ActionDependentFeature<TActionDependentFeature>[] predictions = null;
 
             Execute(
                 vw,
@@ -304,7 +281,7 @@ namespace VW
                 label);
 
             // default to the input list
-            return predictions ?? actionDependentFeatures.Select((o, i) => Tuple.Create(i, o)).ToArray();
+            return predictions ?? actionDependentFeatures.Select((o, i) => new ActionDependentFeature<TActionDependentFeature>(i, o)).ToArray();
         }
 
         /// <summary>
@@ -333,7 +310,7 @@ namespace VW
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
 
-            Tuple<int, TActionDependentFeature>[] predictions = null;
+            ActionDependentFeature<TActionDependentFeature>[] predictions = null;
 
             Execute(
                 vw,
@@ -354,11 +331,11 @@ namespace VW
                 label);
 
             // default to the input list
-            return predictions ?? actionDependentFeatures.Select((o, i) => Tuple.Create(i, o)).ToArray();
+            return predictions ?? actionDependentFeatures.Select((o, i) => new ActionDependentFeature<TActionDependentFeature>(i, o)).ToArray();
         }
 
         /// <summary>
-        /// Extracts the prediction, orders the action depdendent feature objects accordingly and appends the 
+        /// Extracts the prediction, orders the action depdendent feature objects accordingly and appends the
         /// action dependent feature objcts that did produce empty examples at the end.
         /// </summary>
         /// <typeparam name="TActionDependentFeature">The action dependent feature type.</typeparam>
@@ -369,7 +346,7 @@ namespace VW
         /// <returns></returns>
         public static ActionDependentFeature<TActionDependentFeature>[] GetPrediction<TActionDependentFeature>(
             VowpalWabbit vw,
-            List<VowpalWabbitExample> examples,
+            IReadOnlyList<VowpalWabbitExample> examples,
             IReadOnlyList<ActionDependentFeature<TActionDependentFeature>> validActionDependentFeatures,
             IReadOnlyList<ActionDependentFeature<TActionDependentFeature>> emptyActionDependentFeatures)
         {

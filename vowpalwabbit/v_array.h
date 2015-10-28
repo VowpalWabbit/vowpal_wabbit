@@ -22,7 +22,8 @@ license as described in the file LICENSE.
 
 const size_t erase_point = ~ ((1 << 10) -1);
 
-template<class T> struct v_array {
+template<class T> struct v_array
+{
 public:
   T* begin;
   T* end;
@@ -34,27 +35,23 @@ public:
   bool empty() { return begin == end;}
   void decr() { end--;}
   void incr()
-  {
-    if (end == end_array)
+  { if (end == end_array)
       resize(2 * (end_array - begin) + 3);
     end++;
   }
   T& operator[](size_t i) { return begin[i]; }
   T& get(size_t i) { return begin[i]; }
   inline const size_t size() {return end-begin;}
-  void resize(size_t length, bool zero_everything=false)
-  {
-    if ((size_t)(end_array-begin) != length)
-    {
-      size_t old_len = end-begin;
+  void resize(size_t length)
+  { if ((size_t)(end_array-begin) != length)
+    { size_t old_len = end-begin;
       T* temp = (T *)realloc(begin, sizeof(T) * length);
       if ((temp == nullptr) && ((sizeof(T)*length) > 0))
-      {
-        THROW("realloc of " << length << " failed in resize().  out of memory?");
+      { THROW("realloc of " << length << " failed in resize().  out of memory?");
       }
       else
         begin = temp;
-      if (zero_everything && (old_len < length))
+      if (old_len < length)
         memset(begin+old_len, 0, (length-old_len)*sizeof(T));
       end = begin+old_len;
       end_array = begin + length;
@@ -63,21 +60,18 @@ public:
 
   void erase()
   { if (++erase_count & erase_point)
-    {
-      resize(end-begin);
+    { resize(end-begin);
       erase_count = 0;
     }
     end = begin;
   }
   void delete_v()
-  {
-    if (begin != nullptr)
+  { if (begin != nullptr)
       free(begin);
     begin = end = end_array = nullptr;
   }
   void push_back(const T &new_ele)
-  {
-    if(end == end_array)
+  { if(end == end_array)
       resize(2 * (end_array-begin) + 3);
     *(end++) = new_ele;
   }
@@ -86,15 +80,13 @@ public:
     *(end++) = new_ele;
   }
   size_t find_sorted(const T& ele)  //index of the smallest element >= ele, return true if element is in the array
-  {
-    size_t size = end - begin;
+  { size_t size = end - begin;
     size_t a = 0;
     size_t b = size;
     size_t i = (a + b) / 2;
 
     while(b - a > 1)
-    {
-      if(begin[i] < ele)	//if a = 0, size = 1, if in while we have b - a >= 1 the loop is infinite
+    { if(begin[i] < ele)	//if a = 0, size = 1, if in while we have b - a >= 1 the loop is infinite
         a = i;
       else if(begin[i] > ele)
         b = i;
@@ -110,14 +102,12 @@ public:
       return b;
   }
   size_t unique_add_sorted(const T &new_ele)//ANNA
-  {
-    size_t index = 0;
+  { size_t index = 0;
     size_t size = end - begin;
     size_t to_move;
 
     if(!contain_sorted(new_ele, index))
-    {
-      if(end == end_array)
+    { if(end == end_array)
         resize(2 * (end_array-begin) + 3);
 
       to_move = size - index;
@@ -133,8 +123,7 @@ public:
     return index;
   }
   bool contain_sorted(const T &ele, size_t& index)
-  {
-    index = find_sorted(ele);
+  { index = find_sorted(ele);
 
     if(index == this->size())
       return false;
@@ -162,21 +151,18 @@ template<class T>
 inline v_array<T> v_init() { return {nullptr, nullptr, nullptr, 0};}
 
 template<class T> void copy_array(v_array<T>& dst, v_array<T>& src)
-{
-  dst.erase();
+{ dst.erase();
   push_many(dst, src.begin, src.size());
 }
 
 template<class T> void copy_array(v_array<T>& dst, v_array<T>& src, T(*copy_item)(T&))
-{
-  dst.erase();
+{ dst.erase();
   for (T*item = src.begin; item != src.end; ++item)
     dst.push_back(copy_item(*item));
 }
 
 template<class T> void push_many(v_array<T>& v, const T* begin, size_t num)
-{
-  if(v.end+num >= v.end_array)
+{ if(v.end+num >= v.end_array)
     v.resize(max(2 * (size_t)(v.end_array - v.begin) + 3,
                  v.end - v.begin + num));
   memcpy(v.end, begin, num * sizeof(T));
@@ -184,35 +170,33 @@ template<class T> void push_many(v_array<T>& v, const T* begin, size_t num)
 }
 
 template<class T> void calloc_reserve(v_array<T>& v, size_t length)
-{
-  v.begin = calloc_or_throw<T>(length);
+{ v.begin = calloc_or_throw<T>(length);
   v.end = v.begin;
   v.end_array = v.begin + length;
 }
 
 template<class T> v_array<T> pop(v_array<v_array<T> > &stack)
-{
-  if (stack.end != stack.begin)
+{ if (stack.end != stack.begin)
     return *(--stack.end);
   else
     return v_array<T>();
 }
 
-template<class T> bool v_array_contains(v_array<T> &A, T x) {
-  for (T* e = A.begin; e != A.end; ++e)
+template<class T> bool v_array_contains(v_array<T> &A, T x)
+{ for (T* e = A.begin; e != A.end; ++e)
     if (*e == x) return true;
   return false;
 }
 
-template<class T>std::ostream& operator<<(std::ostream& os, const v_array<T>& v) {
-  os << '[';
+template<class T>std::ostream& operator<<(std::ostream& os, const v_array<T>& v)
+{ os << '[';
   for (T* i=v.begin; i!=v.end; ++i) os << ' ' << *i;
   os << " ]";
   return os;
 }
 
-template<class T,class U>std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T,U> >& v) {
-  os << '[';
+template<class T,class U>std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T,U> >& v)
+{ os << '[';
   for (std::pair<T,U>* i=v.begin; i!=v.end; ++i) os << ' ' << i->first << ':' << i->second;
   os << " ]";
   return os;
@@ -221,16 +205,14 @@ template<class T,class U>std::ostream& operator<<(std::ostream& os, const v_arra
 typedef v_array<unsigned char> v_string;
 
 inline v_string string2v_string(const std::string& s)
-{
-  v_string res = v_init<unsigned char>();
+{ v_string res = v_init<unsigned char>();
   if (!s.empty())
     push_many(res, (unsigned  char*)s.data(), s.size());
   return res;
 }
 
 inline std::string v_string2string(const v_string& v_s)
-{
-  std::string res;
+{ std::string res;
   for (unsigned char* i = v_s.begin; i != v_s.end; ++i)
     res.push_back(*i);
   return res;

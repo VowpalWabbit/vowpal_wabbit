@@ -47,4 +47,9 @@ namespace VW
   {
     return m_messages;
   }
+
+  void VisualLeakDetector::MarkAllLeaksAsReported()
+  {
+	  VLDMarkAllLeaksAsReported();
+  }
 }

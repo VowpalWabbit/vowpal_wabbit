@@ -11,7 +11,6 @@ using VW.Serializer.Attributes;
 
 namespace cs_unittest
 {
-    [TestClass]
     public class TestCbAdfClass : TestBase
     {
         public void ProfilePerformanceWithStringData()
@@ -77,7 +76,6 @@ namespace cs_unittest
             }
         }
 
-        [TestMethod]
         [TestCategory("Command line through marshalling")]
         public void Test87()
         {
@@ -112,7 +110,6 @@ namespace cs_unittest
             }
         }
 
-        [TestMethod]
         public void TestSharedModel()
         {
             string cbadfModelFile = "models/cb_adf.model";
@@ -143,7 +140,7 @@ namespace cs_unittest
                         expectedPredictions.Add(null);
                     else
                     {
-                        expectedPredictions.Add(pred.Select(p => p.Item2).ToArray());
+                        expectedPredictions.Add(pred.Select(p => p.Feature).ToArray());
                     }
                 }
             }
@@ -160,7 +157,7 @@ namespace cs_unittest
                     if (actualPrediction == null)
                         ReferenceEquals(expectedPredictions[i], actualPrediction);
                     else
-                        ReferenceEquals(expectedPredictions[i], actualPrediction.Select(p => p.Item2).ToArray());
+                        ReferenceEquals(expectedPredictions[i], actualPrediction.Select(p => p.Feature).ToArray());
                 }
             }
 
@@ -180,7 +177,7 @@ namespace cs_unittest
                             var actualPredictions = new List<DataStringADF[]>();
                             foreach (DataString example in sampleData)
                             {
-                                actualPredictions.Add(vwObject.Value.Predict(example, example.ActionDependentFeatures).Select(p => p.Item2).ToArray());
+                                actualPredictions.Add(vwObject.Value.Predict(example, example.ActionDependentFeatures).Select(p => p.Feature).ToArray());
                             }
 
                             Assert.AreEqual(expectedPredictions.Count, actualPredictions.Count);

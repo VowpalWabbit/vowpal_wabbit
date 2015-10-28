@@ -32,5 +32,7 @@ namespace VW
     }
 
     void ReportLeaks();
+
+	void MarkAllLeaksAsReported();
   };
 }

@@ -20,15 +20,12 @@ namespace VW
 	}
 
 	VowpalWabbitExampleBuilder::~VowpalWabbitExampleBuilder()
-	{
-		this->!VowpalWabbitExampleBuilder();
+{ this->!VowpalWabbitExampleBuilder();
 	}
 
 	VowpalWabbitExampleBuilder::!VowpalWabbitExampleBuilder()
-	{
-		if (m_example != nullptr)
-		{
-			// in case CreateExample is not getting called
+{ if (m_example != nullptr)
+  { // in case CreateExample is not getting called
 			delete m_example;
 
 			m_example = nullptr;
@@ -36,15 +33,13 @@ namespace VW
 	}
 
 	VowpalWabbitExample^ VowpalWabbitExampleBuilder::CreateExample()
-	{
-		if (m_example == nullptr)
+{ if (m_example == nullptr)
 			return nullptr;
 
 		try
-		{
-			// finalize example
+		{ // finalize example
 			VW::parse_atomic_example(*m_vw->m_vw, m_example->m_example, false);
-			VW::setup_example(*m_vw->m_vw, m_example->m_example);
+      VW::setup_example(*m_vw->m_vw, m_example->m_example);
 		}
 		CATCHRETHROW
 
@@ -56,32 +51,27 @@ namespace VW
 	}
 
 	void VowpalWabbitExampleBuilder::ParseLabel(String^ value)
-	{
-		if (value == nullptr)
+{ if (value == nullptr)
 			return;
 
 		auto bytes = System::Text::Encoding::UTF8->GetBytes(value);
 		auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
 
 		try
-		{
-      VW::parse_example_label(*m_vw->m_vw, *m_example->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
+		{ VW::parse_example_label(*m_vw->m_vw, *m_example->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
 		}
 		CATCHRETHROW
 		finally
-		{
-			valueHandle.Free();
+  { valueHandle.Free();
 		}
 	}
 
 	VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(Char featureGroup)
-	{
-		return AddNamespace((Byte)featureGroup);
+{ return AddNamespace((Byte)featureGroup);
 	}
 
 	VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(Byte featureGroup)
-	{
-		uint32_t index = featureGroup;
+{ uint32_t index = featureGroup;
 		auto ex = m_example->m_example;
 
 		return gcnew VowpalWabbitNamespaceBuilder(ex->sum_feat_sq + index, ex->atomics + index, featureGroup, m_example->m_example);
@@ -105,7 +95,7 @@ namespace VW
       unsigned char temp = m_index;
       m_example->indices.push_back(temp);
     }
-  }
+	}
 
   void VowpalWabbitNamespaceBuilder::AddFeaturesUnchecked(uint32_t weight_index_base, float* begin, float* end)
   {
@@ -113,7 +103,7 @@ namespace VW
     // *m_sum_feat_sq += sum_of_squares(begin, end);
 
     for (; begin != end; begin++)
-    {
+	{
       float x = *begin;
       if (x != 0)
       {
@@ -123,14 +113,12 @@ namespace VW
       weight_index_base++;
     }
 
-  }
+	}
 
-  void VowpalWabbitNamespaceBuilder::AddFeature(uint32_t weight_index, float x)
-	{
-		// filter out 0-values
+	void VowpalWabbitNamespaceBuilder::AddFeature(uint32_t weight_index, float x)
+{ // filter out 0-values
 		if (x == 0)
-		{
-			return;
+  { return;
 		}
 
 		*m_sum_feat_sq += x * x;
@@ -138,7 +126,6 @@ namespace VW
 	}
 
 	void VowpalWabbitNamespaceBuilder::PreAllocate(int size)
-	{
-		m_atomic->resize((m_atomic->end - m_atomic->begin) + size);
+{ m_atomic->resize((m_atomic->end - m_atomic->begin) + size);
 	}
 }

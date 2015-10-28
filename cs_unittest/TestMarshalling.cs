@@ -10,10 +10,8 @@ using VW.Serializer.Attributes;
 
 namespace cs_unittest
 {
-    [TestClass]
     public class TestMarshalling
     {
-        [TestMethod]
         [TestCategory("Marshal")]
         public void TestEnumerize()
         {
@@ -25,7 +23,6 @@ namespace cs_unittest
             }
         }
 
-        [TestMethod]
         [TestCategory("Marshal")]
         public void TestString()
         {
@@ -37,7 +34,6 @@ namespace cs_unittest
             }
         }
 
-        [TestMethod]
         [TestCategory("Marshal")]
         public void TestStringFeatureGroup()
         {
@@ -47,43 +43,42 @@ namespace cs_unittest
             }
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(AssertFailedException))]
         [TestCategory("Marshal")]
         public void TestStringNamespace()
         {
-            using (var vw = new VowpalWabbitExampleValidator<ExampleString3>(string.Empty))
+            try
             {
-                // this is an example of incompatibility between C# and VowpalWabbit string format due to missing escape syntax
-                vw.Validate("| London", new ExampleString3() { Location = "London" });
+                using (var vw = new VowpalWabbitExampleValidator<ExampleString3>(string.Empty))
+                {
+                    vw.Validate("|bc London", new ExampleString3() { Location = "London" });
+                }
+
+                Assert.Fail("Expected ArgumentException");
+            }
+            catch (ArgumentException)
+            {
             }
         }
 
-
-        [TestMethod]
         [TestCategory("Marshal")]
         public void TestStringEscape()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleStringEscape>(string.Empty))
             {
-                // this is an example of incompatibility between C# and VowpalWabbit string format due to missing escape syntax
                 vw.Validate("| New_York_State", new ExampleStringEscape() { Value = "New York State" });
                 vw.Validate("| new_York_state", new ExampleStringEscape() { Value = "new York state" });
             }
         }
 
-        [TestMethod]
         [TestCategory("Marshal")]
         public void TestStringSplit()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleStringSplit>(string.Empty))
             {
-                // this is an example of incompatibility between C# and VowpalWabbit string format due to missing escape syntax
                 vw.Validate("| New York State", new ExampleStringSplit() { Value = "New York State" });
             }
         }
 
-        [TestMethod]
         [TestCategory("Marshal")]
         public void TestDictionary()
         {
@@ -100,7 +95,6 @@ namespace cs_unittest
             }
         }
 
-        [TestMethod]
         [TestCategory("Marshal")]
         public void TestCustomType()
         {
@@ -110,7 +104,6 @@ namespace cs_unittest
             }
         }
 
-        [TestMethod]
         [TestCategory("Marshal")]
         public void TestEnumerableString()
         {
@@ -122,7 +115,6 @@ namespace cs_unittest
             }
         }
 
-        [TestMethod]
         [TestCategory("Marshal")]
         public void TestEnumerableKV()
         {
@@ -141,7 +133,6 @@ namespace cs_unittest
             }
         }
 
-        [TestMethod]
         [TestCategory("Marshal")]
         public void TestComplexType()
         {
@@ -184,8 +175,6 @@ namespace cs_unittest
             }
         }
 
-
-        [TestMethod]
         [TestCategory("Marshal")]
         public void TestEnumerizePosition()
         {
@@ -196,7 +185,6 @@ namespace cs_unittest
             }
         }
 
-        [TestMethod]
         [TestCategory("Marshal")]
         public void TestBool()
         {

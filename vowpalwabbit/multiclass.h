@@ -11,8 +11,8 @@ struct vw;
 
 namespace MULTICLASS
 {
-struct label_t {
-  uint32_t label;
+struct label_t
+{ uint32_t label;
   float weight;
 };
 

@@ -19,8 +19,7 @@ namespace VW
 #endif
 
 		try
-		{
-			return VW::get_prediction(ex);
+  { return VW::get_prediction(ex);
 		}
 		CATCHRETHROW
 	}
@@ -33,8 +32,7 @@ namespace VW
 #endif
 
 		try
-		{
-			return VW::get_cost_sensitive_prediction(ex);
+  { return VW::get_cost_sensitive_prediction(ex);
 		}
 		CATCHRETHROW
 	}
@@ -48,23 +46,21 @@ namespace VW
 
 		size_t length;
 		uint32_t* labels;
-
+		
 		try
-		{
-			labels = VW::get_multilabel_predictions(ex, length);
+  { labels = VW::get_multilabel_predictions(ex, length);
 		}
 		CATCHRETHROW
 
 		if (length > Int32::MaxValue)
-		{
-			throw gcnew ArgumentOutOfRangeException("Multi-label predictions too large");
+  { throw gcnew ArgumentOutOfRangeException("Multi-label predictions too large");
 		}
 
 		auto values = gcnew cli::array<int>((int)length);
 
     if (length > 0)
     {
-      Marshal::Copy(IntPtr(labels), values, 0, (int)length);
+		Marshal::Copy(IntPtr(labels), values, 0, (int)length);
     }
 
 		return values;

@@ -6,6 +6,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
 using System.Globalization;
 
 namespace VW.Serializer.Intermediate
@@ -25,6 +26,11 @@ namespace VW.Serializer.Intermediate
         {
             this.Name = name;
             this.FeatureGroup = featureGroup ?? ' ';
+
+            if (featureGroup == null && !string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentException("If Namespace is provided, FeatureGroup must be set too");
+            }
 
             // compute shared namespace hash
             this.NamespaceHash = name == null ?

@@ -2,8 +2,8 @@
 #include "reductions.h"
 
 template <bool is_learn>
-void predict_or_learn(char&, LEARNER::base_learner& base, example& ec) {
-  if (is_learn)
+void predict_or_learn(char&, LEARNER::base_learner& base, example& ec)
+{ if (is_learn)
     base.learn(ec);
   else
     base.predict(ec);
@@ -14,19 +14,17 @@ void predict_or_learn(char&, LEARNER::base_learner& base, example& ec) {
     ec.pred.scalar = -1;
 
   if (ec.l.simple.label != FLT_MAX)
-  {
-    if (fabs(ec.l.simple.label) != 1.f)
+  { if (fabs(ec.l.simple.label) != 1.f)
       cout << "You are using label " << ec.l.simple.label << " not -1 or 1 as loss function expects!" << endl;
     else if (ec.l.simple.label == ec.pred.scalar)
       ec.loss = 0.;
     else
-      ec.loss = ec.l.simple.weight;
+      ec.loss = ec.weight;
   }
 }
 
 LEARNER::base_learner* binary_setup(vw& all)
-{
-  if (missing_option(all, false, "binary", "report loss as binary classification on -1,1"))
+{ if (missing_option(all, false, "binary", "report loss as binary classification on -1,1"))
     return nullptr;
 
   LEARNER::learner<char>& ret =

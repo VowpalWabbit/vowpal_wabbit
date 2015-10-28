@@ -27,21 +27,21 @@ using namespace LEARNER;
 
 inline float sign(float w) { if (w <= 0.) return -1.; else  return 1.;}
 
-long long choose(long long n, long long k) {
-  if (k > n) return 0;
+long long choose(long long n, long long k)
+{ if (k > n) return 0;
   if (k<0) return 0;
   if (k==n) return 1;
   if (k==0 && n!=0) return 1;
   long long r = 1;
-  for (long long d = 1; d <= k; ++d) {
-    r *= n--;
+  for (long long d = 1; d <= k; ++d)
+  { r *= n--;
     r /= d;
   }
   return r;
 }
 
-struct boosting {
-  int N;
+struct boosting
+{ int N;
   float gamma;
   string* alg;
   vw* all;
@@ -55,19 +55,19 @@ struct boosting {
 // Online Boost-by-Majority (BBM)
 // --------------------------------------------------
 template <bool is_learn>
-void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec) {
-  label_data& ld = ec.l.simple;
+void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec)
+{ label_data& ld = ec.l.simple;
 
   float final_prediction = 0;
 
   float s = 0;
-  float u = ld.weight;
+  float u = ec.weight;
 
   if (is_learn) o.t++;
 
   for (int i = 0; i < o.N; i++)
-  {
-    if (is_learn) {
+  { if (is_learn)
+    {
 
       float k = floorf((float)(o.N-i-s)/2);
       long long c;
@@ -81,8 +81,8 @@ void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec) {
       float w = c * pow((double)(0.5 + o.gamma),
                         (double)k) * pow((double)0.5 - o.gamma,(double)(o.N-(i+1)-k));
 
-      // update ld.weight, weight for learner i (starting from 0)
-      ld.weight = u * w;
+      // update ec.weight, weight for learner i (starting from 0)
+      ec.weight = u * w;
 
       base.predict(ec, i);
 
@@ -93,42 +93,43 @@ void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec) {
 
       base.learn(ec, i);
     }
-    else {
-      base.predict(ec, i);
+    else
+    { base.predict(ec, i);
       final_prediction += ec.pred.scalar;
     }
   }
 
-  ld.weight = u;
+  ec.weight = u;
   ec.pred.scalar = sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
   else
-    ec.loss = ld.weight;
+    ec.loss = ec.weight;
 }
 
 //-----------------------------------------------------------------
 // Logistic boost
 //-----------------------------------------------------------------
 template <bool is_learn>
-void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example& ec) {
-  label_data& ld = ec.l.simple;
+void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example& ec)
+{ label_data& ld = ec.l.simple;
 
   float final_prediction = 0;
 
   float s = 0;
-  float u = ld.weight;
+  float u = ec.weight;
 
   if (is_learn) o.t++;
   float eta = 4 / sqrt(o.t);
 
-  for (int i = 0; i < o.N; i++) {
+  for (int i = 0; i < o.N; i++)
+  {
 
-    if (is_learn) {
-      float w = 1 / (1 + exp(s));
+    if (is_learn)
+    { float w = 1 / (1 + exp(s));
 
-      ld.weight = u * w;
+      ec.weight = u * w;
 
       base.predict(ec, i);
       float z;
@@ -148,42 +149,43 @@ void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example
       base.learn(ec, i);
 
     }
-    else {
-      base.predict(ec, i);
+    else
+    { base.predict(ec, i);
       final_prediction += ec.pred.scalar * o.alpha[i];
     }
   }
 
-  ld.weight = u;
+  ec.weight = u;
   ec.pred.scalar = sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
   else
-    ec.loss = ld.weight;
+    ec.loss = ec.weight;
 }
 
 template <bool is_learn>
-void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example& ec) {
-  label_data& ld = ec.l.simple;
+void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example& ec)
+{ label_data& ld = ec.l.simple;
 
   float final_prediction = 0, partial_prediction = 0;
 
   float s = 0;
   float v_normalization = 0, v_partial_sum = 0;
-  float u = ld.weight;
+  float u = ec.weight;
 
   if (is_learn) o.t++;
   float eta = 4 / sqrt(o.t);
 
   float stopping_point = frand48();
 
-  for (int i = 0; i < o.N; i++) {
+  for (int i = 0; i < o.N; i++)
+  {
 
-    if (is_learn) {
-      float w = 1 / (1 + exp(s));
+    if (is_learn)
+    { float w = 1 / (1 + exp(s));
 
-      ld.weight = u * w;
+      ec.weight = u * w;
 
       base.predict(ec, i);
       float z;
@@ -192,8 +194,8 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
 
       s += z * o.alpha[i];
 
-      if (v_partial_sum <= stopping_point) {
-        final_prediction += ec.pred.scalar * o.alpha[i];
+      if (v_partial_sum <= stopping_point)
+      { final_prediction += ec.pred.scalar * o.alpha[i];
       }
 
       partial_prediction += ec.pred.scalar * o.alpha[i];
@@ -201,8 +203,8 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
       v_partial_sum += o.v[i];
 
       // update v, exp(-1) = 0.36788
-      if (ld.label * partial_prediction < 0) {
-        o.v[i] *= 0.36788;
+      if (ld.label * partial_prediction < 0)
+      { o.v[i] *= 0.36788;
       }
       v_normalization += o.v[i];
 
@@ -214,13 +216,13 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
       base.learn(ec, i);
 
     }
-    else {
-      base.predict(ec, i);
-      if (v_partial_sum <= stopping_point) {
-        final_prediction += ec.pred.scalar * o.alpha[i];
+    else
+    { base.predict(ec, i);
+      if (v_partial_sum <= stopping_point)
+      { final_prediction += ec.pred.scalar * o.alpha[i];
       }
-      else {
-        // stopping at learner i
+      else
+      { // stopping at learner i
         break;
       }
       v_partial_sum += o.v[i];
@@ -228,47 +230,44 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
   }
 
   // normalize v vector in training
-  if (is_learn) {
-    for(int i = 0; i < o.N; i++) {
-      if (v_normalization)
+  if (is_learn)
+  { for(int i = 0; i < o.N; i++)
+    { if (v_normalization)
         o.v[i] /= v_normalization;
     }
   }
 
-  ld.weight = u;
+  ec.weight = u;
   ec.pred.scalar = sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
   else
-    ec.loss = ld.weight;
+    ec.loss = ec.weight;
 }
 
 
 void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text)
-{
-  if (model_file.files.size() == 0)
+{ if (model_file.files.size() == 0)
     return;
   stringstream os;
   os << "boosts " << o.N << endl;
   const char* buff = os.str().c_str();
   bin_text_read_write_fixed(model_file, (char *) &(o.N),  sizeof(o.N), "", read, buff, strlen(buff), text);
 
-  if (read) {
-    o.alpha.resize(o.N);
+  if (read)
+  { o.alpha.resize(o.N);
     o.v.resize(o.N);
   }
 
   for (int i = 0; i < o.N; i++)
     if (read)
-    {
-      float f;
+    { float f;
       bin_read_fixed(model_file, (char *) &f,  sizeof(f), "");
       o.alpha[i] = f;
     }
     else
-    {
-      stringstream os2;
+    { stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
       const char* buff2 = os.str().c_str();
       bin_text_write_fixed(model_file, (char *) &(o.alpha[i]),  sizeof(o.alpha[i]), buff2, strlen(buff2), text);
@@ -276,85 +275,79 @@ void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text)
 
   for (int i = 0; i < o.N; i++)
     if (read)
-    {
-      float f;
+    { float f;
       bin_read_fixed(model_file, (char *) &f,  sizeof(f), "");
       o.v[i] = f;
     }
     else
-    {
-      stringstream os2;
+    { stringstream os2;
       os2 << "v " << o.v[i] << endl;
       const char* buff2 = os.str().c_str();
       bin_text_write_fixed(model_file, (char *) &(o.v[i]),  sizeof(o.v[i]), buff2, strlen(buff2), text);
     }
 
-  if (read) {
-    cerr << "Loading alpha and v: " << endl;
+  if (read)
+  { cerr << "Loading alpha and v: " << endl;
   }
-  else {
-    cerr << "Saving alpha and v, current weighted_examples = " << o.all->sd->weighted_examples << endl;
+  else
+  { cerr << "Saving alpha and v, current weighted_examples = " << o.all->sd->weighted_examples << endl;
   }
-  for (int i = 0; i < o.N; i++) {
-    cerr << o.alpha[i] << " " << o.v[i] << endl;
+  for (int i = 0; i < o.N; i++)
+  { cerr << o.alpha[i] << " " << o.v[i] << endl;
   }
   cerr << endl;
 }
 
-void finish(boosting& o) {
-  delete o.alg;
+void finish(boosting& o)
+{ delete o.alg;
   o.C.~vector();
   o.alpha.~vector();
 }
 
-void return_example(vw& all, boosting& a, example& ec) {
-  output_and_account_example(all, ec);
+void return_example(vw& all, boosting& a, example& ec)
+{ output_and_account_example(all, ec);
   VW::finish_example(all,&ec);
 }
 
 void save_load(boosting &o, io_buf &model_file, bool read, bool text)
-{
-  if (model_file.files.size() == 0)
+{ if (model_file.files.size() == 0)
     return;
   stringstream os;
   os << "boosts " << o.N << endl;
   const char* buff = os.str().c_str();
   bin_text_read_write_fixed(model_file, (char *) &(o.N),  sizeof(o.N), "", read, buff, strlen(buff), text);
 
-  if (read) {
-    o.alpha.resize(o.N);
+  if (read)
+  { o.alpha.resize(o.N);
   }
 
   for (int i = 0; i < o.N; i++)
     if (read)
-    {
-      float f;
+    { float f;
       bin_read_fixed(model_file, (char *) &f,  sizeof(f), "");
       o.alpha[i] = f;
     }
     else
-    {
-      stringstream os2;
+    { stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
       const char* buff2 = os.str().c_str();
       bin_text_write_fixed(model_file, (char *) &(o.alpha[i]),  sizeof(o.alpha[i]), buff2, strlen(buff2), text);
     }
 
-  if (read) {
-    cerr << "Loading alpha: " << endl;
+  if (read)
+  { cerr << "Loading alpha: " << endl;
   }
-  else {
-    cerr << "Saving alpha, current weighted_examples = " << o.all->sd->weighted_examples << endl;
+  else
+  { cerr << "Saving alpha, current weighted_examples = " << o.all->sd->weighted_examples << endl;
   }
-  for (int i = 0; i < o.N; i++) {
-    cerr << o.alpha[i] << " " << endl;
+  for (int i = 0; i < o.N; i++)
+  { cerr << o.alpha[i] << " " << endl;
   }
   cerr << endl;
 }
 
 LEARNER::base_learner* boosting_setup(vw& all)
-{
-  if (missing_option<size_t,true>(all,"boosting",
+{ if (missing_option<size_t,true>(all,"boosting",
                                   "Online boosting with <N> weak learners"))
     return NULL;
   new_options(all, "Boosting Options")
@@ -390,21 +383,23 @@ LEARNER::base_learner* boosting_setup(vw& all)
   data.v = std::vector<float>(data.N,1);
 
   learner<boosting>* l;
-  if (*data.alg == "BBM") {
+  if (*data.alg == "BBM")
+  {
 
     l = &init_learner<boosting>(&data, setup_base(all),
                                 predict_or_learn<true>,
                                 predict_or_learn<false>, data.N);
   }
-  else if (*data.alg == "logistic") {
+  else if (*data.alg == "logistic")
+  {
 
     l = &init_learner<boosting>(&data, setup_base(all),
                                 predict_or_learn_logistic<true>,
                                 predict_or_learn_logistic<false>, data.N);
     l->set_save_load(save_load);
   }
-  else if (*data.alg == "adaptive") {
-    l = &init_learner<boosting>(&data, setup_base(all),
+  else if (*data.alg == "adaptive")
+  { l = &init_learner<boosting>(&data, setup_base(all),
                                 predict_or_learn_adaptive<true>,
                                 predict_or_learn_adaptive<false>, data.N);
     l->set_save_load(save_load_sampling);

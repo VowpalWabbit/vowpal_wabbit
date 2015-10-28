@@ -14,8 +14,7 @@ namespace VW
 {
 	VowpalWabbitModel::VowpalWabbitModel(VowpalWabbitSettings^ settings)
 		: VowpalWabbitBase(settings)
-	{
-		if (settings == nullptr)
+	{ if (settings == nullptr)
 			throw gcnew ArgumentNullException("settings");
 
 		if (settings->Model != nullptr)

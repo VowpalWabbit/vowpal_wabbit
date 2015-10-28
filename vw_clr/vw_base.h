@@ -33,12 +33,12 @@ namespace VW
 		/// The settings used for this instance.
 		/// </summary>
 		initonly VowpalWabbitSettings^ m_settings;
-
+		
 		/// <summary>
 		/// An optional shared model.
 		/// </summary>
 		VowpalWabbitModel^ m_model;
-
+		
 		/// <summary>
 		/// Example pool.
 		/// </summary>
@@ -82,7 +82,7 @@ namespace VW
 		bool m_isDisposed;
 
 		/// <summary>
-		/// Initializes a new <see cref="VowpalWabbitBase"/> instance.
+		/// Initializes a new <see cref="VowpalWabbitBase"/> instance. 
 		/// </summary>
 		/// <param name="settings">Command line arguments.</param>
 		VowpalWabbitBase(VowpalWabbitSettings^ settings);
@@ -93,7 +93,7 @@ namespace VW
 		!VowpalWabbitBase();
 
 		/// <summary>
-		/// Internal dipose using reference counting to delay disposal of shared native data structures.
+		/// Internal dipose using reference counting to delay disposal of shared native data structures. 
 		/// </summary>
 		void InternalDispose();
 
@@ -107,8 +107,7 @@ namespace VW
 		/// The settings used for this instance.
 		/// </summary>
 		property VowpalWabbitSettings^ Settings
-		{
-			VowpalWabbitSettings^ get();
+  { VowpalWabbitSettings^ get();
 		}
 
     property VowpalWabbitArguments^ Arguments
@@ -127,7 +126,7 @@ namespace VW
 		/// </summary>
 		/// <returns>An initialized and empty example</returns>
 		VowpalWabbitExample^ GetOrCreateEmptyExample();
-
+		
 		/// <summary>
 		/// Puts a native example data structure back into the pool.
 		/// </summary>

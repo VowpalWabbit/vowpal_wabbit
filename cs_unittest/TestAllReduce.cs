@@ -13,8 +13,7 @@ using VW.Serializer;
 
 namespace cs_unittest
 {
-    [TestClass]
-    public class TestAllReduceClass
+    public class TestAllReduceClass : TestBase
     {
         private static void Ingest(VowpalWabbit vw, IEnumerable<List<string>> blocks)
         {
@@ -42,7 +41,6 @@ namespace cs_unittest
             }
         }
 
-        [TestMethod]
         public async Task TestAllReduce()
         {
             var data = Enumerable.Range(1, 1000).Select(_ => Generator.GenerateShared(10)).ToList();

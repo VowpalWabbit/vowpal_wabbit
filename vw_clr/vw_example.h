@@ -39,14 +39,14 @@ namespace VW
     static initonly VowpalWabbitContextualBanditLabelComparator^ ContextualBandit = gcnew VowpalWabbitContextualBanditLabelComparator;
   };
 
-  /// <summary>
+	/// <summary>
 	/// A CLR representation of a vowpal wabbit example.
 	/// </summary>
 	/// <remarks>
 	/// Underlying memory is allocated by native code, but examples are not part of the ring.
 	/// </remarks>
 	[System::Diagnostics::DebuggerDisplay("{m_string}")]
-	public ref class VowpalWabbitExample
+	public ref class VowpalWabbitExample 
 	{
 	private:
 		/// <summary>
@@ -108,16 +108,14 @@ namespace VW
 		/// An optional inner example this example wraps.
 		/// </summary>
 		property VowpalWabbitExample^ InnerExample
-		{
-			VowpalWabbitExample^ get();
+  { VowpalWabbitExample^ get();
 		}
 
 		/// <summary>
 		/// The owner of this example.
 		/// </summary>
 		property IVowpalWabbitExamplePool^ Owner
-		{
-			IVowpalWabbitExamplePool^ get();
+  { IVowpalWabbitExamplePool^ get();
 		}
 
 		/// <summary>

@@ -11,7 +11,8 @@ license as described in the file LICENSE.
 #include "simple_label.h"
 #include "parser.h"
 
-namespace VW {
+namespace VW
+{
 
 /*    Caveats:
     (1) Some commandline parameters do not make sense as a library.
@@ -37,8 +38,8 @@ namespace VW {
   bool parse_atomic_example(vw& all, example* ae, bool do_read);
 
   typedef pair< unsigned char, vector<feature> > feature_space; //just a helper definition.
-  struct primitive_feature_space { //just a helper definition.
-    unsigned char name;
+struct primitive_feature_space   //just a helper definition.
+{ unsigned char name;
     feature* fs;
     size_t len;
   };
@@ -58,7 +59,7 @@ namespace VW {
   // callers must free memory using release_example
   // this interface must be used with care as finish_example is a no-op for these examples.
   // thus any delay introduced when freeing examples must be at least as long as the one
-  // introduced by all.l->finish_example implementations.
+  // introduced by all.l->finish_example implementations. 
   // e.g. multiline examples as used by cb_adf must not be released before the finishing newline example.
   example *alloc_examples(size_t, size_t);
   void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*) = nullptr);
@@ -103,30 +104,26 @@ namespace VW {
 
   //First create the hash of a namespace.
   inline uint32_t hash_space(vw& all, string s)
-  {
-    substring ss;
+{ substring ss;
     ss.begin = (char*)s.c_str();
     ss.end = ss.begin + s.length();
     return (uint32_t)all.p->hasher(ss,hash_base);
   }
   inline uint32_t hash_space_static(string s, string hash)
-  {
-      substring ss;
+{ substring ss;
       ss.begin = (char*)s.c_str();
       ss.end = ss.begin + s.length();
       return (uint32_t)getHasher(hash)(ss, hash_base);
   }
   //Then use it as the seed for hashing features.
   inline uint32_t hash_feature(vw& all, string s, unsigned long u)
-  {
-    substring ss;
+{ substring ss;
     ss.begin = (char*)s.c_str();
     ss.end = ss.begin + s.length();
     return (uint32_t)(all.p->hasher(ss,u) & all.parse_mask);
   }
   inline uint32_t hash_feature_static(string s, unsigned long u, string h, uint32_t num_bits)
-  {
-      substring ss;
+{ substring ss;
       ss.begin = (char*)s.c_str();
       ss.end = ss.begin + s.length();
       size_t parse_mark = (1 << num_bits) - 1;
@@ -134,8 +131,7 @@ namespace VW {
   }
 
   inline uint32_t hash_feature_cstr(vw& all, char* fstr, unsigned long u)
-  {
-    substring ss;
+{ substring ss;
     ss.begin = fstr;
     ss.end = ss.begin + strlen(fstr);
     return (uint32_t)(all.p->hasher(ss,u) & all.parse_mask);

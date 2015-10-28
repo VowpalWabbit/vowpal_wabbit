@@ -5,7 +5,8 @@
 #ifndef _Included_vw_learner_VWIntArrayLearner
 #define _Included_vw_learner_VWIntArrayLearner
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 /*
  * Class:     vw_learner_VWIntArrayLearner
@@ -13,7 +14,7 @@ extern "C" {
  * Signature: (Ljava/lang/String;ZJ)[F
  */
 JNIEXPORT jintArray JNICALL Java_vw_learner_VWIntArrayLearner_predict
-  (JNIEnv *, jobject, jstring, jboolean, jlong);
+(JNIEnv *, jobject, jstring, jboolean, jlong);
 
 #ifdef __cplusplus
 }
