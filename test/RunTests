@@ -1331,3 +1331,21 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 # Test 103: active cover oracular
 {VW} --loss_function logistic --binary --active_cover --oracular -d ./train-sets/rcv1_small.dat
     train-sets/ref/active_cover_oracular.stderr
+
+# Test 104: train FTRL-Proximal early stopping
+{VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache
+    train-sets/ref/0001_ftrl_holdout.stderr
+
+# Test 105: test FTRL-Proximal early stopping
+{VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout.predict
+    test-sets/ref/0001_ftrl_holdout.stderr
+    pred-sets/ref/0001_ftrl_holdout.predict
+
+# Test 106: train FTRL-Proximal no early stopping
+{VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off
+    train-sets/ref/0001_ftrl_holdout_off.stderr
+
+# Test 107: test FTRL-Proximal no early stopping
+{VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout_off.predict --holdout_off
+    test-sets/ref/0001_ftrl_holdout_off.stderr
+    pred-sets/ref/0001_ftrl_holdout_off.predict

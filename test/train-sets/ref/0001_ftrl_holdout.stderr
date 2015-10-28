@@ -1,0 +1,35 @@
+using l1 regularization = 2
+final_regressor = models/0001_ftrl.model
+Enabling FTRL based optimization
+Algorithm used: Proximal-FTRL
+ftrl_alpha = 0.01
+ftrl_beta = 0
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/0001.dat.cache
+Reading datafile = train-sets/0001.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+1.000000 1.000000            1            1.0   1.0000   0.0000       51
+0.500000 0.000000            2            2.0   0.0000   0.0000      104
+0.250000 0.000000            4            4.0   0.0000   0.0000      135
+0.250012 0.250025            8            8.0   0.0000   0.0070      146
+0.307972 0.365932           16           16.0   1.0000   0.0174      143
+0.330562 0.353151           32           32.0   1.0000   0.0383       70
+0.320522 0.310482           64           64.0   0.0000   0.0649       34
+0.363809 0.407095          128          128.0   0.0000   0.1093       30
+0.344932 0.326056          256          256.0   0.0000   0.1545       72
+0.332219 0.319506          512          512.0   0.0000   0.2409       37
+
+finished run
+number of examples = 540
+weighted example sum = 540.000000
+weighted label sum = 240.000000
+average loss = 0.000000 h
+best constant = 0.444444
+best constant's loss = 0.246914
+total feature number = 41349
