@@ -93,7 +93,7 @@ bool directory_exists(string path)
   if (stat(path.c_str(), &info) != 0)
     return false;
   else
-    return (info.st_mode & S_IFDIR);
+    return (info.st_mode & S_IFDIR) > 0;
   //  boost::filesystem::path p(path);
   //  return boost::filesystem::exists(p) && boost::filesystem::is_directory(p);
 }
@@ -512,7 +512,7 @@ void parse_feature_tweaks(vw& all)
     VW::validate_num_bits(all);
   }
 
-  all.permutations = vm.count("permutations");
+  all.permutations = vm.count("permutations") > 0;
 
   // prepare namespace interactions
   v_array<v_string> expanded_interactions = v_init<v_string>();

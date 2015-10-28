@@ -796,7 +796,7 @@ example* new_unused_example(vw& all)
 { example* ec = get_unused_example(all);
   all.p->lp.default_label(&ec->l);
   all.p->begin_parsed_examples++;
-  ec->example_counter = all.p->begin_parsed_examples;
+  ec->example_counter = (size_t)all.p->begin_parsed_examples;
   return ec;
 }
 example* read_example(vw& all, char* example_line)

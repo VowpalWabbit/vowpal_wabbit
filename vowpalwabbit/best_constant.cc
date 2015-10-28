@@ -76,8 +76,8 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
     return false;
 
   if (!is_more_than_two_labels_observed)
-  { best_constant_loss =  (label1_cnt>0)?all.loss->getLoss(all.sd, best_constant, label1) * label1_cnt:0.0;
-    best_constant_loss += (label2_cnt>0)?all.loss->getLoss(all.sd, best_constant, label2) * label2_cnt:0.0;
+  { best_constant_loss =  (label1_cnt>0)?all.loss->getLoss(all.sd, best_constant, label1) * label1_cnt:0.0f;
+    best_constant_loss += (label2_cnt>0)?all.loss->getLoss(all.sd, best_constant, label2) * label2_cnt:0.0f;
     best_constant_loss /= label1_cnt + label2_cnt;
   }
   else best_constant_loss = FLT_MIN;

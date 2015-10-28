@@ -287,8 +287,8 @@ const size_t size_fast_factorial = sizeof(fast_factorial)/sizeof(*fast_factorial
 // leave second argument = 1 to get regular factorial function
 
 inline size_t factor(const size_t n, const size_t start_from = 1)
-{ if (n <= 0) return 1.;
-  if (start_from == 1 && n < size_fast_factorial) return fast_factorial[n];
+{ if (n <= 0) return 1;
+  if (start_from == 1 && n < size_fast_factorial) return (size_t)fast_factorial[n];
 
   size_t res = 1;
   for (size_t i = start_from+1; i <= n; ++i) res *= i;
@@ -413,16 +413,16 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
           size_t n;
           if (cnt_ft_value_non_1 == 0) // number of generated simple combinations is C(n,k)
-          { n = choose(ft_size, order_of_inter);
+          { n = (size_t)choose((long long)ft_size, (long long)order_of_inter);
           }
           else
-          { n = 0.;
+          { n = 0;
             for (size_t l = 0; l <= order_of_inter; ++l)
             { //C(l+m-1, l) * C(n-m, k-l)
-              size_t num = (l==0)?1:choose(l+cnt_ft_value_non_1-1, l);
+              size_t num = (l==0)?1:(size_t)choose(l+cnt_ft_value_non_1-1, l);
 
               if (ft_size - cnt_ft_value_non_1 >= order_of_inter-l)
-                num *= choose(ft_size - cnt_ft_value_non_1, order_of_inter-l);
+                num *= (size_t)choose(ft_size - cnt_ft_value_non_1, order_of_inter-l);
               else num = 0;
 
               n +=  num;
