@@ -49,7 +49,7 @@ public class NativeUtils {
             Process process = Runtime.getRuntime().exec("lsb_release -r");
             reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
-            Pattern releasePattern = Pattern.compile("Release:\\s*(\\d+).*");
+            Pattern releasePattern = Pattern.compile("Release:\\s*(\\S+).*");
             Matcher matcher;
             while ((line = reader.readLine()) != null) {
                 matcher = releasePattern.matcher(line);
@@ -76,7 +76,7 @@ public class NativeUtils {
     public static String getOsFamily() throws IOException {
         final String osName = System.getProperty("os.name");
         if (osName.toLowerCase().contains("mac")) {
-            return "Darwin";
+            return "darwin";
         }
         else if (osName.toLowerCase().contains("linux")) {
             String distro = getDistroName();
@@ -88,7 +88,7 @@ public class NativeUtils {
             if (version == null) {
                 throw new UnsupportedOperationException("Cannot determine linux version");
             }
-            return distro.trim().replaceAll(" ", "_") + "." + version;
+            return (distro.trim().replaceAll(" ", "_") + "_" + version).toLowerCase();
         }
         throw new IllegalStateException("Unsupported operating system " + osName);
     }
@@ -103,7 +103,7 @@ public class NativeUtils {
      */
     public static void loadOSDependentLibrary(String path, String suffix) throws IOException {
         String osFamily = getOsFamily();
-        String osDependentLib = path + "." + osFamily + "." + System.getProperty("os.arch") + suffix;
+        String osDependentLib = path + "-" + osFamily + "_" + System.getProperty("os.arch") + suffix;
         if (NativeUtils.class.getResource(osDependentLib) != null) {
             loadLibraryFromJar(osDependentLib);
         }
