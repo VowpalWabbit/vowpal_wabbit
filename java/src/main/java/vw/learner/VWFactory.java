@@ -21,30 +21,31 @@ final public class VWFactory {
 
     private VWFactory() {}
 
-    static <T extends VWLearner> VWLearner getVWLearnerSafe(final String command, final Class<T> clazz) {
+    /**
+     * This is provided so that a VWLeaner can be created to pass to other code that takes the base type.
+     * This can useful but the user <b>NEEDS TO CLOSE</b> the instance.
+     * @param command the VW command
+     * @return The base type of the VW learner hierarchy.
+     */
+    public static VWLearner getVWLearner(final String command) {
         long nativePointer = initializeVWJni(command);
         VWReturnType returnType = getReturnType(nativePointer);
 
-        VWLearner baseLearner;
         switch (returnType) {
-            case VWFloatType:
-                baseLearner = new VWFloatLearner(nativePointer);
-                break;
-            case VWIntType:
-                baseLearner = new VWIntLearner(nativePointer);
-                break;
-            case VWFloatArrayType:
-                baseLearner = new VWFloatArrayLearner(nativePointer);
-                break;
-            case VWIntArrayType:
-                baseLearner = new VWIntArrayLearner(nativePointer);
-                break;
+            case VWFloatType: return new VWFloatLearner(nativePointer);
+            case VWIntType: return new VWIntLearner(nativePointer);
+            case VWFloatArrayType: return new VWFloatArrayLearner(nativePointer);
+            case VWIntArrayType: return new VWIntArrayLearner(nativePointer);
             case Unknown:
             default:
                 // Doing this will allow for all cases when a C object is made to be closed.
                 closeInstance(nativePointer);
                 throw new IllegalArgumentException("Unknown VW return type using command: " + command);
         }
+    }
+
+    static <T extends VWLearner> VWLearner getVWLearnerSafe(final String command, final Class<T> clazz) {
+        final VWLearner baseLearner = getVWLearner(command);
 
         // In the case that we have a ClassCastException the C object was still created and must be closed.
         // This will ensure that that closing happens
