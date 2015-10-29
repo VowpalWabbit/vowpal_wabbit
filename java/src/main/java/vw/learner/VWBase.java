@@ -8,8 +8,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * The base class for VW predictors.  This class is responsible for:
  *
  * <ol>
- * <li>Loading the native library.</li>
- * <li>Initializing the VW predictor on the <em>C</em> side.</li>
+ * <li>Keeping track of VW on the <em>C</em> side.</li>
  * <li>Closing the VW predictor and cleaning up the memory on the <em>C</em> side.</li>
  * <li>Bookkeeping, such as keeping the <em>C</em> memory pointer.</li>
  * </ol>
@@ -51,7 +50,7 @@ abstract class VWBase implements Closeable {
         try {
             if (isOpen) {
                 isOpen = false;
-                closeInstance(nativePointer);
+                VWFactory.closeInstance(nativePointer);
             }
         }
         finally {
@@ -62,6 +61,4 @@ abstract class VWBase implements Closeable {
     final protected boolean isOpen() {
         return isOpen;
     }
-
-    private native void closeInstance(long nativePointer);
 }

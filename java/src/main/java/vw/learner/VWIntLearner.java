@@ -3,8 +3,8 @@ package vw.learner;
 /**
  * @author deak
  */
-final public class VWIntLearner extends VWBase implements VWGeneric {
-    protected VWIntLearner(final long nativePointer) {
+final public class VWIntLearner extends VWBase implements VWLearner {
+    VWIntLearner(final long nativePointer) {
         super(nativePointer);
     }
 

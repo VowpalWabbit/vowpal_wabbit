@@ -17,6 +17,14 @@ JNIEXPORT jlong JNICALL Java_vw_learner_VWFactory_initialize
 (JNIEnv *, jobject, jstring);
 
 /*
+ * Class:     vw_learner_VWBase
+ * Method:    closeInstance
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_vw_learner_VWFactory_closeInstance
+(JNIEnv *, jobject, jlong);
+
+/*
  * Class:     vw_learner_VWFactory
  * Method:    getReturnType
  * Signature: (J)V

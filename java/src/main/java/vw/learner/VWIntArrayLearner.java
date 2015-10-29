@@ -1,7 +1,7 @@
 package vw.learner;
 
-public final class VWIntArrayLearner extends VWGenericBase<int[]> {
-    protected VWIntArrayLearner(final long nativePointer) {
+public final class VWIntArrayLearner extends VWLearnerBase<int[]> {
+    VWIntArrayLearner(final long nativePointer) {
         super(nativePointer);
     }
 

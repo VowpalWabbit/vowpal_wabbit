@@ -44,12 +44,12 @@ public class VWFloatLearnerTest {
                 "0 | price:.23 sqft:.25 age:.05 2006",
                 "1 2 'second_house | price:.18 sqft:.15 age:.35 1976",
                 "0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924"};
-        VWFloatLearner learner = (VWFloatLearner)VWFactory.getVWLeaner(" --quiet -f " + houseModel);
+        VWFloatLearner learner = VWFactory.getVWLeaner(" --quiet -f " + houseModel);
         for (String d : houseData) {
             learner.learn(d);
         }
         learner.close();
-        houseScorer = (VWFloatLearner)VWFactory.getVWLeaner("--quiet -t -i " + houseModel);
+        houseScorer = VWFactory.getVWLeaner("--quiet -t -i " + houseModel);
     }
 
     @After
@@ -58,7 +58,7 @@ public class VWFloatLearnerTest {
     }
 
     private long streamingLoadTest(int times) {
-        VWFloatLearner m1 = (VWFloatLearner)VWFactory.getVWLeaner("--quiet");
+        VWFloatLearner m1 = VWFactory.getVWLeaner("--quiet");
         long start = System.currentTimeMillis();
         for (int i=0; i<times; ++i) {
             // This will force a new string to be created every time for a fair test
@@ -106,7 +106,7 @@ public class VWFloatLearnerTest {
 
     @Test
     public void testLearn() throws IOException {
-        VWFloatLearner learner = (VWFloatLearner)VWFactory.getVWLeaner("--quiet");
+        VWFloatLearner learner = VWFactory.getVWLeaner("--quiet");
         float firstPrediction = learner.learn("0.1 " + heightData);
         float secondPrediction = learner.learn("0.9 " + heightData);
         assertNotEquals(firstPrediction, secondPrediction, 0.001);
@@ -124,7 +124,7 @@ public class VWFloatLearnerTest {
     public void testManySamples() {
         File model = new File("basic.model");
         model.deleteOnExit();
-        VWFloatLearner m = (VWFloatLearner)VWFactory.getVWLeaner("--quiet --loss_function logistic --link logistic -f " + model.getAbsolutePath());
+        VWFloatLearner m = VWFactory.getVWLeaner("--quiet --loss_function logistic --link logistic -f " + model.getAbsolutePath());
         for (int i=0; i<100; ++i) {
             m.learn("-1 | ");
             m.learn("1 | ");
@@ -132,14 +132,14 @@ public class VWFloatLearnerTest {
         m.close();
 
         float expVwOutput = 0.50419676f;
-        m = (VWFloatLearner)VWFactory.getVWLeaner("--quiet -i " + model.getAbsolutePath());
+        m = VWFactory.getVWLeaner("--quiet -i " + model.getAbsolutePath());
         assertEquals(expVwOutput, m.predict("| "), 0.0001);
     }
 
     @Test
     public void twoModelTest() {
-        VWFloatLearner m1 = (VWFloatLearner)VWFactory.getVWLeaner("--quiet");
-        VWFloatLearner m2 = (VWFloatLearner)VWFactory.getVWLeaner("--quiet");
+        VWFloatLearner m1 = VWFactory.getVWLeaner("--quiet");
+        VWFloatLearner m2 = VWFactory.getVWLeaner("--quiet");
 
         float a = m1.predict("-1 | ");
         m1.close();
@@ -152,7 +152,7 @@ public class VWFloatLearnerTest {
     public void testAlreadyClosed() {
         thrown.expect(IllegalStateException.class);
         thrown.expectMessage("Already closed.");
-        VWFloatLearner s = (VWFloatLearner)VWFactory.getVWLeaner("--quiet");
+        VWFloatLearner s = VWFactory.getVWLeaner("--quiet");
         s.close();
         s.predict("1 | ");
     }
@@ -161,7 +161,7 @@ public class VWFloatLearnerTest {
     public void testOldModel() {
         thrown.expect(Exception.class);
         thrown.expectMessage("bad model format!");
-        VWFloatLearner vw = (VWFloatLearner)VWFactory.getVWLeaner("--quiet -i src/test/resources/vw_7.8.model");
+        VWFloatLearner vw = VWFactory.getVWLeaner("--quiet -i src/test/resources/vw_7.8.model");
         vw.close();
     }
 
@@ -171,7 +171,7 @@ public class VWFloatLearnerTest {
         // that the Java layer could do something about
         thrown.expect(Exception.class);
         thrown.expectMessage("Model content is corrupted, weight vector index 1347768914 must be less than total vector length 262144");
-        VWFloatLearner vw = (VWFloatLearner)VWFactory.getVWLeaner("--quiet -i src/test/resources/vw_bad.model");
+        VWFloatLearner vw = VWFactory.getVWLeaner("--quiet -i src/test/resources/vw_bad.model");
         vw.close();
     }
 
@@ -189,7 +189,7 @@ public class VWFloatLearnerTest {
         data.put("1 | 7", 0.172148f);
 
         final String model = temporaryFolder.newFile().getAbsolutePath();
-        VWFloatLearner learn = (VWFloatLearner)VWFactory.getVWLeaner("--quiet --loss_function logistic -f " + model);
+        VWFloatLearner learn = VWFactory.getVWLeaner("--quiet --loss_function logistic -f " + model);
         for (String d : data.keySet()) {
             learn.learn(d);
         }
@@ -197,7 +197,7 @@ public class VWFloatLearnerTest {
 
         int numThreads = Runtime.getRuntime().availableProcessors();
         ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
-        final VWFloatLearner predict = (VWFloatLearner)VWFactory.getVWLeaner("--quiet -i " + model);
+        final VWFloatLearner predict = VWFactory.getVWLeaner("--quiet -i " + model);
         for (int i=0; i<numThreads; ++i) {
             Runnable run = new Runnable() {
                 @Override

@@ -7,24 +7,72 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Created by jmorra on 10/28/15.
+ * This is the only entrance point to create a VWLearner.  It is the responsibility of the user to supply the type they want
+ * given the VW command.  If that type is incorrect a {@link java.lang.ClassCastException} is thrown.
+ * @author jmorra
  */
-public class VWFactory {
+final public class VWFactory {
     private volatile static boolean loadedNativeLibrary = false;
     private static final Lock STATIC_LOCK = new ReentrantLock();
 
+    enum VWReturnType {
+        Unknown, VWFloatType, VWIntType, VWIntArrayType, VWFloatArrayType
+    }
+
     private VWFactory() {}
 
-    public static VWGeneric getVWLeaner(final String command) {
+    /**
+     * This is the only way to construct a VW Predictor.  The goal here is to provide a typesafe way of getting an predictor
+     * which will return the correct output type given the command specified.
+     * <pre>
+     *  {@code
+     *      VWIntLearner vw = VWFactory.getVWLearner("--cb 4");
+     *  }
+     * </pre>
+     * @param command The VW initialization command.
+     * @param <T> The type of learner expected.  Note that this type implicitly specifies the output type of the learner.
+     * @throws ClassCastException If the specified type T is not a super type of the returned learner given the command.
+     * @return A VW Learner
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends VWLearner> T getVWLeaner(final String command) {
         long nativePointer = initializeVWJni(command);
         VWReturnType returnType = getReturnType(nativePointer);
 
+        VWLearner baseLearner;
         switch (returnType) {
-            case VWFloatType: return new VWFloatLearner(nativePointer);
-            case VWIntType: return new VWIntLearner(nativePointer);
-            case VWFloatArrayType: return new VWFloatArrayLearner(nativePointer);
-            case VWIntArrayType: return new VWIntArrayLearner(nativePointer);
-            default: throw new IllegalArgumentException("Unknown VW return type");
+            case VWFloatType:
+                baseLearner = new VWFloatLearner(nativePointer);
+                break;
+            case VWIntType:
+                baseLearner = new VWIntLearner(nativePointer);
+                break;
+            case VWFloatArrayType:
+                baseLearner = new VWFloatArrayLearner(nativePointer);
+                break;
+            case VWIntArrayType:
+                baseLearner = new VWIntArrayLearner(nativePointer);
+                break;
+            case Unknown:
+            default:
+                // Doing this will allow for all cases when a C object is made to be closed.
+                closeInstance(nativePointer);
+                throw new IllegalArgumentException("Unknown VW return type using command: " + command);
+        }
+
+        // In the case that we have a ClassCastException the C object was still created and must be closed.
+        // This will ensure that that closing happens
+        try {
+            return (T)baseLearner;
+        }
+        catch (ClassCastException e) {
+            try {
+                baseLearner.close();
+            }
+            catch (IOException e1) {
+                // Ignored, closing a VWLearner cannot fail
+            }
+            throw e;
         }
     }
 
@@ -69,5 +117,8 @@ public class VWFactory {
     }
 
     private static native long initialize(String command);
-    static native VWReturnType getReturnType(long nativePointer);
+    private static native VWReturnType getReturnType(long nativePointer);
+
+    // Closing needs to be done here when initialization fails and by VWBase
+    static native void closeInstance(long nativePointer);
 }

@@ -3,8 +3,8 @@ package vw.learner;
 /**
  * @author deak
  */
-final public class VWFloatLearner extends VWBase implements VWGeneric {
-    protected VWFloatLearner(final long nativePointer) {
+final public class VWFloatLearner extends VWBase implements VWLearner {
+    VWFloatLearner(final long nativePointer) {
         super(nativePointer);
     }
 
