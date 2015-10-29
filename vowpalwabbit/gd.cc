@@ -570,8 +570,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
   { brw = 1;
     weight* v;
     if (read)
-    {
-      brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
+    { brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
       if (brw > 0)
       { if (i >= length)
         { THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
@@ -585,8 +584,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 
       v = &(all.reg.weight_vector[stride*i]);
       if (*v != 0.)
-      {
-        char buff[512];
+      { char buff[512];
         size_t buf_size = sizeof(buff);
         int text_len;
 

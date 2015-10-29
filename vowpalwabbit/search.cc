@@ -2459,12 +2459,12 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
   action a = search_predict(*priv, ecs, ec_cnt, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, nullptr, 0, nullptr, learner_id, a_cost, weight);
   if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
   if ((mytag != 0) && ecs[a].l.cs.costs.size() > 0)
-    { if (mytag < priv->ptag_to_action.size())
-	{ cdbg << "delete_v at " << mytag << endl;
-	  priv->ptag_to_action[mytag].repr.delete_v();
-	}
-      push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, priv->last_action_repr), mytag);
+  { if (mytag < priv->ptag_to_action.size())
+    { cdbg << "delete_v at " << mytag << endl;
+      priv->ptag_to_action[mytag].repr.delete_v();
     }
+    push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, priv->last_action_repr), mytag);
+  }
   if (priv->auto_hamming_loss)
     loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt)); // TODO: action costs
   cdbg << "predict returning " << a << endl;

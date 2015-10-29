@@ -460,7 +460,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   { // Mark the predicted subexample with its class_index, all other with 0
     for (size_t k=start_K; k<K; k++)
       if (k == predicted_K)
-	data.ec_seq[k]->pred.multiclass =  data.ec_seq[k]->l.cs.costs[0].class_index;
+        data.ec_seq[k]->pred.multiclass =  data.ec_seq[k]->l.cs.costs[0].class_index;
       else
         data.ec_seq[k]->pred.multiclass =  0;
   }
