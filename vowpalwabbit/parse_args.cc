@@ -225,7 +225,7 @@ void parse_dictionary_argument(vw&all, string str)
   delete io;
   VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
-  
+
   if (! all.quiet)
     cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
 
@@ -1095,59 +1095,66 @@ void add_to_args(vw& all, int argc, char* argv[], int excl_param_count = 0, cons
 vw& parse_args(int argc, char *argv[])
 { vw& all = *(new vw());
 
-  all.vw_is_main = false;		  
-  add_to_args(all, argc, argv);
+  try
+  {
+    all.vw_is_main = false;
+    add_to_args(all, argc, argv);
 
-  all.program_name = argv[0];
+    all.program_name = argv[0];
 
-  time(&all.init_time);
+    time(&all.init_time);
 
-  new_options(all, "VW options")
-  ("random_seed", po::value<size_t>(&(all.random_seed)), "seed random number generator")
-  ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring");
-  add_options(all);
+    new_options(all, "VW options")
+      ("random_seed", po::value<size_t>(&(all.random_seed)), "seed random number generator")
+      ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring");
+    add_options(all);
 
-  new_options(all, "Update options")
-  ("learning_rate,l", po::value<float>(&(all.eta)), "Set learning rate")
-  ("power_t", po::value<float>(&(all.power_t)), "t power value")
-  ("decay_learning_rate", po::value<float>(&(all.eta_decay_rate)),
-   "Set Decay factor for learning_rate between passes")
-  ("initial_t", po::value<double>(&((all.sd->t))), "initial t value")
-  ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights.");
-  add_options(all);
+    new_options(all, "Update options")
+      ("learning_rate,l", po::value<float>(&(all.eta)), "Set learning rate")
+      ("power_t", po::value<float>(&(all.power_t)), "t power value")
+      ("decay_learning_rate", po::value<float>(&(all.eta_decay_rate)),
+        "Set Decay factor for learning_rate between passes")
+      ("initial_t", po::value<double>(&((all.sd->t))), "initial t value")
+      ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights.");
+    add_options(all);
 
-  new_options(all, "Weight options")
-  ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
-  ("initial_weight", po::value<float>(&(all.initial_weight)), "Set all weights to an initial value of arg.")
-  ("random_weights", po::value<bool>(&(all.random_weights)), "make initial weights random")
-  ("input_feature_regularizer", po::value< string >(&(all.per_feature_regularizer_input)), "Per feature regularization input file");
-  add_options(all);
+    new_options(all, "Weight options")
+      ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
+      ("initial_weight", po::value<float>(&(all.initial_weight)), "Set all weights to an initial value of arg.")
+      ("random_weights", po::value<bool>(&(all.random_weights)), "make initial weights random")
+      ("input_feature_regularizer", po::value< string >(&(all.per_feature_regularizer_input)), "Per feature regularization input file");
+    add_options(all);
 
-  new_options(all, "Parallelization options")
-    ("span_server", po::value<string>(), "Location of server for setting up spanning tree")
-    ("threads", "Enable multi-threading")
-		("unique_id", po::value<size_t>()->default_value(0), "unique id used for cluster parallel jobs")
-		("total", po::value<size_t>()->default_value(1), "total number of nodes used in cluster parallel job")
-		("node", po::value<size_t>()->default_value(0), "node number in cluster parallel job");
-  add_options(all);
+    new_options(all, "Parallelization options")
+      ("span_server", po::value<string>(), "Location of server for setting up spanning tree")
+      ("threads", "Enable multi-threading")
+      ("unique_id", po::value<size_t>()->default_value(0), "unique id used for cluster parallel jobs")
+      ("total", po::value<size_t>()->default_value(1), "total number of nodes used in cluster parallel job")
+      ("node", po::value<size_t>()->default_value(0), "node number in cluster parallel job");
+    add_options(all);
 
-  po::variables_map& vm = all.vm;
-  if (vm.count("span_server"))
-  { all.all_reduce_type = AllReduceType::Socket;
-	  all.all_reduce = new AllReduceSockets(
-		  vm["span_server"].as<string>(),
-		  vm["unique_id"].as<size_t>(),
-		  vm["total"].as<size_t>(),
-		  vm["node"].as<size_t>());
+    po::variables_map& vm = all.vm;
+    if (vm.count("span_server"))
+    { all.all_reduce_type = AllReduceType::Socket;
+      all.all_reduce = new AllReduceSockets(
+        vm["span_server"].as<string>(),
+        vm["unique_id"].as<size_t>(),
+        vm["total"].as<size_t>(),
+        vm["node"].as<size_t>());
+    }
+
+    msrand48(all.random_seed);
+    parse_diagnostics(all, argc);
+
+    all.sd->weighted_unlabeled_examples = all.sd->t;
+    all.initial_t = (float)all.sd->t;
+
+    return all;
   }
-
-  msrand48(all.random_seed);
-  parse_diagnostics(all, argc);
-
-  all.sd->weighted_unlabeled_examples = all.sd->t;
-  all.initial_t = (float)all.sd->t;
-
-  return all;
+  catch (...)
+  { VW::finish(all);
+    throw;
+  }
 }
 
 bool check_interaction_settings_collision(vw& all)
@@ -1294,18 +1301,27 @@ vw* initialize(string s)
   char** argv = get_argv_from_string(s,argc);
 
   vw& all = parse_args(argc, argv);
-  io_buf model;
-  parse_regressor_args(all, model);
-  parse_modules(all, model);
-  parse_sources(all, model);
 
-  initialize_parser_datastructures(all);
-
-  for(int i = 0; i < argc; i++)
+  // if parse_args ever throws, this will leak.
+  for (int i = 0; i < argc; i++)
     free(argv[i]);
   free(argv);
 
-  return &all;
+  try
+  { io_buf model;
+    parse_regressor_args(all, model);
+    parse_modules(all, model);
+    parse_sources(all, model);
+
+    initialize_parser_datastructures(all);
+
+    return &all;
+  }
+  catch (...)
+  {
+    finish(all);
+    throw;
+  }
 }
 
 // Create a new VW instance while sharing the model with another instance
@@ -1403,7 +1419,7 @@ void finish(vw& all, bool delete_all)
   { finalize_regressor_exception = e;
     finalize_regressor_exception_thrown = true;
   }
-  
+
   if (all.l != nullptr)
   { all.l->finish();
     free_it(all.l);
