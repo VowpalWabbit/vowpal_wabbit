@@ -16,11 +16,10 @@ loss       last        counter           output prefix          output prefix  p
 48.500000  8.000000          2  [2:2 3:5 0:8 3:7 3:4 ] [0:8 1:2 2:2 3:2 4:2 ]     0     0      104        0      104  0.001029
 39.000000  29.500000         4  [4:2 4:2 4:2 7:5 6:..] [0:8 1:2 2:2 3:2 4:..]     0     0      164        0      164  0.001629
 42.625000  46.250000         8  [4:2 4:2 4:2 5:5 0:..] [0:8 1:2 2:2 3:2 4:..]     1     0      362        0      362  0.003604
-44.437500  46.250000        16  [43:1 5:2 5:2 5:2 1..] [0:8 1:3 2:2 3:1 4:..]     3     0      756        0      756  0.007522
 
 finished run
-number of examples = 30
-weighted example sum = 30
+number of examples = 10
+weighted example sum = 10
 weighted label sum = 0
-average loss = 41.4333
-total feature number = 354791
+average loss = 41.7
+total feature number = 119131
