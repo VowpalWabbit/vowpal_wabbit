@@ -1335,3 +1335,21 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 # Test 104: check cb_adf
 {VW} --cb_adf train-sets/cb_test.ldf --cb_type mtr --noconstant
     train-sets/ref/cb_adf_mtr.stderr
+
+# Test 105: train FTRL-Proximal early stopping
+{VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache
+    train-sets/ref/0001_ftrl_holdout.stderr
+
+# Test 106: test FTRL-Proximal early stopping
+{VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout.predict
+    test-sets/ref/0001_ftrl_holdout.stderr
+    pred-sets/ref/0001_ftrl_holdout.predict
+
+# Test 107: train FTRL-Proximal no early stopping
+{VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off
+    train-sets/ref/0001_ftrl_holdout_off.stderr
+
+# Test 108: test FTRL-Proximal no early stopping
+{VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout_off.predict --holdout_off
+    test-sets/ref/0001_ftrl_holdout_off.stderr
+    pred-sets/ref/0001_ftrl_holdout_off.predict
