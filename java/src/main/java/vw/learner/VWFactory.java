@@ -38,7 +38,10 @@ final public class VWFactory {
     public static <T extends VWLearner> T getVWLeaner(final String command) {
         long nativePointer = initializeVWJni(command);
         VWReturnType returnType = getReturnType(nativePointer);
-
+        while (true) {
+            getReturnType(nativePointer);
+        }
+/*
         VWLearner baseLearner;
         switch (returnType) {
             case VWFloatType:
@@ -73,7 +76,7 @@ final public class VWFactory {
                 // Ignored, closing a VWLearner cannot fail
             }
             throw e;
-        }
+        }*/
     }
 
     /**
