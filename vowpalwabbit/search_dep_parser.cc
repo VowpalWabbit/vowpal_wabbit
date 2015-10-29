@@ -364,7 +364,7 @@ void get_cost_to_go_losses(Search::search &sch, uint32_t idx, uint32_t n, v_arra
     if(gold_heads[i] == last)
       action_loss[2] +=1;
   if(one_learner)
-  {  uint32_t gold_label = gold_tags[stack.last()];
+  {  uint32_t gold_label = stack.empty()?-1:gold_tags[stack.last()];
 	 for(size_t i=1; i<=3; i++)
      if(is_valid(i, valid_actions))
 	   for(size_t j=1; j<=num_label; j++)
