@@ -255,6 +255,7 @@ void SpanningTree::Run()
         }
         CLOSESOCK(partial_nodeset.nodes[i].socket);
       }
+      free(client_ports);
       free(partial_nodeset.nodes);
       free(parent);
       free(kid_count);

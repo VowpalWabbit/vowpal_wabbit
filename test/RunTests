@@ -1324,7 +1324,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/active_cover.stderr
 
 # Test 102: active cover (predict)
-{VW} -i models/active_cover.model --binary -t -d test-sets/rcv1_small_test.data -p active_cover.predict 
+{VW} -i models/active_cover.model --binary -t -d test-sets/rcv1_small_test.data -p active_cover.predict
     test-sets/ref/active_cover.stderr
     pred-sets/ref/active_cover.predict
 
@@ -1332,14 +1332,34 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW --loss_function logistic --binary --active_cover --oracular -d ./train-sets/rcv1_small.dat
     train-sets/ref/active_cover_oracular.stderr
 
-# Test 104: Train a depenency parser with neural network and one_learner approach (lols)
+# Test 104: check cb_adf
+{VW} --cb_adf train-sets/cb_test.ldf --cb_type mtr --noconstant
+    train-sets/ref/cb_adf_mtr.stderr
+
+# Test 105: train FTRL-Proximal early stopping
+{VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache
+    train-sets/ref/0001_ftrl_holdout.stderr
+
+# Test 106: test FTRL-Proximal early stopping
+{VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout.predict
+    test-sets/ref/0001_ftrl_holdout.stderr
+    pred-sets/ref/0001_ftrl_holdout.predict
+
+# Test 107: train FTRL-Proximal no early stopping
+{VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off
+    train-sets/ref/0001_ftrl_holdout_off.stderr
+
+# Test 108: test FTRL-Proximal no early stopping
+{VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout_off.predict --holdout_off
+    test-sets/ref/0001_ftrl_holdout_off.stderr
+    pred-sets/ref/0001_ftrl_holdout_off.predict
+
+# Test 109: Train a depenency parser with neural network and one_learner approach (lols)
 # use -b 30 to get better performnce 
 {VW} -k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --passes 6 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --holdout_off --one_learner --nn 5 --ftrl --search_history_length 3 --root_label 8
     train-sets/ref/search_dep_parser_one_learner.stderr
 
-# Test 105: Train a depenency parser with cost_to_go 
+# Test 110: Train a depenency parser with cost_to_go 
 # use -b 30 to get better performnce 
 {VW} -k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --passes 6 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout none --holdout_off --search_history_length 3 --root_label 8 --cost_to_go
     train-sets/ref/search_dep_parser_cost_to_go.stderr
-
-

@@ -2,6 +2,9 @@ bin_PROGRAMS = spanning_tree
 
 spanning_tree_SOURCES = spanning_tree_main.cc ../vowpalwabbit/spanning_tree.cc ../vowpalwabbit/vw_exception.cc
 
+spanning_tree_LDADD = liballreduce.la
+spanning_tree_DEPENDENCIES = liballreduce.la
+
 ACLOCAL_AMFLAGS = -I acinclude.d
 
 AM_CXXFLAGS = ${BOOST_CPPFLAGS} ${ZLIB_CPPFLAGS} ${PTHREAD_CFLAGS}

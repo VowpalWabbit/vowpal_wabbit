@@ -76,10 +76,10 @@ void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec)
       else if (k < 0) c = 0;
       else if (o.C[o.N-(i+1)][(long long)k] != -1)
         c = o.C[o.N-(i+1)][(long long)k];
-      else { c = choose(o.N-(i+1),k); o.C[o.N-(i+1)][(long long)k] = c; }
+      else { c = choose(o.N-(i+1),(long long)k); o.C[o.N-(i+1)][(long long)k] = c; }
 
-      float w = c * pow((double)(0.5 + o.gamma),
-                        (double)k) * pow((double)0.5 - o.gamma,(double)(o.N-(i+1)-k));
+      float w = c * (float)pow((double)(0.5 + o.gamma), (double)k) 
+				* (float)pow((double)0.5 - o.gamma,(double)(o.N-(i+1)-k));
 
       // update ec.weight, weight for learner i (starting from 0)
       ec.weight = u * w;
@@ -121,7 +121,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example
   float u = ec.weight;
 
   if (is_learn) o.t++;
-  float eta = 4 / sqrt(o.t);
+  float eta = 4.f / sqrtf((float)o.t);
 
   for (int i = 0; i < o.N; i++)
   {
@@ -175,7 +175,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
   float u = ec.weight;
 
   if (is_learn) o.t++;
-  float eta = 4 / sqrt(o.t);
+  float eta = 4.f / (float)sqrtf((float)o.t);
 
   float stopping_point = frand48();
 
@@ -204,7 +204,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
 
       // update v, exp(-1) = 0.36788
       if (ld.label * partial_prediction < 0)
-      { o.v[i] *= 0.36788;
+      { o.v[i] *= 0.36788f;
       }
       v_normalization += o.v[i];
 
@@ -351,7 +351,7 @@ LEARNER::base_learner* boosting_setup(vw& all)
                                   "Online boosting with <N> weak learners"))
     return NULL;
   new_options(all, "Boosting Options")
-  ("gamma", po::value<float>()->default_value(0.1),
+  ("gamma", po::value<float>()->default_value(0.1f),
    "weak learner's edge (=0.1), used only by online BBM")
   ("alg", po::value<string>()->default_value("BBM"),
    "specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)");

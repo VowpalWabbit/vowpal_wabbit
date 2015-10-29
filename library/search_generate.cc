@@ -183,7 +183,7 @@ public:
     return (N-n) * ins_cost + prev_row_min;
   }
 
-  ~IncrementalEditDistance() { delete prev_row; delete cur_row; }
+  ~IncrementalEditDistance() { delete[] prev_row; delete[] cur_row; }
 
 private:
   size_t* prev_row;

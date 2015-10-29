@@ -437,7 +437,7 @@ void run(Search::search& sch, vector<example*>& ec)
 	  uint32_t a_id = 0, t_id = 0;
 
 	  if(one_learner)      
-	  {	  uint32_t gold_label = gold_tags[stack.last()];
+	  {	  uint32_t gold_label = stack.empty()?-1:gold_tags[stack.last()];
 		  
 		  if(cost_to_go)
 		  { get_cost_to_go_losses(sch, idx, n, gold_action_losses);

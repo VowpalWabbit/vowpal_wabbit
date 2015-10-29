@@ -153,8 +153,6 @@ void end_pass(gd& g)
   }
 }
 
-
-
 #include <algorithm>
 
 struct string_value
@@ -406,7 +404,7 @@ struct norm_data
   power_data pd;
 };
 
-const float x_min = 1.084202e-19;
+const float x_min = 1.084202e-19f;
 const float x2_min = x_min*x_min;
 
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
@@ -543,7 +541,6 @@ void sync_weights(vw& all)
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 { uint32_t length = 1 << all.num_bits;
   uint32_t stride = 1 << all.reg.stride_shift;
-  int c = 0;
   uint32_t i = 0;
   size_t brw = 1;
 
@@ -573,7 +570,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
   { brw = 1;
     weight* v;
     if (read)
-    { c++;
+    {
       brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
       if (brw > 0)
       { if (i >= length)
@@ -588,7 +585,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 
       v = &(all.reg.weight_vector[stride*i]);
       if (*v != 0.)
-      { c++;
+      {
         char buff[512];
         size_t buf_size = sizeof(buff);
         int text_len;
