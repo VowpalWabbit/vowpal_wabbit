@@ -282,13 +282,13 @@ void get_gold_actions(Search::search &sch, uint32_t idx, uint32_t n, v_array<act
   v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions;
   size_t size = stack.size();
   uint32_t last = (size==0) ? 0 : stack.last();
-  if (is_valid(1,valid_actions) &&( stack.empty() || gold_heads[idx] == last)) {
-    gold_actions.push_back(1);
+  if (is_valid(SHIFT,valid_actions) &&( stack.empty() || gold_heads[idx] == last))
+  { gold_actions.push_back(SHIFT);
     return;
   }
 
-  if (is_valid(3,valid_actions) && gold_heads[last] == idx)
-  { gold_actions.push_back(3);
+  if (is_valid(REDUCE_LEFT,valid_actions) && gold_heads[last] == idx)
+  { gold_actions.push_back(REDUCE_LEFT);
     return;
   }
 
@@ -297,23 +297,23 @@ void get_gold_actions(Search::search &sch, uint32_t idx, uint32_t n, v_array<act
 
   for(uint32_t i = 0; i<size-1; i++)
     if(idx <=n && (gold_heads[stack[i]] == idx || gold_heads[idx] == stack[i]))
-      action_loss[1] += 1;
+      action_loss[SHIFT] += 1;
   if(size>0 && gold_heads[last] == idx)
-    action_loss[1] += 1;
+    action_loss[SHIFT] += 1;
 
   for(uint32_t i = idx+1; i<=n; i++)
     if(gold_heads[i] == last|| gold_heads[last] == i)
-      action_loss[3] +=1;
+      action_loss[REDUCE_LEFT] +=1;
   if(size>0  && idx <=n && gold_heads[idx] == last)
-    action_loss[3] +=1;
+    action_loss[REDUCE_LEFT] +=1;
   if(size>=2 && gold_heads[last] == stack[size-2])
-    action_loss[3] += 1;
+    action_loss[REDUCE_LEFT] += 1;
 
   if(gold_heads[last] >=idx)
-    action_loss[2] +=1;
+    action_loss[REDUCE_RIGHT] +=1;
   for(uint32_t i = idx; i<=n; i++)
     if(gold_heads[i] == last)
-      action_loss[2] +=1;
+      action_loss[REDUCE_RIGHT] +=1;
 
   // return the best actions
   size_t best_action = 1;
@@ -345,24 +345,24 @@ void get_cost_to_go_losses(Search::search &sch, uint32_t idx, uint32_t n, v_arra
   if(!stack.empty())
     for(uint32_t i = 0; i<size-1; i++)
   if(idx <=n && (gold_heads[stack[i]] == idx || gold_heads[idx] == stack[i]))		  
-    action_loss[1] += 1;
+    action_loss[SHIFT] += 1;
 
   if(size>0 && gold_heads[last] == idx)
-    action_loss[1] += 1;
+    action_loss[SHIFT] += 1;
 
   for(uint32_t i = idx+1; i<=n; i++)
     if(gold_heads[i] == last|| gold_heads[last] == i)
-      action_loss[3] +=1;
+      action_loss[REDUCE_LEFT] +=1;
   if(size>0  && idx <=n && gold_heads[idx] == last)
-    action_loss[3] +=1;
+    action_loss[REDUCE_LEFT] +=1;
   if(size>=2 && gold_heads[last] == stack[size-2])
-    action_loss[3] += 1;
+    action_loss[REDUCE_LEFT] += 1;
 
   if(gold_heads[last] >=idx)
-    action_loss[2] +=1;
+    action_loss[REDUCE_RIGHT] +=1;
   for(uint32_t i = idx; i<=n; i++)
     if(gold_heads[i] == last)
-      action_loss[2] +=1;
+      action_loss[REDUCE_RIGHT] +=1;
   if(one_learner)
   {  uint32_t gold_label = stack.empty()?-1:gold_tags[stack.last()];
 	 for(size_t i=1; i<=3; i++)
@@ -477,7 +477,7 @@ void run(Search::search& sch, vector<example*>& ec)
                               .set_learner_id(0)
                               .predict();
 		  }
-		  if (a_id == 1){
+		  if (a_id == 1) {
 			  t_id = 0;
 		  } else if(a_id>1 && a_id-1 <= num_label) {
 			  t_id = a_id-1; 
@@ -488,7 +488,7 @@ void run(Search::search& sch, vector<example*>& ec)
 		  }
 	  }
       else {
-		  if(cost_to_go){
+		  if(cost_to_go) {
 			  get_cost_to_go_losses(sch, idx, n, gold_action_losses);
 			  a_id= Search::predictor(sch, (ptag) count)
                               .set_input(*(data->ex))
