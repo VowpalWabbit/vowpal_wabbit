@@ -50,7 +50,7 @@ abstract class VWBase implements Closeable {
         try {
             if (isOpen) {
                 isOpen = false;
-                VWFactory.closeInstance(nativePointer);
+                VWLearners.closeInstance(nativePointer);
             }
         }
         finally {

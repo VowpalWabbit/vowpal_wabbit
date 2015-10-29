@@ -22,13 +22,13 @@ import static org.junit.Assert.assertTrue;
 /**
  * Created by jmorra on 10/29/15.
  */
-public class VWFactoryTest extends VWTestHelper {
+public class VWLearnersTest extends VWTestHelper {
 
     private final String heightData = "|f height:0.23 weight:0.25 width:0.05";
 
     @Test
     public void testWrongType() {
-        VWBase base = (VWBase)VWFactory.getVWLearnerSafe("--cb 4 --quiet", VWFloatLearner.class);
+        VWBase base = (VWBase) VWLearners.createSafe(VWFloatLearner.class, "--cb 4 --quiet");
         assertFalse(base.isOpen());
         assertTrue(base instanceof VWIntLearner);
     }
@@ -37,14 +37,14 @@ public class VWFactoryTest extends VWTestHelper {
     public void testBadVWArgs() {
         final String args = "--BAD_FEATURE___ounq24tjnasdf8h";
         thrown.expect(IllegalArgumentException.class);
-        VWFactory.getVWLeaner(args + " --quiet", VWFloatLearner.class);
+        VWLearners.create(VWFloatLearner.class, args + " --quiet");
     }
 
     @Test
     public void testAlreadyClosed() {
         thrown.expect(IllegalStateException.class);
         thrown.expectMessage("Already closed.");
-        VWFloatLearner s = VWFactory.getVWLeaner("--quiet", VWFloatLearner.class);
+        VWFloatLearner s = VWLearners.create(VWFloatLearner.class, "--quiet");
         s.close();
         s.predict("1 | ");
     }
@@ -53,7 +53,7 @@ public class VWFactoryTest extends VWTestHelper {
     public void testOldModel() {
         thrown.expect(Exception.class);
         thrown.expectMessage("bad model format!");
-        VWFloatLearner vw = VWFactory.getVWLeaner("--quiet -i src/test/resources/vw_7.8.model", VWFloatLearner.class);
+        VWFloatLearner vw = VWLearners.create(VWFloatLearner.class, "--quiet -i src/test/resources/vw_7.8.model");
         vw.close();
     }
 
@@ -63,7 +63,7 @@ public class VWFactoryTest extends VWTestHelper {
         // that the Java layer could do something about
         thrown.expect(Exception.class);
         thrown.expectMessage("Model content is corrupted, weight vector index 1347768914 must be less than total vector length 262144");
-        VWFloatLearner vw = VWFactory.getVWLeaner("--quiet -i src/test/resources/vw_bad.model", VWFloatLearner.class);
+        VWFloatLearner vw = VWLearners.create(VWFloatLearner.class, "--quiet -i src/test/resources/vw_bad.model");
         vw.close();
     }
 
@@ -81,7 +81,7 @@ public class VWFactoryTest extends VWTestHelper {
         data.put("1 | 7", 0.172148f);
 
         final String model = temporaryFolder.newFile().getAbsolutePath();
-        VWFloatLearner learn = VWFactory.getVWLeaner("--quiet --loss_function logistic -f " + model, VWFloatLearner.class);
+        VWFloatLearner learn = VWLearners.create(VWFloatLearner.class, "--quiet --loss_function logistic -f " + model);
         for (String d : data.keySet()) {
             learn.learn(d);
         }
@@ -89,7 +89,7 @@ public class VWFactoryTest extends VWTestHelper {
 
         int numThreads = Runtime.getRuntime().availableProcessors();
         ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
-        final VWFloatLearner predict = VWFactory.getVWLeaner("--quiet -i " + model, VWFloatLearner.class);
+        final VWFloatLearner predict = VWLearners.create(VWFloatLearner.class, "--quiet -i " + model);
         for (int i=0; i<numThreads; ++i) {
             Runnable run = new Runnable() {
                 @Override
@@ -110,7 +110,7 @@ public class VWFactoryTest extends VWTestHelper {
     }
 
     private long streamingLoadTest(int times) {
-        VWFloatLearner m1 = VWFactory.getVWLeaner("--quiet", VWFloatLearner.class);
+        VWFloatLearner m1 = VWLearners.create(VWFloatLearner.class, "--quiet");
         long start = System.currentTimeMillis();
         for (int i=0; i<times; ++i) {
             // This will force a new string to be created every time for a fair test

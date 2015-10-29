@@ -1,11 +1,11 @@
 #include "../../../../vowpalwabbit/vw.h"
 #include "jni_base_learner.h"
-#include "vw_learner_VWFactory.h"
+#include "vw_learner_VWLearners.h"
 
-#define RETURN_TYPE "vw/learner/VWFactory$VWReturnType"
+#define RETURN_TYPE "vw/learner/VWLearners$VWReturnType"
 #define RETURN_TYPE_INSTANCE "L" RETURN_TYPE ";"
 
-JNIEXPORT jlong JNICALL Java_vw_learner_VWFactory_initialize(JNIEnv *env, jobject obj, jstring command)
+JNIEXPORT jlong JNICALL Java_vw_learner_VWLearners_initialize(JNIEnv *env, jobject obj, jstring command)
 { jlong vwPtr = 0;
   try
   { vw* vwInstance = VW::initialize(env->GetStringUTFChars(command, NULL));
@@ -17,7 +17,7 @@ JNIEXPORT jlong JNICALL Java_vw_learner_VWFactory_initialize(JNIEnv *env, jobjec
   return vwPtr;
 }
 
-JNIEXPORT void JNICALL Java_vw_learner_VWFactory_closeInstance(JNIEnv *env, jobject obj, jlong vwPtr)
+JNIEXPORT void JNICALL Java_vw_learner_VWLearners_closeInstance(JNIEnv *env, jobject obj, jlong vwPtr)
 { try
   { VW::finish(*((vw*)vwPtr));
   }
@@ -26,7 +26,7 @@ JNIEXPORT void JNICALL Java_vw_learner_VWFactory_closeInstance(JNIEnv *env, jobj
   }
 }
 
-JNIEXPORT jobject JNICALL Java_vw_learner_VWFactory_getReturnType(JNIEnv *env, jobject obj, jlong vwPtr)
+JNIEXPORT jobject JNICALL Java_vw_learner_VWLearners_getReturnType(JNIEnv *env, jobject obj, jlong vwPtr)
 {
     jclass clVWReturnType = env->FindClass(RETURN_TYPE);
     jfieldID field;

@@ -11,7 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * given the VW command.  If that type is incorrect a {@link java.lang.ClassCastException} is thrown.
  * @author jmorra
  */
-final public class VWFactory {
+final public class VWLearners {
     private volatile static boolean loadedNativeLibrary = false;
     private static final Lock STATIC_LOCK = new ReentrantLock();
 
@@ -19,7 +19,7 @@ final public class VWFactory {
         Unknown, VWFloatType, VWIntType, VWIntArrayType, VWFloatArrayType
     }
 
-    private VWFactory() {}
+    private VWLearners() {}
 
     /**
      * This is provided so that a VWLeaner can be created to pass to other code that takes the base type.
@@ -27,7 +27,7 @@ final public class VWFactory {
      * @param command the VW command
      * @return The base type of the VW learner hierarchy.
      */
-    public static VWLearner getVWLearner(final String command) {
+    public static VWLearner create(final String command) {
         long nativePointer = initializeVWJni(command);
         VWReturnType returnType = getReturnType(nativePointer);
 
@@ -44,8 +44,8 @@ final public class VWFactory {
         }
     }
 
-    static <T extends VWLearner> VWLearner getVWLearnerSafe(final String command, final Class<T> clazz) {
-        final VWLearner baseLearner = getVWLearner(command);
+    static <T extends VWLearner> VWLearner createSafe(final Class<T> clazz, final String command) {
+        final VWLearner baseLearner = create(command);
 
         // In the case that we have a ClassCastException the C object was still created and must be closed.
         // This will ensure that that closing happens
@@ -65,20 +65,20 @@ final public class VWFactory {
      * which will return the correct output type given the command specified.
      * <pre>
      * {@code
-     *     VWIntLearner vw = VWFactory.getVWLearner("--cb 4");
+     *     VWIntLearner vw = VWFactory.createVWLearner("--cb 4");
      * }
      * </pre>
-     * @param command The VW initialization command.
      * @param clazz The class object of the output type.  This is required because we need to be able to close the created
      *              learner in the case that the type is specified incorrectly.
+     * @param command The VW initialization command.
      * @param <T> The type of learner expected.  Note that this type implicitly specifies the output type of the learner.
      * @throws ClassCastException If the specified type T is not a super type of the returned learner given the command.
      * @return A VW Learner
      */
-    public static <T extends VWLearner> T getVWLeaner(final String command, final Class<T> clazz) {
+    public static <T extends VWLearner> T create(final Class<T> clazz, final String command) {
         // This doesn't protect this function from throwing a class cast exception it just allows the
         // VWLearner to be closed if the type is incorrect.
-        return clazz.cast(getVWLearnerSafe(command, clazz));
+        return clazz.cast(createSafe(clazz, command));
     }
 
     /**
