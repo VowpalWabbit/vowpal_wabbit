@@ -12,21 +12,26 @@ namespace cs_unittest
     public class TestModelLoading
     {
         [TestCategory("Model Loading")]
-        public void TestLoadModel()
+        public void TestLoadModelCorrupt()
         {
             InternalTestModel(@"model-sets/7.10.2_corrupted.model", false);
-            //InternalTestModel(@"model-sets/8.0.0_ok.model", true);
-            //InternalTestModel(@"model-sets/8.0.1.test_named_ok.model", true);
-            //InternalTestModel(@"model-sets/8.0.1_rcv1_ok.model", true);
-            //InternalTestModel(@"model-sets/8.0.1_hash_ok.model", true);
+        }
+
+        [TestCategory("Model Loading")]
+        public void TestLoadModel()
+        {
+            InternalTestModel(@"model-sets/8.0.0_ok.model", true);
+            InternalTestModel(@"model-sets/8.0.1.test_named_ok.model", true);
+            InternalTestModel(@"model-sets/8.0.1_rcv1_ok.model", true);
+            InternalTestModel(@"model-sets/8.0.1_hash_ok.model", true);
         }
 
         [TestCategory("Model Loading")]
         public void TestLoadModelRandomCorrupt()
         {
             InternalTestModelRandomCorrupt("model-sets/8.0.1.test_named_ok.model");
-            InternalTestModelRandomCorrupt("model-sets/8.0.1_rcv1_ok.model");
-            InternalTestModelRandomCorrupt("model-sets/8.0.1_hash_ok.model");
+            //InternalTestModelRandomCorrupt("model-sets/8.0.1_rcv1_ok.model");
+            //InternalTestModelRandomCorrupt("model-sets/8.0.1_hash_ok.model");
         }
 
         [TestCategory("Model Loading")]

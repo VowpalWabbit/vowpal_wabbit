@@ -40,8 +40,12 @@ namespace cs_unittest
                 vw.Learn(d.Item1, d.Item2, (int)d.Item3.Action, d.Item3);
             }
         }
+        public void TestAllReduce()
+        {
+            TestAllReduceInternal().Wait();
+        }
 
-        public async Task TestAllReduce()
+        internal async Task TestAllReduceInternal()
         {
             var data = Enumerable.Range(1, 1000).Select(_ => Generator.GenerateShared(10)).ToList();
 

@@ -1265,6 +1265,14 @@ namespace cs_unittest
             [TestCategory("Model Loading")]
 
             [TestMethod]
+            public void TestLoadModelCorrupt()
+            {
+                 Run("cs_unittest.TestModelLoading", "TestLoadModelCorrupt");
+            }
+
+            [TestCategory("Model Loading")]
+
+            [TestMethod]
             public void TestLoadModel()
             {
                  Run("cs_unittest.TestModelLoading", "TestLoadModel");

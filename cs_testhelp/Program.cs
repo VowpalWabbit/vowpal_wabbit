@@ -16,7 +16,7 @@ namespace cs_testhelp
             var vwRoot = mainArgs[0];
 
             DiscoverUnitTests.Discover(vwRoot);
-            RunTestsToUnitTests.Convert(vwRoot);
+            //RunTestsToUnitTests.Convert(vwRoot);
         }
     }
 }

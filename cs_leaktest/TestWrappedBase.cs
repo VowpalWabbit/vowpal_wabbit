@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -83,8 +84,11 @@ namespace cs_leaktest
                     FreeLibrary(handle);
                     FreeLibrary(handle);
 
+                    Debug.WriteLine("vld.ReportLeaks.1");
+
                     vld.ReportLeaks();
 
+                    Debug.WriteLine("vld.ReportLeaks.2");
                     var message = string.Concat(vld.Messages.Select(t => t.Item2));
 
                     var blocks = message.Split(new[] { "---------- Block " }, StringSplitOptions.None)
