@@ -54,4 +54,37 @@ public class VWIntLearnerTest extends VWTestHelper {
         vw.close();
         assertArrayEquals(expectedTestPreds, testPreds);
     }
+
+    @Test
+    public void csoaa() throws IOException {
+        // Note that the expected values in this test were obtained by running
+        // vw from the command line as follows
+        // echo -e "1 | a\n2 | a b\n3 | a c\n2 | a b\n3 | b c\n1 | a c\n2 | d" | ../vowpalwabbit/vw --multilabel_oaa 4 -f multilabel.model -p multilabel.train.out
+        // echo -e "| a b c d\n| b d" | ../vowpalwabbit/vw -t -i multilabel.model -p multilabel.test.out
+        String[] train = new String[]{
+                "1:1.0 a1_expect_1| a",
+                "2:1.0 b1_expect_2| b",
+                "3:1.0 c1_expect_3| c",
+                "1:2.0 2:1.0 ab1_expect_2| a b",
+                "2:1.0 3:3.0 bc1_expect_2| b c",
+                "1:3.0 3:1.0 ac1_expect_3| a c",
+                "2:3.0 d1_expect_2| d"
+        };
+        String model = temporaryFolder.newFile().getAbsolutePath();
+        VWIntLearner vw = VWFactory.getVWLeaner("--quiet --csoaa 3 -f " + model, VWIntLearner.class);
+        for (int i=0; i<train.length; ++i) {
+            vw.learn(train[i]);
+        }
+        vw.close();
+
+        int[] expectedTestPreds = new int[]{1, 2, 3, 2, 2, 3, 2};
+        vw = VWFactory.getVWLeaner("--quiet -t -i " + model, VWIntLearner.class);
+        int[] testPreds = new int[expectedTestPreds.length];
+        for (int i=0; i<train.length; ++i) {
+            testPreds[i] = vw.predict(train[i]);
+        }
+
+        assertArrayEquals(expectedTestPreds, testPreds);
+        vw.close();
+    }
 }
