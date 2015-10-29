@@ -25,9 +25,9 @@ final public class VWFactory {
      * This is the only way to construct a VW Predictor.  The goal here is to provide a typesafe way of getting an predictor
      * which will return the correct output type given the command specified.
      * <pre>
-     *  {@code
-     *      VWIntLearner vw = VWFactory.getVWLearner("--cb 4");
-     *  }
+     * {@code
+     *     VWIntLearner vw = VWFactory.getVWLearner("--cb 4");
+     * }
      * </pre>
      * @param command The VW initialization command.
      * @param <T> The type of learner expected.  Note that this type implicitly specifies the output type of the learner.
@@ -38,10 +38,7 @@ final public class VWFactory {
     public static <T extends VWLearner> T getVWLeaner(final String command) {
         long nativePointer = initializeVWJni(command);
         VWReturnType returnType = getReturnType(nativePointer);
-        while (true) {
-            getReturnType(nativePointer);
-        }
-/*
+
         VWLearner baseLearner;
         switch (returnType) {
             case VWFloatType:
@@ -76,7 +73,7 @@ final public class VWFactory {
                 // Ignored, closing a VWLearner cannot fail
             }
             throw e;
-        }*/
+        }
     }
 
     /**
