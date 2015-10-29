@@ -404,7 +404,7 @@ struct norm_data
   power_data pd;
 };
 
-const float x_min = 1.084202e-19;
+const float x_min = 1.084202e-19f;
 const float x2_min = x_min*x_min;
 
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>

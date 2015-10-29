@@ -28,6 +28,8 @@ struct ftrl
   float ftrl_alpha;
   float ftrl_beta;
   struct update_data data;
+  size_t no_win_counter;
+  size_t early_stop_thres;
 };
 
 void predict(ftrl& b, base_learner&, example& ec)
@@ -153,6 +155,19 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
   }
 }
 
+void end_pass(ftrl& g)
+{ vw& all = *g.all;
+
+  if(!all.holdout_set_off)
+  { if(summarize_holdout_set(all, g.no_win_counter))
+      finalize_regressor(all, all.final_regressor_name);
+    if((g.early_stop_thres == g.no_win_counter) &&
+        ((all.check_holdout_every_n_passes <= 1) ||
+         ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
+      set_done(all);
+  }
+}
+
 base_learner* ftrl_setup(vw& all)
 { if (missing_option(all, false, "ftrl", "FTRL: Follow the Proximal Regularized Leader") &&
       missing_option(all, false, "pistol", "FTRL: Parameter-free Stochastic Learning"))
@@ -167,6 +182,8 @@ base_learner* ftrl_setup(vw& all)
 
   ftrl& b = calloc_or_throw<ftrl>();
   b.all = &all;
+  b.no_win_counter = 0;
+  b.early_stop_thres = 3;
 
   void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
 
@@ -213,5 +230,6 @@ base_learner* ftrl_setup(vw& all)
   l.set_predict(predict);
   l.set_multipredict(multipredict);
   l.set_save_load(save_load);
+  l.set_end_pass(end_pass);
   return make_base(l);
 }

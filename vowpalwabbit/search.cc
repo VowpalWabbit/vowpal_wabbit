@@ -304,7 +304,7 @@ int select_learner(search_private& priv, int policy, size_t learner_id, bool is_
   { if (priv.xv)
     { learner_id *= 3;
       if (! is_local)
-        learner_id += 1 + ( is_training ^ (priv.all->sd->example_number % 2) );
+        learner_id += 1 + (size_t)( is_training ^ (priv.all->sd->example_number % 2 == 1) );
     }
     int p = (int) (policy*priv.num_learners+learner_id);
     return p;
@@ -412,7 +412,7 @@ void print_update(search_private& priv)
     avg_loss_since = safediv((float)all.sd->sum_loss_since_last_dump, (float) (all.sd->weighted_examples - all.sd->old_weighted_examples));
   }
 
-  char inst_cntr[9];  number_to_natural(all.sd->example_number, inst_cntr);
+  char inst_cntr[9];  number_to_natural((size_t)all.sd->example_number, inst_cntr);
   char total_pred[8]; number_to_natural(priv.total_predictions_made, total_pred);
   char total_cach[8]; number_to_natural(priv.total_cache_hits, total_cach);
   char total_exge[8]; number_to_natural(priv.total_examples_generated, total_exge);
@@ -1165,8 +1165,8 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     polylabel old_label = ec.l;
     ec.l = losses; // labels;
     if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
-    for (size_t is_local=0; is_local<=priv.xv; is_local++)
-    { int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local);
+    for (size_t is_local=0; is_local<= (size_t)priv.xv; is_local++)
+    { int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
       ec.in_use = true;
       priv.base_learner->learn(ec, learner);
     }
@@ -1186,8 +1186,8 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
         add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
       }
 
-    for (size_t is_local=0; is_local<=priv.xv; is_local++)
-    { int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local);
+    for (size_t is_local=0; is_local<= (size_t)priv.xv; is_local++)
+    { int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
 
       for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++)
       { example& ec = priv.learn_ec_ref[a];
