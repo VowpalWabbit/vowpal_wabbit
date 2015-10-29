@@ -70,6 +70,10 @@ public:
     : total(ptotal), node(pnode)
   { assert(node >= 0 && node < total);
   }
+
+  virtual ~AllReduce()
+  {
+  }
 };
 
 struct Data
@@ -126,7 +130,7 @@ public:
 
   AllReduceThreads(const size_t ptotal, const size_t pnode);
 
-  ~AllReduceThreads();
+  virtual ~AllReduceThreads();
 
   template <class T, void(*f)(T&, const T&)> void all_reduce(T* buffer, const size_t n)
   { // register buffer
@@ -265,6 +269,10 @@ private:
 public:
   AllReduceSockets(std::string pspan_server, const size_t punique_id, size_t ptotal, const size_t pnode)
     : AllReduce(ptotal, pnode), span_server(pspan_server), unique_id(punique_id)
+  {
+  }
+
+  virtual ~AllReduceSockets()
   {
   }
 
