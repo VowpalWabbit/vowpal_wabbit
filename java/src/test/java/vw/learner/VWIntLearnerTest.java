@@ -37,7 +37,7 @@ public class VWIntLearnerTest {
                 "3:1.5:0.7 | a d"
         };
         String cbModel = temporaryFolder.newFile().getAbsolutePath();
-        VWIntLearner vw = new VWIntLearner("--quiet --cb 4 -f " + cbModel);
+        VWIntLearner vw = (VWIntLearner)VWFactory.getVWLeaner("--quiet --cb 4 -f " + cbModel);
         int[] trainPreds = new int[train.length];
         for (int i=0; i<train.length; ++i) {
             trainPreds[i] = vw.learn(train[i]);
@@ -47,7 +47,7 @@ public class VWIntLearnerTest {
 
         assertArrayEquals(expectedTrainPreds, trainPreds);
 
-        vw = new VWIntLearner("--quiet -t -i " + cbModel);
+        vw = (VWIntLearner)VWFactory.getVWLeaner("--quiet -t -i " + cbModel);
         String[] test = new String[]{
                 "1:2 3:5 4:1:0.6 | a c d",
                 "1:0.5 2:1:0.4 3:2 4:1.5 | c d"

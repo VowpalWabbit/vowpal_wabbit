@@ -59,7 +59,7 @@ public class VWFloatArrayLearnerTest {
       }
       return docs.toArray(new String[]{});
     }
- 
+
     private final String[] trainingDocuments = new String[] {
       "printf sizeof char",
       "eof printlf argc std",
@@ -98,7 +98,7 @@ public class VWFloatArrayLearnerTest {
     }
 
     private void writeVwModelToDisk() {
-        final VWFloatArrayLearner vwModel = new VWFloatArrayLearner(String.format("--quiet -b 4 --lda 3 -f %s --readable_model %s",
+        final VWFloatArrayLearner vwModel = (VWFloatArrayLearner) VWFactory.getVWLeaner(String.format("--quiet -b 4 --lda 3 -f %s --readable_model %s",
                 model, readableModel));
 
         for (String d : data) {
@@ -109,6 +109,6 @@ public class VWFloatArrayLearnerTest {
     }
 
     private VWFloatArrayLearner rehydrateModel() {
-        return new VWFloatArrayLearner("-i " + model + " -t --quiet");
+        return (VWFloatArrayLearner)VWFactory.getVWLeaner("-i " + model + " -t --quiet");
     }
 }

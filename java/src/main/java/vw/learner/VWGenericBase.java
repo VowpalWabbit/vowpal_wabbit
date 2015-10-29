@@ -17,9 +17,9 @@ package vw.learner;
  *
  * @author deak
  */
-abstract class VWGenericBase<T> extends VWBase implements VWGeneric<T> {
-    protected VWGenericBase(final String command) {
-        super(command);
+abstract class VWGenericBase<T> extends VWBase implements VWTypedGeneric<T> {
+    protected VWGenericBase(final long nativePointer) {
+        super(nativePointer);
     }
 
     @Override

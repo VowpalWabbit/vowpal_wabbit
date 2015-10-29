@@ -1,4 +1,3 @@
-#include "../../../../vowpalwabbit/parser.h"
 #include "../../../../vowpalwabbit/vw.h"
 #include "vw_VW.h"
 

@@ -8,13 +8,6 @@
 extern "C"
 {
 #endif
-/*
- * Class:     vw_learner_VWBase
- * Method:    initialize
- * Signature: (Ljava/lang/String;)J
- */
-JNIEXPORT jlong JNICALL Java_vw_learner_VWBase_initialize
-(JNIEnv *, jobject, jstring);
 
 /*
  * Class:     vw_learner_VWBase
