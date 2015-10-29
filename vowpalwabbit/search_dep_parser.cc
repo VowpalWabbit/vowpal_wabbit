@@ -88,9 +88,9 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
   for (vector<string>::const_iterator i = all.triples.begin(); i != all.triples.end(); ++i)
     all.interactions.push_back(string2v_string(*i));
   if(data->cost_to_go)   
-	    sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);
-	else
-	    sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING );
+    sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);
+  else
+    sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING );
 
   sch.set_label_parser( COST_SENSITIVE::cs_label, [](polylabel&l) -> bool { return l.cs.costs.size() == 0; });
 }
@@ -331,11 +331,13 @@ void get_gold_actions(Search::search &sch, uint32_t idx, uint32_t n, v_array<act
     }
 }
 
-void get_gold_action_losses(Search::search &sch, uint32_t idx, uint32_t n, v_array<pair<action, float>>& gold_action_losses)
+void get_cost_to_go_losses(Search::search &sch, uint32_t idx, uint32_t n, v_array<pair<action, float>>& gold_action_losses)
 { task_data *data = sch.get_task_data<task_data>();
-  v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions;
+  v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &gold_tags=data->gold_tags;
   size_t size = stack.size();
   uint32_t last = (size==0) ? 0 : stack.last();
+  bool &one_learner = data->one_learner;
+  size_t &num_label = data->num_label;
 
   gold_action_losses.erase();	
   for(uint32_t i = 1; i<= 3; i++)
@@ -361,10 +363,19 @@ void get_gold_action_losses(Search::search &sch, uint32_t idx, uint32_t n, v_arr
   for(uint32_t i = idx; i<=n; i++)
     if(gold_heads[i] == last)
       action_loss[2] +=1;
-
-  for(size_t i=1; i<=3; i++)
-    if(is_valid(i, valid_actions))
-      gold_action_losses.push_back(make_pair(i, action_loss[i]));			
+  if(one_learner)
+  {  uint32_t gold_label = gold_tags[stack.last()];
+	 for(size_t i=1; i<=3; i++)
+     if(is_valid(i, valid_actions))
+	   for(size_t j=1; j<=num_label; j++)
+       if(j!=data->root_label)
+         gold_action_losses.push_back(make_pair((i==1?1:1+j+(i-2)*num_label), action_loss[i]+(j != gold_label)));	 
+  }
+  else
+  {  for(size_t i=1; i<=3; i++)
+      if(is_valid(i, valid_actions))
+        gold_action_losses.push_back(make_pair(i, action_loss[i]));			
+  }
 }
 
 
@@ -425,35 +436,47 @@ void run(Search::search& sch, vector<example*>& ec)
     get_valid_actions(valid_actions, idx, n, (uint32_t) stack.size(), stack.empty() ? 0 : stack.last());
 	  uint32_t a_id = 0, t_id = 0;
 
-	  if(one_learner){	      
-       	  uint32_t gold_label = gold_tags[stack.last()];
-		  get_gold_actions(sch, idx, n, gold_actions);
-		  valid_action_temp.erase();
-		  gold_action_temp.erase();
-		  if(is_valid(SHIFT, valid_actions))
-			  valid_action_temp.push_back(SHIFT);
-		  if(is_valid(REDUCE_RIGHT, valid_actions))
-			 for(size_t i=0; i< num_label; i++)
+	  if(one_learner)      
+	  {	  uint32_t gold_label = gold_tags[stack.last()];
+		  
+		  if(cost_to_go)
+		  { get_cost_to_go_losses(sch, idx, n, gold_action_losses);
+ 		    a_id= Search::predictor(sch, (ptag) count)
+                              .set_input(*(data->ex))
+                              .set_allowed(gold_action_losses)
+                              .set_condition_range(count-1, sch.get_history_length(), 'p')
+                              .set_learner_id(0)
+                              .predict();
+		  }
+		  else
+		  { get_gold_actions(sch, idx, n, gold_actions);
+            gold_action_temp.erase();
+            if(is_valid(SHIFT, gold_actions))
+			  gold_action_temp.push_back(SHIFT);
+            if(is_valid(REDUCE_RIGHT, gold_actions))
+              gold_action_temp.push_back(1+gold_label);
+            if(is_valid(REDUCE_LEFT, gold_actions))
+              gold_action_temp.push_back(1+gold_label+num_label);
+              valid_action_temp.erase();		  
+            if(is_valid(SHIFT, valid_actions))
+              valid_action_temp.push_back(SHIFT);
+            if(is_valid(REDUCE_RIGHT, valid_actions))
+			  for(size_t i=0; i< num_label; i++)
 				if(i!=data->root_label-1)
 				 	valid_action_temp.push_back(i+2);
 		  if(is_valid(REDUCE_LEFT, valid_actions))
 			  for(size_t i=0; i<num_label; i++)
 				  if(i!=data->root_label-1)
 					  valid_action_temp.push_back(i+2+num_label);
-		  if(is_valid(SHIFT, gold_actions))
-			  gold_action_temp.push_back(SHIFT);
-		  if(is_valid(REDUCE_RIGHT, gold_actions))
-			  gold_action_temp.push_back(1+gold_label);
-		  if(is_valid(REDUCE_LEFT, gold_actions))
-			  gold_action_temp.push_back(1+gold_label+num_label);
 
-		  a_id = Search::predictor(sch, (ptag) count)
+            a_id = Search::predictor(sch, (ptag) count)
                               .set_input(*(data->ex))
                               .set_oracle(gold_action_temp)
                               .set_allowed(valid_action_temp)
                               .set_condition_range(count-1, sch.get_history_length(), 'p')
                               .set_learner_id(0)
                               .predict();
+		  }
 		  if (a_id == 1){
 			  t_id = 0;
 		  } else if(a_id>1 && a_id-1 <= num_label) {
@@ -466,7 +489,7 @@ void run(Search::search& sch, vector<example*>& ec)
 	  }
       else {
 		  if(cost_to_go){
-			  get_gold_action_losses(sch, idx, n, gold_action_losses);
+			  get_cost_to_go_losses(sch, idx, n, gold_action_losses);
 			  a_id= Search::predictor(sch, (ptag) count)
                               .set_input(*(data->ex))
                               .set_allowed(gold_action_losses)
@@ -490,7 +513,7 @@ void run(Search::search& sch, vector<example*>& ec)
      	  if (a_id != SHIFT) {
        		uint32_t gold_label = gold_tags[stack.last()];
 			if(cost_to_go){
-			gold_action_losses.erase();
+			  gold_action_losses.erase();
 				for(size_t i=1; i<= data->num_label; i++)			
 					gold_action_losses.push_back(make_pair(i, i != gold_label));
     		    t_id = Search::predictor(sch, (ptag) count)
