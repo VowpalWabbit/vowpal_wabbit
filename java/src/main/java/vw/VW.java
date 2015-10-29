@@ -15,9 +15,14 @@ public final class VW {
      * java -cp target/vw-jni-*-SNAPSHOT.jar vw.VW
      * @param args No args needed.
      */
-    public static void main(String[] args) throws IOException {
-        VWFactory.getVWLeaner("").close();
-        VWFactory.getVWLeaner("--quiet").close();
+    public static void main(String[] args) {
+        try {
+            VWFactory.getVWLeaner("").close();
+            VWFactory.getVWLeaner("--quiet").close();
+        }
+        catch (IOException e) {
+            // Ignored VW can't throw on close
+        }
     }
 
     public static native String version();
