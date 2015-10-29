@@ -1,6 +1,9 @@
 package vw;
 
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +15,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class VWTestHelper {
 
     private static AtomicBoolean loaded = new AtomicBoolean(false);
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @BeforeClass
     public static void loadLibrary() throws IOException {

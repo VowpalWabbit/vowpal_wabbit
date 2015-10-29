@@ -58,7 +58,7 @@ abstract class VWBase implements Closeable {
         }
     }
 
-    final protected boolean isOpen() {
+    final boolean isOpen() {
         return isOpen;
     }
 }

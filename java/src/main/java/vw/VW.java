@@ -1,8 +1,7 @@
 package vw;
 
 import vw.learner.VWFactory;
-
-import java.io.IOException;
+import vw.learner.VWFloatLearner;
 
 public final class VW {
     /**
@@ -16,13 +15,8 @@ public final class VW {
      * @param args No args needed.
      */
     public static void main(String[] args) {
-        try {
-            VWFactory.getVWLeaner("").close();
-            VWFactory.getVWLeaner("--quiet").close();
-        }
-        catch (IOException e) {
-            // Ignored VW can't throw on close
-        }
+        VWFactory.getVWLeaner("", VWFloatLearner.class).close();
+        VWFactory.getVWLeaner("--quiet", VWFloatLearner.class).close();
     }
 
     public static native String version();
