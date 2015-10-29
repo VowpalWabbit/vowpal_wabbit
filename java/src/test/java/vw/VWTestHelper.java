@@ -1,5 +1,7 @@
 package vw;
 
+import org.junit.BeforeClass;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -9,6 +11,8 @@ import java.io.IOException;
 public class VWTestHelper {
 
     private static boolean loaded = false;
+
+    @BeforeClass
     public static void loadLibrary() throws IOException {
         if (!loaded) {
             try {

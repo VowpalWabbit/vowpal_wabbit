@@ -1,6 +1,5 @@
 package vw.learner;
 
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -13,13 +12,7 @@ import static org.junit.Assert.assertArrayEquals;
 /**
  * Created by jmorra on 10/2/15.
  */
-public class VWIntArrayLearnerTest {
-
-    @BeforeClass
-    public static void globalSetup() throws IOException {
-        VWTestHelper.loadLibrary();
-    }
-
+public class VWIntArrayLearnerTest extends VWTestHelper {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 

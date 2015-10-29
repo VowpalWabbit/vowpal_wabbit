@@ -19,7 +19,7 @@ import static org.junit.Assert.assertNotEquals;
 /**
  * Created by jmorra on 11/24/14.
  */
-public class VWFloatLearnerTest {
+public class VWFloatLearnerTest extends VWTestHelper {
     private String houseModel;
     private final String heightData = "|f height:0.23 weight:0.25 width:0.05";
     private VWFloatLearner houseScorer;
@@ -29,11 +29,6 @@ public class VWFloatLearnerTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-    @BeforeClass
-    public static void globalSetup() throws IOException {
-        VWTestHelper.loadLibrary();
-    }
 
     @Before
     public void setup() throws IOException {

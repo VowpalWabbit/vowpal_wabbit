@@ -1,30 +1,28 @@
 package vw.learner;
 
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import vw.VWTestHelper;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author jmorra
  * @author marko asplund
  */
-public class VWFloatArrayLearnerTest {
+public class VWFloatArrayLearnerTest extends VWTestHelper {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-    @BeforeClass
-    public static void globalSetup() throws IOException {
-        VWTestHelper.loadLibrary();
-    }
 
     private String model;
     private String readableModel;

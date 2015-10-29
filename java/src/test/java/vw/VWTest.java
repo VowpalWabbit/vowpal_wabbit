@@ -1,6 +1,5 @@
 package vw;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -13,12 +12,7 @@ import static org.junit.Assert.fail;
 /**
  * Created by jmorra on 10/28/15.
  */
-public class VWTest {
-
-    @BeforeClass
-    public static void globalSetup() throws IOException {
-        VWTestHelper.loadLibrary();
-    }
+public class VWTest extends VWTestHelper {
 
     @Test
     public void testVersion() throws IOException {
