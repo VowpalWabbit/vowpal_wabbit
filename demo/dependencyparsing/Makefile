@@ -26,7 +26,7 @@ clean:
 	@$(python_exe) parse_data.py $(test_data) $(test_data).vw
 
 dep.model: $(train_data).vw
-	@$(VW) --passes 3 -d $< -k -c --search_rollin mix_per_roll --search_task dep_parser --search 12 --search_alpha 1e-5  --search_rollout oracle  --holdout_off -f $@ --search_history_length 3 --search_no_caching -b 26 --root_label 8 --num_label 12 --nn 5 --ftrl
+	@$(VW) --passes 3 -d $< -k -c --search_rollin mix_per_roll --search_task dep_parser --search 12 --search_alpha 1e-5  --search_rollout oracle  --holdout_off -f $@ --search_history_length 3 --search_no_caching -b 30 --root_label 8 --num_label 12 --nn 5 --ftrl
 
 dep.test.predictions: $(test_data).vw dep.model
 	@$(VW) -d $< -t $(search_option) -i dep.model -p $@

@@ -92,8 +92,7 @@ void finish_example(vw& all, topk& d, example& ec)
 
 
 void finish(topk& d)
-{
-  d.pr_queue = priority_queue<scored_example, vector<scored_example>, compare_scored_examples >();  
+{ d.pr_queue = priority_queue<scored_example, vector<scored_example>, compare_scored_examples >();
 }
 
 LEARNER::base_learner* topk_setup(vw& all)

@@ -192,10 +192,10 @@ size_t predict_relation(Search::search&sch, example* ex, v_array<size_t>& predic
     hist[1] = 0;
   }
   for(size_t j=0; j< my_task_data->y_allowed_relation.size(); j++)
-    { if(!my_task_data->constraints || hist[0] == 0  || check_constraints(hist[0], hist[1], my_task_data->y_allowed_relation[j]))
-	constrained_relation_labels.push_back(my_task_data->y_allowed_relation[j]);
-      
-    }
+  { if(!my_task_data->constraints || hist[0] == 0  || check_constraints(hist[0], hist[1], my_task_data->y_allowed_relation[j]))
+      constrained_relation_labels.push_back(my_task_data->y_allowed_relation[j]);
+
+  }
 
   size_t prediction;
   if(my_task_data->allow_skip)

@@ -24,12 +24,11 @@ float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, exa
   polyprediction p = ec.pred;
 
   if (is_learn && simple_temp.label != FLT_MAX)
-    { 
-      float old_weight = ec.weight;
-      ec.weight = 1.f;
-      scorer->learn(ec, index-1+base);
-      ec.weight = old_weight;
-    }
+  { float old_weight = ec.weight;
+    ec.weight = 1.f;
+    scorer->learn(ec, index-1+base);
+    ec.weight = old_weight;
+  }
   else
     scorer->predict(ec, index-1+base);
 

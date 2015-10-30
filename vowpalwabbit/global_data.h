@@ -164,14 +164,13 @@ public:
   }
 
   ~namedlabels()
-    {
-      if (id2name.size()>0)
-	free(id2name[0].begin);
-      cout << "in namedlabels delete" << endl;
-      name2id.iter(deleter);
-      name2id.delete_v();
-      id2name.delete_v();
-    }
+  { if (id2name.size()>0)
+      free(id2name[0].begin);
+    cout << "in namedlabels delete" << endl;
+    name2id.iter(deleter);
+    name2id.delete_v();
+    id2name.delete_v();
+  }
 
   uint32_t getK() { return K; }
 
@@ -227,6 +226,10 @@ struct shared_data
   double weighted_holdout_examples_since_last_pass;//reserved for best predictor selection
   double holdout_sum_loss_since_last_pass;
   size_t holdout_best_pass;
+  // for --probabilities
+  bool report_multiclass_log_loss;
+  double multiclass_log_loss;
+  double holdout_multiclass_log_loss;
 
   // Column width, precision constants:
   static const int col_avg_loss = 8;

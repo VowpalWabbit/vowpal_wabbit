@@ -78,8 +78,8 @@ void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec)
         c = o.C[o.N-(i+1)][(long long)k];
       else { c = choose(o.N-(i+1),(long long)k); o.C[o.N-(i+1)][(long long)k] = c; }
 
-      float w = c * (float)pow((double)(0.5 + o.gamma), (double)k) 
-				* (float)pow((double)0.5 - o.gamma,(double)(o.N-(i+1)-k));
+      float w = c * (float)pow((double)(0.5 + o.gamma), (double)k)
+                * (float)pow((double)0.5 - o.gamma,(double)(o.N-(i+1)-k));
 
       // update ec.weight, weight for learner i (starting from 0)
       ec.weight = u * w;

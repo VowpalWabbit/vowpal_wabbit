@@ -727,7 +727,7 @@ void setup_example(vw& all, example* ae)
 
   if (all.p->emptylines_separate_examples && example_is_newline(*ae))
     all.p->in_pass_counter++;
-  
+
   ae->weight = all.p->lp.get_weight(&ae->l);
   all.sd->t += ae->weight;
   ae->example_t = (float)all.sd->t;

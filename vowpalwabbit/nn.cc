@@ -162,7 +162,7 @@ void predict_or_learn_multi(nn& n, base_learner& base, example& ec)
         base.learn(n.hiddenbias, i);
         n.hiddenbias.l.simple.label = FLT_MAX;
       }
-    
+
     base.multipredict(ec, 0, n.k, hidden_units, true);
 
     for (unsigned int i = 0; i < n.k; ++i )
