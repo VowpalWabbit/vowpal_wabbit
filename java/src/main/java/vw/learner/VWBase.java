@@ -61,4 +61,20 @@ abstract class VWBase implements Closeable {
     final boolean isOpen() {
         return isOpen;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        VWBase vwBase = (VWBase) o;
+
+        return nativePointer == vwBase.nativePointer;
+
+    }
+
+    @Override
+    public int hashCode() {
+        return (int) (nativePointer ^ (nativePointer >>> 32));
+    }
 }
