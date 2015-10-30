@@ -18,7 +18,6 @@ struct oaa
   size_t num_subsample; // for randomized subsampling, how many negatives to draw?
   uint32_t* subsample_order; // for randomized subsampling, in what order should we touch classes
   size_t subsample_id; // for randomized subsampling, where do we live in the list
-  float* probs;
 };
 
 void learn_randomized(oaa& o, LEARNER::base_learner& base, example& ec)
@@ -90,18 +89,16 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
 
   if (is_probabilities)
   { float sum_prob = 0;
+    ec.pred.probs = calloc_or_throw<float>(o.k);
     for (uint32_t i=0; i<o.k; i++)
     { // probability of class (i+1) = logistic_link_function(raw_prediction)
       float prob = 1.f / (1.f + exp(- o.pred[i].scalar));
-      o.probs[i] = prob;
+      ec.pred.probs[i] = prob;
       sum_prob += prob;
     }
     // make sure that the probabilities sum up (exactly) to one
     for (uint32_t i=0; i<o.k; i++)
-      o.probs[i] /= sum_prob;
-    // copy probs pointer to the example.
-    // TODO: shouldn't we do a deep copy and free(ec.pred.probs) in finish_example()?
-    ec.pred.probs = o.probs;
+      ec.pred.probs[i] /= sum_prob;
   } else {
     ec.pred.multiclass = prediction;
   }
@@ -112,7 +109,6 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
 void finish(oaa&o)
 { free(o.pred);
   free(o.subsample_order);
-  free(o.probs);
 }
 
 // TODO: partial code duplication with multiclass.cc:finish_example
@@ -174,6 +170,7 @@ void finish_example_probabilities(vw& all, oaa& o, example& ec)
 
   // === Print progress report
   MULTICLASS::print_update_with_probability(all, ec, prediction);
+  free(ec.pred.probs);
   VW::finish_example(all, &ec);
 }
 
@@ -187,8 +184,6 @@ LEARNER::base_learner* oaa_setup(vw& all)
   oaa* data_ptr = calloc_or_throw<oaa>(1);
   oaa& data = *data_ptr;
   data.k = all.vm["oaa"].as<size_t>(); // number of classes
-  data.probs = calloc_or_throw<float>(data.k);
-
 
   if (all.sd->ldict && (data.k != all.sd->ldict->getK()))
     THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
