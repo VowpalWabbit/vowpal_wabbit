@@ -1,6 +1,6 @@
 package vw;
 
-import vw.learner.VWFloatLearner;
+import vw.learner.VWLearners;
 
 public final class VW {
     /**
@@ -14,8 +14,8 @@ public final class VW {
      * @param args No args needed.
      */
     public static void main(String[] args) {
-        new VWFloatLearner("").close();
-        new VWFloatLearner("--quiet").close();
+        VWLearners.create("").close();
+        VWLearners.create("--quiet").close();
     }
 
     public static native String version();

@@ -1,4 +1,3 @@
-#include "../../../../vowpalwabbit/parser.h"
 #include "../../../../vowpalwabbit/vw.h"
 
 #include "jni_base_learner.h"

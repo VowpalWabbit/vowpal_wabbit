@@ -1,30 +1,28 @@
 package vw.learner;
 
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import vw.VWTestHelper;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author jmorra
  * @author marko asplund
  */
-public class VWFloatArrayLearnerTest {
+public class VWFloatArrayLearnerTest extends VWTestHelper {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-    @BeforeClass
-    public static void globalSetup() throws IOException {
-        VWTestHelper.loadLibrary();
-    }
 
     private String model;
     private String readableModel;
@@ -59,7 +57,7 @@ public class VWFloatArrayLearnerTest {
       }
       return docs.toArray(new String[]{});
     }
- 
+
     private final String[] trainingDocuments = new String[] {
       "printf sizeof char",
       "eof printlf argc std",
@@ -98,7 +96,7 @@ public class VWFloatArrayLearnerTest {
     }
 
     private void writeVwModelToDisk() {
-        final VWFloatArrayLearner vwModel = new VWFloatArrayLearner(String.format("--quiet -b 4 --lda 3 -f %s --readable_model %s",
+        final VWFloatArrayLearner vwModel =  VWLearners.create(String.format("--quiet -b 4 --lda 3 -f %s --readable_model %s",
                 model, readableModel));
 
         for (String d : data) {
@@ -109,6 +107,6 @@ public class VWFloatArrayLearnerTest {
     }
 
     private VWFloatArrayLearner rehydrateModel() {
-        return new VWFloatArrayLearner("-i " + model + " -t --quiet");
+        return VWLearners.create("-i " + model + " -t --quiet");
     }
 }

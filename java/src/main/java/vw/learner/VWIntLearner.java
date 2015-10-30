@@ -3,9 +3,9 @@ package vw.learner;
 /**
  * @author deak
  */
-final public class VWIntLearner extends VWBase {
-    public VWIntLearner(String command) {
-        super(command);
+final public class VWIntLearner extends VWBase implements VWLearner {
+    VWIntLearner(final long nativePointer) {
+        super(nativePointer);
     }
 
     /**

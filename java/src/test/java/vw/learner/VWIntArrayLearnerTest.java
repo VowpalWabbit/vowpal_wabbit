@@ -1,6 +1,5 @@
 package vw.learner;
 
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -13,13 +12,7 @@ import static org.junit.Assert.assertArrayEquals;
 /**
  * Created by jmorra on 10/2/15.
  */
-public class VWIntArrayLearnerTest {
-
-    @BeforeClass
-    public static void globalSetup() throws IOException {
-        VWTestHelper.loadLibrary();
-    }
-
+public class VWIntArrayLearnerTest extends VWTestHelper {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
@@ -39,7 +32,7 @@ public class VWIntArrayLearnerTest {
                 "2 | d"
         };
         String model = temporaryFolder.newFile().getAbsolutePath();
-        VWIntArrayLearner vw = new VWIntArrayLearner("--quiet --multilabel_oaa 4 -f " + model);
+        VWIntArrayLearner vw = VWLearners.create("--quiet --multilabel_oaa 4 -f " + model);
         int[][] trainPreds = new int[train.length][];
         for (int i=0; i<train.length; ++i) {
             trainPreds[i] = vw.learn(train[i]);
@@ -56,7 +49,7 @@ public class VWIntArrayLearnerTest {
 
         assertArrayEquals(expectedTrainPreds, trainPreds);
 
-        vw = new VWIntArrayLearner("--quiet -t -i " + model);
+        vw = VWLearners.create("--quiet -t -i " + model);
         String[] test = new String[]{
                 "| a b c d",
                 "| b d"
