@@ -32,7 +32,7 @@ public class VWIntArrayLearnerTest extends VWTestHelper {
                 "2 | d"
         };
         String model = temporaryFolder.newFile().getAbsolutePath();
-        VWIntArrayLearner vw = VWLearners.create(VWIntArrayLearner.class, "--quiet --multilabel_oaa 4 -f " + model);
+        VWIntArrayLearner vw = VWLearners.create("--quiet --multilabel_oaa 4 -f " + model);
         int[][] trainPreds = new int[train.length][];
         for (int i=0; i<train.length; ++i) {
             trainPreds[i] = vw.learn(train[i]);
@@ -49,7 +49,7 @@ public class VWIntArrayLearnerTest extends VWTestHelper {
 
         assertArrayEquals(expectedTrainPreds, trainPreds);
 
-        vw = VWLearners.create(VWIntArrayLearner.class, "--quiet -t -i " + model);
+        vw = VWLearners.create("--quiet -t -i " + model);
         String[] test = new String[]{
                 "| a b c d",
                 "| b d"

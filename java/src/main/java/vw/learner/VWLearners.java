@@ -8,7 +8,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * This is the only entrance point to create a VWLearner.  It is the responsibility of the user to supply the type they want
- * given the VW command.  If that type is incorrect a {@link java.lang.ClassCastException} is thrown.
+ * given the VW command.  If that type is incorrect a {@link java.lang.ClassCastException} is thrown.  Refer to
+ * {@link #create(String)} for more information.
  * @author jmorra
  */
 final public class VWLearners {
@@ -22,45 +23,6 @@ final public class VWLearners {
     private VWLearners() {}
 
     /**
-     * This is provided so that a VWLeaner can be created to pass to other code that takes the base type.
-     * This can useful but the user <b>NEEDS TO CLOSE</b> the instance.
-     * @param command the VW command
-     * @return The base type of the VW learner hierarchy.
-     */
-    public static VWLearner create(final String command) {
-        long nativePointer = initializeVWJni(command);
-        VWReturnType returnType = getReturnType(nativePointer);
-
-        switch (returnType) {
-            case VWFloatType: return new VWFloatLearner(nativePointer);
-            case VWIntType: return new VWIntLearner(nativePointer);
-            case VWFloatArrayType: return new VWFloatArrayLearner(nativePointer);
-            case VWIntArrayType: return new VWIntArrayLearner(nativePointer);
-            case Unknown:
-            default:
-                // Doing this will allow for all cases when a C object is made to be closed.
-                closeInstance(nativePointer);
-                throw new IllegalArgumentException("Unknown VW return type using command: " + command);
-        }
-    }
-
-    static <T extends VWLearner> VWLearner createSafe(final Class<T> clazz, final String command) {
-        final VWLearner baseLearner = create(command);
-
-        // In the case that we have a ClassCastException the C object was still created and must be closed.
-        // This will ensure that that closing happens
-        if (!clazz.isAssignableFrom(baseLearner.getClass())) {
-            try {
-                baseLearner.close();
-            }
-            catch (IOException e1) {
-                // Ignored, closing a VWLearner cannot fail
-            }
-        }
-        return baseLearner;
-    }
-
-    /**
      * This is the only way to construct a VW Predictor.  The goal here is to provide a typesafe way of getting an predictor
      * which will return the correct output type given the command specified.
      * <pre>
@@ -68,17 +30,31 @@ final public class VWLearners {
      *     VWIntLearner vw = VWFactory.createVWLearner("--cb 4");
      * }
      * </pre>
-     * @param clazz The class object of the output type.  This is required because we need to be able to close the created
-     *              learner in the case that the type is specified incorrectly.
+     *
+     * NOTE: It is very important to note that if this method results in a {@link java.lang.ClassCastException} then there
+     * WILL be a memory leak as the exception occurs in the calling method not this method due to type erasures.  It is therefore
+     * imperative that if the caller of this method is unsure of the type returned that it should specify <code>T</code>
+     * as {@link VWLearner} and do the casting on it's side so that closing the method can be guaranteed.
      * @param command The VW initialization command.
      * @param <T> The type of learner expected.  Note that this type implicitly specifies the output type of the learner.
-     * @throws ClassCastException If the specified type T is not a super type of the returned learner given the command.
      * @return A VW Learner
      */
-    public static <T extends VWLearner> T create(final Class<T> clazz, final String command) {
-        // This doesn't protect this function from throwing a class cast exception it just allows the
-        // VWLearner to be closed if the type is incorrect.
-        return clazz.cast(createSafe(clazz, command));
+    @SuppressWarnings("unchecked")
+    public static <T extends VWLearner> T create(final String command) {
+        long nativePointer = initializeVWJni(command);
+        VWReturnType returnType = getReturnType(nativePointer);
+
+        switch (returnType) {
+            case VWFloatType: return (T)new VWFloatLearner(nativePointer);
+            case VWIntType: return (T)new VWIntLearner(nativePointer);
+            case VWFloatArrayType: return (T)new VWFloatArrayLearner(nativePointer);
+            case VWIntArrayType: return (T)new VWIntArrayLearner(nativePointer);
+            case Unknown:
+            default:
+                // Doing this will allow for all cases when a C object is made to be closed.
+                closeInstance(nativePointer);
+                throw new IllegalArgumentException("Unknown VW return type using command: " + command);
+        }
     }
 
     /**

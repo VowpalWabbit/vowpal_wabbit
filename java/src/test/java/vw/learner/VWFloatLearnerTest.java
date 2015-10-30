@@ -28,12 +28,12 @@ public class VWFloatLearnerTest extends VWTestHelper {
                 "0 | price:.23 sqft:.25 age:.05 2006",
                 "1 2 'second_house | price:.18 sqft:.15 age:.35 1976",
                 "0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924"};
-        VWFloatLearner learner = VWLearners.create(VWFloatLearner.class, " --quiet -f " + houseModel);
+        VWFloatLearner learner = VWLearners.create(" --quiet -f " + houseModel);
         for (String d : houseData) {
             learner.learn(d);
         }
         learner.close();
-        houseScorer = VWLearners.create(VWFloatLearner.class, "--quiet -t -i " + houseModel);
+        houseScorer = VWLearners.create("--quiet -t -i " + houseModel);
     }
 
     @After
@@ -56,8 +56,8 @@ public class VWFloatLearnerTest extends VWTestHelper {
     }
 
     @Test
-    public void testLearn() throws IOException {
-        VWFloatLearner learner = VWLearners.create(VWFloatLearner.class, "--quiet");
+    public void testLearn() {
+        VWFloatLearner learner = VWLearners.create("--quiet");
         float firstPrediction = learner.learn("0.1 " + heightData);
         float secondPrediction = learner.learn("0.9 " + heightData);
         assertNotEquals(firstPrediction, secondPrediction, 0.001);
@@ -68,7 +68,7 @@ public class VWFloatLearnerTest extends VWTestHelper {
     public void testManySamples() {
         File model = new File("basic.model");
         model.deleteOnExit();
-        VWFloatLearner m = VWLearners.create(VWFloatLearner.class, "--quiet --loss_function logistic --link logistic -f " + model.getAbsolutePath());
+        VWFloatLearner m = VWLearners.create("--quiet --loss_function logistic --link logistic -f " + model.getAbsolutePath());
         for (int i=0; i<100; ++i) {
             m.learn("-1 | ");
             m.learn("1 | ");
@@ -76,14 +76,14 @@ public class VWFloatLearnerTest extends VWTestHelper {
         m.close();
 
         float expVwOutput = 0.50419676f;
-        m = VWLearners.create(VWFloatLearner.class, "--quiet -i " + model.getAbsolutePath());
+        m = VWLearners.create("--quiet -i " + model.getAbsolutePath());
         assertEquals(expVwOutput, m.predict("| "), 0.0001);
     }
 
     @Test
     public void twoModelTest() {
-        VWFloatLearner m1 = VWLearners.create(VWFloatLearner.class, "--quiet");
-        VWFloatLearner m2 = VWLearners.create(VWFloatLearner.class, "--quiet");
+        VWFloatLearner m1 = VWLearners.create("--quiet");
+        VWFloatLearner m2 = VWLearners.create("--quiet");
 
         float a = m1.predict("-1 | ");
         m1.close();

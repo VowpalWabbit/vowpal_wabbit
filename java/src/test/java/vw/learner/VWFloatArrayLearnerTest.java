@@ -96,7 +96,7 @@ public class VWFloatArrayLearnerTest extends VWTestHelper {
     }
 
     private void writeVwModelToDisk() {
-        final VWFloatArrayLearner vwModel =  VWLearners.create(VWFloatArrayLearner.class, String.format("--quiet -b 4 --lda 3 -f %s --readable_model %s",
+        final VWFloatArrayLearner vwModel =  VWLearners.create(String.format("--quiet -b 4 --lda 3 -f %s --readable_model %s",
                 model, readableModel));
 
         for (String d : data) {
@@ -107,6 +107,6 @@ public class VWFloatArrayLearnerTest extends VWTestHelper {
     }
 
     private VWFloatArrayLearner rehydrateModel() {
-        return VWLearners.create(VWFloatArrayLearner.class, "-i " + model + " -t --quiet");
+        return VWLearners.create("-i " + model + " -t --quiet");
     }
 }

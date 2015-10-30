@@ -30,7 +30,7 @@ public class VWIntLearnerTest extends VWTestHelper {
                 "3:1.5:0.7 | a d"
         };
         String cbModel = temporaryFolder.newFile().getAbsolutePath();
-        VWIntLearner vw = VWLearners.create(VWIntLearner.class, "--quiet --cb 4 -f " + cbModel);
+        VWIntLearner vw = VWLearners.create("--quiet --cb 4 -f " + cbModel);
         int[] trainPreds = new int[train.length];
         for (int i=0; i<train.length; ++i) {
             trainPreds[i] = vw.learn(train[i]);
@@ -40,7 +40,7 @@ public class VWIntLearnerTest extends VWTestHelper {
 
         assertArrayEquals(expectedTrainPreds, trainPreds);
 
-        vw = VWLearners.create(VWIntLearner.class, "--quiet -t -i " + cbModel);
+        vw = VWLearners.create("--quiet -t -i " + cbModel);
         String[] test = new String[]{
                 "1:2 3:5 4:1:0.6 | a c d",
                 "1:0.5 2:1:0.4 3:2 4:1.5 | c d"
@@ -71,14 +71,14 @@ public class VWIntLearnerTest extends VWTestHelper {
                 "2:3.0 d1_expect_2| d"
         };
         String model = temporaryFolder.newFile().getAbsolutePath();
-        VWIntLearner vw = VWLearners.create(VWIntLearner.class, "--quiet --csoaa 3 -f " + model);
+        VWIntLearner vw = VWLearners.create("--quiet --csoaa 3 -f " + model);
         for (int i=0; i<train.length; ++i) {
             vw.learn(train[i]);
         }
         vw.close();
 
         int[] expectedTestPreds = new int[]{1, 2, 3, 2, 2, 3, 2};
-        vw = VWLearners.create(VWIntLearner.class, "--quiet -t -i " + model);
+        vw = VWLearners.create("--quiet -t -i " + model);
         int[] testPreds = new int[expectedTestPreds.length];
         for (int i=0; i<train.length; ++i) {
             testPreds[i] = vw.predict(train[i]);
