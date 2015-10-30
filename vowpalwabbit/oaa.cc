@@ -5,9 +5,11 @@ license as described in the file LICENSE.
  */
 #include <sstream>
 #include <float.h>
+#include <math.h>
 #include "reductions.h"
 #include "rand48.h"
 #include "vw_exception.h"
+#include "vw.h"
 
 struct oaa
 { size_t k;
@@ -52,7 +54,7 @@ void learn_randomized(oaa& o, LEARNER::base_learner& base, example& ec)
   ec.l.multi = ld;
 }
 
-template <bool is_learn, bool print_all>
+template <bool is_learn, bool print_all, bool is_probabilities>
 void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
 { MULTICLASS::label_t mc_label_data = ec.l.multi;
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
@@ -85,27 +87,109 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
     o.all->print_text(o.all->raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  ec.pred.multiclass = prediction;
+  if (is_probabilities)
+  { float sum_prob = 0;
+    ec.pred.probs = calloc_or_throw<float>(o.k);
+    for (uint32_t i=0; i<o.k; i++)
+    { // probability of class (i+1) = logistic_link_function(raw_prediction)
+      float prob = 1.f / (1.f + exp(- o.pred[i].scalar));
+      ec.pred.probs[i] = prob;
+      sum_prob += prob;
+    }
+    // make sure that the probabilities sum up (exactly) to one
+    for (uint32_t i=0; i<o.k; i++)
+      ec.pred.probs[i] /= sum_prob;
+  } else {
+    ec.pred.multiclass = prediction;
+  }
+
   ec.l.multi = mc_label_data;
 }
 
-void finish(oaa&o) { free(o.pred); free(o.subsample_order); }
+void finish(oaa&o)
+{ free(o.pred);
+  free(o.subsample_order);
+}
+
+// TODO: partial code duplication with multiclass.cc:finish_example
+void finish_example_probabilities(vw& all, oaa& o, example& ec)
+{ // === Compute multiclass_log_loss
+  // TODO:
+  // What to do if the correct label is unknown, i.e. (uint32_t)-1?
+  //   Suggestion: increase all.sd->weighted_unlabeled_examples???,
+  //               but not sd.example_number, so the average loss is not influenced.
+  // What to do if the correct_class_prob==0?
+  //   Suggestion: have some maximal multiclass_log_loss limit, e.g. 999.
+  float multiclass_log_loss = 999; // -log(0) = plus infinity
+  float correct_class_prob = 0;
+  if (ec.l.multi.label <= o.k) // prevent segmentation fault if labeĺ==(uint32_t)-1
+    correct_class_prob = ec.pred.probs[ec.l.multi.label-1];
+  if (correct_class_prob > 0)
+    multiclass_log_loss = -log(correct_class_prob) * ec.l.multi.weight;
+
+  if (ec.test_only)
+    all.sd->holdout_multiclass_log_loss += multiclass_log_loss;
+  else
+    all.sd->multiclass_log_loss += multiclass_log_loss;
+
+  // === Compute `prediction` and zero_one_loss
+  // We have already computed `prediction` in predict_or_learn,
+  // but we cannot store it in ec.pred union because we store ec.pred.probs there.
+  uint32_t prediction = 0;
+  for (size_t i = 1; i < o.k; i++)
+    if (ec.pred.probs[i] > ec.pred.probs[prediction])
+      prediction = i;
+  prediction++; // prediction is 1-based index (not 0-based)
+  float zero_one_loss = 0;
+  if (ec.l.multi.label != prediction)
+    zero_one_loss = ec.l.multi.weight;
+
+  // === Print probabilities for all classes
+  char temp_str[10];
+  ostringstream outputStringStream;
+  for (size_t i = 0; i < o.k; i++)
+  { if (i > 0) outputStringStream << ' ';
+    if (all.sd->ldict)
+    { substring ss = all.sd->ldict->get(i+1);
+      outputStringStream << string(ss.begin, ss.end - ss.begin);
+    } else
+      outputStringStream << i+1;
+    sprintf(temp_str, "%f", ec.pred.probs[i]); // 0.123 -> 0.123000
+    outputStringStream << ':' << temp_str;
+  }
+  for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+    all.print_text(*sink, outputStringStream.str(), ec.tag);
+
+  // === Report updates using zero-one loss
+  all.sd->update(ec.test_only, zero_one_loss, ec.l.multi.weight, ec.num_features);
+  // Alternatively, we could report multiclass_log_loss.
+  //all.sd->update(ec.test_only, multiclass_log_loss, ec.l.multi.weight, ec.num_features);
+  // Even better would be to report both losses, but this would mean to increase
+  // the number of columns and this would not fit narrow screens.
+  // So let's report (average) multiclass_log_loss only in the final resume.
+
+  // === Print progress report
+  MULTICLASS::print_update_with_probability(all, ec, prediction);
+  free(ec.pred.probs);
+  VW::finish_example(all, &ec);
+}
 
 LEARNER::base_learner* oaa_setup(vw& all)
 { if (missing_option<size_t, true>(all, "oaa", "One-against-all multiclass with <k> labels"))
     return nullptr;
   new_options(all, "oaa options")
-  ("oaa_subsample", po::value<size_t>(), "subsample this number of negative examples when learning");
+  ("oaa_subsample", po::value<size_t>(), "subsample this number of negative examples when learning")
+  ("probabilities", "predict probabilites of all classes");
   add_options(all);
 
   oaa* data_ptr = calloc_or_throw<oaa>(1);
   oaa& data = *data_ptr;
-  data.k = all.vm["oaa"].as<size_t>();
+  data.k = all.vm["oaa"].as<size_t>(); // number of classes
 
   if (all.sd->ldict && (data.k != all.sd->ldict->getK()))
     THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
 
-    data.all = &all;
+  data.all = &all;
   data.pred = calloc_or_throw<polyprediction>(data.k);
   data.num_subsample = 0;
   data.subsample_order = nullptr;
@@ -129,12 +213,22 @@ LEARNER::base_learner* oaa_setup(vw& all)
   }
 
   LEARNER::learner<oaa>* l;
-  if (all.raw_prediction > 0)
-    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all), predict_or_learn<true, true>,
-                                          predict_or_learn<false, true>, all.p, data.k);
+  if( all.vm.count("probabilities") )
+  { all.sd->report_multiclass_log_loss = true;
+    if (!all.vm.count("loss_function") || all.vm["loss_function"].as<string>() != "logistic" )
+      cerr << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
+    // the three boolean template parameters are: is_learn, print_all and is_probabilities
+    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all), predict_or_learn<true, false, true>,
+                                          predict_or_learn<false, false, true>, all.p, data.k);
+    l->set_finish_example(finish_example_probabilities);
+  }
+  else if (all.raw_prediction > 0)
+    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all), predict_or_learn<true, true, false>,
+                                          predict_or_learn<false, true, false>, all.p, data.k);
   else
-    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all),predict_or_learn<true, false>,
-                                          predict_or_learn<false, false>, all.p, data.k);
+    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all),predict_or_learn<true, false, false>,
+                                          predict_or_learn<false, false, false>, all.p, data.k);
+
   if (data.num_subsample > 0)
     l->set_learn(learn_randomized);
   l->set_finish(finish);
