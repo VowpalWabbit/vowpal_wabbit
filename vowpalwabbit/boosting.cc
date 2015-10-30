@@ -13,6 +13,7 @@
 #include <float.h>
 #include <limits.h>
 #include <math.h>
+#include "correctedMath.h"
 #include <stdio.h>
 #include <string>
 #include <sstream>
@@ -127,7 +128,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example
   {
 
     if (is_learn)
-    { float w = 1 / (1 + exp(s));
+    { float w = 1 / (1 + correctedExp(s));
 
       ec.weight = u * w;
 
@@ -142,7 +143,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example
       final_prediction += ec.pred.scalar * o.alpha[i];
 
       // update alpha
-      o.alpha[i] += eta * z / (1 + exp(s));
+      o.alpha[i] += eta * z / (1 + correctedExp(s));
       if (o.alpha[i] > 2.) o.alpha[i] = 2;
       if (o.alpha[i] < -2.) o.alpha[i] = -2;
 
@@ -183,7 +184,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
   {
 
     if (is_learn)
-    { float w = 1 / (1 + exp(s));
+    { float w = 1 / (1 + correctedExp(s));
 
       ec.weight = u * w;
 
@@ -209,7 +210,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
       v_normalization += o.v[i];
 
       // update alpha
-      o.alpha[i] += eta * z / (1 + exp(s));
+      o.alpha[i] += eta * z / (1 + correctedExp(s));
       if (o.alpha[i] > 2.) o.alpha[i] = 2;
       if (o.alpha[i] < -2.) o.alpha[i] = -2;
 

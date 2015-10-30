@@ -4,6 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include<math.h>
+#include "correctedMath.h"
 #include<iostream>
 #include<stdlib.h>
 #include<float.h>
@@ -46,7 +47,7 @@ public:
        */
       return 2.f*(label - prediction)*eta_t/pred_per_update;
     }
-    return (label - prediction)*(1.f-exp(-2.f*eta_t))/pred_per_update;
+    return (label - prediction)*(1.f-correctedExp(-2.f*eta_t))/pred_per_update;
   }
 
   float getUnsafeUpdate(float prediction, float label, float eta_t, float pred_per_update)
@@ -171,12 +172,12 @@ public:
   float getLoss(shared_data*, float prediction, float label)
   { if (label != -1.f && label != 1.f)
       cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << endl;
-    return log(1 + exp(-label * prediction));
+    return log(1 + correctedExp(-label * prediction));
   }
 
   float getUpdate(float prediction, float label, float eta_t, float pred_per_update)
   { float w,x;
-    float d = exp(label * prediction);
+    float d = correctedExp(label * prediction);
     if(eta_t < 1e-6)
     { /* As with squared loss, for small eta_t we replace the update
        * with its first order Taylor expansion to avoid numerical problems
@@ -189,7 +190,7 @@ public:
   }
 
   float getUnsafeUpdate(float prediction, float label, float eta_t, float pred_per_update)
-  { float d = exp(label * prediction);
+  { float d = correctedExp(label * prediction);
     return label*eta_t/((1+d)*pred_per_update);
   }
 
@@ -199,7 +200,7 @@ public:
      * The absolute error of this approximation is less than 9e-5.
      * Faster/better approximations can be substituted here.
      */
-    double w = x>=1. ? 0.86*x+0.01 : exp(0.8*x-0.65); //initial guess
+    double w = x>=1. ? 0.86*x+0.01 : correctedExp(0.8*x-0.65); //initial guess
     double r = x>=1. ? x-log(w)-w : 0.2*x+0.65-w; //residual
     double t = 1.+w;
     double u = 2.*t*(t+2.*r/3.); //magic
@@ -208,11 +209,11 @@ public:
 
   float getRevertingWeight(shared_data*, float prediction, float eta_t)
   { float z = -fabs(prediction);
-    return (1-z-exp(z))/eta_t;
+    return (1-z-correctedExp(z))/eta_t;
   }
 
   float first_derivative(shared_data*, float prediction, float label)
-  { float v = - label/(1+exp(label * prediction));
+  { float v = - label/(1+correctedExp(label * prediction));
     return v;
   }
 
@@ -222,7 +223,7 @@ public:
   }
 
   float second_derivative(shared_data*, float prediction, float label)
-  { float p = 1 / (1+exp(label*prediction));
+  { float p = 1 / (1+correctedExp(label*prediction));
 
     return p*(1-p);
   }
