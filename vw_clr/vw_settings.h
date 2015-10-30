@@ -20,8 +20,7 @@ namespace VW
 	ref class VowpalWabbit;
 
 	public enum class VowpalWabbitExampleDistribution
-	{
-		// statistically safer option
+{ // statistically safer option
 		UniformRandom = 0,
 		// better runtime performance
 		RoundRobin = 1
@@ -60,8 +59,7 @@ namespace VW
 
 		VowpalWabbitSettings(String^ arguments)
 			: VowpalWabbitSettings()
-		{
-			if (arguments != nullptr)
+  { if (arguments != nullptr)
 				m_arguments = arguments;
 		}
 
@@ -80,8 +78,7 @@ namespace VW
       [System::Runtime::InteropServices::Optional] List<FeatureExpression^>^ allFeatures,
       [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer)
 			: VowpalWabbitSettings()
-		{
-			if (arguments != nullptr)
+  { if (arguments != nullptr)
 				m_arguments = arguments;
 
 			m_model = model;
@@ -117,10 +114,8 @@ namespace VW
 		/// Command line arguments.
 		/// </summary>
 		property String^ Arguments
-		{
-			String^ get()
-			{
-				return m_arguments;
+  { String^ get()
+    { return m_arguments;
 			}
 		}
 
@@ -128,10 +123,8 @@ namespace VW
 		/// Model used for initialization.
 		/// </summary>
 		property Stream^ ModelStream
-		{
-			Stream^ get()
-			{
-				return m_modelStream;
+  { Stream^ get()
+    { return m_modelStream;
 			}
 		}
 
@@ -139,40 +132,32 @@ namespace VW
 		/// Shared native vowpwal wabbit data structure.
 		/// </summary>
 		property VowpalWabbitModel^ Model
-		{
-			VowpalWabbitModel^ get()
-			{
-				return m_model;
+  { VowpalWabbitModel^ get()
+    { return m_model;
 			}
 		}
 
 		property ParallelOptions^ ParallelOptions
-		{
-			System::Threading::Tasks::ParallelOptions^ get()
-			{
-				return m_parallelOptions;
+  { System::Threading::Tasks::ParallelOptions^ get()
+    { return m_parallelOptions;
 			}
 		}
 
 		/// <summary>
 		/// Set to true to disable example caching when used with a serializer. Defaults to true.
 		/// </summary>
-		property bool EnableExampleCaching
-		{
-			bool get()
-			{
-				return m_enableExampleCaching;
+		property bool EnableExampleCaching		
+  { bool get()
+    { return m_enableExampleCaching;
 			}
 		}
 
 		/// <summary>
 		/// Maximum number of serialized examples cached. Defaults to UINT32_MAX.
 		/// </summary>
-		property uint32_t MaxExampleCacheSize
-		{
-			uint32_t get()
-			{
-				return m_maxExampleCacheSize;;
+		property uint32_t MaxExampleCacheSize		
+  { uint32_t get()
+    { return m_maxExampleCacheSize;;
 			}
 		}
 
@@ -180,34 +165,26 @@ namespace VW
 		/// Maximum number of examples accepted by VowpalWabbitManager until Learn/Predict/... start to block. Defaults to UINT32_MAX.
 		/// </summary>
 		property uint32_t MaxExampleQueueLengthPerInstance
-		{
-			uint32_t get()
-			{
-				return m_maxExampleCacheSize;;
+  { uint32_t get()
+    { return m_maxExampleCacheSize;;
 			}
 		}
 
 		property uint32_t Node
-		{
-			uint32_t get()
-			{
-				return m_node;
+  { uint32_t get()
+    { return m_node;
 			}
 		}
 
 		property VowpalWabbit^ Root
-		{
-			VowpalWabbit^ get()
-			{
-				return m_root;
+  { VowpalWabbit^ get()
+    { return m_root;
 			}
 		}
 
 		property VowpalWabbitExampleDistribution ExampleDistribution
-		{
-			VowpalWabbitExampleDistribution get()
-			{
-				return m_exampleDistribution;
+  { VowpalWabbitExampleDistribution get()
+    { return m_exampleDistribution;
 			}
 		}
 
@@ -217,10 +194,8 @@ namespace VW
 		/// Defaults to 1000.
 		/// </summary>
 		property uint32_t ExampleCountPerRun
-		{
-			uint32_t get()
-			{
-				return m_exampleCountPerRun;
+  { uint32_t get()
+    { return m_exampleCountPerRun;
 			}
 		}
 
@@ -263,14 +238,12 @@ namespace VW
       [System::Runtime::InteropServices::Optional] Nullable<bool> enableStringExampleGeneration,
       [System::Runtime::InteropServices::Optional] List<FeatureExpression^>^ allFeatures,
       [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer)
-		{
-			auto copy = gcnew VowpalWabbitSettings();
+		{ auto copy = gcnew VowpalWabbitSettings();
 
 			copy->m_model = model == nullptr ? Model : model;
 			// don't copy arguments if model is set, as these are treated as extra arguments.
 			if (arguments == nullptr)
-			{
-				if (copy->m_model == nullptr)
+    { if (copy->m_model == nullptr)
 					copy->m_arguments = Arguments;
 				else
 					copy->m_arguments = String::Empty;
@@ -286,8 +259,10 @@ namespace VW
 			copy->m_exampleCountPerRun = exampleCountPerRun.HasValue ? exampleCountPerRun.Value : ExampleCountPerRun;
 			copy->m_node = node.HasValue ? node.Value : Node;
 			copy->m_root = root == nullptr ? Root : root;
-      copy->m_exampleDistribution = exampleDistribution.HasValue ? exampleDistribution.Value : ExampleDistribution;
+			copy->m_exampleDistribution = exampleDistribution.HasValue ? exampleDistribution.Value : ExampleDistribution;
       copy->m_enableStringExampleGeneration = enableStringExampleGeneration.HasValue ? enableStringExampleGeneration.Value : EnableStringExampleGeneration;
+      copy->m_allFeatures = allFeatures == nullptr ? AllFeatures : allFeatures;
+      copy->m_customFeaturizer = customFeaturizer == nullptr ? CustomFeaturizer : customFeaturizer;
 
 			return copy;
 		}

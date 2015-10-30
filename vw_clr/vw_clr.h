@@ -94,16 +94,25 @@ namespace VW
 		/// Gets the source filename in which the wrapped exception occurred.
 		/// </summary>
 		property String^ Filename
-		{
-			String^ get();
+  { String^ get();
 		}
 
 		/// <summary>
 		/// Gets the line number in which the wrapped exception occurred.
 		/// </summary>
 		property Int32 LineNumber
+  { Int32 get();
+  }
+};
+
+[System::ComponentModel::Browsable(false)]
+[System::ComponentModel::EditorBrowsable(System::ComponentModel::EditorBrowsableState::Never)]
+public ref class VowpalWabbitLeakTest abstract sealed
+{
+public:
+	static void Leak()
 		{
-			Int32 get();
+		new float[123];
 		}
 	};
 }

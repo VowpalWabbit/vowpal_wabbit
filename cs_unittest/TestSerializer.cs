@@ -42,13 +42,10 @@ namespace cs_unittest
         }
     }
 
-    [TestClass]
     public class TestSerializer
     {
-        [TestMethod]
         public void TestCustomFeaturizer()
         {
-
             var context = new MyContext() { Feature = new CustomClass() { X = 5 }};
             using (var vw = new VowpalWabbit(""))
             {
@@ -65,7 +62,6 @@ namespace cs_unittest
             Assert.IsTrue(context.Feature.HasVisited);
         }
 
-        [TestMethod]
         public void TestCustomFeaturizerOverideMethod()
         {
             var context = new MyContext() { Feature = new CustomClass() { X = 5 } };

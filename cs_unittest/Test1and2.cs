@@ -11,18 +11,13 @@ using VW.Labels;
 using VW.Serializer.Attributes;
 using System.Threading;
 using VW.Serializer;
+using cs_testcommon;
 
 namespace cs_test
 {
-    [TestClass]
     public class Test1and2Class : TestBase
     {
-        [TestMethod]
         [TestCategory("Command line through marshalling")]
-        [DeploymentItem(@"train-sets\0001.dat", "train-sets")]
-        [DeploymentItem(@"train-sets\ref\0001.stderr", @"train-sets\ref")]
-        [DeploymentItem(@"test-sets\ref\0001.stderr", @"test-sets\ref")]
-        [DeploymentItem(@"pred-sets\ref\0001.predict", @"pred-sets\ref")]
         public void Test1and2()
         {
             var references = File.ReadAllLines(@"pred-sets\ref\0001.predict").Select(l => float.Parse(l, CultureInfo.InvariantCulture)).ToArray();
@@ -103,9 +98,9 @@ namespace cs_test
             }
         }
 
-        //[TestMethod]
+        //// [TestMethod] // TODO
         //[Ignore]
-        //[DeploymentItem(@"train-sets\rcv1_cb_eval", "train-sets")]
+        //// [DeploymentItem(@"train-sets\rcv1_cb_eval", "train-sets")]
         //public void Test74()
         //{
         //    // 2 1:1:0.5 | tuesday year million short compan vehicl line stat financ commit exchang plan corp subsid credit issu debt pay gold bureau prelimin refin billion telephon time draw basic relat file spokesm reut secur acquir form prospect period interview regist toront resourc barrick ontario qualif bln prospectus convertibl vinc borg arequip

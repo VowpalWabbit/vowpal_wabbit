@@ -15,19 +15,16 @@ using namespace LEARNER;
 namespace CB
 {
 char* bufread_label(CB::label* ld, char* c, io_buf& cache)
-{
-  size_t num = *(size_t *)c;
+{ size_t num = *(size_t *)c;
   ld->costs.erase();
   c += sizeof(size_t);
   size_t total = sizeof(cb_class)*num;
   if (buf_read(cache, c, total) < total)
-  {
-    cout << "error in demarshal of cost data" << endl;
+  { cout << "error in demarshal of cost data" << endl;
     return c;
   }
   for (size_t i = 0; i<num; i++)
-  {
-    cb_class temp = *(cb_class *)c;
+  { cb_class temp = *(cb_class *)c;
     c += sizeof(cb_class);
     ld->costs.push_back(temp);
   }
@@ -36,8 +33,7 @@ char* bufread_label(CB::label* ld, char* c, io_buf& cache)
 }
 
 size_t read_cached_label(shared_data*, void* v, io_buf& cache)
-{
-  CB::label* ld = (CB::label*) v;
+{ CB::label* ld = (CB::label*) v;
   ld->costs.erase();
   char *c;
   size_t total = sizeof(size_t);
@@ -49,63 +45,54 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 }
 
 float weight(void*)
-{
-  return 1.;
+{ return 1.;
 }
 
 char* bufcache_label(CB::label* ld, char* c)
-{
-  *(size_t *)c = ld->costs.size();
+{ *(size_t *)c = ld->costs.size();
   c += sizeof(size_t);
   for (size_t i = 0; i< ld->costs.size(); i++)
-  {
-    *(cb_class *)c = ld->costs[i];
+  { *(cb_class *)c = ld->costs[i];
     c += sizeof(cb_class);
   }
   return c;
 }
 
 void cache_label(void* v, io_buf& cache)
-{
-  char *c;
+{ char *c;
   CB::label* ld = (CB::label*) v;
   buf_write(cache, c, sizeof(size_t)+sizeof(cb_class)*ld->costs.size());
   bufcache_label(ld,c);
 }
 
 void default_label(void* v)
-{
-  CB::label* ld = (CB::label*) v;
+{ CB::label* ld = (CB::label*) v;
   ld->costs.erase();
 }
 
 void delete_label(void* v)
-{
-  CB::label* ld = (CB::label*)v;
+{ CB::label* ld = (CB::label*)v;
   ld->costs.delete_v();
 }
 
 void copy_label(void*dst, void*src)
-{
-  CB::label* ldD = (CB::label*)dst;
+{ CB::label* ldD = (CB::label*)dst;
   CB::label* ldS = (CB::label*)src;
   copy_array(ldD->costs, ldS->costs);
 }
 
-bool substring_eq(substring ss, const char* str) {
-  size_t len_ss  = ss.end - ss.begin;
+bool substring_eq(substring ss, const char* str)
+{ size_t len_ss  = ss.end - ss.begin;
   size_t len_str = strlen(str);
   if (len_ss != len_str) return false;
   return (strncmp(ss.begin, str, len_ss) == 0);
 }
 
 void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
-{
-  CB::label* ld = (CB::label*)v;
+{ CB::label* ld = (CB::label*)v;
 
   for (size_t i = 0; i < words.size(); i++)
-  {
-    cb_class f;
+  { cb_class f;
     tokenize(':', words[i], p->parse_name);
 
     if( p->parse_name.size() < 1 || p->parse_name.size() > 3 )
@@ -129,19 +116,18 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
       THROW("error NaN probability (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
 
     if( f.probability > 1.0 )
-    {
-      cerr << "invalid probability > 1 specified for an action, resetting to 1." << endl;
+    { cerr << "invalid probability > 1 specified for an action, resetting to 1." << endl;
       f.probability = 1.0;
     }
     if( f.probability < 0.0 )
-    {
-      cerr << "invalid probability < 0 specified for an action, resetting to 0." << endl;
+    { cerr << "invalid probability < 0 specified for an action, resetting to 0." << endl;
       f.probability = .0;
     }
-    if (substring_eq(p->parse_name[0], "shared")) {
-      if (p->parse_name.size() == 1) {
-        f.probability = -1.f;
-      } else
+    if (substring_eq(p->parse_name[0], "shared"))
+    { if (p->parse_name.size() == 1)
+      { f.probability = -1.f;
+      }
+      else
         cerr << "shared feature vectors should not have costs" << endl;
     }
 
@@ -157,8 +143,7 @@ label_parser cb_label = {default_label, parse_label,
                         };
 
 bool example_is_test(example& ec)
-{
-  v_array<CB::cb_class> costs = ec.l.cb.costs;
+{ v_array<CB::cb_class> costs = ec.l.cb.costs;
   if (costs.size() == 0) return true;
   for (size_t j=0; j<costs.size(); j++)
     if (costs[j].cost != FLT_MAX) return false;
@@ -166,27 +151,23 @@ bool example_is_test(example& ec)
 }
 
 bool ec_is_example_header(example& ec)  // example headers just have "shared"
-{
-  v_array<CB::cb_class> costs = ec.l.cb.costs;
+{ v_array<CB::cb_class> costs = ec.l.cb.costs;
   if (costs.size() != 1) return false;
   if (costs[0].probability == -1.f) return true;
   return false;
 }
 
 void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq, bool multilabel)
-{
-  if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
-  {
-    size_t num_features = ec.num_features;
+{ if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  { size_t num_features = ec.num_features;
 
     size_t pred = ec.pred.multiclass;
     if (ec_seq != nullptr)
-    {
-      num_features = 0;
+    { num_features = 0;
       // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
       for (size_t i = 0; i < (*ec_seq).size(); i++)
-	if (!CB::ec_is_example_header(*(*ec_seq)[i]))
-	  num_features += (*ec_seq)[i]->num_features;
+        if (!CB::ec_is_example_header(*(*ec_seq)[i]))
+          num_features += (*ec_seq)[i]->num_features;
     }
     std::string label_buf;
     if (is_test)
@@ -194,8 +175,8 @@ void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq,
     else
       label_buf = " known";
 
-    if (multilabel) {
-      std::ostringstream pred_buf;
+    if (multilabel)
+    { std::ostringstream pred_buf;
       pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ')
                << ec.pred.multilabels.label_v[0]<<"...";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
@@ -211,8 +192,7 @@ void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq,
 namespace CB_EVAL
 {
 size_t read_cached_label(shared_data*sd, void* v, io_buf& cache)
-{
-  CB_EVAL::label* ld = (CB_EVAL::label*) v;
+{ CB_EVAL::label* ld = (CB_EVAL::label*) v;
   char* c;
   size_t total = sizeof(uint32_t);
   if (buf_read(cache, c, total) < total)
@@ -224,8 +204,7 @@ size_t read_cached_label(shared_data*sd, void* v, io_buf& cache)
 }
 
 void cache_label(void* v, io_buf& cache)
-{
-  char *c;
+{ char *c;
   CB_EVAL::label* ld = (CB_EVAL::label*) v;
   buf_write(cache, c, sizeof(uint32_t));
   *(uint32_t *)c = ld->action;
@@ -235,29 +214,25 @@ void cache_label(void* v, io_buf& cache)
 }
 
 void default_label(void* v)
-{
-  CB_EVAL::label* ld = (CB_EVAL::label*) v;
+{ CB_EVAL::label* ld = (CB_EVAL::label*) v;
   CB::default_label(&(ld->event));
   ld->action = 0;
 }
 
 void delete_label(void* v)
-{
-  CB_EVAL::label* ld = (CB_EVAL::label*)v;
+{ CB_EVAL::label* ld = (CB_EVAL::label*)v;
   CB::delete_label(&(ld->event));
 }
 
 void copy_label(void*dst, void*src)
-{
-  CB_EVAL::label* ldD = (CB_EVAL::label*)dst;
+{ CB_EVAL::label* ldD = (CB_EVAL::label*)dst;
   CB_EVAL::label* ldS = (CB_EVAL::label*)src;
   CB::copy_label(&(ldD->event), &(ldS)->event);
   ldD->action = ldS->action;
 }
 
 void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
-{
-  CB_EVAL::label* ld = (CB_EVAL::label*)v;
+{ CB_EVAL::label* ld = (CB_EVAL::label*)v;
 
   if (words.size() < 2)
     THROW("Evaluation can not happen without an action and an exploration");

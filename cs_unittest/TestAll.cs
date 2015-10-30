@@ -5,16 +5,16 @@ using VW;
 
 namespace cs_unittest
 {
-    [TestClass]
-    public partial class TestAll
+    // [TestClass]
+    public partial class TestAll : TestBase
     {
 
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/0001.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/0001.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test1()
         {
@@ -31,14 +31,14 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("checking predictions as well")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/0001.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/0001.stderr", @"train-sets\ref")]
 
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"test-sets/ref/0001.stderr", @"test-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"test-sets/ref/0001.stderr", @"test-sets\ref")]
 
         public void CommandLine_Test2()
         {
@@ -66,11 +66,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("without -d, training only")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/0002.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/0002.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test3()
         {
@@ -87,11 +87,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("same, with -d")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/0002.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/0002.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test4()
         {
@@ -108,11 +108,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("add -q .., adaptive, and more (same input, different outputs)")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/0002a.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/0002a.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test5()
         {
@@ -129,14 +129,14 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("run predictions on Test 4 model")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/0002.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/0002.stderr", @"train-sets\ref")]
 
-        [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
-        [DeploymentItem(@"test-sets/ref/0002b.stderr", @"test-sets\ref")]
+        // [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
+        // [DeploymentItem(@"test-sets/ref/0002b.stderr", @"test-sets\ref")]
 
         public void CommandLine_Test6()
         {
@@ -164,11 +164,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("using normalized adaptive updates and a low --power_t")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/0002c.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/0002c.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test7()
         {
@@ -185,14 +185,14 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("predicts on test 7 model")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/0002c.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/0002c.stderr", @"train-sets\ref")]
 
-        [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
-        [DeploymentItem(@"test-sets/ref/0002c.stderr", @"test-sets\ref")]
+        // [DeploymentItem(@"train-sets/0002.dat", @"train-sets")]
+        // [DeploymentItem(@"test-sets/ref/0002c.stderr", @"test-sets\ref")]
 
         public void CommandLine_Test8()
         {
@@ -222,11 +222,11 @@ namespace cs_unittest
         /* Unable to parse command line: lines must not be empty. For multi-line examples use Learn(IEnumerable<string>) overload. */
         /* Unable to parse command line: lines must not be empty. For multi-line examples use Learn(IEnumerable<string>) overload. */
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("one-against-all")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/multiclass", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/oaa.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/multiclass", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/oaa.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test11()
         {
@@ -243,11 +243,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("Error Correcting Tournament")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/multiclass", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/multiclass.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/multiclass", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/multiclass.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test12()
         {
@@ -264,11 +264,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("LBFGS on zero derivative input")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/zero.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/zero.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/zero.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/zero.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test15()
         {
@@ -285,11 +285,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("cubic features -- on a parity test case")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/xxor.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/xxor.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/xxor.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/xxor.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test21()
         {
@@ -306,11 +306,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("matrix factorization -- training")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/ml100k_small_train", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/ml100k_small.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/ml100k_small_train", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/ml100k_small.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test22()
         {
@@ -328,11 +328,11 @@ namespace cs_unittest
         }
         // Skipping inconsistent test -t without .predict file
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("bagging -- binary classifiers")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/bs.vote.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/bs.vote.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test27()
         {
@@ -349,14 +349,14 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("bagging -- predict with bagged classifier")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/bs.vote.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/bs.vote.stderr", @"train-sets\ref")]
 
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/bs.prvote.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/bs.prvote.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test28()
         {
@@ -384,11 +384,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("affix features")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/affix_test.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/affix_test.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/affix_test.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/affix_test.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test29()
         {
@@ -405,11 +405,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("train --l1 regularized model")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/mask.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/mask.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test30()
         {
@@ -426,11 +426,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("non-centered data-set where constant >> 0")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/big-constant.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/big-constant.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/big-constant.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/big-constant.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test35()
         {
@@ -447,11 +447,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("new option: --progress w/ integer arg")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/progress-10.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/progress-10.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test36()
         {
@@ -468,11 +468,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("new-option: --progress w/ floating-point arg")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/progress-0.5.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/progress-0.5.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test37()
         {
@@ -489,11 +489,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("--nn without --quiet to avoid nn regressions")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/nn-1-noquiet.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/nn-1-noquiet.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test38()
         {
@@ -510,11 +510,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("cb with dr")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/rcv1_raw_cb_small.vw", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/rcv1_raw_cb_dr.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/rcv1_raw_cb_small.vw", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/rcv1_raw_cb_dr.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test39()
         {
@@ -531,11 +531,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("cb with ips")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/rcv1_raw_cb_small.vw", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/rcv1_raw_cb_ips.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/rcv1_raw_cb_small.vw", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/rcv1_raw_cb_ips.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test40()
         {
@@ -552,11 +552,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("cb with dm")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/rcv1_raw_cb_small.vw", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/rcv1_raw_cb_dm.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/rcv1_raw_cb_small.vw", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/rcv1_raw_cb_dm.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test41()
         {
@@ -573,11 +573,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("SVM linear kernel")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/rcv1_smaller.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/ksvm_train.linear.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/rcv1_smaller.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/ksvm_train.linear.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test62()
         {
@@ -594,11 +594,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("SVM polynomial kernel")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/rcv1_smaller.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/ksvm_train.poly.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/rcv1_smaller.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/ksvm_train.poly.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test63()
         {
@@ -615,11 +615,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("SVM rbf kernel")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/rcv1_smaller.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/ksvm_train.rbf.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/rcv1_smaller.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/ksvm_train.rbf.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test64()
         {
@@ -636,11 +636,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("train FTRL-Proximal")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/0001_ftrl.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/0001_ftrl.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test72()
         {
@@ -657,14 +657,14 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("test FTRL-Proximal")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/0001_ftrl.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/0001_ftrl.stderr", @"train-sets\ref")]
 
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"test-sets/ref/0001_ftrl.stderr", @"test-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"test-sets/ref/0001_ftrl.stderr", @"test-sets\ref")]
 
         public void CommandLine_Test73()
         {
@@ -692,11 +692,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("cb evaluation")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/rcv1_cb_eval", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/rcv1_cb_eval.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/rcv1_cb_eval", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/rcv1_cb_eval.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test74()
         {
@@ -713,11 +713,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("Log_multi")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/multiclass", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/log_multi.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/multiclass", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/log_multi.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test75()
         {
@@ -734,11 +734,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("cbify, epsilon-greedy")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/multiclass", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/cbify_epsilon.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/multiclass", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/cbify_epsilon.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test76()
         {
@@ -755,11 +755,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("cbify, bag")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/multiclass", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/cbify_bag.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/multiclass", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/cbify_bag.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test78()
         {
@@ -776,11 +776,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("cbify, cover")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/multiclass", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/cbify_cover.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/multiclass", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/cbify_cover.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test79()
         {
@@ -797,11 +797,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("lrq empty namespace")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0080.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/0080.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0080.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/0080.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test80()
         {
@@ -818,11 +818,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("train FTRL-PiSTOL")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/ftrl_pistol.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/ftrl_pistol.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test81()
         {
@@ -839,14 +839,14 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("test FTRL-PiSTOL")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/ftrl_pistol.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/ftrl_pistol.stderr", @"train-sets\ref")]
 
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"test-sets/ref/ftrl_pistol.stderr", @"test-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"test-sets/ref/ftrl_pistol.stderr", @"test-sets\ref")]
 
         public void CommandLine_Test82()
         {
@@ -874,11 +874,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("check redefine functionality")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0080.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/redefine.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0080.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/redefine.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test83()
         {
@@ -899,11 +899,11 @@ namespace cs_unittest
         /* Unable to parse command line: lines must not be empty. For multi-line examples use Learn(IEnumerable<string>) overload. */
         /* Unable to parse command line: lines must not be empty. For multi-line examples use Learn(IEnumerable<string>) overload. */
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("named labels at training time")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/test_named", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/test_named_train.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/test_named", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/test_named_train.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test88()
         {
@@ -921,11 +921,11 @@ namespace cs_unittest
         }
         // Skipping test, unable to parse prediction file
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("named labels at training time (csoaa)")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/test_named_csoaa", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/test_named_csoaa_train.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/test_named_csoaa", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/test_named_csoaa_train.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test90()
         {
@@ -946,11 +946,11 @@ namespace cs_unittest
         Parameter name: path */
         /* Unable to parse command line: lines must not be empty. For multi-line examples use Learn(IEnumerable<string>) overload. */
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("experience replay version of test 1")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/0001-replay.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/0001-replay.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test94()
         {
@@ -967,11 +967,11 @@ namespace cs_unittest
 
         }
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("named labels at training time (csoaa) with experience replay")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/test_named_csoaa", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/test_named_csoaa_train-replay.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/test_named_csoaa", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/test_named_csoaa_train-replay.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test95()
         {
@@ -990,11 +990,11 @@ namespace cs_unittest
         /* Unable to parse command line: Empty path name is not legal.
         Parameter name: path */
 
-        [TestMethod]
+        // [TestMethod] // TODO
         [Description("")]
         [TestCategory("Command line")]
-        [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
-        [DeploymentItem(@"train-sets/ref/0097.stderr", @"train-sets\ref")]
+        // [DeploymentItem(@"train-sets/0001.dat", @"train-sets")]
+        // [DeploymentItem(@"train-sets/ref/0097.stderr", @"train-sets\ref")]
 
         public void CommandLine_Test97()
         {

@@ -53,6 +53,11 @@ namespace VW
     /// </summary>
     void InitializeFromModel(string args, io_buf& model);
 
+		/// <summary>
+		/// Reference count to native data structure.
+		/// </summary>
+		System::Int32 m_instanceCount;
+
 	internal:
 		/// <summary>
 		/// The native vowpal wabbit data structure.
@@ -64,6 +69,16 @@ namespace VW
 		/// </summary>
 		/// <returns>A ready to use cleared native example data structure.</returns>
 		VowpalWabbitExample^ GetOrCreateNativeExample();
+
+		/// <summary>
+		/// Thread-safe increment of reference count.
+		/// </summary>
+		void IncrementReference();
+
+		/// <summary>
+		/// Thread-safe decrement of reference count.
+		/// </summary>
+		void DecrementReference();
 
 	protected:
 		/// <summary>
@@ -97,8 +112,7 @@ namespace VW
 		/// The settings used for this instance.
 		/// </summary>
 		property VowpalWabbitSettings^ Settings
-		{
-			VowpalWabbitSettings^ get();
+  { VowpalWabbitSettings^ get();
 		}
 
     /// <summary>
@@ -137,7 +151,7 @@ namespace VW
     /// - Dipose existing instance
     /// - Initialize new instance from in-memory buffer
     /// </summary>
-    void Reload();
+    void Reload([System::Runtime::InteropServices::Optional] String^ args);
 
     /// <summary>
     /// Compares features created by current instance are compatible to features created by <paramref name="other"/>.

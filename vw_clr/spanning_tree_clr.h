@@ -39,6 +39,6 @@ namespace VW
     /// <summary>
     /// Stops the background thread.
     /// </summary>
-    void Stop();
+		void Stop();
 	};
 }

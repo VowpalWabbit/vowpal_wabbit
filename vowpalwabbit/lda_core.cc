@@ -45,8 +45,8 @@ public:
   bool operator<(const index_feature b) const { return f.weight_index < b.f.weight_index; }
 };
 
-struct lda {
-  uint32_t topics;
+struct lda
+{ uint32_t topics;
   float lda_alpha;
   float lda_rho;
   float lda_D;
@@ -99,8 +99,7 @@ inline bool is_aligned16(void *ptr)
 namespace ldamath
 {
 inline float fastlog2(float x)
-{
-  uint32_t mx;
+{ uint32_t mx;
   memcpy(&mx, &x, sizeof(uint32_t));
   mx = (mx & 0x007FFFFF) | (0x7e << 23);
 
@@ -119,8 +118,7 @@ inline float fastlog2(float x)
 inline float fastlog(float x) { return 0.69314718f * fastlog2(x); }
 
 inline float fastpow2(float p)
-{
-  float offset = (p < 0) * 1.0f;
+{ float offset = (p < 0) * 1.0f;
   float clipp = (p < -126.0) ? -126.0f : p;
   int w = (int)clipp;
   float z = clipp - w + offset;
@@ -136,16 +134,14 @@ inline float fastexp(float p) { return fastpow2(1.442695040f * p); }
 inline float fastpow(float x, float p) { return fastpow2(p * fastlog2(x)); }
 
 inline float fastlgamma(float x)
-{
-  float logterm = fastlog(x * (1.0f + x) * (2.0f + x));
+{ float logterm = fastlog(x * (1.0f + x) * (2.0f + x));
   float xp3 = 3.0f + x;
 
   return -2.081061466f - x + 0.0833333f / xp3 - logterm + (2.5f + x) * fastlog(xp3);
 }
 
 inline float fastdigamma(float x)
-{
-  float twopx = 2.0f + x;
+{ float twopx = 2.0f + x;
   float logterm = fastlog(twopx);
 
   return -(1.0f + 2.0f * x) / (x * (1.0f + x)) - (13.0f + 6.0f * x) / (12.0f * twopx * twopx) + logterm;
@@ -200,8 +196,7 @@ inline const v4sf v4sfl(const float x) { return _mm_set1_ps(x); }
 inline const v4si v4sil(const uint32_t x) { return _mm_set1_epi32(x); }
 
 inline v4sf vfastpow2(const v4sf p)
-{
-  v4sf ltzero = _mm_cmplt_ps(p, v4sfl(0.0f));
+{ v4sf ltzero = _mm_cmplt_ps(p, v4sfl(0.0f));
   v4sf offset = _mm_and_ps(ltzero, v4sfl(1.0f));
   v4sf lt126 = _mm_cmplt_ps(p, v4sfl(-126.0f));
   v4sf clipp = _mm_andnot_ps(lt126, p) + _mm_and_ps(lt126, v4sfl(-126.0f));
@@ -219,15 +214,13 @@ inline v4sf vfastpow2(const v4sf p)
 }
 
 inline v4sf vfastexp(const v4sf p)
-{
-  const v4sf c_invlog_2 = v4sfl(1.442695040f);
+{ const v4sf c_invlog_2 = v4sfl(1.442695040f);
 
   return vfastpow2(c_invlog_2 * p);
 }
 
 inline v4sf vfastlog2(v4sf x)
-{
-  v4si vx_i = _mm_castps_si128(x);
+{ v4si vx_i = _mm_castps_si128(x);
   v4sf mx_f = _mm_castsi128_ps(_mm_or_si128(_mm_and_si128(vx_i, v4sil(0x007FFFFF)), v4sil(0x3f000000)));
   v4sf y = v4si_to_v4sf(vx_i) * v4sfl(1.1920928955078125e-7f);
 
@@ -240,15 +233,13 @@ inline v4sf vfastlog2(v4sf x)
 }
 
 inline v4sf vfastlog(v4sf x)
-{
-  const v4sf c_0_69314718 = v4sfl(0.69314718f);
+{ const v4sf c_0_69314718 = v4sfl(0.69314718f);
 
   return c_0_69314718 * vfastlog2(x);
 }
 
 inline v4sf vfastdigamma(v4sf x)
-{
-  v4sf twopx = v4sfl(2.0f) + x;
+{ v4sf twopx = v4sfl(2.0f) + x;
   v4sf logterm = vfastlog(twopx);
 
   return (v4sfl(-48.0f) + x * (v4sfl(-157.0f) + x * (v4sfl(-127.0f) - v4sfl(30.0f) * x))) /
@@ -257,29 +248,28 @@ inline v4sf vfastdigamma(v4sf x)
 }
 
 void vexpdigammify(vw &all, float *gamma, const float underflow_threshold)
-{
-  float extra_sum = 0.0f;
+{ float extra_sum = 0.0f;
   v4sf sum = v4sfl(0.0f);
   float *fp;
   const float *fpend = gamma + all.lda;
 
   // Iterate through the initial part of the array that isn't 128-bit SIMD
   // aligned.
-  for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp) {
-    extra_sum += *fp;
+  for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp)
+  { extra_sum += *fp;
     *fp = fastdigamma(*fp);
   }
 
   // Rip through the aligned portion...
-  for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4) {
-    v4sf arg = _mm_load_ps(fp);
+  for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4)
+  { v4sf arg = _mm_load_ps(fp);
     sum += arg;
     arg = vfastdigamma(arg);
     _mm_store_ps(fp, arg);
   }
 
-  for (; fp < fpend; ++fp) {
-    extra_sum += *fp;
+  for (; fp < fpend; ++fp)
+  { extra_sum += *fp;
     *fp = fastdigamma(*fp);
   }
 
@@ -295,35 +285,34 @@ void vexpdigammify(vw &all, float *gamma, const float underflow_threshold)
   extra_sum = fastdigamma(extra_sum);
   sum = v4sfl(extra_sum);
 
-  for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp) {
-    *fp = fmax(underflow_threshold, fastexp(*fp - extra_sum));
+  for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp)
+  { *fp = fmax(underflow_threshold, fastexp(*fp - extra_sum));
   }
 
-  for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4) {
-    v4sf arg = _mm_load_ps(fp);
+  for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4)
+  { v4sf arg = _mm_load_ps(fp);
     arg -= sum;
     arg = vfastexp(arg);
     arg = _mm_max_ps(v4sfl(underflow_threshold), arg);
     _mm_store_ps(fp, arg);
   }
 
-  for (; fp < fpend; ++fp) {
-    *fp = fmax(underflow_threshold, fastexp(*fp - extra_sum));
+  for (; fp < fpend; ++fp)
+  { *fp = fmax(underflow_threshold, fastexp(*fp - extra_sum));
   }
 }
 
 void vexpdigammify_2(vw &all, float *gamma, const float *norm, const float underflow_threshold)
-{
-  float *fp;
+{ float *fp;
   const float *np;
   const float *fpend = gamma + all.lda;
 
-  for (fp = gamma, np = norm; fp < fpend && !is_aligned16(fp); ++fp, ++np) {
-    *fp = fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
+  for (fp = gamma, np = norm; fp < fpend && !is_aligned16(fp); ++fp, ++np)
+  { *fp = fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
   }
 
-  for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4, np += 4) {
-    v4sf arg = _mm_load_ps(fp);
+  for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4, np += 4)
+  { v4sf arg = _mm_load_ps(fp);
     arg = vfastdigamma(arg);
     v4sf vnorm = _mm_loadu_ps(np);
     arg -= vnorm;
@@ -332,8 +321,8 @@ void vexpdigammify_2(vw &all, float *gamma, const float *norm, const float under
     _mm_store_ps(fp, arg);
   }
 
-  for (; fp < fpend; ++fp, ++np) {
-    *fp = fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
+  for (; fp < fpend; ++fp, ++np)
+  { *fp = fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
   }
 }
 
@@ -357,26 +346,22 @@ void vexpdigammify_2(vw &all, float *gamma, const float *norm, const float under
 
 // Log gamma:
 template <typename T, const lda_math_mode mtype> inline T lgamma(T x)
-{
-  BOOST_STATIC_ASSERT_MSG(true, "ldamath::lgamma is not defined for this type and math mode.");
+{ BOOST_STATIC_ASSERT_MSG(true, "ldamath::lgamma is not defined for this type and math mode.");
 }
 
 // Digamma:
 template <typename T, const lda_math_mode mtype> inline T digamma(T x)
-{
-  BOOST_STATIC_ASSERT_MSG(true, "ldamath::digamma is not defined for this type and math mode.");
+{ BOOST_STATIC_ASSERT_MSG(true, "ldamath::digamma is not defined for this type and math mode.");
 }
 
 // Exponential
 template <typename T, lda_math_mode mtype> inline T exponential(T x)
-{
-  BOOST_STATIC_ASSERT_MSG(true, "ldamath::exponential is not defined for this type and math mode.");
+{ BOOST_STATIC_ASSERT_MSG(true, "ldamath::exponential is not defined for this type and math mode.");
 }
 
 // Powf
 template <typename T, lda_math_mode mtype> inline T powf(T x, T p)
-{
-  BOOST_STATIC_ASSERT_MSG(true, "ldamath::powf is not defined for this type and math mode.");
+{ BOOST_STATIC_ASSERT_MSG(true, "ldamath::powf is not defined for this type and math mode.");
 }
 
 // High accuracy float specializations:
@@ -401,11 +386,10 @@ template <> inline float exponential<float, USE_SIMD>(float x) { return exponent
 template <> inline float powf<float, USE_SIMD>(float x, float p) { return powf<float, USE_FAST_APPROX>(x, p); }
 
 template <typename T, const lda_math_mode mtype> inline void expdigammify(vw &all, T *gamma, T threshold, T initial)
-{
-  T sum = digamma<T, mtype>(std::accumulate(gamma, gamma + all.lda, initial));
+{ T sum = digamma<T, mtype>(std::accumulate(gamma, gamma + all.lda, initial));
 
-  std::transform(gamma, gamma + all.lda, gamma, [sum, threshold](T g) {
-    return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - sum));
+  std::transform(gamma, gamma + all.lda, gamma, [sum, threshold](T g)
+  { return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - sum));
   });
 }
 template <> inline void expdigammify<float, USE_SIMD>(vw &all, float *gamma, float threshold, float)
@@ -420,9 +404,8 @@ template <> inline void expdigammify<float, USE_SIMD>(vw &all, float *gamma, flo
 
 template <typename T, const lda_math_mode mtype>
 inline void expdigammify_2(vw &all, T *gamma, T *norm, const T threshold)
-{
-  std::transform(gamma, gamma + all.lda, norm, gamma, [threshold](float g, float n) {
-    return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n));
+{ std::transform(gamma, gamma + all.lda, norm, gamma, [threshold](float g, float n)
+  { return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n));
   });
 }
 template <> inline void expdigammify_2<float, USE_SIMD>(vw &all, float *gamma, float *norm, const float threshold)
@@ -437,102 +420,96 @@ template <> inline void expdigammify_2<float, USE_SIMD>(vw &all, float *gamma, f
 } // namespace ldamath
 
 float lda::digamma(float x)
-{
-  switch (mmode) {
-  case USE_FAST_APPROX:
-    // std::cerr << "lda::digamma FAST_APPROX ";
-    return ldamath::digamma<float, USE_FAST_APPROX>(x);
-  case USE_PRECISE:
-    // std::cerr << "lda::digamma PRECISE ";
-    return ldamath::digamma<float, USE_PRECISE>(x);
-  case USE_SIMD:
-    // std::cerr << "lda::digamma SIMD ";
-    return ldamath::digamma<float, USE_SIMD>(x);
-  default:
-    // Should not happen.
-    std::cerr << "lda::digamma: Trampled or invalid math mode, aborting" << std::endl;
-    abort();
-    return 0.0f;
+{ switch (mmode)
+  { case USE_FAST_APPROX:
+      // std::cerr << "lda::digamma FAST_APPROX ";
+      return ldamath::digamma<float, USE_FAST_APPROX>(x);
+    case USE_PRECISE:
+      // std::cerr << "lda::digamma PRECISE ";
+      return ldamath::digamma<float, USE_PRECISE>(x);
+    case USE_SIMD:
+      // std::cerr << "lda::digamma SIMD ";
+      return ldamath::digamma<float, USE_SIMD>(x);
+    default:
+      // Should not happen.
+      std::cerr << "lda::digamma: Trampled or invalid math mode, aborting" << std::endl;
+      abort();
+      return 0.0f;
   }
 }
 
 float lda::lgamma(float x)
-{
-  switch (mmode) {
-  case USE_FAST_APPROX:
-    // std::cerr << "lda::lgamma FAST_APPROX ";
-    return ldamath::lgamma<float, USE_FAST_APPROX>(x);
-  case USE_PRECISE:
-    // std::cerr << "lda::lgamma PRECISE ";
-    return ldamath::lgamma<float, USE_PRECISE>(x);
-  case USE_SIMD:
-    // std::cerr << "lda::gamma SIMD ";
-    return ldamath::lgamma<float, USE_SIMD>(x);
-  default:
-    std::cerr << "lda::lgamma: Trampled or invalid math mode, aborting" << std::endl;
-    abort();
-    return 0.0f;
+{ switch (mmode)
+  { case USE_FAST_APPROX:
+      // std::cerr << "lda::lgamma FAST_APPROX ";
+      return ldamath::lgamma<float, USE_FAST_APPROX>(x);
+    case USE_PRECISE:
+      // std::cerr << "lda::lgamma PRECISE ";
+      return ldamath::lgamma<float, USE_PRECISE>(x);
+    case USE_SIMD:
+      // std::cerr << "lda::gamma SIMD ";
+      return ldamath::lgamma<float, USE_SIMD>(x);
+    default:
+      std::cerr << "lda::lgamma: Trampled or invalid math mode, aborting" << std::endl;
+      abort();
+      return 0.0f;
   }
 }
 
 float lda::powf(float x, float p)
-{
-  switch (mmode) {
-  case USE_FAST_APPROX:
-    // std::cerr << "lda::powf FAST_APPROX ";
-    return ldamath::powf<float, USE_FAST_APPROX>(x, p);
-  case USE_PRECISE:
-    // std::cerr << "lda::powf PRECISE ";
-    return ldamath::powf<float, USE_PRECISE>(x, p);
-  case USE_SIMD:
-    // std::cerr << "lda::powf SIMD ";
-    return ldamath::powf<float, USE_SIMD>(x, p);
-  default:
-    std::cerr << "lda::powf: Trampled or invalid math mode, aborting" << std::endl;
-    abort();
-    return 0.0f;
+{ switch (mmode)
+  { case USE_FAST_APPROX:
+      // std::cerr << "lda::powf FAST_APPROX ";
+      return ldamath::powf<float, USE_FAST_APPROX>(x, p);
+    case USE_PRECISE:
+      // std::cerr << "lda::powf PRECISE ";
+      return ldamath::powf<float, USE_PRECISE>(x, p);
+    case USE_SIMD:
+      // std::cerr << "lda::powf SIMD ";
+      return ldamath::powf<float, USE_SIMD>(x, p);
+    default:
+      std::cerr << "lda::powf: Trampled or invalid math mode, aborting" << std::endl;
+      abort();
+      return 0.0f;
   }
 }
 
 void lda::expdigammify(vw &all, float *gamma)
-{
-  switch (mmode) {
-  case USE_FAST_APPROX:
-    ldamath::expdigammify<float, USE_FAST_APPROX>(all, gamma, underflow_threshold(), 0.0f);
-    break;
-  case USE_PRECISE:
-    ldamath::expdigammify<float, USE_PRECISE>(all, gamma, underflow_threshold(), 0.0f);
-    break;
-  case USE_SIMD:
-    ldamath::expdigammify<float, USE_SIMD>(all, gamma, underflow_threshold(), 0.0f);
-    break;
-  default:
-    std::cerr << "lda::expdigammify: Trampled or invalid math mode, aborting" << std::endl;
-    abort();
+{ switch (mmode)
+  { case USE_FAST_APPROX:
+      ldamath::expdigammify<float, USE_FAST_APPROX>(all, gamma, underflow_threshold(), 0.0f);
+      break;
+    case USE_PRECISE:
+      ldamath::expdigammify<float, USE_PRECISE>(all, gamma, underflow_threshold(), 0.0f);
+      break;
+    case USE_SIMD:
+      ldamath::expdigammify<float, USE_SIMD>(all, gamma, underflow_threshold(), 0.0f);
+      break;
+    default:
+      std::cerr << "lda::expdigammify: Trampled or invalid math mode, aborting" << std::endl;
+      abort();
   }
 }
 
 void lda::expdigammify_2(vw &all, float *gamma, float *norm)
-{
-  switch (mmode) {
-  case USE_FAST_APPROX:
-    ldamath::expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, underflow_threshold());
-    break;
-  case USE_PRECISE:
-    ldamath::expdigammify_2<float, USE_PRECISE>(all, gamma, norm, underflow_threshold());
-    break;
-  case USE_SIMD:
-    ldamath::expdigammify_2<float, USE_SIMD>(all, gamma, norm, underflow_threshold());
-    break;
-  default:
-    std::cerr << "lda::expdigammify_2: Trampled or invalid math mode, aborting" << std::endl;
-    abort();
+{ switch (mmode)
+  { case USE_FAST_APPROX:
+      ldamath::expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, underflow_threshold());
+      break;
+    case USE_PRECISE:
+      ldamath::expdigammify_2<float, USE_PRECISE>(all, gamma, norm, underflow_threshold());
+      break;
+    case USE_SIMD:
+      ldamath::expdigammify_2<float, USE_SIMD>(all, gamma, norm, underflow_threshold());
+      break;
+    default:
+      std::cerr << "lda::expdigammify_2: Trampled or invalid math mode, aborting" << std::endl;
+      abort();
   }
 }
 
 static inline float average_diff(vw &all, float *oldgamma, float *newgamma)
-{
-  float sum;
+{ float sum;
   float normalizer;
 
   // This warps the normal sense of "inner product", but it accomplishes the same
@@ -548,19 +525,18 @@ static inline float average_diff(vw &all, float *oldgamma, float *newgamma)
 
 // Returns E_q[log p(\theta)] - E_q[log q(\theta)].
 float theta_kl(lda &l, v_array<float> &Elogtheta, float *gamma)
-{
-  float gammasum = 0;
+{ float gammasum = 0;
   Elogtheta.erase();
-  for (size_t k = 0; k < l.topics; k++) {
-    Elogtheta.push_back(l.digamma(gamma[k]));
+  for (size_t k = 0; k < l.topics; k++)
+  { Elogtheta.push_back(l.digamma(gamma[k]));
     gammasum += gamma[k];
   }
   float digammasum = l.digamma(gammasum);
   gammasum = l.lgamma(gammasum);
   float kl = -(l.topics * l.lgamma(l.lda_alpha));
   kl += l.lgamma(l.lda_alpha * l.topics) - gammasum;
-  for (size_t k = 0; k < l.topics; k++) {
-    Elogtheta[k] -= digammasum;
+  for (size_t k = 0; k < l.topics; k++)
+  { Elogtheta[k] -= digammasum;
     kl += (l.lda_alpha - gamma[k]) * Elogtheta[k];
     kl += l.lgamma(gamma[k]);
   }
@@ -569,8 +545,7 @@ float theta_kl(lda &l, v_array<float> &Elogtheta, float *gamma)
 }
 
 static inline float find_cw(lda &l, float *u_for_w, float *v)
-{
-  return 1.0f / std::inner_product(u_for_w, u_for_w + l.topics, v, 0.0f);
+{ return 1.0f / std::inner_product(u_for_w, u_for_w + l.topics, v, 0.0f);
 }
 
 namespace
@@ -586,12 +561,11 @@ v_array<float> old_gamma = v_init<float>();
 // divided by the total number of words in the document This can be
 // used as a (possibly very noisy) estimate of held-out likelihood.
 float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, example *ec, float)
-{
-  new_gamma.erase();
+{ new_gamma.erase();
   old_gamma.erase();
 
-  for (size_t i = 0; i < l.topics; i++) {
-    new_gamma.push_back(1.f);
+  for (size_t i = 0; i < l.topics; i++)
+  { new_gamma.push_back(1.f);
     old_gamma.push_back(0.f);
   }
   size_t num_words = 0;
@@ -601,8 +575,8 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, exa
   float xc_w = 0;
   float score = 0;
   float doc_length = 0;
-  do {
-    memcpy(v, new_gamma.begin, sizeof(float) * l.topics);
+  do
+  { memcpy(v, new_gamma.begin, sizeof(float) * l.topics);
     l.expdigammify(*l.all, v);
 
     memcpy(old_gamma.begin, new_gamma.begin, sizeof(float) * l.topics);
@@ -611,16 +585,16 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, exa
     score = 0;
     size_t word_count = 0;
     doc_length = 0;
-    for (unsigned char *i = ec->indices.begin; i != ec->indices.end; i++) {
-      feature *f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++) {
-        float *u_for_w = &weights[(f->weight_index & l.all->reg.weight_mask) + l.topics + 1];
+    for (unsigned char *i = ec->indices.begin; i != ec->indices.end; i++)
+    { feature *f = ec->atomics[*i].begin;
+      for (; f != ec->atomics[*i].end; f++)
+      { float *u_for_w = &weights[(f->weight_index & l.all->reg.weight_mask) + l.topics + 1];
         float c_w = find_cw(l, u_for_w, v);
         xc_w = c_w * f->x;
         score += -f->x * log(c_w);
         size_t max_k = l.topics;
-        for (size_t k = 0; k < max_k; k++) {
-          new_gamma[k] += xc_w * u_for_w[k];
+        for (size_t k = 0; k < max_k; k++)
+        { new_gamma[k] += xc_w * u_for_w[k];
         }
         word_count++;
         doc_length += f->x;
@@ -628,11 +602,13 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, exa
     }
     for (size_t k = 0; k < l.topics; k++)
       new_gamma[k] = new_gamma[k] * v[k] + l.lda_alpha;
-  } while (average_diff(*l.all, old_gamma.begin, new_gamma.begin) > l.lda_epsilon);
+  }
+  while (average_diff(*l.all, old_gamma.begin, new_gamma.begin) > l.lda_epsilon);
 
   ec->topic_predictions.erase();
   ec->topic_predictions.resize(l.topics);
   memcpy(ec->topic_predictions.begin, new_gamma.begin, l.topics * sizeof(float));
+  ec->topic_predictions.end = ec->topic_predictions.begin + l.topics;
 
   score += theta_kl(l, Elogtheta, new_gamma.begin);
 
@@ -640,28 +616,26 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, exa
 }
 
 size_t next_pow2(size_t x)
-{
-  int i = 0;
+{ int i = 0;
   x = x > 0 ? x - 1 : 0;
-  while (x > 0) {
-    x >>= 1;
+  while (x > 0)
+  { x >>= 1;
     i++;
   }
   return ((size_t)1) << i;
 }
 
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
-{
-  vw *all = l.all;
+{ vw *all = l.all;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = 1 << all->reg.stride_shift;
 
-  if (read) {
-    initialize_regressor(*all);
-    for (size_t j = 0; j < stride * length; j += stride) {
-      for (size_t k = 0; k < all->lda; k++) {
-        if (all->random_weights) {
-          all->reg.weight_vector[j + k] = (float)(-log(frand48()) + 1.0f);
+  if (read)
+  { initialize_regressor(*all);
+    for (size_t j = 0; j < stride * length; j += stride)
+    { for (size_t k = 0; k < all->lda; k++)
+      { if (all->random_weights)
+        { all->reg.weight_vector[j + k] = (float)(-log(frand48()) + 1.0f);
           all->reg.weight_vector[j + k] *= (float)(l.lda_D / all->lda / all->length() * 200);
         }
       }
@@ -669,20 +643,20 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
     }
   }
 
-  if (model_file.files.size() > 0) {
-    uint32_t i = 0;
+  if (model_file.files.size() > 0)
+  { uint32_t i = 0;
     uint32_t text_len;
     char buff[512];
     size_t brw = 1;
-    do {
-      brw = 0;
+    do
+    { brw = 0;
       size_t K = all->lda;
 
       text_len = sprintf(buff, "%d ", i);
       brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, buff, text_len, text);
       if (brw != 0)
-        for (uint32_t k = 0; k < K; k++) {
-          uint32_t ndx = stride * i + k;
+        for (uint32_t k = 0; k < K; k++)
+        { uint32_t ndx = stride * i + k;
 
           weight *v = &(all->reg.weight_vector[ndx]);
           text_len = sprintf(buff, "%f ", *v + l.lda_rho);
@@ -694,14 +668,14 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 
       if (!read)
         i++;
-    } while ((!read && i < length) || (read && brw > 0));
+    }
+    while ((!read && i < length) || (read && brw > 0));
   }
 }
 
 void learn_batch(lda &l)
-{
-  if (l.sorted_features.empty()) {
-    // This can happen when the socket connection is dropped by the client.
+{ if (l.sorted_features.empty())
+  { // This can happen when the socket connection is dropped by the client.
     // If l.sorted_features is empty, then l.sorted_features[0] does not
     // exist, so we should not try to take its address in the beginning of
     // the for loops down there. Since it seems that there's not much to
@@ -715,8 +689,8 @@ void learn_batch(lda &l)
   float eta = -1;
   float minuseta = -1;
 
-  if (l.total_lambda.size() == 0) {
-    for (size_t k = 0; k < l.all->lda; k++)
+  if (l.total_lambda.size() == 0)
+  { for (size_t k = 0; k < l.all->lda; k++)
       l.total_lambda.push_back(0.f);
 
     size_t stride = 1 << l.all->reg.stride_shift;
@@ -741,15 +715,15 @@ void learn_batch(lda &l)
 
   l.digammas.erase();
   float additional = (float)(l.all->length()) * l.lda_rho;
-  for (size_t i = 0; i < l.all->lda; i++) {
-    l.digammas.push_back(l.digamma(l.total_lambda[i] + additional));
+  for (size_t i = 0; i < l.all->lda; i++)
+  { l.digammas.push_back(l.digamma(l.total_lambda[i] + additional));
   }
 
   weight *weights = l.all->reg.weight_vector;
 
   size_t last_weight_index = -1;
-  for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++) {
-    if (last_weight_index == s->f.weight_index)
+  for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++)
+  { if (last_weight_index == s->f.weight_index)
       continue;
     last_weight_index = s->f.weight_index;
     float *weights_for_w = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
@@ -759,49 +733,49 @@ void learn_batch(lda &l)
     float *u_for_w = weights_for_w + l.all->lda + 1;
 
     weights_for_w[l.all->lda] = (float)l.example_t;
-    for (size_t k = 0; k < l.all->lda; k++) {
-      weights_for_w[k] *= decay;
+    for (size_t k = 0; k < l.all->lda; k++)
+    { weights_for_w[k] *= decay;
       u_for_w[k] = weights_for_w[k] + l.lda_rho;
     }
     l.expdigammify_2(*l.all, u_for_w, l.digammas.begin);
   }
 
-  for (size_t d = 0; d < batch_size; d++) {
-    float score = lda_loop(l, l.Elogtheta, &(l.v[d * l.all->lda]), weights, l.examples[d], l.all->power_t);
+  for (size_t d = 0; d < batch_size; d++)
+  { float score = lda_loop(l, l.Elogtheta, &(l.v[d * l.all->lda]), weights, l.examples[d], l.all->power_t);
     if (l.all->audit)
       GD::print_audit_features(*l.all, *l.examples[d]);
     // If the doc is empty, give it loss of 0.
-    if (l.doc_lengths[d] > 0) {
-      l.all->sd->sum_loss -= score;
+    if (l.doc_lengths[d] > 0)
+    { l.all->sd->sum_loss -= score;
       l.all->sd->sum_loss_since_last_dump -= score;
     }
     return_simple_example(*l.all, nullptr, *l.examples[d]);
   }
 
-  for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back();) {
-    index_feature *next = s + 1;
+  for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back();)
+  { index_feature *next = s + 1;
     while (next <= &l.sorted_features.back() && next->f.weight_index == s->f.weight_index)
       next++;
 
     float *word_weights = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
-    for (size_t k = 0; k < l.all->lda; k++) {
-      float new_value = minuseta * word_weights[k];
+    for (size_t k = 0; k < l.all->lda; k++)
+    { float new_value = minuseta * word_weights[k];
       word_weights[k] = new_value;
     }
 
-    for (; s != next; s++) {
-      float *v_s = &(l.v[s->document * l.all->lda]);
+    for (; s != next; s++)
+    { float *v_s = &(l.v[s->document * l.all->lda]);
       float *u_for_w = &weights[(s->f.weight_index & l.all->reg.weight_mask) + l.all->lda + 1];
       float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
-      for (size_t k = 0; k < l.all->lda; k++) {
-        float new_value = u_for_w[k] * v_s[k] * c_w;
+      for (size_t k = 0; k < l.all->lda; k++)
+      { float new_value = u_for_w[k] * v_s[k] * c_w;
         l.total_new[k] += new_value;
         word_weights[k] += new_value;
       }
     }
   }
-  for (size_t k = 0; k < l.all->lda; k++) {
-    l.total_lambda[k] *= minuseta;
+  for (size_t k = 0; k < l.all->lda; k++)
+  { l.total_lambda[k] *= minuseta;
     l.total_lambda[k] += l.total_new[k];
   }
 
@@ -812,14 +786,13 @@ void learn_batch(lda &l)
 }
 
 void learn(lda &l, LEARNER::base_learner &, example &ec)
-{
-  size_t num_ex = l.examples.size();
+{ size_t num_ex = l.examples.size();
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
-  for (unsigned char *i = ec.indices.begin; i != ec.indices.end; i++) {
-    feature *f = ec.atomics[*i].begin;
-    for (; f != ec.atomics[*i].end; f++) {
-      index_feature temp = {(uint32_t)num_ex, *f};
+  for (unsigned char *i = ec.indices.begin; i != ec.indices.end; i++)
+  { feature *f = ec.atomics[*i].begin;
+    for (; f != ec.atomics[*i].end; f++)
+    { index_feature temp = {(uint32_t)num_ex, *f};
       l.sorted_features.push_back(temp);
       l.doc_lengths[num_ex] += (int)f->x;
     }
@@ -832,15 +805,13 @@ void learn(lda &l, LEARNER::base_learner &, example &ec)
 void predict(lda &l, LEARNER::base_learner &base, example &ec) { learn(l, base, ec); }
 
 void end_pass(lda &l)
-{
-  if (l.examples.size())
+{ if (l.examples.size())
     learn_batch(l);
 }
 
 void end_examples(lda &l)
-{
-  for (size_t i = 0; i < l.all->length(); i++) {
-    weight *weights_for_w = &(l.all->reg.weight_vector[i << l.all->reg.stride_shift]);
+{ for (size_t i = 0; i < l.all->length(); i++)
+  { weight *weights_for_w = &(l.all->reg.weight_vector[i << l.all->reg.stride_shift]);
     float decay_component =
       l.decay_levels.last() - l.decay_levels.end[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
     float decay = fmin(1.f, std::exp(decay_component));
@@ -852,8 +823,7 @@ void end_examples(lda &l)
 void finish_example(vw&, lda&, example &) {}
 
 void finish(lda &ld)
-{
-  ld.sorted_features.~vector<index_feature>();
+{ ld.sorted_features.~vector<index_feature>();
   ld.Elogtheta.delete_v();
   ld.decay_levels.delete_v();
   ld.total_new.delete_v();
@@ -865,8 +835,7 @@ void finish(lda &ld)
 }
 
 std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
-{
-  using namespace boost::program_options;
+{ using namespace boost::program_options;
 
   std::string token;
   in >> token;
@@ -882,8 +851,7 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
 }
 
 LEARNER::base_learner *lda_setup(vw &all)
-{
-  if (missing_option<uint32_t, true>(all, "lda", "Run lda with <int> topics"))
+{ if (missing_option<uint32_t, true>(all, "lda", "Run lda with <int> topics"))
     return nullptr;
   new_options(all, "Lda options")("lda_alpha", po::value<float>()->default_value(0.1f),
                                   "Prior on sparsity of per-document topic weights")(
@@ -916,13 +884,13 @@ LEARNER::base_learner *lda_setup(vw &all)
   all.random_weights = true;
   all.add_constant = false;
 
-  if (all.eta > 1.) {
-    std::cerr << "your learning rate is too high, setting it to 1" << std::endl;
+  if (all.eta > 1.)
+  { std::cerr << "your learning rate is too high, setting it to 1" << std::endl;
     all.eta = min(all.eta, 1.f);
   }
 
-  if (vm.count("minibatch")) {
-    size_t minibatch2 = next_pow2(ld.minibatch);
+  if (vm.count("minibatch"))
+  { size_t minibatch2 = next_pow2(ld.minibatch);
     all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
   }
 

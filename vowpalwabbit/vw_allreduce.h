@@ -10,15 +10,13 @@ license as described in the file LICENSE.
 #include "allreduce.h"
 
 template <class T, void(*f)(T&, const T&)> void all_reduce(vw& all, T* buffer, const size_t n)
-{
-  switch (all.all_reduce_type)
-  {
-  case AllReduceType::Socket:
-    ((AllReduceSockets*)all.all_reduce)->all_reduce<T, f>(buffer, n);
-    break;
+{ switch (all.all_reduce_type)
+  { case AllReduceType::Socket:
+      ((AllReduceSockets*)all.all_reduce)->all_reduce<T, f>(buffer, n);
+      break;
 
-  case AllReduceType::Thread:
-    ((AllReduceThreads*)all.all_reduce)->all_reduce<T, f>(buffer, n);
-    break;
+    case AllReduceType::Thread:
+      ((AllReduceThreads*)all.all_reduce)->all_reduce<T, f>(buffer, n);
+      break;
   }
 }

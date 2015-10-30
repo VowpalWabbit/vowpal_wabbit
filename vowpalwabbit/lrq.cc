@@ -7,8 +7,8 @@
 
 using namespace LEARNER;
 
-struct LRQstate {
-  vw* all; // feature creation, audit, hash_inv
+struct LRQstate
+{ vw* all; // feature creation, audit, hash_inv
   bool lrindices[256];
   size_t orig_size[256];
   std::set<std::string> lrpairs;
@@ -18,8 +18,7 @@ struct LRQstate {
 };
 
 bool valid_int (const char* s)
-{
-  char* endptr;
+{ char* endptr;
 
   int v = strtoul (s, &endptr, 0);
   (void) v;
@@ -29,42 +28,36 @@ bool valid_int (const char* s)
 
 inline bool
 cheesyrbit (uint64_t& seed)
-{
-  return merand48 (seed) > 0.5;
+{ return merand48 (seed) > 0.5;
 }
 
 inline float
 cheesyrand (uint32_t x)
-{
-  uint64_t seed = x;
+{ uint64_t seed = x;
 
   return merand48 (seed);
 }
 
 inline bool
 example_is_test (example& ec)
-{
-  return ec.l.simple.label == FLT_MAX;
+{ return ec.l.simple.label == FLT_MAX;
 }
 
 void
 reset_seed (LRQstate& lrq)
-{
-  if (lrq.all->bfgs)
+{ if (lrq.all->bfgs)
     lrq.seed = lrq.initial_seed;
 }
 
 template <bool is_learn>
 void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
-{
-  vw& all = *lrq.all;
+{ vw& all = *lrq.all;
 
   // Remember original features
 
   memset (lrq.orig_size, 0, sizeof (lrq.orig_size));
   for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
-  {
-    if (lrq.lrindices[*i])
+  { if (lrq.lrindices[*i])
       lrq.orig_size[*i] = ec.atomics[*i].size ();
   }
 
@@ -77,8 +70,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
   float scale = (! lrq.dropout || do_dropout) ? 1.f : 0.5f;
 
   for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
-  {
-    // Add left LRQ features, holding right LRQ features fixed
+  { // Add left LRQ features, holding right LRQ features fixed
     //     and vice versa
     // TODO: what happens with --lrq ab2 --lrq ac2
     //       i.e. namespace occurs multiple times (?)
@@ -86,22 +78,18 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
     for (set<string>::iterator i = lrq.lrpairs.begin ();
          i != lrq.lrpairs.end ();
          ++i)
-    {
-      unsigned char left = (*i)[which%2];
+    { unsigned char left = (*i)[which%2];
       unsigned char right = (*i)[(which+1)%2];
       unsigned int k = atoi (i->c_str () + 2);
 
       for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
-      {
-        feature* lf = ec.atomics[left].begin + lfn;
+      { feature* lf = ec.atomics[left].begin + lfn;
         float lfx = lf->x;
         size_t lindex = lf->weight_index + ec.ft_offset;
 
         for (unsigned int n = 1; n <= k; ++n)
-        {
-          if (! do_dropout || cheesyrbit (lrq.seed))
-          {
-            uint32_t lwindex = (uint32_t)(lindex + (n << all.reg.stride_shift));
+        { if (! do_dropout || cheesyrbit (lrq.seed))
+          { uint32_t lwindex = (uint32_t)(lindex + (n << all.reg.stride_shift));
 
             float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
 
@@ -112,8 +100,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
             for (unsigned int rfn = 0;
                  rfn < lrq.orig_size[right];
                  ++rfn)
-            {
-              feature* rf = ec.atomics[right].begin + rfn;
+            { feature* rf = ec.atomics[right].begin + rfn;
               audit_data* ra = ec.audit_features[right].begin + rfn;
 
               // NB: ec.ft_offset added by base learner
@@ -128,8 +115,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
               ec.atomics[right].push_back (lrq);
 
               if (all.audit || all.hash_inv)
-              {
-                std::stringstream new_feature_buffer;
+              { std::stringstream new_feature_buffer;
 
                 new_feature_buffer << right << '^'
                                    << ra->feature << '^'
@@ -159,32 +145,27 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
 
     // Restore example
     if (iter == 0)
-    {
-      first_prediction = ec.pred.scalar;
+    { first_prediction = ec.pred.scalar;
       first_loss = ec.loss;
     }
     else
-    {
-      ec.pred.scalar = first_prediction;
+    { ec.pred.scalar = first_prediction;
       ec.loss = first_loss;
     }
 
     for (set<string>::iterator i = lrq.lrpairs.begin ();
          i != lrq.lrpairs.end ();
          ++i)
-    {
-      unsigned char right = (*i)[(which+1)%2];
+    { unsigned char right = (*i)[(which+1)%2];
 
       ec.atomics[right].end =
         ec.atomics[right].begin + lrq.orig_size[right];
 
       if (all.audit || all.hash_inv)
-      {
-        for (audit_data* a = ec.audit_features[right].begin + lrq.orig_size[right];
+      { for (audit_data* a = ec.audit_features[right].begin + lrq.orig_size[right];
              a < ec.audit_features[right].end;
              ++a)
-        {
-          free (a->space);
+        { free (a->space);
           free (a->feature);
         }
 
@@ -194,6 +175,8 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
     }
   }
 }
+
+void finish(LRQstate& lrq) { lrq.lrpairs.~set<string>(); }
 
 base_learner* lrq_setup(vw& all)
 { //parse and set arguments
@@ -217,8 +200,7 @@ base_learner* lrq_setup(vw& all)
 
   lrq.initial_seed = lrq.seed = all.random_seed | 8675309;
   if (all.vm.count("lrqdropout"))
-  {
-    lrq.dropout = true;
+  { lrq.dropout = true;
     *all.file_options << " --lrqdropout ";
   }
   else
@@ -230,8 +212,7 @@ base_learner* lrq_setup(vw& all)
     *all.file_options << " --lrq " << *i;
 
   if (! all.quiet)
-  {
-    cerr << "creating low rank quadratic features for pairs: ";
+  { cerr << "creating low rank quadratic features for pairs: ";
     if (lrq.dropout)
       cerr << "(using dropout) ";
   }
@@ -239,9 +220,8 @@ base_learner* lrq_setup(vw& all)
   for (set<string>::iterator i = lrq.lrpairs.begin ();
        i != lrq.lrpairs.end ();
        ++i)
-  {
-    if(!all.quiet) {
-      if (( i->length() < 3 ) || ! valid_int (i->c_str () + 2))
+  { if(!all.quiet)
+    { if (( i->length() < 3 ) || ! valid_int (i->c_str () + 2))
         THROW("error, low-rank quadratic features must involve two sets and a rank.");
 
       cerr << *i << " ";
@@ -263,6 +243,7 @@ base_learner* lrq_setup(vw& all)
   learner<LRQstate>& l = init_learner(&lrq, setup_base(all), predict_or_learn<true>,
                                       predict_or_learn<false>, 1 + maxk);
   l.set_end_pass(reset_seed);
+  l.set_finish(finish);
 
   // TODO: leaks memory ?
   return make_base(l);

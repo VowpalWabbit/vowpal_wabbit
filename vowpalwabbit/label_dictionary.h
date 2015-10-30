@@ -1,6 +1,7 @@
-namespace LabelDict {
-struct feature_audit {
-  v_array<feature> features;
+namespace LabelDict
+{
+struct feature_audit
+{ v_array<feature> features;
   v_array<audit_data> audit;
 };
 typedef v_hashmap< size_t, feature_audit > label_feature_map;

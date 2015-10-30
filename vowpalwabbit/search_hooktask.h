@@ -6,7 +6,8 @@ license as described in the file LICENSE.
 #pragma once
 #include "search.h"
 
-namespace HookTask {
+namespace HookTask
+{
 void initialize(Search::search&, size_t&, po::variables_map&);
 void finish(Search::search&);
 void run(Search::search&, vector<example*>&);
@@ -14,8 +15,8 @@ void run_setup(Search::search&, vector<example*>&);
 void run_takedown(Search::search&, vector<example*>&);
 extern Search::search_task task;
 
-struct task_data {
-  void (*run_f)(Search::search&);
+struct task_data
+{ void (*run_f)(Search::search&);
   void (*run_setup_f)(Search::search&);
   void (*run_takedown_f)(Search::search&);
   void *run_object;                  // for python this will really be a (py::object*), but we don't want basic VW to have to know about hook

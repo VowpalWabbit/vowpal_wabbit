@@ -16,7 +16,7 @@ namespace VW
 	/// <summary>
 	/// Helper class to ease construction of native vowpal wabbit namespace data structure.
 	/// </summary>
-  public ref class VowpalWabbitNamespaceBuilder
+	public ref class VowpalWabbitNamespaceBuilder
 	{
 	private:
 		/// <summary>
@@ -99,7 +99,7 @@ namespace VW
 
 	public:
 		/// <summary>
-		/// Initializes a new <see cref="VowpalWabbitExampleBuilder"/> instance.
+		/// Initializes a new <see cref="VowpalWabbitExampleBuilder"/> instance. 
 		/// </summary>
 		/// <param name="vw">The parent vowpal wabbit instance.</param>
 		VowpalWabbitExampleBuilder(VowpalWabbit^ vw);
@@ -116,7 +116,7 @@ namespace VW
 		VowpalWabbitExample^ CreateExample();
 
 		/// <summary>
-		/// Sets the label for the resulting example.
+		/// Sets the label for the resulting example.  
 		/// </summary>
     /// <param name="value">The label value to be parsed.</param>
 		void ParseLabel(String^ value);

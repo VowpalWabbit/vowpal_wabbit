@@ -4,10 +4,11 @@
 #include "parse_args.h"
 #include "rand48.h"
 
-namespace ExpReplay {
+namespace ExpReplay
+{
 
-struct expreplay {
-  vw* all;
+struct expreplay
+{ vw* all;
   size_t N;      //how big is the buffer?
   example* buf;  //the deep copies of examples (N of them)
   bool* filled;  //which of buf[] is filled
@@ -16,14 +17,14 @@ struct expreplay {
 };
 
 template<bool is_learn, label_parser& lp>
-void predict_or_learn(expreplay& er, LEARNER::base_learner& base, example& ec) {
-  // regardless of what happens, we must predict
+void predict_or_learn(expreplay& er, LEARNER::base_learner& base, example& ec)
+{ // regardless of what happens, we must predict
   base.predict(ec);
   // if we're not learning, that's all that has to happen
   if (!is_learn || lp.get_weight(&ec.l) == 0.) return;
 
-  for (size_t replay=1; replay<er.replay_count; replay++) {
-    size_t n = (size_t)(frand48() * (float)er.N);
+  for (size_t replay=1; replay<er.replay_count; replay++)
+  { size_t n = (size_t)(frand48() * (float)er.N);
     if (er.filled[n])
       base.learn(er.buf[n]);
   }
@@ -40,25 +41,25 @@ void predict_or_learn(expreplay& er, LEARNER::base_learner& base, example& ec) {
     er.buf[n].l = ec.l;
 }
 
-void multipredict(expreplay&, LEARNER::base_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions) {
-  base.multipredict(ec, count, step, pred, finalize_predictions);
+void multipredict(expreplay&, LEARNER::base_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions)
+{ base.multipredict(ec, count, step, pred, finalize_predictions);
 }
 
-void end_pass(expreplay& er) {
-  // we need to go through and learn on everyone who remains
+void end_pass(expreplay& er)
+{ // we need to go through and learn on everyone who remains
   // also need to clean up remaining examples
   for (size_t n = 0; n < er.N; n++)
-    if (er.filled[n]) {
-      // TODO: if er.replay_count > 1 do we need to play these more?
+    if (er.filled[n])
+    { // TODO: if er.replay_count > 1 do we need to play these more?
       er.base->learn(er.buf[n]);
       er.filled[n] = false;
     }
 }
 
 template<label_parser& lp>
-void finish(expreplay& er) {
-  for (size_t n=0; n<er.N; n++) {
-    lp.delete_label(&er.buf[n].l);
+void finish(expreplay& er)
+{ for (size_t n=0; n<er.N; n++)
+  { lp.delete_label(&er.buf[n].l);
     VW::dealloc_example(NULL, er.buf[n], NULL);  // TODO: need to free label
   }
   free(er.buf);
@@ -66,8 +67,8 @@ void finish(expreplay& er) {
 }
 
 template<char er_level, label_parser& lp>
-LEARNER::base_learner* expreplay_setup(vw& all) {
-  string replay_string = "replay_"; replay_string += er_level;
+LEARNER::base_learner* expreplay_setup(vw& all)
+{ string replay_string = "replay_"; replay_string += er_level;
   if (missing_option<size_t, true>(all, replay_string.c_str(), "use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost sensitive] with specified buffer size"))
     return nullptr;
 

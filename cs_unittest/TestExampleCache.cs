@@ -10,32 +10,43 @@ using VW.Serializer.Attributes;
 
 namespace cs_unittest
 {
-    [TestClass]
     public class TestExampleCacheCases : TestBase
     {
 #if DEBUG
-        [TestMethod]
-        [ExpectedException(typeof(NotSupportedException))]
         public void TestExampleCacheForLearning()
         {
-            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(string.Empty, enableExampleCaching: true)))
+            try
             {
-                vw.Learn(new CachedData(), new SimpleLabel());
+                using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(string.Empty, enableExampleCaching: true)))
+                {
+                    vw.Learn(new CachedData(), new SimpleLabel());
+                }
+
+                Assert.Fail("Expect NotSupportedException");
             }
+            catch (NotSupportedException)
+            {
+            }
+
         }
 #else
-        [TestMethod]
-        [ExpectedException(typeof(NullReferenceException))]
         public void TestExampleCacheForLearning()
         {
-            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(string.Empty, enableExampleCaching: true)))
+            try
             {
-                vw.Learn(new CachedData(), new SimpleLabel());
+                using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(string.Empty, enableExampleCaching: true)))
+                {
+                    vw.Learn(new CachedData(), new SimpleLabel());
+                }
+
+                Assert.Fail("Expect NullReferenceException");
+            }
+            catch (NotSupportedException)
+            {
             }
         }
 #endif
 
-        [TestMethod]
         public void TestExampleCacheDisabledForLearning()
         {
             using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(enableExampleCaching: false)))
@@ -45,7 +56,6 @@ namespace cs_unittest
             }
         }
 
-        [TestMethod]
         public void TestExampleCache()
         {
             var random = new Random(123);
@@ -80,10 +90,10 @@ namespace cs_unittest
                 }
 
                 vw.Native.RunMultiPass();
-                vw.Native.SaveModel("model1");
+                vw.Native.SaveModel("models/model1");
             }
 
-            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-t", modelStream: File.OpenRead("model1"))))
+            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-t", modelStream: File.OpenRead("models/model1"))))
             using (var vwCached = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(model: vwModel, enableExampleCaching: true, maxExampleCacheSize: 5 )))
             using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(model: vwModel, enableExampleCaching: false )))
             {

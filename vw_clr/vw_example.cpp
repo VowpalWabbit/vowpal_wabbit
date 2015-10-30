@@ -21,24 +21,20 @@ namespace VW
 	}
 
 	VowpalWabbitExample::!VowpalWabbitExample()
-	{
-		if (m_owner != nullptr)
+{ if (m_owner != nullptr)
 			m_owner->ReturnExampleToPool(this);
 	}
 
 	VowpalWabbitExample::~VowpalWabbitExample()
-	{
-		this->!VowpalWabbitExample();
+{ this->!VowpalWabbitExample();
 	}
 
 	VowpalWabbitExample^ VowpalWabbitExample::InnerExample::get()
-	{
-		return m_innerExample;
+{ return m_innerExample;
 	}
 
 	IVowpalWabbitExamplePool^ VowpalWabbitExample::Owner::get()
-	{
-		return m_owner;
+{ return m_owner;
 	}
 
 	generic<typename T>

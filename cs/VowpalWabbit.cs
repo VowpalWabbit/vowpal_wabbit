@@ -198,16 +198,16 @@ namespace VW
         {
             if (disposing)
             {
-                if (this.vw != null)
-                {
-                    this.vw.Dispose();
-                    this.vw = null;
-                }
-
                 if (this.serializer != null)
                 {
                     this.serializer.Dispose();
                     this.serializer = null;
+                }
+
+                if (this.vw != null)
+                {
+                    this.vw.Dispose();
+                    this.vw = null;
                 }
             }
         }
@@ -286,8 +286,8 @@ namespace VW
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(index >= 0);
-            Contract.Requires(label != null);
+            //Contract.Requires(index >= 0);
+            //Contract.Requires(label != null);
 
             VowpalWabbitMultiLine.Learn(
                 this.vw,
@@ -307,7 +307,7 @@ namespace VW
         /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
         /// <param name="label">The label for the example to learn.</param>
         /// <returns>The ranked prediction for the given examples.</returns>
-        public Tuple<int, TActionDependentFeature>[] LearnAndPredict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        public ActionDependentFeature<TActionDependentFeature>[] LearnAndPredict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);

@@ -11,7 +11,6 @@ using VW.Serializer.Attributes;
 
 namespace cs_unittest
 {
-    [TestClass]
     public class TestCbAdfClass : TestBase
     {
         public void ProfilePerformanceWithStringData()
@@ -54,7 +53,29 @@ namespace cs_unittest
             }
         }
 
-        [TestMethod]
+        public static void TestMemoryLeak()
+        {
+            string outModelFile = "cb_adf_mem_leak.model";
+            using (var vw = new VowpalWabbit<DataString, DataStringADF>("--cb_adf --rank_all"))
+            {
+                DataString[] sampleData = CreateStringCbAdfData(1000);
+                foreach (DataString example in sampleData)
+                {
+                    vw.Learn(example, example.ActionDependentFeatures, example.SelectedActionIndex, example.Label);
+                }
+                vw.Native.SaveModel(outModelFile);
+            }
+
+            var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings(string.Format("--quiet -t -i {0}", outModelFile), maxExampleCacheSize: 1024));
+            var pool = new VowpalWabbitThreadedPrediction<DataString, DataStringADF>(vwModel);
+
+            while (true)
+            {
+                vwModel = new VowpalWabbitModel(new VowpalWabbitSettings(string.Format("--quiet -t -i {0}", outModelFile), maxExampleCacheSize: 1024));
+                pool.UpdateModel(vwModel);
+            }
+        }
+
         [TestCategory("Command line through marshalling")]
         public void Test87()
         {
@@ -89,7 +110,6 @@ namespace cs_unittest
             }
         }
 
-        [TestMethod]
         public void TestSharedModel()
         {
             string cbadfModelFile = "models/cb_adf.model";
@@ -120,7 +140,7 @@ namespace cs_unittest
                         expectedPredictions.Add(null);
                     else
                     {
-                        expectedPredictions.Add(pred.Select(p => p.Item2).ToArray());
+                        expectedPredictions.Add(pred.Select(p => p.Feature).ToArray());
                     }
                 }
             }
@@ -137,7 +157,7 @@ namespace cs_unittest
                     if (actualPrediction == null)
                         ReferenceEquals(expectedPredictions[i], actualPrediction);
                     else
-                        ReferenceEquals(expectedPredictions[i], actualPrediction.Select(p => p.Item2).ToArray());
+                        ReferenceEquals(expectedPredictions[i], actualPrediction.Select(p => p.Feature).ToArray());
                 }
             }
 
@@ -157,7 +177,7 @@ namespace cs_unittest
                             var actualPredictions = new List<DataStringADF[]>();
                             foreach (DataString example in sampleData)
                             {
-                                actualPredictions.Add(vwObject.Value.Predict(example, example.ActionDependentFeatures).Select(p => p.Item2).ToArray());
+                                actualPredictions.Add(vwObject.Value.Predict(example, example.ActionDependentFeatures).Select(p => p.Feature).ToArray());
                             }
 
                             Assert.AreEqual(expectedPredictions.Count, actualPredictions.Count);
@@ -259,7 +279,7 @@ namespace cs_unittest
             return sampleData;
         }
 
-        private DataString[] CreateStringCbAdfData(int numSamples, int randomSeed = 0)
+        private static DataString[] CreateStringCbAdfData(int numSamples, int randomSeed = 0)
         {
             var random = new Random(randomSeed);
 

@@ -81,16 +81,14 @@ namespace VW
 		/// An optional inner example this example wraps.
 		/// </summary>
 		property VowpalWabbitExample^ InnerExample
-		{
-			VowpalWabbitExample^ get();
+  { VowpalWabbitExample^ get();
 		}
 
 		/// <summary>
 		/// The owner of this example.
 		/// </summary>
 		property IVowpalWabbitExamplePool^ Owner
-		{
-			IVowpalWabbitExamplePool^ get();
+  { IVowpalWabbitExamplePool^ get();
 		}
 
 		/// <summary>
