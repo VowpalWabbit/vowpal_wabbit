@@ -140,7 +140,7 @@ struct ldf
   bool first_pass;
   bool treat_as_classifier;
   bool is_singleline;
-  bool is_probabilities = false;
+  bool is_probabilities;
   float csoaa_example_t;
   vw* all;
 
@@ -808,6 +808,8 @@ base_learner* csldf_setup(vw& all)
       cerr << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
     if (!ld.treat_as_classifier)
       cerr << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << endl;
+  } else
+  { ld.is_probabilities = false;
   }
 
   all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld.is_singleline;
