@@ -44,8 +44,13 @@ namespace VW
 		/// </summary>
 		Stack<VowpalWabbitExample^>^ m_examples;
 
+    /// <summary>
+    /// Extracted command line arguments.
     VowpalWabbitArguments^ m_arguments;
 
+    /// <summary>
+    /// Initialize from passed model.
+    /// </summary>
     void InitializeFromModel(string args, io_buf& model);
 
 	internal:
@@ -96,11 +101,17 @@ namespace VW
 			VowpalWabbitSettings^ get();
 		}
 
+    /// <summary>
+    /// Extracted command line arguments.
+    /// </summary>
     property VowpalWabbitArguments^ Arguments
     {
       VowpalWabbitArguments^ get();
     }
 
+    /// <summary>
+    /// The read/writable model id.
+    /// </summary>
     property String^ ID
     {
       String^ get();
@@ -119,8 +130,20 @@ namespace VW
 		/// <param name="example">The example to be returned.</param>
 		virtual void ReturnExampleToPool(VowpalWabbitExample^ example) sealed;
 
+    /// <summary>
+    /// Performs the following steps to reset the learning state:
+    ///
+    /// - Save model to in-memory buffer
+    /// - Dipose existing instance
+    /// - Initialize new instance from in-memory buffer
+    /// </summary>
     void Reload();
 
+    /// <summary>
+    /// Compares features created by current instance are compatible to features created by <paramref name="other"/>.
+    /// </summary>
+    /// <returns>
+    /// Null if compatible, otherwise the difference 
     String^ AreFeaturesCompatible(VowpalWabbitBase^ other);
 	};
 }

@@ -26,18 +26,39 @@ namespace VW
 	public ref class VowpalWabbitPerformanceStatistics
 	{
 	public:
+    /// <summary>
+    /// The total number of features seen since instance creation.
+    /// </summary>
 		property uint64_t TotalNumberOfFeatures;
 
+    /// <summary>
+    /// The weighted sum of examples.
+    /// </summary>
 		property double WeightedExampleSum;
 
+    /// <summary>
+    ///  The total number of examples per pass.
+    /// </summary>
 		property uint64_t NumberOfExamplesPerPass;
 
+    /// <summary>
+    /// The weighted sum of labels.
+    /// </summary>
 		property double WeightedLabelSum;
 
+    /// <summary>
+    /// The average loss since instance creation.
+    /// </summary>
 		property double AverageLoss;
 
+    /// <summary>
+    /// The best constant since instance creation.
+    /// </summary>
 		property double BestConstant;
 
+    /// <summary>
+    /// The best constant loss since instance creation.
+    /// </summary>
 		property double BestConstantLoss;
 	};
 

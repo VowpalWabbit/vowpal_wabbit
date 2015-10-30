@@ -191,6 +191,7 @@
     <ClInclude Include="vw_builder.h" />
     <ClInclude Include="vw_clr.h" />
     <ClInclude Include="vw_example.h" />
+    <ClInclude Include="vw_labelcomparator.h" />
     <ClInclude Include="vw_model.h" />
     <ClInclude Include="vw_prediction.h" />
     <ClInclude Include="vw_settings.h" />

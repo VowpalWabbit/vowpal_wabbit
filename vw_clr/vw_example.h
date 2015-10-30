@@ -8,37 +8,10 @@ license as described in the file LICENSE.
 
 #include "vw_clr.h"
 #include "vw_interface.h"
+#include "vw_labelcomparator.h"
 
 namespace VW
 {
-  ref class VowpalWabbitExample;
-
-  public interface class IVowpalWabbitLabelComparator
-  {
-  public:
-    String^ Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2);
-  };
-
-  public ref class VowpalWabbitSimpleLabelComparator sealed : IVowpalWabbitLabelComparator
-  {
-  public:
-    virtual String^ Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2) sealed;
-  };
-
-  public ref class VowpalWabbitContextualBanditLabelComparator sealed : IVowpalWabbitLabelComparator
-  {
-  public:
-    virtual String^ Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2) sealed;
-  };
-
-  public ref class VowpalWabbitLabelComparator sealed abstract
-  {
-  public:
-    static initonly VowpalWabbitSimpleLabelComparator^ Simple = gcnew VowpalWabbitSimpleLabelComparator;
-
-    static initonly VowpalWabbitContextualBanditLabelComparator^ ContextualBandit = gcnew VowpalWabbitContextualBanditLabelComparator;
-  };
-
   /// <summary>
 	/// A CLR representation of a vowpal wabbit example.
 	/// </summary>
@@ -129,6 +102,10 @@ namespace VW
 			void set(String^ value);
 		}
 
+    /// <summary>
+    /// True if this is a new line example, otherwise false.
+    /// </summary>
+    /// <remarks>A example without features is considered a new line example.</reamrks>
     property bool IsNewLine
     {
       bool get();

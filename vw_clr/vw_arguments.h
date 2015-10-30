@@ -16,6 +16,9 @@ using namespace System::Collections::Generic;
 
 namespace VW
 {
+  /// <summary>
+  /// command line arguments extracted from native C++.
+  /// </summary>
   public ref class VowpalWabbitArguments
   {
   private:
@@ -44,6 +47,9 @@ namespace VW
     }
 
   public:
+    /// <summary>
+    /// The input data file.
+    /// </summary>
     property String^ Data
     {
       String^ get()
@@ -52,6 +58,9 @@ namespace VW
       }
     }
 
+    /// <summary>
+    /// True if "-t" for test only mode supplied as part of arguments.
+    /// </summary>
     property bool TestOnly
     {
       bool get()
@@ -60,6 +69,9 @@ namespace VW
       }
     }
 
+    /// <summary>
+    /// Number of passes.
+    /// </summary>
     property int NumPasses
     {
       int get()
@@ -68,6 +80,9 @@ namespace VW
       }
     }
 
+    /// <summary>
+    /// The output model filename.
+    /// </summary>
     property String^ FinalRegressor
     {
       String^ get()
@@ -76,12 +91,15 @@ namespace VW
       }
     }
 
+    /// <summary>
+    ///The list of input model filenames.
+    /// </summary>
     property List<String^>^ InitialRegressors
     {
       List<String^>^ get()
       {
         return m_regressors;
       }
-    }
+    }                        
   };
 }

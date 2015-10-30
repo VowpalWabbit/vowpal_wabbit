@@ -11,13 +11,19 @@ using namespace System::IO;
 
 namespace VW
 {
+  /// <summary>
+  /// C++ wrapper for managed <see cref="Stream"/>.
+  /// </summary>
 	class clr_io_buf : public io_buf
 	{
 	private:
 		gcroot<Stream^> m_stream;
 
 	public:
-		clr_io_buf(Stream^stream);
+    /// <summary>
+    ///Initializes a new <see cref="clr_io_buf"/> instance.
+    /// </summary>
+		clr_io_buf(Stream^ stream);
 
 		virtual int open_file(const char* name, bool stdin_off, int flag = READ);
 

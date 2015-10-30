@@ -29,8 +29,14 @@ namespace VW
 		/// </summary>
 		v_array<feature>* m_atomic;
 
+    /// <summary>
+    /// The namespace index.
+    /// </summary>
     unsigned char m_index;
 
+    /// <summary>
+    /// The native example.
+    /// </summary>
     example* m_example;
 
     // float(*m_sum_of_squares)(float*, float*);
@@ -43,7 +49,9 @@ namespace VW
 		/// </summary>
 		/// <param name="sum_feat_sq">Pointer into sum squares array owned by <see cref="VowpalWabbitExample"/>.</param>
 		/// <param name="atomic">Pointer into atomics owned by <see cref="VowpalWabbitExample"/>.</param>
-    VowpalWabbitNamespaceBuilder(float* sum_feat_sq, v_array<feature>* atomic, unsigned char index, example* m_example);
+    /// <param name="index">The namespace index.</param>
+    /// <param name="example">The native example to build up.</param>
+    VowpalWabbitNamespaceBuilder(float* sum_feat_sq, v_array<feature>* atomic, unsigned char index, example* example);
 
 	public:
     ~VowpalWabbitNamespaceBuilder();
@@ -55,6 +63,12 @@ namespace VW
 		/// <param name="x">The value.</param>
 		void AddFeature(uint32_t weight_index, float x);
 
+    /// <summary>
+    /// Adds a dense array to the example.
+    /// </summary>
+    /// <param name="weight_index_base">The base weight index. Each element is then placed relative to this index.</param>
+    /// <param name="begin">The start pointer of the float array.</param>
+    /// <param name="end">The end pointer of the float array.</param>
     void AddFeaturesUnchecked(uint32_t weight_index_base, float* begin, float* end);
 
 		/// <summary>
@@ -98,11 +112,13 @@ namespace VW
 		/// <summary>
 		/// Creates the managed example representation.
 		/// </summary>
+    /// <returns>Creates the managed example.</returns>
 		VowpalWabbitExample^ CreateExample();
 
 		/// <summary>
 		/// Sets the label for the resulting example.
 		/// </summary>
+    /// <param name="value">The label value to be parsed.</param>
 		void ParseLabel(String^ value);
 
 		/// <summary>
@@ -113,6 +129,7 @@ namespace VW
 		/// <summary>
 		/// Creates and adds a new namespace to this example.
 		/// </summary>
+    /// <param name="featureGroup">The feature group of the new namespace.</param>
 		/// <remarks>Casts to System::Byte.</remarks>
 		VowpalWabbitNamespaceBuilder^ AddNamespace(Char featureGroup);
 	};

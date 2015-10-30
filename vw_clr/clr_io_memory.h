@@ -10,6 +10,9 @@ license as described in the file LICENSE.
 
 namespace VW
 {
+  /// <summary>
+  /// IO Buffer keeping data in memory. Used by VowpalWabbit::Reload.
+  /// </summary>
   class clr_io_memory_buf : public io_buf
   {
   private:
@@ -18,6 +21,9 @@ namespace VW
     vector<char>::const_iterator m_iterator;
 
   public:
+    /// <summary>
+    ///Initializes a new <see cref="clr_io_memory_buf"/> instance.
+    /// </summary>
     clr_io_memory_buf();
 
     virtual int open_file(const char* name, bool stdin_off, int flag = READ);

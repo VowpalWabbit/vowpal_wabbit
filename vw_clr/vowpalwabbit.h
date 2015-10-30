@@ -73,6 +73,12 @@ namespace VW
 			VowpalWabbitPerformanceStatistics^ get();
 		}
 
+    /// <summary>
+    /// Parses <paramref name="line"/> using the C++ parser.
+    /// </summary>
+    /// <returns>
+    /// Returns a <see cref="VowpalWabbitExample"/> ready to be used for <see cref="Learn"/> or <see cref="Predict"/>.
+    /// </returns>
     VowpalWabbitExample^ ParseLine(String^ line);
 
 		/// <summary>
