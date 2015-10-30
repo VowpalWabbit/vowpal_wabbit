@@ -61,7 +61,7 @@ void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec)
   float final_prediction = 0;
 
   float s = 0;
-  float u = ld.weight;
+  float u = ec.weight;
 
   if (is_learn) o.t++;
 
@@ -76,13 +76,13 @@ void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec)
       else if (k < 0) c = 0;
       else if (o.C[o.N-(i+1)][(long long)k] != -1)
         c = o.C[o.N-(i+1)][(long long)k];
-      else { c = choose(o.N-(i+1),k); o.C[o.N-(i+1)][(long long)k] = c; }
+      else { c = choose(o.N-(i+1),(long long)k); o.C[o.N-(i+1)][(long long)k] = c; }
 
-      float w = c * pow((double)(0.5 + o.gamma),
-                        (double)k) * pow((double)0.5 - o.gamma,(double)(o.N-(i+1)-k));
+      float w = c * (float)pow((double)(0.5 + o.gamma), (double)k)
+                * (float)pow((double)0.5 - o.gamma,(double)(o.N-(i+1)-k));
 
-      // update ld.weight, weight for learner i (starting from 0)
-      ld.weight = u * w;
+      // update ec.weight, weight for learner i (starting from 0)
+      ec.weight = u * w;
 
       base.predict(ec, i);
 
@@ -99,13 +99,13 @@ void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec)
     }
   }
 
-  ld.weight = u;
+  ec.weight = u;
   ec.pred.scalar = sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
   else
-    ec.loss = ld.weight;
+    ec.loss = ec.weight;
 }
 
 //-----------------------------------------------------------------
@@ -118,10 +118,10 @@ void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example
   float final_prediction = 0;
 
   float s = 0;
-  float u = ld.weight;
+  float u = ec.weight;
 
   if (is_learn) o.t++;
-  float eta = 4 / sqrt(o.t);
+  float eta = 4.f / sqrtf((float)o.t);
 
   for (int i = 0; i < o.N; i++)
   {
@@ -129,7 +129,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example
     if (is_learn)
     { float w = 1 / (1 + exp(s));
 
-      ld.weight = u * w;
+      ec.weight = u * w;
 
       base.predict(ec, i);
       float z;
@@ -155,13 +155,13 @@ void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example
     }
   }
 
-  ld.weight = u;
+  ec.weight = u;
   ec.pred.scalar = sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
   else
-    ec.loss = ld.weight;
+    ec.loss = ec.weight;
 }
 
 template <bool is_learn>
@@ -172,10 +172,10 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
 
   float s = 0;
   float v_normalization = 0, v_partial_sum = 0;
-  float u = ld.weight;
+  float u = ec.weight;
 
   if (is_learn) o.t++;
-  float eta = 4 / sqrt(o.t);
+  float eta = 4.f / (float)sqrtf((float)o.t);
 
   float stopping_point = frand48();
 
@@ -185,7 +185,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
     if (is_learn)
     { float w = 1 / (1 + exp(s));
 
-      ld.weight = u * w;
+      ec.weight = u * w;
 
       base.predict(ec, i);
       float z;
@@ -204,7 +204,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
 
       // update v, exp(-1) = 0.36788
       if (ld.label * partial_prediction < 0)
-      { o.v[i] *= 0.36788;
+      { o.v[i] *= 0.36788f;
       }
       v_normalization += o.v[i];
 
@@ -237,13 +237,13 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
     }
   }
 
-  ld.weight = u;
+  ec.weight = u;
   ec.pred.scalar = sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
   else
-    ec.loss = ld.weight;
+    ec.loss = ec.weight;
 }
 
 
@@ -351,7 +351,7 @@ LEARNER::base_learner* boosting_setup(vw& all)
                                   "Online boosting with <N> weak learners"))
     return NULL;
   new_options(all, "Boosting Options")
-  ("gamma", po::value<float>()->default_value(0.1),
+  ("gamma", po::value<float>()->default_value(0.1f),
    "weak learner's edge (=0.1), used only by online BBM")
   ("alg", po::value<string>()->default_value("BBM"),
    "specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)");

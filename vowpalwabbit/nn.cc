@@ -94,7 +94,7 @@ void finish_setup (nn& n, vw& all)
   n.hiddenbias.atomics[constant_namespace].push_back(temp);
   n.hiddenbias.total_sum_feat_sq++;
   n.hiddenbias.l.simple.label = FLT_MAX;
-  n.hiddenbias.l.simple.weight = 1;
+  n.hiddenbias.weight = 1;
   n.hiddenbias.in_use = true;
 
   memset (&n.outputweight, 0, sizeof (n.outputweight));
@@ -103,7 +103,7 @@ void finish_setup (nn& n, vw& all)
   n.outputweight.atomics[nn_output_namespace][0].x = 1;
   n.outputweight.total_sum_feat_sq++;
   n.outputweight.l.simple.label = FLT_MAX;
-  n.outputweight.l.simple.weight = 1;
+  n.outputweight.weight = 1;
   n.outputweight.in_use = true;
 
   n.finished_setup = true;
@@ -117,7 +117,6 @@ void end_pass(nn& n)
 template<bool is_learn, bool recompute_hidden>
 void predict_or_learn_multi(nn& n, base_learner& base, example& ec)
 { bool shouldOutput = n.all->raw_prediction > 0;
-
   if (! n.finished_setup)
     finish_setup (n, *(n.all));
 
@@ -258,6 +257,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   else
   { n.output_layer.ft_offset = ec.ft_offset;
     n.output_layer.l = ec.l;
+    n.output_layer.weight = ec.weight;
     n.output_layer.partial_prediction = 0;
     n.output_layer.example_t = ec.example_t;
     if (is_learn)

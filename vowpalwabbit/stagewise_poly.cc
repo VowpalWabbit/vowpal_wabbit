@@ -340,6 +340,7 @@ void sort_data_update_support(stagewise_poly &poly)
 
 void synthetic_reset(stagewise_poly &poly, example &ec)
 { poly.synth_ec.l = ec.l;
+  poly.synth_ec.weight = ec.weight;
   poly.synth_ec.tag = ec.tag;
   poly.synth_ec.example_counter = ec.example_counter;
 

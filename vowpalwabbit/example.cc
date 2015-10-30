@@ -90,6 +90,7 @@ void copy_example_data(bool audit, example* dst, example* src)
     copy_array(* dst->passthrough, *src->passthrough);
   }
   dst->loss = src->loss;
+  dst->weight = src->weight;
   dst->example_t = src->example_t;
   memcpy(dst->sum_feat_sq, src->sum_feat_sq, 256 * sizeof(float));
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
@@ -143,6 +144,7 @@ void return_features(feature* f)
 flat_example* flatten_example(vw& all, example *ec)
 { flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
+  fec.l.simple.weight = ec->weight;
 
   fec.tag_len = ec->tag.size();
   if (fec.tag_len >0)

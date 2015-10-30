@@ -394,10 +394,9 @@ size_t suboptimality(svm_model* model, double* subopt)
   //cerr<<"Subopt ";
   double max_val = 0;
   for(size_t i = 0; i < model->num_support; i++)
-  { label_data& ld = model->support_vec[i]->ex.l.simple;
-    double tmp = model->alpha[i]*ld.label;
+  { double tmp = model->alpha[i]*model->support_vec[i]->ex.l.simple.label;
 
-    if((tmp < ld.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
+    if((tmp < model->support_vec[i]->ex.l.simple.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
       subopt[i] = fabs(model->delta[i]);
     else
       subopt[i] = 0;
@@ -476,8 +475,8 @@ bool update(svm_params& params, size_t pos)
   float ai = (params.lambda - proj)/inprods[pos];
   //cerr<<model->num_support<<" "<<pos<<" "<<proj<<" "<<alphaKi<<" "<<alpha_old<<" "<<ld->label<<" "<<model->delta[pos]<<" ";
 
-  if(ai > ld.weight)
-    ai = ld.weight;
+  if(ai > fec->ex.l.simple.weight)
+    ai = fec->ex.l.simple.weight;
   else if(ai < 0)
     ai = 0;
 

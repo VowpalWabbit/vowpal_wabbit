@@ -29,7 +29,7 @@ bool dis_test(vw& all, example& ec, float prediction, float threshold)
   }
 
   // Get loss difference
-  float k = ec.example_t - ec.l.simple.weight;
+  float k = ec.example_t - ec.weight;
   ec.revert_weight = all.loss->getRevertingWeight(all.sd, prediction, all.eta/powf(k,all.power_t));
   float loss_delta = ec.revert_weight/k;
 
@@ -56,7 +56,7 @@ float get_pmin(float sum_loss, float t)
   }
 
   float avg_loss = sum_loss/t;
-  float pmin = fmin(1.f/(sqrt(t*avg_loss)+log(t)),0.5);
+  float pmin = fmin(1.f/(sqrt(t*avg_loss)+log(t)),0.5f);
   return pmin; // treating n*eps_n = 1
 }
 
@@ -105,26 +105,26 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
   { vw& all = *a.all;
 
     float prediction = ec.pred.scalar;
-    float t = ec.example_t - ec.l.simple.weight;
-    float ec_input_weight = ec.l.simple.weight;
+    float t = ec.example_t - ec.weight;
+    float ec_input_weight = ec.weight;
     float ec_input_label = ec.l.simple.label;
 
     // Compute threshold defining allowed set A
     float threshold = get_threshold((float)all.sd->sum_loss, t, a.active_c0, a.alpha);
-    float in_dis =  dis_test(all, ec, prediction, threshold);
+    bool in_dis =  dis_test(all, ec, prediction, threshold);
     float pmin = get_pmin((float)all.sd->sum_loss, t);
     float importance = query_decision(a, base, ec, prediction, pmin, in_dis);
 
     // Query (or not)
     if(!in_dis) // Use predicted label
     { ec.l.simple.label = sign(prediction);
-      ec.l.simple.weight = ec_input_weight;
+      ec.weight = ec_input_weight;
       base.learn(ec, 0);
 
     }
     else if(importance > 0) // Use importance-weighted example
     { all.sd->queries += 1;
-      ec.l.simple.weight = ec_input_weight * importance;
+      ec.weight = ec_input_weight * importance;
       ec.l.simple.label = ec_input_label;
       base.learn(ec, 0);
     }
@@ -138,7 +138,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
     float q2 = 4.f*pmin*pmin;
     float p, s, cost, cost_delta;
     float ec_output_label = ec.l.simple.label;
-    float ec_output_weight = ec.l.simple.weight;
+    float ec_output_weight = ec.weight;
     float r = 2.f*threshold*t*a.alpha/a.active_c0/a.beta_scale;
 
     // Set up costs
@@ -163,7 +163,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
       // Choose min-cost label as the label
       // Set importance weight to be the cost difference
       ec.l.simple.label = -1.f*sign(cost_delta)*sign(prediction);
-      ec.l.simple.weight = ec_input_weight*fabs(cost_delta);
+      ec.weight = ec_input_weight*fabs(cost_delta);
 
       // Update learner
       base.learn(ec,i+1);
@@ -174,7 +174,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
       a.lambda_n[i] = fmax(a.lambda_n[i], 0.f);
 
       // Update denominator of lambda
-      a.lambda_d[i] += ((float)(sign(ec.pred.scalar) != sign(prediction) && in_dis)) / pow(q2,1.5);
+      a.lambda_d[i] += ((float)(sign(ec.pred.scalar) != sign(prediction) && in_dis)) / (float)pow(q2,1.5);
 
       // Accumulating weights of learners in the cover
       q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i]/a.lambda_d[i]);
@@ -182,15 +182,14 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
     }
 
     // Restoring the weight, the label, and the prediction
-    ec.l.simple.weight = ec_output_weight;
+    ec.weight = ec_output_weight;
     ec.l.simple.label = ec_output_label;
     ec.pred.scalar = prediction;
   }
 }
 
 void finish(active_cover& ac)
-{
-  delete[] ac.lambda_n;
+{ delete[] ac.lambda_n;
   delete[] ac.lambda_d;
 }
 
@@ -198,7 +197,7 @@ base_learner* active_cover_setup(vw& all)
 { //parse and set arguments
   if(missing_option(all, false, "active_cover", "enable active learning with cover"))
     return nullptr;
-  
+
   new_options(all, "Active Learning with cover options")
   ("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8.")
   ("alpha", po::value<float>(), "active learning variance upper bound parameter alpha. Default 1.")

@@ -30,7 +30,7 @@ struct bs
 
 void bs_predict_mean(vw& all, example& ec, vector<double> &pred_vec)
 { ec.pred.scalar = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
-  ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.l.simple.weight;
+  ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 }
 
 void bs_predict_vote(example& ec, vector<double> &pred_vec)
@@ -107,8 +107,8 @@ void bs_predict_vote(example& ec, vector<double> &pred_vec)
   // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()
   ec.pred.scalar = (float)current_label;
 
-  // ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ld.weight; //replace line below for: "avg on votes" and getLoss()
-  ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.l.simple.weight;
+  // ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ec.weight; //replace line below for: "avg on votes" and getLoss()
+  ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.weight;
 }
 
 void print_result(int f, float res, v_array<char> tag, float lb, float ub)
@@ -135,9 +135,9 @@ void print_result(int f, float res, v_array<char> tag, float lb, float ub)
 void output_example(vw& all, bs& d, example& ec)
 { label_data& ld = ec.l.simple;
 
-  all.sd->update(ec.test_only, ec.loss, ld.weight, ec.num_features);
+  all.sd->update(ec.test_only, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)
-    all.sd->weighted_labels += ld.label * ld.weight;
+    all.sd->weighted_labels += ld.label * ec.weight;
 
   if(all.final_prediction_sink.size() != 0)//get confidence interval only when printing out predictions
   { d.lb = FLT_MAX;
@@ -161,13 +161,13 @@ void predict_or_learn(bs& d, base_learner& base, example& ec)
 { vw& all = *d.all;
   bool shouldOutput = all.raw_prediction > 0;
 
-  float weight_temp = ec.l.simple.weight;
+  float weight_temp = ec.weight;
 
   stringstream outputStringStream;
   d.pred_vec.clear();
 
   for (size_t i = 1; i <= d.B; i++)
-  { ec.l.simple.weight = weight_temp * (float) BS::weight_gen();
+  { ec.weight = weight_temp * (float) BS::weight_gen();
 
     if (is_learn)
       base.learn(ec, i-1);
@@ -182,7 +182,7 @@ void predict_or_learn(bs& d, base_learner& base, example& ec)
     }
   }
 
-  ec.l.simple.weight = weight_temp;
+  ec.weight = weight_temp;
 
   switch(d.bs_type)
   { case BS_TYPE_MEAN:

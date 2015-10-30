@@ -153,8 +153,6 @@ void end_pass(gd& g)
   }
 }
 
-
-
 #include <algorithm>
 
 struct string_value
@@ -406,7 +404,7 @@ struct norm_data
   power_data pd;
 };
 
-const float x_min = 1.084202e-19;
+const float x_min = 1.084202e-19f;
 const float x2_min = x_min*x_min;
 
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
@@ -448,7 +446,7 @@ float get_pred_per_update(gd& g, example& ec)
 { //We must traverse the features in _precisely_ the same order as during training.
   label_data& ld = ec.l.simple;
   vw& all = *g.all;
-  float grad_squared = all.loss->getSquareGrad(ec.pred.scalar, ld.label) * ld.weight;
+  float grad_squared = all.loss->getSquareGrad(ec.pred.scalar, ld.label) * ec.weight;
   if (grad_squared == 0) return 1.;
 
   norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
@@ -456,8 +454,8 @@ float get_pred_per_update(gd& g, example& ec)
   foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, nd);
 
   if(normalized)
-  { g.all->normalized_sum_norm_x += ld.weight * nd.norm_x;
-    g.total_weight += ld.weight;
+  { g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
+    g.total_weight += ec.weight;
 
     g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g);
     nd.pred_per_update *= g.update_multiplier;
@@ -480,7 +478,7 @@ float compute_update(gd& g, example& ec)
       pred_per_update = get_pred_per_update<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,ec);
     else
       pred_per_update = ec.total_sum_feat_sq;
-    float delta_pred = pred_per_update * all.eta * ld.weight;
+    float delta_pred = pred_per_update * all.eta * ec.weight;
     if(!adaptive)
     { float t = (float)(ec.example_t - all.sd->weighted_holdout_examples);
       delta_pred *= powf(t, g.neg_power_t);
@@ -523,7 +521,7 @@ void learn(gd& g, base_learner& base, example& ec)
 { //invariant: not a test label, importance weight > 0
   assert(ec.in_use);
   assert(ec.l.simple.label != FLT_MAX);
-  assert(ec.l.simple.weight > 0.);
+  assert(ec.weight > 0.);
 
   g.predict(g,base,ec);
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,base,ec);
@@ -543,7 +541,6 @@ void sync_weights(vw& all)
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 { uint32_t length = 1 << all.num_bits;
   uint32_t stride = 1 << all.reg.stride_shift;
-  int c = 0;
   uint32_t i = 0;
   size_t brw = 1;
 
@@ -573,8 +570,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
   { brw = 1;
     weight* v;
     if (read)
-    { c++;
-      brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
+    { brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
       if (brw > 0)
       { if (i >= length)
         { THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
@@ -588,8 +584,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 
       v = &(all.reg.weight_vector[stride*i]);
       if (*v != 0.)
-      { c++;
-        char buff[512];
+      { char buff[512];
         size_t buf_size = sizeof(buff);
         int text_len;
 
@@ -693,7 +688,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
     if (read && g != nullptr) g->total_weight = total_weight;
 
     // fix "loss since last" for first printed out example details
-    text_len = sprintf_s(buff, buf_size, "sd::old_weighted_examples %f\n", all.sd->old_weighted_examples);
+    text_len = sprintf_s(buff, buf_size, "sd::oec.weighted_examples %f\n", all.sd->old_weighted_examples);
     bin_text_read_write_fixed(model_file, (char*)&all.sd->old_weighted_examples, sizeof(all.sd->old_weighted_examples),
                               "", read,
                               buff, text_len, text);

@@ -53,8 +53,8 @@ void output_example(vw& all, topk& d, example& ec)
 { label_data& ld = ec.l.simple;
 
   if (ld.label != FLT_MAX)
-    all.sd->weighted_labels += ld.label * ld.weight;
-  all.sd->weighted_examples += ld.weight;
+    all.sd->weighted_labels += ld.label * ec.weight;
+  all.sd->weighted_examples += ec.weight;
   all.sd->sum_loss += ec.loss;
   all.sd->sum_loss_since_last_dump += ec.loss;
   all.sd->total_features += ec.num_features;
@@ -92,8 +92,7 @@ void finish_example(vw& all, topk& d, example& ec)
 
 
 void finish(topk& d)
-{
-  d.pr_queue = priority_queue<scored_example, vector<scored_example>, compare_scored_examples >();  
+{ d.pr_queue = priority_queue<scored_example, vector<scored_example>, compare_scored_examples >();
 }
 
 LEARNER::base_learner* topk_setup(vw& all)
