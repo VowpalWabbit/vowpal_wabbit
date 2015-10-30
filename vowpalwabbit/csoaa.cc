@@ -140,6 +140,7 @@ struct ldf
   bool first_pass;
   bool treat_as_classifier;
   bool is_singleline;
+  bool is_probabilities = false;
   float csoaa_example_t;
   vw* all;
 
@@ -472,7 +473,7 @@ void do_actual_learning(ldf& data, base_learner& base)
       LabelDict::del_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0], (data.all->audit || data.all->hash_inv));
 
   ////////////////////// compute probabilities
-  if (data.all->probabilities)
+  if (data.is_probabilities)
   { float sum_prob = 0;
     for (size_t k=start_K; k<K; k++)
     { // probability(correct_class) = 1 / (1+exp(-score)), where score is higher for better classes,
@@ -501,7 +502,7 @@ void global_print_newline(vw& all)
   }
 }
 
-void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_seq)
+void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_seq, ldf& data)
 { label& ld = ec.l.cs;
   v_array<COST_SENSITIVE::wclass> costs = ld.costs;
 
@@ -514,7 +515,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
   float loss = 0.;
 
   uint32_t predicted_class;
-  if (all.probabilities)
+  if (data.is_probabilities)
   { // predicted_K was already computed in do_actual_learning(),
     // but we cannot store it in ec.pred union because we store ec.pred.prob there.
     // So we must compute it again.
@@ -551,7 +552,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
   }
 
   for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-    all.print(*sink, all.probabilities ? ec.pred.prob : (float)ec.pred.multiclass, 0, ec.tag);
+    all.print(*sink, data.is_probabilities ? ec.pred.prob : (float)ec.pred.multiclass, 0, ec.tag);
 
   if (all.raw_prediction > 0)
   { string outputString;
@@ -624,14 +625,14 @@ void output_example_seq(vw& all, ldf& data)
       output_rank_example(all, **(data.ec_seq.begin), hit_loss, &(data.ec_seq));
     else
       for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
-        output_example(all, **ecc, hit_loss, &(data.ec_seq));
+        output_example(all, **ecc, hit_loss, &(data.ec_seq), data);
 
     if (!data.is_singleline && (all.raw_prediction > 0))
     { v_array<char> empty = { nullptr, nullptr, nullptr, 0 };
       all.print_text(all.raw_prediction, "", empty);
     }
 
-    if (all.probabilities)
+    if (data.is_probabilities)
     { size_t start_K = ec_is_example_header(*data.ec_seq[0]) ? 1 : 0;
       float  min_cost = FLT_MAX;
       size_t correct_class_k = start_K;
@@ -674,13 +675,13 @@ void end_pass(ldf& data)
 { data.first_pass = false;
 }
 
-void finish_singleline_example(vw& all, ldf&, example& ec)
+void finish_singleline_example(vw& all, ldf& data, example& ec)
 { if (! ec_is_label_definition(ec))
   { all.sd->weighted_examples += 1;
     all.sd->example_number++;
   }
   bool hit_loss = false;
-  output_example(all, ec, hit_loss, nullptr);
+  output_example(all, ec, hit_loss, nullptr, data);
   VW::finish_example(all, &ec);
 }
 
@@ -751,7 +752,8 @@ base_learner* csldf_setup(vw& all)
     return nullptr;
   new_options(all, "LDF Options")
   ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
-  ("csoaa_rank","Return actions sorted by score order");
+  ("csoaa_rank", "Return actions sorted by score order")
+  ("probabilities", "predict probabilites of all classes");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -799,6 +801,15 @@ base_learner* csldf_setup(vw& all)
     { ld.treat_as_classifier = true;
       ld.is_singleline = true;
     }
+  }
+
+  if( vm.count("probabilities") )
+  { ld.is_probabilities = true;
+    all.sd->report_multiclass_log_loss = true;
+    if (!vm.count("loss_function") || vm["loss_function"].as<string>() != "logistic" )
+      cerr << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
+    if (!ld.treat_as_classifier)
+      cerr << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << endl;
   }
 
   all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld.is_singleline;

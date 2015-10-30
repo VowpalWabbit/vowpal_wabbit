@@ -843,7 +843,6 @@ void parse_example_tweaks(vw& all)
 void parse_output_preds(vw& all)
 { new_options(all, "Output options")
   ("predictions,p", po::value< string >(), "File to output predictions to")
-  ("probabilities", "predict probabilites of all classes")
   ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to");
   add_options(all);
 
@@ -887,8 +886,6 @@ void parse_output_preds(vw& all)
       all.raw_prediction = f;
     }
   }
-  if (vm.count("probabilities"))
-    all.probabilities = true;
 }
 
 void parse_output_model(vw& all)
@@ -1006,13 +1003,6 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(bs_setup);
 
   all.l = setup_base(all);
-
-  if (all.probabilities)
-  { if (!all.vm.count("oaa") && !all.vm.count("csoaa_ldf"))
-      THROW("--probabilities can only be used with --oaa=N or --csoaa_ldf=mc");
-    if (!all.vm.count("loss_function") || all.vm["loss_function"].as<string>() != "logistic" )
-      cerr << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
-  }
 }
 
 void add_to_args(vw& all, int argc, char* argv[], int excl_param_count = 0, const char* excl_params[] = NULL)
@@ -1318,7 +1308,7 @@ void finish(vw& all, bool delete_all)
       cerr << endl << "average loss = " << all.sd->sum_loss / all.sd->weighted_examples;
     else
       cerr << endl << "average loss = " << all.sd->holdout_best_loss << " h";
-    if (all.probabilities)
+    if (all.sd->report_multiclass_log_loss)
     { if (all.holdout_set_off)
         cerr << endl << "average multiclass log loss = " << all.sd->multiclass_log_loss / all.sd->weighted_examples;
       else

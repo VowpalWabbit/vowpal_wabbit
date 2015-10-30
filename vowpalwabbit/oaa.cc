@@ -178,7 +178,8 @@ LEARNER::base_learner* oaa_setup(vw& all)
 { if (missing_option<size_t, true>(all, "oaa", "One-against-all multiclass with <k> labels"))
     return nullptr;
   new_options(all, "oaa options")
-  ("oaa_subsample", po::value<size_t>(), "subsample this number of negative examples when learning");
+  ("oaa_subsample", po::value<size_t>(), "subsample this number of negative examples when learning")
+  ("probabilities", "predict probabilites of all classes");
   add_options(all);
 
   oaa* data_ptr = calloc_or_throw<oaa>(1);
@@ -188,7 +189,7 @@ LEARNER::base_learner* oaa_setup(vw& all)
   if (all.sd->ldict && (data.k != all.sd->ldict->getK()))
     THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
 
-    data.all = &all;
+  data.all = &all;
   data.pred = calloc_or_throw<polyprediction>(data.k);
   data.num_subsample = 0;
   data.subsample_order = nullptr;
@@ -212,9 +213,12 @@ LEARNER::base_learner* oaa_setup(vw& all)
   }
 
   LEARNER::learner<oaa>* l;
-  // the three boolean template parameters are: is_learn, print_all and is_probabilities
-  if (all.probabilities)
-  { l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all), predict_or_learn<true, false, true>,
+  if( all.vm.count("probabilities") )
+  { all.sd->report_multiclass_log_loss = true;
+    if (!all.vm.count("loss_function") || all.vm["loss_function"].as<string>() != "logistic" )
+      cerr << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
+    // the three boolean template parameters are: is_learn, print_all and is_probabilities
+    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all), predict_or_learn<true, false, true>,
                                           predict_or_learn<false, false, true>, all.p, data.k);
     l->set_finish_example(finish_example_probabilities);
   }

@@ -347,7 +347,7 @@ vw::vw()
 
   seeded = false; // default is not to share model states
 
-  probabilities = false;
+  sd->report_multiclass_log_loss = false;
   sd->multiclass_log_loss = 0;
   sd->holdout_multiclass_log_loss = 0;
 }
