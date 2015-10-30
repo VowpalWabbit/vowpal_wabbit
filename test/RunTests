@@ -1151,8 +1151,8 @@ __DATA__
     train-sets/ref/search_er.stderr
 
 # Test 66: Train a depenency parser with search (dagger)
-# on wsj_small.dparser.vw.gz for 2 passes
-{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout ref --holdout_off --search_linear_ordering
+# on wsj_small.dparser.vw.gz for 6 passes
+{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout oracle --holdout_off
     train-sets/ref/search_dep_parser.stderr
 
 # Test 67: classification with data from dictionaries
@@ -1363,3 +1363,13 @@ perl -pE 's/^0/2/;s/^-1/4/' train-sets/0001.multi.dat | {VW} --probabilities --o
 {VW} -d train-sets/cs_test.ldf --probabilities --csoaa_ldf=mc --loss_function=logistic -p csoaa_ldf_probabilities.predict
    train-sets/ref/csoaa_ldf_probabilities.stderr
    pred-sets/ref/csoaa_ldf_probabilities.predict
+
+# Test 111: Train a depenency parser with neural network and one_learner approach (lols)
+# use -b 30 to get better performnce
+{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --passes 2 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --holdout_off --one_learner --nn 5 --ftrl --search_history_length 3 --root_label 8
+    train-sets/ref/search_dep_parser_one_learner.stderr
+
+# Test 112: Train a depenency parser with cost_to_go
+# use -b 30 to get better performnce
+{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --passes 6 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout none --holdout_off --search_history_length 3 --root_label 8 --cost_to_go
+    train-sets/ref/search_dep_parser_cost_to_go.stderr
