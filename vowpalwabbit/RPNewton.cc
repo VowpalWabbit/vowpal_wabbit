@@ -13,22 +13,22 @@ using namespace LEARNER;
 
 struct update_data {
     struct RPNewton *RPN;
-    float g;
-    float sketch_cnt;
-    float *r;
-    float *q;
-    float *Sx;
-    float rb;
-    float norm2_x;
-    float prediction;
+    double g;
+    double sketch_cnt;
+    double *r;
+    double *q;
+    double *Sx;
+    double rb;
+    double norm2_x;
+    double prediction;
 };
 
 struct RPNewton {
     vw* all; 
     int m;
-    float alpha;
-    float *b;
-    float **H;
+    double alpha;
+    double *b;
+    double **H;
     struct update_data data;    
 
     void generate_r() {
@@ -44,19 +44,19 @@ struct RPNewton {
     }
     
     void compute_q() {
-        float cnt = data.sketch_cnt;
-        float tmp = cnt * cnt * data.norm2_x / 2;
+        double cnt = data.sketch_cnt;
+        double tmp = cnt * cnt * data.norm2_x / 2;
         for (int i = 1; i <= m; i++) {
             data.q[i] = data.Sx[i] * cnt - tmp * data.r[i];
          }
     }
 
     // update H so that inv(H) <- inv(H) + uv'
-    void Woodbury_update(float **H, float *u, float *v, int size)
+    void Woodbury_update(double **H, double *u, double *v, int size)
     {
-        float quad = 0;
-        float *Hu = calloc_or_die<float>(size+1);
-        float *vH = calloc_or_die<float>(size+1);
+        double quad = 0;
+        double *Hu = calloc_or_die<double>(size+1);
+        double *vH = calloc_or_die<double>(size+1);
 
         for (int i = 1; i <= size; i++) {
             for (int j = 1; j <= size; j++) {
@@ -78,7 +78,7 @@ struct RPNewton {
 
     void update_b() {
         for (int i = 1; i <= m; i++) {
-            float tmp = 0;
+            double tmp = 0;
             for (int j = 1; j <= m; j++) {
                 tmp += H[i][j] * data.Sx[j] * data.g;
             }
@@ -107,7 +107,7 @@ void make_prediction(update_data& data, float x, float& wref) {
 void predict(RPNewton& RPN, base_learner&, example& ec) {
     RPN.data.prediction = 0;
     RPN.data.norm2_x = 0;
-    memset(RPN.data.Sx, 0, sizeof(float) * (RPN.m + 1));
+    memset(RPN.data.Sx, 0, sizeof(double) * (RPN.m + 1));
     GD::foreach_feature<update_data, make_prediction>(*RPN.all, ec, RPN.data);
     ec.partial_prediction = RPN.data.prediction;
     ec.pred.scalar = GD::finalize_prediction(RPN.all->sd, ec.partial_prediction);
@@ -184,7 +184,7 @@ base_learner* RPNewton_setup(vw& all) {
 
     new_options(all, "RPNewton options")
         ("sketch_size", po::value<int>(), "size of sketch")
-        ("alpha", po::value<float>(), "mutiplicative constant for indentiy");
+        ("alpha", po::value<double>(), "mutiplicative constant for indentiy");
     add_options(all);
 
     po::variables_map& vm = all.vm;
@@ -198,20 +198,20 @@ base_learner* RPNewton_setup(vw& all) {
         RPN.m = 10;
 
     if (vm.count("alpha"))
-        RPN.alpha = vm["alpha"].as<float>();
+        RPN.alpha = vm["alpha"].as<double>();
     else
         RPN.alpha = 1.0;
     
-    RPN.b = calloc_or_die<float>(RPN.m+1);    
-    RPN.H = calloc_or_die<float*>(RPN.m+1);
+    RPN.b = calloc_or_die<double>(RPN.m+1);    
+    RPN.H = calloc_or_die<double*>(RPN.m+1);
     for (int i = 1; i <= RPN.m; i++) {
-        RPN.H[i] = calloc_or_die<float>(RPN.m+1);
+        RPN.H[i] = calloc_or_die<double>(RPN.m+1);
         RPN.H[i][i] = 1.0 / RPN.alpha;
     }
 
-    RPN.data.r = calloc_or_die<float>(RPN.m+1);
-    RPN.data.q = calloc_or_die<float>(RPN.m+1);
-    RPN.data.Sx = calloc_or_die<float>(RPN.m+1);
+    RPN.data.r = calloc_or_die<double>(RPN.m+1);
+    RPN.data.q = calloc_or_die<double>(RPN.m+1);
+    RPN.data.Sx = calloc_or_die<double>(RPN.m+1);
     RPN.data.RPN = &RPN;
 
     all.reg.stride_shift = ceil(log2(RPN.m + 1));

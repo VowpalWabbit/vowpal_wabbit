@@ -338,7 +338,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec) {
         }
 
         ON.update_A();
-        ON.update_D();
+        //ON.update_D();
     }
 
     memset(data.Zx, 0, sizeof(double)* (ON.m+1));
