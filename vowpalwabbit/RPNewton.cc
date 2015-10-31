@@ -20,8 +20,14 @@ struct update_data {
     double *Sx;
     double rb;
     double norm2_x;
+    double c; // for projection
     double prediction;
 };
+
+void project_update(update_data& data, float x, float& wref) {
+    float*w = &wref;
+    w[0] -= data.c * x;
+}
 
 struct RPNewton {
     vw* all; 
@@ -30,6 +36,7 @@ struct RPNewton {
     double *b;
     double **H;
     struct update_data data;    
+    bool proj;
 
     void generate_r() {
         for (int i = 1; i <= m; i++) {
@@ -90,6 +97,25 @@ struct RPNewton {
         for (int i = 1; i <= m; i++) 
             data.Sx[i] += data.sketch_cnt * data.norm2_x * data.r[i];
     }
+
+    void project(example& ec) {
+        data.c = ec.partial_prediction - ec.pred.scalar; 
+        if (fabs(data.c) < 1e-7) return;
+
+        double* HSx = calloc_or_die<double>(m+1);
+        double tmp = 0;
+        for (int i = 1; i <= m; i++) {
+            for (int j = 1; j <= m; j++)
+                HSx[i] += H[i][j] * data.Sx[j]; 
+            tmp += data.Sx[i] * HSx[i];
+        } 
+        data.c /= data.norm2_x - tmp;
+
+        for (int i = 1; i <= m; i++)
+            b[i] += data.c * HSx[i];
+
+        GD::foreach_feature<update_data, project_update>(*all, ec, data);
+    }
 };
 
 void make_prediction(update_data& data, float x, float& wref) {
@@ -133,6 +159,8 @@ void learn(RPNewton& RPN, base_learner& base, example& ec) {
     predict(RPN, base, ec);
 
     //update state based on the prediction
+    if (RPN.proj) RPN.project(ec); 
+
     update_data& data = RPN.data;
 
     data.g = RPN.all->loss->first_derivative(RPN.all->sd, ec.pred.scalar, ec.l.simple.label)
@@ -184,7 +212,8 @@ base_learner* RPNewton_setup(vw& all) {
 
     new_options(all, "RPNewton options")
         ("sketch_size", po::value<int>(), "size of sketch")
-        ("alpha", po::value<double>(), "mutiplicative constant for indentiy");
+        ("alpha", po::value<double>(), "mutiplicative constant for indentiy")
+        ("projection", po::value<bool>(), "project or not");
     add_options(all);
 
     po::variables_map& vm = all.vm;
@@ -201,6 +230,11 @@ base_learner* RPNewton_setup(vw& all) {
         RPN.alpha = vm["alpha"].as<double>();
     else
         RPN.alpha = 1.0;
+
+    if (vm.count("projection"))
+        RPN.proj = vm["projection"].as<bool>();
+    else
+        RPN.proj = false;
     
     RPN.b = calloc_or_die<double>(RPN.m+1);    
     RPN.H = calloc_or_die<double*>(RPN.m+1);
