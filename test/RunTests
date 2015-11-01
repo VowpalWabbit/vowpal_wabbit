@@ -1373,3 +1373,9 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 # use -b 30 to get better performnce
 {VW} -k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --passes 6 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout none --holdout_off --search_history_length 3 --root_label 8 --cost_to_go
     train-sets/ref/search_dep_parser_cost_to_go.stderr
+
+# Test 113: Predictions with confidences
+# use -b 30 to get better performnce
+{VW} --confidence -d ./train-sets/rcv1_small.dat -p confidence.preds
+    train-sets/ref/confidence.stderr
+    pred-sets/ref/confidence.preds

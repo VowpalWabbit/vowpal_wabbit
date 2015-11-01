@@ -1,0 +1,30 @@
+predictions = confidence.preds
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = ./train-sets/rcv1_small.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+1.000000 1.000000            1            1.0  -1.0000   0.0000      128
+0.893728 0.787455            2            2.0  -1.0000  -0.1126       44
+0.905122 0.916517            4            4.0  -1.0000  -0.1701      190
+0.924790 0.944458            8            8.0   1.0000  -0.0231       34
+0.894742 0.864695           16           16.0   1.0000   0.0065       43
+0.875196 0.855650           32           32.0  -1.0000   0.0423       47
+0.838072 0.800947           64           64.0   1.0000   0.0619       54
+0.754589 0.671106          128          128.0  -1.0000  -0.2779       67
+0.662491 0.570393          256          256.0   1.0000   0.6543       86
+0.564488 0.466484          512          512.0  -1.0000  -0.8828      104
+
+finished run
+number of examples per pass = 1000
+passes used = 1
+weighted example sum = 1000.000000
+weighted label sum = -82.000000
+average loss = 0.502732
+best constant = -0.082000
+best constant's loss = 0.993276
+total feature number = 78739
