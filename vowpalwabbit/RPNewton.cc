@@ -11,6 +11,8 @@ license as described in the file LICENSE.
 using namespace std;
 using namespace LEARNER;
 
+#define NORM2 (m+1)
+
 struct update_data {
     struct RPNewton *RPN;
     double g;
@@ -24,10 +26,7 @@ struct update_data {
     double prediction;
 };
 
-void project_update(update_data& data, float x, float& wref) {
-    float*w = &wref;
-    w[0] -= data.c * x;
-}
+void project_update(update_data& data, float x, float& wref); 
 
 struct RPNewton {
     vw* all; 
@@ -118,9 +117,19 @@ struct RPNewton {
     }
 };
 
+void project_update(update_data& data, float x, float& wref) {
+    float*w = &wref;
+    int m = data.RPN->m;
+    x /= sqrt(w[NORM2]);
+    w[0] -= data.c * x;
+}
+
 void make_prediction(update_data& data, float x, float& wref) {
     int m = data.RPN->m;
     float* w = &wref;
+    
+    w[NORM2] += x * x;
+    x /= sqrt(w[NORM2]);
     
     data.prediction += w[0] * x;
     data.norm2_x += x * x;
@@ -141,13 +150,17 @@ void predict(RPNewton& RPN, base_learner&, example& ec) {
 
 void update_sketch(update_data& data, float x, float& wref) {
     float* w = &wref;
+    int m = data.RPN->m;
+    x /= sqrt(NORM2);    
 
-    for (int i = 1; i <= data.RPN->m ;i++)
+    for (int i = 1; i <= m ;i++)
         w[i] += data.r[i] * data.sketch_cnt * x;
 }
 
 void update_weight(update_data& data, float x, float& wref) {
     float* w = &wref;
+    int m = data.RPN->m;
+    x /= sqrt(NORM2);    
 
     w[0] -= x * (data.g / data.RPN->alpha + data.rb * data.sketch_cnt);
 }
@@ -248,7 +261,7 @@ base_learner* RPNewton_setup(vw& all) {
     RPN.data.Sx = calloc_or_die<double>(RPN.m+1);
     RPN.data.RPN = &RPN;
 
-    all.reg.stride_shift = ceil(log2(RPN.m + 1));
+    all.reg.stride_shift = ceil(log2(RPN.m + 2));
 
     learner<RPNewton>& l = init_learner(&RPN, learn, 1 << all.reg.stride_shift);
     l.set_predict(predict);

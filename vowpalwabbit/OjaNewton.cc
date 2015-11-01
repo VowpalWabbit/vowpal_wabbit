@@ -10,6 +10,8 @@ license as described in the file LICENSE.
 using namespace std;
 using namespace LEARNER;
 
+#define NORM2 (m+1)
+
 struct update_data {
     struct OjaNewton *ON;
     double g;
@@ -261,6 +263,9 @@ void make_pred(update_data& data, float x, float& wref) {
     int m = data.ON->m;
     float* w = &wref;
 
+    w[NORM2] += x * x;    
+    x /= sqrt(w[NORM2]);
+
     data.prediction += w[0] * x;
     for (int i = 1; i <= m; i++) {
         data.prediction += w[i] * x * data.ON->D[i] * data.ON->b[i];
@@ -275,10 +280,11 @@ void predict(OjaNewton& ON, base_learner&, example& ec) {
 }
 
 
-void update_Z_and_wbar(update_data& data, float x, float& wref) {
+void update_Z_and_wbar(update_data& data, float x, float& wref) {   
     float* w = &wref;
-    double s = data.sketch_cnt * x;
     int m = data.ON->m;
+    x /= sqrt(w[NORM2]);
+    double s = data.sketch_cnt * x;
 
     for (int i = 1; i <= m; i++) {
         w[i] += data.delta[i] * s / data.ON->D[i];
@@ -288,8 +294,10 @@ void update_Z_and_wbar(update_data& data, float x, float& wref) {
 
 void compute_Zx_and_norm(update_data& data, float x, float& wref) {
     float* w = &wref;
+    int m = data.ON->m;
+    x /= sqrt(w[NORM2]);
 
-    for (int i = 1; i <= data.ON->m; i++) {
+    for (int i = 1; i <= m; i++) {
         data.Zx[i] += w[i] * x * data.ON->D[i];
     }
     data.norm2_x += x * x;
@@ -297,9 +305,12 @@ void compute_Zx_and_norm(update_data& data, float x, float& wref) {
 
 void update_wbar_and_Zx(update_data& data, float x, float& wref) {
     float* w = &wref;
+    int m = data.ON->m;
+    x /= sqrt(w[NORM2]);
+
     double g = data.g * x;
 
-    for (int i = 1; i <= data.ON->m; i++) {
+    for (int i = 1; i <= m; i++) {
         data.Zx[i] += w[i] * x * data.ON->D[i];
     }
     w[0] -= g / data.ON->alpha;
@@ -438,7 +449,7 @@ base_learner* OjaNewton_setup(vw& all) {
     ON.data.AZx = calloc_or_die<double>(ON.m+1);
     ON.data.delta = calloc_or_die<double>(ON.m+1);
 
-    all.reg.stride_shift = ceil(log2(ON.m + 1));
+    all.reg.stride_shift = ceil(log2(ON.m + 2));
 
     learner<OjaNewton>& l = init_learner(&ON, learn, 1 << all.reg.stride_shift);
 
