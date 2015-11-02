@@ -22,7 +22,6 @@ namespace std
   class future;
 }
 #else
-
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
