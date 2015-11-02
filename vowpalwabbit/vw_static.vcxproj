@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -248,6 +248,7 @@
     <ClInclude Include="cache.h" />
     <ClInclude Include="cb_adf.h" />
     <ClInclude Include="comp_io.h" />
+    <ClInclude Include="confidence.h" />
     <ClInclude Include="constant.h" />
     <ClInclude Include="csoaa.h" />
     <ClInclude Include="ect.h" />
@@ -326,6 +327,7 @@
     <ClCompile Include="cbify.cc" />
     <ClCompile Include="cb_adf.cc" />
     <ClCompile Include="comp_io.cc" />
+    <ClCompile Include="confidence.cc" />
     <ClCompile Include="csoaa.cc" />
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />

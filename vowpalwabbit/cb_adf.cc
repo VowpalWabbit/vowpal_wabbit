@@ -59,8 +59,7 @@ struct cb_adf
 namespace CB_ADF
 {
 void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
-{ 
-  if (cs_labels.size() < examples.size())
+{ if (cs_labels.size() < examples.size())
   { cs_labels.resize(examples.size());
     cs_labels.end = cs_labels.end_array;
   }
@@ -72,7 +71,7 @@ void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::labe
     if (shared && i > 0)
       wc.class_index = i-1;
     else
-      wc.class_index = 0;
+      wc.class_index = i;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
       wc.x = ld.costs[0].cost / ld.costs[0].probability;
     else
@@ -124,16 +123,11 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
     else
       wc.class_index = i;
     c.pred_scores.costs.push_back(wc); // done
-    wc.class_index = 0;
 
     //add correction if we observed cost for this action and regressor is wrong
     if (c.known_cost.probability != -1 && c.known_cost.action + startK == i)
     { wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
     }
-
-    //cout<<"Action "<<c.known_cost.action<<" Cost "<<c.known_cost.cost<<" Probability "<<c.known_cost.probability<<endl;
-
-    //cout<<"Prediction = "<<wc.x<<" ";
     cs_labels[i].costs.erase();
     cs_labels[i].costs.push_back(wc);
   }
@@ -147,9 +141,6 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
   { cs_labels[0].costs[0].class_index = 0;
     cs_labels[0].costs[0].x = -FLT_MAX;
   }
-
-  //cout<<endl;
-
 }
 
 void get_observed_cost(cb_adf& mydata, v_array<example*>& examples)
@@ -187,8 +178,8 @@ void get_observed_cost(cb_adf& mydata, v_array<example*>& examples)
 }
 
 template<bool is_learn>
-void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples, 
-			   v_array<CB::label>& cb_labels, v_array<COST_SENSITIVE::label>& cs_labels)
+void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples,
+                           v_array<CB::label>& cb_labels, v_array<COST_SENSITIVE::label>& cs_labels)
 { // first of all, clear the container mydata.array.
   cb_labels.erase();
 
@@ -215,13 +206,13 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
     (**ec).l.cb = cb_labels[i++];
 
   if (!mydata.rank_all)
-    { uint32_t action = 0;
-      for (size_t i = 0; i < mydata.ec_seq.size(); i++)
-	if (!CB::ec_is_example_header(*mydata.ec_seq[i]) && !example_is_newline(*mydata.ec_seq[i]))
-	  if (mydata.ec_seq[i]->pred.multiclass != 0)
-	    action = mydata.ec_seq[i]->pred.multiclass;
-      mydata.ec_seq[0]->pred.multiclass = action;
-    }
+  { uint32_t action = 0;
+    for (size_t i = 0; i < examples.size(); i++)
+      if (!CB::ec_is_example_header(*examples[i]) && !example_is_newline(*examples[i]))
+        if (examples[i]->pred.multiclass != 0)
+          action = examples[i]->pred.multiclass;
+    examples[0]->pred.multiclass = action;
+  }
 }
 
 void learn_IPS(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
@@ -234,55 +225,49 @@ void learn_DR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   call_predict_or_learn<true>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
 }
 
-  void gen_cs_example_MTR(cb_adf& data, v_array<example*>& ec_seq, v_array<example*>& mtr_ec_seq, v_array<COST_SENSITIVE::label>& mtr_cs_labels)
-{ 
-  mtr_ec_seq.erase();
+void gen_cs_example_MTR(cb_adf& data, v_array<example*>& ec_seq, v_array<example*>& mtr_ec_seq, v_array<COST_SENSITIVE::label>& mtr_cs_labels)
+{ mtr_ec_seq.erase();
   bool shared = CB::ec_is_example_header(*(ec_seq[0]));
   data.action_sum += ec_seq.size()-2; //-1 for shared -1 for end example
   if (!shared)
     data.action_sum += 1;
   data.event_sum++;
   uint32_t keep_count = 0;
-  
+
   for (size_t i = 0; i < ec_seq.size(); i++)
-    { CB::label ld = ec_seq[i]->l.cb;
-      
-      COST_SENSITIVE::wclass wc = {0, 0};
+  { CB::label ld = ec_seq[i]->l.cb;
 
-      bool keep_example = false;
-      if (shared && i == 0)
-	{
-	  wc.x = -FLT_MAX;
-	  keep_example = true;
-	}
-      else if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
-	{
-	  wc.x = ld.costs[0].cost;
-	  data.mtr_example = i;
-	  keep_example = true;
-	}
-      
-      else if (i == ec_seq.size() - 1)
-	{
-	  wc.x = FLT_MAX; //trigger end of multiline example.
-	  keep_example = true;
-	}
+    COST_SENSITIVE::wclass wc = {0, 0};
 
-      if (keep_example)
-	{
-	  mtr_ec_seq.push_back(ec_seq[i]);
-	  mtr_cs_labels[keep_count].costs.erase();
-	  mtr_cs_labels[keep_count++].costs.push_back(wc);
-	}
+    bool keep_example = false;
+    if (shared && i == 0)
+    { wc.x = -FLT_MAX;
+      keep_example = true;
     }
+    else if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
+    { wc.x = ld.costs[0].cost;
+      data.mtr_example = i;
+      keep_example = true;
+    }
+
+    else if (i == ec_seq.size() - 1)
+    { wc.x = FLT_MAX; //trigger end of multiline example.
+      keep_example = true;
+    }
+
+    if (keep_example)
+    { mtr_ec_seq.push_back(ec_seq[i]);
+      mtr_cs_labels[keep_count].costs.erase();
+      mtr_cs_labels[keep_count++].costs.push_back(wc);
+    }
+  }
 }
 
-  template<class T> void swap(T& ele1, T& ele2)
-  {
-    T temp = ele2;
-    ele2 = ele1;
-    ele1 = temp;
-  }
+template<class T> void swap(T& ele1, T& ele2)
+{ T temp = ele2;
+  ele2 = ele1;
+  ele1 = temp;
+}
 
 void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 { //first get the prediction to return
@@ -299,7 +284,7 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   gen_cs_example_MTR(mydata, examples, mydata.mtr_ec_seq, mydata.mtr_cs_labels);
   uint32_t nf = examples[mydata.mtr_example]->num_features;
   float old_weight = examples[mydata.mtr_example]->weight;
-  examples[mydata.mtr_example]->weight *= 1. / examples[mydata.mtr_example]->l.cb.costs[0].probability * ((float)mydata.event_sum / (float)mydata.action_sum);
+  examples[mydata.mtr_example]->weight *= 1.f / examples[mydata.mtr_example]->l.cb.costs[0].probability * ((float)mydata.event_sum / (float)mydata.action_sum);
   call_predict_or_learn<true>(mydata, base, mydata.mtr_ec_seq, mydata.cb_labels, mydata.mtr_cs_labels);
   examples[mydata.mtr_example]->num_features = nf;
   examples[mydata.mtr_example]->weight = old_weight;

@@ -32,6 +32,7 @@ license as described in the file LICENSE.
 #include "csoaa.h"
 #include "cb_algs.h"
 #include "cb_adf.h"
+#include "confidence.h"
 #include "scorer.h"
 #include "expreplay.h"
 #include "search.h"
@@ -72,7 +73,7 @@ bool ends_with(string const &fullString, string const &ending)
   }
   else
   { return false;
-}
+  }
 }
 
 unsigned long long hash_file_contents(io_buf *io, int f)
@@ -94,7 +95,7 @@ bool directory_exists(string path)
   if (stat(path.c_str(), &info) != 0)
     return false;
   else
-    return (info.st_mode & S_IFDIR);
+    return (info.st_mode & S_IFDIR) > 0;
   //  boost::filesystem::path p(path);
   //  return boost::filesystem::exists(p) && boost::filesystem::is_directory(p);
 }
@@ -225,7 +226,7 @@ void parse_dictionary_argument(vw&all, string str)
   delete io;
   VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
-
+  
   if (! all.quiet)
     cerr << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "\n" : "s\n");
 
@@ -462,29 +463,29 @@ namespace VW
 // return a copy of string replacing \x00 sequences in it
 string spoof_hex_encoded_namespaces(const string& arg)
 { string res;
-    int pos = 0;
-    while (pos < (int)arg.size()-3)
+  int pos = 0;
+  while (pos < (int)arg.size()-3)
   { if (arg[pos] == '\\' && arg[pos+1] == 'x')
     { string substr = arg.substr(pos+2,2);
-            char* p;
-            unsigned char c = (unsigned char) strtoul(substr.c_str(), &p, 16);
-            if (*p == '\0')
+      char* p;
+      unsigned char c = (unsigned char) strtoul(substr.c_str(), &p, 16);
+      if (*p == '\0')
       { res.push_back(c);
-                pos += 4;
+        pos += 4;
       }
       else
       { cerr << "Possibly malformed hex representation of a namespace: '\\x" << substr << "'\n";
-                res.push_back(arg[pos++]);
-            }
+        res.push_back(arg[pos++]);
+      }
     }
     else
-            res.push_back(arg[pos++]);
-    }
+      res.push_back(arg[pos++]);
+  }
 
-    while (pos < (int)arg.size()) //copy last 2 characters
-        res.push_back(arg[pos++]);
+  while (pos < (int)arg.size()) //copy last 2 characters
+    res.push_back(arg[pos++]);
 
-    return res;
+  return res;
 }
 
 void parse_feature_tweaks(vw& all)
@@ -541,7 +542,7 @@ void parse_feature_tweaks(vw& all)
 
     all.ngram_strings = vm["ngram"].as< vector<string> >();
     for (size_t i = 0; i < all.ngram_strings.size(); i++)
-        all.ngram_strings[i] = spoof_hex_encoded_namespaces(all.ngram_strings[i]);
+      all.ngram_strings[i] = spoof_hex_encoded_namespaces(all.ngram_strings[i]);
     compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.quiet);
   }
 
@@ -551,7 +552,7 @@ void parse_feature_tweaks(vw& all)
 
     all.skip_strings = vm["skips"].as<vector<string> >();
     for (size_t i = 0; i < all.skip_strings.size(); i++)
-        all.skip_strings[i] = spoof_hex_encoded_namespaces(all.skip_strings[i]);
+      all.skip_strings[i] = spoof_hex_encoded_namespaces(all.skip_strings[i]);
     compile_gram(all.skip_strings, all.skips, (char*)"skips", all.quiet);
   }
 
@@ -571,7 +572,7 @@ void parse_feature_tweaks(vw& all)
     VW::validate_num_bits(all);
   }
 
-  all.permutations = vm.count("permutations");
+  all.permutations = vm.count("permutations") > 0;
 
   // prepare namespace interactions
   v_array<v_string> expanded_interactions = v_init<v_string>();
@@ -596,11 +597,11 @@ void parse_feature_tweaks(vw& all)
     if (!all.quiet)
       cerr << "creating quadratic features for pairs: ";
 
-      for (vector<string>::iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+    for (vector<string>::iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
     { *all.file_options << " --quadratic " << *i;
-        *i = spoof_hex_encoded_namespaces(*i);
-        if (!all.quiet) cerr << *i << " ";
-      }
+      *i = spoof_hex_encoded_namespaces(*i);
+      if (!all.quiet) cerr << *i << " ";
+    }
 
     expanded_interactions = INTERACTIONS::expand_interactions(vec_arg, 2, "error, quadratic features must involve two sets.");
 
@@ -685,16 +686,16 @@ void parse_feature_tweaks(vw& all)
     vector<string> ignore = vm["ignore"].as< vector<string> >();
     for (vector<string>::iterator i = ignore.begin(); i != ignore.end(); i++)
     { *i = spoof_hex_encoded_namespaces(*i);
-        for (string::const_iterator j = i->begin(); j != i->end(); j++)
-            all.ignore[(size_t)(unsigned char)*j] = true;
+      for (string::const_iterator j = i->begin(); j != i->end(); j++)
+        all.ignore[(size_t)(unsigned char)*j] = true;
 
     }
 
     if (!all.quiet)
     { cerr << "ignoring namespaces beginning with: ";
       for (vector<string>::iterator i = ignore.begin(); i != ignore.end(); i++)
-          for (string::const_iterator j = i->begin(); j != i->end(); j++)
-              cerr << *j << " ";
+        for (string::const_iterator j = i->begin(); j != i->end(); j++)
+          cerr << *j << " ";
 
       cerr << endl;
     }
@@ -709,17 +710,17 @@ void parse_feature_tweaks(vw& all)
     vector<string> keep = vm["keep"].as< vector<string> >();
     for (vector<string>::iterator i = keep.begin(); i != keep.end(); i++)
     { *i = spoof_hex_encoded_namespaces(*i);
-        for (string::const_iterator j = i->begin(); j != i->end(); j++)
-            all.ignore[(size_t)(unsigned char)*j] = false;
+      for (string::const_iterator j = i->begin(); j != i->end(); j++)
+        all.ignore[(size_t)(unsigned char)*j] = false;
     }
 
     if (!all.quiet)
     { cerr << "using namespaces beginning with: ";
-        for (vector<string>::iterator i = keep.begin(); i != keep.end(); i++)
-            for (string::const_iterator j = i->begin(); j != i->end(); j++)
-                cerr << *j << " ";
+      for (vector<string>::iterator i = keep.begin(); i != keep.end(); i++)
+        for (string::const_iterator j = i->begin(); j != i->end(); j++)
+          cerr << *j << " ";
 
-        cerr << endl;
+      cerr << endl;
     }
   }
 
@@ -1038,6 +1039,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'b', simple_label>);
   all.reduction_stack.push_back(active_setup);
   all.reduction_stack.push_back(active_cover_setup);
+  all.reduction_stack.push_back(confidence_setup);
   all.reduction_stack.push_back(nn_setup);
   all.reduction_stack.push_back(mf_setup);
   all.reduction_stack.push_back(autolink_setup);
@@ -1096,61 +1098,60 @@ vw& parse_args(int argc, char *argv[])
 { vw& all = *(new vw());
 
   try
-  {
-    all.vw_is_main = false;
-    add_to_args(all, argc, argv);
+  { all.vw_is_main = false;
+  add_to_args(all, argc, argv);
 
-    all.program_name = argv[0];
+  all.program_name = argv[0];
 
-    time(&all.init_time);
+  time(&all.init_time);
 
-    new_options(all, "VW options")
-      ("random_seed", po::value<size_t>(&(all.random_seed)), "seed random number generator")
-      ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring");
-    add_options(all);
+  new_options(all, "VW options")
+  ("random_seed", po::value<size_t>(&(all.random_seed)), "seed random number generator")
+  ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring");
+  add_options(all);
 
-    new_options(all, "Update options")
-      ("learning_rate,l", po::value<float>(&(all.eta)), "Set learning rate")
-      ("power_t", po::value<float>(&(all.power_t)), "t power value")
-      ("decay_learning_rate", po::value<float>(&(all.eta_decay_rate)),
-        "Set Decay factor for learning_rate between passes")
-      ("initial_t", po::value<double>(&((all.sd->t))), "initial t value")
-      ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights.");
-    add_options(all);
+  new_options(all, "Update options")
+  ("learning_rate,l", po::value<float>(&(all.eta)), "Set learning rate")
+  ("power_t", po::value<float>(&(all.power_t)), "t power value")
+  ("decay_learning_rate", po::value<float>(&(all.eta_decay_rate)),
+   "Set Decay factor for learning_rate between passes")
+  ("initial_t", po::value<double>(&((all.sd->t))), "initial t value")
+  ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights.");
+  add_options(all);
 
-    new_options(all, "Weight options")
-      ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
-      ("initial_weight", po::value<float>(&(all.initial_weight)), "Set all weights to an initial value of arg.")
-      ("random_weights", po::value<bool>(&(all.random_weights)), "make initial weights random")
-      ("input_feature_regularizer", po::value< string >(&(all.per_feature_regularizer_input)), "Per feature regularization input file");
-    add_options(all);
+  new_options(all, "Weight options")
+  ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
+  ("initial_weight", po::value<float>(&(all.initial_weight)), "Set all weights to an initial value of arg.")
+  ("random_weights", po::value<bool>(&(all.random_weights)), "make initial weights random")
+  ("input_feature_regularizer", po::value< string >(&(all.per_feature_regularizer_input)), "Per feature regularization input file");
+  add_options(all);
 
-    new_options(all, "Parallelization options")
-      ("span_server", po::value<string>(), "Location of server for setting up spanning tree")
-      ("threads", "Enable multi-threading")
-      ("unique_id", po::value<size_t>()->default_value(0), "unique id used for cluster parallel jobs")
-      ("total", po::value<size_t>()->default_value(1), "total number of nodes used in cluster parallel job")
-      ("node", po::value<size_t>()->default_value(0), "node number in cluster parallel job");
-    add_options(all);
+  new_options(all, "Parallelization options")
+  ("span_server", po::value<string>(), "Location of server for setting up spanning tree")
+  ("threads", "Enable multi-threading")
+  ("unique_id", po::value<size_t>()->default_value(0), "unique id used for cluster parallel jobs")
+  ("total", po::value<size_t>()->default_value(1), "total number of nodes used in cluster parallel job")
+  ("node", po::value<size_t>()->default_value(0), "node number in cluster parallel job");
+  add_options(all);
 
-    po::variables_map& vm = all.vm;
-    if (vm.count("span_server"))
-    { all.all_reduce_type = AllReduceType::Socket;
-      all.all_reduce = new AllReduceSockets(
-        vm["span_server"].as<string>(),
-        vm["unique_id"].as<size_t>(),
-        vm["total"].as<size_t>(),
-        vm["node"].as<size_t>());
-    }
-
-    msrand48(all.random_seed);
-    parse_diagnostics(all, argc);
-
-    all.sd->weighted_unlabeled_examples = all.sd->t;
-    all.initial_t = (float)all.sd->t;
-
-    return all;
+  po::variables_map& vm = all.vm;
+  if (vm.count("span_server"))
+  { all.all_reduce_type = AllReduceType::Socket;
+    all.all_reduce = new AllReduceSockets(
+      vm["span_server"].as<string>(),
+      vm["unique_id"].as<size_t>(),
+      vm["total"].as<size_t>(),
+      vm["node"].as<size_t>());
   }
+
+  msrand48(all.random_seed);
+  parse_diagnostics(all, argc);
+
+  all.sd->weighted_unlabeled_examples = all.sd->t;
+  all.initial_t = (float)all.sd->t;
+
+  return all;
+}
   catch (...)
   { VW::finish(all);
     throw;
@@ -1309,17 +1310,16 @@ vw* initialize(string s)
 
   try
   { io_buf model;
-    parse_regressor_args(all, model);
-    parse_modules(all, model);
-    parse_sources(all, model);
+  parse_regressor_args(all, model);
+  parse_modules(all, model);
+  parse_sources(all, model);
 
-    initialize_parser_datastructures(all);
+  initialize_parser_datastructures(all);
 
-    return &all;
-  }
+  return &all;
+}
   catch (...)
-  {
-    finish(all);
+  { finish(all);
     throw;
   }
 }
@@ -1360,22 +1360,22 @@ void delete_dictionary_entry(substring ss, v_array<feature>*A)
   delete A;
 }
 
-  void sync_stats(vw& all)
+void sync_stats(vw& all)
 { if (all.all_reduce != nullptr)
   { float loss = (float)all.sd->sum_loss;
-		  all.sd->sum_loss = (double)accumulate_scalar(all, loss);
-		  float weighted_examples = (float)all.sd->weighted_examples;
-		  all.sd->weighted_examples = (double)accumulate_scalar(all, weighted_examples);
-		  float weighted_labels = (float)all.sd->weighted_labels;
-		  all.sd->weighted_labels = (double)accumulate_scalar(all, weighted_labels);
-		  float weighted_unlabeled_examples = (float)all.sd->weighted_unlabeled_examples;
-		  all.sd->weighted_unlabeled_examples = (double)accumulate_scalar(all, weighted_unlabeled_examples);
-		  float example_number = (float)all.sd->example_number;
-		  all.sd->example_number = (uint64_t)accumulate_scalar(all, example_number);
-		  float total_features = (float)all.sd->total_features;
-		  all.sd->total_features = (uint64_t)accumulate_scalar(all, total_features);
-	  }
+    all.sd->sum_loss = (double)accumulate_scalar(all, loss);
+    float weighted_examples = (float)all.sd->weighted_examples;
+    all.sd->weighted_examples = (double)accumulate_scalar(all, weighted_examples);
+    float weighted_labels = (float)all.sd->weighted_labels;
+    all.sd->weighted_labels = (double)accumulate_scalar(all, weighted_labels);
+    float weighted_unlabeled_examples = (float)all.sd->weighted_unlabeled_examples;
+    all.sd->weighted_unlabeled_examples = (double)accumulate_scalar(all, weighted_unlabeled_examples);
+    float example_number = (float)all.sd->example_number;
+    all.sd->example_number = (uint64_t)accumulate_scalar(all, example_number);
+    float total_features = (float)all.sd->total_features;
+    all.sd->total_features = (uint64_t)accumulate_scalar(all, total_features);
   }
+}
 
 void finish(vw& all, bool delete_all)
 { if (!all.quiet)
@@ -1393,6 +1393,12 @@ void finish(vw& all, bool delete_all)
       cerr << endl << "average loss = " << all.sd->sum_loss / all.sd->weighted_examples;
     else
       cerr << endl << "average loss = " << all.sd->holdout_best_loss << " h";
+    if (all.sd->report_multiclass_log_loss)
+    { if (all.holdout_set_off)
+        cerr << endl << "average multiclass log loss = " << all.sd->multiclass_log_loss / all.sd->weighted_examples;
+      else
+        cerr << endl << "average multiclass log loss = " << all.sd->holdout_multiclass_log_loss / all.sd->weighted_examples << " h";
+    }
 
     float best_constant; float best_constant_loss;
     if (get_best_constant(all, best_constant, best_constant_loss))
@@ -1432,10 +1438,9 @@ void finish(vw& all, bool delete_all)
   all.p->parse_name.delete_v();
   free(all.p);
   if (!all.seeded)
-  {
-      delete(all.sd->ldict);
-    free(all.sd);
-  }
+  { delete(all.sd->ldict);
+      free(all.sd); 
+    }
   all.reduction_stack.delete_v();
   delete all.file_options;
   for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
@@ -1450,7 +1455,7 @@ void finish(vw& all, bool delete_all)
   }
   delete all.loss;
 
-	delete all.all_reduce;
+  delete all.all_reduce;
 
   // destroy all interactions and array of them
   for (v_string* i = all.interactions.begin; i != all.interactions.end; ++i) i->delete_v();

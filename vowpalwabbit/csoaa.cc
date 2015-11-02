@@ -140,6 +140,7 @@ struct ldf
   bool first_pass;
   bool treat_as_classifier;
   bool is_singleline;
+  bool is_probabilities;
   float csoaa_example_t;
   vw* all;
 
@@ -468,6 +469,23 @@ void do_actual_learning(ldf& data, base_learner& base)
   if (start_K > 0)
     for (size_t k=1; k<K; k++)
       LabelDict::del_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0], (data.all->audit || data.all->hash_inv));
+
+  ////////////////////// compute probabilities
+  if (data.is_probabilities)
+  { float sum_prob = 0;
+    for (size_t k=start_K; k<K; k++)
+    { // probability(correct_class) = 1 / (1+exp(-score)), where score is higher for better classes,
+      // but partial_prediction is lower for better classes (we are predicting the cost),
+      // so we need to take score = -partial_prediction,
+      // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
+      float prob = 1.f / (1.f + exp(data.ec_seq[k]->partial_prediction));
+      data.ec_seq[k]->pred.prob = prob;
+      sum_prob += prob;
+    }
+    // make sure that the probabilities sum up (exactly) to one
+    for (size_t k=start_K; k<K; k++)
+      data.ec_seq[k]->pred.prob /= sum_prob;
+  }
 }
 
 void global_print_newline(vw& all)
@@ -482,7 +500,7 @@ void global_print_newline(vw& all)
   }
 }
 
-void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_seq)
+void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_seq, ldf& data)
 { label& ld = ec.l.cs;
   v_array<COST_SENSITIVE::wclass> costs = ld.costs;
 
@@ -494,10 +512,33 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
 
   float loss = 0.;
 
+  uint32_t predicted_class;
+  if (data.is_probabilities)
+  { // predicted_K was already computed in do_actual_learning(),
+    // but we cannot store it in ec.pred union because we store ec.pred.prob there.
+    // So we must compute it again.
+    size_t start_K = 0;
+    size_t K = ec_seq->size();
+    if (ec_is_example_header(*ec_seq->get(0)))
+      start_K = 1;
+    uint32_t predicted_K = start_K;
+    float  min_score = FLT_MAX;
+    for (size_t k=start_K; k<K; k++)
+    { example *ec = ec_seq->get(k);
+      if (ec->partial_prediction < min_score)
+      { min_score = ec->partial_prediction;
+        predicted_K = k;
+      }
+    }
+    predicted_class = ec_seq->get(predicted_K)->l.cs.costs[0].class_index;
+  }
+  else
+    predicted_class = ec.pred.multiclass;
+
   if (!COST_SENSITIVE::example_is_test(ec))
   { for (size_t j=0; j<costs.size(); j++)
     { if (hit_loss) break;
-      if (ec.pred.multiclass == costs[j].class_index)
+      if (predicted_class == costs[j].class_index)
       { loss = costs[j].x;
         hit_loss = true;
       }
@@ -509,7 +550,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
   }
 
   for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-    all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
+    all.print(*sink, data.is_probabilities ? ec.pred.prob : (float)ec.pred.multiclass, 0, ec.tag);
 
   if (all.raw_prediction > 0)
   { string outputString;
@@ -522,7 +563,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(ec), ec, ec_seq);
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(ec), ec, ec_seq, false, predicted_class);
 }
 
 void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<example*>* ec_seq)
@@ -568,11 +609,12 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
     all.print_text(all.raw_prediction, outputStringStream.str(), head_ec.tag);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(head_ec), head_ec, ec_seq, true);
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(head_ec), head_ec, ec_seq, true, 0);
 }
 
 void output_example_seq(vw& all, ldf& data)
-{ if ((data.ec_seq.size() > 0) && !ec_seq_is_label_definition(data.ec_seq))
+{ size_t K = data.ec_seq.size();
+  if ((K > 0) && !ec_seq_is_label_definition(data.ec_seq))
   { all.sd->weighted_examples += 1;
     all.sd->example_number++;
 
@@ -581,11 +623,40 @@ void output_example_seq(vw& all, ldf& data)
       output_rank_example(all, **(data.ec_seq.begin), hit_loss, &(data.ec_seq));
     else
       for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
-        output_example(all, **ecc, hit_loss, &(data.ec_seq));
+        output_example(all, **ecc, hit_loss, &(data.ec_seq), data);
 
     if (!data.is_singleline && (all.raw_prediction > 0))
     { v_array<char> empty = { nullptr, nullptr, nullptr, 0 };
       all.print_text(all.raw_prediction, "", empty);
+    }
+
+    if (data.is_probabilities)
+    { size_t start_K = ec_is_example_header(*data.ec_seq[0]) ? 1 : 0;
+      float  min_cost = FLT_MAX;
+      size_t correct_class_k = start_K;
+
+      for (size_t k=start_K; k<K; k++)
+      { float ec_cost = data.ec_seq[k]->l.cs.costs[0].x;
+        if (ec_cost < min_cost)
+        { min_cost = ec_cost;
+          correct_class_k = k;
+        }
+      }
+
+      float multiclass_log_loss = 999; // -log(0) = plus infinity
+      float correct_class_prob = data.ec_seq[correct_class_k]->pred.prob;
+      if (correct_class_prob > 0)
+        multiclass_log_loss = -log(correct_class_prob);
+
+      // TODO: How to detect if we should update holdout or normal loss?
+      // (ec.test_only) OR (COST_SENSITIVE::example_is_test(ec))
+      // What should be the "ec"? data.ec_seq[0]?
+      // Based on parse_args.cc (where "average multiclass log loss") is printed,
+      // I decided to try yet another way: (!all.holdout_set_off).
+      if (!all.holdout_set_off)
+        all.sd->holdout_multiclass_log_loss += multiclass_log_loss;
+      else
+        all.sd->multiclass_log_loss += multiclass_log_loss;
     }
   }
 }
@@ -602,13 +673,13 @@ void end_pass(ldf& data)
 { data.first_pass = false;
 }
 
-void finish_singleline_example(vw& all, ldf&, example& ec)
+void finish_singleline_example(vw& all, ldf& data, example& ec)
 { if (! ec_is_label_definition(ec))
   { all.sd->weighted_examples += 1;
     all.sd->example_number++;
   }
   bool hit_loss = false;
-  output_example(all, ec, hit_loss, nullptr);
+  output_example(all, ec, hit_loss, nullptr, data);
   VW::finish_example(all, &ec);
 }
 
@@ -679,7 +750,8 @@ base_learner* csldf_setup(vw& all)
     return nullptr;
   new_options(all, "LDF Options")
   ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
-  ("csoaa_rank","Return actions sorted by score order");
+  ("csoaa_rank", "Return actions sorted by score order")
+  ("probabilities", "predict probabilites of all classes");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -727,6 +799,17 @@ base_learner* csldf_setup(vw& all)
     { ld.treat_as_classifier = true;
       ld.is_singleline = true;
     }
+  }
+
+  if( vm.count("probabilities") )
+  { ld.is_probabilities = true;
+    all.sd->report_multiclass_log_loss = true;
+    if (!vm.count("loss_function") || vm["loss_function"].as<string>() != "logistic" )
+      cerr << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
+    if (!ld.treat_as_classifier)
+      cerr << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << endl;
+  } else
+  { ld.is_probabilities = false;
   }
 
   all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld.is_singleline;

@@ -336,7 +336,7 @@ float macro_f(task_data& D)
       predC += (float)D.confusion_matrix[ IDX(j,k) ];
     }
     if (trueC == 0) continue;
-    float correctC = D.confusion_matrix[ IDX(k,k) ];
+    float correctC = (float)D.confusion_matrix[ IDX(k,k) ];
     count_f1++;
     if (correctC > 0)
     { float pre = correctC / predC;
@@ -349,7 +349,7 @@ float macro_f(task_data& D)
 
 void run(Search::search& sch, vector<example*>& ec)
 { task_data& D = *sch.get_task_data<task_data>();
-  float loss_val = 0.5 / (float)D.num_loops;
+  float loss_val = 0.5f / (float)D.num_loops;
   for (size_t n=0; n<D.N; n++) D.pred[n] = D.K+1;
 
   for (size_t loop=0; loop<D.num_loops; loop++)
@@ -367,7 +367,7 @@ void run(Search::search& sch, vector<example*>& ec)
       Search::predictor P = Search::predictor(sch, n+1);
       P.set_input(*ec[n]);
       if (false && (k > 0))
-      { float min_count = 1e12;
+      { float min_count = 1e12f;
         for (size_t k2=1; k2<=D.K; k2++)
           min_count = min(min_count, D.true_counts[k2]);
         float w = min_count / D.true_counts[k];
@@ -393,7 +393,7 @@ void run(Search::search& sch, vector<example*>& ec)
       // make the prediction
       D.pred[n] = P.predict();
       if (ec[n]->l.cs.costs.size() > 0) // for test examples
-        sch.loss((ec[n]->l.cs.costs[0].class_index == D.pred[n]) ? 0. : (last_loop ? 0.5 : loss_val));
+        sch.loss((ec[n]->l.cs.costs[0].class_index == D.pred[n]) ? 0.f : (last_loop ? 0.5f : loss_val));
 
       if (add_features) del_edge_features(D, n, ec);
     }
@@ -401,7 +401,7 @@ void run(Search::search& sch, vector<example*>& ec)
 
   for (uint32_t n=0; n<D.N; n++)
     D.confusion_matrix[ IDX( ec[n]->l.cs.costs[0].class_index, D.pred[n] ) ] ++;
-  sch.loss( 1. - macro_f(D) );
+  sch.loss( 1.f - macro_f(D) );
 
   if (sch.output().good())
     for (uint32_t n=0; n<D.N; n++)

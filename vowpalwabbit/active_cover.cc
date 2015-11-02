@@ -56,7 +56,7 @@ float get_pmin(float sum_loss, float t)
   }
 
   float avg_loss = sum_loss/t;
-  float pmin = fmin(1.f/(sqrt(t*avg_loss)+log(t)),0.5);
+  float pmin = fmin(1.f/(sqrt(t*avg_loss)+log(t)),0.5f);
   return pmin; // treating n*eps_n = 1
 }
 
@@ -111,7 +111,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 
     // Compute threshold defining allowed set A
     float threshold = get_threshold((float)all.sd->sum_loss, t, a.active_c0, a.alpha);
-    float in_dis =  dis_test(all, ec, prediction, threshold);
+    bool in_dis =  dis_test(all, ec, prediction, threshold);
     float pmin = get_pmin((float)all.sd->sum_loss, t);
     float importance = query_decision(a, base, ec, prediction, pmin, in_dis);
 
@@ -174,7 +174,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
       a.lambda_n[i] = fmax(a.lambda_n[i], 0.f);
 
       // Update denominator of lambda
-      a.lambda_d[i] += ((float)(sign(ec.pred.scalar) != sign(prediction) && in_dis)) / pow(q2,1.5);
+      a.lambda_d[i] += ((float)(sign(ec.pred.scalar) != sign(prediction) && in_dis)) / (float)pow(q2,1.5);
 
       // Accumulating weights of learners in the cover
       q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i]/a.lambda_d[i]);
@@ -189,8 +189,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 }
 
 void finish(active_cover& ac)
-{
-  delete[] ac.lambda_n;
+{ delete[] ac.lambda_n;
   delete[] ac.lambda_d;
 }
 
@@ -198,7 +197,7 @@ base_learner* active_cover_setup(vw& all)
 { //parse and set arguments
   if(missing_option(all, false, "active_cover", "enable active learning with cover"))
     return nullptr;
-  
+
   new_options(all, "Active Learning with cover options")
   ("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8.")
   ("alpha", po::value<float>(), "active learning variance upper bound parameter alpha. Default 1.")

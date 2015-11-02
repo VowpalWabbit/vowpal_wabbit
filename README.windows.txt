@@ -1,5 +1,3 @@
-Building VW on Windows
-
 Originally by Chris Quirk <chrisq@microsoft.com>
 **************************************************************************************************************
 Notes for building VW under Visual Studio 2013 on Windows 8.1
@@ -8,14 +6,21 @@ Notes for building VW under Visual Studio 2013 on Windows 8.1
 Replace source dependencies with Nuget
 04/29/2015 Sharat Chikkerur sharat.chikkerur@gmail.com
 
+Added ANTLR based unit test
+10/2/2015 Markus Cozowicz marcozo@microsoft.com
+
 **************************************************************************************************************
 (1) Get Tools
-You'll need a Visual Studio 2013 installed that includes c# and c++
+You'll need a Visual Studio 2013 (or 2015) installed that includes c# and c++
+You should install Visual Studio 2013 Update 5: https://www.microsoft.com/en-us/download/details.aspx?id=48129
 You'll also need the Windows SDK which you can download from Microsoft at
 	http://msdn.microsoft.com/en-us/windows/desktop/bg162891.aspx
 
 You'll need Nuget integration with visual studio
 	http://docs.nuget.org/consume
+
+You'll need Java to run unit tests
+	http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html
 **************************************************************************************************************
 (2) open a copy various command shells
 
@@ -45,18 +50,27 @@ I use c:\src\vw as my %ROOT% directory;
 	details of the changes are in bottom of this file.
 
 **************************************************************************************************************
+(5) Restore nugets
+
+
+    (a) In a  command shell to %ROOT%\vowpalwabbit : "cd c:\src\vw\vowpalwabbit" 
+    (b) run ".nuget\NuGet.exe restore vw.sln"
+	This will restore the ANTLR nuget which is needed before Visual Studio loads the solution.	
+
 **************************************************************************************************************
 (5) Build Vowpal Wabbit 
 
 	(a) Using visual studio
 	Open %ROOT%\vowpal_wabbit\vowpalwabbit\vw.sln in Visual Studio 2013
 	Set startup project as vw (or the test project)
+     	
+	Select x64 platform (Configuration Manager \ Active solution platfrom)
+	Select x64 as test platform (Test \ Test settings \ Default Processor Architecture)
+
 	run  build>rebuild solution
 		or run  batch build
-    Binaries will be in one of these four directories, based on whether you built DEBUG or RELEASE bits and whether you are building x64 or Win32.
+    Binaries will be in one of these four directories, based on whether you built DEBUG or RELEASE bits and whether you are building x64.
 
-		%ROOT%\vowpal_wabbit\vowpalwabbit\x86\Debug\vw.exe
-		%ROOT%\vowpal_wabbit\vowpalwabbit\x86\Release\vw.exe
 		%ROOT%\vowpal_wabbit\vowpalwabbit\x64\Debug\vw.exe
 		%ROOT%\vowpal_wabbit\vowpalwabbit\x64\Release\vw.exe
 	Missing nugets will be installed during the build.
@@ -64,6 +78,11 @@ I use c:\src\vw as my %ROOT% directory;
 	(b) Using command line (available configurations are "Release" and "Debug". Available platforms are "x64" and "Win32")
 	run>msbuild /p:Configuration="Release" /p:Platform="x64" vw.sln
 	
+	
+	Note: If you failed to do so before opening the solution, the cs_unittest
+	project is in a "not loaded" state. After executing the above you'll have to
+	hit "Reload" (Project / Context Menu) in Visual Studio.
+
 **************************************************************************************************************
 (8) Test
 	There's a new test batch file that runs a quick test on all four configurations
