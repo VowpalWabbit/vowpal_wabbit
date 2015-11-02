@@ -1376,6 +1376,6 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 
 # Test 113: Predictions with confidences
 # use -b 30 to get better performnce
-{VW} --confidence -d ./train-sets/rcv1_small.dat -p confidence.preds
+{VW} --confidence -d ./train-sets/rcv1_micro.dat -p confidence.preds
     train-sets/ref/confidence.stderr
     pred-sets/ref/confidence.preds
