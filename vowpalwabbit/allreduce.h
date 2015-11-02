@@ -15,6 +15,16 @@ typedef unsigned short uint16_t;
 typedef int socklen_t;
 typedef SOCKET socket_t;
 #define CLOSESOCK closesocket
+namespace std
+{
+  // forward declare promise as C++/CLI doesn't allow usage in header files
+  template<typename T>
+  class promise;
+
+  class condition_variable;
+
+  class mutex;
+}
 #else
 #include <sys/socket.h>
 #include <sys/socket.h>
@@ -27,6 +37,7 @@ typedef SOCKET socket_t;
 #include <string.h>
 typedef int socket_t;
 #define CLOSESOCK close
+#include <future>
 #endif
 #include "vw_exception.h"
 #include <assert.h>
@@ -80,19 +91,6 @@ struct Data
 { void* buffer;
   size_t length;
 };
-
-#ifndef __APPLE__
-namespace std
-{
-// forward declare promise as C++/CLI doesn't allow usage in header files
-template<typename T>
-class promise;
-
-class condition_variable;
-
-class mutex;
-}
-#endif
 
 class AllReduceSync
 {

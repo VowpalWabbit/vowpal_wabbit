@@ -15,6 +15,12 @@ typedef unsigned short uint16_t;
 typedef int socklen_t;
 typedef SOCKET socket_t;
 
+namespace std
+{
+  // forward declare promise as C++/CLI doesn't allow usage in header files
+  template<typename T>
+  class future;
+}
 #else
 
 #include <unistd.h>
@@ -29,16 +35,7 @@ typedef SOCKET socket_t;
 
 typedef int socket_t;
 
-#endif
-
-#ifdef __APPLE__
 #include <future>
-#else
-namespace std
-{
-template<typename T>
-class future;
-}
 #endif
 
 namespace VW
