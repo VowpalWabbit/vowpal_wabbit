@@ -38,6 +38,10 @@ namespace VW
 
         private VowpalWabbitSerializer<TActionDependentFeature>[] actionDependentFeatureSerializers;
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="settings">The list of settings to be used.</param>
         public VowpalWabbitSweep(List<VowpalWabbitSettings> settings)
         {
             if (settings == null || settings.Count == 0)
@@ -58,8 +62,15 @@ namespace VW
             this.actionDependentFeatureSerializers = this.vws.Select(vw => VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings).Create(vw)).ToArray();
         }
 
+        /// <summary>
+        /// The internally allocated VW instances.
+        /// </summary>
         public VowpalWabbit[] VowpalWabbits { get { return this.vws; } }
 
+        /// <summary>
+        /// Creates a partioner used for parallel scenarios.
+        /// </summary>
+        /// <returns>An ordered partitioner.</returns>
         public OrderablePartitioner<Tuple<int, int>> CreatePartitioner()
         {
             return Partitioner.Create(0, this.vws.Length, Math.Min(this.vws.Length, NumberOfVWInstancesSharingExamples));
@@ -69,6 +80,8 @@ namespace VW
         /// Learn from the given example and return the current prediction for it.
         /// </summary>
         /// <param name="example">The shared example.</param>
+        /// <param name="fromInclusive">Instance number to start from.</param>
+        /// <param name="toExclusive">Instance number to end at.</param>
         /// <param name="actionDependentFeatures">The action dependent features.</param>
         /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
         /// <param name="label">The label for the example to learn.</param>

@@ -173,6 +173,8 @@ namespace VW.Reflection
         /// </summary>
         public static MemberInfo GetInfo<T, TResult>(Expression<Func<T, TResult>> expression)
         {
+            Contract.Requires(expression != null);
+
             return GetInfo(expression.Body);
         }
 
@@ -181,6 +183,8 @@ namespace VW.Reflection
         /// </summary>
         public static MemberInfo GetInfo<T>(Expression<Action<T>> expression)
         {
+            Contract.Requires(expression != null);
+
             return GetInfo(expression.Body);
         }
 
@@ -189,6 +193,8 @@ namespace VW.Reflection
         /// </summary>
         public static MemberInfo GetInfo(Expression expression)
         {
+            Contract.Requires(expression != null);
+
             var binaryExpression = expression as BinaryExpression;
             if (binaryExpression != null)
             {

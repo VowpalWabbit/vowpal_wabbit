@@ -87,6 +87,9 @@ namespace VW
             this.learnSerializer = this.serializer.CachesExamples ? null : this.serializer;
         }
 
+        /// <summary>
+        /// The serializer used to marshal examples.
+        /// </summary>
         public VowpalWabbitSerializerCompiled<TExample> Serializer
         {
             get
@@ -329,6 +332,8 @@ namespace VW
         /// </summary>
         /// <param name="example">The shared example.</param>
         /// <param name="actionDependentFeatures">The action dependent features.</param>
+        /// <param name="index">The index of the example to evaluate within <paramref name="actionDependentFeatures"/>.</param>
+        /// <param name="label">The label for the example to evaluate.</param>
         /// <returns>The ranked prediction for the given examples.</returns>
         public ActionDependentFeature<TActionDependentFeature>[] Predict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int? index = null, ILabel label = null)
         {

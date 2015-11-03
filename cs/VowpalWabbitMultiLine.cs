@@ -92,6 +92,13 @@ namespace VW
             return stringExample.ToString();
         }
 
+        /// <summary>
+        /// A named delegate for the action to be taken once all the examples are marshalled.
+        /// </summary>
+        /// <typeparam name="TActionDependentFeature">The action dependent feature user type.</typeparam>
+        /// <param name="validExamples">Marshalled valid examples.</param>
+        /// <param name="validActionDependentFeatures">List of valid marshalled examples.</param>
+        /// <param name="emptyActionDependentFeatures">List of empty non-marshalled examples.</param>
         public delegate void LearnOrPredictAction<TActionDependentFeature>(
             IReadOnlyList<VowpalWabbitExample> validExamples,
             IReadOnlyList<ActionDependentFeature<TActionDependentFeature>> validActionDependentFeatures,
@@ -294,6 +301,8 @@ namespace VW
         /// <param name="actionDependentFeatureSerializer">The serializer for <typeparamref name="TActionDependentFeature"/>.</param>
         /// <param name="example">The user example.</param>
         /// <param name="actionDependentFeatures">The action dependent features.</param>
+        /// <param name="index">The index of action dependent feature to label.</param>
+        /// <param name="label">The label for the selected action dependent feature.</param>
         /// <returns>An ranked subset of predicted actions.</returns>
         public static ActionDependentFeature<TActionDependentFeature>[] Predict<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
@@ -339,11 +348,11 @@ namespace VW
         /// action dependent feature objcts that did produce empty examples at the end.
         /// </summary>
         /// <typeparam name="TActionDependentFeature">The action dependent feature type.</typeparam>
-        /// <param name="vw"The Vowpal Wabbit instance.></param>
+        /// <param name="vw">The Vowpal Wabbit instance.></param>
         /// <param name="examples">The list of examples.</param>
         /// <param name="validActionDependentFeatures">The list of non-empty action dependent feature objects.</param>
         /// <param name="emptyActionDependentFeatures">The list of empty action dependent feature objects.</param>
-        /// <returns></returns>
+        /// <returns>Returns the ranked list of action dependent features.</returns>
         public static ActionDependentFeature<TActionDependentFeature>[] GetPrediction<TActionDependentFeature>(
             VowpalWabbit vw,
             IReadOnlyList<VowpalWabbitExample> examples,

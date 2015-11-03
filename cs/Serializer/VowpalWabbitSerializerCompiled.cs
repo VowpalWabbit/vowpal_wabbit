@@ -418,12 +418,18 @@ namespace VW.Serializer
                 Expression.Block(this.variables, this.body), this.vwParameter);
         }
 
+        /// <summary>
+        /// The source expression tree <seealso cref="Func"/> is built from.
+        /// </summary>
         public Expression<Func<VowpalWabbit, Action<VowpalWabbitMarshalContext, TExample, ILabel>>> SourceExpression
         {
             get;
             private set;
         }
 
+        /// <summary>
+        /// The closure used for serialization.
+        /// </summary>
         public Func<VowpalWabbit, Action<VowpalWabbitMarshalContext, TExample, ILabel>> Func
         {
             get;

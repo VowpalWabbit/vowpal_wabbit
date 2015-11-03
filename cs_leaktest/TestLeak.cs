@@ -14,7 +14,7 @@ namespace cs_leaktest
         public void TestLeak()
         {
             try
-            {
+            {                
                 Run("cs_unittest.TestLeakClass", "Leak");
             }
             catch (AssertFailedException ex)

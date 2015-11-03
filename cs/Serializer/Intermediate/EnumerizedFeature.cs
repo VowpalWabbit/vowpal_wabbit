@@ -52,7 +52,7 @@ namespace VW.Serializer.Intermediate
         /// Hashes <paramref name="value"/> potentially using a cache.
         /// </summary>
         /// <param name="value">The value to be hashed.</param>
-        /// <returns>The hash of <see cref="Name"/> + <paramref name="value"/></returns>
+        /// <returns>The hash of <see cref="Feature.Name"/> + <paramref name="value"/></returns>
         public uint FeatureHash(T value)
         {
             return this.enumHashing(value);

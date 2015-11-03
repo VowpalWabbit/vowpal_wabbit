@@ -17,6 +17,11 @@ namespace VW.Serializer.Intermediate
     /// </summary>
     public class Feature
     {
+        /// <summary>
+        /// Initializes a new Feature.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="addAnchor"></param>
         public Feature(string name, bool addAnchor)
         {
             this.Name = name;

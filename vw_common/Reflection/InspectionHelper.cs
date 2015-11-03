@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 
 namespace VW.Reflection
@@ -41,6 +42,8 @@ namespace VW.Reflection
 
         public static Type GetDenseFeatureValueElementType(Type type)
         {
+            Contract.Requires(type != null);
+
             if (type.IsArray)
             {
                 var elemType = type.GetElementType();

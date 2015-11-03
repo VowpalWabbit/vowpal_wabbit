@@ -109,11 +109,20 @@ namespace VW.Serializer
             get { return this.exampleCache != null; }
         }
 
+        /// <summary>
+        /// True if string examples are generated in parallel to native examples.
+        /// </summary>
         public bool EnableStringExampleGeneration
         {
             get { return !this.serializer.DisableStringExampleGeneration; }
         }
 
+        /// <summary>
+        /// Serializes the given <paramref name="example"/> to VW string format.
+        /// </summary>
+        /// <param name="example">The example to serialize.</param>
+        /// <param name="label">The label to serialize.</param>
+        /// <returns>The resulting VW string.</returns>
         public string SerializeToString(TExample example, ILabel label = null)
         {
             Contract.Requires(example != null);
@@ -128,7 +137,6 @@ namespace VW.Serializer
         /// <summary>
         /// Serialize the example.
         /// </summary>
-        /// <param name="vw">The vw instance.</param>
         /// <param name="example">The example to serialize.</param>
         /// <param name="label">The label to be serialized.</param>
         /// <returns>The serialized example.</returns>

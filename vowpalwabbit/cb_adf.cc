@@ -64,7 +64,7 @@ void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::labe
     cs_labels.end = cs_labels.end_array;
   }
   bool shared = CB::ec_is_example_header(*examples[0]);
-  for (size_t i = 0; i < examples.size(); i++)
+  for (uint32_t i = 0; i < examples.size(); i++)
   { CB::label ld = examples[i]->l.cb;
 
     COST_SENSITIVE::wclass wc;
