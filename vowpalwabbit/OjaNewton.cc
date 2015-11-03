@@ -43,6 +43,7 @@ struct OjaNewton {
     struct update_data data;
 
     double learning_rate_cnt;
+    bool normalize;
 
     void initialize_Z()
     {
@@ -263,8 +264,10 @@ void make_pred(update_data& data, float x, float& wref) {
     int m = data.ON->m;
     float* w = &wref;
 
-    w[NORM2] += x * x;    
-    x /= sqrt(w[NORM2]);
+    if (data.ON->normalize) {
+        w[NORM2] += x * x;    
+        x /= sqrt(w[NORM2]);
+    }
 
     data.prediction += w[0] * x;
     for (int i = 1; i <= m; i++) {
@@ -283,7 +286,7 @@ void predict(OjaNewton& ON, base_learner&, example& ec) {
 void update_Z_and_wbar(update_data& data, float x, float& wref) {   
     float* w = &wref;
     int m = data.ON->m;
-    x /= sqrt(w[NORM2]);
+    if (data.ON->normalize) x /= sqrt(w[NORM2]);
     double s = data.sketch_cnt * x;
 
     for (int i = 1; i <= m; i++) {
@@ -295,7 +298,7 @@ void update_Z_and_wbar(update_data& data, float x, float& wref) {
 void compute_Zx_and_norm(update_data& data, float x, float& wref) {
     float* w = &wref;
     int m = data.ON->m;
-    x /= sqrt(w[NORM2]);
+    if (data.ON->normalize) x /= sqrt(w[NORM2]);
 
     for (int i = 1; i <= m; i++) {
         data.Zx[i] += w[i] * x * data.ON->D[i];
@@ -306,7 +309,7 @@ void compute_Zx_and_norm(update_data& data, float x, float& wref) {
 void update_wbar_and_Zx(update_data& data, float x, float& wref) {
     float* w = &wref;
     int m = data.ON->m;
-    x /= sqrt(w[NORM2]);
+    if (data.ON->normalize) x /= sqrt(w[NORM2]);
 
     double g = data.g * x;
 
@@ -396,7 +399,8 @@ base_learner* OjaNewton_setup(vw& all) {
         ("sketch_size", po::value<int>(), "size of sketch")
         ("epoch_size", po::value<int>(), "size of epoch")
         ("alpha", po::value<double>(), "mutiplicative constant for indentiy")
-        ("learning_rate_cnt", po::value<double>(), "constant for the learning rate 1/t");
+        ("learning_rate_cnt", po::value<double>(), "constant for the learning rate 1/t")
+        ("normalize", po::value<bool>(), "normalize the features or not");
     add_options(all);
 
     po::variables_map& vm = all.vm;
@@ -423,6 +427,11 @@ base_learner* OjaNewton_setup(vw& all) {
         ON.learning_rate_cnt = vm["learning_rate_cnt"].as<double>();
     else
         ON.learning_rate_cnt = 10;
+
+    if (vm.count("normalize"))
+        ON.normalize = vm["normalize"].as<bool>();
+    else
+        ON.normalize = true;
 
 
     ON.cnt = 0;
