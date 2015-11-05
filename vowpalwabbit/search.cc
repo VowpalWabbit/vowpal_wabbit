@@ -1990,6 +1990,20 @@ void search_initialize(vw* all, search& sch)
   CS::cs_label.default_label(&priv.empty_cs_label);
 
   priv.rawOutputStringStream = new stringstream(priv.rawOutputString);
+
+  priv.metaoverride = nullptr;
+
+  priv.neighbor_features = v_init<int32_t>();
+  priv.learn_ec_copy = v_init<example>();
+  priv.learn_condition_on = v_init<ptag>();      // a copy of the tags used for conditioning at the training position
+  priv.learn_condition_on_act = v_init<action_repr>();// the actions taken
+  priv.learn_condition_on_names = v_init<char>();// the names of the actions
+  priv.learn_allowed_actions = v_init<action>(); // which actions were allowed at training time?
+  priv.ptag_to_action = v_init<action_repr>();// tag to action mapping for conditioning
+  priv.train_trajectory = v_init<scored_action>(); // the training trajectory
+  priv.condition_on_actions = v_init<action_repr>();
+  priv.timesteps = v_init<size_t>();
+  priv.memo_foreach_action = v_init<v_array<action_cache>*>(); // when foreach_action is on, we need to cache TRAIN trajectory actions for LEARN
 }
 
 void search_finish(search& sch)
