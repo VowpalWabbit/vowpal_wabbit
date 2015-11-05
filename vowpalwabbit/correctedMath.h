@@ -5,7 +5,7 @@
 
 #include <math.h>
 
-#ifdef _Win32
+#ifdef _WIN32
 template<typename T>
 T correctedExp(T exponent) {
 	if (isinf(exponent) && exponent < T(0)) {
