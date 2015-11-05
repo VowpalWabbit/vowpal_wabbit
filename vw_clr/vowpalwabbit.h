@@ -17,10 +17,10 @@ namespace VW
 	ref class VowpalWabbitExampleBuilder;
 
 	/// <summary>
-	/// Simple string example based wrapper for vowpal wabbit.  
+	/// Simple string example based wrapper for vowpal wabbit.
 	/// </summary>
-	/// <remarks>If possible use VowpalWabbit{T} types as this wrapper suffers from marshalling performance wise.</remarks> 
-	public ref class VowpalWabbit : VowpalWabbitBase 
+	/// <remarks>If possible use VowpalWabbit{T} types as this wrapper suffers from marshalling performance wise.</remarks>
+	public ref class VowpalWabbit : VowpalWabbitBase
 	{
 	private:
 		/// <summary>
@@ -38,19 +38,19 @@ namespace VW
 
 	public:
 		/// <summary>
-		/// Initializes a new <see cref="VowpalWabbit"/> instance. 
+		/// Initializes a new <see cref="VowpalWabbit"/> instance.
 		/// </summary>
 		/// <param name="settings">The settings.</param>
 		VowpalWabbit(VowpalWabbitSettings^ settings);
 
 		/// <summary>
-		/// Initializes a new <see cref="VowpalWabbit"/> instance. 
+		/// Initializes a new <see cref="VowpalWabbit"/> instance.
 		/// </summary>
 		/// <param name="args">Command line arguments.</param>
 		VowpalWabbit(String^ args);
 
 		/// <summary>
-		/// Run multi-passe training. 
+		/// Run multi-passe training.
 		/// </summary>
 		void RunMultiPass();
 
@@ -66,7 +66,7 @@ namespace VW
 		void SaveModel(String^ filename);
 
     /// <summary>
-    /// Persist model to <paramref name="filename"/>.
+    /// Persist model to <paramref name="stream"/>.
     /// </summary>
     /// <param name="stream">The destination stream for the model.</param>
     /// <remarks>The stream is not closed to support embedded schemes.</param>

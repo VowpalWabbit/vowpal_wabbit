@@ -103,7 +103,7 @@ namespace VW
     /// <summary>
     /// True if this is a new line example, otherwise false.
     /// </summary>
-    /// <remarks>A example without features is considered a new line example.</reamrks>
+    /// <remarks>A example without features is considered a new line example.</remarks>
     property bool IsNewLine
     {
       bool get();

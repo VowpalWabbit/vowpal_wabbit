@@ -11,7 +11,7 @@ using System;
 namespace VW.Serializer.Intermediate
 {
     /// <summary>
-    /// Feature description for enumerized features. Instead of estimating a single parameter/weight 
+    /// Feature description for enumerized features. Instead of estimating a single parameter/weight
     /// for a given integer, VW will estimate a parameter/weight for each value (one-hot encoding, dummy variables)
     /// </summary>
     /// <typeparam name="T">The value type.</typeparam>
@@ -43,7 +43,7 @@ namespace VW.Serializer.Intermediate
 
             this.vw = vw;
             this.ns = ns;
-            
+
             // initialize the enumHashing function
             this.enumHashing = enumHashing(this);
         }
@@ -62,7 +62,7 @@ namespace VW.Serializer.Intermediate
         /// Hashes <paramref name="value"/> directly (no caching).
         /// </summary>
         /// <param name="value">The value to be hashed.</param>
-        /// <returns>The hash of <see cref="Name"/> + <paramref name="value"/></returns>
+        /// <returns>The hash of <see cref="Feature.Name"/> + <paramref name="value"/></returns>
         public uint FeatureHashInternal(T value)
         {
             return this.vw.HashFeature(

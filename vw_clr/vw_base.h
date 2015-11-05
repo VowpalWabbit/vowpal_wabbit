@@ -46,6 +46,7 @@ namespace VW
 
     /// <summary>
     /// Extracted command line arguments.
+    /// </summary>
     VowpalWabbitArguments^ m_arguments;
 
     /// <summary>
@@ -157,7 +158,7 @@ namespace VW
     /// Compares features created by current instance are compatible to features created by <paramref name="other"/>.
     /// </summary>
     /// <returns>
-    /// Null if compatible, otherwise the difference 
+    /// Null if compatible, otherwise the difference
     String^ AreFeaturesCompatible(VowpalWabbitBase^ other);
 	};
 }

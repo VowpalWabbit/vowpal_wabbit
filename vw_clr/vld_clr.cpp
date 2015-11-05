@@ -35,7 +35,10 @@ namespace VW
 
   void VisualLeakDetector::ReportInternal(int reportType, wchar_t *message)
   {
-    m_messages->Add(Tuple::Create(reportType, gcnew String(message)));
+    auto msg = gcnew String(message);
+
+    System::Diagnostics::Debug::Write(msg);
+    m_messages->Add(Tuple::Create(reportType, msg));
   }
 
   void VisualLeakDetector::ReportLeaks()

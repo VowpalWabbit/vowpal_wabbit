@@ -12,7 +12,7 @@ namespace cs_unittest
 
             [TestMethod]
             public void Test1and2()
-            {                                                                                                            
+            {
                  Run("cs_test.Test1and2Class", "Test1and2");
             }
 

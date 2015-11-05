@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using VW;
 
@@ -44,64 +45,72 @@ namespace cs_leaktest
         }
         public TestContext TestContext { get; set; }
 
+        private object lockObject = new object();
+
         protected void Run(string type, string method)
         {
-            using (var vld = new VisualLeakDetector())
+            lock (lockObject)
             {
-                try
+                using (var vld = new VisualLeakDetector())
                 {
-                    var basePath = Path.GetDirectoryName(typeof(VisualLeakDetector).Assembly.Location);
-
-                    var handle = LoadLibrary(basePath + @"\\VowpalWabbitCore.dll");
-                    var appDomain = AppDomain.CreateDomain("Test1");
-
                     try
                     {
-                        ITestRunner test1 = (ITestRunner)appDomain.CreateInstanceFromAndUnwrap(basePath + @"\\cs_unittest.dll", "cs_unittest.TestRunner");
+                        var basePath = Path.GetDirectoryName(typeof(VisualLeakDetector).Assembly.Location);
 
-                        Environment.CurrentDirectory = TestContext.TestDir + @"\..\..\..\test";
+                        var handle = LoadLibrary(basePath + @"\\VowpalWabbitCore.dll");
+                        var appDomain = AppDomain.CreateDomain("Test1");
 
-                        var result = test1.Run(type, method);
-
-                        if (result != null)
+                        try
                         {
-                            // check for exception marker
-                            var index = result.IndexOf("#-#-#-#-#-#-#");
+                            ITestRunner test1 = (ITestRunner)appDomain.CreateInstanceFromAndUnwrap(basePath + @"\\cs_unittest.dll", "cs_unittest.TestRunner");
 
-                            if (index == -1)
+                            Environment.CurrentDirectory = TestContext.TestDir + @"\..\..\..\test";
+
+                            var result = test1.Run(type, method);
+
+                            if (result != null)
                             {
-                                Assert.Fail(result);
+                                // check for exception marker
+                                var index = result.IndexOf("#-#-#-#-#-#-#");
+
+                                if (index == -1)
+                                {
+                                    Assert.Fail(result);
+                                }
+
+                                throw new CustomException(result.Substring(0, index), result.Substring(index + 13));
                             }
 
-                            throw new CustomException(result.Substring(0, index), result.Substring(index + 13));
+                        }
+                        finally
+                        {
+                            AppDomain.Unload(appDomain);
+                        }
+
+                        try
+                        {
+                            FreeLibrary(handle);
+                            FreeLibrary(handle);
+
+                            vld.ReportLeaks();
+
+                            var message = string.Concat(vld.Messages.Select(t => t.Item2));
+
+                            var blocks = message.Split(new[] { "---------- Block " }, StringSplitOptions.None)
+                              .Where(block => Regex.IsMatch(block, "^\\d+ at"))
+                              .ToList();
+
+                            Assert.AreEqual(0, blocks.Count, string.Join("\n", blocks));
+                        }
+                        finally
+                        {
+                            LoadLibrary(basePath + @"\VowpalWabbitCore.dll");
                         }
                     }
                     finally
                     {
-                        AppDomain.Unload(appDomain);
+                        vld.MarkAllLeaksAsReported();
                     }
-
-                    FreeLibrary(handle);
-                    FreeLibrary(handle);
-
-                    Debug.WriteLine("vld.ReportLeaks.1");
-
-                    vld.ReportLeaks();
-
-                    Debug.WriteLine("vld.ReportLeaks.2");
-                    var message = string.Concat(vld.Messages.Select(t => t.Item2));
-
-                    var blocks = message.Split(new[] { "---------- Block " }, StringSplitOptions.None)
-                      .Where(block => Regex.IsMatch(block, "^\\d+ at"))
-                      .ToList();
-
-                    Assert.AreEqual(0, blocks.Count, string.Join("\n", blocks));
-
-                    LoadLibrary(@"C:\work\vw2\cs_unittest\bin\x64\Debug\VowpalWabbitCore.dll");
-                }
-                finally
-                {
-                    vld.MarkAllLeaksAsReported();
                 }
             }
         }
