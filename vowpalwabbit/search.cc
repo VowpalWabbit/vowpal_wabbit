@@ -1932,6 +1932,7 @@ void search_initialize(vw* all, search& sch)
   priv.test_loss = 0.;
   priv.learn_loss = 0.;
   priv.train_loss = 0.;
+  priv.total_example_t = 0.;
 
   priv.force_oracle = false;
   priv.perturb_oracle = 0.;
