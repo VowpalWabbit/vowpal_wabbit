@@ -1159,7 +1159,7 @@ __DATA__
 # (eg embeddings or gazetteers) -- note that this is impossible without
 # dictionaries because --ignore w; also test to make sure gzipped dicts
 # work and dictionary redundancy checking works
-{VW} -k -c -d train-sets/dictionary_test.dat --binary --ignore w --holdout_off --passes 32 --dictionary w:dictionary_test.dict --dictionary w:dictionary_test.dict.gz --dictionary_path train-sets/
+{VW} -k -c -d train-sets/dictionary_test.dat --binary --ignore w --holdout_off --passes 32 --dictionary w:dictionary_test.dict --dictionary w:dictionary_test.dict.gz --dictionary_path train-sets
     train-sets/ref/dictionary_test.stderr
 
 # Test 68: Search for multiclass classification
