@@ -4,6 +4,7 @@
    license as described in the file LICENSE.
    */
 #include <string>
+#include "correctedMath.h"
 #include "gd.h"
 
 using namespace std;
@@ -82,7 +83,7 @@ void inner_update_pistol_state_and_predict(update_data& d, float x, float& wref)
 
   float squared_theta = w[W_ZT] * w[W_ZT];
   float tmp = 1.f / (d.ftrl_alpha * w[W_MX] * (w[W_G2] + w[W_MX]));
-  w[W_XT] = sqrt(w[W_G2]) * d.ftrl_beta * w[W_ZT] * exp(squared_theta / 2 * tmp) * tmp;
+  w[W_XT] = sqrt(w[W_G2]) * d.ftrl_beta * w[W_ZT] * correctedExp(squared_theta / 2 * tmp) * tmp;
 
   d.predict +=  w[W_XT]*x;
 }

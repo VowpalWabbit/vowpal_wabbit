@@ -151,10 +151,19 @@ struct ldf
   base_learner* base;
 };
 
+int cmp(int a, int b) {
+  if (a == b) return 0;
+  if (a > b) return 1;
+  return -1;
+}
+
 int score_comp(const void* p1, const void* p2)
 { score* s1 = (score*)p1;
   score* s2 = (score*)p2;
-  if(s2->val == s1->val) return 0;
+  // Most sorting algos do not guarantee the output order of elements that compare equal.
+  // Tie-breaking on the index ensures that the result is deterministic across platforms.
+  // However, this forces a strict ordering, rather than a weak ordering, which carries a performance cost.
+  if(s2->val == s1->val) return cmp(s1->idx, s2->idx);
   else if(s2->val >= s1->val) return -1;
   else return 1;
 }
@@ -426,7 +435,7 @@ void do_actual_learning(ldf& data, base_learner& base)
     }
 
     qsort((void*) data.scores.begin, data.scores.size(), sizeof(score), score_comp);
-  }
+   }
   else
   { float  min_score = FLT_MAX;
     for (size_t k=start_K; k<K; k++)
@@ -586,10 +595,9 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
       if (hit_loss) break;
       if (preds[0] == idx)
       { loss = ex.l.cs.costs[0].x;
-        hit_loss = true;
+      hit_loss = true;
       }
     }
-
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
     assert(loss >= 0);

@@ -1932,6 +1932,7 @@ void search_initialize(vw* all, search& sch)
   priv.test_loss = 0.;
   priv.learn_loss = 0.;
   priv.train_loss = 0.;
+  priv.total_example_t = 0.;
 
   priv.force_oracle = false;
   priv.perturb_oracle = 0.;
@@ -1990,6 +1991,21 @@ void search_initialize(vw* all, search& sch)
   CS::cs_label.default_label(&priv.empty_cs_label);
 
   priv.rawOutputStringStream = new stringstream(priv.rawOutputString);
+
+  priv.metaoverride = nullptr;
+
+  priv.neighbor_features = v_init<int32_t>();
+  priv.learn_ec_copy = v_init<example>();
+  priv.learn_condition_on = v_init<ptag>();
+  priv.learn_condition_on_act = v_init<action_repr>();
+  priv.learn_condition_on_names = v_init<char>();
+  priv.learn_allowed_actions = v_init<action>();
+  priv.ptag_to_action = v_init<action_repr>();
+  priv.train_trajectory = v_init<scored_action>();
+  priv.condition_on_actions = v_init<action_repr>();
+  priv.timesteps = v_init<size_t>();
+  priv.memo_foreach_action = v_init<v_array<action_cache>*>();
+  priv.ldf_test_label.costs = v_init<CS::wclass>();
 }
 
 void search_finish(search& sch)
