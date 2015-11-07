@@ -351,9 +351,9 @@ void multipredict(nn& n, base_learner& base, example& ec, size_t count, size_t s
       predict_or_learn_multi<false,false>(n, base, ec);
     if (finalize_predictions) pred[c] = ec.pred;
     else pred[c].scalar = ec.partial_prediction;
-    ec.ft_offset += step;
+    ec.ft_offset += (uint32_t)step;
   }
-  ec.ft_offset -= step*count;
+  ec.ft_offset -= (uint32_t)(step*count);
 }
 
 void finish_example(vw& all, nn&, example& ec)

@@ -864,7 +864,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
         { cdbg << ", hit @ " << k;
           count++;
           if ((count == 1) || (frand48() < 1./(float)count))
-          { a = (allowed_actions == nullptr) ? (k+1) : allowed_actions[k];
+          { a = (allowed_actions == nullptr) ? (uint32_t)(k+1) : allowed_actions[k];
             cdbg << "***";
           }
         }
@@ -1743,7 +1743,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex)
       run_task(sch, priv.ec_seq);
       //cerr_print_array("in GENER, learn_allowed_actions", priv.learn_allowed_actions);
       float this_loss = priv.learn_loss;
-      cs_cost_push_back(priv.cb_learner, priv.learn_losses, priv.is_ldf ? (priv.learn_a_idx - 1) : priv.learn_a_idx, this_loss);
+      cs_cost_push_back(priv.cb_learner, priv.learn_losses, priv.is_ldf ? (uint32_t)(priv.learn_a_idx - 1) : (uint32_t)priv.learn_a_idx, this_loss);
       //                          (priv.learn_allowed_actions.size() > 0) ? priv.learn_allowed_actions[priv.learn_a_idx-1] : priv.is_ldf ? (priv.learn_a_idx-1) : (priv.learn_a_idx),
       //                           priv.learn_loss);
     }

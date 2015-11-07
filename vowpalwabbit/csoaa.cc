@@ -151,7 +151,7 @@ struct ldf
   base_learner* base;
 };
 
-int cmp(int a, int b) {
+int cmp(size_t a, size_t b) {
   if (a == b) return 0;
   if (a > b) return 1;
   return -1;
@@ -463,7 +463,7 @@ void do_actual_learning(ldf& data, base_learner& base)
     }
     for (size_t k=start_K; k<K; k++)
     { data.ec_seq[k]->pred.multilabels = data.stored_preds[k];
-      data.ec_seq[0]->pred.multilabels.label_v.push_back(data.scores[k-start_K].idx);
+      data.ec_seq[0]->pred.multilabels.label_v.push_back((uint32_t)data.scores[k-start_K].idx);
     }
   }
   else
@@ -530,13 +530,13 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
     size_t K = ec_seq->size();
     if (ec_is_example_header(*ec_seq->get(0)))
       start_K = 1;
-    uint32_t predicted_K = start_K;
+    uint32_t predicted_K = (uint32_t)start_K;
     float  min_score = FLT_MAX;
     for (size_t k=start_K; k<K; k++)
     { example *ec = ec_seq->get(k);
       if (ec->partial_prediction < min_score)
       { min_score = ec->partial_prediction;
-        predicted_K = k;
+        predicted_K = (uint32_t)k;
       }
     }
     predicted_class = ec_seq->get(predicted_K)->l.cs.costs[0].class_index;

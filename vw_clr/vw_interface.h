@@ -18,10 +18,8 @@ ref class VowpalWabbitExample;
 /// Owners of example must implement this interface.
 /// </summary>
 public interface class IVowpalWabbitExamplePool
-{ /// <summary>
-  /// Puts a native example data structure back into the pool.
-  /// </summary>
-  /// <param name="example">The example to be returned.</param>
+{ // Puts a native example data structure back into the pool.
+  // <param name="example">The example to be returned.</param>
   void ReturnExampleToPool(VowpalWabbitExample^ example);
 };
 }

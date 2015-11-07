@@ -201,8 +201,8 @@ sub init() {
         # Assumes cygwin is installed
         $ENV{'PATH'} .= ':/cygdrive/c/cygwin/bin';
         # And just to be safe (probably not needed):
-        $Diff  = 'c:/cygwin/bin/diff.exe';
-        $Cat   = 'c:/cygwin/bin/cat.exe';
+#        $Diff  = 'c:/cygwin/bin/diff.exe';
+#        $Cat   = 'c:/cygwin/bin/cat.exe';
     }
     $Epsilon = $opt_E if ($opt_E);
     $Diff .= ' --ignore-space-change' if ($opt_w);
