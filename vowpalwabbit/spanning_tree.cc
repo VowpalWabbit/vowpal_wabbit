@@ -37,7 +37,7 @@ static int socket_sort(const void* s1, const void* s2)
   if (socket1->client_ip != socket2->client_ip)
     return socket1->client_ip - socket2->client_ip;
   else
-    return socket1->socket - socket2->socket;
+    return (int)(socket1->socket - socket2->socket);
 }
 
 int build_tree(int*  parent, uint16_t* kid_count, size_t source_count, int offset)

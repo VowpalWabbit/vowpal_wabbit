@@ -11,7 +11,7 @@ void unique_sort_features(bool audit, uint32_t parse_mask, example* ae);
 template <class T> int order_features(const void* first, const void* second)
 { 
   if (((T*)first)->weight_index != ((T*)second)->weight_index)
-    return ((T*)first)->weight_index - ((T*)second)->weight_index;
+    return (int)(((T*)first)->weight_index - ((T*)second)->weight_index);
   else
     if (((T*)first)->x > ((T*)second)->x)
       return 1;
