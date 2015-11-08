@@ -4,15 +4,9 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #include "example.h"
+#include "unique_sort.h"
 
-int order_features(const void* first, const void* second)
-{ return ((feature*)first)->weight_index - ((feature*)second)->weight_index;}
-
-int order_audit_features(const void* first, const void* second)
-{ return (int)(((audit_data*)first)->weight_index) - (int)(((audit_data*)second)->weight_index);
-}
-
-void unique_features(v_array<feature>& features, int max=-1)
+void unique_features(v_array<feature>& features, int max)
 { if (features.empty())
     return;
   feature* last = features.begin;
@@ -55,7 +49,7 @@ void unique_sort_features(bool audit, uint32_t parse_mask, example* ae)
     for (size_t i = 0; i < features.size(); i++)
       features[i].weight_index &= parse_mask;
     qsort(features.begin, features.size(), sizeof(feature),
-          order_features);
+          order_features<feature>);
     unique_features(ae->atomics[*b]);
 
     if (audit)
@@ -65,7 +59,7 @@ void unique_sort_features(bool audit, uint32_t parse_mask, example* ae)
         afeatures[i].weight_index &= parse_mask;
 
       qsort(afeatures.begin, afeatures.size(), sizeof(audit_data),
-            order_audit_features);
+            order_features<audit_data>);
       unique_audit_features(afeatures);
     }
   }

@@ -705,7 +705,7 @@ void feature_limit(vw& all, example* ex)
     if (all.limit[*index] < ex->atomics[*index].size())
     { v_array<feature>& features = ex->atomics[*index];
 
-      qsort(features.begin, features.size(), sizeof(feature), order_features);
+      qsort(features.begin, features.size(), sizeof(feature), order_features<feature>);
 
       unique_features(features, all.limit[*index]);
     }
