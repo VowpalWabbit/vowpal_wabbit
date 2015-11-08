@@ -1123,7 +1123,7 @@ __DATA__
 
 # Test 60: empty test, bad builds (without make clean)
 # sometimes cause a SEGV even on empty input
-{VW} /dev/null
+echo "" | {VW} 
     train-sets/ref/empty-set.stderr
 
 # Test 61: daemon test
