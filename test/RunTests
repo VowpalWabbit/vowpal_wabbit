@@ -265,7 +265,7 @@ sub trim_spaces($) {
 #
 sub ref_file($) {
     my $file = shift;
-    if ($^O =~ /MSWin/i) {
+    if ($^O =~ /MSWin/i or $^O =~ /cygwin/i) {
         my $win_reffile = "$file-mswin";
         if (-e $win_reffile) {
             return $win_reffile;
