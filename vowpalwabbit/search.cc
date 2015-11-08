@@ -1901,7 +1901,6 @@ void search_initialize(vw* all, search& sch)
 
   priv.label_is_test = mc_label_is_test;
 
-  priv.active_uncertainty = v_init< pair<float,size_t> >();
   priv.A = 1;
   priv.num_learners = 1;
   priv.state = INITIALIZE;
@@ -1957,6 +1956,11 @@ void search_finish(search& sch)
   delete priv.truth_string;
   delete priv.pred_string;
   delete priv.bad_string_stream;
+  priv.cache_hash_map.~v_hashmap<unsigned char*, scored_action>();
+  priv.rawOutputString.~string();
+  priv.ec_seq.~vector<example*>();
+  priv.test_action_sequence.~vector<action>();
+  priv.dat_new_feature_audit_ss.~stringstream();
   priv.neighbor_features.delete_v();
   priv.timesteps.delete_v();
   if (priv.cb_learner) priv.learn_losses.cb.costs.delete_v();
