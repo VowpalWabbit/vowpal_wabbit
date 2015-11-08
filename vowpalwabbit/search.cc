@@ -1985,10 +1985,15 @@ void search_initialize(vw* all, search& sch)
   priv.task = nullptr;
   sch.task_data = nullptr;
 
+  priv.empty_cs_label.costs = v_init<CS::wclass>();
+
   priv.empty_example = VW::alloc_examples(sizeof(CS::label), 1);
   CS::cs_label.default_label(&priv.empty_example->l.cs);
   priv.empty_example->in_use = true;
   CS::cs_label.default_label(&priv.empty_cs_label);
+
+  priv.learn_losses.cs.costs = v_init<CS::wclass>();
+  priv.gte_label.cs.costs = v_init<CS::wclass>();
 
   priv.rawOutputStringStream = new stringstream(priv.rawOutputString);
 
