@@ -1960,6 +1960,7 @@ void search_initialize(vw* all, search& sch)
   priv.allow_current_policy = true;
   priv.adaptive_beta = true;
   priv.passes_per_policy = 1;     //this should be set to the same value as --passes for dagger
+  priv.passes_since_new_policy = 0;
 
   priv.current_policy = 0;
 
@@ -1985,10 +1986,15 @@ void search_initialize(vw* all, search& sch)
   priv.task = nullptr;
   sch.task_data = nullptr;
 
+  priv.empty_cs_label.costs = v_init<CS::wclass>();
+
   priv.empty_example = VW::alloc_examples(sizeof(CS::label), 1);
   CS::cs_label.default_label(&priv.empty_example->l.cs);
   priv.empty_example->in_use = true;
   CS::cs_label.default_label(&priv.empty_cs_label);
+
+  priv.learn_losses.cs.costs = v_init<CS::wclass>();
+  priv.gte_label.cs.costs = v_init<CS::wclass>();
 
   priv.rawOutputStringStream = new stringstream(priv.rawOutputString);
 
