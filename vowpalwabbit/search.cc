@@ -1960,6 +1960,7 @@ void search_initialize(vw* all, search& sch)
   priv.allow_current_policy = true;
   priv.adaptive_beta = true;
   priv.passes_per_policy = 1;     //this should be set to the same value as --passes for dagger
+  priv.passes_since_new_policy = 0;
 
   priv.current_policy = 0;
 
