@@ -27,7 +27,7 @@ void run(Search::search& sch, vector<example*>& ec)
     size_t prediction = Search::predictor(sch, (ptag)i+1).set_input(*ec[i]).set_oracle(oracle).set_condition_range((ptag)i, sch.get_history_length(), 'p').predict();
 
     if (sch.output().good())
-      sch.output() << sch.pretty_label(prediction) << ' ';
+      sch.output() << sch.pretty_label((uint32_t)prediction) << ' ';
   }
 }
 }
@@ -232,7 +232,7 @@ void run(Search::search& sch, vector<example*>& ec)
       .set_condition_range((ptag)i, sch.get_history_length(), 'p')
       .predict();
     if (sch.output().good())
-      sch.output() << sch.pretty_label(prediction) << ' ';
+      sch.output() << sch.pretty_label((uint32_t)prediction) << ' ';
   }
   free(costs);
 }

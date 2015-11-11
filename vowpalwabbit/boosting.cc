@@ -13,6 +13,7 @@
 #include <float.h>
 #include <limits.h>
 #include <math.h>
+#include "correctedMath.h"
 #include <stdio.h>
 #include <string>
 #include <sstream>
@@ -127,7 +128,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example
   {
 
     if (is_learn)
-    { float w = 1 / (1 + exp(s));
+    { float w = 1 / (1 + correctedExp(s));
 
       ec.weight = u * w;
 
@@ -142,7 +143,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example
       final_prediction += ec.pred.scalar * o.alpha[i];
 
       // update alpha
-      o.alpha[i] += eta * z / (1 + exp(s));
+      o.alpha[i] += eta * z / (1 + correctedExp(s));
       if (o.alpha[i] > 2.) o.alpha[i] = 2;
       if (o.alpha[i] < -2.) o.alpha[i] = -2;
 
@@ -183,7 +184,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
   {
 
     if (is_learn)
-    { float w = 1 / (1 + exp(s));
+    { float w = 1 / (1 + correctedExp(s));
 
       ec.weight = u * w;
 
@@ -209,7 +210,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
       v_normalization += o.v[i];
 
       // update alpha
-      o.alpha[i] += eta * z / (1 + exp(s));
+      o.alpha[i] += eta * z / (1 + correctedExp(s));
       if (o.alpha[i] > 2.) o.alpha[i] = 2;
       if (o.alpha[i] < -2.) o.alpha[i] = -2;
 
@@ -253,7 +254,7 @@ void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text)
   stringstream os;
   os << "boosts " << o.N << endl;
   const char* buff = os.str().c_str();
-  bin_text_read_write_fixed(model_file, (char *) &(o.N),  sizeof(o.N), "", read, buff, strlen(buff), text);
+  bin_text_read_write_fixed(model_file, (char *) &(o.N),  sizeof(o.N), "", read, buff, (uint32_t)strlen(buff), text);
 
   if (read)
   { o.alpha.resize(o.N);
@@ -270,7 +271,7 @@ void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text)
     { stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
       const char* buff2 = os.str().c_str();
-      bin_text_write_fixed(model_file, (char *) &(o.alpha[i]),  sizeof(o.alpha[i]), buff2, strlen(buff2), text);
+      bin_text_write_fixed(model_file, (char *) &(o.alpha[i]),  sizeof(o.alpha[i]), buff2, (uint32_t)strlen(buff2), text);
     }
 
   for (int i = 0; i < o.N; i++)
@@ -283,7 +284,7 @@ void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text)
     { stringstream os2;
       os2 << "v " << o.v[i] << endl;
       const char* buff2 = os.str().c_str();
-      bin_text_write_fixed(model_file, (char *) &(o.v[i]),  sizeof(o.v[i]), buff2, strlen(buff2), text);
+      bin_text_write_fixed(model_file, (char *) &(o.v[i]),  sizeof(o.v[i]), buff2, (uint32_t)strlen(buff2), text);
     }
 
   if (read)
@@ -315,7 +316,7 @@ void save_load(boosting &o, io_buf &model_file, bool read, bool text)
   stringstream os;
   os << "boosts " << o.N << endl;
   const char* buff = os.str().c_str();
-  bin_text_read_write_fixed(model_file, (char *) &(o.N),  sizeof(o.N), "", read, buff, strlen(buff), text);
+  bin_text_read_write_fixed(model_file, (char *) &(o.N),  sizeof(o.N), "", read, buff, (uint32_t)strlen(buff), text);
 
   if (read)
   { o.alpha.resize(o.N);
@@ -331,7 +332,7 @@ void save_load(boosting &o, io_buf &model_file, bool read, bool text)
     { stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
       const char* buff2 = os.str().c_str();
-      bin_text_write_fixed(model_file, (char *) &(o.alpha[i]),  sizeof(o.alpha[i]), buff2, strlen(buff2), text);
+      bin_text_write_fixed(model_file, (char *) &(o.alpha[i]),  sizeof(o.alpha[i]), buff2, (uint32_t)strlen(buff2), text);
     }
 
   if (read)

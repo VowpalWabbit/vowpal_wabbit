@@ -69,9 +69,9 @@ void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::labe
 
     COST_SENSITIVE::wclass wc;
     if (shared && i > 0)
-      wc.class_index = i-1;
+      wc.class_index = (uint32_t)i-1;
     else
-      wc.class_index = i;
+      wc.class_index = (uint32_t)i;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
       wc.x = ld.costs[0].cost / ld.costs[0].probability;
     else
@@ -119,9 +119,9 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
       wc.x = CB_ALGS::get_cost_pred<true>(c.scorer, nullptr, *(examples[i]), 0, 2);
 
     if (shared)
-      wc.class_index = i - 1;
+      wc.class_index = (uint32_t)i - 1;
     else
-      wc.class_index = i;
+      wc.class_index = (uint32_t)i;
     c.pred_scores.costs.push_back(wc); // done
 
     //add correction if we observed cost for this action and regressor is wrong
@@ -152,7 +152,7 @@ void get_observed_cost(cb_adf& mydata, v_array<example*>& examples)
         (**ec).l.cb.costs[0].cost != FLT_MAX &&
         (**ec).l.cb.costs[0].probability > 0)
     { ld = (**ec).l.cb;
-      index = ec - examples.begin;
+      index = (int)(ec - examples.begin);
     }
   }
 
@@ -246,7 +246,7 @@ void gen_cs_example_MTR(cb_adf& data, v_array<example*>& ec_seq, v_array<example
     }
     else if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     { wc.x = ld.costs[0].cost;
-      data.mtr_example = i;
+      data.mtr_example = (uint32_t)i;
       keep_example = true;
     }
 
@@ -282,7 +282,7 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   //We must go through the cost sensitive classifier layer to get
   //proper feature handling.
   gen_cs_example_MTR(mydata, examples, mydata.mtr_ec_seq, mydata.mtr_cs_labels);
-  uint32_t nf = examples[mydata.mtr_example]->num_features;
+  uint32_t nf = (uint32_t)examples[mydata.mtr_example]->num_features;
   float old_weight = examples[mydata.mtr_example]->weight;
   examples[mydata.mtr_example]->weight *= 1.f / examples[mydata.mtr_example]->l.cb.costs[0].probability * ((float)mydata.event_sum / (float)mydata.action_sum);
   call_predict_or_learn<true>(mydata, base, mydata.mtr_ec_seq, mydata.cb_labels, mydata.mtr_cs_labels);

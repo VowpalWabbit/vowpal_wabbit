@@ -31,6 +31,7 @@ license as described in the file LICENSE.
 #include "csoaa.h"
 #include "cb_algs.h"
 #include "cb_adf.h"
+#include "confidence.h"
 #include "scorer.h"
 #include "expreplay.h"
 #include "search.h"
@@ -972,6 +973,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'b', simple_label>);
   all.reduction_stack.push_back(active_setup);
   all.reduction_stack.push_back(active_cover_setup);
+  all.reduction_stack.push_back(confidence_setup);
   all.reduction_stack.push_back(nn_setup);
   all.reduction_stack.push_back(mf_setup);
   all.reduction_stack.push_back(autolink_setup);

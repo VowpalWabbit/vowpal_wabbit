@@ -6,7 +6,7 @@
 
 using namespace LEARNER;
 
-inline float sign(float w) { if (w < 0.f) return -1.f; else  return 1.f;}
+inline float sign(float w) { if (w <= 0.f) return -1.f; else  return 1.f;}
 
 struct active_cover
 { // active learning algorithm parameters
