@@ -8,6 +8,8 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -qq libboost-all-dev; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install maven; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo pip install cpp-coveralls wheel; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install python; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install maven; fi
 script:
   - make
   - make python
