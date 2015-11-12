@@ -1,4 +1,4 @@
-os: 
+os:
   - osx
 language: cpp
 compiler:
