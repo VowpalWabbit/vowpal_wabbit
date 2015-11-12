@@ -4,10 +4,10 @@ language: cpp
 compiler:
   - gcc
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -qq libboost-all-dev
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install maven
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo pip install cpp-coveralls wheel
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -qq libboost-all-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install maven; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo pip install cpp-coveralls wheel; fi
 script:
   - make
   - make python
