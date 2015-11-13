@@ -16,9 +16,9 @@ before_install:
 script:
   - make
   - make python
-  - cd java && mvn test && cd ..
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; cd java && mvn test && cd ..
   - make test
-  - make test_gcov --always-make
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; make test_gcov --always-make
   - python setup.py sdist
   - python setup.py bdist_wheel
 after_success:
