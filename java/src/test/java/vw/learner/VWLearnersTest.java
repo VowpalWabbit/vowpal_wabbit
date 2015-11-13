@@ -27,7 +27,7 @@ public class VWLearnersTest extends VWTestHelper {
     @Test
     public void testWrongType() {
         thrown.expect(ClassCastException.class);
-        VWFloatLearner learner = VWLearners.create("--cb 4 --quiet");
+        VWLearners.<VWFloatLearner>create("--cb 4 --quiet");
     }
 
     @Test
