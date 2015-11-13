@@ -129,16 +129,6 @@ install_cask_app() {
 }
 
 run_docker() {
-  # Ideally we should only have to do this once, but it doesn't seem robust, while this is slower
-  # it works every time
-  boot2docker delete
-  boot2docker init
-  boot2docker up
-
-  # After running boot2docker up this is printed out and it should be the same for everyone
-  export DOCKER_HOST=tcp://192.168.59.103:2376
-  export DOCKER_CERT_PATH=~/.boot2docker/certs/boot2docker-vm
-  export DOCKER_TLS_VERIFY=1
   local machine=$1
   local script=$2
   docker run -v $(pwd):/vowpal_wabbit $machine /bin/bash -c "$script"
@@ -151,8 +141,11 @@ run_docker() {
 check_brew_installed
 install_brew_cask
 install_cask_app "virtualbox"
-install_brew_app "boot2docker"
+install_brew_app "docker-machine"
 install_brew_app "docker"
+
+docker-machine create --driver virtualbox default
+eval "$(docker-machine env default)"
 
 run_docker "ubuntu:12.04" "$ubuntu_12"
 run_docker "32bit/ubuntu:14.04" "$ubuntu_14_32"
