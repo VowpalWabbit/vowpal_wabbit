@@ -10,16 +10,18 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo pip install cpp-coveralls wheel; fi
   
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew uninstall boost; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install boost-python; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew unlink boost; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export JAVA_HOME=$(/usr/libexec/java_home); fi
 script:
-  - make
-  - make python
-  - mvn test -f java/pom.xml
-  - make test
-  - make test_gcov --always-make
-  - python setup.py sdist
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make python; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then mvn test -f java/pom.xml; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make test; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make test_gcov --always-make; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then python setup.py sdist; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then python setup.py bdist_wheel; fi
+  
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then java/src/main/bin/build.sh; fi
+  
 after_success:
-  - coveralls --exclude lib --exclude tests --gcov-options '\-lp'
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then coveralls --exclude lib --exclude tests --gcov-options '\-lp'; fi
