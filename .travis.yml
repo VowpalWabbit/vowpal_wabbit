@@ -22,6 +22,7 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then python setup.py bdist_wheel; fi
   
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then java/src/main/bin/build.sh; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then mvn clean test -f java/pom.xml; fi
   
 after_success:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then coveralls --exclude lib --exclude tests --gcov-options '\-lp'; fi
