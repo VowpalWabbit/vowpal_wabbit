@@ -10,7 +10,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo pip install cpp-coveralls wheel; fi
   
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install boost --with-python; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew upgrade boost --with-python; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export JAVA_HOME=$(/usr/libexec/java_home); fi
 script:
   - make
