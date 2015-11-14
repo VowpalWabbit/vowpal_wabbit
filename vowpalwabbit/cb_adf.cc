@@ -54,6 +54,7 @@ struct cb_adf
   base_learner* base;
 
   bool rank_all;
+  bool predict;
 };
 
 namespace CB_ADF
@@ -269,15 +270,18 @@ template<class T> void swap(T& ele1, T& ele2)
   ele1 = temp;
 }
 
+template<bool predict>
 void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
-{ //first get the prediction to return
-  gen_cs_example_ips(examples, mydata.cs_labels);
-  call_predict_or_learn<false>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
+{ 
   uint32_t action = 0;
-  if (!mydata.rank_all) //preserve prediction
-    action = examples[0]->pred.multiclass;
-  else
-    swap(examples[0]->pred.multilabels, mydata.mtr_multilabels);
+  if (predict) //first get the prediction to return
+    { gen_cs_example_ips(examples, mydata.cs_labels);
+      call_predict_or_learn<false>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
+      if (!mydata.rank_all) //preserve prediction
+	action = examples[0]->pred.multiclass;
+      else
+	swap(examples[0]->pred.multilabels, mydata.mtr_multilabels);
+    }
   //second train on _one_ action (which requires up to 3 examples).
   //We must go through the cost sensitive classifier layer to get
   //proper feature handling.
@@ -335,7 +339,10 @@ void do_actual_learning(cb_adf& data, base_learner& base)
         learn_DR(data, base, data.ec_seq);
         break;
       case CB_TYPE_MTR:
-        learn_MTR(data, base, data.ec_seq);
+	if (data.predict)
+	  learn_MTR<true>(data, base, data.ec_seq);
+	else
+	  learn_MTR<false>(data, base, data.ec_seq);
         break;
       default:
         THROW("Unknown cb_type specified for contextual bandit learning: " << data.cb_type);
@@ -527,6 +534,7 @@ base_learner* cb_adf_setup(vw& all)
     return nullptr;
   new_options(all, "ADF Options")
   ("rank_all", "Return actions sorted by score order")
+  ("no_predict", "Do not do a prediction when training")
   ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}");
   add_options(all);
 
@@ -572,6 +580,11 @@ base_learner* cb_adf_setup(vw& all)
     all.multilabel_prediction = true;
     *all.file_options << " --rank_all";
   }
+
+  if (all.vm.count("no_predict"))
+    ld.predict = false;
+  else
+    ld.predict = true;
 
   // Push necessary flags.
   if ( (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0)
