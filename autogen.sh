@@ -1,7 +1,10 @@
 #!/bin/sh
 
-[ -x "`which g++`" ] && CXX=g++
-[ -x "`which clang++`" ] && CXX=clang++
+if [ -z $CXX ]; then
+if [ -x "`which g++`" ]; then CXX=g++
+elif [ -x "`which clang++`" ]; then CXX=clang++
+fi
+fi
 
 case $( uname -s ) in
  Darwin)
