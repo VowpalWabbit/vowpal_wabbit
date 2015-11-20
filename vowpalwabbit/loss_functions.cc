@@ -81,10 +81,7 @@ public:
 class classic_squaredloss : public loss_function
 {
 public:
-  classic_squaredloss()
-  {
-
-  }
+  classic_squaredloss(){}
 
   float getLoss(shared_data*, float prediction, float label)
   { float example_loss = (prediction - label) * (prediction - label);
