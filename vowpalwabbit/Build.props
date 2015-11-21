@@ -6,6 +6,10 @@
 		<ZlibIncludeDir>$(SolutionDir)packages\zlib.1.2.8.7\build\native\include</ZlibIncludeDir>
 		<ZlibLibDir>$(SolutionDir)packages\zlib.1.2.8.7\build\native\lib\v120\$(Platform)\$(Configuration)\static\stdcall</ZlibLibDir>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration) $(Platform)'=='Debug x64'">
+		<VLDIncludeDir>$(SolutionDir)packages\VisualLeakDetector.2.4.2\lib\native\include</VLDIncludeDir>
+		<VLDLibDir>$(SolutionDir)packages\VisualLeakDetector.2.4.2\lib\native\address-model-64\lib</VLDLibDir>
+	</PropertyGroup>
 	<PropertyGroup Condition="'$(Platform)'=='Win32'">
 		<BoostIncludeDir>$(SolutionDir)packages\boost.1.58.0.0\lib\native\include</BoostIncludeDir>
 		<BoostLibDir>$(SolutionDir)packages\boost_program_options-vc120.1.58.0.0\lib\native\address-model-32\lib</BoostLibDir>

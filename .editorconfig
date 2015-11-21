@@ -30,3 +30,20 @@ trim_trailing_whitespace = false
 # If not set this breaks class feature blocks
 [*.tt]
 insert_final_newline = false
+
+[*.cs]
+end_of_line = crlf
+indent_style = space
+indent_size = 4
+insert_final_newline = false
+
+# This actually gives a warning/error:
+#
+# { /// <summary> 
+# 
+# Does reverting to Allman
+[vw_clr/*.{cpp,h}]
+end_of_line = crlf
+indent_style = space
+indent_size = 4
+indent_brace_style = Allman

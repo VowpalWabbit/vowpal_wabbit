@@ -153,7 +153,7 @@ public:
     { substring& l = id2name[k];
       size_t hash = uniform_hash((unsigned char*)l.begin, l.end-l.begin, 378401);
       uint32_t id = name2id.get(l, hash);
-      if (id != 0)
+      if (id != 0) // TODO: memory leak: char* temp
         THROW("error: label dictionary initialized with multiple occurances of: " << l);
       size_t len = l.end - l.begin;
       substring l_copy = { calloc_or_throw<char>(len), nullptr };

@@ -47,7 +47,7 @@ namespace VW
 
 		return factory->Create(vw->m_vw, m_example);
 	}
-	
+
 	String^ VowpalWabbitExample::VowpalWabbitString::get()
 	{
 		return m_string;
@@ -60,7 +60,7 @@ namespace VW
 
   bool VowpalWabbitExample::IsNewLine::get()
   {
-    return example_is_newline(*m_example);
+    return (bool)example_is_newline(*m_example);
   }
 
   void FormatIndices(example* a, System::Text::StringBuilder^ sb)

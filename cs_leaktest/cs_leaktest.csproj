@@ -63,10 +63,16 @@
       <Project>{6a9cbeab-427f-4d8d-9559-b76b42b0895c}</Project>
       <Name>cs_testcommon</Name>
     </ProjectReference>
-    <ProjectReference Include="..\vowpalwabbit\cs_vld\cs_vld.vcxproj">
+    <ProjectReference Include="..\vw_clr\cs_vld.vcxproj">
       <Project>{3d57a6af-de8c-40dc-abde-e4ce1b9c0d20}</Project>
       <Name>cs_vld</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\vowpalwabbit\packages\VisualLeakDetector.2.4.2\lib\native\address-model-64\lib\vld_x64.dll">
+      <Link>vld_x64.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

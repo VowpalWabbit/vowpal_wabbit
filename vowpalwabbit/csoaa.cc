@@ -789,7 +789,9 @@ base_learner* csldf_setup(vw& all)
   }
   else
   { if (all.training)
+    { free(&ld);
       THROW("ldf requires either m/multiline or mc/multiline-classifier, except in test-mode which can be s/sc/singleline/singleline-classifier");
+    }
 
     if (ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0)
     { ld.treat_as_classifier = false;

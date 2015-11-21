@@ -729,7 +729,7 @@ void end_pass(bfgs& b)
   if (b.current_pass <= b.final_pass)
   { if(b.current_pass < b.final_pass)
     { int status = process_pass(*all, b);
-	  
+
           //reaching the max number of passes regardless of convergence
           if(b.final_pass == b.current_pass)
       { cerr<<"Maximum number of passes reached. ";
@@ -741,17 +741,17 @@ void end_pass(bfgs& b)
 		  b.output_regularizer = false;
 		}
 	    }
-	  
+
           //attain convergence before reaching max iterations
       if (status != LEARN_OK && b.final_pass > b.current_pass)
       { b.final_pass = b.current_pass;
 	  }
-	  
+
       if (b.output_regularizer && b.final_pass == b.current_pass)
       { zero_preconditioner(*all);
 	    b.preconditioner_pass = true;
 	  }
-	  
+
 	  if(!all->holdout_set_off)
       { if(summarize_holdout_set(*all, b.no_win_counter))
 		finalize_regressor(*all, all->final_regressor_name);
@@ -763,7 +763,7 @@ void end_pass(bfgs& b)
       { finalize_regressor(*all, all->final_regressor_name);
 	    set_done(*all);
 	  }
-	  
+
     }
     else    //reaching convergence in the previous pass
         b.current_pass ++;
@@ -856,7 +856,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
       b.mem = calloc_or_throw<float>(all->length()*b.mem_stride);
       b.rho = calloc_or_throw<double>(m);
       b.alpha = calloc_or_throw<double>(m);
-      
+
       if (!all->quiet)
     { fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b.mem_stride)+(sizeof(weight) << all->reg.stride_shift)) >> 20);
 	}
@@ -933,6 +933,7 @@ base_learner* bfgs_setup(vw& all)
   if (vm.count("hessian_on") || b.m==0)
   { all.hessian_on = true;
   }
+
   if (!all.quiet)
   { if (b.m>0)
       cerr << "enabling BFGS based optimization ";
@@ -943,8 +944,11 @@ base_learner* bfgs_setup(vw& all)
     else
       cerr << "**without** curvature calculation" << endl;
   }
+
   if (all.numpasses < 2)
+  { free(&b);
     THROW("you must make at least 2 passes to use BFGS");
+  }
 
   all.bfgs = true;
   all.reg.stride_shift = 2;

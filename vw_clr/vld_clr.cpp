@@ -1,6 +1,6 @@
 #include "vld_clr.h"
 
-namespace VW
+namespace VLD
 {
   int VldReportHook(int reportType, wchar_t *message, int *returnValue)
   {

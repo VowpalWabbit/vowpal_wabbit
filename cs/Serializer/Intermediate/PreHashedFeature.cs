@@ -13,6 +13,13 @@ namespace VW.Serializer.Intermediate
     /// </summary>
     public sealed class PreHashedFeature : Feature
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PreHashedFeature"/> class.
+        /// </summary>
+        /// <param name="vw">The vowpal wabbit instance.</param>
+        /// <param name="ns">The namespace.</param>
+        /// <param name="name">The feature name/</param>
+        /// <param name="addAnchor">True if an anchor needs to be added, false otherwise.</param>
         public PreHashedFeature(VowpalWabbit vw, Namespace ns, string name, bool addAnchor)
             : base(name, addAnchor)
         {

@@ -159,6 +159,7 @@ namespace VW
     /// </summary>
     /// <returns>
     /// Null if compatible, otherwise the difference
+	/// </returns>
     String^ AreFeaturesCompatible(VowpalWabbitBase^ other);
 	};
 }

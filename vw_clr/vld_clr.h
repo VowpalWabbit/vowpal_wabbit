@@ -6,7 +6,7 @@ using namespace System;
 using namespace System::Collections::Generic;
 using namespace System::Runtime::InteropServices;
 
-namespace VW
+namespace VLD
 {
   int VldReportHook(int reportType, wchar_t *message, int *returnValue);
 

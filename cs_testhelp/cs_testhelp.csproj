@@ -69,6 +69,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\cs_testcommon\cs_testcommon.csproj">
+      <Project>{6a9cbeab-427f-4d8d-9559-b76b42b0895c}</Project>
+      <Name>cs_testcommon</Name>
+    </ProjectReference>
     <ProjectReference Include="..\cs_unittest\cs_unittest.csproj">
       <Project>{007b7de0-1d9b-498d-acfc-e9d33058f22e}</Project>
       <Name>cs_unittest</Name>

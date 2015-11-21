@@ -161,12 +161,14 @@ void parse_dictionary_argument(vw&all, string str)
       return;
     }
 
-  feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
-
-  example *ec = VW::alloc_examples(all.p->lp.label_size, 1);
   fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
   if (fd < 0)
+  { delete io;
     THROW("error: cannot re-read dictionary from file '" << fname << "'" << ", opening failed");
+  }
+
+  feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
+  example *ec = VW::alloc_examples(all.p->lp.label_size, 1);
 
   size_t def = (size_t)' ';
 
@@ -182,7 +184,13 @@ void parse_dictionary_argument(vw&all, string str)
       { size *= 2;
         buffer = (char*)realloc(buffer, size);
         if (buffer == nullptr)
+        { free(ec);
+          VW::dealloc_example(all.p->lp.delete_label, *ec);
+          delete map;
+          io->close_file();
+          delete io;
           THROW("error: memory allocation failed in reading dictionary");
+        }
       }
     }
     while ( (rc != EOF) && (rc != '\n') && (nread > 0) );
@@ -242,31 +250,38 @@ void parse_affix_argument(vw&all, string str)
   strcpy(cstr, str.c_str());
 
   char*p = strtok(cstr, ",");
-  while (p != 0)
-  { char*q = p;
-    uint16_t prefix = 1;
-    if (q[0] == '+') { q++; }
-    else if (q[0] == '-') { prefix = 0; q++; }
-    if ((q[0] < '1') || (q[0] > '7'))
-      THROW("malformed affix argument (length must be 1..7): " << p);
 
-    uint16_t len = (uint16_t)(q[0] - '0');
-    uint16_t ns = (uint16_t)' ';  // default namespace
-    if (q[1] != 0)
-    { if (valid_ns(q[1]))
-        ns = (uint16_t)q[1];
-      else
-        THROW("malformed affix argument (invalid namespace): " << p);
+  try
+  { while (p != 0)
+    { char*q = p;
+      uint16_t prefix = 1;
+      if (q[0] == '+') { q++; }
+      else if (q[0] == '-') { prefix = 0; q++; }
+      if ((q[0] < '1') || (q[0] > '7'))
+        THROW("malformed affix argument (length must be 1..7): " << p);
 
-      if (q[2] != 0)
-        THROW("malformed affix argument (too long): " << p);
+      uint16_t len = (uint16_t)(q[0] - '0');
+      uint16_t ns = (uint16_t)' ';  // default namespace
+      if (q[1] != 0)
+      { if (valid_ns(q[1]))
+          ns = (uint16_t)q[1];
+        else
+          THROW("malformed affix argument (invalid namespace): " << p);
+
+        if (q[2] != 0)
+          THROW("malformed affix argument (too long): " << p);
+      }
+
+      uint16_t afx = (len << 1) | (prefix & 0x1);
+      all.affix_features[ns] <<= 4;
+      all.affix_features[ns] |=  afx;
+
+      p = strtok(nullptr, ",");
     }
-
-    uint16_t afx = (len << 1) | (prefix & 0x1);
-    all.affix_features[ns] <<= 4;
-    all.affix_features[ns] |=  afx;
-
-    p = strtok(nullptr, ",");
+  }
+  catch(...)
+  { free(cstr);
+    throw;
   }
 
   free(cstr);
@@ -1310,14 +1325,14 @@ vw* initialize(string s)
 
   try
   { io_buf model;
-  parse_regressor_args(all, model);
-  parse_modules(all, model);
-  parse_sources(all, model);
+    parse_regressor_args(all, model);
+    parse_modules(all, model);
+    parse_sources(all, model);
 
-  initialize_parser_datastructures(all);
+    initialize_parser_datastructures(all);
 
-  return &all;
-}
+    return &all;
+  }
   catch (...)
   { finish(all);
     throw;
@@ -1378,7 +1393,8 @@ void sync_stats(vw& all)
 }
 
 void finish(vw& all, bool delete_all)
-{ if (!all.quiet)
+{
+  if (!all.quiet)
   { cerr.precision(6);
     cerr << endl << "finished run";
     if(all.current_pass == 0)

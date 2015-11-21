@@ -163,32 +163,37 @@ void set_compressed(parser* par)
 uint32_t cache_numbits(io_buf* buf, int filepointer)
 { v_array<char> t = v_init<char>();
 
-  uint32_t v_length;
-  buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
-  if (v_length > 29)
-    THROW("cache version too long, cache file is probably invalid");
+  try
+  { uint32_t v_length;
+    buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
+    if (v_length > 29)
+      THROW("cache version too long, cache file is probably invalid");
 
-  if (v_length == 0)
-    THROW("cache version too short, cache file is probably invalid");
+    if (v_length == 0)
+      THROW("cache version too short, cache file is probably invalid");
 
-  t.erase();
-  if (t.size() < v_length)
-    t.resize(v_length);
+    t.erase();
+    if (t.size() < v_length)
+      t.resize(v_length);
 
-  buf->read_file(filepointer,t.begin,v_length);
-  version_struct v_tmp(t.begin);
-  if ( v_tmp != version )
-  { cout << "cache has possibly incompatible version, rebuilding" << endl;
-    t.delete_v();
-    return 0;
+    buf->read_file(filepointer,t.begin,v_length);
+    version_struct v_tmp(t.begin);
+    if ( v_tmp != version )
+    { cout << "cache has possibly incompatible version, rebuilding" << endl;
+      t.delete_v();
+      return 0;
+    }
+
+    char temp;
+    if (buf->read_file(filepointer, &temp, 1) < 1)
+      THROW("failed to read");
+
+    if (temp != 'c')
+      THROW("data file is not a cache file");
   }
-
-  char temp;
-  if (buf->read_file(filepointer, &temp, 1) < 1)
-    THROW("failed to read");
-
-  if (temp != 'c')
-    THROW("data file is not a cache file");
+  catch(...)
+  { t.delete_v();
+  }
 
   t.delete_v();
 
@@ -730,7 +735,7 @@ void setup_example(vw& all, example* ae)
 
   if (all.p->emptylines_separate_examples && example_is_newline(*ae))
     all.p->in_pass_counter++;
-  
+
   ae->weight = all.p->lp.get_weight(&ae->l);
   all.sd->t += ae->weight;
   ae->example_t = (float)all.sd->t;

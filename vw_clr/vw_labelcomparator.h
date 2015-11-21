@@ -19,7 +19,7 @@ namespace VW
   {
   public:
     /// <summary>
-    /// Compares labels of <paramref cref="ex1"/> and <paramref cref="ex2"/>.
+    /// Compares labels of <paramref name="ex1"/> and <paramref name="ex2"/>.
     /// </summary>
     /// <returns>Returns null if labels are equivalent, otherwise returns the difference description.</returns>
     String^ Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2);
@@ -32,7 +32,7 @@ namespace VW
   {
   public:
     /// <summary>
-    /// Compares labels of <paramref cref="ex1"/> and <paramref cref="ex2"/>.
+    /// Compares labels of <paramref name="ex1"/> and <paramref name="ex2"/>.
     /// </summary>
     /// <returns>Returns null if labels are equivalent, otherwise returns the difference description.</returns>
     virtual String^ Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2) sealed;

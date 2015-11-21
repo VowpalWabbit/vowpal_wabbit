@@ -237,12 +237,14 @@ base_learner* active_cover_setup(vw& all)
   }
 
   if (count(all.args.begin(), all.args.end(),"--lda") != 0)
-  { THROW("error: you can't combine lda and active learning");
+  { free(&data);
+    THROW("error: you can't combine lda and active learning");
   }
 
 
   if (count(all.args.begin(), all.args.end(),"--active") != 0)
-  { THROW("error: you can't use --active_cover and --active at the same time");
+  { free(&data);
+    THROW("error: you can't use --active_cover and --active at the same time");
   }
 
   *all.file_options <<" --active_cover --cover "<< data.cover_size;

@@ -19,15 +19,38 @@ using VW.Serializer.Intermediate;
 
 namespace VW.Serializer
 {
+    /// <summary>
+    /// The default marshaller for most types supported by VW.
+    /// </summary>
     public partial class VowpalWabbitDefaultMarshaller
     {
         private readonly bool disableStringExampleGeneration;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VowpalWabbitDefaultMarshaller"/> class.
+        /// </summary>
+        /// <param name="disableStringExampleGeneration">True if no vw native strings should be generated, false otherwise.</param>
         public VowpalWabbitDefaultMarshaller(bool disableStringExampleGeneration)
         {
             this.disableStringExampleGeneration = disableStringExampleGeneration;
         }
 
+        /// <summary>
+        /// Marshals the given value <paramref name="value"/> into native VW by
+        ///
+        /// <list type="number">
+        /// <item><description>string concatenating the feature name and the value.</description></item>
+        /// <item><description>Hashing of the resulting string.</description></item>
+        /// </list>
+        ///
+        /// e.g. feature name = "Age", value = 25 yields "Age25:1" in VW native string format.
+        /// </summary>
+        /// <typeparam name="T">The value type.</typeparam>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The actual feature value.</param>
+        /// <remarks>This is a fallback method if no other types match.</remarks>
         public void MarshalFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, T value)
         {
             Contract.Requires(context != null);
@@ -50,6 +73,16 @@ namespace VW.Serializer
                 featureString);
         }
 
+        /// <summary>
+        /// Marshals a boolean value into native VW.
+        /// 
+        /// e.g. loggedIn = true yields "loggedIn" in VW native string format.
+        /// e.g. loggedIn = false yields an empty string.
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The actual feature value.</param>
         public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, bool value)
         {
             Contract.Requires(context != null);
@@ -74,6 +107,16 @@ namespace VW.Serializer
                 feature.Name);
         }
 
+        /// <summary>
+        /// Marshals an enum value into native VW.
+        /// 
+        /// e.g. Gender = Male yields "GenderMale" in VW native string format.
+        /// </summary>
+        /// <typeparam name="T">The enum type.</typeparam>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The actual feature value.</param>
         public void MarshalEnumFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, EnumerizedFeature<T> feature, T value)
         {
             Contract.Requires(context != null);
