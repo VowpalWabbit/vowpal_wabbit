@@ -37,10 +37,10 @@ indent_style = space
 indent_size = 4
 insert_final_newline = false
 
-# This actually gives a warning/error:
+# The following line results in warning/error:
 #
-# { /// <summary> 
-# 
+# { /// <summary>
+#
 # Does reverting to Allman
 [vw_clr/*.{cpp,h}]
 end_of_line = crlf
