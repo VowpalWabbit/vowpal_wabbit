@@ -31,6 +31,12 @@ namespace VW.Serializer
         /// </summary>
         private static readonly Dictionary<Type, object> SerializerCache = new Dictionary<Type, object>();
 
+        /// <summary>
+        /// Creates a serializer for the given type and settings.
+        /// </summary>
+        /// <typeparam name="TExample">The user type to serialize.</typeparam>
+        /// <param name="settings"></param>
+        /// <returns></returns>
         public static VowpalWabbitSerializerCompiled<TExample> CreateSerializer<TExample>(VowpalWabbitSettings settings = null)
         {
             List<FeatureExpression> allFeatures = null;

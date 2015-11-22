@@ -103,6 +103,16 @@ namespace VW
                 }, index, label);
         }
 
+        /// <summary>
+        /// Prediction sweep.
+        /// </summary>
+        /// <param name="fromInclusive"></param>
+        /// <param name="toExclusive"></param>
+        /// <param name="example"></param>
+        /// <param name="actionDependentFeatures"></param>
+        /// <param name="index"></param>
+        /// <param name="label"></param>
+        /// <returns></returns>
         public TActionDependentFeature[][] Predict(int fromInclusive, int toExclusive, TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
             if (fromInclusive != toExclusive - 1)
@@ -129,6 +139,9 @@ namespace VW
             return result;
         }
 
+        /// <summary>
+        /// Dispose resources.
+        /// </summary>
         public void Dispose()
         {
             this.Dispose(true);

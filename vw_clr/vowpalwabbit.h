@@ -76,7 +76,8 @@ namespace VW
         /// Gets Collected performance statistics.
         /// </summary>
         property VowpalWabbitPerformanceStatistics^ PerformanceStatistics
-        { VowpalWabbitPerformanceStatistics^ get();
+        {
+            VowpalWabbitPerformanceStatistics^ get();
         }
 
         /// <summary>

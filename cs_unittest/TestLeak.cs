@@ -6,7 +6,9 @@ namespace cs_unittest
     {
         public void Leak()
         {
+#if DEBUG
             VowpalWabbitLeakTest.Leak();
+#endif
         }
     }
 }

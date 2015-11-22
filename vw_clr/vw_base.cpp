@@ -75,7 +75,7 @@ namespace VW
 
         try
         {
-			parse_modules(*m_vw, model);
+            parse_modules(*m_vw, model);
             parse_sources(*m_vw, model);
             initialize_parser_datastructures(*m_vw);
         }

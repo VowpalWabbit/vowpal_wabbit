@@ -11,19 +11,19 @@ license as described in the file LICENSE.
 
 namespace VW
 {
-	/// <summary>
-	/// VowpalWabbit model wrapper used in multi-threaded scenarios.
-	/// </summary>
-	public ref class VowpalWabbitModel : public VowpalWabbitBase
-	{
-	public:
-		/// <summary>
-		/// Initializes a new <see cref="VowpalWabbitModel"/> instance. 
-		/// </summary>
-		/// <param name="settings">Arguments passed to native instance.</param>
-		VowpalWabbitModel(VowpalWabbitSettings^ settings);
+    /// <summary>
+    /// VowpalWabbit model wrapper used in multi-threaded scenarios.
+    /// </summary>
+    public ref class VowpalWabbitModel : public VowpalWabbitBase
+    {
+    public:
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbitModel"/> instance.
+        /// </summary>
+        /// <param name="settings">Arguments passed to native instance.</param>
+        VowpalWabbitModel(VowpalWabbitSettings^ settings);
 
-		/// <param name="args">Command line arguments passed to native instance.</param>
-		VowpalWabbitModel(String^ args);
-	};
+        /// <param name="args">Command line arguments passed to native instance.</param>
+        VowpalWabbitModel(String^ args);
+    };
 }

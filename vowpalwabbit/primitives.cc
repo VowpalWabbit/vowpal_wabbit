@@ -34,6 +34,7 @@ float sum_of_squares(float* begin, float* end)
   return sum;
 }
 
+/*
 float sum_of_squares_avx(float* begin, float* end)
 {
   size_t length = (end - begin);
@@ -87,3 +88,4 @@ float sum_of_squares_avx2(float* begin, float* end)
 
   return sum;
 }
+*/

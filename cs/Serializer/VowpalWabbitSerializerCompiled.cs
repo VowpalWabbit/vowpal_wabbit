@@ -26,8 +26,6 @@ namespace VW.Serializer
     /// Compiles a serializers for the given example user type.
     /// </summary>
     /// <typeparam name="TExample">The example user type.</typeparam>
-    /// <typeparam name="TVisitor">The visitor to be used for serialization.</typeparam>
-    /// <typeparam name="VowpalWabbitMarshallingContext">The resulting serialization type.</typeparam>
     /// <returns>A serializer for the given user example type.</returns>
     public sealed class VowpalWabbitSerializerCompiled<TExample>
     {
@@ -115,6 +113,11 @@ namespace VW.Serializer
 
         internal bool DisableStringExampleGeneration { get { return this.disableStringExampleGeneration; } }
 
+        /// <summary>
+        /// Creates a bound serializers.
+        /// </summary>
+        /// <param name="vw">The vw instance to bind to.</param>
+        /// <returns></returns>
         public VowpalWabbitSerializer<TExample> Create(VowpalWabbit vw)
         {
             return new VowpalWabbitSerializer<TExample>(this, vw);

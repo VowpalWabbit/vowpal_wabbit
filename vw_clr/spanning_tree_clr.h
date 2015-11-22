@@ -10,35 +10,35 @@ license as described in the file LICENSE.
 
 namespace VW
 {
-  /// <summary>
-  /// Managed wrapper for AllReduce spanning tree implementation.
-  /// </summary>
-	public ref class SpanningTreeClr
-	{
-	private:
-		SpanningTree* m_spanningTree;
-
-	public:
     /// <summary>
-    ///Initializes a new <see cref="SpanningTreeClr"/> instance.
+    /// Managed wrapper for AllReduce spanning tree implementation.
     /// </summary>
-		SpanningTreeClr();
+    public ref class SpanningTreeClr
+    {
+    private:
+        SpanningTree* m_spanningTree;
 
-		~SpanningTreeClr();
+    public:
+        /// <summary>
+        /// Initializes a new <see cref="SpanningTreeClr"/> instance.
+        /// </summary>
+        SpanningTreeClr();
 
-    /// <summary>
-    /// Starts the server on a background thread.
-    /// </summary>
-		void Start();
+        ~SpanningTreeClr();
 
-    /// <summary>
-    /// Runs the server on the calling thread.
-    /// </summary>
-		void Run();
-		
-    /// <summary>
-    /// Stops the background thread.
-    /// </summary>
-		void Stop();
-	};
+        /// <summary>
+        /// Starts the server on a background thread.
+        /// </summary>
+        void Start();
+
+        /// <summary>
+        /// Runs the server on the calling thread.
+        /// </summary>
+        void Run();
+
+        /// <summary>
+        /// Stops the background thread.
+        /// </summary>
+        void Stop();
+    };
 }

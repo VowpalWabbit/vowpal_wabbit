@@ -11,74 +11,78 @@ license as described in the file LICENSE.
 
 namespace VW
 {
-	float VowpalWabbitScalarPredictionFactory::Create(vw* vw, example* ex)
-	{
-#if _DEBUG
-		if (ex == nullptr)
-			throw gcnew ArgumentNullException("ex");
-#endif
-
-		try
-  { return VW::get_prediction(ex);
-		}
-		CATCHRETHROW
-	}
-
-	float VowpalWabbitCostSensitivePredictionFactory::Create(vw* vw, example* ex)
-	{
-#if _DEBUG
-		if (ex == nullptr)
-			throw gcnew ArgumentNullException("ex");
-#endif
-
-		try
-  { return VW::get_cost_sensitive_prediction(ex);
-		}
-		CATCHRETHROW
-	}
-
-	cli::array<int>^ VowpalWabbitMultilabelPredictionFactory::Create(vw* vw, example* ex)
-	{
-#if _DEBUG
-		if (ex == nullptr)
-			throw gcnew ArgumentNullException("ex");
-#endif
-
-		size_t length;
-		uint32_t* labels;
-		
-		try
-  { labels = VW::get_multilabel_predictions(ex, length);
-		}
-		CATCHRETHROW
-
-		if (length > Int32::MaxValue)
-  { throw gcnew ArgumentOutOfRangeException("Multi-label predictions too large");
-		}
-
-		auto values = gcnew cli::array<int>((int)length);
-
-    if (length > 0)
+    float VowpalWabbitScalarPredictionFactory::Create(vw* vw, example* ex)
     {
-		Marshal::Copy(IntPtr(labels), values, 0, (int)length);
+#if _DEBUG
+        if (ex == nullptr)
+            throw gcnew ArgumentNullException("ex");
+#endif
+
+        try
+        {
+            return VW::get_prediction(ex);
+        }
+        CATCHRETHROW
     }
 
-		return values;
-	}
-
-	cli::array<float>^ VowpalWabbitTopicPredictionFactory::Create(vw* vw, example* ex)
-	{
+    float VowpalWabbitCostSensitivePredictionFactory::Create(vw* vw, example* ex)
+    {
 #if _DEBUG
-		if (vw == nullptr)
-			throw gcnew ArgumentNullException("vw");
-
-		if (ex == nullptr)
-			throw gcnew ArgumentNullException("ex");
+        if (ex == nullptr)
+            throw gcnew ArgumentNullException("ex");
 #endif
 
-		auto values = gcnew cli::array<float>(vw->lda);
-		Marshal::Copy(IntPtr(ex->topic_predictions.begin), values, 0, vw->lda);
+        try
+        {
+            return VW::get_cost_sensitive_prediction(ex);
+        }
+        CATCHRETHROW
+    }
 
-		return values;
-	}
+    cli::array<int>^ VowpalWabbitMultilabelPredictionFactory::Create(vw* vw, example* ex)
+    {
+#if _DEBUG
+        if (ex == nullptr)
+            throw gcnew ArgumentNullException("ex");
+#endif
+
+        size_t length;
+        uint32_t* labels;
+
+        try
+        {
+            labels = VW::get_multilabel_predictions(ex, length);
+        }
+        CATCHRETHROW
+
+            if (length > Int32::MaxValue)
+            {
+                throw gcnew ArgumentOutOfRangeException("Multi-label predictions too large");
+            }
+
+        auto values = gcnew cli::array<int>((int)length);
+
+        if (length > 0)
+        {
+            Marshal::Copy(IntPtr(labels), values, 0, (int)length);
+        }
+
+        return values;
+    }
+
+    cli::array<float>^ VowpalWabbitTopicPredictionFactory::Create(vw* vw, example* ex)
+    {
+#if _DEBUG
+        if (vw == nullptr)
+            throw gcnew ArgumentNullException("vw");
+
+        if (ex == nullptr)
+            throw gcnew ArgumentNullException("ex");
+#endif
+
+        auto values = gcnew cli::array<float>(vw->lda);
+        Marshal::Copy(IntPtr(ex->topic_predictions.begin), values, 0, vw->lda);
+
+        return values;
+    }
 }

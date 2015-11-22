@@ -19,14 +19,21 @@
   </metadata>
   <files>
 	  <!-- despite warning this is still required -->
-	  <file src="bin\$Platform$\$Configuration$\VowpalWabbit*.dll" target="lib\net45" />
-    <file src="bin\$Platform$\$Configuration$\VowpalWabbit*.pdb" target="lib\net45" />
-    <file src="bin\$Platform$\$Configuration$\VowpalWabbit*.xml" target="lib\net45" />
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit*.dll" target="lib\net45" />
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit*.pdb" target="lib\net45" />
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit*.xml" target="lib\net45" />
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit*.xml" target="lib\net45" />
+
+	  <!-- The VowpalWabbitCore.dll is compiled specifically with dynamic linkage,
+	       thus I opted to include the dll directly and not go through dependencies -->
+	  <file src="$SolutionDir$x64\$Configuration$\zlib.dll" target="build\native" />
+	  <file src="VowpalWabbit.targets" target="build" />
+      
 	  <file src="**\*.cs" target="src\cs" exclude="**\obj\**\*.cs" />
 	  <file src="..\vw_clr\*.cpp" target="src\vw_clr" />
 	  <file src="..\vw_clr\*.h" target="src\vw_clr" />
-	  <file src="..\vowpalwabbit\*.cc" target="src\vowpalwabbit" />
-	  <file src="..\vowpalwabbit\*.h" target="src\vowpalwabbit" />
+	  <file src="$SolutionDir$*.cc" target="src\vowpalwabbit" />
+	  <file src="$SolutionDir$*.h" target="src\vowpalwabbit" />
   </files>
 </package>
 

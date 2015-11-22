@@ -10,34 +10,34 @@ license as described in the file LICENSE.
 
 namespace VW
 {
-  /// <summary>
-  /// IO Buffer keeping data in memory. Used by VowpalWabbit::Reload.
-  /// </summary>
-  class clr_io_memory_buf : public io_buf
-  {
-  private:
-    vector<char> m_data;
-
-    vector<char>::const_iterator m_iterator;
-
-  public:
     /// <summary>
-    ///Initializes a new <see cref="clr_io_memory_buf"/> instance.
+    /// IO Buffer keeping data in memory. Used by VowpalWabbit::Reload.
     /// </summary>
-    clr_io_memory_buf();
+    class clr_io_memory_buf : public io_buf
+    {
+    private:
+        vector<char> m_data;
 
-    virtual int open_file(const char* name, bool stdin_off, int flag = READ);
+        vector<char>::const_iterator m_iterator;
 
-    virtual void reset_file(int f);
+    public:
+        /// <summary>
+        /// Initializes a new <see cref="clr_io_memory_buf"/> instance.
+        /// </summary>
+        clr_io_memory_buf();
 
-    virtual ssize_t read_file(int f, void* buf, size_t nbytes);
+        virtual int open_file(const char* name, bool stdin_off, int flag = READ);
 
-    virtual size_t num_files();
+        virtual void reset_file(int f);
 
-    virtual ssize_t write_file(int file, const void* buf, size_t nbytes);
+        virtual ssize_t read_file(int f, void* buf, size_t nbytes);
 
-    virtual bool compressed();
+        virtual size_t num_files();
 
-    virtual bool close_file();
-  };
+        virtual ssize_t write_file(int file, const void* buf, size_t nbytes);
+
+        virtual bool compressed();
+
+        virtual bool close_file();
+    };
 }

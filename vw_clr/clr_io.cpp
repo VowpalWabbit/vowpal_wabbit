@@ -12,57 +12,65 @@ using namespace System::Runtime::InteropServices;
 
 namespace VW
 {
-	clr_io_buf::clr_io_buf(Stream^ stream) : m_stream(stream)
-{ if (stream == nullptr)
-			throw gcnew ArgumentNullException("stream");
-		
-		files.push_back(0);
-	}
+    clr_io_buf::clr_io_buf(Stream^ stream) : m_stream(stream)
+    {
+        if (stream == nullptr)
+            throw gcnew ArgumentNullException("stream");
 
-	int clr_io_buf::open_file(const char* name, bool stdin_off, int flag)
-{ return 0;
-	}
+        files.push_back(0);
+    }
 
-	void clr_io_buf::reset_file(int f)
-{ m_stream->Seek(0, SeekOrigin::Begin);
-		endloaded = space.begin;
-		space.end = space.begin;
-	}
+    int clr_io_buf::open_file(const char* name, bool stdin_off, int flag)
+    {
+        return 0;
+    }
 
-	ssize_t clr_io_buf::read_file(int f, void* buf, size_t nbytes)
-{ auto buffer = gcnew array<unsigned char>((int)nbytes);
-		int readBytes = m_stream->Read(buffer, 0, (int)nbytes);
+    void clr_io_buf::reset_file(int f)
+    {
+        m_stream->Seek(0, SeekOrigin::Begin);
+        endloaded = space.begin;
+        space.end = space.begin;
+    }
 
-		Marshal::Copy(buffer, 0, IntPtr(buf), (int)nbytes);
+    ssize_t clr_io_buf::read_file(int f, void* buf, size_t nbytes)
+    {
+        auto buffer = gcnew array<unsigned char>((int)nbytes);
+        int readBytes = m_stream->Read(buffer, 0, (int)nbytes);
 
-		return readBytes;
-	}
+        Marshal::Copy(buffer, 0, IntPtr(buf), (int)nbytes);
 
-	size_t clr_io_buf::num_files()
-{ return 1;
-	}
-		
-	ssize_t clr_io_buf::write_file(int file, const void* buf, size_t nbytes)
-{ auto buffer = gcnew array<unsigned char>((int)nbytes);
-		Marshal::Copy(IntPtr((void*)buf), buffer, 0, (int)nbytes);
+        return readBytes;
+    }
 
-		m_stream->Write(buffer, 0, (int)nbytes);
+    size_t clr_io_buf::num_files()
+    {
+        return 1;
+    }
 
-		return nbytes;
-	}
+    ssize_t clr_io_buf::write_file(int file, const void* buf, size_t nbytes)
+    {
+        auto buffer = gcnew array<unsigned char>((int)nbytes);
+        Marshal::Copy(IntPtr((void*)buf), buffer, 0, (int)nbytes);
 
-	bool clr_io_buf::compressed()
-{ return false;
-	}
+        m_stream->Write(buffer, 0, (int)nbytes);
 
-	void clr_io_buf::flush()
-	{ io_buf::flush();
-		m_stream->Flush();
-	}
+        return nbytes;
+    }
 
-	bool clr_io_buf::close_file()
-	{
-    // don't close stream on purpose. Caller of SaveModel should have control when to close.
-		return true;
-	}
+    bool clr_io_buf::compressed()
+    {
+        return false;
+    }
+
+    void clr_io_buf::flush()
+    {
+        io_buf::flush();
+        m_stream->Flush();
+    }
+
+    bool clr_io_buf::close_file()
+    {
+        // don't close stream on purpose. Caller of SaveModel should have control when to close.
+        return true;
+    }
 }

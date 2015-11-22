@@ -52,7 +52,7 @@ void vw_trace(const char* filename, int linenumber, const char* fmt, ...)
 bool launchDebugger()
 {	// Get System directory, typically c:\windows\system32
 	std::wstring systemDir(MAX_PATH + 1, '\0');
-	UINT nChars = GetSystemDirectoryW(&systemDir[0], systemDir.length());
+	UINT nChars = GetSystemDirectoryW(&systemDir[0], (UINT)systemDir.length());
 	if (nChars == 0) return false; // failed to get system directory
 	systemDir.resize(nChars);
 

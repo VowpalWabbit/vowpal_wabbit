@@ -137,6 +137,14 @@ namespace VW.Serializer
                 value);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The actual feature value.</param>
         public void MarshalEnumerizeFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, T value)
         {
             Contract.Requires(context != null);
@@ -154,6 +162,13 @@ namespace VW.Serializer
             context.StringExample.Append(' ').Append(stringValue);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The actual feature value.</param>
         public void MarshalFeatureStringEscape(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, string value)
         {
             Contract.Requires(context != null);
@@ -177,6 +192,13 @@ namespace VW.Serializer
             context.StringExample.Append(' ').Append(value);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The actual feature value.</param>
         public void MarshalFeatureStringSplit(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, string value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -203,7 +225,12 @@ namespace VW.Serializer
         /// <summary>
         /// Transfers feature data to native space.
         /// </summary>
-        /// <param name="feature">The feature.</param>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The actual feature value.</param>
         public void MarshalFeature<TKey, TValue>(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IEnumerable<KeyValuePair<TKey, TValue>> value)
         {
             Contract.Requires(context != null);
@@ -238,10 +265,14 @@ namespace VW.Serializer
             }
         }
 
+
         /// <summary>
-        /// Transfers feature data to native space.
+        /// 
         /// </summary>
-        /// <param name="feature">The feature.</param>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The actual feature value.</param>
         public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IDictionary value)
         {
             Contract.Requires(context != null);
@@ -276,9 +307,12 @@ namespace VW.Serializer
         }
 
         /// <summary>
-        /// Transfers feature data to native space.
+        /// 
         /// </summary>
-        /// <param name="feature">The feature.</param>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The actual feature value.</param>
         public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IEnumerable<string> value)
         {
             Contract.Requires(context != null);
@@ -309,6 +343,12 @@ namespace VW.Serializer
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="featureVisits"></param>
         public void MarshalNamespace(VowpalWabbitMarshalContext context, Namespace ns, Action featureVisits)
         {
             try
@@ -344,6 +384,11 @@ namespace VW.Serializer
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="label"></param>
         public void MarshalLabel(VowpalWabbitMarshalContext context, ILabel label)
         {
             if (label == null)
@@ -357,7 +402,7 @@ namespace VW.Serializer
             {
                 return;
             }
-
+            
             // prefix with label
             context.StringExample.Append(label.ToVowpalWabbitFormat());
         }
