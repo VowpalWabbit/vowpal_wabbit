@@ -478,15 +478,15 @@ float compute_update(gd& g, example& ec)
       pred_per_update = get_pred_per_update<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,ec);
     else
       pred_per_update = ec.total_sum_feat_sq;
-    float delta_pred = pred_per_update * all.eta * ec.weight;
+    float update_scale = all.eta * ec.weight;
     if(!adaptive)
     { float t = (float)(ec.example_t - all.sd->weighted_holdout_examples);
-      delta_pred *= powf(t, g.neg_power_t);
+      update_scale *= powf(t, g.neg_power_t);
     }
     if(invariant)
-      update = all.loss->getUpdate(ec.pred.scalar, ld.label, delta_pred, pred_per_update);
+      update = all.loss->getUpdate(ec.pred.scalar, ld.label, update_scale, pred_per_update);
     else
-      update = all.loss->getUnsafeUpdate(ec.pred.scalar, ld.label, delta_pred, pred_per_update);
+      update = all.loss->getUnsafeUpdate(ec.pred.scalar, ld.label, update_scale);
     // changed from ec.partial_prediction to ld.prediction
     ec.updated_prediction += pred_per_update * update;
 

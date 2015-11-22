@@ -25,8 +25,8 @@ public :
    * getUpdate evaluates the update scalar
    * The function return the update scalar
    */
-  virtual float getUpdate(float prediction, float label, float eta_t, float norm) = 0;
-  virtual float getUnsafeUpdate(float prediction, float label, float eta_t, float norm) = 0;
+  virtual float getUpdate(float prediction, float label, float update_scale, float pred_per_update) = 0;
+  virtual float getUnsafeUpdate(float prediction, float label, float eta_t) = 0;
   
   //the number of examples of the opposite label such that updating with
   //that number results in the opposite label. 
