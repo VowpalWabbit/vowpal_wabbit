@@ -50,7 +50,7 @@ void learn_randomized(oaa& o, LEARNER::base_learner& base, example& ec)
   }
   o.subsample_id = p;
 
-  ec.pred.multiclass = prediction;
+  ec.pred.multiclass = (uint32_t)prediction;
   ec.l.multi = ld;
 }
 
@@ -136,7 +136,7 @@ void finish_example_probabilities(vw& all, oaa& o, example& ec)
   // We have already computed `prediction` in predict_or_learn,
   // but we cannot store it in ec.pred union because we store ec.pred.probs there.
   uint32_t prediction = 0;
-  for (size_t i = 1; i < o.k; i++)
+  for (uint32_t i = 1; i < o.k; i++)
     if (ec.pred.probs[i] > ec.pred.probs[prediction])
       prediction = i;
   prediction++; // prediction is 1-based index (not 0-based)
@@ -147,7 +147,7 @@ void finish_example_probabilities(vw& all, oaa& o, example& ec)
   // === Print probabilities for all classes
   char temp_str[10];
   ostringstream outputStringStream;
-  for (size_t i = 0; i < o.k; i++)
+  for (uint32_t i = 0; i < o.k; i++)
   { if (i > 0) outputStringStream << ' ';
     if (all.sd->ldict)
     { substring ss = all.sd->ldict->get(i+1);

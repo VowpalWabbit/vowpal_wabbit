@@ -152,7 +152,8 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
           const feature_class* snd_end = features_data[snd_ns].end;
 
           for (; fst != fst_end; ++fst)
-          { const uint32_t halfhash = FNV_prime * fst->weight_index;
+          { 
+			const uint32_t halfhash = FNV_prime * (uint32_t)fst->weight_index;
             call_audit<R ,audit_func>(dat, fst);
             // next index differs for permutations and simple combinations
             const feature_class* snd = (!same_namespace) ? features_data[snd_ns].begin :
@@ -161,7 +162,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
             for (; snd < snd_end; ++snd)
             { call_audit<R, audit_func>(dat, snd);
               //  const size_t ft_idx = ((snd->weight_index /*>> stride_shift*/) ^ halfhash) /*<< stride_shift*/;
-              call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value,snd->x), (snd->weight_index^halfhash) + offset);
+              call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value,snd->x), (uint32_t)(snd->weight_index^halfhash) + offset);
               call_audit<R, audit_func>(dat, nullptr);
             } // end for(snd)
 
@@ -204,14 +205,14 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                 const feature_class* snd = (!same_namespace1) ? features_data[snd_ns].begin :
                                            (PROCESS_SELF_INTERACTIONS(fst->x)) ? fst : fst+1;
 
-                const uint32_t halfhash1 = FNV_prime * fst->weight_index;
+                const uint32_t halfhash1 = FNV_prime * (uint32_t)fst->weight_index;
                 const float& ft_value = fst->x;
 
                 for (; snd < snd_end; ++snd)
                 { //f3 x k*(f2 x k*f1)
                   call_audit<R, audit_func>(dat, snd);
 
-                  const uint32_t halfhash2 = FNV_prime * (halfhash1 ^ snd->weight_index);
+                  const uint32_t halfhash2 = FNV_prime * (halfhash1 ^ (uint32_t)snd->weight_index);
                   const float ft_value1 = INTERACTION_VALUE(ft_value, snd->x);
 
                   // next index differs for permutations and simple combinations
@@ -221,7 +222,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
                   for (; thr < thr_end; ++thr)
                   { call_audit<R, audit_func>(dat, thr);
 //                                        const size_t ft_idx = ((thr->weight_index /*>> stride_shift*/)^ halfhash2) /*<< stride_shift*/;
-                    call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value1,thr->x), (thr->weight_index^halfhash2) + offset);
+                    call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value1,thr->x), (uint32_t)(thr->weight_index^halfhash2) + offset);
                     call_audit<R, audit_func>(dat, nullptr);
                   } // end for (thr)
                   call_audit<R, audit_func>(dat, nullptr);
@@ -345,12 +346,12 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
             call_audit<R, audit_func>(dat, cur_feature);
 
             if (cur_data == fgd) // first namespace
-            { next_data->hash = FNV_prime * cur_feature->weight_index;
+            { next_data->hash = FNV_prime * (uint32_t)cur_feature->weight_index;
               next_data->x = cur_feature->x; // data->x == 1.
             }
             else
             { // feature2 xor (16777619*feature1)
-              next_data->hash = FNV_prime * (cur_data->hash ^ cur_feature->weight_index);
+              next_data->hash = FNV_prime * (cur_data->hash ^ (uint32_t)cur_feature->weight_index);
               next_data->x = INTERACTION_VALUE(cur_feature->x, cur_data->x);
             }
 
@@ -367,7 +368,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
 
             for (feature_class* f = start; f != end; ++f)
             { call_audit<R, audit_func>(dat, f);
-              call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(fgd2->x, f->x), (fgd2->hash^f->weight_index) + offset );
+              call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(fgd2->x, f->x), (uint32_t)(fgd2->hash^f->weight_index) + offset );
               call_audit<R, audit_func>(dat, nullptr);
             }
 

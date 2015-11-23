@@ -134,7 +134,6 @@ void handle_sigterm (int)
 
 bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdout_off, uint32_t target_modulus)  // target should be 0 in the normal case, or period-1 in the case that emptylines separate examples
 { if(holdout_off) return false;
-  //cerr << "(" << counter << "," << period << "," << target_modulus << ")";
   if (after == 0) // hold out by period
     return (counter % period == target_modulus);
   else // hold out by position
@@ -713,7 +712,7 @@ void feature_limit(vw& all, example* ex)
     if (all.limit[*index] < ex->atomics[*index].size())
     { v_array<feature>& features = ex->atomics[*index];
 
-      qsort(features.begin, features.size(), sizeof(feature), order_features);
+      qsort(features.begin, features.size(), sizeof(feature), order_features<feature>);
 
       unique_features(features, all.limit[*index]);
     }

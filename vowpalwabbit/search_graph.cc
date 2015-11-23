@@ -230,7 +230,7 @@ void takedown(Search::search& sch, vector<example*>& /*ec*/)
 
 void add_edge_features_group_fn(task_data&D, float fv, uint32_t fx)
 { example*node = D.cur_node;
-  uint32_t fx2 = fx / D.multiplier;
+  uint32_t fx2 = fx / (uint32_t)D.multiplier;
   for (size_t k=0; k<D.numN; k++)
   { if (D.neighbor_predictions[k] == 0.) continue;
     float fv2 = fv * D.neighbor_predictions[k];
@@ -243,7 +243,7 @@ void add_edge_features_group_fn(task_data&D, float fv, uint32_t fx)
 
 void add_edge_features_single_fn(task_data&D, float fv, uint32_t fx)
 { example*node = D.cur_node;
-  uint32_t fx2 = fx / D.multiplier;
+  uint32_t fx2 = fx / (uint32_t)D.multiplier;
   size_t k = (size_t) D.neighbor_predictions[0];
   feature f = { fv, (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint32_t)D.mask };
   node->atomics[neighbor_namespace].push_back(f);
@@ -278,7 +278,7 @@ void add_edge_features(Search::search&sch, task_data&D, uint32_t n, vector<examp
         size_t other_side = (D.directed && (n_in_sink != m_in_sink)) ? (D.K+1) : 0;
         D.neighbor_predictions[ D.pred[m]-1 + other_side ] += 1.;
         pred_total += 1.;
-        last_pred = D.pred[m]-1 + other_side;
+        last_pred = (uint32_t)D.pred[m]-1 + (uint32_t)other_side;
       }
     }
     else

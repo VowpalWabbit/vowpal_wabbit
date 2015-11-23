@@ -54,6 +54,7 @@ struct cb_adf
   base_learner* base;
 
   bool rank_all;
+  bool predict;
 };
 
 namespace CB_ADF
@@ -69,9 +70,9 @@ void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::labe
 
     COST_SENSITIVE::wclass wc;
     if (shared && i > 0)
-      wc.class_index = i-1;
+      wc.class_index = (uint32_t)i-1;
     else
-      wc.class_index = i;
+      wc.class_index = (uint32_t)i;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
       wc.x = ld.costs[0].cost / ld.costs[0].probability;
     else
@@ -119,9 +120,9 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
       wc.x = CB_ALGS::get_cost_pred<true>(c.scorer, nullptr, *(examples[i]), 0, 2);
 
     if (shared)
-      wc.class_index = i - 1;
+      wc.class_index = (uint32_t)i - 1;
     else
-      wc.class_index = i;
+      wc.class_index = (uint32_t)i;
     c.pred_scores.costs.push_back(wc); // done
 
     //add correction if we observed cost for this action and regressor is wrong
@@ -152,7 +153,7 @@ void get_observed_cost(cb_adf& mydata, v_array<example*>& examples)
         (**ec).l.cb.costs[0].cost != FLT_MAX &&
         (**ec).l.cb.costs[0].probability > 0)
     { ld = (**ec).l.cb;
-      index = ec - examples.begin;
+      index = (int)(ec - examples.begin);
     }
   }
 
@@ -246,7 +247,7 @@ void gen_cs_example_MTR(cb_adf& data, v_array<example*>& ec_seq, v_array<example
     }
     else if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     { wc.x = ld.costs[0].cost;
-      data.mtr_example = i;
+      data.mtr_example = (uint32_t)i;
       keep_example = true;
     }
 
@@ -269,20 +270,23 @@ template<class T> void swap(T& ele1, T& ele2)
   ele1 = temp;
 }
 
+template<bool predict>
 void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
-{ //first get the prediction to return
-  gen_cs_example_ips(examples, mydata.cs_labels);
-  call_predict_or_learn<false>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
+{ 
   uint32_t action = 0;
-  if (!mydata.rank_all) //preserve prediction
-    action = examples[0]->pred.multiclass;
-  else
-    swap(examples[0]->pred.multilabels, mydata.mtr_multilabels);
+  if (predict) //first get the prediction to return
+    { gen_cs_example_ips(examples, mydata.cs_labels);
+      call_predict_or_learn<false>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
+      if (!mydata.rank_all) //preserve prediction
+	action = examples[0]->pred.multiclass;
+      else
+	swap(examples[0]->pred.multilabels, mydata.mtr_multilabels);
+    }
   //second train on _one_ action (which requires up to 3 examples).
   //We must go through the cost sensitive classifier layer to get
   //proper feature handling.
   gen_cs_example_MTR(mydata, examples, mydata.mtr_ec_seq, mydata.mtr_cs_labels);
-  uint32_t nf = examples[mydata.mtr_example]->num_features;
+  uint32_t nf = (uint32_t)examples[mydata.mtr_example]->num_features;
   float old_weight = examples[mydata.mtr_example]->weight;
   examples[mydata.mtr_example]->weight *= 1.f / examples[mydata.mtr_example]->l.cb.costs[0].probability * ((float)mydata.event_sum / (float)mydata.action_sum);
   call_predict_or_learn<true>(mydata, base, mydata.mtr_ec_seq, mydata.cb_labels, mydata.mtr_cs_labels);
@@ -335,7 +339,10 @@ void do_actual_learning(cb_adf& data, base_learner& base)
         learn_DR(data, base, data.ec_seq);
         break;
       case CB_TYPE_MTR:
-        learn_MTR(data, base, data.ec_seq);
+	if (data.predict)
+	  learn_MTR<true>(data, base, data.ec_seq);
+	else
+	  learn_MTR<false>(data, base, data.ec_seq);
         break;
       default:
         THROW("Unknown cb_type specified for contextual bandit learning: " << data.cb_type);
@@ -527,6 +534,7 @@ base_learner* cb_adf_setup(vw& all)
     return nullptr;
   new_options(all, "ADF Options")
   ("rank_all", "Return actions sorted by score order")
+  ("no_predict", "Do not do a prediction when training")
   ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}");
   add_options(all);
 
@@ -572,6 +580,11 @@ base_learner* cb_adf_setup(vw& all)
     all.multilabel_prediction = true;
     *all.file_options << " --rank_all";
   }
+
+  if (all.vm.count("no_predict"))
+    ld.predict = false;
+  else
+    ld.predict = true;
 
   // Push necessary flags.
   if ( (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0)

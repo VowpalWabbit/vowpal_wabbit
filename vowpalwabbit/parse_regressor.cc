@@ -397,7 +397,8 @@ void save_predictor(vw& all, string reg_name, size_t current_pass)
 
 void finalize_regressor(vw& all, string reg_name)
 { if (!all.early_terminate)
-  { if (all.per_feature_regularizer_output.length() > 0)
+  {
+    if (all.per_feature_regularizer_output.length() > 0)
       dump_regressor(all, all.per_feature_regularizer_output, false);
     else
       dump_regressor(all, reg_name, false);

@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include <algorithm>
 #include <numeric>
 #include <cmath>
+#include "correctedMath.h"
 
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/math/special_functions/gamma.hpp>
@@ -368,7 +369,7 @@ template <typename T, lda_math_mode mtype> inline T powf(T x, T p)
 
 template <> inline float lgamma<float, USE_PRECISE>(float x) { return boost::math::lgamma(x); }
 template <> inline float digamma<float, USE_PRECISE>(float x) { return boost::math::digamma(x); }
-template <> inline float exponential<float, USE_PRECISE>(float x) { return std::exp(x); }
+template <> inline float exponential<float, USE_PRECISE>(float x) { return correctedExp(x); }
 template <> inline float powf<float, USE_PRECISE>(float x, float p) { return std::pow(x, p); }
 
 // Fast approximation float specializations:
@@ -729,7 +730,7 @@ void learn_batch(lda &l)
     float *weights_for_w = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
     float decay_component =
       l.decay_levels.end[-2] - l.decay_levels.end[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
-    float decay = fmin(1.0f, std::exp(decay_component));
+    float decay = fmin(1.0f, correctedExp(decay_component));
     float *u_for_w = weights_for_w + l.all->lda + 1;
 
     weights_for_w[l.all->lda] = (float)l.example_t;
@@ -814,7 +815,7 @@ void end_examples(lda &l)
   { weight *weights_for_w = &(l.all->reg.weight_vector[i << l.all->reg.stride_shift]);
     float decay_component =
       l.decay_levels.last() - l.decay_levels.end[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
-    float decay = fmin(1.f, std::exp(decay_component));
+    float decay = fmin(1.f, correctedExp(decay_component));
     for (size_t k = 0; k < l.all->lda; k++)
       weights_for_w[k] *= decay;
   }

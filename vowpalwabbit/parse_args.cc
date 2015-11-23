@@ -1405,10 +1405,13 @@ void finish(vw& all, bool delete_all)
     }
     cerr << endl << "weighted example sum = " << all.sd->weighted_examples;
     cerr << endl << "weighted label sum = " << all.sd->weighted_labels;
-    if(all.holdout_set_off || (all.sd->holdout_best_loss == FLT_MAX))
-      cerr << endl << "average loss = " << all.sd->sum_loss / all.sd->weighted_examples;
+    cerr << endl << "average loss = ";
+    if(all.holdout_set_off)
+      cerr << all.sd->sum_loss / all.sd->weighted_examples;
+    else if  ((all.sd->holdout_best_loss == FLT_MAX) || (all.sd->holdout_best_loss == FLT_MAX * 0.5))
+      cerr << "undefined (no holdout)";
     else
-      cerr << endl << "average loss = " << all.sd->holdout_best_loss << " h";
+      cerr << all.sd->holdout_best_loss << " h";
     if (all.sd->report_multiclass_log_loss)
     { if (all.holdout_set_off)
         cerr << endl << "average multiclass log loss = " << all.sd->multiclass_log_loss / all.sd->weighted_examples;

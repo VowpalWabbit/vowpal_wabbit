@@ -30,6 +30,12 @@ public:
   T* end_array;
   size_t erase_count;
 
+  // v_array cannot have a user-defined constructor, because it participates in various unions.
+  // union members cannot have user-defined constructors.
+  // v_array() : begin(nullptr), end(nullptr), end_array(nullptr), erase_count(0) {}
+  // ~v_array() {
+  //  delete_v();
+  // }
   T last() { return *(end-1);}
   T pop() { return *(--end);}
   bool empty() { return begin == end;}

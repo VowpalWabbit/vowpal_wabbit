@@ -151,10 +151,19 @@ struct ldf
   base_learner* base;
 };
 
+int cmp(size_t a, size_t b) {
+  if (a == b) return 0;
+  if (a > b) return 1;
+  return -1;
+}
+
 int score_comp(const void* p1, const void* p2)
 { score* s1 = (score*)p1;
   score* s2 = (score*)p2;
-  if(s2->val == s1->val) return 0;
+  // Most sorting algos do not guarantee the output order of elements that compare equal.
+  // Tie-breaking on the index ensures that the result is deterministic across platforms.
+  // However, this forces a strict ordering, rather than a weak ordering, which carries a performance cost.
+  if(s2->val == s1->val) return cmp(s1->idx, s2->idx);
   else if(s2->val >= s1->val) return -1;
   else return 1;
 }
@@ -426,7 +435,7 @@ void do_actual_learning(ldf& data, base_learner& base)
     }
 
     qsort((void*) data.scores.begin, data.scores.size(), sizeof(score), score_comp);
-  }
+   }
   else
   { float  min_score = FLT_MAX;
     for (size_t k=start_K; k<K; k++)
@@ -454,7 +463,7 @@ void do_actual_learning(ldf& data, base_learner& base)
     }
     for (size_t k=start_K; k<K; k++)
     { data.ec_seq[k]->pred.multilabels = data.stored_preds[k];
-      data.ec_seq[0]->pred.multilabels.label_v.push_back(data.scores[k-start_K].idx);
+      data.ec_seq[0]->pred.multilabels.label_v.push_back((uint32_t)data.scores[k-start_K].idx);
     }
   }
   else
@@ -521,13 +530,13 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
     size_t K = ec_seq->size();
     if (ec_is_example_header(*ec_seq->get(0)))
       start_K = 1;
-    uint32_t predicted_K = start_K;
+    uint32_t predicted_K = (uint32_t)start_K;
     float  min_score = FLT_MAX;
     for (size_t k=start_K; k<K; k++)
     { example *ec = ec_seq->get(k);
       if (ec->partial_prediction < min_score)
       { min_score = ec->partial_prediction;
-        predicted_K = k;
+        predicted_K = (uint32_t)k;
       }
     }
     predicted_class = ec_seq->get(predicted_K)->l.cs.costs[0].class_index;
@@ -586,10 +595,9 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
       if (hit_loss) break;
       if (preds[0] == idx)
       { loss = ex.l.cs.costs[0].x;
-        hit_loss = true;
+      hit_loss = true;
       }
     }
-
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
     assert(loss >= 0);

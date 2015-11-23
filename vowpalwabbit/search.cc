@@ -221,7 +221,7 @@ struct search_private
   LEARNER::base_learner* base_learner;
   clock_t start_clock_time;
 
-  example*empty_example;
+  example* empty_example;
   CS::label empty_cs_label;
 
   search_task* task;    // your task!
@@ -864,7 +864,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
         { cdbg << ", hit @ " << k;
           count++;
           if ((count == 1) || (frand48() < 1./(float)count))
-          { a = (allowed_actions == nullptr) ? (k+1) : allowed_actions[k];
+          { a = (allowed_actions == nullptr) ? (uint32_t)(k+1) : allowed_actions[k];
             cdbg << "***";
           }
         }
@@ -1743,7 +1743,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex)
       run_task(sch, priv.ec_seq);
       //cerr_print_array("in GENER, learn_allowed_actions", priv.learn_allowed_actions);
       float this_loss = priv.learn_loss;
-      cs_cost_push_back(priv.cb_learner, priv.learn_losses, priv.is_ldf ? (priv.learn_a_idx - 1) : priv.learn_a_idx, this_loss);
+      cs_cost_push_back(priv.cb_learner, priv.learn_losses, priv.is_ldf ? (uint32_t)(priv.learn_a_idx - 1) : (uint32_t)priv.learn_a_idx, this_loss);
       //                          (priv.learn_allowed_actions.size() > 0) ? priv.learn_allowed_actions[priv.learn_a_idx-1] : priv.is_ldf ? (priv.learn_a_idx-1) : (priv.learn_a_idx),
       //                           priv.learn_loss);
     }
@@ -1896,92 +1896,43 @@ bool mc_label_is_test(polylabel& lab)
 }
 
 void search_initialize(vw* all, search& sch)
-{ search_private& priv = *sch.priv;
+{ search_private& priv = *sch.priv;//priv is zero initialized by default
   priv.all = all;
-
-  priv.auto_condition_features = false;
-  priv.auto_hamming_loss = false;
-  priv.examples_dont_change = false;
-  priv.is_ldf = false;
-  priv.no_caching = false;
-  priv.use_action_costs = false;
 
   priv.label_is_test = mc_label_is_test;
 
-  priv.active_uncertainty = v_init< pair<float,size_t> >();
-  priv.xv = false;
   priv.A = 1;
   priv.num_learners = 1;
-  priv.cb_learner = false;
   priv.state = INITIALIZE;
-  priv.learn_learner_id = 0;
   priv.mix_per_roll_policy = -2;
-  priv.linear_ordering = false;
 
-  priv.t = 0;
-  priv.T = 0;
-  priv.learn_ec_ref = nullptr;
-  priv.learn_ec_ref_cnt = 0;
-  //priv.allowed_actions_cache = nullptr;
-
-  priv.loss_declared_cnt = 0;
-  priv.learn_t = 0;
-  priv.learn_a_idx = 0;
-  priv.done_with_all_actions = false;
-
-  priv.test_loss = 0.;
-  priv.learn_loss = 0.;
-  priv.train_loss = 0.;
-
-  priv.force_oracle = false;
-  priv.perturb_oracle = 0.;
-
-  priv.last_example_was_newline = false;
-  priv.hit_new_pass = false;
-
-  priv.printed_output_header = false;
-
-  priv.should_produce_string = false;
   priv.pred_string  = new stringstream();
   priv.truth_string = new stringstream();
   priv.bad_string_stream = new stringstream();
   priv.bad_string_stream->clear(priv.bad_string_stream->badbit);
-
-  priv.last_action_repr = v_init<feature>();
 
   priv.beta = 0.5;
   priv.alpha = 1e-10f;
 
   priv.rollout_method = MIX_PER_ROLL;
   priv.rollin_method  = MIX_PER_ROLL;
-  priv.subsample_timesteps = 0.;
 
   priv.allow_current_policy = true;
   priv.adaptive_beta = true;
   priv.passes_per_policy = 1;     //this should be set to the same value as --passes for dagger
 
-  priv.current_policy = 0;
-
-  priv.num_features = 0;
   priv.total_number_of_policies = 1;
-  priv.read_example_last_id = 0;
-  priv.passes_per_policy = 0;
-  priv.read_example_last_pass = 0;
-  priv.total_examples_generated = 0;
-  priv.total_predictions_made = 0;
-  priv.total_cache_hits = 0;
 
   priv.history_length = 1;
   priv.acset.max_bias_ngram_length = 1;
-  priv.acset.max_quad_ngram_length = 0;
+
   priv.acset.feature_value = 1.;
-  priv.acset.use_passthrough_repr = false;
 
   scored_action sa((action)-1,0.);
+  new (&priv.cache_hash_map) v_hashmap<unsigned char*, scored_action>();
   priv.cache_hash_map.set_default_value(sa);
   priv.cache_hash_map.set_equivalent(cached_item_equivalent);
 
-  priv.task = nullptr;
   sch.task_data = nullptr;
 
   priv.empty_example = VW::alloc_examples(sizeof(CS::label), 1);
@@ -1989,7 +1940,11 @@ void search_initialize(vw* all, search& sch)
   priv.empty_example->in_use = true;
   CS::cs_label.default_label(&priv.empty_cs_label);
 
+  new (&priv.rawOutputString) string();
   priv.rawOutputStringStream = new stringstream(priv.rawOutputString);
+  new (&priv.ec_seq) vector<example*>();
+  new (&priv.test_action_sequence) vector<action>();
+  new (&priv.dat_new_feature_audit_ss) stringstream();
 }
 
 void search_finish(search& sch)
@@ -2001,6 +1956,11 @@ void search_finish(search& sch)
   delete priv.truth_string;
   delete priv.pred_string;
   delete priv.bad_string_stream;
+  priv.cache_hash_map.~v_hashmap<unsigned char*, scored_action>();
+  priv.rawOutputString.~string();
+  priv.ec_seq.~vector<example*>();
+  priv.test_action_sequence.~vector<action>();
+  priv.dat_new_feature_audit_ss.~stringstream();
   priv.neighbor_features.delete_v();
   priv.timesteps.delete_v();
   if (priv.cb_learner) priv.learn_losses.cb.costs.delete_v();
@@ -2046,7 +2006,7 @@ void search_finish(search& sch)
 
   free(priv.allowed_actions_cache);
   delete priv.rawOutputStringStream;
-  delete sch.priv;
+  free (sch.priv);
 }
 
 void ensure_param(float &v, float lo, float hi, float def, const char* string)
@@ -2211,7 +2171,7 @@ base_learner* setup(vw&all)
         all.args.erase(all.args.begin() + i, all.args.begin() + i + 2);
 
   search& sch = calloc_or_throw<search>();
-  sch.priv = new search_private();
+  sch.priv = &calloc_or_throw<search_private>();
   search_initialize(&all, sch);
   search_private& priv = *sch.priv;
 

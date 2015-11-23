@@ -183,7 +183,7 @@ void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq,
                            num_features, all.progress_add, all.progress_arg);;
     }
     else
-      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred,
+      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, (uint32_t)pred,
                            num_features, all.progress_add, all.progress_arg);
   }
 }
