@@ -79,6 +79,8 @@ FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_
 BINARIES = vw active_interactor
 MANPAGES = vw.1
 
+default:	vw
+
 all:	vw spanning_tree library_example java
 
 %.1:	%
