@@ -7,10 +7,12 @@ license as described in the file LICENSE.
 #include <iostream>
 using namespace std;
 
+#include "crossplat_compat.h"
+
 #ifndef _WIN32
 #include <unistd.h>
-#define sprintf_s snprintf
 #endif
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
