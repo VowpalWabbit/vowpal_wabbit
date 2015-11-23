@@ -41,7 +41,7 @@ namespace cs_unittest
 
                 Assert.Fail("Expect NullReferenceException");
             }
-            catch (NotSupportedException)
+            catch (NullReferenceException)
             {
             }
         }
@@ -108,9 +108,9 @@ namespace cs_unittest
             }
         }
     }
-     
+
     [Cacheable]
-    public class CachedData 
+    public class CachedData
     {
         [Feature]
         public double Feature { get; set; }
