@@ -22,7 +22,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x64\Debug\</OutputPath>
+    <OutputPath>..\vowpalwabbit\x64\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
@@ -30,13 +30,19 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\x64\Release\</OutputPath>
+    <OutputPath>..\vowpalwabbit\x64\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>vw_key.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Antlr4.Runtime.net45">
@@ -59,12 +65,24 @@
   <ItemGroup>
     <Compile Include="BaseData.cs" />
     <Compile Include="CbAdfData.cs" />
-    <Compile Include="RunTests.cs" />
+    <Compile Include="TestAll.cs" />
     <Compile Include="TestAllReduce.cs" />
     <Compile Include="TestExampleCache.cs" />
+    <Compile Include="TestLeak.cs" />
     <Compile Include="TestManagedHash.cs" />
+    <Compile Include="TestMarshalling.cs" />
+    <Compile Include="TestMarshallingOverflow.cs" />
+    <Compile Include="TestMarshalNumeric.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>TestMarshalNumeric.tt</DependentUpon>
+    </Compile>
     <Compile Include="TestModelLoading.cs" />
+    <Compile Include="TestNull.cs" />
+    <Compile Include="TestRunner.cs" />
+    <Compile Include="TestSerializer.cs" />
     <Compile Include="TrainSetCs_testLdf.cs" />
+    <Compile Include="VowpalWabbitExampleValidator.cs" />
     <Compile Include="VowpalWabbitListenerToEvents.cs" />
     <Compile Include="Rcv1Test.cs" />
     <Compile Include="Test1and2.cs" />
@@ -84,711 +102,20 @@
       <Project>{e4e962ae-7056-4eb0-a8c5-8dc824a4b068}</Project>
       <Name>cs</Name>
     </ProjectReference>
+    <ProjectReference Include="..\cs_testcommon\cs_testcommon.csproj">
+      <Project>{6a9cbeab-427f-4d8d-9559-b76b42b0895c}</Project>
+      <Name>cs_testcommon</Name>
+    </ProjectReference>
     <ProjectReference Include="..\vw_clr\vw_clr.vcxproj">
       <Project>{85e55ae0-3784-4968-9271-c81af560e1c1}</Project>
       <Name>vw_clr</Name>
     </ProjectReference>
+    <ProjectReference Include="..\vw_common\vw_common.csproj">
+      <Project>{e621e022-c1f8-433f-905a-ab9a3de072b7}</Project>
+      <Name>vw_common</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\test\pred-sets\ref\0001.predict">
-      <Link>pred-sets\ref\0001.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\pred-sets\ref\0002b.predict">
-      <Link>pred-sets\ref\0002b.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\pred-sets\ref\0002c.predict">
-      <Link>pred-sets\ref\0002c.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\RunTests">
-      <Link>RunTests</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\test-sets\ref\0001.stderr">
-      <Link>test-sets\ref\0001.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\test-sets\ref\0001_ftrl.stderr">
-      <Link>test-sets\ref\0001_ftrl.stderr</Link>
-    </None>
-    <None Include="..\test\test-sets\ref\0002b.stderr">
-      <Link>test-sets\ref\0002b.stderr</Link>
-    </None>
-    <None Include="..\test\test-sets\ref\0002c.stderr">
-      <Link>test-sets\ref\0002c.stderr</Link>
-    </None>
-    <None Include="..\test\test-sets\ref\ftrl_pistol.stderr">
-      <Link>test-sets\ref\ftrl_pistol.stderr</Link>
-    </None>
-    <None Include="..\test\test-sets\ref\ml100k_small.stderr">
-      <Link>test-sets\ref\ml100k_small.stderr</Link>
-    </None>
-    <None Include="..\test\test-sets\ref\ml100k_small.stdout">
-      <Link>test-sets\ref\ml100k_small.stdout</Link>
-    </None>
-    <None Include="..\test\test-sets\ref\vw-daemon.stdout">
-      <Link>test-sets\ref\vw-daemon.stdout</Link>
-    </None>
-    <None Include="..\test\train-sets\0001.dat">
-      <Link>train-sets\0001.dat</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\0001.multi.dat">
-      <Link>train-sets\0001.multi.dat</Link>
-    </None>
-    <None Include="..\test\train-sets\0002.dat">
-      <Link>train-sets\0002.dat</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\0080.dat">
-      <Link>train-sets\0080.dat</Link>
-    </None>
-    <None Include="..\test\train-sets\3parity">
-      <Link>train-sets\3parity</Link>
-    </None>
-    <None Include="..\test\train-sets\affix_test.dat">
-      <Link>train-sets\affix_test.dat</Link>
-    </None>
-    <None Include="..\test\train-sets\argmax_data">
-      <Link>train-sets\argmax_data</Link>
-    </None>
-    <None Include="..\test\train-sets\big-constant.dat">
-      <Link>train-sets\big-constant.dat</Link>
-    </None>
-    <None Include="..\test\train-sets\chunk_to_features.pl">
-      <Link>train-sets\chunk_to_features.pl</Link>
-    </None>
-    <None Include="..\test\train-sets\cs_test">
-      <Link>train-sets\cs_test</Link>
-    </None>
-    <None Include="..\test\train-sets\cs_test.pred">
-      <Link>train-sets\cs_test.pred</Link>
-    </None>
-    <None Include="..\test\train-sets\dictionary_test.dat">
-      <Link>train-sets\dictionary_test.dat</Link>
-    </None>
-    <None Include="..\test\train-sets\dictionary_test.dict">
-      <Link>train-sets\dictionary_test.dict</Link>
-    </None>
-    <None Include="..\test\train-sets\er_small.vw">
-      <Link>train-sets\er_small.vw</Link>
-    </None>
-    <None Include="..\test\train-sets\eval_chunking.pl">
-      <Link>train-sets\eval_chunking.pl</Link>
-    </None>
-    <None Include="..\test\train-sets\frank.dat">
-      <Link>train-sets\frank.dat</Link>
-    </None>
-    <None Include="..\test\train-sets\lda-2pass-hang.dat">
-      <Link>train-sets\lda-2pass-hang.dat</Link>
-    </None>
-    <None Include="..\test\train-sets\library_train">
-      <Link>train-sets\library_train</Link>
-    </None>
-    <None Include="..\test\train-sets\ml100k_small_train">
-      <Link>train-sets\ml100k_small_train</Link>
-    </None>
-    <None Include="..\test\train-sets\multiclass">
-      <Link>train-sets\multiclass</Link>
-    </None>
-    <None Include="..\test\train-sets\multiclass.sch">
-      <Link>train-sets\multiclass.sch</Link>
-    </None>
-    <None Include="..\test\train-sets\multilabel">
-      <Link>train-sets\multilabel</Link>
-    </None>
-    <None Include="..\test\train-sets\ner.cdict">
-      <Link>train-sets\ner.cdict</Link>
-    </None>
-    <None Include="..\test\train-sets\ner.pred">
-      <Link>train-sets\ner.pred</Link>
-    </None>
-    <None Include="..\test\train-sets\ner.test.gz">
-      <Link>train-sets\ner.test.gz</Link>
-    </None>
-    <None Include="..\test\train-sets\ner.tm">
-      <Link>train-sets\ner.tm</Link>
-    </None>
-    <None Include="..\test\train-sets\ner.train.gz">
-      <Link>train-sets\ner.train.gz</Link>
-    </None>
-    <None Include="..\test\train-sets\rcv1_cb_eval">
-      <Link>train-sets\rcv1_cb_eval</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\0001.stderr">
-      <Link>train-sets\ref\0001.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\0001.stdout">
-      <Link>train-sets\ref\0001.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\0001_ftrl.stderr">
-      <Link>train-sets\ref\0001_ftrl.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\0002.autolink.predict">
-      <Link>train-sets\ref\0002.autolink.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\0002.autolink.stderr">
-      <Link>train-sets\ref\0002.autolink.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\0002.stderr">
-      <Link>train-sets\ref\0002.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\0002.stdout">
-      <Link>train-sets\ref\0002.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\0002a.stderr">
-      <Link>train-sets\ref\0002a.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\0002a.stdout">
-      <Link>train-sets\ref\0002a.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\0002c.stderr">
-      <Link>train-sets\ref\0002c.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\0002c.stdout">
-      <Link>train-sets\ref\0002c.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\0080.stderr">
-      <Link>train-sets\ref\0080.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\3parity.stderr">
-      <Link>train-sets\ref\3parity.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\3parity.stderr-mswin">
-      <Link>train-sets\ref\3parity.stderr-mswin</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\3parity.stdout">
-      <Link>train-sets\ref\3parity.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\active-simulation.t24.stderr">
-      <Link>train-sets\ref\active-simulation.t24.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\affix_test.stderr">
-      <Link>train-sets\ref\affix_test.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\affix_test.stdout">
-      <Link>train-sets\ref\affix_test.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\argmax_data.stderr">
-      <Link>train-sets\ref\argmax_data.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\big-constant.stderr">
-      <Link>train-sets\ref\big-constant.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.prreg.predict">
-      <Link>train-sets\ref\bs.prreg.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.prreg.stderr">
-      <Link>train-sets\ref\bs.prreg.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.prreg.stdout">
-      <Link>train-sets\ref\bs.prreg.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.prvote.multi.predict">
-      <Link>train-sets\ref\bs.prvote.multi.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.prvote.multi.stderr">
-      <Link>train-sets\ref\bs.prvote.multi.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.prvote.predict">
-      <Link>train-sets\ref\bs.prvote.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.prvote.stderr">
-      <Link>train-sets\ref\bs.prvote.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.prvote.stdout">
-      <Link>train-sets\ref\bs.prvote.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.reg.predict">
-      <Link>train-sets\ref\bs.reg.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.reg.stderr">
-      <Link>train-sets\ref\bs.reg.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.reg.stdout">
-      <Link>train-sets\ref\bs.reg.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.vote.multi.predict">
-      <Link>train-sets\ref\bs.vote.multi.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.vote.multi.stderr">
-      <Link>train-sets\ref\bs.vote.multi.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.vote.predict">
-      <Link>train-sets\ref\bs.vote.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.vote.stderr">
-      <Link>train-sets\ref\bs.vote.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\bs.vote.stdout">
-      <Link>train-sets\ref\bs.vote.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\cbify_bag.stderr">
-      <Link>train-sets\ref\cbify_bag.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\cbify_cover.stderr">
-      <Link>train-sets\ref\cbify_cover.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\cbify_epsilon.stderr">
-      <Link>train-sets\ref\cbify_epsilon.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\cbify_first.stderr">
-      <Link>train-sets\ref\cbify_first.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\cb_adf.stderr">
-      <Link>train-sets\ref\cb_adf.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\cb_adf_rank.stderr">
-      <Link>train-sets\ref\cb_adf_rank.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\cs_test.ldf.csoaa.predict">
-      <Link>train-sets\ref\cs_test.ldf.csoaa.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\cs_test.ldf.csoaa.stderr">
-      <Link>train-sets\ref\cs_test.ldf.csoaa.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\cs_test.ldf.csoaa.stdout">
-      <Link>train-sets\ref\cs_test.ldf.csoaa.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\cs_test.ldf.wap.predict">
-      <Link>train-sets\ref\cs_test.ldf.wap.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\cs_test.ldf.wap.stderr">
-      <Link>train-sets\ref\cs_test.ldf.wap.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\cs_test.ldf.wap.stdout">
-      <Link>train-sets\ref\cs_test.ldf.wap.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\dictionary_test.stderr">
-      <Link>train-sets\ref\dictionary_test.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\empty-set.stderr">
-      <Link>train-sets\ref\empty-set.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\ezexample_predict.stderr">
-      <Link>train-sets\ref\ezexample_predict.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\ezexample_predict.stdout">
-      <Link>train-sets\ref\ezexample_predict.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\frank.stderr">
-      <Link>train-sets\ref\frank.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\frank.stdout">
-      <Link>train-sets\ref\frank.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\ftrl_pistol.stderr">
-      <Link>train-sets\ref\ftrl_pistol.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\holdout-loss-not-zero.stderr">
-      <Link>train-sets\ref\holdout-loss-not-zero.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\ksvm_train.linear.predict">
-      <Link>train-sets\ref\ksvm_train.linear.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\ksvm_train.linear.stderr">
-      <Link>train-sets\ref\ksvm_train.linear.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\ksvm_train.poly.predict">
-      <Link>train-sets\ref\ksvm_train.poly.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\ksvm_train.poly.stderr">
-      <Link>train-sets\ref\ksvm_train.poly.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\ksvm_train.rbf.predict">
-      <Link>train-sets\ref\ksvm_train.rbf.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\ksvm_train.rbf.stderr">
-      <Link>train-sets\ref\ksvm_train.rbf.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\lda-2pass-hang.stderr">
-      <Link>train-sets\ref\lda-2pass-hang.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\library_train.stderr">
-      <Link>train-sets\ref\library_train.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\library_train.stdout">
-      <Link>train-sets\ref\library_train.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\log_multi.stderr">
-      <Link>train-sets\ref\log_multi.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\mask.stderr">
-      <Link>train-sets\ref\mask.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\ml100k_small.stderr">
-      <Link>train-sets\ref\ml100k_small.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\ml100k_small.stdout">
-      <Link>train-sets\ref\ml100k_small.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\multiclass.stderr">
-      <Link>train-sets\ref\multiclass.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\multiclass.stdout">
-      <Link>train-sets\ref\multiclass.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\multilabel.stderr">
-      <Link>train-sets\ref\multilabel.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\multilabel_ldf.predict">
-      <Link>train-sets\ref\multilabel_ldf.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\multilabel_ldf.stderr">
-      <Link>train-sets\ref\multilabel_ldf.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\nn-1-noquiet.stderr">
-      <Link>train-sets\ref\nn-1-noquiet.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\oaa.stderr">
-      <Link>train-sets\ref\oaa.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\oaa.stdout">
-      <Link>train-sets\ref\oaa.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\progress-0.5.stderr">
-      <Link>train-sets\ref\progress-0.5.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\progress-10.stderr">
-      <Link>train-sets\ref\progress-10.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\rcv1_cb_eval.stderr">
-      <Link>train-sets\ref\rcv1_cb_eval.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\rcv1_raw_cb_dm.stderr">
-      <Link>train-sets\ref\rcv1_raw_cb_dm.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\rcv1_raw_cb_dr.stderr">
-      <Link>train-sets\ref\rcv1_raw_cb_dr.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\rcv1_raw_cb_ips.stderr">
-      <Link>train-sets\ref\rcv1_raw_cb_ips.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\rcv1_small.stderr">
-      <Link>train-sets\ref\rcv1_small.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\rcv1_small.stdout">
-      <Link>train-sets\ref\rcv1_small.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\redefine.stderr">
-      <Link>train-sets\ref\redefine.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\remask.final.stderr">
-      <Link>train-sets\ref\remask.final.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\remask.stderr">
-      <Link>train-sets\ref\remask.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\search_dep_parser.stderr">
-      <Link>train-sets\ref\search_dep_parser.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\search_er.stderr">
-      <Link>train-sets\ref\search_er.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\search_multiclass.stderr">
-      <Link>train-sets\ref\search_multiclass.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\search_small.stderr">
-      <Link>train-sets\ref\search_small.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\search_small2.stderr">
-      <Link>train-sets\ref\search_small2.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\search_wsj.stderr">
-      <Link>train-sets\ref\search_wsj.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\search_wsj2.dat.stderr">
-      <Link>train-sets\ref\search_wsj2.dat.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequencespan_data.nonldf-bilou.test.predict">
-      <Link>train-sets\ref\sequencespan_data.nonldf-bilou.test.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequencespan_data.nonldf-bilou.test.stderr">
-      <Link>train-sets\ref\sequencespan_data.nonldf-bilou.test.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequencespan_data.nonldf-bilou.train.stderr">
-      <Link>train-sets\ref\sequencespan_data.nonldf-bilou.train.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequencespan_data.nonldf.test.predict">
-      <Link>train-sets\ref\sequencespan_data.nonldf.test.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequencespan_data.nonldf.test.stderr">
-      <Link>train-sets\ref\sequencespan_data.nonldf.test.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequencespan_data.nonldf.train.stderr">
-      <Link>train-sets\ref\sequencespan_data.nonldf.train.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequence_data.ldf.beam.test.predict">
-      <Link>train-sets\ref\sequence_data.ldf.beam.test.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequence_data.ldf.beam.test.stderr">
-      <Link>train-sets\ref\sequence_data.ldf.beam.test.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequence_data.ldf.test.predict">
-      <Link>train-sets\ref\sequence_data.ldf.test.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequence_data.ldf.test.stderr">
-      <Link>train-sets\ref\sequence_data.ldf.test.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequence_data.ldf.train.stderr">
-      <Link>train-sets\ref\sequence_data.ldf.train.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequence_data.nonldf.beam.test.predict">
-      <Link>train-sets\ref\sequence_data.nonldf.beam.test.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequence_data.nonldf.beam.test.stderr">
-      <Link>train-sets\ref\sequence_data.nonldf.beam.test.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequence_data.nonldf.test.predict">
-      <Link>train-sets\ref\sequence_data.nonldf.test.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequence_data.nonldf.test.stderr">
-      <Link>train-sets\ref\sequence_data.nonldf.test.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\sequence_data.nonldf.train.stderr">
-      <Link>train-sets\ref\sequence_data.nonldf.train.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\seq_small.stderr">
-      <Link>train-sets\ref\seq_small.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\seq_small.stdout">
-      <Link>train-sets\ref\seq_small.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\stage_poly.s025.doubling.predict">
-      <Link>train-sets\ref\stage_poly.s025.doubling.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\stage_poly.s025.doubling.stderr">
-      <Link>train-sets\ref\stage_poly.s025.doubling.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\stage_poly.s025.predict">
-      <Link>train-sets\ref\stage_poly.s025.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\stage_poly.s025.stderr">
-      <Link>train-sets\ref\stage_poly.s025.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\stage_poly.s050.doubling.stderr">
-      <Link>train-sets\ref\stage_poly.s050.doubling.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\stage_poly.s050.stderr">
-      <Link>train-sets\ref\stage_poly.s050.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\stage_poly.s100.doubling.predict">
-      <Link>train-sets\ref\stage_poly.s100.doubling.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\stage_poly.s100.doubling.stderr">
-      <Link>train-sets\ref\stage_poly.s100.doubling.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\stage_poly.s100.stderr">
-      <Link>train-sets\ref\stage_poly.s100.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\topk-rec.predict">
-      <Link>train-sets\ref\topk-rec.predict</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\topk-rec.stderr">
-      <Link>train-sets\ref\topk-rec.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\topk-rec.stdout">
-      <Link>train-sets\ref\topk-rec.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\topk-train.stderr">
-      <Link>train-sets\ref\topk-train.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\topk-train.stdout">
-      <Link>train-sets\ref\topk-train.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\wiki1K.stderr">
-      <Link>train-sets\ref\wiki1K.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\wiki1K.stderr-mswin">
-      <Link>train-sets\ref\wiki1K.stderr-mswin</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\wiki1K.stdout">
-      <Link>train-sets\ref\wiki1K.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\wsj_small-tm.dat.stderr">
-      <Link>train-sets\ref\wsj_small-tm.dat.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\wsj_small-tm.dat.stdout">
-      <Link>train-sets\ref\wsj_small-tm.dat.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\wsj_small.dat.stderr">
-      <Link>train-sets\ref\wsj_small.dat.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\wsj_small.dat.stdout">
-      <Link>train-sets\ref\wsj_small.dat.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\xxor.stderr">
-      <Link>train-sets\ref\xxor.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\xxor.stderr-mswin">
-      <Link>train-sets\ref\xxor.stderr-mswin</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\xxor.stdout">
-      <Link>train-sets\ref\xxor.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\zero.stderr">
-      <Link>train-sets\ref\zero.stderr</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\test\train-sets\ref\zero.stdout">
-      <Link>train-sets\ref\zero.stdout</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="model-sets\7.10.2_corrupted.model">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="model-sets\8.0.0_ok.model">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="model-sets\8.0.1.test_named_ok.model">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="model-sets\8.0.1_hash_ok.model">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="model-sets\8.0.1_rcv1_ok.model">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
@@ -797,19 +124,16 @@
       <Listener>True</Listener>
       <Visitor>False</Visitor>
     </Antlr4>
+    <None Include="vw_key.snk" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\test\train-sets\cb_test.ldf">
-      <Link>train-sets\cb_test.ldf</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\test\train-sets\cs_test.ldf">
-      <Link>train-sets\cs_test.ldf</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\test\train-sets\cs_test_multilabel.ldf">
-      <Link>train-sets\cs_test_multilabel.ldf</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="TestMarshalNumeric.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>TestMarshalNumeric.cs</LastGenOutput>
     </Content>
   </ItemGroup>
   <Choose>
@@ -844,8 +168,7 @@
   <Import Project="$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.targets" />
   <!-- Condition="Exists('..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.targets')" -->
   <PropertyGroup>
-    <PreBuildEvent>
-    </PreBuildEvent>
+    <PreBuildEvent>$(ProjectDir)\..\cs\transform_all.bat $(ProjectDir)</PreBuildEvent>
   </PropertyGroup>
   <!-- making sure it's called during AppVeyor build -->
   <!--

@@ -11,35 +11,44 @@ using namespace std;
 
 namespace VW
 {
-SpanningTreeClr::SpanningTreeClr()
-{ m_spanningTree = new SpanningTree;
-}
+    SpanningTreeClr::SpanningTreeClr()
+    {
+        m_spanningTree = new SpanningTree;
+    }
 
-SpanningTreeClr::~SpanningTreeClr()
-{ try
-  { delete m_spanningTree;
-  }
-  CATCHRETHROW
-}
+    SpanningTreeClr::~SpanningTreeClr()
+    {
+        try
+        {
+            delete m_spanningTree;
+        }
+        CATCHRETHROW
+    }
 
-void SpanningTreeClr::Start()
-{ try
-  { m_spanningTree->Start();
-  }
-  CATCHRETHROW
-}
+    void SpanningTreeClr::Start()
+    {
+        try
+        {
+            m_spanningTree->Start();
+        }
+        CATCHRETHROW
+    }
 
-void SpanningTreeClr::Stop()
-{ try
-  { m_spanningTree->Stop();
-  }
-  CATCHRETHROW
-}
+    void SpanningTreeClr::Stop()
+    {
+        try
+        {
+            m_spanningTree->Stop();
+        }
+        CATCHRETHROW
+    }
 
-void SpanningTreeClr::Run()
-{ try
-  { m_spanningTree->Run();
-  }
-  CATCHRETHROW
-}
+    void SpanningTreeClr::Run()
+    {
+        try
+        {
+            m_spanningTree->Run();
+        }
+        CATCHRETHROW
+    }
 }

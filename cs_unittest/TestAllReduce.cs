@@ -10,12 +10,10 @@ using System.Threading.Tasks;
 using VW;
 using VW.Labels;
 using VW.Serializer;
-using VW.Serializer.Visitors;
 
 namespace cs_unittest
 {
-    [TestClass]
-    public class TestAllReduceClass
+    public class TestAllReduceClass : TestBase
     {
         private static void Ingest(VowpalWabbit vw, IEnumerable<List<string>> blocks)
         {
@@ -42,14 +40,17 @@ namespace cs_unittest
                 vw.Learn(d.Item1, d.Item2, (int)d.Item3.Action, d.Item3);
             }
         }
-
-        [TestMethod]
-        public async Task TestAllReduce()
+        public void TestAllReduce()
         {
-            var data = Enumerable.Range(1, 500).Select(_ => Generator.GenerateShared(20)).ToList();
+            TestAllReduceInternal().Wait();
+        }
 
-            var stringSerializer = VowpalWabbitSerializerFactory.CreateSerializer<CbAdfShared, VowpalWabbitStringVisitor, string>();
-            var stringSerializerAdf = VowpalWabbitSerializerFactory.CreateSerializer<CbAdfAction, VowpalWabbitStringVisitor, string>();
+        internal async Task TestAllReduceInternal()
+        {
+            var data = Enumerable.Range(1, 1000).Select(_ => Generator.GenerateShared(10)).ToList();
+
+            var stringSerializerCompiled = VowpalWabbitSerializerFactory.CreateSerializer<CbAdfShared>(new VowpalWabbitSettings(enableStringExampleGeneration: true));
+            var stringSerializerAdfCompiled = VowpalWabbitSerializerFactory.CreateSerializer<CbAdfAction>(new VowpalWabbitSettings(enableStringExampleGeneration: true));
 
             var stringData = new List<List<string>>();
 
@@ -61,13 +62,28 @@ namespace cs_unittest
                 using (var vw1 = new VowpalWabbit(@"--total 2 --node 1 --unique_id 0 --span_server localhost --cb_adf --rank_all --interact xy"))
                 using (var vw2 = new VowpalWabbit(@"--total 2 --node 0 --unique_id 0 --span_server localhost --cb_adf --rank_all --interact xy"))
                 {
+                    var stringSerializer = stringSerializerCompiled.Func(vw1);
+                    var stringSerializerAdf = stringSerializerAdfCompiled.Func(vw1);
+
                     // serialize
                     foreach (var d in data)
                     {
                         var block = new List<string>();
 
-                        block.Add(stringSerializer(vw1, d.Item1, SharedLabel.Instance));
-                        block.AddRange(d.Item2.Select((a, i) => stringSerializerAdf(vw1, a, i == d.Item3.Action ? d.Item3 : null)));
+                        using (var context = new VowpalWabbitMarshalContext(vw1))
+                        {
+                            stringSerializer(context, d.Item1, SharedLabel.Instance);
+                            block.Add(context.StringExample.ToString());
+                        }
+
+                        block.AddRange(d.Item2.Select((a, i) =>
+                            {
+                                using (var context = new VowpalWabbitMarshalContext(vw1))
+                                {
+                                    stringSerializerAdf(context, a, i == d.Item3.Action ? d.Item3 : null);
+                                    return context.StringExample.ToString();
+                                }
+                            }));
 
                         stringData.Add(block);
                     }
@@ -91,7 +107,7 @@ namespace cs_unittest
                 parallelOptions: new ParallelOptions
                 {
                     MaxDegreeOfParallelism = 2
-                }, 
+                },
                 exampleCountPerRun: 2000,
                 exampleDistribution: VowpalWabbitExampleDistribution.RoundRobin);
 

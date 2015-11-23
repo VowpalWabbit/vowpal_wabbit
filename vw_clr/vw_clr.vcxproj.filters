@@ -51,6 +51,15 @@
     <ClInclude Include="spanning_tree_clr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="vw_arguments.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="clr_io_memory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vw_labelcomparator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="vw_example.cpp">
@@ -78,6 +87,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="spanning_tree_clr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="clr_io_memory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

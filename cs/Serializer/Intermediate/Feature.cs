@@ -7,36 +7,31 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
-using VW.Serializer.Interfaces;
+using System.Diagnostics.Contracts;
+using System.Linq.Expressions;
 
 namespace VW.Serializer.Intermediate
 {
     /// <summary>
-    /// The intermediate feature representation.
+    /// The base feature description.
     /// </summary>
-    public class Feature : IFeature
+    public class Feature
     {
         /// <summary>
-        /// The targeted namespace.
+        /// Initializes a new Feature.
         /// </summary>
-        public string Namespace { get; set; }
-
-        /// <summary>
-        /// The targeted feature group.
-        /// </summary>
-        public char? FeatureGroup { get; set; }
+        /// <param name="name"></param>
+        /// <param name="addAnchor"></param>
+        public Feature(string name, bool addAnchor)
+        {
+            this.Name = name;
+            this.AddAnchor = addAnchor;
+        }
 
         /// <summary>
         /// The origin property name is used as the feature name.
         /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        /// If true, features will be converted to string and then hashed.
-        /// In VW line format: Age:15 (Enumerize=false), Age_15 (Enumerize=true)
-        /// Defaults to false.
-        /// </summary>
-        public bool Enumerize { get; set; }
+        public string Name { get; private set; }
 
         /// <summary>
         /// If true, an anchoring feature (0:1) will be inserted at front.
@@ -44,23 +39,6 @@ namespace VW.Serializer.Intermediate
         /// as 0-valued features are removed.
         /// </summary>
         /// <remarks>Defaults to false.</remarks>
-        public bool AddAnchor { get; set; }
-    }
-
-    /// <summary>
-    /// The typed representation of the feature.
-    /// </summary>
-    /// <typeparam name="T">Type of feature value.</typeparam>
-    public sealed class Feature<T> : Feature, IFeature<T>, IVisitableFeature
-    {
-        /// <summary>
-        /// The actual value
-        /// </summary>
-        public T Value { get; set; }
-
-        /// <summary>
-        /// Compiled func to enable automatic double dispatch.
-        /// </summary>
-        public Action Visit { get; set; }
+        public bool AddAnchor { get; private set; }
     }
 }

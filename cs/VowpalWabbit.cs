@@ -15,7 +15,6 @@ using VW;
 using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer;
-using VW.Serializer.Visitors;
 
 namespace VW
 {
@@ -35,6 +34,8 @@ namespace VW
         /// </summary>
         private VowpalWabbitSerializer<TExample> serializer;
 
+        private VowpalWabbitSerializerCompiled<TExample> compiledSerializer;
+
         /// <summary>
         /// The serializer used for learning. It's only set if the serializer is non-caching.
         /// By having a second field there is one less check that has to be done in the hot path.
@@ -46,7 +47,7 @@ namespace VW
         /// </summary>
         /// <param name="args">Command line arguments passed to native instance.</param>
         public VowpalWabbit(String args) : this(new VowpalWabbit(args))
-        { 
+        {
         }
 
         /// <summary>
@@ -55,7 +56,7 @@ namespace VW
         /// <param name="settings">Arguments passed to native instance.</param>
         public VowpalWabbit(VowpalWabbitSettings settings)
             : this(new VowpalWabbit(settings))
-        { 
+        {
         }
 
         /// <summary>
@@ -73,10 +74,28 @@ namespace VW
             Contract.EndContractBlock();
 
             this.vw = vw;
-            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
+            this.compiledSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
+
+            if (this.compiledSerializer == null)
+            {
+                throw new ArgumentException("No features found for " + typeof(TExample));
+            }
+
+            this.serializer = this.compiledSerializer.Create(vw);
 
             // have a 2nd member to throw NullReferenceException in release instead of silently producing wrong results.
             this.learnSerializer = this.serializer.CachesExamples ? null : this.serializer;
+        }
+
+        /// <summary>
+        /// The serializer used to marshal examples.
+        /// </summary>
+        public VowpalWabbitSerializerCompiled<TExample> Serializer
+        {
+            get
+            {
+                return this.compiledSerializer;
+            }
         }
 
         /// <summary>
@@ -97,7 +116,7 @@ namespace VW
 #endif
 
             // in release this throws NullReferenceException instead of producing silently wrong results
-            using (var ex = this.learnSerializer.Serialize(this.vw, example, label))
+            using (var ex = this.learnSerializer.Serialize(example, label))
             {
                 this.vw.Learn(ex);
             }
@@ -125,7 +144,7 @@ namespace VW
             }
 #endif
 
-            using (var ex = this.learnSerializer.Serialize(this.vw, example, label))
+            using (var ex = this.learnSerializer.Serialize(example, label))
             {
                 return this.vw.Learn(ex, predictionFactory);
             }
@@ -139,8 +158,8 @@ namespace VW
         public void Predict(TExample example, ILabel label = null)
         {
             Contract.Requires(example != null);
-            
-            using (var ex = this.serializer.Serialize(this.vw, example, label))
+
+            using (var ex = this.serializer.Serialize(example, label))
             {
                 this.vw.Learn(ex);
             }
@@ -158,7 +177,7 @@ namespace VW
             Contract.Requires(example != null);
             Contract.Requires(predictionFactory != null);
 
-            using (var ex = this.serializer.Serialize(this.vw, example, label))
+            using (var ex = this.serializer.Serialize(example, label))
             {
                 return this.vw.Learn(ex, predictionFactory);
             }
@@ -172,7 +191,6 @@ namespace VW
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-
         public void Dispose()
         {
             this.Dispose(true);
@@ -183,16 +201,16 @@ namespace VW
         {
             if (disposing)
             {
-                if (this.vw != null)
-                {
-                    this.vw.Dispose();
-                    this.vw = null;
-                }
-
                 if (this.serializer != null)
                 {
                     this.serializer.Dispose();
                     this.serializer = null;
+                }
+
+                if (this.vw != null)
+                {
+                    this.vw.Dispose();
+                    this.vw = null;
                 }
             }
         }
@@ -246,8 +264,8 @@ namespace VW
             Contract.EndContractBlock();
 
             this.vw = vw;
-            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
-            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings);
+            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings).Create(vw);
+            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings).Create(vw);
 
             Contract.Assert(this.actionDependentFeatureSerializer != null);
 
@@ -267,12 +285,12 @@ namespace VW
         /// <param name="actionDependentFeatures">The action dependent features.</param>
         /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
         /// <param name="label">The label for the example to learn.</param>
-        public void Learn(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        public void Learn(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(index >= 0);
-            Contract.Requires(label != null);
+            //Contract.Requires(index >= 0);
+            //Contract.Requires(label != null);
 
             VowpalWabbitMultiLine.Learn(
                 this.vw,
@@ -292,7 +310,7 @@ namespace VW
         /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
         /// <param name="label">The label for the example to learn.</param>
         /// <returns>The ranked prediction for the given examples.</returns>
-        public TActionDependentFeature[] LearnAndPredict(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        public ActionDependentFeature<TActionDependentFeature>[] LearnAndPredict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
@@ -314,52 +332,10 @@ namespace VW
         /// </summary>
         /// <param name="example">The shared example.</param>
         /// <param name="actionDependentFeatures">The action dependent features.</param>
-        /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
-        /// <param name="label">The label for the example to learn.</param>
+        /// <param name="index">The index of the example to evaluate within <paramref name="actionDependentFeatures"/>.</param>
+        /// <param name="label">The label for the example to evaluate.</param>
         /// <returns>The ranked prediction for the given examples.</returns>
-        public int[] LearnAndPredictIndex(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
-        {
-            Contract.Requires(example != null);
-            Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(index >= 0);
-            Contract.Requires(label != null);
-
-            return VowpalWabbitMultiLine.LearnAndPredictIndex(
-                this.vw,
-                this.serializer,
-                this.actionDependentFeatureLearnSerializer,
-                example,
-                actionDependentFeatures,
-                index,
-                label);
-        }
-
-        /// <summary>
-        /// Predict for the given examples and return the current prediction for it.
-        /// </summary>
-        /// <param name="example">The shared example.</param>
-        /// <param name="actionDependentFeatures">The action dependent features.</param>
-        /// <returns>The ranked prediction for the given examples.</returns>
-        public int[] PredictIndex(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures)
-        {
-            Contract.Requires(example != null);
-            Contract.Requires(actionDependentFeatures != null);
-
-            return VowpalWabbitMultiLine.PredictIndex(
-                this.vw,
-                this.serializer,
-                this.actionDependentFeatureSerializer,
-                example,
-                actionDependentFeatures);
-        }
-
-        /// <summary>
-        /// Learn from the given example and return the current prediction for it.
-        /// </summary>
-        /// <param name="example">The shared example.</param>
-        /// <param name="actionDependentFeatures">The action dependent features.</param>
-        /// <returns>The ranked prediction for the given examples.</returns>
-        public TActionDependentFeature[] Predict(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures)
+        public ActionDependentFeature<TActionDependentFeature>[] Predict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int? index = null, ILabel label = null)
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
@@ -369,7 +345,9 @@ namespace VW
                 this.serializer,
                 this.actionDependentFeatureSerializer,
                 example,
-                actionDependentFeatures);
+                actionDependentFeatures,
+                index,
+                label);
         }
 
         /// <summary>

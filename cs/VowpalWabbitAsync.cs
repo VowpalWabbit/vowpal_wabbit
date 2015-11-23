@@ -14,7 +14,6 @@ using System.Text;
 using System.Threading.Tasks;
 using VW.Interfaces;
 using VW.Serializer;
-using VW.Serializer.Visitors;
 
 namespace VW
 {
@@ -42,9 +41,9 @@ namespace VW
             this.manager = manager;
 
             // create a serializer for each instance - maintaining separate example caches
-            this.serializers = Enumerable
-                .Range(0, manager.Settings.ParallelOptions.MaxDegreeOfParallelism)
-                .Select(_ => VowpalWabbitSerializerFactory.CreateSerializer<TExample>(manager.Settings))
+            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(manager.Settings);
+            this.serializers = this.manager.VowpalWabbits
+                .Select(vw => serializer.Create(vw))
                 .ToArray();
         }
 
@@ -64,7 +63,7 @@ namespace VW
 
             manager.Post(vw =>
             {
-                using (var ex = this.serializers[vw.Settings.Node].Serialize(vw, example, label))
+                using (var ex = this.serializers[vw.Settings.Node].Serialize(example, label))
                 {
                     vw.Learn(ex);
                 }
@@ -85,7 +84,7 @@ namespace VW
 
             manager.Post(vw =>
             {
-                using (var ex = this.serializers[vw.Settings.Node].Serialize(vw, example))
+                using (var ex = this.serializers[vw.Settings.Node].Serialize(example))
                 {
                     vw.Predict(ex);
                 }
@@ -108,10 +107,10 @@ namespace VW
             Contract.Requires(example != null);
             Contract.Requires(label != null);
             Contract.Requires(predictionFactory != null);
-            
+
             return manager.Post(vw =>
             {
-                using (var ex = this.serializers[vw.Settings.Node].Serialize(vw, example, label))
+                using (var ex = this.serializers[vw.Settings.Node].Serialize(example, label))
                 {
                     return vw.Learn(ex, predictionFactory);
                 }
@@ -135,7 +134,7 @@ namespace VW
 
             return manager.Post(vw =>
             {
-                using (var ex = this.serializers[vw.Settings.Node].Serialize(vw, example))
+                using (var ex = this.serializers[vw.Settings.Node].Serialize(example))
                 {
                     return vw.Predict(ex, predictionFactory);
                 }
@@ -221,14 +220,14 @@ namespace VW
             this.manager = manager;
 
             // create a serializer for each instance - maintaining separate example caches
-            this.serializers = Enumerable
-                .Range(0, manager.Settings.ParallelOptions.MaxDegreeOfParallelism)
-                .Select(_ => VowpalWabbitSerializerFactory.CreateSerializer<TExample>(manager.Settings))
+            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(manager.Settings);
+            this.serializers = this.manager.VowpalWabbits
+                .Select(vw => serializer.Create(vw))
                 .ToArray();
 
-            this.actionDependentFeatureSerializers = Enumerable
-                .Range(0, manager.Settings.ParallelOptions.MaxDegreeOfParallelism)
-                .Select(_ => VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(manager.Settings))
+            var adfSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(manager.Settings);
+            this.actionDependentFeatureSerializers = this.manager.VowpalWabbits
+                .Select(vw => adfSerializer.Create(vw))
                 .ToArray();
         }
 
@@ -239,7 +238,7 @@ namespace VW
         /// <param name="actionDependentFeatures">The action dependent features.</param>
         /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
         /// <param name="label">The label for the example to learn.</param>
-        public void Learn(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        public void Learn(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
@@ -247,32 +246,6 @@ namespace VW
             Contract.Requires(label != null);
 
             manager.Post(vw => VowpalWabbitMultiLine.Learn(
-                vw, 
-                this.serializers[vw.Settings.Node], 
-                this.actionDependentFeatureSerializers[vw.Settings.Node], 
-                example, 
-                actionDependentFeatures, 
-                index, 
-                label));
-        }
-
-        /// <summary>
-        /// Learn from the given example and return the current prediction for it.
-        /// </summary>
-        /// <param name="example">The shared example.</param>
-        /// <param name="actionDependentFeatures">The action dependent features.</param>
-        /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
-        /// <param name="label">The label for the example to learn.</param>
-        /// <returns>The ranked prediction for the given examples.</returns>
-        public Task<int[]> LearnAndPredictIndex(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
-        {
-            Contract.Requires(example != null);
-            Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(index >= 0);
-            Contract.Requires(label != null);
-            Contract.Ensures(Contract.Result<Task<int[]>>() != null);
-
-            return manager.Post(vw => VowpalWabbitMultiLine.LearnAndPredictIndex(
                 vw,
                 this.serializers[vw.Settings.Node],
                 this.actionDependentFeatureSerializers[vw.Settings.Node],
@@ -290,13 +263,12 @@ namespace VW
         /// <param name="index">The index of the example to learn within <paramref name="actionDependentFeatures"/>.</param>
         /// <param name="label">The label for the example to learn.</param>
         /// <returns>The ranked prediction for the given examples.</returns>
-        public Task<TActionDependentFeature[]> LearnAndPredict(TExample example, IEnumerable<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
+        public Task<ActionDependentFeature<TActionDependentFeature>[]> LearnAndPredict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
             Contract.Requires(index >= 0);
             Contract.Requires(label != null);
-            Contract.Ensures(Contract.Result<Task<TActionDependentFeature[]>>() != null);
 
             return manager.Post(vw => VowpalWabbitMultiLine.LearnAndPredict(
                 vw,

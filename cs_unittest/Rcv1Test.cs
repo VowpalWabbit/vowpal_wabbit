@@ -11,29 +11,27 @@ using VW.Serializer.Attributes;
 
 namespace cs_unittest
 {
-    [TestClass]
     public class Rcv1TestClass
     {
-        [TestMethod]
-        [Ignore] 
-        public void Rcv1Test()
-        {
-            using (var gz = new GZipStream(File.OpenRead(@"D:\Data\rcv1.train.vw.gz"), CompressionMode.Decompress))
-            using (var reader = new StreamReader(gz))
-            {
-                MyListener listener;
-                using (var vw = new VowpalWabbit<Data>("-k -f rcv1.model -c rcv1.cache"))
-                {
-                    listener = new MyListener(vw);
-                    string line;
+        //[Ignore]
+        //public void Rcv1Test()
+        //{
+        //    using (var gz = new GZipStream(File.OpenRead(@"D:\Data\rcv1.train.vw.gz"), CompressionMode.Decompress))
+        //    using (var reader = new StreamReader(gz))
+        //    {
+        //        MyListener listener;
+        //        using (var vw = new VowpalWabbit<Data>("-k -f rcv1.model -c rcv1.cache"))
+        //        {
+        //            listener = new MyListener(vw);
+        //            string line;
 
-                    while ((line = reader.ReadLine()) != null)
-                    {
-                        VWTestHelper.ParseInput(line, listener);
-                    }
-                }
-            }
-        }
+        //            while ((line = reader.ReadLine()) != null)
+        //            {
+        //                VWTestHelper.ParseInput(line, listener);
+        //            }
+        //        }
+        //    }
+        //}
 
         public class MyListener : VowpalWabbitBaseListener
         {

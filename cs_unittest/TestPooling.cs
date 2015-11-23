@@ -11,6 +11,7 @@ namespace cs_unittest
     public class TestPooling
     {
         [TestMethod]
+        [TestCategory("ObjectPool")]
         [ExpectedException(typeof(InvalidOperationException))]
         public void ObjectPoolTestEmptyFactory()
         {
@@ -18,6 +19,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("ObjectPool")]
         [ExpectedException(typeof(ObjectDisposedException))]
         public void ObjectPoolTestDisposed1()
         {
@@ -27,6 +29,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("ObjectPool")]
         [ExpectedException(typeof(ObjectDisposedException))]
         public void ObjectPoolTestDisposed2()
         {
@@ -36,6 +39,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("ObjectPool")]
         public void ObjectPoolTestDangling()
         {
             var factory = new Disposable();
@@ -53,6 +57,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("ObjectPool")]
         public void ObjectPoolTestFactory()
         {
             var factory1 = new Disposable();
@@ -87,6 +92,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("ObjectPool")]
         public void ObjectPoolTestConcurrency()
         {
             var factories = new List<Disposable> { new Disposable() };
@@ -143,7 +149,7 @@ namespace cs_unittest
 
         public class Disposable : IDisposable
         {
-            public Disposable() 
+            public Disposable()
             {
                 this.Children = new List<Disposable>();
             }

@@ -5,6 +5,6 @@ namespace cs_unittest
 {
     public class VowpalWabbitListenerToEvents<T> : VowpalWabbitBaseListener
     {
-        public Action<T,ILabel> Created;
+        public Action<string, T,ILabel> Created;
     }
 }

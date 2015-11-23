@@ -8,12 +8,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using VW.Interfaces;
 using VW.Serializer.Attributes;
-using VW.Serializer.Visitors;
 
 namespace VW.Serializer
 {
@@ -34,9 +35,7 @@ namespace VW.Serializer
 #endif
         }
 
-        private readonly VowpalWabbitSettings settings;
-
-        private readonly Func<VowpalWabbit, TExample, ILabel, VowpalWabbitExample> serializer;
+        private readonly VowpalWabbitSerializerCompiled<TExample> serializer;
 
         private Dictionary<TExample, CacheEntry> exampleCache;
 
@@ -50,17 +49,23 @@ namespace VW.Serializer
         private readonly Dictionary<VowpalWabbitExample, CacheEntry> reverseLookup;
 #endif
 
-        internal VowpalWabbitSerializer(Func<VowpalWabbit, TExample, ILabel, VowpalWabbitExample> serializer, VowpalWabbitSettings settings)
+        private readonly VowpalWabbit vw;
+
+        private readonly Action<VowpalWabbitMarshalContext, TExample, ILabel> serializerFunc;
+
+        internal VowpalWabbitSerializer(VowpalWabbitSerializerCompiled<TExample> serializer, VowpalWabbit vw)
         {
             if (serializer == null)
             {
                 throw new ArgumentNullException("serializer");
             }
-            Contract.Ensures(this.settings != null);
+            Contract.Ensures(vw != null);
             Contract.EndContractBlock();
 
+            this.vw = vw;
             this.serializer = serializer;
-            this.settings = settings ?? new VowpalWabbitSettings();
+
+            this.serializerFunc = serializer.Func(vw);
 
             var cacheableAttribute = (CacheableAttribute) typeof (TExample).GetCustomAttributes(typeof (CacheableAttribute), true).FirstOrDefault();
             if (cacheableAttribute == null)
@@ -68,7 +73,7 @@ namespace VW.Serializer
                 return;
             }
 
-            if (this.settings.EnableExampleCaching)
+            if (this.vw.Settings.EnableExampleCaching)
             {
                 if (cacheableAttribute.EqualityComparer == null)
                 {
@@ -105,21 +110,54 @@ namespace VW.Serializer
         }
 
         /// <summary>
+        /// True if string examples are generated in parallel to native examples.
+        /// </summary>
+        public bool EnableStringExampleGeneration
+        {
+            get { return !this.serializer.DisableStringExampleGeneration; }
+        }
+
+        /// <summary>
+        /// Serializes the given <paramref name="example"/> to VW string format.
+        /// </summary>
+        /// <param name="example">The example to serialize.</param>
+        /// <param name="label">The label to serialize.</param>
+        /// <returns>The resulting VW string.</returns>
+        public string SerializeToString(TExample example, ILabel label = null)
+        {
+            Contract.Requires(example != null);
+
+            using (var context = new VowpalWabbitMarshalContext(vw))
+            {
+                this.serializerFunc(context, example, label);
+                return context.StringExample.ToString();
+            }
+        }
+
+        /// <summary>
         /// Serialize the example.
         /// </summary>
-        /// <param name="vw">The vw instance.</param>
         /// <param name="example">The example to serialize.</param>
         /// <param name="label">The label to be serialized.</param>
         /// <returns>The serialized example.</returns>
         /// <remarks>If TExample is annotated using the Cachable attribute, examples are returned from cache.</remarks>
-        public VowpalWabbitExample Serialize(VowpalWabbit vw, TExample example, ILabel label = null)
+        public VowpalWabbitExample Serialize(TExample example, ILabel label = null)
         {
-            Contract.Requires(vw != null);
             Contract.Requires(example != null);
 
             if (this.exampleCache == null || label != null)
             {
-                return this.serializer(vw, example, label);
+                using (var context = new VowpalWabbitMarshalContext(vw))
+                {
+                    this.serializerFunc(context, example, label);
+
+                    var vwExample = context.ExampleBuilder.CreateExample();
+
+                    if (this.EnableStringExampleGeneration)
+                        vwExample.VowpalWabbitString = context.StringExample.ToString();
+
+                    return vwExample;
+                }
             }
 
             CacheEntry result;
@@ -136,16 +174,37 @@ namespace VW.Serializer
             }
             else
             {
-                result = new CacheEntry 
+                // TODO: catch exception and dispose!
+                VowpalWabbitExample nativeExample = null;
+
+                try
                 {
-                    Example =  new VowpalWabbitExample(owner: this, example: this.serializer(vw, example, label)),
-                    LastRecentUse = DateTime.UtcNow
-                };
-                this.exampleCache.Add(example, result);
+                    using (var context = new VowpalWabbitMarshalContext(vw))
+                    {
+                        this.serializerFunc(context, example, label);
+                        nativeExample = context.ExampleBuilder.CreateExample();
+                    }
+
+                    result = new CacheEntry
+                    {
+                        Example = new VowpalWabbitExample(owner: this, example: nativeExample),
+                        LastRecentUse = DateTime.UtcNow
+                    };
+
+                    this.exampleCache.Add(example, result);
 
 #if DEBUG
-                this.reverseLookup.Add(result.Example, result);
+                    this.reverseLookup.Add(result.Example, result);
 #endif
+                }
+                catch(Exception e)
+                {
+                    if (nativeExample != null)
+                    {
+                        nativeExample.Dispose();
+                    }
+                    throw e;
+                }
             }
 
 #if DEBUG
@@ -208,7 +267,7 @@ namespace VW.Serializer
 #endif
 
             // if we reach the cache boundary, dispose the oldest example
-            if (this.exampleCache.Count > this.settings.MaxExampleCacheSize)
+            if (this.exampleCache.Count > this.vw.Settings.MaxExampleCacheSize)
             {
                 var enumerator = this.exampleCache.GetEnumerator();
 

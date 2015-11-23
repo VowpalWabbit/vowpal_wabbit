@@ -8,16 +8,18 @@ license as described in the file LICENSE.
 
 namespace VW
 {
-VowpalWabbitException::VowpalWabbitException(const vw_exception& ex)
-  : Exception(gcnew System::String(ex.what())), m_filename(gcnew System::String(ex.Filename())), m_lineNumber(ex.LineNumber())
-{
-}
+    VowpalWabbitException::VowpalWabbitException(const vw_exception& ex)
+        : Exception(gcnew System::String(ex.what())), m_filename(gcnew System::String(ex.Filename())), m_lineNumber(ex.LineNumber())
+    {
+    }
 
-String^ VowpalWabbitException::Filename::get()
-{ return m_filename;
-}
+    String^ VowpalWabbitException::Filename::get()
+    {
+        return m_filename;
+    }
 
-Int32 VowpalWabbitException::LineNumber::get()
-{ return m_lineNumber;
-}
+    Int32 VowpalWabbitException::LineNumber::get()
+    {
+        return m_lineNumber;
+    }
 }

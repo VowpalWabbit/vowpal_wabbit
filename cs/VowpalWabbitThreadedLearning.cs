@@ -7,11 +7,9 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -45,7 +43,7 @@ namespace VW
         private readonly ActionBlock<Action<VowpalWabbit>>[] actionBlocks;
 
         /// <summary>
-        /// The <see cref="actionBlocks"/> only offer non-blocking methods. Getting observers and calling OnNext() enables 
+        /// The <see cref="actionBlocks"/> only offer non-blocking methods. Getting observers and calling OnNext() enables
         /// blocking once the queue is full.
         /// </summary>
         private readonly IObserver<Action<VowpalWabbit>>[] observers;
@@ -72,22 +70,16 @@ namespace VW
         public VowpalWabbitThreadedLearning(VowpalWabbitSettings settings)
         {
             if (settings == null)
-            {
                 throw new ArgumentNullException("settings");
-            }
 
             if (settings.ParallelOptions == null)
-            {
                 throw new ArgumentNullException("settings.ParallelOptions must be set");
-            }
             Contract.EndContractBlock();
 
             this.Settings = settings;
 
             if (this.Settings.ParallelOptions.CancellationToken == null)
-            {
                 this.Settings.ParallelOptions.CancellationToken = new CancellationToken();
-            }
 
             switch (this.Settings.ExampleDistribution)
             {
@@ -169,6 +161,14 @@ namespace VW
         }
 
         /// <summary>
+        /// VowpalWabbit instances participating in AllReduce.
+        /// </summary>
+        public VowpalWabbit[] VowpalWabbits
+        {
+            get { return this.vws; }
+        }
+
+        /// <summary>
         /// Creates a new instance of <see cref="VowpalWabbitAsync{TExample}"/> to feed examples of type <typeparamref name="TExample"/>.
         /// </summary>
         /// <typeparam name="TExample">The user example type.</typeparam>
@@ -193,7 +193,7 @@ namespace VW
         private uint CheckEndOfPass()
         {
             var exampleCount = (uint)Interlocked.Increment(ref this.exampleCount);
-            
+
             if (exampleCount % this.Settings.ExampleCountPerRun == 0)
             {
                 this.observers[0].OnNext(vw =>
@@ -242,9 +242,9 @@ namespace VW
             var completionSource = new TaskCompletionSource<T>();
 
             // dispatch
-            this.observers[this.exampleDistributor(exampleCount)].OnNext(vw => 
+            this.observers[this.exampleDistributor(exampleCount)].OnNext(vw =>
             {
-                try 
+                try
 	            {
                     completionSource.SetResult(func(vw));
 	            }
@@ -285,7 +285,7 @@ namespace VW
         /// <remarks>The task is only completed after synchronization of all instances, triggered <see cref="VowpalWabbitSettings.ExampleCountPerRun"/> example.</remarks>
         public Task<VowpalWabbitPerformanceStatistics> PerformanceStatistics
         {
-            get 
+            get
             {
                 var completionSource = new TaskCompletionSource<VowpalWabbitPerformanceStatistics>();
 
@@ -321,7 +321,7 @@ namespace VW
         {
             var completionSource = new TaskCompletionSource<bool>();
 
-            this.syncActions.Add(vw => 
+            this.syncActions.Add(vw =>
             {
                 vw.SaveModel();
                 completionSource.SetResult(true);
@@ -340,7 +340,7 @@ namespace VW
 
             var completionSource = new TaskCompletionSource<bool>();
 
-            this.syncActions.Add(vw => 
+            this.syncActions.Add(vw =>
             {
                 vw.SaveModel(filename);
                 completionSource.SetResult(true);

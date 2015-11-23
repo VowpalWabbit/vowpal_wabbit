@@ -10,17 +10,14 @@ using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer.Attributes;
 using System.Threading;
+using VW.Serializer;
+using cs_testcommon;
 
 namespace cs_test
 {
-    [TestClass]
     public class Test1and2Class : TestBase
     {
-        [TestMethod]
-        [DeploymentItem(@"train-sets\0001.dat", "train-sets")]
-        [DeploymentItem(@"train-sets\ref\0001.stderr", @"train-sets\ref")]
-        [DeploymentItem(@"test-sets\ref\0001.stderr", @"test-sets\ref")]
-        [DeploymentItem(@"pred-sets\ref\0001.predict", @"pred-sets\ref")]
+        [TestCategory("Command line through marshalling")]
         public void Test1and2()
         {
             var references = File.ReadAllLines(@"pred-sets\ref\0001.predict").Select(l => float.Parse(l, CultureInfo.InvariantCulture)).ToArray();
@@ -28,7 +25,9 @@ namespace cs_test
             var input = new List<Test1>();
 
             using (var vwStr = new VowpalWabbit(" -k -c test1and2.str --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off"))
-            using (var vw = new VowpalWabbit<Test1>(" -k -c test1and2 --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off"))
+            using (var vw = new VowpalWabbit<Test1>(new VowpalWabbitSettings(" -k -c test1and2 --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off",
+                enableExampleCaching: false)))
+            using (var vwValidate = new VowpalWabbitExampleValidator<Test1>("-l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off"))
             {
                 var lineNr = 0;
                 VWTestHelper.ParseInput(
@@ -36,6 +35,8 @@ namespace cs_test
                     new MyListener(data =>
                     {
                         input.Add(data);
+
+                        vwValidate.Validate(data.Line, data, data.Label);
 
                         var expected = vwStr.Learn(data.Line, VowpalWabbitPredictionType.Scalar);
                         var actual = vw.Learn(data, data.Label, VowpalWabbitPredictionType.Scalar);
@@ -65,7 +66,7 @@ namespace cs_test
             using (var vwNative = new VowpalWabbit("-k -t -i models/0001.model --invariant"))
             using (var vw = new VowpalWabbit<Test1>("-k -t -i models/0001.model --invariant"))
             using (var vwModel2 = new VowpalWabbitModel("-k -t --invariant -i models/0001.model"))
-            using (var vwInMemoryShared3 = new VowpalWabbit<Test1>(new VowpalWabbitSettings(model: vwModel2)))  
+            using (var vwInMemoryShared3 = new VowpalWabbit<Test1>(new VowpalWabbitSettings(model: vwModel2)))
             {
                 for (var i = 0; i < input.Count; i++)
                 {
@@ -97,9 +98,9 @@ namespace cs_test
             }
         }
 
-        //[TestMethod]
+        //// [TestMethod] // TODO
         //[Ignore]
-        //[DeploymentItem(@"train-sets\rcv1_cb_eval", "train-sets")]
+        //// [DeploymentItem(@"train-sets\rcv1_cb_eval", "train-sets")]
         //public void Test74()
         //{
         //    // 2 1:1:0.5 | tuesday year million short compan vehicl line stat financ commit exchang plan corp subsid credit issu debt pay gold bureau prelimin refin billion telephon time draw basic relat file spokesm reut secur acquir form prospect period interview regist toront resourc barrick ontario qualif bln prospectus convertibl vinc borg arequip
@@ -115,7 +116,7 @@ namespace cs_test
         //            var data = new Rcv1CbEval()
         //            {
         //                Words = parts[1].Split(' ')
-        //            }; 
+        //            };
 
         //            using(var example = vw.ReadExample(data))
         //            {
@@ -125,7 +126,7 @@ namespace cs_test
         //        }
         //    }
         //}
-        
+
 
     }
 
@@ -147,7 +148,7 @@ namespace cs_test
     public class Rcv1CbEval
     {
         [Feature]
-        public string[] Words { get; set; } 
+        public string[] Words { get; set; }
     }
 
     public class MyListener : VowpalWabbitBaseListener

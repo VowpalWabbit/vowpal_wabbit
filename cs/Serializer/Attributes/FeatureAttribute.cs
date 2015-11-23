@@ -7,6 +7,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using VW.Serializer;
 
 namespace VW.Serializer.Attributes
 {
@@ -23,6 +24,7 @@ namespace VW.Serializer.Attributes
         {
             this.Enumerize = false;
             this.AddAnchor = false;
+            this.StringProcessing = StringProcessing.Split;
         }
 
         /// <summary>
@@ -56,7 +58,7 @@ namespace VW.Serializer.Attributes
         /// </summary>
         public char FeatureGroup
         {
-            get { return InternalFeatureGroup ?? (char)0; }
+            get { return InternalFeatureGroup ?? ' '; }
             set { this.InternalFeatureGroup = value; }
         }
 
@@ -70,5 +72,10 @@ namespace VW.Serializer.Attributes
         /// Specify the serialization order.
         /// </summary>
         public int Order { get; set; }
+
+        /// <summary>
+        /// Configures string pre-processing before hashing. All options are compatible with VW string format.
+        /// </summary>
+        public StringProcessing StringProcessing { get; set; }
     }
 }

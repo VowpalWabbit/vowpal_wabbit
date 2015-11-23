@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using VW.Serializer.Attributes;
 using VW.Serializer;
-using VW.Serializer.Visitors;
 using VW;
 using VW.Interfaces;
 using VW.Labels;
@@ -92,7 +91,7 @@ namespace cs_test
 
             var vw = new VowpalWabbit<FeatureTestContext>("-q st --noconstant --quiet");
 
-            vw.Native.Learn("1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme"); 
+            vw.Native.Learn("1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
 
             var prediction = vw.Learn(context, new SimpleLabel { Label = 1f }, VowpalWabbitPredictionType.Scalar);
 

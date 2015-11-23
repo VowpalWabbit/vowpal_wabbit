@@ -7,6 +7,7 @@ using Antlr4.Runtime.Atn;
 using Antlr4.Runtime.Tree;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VW;
+using VW.Serializer;
 
 namespace cs_unittest
 {
@@ -48,15 +49,17 @@ namespace cs_unittest
             where TListener : VowpalWabbitListenerToEvents<T>, new()
         {
             using (var vw = new VowpalWabbit<T>(args))
+            using (var validate = new VowpalWabbitExampleValidator<T>(args))
             {
                 var listener = new TListener();
-                listener.Created = (data, label) => 
+                listener.Created = (line, data, label) =>
                 {
                     if (data == null)
                     {
                         Assert.Fail("got empty example");
                     }
 
+                    validate.Validate(line, data, label);
                     vw.Learn(data, label);
                 };
                 VWTestHelper.ParseInput(File.OpenRead(inputFile), listener);
@@ -69,7 +72,7 @@ namespace cs_unittest
             where TData : BaseData
             where TListener : VowpalWabbitListenerToEvents<TData>, new()
         {
-            float[] references = null; 
+            float[] references = null;
             var index = 0;
 
             if (referenceFile != null)
@@ -81,14 +84,18 @@ namespace cs_unittest
 
             using (var vwRef = new VowpalWabbit(args))
             using (var vwModel = new VowpalWabbitModel(args))
+            using (var vwValidate = new VowpalWabbit(args))
             using (var vwInMemoryShared2 = new VowpalWabbit<TData>(new VowpalWabbitSettings(model: vwModel)))
+            using (var validate = new VowpalWabbitExampleValidator<TData>(args))
             {
                 var listener = new TListener();
-                listener.Created = (x, label) =>
+                listener.Created = (line, x, label) =>
                 {
+                    validate.Validate(line, x, label);
+
                     var expected = vwRef.Predict(x.Line, VowpalWabbitPredictionType.Scalar);
 
-                    var actual = vwInMemoryShared2.Predict(x, VowpalWabbitPredictionType.Scalar, label); 
+                    var actual = vwInMemoryShared2.Predict(x, VowpalWabbitPredictionType.Scalar, label);
 
                     Assert.AreEqual(expected, actual, 1e-5);
 
@@ -130,9 +137,14 @@ namespace cs_unittest
         internal static VowpalWabbitPerformanceStatistics ReadPerformanceStatistics(string filename)
         {
             var lines = File.ReadAllLines(filename);
+            var numExamples = FindULongEntry(lines, "number of examples per pass = ");
+
+            if (numExamples == 0)
+                numExamples = FindULongEntry(lines, "number of examples = ");
+
             var stats = new VowpalWabbitPerformanceStatistics()
             {
-                NumberOfExamplesPerPass = FindULongEntry(lines, "number of examples per pass = "),
+                NumberOfExamplesPerPass = numExamples,
                 TotalNumberOfFeatures = FindULongEntry(lines, "total feature number = "),
                 AverageLoss = FindDoubleEntry(lines, "average loss = "),
                 BestConstant = FindDoubleEntry(lines, "best constant = "),
@@ -156,7 +168,7 @@ namespace cs_unittest
             var ret = 0.0;
             if (double.TryParse(candidate.Substring(label.Length), NumberStyles.Float, CultureInfo.InvariantCulture, out ret))
             {
-                return ret;   
+                return ret;
             }
 
             return 0.0;

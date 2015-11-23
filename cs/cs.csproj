@@ -19,13 +19,13 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x64\Debug\</OutputPath>
+    <OutputPath>..\vowpalwabbit\x64\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <DocumentationFile>bin\x64\Debug\VowpalWabbit.XML</DocumentationFile>
+    <DocumentationFile>..\vowpalwabbit\x64\Debug\VowpalWabbit.XML</DocumentationFile>
     <CodeContractsEnableRuntimeChecking>True</CodeContractsEnableRuntimeChecking>
     <CodeContractsRuntimeOnlyPublicSurface>False</CodeContractsRuntimeOnlyPublicSurface>
     <CodeContractsRuntimeThrowOnFailure>True</CodeContractsRuntimeThrowOnFailure>
@@ -69,23 +69,31 @@
     <CodeContractsRuntimeCheckingLevel>Full</CodeContractsRuntimeCheckingLevel>
     <CodeContractsReferenceAssembly>%28none%29</CodeContractsReferenceAssembly>
     <CodeContractsAnalysisWarningLevel>0</CodeContractsAnalysisWarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\x64\Release\</OutputPath>
+    <OutputPath>..\vowpalwabbit\x64\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <DocumentationFile>bin\x64\Release\VowpalWabbit.XML</DocumentationFile>
+    <DocumentationFile>..\vowpalwabbit\x64\Release\VowpalWabbit.XML</DocumentationFile>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>vw_key.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Threading.Tasks.Dataflow, Version=4.5.24.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>True</Private>
       <HintPath>..\vowpalwabbit\packages\Microsoft.Tpl.Dataflow.4.5.24\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -94,6 +102,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ActionDependentFeature.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Labels\ContextualBanditLabel.cs" />
     <Compile Include="ObjectFactory.cs" />
@@ -101,40 +110,28 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializer\Attributes\CacheableAttribute.cs" />
     <Compile Include="Serializer\Attributes\FeatureAttribute.cs" />
-    <Compile Include="Serializer\Contracts\INamespaceDenseContract.cs" />
-    <Compile Include="Serializer\Contracts\INamespaceSparseContract.cs" />
-    <Compile Include="Serializer\Contracts\IVisitableFeatureContract.cs" />
-    <Compile Include="Serializer\Contracts\IVisitableNamespaceContract.cs" />
-    <Compile Include="Serializer\Interfaces\IFeature.cs" />
+    <Compile Include="Serializer\AnnotationInspector.cs" />
     <Compile Include="Interfaces\ILabel.cs" />
-    <Compile Include="Serializer\Interfaces\INamespace.cs" />
-    <Compile Include="Serializer\Interfaces\INamespaceDense.cs" />
-    <Compile Include="Serializer\Interfaces\INamespaceSparse.cs" />
-    <Compile Include="Serializer\Interfaces\IVisitableFeature.cs" />
-    <Compile Include="Serializer\Interfaces\IVisitableNamespace.cs" />
+    <Compile Include="Serializer\Intermediate\EnumerizedFeature.cs" />
     <Compile Include="Serializer\Intermediate\Feature.cs" />
-    <Compile Include="Serializer\Intermediate\FeatureExpression.cs" />
     <Compile Include="Serializer\Intermediate\Namespace.cs" />
-    <Compile Include="Serializer\Intermediate\NamespaceDense.cs" />
-    <Compile Include="Serializer\Intermediate\NamespaceSparse.cs" />
-    <Compile Include="Serializer\Reflection\ReflectionHelper.cs" />
-    <Compile Include="Serializer\Reflection\TypeDistance.cs" />
-    <Compile Include="Serializer\Reflection\TypeMatch.cs" />
-    <Compile Include="Serializer\Visitors\VowpalWabbitNativeVisitor.cs" />
-    <Compile Include="Serializer\Visitors\VowpalWabbitNativeVisitorExt.cs">
-      <DependentUpon>VowpalWabbitNativeVisitorExt.tt</DependentUpon>
-      <DesignTime>True</DesignTime>
+    <Compile Include="Serializer\Intermediate\PreHashedFeature.cs" />
+    <Compile Include="Serializer\VowpalWabbitDefaultMarshaller.cs" />
+    <Compile Include="Serializer\VowpalWabbitDefaultMarshallerExt.cs">
       <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>VowpalWabbitDefaultMarshallerExt.tt</DependentUpon>
     </Compile>
-    <Compile Include="Serializer\Visitors\VowpalWabbitStringVisitor.cs" />
-    <Compile Include="Serializer\VowpalWabbitDebugExample.cs" />
+    <Compile Include="Serializer\VowpalWabbitMarshalContext.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
+    <Compile Include="Serializer\VowpalWabbitSerializerCompiled.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerFactory.cs" />
     <Compile Include="Labels\SharedLabel.cs" />
     <Compile Include="Labels\SimpleLabel.cs" />
     <Compile Include="VowpalWabbit.cs" />
     <Compile Include="ObjectPool.cs" />
     <Compile Include="VowpalWabbitAsync.cs" />
+    <Compile Include="VowpalWabbitSweep.cs" />
     <Compile Include="VowpalWabbitThreadedPrediction.cs" />
     <Compile Include="VowpalWabbitThreadedLearning.cs" />
     <Compile Include="VowpalWabbitMultiLine.cs" />
@@ -145,18 +142,26 @@
       <Project>{85e55ae0-3784-4968-9271-c81af560e1c1}</Project>
       <Name>vw_clr</Name>
     </ProjectReference>
+    <ProjectReference Include="..\vw_common\vw_common.csproj">
+      <Project>{e621e022-c1f8-433f-905a-ab9a3de072b7}</Project>
+      <Name>vw_common</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="cs.nuspec" />
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="vw_key.snk" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Content Include="Serializer\Visitors\VowpalWabbitNativeVisitorExt.tt">
+    <Content Include="Serializer\VowpalWabbitDefaultMarshallerExt.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>VowpalWabbitNativeVisitorExt.cs</LastGenOutput>
+      <LastGenOutput>VowpalWabbitDefaultMarshallerExt.cs</LastGenOutput>
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

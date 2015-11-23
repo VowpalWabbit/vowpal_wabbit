@@ -106,3 +106,4 @@ python/pyvw.egg-info/**
 /COPYING
 /README
 /compile
+/cs/Serializer/Visitors/VowpalWabbitNativeVisitorExt.cs

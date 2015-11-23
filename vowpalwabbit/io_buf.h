@@ -88,38 +88,38 @@ public:
   { int ret = -1;
     switch(flag)
     { case READ:
-        if (*name != '\0')
-        {
+      if (*name != '\0')
+      {
 #ifdef _WIN32
-          // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
-          _sopen_s(&ret, name, _O_RDONLY|_O_BINARY|_O_SEQUENTIAL, _SH_DENYWR, 0);
+        // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
+        _sopen_s(&ret, name, _O_RDONLY|_O_BINARY|_O_SEQUENTIAL, _SH_DENYWR, 0);
 #else
-          ret = open(name, O_RDONLY|O_LARGEFILE);
+        ret = open(name, O_RDONLY|O_LARGEFILE);
 #endif
-        }
-        else if (!stdin_off)
+      }
+      else if (!stdin_off)
 #ifdef _WIN32
-          ret = _fileno(stdin);
+        ret = _fileno(stdin);
 #else
-          ret = fileno(stdin);
+        ret = fileno(stdin);
 #endif
-        if(ret!=-1)
-          files.push_back(ret);
-        break;
+      if(ret!=-1)
+        files.push_back(ret);
+      break;
 
-      case WRITE:
+    case WRITE:
 #ifdef _WIN32
-        _sopen_s(&ret, name, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
+      _sopen_s(&ret, name, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
 #else
-        ret = open(name, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
+      ret = open(name, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
 #endif
-        if(ret!=-1)
-          files.push_back(ret);
-        break;
+      if(ret!=-1)
+        files.push_back(ret);
+      break;
 
-      default:
-        std::cerr << "Unknown file operation. Something other than READ/WRITE specified" << std::endl;
-        ret = -1;
+    default:
+      std::cerr << "Unknown file operation. Something other than READ/WRITE specified" << std::endl;
+      ret = -1;
     }
     if (ret == -1 && *name != '\0')
       THROWERRNO("can't open: " << name);
@@ -159,21 +159,21 @@ public:
 
   size_t fill(int f)
   { // if the loaded values have reached the allocated space
-    if (space.end_array - endloaded == 0)
+      if (space.end_array - endloaded == 0)
     { // reallocate to twice as much space
-      size_t offset = endloaded - space.begin;
-      space.resize(2 * (space.end_array - space.begin));
-      endloaded = space.begin + offset;
-    }
-    // read more bytes from file up to the remaining allocated space
-    ssize_t num_read = read_file(f, endloaded, space.end_array - endloaded);
-    if (num_read >= 0)
+          size_t offset = endloaded - space.begin;
+          space.resize(2 * (space.end_array - space.begin));
+          endloaded = space.begin + offset;
+      }
+      // read more bytes from file up to the remaining allocated space
+      ssize_t num_read = read_file(f, endloaded, space.end_array - endloaded);
+      if (num_read >= 0)
     { // if some bytes were actually loaded, update the end of loaded values
-      endloaded = endloaded + num_read;
-      return num_read;
-    }
-    else
-      return 0;
+          endloaded = endloaded + num_read;
+          return num_read;
+      }
+      else
+          return 0;
   }
 
   virtual ssize_t write_file(int f, const void* buf, size_t nbytes)
@@ -288,12 +288,12 @@ inline size_t bin_text_read_write_validated(io_buf& io, char* data, uint32_t len
     const char* read_message, bool read,
     const char* text_data, uint32_t text_len, bool text)
 { size_t nbytes = bin_text_read_write(io, data, len, read_message, read, text_data, text_len, text);
-  if (read && len > 0)
+    if (read && len > 0)
   { if (nbytes == 0)
     { THROW("Unexpected end of file encountered.");
+        }
     }
-  }
-  return nbytes;
+    return nbytes;
 }
 
 inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len,
@@ -319,10 +319,10 @@ inline size_t bin_text_read_write_fixed_validated(io_buf& io, char* data, uint32
     const char* read_message, bool read,
     const char* text_data, uint32_t text_len, bool text)
 { size_t nbytes = bin_text_read_write_fixed(io, data, len, read_message, read, text_data, text_len, text);
-  if (read && len > 0) // only validate bytes read/write if expected length > 0
+    if (read && len > 0) // only validate bytes read/write if expected length > 0
   { if (nbytes == 0)
     { THROW("Unexpected end of file encountered.");
+        }
     }
-  }
-  return nbytes;
+    return nbytes;
 }
