@@ -971,8 +971,8 @@ void parse_output_model(vw& all)
   ("save_resume", "save extra state so learning can be resumed later with new data")
   ("save_per_pass", "Save the model after every pass over data")
   ("output_feature_regularizer_binary", po::value< string >(&(all.per_feature_regularizer_output)), "Per feature regularization output file")
-    ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text")
-    ("id", po::value< string >(&(all.id)), "User supplied ID embedded into the final regressor");
+  ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text")
+  ("id", po::value< string >(&(all.id)), "User supplied ID embedded into the final regressor");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -999,9 +999,8 @@ void parse_output_model(vw& all)
     all.save_resume = true;
 
   if (vm.count("id") && find(all.args.begin(), all.args.end(), "--id") == all.args.end())
-  {
-      all.args.push_back("--id");
-      all.args.push_back(vm["id"].as<string>());
+  { all.args.push_back("--id");
+    all.args.push_back(vm["id"].as<string>());
   }
 }
 

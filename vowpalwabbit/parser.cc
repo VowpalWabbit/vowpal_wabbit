@@ -563,20 +563,18 @@ child:
     { string temp = all.data_filename;
       if (!quiet)
         cerr << "Reading datafile = " << temp << endl;
-    if (temp.length() > 0)
-    {
       try
       { all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
       }
       catch (exception const& ex)
-      { if (temp.size() != 0)
+      { // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
+        if (temp.size() != 0)
         { cerr << "can't open '" << temp << "', sailing on!" << endl;
         }
         else
         { throw ex;
         }
       }
-    }
 
       all.p->reader = read_features;
       all.p->resettable = all.p->write_cache;
