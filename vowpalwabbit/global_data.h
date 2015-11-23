@@ -24,6 +24,7 @@ namespace po = boost::program_options;
 #include "v_hashmap.h"
 #include <time.h>
 #include "hash.h"
+#include "crossplat_compat.h"
 
 struct version_struct
 { int major;
