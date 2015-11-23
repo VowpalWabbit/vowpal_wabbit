@@ -66,5 +66,8 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = libvw.pc libvw_c_wrapper.pc
+
 test: all
 	cd test && ./RunTests -f -E 0.001 ../vowpalwabbit/vw ../vowpalwabbit/vw

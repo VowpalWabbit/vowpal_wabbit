@@ -78,5 +78,7 @@ AC_CONFIG_FILES([
  vowpalwabbit/Makefile
  cluster/Makefile
  library/Makefile
+ libvw.pc
+ libvw_c_wrapper.pc
 ])
 AC_OUTPUT
