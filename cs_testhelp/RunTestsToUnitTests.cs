@@ -18,10 +18,10 @@ namespace cs_testhelp
             var outputFile = vwRoot + @"\cs_unittest\TestAll.cs";
 
             // useful for automatic update. since there is a MSBuild bug ignoring dependencies, this is disabled
-            //if (File.Exists(outputFile) && File.GetLastWriteTimeUtc(inputFile) == File.GetLastWriteTimeUtc(outputFile))
-            //{
-            //    return;
-            //}
+            if (File.Exists(outputFile) && File.GetLastWriteTimeUtc(inputFile) == File.GetLastWriteTimeUtc(outputFile))
+            {
+                return;
+            }
 
             var lines = File.ReadAllLines(inputFile)
                 .SkipWhile(l => l != "__DATA__")
@@ -157,13 +157,6 @@ namespace cs_unittest
                         // header deps
                         foreach (var t in tests)
                             cs.WriteLine(testCode[t].Item1);
-
-                        var header = new StringWriter();
-                        header.WriteLine("[DeploymentItem(@\"{0}\",@\"{1}\")]",
-                            arguments.Data, dataDirectory);
-                        header.WriteLine("[DeploymentItem(@\"{0}\", @\"{1}\")]",
-                            stderr, Path.GetDirectoryName(stderr));
-                        cs.WriteLine(header.ToString());
 
                         cs.WriteLine("public void CommandLine_Test{0}() {{", nr);
 

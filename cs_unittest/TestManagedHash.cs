@@ -6,7 +6,6 @@ using VW;
 
 namespace cs_unittest
 {
-    // [TestClass]
     public class TestManagedHash
     {
         static string[] data =
@@ -122,7 +121,7 @@ namespace cs_unittest
                         stopWatchNative.Start();
                         var nativeHash = vw.HashSpaceNative(item);
                         stopWatchNative.Stop();
-                         
+
                         stopWatchManaged.Start();
                         var managedHash = vw.HashSpace(item);
                         stopWatchManaged.Stop();

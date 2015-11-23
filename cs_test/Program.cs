@@ -20,22 +20,15 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
-            //VowpalWabbit vw = new VowpalWabbit()
-
-            VowpalWabbitModel vwm = new VowpalWabbitModel(@"-i c:\users\lhoang\downloads\current.80022");
-            //VowpalWabbitModel vwm = new VowpalWabbitModel(@"-i D:\Git\vw-markus\vowpal_wabbit\model.msn");
-            var vw = new VowpalWabbit(new VowpalWabbitSettings(null, null, model: vwm));
-
-            new TestCbAdfClass().Test87();
             // AttributesSample.Attributes();
             //AttributesSample.RunFeaturesTest();
             //ExploreClock.Clock();
             //LabDemo.Run();
-            //ExploreOnlySample.Run();
-            //RunFeaturesTest();
-            //RunParserTest();
-            //RunSpeedTest();
-            //RunFlatExampleTestEx();
+            ExploreOnlySample.Run();
+            RunFeaturesTest();
+            RunParserTest();
+            RunSpeedTest();
+            RunFlatExampleTestEx();
             //RunLDAPredict();
             //RunVWParse_and_VWLearn();
         }
