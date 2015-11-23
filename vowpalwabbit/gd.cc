@@ -3,12 +3,13 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
+#include "crossplat_compat.h"
+
 #include <float.h>
 #ifdef _WIN32
 #include <WinSock2.h>
 #else
 #include <netdb.h>
-#define sprintf_s snprintf
 #endif
 
 #if !defined(VW_NO_INLINE_SIMD)
