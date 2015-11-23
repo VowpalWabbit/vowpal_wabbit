@@ -195,7 +195,7 @@ namespace cs_unittest
 
                         sw.WriteLine("}");
 
-                        testCode.Add(nr, Tuple.Create(header.ToString(), sw.ToString()));
+                        testCode.Add(nr, Tuple.Create(string.Empty, sw.ToString()));
 
                         Reset();
 
