@@ -10,6 +10,7 @@ using VW.Serializer.Attributes;
 
 namespace cs_unittest
 {
+	[TestClass]
     public class TestMarshalNumeric
     {
 	

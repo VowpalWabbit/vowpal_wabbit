@@ -17,5 +17,5 @@ test_script:
 
     {
        cd c:\vowpal_wabbit
-       vstest.console /Platform:x64 /inIsolation vowpalwabbit\x64\Release\cs_leaktest.dll
+       vstest.console /Platform:x64 /inIsolation vowpalwabbit\x64\Release\cs_unittest.dll
     }

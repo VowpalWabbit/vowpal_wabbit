@@ -5,7 +5,7 @@ using VW;
 
 namespace cs_unittest
 {
-    // [TestClass]
+     [TestClass]
     public partial class TestAll : TestBase
     {
 
