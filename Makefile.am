@@ -1,19 +1,29 @@
 SUBDIRS = vowpalwabbit cluster library
 
 nobase_include_HEADERS = vowpalwabbit/allreduce.h \
+	vowpalwabbit/cb.h \
 	vowpalwabbit/comp_io.h \
 	vowpalwabbit/config.h \
+	vowpalwabbit/constant.h \
+	vowpalwabbit/cost_sensitive.h \
 	vowpalwabbit/example.h \
 	vowpalwabbit/global_data.h \
 	vowpalwabbit/hash.h \
 	vowpalwabbit/io_buf.h \
+	vowpalwabbit/label_parser.h \
 	vowpalwabbit/learner.h \
 	vowpalwabbit/loss_functions.h \
+	vowpalwabbit/memory.h \
+	vowpalwabbit/multiclass.h \
+	vowpalwabbit/multilabel.h \
 	vowpalwabbit/parse_primitives.h \
 	vowpalwabbit/parser.h \
 	vowpalwabbit/simple_label.h \
 	vowpalwabbit/v_array.h \
+	vowpalwabbit/v_hashmap.h \
 	vowpalwabbit/vw.h \
+	vowpalwabbit/vw_exception.h \
+	vowpalwabbit/vw_validate.h \
 	vowpalwabbit/vwdll.h
 
 noinst_HEADERS = vowpalwabbit/accumulate.h \
@@ -22,12 +32,8 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/binary.h \
 	vowpalwabbit/bs.h \
 	vowpalwabbit/cache.h \
-	vowpalwabbit/cb.h \
 	vowpalwabbit/cb_algs.h \
 	vowpalwabbit/cbify.h \
-	vowpalwabbit/comp_io.h \
-	vowpalwabbit/constant.h \
-	vowpalwabbit/cost_sensitive.h \
 	vowpalwabbit/csoaa.h \
 	vowpalwabbit/ect.h \
 	vowpalwabbit/interactions.h \
@@ -39,7 +45,6 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/log_multi.h \
 	vowpalwabbit/lrq.h \
 	vowpalwabbit/mf.h \
-	vowpalwabbit/multiclass.h \
 	vowpalwabbit/network.h \
 	vowpalwabbit/nn.h \
 	vowpalwabbit/noop.h \
@@ -61,8 +66,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/sender.h \
 	vowpalwabbit/stagewise_poly.h \
 	vowpalwabbit/topk.h \
-	vowpalwabbit/unique_sort.h \
-	vowpalwabbit/v_hashmap.h
+	vowpalwabbit/unique_sort.h
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 
