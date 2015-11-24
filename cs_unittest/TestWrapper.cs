@@ -5,14 +5,17 @@ using VW;
 
 namespace cs_unittest
 {
+    [TestClass]
     public class TestWrapper : TestBase
     {
+        [TestMethod]
         public void VwCleanupTest()
         {
             new VowpalWabbit<Test1>("-k -l 20 --initial_t 128000 --power_t 1 -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off")
                 .Dispose();
         }
 
+        [TestMethod]
         public void VwCleanupTestError()
         {
             try
@@ -33,6 +36,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         public void VwModelRefCountingTest()
         {
             var model = new VowpalWabbitModel("");

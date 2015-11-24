@@ -11,6 +11,7 @@ using VW.Serializer.Attributes;
 
 namespace cs_unittest
 {
+    [TestClass]
     public class TestCbAdfClass : TestBase
     {
         public void ProfilePerformanceWithStringData()
@@ -76,6 +77,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Command line through marshalling")]
         public void Test87()
         {
@@ -110,6 +112,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         public void TestSharedModel()
         {
             string cbadfModelFile = "models/cb_adf.model";

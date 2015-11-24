@@ -11,8 +11,10 @@ using VW.Serializer.Attributes;
 
 namespace cs_unittest
 {
+    [TestClass]
     public class TestNull
     {
+        [TestMethod]
         [TestCategory("Null")]
         public void TestNull1()
         {
@@ -40,6 +42,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Null")]
         public void TestNull2()
         {
@@ -64,6 +67,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Null")]
         public void TestNull3()
         {
@@ -101,6 +105,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Null")]
         public void TestNull4()
         {
@@ -136,6 +141,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Null")]
         public void TestNull5()
         {

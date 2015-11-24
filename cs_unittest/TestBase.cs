@@ -9,12 +9,25 @@ using System.Diagnostics;
 
 namespace cs_unittest
 {
-  public abstract class TestBase : IDisposable
-  {
-    public TestBase()
+    [TestClass]
+    public abstract class TestBase : IDisposable
     {
-      Directory.CreateDirectory("models");
-    }
+        public TestBase()
+        {
+            this.Init();
+        }
+
+        [TestInitialize]
+        public void Init()
+        {
+            var basePath = Path.GetDirectoryName(typeof(TestBase).Assembly.Location);
+            Environment.CurrentDirectory = basePath + @"\..\..\..\test";
+
+            if (!Directory.Exists("models"))
+            {
+                Directory.CreateDirectory("models");
+            }
+        }
 
         public void Dispose()
         {

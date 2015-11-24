@@ -10,8 +10,10 @@ using VW.Serializer.Attributes;
 
 namespace cs_unittest
 {
+    [TestClass]
     public class TestMarshalling
     {
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestEnumerize()
         {
@@ -23,6 +25,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestString()
         {
@@ -34,6 +37,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestStringFeatureGroup()
         {
@@ -43,6 +47,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestStringNamespace()
         {
@@ -60,6 +65,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestStringEscape()
         {
@@ -70,6 +76,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestStringSplit()
         {
@@ -79,6 +86,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestDictionary()
         {
@@ -95,6 +103,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestCustomType()
         {
@@ -104,6 +113,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestEnumerableString()
         {
@@ -115,6 +125,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestEnumerableKV()
         {
@@ -133,6 +144,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestComplexType()
         {
@@ -175,6 +187,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestEnumerizePosition()
         {
@@ -185,6 +198,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestBool()
         {
@@ -318,7 +332,6 @@ namespace cs_unittest
         [Feature]
         public Age? AgeEnum { get; set; }
     }
-
 
     public class ExampleString
     {

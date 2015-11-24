@@ -10,9 +10,11 @@ using VW.Serializer.Attributes;
 
 namespace cs_unittest
 {
+    [TestClass]
     public class TestExampleCacheCases : TestBase
     {
 #if DEBUG
+        [TestMethod]
         public void TestExampleCacheForLearning()
         {
             try
@@ -30,6 +32,7 @@ namespace cs_unittest
 
         }
 #else
+        [TestMethod]
         public void TestExampleCacheForLearning()
         {
             try
@@ -47,6 +50,7 @@ namespace cs_unittest
         }
 #endif
 
+        [TestMethod]
         public void TestExampleCacheDisabledForLearning()
         {
             using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(enableExampleCaching: false)))
@@ -56,6 +60,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         public void TestExampleCache()
         {
             var random = new Random(123);

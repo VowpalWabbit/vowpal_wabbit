@@ -3,8 +3,10 @@ using System;
 
 namespace cs_unittest
 {
+    [TestClass]
     public class TestMarshallingOverflow
     {
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestNumericInt64Overflow()
         {
@@ -15,6 +17,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestNumericUInt64Overflow()
         {
@@ -24,6 +27,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestNumericDoubleOverflow()
         {
@@ -34,6 +38,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestNumericInt64OverflowArray()
         {
@@ -44,6 +49,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestNumericUInt64OverflowArray()
         {
@@ -53,6 +59,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Marshal")]
         public void TestNumericDoubleOverflowArray()
         {

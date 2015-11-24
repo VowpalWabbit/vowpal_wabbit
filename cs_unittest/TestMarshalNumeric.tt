@@ -14,6 +14,7 @@ namespace cs_unittest
     {
 	<# foreach(var t in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16), typeof(UInt32), typeof(float), typeof(Int64), typeof(UInt64), typeof(double) }) { #>
 
+        [TestMethod]
         [TestCategory("Marshal")]
 		public void TestNumeric<#=t.Name#>()
 		{
@@ -23,6 +24,7 @@ namespace cs_unittest
             }
 		}
 
+        [TestMethod]
         [TestCategory("Marshal")]
 		public void TestNumeric<#=t.Name#>Array()
 		{
@@ -33,6 +35,7 @@ namespace cs_unittest
             }
 		}
 
+        [TestMethod]
         [TestCategory("Marshal")]
 		public void TestNumeric<#=t.Name#>ArrayAnchor()
 		{
@@ -46,6 +49,7 @@ namespace cs_unittest
 	<# } #>
 
 	<# foreach(var t in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16) }) { #>
+        [TestMethod]
         [TestCategory("Marshal")]
 		public void TestDictionary<#=t.Name#>()
 		{
@@ -64,6 +68,7 @@ namespace cs_unittest
             }
 		}
 
+        [TestMethod]
         [TestCategory("Marshal")]
 		public void TestDictionary<#=t.Name#>String()
 		{
@@ -83,6 +88,7 @@ namespace cs_unittest
 		}
 
 	<# foreach(var s in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16), typeof(UInt32), typeof(float), typeof(Int64), typeof(UInt64), typeof(double) }) { #>
+        [TestMethod]
         [TestCategory("Marshal")]
 		public void TestDictionary<#=t.Name#><#=s.Name#>()
 		{

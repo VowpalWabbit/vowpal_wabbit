@@ -13,6 +13,7 @@ using VW.Serializer;
 
 namespace cs_unittest
 {
+    [TestClass]
     public class TestAllReduceClass : TestBase
     {
         private static void Ingest(VowpalWabbit vw, IEnumerable<List<string>> blocks)
@@ -40,6 +41,8 @@ namespace cs_unittest
                 vw.Learn(d.Item1, d.Item2, (int)d.Item3.Action, d.Item3);
             }
         }
+
+        [TestMethod]
         public void TestAllReduce()
         {
             TestAllReduceInternal().Wait();
