@@ -1,0 +1,46 @@
+THIS_MKFILE_PATH := $(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
+
+* .ONESHELL:
+* .NOTPARALLEL for speed tests
+
+one .mk file for getting data sets
+	* one target per data set
+	* after obtaining, each data set can be pre-processed in zero or more ways
+	* data sets collected in same place regardless of config
+
+one .mk file for tests,
+	  * tests depend on data set and executables
+	  * accuracy test always runs
+	  * speed test runs only if invoked with SPEEDTEST=y
+	  * so pattern is:
+	  	run
+		check accuracy
+		if (SPEEDTEST) check speed
+	* pattern can be in implicit rule (?)
+	  %.test: %.done
+   		
+	* additional targets for each test group
+	* tests done in dir named after `uname -io`, appended with Debug/Opt/etc.
+	* separate dir for each set of independent tests
+
+out-of-source, so that tests can be run for different configs without conflicts
+	* VPATH ?
+
+expected files live in platform-independent dir, since they are fixed
+
+help target gives usage info
+
+valid/run/check/expected/pretend/clean targets as in BDTL sandbox
+     * try to do without perl
+	
+     * individual run:
+	  * mkdir for the test
+	  * cd to that dir
+	  * call make with the same target, but passing any relevant params in new vars
+	  	* all switches, including data deps, can be in one string
+	  * now, most of the targets will run vw using the relevant params, leaving result in the test dir
+	  * if running speed test, then wrap in `time`, and dump its output to speed result file
+	  * next, e.g., if target is check or valid, compare to expected file(s), dumping diffs
+	  * return appropriate status if diffs non-empty
+
+for out-of-source runs, test dirs created as needed
