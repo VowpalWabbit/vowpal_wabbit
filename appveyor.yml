@@ -17,6 +17,7 @@ test_script:
     if($env:PLATFORM -eq "x64")
 
     {
-       vstest.console /Platform:x64 /inIsolation c:\vowpal_wabbit\vowpalwabbit\x64\Release\cs_leaktest.dll
-       vstest.console /Platform:x64 /inIsolation c:\vowpal_wabbit\vowpalwabbit\x64\Debug\cs_leaktest.dll
+       cd c:\vowpal_wabbit
+       vstest.console /Platform:x64 /inIsolation vowpalwabbit\x64\Release\cs_leaktest.dll
+       vstest.console /Platform:x64 /inIsolation vowpalwabbit\x64\Debug\cs_leaktest.dll
     }
