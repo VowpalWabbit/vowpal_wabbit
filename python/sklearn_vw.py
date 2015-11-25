@@ -180,10 +180,13 @@ class VW(BaseEstimator, vw):
             del self.fit_
 
         # quiet models by default
-        self.params = dict(quiet=True)
+        if 'quiet' not in self.params:
+            self.params['quiet'] = True
+
         for k, v in locals().iteritems():
             if k != 'self' and v is not None:
                 self.params[k] = v
+
         super(VW, self).__init__(**self.params)
 
     def fit(self, X, y=None, sample_weight=None, convert_to_vw=True):

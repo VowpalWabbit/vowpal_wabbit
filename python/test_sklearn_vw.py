@@ -58,15 +58,16 @@ class TestVW:
         model = VW()
         model.fit(data.x, data.y)
         weights = model.get_coefs()
+        print weights.data
         assert np.allclose(weights.indices, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 116060])
-        assert np.allclose(weights.data, [0.2316927, 0.0023924, -0.02163595, 0.17207056, -0.02247432, -0.00573577,
-                                          0.02267079, -0.06218226, 0.01650311, -0.04394615, -0.16139343])
+        assert np.allclose(weights.data, [0.11553502, -0.0166647, -0.00349924, 0.06911729, 0.00252684,
+                                          -0.00826817, 0.01991862, -0.02473332, 0.00483846, -0.04616702, -0.00744559])
 
     def test_get_intercept(self, data):
         model = VW()
         model.fit(data.x, data.y)
         intercept = model.get_intercept()
-        assert np.isclose(intercept, -0.161393)
+        assert np.isclose(intercept, -0.00744559)
 
 
 class TestVWClassifier:
