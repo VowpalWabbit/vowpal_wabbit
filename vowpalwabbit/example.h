@@ -28,7 +28,7 @@ struct feature
 { float x;
   uint32_t weight_index;
   bool operator==(feature j) {return weight_index == j.weight_index;}
-  feature(float x=0., uint32_t weight_index=0) : x(x), weight_index(weight_index) {}
+  feature(float x_=0., uint32_t weight_index_=0) : x(x_), weight_index(weight_index_) {}
 };
 
 struct audit_data
