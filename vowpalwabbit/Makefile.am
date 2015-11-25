@@ -13,7 +13,7 @@ libvw_la_LIBADD = liballreduce.la
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 
-AM_CXXFLAGS = ${BOOST_CPPFLAGS} ${ZLIB_CPPFLAGS} ${PTHREAD_CFLAGS} -Wall -Wno-unused-local-typedef
+AM_CXXFLAGS = ${BOOST_CPPFLAGS} ${ZLIB_CPPFLAGS} ${PTHREAD_CFLAGS} -Wall -Wno-unused-local-typedefs
 AM_LDFLAGS = ${BOOST_LDFLAGS} ${BOOST_PROGRAM_OPTIONS_LIB} ${ZLIB_LDFLAGS} ${PTHREAD_LIBS}
 
 CXXOPTIMIZE = -ffast-math
