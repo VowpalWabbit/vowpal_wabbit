@@ -1,17 +1,24 @@
-allTests := 1.test 2.test
+# The only variables that are required for every test are *.inData and *.params .  Everything else is optional.  See examples below.
 
-# executable should be listed relative to top level Makefile
-# by default, STDOUT will go to file out and STDERR will go to file err
-# other created files that should be compared to "expected" files should be captured by the *.otherOutputs variable
-# list inter-test dependencies, like below:
-# 31.deps:	30.run 29.run
+# If you're using an unusual executable, it should be listed relative to top level Makefile.
+
+# By default, STDOUT will go to the file out and STDERR will go to the file err. Other created files that should be compared to "expected" files should be captured by the *.otherOutputs variable. The other expected files should be copied to the test's subdirectory under expected/ .
+
+# List inter-test dependencies like this:
+# 31.deps:	30.run 29.test
+# Dependencies can be on either on merely running another test or on that test actually passing.
+
+allTests := 107 2
 
 # by default there are no deps
 %.deps:
-	echo
+	@echo > /dev/null
 
 107.exec = $(TOP_MK_DIR)/../vowpalwabbit/vw
-107.inData = ftrl-proximal-train.prep
-107.params = -k -t $(107.inData) -f 0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off
-107.otherOutputs = ""
+107.inData = ftrl-proximal/ftrl-proximal-train.prep
+107.params = -k -d $(dataDir)/$(107.inData) -f 0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off
+
+2.inData = ftrl-proximal/ftrl-proximal-train.prep
+2.params = -k -d $(dataDir)/$(2.inData) -f 0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off
+2.otherOutputs = 0001_ftrl.model
 
