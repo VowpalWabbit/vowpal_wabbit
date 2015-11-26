@@ -25,7 +25,7 @@ endif
 if VWBUG
 CXXOPTIMIZE += -g -O1
 else
-CXXOPTIMIZE += -O3 -fomit-frame-pointer -fno-strict-aliasing -DNDEBUG
+CXXOPTIMIZE += -O3 -fomit-frame-pointer -DNDEBUG
 endif
 
 if NITPICK
