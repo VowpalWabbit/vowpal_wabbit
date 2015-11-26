@@ -13,13 +13,16 @@ MAKEFLAGS=-r
 .PHONY:	test expected pretend run clean spotless
 
 TOP_MK_DIR := $(patsubst %/,%,$(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
-ARCH := $(subst /,_,$(shell uname -o)_$(shell uname -i))
+ARCH ?= $(subst /,_,$(shell uname -o)_$(shell uname -i))
 stageDir := $(TOP_MK_DIR)/$(ARCH)
 dataDir := $(TOP_MK_DIR)/dataSets
 expDir := $(TOP_MK_DIR)/expected
+allTests := $(patsubst %/,%,$(shell ls $(expDir)))
 
-VW = $(TOP_MK_DIR)/../vowpalwabbit/vw
-DIFF = diff
+# the ?= allows the user to override the executable from the command line, as in
+# make EXEC=myProgram all
+EXEC ?= $(TOP_MK_DIR)/../vowpalwabbit/vw
+DIFF ?= diff
 
 default: test
 all:	test
@@ -27,6 +30,12 @@ all:	test
 # details of individual tests come from here
 include dataSets.mk
 include testDetails.mk
+
+stub:
+	echo $(allTests)
+
+help:
+	cat $(TOP_MK_DIR)/HOWTO.txt
 
 test:
 	@for aTest in $(allTests); do
@@ -50,7 +59,7 @@ expected:
 clean:
 	-rm -r $(stageDir)
 
-cleandata:
+eraseData:
 	-rm -r $(dataDir)/
 
 pretend:
@@ -72,17 +81,16 @@ pretend:
 $(stageDir)/%.dir:
 	@mkdir -p $@
 
-%.run:	%.deps $(stageDir)/%.dir $(stageDir)/%.dir/done
+%.run:	$(stageDir)/%.dir $(stageDir)/%.dir/done
 	@echo
 
 $(stageDir)/%.dir/done:	$(dataDir)/$(%.inData)
+	#if [ -n "$($*.deps)" ] ; then $(MAKE) $($*.deps); fi
 	cd $(stageDir)/$*.dir
-	if [ -n  "$($*.exec)" ] ; then
-		$($*.exec) $($*.params) > out 2> err
-	else
-		$(VW) $($*.params) > out 2> err
-	fi
-	@touch $@
+	exec=$(EXEC)
+	if [ -n  "$($*.exec)" ] ; then exec="$($*.exec)" ; fi
+	$$exec $($*.params) > out 2> err
+	touch $@
 
 # first diff all the results, then set exit status if non-empty
 %.compare:	$(stageDir)/%.dir $(stageDir)/%.dir/diffs
@@ -118,3 +126,4 @@ $(stageDir)/%.dir/diffs:	$(expDir)/%/out $(expDir)/%/err
 
 %.clean:
 	-rm -rf $(stageDir)/$*
+

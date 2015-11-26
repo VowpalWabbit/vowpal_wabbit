@@ -1,0 +1,58 @@
+Help file for using this testing framework
+------------------------------------------
+
+To run all the tests until one fails, type
+
+make test
+
+To run all the tests regardless of failures, type
+
+make -i test
+
+To clean up and start over, type
+
+make clean
+
+To download all the relevant data at once, type
+
+make getData
+
+To erase all the data, type
+
+make eraseData
+
+If you change some code, so that the output of some tests changes, or you add some new tests, and you want to save the new output so that future outputs will be compared with it, type
+
+make expected
+
+You can work with individual tests by prepending their name to the make target, as in
+
+make 2.test
+make t17.clean
+make myNewTest.expected
+
+Of course, you can make multiple targets together, as in
+
+make 2.clean 2.test
+
+If you want to create the correct outputs for a test without actually running it, type
+
+make $testName.pretend
+
+This can be useful if you want to run test X, which depends on the outputs of test Y, but you can't run test Y for some reason.
+
+The "test" target for each test is a actually a "run" followed by a "compare".  Thus
+
+make 3.run 3.compare
+
+is equivalant to
+
+make 3.test
+
+and it's possible to invoke either part without the other.
+
+If you want to use an executable other than ../vowpalwabbit/vw, you can supply it on the command line like this:
+
+make EXEC=myProgram all
+
+Similar substitutions can be made for other variables, such as ARCH and DIFF.
