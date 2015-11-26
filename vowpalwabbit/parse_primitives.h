@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 #include <stdint.h>
 #include <math.h>
 #include "v_array.h"
+#include "floatbits.h"
 
 #ifdef _WIN32
 #include <WinSock2.h>
@@ -102,8 +103,8 @@ inline float parseFloat(char * p, char **end)
     return (float)strtod(start,end);
 }
 
-inline bool nanpattern( float value ) { return ((*(uint32_t*)&value) & 0x7fC00000) == 0x7fC00000; }
-inline bool infpattern( float value ) { return ((*(uint32_t*)&value) & 0x7fC00000) == 0x7f800000; }
+inline bool nanpattern( float value ) { return (float_to_bits(value) & 0x7fC00000) == 0x7fC00000; }
+inline bool infpattern( float value ) { return (float_to_bits(value) & 0x7fC00000) == 0x7f800000; }
 
 inline float float_of_substring(substring s)
 { char* endptr = s.end;
