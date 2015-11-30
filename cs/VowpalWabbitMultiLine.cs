@@ -63,12 +63,12 @@ namespace VW
         /// <typeparam name="TExample">The user example type.</typeparam>
         /// <typeparam name="TActionDependentFeature">The user action dependent feature type.</typeparam>
         /// <param name="vw">The VW instance.</param>
-        /// <param name="serializer">The example serializer.</param>
-        /// <param name="actionDependentFeatureSerializer">The action dependent feature serializer.</param>
         /// <param name="example">The shared example.</param>
         /// <param name="actionDependentFeatures">The action dependent features.</param>
         /// <param name="index">The optional index of the label example.</param>
         /// <param name="label">The optional label.</param>
+        /// <param name="serializer">The example serializer.</param>
+        /// <param name="actionDependentFeatureSerializer">The action dependent feature serializer.</param>
         /// <returns>The string serialized example.</returns>
         public static string SerializeToString<TExample, TActionDependentFeature>(
             VowpalWabbit vw,

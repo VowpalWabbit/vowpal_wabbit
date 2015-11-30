@@ -47,6 +47,7 @@ namespace VW
         VowpalWabbit^ m_root;
         VowpalWabbitExampleDistribution m_exampleDistribution;
         bool m_enableStringExampleGeneration;
+        bool m_enableStringFloatCompact;
         List<FeatureExpression^>^ m_allFeatures;
         List<Type^>^ m_customFeaturizer;
 
@@ -59,7 +60,8 @@ namespace VW
             m_enableExampleCaching(false),
             // default to the statistically more safe option
             m_exampleDistribution(VowpalWabbitExampleDistribution::UniformRandom),
-            m_enableStringExampleGeneration(false)
+            m_enableStringExampleGeneration(false),
+            m_enableStringFloatCompact(false)
         {
         }
 
@@ -82,6 +84,7 @@ namespace VW
             [System::Runtime::InteropServices::Optional] VowpalWabbit^ root,
             [System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitExampleDistribution> exampleDistribution,
             [System::Runtime::InteropServices::Optional] Nullable<bool> enableStringExampleGeneration,
+            [System::Runtime::InteropServices::Optional] Nullable<bool> enableStringFloatCompact,
             [System::Runtime::InteropServices::Optional] List<FeatureExpression^>^ allFeatures,
             [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer)
             : VowpalWabbitSettings()
@@ -116,6 +119,9 @@ namespace VW
 
             if (enableStringExampleGeneration.HasValue)
                 m_enableStringExampleGeneration = enableStringExampleGeneration.Value;
+
+            if (enableStringFloatCompact.HasValue)
+                m_enableStringFloatCompact = enableStringFloatCompact.Value;
         }
 
         /// <summary>
@@ -229,11 +235,25 @@ namespace VW
             }
         }
 
+        /// <summary>
+        /// Enable Vowpal Wabbit native string generation.
+        /// </summary>
         property bool EnableStringExampleGeneration
         {
             bool get()
             {
                 return m_enableStringExampleGeneration;
+            }
+        }
+
+        /// <summary>
+        /// Enable compact float serialization for Vowpal Wabbit native string generation.
+        /// </summary>
+        property bool EnableStringFloatCompact
+        {
+            bool get()
+            {
+                return m_enableStringFloatCompact;
             }
         }
 

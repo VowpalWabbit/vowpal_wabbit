@@ -213,7 +213,7 @@ namespace VW.Serializer
                 // TODO: not sure if negative numbers will work
                 context.AppendStringExample(
                     feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     Convert.ToString(kvp.Key),
                     (float)Convert.ToDouble(kvp.Value, CultureInfo.InvariantCulture));
             }
@@ -254,7 +254,7 @@ namespace VW.Serializer
             {
                 context.AppendStringExample(
                     feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     Convert.ToString(item.Key),
                     (float)Convert.ToDouble(item.Value, CultureInfo.InvariantCulture));
             }

@@ -39,7 +39,7 @@ namespace VW.Serializer
 
             context.AppendStringExample(
 				feature.Dictify,
-                " {0}:{1:E20}",
+                " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                 feature.Name,
                 value);
         }
@@ -98,8 +98,11 @@ namespace VW.Serializer
 
             foreach (var v in value)
             {
-
-                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+                featureBuilder.AppendFormat(
+					CultureInfo.InvariantCulture, 
+					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					i, 
+					v);
                 i++;
             }
 
@@ -124,7 +127,7 @@ namespace VW.Serializer
 
             context.AppendStringExample(
 				feature.Dictify,
-                " {0}:{1:E20}",
+                " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                 feature.Name,
                 value);
         }
@@ -183,8 +186,11 @@ namespace VW.Serializer
 
             foreach (var v in value)
             {
-
-                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+                featureBuilder.AppendFormat(
+					CultureInfo.InvariantCulture, 
+					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					i, 
+					v);
                 i++;
             }
 
@@ -209,7 +215,7 @@ namespace VW.Serializer
 
             context.AppendStringExample(
 				feature.Dictify,
-                " {0}:{1:E20}",
+                " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                 feature.Name,
                 value);
         }
@@ -268,8 +274,11 @@ namespace VW.Serializer
 
             foreach (var v in value)
             {
-
-                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+                featureBuilder.AppendFormat(
+					CultureInfo.InvariantCulture, 
+					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					i, 
+					v);
                 i++;
             }
 
@@ -294,7 +303,7 @@ namespace VW.Serializer
 
             context.AppendStringExample(
 				feature.Dictify,
-                " {0}:{1:E20}",
+                " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                 feature.Name,
                 value);
         }
@@ -353,8 +362,11 @@ namespace VW.Serializer
 
             foreach (var v in value)
             {
-
-                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+                featureBuilder.AppendFormat(
+					CultureInfo.InvariantCulture, 
+					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					i, 
+					v);
                 i++;
             }
 
@@ -379,7 +391,7 @@ namespace VW.Serializer
 
             context.AppendStringExample(
 				feature.Dictify,
-                " {0}:{1:E20}",
+                " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                 feature.Name,
                 value);
         }
@@ -438,8 +450,11 @@ namespace VW.Serializer
 
             foreach (var v in value)
             {
-
-                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+                featureBuilder.AppendFormat(
+					CultureInfo.InvariantCulture, 
+					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					i, 
+					v);
                 i++;
             }
 
@@ -464,7 +479,7 @@ namespace VW.Serializer
 
             context.AppendStringExample(
 				feature.Dictify,
-                " {0}:{1:E20}",
+                " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                 feature.Name,
                 value);
         }
@@ -523,8 +538,11 @@ namespace VW.Serializer
 
             foreach (var v in value)
             {
-
-                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+                featureBuilder.AppendFormat(
+					CultureInfo.InvariantCulture, 
+					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					i, 
+					v);
                 i++;
             }
 
@@ -549,7 +567,7 @@ namespace VW.Serializer
 
             context.AppendStringExample(
 				feature.Dictify,
-                " {0}:{1:E20}",
+                " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                 feature.Name,
                 value);
         }
@@ -607,8 +625,11 @@ namespace VW.Serializer
 
             foreach (var v in value)
             {
-
-                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+                featureBuilder.AppendFormat(
+					CultureInfo.InvariantCulture, 
+					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					i, 
+					v);
                 i++;
             }
 
@@ -639,7 +660,7 @@ namespace VW.Serializer
 
             context.AppendStringExample(
 				feature.Dictify,
-                " {0}:{1:E20}",
+                " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                 feature.Name,
                 value);
         }
@@ -704,8 +725,11 @@ namespace VW.Serializer
 
             foreach (var v in value)
             {
-
-                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+                featureBuilder.AppendFormat(
+					CultureInfo.InvariantCulture, 
+					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					i, 
+					v);
                 i++;
             }
 
@@ -736,7 +760,7 @@ namespace VW.Serializer
 
             context.AppendStringExample(
 				feature.Dictify,
-                " {0}:{1:E20}",
+                " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                 feature.Name,
                 value);
         }
@@ -801,8 +825,11 @@ namespace VW.Serializer
 
             foreach (var v in value)
             {
-
-                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+                featureBuilder.AppendFormat(
+					CultureInfo.InvariantCulture, 
+					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					i, 
+					v);
                 i++;
             }
 
@@ -833,7 +860,7 @@ namespace VW.Serializer
 
             context.AppendStringExample(
 				feature.Dictify,
-                " {0}:{1:E20}",
+                " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                 feature.Name,
                 value);
         }
@@ -898,8 +925,11 @@ namespace VW.Serializer
 
             foreach (var v in value)
             {
-
-                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+                featureBuilder.AppendFormat(
+					CultureInfo.InvariantCulture, 
+					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					i, 
+					v);
                 i++;
             }
 
@@ -944,7 +974,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -985,7 +1015,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1026,7 +1056,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1067,7 +1097,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1108,7 +1138,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1149,7 +1179,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1190,7 +1220,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1231,7 +1261,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1272,7 +1302,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1313,7 +1343,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1356,7 +1386,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1397,7 +1427,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1438,7 +1468,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1479,7 +1509,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1520,7 +1550,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1561,7 +1591,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1602,7 +1632,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1643,7 +1673,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1684,7 +1714,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1725,7 +1755,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1768,7 +1798,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1809,7 +1839,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1850,7 +1880,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1891,7 +1921,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1932,7 +1962,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1973,7 +2003,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2014,7 +2044,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2055,7 +2085,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2096,7 +2126,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2137,7 +2167,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2180,7 +2210,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2221,7 +2251,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2262,7 +2292,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2303,7 +2333,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2344,7 +2374,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2385,7 +2415,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2426,7 +2456,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2467,7 +2497,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2508,7 +2538,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2549,7 +2579,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2592,7 +2622,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2633,7 +2663,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2674,7 +2704,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2715,7 +2745,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2756,7 +2786,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2797,7 +2827,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2838,7 +2868,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2879,7 +2909,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2920,7 +2950,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2961,7 +2991,7 @@ namespace VW.Serializer
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:{1:E20}",
+                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     kvp.Key,
                     kvp.Value);
 			}

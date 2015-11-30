@@ -70,6 +70,7 @@ namespace VW.Serializer
             this.Dictify = dictify ?? false;
             this.StringProcessing = stringProcessing;
             this.OverrideSerializeMethod = overrideSerializeMethod;
+            this.Dictify = dictify ?? false;
 
             this.DenseFeatureValueElementType = InspectionHelper.GetDenseFeatureValueElementType(featureType);
         }

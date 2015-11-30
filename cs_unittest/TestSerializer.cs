@@ -97,7 +97,7 @@ namespace cs_unittest
         [TestMethod]
         public void TestDictify()
         {
-            using (var vw = new VowpalWabbit(new VowpalWabbitSettings(enableStringExampleGeneration: true)))
+            using (var vw = new VowpalWabbit(new VowpalWabbitSettings(enableStringExampleGeneration: true, enableStringFloatCompact: true)))
             using (var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyDictifyContext>(vw.Settings).Create(vw))
             {
                 var dictionary = new Dictionary<string, string>();
