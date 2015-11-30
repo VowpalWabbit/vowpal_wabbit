@@ -7,7 +7,7 @@ before_install:
   - sudo apt-get install maven
   - sudo pip install cpp-coveralls wheel
 script:
-  - make
+  - make all
   - make python
   - mvn test -f java/pom.xml
   - make test
