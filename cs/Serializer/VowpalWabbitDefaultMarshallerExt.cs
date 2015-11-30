@@ -12,8 +12,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using VW.Serializer.Intermediate;
 using System.Globalization;
+using System.Text;
+using VW.Serializer.Intermediate;
 
 
 namespace VW.Serializer
@@ -36,13 +37,8 @@ namespace VW.Serializer
 			
 			context.NamespaceBuilder.AddFeature(feature.FeatureHash, (float)value);
 
-			if (disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.AppendFormat(
-                CultureInfo.InvariantCulture,
+            context.AppendStringExample(
+				feature.Dictify,
                 " {0}:{1:E20}",
                 feature.Name,
                 value);
@@ -85,24 +81,29 @@ namespace VW.Serializer
                 i++;
             }
 			
-            if (disableStringExampleGeneration)
+            if (context.StringExample == null)
             {
                 return;
             }
+
+			var featureBuilder = new StringBuilder();
 
             // support anchor feature
             i = 0;
             if (feature.AddAnchor)
             {
-                context.StringExample.Append(" 0:1");
+                featureBuilder.Append(" 0:1");
                 i++;
             }
 
             foreach (var v in value)
             {
-                context.StringExample.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+
+                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
                 i++;
             }
+
+			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
         }
 
 				/// <summary>
@@ -121,13 +122,8 @@ namespace VW.Serializer
 			
 			context.NamespaceBuilder.AddFeature(feature.FeatureHash, (float)value);
 
-			if (disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.AppendFormat(
-                CultureInfo.InvariantCulture,
+            context.AppendStringExample(
+				feature.Dictify,
                 " {0}:{1:E20}",
                 feature.Name,
                 value);
@@ -170,24 +166,29 @@ namespace VW.Serializer
                 i++;
             }
 			
-            if (disableStringExampleGeneration)
+            if (context.StringExample == null)
             {
                 return;
             }
+
+			var featureBuilder = new StringBuilder();
 
             // support anchor feature
             i = 0;
             if (feature.AddAnchor)
             {
-                context.StringExample.Append(" 0:1");
+                featureBuilder.Append(" 0:1");
                 i++;
             }
 
             foreach (var v in value)
             {
-                context.StringExample.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+
+                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
                 i++;
             }
+
+			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
         }
 
 				/// <summary>
@@ -206,13 +207,8 @@ namespace VW.Serializer
 			
 			context.NamespaceBuilder.AddFeature(feature.FeatureHash, (float)value);
 
-			if (disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.AppendFormat(
-                CultureInfo.InvariantCulture,
+            context.AppendStringExample(
+				feature.Dictify,
                 " {0}:{1:E20}",
                 feature.Name,
                 value);
@@ -255,24 +251,29 @@ namespace VW.Serializer
                 i++;
             }
 			
-            if (disableStringExampleGeneration)
+            if (context.StringExample == null)
             {
                 return;
             }
+
+			var featureBuilder = new StringBuilder();
 
             // support anchor feature
             i = 0;
             if (feature.AddAnchor)
             {
-                context.StringExample.Append(" 0:1");
+                featureBuilder.Append(" 0:1");
                 i++;
             }
 
             foreach (var v in value)
             {
-                context.StringExample.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+
+                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
                 i++;
             }
+
+			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
         }
 
 				/// <summary>
@@ -291,13 +292,8 @@ namespace VW.Serializer
 			
 			context.NamespaceBuilder.AddFeature(feature.FeatureHash, (float)value);
 
-			if (disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.AppendFormat(
-                CultureInfo.InvariantCulture,
+            context.AppendStringExample(
+				feature.Dictify,
                 " {0}:{1:E20}",
                 feature.Name,
                 value);
@@ -340,24 +336,29 @@ namespace VW.Serializer
                 i++;
             }
 			
-            if (disableStringExampleGeneration)
+            if (context.StringExample == null)
             {
                 return;
             }
+
+			var featureBuilder = new StringBuilder();
 
             // support anchor feature
             i = 0;
             if (feature.AddAnchor)
             {
-                context.StringExample.Append(" 0:1");
+                featureBuilder.Append(" 0:1");
                 i++;
             }
 
             foreach (var v in value)
             {
-                context.StringExample.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+
+                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
                 i++;
             }
+
+			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
         }
 
 				/// <summary>
@@ -376,13 +377,8 @@ namespace VW.Serializer
 			
 			context.NamespaceBuilder.AddFeature(feature.FeatureHash, (float)value);
 
-			if (disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.AppendFormat(
-                CultureInfo.InvariantCulture,
+            context.AppendStringExample(
+				feature.Dictify,
                 " {0}:{1:E20}",
                 feature.Name,
                 value);
@@ -425,24 +421,29 @@ namespace VW.Serializer
                 i++;
             }
 			
-            if (disableStringExampleGeneration)
+            if (context.StringExample == null)
             {
                 return;
             }
+
+			var featureBuilder = new StringBuilder();
 
             // support anchor feature
             i = 0;
             if (feature.AddAnchor)
             {
-                context.StringExample.Append(" 0:1");
+                featureBuilder.Append(" 0:1");
                 i++;
             }
 
             foreach (var v in value)
             {
-                context.StringExample.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+
+                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
                 i++;
             }
+
+			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
         }
 
 				/// <summary>
@@ -461,13 +462,8 @@ namespace VW.Serializer
 			
 			context.NamespaceBuilder.AddFeature(feature.FeatureHash, (float)value);
 
-			if (disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.AppendFormat(
-                CultureInfo.InvariantCulture,
+            context.AppendStringExample(
+				feature.Dictify,
                 " {0}:{1:E20}",
                 feature.Name,
                 value);
@@ -510,24 +506,29 @@ namespace VW.Serializer
                 i++;
             }
 			
-            if (disableStringExampleGeneration)
+            if (context.StringExample == null)
             {
                 return;
             }
+
+			var featureBuilder = new StringBuilder();
 
             // support anchor feature
             i = 0;
             if (feature.AddAnchor)
             {
-                context.StringExample.Append(" 0:1");
+                featureBuilder.Append(" 0:1");
                 i++;
             }
 
             foreach (var v in value)
             {
-                context.StringExample.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+
+                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
                 i++;
             }
+
+			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
         }
 
 				/// <summary>
@@ -546,13 +547,8 @@ namespace VW.Serializer
 			
 			context.NamespaceBuilder.AddFeature(feature.FeatureHash, (float)value);
 
-			if (disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.AppendFormat(
-                CultureInfo.InvariantCulture,
+            context.AppendStringExample(
+				feature.Dictify,
                 " {0}:{1:E20}",
                 feature.Name,
                 value);
@@ -594,24 +590,29 @@ namespace VW.Serializer
 			}
 
 			
-            if (disableStringExampleGeneration)
+            if (context.StringExample == null)
             {
                 return;
             }
+
+			var featureBuilder = new StringBuilder();
 
             // support anchor feature
             i = 0;
             if (feature.AddAnchor)
             {
-                context.StringExample.Append(" 0:1");
+                featureBuilder.Append(" 0:1");
                 i++;
             }
 
             foreach (var v in value)
             {
-                context.StringExample.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+
+                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
                 i++;
             }
+
+			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
         }
 
 				/// <summary>
@@ -636,13 +637,8 @@ namespace VW.Serializer
 			
 			context.NamespaceBuilder.AddFeature(feature.FeatureHash, (float)value);
 
-			if (disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.AppendFormat(
-                CultureInfo.InvariantCulture,
+            context.AppendStringExample(
+				feature.Dictify,
                 " {0}:{1:E20}",
                 feature.Name,
                 value);
@@ -691,24 +687,29 @@ namespace VW.Serializer
                 i++;
             }
 			
-            if (disableStringExampleGeneration)
+            if (context.StringExample == null)
             {
                 return;
             }
+
+			var featureBuilder = new StringBuilder();
 
             // support anchor feature
             i = 0;
             if (feature.AddAnchor)
             {
-                context.StringExample.Append(" 0:1");
+                featureBuilder.Append(" 0:1");
                 i++;
             }
 
             foreach (var v in value)
             {
-                context.StringExample.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+
+                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
                 i++;
             }
+
+			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
         }
 
 				/// <summary>
@@ -733,13 +734,8 @@ namespace VW.Serializer
 			
 			context.NamespaceBuilder.AddFeature(feature.FeatureHash, (float)value);
 
-			if (disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.AppendFormat(
-                CultureInfo.InvariantCulture,
+            context.AppendStringExample(
+				feature.Dictify,
                 " {0}:{1:E20}",
                 feature.Name,
                 value);
@@ -788,24 +784,29 @@ namespace VW.Serializer
                 i++;
             }
 			
-            if (disableStringExampleGeneration)
+            if (context.StringExample == null)
             {
                 return;
             }
+
+			var featureBuilder = new StringBuilder();
 
             // support anchor feature
             i = 0;
             if (feature.AddAnchor)
             {
-                context.StringExample.Append(" 0:1");
+                featureBuilder.Append(" 0:1");
                 i++;
             }
 
             foreach (var v in value)
             {
-                context.StringExample.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+
+                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
                 i++;
             }
+
+			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
         }
 
 				/// <summary>
@@ -830,13 +831,8 @@ namespace VW.Serializer
 			
 			context.NamespaceBuilder.AddFeature(feature.FeatureHash, (float)value);
 
-			if (disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.AppendFormat(
-                CultureInfo.InvariantCulture,
+            context.AppendStringExample(
+				feature.Dictify,
                 " {0}:{1:E20}",
                 feature.Name,
                 value);
@@ -885,24 +881,29 @@ namespace VW.Serializer
                 i++;
             }
 			
-            if (disableStringExampleGeneration)
+            if (context.StringExample == null)
             {
                 return;
             }
+
+			var featureBuilder = new StringBuilder();
 
             // support anchor feature
             i = 0;
             if (feature.AddAnchor)
             {
-                context.StringExample.Append(" 0:1");
+                featureBuilder.Append(" 0:1");
                 i++;
             }
 
             foreach (var v in value)
             {
-                context.StringExample.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
+
+                featureBuilder.AppendFormat(CultureInfo.InvariantCulture, " {0}:{1:E20}", i, v);
                 i++;
             }
+
+			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
         }
 
 		
@@ -933,7 +934,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -941,8 +942,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -974,7 +975,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -982,8 +983,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1015,7 +1016,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1023,8 +1024,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1056,7 +1057,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1064,8 +1065,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1097,7 +1098,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1105,8 +1106,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1138,7 +1139,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1146,8 +1147,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1179,7 +1180,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1187,8 +1188,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1220,7 +1221,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1228,8 +1229,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1261,7 +1262,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1269,8 +1270,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1302,7 +1303,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1310,8 +1311,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1345,7 +1346,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1353,8 +1354,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1386,7 +1387,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1394,8 +1395,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1427,7 +1428,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1435,8 +1436,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1468,7 +1469,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1476,8 +1477,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1509,7 +1510,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1517,8 +1518,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1550,7 +1551,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1558,8 +1559,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1591,7 +1592,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1599,8 +1600,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1632,7 +1633,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1640,8 +1641,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1673,7 +1674,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1681,8 +1682,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1714,7 +1715,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1722,8 +1723,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1757,7 +1758,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1765,8 +1766,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1798,7 +1799,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1806,8 +1807,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1839,7 +1840,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1847,8 +1848,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1880,7 +1881,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1888,8 +1889,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1921,7 +1922,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1929,8 +1930,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -1962,7 +1963,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -1970,8 +1971,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2003,7 +2004,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2011,8 +2012,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2044,7 +2045,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2052,8 +2053,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2085,7 +2086,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2093,8 +2094,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2126,7 +2127,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2134,8 +2135,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2169,7 +2170,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2177,8 +2178,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2210,7 +2211,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2218,8 +2219,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2251,7 +2252,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2259,8 +2260,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2292,7 +2293,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2300,8 +2301,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2333,7 +2334,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2341,8 +2342,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2374,7 +2375,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2382,8 +2383,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2415,7 +2416,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2423,8 +2424,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2456,7 +2457,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2464,8 +2465,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2497,7 +2498,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2505,8 +2506,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2538,7 +2539,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2546,8 +2547,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2581,7 +2582,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2589,8 +2590,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2622,7 +2623,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2630,8 +2631,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2663,7 +2664,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2671,8 +2672,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2704,7 +2705,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2712,8 +2713,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2745,7 +2746,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2753,8 +2754,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2786,7 +2787,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2794,8 +2795,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2827,7 +2828,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2835,8 +2836,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2868,7 +2869,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2876,8 +2877,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2909,7 +2910,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2917,8 +2918,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);
@@ -2950,7 +2951,7 @@ namespace VW.Serializer
 				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
             }
 
-			if (disableStringExampleGeneration)
+			if (context.StringExample == null)
             {
                 return;
             }
@@ -2958,8 +2959,8 @@ namespace VW.Serializer
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+					feature.Dictify,
                     " {0}:{1:E20}",
                     kvp.Key,
                     kvp.Value);

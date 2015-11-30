@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,15 +22,21 @@ namespace VW.Serializer
     public class VowpalWabbitMarshalContext : IDisposable
     {
         /// <summary>
-        /// /// Initializes a new instance of the <see cref="VowpalWabbitMarshalContext"/> class.
+        /// Initializes a new instance of the <see cref="VowpalWabbitMarshalContext"/> class.
         /// </summary>
         /// <param name="vw">The VW instance the example will be imported to.</param>
-        public VowpalWabbitMarshalContext(VowpalWabbit vw)
+        /// <param name="dictionary">Dictionary used for dictify operation.</param>
+        public VowpalWabbitMarshalContext(VowpalWabbit vw, IDictionary<string, string> dictionary = null)
         {
             this.VW = vw;
 
-            this.StringExample = new StringBuilder();
             this.ExampleBuilder = new VowpalWabbitExampleBuilder(vw);
+
+            if (vw.Settings.EnableStringExampleGeneration)
+            {
+                this.StringExample = new StringBuilder();
+                this.Dictionary = dictionary;
+            }
         }
 
         /// <summary>
@@ -42,6 +49,8 @@ namespace VW.Serializer
         /// </summary>
         public StringBuilder StringExample { get; private set; }
 
+        public IDictionary<string, string> Dictionary { get; private set; }
+
         /// <summary>
         /// Used to build examples.
         /// </summary>
@@ -51,6 +60,31 @@ namespace VW.Serializer
         /// Used to build a namespace.
         /// </summary>
         public VowpalWabbitNamespaceBuilder NamespaceBuilder { get; set; }
+
+        public void AppendStringExample(bool dictify, string format, params object[] args)
+        {
+            if (this.StringExample != null)
+            {
+                var outputString = string.Format(CultureInfo.InvariantCulture, format, args);
+
+                if (dictify && this.Dictionary != null)
+                {
+                    string surrogate;
+                    if (!this.Dictionary.TryGetValue(outputString, out surrogate))
+                    {
+                        // prefix to avoid number parsing
+                        surrogate = "d" + this.Dictionary.Count.ToString(CultureInfo.InvariantCulture);
+                        this.Dictionary.Add(outputString, surrogate);
+                    }
+
+                    this.StringExample.AppendFormat(" {0}", surrogate);
+                }
+                else
+                {
+                    this.StringExample.AppendFormat(outputString);
+                }
+            }
+        }
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.

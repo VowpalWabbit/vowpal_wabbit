@@ -42,6 +42,16 @@ namespace cs_unittest
         }
     }
 
+    public class MyDictifyContext
+    {
+        [Feature]
+        public int A { get; set; }
+
+        [Feature(Dictify = true)]
+        public float[] B { get; set; }
+    }
+
+    [TestClass]
     public class TestSerializer
     {
         public void TestCustomFeaturizer()
@@ -82,6 +92,29 @@ namespace cs_unittest
             }
 
             Assert.IsTrue(context.Feature.HasVisited);
+        }
+
+        [TestMethod]
+        public void TestDictify()
+        {
+            using (var vw = new VowpalWabbit(new VowpalWabbitSettings(enableStringExampleGeneration: true)))
+            using (var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyDictifyContext>(vw.Settings).Create(vw))
+            {
+                var dictionary = new Dictionary<string, string>();
+                var ctx = new MyDictifyContext
+                {
+                    A = 5,
+                    B = new[] { 1f, 2f, 3f }
+                };
+
+                var str = serializer.SerializeToString(ctx, dictionary: dictionary);
+
+                Assert.AreEqual(" |  A:5 d0", str);
+
+                Assert.AreEqual(1, dictionary.Count);
+                Assert.IsTrue(dictionary.ContainsKey(" 0:1 1:2 2:3"));
+                Assert.AreEqual("d0", dictionary[" 0:1 1:2 2:3"]);
+            }
         }
     }
 }

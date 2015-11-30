@@ -273,6 +273,7 @@ namespace VW.Serializer
                         @namespace,
                         Expression.Constant(feature.Name, typeof(string)),
                         Expression.Constant(feature.AddAnchor),
+                        Expression.Constant(feature.Dictify),
                         Expression.Lambda(Expression.Block(hashVariables, body), featureParameter));
             }
             else if (metaFeatureType == typeof(PreHashedFeature))
@@ -283,13 +284,15 @@ namespace VW.Serializer
                         this.vwParameter,
                         @namespace,
                         Expression.Constant(feature.Name, typeof(string)),
-                        Expression.Constant(feature.AddAnchor));
+                        Expression.Constant(feature.AddAnchor),
+                        Expression.Constant(feature.Dictify));
             }
             else
                 return CreateNew(
                     metaFeatureType,
                     Expression.Constant(feature.Name, typeof(string)),
-                    Expression.Constant(feature.AddAnchor));
+                    Expression.Constant(feature.AddAnchor),
+                    Expression.Constant(feature.Dictify));
         }
 
         private static Expression CreateNew(Type type, params Expression[] constructorParameters)

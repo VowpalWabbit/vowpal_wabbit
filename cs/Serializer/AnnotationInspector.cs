@@ -29,6 +29,7 @@ namespace VW.Serializer
                 type,
                 null,
                 null,
+                null,
                 // CODE example
                 valueExpression => valueExpression,
                 validExpressions);
@@ -38,6 +39,7 @@ namespace VW.Serializer
             Type type,
             string parentNamespace,
             char? parentFeatureGroup,
+            bool? parentDictify,
             Func<Expression, Expression> valueExpressionFactory,
             Stack<Func<Expression, Expression>> valueValidExpressionFactories)
         {
@@ -59,7 +61,8 @@ namespace VW.Serializer
                                     variableName: p.Name,
                                     order: attr.Order,
                                     addAnchor: attr.AddAnchor,
-                                    stringProcessing: attr.StringProcessing);
+                                    stringProcessing: attr.StringProcessing,
+                                    dictify: attr.InternalDictify ?? parentDictify);
 
             // Recurse
             return localFeatures
@@ -67,7 +70,7 @@ namespace VW.Serializer
                 {
                     // CODE example.Prop1.Prop2 != null
                     valueValidExpressionFactories.Push(valueExpression => Expression.NotEqual(f.ValueExpressionFactory(valueExpression), Expression.Constant(null)));
-                    var subFeatures = ExtractFeatures(f.FeatureType, f.Namespace, f.FeatureGroup, f.ValueExpressionFactory, valueValidExpressionFactories);
+                    var subFeatures = ExtractFeatures(f.FeatureType, f.Namespace, f.FeatureGroup, f.Dictify, f.ValueExpressionFactory, valueValidExpressionFactories);
                     valueValidExpressionFactories.Pop();
 
                     return subFeatures.Count == 0 ? new List<FeatureExpression>{ f } : subFeatures;

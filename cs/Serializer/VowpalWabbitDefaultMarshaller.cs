@@ -24,17 +24,6 @@ namespace VW.Serializer
     /// </summary>
     public partial class VowpalWabbitDefaultMarshaller
     {
-        private readonly bool disableStringExampleGeneration;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="VowpalWabbitDefaultMarshaller"/> class.
-        /// </summary>
-        /// <param name="disableStringExampleGeneration">True if no vw native strings should be generated, false otherwise.</param>
-        public VowpalWabbitDefaultMarshaller(bool disableStringExampleGeneration)
-        {
-            this.disableStringExampleGeneration = disableStringExampleGeneration;
-        }
-
         /// <summary>
         /// Marshals the given value <paramref name="value"/> into native VW by
         ///
@@ -62,20 +51,12 @@ namespace VW.Serializer
 
             context.NamespaceBuilder.AddFeature(featureHash, 1f);
 
-            if (this.disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.AppendFormat(
-                CultureInfo.InvariantCulture,
-                " {0}",
-                featureString);
+            context.AppendStringExample(feature.Dictify, " {0}", featureString);
         }
 
         /// <summary>
         /// Marshals a boolean value into native VW.
-        /// 
+        ///
         /// e.g. loggedIn = true yields "loggedIn" in VW native string format.
         /// e.g. loggedIn = false yields an empty string.
         /// </summary>
@@ -96,20 +77,12 @@ namespace VW.Serializer
 
             context.NamespaceBuilder.AddFeature(feature.FeatureHash, 1f);
 
-            if (this.disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.AppendFormat(
-                CultureInfo.InvariantCulture,
-                " {0}",
-                feature.Name);
+            context.AppendStringExample(feature.Dictify, " {0}", feature.Name);
         }
 
         /// <summary>
         /// Marshals an enum value into native VW.
-        /// 
+        ///
         /// e.g. Gender = Male yields "GenderMale" in VW native string format.
         /// </summary>
         /// <typeparam name="T">The enum type.</typeparam>
@@ -125,20 +98,11 @@ namespace VW.Serializer
 
             context.NamespaceBuilder.AddFeature(feature.FeatureHash(value), 1f);
 
-            if (this.disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.AppendFormat(
-                CultureInfo.InvariantCulture,
-                " {0}{1}",
-                feature.Name,
-                value);
+            context.AppendStringExample(feature.Dictify, " {0}{1}", feature.Name, value);
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="context">The marshalling context.</param>
@@ -154,16 +118,11 @@ namespace VW.Serializer
             var stringValue = feature.Name + value.ToString();
             context.NamespaceBuilder.AddFeature(context.VW.HashFeature(stringValue, ns.NamespaceHash), 1f);
 
-            if (this.disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.Append(' ').Append(stringValue);
+            context.AppendStringExample(feature.Dictify, " {0}", stringValue);
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="context">The marshalling context.</param>
         /// <param name="ns">The namespace description.</param>
@@ -184,16 +143,11 @@ namespace VW.Serializer
             var featureHash = context.VW.HashFeature(value, ns.NamespaceHash);
             context.NamespaceBuilder.AddFeature(featureHash, 1f);
 
-            if (this.disableStringExampleGeneration)
-            {
-                return;
-            }
-
-            context.StringExample.Append(' ').Append(value);
+            context.AppendStringExample(feature.Dictify, " {0}", value);
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="context">The marshalling context.</param>
         /// <param name="ns">The namespace description.</param>
@@ -211,14 +165,14 @@ namespace VW.Serializer
                 context.NamespaceBuilder.AddFeature(featureHash, 1f);
             }
 
-            if (this.disableStringExampleGeneration)
+            if (context.StringExample == null)
             {
                 return;
             }
 
             foreach (var s in words)
             {
-                context.StringExample.Append(' ').Append(s);
+                context.AppendStringExample(feature.Dictify, " {0}", s);
             }
         }
 
@@ -249,7 +203,7 @@ namespace VW.Serializer
                         (float)Convert.ToDouble(kvp.Value, CultureInfo.InvariantCulture));
             }
 
-            if (this.disableStringExampleGeneration)
+            if (context.StringExample == null)
             {
                 return;
             }
@@ -257,8 +211,8 @@ namespace VW.Serializer
             foreach (var kvp in value)
             {
                 // TODO: not sure if negative numbers will work
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+                    feature.Dictify,
                     " {0}:{1:E20}",
                     Convert.ToString(kvp.Key),
                     (float)Convert.ToDouble(kvp.Value, CultureInfo.InvariantCulture));
@@ -267,7 +221,7 @@ namespace VW.Serializer
 
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="context">The marshalling context.</param>
         /// <param name="ns">The namespace description.</param>
@@ -291,15 +245,15 @@ namespace VW.Serializer
                     (float)Convert.ToDouble(item.Value, CultureInfo.InvariantCulture));
             }
 
-            if (this.disableStringExampleGeneration)
+            if (context.StringExample == null)
             {
                 return;
             }
 
             foreach (DictionaryEntry item in value)
             {
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
+                context.AppendStringExample(
+                    feature.Dictify,
                     " {0}:{1:E20}",
                     Convert.ToString(item.Key),
                     (float)Convert.ToDouble(item.Value, CultureInfo.InvariantCulture));
@@ -307,7 +261,7 @@ namespace VW.Serializer
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="context">The marshalling context.</param>
         /// <param name="ns">The namespace description.</param>
@@ -329,22 +283,19 @@ namespace VW.Serializer
                 context.NamespaceBuilder.AddFeature(context.VW.HashFeature(item.Replace(' ', '_'), ns.NamespaceHash), 1f);
             }
 
-            if (this.disableStringExampleGeneration)
+            if (context.StringExample == null)
             {
                 return;
             }
 
             foreach (var item in value)
             {
-                context.StringExample.AppendFormat(
-                    CultureInfo.InvariantCulture,
-                    " {0}",
-                    item);
+                context.AppendStringExample(feature.Dictify, " {0}", item);
             }
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="context">The marshalling context.</param>
         /// <param name="ns">The namespace description.</param>
@@ -358,14 +309,14 @@ namespace VW.Serializer
 
                 var position = 0;
                 var stringExample = context.StringExample;
-                if (!this.disableStringExampleGeneration)
+                if (context.StringExample != null)
                 {
                     position = stringExample.Append(ns.NamespaceString).Length;
                 }
 
                 featureVisits();
 
-                if (!this.disableStringExampleGeneration)
+                if (context.StringExample != null)
                 {
                     if (position == stringExample.Length)
                     {
@@ -385,7 +336,7 @@ namespace VW.Serializer
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="context">The marshalling context.</param>
         /// <param name="label"></param>
@@ -396,15 +347,12 @@ namespace VW.Serializer
                 return;
             }
 
-            context.ExampleBuilder.ParseLabel(label.ToVowpalWabbitFormat());
+            var labelString = label.ToVowpalWabbitFormat();
 
-            if (this.disableStringExampleGeneration)
-            {
-                return;
-            }
-            
+            context.ExampleBuilder.ParseLabel(labelString);
+
             // prefix with label
-            context.StringExample.Append(label.ToVowpalWabbitFormat());
+            context.AppendStringExample(false, "{0}", labelString);
         }
     }
 }

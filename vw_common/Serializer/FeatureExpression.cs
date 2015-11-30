@@ -34,7 +34,8 @@ namespace VW.Serializer
             int? order = null,
             bool addAnchor = false,
             StringProcessing stringProcessing = StringProcessing.Split,
-            MethodInfo overrideSerializeMethod = null)
+            MethodInfo overrideSerializeMethod = null,
+            bool? dictify = null)
         {
             if (featureType == null)
                 throw new ArgumentNullException("featureType");
@@ -66,6 +67,7 @@ namespace VW.Serializer
             this.VariableName = variableName ?? name;
             this.Order = order ?? 1;
             this.AddAnchor = addAnchor;
+            this.Dictify = dictify ?? false;
             this.StringProcessing = stringProcessing;
             this.OverrideSerializeMethod = overrideSerializeMethod;
 
@@ -103,6 +105,8 @@ namespace VW.Serializer
         public bool Enumerize { get; private set; }
 
         public bool AddAnchor { get; private set; }
+
+        public bool Dictify { get; private set; }
 
         /// <summary>
         /// Factory to extract the value for a given feature from the example object (input argument).

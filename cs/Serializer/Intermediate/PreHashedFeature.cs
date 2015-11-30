@@ -20,8 +20,9 @@ namespace VW.Serializer.Intermediate
         /// <param name="ns">The namespace.</param>
         /// <param name="name">The feature name/</param>
         /// <param name="addAnchor">True if an anchor needs to be added, false otherwise.</param>
-        public PreHashedFeature(VowpalWabbit vw, Namespace ns, string name, bool addAnchor)
-            : base(name, addAnchor)
+        /// <param name="dictify"></param>
+        public PreHashedFeature(VowpalWabbit vw, Namespace ns, string name, bool addAnchor, bool dictify)
+            : base(name, addAnchor, dictify)
         {
             this.FeatureHash = vw.HashFeature(this.Name, ns.NamespaceHash);
         }

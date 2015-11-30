@@ -23,18 +23,53 @@ namespace VW
     public static class VowpalWabbitMultiLine
     {
         /// <summary>
-        /// String serialization helper.
+        /// Serializes the specifed example to VW native string format.
         /// </summary>
-        /// <typeparam name="TExample">User example type.</typeparam>
-        /// <typeparam name="TActionDependentFeature">Action dependent feature type.</typeparam>
-        /// <param name="vw"></param>
-        /// <param name="example"></param>
-        /// <param name="actionDependentFeatures"></param>
-        /// <param name="index"></param>
-        /// <param name="label"></param>
-        /// <param name="serializer">Optional serializer. Defaults to attribute extraction.</param>
-        /// <param name="actionDependentFeatureSerializer">">Optional serializer. Defaults to attribute extraction.</param>
-        /// <returns>The VW native formatted string.</returns>
+        /// <typeparam name="TExample">The user example type.</typeparam>
+        /// <typeparam name="TActionDependentFeature">The user action dependent feature type.</typeparam>
+        /// <param name="vw">The VW instance.</param>
+        /// <param name="example">The shared example.</param>
+        /// <param name="actionDependentFeatures">The action dependent features.</param>
+        /// <param name="index">The optional index of the label example.</param>
+        /// <param name="label">The optional label.</param>
+        /// <returns>The string serialized example.</returns>
+        public static string SerializeToString<TExample, TActionDependentFeature>(
+            VowpalWabbit<TExample, TActionDependentFeature> vw,
+            TExample example,
+            IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
+            int? index = null,
+            ILabel label = null,
+            IDictionary<string, string> dictionary = null)
+        {
+            if (!vw.Native.Settings.EnableStringExampleGeneration)
+            {
+                throw new ArgumentException("vw.Settings.EnableStringExampleGeneration must be enabled");
+            }
+
+            return SerializeToString<TExample, TActionDependentFeature>(
+                vw.Native,
+                example,
+                actionDependentFeatures,
+                index,
+                label,
+                vw.ExampleSerializer,
+                vw.ActionDependentFeatureSerializer,
+                dictionary);
+        }
+
+        /// <summary>
+        /// Serializes the specifed example to VW native string format.
+        /// </summary>
+        /// <typeparam name="TExample">The user example type.</typeparam>
+        /// <typeparam name="TActionDependentFeature">The user action dependent feature type.</typeparam>
+        /// <param name="vw">The VW instance.</param>
+        /// <param name="serializer">The example serializer.</param>
+        /// <param name="actionDependentFeatureSerializer">The action dependent feature serializer.</param>
+        /// <param name="example">The shared example.</param>
+        /// <param name="actionDependentFeatures">The action dependent features.</param>
+        /// <param name="index">The optional index of the label example.</param>
+        /// <param name="label">The optional label.</param>
+        /// <returns>The string serialized example.</returns>
         public static string SerializeToString<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
             TExample example,
@@ -42,7 +77,8 @@ namespace VW
             int? index = null,
             ILabel label = null,
             VowpalWabbitSerializer<TExample> serializer = null,
-            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer = null)
+            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer = null,
+            IDictionary<string, string> dictionary = null)
         {
             if (vw == null)
                 throw new ArgumentNullException("vw");
@@ -67,7 +103,7 @@ namespace VW
 
             var stringExample = new StringBuilder();
 
-            var sharedExample = serializer.SerializeToString(example, SharedLabel.Instance);
+            var sharedExample = serializer.SerializeToString(example, SharedLabel.Instance, dictionary);
 
             // check if we have shared features
             if (!string.IsNullOrWhiteSpace(sharedExample))
@@ -79,7 +115,7 @@ namespace VW
             foreach (var actionDependentFeature in actionDependentFeatures)
             {
                 var adfExample = actionDependentFeatureSerializer.SerializeToString(actionDependentFeature,
-                    index != null && i == index ? label : null);
+                    index != null && i == index ? label : null, dictionary);
 
                 if (!string.IsNullOrWhiteSpace(adfExample))
                 {

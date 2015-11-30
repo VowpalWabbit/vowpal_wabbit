@@ -22,10 +22,12 @@ namespace VW.Serializer.Intermediate
         /// </summary>
         /// <param name="name"></param>
         /// <param name="addAnchor"></param>
-        public Feature(string name, bool addAnchor)
+        /// <param name="dictify"></param>
+        public Feature(string name, bool addAnchor, bool dictify)
         {
             this.Name = name;
             this.AddAnchor = addAnchor;
+            this.Dictify = dictify;
         }
 
         /// <summary>
@@ -40,5 +42,7 @@ namespace VW.Serializer.Intermediate
         /// </summary>
         /// <remarks>Defaults to false.</remarks>
         public bool AddAnchor { get; private set; }
+
+        public bool Dictify { get; private set; }
     }
 }

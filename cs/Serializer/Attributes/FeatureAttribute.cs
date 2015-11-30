@@ -49,6 +49,21 @@ namespace VW.Serializer.Attributes
         public bool AddAnchor { get; set; }
 
         /// <summary>
+        /// If true, the string serialization will collect the feature into a dictionary and output a surrogate.
+        /// </summary>
+        /// <remarks>Defaults to null, which inherits from parent. If no parent information available, defaults to false.</remarks>
+        public bool Dictify
+        {
+            get { return InternalDictify ?? false; }
+            set { this.InternalDictify = value; }
+        }
+
+        /// <summary>
+        /// Cope with potential null values.
+        /// </summary>
+        internal bool? InternalDictify { get; set; }
+
+        /// <summary>
         /// Cope with potential null values.
         /// </summary>
         internal char? InternalFeatureGroup { get; set; }

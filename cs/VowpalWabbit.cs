@@ -276,7 +276,35 @@ namespace VW
         /// <summary>
         /// The wrapped VW instance.
         /// </summary>
-        public VowpalWabbit Native { get { return this.vw; } }
+        public VowpalWabbit Native
+        {
+            get
+            {
+                return this.vw;
+            }
+        }
+
+        /// <summary>
+        /// Internal example serializer.
+        /// </summary>
+        internal VowpalWabbitSerializer<TExample> ExampleSerializer
+        {
+            get
+            {
+                return this.serializer;
+            }
+        }
+
+        /// <summary>
+        /// Internal action dependent feature serializer.
+        /// </summary>
+        internal VowpalWabbitSerializer<TActionDependentFeature> ActionDependentFeatureSerializer
+        {
+            get
+            {
+                return this.actionDependentFeatureSerializer;
+            }
+        }
 
         /// <summary>
         /// Learn from the given example and return the current prediction for it.
