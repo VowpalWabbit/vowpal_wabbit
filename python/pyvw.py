@@ -67,6 +67,10 @@ class vw(pylibvw.vw):
         pylibvw.vw.__init__(self,' '.join(l))
         self.finished = False
 
+    def num_weights(self):
+        """Get length of weight vector."""
+        return pylibvw.vw.num_weights(self)
+
     def get_weight(self, index, offset=0):
         """Given an (integer) index (and an optional offset), return
         the weight for that position in the (learned) weight vector."""
