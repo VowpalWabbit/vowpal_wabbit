@@ -497,7 +497,7 @@ sub audit_features {
     my $vw_audit_args = "--quiet -t --audit -i $ModelFile -d $ExampleFile";
     my $vw_mcargs = '';
     if (${VWARGS} =~ /--(?:(?:cs)?oaa|wap|sequence)(?:_ldf)?\s+\d+/) {
-        $vw_mcargs = $&;
+#        $vw_mcargs = $&;
     }
     my $audit_cmd = "$VW $vw_mcargs $vw_audit_args";
     $audit_cmd .= "|tee $AuditFile" if ($opt_K);
