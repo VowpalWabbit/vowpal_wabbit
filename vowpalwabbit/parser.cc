@@ -62,14 +62,14 @@ void initialize_mutex(MUTEX * pm)
 #endif
 }
 
+#ifndef _WIN32
+void delete_mutex(MUTEX *) { /* no operation necessary here*/ }
+#else
 void delete_mutex(MUTEX * pm)
 {
-#ifndef _WIN32
-  // no operation necessary here
-#else
   ::DeleteCriticalSection(pm);
-#endif
 }
+#endif
 
 void initialize_condition_variable(CV * pcv)
 {
