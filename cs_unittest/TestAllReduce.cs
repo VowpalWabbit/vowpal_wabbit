@@ -13,6 +13,7 @@ using VW.Serializer;
 
 namespace cs_unittest
 {
+    [TestClass]
     public class TestAllReduceClass : TestBase
     {
         private static void Ingest(VowpalWabbit vw, IEnumerable<List<string>> blocks)
@@ -40,6 +41,8 @@ namespace cs_unittest
                 vw.Learn(d.Item1, d.Item2, (int)d.Item3.Action, d.Item3);
             }
         }
+
+        [TestMethod]
         public void TestAllReduce()
         {
             TestAllReduceInternal().Wait();
@@ -59,8 +62,8 @@ namespace cs_unittest
             {
                 spanningTree.Start();
 
-                using (var vw1 = new VowpalWabbit(@"--total 2 --node 1 --unique_id 0 --span_server localhost --cb_adf --rank_all --interact xy"))
-                using (var vw2 = new VowpalWabbit(@"--total 2 --node 0 --unique_id 0 --span_server localhost --cb_adf --rank_all --interact xy"))
+                using (var vw1 = new VowpalWabbit(new VowpalWabbitSettings(@"--total 2 --node 1 --unique_id 0 --span_server localhost --cb_adf --rank_all --interact xy", enableStringExampleGeneration: true)))
+                using (var vw2 = new VowpalWabbit(new VowpalWabbitSettings(@"--total 2 --node 0 --unique_id 0 --span_server localhost --cb_adf --rank_all --interact xy", enableStringExampleGeneration: true)))
                 {
                     var stringSerializer = stringSerializerCompiled.Func(vw1);
                     var stringSerializerAdf = stringSerializerAdfCompiled.Func(vw1);

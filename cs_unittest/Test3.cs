@@ -6,8 +6,10 @@ using VW;
 
 namespace cs_unittest
 {
+    [TestClass]
     public class Test3Class : TestBase
     {
+        [TestMethod]
         [TestCategory("Command line through marshalling")]
         public void Test3()
         {
@@ -17,6 +19,7 @@ namespace cs_unittest
                 @"train-sets\ref\0002.stderr");
         }
 
+        [TestMethod]
         [TestCategory("Command line through marshalling")]
         public void Test4and6()
         {
@@ -31,6 +34,7 @@ namespace cs_unittest
                 @"pred-sets\ref\0002b.predict");
         }
 
+        [TestMethod]
         [TestCategory("Command line through marshalling")]
         public void Test5()
         {
@@ -44,6 +48,7 @@ namespace cs_unittest
                 @"train-sets\0002.dat");
         }
 
+        [TestMethod]
         [TestCategory("Command line through marshalling")]
         [Description("using normalized adaptive updates and a low --power_t")]
         public void Test7and8()

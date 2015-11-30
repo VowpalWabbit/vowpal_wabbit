@@ -55,6 +55,7 @@ namespace cs_leaktest
                 {
                     try
                     {
+                        // vowpalwabbit\x64\Debug\cs_leaktest.dll
                         var basePath = Path.GetDirectoryName(typeof(VisualLeakDetector).Assembly.Location);
 
                         var handle = LoadLibrary(basePath + @"\\VowpalWabbitCore.dll");
@@ -64,7 +65,7 @@ namespace cs_leaktest
                         {
                             ITestRunner test1 = (ITestRunner)appDomain.CreateInstanceFromAndUnwrap(basePath + @"\\cs_unittest.dll", "cs_unittest.TestRunner");
 
-                            Environment.CurrentDirectory = TestContext.TestDir + @"\..\..\..\test";
+                            Environment.CurrentDirectory = basePath + @"\..\..\..\test";
 
                             var result = test1.Run(type, method);
 

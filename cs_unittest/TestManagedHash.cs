@@ -6,6 +6,7 @@ using VW;
 
 namespace cs_unittest
 {
+    [TestClass]
     public class TestManagedHash
     {
         static string[] data =
@@ -100,6 +101,7 @@ namespace cs_unittest
             "123"
         };
 
+        [TestMethod]
         public void TestHash()
         {
             InternalTestHash("");

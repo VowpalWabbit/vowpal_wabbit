@@ -6,7 +6,7 @@ license as described in the file LICENSE.
 #pragma once
 
 #ifdef _WIN32
-#ifdef _DEBUG
+#ifdef LEAKCHECK
 // Visual Leak Detector for memory leak detection on Windows
 #include <vld.h>
 #endif

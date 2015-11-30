@@ -15,8 +15,10 @@ using cs_testcommon;
 
 namespace cs_test
 {
+    [TestClass]
     public class Test1and2Class : TestBase
     {
+        [TestMethod]
         [TestCategory("Command line through marshalling")]
         public void Test1and2()
         {

@@ -4,6 +4,9 @@ using System.Reflection;
 
 namespace cs_unittest
 {
+    /// <summary>
+    /// Helper to perform leak testing
+    /// </summary>
     public class TestRunner : MarshalByRefObject, ITestRunner
     {
         public string Run(string type, string method)

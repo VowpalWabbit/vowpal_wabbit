@@ -9,14 +9,17 @@ using VW;
 
 namespace cs_unittest
 {
-    public class TestModelLoading
+    [TestClass]
+    public class TestModelLoading : TestBase
     {
+        [TestMethod]
         [TestCategory("Model Loading")]
         public void TestLoadModelCorrupt()
         {
             InternalTestModel(@"model-sets/7.10.2_corrupted.model", false);
         }
 
+        [TestMethod]
         [TestCategory("Model Loading")]
         public void TestLoadModel()
         {
@@ -26,6 +29,7 @@ namespace cs_unittest
             InternalTestModel(@"model-sets/8.0.1_hash_ok.model", true);
         }
 
+        [TestMethod]
         [TestCategory("Model Loading")]
         public void TestLoadModelRandomCorrupt()
         {
@@ -34,6 +38,7 @@ namespace cs_unittest
             //InternalTestModelRandomCorrupt("model-sets/8.0.1_hash_ok.model");
         }
 
+        [TestMethod]
         [TestCategory("Model Loading")]
         public void TestLoadModelInMemory()
         {
@@ -58,6 +63,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Model Loading")]
         public void TestID()
         {
@@ -92,6 +98,7 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
         [TestCategory("Model Loading")]
         public void TestReload()
         {
