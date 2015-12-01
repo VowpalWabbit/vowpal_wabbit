@@ -4,7 +4,7 @@
     <title>Vowpal Wabbit</title>
     <id>VowpalWabbit</id>
     <tags>vw vowpal wabbit john langford</tags>
-    <version>8.0.0.28</version>
+    <version>8.0.0.29</version>
     <authors>John Langford et al</authors>
     <projectUrl>https://github.com/JohnLangford/vowpal_wabbit/wiki/C%23-Binding</projectUrl>
     <licenseUrl>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</licenseUrl>
@@ -28,7 +28,7 @@
 	       thus I opted to include the dll directly and not go through dependencies -->
 	  <file src="$SolutionDir$x64\$Configuration$\zlib.dll" target="build\native" />
 	  <file src="VowpalWabbit.targets" target="build" />
-      
+
 	  <file src="**\*.cs" target="src\cs" exclude="**\obj\**\*.cs" />
 	  <file src="..\vw_clr\*.cpp" target="src\vw_clr" />
 	  <file src="..\vw_clr\*.h" target="src\vw_clr" />
