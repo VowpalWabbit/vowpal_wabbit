@@ -90,10 +90,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'DebugLeakCheck|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x64\DebugLeakCheck\</OutputPath>
+    <OutputPath>..\vowpalwabbit\x64\DebugLeakCheck\</OutputPath>
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile>..\vowpalwabbit\x64\Debug\VowpalWabbit.XML</DocumentationFile>
+    <DocumentationFile>..\vowpalwabbit\x64\DebugLeakCheck\VowpalWabbit.XML</DocumentationFile>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
