@@ -74,7 +74,16 @@
   <ItemGroup>
     <Compile Include="BaseData.cs" />
     <Compile Include="CbAdfData.cs" />
-    <Compile Include="TestAll.cs" />
+    <Compile Include="RunTests.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>RunTests.tt</DependentUpon>
+    </Compile>
+    <Compile Include="TestAll.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>RunTests.tt</DependentUpon>
+    </Compile>
     <Compile Include="TestAllReduce.cs" />
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestLeak.cs" />
@@ -140,6 +149,10 @@
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="RunTests.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>RunTests.cs</LastGenOutput>
+    </Content>
     <Content Include="TestMarshalNumeric.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>TestMarshalNumeric.cs</LastGenOutput>
