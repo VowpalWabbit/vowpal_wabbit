@@ -39,12 +39,15 @@ namespace VW
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int? index = null,
             ILabel label = null,
-            IDictionary<string, string> dictionary = null)
+            Dictionary<string, string> dictionary = null,
+            Dictionary<object, string> fastDictionary = null)
         {
+#if DEBUG
             if (!vw.Native.Settings.EnableStringExampleGeneration)
             {
                 throw new ArgumentException("vw.Settings.EnableStringExampleGeneration must be enabled");
             }
+#endif
 
             return SerializeToString<TExample, TActionDependentFeature>(
                 vw.Native,
@@ -54,7 +57,8 @@ namespace VW
                 label,
                 vw.ExampleSerializer,
                 vw.ActionDependentFeatureSerializer,
-                dictionary);
+                dictionary,
+                fastDictionary);
         }
 
         /// <summary>
@@ -78,7 +82,8 @@ namespace VW
             ILabel label = null,
             VowpalWabbitSerializer<TExample> serializer = null,
             VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer = null,
-            IDictionary<string, string> dictionary = null)
+            Dictionary<string, string> dictionary = null,
+            Dictionary<object, string> fastDictionary = null)
         {
             if (vw == null)
                 throw new ArgumentNullException("vw");
@@ -103,7 +108,7 @@ namespace VW
 
             var stringExample = new StringBuilder();
 
-            var sharedExample = serializer.SerializeToString(example, SharedLabel.Instance, dictionary);
+            var sharedExample = serializer.SerializeToString(example, SharedLabel.Instance, dictionary, fastDictionary);
 
             // check if we have shared features
             if (!string.IsNullOrWhiteSpace(sharedExample))
@@ -115,7 +120,7 @@ namespace VW
             foreach (var actionDependentFeature in actionDependentFeatures)
             {
                 var adfExample = actionDependentFeatureSerializer.SerializeToString(actionDependentFeature,
-                    index != null && i == index ? label : null, dictionary);
+                    index != null && i == index ? label : null, dictionary, fastDictionary);
 
                 if (!string.IsNullOrWhiteSpace(adfExample))
                 {

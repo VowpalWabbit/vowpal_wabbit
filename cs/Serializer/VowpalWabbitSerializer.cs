@@ -123,11 +123,11 @@ namespace VW.Serializer
         /// <param name="example">The example to serialize.</param>
         /// <param name="label">The label to serialize.</param>
         /// <returns>The resulting VW string.</returns>
-        public string SerializeToString(TExample example, ILabel label = null, IDictionary<string, string> dictionary = null)
+        public string SerializeToString(TExample example, ILabel label = null, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)
         {
             Contract.Requires(example != null);
 
-            using (var context = new VowpalWabbitMarshalContext(vw, dictionary))
+            using (var context = new VowpalWabbitMarshalContext(vw, dictionary, fastDictionary))
             {
                 this.serializerFunc(context, example, label);
                 return context.StringExample.ToString();

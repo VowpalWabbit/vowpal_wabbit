@@ -86,6 +86,16 @@ namespace VW.Serializer
                 return;
             }
 
+			string featureString;
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				if (context.FastDictionary.TryGetValue(value, out featureString))
+				{
+					context.AppendStringExample(feature.Dictify, featureString);
+					return;
+				}
+			}
+
 			var featureBuilder = new StringBuilder();
 
             // support anchor feature
@@ -96,17 +106,25 @@ namespace VW.Serializer
                 i++;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
 					CultureInfo.InvariantCulture, 
-					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					format, 
 					i, 
 					v);
                 i++;
             }
 
-			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
+			featureString = featureBuilder.ToString();
+
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				context.FastDictionary.Add(value, featureString);
+			}
+			
+			context.AppendStringExample(feature.Dictify, featureString);
         }
 
 				/// <summary>
@@ -174,6 +192,16 @@ namespace VW.Serializer
                 return;
             }
 
+			string featureString;
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				if (context.FastDictionary.TryGetValue(value, out featureString))
+				{
+					context.AppendStringExample(feature.Dictify, featureString);
+					return;
+				}
+			}
+
 			var featureBuilder = new StringBuilder();
 
             // support anchor feature
@@ -184,17 +212,25 @@ namespace VW.Serializer
                 i++;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
 					CultureInfo.InvariantCulture, 
-					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					format, 
 					i, 
 					v);
                 i++;
             }
 
-			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
+			featureString = featureBuilder.ToString();
+
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				context.FastDictionary.Add(value, featureString);
+			}
+			
+			context.AppendStringExample(feature.Dictify, featureString);
         }
 
 				/// <summary>
@@ -262,6 +298,16 @@ namespace VW.Serializer
                 return;
             }
 
+			string featureString;
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				if (context.FastDictionary.TryGetValue(value, out featureString))
+				{
+					context.AppendStringExample(feature.Dictify, featureString);
+					return;
+				}
+			}
+
 			var featureBuilder = new StringBuilder();
 
             // support anchor feature
@@ -272,17 +318,25 @@ namespace VW.Serializer
                 i++;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
 					CultureInfo.InvariantCulture, 
-					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					format, 
 					i, 
 					v);
                 i++;
             }
 
-			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
+			featureString = featureBuilder.ToString();
+
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				context.FastDictionary.Add(value, featureString);
+			}
+			
+			context.AppendStringExample(feature.Dictify, featureString);
         }
 
 				/// <summary>
@@ -350,6 +404,16 @@ namespace VW.Serializer
                 return;
             }
 
+			string featureString;
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				if (context.FastDictionary.TryGetValue(value, out featureString))
+				{
+					context.AppendStringExample(feature.Dictify, featureString);
+					return;
+				}
+			}
+
 			var featureBuilder = new StringBuilder();
 
             // support anchor feature
@@ -360,17 +424,25 @@ namespace VW.Serializer
                 i++;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
 					CultureInfo.InvariantCulture, 
-					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					format, 
 					i, 
 					v);
                 i++;
             }
 
-			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
+			featureString = featureBuilder.ToString();
+
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				context.FastDictionary.Add(value, featureString);
+			}
+			
+			context.AppendStringExample(feature.Dictify, featureString);
         }
 
 				/// <summary>
@@ -438,6 +510,16 @@ namespace VW.Serializer
                 return;
             }
 
+			string featureString;
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				if (context.FastDictionary.TryGetValue(value, out featureString))
+				{
+					context.AppendStringExample(feature.Dictify, featureString);
+					return;
+				}
+			}
+
 			var featureBuilder = new StringBuilder();
 
             // support anchor feature
@@ -448,17 +530,25 @@ namespace VW.Serializer
                 i++;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
 					CultureInfo.InvariantCulture, 
-					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					format, 
 					i, 
 					v);
                 i++;
             }
 
-			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
+			featureString = featureBuilder.ToString();
+
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				context.FastDictionary.Add(value, featureString);
+			}
+			
+			context.AppendStringExample(feature.Dictify, featureString);
         }
 
 				/// <summary>
@@ -526,6 +616,16 @@ namespace VW.Serializer
                 return;
             }
 
+			string featureString;
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				if (context.FastDictionary.TryGetValue(value, out featureString))
+				{
+					context.AppendStringExample(feature.Dictify, featureString);
+					return;
+				}
+			}
+
 			var featureBuilder = new StringBuilder();
 
             // support anchor feature
@@ -536,17 +636,25 @@ namespace VW.Serializer
                 i++;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
 					CultureInfo.InvariantCulture, 
-					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					format, 
 					i, 
 					v);
                 i++;
             }
 
-			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
+			featureString = featureBuilder.ToString();
+
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				context.FastDictionary.Add(value, featureString);
+			}
+			
+			context.AppendStringExample(feature.Dictify, featureString);
         }
 
 				/// <summary>
@@ -613,6 +721,16 @@ namespace VW.Serializer
                 return;
             }
 
+			string featureString;
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				if (context.FastDictionary.TryGetValue(value, out featureString))
+				{
+					context.AppendStringExample(feature.Dictify, featureString);
+					return;
+				}
+			}
+
 			var featureBuilder = new StringBuilder();
 
             // support anchor feature
@@ -623,17 +741,25 @@ namespace VW.Serializer
                 i++;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
 					CultureInfo.InvariantCulture, 
-					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					format, 
 					i, 
 					v);
                 i++;
             }
 
-			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
+			featureString = featureBuilder.ToString();
+
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				context.FastDictionary.Add(value, featureString);
+			}
+			
+			context.AppendStringExample(feature.Dictify, featureString);
         }
 
 				/// <summary>
@@ -713,6 +839,16 @@ namespace VW.Serializer
                 return;
             }
 
+			string featureString;
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				if (context.FastDictionary.TryGetValue(value, out featureString))
+				{
+					context.AppendStringExample(feature.Dictify, featureString);
+					return;
+				}
+			}
+
 			var featureBuilder = new StringBuilder();
 
             // support anchor feature
@@ -723,17 +859,25 @@ namespace VW.Serializer
                 i++;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
 					CultureInfo.InvariantCulture, 
-					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					format, 
 					i, 
 					v);
                 i++;
             }
 
-			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
+			featureString = featureBuilder.ToString();
+
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				context.FastDictionary.Add(value, featureString);
+			}
+			
+			context.AppendStringExample(feature.Dictify, featureString);
         }
 
 				/// <summary>
@@ -813,6 +957,16 @@ namespace VW.Serializer
                 return;
             }
 
+			string featureString;
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				if (context.FastDictionary.TryGetValue(value, out featureString))
+				{
+					context.AppendStringExample(feature.Dictify, featureString);
+					return;
+				}
+			}
+
 			var featureBuilder = new StringBuilder();
 
             // support anchor feature
@@ -823,17 +977,25 @@ namespace VW.Serializer
                 i++;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
 					CultureInfo.InvariantCulture, 
-					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					format, 
 					i, 
 					v);
                 i++;
             }
 
-			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
+			featureString = featureBuilder.ToString();
+
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				context.FastDictionary.Add(value, featureString);
+			}
+			
+			context.AppendStringExample(feature.Dictify, featureString);
         }
 
 				/// <summary>
@@ -913,6 +1075,16 @@ namespace VW.Serializer
                 return;
             }
 
+			string featureString;
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				if (context.FastDictionary.TryGetValue(value, out featureString))
+				{
+					context.AppendStringExample(feature.Dictify, featureString);
+					return;
+				}
+			}
+
 			var featureBuilder = new StringBuilder();
 
             // support anchor feature
@@ -923,17 +1095,25 @@ namespace VW.Serializer
                 i++;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
 					CultureInfo.InvariantCulture, 
-					" {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"), 
+					format, 
 					i, 
 					v);
                 i++;
             }
 
-			context.AppendStringExample(feature.Dictify, featureBuilder.ToString());
+			featureString = featureBuilder.ToString();
+
+			if (feature.Dictify && context.FastDictionary != null)
+			{
+				context.FastDictionary.Add(value, featureString);
+			}
+			
+			context.AppendStringExample(feature.Dictify, featureString);
         }
 
 		
@@ -969,12 +1149,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1010,12 +1191,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1051,12 +1233,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1092,12 +1275,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1133,12 +1317,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1174,12 +1359,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1215,12 +1401,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1256,12 +1443,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1297,12 +1485,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1338,12 +1527,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1381,12 +1571,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1422,12 +1613,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1463,12 +1655,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1504,12 +1697,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1545,12 +1739,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1586,12 +1781,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1627,12 +1823,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1668,12 +1865,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1709,12 +1907,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1750,12 +1949,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1793,12 +1993,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1834,12 +2035,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1875,12 +2077,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1916,12 +2119,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1957,12 +2161,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -1998,12 +2203,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2039,12 +2245,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2080,12 +2287,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2121,12 +2329,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2162,12 +2371,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2205,12 +2415,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2246,12 +2457,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2287,12 +2499,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2328,12 +2541,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2369,12 +2583,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2410,12 +2625,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2451,12 +2667,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2492,12 +2709,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2533,12 +2751,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2574,12 +2793,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2617,12 +2837,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2658,12 +2879,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2699,12 +2921,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2740,12 +2963,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2781,12 +3005,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2822,12 +3047,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2863,12 +3089,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2904,12 +3131,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2945,12 +3173,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}
@@ -2986,12 +3215,13 @@ namespace VW.Serializer
                 return;
             }
 
+			var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
 			foreach (var kvp in value)
             {
 				// TODO: not sure if negative numbers will work
                 context.AppendStringExample(
 					feature.Dictify,
-                    " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                    format,
                     kvp.Key,
                     kvp.Value);
 			}

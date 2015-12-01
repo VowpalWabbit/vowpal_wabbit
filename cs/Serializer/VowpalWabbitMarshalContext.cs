@@ -26,7 +26,7 @@ namespace VW.Serializer
         /// </summary>
         /// <param name="vw">The VW instance the example will be imported to.</param>
         /// <param name="dictionary">Dictionary used for dictify operation.</param>
-        public VowpalWabbitMarshalContext(VowpalWabbit vw, IDictionary<string, string> dictionary = null)
+        public VowpalWabbitMarshalContext(VowpalWabbit vw, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)
         {
             this.VW = vw;
 
@@ -36,6 +36,7 @@ namespace VW.Serializer
             {
                 this.StringExample = new StringBuilder();
                 this.Dictionary = dictionary;
+                this.FastDictionary = fastDictionary;
             }
         }
 
@@ -49,7 +50,9 @@ namespace VW.Serializer
         /// </summary>
         public StringBuilder StringExample { get; private set; }
 
-        public IDictionary<string, string> Dictionary { get; private set; }
+        public Dictionary<string, string> Dictionary { get; private set; }
+
+        public Dictionary<object, string> FastDictionary { get; private set; }
 
         /// <summary>
         /// Used to build examples.
