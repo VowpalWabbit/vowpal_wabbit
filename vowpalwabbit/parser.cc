@@ -62,14 +62,14 @@ void initialize_mutex(MUTEX * pm)
 #endif
 }
 
+#ifndef _WIN32
+void delete_mutex(MUTEX *) { /* no operation necessary here*/ }
+#else
 void delete_mutex(MUTEX * pm)
 {
-#ifndef _WIN32
-  // no operation necessary here
-#else
   ::DeleteCriticalSection(pm);
-#endif
 }
+#endif
 
 void initialize_condition_variable(CV * pcv)
 {
@@ -134,7 +134,6 @@ void handle_sigterm (int)
 
 bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdout_off, uint32_t target_modulus)  // target should be 0 in the normal case, or period-1 in the case that emptylines separate examples
 { if(holdout_off) return false;
-  //cerr << "(" << counter << "," << period << "," << target_modulus << ")";
   if (after == 0) // hold out by period
     return (counter % period == target_modulus);
   else // hold out by position
@@ -705,7 +704,7 @@ void feature_limit(vw& all, example* ex)
     if (all.limit[*index] < ex->atomics[*index].size())
     { v_array<feature>& features = ex->atomics[*index];
 
-      qsort(features.begin, features.size(), sizeof(feature), order_features);
+      qsort(features.begin, features.size(), sizeof(feature), order_features<feature>);
 
       unique_features(features, all.limit[*index]);
     }
@@ -728,7 +727,8 @@ void setup_example(vw& all, example* ae)
   if (all.p->emptylines_separate_examples && example_is_newline(*ae))
     all.p->in_pass_counter++;
 
-  all.sd->t += all.p->lp.get_weight(&ae->l);
+  ae->weight = all.p->lp.get_weight(&ae->l);
+  all.sd->t += ae->weight;
   ae->example_t = (float)all.sd->t;
 
 
@@ -795,7 +795,7 @@ example* new_unused_example(vw& all)
 { example* ec = get_unused_example(all);
   all.p->lp.default_label(&ec->l);
   all.p->begin_parsed_examples++;
-  ec->example_counter = all.p->begin_parsed_examples;
+  ec->example_counter = (size_t)all.p->begin_parsed_examples;
   return ec;
 }
 example* read_example(vw& all, char* example_line)
@@ -823,8 +823,8 @@ void add_constant_feature(vw& vw, example*ec)
 
 void add_label(example* ec, float label, float weight, float base)
 { ec->l.simple.label = label;
-  ec->l.simple.weight = weight;
   ec->l.simple.initial = base;
+  ec->weight = weight;
 }
 
 example* import_example(vw& all, string label, primitive_feature_space* features, size_t len)
@@ -1001,28 +1001,22 @@ example* get_example(parser* p)
 }
 
 float get_topic_prediction(example* ec, size_t i)
-{ return ec->topic_predictions[i];
-}
+{ return ec->topic_predictions[i]; }
 
 float get_label(example* ec)
-{ return ec->l.simple.label;
-}
+{ return ec->l.simple.label; }
 
 float get_importance(example* ec)
-{ return ec->l.simple.weight;
-}
+{ return ec->weight; }
 
 float get_initial(example* ec)
-{ return ec->l.simple.initial;
-}
+{ return ec->l.simple.initial; }
 
 float get_prediction(example* ec)
-{ return ec->pred.scalar;
-}
+{ return ec->pred.scalar; }
 
 float get_cost_sensitive_prediction(example* ec)
-{ return (float)ec->pred.multiclass;
-}
+{ return (float)ec->pred.multiclass; }
 
 uint32_t* get_multilabel_predictions(example* ec, size_t& len)
 { MULTILABEL::labels labels = ec->pred.multilabels;

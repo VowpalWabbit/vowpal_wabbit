@@ -6,8 +6,8 @@ package vw.learner;
  *
  * <pre>
  * {@code
- * public final class SomeLearner extends VWGenericBase<float[]> {
- *   public VWFloatArrayLearner(String command) { super(command); }
+ * public final class SomeLearner extends VWLearnerBase<float[]> {
+ *   VWFloatArrayLearner(String command) { super(command); }
  *   protected native float[] predict(String example, boolean learn, long nativePointer);
  * }
  * }
@@ -17,9 +17,9 @@ package vw.learner;
  *
  * @author deak
  */
-abstract class VWGenericBase<T> extends VWBase implements VWGeneric<T> {
-    protected VWGenericBase(final String command) {
-        super(command);
+abstract class VWLearnerBase<T> extends VWBase implements VWTypedLearner<T> {
+    VWLearnerBase(final long nativePointer) {
+        super(nativePointer);
     }
 
     @Override

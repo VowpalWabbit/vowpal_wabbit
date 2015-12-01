@@ -4,6 +4,7 @@
    license as described in the file LICENSE.
    */
 #include <string>
+#include "correctedMath.h"
 #include "gd.h"
 
 using namespace std;
@@ -28,6 +29,8 @@ struct ftrl
   float ftrl_alpha;
   float ftrl_beta;
   struct update_data data;
+  size_t no_win_counter;
+  size_t early_stop_thres;
 };
 
 void predict(ftrl& b, base_learner&, example& ec)
@@ -80,7 +83,7 @@ void inner_update_pistol_state_and_predict(update_data& d, float x, float& wref)
 
   float squared_theta = w[W_ZT] * w[W_ZT];
   float tmp = 1.f / (d.ftrl_alpha * w[W_MX] * (w[W_G2] + w[W_MX]));
-  w[W_XT] = sqrt(w[W_G2]) * d.ftrl_beta * w[W_ZT] * exp(squared_theta / 2 * tmp) * tmp;
+  w[W_XT] = sqrt(w[W_G2]) * d.ftrl_beta * w[W_ZT] * correctedExp(squared_theta / 2 * tmp) * tmp;
 
   d.predict +=  w[W_XT]*x;
 }
@@ -103,14 +106,14 @@ void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec)
 
 void update_after_prediction_proximal(ftrl& b, example& ec)
 { b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label)
-                  *ec.l.simple.weight;
+                  *ec.weight;
 
   GD::foreach_feature<update_data, inner_update_proximal>(*b.all, ec, b.data);
 }
 
 void update_after_prediction_pistol(ftrl& b, example& ec)
 { b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label)
-                  *ec.l.simple.weight;
+                  *ec.weight;
 
   GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
@@ -153,6 +156,19 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
   }
 }
 
+void end_pass(ftrl& g)
+{ vw& all = *g.all;
+
+  if(!all.holdout_set_off)
+  { if(summarize_holdout_set(all, g.no_win_counter))
+      finalize_regressor(all, all.final_regressor_name);
+    if((g.early_stop_thres == g.no_win_counter) &&
+        ((all.check_holdout_every_n_passes <= 1) ||
+         ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
+      set_done(all);
+  }
+}
+
 base_learner* ftrl_setup(vw& all)
 { if (missing_option(all, false, "ftrl", "FTRL: Follow the Proximal Regularized Leader") &&
       missing_option(all, false, "pistol", "FTRL: Parameter-free Stochastic Learning"))
@@ -167,6 +183,8 @@ base_learner* ftrl_setup(vw& all)
 
   ftrl& b = calloc_or_throw<ftrl>();
   b.all = &all;
+  b.no_win_counter = 0;
+  b.early_stop_thres = 3;
 
   void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
 
@@ -209,9 +227,16 @@ base_learner* ftrl_setup(vw& all)
     cerr << "ftrl_beta = " << b.ftrl_beta << endl;
   }
 
+  if(!all.holdout_set_off)
+  { all.sd->holdout_best_loss = FLT_MAX;
+    if(vm.count("early_terminate"))
+      b.early_stop_thres = vm["early_terminate"].as< size_t>();
+  }
+
   learner<ftrl>& l = init_learner(&b, learn_ptr, 1 << all.reg.stride_shift);
   l.set_predict(predict);
   l.set_multipredict(multipredict);
   l.set_save_load(save_load);
+  l.set_end_pass(end_pass);
   return make_base(l);
 }

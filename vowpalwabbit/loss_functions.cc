@@ -4,6 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include<math.h>
+#include "correctedMath.h"
 #include<iostream>
 #include<stdlib.h>
 #include<float.h>
@@ -39,19 +40,19 @@ public:
                    + 2. * (sd->max_label - label) * (prediction - sd->max_label));
   }
 
-  float getUpdate(float prediction, float label, float eta_t, float pred_per_update)
-  { if (eta_t < 1e-6)
+  float getUpdate(float prediction, float label, float update_scale, float pred_per_update)
+  { if (update_scale*pred_per_update < 1e-6)
     { /* When exp(-eta_t)~= 1 we replace 1-exp(-eta_t)
        * with its first order Taylor expansion around 0
        * to avoid catastrophic cancellation.
        */
-      return 2.f*(label - prediction)*eta_t/pred_per_update;
+      return 2.f*(label - prediction)*update_scale;
     }
-    return (label - prediction)*(1.f-exp(-2.f*eta_t))/pred_per_update;
+    return (label - prediction)*(1.f-correctedExp(-2.f * update_scale * pred_per_update))/pred_per_update;
   }
 
-  float getUnsafeUpdate(float prediction, float label, float eta_t, float pred_per_update)
-  { return 2.f*(label - prediction)*eta_t/pred_per_update;
+  float getUnsafeUpdate(float prediction, float label, float update_scale)
+  { return 2.f*(label - prediction)*update_scale;
   }
 
   float getRevertingWeight(shared_data* sd, float prediction, float eta_t)
@@ -85,22 +86,19 @@ public:
 class classic_squaredloss : public loss_function
 {
 public:
-  classic_squaredloss()
-  {
-
-  }
+  classic_squaredloss(){}
 
   float getLoss(shared_data*, float prediction, float label)
   { float example_loss = (prediction - label) * (prediction - label);
     return example_loss;
   }
 
-  float getUpdate(float prediction, float label,float eta_t, float pred_per_update)
-  { return 2.f*eta_t*(label - prediction)/pred_per_update;
+  float getUpdate(float prediction, float label,float update_scale, float pred_per_update)
+  { return 2.f*(label - prediction) * update_scale;
   }
 
-  float getUnsafeUpdate(float prediction, float label,float eta_t,float pred_per_update)
-  { return 2.f*eta_t*(label - prediction)/pred_per_update;
+  float getUnsafeUpdate(float prediction, float label,float update_scale)
+  { return 2.f*(label - prediction) * update_scale;
   }
 
   float getRevertingWeight(shared_data* sd, float prediction, float eta_t)
@@ -143,15 +141,15 @@ public:
     return (e > 0) ? e : 0;
   }
 
-  float getUpdate(float prediction, float label,float eta_t, float pred_per_update)
+  float getUpdate(float prediction, float label,float update_scale, float pred_per_update)
   { if(label*prediction >= 1) return 0;
     float err = 1 - label*prediction;
-    return label * (eta_t < err ? eta_t : err)/pred_per_update;
+    return label * (update_scale*pred_per_update < err ? update_scale : err / pred_per_update);
   }
 
-  float getUnsafeUpdate(float prediction, float label,float eta_t, float pred_per_update)
+  float getUnsafeUpdate(float prediction, float label,float update_scale)
   { if(label*prediction >= 1) return 0;
-    return label * eta_t/pred_per_update;
+    return label * update_scale;
   }
 
   float getRevertingWeight(shared_data*, float prediction, float eta_t)
@@ -188,26 +186,26 @@ public:
   float getLoss(shared_data*, float prediction, float label)
   { if (label != -1.f && label != 1.f)
       cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << endl;
-    return log(1 + exp(-label * prediction));
+    return log(1 + correctedExp(-label * prediction));
   }
 
-  float getUpdate(float prediction, float label, float eta_t, float pred_per_update)
+  float getUpdate(float prediction, float label, float update_scale, float pred_per_update)
   { float w,x;
-    float d = exp(label * prediction);
-    if(eta_t < 1e-6)
+    float d = correctedExp(label * prediction);
+    if(update_scale*pred_per_update < 1e-6)
     { /* As with squared loss, for small eta_t we replace the update
        * with its first order Taylor expansion to avoid numerical problems
        */
-      return label*eta_t/((1+d)*pred_per_update);
+      return label*update_scale/(1+d);
     }
-    x = eta_t + label*prediction + d;
+    x = update_scale*pred_per_update + label*prediction + d;
     w = wexpmx(x);
     return -(label*w+prediction)/pred_per_update;
   }
 
-  float getUnsafeUpdate(float prediction, float label, float eta_t, float pred_per_update)
-  { float d = exp(label * prediction);
-    return label*eta_t/((1+d)*pred_per_update);
+  float getUnsafeUpdate(float prediction, float label, float update_scale)
+  { float d = correctedExp(label * prediction);
+    return label*update_scale/(1+d);
   }
 
   inline float wexpmx(float x)
@@ -216,7 +214,7 @@ public:
      * The absolute error of this approximation is less than 9e-5.
      * Faster/better approximations can be substituted here.
      */
-    double w = x>=1. ? 0.86*x+0.01 : exp(0.8*x-0.65); //initial guess
+    double w = x>=1. ? 0.86*x+0.01 : correctedExp(0.8*x-0.65); //initial guess
     double r = x>=1. ? x-log(w)-w : 0.2*x+0.65-w; //residual
     double t = 1.+w;
     double u = 2.*t*(t+2.*r/3.); //magic
@@ -225,7 +223,7 @@ public:
 
   float getRevertingWeight(shared_data*, float prediction, float eta_t)
   { float z = -fabs(prediction);
-    return (1-z-exp(z))/eta_t;
+    return (1-z-correctedExp(z))/eta_t;
   }
   
   float finalize_reverting_weight(float w) {
@@ -233,7 +231,7 @@ public:
   }
 
   float first_derivative(shared_data*, float prediction, float label)
-  { float v = - label/(1+exp(label * prediction));
+  { float v = - label/(1+correctedExp(label * prediction));
     return v;
   }
 
@@ -243,7 +241,7 @@ public:
   }
 
   float second_derivative(shared_data*, float prediction, float label)
-  { float p = 1 / (1+exp(label*prediction));
+  { float p = 1 / (1+correctedExp(label*prediction));
 
     return p*(1-p);
   }
@@ -252,40 +250,35 @@ public:
 class quantileloss : public loss_function
 {
 public:
-  quantileloss(float &tau_) : tau(tau_)
-  {
-  }
+  quantileloss(float &tau_) : tau(tau_) { }
 
   float getLoss(shared_data*, float prediction, float label)
   { float e = label - prediction;
     if(e > 0)
-    { return tau * e;
-    }
+      return tau * e; 
     else
-    { return -(1 - tau) * e;
-    }
-
+      return -(1 - tau) * e;
   }
 
-  float getUpdate(float prediction, float label, float eta_t, float pred_per_update)
+  float getUpdate(float prediction, float label, float update_scale, float pred_per_update)
   { float err = label - prediction;
     if(err == 0) return 0;
-    float normal = eta_t;//base update size
+    float normal = update_scale*pred_per_update;//base update size
     if(err > 0)
     { normal = tau*normal;
-      return (normal < err ? normal : err) / pred_per_update;
+      return (normal < err ? tau*update_scale : err / pred_per_update);
     }
     else
     { normal = -(1-tau) * normal;
-      return ( normal > err ?  normal : err) / pred_per_update;
+      return ( normal > err ?  (tau-1)*update_scale : err / pred_per_update);
     }
   }
 
-  float getUnsafeUpdate(float prediction, float label, float eta_t, float pred_per_update)
+  float getUnsafeUpdate(float prediction, float label, float update_scale)
   { float err = label - prediction;
     if(err == 0) return 0;
-    if(err > 0) return tau*eta_t/pred_per_update;
-    return -(1-tau)*eta_t/pred_per_update;
+    if(err > 0) return tau*update_scale;
+    return -(1-tau)*update_scale;
   }
 
   float getRevertingWeight(shared_data* sd, float prediction, float eta_t)

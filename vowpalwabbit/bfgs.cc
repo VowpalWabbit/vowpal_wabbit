@@ -160,7 +160,7 @@ float predict_and_gradient(vw& all, example &ec)
   label_data& ld = ec.l.simple;
   all.set_minmax(all.sd, ld.label);
 
-  float loss_grad = all.loss->first_derivative(all.sd, fp,ld.label)*ld.weight;
+  float loss_grad = all.loss->first_derivative(all.sd, fp,ld.label)*ec.weight;
 
   ec.ft_offset += W_GT;
   GD::foreach_feature<float,add_grad>(all, ec, loss_grad);
@@ -174,8 +174,7 @@ inline void add_precond(float& d, float f, float& fw)
 }
 
 void update_preconditioner(vw& all, example& ec)
-{ label_data& ld = ec.l.simple;
-  float curvature = all.loss->second_derivative(all.sd, ec.pred.scalar, ld.label) * ld.weight;
+{ float curvature = all.loss->second_derivative(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
   ec.ft_offset += W_COND;
   GD::foreach_feature<float,add_precond>(all, ec, curvature);
@@ -726,14 +725,14 @@ int process_pass(vw& all, bfgs& b)
 void process_example(vw& all, bfgs& b, example& ec)
 { label_data& ld = ec.l.simple;
   if (b.first_pass)
-    b.importance_weight_sum += ld.weight;
+    b.importance_weight_sum += ec.weight;
 
   /********************************************************************/
   /* I) GRADIENT CALCULATION ******************************************/
   /********************************************************************/
   if (b.gradient_pass)
   { ec.pred.scalar = predict_and_gradient(all, ec);//w[0] & w[1]
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ld.weight;
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
     b.loss_sum += ec.loss;
     b.predictions.push_back(ec.pred.scalar);
   }
@@ -746,9 +745,9 @@ void process_example(vw& all, bfgs& b, example& ec)
       b.example_number = b.predictions.size()-1;
     ec.pred.scalar = b.predictions[b.example_number];
     ec.partial_prediction = b.predictions[b.example_number];
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ld.weight;
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
     float sd = all.loss->second_derivative(all.sd, b.predictions[b.example_number++],ld.label);
-    b.curvature += d_dot_x*d_dot_x*sd*ld.weight;
+    b.curvature += d_dot_x*d_dot_x*sd*ec.weight;
   }
   ec.updated_prediction = ec.pred.scalar;
 

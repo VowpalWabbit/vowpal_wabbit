@@ -14,7 +14,19 @@ nobase_include_HEADERS = vowpalwabbit/allreduce.h \
 	vowpalwabbit/simple_label.h \
 	vowpalwabbit/v_array.h \
 	vowpalwabbit/vw.h \
-	vowpalwabbit/vwdll.h
+	vowpalwabbit/vwdll.h \
+	vowpalwabbit/label_parser.h \
+	vowpalwabbit/multiclass.h \
+	vowpalwabbit/cost_sensitive.h \
+	vowpalwabbit/cb.h \
+	vowpalwabbit/v_hashmap.h \
+	vowpalwabbit/memory.h \
+	vowpalwabbit/vw_exception.h \
+	vowpalwabbit/vw_validate.h \
+	vowpalwabbit/multilabel.h \
+	vowpalwabbit/constant.h \
+	vowpalwabbit/ezexample.h
+
 
 noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/autolink.h \
@@ -65,6 +77,9 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/v_hashmap.h
 
 ACLOCAL_AMFLAGS = -I acinclude.d
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = libvw.pc libvw_c_wrapper.pc
 
 test: all
 	cd test && ./RunTests -f -E 0.001 ../vowpalwabbit/vw ../vowpalwabbit/vw

@@ -39,7 +39,7 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   size_t total = sizeof(size_t);
   if (buf_read(cache, c, total) < total)
     return 0;
-  c = bufread_label(ld,c, cache);
+  bufread_label(ld,c, cache);
 
   return total;
 }
@@ -183,7 +183,7 @@ void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq,
                            num_features, all.progress_add, all.progress_arg);;
     }
     else
-      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred,
+      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, (uint32_t)pred,
                            num_features, all.progress_add, all.progress_arg);
   }
 }
@@ -198,7 +198,6 @@ size_t read_cached_label(shared_data*sd, void* v, io_buf& cache)
   if (buf_read(cache, c, total) < total)
     return 0;
   ld->action = *(uint32_t*)c;
-  c += sizeof(uint32_t);
 
   return total + CB::read_cached_label(sd, &(ld->event), cache);
 }
@@ -208,7 +207,6 @@ void cache_label(void* v, io_buf& cache)
   CB_EVAL::label* ld = (CB_EVAL::label*) v;
   buf_write(cache, c, sizeof(uint32_t));
   *(uint32_t *)c = ld->action;
-  c+= sizeof(uint32_t);
 
   CB::cache_label(&(ld->event), cache);
 }

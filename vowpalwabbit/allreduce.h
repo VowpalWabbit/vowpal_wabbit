@@ -15,6 +15,16 @@ typedef unsigned short uint16_t;
 typedef int socklen_t;
 typedef SOCKET socket_t;
 #define CLOSESOCK closesocket
+namespace std
+{
+  // forward declare promise as C++/CLI doesn't allow usage in header files
+  template<typename T>
+  class promise;
+
+  class condition_variable;
+
+  class mutex;
+}
 #else
 #include <sys/socket.h>
 #include <sys/socket.h>
@@ -27,6 +37,7 @@ typedef SOCKET socket_t;
 #include <string.h>
 typedef int socket_t;
 #define CLOSESOCK close
+#include <future>
 #endif
 #include "vw_exception.h"
 #include <assert.h>
@@ -70,25 +81,16 @@ public:
     : total(ptotal), node(pnode)
   { assert(node >= 0 && node < total);
   }
+
+  virtual ~AllReduce()
+  {
+  }
 };
 
 struct Data
 { void* buffer;
   size_t length;
 };
-
-#ifndef __APPLE__
-namespace std
-{
-// forward declare promise as C++/CLI doesn't allow usage in header files
-template<typename T>
-class promise;
-
-class condition_variable;
-
-class mutex;
-}
-#endif
 
 class AllReduceSync
 {
@@ -126,7 +128,7 @@ public:
 
   AllReduceThreads(const size_t ptotal, const size_t pnode);
 
-  ~AllReduceThreads();
+  virtual ~AllReduceThreads();
 
   template <class T, void(*f)(T&, const T&)> void all_reduce(T* buffer, const size_t n)
   { // register buffer
@@ -265,6 +267,10 @@ private:
 public:
   AllReduceSockets(std::string pspan_server, const size_t punique_id, size_t ptotal, const size_t pnode)
     : AllReduce(ptotal, pnode), span_server(pspan_server), unique_id(punique_id)
+  {
+  }
+
+  virtual ~AllReduceSockets()
   {
   }
 

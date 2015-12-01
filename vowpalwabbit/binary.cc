@@ -19,7 +19,7 @@ void predict_or_learn(char&, LEARNER::base_learner& base, example& ec)
     else if (ec.l.simple.label == ec.pred.scalar)
       ec.loss = 0.;
     else
-      ec.loss = ec.l.simple.weight;
+      ec.loss = ec.weight;
   }
 }
 

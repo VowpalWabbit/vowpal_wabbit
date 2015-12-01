@@ -52,6 +52,8 @@ typedef union
 { float scalar;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
+  float* probs; // for --probabilities --oaa
+  float prob; // for --probabilities --csoaa_ldf=mc
 } polyprediction;
 
 struct example // core example datatype.
@@ -60,6 +62,8 @@ struct example // core example datatype.
 
   // input fields
   polylabel l;
+
+  float weight;//a relative importance weight for the example, default = 1
   v_array<char> tag;//An identifier for the example.
   size_t example_counter;
   v_array<unsigned char> indices;

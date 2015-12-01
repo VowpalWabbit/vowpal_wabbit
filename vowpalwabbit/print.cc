@@ -17,8 +17,8 @@ void learn(print& p, LEARNER::base_learner&, example& ec)
 { label_data& ld = ec.l.simple;
   if (ld.label != FLT_MAX)
   { cout << ld.label << " ";
-    if (ld.weight != 1 || ld.initial != 0)
-    { cout << ld.weight << " ";
+    if (ec.weight != 1 || ld.initial != 0)
+    { cout << ec.weight << " ";
       if (ld.initial != 0)
         cout << ld.initial << " ";
     }

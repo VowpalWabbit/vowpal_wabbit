@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: Vowpal Wabbit
+Description: Vowpal Wabbit Machine Learning System
+URL: @PACKAGE_URL@
+Version: @VERSION@
+Requires: zlib
+Libs: -L${libdir} -lvw -lallreduce @PTHREAD_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@
+Cflags: -I${includedir} @PTHREAD_CFLAGS@
