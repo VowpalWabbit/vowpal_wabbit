@@ -124,7 +124,7 @@ namespace cs_unittest
 		[TestMethod]
 		[Description("<#=mainTestcase.Comment.Trim()#>")]
 		[TestCategory("Command Line")]
-		public void NewCommandLine_Test<#=mainTestcase.Id#>()
+		public void CommandLine_Test<#=mainTestcase.Id#>()
 		{
 <# foreach (var tc in mainTestcase.InDependencyOrder()) { #>
 			using (var vw = new VowpalWabbit("<#=tc.Arguments#>"))

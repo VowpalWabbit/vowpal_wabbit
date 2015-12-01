@@ -79,11 +79,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>RunTests.tt</DependentUpon>
     </Compile>
-    <Compile Include="TestAll.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>RunTests.tt</DependentUpon>
-    </Compile>
     <Compile Include="TestAllReduce.cs" />
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestLeak.cs" />
