@@ -1340,9 +1340,9 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache
     train-sets/ref/0001_ftrl_holdout.stderr
 
-# Test 106: test FTRL-Proximal early stopping
+# Test 106: test FTRL-Proximal early stopping prediction
 {VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout.predict
-    test-sets/ref/0001_ftrl_holdout.stderr
+    test-sets/ref/0001_ftrl_holdout_106.stderr
     pred-sets/ref/0001_ftrl_holdout.predict
 
 # Test 107: train FTRL-Proximal no early stopping
