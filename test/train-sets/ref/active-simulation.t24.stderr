@@ -8,22 +8,24 @@ num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0  -1.0000   0.0000      128
-0.770418 0.755288            2           16.2  -1.0000  -0.1309       44
-1.118590 1.361900            3           39.3   1.0000  -0.1670       30
-0.780574 0.450168           39           79.5  unknown   0.1277       85
-0.592298 0.405239           75          159.6  unknown  -0.3427       71
-0.509643 0.427269          169          319.7  unknown   0.3984       18
-0.559013 0.606211          325          654.2  -1.0000  -0.4780      189
-0.447653 0.336421          754         1309.2  unknown  -0.2552       31
+0.500000 0.000000            2            2.0  unknown  -0.1309       44
+0.991579 1.186967            3            7.0   1.0000  -0.0895       30
+0.836494 0.759820            6           21.3  -1.0000  -0.1859      140
+0.618387 0.405403           27           43.0  -1.0000   0.0623       62
+0.491111 0.365928           70           86.8  unknown  -0.1204       41
+0.462086 0.433065          138          173.5  unknown   0.1880      106
+0.461780 0.461474          262          347.1  unknown   0.2588       14
+0.404166 0.346727          433          695.3   1.0000   0.4004       29
+0.401917 0.399675          895         1392.4  -1.0000  -0.7519       48
 
 finished run
 number of examples per pass = 1000
 passes used = 1
-weighted example sum = 1682.949109
-weighted label sum = -89.163114
-average loss = 0.458888
-best constant = -0.101790
-best constant's loss = 0.989639
+weighted example sum = 1552.982826
+weighted label sum = -62.782246
+average loss = 0.388595
+best constant = -0.062721
+best constant's loss = 0.996066
 total feature number = 78739
-total queries = 193
+total queries = 448
 

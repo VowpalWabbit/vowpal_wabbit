@@ -55,6 +55,7 @@ library/test_search
 library/search_generate
 test/RunTests.last.times
 *.dSYM
+*~
 
 # build folders
 **/x64

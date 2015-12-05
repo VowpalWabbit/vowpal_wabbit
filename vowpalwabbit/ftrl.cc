@@ -227,6 +227,12 @@ base_learner* ftrl_setup(vw& all)
     cerr << "ftrl_beta = " << b.ftrl_beta << endl;
   }
 
+  if(!all.holdout_set_off)
+  { all.sd->holdout_best_loss = FLT_MAX;
+    if(vm.count("early_terminate"))
+      b.early_stop_thres = vm["early_terminate"].as< size_t>();
+  }
+
   learner<ftrl>& l = init_learner(&b, learn_ptr, 1 << all.reg.stride_shift);
   l.set_predict(predict);
   l.set_multipredict(multipredict);

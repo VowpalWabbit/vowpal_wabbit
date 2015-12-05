@@ -28,7 +28,7 @@ struct feature
 { float x;
   uint32_t weight_index;
   bool operator==(feature j) {return weight_index == j.weight_index;}
-  feature(float x=0., uint32_t weight_index=0) : x(x), weight_index(weight_index) {}
+  feature(float x_=0., uint32_t weight_index_=0) : x(x_), weight_index(weight_index_) {}
 };
 
 struct audit_data
@@ -80,7 +80,7 @@ struct example // core example datatype.
   float example_t;//sum of importance weights so far.
   float sum_feat_sq[256];//helper for total_sum_feat_sq.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
-  float revert_weight;
+  float confidence;
   v_array<feature>* passthrough; // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
 
   bool test_only;

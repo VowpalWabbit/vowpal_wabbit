@@ -47,7 +47,7 @@ public:
   }
   T& operator[](size_t i) { return begin[i]; }
   T& get(size_t i) { return begin[i]; }
-  inline const size_t size() {return end-begin;}
+  inline size_t size() {return end-begin;}
   void resize(size_t length)
   { if ((size_t)(end_array-begin) != length)
     { size_t old_len = end-begin;
@@ -58,7 +58,7 @@ public:
       else
         begin = temp;
       if (old_len < length)
-        memset(begin+old_len, 0, (length-old_len)*sizeof(T));
+	memset(begin+old_len, 0, (length-old_len)*sizeof(T));
       end = begin+old_len;
       end_array = begin + length;
     }

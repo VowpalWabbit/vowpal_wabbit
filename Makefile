@@ -55,7 +55,6 @@ ifeq ($(UNAME), Darwin)
 endif
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
-
 OPTIM_FLAGS = -O3 -fomit-frame-pointer -fno-strict-aliasing #-ffast-math #uncomment for speed, comment for testability
 ifeq ($(UNAME), FreeBSD)
   WARN_FLAGS = -Wall
@@ -78,6 +77,8 @@ FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_
 
 BINARIES = vw active_interactor
 MANPAGES = vw.1
+
+default:	vw
 
 all:	vw spanning_tree library_example java
 

@@ -28,7 +28,7 @@ namespace VW
     void clr_io_buf::reset_file(int f)
     {
         m_stream->Seek(0, SeekOrigin::Begin);
-        endloaded = space.begin;
+        head = space.begin;
         space.end = space.begin;
     }
 

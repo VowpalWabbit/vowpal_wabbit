@@ -39,8 +39,8 @@ int comp_io_buf::open_file(const char* name, bool stdin_off, int flag)
 void comp_io_buf::reset_file(int f)
 { gzFile fil = gz_files[f];
   gzseek(fil, 0, SEEK_SET);
-  endloaded = space.begin;
   space.end = space.begin;
+  head = space.begin;
 }
 
 ssize_t comp_io_buf::read_file(int f, void* buf, size_t nbytes)
@@ -59,9 +59,9 @@ ssize_t comp_io_buf::write_file(int file, const void* buf, size_t nbytes)
 bool comp_io_buf::compressed() { return true; }
 
 void comp_io_buf::flush()
-{ if (write_file(0, space.begin, space.size()) != (int)((space.size())))
+{ if (write_file(0, space.begin, head - space.end) != (int)((head - space.end)))
     std::cerr << "error, failed to write to cache\n";
-  space.end = space.begin;
+  head = space.begin;
 }
 
 bool comp_io_buf::close_file()

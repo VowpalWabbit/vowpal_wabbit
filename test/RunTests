@@ -950,7 +950,7 @@ __DATA__
     test-sets/ref/ml100k_small.stderr
 
 # Test 24: active-learning -- training
-{VW} -k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10
+{VW} -k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --random_seed 3
     train-sets/ref/active-simulation.t24.stderr
 
 # Test 25: bagging -- training regressor
@@ -1340,9 +1340,9 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache
     train-sets/ref/0001_ftrl_holdout.stderr
 
-# Test 106: test FTRL-Proximal early stopping
+# Test 106: test FTRL-Proximal early stopping prediction
 {VW} -k -t -d train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout.predict
-    test-sets/ref/0001_ftrl_holdout.stderr
+    test-sets/ref/0001_ftrl_holdout_106.stderr
     pred-sets/ref/0001_ftrl_holdout.predict
 
 # Test 107: train FTRL-Proximal no early stopping
@@ -1365,17 +1365,18 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
    pred-sets/ref/csoaa_ldf_probabilities.predict
 
 # Test 111: Train a depenency parser with neural network and one_learner approach (lols)
-# use -b 30 to get better performnce
 {VW} -k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --passes 2 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --holdout_off --one_learner --nn 5 --ftrl --search_history_length 3 --root_label 8
     train-sets/ref/search_dep_parser_one_learner.stderr
 
 # Test 112: Train a depenency parser with cost_to_go
-# use -b 30 to get better performnce
 {VW} -k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --passes 6 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout none --holdout_off --search_history_length 3 --root_label 8 --cost_to_go
     train-sets/ref/search_dep_parser_cost_to_go.stderr
 
 # Test 113: Predictions with confidences
-# use -b 30 to get better performnce
 {VW} --confidence -d ./train-sets/rcv1_micro.dat -p confidence.preds
     train-sets/ref/confidence.stderr
     pred-sets/ref/confidence.preds
+
+# Test 114: Over size example test
+{VW} train-sets/x.txt
+    train-sets/ref/oversize.stderr

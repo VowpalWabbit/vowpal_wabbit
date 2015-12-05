@@ -23,15 +23,17 @@ struct active_cover
   LEARNER::base_learner* l;
 };
 
-bool dis_test(vw& all, example& ec, float prediction, float threshold)
+bool dis_test(vw& all, example& ec, base_learner& base, float prediction, float threshold)
 { if(ec.example_t <= 3)
   { return true;
   }
 
   // Get loss difference
+  float middle = 0.f;
+  ec.confidence = fabsf(ec.pred.scalar - middle) / base.sensitivity(ec);
+
   float k = ec.example_t - ec.weight;
-  ec.revert_weight = all.loss->getRevertingWeight(all.sd, prediction, all.eta/powf(k,all.power_t));
-  float loss_delta = ec.revert_weight/k;
+  float loss_delta = ec.confidence/k;
 
   bool result = (loss_delta <= threshold);
 
@@ -111,7 +113,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 
     // Compute threshold defining allowed set A
     float threshold = get_threshold((float)all.sd->sum_loss, t, a.active_c0, a.alpha);
-    bool in_dis =  dis_test(all, ec, prediction, threshold);
+    bool in_dis =  dis_test(all, ec, base, prediction, threshold);
     float pmin = get_pmin((float)all.sd->sum_loss, t);
     float importance = query_decision(a, base, ec, prediction, pmin, in_dis);
 
