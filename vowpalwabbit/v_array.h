@@ -58,7 +58,7 @@ public:
       else
         begin = temp;
       if (old_len < length)
-        memset(begin+old_len, 0, (length-old_len)*sizeof(T));
+	memset(begin+old_len, 0, (length-old_len)*sizeof(T));
       end = begin+old_len;
       end_array = begin + length;
     }
