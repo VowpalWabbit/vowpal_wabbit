@@ -73,6 +73,8 @@ namespace VW
         /// <param name="label">The optional label.</param>
         /// <param name="serializer">The example serializer.</param>
         /// <param name="actionDependentFeatureSerializer">The action dependent feature serializer.</param>
+        /// <param name="dictionary">Dictionary used for dictify operation.</param>
+        /// <param name="fastDictionary">Dictionary used for dictify operation.</param>
         /// <returns>The string serialized example.</returns>
         public static string SerializeToString<TExample, TActionDependentFeature>(
             VowpalWabbit vw,

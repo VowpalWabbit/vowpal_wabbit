@@ -122,6 +122,8 @@ namespace VW.Serializer
         /// </summary>
         /// <param name="example">The example to serialize.</param>
         /// <param name="label">The label to serialize.</param>
+        /// <param name="dictionary">Dictionary used for dictify operation.</param>
+        /// <param name="fastDictionary">Dictionary used for dictify operation.</param>
         /// <returns>The resulting VW string.</returns>
         public string SerializeToString(TExample example, ILabel label = null, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)
         {

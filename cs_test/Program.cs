@@ -20,6 +20,18 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
+            var models = Directory.EnumerateFiles(@"C:\Data\eastus-enusriver-archive-20151118-replay2");
+
+            int count = 0;
+            foreach (var m in models)
+            {
+                using (var vw = new VowpalWabbit(@"--quiet -t -i " + m))
+                {
+                    Console.Write("{0}\r", count++);
+                }
+            }
+
+            NIPS.AnnotationExample();
             // AttributesSample.Attributes();
             //AttributesSample.RunFeaturesTest();
             //ExploreClock.Clock();

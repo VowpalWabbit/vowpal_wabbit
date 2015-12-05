@@ -26,6 +26,7 @@ namespace VW.Serializer
         /// </summary>
         /// <param name="vw">The VW instance the example will be imported to.</param>
         /// <param name="dictionary">Dictionary used for dictify operation.</param>
+        /// <param name="fastDictionary">Dictionary used for dictify operation.</param>
         public VowpalWabbitMarshalContext(VowpalWabbit vw, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)
         {
             this.VW = vw;
@@ -50,8 +51,14 @@ namespace VW.Serializer
         /// </summary>
         public StringBuilder StringExample { get; private set; }
 
+        /// <summary>
+        /// Used if dictify is true. Maps from serialized feature to surrogate key.
+        /// </summary>
         public Dictionary<string, string> Dictionary { get; private set; }
 
+        /// <summary>
+        /// Used if dictify is true. Maps from raw feature value (e.g. int[]) to serialized feature.
+        /// </summary>
         public Dictionary<object, string> FastDictionary { get; private set; }
 
         /// <summary>
@@ -64,6 +71,12 @@ namespace VW.Serializer
         /// </summary>
         public VowpalWabbitNamespaceBuilder NamespaceBuilder { get; set; }
 
+        /// <summary>
+        /// Formats <paramref name="args"/> based on <paramref name="format"/> to the string example buffer.
+        /// </summary>
+        /// <param name="dictify">If true, performs dictionarization on the serialized string and inserts a surrogate.</param>
+        /// <param name="format">The string format used to serialize <paramref name="args"/>.</param>
+        /// <param name="args">The arguments to the string format operation.</param>
         public void AppendStringExample(bool dictify, string format, params object[] args)
         {
             if (this.StringExample != null)

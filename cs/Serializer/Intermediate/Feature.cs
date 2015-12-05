@@ -43,6 +43,10 @@ namespace VW.Serializer.Intermediate
         /// <remarks>Defaults to false.</remarks>
         public bool AddAnchor { get; private set; }
 
+        /// <summary>
+        /// If true, the string serialization will collect the feature into a dictionary and output a surrogate.
+        /// </summary>
+        /// <remarks>Defaults to null, which inherits from parent. If no parent information available, defaults to false.</remarks>
         public bool Dictify { get; private set; }
     }
 }

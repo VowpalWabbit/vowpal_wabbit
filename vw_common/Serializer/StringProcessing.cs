@@ -8,8 +8,14 @@ namespace VW.Serializer
 {
     public enum StringProcessing
     {
+        /// <summary>
+        /// Spaces are replaced with underscores.
+        /// </summary>
         Escape,
 
+        /// <summary>
+        /// Strings are split on space, producing individual features.
+        /// </summary>
         Split
     }
 }

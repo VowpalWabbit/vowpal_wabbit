@@ -91,6 +91,7 @@ namespace VW.Serializer.Attributes
         /// <summary>
         /// Configures string pre-processing before hashing. All options are compatible with VW string format.
         /// </summary>
+        /// <remarks>Defaults to <see cref="VW.Serializer.StringProcessing.Split"/></remarks>
         public StringProcessing StringProcessing { get; set; }
     }
 }
