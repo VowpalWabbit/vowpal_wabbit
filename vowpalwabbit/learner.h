@@ -14,8 +14,6 @@ license as described in the file LICENSE.
 #include "parser.h"
 using namespace std;
 
-void return_simple_example(vw& all, void*, example& ec);
-
 namespace LEARNER
 {
 template<class T> struct learner;

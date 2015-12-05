@@ -192,12 +192,11 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
   t.delete_v();
 
   const int total = sizeof(uint32_t);
-  char* p[total];
-  if (buf->read_file(filepointer, p, total) < total)
+  uint32_t cache_numbits;
+  if (buf->read_file(filepointer, &cache_numbits, total) < total)
   { return true;
   }
 
-  uint32_t cache_numbits = *(uint32_t *)p;
   return cache_numbits;
 }
 
