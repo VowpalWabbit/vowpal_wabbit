@@ -23,6 +23,7 @@ license as described in the file LICENSE.
 #include "accumulate.h"
 #include "reductions.h"
 #include "vw.h"
+#include "floatbits.h"
 
 #define VERSION_SAVE_RESUME_FIX "7.10.1"
 
@@ -58,9 +59,9 @@ void sync_weights(vw& all);
 inline float quake_InvSqrt(float x)
 { // Carmack/Quake/SGI fast method:
   float xhalf = 0.5f * x;
-  int i = *(int*)&x; // store floating-point bits in integer
+  int i = float_to_bits(x); // store floating-point bits in integer
   i = 0x5f3759d5 - (i >> 1); // initial guess for Newton's method
-  x = *(float*)&i; // convert new bits into float
+  x = bits_to_float(i); // convert new bits into float
   x = x*(1.5f - xhalf*x*x); // One round of Newton's method
   return x;
 }

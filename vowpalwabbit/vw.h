@@ -9,6 +9,7 @@ license as described in the file LICENSE.
 #include "hash.h"
 #include "simple_label.h"
 #include "parser.h"
+#include "parse_example.h"
 
 namespace VW
 {
@@ -62,7 +63,6 @@ example* import_example(vw& all, string label, primitive_feature_space* features
 example *alloc_examples(size_t, size_t);
 void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*) = nullptr);
 
-void read_line(vw& all, example* ex, char* line);
 void parse_example_label(vw&all, example&ec, string label);
 void setup_example(vw& all, example* ae);
 example* new_unused_example(vw& all);
