@@ -950,7 +950,7 @@ __DATA__
     test-sets/ref/ml100k_small.stderr
 
 # Test 24: active-learning -- training
-{VW} -k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --random_seed 1
+{VW} -k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --random_seed 3
     train-sets/ref/active-simulation.t24.stderr
 
 # Test 25: bagging -- training regressor
