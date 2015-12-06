@@ -98,7 +98,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
     text_len = sprintf_s(buff, buf_size, "Version %s\n", version.to_string().c_str());
     memcpy(buff2, version.to_string().c_str(), min(v_length, buf_size));
     if (read)
-    { v_length = buf2_size;
+    { v_length = (uint32_t) buf2_size;
     }
     bytes_read_write += bin_text_read_write_validated(model_file, buff2, v_length,
                         "", read,
