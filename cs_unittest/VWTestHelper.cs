@@ -123,20 +123,21 @@ namespace cs_unittest
                     actual.TotalNumberOfFeatures);
             }
 
-            Assert.AreEqual(expected.NumberOfExamplesPerPass, actual.NumberOfExamplesPerPass);
-            Assert.AreEqual(expected.AverageLoss, actual.AverageLoss, 1e-5);
-            Assert.AreEqual(expected.BestConstant, actual.BestConstant, 1e-5);
+            Assert.AreEqual(expected.NumberOfExamplesPerPass, actual.NumberOfExamplesPerPass, "NumberOfExamplesPerPass");
+            Assert.AreEqual(expected.AverageLoss, actual.AverageLoss, 1e-5, "AverageLoss");
+            Assert.AreEqual(expected.BestConstant, actual.BestConstant, 1e-5, "BestConstant");
             // TODO: something weir'd is happening here. BestConstantsLoss is 0 if using RunAll
             // has the proper value if just the unit test is run
             //Console.WriteLine(expected.BestConstantLoss + " vs. " + actual.BestConstantLoss);
             //Assert.AreEqual(expected.BestConstantLoss, actual.BestConstantLoss, 1e-5);
-            Assert.AreEqual(expected.WeightedExampleSum, actual.WeightedExampleSum, 1e-5);
-            Assert.AreEqual(expected.WeightedLabelSum, actual.WeightedLabelSum, 1e-5);
+            Assert.AreEqual(expected.WeightedExampleSum, actual.WeightedExampleSum, 1e-5, "WeightedExampleSum");
+            Assert.AreEqual(expected.WeightedLabelSum, actual.WeightedLabelSum, 1e-5, "WeightedLabelSum");
         }
 
         internal static VowpalWabbitPerformanceStatistics ReadPerformanceStatistics(string filename)
         {
             var lines = File.ReadAllLines(filename);
+
             var numExamples = FindULongEntry(lines, "number of examples per pass = ");
 
             if (numExamples == 0)
@@ -146,7 +147,7 @@ namespace cs_unittest
             {
                 NumberOfExamplesPerPass = numExamples,
                 TotalNumberOfFeatures = FindULongEntry(lines, "total feature number = "),
-                AverageLoss = FindDoubleEntry(lines, "average loss = "),
+                AverageLoss = FindAverageLossEntry(lines),
                 BestConstant = FindDoubleEntry(lines, "best constant = "),
                 BestConstantLoss = FindDoubleEntry(lines, "best constant's loss = "),
                 WeightedExampleSum = FindDoubleEntry(lines, "weighted example sum = "),
@@ -154,6 +155,31 @@ namespace cs_unittest
             };
 
             return stats;
+        }
+
+        private static double FindAverageLossEntry(string[] lines)
+        {
+            var label = "average loss = ";
+            var candidate = lines.FirstOrDefault(l => l.StartsWith(label));
+
+            if (candidate == null)
+            {
+                return 0.0;
+            }
+
+            candidate = candidate.Substring(label.Length);
+            if (candidate.EndsWith(" h"))
+            {
+                candidate = candidate.Substring(0, candidate.Length - 2);
+            }
+
+            var ret = 0.0;
+            if (double.TryParse(candidate, NumberStyles.Float, CultureInfo.InvariantCulture, out ret))
+            {
+                return ret;
+            }
+
+            return 0.0;
         }
 
         private static double FindDoubleEntry(string[] lines, string label)
