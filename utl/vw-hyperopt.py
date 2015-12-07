@@ -1,7 +1,8 @@
+#!/usr/bin/env python
 # coding: utf-8
 
 """
-Github version of hyperparameter optimization for Vowpal Wabbit via hyperopt
+Hyperparameter optimization for Vowpal Wabbit via hyperopt
 """
 
 __author__ = 'kurtosis'
@@ -15,6 +16,15 @@ from math import exp, log
 import argparse
 import re
 import logging
+import json
+import matplotlib
+from matplotlib import pyplot as plt
+try:
+    import seaborn as sns
+except ImportError:
+    print ("Warning: seaborn is not installed. "
+           "Without seaborn, standard matplotlib plots will not look very charming. "
+           "It's recommended to install it via pip install seaborn")
 
 
 def read_arguments():
@@ -25,9 +35,8 @@ def read_arguments():
     parser.add_argument('--train', type=str, required=True, help="training set")
     parser.add_argument('--holdout', type=str, required=True, help="holdout set")
     parser.add_argument('--vw_space', type=str, required=True, help="hyperparameter search space (must be 'quoted')")
-    #parser.add_argument('--loss_function', default='logistic',
-    #                    choices=['logistic', 'squared', 'hinge', 'quantile', 'classic'])
-    parser.add_argument('--outer_loss_function', default='logistic', choices=['logistic', 'roc-auc'])  # TODO: implement squared, hinge, quantile, PR-auc
+    parser.add_argument('--outer_loss_function', default='logistic',
+                        choices=['logistic', 'roc-auc'])  # TODO: implement squared, hinge, quantile, PR-auc
     parser.add_argument('--regression', action='store_true', default=False, help="""regression (continuous class labels)
                                                                         or classification (-1 or 1, default value).""")
 
@@ -38,11 +47,12 @@ def read_arguments():
 class HyperoptSpaceConstructor(object):
     """
     Takes command-line input and transforms it into hyperopt search space
+    An example of command-line input:
+
+    --algorithms=ftrl,sgd --l2=1e-8..1e-4~LO -l=0.01..10~L --ftrl_beta=0.01..1 --passes=1..10~I -q=SE+SZ+DR,SE~O
     """
 
-    def __init__(self, command=("--algorithms=[ftrl,sgd] --l2=[1e-8..1e-4]LO "
-                                "-l=[0.01..10]L --ftrl_beta=[0.01..1] "
-                                "--passes=[1..10]I -q=[SE+SZ+DR,SE]O")):
+    def __init__(self, command):
         self.command = command
         self.space = None
         self.algorithm_metadata = {
@@ -50,16 +60,20 @@ class HyperoptSpaceConstructor(object):
             'sgd': {'arg': '', 'prohibited_flags': {'--ftrl_alpha', '--ftrl_beta'}}
         }
 
-        self.range_pattern = re.compile("(?<=\[).+(?=\])")
-        self.distr_pattern = re.compile("(?<=\])[IOL]*")
-        self.only_continuous = re.compile("(?<=\])[IL]*")
+        self.range_pattern = re.compile("[^~]+")  # re.compile("(?<=\[).+(?=\])")
+        self.distr_pattern = re.compile("(?<=~)[IOL]*")  # re.compile("(?<=\])[IOL]*")
+        self.only_continuous = re.compile("(?<=~)[IL]*")  # re.compile("(?<=\])[IL]*")
 
     def _process_vw_argument(self, arg, value, algorithm):
-        distr_part = self.distr_pattern.findall(value)[0]
+        try:
+            distr_part = self.distr_pattern.findall(value)[0]
+        except IndexError:
+            distr_part = ''
         range_part = self.range_pattern.findall(value)[0]
         is_continuous = '..' in range_part
 
-        if not is_continuous and self.only_continuous.findall(value)[0]!='':
+        ocd = self.only_continuous.findall(value)
+        if not is_continuous and len(ocd)> 0 and ocd[0] != '':
             raise ValueError(("Need a range instead of a list of discrete values to define "
                               "uniform or log-uniform distribution. "
                               "Please, use [min..max]%s form") % (distr_part))
@@ -68,10 +82,10 @@ class HyperoptSpaceConstructor(object):
             raise ValueError(("You must directly specify namespaces for quadratic features "
                               "as a list of values, not as a parametric distribution"))
 
-        hp_choice_name = "_".join([algorithm, arg.replace('-','')])
+        hp_choice_name = "_".join([algorithm, arg.replace('-', '')])
 
         try_omit_zero = 'O' in distr_part
-        distr_part = distr_part.replace('O','')
+        distr_part = distr_part.replace('O', '')
 
         if is_continuous:
             vmin, vmax = [float(i) for i in range_part.split('..')]
@@ -89,7 +103,7 @@ class HyperoptSpaceConstructor(object):
         else:
             possible_values = range_part.split(',')
             if arg == '-q':
-                possible_values = [v.replace('+',' -q ') for v in possible_values]
+                possible_values = [v.replace('+', ' -q ') for v in possible_values]
             distrib = hp.choice(hp_choice_name, possible_values)
 
         if try_omit_zero:
@@ -105,6 +119,9 @@ class HyperoptSpaceConstructor(object):
         for arg in line:
             arg, value = arg.split('=')
             if arg == '--algorithms':
+                if self.distr_pattern.findall(value) != []:
+                    raise ValueError(("Distribution options are prohibited for --algorithms flag. "
+                                      "Simply list the algorithms instead (like --algorithms=ftrl,sgd)"))
                 algorithms = set(self.range_pattern.findall(value)[0].split(','))
                 for algo in algorithms:
                     if algo not in self.algorithm_metadata:
@@ -113,7 +130,7 @@ class HyperoptSpaceConstructor(object):
                                                   % (algo, str(self.algorithm_metadata.keys())))
                 break
 
-        self.space = {algo:{'type':algo, 'argument':self.algorithm_metadata[algo]['arg']} for algo in algorithms}
+        self.space = {algo: {'type': algo, 'argument': self.algorithm_metadata[algo]['arg']} for algo in algorithms}
         for algo in algorithms:
             for arg in line:
                 arg, value = arg.split('=')
@@ -129,14 +146,16 @@ class HyperOptimizer(object):
     def __init__(self, train_set, holdout_set, command, max_evals=100,
                  outer_loss_function='logistic',
                  searcher='tpe', is_regression=False):
-        self.logger = self._configure_logger()
-
         self.train_set = train_set
         self.holdout_set = holdout_set
 
-        self.train_model = 'current.model'
-        self.holdout_pred = 'holdout.pred'
-        self.holdout_metrics = 'holdout_metrics'
+        self.train_model = './current.model'
+        self.holdout_pred = './holdout.pred'
+        self.trials_output = './trials.json'
+        self.hyperopt_progress_plot = './hyperopt_progress.png'
+        self.log = './log.log'
+
+        self.logger = self._configure_logger()
 
         # hyperopt parameter sample, converted into a string with flags
         self.param_suffix = None
@@ -152,6 +171,9 @@ class HyperOptimizer(object):
         self.searcher = searcher
         self.is_regression = is_regression
 
+        self.trials = Trials()
+        self.current_trial = 0
+
     def _get_space(self, command):
         hs = HyperoptSpaceConstructor(command)
         hs.string_to_pyll()
@@ -160,7 +182,7 @@ class HyperOptimizer(object):
     def _configure_logger(self):
         LOGGER_FORMAT = "%(asctime)s,%(msecs)03d %(levelname)-8s [%(name)s/%(module)s:%(lineno)d]: %(message)s"
         LOGGER_DATEFMT = "%Y-%m-%d %H:%M:%S"
-        LOGFILE = "./log.log"
+        LOGFILE = self.log
 
         logging.basicConfig(format=LOGGER_FORMAT,
                             datefmt=LOGGER_DATEFMT,
@@ -247,15 +269,20 @@ class HyperOptimizer(object):
             fpr, tpr, _ = roc_curve(self.y_true_holdout, y_pred_holdout_proba)
             loss = auc(fpr, tpr)
 
-        m = open(self.holdout_metrics, 'a+')
-        m.write('%s\t%s\n' % (self.param_suffix, loss))
-        m.close()
+        self.logger.info('parameter suffix: %s' % self.param_suffix)
+        self.logger.info('loss value: %.6f' % loss)
+        #m = open(self.holdout_metrics, 'a+')
+        #m.write('%s\t%s\n' % (self.param_suffix, loss))
+        #m.close()
 
         return loss
 
     def hyperopt_search(self, parallel=False):  # TODO: implement parallel search with MongoTrials
         def objective(kwargs):
             start = dt.now()
+
+            self.current_trial += 1
+            self.logger.info('\n\nStarting trial no.%d' % self.current_trial)
             self.get_hyperparam_string(**kwargs)
             self.fit_vw()
             self.validate_vw()
@@ -270,27 +297,61 @@ class HyperOptimizer(object):
 
             to_return = {'status': STATUS_OK,
                          'loss': loss,  # TODO: include also train loss tracking in order to prevent overfitting
-                         'eval_time': elapsed,
-                         'train_command': self.train_command
-                        }
+                         'eval_time': elapsed.seconds,
+                         'train_command': self.train_command,
+                         'current_trial': self.current_trial
+            }
             return to_return
 
-        trials = Trials()
+        self.trials = Trials()
         if self.searcher == 'tpe':
             algo = tpe.suggest
         elif self.searcher == 'rand':
             algo = rand.suggest
 
         logging.debug("starting hypersearch...")
-        best_params = fmin(objective, space=self.space, trials=trials, algo=algo, max_evals=self.max_evals)
+        best_params = fmin(objective, space=self.space, trials=self.trials, algo=algo, max_evals=self.max_evals)
         self.logger.debug("the best hyperopt parameters: %s" % str(best_params))
 
-        best_configuration = trials.results[np.argmin(trials.losses())]['train_command']
-        best_loss = trials.results[np.argmin(trials.losses())]['loss']
-        self.logger.info("\n\nA FULL TRAINING COMMAND WITH THE BEST HYPERPARAMETERS: \n%s" % best_configuration)
-        self.logger.info("\n\nTHE BEST LOSS VALUE: \n%s" % best_loss)
+        json.dump(self.trials.results, open(self.trials_output, 'w'))
+        self.logger.info('All the trials results are saved at %s' % self.trials_output)
+
+        best_configuration = self.trials.results[np.argmin(self.trials.losses())]['train_command']
+        best_loss = self.trials.results[np.argmin(self.trials.losses())]['loss']
+        self.logger.info("\n\nA full training command with the best hyperparameters: \n%s\n\n" % best_configuration)
+        self.logger.info("\n\nThe best holdout loss value: \n%s\n\n" % best_loss)
 
         return best_configuration, best_loss
+
+    def plot_progress(self):
+        try:
+            sns.set_palette('Set2')
+            sns.set_style("darkgrid", {"axes.facecolor": ".95"})
+        except:
+            pass
+
+        self.logger.debug('plotting...')
+        plt.figure(figsize=(15,10))
+        plt.subplot(211)
+        plt.plot(self.trials.losses(), '.', markersize=12)
+        plt.title('Per-Iteration Outer Loss', fontsize=16)
+        plt.ylabel('Outer loss function value')
+        plt.yscale('log')
+        xticks = [int(i) for i in np.linspace(plt.xlim()[0], plt.xlim()[1], min(len(self.trials.losses()), 11))]
+        plt.xticks(xticks, xticks)
+
+
+        plt.subplot(212)
+        plt.plot(np.minimum.accumulate(self.trials.losses()), '.', markersize=12)
+        plt.title('Cumulative Minimum Outer Loss', fontsize=16)
+        plt.xlabel('Iteration number')
+        plt.ylabel('Outer loss function value')
+        xticks = [int(i) for i in np.linspace(plt.xlim()[0], plt.xlim()[1], min(len(self.trials.losses()), 11))]
+        plt.xticks(xticks, xticks)
+
+        plt.tight_layout()
+        plt.savefig(self.hyperopt_progress_plot)
+        self.logger.info('The diagnostic hyperopt progress plot is saved: %s' % self.hyperopt_progress_plot)
 
 
 def main():
@@ -301,6 +362,7 @@ def main():
                        searcher=args.searcher, is_regression=args.regression)
     h.get_y_true_holdout()
     h.hyperopt_search()
+    h.plot_progress()
 
 
 if __name__ == '__main__':
