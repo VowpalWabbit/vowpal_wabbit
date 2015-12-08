@@ -2,7 +2,7 @@
 # coding: utf-8
 
 """
-Hyperparameter optimization for Vowpal Wabbit via hyperopt
+Github version of hyperparameter optimization for Vowpal Wabbit via hyperopt
 """
 
 __author__ = 'kurtosis'
@@ -131,16 +131,21 @@ class HyperoptSpaceConstructor(object):
                 break
 
         self.space = {algo: {'type': algo, 'argument': self.algorithm_metadata[algo]['arg']} for algo in algorithms}
+        #print '\n\nALGOS:', self.space, '\n\n'
         for algo in algorithms:
             for arg in line:
                 arg, value = arg.split('=')
                 if arg == '--algorithms':
                     continue
-                distrib = self._process_vw_argument(arg, value, algo)
                 if arg not in self.algorithm_metadata[algo]['prohibited_flags']:
+                    #print "\n NOT PROHIBITED: ", arg, self.algorithm_metadata[algo]['prohibited_flags']
+                    distrib = self._process_vw_argument(arg, value, algo)
                     self.space[algo][arg] = distrib
+                else:
+                    pass #print "\nPROHIBITED: ", arg, self.algorithm_metadata[algo]['prohibited_flags']
+        #print self.space
         self.space = hp.choice('algorithm', self.space.values())
-
+        #print self.space
 
 class HyperOptimizer(object):
     def __init__(self, train_set, holdout_set, command, max_evals=100,
@@ -197,9 +202,11 @@ class HyperOptimizer(object):
         return logger
 
     def get_hyperparam_string(self, **kwargs):
-        if '--passes' in kwargs:
-            kwargs['--passes'] = int(kwargs['--passes'])
+        for arg in ['--passes']: #, '--rank', '--lrq']:
+            if arg in kwargs:
+                kwargs[arg] = int(kwargs[arg])
 
+        #print 'KWARGS: ', kwargs
         flags = [key for key in kwargs if key.startswith('-')]
         for flag in flags:
             if kwargs[flag] == 'omit':
@@ -267,13 +274,10 @@ class HyperOptimizer(object):
         elif self.outer_loss_function == 'roc-auc':
             y_pred_holdout_proba = [1. / (1 + exp(-i)) for i in y_pred_holdout]
             fpr, tpr, _ = roc_curve(self.y_true_holdout, y_pred_holdout_proba)
-            loss = auc(fpr, tpr)
+            loss = -auc(fpr, tpr)
 
         self.logger.info('parameter suffix: %s' % self.param_suffix)
         self.logger.info('loss value: %.6f' % loss)
-        #m = open(self.holdout_metrics, 'a+')
-        #m.write('%s\t%s\n' % (self.param_suffix, loss))
-        #m.close()
 
         return loss
 
@@ -336,7 +340,8 @@ class HyperOptimizer(object):
         plt.plot(self.trials.losses(), '.', markersize=12)
         plt.title('Per-Iteration Outer Loss', fontsize=16)
         plt.ylabel('Outer loss function value')
-        plt.yscale('log')
+        if self.outer_loss_function in ['logloss']:
+            plt.yscale('log')
         xticks = [int(i) for i in np.linspace(plt.xlim()[0], plt.xlim()[1], min(len(self.trials.losses()), 11))]
         plt.xticks(xticks, xticks)
 
