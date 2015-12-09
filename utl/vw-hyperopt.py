@@ -39,7 +39,9 @@ def read_arguments():
                         choices=['logistic', 'roc-auc'])  # TODO: implement squared, hinge, quantile, PR-auc
     parser.add_argument('--regression', action='store_true', default=False, help="""regression (continuous class labels)
                                                                         or classification (-1 or 1, default value).""")
-
+    parser.add_argument('--plot', action='store_true', default=False, help=("Plot the results in the end. "
+                                                                            "Requires matplotlib and "
+                                                                            "(optionally) seaborn to be installed."))
     args = parser.parse_args()
     return args
 
@@ -367,7 +369,8 @@ def main():
                        searcher=args.searcher, is_regression=args.regression)
     h.get_y_true_holdout()
     h.hyperopt_search()
-    h.plot_progress()
+    if args.plot:
+        h.plot_progress()
 
 
 if __name__ == '__main__':
