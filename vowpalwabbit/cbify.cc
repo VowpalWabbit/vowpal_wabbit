@@ -49,8 +49,7 @@ public:
     predictions.resize(s);
   }
 
-  virtual ~vw_cover()
-  { }
+  virtual ~vw_cover() { }
 
   v_array<float>& Get_Scores()
   { probabilities.erase();
