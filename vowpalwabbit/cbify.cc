@@ -147,7 +147,7 @@ void predict_or_learn_first(cbify& data, base_learner& base, example& ec)
   //Use CB to find current prediction for remaining rounds.
 
   vw_context vwc = {data, base, ec};
-  uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer, to_string((unsigned long long)ec.example_counter), vwc);
+  uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer, StringUtils::to_string(ec.example_counter), vwc);
 
   if (vwc.recorded && is_learn)
   { CB::cb_class l = {loss(ld.label, action), action, data.recorder->probability };
@@ -169,7 +169,7 @@ void predict_or_learn_greedy(cbify& data, base_learner& base, example& ec)
   ec.l.cb = data.cb_label;
 
   vw_context vwc = {data, base, ec};
-  uint32_t action = data.mwt_explorer->Choose_Action(*data.greedy_explorer, to_string((unsigned long long)ec.example_counter), vwc);
+  uint32_t action = data.mwt_explorer->Choose_Action(*data.greedy_explorer, StringUtils::to_string(ec.example_counter), vwc);
 
   if (is_learn)
   { CB::cb_class l = { loss(ld.label, action), action, data.recorder->probability };
@@ -192,7 +192,7 @@ void predict_or_learn_bag(cbify& data, base_learner& base, example& ec)
   ec.l.cb = data.cb_label;
 
   vw_context context = {data, base, ec};
-  uint32_t action = data.mwt_explorer->Choose_Action(*data.bootstrap_explorer, to_string((unsigned long long)ec.example_counter), context);
+  uint32_t action = data.mwt_explorer->Choose_Action(*data.bootstrap_explorer, StringUtils::to_string(ec.example_counter), context);
 
   if (is_learn)
   { CB::cb_class l = {loss(ld.label, action),
@@ -274,7 +274,7 @@ void predict_or_learn_cover(cbify& data, base_learner& base, example& ec)
   float min_prob = epsilon * min(1.f / data.k, 1.f / (float)sqrt(counter * data.k));
 
   vw_context cp = {data, base, ec};
-  uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, to_string((unsigned long long)ec.example_counter), cp);
+  uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(ec.example_counter), cp);
 
   if (is_learn)
   { data.cb_label.costs.erase();
