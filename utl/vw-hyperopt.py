@@ -121,10 +121,13 @@ class HyperoptSpaceConstructor(object):
         for arg in line:
             arg, value = arg.split('=')
             if arg == '--algorithms':
-                if self.distr_pattern.findall(value) != []:
+                algorithms = set(self.range_pattern.findall(value)[0].split(','))
+                if tuple(self.distr_pattern.findall(value)) not in {(), ('O',)}:
                     raise ValueError(("Distribution options are prohibited for --algorithms flag. "
                                       "Simply list the algorithms instead (like --algorithms=ftrl,sgd)"))
-                algorithms = set(self.range_pattern.findall(value)[0].split(','))
+                elif self.distr_pattern.findall(value) == ['O']:
+                    algorithms.add('sgd')
+
                 for algo in algorithms:
                     if algo not in self.algorithm_metadata:
                         raise NotImplementedError(("%s algorithm is not found. "
@@ -133,21 +136,17 @@ class HyperoptSpaceConstructor(object):
                 break
 
         self.space = {algo: {'type': algo, 'argument': self.algorithm_metadata[algo]['arg']} for algo in algorithms}
-        #print '\n\nALGOS:', self.space, '\n\n'
         for algo in algorithms:
             for arg in line:
                 arg, value = arg.split('=')
                 if arg == '--algorithms':
                     continue
                 if arg not in self.algorithm_metadata[algo]['prohibited_flags']:
-                    #print "\n NOT PROHIBITED: ", arg, self.algorithm_metadata[algo]['prohibited_flags']
                     distrib = self._process_vw_argument(arg, value, algo)
                     self.space[algo][arg] = distrib
                 else:
-                    pass #print "\nPROHIBITED: ", arg, self.algorithm_metadata[algo]['prohibited_flags']
-        #print self.space
+                    pass
         self.space = hp.choice('algorithm', self.space.values())
-        #print self.space
 
 class HyperOptimizer(object):
     def __init__(self, train_set, holdout_set, command, max_evals=100,
