@@ -421,8 +421,8 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       w[adaptive] += nd.grad_squared * x2;
     if(normalized)
     { float x_abs = fabsf(x);
-      if( x_abs > w[normalized])  // new scale discovered
-      { if( w[normalized] > 0. && !stateless)  //If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
+      if( x_abs > w[normalized] && !stateless)  // new scale discovered
+      { if( w[normalized] > 0.)  //If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
         { if (sqrt_rate)
           { float rescale = w[normalized]/x_abs;
             w[0] *= (adaptive ? rescale : rescale*rescale);
@@ -455,8 +455,10 @@ float get_pred_per_update(gd& g, example& ec)
   foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless> >(all, ec, nd);
 
   if(normalized)
-  { g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
-    g.total_weight += ec.weight;
+  { if(!stateless)
+    { g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
+      g.total_weight += ec.weight;
+    }
 
     g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g);
     nd.pred_per_update *= g.update_multiplier;
