@@ -174,7 +174,7 @@ MWT_NAMESPACE
   struct StringRecorder : public IRecorder<Ctx>
   { void Record(Ctx& context, u32 action, float probability, string unique_key)
     { // Implicitly enforce To_String() API on the context
-      m_recording.append(to_string((unsigned long long)action));
+      m_recording.append(StringUtils::to_string(action));
       m_recording.append(" ", 1);
       m_recording.append(unique_key);
       m_recording.append(" ", 1);

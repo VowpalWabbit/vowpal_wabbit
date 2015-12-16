@@ -29,6 +29,7 @@ namespace VW
     {
         m_stream->Seek(0, SeekOrigin::Begin);
         head = space.begin;
+
         space.end = space.begin;
     }
 
