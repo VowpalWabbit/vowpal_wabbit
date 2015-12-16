@@ -539,12 +539,12 @@ int process_pass(vw& all, bfgs& b)
   /********************************************************************/
   /* A) FIRST PASS FINISHED: INITIALIZE FIRST LINE SEARCH *************/
   /********************************************************************/
-    if (b.first_pass) {
-      if(all.all_reduce != nullptr)
-	{ accumulate(all, all.reg, W_COND); //Accumulate preconditioner
-	  float temp = (float)b.importance_weight_sum;
-	  b.importance_weight_sum = accumulate_scalar(all, temp);
-	}
+    if (b.first_pass) 
+    { if(all.all_reduce != nullptr)
+      { accumulate(all, all.reg, W_COND); //Accumulate preconditioner
+        float temp = (float)b.importance_weight_sum;
+        b.importance_weight_sum = accumulate_scalar(all, temp);
+      }
       //finalize_preconditioner(all, b, all.l2_lambda);
       if(all.all_reduce != nullptr) 
       {	float temp = (float)b.loss_sum;

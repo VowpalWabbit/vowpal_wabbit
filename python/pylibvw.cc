@@ -648,7 +648,6 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("erase_namespace", &ex_erase_namespace, "Remove all the features from a given namespace")
 
   .def("set_label_string", &ex_set_label_string, "(Re)assign the label of this example to this string")
-  
   .def("get_simplelabel_label", &ex_get_simplelabel_label, "Assuming a simple_label label type, return the corresponding label (class/regression target/etc.)")
   .def("get_simplelabel_weight", &ex_get_simplelabel_weight, "Assuming a simple_label label type, return the importance weight")
   .def("get_simplelabel_initial", &ex_get_simplelabel_initial, "Assuming a simple_label label type, return the initial (baseline) prediction")
