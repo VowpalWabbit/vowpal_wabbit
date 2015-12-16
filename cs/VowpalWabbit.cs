@@ -224,14 +224,23 @@ namespace VW
     public class VowpalWabbit<TExample, TActionDependentFeature> : IDisposable
     {
         /// <summary>
-        /// The wrapper vw instance.
+        /// The native wrapper.
         /// </summary>
         private VowpalWabbit vw;
 
+        /// <summary>
+        /// The shared example serializer.
+        /// </summary>
         private VowpalWabbitSerializer<TExample> serializer;
 
+        /// <summary>
+        /// The action dependent feature serializer.
+        /// </summary>
         private VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
 
+        /// <summary>
+        /// The action dependent feature serializer valid for learning. If example caching is enabled, this is null.
+        /// </summary>
         private readonly VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureLearnSerializer;
 
         /// <summary>
@@ -317,8 +326,6 @@ namespace VW
         {
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
-            //Contract.Requires(index >= 0);
-            //Contract.Requires(label != null);
 
             VowpalWabbitMultiLine.Learn(
                 this.vw,

@@ -63,7 +63,6 @@ namespace VW.Serializer
         private ParameterExpression exampleParameter;
         private ParameterExpression labelParameter;
 
-        //private ParameterExpression mainVisitorParameter;
         private readonly List<ParameterExpression> featurizers;
         private readonly List<ParameterExpression> metaFeatures;
         private readonly bool disableStringExampleGeneration;

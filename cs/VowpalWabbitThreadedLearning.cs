@@ -190,10 +190,17 @@ namespace VW
             return new VowpalWabbitAsync<TExample, TActionDependentFeature>(this);
         }
 
+        /// <summary>
+        /// Everytime <see cref="VowpalWabbitSettings.ExampleCountPerRun"/> examples have been enqueued,
+        /// an AllReduce-sync operation (<see cref="VowpalWabbit.EndOfPass"/>) is injected.
+        /// </summary>
+        /// <returns>The number of examples enqueued so far.</returns>
         private uint CheckEndOfPass()
         {
             var exampleCount = (uint)Interlocked.Increment(ref this.exampleCount);
 
+            // since there is no lock the input queue, it's not guaranteed that exactly
+            // that number of examples are processed (but maybe a few more).
             if (exampleCount % this.Settings.ExampleCountPerRun == 0)
             {
                 this.observers[0].OnNext(vw =>
@@ -233,6 +240,13 @@ namespace VW
             this.observers[this.exampleDistributor(exampleCount)].OnNext(action);
         }
 
+        /// <summary>
+        /// Enqueues a task to be executed by single VowpalWabbit instance.
+        /// </summary>
+        /// <remarks>Which VowpalWabbit instance chosen, is determined by <see cref="VowpalWabbitSettings.ExampleDistribution"/>.</remarks>
+        /// <typeparam name="T">The return type of the task.</typeparam>
+        /// <param name="func">The task to be executed.</param>
+        /// <returns>The awaitable result of the supplied task.</returns>
         internal Task<T> Post<T>(Func<VowpalWabbit, T> func)
         {
             Contract.Requires(func!= null);
@@ -241,7 +255,7 @@ namespace VW
 
             var completionSource = new TaskCompletionSource<T>();
 
-            // dispatch
+            // dispatch to a Vowpal Wabbit instance
             this.observers[this.exampleDistributor(exampleCount)].OnNext(vw =>
             {
                 try
@@ -397,7 +411,7 @@ namespace VW
         }
 
         /// <summary>
-        /// Thread-safe list implementation.
+        /// Thread-safe list implementation supporting completion.
         /// </summary>
         /// <typeparam name="T">The element type.</typeparam>
         private class ConcurrentList<T>
@@ -408,6 +422,11 @@ namespace VW
 
             private readonly object lockObject = new object();
 
+            /// <summary>
+            ///  Adds an object to the end of the list.
+            /// </summary>
+            /// <param name="item">The object to be added to the list.</param>
+            /// <remarks>Throws an <see cref="InvalidOperationException"/> if the <see cref="CompleteAdding"/> as called previously.</remarks>
             public void Add(T item)
             {
                 lock (this.lockObject)
@@ -421,6 +440,9 @@ namespace VW
                 }
             }
 
+            /// <summary>
+            /// Marks this list as complete. Any subsequent calls to <see cref="Add"/> will trigger an <see cref="InvalidOperationException"/>.
+            /// </summary>
             public void CompleteAdding()
             {
                 lock (this.lockObject)
@@ -429,6 +451,10 @@ namespace VW
                 }
             }
 
+            /// <summary>
+            /// Removes all elements from the list.
+            /// </summary>
+            /// <returns>The elements removed.</returns>
             public T[] RemoveAll()
             {
                 lock (this.lockObject)

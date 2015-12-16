@@ -99,37 +99,6 @@ namespace cs_test
                 VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vw.Native.PerformanceStatistics);
             }
         }
-
-        //// [TestMethod] // TODO
-        //[Ignore]
-        //// [DeploymentItem(@"train-sets\rcv1_cb_eval", "train-sets")]
-        //public void Test74()
-        //{
-        //    // 2 1:1:0.5 | tuesday year million short compan vehicl line stat financ commit exchang plan corp subsid credit issu debt pay gold bureau prelimin refin billion telephon time draw basic relat file spokesm reut secur acquir form prospect period interview regist toront resourc barrick ontario qualif bln prospectus convertibl vinc borg arequip
-        //    using (var vw = new VowpalWabbit<Rcv1CbEval>("--cb 2 --eval"))
-        //    using (var fr = new StreamReader(@"train-sets\rcv1_cb_eval"))
-        //    {
-        //        string line;
-
-        //        while ((line = fr.ReadLine()) != null)
-        //        {
-        //            var parts = line.Split('|');
-
-        //            var data = new Rcv1CbEval()
-        //            {
-        //                Words = parts[1].Split(' ')
-        //            };
-
-        //            using(var example = vw.ReadExample(data))
-        //            {
-        //                example.AddLabel(parts[0]);
-        //                example.Learn();
-        //            }
-        //        }
-        //    }
-        //}
-
-
     }
 
     // 1|features 13:.1 15:.2 const:25

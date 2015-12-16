@@ -19,8 +19,17 @@ namespace VW
         where TSource : IDisposable
         where TObject : IDisposable
     {
+        /// <summary>
+        /// The parent pool.
+        /// </summary>
         private readonly ObjectPool<TSource, TObject> pool;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PooledObject{TSource,TObject}"/> class.
+        /// </summary>
+        /// <param name="pool">The parent pool.</param>
+        /// <param name="version">The version of the pool at time of creation of this instance.</param>
+        /// <param name="value">The actual pooled object.</param>
         internal PooledObject(ObjectPool<TSource, TObject> pool, int version, TObject value)
         {
             this.pool = pool;

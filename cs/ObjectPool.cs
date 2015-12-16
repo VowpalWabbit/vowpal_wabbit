@@ -45,13 +45,13 @@ namespace VW
         /// To maximize reuse of previously cached items within the pooled objects.
         /// (e.g. cached action dependent features)
         /// </remarks>
-        private Stack<PooledObject<TSource, TObject>> pool; 
+        private Stack<PooledObject<TSource, TObject>> pool;
 
         /// <summary>
         /// Initializes a new ObjectPool.
         /// </summary>
         /// <param name="factory">
-        /// An optional factory to create pooled objects on demand. 
+        /// An optional factory to create pooled objects on demand.
         /// <see cref="GetOrCreate()"/> will throw if the factory is still null when called.
         /// </param>
         public ObjectPool(ObjectFactory<TSource, TObject> factory = null)
@@ -141,7 +141,7 @@ namespace VW
                     finally
                     {
                         this.rwLockSlim.ExitWriteLock();
-                    }       
+                    }
                 }
             }
             finally
@@ -158,6 +158,11 @@ namespace VW
             return new PooledObject<TSource, TObject>(this, localVersion, localFactory.Create());
         }
 
+        /// <summary>
+        /// Returns <paramref name="pooledObject"/> to the pool of objects, given the version is still the same.
+        /// Otherwise <paramref name="pooledObject"/> is disposed.
+        /// </summary>
+        /// <param name="pooledObject">The object to be returned.</param>
         internal void ReturnObject(PooledObject<TSource, TObject> pooledObject)
         {
             Contract.Ensures(pooledObject != null);

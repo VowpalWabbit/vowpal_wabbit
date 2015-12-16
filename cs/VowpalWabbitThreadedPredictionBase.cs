@@ -12,7 +12,7 @@ using System.Diagnostics.Contracts;
 namespace VW
 {
     /// <summary>
-    /// Enables multi-threaded prediction by utilizing a pool of <see cref="VowpalWabbit"/> instances.  
+    /// Enables multi-threaded prediction by utilizing a pool of <see cref="VowpalWabbit"/> instances.
     /// </summary>
     /// <typeparam name="TVowpalWabbit">The VowpalWabbit wrapper type used.</typeparam>
     public abstract class VowpalWabbitThreadedPredictionBase<TVowpalWabbit> : IDisposable
@@ -67,7 +67,6 @@ namespace VW
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-
         public void Dispose()
         {
             this.Dispose(true);
