@@ -52,6 +52,7 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
     if(importance > 0)
     { all.sd->queries += 1;
       ec.weight *= importance;
+      //cout << ec.weight << endl; 
       base.learn(ec);
     }
     else
