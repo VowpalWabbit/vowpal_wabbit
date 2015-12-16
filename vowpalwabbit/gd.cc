@@ -457,6 +457,7 @@ float get_pred_per_update(gd& g, example& ec)
   if(normalized)
   { g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
     g.total_weight += ec.weight;
+
     g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g);
     nd.pred_per_update *= g.update_multiplier;
   }
