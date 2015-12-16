@@ -192,12 +192,11 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
   t.delete_v();
 
   const int total = sizeof(uint32_t);
-  char* p[total];
-  if (buf->read_file(filepointer, p, total) < total)
+  uint32_t cache_numbits;
+  if (buf->read_file(filepointer, &cache_numbits, total) < total)
   { return true;
   }
 
-  uint32_t cache_numbits = *(uint32_t *)p;
   return cache_numbits;
 }
 
@@ -212,22 +211,22 @@ void reset_source(vw& all, size_t numbits)
 { io_buf* input = all.p->input;
   input->current = 0;
   if (all.p->write_cache)
-  { all.p->output->flush();
-    all.p->write_cache = false;
-    all.p->output->close_file();
-    remove(all.p->output->finalname.begin);
-    rename(all.p->output->currentname.begin, all.p->output->finalname.begin);
-    while(input->num_files() > 0)
-      if (input->compressed())
-        input->close_file();
-      else
-      { int fd = input->files.pop();
-        if (!member(all.final_prediction_sink, (size_t) fd))
-          io_buf::close_file_or_socket(fd);
-      }
-    input->open_file(all.p->output->finalname.begin, all.stdin_off, io_buf::READ); //pushing is merged into open_file
-    all.p->reader = read_cached_features;
-  }
+    { all.p->output->flush();
+      all.p->write_cache = false;
+      all.p->output->close_file();
+      remove(all.p->output->finalname.begin);
+      rename(all.p->output->currentname.begin, all.p->output->finalname.begin);
+      while(input->num_files() > 0)
+	if (input->compressed())
+	  input->close_file();
+	else
+	  { int fd = input->files.pop();
+	    if (!member(all.final_prediction_sink, (size_t) fd))
+	      io_buf::close_file_or_socket(fd);
+	  }
+      input->open_file(all.p->output->finalname.begin, all.stdin_off, io_buf::READ); //pushing is merged into open_file
+      all.p->reader = read_cached_features;
+    }
   if ( all.p->resettable == true )
   { if (all.daemon)
     { // wait for all predictions to be sent back to client

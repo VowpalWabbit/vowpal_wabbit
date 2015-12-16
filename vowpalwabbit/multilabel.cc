@@ -173,6 +173,7 @@ void output_example(vw& all, example& ec)
       }
     }
     loss += given.label_v.size() - given_index;
+    loss += preds.label_v.size() - preds_index;
   }
 
   all.sd->update(ec.test_only, loss, 1.f, ec.num_features);

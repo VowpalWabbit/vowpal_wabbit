@@ -93,7 +93,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->example_t = src->example_t;
   memcpy(dst->sum_feat_sq, src->sum_feat_sq, 256 * sizeof(float));
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
-  dst->revert_weight = src->revert_weight;
+  dst->confidence = src->confidence;
   dst->test_only = src->test_only;
   dst->end_pass = src->end_pass;
   dst->sorted = src->sorted;

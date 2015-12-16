@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #endif
 #include <sys/timeb.h>
 #include "parse_args.h"
+#include "parse_regressor.h"
 #include "accumulate.h"
 #include "best_constant.h"
 #include "vw_exception.h"

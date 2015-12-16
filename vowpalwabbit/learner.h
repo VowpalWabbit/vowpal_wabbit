@@ -14,8 +14,6 @@ license as described in the file LICENSE.
 #include "parser.h"
 using namespace std;
 
-void return_simple_example(vw& all, void*, example& ec);
-
 namespace LEARNER
 {
 template<class T> struct learner;
@@ -44,6 +42,12 @@ struct learn_data
   void (*multipredict_f)(void* data, base_learner& base, example&, size_t count, size_t step, polyprediction*pred, bool finalize_predictions);
 };
 
+struct sensitivity_data
+{
+  void* data;
+  float (*sensitivity_f)(void* data, base_learner& base, example&);
+};
+
 struct save_load_data
 { void* data;
   base_learner* base;
@@ -61,8 +65,10 @@ void generic_driver(std::vector<vw*> alls);
 
 inline void noop_sl(void*, io_buf&, bool, bool) {}
 inline void noop(void*) {}
+ inline float noop_sensitivity(void*, base_learner&, example&) { return 0.; }
 
 typedef void (*tlearn)(void* d, base_learner& base, example& ec);
+typedef float (*tsensitivity)(void* d, base_learner& base, example& ec);
 typedef void (*tmultipredict)(void* d, base_learner& base, example& ec, size_t, size_t, polyprediction*, bool);
 typedef void (*tsl)(void* d, io_buf& io, bool read, bool text);
 typedef void (*tfunc)(void*d);
@@ -79,6 +85,7 @@ struct learner
 private:
   func_data init_fd;
   learn_data learn_fd;
+  sensitivity_data sensitivity_fd;
   finish_example_data finish_example_fd;
   save_load_data save_load_fd;
   func_data end_pass_fd;
@@ -129,6 +136,19 @@ public:
   }
   inline void set_update(void (*u)(T& data, base_learner& base, example&))
   { learn_fd.update_f = (tlearn)u; }
+
+  //used for active learning and confidence to determine how easily predictions are changed
+  inline void set_sensitivity(float (*u)(T& data, base_learner& base, example&))
+  {
+    sensitivity_fd.data = learn_fd.data;
+    sensitivity_fd.sensitivity_f = (tsensitivity)u;
+  }
+  inline float sensitivity(example& ec, size_t i=0)
+  { ec.ft_offset += (uint32_t)(increment*i);
+    float ret = sensitivity_fd.sensitivity_f(learn_fd.data, *learn_fd.base, ec);
+    ec.ft_offset -= (uint32_t)(increment*i);
+    return ret;
+  }
 
   //called anytime saving or loading needs to happen. Autorecursive.
   inline void save_load(io_buf& io, bool read, bool text)
@@ -205,11 +225,12 @@ learner<T>& init_learner(T* dat, void (*learn)(T&, base_learner&, example&),
   ret.learn_fd.update_f = (tlearn)learn;
   ret.learn_fd.predict_f = (tlearn)learn;
   ret.learn_fd.multipredict_f = nullptr;
+  ret.sensitivity_fd.sensitivity_f = (tsensitivity)noop_sensitivity;
   ret.finish_example_fd.data = dat;
   ret.finish_example_fd.finish_example_f = return_simple_example;
 
   return ret;
-}
+  }
 
 template<class T>
 learner<T>& init_learner(T* dat, base_learner* base,

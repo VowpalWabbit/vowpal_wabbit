@@ -44,8 +44,10 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
   { vw& all = *a.all;
 
     float k = ec.example_t - ec.weight;
-    ec.revert_weight = all.loss->getRevertingWeight(all.sd, ec.pred.scalar, all.eta/powf(k,all.power_t));
-    float importance = query_decision(a, ec.revert_weight, k);
+    float threshold = 0.f;
+
+    ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
+    float importance = query_decision(a, ec.confidence, k);
 
     if(importance > 0)
     { all.sd->queries += 1;
@@ -65,10 +67,9 @@ void predict_or_learn_active(active& a, base_learner& base, example& ec)
     base.predict(ec);
 
   if (ec.l.simple.label == FLT_MAX)
-  { vw& all = *a.all;
-    float t = (float)(ec.example_t - all.sd->weighted_holdout_examples);
-    ec.revert_weight = all.loss->getRevertingWeight(all.sd, ec.pred.scalar,
-                       all.eta/powf(t,all.power_t));
+  {
+    float threshold = (a.all->sd->max_label + a.all->sd->min_label) * 0.5f;
+    ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
   }
 }
 
@@ -102,7 +103,7 @@ void output_and_account_example(vw& all, active& a, example& ec)
 
   float ai=-1;
   if(ld.label == FLT_MAX)
-    ai=query_decision(a, ec.revert_weight, (float)all.sd->weighted_unlabeled_examples);
+    ai=query_decision(a, ec.confidence, (float)all.sd->weighted_unlabeled_examples);
 
   all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
   for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
