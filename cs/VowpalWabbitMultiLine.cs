@@ -32,6 +32,8 @@ namespace VW
         /// <param name="actionDependentFeatures">The action dependent features.</param>
         /// <param name="index">The optional index of the label example.</param>
         /// <param name="label">The optional label.</param>
+        /// <param name="dictionary">Used to extract features into dictionary.</param>
+        /// <param name="fastDictionary">Used to extract features into dictionary. This should use a faster comparison mehtod (e.g. reference equals).</param>
         /// <returns>The string serialized example.</returns>
         public static string SerializeToString<TExample, TActionDependentFeature>(
             VowpalWabbit<TExample, TActionDependentFeature> vw,

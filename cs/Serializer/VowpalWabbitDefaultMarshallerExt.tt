@@ -62,7 +62,7 @@ namespace VW.Serializer
 		/// <param name="ns">The namespace description.</param>
 		/// <param name="feature">The feature description.</param>
 		/// <param name="value">The feature value.</param>
-        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, <#=t#>[] value)
+        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, <#=t#>[] value)
         {
             if (value == null)
             {
@@ -138,9 +138,9 @@ namespace VW.Serializer
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
-					CultureInfo.InvariantCulture, 
-					format, 
-					i, 
+					CultureInfo.InvariantCulture,
+					format,
+					i,
 					v);
                 i++;
             }
@@ -151,7 +151,7 @@ namespace VW.Serializer
 			{
 				context.FastDictionary.Add(value, featureString);
 			}
-			
+
 			context.AppendStringExample(feature.Dictify, featureString);
         }
 

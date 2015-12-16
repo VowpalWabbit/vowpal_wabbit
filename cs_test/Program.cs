@@ -31,7 +31,7 @@ namespace cs_test
                 }
             }
 
-            NIPS.AnnotationExample();
+            NIPS2015Tutorial.AnnotationExample();
             // AttributesSample.Attributes();
             //AttributesSample.RunFeaturesTest();
             //ExploreClock.Clock();

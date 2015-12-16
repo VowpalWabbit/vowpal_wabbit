@@ -108,3 +108,4 @@ python/pyvw.egg-info/**
 /README
 /compile
 /cs/Serializer/VowpalWabbitDefaultMarshallerExt.cs
+/cs_unittest/RunTests.cs

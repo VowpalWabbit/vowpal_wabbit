@@ -9,7 +9,10 @@ using VW.Serializer.Attributes;
 
 namespace cs_test
 {
-    public class NIPS
+    /// <summary>
+    /// Code examples as demonstrated during NIPS 2015 Tutorial (slides: https://github.com/JohnLangford/vowpal_wabbit/wiki/Tutorial)
+    /// </summary>
+    public class NIPS2015Tutorial
     {
         public void BasicExample()
         {
