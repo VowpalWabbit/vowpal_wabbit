@@ -33,6 +33,7 @@ public :
   //0 = prediction + pred_per_update 
   //      * getUpdate(prediction, opposite, pred_per_update*getRevertingWeight(), pred_per_update)
   virtual float getRevertingWeight(shared_data*, float prediction, float eta_t) = 0;  
+  virtual float finalize_reverting_weight(float w) = 0;
   virtual float getSquareGrad(float prediction, float label) = 0;
   virtual float first_derivative(shared_data*, float prediction, float label) = 0;
   virtual float second_derivative(shared_data*, float prediction, float label) = 0;

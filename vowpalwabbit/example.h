@@ -81,6 +81,7 @@ struct example // core example datatype.
   float sum_feat_sq[256];//helper for total_sum_feat_sq.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
   float confidence;
+  float revert_weight;
   v_array<feature>* passthrough; // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
 
   bool test_only;
