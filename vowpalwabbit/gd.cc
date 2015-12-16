@@ -455,11 +455,10 @@ float get_pred_per_update(gd& g, example& ec)
   foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless> >(all, ec, nd);
 
   if(normalized)
-  { if(!stateless)
+  { if(!stateless) 
     { g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
       g.total_weight += ec.weight;
     }
-
     g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g);
     nd.pred_per_update *= g.update_multiplier;
   }
