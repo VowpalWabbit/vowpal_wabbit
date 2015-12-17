@@ -913,7 +913,9 @@ private:
 //! Interface for exploration algorithms that optimize decisions involving multiple actions.
 namespace MultiAction {
 
+#ifdef _WIN32
 #include <Windows.h>
+#endif
 
 // Forward declarations
 template <class Ctx>
@@ -1645,7 +1647,9 @@ public:
             throw std::invalid_argument("Number of actions must be at least 1.");
         }
 
+#ifdef _WIN32
         ::InitializeCriticalSection(&m_critical_section);
+#endif
     }
 
     ///
@@ -1659,7 +1663,9 @@ public:
     {
         static_assert(std::is_base_of<IVariableActionContext, Ctx>::value, "The provided context does not implement variable-action interface.");
 
+#ifdef _WIN32
         ::InitializeCriticalSection(&m_critical_section);
+#endif
     }
 
     ~TauFirstExplorer()
@@ -1692,8 +1698,10 @@ private:
         bool explore = false;
         if (m_explore)
         {
+#ifdef _WIN32
             // TODO: add non-windows locking mechanism
             ::EnterCriticalSection(&m_critical_section);
+#endif
 
             if (m_tau)
             {
@@ -1701,7 +1709,9 @@ private:
                 explore = true;
             }
 
+#ifdef _WIN32
             ::LeaveCriticalSection(&m_critical_section);
+#endif
         }
 
         if (explore)
@@ -1734,7 +1744,9 @@ private:
     bool m_explore;
     u32 m_tau;
     const u32 m_num_actions;
+#ifdef _WIN32
     CRITICAL_SECTION m_critical_section;
+#endif
 };
 
 ///
