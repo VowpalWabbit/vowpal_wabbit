@@ -277,7 +277,7 @@ struct StringRecorder : public IRecorder<Ctx>
     void Record(Ctx& context, u32 action, float probability, string unique_key)
     {
         // Implicitly enforce To_String() API on the context
-      m_recording.append(to_string((unsigned long long)action));
+        m_recording.append(StringUtils::to_string(action));
         m_recording.append(" ", 1);
         m_recording.append(unique_key);
         m_recording.append(" ", 1);
@@ -1109,7 +1109,7 @@ struct StringRecorder : public IRecorder<Ctx>
     void Record(Ctx& context, u32* actions, u32 num_actions, float probability, string unique_key)
     {
         // Implicitly enforce To_String() API on the context
-        m_recording.append(to_string((unsigned long long)actions[0])); // TODO: serialize the whole list of actions instead of just the top 1
+        m_recording.append(StringUtils::to_string(actions[0])); // TODO: serialize the whole list of actions instead of just the top 1
         m_recording.append(" ", 1);
         m_recording.append(unique_key);
         m_recording.append(" ", 1);

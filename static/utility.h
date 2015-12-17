@@ -238,6 +238,25 @@ public:
     }
 };
 
+class StringUtils
+{
+public:
+    static inline string to_string(size_t& n)
+    {
+        const int buf_size = 512;
+        char buff[buf_size];
+        sprintf_s(buff, buf_size, "%llu", (unsigned long long)n);
+        return string(buff);
+    }
+    static inline string to_string(u32& n)
+    {
+        const int buf_size = 512;
+        char buff[buf_size];
+        sprintf_s(buff, buf_size, "%u", (unsigned int)n);
+        return string(buff);
+    }
+};
+
 //A quick implementation similar to drand48 for cross-platform compatibility
 namespace PRG {
     const uint64_t a = 0xeece66d5deece66dULL;
