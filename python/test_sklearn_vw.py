@@ -4,6 +4,7 @@ import pytest
 from sklearn_vw import VW, VWClassifier, VWRegressor, tovw
 from sklearn import datasets
 from sklearn.utils.validation import NotFittedError
+from scipy.sparse import csr_matrix
 
 
 """
@@ -32,6 +33,23 @@ class TestVW:
         model.fit(data.x, data.y)
         assert model.fit_
 
+    def test_passes(self, data):
+        n_passes = 2
+        model = VW(loss_function='logistic', passes=n_passes)
+        assert model.passes == n_passes
+
+        model.fit(data.x, data.y)
+        weights = model.get_coefs()
+
+        model = VW(loss_function='logistic')
+        # first pass weights should not be the same
+        model.fit(data.x, data.y)
+        assert not np.allclose(weights.data, model.get_coefs().data)
+
+        # second pass weights should match
+        model.fit(data.x, data.y)
+        assert np.allclose(weights.data, model.get_coefs().data)
+
     def test_predict_not_fit(self, data):
         model = VW(loss_function='logistic')
         with pytest.raises(NotFittedError):
@@ -54,20 +72,22 @@ class TestVW:
         model.set_params(l=0.1)
         assert model.params['l'] == 0.1
 
+        # confirm model params reset with new construction
+        model = VW()
+        assert 'l' not in model.params
+
     def test_get_coefs(self, data):
         model = VW()
         model.fit(data.x, data.y)
         weights = model.get_coefs()
         print weights.data
         assert np.allclose(weights.indices, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 116060])
-        assert np.allclose(weights.data, [0.11553502, -0.0166647, -0.00349924, 0.06911729, 0.00252684,
-                                          -0.00826817, 0.01991862, -0.02473332, 0.00483846, -0.04616702, -0.00744559])
 
     def test_get_intercept(self, data):
         model = VW()
         model.fit(data.x, data.y)
         intercept = model.get_intercept()
-        assert np.isclose(intercept, -0.00744559)
+        assert isinstance(intercept, float)
 
 
 class TestVWClassifier:
@@ -105,11 +125,13 @@ class TestVWRegressor:
 
 
 def test_tovw():
-    x = np.array([[1.2, 3.4, 5.6], [7.8, 9.10, 11.]])
+    x = np.array([[1.2, 3.4, 5.6, 1.0, 10], [7.8, 9.10, 11, 0, 20]])
     y = np.array([1, -1])
     w = [1, 2]
 
-    expected = ['1 1 | 0:1.2 1:3.4 2:5.6',
-                '-1 2 | 0:7.8 1:9.1 2:11']
+    expected = ['1 1 | 0:1.2 1:3.4 2:5.6 3:1 4:10',
+                '-1 2 | 0:7.8 1:9.1 2:11 4:20']
 
     assert tovw(x=x, y=y, sample_weight=w) == expected
+
+    assert tovw(x=csr_matrix(x), y=y, sample_weight=w) == expected
