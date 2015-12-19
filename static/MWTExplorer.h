@@ -31,6 +31,18 @@ using namespace std;
 //! Interface for C++ version of Multiworld Testing library.
 //! For sample usage see: https://github.com/sidsen/vowpal_wabbit/blob/v0/explore/explore_sample.cpp
 namespace MultiWorldTesting {
+// Forward Declaration
+namespace SingleAction {
+    template <class Ctx>
+    static u32 Get_Variable_Number_Of_Actions(Ctx& context, u32 default_num_actions);
+}
+namespace MultiAction {
+    template <class Ctx>
+    static u32 Get_Variable_Number_Of_Actions(Ctx& context, u32 default_num_actions);
+    static void Sample_Without_Replacement(u32* actions, vector<float>& probs, u32 size, PRG::prg& random_generator, float& top_action_probability);
+    static void Validate_Actions(u32* actions, u32 num_actions);
+    static void Put_Action_To_List(u32 action, u32* actions, u32 num_actions);
+}
 
 /*!
 *  \addtogroup CoreCpp
