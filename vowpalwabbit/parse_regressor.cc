@@ -96,7 +96,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 
     uint32_t v_length = (uint32_t)version.to_string().length() + 1;
     text_len = sprintf_s(buff, buf_size, "Version %s\n", version.to_string().c_str());
-    memcpy(buff2, version.to_string().c_str(), min(v_length, buf_size));
+    memcpy(buff2, version.to_string().c_str(), min(v_length, buf2_size));
     if (read)
     { v_length = (uint32_t) buf2_size;
     }
@@ -334,21 +334,25 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                         "", read,
                         "\n", 1, text);
 
-    text_len = safe_sprintf_s(buff, buf_size, "options:%s\n", all.file_options->str().c_str());
-    uint32_t len = (uint32_t)all.file_options->str().length() + 1;
-    safe_memcpy(buff2, buf2_size, all.file_options->str().c_str(), len);
-
     if (read)
     {
-      bytes_read_write += bin_read_fixed(model_file, (char*)&len, sizeof(len), "");
-      resize_buf_if_needed(buff2, buf2_size, len);
-      bytes_read_write += bin_read_fixed(model_file, buff2, len, "");
-      all.file_options->str(buff2);
-    } else
+        uint32_t len;
+        size_t ret = bin_read_fixed(model_file, (char*)&len, sizeof(len), "");
+        if (ret < sizeof(uint32_t)) THROW("bad model format!");
+        resize_buf_if_needed(buff2, buf2_size, len);
+        bytes_read_write += bin_read_fixed(model_file, buff2, len, "") + ret;
+        all.file_options->str(buff2);
+    } else {
+        text_len = safe_sprintf_s(buff, buf_size, "options:%s\n", all.file_options->str().c_str());
 
-    bytes_read_write += bin_text_read_write_validated(model_file, buff2, len+1, //+1 to write a \0
-                        "", read,
-                        buff, text_len, text);
+        uint32_t len = (uint32_t)all.file_options->str().length();
+        if (len > 0)
+            safe_memcpy(buff2, buf2_size, all.file_options->str().c_str(), len+1);
+        *(buff2+len) = 0;
+        bytes_read_write += bin_text_read_write_validated(model_file, buff2, len+1, //len+1 to write a \0
+                                                          "", read,
+                                                          buff, text_len, text);
+    }
 
 
     // Read/write checksum if required by version
