@@ -32,6 +32,7 @@ namespace VW.Serializer.Intermediate
         /// <param name="ns">The associated namespace.</param>
         /// <param name="name">The feature name.</param>
         /// <param name="addAnchor"></param>
+        /// <param name="dictify">If true, enable dictionary extraction.</param>
         /// <param name="enumHashing">The enumHash cache factory.</param>
         public EnumerizedFeature(VowpalWabbit vw, Namespace ns, string name, bool addAnchor, bool dictify, Func<EnumerizedFeature<T>, Func<T, uint>> enumHashing)
             : base(name, addAnchor, dictify)

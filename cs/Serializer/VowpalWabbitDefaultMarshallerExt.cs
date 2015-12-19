@@ -51,7 +51,7 @@ namespace VW.Serializer
 		/// <param name="ns">The namespace description.</param>
 		/// <param name="feature">The feature description.</param>
 		/// <param name="value">The feature value.</param>
-        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, System.Byte[] value)
+        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, System.Byte[] value)
         {
             if (value == null)
             {
@@ -110,9 +110,9 @@ namespace VW.Serializer
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
-					CultureInfo.InvariantCulture, 
-					format, 
-					i, 
+					CultureInfo.InvariantCulture,
+					format,
+					i,
 					v);
                 i++;
             }
@@ -123,7 +123,7 @@ namespace VW.Serializer
 			{
 				context.FastDictionary.Add(value, featureString);
 			}
-			
+
 			context.AppendStringExample(feature.Dictify, featureString);
         }
 
@@ -157,7 +157,7 @@ namespace VW.Serializer
 		/// <param name="ns">The namespace description.</param>
 		/// <param name="feature">The feature description.</param>
 		/// <param name="value">The feature value.</param>
-        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, System.SByte[] value)
+        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, System.SByte[] value)
         {
             if (value == null)
             {
@@ -216,9 +216,9 @@ namespace VW.Serializer
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
-					CultureInfo.InvariantCulture, 
-					format, 
-					i, 
+					CultureInfo.InvariantCulture,
+					format,
+					i,
 					v);
                 i++;
             }
@@ -229,7 +229,7 @@ namespace VW.Serializer
 			{
 				context.FastDictionary.Add(value, featureString);
 			}
-			
+
 			context.AppendStringExample(feature.Dictify, featureString);
         }
 
@@ -263,7 +263,7 @@ namespace VW.Serializer
 		/// <param name="ns">The namespace description.</param>
 		/// <param name="feature">The feature description.</param>
 		/// <param name="value">The feature value.</param>
-        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, System.Int16[] value)
+        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, System.Int16[] value)
         {
             if (value == null)
             {
@@ -322,9 +322,9 @@ namespace VW.Serializer
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
-					CultureInfo.InvariantCulture, 
-					format, 
-					i, 
+					CultureInfo.InvariantCulture,
+					format,
+					i,
 					v);
                 i++;
             }
@@ -335,7 +335,7 @@ namespace VW.Serializer
 			{
 				context.FastDictionary.Add(value, featureString);
 			}
-			
+
 			context.AppendStringExample(feature.Dictify, featureString);
         }
 
@@ -369,7 +369,7 @@ namespace VW.Serializer
 		/// <param name="ns">The namespace description.</param>
 		/// <param name="feature">The feature description.</param>
 		/// <param name="value">The feature value.</param>
-        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, System.Int32[] value)
+        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, System.Int32[] value)
         {
             if (value == null)
             {
@@ -428,9 +428,9 @@ namespace VW.Serializer
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
-					CultureInfo.InvariantCulture, 
-					format, 
-					i, 
+					CultureInfo.InvariantCulture,
+					format,
+					i,
 					v);
                 i++;
             }
@@ -441,7 +441,7 @@ namespace VW.Serializer
 			{
 				context.FastDictionary.Add(value, featureString);
 			}
-			
+
 			context.AppendStringExample(feature.Dictify, featureString);
         }
 
@@ -475,7 +475,7 @@ namespace VW.Serializer
 		/// <param name="ns">The namespace description.</param>
 		/// <param name="feature">The feature description.</param>
 		/// <param name="value">The feature value.</param>
-        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, System.UInt16[] value)
+        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, System.UInt16[] value)
         {
             if (value == null)
             {
@@ -534,9 +534,9 @@ namespace VW.Serializer
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
-					CultureInfo.InvariantCulture, 
-					format, 
-					i, 
+					CultureInfo.InvariantCulture,
+					format,
+					i,
 					v);
                 i++;
             }
@@ -547,7 +547,7 @@ namespace VW.Serializer
 			{
 				context.FastDictionary.Add(value, featureString);
 			}
-			
+
 			context.AppendStringExample(feature.Dictify, featureString);
         }
 
@@ -581,7 +581,7 @@ namespace VW.Serializer
 		/// <param name="ns">The namespace description.</param>
 		/// <param name="feature">The feature description.</param>
 		/// <param name="value">The feature value.</param>
-        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, System.UInt32[] value)
+        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, System.UInt32[] value)
         {
             if (value == null)
             {
@@ -640,9 +640,9 @@ namespace VW.Serializer
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
-					CultureInfo.InvariantCulture, 
-					format, 
-					i, 
+					CultureInfo.InvariantCulture,
+					format,
+					i,
 					v);
                 i++;
             }
@@ -653,7 +653,7 @@ namespace VW.Serializer
 			{
 				context.FastDictionary.Add(value, featureString);
 			}
-			
+
 			context.AppendStringExample(feature.Dictify, featureString);
         }
 
@@ -687,7 +687,7 @@ namespace VW.Serializer
 		/// <param name="ns">The namespace description.</param>
 		/// <param name="feature">The feature description.</param>
 		/// <param name="value">The feature value.</param>
-        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, System.Single[] value)
+        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, System.Single[] value)
         {
             if (value == null)
             {
@@ -745,9 +745,9 @@ namespace VW.Serializer
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
-					CultureInfo.InvariantCulture, 
-					format, 
-					i, 
+					CultureInfo.InvariantCulture,
+					format,
+					i,
 					v);
                 i++;
             }
@@ -758,7 +758,7 @@ namespace VW.Serializer
 			{
 				context.FastDictionary.Add(value, featureString);
 			}
-			
+
 			context.AppendStringExample(feature.Dictify, featureString);
         }
 
@@ -798,7 +798,7 @@ namespace VW.Serializer
 		/// <param name="ns">The namespace description.</param>
 		/// <param name="feature">The feature description.</param>
 		/// <param name="value">The feature value.</param>
-        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, System.Int64[] value)
+        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, System.Int64[] value)
         {
             if (value == null)
             {
@@ -863,9 +863,9 @@ namespace VW.Serializer
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
-					CultureInfo.InvariantCulture, 
-					format, 
-					i, 
+					CultureInfo.InvariantCulture,
+					format,
+					i,
 					v);
                 i++;
             }
@@ -876,7 +876,7 @@ namespace VW.Serializer
 			{
 				context.FastDictionary.Add(value, featureString);
 			}
-			
+
 			context.AppendStringExample(feature.Dictify, featureString);
         }
 
@@ -916,7 +916,7 @@ namespace VW.Serializer
 		/// <param name="ns">The namespace description.</param>
 		/// <param name="feature">The feature description.</param>
 		/// <param name="value">The feature value.</param>
-        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, System.UInt64[] value)
+        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, System.UInt64[] value)
         {
             if (value == null)
             {
@@ -981,9 +981,9 @@ namespace VW.Serializer
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
-					CultureInfo.InvariantCulture, 
-					format, 
-					i, 
+					CultureInfo.InvariantCulture,
+					format,
+					i,
 					v);
                 i++;
             }
@@ -994,7 +994,7 @@ namespace VW.Serializer
 			{
 				context.FastDictionary.Add(value, featureString);
 			}
-			
+
 			context.AppendStringExample(feature.Dictify, featureString);
         }
 
@@ -1034,7 +1034,7 @@ namespace VW.Serializer
 		/// <param name="ns">The namespace description.</param>
 		/// <param name="feature">The feature description.</param>
 		/// <param name="value">The feature value.</param>
-        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, System.Double[] value)
+        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, System.Double[] value)
         {
             if (value == null)
             {
@@ -1099,9 +1099,9 @@ namespace VW.Serializer
             foreach (var v in value)
             {
                 featureBuilder.AppendFormat(
-					CultureInfo.InvariantCulture, 
-					format, 
-					i, 
+					CultureInfo.InvariantCulture,
+					format,
+					i,
 					v);
                 i++;
             }
@@ -1112,7 +1112,7 @@ namespace VW.Serializer
 			{
 				context.FastDictionary.Add(value, featureString);
 			}
-			
+
 			context.AppendStringExample(feature.Dictify, featureString);
         }
 

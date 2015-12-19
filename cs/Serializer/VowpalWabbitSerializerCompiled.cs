@@ -29,43 +29,102 @@ namespace VW.Serializer
     /// <returns>A serializer for the given user example type.</returns>
     public sealed class VowpalWabbitSerializerCompiled<TExample>
     {
+        /// <summary>
+        /// Internal structure collecting all itmes required to marshal a single feature.
+        /// </summary>
         internal sealed class FeatureExpressionInternal
         {
+            /// <summary>
+            /// The supplied feature expression.
+            /// </summary>
             internal FeatureExpression Source;
 
-            internal readonly List<ParameterExpression> Additional = new List<ParameterExpression>();
-
+            /// <summary>
+            /// The resolved mrarshalling method.
+            /// </summary>
             internal MarshalMethod MarshalMethod;
-
-            internal Expression<Action> Visit;
         }
 
+        /// <summary>
+        /// Describes the actual marshalling method and the feature type (e.g. <see cref="PreHashedFeature"/>).
+        /// </summary>
         internal sealed class MarshalMethod
         {
+            /// <summary>
+            /// The actual marshalling method.
+            /// </summary>
             internal MethodInfo Method;
 
+            /// <summary>
+            /// The feature type (e.g. <see cref="PreHashedFeature"/>).
+            /// </summary>
             internal Type MetaFeatureType;
         }
 
-        private static readonly string SerializeMethodName = "Serialize";
-
-        private static readonly ConstructorInfo ArgumentNullExceptionConstructorInfo = (ConstructorInfo)ReflectionHelper.GetInfo((ArgumentNullException t) => new ArgumentNullException(""));
-
+        /// <summary>
+        /// All discovered features.
+        /// </summary>
         private readonly FeatureExpressionInternal[] allFeatures;
-        private readonly List<Type> featurizerTypes;
+
+        /// <summary>
+        /// Ordered list of featurizer types. Marshalling methods are resolved in order of this list.
+        /// <see cref="VowpalWabbitDefaultMarshaller"/> is added last as  default.
+        /// </summary>
+        private readonly List<Type> marshallerTypes;
+
+        /// <summary>
+        /// The main body of the serializer holding preemptive calcutions (e.g. <see cref="PreHashedFeature"/>.
+        /// </summary>
         private readonly List<Expression> body;
+
+        /// <summary>
+        /// The body executed for example.
+        /// </summary>
         private readonly List<Expression> perExampleBody;
+
+        /// <summary>
+        /// Local variables.
+        /// </summary>
         private readonly List<ParameterExpression> variables;
+
+        /// <summary>
+        /// Local variables holding namespaces.
+        /// </summary>
         private readonly List<ParameterExpression> namespaceVariables;
 
+        /// <summary>
+        /// The parameter of the main lambda to <see cref="VowpalWabbit"/>.
+        /// </summary>
         private ParameterExpression vwParameter;
+
+        /// <summary>
+        /// The parameter of the main lambda to <see cref="VowpalWabbitMarshalContext"/>.
+        /// </summary>
         private ParameterExpression contextParameter;
+
+        /// <summary>
+        /// The parameter of the per example lambda to <see cref="VowpalWabbitExample"/>.
+        /// </summary>
         private ParameterExpression exampleParameter;
+
+        /// <summary>
+        /// The parameter of the per example lambda to <see cref="ILabel"/>
+        /// </summary>
         private ParameterExpression labelParameter;
 
-        //private ParameterExpression mainVisitorParameter;
-        private readonly List<ParameterExpression> featurizers;
+        /// <summary>
+        /// The list of featurizers.
+        /// </summary>
+        private readonly List<ParameterExpression> marshallers;
+
+        /// <summary>
+        /// The list of meta features such as <see cref="PreHashedFeature"/>.
+        /// </summary>
         private readonly List<ParameterExpression> metaFeatures;
+
+        /// <summary>
+        /// If true, VowpalWabbit string generation is disabled.
+        /// </summary>
         private readonly bool disableStringExampleGeneration;
 
         internal VowpalWabbitSerializerCompiled(IReadOnlyList<FeatureExpression> allFeatures, IReadOnlyList<Type> featurizerTypes, bool disableStringExampleGeneration)
@@ -78,35 +137,37 @@ namespace VW.Serializer
 
             this.allFeatures = allFeatures.Select(f => new FeatureExpressionInternal { Source = f }).ToArray();
 
-            this.featurizerTypes = featurizerTypes == null ? new List<Type>() : new List<Type>(featurizerTypes);
+            // collect the types used for marshalling
+            this.marshallerTypes = featurizerTypes == null ? new List<Type>() : new List<Type>(featurizerTypes);
 
+            // extract types from overrides defined on particular features
             var overrideFeaturizerTypes = allFeatures
                 .Select(f => f.OverrideSerializeMethod)
                 .Where(o => o != null)
                 .Select(o => o.DeclaringType);
-            this.featurizerTypes.AddRange(overrideFeaturizerTypes);
+            this.marshallerTypes.AddRange(overrideFeaturizerTypes);
 
             // add as last
-            this.featurizerTypes.Add(typeof(VowpalWabbitDefaultMarshaller));
+            this.marshallerTypes.Add(typeof(VowpalWabbitDefaultMarshaller));
 
             this.body = new List<Expression>();
             this.perExampleBody = new List<Expression>();
             this.variables = new List<ParameterExpression>();
             this.namespaceVariables = new List<ParameterExpression>();
-            this.featurizers = new List<ParameterExpression>();
+            this.marshallers = new List<ParameterExpression>();
             this.metaFeatures = new List<ParameterExpression>();
 
-            this.CreateVisitors();
+            this.CreateMarshallers();
 
             this.ResolveFeatureMarshallingMethods();
             this.CreateParameters();
 
             // CODE MarshalLabel(...)
-            this.CreateFeaturizerCall("MarshalLabel", this.contextParameter, this.labelParameter);
+            this.CreateMarshallerCall("MarshalLabel", this.contextParameter, this.labelParameter);
 
             this.CreateNamespacesAndFeatures();
 
-            this.CreateLambda();
+            this.CreateLambdas();
             // this.CreateLambda();
             this.Compile();
         }
@@ -123,25 +184,28 @@ namespace VW.Serializer
             return new VowpalWabbitSerializer<TExample>(this, vw);
         }
 
-        private void CreateVisitors()
+        /// <summary>
+        /// Define variables and instantiate marshaller types.
+        /// </summary>
+        private void CreateMarshallers()
         {
-            foreach (var featurizerType in this.featurizerTypes)
+            foreach (var marshallerType in this.marshallerTypes)
             {
-                var featurizer = Expression.Parameter(featurizerType, "featurizer_" + featurizerType.Name);
+                var marshaller = Expression.Parameter(marshallerType, "marshaller_" + marshallerType.Name);
 
-                this.featurizers.Add(featurizer);
-                this.variables.Add(featurizer);
+                this.marshallers.Add(marshaller);
+                this.variables.Add(marshaller);
 
                 // CODE new FeaturizerType(disableStringExampleGeneration)
-                var newExpr = CreateNew(featurizerType, Expression.Constant(disableStringExampleGeneration));
+                var newExpr = CreateNew(marshallerType, Expression.Constant(disableStringExampleGeneration));
                 if (newExpr == null)
                 {
-                    // CODE new FeaturizerType()
-                    newExpr = Expression.New(featurizerType);
+                    // CODE new MarshallerType()
+                    newExpr = Expression.New(marshallerType);
                 }
 
-                // featurizer = new ...
-                this.body.Add(Expression.Assign(featurizer, newExpr));
+                // marshaller = new ...
+                this.body.Add(Expression.Assign(marshaller, newExpr));
             }
         }
 
@@ -195,7 +259,7 @@ namespace VW.Serializer
             foreach (var metaFeatureType in metaFeatureTypeCandidates)
             {
                 // find visitor.MarshalFeature(VowpalWabbitMarshallingContext context, Namespace ns, <PreHashedFeature|Feature> feature, <valueType> value)
-                var method = this.featurizerTypes.Select(visitor =>
+                var method = this.marshallerTypes.Select(visitor =>
                     ReflectionHelper.FindMethod(
                             visitor,
                             methodName,
@@ -219,6 +283,9 @@ namespace VW.Serializer
             throw new ArgumentException("Unable to find featurize method for " + feature);
         }
 
+        /// <summary>
+        /// Resolve methods for each feature base on feature type and configuration.
+        /// </summary>
         private void ResolveFeatureMarshallingMethods()
         {
             foreach (var feature in this.allFeatures)
@@ -227,6 +294,24 @@ namespace VW.Serializer
             }
         }
 
+        /// <summary>
+        /// define functions input parameter
+        /// </summary>
+        private void CreateParameters()
+        {
+            this.vwParameter = Expression.Parameter(typeof(VowpalWabbit), "vw");
+            this.contextParameter = Expression.Parameter(typeof(VowpalWabbitMarshalContext), "context");
+            this.exampleParameter = Expression.Parameter(typeof(TExample), "example");
+            this.labelParameter = Expression.Parameter(typeof(ILabel), "label");
+        }
+
+        /// <summary>
+        /// Instantiate the meta information object such as <see cref="PreHashedFeature"/>
+        /// for a given feature.
+        /// </summary>
+        /// <param name="featureInternal">The feature.</param>
+        /// <param name="namespace">The namespace.</param>
+        /// <returns>The "new" expression for the meta information object.</returns>
         private Expression CreateFeature(FeatureExpressionInternal featureInternal, Expression @namespace)
         {
             FeatureExpression feature = featureInternal.Source;
@@ -234,6 +319,7 @@ namespace VW.Serializer
 
             if (metaFeatureType.IsGenericType && metaFeatureType.GetGenericTypeDefinition() == typeof(EnumerizedFeature<>))
             {
+                // preemptively calculate all hashes for each enum value
                 var featureParameter = Expression.Parameter(metaFeatureType);
                 var valueParameter = Expression.Parameter(feature.FeatureType);
 
@@ -252,7 +338,7 @@ namespace VW.Serializer
                             Expression.Constant(value))));
                 }
 
-                var cases =  Enum.GetValues(feature.FeatureType)
+                var cases = Enum.GetValues(feature.FeatureType)
                         .Cast<object>()
                         .Zip(hashVariables, (value, hash) => Expression.SwitchCase(
                             hash,
@@ -278,7 +364,7 @@ namespace VW.Serializer
             }
             else if (metaFeatureType == typeof(PreHashedFeature))
             {
-                // CODE: new PreHashedFeature(vw, namespace, "Name", "AddAnchor");
+                // CODE new PreHashedFeature(vw, namespace, "Name", "AddAnchor");
                 return CreateNew(
                         typeof(PreHashedFeature),
                         this.vwParameter,
@@ -288,6 +374,7 @@ namespace VW.Serializer
                         Expression.Constant(feature.Dictify));
             }
             else
+                // CODE new Feature("Name", ...)
                 return CreateNew(
                     metaFeatureType,
                     Expression.Constant(feature.Name, typeof(string)),
@@ -295,6 +382,12 @@ namespace VW.Serializer
                     Expression.Constant(feature.Dictify));
         }
 
+        /// <summary>
+        /// Helper to create the "new" expression using a matching constructor.
+        /// </summary>
+        /// <param name="type">The type of the new object.</param>
+        /// <param name="constructorParameters">The actual parameters for the constructor.</param>
+        /// <returns>The "new" expression bound to <paramref name="constructorParameters"/>.</returns>
         private static Expression CreateNew(Type type, params Expression[] constructorParameters)
         {
             var ctor = type.GetConstructor(constructorParameters.Select(e => e.Type).ToArray());
@@ -342,7 +435,7 @@ namespace VW.Serializer
                     this.body.Add(Expression.Assign(featureVariable, newFeature));
 
                     // TODO: optimize
-                    var featurizer = this.featurizers.First(f => f.Type == feature.MarshalMethod.Method.ReflectedType);
+                    var marshaller = this.marshallers.First(f => f.Type == feature.MarshalMethod.Method.ReflectedType);
 
                     var valueVariable = feature.Source.ValueExpressionFactory(this.exampleParameter);
                     Expression featureVisit;
@@ -352,7 +445,7 @@ namespace VW.Serializer
                         featureVisit = Expression.IfThen(
                             Expression.NotEqual(valueVariable, Expression.Constant(null)),
                                 Expression.Call(
-                                     featurizer,
+                                     marshaller,
                                      feature.MarshalMethod.Method,
                                      this.contextParameter,
                                      namespaceVariable,
@@ -363,7 +456,7 @@ namespace VW.Serializer
                     {
                         // featurzier.MarshalXXX(vw, context, ns, feature, value);
                         featureVisit = Expression.Call(
-                            featurizer,
+                            marshaller,
                             feature.MarshalMethod.Method,
                             this.contextParameter,
                             namespaceVariable,
@@ -389,20 +482,25 @@ namespace VW.Serializer
                 var featureVisitLambda = Expression.Lambda(Expression.Block(featureVisits));
 
                 // CODE: featurizer.MarshalNamespace(context, namespace, { ... })
-                this.CreateFeaturizerCall("MarshalNamespace", this.contextParameter, namespaceVariable, featureVisitLambda);
+                this.CreateMarshallerCall("MarshalNamespace", this.contextParameter, namespaceVariable, featureVisitLambda);
             }
         }
 
-        private void CreateFeaturizerCall(string methodName, params Expression[] parameters)
+        /// <summary>
+        /// Create the invocation expression of a marshalling method.
+        /// </summary>
+        /// <param name="methodName">The marshalling method to invoke.</param>
+        /// <param name="parameters">The parameters for this method.</param>
+        private void CreateMarshallerCall(string methodName, params Expression[] parameters)
         {
             var parameterTypes = parameters.Select(p => p.Type).ToArray();
-            foreach (var featurizer in this.featurizers)
+            foreach (var marshaller in this.marshallers)
 	        {
-                var method = featurizer.Type.GetMethod(methodName, parameterTypes);
+                var method = marshaller.Type.GetMethod(methodName, parameterTypes);
 
                 if (method != null)
                 {
-                    this.perExampleBody.Add(Expression.Call(featurizer, method, parameters));
+                    this.perExampleBody.Add(Expression.Call(marshaller, method, parameters));
                     return;
                 }
 	        }
@@ -410,7 +508,10 @@ namespace VW.Serializer
             throw new ArgumentException("Unable to find MarshalNamespace(VowpalWabbitMarshallingContext, Namespace, Action) on any featurizer");
         }
 
-        private void CreateLambda()
+        /// <summary>
+        /// Creates the main lambda and the per example lambda.
+        /// </summary>
+        private void CreateLambdas()
         {
             // CODE (TExample, Label) => { ... }
             this.body.Add(
@@ -442,6 +543,9 @@ namespace VW.Serializer
             private set;
         }
 
+        /// <summary>
+        /// Compiles the <see cref="SourceExpression"/> into an executable assembly.
+        /// </summary>
         private void Compile()
         {
             var asmName = new AssemblyName("VowpalWabbitSerializer." + typeof(TExample).Name);
@@ -456,8 +560,9 @@ namespace VW.Serializer
             var typeBuilder = moduleBuilder.DefineType("VowpalWabbitSerializer" + Guid.NewGuid().ToString().Replace('-', '_'));
 
             // Create our method builder for this type builder
+            const string serializeMethodName = "Serialize";
             var methodBuilder = typeBuilder.DefineMethod(
-                SerializeMethodName,
+                serializeMethodName,
                 MethodAttributes.Public | MethodAttributes.Static,
                 typeof(Action<VowpalWabbitMarshalContext, TExample, ILabel>),
                 new[] { typeof(VowpalWabbit) });
@@ -475,19 +580,7 @@ namespace VW.Serializer
 
             this.Func = (Func<VowpalWabbit, Action<VowpalWabbitMarshalContext, TExample, ILabel>>)Delegate.CreateDelegate(
                 typeof(Func<VowpalWabbit, Action<VowpalWabbitMarshalContext, TExample, ILabel>>),
-                dynType.GetMethod(SerializeMethodName));
-        }
-
-        /// <summary>
-        /// define functions input parameter
-        /// </summary>
-        private void CreateParameters()
-        {
-            this.vwParameter = Expression.Parameter(typeof(VowpalWabbit), "vw");
-            this.contextParameter = Expression.Parameter(typeof(VowpalWabbitMarshalContext), "context");
-            this.exampleParameter = Expression.Parameter(typeof(TExample), "example");
-            this.labelParameter = Expression.Parameter(typeof(ILabel), "label");
-
+                dynType.GetMethod(serializeMethodName));
         }
     }
 }

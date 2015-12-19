@@ -14,7 +14,7 @@ namespace VW
     /// Helper to conveniently create <see cref="ObjectFactory{TSource,TObject}"/>.
     /// </summary>
     public static class ObjectFactory
-    {   
+    {
         /// <summary>
         /// Disposable object factory.
         /// </summary>
@@ -35,10 +35,19 @@ namespace VW
     public class ObjectFactory<TSource, TObject> : IDisposable
         where TSource : IDisposable
     {
+        /// <summary>
+        /// Factory function to create new instances.
+        /// </summary>
         private readonly Func<TSource, TObject> creator;
-        
+
+        /// <summary>
+        /// The source object passed to <see cref="creator"/>.
+        /// </summary>
         private TSource source;
 
+        /// <summary>
+        /// True if this instance is already disposed.
+        /// </summary>
         private bool disposed;
 
         internal ObjectFactory(TSource source, Func<TSource, TObject> creator)

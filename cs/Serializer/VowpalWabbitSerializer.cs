@@ -176,7 +176,6 @@ namespace VW.Serializer
             }
             else
             {
-                // TODO: catch exception and dispose!
                 VowpalWabbitExample nativeExample = null;
 
                 try

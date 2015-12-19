@@ -200,7 +200,7 @@ namespace VW.Serializer
             {
                 context.NamespaceBuilder.AddFeature(
                         context.VW.HashFeature(Convert.ToString(kvp.Key), ns.NamespaceHash),
-                        (float)Convert.ToDouble(kvp.Value, CultureInfo.InvariantCulture));
+                        Convert.ToSingle(kvp.Value, CultureInfo.InvariantCulture));
             }
 
             if (context.StringExample == null)
@@ -210,15 +210,13 @@ namespace VW.Serializer
 
             foreach (var kvp in value)
             {
-                // TODO: not sure if negative numbers will work
                 context.AppendStringExample(
                     feature.Dictify,
                     " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     Convert.ToString(kvp.Key),
-                    (float)Convert.ToDouble(kvp.Value, CultureInfo.InvariantCulture));
+                    Convert.ToSingle(kvp.Value, CultureInfo.InvariantCulture));
             }
         }
-
 
         /// <summary>
         ///
@@ -242,7 +240,7 @@ namespace VW.Serializer
             {
                 context.NamespaceBuilder.AddFeature(
                     context.VW.HashFeature(Convert.ToString(item.Key), ns.NamespaceHash),
-                    (float)Convert.ToDouble(item.Value, CultureInfo.InvariantCulture));
+                    Convert.ToSingle(item.Value, CultureInfo.InvariantCulture));
             }
 
             if (context.StringExample == null)
@@ -256,7 +254,7 @@ namespace VW.Serializer
                     feature.Dictify,
                     " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
                     Convert.ToString(item.Key),
-                    (float)Convert.ToDouble(item.Value, CultureInfo.InvariantCulture));
+                    Convert.ToSingle(item.Value, CultureInfo.InvariantCulture));
             }
         }
 

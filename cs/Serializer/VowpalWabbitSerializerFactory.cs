@@ -77,6 +77,7 @@ namespace VW.Serializer
                 allFeatures = AnnotationInspector.ExtractFeatures(typeof(TExample), propertyPredicate).ToList();
             }
 
+            // need at least a single feature to do something sensible
             if (allFeatures == null || allFeatures.Count == 0)
             {
                 return null;
