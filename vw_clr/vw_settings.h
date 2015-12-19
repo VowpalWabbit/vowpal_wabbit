@@ -32,6 +32,19 @@ namespace VW
         RoundRobin = 1
     };
 
+	public enum class VowpalWabbitFeatureDiscovery
+	{
+		/// <summary>
+		/// Only properties annotated using Feature attribute are considered.
+		/// </summary>
+		Default,
+
+		/// <summary>
+		/// All properties are used as features.
+		/// </summary>
+		All
+	};
+
     public ref class VowpalWabbitSettings
     {
     private:
@@ -50,6 +63,7 @@ namespace VW
         bool m_enableStringFloatCompact;
         List<FeatureExpression^>^ m_allFeatures;
         List<Type^>^ m_customFeaturizer;
+		VowpalWabbitFeatureDiscovery m_featureDiscovery;
 
     public:
         VowpalWabbitSettings() :
@@ -61,7 +75,8 @@ namespace VW
             // default to the statistically more safe option
             m_exampleDistribution(VowpalWabbitExampleDistribution::UniformRandom),
             m_enableStringExampleGeneration(false),
-            m_enableStringFloatCompact(false)
+            m_enableStringFloatCompact(false),
+			m_featureDiscovery(VowpalWabbitFeatureDiscovery::Default)
         {
         }
 
@@ -86,7 +101,8 @@ namespace VW
             [System::Runtime::InteropServices::Optional] Nullable<bool> enableStringExampleGeneration,
             [System::Runtime::InteropServices::Optional] Nullable<bool> enableStringFloatCompact,
             [System::Runtime::InteropServices::Optional] List<FeatureExpression^>^ allFeatures,
-            [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer)
+            [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer,
+			[System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitFeatureDiscovery> featureDiscovery)
             : VowpalWabbitSettings()
         {
             if (arguments != nullptr)
@@ -122,6 +138,9 @@ namespace VW
 
             if (enableStringFloatCompact.HasValue)
                 m_enableStringFloatCompact = enableStringFloatCompact.Value;
+
+			if (featureDiscovery.HasValue)
+				m_featureDiscovery = featureDiscovery.Value;
         }
 
         /// <summary>
@@ -273,6 +292,14 @@ namespace VW
             }
         }
 
+		property VowpalWabbitFeatureDiscovery FeatureDiscovery
+		{
+			VowpalWabbitFeatureDiscovery get()
+			{
+				return m_featureDiscovery;
+			}
+		}
+
         VowpalWabbitSettings^ ShallowCopy(
             [System::Runtime::InteropServices::Optional] String^ arguments,
             [System::Runtime::InteropServices::Optional] Stream^ modelStream,
@@ -287,7 +314,8 @@ namespace VW
             [System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitExampleDistribution> exampleDistribution,
             [System::Runtime::InteropServices::Optional] Nullable<bool> enableStringExampleGeneration,
             [System::Runtime::InteropServices::Optional] List<FeatureExpression^>^ allFeatures,
-            [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer)
+			[System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer,
+			[System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitFeatureDiscovery> featureDiscovery)
         {
             auto copy = gcnew VowpalWabbitSettings();
 
@@ -315,6 +343,7 @@ namespace VW
             copy->m_enableStringExampleGeneration = enableStringExampleGeneration.HasValue ? enableStringExampleGeneration.Value : EnableStringExampleGeneration;
             copy->m_allFeatures = allFeatures == nullptr ? AllFeatures : allFeatures;
             copy->m_customFeaturizer = customFeaturizer == nullptr ? CustomFeaturizer : customFeaturizer;
+			copy->m_featureDiscovery = featureDiscovery.HasValue ? featureDiscovery.Value : FeatureDiscovery;
 
             return copy;
         }

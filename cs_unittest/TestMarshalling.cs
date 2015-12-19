@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VW;
 using VW.Serializer;
 using VW.Serializer.Attributes;
 
@@ -208,6 +209,24 @@ namespace cs_unittest
                 vw.Validate("| ", new ExampleBoolean { OnOff = false });
             }
         }
+
+        [TestMethod]
+        [TestCategory("Marshal")]
+        public void TestFeatureDiscoveryAll()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<POCO>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.All)))
+            {
+                vw.Validate("| Feature1 Feature2:5", new POCO { Feature1 = true, Feature2 = 5 });
+            }
+        }
+    }
+
+    public class POCO
+    {
+        public bool Feature1 { get; set; }
+
+        [Feature]
+        public int Feature2 { get; set; }
     }
 
     public class ExampleBoolean

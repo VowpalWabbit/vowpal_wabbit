@@ -20,7 +20,7 @@ namespace cs_unittest
         private Action<VowpalWabbitMarshalContext, TExample, ILabel> serializerNative;
         private VowpalWabbitSerializer<TExample> factorySerializer;
 
-        internal VowpalWabbitExampleValidator(string args)
+        private static string FixArgs(string args)
         {
             // remove model writing
             args = Regex.Replace(args, @"-f\s+[^ -]+", " ");
@@ -28,10 +28,19 @@ namespace cs_unittest
             // remove cache file
             args = Regex.Replace(args, @"-c\s+([^ -]+)?", " ");
 
-            this.vw = new VowpalWabbit<TExample>(new VowpalWabbitSettings(args, enableStringExampleGeneration: true));
+            return args;
+        }
+
+        internal VowpalWabbitExampleValidator(string args) : this(new VowpalWabbitSettings(FixArgs(args)))
+        {
+        }
+
+        internal VowpalWabbitExampleValidator(VowpalWabbitSettings settings)
+        {
+            this.vw = new VowpalWabbit<TExample>(settings.ShallowCopy(enableStringExampleGeneration: true));
             this.serializer = this.vw.Serializer.Func(this.vw.Native);
 
-            this.vwNative = new VowpalWabbit<TExample>(new VowpalWabbitSettings(args));
+            this.vwNative = new VowpalWabbit<TExample>(settings);
             this.serializerNative = this.vwNative.Serializer.Func(this.vwNative.Native);
 
             this.factorySerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(new VowpalWabbitSettings(enableStringExampleGeneration: true)).Create(this.vw.Native);

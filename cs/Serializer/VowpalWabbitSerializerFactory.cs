@@ -62,7 +62,19 @@ namespace VW.Serializer
 
                 // TOOD: enhance caching based on feature list & featurizer set
                 // if no feature mapping is provided, use [Feature] annotation on provided type.
-                allFeatures = AnnotationInspector.ExtractFeatures(typeof(TExample)).ToList();
+
+                Func<PropertyInfo, FeatureAttribute, bool> propertyPredicate = null;
+                switch (settings.FeatureDiscovery)
+                {
+                    case VowpalWabbitFeatureDiscovery.Default:
+                        propertyPredicate = (_, attr) => attr != null;
+                        break;
+                    case VowpalWabbitFeatureDiscovery.All:
+                        propertyPredicate = (_, __) => true;
+                        break;
+                }
+
+                allFeatures = AnnotationInspector.ExtractFeatures(typeof(TExample), propertyPredicate).ToList();
             }
 
             if (allFeatures == null || allFeatures.Count == 0)
