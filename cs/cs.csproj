@@ -142,6 +142,7 @@
     <Compile Include="VowpalWabbit.cs" />
     <Compile Include="ObjectPool.cs" />
     <Compile Include="VowpalWabbitAsync.cs" />
+    <Compile Include="VowpalWabbitDynamic.cs" />
     <Compile Include="VowpalWabbitSweep.cs" />
     <Compile Include="VowpalWabbitThreadedPrediction.cs" />
     <Compile Include="VowpalWabbitThreadedLearning.cs" />

@@ -75,56 +75,54 @@ namespace VW.Serializer
             this.DenseFeatureValueElementType = InspectionHelper.GetDenseFeatureValueElementType(featureType);
         }
 
-        public bool IsNullable { get; private set; }
+        public bool IsNullable { get; set; }
 
         /// <summary>
         /// Serializer variable name.
         /// </summary>
         /// <remarks>Useful to debug</remarks>
-        public string VariableName { get; private set; }
+        public string VariableName { get; set; }
 
         /// <summary>
         /// The type of the feature.
         /// </summary>
         public Type FeatureType { get; private set; }
 
-        //public Type EnumType { get; private set; }
-
-        internal Type IntermediateFeatureType { get; private set; }
+        internal Type IntermediateFeatureType { get; set; }
 
         /// <summary>
         /// The Name of the feature.
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get; set; }
 
-        public string Namespace { get; private set; }
+        public string Namespace { get; set; }
 
-        public char? FeatureGroup { get; private set; }
+        public char? FeatureGroup { get; set; }
 
-        public MethodInfo OverrideSerializeMethod { get; private set; }
+        public MethodInfo OverrideSerializeMethod { get; set; }
 
-        public bool Enumerize { get; private set; }
+        public bool Enumerize { get; set; }
 
-        public bool AddAnchor { get; private set; }
+        public bool AddAnchor { get; set; }
 
-        public bool Dictify { get; private set; }
+        public bool Dictify { get; set; }
 
         /// <summary>
         /// Factory to extract the value for a given feature from the example object (input argument).
         /// </summary>
-        public Func<Expression, Expression> ValueExpressionFactory { get; private set; }
+        public Func<Expression, Expression> ValueExpressionFactory { get; set; }
 
         /// <summary>
         /// Factories to provide validation before invoking the expression created through <see cref="ValueExpressionFactory"/>.
         /// </summary>
-        public List<Func<Expression, Expression>> ValueValidExpressionFactories { get; private set; }
+        public List<Func<Expression, Expression>> ValueValidExpressionFactories { get; set; }
 
-        public NewFeatureExpressionDelegate FeatureExpressionFactory { get; private set; }
+        public NewFeatureExpressionDelegate FeatureExpressionFactory { get; set; }
 
-        public Type DenseFeatureValueElementType { get; private set; }
+        public Type DenseFeatureValueElementType { get; set; }
 
-        public int Order { get; private set; }
+        public int Order { get; set; }
 
-        public StringProcessing StringProcessing { get; private set; }
+        public StringProcessing StringProcessing { get; set; }
     }
 }
