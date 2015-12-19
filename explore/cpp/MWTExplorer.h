@@ -407,7 +407,7 @@ public:
     /// @param num_actions     The number of actions to randomize over.
     ///
     EpsilonGreedyExplorer(IPolicy<Ctx>& default_policy, float epsilon, u32 num_actions) :
-        m_default_policy(default_policy), m_epsilon(epsilon), m_num_actions(num_actions), m_explore(true)
+        m_default_policy(default_policy), m_num_actions(num_actions), m_epsilon(epsilon), m_explore(true)
     {
         if (m_num_actions < 1)
         {
@@ -427,7 +427,7 @@ public:
     /// @param epsilon         The probability of a random exploration.
     ///
     EpsilonGreedyExplorer(IPolicy<Ctx>& default_policy, float epsilon) :
-        m_default_policy(default_policy), m_epsilon(epsilon), m_num_actions(UINT_MAX), m_explore(true)
+        m_default_policy(default_policy), m_num_actions(UINT_MAX), m_epsilon(epsilon), m_explore(true)
     {
         if (m_epsilon < 0 || m_epsilon > 1)
         {
@@ -469,9 +469,9 @@ private:
 
 private:
     IPolicy<Ctx>& m_default_policy;
+    const u32 m_num_actions;
     const float m_epsilon;
     bool m_explore;
-    const u32 m_num_actions;
 };
 
 ///
@@ -702,8 +702,8 @@ private:
 
 private:
     IScorer<Ctx>& m_default_scorer;
-    bool m_explore;
     const u32 m_num_actions;
+    bool m_explore;
 };
 
 ///
@@ -723,7 +723,7 @@ public:
     /// @param num_actions     The number of actions to randomize over.
     ///
     TauFirstExplorer(IPolicy<Ctx>& default_policy, u32 tau, u32 num_actions) :
-        m_default_policy(default_policy), m_tau(tau), m_num_actions(num_actions), m_explore(true)
+        m_default_policy(default_policy), m_num_actions(num_actions), m_tau(tau), m_explore(true)
     {
         if (m_num_actions < 1)
         {
@@ -738,7 +738,7 @@ public:
     /// @param tau             The number of events to be uniform over.
     ///
     TauFirstExplorer(IPolicy<Ctx>& default_policy, u32 tau) :
-        m_default_policy(default_policy), m_tau(tau), m_num_actions(UINT_MAX), m_explore(true)
+        m_default_policy(default_policy), m_num_actions(UINT_MAX), m_tau(tau), m_explore(true)
     {
         static_assert(std::is_base_of<IVariableActionContext, Ctx>::value, "The provided context does not implement variable-action interface.");
     }
@@ -791,9 +791,9 @@ private:
 
 private:
     IPolicy<Ctx>& m_default_policy;
-    bool m_explore;
-    u32 m_tau;
     const u32 m_num_actions;
+    u32 m_tau;
+    bool m_explore;
 };
 
 ///
@@ -813,7 +813,7 @@ public:
     ///
     BootstrapExplorer(vector<unique_ptr<IPolicy<Ctx>>>& default_policy_functions, u32 num_actions) :
         m_default_policy_functions(default_policy_functions),
-        m_num_actions(num_actions), m_explore(true), m_bags((u32)default_policy_functions.size())
+        m_num_actions(num_actions), m_bags((u32)default_policy_functions.size()), m_explore(true)
     {
         if (m_num_actions < 1)
         {
@@ -834,7 +834,7 @@ public:
     ///
     BootstrapExplorer(vector<unique_ptr<IPolicy<Ctx>>>& default_policy_functions) :
         m_default_policy_functions(default_policy_functions),
-        m_num_actions(UINT_MAX), m_explore(true), m_bags((u32)default_policy_functions.size())
+        m_num_actions(UINT_MAX), m_bags((u32)default_policy_functions.size()), m_explore(true)
     {
         if (m_bags < 1)
         {
@@ -910,9 +910,9 @@ private:
 
 private:
     vector<unique_ptr<IPolicy<Ctx>>>& m_default_policy_functions;
-    bool m_explore;
-    const u32 m_bags;
     const u32 m_num_actions;
+    const u32 m_bags;
+    bool m_explore;
 };
 
 } /*! @} End of SingleActionCpp group*/
@@ -1290,7 +1290,7 @@ static void Validate_Actions(u32* actions, u32 num_actions)
         }
         exists[actions[i]] = true;
     }
-};
+}
 
 static void Put_Action_To_List(u32 action, u32* actions, u32 num_actions)
 {
@@ -1682,7 +1682,9 @@ public:
 
     ~TauFirstExplorer()
     {
+#ifdef _WIN32
         ::DeleteCriticalSection(&m_critical_section);
+#endif
     }
 
     void Update_Policy(IPolicy<Ctx>& new_policy)
