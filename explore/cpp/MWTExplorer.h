@@ -437,7 +437,7 @@ public:
 private:
     std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
     {
-        u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+        u32 num_actions = MultiWorldTesting::SingleAction::Get_Variable_Number_Of_Actions(context, m_num_actions);
 
         // Invoke the default policy function to get the action
         u32 chosen_action = m_default_policy.Choose_Action(context);
@@ -511,7 +511,7 @@ public:
 private:
     std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
     {
-        u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+        u32 num_actions = MultiWorldTesting::SingleAction::Get_Variable_Number_Of_Actions(context, m_num_actions);
 
         PRG::prg random_generator(salted_seed);
 
@@ -639,7 +639,7 @@ public:
 private:
     std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
     {
-        u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+        u32 num_actions = MultiWorldTesting::SingleAction::Get_Variable_Number_Of_Actions(context, m_num_actions);
 
         PRG::prg random_generator(salted_seed);
 
@@ -744,7 +744,7 @@ public:
 private:
     std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
     {
-        u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+        u32 num_actions = MultiWorldTesting::SingleAction::Get_Variable_Number_Of_Actions(context, m_num_actions);
 
         PRG::prg random_generator(salted_seed);
 
@@ -845,7 +845,7 @@ public:
 private:
     std::tuple<u32, float, bool> Choose_Action(u64 salted_seed, Ctx& context)
     {
-        u32 num_actions = ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+        u32 num_actions = MultiWorldTesting::SingleAction::Get_Variable_Number_Of_Actions(context, m_num_actions);
 
         PRG::prg random_generator(salted_seed);
 
@@ -1358,7 +1358,7 @@ private:
     {
         // Invoke the default policy function to get the action
         m_default_policy.Choose_Action(context, actions, num_actions);
-        ::Validate_Actions(actions, num_actions);
+        MultiWorldTesting::MultiAction::Validate_Actions(actions, num_actions);
 
         u32 chosen_action = actions[0];
         float action_probability = 0.f;
@@ -1367,7 +1367,7 @@ private:
         Core::Explore_Epsilon_Greedy(chosen_action, action_probability, should_log, num_actions, m_explore, m_epsilon, salted_seed);
 
         // Put chosen action at the top of the list, swapping out the current top.
-        ::Put_Action_To_List(chosen_action, actions, num_actions);
+        MultiWorldTesting::MultiAction::Put_Action_To_List(chosen_action, actions, num_actions);
 
         return std::tuple<float, bool>(action_probability, true);
     }
@@ -1376,7 +1376,7 @@ private:
 
     u32 Get_Number_Of_Actions(Ctx& context)
     {
-        return ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+        return MultiWorldTesting::MultiAction::Get_Variable_Number_Of_Actions(context, m_num_actions);
     }
 
 private:
@@ -1478,7 +1478,7 @@ private:
                 actions[i] = 0;
             }
 
-            ::Sample_Without_Replacement(actions, scores, num_actions, random_generator, action_probability);
+            MultiWorldTesting::MultiAction::Sample_Without_Replacement(actions, scores, num_actions, random_generator, action_probability);
         }
         else
         {
@@ -1514,7 +1514,7 @@ private:
 
     u32 Get_Number_Of_Actions(Ctx& context)
     {
-        return ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+        return MultiWorldTesting::MultiAction::Get_Variable_Number_Of_Actions(context, m_num_actions);
     }
 
 private:
@@ -1605,7 +1605,7 @@ private:
         }
 
         float action_probability = 0.f;
-        ::Sample_Without_Replacement(actions, weights, num_actions, random_generator, action_probability);
+        MultiWorldTesting::MultiAction::Sample_Without_Replacement(actions, weights, num_actions, random_generator, action_probability);
 
         return std::tuple<float, bool>(action_probability, true);
     }
@@ -1614,7 +1614,7 @@ private:
 
     u32 Get_Number_Of_Actions(Ctx& context)
     {
-        return ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+        return MultiWorldTesting::MultiAction::Get_Variable_Number_Of_Actions(context, m_num_actions);
     }
 
 private:
@@ -1693,7 +1693,7 @@ private:
 
         // Invoke the default policy function to get the action
         m_default_policy.Choose_Action(context, actions, num_actions);
-        ::Validate_Actions(actions, num_actions);
+        MultiWorldTesting::MultiAction::Validate_Actions(actions, num_actions);
 
         bool explore = false;
         if (m_explore)
@@ -1719,7 +1719,7 @@ private:
             u32 actionId = random_generator.Uniform_Int(1, num_actions);
             action_probability = 1.f / num_actions;
 
-            ::Put_Action_To_List(actionId, actions, num_actions);
+            MultiWorldTesting::MultiAction::Put_Action_To_List(actionId, actions, num_actions);
 
             log_action = true;
         }
@@ -1736,7 +1736,7 @@ private:
 
     u32 Get_Number_Of_Actions(Ctx& context)
     {
-        return ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+        return MultiWorldTesting::MultiAction::Get_Variable_Number_Of_Actions(context, m_num_actions);
     }
 
 private:
@@ -1838,7 +1838,7 @@ private:
                 // if we trigger into VW passing an index to invoke bootstrap scoring, and if VW model changes while we are doing so, 
                 // we could end up calling the wrong bag
                 m_default_policy_functions[current_bag]->Choose_Action(context, actions, num_actions);
-                ::Validate_Actions(actions, num_actions);
+                MultiWorldTesting::MultiAction::Validate_Actions(actions, num_actions);
 
                 top_action_from_bag = actions[0];
 
@@ -1871,7 +1871,7 @@ private:
 
     u32 Get_Number_Of_Actions(Ctx& context)
     {
-        return ::Get_Variable_Number_Of_Actions(context, m_num_actions);
+        return MultiWorldTesting::MultiAction::Get_Variable_Number_Of_Actions(context, m_num_actions);
     }
 
 private:
