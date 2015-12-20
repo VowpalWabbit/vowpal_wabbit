@@ -338,7 +338,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
     {
         uint32_t len;
         size_t ret = bin_read_fixed(model_file, (char*)&len, sizeof(len), "");
-        if (len > 512 || ret < sizeof(uint32_t)) THROW("bad model format!");
+        if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t))
+            THROW("bad model format!");
         resize_buf_if_needed(buff2, buf2_size, len);
         bytes_read_write += bin_read_fixed(model_file, buff2, len, "") + ret;
         all.file_options->str(buff2);
