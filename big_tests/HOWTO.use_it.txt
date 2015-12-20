@@ -5,11 +5,15 @@ To run all the tests until one fails, type
 
 make test
 
+or simply
+
+make
+
 To run all the tests regardless of failures, type
 
 make -i test
 
-To clean up and start over, type
+To clean up so that you can start over, type
 
 make clean
 
@@ -21,7 +25,7 @@ To erase all the data, type
 
 make eraseData
 
-If you change some code, so that the output of some tests changes, or you add some new tests, and you want to save the new output so that future outputs will be compared with it, type
+If you change some code so that the output of some tests changes, or you add some new tests, and you want to save the new output so that future outputs will be compared with it, type
 
 make expected
 
@@ -35,17 +39,21 @@ Of course, you can make multiple targets together, as in
 
 make 2.clean 2.test
 
+There are also pre-defined groups of tests that you can run, such as
+
+make regression_group
+
 If you want to create the correct outputs for a test without actually running it, type
 
 make $testName.pretend
 
 This can be useful if you want to run test X, which depends on the outputs of test Y, but you can't run test Y for some reason.
 
-The "test" target for each test is a actually a "run" followed by a "compare".  Thus
+The "test" target for each test is actually a "run" followed by a "compare".  Thus
 
 make 3.run 3.compare
 
-is equivalant to
+is equivalent to
 
 make 3.test
 
@@ -56,3 +64,8 @@ If you want to use an executable other than ../vowpalwabbit/vw, you can supply i
 make EXEC=myProgram all
 
 Similar substitutions can be made for other variables, such as ARCH and DIFF.
+
+If you want to pass extra parameters to all tests, set the EP variable, like this:
+
+make EP="--random_seed 13"
+

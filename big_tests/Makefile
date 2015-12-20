@@ -4,12 +4,13 @@ SHELL = bash
 
 # suppress built-in rules, to speed things up
 MAKEFLAGS=-r
-
 # disable implicit suffixes, to speed things up
 .SUFFIXES:
 # keep all intermediate files
 .SECONDARY:
 .ONESHELL:
+.SILENT:
+
 .PHONY:	test expected pretend run clean spotless
 
 TOP_MK_DIR := $(patsubst %/,%,$(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
@@ -41,20 +42,20 @@ test:
 	@for aTest in $(allTests); do
 		make $$aTest.test || exit
 	done
-	@echo "made test"
+	@echo "test suite finished"
 
 # use this target to run without doing any diffs
 run:
 	@for aTest in $(allTests); do
 		make $$aTest.run || exit 1
 	done
-	echo "made run"
+	echo "'make run' finished"
 
 expected:
 	@for aTest in $(allTests); do
 		make $$aTest.expected || exit
 	done
-	echo "made expected"
+	echo "'make expected' finished"
 
 clean:
 	-rm -r $(stageDir)
@@ -66,11 +67,10 @@ pretend:
 	@for aTest in $(allTests); do
 		make $$aTest.pretend || exit
 	done
-	echo "made pretend"
+	echo "'make pretend' finished"
 
 
-%.test:	%.startNotice %.run %.compare %.endNotice
-	@echo
+%.test:	%.startNotice %.run %.compare %.endNotice ;
 
 %.startNotice:
 	@echo "Starting test $*"
@@ -81,29 +81,34 @@ pretend:
 $(stageDir)/%.dir:
 	@mkdir -p $@
 
-%.run:	$(stageDir)/%.dir $(stageDir)/%.dir/done
-	@echo
+%.run:	$(stageDir)/%.dir $(stageDir)/%.dir/done ;
 
 $(stageDir)/%.dir/done:	$(dataDir)/$(%.inData)
-	#if [ -n "$($*.deps)" ] ; then $(MAKE) $($*.deps); fi
+	@if [ -n "$($*.deps)" ] ; then
+		echo "test $* has dependencies: $($*.deps)"
+		$(MAKE) $($*.deps)
+		# ToDo: stop if deps fail
+		echo "finished dependencies; proceeding with test $*"
+	fi
 	cd $(stageDir)/$*.dir
 	exec=$(EXEC)
 	if [ -n  "$($*.exec)" ] ; then exec="$($*.exec)" ; fi
-	$$exec $($*.params) > out 2> err
+	echo "$$exec $($*.params) $(EP) > out 2> err"
+	$$exec $($*.params) $(EP) > out 2> err
 	touch $@
 
 # first diff all the results, then set exit status if non-empty
-%.compare:	$(stageDir)/%.dir $(stageDir)/%.dir/diffs
-	@echo
-
-$(stageDir)/%.dir/diffs:	$(expDir)/%/out $(expDir)/%/err
+%.compare:	$(stageDir)/%.dir $(expDir)/%/out $(expDir)/%/err
 	@cd $(stageDir)/$*.dir
 	rm -f diffs
 	for FILE in out err $($*.otherOutputs) ; do
 		echo "$(DIFF) -b $$FILE $(expDir)/$*/$$FILE"
 		$(DIFF) -b $$FILE $(expDir)/$*/$$FILE |& tee -a diffs
 	done
-	if [ -s diffs ] ; then (echo "Check failed for test $*"; exit 1) ; fi
+	if [ -s diffs ] ; then
+		echo "Test $* failed due to diffs." ;\
+		exit 1
+	fi
 
 # update expected files from current target files
 # $*.out and $*.err are always added as expected files
@@ -126,4 +131,3 @@ $(stageDir)/%.dir/diffs:	$(expDir)/%/out $(expDir)/%/err
 
 %.clean:
 	-rm -rf $(stageDir)/$*
-
