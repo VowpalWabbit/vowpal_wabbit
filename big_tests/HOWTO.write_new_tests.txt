@@ -1,0 +1,26 @@
+HOWTO write new tests for the big_tests test suite
+--------------------------------------------------
+
+The only variables that are required for every test are *.inData and *.params .  Everything else is optional.  Here's a simple example of a complete test specification:
+
+myTest.inData := ftrl-proximal/ftrl-proximal-train.prep
+myTest.params := -k -d $(dataDir)/$(107.inData) -f 0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off
+  
+The data will typically be under dataSets/ .  Look at dataSets.mk for examples of how to add new datasets.
+
+By default, STDOUT will go to the file out and STDERR will go to the file err. Other created files that should be compared to "expected" files should be captured by the *.otherOutputs variable.  For example:
+
+myTest.otherOutputs := 0001_ftrl.model
+
+These other expected files should be copied to the test's subdirectory under expected/ .
+
+# If you're using an unusual executable (e.g. library_example), its path should be given by the *.exec variable, relative to the directory of the top level Makefile.  For example:
+
+myTest.exec := $(TOP_MK_DIR)/../vowpalwabbit/library_example
+
+List inter-test dependencies like this:
+
+myTest.deps:	test2.run test4.test
+
+Dependencies can be on any set of valid targets, including merely running other tests (*.run targets) or those tests actually passing (*.test targets).
+
