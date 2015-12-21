@@ -7,6 +7,7 @@ spanning_tree_DEPENDENCIES = ../vowpalwabbit/liballreduce.la
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 
+AM_CPPFLAGS = -I$(top_srcdir)/vowpalwabbit
 AM_CXXFLAGS = ${BOOST_CPPFLAGS} ${ZLIB_CPPFLAGS} ${PTHREAD_CFLAGS}
 AM_LDFLAGS = ${BOOST_LDFLAGS} ${BOOST_PROGRAM_OPTIONS_LIB} ${ZLIB_LDFLAGS} ${PTHREAD_LIBS}
 

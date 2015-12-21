@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
     // everything gets caught here & the error message is printed
     // sans the excess exception noise, and core dump.
     cerr << "vw: " << e.what() << endl;
-	// cin.ignore();
+    // cin.ignore();
     exit(1);
   }
   // cin.ignore();

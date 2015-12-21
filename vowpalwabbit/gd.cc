@@ -408,7 +408,7 @@ struct norm_data
 const float x_min = 1.084202e-19f;
 const float x2_min = x_min*x_min;
 
-  template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare, bool stateless>
+template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare, bool stateless>
 inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
 { if(feature_mask_off || fw != 0.)
   { weight* w = &fw;
@@ -421,8 +421,8 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       w[adaptive] += nd.grad_squared * x2;
     if(normalized)
     { float x_abs = fabsf(x);
-      if( x_abs > w[normalized])  // new scale discovered
-      { if( w[normalized] > 0. && !stateless)  //If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
+      if( x_abs > w[normalized] && !stateless)  // new scale discovered
+      { if( w[normalized] > 0.)  //If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
         { if (sqrt_rate)
           { float rescale = w[normalized]/x_abs;
             w[0] *= (adaptive ? rescale : rescale*rescale);
@@ -442,7 +442,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
 }
 
 bool global_print_features = false;
-  template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare, bool stateless>
+template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare, bool stateless>
 float get_pred_per_update(gd& g, example& ec)
 { //We must traverse the features in _precisely_ the same order as during training.
   label_data& ld = ec.l.simple;
@@ -455,9 +455,10 @@ float get_pred_per_update(gd& g, example& ec)
   foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless> >(all, ec, nd);
 
   if(normalized)
-  { g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
-    g.total_weight += ec.weight;
-
+  { if(!stateless)
+    { g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
+      g.total_weight += ec.weight;
+    }
     g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g);
     nd.pred_per_update *= g.update_multiplier;
   }
@@ -465,32 +466,29 @@ float get_pred_per_update(gd& g, example& ec)
   return nd.pred_per_update;
 }
 
-  template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare, bool stateless>
+template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare, bool stateless>
 float sensitivity(gd& g, example& ec)
-{
-  if(adaptive || normalized)
+{ if(adaptive || normalized)
     return get_pred_per_update<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless>(g,ec);
   else
     return ec.total_sum_feat_sq;
 }
 
-  template<size_t adaptive>
-  float get_scale(gd& g, example& ec, float weight)
-  {
-    float update_scale = g.all->eta * weight;
-    if(!adaptive)
-      { float t = (float)(ec.example_t - g.all->sd->weighted_holdout_examples);
-        update_scale *= powf(t, g.neg_power_t);
-      }
-    return update_scale;
+template<size_t adaptive>
+float get_scale(gd& g, example& ec, float weight)
+{ float update_scale = g.all->eta * weight;
+  if(!adaptive)
+  { float t = (float)(ec.example_t - g.all->sd->weighted_holdout_examples);
+    update_scale *= powf(t, g.neg_power_t);
   }
+  return update_scale;
+}
 
-  template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-  float sensitivity(gd& g, base_learner& base, example& ec)
-  {
-    return get_scale<adaptive>(g, ec, 1.)
-      * sensitivity<sqrt_rate, feature_mask_off, adaptive, normalized, spare, true>(g,ec);
-  }
+template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
+float sensitivity(gd& g, base_learner& base, example& ec)
+{ return get_scale<adaptive>(g, ec, 1.)
+         * sensitivity<sqrt_rate, feature_mask_off, adaptive, normalized, spare, true>(g,ec);
+}
 
 template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 float compute_update(gd& g, example& ec)
@@ -501,8 +499,8 @@ float compute_update(gd& g, example& ec)
   float update = 0.;
   ec.updated_prediction = ec.pred.scalar;
   if (all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) > 0.)
-    { float pred_per_update = sensitivity<sqrt_rate, feature_mask_off, adaptive, normalized, spare, false>(g, ec);
-      float update_scale = get_scale<adaptive>(g, ec, ec.weight);
+  { float pred_per_update = sensitivity<sqrt_rate, feature_mask_off, adaptive, normalized, spare, false>(g, ec);
+    float update_scale = get_scale<adaptive>(g, ec, ec.weight);
 
     if(invariant)
       update = all.loss->getUpdate(ec.pred.scalar, ld.label, update_scale, pred_per_update);
@@ -579,7 +577,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
         brw = bin_text_write_fixed(model_file, (char*)it->first.c_str(), sizeof(*it->first.c_str()),
                                    buff, text_len, true);
 
-        text_len = sprintf_s(buff, buf_size, ":%ld:%f\n", it->second, *v);
+        text_len = sprintf_s(buff, buf_size, ":%zd:%f\n", it->second, *v);
         brw += bin_text_write_fixed(model_file, (char *)v, sizeof(*v),
                                     buff, text_len, true);
       }

@@ -99,8 +99,9 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
     // make sure that the probabilities sum up (exactly) to one
     for (uint32_t i=0; i<o.k; i++)
       ec.pred.probs[i] /= sum_prob;
-  } else {
-    ec.pred.multiclass = prediction;
+  }
+  else
+  { ec.pred.multiclass = prediction;
   }
 
   ec.l.multi = mc_label_data;
@@ -152,7 +153,8 @@ void finish_example_probabilities(vw& all, oaa& o, example& ec)
     if (all.sd->ldict)
     { substring ss = all.sd->ldict->get(i+1);
       outputStringStream << string(ss.begin, ss.end - ss.begin);
-    } else
+    }
+    else
       outputStringStream << i+1;
     sprintf(temp_str, "%f", ec.pred.probs[i]); // 0.123 -> 0.123000
     outputStringStream << ':' << temp_str;
@@ -189,7 +191,7 @@ LEARNER::base_learner* oaa_setup(vw& all)
   if (all.sd->ldict && (data.k != all.sd->ldict->getK()))
     THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
 
-  data.all = &all;
+    data.all = &all;
   data.pred = calloc_or_throw<polyprediction>(data.k);
   data.num_subsample = 0;
   data.subsample_order = nullptr;
