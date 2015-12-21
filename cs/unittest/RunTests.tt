@@ -10,7 +10,7 @@
 
 <#
 
-var testRoot = Path.Combine(Path.GetDirectoryName(Host.TemplateFile), @"..\test");
+var testRoot = Path.Combine(Path.GetDirectoryName(Host.TemplateFile), @"..\..\test");
 
 var lines = File.ReadAllLines(Path.Combine(testRoot, "RunTests"))
     .SkipWhile(l => l != "__DATA__")

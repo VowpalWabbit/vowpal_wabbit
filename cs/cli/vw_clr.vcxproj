@@ -31,7 +31,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <Keyword>ManagedCProj</Keyword>
     <RootNamespace>vw_clr</RootNamespace>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\vowpalwabbit\</SolutionDir>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -297,10 +297,10 @@
     <ClCompile Include="vw_prediction.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\vowpalwabbit\vw_dynamic.vcxproj">
+    <ProjectReference Include="$(SolutionDir)\vw_dynamic.vcxproj">
       <Project>{1e205806-7f80-47dd-a38d-fc08083f3593}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\vw_common\vw_common.csproj">
+    <ProjectReference Include="..\common\vw_common.csproj">
       <Project>{e621e022-c1f8-433f-905a-ab9a3de072b7}</Project>
     </ProjectReference>
   </ItemGroup>

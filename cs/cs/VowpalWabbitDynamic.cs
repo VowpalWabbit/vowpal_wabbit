@@ -1,4 +1,12 @@
-﻿using System;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="VowpalWabbitDynamic.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -9,16 +17,29 @@ using VW.Serializer;
 
 namespace VW
 {
+    /// <summary>
+    /// Vowpal Wabbit wrapper for anonymous classes. Type used for serialization doesn't need to be known at compile time,
+    /// but it's checked at runtime.
+    /// </summary>
+    /// <remarks>For each call to <see cref="Learn"/> there is additional overhead as the type is looked up in a dictionary compared to <see cref="VowpalWabbit{T}"/>.</remarks>
     public class VowpalWabbitDynamic : IDisposable
     {
         private Dictionary<Type, VowpalWabbitSerializer<object>> serializers;
 
         private VowpalWabbit vw;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VowpalWabbitDynamic"/> class.
+        /// </summary>
+        /// <param name="arguments">Command line arguments passed to native instance.</param>
         public VowpalWabbitDynamic(string arguments) : this(new VowpalWabbitSettings(arguments))
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VowpalWabbitDynamic"/> class.
+        /// </summary>
+        /// <param name="settings">Arguments passed to native instance.</param>
         public VowpalWabbitDynamic(VowpalWabbitSettings settings)
         {
             this.vw = new VowpalWabbit(settings);
@@ -47,6 +68,11 @@ namespace VW
             return serializer;
         }
 
+        /// <summary>
+        /// Learns from the given example.
+        /// </summary>
+        /// <param name="example">The example to learn.</param>
+        /// <param name="label">The label for this <paramref name="example"/>.</param>
         public void Learn(object example, ILabel label)
         {
             using (var ex = GetOrCreateSerializer(example.GetType()).Serialize(example, label))

@@ -17,11 +17,11 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>vw_key.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\vw_key.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\vowpalwabbit\x64\Debug\</OutputPath>
+    <OutputPath>$(SolutionDir)\x64\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
@@ -72,7 +72,7 @@
     <CodeContractsAnalysisWarningLevel>0</CodeContractsAnalysisWarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>..\vowpalwabbit\x64\Release\</OutputPath>
+    <OutputPath>$(SolutionDir)\x64\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
@@ -108,7 +108,7 @@
     <Compile Include="Serializer\StringProcessing.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="vw_key.snk" />
+    <None Include="..\vw_key.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

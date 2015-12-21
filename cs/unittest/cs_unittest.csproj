@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.props" Condition="Exists('..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.props')" />
+  <Import Project="$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.props" Condition="Exists('$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -17,12 +17,12 @@
     <ReferencePath>$(ProgramFiles)\Common Files\microsoft shared\VSTT\$(VisualStudioVersion)\UITestExtensionPackages</ReferencePath>
     <IsCodedUITest>False</IsCodedUITest>
     <TestProjectType>UnitTest</TestProjectType>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\vowpalwabbit\</SolutionDir>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
     <NuGetPackageImportStamp>b7be78ce</NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\vowpalwabbit\x64\Debug\</OutputPath>
+    <OutputPath>$(SolutionDir)\x64\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
@@ -30,7 +30,7 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>..\vowpalwabbit\x64\Release\</OutputPath>
+    <OutputPath>$(SolutionDir)\x64\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
@@ -42,11 +42,11 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>vw_key.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\vw_key.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'DebugLeakCheck|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\vowpalwabbit\x64\DebugLeakCheck\</OutputPath>
+    <OutputPath>$(SolutionDir)\x64\DebugLeakCheck\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
@@ -55,7 +55,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Antlr4.Runtime.net45">
-      <HintPath>..\vowpalwabbit\packages\Antlr4.Runtime.4.3.0\lib\net45\Antlr4.Runtime.net45.dll</HintPath>
+      <HintPath>$(SolutionDir)\packages\Antlr4.Runtime.4.3.0\lib\net45\Antlr4.Runtime.net45.dll</HintPath>
     </Reference>
     <Reference Include="System" />
   </ItemGroup>
@@ -114,15 +114,15 @@
       <Project>{e4e962ae-7056-4eb0-a8c5-8dc824a4b068}</Project>
       <Name>cs</Name>
     </ProjectReference>
-    <ProjectReference Include="..\cs_testcommon\cs_testcommon.csproj">
+    <ProjectReference Include="..\testcommon\cs_testcommon.csproj">
       <Project>{6a9cbeab-427f-4d8d-9559-b76b42b0895c}</Project>
       <Name>cs_testcommon</Name>
     </ProjectReference>
-    <ProjectReference Include="..\vw_clr\vw_clr.vcxproj">
+    <ProjectReference Include="..\cli\vw_clr.vcxproj">
       <Project>{85e55ae0-3784-4968-9271-c81af560e1c1}</Project>
       <Name>vw_clr</Name>
     </ProjectReference>
-    <ProjectReference Include="..\vw_common\vw_common.csproj">
+    <ProjectReference Include="..\common\vw_common.csproj">
       <Project>{e621e022-c1f8-433f-905a-ab9a3de072b7}</Project>
       <Name>vw_common</Name>
     </ProjectReference>
@@ -136,7 +136,7 @@
       <Listener>True</Listener>
       <Visitor>False</Visitor>
     </Antlr4>
-    <None Include="vw_key.snk" />
+    <None Include="..\vw_key.snk" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
@@ -178,13 +178,13 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.props')" Text="$([System.String]::Format('$(ErrorText)', '..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.props'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.props')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.props'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.targets'))" />
   </Target>
   <Import Project="$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.targets" />
-  <!-- Condition="Exists('..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.targets')" -->
+  <!-- Condition="Exists('$(SolutionDir)\packages\Antlr4.4.3.0\build\Antlr4.targets')" -->
   <PropertyGroup>
-    <PreBuildEvent>$(ProjectDir)\..\cs\transform_all.bat $(ProjectDir)</PreBuildEvent>
+    <PreBuildEvent>$(SolutionDir)..\cs\transform_all.bat $(ProjectDir)</PreBuildEvent>
   </PropertyGroup>
   <!-- making sure it's called during AppVeyor build -->
   <!--

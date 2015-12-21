@@ -16,12 +16,12 @@
     <ReferencePath>$(ProgramFiles)\Common Files\microsoft shared\VSTT\$(VisualStudioVersion)\UITestExtensionPackages</ReferencePath>
     <IsCodedUITest>False</IsCodedUITest>
     <TestProjectType>UnitTest</TestProjectType>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\vowpalwabbit\</SolutionDir>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
     <NuGetPackageImportStamp>fc8dceef</NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\vowpalwabbit\x64\Debug\</OutputPath>
+    <OutputPath>$(SolutionDir)\x64\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>full</DebugType>
@@ -30,7 +30,7 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>..\vowpalwabbit\x64\Release\</OutputPath>
+    <OutputPath>$(SolutionDir)\x64\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
@@ -40,7 +40,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'DebugLeakCheck|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\vowpalwabbit\x64\DebugLeakCheck\</OutputPath>
+    <OutputPath>$(SolutionDir)\x64\DebugLeakCheck\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>full</DebugType>
@@ -71,27 +71,27 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\cs_testcommon\cs_testcommon.csproj">
+    <ProjectReference Include="..\testcommon\cs_testcommon.csproj">
       <Project>{6a9cbeab-427f-4d8d-9559-b76b42b0895c}</Project>
       <Name>cs_testcommon</Name>
     </ProjectReference>
-    <ProjectReference Include="..\vw_clr\cs_vld.vcxproj">
+    <ProjectReference Include="..\cli\cs_vld.vcxproj">
       <Project>{3d57a6af-de8c-40dc-abde-e4ce1b9c0d20}</Project>
       <Name>cs_vld</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\vowpalwabbit\packages\VisualLeakDetector.2.4.2.4\lib\native\address-model-64\lib\dbghelp.dll">
+    <None Include="$(SolutionDir)\packages\VisualLeakDetector.2.4.2.4\lib\native\address-model-64\lib\dbghelp.dll">
       <Link>dbghelp.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\vowpalwabbit\packages\VisualLeakDetector.2.4.2.4\lib\native\address-model-64\lib\vld_x64.dll">
+    <None Include="$(SolutionDir)\packages\VisualLeakDetector.2.4.2.4\lib\native\address-model-64\lib\vld_x64.dll">
       <Link>vld_x64.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\vowpalwabbit\packages\VisualLeakDetector.2.4.2.4\lib\native\address-model-64\lib\Microsoft.DTfW.DHL.manifest">
+    <None Include="$(SolutionDir)\packages\VisualLeakDetector.2.4.2.4\lib\native\address-model-64\lib\Microsoft.DTfW.DHL.manifest">
       <Link>Microsoft.DTfW.DHL.manifest</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

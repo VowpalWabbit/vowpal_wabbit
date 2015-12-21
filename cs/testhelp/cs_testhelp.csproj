@@ -11,11 +11,11 @@
     <AssemblyName>cs_testhelp</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit</SolutionDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\vowpalwabbit\x64\Debug\</OutputPath>
+    <OutputPath>$(SolutionDir)\x64\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
@@ -24,7 +24,7 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>..\vowpalwabbit\x64\Release\</OutputPath>
+    <OutputPath>$(SolutionDir)\x64\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
@@ -57,7 +57,7 @@
   </Choose>
   <ItemGroup>
     <Reference Include="Antlr4.Runtime.net45, Version=4.3.0.0, Culture=neutral, PublicKeyToken=eb42632606e9261f, processorArchitecture=MSIL">
-      <HintPath>..\vowpalwabbit\packages\Antlr4.Runtime.4.3.0\lib\net45\Antlr4.Runtime.net45.dll</HintPath>
+      <HintPath>$(SolutionDir)\packages\Antlr4.Runtime.4.3.0\lib\net45\Antlr4.Runtime.net45.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -78,15 +78,15 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\cs_testcommon\cs_testcommon.csproj">
+    <ProjectReference Include="..\testcommon\cs_testcommon.csproj">
       <Project>{6a9cbeab-427f-4d8d-9559-b76b42b0895c}</Project>
       <Name>cs_testcommon</Name>
     </ProjectReference>
-    <ProjectReference Include="..\cs_unittest\cs_unittest.csproj">
+    <ProjectReference Include="..\unittest\cs_unittest.csproj">
       <Project>{007b7de0-1d9b-498d-acfc-e9d33058f22e}</Project>
       <Name>cs_unittest</Name>
     </ProjectReference>
-    <ProjectReference Include="..\vw_clr\vw_clr.vcxproj">
+    <ProjectReference Include="..\cli\vw_clr.vcxproj">
       <Project>{85e55ae0-3784-4968-9271-c81af560e1c1}</Project>
       <Name>vw_clr</Name>
     </ProjectReference>
