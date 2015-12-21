@@ -370,10 +370,10 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
     if (read)
       for (uint32_t j = 1; j < temp; j++)
         b.nodes.push_back(init_node());
-    text_len = sprintf(buff, "max_predictors = %ld ",b.max_predictors);
+    text_len = sprintf(buff, "max_predictors = %zd ",b.max_predictors);
     bin_text_read_write_fixed(model_file,(char*)&b.max_predictors, sizeof(b.max_predictors), "", read, buff, text_len, text);
 
-    text_len = sprintf(buff, "predictors_used = %ld ",b.predictors_used);
+    text_len = sprintf(buff, "predictors_used = %zd ",b.predictors_used);
     bin_text_read_write_fixed(model_file,(char*)&b.predictors_used, sizeof(b.predictors_used), "", read, buff, text_len, text);
 
     text_len = sprintf(buff, "progress = %d ",b.progress);
