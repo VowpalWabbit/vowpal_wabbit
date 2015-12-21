@@ -1,14 +1,24 @@
 
 # test groups
 
-regression_group:	107.test 2.test ;
+# this test group is bogus, for illustration only; adjust if you know what you're doing
+regression_group:	1a.valid 1b.valid 3.valid ;
 
 # individual tests
 
-107.inData := ftrl-proximal/ftrl-proximal-train.prep
-107.params := -k -d $(dataDir)/$(107.inData) -f 0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off
+# MNIST training
+1a.inData := mnist.dir/mnist-train.prep
+1a.params := --oaa 10 -d $(dataDir)/$(1a.inData) -f mnist.model -b 24 --adaptive --invariant --holdout_off -l 0.1 --nn 40 --passes 24 -k --compressed --cache_file mnist.cache
 
-2.deps := 107.test
-2.inData := ftrl-proximal/ftrl-proximal-train.prep
-2.params := -k -d $(dataDir)/$(2.inData) -f 0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off
-2.otherOutputs := 0001_ftrl.model
+# MNIST prediction
+1b.inData := mnist.dir/mnist-test.prep
+1b.params := -t -d $(dataDir)/$(1b.inData) -i $(stageDir)/1a.dir/mnist.model
+1b.deps := 1a.valid
+
+# COVERTYPE
+2.inData := covtype.dir/covtype.prep
+2.params := --oaa 7 -d $(dataDir)/$(2.inData)
+
+# URL Reputation
+3.inData := URLRep.dir/URLRep.prep
+3.params := -d $(dataDir)/$(3.inData)

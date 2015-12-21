@@ -1,26 +1,46 @@
 HOWTO write new tests for the big_tests test suite
---------------------------------------------------
+==================================================
 
-The only variables that are required for every test are *.inData and *.params .  Everything else is optional.  Here's a simple example of a complete test specification:
+There are 3 steps in writing a new test.
+1. Add some variable settings to the file testDetails.mk.  Details below.
+2. Add code for obtaining and preparing relevant data, if it's not already used by other tests.
+3. Create the "expected" files.  Note that your new tests WILL NOT EVEN RUN unless at least the 'out' and 'err' files exist in the right place.
+Here are the details.
+
+
+Step 1: testDetails.mk
+----------------------
+
+The only variable that is required for every test is *.params .  For most tests, you will also want to set *.inData, but it's possible to have tests without it.  Here's a simple example of a complete test specification:
 
 myTest.inData := ftrl-proximal/ftrl-proximal-train.prep
 myTest.params := -k -d $(dataDir)/$(107.inData) -f 0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off
-  
-The data will typically be under dataSets/ .  Look at dataSets.mk for examples of how to add new datasets.
 
 By default, STDOUT will go to the file out and STDERR will go to the file err. Other created files that should be compared to "expected" files should be captured by the *.otherOutputs variable.  For example:
 
 myTest.otherOutputs := 0001_ftrl.model
 
-These other expected files should be copied to the test's subdirectory under expected/ .
-
-# If you're using an unusual executable (e.g. library_example), its path should be given by the *.exec variable, relative to the directory of the top level Makefile.  For example:
+To use a non-standard executable (e.g. library_example), give its path to the *.exec variable, relative to the directory of the top level Makefile.  For example:
 
 myTest.exec := $(TOP_MK_DIR)/../vowpalwabbit/library_example
 
-List inter-test dependencies like this:
+A test can depend on any set of other targets as pre-requisites, including those that merely run other tests (*.run targets) and those that check whether another test passed (*.valid targets).  List inter-test dependencies like this:
 
-myTest.deps:	test2.run test4.test
+myTest.deps:	test2.run test4.valid
 
-Dependencies can be on any set of valid targets, including merely running other tests (*.run targets) or those tests actually passing (*.test targets).
+
+Step 2: dataSets.mk
+-------------------
+
+The data will typically be under dataSets/ .  Look at dataSets.mk for examples of how to add new datasets.
+
+Whenever you add a new data set, don't forget to add its name to the 'allData' target in dataSets.mk .
+
+
+Step 3: expected files
+----------------------
+
+Every test creates files named 'out' and 'err', and possibly others.  When you run `make $testName.compare` (which is the 2nd part of running `make $testName.valid`) these files are compared to the expected files with the same names in the directory expected/$testName/ .  The $testName.compare target WILL NOT RUN unless the expected files exist in that directory.  So, the first time you create a test, you should (a) `make $testName.run`, and (b) copy the expected files to expected/$testName/.  Only then will you be able to `make $testName.valid`.
+
+Tests may create output files besides 'out' and 'err', and you can use these as additional expected files.  These additional expected files should also be copied to expected/$testName/ .  However, 'out' and 'err' must exist there, even if they are empty.
 
