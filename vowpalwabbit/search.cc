@@ -432,7 +432,7 @@ void print_update(search_private& priv)
 
   if (PRINT_CLOCK_TIME)
   { size_t num_sec = (size_t)(((float)(clock() - priv.start_clock_time)) / CLOCKS_PER_SEC);
-    fprintf(stderr, " %15zusec", num_sec);
+    fprintf(stderr, " %15llusec", num_sec);
   }
 
   if (use_heldout_loss)
@@ -458,7 +458,7 @@ void add_new_feature(search_private& priv, float val, uint32_t idx)
     a.space   = calloc_or_throw<char>(priv.dat_new_feature_feature_space->length()+1);
     a.feature = calloc_or_throw<char>(priv.dat_new_feature_audit_ss.str().length() + 32);
     strcpy(a.space, priv.dat_new_feature_feature_space->c_str());
-    int num = sprintf(a.feature, "fid=%zu_", (idx & mask) >> ss);
+    int num = sprintf(a.feature, "fid=%llu_", (idx & mask) >> ss);
     strcpy(a.feature+num, priv.dat_new_feature_audit_ss.str().c_str());
     priv.dat_new_feature_ec->audit_features[priv.dat_new_feature_namespace].push_back(a);
   }
@@ -467,9 +467,9 @@ void add_new_feature(search_private& priv, float val, uint32_t idx)
 void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns)
 { if ((ec.indices.size() == 0) || (ec.indices.last() != ns))
   { if (ec.indices.size() == 0)
-    { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was empty"); }
+      { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was empty"); }
     else
-    { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " << (size_t)ec.indices.last()); }
+      { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " << (size_t)ec.indices.last()); }
   }
   ec.num_features -= ec.atomics[ns].size();
   ec.total_sum_feat_sq -= ec.sum_feat_sq[ns];

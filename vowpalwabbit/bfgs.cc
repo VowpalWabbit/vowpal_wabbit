@@ -933,6 +933,7 @@ base_learner* bfgs_setup(vw& all)
   if (vm.count("hessian_on") || b.m==0)
   { all.hessian_on = true;
   }
+
   if (!all.quiet)
   { if (b.m>0)
       cerr << "enabling BFGS based optimization ";
@@ -943,8 +944,11 @@ base_learner* bfgs_setup(vw& all)
     else
       cerr << "**without** curvature calculation" << endl;
   }
+
   if (all.numpasses < 2)
+  { free(&b);
     THROW("you must make at least 2 passes to use BFGS");
+  }
 
   all.bfgs = true;
   all.reg.stride_shift = 2;

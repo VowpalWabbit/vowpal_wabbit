@@ -3,12 +3,13 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
+#include "crossplat_compat.h"
+
 #include <float.h>
 #ifdef _WIN32
 #include <WinSock2.h>
 #else
 #include <netdb.h>
-#define sprintf_s snprintf
 #endif
 
 #if !defined(VW_NO_INLINE_SIMD)
@@ -577,7 +578,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
         brw = bin_text_write_fixed(model_file, (char*)it->first.c_str(), sizeof(*it->first.c_str()),
                                    buff, text_len, true);
 
-        text_len = sprintf_s(buff, buf_size, ":%zd:%f\n", it->second, *v);
+        text_len = sprintf_s(buff, buf_size, ":%llu:%f\n", it->second, *v);
         brw += bin_text_write_fixed(model_file, (char *)v, sizeof(*v),
                                     buff, text_len, true);
       }
@@ -729,6 +730,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
     all.sd->example_number = 0;
     all.sd->total_features = 0;
   }
+
 
   uint32_t length = 1 << all.num_bits;
   uint32_t stride = 1 << all.reg.stride_shift;

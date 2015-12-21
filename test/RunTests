@@ -840,12 +840,12 @@ __DATA__
         train-sets/ref/0001.stderr
 
 # Test 2: checking predictions as well
-{VW} -k -t train-sets/0001.dat -i models/0001.model -p 0001.predict --invariant
+{VW} -k -t -d train-sets/0001.dat -i models/0001.model -p 0001.predict --invariant
     test-sets/ref/0001.stderr
     pred-sets/ref/0001.predict
 
 # Test 3: without -d, training only
-{VW} -k train-sets/0002.dat -f models/0002.model --invariant
+{VW} -k -d train-sets/0002.dat -f models/0002.model --invariant
     train-sets/ref/0002.stderr
 
 # Test 4: same, with -d
@@ -854,7 +854,7 @@ __DATA__
     train-sets/ref/0002.stderr
 
 # Test 5: add -q .., adaptive, and more (same input, different outputs)
-{VW} -k --initial_t 1 --adaptive --invariant -q Tf -q ff -f models/0002a.model train-sets/0002.dat
+{VW} -k --initial_t 1 --adaptive --invariant -q Tf -q ff -f models/0002a.model -d train-sets/0002.dat
     train-sets/ref/0002a.stderr
 
 # Test 6: run predictions on Test 4 model
@@ -864,7 +864,7 @@ __DATA__
     pred-sets/ref/0002b.predict
 
 # Test 7: using normalized adaptive updates and a low --power_t
-{VW} -k --power_t 0.45 -f models/0002c.model train-sets/0002.dat
+{VW} -k --power_t 0.45 -f models/0002c.model -d train-sets/0002.dat
     train-sets/ref/0002c.stderr
 
 # Test 8: predicts on test 7 model
@@ -883,11 +883,11 @@ __DATA__
     train-sets/ref/cs_test.ldf.wap.predict
 
 # Test 11: one-against-all
-{VW} -k --oaa 10 -c --passes 10 train-sets/multiclass --holdout_off
+{VW} -k --oaa 10 -c --passes 10 -d train-sets/multiclass --holdout_off
     train-sets/ref/oaa.stderr
 
 # Test 12: Error Correcting Tournament
-{VW} -k --ect 10 --error 3 -c --passes 10 --invariant train-sets/multiclass --holdout_off
+{VW} -k --ect 10 --error 3 -c --passes 10 --invariant -d train-sets/multiclass --holdout_off
     train-sets/ref/multiclass.stderr
 
 # Test 13: Run search (dagger) on wsj_small for 6 passes extra features
@@ -933,7 +933,7 @@ __DATA__
     pred-sets/ref/0022.predict
 
 # Test 21: cubic features -- on a parity test case
-{VW} -k -c -f models/xxor.model train-sets/xxor.dat --cubic abc --passes 100 --holdout_off --progress 1.33333
+{VW} -k -c -f models/xxor.model -d train-sets/xxor.dat --cubic abc --passes 100 --holdout_off --progress 1.33333
     train-sets/ref/xxor.stderr
 
 # Test 22: matrix factorization -- training
@@ -1186,7 +1186,7 @@ echo "" | {VW}
     train-sets/ref/0001_ftrl.stderr
 
 # Test 73: test FTRL-Proximal
-{VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl.predict
+{VW} -k -t -d train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl.predict
     test-sets/ref/0001_ftrl.stderr
     pred-sets/ref/0001_ftrl.predict
 
@@ -1195,23 +1195,23 @@ echo "" | {VW}
     train-sets/ref/rcv1_cb_eval.stderr
 
 # Test 75: Log_multi
-{VW} --log_multi 10 train-sets/multiclass
+{VW} --log_multi 10 -d train-sets/multiclass
     train-sets/ref/log_multi.stderr
 
 # Test 76: cbify, epsilon-greedy
-{VW} --cbify 10 --epsilon 0.05 train-sets/multiclass
+{VW} --cbify 10 --epsilon 0.05 -d train-sets/multiclass
     train-sets/ref/cbify_epsilon.stderr
 
 # Test 77: cbify, tau first
-{VW} --cbify 10 --first 5 train-sets/multiclass
+{VW} --cbify 10 --first 5 -d train-sets/multiclass
     train-sets/ref/cbify_first.stderr
 
 # Test 78: cbify, bag
-{VW} --cbify 10 --bag 7 train-sets/multiclass
+{VW} --cbify 10 --bag 7 -d train-sets/multiclass
     train-sets/ref/cbify_bag.stderr
 
 # Test 79: cbify, cover
-{VW} --cbify 10 --cover 3 train-sets/multiclass
+{VW} --cbify 10 --cover 3 -d train-sets/multiclass
     train-sets/ref/cbify_cover.stderr
 
 # Test 80: lrq empty namespace
@@ -1223,7 +1223,7 @@ echo "" | {VW}
     train-sets/ref/ftrl_pistol.stderr
 
 # Test 82: test FTRL-PiSTOL
-{VW} -k -t train-sets/0001.dat -i models/ftrl_pistol.model -p ftrl_pistol.predict
+{VW} -k -t -d train-sets/0001.dat -i models/ftrl_pistol.model -p ftrl_pistol.predict
     test-sets/ref/ftrl_pistol.stderr
     pred-sets/ref/ftrl_pistol.predict
 
@@ -1232,16 +1232,16 @@ echo "" | {VW}
     train-sets/ref/redefine.stderr
 
 # Test 84: check cb_adf
-{VW} --cb_adf train-sets/cb_test.ldf --noconstant
+{VW} --cb_adf -d train-sets/cb_test.ldf --noconstant
     train-sets/ref/cb_adf.stderr
 
 # Test 85: check multilabel_oaa
-{VW} --multilabel_oaa 10 train-sets/multilabel -p multilabel.predict
+{VW} --multilabel_oaa 10 -d train-sets/multilabel -p multilabel.predict
     train-sets/ref/multilabel.stderr
     pred-sets/ref/multilabel.predict
 
 # Test 86: check --csoaa_rank on csoaa_ldf
-{VW} --csoaa_ldf multiline --csoaa_rank train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict --noconstant
+{VW} --csoaa_ldf multiline --csoaa_rank -d train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict --noconstant
     train-sets/ref/multilabel_ldf.stderr
     pred-sets/ref/multilabel_ldf.predict
 
@@ -1333,7 +1333,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/active_cover_oracular.stderr
 
 # Test 104: check cb_adf
-{VW} --cb_adf train-sets/cb_test.ldf --cb_type mtr --noconstant
+{VW} --cb_adf -d train-sets/cb_test.ldf --cb_type mtr --noconstant
     train-sets/ref/cb_adf_mtr.stderr
 
 # Test 105: train FTRL-Proximal early stopping
@@ -1341,7 +1341,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/0001_ftrl_holdout.stderr
 
 # Test 106: test FTRL-Proximal early stopping prediction
-{VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout.predict
+{VW} -k -t -d train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout.predict
     test-sets/ref/0001_ftrl_holdout_106.stderr
     pred-sets/ref/0001_ftrl_holdout.predict
 
@@ -1350,7 +1350,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/0001_ftrl_holdout_off.stderr
 
 # Test 108: test FTRL-Proximal no early stopping
-{VW} -k -t train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout_off.predict --holdout_off
+{VW} -k -t -d train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout_off.predict --holdout_off
     test-sets/ref/0001_ftrl_holdout_off.stderr
     pred-sets/ref/0001_ftrl_holdout_off.predict
 

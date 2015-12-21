@@ -6,6 +6,7 @@
 #include <math.h>
 
 #ifdef _WIN32
+// this is a bug in VS2013, fixed in VS2015 runtime
 template<typename T>
 T correctedExp(T exponent)
 { if (isinf(exponent) && exponent < T(0))

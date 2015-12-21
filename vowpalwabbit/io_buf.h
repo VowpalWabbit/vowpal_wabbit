@@ -182,7 +182,7 @@ public:
 
   virtual void flush()
   { if (files.size() > 0)
-      { if (write_file(files[0], space.begin, head - space.begin) != (int) (head - space.begin))
+    { if (write_file(files[0], space.begin, head - space.begin) != (int) (head - space.begin))
         std::cerr << "error, failed to write example\n";
       head = space.begin;
     }
@@ -216,18 +216,18 @@ size_t readto(io_buf &i, char* &pointer, char terminal);
 inline size_t bin_read_fixed(io_buf& i, char* data, size_t len, const char* read_message)
 { if (len > 0)
   { char* p;
-    size_t ret = buf_read(i,p,len);
+    // if the model is corrupt the number of bytes can be less then specified (as there isn't enought data available in the file)
+    len = buf_read(i,p,len);
 
     // compute hash for check-sum
     if (i.verify_hash)
-    { i.hash = uniform_hash(p, len, i.hash);
-    }
+      i.hash = uniform_hash(p, len, i.hash);
 
     if (*read_message == '\0')
       memcpy(data,p,len);
     else if (memcmp(data,p,len) != 0)
       THROW(read_message);
-    return ret;
+    return len;
   }
   return 0;
 }
