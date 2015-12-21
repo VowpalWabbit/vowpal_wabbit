@@ -20,12 +20,6 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
-            Environment.CurrentDirectory = @"C:\work\vw2\test";
-            new RunTests().CommandLine_Test30();
-
-            if (true)
-                return;
-
             NIPS2015Tutorial.AnnotationExample();
             // AttributesSample.Attributes();
             //AttributesSample.RunFeaturesTest();
@@ -39,7 +33,6 @@ namespace cs_test
             //RunLDAPredict();
             //RunVWParse_and_VWLearn();
         }
-
 
         private static void RunFeaturesTest()
         {
