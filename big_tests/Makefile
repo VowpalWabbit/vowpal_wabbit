@@ -3,7 +3,7 @@
 SHELL = bash
 
 # suppress built-in rules, to speed things up
-MAKEFLAGS+=-r
+MAKEFLAGS+=r
 # disable implicit suffixes, to speed things up
 .SUFFIXES:
 # keep all intermediate files
@@ -33,27 +33,27 @@ include dataSets.mk
 include testDetails.mk
 
 stub:
-	echo $(allTests)
+	echo $(MAKEFLAGS)
 
 help:
 	cat $(TOP_MK_DIR)/HOWTO.use_it.txt
 
 valid:
 	@for aTest in $(allTests); do
-		$(MAKE) $(MAKEFLAGS) $$aTest.valid || exit
+		$(MAKE) -$(MAKEFLAGS) $$aTest.valid || exit
 	done
 	@echo "test suite finished"
 
 # use this target to run without doing any diffs
 run:
 	@for aTest in $(allTests); do
-		$(MAKE) $(MAKEFLAGS) $$aTest.run || exit 1
+		$(MAKE) -$(MAKEFLAGS) $$aTest.run || exit 1
 	done
 	echo "'make run' finished"
 
 expected:
 	@for aTest in $(allTests); do
-		$(MAKE) $(MAKEFLAGS) $$aTest.expected || exit
+		$(MAKE) -$(MAKEFLAGS) $$aTest.expected || exit
 	done
 	echo "'make expected' finished"
 
@@ -62,7 +62,7 @@ clean:
 
 pretend:
 	@for aTest in $(allTests); do
-		$(MAKE) $(MAKEFLAGS) $$aTest.pretend || exit
+		$(MAKE) -$(MAKEFLAGS) $$aTest.pretend || exit
 	done
 	echo "'make pretend' finished"
 

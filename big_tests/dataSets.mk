@@ -1,12 +1,13 @@
 # Makefile for obtaining and preparing data sets
 
 allData := mnist covtype URLRep
-allDataTargets := $(addsuffix .dat,$(allData))
-# allDataDirs := $(addprefix $(dataDir)/,$(addsuffix .dir,$(allData)))
 
 ################ begin generic stuff #########
 
 mungeCodeDir := $(TOP_MK_DIR)/dataPrepCode
+
+allDataTargets := $(addsuffix .dat,$(allData))
+# allDataDirs := $(addprefix $(dataDir)/,$(addsuffix .dir,$(allData)))
 
 .PHONY:	getData eraseData %.dat
 
