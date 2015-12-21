@@ -182,7 +182,7 @@ public:
 
   virtual void flush()
   { if (files.size() > 0)
-    { if (write_file(files[0], space.begin, head - space.begin) != (int) (head - space.begin))
+      { if (write_file(files[0], space.begin, head - space.begin) != (int) (head - space.begin))
         std::cerr << "error, failed to write example\n";
       head = space.begin;
     }
@@ -267,7 +267,7 @@ inline size_t bin_text_write(io_buf& io, char* data, uint32_t len,
                              const char* text_data, uint32_t text_len, bool text)
 { if (text)
     return bin_write_fixed (io, text_data, text_len);
-  else if (len > 0)
+  else
     return bin_write (io, data, len);
   return 0;
 }
