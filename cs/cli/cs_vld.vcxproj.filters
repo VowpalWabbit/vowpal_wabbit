@@ -15,12 +15,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\vw_clr\vld_clr.h">
+    <ClInclude Include="vld_clr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\vw_clr\vld_clr.cpp">
+    <ClCompile Include="vld_clr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 
 #ifndef _WIN32
 #define sprintf_s snprintf
+#define vsprintf_s vsnprintf
 #endif
 
 

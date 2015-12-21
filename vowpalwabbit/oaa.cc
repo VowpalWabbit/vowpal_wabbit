@@ -193,7 +193,7 @@ LEARNER::base_learner* oaa_setup(vw& all)
     THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
   }
 
-  data.all = &all;
+    data.all = &all;
   data.pred = calloc_or_throw<polyprediction>(data.k);
   data.num_subsample = 0;
   data.subsample_order = nullptr;

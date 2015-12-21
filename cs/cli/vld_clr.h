@@ -33,6 +33,6 @@ namespace VLD
 
     void ReportLeaks();
 
-	void MarkAllLeaksAsReported();
+	  void MarkAllLeaksAsReported();
   };
 }

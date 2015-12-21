@@ -287,7 +287,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>LEAKCHECK;ZLIB_WINAPI;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZLIB_WINAPI;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion Condition="'$(Configuration)'=='Release'">AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed Condition="'$(Configuration)'=='Release'">Speed</FavorSizeOrSpeed>
@@ -358,6 +358,7 @@
     <ClInclude Include="comp_io.h" />
     <ClInclude Include="confidence.h" />
     <ClInclude Include="constant.h" />
+    <ClInclude Include="crossplat_compat.h" />
     <ClInclude Include="csoaa.h" />
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />

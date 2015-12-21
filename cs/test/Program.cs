@@ -20,16 +20,11 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
-            var models = Directory.EnumerateFiles(@"C:\Data\eastus-enusriver-archive-20151118-replay2");
+            Environment.CurrentDirectory = @"C:\work\vw2\test";
+            new RunTests().CommandLine_Test30();
 
-            int count = 0;
-            foreach (var m in models)
-            {
-                using (var vw = new VowpalWabbit(@"--quiet -t -i " + m))
-                {
-                    Console.Write("{0}\r", count++);
-                }
-            }
+            if (true)
+                return;
 
             NIPS2015Tutorial.AnnotationExample();
             // AttributesSample.Attributes();
