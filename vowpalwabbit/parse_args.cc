@@ -107,7 +107,7 @@ string find_in_path(vector<string> paths, string fname)
 #else
   string delimiter = "/";
 #endif
-for (string path : paths)
+  for (string path : paths)
   { string full = ends_with(path, delimiter) ? (path + fname) : (path + delimiter + fname);
     ifstream f(full.c_str());
     if (f.good())
@@ -801,7 +801,7 @@ void parse_feature_tweaks(vw& all)
 
   if (vm.count("dictionary"))
   { if (vm.count("dictionary_path"))
-for (string path : vm["dictionary_path"].as< vector<string> >())
+      for (string path : vm["dictionary_path"].as< vector<string> >())
         if (directory_exists(path))
           all.dictionary_path.push_back(path);
     if (directory_exists("."))

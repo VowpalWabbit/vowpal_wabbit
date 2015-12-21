@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
     if(!all.quiet && all.all_reduce != nullptr)
       cerr<<"Net time taken by process = "<<net_time/(double)(1000)<<" seconds\n";
 
-for (auto v : alls)
+    for (auto v : alls)
     { VW::sync_stats(*v);
       VW::finish(*v);
     }
