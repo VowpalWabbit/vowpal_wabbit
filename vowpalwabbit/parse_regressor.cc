@@ -10,11 +10,13 @@ using namespace std;
 #ifndef _WIN32
 #include <unistd.h>
 #define sprintf_s snprintf
+#define vsprintf_s vsnprintf
 #endif
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
 #include <algorithm>
+#include <stdarg.h>
 
 #include "rand48.h"
 #include "global_data.h"
@@ -44,11 +46,49 @@ void initialize_regressor(vw& all)
       all.reg.weight_vector[j << all.reg.stride_shift] = (float)(frand48() - 0.5);
 }
 
-const size_t buf_size = 512;
+const size_t default_buf_size = 512;
+
+bool resize_buf_if_needed(char *& __dest, size_t& __dest_size, const size_t __n)
+{
+    if (__dest_size < __n)
+    {
+        if ( (__dest = (char*) realloc(__dest, __n)) == NULL)
+            THROW("Can't realloc enough memory.");
+        __dest_size = __n;
+        return true;
+    }
+    return false;
+}
+
+int32_t safe_sprintf_s(char *& buf, size_t& buf_size, const char * fmt, ...)
+{
+    va_list args;
+    va_start(args,fmt);
+    int32_t len = vsprintf_s(buf, buf_size, fmt, args);
+    va_end(args);
+    if (len < 0) THROW("Encoding error.");
+    if (resize_buf_if_needed(buf, buf_size, len+1))
+    {
+        va_start(args,fmt);
+        vsprintf_s(buf, buf_size, fmt, args);
+        va_end(args);
+    }
+
+
+    return len;
+}
+
+inline void safe_memcpy(char *& __dest, size_t& __dest_size, const void *__src, size_t __n)
+{
+  resize_buf_if_needed(__dest, __dest_size, __n);
+  memcpy(__dest, __src, __n);
+}
 
 void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
-{ char buff[buf_size];
-  char buff2[buf_size];
+{ char* buff = (char*) malloc(default_buf_size);
+  size_t buf_size = default_buf_size;
+  char* buff2 = (char*) malloc(default_buf_size);
+  size_t buf2_size = default_buf_size;
   uint32_t text_len;
 
   if (model_file.files.size() > 0)
@@ -56,9 +96,9 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 
     uint32_t v_length = (uint32_t)version.to_string().length() + 1;
     text_len = sprintf_s(buff, buf_size, "Version %s\n", version.to_string().c_str());
-    memcpy(buff2, version.to_string().c_str(), min(v_length, buf_size));
+    memcpy(buff2, version.to_string().c_str(), min(v_length, buf2_size));
     if (read)
-    { v_length = buf_size;
+    { v_length = (uint32_t) buf2_size;
     }
     bytes_read_write += bin_text_read_write_validated(model_file, buff2, v_length,
                         "", read,
@@ -112,7 +152,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
     VW::validate_num_bits(all);
 
     if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
-    { // -q, --cubic and --interactions are saved in vw::file_options
+    { // -q, --cubic and --interactions are not saved in vw::file_options
       uint32_t pair_len = (uint32_t)all.pairs.size();
       text_len = sprintf_s(buff, buf_size, "%d pairs: ", (int)pair_len);
       bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&pair_len, sizeof(pair_len),
@@ -294,21 +334,27 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                         "", read,
                         "\n", 1, text);
 
-    text_len = sprintf_s(buff, buf_size, "options:%s\n", all.file_options->str().c_str());
-    uint32_t len = (uint32_t)all.file_options->str().length() + 1;
-    memcpy(buff2, all.file_options->str().c_str(), min(len, buf_size));
-
     if (read)
-    { len = buf_size;
+    {
+        uint32_t len;
+        size_t ret = bin_read_fixed(model_file, (char*)&len, sizeof(len), "");
+        if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t))
+            THROW("bad model format!");
+        resize_buf_if_needed(buff2, buf2_size, len);
+        bytes_read_write += bin_read_fixed(model_file, buff2, len, "") + ret;
+        all.file_options->str(buff2);
+    } else {
+        text_len = safe_sprintf_s(buff, buf_size, "options:%s\n", all.file_options->str().c_str());
+
+        uint32_t len = (uint32_t)all.file_options->str().length();
+        if (len > 0)
+            safe_memcpy(buff2, buf2_size, all.file_options->str().c_str(), len+1);
+        *(buff2+len) = 0;
+        bytes_read_write += bin_text_read_write_validated(model_file, buff2, len+1, //len+1 to write a \0
+                                                          "", read,
+                                                          buff, text_len, text);
     }
 
-    bytes_read_write += bin_text_read_write_validated(model_file, buff2, len,
-                        "", read,
-                        buff, text_len, text);
-
-    if (read)
-    { all.file_options->str(buff2);
-    }
 
     // Read/write checksum if required by version
     if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_HASH)
@@ -332,7 +378,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
     { model_file.verify_hash = false;
     }
   }
-
+ free(buff);
+ free(buff2);
 }
 
 void dump_regressor(vw& all, string reg_name, bool as_text)
