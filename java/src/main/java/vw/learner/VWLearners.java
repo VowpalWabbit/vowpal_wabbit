@@ -61,7 +61,7 @@ final public class VWLearners {
      * @param command The same string that is passed to VW, see
      *                <a href="https://github.com/JohnLangford/vowpal_wabbit/wiki/Command-line-arguments">here</a>
      *                for more information
-     * @return
+     * @return The pointer to the native object created on the C side
      */
     private static long initializeVWJni(final String command) {
         long nativePointer;

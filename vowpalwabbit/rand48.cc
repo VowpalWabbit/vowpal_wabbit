@@ -1,5 +1,6 @@
 //A quick implementation similar to drand48 for cross-platform compatibility
 #include <stdint.h>
+#include "floatbits.h"
 //
 // NB: the 'ULL' suffix is not part of the constant it is there to
 // prevent truncation of constant to (32-bit long) when compiling
@@ -16,7 +17,7 @@ int bias = 127 << 23;
 float merand48(uint64_t& initial)
 { initial = a * initial + c;
   int32_t temp = ((initial >> 25) & 0x7FFFFF) | bias;
-  return *(float *)&temp - 1;
+  return bits_to_float(temp) - 1;
 }
 
 uint64_t v = c;

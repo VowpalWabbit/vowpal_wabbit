@@ -54,7 +54,7 @@ private:
     new_ec->loss = 0.;
     new_ec->example_t = 0.;
     new_ec->total_sum_feat_sq = 0.;
-    new_ec->revert_weight = 0.;
+    new_ec->confidence = 0.;
     return new_ec;
   }
 
