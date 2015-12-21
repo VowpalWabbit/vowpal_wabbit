@@ -467,9 +467,9 @@ void add_new_feature(search_private& priv, float val, uint32_t idx)
 void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns)
 { if ((ec.indices.size() == 0) || (ec.indices.last() != ns))
   { if (ec.indices.size() == 0)
-    { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was empty"); }
+      { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was empty"); }
     else
-    { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " << (size_t)ec.indices.last()); }
+      { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " << (size_t)ec.indices.last()); }
   }
   ec.num_features -= ec.atomics[ns].size();
   ec.total_sum_feat_sq -= ec.sum_feat_sq[ns];

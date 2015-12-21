@@ -182,7 +182,7 @@ public:
 
   virtual void flush()
   { if (files.size() > 0)
-      { if (write_file(files[0], space.begin, head - space.begin) != (int) (head - space.begin))
+    { if (write_file(files[0], space.begin, head - space.begin) != (int) (head - space.begin))
         std::cerr << "error, failed to write example\n";
       head = space.begin;
     }

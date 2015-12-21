@@ -66,8 +66,7 @@ void initialize_mutex(MUTEX * pm)
 void delete_mutex(MUTEX *) { /* no operation necessary here*/ }
 #else
 void delete_mutex(MUTEX * pm)
-{
-  ::DeleteCriticalSection(pm);
+{ ::DeleteCriticalSection(pm);
 }
 #endif
 
@@ -216,22 +215,22 @@ void reset_source(vw& all, size_t numbits)
 { io_buf* input = all.p->input;
   input->current = 0;
   if (all.p->write_cache)
-    { all.p->output->flush();
-      all.p->write_cache = false;
-      all.p->output->close_file();
-      remove(all.p->output->finalname.begin);
-      rename(all.p->output->currentname.begin, all.p->output->finalname.begin);
-      while(input->num_files() > 0)
-	if (input->compressed())
-	  input->close_file();
-	else
-	  { int fd = input->files.pop();
-	    if (!member(all.final_prediction_sink, (size_t) fd))
-	      io_buf::close_file_or_socket(fd);
-	  }
-      input->open_file(all.p->output->finalname.begin, all.stdin_off, io_buf::READ); //pushing is merged into open_file
-      all.p->reader = read_cached_features;
-    }
+  { all.p->output->flush();
+    all.p->write_cache = false;
+    all.p->output->close_file();
+    remove(all.p->output->finalname.begin);
+    rename(all.p->output->currentname.begin, all.p->output->finalname.begin);
+    while(input->num_files() > 0)
+      if (input->compressed())
+        input->close_file();
+      else
+      { int fd = input->files.pop();
+        if (!member(all.final_prediction_sink, (size_t) fd))
+          io_buf::close_file_or_socket(fd);
+      }
+    input->open_file(all.p->output->finalname.begin, all.stdin_off, io_buf::READ); //pushing is merged into open_file
+    all.p->reader = read_cached_features;
+  }
   if ( all.p->resettable == true )
   { if (all.daemon)
     { // wait for all predictions to be sent back to client
@@ -763,7 +762,7 @@ void setup_example(vw& all, example* ae)
     ae->atomics[constant_namespace].push_back(temp);
     ae->total_sum_feat_sq++;
 
-    if (all.audit || all.hash_inv) ae->audit_features[constant_namespace].push_back({nullptr,(char*)"Constant",(uint32_t)constant, 1.,false});
+    if (all.audit || all.hash_inv) ae->audit_features[constant_namespace].push_back( {nullptr,(char*)"Constant",(uint32_t)constant, 1.,false});
   }
 
   if(all.limit_strings.size() > 0)
@@ -823,7 +822,7 @@ void add_constant_feature(vw& vw, example*ec)
   ec->atomics[cns].push_back(temp);
   ec->total_sum_feat_sq++;
   ec->num_features++;
-  if (vw.audit || vw.hash_inv) ec->audit_features[constant_namespace].push_back({nullptr,(char*)"Constant",(uint32_t)constant, 1.,false});
+  if (vw.audit || vw.hash_inv) ec->audit_features[constant_namespace].push_back( {nullptr,(char*)"Constant",(uint32_t)constant, 1.,false});
 }
 
 void add_label(example* ec, float label, float weight, float base)

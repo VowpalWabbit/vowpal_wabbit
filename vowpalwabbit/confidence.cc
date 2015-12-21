@@ -4,8 +4,7 @@
 using namespace LEARNER;
 
 struct confidence
-{
-  vw* all;//statistics, loss
+{ vw* all;//statistics, loss
 };
 
 template <bool is_learn>
@@ -67,7 +66,7 @@ base_learner* confidence_setup(vw& all)
 
   //Create new learner
   learner<confidence>& l = init_learner(&data, setup_base(all), predict_or_learn_with_confidence<true>,
-                                    predict_or_learn_with_confidence<false>);
+                                        predict_or_learn_with_confidence<false>);
   l.set_finish_example(return_confidence_example);
 
   return make_base(l);

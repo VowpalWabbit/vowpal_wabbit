@@ -17,13 +17,13 @@ typedef SOCKET socket_t;
 #define CLOSESOCK closesocket
 namespace std
 {
-  // forward declare promise as C++/CLI doesn't allow usage in header files
-  template<typename T>
-  class promise;
+// forward declare promise as C++/CLI doesn't allow usage in header files
+template<typename T>
+class promise;
 
-  class condition_variable;
+class condition_variable;
 
-  class mutex;
+class mutex;
 }
 #else
 #include <sys/socket.h>

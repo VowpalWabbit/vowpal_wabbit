@@ -25,8 +25,7 @@ using namespace std;
 //}
 
 float sum_of_squares(float* begin, float* end)
-{
-  float sum = 0;
+{ float sum = 0;
 
   for (; begin != end; begin++)
     sum += *begin * *begin;

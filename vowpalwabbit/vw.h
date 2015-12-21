@@ -32,7 +32,7 @@ vw* seed_vw_model(vw* vw_model, string extra_args);
 void cmd_string_replace_value( std::stringstream*& ss, string flag_to_replace, string new_value );
 
 char** get_argv_from_string(string s, int& argc);
-  const char* are_features_compatible(vw& vw1, vw& vw2);
+const char* are_features_compatible(vw& vw1, vw& vw2);
 
 /*
   Call finish() after you are done with the vw instance.  This cleans up memory usage.
@@ -105,7 +105,7 @@ primitive_feature_space* export_example(vw& all, example* e, size_t& len);
 void releaseFeatureSpace(primitive_feature_space* features, size_t len);
 
 void save_predictor(vw& all, string reg_name);
-  void save_predictor(vw& all, io_buf& buf);
+void save_predictor(vw& all, io_buf& buf);
 
 // inlines
 

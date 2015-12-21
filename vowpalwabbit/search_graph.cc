@@ -149,7 +149,7 @@ void run_bfs(task_data &D, vector<example*>& ec)
   while (D.bfs.size() < D.N)
   { while (i < D.bfs.size())
     { uint32_t n = D.bfs[i];
-      for (size_t id : D.adj[n])
+for (size_t id : D.adj[n])
         for (size_t j=0; j<ec[id]->l.cs.costs.size(); j++)
         { uint32_t m = ec[id]->l.cs.costs[j].class_index;
           if ((m > 0) && (!touched[m-1]))
@@ -224,7 +224,7 @@ void takedown(Search::search& sch, vector<example*>& /*ec*/)
 { task_data& D = *sch.get_task_data<task_data>();
   D.bfs.clear();
   D.pred.clear();
-  for (auto x : D.adj) x.clear();
+for (auto x : D.adj) x.clear();
   D.adj.clear();
 }
 
@@ -254,7 +254,7 @@ void add_edge_features_single_fn(task_data&D, float fv, uint32_t fx)
 void add_edge_features(Search::search&sch, task_data&D, uint32_t n, vector<example*>&ec)
 { D.cur_node = ec[n];
 
-  for (size_t i : D.adj[n])
+for (size_t i : D.adj[n])
   { for (size_t k=0; k<D.numN; k++) D.neighbor_predictions[k] = 0.;
 
     float pred_total = 0.;

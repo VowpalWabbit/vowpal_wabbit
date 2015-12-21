@@ -58,7 +58,7 @@ float multiply(v_array<feature>& f_dest, v_array<feature>& f_src2, interact& in)
     size_t cur_id1 = (size_t)(((f_src1[i1].weight_index & weight_mask) - base_id1) & weight_mask);
     size_t cur_id2 = (size_t)(((f_src2[i2].weight_index & weight_mask) - base_id2) & weight_mask);
 
-	// checking for sorting requirement
+    // checking for sorting requirement
     if (cur_id1 < prev_id1)
     { cout << "interact features are out of order: " << cur_id1 << " > " << prev_id1 << ". Skipping features." << endl;
       return 0;
@@ -125,9 +125,9 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec)
   { if (ec.indices[i] == in.n2)
     { n2_i = (int)i;
       memmove(&ec.indices[n2_i], &ec.indices[n2_i + 1], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));
-		  ec.indices.decr();
-		  break;
-	  }
+      ec.indices.decr();
+      break;
+    }
   }
 
   base.predict(ec);
