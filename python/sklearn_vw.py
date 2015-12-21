@@ -33,6 +33,7 @@ class VW(BaseEstimator, vw):
     """
 
     params = dict()
+    passes = 1
 
     def __init__(self,
                  random_seed=None,
@@ -91,6 +92,7 @@ class VW(BaseEstimator, vw):
                  f=None,
                  readable_model=None,
                  invert_hash=None,
+                 passes=None,
                  save_resume=None,
                  output_feature_regularizer_binary=None,
                  output_feature_regularizer_text=None):
@@ -165,6 +167,7 @@ class VW(BaseEstimator, vw):
         final_regressor,f (str): Final regressor
         readable_model (str): Output human-readable final regressor with numeric features
         invert_hash (str): Output human-readable final regressor with feature names.  Computationally expensive.
+        passes (int): Number of training passes
         save_resume (bool): save extra state so learning can be resumed later with new data
         output_feature_regularizer_binary (str): Per feature regularization output file
         output_feature_regularizer_text (str): Per feature regularization output file, in text
@@ -179,13 +182,16 @@ class VW(BaseEstimator, vw):
         if hasattr(self, 'fit_'):
             del self.fit_
 
-        # quiet models by default
-        if 'quiet' not in self.params:
-            self.params['quiet'] = True
+        # reset params and quiet models by default
+        self.params = {'quiet':  True}
 
+        # assign all valid args to params dict
         for k, v in locals().iteritems():
             if k != 'self' and v is not None:
                 self.params[k] = v
+
+        # store passes separately to be used in fit
+        self.passes = self.params.pop('passes', 1)
 
         super(VW, self).__init__(**self.params)
 
@@ -207,8 +213,11 @@ class VW(BaseEstimator, vw):
         """
 
         # add examples to model
-        for ex in X if not convert_to_vw else tovw(x=X, y=y, sample_weight=sample_weight):
-            self.learn(ex)
+        for _ in xrange(self.passes):
+            for idx, x in enumerate(X):
+                if convert_to_vw:
+                    x = tovw(x=x, y=y[idx], sample_weight=sample_weight)[0]
+                self.learn(x)
         self.fit_ = True
 
     def predict(self, X, convert_to_vw=True):
@@ -238,7 +247,9 @@ class VW(BaseEstimator, vw):
 
         # add test examples to model
         y = np.empty([num_samples])
-        for idx, x in enumerate(X if not convert_to_vw else tovw(x=X)):
+        for idx, x in enumerate(X):
+            if convert_to_vw:
+                x = tovw(x)[0]
             ex = self.example(x)
             # need to set test bit to skip learning
             ex.set_test_only(True)
@@ -319,6 +330,9 @@ class VWClassifier(SparseCoefMixin, LinearClassifierMixin, VW):
 
         return VW.predict(self, X=X)
 
+    def __del__(self):
+        VW.__del__(self)
+
 
 class VWRegressor(VW, RegressorMixin):
     """ Vowpal Wabbit Regressor model """
@@ -349,7 +363,7 @@ def tovw(x, y=None, sample_weight=None):
     use_weight = sample_weight is not None
 
     # convert to numpy array if needed
-    if not isinstance(x, np.ndarray):
+    if not isinstance(x, (np.ndarray, csr_matrix)):
         x = np.array(x)
     if not isinstance(y, np.ndarray):
         y = np.array(y)
@@ -378,7 +392,7 @@ def tovw(x, y=None, sample_weight=None):
     for idx, row in enumerate(rows):
         truth = y[idx] if use_truth else 1
         weight = sample_weight[idx] if use_weight else 1
-        features = row.split('0 ')[1]
+        features = row.split('0 ', 1)[1]
         # only using a single namespace and no tags
         out.append(('{y} {w} |{ns} {x}'.format(y=truth, w=weight, ns=DEFAULT_NS, x=features)))
 
