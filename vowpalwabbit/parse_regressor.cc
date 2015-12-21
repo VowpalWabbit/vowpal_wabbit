@@ -49,38 +49,33 @@ void initialize_regressor(vw& all)
 const size_t default_buf_size = 512;
 
 bool resize_buf_if_needed(char *& __dest, size_t& __dest_size, const size_t __n)
-{
-    if (__dest_size < __n)
-    {
-        if ( (__dest = (char*) realloc(__dest, __n)) == NULL)
-            THROW("Can't realloc enough memory.");
-        __dest_size = __n;
-        return true;
-    }
-    return false;
+{ if (__dest_size < __n)
+  { if ( (__dest = (char*) realloc(__dest, __n)) == NULL)
+      THROW("Can't realloc enough memory.");
+    __dest_size = __n;
+    return true;
+  }
+  return false;
 }
 
 int32_t safe_sprintf_s(char *& buf, size_t& buf_size, const char * fmt, ...)
-{
-    va_list args;
-    va_start(args,fmt);
-    int32_t len = vsprintf_s(buf, buf_size, fmt, args);
+{ va_list args;
+  va_start(args,fmt);
+  int32_t len = vsprintf_s(buf, buf_size, fmt, args);
+  va_end(args);
+  if (len < 0) THROW("Encoding error.");
+  if (resize_buf_if_needed(buf, buf_size, len+1))
+  { va_start(args,fmt);
+    vsprintf_s(buf, buf_size, fmt, args);
     va_end(args);
-    if (len < 0) THROW("Encoding error.");
-    if (resize_buf_if_needed(buf, buf_size, len+1))
-    {
-        va_start(args,fmt);
-        vsprintf_s(buf, buf_size, fmt, args);
-        va_end(args);
-    }
+  }
 
 
-    return len;
+  return len;
 }
 
 inline void safe_memcpy(char *& __dest, size_t& __dest_size, const void *__src, size_t __n)
-{
-  resize_buf_if_needed(__dest, __dest_size, __n);
+{ resize_buf_if_needed(__dest, __dest_size, __n);
   memcpy(__dest, __src, __n);
 }
 
@@ -335,24 +330,24 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                         "\n", 1, text);
 
     if (read)
-    {
-        uint32_t len;
-        size_t ret = bin_read_fixed(model_file, (char*)&len, sizeof(len), "");
-        if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t))
-            THROW("bad model format!");
-        resize_buf_if_needed(buff2, buf2_size, len);
-        bytes_read_write += bin_read_fixed(model_file, buff2, len, "") + ret;
-        all.file_options->str(buff2);
-    } else {
-        text_len = safe_sprintf_s(buff, buf_size, "options:%s\n", all.file_options->str().c_str());
+    { uint32_t len;
+      size_t ret = bin_read_fixed(model_file, (char*)&len, sizeof(len), "");
+      if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t))
+        THROW("bad model format!");
+      resize_buf_if_needed(buff2, buf2_size, len);
+      bytes_read_write += bin_read_fixed(model_file, buff2, len, "") + ret;
+      all.file_options->str(buff2);
+    }
+    else
+    { text_len = safe_sprintf_s(buff, buf_size, "options:%s\n", all.file_options->str().c_str());
 
-        uint32_t len = (uint32_t)all.file_options->str().length();
-        if (len > 0)
-            safe_memcpy(buff2, buf2_size, all.file_options->str().c_str(), len+1);
-        *(buff2+len) = 0;
-        bytes_read_write += bin_text_read_write_validated(model_file, buff2, len+1, //len+1 to write a \0
-                                                          "", read,
-                                                          buff, text_len, text);
+      uint32_t len = (uint32_t)all.file_options->str().length();
+      if (len > 0)
+        safe_memcpy(buff2, buf2_size, all.file_options->str().c_str(), len+1);
+      *(buff2+len) = 0;
+      bytes_read_write += bin_text_read_write_validated(model_file, buff2, len+1, //len+1 to write a \0
+                          "", read,
+                          buff, text_len, text);
     }
 
 
@@ -378,8 +373,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
     { model_file.verify_hash = false;
     }
   }
- free(buff);
- free(buff2);
+  free(buff);
+  free(buff2);
 }
 
 void dump_regressor(vw& all, string reg_name, bool as_text)
@@ -409,8 +404,7 @@ void save_predictor(vw& all, string reg_name, size_t current_pass)
 
 void finalize_regressor(vw& all, string reg_name)
 { if (!all.early_terminate)
-  {
-    if (all.per_feature_regularizer_output.length() > 0)
+  { if (all.per_feature_regularizer_output.length() > 0)
       dump_regressor(all, all.per_feature_regularizer_output, false);
     else
       dump_regressor(all, reg_name, false);

@@ -43,8 +43,7 @@ struct learn_data
 };
 
 struct sensitivity_data
-{
-  void* data;
+{ void* data;
   float (*sensitivity_f)(void* data, base_learner& base, example&);
 };
 
@@ -65,7 +64,7 @@ void generic_driver(std::vector<vw*> alls);
 
 inline void noop_sl(void*, io_buf&, bool, bool) {}
 inline void noop(void*) {}
- inline float noop_sensitivity(void*, base_learner&, example&) { return 0.; }
+inline float noop_sensitivity(void*, base_learner&, example&) { return 0.; }
 
 typedef void (*tlearn)(void* d, base_learner& base, example& ec);
 typedef float (*tsensitivity)(void* d, base_learner& base, example& ec);
@@ -139,8 +138,7 @@ public:
 
   //used for active learning and confidence to determine how easily predictions are changed
   inline void set_sensitivity(float (*u)(T& data, base_learner& base, example&))
-  {
-    sensitivity_fd.data = learn_fd.data;
+  { sensitivity_fd.data = learn_fd.data;
     sensitivity_fd.sensitivity_f = (tsensitivity)u;
   }
   inline float sensitivity(example& ec, size_t i=0)
@@ -230,7 +228,7 @@ learner<T>& init_learner(T* dat, void (*learn)(T&, base_learner&, example&),
   ret.finish_example_fd.finish_example_f = return_simple_example;
 
   return ret;
-  }
+}
 
 template<class T>
 learner<T>& init_learner(T* dat, base_learner* base,

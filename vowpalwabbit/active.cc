@@ -67,8 +67,7 @@ void predict_or_learn_active(active& a, base_learner& base, example& ec)
     base.predict(ec);
 
   if (ec.l.simple.label == FLT_MAX)
-  {
-    float threshold = (a.all->sd->max_label + a.all->sd->min_label) * 0.5f;
+  { float threshold = (a.all->sd->max_label + a.all->sd->min_label) * 0.5f;
     ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
   }
 }

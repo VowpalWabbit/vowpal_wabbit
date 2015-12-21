@@ -27,25 +27,24 @@ JNIEXPORT void JNICALL Java_vw_learner_VWLearners_closeInstance(JNIEnv *env, job
 }
 
 JNIEXPORT jobject JNICALL Java_vw_learner_VWLearners_getReturnType(JNIEnv *env, jobject obj, jlong vwPtr)
-{
-    jclass clVWReturnType = env->FindClass(RETURN_TYPE);
-    jfieldID field;
-    vw* vwInstance = (vw*)vwPtr;
-    if (vwInstance->p->lp.parse_label == simple_label.parse_label) {
-        if (vwInstance->lda > 0)
-            field = env->GetStaticFieldID(clVWReturnType , "VWFloatArrayType", RETURN_TYPE_INSTANCE);
-        else
-            field = env->GetStaticFieldID(clVWReturnType , "VWFloatType", RETURN_TYPE_INSTANCE);
-    }
-    else if (vwInstance->p->lp.parse_label == MULTILABEL::multilabel.parse_label)
-        field = env->GetStaticFieldID(clVWReturnType , "VWIntArrayType", RETURN_TYPE_INSTANCE);
-    else if (vwInstance->p->lp.parse_label == MULTICLASS::mc_label.parse_label ||
-             vwInstance->p->lp.parse_label == CB::cb_label.parse_label ||
-             vwInstance->p->lp.parse_label == CB_EVAL::cb_eval.parse_label ||
-             vwInstance->p->lp.parse_label == COST_SENSITIVE::cs_label.parse_label)
-        field = env->GetStaticFieldID(clVWReturnType , "VWIntType", RETURN_TYPE_INSTANCE);
+{ jclass clVWReturnType = env->FindClass(RETURN_TYPE);
+  jfieldID field;
+  vw* vwInstance = (vw*)vwPtr;
+  if (vwInstance->p->lp.parse_label == simple_label.parse_label)
+  { if (vwInstance->lda > 0)
+      field = env->GetStaticFieldID(clVWReturnType , "VWFloatArrayType", RETURN_TYPE_INSTANCE);
     else
-        field = env->GetStaticFieldID(clVWReturnType , "Unknown", RETURN_TYPE_INSTANCE);
-    return env->GetStaticObjectField(clVWReturnType, field);
+      field = env->GetStaticFieldID(clVWReturnType , "VWFloatType", RETURN_TYPE_INSTANCE);
+  }
+  else if (vwInstance->p->lp.parse_label == MULTILABEL::multilabel.parse_label)
+    field = env->GetStaticFieldID(clVWReturnType , "VWIntArrayType", RETURN_TYPE_INSTANCE);
+  else if (vwInstance->p->lp.parse_label == MULTICLASS::mc_label.parse_label ||
+           vwInstance->p->lp.parse_label == CB::cb_label.parse_label ||
+           vwInstance->p->lp.parse_label == CB_EVAL::cb_eval.parse_label ||
+           vwInstance->p->lp.parse_label == COST_SENSITIVE::cs_label.parse_label)
+    field = env->GetStaticFieldID(clVWReturnType , "VWIntType", RETURN_TYPE_INSTANCE);
+  else
+    field = env->GetStaticFieldID(clVWReturnType , "Unknown", RETURN_TYPE_INSTANCE);
+  return env->GetStaticObjectField(clVWReturnType, field);
 }
 
