@@ -1,0 +1,32 @@
+only testing
+Num weight bits = 24
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = /home/melamed/projects/vwDMFork/big_tests/dataSets/mnist.dir/mnist-test.prep
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.000000 0.000000            1            1.0        8        8      117
+0.000000 0.000000            2            2.0        3        3      166
+0.000000 0.000000            4            4.0        1        1      194
+0.000000 0.000000            8            8.0       10       10      130
+0.000000 0.000000           16           16.0        6        6      138
+0.031250 0.062500           32           32.0        2        2       62
+0.015625 0.000000           64           64.0        4        4      138
+0.015625 0.015625          128          128.0        6        6      160
+0.015625 0.015625          256          256.0        8        8      104
+0.015625 0.015625          512          512.0        5        5      100
+0.025391 0.035156         1024         1024.0        5        5      156
+0.029297 0.033203         2048         2048.0        7        7      193
+0.031006 0.032715         4096         4096.0       10       10      157
+0.023926 0.016846         8192         8192.0        7        7      172
+
+finished run
+number of examples per pass = 10000
+passes used = 1
+weighted example sum = 10000.000000
+weighted label sum = 0.000000
+average loss = 0.022500
+total feature number = 1521219

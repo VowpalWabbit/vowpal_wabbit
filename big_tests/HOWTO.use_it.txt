@@ -1,0 +1,70 @@
+Help file for using this testing framework
+------------------------------------------
+
+To run all the tests until one fails, type
+
+make
+
+To run all the tests regardless of failures, type
+
+make -i
+
+Either way, you would be making the default target, named 'valid'. (Naming it 'test' would get confusing when you start referring to data train/test splits.)
+
+To clean up so that you can start over, type
+
+make clean
+
+To download all the relevant data at once, type
+
+make getData
+
+To erase all the data, type
+
+make eraseData
+
+If you change some code so that the output of some tests changes, or you add some new tests, and you want to save the new output so that future outputs will be compared with it, type
+
+make expected
+
+You can work with individual tests by prepending their name to the make target, as in
+
+make 2.valid
+make t17.clean
+make myNewTest.expected
+
+Of course, you can make multiple targets together, as in
+
+make 2.clean 2.valid
+
+There are also pre-defined groups of tests that you can run, such as
+
+make regression_group
+
+If you want to create the correct outputs for a test without actually running it, type
+
+make $testName.pretend
+
+This can be useful if you want to run test X, which depends on the outputs of test Y, but you can't run test Y for some reason.
+
+The "valid" target for each test is actually a "run" followed by a "compare".  Thus
+
+make 3.run 3.compare
+
+is equivalent to
+
+make 3.valid
+
+and it's possible to invoke either part without the other.
+
+If you want to use an executable other than ../vowpalwabbit/vw, you can supply it on the command line like this:
+
+make EXEC=myProgram all
+
+Similar substitutions can be made for other variables, such as ARCH and DIFF.
+
+If you want to pass extra parameters to all tests, set the EP variable, like this:
+
+make EP="--random_seed 13"
+
+If you want to add or modify tests, read HOWTO.write_new_tests.txt .
