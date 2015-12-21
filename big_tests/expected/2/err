@@ -1,36 +1,37 @@
-using l1 regularization = 2
-final_regressor = 0001_ftrl.model
-Enabling FTRL based optimization
-Algorithm used: Proximal-FTRL
-ftrl_alpha = 0.01
-ftrl_beta = 0
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-decay_learning_rate = 1
-creating cache_file = /home/melamed/projects/vwDMFork/big_tests/dataSets/ftrl-proximal/ftrl-proximal-train.prep.cache
-Reading datafile = /home/melamed/projects/vwDMFork/big_tests/dataSets/ftrl-proximal/ftrl-proximal-train.prep
+using no cache
+Reading datafile = /home/melamed/projects/vwDMFork/big_tests/dataSets/covtype.dir/covtype.prep
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-1.000000 1.000000            1            1.0   1.0000   0.0000       51
-0.500000 0.000000            2            2.0   0.0000   0.0000      104
-0.250000 0.000000            4            4.0   0.0000   0.0000      135
-0.250012 0.250025            8            8.0   0.0000   0.0070      146
-0.308000 0.365988           16           16.0   1.0000   0.0173       24
-0.330613 0.353225           32           32.0   0.0000   0.0413       32
-0.334181 0.337749           64           64.0   0.0000   0.0670       61
-0.363877 0.393573          128          128.0   1.0000   0.1077      106
-0.355459 0.347041          256          256.0   0.0000   0.1651       71
-0.329371 0.303283          512          512.0   0.0000   0.2272       49
-0.296295 0.263220         1024         1024.0   1.0000   0.3364       31
+1.000000 1.000000            1            1.0        5        1       55
+0.500000 0.000000            2            2.0        5        5       55
+0.500000 0.500000            4            4.0        2        2       55
+0.625000 0.750000            8            8.0        5        5       55
+0.437500 0.250000           16           16.0        5        5       55
+0.343750 0.250000           32           32.0        5        5       55
+0.375000 0.406250           64           64.0        5        2       55
+0.375000 0.375000          128          128.0        2        2       55
+0.429688 0.484375          256          256.0        2        2       55
+0.414062 0.398438          512          512.0        2        2       55
+0.412109 0.410156         1024         1024.0        1        1       55
+0.456543 0.500977         2048         2048.0        6        5       55
+0.402832 0.349121         4096         4096.0        4        4       55
+0.454468 0.506104         8192         8192.0        1        5       55
+0.442993 0.431519        16384        16384.0        2        2       55
+0.268890 0.094788        32768        32768.0        2        2       55
+0.174164 0.079437        65536        65536.0        1        1       55
+0.146667 0.119171       131072       131072.0        1        1       55
+0.156979 0.167290       262144       262144.0        3        3       55
+0.179811 0.202644       524288       524288.0        2        1       55
 
 finished run
-number of examples = 2000
-weighted example sum = 2000.000000
-weighted label sum = 910.000000
-average loss = 0.255959
-best constant = 0.455000
-best constant's loss = 0.247975
-total feature number = 154820
+number of examples per pass = 581012
+passes used = 1
+weighted example sum = 581012.000000
+weighted label sum = 0.000000
+average loss = 0.181223
+total feature number = 31955660

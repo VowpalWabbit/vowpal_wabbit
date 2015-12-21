@@ -1,0 +1,5 @@
+* speed test runs only if invoked with SPEEDTEST=y
+  * .NOTPARALLEL for speed tests
+  * if running speed test, then wrap in `time`, and dump its output to speed result file
+
+* VPATH ?

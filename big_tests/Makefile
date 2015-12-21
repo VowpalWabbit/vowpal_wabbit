@@ -3,7 +3,7 @@
 SHELL = bash
 
 # suppress built-in rules, to speed things up
-MAKEFLAGS=-r
+MAKEFLAGS+=-r
 # disable implicit suffixes, to speed things up
 .SUFFIXES:
 # keep all intermediate files
@@ -11,7 +11,7 @@ MAKEFLAGS=-r
 .ONESHELL:
 .SILENT:
 
-.PHONY:	test expected pretend run clean spotless
+.PHONY:	valid expected pretend run clean spotless %.valid %.expected %.run %.clean %.spotless default all stub help
 
 TOP_MK_DIR := $(patsubst %/,%,$(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
 ARCH ?= $(subst /,_,$(shell uname -o)_$(shell uname -i))
@@ -22,11 +22,11 @@ allTests := $(patsubst %/,%,$(shell ls $(expDir)))
 
 # the ?= allows the user to override the executable from the command line, as in
 # make EXEC=myProgram all
-EXEC ?= $(TOP_MK_DIR)/../vowpalwabbit/vw
-DIFF ?= diff
+EXEC ?= $(realpath $(TOP_MK_DIR)/../vowpalwabbit/vw)
+DIFF ?= diff -b
 
-default: test
-all:	test
+default: valid ;
+all:	valid ;
 
 # details of individual tests come from here
 include dataSets.mk
@@ -36,41 +36,38 @@ stub:
 	echo $(allTests)
 
 help:
-	cat $(TOP_MK_DIR)/HOWTO.txt
+	cat $(TOP_MK_DIR)/HOWTO.use_it.txt
 
-test:
+valid:
 	@for aTest in $(allTests); do
-		make $$aTest.test || exit
+		$(MAKE) $(MAKEFLAGS) $$aTest.valid || exit
 	done
 	@echo "test suite finished"
 
 # use this target to run without doing any diffs
 run:
 	@for aTest in $(allTests); do
-		make $$aTest.run || exit 1
+		$(MAKE) $(MAKEFLAGS) $$aTest.run || exit 1
 	done
 	echo "'make run' finished"
 
 expected:
 	@for aTest in $(allTests); do
-		make $$aTest.expected || exit
+		$(MAKE) $(MAKEFLAGS) $$aTest.expected || exit
 	done
 	echo "'make expected' finished"
 
 clean:
 	-rm -r $(stageDir)
 
-eraseData:
-	-rm -r $(dataDir)/
-
 pretend:
 	@for aTest in $(allTests); do
-		make $$aTest.pretend || exit
+		$(MAKE) $(MAKEFLAGS) $$aTest.pretend || exit
 	done
 	echo "'make pretend' finished"
 
 
-%.test:	%.startNotice %.run %.compare %.endNotice ;
+%.valid:	%.startNotice %.run %.compare %.endNotice ;
 
 %.startNotice:
 	@echo "Starting test $*"
@@ -78,10 +75,10 @@ pretend:
 %.endNotice:
 	@echo "Finished test $*"
 
-$(stageDir)/%.dir:
-	@mkdir -p $@
-
 %.run:	$(stageDir)/%.dir $(stageDir)/%.dir/done ;
+
+%.dir:
+	@mkdir -p $@
 
 $(stageDir)/%.dir/done:	$(dataDir)/$(%.inData)
 	@if [ -n "$($*.deps)" ] ; then
@@ -103,7 +100,7 @@ $(stageDir)/%.dir/done:	$(dataDir)/$(%.inData)
 	rm -f diffs
 	for FILE in out err $($*.otherOutputs) ; do
 		echo "$(DIFF) -b $$FILE $(expDir)/$*/$$FILE"
-		$(DIFF) -b $$FILE $(expDir)/$*/$$FILE |& tee -a diffs
+		$(DIFF) $$FILE $(expDir)/$*/$$FILE |& tee -a diffs
 	done
 	if [ -s diffs ] ; then
 		echo "Test $* failed due to diffs." ;\
@@ -130,4 +127,4 @@ $(stageDir)/%.dir/done:	$(dataDir)/$(%.inData)
 	done
 
 %.clean:
-	-rm -rf $(stageDir)/$*
+	-rm -rf $(stageDir)/$*.dir

@@ -1,0 +1,40 @@
+final_regressor = mnist.model
+Num weight bits = 24
+learning rate = 0.1
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = mnist.cache
+Reading datafile = /home/melamed/projects/vwDMFork/big_tests/dataSets/mnist/mnist-train.prep
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+1.000000 1.000000            1            1.0        8        1      116
+1.000000 1.000000            2            2.0        6        8      170
+1.000000 1.000000            4            4.0        8        4      124
+1.000000 1.000000            8            8.0        7        5      190
+0.937500 0.875000           16           16.0        3        2      150
+0.906250 0.875000           32           32.0        7       10      179
+0.781250 0.656250           64           64.0       10        8      138
+0.593750 0.406250          128          128.0        8        8      113
+0.441406 0.289062          256          256.0       10       10       89
+0.371094 0.300781          512          512.0        4        4      179
+0.278320 0.185547         1024         1024.0        9       10      195
+0.230957 0.183594         2048         2048.0        6        4      159
+0.186035 0.141113         4096         4096.0        3        3      225
+0.154907 0.123779         8192         8192.0        6        9      113
+0.127808 0.100708        16384        16384.0       10       10      192
+0.105286 0.082764        32768        32768.0        7        7      151
+0.083969 0.062653        65536        65536.0        2        2       79
+0.062363 0.040756       131072       131072.0        2        2       79
+0.044086 0.025810       262144       262144.0        8        8      161
+0.029339 0.014591       524288       524288.0        9        9      152
+0.017394 0.005449      1048576      1048576.0        4        4      198
+
+finished run
+number of examples per pass = 60000
+passes used = 24
+weighted example sum = 1440000.000000
+weighted label sum = 0.000000
+average loss = 0.013094
+total feature number = 217299744

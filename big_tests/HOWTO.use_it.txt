@@ -3,15 +3,13 @@ Help file for using this testing framework
 
 To run all the tests until one fails, type
 
-make test
-
-or simply
-
 make
 
 To run all the tests regardless of failures, type
 
-make -i test
+make -i
+
+Either way, you would be making the default target, named 'valid'. (Naming it 'test' would get confusing when you start referring to data train/test splits.)
 
 To clean up so that you can start over, type
 
@@ -31,13 +29,13 @@ make expected
 
 You can work with individual tests by prepending their name to the make target, as in
 
-make 2.test
+make 2.valid
 make t17.clean
 make myNewTest.expected
 
 Of course, you can make multiple targets together, as in
 
-make 2.clean 2.test
+make 2.clean 2.valid
 
 There are also pre-defined groups of tests that you can run, such as
 
@@ -49,13 +47,13 @@ make $testName.pretend
 
 This can be useful if you want to run test X, which depends on the outputs of test Y, but you can't run test Y for some reason.
 
-The "test" target for each test is actually a "run" followed by a "compare".  Thus
+The "valid" target for each test is actually a "run" followed by a "compare".  Thus
 
 make 3.run 3.compare
 
 is equivalent to
 
-make 3.test
+make 3.valid
 
 and it's possible to invoke either part without the other.
 
@@ -69,3 +67,4 @@ If you want to pass extra parameters to all tests, set the EP variable, like thi
 
 make EP="--random_seed 13"
 
+If you want to add or modify tests, read HOWTO.write_new_tests.txt .
