@@ -146,6 +146,10 @@
       <Project>{007b7de0-1d9b-498d-acfc-e9d33058f22e}</Project>
       <Name>cs_unittest</Name>
     </ProjectReference>
+    <ProjectReference Include="..\explore\csharp\Explore.csproj">
+      <Project>{6d245816-6016-49b6-9e37-a0bf0d2a736a}</Project>
+      <Name>Explore</Name>
+    </ProjectReference>
     <ProjectReference Include="..\vw_clr\vw_clr.vcxproj">
       <Project>{85e55ae0-3784-4968-9271-c81af560e1c1}</Project>
       <Name>vw_clr</Name>
