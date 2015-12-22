@@ -2,19 +2,18 @@ HOWTO write new tests for the big_tests test suite
 ==================================================
 
 There are 3 steps in writing a new test.
-1. Add some variable settings to the file testDetails.mk.  Details below.
-2. Add code for obtaining and preparing relevant data, if it's not already used by other tests.
-3. Create the "expected" files.  Note that your new tests WILL NOT EVEN RUN unless at least the 'out' and 'err' files exist in the right place.
-Here are the details.
-
+1. Add some variable settings to the file testDetails.mk.
+2. Add code to dataSets.mk for obtaining and preparing relevant data, if it's not already there for other tests.
+3. Create the "expected" files.  Note that your new tests WILL NOT EVEN RUN unless at least the 'out' and 'err' expected files exist in the right place.
+Read on for details.
 
 Step 1: testDetails.mk
 ----------------------
 
-The only variable that is required for every test is *.params .  For most tests, you will also want to set *.inData, but it's possible to have tests without it.  Here's a simple example of a complete test specification:
+Be sure to use := and not = to set these variables.  All variables are optional.  For most tests, you will want to set the variables *.params and *.inData, but it's possible to have tests without them.  Here's a simple example of a complete test specification:
 
-myTest.inData := ftrl-proximal/ftrl-proximal-train.prep
-myTest.params := -k -d $(dataDir)/$(107.inData) -f 0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off
+myTest.inData := $(dataDir)/ftrl-proximal/ftrl-proximal-train.prep
+myTest.params := -k -d $(myTest.inData) -f 0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off
 
 By default, STDOUT will go to the file out and STDERR will go to the file err. Other created files that should be compared to "expected" files should be captured by the *.otherOutputs variable.  For example:
 
@@ -24,9 +23,11 @@ To use a non-standard executable (e.g. library_example), give its path to the *.
 
 myTest.exec := $(TOP_MK_DIR)/../vowpalwabbit/library_example
 
-A test can depend on any set of other targets as pre-requisites, including those that merely run other tests (*.run targets) and those that check whether another test passed (*.valid targets).  List inter-test dependencies like this:
+A test can depend on any set of other targets as prerequisites, including those that merely run other tests (*.run targets) and those that check whether another test passed (*.valid targets).  List inter-test dependencies like this:
 
 myTest.deps:	test2.run test4.valid
+
+Some groups of tests are defined at the top of testDetails.mk.  You can add your tests to these groups or create your own groups.
 
 
 Step 2: dataSets.mk
@@ -40,7 +41,4 @@ Whenever you add a new data set, don't forget to add its name to the 'allData' t
 Step 3: expected files
 ----------------------
 
-Every test creates files named 'out' and 'err', and possibly others.  When you run `make $testName.compare` (which is the 2nd part of running `make $testName.valid`) these files are compared to the expected files with the same names in the directory expected/$testName/ .  The $testName.compare target WILL NOT RUN unless the expected files exist in that directory.  So, the first time you create a test, you should (a) `make $testName.run`, and (b) copy the expected files to expected/$testName/.  Only then will you be able to `make $testName.valid`.
-
-Tests may create output files besides 'out' and 'err', and you can use these as additional expected files.  These additional expected files should also be copied to expected/$testName/ .  However, 'out' and 'err' must exist there, even if they are empty.
-
+Every test should create files named 'out' and 'err' (even if they are empty), and possibly others.  When you run `make $testName.compare` (which is the 2nd part of running `make $testName.valid`) these files are compared to the expected files with the same names in the directory expected/$testName/ .  The $testName.compare target WILL NOT RUN unless the expected files exist in that directory.  So, the first time you create a test, you should (a) `make $testName.run`, (b) create the directory expected/$testName/, and (c) copy the expected files to that directory.  Only then will you be able to `make $testName.valid`.  If you want to share you test with others, don't forget to `git add expected/$testName/`.

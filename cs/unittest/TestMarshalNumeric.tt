@@ -1,0 +1,158 @@
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using VW.Serializer;
+using VW.Serializer.Attributes;
+
+namespace cs_unittest
+{
+	[TestClass]
+    public class TestMarshalNumeric
+    {
+	<# foreach(var t in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16), typeof(UInt32), typeof(float), typeof(Int64), typeof(UInt64), typeof(double) }) { #>
+
+        [TestMethod]
+        [TestCategory("Marshal")]
+		public void TestNumeric<#=t.Name#>()
+		{
+		    using(var vw = new VowpalWabbitExampleValidator<NumericExample<#=t.Name#>>(string.Empty))
+            {
+                vw.Validate("| Value:25", new NumericExample<#=t.Name#>() { Value = 25 });
+            }
+		}
+
+        [TestMethod]
+        [TestCategory("Marshal")]
+		public void TestNumeric<#=t.Name#>Array()
+		{
+		    using(var vw = new VowpalWabbitExampleValidator<NumericExample<#=t.Name#>Array>(string.Empty))
+            {
+                vw.Validate("| :4 :2 :3", new NumericExample<#=t.Name#>Array() { Value = new <#=t#>[] { 4, 2, 3 } });
+                vw.Validate("", new NumericExample<#=t.Name#>Array());
+            }
+		}
+
+        [TestMethod]
+        [TestCategory("Marshal")]
+		public void TestNumeric<#=t.Name#>ArrayAnchor()
+		{
+		    using(var vw = new VowpalWabbitExampleValidator<NumericExample<#=t.Name#>ArrayAnchor>(string.Empty))
+            {
+                vw.Validate("| :1 :4 :2 :3", new NumericExample<#=t.Name#>ArrayAnchor() { Value = new <#=t#>[] { 4, 2, 3 } });
+                vw.Validate("", new NumericExample<#=t.Name#>ArrayAnchor());
+            }
+		}
+
+	<# } #>
+
+	<# foreach(var t in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16) }) { #>
+        [TestMethod]
+        [TestCategory("Marshal")]
+		public void TestDictionary<#=t.Name#>()
+		{
+		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExample<#=t.Name#>>(string.Empty))
+            {
+				var example = new DictionaryExample<#=t.Name#>() { Dict = new Dictionary<<#=t#>, float>() };
+
+				example.Dict.Add(15, .5f);
+				example.Dict.Add(5, .3f);
+				example.Dict.Add(20, 123.2f);
+
+                vw.Validate("| 15:0.5 5:0.3 20:123.2", example);
+
+				example.Dict = null;
+                vw.Validate("", example);
+            }
+		}
+
+        [TestMethod]
+        [TestCategory("Marshal")]
+		public void TestDictionary<#=t.Name#>String()
+		{
+		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExample<#=t.Name#>String>(string.Empty))
+            {
+				var example = new DictionaryExample<#=t.Name#>String() { Dict = new Dictionary<<#=t#>, string>() };
+
+				example.Dict.Add(15, "0.5");
+				example.Dict.Add(5, "0.3");
+				example.Dict.Add(20, "123.2");
+
+                vw.Validate("| 15:0.5 5:0.3 20:123.2", example);
+
+				example.Dict = null;
+                vw.Validate("", example);
+            }
+		}
+
+	<# foreach(var s in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16), typeof(UInt32), typeof(float), typeof(Int64), typeof(UInt64), typeof(double) }) { #>
+        [TestMethod]
+        [TestCategory("Marshal")]
+		public void TestDictionary<#=t.Name#><#=s.Name#>()
+		{
+		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExample<#=t.Name#><#=s.Name#>>(string.Empty))
+            {
+				var example = new DictionaryExample<#=t.Name#><#=s.Name#>() { Dict = new Dictionary<<#=t#>, <#=s.Name#>>() };
+
+				example.Dict.Add(15, (<#=s.Name#>)3);
+				example.Dict.Add(5, (<#=s.Name#>)4);
+				example.Dict.Add(20, (<#=s.Name#>)5);
+
+                vw.Validate("| 15:3 5:4 20:5", example);
+
+				example.Dict = null;
+                vw.Validate("", example);
+            }
+		}
+	<# } #>
+
+	<# } #>
+
+    }
+
+	<# foreach(var t in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16), typeof(UInt32), typeof(float), typeof(Int64), typeof(UInt64), typeof(double) }) { #>
+	public class NumericExample<#=t.Name#>
+	{
+		[Feature]
+		public <#=t#> Value { get; set; }
+	}
+
+	public class NumericExample<#=t.Name#>Array
+	{
+		[Feature]
+		public <#=t#>[] Value { get; set; }
+	}
+
+	public class NumericExample<#=t.Name#>ArrayAnchor
+	{
+		[Feature(AddAnchor = true)]
+		public <#=t#>[] Value { get; set; }
+	}
+
+	<# } #>
+
+	<# foreach(var t in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16) }) { #>
+	public class DictionaryExample<#=t.Name#>
+	{
+		[Feature]
+		public Dictionary<<#=t#>, float> Dict { get; set; }
+	}
+
+	public class DictionaryExample<#=t.Name#>String
+	{
+		[Feature]
+		public Dictionary<<#=t#>, String> Dict { get; set; }
+	}
+
+	<# foreach(var s in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16), typeof(UInt32), typeof(float), typeof(Int64), typeof(UInt64), typeof(double) }) { #>
+	public class DictionaryExample<#=t.Name#><#=s.Name#>
+	{
+		[Feature]
+		public Dictionary<<#=t#>, <#=s#>> Dict { get; set; }
+	}
+	<# } #>
+	<# } #>
+}

@@ -8,10 +8,15 @@ MAKEFLAGS+=r
 .SUFFIXES:
 # keep all intermediate files
 .SECONDARY:
-.ONESHELL:
+.SECONDEXPANSION:
+# .ONESHELL doesn't work with make < 3.82!
+# .ONESHELL:
 .SILENT:
 
-.PHONY:	valid expected pretend run clean spotless %.valid %.expected %.run %.clean %.spotless default all stub help
+# can't compare before running; can't prep data before downloading; etc.
+.NOTPARALLEL:
+
+.PHONY:	default all stub help valid expected pretend run clean spotless %.valid %.expected %.run %.clean %.deps %.depsWrapper %.depsStart %.depsEnd %.stub
 
 TOP_MK_DIR := $(patsubst %/,%,$(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
 ARCH ?= $(subst /,_,$(shell uname -o)_$(shell uname -i))
@@ -22,109 +27,121 @@ allTests := $(patsubst %/,%,$(shell ls $(expDir)))
 
 # the ?= allows the user to override the executable from the command line, as in
 # make EXEC=myProgram all
-EXEC ?= $(realpath $(TOP_MK_DIR)/../vowpalwabbit/vw)
+# alas, $(realpath ...) doesn't seem to work here on make 3.81 for some reason
+EXEC ?= $(TOP_MK_DIR)/../vowpalwabbit/vw
 DIFF ?= diff -b
 
-default: valid ;
 all:	valid ;
+
+.DEFAULT:
+	@echo "No rules found for $@ in $(MAKEFILE_LIST)"
 
 # details of individual tests come from here
 include dataSets.mk
 include testDetails.mk
 
+# for debugging
+%.stub:	$$(%.inData) stub
+	@echo $($*.inData)
+
+# for debugging
 stub:
 	echo $(MAKEFLAGS)
+	echo $(EXEC)
+	echo $(TOP_MK_DIR)
 
 help:
-	cat $(TOP_MK_DIR)/HOWTO.use_it.txt
+	cat $(TOP_MK_DIR)/README.txt
 
-valid:
-	@for aTest in $(allTests); do
-		$(MAKE) -$(MAKEFLAGS) $$aTest.valid || exit
-	done
+validTargets := $(addsuffix .valid,$(allTests))
+valid:	$(validTargets)
 	@echo "test suite finished"
 
 # use this target to run without doing any diffs
-run:
-	@for aTest in $(allTests); do
-		$(MAKE) -$(MAKEFLAGS) $$aTest.run || exit 1
-	done
-	echo "'make run' finished"
+runTargets := $(addsuffix .run,$(allTests))
+run:	$(runTargets)
+	@echo "'make run' finished"
 
-expected:
-	@for aTest in $(allTests); do
-		$(MAKE) -$(MAKEFLAGS) $$aTest.expected || exit
-	done
-	echo "'make expected' finished"
+expectedTargets := $(addsuffix .expected,$(allTests))
+expected:	$(expectedTargets)
+	@echo "'make expected' finished"
+
+pretendTargets := $(addsuffix .pretend,$(allTests))
+pretend:	$(pretendTargets)
+	@echo "'make pretend' finished"
 
 clean:
 	-rm -r $(stageDir)
-
-pretend:
-	@for aTest in $(allTests); do
-		$(MAKE) -$(MAKEFLAGS) $$aTest.pretend || exit
-	done
-	echo "'make pretend' finished"
-
-
-%.valid:	%.startNotice %.run %.compare %.endNotice ;
-
-%.startNotice:
-	@echo "Starting test $*"
-
-%.endNotice:
-	@echo "Finished test $*"
-
-%.run:	$(stageDir)/%.dir $(stageDir)/%.dir/done ;
+	@echo "'make clean' finished"
 
 %.dir:
 	@mkdir -p $@
 
-$(stageDir)/%.dir/done:	$(dataDir)/$(%.inData)
-	@if [ -n "$($*.deps)" ] ; then
-		echo "test $* has dependencies: $($*.deps)"
-		$(MAKE) $($*.deps)
-		# ToDo: stop if deps fail
-		echo "finished dependencies; proceeding with test $*"
+%.valid:	%.run %.compare ;
+
+%.run:	%.startNotice $(stageDir)/%.dir/done %.endNotice ;
+
+%.startNotice:
+	@echo "Starting to run test $*"
+
+%.endNotice:
+	@echo "Finished running test $*"
+
+$(dataDir) $(stageDir):
+	@mkdir -p $@
+
+%.depsWrapper:	%.depsStart $$(%.deps) %.depsEnd ;
+
+%.depsStart:
+	@if [ -n "$($*.deps)" ] ; then \
+		echo "test $* has dependencies: $($*.deps)" ;\
 	fi
-	cd $(stageDir)/$*.dir
-	exec=$(EXEC)
-	if [ -n  "$($*.exec)" ] ; then exec="$($*.exec)" ; fi
-	echo "$$exec $($*.params) $(EP) > out 2> err"
-	$$exec $($*.params) $(EP) > out 2> err
+
+%.depsEnd:
+	@if [ -n "$($*.deps)" ] ; then \
+		echo "dependencies satisfied; proceeding with test $*" ;\
+	fi
+
+$(stageDir)/%.dir/done:	$(stageDir)/%.dir %.depsWrapper $$(%.inData)
+	cd $(stageDir)/$*.dir ;\
+	exec=$(EXEC) ;\
+	if [ -n "$($*.exec)" ] ; then exec="$($*.exec)" ; fi ;\
+	echo "$$exec $($*.params) $(EP) > out 2> err" ;\
+	$$exec $($*.params) $(EP) > out 2> err ;\
 	touch $@
 
 # first diff all the results, then set exit status if non-empty
 %.compare:	$(stageDir)/%.dir $(expDir)/%/out $(expDir)/%/err
-	@cd $(stageDir)/$*.dir
-	rm -f diffs
-	for FILE in out err $($*.otherOutputs) ; do
-		echo "$(DIFF) -b $$FILE $(expDir)/$*/$$FILE"
-		$(DIFF) $$FILE $(expDir)/$*/$$FILE |& tee -a diffs
-	done
-	if [ -s diffs ] ; then
+	@cd $(stageDir)/$*.dir ;\
+	rm -f diffs ;\
+	for FILE in out err $($*.otherOutputs) ; do \
+		echo "$(DIFF) $$FILE $(expDir)/$*/$$FILE" ;\
+		$(DIFF) $$FILE $(expDir)/$*/$$FILE |& tee -a diffs ;\
+	done ;\
+	if [ -s diffs ] ; then \
 		echo "Test $* failed due to diffs." ;\
-		exit 1
+		exit 1 ;\
 	fi
 
-# update expected files from current target files
-# $*.out and $*.err are always added as expected files
-# copy files over only if they are different or absent, to avoid triggering dependencies
+# update expected files from current output files
+# expected files always include out and err
+# to avoid triggering dependencies, copy files over only if they are different or absent
 %.expected: %.run
-	@cd $(stageDir)/$*.dir
-	mkdir -p $(expDir)/$*/
-	for FILE in out err $($*.otherOutputs) ; do
-		$(DIFF) -qbr $$FILE $(expDir)/$*/$$FILE \
-		|| (echo "copying $$FILE to $(expDir)/$*/" ; cp $$FILE $(expDir)/$*/ )
+	@cd $(stageDir)/$*.dir ;\
+	mkdir -p $(expDir)/$*/ ;\
+	for FILE in out err $($*.otherOutputs) ; do \
+		$(DIFF) -qr $$FILE $(expDir)/$*/$$FILE \
+		|| (echo "copying $$FILE to $(expDir)/$*/" ; cp $$FILE $(expDir)/$*/ ) ;\
 	done
 
-# create targets from expected files, to pretend that the module succeeded
+# copy outputs from expected files, to pretend that the module succeeded
 %.pretend:	$(stageDir)/%.dir $(expDir)/%/out $(expDir)/%/err
-	@cd $(stageDir)/$*.dir
-	for FILE in out err $($*.otherOutputs) ; do
-		echo "copying $(expDir)/$*/$$FILE to $(stageDir)/$*.dir/"
-		cp $(expDir)/$*/$$FILE .
+	@cd $(stageDir)/$*.dir ;\
+	for FILE in out err $($*.otherOutputs) ; do \
+		echo "copying $(expDir)/$*/$$FILE to $(stageDir)/$*.dir/" ;\
+		cp $(expDir)/$*/$$FILE . ;\
 	done
 
 %.clean:
 	-rm -rf $(stageDir)/$*.dir
+	@echo "finished cleaning $(stageDir)/$*.dir"

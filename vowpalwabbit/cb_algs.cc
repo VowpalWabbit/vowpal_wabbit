@@ -370,7 +370,9 @@ base_learner* cb_algs_setup(vw& all)
       c.cb_type = CB_TYPE_DR;
     else if (type_string.compare("dm") == 0)
     { if (eval)
+      { free(&c);
         THROW( "direct method can not be used for evaluation --- it is biased.");
+      }
 
       c.cb_type = CB_TYPE_DM;
       problem_multiplier = 1;

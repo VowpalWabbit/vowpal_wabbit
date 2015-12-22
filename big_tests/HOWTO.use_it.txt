@@ -1,6 +1,10 @@
 Help file for using this testing framework
 ------------------------------------------
 
+If you ever forget what you're currently reading, you can always see it again by typing
+
+make help
+
 To run all the tests until one fails, type
 
 make
