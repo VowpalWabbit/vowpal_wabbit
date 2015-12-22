@@ -11,6 +11,8 @@ MAKEFLAGS+=r
 .SECONDEXPANSION:
 # .ONESHELL doesn't work with make < 3.82!
 # .ONESHELL:
+
+# comment out for debugging
 .SILENT:
 
 # can't compare before running; can't prep data before downloading; etc.
@@ -20,15 +22,15 @@ MAKEFLAGS+=r
 
 TOP_MK_DIR := $(patsubst %/,%,$(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
 ARCH ?= $(subst /,_,$(shell uname -o)_$(shell uname -i))
-stageDir := $(TOP_MK_DIR)/$(ARCH)
-dataDir := $(TOP_MK_DIR)/dataSets
-expDir := $(TOP_MK_DIR)/expected
+stageDir := $(ARCH)
+dataDir := dataSets
+expDir := expected
 allTests := $(patsubst %/,%,$(shell ls $(expDir)))
 
 # the ?= allows the user to override the executable from the command line, as in
 # make EXEC=myProgram all
 # alas, $(realpath ...) doesn't seem to work here on make 3.81 for some reason
-EXEC ?= $(TOP_MK_DIR)/../vowpalwabbit/vw
+EXEC ?= ../vowpalwabbit/vw
 DIFF ?= diff -b
 
 all:	valid ;
@@ -41,14 +43,17 @@ include dataSets.mk
 include testDetails.mk
 
 # for debugging
-%.stub:	$$(%.inData) stub
-	@echo $($*.inData)
+%.stub:	
+	echo $($*.deps)
+	echo $(stageDir)/$*.dir/done
+	echo $(addsuffix .valid,$($*.deps))
 
 # for debugging
-stub:
+stub:	
 	echo $(MAKEFLAGS)
 	echo $(EXEC)
 	echo $(TOP_MK_DIR)
+	echo $(VPATH)
 
 help:
 	cat $(TOP_MK_DIR)/README.txt
@@ -102,23 +107,22 @@ $(dataDir) $(stageDir):
 		echo "dependencies satisfied; proceeding with test $*" ;\
 	fi
 
-$(stageDir)/%.dir/done:	$(stageDir)/%.dir %.depsWrapper $$(%.inData)
-	cd $(stageDir)/$*.dir ;\
+# $(stageDir)/%.dir/done:	$(stageDir)/%.dir $$(%.deps) $$(%.inData)
+$(stageDir)/%.dir/done:	$(stageDir)/%.dir $$(%.inData)
 	exec=$(EXEC) ;\
 	if [ -n "$($*.exec)" ] ; then exec="$($*.exec)" ; fi ;\
-	echo "$$exec $($*.params) $(EP) > out 2> err" ;\
-	$$exec $($*.params) $(EP) > out 2> err ;\
+	echo "$$exec $($*.params) $(EP) > $(stageDir)/$*.dir/out 2> $(stageDir)/$*.dir/err" ;\
+	$$exec $($*.params) $(EP) > $(stageDir)/$*.dir/out 2> $(stageDir)/$*.dir/err ;\
 	touch $@
 
 # first diff all the results, then set exit status if non-empty
 %.compare:	$(stageDir)/%.dir $(expDir)/%/out $(expDir)/%/err
-	@cd $(stageDir)/$*.dir ;\
-	rm -f diffs ;\
+	rm -f $(stageDir)/$*.dir/diffs ;\
 	for FILE in out err $($*.otherOutputs) ; do \
-		echo "$(DIFF) $$FILE $(expDir)/$*/$$FILE" ;\
-		$(DIFF) $$FILE $(expDir)/$*/$$FILE |& tee -a diffs ;\
+		echo "$(DIFF) $(stageDir)/$*.dir/$$FILE $(expDir)/$*/$$FILE" ;\
+		$(DIFF) $(stageDir)/$*.dir/$$FILE $(expDir)/$*/$$FILE |& tee -a $(stageDir)/$*.dir/diffs ;\
 	done ;\
-	if [ -s diffs ] ; then \
+	if [ -s $(stageDir)/$*.dir/diffs ] ; then \
 		echo "Test $* failed due to diffs." ;\
 		exit 1 ;\
 	fi
@@ -127,19 +131,17 @@ $(stageDir)/%.dir/done:	$(stageDir)/%.dir %.depsWrapper $$(%.inData)
 # expected files always include out and err
 # to avoid triggering dependencies, copy files over only if they are different or absent
 %.expected: %.run
-	@cd $(stageDir)/$*.dir ;\
 	mkdir -p $(expDir)/$*/ ;\
 	for FILE in out err $($*.otherOutputs) ; do \
-		$(DIFF) -qr $$FILE $(expDir)/$*/$$FILE \
-		|| (echo "copying $$FILE to $(expDir)/$*/" ; cp $$FILE $(expDir)/$*/ ) ;\
+		$(DIFF) -qr $(stageDir)/$*.dir/$$FILE $(expDir)/$*/$$FILE \
+		|| (echo "copying $(stageDir)/$*.dir/$$FILE to $(expDir)/$*/" ; cp $(stageDir)/$*.dir/$$FILE $(expDir)/$*/ ) ;\
 	done
 
 # copy outputs from expected files, to pretend that the module succeeded
 %.pretend:	$(stageDir)/%.dir $(expDir)/%/out $(expDir)/%/err
-	@cd $(stageDir)/$*.dir ;\
 	for FILE in out err $($*.otherOutputs) ; do \
 		echo "copying $(expDir)/$*/$$FILE to $(stageDir)/$*.dir/" ;\
-		cp $(expDir)/$*/$$FILE . ;\
+		cp $(expDir)/$*/$$FILE $(stageDir)/$*.dir/ ;\
 	done
 
 %.clean:

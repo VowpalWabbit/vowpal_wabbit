@@ -9,12 +9,13 @@ regression_group:	1a.valid 1b.valid 3.valid ;
 
 # MNIST training
 1a.inData := $(dataDir)/mnist.dir/train.prep
-1a.params := --oaa 10 -d $(1a.inData) -f mnist.model -b 24 --adaptive --invariant --holdout_off -l 0.1 --nn 40 --passes 24 -k --compressed --cache_file mnist.cache
+1a.params := --oaa 10 -d $(1a.inData) -f $(stageDir)/1a.dir/mnist.model -b 24 --adaptive --invariant --holdout_off -l 0.1 --nn 40 --passes 24 -k --compressed --cache_file $(stageDir)/1a.dir/mnist.cache
 
 # MNIST prediction
 1b.inData := $(dataDir)/mnist.dir/test.prep
 1b.params := -t -d $(1b.inData) -i $(stageDir)/1a.dir/mnist.model
-1b.deps := 1a.valid
+# test dependencies not working yet
+# 1b.deps = 1a.valid
 
 # COVERTYPE
 2.inData := $(dataDir)/covtype.dir/prep
