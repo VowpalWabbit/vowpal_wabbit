@@ -67,8 +67,7 @@ void predict_or_learn_active(active& a, base_learner& base, example& ec)
     base.predict(ec);
 
   if (ec.l.simple.label == FLT_MAX)
-  {
-    float threshold = (a.all->sd->max_label + a.all->sd->min_label) * 0.5f;
+  { float threshold = (a.all->sd->max_label + a.all->sd->min_label) * 0.5f;
     ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
   }
 }
@@ -134,8 +133,10 @@ base_learner* active_setup(vw& all)
   if (all.vm.count("mellowness"))
     data.active_c0 = all.vm["mellowness"].as<float>();
 
-  if (count(all.args.begin(), all.args.end(),"--lda") != 0)
+  if (count(all.args.begin(), all.args.end(), "--lda") != 0)
+  { free(&data);
     THROW("error: you can't combine lda and active learning");
+  }
 
   base_learner* base = setup_base(all);
 

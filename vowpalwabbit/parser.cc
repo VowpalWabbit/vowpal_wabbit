@@ -66,8 +66,7 @@ void initialize_mutex(MUTEX * pm)
 void delete_mutex(MUTEX *) { /* no operation necessary here*/ }
 #else
 void delete_mutex(MUTEX * pm)
-{
-  ::DeleteCriticalSection(pm);
+{ ::DeleteCriticalSection(pm);
 }
 #endif
 
@@ -162,32 +161,37 @@ void set_compressed(parser* par)
 uint32_t cache_numbits(io_buf* buf, int filepointer)
 { v_array<char> t = v_init<char>();
 
-  uint32_t v_length;
-  buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
-  if (v_length > 29)
-    THROW("cache version too long, cache file is probably invalid");
+  try
+  { uint32_t v_length;
+    buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
+    if (v_length > 29)
+      THROW("cache version too long, cache file is probably invalid");
 
-  if (v_length == 0)
-    THROW("cache version too short, cache file is probably invalid");
+    if (v_length == 0)
+      THROW("cache version too short, cache file is probably invalid");
 
-  t.erase();
-  if (t.size() < v_length)
-    t.resize(v_length);
+    t.erase();
+    if (t.size() < v_length)
+      t.resize(v_length);
 
-  buf->read_file(filepointer,t.begin,v_length);
-  version_struct v_tmp(t.begin);
-  if ( v_tmp != version )
-  { cout << "cache has possibly incompatible version, rebuilding" << endl;
-    t.delete_v();
-    return 0;
+    buf->read_file(filepointer,t.begin,v_length);
+    version_struct v_tmp(t.begin);
+    if ( v_tmp != version )
+    { cout << "cache has possibly incompatible version, rebuilding" << endl;
+      t.delete_v();
+      return 0;
+    }
+
+    char temp;
+    if (buf->read_file(filepointer, &temp, 1) < 1)
+      THROW("failed to read");
+
+    if (temp != 'c')
+      THROW("data file is not a cache file");
   }
-
-  char temp;
-  if (buf->read_file(filepointer, &temp, 1) < 1)
-    THROW("failed to read");
-
-  if (temp != 'c')
-    THROW("data file is not a cache file");
+  catch(...)
+  { t.delete_v();
+  }
 
   t.delete_v();
 
@@ -211,22 +215,22 @@ void reset_source(vw& all, size_t numbits)
 { io_buf* input = all.p->input;
   input->current = 0;
   if (all.p->write_cache)
-    { all.p->output->flush();
-      all.p->write_cache = false;
-      all.p->output->close_file();
-      remove(all.p->output->finalname.begin);
-      rename(all.p->output->currentname.begin, all.p->output->finalname.begin);
-      while(input->num_files() > 0)
-	if (input->compressed())
-	  input->close_file();
-	else
-	  { int fd = input->files.pop();
-	    if (!member(all.final_prediction_sink, (size_t) fd))
-	      io_buf::close_file_or_socket(fd);
-	  }
-      input->open_file(all.p->output->finalname.begin, all.stdin_off, io_buf::READ); //pushing is merged into open_file
-      all.p->reader = read_cached_features;
-    }
+  { all.p->output->flush();
+    all.p->write_cache = false;
+    all.p->output->close_file();
+    remove(all.p->output->finalname.begin);
+    rename(all.p->output->currentname.begin, all.p->output->finalname.begin);
+    while(input->num_files() > 0)
+      if (input->compressed())
+        input->close_file();
+      else
+      { int fd = input->files.pop();
+        if (!member(all.final_prediction_sink, (size_t) fd))
+          io_buf::close_file_or_socket(fd);
+      }
+    input->open_file(all.p->output->finalname.begin, all.stdin_off, io_buf::READ); //pushing is merged into open_file
+    all.p->reader = read_cached_features;
+  }
   if ( all.p->resettable == true )
   { if (all.daemon)
     { // wait for all predictions to be sent back to client
@@ -561,7 +565,8 @@ child:
       { all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
       }
       catch (exception const& ex)
-      { if (temp.size() != 0)
+      { // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
+        if (temp.size() != 0)
         { cerr << "can't open '" << temp << "', sailing on!" << endl;
         }
         else
@@ -757,7 +762,7 @@ void setup_example(vw& all, example* ae)
     ae->atomics[constant_namespace].push_back(temp);
     ae->total_sum_feat_sq++;
 
-    if (all.audit || all.hash_inv) ae->audit_features[constant_namespace].push_back({nullptr,(char*)"Constant",(uint32_t)constant, 1.,false});
+    if (all.audit || all.hash_inv) ae->audit_features[constant_namespace].push_back( {nullptr,(char*)"Constant",(uint32_t)constant, 1.,false});
   }
 
   if(all.limit_strings.size() > 0)
@@ -817,7 +822,7 @@ void add_constant_feature(vw& vw, example*ec)
   ec->atomics[cns].push_back(temp);
   ec->total_sum_feat_sq++;
   ec->num_features++;
-  if (vw.audit || vw.hash_inv) ec->audit_features[constant_namespace].push_back({nullptr,(char*)"Constant",(uint32_t)constant, 1.,false});
+  if (vw.audit || vw.hash_inv) ec->audit_features[constant_namespace].push_back( {nullptr,(char*)"Constant",(uint32_t)constant, 1.,false});
 }
 
 void add_label(example* ec, float label, float weight, float base)

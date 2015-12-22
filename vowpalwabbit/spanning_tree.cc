@@ -31,8 +31,7 @@ struct partial
 };
 
 static int socket_sort(const void* s1, const void* s2)
-{
-  client* socket1 = (client*)s1;
+{ client* socket1 = (client*)s1;
   client* socket2 = (client*)s2;
   if (socket1->client_ip != socket2->client_ip)
     return socket1->client_ip - socket2->client_ip;

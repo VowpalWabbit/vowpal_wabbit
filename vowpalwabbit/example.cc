@@ -15,8 +15,7 @@ int compare_feature(const void* p1, const void* p2)
 }
 
 float collision_cleanup(feature* feature_map, size_t& len)
-{
-  int pos = 0;
+{ int pos = 0;
   float sum_sq = 0.;
 
   for(uint32_t i = 1; i < len; i++)
