@@ -13,7 +13,8 @@ void dispatch_example(vw& all, example& ec)
 namespace LEARNER
 {
 void process_example(vw& all, example* ec)
-{ if (ec->indices.size() > 1) // 1+ nonconstant feature. (most common case first)
+{ 
+  if (ec->indices.size() > 1) // 1+ nonconstant feature. (most common case first)
     dispatch_example(all, *ec);
   else if (ec->end_pass)
   { all.l->end_pass();
@@ -35,7 +36,6 @@ void process_example(vw& all, example* ec)
   }
   else // empty example
     dispatch_example(all, *ec);
-
 }
 
 template <class T, void(*f)(T, example*)> void generic_driver(vw& all, T context)

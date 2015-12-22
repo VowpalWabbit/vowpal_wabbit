@@ -14,7 +14,7 @@ struct LRQFAstate
 };
 
 inline float
-cheesyrand (uint32_t x)
+cheesyrand (uint64_t x)
 { uint64_t seed = x;
 
   return merand48 (seed);
@@ -53,9 +53,9 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
         for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
         { feature* lf = ec.atomics[left].begin + lfn;
           float lfx = lf->x;
-          size_t lindex = lf->weight_index;
+          uint64_t lindex = lf->weight_index;
           for (unsigned int n = 1; n <= k; ++n)
-          { uint32_t lwindex = (uint32_t)(lindex + ((rfd_id*k+n) << all.reg.stride_shift)); // a feature has k weights in each field
+          { uint64_t lwindex = (uint64_t)(lindex + ((rfd_id*k+n) << all.reg.stride_shift)); // a feature has k weights in each field
             float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
 
             // perturb away from saddle point at (0, 0)
@@ -68,8 +68,8 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
               audit_data* ra = ec.audit_features[right].begin + rfn;
               // NB: ec.ft_offset added by base learner
               float rfx = rf->x;
-              size_t rindex = rf->weight_index;
-              uint32_t rwindex = (uint32_t)(rindex + ((lfd_id*k+n) << all.reg.stride_shift));
+              uint64_t rindex = rf->weight_index;
+              uint64_t rwindex = (uint64_t)(rindex + ((lfd_id*k+n) << all.reg.stride_shift));
 
               feature lrq;
               lrq.x = *lw * lfx * rfx;
@@ -87,7 +87,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
                 char* new_space = strdup("lrqfa");
                 char* new_feature = strdup(new_feature_buffer.str().c_str());
 #endif
-                audit_data ad = { new_space, new_feature, lrq.weight_index, lrq.x, true };
+                audit_data ad = { new_space, new_feature, lrq.weight_index, lrq.x};
                 ec.audit_features[right].push_back(ad);
               }
             }
@@ -148,7 +148,7 @@ LEARNER::base_learner* lrqfa_setup(vw& all)
   { lrq.field_id[(int)*i] = fd_id++;
   }
 
-  all.wpp = all.wpp * (uint32_t)(1 + lrq.k);
+  all.wpp = all.wpp * (uint64_t)(1 + lrq.k);
   learner<LRQFAstate>& l = init_learner(&lrq, setup_base(all), predict_or_learn<true>, predict_or_learn<false>, 1 + lrq.field_name.size() * lrq.k);
 
   return make_base(l);

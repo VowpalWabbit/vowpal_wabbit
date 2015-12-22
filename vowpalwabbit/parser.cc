@@ -161,9 +161,9 @@ void set_compressed(parser* par)
 uint32_t cache_numbits(io_buf* buf, int filepointer)
 { v_array<char> t = v_init<char>();
 
-  uint32_t v_length;
+  uint64_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
-  if (v_length > 29)
+  if (v_length > 61)
     THROW("cache version too long, cache file is probably invalid");
 
   if (v_length == 0)
@@ -190,9 +190,8 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
 
   t.delete_v();
 
-  const int total = sizeof(uint32_t);
   uint32_t cache_numbits;
-  if (buf->read_file(filepointer, &cache_numbits, total) < total)
+  if (buf->read_file(filepointer, &cache_numbits, sizeof(cache_numbits)) < (int)sizeof(cache_numbits))
   { return true;
   }
 
@@ -210,7 +209,7 @@ void reset_source(vw& all, size_t numbits)
 { io_buf* input = all.p->input;
   input->current = 0;
   if (all.p->write_cache)
-  { all.p->output->flush();
+    { all.p->output->flush();
     all.p->write_cache = false;
     all.p->output->close_file();
     remove(all.p->output->finalname.begin);
@@ -301,7 +300,7 @@ void make_write_cache(vw& all, string &newname, bool quiet)
     return;
   }
 
-  uint32_t v_length = (uint32_t)version.to_string().length()+1;
+  uint64_t v_length = (uint64_t)version.to_string().length()+1;
 
   output->write_file(f, &v_length, sizeof(v_length));
   output->write_file(f,version.to_string().c_str(),v_length);
@@ -334,7 +333,7 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
     if (f == -1)
       make_write_cache(all, caches[i], quiet);
     else
-    { uint32_t c = cache_numbits(all.p->input, f);
+    { uint64_t c = cache_numbits(all.p->input, f);
       if (c < all.num_bits)
       { all.p->input->close_file();
         make_write_cache(all, caches[i], quiet);
@@ -602,11 +601,11 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 { if (ngram == 0 && gram_mask.last() < initial_length)
   { size_t last = initial_length - gram_mask.last();
     for(size_t i = 0; i < last; i++)
-    { size_t new_index = atomics[i].weight_index;
+    { uint64_t new_index = atomics[i].weight_index;
       for (size_t n = 1; n < gram_mask.size(); n++)
         new_index = new_index*quadratic_constant + atomics[i+gram_mask[n]].weight_index;
 
-      feature f = {1.,(uint32_t)(new_index)};
+      feature f = {1.,new_index};
       atomics.push_back(f);
       if ((all.audit || all.hash_inv) && audits.size() >= initial_length)
       { string feature_name(audits[i].feature);
@@ -617,7 +616,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 
         string feature_space = string(audits[i].space);
 
-        audit_data a_feature = {nullptr,nullptr,new_index, 1., true};
+        audit_data a_feature = {nullptr,nullptr,new_index, 1.};
         a_feature.space = calloc_or_throw<char>(feature_space.length()+1);
         strcpy(a_feature.space, feature_space.c_str());
         a_feature.feature = calloc_or_throw<char>(feature_name.length()+1);
@@ -679,13 +678,13 @@ namespace VW
 bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
 { if (do_read && all.p->reader(&all, ae) <= 0)
     return false;
-
+  
   if(all.p->sort_features && ae->sorted == false)
-    unique_sort_features(all.audit, (uint32_t)all.parse_mask, ae);
+    unique_sort_features(all.audit, all.parse_mask, ae);
 
   if (all.p->write_cache)
-  { all.p->lp.cache_label(&ae->l,*(all.p->output));
-    cache_features(*(all.p->output), ae, (uint32_t)all.parse_mask);
+    { all.p->lp.cache_label(&ae->l,*(all.p->output));
+    cache_features(*(all.p->output), ae, all.parse_mask);
   }
   return true;
 }
@@ -752,17 +751,17 @@ void setup_example(vw& all, example* ae)
   if (all.add_constant)
   { //add constant feature
     ae->indices.push_back(constant_namespace);
-    feature temp = {1.f,(uint32_t) constant};
+    feature temp = {1.f, constant};
     ae->atomics[constant_namespace].push_back(temp);
     ae->total_sum_feat_sq++;
 
-    if (all.audit || all.hash_inv) ae->audit_features[constant_namespace].push_back({nullptr,(char*)"Constant",(uint32_t)constant, 1.,false});
+    if (all.audit || all.hash_inv) ae->audit_features[constant_namespace].push_back({nullptr,strdup("Constant"), constant, 1.});
   }
 
   if(all.limit_strings.size() > 0)
     feature_limit(all,ae);
 
-  uint32_t multiplier = all.wpp << all.reg.stride_shift;
+  uint64_t multiplier = all.wpp << all.reg.stride_shift;
   if(multiplier != 1) //make room for per-feature information.
   { for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
       for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
@@ -810,13 +809,13 @@ example* read_example(vw& all, char* example_line)
 example* read_example(vw& all, string example_line) { return read_example(all, (char*)example_line.c_str()); }
 
 void add_constant_feature(vw& vw, example*ec)
-{ uint32_t cns = constant_namespace;
+{ uint64_t cns = constant_namespace;
   ec->indices.push_back(cns);
-  feature temp = {1,(uint32_t) constant};
+  feature temp = {1, constant};
   ec->atomics[cns].push_back(temp);
   ec->total_sum_feat_sq++;
   ec->num_features++;
-  if (vw.audit || vw.hash_inv) ec->audit_features[constant_namespace].push_back({nullptr,(char*)"Constant",(uint32_t)constant, 1.,false});
+  if (vw.audit || vw.hash_inv) ec->audit_features[constant_namespace].push_back({nullptr,strdup("Constant"), constant, 1.});
 }
 
 void add_label(example* ec, float label, float weight, float base)
@@ -833,7 +832,7 @@ example* import_example(vw& all, string label, primitive_feature_space* features
     parse_example_label(all, *ret, label);
 
   for (size_t i = 0; i < len; i++)
-  { uint32_t index = features[i].name;
+  { uint64_t index = features[i].name;
     ret->indices.push_back(index);
     for (size_t j = 0; j < features[i].len; j++)
     { ret->sum_feat_sq[index] += features[i].fs[j].x * features[i].fs[j].x;
@@ -890,12 +889,10 @@ void empty_example(vw& all, example& ec)
     { for (audit_data* temp
            = ec.audit_features[*i].begin;
            temp != ec.audit_features[*i].end; temp++)
-      { if (temp->alloced)
-        { free(temp->space);
-          free(temp->feature);
-          temp->alloced=false;
-        }
-      }
+	{ 
+	  free_it(temp->space);
+          free_it(temp->feature);
+	}
       ec.audit_features[*i].erase();
     }
 

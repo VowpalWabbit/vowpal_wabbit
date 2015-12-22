@@ -166,7 +166,7 @@ public:
     }
     // read more bytes from file up to the remaining allocated space
     ssize_t num_read = read_file(f, space.end, space.end_array - space.end);
-    if (num_read >= 0)
+     if (num_read >= 0)
     { // if some bytes were actually loaded, update the end of loaded values
       space.end = space.end + num_read;
       return num_read;
@@ -181,8 +181,10 @@ public:
   static ssize_t write_file_or_socket(int f, const void* buf, size_t nbytes);
 
   virtual void flush()
-  { if (files.size() > 0)
-      { if (write_file(files[0], space.begin, head - space.begin) != (int) (head - space.begin))
+  { 
+    if (files.size() > 0)
+      { 
+	if (write_file(files[0], space.begin, head - space.begin) != (int) (head - space.begin))
         std::cerr << "error, failed to write example\n";
       head = space.begin;
     }

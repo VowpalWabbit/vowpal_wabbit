@@ -202,7 +202,7 @@ void compute_wap_values(vector<COST_SENSITIVE::wclass*> costs)
 // Rather than finding the corresponding namespace and feature in ec,
 // add a new feature with opposite value (but same index) to ec to a special wap_ldf_namespace.
 // This is faster and allows fast undo in unsubtract_example().
-void subtract_feature(example& ec, float feature_value_x, uint32_t weight_index)
+void subtract_feature(example& ec, float feature_value_x, uint64_t weight_index)
 { feature temp = { -feature_value_x, weight_index };
   ec.atomics[wap_ldf_namespace].push_back(temp);
   ec.sum_feat_sq[wap_ldf_namespace] += feature_value_x * feature_value_x;
@@ -211,7 +211,7 @@ void subtract_feature(example& ec, float feature_value_x, uint32_t weight_index)
 // Iterate over all features of ecsub including quadratic and cubic features and subtract them from ec.
 void subtract_example(vw& all, example *ec, example *ecsub)
 { ec->sum_feat_sq[wap_ldf_namespace] = 0;
-  GD::foreach_feature<example&, uint32_t, subtract_feature>(all, *ecsub, *ec);
+  GD::foreach_feature<example&, uint64_t, subtract_feature>(all, *ecsub, *ec);
   ec->indices.push_back(wap_ldf_namespace);
   ec->num_features += ec->atomics[wap_ldf_namespace].size();
   ec->total_sum_feat_sq += ec->sum_feat_sq[wap_ldf_namespace];
@@ -387,12 +387,10 @@ void do_actual_learning(ldf& data, base_learner& base)
     { v_array<feature> features = v_init<feature>();
       v_array<audit_data> audit = v_init<audit_data>();
       for (feature*f=data.ec_seq[i]->atomics[data.ec_seq[i]->indices[0]].begin; f!=data.ec_seq[i]->atomics[data.ec_seq[i]->indices[0]].end; f++)
-      { feature fnew = { f->x,  f->weight_index };
-        features.push_back(fnew);
-      }
+	features.push_back(*f);
       if ((data.all->audit || data.all->hash_inv))
         for (audit_data*f=data.ec_seq[i]->audit_features[data.ec_seq[i]->indices[0]].begin; f!=data.ec_seq[i]->audit_features[data.ec_seq[i]->indices[0]].end; f++)
-        { audit_data f2 = { f->space, f->feature, f->weight_index, f->x, false };
+        { audit_data f2 = { f->space, f->feature, f->weight_index, f->x};
           audit.push_back(f2);
         }
 

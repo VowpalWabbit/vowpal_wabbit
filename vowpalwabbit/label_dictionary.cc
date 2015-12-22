@@ -60,7 +60,7 @@ void add_example_namespace(example& ec, char ns, v_array<feature>& features, v_a
 
   if (audit != nullptr)
     for (audit_data*f = audit->begin; f != audit->end; ++f)
-    { audit_data f2 = { f->space, f->feature, f->weight_index, f->x, false };
+    { audit_data f2 = { f->space, f->feature, f->weight_index, f->x};
       ec.audit_features[(size_t)ns].push_back(f2);
     }
 }

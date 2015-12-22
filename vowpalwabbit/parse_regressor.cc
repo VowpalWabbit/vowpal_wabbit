@@ -122,7 +122,6 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                         buff, text_len, text);
 
     VW::validate_min_max_label(all);
-
     if (read && find(all.args.begin(), all.args.end(), "--max_prediction") == all.args.end())
     { all.args.push_back("--max_prediction");
       all.args.push_back(boost::lexical_cast<std::string>(all.sd->max_label));

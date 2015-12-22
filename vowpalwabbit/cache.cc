@@ -10,7 +10,7 @@ license as described in the file LICENSE.
 const size_t neg_1 = 1;
 const size_t general = 2;
 
-char* run_len_decode(char *p, uint32_t& i)
+char* run_len_decode(char *p, uint64_t& i)
 { // read an int 7 bits at a time.
   size_t count = 0;
   while(*p & 128)\
@@ -19,7 +19,7 @@ char* run_len_decode(char *p, uint32_t& i)
   return p;
 }
 
-inline int32_t ZigZagDecode(uint32_t n) { return (n >> 1) ^ -static_cast<int32_t>(n & 1); }
+inline int32_t ZigZagDecode(uint64_t n) { return (n >> 1) ^ -static_cast<int32_t>(n & 1); }
 
 size_t read_cached_tag(io_buf& cache, example* ae)
 { char* c;
@@ -34,7 +34,7 @@ size_t read_cached_tag(io_buf& cache, example* ae)
 
   ae->tag.erase();
   push_many(ae->tag, c, tag_size);
-  return tag_size+sizeof(tag_size);
+ return tag_size+sizeof(tag_size);
 }
 
 struct one_float { float f; }
@@ -86,7 +86,7 @@ int read_cached_features(void* in, example* ec)
 
     char *end = c+storage;
 
-    uint32_t last = 0;
+    uint64_t last = 0;
 
     for (; c!= end;)
     { feature f = {1., 0};
@@ -98,9 +98,9 @@ int read_cached_features(void* in, example* ec)
         c += sizeof(float);
       }
       *our_sum_feat_sq += f.x*f.x;
-      uint32_t diff = f.weight_index >> 2;
+      uint64_t diff = f.weight_index >> 2;
 
-      int32_t s_diff = ZigZagDecode(diff);
+      int64_t s_diff = ZigZagDecode(diff);
       if (s_diff < 0)
         ae->sorted = false;
       f.weight_index = last + s_diff;
@@ -123,8 +123,8 @@ char* run_len_encode(char *p, size_t i)
   return p;
 }
 
-inline uint32_t ZigZagEncode(int32_t n)
-{ uint32_t ret = (n << 1) ^ (n >> 31);
+inline uint64_t ZigZagEncode(int64_t n)
+{ uint64_t ret = (n << 1) ^ (n >> 31);
   return ret;
 }
 
@@ -136,7 +136,7 @@ void output_byte(io_buf& cache, unsigned char s)
   cache.set(c);
 }
 
-void output_features(io_buf& cache, unsigned char index, feature* begin, feature* end, uint32_t mask)
+void output_features(io_buf& cache, unsigned char index, feature* begin, feature* end, uint64_t mask)
 { char* c;
   size_t storage = (end-begin) * int_size;
   for (feature* i = begin; i != end; i++)
@@ -149,12 +149,12 @@ void output_features(io_buf& cache, unsigned char index, feature* begin, feature
   char *storage_size_loc = c;
   c += sizeof(size_t);
 
-  uint32_t last = 0;
+  uint64_t last = 0;
 
   for (feature* i = begin; i != end; i++)
-  { uint32_t cache_index = (i->weight_index) & mask;
-    int32_t s_diff = (cache_index - last);
-    size_t diff = ZigZagEncode(s_diff) << 2;
+  { uint64_t cache_index = (i->weight_index) & mask;
+    int64_t s_diff = (cache_index - last);
+    uint64_t diff = ZigZagEncode(s_diff) << 2;
     last = cache_index;
     if (i->x == 1.)
       c = run_len_encode(c, diff);
@@ -180,7 +180,7 @@ void cache_tag(io_buf& cache, v_array<char> tag)
   cache.set(c);
 }
 
-void cache_features(io_buf& cache, example* ae, uint32_t mask)
+void cache_features(io_buf& cache, example* ae, uint64_t mask)
 { cache_tag(cache,ae->tag);
   output_byte(cache, (unsigned char) ae->indices.size());
   for (unsigned char* b = ae->indices.begin; b != ae->indices.end; b++)

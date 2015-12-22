@@ -298,13 +298,13 @@ float linear_kernel(const flat_example* fec1, const flat_example* fec2)
   float dotprod = 0;
 
   feature* ec2f = fec2->feature_map;
-  uint32_t ec2pos = ec2f->weight_index;
-  uint32_t idx1 = 0, idx2 = 0;
+  uint64_t ec2pos = ec2f->weight_index;
+  uint64_t idx1 = 0, idx2 = 0;
 
   //cerr<<"Intersection ";
   int numint = 0;
   for (feature* f = fec1->feature_map; idx1 < fec1->feature_map_len && idx2 < fec2->feature_map_len ; f++, idx1++)
-  { uint32_t ec1pos = f->weight_index;
+  { uint64_t ec1pos = f->weight_index;
     //cerr<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<<endl;
     if(ec1pos < ec2pos) continue;
 
@@ -875,7 +875,7 @@ LEARNER::base_learner* kernel_svm_setup(vw &all)
   else
     params.kernel_type = SVM_KER_LIN;
 
-  params.all->reg.weight_mask = (uint32_t)LONG_MAX;
+  params.all->reg.weight_mask = (uint64_t)LONG_MAX;
   params.all->reg.stride_shift = 0;
 
   learner<svm_params>& l = init_learner(&params, learn, 1);

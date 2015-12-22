@@ -42,7 +42,7 @@ void unique_audit_features(v_array<audit_data>& features, int max = -1)
   features.end = ++last;
 }
 
-void unique_sort_features(bool audit, uint32_t parse_mask, example* ae)
+void unique_sort_features(bool audit, uint64_t parse_mask, example* ae)
 { for (unsigned char* b = ae->indices.begin; b != ae->indices.end; b++)
   { v_array<feature> features = ae->atomics[*b];
 

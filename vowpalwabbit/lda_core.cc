@@ -41,13 +41,13 @@ enum lda_math_mode { USE_SIMD, USE_PRECISE, USE_FAST_APPROX };
 class index_feature
 {
 public:
-  uint32_t document;
+  uint64_t document;
   feature f;
   bool operator<(const index_feature b) const { return f.weight_index < b.f.weight_index; }
 };
 
 struct lda
-{ uint32_t topics;
+{ uint64_t topics;
   float lda_alpha;
   float lda_rho;
   float lda_D;
@@ -628,8 +628,8 @@ size_t next_pow2(size_t x)
 
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
 { vw *all = l.all;
-  uint32_t length = 1 << all->num_bits;
-  uint32_t stride = 1 << all->reg.stride_shift;
+  uint64_t length = 1 << all->num_bits;
+  uint64_t stride = 1 << all->reg.stride_shift;
 
   if (read)
   { initialize_regressor(*all);
@@ -645,19 +645,19 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
   }
 
   if (model_file.files.size() > 0)
-  { uint32_t i = 0;
-    uint32_t text_len;
+  { uint64_t i = 0;
+    uint64_t text_len;
     char buff[512];
     size_t brw = 1;
     do
     { brw = 0;
       size_t K = all->lda;
 
-      text_len = sprintf(buff, "%d ", i);
+      text_len = sprintf(buff, "%zd ", i);
       brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, buff, text_len, text);
       if (brw != 0)
-        for (uint32_t k = 0; k < K; k++)
-        { uint32_t ndx = stride * i + k;
+        for (uint64_t k = 0; k < K; k++)
+        { uint64_t ndx = stride * i + k;
 
           weight *v = &(all->reg.weight_vector[ndx]);
           text_len = sprintf(buff, "%f ", *v + l.lda_rho);
@@ -793,7 +793,7 @@ void learn(lda &l, LEARNER::base_learner &, example &ec)
   for (unsigned char *i = ec.indices.begin; i != ec.indices.end; i++)
   { feature *f = ec.atomics[*i].begin;
     for (; f != ec.atomics[*i].end; f++)
-    { index_feature temp = {(uint32_t)num_ex, *f};
+    { index_feature temp = {(uint64_t)num_ex, *f};
       l.sorted_features.push_back(temp);
       l.doc_lengths[num_ex] += (int)f->x;
     }
@@ -852,7 +852,7 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
 }
 
 LEARNER::base_learner *lda_setup(vw &all)
-{ if (missing_option<uint32_t, true>(all, "lda", "Run lda with <int> topics"))
+{ if (missing_option<uint64_t, true>(all, "lda", "Run lda with <int> topics"))
     return nullptr;
   new_options(all, "Lda options")("lda_alpha", po::value<float>()->default_value(0.1f),
                                   "Prior on sparsity of per-document topic weights")(
@@ -864,7 +864,7 @@ LEARNER::base_learner *lda_setup(vw &all)
   add_options(all);
   po::variables_map &vm = all.vm;
 
-  all.lda = vm["lda"].as<uint32_t>();
+  all.lda = vm["lda"].as<uint64_t>();
 
   lda &ld = calloc_or_throw<lda>();
 

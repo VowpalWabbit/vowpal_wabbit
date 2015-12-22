@@ -20,4 +20,4 @@ T* calloc_or_throw(size_t nmemb)
 template<class T> T& calloc_or_throw()
 { return *calloc_or_throw<T>(1); }
 
-inline void free_it(void* ptr) { if (ptr != nullptr) free(ptr); }
+inline void free_it(void* ptr) { if (ptr != nullptr) free(ptr); ptr = nullptr; }
