@@ -3,3 +3,5 @@
   * if running speed test, then wrap in `time`, and dump its output to speed result file
 
 * VPATH ?
+
+* make vw stop if data file is missing
