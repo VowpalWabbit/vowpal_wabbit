@@ -432,7 +432,7 @@ void print_update(search_private& priv)
 
   if (PRINT_CLOCK_TIME)
   { size_t num_sec = (size_t)(((float)(clock() - priv.start_clock_time)) / CLOCKS_PER_SEC);
-    fprintf(stderr, " %15llusec", num_sec);
+    fprintf(stderr, " %15lusec", num_sec);
   }
 
   if (use_heldout_loss)
@@ -458,7 +458,7 @@ void add_new_feature(search_private& priv, float val, uint32_t idx)
     a.space   = calloc_or_throw<char>(priv.dat_new_feature_feature_space->length()+1);
     a.feature = calloc_or_throw<char>(priv.dat_new_feature_audit_ss.str().length() + 32);
     strcpy(a.space, priv.dat_new_feature_feature_space->c_str());
-    int num = sprintf(a.feature, "fid=%llu_", (idx & mask) >> ss);
+    int num = sprintf(a.feature, "fid=%lu_", (idx & mask) >> ss);
     strcpy(a.feature+num, priv.dat_new_feature_audit_ss.str().c_str());
     priv.dat_new_feature_ec->audit_features[priv.dat_new_feature_namespace].push_back(a);
   }
