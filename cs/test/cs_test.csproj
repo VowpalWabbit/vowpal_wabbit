@@ -164,8 +164,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AttributesSample.cs" />
-    <Compile Include="ExploreClock.cs" />
-    <Compile Include="ExploreOnlySample.cs" />
     <Compile Include="NIPS2015Tutorial.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
