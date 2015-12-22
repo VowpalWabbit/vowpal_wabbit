@@ -151,8 +151,8 @@ struct ldf
   base_learner* base;
 };
 
-int cmp(size_t a, size_t b) {
-  if (a == b) return 0;
+int cmp(size_t a, size_t b)
+{ if (a == b) return 0;
   if (a > b) return 1;
   return -1;
 }
@@ -435,7 +435,7 @@ void do_actual_learning(ldf& data, base_learner& base)
     }
 
     qsort((void*) data.scores.begin, data.scores.size(), sizeof(score), score_comp);
-   }
+  }
   else
   { float  min_score = FLT_MAX;
     for (size_t k=start_K; k<K; k++)
@@ -595,7 +595,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
       if (hit_loss) break;
       if (preds[0] == idx)
       { loss = ex.l.cs.costs[0].x;
-      hit_loss = true;
+        hit_loss = true;
       }
     }
     all.sd->sum_loss += loss;
@@ -797,7 +797,9 @@ base_learner* csldf_setup(vw& all)
   }
   else
   { if (all.training)
+    { free(&ld);
       THROW("ldf requires either m/multiline or mc/multiline-classifier, except in test-mode which can be s/sc/singleline/singleline-classifier");
+    }
 
     if (ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0)
     { ld.treat_as_classifier = false;
@@ -816,7 +818,8 @@ base_learner* csldf_setup(vw& all)
       cerr << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
     if (!ld.treat_as_classifier)
       cerr << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << endl;
-  } else
+  }
+  else
   { ld.is_probabilities = false;
   }
 

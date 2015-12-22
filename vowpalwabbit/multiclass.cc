@@ -106,15 +106,14 @@ void print_update(vw& all, example &ec)
 void print_update_with_probability(vw& all, example &ec, uint32_t prediction)
 { if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   { if (!all.sd->ldict)
-    {
-      char temp_str[10];
+    { char temp_str[10];
       sprintf_s(temp_str, 10, "%d(%2.0f%%)", prediction, 100 * ec.pred.probs[prediction - 1]);
 
       char label_str[512];
       sprintf_s(label_str, 512, "%u", ec.l.multi.label);
 
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_str, temp_str,
-        ec.num_features, all.progress_add, all.progress_arg);
+                           ec.num_features, all.progress_add, all.progress_arg);
     }
     else
     { substring ss_label = all.sd->ldict->get(ec.l.multi.label);

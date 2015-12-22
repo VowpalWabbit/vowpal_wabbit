@@ -152,8 +152,7 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
           const feature_class* snd_end = features_data[snd_ns].end;
 
           for (; fst != fst_end; ++fst)
-          { 
-			const uint32_t halfhash = FNV_prime * (uint32_t)fst->weight_index;
+          { const uint32_t halfhash = FNV_prime * (uint32_t)fst->weight_index;
             call_audit<R ,audit_func>(dat, fst);
             // next index differs for permutations and simple combinations
             const feature_class* snd = (!same_namespace) ? features_data[snd_ns].begin :

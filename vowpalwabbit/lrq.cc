@@ -222,7 +222,9 @@ base_learner* lrq_setup(vw& all)
        ++i)
   { if(!all.quiet)
     { if (( i->length() < 3 ) || ! valid_int (i->c_str () + 2))
+      { free(&lrq);
         THROW("error, low-rank quadratic features must involve two sets and a rank.");
+      }
 
       cerr << *i << " ";
     }
