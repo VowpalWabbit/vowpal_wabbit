@@ -164,7 +164,7 @@ public:
   { finisher_fd = tuple_dbf(learn_fd.data,learn_fd.base, (tfunc)f); }
   inline void finish()
   { if (finisher_fd.data)
-    {finisher_fd.func(finisher_fd.data); free(finisher_fd.data); }
+      {finisher_fd.func(finisher_fd.data); free(finisher_fd.data); }
     if (finisher_fd.base)
     { finisher_fd.base->finish();
       free(finisher_fd.base);
