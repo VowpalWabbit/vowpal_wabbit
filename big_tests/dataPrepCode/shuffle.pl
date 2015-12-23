@@ -5,7 +5,7 @@
 # same as random sample (without replacement) of all of them
 ########################################################################
 
-srand;
+srand(13);
 
 while (<>) {
     $line[$. - 1] = $_;

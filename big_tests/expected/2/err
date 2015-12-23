@@ -3,7 +3,7 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 using no cache
-Reading datafile = /home/melamed/projects/vwDMFork/big_tests/dataSets/covtype.dir/prep
+Reading datafile = dataSets/covtype.dir/prep
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features

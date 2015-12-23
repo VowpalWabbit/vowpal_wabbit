@@ -5,3 +5,5 @@
 * VPATH ?
 
 * make vw stop if data file is missing
+
+* avoid re-making tests that don't need to be remade

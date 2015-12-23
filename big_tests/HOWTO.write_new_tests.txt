@@ -15,6 +15,8 @@ Be sure to use := and not = to set these variables.  All variables are optional.
 myTest.inData := $(dataDir)/ftrl-proximal/ftrl-proximal-train.prep
 myTest.params := -k -d $(myTest.inData) -f 0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off
 
+The file that *.inData refers to is always treated as a prerequisite for running a test.  So if it's not there, an attempt will be made to obtain and/or prepare it.
+
 By default, STDOUT will go to the file out and STDERR will go to the file err. Other created files that should be compared to "expected" files should be captured by the *.otherOutputs variable.  For example:
 
 myTest.otherOutputs := 0001_ftrl.model
@@ -23,7 +25,7 @@ To use a non-standard executable (e.g. library_example), give its path to the *.
 
 myTest.exec := $(TOP_MK_DIR)/../vowpalwabbit/library_example
 
-A test can depend on any set of other targets as prerequisites, including those that merely run other tests (*.run targets) and those that check whether another test passed (*.valid targets).  List inter-test dependencies like this:
+[Not working yet] A test can have any set of targets as prerequisites, in addition to the value of *.inData, including those that merely run other tests (*.run targets) and those that check whether another test passed (*.valid targets).  List inter-test dependencies like this:
 
 myTest.deps:	test2.run test4.valid
 
