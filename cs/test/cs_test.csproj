@@ -170,10 +170,6 @@
     <Compile Include="VowpalWabbitInterface.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\explore\csharp\Explore.csproj">
-      <Project>{6d245816-6016-49b6-9e37-a0bf0d2a736a}</Project>
-      <Name>Explore</Name>
-    </ProjectReference>
     <ProjectReference Include="..\cs\cs.csproj">
       <Project>{e4e962ae-7056-4eb0-a8c5-8dc824a4b068}</Project>
       <Name>cs</Name>
