@@ -328,7 +328,7 @@ namespace VW.Serializer
                 var hashVariables = new List<ParameterExpression>();
                 foreach (var value in Enum.GetValues(feature.FeatureType))
                 {
-                    var hashVar = Expression.Variable(typeof(uint));
+                    var hashVar = Expression.Variable(typeof(UInt64));
                     hashVariables.Add(hashVar);
 
                     // CODE hashVar = feature.FeatureHashInternal(value);
@@ -347,7 +347,7 @@ namespace VW.Serializer
 
                 // expand the switch(value) { case enum1: return hash1; .... }
                 var hashSwitch = Expression.Switch(valueParameter,
-                    Expression.Block(Expression.Throw(Expression.New(typeof(NotSupportedException))), Expression.Constant((uint)0, typeof(uint))),
+                    Expression.Block(Expression.Throw(Expression.New(typeof(NotSupportedException))), Expression.Constant((UInt64)0, typeof(UInt64))),
                     cases);
 
                 // CODE return value => switch(value) { .... }

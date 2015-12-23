@@ -27,6 +27,12 @@ namespace cs_leaktest
                 Assert.IsTrue(ex.Message.Contains("Total 492 bytes")); // 123 *4
             }
         }
+
+        [TestMethod]
+        public void TestNoLeak()
+        {
+            Run("cs_unittest.TestLeakClass", "NoLeak");
+        }
 #endif
     }
 }

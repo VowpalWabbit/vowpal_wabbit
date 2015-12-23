@@ -23,7 +23,7 @@ namespace VW.Serializer.Intermediate
         /// <summary>
         /// Enum hashing function.
         /// </summary>
-        private readonly Func<T, uint> enumHashing;
+        private readonly Func<T, ulong> enumHashing;
 
         /// <summary>
         /// Initializes a new EnumerizedFeature.
@@ -34,7 +34,7 @@ namespace VW.Serializer.Intermediate
         /// <param name="addAnchor"></param>
         /// <param name="dictify">If true, enable dictionary extraction.</param>
         /// <param name="enumHashing">The enumHash cache factory.</param>
-        public EnumerizedFeature(VowpalWabbit vw, Namespace ns, string name, bool addAnchor, bool dictify, Func<EnumerizedFeature<T>, Func<T, uint>> enumHashing)
+        public EnumerizedFeature(VowpalWabbit vw, Namespace ns, string name, bool addAnchor, bool dictify, Func<EnumerizedFeature<T>, Func<T, ulong>> enumHashing)
             : base(name, addAnchor, dictify)
         {
             if (!typeof(T).IsEnum)
@@ -54,7 +54,7 @@ namespace VW.Serializer.Intermediate
         /// </summary>
         /// <param name="value">The value to be hashed.</param>
         /// <returns>The hash of <see cref="Feature.Name"/> + <paramref name="value"/></returns>
-        public uint FeatureHash(T value)
+        public ulong FeatureHash(T value)
         {
             return this.enumHashing(value);
         }
@@ -64,7 +64,7 @@ namespace VW.Serializer.Intermediate
         /// </summary>
         /// <param name="value">The value to be hashed.</param>
         /// <returns>The hash of <see cref="Feature.Name"/> + <paramref name="value"/></returns>
-        public uint FeatureHashInternal(T value)
+        public ulong FeatureHashInternal(T value)
         {
             return this.vw.HashFeature(
                 this.Name + Enum.GetName(typeof(T), value),

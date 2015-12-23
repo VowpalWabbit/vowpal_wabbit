@@ -197,7 +197,7 @@ public:
                 char *c = str+2;
                 for (char* fc=feature_name.begin; fc!=feature_name.end; ++fc) *(c++) = *fc;
                 *(c++) = '=';
-                sprintf(c, "%zd", id);
+                sprintf(c, "%llud", id);
                 audit_data ad = { copy((char*)"dictionary"), str, f->weight_index, f->x};
                 ae->audit_features[dictionary_namespace].push_back(ad);
               }

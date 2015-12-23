@@ -164,7 +164,7 @@ namespace VW
 
             using (var ex = this.serializer.Serialize(example, label))
             {
-                this.vw.Learn(ex);
+                this.vw.Predict(ex);
             }
         }
 
@@ -182,7 +182,7 @@ namespace VW
 
             using (var ex = this.serializer.Serialize(example, label))
             {
-                return this.vw.Learn(ex, predictionFactory);
+                return this.vw.Predict(ex, predictionFactory);
             }
         }
 
