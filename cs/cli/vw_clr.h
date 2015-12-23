@@ -117,6 +117,13 @@ namespace VW
         {
             new float[123];
         }
+
+        static void NoLeak()
+        {
+          void* ptr = calloc(128, 2);
+          ptr = realloc(ptr, 128 * 3);
+          free(ptr);
+        }
     };
 #endif
 }
