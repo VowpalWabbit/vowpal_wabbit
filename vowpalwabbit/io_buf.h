@@ -166,7 +166,7 @@ public:
     }
     // read more bytes from file up to the remaining allocated space
     ssize_t num_read = read_file(f, space.end, space.end_array - space.end);
-    if (num_read >= 0)
+     if (num_read >= 0)
     { // if some bytes were actually loaded, update the end of loaded values
       space.end = space.end + num_read;
       return num_read;
@@ -280,18 +280,6 @@ inline size_t bin_text_read_write(io_buf& io, char* data, uint32_t len,
     return bin_read(io, data, len, read_message);
   else
     return bin_text_write(io,data,len, text_data, text_len, text);
-}
-
-inline size_t bin_text_read_write_validated(io_buf& io, char* data, uint32_t len,
-    const char* read_message, bool read,
-    const char* text_data, uint32_t text_len, bool text)
-{ size_t nbytes = bin_text_read_write(io, data, len, read_message, read, text_data, text_len, text);
-  if (read && len > 0)
-  { if (nbytes == 0)
-    { THROW("Unexpected end of file encountered.");
-    }
-  }
-  return nbytes;
 }
 
 inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len,

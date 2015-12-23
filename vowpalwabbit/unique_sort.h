@@ -7,7 +7,7 @@ license as described in the file LICENSE.
 #include "parser.h"
 #include "example.h"
 
-void unique_sort_features(bool audit, uint32_t parse_mask, example* ae);
+void unique_sort_features(bool audit, uint64_t parse_mask, example* ae);
 template <class T> int order_features(const void* first, const void* second)
 { if (((T*)first)->weight_index != ((T*)second)->weight_index)
     return (int)(((T*)first)->weight_index - ((T*)second)->weight_index);

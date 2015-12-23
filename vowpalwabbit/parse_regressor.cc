@@ -97,7 +97,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       if (read)
       { v_length = (uint32_t)buf2_size;
       }
-      bytes_read_write += bin_text_read_write_validated(model_file, buff2, v_length,
+      bytes_read_write += bin_text_read_write(model_file, buff2, v_length,
                           "", read,
                           buff, text_len, text);
       all.model_file_ver = buff2; //stored in all to check save_resume fix in gd
@@ -115,7 +115,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         if (read)
         { v_length = buf_size;
         }
-        bytes_read_write += bin_text_read_write_validated(model_file, buff2, v_length,
+        bytes_read_write += bin_text_read_write(model_file, buff2, v_length,
                             "", read,
                             buff, text_len, text);
         all.id = buff2;
@@ -366,7 +366,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         if (len > 0)
           safe_memcpy(buff2, buf2_size, all.file_options->str().c_str(), len + 1);
         *(buff2 + len) = 0;
-        bytes_read_write += bin_text_read_write_validated(model_file, buff2, len + 1, //len+1 to write a \0
+        bytes_read_write += bin_text_read_write(model_file, buff2, len + 1, //len+1 to write a \0
                             "", read,
                             buff, text_len, text);
       }
@@ -381,7 +381,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         uint32_t check_sum_saved = check_sum;
 
         text_len = sprintf_s(buff, buf_size, "Checksum: %d\n", check_sum);
-        bin_text_read_write_validated(model_file, (char*)&check_sum, sizeof(check_sum),
+        bin_text_read_write(model_file, (char*)&check_sum, sizeof(check_sum),
                                       "", read,
                                       buff, text_len, text);
 

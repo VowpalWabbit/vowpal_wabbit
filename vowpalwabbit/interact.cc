@@ -40,9 +40,9 @@ float multiply(v_array<feature>& f_dest, v_array<feature>& f_src2, interact& in)
 { f_dest.erase();
   v_array<feature>& f_src1 = in.feat_store;
   vw* all = in.all;
-  size_t weight_mask = all->reg.weight_mask;
-  size_t base_id1 = f_src1[0].weight_index & weight_mask;
-  size_t base_id2 = f_src2[0].weight_index & weight_mask;
+  uint64_t weight_mask = all->reg.weight_mask;
+  uint64_t base_id1 = f_src1[0].weight_index & weight_mask;
+  uint64_t base_id2 = f_src2[0].weight_index & weight_mask;
 
   feature f;
   f.weight_index = f_src1[0].weight_index;
@@ -50,13 +50,13 @@ float multiply(v_array<feature>& f_dest, v_array<feature>& f_src2, interact& in)
   float sum_sq = f.x*f.x;
   f_dest.push_back(f);
 
-  size_t prev_id1 = 0;
-  size_t prev_id2 = 0;
+  uint64_t prev_id1 = 0;
+  uint64_t prev_id2 = 0;
 
-  for(size_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();)
+  for(uint64_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();)
   { // calculating the relative offset from the namespace offset used to match features
-    size_t cur_id1 = (size_t)(((f_src1[i1].weight_index & weight_mask) - base_id1) & weight_mask);
-    size_t cur_id2 = (size_t)(((f_src2[i2].weight_index & weight_mask) - base_id2) & weight_mask);
+    uint64_t cur_id1 = (uint64_t)(((f_src1[i1].weight_index & weight_mask) - base_id1) & weight_mask);
+    uint64_t cur_id2 = (uint64_t)(((f_src2[i2].weight_index & weight_mask) - base_id2) & weight_mask);
 
     // checking for sorting requirement
     if (cur_id1 < prev_id1)
@@ -115,13 +115,13 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec)
   ec.total_sum_feat_sq += ec.sum_feat_sq[in.n1];
   ec.num_features += f1->size();
 
-  /*for(size_t i = 0;i < f1.size();i++)
+  /*for(uint64_t i = 0;i < f1.size();i++)
     cout<<f1[i].weight_index<<":"<<f1[i].x<<" ";
     cout<<endl;*/
 
   // remove 2nd namespace
   int n2_i = -1;
-  for (size_t i = 0; i < ec.indices.size(); i++)
+  for (uint64_t i = 0; i < ec.indices.size(); i++)
   { if (ec.indices[i] == in.n2)
     { n2_i = (int)i;
       memmove(&ec.indices[n2_i], &ec.indices[n2_i + 1], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));

@@ -32,7 +32,7 @@ struct stagewise_poly
   bool batch_sz_double;
 
   sort_data *sd;
-  uint32_t sd_len;
+  uint64_t sd_len;
   uint8_t *depthsbits; //interleaved array storing depth information and parent/cycle bits
 
   uint64_t sum_sparsity; //of synthetic example
@@ -65,56 +65,56 @@ struct stagewise_poly
 };
 
 
-inline uint32_t stride_shift(const stagewise_poly &poly, uint32_t idx)
+inline uint64_t stride_shift(const stagewise_poly &poly, uint64_t idx)
 { return idx << poly.all->reg.stride_shift;
 }
 
-inline uint32_t stride_un_shift(const stagewise_poly &poly, uint32_t idx)
+inline uint64_t stride_un_shift(const stagewise_poly &poly, uint64_t idx)
 { return idx >> poly.all->reg.stride_shift;
 }
 
-inline uint32_t do_ft_offset(const stagewise_poly &poly, uint32_t idx)
+inline uint64_t do_ft_offset(const stagewise_poly &poly, uint64_t idx)
 { //cout << poly.synth_ec.ft_offset << "  " << poly.original_ec->ft_offset << endl;
   assert(!poly.original_ec || poly.synth_ec.ft_offset == poly.original_ec->ft_offset);
   return idx + poly.synth_ec.ft_offset;
 }
 
-inline uint32_t un_ft_offset(const stagewise_poly &poly, uint32_t idx)
+inline uint64_t un_ft_offset(const stagewise_poly &poly, uint64_t idx)
 { assert(!poly.original_ec || poly.synth_ec.ft_offset == poly.original_ec->ft_offset);
   if (poly.synth_ec.ft_offset == 0)
     return idx;
   else
   { while (idx < poly.synth_ec.ft_offset)
-    { idx += (uint32_t) poly.all->length() << poly.all->reg.stride_shift;
+    { idx += poly.all->length() << poly.all->reg.stride_shift;
     }
     return idx - poly.synth_ec.ft_offset;
   }
 }
 
-inline uint32_t wid_mask(const stagewise_poly &poly, uint32_t wid)
+inline uint64_t wid_mask(const stagewise_poly &poly, uint64_t wid)
 { return wid & poly.all->reg.weight_mask;
 }
 
-inline uint32_t wid_mask_un_shifted(const stagewise_poly &poly, uint32_t wid)
+inline uint64_t wid_mask_un_shifted(const stagewise_poly &poly, uint64_t wid)
 { return stride_un_shift(poly, wid & poly.all->reg.weight_mask);
 }
 
-inline uint32_t constant_feat(const stagewise_poly &poly)
+inline uint64_t constant_feat(const stagewise_poly &poly)
 { return stride_shift(poly, constant * poly.all->wpp);
 }
 
-inline uint32_t constant_feat_masked(const stagewise_poly &poly)
+inline uint64_t constant_feat_masked(const stagewise_poly &poly)
 { return wid_mask(poly, constant_feat(poly));
 }
 
 
-inline uint32_t depthsbits_sizeof(const stagewise_poly &poly)
-{ return (uint32_t)(2 * poly.all->length() * sizeof(uint8_t));
+inline uint64_t depthsbits_sizeof(const stagewise_poly &poly)
+{ return (2 * poly.all->length() * sizeof(uint8_t));
 }
 
 void depthsbits_create(stagewise_poly &poly)
 { poly.depthsbits = calloc_or_throw<uint8_t>(2 * poly.all->length());
-  for (uint32_t i = 0; i < poly.all->length() * 2; i += 2)
+  for (uint64_t i = 0; i < poly.all->length() * 2; i += 2)
   { poly.depthsbits[i] = default_depth;
     poly.depthsbits[i+1] = indicator_bit;
   }
@@ -124,19 +124,19 @@ void depthsbits_destroy(stagewise_poly &poly)
 { free(poly.depthsbits);
 }
 
-inline bool parent_get(const stagewise_poly &poly, uint32_t wid)
+inline bool parent_get(const stagewise_poly &poly, uint64_t wid)
 { assert(wid % stride_shift(poly, 1) == 0);
   assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
   return poly.depthsbits[wid_mask_un_shifted(poly, do_ft_offset(poly, wid)) * 2 + 1] & parent_bit;
 }
 
-inline void parent_toggle(stagewise_poly &poly, uint32_t wid)
+inline void parent_toggle(stagewise_poly &poly, uint64_t wid)
 { assert(wid % stride_shift(poly, 1) == 0);
   assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
   poly.depthsbits[wid_mask_un_shifted(poly, do_ft_offset(poly, wid)) * 2 + 1] ^= parent_bit;
 }
 
-inline bool cycle_get(const stagewise_poly &poly, uint32_t wid)
+inline bool cycle_get(const stagewise_poly &poly, uint64_t wid)
 { //note: intentionally leaving out ft_offset.
   assert(wid % stride_shift(poly, 1) == 0);
   if ((poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & cycle_bit) > 0)
@@ -145,19 +145,19 @@ inline bool cycle_get(const stagewise_poly &poly, uint32_t wid)
     return false;
 }
 
-inline void cycle_toggle(stagewise_poly &poly, uint32_t wid)
+inline void cycle_toggle(stagewise_poly &poly, uint64_t wid)
 { //note: intentionally leaving out ft_offset.
   assert(wid % stride_shift(poly, 1) == 0);
   poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] ^= cycle_bit;
 }
 
-inline uint8_t min_depths_get(const stagewise_poly &poly, uint32_t wid)
+inline uint8_t min_depths_get(const stagewise_poly &poly, uint64_t wid)
 { assert(wid % stride_shift(poly, 1) == 0);
   assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
   return poly.depthsbits[stride_un_shift(poly, do_ft_offset(poly, wid)) * 2];
 }
 
-inline void min_depths_set(stagewise_poly &poly, uint32_t wid, uint8_t depth)
+inline void min_depths_set(stagewise_poly &poly, uint64_t wid, uint8_t depth)
 { assert(wid % stride_shift(poly, 1) == 0);
   assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
   poly.depthsbits[stride_un_shift(poly, do_ft_offset(poly, wid)) * 2] = depth;
@@ -165,8 +165,8 @@ inline void min_depths_set(stagewise_poly &poly, uint32_t wid, uint8_t depth)
 
 #ifndef NDEBUG
 void sanity_check_state(stagewise_poly &poly)
-{ for (uint32_t i = 0; i != poly.all->length(); ++i)
-  { uint32_t wid = stride_shift(poly, i);
+{ for (uint64_t i = 0; i != poly.all->length(); ++i)
+  { uint64_t wid = stride_shift(poly, i);
 
     assert( ! cycle_get(poly,wid) );
 
@@ -182,7 +182,7 @@ void sanity_check_state(stagewise_poly &poly)
 
 //Note.  OUTPUT & INPUT masked.
 //It is very important that this function is invariant to stride.
-inline uint32_t child_wid(const stagewise_poly &poly, uint32_t wi_atomic, uint32_t wi_general)
+inline uint64_t child_wid(const stagewise_poly &poly, uint64_t wi_atomic, uint64_t wi_general)
 { assert(wi_atomic == wid_mask(poly, wi_atomic));
   assert(wi_general == wid_mask(poly, wi_general));
   assert((wi_atomic & (stride_shift(poly, 1) - 1)) == 0);
@@ -208,13 +208,13 @@ void sort_data_create(stagewise_poly &poly)
   poly.sd_len = 0;
 }
 
-void sort_data_ensure_sz(stagewise_poly &poly, uint32_t len)
+void sort_data_ensure_sz(stagewise_poly &poly, uint64_t len)
 { if (poly.sd_len < len)
-  { uint32_t len_candidate = 2 * len;
+  { uint64_t len_candidate = 2 * len;
 #ifdef DEBUG
     cout << "resizing sort buffer; current size " << poly.sd_len;
 #endif //DEBUG
-    poly.sd_len = (len_candidate > poly.all->length()) ? (uint32_t)poly.all->length() : len_candidate;
+    poly.sd_len = (len_candidate > poly.all->length()) ? (uint64_t)poly.all->length() : len_candidate;
 #ifdef DEBUG
     cout << ", new size " << poly.sd_len << endl;
 #endif //DEBUG
@@ -255,19 +255,19 @@ void sort_data_update_support(stagewise_poly &poly)
 { assert(poly.num_examples);
 
   //ft_offset affects parent_set / parent_get.  This state must be reset at end.
-  uint32_t pop_ft_offset = poly.original_ec->ft_offset;
+  uint64_t pop_ft_offset = poly.original_ec->ft_offset;
   poly.synth_ec.ft_offset = 0;
   assert(poly.original_ec);
   poly.original_ec->ft_offset = 0;
 
-  uint32_t num_new_features = (uint32_t)pow(poly.sum_input_sparsity * 1.0f / poly.num_examples, poly.sched_exponent);
-  num_new_features = (num_new_features > poly.all->length()) ? (uint32_t)poly.all->length() : num_new_features;
+  uint64_t num_new_features = (uint64_t)pow(poly.sum_input_sparsity * 1.0f / poly.num_examples, poly.sched_exponent);
+  num_new_features = (num_new_features > poly.all->length()) ? (uint64_t)poly.all->length() : num_new_features;
   sort_data_ensure_sz(poly, num_new_features);
 
   sort_data *heap_end = poly.sd;
   make_heap(poly.sd, heap_end, sort_data_compar_heap); //redundant
-  for (uint32_t i = 0; i != poly.all->length(); ++i)
-  { uint32_t wid = stride_shift(poly, i);
+  for (uint64_t i = 0; i != poly.all->length(); ++i)
+  { uint64_t wid = stride_shift(poly, i);
     if (!parent_get(poly, wid) && wid != constant_feat_masked(poly))
     { float wval = (fabsf(poly.all->reg.weight_vector[wid])
                     * poly.all->reg.weight_vector[poly.all->normalized_idx + (wid)])
@@ -301,14 +301,14 @@ void sort_data_update_support(stagewise_poly &poly)
       }
     }
   }
-  num_new_features = (uint32_t) (heap_end - poly.sd);
+  num_new_features = (uint64_t) (heap_end - poly.sd);
 
 #ifdef DEBUG
   //eyeballing weights a pain if unsorted.
   qsort(poly.sd, num_new_features, sizeof(sort_data), sort_data_compar);
 #endif //DEBUG
 
-  for (uint32_t pos = 0; pos < num_new_features && pos < poly.sd_len; ++pos)
+  for (uint64_t pos = 0; pos < num_new_features && pos < poly.sd_len; ++pos)
   { assert(!parent_get(poly, poly.sd[pos].wid)
            && poly.sd[pos].wval > tolerance
            && poly.sd[pos].wid != constant_feat_masked(poly));
@@ -324,7 +324,7 @@ void sort_data_update_support(stagewise_poly &poly)
 
 #ifdef DEBUG
   cout << "depths:";
-  for (uint32_t depth = 0; depth <= poly.max_depth && depth < sizeof(poly.depths) / sizeof(*poly.depths); ++depth)
+  for (uint64_t depth = 0; depth <= poly.max_depth && depth < sizeof(poly.depths) / sizeof(*poly.depths); ++depth)
     cout << "  [" << depth << "] = " << poly.depths[depth];
   cout << endl;
 
@@ -391,8 +391,8 @@ void synthetic_decycle(stagewise_poly &poly)
 
 void synthetic_create_rec(stagewise_poly &poly, float v, float &w)
 { //Note: need to un_ft_shift since gd::foreach_feature bakes in the offset.
-  uint32_t wid_atomic = wid_mask(poly, un_ft_offset(poly, (uint32_t)((&w - poly.all->reg.weight_vector))));
-  uint32_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.weight_index);
+  uint64_t wid_atomic = wid_mask(poly, un_ft_offset(poly, (uint64_t)((&w - poly.all->reg.weight_vector))));
+  uint64_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.weight_index);
   assert(wid_atomic % stride_shift(poly, 1) == 0);
 
   //Note: only mutate learner state when in training mode.  This is because
@@ -405,7 +405,7 @@ void synthetic_create_rec(stagewise_poly &poly, float v, float &w)
 #ifdef DEBUG
       cout
           << "FOUND A TRANSPLANT!!! moving [" << wid_cur
-          << "] from depth " << (uint32_t) min_depths_get(poly, wid_cur)
+          << "] from depth " << (uint64_t) min_depths_get(poly, wid_cur)
           << " to depth " << poly.cur_depth << endl;
 #endif //DEBUG
       //XXX arguably, should also fear transplants that occured with
@@ -633,7 +633,7 @@ base_learner *stagewise_poly_setup(vw &all)
 
   new_options(all, "Stagewise poly options")
   ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
-  ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")
+  ("batch_sz", po::value<uint64_t>(), "multiplier on batch size before including more features")
   ("batch_sz_no_doubling", "batch_sz does not double")
 #ifdef MAGIC_ARGUMENT
   ("magic_argument", po::value<float>(), "magical feature flag")
@@ -648,7 +648,7 @@ base_learner *stagewise_poly_setup(vw &all)
   sort_data_create(poly);
 
   poly.sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 1.f;
-  poly.batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 1000;
+  poly.batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint64_t>() : 1000;
   poly.batch_sz_double = vm.count("batch_sz_no_doubling") ? false : true;
 #ifdef MAGIC_ARGUMENT
   poly.magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;
