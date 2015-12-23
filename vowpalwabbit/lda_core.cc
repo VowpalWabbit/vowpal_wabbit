@@ -654,6 +654,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 
       msg << i << " ";
       brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, msg, text);
+
       if (brw != 0)
         for (uint64_t k = 0; k < K; k++)
         { uint64_t ndx = stride * i + k;

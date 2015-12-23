@@ -35,6 +35,7 @@
     <PlatformToolset>v120</PlatformToolset>
     <CLRSupport>true</CLRSupport>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableVLD>true</EnableVLD>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -57,7 +58,7 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <NuGetPackageImportStamp>703d8bef</NuGetPackageImportStamp>
+    <NuGetPackageImportStamp>56b44ba1</NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -132,19 +133,16 @@
   <ItemGroup>
     <ClCompile Include="vld_clr.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
-    <Import Project="$(SolutionDir)\packages\VisualLeakDetector.2.4.2.5\build\native\VisualLeakDetector.targets" Condition="Exists('$(SolutionDir)\packages\VisualLeakDetector.2.4.2.5\build\native\VisualLeakDetector.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\VisualLeakDetector.2.5.0.0\build\native\VisualLeakDetector.targets" Condition="Exists('..\..\vowpalwabbit\packages\VisualLeakDetector.2.5.0.0\build\native\VisualLeakDetector.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\VisualLeakDetector.2.4.2.5\build\native\VisualLeakDetector.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\VisualLeakDetector.2.4.2.5\build\native\VisualLeakDetector.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\VisualLeakDetector.2.5.0.0\build\native\VisualLeakDetector.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\VisualLeakDetector.2.5.0.0\build\native\VisualLeakDetector.targets'))" />
   </Target>
 </Project>
