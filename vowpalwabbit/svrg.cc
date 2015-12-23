@@ -130,17 +130,16 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
 
   if (model_file.files.size() > 0)
   { bool resume = s.all->save_resume;
-    char buff[512];
-    uint32_t text_len = sprintf(buff, ":%d\n", resume);
+    stringstream msg;
+    msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, (char*) &resume, sizeof(resume), "",
-                              read, buff, text_len, text);
+                              read, msg, text);
 
     if (resume)
-    { GD::save_load_online_state(*s.all, model_file, read, text);
-    }
+      GD::save_load_online_state(*s.all, model_file, read, text);
     else
-    { GD::save_load_regressor(*s.all, model_file, read, text);
-    }
+      GD::save_load_regressor(*s.all, model_file, read, text);
+
   }
 }
 
@@ -170,4 +169,3 @@ base_learner* svrg_setup(vw& all)
   l.set_save_load(save_load);
   return make_base(l);
 }
-

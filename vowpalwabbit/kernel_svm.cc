@@ -242,9 +242,9 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
 
   //cerr<<"Save load svm "<<read<<" "<<text<<endl;
   if (model_file.files.size() == 0) return;
-
+  stringstream msg;
   bin_text_read_write_fixed(model_file,(char*)&(model->num_support), sizeof(model->num_support),
-                            "", read, "", 0, text);
+                            "", read, msg, text);
   //cerr<<"Read num support "<<model->num_support<<endl;
 
   flat_example* fec;
@@ -263,23 +263,15 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
       save_load_flat_example(model_file, read, fec);
     }
   }
-  //cerr<<endl;
-
-  //cerr<<"Read model"<<endl;
 
   if(read)
     model->alpha.resize(model->num_support);
   bin_text_read_write_fixed(model_file, (char*)model->alpha.begin, (uint32_t)model->num_support*sizeof(float),
-                            "", read, "", 0, text);
+                            "", read, msg, text);
   if(read)
     model->delta.resize(model->num_support);
   bin_text_read_write_fixed(model_file, (char*)model->delta.begin, (uint32_t)model->num_support*sizeof(float),
-                            "", read, "", 0, text);
-
-  // cerr<<"In save_load\n";
-  // for(int i = 0;i < model->num_support;i++)
-  //   cerr<<model->alpha[i]<<" ";
-  // cerr<<endl;
+                            "", read, msg, text);
 }
 
 void save_load(svm_params& params, io_buf& model_file, bool read, bool text)

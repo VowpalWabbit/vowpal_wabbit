@@ -208,33 +208,31 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
-    uint64_t text_len;
-    char buff[512];
-    size_t brw = 1;
+     size_t brw = 1;
 
     do
     { brw = 0;
       size_t K = d.rank*2+1;
-
-      text_len = sprintf(buff, "%zd ", i);
+      stringstream msg;
+      msg << i << " ";
       brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
-                                       "", read,
-                                       buff, text_len, text);
+                                       "", read, msg, text);
       if (brw != 0)
         for (uint64_t k = 0; k < K; k++)
         { uint64_t ndx = (i << stride_shift)+k;
 
           weight* v = &(all->reg.weight_vector[ndx]);
-          text_len = sprintf(buff, "%f ", *v);
+          msg << v << " ";
           brw += bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
-                                           "", read,
-                                           buff, text_len, text);
+                                           "", read, msg, text);
 
         }
       if (text)
-        brw += bin_text_read_write_fixed(model_file,buff,0,
-                                         "", read,
-                                         "\n",1,text);
+        {
+          msg << "\n";
+          brw += bin_text_read_write_fixed(model_file, nullptr, 0,
+                                           "", read, msg,text);
+        }
 
       if (!read)
         i++;

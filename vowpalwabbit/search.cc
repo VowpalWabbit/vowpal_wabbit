@@ -431,9 +431,9 @@ void print_update(search_private& priv)
           priv.beta);
 
   if (PRINT_CLOCK_TIME)
-  { size_t num_sec = (size_t)(((float)(clock() - priv.start_clock_time)) / CLOCKS_PER_SEC);
-    fprintf(stderr, " %15llusec", num_sec);
-  }
+    { size_t num_sec = (size_t)(((float)(clock() - priv.start_clock_time)) / CLOCKS_PER_SEC);
+      cerr <<" "<< num_sec << "sec";
+    }
 
   if (use_heldout_loss)
     fprintf(stderr, " h");
@@ -458,7 +458,10 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
     a.space   = calloc_or_throw<char>(priv.dat_new_feature_feature_space->length()+1);
     a.feature = calloc_or_throw<char>(priv.dat_new_feature_audit_ss.str().length() + 32);
     strcpy(a.space, priv.dat_new_feature_feature_space->c_str());
-    int num = sprintf(a.feature, "fid=%llu_", (idx & mask) >> ss);
+    stringstream temp;
+    temp << "fid="<< ((idx & mask) >> ss) <<"_";
+    int num = temp.str().size();
+    strcpy(a.feature, temp.str().c_str());
     strcpy(a.feature+num, priv.dat_new_feature_audit_ss.str().c_str());
     priv.dat_new_feature_ec->audit_features[priv.dat_new_feature_namespace].push_back(a);
   }
@@ -1436,7 +1439,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         if (priv.auto_condition_features)
           for (size_t n=start_K; n<ec_cnt; n++)
             add_example_conditioning(priv, ecs[n], condition_on_cnt, condition_on_names, priv.condition_on_actions.begin);
-    
+
         if (((!skip) && (policy >= 0)) || need_fea)    // only make a prediction if we're going to use the output
         { if (priv.auto_condition_features && priv.acset.use_passthrough_repr)
           { if (priv.is_ldf)  { std::cerr << "search cannot use state representations in ldf mode" << endl; throw exception(); }

@@ -796,7 +796,7 @@ void finish(bfgs& b)
 }
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
-{ char buff[512];
+{
   int c = 0;
   uint32_t length = 2*(1 << all.num_bits);
   uint32_t i = 0;
@@ -822,13 +822,14 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
     { v = &(b.regularizers[i]);
       if (*v != 0.)
       { c++;
-        int text_len = sprintf(buff, "%d", i);
+        stringstream msg;
+        msg << i;
         brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i),
-                                   buff, text_len, text);
+                                   msg, text);
 
-        text_len = sprintf(buff, ":%f\n", *v);
+        msg << ":"<< *v << "\n";
         brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
-                                   buff, text_len, text);
+                                   msg, text);
       }
     }
     if (!read)
@@ -881,11 +882,10 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
   bool reg_vector = (b.output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
 
   if (model_file.files.size() > 0)
-  { char buff[512];
-    uint32_t text_len = sprintf(buff, ":%d\n", reg_vector);
-    bin_text_read_write_fixed(model_file,(char *)&reg_vector, sizeof (reg_vector),
-                              "", read,
-                              buff, text_len, text);
+    { stringstream msg;
+      msg << ":"<< reg_vector <<"\n";
+      bin_text_read_write_fixed(model_file,(char *)&reg_vector, sizeof (reg_vector),
+                                "", read, msg, text);
 
     if (reg_vector)
       save_load_regularizer(*all, b, model_file, read, text);
@@ -962,4 +962,3 @@ base_learner* bfgs_setup(vw& all)
 
   return make_base(l);
 }
-

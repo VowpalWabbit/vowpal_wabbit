@@ -616,8 +616,10 @@ void finish(stagewise_poly &poly)
 
 void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
 { if (model_file.files.size() > 0)
-    bin_text_read_write_fixed(model_file, (char *) poly.depthsbits, depthsbits_sizeof(poly), "", read, "", 0, text);
-
+    {
+      stringstream msg;
+      bin_text_read_write_fixed(model_file, (char *) poly.depthsbits, depthsbits_sizeof(poly), "", read, msg, text);
+    }
   //unfortunately, following can't go here since save_load called before gd::save_load and thus
   //weight vector state uninitialiazed.
   //#ifdef DEBUG
