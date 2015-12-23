@@ -583,7 +583,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
         brw = bin_text_write_fixed(model_file, (char*)it->first.c_str(), sizeof(*it->first.c_str()),
                                    buff, text_len, true);
 
-        text_len = sprintf_s(buff, buf_size, ":%llu:%f\n", it->second, *v);
+        text_len = sprintf_s(buff, buf_size, ":%lu:%f\n", it->second, *v);
         brw += bin_text_write_fixed(model_file, (char *)v, sizeof(*v),
                                     buff, text_len, true);
       }
