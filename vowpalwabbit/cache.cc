@@ -7,19 +7,31 @@ license as described in the file LICENSE.
 #include "unique_sort.h"
 #include "global_data.h"
 
+const size_t int_size = 11;
+const size_t char_size = 2;
 const size_t neg_1 = 1;
 const size_t general = 2;
 
 char* run_len_decode(char *p, uint64_t& i)
 { // read an int 7 bits at a time.
   size_t count = 0;
-  while(*p & 128)\
-    i = i | ((*(p++) & 127) << 7*count++);
-  i = i | (*(p++) << 7*count);
+  while(*p & 128)
+    i = i | ((uint64_t)(*(p++) & 127) << 7*count++);
+  i = i | ((uint64_t)(*(p++)) << 7*count);
   return p;
 }
 
-inline int32_t ZigZagDecode(uint64_t n) { return (n >> 1) ^ -static_cast<int32_t>(n & 1); }
+char* run_len_encode(char *p, uint64_t i)
+{ // store an int 7 bits at a time.
+  while (i >= 128)
+  { *(p++) = (i & 127) | 128;
+    i = i >> 7;
+  }
+  *(p++) = (i & 127);
+  return p;
+}
+
+inline int64_t ZigZagDecode(uint64_t n) { return (n >> 1) ^ -static_cast<int64_t>(n & 1); }
 
 size_t read_cached_tag(io_buf& cache, example* ae)
 { char* c;
@@ -113,18 +125,8 @@ int read_cached_features(void* in, example* ec)
   return (int)total;
 }
 
-char* run_len_encode(char *p, size_t i)
-{ // store an int 7 bits at a time.
-  while (i >= 128)
-  { *(p++) = (i & 127) | 128;
-    i = i >> 7;
-  }
-  *(p++) = (i & 127);
-  return p;
-}
-
 inline uint64_t ZigZagEncode(int64_t n)
-{ uint64_t ret = (n << 1) ^ (n >> 31);
+{ uint64_t ret = (n << 1) ^ (n >> 63);
   return ret;
 }
 
@@ -152,7 +154,8 @@ void output_features(io_buf& cache, unsigned char index, feature* begin, feature
   uint64_t last = 0;
 
   for (feature* i = begin; i != end; i++)
-  { uint64_t cache_index = (i->weight_index) & mask;
+    { 
+    uint64_t cache_index = (i->weight_index) & mask;
     int64_t s_diff = (cache_index - last);
     uint64_t diff = ZigZagEncode(s_diff) << 2;
     last = cache_index;

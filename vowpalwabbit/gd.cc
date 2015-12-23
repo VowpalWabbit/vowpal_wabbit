@@ -553,8 +553,8 @@ void learn(gd& g, base_learner& base, example& ec)
 void sync_weights(vw& all)
 { if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
     return;
-  uint64_t length = 1 << all.num_bits;
-  uint64_t stride = 1 << all.reg.stride_shift;
+  uint64_t length = (uint64_t)1 << all.num_bits;
+  uint64_t stride = (uint64_t)1 << all.reg.stride_shift;
   for(uint64_t i = 0; i < length && all.reg_mode; i++)
     all.reg.weight_vector[stride*i] = trunc_weight(all.reg.weight_vector[stride*i], (float)all.sd->gravity) * (float)all.sd->contraction;
   all.sd->gravity = 0.;
@@ -562,8 +562,8 @@ void sync_weights(vw& all)
 }
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
-{ uint64_t length = 1 << all.num_bits;
-  uint64_t stride = 1 << all.reg.stride_shift;
+{ uint64_t length = (uint64_t)1 << all.num_bits;
+  uint64_t stride = (uint64_t)1 << all.reg.stride_shift;
   uint64_t i = 0;
   uint32_t old_i = 0;
   size_t brw = 1;
@@ -594,7 +594,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
   { brw = 1;
     weight* v;
     if (read)
-      { if (all.num_bits < 30)//backwards compatible
+      { if (all.num_bits < 31)//backwards compatible
 	  { brw = bin_read_fixed(model_file, (char*)&old_i, sizeof(old_i), "");
 	    i = old_i;
 	  }
@@ -618,7 +618,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
         int text_len;
 
         text_len = sprintf_s(buff, buf_size, "%zd", i);
-	if (all.num_bits < 30)
+	if (all.num_bits < 31)
 	  {
 	    old_i = i;
 	    brw = bin_text_write_fixed(model_file, (char *)&old_i, sizeof(old_i),
@@ -747,8 +747,8 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
     all.sd->total_features = 0;
   }
 
-  uint64_t length = 1 << all.num_bits;
-  uint64_t stride = 1 << all.reg.stride_shift;
+  uint64_t length = (uint64_t)1 << all.num_bits;
+  uint64_t stride = (uint64_t)1 << all.reg.stride_shift;
   int c = 0;
   uint64_t i = 0;
   size_t brw = 1;
@@ -815,8 +815,8 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
   { initialize_regressor(all);
 
     if(all.adaptive && all.initial_t > 0)
-    { uint64_t length = 1 << all.num_bits;
-      uint64_t stride = 1 << all.reg.stride_shift;
+      { uint64_t length = (uint64_t)1 << all.num_bits;
+	uint64_t stride = (uint64_t)1 << all.reg.stride_shift;
       for (size_t j = 1; j < stride*length; j+=stride)
       { all.reg.weight_vector[j] = all.initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
         //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be

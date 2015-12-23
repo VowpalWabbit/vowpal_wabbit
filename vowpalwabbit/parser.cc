@@ -351,7 +351,7 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
     }
   }
 
-  all.parse_mask = (1 << all.num_bits) - 1;
+  all.parse_mask = ((uint64_t)1 << all.num_bits) - 1;
   if (caches.size() == 0)
   { if (!quiet)
       cerr << "using no cache" << endl;

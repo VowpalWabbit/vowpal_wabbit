@@ -628,8 +628,8 @@ size_t next_pow2(size_t x)
 
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
 { vw *all = l.all;
-  uint64_t length = 1 << all->num_bits;
-  uint64_t stride = 1 << all->reg.stride_shift;
+  uint64_t length = (uint64_t)1 << all->num_bits;
+  uint64_t stride = (uint64_t)1 << all->reg.stride_shift;
 
   if (read)
   { initialize_regressor(*all);

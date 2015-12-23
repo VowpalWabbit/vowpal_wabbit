@@ -196,7 +196,7 @@ void mf_train(gdmf& d, example& ec)
 
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 { vw* all = d.all;
-  uint64_t length = 1 << all->num_bits;
+  uint64_t length = (uint64_t)1 << all->num_bits;
   uint64_t stride_shift = all->reg.stride_shift;
 
   if(read)

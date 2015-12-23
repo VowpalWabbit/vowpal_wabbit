@@ -49,7 +49,8 @@ inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
 template <class R, void (*T)(R&, const float, float&)>
 inline void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R& dat, uint64_t offset=0, float mult=1.)
-{ for (feature* f = begin; f != end; ++f)
+{ 
+  for (feature* f = begin; f != end; ++f)
     T(dat, mult*f->x, weight_vector[(f->weight_index + offset) & weight_mask]);
 }
 

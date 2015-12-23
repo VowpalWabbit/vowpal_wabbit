@@ -8,9 +8,6 @@ license as described in the file LICENSE.
 #include "io_buf.h"
 #include "example.h"
 
-const size_t int_size = 6;
-const size_t char_size = 2;
-
 char* run_len_decode(char *p, size_t& i);
 char* run_len_encode(char *p, size_t i);
 
