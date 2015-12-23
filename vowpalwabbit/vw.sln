@@ -65,8 +65,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cs_vld", "..\cs\cli\cs_vld.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_dynamic", "vw_dynamic.vcxproj", "{1E205806-7F80-47DD-A38D-FC08083F3593}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Explore", "..\explore\csharp\Explore.csproj", "{6D245816-6016-49B6-9E37-A0BF0D2A736A}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -233,14 +231,6 @@ Global
 		{1E205806-7F80-47DD-A38D-FC08083F3593}.Release|Win32.Build.0 = Release|Win32
 		{1E205806-7F80-47DD-A38D-FC08083F3593}.Release|x64.ActiveCfg = Release|x64
 		{1E205806-7F80-47DD-A38D-FC08083F3593}.Release|x64.Build.0 = Release|x64
-		{6D245816-6016-49B6-9E37-A0BF0D2A736A}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{6D245816-6016-49B6-9E37-A0BF0D2A736A}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{6D245816-6016-49B6-9E37-A0BF0D2A736A}.Debug|x64.Build.0 = Debug|Any CPU
-		{6D245816-6016-49B6-9E37-A0BF0D2A736A}.DebugLeakCheck|Win32.ActiveCfg = Debug|Any CPU
-		{6D245816-6016-49B6-9E37-A0BF0D2A736A}.DebugLeakCheck|x64.ActiveCfg = Debug|Any CPU
-		{6D245816-6016-49B6-9E37-A0BF0D2A736A}.Release|Win32.ActiveCfg = Release|Any CPU
-		{6D245816-6016-49B6-9E37-A0BF0D2A736A}.Release|x64.ActiveCfg = Release|Any CPU
-		{6D245816-6016-49B6-9E37-A0BF0D2A736A}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
