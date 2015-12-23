@@ -1,10 +1,10 @@
-final_regressor = GNU_Linux_x86_64/1a.dir/mnist.model
+final_regressor = runs/1a.dir/mnist.model
 Num weight bits = 24
 learning rate = 0.1
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-creating cache_file = GNU_Linux_x86_64/1a.dir/mnist.cache
+creating cache_file = runs/1a.dir/mnist.cache
 Reading datafile = dataSets/mnist.dir/train.prep
 num sources = 1
 average  since         example        example  current  current  current

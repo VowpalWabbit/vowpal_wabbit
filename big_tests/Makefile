@@ -22,7 +22,9 @@ MAKEFLAGS+=r
 
 TOP_MK_DIR := $(patsubst %/,%,$(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
 ARCH ?= $(subst /,_,$(shell uname -o)_$(shell uname -i))
-stageDir := $(ARCH)
+# can't use the architecture as directory name, cuz that produces different expected files on different platforms
+# stageDir := $(ARCH)
+stageDir := runs
 dataDir := dataSets
 expDir := expected
 allTests := $(patsubst %/,%,$(shell ls $(expDir)))
