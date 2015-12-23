@@ -7,11 +7,12 @@ license as described in the file LICENSE.
 #include <iostream>
 using namespace std;
 
+#include "crossplat_compat.h"
+
 #ifndef _WIN32
 #include <unistd.h>
-#define sprintf_s snprintf
-#define vsprintf_s vsnprintf
 #endif
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
@@ -34,7 +35,7 @@ void initialize_regressor(vw& all)
   all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
   all.reg.weight_vector = calloc_or_throw<weight>(length << all.reg.stride_shift);
   if (all.reg.weight_vector == nullptr)
-  { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
+    { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
     for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
       all.reg.weight_vector[j] = all.initial_weight;
@@ -86,294 +87,334 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
   size_t buf2_size = default_buf_size;
   uint32_t text_len;
 
-  if (model_file.files.size() > 0)
-  { size_t bytes_read_write = 0;
+  try
+  { if (model_file.files.size() > 0)
+    { size_t bytes_read_write = 0;
 
-    uint32_t v_length = (uint32_t)version.to_string().length() + 1;
-    text_len = sprintf_s(buff, buf_size, "Version %s\n", version.to_string().c_str());
-    memcpy(buff2, version.to_string().c_str(), min(v_length, buf2_size));
-    if (read)
-    { v_length = (uint32_t) buf2_size;
-    }
-    bytes_read_write += bin_text_read_write_validated(model_file, buff2, v_length,
-                        "", read,
-                        buff, text_len, text);
-    all.model_file_ver = buff2; //stord in all to check save_resume fix in gd
-
-    VW::validate_version(all);
-
-    if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
-    { model_file.verify_hash = true;
-    }
-
-    char model = 'm';
-    bytes_read_write += bin_text_read_write_fixed_validated(model_file, &model, 1,
-                        "file is not a model file", read,
-                        "", 0, text);
-
-    text_len = sprintf_s(buff, buf_size, "Min label:%f\n", all.sd->min_label);
-    bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char*)&all.sd->min_label, sizeof(all.sd->min_label),
-                        "", read,
-                        buff, text_len, text);
-
-    text_len = sprintf_s(buff, buf_size, "Max label:%f\n", all.sd->max_label);
-    bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char*)&all.sd->max_label, sizeof(all.sd->max_label),
-                        "", read,
-                        buff, text_len, text);
-
-    VW::validate_min_max_label(all);
-    if (read && find(all.args.begin(), all.args.end(), "--max_prediction") == all.args.end())
-    { all.args.push_back("--max_prediction");
-      all.args.push_back(boost::lexical_cast<std::string>(all.sd->max_label));
-    }
-
-    text_len = sprintf_s(buff, buf_size, "bits:%d\n", (int)all.num_bits);
-    uint32_t local_num_bits = all.num_bits;
-    bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&local_num_bits, sizeof(local_num_bits),
-                        "", read,
-                        buff, text_len, text);
-
-    if (read && find(all.args.begin(), all.args.end(), "--bit_precision") == all.args.end())
-    { all.args.push_back("--bit_precision");
-      all.args.push_back(boost::lexical_cast<std::string>(local_num_bits));
-    }
-
-    VW::validate_default_bits(all, local_num_bits);
-
-    all.default_bits = false;
-    all.num_bits = local_num_bits;
-
-    VW::validate_num_bits(all);
-
-    if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
-    { // -q, --cubic and --interactions are not saved in vw::file_options
-      uint32_t pair_len = (uint32_t)all.pairs.size();
-      text_len = sprintf_s(buff, buf_size, "%d pairs: ", (int)pair_len);
-      bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&pair_len, sizeof(pair_len),
+      uint32_t v_length = (uint32_t)version.to_string().length() + 1;
+      text_len = sprintf_s(buff, buf_size, "Version %s\n", version.to_string().c_str());
+      memcpy(buff2, version.to_string().c_str(), min(v_length, buf2_size));
+      if (read)
+      { v_length = (uint32_t)buf2_size;
+      }
+      bytes_read_write += bin_text_read_write(model_file, buff2, v_length,
                           "", read,
                           buff, text_len, text);
+      all.model_file_ver = buff2; //stored in all to check save_resume fix in gd
 
-      // TODO: validate pairs?
-      for (size_t i = 0; i < pair_len; i++)
-      { char pair[3] = { 0, 0, 0 };
-        if (!read)
-        { memcpy(pair, all.pairs[i].c_str(), 2);
-          text_len = sprintf_s(buff, buf_size, "%s ", all.pairs[i].c_str());
+      VW::validate_version(all);
+
+      if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
+      { model_file.verify_hash = true;
+      }
+
+      if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
+      { v_length = (uint32_t)all.id.length() + 1;
+        text_len = sprintf_s(buff, buf_size, "Id %s\n", all.id.c_str());
+        memcpy(buff2, all.id.c_str(), min(v_length, buf_size));
+        if (read)
+        { v_length = buf_size;
         }
-
-        bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2,
+        bytes_read_write += bin_text_read_write(model_file, buff2, v_length,
                             "", read,
                             buff, text_len, text);
-        if (read)
-        { string temp(pair);
-          if (count(all.pairs.begin(), all.pairs.end(), temp) == 0)
-            all.pairs.push_back(temp);
+        all.id = buff2;
+
+        if (read && find(all.args.begin(), all.args.end(), "--id") == all.args.end())
+        { all.args.push_back("--id");
+          all.args.push_back(all.id);
         }
       }
 
-      bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff, 0,
-                          "", read,
-                          "\n", 1, text);
+      char model = 'm';
+      bytes_read_write += bin_text_read_write_fixed_validated(model_file, &model, 1,
+                          "file is not a model file", read,
+                          "", 0, text);
 
-      uint32_t triple_len = (uint32_t)all.triples.size();
-      text_len = sprintf_s(buff, buf_size, "%d triples: ", (int)triple_len);
-      bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&triple_len, sizeof(triple_len),
+      text_len = sprintf_s(buff, buf_size, "Min label:%f\n", all.sd->min_label);
+      bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char*)&all.sd->min_label, sizeof(all.sd->min_label),
                           "", read,
                           buff, text_len, text);
 
-      // TODO: validate triples?
-      for (size_t i = 0; i < triple_len; i++)
-      { char triple[4] = { 0, 0, 0, 0 };
-        if (!read)
-        { text_len = sprintf_s(buff, buf_size, "%s ", all.triples[i].c_str());
-          memcpy(triple, all.triples[i].c_str(), 3);
-        }
-        bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3,
-                            "", read,
-                            buff, text_len, text);
-        if (read)
-        { string temp(triple);
-          if (count(all.triples.begin(), all.triples.end(), temp) == 0)
-            all.triples.push_back(temp);
-        }
-      }
-      bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff, 0,
+      text_len = sprintf_s(buff, buf_size, "Max label:%f\n", all.sd->max_label);
+      bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char*)&all.sd->max_label, sizeof(all.sd->max_label),
                           "", read,
-                          "\n", 1, text);
+                          buff, text_len, text);
 
-      if (all.model_file_ver >= VERSION_FILE_WITH_INTERACTIONS) // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO (previous if)
-      { // the only version that saves interacions among pairs and triples
-        uint32_t len = (uint32_t)all.interactions.size();
-        text_len = sprintf_s(buff, buf_size, "%d interactions: ", (int)len);
-        bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&len, sizeof(len),
+      VW::validate_min_max_label(all);
+
+      if (read && find(all.args.begin(), all.args.end(), "--max_prediction") == all.args.end())
+      { all.args.push_back("--max_prediction");
+        all.args.push_back(boost::lexical_cast<std::string>(all.sd->max_label));
+      }
+
+      text_len = sprintf_s(buff, buf_size, "bits:%d\n", (int)all.num_bits);
+      uint32_t local_num_bits = all.num_bits;
+      bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&local_num_bits, sizeof(local_num_bits),
+                          "", read,
+                          buff, text_len, text);
+
+      if (read && find(all.args.begin(), all.args.end(), "--bit_precision") == all.args.end())
+      { all.args.push_back("--bit_precision");
+        all.args.push_back(boost::lexical_cast<std::string>(local_num_bits));
+      }
+
+      VW::validate_default_bits(all, local_num_bits);
+
+      all.default_bits = false;
+      all.num_bits = local_num_bits;
+
+      VW::validate_num_bits(all);
+
+      if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
+      { // -q, --cubic and --interactions are not saved in vw::file_options
+        uint32_t pair_len = (uint32_t)all.pairs.size();
+        text_len = sprintf_s(buff, buf_size, "%d pairs: ", (int)pair_len);
+        bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&pair_len, sizeof(pair_len),
                             "", read,
                             buff, text_len, text);
 
-        for (size_t i = 0; i < len; i++)
-        { uint32_t inter_len = 0;
+        // TODO: validate pairs?
+        for (size_t i = 0; i < pair_len; i++)
+        { char pair[3] = { 0, 0, 0 };
           if (!read)
-          { inter_len = (uint32_t)all.interactions[i].size();
-            text_len = sprintf_s(buff, buf_size, "len: %d ", inter_len);
+          { memcpy(pair, all.pairs[i].c_str(), 2);
+            text_len = sprintf_s(buff, buf_size, "%s ", all.pairs[i].c_str());
           }
-          bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&inter_len, sizeof(inter_len),
+
+          bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2,
                               "", read,
                               buff, text_len, text);
           if (read)
-          { v_string s = v_init<unsigned char>();
-            s.resize(inter_len);
-            s.end += inter_len;
-            all.interactions.push_back(s);
+          { string temp(pair);
+            if (count(all.pairs.begin(), all.pairs.end(), temp) == 0)
+              all.pairs.push_back(temp);
           }
-          else
-            text_len = sprintf_s(buff, buf_size, "interaction: %.*s ", inter_len, all.interactions[i].begin);
-
-          bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char*)all.interactions[i].begin, inter_len,
-                              "", read,
-                              buff, text_len, text);
-
         }
 
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff, 0,
                             "", read,
                             "\n", 1, text);
-      }
-      else // < VERSION_FILE_WITH_INTERACTIONS
-      { //pairs and triples may be restored but not reflected in interactions
-        for (size_t i = 0; i < all.pairs.size(); i++)
-          all.interactions.push_back(string2v_string(all.pairs[i]));
-        for (size_t i = 0; i < all.triples.size(); i++)
-          all.interactions.push_back(string2v_string(all.triples[i]));
-      }
-    }
 
-    if (all.model_file_ver <= VERSION_FILE_WITH_RANK_IN_HEADER)
-    { // to fix compatibility that was broken in 7.9
-      uint32_t rank = 0;
-      text_len = sprintf_s(buff, buf_size, "rank:%d\n", (int)rank);
-      bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char*)&rank, sizeof(rank),
-                          "", read,
-                          buff, text_len, text);
-      if (rank != 0)
-      { if (std::find(all.args.begin(), all.args.end(), "--rank") == all.args.end())
-        { all.args.push_back("--rank");
-          sprintf_s(buff, buf_size, "%d", (int)rank);
-          all.args.push_back(buff);
+        uint32_t triple_len = (uint32_t)all.triples.size();
+        text_len = sprintf_s(buff, buf_size, "%d triples: ", (int)triple_len);
+        bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&triple_len, sizeof(triple_len),
+                            "", read,
+                            buff, text_len, text);
+
+        // TODO: validate triples?
+        for (size_t i = 0; i < triple_len; i++)
+        { char triple[4] = { 0, 0, 0, 0 };
+          if (!read)
+          { text_len = sprintf_s(buff, buf_size, "%s ", all.triples[i].c_str());
+            memcpy(triple, all.triples[i].c_str(), 3);
+          }
+          bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3,
+                              "", read,
+                              buff, text_len, text);
+          if (read)
+          { string temp(triple);
+            if (count(all.triples.begin(), all.triples.end(), temp) == 0)
+              all.triples.push_back(temp);
+          }
         }
-        else
-          cerr << "WARNING: this model file contains 'rank: " << rank << "' value but it will be ignored as another value specified via the command line." << endl;
+        bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff, 0,
+                            "", read,
+                            "\n", 1, text);
+
+        if (all.model_file_ver >= VERSION_FILE_WITH_INTERACTIONS) // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO (previous if)
+        { // the only version that saves interacions among pairs and triples
+          uint32_t len = (uint32_t)all.interactions.size();
+          text_len = sprintf_s(buff, buf_size, "%d interactions: ", (int)len);
+          bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&len, sizeof(len),
+                              "", read,
+                              buff, text_len, text);
+
+          for (size_t i = 0; i < len; i++)
+          { uint32_t inter_len = 0;
+            if (!read)
+            { inter_len = (uint32_t)all.interactions[i].size();
+              text_len = sprintf_s(buff, buf_size, "len: %d ", inter_len);
+            }
+            bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&inter_len, sizeof(inter_len),
+                                "", read,
+                                buff, text_len, text);
+            if (read)
+            { v_string s = v_init<unsigned char>();
+              s.resize(inter_len);
+              s.end += inter_len;
+              all.interactions.push_back(s);
+            }
+            else
+              text_len = sprintf_s(buff, buf_size, "interaction: %.*s ", inter_len, all.interactions[i].begin);
+
+            bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char*)all.interactions[i].begin, inter_len,
+                                "", read,
+                                buff, text_len, text);
+
+          }
+
+          bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff, 0,
+                              "", read,
+                              "\n", 1, text);
+        }
+        else // < VERSION_FILE_WITH_INTERACTIONS
+        { //pairs and triples may be restored but not reflected in interactions
+          for (size_t i = 0; i < all.pairs.size(); i++)
+            all.interactions.push_back(string2v_string(all.pairs[i]));
+          for (size_t i = 0; i < all.triples.size(); i++)
+            all.interactions.push_back(string2v_string(all.triples[i]));
+        }
       }
 
-    }
+      if (all.model_file_ver <= VERSION_FILE_WITH_RANK_IN_HEADER)
+      { // to fix compatibility that was broken in 7.9
+        uint32_t rank = 0;
+        text_len = sprintf_s(buff, buf_size, "rank:%d\n", (int)rank);
+        bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char*)&rank, sizeof(rank),
+                            "", read,
 
-    text_len = sprintf_s(buff, buf_size, "lda:%d\n", (int)all.lda);
-    bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char*)&all.lda, sizeof(all.lda),
-                        "", read,
-                        buff, text_len, text);
+                            buff, text_len, text);
+        if (rank != 0)
+        { if (std::find(all.args.begin(), all.args.end(), "--rank") == all.args.end())
+          { all.args.push_back("--rank");
+            sprintf_s(buff, buf_size, "%d", (int)rank);
+            all.args.push_back(buff);
+          }
+          else
+            cerr << "WARNING: this model file contains 'rank: " << rank << "' value but it will be ignored as another value specified via the command line." << endl;
+        }
 
-    // TODO: validate ngram_len?
-    uint32_t ngram_len = (uint32_t)all.ngram_strings.size();
-    text_len = sprintf_s(buff, buf_size, "%d ngram: ", (int)ngram_len);
-    bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&ngram_len, sizeof(ngram_len),
-                        "", read,
-                        buff, text_len, text);
-    for (size_t i = 0; i < ngram_len; i++)
-    { // have '\0' at the end for sure
-      char ngram[4] = { 0, 0, 0, 0 };
-      if (!read)
-      { text_len = sprintf_s(buff, buf_size, "%s ", all.ngram_strings[i].c_str());
-        memcpy(ngram, all.ngram_strings[i].c_str(), min(3, all.ngram_strings[i].size()));
       }
-      bytes_read_write += bin_text_read_write_fixed_validated(model_file, ngram, 3,
+
+      text_len = sprintf_s(buff, buf_size, "lda:%d\n", (int)all.lda);
+      bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char*)&all.lda, sizeof(all.lda),
                           "", read,
                           buff, text_len, text);
+
+      // TODO: validate ngram_len?
+      uint32_t ngram_len = (uint32_t)all.ngram_strings.size();
+      text_len = sprintf_s(buff, buf_size, "%d ngram: ", (int)ngram_len);
+      bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&ngram_len, sizeof(ngram_len),
+                          "", read,
+                          buff, text_len, text);
+      for (size_t i = 0; i < ngram_len; i++)
+      { // have '\0' at the end for sure
+        char ngram[4] = { 0, 0, 0, 0 };
+        if (!read)
+        { text_len = sprintf_s(buff, buf_size, "%s ", all.ngram_strings[i].c_str());
+          memcpy(ngram, all.ngram_strings[i].c_str(), min(3, all.ngram_strings[i].size()));
+        }
+        bytes_read_write += bin_text_read_write_fixed_validated(model_file, ngram, 3,
+                            "", read,
+                            buff, text_len, text);
+        if (read)
+        { string temp(ngram);
+          all.ngram_strings.push_back(temp);
+
+          all.args.push_back("--ngram");
+          all.args.push_back(boost::lexical_cast<std::string>(temp));
+        }
+      }
+
+      bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff, 0,
+                          "", read,
+                          "\n", 1, text);
+
+      // TODO: validate skips?
+      uint32_t skip_len = (uint32_t)all.skip_strings.size();
+      text_len = sprintf_s(buff, buf_size, "%d skip: ", (int)skip_len);
+      bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&skip_len, sizeof(skip_len),
+                          "", read,
+                          buff, text_len, text);
+
+      for (size_t i = 0; i < skip_len; i++)
+      { char skip[4] = { 0, 0, 0, 0 };
+        if (!read)
+        { text_len = sprintf_s(buff, buf_size, "%s ", all.skip_strings[i].c_str());
+          memcpy(skip, all.skip_strings[i].c_str(), min(3, all.skip_strings[i].size()));
+        }
+
+        bytes_read_write += bin_text_read_write_fixed_validated(model_file, skip, 3,
+                            "", read,
+                            buff, text_len, text);
+        if (read)
+        { string temp(skip);
+          all.skip_strings.push_back(temp);
+
+          all.args.push_back("--skips");
+          all.args.push_back(boost::lexical_cast<std::string>(temp));
+        }
+      }
+      bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff, 0,
+                          "", read,
+                          "\n", 1, text);
+
       if (read)
-      { string temp(ngram);
-        all.ngram_strings.push_back(temp);
-
-        all.args.push_back("--ngram");
-        all.args.push_back(boost::lexical_cast<std::string>(temp));
+      { uint32_t len;
+        size_t ret = bin_read_fixed(model_file, (char*)&len, sizeof(len), "");
+        if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t))
+          THROW("bad model format!");
+        resize_buf_if_needed(buff2, buf2_size, len);
+        bytes_read_write += bin_read_fixed(model_file, buff2, len, "") + ret;
+        all.file_options->str(buff2);
       }
-    }
+      else
+      { text_len = safe_sprintf_s(buff, buf_size, "options:%s\n", all.file_options->str().c_str());
 
-    bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff, 0,
-                        "", read,
-                        "\n", 1, text);
-
-    // TODO: validate skips?
-    uint32_t skip_len = (uint32_t)all.skip_strings.size();
-    text_len = sprintf_s(buff, buf_size, "%d skip: ", (int)skip_len);
-    bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&skip_len, sizeof(skip_len),
-                        "", read,
-                        buff, text_len, text);
-
-    for (size_t i = 0; i < skip_len; i++)
-    { char skip[4] = { 0, 0, 0, 0 };
-      if (!read)
-      { text_len = sprintf_s(buff, buf_size, "%s ", all.skip_strings[i].c_str());
-        memcpy(skip, all.skip_strings[i].c_str(), min(3, all.skip_strings[i].size()));
+        uint32_t len = (uint32_t)all.file_options->str().length();
+        if (len > 0)
+          safe_memcpy(buff2, buf2_size, all.file_options->str().c_str(), len + 1);
+        *(buff2 + len) = 0;
+        bytes_read_write += bin_text_read_write(model_file, buff2, len + 1, //len+1 to write a \0
+                            "", read,
+                            buff, text_len, text);
       }
 
-      bytes_read_write += bin_text_read_write_fixed_validated(model_file, skip, 3,
-                          "", read,
-                          buff, text_len, text);
-      if (read)
-      { string temp(skip);
-        all.skip_strings.push_back(temp);
 
-        all.args.push_back("--skips");
-        all.args.push_back(boost::lexical_cast<std::string>(temp));
+      // Read/write checksum if required by version
+      if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_HASH)
+      { uint32_t check_sum = (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH) ?
+                             model_file.hash :
+                             uniform_hash(model_file.space.begin, bytes_read_write, 0);
+
+        uint32_t check_sum_saved = check_sum;
+
+        text_len = sprintf_s(buff, buf_size, "Checksum: %d\n", check_sum);
+        bin_text_read_write(model_file, (char*)&check_sum, sizeof(check_sum),
+                                      "", read,
+                                      buff, text_len, text);
+
+        if (check_sum_saved != check_sum)
+        { THROW("Checksum is inconsistent, file is possibly corrupted.");
+        }
       }
-    }
-    bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff, 0,
-                        "", read,
-                        "\n", 1, text);
 
-    if (read)
-    { uint32_t len;
-      size_t ret = bin_read_fixed(model_file, (char*)&len, sizeof(len), "");
-      if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t))
-        THROW("bad model format!");
-      resize_buf_if_needed(buff2, buf2_size, len);
-      bytes_read_write += bin_read_fixed(model_file, buff2, len, "") + ret;
-      all.file_options->str(buff2);
-    }
-    else
-    { text_len = safe_sprintf_s(buff, buf_size, "options:%s\n", all.file_options->str().c_str());
+      if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
+      { model_file.verify_hash = false;
 
-      uint32_t len = (uint32_t)all.file_options->str().length();
-      if (len > 0)
-        safe_memcpy(buff2, buf2_size, all.file_options->str().c_str(), len+1);
-      *(buff2+len) = 0;
-      bytes_read_write += bin_text_read_write_validated(model_file, buff2, len+1, //len+1 to write a \0
-                          "", read,
-                          buff, text_len, text);
-    }
-
-
-    // Read/write checksum if required by version
-    if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_HASH)
-    { uint32_t check_sum = (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH) ?
-                           model_file.hash :
-                           uniform_hash(model_file.space.begin, bytes_read_write, 0);
-
-      uint32_t check_sum_saved = check_sum;
-
-      text_len = sprintf_s(buff, buf_size, "Checksum: %d\n", check_sum);
-      bin_text_read_write_validated(model_file, (char*)&check_sum, sizeof(check_sum),
-                                    "", read,
-                                    buff, text_len, text);
-
-      if (check_sum_saved != check_sum)
-      { THROW("Checksum is inconsistent, file is possibly corrupted.");
+        // reset the hash so that the io_buf can be re-used for loading
+        // as it is done for Reload()
+        model_file.hash = 0;
       }
-    }
-
-    if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
-    { model_file.verify_hash = false;
     }
   }
+  catch (...)
+  { free(buff);
+    free(buff2);
+    throw;
+  }
+
   free(buff);
   free(buff2);
+}
+
+void dump_regressor(vw& all, io_buf& buf, bool as_text)
+{ save_load_header(all, buf, false, as_text);
+  all.l->save_load(buf, false, as_text);
+
+  buf.flush(); // close_file() should do this for me ...
+  buf.close_file();
 }
 
 void dump_regressor(vw& all, string reg_name, bool as_text)
@@ -384,11 +425,8 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
 
   io_temp.open_file(start_name.c_str(), all.stdin_off, io_buf::WRITE);
 
-  save_load_header(all, io_temp, false, as_text);
-  all.l->save_load(io_temp, false, as_text);
+  dump_regressor(all, io_temp, as_text);
 
-  io_temp.flush(); // close_file() should do this for me ...
-  io_temp.close_file();
   remove(reg_name.c_str());
   rename(start_name.c_str(),reg_name.c_str());
 }
@@ -484,4 +522,9 @@ namespace VW
 void save_predictor(vw& all, string reg_name)
 { dump_regressor(all, reg_name, false);
 }
+
+void save_predictor(vw& all, io_buf& buf)
+{ dump_regressor(all, buf, false);
 }
+}
+

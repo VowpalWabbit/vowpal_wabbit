@@ -189,7 +189,9 @@ LEARNER::base_learner* oaa_setup(vw& all)
   data.k = all.vm["oaa"].as<size_t>(); // number of classes
 
   if (all.sd->ldict && (data.k != all.sd->ldict->getK()))
+  { free(data_ptr);
     THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
+  }
 
     data.all = &all;
   data.pred = calloc_or_throw<polyprediction>(data.k);

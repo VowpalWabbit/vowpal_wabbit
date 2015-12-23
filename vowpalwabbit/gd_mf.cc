@@ -276,6 +276,15 @@ base_learner* gd_mf_setup(vw& all)
 { if (missing_option<uint64_t, true>(all, "rank", "rank for matrix factorization."))
     return nullptr;
 
+  if (all.vm.count("adaptive"))
+    THROW("adaptive is not implemented for matrix factorization");
+  if (all.vm.count("normalized"))
+    THROW("normalized is not implemented for matrix factorization");
+  if (all.vm.count("exact_adaptive_norm"))
+    THROW("normalized adaptive updates is not implemented for matrix factorization");
+  if (all.vm.count("bfgs") || all.vm.count("conjugate_gradient"))
+    THROW("bfgs is not implemented for matrix factorization");
+
   gdmf& data = calloc_or_throw<gdmf>();
   data.all = &all;
   data.rank = all.vm["rank"].as<uint64_t>();
@@ -286,15 +295,6 @@ base_learner* gd_mf_setup(vw& all)
   float temp = ceilf(logf((float)(data.rank*2+1)) / logf (2.f));
   all.reg.stride_shift = (size_t) temp;
   all.random_weights = true;
-
-  if (all.vm.count("adaptive"))
-    THROW("adaptive is not implemented for matrix factorization");
-  if (all.vm.count("normalized"))
-    THROW("normalized is not implemented for matrix factorization");
-  if (all.vm.count("exact_adaptive_norm"))
-    THROW("normalized adaptive updates is not implemented for matrix factorization");
-  if (all.vm.count("bfgs") || all.vm.count("conjugate_gradient"))
-    THROW("bfgs is not implemented for matrix factorization");
 
   if(!all.holdout_set_off)
   { all.sd->holdout_best_loss = FLT_MAX;

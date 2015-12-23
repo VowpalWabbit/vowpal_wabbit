@@ -161,32 +161,37 @@ void set_compressed(parser* par)
 uint32_t cache_numbits(io_buf* buf, int filepointer)
 { v_array<char> t = v_init<char>();
 
-  uint64_t v_length;
-  buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
-  if (v_length > 61)
-    THROW("cache version too long, cache file is probably invalid");
-
-  if (v_length == 0)
-    THROW("cache version too short, cache file is probably invalid");
-
-  t.erase();
-  if (t.size() < v_length)
-    t.resize(v_length);
-
-  buf->read_file(filepointer,t.begin,v_length);
-  version_struct v_tmp(t.begin);
-  if ( v_tmp != version )
-  { cout << "cache has possibly incompatible version, rebuilding" << endl;
-    t.delete_v();
-    return 0;
-  }
-
-  char temp;
-  if (buf->read_file(filepointer, &temp, 1) < 1)
-    THROW("failed to read");
-
-  if (temp != 'c')
-    THROW("data file is not a cache file");
+  try
+    {  uint64_t v_length;
+      buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
+      if (v_length > 61)
+	THROW("cache version too long, cache file is probably invalid");
+      
+      if (v_length == 0)
+	THROW("cache version too short, cache file is probably invalid");
+      
+      t.erase();
+      if (t.size() < v_length)
+	t.resize(v_length);
+      
+      buf->read_file(filepointer,t.begin,v_length);
+      version_struct v_tmp(t.begin);
+      if ( v_tmp != version )
+	{ cout << "cache has possibly incompatible version, rebuilding" << endl;
+	  t.delete_v();
+	  return 0;
+	}
+      
+      char temp;
+      if (buf->read_file(filepointer, &temp, 1) < 1)
+	THROW("failed to read");
+      
+      if (temp != 'c')
+	THROW("data file is not a cache file");
+    }
+  catch(...)
+    { t.delete_v();
+    }
 
   t.delete_v();
 
@@ -559,7 +564,8 @@ child:
       { all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
       }
       catch (exception const& ex)
-      { if (temp.size() != 0)
+      { // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
+        if (temp.size() != 0)
         { cerr << "can't open '" << temp << "', sailing on!" << endl;
         }
         else

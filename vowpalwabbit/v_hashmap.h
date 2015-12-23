@@ -128,14 +128,14 @@ public:
     for (hash_elem* e=dat.begin; e!=dat.end_array; e++)
     { //hash_elem* e = dat.begin+lp;
       if (e->occupied)
-      { //printf("  [lp=%d\tocc=%d\thash=%zu]\n", lp, e->occupied, e->hash);
+      { //printf("  [lp=%d\tocc=%d\thash=%llu]\n", lp, e->occupied, e->hash);
         func(e->key, e->val);
       }
     }
   }
 
   void put_after_get_nogrow(K& key, size_t hash, V val)
-  { //printf("++[lp=%d\tocc=%d\thash=%zu]\n", last_position, dat[last_position].occupied, hash);
+  { //printf("++[lp=%d\tocc=%d\thash=%llu]\n", last_position, dat[last_position].occupied, hash);
     dat[last_position].occupied = true;
     dat[last_position].key = key;
     dat[last_position].val = val;

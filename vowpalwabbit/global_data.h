@@ -24,6 +24,7 @@ namespace po = boost::program_options;
 #include "v_hashmap.h"
 #include <time.h>
 #include "hash.h"
+#include "crossplat_compat.h"
 
 struct version_struct
 { int major;
@@ -99,7 +100,7 @@ struct version_struct
   }
   std::string to_string() const
   { char v_str[128];
-    std::sprintf(v_str,"%d.%d.%d",major,minor,rev);
+    sprintf_s(v_str,sizeof(v_str),"%d.%d.%d",major,minor,rev);
     std::string s = v_str;
     return s;
   }
@@ -153,7 +154,7 @@ public:
     { substring& l = id2name[k];
       size_t hash = uniform_hash((unsigned char*)l.begin, l.end-l.begin, 378401);
       uint32_t id = name2id.get(l, hash);
-      if (id != 0)
+      if (id != 0) // TODO: memory leak: char* temp
         THROW("error: label dictionary initialized with multiple occurances of: " << l);
       size_t len = l.end - l.begin;
       substring l_copy = { calloc_or_throw<char>(len), nullptr };
@@ -383,8 +384,7 @@ struct shared_data
 };
 
 enum AllReduceType
-{
-  Socket,
+{ Socket,
   Thread
 };
 
@@ -428,6 +428,8 @@ struct vw
   bool hessian_on;
 
   bool save_resume;
+  string id;
+
   version_struct model_file_ver;
   double normalized_sum_norm_x;
   bool vw_is_main;  // true if vw is executable; false in library mode

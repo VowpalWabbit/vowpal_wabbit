@@ -1,6 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="DebugLeakCheck|Win32">
+      <Configuration>DebugLeakCheck</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugLeakCheck|x64">
+      <Configuration>DebugLeakCheck</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -30,7 +38,19 @@
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLeakCheck|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLeakCheck|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
@@ -56,7 +76,13 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugLeakCheck|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugLeakCheck|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -71,12 +97,22 @@
     <IntDir>$(SolutionDir)deploy\stage\$(PlatformShortName)\$(Configuration)\</IntDir>
     <CustomBuildAfterTargets>Clean</CustomBuildAfterTargets>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLeakCheck|Win32'">
+    <OutDir>$(SolutionDir)deploy\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)deploy\stage\$(PlatformShortName)\$(Configuration)\</IntDir>
+    <CustomBuildAfterTargets>Clean</CustomBuildAfterTargets>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)deploy\$(PlatformShortName)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)deploy\stage\$(PlatformShortName)\$(Configuration)\</IntDir>
     <CustomBuildAfterTargets>Clean</CustomBuildAfterTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)deploy\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)deploy\stage\$(PlatformShortName)\$(Configuration)\</IntDir>
+    <CustomBuildAfterTargets>Clean</CustomBuildAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLeakCheck|x64'">
     <OutDir>$(SolutionDir)deploy\$(PlatformShortName)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)deploy\stage\$(PlatformShortName)\$(Configuration)\</IntDir>
     <CustomBuildAfterTargets>Clean</CustomBuildAfterTargets>
@@ -112,7 +148,59 @@ xcopy /v /i /r  /y "$(VCInstallDir)redist\Debug_NonRedist\$(PlatformShortName)\M
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugLeakCheck|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <CustomBuildStep>
+      <Command>rd /s /y $(OutputPath)</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Cleaning Deploy</Message>
+    </CustomBuildStep>
+    <PostBuildEvent>
+      <Command>xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw.exe"  "$(OutputPath)"
+xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw.pdb"  "$(OutputPath)"
+xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\spanning_tree.exe"  "$(OutputPath)"
+xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\spanning_tree.pdb"  "$(OutputPath)"
+xcopy /v /i /r  /y "$(VCInstallDir)\redist\Debug_NonRedist\$(PlatformShortName)\Microsoft.VC120.DebugCRT" "$(OutputPath)"
+xcopy /v /i /r  /y "%$(VCInstallDir)redist\Debug_NonRedist\$(PlatformShortName)\Microsoft.VC120.DebugCXXAMP" "$(OutputPath)"
+xcopy /v /i /r  /y "$(VCInstallDir)redist\Debug_NonRedist\$(PlatformShortName)\Microsoft.VC120.DebugOPENMP" "$(OutputPath)"
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <CustomBuildStep>
+      <Command>rd /s /y $(OutputPath)</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Cleaning Deploy</Message>
+    </CustomBuildStep>
+    <PostBuildEvent>
+      <Command>xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw.exe"  "$(OutputPath)"
+xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw.pdb"  "$(OutputPath)"
+xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\spanning_tree.exe"  "$(OutputPath)"
+xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\spanning_tree.pdb"  "$(OutputPath)"
+xcopy /v /i /r  /y "$(VCInstallDir)\redist\Debug_NonRedist\$(PlatformShortName)\Microsoft.VC120.DebugCRT" "$(OutputPath)"
+xcopy /v /i /r  /y "%$(VCInstallDir)redist\Debug_NonRedist\$(PlatformShortName)\Microsoft.VC120.DebugCXXAMP" "$(OutputPath)"
+xcopy /v /i /r  /y "$(VCInstallDir)redist\Debug_NonRedist\$(PlatformShortName)\Microsoft.VC120.DebugOPENMP" "$(OutputPath)"
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugLeakCheck|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
