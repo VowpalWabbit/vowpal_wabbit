@@ -47,6 +47,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <EnableVLD>true</EnableVLD>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
@@ -81,17 +82,17 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="$(SolutionDir)\packages\VisualLeakDetector.2.4.2.4\lib\native\address-model-64\lib\dbghelp.dll">
+    <None Include="$(SolutionDir)\packages\VisualLeakDetector.2.5.0.0\lib\native\address-model-64\lib\dbghelp.dll">
       <Link>dbghelp.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="$(SolutionDir)\packages\VisualLeakDetector.2.4.2.4\lib\native\address-model-64\lib\vld_x64.dll">
+    <None Include="$(SolutionDir)\packages\VisualLeakDetector.2.5.0.0\lib\native\address-model-64\lib\vld_x64.dll">
       <Link>vld_x64.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="$(SolutionDir)\packages\VisualLeakDetector.2.4.2.4\lib\native\address-model-64\lib\Microsoft.DTfW.DHL.manifest">
+    <None Include="$(SolutionDir)\packages\VisualLeakDetector.2.5.0.0\lib\native\address-model-64\lib\Microsoft.DTfW.DHL.manifest">
       <Link>Microsoft.DTfW.DHL.manifest</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

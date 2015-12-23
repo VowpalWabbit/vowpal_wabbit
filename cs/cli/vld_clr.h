@@ -24,7 +24,7 @@ namespace VLD
 
     static VisualLeakDetector^ Instance;
 
-    void ReportInternal(int reportType, wchar_t *message);
+    void ReportInternal(int reportType, String^ msg);
 
     property List<Tuple<int, String^>^>^ Messages
     {

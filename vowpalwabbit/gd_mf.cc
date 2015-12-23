@@ -24,15 +24,15 @@ using namespace LEARNER;
 
 struct gdmf
 { vw* all;//regressor, printing
-  uint32_t rank;
-  size_t no_win_counter;
-  size_t early_stop_thres;
+  uint64_t rank;
+  uint64_t no_win_counter;
+  uint64_t early_stop_thres;
 };
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 { vw& all = *d.all;
   weight* weights = all.reg.weight_vector;
-  size_t mask = all.reg.weight_mask;
+  uint64_t mask = all.reg.weight_mask;
   for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
     if (ec.audit_features[*i].begin != ec.audit_features[*i].end)
       for (audit_data *f = ec.audit_features[*i].begin; f != ec.audit_features[*i].end; f++)
@@ -42,7 +42,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
       }
     else
       for (feature *f = ec.atomics[*i].begin; f != ec.atomics[*i].end; f++)
-      { size_t index = (f->weight_index + offset) & all.reg.weight_mask;
+      { uint64_t index = (f->weight_index + offset) & all.reg.weight_mask;
 
         cout << "\tConstant:";
         cout << ((index >> all.reg.stride_shift) & all.parse_mask) << ':' << f->x;
@@ -104,7 +104,7 @@ float mf_predict(gdmf& d, example& ec)
   // interaction terms
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end(); i++)
   { if (ec.atomics[(int)(*i)[0]].size() > 0 && ec.atomics[(int)(*i)[1]].size() > 0)
-    { for (uint32_t k = 1; k <= d.rank; k++)
+    { for (uint64_t k = 1; k <= d.rank; k++)
       { // x_l * l^k
         // l^k is from index+1 to index+d.rank
         //float x_dot_l = sd_offset_add(weights, mask, ec.atomics[(int)(*i)[0]].begin, ec.atomics[(int)(*i)[0]].end, k);
@@ -196,8 +196,8 @@ void mf_train(gdmf& d, example& ec)
 
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 { vw* all = d.all;
-  uint32_t length = 1 << all->num_bits;
-  uint32_t stride_shift = all->reg.stride_shift;
+  uint64_t length = (uint64_t)1 << all->num_bits;
+  uint64_t stride_shift = all->reg.stride_shift;
 
   if(read)
   { initialize_regressor(*all);
@@ -207,34 +207,32 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
   }
 
   if (model_file.files.size() > 0)
-  { uint32_t i = 0;
-    uint32_t text_len;
-    char buff[512];
-    size_t brw = 1;
+  { uint64_t i = 0;
+     size_t brw = 1;
 
     do
     { brw = 0;
       size_t K = d.rank*2+1;
-
-      text_len = sprintf(buff, "%d ", i);
+      stringstream msg;
+      msg << i << " ";
       brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
-                                       "", read,
-                                       buff, text_len, text);
+                                       "", read, msg, text);
       if (brw != 0)
-        for (uint32_t k = 0; k < K; k++)
-        { uint32_t ndx = (i << stride_shift)+k;
+        for (uint64_t k = 0; k < K; k++)
+        { uint64_t ndx = (i << stride_shift)+k;
 
           weight* v = &(all->reg.weight_vector[ndx]);
-          text_len = sprintf(buff, "%f ", *v);
+          msg << v << " ";
           brw += bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
-                                           "", read,
-                                           buff, text_len, text);
+                                           "", read, msg, text);
 
         }
       if (text)
-        brw += bin_text_read_write_fixed(model_file,buff,0,
-                                         "", read,
-                                         "\n",1,text);
+        {
+          msg << "\n";
+          brw += bin_text_read_write_fixed(model_file, nullptr, 0,
+                                           "", read, msg,text);
+        }
 
       if (!read)
         i++;
@@ -273,7 +271,7 @@ void learn(gdmf& d, base_learner&, example& ec)
 }
 
 base_learner* gd_mf_setup(vw& all)
-{ if (missing_option<uint32_t, true>(all, "rank", "rank for matrix factorization."))
+{ if (missing_option<uint64_t, true>(all, "rank", "rank for matrix factorization."))
     return nullptr;
 
   if (all.vm.count("adaptive"))
@@ -287,7 +285,7 @@ base_learner* gd_mf_setup(vw& all)
 
   gdmf& data = calloc_or_throw<gdmf>();
   data.all = &all;
-  data.rank = all.vm["rank"].as<uint32_t>();
+  data.rank = all.vm["rank"].as<uint64_t>();
   data.no_win_counter = 0;
   data.early_stop_thres = 3;
 
