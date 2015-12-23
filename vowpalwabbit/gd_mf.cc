@@ -216,7 +216,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
     { brw = 0;
       size_t K = d.rank*2+1;
 
-      text_len = sprintf(buff, "%zd ", i);
+      text_len = sprintf(buff, "%llud ", i);
       brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
                                        "", read,
                                        buff, text_len, text);

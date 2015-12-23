@@ -193,7 +193,7 @@ inline void audit_interaction(audit_results& dat, const audit_data* f)
     ns_pre += '*';
 
   if (f->space != nullptr && (*(f->space) != ' '))
-    { 
+    {
     ns_pre.append((const char*)f->space);
     ns_pre += '^';
   }
@@ -264,7 +264,7 @@ void print_features(vw& all, example& ec)
     for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
     { v_array<audit_data>& ns =  ec.audit_features[(size_t)*i];
       for (audit_data* a = ns.begin; a != ns.end; ++a)
-	{ 
+	{
 	  audit_interaction(dat, a);
 	  audit_feature(dat, a->x, (uint32_t)a->weight_index + ec.ft_offset);
 	  audit_interaction(dat, NULL);
@@ -618,7 +618,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
         size_t buf_size = sizeof(buff);
         int text_len;
 
-        text_len = sprintf_s(buff, buf_size, "%zd", i);
+        text_len = sprintf_s(buff, buf_size, "%llud", i);
 	if (all.num_bits < 31)
 	  {
 	    old_i = i;
@@ -702,12 +702,12 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
                             "", read,
                             buff, text_len, text);
 
-  text_len = sprintf_s(buff, buf_size, "example_number %zd\n", (uint64_t)all.sd->example_number);
+  text_len = sprintf_s(buff, buf_size, "example_number %llud\n", (uint64_t)all.sd->example_number);
   bin_text_read_write_fixed(model_file, (char*)&all.sd->example_number, sizeof(all.sd->example_number),
                             "", read,
                             buff, text_len, text);
 
-  text_len = sprintf_s(buff, buf_size, "total_features %zd\n", (uint64_t)all.sd->total_features);
+  text_len = sprintf_s(buff, buf_size, "total_features %llud\n", (uint64_t)all.sd->total_features);
   bin_text_read_write_fixed(model_file, (char*)&all.sd->total_features, sizeof(all.sd->total_features),
                             "", read,
                             buff, text_len, text);
@@ -731,7 +731,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
                               buff, text_len, text);
 
     // fix "number of examples per pass"
-    text_len = sprintf_s(buff, buf_size, "current_pass %zd\n", (uint64_t)all.current_pass);
+    text_len = sprintf_s(buff, buf_size, "current_pass %llud\n", (uint64_t)all.current_pass);
     bin_text_read_write_fixed(model_file, (char*)&all.current_pass, sizeof(all.current_pass),
                               "", read,
                               buff, text_len, text);
@@ -783,7 +783,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
         char buff[512];
         size_t buf_size = sizeof(buff);
 
-        int text_len = sprintf_s(buff, buf_size, "%zd", i);
+        int text_len = sprintf_s(buff, buf_size, "%llud", i);
         brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i),
                                    buff, text_len, text);
         if (g == nullptr || (! g->adaptive && ! g->normalized))

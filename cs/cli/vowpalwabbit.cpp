@@ -169,7 +169,7 @@ namespace VW
     return stats;
   }
 
-  uint32_t VowpalWabbit::HashSpace(String^ s)
+  uint64_t VowpalWabbit::HashSpace(String^ s)
   {
     auto newHash = m_hasher(s, hash_base);
 
@@ -181,7 +181,7 @@ namespace VW
     return (uint32_t)newHash;
   }
 
-  uint32_t VowpalWabbit::HashFeature(String^ s, unsigned long u)
+  uint64_t VowpalWabbit::HashFeature(String^ s, size_t u)
   {
     auto newHash = m_hasher(s, u) & m_vw->parse_mask;
 
@@ -190,10 +190,10 @@ namespace VW
     assert(newHash == oldHash);
 #endif
 
-    return (uint32_t)newHash;
+    return (uint64_t)newHash;
   }
 
-  uint32_t VowpalWabbit::HashSpaceNative(String^ s)
+  uint64_t VowpalWabbit::HashSpaceNative(String^ s)
   {
     auto bytes = System::Text::Encoding::UTF8->GetBytes(s);
     auto handle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
@@ -209,7 +209,7 @@ namespace VW
     }
   }
 
-  uint32_t VowpalWabbit::HashFeatureNative(String^ s, unsigned long u)
+  uint64_t VowpalWabbit::HashFeatureNative(String^ s, size_t u)
   {
     auto bytes = System::Text::Encoding::UTF8->GetBytes(s);
     auto handle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
@@ -565,7 +565,7 @@ namespace VW
   /// <param name="u">Hash offset.</param>
   /// <returns>The resulting hash code.</returns>
   //template<bool replaceSpace>
-  size_t hashall(String^ s, unsigned long u)
+  size_t hashall(String^ s, size_t u)
   { // get raw bytes from string
     auto keys = Encoding::UTF8->GetBytes(s);
     int length = keys->Length;
@@ -643,7 +643,7 @@ namespace VW
   /// <param name="s">String to be hashed.</param>
   /// <param name="u">Hash offset.</param>
   /// <returns>The resulting hash code.</returns>
-  size_t hashstring(String^ s, unsigned long u)
+  size_t hashstring(String^ s, size_t u)
   {
     s = s->Trim();
 
@@ -658,7 +658,7 @@ namespace VW
     }
   }
 
-  Func<String^, unsigned long, size_t>^ VowpalWabbit::GetHasher()
+  Func<String^, size_t, size_t>^ VowpalWabbit::GetHasher()
   {
     //feature manipulation
     string hash_function("strings");
@@ -669,11 +669,11 @@ namespace VW
 
     if (hash_function == "strings")
     {
-      return gcnew Func<String^, unsigned long, size_t>(&hashstring);
+      return gcnew Func<String^, size_t, size_t>(&hashstring);
     }
     else if (hash_function == "all")
     {
-      return gcnew Func<String^, unsigned long, size_t>(&hashall);
+      return gcnew Func<String^, size_t, size_t>(&hashall);
     }
     else
     {
