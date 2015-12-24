@@ -242,7 +242,10 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                 all.interactions.push_back(s);
               }
             else
-              msg << "interaction: " << all.interactions[i].begin; //This may not be right.  What was %.*s precisely?
+              {
+                msg << "interaction: ";
+                msg.write((char*)all.interactions[i].begin, inter_len);
+              }
 
             bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char*)all.interactions[i].begin, inter_len,
                                                                     "", read, msg, text);
