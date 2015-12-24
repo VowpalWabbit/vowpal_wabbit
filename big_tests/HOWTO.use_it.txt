@@ -63,9 +63,9 @@ and it's possible to invoke either part without the other.
 
 If you want to use an executable other than ../vowpalwabbit/vw, you can supply it on the command line like this:
 
-make EXEC=myProgram all
+make EXEC=myProgram
 
-Similar substitutions can be made for other variables, such as ARCH and DIFF.
+Similar substitutions can be made for other variables, such as ARCH, DIFF, and GREP.
 
 If you want to pass extra parameters to all tests, set the EP variable, like this:
 

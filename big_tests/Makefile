@@ -13,7 +13,7 @@ MAKEFLAGS+=r
 # .ONESHELL:
 
 # comment out for debugging
-.SILENT:
+# .SILENT:
 
 # can't compare before running; can't prep data before downloading; etc.
 .NOTPARALLEL:
@@ -27,13 +27,20 @@ ARCH ?= $(subst /,_,$(shell uname -o)_$(shell uname -i))
 stageDir := runs
 dataDir := dataSets
 expDir := expected
+testCodeDir := $(TOP_MK_DIR)/testCode
+
 allTests := $(patsubst %/,%,$(shell ls $(expDir)))
 
 # the ?= allows the user to override the executable from the command line, as in
 # make EXEC=myProgram all
 # alas, $(realpath ...) doesn't seem to work here on make 3.81 for some reason
 EXEC ?= ../vowpalwabbit/vw
-DIFF ?= diff -b
+ACC_DIFF_TOLERANCE ?= 0.001
+TIME_DIFF_TOLERANCE ?= 0.05
+DIFF ?= $(testCodeDir)/floatingTolerance.pl
+GREP ?= grep
+DEFAULT_STDOUT_COMPARATOR_REGEXP ?= "."
+DEFAULT_STDERR_COMPARATOR_REGEXP ?= "average loss"
 
 all:	valid ;
 
@@ -109,20 +116,30 @@ $(dataDir) $(stageDir):
 		echo "dependencies satisfied; proceeding with test $*" ;\
 	fi
 
+# deps currently broken
 # $(stageDir)/%.dir/done:	$(stageDir)/%.dir $$(%.deps) $$(%.inData)
 $(stageDir)/%.dir/done:	$(stageDir)/%.dir $$(%.inData)
 	exec=$(EXEC) ;\
 	if [ -n "$($*.exec)" ] ; then exec="$($*.exec)" ; fi ;\
-	echo "$$exec $($*.params) $(EP) > $(stageDir)/$*.dir/out 2> $(stageDir)/$*.dir/err" ;\
-	$$exec $($*.params) $(EP) > $(stageDir)/$*.dir/out 2> $(stageDir)/$*.dir/err ;\
+	echo "$$exec $($*.params) $(EP) > $(stageDir)/$*.dir/raw_out 2> $(stageDir)/$*.dir/raw_err" ;\
+	$$exec $($*.params) $(EP) > $(stageDir)/$*.dir/raw_out 2> $(stageDir)/$*.dir/raw_err ;\
+	out_compar=$(DEFAULT_STDOUT_COMPARATOR_REGEXP) ;\
+	if [ -n "$($*.STDOUT_COMPARATOR_REGEXP)" ] ; then out_compar="$($*.STDOUT_COMPARATOR_REGEXP)" ; fi ;\
+	echo "$(GREP) \"$$out_compar\" $(stageDir)/$*.dir/raw_out > $(stageDir)/$*.dir/out" ;\
+	$(GREP) "$$out_compar" $(stageDir)/$*.dir/raw_out > $(stageDir)/$*.dir/out ;\
+	err_compar=$(DEFAULT_STDERR_COMPARATOR_REGEXP) ;\
+	if [ -n "$($*.STDERR_COMPARATOR_REGEXP)" ] ; then err_compar="$($*.STDERR_COMPARATOR_REGEXP)" ; fi ;\
+	echo "$(GREP) \"$$err_compar\" $(stageDir)/$*.dir/raw_err > $(stageDir)/$*.dir/err" ;\
+	$(GREP) "$$err_compar" $(stageDir)/$*.dir/raw_err > $(stageDir)/$*.dir/err ;\
+	wait
 	touch $@
 
 # first diff all the results, then set exit status if non-empty
 %.compare:	$(stageDir)/%.dir $(expDir)/%/out $(expDir)/%/err
 	rm -f $(stageDir)/$*.dir/diffs ;\
 	for FILE in out err $($*.otherOutputs) ; do \
-		echo "$(DIFF) $(stageDir)/$*.dir/$$FILE $(expDir)/$*/$$FILE" ;\
-		$(DIFF) $(stageDir)/$*.dir/$$FILE $(expDir)/$*/$$FILE |& tee -a $(stageDir)/$*.dir/diffs ;\
+		echo "$(DIFF) $(ACC_DIFF_TOLERANCE) $(stageDir)/$*.dir/$$FILE $(expDir)/$*/$$FILE" ;\
+		$(DIFF) $(ACC_DIFF_TOLERANCE) $(stageDir)/$*.dir/$$FILE $(expDir)/$*/$$FILE |& tee -a $(stageDir)/$*.dir/diffs ;\
 	done ;\
 	if [ -s $(stageDir)/$*.dir/diffs ] ; then \
 		echo "Test $* failed due to diffs." ;\
