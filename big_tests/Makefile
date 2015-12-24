@@ -13,7 +13,7 @@ MAKEFLAGS+=r
 # .ONESHELL:
 
 # comment out for debugging
-# .SILENT:
+.SILENT:
 
 # can't compare before running; can't prep data before downloading; etc.
 .NOTPARALLEL:
@@ -35,6 +35,8 @@ allTests := $(patsubst %/,%,$(shell ls $(expDir)))
 # make EXEC=myProgram all
 # alas, $(realpath ...) doesn't seem to work here on make 3.81 for some reason
 EXEC ?= ../vowpalwabbit/vw
+TIME ?= /bin/time -f "%U"
+TIMING ?= y
 ACC_DIFF_TOLERANCE ?= 0.001
 TIME_DIFF_TOLERANCE ?= 0.05
 DIFF ?= $(testCodeDir)/floatingTolerance.pl
@@ -88,7 +90,7 @@ clean:
 	-rm -r $(stageDir)
 	@echo "'make clean' finished"
 
-%.dir:
+%.dir/$(ARCH) %.dir:
 	@mkdir -p $@
 
 %.valid:	%.run %.compare ;
@@ -118,11 +120,18 @@ $(dataDir) $(stageDir):
 
 # deps currently broken
 # $(stageDir)/%.dir/done:	$(stageDir)/%.dir $$(%.deps) $$(%.inData)
-$(stageDir)/%.dir/done:	$(stageDir)/%.dir $$(%.inData)
+$(stageDir)/%.dir/done:	$(stageDir)/%.dir $(stageDir)/%.dir/$(ARCH) $$(%.inData)
 	exec=$(EXEC) ;\
 	if [ -n "$($*.exec)" ] ; then exec="$($*.exec)" ; fi ;\
-	echo "$$exec $($*.params) $(EP) > $(stageDir)/$*.dir/raw_out 2> $(stageDir)/$*.dir/raw_err" ;\
-	$$exec $($*.params) $(EP) > $(stageDir)/$*.dir/raw_out 2> $(stageDir)/$*.dir/raw_err ;\
+	if [ "$(TIMING)" = "y" ] ; then (\
+		echo "$(TIME) -o $(stageDir)/$*.dir/$(ARCH)/rc $$exec $($*.params) $(EP) > $(stageDir)/$*.dir/raw_out 2> $(stageDir)/$*.dir/raw_err" ;\
+		$(TIME) -o $(stageDir)/$*.dir/$(ARCH)/rc $$exec $($*.params) $(EP) > $(stageDir)/$*.dir/raw_out 2> $(stageDir)/$*.dir/raw_err \
+	) \
+	else (\
+		echo "$$exec $($*.params) $(EP) > $(stageDir)/$*.dir/raw_out 2> $(stageDir)/$*.dir/raw_err" ;\
+		$$exec $($*.params) $(EP) > $(stageDir)/$*.dir/raw_out 2> $(stageDir)/$*.dir/raw_err \
+	) ; \
+	fi ;\
 	out_compar=$(DEFAULT_STDOUT_COMPARATOR_REGEXP) ;\
 	if [ -n "$($*.STDOUT_COMPARATOR_REGEXP)" ] ; then out_compar="$($*.STDOUT_COMPARATOR_REGEXP)" ; fi ;\
 	echo "$(GREP) \"$$out_compar\" $(stageDir)/$*.dir/raw_out > $(stageDir)/$*.dir/out" ;\
@@ -142,26 +151,41 @@ $(stageDir)/%.dir/done:	$(stageDir)/%.dir $$(%.inData)
 		$(DIFF) $(ACC_DIFF_TOLERANCE) $(stageDir)/$*.dir/$$FILE $(expDir)/$*/$$FILE |& tee -a $(stageDir)/$*.dir/diffs ;\
 	done ;\
 	if [ -s $(stageDir)/$*.dir/diffs ] ; then \
-		echo "Test $* failed due to diffs." ;\
+		echo "Test $* failed due to accuracy diffs." ;\
 		exit 1 ;\
+	fi ;\
+	if [ "$(TIMING)" = "y" ] ; then \
+		echo "$(DIFF) $(TIME_DIFF_TOLERANCE) $(stageDir)/$*.dir/$(ARCH)/rc $(expDir)/$*/$(ARCH)/rc" ;\
+		$(DIFF) $(TIME_DIFF_TOLERANCE) $(stageDir)/$*.dir/$(ARCH)/rc $(expDir)/$*/$(ARCH)/rc |& tee -a $(stageDir)/$*.dir/diffs ;\
+		if [ -s $(stageDir)/$*.dir/diffs ] ; then \
+			echo "Test $* failed due to speed diffs." ;\
+			exit 1 ;\
+		fi ;\
 	fi
 
 # update expected files from current output files
 # expected files always include out and err
-# to avoid triggering dependencies, copy files over only if they are different or absent
-%.expected: %.run
+%.expected:
 	mkdir -p $(expDir)/$*/ ;\
 	for FILE in out err $($*.otherOutputs) ; do \
-		$(DIFF) -qr $(stageDir)/$*.dir/$$FILE $(expDir)/$*/$$FILE \
-		|| (echo "copying $(stageDir)/$*.dir/$$FILE to $(expDir)/$*/" ; cp $(stageDir)/$*.dir/$$FILE $(expDir)/$*/ ) ;\
-	done
+		(echo "copying $(stageDir)/$*.dir/$$FILE to $(expDir)/$*/" ; cp $(stageDir)/$*.dir/$$FILE $(expDir)/$*/ ) ;\
+	done ;\
+	if [ "$(TIMING)" = "y" ] ; then \
+		mkdir -p $(expDir)/$*/$(ARCH) ;\
+		(echo "copying $(stageDir)/$*.dir/$(ARCH)/rc to $(expDir)/$*/$(ARCH)/rc" ; cp $(stageDir)/$*.dir/$(ARCH)/rc $(expDir)/$*/$(ARCH)/rc ) ;\
+	fi
 
 # copy outputs from expected files, to pretend that the module succeeded
 %.pretend:	$(stageDir)/%.dir $(expDir)/%/out $(expDir)/%/err
 	for FILE in out err $($*.otherOutputs) ; do \
 		echo "copying $(expDir)/$*/$$FILE to $(stageDir)/$*.dir/" ;\
 		cp $(expDir)/$*/$$FILE $(stageDir)/$*.dir/ ;\
-	done
+	done ;\
+	if [ "$(TIMING)" = "y" ] ; then \
+		mkdir -p $(stageDir)/$*.dir/$(ARCH) ;\
+		echo "copying $(expDir)/$*/$(ARCH)/rc $(stageDir)/$*.dir/$(ARCH)/rc" ;\
+		cp $(expDir)/$*/$(ARCH)/rc $(stageDir)/$*.dir/$(ARCH)/rc ;\
+	fi
 
 %.clean:
 	-rm -rf $(stageDir)/$*.dir

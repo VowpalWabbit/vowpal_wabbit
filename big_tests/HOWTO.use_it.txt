@@ -65,7 +65,9 @@ If you want to use an executable other than ../vowpalwabbit/vw, you can supply i
 
 make EXEC=myProgram
 
-Similar substitutions can be made for other variables, such as ARCH, DIFF, and GREP.
+Similar substitutions can be made for other variables, such as ARCH, DIFF, TIME, and GREP.
+
+These tests are designed to check both accuracy and speed.  If you want to ignore speed differences, invoke with TIMING=n .
 
 If you want to pass extra parameters to all tests, set the EP variable, like this:
 
