@@ -57,7 +57,7 @@ namespace VW.Serializer.Intermediate
         /// <summary>
         /// The pre-calculated hash.
         /// </summary>
-        public uint NamespaceHash { get; private set; }
+        public ulong NamespaceHash { get; private set; }
 
         /// <summary>
         /// The string representation of the namespace.

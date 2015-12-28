@@ -61,7 +61,7 @@ namespace VW
         /// </summary>
         /// <param name="weight_index">The weight index.</param>
         /// <param name="x">The value.</param>
-        void AddFeature(uint32_t weight_index, float x);
+        void AddFeature(uint64_t weight_index, float x);
 
         /// <summary>
         /// Adds a dense array to the example.
@@ -69,7 +69,7 @@ namespace VW
         /// <param name="weight_index_base">The base weight index. Each element is then placed relative to this index.</param>
         /// <param name="begin">The start pointer of the float array.</param>
         /// <param name="end">The end pointer of the float array.</param>
-        void AddFeaturesUnchecked(uint32_t weight_index_base, float* begin, float* end);
+        void AddFeaturesUnchecked(uint64_t weight_index_base, float* begin, float* end);
 
         /// <summary>
         /// Pre-allocate features of <paramref name="size"/>.

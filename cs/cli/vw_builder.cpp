@@ -106,7 +106,7 @@ namespace VW
         }
     }
 
-    void VowpalWabbitNamespaceBuilder::AddFeaturesUnchecked(uint32_t weight_index_base, float* begin, float* end)
+    void VowpalWabbitNamespaceBuilder::AddFeaturesUnchecked(uint64_t weight_index_base, float* begin, float* end)
     {
         // TODO: remove m_sum_feat_sq
         // *m_sum_feat_sq += sum_of_squares(begin, end);
@@ -124,7 +124,7 @@ namespace VW
 
     }
 
-    void VowpalWabbitNamespaceBuilder::AddFeature(uint32_t weight_index, float x)
+    void VowpalWabbitNamespaceBuilder::AddFeature(uint64_t weight_index, float x)
     {
         // filter out 0-values
         if (x == 0)

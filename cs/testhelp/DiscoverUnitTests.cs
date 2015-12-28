@@ -14,19 +14,21 @@ namespace cs_testhelp
     {
         internal static void Discover(string vwRoot)
         {
-            // find all methods that are 
+            // find all methods that are
             // - not part of types annotated by [TestClass] (as they'll already be discovered by unit test framework)
             // - contain "test" in method name
             var methodByType =
                 from type in typeof(TestRunner).Assembly.GetTypes()
-                where type.GetCustomAttribute<TestClassAttribute>() == null
+                where type.GetCustomAttribute<TestClassAttribute>() != null
                 from method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public)
-                where method.Name.ToLowerInvariant().Contains("test")
-                where method.GetParameters().Count() == 0
+                where method.Name.ToLowerInvariant().Contains("test") &&
+                    method.GetParameters().Count() == 0 &&
+                    method.GetCustomAttribute<TestMethodAttribute>() != null &&
+                    method.GetCustomAttribute<IgnoreAttribute>() == null
                 group method by method.DeclaringType into g
                 select g;
 
-            var outputFile = vwRoot + @"\cs_leaktest\TestWrapped.cs";
+            var outputFile = vwRoot + @"\..\cs\leaktest\TestWrapped.cs";
             using (var cs = new StreamWriter(outputFile))
             {
                 cs.WriteLine(@"
@@ -46,7 +48,7 @@ namespace cs_unittest
                         var name = method.Name;
 
                         var categoryAttr = method.GetCustomAttribute<TestCategoryAttribute>();
-            
+
                         if (categoryAttr != null)
                         {
                             cs.WriteLine(@"
@@ -58,7 +60,7 @@ namespace cs_unittest
             public void {1}()
             {{
                  Run(""{0}"", ""{1}"");
-            }}", g.Key, name);
+            }}", g.Key.FullName, name);
                     }
                 }
 

@@ -26,7 +26,7 @@ namespace VW
         /// <summary>
         /// Select the right hash method based on args.
         /// </summary>
-        Func<String^, unsigned long, size_t>^ GetHasher();
+        Func<String^, size_t, size_t>^ GetHasher();
 
         /// <summary>
         /// The selected hasher method.
@@ -34,7 +34,7 @@ namespace VW
         /// <remarks>
         /// Avoiding if-else for hash function selection. Delegates outperform function pointers according to http://stackoverflow.com/questions/13443250/performance-of-c-cli-function-pointers-versus-net-delegates
         /// </remarks>
-        initonly Func<String^, unsigned long, size_t>^ m_hasher;
+        initonly Func<String^, size_t, size_t>^ m_hasher;
 
     public:
         /// <summary>
@@ -94,7 +94,7 @@ namespace VW
         /// <param name="s">String to be hashed.</param>
         /// <returns>The resulting hash code.</returns>
         /// <remarks>The hash code depends on the vowpal wabbit instance as different has functions can be configured.</remarks>
-        uint32_t HashSpaceNative(String^ s);
+        uint64_t HashSpaceNative(String^ s);
 
         /// <summary>
         /// Hashes the given namespace <paramref name="s"/>.
@@ -102,7 +102,7 @@ namespace VW
         /// <param name="s">String to be hashed.</param>
         /// <returns>The resulting hash code.</returns>
         /// <remarks>The hash code depends on the vowpal wabbit instance as different has functions can be configured.</remarks>
-        uint32_t HashSpace(String^ s);
+        uint64_t HashSpace(String^ s);
 
         /// <summary>
         /// Hash the given feature <paramref name="s"/>.
@@ -111,7 +111,7 @@ namespace VW
         /// <param name="u">Hash offset.</param>
         /// <returns>The resulting hash code.</returns>
         /// <remarks>The hash code depends on the vowpal wabbit instance as different has functions can be configured.</remarks>
-        uint32_t HashFeatureNative(String^ s, unsigned long u);
+        uint64_t HashFeatureNative(String^ s, size_t u);
 
         /// <summary>
         /// Hash the given feature <paramref name="s"/>.
@@ -120,7 +120,7 @@ namespace VW
         /// <param name="u">Hash offset.</param>
         /// <returns>The resulting hash code.</returns>
         /// <remarks>The hash code depends on the vowpal wabbit instance as different has functions can be configured.</remarks>
-        uint32_t HashFeature(String^ s, unsigned long u);
+        uint64_t HashFeature(String^ s, size_t u);
 
         /// <summary>
         /// The associated <see cref="VowpalWabbitBase"/> instance learns from this example and returns the prediction result for this example.

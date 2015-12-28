@@ -14,11 +14,11 @@ int compare_feature(const void* p1, const void* p2)
   else return 0;
 }
 
-float collision_cleanup(feature* feature_map, size_t& len)
+float collision_cleanup(feature* feature_map, uint64_t& len)
 { int pos = 0;
   float sum_sq = 0.;
 
-  for(uint32_t i = 1; i < len; i++)
+  for(uint64_t i = 1; i < len; i++)
   { if(feature_map[i].weight_index == feature_map[pos].weight_index)
       feature_map[pos].x += feature_map[i].x;
     else
@@ -33,18 +33,30 @@ float collision_cleanup(feature* feature_map, size_t& len)
 
 audit_data copy_audit_data(audit_data &src)
 { audit_data dst;
-  if (src.space != NULL)
-  { dst.space = calloc_or_throw<char>(strlen(src.space)+1);
-    strcpy(dst.space, src.space);
-  }
-  if (src.feature != NULL)
-  { dst.feature = calloc_or_throw<char>(strlen(src.feature)+1);
-    strcpy(dst.feature, src.feature);
-  }
+  if (src.space != nullptr)
+    { dst.space = calloc_or_throw<char>(strlen(src.space)+1);
+      strcpy(dst.space, src.space);
+    }
+  else
+    dst.space = nullptr;
+  if (src.feature != nullptr)
+    { dst.feature = calloc_or_throw<char>(strlen(src.feature)+1);
+      strcpy(dst.feature, src.feature);
+    }
+  else
+    dst.feature = nullptr;
   dst.weight_index = src.weight_index;
   dst.x = src.x;
-  dst.alloced = src.alloced;
   return dst;
+}
+
+void free_audit_features(example* ec)
+{
+  for (size_t i=0; i<256; i++)
+    for (size_t j=0; j<ec->audit_features[i].size(); j++)
+      { free_it(ec->audit_features[i][j].space);
+	free_it(ec->audit_features[i][j].feature);
+      }
 }
 
 namespace VW
@@ -69,13 +81,10 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->ft_offset = src->ft_offset;
 
   if (audit)
-    for (size_t i=0; i<256; i++)
-    { for (size_t j=0; j<dst->audit_features[i].size(); j++)
-        if (dst->audit_features[i][j].alloced)
-        { free(dst->audit_features[i][j].space);
-          free(dst->audit_features[i][j].feature);
-        }
-      copy_array(dst->audit_features[i], src->audit_features[i], copy_audit_data);
+    {
+      free_audit_features(dst);
+      for (size_t i=0; i<256; i++)
+	copy_array(dst->audit_features[i], src->audit_features[i], copy_audit_data);
     }
 
   dst->num_features = src->num_features;
@@ -109,13 +118,13 @@ void copy_example_data(bool audit, example* dst, example* src, size_t label_size
 struct features_and_source
 { v_array<feature> feature_map; //map to store sparse feature vectors
   uint32_t stride_shift;
-  uint32_t mask;
+  uint64_t mask;
   weight* base;
   vw* all;
 };
 
-void vec_store(features_and_source& p, float fx, uint32_t fi)
-{ feature f = {fx, (uint32_t)(fi >> p.stride_shift) & p.mask};
+void vec_store(features_and_source& p, float fx, uint64_t fi)
+{ feature f = {fx, (uint64_t)(fi >> p.stride_shift) & p.mask};
   p.feature_map.push_back(f);
 }
 
@@ -124,11 +133,11 @@ namespace VW
 feature* get_features(vw& all, example* ec, size_t& feature_map_len)
 { features_and_source fs;
   fs.stride_shift = all.reg.stride_shift;
-  fs.mask = (uint32_t)all.reg.weight_mask >> all.reg.stride_shift;
+  fs.mask = (uint64_t)all.reg.weight_mask >> all.reg.stride_shift;
   fs.base = all.reg.weight_vector;
   fs.all = &all;
   fs.feature_map = v_init<feature>();
-  GD::foreach_feature<features_and_source, uint32_t, vec_store>(all, *ec, fs);
+  GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
   feature_map_len = fs.feature_map.size();
   return fs.feature_map.begin;
 }
@@ -209,13 +218,13 @@ void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_predic
   { ec.atomics[j].delete_v();
 
     if (ec.audit_features[j].begin != ec.audit_features[j].end_array)
-    { for (audit_data* temp = ec.audit_features[j].begin;
+      { 
+      for (audit_data* temp = ec.audit_features[j].begin;
            temp != ec.audit_features[j].end; temp++)
-        if (temp->alloced)
-        { free(temp->space);
-          free(temp->feature);
-          temp->alloced = false;
-        }
+	{
+	  free_it(temp->space);
+	  free_it(temp->feature);
+	}
       ec.audit_features[j].delete_v();
     }
   }

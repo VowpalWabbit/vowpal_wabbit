@@ -338,7 +338,7 @@ void finish(Search::search& sch)
 
 
 // this is totally bogus for the example -- you'd never actually do this!
-void my_update_example_indicies(Search::search& sch, bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount)
+void my_update_example_indicies(Search::search& sch, bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount)
 { size_t ss = sch.get_stride_shift();
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
     for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; ++f)
@@ -357,14 +357,14 @@ void run(Search::search& sch, vector<example*>& ec)
     { if (sch.predictNeedsExample())   // we can skip this work if `predict` won't actually use the example data
       { VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
         // now, offset it appropriately for the action id
-        my_update_example_indicies(sch, true, &data->ldf_examples[a], 28904713, 4832917 * (uint32_t)a);
+        my_update_example_indicies(sch, true, &data->ldf_examples[a], 28904713, 4832917 * (uint64_t)a);
       }
 
       // regardless of whether the example is needed or not, the class info is needed
       CS::label& lab = data->ldf_examples[a].l.cs;
       // need to tell search what the action id is, so that it can add history features correctly!
       lab.costs[0].x = 0.;
-      lab.costs[0].class_index = (uint32_t)a+1;
+      lab.costs[0].class_index = (uint64_t)a+1;
       lab.costs[0].partial_prediction = 0.;
       lab.costs[0].wap_value = 0.;
     }

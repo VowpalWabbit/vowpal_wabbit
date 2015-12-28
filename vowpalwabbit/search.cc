@@ -232,7 +232,7 @@ struct search_private
 };
 
 string   audit_feature_space("conditional");
-uint32_t conditional_constant = 8290743;
+uint64_t conditional_constant = 8290743;
 
 void clear_memo_foreach_action(search_private& priv)
 { for (size_t i=0; i<priv.memo_foreach_action.size(); i++)
@@ -431,9 +431,9 @@ void print_update(search_private& priv)
           priv.beta);
 
   if (PRINT_CLOCK_TIME)
-  { size_t num_sec = (size_t)(((float)(clock() - priv.start_clock_time)) / CLOCKS_PER_SEC);
-    fprintf(stderr, " %15llusec", num_sec);
-  }
+    { size_t num_sec = (size_t)(((float)(clock() - priv.start_clock_time)) / CLOCKS_PER_SEC);
+      cerr <<" "<< num_sec << "sec";
+    }
 
   if (use_heldout_loss)
     fprintf(stderr, " h");
@@ -443,22 +443,25 @@ void print_update(search_private& priv)
   all.sd->update_dump_interval(all.progress_add, all.progress_arg);
 }
 
-void add_new_feature(search_private& priv, float val, uint32_t idx)
+void add_new_feature(search_private& priv, float val, uint64_t idx)
 { size_t mask = priv.all->reg.weight_mask;
   size_t ss   = priv.all->reg.stride_shift;
   size_t idx2 = ((idx & mask) >> ss) & mask;
   feature f = { val * priv.dat_new_feature_value,
-                (uint32_t) (((priv.dat_new_feature_idx + idx2) << ss) )
+                (((priv.dat_new_feature_idx + idx2) << ss) )
               };
   cdbg << "adding: " << f.weight_index << ':' << f.x << endl;
   priv.dat_new_feature_ec->atomics[priv.dat_new_feature_namespace].push_back(f);
   priv.dat_new_feature_ec->sum_feat_sq[priv.dat_new_feature_namespace] += f.x * f.x;
   if (priv.all->audit)
-  { audit_data a = { nullptr, nullptr, f.weight_index, f.x, true };
+  { audit_data a = { nullptr, nullptr, f.weight_index, f.x};
     a.space   = calloc_or_throw<char>(priv.dat_new_feature_feature_space->length()+1);
     a.feature = calloc_or_throw<char>(priv.dat_new_feature_audit_ss.str().length() + 32);
     strcpy(a.space, priv.dat_new_feature_feature_space->c_str());
-    int num = sprintf(a.feature, "fid=%llu_", (idx & mask) >> ss);
+    stringstream temp;
+    temp << "fid="<< ((idx & mask) >> ss) <<"_";
+    int num = temp.str().size();
+    strcpy(a.feature, temp.str().c_str());
     strcpy(a.feature+num, priv.dat_new_feature_audit_ss.str().c_str());
     priv.dat_new_feature_ec->audit_features[priv.dat_new_feature_namespace].push_back(a);
   }
@@ -478,7 +481,6 @@ void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns)
   ec.atomics[ns].erase();
   if (priv.all->audit)
   { for (size_t i=0; i<ec.audit_features[ns].size(); i++)
-      if (ec.audit_features[ns][i].alloced)
       { free(ec.audit_features[ns][i].space);
         free(ec.audit_features[ns][i].feature);
       }
@@ -508,7 +510,7 @@ void add_neighbor_features(search_private& priv)
       }
 
       //cerr << "n=" << n << " offset=" << offset << endl;
-      if ((offset < 0) && (n < (uint32_t)(-offset))) // add <s> feature
+      if ((offset < 0) && (n < (uint64_t)(-offset))) // add <s> feature
         add_new_feature(priv, 1., 925871901 << priv.all->reg.stride_shift);
       else if (n + offset >= priv.ec_seq.size()) // add </s> feature
         add_new_feature(priv, 1., 3824917 << priv.all->reg.stride_shift);
@@ -601,7 +603,7 @@ template<class T> bool array_contains(T target, const T*A, size_t n)
 void add_example_conditioning(search_private& priv, example& ec, size_t condition_on_cnt, const char* condition_on_names, action_repr* condition_on_actions)
 { if (condition_on_cnt == 0) return;
 
-  uint32_t extra_offset=0;
+  uint64_t extra_offset=0;
   if (priv.is_ldf)
     if (ec.l.cs.costs.size() > 0)
       extra_offset = 3849017 * ec.l.cs.costs[0].class_index;
@@ -609,7 +611,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
   size_t I = condition_on_cnt;
   size_t N = max(priv.acset.max_bias_ngram_length, priv.acset.max_quad_ngram_length);
   for (size_t i=0; i<I; i++)   // position in conditioning
-  { uint32_t fid = 71933 + 8491087 * extra_offset;
+  { uint64_t fid = 71933 + 8491087 * extra_offset;
     if (priv.all->audit)
     { priv.dat_new_feature_audit_ss.str("");
       priv.dat_new_feature_audit_ss.clear();
@@ -640,7 +642,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 
       // add the quadratic features
       if (n < priv.acset.max_quad_ngram_length)
-        GD::foreach_feature<search_private,uint32_t,add_new_feature>(*priv.all, ec, priv);
+        GD::foreach_feature<search_private,uint64_t,add_new_feature>(*priv.all, ec, priv);
     }
   }
 
@@ -650,7 +652,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
       { char name = condition_on_names[i];
         for (size_t k=0; k<condition_on_actions[i].repr.size(); k++)
           if ((condition_on_actions[i].repr[k].x > 1e-10) || (condition_on_actions[i].repr[k].x < -1e-10))
-          { uint32_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + condition_on_actions[i].repr[k].weight_index);
+          { uint64_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + condition_on_actions[i].repr[k].weight_index);
             if (priv.all->audit)
             { priv.dat_new_feature_audit_ss.str("");
               priv.dat_new_feature_audit_ss.clear();
@@ -911,7 +913,6 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
 
   cdbg << "allowed_actions_cnt=" << allowed_actions_cnt << ", ec.l = ["; for (size_t i=0; i<ec.l.cs.costs.size(); i++) cdbg << ' ' << ec.l.cs.costs[i].class_index << ':' << ec.l.cs.costs[i].x; cdbg << " ]" << endl;
 
-
   priv.base_learner->predict(ec, policy);
   uint32_t act = ec.pred.multiclass;
   cdbg << "a=" << act << " from"; if (allowed_actions) { for (size_t ii=0; ii<allowed_actions_cnt; ii++) cdbg << ' ' << allowed_actions[ii]; } cdbg << endl;
@@ -1118,7 +1119,7 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
     *here = condition_on_actions[i].a;   here += sizeof(action);
     *here = condition_on_names[i];       here += sizeof(char);  // SPEEDUP: should we align this at 4?
   }
-  uint32_t hash = uniform_hash(item, sz, 3419);
+  uint64_t hash = uniform_hash(item, sz, 3419);
 
   if (do_store)
   { priv.cache_hash_map.put(item, hash, scored_action(a, a_cost));
@@ -1155,9 +1156,6 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     // and learn_ec_ref[0] is a pointer to a single example
     assert(priv.learn_ec_ref_cnt == 1);
     assert(priv.learn_ec_ref != nullptr);
-
-    //polylabel labels = allowed_actions_to_ld(priv, priv.learn_ec_ref_cnt, priv.learn_allowed_actions.begin, priv.learn_allowed_actions.size());
-    //cdbg_print_array("learn_allowed_actions", priv.learn_allowed_actions);
 
     example& ec = priv.learn_ec_ref[0];
     float old_example_t = ec.example_t;
@@ -1448,7 +1446,6 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
             if (ecs[0].passthrough) { std::cerr << "search cannot passthrough" << endl; throw exception(); }
             ecs[0].passthrough = &priv.last_action_repr;
           }
-
           a = priv.is_ldf ? single_prediction_LDF(priv, ecs, ec_cnt, learner, a_cost, need_fea ? a : (action)-1)
                 : single_prediction_notLDF(priv, *ecs, learner, allowed_actions, allowed_actions_cnt, allowed_actions_cost, a_cost, need_fea ? a : (action)-1);
 
