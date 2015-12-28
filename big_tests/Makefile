@@ -35,7 +35,7 @@ allTests := $(patsubst %/,%,$(shell ls $(expDir)))
 # make EXEC=myProgram all
 # alas, $(realpath ...) doesn't seem to work here on make 3.81 for some reason
 EXEC ?= ../vowpalwabbit/vw
-TIME ?= /bin/time -f "%U"
+TIME ?= env time -f "%U"
 TIMING ?= y
 ACC_DIFF_TOLERANCE ?= 0.001
 TIME_DIFF_TOLERANCE ?= 0.05
