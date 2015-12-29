@@ -1,9 +1,20 @@
 version: 1.0.{build}
 configuration:
-- Debug
 - Release
 platform:
 - Win32
 - x64
 build:
   verbosity: minimal
+test_script:
+- ps: >-
+    if($env:PLATFORM -eq "x64")
+    {
+        cd c:\explore-cpp
+        vstest.console /Platform:x64 /inIsolation bin\x64\Release\explore_tests.dll
+    }
+    if($env:PLATFORM -eq "Win32")
+    {
+        cd c:\explore-cpp
+        vstest.console /Platform:Win32 /inIsolation bin\Win32\Release\explore_tests.dll
+    }
