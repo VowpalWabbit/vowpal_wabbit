@@ -1,3 +1,5 @@
+[![Build Status](https://ci.appveyor.com/api/projects/status/github/MultiWorldTesting/explore-cpp?branch=master&svg=true)](https://ci.appveyor.com/project/lhoang29/explore-cpp)
+
 Exploration Library
 =======
 
