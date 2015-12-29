@@ -1,0 +1,9 @@
+version: 1.0.{build}
+configuration:
+- Debug
+- Release
+platform:
+- x86
+- x64
+build:
+  verbosity: minimal
