@@ -4,6 +4,8 @@ allData := mnist covtype URLRep
 
 ################ begin generic stuff #########
 
+VPATH+=$(testCodeDir)
+
 .PHONY:	getData eraseData %.prep
 
 allDataTargets := $(addsuffix .prep,$(allData))
@@ -20,7 +22,7 @@ eraseData:
 ################ end generic stuff #########
 
 # URLRep
-$(dataDir)/URLRep.dir/prep:	URLRep.raw $(testCodeDir)/URLRep.munge.sh
+$(dataDir)/URLRep.dir/prep:	URLRep.raw URLRep.munge.sh
 	export testCodeDir=$(testCodeDir) ;\
 	cd $(dataDir)/URLRep.dir/ ;\
 	$(testCodeDir)/URLRep.munge.sh url_svmlight.tar.gz > prep
@@ -35,7 +37,7 @@ $(dataDir)/URLRep.dir/url_svmlight.tar.gz:
 
 
 # COVERTYPE
-$(dataDir)/covtype.dir/prep:	covtype.raw $(testCodeDir)/covtype.munge.sh
+$(dataDir)/covtype.dir/prep:	covtype.raw covtype.munge.sh
 	export testCodeDir=$(testCodeDir) ;\
 	cd $(dataDir)/covtype.dir/ ;\
 	$(testCodeDir)/covtype.munge.sh covtype.data.gz > prep
@@ -53,13 +55,13 @@ $(dataDir)/covtype.dir/covtype.data.gz:
 # override implicit %.prep rule
 mnist.prep:	$(dataDir)/mnist.dir $(dataDir)/mnist.dir/train.prep $(dataDir)/mnist.dir/test.prep ;
 
-$(dataDir)/mnist.dir/train.prep:	 mnist-train.raw $(testCodeDir)/mnist.munge.sh $(testCodeDir)/mnist.extractfeatures $(testCodeDir)/mnist.extract-labels.pl $(testCodeDir)/shuffle.pl
+$(dataDir)/mnist.dir/train.prep:	 mnist-train.raw mnist.munge.sh mnist.extractfeatures mnist.extract-labels.pl shuffle.pl
 	export testCodeDir=$(testCodeDir) ;\
 	cd $(dataDir)/mnist.dir/ ;\
 	$(testCodeDir)/mnist.munge.sh train-labels-idx1-ubyte.gz train-images-idx3-ubyte.gz \
 	| $(testCodeDir)/shuffle.pl > train.prep
 
-$(testCodeDir)/mnist.extractfeatures:	$(testCodeDir)/mnist.extractfeatures.cpp
+mnist.extractfeatures:	mnist.extractfeatures.cpp
 	cd $(testCodeDir)/ ;\
 	g++ -O3 -Wall $^ -o $@
 
@@ -72,7 +74,7 @@ $(dataDir)/mnist.dir/%.gz:
 	fileName=`basename $@` ;\
 	wget http://yann.lecun.com/exdb/mnist/$$fileName
 
-$(dataDir)/mnist.dir/test.prep:	mnist-test.raw $(testCodeDir)/mnist.munge.sh $(testCodeDir)/mnist.extractfeatures $(testCodeDir)/mnist.extract-labels.pl
+$(dataDir)/mnist.dir/test.prep:	mnist-test.raw mnist.munge.sh mnist.extractfeatures mnist.extract-labels.pl
 	export testCodeDir=$(testCodeDir) ;\
 	cd $(dataDir)/mnist.dir/ ;\
 	$(testCodeDir)/mnist.munge.sh t10k-labels-idx1-ubyte.gz t10k-images-idx3-ubyte.gz > test.prep
