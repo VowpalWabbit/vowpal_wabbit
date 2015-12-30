@@ -14,6 +14,6 @@ test_script:
         git clone -q --branch=master https://github.com/multiworldtesting/explore-csharp.git C:\projects\explore-csharp
         git clone -q --branch=master https://github.com/multiworldtesting/explore-test.git C:\projects\explore-test
         cd C:\projects\explore-test
-        & "C:\Program Files (x86)\MSBuild\12.0\Bin\MSBuild.exe" .\Test.sln "/p:Configuration=Release;Platform=Any CPU" /t:Clean,Build
+        & "C:\Program Files (x86)\MSBuild\12.0\Bin\MSBuild.exe" .\Test.sln /p:Configuration=Release /p:Platform="Any CPU"
         vstest.console /Platform:x64 /inIsolation bin\Release\blackbox.dll
     }
