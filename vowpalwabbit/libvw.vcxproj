@@ -237,11 +237,6 @@
     <ClInclude Include="vwdll.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\explore\static\explore_static.vcxproj">
-      <Project>{ace47e98-488c-4cdf-b9f1-36337b2855ad}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
