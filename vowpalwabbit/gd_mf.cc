@@ -25,7 +25,7 @@ using namespace LEARNER;
 struct gdmf
 { vw* all;//regressor, printing
   uint64_t rank;
-  uint64_t no_win_counter;
+  size_t no_win_counter;
   uint64_t early_stop_thres;
 };
 
