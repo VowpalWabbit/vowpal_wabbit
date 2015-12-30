@@ -426,8 +426,8 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       w[adaptive] += nd.grad_squared * x2;
     if(normalized)
     { float x_abs = fabsf(x);
-      if( x_abs > w[normalized])  // new scale discovered
-      { if( w[normalized] > 0. && !stateless)  //If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
+      if( x_abs > w[normalized] && !stateless)  // new scale discovered
+      { if( w[normalized] > 0.)  //If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
         { if (sqrt_rate)
           { float rescale = w[normalized]/x_abs;
             w[0] *= (adaptive ? rescale : rescale*rescale);
