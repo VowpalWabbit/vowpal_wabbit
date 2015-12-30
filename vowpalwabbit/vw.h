@@ -45,10 +45,14 @@ void end_parser(vw& all);
 bool is_ring_example(vw& all, example* ae);
 bool parse_atomic_example(vw& all, example* ae, bool do_read);
 
-typedef pair< unsigned char, vector<feature> > feature_space; //just a helper definition.
+ struct sparse_feature {
+   float x;
+   uint64_t index;
+ };
+
 struct primitive_feature_space   //just a helper definition.
 { unsigned char name;
-  feature* fs;
+  sparse_feature* fs;
   size_t len;
 };
 
@@ -86,8 +90,8 @@ uint32_t* get_multilabel_predictions(example* ec, size_t& len);
 size_t get_tag_length(example* ec);
 const char* get_tag(example* ec);
 size_t get_feature_number(example* ec);
-feature* get_features(vw& all, example* ec, size_t& feature_number);
-void return_features(feature* f);
+sparse_feature* get_features(vw& all, example* ec, size_t& feature_number);
+void return_features(sparse_feature* f);
 
 void add_constant_feature(vw& all, example*ec);
 void add_label(example* ec, float label, float weight = 1, float base = 0);

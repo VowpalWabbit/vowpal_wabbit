@@ -85,8 +85,7 @@ int read_cached_features(void* in, example* ec)
     index = *(unsigned char*)c;
     c+= sizeof(index);
     ae->indices.push_back((size_t)index);
-    v_array<feature>* ours = ae->atomics+index;
-    float* our_sum_feat_sq = ae->sum_feat_sq+index;
+    features& ours = ae->feature_space[index];
     size_t storage = *(size_t *)c;
     c += sizeof(size_t);
     all->p->input->set(c);
@@ -101,27 +100,29 @@ int read_cached_features(void* in, example* ec)
     uint64_t last = 0;
 
     for (; c!= end;)
-    { feature f = {1., 0};
-      c = run_len_decode(c,f.weight_index);
-      if (f.weight_index & neg_1)
-        f.x = -1.;
-      else if (f.weight_index & general)
-      { f.x = ((one_float *)c)->f;
-        c += sizeof(float);
+      { feature_index i;
+	c = run_len_decode(c,i);
+	feature_value v;
+	if (i & neg_1)
+	  v = -1.;
+	else if (i & general)
+	  { v = ((one_float *)c)->f;
+	    c += sizeof(float);
+	  }
+	ours.sum_feat_sq += v*v;
+	uint64_t diff = i >> 2;
+	
+	int64_t s_diff = ZigZagDecode(diff);
+	if (s_diff < 0)
+	  ae->sorted = false;
+	i = last + s_diff;
+	last = i;
+	ours.values.push_back(v);
+	ours.indicies.push_back(i);
       }
-      *our_sum_feat_sq += f.x*f.x;
-      uint64_t diff = f.weight_index >> 2;
-
-      int64_t s_diff = ZigZagDecode(diff);
-      if (s_diff < 0)
-        ae->sorted = false;
-      f.weight_index = last + s_diff;
-      last = f.weight_index;
-      ours->push_back(f);
-    }
     all->p->input->set(c);
   }
-
+  
   return (int)total;
 }
 
@@ -138,11 +139,11 @@ void output_byte(io_buf& cache, unsigned char s)
   cache.set(c);
 }
 
-void output_features(io_buf& cache, unsigned char index, feature* begin, feature* end, uint64_t mask)
+void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t mask)
 { char* c;
-  size_t storage = (end-begin) * int_size;
-  for (feature* i = begin; i != end; i++)
-    if (i->x != 1. && i->x != -1.)
+  size_t storage = fs.values.size() * int_size;
+  for (size_t i = 0; i != fs.values.size(); i++)
+    if (fs.values[i] != 1. && fs.values[i] != -1.)
       storage += sizeof(float);
   buf_write(cache, c, sizeof(index) + storage + sizeof(size_t));
   *reinterpret_cast<unsigned char*>(c) = index;
@@ -152,23 +153,26 @@ void output_features(io_buf& cache, unsigned char index, feature* begin, feature
   c += sizeof(size_t);
 
   uint64_t last = 0;
-
-  for (feature* i = begin; i != end; i++)
+  
+  for (size i = 0; i != fs.values.size(); i++)
     { 
-    uint64_t cache_index = (i->weight_index) & mask;
-    int64_t s_diff = (cache_index - last);
-    uint64_t diff = ZigZagEncode(s_diff) << 2;
-    last = cache_index;
-    if (i->x == 1.)
-      c = run_len_encode(c, diff);
-    else if (i->x == -1.)
-      c = run_len_encode(c, diff | neg_1);
-    else
-    { c = run_len_encode(c, diff | general);
-      memcpy(c, &i->x, sizeof(i->x));
-      c += sizeof(i->x);
+      uint64_t cache_index = i;
+      if (fs.indicies.size() > 0)
+	cache_index = fs.indicies[i];
+      cache_index &= mask;
+      int64_t s_diff = (cache_index - last);
+      uint64_t diff = ZigZagEncode(s_diff) << 2;
+      last = cache_index;
+      if (fs.values[i] == 1.)
+	c = run_len_encode(c, diff);
+      else if (fs.values[i] == -1.)
+	c = run_len_encode(c, diff | neg_1);
+      else
+	{ c = run_len_encode(c, diff | general);
+	  memcpy(c, &i->x, sizeof(i->x));
+	  c += sizeof(i->x);
+	}
     }
-  }
   cache.set(c);
   *(size_t*)storage_size_loc = c - storage_size_loc - sizeof(size_t);
 }

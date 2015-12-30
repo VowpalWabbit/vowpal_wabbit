@@ -65,15 +65,10 @@ inline void call_T( R& dat, weight* /*weight_vector*/, const size_t /*weight_mas
 { T(dat, ft_value, ft_idx);
 }
 
-template <class R, void (*audit_func)(R&, const audit_data*)>
-inline void call_audit(R& dat, const audit_data* f)
+template <class R, void (*audit_func)(R&, const feature_slice*)>
+inline void call_audit(R& dat, const feature_slice* f)
 { audit_func(dat, f);
 }
-
-// should be optimized away for any audit_func with feature argument
-template <class R, void (*audit_func)(R&, const feature*)>
-inline void call_audit(R&, const feature*) {}
-
 
 // state data used in non-recursive feature generation algorithm
 // contains N feature_gen_data records (where N is length of interaction)
@@ -103,12 +98,12 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
 // this templated function generates new features for given example and set of interactions
 // and passes each of them to given function T()
 // it must be in header file to avoid compilation problems
-
-template <class R, class S, void (*T)(R&, float, S), class feature_class = feature,  void (*audit_func)(R&, const feature_class*) /*= nullptr*/> // nullptr func can't be used as template param in old compilers
-inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_class>* features_data /*= NULL*/) // default value removed to eliminate ambiguity in old complers
-{ if (features_data == NULL) features_data = (v_array<feature_class>*)ec.atomics;
-  assert(((void*)features_data == (void*)ec.atomics) || ((void*)features_data == (void*)ec.audit_features));
-
+ 
+ template <class R, class S, void (*T)(R&, float, S), class feature_class,  void (*audit_func)(R&, const feature_class*) /*= nullptr*/> // nullptr func can't be used as template param in old compilers
+   inline void generate_interactions(vw& all, example& ec, R& dat) // default value removed to eliminate ambiguity in old complers
+ { 
+   features* features_data = ec.feature_space;
+   
   // often used values
   const uint64_t offset = ec.ft_offset;
 //    const uint64_t stride_shift = all.reg.stride_shift; // it seems we don't need stride shift in FTRL-like hash
@@ -138,11 +133,11 @@ inline void generate_interactions(vw& all, example& ec, R& dat, v_array<feature_
 
     if (len == 2) //special case of pairs
     { const size_t fst_ns = ns[0];
-      if (features_data[fst_ns].size() > 0)
+      if (features_data[fst_ns].indicies.size() > 0)
       {
 
         const size_t snd_ns = ns[1];
-        if (features_data[snd_ns].size() > 0)
+        if (features_data[snd_ns].indicies.size() > 0)
         {
 
           const bool same_namespace = ( !all.permutations && ( fst_ns == snd_ns ) );
