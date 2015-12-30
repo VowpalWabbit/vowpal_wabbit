@@ -32,7 +32,7 @@ cheesyrbit (uint64_t& seed)
 }
 
 inline float
-cheesyrand (uint32_t x)
+cheesyrand (uint64_t x)
 { uint64_t seed = x;
 
   return merand48 (seed);
@@ -85,11 +85,11 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
       for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
       { feature* lf = ec.atomics[left].begin + lfn;
         float lfx = lf->x;
-        size_t lindex = lf->weight_index + ec.ft_offset;
+        uint64_t lindex = lf->weight_index + ec.ft_offset;
 
         for (unsigned int n = 1; n <= k; ++n)
         { if (! do_dropout || cheesyrbit (lrq.seed))
-          { uint32_t lwindex = (uint32_t)(lindex + (n << all.reg.stride_shift));
+          { uint64_t lwindex = (uint64_t)(lindex + (n << all.reg.stride_shift));
 
             float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
 
@@ -105,8 +105,8 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
 
               // NB: ec.ft_offset added by base learner
               float rfx = rf->x;
-              size_t rindex = rf->weight_index;
-              uint32_t rwindex = (uint32_t)(rindex + (n << all.reg.stride_shift));
+              uint64_t rindex = rf->weight_index;
+              uint64_t rwindex = (uint64_t)(rindex + (n << all.reg.stride_shift));
 
               feature lrq;
               lrq.x = scale **lw * lfx * rfx;
@@ -129,7 +129,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
                 char* new_feature = strdup(new_feature_buffer.str().c_str());
 #endif
 
-                audit_data ad = { new_space, new_feature, lrq.weight_index, lrq.x, true };
+                audit_data ad = { new_space, new_feature, lrq.weight_index, lrq.x};
                 ec.audit_features[right].push_back (ad);
               }
             }
@@ -222,7 +222,9 @@ base_learner* lrq_setup(vw& all)
        ++i)
   { if(!all.quiet)
     { if (( i->length() < 3 ) || ! valid_int (i->c_str () + 2))
+      { free(&lrq);
         THROW("error, low-rank quadratic features must involve two sets and a rank.");
+      }
 
       cerr << *i << " ";
     }
@@ -239,7 +241,7 @@ base_learner* lrq_setup(vw& all)
   if(!all.quiet)
     cerr<<endl;
 
-  all.wpp = all.wpp * (uint32_t)(1 + maxk);
+  all.wpp = all.wpp * (uint64_t)(1 + maxk);
   learner<LRQstate>& l = init_learner(&lrq, setup_base(all), predict_or_learn<true>,
                                       predict_or_learn<false>, 1 + maxk);
   l.set_end_pass(reset_seed);

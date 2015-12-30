@@ -65,7 +65,7 @@ void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::labe
     cs_labels.end = cs_labels.end_array;
   }
   bool shared = CB::ec_is_example_header(*examples[0]);
-  for (size_t i = 0; i < examples.size(); i++)
+  for (uint32_t i = 0; i < examples.size(); i++)
   { CB::label ld = examples[i]->l.cb;
 
     COST_SENSITIVE::wclass wc;
@@ -272,16 +272,15 @@ template<class T> void swap(T& ele1, T& ele2)
 
 template<bool predict>
 void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
-{ 
-  uint32_t action = 0;
+{ uint32_t action = 0;
   if (predict) //first get the prediction to return
-    { gen_cs_example_ips(examples, mydata.cs_labels);
-      call_predict_or_learn<false>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
-      if (!mydata.rank_all) //preserve prediction
-	action = examples[0]->pred.multiclass;
-      else
-	swap(examples[0]->pred.multilabels, mydata.mtr_multilabels);
-    }
+  { gen_cs_example_ips(examples, mydata.cs_labels);
+    call_predict_or_learn<false>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
+    if (!mydata.rank_all) //preserve prediction
+      action = examples[0]->pred.multiclass;
+    else
+      swap(examples[0]->pred.multilabels, mydata.mtr_multilabels);
+  }
   //second train on _one_ action (which requires up to 3 examples).
   //We must go through the cost sensitive classifier layer to get
   //proper feature handling.
@@ -339,10 +338,10 @@ void do_actual_learning(cb_adf& data, base_learner& base)
         learn_DR(data, base, data.ec_seq);
         break;
       case CB_TYPE_MTR:
-	if (data.predict)
-	  learn_MTR<true>(data, base, data.ec_seq);
-	else
-	  learn_MTR<false>(data, base, data.ec_seq);
+        if (data.predict)
+          learn_MTR<true>(data, base, data.ec_seq);
+        else
+          learn_MTR<false>(data, base, data.ec_seq);
         break;
       default:
         THROW("Unknown cb_type specified for contextual bandit learning: " << data.cb_type);

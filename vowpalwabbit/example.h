@@ -26,17 +26,16 @@ const size_t dictionary_namespace  = 135; // this is \x87
 
 struct feature
 { float x;
-  uint32_t weight_index;
+  uint64_t weight_index;
   bool operator==(feature j) {return weight_index == j.weight_index;}
-  feature(float x_=0., uint32_t weight_index_=0) : x(x_), weight_index(weight_index_) {}
+  feature(float x_=0., uint64_t weight_index_=0) : x(x_), weight_index(weight_index_) {}
 };
 
 struct audit_data
 { char* space;
   char* feature;
-  size_t weight_index;
+  uint64_t weight_index;
   float x;
-  bool alloced;
 };
 
 typedef union
@@ -68,7 +67,7 @@ struct example // core example datatype.
   size_t example_counter;
   v_array<unsigned char> indices;
   v_array<feature> atomics[256]; // raw parsed data
-  uint32_t ft_offset;
+  uint64_t ft_offset;
 
   //helpers
   v_array<audit_data> audit_features[256];
@@ -81,7 +80,6 @@ struct example // core example datatype.
   float sum_feat_sq[256];//helper for total_sum_feat_sq.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
   float confidence;
-  float revert_weight;
   v_array<feature>* passthrough; // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
 
   bool test_only;

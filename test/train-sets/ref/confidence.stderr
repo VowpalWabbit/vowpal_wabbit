@@ -10,15 +10,15 @@ average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0  -1.0000   0.0000      128
 0.893728 0.787455            2            2.0  -1.0000  -0.1126       44
-0.904234 0.914740            4            4.0  -1.0000  -0.1711      190
-0.924538 0.944843            8            8.0   1.0000  -0.0239       34
+0.905122 0.916517            4            4.0  -1.0000  -0.1701      190
+0.924790 0.944458            8            8.0   1.0000  -0.0231       34
 
 finished run
 number of examples per pass = 10
 passes used = 1
 weighted example sum = 10.000000
 weighted label sum = -2.000000
-average loss = 0.874357
+average loss = 0.874088
 best constant = -0.200000
 best constant's loss = 0.960000
 total feature number = 979

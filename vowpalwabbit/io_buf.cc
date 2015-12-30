@@ -8,7 +8,6 @@ license as described in the file LICENSE.
 #include <winsock2.h>
 #endif
 
-//return a pointer to the next n bytes.  n must be smaller than the maximum size.
 size_t buf_read(io_buf &i, char* &pointer, size_t n)
 { //return a pointer to the next n bytes.  n must be smaller than the maximum size.
   if (i.head + n <= i.space.end)

@@ -24,6 +24,7 @@ namespace po = boost::program_options;
 #include "v_hashmap.h"
 #include <time.h>
 #include "hash.h"
+#include "crossplat_compat.h"
 
 struct version_struct
 { int major;
@@ -99,7 +100,7 @@ struct version_struct
   }
   std::string to_string() const
   { char v_str[128];
-    std::sprintf(v_str,"%d.%d.%d",major,minor,rev);
+    sprintf_s(v_str,sizeof(v_str),"%d.%d.%d",major,minor,rev);
     std::string s = v_str;
     return s;
   }
@@ -114,7 +115,7 @@ typedef float weight;
 
 struct regressor
 { weight* weight_vector;
-  size_t weight_mask; // (stride*(1 << num_bits) -1)
+  uint64_t weight_mask; // (stride*(1 << num_bits) -1)
   uint32_t stride_shift;
 };
 
@@ -153,7 +154,7 @@ public:
     { substring& l = id2name[k];
       size_t hash = uniform_hash((unsigned char*)l.begin, l.end-l.begin, 378401);
       uint32_t id = name2id.get(l, hash);
-      if (id != 0)
+      if (id != 0) // TODO: memory leak: char* temp
         THROW("error: label dictionary initialized with multiple occurances of: " << l);
       size_t len = l.end - l.begin;
       substring l_copy = { calloc_or_throw<char>(len), nullptr };
@@ -383,8 +384,7 @@ struct shared_data
 };
 
 enum AllReduceType
-{
-  Socket,
+{ Socket,
   Thread
 };
 
@@ -428,6 +428,8 @@ struct vw
   bool hessian_on;
 
   bool save_resume;
+  string id;
+
   version_struct model_file_ver;
   double normalized_sum_norm_x;
   bool vw_is_main;  // true if vw is executable; false in library mode
@@ -456,7 +458,7 @@ struct vw
   size_t pass_length;
   size_t numpasses;
   size_t passes_complete;
-  size_t parse_mask; // 1 << num_bits -1
+  uint64_t parse_mask; // 1 << num_bits -1
   bool permutations; // if true - permutations of features generated instead of simple combinations. false by default
   v_array<v_string> interactions; // interactions of namespaces to cross.
   std::vector<std::string> pairs; // pairs of features to cross.
@@ -473,7 +475,7 @@ struct vw
   uint32_t skips[256];//skips in ngrams.
   std::vector<std::string> limit_strings; // descriptor of feature limits
   uint32_t limit[256];//count to limit features by
-  uint32_t affix_features[256]; // affixes to generate (up to 8 per namespace)
+  uint64_t affix_features[256]; // affixes to generate (up to 8 per namespace)
   bool     spelling_features[256]; // generate spelling features for which namespace
   vector<string> dictionary_path;  // where to look for dictionaries
   vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it

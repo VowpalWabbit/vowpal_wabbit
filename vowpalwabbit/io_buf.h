@@ -166,7 +166,7 @@ public:
     }
     // read more bytes from file up to the remaining allocated space
     ssize_t num_read = read_file(f, space.end, space.end_array - space.end);
-    if (num_read >= 0)
+     if (num_read >= 0)
     { // if some bytes were actually loaded, update the end of loaded values
       space.end = space.end + num_read;
       return num_read;
@@ -182,7 +182,7 @@ public:
 
   virtual void flush()
   { if (files.size() > 0)
-      { if (write_file(files[0], space.begin, head - space.begin) != (int) (head - space.begin))
+    { if (write_file(files[0], space.begin, head - space.begin) != (int) (head - space.begin))
         std::cerr << "error, failed to write example\n";
       head = space.begin;
     }
@@ -216,18 +216,18 @@ size_t readto(io_buf &i, char* &pointer, char terminal);
 inline size_t bin_read_fixed(io_buf& i, char* data, size_t len, const char* read_message)
 { if (len > 0)
   { char* p;
-    size_t ret = buf_read(i,p,len);
+    // if the model is corrupt the number of bytes can be less then specified (as there isn't enought data available in the file)
+    len = buf_read(i,p,len);
 
     // compute hash for check-sum
     if (i.verify_hash)
-    { i.hash = uniform_hash(p, len, i.hash);
-    }
+      i.hash = uniform_hash(p, len, i.hash);
 
     if (*read_message == '\0')
       memcpy(data,p,len);
     else if (memcmp(data,p,len) != 0)
       THROW(read_message);
-    return ret;
+    return len;
   }
   return 0;
 }
@@ -264,10 +264,14 @@ inline size_t bin_write(io_buf& o, const char* data, uint32_t len)
 }
 
 inline size_t bin_text_write(io_buf& io, char* data, uint32_t len,
-                             const char* text_data, uint32_t text_len, bool text)
+                             stringstream& msg, bool text)
 { if (text)
-    return bin_write_fixed (io, text_data, text_len);
-  else if (len > 0)
+    {
+      size_t temp = bin_write_fixed (io, msg.str().c_str(), msg.str().size());
+      msg.str("");
+      return temp;
+    }
+  else
     return bin_write (io, data, len);
   return 0;
 }
@@ -275,29 +279,21 @@ inline size_t bin_text_write(io_buf& io, char* data, uint32_t len,
 //a unified function for read(in binary), write(in binary), and write(in text)
 inline size_t bin_text_read_write(io_buf& io, char* data, uint32_t len,
                                   const char* read_message, bool read,
-                                  const char* text_data, uint32_t text_len, bool text)
+                                  stringstream& msg, bool text)
 { if (read)
     return bin_read(io, data, len, read_message);
   else
-    return bin_text_write(io,data,len, text_data, text_len, text);
-}
-
-inline size_t bin_text_read_write_validated(io_buf& io, char* data, uint32_t len,
-    const char* read_message, bool read,
-    const char* text_data, uint32_t text_len, bool text)
-{ size_t nbytes = bin_text_read_write(io, data, len, read_message, read, text_data, text_len, text);
-  if (read && len > 0)
-  { if (nbytes == 0)
-    { THROW("Unexpected end of file encountered.");
-    }
-  }
-  return nbytes;
+    return bin_text_write(io,data,len, msg, text);
 }
 
 inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len,
-                                   const char* text_data, uint32_t text_len, bool text)
+                                   stringstream& msg, bool text)
 { if (text)
-    return bin_write_fixed (io, text_data, text_len);
+    {
+      size_t temp = bin_write_fixed (io, msg.str().c_str(), msg.str().size());
+      msg.str("");
+      return temp;
+    }
   else
     return bin_write_fixed (io, data, len);
   return 0;
@@ -306,17 +302,17 @@ inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len,
 //a unified function for read(in binary), write(in binary), and write(in text)
 inline size_t bin_text_read_write_fixed(io_buf& io, char* data, uint32_t len,
                                         const char* read_message, bool read,
-                                        const char* text_data, uint32_t text_len, bool text)
+                                        stringstream& msg, bool text)
 { if (read)
     return bin_read_fixed(io, data, len, read_message);
   else
-    return bin_text_write_fixed(io, data, len, text_data, text_len, text);
+    return bin_text_write_fixed(io, data, len, msg, text);
 }
 
 inline size_t bin_text_read_write_fixed_validated(io_buf& io, char* data, uint32_t len,
-    const char* read_message, bool read,
-    const char* text_data, uint32_t text_len, bool text)
-{ size_t nbytes = bin_text_read_write_fixed(io, data, len, read_message, read, text_data, text_len, text);
+                                                  const char* read_message, bool read,
+                                                  stringstream& msg, bool text)
+{ size_t nbytes = bin_text_read_write_fixed(io, data, len, read_message, read, msg, text);
   if (read && len > 0) // only validate bytes read/write if expected length > 0
   { if (nbytes == 0)
     { THROW("Unexpected end of file encountered.");

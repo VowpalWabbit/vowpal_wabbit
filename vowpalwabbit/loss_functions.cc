@@ -12,7 +12,6 @@ using namespace std;
 
 #include "global_data.h"
 #include "vw_exception.h"
-#include "example.h"
 
 class squaredloss : public loss_function
 {
@@ -60,10 +59,6 @@ public:
     float alternative = (prediction > t) ? sd->min_label : sd->max_label;
     return log((alternative-prediction)/(alternative-t))/eta_t;
   }
-  
-  float finalize_reverting_weight(float w) {
-    return 0.5*w; 
-  }
 
   float getSquareGrad(float prediction, float label)
   { return 4.f*(prediction - label) * (prediction - label);
@@ -86,7 +81,7 @@ public:
 class classic_squaredloss : public loss_function
 {
 public:
-  classic_squaredloss(){}
+  classic_squaredloss() {}
 
   float getLoss(shared_data*, float prediction, float label)
   { float example_loss = (prediction - label) * (prediction - label);
@@ -107,15 +102,8 @@ public:
     return (t-prediction)/((alternative-prediction)*eta_t);
   }
 
-  float finalize_reverting_weight(float w) {
-   
-    cerr << "Warning: finalize_reverting_weight not implemented for this type of loss. Returning 0." << endl; 	
-    return 0.0; 
-  }
-
-
-  float getSquareGrad(float prediction, float label) {
-    return 4.f * (prediction - label) * (prediction - label);
+  float getSquareGrad(float prediction, float label)
+  { return 4.f * (prediction - label) * (prediction - label);
   }
   float first_derivative(shared_data*, float prediction, float label)
   { return 2.f * (prediction-label);
@@ -154,11 +142,6 @@ public:
 
   float getRevertingWeight(shared_data*, float prediction, float eta_t)
   { return fabs(prediction)/eta_t;
-  }
-  
-  float finalize_reverting_weight(float w) {
-    cerr << "Warning: finalize_reverting_weight not implemented for this type of loss. Returning 0." << endl; 	
-    return 0.0; 
   }
 
   float getSquareGrad(float prediction, float label)
@@ -225,10 +208,6 @@ public:
   { float z = -fabs(prediction);
     return (1-z-correctedExp(z))/eta_t;
   }
-  
-  float finalize_reverting_weight(float w) {
-    return 2.f*w; 
-  }
 
   float first_derivative(shared_data*, float prediction, float label)
   { float v = - label/(1+correctedExp(label * prediction));
@@ -255,7 +234,7 @@ public:
   float getLoss(shared_data*, float prediction, float label)
   { float e = label - prediction;
     if(e > 0)
-      return tau * e; 
+      return tau * e;
     else
       return -(1 - tau) * e;
   }
@@ -289,11 +268,6 @@ public:
     else
       v = tau;
     return (t - prediction)/(eta_t*v);
-  }
-  
-  float finalize_reverting_weight(float w) {
-    cerr << "Warning: finalize_reverting_weight not implemented for this type of loss. Returning 0." << endl; 	
-    return 0.0; 
   }
 
   float first_derivative(shared_data*, float prediction, float label)

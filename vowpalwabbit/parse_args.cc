@@ -10,6 +10,7 @@ license as described in the file LICENSE.
 //#include <boost/filesystem.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <algorithm>
 
 #include "parse_regressor.h"
 #include "parser.h"
@@ -160,12 +161,14 @@ void parse_dictionary_argument(vw&all, string str)
       return;
     }
 
-  feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
-
-  example *ec = VW::alloc_examples(all.p->lp.label_size, 1);
   fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
   if (fd < 0)
+  { delete io;
     THROW("error: cannot re-read dictionary from file '" << fname << "'" << ", opening failed");
+  }
+
+  feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
+  example *ec = VW::alloc_examples(all.p->lp.label_size, 1);
 
   size_t def = (size_t)' ';
 
@@ -181,7 +184,13 @@ void parse_dictionary_argument(vw&all, string str)
       { size *= 2;
         buffer = (char*)realloc(buffer, size);
         if (buffer == nullptr)
+        { free(ec);
+          VW::dealloc_example(all.p->lp.delete_label, *ec);
+          delete map;
+          io->close_file();
+          delete io;
           THROW("error: memory allocation failed in reading dictionary");
+        }
       }
     }
     while ( (rc != EOF) && (rc != '\n') && (nread > 0) );
@@ -241,31 +250,38 @@ void parse_affix_argument(vw&all, string str)
   strcpy(cstr, str.c_str());
 
   char*p = strtok(cstr, ",");
-  while (p != 0)
-  { char*q = p;
-    uint16_t prefix = 1;
-    if (q[0] == '+') { q++; }
-    else if (q[0] == '-') { prefix = 0; q++; }
-    if ((q[0] < '1') || (q[0] > '7'))
-      THROW("malformed affix argument (length must be 1..7): " << p);
 
-    uint16_t len = (uint16_t)(q[0] - '0');
-    uint16_t ns = (uint16_t)' ';  // default namespace
-    if (q[1] != 0)
-    { if (valid_ns(q[1]))
-        ns = (uint16_t)q[1];
-      else
-        THROW("malformed affix argument (invalid namespace): " << p);
+  try
+  { while (p != 0)
+    { char*q = p;
+      uint16_t prefix = 1;
+      if (q[0] == '+') { q++; }
+      else if (q[0] == '-') { prefix = 0; q++; }
+      if ((q[0] < '1') || (q[0] > '7'))
+        THROW("malformed affix argument (length must be 1..7): " << p);
 
-      if (q[2] != 0)
-        THROW("malformed affix argument (too long): " << p);
+      uint16_t len = (uint16_t)(q[0] - '0');
+      uint16_t ns = (uint16_t)' ';  // default namespace
+      if (q[1] != 0)
+      { if (valid_ns(q[1]))
+          ns = (uint16_t)q[1];
+        else
+          THROW("malformed affix argument (invalid namespace): " << p);
+
+        if (q[2] != 0)
+          THROW("malformed affix argument (too long): " << p);
+      }
+
+      uint16_t afx = (len << 1) | (prefix & 0x1);
+      all.affix_features[ns] <<= 4;
+      all.affix_features[ns] |=  afx;
+
+      p = strtok(nullptr, ",");
     }
-
-    uint16_t afx = (len << 1) | (prefix & 0x1);
-    all.affix_features[ns] <<= 4;
-    all.affix_features[ns] |=  afx;
-
-    p = strtok(nullptr, ",");
+  }
+  catch(...)
+  { free(cstr);
+    throw;
   }
 
   free(cstr);
@@ -400,7 +416,64 @@ void parse_source(vw& all)
 }
 
 bool interactions_settings_doubled = false; // local setting setted in parse_modules()
+namespace VW
+{
+const char* are_features_compatible(vw& vw1, vw& vw2)
+{ if (vw1.p->hasher != vw2.p->hasher)
+    return "hasher";
 
+  if (!equal(vw1.spelling_features, vw1.spelling_features + (sizeof(vw1.spelling_features) / sizeof(bool)), vw2.spelling_features))
+    return "spelling_features";
+
+  if (!equal(vw1.affix_features, vw1.affix_features + (sizeof(vw1.affix_features) / sizeof(uint32_t)), vw2.affix_features))
+    return "affix_features";
+
+  if (!equal(vw1.ngram, vw1.ngram + (sizeof(vw1.ngram) / sizeof(uint32_t)), vw2.ngram))
+    return "ngram";
+
+  if (!equal(vw1.skips, vw1.skips + (sizeof(vw1.skips) / sizeof(uint32_t)), vw2.skips))
+    return "skips";
+
+  if (!equal(vw1.limit, vw1.limit + (sizeof(vw1.limit) / sizeof(uint32_t)), vw2.limit))
+    return "limit";
+
+  if (vw1.num_bits != vw2.num_bits)
+    return "num_bits";
+
+  if (vw1.permutations != vw1.permutations)
+    return "permutations";
+
+  if (vw1.interactions.size() != vw2.interactions.size())
+    return "interactions size";
+
+  if (vw1.ignore_some != vw2.ignore_some)
+    return "ignore_some";
+
+  if (vw1.ignore_some && !equal(vw1.ignore, vw1.ignore + (sizeof(vw1.ignore) / sizeof(bool)), vw2.ignore))
+    return "ignore";
+
+  if (vw1.redefine_some != vw2.redefine_some)
+    return "redefine_some";
+
+  if (vw1.redefine_some && !equal(vw1.redefine, vw1.redefine + (sizeof(vw1.redefine) / sizeof(unsigned char)), vw2.redefine))
+    return "redefine";
+
+  if (vw1.add_constant != vw2.add_constant)
+    return "add_constant";
+
+  if (vw1.dictionary_path.size() != vw2.dictionary_path.size())
+    return "dictionary_path size";
+
+  if (!equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
+    return "dictionary_path";
+
+  for (auto i = vw1.interactions.begin, j = vw2.interactions.begin; i != vw1.interactions.end; i++, j++)
+    if (v_string2string(*i) != v_string2string(*j))
+      return "interaction mismatch";
+
+  return nullptr;
+}
+}
 // return a copy of string replacing \x00 sequences in it
 string spoof_hex_encoded_namespaces(const string& arg)
 { string res;
@@ -897,7 +970,8 @@ void parse_output_model(vw& all)
   ("save_resume", "save extra state so learning can be resumed later with new data")
   ("save_per_pass", "Save the model after every pass over data")
   ("output_feature_regularizer_binary", po::value< string >(&(all.per_feature_regularizer_output)), "Per feature regularization output file")
-  ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text");
+  ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text")
+  ("id", po::value< string >(&(all.id)), "User supplied ID embedded into the final regressor");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -922,6 +996,11 @@ void parse_output_model(vw& all)
 
   if (vm.count("save_resume"))
     all.save_resume = true;
+
+  if (vm.count("id") && find(all.args.begin(), all.args.end(), "--id") == all.args.end())
+  { all.args.push_back("--id");
+    all.args.push_back(vm["id"].as<string>());
+  }
 }
 
 void load_input_model(vw& all, io_buf& io_temp)
@@ -1275,6 +1354,9 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
   }
 
   vw* new_model = VW::initialize(init_args.str().c_str());
+
+  free_it(new_model->reg.weight_vector);
+  free_it(new_model->sd);
 
   // reference model states stored in the specified VW instance
   new_model->reg = vw_model->reg; // regressor

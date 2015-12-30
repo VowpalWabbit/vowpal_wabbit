@@ -460,44 +460,30 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
     if (b.regularizers == nullptr)
       THROW("Failed to allocate weight array: try decreasing -b <bits>");
 
-      for(uint32_t i = 0; i < length; i++)
-      {
-	b.regularizers[2*i] = regularization;
-        if(weights[stride*i+W_COND] > 0.f)
-        {
-          b.regularizers[2*i] += 1.f / weights[stride*i+W_COND]; 
-        }
-      }
-    }
-  else
-  {
     for(uint32_t i = 0; i < length; i++)
-    {
-       if(weights[stride*i+W_COND] > 0.f)
-       {
-          b.regularizers[2*i] += 1.f / weights[stride*i+W_COND];
-       }
+    { b.regularizers[2*i] = regularization;
+      if (weights[stride*i+W_COND] > 0.f)
+        b.regularizers[2*i] += 1.f / weights[stride*i+W_COND];
     }
   }
-
+  else
+    for(uint32_t i = 0; i < length; i++)
+    { if (weights[stride*i+W_COND] > 0.f)
+        b.regularizers[2*i] += 1.f / weights[stride*i+W_COND];
+    }
   for(uint32_t i = 0; i < length; i++)
-  {
-      b.regularizers[2*i+1] = weights[stride*i];
-  }
+    b.regularizers[2*i+1] = weights[stride*i];
 }
 
 void regularizer_to_weight(vw& all, bfgs& b)
-{
-  uint32_t length = 1 << all.num_bits;
+{ uint32_t length = 1 << all.num_bits;
   size_t stride = 1 << all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
   if (b.regularizers != nullptr)
-  {
-     for(uint32_t i = 0; i < length; i++)
-     {
-        weights[stride*i+W_COND] = b.regularizers[2*i];
-        weights[stride*i] = b.regularizers[2*i+1];
-     }
+  { for(uint32_t i = 0; i < length; i++)
+    { weights[stride*i+W_COND] = b.regularizers[2*i];
+      weights[stride*i] = b.regularizers[2*i+1];
+    }
   }
 }
 
@@ -535,7 +521,7 @@ void update_weight(vw& all, float step_size)
 int process_pass(vw& all, bfgs& b)
 { int status = LEARN_OK;
 
-      finalize_preconditioner(all, b, all.l2_lambda);
+    finalize_preconditioner(all, b, all.l2_lambda);
   /********************************************************************/
   /* A) FIRST PASS FINISHED: INITIALIZE FIRST LINE SEARCH *************/
   /********************************************************************/
@@ -674,46 +660,46 @@ int process_pass(vw& all, bfgs& b)
   /********************************************************************/
   /* C) NOT FIRST PASS, CURVATURE CALCULATED **************************/
   /********************************************************************/
-      else // just finished all second gradients
-	{ if(all.all_reduce != nullptr) 
-          { float t = (float)b.curvature;
-	    b.curvature = accumulate_scalar(all, t);  //Accumulate curvatures
-	  }
-	  if (all.l2_lambda > 0.)
-	    b.curvature += regularizer_direction_magnitude(all, b, all.l2_lambda);
-	  float dd = (float)derivative_in_direction(all, b, b.mem, b.origin);
-	  if (b.curvature == 0. && dd != 0.)
-	  { fprintf(stdout, "%s", curv_message);
-	      b.step_size=0.0;
-	      status = LEARN_CURV;
-	  }
-	  else if ( dd == 0.)
-	  { fprintf(stdout, "Derivative 0 detected.\n");
-	    b.step_size=0.0;
-	    status = LEARN_CONV;
-	   }
-	  else
-	    b.step_size = - dd/(float)b.curvature;
-
-	  float d_mag = direction_magnitude(all);
-
-	  b.predictions.erase();
-	  update_weight(all, b.step_size);
-	  ftime(&b.t_end_global);
-	  b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
-	  if (!all.quiet)
-	    fprintf(stderr, "%-10.5f\t%-10.5f\t%-10.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
-	  b.gradient_pass = true;
-	}//now start computing derivatives.
-    b.current_pass++;
-    b.first_pass = false;
-
-    if (b.output_regularizer)//need to accumulate and place the regularizer.
-      {
-	if(all.all_reduce != nullptr)
-	  accumulate(all, all.reg, W_COND); //Accumulate preconditioner
-	//preconditioner_to_regularizer(all, b, all.l2_lambda);
+    else // just finished all second gradients
+    { if(all.all_reduce != nullptr)
+      { float t = (float)b.curvature;
+        b.curvature = accumulate_scalar(all, t);  //Accumulate curvatures
       }
+      if (all.l2_lambda > 0.)
+        b.curvature += regularizer_direction_magnitude(all, b, all.l2_lambda);
+      float dd = (float)derivative_in_direction(all, b, b.mem, b.origin);
+      if (b.curvature == 0. && dd != 0.)
+      { fprintf(stdout, "%s", curv_message);
+        b.step_size=0.0;
+        status = LEARN_CURV;
+      }
+      else if ( dd == 0.)
+      { fprintf(stdout, "Derivative 0 detected.\n");
+        b.step_size=0.0;
+        status = LEARN_CONV;
+      }
+      else
+        b.step_size = - dd/(float)b.curvature;
+
+      float d_mag = direction_magnitude(all);
+
+      b.predictions.erase();
+      update_weight(all, b.step_size);
+      ftime(&b.t_end_global);
+      b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
+      if (!all.quiet)
+        fprintf(stderr, "%-10.5f\t%-10.5f\t%-10.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
+      b.gradient_pass = true;
+    }//now start computing derivatives.
+  b.current_pass++;
+  b.first_pass = false;
+  b.preconditioner_pass = false;
+
+  if (b.output_regularizer)//need to accumulate and place the regularizer.
+  { if(all.all_reduce != nullptr)
+      accumulate(all, all.reg, W_COND); //Accumulate preconditioner
+    //preconditioner_to_regularizer(all, b, all.l2_lambda);
+  }
   ftime(&b.t_end_global);
   b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
 
@@ -759,69 +745,52 @@ void end_pass(bfgs& b)
 { vw* all = b.all;
 
   if (b.current_pass <= b.final_pass)
-    {if(b.current_pass < b.final_pass)
-      { int status = process_pass(*all, b);
-	  
-          //reaching the max number of passes regardless of convergence
-          if(b.final_pass == b.current_pass)
-          { cerr<<"Maximum number of passes reached. ";
-	      if(!b.output_regularizer)
-               cerr<<"If you want to optimize further, increase the number of passes\n";
-	      if(b.output_regularizer)
-		{ cerr<<"\nRegular model file has been created. ";
-		  cerr<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
-		  b.output_regularizer = false;
-		}
-	    }
-	  
-          //attain convergence before reaching max iterations
-	  if (status != LEARN_OK && b.final_pass > b.current_pass) {
-	    b.final_pass = b.current_pass;
-	  }
-	  else
-	  {
-            // Not converged yet.
-            // Reset preconditioner to zero so that it is correctly recomputed in the next pass
-            zero_preconditioner(*all);
-          }
-	  
-	  if(!all->holdout_set_off)
-	    {if(summarize_holdout_set(*all, b.no_win_counter))
-		finalize_regressor(*all, all->final_regressor_name);
-	      if(b.early_stop_thres == b.no_win_counter)
-		{ set_done(*all);
-		  cerr<<"Early termination reached w.r.t. holdout set error";
-		}
-	    } if (b.final_pass == b.current_pass) {
-	    finalize_regressor(*all, all->final_regressor_name);
-	    set_done(*all);
-	  }
-	  
-	} 
-        else  //reaching convergence in the previous pass
-          b.current_pass ++;
-    }
-}
+  { if(b.current_pass < b.final_pass)
+    { int status = process_pass(*all, b);
 
-inline void scaled_norm(float& p, const float fx, float& fw) { p += 2.f*fx*fx/fw;}
+      //reaching the max number of passes regardless of convergence
+      if(b.final_pass == b.current_pass)
+      { cerr<<"Maximum number of passes reached. ";
+        if(!b.output_regularizer)
+          cerr<<"If you want to optimize further, increase the number of passes\n";
+        if(b.output_regularizer)
+        { cerr<<"\nRegular model file has been created. ";
+          cerr<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
+          b.output_regularizer = false;
+        }
+      }
+
+      //attain convergence before reaching max iterations
+      if (status != LEARN_OK && b.final_pass > b.current_pass)
+      { b.final_pass = b.current_pass;
+      }
+      else
+      { // Not converged yet.
+        // Reset preconditioner to zero so that it is correctly recomputed in the next pass
+        zero_preconditioner(*all);
+      }
+      if(!all->holdout_set_off)
+      { if(summarize_holdout_set(*all, b.no_win_counter))
+          finalize_regressor(*all, all->final_regressor_name);
+        if(b.early_stop_thres == b.no_win_counter)
+        { set_done(*all);
+          cerr<<"Early termination reached w.r.t. holdout set error";
+        }
+      } if (b.final_pass == b.current_pass)
+      { finalize_regressor(*all, all->final_regressor_name);
+        set_done(*all);
+      }
+
+    }
+    else    //reaching convergence in the previous pass
+      b.current_pass ++;
+  }
+}
 
 // placeholder
 void predict(bfgs& b, base_learner&, example& ec)
 { vw* all = b.all;
   ec.pred.scalar = bfgs_predict(*all,ec);
-
-  if(b.regularizers != nullptr)
-  {
-     float norm = 0.f;		
-
-     regularizer_to_weight(*all, b);
-
-     ec.ft_offset += W_COND;
-     GD::foreach_feature<float,scaled_norm>(*all, ec, norm);
-     ec.ft_offset -= W_COND;
-
-     ec.revert_weight = (*all).loss->finalize_reverting_weight(fabs(ec.pred.scalar) / norm);
-  }
 }
 
 void learn(bfgs& b, base_learner& base, example& ec)
@@ -844,7 +813,7 @@ void finish(bfgs& b)
 }
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
-{ char buff[512];
+{
   int c = 0;
   uint32_t length = 2*(1 << all.num_bits);
   uint32_t i = 0;
@@ -870,26 +839,23 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
     { v = &(b.regularizers[i]);
       if (*v != 0.)
       { c++;
-        int text_len = sprintf(buff, "%d", i);
+        stringstream msg;
+        msg << i;
         brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i),
-                                   buff, text_len, text);
+                                   msg, text);
 
-        text_len = sprintf(buff, ":%f\n", *v);
+        msg << ":"<< *v << "\n";
         brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
-                                   buff, text_len, text);
+                                   msg, text);
       }
     }
     if (!read)
       i++;
   }
   while ((!read && i < length) || (read && brw >0));
-
-  if(read)
-  {
-     regularizer_to_weight(all, b);
-  }
-
-
+  
+  if (read)
+    regularizer_to_weight(all, b);
 }
 
 
@@ -936,11 +902,10 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
   bool reg_vector = (b.output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
 
   if (model_file.files.size() > 0)
-  { char buff[512];
-    uint32_t text_len = sprintf(buff, ":%d\n", reg_vector);
-    bin_text_read_write_fixed(model_file,(char *)&reg_vector, sizeof (reg_vector),
-                              "", read,
-                              buff, text_len, text);
+    { stringstream msg;
+      msg << ":"<< reg_vector <<"\n";
+      bin_text_read_write_fixed(model_file,(char *)&reg_vector, sizeof (reg_vector),
+                                "", read, msg, text);
 
     if (reg_vector)
       save_load_regularizer(*all, b, model_file, read, text);
@@ -988,6 +953,7 @@ base_learner* bfgs_setup(vw& all)
   if (vm.count("hessian_on") || b.m==0)
   { all.hessian_on = true;
   }
+
   if (!all.quiet)
   { if (b.m>0)
       cerr << "enabling BFGS based optimization ";
@@ -998,8 +964,11 @@ base_learner* bfgs_setup(vw& all)
     else
       cerr << "**without** curvature calculation" << endl;
   }
+
   if (all.numpasses < 2 && all.training)
+  { free(&b);
     THROW("you must make at least 2 passes to use BFGS");
+  }
 
   all.bfgs = true;
   all.reg.stride_shift = 2;
@@ -1013,4 +982,3 @@ base_learner* bfgs_setup(vw& all)
 
   return make_base(l);
 }
-

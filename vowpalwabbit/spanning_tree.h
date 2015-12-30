@@ -17,9 +17,9 @@ typedef SOCKET socket_t;
 
 namespace std
 {
-  // forward declare promise as C++/CLI doesn't allow usage in header files
-  template<typename T>
-  class future;
+// forward declare promise as C++/CLI doesn't allow usage in header files
+template<typename T>
+class future;
 }
 #else
 #include <unistd.h>
