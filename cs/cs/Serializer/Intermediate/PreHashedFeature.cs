@@ -30,6 +30,6 @@ namespace VW.Serializer.Intermediate
         /// <summary>
         /// The pre-hashed feature hash.
         /// </summary>
-        public uint FeatureHash { get; private set; }
+        public ulong FeatureHash { get; private set; }
     }
 }

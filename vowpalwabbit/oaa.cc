@@ -25,8 +25,6 @@ void learn_randomized(oaa& o, LEARNER::base_learner& base, example& ec)
   if (ld.label == 0 || (ld.label > o.k && ld.label != (uint32_t)-1))
     cout << "label " << ld.label << " is not in {1,"<< o.k << "} This won't work right." << endl;
 
-  stringstream outputStringStream;
-
   ec.l.simple = { 1., 0.f, 0.f }; // truth
   base.learn(ec, ld.label-1);
 

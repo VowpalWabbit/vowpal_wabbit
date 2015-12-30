@@ -69,7 +69,7 @@ namespace VW.Serializer
                 return;
             }
 
-            var i = 0;
+            ulong i = 0;
 
             // support anchor feature
             if (feature.AddAnchor)
@@ -88,7 +88,7 @@ namespace VW.Serializer
 
 			fixed (float* begin = value)
 			{
-				context.NamespaceBuilder.AddFeaturesUnchecked((uint)(ns.NamespaceHash + i), begin, begin + value.Length);
+				context.NamespaceBuilder.AddFeaturesUnchecked((ulong)(ns.NamespaceHash + i), begin, begin + value.Length);
 			}
 
 			<# } else { #>
@@ -104,7 +104,7 @@ namespace VW.Serializer
 				#endif
 				<# } #>
 
-                context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + i), (float)v);
+                context.NamespaceBuilder.AddFeature((ulong)(ns.NamespaceHash + i), (float)v);
                 i++;
             }
 			<# } #>
@@ -191,7 +191,7 @@ namespace VW.Serializer
 				#endif
 				<# } #>
 
-				context.NamespaceBuilder.AddFeature((uint)(ns.NamespaceHash + kvp.Key), (float)kvp.Value);
+				context.NamespaceBuilder.AddFeature(ns.NamespaceHash + (ulong)kvp.Key, (float)kvp.Value);
             }
 
 			if (context.StringExample == null)

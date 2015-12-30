@@ -242,9 +242,9 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
 
   //cerr<<"Save load svm "<<read<<" "<<text<<endl;
   if (model_file.files.size() == 0) return;
-
+  stringstream msg;
   bin_text_read_write_fixed(model_file,(char*)&(model->num_support), sizeof(model->num_support),
-                            "", read, "", 0, text);
+                            "", read, msg, text);
   //cerr<<"Read num support "<<model->num_support<<endl;
 
   flat_example* fec;
@@ -263,23 +263,15 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
       save_load_flat_example(model_file, read, fec);
     }
   }
-  //cerr<<endl;
-
-  //cerr<<"Read model"<<endl;
 
   if(read)
     model->alpha.resize(model->num_support);
   bin_text_read_write_fixed(model_file, (char*)model->alpha.begin, (uint32_t)model->num_support*sizeof(float),
-                            "", read, "", 0, text);
+                            "", read, msg, text);
   if(read)
     model->delta.resize(model->num_support);
   bin_text_read_write_fixed(model_file, (char*)model->delta.begin, (uint32_t)model->num_support*sizeof(float),
-                            "", read, "", 0, text);
-
-  // cerr<<"In save_load\n";
-  // for(int i = 0;i < model->num_support;i++)
-  //   cerr<<model->alpha[i]<<" ";
-  // cerr<<endl;
+                            "", read, msg, text);
 }
 
 void save_load(svm_params& params, io_buf& model_file, bool read, bool text)
@@ -298,13 +290,13 @@ float linear_kernel(const flat_example* fec1, const flat_example* fec2)
   float dotprod = 0;
 
   feature* ec2f = fec2->feature_map;
-  uint32_t ec2pos = ec2f->weight_index;
-  uint32_t idx1 = 0, idx2 = 0;
+  uint64_t ec2pos = ec2f->weight_index;
+  uint64_t idx1 = 0, idx2 = 0;
 
   //cerr<<"Intersection ";
   int numint = 0;
   for (feature* f = fec1->feature_map; idx1 < fec1->feature_map_len && idx2 < fec2->feature_map_len ; f++, idx1++)
-  { uint32_t ec1pos = f->weight_index;
+  { uint64_t ec1pos = f->weight_index;
     //cerr<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<<endl;
     if(ec1pos < ec2pos) continue;
 
@@ -875,7 +867,7 @@ LEARNER::base_learner* kernel_svm_setup(vw &all)
   else
     params.kernel_type = SVM_KER_LIN;
 
-  params.all->reg.weight_mask = (uint32_t)LONG_MAX;
+  params.all->reg.weight_mask = (uint64_t)LONG_MAX;
   params.all->reg.stride_shift = 0;
 
   learner<svm_params>& l = init_learner(&params, learn, 1);

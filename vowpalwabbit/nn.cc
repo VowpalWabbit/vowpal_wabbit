@@ -18,10 +18,10 @@ using namespace LEARNER;
 
 const float hidden_min_activation = -3;
 const float hidden_max_activation = 3;
-const uint32_t nn_constant = 533357803;
+const uint64_t nn_constant = 533357803;
 
 struct nn
-{ uint32_t k;
+{ uint64_t k;
   loss_function* squared_loss;
   example output_layer;
   example hiddenbias;
@@ -77,7 +77,7 @@ void finish_setup (nn& n, vw& all)
   for (unsigned int i = 0; i < n.k; ++i)
   { n.output_layer.atomics[nn_output_namespace].push_back(output);
     ++n.output_layer.num_features;
-    output.weight_index += (uint32_t)n.increment;
+    output.weight_index += (uint64_t)n.increment;
   }
 
   if (! n.inpass)
@@ -90,7 +90,7 @@ void finish_setup (nn& n, vw& all)
   // TODO: not correct if --noconstant
   memset (&n.hiddenbias, 0, sizeof (n.hiddenbias));
   n.hiddenbias.indices.push_back(constant_namespace);
-  feature temp = {1,(uint32_t) constant};
+  feature temp = {1,(uint64_t) constant};
   n.hiddenbias.atomics[constant_namespace].push_back(temp);
   n.hiddenbias.total_sum_feat_sq++;
   n.hiddenbias.l.simple.label = FLT_MAX;
@@ -145,7 +145,7 @@ void predict_or_learn_multi(nn& n, base_learner& base, example& ec)
   save_max_label = n.all->sd->max_label;
   n.all->sd->max_label = hidden_max_activation;
 
-  uint32_t save_ft_offset = ec.ft_offset;
+  uint64_t save_ft_offset = ec.ft_offset;
 
   if (n.multitask)
     ec.ft_offset = 0;
@@ -351,9 +351,9 @@ void multipredict(nn& n, base_learner& base, example& ec, size_t count, size_t s
       predict_or_learn_multi<false,false>(n, base, ec);
     if (finalize_predictions) pred[c] = ec.pred;
     else pred[c].scalar = ec.partial_prediction;
-    ec.ft_offset += (uint32_t)step;
+    ec.ft_offset += (uint64_t)step;
   }
-  ec.ft_offset -= (uint32_t)(step*count);
+  ec.ft_offset -= (uint64_t)(step*count);
 }
 
 void finish_example(vw& all, nn&, example& ec)
@@ -388,7 +388,7 @@ base_learner* nn_setup(vw& all)
   nn& n = calloc_or_throw<nn>();
   n.all = &all;
   //first parse for number of hidden units
-  n.k = (uint32_t)vm["nn"].as<size_t>();
+  n.k = (uint64_t)vm["nn"].as<size_t>();
 
   if ( vm.count("dropout") )
   { n.dropout = true;

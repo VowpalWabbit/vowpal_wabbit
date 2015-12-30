@@ -71,7 +71,7 @@ struct task_data
 
   // for adding new features
   size_t mask; // all->reg.weight_mask
-  size_t multiplier;   // all.wpp << all.reg.stride_shift
+  uint64_t multiplier;   // all.wpp << all.reg.stride_shift
   size_t ss; // stride_shift
   size_t wpp;
 
@@ -228,22 +228,22 @@ void takedown(Search::search& sch, vector<example*>& /*ec*/)
   D.adj.clear();
 }
 
-void add_edge_features_group_fn(task_data&D, float fv, uint32_t fx)
+void add_edge_features_group_fn(task_data&D, float fv, uint64_t fx)
 { example*node = D.cur_node;
-  uint32_t fx2 = fx / (uint32_t)D.multiplier;
+  uint64_t fx2 = fx / (uint64_t)D.multiplier;
   for (size_t k=0; k<D.numN; k++)
   { if (D.neighbor_predictions[k] == 0.) continue;
     float fv2 = fv * D.neighbor_predictions[k];
-    feature f = { fv2, (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint32_t)D.mask };
+    feature f = { fv2, (uint64_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint64_t)D.mask };
     node->atomics[neighbor_namespace].push_back(f);
     node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
   }
   // TODO: audit
 }
 
-void add_edge_features_single_fn(task_data&D, float fv, uint32_t fx)
+void add_edge_features_single_fn(task_data&D, float fv, uint64_t fx)
 { example*node = D.cur_node;
-  uint32_t fx2 = fx / (uint32_t)D.multiplier;
+  uint64_t fx2 = fx / (uint64_t)D.multiplier;
   size_t k = (size_t) D.neighbor_predictions[0];
   feature f = { fv, (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint32_t)D.mask };
   node->atomics[neighbor_namespace].push_back(f);
@@ -251,7 +251,7 @@ void add_edge_features_single_fn(task_data&D, float fv, uint32_t fx)
   // TODO: audit
 }
 
-void add_edge_features(Search::search&sch, task_data&D, uint32_t n, vector<example*>&ec)
+void add_edge_features(Search::search&sch, task_data&D, uint64_t n, vector<example*>&ec)
 { D.cur_node = ec[n];
 
   for (size_t i : D.adj[n])
@@ -294,10 +294,10 @@ void add_edge_features(Search::search&sch, task_data&D, uint32_t n, vector<examp
 
     if (pred_total <= 1.)    // single edge
     { D.neighbor_predictions[0] = (float)last_pred;
-      GD::foreach_feature<task_data,uint32_t,add_edge_features_single_fn>(sch.get_vw_pointer_unsafe(), edge, D);
+      GD::foreach_feature<task_data,uint64_t,add_edge_features_single_fn>(sch.get_vw_pointer_unsafe(), edge, D);
     }
     else   // lots of edges
-      GD::foreach_feature<task_data,uint32_t,add_edge_features_group_fn>(sch.get_vw_pointer_unsafe(), edge, D);
+      GD::foreach_feature<task_data,uint64_t,add_edge_features_group_fn>(sch.get_vw_pointer_unsafe(), edge, D);
   }
   ec[n]->indices.push_back(neighbor_namespace);
   ec[n]->total_sum_feat_sq += ec[n]->sum_feat_sq[neighbor_namespace];
