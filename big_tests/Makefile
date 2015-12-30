@@ -21,7 +21,9 @@ MAKEFLAGS+=r
 .PHONY:	default all stub help valid expected pretend run clean spotless %.valid %.expected %.run %.clean %.deps %.depsWrapper %.depsStart %.depsEnd %.stub
 
 TOP_MK_DIR := $(patsubst %/,%,$(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
-ARCH ?= $(subst /,_,$(shell uname -o)_$(shell uname -i))
+MIPS_HELP := $(shell lscpu | grep -i bogomips)
+MIPS := $(word $(words $(MIPS_HELP)),$(MIPS_HELP))
+ARCH ?= $(subst /,_,$(shell uname -o)_$(MIPS))
 # can't use the architecture as directory name, cuz that produces different expected files on different platforms
 # stageDir := $(ARCH)
 stageDir := runs
@@ -36,7 +38,7 @@ allTests := $(patsubst %/,%,$(shell ls $(expDir)))
 # alas, $(realpath ...) doesn't seem to work here on make 3.81 for some reason
 EXEC ?= ../vowpalwabbit/vw
 TIME ?= env time -f "%U"
-TIMING ?= y
+TIMING ?= n
 ACC_DIFF_TOLERANCE ?= 0.001
 TIME_DIFF_TOLERANCE ?= 0.05
 DIFF ?= $(testCodeDir)/floatingTolerance.pl
@@ -54,13 +56,14 @@ include dataSets.mk
 include testDetails.mk
 
 # for debugging
-%.stub:	
+%.stub:
 	echo $($*.deps)
 	echo $(stageDir)/$*.dir/done
 	echo $(addsuffix .valid,$($*.deps))
 
 # for debugging
 stub:	
+	echo $(ARCH)
 	echo $(MAKEFLAGS)
 	echo $(EXEC)
 	echo $(TOP_MK_DIR)
