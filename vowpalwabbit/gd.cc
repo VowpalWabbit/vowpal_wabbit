@@ -182,7 +182,7 @@ struct audit_results
 };
 
 
-inline void audit_interaction(audit_results& dat, const audit_data* f)
+inline void audit_interaction(audit_results& dat, const audit_strings* f)
 { if (f == nullptr)
   { dat.ns_pre.pop_back();
     return;
@@ -192,14 +192,14 @@ inline void audit_interaction(audit_results& dat, const audit_data* f)
   if (!dat.ns_pre.empty())
     ns_pre += '*';
 
-  if (f->space != nullptr && (*(f->space) != ' '))
+  if (f->first != nullptr && (*(f->first) != ' '))
     {
-    ns_pre.append((const char*)f->space);
-    ns_pre += '^';
-  }
-  if (f->feature != nullptr)
+      ns_pre.append((const char*)f->first);
+      ns_pre += '^';
+    }
+  if (f->second != nullptr)
     {
-      ns_pre.append(f->feature);
+      ns_pre.append(f->second);
       dat.ns_pre.push_back(ns_pre);
     }
 }
@@ -247,12 +247,15 @@ void print_features(vw& all, example& ec)
   if (all.lda > 0)
   { size_t count = 0;
     for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-      count += ec.atomics[*i].size();
+      count += ec.feature_space[*i].size();
     for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-      for (audit_data *f = ec.audit_features[*i].begin; f != ec.audit_features[*i].end; f++)
-      { cout << '\t' << f->space << '^' << f->feature << ':' << ((f->weight_index >> all.reg.stride_shift) & all.parse_mask) << ':' << f->x;
-        for (size_t k = 0; k < all.lda; k++)
-          cout << ':' << weights[(f->weight_index+k) & all.reg.weight_mask];
+      {
+        features& fs = ec.feature_space[*i];
+        for (size_t j = 0; j < fs.size(); ++j)
+          { cout << '\t' << fs.space_names[j].first << '^' << fs.space_names[j].second << ':' << ((fs.indicies[j] >> all.reg.stride_shift) & all.parse_mask) << ':' << fs.values[j];
+            for (size_t k = 0; k < all.lda; k++)
+              cout << ':' << weights[(fs.indicies[j]+k) & all.reg.weight_mask];
+          }
       }
     cout << " total of " << count << " features." << endl;
   }
@@ -262,16 +265,16 @@ void print_features(vw& all, example& ec)
     audit_results dat(all,ec.ft_offset);
 
     for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
-    { v_array<audit_data>& ns =  ec.audit_features[(size_t)*i];
-      for (audit_data* a = ns.begin; a != ns.end; ++a)
-	{
-	  audit_interaction(dat, a);
-	  audit_feature(dat, a->x, (uint32_t)a->weight_index + ec.ft_offset);
-	  audit_interaction(dat, NULL);
-	}
-    }
+      { features& fs = ec.feature_space[(size_t)*i];
+        for (size_t j = 0; j < fs.size(); ++j)
+          {
+            audit_interaction(dat, &fs.space_names[j]);
+            audit_feature(dat, fs.values[j], (uint32_t)fs.indicies[j] + ec.ft_offset);
+            audit_interaction(dat, NULL);
+          }
+      }
 
-    INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, audit_data, audit_interaction >(all, ec, dat, ec.audit_features);
+    INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, audit_interaction >(all, ec, dat);
 
     sort(dat.results.begin(),dat.results.end());
     if(all.audit)

@@ -6,57 +6,27 @@ license as described in the file LICENSE.
 #include <stdint.h>
 #include "gd.h"
 
-int compare_feature(const void* p1, const void* p2)
-{ feature* f1 = (feature*) p1;
-  feature* f2 = (feature*) p2;
-  if(f1->weight_index < f2->weight_index) return -1;
-  else if(f1->weight_index > f2->weight_index) return 1;
-  else return 0;
-}
-
-float collision_cleanup(feature* feature_map, uint64_t& len)
+float collision_cleanup(features& fs)
 { int pos = 0;
   float sum_sq = 0.;
 
-  for(uint64_t i = 1; i < len; i++)
-  { if(feature_map[i].weight_index == feature_map[pos].weight_index)
-      feature_map[pos].x += feature_map[i].x;
-    else
-    { sum_sq += feature_map[pos].x*feature_map[pos].x;
-      feature_map[++pos] = feature_map[i];
+  for(uint64_t i = 1; i < fs.size(); i++)
+    { if(fs.indicies[i] == fs.indicies[pos])
+        {
+          fs.values[pos] += fs.values[i];
+          fs.indicies[pos] += fs.indicies[pos];
+        }
+      else
+        { sum_sq += fs.values[pos]*fs.values[pos];
+          fs.values[++pos] = fs.values[i];
+          fs.indicies[pos] = fs.indicies[pos];
+        }
     }
-  }
-  sum_sq += feature_map[pos].x*feature_map[pos].x;
-  len = pos+1;
+  sum_sq += fs.values[pos]*fs.values[pos];
+  pos++;
+  fs.values.end = fs.values.begin+pos;
+  fs.indicies.end = fs.indicies.begin+pos;
   return sum_sq;
-}
-
-audit_data copy_audit_data(audit_data &src)
-{ audit_data dst;
-  if (src.space != nullptr)
-    { dst.space = calloc_or_throw<char>(strlen(src.space)+1);
-      strcpy(dst.space, src.space);
-    }
-  else
-    dst.space = nullptr;
-  if (src.feature != nullptr)
-    { dst.feature = calloc_or_throw<char>(strlen(src.feature)+1);
-      strcpy(dst.feature, src.feature);
-    }
-  else
-    dst.feature = nullptr;
-  dst.weight_index = src.weight_index;
-  dst.x = src.x;
-  return dst;
-}
-
-void free_audit_features(example* ec)
-{
-  for (size_t i=0; i<256; i++)
-    for (size_t j=0; j<ec->audit_features[i].size(); j++)
-      { free_it(ec->audit_features[i][j].space);
-	free_it(ec->audit_features[i][j].feature);
-      }
 }
 
 namespace VW
@@ -76,30 +46,21 @@ void copy_example_data(bool audit, example* dst, example* src)
   copy_array(dst->indices, src->indices);
   //  for (size_t i=0; i<256; i++)
   for (unsigned char*c = src->indices.begin; c != src->indices.end; ++c)
-    copy_array(dst->atomics[*c], src->atomics[*c]);
+    copy(dst->feature_space[*c], src->feature_space[*c]);
   //copy_array(dst->atomics[i], src->atomics[i]);
   dst->ft_offset = src->ft_offset;
-
-  if (audit)
-    {
-      free_audit_features(dst);
-      for (size_t i=0; i<256; i++)
-	copy_array(dst->audit_features[i], src->audit_features[i], copy_audit_data);
-    }
 
   dst->num_features = src->num_features;
   dst->partial_prediction = src->partial_prediction;
   copy_array(dst->topic_predictions, src->topic_predictions);
   if (src->passthrough == nullptr) dst->passthrough = nullptr;
   else
-  { dst->passthrough = new v_array<feature>;
-    *dst->passthrough = v_init<feature>();
-    copy_array(* dst->passthrough, *src->passthrough);
+  { dst->passthrough = new features;
+    copy(*dst->passthrough, *src->passthrough);
   }
   dst->loss = src->loss;
   dst->weight = src->weight;
   dst->example_t = src->example_t;
-  memcpy(dst->sum_feat_sq, src->sum_feat_sq, 256 * sizeof(float));
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->confidence = src->confidence;
   dst->test_only = src->test_only;
@@ -116,7 +77,7 @@ void copy_example_data(bool audit, example* dst, example* src, size_t label_size
 }
 
 struct features_and_source
-{ v_array<feature> feature_map; //map to store sparse feature vectors
+{ v_array<sparse_feature> feature_map; //map to store sparse feature vectors
   uint32_t stride_shift;
   uint64_t mask;
   weight* base;
@@ -124,13 +85,11 @@ struct features_and_source
 };
 
 void vec_store(features_and_source& p, float fx, uint64_t fi)
-{ feature f = {fx, (uint64_t)(fi >> p.stride_shift) & p.mask};
-  p.feature_map.push_back(f);
-}
+{ p.feature_map.push_back(sparse_feature(fx, (uint64_t)(fi >> p.stride_shift) & p.mask)); }
 
 namespace VW
 {
-feature* get_features(vw& all, example* ec, size_t& feature_map_len)
+sparse_feature* get_features(vw& all, example* ec, size_t& feature_map_len)
 { features_and_source fs;
   fs.stride_shift = all.reg.stride_shift;
   fs.mask = (uint64_t)all.reg.weight_mask >> all.reg.stride_shift;
@@ -170,7 +129,7 @@ flat_example* flatten_example(vw& all, example *ec)
 
 flat_example* flatten_sort_example(vw& all, example *ec)
 { flat_example* fec = flatten_example(all, ec);
-  qsort(fec->feature_map, fec->feature_map_len, sizeof(feature), compare_feature);
+  fec->feature_map.sort();
   fec->total_sum_feat_sq = collision_cleanup(fec->feature_map, fec->feature_map_len);
   return fec;
 }
@@ -218,7 +177,7 @@ void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_predic
   { ec.atomics[j].delete_v();
 
     if (ec.audit_features[j].begin != ec.audit_features[j].end_array)
-      { 
+      {
       for (audit_data* temp = ec.audit_features[j].begin;
            temp != ec.audit_features[j].end; temp++)
 	{

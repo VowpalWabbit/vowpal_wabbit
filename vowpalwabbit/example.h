@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include "cost_sensitive.h"
 #include "cb.h"
 #include "constant.h"
+#include "features.h"
 
 const size_t wap_ldf_namespace  = 126;
 const size_t history_namespace  = 127;
@@ -23,22 +24,6 @@ const size_t affix_namespace     = 132;   // this is \x84
 const size_t spelling_namespace  = 133;   // this is \x85
 const size_t conditioning_namespace = 134;// this is \x86
 const size_t dictionary_namespace  = 135; // this is \x87
-
-typedef float feature_value;
-typedef uint64_t feature_index;
-
-struct features { // the core definition of a set of features.
-  v_array<feature_value> values; // Always needed.  
-  v_array<feature_index> indicies; //Optional for dense data.
-  v_array<pair<char*, char*>> space_names; //Optional for audit mode.
-  float sum_feat_sq;//a helper for precomputation.
-};
-
-struct feature_slice{ //a helper struct for functions using the set {v,i,space_name}
-  feature_value v;
-  feature_index i;
-  pair<char*, char*> space_name;
-};
 
 typedef union
 { label_data simple;
@@ -102,9 +87,7 @@ struct flat_example
 
   size_t num_features;//precomputed, cause it's fast&easy.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
-  size_t feature_map_len;
-  feature_value* values; //map to store sparse feature vectors
-  feature_index* indicies; //map to store sparse feature vectors
+  features fs;//all the features
 };
 
 flat_example* flatten_example(vw& all, example *ec);
@@ -124,10 +107,7 @@ inline bool valid_ns(char c)
 
 inline void add_passthrough_feature_magic(example& ec, uint32_t magic, uint32_t i, float x)
 { if (ec.passthrough)
-    {
-      ec.passthrough->values.push_back( x ); 
-      ec.passthrough->indicies.push_back((FNV_prime * magic) ^ i);
-    }
-}  
+    ec.passthrough->push_back( x, (FNV_prime * magic) ^ i);
+}
 
 #define add_passthrough_feature(ec, i, x) add_passthrough_feature_magic(ec, __FILE__[0]*483901+__FILE__[1]*3417+__FILE__[2]*8490177, i, x);

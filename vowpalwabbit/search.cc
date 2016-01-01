@@ -92,9 +92,13 @@ std::ostream& operator << (std::ostream& os, const scored_action& x) { os << x.a
 
 struct action_repr
 { action a;
-  v_array<feature> repr;
-  action_repr(action _a, v_array<feature>&_repr) : a(_a), repr(v_init<feature>()) { copy_array(repr, _repr); }
-  action_repr(action _a) : a(_a), repr(v_init<feature>()) {}
+  features repr;
+  action_repr(action _a, features& _repr) : a(_a), repr()
+{ copy_array(repr.values, _repr.values);
+  copy_array(repr.indicies, _repr.indicies);
+  copy_array(repr.space_names, _repr.space_names);
+ }
+  action_repr(action _a) : a(_a), repr() {}
 };
 
 struct action_cache
@@ -142,7 +146,7 @@ struct search_private
   v_array<action_repr> ptag_to_action;// tag to action mapping for conditioning
   vector<action> test_action_sequence; // if test-mode was run, what was the corresponding action sequence; it's a vector cuz we might expose it to the library
   action learn_oracle_action;    // store an oracle action for debugging purposes
-  v_array<feature> last_action_repr;
+  features last_action_repr;
 
   polylabel* allowed_actions_cache;
 
@@ -447,23 +451,19 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
 { size_t mask = priv.all->reg.weight_mask;
   size_t ss   = priv.all->reg.stride_shift;
   size_t idx2 = ((idx & mask) >> ss) & mask;
-  feature f = { val * priv.dat_new_feature_value,
-                (((priv.dat_new_feature_idx + idx2) << ss) )
-              };
-  cdbg << "adding: " << f.weight_index << ':' << f.x << endl;
-  priv.dat_new_feature_ec->atomics[priv.dat_new_feature_namespace].push_back(f);
-  priv.dat_new_feature_ec->sum_feat_sq[priv.dat_new_feature_namespace] += f.x * f.x;
+  features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
+  fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss) );
+  cdbg << "adding: " << fs.indicies.last() << ':' << fs.values.last() << endl;
   if (priv.all->audit)
-  { audit_data a = { nullptr, nullptr, f.weight_index, f.x};
-    a.space   = calloc_or_throw<char>(priv.dat_new_feature_feature_space->length()+1);
-    a.feature = calloc_or_throw<char>(priv.dat_new_feature_audit_ss.str().length() + 32);
-    strcpy(a.space, priv.dat_new_feature_feature_space->c_str());
+  { char* space;
+    strcpy(space, priv.dat_new_feature_feature_space->c_str());
     stringstream temp;
     temp << "fid="<< ((idx & mask) >> ss) <<"_";
     int num = temp.str().size();
-    strcpy(a.feature, temp.str().c_str());
-    strcpy(a.feature+num, priv.dat_new_feature_audit_ss.str().c_str());
-    priv.dat_new_feature_ec->audit_features[priv.dat_new_feature_namespace].push_back(a);
+    char* feature=nullptr;
+    strcpy(feature, temp.str().c_str());
+    strcpy(feature+num, priv.dat_new_feature_audit_ss.str().c_str());
+    fs.space_names.push_back(audit_strings(space,feature));
   }
 }
 
@@ -474,18 +474,11 @@ void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns)
     else
       { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " << (size_t)ec.indices.last()); }
   }
-  ec.num_features -= ec.atomics[ns].size();
-  ec.total_sum_feat_sq -= ec.sum_feat_sq[ns];
-  ec.sum_feat_sq[ns] = 0;
+  features& fs = ec.feature_space[ns];
   ec.indices.decr();
-  ec.atomics[ns].erase();
-  if (priv.all->audit)
-  { for (size_t i=0; i<ec.audit_features[ns].size(); i++)
-      { free(ec.audit_features[ns][i].space);
-        free(ec.audit_features[ns][i].feature);
-      }
-    ec.audit_features[ns].erase();
-  }
+  ec.num_features -= fs.size();
+  ec.total_sum_feat_sq -= fs.sum_feat_sq;
+  fs.erase();
 }
 
 void add_neighbor_features(search_private& priv)
@@ -516,20 +509,19 @@ void add_neighbor_features(search_private& priv)
         add_new_feature(priv, 1., 3824917 << priv.all->reg.stride_shift);
       else   // this is actually a neighbor
       { example& other = *priv.ec_seq[n + offset];
-        GD::foreach_feature<search_private,add_new_feature>(all.reg.weight_vector, all.reg.weight_mask, other.atomics[ns].begin, other.atomics[ns].end, priv, me.ft_offset);
+        GD::foreach_feature<search_private,add_new_feature>(all.reg.weight_vector, all.reg.weight_mask, other.feature_space[ns], priv, me.ft_offset);
       }
     }
 
-    size_t sz = me.atomics[neighbor_namespace].size();
-    if ((sz > 0) && (me.sum_feat_sq[neighbor_namespace] > 0.))
-    { me.indices.push_back(neighbor_namespace);
-      me.total_sum_feat_sq += me.sum_feat_sq[neighbor_namespace];
-      me.num_features += sz;
-    }
+    features& fs = me.feature_space[neighbor_namespace];
+    size_t sz = fs.size();
+    if ((sz > 0) && (fs.sum_feat_sq > 0.))
+      { me.indices.push_back(neighbor_namespace);
+        me.total_sum_feat_sq += fs.sum_feat_sq;
+        me.num_features += sz;
+      }
     else
-    { me.atomics[neighbor_namespace].erase();
-      if (priv.all->audit) me.audit_features[neighbor_namespace].erase();
-    }
+      fs.erase();
   }
 }
 
@@ -560,7 +552,9 @@ void reset_search_structure(search_private& priv)
     if (priv.beta > 1) priv.beta = 1;
   }
   for (action_repr* ar = priv.ptag_to_action.begin; ar != priv.ptag_to_action.end; ++ar)
-  { ar->repr.delete_v();
+  { ar->repr.values.delete_v();
+    ar->repr.indicies.delete_v();
+    ar->repr.space_names.delete_v();
     cdbg << "delete_v" << endl;
   }
   priv.ptag_to_action.erase();
@@ -648,35 +642,34 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 
   if (priv.acset.use_passthrough_repr)
     for (size_t i=0; i<I; i++)
-      if (condition_on_actions[i].repr.size() > 0)
-      { char name = condition_on_names[i];
-        for (size_t k=0; k<condition_on_actions[i].repr.size(); k++)
-          if ((condition_on_actions[i].repr[k].x > 1e-10) || (condition_on_actions[i].repr[k].x < -1e-10))
-          { uint64_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + condition_on_actions[i].repr[k].weight_index);
-            if (priv.all->audit)
-            { priv.dat_new_feature_audit_ss.str("");
-              priv.dat_new_feature_audit_ss.clear();
-              priv.dat_new_feature_audit_ss << "passthrough_repr_" << i << '_' << k;
-            }
+      {
+        features& fs = condition_on_actions[i].repr;
+        char name = condition_on_names[i];
+        for (size_t k=0; k<fs.size(); k++)
+          if ((fs.values[k] > 1e-10) || (fs.values[k] < -1e-10))
+            { uint64_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + fs.indicies[k]);
+              if (priv.all->audit)
+                { priv.dat_new_feature_audit_ss.str("");
+                  priv.dat_new_feature_audit_ss.clear();
+                  priv.dat_new_feature_audit_ss << "passthrough_repr_" << i << '_' << k;
+                }
 
-            priv.dat_new_feature_ec  = &ec;
-            priv.dat_new_feature_idx = fid;
-            priv.dat_new_feature_namespace = conditioning_namespace;
-            priv.dat_new_feature_value = condition_on_actions[i].repr[k].x;
-            add_new_feature(priv, 1., 4398201 << priv.all->reg.stride_shift);
-          }
+              priv.dat_new_feature_ec  = &ec;
+              priv.dat_new_feature_idx = fid;
+              priv.dat_new_feature_namespace = conditioning_namespace;
+              priv.dat_new_feature_value = fs.values[k];
+              add_new_feature(priv, 1., 4398201 << priv.all->reg.stride_shift);
+            }
       }
 
-  size_t sz = ec.atomics[conditioning_namespace].size();
-  if ((sz > 0) && (ec.sum_feat_sq[conditioning_namespace] > 0.))
-  { ec.indices.push_back(conditioning_namespace);
-    ec.total_sum_feat_sq += ec.sum_feat_sq[conditioning_namespace];
-    ec.num_features += sz;
-  }
+  features& con_fs = ec.feature_space[conditioning_namespace];
+  if ((con_fs.size() > 0) && (con_fs.sum_feat_sq > 0.))
+    { ec.indices.push_back(conditioning_namespace);
+      ec.total_sum_feat_sq += con_fs.sum_feat_sq;
+      ec.num_features += con_fs.size();
+    }
   else
-  { ec.atomics[conditioning_namespace].erase();
-    if (priv.all->audit) ec.audit_features[conditioning_namespace].erase();
-  }
+    con_fs.erase();
 }
 
 void del_example_conditioning(search_private& priv, example& ec)
@@ -1449,7 +1442,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
           a = priv.is_ldf ? single_prediction_LDF(priv, ecs, ec_cnt, learner, a_cost, need_fea ? a : (action)-1)
                 : single_prediction_notLDF(priv, *ecs, learner, allowed_actions, allowed_actions_cnt, allowed_actions_cost, a_cost, need_fea ? a : (action)-1);
 
-          cdbg << "passthrough = ["; for (size_t kk=0; kk<priv.last_action_repr.size(); kk++) cdbg << ' ' << priv.last_action_repr[kk].weight_index << ':' << priv.last_action_repr[kk].x; cdbg << " ]" << endl;
+          cdbg << "passthrough = ["; for (size_t kk=0; kk<priv.last_action_repr.size(); kk++) cdbg << ' ' << priv.last_action_repr.indicies[kk] << ':' << priv.last_action_repr.values[kk]; cdbg << " ]" << endl;
 
           ecs[0].passthrough = nullptr;
         }

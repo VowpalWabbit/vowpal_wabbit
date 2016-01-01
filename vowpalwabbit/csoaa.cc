@@ -77,12 +77,12 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec)
   { uint32_t second_best = 0;
     float    second_best_cost = FLT_MAX;
     for (size_t i=0; i<ec.passthrough->size() - pt_start; i++)
-    { float  val = ec.passthrough->get(pt_start + i).x;
-      if ((val > ec.partial_prediction) && (val < second_best_cost))
-      { second_best_cost = val;
-        second_best = ec.passthrough->get(pt_start + i).weight_index;
+      { float  val = ec.passthrough->values[pt_start + i];
+        if ((val > ec.partial_prediction) && (val < second_best_cost))
+          { second_best_cost = val;
+            second_best = ec.passthrough->indicies[pt_start + i];
+          }
       }
-    }
     if (second_best_cost < FLT_MAX)
     { float margin = second_best_cost - ec.partial_prediction;
       add_passthrough_feature(ec, constant*2, margin);
@@ -203,18 +203,16 @@ void compute_wap_values(vector<COST_SENSITIVE::wclass*> costs)
 // add a new feature with opposite value (but same index) to ec to a special wap_ldf_namespace.
 // This is faster and allows fast undo in unsubtract_example().
 void subtract_feature(example& ec, float feature_value_x, uint64_t weight_index)
-{ feature temp = { -feature_value_x, weight_index };
-  ec.atomics[wap_ldf_namespace].push_back(temp);
-  ec.sum_feat_sq[wap_ldf_namespace] += feature_value_x * feature_value_x;
-}
+{ ec.feature_space[wap_ldf_namespace].push_back(-feature_value_x, weight_index); }
 
 // Iterate over all features of ecsub including quadratic and cubic features and subtract them from ec.
 void subtract_example(vw& all, example *ec, example *ecsub)
-{ ec->sum_feat_sq[wap_ldf_namespace] = 0;
+{ features& wap_fs = ec->feature_space[wap_ldf_namespace];
+  wap_fs.sum_feat_sq = 0;
   GD::foreach_feature<example&, uint64_t, subtract_feature>(all, *ecsub, *ec);
   ec->indices.push_back(wap_ldf_namespace);
-  ec->num_features += ec->atomics[wap_ldf_namespace].size();
-  ec->total_sum_feat_sq += ec->sum_feat_sq[wap_ldf_namespace];
+  ec->num_features += wap_fs.size();
+  ec->total_sum_feat_sq += wap_fs.sum_feat_sq;
 }
 
 void unsubtract_example(example *ec)
@@ -228,10 +226,10 @@ void unsubtract_example(example *ec)
     return;
   }
 
-  ec->num_features -= ec->atomics[wap_ldf_namespace].size();
-  ec->total_sum_feat_sq -= ec->sum_feat_sq[wap_ldf_namespace];
-  ec->sum_feat_sq[wap_ldf_namespace] = 0;
-  ec->atomics[wap_ldf_namespace].erase();
+  features& fs = ec->feature_space[wap_ldf_namespace];
+  ec->num_features -= fs.size();
+  ec->total_sum_feat_sq -= fs.sum_feat_sq;
+  fs.erase();
   ec->indices.decr();
 }
 
@@ -383,23 +381,17 @@ void do_actual_learning(ldf& data, base_learner& base)
 
   /////////////////////// handle label definitions
   if (ec_seq_is_label_definition(data.ec_seq))
-  { for (size_t i=0; i<data.ec_seq.size(); i++)
-    { v_array<feature> features = v_init<feature>();
-      v_array<audit_data> audit = v_init<audit_data>();
-      for (feature*f=data.ec_seq[i]->atomics[data.ec_seq[i]->indices[0]].begin; f!=data.ec_seq[i]->atomics[data.ec_seq[i]->indices[0]].end; f++)
-	features.push_back(*f);
-      if ((data.all->audit || data.all->hash_inv))
-        for (audit_data*f=data.ec_seq[i]->audit_features[data.ec_seq[i]->indices[0]].begin; f!=data.ec_seq[i]->audit_features[data.ec_seq[i]->indices[0]].end; f++)
-        { audit_data f2 = { f->space, f->feature, f->weight_index, f->x};
-          audit.push_back(f2);
-        }
+  {
+    for (size_t i=0; i<data.ec_seq.size(); i++)
+      { features new_fs;
+        copy(new_fs, data.ec_seq[i]->feature_space[data.ec_seq[i]->indices[0]]);
 
-      v_array<COST_SENSITIVE::wclass>& costs = data.ec_seq[i]->l.cs.costs;
-      for (size_t j=0; j<costs.size(); j++)
-      { size_t lab = (size_t)costs[j].x;
-        LabelDict::set_label_features(data.label_features, lab, features, (data.all->audit || data.all->hash_inv) ? &audit : nullptr);
+        v_array<COST_SENSITIVE::wclass>& costs = data.ec_seq[i]->l.cs.costs;
+        for (size_t j=0; j<costs.size(); j++)
+          { size_t lab = (size_t)costs[j].x;
+            LabelDict::set_label_features(data.label_features, lab, new_fs);
+          }
       }
-    }
     return;
   }
 
@@ -826,10 +818,8 @@ base_learner* csldf_setup(vw& all)
   /*if (all.add_constant) {
     all.add_constant = false;
     }*/
-  v_array<feature> empty_f = { nullptr, nullptr, nullptr, 0 };
-  v_array<audit_data> empty_a = { nullptr, nullptr, nullptr, 0 };
-  LabelDict::feature_audit empty_fa = { empty_f, empty_a };
-  ld.label_features.init(256, empty_fa, LabelDict::size_t_eq);
+  features fs;
+  ld.label_features.init(256, fs, LabelDict::size_t_eq);
   ld.label_features.get(1, 94717244); // TODO: figure this out
 
   ld.read_example_this_loop = 0;

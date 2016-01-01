@@ -28,31 +28,12 @@ void unique_features(features& fs, int max)
     fs.space_names.end = fs.space_names.begin + last_index;
 }
 
-void unique_sort_features(bool audit, uint64_t parse_mask, example* ae)
-{ 
+void unique_sort_features(uint64_t parse_mask, example* ae)
+{
   for (unsigned char* b = ae->indices.begin; b != ae->indices.end; b++)
     { features& fs = ae->feature_space[*b];
-            
-      if (fs.indicies.size() == 0)
-	continue;
-      v_array<feature_slice> slice = v_init<feature_slice>();
-      for (size_t i = 0; i < fs.indicies.size(); i++)
-	{
-	  feature_slice temp = {fs.values[i], fs.indicies[i] & parse_mask, pair<char*, char*>(nullptr, nullptr)};
-	  if (fs.space_names.size() != 0)
-	    temp.space_name = fs.space_names[i];
-	  slice.push_back(temp);
-	}
-      qsort(slice.begin, slice.size(), sizeof(feature_slice), order_features);
-      for (size_t i = 0; i < slice.size(); i++)
-	{
-	  fs.values[i] = slice[i].v;
-	  fs.indicies[i] = slice[i].i;
-	  if (fs.space_names.size() > 0)
-	    fs.space_names[i] = slice[i].space_name;
-	}
-      slice.delete_v();
-      unique_features(fs);
+      if (fs.sort(parse_mask))
+        unique_features(fs);
     }
   ae->sorted=true;
 }

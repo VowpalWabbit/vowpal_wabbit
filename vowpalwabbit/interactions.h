@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 
 #include "global_data.h"
 #include "constant.h"
@@ -51,28 +51,22 @@ const bool feature_self_interactions = true;
 // function estimates how many new features will be generated for example and ther sum(value^2).
 void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, float& new_features_value);
 
-
-
-// 2 template functions to pass T() proper argument (feature idx in regressor, or its coefficient)
+// 3 template functions to pass T() proper argument (feature idx in regressor, or its coefficient)
 
 template <class R, void (*T)(R&, const float, float&)>
-inline void call_T( R& dat, weight* weight_vector, const size_t weight_mask, const float ft_value, const uint64_t ft_idx)
-{ T(dat, ft_value, weight_vector[ft_idx & weight_mask]);
+  inline void call_T( R& dat, weight* weight_vector, const uint64_t weight_mask, const float ft_value, const uint64_t ft_idx)
+{
+  T(dat, ft_value, weight_vector[ft_idx & weight_mask]);
 }
 
 template <class R, void (*T)(R&, float, uint64_t)>
-inline void call_T( R& dat, weight* /*weight_vector*/, const size_t /*weight_mask*/, const float ft_value, const uint64_t ft_idx)
-{ T(dat, ft_value, ft_idx);
-}
-
-template <class R, void (*audit_func)(R&, const feature_slice*)>
-inline void call_audit(R& dat, const feature_slice* f)
-{ audit_func(dat, f);
+  inline void call_T( R& dat, weight* /*weight_vector*/, const uint64_t /*weight_mask*/, const float ft_value, const uint64_t ft_idx)
+{
+    T(dat, ft_value, ft_idx);
 }
 
 // state data used in non-recursive feature generation algorithm
 // contains N feature_gen_data records (where N is length of interaction)
-template <class feature_class>
 struct feature_gen_data
 { size_t loop_idx;          // current feature id in namespace
   uint64_t hash;            // hash of feature interactions of previous namespaces in the list
@@ -80,7 +74,7 @@ struct feature_gen_data
   size_t loop_end;          // last feature id. May be less than number of features if namespace involved in interaction more than once
   // calculated at preprocessing together with same_ns
   size_t self_interaction;  // namespace interacting with itself
-  v_array<feature_class>* ft_arr;
+  features* ft_arr;
 //    feature_gen_data(): loop_idx(0), x(1.), loop_end(0), self_interaction(false) {}
 };
 
@@ -98,12 +92,12 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
 // this templated function generates new features for given example and set of interactions
 // and passes each of them to given function T()
 // it must be in header file to avoid compilation problems
- 
- template <class R, class S, void (*T)(R&, float, S), class feature_class,  void (*audit_func)(R&, const feature_class*) /*= nullptr*/> // nullptr func can't be used as template param in old compilers
+
+ template <class R, class S, void (*T)(R&, float, S), void (*audit_func)(R&, const audit_strings*) /*= nullptr*/> // nullptr func can't be used as template param in old compilers
    inline void generate_interactions(vw& all, example& ec, R& dat) // default value removed to eliminate ambiguity in old complers
- { 
+ {
    features* features_data = ec.feature_space;
-   
+
   // often used values
   const uint64_t offset = ec.ft_offset;
 //    const uint64_t stride_shift = all.reg.stride_shift; // it seems we don't need stride shift in FTRL-like hash
@@ -111,9 +105,9 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
   const size_t  weight_mask   = all.reg.weight_mask;
 
   // statedata for generic non-recursive iteration
-  v_array<feature_gen_data<feature_class> > state_data = v_init<feature_gen_data<feature_class> >();
+  v_array<feature_gen_data > state_data = v_init<feature_gen_data >();
 
-  feature_gen_data<feature_class> empty_ns_data;  // micro-optimization. don't want to call its constructor each time in loop.
+  feature_gen_data empty_ns_data;  // micro-optimization. don't want to call its constructor each time in loop.
   empty_ns_data.loop_idx = 0;
   empty_ns_data.x = 1.;
   empty_ns_data.loop_end = 0;
@@ -132,96 +126,79 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
     const size_t len = ns.size();
 
     if (len == 2) //special case of pairs
-    { const size_t fst_ns = ns[0];
-      if (features_data[fst_ns].indicies.size() > 0)
       {
-
-        const size_t snd_ns = ns[1];
-        if (features_data[snd_ns].indicies.size() > 0)
-        {
-
-          const bool same_namespace = ( !all.permutations && ( fst_ns == snd_ns ) );
-
-          const feature_class* fst     = features_data[fst_ns].begin;
-          const feature_class* fst_end = features_data[fst_ns].end;
-          const feature_class* snd_end = features_data[snd_ns].end;
-
-          for (; fst != fst_end; ++fst)
-          { const uint64_t halfhash = FNV_prime * (uint64_t)fst->weight_index;
-            call_audit<R ,audit_func>(dat, fst);
-            // next index differs for permutations and simple combinations
-            const feature_class* snd = (!same_namespace) ? features_data[snd_ns].begin :
-                                       (PROCESS_SELF_INTERACTIONS(fst->x)) ? fst : fst+1;
-            const float& ft_value = fst->x;
-            for (; snd < snd_end; ++snd)
-            { call_audit<R, audit_func>(dat, snd);
-              //  const size_t ft_idx = ((snd->weight_index /*>> stride_shift*/) ^ halfhash) /*<< stride_shift*/;
-              call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value,snd->x), (snd->weight_index^halfhash) + offset);
-              call_audit<R, audit_func>(dat, nullptr);
-            } // end for(snd)
-
-            call_audit<R, audit_func>(dat, nullptr);
-          } // end for(fst)
-
-        } // end if (data[snd] size > 0)
-      } // end if (data[fst] size > 0)
-
-    }
-    else
-
-      if (len == 3) // special case for triples
-      { const size_t fst_ns = ns[0];
-        if (features_data[fst_ns].size() > 0)
-        {
-
-          const size_t snd_ns = ns[1];
-          if (features_data[snd_ns].size() > 0)
+        features& first = features_data[ns[0]];
+        if (first.indicies.size() > 0)
           {
+            features& second = features_data[ns[1]];
+            if (second.indicies.size() > 0)
+              {
+                const bool same_namespace = ( !all.permutations && ( ns[0] == ns[1] ) );
 
-            const size_t thr_ns = ns[2];
-            if (features_data[thr_ns].size() > 0)
+                for(size_t i = 0; i < first.indicies.size(); ++i)
+                  { const uint64_t halfhash = FNV_prime * (uint64_t)first.indicies[i];
+                    audit_func(dat, &first.space_names[i]);
+                    // next index differs for permutations and simple combinations
+                    const float& ft_value = first.values[i];
+                    size_t j=0;
+                    if (same_namespace)
+                      j = (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i+1;
+                    for (; j < second.indicies.size(); ++j)
+                      {
+                        audit_func(dat, &second.space_names[j]);
+                        //  const size_t ft_idx = ((snd->weight_index /*>> stride_shift*/) ^ halfhash) /*<< stride_shift*/;
+                        call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value, second.values[j]), (second.indicies[j]^halfhash) + offset);
+                        audit_func(dat, nullptr);
+                      } // end for(snd)
+                    audit_func(dat, nullptr);
+                  } // end for(fst)
+              } // end if (data[snd] size > 0)
+          } // end if (data[fst] size > 0)
+      }
+    else
+      if (len == 3) // special case for triples
+        { features& first = features_data[ns[0]];
+        if (first.indicies.size() > 0)
+        {
+          features& second = features_data[ns[1]];
+          if (second.indicies.size() > 0)
+          {
+            features& third = features_data[ns[2]];
+            if (third.indicies.size() > 0)
             {
-
-
               // don't compare 1 and 3 as interaction is sorted
-              const bool same_namespace1 = ( !all.permutations && ( fst_ns == snd_ns ) );
-              const bool same_namespace2 = ( !all.permutations && ( snd_ns == thr_ns ) );
+              const bool same_namespace1 = ( !all.permutations && ( ns[0] == ns[1] ) );
+              const bool same_namespace2 = ( !all.permutations && ( ns[1] == ns[2] ) );
 
-              const feature_class* fst = features_data[fst_ns].begin;
-              const feature_class* fst_end = features_data[fst_ns].end;
-              const feature_class* snd_end = (same_namespace1) ? fst_end : features_data[snd_ns].end;
-              const feature_class* thr_end = (same_namespace2) ? snd_end : features_data[thr_ns].end;
+              for(size_t i = 0; i < first.indicies.size(); ++i)
+              {
+                audit_func(dat, &first.space_names[i]);
+                const uint64_t halfhash1 = FNV_prime * (uint64_t)first.indicies[i];
+                const float& ft_value = first.values[i];
+                size_t j=0;
+                if (same_namespace1)                // next index differs for permutations and simple combinations
+                  j = (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i+1;
 
-              for (; fst < fst_end; ++fst)
-              { call_audit<R, audit_func>(dat, fst);
-
-                // next index differs for permutations and simple combinations
-                const feature_class* snd = (!same_namespace1) ? features_data[snd_ns].begin :
-                                           (PROCESS_SELF_INTERACTIONS(fst->x)) ? fst : fst+1;
-
-                const uint64_t halfhash1 = FNV_prime * (uint64_t)fst->weight_index;
-                const float& ft_value = fst->x;
-
-                for (; snd < snd_end; ++snd)
+                for (; j < second.indicies.size(); ++j)
                 { //f3 x k*(f2 x k*f1)
-                  call_audit<R, audit_func>(dat, snd);
+                  audit_func(dat, &second.space_names[j]);
+                  const uint64_t halfhash2 = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
+                  const float snd_value = INTERACTION_VALUE(ft_value, second.values[j]);
 
-                  const uint64_t halfhash2 = FNV_prime * (halfhash1 ^ (uint64_t)snd->weight_index);
-                  const float ft_value1 = INTERACTION_VALUE(ft_value, snd->x);
+                  size_t k=0;
+                  if (same_namespace2)//next index differs for permutations and simple combinations
+                    k = (PROCESS_SELF_INTERACTIONS(snd_value)) ? j : j+1;
 
-                  // next index differs for permutations and simple combinations
-                  const feature_class* thr = (!same_namespace2) ? features_data[thr_ns].begin :
-                                             (PROCESS_SELF_INTERACTIONS(snd->x)) ? snd : snd+1;
-
-                  for (; thr < thr_end; ++thr)
-                  { call_audit<R, audit_func>(dat, thr);
+                  for (; k < third.indicies.size(); ++k)
+                  {
+                    audit_func(dat, &third.space_names[k]);
 //                                        const size_t ft_idx = ((thr->weight_index /*>> stride_shift*/)^ halfhash2) /*<< stride_shift*/;
-                    call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value1,thr->x), (thr->weight_index^halfhash2) + offset);
-                    call_audit<R, audit_func>(dat, nullptr);
+                    call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(snd_value,third.values[k]), (third.indicies[k]^halfhash2) + offset);
+                    audit_func(dat, nullptr);
                   } // end for (thr)
-                  call_audit<R, audit_func>(dat, nullptr);
+                  audit_func(dat, nullptr);
                 } // end for (snd)
-                call_audit<R, audit_func>(dat, nullptr);
+                audit_func(dat, nullptr);
               } // end for (fst)
 
             } // end if (data[thr] size > 0)
@@ -237,31 +214,29 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
         bool must_skip_interaction = false;
 
         // preparing state data
-        feature_gen_data<feature_class>* fgd = state_data.begin;
-        feature_gen_data<feature_class>* fgd2; // for further use
+        feature_gen_data* fgd = state_data.begin;
+        feature_gen_data* fgd2; // for further use
         for (unsigned char* n = ns.begin; n != ns.end; ++n)
-        { v_array<feature_class>* ft = &features_data[(int32_t)*n];
-          const size_t ft_cnt = ft->size();
+        { features& ft = features_data[(int32_t)*n];
+          const size_t ft_cnt = ft.indicies.size();
 
           if (ft_cnt == 0)
-          { must_skip_interaction = true;
-            break;
-          }
+            { must_skip_interaction = true;
+              break;
+            }
 
           if (fgd == state_data.end)
-          { state_data.push_back(empty_ns_data);
-            fgd = state_data.end-1; // reassign as memory could be realloced
-          }
+            { state_data.push_back(empty_ns_data);
+              fgd = state_data.end-1; // reassign as memory could be realloced
+            }
 
           fgd->loop_end = ft_cnt-1; // saving number of features for each namespace
-          fgd->ft_arr = ft;
+          fgd->ft_arr = &ft;
           ++fgd;
         }
 
         // if any of interacting namespace has 0 features - whole interaction is skipped
         if (must_skip_interaction) continue; //no_data_to_interact
-
-
 
         if (!all.permutations) // adjust state_data for simple combinations
         { // if permutations mode is disabeled then namespaces in ns are already sorted and thus grouped
@@ -279,16 +254,15 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
             if (fgd->self_interaction)
             { size_t& loop_end = fgd2->loop_end;
 
-              if (!PROCESS_SELF_INTERACTIONS((*fgd2->ft_arr)[loop_end-margin].x))
-              { ++margin; // otherwise margin can 't be increased
-                if ( (must_skip_interaction = (loop_end < margin)) ) break;
-              }
+              if (!PROCESS_SELF_INTERACTIONS((*fgd2->ft_arr).values[loop_end-margin]))
+                { ++margin; // otherwise margin can 't be increased
+                  if ( (must_skip_interaction = (loop_end < margin)) ) break;
+                }
 
               if (margin != 0)
                 loop_end -= margin;               // skip some features and increase margin
             }
             else if (margin != 0) margin = 0;
-
           }
 
           // if impossible_without_permutations == true then we faced with case like interaction 'aaaa'
@@ -303,68 +277,59 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
         fgd->loop_idx = 0; // loop_idx contains current feature id for curently processed namespace.
 
         // beware: micro-optimization.
-
-        feature_class* features_begin = fgd2->ft_arr->begin; // in fact, constant in all cases. Left non constant to avoid type conversion
         /* start & end are always point to features in last namespace of interaction.
             for 'all.permutations == true' they are constant.*/
-        feature_class* start = features_begin;
-        feature_class* end = features_begin + fgd2->loop_end + 1; // end is constant as data->loop_end is never changed in the loop
+        size_t start_i = 0;
+        const size_t loop_end = fgd2->loop_end + 1; // end is constant as data->loop_end is never changed in the loop
 
-        feature_gen_data<feature_class>* cur_data = fgd;
-        feature_gen_data<feature_class>* next_data;
-        feature_class* cur_feature;
+        feature_gen_data* cur_data = fgd;
         // end of micro-optimization block
-
 
         // generic feature generation cycle for interactions of any length
         bool do_it = true;
-
         while (do_it)
         {
+          if (cur_data < fgd2) // can go further threw the list of namespaces in interaction
+            { feature_gen_data* next_data = cur_data+1;
+              size_t feature = cur_data->loop_idx;
+              features& fs = *(cur_data->ft_arr);
 
-          if (cur_data < fgd2) // can go further throw the list of namespaces in interaction
-          { next_data = cur_data+1;
-            cur_feature = cur_data->ft_arr->begin + cur_data->loop_idx;
+              if (next_data->self_interaction)
+                { // if next namespace is same, we should start with loop_idx + 1 to avoid feature interaction with itself
+                  // unless feature has value x and x != x*x. E.g. x != 0 and x != 1. Features with x == 0 are already
+                  // filtered out in parce_args.cc::maybeFeature().
 
-            if (next_data->self_interaction)
-            { // if next namespace is same, we should start with loop_idx + 1 to avoid feature interaction with itself
-              // unless feature has value x and x != x*x. E.g. x != 0 and x != 1. Features with x == 0 are already
-              // filtered out in parce_args.cc::maybeFeature().
+                  next_data->loop_idx = (PROCESS_SELF_INTERACTIONS(fs.values[feature])) ? cur_data->loop_idx : cur_data->loop_idx + 1;
+                }
+              else
+                next_data->loop_idx = 0;
 
-              next_data->loop_idx = (PROCESS_SELF_INTERACTIONS(cur_feature->x)) ? cur_data->loop_idx : cur_data->loop_idx + 1;
+              audit_func(dat, &fs.space_names[feature]);
+
+              if (cur_data == fgd) // first namespace
+                { next_data->hash = FNV_prime * (uint64_t)fs.indicies[feature];
+                  next_data->x = fs.values[feature]; // data->x == 1.
+                }
+              else
+                { // feature2 xor (16777619*feature1)
+                  next_data->hash = FNV_prime * (cur_data->hash ^ (uint64_t)fs.indicies[feature]);
+                  next_data->x = INTERACTION_VALUE(fs.values[feature], cur_data->x);
+                }
+
+              ++cur_data;
             }
-            else
-              next_data->loop_idx = 0;
-
-
-            call_audit<R, audit_func>(dat, cur_feature);
-
-            if (cur_data == fgd) // first namespace
-            { next_data->hash = FNV_prime * (uint64_t)cur_feature->weight_index;
-              next_data->x = cur_feature->x; // data->x == 1.
-            }
-            else
-            { // feature2 xor (16777619*feature1)
-              next_data->hash = FNV_prime * (cur_data->hash ^ (uint64_t)cur_feature->weight_index);
-              next_data->x = INTERACTION_VALUE(cur_feature->x, cur_data->x);
-            }
-
-            ++cur_data;
-
-          }
           else
           {
-
             // last namespace - iterate its features and go back
-
             if (!all.permutations) // start value is not a constant in this case
-              start = features_begin + fgd2->loop_idx;
+              start_i = fgd2->loop_idx;
 
-            for (feature_class* f = start; f != end; ++f)
-            { call_audit<R, audit_func>(dat, f);
-              call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(fgd2->x, f->x), (uint64_t)(fgd2->hash^f->weight_index) + offset );
-              call_audit<R, audit_func>(dat, nullptr);
-            }
+            features& fs = *(fgd2->ft_arr);
+            for (size_t i = start_i; i != loop_end; ++i)
+              { audit_func(dat, &fs.space_names[i]);
+                call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(fgd2->x, fs.values[i]), (uint64_t)(fgd2->hash^fs.indicies[i]) + offset );
+                audit_func(dat, nullptr);
+              }
 
             // trying to go back increasing loop_idx of each namespace by the way
 
@@ -373,31 +338,27 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
             do
             { --cur_data;
               go_further = (++cur_data->loop_idx > cur_data->loop_end); //increment loop_idx
-              call_audit<R, audit_func>(dat, nullptr);
+              audit_func(dat, nullptr);
             }
             while (go_further && cur_data != fgd);
 
             do_it = !(cur_data == fgd && go_further);
             //if do_it==false - we've reached 0 namespace but its 'cur_data.loop_idx > cur_data.loop_end' -> exit the while loop
-
           } // if last namespace
-
         } // while do_it
-
       }
-
   } // foreach interaction in all.interactions
 
   state_data.delete_v();
 }
 
 template <class R>
-inline void dummy_func(R&, const feature*) {} // should never be called due to call_audit overload
+inline void dummy_func(R&, const audit_strings*) {} // should never be called due to call_audit overload
 
 // this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6
 template <class R, class S, void (*T)(R&, float, S)>
 inline void generate_interactions(vw& all, example& ec, R& dat)
-{ generate_interactions<R, S, T, feature, dummy_func<R> > (all, ec, dat, ec.atomics);
+{ generate_interactions<R, S, T, dummy_func<R> > (all, ec, dat);
 }
 
 // C(n,k) = n!/(k!(n-k)!)
@@ -416,4 +377,3 @@ inline long long choose(long long n, long long k)
 }
 
 } // end of namespace
-

@@ -215,7 +215,7 @@ void parse_dictionary_argument(vw&all, string str)
     *d = '|';  // set up for parser::read_line
     VW::read_line(all, ec, d);
     // now we just need to grab stuff from the default namespace of ec!
-    if (ec->atomics[def].size() == 0)
+    if (ec->feature_space[def].size() == 0)
     { free(word);
       continue;
     }

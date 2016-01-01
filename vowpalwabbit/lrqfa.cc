@@ -31,8 +31,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
 
   memset(lrq.orig_size, 0, sizeof(lrq.orig_size));
   for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
-  { lrq.orig_size[*i] = ec.atomics[*i].size();
-  }
+    lrq.orig_size[*i] = ec.feature_space[*i].size();
 
   size_t which = ec.example_counter;
   float first_prediction = 0;
@@ -51,48 +50,44 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
         unsigned int lfd_id = lrq.field_id[left];
         unsigned int rfd_id = lrq.field_id[right];
         for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
-        { feature* lf = ec.atomics[left].begin + lfn;
-          float lfx = lf->x;
-          uint64_t lindex = lf->weight_index;
-          for (unsigned int n = 1; n <= k; ++n)
-          { uint64_t lwindex = (uint64_t)(lindex + ((rfd_id*k+n) << all.reg.stride_shift)); // a feature has k weights in each field
-            float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
+          { features& fs = ec.feature_space[left];
+            float lfx = fs.values[lfn];
+            uint64_t lindex = fs.indicies[lfn];
+            for (unsigned int n = 1; n <= k; ++n)
+              { uint64_t lwindex = (uint64_t)(lindex + ((rfd_id*k+n) << all.reg.stride_shift)); // a feature has k weights in each field
+                float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
 
-            // perturb away from saddle point at (0, 0)
-            if (is_learn && ! example_is_test (ec) && *lw == 0)
-            { *lw = cheesyrand(lwindex) * 0.5f / sqrtk;
-            }
+                // perturb away from saddle point at (0, 0)
+                if (is_learn && ! example_is_test (ec) && *lw == 0)
+                  { *lw = cheesyrand(lwindex) * 0.5f / sqrtk;
+                  }
 
-            for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)
-            { feature* rf = ec.atomics[right].begin + rfn;
-              audit_data* ra = ec.audit_features[right].begin + rfn;
-              // NB: ec.ft_offset added by base learner
-              float rfx = rf->x;
-              uint64_t rindex = rf->weight_index;
-              uint64_t rwindex = (uint64_t)(rindex + ((lfd_id*k+n) << all.reg.stride_shift));
+                for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)
+                  { features& rfs = ec.feature_space[right];
+                    //                    feature* rf = ec.atomics[right].begin + rfn;
+                    // NB: ec.ft_offset added by base learner
+                    float rfx = rfs.values[rfn];
+                    uint64_t rindex = rfs.indicies[rfn];
+                    uint64_t rwindex = (uint64_t)(rindex + ((lfd_id*k+n) << all.reg.stride_shift));
 
-              feature lrq;
-              lrq.x = *lw * lfx * rfx;
-              lrq.weight_index = rwindex;
-              ec.atomics[right].push_back (lrq);
-              if (all.audit || all.hash_inv)
-              { std::stringstream new_feature_buffer;
-                new_feature_buffer << right << '^'
-                                   << ra->feature << '^'
-                                   << n;
+                    rfs.push_back(*lw * lfx * rfx, rwindex);
+                    if (all.audit || all.hash_inv)
+                      { std::stringstream new_feature_buffer;
+                        new_feature_buffer << right << '^'
+                                           << rfs.space_names[rfn].second << '^'
+                                           << n;
 #ifdef _WIN32
-                char* new_space = _strdup("lrqfa");
-                char* new_feature = _strdup(new_feature_buffer.str().c_str());
+                        char* new_space = _strdup("lrqfa");
+                        char* new_feature = _strdup(new_feature_buffer.str().c_str());
 #else
-                char* new_space = strdup("lrqfa");
-                char* new_feature = strdup(new_feature_buffer.str().c_str());
+                        char* new_space = strdup("lrqfa");
+                        char* new_feature = strdup(new_feature_buffer.str().c_str());
 #endif
-                audit_data ad = { new_space, new_feature, lrq.weight_index, lrq.x};
-                ec.audit_features[right].push_back(ad);
+                        rfs.space_names.push_back(audit_strings(new_space,new_feature));
+                      }
+                  }
               }
-            }
           }
-        }
       }
     }
 
@@ -113,17 +108,17 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
 
     for (string::const_iterator i = lrq.field_name.begin(); i != lrq.field_name.end(); ++i)
     { unsigned char right = *i;
-
-      ec.atomics[right].end = ec.atomics[right].begin + lrq.orig_size[right];
+      features& rfs = ec.feature_space[right];
+      rfs.values.end = rfs.values.begin + lrq.orig_size[right];
 
       if (all.audit || all.hash_inv)
-      { for (audit_data* a = ec.audit_features[right].begin + lrq.orig_size[right]; a < ec.audit_features[right].end; ++a)
-        { free (a->space);
-          free (a->feature);
-        }
+        { for (size_t j = lrq.orig_size[right]; j < rfs.space_names.size(); ++j)
+            { free (rfs.space_names[j].first);
+              free (rfs.space_names[j].second);
+            }
 
-        ec.audit_features[right].end = ec.audit_features[right].begin + lrq.orig_size[right];
-      }
+          rfs.space_names[right].end = rfs.space_names[right].begin + lrq.orig_size[right];
+        }
     }
   }
 }

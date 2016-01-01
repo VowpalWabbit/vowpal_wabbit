@@ -365,12 +365,10 @@ void run(Search::search& sch, vector<example*>& ec)
 // this is totally bogus for the example -- you'd never actually do this!
 void update_example_indicies(bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount)
 { for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-    for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; ++f)
-      f->weight_index = ((f->weight_index * mult_amount) + plus_amount);
-  if (audit)
-    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-      if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-        for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; ++f)
-          f->weight_index = ((f->weight_index * mult_amount) + plus_amount);
+    {
+      v_array<feature_index>& fis = ec->feature_space[*i].indicies;
+      for (size_t j = 0; j < fis.size(); ++j)
+        fis[j] = ((fis[j] * mult_amount) + plus_amount);
+    }
 }
 }

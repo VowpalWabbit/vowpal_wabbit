@@ -166,14 +166,14 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
       buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
       if (v_length > 61)
 	THROW("cache version too long, cache file is probably invalid");
-      
+
       if (v_length == 0)
 	THROW("cache version too short, cache file is probably invalid");
-      
+
       t.erase();
       if (t.size() < v_length)
 	t.resize(v_length);
-      
+
       buf->read_file(filepointer,t.begin,v_length);
       version_struct v_tmp(t.begin);
       if ( v_tmp != version )
@@ -181,11 +181,11 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
 	  t.delete_v();
 	  return 0;
 	}
-      
+
       char temp;
       if (buf->read_file(filepointer, &temp, 1) < 1)
 	THROW("failed to read");
-      
+
       if (temp != 'c')
 	THROW("data file is not a cache file");
     }
@@ -602,42 +602,37 @@ void set_done(vw& all)
   mutex_unlock(&all.p->examples_lock);
 }
 
-void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array<audit_data>& audits,
+void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs,
               size_t initial_length, v_array<size_t> &gram_mask, size_t skips)
 { if (ngram == 0 && gram_mask.last() < initial_length)
   { size_t last = initial_length - gram_mask.last();
     for(size_t i = 0; i < last; i++)
-    { uint64_t new_index = atomics[i].weight_index;
-      for (size_t n = 1; n < gram_mask.size(); n++)
-        new_index = new_index*quadratic_constant + atomics[i+gram_mask[n]].weight_index;
-
-      feature f = {1.,new_index};
-      atomics.push_back(f);
-      if ((all.audit || all.hash_inv) && audits.size() >= initial_length)
-      { string feature_name(audits[i].feature);
+      { uint64_t new_index = fs.indicies[i];
         for (size_t n = 1; n < gram_mask.size(); n++)
-        { feature_name += string("^");
-          feature_name += string(audits[i+gram_mask[n]].feature);
-        }
+          new_index = new_index*quadratic_constant + fs.indicies[i+gram_mask[n]];
 
-        string feature_space = string(audits[i].space);
-
-        audit_data a_feature = {nullptr,nullptr,new_index, 1.};
-        a_feature.space = calloc_or_throw<char>(feature_space.length()+1);
-        strcpy(a_feature.space, feature_space.c_str());
-        a_feature.feature = calloc_or_throw<char>(feature_name.length()+1);
-        strcpy(a_feature.feature, feature_name.c_str());
-        audits.push_back(a_feature);
+        fs.push_back(1.,new_index);
+        if ((all.audit || all.hash_inv) && fs.space_names.size() >= initial_length)
+          { string feature_name(fs.space_names[i].second);
+            for (size_t n = 1; n < gram_mask.size(); n++)
+              { feature_name += string("^");
+                feature_name += string(fs.space_names[i+gram_mask[n]].second);
+              }
+            char* feature;
+            strcpy(feature, feature_name.c_str());
+            char* space;
+            strcpy(space, fs.space_names[i].first);
+            fs.space_names.push_back(audit_strings(space,feature));
+          }
       }
-    }
   }
   if (ngram > 0)
   { gram_mask.push_back(gram_mask.last()+1+skips);
-    addgrams(all, ngram-1, skip_gram, atomics, audits, initial_length, gram_mask, 0);
+    addgrams(all, ngram-1, skip_gram, fs, initial_length, gram_mask, 0);
     gram_mask.pop();
   }
   if (skip_gram > 0 && ngram > 0)
-    addgrams(all, ngram, skip_gram-1, atomics, audits, initial_length, gram_mask, skips+1);
+    addgrams(all, ngram, skip_gram-1, fs, initial_length, gram_mask, skips+1);
 }
 
 /**
@@ -653,12 +648,11 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
  */
 void generateGrams(vw& all, example* &ex)
 { for(unsigned char* index = ex->indices.begin; index < ex->indices.end; index++)
-  { size_t length = ex->atomics[*index].size();
+  { size_t length = ex->feature_space[*index].size();
     for (size_t n = 1; n < all.ngram[*index]; n++)
     { all.p->gram_mask.erase();
       all.p->gram_mask.push_back((size_t)0);
-      addgrams(all, n, all.skips[*index], ex->atomics[*index],
-               ex->audit_features[*index],
+      addgrams(all, n, all.skips[*index], ex->feature_space[*index],
                length, all.p->gram_mask, 0);
     }
   }
@@ -684,7 +678,7 @@ namespace VW
 bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
 { if (do_read && all.p->reader(&all, ae) <= 0)
     return false;
-  
+
   if(all.p->sort_features && ae->sorted == false)
     unique_sort_features(all.audit, all.parse_mask, ae);
 
@@ -704,13 +698,11 @@ void end_pass_example(vw& all, example* ae)
 
 void feature_limit(vw& all, example* ex)
 { for(unsigned char* index = ex->indices.begin; index < ex->indices.end; index++)
-    if (all.limit[*index] < ex->atomics[*index].size())
-    { v_array<feature>& features = ex->atomics[*index];
-
-      qsort(features.begin, features.size(), sizeof(feature), order_features<feature>);
-
-      unique_features(features, all.limit[*index]);
-    }
+    if (all.limit[*index] < ex->feature_space[*index].size())
+      { features& fs = ex->feature_space[*index];
+        fs.sort();
+        unique_features(fs, all.limit[*index]);
+      }
 }
 
 namespace VW
@@ -895,7 +887,7 @@ void empty_example(vw& all, example& ec)
     { for (audit_data* temp
            = ec.audit_features[*i].begin;
            temp != ec.audit_features[*i].end; temp++)
-	{ 
+	{
 	  free_it(temp->space);
           free_it(temp->feature);
 	}

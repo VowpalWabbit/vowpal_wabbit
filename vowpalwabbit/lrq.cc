@@ -58,7 +58,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
   memset (lrq.orig_size, 0, sizeof (lrq.orig_size));
   for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
   { if (lrq.lrindices[*i])
-      lrq.orig_size[*i] = ec.atomics[*i].size ();
+      lrq.orig_size[*i] = ec.feature_space[*i].size ();
   }
 
   size_t which = ec.example_counter;
@@ -82,60 +82,52 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
       unsigned char right = (*i)[(which+1)%2];
       unsigned int k = atoi (i->c_str () + 2);
 
+      features& left_fs = ec.feature_space[left];
       for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
-      { feature* lf = ec.atomics[left].begin + lfn;
-        float lfx = lf->x;
-        uint64_t lindex = lf->weight_index + ec.ft_offset;
+        {
+          float lfx = left_fs.values[lfn];
+          uint64_t lindex = left_fs.indicies[lfn] + ec.ft_offset;
 
-        for (unsigned int n = 1; n <= k; ++n)
-        { if (! do_dropout || cheesyrbit (lrq.seed))
-          { uint64_t lwindex = (uint64_t)(lindex + (n << all.reg.stride_shift));
+          for (unsigned int n = 1; n <= k; ++n)
+            { if (! do_dropout || cheesyrbit (lrq.seed))
+                { uint64_t lwindex = (uint64_t)(lindex + (n << all.reg.stride_shift));
 
-            float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
+                  float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
 
-            // perturb away from saddle point at (0, 0)
-            if (is_learn && ! example_is_test (ec) && *lw == 0)
-              *lw = cheesyrand (lwindex);
+                  // perturb away from saddle point at (0, 0)
+                  if (is_learn && ! example_is_test (ec) && *lw == 0)
+                    *lw = cheesyrand (lwindex);
 
-            for (unsigned int rfn = 0;
-                 rfn < lrq.orig_size[right];
-                 ++rfn)
-            { feature* rf = ec.atomics[right].begin + rfn;
-              audit_data* ra = ec.audit_features[right].begin + rfn;
+                  features& right_fs = ec.feature_space[right];
+                  for (unsigned int rfn = 0;
+                       rfn < lrq.orig_size[right];
+                       ++rfn)
+                    { // NB: ec.ft_offset added by base learner
+                      float rfx = right_fs.values[rfn];
+                      uint64_t rindex = right_fs.indicies[rfn];
+                      uint64_t rwindex = (uint64_t)(rindex + (n << all.reg.stride_shift));
 
-              // NB: ec.ft_offset added by base learner
-              float rfx = rf->x;
-              uint64_t rindex = rf->weight_index;
-              uint64_t rwindex = (uint64_t)(rindex + (n << all.reg.stride_shift));
+                      right_fs.push_back(scale **lw * lfx * rfx, rwindex);
 
-              feature lrq;
-              lrq.x = scale **lw * lfx * rfx;
-              lrq.weight_index = rwindex;
-
-              ec.atomics[right].push_back (lrq);
-
-              if (all.audit || all.hash_inv)
-              { std::stringstream new_feature_buffer;
-
-                new_feature_buffer << right << '^'
-                                   << ra->feature << '^'
-                                   << n;
+                      if (all.audit || all.hash_inv)
+                        { std::stringstream new_feature_buffer;
+                          new_feature_buffer << right << '^'
+                                             << right_fs.space_names[rfn].second << '^'
+                                             << n;
 
 #ifdef _WIN32
-                char* new_space = _strdup("lrq");
-                char* new_feature =	_strdup(new_feature_buffer.str().c_str());
+                          char* new_space = _strdup("lrq");
+                          char* new_feature =	_strdup(new_feature_buffer.str().c_str());
 #else
-                char* new_space = strdup("lrq");
-                char* new_feature = strdup(new_feature_buffer.str().c_str());
+                          char* new_space = strdup("lrq");
+                          char* new_feature = strdup(new_feature_buffer.str().c_str());
 #endif
-
-                audit_data ad = { new_space, new_feature, lrq.weight_index, lrq.x};
-                ec.audit_features[right].push_back (ad);
-              }
+                          right_fs.space_names.push_back(audit_strings(new_space,new_feature));
+                        }
+                    }
+                }
             }
-          }
         }
-      }
     }
 
     if (is_learn)
@@ -145,34 +137,30 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
 
     // Restore example
     if (iter == 0)
-    { first_prediction = ec.pred.scalar;
-      first_loss = ec.loss;
-    }
+      { first_prediction = ec.pred.scalar;
+        first_loss = ec.loss;
+      }
     else
-    { ec.pred.scalar = first_prediction;
-      ec.loss = first_loss;
-    }
+      { ec.pred.scalar = first_prediction;
+        ec.loss = first_loss;
+      }
 
     for (set<string>::iterator i = lrq.lrpairs.begin ();
          i != lrq.lrpairs.end ();
          ++i)
-    { unsigned char right = (*i)[(which+1)%2];
+      { unsigned char right = (*i)[(which+1)%2];
 
-      ec.atomics[right].end =
-        ec.atomics[right].begin + lrq.orig_size[right];
+        ec.feature_space[right].space_names.end =
+          ec.feature_space[right].space_names.begin + lrq.orig_size[right];
 
-      if (all.audit || all.hash_inv)
-      { for (audit_data* a = ec.audit_features[right].begin + lrq.orig_size[right];
-             a < ec.audit_features[right].end;
-             ++a)
-        { free (a->space);
-          free (a->feature);
-        }
-
-        ec.audit_features[right].end =
-          ec.audit_features[right].begin + lrq.orig_size[right];
+        if (all.audit || all.hash_inv)
+          for (audit_strings* a = ec.feature_space[right].space_names.begin + lrq.orig_size[right];
+               a != ec.feature_space[right].space_names.end;
+               ++a)
+            { free (a->first);
+              free (a->second);
+            }
       }
-    }
   }
 }
 
