@@ -38,9 +38,9 @@ struct features { // the core definition of a set of features.
  }
   size_t size() { return values.size(); }
 
-  void free_space_names()
+  void free_space_names(size_t i)
   {
-    for (size_t i=0; i<space_names.size(); i++)
+    for (; i<space_names.size(); i++)
       { free(space_names[i].first);
         free(space_names[i].second);
       }
@@ -51,14 +51,27 @@ struct features { // the core definition of a set of features.
     sum_feat_sq = 0.f;
     values.erase();
     indicies.erase();
-    free_space_names();
+    free_space_names(0);
     space_names.erase();
   }
+
+  void truncate_to(size_t i)
+  {
+    values.end = values.begin + i;
+    if (indicies.end != indicies.begin)
+      indicies.end = indicies.begin + i;
+    if (space_names.begin != space_names.end)
+      {
+	free_space_names(i);
+	space_names.end = space_names.begin + i;
+      }
+  }
+
   void delete_v()
   {
     values.delete_v();
     indicies.delete_v();
-    free_space_names();
+    free_space_names(0);
     space_names.delete_v();
   }
   void push_back(feature_value v, feature_index i)
@@ -97,7 +110,7 @@ inline void copy(features& dst, features& src)
 {
   copy_array(dst.values, src.values);
   copy_array(dst.indicies, src.indicies);
-  dst.free_space_names();
+  dst.free_space_names(0);
   copy_array(dst.space_names, src.space_names);
   dst.sum_feat_sq = src.sum_feat_sq;
 }

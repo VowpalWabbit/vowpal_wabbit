@@ -149,17 +149,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
          i != lrq.lrpairs.end ();
          ++i)
       { unsigned char right = (*i)[(which+1)%2];
-
-        ec.feature_space[right].space_names.end =
-          ec.feature_space[right].space_names.begin + lrq.orig_size[right];
-
-        if (all.audit || all.hash_inv)
-          for (audit_strings* a = ec.feature_space[right].space_names.begin + lrq.orig_size[right];
-               a != ec.feature_space[right].space_names.end;
-               ++a)
-            { free (a->first);
-              free (a->second);
-            }
+        ec.feature_space[right].truncate_to(lrq.orig_size[right]);
       }
   }
 }
