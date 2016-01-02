@@ -45,6 +45,14 @@ struct features { // the core definition of a set of features.
         free(space_names[i].second);
       }
   }
+  bool empty() { return values.end == values.begin;}
+  template<class R, void (*T)(R&, feature_value, feature_index)> inline void foreach_feature(R& dat)
+  {
+    feature_value* vp = values.begin;
+    feature_index* ip = indicies.begin;
+    for (;vp != values.end;++vp, ++ip)
+      T(dat,*vp,*ip);
+  }
 
   void erase()
   {

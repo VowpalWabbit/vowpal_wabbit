@@ -278,7 +278,7 @@ void print_features(vw& all, example& ec)
 	    audit_feature(dat, fs.values[j], (uint32_t)fs.indicies[j] + ec.ft_offset);
       }
 
-    INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, audit_interaction >(all, ec, dat);
+    INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, true, audit_interaction >(all, ec, dat);
 
     sort(dat.results.begin(),dat.results.end());
     if(all.audit)

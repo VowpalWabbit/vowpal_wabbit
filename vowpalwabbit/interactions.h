@@ -93,7 +93,7 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
 // and passes each of them to given function T()
 // it must be in header file to avoid compilation problems
 
- template <class R, class S, void (*T)(R&, float, S), void (*audit_func)(R&, const audit_strings*) /*= nullptr*/> // nullptr func can't be used as template param in old compilers
+ template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*)> // nullptr func can't be used as template param in old compilers
    inline void generate_interactions(vw& all, example& ec, R& dat) // default value removed to eliminate ambiguity in old complers
  {
    features* features_data = ec.feature_space;
@@ -128,11 +128,9 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
     if (len == 2) //special case of pairs
       {
         features& first = features_data[ns[0]];	
-	bool audit = first.space_names.size() >0;
         if (first.indicies.size() > 0)
           {
             features& second = features_data[ns[1]];
-	    audit &= second.space_names.size() > 0;
             if (second.indicies.size() > 0)
               {
                 const bool same_namespace = ( !all.permutations && ( ns[0] == ns[1] ) );
@@ -145,11 +143,12 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
                     size_t j=0;
                     if (same_namespace)
                       j = (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i+1;
-                    for (; j < second.indicies.size(); ++j)
+		    feature_value* vp = second.values.begin+j;
+                    for (feature_index* ip = second.indicies.begin+j; vp != second.values.end; ++vp, ++ip)
                       {
-                        if (audit) audit_func(dat, &second.space_names[j]);
+                        if (audit) audit_func(dat, &second.space_names[vp - second.values.begin]);
                         //  const size_t ft_idx = ((snd->weight_index /*>> stride_shift*/) ^ halfhash) /*<< stride_shift*/;
-                        call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value, second.values[j]), (second.indicies[j]^halfhash) + offset);
+                        call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value, *vp), (*ip ^halfhash) + offset);
                         if (audit) audit_func(dat, nullptr);
                       } // end for(snd)
                     if (audit) audit_func(dat, nullptr);
@@ -160,15 +159,12 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
     else
       if (len == 3) // special case for triples
         { features& first = features_data[ns[0]];
-	  bool audit = first.space_names.size() >0;
         if (first.indicies.size() > 0)
         {
           features& second = features_data[ns[1]];
-	  audit &= second.space_names.size() > 0;
           if (second.indicies.size() > 0)
           {
             features& third = features_data[ns[2]];
-	    audit &= third.space_names.size() > 0;
             if (third.indicies.size() > 0)
             {
               // don't compare 1 and 3 as interaction is sorted
@@ -193,14 +189,15 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
                   size_t k=0;
                   if (same_namespace2)//next index differs for permutations and simple combinations
                     k = (PROCESS_SELF_INTERACTIONS(snd_value)) ? j : j+1;
-
-                  for (; k < third.indicies.size(); ++k)
-                  {
-                    if (audit) audit_func(dat, &third.space_names[k]);
-//                                        const size_t ft_idx = ((thr->weight_index /*>> stride_shift*/)^ halfhash2) /*<< stride_shift*/;
-                    call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(snd_value,third.values[k]), (third.indicies[k]^halfhash2) + offset);
-                    if(audit) audit_func(dat, nullptr);
-                  } // end for (thr)
+		  
+		  feature_value* vp = third.values.begin+k;
+		  for (feature_index* ip = third.indicies.begin+k; vp != third.values.end; ++vp, ++ip)
+		    {
+		      if (audit) audit_func(dat, &third.space_names[vp - third.values.begin]);
+		      //                                        const size_t ft_idx = ((thr->weight_index /*>> stride_shift*/)^ halfhash2) /*<< stride_shift*/;
+		      call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(snd_value,*vp), (*ip^halfhash2) + offset);
+		      if(audit) audit_func(dat, nullptr);
+		    } // end for (thr)
                   if (audit) audit_func(dat, nullptr);
                 } // end for (snd)
                 if(audit) audit_func(dat, nullptr);
@@ -217,13 +214,11 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
       {
 
         bool must_skip_interaction = false;
-	bool audit = true;
         // preparing state data
         feature_gen_data* fgd = state_data.begin;
         feature_gen_data* fgd2; // for further use
         for (unsigned char* n = ns.begin; n != ns.end; ++n)
 	  { features& ft = features_data[(int32_t)*n];
-	    audit &= ft.space_names.size() > 0;
 	    const size_t ft_cnt = ft.indicies.size();
 	    
 	    if (ft_cnt == 0)
@@ -286,7 +281,7 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
         /* start & end are always point to features in last namespace of interaction.
             for 'all.permutations == true' they are constant.*/
         size_t start_i = 0;
-        const size_t loop_end = fgd2->loop_end + 1; // end is constant as data->loop_end is never changed in the loop
+        const feature_value* end = fgd2->ft_arr->values.begin + fgd2->loop_end + 1; // end is constant as data->loop_end is never changed in the loop
 
         feature_gen_data* cur_data = fgd;
         // end of micro-optimization block
@@ -331,9 +326,10 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
               start_i = fgd2->loop_idx;
 
             features& fs = *(fgd2->ft_arr);
-            for (size_t i = start_i; i != loop_end; ++i)
-              { if (audit) audit_func(dat, &fs.space_names[i]);
-                call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(fgd2->x, fs.values[i]), (uint64_t)(fgd2->hash^fs.indicies[i]) + offset );
+	    feature_value* vp = fs.values.begin+start_i;
+	    for (feature_index* ip = fs.indicies.begin+start_i; vp != end; ++vp, ++ip)
+              { if (audit) audit_func(dat, &fs.space_names[vp - fs.values.begin]);
+                call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(fgd2->x, *vp), (uint64_t)(fgd2->hash^*ip) + offset );
                 if (audit) audit_func(dat, nullptr);
               }
 
@@ -364,7 +360,7 @@ inline void dummy_func(R&, const audit_strings*) {} // should never be called du
 // this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6
 template <class R, class S, void (*T)(R&, float, S)>
 inline void generate_interactions(vw& all, example& ec, R& dat)
-{ generate_interactions<R, S, T, dummy_func<R> > (all, ec, dat);
+{ generate_interactions<R, S, T, false, dummy_func<R> > (all, ec, dat);
 }
 
 // C(n,k) = n!/(k!(n-k)!)
