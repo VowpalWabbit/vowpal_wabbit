@@ -817,7 +817,7 @@ example* import_example(vw& all, string label, primitive_feature_space* features
   { uint64_t index = features[i].name;
     ret->indices.push_back(index);
     for (size_t j = 0; j < features[i].len; j++)
-      ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].index);
+      ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].weight_index);
   }
   VW::parse_atomic_example(all,ret,false);
   setup_example(all, ret);
@@ -833,13 +833,13 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
   { fs_ptr[fs_count].name = *i;
     fs_ptr[fs_count].len = ec->feature_space[*i].size();
-    fs_ptr[fs_count].fs = new sparse_feature[fs_ptr[fs_count].len];
+    fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
 
     int f_count = 0;
     features& fs = ec->feature_space[*i];
     for (size_t j = 0; j < fs.size(); ++j)
-      { sparse_feature t = {fs.values[j], fs.indicies[j]};
-        t.index >>= all.reg.stride_shift;
+      { feature t = {fs.values[j], fs.indicies[j]};
+        t.weight_index >>= all.reg.stride_shift;
         fs_ptr[fs_count].fs[f_count] = t;
         f_count++;
       }

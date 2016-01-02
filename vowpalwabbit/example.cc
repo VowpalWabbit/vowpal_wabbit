@@ -77,27 +77,27 @@ void copy_example_data(bool audit, example* dst, example* src, size_t label_size
 }
 
 struct features_and_source
-{ v_array<sparse_feature> feature_map; //map to store sparse feature vectors
+{ v_array<feature> feature_map; //map to store sparse feature vectors
   uint32_t stride_shift;
   uint64_t mask;
 };
 
 void vec_store(features_and_source& p, float fx, uint64_t fi)
-{ p.feature_map.push_back(sparse_feature(fx, (uint64_t)(fi >> p.stride_shift) & p.mask)); }
+{ p.feature_map.push_back(feature(fx, (uint64_t)(fi >> p.stride_shift) & p.mask)); }
 
 namespace VW
 {
-sparse_feature* get_features(vw& all, example* ec, size_t& feature_map_len)
+feature* get_features(vw& all, example* ec, size_t& feature_map_len)
 { features_and_source fs;
   fs.stride_shift = all.reg.stride_shift;
   fs.mask = (uint64_t)all.reg.weight_mask >> all.reg.stride_shift;
-  fs.feature_map = v_init<sparse_feature>();
+  fs.feature_map = v_init<feature>();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
   feature_map_len = fs.feature_map.size();
   return fs.feature_map.begin;
 }
 
-void return_features(sparse_feature* f)
+void return_features(feature* f)
 { free_it (f); }
 }
 

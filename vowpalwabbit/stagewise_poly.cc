@@ -45,7 +45,7 @@ struct stagewise_poly
 
   example synth_ec;
   //following is bookkeeping in synth_ec creation (dfs)
-  sparse_feature synth_rec_f;
+  feature synth_rec_f;
   example *original_ec;
   uint32_t cur_depth;
   bool training;
@@ -391,7 +391,7 @@ void synthetic_decycle(stagewise_poly &poly)
 void synthetic_create_rec(stagewise_poly &poly, float v, float &w)
 { //Note: need to un_ft_shift since gd::foreach_feature bakes in the offset.
   uint64_t wid_atomic = wid_mask(poly, un_ft_offset(poly, (uint64_t)((&w - poly.all->reg.weight_vector))));
-  uint64_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.index);
+  uint64_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.weight_index);
   assert(wid_atomic % stride_shift(poly, 1) == 0);
 
   //Note: only mutate learner state when in training mode.  This is because
@@ -424,12 +424,12 @@ void synthetic_create_rec(stagewise_poly &poly, float v, float &w)
     ++poly.depths[poly.cur_depth];
 #endif //DEBUG
 
-    sparse_feature temp ={v * poly.synth_rec_f.x, wid_cur};
-    poly.synth_ec.feature_space[tree_atomics].push_back(temp.x, temp.index);
+    feature temp ={v * poly.synth_rec_f.x, wid_cur};
+    poly.synth_ec.feature_space[tree_atomics].push_back(temp.x, temp.weight_index);
     poly.synth_ec.num_features++;
 
-    if (parent_get(poly, temp.index))
-    { sparse_feature parent_f = poly.synth_rec_f;
+    if (parent_get(poly, temp.weight_index))
+    { feature parent_f = poly.synth_rec_f;
       poly.synth_rec_f = temp;
       ++poly.cur_depth;
 #ifdef DEBUG
@@ -448,7 +448,7 @@ void synthetic_create(stagewise_poly &poly, example &ec, bool training)
   poly.cur_depth = 0;
 
   poly.synth_rec_f.x = 1.0;
-  poly.synth_rec_f.index = constant_feat_masked(poly); //note: not ft_offset'd
+  poly.synth_rec_f.weight_index = constant_feat_masked(poly); //note: not ft_offset'd
   poly.training = training;
   /*
    * Another choice is to mark the constant feature as the single initial

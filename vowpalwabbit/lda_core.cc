@@ -42,8 +42,8 @@ class index_feature
 {
 public:
   uint64_t document;
-  sparse_feature f;
-  bool operator<(const index_feature b) const { return f.index < b.f.index; }
+  feature f;
+  bool operator<(const index_feature b) const { return f.weight_index < b.f.weight_index; }
 };
 
 struct lda
@@ -726,10 +726,10 @@ void learn_batch(lda &l)
 
   size_t last_weight_index = -1;
   for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++)
-  { if (last_weight_index == s->f.index)
+  { if (last_weight_index == s->f.weight_index)
       continue;
-    last_weight_index = s->f.index;
-    float *weights_for_w = &(weights[s->f.index & l.all->reg.weight_mask]);
+    last_weight_index = s->f.weight_index;
+    float *weights_for_w = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
     float decay_component =
       l.decay_levels.end[-2] - l.decay_levels.end[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
     float decay = fmin(1.0f, correctedExp(decay_component));
@@ -757,10 +757,10 @@ void learn_batch(lda &l)
 
   for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back();)
   { index_feature *next = s + 1;
-    while (next <= &l.sorted_features.back() && next->f.index == s->f.index)
+    while (next <= &l.sorted_features.back() && next->f.weight_index == s->f.weight_index)
       next++;
 
-    float *word_weights = &(weights[s->f.index & l.all->reg.weight_mask]);
+    float *word_weights = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
     for (size_t k = 0; k < l.all->lda; k++)
     { float new_value = minuseta * word_weights[k];
       word_weights[k] = new_value;
@@ -768,7 +768,7 @@ void learn_batch(lda &l)
 
     for (; s != next; s++)
     { float *v_s = &(l.v[s->document * l.all->lda]);
-      float *u_for_w = &weights[(s->f.index & l.all->reg.weight_mask) + l.all->lda + 1];
+      float *u_for_w = &weights[(s->f.weight_index & l.all->reg.weight_mask) + l.all->lda + 1];
       float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
       for (size_t k = 0; k < l.all->lda; k++)
       { float new_value = u_for_w[k] * v_s[k] * c_w;
@@ -795,7 +795,7 @@ void learn(lda &l, LEARNER::base_learner &, example &ec)
   for (unsigned char *i = ec.indices.begin; i != ec.indices.end; i++)
     { features& fs = ec.feature_space[*i];
       for (size_t j = 0; j < fs.size(); ++j)
-        { index_feature temp = {(uint64_t)num_ex, sparse_feature(fs.values[j], fs.indicies[j])};
+        { index_feature temp = {(uint64_t)num_ex, feature(fs.values[j], fs.indicies[j])};
           l.sorted_features.push_back(temp);
           l.doc_lengths[num_ex] += (int)fs.values[j];
         }
