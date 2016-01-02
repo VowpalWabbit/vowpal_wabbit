@@ -65,14 +65,14 @@ void del_example_namespaces_from_example(example& target, example& source)
     }
 }
 
-void add_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab, bool audit)
+void add_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab)
 { size_t lab_hash = hash_lab(lab);
   features& res = lfm.get(lab, lab_hash);
   if (res.size() == 0) return;
   add_example_namespace(ec, 'l', res);
 }
 
-void del_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab, bool audit)
+void del_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab)
 { size_t lab_hash = hash_lab(lab);
   features& res = lfm.get(lab, lab_hash);
   if (res.size() == 0) return;

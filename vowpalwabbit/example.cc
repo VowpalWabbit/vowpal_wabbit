@@ -80,8 +80,6 @@ struct features_and_source
 { v_array<sparse_feature> feature_map; //map to store sparse feature vectors
   uint32_t stride_shift;
   uint64_t mask;
-  weight* base;
-  vw* all;
 };
 
 void vec_store(features_and_source& p, float fx, uint64_t fi)
@@ -93,19 +91,24 @@ sparse_feature* get_features(vw& all, example* ec, size_t& feature_map_len)
 { features_and_source fs;
   fs.stride_shift = all.reg.stride_shift;
   fs.mask = (uint64_t)all.reg.weight_mask >> all.reg.stride_shift;
-  fs.base = all.reg.weight_vector;
-  fs.all = &all;
-  fs.feature_map = v_init<feature>();
+  fs.feature_map = v_init<sparse_feature>();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
   feature_map_len = fs.feature_map.size();
   return fs.feature_map.begin;
 }
 
-void return_features(feature* f)
-{ if (f != nullptr)
-    free(f);
+void return_features(sparse_feature* f)
+{ free_it (f); }
 }
-}
+
+struct full_features_and_source
+{ features fs;
+  uint32_t stride_shift;
+  uint64_t mask;
+};
+
+void vec_ffs_store(full_features_and_source& p, float fx, uint64_t fi)
+{ p.fs.push_back(fx, (uint64_t)(fi >> p.stride_shift) & p.mask); }
 
 flat_example* flatten_example(vw& all, example *ec)
 { flat_example& fec = calloc_or_throw<flat_example>();
@@ -122,27 +125,32 @@ flat_example* flatten_example(vw& all, example *ec)
   fec.ft_offset = ec->ft_offset;
   fec.num_features = ec->num_features;
 
-  fec.feature_map = VW::get_features(all, ec, fec.feature_map_len);
+  full_features_and_source ffs;
+  ffs.fs = features();
+  ffs.stride_shift = all.reg.stride_shift;
+  ffs.mask = (uint64_t)all.reg.weight_mask >> all.reg.stride_shift;
+  GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
+
+  fec.fs = ffs.fs;
 
   return &fec;
 }
 
 flat_example* flatten_sort_example(vw& all, example *ec)
 { flat_example* fec = flatten_example(all, ec);
-  fec->feature_map.sort();
-  fec->total_sum_feat_sq = collision_cleanup(fec->feature_map, fec->feature_map_len);
+  fec->fs.sort(all.parse_mask);
+  fec->total_sum_feat_sq = collision_cleanup(fec->fs);
   return fec;
 }
 
 void free_flatten_example(flat_example* fec)
 { //note: The label memory should be freed by by freeing the original example.
   if (fec)
-  { if (fec->feature_map_len > 0)
-      free(fec->feature_map);
-    if (fec->tag_len > 0)
-      free(fec->tag);
-    free(fec);
-  }
+    { fec->fs.delete_v();
+      if (fec->tag_len > 0)
+        free(fec->tag);
+      free(fec);
+    }
 }
 
 namespace VW
@@ -174,19 +182,8 @@ void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_predic
   }
 
   for (size_t j = 0; j < 256; j++)
-  { ec.atomics[j].delete_v();
+    ec.feature_space[j].delete_v();
 
-    if (ec.audit_features[j].begin != ec.audit_features[j].end_array)
-      {
-      for (audit_data* temp = ec.audit_features[j].begin;
-           temp != ec.audit_features[j].end; temp++)
-	{
-	  free_it(temp->space);
-	  free_it(temp->feature);
-	}
-      ec.audit_features[j].delete_v();
-    }
-  }
   ec.indices.delete_v();
 }
 }

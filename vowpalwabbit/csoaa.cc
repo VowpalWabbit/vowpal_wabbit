@@ -239,13 +239,13 @@ void make_single_prediction(ldf& data, base_learner& base, example& ec)
   simple_label.initial = 0.;
   simple_label.label = FLT_MAX;
 
-  LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index, data.all->audit || data.all->hash_inv);
+  LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
 
   ec.l.simple = simple_label;
   base.predict(ec); // make a prediction
   ld.costs[0].partial_prediction = ec.partial_prediction;
 
-  LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index, data.all->audit || data.all->hash_inv);
+  LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
   ec.l.cs = ld;
 }
 
@@ -286,7 +286,7 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
     v_array<COST_SENSITIVE::wclass> costs1 = save_cs_label.costs;
     if (costs1[0].class_index == (uint32_t)-1) continue;
 
-    LabelDict::add_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index, data.all->audit || data.all->hash_inv);
+    LabelDict::add_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
 
     for (size_t k2=k1+1; k2<K; k2++)
     { example *ec2 = data.ec_seq[k2];
@@ -298,7 +298,7 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
       if (value_diff < 1e-6)
         continue;
 
-      LabelDict::add_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index, data.all->audit || data.all->hash_inv);
+      LabelDict::add_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
 
       // learn
       ec1->example_t = data.csoaa_example_t;
@@ -310,9 +310,9 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
       base.learn(*ec1);
       unsubtract_example(ec1);
 
-      LabelDict::del_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index, data.all->audit || data.all->hash_inv);
+      LabelDict::del_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
     }
-    LabelDict::del_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index, data.all->audit || data.all->hash_inv);
+    LabelDict::del_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
 
     // restore original cost-sensitive label, sum of importance weights
     ec1->l.cs = save_cs_label;
@@ -362,9 +362,9 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
     ec->l.simple = simple_label;
 
     // learn
-    LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index, data.all->audit || data.all->hash_inv);
+    LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
     base.learn(*ec);
-    LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index, data.all->audit || data.all->hash_inv);
+    LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
     ec->weight = old_weight;
 
     // restore original cost-sensitive label, sum of importance weights and partial_prediction
@@ -402,7 +402,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   if (ec_is_example_header(*data.ec_seq[0]))
   { start_K = 1;
     for (size_t k=1; k<K; k++)
-      LabelDict::add_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0], (data.all->audit || data.all->hash_inv));
+      LabelDict::add_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0]);
   }
   bool isTest = check_ldf_sequence(data, start_K);
 
@@ -467,7 +467,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   /////////////////////// remove header
   if (start_K > 0)
     for (size_t k=1; k<K; k++)
-      LabelDict::del_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0], (data.all->audit || data.all->hash_inv));
+      LabelDict::del_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0]);
 
   ////////////////////// compute probabilities
   if (data.is_probabilities)

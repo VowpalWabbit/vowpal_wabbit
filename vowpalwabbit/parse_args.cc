@@ -219,14 +219,13 @@ void parse_dictionary_argument(vw&all, string str)
     { free(word);
       continue;
     }
-    v_array<feature>* arr = new v_array<feature>;
-    *arr = v_init<feature>();
-    push_many(*arr, ec->atomics[def].begin, ec->atomics[def].size());
+    features* arr = new features;
+    copy(*arr, ec->feature_space[def]);
     map->put(ss, hash, arr);
 
     // clear up ec
     ec->tag.erase(); ec->indices.erase();
-    for (size_t i=0; i<256; i++) { ec->atomics[i].erase(); ec->audit_features[i].erase(); }
+    for (size_t i=0; i<256; i++) { ec->feature_space[i].erase();}
   }
   while ((rc != EOF) && (nread > 0));
   free(buffer);
@@ -1367,7 +1366,7 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
   return new_model;
 }
 
-void delete_dictionary_entry(substring ss, v_array<feature>*A)
+void delete_dictionary_entry(substring ss, features* A)
 { free(ss.begin);
   A->delete_v();
   delete A;

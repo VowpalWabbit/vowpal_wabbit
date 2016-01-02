@@ -14,7 +14,7 @@ license as described in the file LICENSE.
 
 using namespace std;
 
-char* copy(char* base)
+char* copy(const char* base)
 { size_t len = 0;
   while (base[len++] != '\0');
   char* ret = calloc_or_throw<char>(len);
@@ -186,12 +186,11 @@ public:
               if (audit)
                 for (size_t i = 0; i < feats->indicies.size(); ++i)
                   { uint64_t id = feats->indicies[i];
-                    size_t len = 2 + (feature_name.end-feature_name.begin) + 1 + (size_t)ceil(log10(id)) + 1;
                     stringstream ss;
                     ss << index << '_';
                     for (char* fc=feature_name.begin; fc!=feature_name.end; ++fc) ss << *fc;
                     ss << '=' << id;
-                    dict_fs.space_names.push_back(audit_strings(copy((char*)"dictionary"), ss.str()));
+                    dict_fs.space_names.push_back(audit_strings(copy((char*)"dictionary"), copy(ss.str().c_str())));
                   }
             }
         }

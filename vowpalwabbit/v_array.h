@@ -45,9 +45,9 @@ public:
       resize(2 * (end_array - begin) + 3);
     end++;
   }
-  T& operator[](size_t i) { return begin[i]; }
+  T& operator[](size_t i) const { return begin[i]; }
   T& get(size_t i) { return begin[i]; }
-  inline size_t size() {return end-begin;}
+  inline size_t size() const {return end-begin;}
   void resize(size_t length)
   { if ((size_t)(end_array-begin) != length)
     { size_t old_len = end-begin;

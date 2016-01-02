@@ -41,10 +41,8 @@ private:
     new_ec->tag.erase();
     new_ec->indices.erase();
     for (size_t i=0; i<256; i++)
-    { new_ec->atomics[i].erase();
-      new_ec->audit_features[i].erase();
-      new_ec->sum_feat_sq[i] = 0.;
-    }
+      new_ec->feature_space[i].erase();
+
     new_ec->ft_offset = 0;
     new_ec->num_features = 0;
     new_ec->partial_prediction = 0.;
@@ -140,8 +138,7 @@ public:
   void addns(char c)
   { if (ensure_ns_exists(c)) return;
 
-    ec->atomics[(int)c].erase();
-    ec->sum_feat_sq[(int)c] = 0;
+    ec->feature_space[(int)c].erase();
     past_seeds.push_back(current_seed);
     current_ns = c;
     str[0] = c;
@@ -155,13 +152,12 @@ public:
     }
     else
     { if (ns_exists[(int)current_ns])
-      { ec->total_sum_feat_sq -= ec->sum_feat_sq[(int)current_ns];
-        ec->sum_feat_sq[(int)current_ns] = 0;
-        ec->num_features -= ec->atomics[(int)current_ns].size();
-        ec->atomics[(int)current_ns].erase();
+        { ec->total_sum_feat_sq -= ec->feature_space[(int)current_ns].sum_feat_sq;
+          ec->feature_space[(int)current_ns].erase();
+          ec->num_features -= ec->feature_space[(int)current_ns].size();
 
-        ns_exists[(int)current_ns] = false;
-      }
+          ns_exists[(int)current_ns] = false;
+        }
 
       current_seed = past_seeds.back();
       past_seeds.pop_back();
@@ -175,9 +171,7 @@ public:
   { if (to_ns == 0) return 0;
     if (ensure_ns_exists(to_ns)) return 0;
 
-    feature f = { v, fint << vw_ref->reg.stride_shift };
-    ec->atomics[(int)to_ns].push_back(f);
-    ec->sum_feat_sq[(int)to_ns] += v * v;
+    ec->feature_space[(int)to_ns].push_back(v, fint << vw_ref->reg.stride_shift);
     ec->total_sum_feat_sq += v * v;
     ec->num_features++;
     example_changed_since_prediction = true;
@@ -189,12 +183,11 @@ public:
   // copy an entire namespace from this other example, you can even give it a new namespace name if you want!
   void add_other_example_ns(example& other, char other_ns, char to_ns)
   { if (ensure_ns_exists(to_ns)) return;
-    for (feature*f = other.atomics[(int)other_ns].begin; f != other.atomics[(int)other_ns].end; ++f)
-    { ec->atomics[(int)to_ns].push_back(*f);
-      ec->sum_feat_sq[(int)to_ns] += f->x * f->x;
-      ec->total_sum_feat_sq += f->x * f->x;
-      ec->num_features++;
-    }
+    features& fs = other.feature_space[(int)other_ns];
+    for (size_t i = 0; i < fs.size(); i++)
+      ec->feature_space[(int)to_ns].push_back(fs.values[i], fs.indicies[i]);
+    ec->total_sum_feat_sq += fs.sum_feat_sq;
+    ec->num_features += fs.size();
     example_changed_since_prediction = true;
   }
   void add_other_example_ns(example& other, char ns)    // default to_ns to other_ns
@@ -223,11 +216,9 @@ public:
 
     for (vector<string>::iterator i = vw_ref->pairs.begin(); i != vw_ref->pairs.end(); i++)
     { quadratic_features_num
-      += (ec->atomics[(int)(*i)[0]].end - ec->atomics[(int)(*i)[0]].begin)
-         *  (ec->atomics[(int)(*i)[1]].end - ec->atomics[(int)(*i)[1]].begin);
+        += ec->feature_space[(int)(*i)[0]].size() * ec->feature_space[(int)(*i)[1]].size();
       quadratic_features_sqr
-      += ec->sum_feat_sq[(int)(*i)[0]]
-         *  ec->sum_feat_sq[(int)(*i)[1]];
+      += ec->feature_space[(int)(*i)[0]].sum_feat_sq * ec->feature_space[(int)(*i)[1]].sum_feat_sq;
     }
     ec->num_features      += quadratic_features_num;
     ec->total_sum_feat_sq += quadratic_features_sqr;

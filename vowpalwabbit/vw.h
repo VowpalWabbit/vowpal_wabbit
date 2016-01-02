@@ -45,11 +45,6 @@ void end_parser(vw& all);
 bool is_ring_example(vw& all, example* ae);
 bool parse_atomic_example(vw& all, example* ae, bool do_read);
 
- struct sparse_feature {
-   float x;
-   uint64_t index;
- };
-
 struct primitive_feature_space   //just a helper definition.
 { unsigned char name;
   sparse_feature* fs;

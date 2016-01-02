@@ -680,7 +680,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
     return false;
 
   if(all.p->sort_features && ae->sorted == false)
-    unique_sort_features(all.audit, all.parse_mask, ae);
+    unique_sort_features(all.parse_mask, ae);
 
   if (all.p->write_cache)
     { all.p->lp.cache_label(&ae->l,*(all.p->output));
@@ -700,7 +700,7 @@ void feature_limit(vw& all, example* ex)
 { for(unsigned char* index = ex->indices.begin; index < ex->indices.end; index++)
     if (all.limit[*index] < ex->feature_space[*index].size())
       { features& fs = ex->feature_space[*index];
-        fs.sort();
+        fs.sort(all.parse_mask);
         unique_features(fs, all.limit[*index]);
       }
 }
@@ -728,52 +728,37 @@ void setup_example(vw& all, example* ae)
 
 
   if (all.ignore_some)
-  { if (all.audit || all.hash_inv)
-      for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
-        if (all.ignore[*i])
-          ae->audit_features[*i].erase();
-
     for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
       if (all.ignore[*i])
-      { //delete namespace
-        ae->atomics[*i].erase();
-        memmove(i,i+1,(ae->indices.end - (i+1))*sizeof(*i));
-        ae->indices.end--;
-        i--;
-      }
-  }
+        { //delete namespace
+          ae->feature_space[*i].erase();
+          memmove(i,i+1,(ae->indices.end - (i+1))*sizeof(*i));
+          ae->indices.end--;
+          i--;
+        }
 
   if(all.ngram_strings.size() > 0)
     generateGrams(all, ae);
 
-  if (all.add_constant)
-  { //add constant feature
-    ae->indices.push_back(constant_namespace);
-    feature temp = {1.f, constant};
-    ae->atomics[constant_namespace].push_back(temp);
-    ae->total_sum_feat_sq++;
+  if (all.add_constant)//add constant feature
+    VW::add_constant_feature(all,ae);
 
-    if (all.audit || all.hash_inv) ae->audit_features[constant_namespace].push_back({nullptr,strdup("Constant"), constant, 1.});
-  }
 
   if(all.limit_strings.size() > 0)
     feature_limit(all,ae);
 
   uint64_t multiplier = all.wpp << all.reg.stride_shift;
   if(multiplier != 1) //make room for per-feature information.
-  { for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
-      for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
-        j->weight_index *= multiplier;
-    if (all.audit || all.hash_inv)
-      for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
-        for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
-          j->weight_index *= multiplier;
-  }
-
+    for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
+      {
+        features& fs = ae->feature_space[*i];
+        for(size_t j = 0; j < fs.size(); ++j)
+          fs.indicies[j] *= multiplier;
+      }
   for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
-  { ae->num_features += ae->atomics[*i].end - ae->atomics[*i].begin;
-    ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
-  }
+    { ae->num_features += ae->feature_space[*i].size();
+      ae->total_sum_feat_sq += ae->feature_space[*i].sum_feat_sq;
+    }
 
   size_t new_features_cnt;
   float new_features_sum_feat_sq;
@@ -809,11 +794,10 @@ example* read_example(vw& all, string example_line) { return read_example(all, (
 void add_constant_feature(vw& vw, example*ec)
 { uint64_t cns = constant_namespace;
   ec->indices.push_back(cns);
-  feature temp = {1, constant};
-  ec->atomics[cns].push_back(temp);
+  ec->feature_space[cns].push_back(1,constant);
   ec->total_sum_feat_sq++;
   ec->num_features++;
-  if (vw.audit || vw.hash_inv) ec->audit_features[constant_namespace].push_back({nullptr,strdup("Constant"), constant, 1.});
+  if (vw.audit || vw.hash_inv) ec->feature_space[constant_namespace].space_names.push_back(audit_strings(nullptr,strdup("Constant")));
 }
 
 void add_label(example* ec, float label, float weight, float base)
@@ -833,9 +817,7 @@ example* import_example(vw& all, string label, primitive_feature_space* features
   { uint64_t index = features[i].name;
     ret->indices.push_back(index);
     for (size_t j = 0; j < features[i].len; j++)
-    { ret->sum_feat_sq[index] += features[i].fs[j].x * features[i].fs[j].x;
-      ret->atomics[index].push_back(features[i].fs[j]);
-    }
+      ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].index);
   }
   VW::parse_atomic_example(all,ret,false);
   setup_example(all, ret);
@@ -850,16 +832,17 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
   int fs_count = 0;
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
   { fs_ptr[fs_count].name = *i;
-    fs_ptr[fs_count].len = ec->atomics[*i].size();
-    fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
+    fs_ptr[fs_count].len = ec->feature_space[*i].size();
+    fs_ptr[fs_count].fs = new sparse_feature[fs_ptr[fs_count].len];
 
     int f_count = 0;
-    for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
-    { feature t = *f;
-      t.weight_index >>= all.reg.stride_shift;
-      fs_ptr[fs_count].fs[f_count] = t;
-      f_count++;
-    }
+    features& fs = ec->feature_space[*i];
+    for (size_t j = 0; j < fs.size(); ++j)
+      { sparse_feature t = {fs.values[j], fs.indicies[j]};
+        t.index >>= all.reg.stride_shift;
+        fs_ptr[fs_count].fs[f_count] = t;
+        f_count++;
+      }
     fs_count++;
   }
   return fs_ptr;
@@ -882,22 +865,9 @@ void parse_example_label(vw& all, example&ec, string label)
 }
 
 void empty_example(vw& all, example& ec)
-{ if (all.audit || all.hash_inv)
-    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-    { for (audit_data* temp
-           = ec.audit_features[*i].begin;
-           temp != ec.audit_features[*i].end; temp++)
-	{
-	  free_it(temp->space);
-          free_it(temp->feature);
-	}
-      ec.audit_features[*i].erase();
-    }
-
+{
   for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-  { ec.atomics[*i].erase();
-    ec.sum_feat_sq[*i]=0;
-  }
+    ec.feature_space[*i].erase();
 
   ec.indices.erase();
   ec.tag.erase();

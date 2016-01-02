@@ -42,8 +42,8 @@ class index_feature
 {
 public:
   uint64_t document;
-  feature f;
-  bool operator<(const index_feature b) const { return f.weight_index < b.f.weight_index; }
+  sparse_feature f;
+  bool operator<(const index_feature b) const { return f.index < b.f.index; }
 };
 
 struct lda
@@ -571,7 +571,7 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, exa
   }
   size_t num_words = 0;
   for (unsigned char *i = ec->indices.begin; i != ec->indices.end; i++)
-    num_words += ec->atomics[*i].end - ec->atomics[*i].begin;
+    num_words += ec->feature_space[*i].size();
 
   float xc_w = 0;
   float score = 0;
@@ -587,20 +587,20 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, exa
     size_t word_count = 0;
     doc_length = 0;
     for (unsigned char *i = ec->indices.begin; i != ec->indices.end; i++)
-    { feature *f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++)
-      { float *u_for_w = &weights[(f->weight_index & l.all->reg.weight_mask) + l.topics + 1];
-        float c_w = find_cw(l, u_for_w, v);
-        xc_w = c_w * f->x;
-        score += -f->x * log(c_w);
-        size_t max_k = l.topics;
-        for (size_t k = 0; k < max_k; k++)
-        { new_gamma[k] += xc_w * u_for_w[k];
-        }
-        word_count++;
-        doc_length += f->x;
+      { features& fs = ec->feature_space[*i];
+        for (size_t j = 0; j < fs.size(); ++j)
+          { float *u_for_w = &weights[(fs.indicies[j] & l.all->reg.weight_mask) + l.topics + 1];
+            float c_w = find_cw(l, u_for_w, v);
+            xc_w = c_w * fs.values[j];
+            score += -fs.values[j] * log(c_w);
+            size_t max_k = l.topics;
+            for (size_t k = 0; k < max_k; k++)
+              { new_gamma[k] += xc_w * u_for_w[k];
+              }
+            word_count++;
+            doc_length += fs.values[j];
+          }
       }
-    }
     for (size_t k = 0; k < l.topics; k++)
       new_gamma[k] = new_gamma[k] * v[k] + l.lda_alpha;
   }
@@ -726,10 +726,10 @@ void learn_batch(lda &l)
 
   size_t last_weight_index = -1;
   for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++)
-  { if (last_weight_index == s->f.weight_index)
+  { if (last_weight_index == s->f.index)
       continue;
-    last_weight_index = s->f.weight_index;
-    float *weights_for_w = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
+    last_weight_index = s->f.index;
+    float *weights_for_w = &(weights[s->f.index & l.all->reg.weight_mask]);
     float decay_component =
       l.decay_levels.end[-2] - l.decay_levels.end[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
     float decay = fmin(1.0f, correctedExp(decay_component));
@@ -757,10 +757,10 @@ void learn_batch(lda &l)
 
   for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back();)
   { index_feature *next = s + 1;
-    while (next <= &l.sorted_features.back() && next->f.weight_index == s->f.weight_index)
+    while (next <= &l.sorted_features.back() && next->f.index == s->f.index)
       next++;
 
-    float *word_weights = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
+    float *word_weights = &(weights[s->f.index & l.all->reg.weight_mask]);
     for (size_t k = 0; k < l.all->lda; k++)
     { float new_value = minuseta * word_weights[k];
       word_weights[k] = new_value;
@@ -768,7 +768,7 @@ void learn_batch(lda &l)
 
     for (; s != next; s++)
     { float *v_s = &(l.v[s->document * l.all->lda]);
-      float *u_for_w = &weights[(s->f.weight_index & l.all->reg.weight_mask) + l.all->lda + 1];
+      float *u_for_w = &weights[(s->f.index & l.all->reg.weight_mask) + l.all->lda + 1];
       float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
       for (size_t k = 0; k < l.all->lda; k++)
       { float new_value = u_for_w[k] * v_s[k] * c_w;
@@ -793,13 +793,13 @@ void learn(lda &l, LEARNER::base_learner &, example &ec)
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
   for (unsigned char *i = ec.indices.begin; i != ec.indices.end; i++)
-  { feature *f = ec.atomics[*i].begin;
-    for (; f != ec.atomics[*i].end; f++)
-    { index_feature temp = {(uint64_t)num_ex, *f};
-      l.sorted_features.push_back(temp);
-      l.doc_lengths[num_ex] += (int)f->x;
+    { features& fs = ec.feature_space[*i];
+      for (size_t j = 0; j < fs.size(); ++j)
+        { index_feature temp = {(uint64_t)num_ex, sparse_feature(fs.values[j], fs.indicies[j])};
+          l.sorted_features.push_back(temp);
+          l.doc_lengths[num_ex] += (int)fs.values[j];
+        }
     }
-  }
   if (++num_ex == l.minibatch)
     learn_batch(l);
 }

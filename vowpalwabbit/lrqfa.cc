@@ -117,7 +117,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
               free (rfs.space_names[j].second);
             }
 
-          rfs.space_names[right].end = rfs.space_names[right].begin + lrq.orig_size[right];
+          rfs.space_names.end = rfs.space_names.begin + lrq.orig_size[right];
         }
     }
   }

@@ -45,7 +45,7 @@ struct stagewise_poly
 
   example synth_ec;
   //following is bookkeeping in synth_ec creation (dfs)
-  feature synth_rec_f;
+  sparse_feature synth_rec_f;
   example *original_ec;
   uint32_t cur_depth;
   bool training;
@@ -370,11 +370,9 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.sorted = ec.sorted;
   poly.synth_ec.in_use = ec.in_use;
 
-  poly.synth_ec.atomics[tree_atomics].erase();
-  poly.synth_ec.audit_features[tree_atomics].erase();
+  poly.synth_ec.feature_space[tree_atomics].erase();
   poly.synth_ec.num_features = 0;
   poly.synth_ec.total_sum_feat_sq = 0;
-  poly.synth_ec.sum_feat_sq[tree_atomics] = 0;
   poly.synth_ec.example_t = ec.example_t;
 
   if (poly.synth_ec.indices.size()==0)
@@ -382,17 +380,18 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
 }
 
 void synthetic_decycle(stagewise_poly &poly)
-{ for (feature *f = poly.synth_ec.atomics[tree_atomics].begin;
-       f != poly.synth_ec.atomics[tree_atomics].end; ++f)
-  { assert(cycle_get(poly, f->weight_index));
-    cycle_toggle(poly, f->weight_index);
-  }
+{
+  features& fs = poly.synth_ec.feature_space[tree_atomics];
+  for (size_t i = 0; i < fs.size(); ++i)
+    { assert(cycle_get(poly, fs.indiceis[i]));
+      cycle_toggle(poly, fs.indicies[i]);
+    }
 }
 
 void synthetic_create_rec(stagewise_poly &poly, float v, float &w)
 { //Note: need to un_ft_shift since gd::foreach_feature bakes in the offset.
   uint64_t wid_atomic = wid_mask(poly, un_ft_offset(poly, (uint64_t)((&w - poly.all->reg.weight_vector))));
-  uint64_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.weight_index);
+  uint64_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.index);
   assert(wid_atomic % stride_shift(poly, 1) == 0);
 
   //Note: only mutate learner state when in training mode.  This is because
@@ -425,14 +424,13 @@ void synthetic_create_rec(stagewise_poly &poly, float v, float &w)
     ++poly.depths[poly.cur_depth];
 #endif //DEBUG
 
-    feature new_f = { v * poly.synth_rec_f.x, wid_cur };
-    poly.synth_ec.atomics[tree_atomics].push_back(new_f);
+    sparse_feature temp ={v * poly.synth_rec_f.x, wid_cur};
+    poly.synth_ec.feature_space[tree_atomics].push_back(temp.x, temp.index);
     poly.synth_ec.num_features++;
-    poly.synth_ec.sum_feat_sq[tree_atomics] += new_f.x * new_f.x;
 
-    if (parent_get(poly, new_f.weight_index))
-    { feature parent_f = poly.synth_rec_f;
-      poly.synth_rec_f = new_f;
+    if (parent_get(poly, temp.index))
+    { sparse_feature parent_f = poly.synth_rec_f;
+      poly.synth_rec_f = temp;
       ++poly.cur_depth;
 #ifdef DEBUG
       poly.max_depth = (poly.max_depth > poly.cur_depth) ? poly.max_depth : poly.cur_depth;
@@ -450,7 +448,7 @@ void synthetic_create(stagewise_poly &poly, example &ec, bool training)
   poly.cur_depth = 0;
 
   poly.synth_rec_f.x = 1.0;
-  poly.synth_rec_f.weight_index = constant_feat_masked(poly); //note: not ft_offset'd
+  poly.synth_rec_f.index = constant_feat_masked(poly); //note: not ft_offset'd
   poly.training = training;
   /*
    * Another choice is to mark the constant feature as the single initial
@@ -459,7 +457,7 @@ void synthetic_create(stagewise_poly &poly, example &ec, bool training)
    */
   GD::foreach_feature<stagewise_poly, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
   synthetic_decycle(poly);
-  poly.synth_ec.total_sum_feat_sq = poly.synth_ec.sum_feat_sq[tree_atomics];
+  poly.synth_ec.total_sum_feat_sq = poly.synth_ec.feature_space[tree_atomics].sum_feat_sq;
 
   if (training)
   { poly.sum_sparsity += poly.synth_ec.num_features;
@@ -607,7 +605,7 @@ void finish(stagewise_poly &poly)
   cout << "total feature number (after poly expansion!) = " << poly.sum_sparsity << endl;
 #endif //DEBUG
 
-  poly.synth_ec.atomics[tree_atomics].delete_v();
+  poly.synth_ec.feature_space[tree_atomics].delete_v();
   poly.synth_ec.indices.delete_v();
   sort_data_destroy(poly);
   depthsbits_destroy(poly);
