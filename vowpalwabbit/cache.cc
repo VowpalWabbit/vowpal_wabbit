@@ -100,7 +100,7 @@ int read_cached_features(void* in, example* ec)
     uint64_t last = 0;
 
     for (; c!= end;)
-      { feature_index i;
+      { feature_index i = 0;
         c = run_len_decode(c,i);
         feature_value v = 1.f;
         if (i & neg_1)
@@ -110,7 +110,6 @@ int read_cached_features(void* in, example* ec)
             c += sizeof(float);
           }
         uint64_t diff = i >> 2;
-
         int64_t s_diff = ZigZagDecode(diff);
         if (s_diff < 0)
           ae->sorted = false;

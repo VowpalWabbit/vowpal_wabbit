@@ -612,16 +612,14 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs,
           new_index = new_index*quadratic_constant + fs.indicies[i+gram_mask[n]];
 
         fs.push_back(1.,new_index);
-        if ((all.audit || all.hash_inv) && fs.space_names.size() >= initial_length)
+        if (fs.space_names.size() > 0)
           { string feature_name(fs.space_names[i].second);
             for (size_t n = 1; n < gram_mask.size(); n++)
               { feature_name += string("^");
                 feature_name += string(fs.space_names[i+gram_mask[n]].second);
               }
-            char* feature;
-            strcpy(feature, feature_name.c_str());
-            char* space;
-            strcpy(space, fs.space_names[i].first);
+            char* feature = strdup(feature_name.c_str());
+            char* space = strdup(fs.space_names[i].first);
             fs.space_names.push_back(audit_strings(space,feature));
           }
       }
@@ -743,7 +741,6 @@ void setup_example(vw& all, example* ae)
   if (all.add_constant)//add constant feature
     VW::add_constant_feature(all,ae);
 
-
   if(all.limit_strings.size() > 0)
     feature_limit(all,ae);
 
@@ -755,6 +752,8 @@ void setup_example(vw& all, example* ae)
         for(size_t j = 0; j < fs.size(); ++j)
           fs.indicies[j] *= multiplier;
       }
+  ae->num_features = 0;
+  ae->total_sum_feat_sq = 0;
   for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
     { ae->num_features += ae->feature_space[*i].size();
       ae->total_sum_feat_sq += ae->feature_space[*i].sum_feat_sq;
@@ -765,7 +764,6 @@ void setup_example(vw& all, example* ae)
   INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
   ae->num_features += new_features_cnt;
   ae->total_sum_feat_sq += new_features_sum_feat_sq;
-
 }
 }
 

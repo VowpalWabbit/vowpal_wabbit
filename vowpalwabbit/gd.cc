@@ -266,12 +266,16 @@ void print_features(vw& all, example& ec)
 
     for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
       { features& fs = ec.feature_space[(size_t)*i];
-        for (size_t j = 0; j < fs.size(); ++j)
-          {
-            audit_interaction(dat, &fs.space_names[j]);
-            audit_feature(dat, fs.values[j], (uint32_t)fs.indicies[j] + ec.ft_offset);
-            audit_interaction(dat, NULL);
-          }
+	if (fs.space_names.size() > 0)
+	  for (size_t j = 0; j < fs.size(); ++j)
+	    {
+	      audit_interaction(dat, &fs.space_names[j]);
+	      audit_feature(dat, fs.values[j], (uint32_t)fs.indicies[j] + ec.ft_offset);
+	      audit_interaction(dat, NULL);
+	    }
+	else
+	  for (size_t j = 0; j < fs.size(); ++j)
+	    audit_feature(dat, fs.values[j], (uint32_t)fs.indicies[j] + ec.ft_offset);
       }
 
     INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, audit_interaction >(all, ec, dat);

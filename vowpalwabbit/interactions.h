@@ -127,17 +127,19 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
 
     if (len == 2) //special case of pairs
       {
-        features& first = features_data[ns[0]];
+        features& first = features_data[ns[0]];	
+	bool audit = first.space_names.size() >0;
         if (first.indicies.size() > 0)
           {
             features& second = features_data[ns[1]];
+	    audit &= second.space_names.size() > 0;
             if (second.indicies.size() > 0)
               {
                 const bool same_namespace = ( !all.permutations && ( ns[0] == ns[1] ) );
 
                 for(size_t i = 0; i < first.indicies.size(); ++i)
                   { const uint64_t halfhash = FNV_prime * (uint64_t)first.indicies[i];
-                    audit_func(dat, &first.space_names[i]);
+                    if (audit) audit_func(dat, &first.space_names[i]);
                     // next index differs for permutations and simple combinations
                     const float& ft_value = first.values[i];
                     size_t j=0;
@@ -145,12 +147,12 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
                       j = (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i+1;
                     for (; j < second.indicies.size(); ++j)
                       {
-                        audit_func(dat, &second.space_names[j]);
+                        if (audit) audit_func(dat, &second.space_names[j]);
                         //  const size_t ft_idx = ((snd->weight_index /*>> stride_shift*/) ^ halfhash) /*<< stride_shift*/;
                         call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value, second.values[j]), (second.indicies[j]^halfhash) + offset);
-                        audit_func(dat, nullptr);
+                        if (audit) audit_func(dat, nullptr);
                       } // end for(snd)
-                    audit_func(dat, nullptr);
+                    if (audit) audit_func(dat, nullptr);
                   } // end for(fst)
               } // end if (data[snd] size > 0)
           } // end if (data[fst] size > 0)
@@ -158,12 +160,15 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
     else
       if (len == 3) // special case for triples
         { features& first = features_data[ns[0]];
+	  bool audit = first.space_names.size() >0;
         if (first.indicies.size() > 0)
         {
           features& second = features_data[ns[1]];
+	  audit &= second.space_names.size() > 0;
           if (second.indicies.size() > 0)
           {
             features& third = features_data[ns[2]];
+	    audit &= third.space_names.size() > 0;
             if (third.indicies.size() > 0)
             {
               // don't compare 1 and 3 as interaction is sorted
@@ -172,7 +177,7 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
 
               for(size_t i = 0; i < first.indicies.size(); ++i)
               {
-                audit_func(dat, &first.space_names[i]);
+                if(audit) audit_func(dat, &first.space_names[i]);
                 const uint64_t halfhash1 = FNV_prime * (uint64_t)first.indicies[i];
                 const float& ft_value = first.values[i];
                 size_t j=0;
@@ -181,7 +186,7 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
 
                 for (; j < second.indicies.size(); ++j)
                 { //f3 x k*(f2 x k*f1)
-                  audit_func(dat, &second.space_names[j]);
+                  if(audit) audit_func(dat, &second.space_names[j]);
                   const uint64_t halfhash2 = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
                   const float snd_value = INTERACTION_VALUE(ft_value, second.values[j]);
 
@@ -191,14 +196,14 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
 
                   for (; k < third.indicies.size(); ++k)
                   {
-                    audit_func(dat, &third.space_names[k]);
+                    if (audit) audit_func(dat, &third.space_names[k]);
 //                                        const size_t ft_idx = ((thr->weight_index /*>> stride_shift*/)^ halfhash2) /*<< stride_shift*/;
                     call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(snd_value,third.values[k]), (third.indicies[k]^halfhash2) + offset);
-                    audit_func(dat, nullptr);
+                    if(audit) audit_func(dat, nullptr);
                   } // end for (thr)
-                  audit_func(dat, nullptr);
+                  if (audit) audit_func(dat, nullptr);
                 } // end for (snd)
-                audit_func(dat, nullptr);
+                if(audit) audit_func(dat, nullptr);
               } // end for (fst)
 
             } // end if (data[thr] size > 0)
@@ -212,28 +217,29 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
       {
 
         bool must_skip_interaction = false;
-
+	bool audit = true;
         // preparing state data
         feature_gen_data* fgd = state_data.begin;
         feature_gen_data* fgd2; // for further use
         for (unsigned char* n = ns.begin; n != ns.end; ++n)
-        { features& ft = features_data[(int32_t)*n];
-          const size_t ft_cnt = ft.indicies.size();
-
-          if (ft_cnt == 0)
-            { must_skip_interaction = true;
-              break;
-            }
-
-          if (fgd == state_data.end)
-            { state_data.push_back(empty_ns_data);
-              fgd = state_data.end-1; // reassign as memory could be realloced
-            }
-
-          fgd->loop_end = ft_cnt-1; // saving number of features for each namespace
-          fgd->ft_arr = &ft;
-          ++fgd;
-        }
+	  { features& ft = features_data[(int32_t)*n];
+	    audit &= ft.space_names.size() > 0;
+	    const size_t ft_cnt = ft.indicies.size();
+	    
+	    if (ft_cnt == 0)
+	      { must_skip_interaction = true;
+		break;
+	      }
+	    
+	    if (fgd == state_data.end)
+	      { state_data.push_back(empty_ns_data);
+		fgd = state_data.end-1; // reassign as memory could be realloced
+	      }
+	    
+	    fgd->loop_end = ft_cnt-1; // saving number of features for each namespace
+	    fgd->ft_arr = &ft;
+	    ++fgd;
+	  }
 
         // if any of interacting namespace has 0 features - whole interaction is skipped
         if (must_skip_interaction) continue; //no_data_to_interact
@@ -304,7 +310,7 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
               else
                 next_data->loop_idx = 0;
 
-              audit_func(dat, &fs.space_names[feature]);
+              if(audit) audit_func(dat, &fs.space_names[feature]);
 
               if (cur_data == fgd) // first namespace
                 { next_data->hash = FNV_prime * (uint64_t)fs.indicies[feature];
@@ -326,9 +332,9 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
 
             features& fs = *(fgd2->ft_arr);
             for (size_t i = start_i; i != loop_end; ++i)
-              { audit_func(dat, &fs.space_names[i]);
+              { if (audit) audit_func(dat, &fs.space_names[i]);
                 call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(fgd2->x, fs.values[i]), (uint64_t)(fgd2->hash^fs.indicies[i]) + offset );
-                audit_func(dat, nullptr);
+                if (audit) audit_func(dat, nullptr);
               }
 
             // trying to go back increasing loop_idx of each namespace by the way
@@ -338,7 +344,7 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
             do
             { --cur_data;
               go_further = (++cur_data->loop_idx > cur_data->loop_end); //increment loop_idx
-              audit_func(dat, nullptr);
+              if (audit) audit_func(dat, nullptr);
             }
             while (go_further && cur_data != fgd);
 
