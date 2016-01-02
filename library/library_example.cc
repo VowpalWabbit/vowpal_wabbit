@@ -5,9 +5,9 @@
 using namespace std;
 
 
-inline sparse_feature vw_feature_from_string(vw& v, string fstr, unsigned long seed, float val)
+inline feature vw_feature_from_string(vw& v, string fstr, unsigned long seed, float val)
 { uint32_t foo = VW::hash_feature(v, fstr, seed);
-  sparse_feature f = { val, foo};
+  feature f = { val, foo};
   return f;
 }
 
@@ -26,9 +26,9 @@ int main(int argc, char *argv[])
 
   uint32_t s_hash = VW::hash_space(*model, "s");
   uint32_t t_hash = VW::hash_space(*model, "t");
-  s->fs = new sparse_feature[3];
+  s->fs = new feature[3];
   s->len = 3;
-  t->fs = new sparse_feature[3];
+  t->fs = new feature[3];
   t->len = 3;
 
   s->fs[0] = vw_feature_from_string(*model, "p^the_man", s_hash, 1.0);
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
   for (size_t i = 0; i < len; i++)
   { cout << "namespace = " << pfs[i].name;
     for (size_t j = 0; j < pfs[i].len; j++)
-      cout << " " << pfs[i].fs[j].index << ":" << pfs[i].fs[j].x << ":" << VW::get_weight(*model2, pfs[i].fs[j].index, 0);
+      cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":" << VW::get_weight(*model2, pfs[i].fs[j].weight_index, 0);
     cout << endl;
   }
 

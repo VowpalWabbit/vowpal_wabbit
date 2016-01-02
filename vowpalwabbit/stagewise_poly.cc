@@ -383,7 +383,7 @@ void synthetic_decycle(stagewise_poly &poly)
 {
   features& fs = poly.synth_ec.feature_space[tree_atomics];
   for (size_t i = 0; i < fs.size(); ++i)
-    { assert(cycle_get(poly, fs.indiceis[i]));
+    { assert(cycle_get(poly, fs.indicies[i]));
       cycle_toggle(poly, fs.indicies[i]);
     }
 }
