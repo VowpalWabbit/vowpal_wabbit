@@ -36,9 +36,9 @@ public:
   // ~v_array() {
   //  delete_v();
   // }
-  T last() { return *(end-1);}
+  T last() const { return *(end-1);}
   T pop() { return *(--end);}
-  bool empty() { return begin == end;}
+  bool empty() const { return begin == end;}
   void decr() { end--;}
   void incr()
   { if (end == end_array)
@@ -46,7 +46,7 @@ public:
     end++;
   }
   T& operator[](size_t i) const { return begin[i]; }
-  T& get(size_t i) { return begin[i]; }
+  T& get(size_t i) const { return begin[i]; }
   inline size_t size() const {return end-begin;}
   void resize(size_t length)
   { if ((size_t)(end_array-begin) != length)
@@ -76,15 +76,15 @@ public:
       free(begin);
     begin = end = end_array = nullptr;
   }
-  void push_back(const T &new_ele)
+  void push_back(const T& new_ele)
   { if(end == end_array)
       resize(2 * (end_array-begin) + 3);
     *(end++) = new_ele;
   }
-  void push_back_unchecked(const T &new_ele)
+  void push_back_unchecked(const T& new_ele)
   { *(end++) = new_ele;
   }
-  size_t find_sorted(const T& ele)  //index of the smallest element >= ele, return true if element is in the array
+  size_t find_sorted(const T& ele) const //index of the smallest element >= ele, return true if element is in the array
   { size_t size = end - begin;
     size_t a = 0;
     size_t b = size;
@@ -106,7 +106,7 @@ public:
     else	//size = 1, ele = 1, begin[0] = 0
       return b;
   }
-  size_t unique_add_sorted(const T &new_ele)//ANNA
+  size_t unique_add_sorted(const T& new_ele)
   { size_t index = 0;
     size_t size = end - begin;
     size_t to_move;
@@ -127,7 +127,7 @@ public:
 
     return index;
   }
-  bool contain_sorted(const T &ele, size_t& index)
+  bool contain_sorted(const T& ele, size_t& index)
   { index = find_sorted(ele);
 
     if(index == this->size())

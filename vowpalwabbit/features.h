@@ -36,16 +36,16 @@ struct features { // the core definition of a set of features.
     space_names = v_init<audit_strings>();
     sum_feat_sq = 0.f;
  }
-  size_t size() { return values.size(); }
+  inline size_t size() { return values.size(); }
 
   void free_space_names(size_t i)
   {
     for (; i<space_names.size(); i++)
-      { free(space_names[i].first);
-        free(space_names[i].second);
+      { free_it(space_names[i].first);
+        free_it(space_names[i].second);
       }
   }
-  bool empty() { return values.end == values.begin;}
+  inline bool empty() const { return values.end == values.begin;}
   template<class R, void (*T)(R&, feature_value, feature_index)> inline void foreach_feature(R& dat)
   {
     feature_value* vp = values.begin;

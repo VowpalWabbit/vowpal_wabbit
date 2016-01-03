@@ -12,7 +12,7 @@ const size_t char_size = 2;
 const size_t neg_1 = 1;
 const size_t general = 2;
 
-char* run_len_decode(char *p, uint64_t& i)
+inline char* run_len_decode(char *p, uint64_t& i)
 { // read an int 7 bits at a time.
   size_t count = 0;
   while(*p & 128)
@@ -21,7 +21,7 @@ char* run_len_decode(char *p, uint64_t& i)
   return p;
 }
 
-char* run_len_encode(char *p, uint64_t i)
+inline char* run_len_encode(char *p, uint64_t i)
 { // store an int 7 bits at a time.
   while (i >= 128)
   { *(p++) = (i & 127) | 128;
