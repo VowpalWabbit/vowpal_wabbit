@@ -6,6 +6,8 @@ license as described in the file LICENSE.
 #include <string>
 #include "gd.h"
 #include "vw.h"
+#include "rand48.h"
+#include <math.h>
 
 using namespace std;
 using namespace LEARNER;
@@ -50,13 +52,44 @@ struct OjaNewton {
         size_t stride_shift = all->reg.stride_shift;
         weight* weights = all->reg.weight_vector;
 
+        // simple initialization
         for (int i = 1; i <= m; i++)
             weights[(i << stride_shift) + i] = 1;
+
+        // more complicated initialization: orthgonal basis of a random matrix
+        /*uint32_t length = 1 << all->num_bits;
+	const double PI = 3.1415927;
+
+        for (int i = 0; i < length; i++) {
+            for (int j = 1; j <= m; j++) {
+	       double r1 = frand48();
+	       double r2 = frand48();
+	       weights[(i << stride_shift) + j] = sqrt(-2 * log(r1)) * cos(2 * PI * r2);
+	    }
+	}
+
+        // Gram-Schmidt
+        for (int j = 1; j <= m; j++) {
+            for (int k = 1; k <= j - 1; k++) {
+	        double tmp = 0;
+		for (int i = 0; i < length; i++) 
+		    tmp += weights[(i << stride_shift) + j] * weights[(i << stride_shift) + k];
+		for (int i = 0; i < length; i++) 
+		    weights[(i << stride_shift) + j] -= tmp * weights[(i << stride_shift) + k];
+	    }
+	    double norm = 0;
+	    for (int i = 0; i < length; i++)
+                norm += weights[(i << stride_shift) + j] * weights[(i << stride_shift) + j];
+            norm = sqrt(norm);
+	    for (int i = 0; i < length; i++)
+		weights[(i << stride_shift) + j] /= norm;
+	}*/
     }
 
     void compute_AZx()
     {
         for (int i = 1; i <= m; i++) {
+            //printf("Zx[%d] = %f\n", i, data.Zx[i]);
             data.AZx[i] = 0;
             for (int j = 1; j <= i; j++) {
                 data.AZx[i] += A[i][j] * data.Zx[j];
@@ -67,7 +100,7 @@ struct OjaNewton {
     void update_eigenvalues()
     {
         for (int i = 1; i <= m; i++) {
-            double gamma = fmin(learning_rate_cnt * i / t, .1);
+            double gamma = fmin(learning_rate_cnt / t, 1);
             double tmp = data.AZx[i] * data.sketch_cnt;
 
             if (t == 1) {
@@ -76,6 +109,7 @@ struct OjaNewton {
             else {
                 ev[i] = (1 - gamma) * t * ev[i] / (t - 1) + gamma * t * tmp * tmp;
             }
+	    // printf("%d = %f\n", i, ev[i] / t);
         }
     }
 
@@ -83,13 +117,18 @@ struct OjaNewton {
     {
         data.bdelta = 0;
         for (int i = 1; i <= m; i++) {
-            double gamma = fmin(learning_rate_cnt * i / t, .1);
+            double gamma = fmin(learning_rate_cnt / t, 1);
             
-            data.delta[i] = gamma * data.AZx[i] * data.sketch_cnt;
+	    // if different learning rates are used
+            /*data.delta[i] = gamma * data.AZx[i] * data.sketch_cnt;
             for (int j = 1; j < i; j++) {
                 data.delta[i] -= A[i][j] * data.delta[j];
             }
-            data.delta[i] /= A[i][i];
+            data.delta[i] /= A[i][i];*/
+
+	    // if a same learning rate is used
+            data.delta[i] = gamma * data.Zx[i] * data.sketch_cnt;
+
             //printf("delta[%d] = %f\n", i, data.delta[i]);
             data.bdelta += data.delta[i] * b[i];
         }
@@ -190,6 +229,7 @@ struct OjaNewton {
         for (int i = 1; i <= m; i++)
             for (int j = i; j <= m ;j++)
                 max_norm = fmax(max_norm, fabs(K[i][j]));
+	//printf("|K| = %f\n", max_norm);
         if (max_norm < 1e7) return;
         
         // implicit -> explicit representation
@@ -220,11 +260,12 @@ struct OjaNewton {
                 for (int h = 1; h <= m; h++)
                     tmp[j] += K[i][h] * A[j][h];
 
-            for (int j = 1; j <= m; j++)
+            for (int j = 1; j <= m; j++) { 
                 K[i][j] = tmp[j];
+	    }
         }
-
-        //second step: w[0] <- w[0] + (DZ)'b, b <- 0.
+        
+	//second step: w[0] <- w[0] + (DZ)'b, b <- 0.
 
         uint32_t length = 1 << all->num_bits;
         size_t stride_shift = all->reg.stride_shift;
@@ -237,15 +278,19 @@ struct OjaNewton {
         memset(b, 0, sizeof(double) * (m+1));
 
         //third step: Z <- ADZ, A, D <- Identity
+	//double norm = 0;
         for (int i = 0; i < length; i++) {
             memset(tmp, 0, sizeof(double) * (m+1));
             
             for (int j = 1; j <= m; j++)
                 for (int h = 1; h <= m; h++)
                     tmp[j] += A[j][h] * D[h] * weights[(i << stride_shift) + h];
-            for (int j = 1; j <= m; j++)
+            for (int j = 1; j <= m; j++) {
+		//norm = max(norm, fabs(tmp[j]));
                 weights[(i << stride_shift) + j] = tmp[j];
+	    }
         }
+        //printf("|Z| = %f\n", norm);
 
         for (int i = 1; i <= m; i++) {
             memset(A[i], 0, sizeof(double) * (m+1));
@@ -328,8 +373,8 @@ void learn(OjaNewton& ON, base_learner& base, example& ec) {
 
     update_data& data = ON.data;
     data.g = ON.all->loss->first_derivative(ON.all->sd, ec.pred.scalar, ec.l.simple.label)*ec.l.simple.weight;
-    data.g /= 2; // for half square loss...
-
+    data.g /= 2; // for half square loss
+    
     ON.buffer[ON.cnt] = &ec;
     ON.weight_buffer[ON.cnt++] = data.g / 2;
 
@@ -426,7 +471,7 @@ base_learner* OjaNewton_setup(vw& all) {
     if (vm.count("learning_rate_cnt"))
         ON.learning_rate_cnt = vm["learning_rate_cnt"].as<double>();
     else
-        ON.learning_rate_cnt = 10;
+        ON.learning_rate_cnt = .5;
 
     if (vm.count("normalize"))
         ON.normalize = vm["normalize"].as<bool>();
