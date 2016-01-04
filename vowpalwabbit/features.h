@@ -57,7 +57,12 @@ struct features { // the core definition of a set of features.
   }
 
   template<class R, void (*T)(R&, feature_value, feature_index)> inline void foreach_feature(R& dat, size_t j)
-  { foreach_feature<R,T>(dat, j, size()); }
+  { 
+    feature_value* vp = values.begin + j;
+    feature_index* ip = indicies.begin + j;
+    for (;vp != values.end ;++vp, ++ip)
+      T(dat,*vp,*ip);
+  }
 
   template<class R, void (*T)(R&, feature_value, feature_index, audit_strings*)> inline void foreach_feature(R& dat, size_t j, size_t k)
   {
