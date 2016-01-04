@@ -119,7 +119,8 @@ struct regressor
   uint32_t stride_shift;
 };
 
-typedef v_hashmap< substring, v_array<feature>* > feature_dict;
+typedef v_hashmap< substring, features* > feature_dict;
+
 struct dictionary_info
 { char* name;
   unsigned long long file_hash;
