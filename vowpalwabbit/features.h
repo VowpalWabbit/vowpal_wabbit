@@ -35,8 +35,9 @@ struct features { // the core definition of a set of features.
     indicies = v_init<feature_index>();
     space_names = v_init<audit_strings>();
     sum_feat_sq = 0.f;
- }
-  inline size_t size() { return values.size(); }
+  }
+  inline size_t size() const { return values.size(); }
+  inline bool nonempty() const { return values.begin != values.end; }
 
   void free_space_names(size_t i)
   {
@@ -45,14 +46,31 @@ struct features { // the core definition of a set of features.
         free_it(space_names[i].second);
       }
   }
-  inline bool empty() const { return values.end == values.begin;}
-  template<class R, void (*T)(R&, feature_value, feature_index)> inline void foreach_feature(R& dat)
+
+  template<class R, void (*T)(R&, feature_value, feature_index)> inline void foreach_feature(R& dat, size_t j, size_t k)
   {
-    feature_value* vp = values.begin;
-    feature_index* ip = indicies.begin;
-    for (;vp != values.end;++vp, ++ip)
+    feature_value* vp = values.begin + j;
+    feature_index* ip = indicies.begin + j;
+    feature_value* end = values.begin + k;
+    for (;vp != end;++vp, ++ip)
       T(dat,*vp,*ip);
   }
+
+  template<class R, void (*T)(R&, feature_value, feature_index)> inline void foreach_feature(R& dat, size_t j)
+  { foreach_feature<R,T>(dat, j, size()); }
+
+  template<class R, void (*T)(R&, feature_value, feature_index, audit_strings*)> inline void foreach_feature(R& dat, size_t j, size_t k)
+  {
+    feature_value* vp = values.begin + j;
+    feature_index* ip = indicies.begin + j;
+    audit_strings* ap = space_names.begin + j;
+    feature_value* end = values.begin + k;
+    for (;vp != end; ++vp, ++ip, ++ap)
+      T(dat,*vp,*ip, ap);
+  }
+
+  template<class R, void (*T)(R&, feature_value, feature_index, audit_strings*)> inline void foreach_feature(R& dat, size_t j)
+  { foreach_feature<R,T>(dat,j,size()); }
 
   void erase()
   {

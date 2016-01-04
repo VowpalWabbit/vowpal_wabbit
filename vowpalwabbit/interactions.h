@@ -89,6 +89,30 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
 
 // #define GEN_INTER_LOOP
 
+template<class R>
+ struct inner_data {
+   R& dat;
+   const feature_index offset;
+   const size_t weight_mask;
+   weight* weight_vector;
+   feature_value ft_value;
+   feature_index halfhash;
+ };
+
+ template<class R, class S, void(*T)(R&, float, S)> 
+   inline void inner_kernel(inner_data<R>& id, feature_value fv, feature_index fi)
+ {
+   call_T<R, T> (id.dat, id.weight_vector, id.weight_mask, INTERACTION_VALUE(id.ft_value, fv), (fi ^id.halfhash) + id.offset);
+}
+
+ template<class R, class S, void(*T)(R&, float, S), void (*audit_func)(R&, const audit_strings*)> 
+   inline void audit_inner_kernel(inner_data<R>& id, feature_value fv, feature_index fi, audit_strings* fa)
+ {
+   audit_func(id.dat, fa);
+   inner_kernel<R,S,T>(id, fv, fi);
+   audit_func(id.dat, nullptr);
+ }
+
 // this templated function generates new features for given example and set of interactions
 // and passes each of them to given function T()
 // it must be in header file to avoid compilation problems
@@ -101,8 +125,10 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
   // often used values
   const uint64_t offset = ec.ft_offset;
 //    const uint64_t stride_shift = all.reg.stride_shift; // it seems we don't need stride shift in FTRL-like hash
-  weight* weight_vector = all.reg.weight_vector;
   const size_t  weight_mask   = all.reg.weight_mask;
+  weight* weight_vector = all.reg.weight_vector;
+
+  inner_data<R> id ={dat, offset, weight_mask, weight_vector};
 
   // statedata for generic non-recursive iteration
   v_array<feature_gen_data > state_data = v_init<feature_gen_data >();
@@ -128,30 +154,28 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
     if (len == 2) //special case of pairs
       {
         features& first = features_data[ns[0]];	
-        if (first.indicies.size() > 0)
+        if (first.nonempty())
           {
             features& second = features_data[ns[1]];
-            if (second.indicies.size() > 0)
+            if (second.nonempty())
               {
                 const bool same_namespace = ( !all.permutations && ( ns[0] == ns[1] ) );
 
                 for(size_t i = 0; i < first.indicies.size(); ++i)
-                  { const uint64_t halfhash = FNV_prime * (uint64_t)first.indicies[i];
+                  { id.halfhash = FNV_prime * (uint64_t)first.indicies[i];
                     if (audit) audit_func(dat, &first.space_names[i]);
                     // next index differs for permutations and simple combinations
-                    const float& ft_value = first.values[i];
+                    id.ft_value = first.values[i];
                     size_t j=0;
                     if (same_namespace)
                       j = (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i+1;
-		    feature_value* vp = second.values.begin+j;
-                    for (feature_index* ip = second.indicies.begin+j; vp != second.values.end; ++vp, ++ip)
-                      {
-                        if (audit) audit_func(dat, &second.space_names[vp - second.values.begin]);
-                        //  const size_t ft_idx = ((snd->weight_index /*>> stride_shift*/) ^ halfhash) /*<< stride_shift*/;
-                        call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value, *vp), (*ip ^halfhash) + offset);
-                        if (audit) audit_func(dat, nullptr);
-                      } // end for(snd)
-                    if (audit) audit_func(dat, nullptr);
+
+		    if (audit)
+		      second.foreach_feature<inner_data<R>, audit_inner_kernel<R,S,T, audit_func> >(id, j);
+		    else
+		      second.foreach_feature<inner_data<R>, inner_kernel<R,S,T> >(id, j);
+
+		    if (audit) audit_func(dat, nullptr);
                   } // end for(fst)
               } // end if (data[snd] size > 0)
           } // end if (data[fst] size > 0)
@@ -159,13 +183,13 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
     else
       if (len == 3) // special case for triples
         { features& first = features_data[ns[0]];
-        if (first.indicies.size() > 0)
+	  if (first.nonempty())
         {
           features& second = features_data[ns[1]];
-          if (second.indicies.size() > 0)
+          if (second.nonempty())
           {
             features& third = features_data[ns[2]];
-            if (third.indicies.size() > 0)
+            if (third.nonempty())
             {
               // don't compare 1 and 3 as interaction is sorted
               const bool same_namespace1 = ( !all.permutations && ( ns[0] == ns[1] ) );
@@ -183,21 +207,18 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
                 for (; j < second.indicies.size(); ++j)
                 { //f3 x k*(f2 x k*f1)
                   if(audit) audit_func(dat, &second.space_names[j]);
-                  const uint64_t halfhash2 = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
-                  const float snd_value = INTERACTION_VALUE(ft_value, second.values[j]);
+                  id.halfhash = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
+                  id.ft_value = INTERACTION_VALUE(ft_value, second.values[j]);
 
                   size_t k=0;
                   if (same_namespace2)//next index differs for permutations and simple combinations
                     k = (PROCESS_SELF_INTERACTIONS(snd_value)) ? j : j+1;
 		  
-		  feature_value* vp = third.values.begin+k;
-		  for (feature_index* ip = third.indicies.begin+k; vp != third.values.end; ++vp, ++ip)
-		    {
-		      if (audit) audit_func(dat, &third.space_names[vp - third.values.begin]);
-		      //                                        const size_t ft_idx = ((thr->weight_index /*>> stride_shift*/)^ halfhash2) /*<< stride_shift*/;
-		      call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(snd_value,*vp), (*ip^halfhash2) + offset);
-		      if(audit) audit_func(dat, nullptr);
-		    } // end for (thr)
+		  if (audit)
+		    third.foreach_feature<inner_data<R>, audit_inner_kernel<R,S,T, audit_func> >(id, k);
+		  else
+		    third.foreach_feature<inner_data<R>, inner_kernel<R,S,T> >(id, k);
+
                   if (audit) audit_func(dat, nullptr);
                 } // end for (snd)
                 if(audit) audit_func(dat, nullptr);
@@ -281,7 +302,6 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
         /* start & end are always point to features in last namespace of interaction.
             for 'all.permutations == true' they are constant.*/
         size_t start_i = 0;
-        const feature_value* end = fgd2->ft_arr->values.begin + fgd2->loop_end + 1; // end is constant as data->loop_end is never changed in the loop
 
         feature_gen_data* cur_data = fgd;
         // end of micro-optimization block
@@ -326,12 +346,13 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
               start_i = fgd2->loop_idx;
 
             features& fs = *(fgd2->ft_arr);
-	    feature_value* vp = fs.values.begin+start_i;
-	    for (feature_index* ip = fs.indicies.begin+start_i; vp != end; ++vp, ++ip)
-              { if (audit) audit_func(dat, &fs.space_names[vp - fs.values.begin]);
-                call_T<R, T> (dat, weight_vector, weight_mask, INTERACTION_VALUE(fgd2->x, *vp), (uint64_t)(fgd2->hash^*ip) + offset );
-                if (audit) audit_func(dat, nullptr);
-              }
+	    
+	    id.ft_value = fgd2->x;
+	    id.halfhash = fgd2->hash;
+	    if (audit)
+	      fs.foreach_feature<inner_data<R>, audit_inner_kernel<R,S,T, audit_func> >(id, start_i, fgd2->loop_end + 1);
+	    else
+	      fs.foreach_feature<inner_data<R>, inner_kernel<R,S,T> >(id, start_i, fgd2->loop_end + 1);
 
             // trying to go back increasing loop_idx of each namespace by the way
 
