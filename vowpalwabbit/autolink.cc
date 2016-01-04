@@ -13,24 +13,23 @@ void predict_or_learn(autolink& b, LEARNER::base_learner& base, example& ec)
   float base_pred = ec.pred.scalar;
   // add features of label
   ec.indices.push_back(autolink_namespace);
-  float sum_sq = 0;
+  features& fs = ec.feature_space[autolink_namespace];
   for (size_t i = 0; i < b.d; i++)
     if (base_pred != 0.)
-    { feature f = { base_pred, (uint32_t) (autoconstant + (i << b.stride_shift)) };
-      ec.atomics[autolink_namespace].push_back(f);
-      sum_sq += base_pred*base_pred;
-      base_pred *= ec.pred.scalar;
+      {
+        fs.push_back(base_pred, autoconstant + (i << b.stride_shift));
+        base_pred *= ec.pred.scalar;
     }
-  ec.total_sum_feat_sq += sum_sq;
+  ec.total_sum_feat_sq += fs.sum_feat_sq;
 
   if (is_learn)
     base.learn(ec);
   else
     base.predict(ec);
 
-  ec.atomics[autolink_namespace].erase();
+  ec.total_sum_feat_sq -= fs.sum_feat_sq;
+  fs.erase();
   ec.indices.pop();
-  ec.total_sum_feat_sq -= sum_sq;
 }
 
 LEARNER::base_learner* autolink_setup(vw& all)

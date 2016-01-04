@@ -341,13 +341,11 @@ void finish(Search::search& sch)
 void my_update_example_indicies(Search::search& sch, bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount)
 { size_t ss = sch.get_stride_shift();
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-    for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; ++f)
-      f->weight_index = (((f->weight_index>>ss) * mult_amount) + plus_amount)<<ss;
-  if (audit)
-    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-      if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-        for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; ++f)
-          f->weight_index = (((f->weight_index>>ss) * mult_amount) + plus_amount)<<ss;
+    {
+      v_array<feature_index>& fis = ec->feature_space[*i].indicies;
+      for (size_t j = 0; j < fis.size(); ++j)
+        fis[j] = (((fis[j]>>ss) * mult_amount) + plus_amount)<<ss;
+    }
 }
 
 void run(Search::search& sch, vector<example*>& ec)

@@ -195,7 +195,6 @@ trim_cache(svm_params& params)
   return alloc;
 }
 
-
 int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
 { size_t brw = 1;
   if(read)
@@ -208,9 +207,19 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         brw = bin_read_fixed(model_file, (char*) fec->tag, fec->tag_len*sizeof(char), "");
         if(!brw) return 2;
       }
-      if(fec->feature_map_len > 0)
-      { fec->feature_map = calloc_or_throw<feature>(fec->feature_map_len);
-        brw = bin_read_fixed(model_file, (char*) fec->feature_map, fec->feature_map_len*sizeof(feature), ""); 	  if(!brw) return 3;
+      if(fec->fs.size() > 0)
+        { features& fs = fec->fs;
+          size_t len = fs.size();
+          fs.values = v_init<feature_value>();
+          fs.values.resize(len);
+          brw = bin_read_fixed(model_file, (char*) fs.values.begin, len*sizeof(feature_value), ""); 	  if(!brw) return 3;
+          fs.values.end = fs.values.begin+len;
+
+          len = fs.indicies.size();
+          fs.indicies = v_init<feature_index>();
+          fs.indicies.resize(len);
+          brw = bin_read_fixed(model_file, (char*) fs.indicies.begin, len*sizeof(feature_index), ""); 	  if(!brw) return 3;
+          fs.indicies.end = fs.indicies.begin+len;
       }
     }
     else return 1;
@@ -226,9 +235,10 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
           return 2;
         }
       }
-      if(fec->feature_map_len > 0)
-      { brw = bin_write_fixed(model_file, (char*) fec->feature_map, (uint32_t)fec->feature_map_len*sizeof(feature));    	  if(!brw) return 3;
-      }
+      if(fec->fs.size() > 0)
+        { brw = bin_write_fixed(model_file, (char*) fec->fs.values.begin, (uint32_t)fec->fs.size()*sizeof(feature_value));    	  if(!brw) return 3;
+          brw = bin_write_fixed(model_file, (char*) fec->fs.indicies.begin, (uint32_t)fec->fs.indicies.size()*sizeof(feature_index));    	  if(!brw) return 3;
+        }
     }
     else return 1;
   }
@@ -286,39 +296,30 @@ void save_load(svm_params& params, io_buf& model_file, bool read, bool text)
 
 float linear_kernel(const flat_example* fec1, const flat_example* fec2)
 {
-
   float dotprod = 0;
 
-  feature* ec2f = fec2->feature_map;
-  uint64_t ec2pos = ec2f->weight_index;
-  uint64_t idx1 = 0, idx2 = 0;
+  features& fs_1 = (features&)fec1->fs;
+  features& fs_2 = (features&)fec2->fs;
+  if (fs_2.indicies.size() == 0)
+    return 0.f;
 
-  //cerr<<"Intersection ";
   int numint = 0;
-  for (feature* f = fec1->feature_map; idx1 < fec1->feature_map_len && idx2 < fec2->feature_map_len ; f++, idx1++)
-  { uint64_t ec1pos = f->weight_index;
-    //cerr<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<<endl;
-    if(ec1pos < ec2pos) continue;
+  for (uint64_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size() ; idx1++)
+    { uint64_t ec1pos = fs_1.indicies[idx1];
+      uint64_t ec2pos = fs_2.indicies[idx2];
+      //cerr<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<<endl;
+      if(ec1pos < ec2pos) continue;
 
-    while(ec1pos > ec2pos && idx2 < fec2->feature_map_len)
-    { ec2f++;
-      idx2++;
-      if(idx2 < fec2->feature_map_len)
-        ec2pos = ec2f->weight_index;
-    }
+      while(ec1pos > ec2pos && ++idx2 < fs_2.size())
+        ec2pos = fs_2.indicies[idx2];
 
-    if(ec1pos == ec2pos)
-    { //cerr<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<<endl;
-      numint++;
-      dotprod += f->x*ec2f->x;
-      //cerr<<f->x<<" "<<ec2f->x<<" "<<dotprod<<" ";
-      ec2f++;
-      idx2++;
-      //cerr<<idx2<<" ";
-      if(idx2 < fec2->feature_map_len)
-        ec2pos = ec2f->weight_index;
+      if(ec1pos == ec2pos)
+        { //cerr<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<<endl;
+          numint++;
+          dotprod += fs_1.values[idx1] * fs_2.values[idx2];
+          ++idx2;
+        }
     }
-  }
   //cerr<<endl;
   //cerr<<"numint = "<<numint<<" dotprod = "<<dotprod<<endl;
   return dotprod;

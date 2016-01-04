@@ -45,7 +45,6 @@ void end_parser(vw& all);
 bool is_ring_example(vw& all, example* ae);
 bool parse_atomic_example(vw& all, example* ae, bool do_read);
 
-typedef pair< unsigned char, vector<feature> > feature_space; //just a helper definition.
 struct primitive_feature_space   //just a helper definition.
 { unsigned char name;
   feature* fs;
