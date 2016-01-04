@@ -117,36 +117,29 @@ void finish(Search::search& sch)
 }
 
 void inline add_feature(example& ex, uint64_t idx, unsigned char ns, uint64_t mask, uint64_t multiplier, bool audit=false)
-{ feature f = {1.0f, (idx * multiplier) & mask};
-  ex.atomics[(int)ns].push_back(f);
-  if (audit)
-  { audit_data a = { nullptr, nullptr, f.weight_index, 1.f};
-    ex.audit_features[(int)ns].push_back(a);
-  }
+{
+  ex.feature_space[(int)ns].push_back(1.0f, (idx * multiplier) & mask);
 }
 
 void add_all_features(example& ex, example& src, unsigned char tgt_ns, uint64_t mask, uint64_t multiplier, uint64_t offset, bool audit=false)
-{ for (unsigned char* ns = src.indices.begin; ns != src.indices.end; ++ns)
+{
+  features& tgt_fs = ex.feature_space[tgt_ns];
+  for (unsigned char* ns = src.indices.begin; ns != src.indices.end; ++ns)
     if(*ns != constant_namespace) // ignore constant_namespace
-      for (size_t k=0; k<src.atomics[*ns].size(); k++)
-      { uint64_t i = src.atomics[*ns][k].weight_index / multiplier;
-        feature  f = { 1., ((i + offset) * multiplier) & mask };
-        ex.atomics[tgt_ns].push_back(f);
-        if (audit)
-        { audit_data a = { nullptr, nullptr, f.weight_index, 1.f};
-          ex.audit_features[tgt_ns].push_back(a);
-        }
+      {
+        features& src_fs = src.feature_space[*ns];
+        for (size_t k=0; k<src_fs.indicies.size(); k++)
+          { uint64_t i = src_fs.indicies[k] / multiplier;
+            tgt_fs.push_back(1.0f, ((i + offset) * multiplier) & mask );
+          }
       }
 }
 
-void inline reset_ex(example *ex, bool audit=false)
+void inline reset_ex(example *ex)
 { ex->num_features = 0;
   ex->total_sum_feat_sq = 0;
   for(unsigned char *ns = ex->indices.begin; ns!=ex->indices.end; ns++)
-  { ex->sum_feat_sq[(int)*ns] = 0;
-    ex->atomics[(int)*ns].erase();
-    if (audit) ex->audit_features[(int)*ns].erase();
-  }
+    ex->feature_space[(int)*ns].erase();
 }
 
 // arc-hybrid System.
@@ -248,9 +241,9 @@ void extract_features(Search::search& sch, uint64_t idx,  vector<example*> &ec)
   }
   size_t count=0;
   for (unsigned char* ns = data->ex->indices.begin; ns != data->ex->indices.end; ns++)
-  { data->ex->sum_feat_sq[(int)*ns] = (float) data->ex->atomics[(int)*ns].size();
-    count+= data->ex->atomics[(int)*ns].size();
-  }
+    { data->ex->feature_space[(int)*ns].sum_feat_sq = (float) data->ex->feature_space[(int)*ns].size();
+      count+= data->ex->feature_space[(int)*ns].size();
+    }
 
   size_t new_count;
   float new_weight;

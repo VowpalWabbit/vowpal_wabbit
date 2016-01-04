@@ -42,7 +42,7 @@ void send_features(io_buf *b, example& ec, uint32_t mask)
   for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
   { if (*i == constant_namespace)
       continue;
-    output_features(*b, *i, ec.atomics[*i].begin, ec.atomics[*i].end, mask);
+    output_features(*b, *i, ec.feature_space[*i], mask);
   }
   b->flush();
 }
