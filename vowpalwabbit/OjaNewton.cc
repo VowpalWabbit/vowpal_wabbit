@@ -46,44 +46,48 @@ struct OjaNewton {
 
     double learning_rate_cnt;
     bool normalize;
+    bool random_init;
 
     void initialize_Z()
     {
         size_t stride_shift = all->reg.stride_shift;
         weight* weights = all->reg.weight_vector;
 
-        // simple initialization
-        for (int i = 1; i <= m; i++)
-            weights[(i << stride_shift) + i] = 1;
+        if(!random_init) {
+            // simple initialization
+            for (int i = 1; i <= m; i++)
+                weights[(i << stride_shift) + i] = 1;
+        }
+	else {
+            // more complicated initialization: orthgonal basis of a random matrix
+            uint32_t length = 1 << all->num_bits;
+	    const double PI = 3.1415927;
 
-        // more complicated initialization: orthgonal basis of a random matrix
-        /*uint32_t length = 1 << all->num_bits;
-	const double PI = 3.1415927;
+            for (int i = 0; i < length; i++) {
+                for (int j = 1; j <= m; j++) {
+	           double r1 = frand48();
+	           double r2 = frand48();
+	           weights[(i << stride_shift) + j] = sqrt(-2 * log(r1)) * cos(2 * PI * r2);
+	        }
+	    }
 
-        for (int i = 0; i < length; i++) {
+            // Gram-Schmidt
             for (int j = 1; j <= m; j++) {
-	       double r1 = frand48();
-	       double r2 = frand48();
-	       weights[(i << stride_shift) + j] = sqrt(-2 * log(r1)) * cos(2 * PI * r2);
+                for (int k = 1; k <= j - 1; k++) {
+	            double tmp = 0;
+		    for (int i = 0; i < length; i++) 
+		        tmp += weights[(i << stride_shift) + j] * weights[(i << stride_shift) + k];
+		    for (int i = 0; i < length; i++) 
+		        weights[(i << stride_shift) + j] -= tmp * weights[(i << stride_shift) + k];
+	        }
+	        double norm = 0;
+	        for (int i = 0; i < length; i++)
+                    norm += weights[(i << stride_shift) + j] * weights[(i << stride_shift) + j];
+                norm = sqrt(norm);
+	        for (int i = 0; i < length; i++)
+	   	    weights[(i << stride_shift) + j] /= norm;
 	    }
 	}
-
-        // Gram-Schmidt
-        for (int j = 1; j <= m; j++) {
-            for (int k = 1; k <= j - 1; k++) {
-	        double tmp = 0;
-		for (int i = 0; i < length; i++) 
-		    tmp += weights[(i << stride_shift) + j] * weights[(i << stride_shift) + k];
-		for (int i = 0; i < length; i++) 
-		    weights[(i << stride_shift) + j] -= tmp * weights[(i << stride_shift) + k];
-	    }
-	    double norm = 0;
-	    for (int i = 0; i < length; i++)
-                norm += weights[(i << stride_shift) + j] * weights[(i << stride_shift) + j];
-            norm = sqrt(norm);
-	    for (int i = 0; i < length; i++)
-		weights[(i << stride_shift) + j] /= norm;
-	}*/
     }
 
     void compute_AZx()
@@ -445,7 +449,8 @@ base_learner* OjaNewton_setup(vw& all) {
         ("epoch_size", po::value<int>(), "size of epoch")
         ("alpha", po::value<double>(), "mutiplicative constant for indentiy")
         ("learning_rate_cnt", po::value<double>(), "constant for the learning rate 1/t")
-        ("normalize", po::value<bool>(), "normalize the features or not");
+        ("normalize", po::value<bool>(), "normalize the features or not")
+	("random_init", po::value<bool>(), "randomize initialization of Oja or not");
     add_options(all);
 
     po::variables_map& vm = all.vm;
@@ -477,8 +482,12 @@ base_learner* OjaNewton_setup(vw& all) {
         ON.normalize = vm["normalize"].as<bool>();
     else
         ON.normalize = true;
-
-
+    
+    if (vm.count("random_init"))
+        ON.normalize = vm["random_init"].as<bool>();
+    else
+        ON.normalize = true;
+    
     ON.cnt = 0;
     ON.t = 1;
 
