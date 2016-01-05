@@ -272,7 +272,7 @@ void learn(gdmf& d, base_learner&, example& ec)
 }
 
 base_learner* gd_mf_setup(vw& all)
-{ if (missing_option<uint64_t, true>(all, "rank", "rank for matrix factorization."))
+{ if (missing_option<uint32_t, true>(all, "rank", "rank for matrix factorization."))
     return nullptr;
 
   if (all.vm.count("adaptive"))
