@@ -66,7 +66,7 @@ endif
 FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE)  -fPIC #-DVW_LDA_NO_SSE
 
 # for profiling -- note that it needs to be gcc
-#FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -O2 -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) -pg  -fPIC 
+#FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -O2 -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) -pg  -fPIC
 #CXX = g++
 
 # for valgrind / gdb debugging
@@ -80,7 +80,7 @@ MANPAGES = vw.1
 
 default:	vw
 
-all:	vw library_example java #spanning_tree 
+all:	vw library_example java spanning_tree
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
