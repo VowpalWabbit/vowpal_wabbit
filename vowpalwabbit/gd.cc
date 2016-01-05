@@ -175,7 +175,7 @@ bool operator<(const string_value& first, const string_value& second)
 
 struct audit_results
 { vw& all;
-  const size_t offset;
+  const uint64_t offset;
   vector<string> ns_pre;
   vector<string_value> results;
   audit_results(vw& p_all, const size_t p_offset):all(p_all), offset(p_offset) {}
@@ -192,12 +192,12 @@ inline void audit_interaction(audit_results& dat, const audit_strings* f)
   if (!dat.ns_pre.empty())
     ns_pre += '*';
 
-  if (f->first != nullptr && (*(f->first) != ' '))
+  if (f->first != "" && ((f->first) != " "))
     {
-      ns_pre.append((const char*)f->first);
+      ns_pre.append(f->first);
       ns_pre += '^';
     }
-  if (f->second != nullptr)
+  if (f->second != "")
     {
       ns_pre.append(f->second);
       dat.ns_pre.push_back(ns_pre);
@@ -205,7 +205,7 @@ inline void audit_interaction(audit_results& dat, const audit_strings* f)
 }
 
 inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx)
-{ size_t index = ft_idx & dat.all.reg.weight_mask;
+{ uint64_t index = ft_idx & dat.all.reg.weight_mask;
   weight* weights = dat.all.reg.weight_vector;
   size_t stride_shift = dat.all.reg.stride_shift;
 
@@ -624,7 +624,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 
           if (all.num_bits < 31)
             {
-              old_i = i;
+              old_i = (uint32_t)i;
               brw = bin_text_write_fixed(model_file, (char *)&old_i, sizeof(old_i), msg, text);
             }
           else
@@ -799,7 +799,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     if(all.adaptive && all.initial_t > 0)
       { uint64_t length = (uint64_t)1 << all.num_bits;
 	uint64_t stride = (uint64_t)1 << all.reg.stride_shift;
-      for (size_t j = 1; j < stride*length; j+=stride)
+      for (uint64_t j = 1; j < stride*length; j+=stride)
       { all.reg.weight_vector[j] = all.initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
         //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be
         //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients
@@ -971,7 +971,7 @@ base_learner* setup(vw& all)
     stride = set_learn<true>(all, feature_mask_off, g);
   else
     stride = set_learn<false>(all, feature_mask_off, g);
-  all.reg.stride_shift = ceil_log_2(stride-1);
+  all.reg.stride_shift = (uint32_t)ceil_log_2(stride-1);
 
   learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.reg.stride_shift));
   ret.set_predict(g.predict);

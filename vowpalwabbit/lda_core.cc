@@ -41,13 +41,13 @@ enum lda_math_mode { USE_SIMD, USE_PRECISE, USE_FAST_APPROX };
 class index_feature
 {
 public:
-  uint64_t document;
+  uint32_t document;
   feature f;
   bool operator<(const index_feature b) const { return f.weight_index < b.f.weight_index; }
 };
 
 struct lda
-{ uint64_t topics;
+{ size_t topics;
   float lda_alpha;
   float lda_rho;
   float lda_D;
@@ -633,7 +633,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 
   if (read)
   { initialize_regressor(*all);
-    for (size_t j = 0; j < stride * length; j += stride)
+    for (uint64_t j = 0; j < stride * length; j += stride)
     { for (size_t k = 0; k < all->lda; k++)
       { if (all->random_weights)
         { all->reg.weight_vector[j + k] = (float)(-log(frand48()) + 1.0f);
@@ -724,7 +724,7 @@ void learn_batch(lda &l)
 
   weight *weights = l.all->reg.weight_vector;
 
-  size_t last_weight_index = -1;
+  uint64_t last_weight_index = -1;
   for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++)
   { if (last_weight_index == s->f.weight_index)
       continue;
@@ -789,13 +789,13 @@ void learn_batch(lda &l)
 }
 
 void learn(lda &l, LEARNER::base_learner &, example &ec)
-{ size_t num_ex = l.examples.size();
+{ uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
   for (unsigned char *i = ec.indices.begin; i != ec.indices.end; i++)
     { features& fs = ec.feature_space[*i];
       for (size_t j = 0; j < fs.size(); ++j)
-        { index_feature temp = {(uint64_t)num_ex, feature(fs.values[j], fs.indicies[j])};
+        { index_feature temp = {num_ex, feature(fs.values[j], fs.indicies[j])};
           l.sorted_features.push_back(temp);
           l.doc_lengths[num_ex] += (int)fs.values[j];
         }
@@ -854,19 +854,19 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
 }
 
 LEARNER::base_learner *lda_setup(vw &all)
-{ if (missing_option<uint64_t, true>(all, "lda", "Run lda with <int> topics"))
+{ if (missing_option<uint32_t, true>(all, "lda", "Run lda with <int> topics"))
     return nullptr;
-  new_options(all, "Lda options")("lda_alpha", po::value<float>()->default_value(0.1f),
-                                  "Prior on sparsity of per-document topic weights")(
-                                    "lda_rho", po::value<float>()->default_value(0.1f), "Prior on sparsity of topic distributions")(
-                                      "lda_D", po::value<float>()->default_value(10000.),
-                                      "Number of documents")("lda_epsilon", po::value<float>()->default_value(0.001f), "Loop convergence threshold")(
-                                        "minibatch", po::value<size_t>()->default_value(1), "Minibatch size, for LDA")(
-                                          "math-mode", po::value<lda_math_mode>()->default_value(USE_SIMD), "Math mode: simd, accuracy, fast-approx");
+  new_options(all, "Lda options")
+    ("lda_alpha", po::value<float>()->default_value(0.1f),"Prior on sparsity of per-document topic weights")
+    ("lda_rho", po::value<float>()->default_value(0.1f), "Prior on sparsity of topic distributions")
+    ("lda_D", po::value<float>()->default_value(10000.), "Number of documents")
+    ("lda_epsilon", po::value<float>()->default_value(0.001f), "Loop convergence threshold")
+    ("minibatch", po::value<size_t>()->default_value(1), "Minibatch size, for LDA")
+    ("math-mode", po::value<lda_math_mode>()->default_value(USE_SIMD), "Math mode: simd, accuracy, fast-approx");
   add_options(all);
   po::variables_map &vm = all.vm;
 
-  all.lda = vm["lda"].as<uint64_t>();
+  all.lda = vm["lda"].as<uint32_t>();
 
   lda &ld = calloc_or_throw<lda>();
 

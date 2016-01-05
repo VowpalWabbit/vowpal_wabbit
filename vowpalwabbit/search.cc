@@ -16,7 +16,7 @@ license as described in the file LICENSE.
 #include "search_entityrelationtask.h"
 #include "search_hooktask.h"
 #include "search_graph.h"
-#include "search_meta.h"
+#include "search_meta.h" 
 #include "csoaa.h"
 #include "active.h"
 #include "label_dictionary.h"
@@ -205,7 +205,7 @@ struct search_private
   v_hashmap<unsigned char*, scored_action> cache_hash_map;
 
   // for foreach_feature temporary storage for conditioning
-  uint32_t dat_new_feature_idx;
+  uint64_t dat_new_feature_idx;
   example* dat_new_feature_ec;
   stringstream dat_new_feature_audit_ss;
   size_t dat_new_feature_namespace;
@@ -448,22 +448,17 @@ void print_update(search_private& priv)
 }
 
 void add_new_feature(search_private& priv, float val, uint64_t idx)
-{ size_t mask = priv.all->reg.weight_mask;
+{ uint64_t mask = priv.all->reg.weight_mask;
   size_t ss   = priv.all->reg.stride_shift;
-  size_t idx2 = ((idx & mask) >> ss) & mask;
+  uint64_t idx2 = ((idx & mask) >> ss) & mask;
   features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss) );
   cdbg << "adding: " << fs.indicies.last() << ':' << fs.values.last() << endl;
   if (priv.all->audit)
-  { char* space;
-    strcpy(space, priv.dat_new_feature_feature_space->c_str());
+  {
     stringstream temp;
-    temp << "fid="<< ((idx & mask) >> ss) <<"_";
-    int num = temp.str().size();
-    char* feature=nullptr;
-    strcpy(feature, temp.str().c_str());
-    strcpy(feature+num, priv.dat_new_feature_audit_ss.str().c_str());
-    fs.space_names.push_back(audit_strings(space,feature));
+	temp << "fid=" << ((idx & mask) >> ss) << "_" << priv.dat_new_feature_audit_ss.str();
+	fs.space_names.push_back(audit_strings(*priv.dat_new_feature_feature_space, temp.str()));
   }
 }
 
@@ -2465,7 +2460,7 @@ void search::get_test_action_sequence(vector<action>& V)
 void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
 void search::add_program_options(po::variables_map& /*vw*/, po::options_description& opts) { add_options( *this->priv->all, opts ); }
 
-size_t search::get_mask() { return this->priv->all->reg.weight_mask;}
+uint64_t search::get_mask() { return this->priv->all->reg.weight_mask;}
 size_t search::get_stride_shift() { return this->priv->all->reg.stride_shift;}
 uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
 

@@ -18,7 +18,7 @@ public:
   { bool   occupied;
     K      key;
     V      val;
-    size_t hash;
+    uint64_t hash;
   };
 
   bool (*equivalent)(void*,K&,K&);
@@ -134,7 +134,7 @@ public:
     }
   }
 
-  void put_after_get_nogrow(K& key, size_t hash, V val)
+  void put_after_get_nogrow(K& key, uint64_t hash, V val)
   { //printf("++[lp=%d\tocc=%d\thash=%llu]\n", last_position, dat[last_position].occupied, hash);
     dat[last_position].occupied = true;
     dat[last_position].key = key;
@@ -174,7 +174,7 @@ public:
       return equivalent_no_data(key, key2);
   }
 
-  V& get(K key, size_t hash)
+  V& get(K key, uint64_t hash)
   { size_t sz  = base_size();
     size_t first_position = hash % sz;
     last_position = first_position;
@@ -229,7 +229,7 @@ public:
   // run get(key, hash).  if you haven't already run get, then
   // you should use put() rather than put_after_get().  these
   // both will overwrite previous values, if they exist.
-  void put_after_get(K& key, size_t hash, V val)
+  void put_after_get(K& key, uint64_t hash, V val)
   { if (!dat[last_position].occupied)
     { num_occupants++;
       if (num_occupants*4 >= base_size())          // grow when we're a quarter full
@@ -242,7 +242,7 @@ public:
     put_after_get_nogrow(key, hash, val);
   }
 
-  void put(K& key, size_t hash, V val)
+  void put(K& key, uint64_t hash, V val)
   { get(key, hash);
     put_after_get(key, hash, val);
   }

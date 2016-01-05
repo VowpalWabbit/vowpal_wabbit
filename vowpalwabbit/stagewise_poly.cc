@@ -21,7 +21,7 @@ static const uint32_t default_depth = 127;
 
 struct sort_data
 { float wval;
-  uint32_t wid;
+  uint64_t wid;
 };
 
 struct stagewise_poly
@@ -32,7 +32,7 @@ struct stagewise_poly
   bool batch_sz_double;
 
   sort_data *sd;
-  uint64_t sd_len;
+  size_t sd_len;
   uint8_t *depthsbits; //interleaved array storing depth information and parent/cycle bits
 
   uint64_t sum_sparsity; //of synthetic example
@@ -108,7 +108,7 @@ inline uint64_t constant_feat_masked(const stagewise_poly &poly)
 }
 
 
-inline uint64_t depthsbits_sizeof(const stagewise_poly &poly)
+inline size_t depthsbits_sizeof(const stagewise_poly &poly)
 { return (2 * poly.all->length() * sizeof(uint8_t));
 }
 
@@ -208,13 +208,13 @@ void sort_data_create(stagewise_poly &poly)
   poly.sd_len = 0;
 }
 
-void sort_data_ensure_sz(stagewise_poly &poly, uint64_t len)
+void sort_data_ensure_sz(stagewise_poly &poly, size_t len)
 { if (poly.sd_len < len)
-  { uint64_t len_candidate = 2 * len;
+  { size_t len_candidate = 2 * len;
 #ifdef DEBUG
     cout << "resizing sort buffer; current size " << poly.sd_len;
 #endif //DEBUG
-    poly.sd_len = (len_candidate > poly.all->length()) ? (uint64_t)poly.all->length() : len_candidate;
+    poly.sd_len = (len_candidate > poly.all->length()) ? poly.all->length() : len_candidate;
 #ifdef DEBUG
     cout << ", new size " << poly.sd_len << endl;
 #endif //DEBUG
@@ -260,7 +260,7 @@ void sort_data_update_support(stagewise_poly &poly)
   assert(poly.original_ec);
   poly.original_ec->ft_offset = 0;
 
-  uint64_t num_new_features = (uint64_t)pow(poly.sum_input_sparsity * 1.0f / poly.num_examples, poly.sched_exponent);
+  size_t num_new_features = (size_t)pow(poly.sum_input_sparsity * 1.0f / poly.num_examples, poly.sched_exponent);
   num_new_features = (num_new_features > poly.all->length()) ? (uint64_t)poly.all->length() : num_new_features;
   sort_data_ensure_sz(poly, num_new_features);
 
@@ -633,7 +633,7 @@ base_learner *stagewise_poly_setup(vw &all)
 
   new_options(all, "Stagewise poly options")
   ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
-  ("batch_sz", po::value<uint64_t>(), "multiplier on batch size before including more features")
+  ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")
   ("batch_sz_no_doubling", "batch_sz does not double")
 #ifdef MAGIC_ARGUMENT
   ("magic_argument", po::value<float>(), "magical feature flag")
@@ -648,7 +648,7 @@ base_learner *stagewise_poly_setup(vw &all)
   sort_data_create(poly);
 
   poly.sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 1.f;
-  poly.batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint64_t>() : 1000;
+  poly.batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 1000;
   poly.batch_sz_double = vm.count("batch_sz_no_doubling") ? false : true;
 #ifdef MAGIC_ARGUMENT
   poly.magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;

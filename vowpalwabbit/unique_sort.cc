@@ -12,7 +12,7 @@ void unique_features(features& fs, int max)
   size_t last_index = 0;
   size_t num_features = fs.indicies.size();
   if (max > 0)
-    num_features = min(num_features, max);
+    num_features = min(num_features, (size_t)max);
   for (size_t i = 1; i < num_features; i++)
     if (fs.indicies[i] != fs.indicies[last_index])
       if (i != ++last_index)

@@ -10,7 +10,7 @@ float collision_cleanup(features& fs)
 { int pos = 0;
   float sum_sq = 0.;
 
-  for(uint64_t i = 1; i < fs.size(); i++)
+  for(size_t i = 1; i < fs.size(); i++)
     { if(fs.indicies[i] == fs.indicies[pos])
         {
           fs.values[pos] += fs.values[i];

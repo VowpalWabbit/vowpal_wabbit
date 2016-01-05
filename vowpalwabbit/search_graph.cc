@@ -70,7 +70,7 @@ struct task_data
   bool   directed;
 
   // for adding new features
-  size_t mask; // all->reg.weight_mask
+  uint64_t mask; // all->reg.weight_mask
   uint64_t multiplier;   // all.wpp << all.reg.stride_shift
   size_t ss; // stride_shift
   size_t wpp;
@@ -245,7 +245,7 @@ void add_edge_features_single_fn(task_data&D, float fv, uint64_t fx)
   fs.push_back(fv, (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint64_t)D.mask);
 }
 
-void add_edge_features(Search::search&sch, task_data&D, uint64_t n, vector<example*>&ec)
+void add_edge_features(Search::search&sch, task_data&D, size_t n, vector<example*>&ec)
 { D.cur_node = ec[n];
 
   for (size_t i : D.adj[n])

@@ -65,11 +65,11 @@ void parse_label(parser*, shared_data*sd, void* v, v_array<substring>& words)
   { case 0:
       break;
     case 1:
-      ld->label = sd->ldict ? sd->ldict->get(words[0]) : int_of_substring(words[0]);
+      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_substring(words[0]);
       ld->weight = 1.0;
       break;
     case 2:
-      ld->label = sd->ldict ? sd->ldict->get(words[0]) : int_of_substring(words[0]);
+      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_substring(words[0]);
       ld->weight = float_of_substring(words[1]);
       break;
     default:

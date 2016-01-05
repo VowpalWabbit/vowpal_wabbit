@@ -12,7 +12,7 @@ ifeq ($(CXX),)
   $(error No compiler found)
 endif
 
-FLAGS += -I ../vowpalwabbit
+FLAGS += -I ../vowpalwabbit 
 STDLIBS = $(BOOST_LIBRARY) $(LIBS)
 
 all:	spanning_tree

@@ -48,7 +48,7 @@ void multiply(features& f_dest, features& f_src2, interact& in)
   uint64_t prev_id1 = 0;
   uint64_t prev_id2 = 0;
 
-  for(uint64_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();)
+  for(size_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();)
   { // calculating the relative offset from the namespace offset used to match features
     uint64_t cur_id1 = (uint64_t)(((f_src1.indicies[i1] & weight_mask) - base_id1) & weight_mask);
     uint64_t cur_id2 = (uint64_t)(((f_src2.indicies[i2] & weight_mask) - base_id2) & weight_mask);
@@ -109,7 +109,7 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec)
 
   // remove 2nd namespace
   int n2_i = -1;
-  for (uint64_t i = 0; i < ec.indices.size(); i++)
+  for (size_t i = 0; i < ec.indices.size(); i++)
   { if (ec.indices[i] == in.n2)
     { n2_i = (int)i;
       memmove(&ec.indices[n2_i], &ec.indices[n2_i + 1], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));

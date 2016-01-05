@@ -127,7 +127,7 @@ struct dictionary_info
   feature_dict* dict;
 };
 
-inline void deleter(substring ss, uint32_t label)
+inline void deleter(substring ss, uint64_t label)
 { free_it(ss.begin); }
 
 class namedlabels
@@ -135,7 +135,7 @@ class namedlabels
 private:
 
   v_array<substring> id2name;
-  v_hashmap<substring,uint32_t> name2id;
+  v_hashmap<substring,uint64_t> name2id;
   uint32_t K;
 
 public:
@@ -153,8 +153,8 @@ public:
     name2id.init(4 * K + 1, 0, substring_equal);
     for (size_t k=0; k<K; k++)
     { substring& l = id2name[k];
-      size_t hash = uniform_hash((unsigned char*)l.begin, l.end-l.begin, 378401);
-      uint32_t id = name2id.get(l, hash);
+      uint64_t hash = uniform_hash((unsigned char*)l.begin, l.end-l.begin, 378401);
+      uint64_t id = name2id.get(l, hash);
       if (id != 0) // TODO: memory leak: char* temp
         THROW("error: label dictionary initialized with multiple occurances of: " << l);
       size_t len = l.end - l.begin;
@@ -176,9 +176,9 @@ public:
 
   uint32_t getK() { return K; }
 
-  uint32_t get(substring& s)
-  { size_t hash = uniform_hash((unsigned char*)s.begin, s.end-s.begin, 378401);
-    uint32_t v  =  name2id.get(s, hash);
+  uint64_t get(substring& s)
+  { uint64_t hash = uniform_hash((unsigned char*)s.begin, s.end-s.begin, 378401);
+    uint64_t v  =  name2id.get(s, hash);
     if (v == 0)
     { cerr << "warning: missing named label '";
       for (char*c = s.begin; c != s.end; c++) cerr << *c;
@@ -476,7 +476,7 @@ struct vw
   uint32_t skips[256];//skips in ngrams.
   std::vector<std::string> limit_strings; // descriptor of feature limits
   uint32_t limit[256];//count to limit features by
-  uint64_t affix_features[256]; // affixes to generate (up to 8 per namespace)
+  char affix_features[256]; // affixes to generate (up to 8 per namespace)
   bool     spelling_features[256]; // generate spelling features for which namespace
   vector<string> dictionary_path;  // where to look for dictionaries
   vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it

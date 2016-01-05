@@ -93,7 +93,7 @@ template<class R>
  struct inner_data {
    R& dat;
    const feature_index offset;
-   const size_t weight_mask;
+   const uint64_t weight_mask;
    weight* weight_vector;
    feature_value ft_value;
    feature_index halfhash;
@@ -125,7 +125,7 @@ template<class R>
   // often used values
   const uint64_t offset = ec.ft_offset;
 //    const uint64_t stride_shift = all.reg.stride_shift; // it seems we don't need stride shift in FTRL-like hash
-  const size_t  weight_mask   = all.reg.weight_mask;
+  const uint64_t  weight_mask   = all.reg.weight_mask;
   weight* weight_vector = all.reg.weight_vector;
 
   inner_data<R> id ={dat, offset, weight_mask, weight_vector};
