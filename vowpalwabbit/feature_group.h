@@ -117,7 +117,7 @@ struct features { // the core definition of a set of features.
     v_array<feature_slice> slice = v_init<feature_slice>();
     for (size_t i = 0; i < indicies.size(); i++)
       {
-        feature_slice temp = {values[i], indicies[i] & parse_mask, audit_strings(nullptr, nullptr)};
+        feature_slice temp = {values[i], indicies[i] & parse_mask, audit_strings("", "")};
         if (space_names.size() != 0)
           temp.space_name = space_names[i];
         slice.push_back(temp);

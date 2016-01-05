@@ -14,14 +14,6 @@ license as described in the file LICENSE.
 
 using namespace std;
 
-char* copy(const char* base)
-{ size_t len = 0;
-  while (base[len++] != '\0');
-  char* ret = calloc_or_throw<char>(len);
-  memcpy(ret,base,len);
-  return ret;
-}
-
 template<bool audit>
 class TC_parser
 {
@@ -110,7 +102,7 @@ public:
           { v_array<char> feature_v = v_init<char>();
             push_many(feature_v, feature_name.begin, feature_name.end - feature_name.begin);
             feature_v.push_back('\0');
-            fs.space_names.push_back(audit_strings(copy(base), feature_v.begin));
+	    fs.space_names.push_back(audit_strings(base, feature_v.begin));
           }
         if ((affix_features[index] > 0) && (feature_name.end != feature_name.begin))
           {
@@ -138,7 +130,7 @@ public:
                      affix_v.push_back('=');
                      push_many(affix_v, affix_name.begin, affix_name.end - affix_name.begin);
                      affix_v.push_back('\0');
-                     affix_fs.space_names.push_back(audit_strings(copy((char*)"affix"),affix_v.begin));
+		     fs.space_names.push_back(audit_strings("affix",affix_v.begin));
                    }
                  affix >>= 4;
               }
@@ -168,7 +160,7 @@ public:
           if (index != ' ') { spelling_v.push_back(index); spelling_v.push_back('_'); }
           push_many(spelling_v, spelling_ss.begin, spelling_ss.end - spelling_ss.begin);
           spelling_v.push_back('\0');
-          spell_fs.space_names.push_back(audit_strings(copy((char*)"spelling"),spelling_v.begin));
+          spell_fs.space_names.push_back(audit_strings("spelling",spelling_v.begin));
         }
       }
       if (namespace_dictionaries[index].size() > 0)
@@ -190,7 +182,7 @@ public:
                     ss << index << '_';
                     for (char* fc=feature_name.begin; fc!=feature_name.end; ++fc) ss << *fc;
                     ss << '=' << id;
-                    dict_fs.space_names.push_back(audit_strings(copy((char*)"dictionary"), copy(ss.str().c_str())));
+                    dict_fs.space_names.push_back(audit_strings("dictionary", ss.str()));
                   }
             }
         }
