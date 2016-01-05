@@ -21,7 +21,7 @@ const float hidden_max_activation = 3;
 const uint64_t nn_constant = 533357803;
 
 struct nn
-{ uint64_t k;
+{ uint32_t k;
   loss_function* squared_loss;
   example output_layer;
   example hiddenbias;

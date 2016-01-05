@@ -162,7 +162,7 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
 { v_array<char> t = v_init<char>();
 
   try
-    {  uint64_t v_length;
+    {  size_t v_length;
       buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
       if (v_length > 61)
 	THROW("cache version too long, cache file is probably invalid");
@@ -305,7 +305,7 @@ void make_write_cache(vw& all, string &newname, bool quiet)
     return;
   }
 
-  uint64_t v_length = (uint64_t)version.to_string().length()+1;
+  size_t v_length = (uint64_t)version.to_string().length()+1;
 
   output->write_file(f, &v_length, sizeof(v_length));
   output->write_file(f,version.to_string().c_str(),v_length);
@@ -618,9 +618,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs,
               { feature_name += string("^");
                 feature_name += string(fs.space_names[i+gram_mask[n]].second);
               }
-            char* feature = strdup(feature_name.c_str());
-            char* space = strdup(fs.space_names[i].first);
-            fs.space_names.push_back(audit_strings(space,feature));
+			fs.space_names.push_back(audit_strings(fs.space_names[i].first, feature_name));
           }
       }
   }
@@ -790,12 +788,12 @@ example* read_example(vw& all, char* example_line)
 example* read_example(vw& all, string example_line) { return read_example(all, (char*)example_line.c_str()); }
 
 void add_constant_feature(vw& vw, example*ec)
-{ uint64_t cns = constant_namespace;
+{ char cns = constant_namespace;
   ec->indices.push_back(cns);
   ec->feature_space[cns].push_back(1,constant);
   ec->total_sum_feat_sq++;
   ec->num_features++;
-  if (vw.audit || vw.hash_inv) ec->feature_space[constant_namespace].space_names.push_back(audit_strings(nullptr,strdup("Constant")));
+  if (vw.audit || vw.hash_inv) ec->feature_space[constant_namespace].space_names.push_back(audit_strings("","Constant"));
 }
 
 void add_label(example* ec, float label, float weight, float base)
@@ -812,7 +810,7 @@ example* import_example(vw& all, string label, primitive_feature_space* features
     parse_example_label(all, *ret, label);
 
   for (size_t i = 0; i < len; i++)
-  { uint64_t index = features[i].name;
+  { unsigned char index = features[i].name;
     ret->indices.push_back(index);
     for (size_t j = 0; j < features[i].len; j++)
       ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].weight_index);

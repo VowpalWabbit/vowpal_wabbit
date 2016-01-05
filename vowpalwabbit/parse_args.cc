@@ -206,7 +206,7 @@ void parse_dictionary_argument(vw&all, string str)
     char* word = calloc_or_throw<char>(d-c);
     memcpy(word, c, d-c);
     substring ss = { word, word + (d - c) };
-    uint32_t hash = uniform_hash( ss.begin, ss.end-ss.begin, quadratic_constant);
+    uint64_t hash = uniform_hash( ss.begin, ss.end-ss.begin, quadratic_constant);
     if (map->get(ss, hash) != nullptr)   // don't overwrite old values!
     { free(word);
       continue;

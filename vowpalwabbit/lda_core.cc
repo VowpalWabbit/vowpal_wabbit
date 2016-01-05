@@ -41,13 +41,13 @@ enum lda_math_mode { USE_SIMD, USE_PRECISE, USE_FAST_APPROX };
 class index_feature
 {
 public:
-  uint64_t document;
+  uint32_t document;
   feature f;
   bool operator<(const index_feature b) const { return f.weight_index < b.f.weight_index; }
 };
 
 struct lda
-{ uint64_t topics;
+{ size_t topics;
   float lda_alpha;
   float lda_rho;
   float lda_D;
@@ -633,7 +633,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 
   if (read)
   { initialize_regressor(*all);
-    for (size_t j = 0; j < stride * length; j += stride)
+    for (uint64_t j = 0; j < stride * length; j += stride)
     { for (size_t k = 0; k < all->lda; k++)
       { if (all->random_weights)
         { all->reg.weight_vector[j + k] = (float)(-log(frand48()) + 1.0f);
@@ -724,7 +724,7 @@ void learn_batch(lda &l)
 
   weight *weights = l.all->reg.weight_vector;
 
-  size_t last_weight_index = -1;
+  uint64_t last_weight_index = -1;
   for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++)
   { if (last_weight_index == s->f.weight_index)
       continue;
@@ -866,7 +866,7 @@ LEARNER::base_learner *lda_setup(vw &all)
   add_options(all);
   po::variables_map &vm = all.vm;
 
-  all.lda = vm["lda"].as<uint64_t>();
+  all.lda = vm["lda"].as<uint32_t>();
 
   lda &ld = calloc_or_throw<lda>();
 

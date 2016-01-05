@@ -41,7 +41,7 @@ public:
   unsigned char (*redefine)[256];
   parser* p;
   example* ae;
-  uint64_t* affix_features;
+  char* affix_features;
   bool* spelling_features;
   v_array<char> spelling;
 
@@ -100,7 +100,7 @@ public:
         v = cur_channel_v * featureValue();
         uint64_t word_hash;
         if (feature_name.end != feature_name.begin)
-          word_hash = (p->hasher(feature_name,(uint64_t)channel_hash));
+          word_hash = (p->hasher(feature_name, channel_hash));
         else
           word_hash = channel_hash + anon++;
         if(v == 0) return; //dont add 0 valued features to list of features
@@ -117,10 +117,10 @@ public:
             features& affix_fs = ae->feature_space[affix_namespace];
             if (affix_fs.size() == 0)
               ae->indices.push_back(affix_namespace);
-            uint64_t affix = affix_features[index];
+            char affix = affix_features[index];
             while (affix > 0)
               { bool is_prefix = affix & 0x1;
-                uint64_t len   = (affix >> 1) & 0x7;
+                char len   = (affix >> 1) & 0x7;
                 substring affix_name = { feature_name.begin, feature_name.end };
                 if (affix_name.end > affix_name.begin + len)
                   { if (is_prefix)

@@ -74,7 +74,7 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec)
       inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp);
   }
   if (ec.passthrough)
-  { uint32_t second_best = 0;
+  { uint64_t second_best = 0;
     float    second_best_cost = FLT_MAX;
     for (size_t i=0; i<ec.passthrough->size() - pt_start; i++)
       { float  val = ec.passthrough->values[pt_start + i];

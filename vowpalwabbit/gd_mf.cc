@@ -24,7 +24,7 @@ using namespace LEARNER;
 
 struct gdmf
 { vw* all;//regressor, printing
-  uint64_t rank;
+  uint32_t rank;
   size_t no_win_counter;
   uint64_t early_stop_thres;
 };
@@ -147,7 +147,7 @@ float mf_predict(gdmf& d, example& ec)
 }
 
 
-void sd_offset_update(weight* weights, size_t mask, features& fs, size_t offset, float update, float regularization)
+void sd_offset_update(weight* weights, uint64_t mask, features& fs, uint64_t offset, float update, float regularization)
 { for (size_t i = 0; i < fs.size(); i++)
     weights[(fs.indicies[i] + offset) & mask] += update * fs.values[i] - regularization * weights[(fs.indicies[i] + offset) & mask];
 }
@@ -155,7 +155,7 @@ void sd_offset_update(weight* weights, size_t mask, features& fs, size_t offset,
 void mf_train(gdmf& d, example& ec)
 { vw& all = *d.all;
   weight* weights = all.reg.weight_vector;
-  size_t mask = all.reg.weight_mask;
+  uint64_t mask = all.reg.weight_mask;
   label_data& ld = ec.l.simple;
 
   // use final prediction to get update size
@@ -286,7 +286,7 @@ base_learner* gd_mf_setup(vw& all)
 
   gdmf& data = calloc_or_throw<gdmf>();
   data.all = &all;
-  data.rank = all.vm["rank"].as<uint64_t>();
+  data.rank = all.vm["rank"].as<uint32_t>();
   data.no_win_counter = 0;
   data.early_stop_thres = 3;
 

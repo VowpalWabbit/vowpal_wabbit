@@ -82,7 +82,7 @@ struct flat_example
   char* tag;//An identifier for the example.
 
   size_t example_counter;
-  uint32_t ft_offset;
+  uint64_t ft_offset;
   float global_weight;
 
   size_t num_features;//precomputed, cause it's fast&easy.
@@ -105,7 +105,7 @@ inline bool valid_ns(char c)
 { return !(c == '|' || c == ':');
 }
 
-inline void add_passthrough_feature_magic(example& ec, uint32_t magic, uint32_t i, float x)
+inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t i, float x)
 { if (ec.passthrough)
     ec.passthrough->push_back( x, (FNV_prime * magic) ^ i);
 }

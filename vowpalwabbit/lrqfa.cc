@@ -111,11 +111,10 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
       features& rfs = ec.feature_space[right];
       rfs.values.end = rfs.values.begin + lrq.orig_size[right];
 
-      if (all.audit || all.hash_inv)
-        { for (size_t j = lrq.orig_size[right]; j < rfs.space_names.size(); ++j)
-            { free (rfs.space_names[j].first);
-              free (rfs.space_names[j].second);
-            }
+	  if (all.audit || all.hash_inv)
+	  {
+		for (size_t j = lrq.orig_size[right]; j < rfs.space_names.size(); ++j)
+		  rfs.space_names[j].~audit_strings(); 
 
           rfs.space_names.end = rfs.space_names.begin + lrq.orig_size[right];
         }

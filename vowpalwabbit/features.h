@@ -1,6 +1,6 @@
 typedef float feature_value;
 typedef uint64_t feature_index;
-typedef pair<char*, char*> audit_strings;
+typedef pair<string, string> audit_strings;
 
 struct feature {//sparse feature definition for the library interface
   float x;
@@ -41,10 +41,8 @@ struct features { // the core definition of a set of features.
 
   void free_space_names(size_t i)
   {
-    for (; i<space_names.size(); i++)
-      { free_it(space_names[i].first);
-        free_it(space_names[i].second);
-      }
+	  for (; i < space_names.size(); i++)
+		  space_names[i].~audit_strings();
   }
 
   template<class R, void (*T)(R&, feature_value, feature_index)> inline void foreach_feature(R& dat, size_t j, size_t k)
