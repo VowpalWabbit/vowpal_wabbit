@@ -146,6 +146,7 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
 
 void get_observed_cost(cb_adf& mydata, v_array<example*>& examples)
 { CB::label ld;
+  ld.costs = v_init<cb_class>();
   int index = -1;
 
   for (example **ec = examples.begin; ec != examples.end; ec++)
