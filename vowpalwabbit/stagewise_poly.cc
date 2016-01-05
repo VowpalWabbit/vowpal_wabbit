@@ -633,7 +633,7 @@ base_learner *stagewise_poly_setup(vw &all)
 
   new_options(all, "Stagewise poly options")
   ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
-  ("batch_sz", po::value<uint64_t>(), "multiplier on batch size before including more features")
+  ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")
   ("batch_sz_no_doubling", "batch_sz does not double")
 #ifdef MAGIC_ARGUMENT
   ("magic_argument", po::value<float>(), "magical feature flag")
