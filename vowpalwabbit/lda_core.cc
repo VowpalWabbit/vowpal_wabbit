@@ -795,7 +795,7 @@ void learn(lda &l, LEARNER::base_learner &, example &ec)
   for (unsigned char *i = ec.indices.begin; i != ec.indices.end; i++)
     { features& fs = ec.feature_space[*i];
       for (size_t j = 0; j < fs.size(); ++j)
-        { index_feature temp = {(uint64_t)num_ex, feature(fs.values[j], fs.indicies[j])};
+        { index_feature temp = {num_ex, feature(fs.values[j], fs.indicies[j])};
           l.sorted_features.push_back(temp);
           l.doc_lengths[num_ex] += (int)fs.values[j];
         }
