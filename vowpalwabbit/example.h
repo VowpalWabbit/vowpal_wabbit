@@ -14,16 +14,16 @@ license as described in the file LICENSE.
 #include "constant.h"
 #include "features.h"
 
-const size_t wap_ldf_namespace  = 126;
-const size_t history_namespace  = 127;
-const size_t constant_namespace = 128;
-const size_t nn_output_namespace  = 129;
-const size_t autolink_namespace  = 130;
-const size_t neighbor_namespace  = 131;   // this is \x83 -- to do quadratic, say "-q a`printf "\x83"` on the command line
-const size_t affix_namespace     = 132;   // this is \x84
-const size_t spelling_namespace  = 133;   // this is \x85
-const size_t conditioning_namespace = 134;// this is \x86
-const size_t dictionary_namespace  = 135; // this is \x87
+const unsigned char wap_ldf_namespace  = 126;
+const unsigned char history_namespace  = 127;
+const unsigned char constant_namespace = 128;
+const unsigned char nn_output_namespace  = 129;
+const unsigned char autolink_namespace  = 130;
+const unsigned char neighbor_namespace  = 131;   // this is \x83 -- to do quadratic, say "-q a`printf "\x83"` on the command line
+const unsigned char affix_namespace     = 132;   // this is \x84
+const unsigned char spelling_namespace  = 133;   // this is \x85
+const unsigned char conditioning_namespace = 134;// this is \x86
+const unsigned char dictionary_namespace  = 135; // this is \x87
 
 typedef union
 { label_data simple;

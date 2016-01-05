@@ -788,9 +788,9 @@ example* read_example(vw& all, char* example_line)
 example* read_example(vw& all, string example_line) { return read_example(all, (char*)example_line.c_str()); }
 
 void add_constant_feature(vw& vw, example*ec)
-{ char cns = constant_namespace;
-  ec->indices.push_back(cns);
-  ec->feature_space[cns].push_back(1,constant);
+{
+  ec->indices.push_back(constant_namespace);
+  ec->feature_space[constant_namespace].push_back(1,constant);
   ec->total_sum_feat_sq++;
   ec->num_features++;
   if (vw.audit || vw.hash_inv) ec->feature_space[constant_namespace].space_names.push_back(audit_strings("","Constant"));
