@@ -789,7 +789,7 @@ void learn_batch(lda &l)
 }
 
 void learn(lda &l, LEARNER::base_learner &, example &ec)
-{ size_t num_ex = l.examples.size();
+{ uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
   for (unsigned char *i = ec.indices.begin; i != ec.indices.end; i++)
