@@ -132,6 +132,9 @@ test_gcov: .FORCE vw_gcov library_example_gcov
 install: $(BINARIES)
 	cd vowpalwabbit; cp $(BINARIES) /usr/local/bin; cd ../cluster; $(MAKE) install
 
+doc:
+	doxygen Doxyfile
+
 clean:
 	cd vowpalwabbit && $(MAKE) clean
 	cd cluster && $(MAKE) clean

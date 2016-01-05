@@ -163,3 +163,11 @@ $ sh autogen.sh --enable-libc++
 $ make
 $ make test    # (optional)
 ```
+
+## Code Documentation
+
+To browse the code more easily, do
+
+make doc
+
+and then point your browser to doc/html/index.html .
