@@ -856,13 +856,13 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
 LEARNER::base_learner *lda_setup(vw &all)
 { if (missing_option<uint64_t, true>(all, "lda", "Run lda with <int> topics"))
     return nullptr;
-  new_options(all, "Lda options")("lda_alpha", po::value<float>()->default_value(0.1f),
-                                  "Prior on sparsity of per-document topic weights")(
-                                    "lda_rho", po::value<float>()->default_value(0.1f), "Prior on sparsity of topic distributions")(
-                                      "lda_D", po::value<float>()->default_value(10000.),
-                                      "Number of documents")("lda_epsilon", po::value<float>()->default_value(0.001f), "Loop convergence threshold")(
-                                        "minibatch", po::value<size_t>()->default_value(1), "Minibatch size, for LDA")(
-                                          "math-mode", po::value<lda_math_mode>()->default_value(USE_SIMD), "Math mode: simd, accuracy, fast-approx");
+  new_options(all, "Lda options")
+    ("lda_alpha", po::value<float>()->default_value(0.1f),"Prior on sparsity of per-document topic weights")
+    ("lda_rho", po::value<float>()->default_value(0.1f), "Prior on sparsity of topic distributions")
+    ("lda_D", po::value<float>()->default_value(10000.), "Number of documents")
+    ("lda_epsilon", po::value<float>()->default_value(0.001f), "Loop convergence threshold")
+    ("minibatch", po::value<size_t>()->default_value(1), "Minibatch size, for LDA")
+    ("math-mode", po::value<lda_math_mode>()->default_value(USE_SIMD), "Math mode: simd, accuracy, fast-approx");
   add_options(all);
   po::variables_map &vm = all.vm;
 
