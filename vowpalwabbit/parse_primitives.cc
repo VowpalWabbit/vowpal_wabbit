@@ -39,7 +39,7 @@ void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty
   }
 }
 
-uint64_t hashstring (substring s, uint32_t h)
+uint64_t hashstring (substring s, uint64_t h)
 { //trim leading whitespace but not UTF-8
   for(; s.begin < s.end && *(s.begin) <= 0x20 && (int)*(s.begin)>= 0; s.begin++);
   //trim trailing white space but not UTF-8
