@@ -12,7 +12,7 @@ license as described in the file LICENSE.
 #include "cost_sensitive.h"
 #include "cb.h"
 #include "constant.h"
-#include "features.h"
+#include "feature_group.h"
 
 const unsigned char wap_ldf_namespace  = 126;
 const unsigned char history_namespace  = 127;
