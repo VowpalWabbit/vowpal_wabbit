@@ -127,8 +127,7 @@ namespace VW
         if (x == 0)
             return;
 
-        m_features->values.push_back(x);
-        m_features->indicies.push_back(weight_index);
+        m_features->push_back(x, weight_index);
     }
 
     void VowpalWabbitNamespaceBuilder::PreAllocate(int size)
