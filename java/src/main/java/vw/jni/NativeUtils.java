@@ -20,39 +20,17 @@ public class NativeUtils {
     }
 
     /**
-     * This will read from /proc/version to attempt to find the Linux distribution.
-     * @return The Linux distribution or null if the version cannot be found.
-     * @throws IOException If an I/O error occurs
+     * lsb_args = "-i", regexp = "Distributor ID: *(.*)$"
      */
-    public static String getDistroName() throws IOException {
-        Pattern distroRegex = Pattern.compile("[^(]+\\([^(]+\\([^(]+\\(([A-Za-z\\s]+).*");
-        BufferedReader reader = new BufferedReader(new FileReader("/proc/version"));
-        String distro;
-        try {
-            Matcher line = distroRegex.matcher(reader.readLine());
-            distro = line.matches() ? line.group(1) : null;
-        }
-        finally {
-            reader.close();
-        }
-        return distro;
-    }
-
-    /**
-     * This will attempt to find the Linux version by making use of {@code lsb_release -r}
-     * @return The Linux version or null if the version cannot be determined.
-     * @throws IOException If an I/O error occurs
-     */
-    public static String getLinuxVersion() throws IOException {
+    public static String lsb_release(String lsb_args, Pattern regexp) throws IOException {
         BufferedReader reader = null;
         try {
-            Process process = Runtime.getRuntime().exec("lsb_release -r");
+            Process process = Runtime.getRuntime().exec("lsb_release " + lsb_args);
             reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
-            Pattern releasePattern = Pattern.compile("Release:\\s*(\\d+).*");
             Matcher matcher;
             while ((line = reader.readLine()) != null) {
-                matcher = releasePattern.matcher(line);
+                matcher = regexp.matcher(line);
                 if (matcher.matches()) {
                     return matcher.group(1);
                 }
@@ -62,6 +40,24 @@ public class NativeUtils {
             reader.close();
         }
         return null;
+    }
+
+    /**
+     * Attempt to find the Linux distribution ID.
+     * @return The Linux distribution or null if the version cannot be found.
+     * @throws IOException If an I/O error occurs
+     */
+    public static String getDistroName() throws IOException {
+        return lsb_release("-i", Pattern.compile("Distributor ID:\\s*(.*)\\s*$"));
+    }
+
+    /**
+     * This will attempt to find the Linux version by making use of {@code lsb_release -r}
+     * @return The Linux version or null if the version cannot be determined.
+     * @throws IOException If an I/O error occurs
+     */
+    public static String getLinuxVersion() throws IOException {
+        return lsb_release("-r", Pattern.compile("Release:\\s*(.*)\\s*$"));
     }
 
     /**
@@ -88,7 +84,7 @@ public class NativeUtils {
             if (version == null) {
                 throw new UnsupportedOperationException("Cannot determine linux version");
             }
-            return distro.trim().replaceAll(" ", "_") + "." + version;
+            return String.format("%s.%s", distro, version.split("\\.")[0]);
         }
         throw new IllegalStateException("Unsupported operating system " + osName);
     }
