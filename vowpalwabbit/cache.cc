@@ -136,12 +136,40 @@ void output_byte(io_buf& cache, unsigned char s)
   cache.set(c);
 }
 
+void add_storage(size_t& storage, feature_value f)
+{
+  if (f != 1. && f != -1.)
+    storage += sizeof(feature_value);  
+}
+
+struct cache_fs {
+  uint64_t mask;
+  uint64_t last;
+  char* c;
+};
+
+void cache_feature(cache_fs& cf, feature_value v, feature_index fi)
+{
+  fi &= cf.mask;
+  int64_t s_diff = (fi - cf.last);
+  uint64_t diff = ZigZagEncode(s_diff) << 2;
+  cf.last = fi;
+  if (v == 1.)
+    cf.c = run_len_encode(cf.c, diff);
+  else if (v == -1.)
+    cf.c = run_len_encode(cf.c, diff | neg_1);
+  else
+    { cf.c = run_len_encode(cf.c, diff | general);
+      memcpy(cf.c, &v, sizeof(v));
+      cf.c += sizeof(v);
+    }
+}
+
 void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t mask)
 { char* c;
   size_t storage = fs.size() * int_size;
-  for (size_t i = 0; i != fs.size(); i++)
-    if (fs.values[i] != 1. && fs.values[i] != -1.)
-      storage += sizeof(float);
+  fs.foreach_feature<size_t, add_storage>(storage);
+
   buf_write(cache, c, sizeof(index) + storage + sizeof(size_t));
   *reinterpret_cast<unsigned char*>(c) = index;
   c += sizeof(index);
@@ -149,27 +177,9 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
   char *storage_size_loc = c;
   c += sizeof(size_t);
 
-  uint64_t last = 0;
-
-  for (size_t i = 0; i != fs.size(); i++)
-    {
-      uint64_t cache_index = i;
-      if (fs.indicies.size() > 0)
-        cache_index = fs.indicies[i];
-      cache_index &= mask;
-      int64_t s_diff = (cache_index - last);
-      uint64_t diff = ZigZagEncode(s_diff) << 2;
-      last = cache_index;
-      if (fs.values[i] == 1.)
-        c = run_len_encode(c, diff);
-      else if (fs.values[i] == -1.)
-        c = run_len_encode(c, diff | neg_1);
-      else
-        { c = run_len_encode(c, diff | general);
-          memcpy(c, &fs.values[i], sizeof(fs.values[i]));
-          c += sizeof(fs.values[i]);
-        }
-    }
+  cache_fs temp = {mask, 0, c};
+  fs.foreach_feature<cache_fs, cache_feature>(temp);
+  c = temp.c;
   cache.set(c);
   *(size_t*)storage_size_loc = c - storage_size_loc - sizeof(size_t);
 }
