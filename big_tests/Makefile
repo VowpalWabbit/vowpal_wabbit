@@ -18,7 +18,7 @@ MAKEFLAGS+=r
 # can't compare before running; can't prep data before downloading; etc.
 .NOTPARALLEL:
 
-.PHONY:	default all stub help valid expected pretend run clean spotless %.valid %.expected %.run %.clean %.deps %.depsWrapper %.depsStart %.depsEnd %.stub
+.PHONY:	default all stub help valid expected pretend run startTimer clean spotless %.valid %.expected %.run %.clean %.deps %.depsWrapper %.depsStart %.depsEnd %.stub
 
 TOP_MK_DIR := $(patsubst %/,%,$(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
 MIPS_HELP := $(shell lscpu | grep -i bogomips)
@@ -32,6 +32,7 @@ expDir := expected
 testCodeDir := $(TOP_MK_DIR)/testCode
 
 allTests := $(patsubst %/,%,$(shell ls $(expDir)))
+# allTests := 2
 
 # the ?= allows the user to override the executable from the command line, as in
 # make EXEC=myProgram all
@@ -78,8 +79,20 @@ valid:	$(validTargets)
 
 # use this target to run without doing any diffs
 runTargets := $(addsuffix .run,$(allTests))
-run:	$(runTargets)
+run:	prepData startTimer $(runTargets)
+	if [ "$(TIMING)" = "y" ] ; then \
+		startTime=`cat startTime` ;\
+		endTime=`date +%s` ;\
+		elapsedTime=$$(($$endTime - $$startTime)) ;\
+		echo "Total test time = $$elapsedTime" ;\
+		rm startTime ;\
+	fi
 	@echo "'make run' finished"
+
+startTimer:
+	if [ "$(TIMING)" = "y" ] ; then \
+		date +%s > startTime ;\
+	fi
 
 expectedTargets := $(addsuffix .expected,$(allTests))
 expected:	$(expectedTargets)
@@ -98,7 +111,7 @@ clean:
 
 %.valid:	%.run %.compare ;
 
-%.run:	%.startNotice $(stageDir)/%.dir/done %.endNotice ;
+%.run:	 $$(%.inData) %.startNotice $(stageDir)/%.dir/done %.endNotice ;
 
 %.startNotice:
 	@echo "Starting to run test $*"
@@ -123,27 +136,33 @@ $(dataDir) $(stageDir):
 
 # deps currently broken
 # $(stageDir)/%.dir/done:	$(stageDir)/%.dir $$(%.deps) $$(%.inData)
-$(stageDir)/%.dir/done:	$(stageDir)/%.dir $(stageDir)/%.dir/$(ARCH) $$(%.inData)
+$(stageDir)/%.dir/done:	$(stageDir)/%.dir $(stageDir)/%.dir/$(ARCH)
 	exec=$(EXEC) ;\
 	if [ -n "$($*.exec)" ] ; then exec="$($*.exec)" ; fi ;\
+	roFile=$(stageDir)/$*.dir/raw_out ;\
+	reFile=$(stageDir)/$*.dir/raw_err ;\
+	oFile=$(stageDir)/$*.dir/out ;\
+	eFile=$(stageDir)/$*.dir/err ;\
 	if [ "$(TIMING)" = "y" ] ; then (\
-		echo "$(TIME) -o $(stageDir)/$*.dir/$(ARCH)/rc $$exec $($*.params) $(EP) > $(stageDir)/$*.dir/raw_out 2> $(stageDir)/$*.dir/raw_err" ;\
-		$(TIME) -o $(stageDir)/$*.dir/$(ARCH)/rc $$exec $($*.params) $(EP) > $(stageDir)/$*.dir/raw_out 2> $(stageDir)/$*.dir/raw_err \
-	) \
+		timeFile=$(stageDir)/$*.dir/$(ARCH)/rc ;\
+		echo "$(TIME) -o $$timeFile $$exec $($*.params) $(EP) > $$roFile 2> $$reFile" ;\
+		$(TIME) -o $$timeFile $$exec $($*.params) $(EP) > $$roFile 2> $$reFile ;\
+		uTime=`cat $$timeFile` ;\
+		echo "timing of test $* = $$uTime" \
+	) ;\
 	else (\
-		echo "$$exec $($*.params) $(EP) > $(stageDir)/$*.dir/raw_out 2> $(stageDir)/$*.dir/raw_err" ;\
-		$$exec $($*.params) $(EP) > $(stageDir)/$*.dir/raw_out 2> $(stageDir)/$*.dir/raw_err \
+		echo "$$exec $($*.params) $(EP) > $$roFile 2> $$reFile" ;\
+		$$exec $($*.params) $(EP) > $$roFile 2> $$reFile \
 	) ; \
 	fi ;\
 	out_compar=$(DEFAULT_STDOUT_COMPARATOR_REGEXP) ;\
 	if [ -n "$($*.STDOUT_COMPARATOR_REGEXP)" ] ; then out_compar="$($*.STDOUT_COMPARATOR_REGEXP)" ; fi ;\
-	echo "$(GREP) \"$$out_compar\" $(stageDir)/$*.dir/raw_out > $(stageDir)/$*.dir/out" ;\
-	$(GREP) "$$out_compar" $(stageDir)/$*.dir/raw_out > $(stageDir)/$*.dir/out ;\
+	echo "$(GREP) \"$$out_compar\" $$roFile | tee $$oFile" ;\
+	$(GREP) "$$out_compar" $$roFile | tee $$oFile ;\
 	err_compar=$(DEFAULT_STDERR_COMPARATOR_REGEXP) ;\
 	if [ -n "$($*.STDERR_COMPARATOR_REGEXP)" ] ; then err_compar="$($*.STDERR_COMPARATOR_REGEXP)" ; fi ;\
-	echo "$(GREP) \"$$err_compar\" $(stageDir)/$*.dir/raw_err > $(stageDir)/$*.dir/err" ;\
-	$(GREP) "$$err_compar" $(stageDir)/$*.dir/raw_err > $(stageDir)/$*.dir/err ;\
-	wait
+	echo "$(GREP) \"$$err_compar\" $$reFile | tee $$eFile" ;\
+	$(GREP) "$$err_compar" $$reFile | tee $$eFile ;\
 	touch $@
 
 # first diff all the results, then set exit status if non-empty
