@@ -6,10 +6,10 @@ allData := mnist covtype URLRep
 
 VPATH+=$(testCodeDir)
 
-.PHONY:	getData eraseData %.prep
+.PHONY:	prepData eraseData %.prep
 
 allDataTargets := $(addsuffix .prep,$(allData))
-getData:	$(allDataTargets)
+prepData:	$(allDataTargets)
 	@echo "finished preparing all data"
 
 %.prep:	$(dataDir)/%.dir $(dataDir)/%.dir/prep ;

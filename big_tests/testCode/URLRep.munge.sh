@@ -1,5 +1,5 @@
 #! /bin/bash
 
-gunzip -c $1 \
-| tail -n +2 \
+tar xzf $1
+cat url_svmlight/*.svm \
 | $testCodeDir/svml2vw.pl
