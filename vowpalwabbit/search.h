@@ -169,7 +169,7 @@ struct search
   void get_test_action_sequence(vector<action>&);
 
   // get feature index mask
-  size_t get_mask();
+  uint64_t get_mask();
 
   // get stride_shift
   size_t get_stride_shift();

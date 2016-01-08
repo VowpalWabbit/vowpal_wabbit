@@ -25,13 +25,13 @@ finished run
 number of examples = 250
 weighted example sum = 250.000000
 weighted label sum = -22.000000
-average loss = 0.888309
+average loss = 0.888046
 best constant = -0.088000
 best constant's loss = 0.992256
 total feature number = 19870
 Num support = 250
-Number of kernel evaluations = 192975 Number of cache queries = 172366
-Total loss = 222.077240
+Number of kernel evaluations = 194681 Number of cache queries = 170561
+Total loss = 222.011459
 Done freeing model
 Done freeing kernel params
 Done with finish 

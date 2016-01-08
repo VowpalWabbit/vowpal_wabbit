@@ -20,14 +20,9 @@ namespace VW
     {
     private:
         /// <summary>
-        /// Sum of squares.
-        /// </summary>
-        float* m_sum_feat_sq;
-
-        /// <summary>
         /// Features.
         /// </summary>
-        v_array<feature>* m_atomic;
+        features* m_features;
 
         /// <summary>
         /// The namespace index.
@@ -47,11 +42,10 @@ namespace VW
         /// <summary>
         /// Initializes a new <see cref="VowpalWabbitNamespaceBuilder"/> instance.
         /// </summary>
-        /// <param name="sum_feat_sq">Pointer into sum squares array owned by <see cref="VowpalWabbitExample"/>.</param>
-        /// <param name="atomic">Pointer into atomics owned by <see cref="VowpalWabbitExample"/>.</param>
+        /// <param name="features">Pointer into features owned by <see cref="VowpalWabbitExample"/>.</param>
         /// <param name="index">The namespace index.</param>
         /// <param name="example">The native example to build up.</param>
-        VowpalWabbitNamespaceBuilder(float* sum_feat_sq, v_array<feature>* atomic, unsigned char index, example* example);
+        VowpalWabbitNamespaceBuilder(features* features, unsigned char index, example* example);
 
     public:
         ~VowpalWabbitNamespaceBuilder();

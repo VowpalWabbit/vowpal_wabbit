@@ -19,9 +19,9 @@ To clean up so that you can start over, type
 
 make clean
 
-To download all the relevant data at once, type
+To download and prepare all the relevant data at once, type
 
-make getData
+make prepData
 
 To erase all the data, type
 
