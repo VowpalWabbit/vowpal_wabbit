@@ -169,7 +169,7 @@ int score_comp(const void* p1, const void* p2)
 }
 
 bool ec_is_label_definition(example& ec) // label defs look like "0:___" or just "label:___"
-{ if (ec.indices.size() != 1) return false;
+{ if (ec.indices.size() < 1) return false;
   if (ec.indices[0] != 'l') return false;
   v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
   for (size_t j=0; j<costs.size(); j++)
