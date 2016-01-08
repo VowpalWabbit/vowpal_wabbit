@@ -133,7 +133,7 @@ void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
         }
       }
       if (eq_label) {
-        if (p->parse_name.size() != 2) cerr << "label feature vectors should exactly one cost on: " << words[0] << endl;
+        if (p->parse_name.size() != 2) cerr << "label feature vectors should have exactly one cost on: " << words[0] << endl;
         else {
           wclass f = { float_of_substring(p->parse_name[1]), 0, 0., 0.};
           ld->costs.push_back(f);
