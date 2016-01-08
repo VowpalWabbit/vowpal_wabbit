@@ -45,6 +45,13 @@ struct features { // the core definition of a set of features.
 		  space_names[i].~audit_strings();
   }
 
+  template<class R, void (*T)(R&, feature_value)> inline void foreach_feature(R& dat)
+  { 
+    feature_value* vp = values.begin;
+    for (;vp != values.end ;++vp)
+      T(dat,*vp);
+  }
+
   template<class R, void (*T)(R&, feature_value, feature_index)> inline void foreach_feature(R& dat, size_t j, size_t k)
   {
     feature_value* vp = values.begin + j;
@@ -58,6 +65,14 @@ struct features { // the core definition of a set of features.
   { 
     feature_value* vp = values.begin + j;
     feature_index* ip = indicies.begin + j;
+    for (;vp != values.end ;++vp, ++ip)
+      T(dat,*vp,*ip);
+  }
+
+  template<class R, void (*T)(R&, feature_value, feature_index)> inline void foreach_feature(R& dat)
+  { 
+    feature_value* vp = values.begin;
+    feature_index* ip = indicies.begin;
     for (;vp != values.end ;++vp, ++ip)
       T(dat,*vp,*ip);
   }

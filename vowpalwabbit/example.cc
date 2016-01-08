@@ -6,27 +6,36 @@ license as described in the file LICENSE.
 #include <stdint.h>
 #include "gd.h"
 
-float collision_cleanup(features& fs)
-{ int pos = 0;
-  float sum_sq = 0.;
+struct feature_collision 
+{
+  uint64_t last_index;
+  size_t pos;
+  float sum_sq;
+  features& fs;
+};
 
-  for(size_t i = 1; i < fs.size(); i++)
-    { if(fs.indicies[i] == fs.indicies[pos])
-        {
-          fs.values[pos] += fs.values[i];
-          fs.indicies[pos] += fs.indicies[pos];
-        }
-      else
-        { sum_sq += fs.values[pos]*fs.values[pos];
-          fs.values[++pos] = fs.values[i];
-          fs.indicies[pos] = fs.indicies[pos];
-        }
+void collision_addition(feature_collision& fc, feature_value fv, feature_index fi)
+{
+  if (fc.last_index == fi)
+    fc.fs.values[fc.pos] += fv;
+  else
+    { fc.sum_sq += fc.fs.values[fc.pos]*fc.fs.values[fc.pos];
+      fc.fs.values[++fc.pos] = fv;
+      fc.fs.indicies[fc.pos] = fi;
+      fc.last_index = fi;
     }
-  sum_sq += fs.values[pos]*fs.values[pos];
-  pos++;
-  fs.values.end = fs.values.begin+pos;
-  fs.indicies.end = fs.indicies.begin+pos;
-  return sum_sq;
+}
+
+float collision_cleanup(features& fs)
+{ 
+  feature_collision fc = {(uint64_t)-1, 0, 0.f, fs};
+  fs.foreach_feature<feature_collision, collision_addition>(fc);
+    
+  fc.sum_sq += fc.fs.values[fc.pos]*fc.fs.values[fc.pos];
+  fs.sum_feat_sq = fc.sum_sq;
+  fs.values.end = fs.values.begin+ (++fc.pos);
+  fs.indicies.end = fs.indicies.begin+fc.pos;
+  return fc.sum_sq;
 }
 
 namespace VW
