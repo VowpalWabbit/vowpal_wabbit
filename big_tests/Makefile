@@ -134,17 +134,22 @@ $(dataDir) $(stageDir):
 		echo "dependencies satisfied; proceeding with test $*" ;\
 	fi
 
+# don't do like on the following line, because making the dir a dependency of the file that's in it will result in the file always getting remade, cuz the dir will always be newer
+# $(stageDir)/%.dir/done:	$(stageDir)/%.dir
 # deps currently broken
-# $(stageDir)/%.dir/done:	$(stageDir)/%.dir $$(%.deps) $$(%.inData)
-$(stageDir)/%.dir/done:	$(stageDir)/%.dir $(stageDir)/%.dir/$(ARCH)
+# $(stageDir)/%.dir/done:	$$(%.deps)
+$(stageDir)/%.dir/done:
+	dir=`dirname $@` ;\
+	mkdir -p $$dir ;\
 	exec=$(EXEC) ;\
 	if [ -n "$($*.exec)" ] ; then exec="$($*.exec)" ; fi ;\
-	roFile=$(stageDir)/$*.dir/raw_out ;\
-	reFile=$(stageDir)/$*.dir/raw_err ;\
-	oFile=$(stageDir)/$*.dir/out ;\
-	eFile=$(stageDir)/$*.dir/err ;\
+	roFile=$$dir/raw_out ;\
+	reFile=$$dir/raw_err ;\
+	oFile=$$dir/out ;\
+	eFile=$$dir/err ;\
 	if [ "$(TIMING)" = "y" ] ; then (\
-		timeFile=$(stageDir)/$*.dir/$(ARCH)/rc ;\
+		mkdir -p $$dir/$(ARCH) ;\
+		timeFile=$$dir/$(ARCH)/rc ;\
 		echo "$(TIME) -o $$timeFile $$exec $($*.params) $(EP) > $$roFile 2> $$reFile" ;\
 		$(TIME) -o $$timeFile $$exec $($*.params) $(EP) > $$roFile 2> $$reFile ;\
 		uTime=`cat $$timeFile` ;\
@@ -166,20 +171,21 @@ $(stageDir)/%.dir/done:	$(stageDir)/%.dir $(stageDir)/%.dir/$(ARCH)
 	touch $@
 
 # first diff all the results, then set exit status if non-empty
-%.compare:	$(stageDir)/%.dir $(expDir)/%/out $(expDir)/%/err
-	rm -f $(stageDir)/$*.dir/diffs ;\
+%.compare:	$(expDir)/%/out $(expDir)/%/err
+	dir=$(stageDir)/$*.dir ;\
+	rm -f $$dir/diffs ;\
 	for FILE in out err $($*.otherOutputs) ; do \
-		echo "$(DIFF) $(ACC_DIFF_TOLERANCE) $(stageDir)/$*.dir/$$FILE $(expDir)/$*/$$FILE" ;\
-		$(DIFF) $(ACC_DIFF_TOLERANCE) $(stageDir)/$*.dir/$$FILE $(expDir)/$*/$$FILE |& tee -a $(stageDir)/$*.dir/diffs ;\
+		echo "$(DIFF) $(ACC_DIFF_TOLERANCE) $$dir/$$FILE $(expDir)/$*/$$FILE" ;\
+		$(DIFF) $(ACC_DIFF_TOLERANCE) $$dir/$$FILE $(expDir)/$*/$$FILE |& tee -a $$dir/diffs ;\
 	done ;\
-	if [ -s $(stageDir)/$*.dir/diffs ] ; then \
+	if [ -s $$dir/diffs ] ; then \
 		echo "Test $* failed due to accuracy diffs." ;\
 		exit 1 ;\
 	fi ;\
 	if [ "$(TIMING)" = "y" ] ; then \
-		echo "$(DIFF) $(TIME_DIFF_TOLERANCE) $(stageDir)/$*.dir/$(ARCH)/rc $(expDir)/$*/$(ARCH)/rc" ;\
-		$(DIFF) $(TIME_DIFF_TOLERANCE) $(stageDir)/$*.dir/$(ARCH)/rc $(expDir)/$*/$(ARCH)/rc |& tee -a $(stageDir)/$*.dir/diffs ;\
-		if [ -s $(stageDir)/$*.dir/diffs ] ; then \
+		echo "$(DIFF) $(TIME_DIFF_TOLERANCE) $$dir/$(ARCH)/rc $(expDir)/$*/$(ARCH)/rc" ;\
+		$(DIFF) $(TIME_DIFF_TOLERANCE) $$dir/$(ARCH)/rc $(expDir)/$*/$(ARCH)/rc |& tee -a $$dir/diffs ;\
+		if [ -s $$dir/diffs ] ; then \
 			echo "Test $* failed due to speed diffs." ;\
 			exit 1 ;\
 		fi ;\
@@ -188,25 +194,27 @@ $(stageDir)/%.dir/done:	$(stageDir)/%.dir $(stageDir)/%.dir/$(ARCH)
 # update expected files from current output files
 # expected files always include out and err
 %.expected:
+	dir=$(stageDir)/$*.dir ;\
 	mkdir -p $(expDir)/$*/ ;\
 	for FILE in out err $($*.otherOutputs) ; do \
-		(echo "copying $(stageDir)/$*.dir/$$FILE to $(expDir)/$*/" ; cp $(stageDir)/$*.dir/$$FILE $(expDir)/$*/ ) ;\
+		(echo "copying $$dir/$$FILE to $(expDir)/$*/" ; cp $$dir/$$FILE $(expDir)/$*/ ) ;\
 	done ;\
 	if [ "$(TIMING)" = "y" ] ; then \
 		mkdir -p $(expDir)/$*/$(ARCH) ;\
-		(echo "copying $(stageDir)/$*.dir/$(ARCH)/rc to $(expDir)/$*/$(ARCH)/rc" ; cp $(stageDir)/$*.dir/$(ARCH)/rc $(expDir)/$*/$(ARCH)/rc ) ;\
+		(echo "copying $$dir/$(ARCH)/rc to $(expDir)/$*/$(ARCH)/rc" ; cp $$dir/$(ARCH)/rc $(expDir)/$*/$(ARCH)/rc ) ;\
 	fi
 
 # copy outputs from expected files, to pretend that the module succeeded
 %.pretend:	$(stageDir)/%.dir $(expDir)/%/out $(expDir)/%/err
+	dir=$(stageDir)/$*.dir ;\
 	for FILE in out err $($*.otherOutputs) ; do \
-		echo "copying $(expDir)/$*/$$FILE to $(stageDir)/$*.dir/" ;\
-		cp $(expDir)/$*/$$FILE $(stageDir)/$*.dir/ ;\
+		echo "copying $(expDir)/$*/$$FILE to $$dir/" ;\
+		cp $(expDir)/$*/$$FILE $$dir/ ;\
 	done ;\
 	if [ "$(TIMING)" = "y" ] ; then \
-		mkdir -p $(stageDir)/$*.dir/$(ARCH) ;\
-		echo "copying $(expDir)/$*/$(ARCH)/rc $(stageDir)/$*.dir/$(ARCH)/rc" ;\
-		cp $(expDir)/$*/$(ARCH)/rc $(stageDir)/$*.dir/$(ARCH)/rc ;\
+		mkdir -p $$dir/$(ARCH) ;\
+		echo "copying $(expDir)/$*/$(ARCH)/rc $$dir/$(ARCH)/rc" ;\
+		cp $(expDir)/$*/$(ARCH)/rc $$dir/$(ARCH)/rc ;\
 	fi
 
 %.clean:

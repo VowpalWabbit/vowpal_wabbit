@@ -67,7 +67,7 @@ make EXEC=myProgram
 
 or make ../vowpalwabbit/vw a sym-link to it.
 
-Other variables, such as ARCH, DIFF, TIME, and GREP, can also be set on the command line similarly.
+Other variables, such as ARCH, DIFF, TIME, WGET, and GREP, can also be set on the command line similarly.
 
 If you want to pass extra parameters to all tests, set the EP variable, like this:
 
