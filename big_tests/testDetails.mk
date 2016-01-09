@@ -32,3 +32,14 @@ regression_group:	1a.valid 1b.valid 3.valid ;
 # Entity Relation prediction
 4b.inData := $(dataDir)/ER.dir/test.prep
 4b.params := -t -d $(4b.inData) -i $(stageDir)/4a.dir/er.model
+
+
+# MovieLens training
+5a.inData := $(dataDir)/movielens.dir/train.prep
+5a.params := --loss_function quantile -l 0.45 -b 24 --passes 100 -k --cache_file $(stageDir)/5a.dir/movielens.cache -d $(5a.inData) --holdout_off --lrq um14 --lrqdropout --adaptive --invariant -f $(stageDir)/5a.dir/movielens.model
+
+# MovieLens prediction
+5b.inData := $(dataDir)/movielens.dir/test.prep
+5b.params := --loss_function quantile -t -i $(stageDir)/5a.dir/movielens.model -d $(5b.inData)
+
+

@@ -94,6 +94,10 @@ startTimer:
 		date +%s > startTime ;\
 	fi
 
+compareTargets := $(addsuffix .compare,$(allTests))
+compare:	$(compareTargets)
+	@echo "'make compare' finished"
+
 expectedTargets := $(addsuffix .expected,$(allTests))
 expected:	$(expectedTargets)
 	@echo "'make expected' finished"
