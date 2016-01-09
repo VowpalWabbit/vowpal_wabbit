@@ -484,9 +484,9 @@ base_learner* OjaNewton_setup(vw& all) {
         ON.normalize = true;
     
     if (vm.count("random_init"))
-        ON.normalize = vm["random_init"].as<bool>();
+        ON.random_init = vm["random_init"].as<bool>();
     else
-        ON.normalize = true;
+        ON.random_init = true;
     
     ON.cnt = 0;
     ON.t = 1;
