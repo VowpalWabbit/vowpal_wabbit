@@ -489,7 +489,7 @@ base_learner* OjaNewton_setup(vw& all) {
     if (vm.count("learning_rate_cnt"))
         ON.learning_rate_cnt = vm["learning_rate_cnt"].as<double>();
     else
-        ON.learning_rate_cnt = .5;
+        ON.learning_rate_cnt = 2;
 
     if (vm.count("normalize"))
         ON.normalize = vm["normalize"].as<bool>();
