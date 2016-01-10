@@ -22,6 +22,27 @@ eraseData:
 
 ################ end generic stuff #########
 
+#OCR
+$(dataDir)/OCR.dir/prep:	$(dataDir)/OCR.dir/train.prep $(dataDir)/OCR.dir/test.prep
+$(dataDir)/OCR.dir/train.prep:	$(dataDir)/OCR.dir/test.prep
+$(dataDir)/OCR.dir/test.prep:	$(dataDir)/OCR.dir/letter.data.gz $(dataDir)/OCR.dir/letter.names
+	dir=$(dir $@) ;\
+	cd $$dir ;\
+	$(testCodeDir)/ocr2vw.py letter.data.gz letter.names train.prep test.prep
+
+$(dataDir)/OCR.dir/letter.data.gz:
+	dir=$(dir $@) ;\
+	mkdir -p $$dir ;\
+	cd $$dir ;\
+	wget http://ai.stanford.edu/~btaskar/ocr/letter.data.gz
+
+$(dataDir)/OCR.dir/letter.names:
+	dir=$(dir $@) ;\
+	mkdir -p $$dir ;\
+	cd $$dir ;\
+	wget http://ai.stanford.edu/~btaskar/ocr/letter.names
+
+
 #movielens
 $(dataDir)/movielens.dir/movielens.prep:	$(dataDir)/movielens.dir/train.prep ;
 

@@ -33,7 +33,6 @@ regression_group:	1a.valid 1b.valid 3.valid ;
 4b.inData := $(dataDir)/ER.dir/test.prep
 4b.params := -t -d $(4b.inData) -i $(stageDir)/4a.dir/er.model
 
-
 # MovieLens training
 5a.inData := $(dataDir)/movielens.dir/train.prep
 5a.params := --loss_function quantile -l 0.45 -b 24 --passes 100 -k --cache_file $(stageDir)/5a.dir/movielens.cache -d $(5a.inData) --holdout_off --lrq um14 --lrqdropout --adaptive --invariant -f $(stageDir)/5a.dir/movielens.model
@@ -42,4 +41,10 @@ regression_group:	1a.valid 1b.valid 3.valid ;
 5b.inData := $(dataDir)/movielens.dir/test.prep
 5b.params := --loss_function quantile -t -i $(stageDir)/5a.dir/movielens.model -d $(5b.inData)
 
+# OCR training
+6a.inData := $(dataDir)/OCR.dir/train.prep
+6a.params := -d $(6a.inData) -f $(stageDir)/6a.dir/OCR.model --cache_file $(stageDir)/6a.dir/OCR.cache -k --oaa 26 --adaptive --invariant --holdout_off --loss_function logistic --passes 14
 
+# OCR prediction
+6b.inData := $(dataDir)/OCR.dir/test.prep
+6b.params := -i $(stageDir)/6a.dir/OCR.model -d $(6b.inData) --testonly
