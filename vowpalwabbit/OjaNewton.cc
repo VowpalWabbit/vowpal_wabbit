@@ -53,6 +53,12 @@ struct OjaNewton {
         size_t stride_shift = all->reg.stride_shift;
         weight* weights = all->reg.weight_vector;
 
+        uint32_t length = 1 << all->num_bits;
+        if(normalize) { // initialize normalization part
+	    for (int i = 0; i < length; i++)
+	        weights[(i << stride_shift) + NORM2] = 0.01;
+        }
+
         if(!random_init) {
             // simple initialization
             for (int i = 1; i <= m; i++)
@@ -60,7 +66,6 @@ struct OjaNewton {
         }
 	else {
             // more complicated initialization: orthgonal basis of a random matrix
-            uint32_t length = 1 << all->num_bits;
 	    const double PI = 3.1415927;
 
             for (int i = 0; i < length; i++) {
@@ -314,7 +319,6 @@ void make_pred(update_data& data, float x, float& wref) {
     float* w = &wref;
 
     if (data.ON->normalize) {
-        w[NORM2] += x * x;    
         x /= sqrt(w[NORM2]);
     }
 
@@ -369,6 +373,13 @@ void update_wbar_and_Zx(update_data& data, float x, float& wref) {
 }
 
 
+void update_normalization(update_data& data, float x, float& wref) {
+    float* w = &wref;
+    int m = data.ON->m;
+    
+    w[NORM2] += x * x * data.g * data.g;
+}
+
 void learn(OjaNewton& ON, base_learner& base, example& ec) {
     assert(ec.in_use);
 
@@ -379,6 +390,8 @@ void learn(OjaNewton& ON, base_learner& base, example& ec) {
     data.g = ON.all->loss->first_derivative(ON.all->sd, ec.pred.scalar, ec.l.simple.label)*ec.l.simple.weight;
     data.g /= 2; // for half square loss
     
+    if(ON.normalize) GD::foreach_feature<update_data, update_normalization>(*ON.all, ec, data);
+
     ON.buffer[ON.cnt] = &ec;
     ON.weight_buffer[ON.cnt++] = data.g / 2;
 
