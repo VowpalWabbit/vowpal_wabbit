@@ -56,7 +56,7 @@ struct OjaNewton {
         uint32_t length = 1 << all->num_bits;
         if(normalize) { // initialize normalization part
 	    for (int i = 0; i < length; i++)
-	        weights[(i << stride_shift) + NORM2] = 0.01;
+	        weights[(i << stride_shift) + NORM2] = 0.1;
         }
 
         if(!random_init) {
