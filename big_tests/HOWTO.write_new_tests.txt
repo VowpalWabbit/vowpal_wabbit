@@ -38,7 +38,7 @@ To use a non-standard executable (e.g. library_example), give its path to the *.
 
 myTest.exec := $(TOP_MK_DIR)/../vowpalwabbit/library_example
 
-[Not working yet] A test can have any set of targets as prerequisites, in addition to the value of *.inData, including those that merely run other tests (*.run targets) and those that check whether another test passed (*.valid targets).  List inter-test dependencies like this:
+A test can have any set of targets as prerequisites, in addition to the value of *.inData, including those that merely run other tests (*.run targets) and those that check whether another test passed (*.valid targets).  List inter-test dependencies like this:
 
 myTest.deps:	test2.run test4.valid
 

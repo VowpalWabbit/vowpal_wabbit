@@ -115,7 +115,7 @@ clean:
 
 %.valid:	%.run %.compare ;
 
-%.run:	 $$(%.inData) %.startNotice $(stageDir)/%.dir/done %.endNotice ;
+%.run:	 $(%.inData) %.depsWrapper %.startNotice $(stageDir)/%.dir/done %.endNotice ;
 
 %.startNotice:
 	@echo "Starting to run test $*"
@@ -135,13 +135,11 @@ $(dataDir) $(stageDir):
 
 %.depsEnd:
 	@if [ -n "$($*.deps)" ] ; then \
-		echo "dependencies satisfied; proceeding with test $*" ;\
+		echo "dependencies of test $* satisfied" ;\
 	fi
 
-# don't do like on the following line, because making the dir a dependency of the file that's in it will result in the file always getting remade, cuz the dir will always be newer
+# don't do like on the following line, because making the dir a dependency of the file that's in it will result in the file always getting remade, cuz the dir will always have a newer timestamp
 # $(stageDir)/%.dir/done:	$(stageDir)/%.dir
-# deps currently broken
-# $(stageDir)/%.dir/done:	$$(%.deps)
 $(stageDir)/%.dir/done:
 	dir=`dirname $@` ;\
 	mkdir -p $$dir ;\
@@ -215,6 +213,7 @@ $(stageDir)/%.dir/done:
 		echo "copying $(expDir)/$*/$$FILE to $$dir/" ;\
 		cp $(expDir)/$*/$$FILE $$dir/ ;\
 	done ;\
+	touch $$dir/done ;\
 	if [ "$(TIMING)" = "y" ] ; then \
 		mkdir -p $$dir/$(ARCH) ;\
 		echo "copying $(expDir)/$*/$(ARCH)/rc $$dir/$(ARCH)/rc" ;\

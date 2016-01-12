@@ -15,7 +15,7 @@ regression_group:	1a.valid 1b.valid 3.valid ;
 1b.inData := $(dataDir)/mnist.dir/test.prep
 1b.params := -t -d $(1b.inData) -i $(stageDir)/1a.dir/mnist.model
 # test dependencies not working yet
-# 1b.deps = 1a.valid
+1b.deps := 1a.valid
 
 # COVERTYPE
 2.inData := $(dataDir)/covtype.dir/prep
@@ -32,6 +32,7 @@ regression_group:	1a.valid 1b.valid 3.valid ;
 # Entity Relation prediction
 4b.inData := $(dataDir)/ER.dir/test.prep
 4b.params := -t -d $(4b.inData) -i $(stageDir)/4a.dir/er.model
+4b.deps := 4a.valid
 
 # MovieLens training
 5a.inData := $(dataDir)/movielens.dir/train.prep
@@ -40,6 +41,7 @@ regression_group:	1a.valid 1b.valid 3.valid ;
 # MovieLens prediction
 5b.inData := $(dataDir)/movielens.dir/test.prep
 5b.params := --loss_function quantile -t -i $(stageDir)/5a.dir/movielens.model -d $(5b.inData)
+5b.deps := 5a.valid
 
 # OCR training
 6a.inData := $(dataDir)/OCR.dir/train.prep
@@ -48,3 +50,4 @@ regression_group:	1a.valid 1b.valid 3.valid ;
 # OCR prediction
 6b.inData := $(dataDir)/OCR.dir/test.prep
 6b.params := -i $(stageDir)/6a.dir/OCR.model -d $(6b.inData) --testonly
+6b.deps := 6a.valid
