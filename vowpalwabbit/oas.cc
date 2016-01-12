@@ -9,6 +9,7 @@ license as described in the file LICENSE.node
 #include <sstream>
 
 #include "reductions.h"
+#include "beam.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -282,6 +283,96 @@ void predict(oas& b,  base_learner& base, example& ec)
     depth ++;
   }
   ec.pred.multiclass = b.nodes[cn].max_count_label;
+  ec.l.multi = mc;
+}
+
+struct treepath {
+  uint32_t value;
+  bool is_class; // if false, value is a node in the tree; if true, value is the label
+};
+
+uint32_t treepath_hash(treepath& path) { return quadratic_constant * (path.value + cubic_constant * path.is_class); }
+
+void treepath_free(treepath* path) { free(path); }
+
+float addLog(float a, float b) {
+  if (isinf(a) == -1) return b;
+  if (isinf(b) == -1) return a;
+  if (isinf(a) ==  1) return a;
+  if (isinf(b) ==  1) return b;
+  if (a - b > 16) return a;
+  if (a > b) return a + log(1 + exp(b-a));
+  if (b - a > 16) return b;
+  return b + log(1 + exp(a-b));
+}
+
+void predict_ucs(oas& b, base_learner& base, example& ec)
+{
+  MULTICLASS::label_t mc = ec.l.multi;
+  ec.l.simple = {FLT_MAX, 0.f, 0.f};
+
+  v_array<uint32_t> labelset = v_init<uint32_t>();
+  float total_mass = 0.;
+ 
+  size_t MaxBeamSize = 1000;
+  Beam::beam<treepath>* Qptr = new Beam::beam<treepath>(MaxBeamSize, FLT_MAX, nullptr, true);
+  Beam::beam<treepath>& Q = *Qptr;
+  {
+    treepath* path0 = calloc_or_throw<treepath>(1); // root node
+    if (!Q.insert(path0, 0., treepath_hash(*path0)))
+      THROW("oas::predict_ucs: cannot insert initial path into priority queue");
+  }
+  Beam::beam_element<treepath>* elem;
+  while ((elem = Q.pop_best_item()) != nullptr) {
+    treepath& path = *(elem->data);
+    if (path.is_class) {
+      // TODO: check for dupes?
+      labelset.push_back(path.value);
+      total_mass = addLog(total_mass, elem->cost);
+    } else { // path is an internal node
+      uint32_t cn = path.value;
+      if (b.nodes[cn].internal) {
+        base.predict(ec, b.nodes[cn].base_predictor);
+        float pL = min(1., max(0., ec.partial_prediction));
+
+        if (pL > 0.) {
+          treepath* pathL = calloc_or_throw<treepath>(1);
+          pathL->value = b.nodes[cn].left;
+          if (!Q.insert(pathL, elem->cost + log(pL), treepath_hash(*pathL)))
+            free(pathL);
+        }
+
+        if (1. - pL > 0.) {
+          treepath* pathR = calloc_or_throw<treepath>(1);
+          pathR->value = b.nodes[cn].left;
+          if (!Q.insert(pathR, elem->cost + log(1.-pL), treepath_hash(*pathR)))
+            free(pathR);
+        }
+      } else { // leaf!
+        float log_sum_count = 0.;
+        for (node_pred*node=b.nodes[cn].preds.begin; node != b.nodes[cn].preds.end; ++node)
+          if (node->label_count > 0)
+            log_sum_count += (float)node->label_count;
+        if (log_sum_count > 0) {
+          log_sum_count = log(log_sum_count);
+          for (node_pred*node=b.nodes[cn].preds.begin; node != b.nodes[cn].preds.end; ++node)
+            if (node->label_count > 0) {
+              treepath* pathL = calloc_or_throw<treepath>(1);
+              pathL->value = node->label;
+              pathL->is_class = true;
+              float logp = log((float)node->label_count) - log_sum_count;
+              if (!Q.insert(pathL, elem->cost + logp, treepath_hash(*pathL)))
+                free(pathL);
+            }
+        }
+      }
+    }
+    
+    Q.maybe_compact(treepath_free);
+  }
+  Q.erase(treepath_free);
+  delete Qptr;
+  
   ec.l.multi = mc;
 }
 

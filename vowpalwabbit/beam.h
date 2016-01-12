@@ -86,9 +86,9 @@ public:
     best_cost_data = nullptr;
     A = v_init<beam_element<T>>();
     if (beam_size <= BEAM_CONSTANT_SIZE)
-      A.resize(beam_size, true);
+      A.resize(beam_size);
     else
-      A.resize((beam_size+1) * 4, true);
+      A.resize((beam_size+1) * 4);
     if (beam_size == 1) do_kbest = false;  // automatically turn of kbest
   }
 
