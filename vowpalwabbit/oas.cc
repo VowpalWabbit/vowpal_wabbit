@@ -70,6 +70,12 @@ typedef struct
 
 enum OASTrainMethod { TRAIN_SINGLE_PATH, TRAIN_HIT_NODES };
 
+
+struct treenode {
+  uint32_t value;
+  bool is_class; // if false, value is a node in the tree; if true, value is the label
+};
+
 struct oas
 { uint32_t k; // size of tree (# of nodes)
   uint32_t num_classes; // number of classes (used for oas)
@@ -87,7 +93,10 @@ struct oas
   uint32_t nbofswaps;
 
   OASTrainMethod train_method;
+  Beam::beam<treenode>* Qptr;
 };
+
+uint32_t treenode_hash(treenode& node) { return quadratic_constant * (node.value + cubic_constant * node.is_class); }
 
 inline void init_leaf(oas_node& n)
 { n.internal = false;
@@ -291,15 +300,6 @@ void predict_noucs(oas& b,  base_learner& base, example& ec)
   ec.l.multi = mc;
 }
 
-struct treenode {
-  uint32_t value;
-  bool is_class; // if false, value is a node in the tree; if true, value is the label
-};
-
-uint32_t treenode_hash(treenode& node) { return quadratic_constant * (node.value + cubic_constant * node.is_class); }
-
-void treenode_free(treenode* node) { free(node); }
-
 float addLog(float a, float b) {
   if (isinf(a) == -1) return b;
   if (isinf(b) == -1) return a;
@@ -325,21 +325,19 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
 
   float total_mass = -100;
  
-  size_t MaxBeamSize = 100000;
   uint32_t pred = 0;
   float predScore = -FLT_MAX;
   uint32_t num_labels_considered = 0;
   
-  Beam::beam<treenode>* Qptr = new Beam::beam<treenode>(MaxBeamSize, FLT_MAX, nullptr, true);
-  Beam::beam<treenode>& Q = *Qptr;
+  Beam::beam<treenode>& Q = *b.Qptr;
   {
-    treenode* node0 = calloc_or_throw<treenode>(1); // root node
-    if (!Q.insert(node0, 0., treenode_hash(*node0)))
+    treenode node0 = {0,false}; // root node
+    if (!Q.insert(node0, 0., treenode_hash(node0)))
       THROW("oas::predict: cannot insert initial node into priority queue");
   }
   Beam::beam_element<treenode>* elem;
   while ((elem = Q.pop_best_item()) != nullptr) {
-    treenode& node = *(elem->data);
+    treenode& node = elem->data;
     // cerr << "popped is_class=" << node.is_class << " value=" << node.value << " cost=" << elem->cost << endl;
     if (node.is_class) {
       if (labelset != nullptr)
@@ -372,19 +370,15 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
         //cerr << "pR=" << pR << endl;
 
         if (1. - pR > 0.) {
-          treenode* nodeL = calloc_or_throw<treenode>(1);
-          nodeL->value = b.nodes[cn].left;
+          treenode nodeL = { b.nodes[cn].left, false };
           // cerr << "push L is_class=0 value=" << b.nodes[cn].left << " cost=" << elem->cost - log(1.-pR) << endl;
-          if (!Q.insert(nodeL, elem->cost - log(1.-pR), treenode_hash(*nodeL)))
-            free(nodeL);
+          Q.insert(nodeL, elem->cost - log(1.-pR), treenode_hash(nodeL));
         }
 
         if (pR > 0.) {
-          treenode* nodeR = calloc_or_throw<treenode>(1);
-          nodeR->value = b.nodes[cn].right;
+          treenode nodeR = {b.nodes[cn].right, false };
           // cerr << "push R is_class=0 value=" << b.nodes[cn].right << " cost=" << elem->cost - log(pR) << endl;
-          if (!Q.insert(nodeR, elem->cost - log(pR), treenode_hash(*nodeR)))
-            free(nodeR);
+          Q.insert(nodeR, elem->cost - log(pR), treenode_hash(nodeR));
         }
       } else { // leaf!
         double sum_count = 0.;
@@ -395,22 +389,18 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
           double log_sum_count = log(sum_count);
           for (oas_node_pred*node=b.nodes[cn].preds.begin; node != b.nodes[cn].preds.end; ++node)
             if (node->label_count > 0) {
-              treenode* nodeL = calloc_or_throw<treenode>(1);
-              nodeL->value = node->label;
-              nodeL->is_class = true;
+              treenode nodeL = { node->label, true };
               double logp = log(node->label_count) - log_sum_count;
               //cerr << "push C is_class=1 sum_count=" << exp(log_sum_count) << " label_count=" << node->label_count << " value=" << node->label << " cost=" << elem->cost - logp << endl;
-              if (!Q.insert(nodeL, elem->cost - logp, treenode_hash(*nodeL)))
-                free(nodeL);
+              Q.insert(nodeL, elem->cost - logp, treenode_hash(nodeL));
             }
         }
       }
     }
     
-    Q.maybe_compact(treenode_free);
+    Q.maybe_compact();
   }
-  Q.erase(treenode_free);
-  delete Qptr;
+  Q.erase();
 
   ec.pred.multiclass = pred;
   // cerr << "truth=" << mc.label << " returning " << ec.pred.multiclass << endl << endl;
@@ -536,6 +526,7 @@ void finish(oas& b)
   for (size_t i = 0; i < b.nodes.size(); i++)
     b.nodes[i].preds.delete_v();
   b.nodes.delete_v();
+  delete b.Qptr;
 }
 
 void save_load_tree(oas& b, io_buf& model_file, bool read, bool text)
@@ -679,6 +670,9 @@ base_learner* oas_setup(vw& all)	//learner setup
   data.max_predictors = data.k - 1 + data.num_classes;
   init_tree(data);
 
+  size_t MaxBeamSize = 100000;
+  data.Qptr = new Beam::beam<treenode>(MaxBeamSize, FLT_MAX, nullptr, true);
+  
   learner<oas>& l = init_multiclass_learner(&data, setup_base(all), learn, predict, all.p, data.max_predictors);
   l.set_save_load(save_load_tree);
   l.set_finish(finish);

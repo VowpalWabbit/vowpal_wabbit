@@ -20,19 +20,20 @@ using namespace std;
 namespace Beam
 {
 
-template <class T> struct beam_element
-{ uint32_t hash;   // a cached hash value -- if a ~= b then h(a) must== h(b)
+template <class T> struct beam_element {
+  uint32_t hash;   // a cached hash value -- if a ~= b then h(a) must== h(b)
   float    cost;   // cost of this element
-  T*       data;   // pointer to element data -- rarely accessed!
   bool     active; // is this currently active
+  T        data;   // element data -- rarely accessed!
   //  bool     recombined;                 // if we're not the BEST then we've been recombined
   //  v_array<T*> * recomb_friends;   // if we're the BEST (among ~= elements), then recomb_friends is everything that's equivalent to us but worse... NOT USED if we're not doing k-best predictions
+  //  beam_element(uint32_t hash, float cost, T data, bool active) : hash(hash), cost(cost), data(data), active(active) {}
 };
 
 inline int compare_on_cost(const void *void_a, const void *void_b)
 { if (void_a == void_b) return 0;
-  const beam_element<void> *a = (const beam_element<void>*) void_a;
-  const beam_element<void> *b = (const beam_element<void>*) void_b;
+  const beam_element<void*> *a = (const beam_element<void*>*) void_a;
+  const beam_element<void*> *b = (const beam_element<void*>*) void_b;
   if      ( a->active && !b->active) return -1;   // active things come before inactive things
   else if (!a->active &&  b->active) return  1;
   else if (!a->active && !b->active) return  0;
@@ -43,8 +44,8 @@ inline int compare_on_cost(const void *void_a, const void *void_b)
 
 inline int compare_on_hash_then_cost(const void *void_a, const void *void_b)
 { if (void_a == void_b) return 0;
-  const beam_element<void> *a = (const beam_element<void>*) void_a;
-  const beam_element<void> *b = (const beam_element<void>*) void_b;
+  const beam_element<void*> *a = (const beam_element<void*>*) void_a;
+  const beam_element<void*> *b = (const beam_element<void*>*) void_b;
   if      ( a->active && !b->active) return -1;   // active things come before inactive things
   else if (!a->active &&  b->active) return  1;
   else if (!a->active && !b->active) return  0;
@@ -71,10 +72,10 @@ private:
 
   //  static size_t NUM_RECOMB_BUCKETS = 10231;
 
-  bool (*is_equivalent)(T*,T*);  // test if two items are equivalent; nullptr means don't do hypothesis recombination
+  bool (*is_equivalent)(T&,T&);  // test if two items are equivalent; nullptr means don't do hypothesis recombination
 
 public:
-  beam(size_t beam_size, float prune_coeff=FLT_MAX, bool (*test_equiv)(T*,T*)=nullptr, bool kbest=false)
+  beam(size_t beam_size, float prune_coeff=FLT_MAX, bool (*test_equiv)(T&,T&)=nullptr, bool kbest=false)
     : beam_size(beam_size)
     , pruning_coefficient(prune_coeff)
     , do_kbest(kbest)
@@ -94,7 +95,7 @@ public:
 
   inline bool might_insert(float cost) { return (cost <= prune_if_gt) && ((count < beam_size) || (cost < worst_cost)); }
 
-  bool insert(T*data, float cost, uint32_t hash)   // returns TRUE iff element was actually added
+  bool insert(T& data, float cost, uint32_t hash)   // returns TRUE iff element was actually added
   { if (!might_insert(cost)) return false;
 
     //bool we_were_worse = false;
@@ -149,7 +150,7 @@ public:
 
     if (cost < best_cost)
     { best_cost = cost;
-      best_cost_data = data;
+      best_cost_data = &data;
     }
     if (cost > worst_cost)
     { worst_cost  = cost;
@@ -176,7 +177,7 @@ public:
         ret = el;
       else if (el->active && (el->cost < next_best_cost))
       { next_best_cost = el->cost;
-        best_cost_data = el->data;
+        best_cost_data = &el->data;
       }
 
     if (ret != nullptr)
@@ -221,7 +222,7 @@ public:
     }
   }
 
-  void compact(void (*free_data)(T*)=nullptr)
+  void compact(void (*free_data)(T&)=nullptr)
   { if (is_equivalent) do_recombination();
     qsort(A.begin, A.size(), sizeof(beam_element<T>), compare_on_cost); // TODO: quick select
 
@@ -240,15 +241,15 @@ public:
     best_cost = A[0].cost;
     worst_cost = A[count-1].cost;
     prune_if_gt = max(1.f, best_cost) * pruning_coefficient;
-    best_cost_data = A[0].data;
+    best_cost_data = &A[0].data;
   }
 
-  void maybe_compact(void (*free_data)(T*)=nullptr)
+  void maybe_compact(void (*free_data)(T&)=nullptr)
   { if (count >= beam_size * 10)
       compact(free_data);
   }
 
-  void erase(void (*free_data)(T*)=nullptr)
+  void erase(void (*free_data)(T&)=nullptr)
   { if (free_data)
       for (beam_element<T> * be = A.begin; be != A.end; ++be)
         free_data(be->data);
