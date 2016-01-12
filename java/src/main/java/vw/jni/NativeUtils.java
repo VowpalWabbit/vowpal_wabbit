@@ -22,7 +22,7 @@ public class NativeUtils {
     /**
      * lsb_args = "-i", regexp = "Distributor ID: *(.*)$"
      */
-    public static String lsb_release(String lsb_args, Pattern regexp) throws IOException {
+    public static String lsbRelease(String lsb_args, Pattern regexp) throws IOException {
         BufferedReader reader = null;
         try {
             Process process = Runtime.getRuntime().exec("lsb_release " + lsb_args);
@@ -48,7 +48,7 @@ public class NativeUtils {
      * @throws IOException If an I/O error occurs
      */
     public static String getDistroName() throws IOException {
-        return lsb_release("-i", Pattern.compile("Distributor ID:\\s*(.*)\\s*$"));
+        return lsbRelease("-i", Pattern.compile("Distributor ID:\\s*(.*)\\s*$"));
     }
 
     /**
@@ -57,7 +57,7 @@ public class NativeUtils {
      * @throws IOException If an I/O error occurs
      */
     public static String getLinuxVersion() throws IOException {
-        return lsb_release("-r", Pattern.compile("Release:\\s*(.*)\\s*$"));
+        return lsbRelease("-r", Pattern.compile("Release:\\s*(.*)\\s*$"));
     }
 
     /**
