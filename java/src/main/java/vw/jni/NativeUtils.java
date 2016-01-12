@@ -79,12 +79,13 @@ public class NativeUtils {
             if (distro == null) {
                 throw new UnsupportedEncodingException("Cannot determine linux distribution");
             }
-
             String version = getLinuxVersion();
             if (version == null) {
                 throw new UnsupportedOperationException("Cannot determine linux version");
             }
-            return String.format("%s.%s", distro, version.split("\\.")[0]);
+            // get the major version.
+            // don't expect a period because linux version might not have one
+            return distro + "." + version.split("\\.")[0];
         }
         throw new IllegalStateException("Unsupported operating system " + osName);
     }
