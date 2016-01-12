@@ -82,6 +82,7 @@ struct oas
   bool evaluate_recall;
   uint32_t swap_resist;
   float log_MaxMassToConsider;
+  uint32_t MaxLabelsToConsider;
 
   uint32_t nbofswaps;
 
@@ -269,7 +270,7 @@ double sum_count_dfs(oas& b, oas_node node)
 }
 
 inline uint32_t descend(oas_node& n, float prediction)
-{ if (prediction < 0)
+{ if (prediction < 0.5)
     return n.left;
   else
     return n.right;
@@ -327,6 +328,7 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
   size_t MaxBeamSize = 100000;
   uint32_t pred = 0;
   float predScore = -FLT_MAX;
+  uint32_t num_labels_considered = 0;
   
   Beam::beam<treenode>* Qptr = new Beam::beam<treenode>(MaxBeamSize, FLT_MAX, nullptr, true);
   Beam::beam<treenode>& Q = *Qptr;
@@ -355,7 +357,8 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
       }
       
       total_mass = addLog(total_mass, -elem->cost);
-      if (total_mass >= b.log_MaxMassToConsider)
+      num_labels_considered ++;
+      if (total_mass >= b.log_MaxMassToConsider || num_labels_considered >= b.MaxLabelsToConsider)
         break;
     } else { // node is an internal node
       uint32_t cn = node.value;
@@ -364,9 +367,9 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
       
       if (b.nodes[cn].internal) {
         base.predict(ec, b.nodes[cn].base_predictor);
-        float pR = (ec.pred.scalar + 1.) / 2.;
+        float pR = ec.pred.scalar; // (ec.pred.scalar + 1.) / 2.;
         //if (pR < 0.) pR = 0.; else if (pR > 1.) pR = 1.;
-        // cerr << "partial_prediction=" << ec.partial_prediction << " pR=" << pR << endl;
+        //cerr << "pR=" << pR << endl;
 
         if (1. - pR > 0.) {
           treenode* nodeL = calloc_or_throw<treenode>(1);
@@ -384,19 +387,19 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
             free(nodeR);
         }
       } else { // leaf!
-        float log_sum_count = 0.;
+        double sum_count = 0.;
         for (oas_node_pred*node=b.nodes[cn].preds.begin; node != b.nodes[cn].preds.end; ++node)
           if (node->label_count > 0)
-            log_sum_count += (float)node->label_count;
-        if (log_sum_count > 0) {
-          log_sum_count = log(log_sum_count);
+            sum_count += node->label_count;
+        if (sum_count > 0) {
+          double log_sum_count = log(sum_count);
           for (oas_node_pred*node=b.nodes[cn].preds.begin; node != b.nodes[cn].preds.end; ++node)
             if (node->label_count > 0) {
               treenode* nodeL = calloc_or_throw<treenode>(1);
               nodeL->value = node->label;
               nodeL->is_class = true;
-              float logp = log((float)node->label_count) - log_sum_count;
-              // cerr << "push C is_class=1 value=" << node->label << " cost=" << elem->cost - logp << endl;
+              double logp = log(node->label_count) - log_sum_count;
+              //cerr << "push C is_class=1 sum_count=" << exp(log_sum_count) << " label_count=" << node->label_count << " value=" << node->label << " cost=" << elem->cost - logp << endl;
               if (!Q.insert(nodeL, elem->cost - logp, treenode_hash(*nodeL)))
                 free(nodeL);
             }
@@ -416,12 +419,13 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
 }
 
 void predict(oas& b, base_learner& base, example& ec) {
-  //predict_ucs(b, base, ec, nullptr, nullptr);
-  predict_noucs(b, base, ec);
+  predict_ucs(b, base, ec, nullptr, nullptr);
+  //predict_noucs(b, base, ec);
 }
 
 void learn(oas& b, base_learner& base, example& ec)
 { //    verify_min_dfs(b, b.nodes[0]);
+  MULTICLASS::label_t mc = ec.l.multi;
   v_array<uint32_t>* labelset = nullptr;
   v_array<weighted_node>* nodeset  = nullptr;
   if (ec.l.multi.label != (uint32_t)-1) {
@@ -434,14 +438,16 @@ void learn(oas& b, base_learner& base, example& ec)
   }
   
   predict_ucs(b,base,ec,labelset,nodeset);
-  //predict_noucs(b,base,ec);
-  if(ec.l.multi.label != (uint32_t)-1)  //if training the tree
-  { MULTICLASS::label_t mc = ec.l.multi;
-    uint32_t start_pred = ec.pred.multiclass;
+  if(mc.label != (uint32_t)-1)  //if training the tree
+  { uint32_t start_pred = ec.pred.multiclass;
     // train one-against-some, TODO: importance weighted?
-    for (uint32_t*lab=labelset->begin; lab!=labelset->end; ++lab) {
-      ec.l.simple = { (mc.label == *lab) ? 1.f : -1.f, 0.f, 0.f };
-      base.learn(ec, b.k + *lab-1);
+    if (b.MaxLabelsToConsider > 1) {
+      ec.l.simple = { 1.f, 1.f, 0.f };
+      base.learn(ec, b.k + mc.label-1);
+      ec.l.simple = { -1.f, 1.f, 0.f };
+      for (uint32_t*lab=labelset->begin; lab!=labelset->end; ++lab)
+        if (*lab != mc.label)
+          base.learn(ec, b.k + *lab-1);
     }
 
     // train the tree
@@ -462,7 +468,7 @@ void learn(oas& b, base_learner& base, example& ec)
         float    w  = wn->weight;
         uint32_t class_index = 0;
         ec.l.simple = {FLT_MAX, 0.f, 0.f};
-        if (children(b, cn, class_index, mc.label, 1.0))
+        if (children(b, cn, class_index, mc.label, w))
           train_node(b, base, ec, cn, class_index, w);
         else {
           b.nodes[cn].min_count += w;
@@ -633,7 +639,8 @@ base_learner* oas_setup(vw& all)	//learner setup
       ("swap_resistance", po::value<uint32_t>(), "higher = more resistance to swap, default=4")
       ("tree_size", po::value<uint32_t>(), "change the size of the tree, default=K")
       ("evaluate_recall", "compute the recall of the tree, rather than the accuracy")
-      ("max_mass", "stop popping once we've hit this amount of probability mass, default=0.999")
+      ("max_mass", po::value<float>(), "stop popping once we've hit this amount of probability mass, default=0.999")
+      ("max_labels", po::value<uint32_t>(), "stop popping once we've hit this many labels, default=tree_size")
       ("train_single_path", "only train on the predicted path");
   add_options(all);
 
@@ -657,15 +664,17 @@ base_learner* oas_setup(vw& all)	//learner setup
     data.k = vm["tree_size"].as<uint32_t>();
   }
 
+  data.MaxLabelsToConsider = data.k;
   if (vm.count("max_mass"))
     data.log_MaxMassToConsider = log(vm["max_mass"].as<float>());
+  if (vm.count("max_labels"))
+    data.MaxLabelsToConsider = vm["max_labels"].as<uint32_t>();
   
   data.evaluate_recall = vm.count("evaluate_recall") > 0;
-  
-  string loss_function = "quantile";
-  float loss_parameter = 0.5;
-  delete(all.loss);
-  all.loss = getLossFunction(all, loss_function, loss_parameter);
+
+  // switch to logistic loss and link
+  all.args.push_back("--loss_function"); all.args.push_back("logistic");
+  all.args.push_back("--link");          all.args.push_back("logistic");
 
   data.max_predictors = data.k - 1 + data.num_classes;
   init_tree(data);
