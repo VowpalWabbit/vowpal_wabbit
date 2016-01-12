@@ -20,7 +20,7 @@ public:
 
   double Ehk;
   float norm_Ehk;
-  uint32_t nk;
+  double  nk;
   uint32_t label;
   double   label_count;
 
@@ -42,7 +42,7 @@ public:
   { label = l;
     Ehk = 0.f;
     norm_Ehk = 0;
-    nk = 0;
+    nk = 0.;
     label_count = 0.;
   }
 };
@@ -88,12 +88,18 @@ struct oas
   bool evaluate_recall;
   uint32_t swap_resist;
   float log_MaxMassToConsider;
-  uint32_t MaxLabelsToConsider;
+  uint32_t MaxDequeues;
+  bool predict_by_sum;
 
   uint32_t nbofswaps;
 
   OASTrainMethod train_method;
   Beam::beam<treenode>* Qptr;
+  uint32_t num_repeats;
+  uint32_t num_repeats_wrong;
+  uint32_t num_classes_popped;
+  float repeat_mass;
+  float class_mass;
 };
 
 uint32_t treenode_hash(treenode& node) { return quadratic_constant * (node.value + cubic_constant * node.is_class); }
@@ -251,10 +257,10 @@ void train_node(oas& b, base_learner& base, example& ec, uint32_t& current, uint
   ec.l.simple.label = FLT_MAX;
   base.predict(ec, b.nodes[current].base_predictor); // depth
 
-  b.nodes[current].Eh += (double)ec.partial_prediction;
-  b.nodes[current].preds[class_index].Ehk += (double)ec.partial_prediction;
+  b.nodes[current].Eh += imp_weight * ec.partial_prediction;
+  b.nodes[current].preds[class_index].Ehk += imp_weight * ec.partial_prediction;
   b.nodes[current].n += imp_weight;
-  b.nodes[current].preds[class_index].nk++;
+  b.nodes[current].preds[class_index].nk += imp_weight;
 
   b.nodes[current].norm_Eh = (float)b.nodes[current].Eh / b.nodes[current].n;
   b.nodes[current].preds[class_index].norm_Ehk = (float)b.nodes[current].preds[class_index].Ehk / b.nodes[current].preds[class_index].nk;
@@ -323,9 +329,12 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
   MULTICLASS::label_t mc = ec.l.multi;
   ec.l.simple = {FLT_MAX, 0.f, 0.f};
 
+  float* scores = calloc_or_throw<float>(b.num_classes);
+  for (uint32_t i=0; i<b.num_classes; i++) scores[i] = 0.;
+  
   float total_mass = -100;
  
-  uint32_t pred = 0;
+  uint32_t pred = 1;
   float predScore = -FLT_MAX;
   uint32_t num_labels_considered = 0;
   
@@ -335,28 +344,39 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
     if (!Q.insert(node0, 0., treenode_hash(node0)))
       THROW("oas::predict: cannot insert initial node into priority queue");
   }
+  uint32_t num_classes_popped_old = b.num_classes_popped;
   Beam::beam_element<treenode>* elem;
   while ((elem = Q.pop_best_item()) != nullptr) {
     treenode& node = elem->data;
     // cerr << "popped is_class=" << node.is_class << " value=" << node.value << " cost=" << elem->cost << endl;
     if (node.is_class) {
-      if (labelset != nullptr)
-        labelset->push_back(node.value);
+      if (scores[node.value-1] <= 0.) { // if we haven't seen this label yet, we have to do work        
+        if (labelset != nullptr)
+          labelset->push_back(node.value);
 
-      if (b.evaluate_recall) {
-        if (node.value == mc.label)
-          pred = node.value;
-      } else {
-        base.predict(ec, b.k + node.value-1);
-        if (ec.partial_prediction > predScore) {
-          predScore = ec.partial_prediction;
-          pred = node.value;
+        if (b.evaluate_recall) {
+          if (node.value == mc.label)
+            pred = node.value;
+        } else if (! b.predict_by_sum) {
+          base.predict(ec, b.k + node.value-1);
+          if (ec.partial_prediction > predScore) {
+            predScore = ec.partial_prediction;
+            pred = node.value;
+          }
         }
+      } else {
+        b.num_repeats++;
+        if (node.value != mc.label)
+          b.num_repeats_wrong++;
+        b.repeat_mass += exp(-elem->cost);
       }
+      scores[node.value-1] += exp(-elem->cost);
+      b.num_classes_popped++;
+      b.class_mass += exp(-elem->cost);
       
       total_mass = addLog(total_mass, -elem->cost);
       num_labels_considered ++;
-      if (total_mass >= b.log_MaxMassToConsider || num_labels_considered >= b.MaxLabelsToConsider)
+      if (total_mass >= b.log_MaxMassToConsider || num_labels_considered >= b.MaxDequeues)
         break;
     } else { // node is an internal node
       uint32_t cn = node.value;
@@ -402,8 +422,18 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
   }
   Q.erase();
 
+  if (b.predict_by_sum) {
+    pred = 1;
+    for (size_t i=2; i<=b.num_classes; i++)
+      if (scores[i-1] > scores[pred-1]) pred = i;
+  }
   ec.pred.multiclass = pred;
   // cerr << "truth=" << mc.label << " returning " << ec.pred.multiclass << endl << endl;
+
+  /*
+  if ((uint32_t)log(b.num_classes_popped) > (uint32_t)log(num_classes_popped_old))
+    cerr << b.num_classes_popped << " classes popped, " << b.num_repeats << " repeats = " << (float)b.num_repeats/(float)b.num_classes_popped << "% repeats (of which " << (float)b.num_repeats_wrong/(float)b.num_classes_popped << "% is wrong), accounting for " << b.repeat_mass / b.class_mass << "% of the mass" << endl;
+  */
   
   ec.l.multi = mc;
 }
@@ -431,7 +461,7 @@ void learn(oas& b, base_learner& base, example& ec)
   if(mc.label != (uint32_t)-1)  //if training the tree
   { uint32_t start_pred = ec.pred.multiclass;
     // train one-against-some, TODO: importance weighted?
-    if (b.MaxLabelsToConsider > 1) {
+    if ((!b.predict_by_sum) && (b.MaxDequeues > 1)) {
       ec.l.simple = { 1.f, 1.f, 0.f };
       base.learn(ec, b.k + mc.label-1);
       ec.l.simple = { -1.f, 1.f, 0.f };
@@ -484,7 +514,7 @@ void learn(oas& b, base_learner& base, example& ec)
 void save_node_stats(oas& d)
 { FILE *fp;
   uint32_t i, j;
-  uint32_t total;
+  double total;
   oas* b = &d;
 
   fp = fopen("atxm_debug.csv", "wt");
@@ -504,16 +534,16 @@ void save_node_stats(oas& d)
     }
     fprintf(fp, "\n");
 
-    total = 0;
+    total = 0.;
 
     fprintf(fp, "nk:, ");
     for(j = 0; j < b->nodes[i].preds.size(); j++)
-    { fprintf(fp, "%6d,", (int) b->nodes[i].preds[j].nk);
+    { fprintf(fp, "%6g,", b->nodes[i].preds[j].nk);
       total += b->nodes[i].preds[j].nk;
     }
     fprintf(fp, "\n");
 
-    fprintf(fp, "max(lab:cnt:tot):, %3d,%6f,%7d,\n", (int) b->nodes[i].max_count_label, b->nodes[i].max_count, (int) total);
+    fprintf(fp, "max(lab:cnt:tot):, %3d,%6f,%7g,\n", (int) b->nodes[i].max_count_label, b->nodes[i].max_count, total);
     fprintf(fp, "left: %4d, right: %4d", (int) b->nodes[i].left, (int) b->nodes[i].right);
     fprintf(fp, "\n\n");
   }
@@ -632,6 +662,7 @@ base_learner* oas_setup(vw& all)	//learner setup
       ("evaluate_recall", "compute the recall of the tree, rather than the accuracy")
       ("max_mass", po::value<float>(), "stop popping once we've hit this amount of probability mass, default=0.999")
       ("max_labels", po::value<uint32_t>(), "stop popping once we've hit this many labels, default=tree_size")
+      ("predict_by_sum", "predict using tree sum probability (rather than oas)")
       ("train_single_path", "only train on the predicted path");
   add_options(all);
 
@@ -655,18 +686,21 @@ base_learner* oas_setup(vw& all)	//learner setup
     data.k = vm["tree_size"].as<uint32_t>();
   }
 
-  data.MaxLabelsToConsider = data.k;
+  data.MaxDequeues = 2 * data.k;
   if (vm.count("max_mass"))
     data.log_MaxMassToConsider = log(vm["max_mass"].as<float>());
   if (vm.count("max_labels"))
-    data.MaxLabelsToConsider = vm["max_labels"].as<uint32_t>();
+    data.MaxDequeues = vm["max_dequeues"].as<uint32_t>();
   
   data.evaluate_recall = vm.count("evaluate_recall") > 0;
+  data.predict_by_sum = vm.count("predict_by_sum") > 0;
 
   // switch to logistic loss and link
   all.args.push_back("--loss_function"); all.args.push_back("logistic");
   all.args.push_back("--link");          all.args.push_back("logistic");
 
+  data.num_repeats = 0; data.num_repeats_wrong = 0; data.num_classes_popped = 0;
+  data.repeat_mass = 0.; data.class_mass = 0.;
   data.max_predictors = data.k - 1 + data.num_classes;
   init_tree(data);
 
