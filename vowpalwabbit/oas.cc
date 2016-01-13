@@ -348,7 +348,8 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
   Beam::beam_element<treenode>* elem;
   while ((elem = Q.pop_best_item()) != nullptr) {
     treenode& node = elem->data;
-    // cerr << "popped is_class=" << node.is_class << " value=" << node.value << " cost=" << elem->cost << endl;
+    float elem_cost = elem->cost;
+    // cerr << "popped is_class=" << node.is_class << " value=" << node.value << " cost=" << elem_cost << endl;
     if (node.is_class) {
       if (scores[node.value-1] <= 0.) { // if we haven't seen this label yet, we have to do work        
         if (labelset != nullptr)
@@ -368,20 +369,20 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
         b.num_repeats++;
         if (node.value != mc.label)
           b.num_repeats_wrong++;
-        b.repeat_mass += exp(-elem->cost);
+        b.repeat_mass += exp(-elem_cost);
       }
-      scores[node.value-1] += exp(-elem->cost);
+      scores[node.value-1] += exp(-elem_cost);
       b.num_classes_popped++;
-      b.class_mass += exp(-elem->cost);
+      b.class_mass += exp(-elem_cost);
       
-      total_mass = addLog(total_mass, -elem->cost);
+      total_mass = addLog(total_mass, -elem_cost);
       num_labels_considered ++;
       if (total_mass >= b.log_MaxMassToConsider || num_labels_considered >= b.MaxDequeues)
         break;
     } else { // node is an internal node
       uint32_t cn = node.value;
       if (nodeset != nullptr)
-        nodeset->push_back(weighted_node(cn, exp(-elem->cost)));
+        nodeset->push_back(weighted_node(cn, exp(-elem_cost)));
       
       if (b.nodes[cn].internal) {
         base.predict(ec, b.nodes[cn].base_predictor);
@@ -391,14 +392,14 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
 
         if (1. - pR > 0.) {
           treenode nodeL = { b.nodes[cn].left, false };
-          // cerr << "push L is_class=0 value=" << b.nodes[cn].left << " cost=" << elem->cost - log(1.-pR) << endl;
-          Q.insert(nodeL, elem->cost - log(1.-pR), treenode_hash(nodeL));
+          // cerr << "push L is_class=0 value=" << b.nodes[cn].left << " cost=" << elem_cost - log(1.-pR) << endl;
+          Q.insert(nodeL, elem_cost - log(1.-pR), treenode_hash(nodeL));
         }
 
         if (pR > 0.) {
           treenode nodeR = {b.nodes[cn].right, false };
-          // cerr << "push R is_class=0 value=" << b.nodes[cn].right << " cost=" << elem->cost - log(pR) << endl;
-          Q.insert(nodeR, elem->cost - log(pR), treenode_hash(nodeR));
+          // cerr << "push R is_class=0 value=" << b.nodes[cn].right << " cost=" << elem_cost - log(pR) << endl;
+          Q.insert(nodeR, elem_cost - log(pR), treenode_hash(nodeR));
         }
       } else { // leaf!
         double sum_count = 0.;
@@ -411,8 +412,8 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
             if (node->label_count > 0) {
               treenode nodeL = { node->label, true };
               double logp = log(node->label_count) - log_sum_count;
-              //cerr << "push C is_class=1 sum_count=" << exp(log_sum_count) << " label_count=" << node->label_count << " value=" << node->label << " cost=" << elem->cost - logp << endl;
-              Q.insert(nodeL, elem->cost - logp, treenode_hash(nodeL));
+              //cerr << "push C is_class=1 sum_count=" << exp(log_sum_count) << " label_count=" << node->label_count << " value=" << node->label << " cost=" << elem_cost - logp << endl;
+              Q.insert(nodeL, elem_cost - logp, treenode_hash(nodeL));
             }
         }
       }
@@ -661,7 +662,7 @@ base_learner* oas_setup(vw& all)	//learner setup
       ("tree_size", po::value<uint32_t>(), "change the size of the tree, default=K")
       ("evaluate_recall", "compute the recall of the tree, rather than the accuracy")
       ("max_mass", po::value<float>(), "stop popping once we've hit this amount of probability mass, default=0.999")
-      ("max_labels", po::value<uint32_t>(), "stop popping once we've hit this many labels, default=tree_size")
+      ("max_dequeues", po::value<uint32_t>(), "stop popping once we've poped this many labels, default=tree_size")
       ("predict_by_sum", "predict using tree sum probability (rather than oas)")
       ("train_single_path", "only train on the predicted path");
   add_options(all);
@@ -689,7 +690,7 @@ base_learner* oas_setup(vw& all)	//learner setup
   data.MaxDequeues = 2 * data.k;
   if (vm.count("max_mass"))
     data.log_MaxMassToConsider = log(vm["max_mass"].as<float>());
-  if (vm.count("max_labels"))
+  if (vm.count("max_dequeues"))
     data.MaxDequeues = vm["max_dequeues"].as<uint32_t>();
   
   data.evaluate_recall = vm.count("evaluate_recall") > 0;
@@ -705,7 +706,7 @@ base_learner* oas_setup(vw& all)	//learner setup
   init_tree(data);
 
   size_t MaxBeamSize = 100000;
-  data.Qptr = new Beam::beam<treenode>(MaxBeamSize, FLT_MAX, nullptr, true);
+  data.Qptr = new Beam::beam<treenode>(MaxBeamSize, FLT_MAX, nullptr, false);
   
   learner<oas>& l = init_multiclass_learner(&data, setup_base(all), learn, predict, all.p, data.max_predictors);
   l.set_save_load(save_load_tree);
