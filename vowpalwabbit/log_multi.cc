@@ -13,6 +13,8 @@ license as described in the file LICENSE.node
 using namespace std;
 using namespace LEARNER;
 
+namespace log_multi {
+
 class node_pred
 {
 public:
@@ -487,4 +489,6 @@ base_learner* log_multi_setup(vw& all)	//learner setup
   l.set_finish(finish);
 
   return make_base(l);
+}
+
 }

@@ -14,7 +14,9 @@ license as described in the file LICENSE.node
 using namespace std;
 using namespace LEARNER;
 
-class oas_node_pred
+namespace oas {
+
+class node_pred
 {
 public:
 
@@ -24,21 +26,21 @@ public:
   uint32_t label;
   double   label_count;
 
-  bool operator==(oas_node_pred v)
+  bool operator==(node_pred v)
   { return (label == v.label);
   }
 
-  bool operator>(oas_node_pred v)
+  bool operator>(node_pred v)
   { if(label > v.label) return true;
     return false;
   }
 
-  bool operator<(oas_node_pred v)
+  bool operator<(node_pred v)
   { if(label < v.label) return true;
     return false;
   }
 
-  oas_node_pred(uint32_t l)
+  node_pred(uint32_t l)
   { label = l;
     Ehk = 0.f;
     norm_Ehk = 0;
@@ -50,7 +52,7 @@ public:
 typedef struct
 { //everyone has
   uint32_t parent;//the parent node
-  v_array<oas_node_pred> preds;//per-class state
+  v_array<node_pred> preds;//per-class state
   double min_count;//the number of examples reaching this node (if it's a leaf) or the minimum reaching any grandchild.
 
   bool internal;//internal or leaf
@@ -66,7 +68,7 @@ typedef struct
   //leaf has
   double max_count;//the number of samples of the most common label
   uint32_t max_count_label;//the most common label
-} oas_node;
+} node;
 
 enum OASTrainMethod { TRAIN_SINGLE_PATH, TRAIN_HIT_NODES };
 
@@ -80,7 +82,7 @@ struct oas
 { uint32_t k; // size of tree (# of nodes)
   uint32_t num_classes; // number of classes (used for oas)
 
-  v_array<oas_node> nodes;
+  v_array<node> nodes;
 
   size_t max_predictors;
   size_t predictors_used;
@@ -104,7 +106,7 @@ struct oas
 
 uint32_t treenode_hash(treenode& node) { return quadratic_constant * (node.value + cubic_constant * node.is_class); }
 
-inline void init_leaf(oas_node& n)
+inline void init_leaf(node& n)
 { n.internal = false;
   n.preds.erase();
   n.base_predictor = 0;
@@ -117,12 +119,12 @@ inline void init_leaf(oas_node& n)
   n.right = 0;
 }
 
-inline oas_node init_node()
-{ oas_node node;
+inline node init_node()
+{ node node;
 
   node.parent = 0;
   node.min_count = 0.;
-  node.preds = v_init<oas_node_pred>();
+  node.preds = v_init<node_pred>();
   init_leaf(node);
 
   return node;
@@ -133,7 +135,7 @@ void init_tree(oas& d)
   d.nbofswaps = 0;
 }
 
-inline float min_left_right(oas& b, oas_node& n)
+inline float min_left_right(oas& b, node& n)
 { return fmin(b.nodes[n.left].min_count, b.nodes[n.right].min_count);
 }
 
@@ -161,7 +163,7 @@ inline void update_min_count(oas& b, uint32_t node)
   }
 }
 
-void display_tree_dfs(oas& b, oas_node node, uint32_t depth)
+void display_tree_dfs(oas& b, node node, uint32_t depth)
 { for (uint32_t i = 0; i < depth; i++)
     cout << "\t";
   cout << node.min_count << " " << node.left
@@ -181,7 +183,7 @@ void display_tree_dfs(oas& b, oas_node node, uint32_t depth)
 }
 
 bool children(oas& b, uint32_t& current, uint32_t& class_index, uint32_t label, float imp_weight)
-{ class_index = (uint32_t)b.nodes[current].preds.unique_add_sorted(oas_node_pred(label));
+{ class_index = (uint32_t)b.nodes[current].preds.unique_add_sorted(node_pred(label));
   b.nodes[current].preds[class_index].label_count+=imp_weight;
 
   if(b.nodes[current].preds[class_index].label_count > b.nodes[current].max_count)
@@ -266,7 +268,7 @@ void train_node(oas& b, base_learner& base, example& ec, uint32_t& current, uint
   b.nodes[current].preds[class_index].norm_Ehk = (float)b.nodes[current].preds[class_index].Ehk / b.nodes[current].preds[class_index].nk;
 }
 
-void verify_min_dfs(oas& b, oas_node node)
+void verify_min_dfs(oas& b, node node)
 { if (node.internal)
   { if (node.min_count != min_left_right(b, node))
     { cout << "badness! " << endl;
@@ -277,14 +279,14 @@ void verify_min_dfs(oas& b, oas_node node)
   }
 }
 
-double sum_count_dfs(oas& b, oas_node node)
+double sum_count_dfs(oas& b, node node)
 { if (node.internal)
     return sum_count_dfs(b, b.nodes[node.left]) + sum_count_dfs(b, b.nodes[node.right]);
   else
     return node.min_count;
 }
 
-inline uint32_t descend(oas_node& n, float prediction)
+inline uint32_t descend(node& n, float prediction)
 { if (prediction < 0.5)
     return n.left;
   else
@@ -329,9 +331,6 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
   MULTICLASS::label_t mc = ec.l.multi;
   ec.l.simple = {FLT_MAX, 0.f, 0.f};
 
-  float* scores = calloc_or_throw<float>(b.num_classes);
-  for (uint32_t i=0; i<b.num_classes; i++) scores[i] = 0.;
-  
   float total_mass = -100;
  
   uint32_t pred = 1;
@@ -344,6 +343,9 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
     if (!Q.insert(node0, 0., treenode_hash(node0)))
       THROW("oas::predict: cannot insert initial node into priority queue");
   }
+  float* scores = calloc_or_throw<float>(b.num_classes);
+  for (uint32_t i=0; i<b.num_classes; i++) scores[i] = 0.;
+  
   uint32_t num_classes_popped_old = b.num_classes_popped;
   Beam::beam_element<treenode>* elem;
   while ((elem = Q.pop_best_item()) != nullptr) {
@@ -403,17 +405,21 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
         }
       } else { // leaf!
         double sum_count = 0.;
-        for (oas_node_pred*node=b.nodes[cn].preds.begin; node != b.nodes[cn].preds.end; ++node)
+        for (node_pred*node=b.nodes[cn].preds.begin; node != b.nodes[cn].preds.end; ++node)
           if (node->label_count > 0)
             sum_count += node->label_count;
         if (sum_count > 0) {
           double log_sum_count = log(sum_count);
-          for (oas_node_pred*node=b.nodes[cn].preds.begin; node != b.nodes[cn].preds.end; ++node)
+          for (node_pred*node=b.nodes[cn].preds.begin; node != b.nodes[cn].preds.end; ++node)
             if (node->label_count > 0) {
-              treenode nodeL = { node->label, true };
-              double logp = log(node->label_count) - log_sum_count;
-              //cerr << "push C is_class=1 sum_count=" << exp(log_sum_count) << " label_count=" << node->label_count << " value=" << node->label << " cost=" << elem_cost - logp << endl;
-              Q.insert(nodeL, elem_cost - logp, treenode_hash(nodeL));
+              if (scores[node->label - 1] > 0.) // we've already seen this, just add to scores rather than reusing the queue
+                scores[node->label - 1] += node->label_count / sum_count;
+              else {
+                treenode nodeL = { node->label, true };
+                double logp = log(node->label_count) - log_sum_count;
+                //cerr << "push C is_class=1 sum_count=" << exp(log_sum_count) << " label_count=" << node->label_count << " value=" << node->label << " cost=" << elem_cost - logp << endl;
+                Q.insert(nodeL, elem_cost - logp, treenode_hash(nodeL));
+              }
             }
         }
       }
@@ -422,6 +428,7 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
     Q.maybe_compact();
   }
   Q.erase();
+  free(scores);
 
   if (b.predict_by_sum) {
     pred = 1;
@@ -461,7 +468,7 @@ void learn(oas& b, base_learner& base, example& ec)
   predict_ucs(b,base,ec,labelset,nodeset);
   if(mc.label != (uint32_t)-1)  //if training the tree
   { uint32_t start_pred = ec.pred.multiclass;
-    // train one-against-some, TODO: importance weighted?
+    // train one-against-some
     if ((!b.predict_by_sum) && (b.MaxDequeues > 1)) {
       ec.l.simple = { 1.f, 1.f, 0.f };
       base.learn(ec, b.k + mc.label-1);
@@ -587,7 +594,7 @@ void save_load_tree(oas& b, io_buf& model_file, bool read, bool text)
 
     for (size_t j = 0; j < b.nodes.size(); j++)
     { //Need to read or write nodes.
-      oas_node& n = b.nodes[j];
+      node& n = b.nodes[j];
 
       msg << " parent = " << n.parent;
       bin_text_read_write_fixed(model_file,(char*)&n.parent, sizeof(n.parent), "", read, msg, text);
@@ -598,7 +605,7 @@ void save_load_tree(oas& b, io_buf& model_file, bool read, bool text)
       bin_text_read_write_fixed(model_file,(char*)&temp, sizeof(temp), "", read, msg, text);
       if (read)
         for (uint32_t k = 0; k < temp; k++)
-          n.preds.push_back(oas_node_pred(1));
+          n.preds.push_back(node_pred(1));
 
       msg << " min_count = " << n.min_count;
       bin_text_read_write_fixed(model_file,(char*)&n.min_count, sizeof(n.min_count), "", read, msg, text);
@@ -633,7 +640,7 @@ void save_load_tree(oas& b, io_buf& model_file, bool read, bool text)
         }
 
       for (size_t k = 0; k < n.preds.size(); k++)
-      { oas_node_pred& p = n.preds[k];
+      { node_pred& p = n.preds[k];
 
         msg << "  Ehk = " << p.Ehk;
         bin_text_read_write_fixed(model_file,(char*)&p.Ehk, sizeof(p.Ehk), "", read, msg, text);
@@ -713,4 +720,6 @@ base_learner* oas_setup(vw& all)	//learner setup
   l.set_finish(finish);
 
   return make_base(l);
+}
+
 }
