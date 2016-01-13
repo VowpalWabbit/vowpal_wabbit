@@ -178,6 +178,7 @@ public:
       else if (el->active && (el->cost < next_best_cost))
       { next_best_cost = el->cost;
         best_cost_data = &el->data;
+        break;
       }
 
     if (ret != nullptr)
