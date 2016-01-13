@@ -115,13 +115,7 @@ clean:
 
 %.valid:	%.run %.compare ;
 
-%.run:	 $(%.inData) %.depsWrapper %.startNotice $(stageDir)/%.dir/done %.endNotice ;
-
-%.startNotice:
-	@echo "Starting to run test $*"
-
-%.endNotice:
-	@echo "Finished running test $*"
+%.run:	 $$(%.inData) %.depsWrapper $(stageDir)/%.dir/done ;
 
 $(dataDir) $(stageDir):
 	@mkdir -p $@
@@ -138,9 +132,10 @@ $(dataDir) $(stageDir):
 		echo "dependencies of test $* satisfied" ;\
 	fi
 
-# don't do like on the following line, because making the dir a dependency of the file that's in it will result in the file always getting remade, cuz the dir will always have a newer timestamp
+# Don't do like on the following line, because making the dir a dependency of the file that's in it will result in the file always getting remade, cuz the dir will always have a newer timestamp.
 # $(stageDir)/%.dir/done:	$(stageDir)/%.dir
 $(stageDir)/%.dir/done:
+	@echo "Starting to run test $*"
 	dir=`dirname $@` ;\
 	mkdir -p $$dir ;\
 	exec=$(EXEC) ;\
@@ -171,6 +166,7 @@ $(stageDir)/%.dir/done:
 	echo "$(GREP) \"$$err_compar\" $$reFile | tee $$eFile" ;\
 	$(GREP) "$$err_compar" $$reFile | tee $$eFile ;\
 	touch $@
+	@echo "Finished running test $*"
 
 # first diff all the results, then set exit status if non-empty
 %.compare:	$(expDir)/%/out $(expDir)/%/err
