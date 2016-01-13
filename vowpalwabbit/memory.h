@@ -10,7 +10,7 @@ T* calloc_or_throw(size_t nmemb)
 
   void* data = calloc(nmemb, sizeof(T));
   if (data == nullptr)
-  { const char* msg = "internal error: memory allocation failed; you probably ran out of memory -- try a lower -b setting; dying!\n";
+  { const char* msg = "internal error: memory allocation failed!\n";
     // use low-level function since we're already out of memory.
     fputs(msg, stderr);
     THROW(msg);
