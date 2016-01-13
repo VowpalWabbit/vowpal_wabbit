@@ -97,6 +97,8 @@ struct oas
 
   OASTrainMethod train_method;
   Beam::beam<treenode>* Qptr;
+  float *class_scores;
+  v_array<uint32_t> labelset;
   uint32_t num_repeats;
   uint32_t num_repeats_wrong;
   uint32_t num_classes_popped;
@@ -326,7 +328,7 @@ struct weighted_node {
   weighted_node(uint32_t _node, float _weight) : node(_node), weight(_weight) {}
 };
 
-void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labelset, v_array<weighted_node>*nodeset) // fill in labelset with the labels considered (if not nullptr), and nodeset with nodes hit (if not nullptr)
+void predict_ucs(oas& b, base_learner& base, example& ec, v_array<weighted_node>*nodeset) // fill in labelset with the labels considered (if not nullptr), and nodeset with nodes hit (if not nullptr)
 {
   MULTICLASS::label_t mc = ec.l.multi;
   ec.l.simple = {FLT_MAX, 0.f, 0.f};
@@ -343,19 +345,18 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
     if (!Q.insert(node0, 0., treenode_hash(node0)))
       THROW("oas::predict: cannot insert initial node into priority queue");
   }
-  float* scores = calloc_or_throw<float>(b.num_classes);
-  for (uint32_t i=0; i<b.num_classes; i++) scores[i] = 0.;
+
+  b.labelset.erase();
   
-  uint32_t num_classes_popped_old = b.num_classes_popped;
+  //uint32_t num_classes_popped_old = b.num_classes_popped;
   Beam::beam_element<treenode>* elem;
   while ((elem = Q.pop_best_item()) != nullptr) {
     treenode& node = elem->data;
     float elem_cost = elem->cost;
     // cerr << "popped is_class=" << node.is_class << " value=" << node.value << " cost=" << elem_cost << endl;
     if (node.is_class) {
-      if (scores[node.value-1] <= 0.) { // if we haven't seen this label yet, we have to do work        
-        if (labelset != nullptr)
-          labelset->push_back(node.value);
+      if (b.class_scores[node.value-1] <= 0.) { // if we haven't seen this label yet, we have to do work        
+        b.labelset.push_back(node.value);
 
         if (b.evaluate_recall) {
           if (node.value == mc.label)
@@ -373,7 +374,7 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
           b.num_repeats_wrong++;
         b.repeat_mass += exp(-elem_cost);
       }
-      scores[node.value-1] += exp(-elem_cost);
+      b.class_scores[node.value-1] += exp(-elem_cost);
       b.num_classes_popped++;
       b.class_mass += exp(-elem_cost);
       
@@ -412,9 +413,11 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
           double log_sum_count = log(sum_count);
           for (node_pred*node=b.nodes[cn].preds.begin; node != b.nodes[cn].preds.end; ++node)
             if (node->label_count > 0) {
-              if (scores[node->label - 1] > 0.) // we've already seen this, just add to scores rather than reusing the queue
-                scores[node->label - 1] += node->label_count / sum_count;
-              else {
+              if (b.class_scores[node->label - 1] > 0.) { // we've already seen this, just add to scores rather than reusing the queue
+                b.class_scores[node->label - 1] += node->label_count / sum_count;
+                total_mass = addLog(total_mass, log(node->label_count / sum_count));
+                // TODO: udpate mass
+              } else {
                 treenode nodeL = { node->label, true };
                 double logp = log(node->label_count) - log_sum_count;
                 //cerr << "push C is_class=1 sum_count=" << exp(log_sum_count) << " label_count=" << node->label_count << " value=" << node->label << " cost=" << elem_cost - logp << endl;
@@ -428,14 +431,17 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
     Q.maybe_compact();
   }
   Q.erase();
-  free(scores);
-
-  if (b.predict_by_sum) {
+  
+  if (b.predict_by_sum) { // TODO use labelset to make this faster
     pred = 1;
     for (size_t i=2; i<=b.num_classes; i++)
-      if (scores[i-1] > scores[pred-1]) pred = i;
+      if (b.class_scores[i-1] > b.class_scores[pred-1]) pred = i;
   }
   ec.pred.multiclass = pred;
+
+  for (uint32_t* i=b.labelset.begin; i!=b.labelset.end; ++i)
+    b.class_scores[*i - 1] = 0.;
+
   // cerr << "truth=" << mc.label << " returning " << ec.pred.multiclass << endl << endl;
 
   /*
@@ -447,25 +453,20 @@ void predict_ucs(oas& b, base_learner& base, example& ec, v_array<uint32_t>*labe
 }
 
 void predict(oas& b, base_learner& base, example& ec) {
-  predict_ucs(b, base, ec, nullptr, nullptr);
+  predict_ucs(b, base, ec, nullptr);
   //predict_noucs(b, base, ec);
 }
 
 void learn(oas& b, base_learner& base, example& ec)
 { //    verify_min_dfs(b, b.nodes[0]);
   MULTICLASS::label_t mc = ec.l.multi;
-  v_array<uint32_t>* labelset = nullptr;
   v_array<weighted_node>* nodeset  = nullptr;
-  if (ec.l.multi.label != (uint32_t)-1) {
-    labelset  = new v_array<uint32_t>();
-    *labelset = v_init<uint32_t>();
-    if (b.train_method != TRAIN_SINGLE_PATH) {
-      nodeset   = new v_array<weighted_node>();
-      *nodeset  = v_init<weighted_node>();
-    }
+  if ((ec.l.multi.label != (uint32_t)-1) && (b.train_method != TRAIN_SINGLE_PATH)) {
+    nodeset   = new v_array<weighted_node>();
+    *nodeset  = v_init<weighted_node>();
   }
   
-  predict_ucs(b,base,ec,labelset,nodeset);
+  predict_ucs(b,base,ec,nodeset);
   if(mc.label != (uint32_t)-1)  //if training the tree
   { uint32_t start_pred = ec.pred.multiclass;
     // train one-against-some
@@ -473,7 +474,7 @@ void learn(oas& b, base_learner& base, example& ec)
       ec.l.simple = { 1.f, 1.f, 0.f };
       base.learn(ec, b.k + mc.label-1);
       ec.l.simple = { -1.f, 1.f, 0.f };
-      for (uint32_t*lab=labelset->begin; lab!=labelset->end; ++lab)
+      for (uint32_t*lab=b.labelset.begin; lab!=b.labelset.end; ++lab)
         if (*lab != mc.label)
           base.learn(ec, b.k + *lab-1);
     }
@@ -509,10 +510,6 @@ void learn(oas& b, base_learner& base, example& ec)
     ec.l.multi = mc;
   }
 
-  if (labelset != nullptr) {
-    labelset->delete_v();
-    delete labelset;
-  }
   if (nodeset != nullptr) {
     nodeset->delete_v();
     delete nodeset;
@@ -565,6 +562,8 @@ void finish(oas& b)
     b.nodes[i].preds.delete_v();
   b.nodes.delete_v();
   delete b.Qptr;
+  free(b.class_scores);
+  b.labelset.delete_v();
 }
 
 void save_load_tree(oas& b, io_buf& model_file, bool read, bool text)
@@ -714,6 +713,7 @@ base_learner* oas_setup(vw& all)	//learner setup
 
   size_t MaxBeamSize = 100000;
   data.Qptr = new Beam::beam<treenode>(MaxBeamSize, FLT_MAX, nullptr, false);
+  data.class_scores = calloc_or_throw<float>(data.num_classes);
   
   learner<oas>& l = init_multiclass_learner(&data, setup_base(all), learn, predict, all.p, data.max_predictors);
   l.set_save_load(save_load_tree);
