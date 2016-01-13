@@ -23,8 +23,8 @@ eraseData:
 ################ end generic stuff #########
 
 #OCR
-$(dataDir)/OCR.dir/prep:	$(dataDir)/OCR.dir/train.prep $(dataDir)/OCR.dir/test.prep
-$(dataDir)/OCR.dir/train.prep:	$(dataDir)/OCR.dir/test.prep
+OCR.prep:	$(dataDir)/OCR.dir/train.prep $(dataDir)/OCR.dir/test.prep ;
+$(dataDir)/OCR.dir/train.prep:	$(dataDir)/OCR.dir/test.prep ;
 $(dataDir)/OCR.dir/test.prep:	$(dataDir)/OCR.dir/letter.data.gz $(dataDir)/OCR.dir/letter.names
 	dir=$(dir $@) ;\
 	cd $$dir ;\
@@ -44,8 +44,7 @@ $(dataDir)/OCR.dir/letter.names:
 
 
 #movielens
-$(dataDir)/movielens.dir/movielens.prep:	$(dataDir)/movielens.dir/train.prep ;
-
+movielens.prep:	$(dataDir)/movielens.dir/train.prep ;
 $(dataDir)/movielens.dir/train.prep:	$(dataDir)/movielens.dir/test.prep ;
 	cd $(dataDir)/movielens.dir/ ;\
 	perl -ne 'BEGIN { srand 8675309; };             \
@@ -67,19 +66,19 @@ $(dataDir)/movielens.dir/ml-1m.zip:
 
 #ER
 ER.prep:	$(dataDir)/ER.dir/train.prep $(dataDir)/ER.dir/test.prep ;
-
 $(dataDir)/ER.dir/train.prep:	$(dataDir)/ER.dir/ER_train.vw
 	cd $(dataDir)/ER.dir/ ;\
 	ln -sf ER_train.vw train.prep
-
 $(dataDir)/ER.dir/test.prep:	$(dataDir)/ER.dir/ER_test.vw
 	cd $(dataDir)/ER.dir/ ;\
 	ln -sf ER_test.vw test.prep
 
 $(dataDir)/ER.dir/ER_train.vw:	$(dataDir)/ER.dir/ER_test.vw ;
+	touch $@
 $(dataDir)/ER.dir/ER_test.vw:	$(dataDir)/ER.dir/er.zip
 	cd $(dataDir)/ER.dir/ ;\
-	unzip -ou er.zip
+	unzip -ou er.zip ;\
+	touch ER_test.vw
 
 $(dataDir)/ER.dir/er.zip:
 	dir=$(dir $@) ;\
