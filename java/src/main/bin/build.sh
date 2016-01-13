@@ -11,7 +11,7 @@ make clean;
 make vw java;"
 
 ubuntu_base="apt-get update -qq;
-apt-get install -qq software-properties-common g++ make libboost-all-dev default-jdk;"
+apt-get install -qq software-properties-common g++ make libboost-program-options-dev default-jdk;"
 
 ubuntu_12="$ubuntu_base
 export JAVA_HOME=/usr/lib/jvm/java-6-openjdk-amd64;
@@ -55,7 +55,8 @@ make -f Makefile.permissive vw java;
 rm -f Makefile.permissive;
 mv java/target/vw_jni.lib java/target/vw_jni.Red_Hat.6.amd64.lib"
 
-red_hat_7="yum install -q -y gcc-c++ make boost-devel zlib-devel java-1.7.0-openjdk-devel perl clang redhat-lsb-core;
+red_hat_7="yum update -q -y;
+yum install -q -y gcc-c++ make boost-devel zlib-devel java-1.7.0-openjdk-devel perl clang redhat-lsb-core;
 export JAVA_HOME=/usr/lib/jvm/java-1.7.0-openjdk;
 $make_base
 mv java/target/vw_jni.lib java/target/vw_jni.Red_Hat.7.amd64.lib"
@@ -145,6 +146,7 @@ install_brew_app "docker-machine"
 install_brew_app "docker"
 
 docker-machine create --driver virtualbox default
+docker-machine start default
 eval "$(docker-machine env default)"
 
 set -e
@@ -165,5 +167,5 @@ run_docker "centos:6" "$red_hat_6"
 run_docker "centos:7" "$red_hat_7"
 
 make clean
-make
+make vw java
 mv java/target/vw_jni.lib java/target/vw_jni.$(uname -s).$(uname -m).lib
