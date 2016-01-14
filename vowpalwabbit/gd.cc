@@ -252,7 +252,7 @@ void print_features(vw& all, example& ec)
       {
         features& fs = ec.feature_space[*i];
         for (size_t j = 0; j < fs.size(); ++j)
-          { cout << '\t' << fs.space_names[j].first << '^' << fs.space_names[j].second << ':' << ((fs.indicies[j] >> all.reg.stride_shift) & all.parse_mask) << ':' << fs.values[j];
+          { cout << '\t' << fs.space_names[j].get()->first << '^' << fs.space_names[j].get()->second << ':' << ((fs.indicies[j] >> all.reg.stride_shift) & all.parse_mask) << ':' << fs.values[j];
             for (size_t k = 0; k < all.lda; k++)
               cout << ':' << weights[(fs.indicies[j]+k) & all.reg.weight_mask];
           }
@@ -269,7 +269,7 @@ void print_features(vw& all, example& ec)
 	if (fs.space_names.size() > 0)
 	  for (size_t j = 0; j < fs.size(); ++j)
 	    {
-	      audit_interaction(dat, &fs.space_names[j]);
+          audit_interaction(dat, fs.space_names[j].get());
 	      audit_feature(dat, fs.values[j], (uint32_t)fs.indicies[j] + ec.ft_offset);
 	      audit_interaction(dat, NULL);
 	    }

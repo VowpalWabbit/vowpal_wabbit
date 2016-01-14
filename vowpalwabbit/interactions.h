@@ -163,7 +163,7 @@ template<class R>
 
                 for(size_t i = 0; i < first.indicies.size(); ++i)
                   { id.halfhash = FNV_prime * (uint64_t)first.indicies[i];
-                    if (audit) audit_func(dat, &first.space_names[i]);
+                    if (audit) audit_func(dat, first.space_names[i].get());
                     // next index differs for permutations and simple combinations
                     id.ft_value = first.values[i];
                     size_t j=0;
@@ -197,7 +197,7 @@ template<class R>
 
               for(size_t i = 0; i < first.indicies.size(); ++i)
               {
-                if(audit) audit_func(dat, &first.space_names[i]);
+                if(audit) audit_func(dat, first.space_names[i].get());
                 const uint64_t halfhash1 = FNV_prime * (uint64_t)first.indicies[i];
                 const float& ft_value = first.values[i];
                 size_t j=0;
@@ -206,7 +206,7 @@ template<class R>
 
                 for (; j < second.indicies.size(); ++j)
                 { //f3 x k*(f2 x k*f1)
-                  if(audit) audit_func(dat, &second.space_names[j]);
+                  if(audit) audit_func(dat, second.space_names[j].get());
                   id.halfhash = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
                   id.ft_value = INTERACTION_VALUE(ft_value, second.values[j]);
 
@@ -325,7 +325,7 @@ template<class R>
               else
                 next_data->loop_idx = 0;
 
-              if(audit) audit_func(dat, &fs.space_names[feature]);
+              if(audit) audit_func(dat, fs.space_names[feature].get());
 
               if (cur_data == fgd) // first namespace
                 { next_data->hash = FNV_prime * (uint64_t)fs.indicies[feature];

@@ -458,7 +458,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   {
     stringstream temp;
 	temp << "fid=" << ((idx & mask) >> ss) << "_" << priv.dat_new_feature_audit_ss.str();
-	fs.space_names.push_back(audit_strings(*priv.dat_new_feature_feature_space, temp.str()));
+    fs.space_names.push_back(audit_strings_ptr(new audit_strings(*priv.dat_new_feature_feature_space, temp.str())));
   }
 }
 
