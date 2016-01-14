@@ -1,6 +1,9 @@
+#include <memory>
+
 typedef float feature_value;
 typedef uint64_t feature_index;
 typedef pair<string, string> audit_strings;
+typedef std::shared_ptr<audit_strings> audit_strings_ptr;
 
 struct feature {//sparse feature definition for the library interface
   float x;
@@ -27,13 +30,13 @@ inline int order_features(const void* first, const void* second)
 struct features { // the core definition of a set of features.
   v_array<feature_value> values; // Always needed.
   v_array<feature_index> indicies; //Optional for dense data.
-  v_array<audit_strings> space_names; //Optional for audit mode.
+  v_array<audit_strings_ptr> space_names; //Optional for audit mode.
   float sum_feat_sq;
   features()
   {
     values = v_init<feature_value>();
     indicies = v_init<feature_index>();
-    space_names = v_init<audit_strings>();
+    space_names = v_init<audit_strings_ptr>();
     sum_feat_sq = 0.f;
   }
   inline size_t size() const { return values.size(); }
@@ -42,7 +45,7 @@ struct features { // the core definition of a set of features.
   void free_space_names(size_t i)
   {
 	  for (; i < space_names.size(); i++)
-		  space_names[i].~audit_strings();
+                  space_names[i].~audit_strings_ptr();
   }
 
   template<class R, void (*T)(R&, feature_value)> inline void foreach_feature(R& dat)
@@ -81,10 +84,10 @@ struct features { // the core definition of a set of features.
   {
     feature_value* vp = values.begin + j;
     feature_index* ip = indicies.begin + j;
-    audit_strings* ap = space_names.begin + j;
+    audit_strings_ptr* ap = space_names.begin + j;
     feature_value* end = values.begin + k;
     for (;vp != end; ++vp, ++ip, ++ap)
-      T(dat,*vp,*ip, ap);
+      T(dat,*vp,*ip, ap->get());
   }
 
   template<class R, void (*T)(R&, feature_value, feature_index, audit_strings*)> inline void foreach_feature(R& dat, size_t j)
@@ -134,7 +137,7 @@ struct features { // the core definition of a set of features.
       {
         feature_slice temp = {values[i], indicies[i] & parse_mask, audit_strings("", "")};
         if (space_names.size() != 0)
-          temp.space_name = space_names[i];
+          temp.space_name = *space_names[i].get();
         slice.push_back(temp);
       }
     qsort(slice.begin, slice.size(), sizeof(feature_slice), order_features);
@@ -143,7 +146,7 @@ struct features { // the core definition of a set of features.
         values[i] = slice[i].v;
         indicies[i] = slice[i].i;
         if (space_names.size() > 0)
-          space_names[i] = slice[i].space_name;
+          *space_names[i].get() = slice[i].space_name;
       }
     slice.delete_v();
     return true;

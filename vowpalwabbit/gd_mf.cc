@@ -41,7 +41,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
         {
           cout << '\t';
           if (audit)
-            cout << fs.space_names[j].first << '^' << fs.space_names[j].second << ':';
+            cout << fs.space_names[j].get()->first << '^' << fs.space_names[j].get()->second << ':';
           cout << fs.indicies[j] <<"(" << ((fs.indicies[j] + offset) & mask)  << ")" << ':' << fs.values[j];
           cout << ':' << weights[(fs.indicies[j] + offset) & mask];
         }
@@ -55,11 +55,11 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
         features& fs2 = ec.feature_space[(int)(*i)[1]];
         for (size_t j = 0; j < fs1.size(); ++j)
           for (size_t l = 0; l < fs2.size(); ++l)
-          { cout << '\t' << fs1.space_names[j].first << k << '^' << fs1.space_names[j].second << ':' << ((fs1.indicies[j]+k)&mask)
+          { cout << '\t' << fs1.space_names[j].get()->first << k << '^' << fs1.space_names[j].get()->second << ':' << ((fs1.indicies[j]+k)&mask)
                  <<"(" << ((fs1.indicies[j] + offset +k) & mask)  << ")" << ':' << fs1.values[j];
             cout << ':' << weights[(fs1.indicies[j] + offset + k) & mask];
 
-            cout << ':' << fs2.space_names[l].first << k << '^' << fs2.space_names[l].second << ':' << ((fs2.indicies[l]+k+d.rank)&mask)
+            cout << ':' << fs2.space_names[l].get()->first << k << '^' << fs2.space_names[l].get()->second << ':' << ((fs2.indicies[l]+k+d.rank)&mask)
                  <<"(" << ((fs2.indicies[l] + offset +k+d.rank) & mask)  << ")" << ':' << fs2.values[l];
             cout << ':' << weights[(fs2.indicies[l] + offset + k+d.rank) & mask];
 

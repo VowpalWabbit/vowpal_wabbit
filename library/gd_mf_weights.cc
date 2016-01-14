@@ -83,9 +83,9 @@ int main(int argc, char *argv[])
     // write out features for left namespace
     features& left = ec->feature_space[left_ns];
     for (size_t i = 0; i < left.size(); ++i)
-      { left_linear << left.space_names[i].second << '\t' << weights[left.indicies[i] & mask];
+      { left_linear << left.space_names[i].get()->second << '\t' << weights[left.indicies[i] & mask];
 
-        left_quadratic << left.space_names[i].second;
+        left_quadratic << left.space_names[i].get()->second;
         for (size_t k = 1; k <= rank; k++)
           left_quadratic << '\t' << weights[(left.indicies[i] + k) & mask];
       }
@@ -95,9 +95,9 @@ int main(int argc, char *argv[])
     // write out features for right namespace
     features& right = ec->feature_space[right_ns];
     for (size_t i = 0; i < right.size(); ++i)
-      { right_linear << right.space_names[i].second << '\t' << weights[left.indicies[i] & mask];
+      { right_linear << right.space_names[i].get()->second << '\t' << weights[left.indicies[i] & mask];
 
-        right_quadratic << right.space_names[i].second;
+        right_quadratic << right.space_names[i].get()->second;
         for (size_t k = 1; k <= rank; k++)
           right_quadratic << '\t' << weights[(left.indicies[i] + k + rank) & mask];
       }
