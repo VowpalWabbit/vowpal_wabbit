@@ -24,6 +24,8 @@ public class NativeUtils {
      * @param lsb_args parameters to lsb_release.  EX: "-i" or "-a"
      * @param regexp a regular expression pattern used to parse the response from lsb_release
      *   For example:  lsb_args = "-i", regexp = "Distributor ID: *(.*)$"
+     * @return A system dependent string identifying the OS.
+     * @throws IOException If an error occurs while running shell command
      */
     public static String lsbRelease(String lsb_args, Pattern regexp) throws IOException {
         BufferedReader reader = null;
