@@ -64,6 +64,7 @@ include testDetails.mk
 
 # for debugging
 stub:	
+	echo $(MAKE_VERSION)
 	echo $(ARCH)
 	echo $(MAKEFLAGS)
 	echo $(EXEC)
@@ -115,7 +116,12 @@ clean:
 
 %.valid:	%.run %.compare ;
 
+# dependency tracking doesn't work in make < 4 due to a bug in how SECONDEXPANSION is done
+ifeq ($(findstring 4.,$(MAKE_VERSION)),4.)
 %.run:	 $$(%.inData) %.depsWrapper $(stageDir)/%.dir/done ;
+else
+%.run:	 $$(%.inData) $(stageDir)/%.dir/done ;
+endif
 
 $(dataDir) $(stageDir):
 	@mkdir -p $@
