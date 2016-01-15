@@ -603,7 +603,6 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
       { if (all.num_bits < 31)//backwards compatible
 	  { brw = bin_read_fixed(model_file, (char*)&old_i, sizeof(old_i), "");
 	    i = old_i;
-        ++all.loaded_regressor_values; // used in audit_regressor
 	  }
 	else
 	  brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
