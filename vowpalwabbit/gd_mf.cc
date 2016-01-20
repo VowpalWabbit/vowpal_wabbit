@@ -24,8 +24,8 @@ using namespace LEARNER;
 
 struct gdmf
 { vw* all;//regressor, printing
-  uint64_t rank;
-  uint64_t no_win_counter;
+  uint32_t rank;
+  size_t no_win_counter;
   uint64_t early_stop_thres;
 };
 
@@ -34,35 +34,36 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
   weight* weights = all.reg.weight_vector;
   uint64_t mask = all.reg.weight_mask;
   for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-    if (ec.audit_features[*i].begin != ec.audit_features[*i].end)
-      for (audit_data *f = ec.audit_features[*i].begin; f != ec.audit_features[*i].end; f++)
-      { cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index <<"(" << ((f->weight_index + offset) & mask)  << ")" << ':' << f->x;
-
-        cout << ':' << weights[(f->weight_index + offset) & mask];
-      }
-    else
-      for (feature *f = ec.atomics[*i].begin; f != ec.atomics[*i].end; f++)
-      { uint64_t index = (f->weight_index + offset) & all.reg.weight_mask;
-
-        cout << "\tConstant:";
-        cout << ((index >> all.reg.stride_shift) & all.parse_mask) << ':' << f->x;
-        cout  << ':' << weights[index];
-      }
+    {
+      features& fs = ec.feature_space[*i];
+      bool audit = fs.space_names.size() > 0;
+      for (size_t j = 0; j < fs.size(); ++j)
+        {
+          cout << '\t';
+          if (audit)
+            cout << fs.space_names[j].first << '^' << fs.space_names[j].second << ':';
+          cout << fs.indicies[j] <<"(" << ((fs.indicies[j] + offset) & mask)  << ")" << ':' << fs.values[j];
+          cout << ':' << weights[(fs.indicies[j] + offset) & mask];
+        }
+    }
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end(); i++)
-    if (ec.atomics[(int)(*i)[0]].size() > 0 && ec.atomics[(int)(*i)[1]].size() > 0)
+    if (ec.feature_space[(int)(*i)[0]].size() > 0 && ec.feature_space[(int)(*i)[1]].size() > 0)
     { /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
       for (size_t k = 1; k <= d.rank; k++)
-      { for (audit_data* f = ec.audit_features[(int)(*i)[0]].begin; f!= ec.audit_features[(int)(*i)[0]].end; f++)
-          for (audit_data* f2 = ec.audit_features[(int)(*i)[1]].begin; f2!= ec.audit_features[(int)(*i)[1]].end; f2++)
-          { cout << '\t' << f->space << k << '^' << f->feature << ':' << ((f->weight_index+k)&mask)
-                 <<"(" << ((f->weight_index + offset +k) & mask)  << ")" << ':' << f->x;
-            cout << ':' << weights[(f->weight_index + offset + k) & mask];
+      {
+        features& fs1 = ec.feature_space[(int)(*i)[0]];
+        features& fs2 = ec.feature_space[(int)(*i)[1]];
+        for (size_t j = 0; j < fs1.size(); ++j)
+          for (size_t l = 0; l < fs2.size(); ++l)
+          { cout << '\t' << fs1.space_names[j].first << k << '^' << fs1.space_names[j].second << ':' << ((fs1.indicies[j]+k)&mask)
+                 <<"(" << ((fs1.indicies[j] + offset +k) & mask)  << ")" << ':' << fs1.values[j];
+            cout << ':' << weights[(fs1.indicies[j] + offset + k) & mask];
 
-            cout << ':' << f2->space << k << '^' << f2->feature << ':' << ((f2->weight_index+k+d.rank)&mask)
-                 <<"(" << ((f2->weight_index + offset +k+d.rank) & mask)  << ")" << ':' << f2->x;
-            cout << ':' << weights[(f2->weight_index + offset + k+d.rank) & mask];
+            cout << ':' << fs2.space_names[l].first << k << '^' << fs2.space_names[l].second << ':' << ((fs2.indicies[l]+k+d.rank)&mask)
+                 <<"(" << ((fs2.indicies[l] + offset +k+d.rank) & mask)  << ")" << ':' << fs2.values[l];
+            cout << ':' << weights[(fs2.indicies[l] + offset + k+d.rank) & mask];
 
-            cout << ':' <<  weights[(f->weight_index + offset + k) & mask] * weights[(f2->weight_index + offset + k + d.rank) & mask];
+            cout << ':' <<  weights[(fs1.indicies[j] + offset + k) & mask] * weights[(fs2.indicies[l] + offset + k + d.rank) & mask];
           }
       }
     }
@@ -82,9 +83,9 @@ float mf_predict(gdmf& d, example& ec)
   float prediction = ld.initial;
 
   for (vector<string>::iterator i = d.all->pairs.begin(); i != d.all->pairs.end(); i++)
-  { ec.num_features -= ec.atomics[(int)(*i)[0]].size() * ec.atomics[(int)(*i)[1]].size();
-    ec.num_features += ec.atomics[(int)(*i)[0]].size() * d.rank;
-    ec.num_features += ec.atomics[(int)(*i)[1]].size() * d.rank;
+  { ec.num_features -= ec.feature_space[(int)(*i)[0]].size() * ec.feature_space[(int)(*i)[1]].size();
+    ec.num_features += ec.feature_space[(int)(*i)[0]].size() * d.rank;
+    ec.num_features += ec.feature_space[(int)(*i)[1]].size() * d.rank;
   }
 
   // clear stored predictions
@@ -93,7 +94,7 @@ float mf_predict(gdmf& d, example& ec)
   float linear_prediction = 0.;
   // linear terms
   for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-    GD::foreach_feature<float, GD::vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[*i].begin, ec.atomics[*i].end, linear_prediction);
+    GD::foreach_feature<float, GD::vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.feature_space[*i], linear_prediction);
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -103,18 +104,18 @@ float mf_predict(gdmf& d, example& ec)
 
   // interaction terms
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end(); i++)
-  { if (ec.atomics[(int)(*i)[0]].size() > 0 && ec.atomics[(int)(*i)[1]].size() > 0)
+  { if (ec.feature_space[(int)(*i)[0]].size() > 0 && ec.feature_space[(int)(*i)[1]].size() > 0)
     { for (uint64_t k = 1; k <= d.rank; k++)
       { // x_l * l^k
         // l^k is from index+1 to index+d.rank
         //float x_dot_l = sd_offset_add(weights, mask, ec.atomics[(int)(*i)[0]].begin, ec.atomics[(int)(*i)[0]].end, k);
         float x_dot_l = 0.;
-        GD::foreach_feature<float, GD::vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(int)(*i)[0]].begin, ec.atomics[(int)(*i)[0]].end, x_dot_l, k);
+        GD::foreach_feature<float, GD::vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.feature_space[(int)(*i)[0]], x_dot_l, k);
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
         //float x_dot_r = sd_offset_add(weights, mask, ec.atomics[(int)(*i)[1]].begin, ec.atomics[(int)(*i)[1]].end, k+d.rank);
         float x_dot_r = 0.;
-        GD::foreach_feature<float,GD::vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(int)(*i)[1]].begin, ec.atomics[(int)(*i)[1]].end, x_dot_r, k+d.rank);
+        GD::foreach_feature<float,GD::vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.feature_space[(int)(*i)[1]], x_dot_r, k+d.rank);
 
         prediction += x_dot_l * x_dot_r;
 
@@ -146,15 +147,15 @@ float mf_predict(gdmf& d, example& ec)
 }
 
 
-void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float update, float regularization)
-{ for (feature* f = begin; f!= end; f++)
-    weights[(f->weight_index + offset) & mask] += update * f->x - regularization * weights[(f->weight_index + offset) & mask];
+void sd_offset_update(weight* weights, uint64_t mask, features& fs, uint64_t offset, float update, float regularization)
+{ for (size_t i = 0; i < fs.size(); i++)
+    weights[(fs.indicies[i] + offset) & mask] += update * fs.values[i] - regularization * weights[(fs.indicies[i] + offset) & mask];
 }
 
 void mf_train(gdmf& d, example& ec)
 { vw& all = *d.all;
   weight* weights = all.reg.weight_vector;
-  size_t mask = all.reg.weight_mask;
+  uint64_t mask = all.reg.weight_mask;
   label_data& ld = ec.l.simple;
 
   // use final prediction to get update size
@@ -166,11 +167,11 @@ void mf_train(gdmf& d, example& ec)
 
   // linear update
   for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-    sd_offset_update(weights, mask, ec.atomics[*i].begin, ec.atomics[*i].end, 0, update, regularization);
+    sd_offset_update(weights, mask, ec.feature_space[*i], 0, update, regularization);
 
   // quadratic update
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end(); i++)
-  { if (ec.atomics[(int)(*i)[0]].size() > 0 && ec.atomics[(int)(*i)[1]].size() > 0)
+  { if (ec.feature_space[(int)(*i)[0]].size() > 0 && ec.feature_space[(int)(*i)[1]].size() > 0)
     {
 
       // update l^k weights
@@ -178,14 +179,14 @@ void mf_train(gdmf& d, example& ec)
       { // r^k \cdot x_r
         float r_dot_x = ec.topic_predictions[2*k];
         // l^k <- l^k + update * (r^k \cdot x_r) * x_l
-        sd_offset_update(weights, mask, ec.atomics[(int)(*i)[0]].begin, ec.atomics[(int)(*i)[0]].end, k, update*r_dot_x, regularization);
+        sd_offset_update(weights, mask, ec.feature_space[(int)(*i)[0]], k, update*r_dot_x, regularization);
       }
       // update r^k weights
       for (size_t k = 1; k <= d.rank; k++)
       { // l^k \cdot x_l
         float l_dot_x = ec.topic_predictions[2*k-1];
         // r^k <- r^k + update * (l^k \cdot x_l) * x_r
-        sd_offset_update(weights, mask, ec.atomics[(int)(*i)[1]].begin, ec.atomics[(int)(*i)[1]].end, k+d.rank, update*l_dot_x, regularization);
+        sd_offset_update(weights, mask, ec.feature_space[(int)(*i)[1]], k+d.rank, update*l_dot_x, regularization);
       }
 
     }
@@ -208,33 +209,31 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
-    uint64_t text_len;
-    char buff[512];
-    size_t brw = 1;
+     size_t brw = 1;
 
     do
     { brw = 0;
       size_t K = d.rank*2+1;
-
-      text_len = sprintf(buff, "%llud ", i);
+      stringstream msg;
+      msg << i << " ";
       brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
-                                       "", read,
-                                       buff, text_len, text);
+                                       "", read, msg, text);
       if (brw != 0)
         for (uint64_t k = 0; k < K; k++)
         { uint64_t ndx = (i << stride_shift)+k;
 
           weight* v = &(all->reg.weight_vector[ndx]);
-          text_len = sprintf(buff, "%f ", *v);
+          msg << v << " ";
           brw += bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
-                                           "", read,
-                                           buff, text_len, text);
+                                           "", read, msg, text);
 
         }
       if (text)
-        brw += bin_text_read_write_fixed(model_file,buff,0,
-                                         "", read,
-                                         "\n",1,text);
+        {
+          msg << "\n";
+          brw += bin_text_read_write_fixed(model_file, nullptr, 0,
+                                           "", read, msg,text);
+        }
 
       if (!read)
         i++;
@@ -273,7 +272,7 @@ void learn(gdmf& d, base_learner&, example& ec)
 }
 
 base_learner* gd_mf_setup(vw& all)
-{ if (missing_option<uint64_t, true>(all, "rank", "rank for matrix factorization."))
+{ if (missing_option<uint32_t, true>(all, "rank", "rank for matrix factorization."))
     return nullptr;
 
   if (all.vm.count("adaptive"))
@@ -287,7 +286,7 @@ base_learner* gd_mf_setup(vw& all)
 
   gdmf& data = calloc_or_throw<gdmf>();
   data.all = &all;
-  data.rank = all.vm["rank"].as<uint64_t>();
+  data.rank = all.vm["rank"].as<uint32_t>();
   data.no_win_counter = 0;
   data.early_stop_thres = 3;
 

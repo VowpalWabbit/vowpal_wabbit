@@ -27,7 +27,7 @@ struct task_data
   bool constraints;
   bool allow_skip;
   v_array<uint32_t> y_allowed_entity;
-  v_array<uint64_t> y_allowed_relation;
+  v_array<uint32_t> y_allowed_relation;
   size_t search_order;
   example* ldf_entity;
   example* ldf_relation;
@@ -120,7 +120,7 @@ void decode_tag(v_array<char> tag, char& type, int& id1, int& id2)
 { string s1;
   string s2;
   type = tag[0];
-  uint64_t idx = 2;
+  size_t idx = 2;
   while(idx < tag.size() && tag[idx] != '_' && tag[idx] != '\0')
   { s1.push_back(tag[idx]);
     idx++;
@@ -180,12 +180,12 @@ size_t predict_relation(Search::search&sch, example* ex, v_array<size_t>& predic
 { char type;
   int id1, id2;
   task_data* my_task_data = sch.get_task_data<task_data>();
-  uint64_t hist[2];
+  uint32_t hist[2];
   decode_tag(ex->tag, type, id1, id2);
   v_array<uint32_t> constrained_relation_labels = v_init<uint32_t>();
   if(my_task_data->constraints && predictions[id1]!=0 &&predictions[id2]!=0)
-  { hist[0] = (uint64_t)predictions[id1];
-    hist[1] = (uint64_t)predictions[id2];
+  { hist[0] = predictions[id1];
+    hist[1] = predictions[id2];
   }
   else
   { hist[0] = 0;
@@ -272,7 +272,7 @@ void er_mixed_decoding(Search::search& sch, vector<example*> ec, v_array<size_t>
       count++;
       for(size_t j=0; j<i; j++)
       { if(count ==t)
-        { uint64_t rel_index = (uint64_t) (n_ent + (2*n_ent-j-1)*j/2 + i-j-1);
+        { size_t rel_index = (n_ent + (2*n_ent-j-1)*j/2 + i-j-1);
           predictions[rel_index] = predict_relation(sch, ec[rel_index], predictions, rel_index);
           break;
         }
@@ -294,7 +294,7 @@ void er_allow_skip_decoding(Search::search& sch, vector<example*> ec, v_array<si
 
   // loop until all the entity and relation types are predicted
   for(size_t t=0; ; t++)
-  { uint64_t i = (uint64_t) t % ec.size();
+  { size_t i = t % ec.size();
     if(n_predicts == ec.size())
       break;
 
@@ -365,12 +365,10 @@ void run(Search::search& sch, vector<example*>& ec)
 // this is totally bogus for the example -- you'd never actually do this!
 void update_example_indicies(bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount)
 { for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-    for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; ++f)
-      f->weight_index = ((f->weight_index * mult_amount) + plus_amount);
-  if (audit)
-    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-      if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-        for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; ++f)
-          f->weight_index = ((f->weight_index * mult_amount) + plus_amount);
+    {
+      v_array<feature_index>& fis = ec->feature_space[*i].indicies;
+      for (size_t j = 0; j < fis.size(); ++j)
+        fis[j] = ((fis[j] * mult_amount) + plus_amount);
+    }
 }
 }

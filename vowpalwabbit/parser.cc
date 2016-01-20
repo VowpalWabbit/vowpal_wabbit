@@ -162,18 +162,18 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
 { v_array<char> t = v_init<char>();
 
   try
-    {  uint64_t v_length;
+    {  size_t v_length;
       buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
       if (v_length > 61)
 	THROW("cache version too long, cache file is probably invalid");
-      
+
       if (v_length == 0)
 	THROW("cache version too short, cache file is probably invalid");
-      
+
       t.erase();
       if (t.size() < v_length)
 	t.resize(v_length);
-      
+
       buf->read_file(filepointer,t.begin,v_length);
       version_struct v_tmp(t.begin);
       if ( v_tmp != version )
@@ -181,11 +181,11 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
 	  t.delete_v();
 	  return 0;
 	}
-      
+
       char temp;
       if (buf->read_file(filepointer, &temp, 1) < 1)
 	THROW("failed to read");
-      
+
       if (temp != 'c')
 	THROW("data file is not a cache file");
     }
@@ -305,7 +305,7 @@ void make_write_cache(vw& all, string &newname, bool quiet)
     return;
   }
 
-  uint64_t v_length = (uint64_t)version.to_string().length()+1;
+  size_t v_length = (uint64_t)version.to_string().length()+1;
 
   output->write_file(f, &v_length, sizeof(v_length));
   output->write_file(f,version.to_string().c_str(),v_length);
@@ -602,42 +602,33 @@ void set_done(vw& all)
   mutex_unlock(&all.p->examples_lock);
 }
 
-void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array<audit_data>& audits,
+void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs,
               size_t initial_length, v_array<size_t> &gram_mask, size_t skips)
 { if (ngram == 0 && gram_mask.last() < initial_length)
   { size_t last = initial_length - gram_mask.last();
     for(size_t i = 0; i < last; i++)
-    { uint64_t new_index = atomics[i].weight_index;
-      for (size_t n = 1; n < gram_mask.size(); n++)
-        new_index = new_index*quadratic_constant + atomics[i+gram_mask[n]].weight_index;
-
-      feature f = {1.,new_index};
-      atomics.push_back(f);
-      if ((all.audit || all.hash_inv) && audits.size() >= initial_length)
-      { string feature_name(audits[i].feature);
+      { uint64_t new_index = fs.indicies[i];
         for (size_t n = 1; n < gram_mask.size(); n++)
-        { feature_name += string("^");
-          feature_name += string(audits[i+gram_mask[n]].feature);
-        }
+          new_index = new_index*quadratic_constant + fs.indicies[i+gram_mask[n]];
 
-        string feature_space = string(audits[i].space);
-
-        audit_data a_feature = {nullptr,nullptr,new_index, 1.};
-        a_feature.space = calloc_or_throw<char>(feature_space.length()+1);
-        strcpy(a_feature.space, feature_space.c_str());
-        a_feature.feature = calloc_or_throw<char>(feature_name.length()+1);
-        strcpy(a_feature.feature, feature_name.c_str());
-        audits.push_back(a_feature);
+        fs.push_back(1.,new_index);
+        if (fs.space_names.size() > 0)
+          { string feature_name(fs.space_names[i].second);
+            for (size_t n = 1; n < gram_mask.size(); n++)
+              { feature_name += string("^");
+                feature_name += string(fs.space_names[i+gram_mask[n]].second);
+              }
+			fs.space_names.push_back(audit_strings(fs.space_names[i].first, feature_name));
+          }
       }
-    }
   }
   if (ngram > 0)
   { gram_mask.push_back(gram_mask.last()+1+skips);
-    addgrams(all, ngram-1, skip_gram, atomics, audits, initial_length, gram_mask, 0);
+    addgrams(all, ngram-1, skip_gram, fs, initial_length, gram_mask, 0);
     gram_mask.pop();
   }
   if (skip_gram > 0 && ngram > 0)
-    addgrams(all, ngram, skip_gram-1, atomics, audits, initial_length, gram_mask, skips+1);
+    addgrams(all, ngram, skip_gram-1, fs, initial_length, gram_mask, skips+1);
 }
 
 /**
@@ -653,12 +644,11 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
  */
 void generateGrams(vw& all, example* &ex)
 { for(unsigned char* index = ex->indices.begin; index < ex->indices.end; index++)
-  { size_t length = ex->atomics[*index].size();
+  { size_t length = ex->feature_space[*index].size();
     for (size_t n = 1; n < all.ngram[*index]; n++)
     { all.p->gram_mask.erase();
       all.p->gram_mask.push_back((size_t)0);
-      addgrams(all, n, all.skips[*index], ex->atomics[*index],
-               ex->audit_features[*index],
+      addgrams(all, n, all.skips[*index], ex->feature_space[*index],
                length, all.p->gram_mask, 0);
     }
   }
@@ -684,9 +674,9 @@ namespace VW
 bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
 { if (do_read && all.p->reader(&all, ae) <= 0)
     return false;
-  
+
   if(all.p->sort_features && ae->sorted == false)
-    unique_sort_features(all.audit, all.parse_mask, ae);
+    unique_sort_features(all.parse_mask, ae);
 
   if (all.p->write_cache)
     { all.p->lp.cache_label(&ae->l,*(all.p->output));
@@ -704,13 +694,11 @@ void end_pass_example(vw& all, example* ae)
 
 void feature_limit(vw& all, example* ex)
 { for(unsigned char* index = ex->indices.begin; index < ex->indices.end; index++)
-    if (all.limit[*index] < ex->atomics[*index].size())
-    { v_array<feature>& features = ex->atomics[*index];
-
-      qsort(features.begin, features.size(), sizeof(feature), order_features<feature>);
-
-      unique_features(features, all.limit[*index]);
-    }
+    if (all.limit[*index] < ex->feature_space[*index].size())
+      { features& fs = ex->feature_space[*index];
+        fs.sort(all.parse_mask);
+        unique_features(fs, all.limit[*index]);
+      }
 }
 
 namespace VW
@@ -736,59 +724,44 @@ void setup_example(vw& all, example* ae)
 
 
   if (all.ignore_some)
-  { if (all.audit || all.hash_inv)
-      for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
-        if (all.ignore[*i])
-          ae->audit_features[*i].erase();
-
     for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
       if (all.ignore[*i])
-      { //delete namespace
-        ae->atomics[*i].erase();
-        memmove(i,i+1,(ae->indices.end - (i+1))*sizeof(*i));
-        ae->indices.end--;
-        i--;
-      }
-  }
+        { //delete namespace
+          ae->feature_space[*i].erase();
+          memmove(i,i+1,(ae->indices.end - (i+1))*sizeof(*i));
+          ae->indices.end--;
+          i--;
+        }
 
   if(all.ngram_strings.size() > 0)
     generateGrams(all, ae);
 
-  if (all.add_constant)
-  { //add constant feature
-    ae->indices.push_back(constant_namespace);
-    feature temp = {1.f, constant};
-    ae->atomics[constant_namespace].push_back(temp);
-    ae->total_sum_feat_sq++;
-
-    if (all.audit || all.hash_inv) ae->audit_features[constant_namespace].push_back({nullptr,strdup("Constant"), constant, 1.});
-  }
+  if (all.add_constant)//add constant feature
+    VW::add_constant_feature(all,ae);
 
   if(all.limit_strings.size() > 0)
     feature_limit(all,ae);
 
   uint64_t multiplier = all.wpp << all.reg.stride_shift;
   if(multiplier != 1) //make room for per-feature information.
-  { for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
-      for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
-        j->weight_index *= multiplier;
-    if (all.audit || all.hash_inv)
-      for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
-        for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
-          j->weight_index *= multiplier;
-  }
-
+    for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
+      {
+        features& fs = ae->feature_space[*i];
+        for(size_t j = 0; j < fs.size(); ++j)
+          fs.indicies[j] *= multiplier;
+      }
+  ae->num_features = 0;
+  ae->total_sum_feat_sq = 0;
   for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
-  { ae->num_features += ae->atomics[*i].end - ae->atomics[*i].begin;
-    ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
-  }
+    { ae->num_features += ae->feature_space[*i].size();
+      ae->total_sum_feat_sq += ae->feature_space[*i].sum_feat_sq;
+    }
 
   size_t new_features_cnt;
   float new_features_sum_feat_sq;
   INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
   ae->num_features += new_features_cnt;
   ae->total_sum_feat_sq += new_features_sum_feat_sq;
-
 }
 }
 
@@ -815,13 +788,12 @@ example* read_example(vw& all, char* example_line)
 example* read_example(vw& all, string example_line) { return read_example(all, (char*)example_line.c_str()); }
 
 void add_constant_feature(vw& vw, example*ec)
-{ uint64_t cns = constant_namespace;
-  ec->indices.push_back(cns);
-  feature temp = {1, constant};
-  ec->atomics[cns].push_back(temp);
+{
+  ec->indices.push_back(constant_namespace);
+  ec->feature_space[constant_namespace].push_back(1,constant);
   ec->total_sum_feat_sq++;
   ec->num_features++;
-  if (vw.audit || vw.hash_inv) ec->audit_features[constant_namespace].push_back({nullptr,strdup("Constant"), constant, 1.});
+  if (vw.audit || vw.hash_inv) ec->feature_space[constant_namespace].space_names.push_back(audit_strings("","Constant"));
 }
 
 void add_label(example* ec, float label, float weight, float base)
@@ -838,12 +810,10 @@ example* import_example(vw& all, string label, primitive_feature_space* features
     parse_example_label(all, *ret, label);
 
   for (size_t i = 0; i < len; i++)
-  { uint64_t index = features[i].name;
+  { unsigned char index = features[i].name;
     ret->indices.push_back(index);
     for (size_t j = 0; j < features[i].len; j++)
-    { ret->sum_feat_sq[index] += features[i].fs[j].x * features[i].fs[j].x;
-      ret->atomics[index].push_back(features[i].fs[j]);
-    }
+      ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].weight_index);
   }
   VW::parse_atomic_example(all,ret,false);
   setup_example(all, ret);
@@ -858,16 +828,17 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
   int fs_count = 0;
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
   { fs_ptr[fs_count].name = *i;
-    fs_ptr[fs_count].len = ec->atomics[*i].size();
+    fs_ptr[fs_count].len = ec->feature_space[*i].size();
     fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
 
     int f_count = 0;
-    for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
-    { feature t = *f;
-      t.weight_index >>= all.reg.stride_shift;
-      fs_ptr[fs_count].fs[f_count] = t;
-      f_count++;
-    }
+    features& fs = ec->feature_space[*i];
+    for (size_t j = 0; j < fs.size(); ++j)
+      { feature t = {fs.values[j], fs.indicies[j]};
+        t.weight_index >>= all.reg.stride_shift;
+        fs_ptr[fs_count].fs[f_count] = t;
+        f_count++;
+      }
     fs_count++;
   }
   return fs_ptr;
@@ -890,22 +861,9 @@ void parse_example_label(vw& all, example&ec, string label)
 }
 
 void empty_example(vw& all, example& ec)
-{ if (all.audit || all.hash_inv)
-    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-    { for (audit_data* temp
-           = ec.audit_features[*i].begin;
-           temp != ec.audit_features[*i].end; temp++)
-	{ 
-	  free_it(temp->space);
-          free_it(temp->feature);
-	}
-      ec.audit_features[*i].erase();
-    }
-
+{
   for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-  { ec.atomics[*i].erase();
-    ec.sum_feat_sq[*i]=0;
-  }
+    ec.feature_space[*i].erase();
 
   ec.indices.erase();
   ec.tag.erase();

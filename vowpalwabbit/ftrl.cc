@@ -145,9 +145,9 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
 
   if (model_file.files.size() > 0)
   { bool resume = all->save_resume;
-    char buff[512];
-    uint32_t text_len = sprintf(buff, ":%d\n", resume);
-    bin_text_read_write_fixed(model_file,(char *)&resume, sizeof (resume), "", read, buff, text_len, text);
+    stringstream msg;
+    msg << ":"<< resume<< "\n";
+    bin_text_read_write_fixed(model_file,(char *)&resume, sizeof (resume), "", read, msg, text);
 
     if (resume)
       GD::save_load_online_state(*all, model_file, read, text);

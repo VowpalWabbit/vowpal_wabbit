@@ -221,7 +221,7 @@ inline size_t bin_read_fixed(io_buf& i, char* data, size_t len, const char* read
 
     // compute hash for check-sum
     if (i.verify_hash)
-      i.hash = uniform_hash(p, len, i.hash);
+      i.hash = (uint32_t)uniform_hash(p, len, i.hash);
 
     if (*read_message == '\0')
       memcpy(data,p,len);
@@ -251,7 +251,7 @@ inline size_t bin_write_fixed(io_buf& o, const char* data, uint32_t len)
 
     // compute hash for check-sum
     if (o.verify_hash)
-    { o.hash = uniform_hash(p, len, o.hash);
+    { o.hash = (uint32_t)uniform_hash(p, len, o.hash);
     }
   }
   return len;
@@ -264,9 +264,13 @@ inline size_t bin_write(io_buf& o, const char* data, uint32_t len)
 }
 
 inline size_t bin_text_write(io_buf& io, char* data, uint32_t len,
-                             const char* text_data, uint32_t text_len, bool text)
+                             stringstream& msg, bool text)
 { if (text)
-    return bin_write_fixed (io, text_data, text_len);
+    {
+      size_t temp = bin_write_fixed (io, msg.str().c_str(), msg.str().size());
+      msg.str("");
+      return temp;
+    }
   else
     return bin_write (io, data, len);
   return 0;
@@ -275,17 +279,21 @@ inline size_t bin_text_write(io_buf& io, char* data, uint32_t len,
 //a unified function for read(in binary), write(in binary), and write(in text)
 inline size_t bin_text_read_write(io_buf& io, char* data, uint32_t len,
                                   const char* read_message, bool read,
-                                  const char* text_data, uint32_t text_len, bool text)
+                                  stringstream& msg, bool text)
 { if (read)
     return bin_read(io, data, len, read_message);
   else
-    return bin_text_write(io,data,len, text_data, text_len, text);
+    return bin_text_write(io,data,len, msg, text);
 }
 
 inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len,
-                                   const char* text_data, uint32_t text_len, bool text)
+                                   stringstream& msg, bool text)
 { if (text)
-    return bin_write_fixed (io, text_data, text_len);
+    {
+      size_t temp = bin_write_fixed (io, msg.str().c_str(), msg.str().size());
+      msg.str("");
+      return temp;
+    }
   else
     return bin_write_fixed (io, data, len);
   return 0;
@@ -294,17 +302,17 @@ inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len,
 //a unified function for read(in binary), write(in binary), and write(in text)
 inline size_t bin_text_read_write_fixed(io_buf& io, char* data, uint32_t len,
                                         const char* read_message, bool read,
-                                        const char* text_data, uint32_t text_len, bool text)
+                                        stringstream& msg, bool text)
 { if (read)
     return bin_read_fixed(io, data, len, read_message);
   else
-    return bin_text_write_fixed(io, data, len, text_data, text_len, text);
+    return bin_text_write_fixed(io, data, len, msg, text);
 }
 
 inline size_t bin_text_read_write_fixed_validated(io_buf& io, char* data, uint32_t len,
-    const char* read_message, bool read,
-    const char* text_data, uint32_t text_len, bool text)
-{ size_t nbytes = bin_text_read_write_fixed(io, data, len, read_message, read, text_data, text_len, text);
+                                                  const char* read_message, bool read,
+                                                  stringstream& msg, bool text)
+{ size_t nbytes = bin_text_read_write_fixed(io, data, len, read_message, read, msg, text);
   if (read && len > 0) // only validate bytes read/write if expected length > 0
   { if (nbytes == 0)
     { THROW("Unexpected end of file encountered.");

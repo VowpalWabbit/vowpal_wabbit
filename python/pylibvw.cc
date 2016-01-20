@@ -158,27 +158,25 @@ unsigned char ex_namespace(example_ptr ec, uint32_t ns)
 }
 
 uint32_t ex_num_features(example_ptr ec, unsigned char ns)
-{ return ec->atomics[ns].size();
+{ return ec->feature_space[ns].size();
 }
 
 uint32_t ex_feature(example_ptr ec, unsigned char ns, uint32_t i)
-{ return ec->atomics[ns][i].weight_index;
+{ return ec->feature_space[ns].indicies[i];
 }
 
 float ex_feature_weight(example_ptr ec, unsigned char ns, uint32_t i)
-{ return ec->atomics[ns][i].x;
+{ return ec->feature_space[ns].values[i];
 }
 
 float ex_sum_feat_sq(example_ptr ec, unsigned char ns)
-{ return ec->sum_feat_sq[ns];
+{ return ec->feature_space[ns].sum_feat_sq;
 }
 
 void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
 { // warning: assumes namespace exists!
-  feature f = { v, fid };
-  ec->atomics[ns].push_back(f);
+  ec->feature_space[ns].push_back(v,fid);
   ec->num_features++;
-  ec->sum_feat_sq[ns] += v * v;
   ec->total_sum_feat_sq += v * v;
 }
 
@@ -214,14 +212,13 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
         else { cerr << "warning: malformed feature in list" << endl; continue; }
       }
       if (got)
-      { ec->atomics[ns].push_back(f);
+	{ ec->feature_space[ns].push_back(f.x, f.weight_index);
         count++;
-        sum_sq += f.x * f.x;
+	sum_sq += f.x*f.x;
       }
     }
   }
   ec->num_features += count;
-  ec->sum_feat_sq[ns] += sum_sq;
   ec->total_sum_feat_sq += sum_sq;
 }
 
@@ -260,20 +257,23 @@ void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict& dict)
 }
 
 bool ex_pop_feature(example_ptr ec, unsigned char ns)
-{ if (ec->atomics[ns].size() == 0) return false;
-  feature f = ec->atomics[ns].pop();
+{ if (ec->feature_space[ns].size() == 0) return false;
+  float val = ec->feature_space[ns].values.pop();
+  if (ec->feature_space[ns].indicies.size()> 0)
+    ec->feature_space[ns].indicies.pop();
+  if (ec->feature_space[ns].space_names.size()> 0)
+    ec->feature_space[ns].space_names.pop();
   ec->num_features--;
-  ec->sum_feat_sq[ns] -= f.x * f.x;
-  ec->total_sum_feat_sq -= f.x * f.x;
+  ec->feature_space[ns].sum_feat_sq -= val * val;
+  ec->total_sum_feat_sq -= val * val;
   return true;
 }
 
 void ex_erase_namespace(example_ptr ec, unsigned char ns)
-{ ec->num_features -= ec->atomics[ns].size();
-  ec->total_sum_feat_sq -= ec->sum_feat_sq[ns];
-  ec->sum_feat_sq[ns] = 0.;
-  ec->atomics[ns].erase();
-  ec->audit_features[ns].erase();
+{ ec->num_features -= ec->feature_space[ns].size();
+  ec->total_sum_feat_sq -= ec->feature_space[ns].sum_feat_sq;
+  ec->feature_space[ns].sum_feat_sq = 0.;
+  ec->feature_space[ns].erase();
 }
 
 bool ex_pop_namespace(example_ptr ec)
@@ -305,8 +305,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   }
 
   if (all.add_constant)
-  { ae->atomics[constant_namespace].erase();
-    ae->audit_features[constant_namespace].erase();
+    { ae->feature_space[constant_namespace].erase();
     int hit_constant = -1;
     size_t N = ae->indices.size();
     for (size_t i=0; i<N; i++)
@@ -326,14 +325,9 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
 
   uint32_t multiplier = all.wpp << all.reg.stride_shift;
   if(multiplier != 1)   //make room for per-feature information.
-  { for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
-      for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
-        j->weight_index /= multiplier;
-    if (all.audit || all.hash_inv)
-      for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
-        for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
-          j->weight_index /= multiplier;
-  }
+    for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
+      for (size_t j = 0; j < ae->feature_space[*i].indicies.size(); j++)
+	ae->feature_space[*i].indicies[j] /= multiplier;
 }
 
 
@@ -647,7 +641,6 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("erase_namespace", &ex_erase_namespace, "Remove all the features from a given namespace")
 
   .def("set_label_string", &ex_set_label_string, "(Re)assign the label of this example to this string")
-
   .def("get_simplelabel_label", &ex_get_simplelabel_label, "Assuming a simple_label label type, return the corresponding label (class/regression target/etc.)")
   .def("get_simplelabel_weight", &ex_get_simplelabel_weight, "Assuming a simple_label label type, return the importance weight")
   .def("get_simplelabel_initial", &ex_get_simplelabel_initial, "Assuming a simple_label label type, return the initial (baseline) prediction")

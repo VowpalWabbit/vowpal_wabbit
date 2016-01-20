@@ -68,16 +68,16 @@ example flags.
 
 ## C++ Optimization
 
-The default C++ compiler optimization flags are very aggressive. If you should run into a problem, consider running `configure` with the `--enable-debug` option, e.g.:
+The default C++ compiler optimization flags are very aggressive. If you should run into a problem, consider creating and running `configure` with the `--enable-debug` option, e.g.:
 
 ```
 $ ./configure --enable-debug
 ```
 
-or passing your own compiler flags via the `CXXOPTIMIZE` make variable:
+or passing your own compiler flags via the `OPTIM_FLAGS` make variable:
 
 ```
-$ make CXXOPTIMIZE="-O0 -g"
+$ make OPTIM_FLAGS="-O0 -g"
 ```
 
 ## Ubuntu/Debian specific info

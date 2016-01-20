@@ -89,9 +89,10 @@ void buf_write(io_buf &o, char* &pointer, size_t n)
   else // Time to dump the file
   { if (o.head != o.space.begin)
       o.flush();
-    else // Array is short, so increase size.
+        else // Array is short, so increase size.
     { o.space.resize(2*(o.space.end_array - o.space.begin));
       o.space.end = o.space.begin;
+      o.head = o.space.begin;
     }
     buf_write (o, pointer,n);
   }
