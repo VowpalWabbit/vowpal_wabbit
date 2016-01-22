@@ -76,29 +76,6 @@ namespace VW.Serializer
             }
         }
 
-        private void SkipAuxiliary()
-        {
-            var nestedCount = 0;
-            while (reader.Read())
-            {
-                switch (reader.TokenType)
-                {
-                    case JsonToken.StartArray:
-                    case JsonToken.StartConstructor:
-                    case JsonToken.StartObject:
-                        nestedCount++;
-                        break;
-                    case JsonToken.EndArray:
-                    case JsonToken.EndConstructor:
-                    case JsonToken.EndObject:
-                        nestedCount--;
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-
         /// <summary>
         /// Parses the example.
         /// </summary>
@@ -141,7 +118,7 @@ namespace VW.Serializer
                                         //case "action":
                                         //    break;
                                         default:
-                                            SkipAuxiliary();
+                                            reader.Skip();
                                             break;
                                     }
                                 }
