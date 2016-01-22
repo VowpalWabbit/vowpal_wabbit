@@ -7,6 +7,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq.Expressions;
 
@@ -15,6 +16,7 @@ namespace VW.Serializer.Intermediate
     /// <summary>
     /// The base feature description.
     /// </summary>
+    [DebuggerDisplay("Feature({Name}, addAnchor: {AddAnchor}, dictify: {Dictify}")]
     public class Feature
     {
         /// <summary>
@@ -23,7 +25,7 @@ namespace VW.Serializer.Intermediate
         /// <param name="name"></param>
         /// <param name="addAnchor"></param>
         /// <param name="dictify"></param>
-        public Feature(string name, bool addAnchor, bool dictify)
+        public Feature(string name, bool addAnchor = false, bool dictify = false)
         {
             this.Name = name;
             this.AddAnchor = addAnchor;

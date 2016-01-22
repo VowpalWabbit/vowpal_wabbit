@@ -91,6 +91,17 @@ namespace VW
         }
 
         /// <summary>
+        /// The wrapped VW instance.
+        /// </summary>
+        public VowpalWabbit Native 
+        { 
+            get 
+            { 
+                return this.vw; 
+            } 
+        }
+
+        /// <summary>
         /// The serializer used to marshal examples.
         /// </summary>
         public VowpalWabbitSerializerCompiled<TExample> Serializer
@@ -185,11 +196,6 @@ namespace VW
                 return this.vw.Predict(ex, predictionFactory);
             }
         }
-
-        /// <summary>
-        /// The wrapped VW instance.
-        /// </summary>
-        public VowpalWabbit Native { get { return this.vw; } }
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.

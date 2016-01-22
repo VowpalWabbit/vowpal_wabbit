@@ -44,6 +44,23 @@ namespace VW.Serializer.Intermediate
                 this.Name);
         }
 
+        public Namespace(VowpalWabbit vw, string name = null)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                name = " ";
+            }
+
+            if (name.Length > 1)
+            {
+                this.Name = name.Substring(1);
+            }
+            this.FeatureGroup = name[0];
+
+            this.NamespaceHash = vw.HashSpace(name);
+            this.NamespaceString = " |" + name;
+        }
+
         /// <summary>
         /// Gets or sets the namespace name.
         /// </summary>
