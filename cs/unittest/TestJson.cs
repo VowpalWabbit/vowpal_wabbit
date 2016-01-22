@@ -30,6 +30,17 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        public void TestJsonAux()
+        {
+            using (var validator = new VowpalWabbitExampleJsonValidator())
+            {
+                validator.Validate("|a foo:1", "{\"a\":{\"foo\":1},\"_aux\":{\"abc\":{\"def\":3}}}");
+                validator.Validate("|a foo:1", "{\"a\":{\"foo\":1},\"_aux\":5}");
+                validator.Validate("|a foo:1", "{\"a\":{\"foo\":1},\"_aux\":[1,2,[3,4],2]}");
+            }
+        }
+
+        [TestMethod]
         public void TestJsonArray()
         {
             using (var validator = new VowpalWabbitExampleJsonValidator())

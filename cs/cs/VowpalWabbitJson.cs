@@ -91,9 +91,8 @@ namespace VW
         /// </summary>
         /// <typeparam name="TPrediction">The prediction type.</typeparam>
         /// <param name="json">The example to learn.</param>
-        /// <param name="label">The label for this <paramref name="example"/>.</param>
         /// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
-        /// <returns>The prediction for the given <paramref name="example"/>.</returns>
+        /// <returns>The prediction for the given <paramref name="json"/>.</returns>
         public TPrediction Learn<TPrediction>(string json, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory)
         {
             using (var example = this.serializer.Parse(json))

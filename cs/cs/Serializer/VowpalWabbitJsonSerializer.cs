@@ -76,6 +76,29 @@ namespace VW.Serializer
             }
         }
 
+        private void SkipAuxiliary()
+        {
+            var nestedCount = 0;
+            while (reader.Read())
+            {
+                switch (reader.TokenType)
+                {
+                    case JsonToken.StartArray:
+                    case JsonToken.StartConstructor:
+                    case JsonToken.StartObject:
+                        nestedCount++;
+                        break;
+                    case JsonToken.EndArray:
+                    case JsonToken.EndConstructor:
+                    case JsonToken.EndObject:
+                        nestedCount--;
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
         /// <summary>
         /// Parses the example.
         /// </summary>
@@ -118,6 +141,7 @@ namespace VW.Serializer
                                         //case "action":
                                         //    break;
                                         default:
+                                            SkipAuxiliary();
                                             break;
                                     }
                                 }
@@ -253,6 +277,10 @@ namespace VW.Serializer
                         var feature = new PreHashedFeature(this.vw, ns, featureName);
                         this.defaultMarshaller.MarshalFeature(context, ns, feature, (bool)reader.Value);
                     }
+                    break;
+                case JsonToken.Comment:
+                case JsonToken.Null:
+                    // probably best to ignore?
                     break;
                 case JsonToken.StartArray:
                     this.ParseFeatureArray(context, ns);
