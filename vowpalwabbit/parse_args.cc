@@ -886,7 +886,8 @@ void parse_example_tweaks(vw& all)
   if (vm.count("named_labels"))
   { *all.file_options << " --named_labels " << named_labels << ' ';
     all.sd->ldict = new namedlabels(named_labels);
-    cerr << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
+    if (!all.quiet)
+      cerr << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
   }
 
   string loss_function = vm["loss_function"].as<string>();

@@ -13,8 +13,6 @@ license as described in the file LICENSE.node
 using namespace std;
 using namespace LEARNER;
 
-    
-
 namespace oas {
 
 template<class T> struct pqueue {
