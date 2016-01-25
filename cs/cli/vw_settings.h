@@ -42,7 +42,16 @@ namespace VW
 		/// <summary>
 		/// All properties are used as features.
 		/// </summary>
-		All
+		All,
+
+    /// <summary>
+    /// Use JSON.NET's JsonProperty annotation for feature annotation.
+    /// </summary>
+    /// <remarks>
+    /// This serialization produces equivalent results as if the object would be
+    /// serialized using JSON.NET and then ingested be VowpalWabbitJsonSerializer.
+    /// </remarks>
+    Json
 	};
 
     public ref class VowpalWabbitSettings

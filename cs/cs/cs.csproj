@@ -123,6 +123,7 @@
     <Compile Include="ObjectFactory.cs" />
     <Compile Include="PooledObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Serializer\AnnotationJsonInspector.cs" />
     <Compile Include="Serializer\Attributes\CacheableAttribute.cs" />
     <Compile Include="Serializer\Attributes\FeatureAttribute.cs" />
     <Compile Include="Serializer\AnnotationInspector.cs" />

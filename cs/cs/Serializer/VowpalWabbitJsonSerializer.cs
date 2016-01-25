@@ -246,7 +246,7 @@ namespace VW.Serializer
                 case JsonToken.String:
                     {
                         var feature = new Feature(featureName);
-                        this.defaultMarshaller.MarshalFeature(context, ns, feature, (string)reader.Value);
+                        this.defaultMarshaller.MarshalFeatureStringEscape(context, ns, feature, (string)reader.Value);
                     }
                     break;
                 case JsonToken.Boolean:

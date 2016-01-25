@@ -12,12 +12,6 @@ namespace cs_unittest
     public class TestJsonClass
     {
         [TestMethod]
-        public void TestJsonPropertyToVW()
-        {
-            // TODO: direct serialization from JsonProperty annotated class to VW
-        }
-
-        [TestMethod]
         public void TestJson()
         {
             using (var validator = new VowpalWabbitExampleJsonValidator())
@@ -25,7 +19,7 @@ namespace cs_unittest
                 validator.Validate("|a foo:1", "{\"a\":{\"foo\":1}}");
                 validator.Validate("|a foo:2.3", "{\"a\":{\"foo\":2.3}}");
                 validator.Validate("|a foo:2.3 bar", "{\"a\":{\"foo\":2.3, \"bar\":true}}");
-                validator.Validate("|a foo:1 |bcd Age25", "{\"a\":{\"foo\":1},\"bcd\":{\"Age\":\"25\"}}");
+                validator.Validate("|a foo:1 |bcd 25_old", "{\"a\":{\"foo\":1},\"bcd\":{\"Age\":\"25 old\"}}");
             }
         }
 
