@@ -1,12 +1,4 @@
 
-# test groups
-
-# this test group is bogus, for illustration only; adjust if you know what you're doing
-regression_group:	1a.valid 1b.valid 3.valid ;
-
-
-# individual tests
-
 # MNIST training
 1a.inData := $(dataDir)/mnist.dir/train.prep
 1a.params := --oaa 10 -d $(1a.inData) -f $(stageDir)/1a.dir/mnist.model -b 24 --adaptive --invariant --holdout_off -l 0.1 --nn 40 --passes 24 -k --compressed --cache_file $(stageDir)/1a.dir/mnist.cache

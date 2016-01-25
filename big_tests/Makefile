@@ -57,6 +57,7 @@ all:	valid ;
 # details of individual tests come from here
 include dataSets.mk
 include testDetails.mk
+include testGroups.mk
 
 # for debugging
 %.stub:

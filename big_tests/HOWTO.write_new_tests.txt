@@ -44,7 +44,7 @@ myTest.deps:	test2.run test4.valid
 
 Unfortunatley, tracking of inter-test dependencies as above doesn't work for older versions of gnu make (< 4.0), due to bugs in those older versions.  Upgrade if you can.
 
-Some groups of tests are defined at the top of testDetails.mk.  You can add your tests to these groups or create new groups.
+Groups of tests are defined in testGroups.mk.  You can add your tests to these groups or create new groups.
 
 
 Step 3: expected files
