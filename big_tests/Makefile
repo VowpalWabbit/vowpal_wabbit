@@ -40,8 +40,10 @@ allTests := $(patsubst %/,%,$(shell ls $(expDir)))
 EXEC ?= ../vowpalwabbit/vw
 TIME ?= env time -f "%U"
 TIMING ?= n
-ACC_DIFF_TOLERANCE ?= 0.001
-TIME_DIFF_TOLERANCE ?= 0.05
+ACC_DIFF_TOLERANCE_REL ?= 0.001
+ACC_DIFF_TOLERANCE_ABS ?= 0.001
+TIME_DIFF_TOLERANCE_REL ?= 0.05
+TIME_DIFF_TOLERANCE_ABS ?= 1.0
 DIFF ?= $(testCodeDir)/floatingTolerance.pl
 GREP ?= grep
 DEFAULT_STDOUT_COMPARATOR_REGEXP ?= "."
@@ -179,16 +181,16 @@ $(stageDir)/%.dir/done:
 	dir=$(stageDir)/$*.dir ;\
 	rm -f $$dir/diffs ;\
 	for FILE in out err $($*.otherOutputs) ; do \
-		echo "$(DIFF) $(ACC_DIFF_TOLERANCE) $$dir/$$FILE $(expDir)/$*/$$FILE" ;\
-		$(DIFF) $(ACC_DIFF_TOLERANCE) $$dir/$$FILE $(expDir)/$*/$$FILE |& tee -a $$dir/diffs ;\
+		echo "$(DIFF) $(ACC_DIFF_TOLERANCE_REL) $(ACC_DIFF_TOLERANCE_ABS) $$dir/$$FILE $(expDir)/$*/$$FILE" ;\
+		$(DIFF) $(ACC_DIFF_TOLERANCE_REL) $(ACC_DIFF_TOLERANCE_ABS) $$dir/$$FILE $(expDir)/$*/$$FILE |& tee -a $$dir/diffs ;\
 	done ;\
 	if [ -s $$dir/diffs ] ; then \
 		echo "Test $* failed due to accuracy diffs." ;\
 		exit 1 ;\
 	fi ;\
 	if [ "$(TIMING)" = "y" ] ; then \
-		echo "$(DIFF) $(TIME_DIFF_TOLERANCE) $$dir/$(ARCH)/rc $(expDir)/$*/$(ARCH)/rc" ;\
-		$(DIFF) $(TIME_DIFF_TOLERANCE) $$dir/$(ARCH)/rc $(expDir)/$*/$(ARCH)/rc |& tee -a $$dir/diffs ;\
+		echo "$(DIFF) $(TIME_DIFF_TOLERANCE_REL) $(TIME_DIFF_TOLERANCE_ABS) $$dir/$(ARCH)/rc $(expDir)/$*/$(ARCH)/rc" ;\
+		$(DIFF) $(TIME_DIFF_TOLERANCE_REL) $(TIME_DIFF_TOLERANCE_ABS) $$dir/$(ARCH)/rc $(expDir)/$*/$(ARCH)/rc |& tee -a $$dir/diffs ;\
 		if [ -s $$dir/diffs ] ; then \
 			echo "Test $* failed due to speed diffs." ;\
 			exit 1 ;\

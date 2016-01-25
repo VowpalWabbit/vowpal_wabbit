@@ -2,7 +2,7 @@
 
 ####################################################################################################
 # Author:  I. Dan Melamed
-# Purpose:	for each pair of floating point numbers (x,y), and +ive tolerance t, check if (x / y - 1 < t)
+# Purpose:	for each pair of floating point numbers (x,y), +ive relative tolerance r, and +ive absolute tolerance a, fail if (x / y - 1 > r) AND (x - y > a)
 # Streams:	2 files of numbers; the numbers that we want to be smaller should come first
 # N.B.:		tolerance is evaluated in only one direction, unless one of the numbers is zero
 # N.B.2:    return code is > 0 iff tolerance test fails
@@ -10,12 +10,13 @@
 
 #check for correct usage
 if ($#ARGV < 0) {
-    print "usage: $0 <tolerance> <file 1> [<file 2>]\n";
+    print "usage: $0 <rel. tolerance> <abs. tolerance> <file 1> [<file 2>]\n";
     exit; 
 };
 
 $exitCode = 0;
-$tolerance = shift;
+$rtolerance = shift;
+$atolerance = shift;
 open(F, $ARGV[0]) || die "\nCouldn't open $ARGV[0]: $!\n";
 shift;
 open(G, $ARGV[0]) || die "\nCouldn't open $ARGV[0]: $!\n";
@@ -50,9 +51,10 @@ LINE: while (<F>) {
 			$exitCode = 15;
 			next LINE;
 		};
-		$diff = $ftok / $gtok - 1.0;
-		if ($diff > $tolerance) {
-			print "Difference exceeds tolerance of $tolerance on line $.: $ftok vs. $gtok .\n";
+		$rdiff = $ftok / $gtok - 1.0;
+		$adiff = $ftok - $gtok;
+		if ($rdiff > $rtolerance && $adiff > $atolerance) {
+			print "Differences exceed rel. tolerance of $rtolerance and abs. tolerance of $atolerance on line $.: $ftok vs. $gtok .\n";
 			$exitCode = 17;
 			next LINE;
 		};
