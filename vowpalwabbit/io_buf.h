@@ -27,7 +27,7 @@ using namespace std;
 #endif
 
 #ifdef _WIN32
-#define ssize_t size_t
+#define ssize_t int64_t
 #include <io.h>
 #include <sys/stat.h>
 #endif
@@ -267,7 +267,7 @@ inline size_t bin_text_write(io_buf& io, char* data, uint32_t len,
                              stringstream& msg, bool text)
 { if (text)
     {
-      size_t temp = bin_write_fixed (io, msg.str().c_str(), msg.str().size());
+      size_t temp = bin_write_fixed (io, msg.str().c_str(), (uint32_t)msg.str().size());
       msg.str("");
       return temp;
     }
@@ -290,7 +290,7 @@ inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len,
                                    stringstream& msg, bool text)
 { if (text)
     {
-      size_t temp = bin_write_fixed (io, msg.str().c_str(), msg.str().size());
+      size_t temp = bin_write_fixed(io, msg.str().c_str(), (uint32_t)msg.str().size());
       msg.str("");
       return temp;
     }
