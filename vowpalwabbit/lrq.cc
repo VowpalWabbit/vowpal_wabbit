@@ -112,7 +112,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
                       if (all.audit || all.hash_inv)
                         { std::stringstream new_feature_buffer;
                           new_feature_buffer << right << '^'
-                                             << right_fs.space_names[rfn].second << '^'
+                                             << right_fs.space_names[rfn].get()->second << '^'
                                              << n;
 
 #ifdef _WIN32
@@ -122,7 +122,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
                           char* new_space = strdup("lrq");
                           char* new_feature = strdup(new_feature_buffer.str().c_str());
 #endif
-                          right_fs.space_names.push_back(audit_strings(new_space,new_feature));
+                          right_fs.space_names.push_back(audit_strings_ptr(new audit_strings(new_space,new_feature)));
                         }
                     }
                 }

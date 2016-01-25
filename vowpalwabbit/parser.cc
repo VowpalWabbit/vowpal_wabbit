@@ -613,12 +613,12 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs,
 
         fs.push_back(1.,new_index);
         if (fs.space_names.size() > 0)
-          { string feature_name(fs.space_names[i].second);
+          { string feature_name(fs.space_names[i].get()->second);
             for (size_t n = 1; n < gram_mask.size(); n++)
               { feature_name += string("^");
-                feature_name += string(fs.space_names[i+gram_mask[n]].second);
+                feature_name += string(fs.space_names[i+gram_mask[n]].get()->second);
               }
-			fs.space_names.push_back(audit_strings(fs.space_names[i].first, feature_name));
+            fs.space_names.push_back(audit_strings_ptr(new audit_strings(fs.space_names[i].get()->first, feature_name)));
           }
       }
   }
@@ -793,7 +793,7 @@ void add_constant_feature(vw& vw, example*ec)
   ec->feature_space[constant_namespace].push_back(1,constant);
   ec->total_sum_feat_sq++;
   ec->num_features++;
-  if (vw.audit || vw.hash_inv) ec->feature_space[constant_namespace].space_names.push_back(audit_strings("","Constant"));
+  if (vw.audit || vw.hash_inv) ec->feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("","Constant")));
 }
 
 void add_label(example* ec, float label, float weight, float base)
