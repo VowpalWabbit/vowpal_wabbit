@@ -16,19 +16,20 @@ namespace cs_unittest
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonContext>(new VowpalWabbitSettings(featureDiscovery:VowpalWabbitFeatureDiscovery.Json)))
             {
-                //vw.Validate("| Clicks:5 |a Bar:1 25_old |b Marker", new JsonContext() {
-                //    Ns1 = new Namespace1
-                //    {
-                //        Foo = 1,
-                //        Age = "25 old",
-                //        DontConsider = "XXX"
-                //    },
-                //    Ns2 = new Namespace2
-                //    {
-                //        FeatureA = true
-                //    },
-                //    Clicks = 5
-                //});
+                vw.Validate("| Clicks:5 |a Bar:1 25_old |b Marker", new JsonContext()
+                {
+                    Ns1 = new Namespace1
+                    {
+                        Foo = 1,
+                        Age = "25 old",
+                        DontConsider = "XXX"
+                    },
+                    Ns2 = new Namespace2
+                    {
+                        FeatureA = true
+                    },
+                    Clicks = 5
+                });
 
                 vw.Validate("| Clicks:5 |a Bar:1", new JsonContext() {
                     Ns1 = new Namespace1
