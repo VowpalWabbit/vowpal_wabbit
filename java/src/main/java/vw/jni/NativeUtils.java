@@ -3,6 +3,10 @@ package vw.jni;
 import java.io.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Simple library class for working with JNI (Java Native Interface),
@@ -17,6 +21,15 @@ public class NativeUtils {
      * Private constructor - this class will never be instanced
      */
     private NativeUtils() {
+    }
+
+    // Identifies which OS distributions can share binaries
+    private static final Map<String, List<String>> identicalOSs = new HashMap<String, List<String>>();
+    static {
+        // RedHat binaries
+        List<String> redHatAlternatives = new ArrayList<String>();
+        redHatAlternatives.add("Red_Hat.6");
+        identicalOSs.put("Scientific.6", redHatAlternatives);
     }
 
     /**
@@ -65,19 +78,21 @@ public class NativeUtils {
         return lsbRelease("-r", Pattern.compile("Release:\\s*(.*)\\s*$"));
     }
 
-    /**
+   /**
      * Returns the system dependent OS family.  In the case of a Linux OS it will combine
      * {@link NativeUtils#getDistroName()} and {@link NativeUtils#getLinuxVersion()}.
-     * @return A system dependent string identifying the OS.
+     * @return A list system dependent string identifying the OS.  This is a list because there are some OSs which are
+     * functionally identical to the one returned by lsbRelease.
      * @throws UnsupportedEncodingException If an error occurs while determining the Linux specific
      *          information.
      * @throws IOException If an I/O error occurs
      * @throws IllegalStateException If the os.name property returns an unsupported OS.
      */
-    public static String getOsFamily() throws IOException {
+    public static List<String> getOsFamilies() throws IOException {
         final String osName = System.getProperty("os.name");
+        final String primaryName;
         if (osName.toLowerCase().contains("mac")) {
-            return "Darwin";
+            primaryName = "Darwin";
         }
         else if (osName.toLowerCase().contains("linux")) {
             String distro = getDistroName();
@@ -90,9 +105,18 @@ public class NativeUtils {
             }
             // get the major version.
             // don't expect a period because linux version might not have one
-            return distro + "." + version.split("\\.")[0];
+            primaryName = distro + "." + version.split("\\.")[0];
         }
-        throw new IllegalStateException("Unsupported operating system " + osName);
+        else {
+            throw new IllegalStateException("Unsupported operating system " + osName);
+        }
+
+        List<String> viableFamilies = new ArrayList<String>();
+        viableFamilies.add(primaryName);
+        if (identicalOSs.containsKey(primaryName)) {
+            viableFamilies.addAll(identicalOSs.get(primaryName));
+        }
+        return viableFamilies;
     }
 
     /**
@@ -104,9 +128,16 @@ public class NativeUtils {
      * @throws IOException If temporary file creation or read/write operation fails
      */
     public static void loadOSDependentLibrary(String path, String suffix) throws IOException {
-        String osFamily = getOsFamily();
-        String osDependentLib = path + "." + osFamily + "." + System.getProperty("os.arch") + suffix;
-        if (NativeUtils.class.getResource(osDependentLib) != null) {
+        List<String> osFamilies = getOsFamilies();
+        String osDependentLib = null;
+        for (String osFamily : osFamilies) {
+            String currentOsDependentLib = path + "." + osFamily + "." + System.getProperty("os.arch") + suffix;
+            if (NativeUtils.class.getResource(currentOsDependentLib) != null) {
+                osDependentLib = currentOsDependentLib;
+                break;
+            }
+        }
+        if (osDependentLib != null) {
             loadLibraryFromJar(osDependentLib);
         }
         else {
