@@ -64,18 +64,18 @@ vw& setup(int argc, char* argv[])
   } else
       if (all.audit_regressor && !all.quiet)
       {
-          std::cerr << "Regressor contains " << all.loaded_regressor_values << " weights\n";
+          std::cerr << "Regressor contains " << all.loaded_regressor_values << " values\n";
           std::cerr << std::left
                 << std::setw(shared_data::col_example_counter) << "example"
                 << " "
-                << std::setw(shared_data::col_example_weight) << "features"
+                << std::setw(shared_data::col_example_weight) << "values"
                 << " "
                 << std::setw(shared_data::col_current_label) << "total"
                 << std::endl;
           std::cerr << std::left
                 << std::setw(shared_data::col_example_counter) << "counter"
                 << " "
-                << std::setw(shared_data::col_example_weight) << "demangled"
+                << std::setw(shared_data::col_example_weight) << "audited"
                 << " "
                 << std::setw(shared_data::col_current_label) << "progress"
                 << std::endl;
