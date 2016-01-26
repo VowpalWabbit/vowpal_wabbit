@@ -143,7 +143,7 @@ $(dataDir) $(stageDir):
 
 # Don't do like on the following line, because making the dir a dependency of the file that's in it will result in the file always getting remade, cuz the dir will always have a newer timestamp.
 # $(stageDir)/%.dir/done:	$(stageDir)/%.dir
-$(stageDir)/%.dir/done:
+$(stageDir)/%.dir/done:	$(EXEC)
 	@echo "Starting to run test $*"
 	dir=`dirname $@` ;\
 	mkdir -p $$dir ;\
@@ -178,7 +178,7 @@ $(stageDir)/%.dir/done:
 	@echo "Finished running test $*"
 
 # first diff all the results, then set exit status if non-empty
-%.compare:	$(expDir)/%/out $(expDir)/%/err
+%.compare:	$(DIFF) $(expDir)/%/out $(expDir)/%/err
 	dir=$(stageDir)/$*.dir ;\
 	rm -f $$dir/diffs ;\
 	for FILE in out err $($*.otherOutputs) ; do \
