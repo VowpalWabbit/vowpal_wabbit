@@ -11,7 +11,7 @@ make clean;
 make vw java;"
 
 ubuntu_base="apt-get update -qq;
-apt-get install -qq software-properties-common g++ make libboost-program-options-dev default-jdk;"
+apt-get install -qq software-properties-common g++ make libboost-program-options-dev zlib1g-dev default-jdk;"
 
 ubuntu_12="$ubuntu_base
 export JAVA_HOME=/usr/lib/jvm/java-6-openjdk-amd64;
