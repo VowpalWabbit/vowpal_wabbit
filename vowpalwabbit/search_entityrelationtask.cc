@@ -17,7 +17,7 @@ namespace EntityRelationTask
 using namespace Search;
 namespace CS = COST_SENSITIVE;
 
-void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount);
+void update_example_indicies(bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount);
 
 struct task_data
 { float relation_none_cost;
@@ -120,7 +120,7 @@ void decode_tag(v_array<char> tag, char& type, int& id1, int& id2)
 { string s1;
   string s2;
   type = tag[0];
-  uint32_t idx = 2;
+  size_t idx = 2;
   while(idx < tag.size() && tag[idx] != '_' && tag[idx] != '\0')
   { s1.push_back(tag[idx]);
     idx++;
@@ -152,10 +152,10 @@ size_t predict_entity(Search::search&sch, example* ex, v_array<size_t>& /*predic
   { if(isLdf)
     { for(size_t a=0; a<4; a++)
       { VW::copy_example_data(false, &my_task_data->ldf_entity[a], ex);
-        update_example_indicies(true, &my_task_data->ldf_entity[a], 28904713, 4832917 * (uint32_t)(a+1));
+        update_example_indicies(true, &my_task_data->ldf_entity[a], 28904713, 4832917 * (uint64_t)(a+1));
         CS::label& lab = my_task_data->ldf_entity[a].l.cs;
         lab.costs[0].x = 0.f;
-        lab.costs[0].class_index = (uint32_t)a;
+        lab.costs[0].class_index = (uint64_t)a;
         lab.costs[0].partial_prediction = 0.f;
         lab.costs[0].wap_value = 0.f;
       }
@@ -184,8 +184,8 @@ size_t predict_relation(Search::search&sch, example* ex, v_array<size_t>& predic
   decode_tag(ex->tag, type, id1, id2);
   v_array<uint32_t> constrained_relation_labels = v_init<uint32_t>();
   if(my_task_data->constraints && predictions[id1]!=0 &&predictions[id2]!=0)
-  { hist[0] = (uint32_t)predictions[id1];
-    hist[1] = (uint32_t)predictions[id2];
+  { hist[0] = predictions[id1];
+    hist[1] = predictions[id2];
   }
   else
   { hist[0] = 0;
@@ -211,10 +211,10 @@ size_t predict_relation(Search::search&sch, example* ex, v_array<size_t>& predic
     { int correct_label = 0; // if correct label is not in the set, use the first one
       for(size_t a=0; a<constrained_relation_labels.size(); a++)
       { VW::copy_example_data(false, &my_task_data->ldf_relation[a], ex);
-        update_example_indicies(true, &my_task_data->ldf_relation[a], 28904713, 4832917* (uint32_t)(constrained_relation_labels[a]));
+        update_example_indicies(true, &my_task_data->ldf_relation[a], 28904713, 4832917* (uint64_t)(constrained_relation_labels[a]));
         CS::label& lab = my_task_data->ldf_relation[a].l.cs;
         lab.costs[0].x = 0.f;
-        lab.costs[0].class_index = (uint32_t)constrained_relation_labels[a];
+        lab.costs[0].class_index = constrained_relation_labels[a];
         lab.costs[0].partial_prediction = 0.f;
         lab.costs[0].wap_value = 0.f;
         if(constrained_relation_labels[a] == ex->l.multi.label)
@@ -272,7 +272,7 @@ void er_mixed_decoding(Search::search& sch, vector<example*> ec, v_array<size_t>
       count++;
       for(size_t j=0; j<i; j++)
       { if(count ==t)
-        { uint32_t rel_index = (uint32_t) (n_ent + (2*n_ent-j-1)*j/2 + i-j-1);
+        { size_t rel_index = (n_ent + (2*n_ent-j-1)*j/2 + i-j-1);
           predictions[rel_index] = predict_relation(sch, ec[rel_index], predictions, rel_index);
           break;
         }
@@ -294,7 +294,7 @@ void er_allow_skip_decoding(Search::search& sch, vector<example*> ec, v_array<si
 
   // loop until all the entity and relation types are predicted
   for(size_t t=0; ; t++)
-  { uint32_t i = (uint32_t) t % ec.size();
+  { size_t i = t % ec.size();
     if(n_predicts == ec.size())
       break;
 
@@ -363,14 +363,12 @@ void run(Search::search& sch, vector<example*>& ec)
   predictions.delete_v();
 }
 // this is totally bogus for the example -- you'd never actually do this!
-void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount)
+void update_example_indicies(bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount)
 { for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-    for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; ++f)
-      f->weight_index = ((f->weight_index * mult_amount) + plus_amount);
-  if (audit)
-    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-      if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-        for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; ++f)
-          f->weight_index = ((f->weight_index * mult_amount) + plus_amount);
+    {
+      v_array<feature_index>& fis = ec->feature_space[*i].indicies;
+      for (size_t j = 0; j < fis.size(); ++j)
+        fis[j] = ((fis[j] * mult_amount) + plus_amount);
+    }
 }
 }

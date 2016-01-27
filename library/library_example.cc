@@ -63,4 +63,3 @@ int main(int argc, char *argv[])
   VW::finish_example(*model2, vec2);
   VW::finish(*model2);
 }
-

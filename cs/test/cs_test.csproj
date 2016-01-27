@@ -164,8 +164,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AttributesSample.cs" />
-    <Compile Include="ExploreClock.cs" />
-    <Compile Include="ExploreOnlySample.cs" />
     <Compile Include="NIPS2015Tutorial.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -179,10 +177,6 @@
     <ProjectReference Include="..\unittest\cs_unittest.csproj">
       <Project>{007b7de0-1d9b-498d-acfc-e9d33058f22e}</Project>
       <Name>cs_unittest</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\explore\clr\explore_clr.vcxproj">
-      <Project>{8400da16-1f46-4a31-a126-bbe16f62bfd7}</Project>
-      <Name>vw_explore_clr_wrapper</Name>
     </ProjectReference>
     <ProjectReference Include="..\cli\vw_clr.vcxproj">
       <Project>{85e55ae0-3784-4968-9271-c81af560e1c1}</Project>

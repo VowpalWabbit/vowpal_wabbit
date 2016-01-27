@@ -28,8 +28,8 @@ void validate_default_bits(vw& all, uint32_t local_num_bits)
 }
 
 void validate_num_bits(vw& all)
-{ if (all.num_bits > min(31, sizeof(size_t) * 8 - 3))
-  { THROW("Only " << min(31, sizeof(size_t) * 8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up.");
+{ if (all.num_bits > sizeof(size_t) * 8 - 3)
+  { THROW("Only " << sizeof(size_t) * 8 - 3 << " or fewer bits allowed.  If this is a serious limit, speak up.");
   }
 }
 }

@@ -8,356 +8,404 @@ namespace cs_unittest
     public class TestWrapped : TestWrappedBase
     {
 
-            [TestCategory("Command line through marshalling")]
-
-            [TestMethod]
-            public void Test1and2()
-            {
-                 Run("cs_test.Test1and2Class", "Test1and2");
-            }
-
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test1()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test1");
+                 Run("cs_unittest.RunTests", "CommandLine_Test1");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test2()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test2");
+                 Run("cs_unittest.RunTests", "CommandLine_Test2");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test3()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test3");
+                 Run("cs_unittest.RunTests", "CommandLine_Test3");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test4()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test4");
+                 Run("cs_unittest.RunTests", "CommandLine_Test4");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test5()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test5");
+                 Run("cs_unittest.RunTests", "CommandLine_Test5");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test6()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test6");
+                 Run("cs_unittest.RunTests", "CommandLine_Test6");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test7()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test7");
+                 Run("cs_unittest.RunTests", "CommandLine_Test7");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test8()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test8");
+                 Run("cs_unittest.RunTests", "CommandLine_Test8");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test11()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test11");
+                 Run("cs_unittest.RunTests", "CommandLine_Test11");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test12()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test12");
+                 Run("cs_unittest.RunTests", "CommandLine_Test12");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test15()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test15");
+                 Run("cs_unittest.RunTests", "CommandLine_Test15");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test21()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test21");
+                 Run("cs_unittest.RunTests", "CommandLine_Test21");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test22()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test22");
+                 Run("cs_unittest.RunTests", "CommandLine_Test22");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
+
+            [TestMethod]
+            public void CommandLine_Test23()
+            {
+                 Run("cs_unittest.RunTests", "CommandLine_Test23");
+            }
+
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test27()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test27");
+                 Run("cs_unittest.RunTests", "CommandLine_Test27");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test28()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test28");
+                 Run("cs_unittest.RunTests", "CommandLine_Test28");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test29()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test29");
+                 Run("cs_unittest.RunTests", "CommandLine_Test29");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test30()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test30");
+                 Run("cs_unittest.RunTests", "CommandLine_Test30");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test35()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test35");
+                 Run("cs_unittest.RunTests", "CommandLine_Test35");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test36()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test36");
+                 Run("cs_unittest.RunTests", "CommandLine_Test36");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test37()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test37");
+                 Run("cs_unittest.RunTests", "CommandLine_Test37");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test38()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test38");
+                 Run("cs_unittest.RunTests", "CommandLine_Test38");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test39()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test39");
+                 Run("cs_unittest.RunTests", "CommandLine_Test39");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test40()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test40");
+                 Run("cs_unittest.RunTests", "CommandLine_Test40");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test41()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test41");
+                 Run("cs_unittest.RunTests", "CommandLine_Test41");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test62()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test62");
+                 Run("cs_unittest.RunTests", "CommandLine_Test62");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test63()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test63");
+                 Run("cs_unittest.RunTests", "CommandLine_Test63");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test64()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test64");
+                 Run("cs_unittest.RunTests", "CommandLine_Test64");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test72()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test72");
+                 Run("cs_unittest.RunTests", "CommandLine_Test72");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test73()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test73");
+                 Run("cs_unittest.RunTests", "CommandLine_Test73");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test74()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test74");
+                 Run("cs_unittest.RunTests", "CommandLine_Test74");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test75()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test75");
+                 Run("cs_unittest.RunTests", "CommandLine_Test75");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test76()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test76");
+                 Run("cs_unittest.RunTests", "CommandLine_Test76");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test78()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test78");
+                 Run("cs_unittest.RunTests", "CommandLine_Test78");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test79()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test79");
+                 Run("cs_unittest.RunTests", "CommandLine_Test79");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test80()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test80");
+                 Run("cs_unittest.RunTests", "CommandLine_Test80");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test81()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test81");
+                 Run("cs_unittest.RunTests", "CommandLine_Test81");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test82()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test82");
+                 Run("cs_unittest.RunTests", "CommandLine_Test82");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test83()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test83");
+                 Run("cs_unittest.RunTests", "CommandLine_Test83");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test88()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test88");
+                 Run("cs_unittest.RunTests", "CommandLine_Test88");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
+
+            [TestMethod]
+            public void CommandLine_Test89()
+            {
+                 Run("cs_unittest.RunTests", "CommandLine_Test89");
+            }
+
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test90()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test90");
+                 Run("cs_unittest.RunTests", "CommandLine_Test90");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
+
+            [TestMethod]
+            public void CommandLine_Test91()
+            {
+                 Run("cs_unittest.RunTests", "CommandLine_Test91");
+            }
+
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test94()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test94");
+                 Run("cs_unittest.RunTests", "CommandLine_Test94");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test95()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test95");
+                 Run("cs_unittest.RunTests", "CommandLine_Test95");
             }
 
-            [TestCategory("Command line")]
+            [TestCategory("Command Line")]
 
             [TestMethod]
             public void CommandLine_Test97()
             {
-                 Run("cs_unittest.TestAll", "CommandLine_Test97");
+                 Run("cs_unittest.RunTests", "CommandLine_Test97");
+            }
+
+            [TestCategory("Command Line")]
+
+            [TestMethod]
+            public void CommandLine_Test107()
+            {
+                 Run("cs_unittest.RunTests", "CommandLine_Test107");
+            }
+
+            [TestCategory("Command Line")]
+
+            [TestMethod]
+            public void CommandLine_Test108()
+            {
+                 Run("cs_unittest.RunTests", "CommandLine_Test108");
+            }
+
+            [TestCategory("Command Line")]
+
+            [TestMethod]
+            public void CommandLine_Test109()
+            {
+                 Run("cs_unittest.RunTests", "CommandLine_Test109");
+            }
+
+            [TestCategory("Command Line")]
+
+            [TestMethod]
+            public void CommandLine_Test113()
+            {
+                 Run("cs_unittest.RunTests", "CommandLine_Test113");
             }
 
             [TestMethod]
@@ -492,6 +540,14 @@ namespace cs_unittest
             public void TestBool()
             {
                  Run("cs_unittest.TestMarshalling", "TestBool");
+            }
+
+            [TestCategory("Marshal")]
+
+            [TestMethod]
+            public void TestFeatureDiscoveryAll()
+            {
+                 Run("cs_unittest.TestMarshalling", "TestFeatureDiscoveryAll");
             }
 
             [TestCategory("Marshal")]
@@ -1362,6 +1418,20 @@ namespace cs_unittest
                  Run("cs_unittest.TestSerializer", "TestCustomFeaturizerOverideMethod");
             }
 
+            [TestMethod]
+            public void TestDictify()
+            {
+                 Run("cs_unittest.TestSerializer", "TestDictify");
+            }
+
+            [TestCategory("Command line through marshalling")]
+
+            [TestMethod]
+            public void Test1and2()
+            {
+                 Run("cs_test.Test1and2Class", "Test1and2");
+            }
+
             [TestCategory("Command line through marshalling")]
 
             [TestMethod]
@@ -1412,6 +1482,54 @@ namespace cs_unittest
             public void TestAntlr()
             {
                  Run("cs_unittest.TestAntlrClass", "TestAntlr");
+            }
+
+            [TestCategory("ObjectPool")]
+
+            [TestMethod]
+            public void ObjectPoolTestEmptyFactory()
+            {
+                 Run("cs_unittest.TestPooling", "ObjectPoolTestEmptyFactory");
+            }
+
+            [TestCategory("ObjectPool")]
+
+            [TestMethod]
+            public void ObjectPoolTestDisposed1()
+            {
+                 Run("cs_unittest.TestPooling", "ObjectPoolTestDisposed1");
+            }
+
+            [TestCategory("ObjectPool")]
+
+            [TestMethod]
+            public void ObjectPoolTestDisposed2()
+            {
+                 Run("cs_unittest.TestPooling", "ObjectPoolTestDisposed2");
+            }
+
+            [TestCategory("ObjectPool")]
+
+            [TestMethod]
+            public void ObjectPoolTestDangling()
+            {
+                 Run("cs_unittest.TestPooling", "ObjectPoolTestDangling");
+            }
+
+            [TestCategory("ObjectPool")]
+
+            [TestMethod]
+            public void ObjectPoolTestFactory()
+            {
+                 Run("cs_unittest.TestPooling", "ObjectPoolTestFactory");
+            }
+
+            [TestCategory("ObjectPool")]
+
+            [TestMethod]
+            public void ObjectPoolTestConcurrency()
+            {
+                 Run("cs_unittest.TestPooling", "ObjectPoolTestConcurrency");
             }
 
             [TestMethod]

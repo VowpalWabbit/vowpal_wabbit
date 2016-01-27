@@ -3,11 +3,12 @@
 #include "cb_algs.h"
 #include "rand48.h"
 #include "bs.h"
-#include "../explore/static/MWTExplorer.h"
+#include "../explore/cpp/MWTExplorer.h"
 #include "vw.h"
 
 using namespace LEARNER;
 using namespace MultiWorldTesting;
+using namespace MultiWorldTesting::SingleAction;
 
 struct cbify;
 

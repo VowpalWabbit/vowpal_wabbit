@@ -1,12 +1,12 @@
-Id 
-Min label:-1.000000
-Max label:1.000000
+Id
+Min label:-1
+Max label:1
 bits:18
 lda:0
-0 ngram: 
-0 skip: 
+0 ngram:
+0 skip:
 options: --oaa 3
-Checksum: -564463738
+Checksum: 3958061355
 :0
 Constant:202096:-0.129173
 Constant[1]:202097:0.058857

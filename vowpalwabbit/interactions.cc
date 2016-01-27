@@ -313,8 +313,8 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
       for (unsigned char* j = inter->begin; j != inter->end; ++j)
       { const int ns = *j;
-        num_features_in_inter *= ec.atomics[ns].size();
-        sum_feat_sq_in_inter *= ec.sum_feat_sq[ns];
+        num_features_in_inter *= ec.feature_space[ns].size();
+        sum_feat_sq_in_inter *= ec.feature_space[ns].sum_feat_sq;
         if (num_features_in_inter == 0) break;
       }
 
@@ -344,8 +344,8 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
       { if ((ns == inter->end-1) || (*ns != *(ns + 1))) // neighbour namespaces are different
         { // just multiply precomputed values
           const int nsc = *ns;
-          num_features_in_inter *= ec.atomics[nsc].size();
-          sum_feat_sq_in_inter *= ec.sum_feat_sq[nsc];
+          num_features_in_inter *= ec.feature_space[nsc].size();
+          sum_feat_sq_in_inter *= ec.feature_space[nsc].sum_feat_sq;
           if (num_features_in_inter == 0) break; //one of namespaces has no features - go to next interaction
         }
         else     // we are at beginning of a block made of same namespace (interaction is preliminary sorted)
@@ -358,7 +358,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
             if (*ns == *ns_end) ++order_of_inter;
 
           // namespace is same for whole block
-          v_array<feature>& features = ec.atomics[(const int)*ns];
+          features& fs = ec.feature_space[(const int)*ns];
 
           // count number of features with value != 1.;
           size_t cnt_ft_value_non_1 = 0;
@@ -376,10 +376,10 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
           while (results.size() < order_of_inter) results.push_back(0.);
 
           // recurrent value calculations
-          for (feature* ft = features.begin; ft != features.end; ++ft)
-          { const float x = ft->x*ft->x;
+          for (size_t i = 0; i < fs.size(); ++i)
+          { const float x = fs.values[i]*fs.values[i];
 
-            if ( !PROCESS_SELF_INTERACTIONS(ft->x) )
+            if ( !PROCESS_SELF_INTERACTIONS(fs.values[i]) )
             { for (size_t i = order_of_inter-1; i > 0; --i)
                 results[i] += results[i-1]*x;
 
@@ -404,7 +404,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
           // if number of features is less than  order of interaction then go to the next interaction
           // as you can't make simple combination of interaction 'aaa' if a contains < 3 features.
           // unless one of them has value != 1. and we are counting them.
-          const size_t ft_size = features.size();
+          const size_t ft_size = fs.size();
           if (cnt_ft_value_non_1 == 0 && ft_size < order_of_inter)
           { num_features_in_inter = 0;
             break;

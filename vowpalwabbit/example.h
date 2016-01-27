@@ -12,32 +12,18 @@ license as described in the file LICENSE.
 #include "cost_sensitive.h"
 #include "cb.h"
 #include "constant.h"
+#include "feature_group.h"
 
-const size_t wap_ldf_namespace  = 126;
-const size_t history_namespace  = 127;
-const size_t constant_namespace = 128;
-const size_t nn_output_namespace  = 129;
-const size_t autolink_namespace  = 130;
-const size_t neighbor_namespace  = 131;   // this is \x83 -- to do quadratic, say "-q a`printf "\x83"` on the command line
-const size_t affix_namespace     = 132;   // this is \x84
-const size_t spelling_namespace  = 133;   // this is \x85
-const size_t conditioning_namespace = 134;// this is \x86
-const size_t dictionary_namespace  = 135; // this is \x87
-
-struct feature
-{ float x;
-  uint32_t weight_index;
-  bool operator==(feature j) {return weight_index == j.weight_index;}
-  feature(float x_=0., uint32_t weight_index_=0) : x(x_), weight_index(weight_index_) {}
-};
-
-struct audit_data
-{ char* space;
-  char* feature;
-  size_t weight_index;
-  float x;
-  bool alloced;
-};
+const unsigned char wap_ldf_namespace  = 126;
+const unsigned char history_namespace  = 127;
+const unsigned char constant_namespace = 128;
+const unsigned char nn_output_namespace  = 129;
+const unsigned char autolink_namespace  = 130;
+const unsigned char neighbor_namespace  = 131;   // this is \x83 -- to do quadratic, say "-q a`printf "\x83"` on the command line
+const unsigned char affix_namespace     = 132;   // this is \x84
+const unsigned char spelling_namespace  = 133;   // this is \x85
+const unsigned char conditioning_namespace = 134;// this is \x86
+const unsigned char dictionary_namespace  = 135; // this is \x87
 
 typedef union
 { label_data simple;
@@ -67,21 +53,19 @@ struct example // core example datatype.
   v_array<char> tag;//An identifier for the example.
   size_t example_counter;
   v_array<unsigned char> indices;
-  v_array<feature> atomics[256]; // raw parsed data
-  uint32_t ft_offset;
+  features feature_space[256]; //Groups of feature values.
+  uint64_t ft_offset;//An offset for all feature values.
 
   //helpers
-  v_array<audit_data> audit_features[256];
   size_t num_features;//precomputed, cause it's fast&easy.
   float partial_prediction;//shared data for prediction.
   float updated_prediction;//estimated post-update prediction.
   v_array<float> topic_predictions;
   float loss;
   float example_t;//sum of importance weights so far.
-  float sum_feat_sq[256];//helper for total_sum_feat_sq.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
   float confidence;
-  v_array<feature>* passthrough; // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
+  features* passthrough; // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
 
   bool test_only;
   bool end_pass;//special example indicating end of pass.
@@ -98,13 +82,12 @@ struct flat_example
   char* tag;//An identifier for the example.
 
   size_t example_counter;
-  uint32_t ft_offset;
+  uint64_t ft_offset;
   float global_weight;
 
   size_t num_features;//precomputed, cause it's fast&easy.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
-  size_t feature_map_len;
-  feature* feature_map; //map to store sparse feature vectors
+  features fs;//all the features
 };
 
 flat_example* flatten_example(vw& all, example *ec);
@@ -122,9 +105,9 @@ inline bool valid_ns(char c)
 { return !(c == '|' || c == ':');
 }
 
-inline void add_passthrough_feature_magic(example& ec, uint32_t magic, uint32_t i, float x)
+inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t i, float x)
 { if (ec.passthrough)
-    ec.passthrough->push_back( feature(x, (FNV_prime * magic) ^ i) );
+    ec.passthrough->push_back( x, (FNV_prime * magic) ^ i);
 }
 
 #define add_passthrough_feature(ec, i, x) add_passthrough_feature_magic(ec, __FILE__[0]*483901+__FILE__[1]*3417+__FILE__[2]*8490177, i, x);

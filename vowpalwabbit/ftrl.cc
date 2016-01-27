@@ -43,7 +43,7 @@ void multipredict(ftrl& b, base_learner&, example& ec, size_t count, size_t step
   for (size_t c=0; c<count; c++)
     pred[c].scalar = ec.l.simple.initial;
   GD::multipredict_info mp = { count, step, pred, &all.reg, (float)all.sd->gravity };
-  GD::foreach_feature<GD::multipredict_info, uint32_t, GD::vec_add_multipredict>(all, ec, mp);
+  GD::foreach_feature<GD::multipredict_info, uint64_t, GD::vec_add_multipredict>(all, ec, mp);
   if (all.sd->contraction != 1.)
     for (size_t c=0; c<count; c++)
       pred[c].scalar *= (float)all.sd->contraction;
@@ -145,9 +145,9 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
 
   if (model_file.files.size() > 0)
   { bool resume = all->save_resume;
-    char buff[512];
-    uint32_t text_len = sprintf(buff, ":%d\n", resume);
-    bin_text_read_write_fixed(model_file,(char *)&resume, sizeof (resume), "", read, buff, text_len, text);
+    stringstream msg;
+    msg << ":"<< resume<< "\n";
+    bin_text_read_write_fixed(model_file,(char *)&resume, sizeof (resume), "", read, msg, text);
 
     if (resume)
       GD::save_load_online_state(*all, model_file, read, text);

@@ -115,22 +115,31 @@ void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
   ld->costs.erase();
 
   // handle shared and label first
-  if (words.size() == 1)
-  { float fx;
+  if (words.size() == 1) {
+    float fx;
     name_value(words[0], p->parse_name, fx);
     bool eq_shared = substring_eq(p->parse_name[0], "***shared***");
     bool eq_label  = substring_eq(p->parse_name[0], "***label***");
-    if (! sd->ldict)
-    { eq_shared |= substring_eq(p->parse_name[0], "shared");
+    if (! sd->ldict) {
+      eq_shared |= substring_eq(p->parse_name[0], "shared");
       eq_label  |= substring_eq(p->parse_name[0], "label");
     }
-    if (eq_shared || eq_label)
-    { if (p->parse_name.size() != 1) cerr << "shared feature vectors and label feature vectors should not have costs on: " << words[0] << endl;
-      else
-      { wclass f = { eq_shared ? -FLT_MAX : 0.f, 0, 0., 0.};
-        ld->costs.push_back(f);
-        return;
+    if (eq_shared || eq_label) {
+      if (eq_shared) {
+        if (p->parse_name.size() != 1) cerr << "shared feature vectors should not have costs on: " << words[0] << endl;
+        else {
+          wclass f = { -FLT_MAX, 0, 0., 0.};
+          ld->costs.push_back(f);
+        }
       }
+      if (eq_label) {
+        if (p->parse_name.size() != 2) cerr << "label feature vectors should have exactly one cost on: " << words[0] << endl;
+        else {
+          wclass f = { float_of_substring(p->parse_name[1]), 0, 0., 0.};
+          ld->costs.push_back(f);
+        }
+      }
+      return;
     }
   }
 
@@ -143,7 +152,7 @@ void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
       THROW(" invalid cost: specification -- no names on: " << words[i]);
 
     if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3)
-    { f.class_index = sd->ldict ? sd->ldict->get(p->parse_name[0]) : (uint32_t)hashstring(p->parse_name[0], 0);
+    { f.class_index = sd->ldict ? (uint32_t)sd->ldict->get(p->parse_name[0]) : (uint32_t)hashstring(p->parse_name[0], 0);
       if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
         f.x = FLT_MAX;
     }

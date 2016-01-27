@@ -6,113 +6,90 @@ namespace LabelDict
 {
 size_t hash_lab(size_t lab) { return 328051 + 94389193 * lab; }
 
-void del_example_namespace(example& ec, char ns, v_array<feature>& features, bool audit)
-{ size_t numf = features.size();
-  // print_update is called after this del_example_namespace,
-  // so we need to keep the ec.num_features correct,
-  // so shared features are included in the reported number of "current features"
-  //ec.num_features -= numf;
-
-  assert (ec.atomics[(size_t)ns].size() >= numf);
-  if (ec.atomics[(size_t)ns].size() == numf)   // did NOT have ns
-  { assert(ec.indices.size() > 0);
-    assert(ec.indices[ec.indices.size()-1] == (size_t)ns);
-    ec.indices.pop();
-    ec.total_sum_feat_sq -= ec.sum_feat_sq[(size_t)ns];
-    ec.atomics[(size_t)ns].erase();
-    ec.sum_feat_sq[(size_t)ns] = 0.;
-    if (audit)
-      ec.audit_features[(size_t)ns].erase();
+  void del_example_namespace(example& ec, char ns, features& fs)
+  {
+    // print_update is called after this del_example_namespace,
+    // so we need to keep the ec.num_features correct,
+    // so shared features are included in the reported number of "current features"
+    //ec.num_features -= numf;
+    features& del_target = ec.feature_space[(size_t)ns];
+    assert(del_target.size() >= fs.size());
+    assert(ec.indices.size() > 0);
+    if (ec.indices.last() == ns && ec.feature_space[(size_t)ns].size() == fs.size())
+      ec.indices.pop();
+    ec.total_sum_feat_sq -= fs.sum_feat_sq;
+    del_target.truncate_to(del_target.size() - fs.size());
+    del_target.sum_feat_sq -= fs.sum_feat_sq;
   }
-  else     // DID have ns
-  { for (feature*f=features.begin; f!=features.end; f++)
-    { ec.sum_feat_sq[(size_t)ns] -= f->x * f->x;
-      ec.atomics[(size_t)ns].pop();
-      if (audit)
-        ec.audit_features[(size_t)ns].pop();
-    }
-  }
-}
 
-void add_example_namespace(example& ec, char ns, v_array<feature>& features, v_array<audit_data>* audit)
+void add_example_namespace(example& ec, char ns, features& fs)
 { bool has_ns = false;
   for (size_t i=0; i<ec.indices.size(); i++)
-  { if (ec.indices[i] == (size_t)ns)
-    { has_ns = true;
-      break;
+    if (ec.indices[i] == (size_t)ns)
+      { has_ns = true;
+        break;
+      }
+
+  if (!has_ns)
+    ec.indices.push_back((size_t)ns);
+
+  bool audit = fs.space_names.size() > 0;
+  features& add_fs = ec.feature_space[(size_t)ns];
+ for (size_t i = 0; i < fs.size(); ++i)
+    {
+      add_fs.push_back(fs.values[i], fs.indicies[i]);
+      if (audit)
+        add_fs.space_names.push_back(fs.space_names[i]);
     }
-  }
-  if (has_ns)
-  { ec.total_sum_feat_sq -= ec.sum_feat_sq[(size_t)ns];
-  }
-  else
-  { ec.indices.push_back((size_t)ns);
-    ec.sum_feat_sq[(size_t)ns] = 0;
-  }
+  ec.total_sum_feat_sq += fs.sum_feat_sq;
 
-  for (feature*f=features.begin; f!=features.end; f++)
-  { ec.sum_feat_sq[(size_t)ns] += f->x * f->x;
-    ec.atomics[(size_t)ns].push_back(*f);
-  }
-
-  ec.num_features += features.size();
-  ec.total_sum_feat_sq += ec.sum_feat_sq[(size_t)ns];
-
-  if (audit != nullptr)
-    for (audit_data*f = audit->begin; f != audit->end; ++f)
-    { audit_data f2 = { f->space, f->feature, f->weight_index, f->x, false };
-      ec.audit_features[(size_t)ns].push_back(f2);
-    }
+  ec.num_features += fs.size();
 }
 
-void add_example_namespaces_from_example(example& target, example& source, bool audit)
+void add_example_namespaces_from_example(example& target, example& source)
 { for (unsigned char* idx=source.indices.begin; idx!=source.indices.end; idx++)
-  { if (*idx == constant_namespace) continue;
-    add_example_namespace(target, (char)*idx, source.atomics[*idx],
-                          audit ? &source.audit_features[*idx] : nullptr);
-  }
+    { if (*idx == constant_namespace) continue;
+      add_example_namespace(target, (char)*idx, source.feature_space[*idx]);
+    }
 }
 
-void del_example_namespaces_from_example(example& target, example& source, bool audit)
+void del_example_namespaces_from_example(example& target, example& source)
 { //for (size_t*idx=source.indices.begin; idx!=source.indices.end; idx++) {
   unsigned char* idx = source.indices.end;
   idx--;
   for (; idx>=source.indices.begin; idx--)
-  { if (*idx == constant_namespace) continue;
-    del_example_namespace(target, (char)*idx, source.atomics[*idx], audit);
-  }
+    { if (*idx == constant_namespace) continue;
+      del_example_namespace(target, (char)*idx, source.feature_space[*idx]);
+    }
 }
 
-void add_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab, bool audit)
+void add_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab)
 { size_t lab_hash = hash_lab(lab);
-  feature_audit& res = lfm.get(lab, lab_hash);
-  if (res.features.size() == 0) return;
-  add_example_namespace(ec, 'l', res.features, audit ? &res.audit : nullptr);
+  features& res = lfm.get(lab, lab_hash);
+  if (res.size() == 0) return;
+  add_example_namespace(ec, 'l', res);
 }
 
-void del_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab, bool audit)
+void del_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab)
 { size_t lab_hash = hash_lab(lab);
-  feature_audit& res = lfm.get(lab, lab_hash);
-  if (res.features.size() == 0) return;
-  del_example_namespace(ec, 'l', res.features, audit);
+  features& res = lfm.get(lab, lab_hash);
+  if (res.size() == 0) return;
+  del_example_namespace(ec, 'l', res);
 }
 
-void set_label_features(label_feature_map& lfm, size_t lab, v_array<feature>&features, v_array<audit_data>* audit)
+void set_label_features(label_feature_map& lfm, size_t lab, features& fs)
 { size_t lab_hash = hash_lab(lab);
-  if (lfm.contains(lab, lab_hash)) { return; }
-  const v_array<audit_data> empty = { nullptr, nullptr, nullptr, 0 };
-  feature_audit fa = { features, audit ? (*audit) : empty };
-  lfm.put_after_get(lab, lab_hash, fa);
+  if (lfm.contains(lab, lab_hash)) return;
+  lfm.put_after_get(lab, lab_hash, fs);
 }
 
 void free_label_features(label_feature_map& lfm)
 { void* label_iter = lfm.iterator();
   while (label_iter != nullptr)
-  { feature_audit *res = lfm.iterator_get_value(label_iter);
-    res->features.erase();
-    res->features.delete_v();
-    res->audit.erase();
-    res->audit.delete_v();
+  { features *res = lfm.iterator_get_value(label_iter);
+    res->values.delete_v();
+    res->indicies.delete_v();
+    res->space_names.delete_v();
 
     label_iter = lfm.iterator_next(label_iter);
   }

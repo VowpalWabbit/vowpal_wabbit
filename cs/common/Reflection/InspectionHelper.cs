@@ -55,12 +55,13 @@ namespace VW.Reflection
                 }
             }
 
-            if (typeof(IEnumerable<object>).IsAssignableFrom(type))
+            var enumerableType = type.GetInterfaces().Union(new[] { type })
+                    .FirstOrDefault(it => it.IsGenericType && it.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+
+            if (enumerableType != null)
             {
                 // let's get T of IEnumerable<T>
-                var elemType = type.GetInterfaces().Union(new[] { type })
-                    .First(it => it.IsGenericType && it.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                    .GetGenericArguments()[0];
+                var elemType = enumerableType.GetGenericArguments()[0];
 
                 if (IsNumericType(elemType))
                 {
