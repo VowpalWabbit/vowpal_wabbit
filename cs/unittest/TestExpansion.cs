@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VW;
 using VW.Serializer.Attributes;
 
 namespace cs_unittest
@@ -20,6 +21,19 @@ namespace cs_unittest
                 vw.Validate("| 3:.1 4:.2 5:.3", new ExpansionContext() { Features = new[] { .1f, .2f, .3f }, Offset = 3 });
             }
         }
+
+        [TestMethod]
+        [TestCategory("Marshal")]
+        public void TestMultilineExpansion()
+        {
+            using (var vw = new VowpalWabbit<EmptyContext, ExpansionContext>(string.Empty))
+            {
+            }
+        }
+    }
+
+    public class EmptyContext
+    {
     }
 
     public class ExpansionContext

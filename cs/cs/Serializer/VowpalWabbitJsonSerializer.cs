@@ -68,11 +68,11 @@ namespace VW.Serializer
         /// </summary>
         /// <param name="json">The example to parse.</param>
         /// <returns>The VowpalWabbit native example.</returns>
-        public VowpalWabbitExample Parse(string json)
+        public VowpalWabbitExample Parse(string json, ILabel label = null)
         {
             using (var textReader = new JsonTextReader(new StringReader(json)))
             {
-                return this.Parse(textReader);
+                return this.Parse(textReader, label);
             }
         }
 
@@ -81,13 +81,16 @@ namespace VW.Serializer
         /// </summary>
         /// <param name="reader">The example to parse.</param>
         /// <returns>The VowpalWabbit native example.</returns>
-        public VowpalWabbitExample Parse(JsonReader reader)
+        public VowpalWabbitExample Parse(JsonReader reader, ILabel label = null)
         {
             // avoid parameter passing for the sake of non-reentrantness
             this.reader = reader;
             using (VowpalWabbitMarshalContext context = new VowpalWabbitMarshalContext(this.vw))
             using (VowpalWabbitMarshalContext defaultNamespaceContext = new VowpalWabbitMarshalContext(this.vw, context.ExampleBuilder))
             {
+                if (label != null)
+                    this.defaultMarshaller.MarshalLabel(context, label);
+
                 if (!reader.Read())
                     throw new ArgumentException("json");
 
@@ -109,7 +112,9 @@ namespace VW.Serializer
                                     switch (propertyName)
                                     {
                                         case "_label":
-                                            this.ParseLabel(context);
+                                            // passed in label has precedence
+                                            if (label == null)
+                                                this.ParseLabel(context);
                                             break;
                                         //case "_shared":
                                         //    break;

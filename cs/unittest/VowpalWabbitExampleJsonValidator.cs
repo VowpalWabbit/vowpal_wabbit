@@ -26,10 +26,10 @@ namespace cs_unittest
             this.jsonSerializer = new VowpalWabbitJsonSerializer(this.vw);
         }
 
-        public void Validate(string line, string json, IVowpalWabbitLabelComparator labelComparator = null)
+        public void Validate(string line, string json, IVowpalWabbitLabelComparator labelComparator = null, ILabel label = null)
         {
             using (var strExample = this.vw.ParseLine(line))
-            using (var jsonExample = this.jsonSerializer.Parse(json))
+            using (var jsonExample = this.jsonSerializer.Parse(json, label))
             using (var strJsonExample = this.vw.ParseLine(jsonExample.VowpalWabbitString))
             {
                 var diff = strExample.Diff(this.vw, jsonExample, labelComparator);
