@@ -74,11 +74,11 @@ namespace VW.Serializer
         /// If null, <paramref name="json"/> will be inspected and the "_label" property used as label.
         /// </param>
         /// <returns>The VowpalWabbit native example.</returns>
-        public VowpalWabbitExample Parse(string json)
+        public VowpalWabbitExample Parse(string json, ILabel label = null)
         {
             using (var textReader = new JsonTextReader(new StringReader(json)))
             {
-                return this.Parse(textReader);
+                return this.Parse(textReader, label);
             }
         }
 
@@ -91,7 +91,7 @@ namespace VW.Serializer
         /// If null, <paramref name="reader"/> will be inspected and the "_label" property used as label.
         /// </param>
         /// <returns>The VowpalWabbit native example.</returns>
-        public VowpalWabbitExample Parse(JsonReader reader)
+        public VowpalWabbitExample Parse(JsonReader reader, ILabel label = null)
         {
             // avoid parameter passing for the sake of non-reentrantness
             this.reader = reader;

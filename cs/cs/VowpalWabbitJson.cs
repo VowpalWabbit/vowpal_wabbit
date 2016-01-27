@@ -6,8 +6,10 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+using Newtonsoft.Json;
 using System;
 using System.Diagnostics.Contracts;
+using VW.Interfaces;
 using VW.Serializer;
 
 namespace VW
@@ -69,9 +71,13 @@ namespace VW
         /// Learns from the given example.
         /// </summary>
         /// <param name="json">The example to learn.</param>
-        public void Learn(string json)
+        /// <param name="label">
+        /// Optional label, taking precedence over "_label" property found in <paramref name="json"/>.
+        /// If null, <paramref name="json"/> will be inspected and the "_label" property used as label.
+        /// </param>
+        public void Learn(string json, ILabel label = null)
         {
-            using (var example = this.serializer.Parse(json))
+            using (var example = this.serializer.Parse(json, label))
             {
                 this.vw.Learn(example);
             }
@@ -134,7 +140,7 @@ namespace VW
         /// <returns>The prediction for the given <paramref name="reader"/>.</returns>
         public TPrediction Learn<TPrediction>(JsonReader reader, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
         {
-            using (var example = this.serializer.Parse(json))
+            using (var example = this.serializer.Parse(reader, label))
             {
                 return this.vw.Learn(example, predictionFactory);
             }
@@ -144,14 +150,18 @@ namespace VW
         /// Predicts for the given example.
         /// </summary>
         /// <param name="json">The example to predict for.</param>
-        public void Predict(string json)
+        /// <param name="label">
+        /// Optional label, taking precedence over "_label" property found in <paramref name="json"/>.
+        /// If null, <paramref name="json"/> will be inspected and the "_label" property used as label.
+        /// </param>
+
+        public void Predict(string json, ILabel label = null)
         {
             using (var example = this.serializer.Parse(json, label))
             {
                 this.vw.Predict(example);
             }
         }
-
 
         /// <summary>
         /// Predicts for the given example.
@@ -199,7 +209,7 @@ namespace VW
         /// </param>
         public TPrediction Predict<TPrediction>(JsonReader reader, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
         {
-            using (var example = this.serializer.Parse(json))
+            using (var example = this.serializer.Parse(reader, label))
             {
                 return this.vw.Predict(example, predictionFactory);
             }
