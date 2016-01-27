@@ -365,6 +365,7 @@
     <ClInclude Include="feature_group.h" />
     <ClInclude Include="gd.h" />
     <ClInclude Include="interactions.h" />
+    <ClInclude Include="audit_regressor.h" />
     <ClInclude Include="ftrl.h" />
     <ClInclude Include="label_dictionary.h" />
     <ClInclude Include="memory.h" />
@@ -443,6 +444,7 @@
     <ClCompile Include="example.cc" />
     <ClCompile Include="gd.cc" />
     <ClCompile Include="interactions.cc" />
+    <ClCompile Include="audit_regressor.cc" />
     <ClCompile Include="ftrl.cc" />
     <ClCompile Include="interact.cc" />
     <ClCompile Include="kernel_svm.cc" />
