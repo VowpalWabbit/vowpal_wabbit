@@ -102,7 +102,7 @@ namespace VW.Serializer
                     this.defaultMarshaller.MarshalLabel(context, label);
 
                 if (!reader.Read() || reader.TokenType != JsonToken.StartObject)
-                    throw new JsonSerializationException("Expected start object at ");
+                    throw new VowpalWabbitJsonException(reader.Path, "Expected start object");
 
                 Namespace defaultNamespace = new Namespace(this.vw);
                 using (defaultNamespaceContext.NamespaceBuilder = defaultNamespaceContext.ExampleBuilder.AddNamespace(VowpalWabbitConstants.DefaultNamespace))
