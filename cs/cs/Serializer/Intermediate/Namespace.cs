@@ -25,7 +25,7 @@ namespace VW.Serializer.Intermediate
         public Namespace(VowpalWabbit vw, string name, char? featureGroup)
         {
             this.Name = name;
-            this.FeatureGroup = featureGroup ?? ' ';
+            this.FeatureGroup = featureGroup ?? VowpalWabbitConstants.DefaultNamespace;
 
             if (featureGroup == null && !string.IsNullOrWhiteSpace(name))
             {
