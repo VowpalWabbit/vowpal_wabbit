@@ -26,6 +26,7 @@ namespace VW.Serializer
         {
             return type == typeof(double)
                     || type == typeof(float)
+                    || type == typeof(byte)
                     || type == typeof(decimal)
                     || type == typeof(UInt16)
                     || type == typeof(UInt32)

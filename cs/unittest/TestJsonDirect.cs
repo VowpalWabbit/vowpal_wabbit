@@ -102,6 +102,16 @@ namespace cs_unittest
                 });
             }
         }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonByte()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<JsonContextByte>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
+            {
+                vw.Validate("| Feature:25", new JsonContextByte { Feature = 25 });
+            }
+        }
     }
 
     [JsonObject(MemberSerialization = MemberSerialization.OptOut)]
@@ -148,6 +158,11 @@ namespace cs_unittest
 
         [JsonProperty(PropertyName = "_aux", NullValueHandling = NullValueHandling.Ignore)]
         public object IgnoreMe2 { get; set; }
+    }
+
+    public class JsonContextByte
+    {
+        public byte Feature { get; set; }
     }
 
     public class Namespace1

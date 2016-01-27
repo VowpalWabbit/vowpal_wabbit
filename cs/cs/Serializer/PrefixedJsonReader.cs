@@ -19,19 +19,19 @@ namespace VW.Serializer
     internal class PrefixedJsonReader : JsonReader
     {
         private JsonReader reader;
-        private Stack<Tuple<JsonToken, object>> prefix;
+        private Queue<Tuple<JsonToken, object>> prefix;
 
         internal PrefixedJsonReader(JsonReader reader, params Tuple<JsonToken, object>[] prefix)
         {
             this.reader = reader;
-            this.prefix = new Stack<Tuple<JsonToken, object>>(prefix.Reverse());
+            this.prefix = new Queue<Tuple<JsonToken, object>>(prefix);
         }
 
         public override bool Read()
         {
             if (this.prefix.Count > 0)
             {
-                var t = prefix.Pop();
+                var t = prefix.Dequeue();
                 this.SetToken(t.Item1, t.Item2);
                 return true;
             }

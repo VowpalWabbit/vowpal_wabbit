@@ -154,6 +154,7 @@ namespace VW
         /// Optional label, taking precedence over "_label" property found in <paramref name="json"/>.
         /// If null, <paramref name="json"/> will be inspected and the "_label" property used as label.
         /// </param>
+
         public void Predict(string json, ILabel label = null)
         {
             using (var example = this.serializer.Parse(json, label))
@@ -161,7 +162,6 @@ namespace VW
                 this.vw.Predict(example);
             }
         }
-
 
         /// <summary>
         /// Predicts for the given example.
