@@ -41,7 +41,7 @@ namespace VW
                 m_regressors = gcnew List<String^>;
 
                 vector<string> regs = vm["initial_regressor"].as< vector<string> >();
-                for (auto iter = regs.begin(); iter != regs.end(); iter++)
+                for (auto iter = regs.begin()(); iter != regs.end()(); iter++)
                     m_regressors->Add(gcnew String(iter->c_str()));
             }
         }

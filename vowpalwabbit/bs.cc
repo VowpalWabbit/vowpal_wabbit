@@ -150,7 +150,7 @@ void output_example(vw& all, bs& d, example& ec)
     }
   }
 
-  for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+  for (int* sink = all.final_prediction_sink.begin(); sink != all.final_prediction_sink.end(); sink++)
     print_result(*sink, ec.pred.scalar, ec.tag, d.lb, d.ub);
 
   print_update(all, ec);

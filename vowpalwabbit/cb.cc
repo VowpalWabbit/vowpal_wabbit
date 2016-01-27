@@ -237,11 +237,11 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
 
   ld->action = (uint32_t)hashstring(words[0], 0);
 
-  words.begin++;
+  words.begin()++;
 
   CB::parse_label(p, sd, &(ld->event), words);
 
-  words.begin--;
+  words.begin()--;
 }
 
 label_parser cb_eval = {default_label, parse_label,

@@ -134,7 +134,7 @@ void finish_example(vw& all, example& ec)
 
   all.sd->update(ec.test_only, loss, ec.l.multi.weight, ec.num_features);
 
-  for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+  for (auto sink : all.final_prediction_sink)
     if (! all.sd->ldict)
       all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
     else

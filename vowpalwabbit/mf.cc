@@ -60,11 +60,10 @@ void predict(mf& data, base_learner& base, example& ec)
   ec.indices.push_back(0);
 
   // add interaction terms to prediction
-  for (vector<string>::iterator i = data.pairs.begin(); i != data.pairs.end(); i++)
+  for (auto& i : data.pairs)
   {
-
-    int left_ns = (int) (*i)[0];
-    int right_ns = (int) (*i)[1];
+    int left_ns = (int) i[0];
+    int right_ns = (int) i[1];
 
     if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
     { for (size_t k = 1; k <= data.rank; k++)
@@ -117,11 +116,11 @@ void learn(mf& data, base_learner& base, example& ec)
 
   // update interaction terms
   // looping over all pairs of non-empty namespaces
-  for (vector<string>::iterator i = data.pairs.begin(); i != data.pairs.end(); i++)
+  for (auto& i : data.pairs)
   {
 
-    int left_ns = (int) (*i)[0];
-    int right_ns = (int) (*i)[1];
+    int left_ns = (int) i[0];
+    int right_ns = (int) i[1];
 
     if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
     {

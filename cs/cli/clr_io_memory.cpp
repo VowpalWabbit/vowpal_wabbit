@@ -11,19 +11,19 @@ namespace VW
     clr_io_memory_buf::clr_io_memory_buf()
     {
         files.push_back(0);
-        m_iterator = m_data.begin();
+        m_iterator = m_data.begin()();
     }
 
     int clr_io_memory_buf::open_file(const char* name, bool stdin_off, int flag)
     {
-        m_iterator = m_data.begin();
+        m_iterator = m_data.begin()();
         return 0;
     }
 
     void clr_io_memory_buf::reset_file(int f)
     {
         size_t count = m_data.size();
-        m_iterator = m_data.begin();
+        m_iterator = m_data.begin()();
     }
 
     ssize_t clr_io_memory_buf::read_file(int f, void* buf, size_t nbytes)

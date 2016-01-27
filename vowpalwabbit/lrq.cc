@@ -56,9 +56,9 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
   // Remember original features
 
   memset (lrq.orig_size, 0, sizeof (lrq.orig_size));
-  for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
-  { if (lrq.lrindices[*i])
-      lrq.orig_size[*i] = ec.feature_space[*i].size ();
+  for (auto i : ec.indices)
+  { if (lrq.lrindices[i])
+      lrq.orig_size[i] = ec.feature_space[i].size ();
   }
 
   size_t which = ec.example_counter;
@@ -75,12 +75,10 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
     // TODO: what happens with --lrq ab2 --lrq ac2
     //       i.e. namespace occurs multiple times (?)
 
-    for (set<string>::iterator i = lrq.lrpairs.begin ();
-         i != lrq.lrpairs.end ();
-         ++i)
-    { unsigned char left = (*i)[which%2];
-      unsigned char right = (*i)[(which+1)%2];
-      unsigned int k = atoi (i->c_str () + 2);
+    for (auto& i lrq.lrpairs)
+    { unsigned char left = i[which%2];
+      unsigned char right = i[(which+1)%2];
+      unsigned int k = atoi (i.c_str () + 2);
 
       features& left_fs = ec.feature_space[left];
       for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
@@ -145,10 +143,8 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
         ec.loss = first_loss;
       }
 
-    for (set<string>::iterator i = lrq.lrpairs.begin ();
-         i != lrq.lrpairs.end ();
-         ++i)
-      { unsigned char right = (*i)[(which+1)%2];
+    for (auto& i lrq.lrpairs)
+      { unsigned char right = i[(which+1)%2];
         ec.feature_space[right].truncate_to(lrq.orig_size[right]);
       }
   }
@@ -174,7 +170,7 @@ base_learner* lrq_setup(vw& all)
   vector<string> arg = all.vm["lrq"].as<vector<string> > ();
   for (size_t i = 0; i < arg.size(); i++) arg[i] = spoof_hex_encoded_namespaces( arg[i] );
 
-  new(&lrq.lrpairs) std::set<std::string> (arg.begin (), arg.end ());
+  new(&lrq.lrpairs) std::set<std::string> (arg.begin(), arg.end());
 
   lrq.initial_seed = lrq.seed = all.random_seed | 8675309;
   if (all.vm.count("lrqdropout"))
@@ -184,10 +180,8 @@ base_learner* lrq_setup(vw& all)
   else
     lrq.dropout = false;
 
-  for (set<string>::iterator i = lrq.lrpairs.begin ();
-       i != lrq.lrpairs.end ();
-       ++i)
-    *all.file_options << " --lrq " << *i;
+  for (auto& i lrq.lrpairs)
+    *all.file_options << " --lrq " << i;
 
   if (! all.quiet)
   { cerr << "creating low rank quadratic features for pairs: ";
@@ -195,23 +189,21 @@ base_learner* lrq_setup(vw& all)
       cerr << "(using dropout) ";
   }
 
-  for (set<string>::iterator i = lrq.lrpairs.begin ();
-       i != lrq.lrpairs.end ();
-       ++i)
+  for (auto& i lrq.lrpairs)
   { if(!all.quiet)
-    { if (( i->length() < 3 ) || ! valid_int (i->c_str () + 2))
+    { if (( i.length() < 3 ) || ! valid_int (i.c_str () + 2))
       { free(&lrq);
         THROW("error, low-rank quadratic features must involve two sets and a rank.");
       }
 
-      cerr << *i << " ";
+      cerr << i << " ";
     }
     // TODO: colon-syntax
 
-    unsigned int k = atoi (i->c_str () + 2);
+    unsigned int k = atoi (i.c_str () + 2);
 
-    lrq.lrindices[(int) (*i)[0]] = 1;
-    lrq.lrindices[(int) (*i)[1]] = 1;
+    lrq.lrindices[(int) i[0]] = 1;
+    lrq.lrindices[(int) i[1]] = 1;
 
     maxk = max (maxk, k);
   }
