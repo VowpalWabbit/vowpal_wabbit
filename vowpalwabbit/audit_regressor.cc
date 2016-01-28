@@ -12,7 +12,7 @@ license as described in the file LICENSE.
 struct audit_regressor_data
 {
     vw* all;
-    size_t cur_ft_offset;
+    size_t increment;
     size_t cur_class;
     size_t total_class_cnt;
     vector<string> ns_pre;
@@ -72,10 +72,17 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float /*ft_
 // This is a learner which does nothing with examples.
 //void learn(audit_regressor_data&, LEARNER::base_learner&, example&) {}
 
-void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& /*base*/, example& ec)
+void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, example& ec)
 {       
 
     vw& all = *rd.all;
+
+    if (rd.increment == 0)
+    {
+        rd.increment = base.increment/base.weights;
+        rd.total_class_cnt = base.weights;
+    }
+
     if (all.lda > 0)
     {
         ostringstream tempstream;
@@ -103,9 +110,7 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& /*base*/, 
         uint64_t old_offset = ec.ft_offset;
 
         while ( rd.cur_class < rd.total_class_cnt )
-        {
-
-            rd.cur_ft_offset = ec.ft_offset;
+        {            
 
             for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
             { features& fs = ec.feature_space[(size_t)*i];
@@ -124,7 +129,8 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& /*base*/, 
 
             INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true, audit_regressor_interaction >(*rd.all, ec, rd);
 
-            ec.ft_offset += 4*(++rd.cur_class);
+            ec.ft_offset += rd.increment;
+            ++rd.cur_class;
         }
 
         ec.ft_offset = old_offset; // make sure example is not changed.
@@ -185,18 +191,6 @@ void init_driver(audit_regressor_data& dat)
 
     if (dat.all->loaded_regressor_values == 0)
         THROW("regressor has no non-zero weights. Nothing to audit.");
-
-    // get number of classes
-    if (vm.count("oaa"))
-        dat.total_class_cnt = vm["oaa"].as<size_t>();
-    else
-        if (vm.count("ect"))
-            dat.total_class_cnt = vm["ect"].as<size_t>();
-        else
-            if (vm.count("csoaa"))
-                dat.total_class_cnt = vm["csoaa"].as<size_t>();
-            else // by default one feature corresponds to one regressor value
-                dat.total_class_cnt = 1;
 }
 
 
