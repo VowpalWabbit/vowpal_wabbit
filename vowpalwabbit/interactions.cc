@@ -311,9 +311,8 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
     { size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
 
-      for (auto j : inter)
-      { const int ns = j;
-        num_features_in_inter *= ec.feature_space[ns].size();
+      for (auto ns : inter)
+      { num_features_in_inter *= ec.feature_space[ns].size();
         sum_feat_sq_in_inter *= ec.feature_space[ns].sum_feat_sq;
         if (num_features_in_inter == 0) break;
       }
