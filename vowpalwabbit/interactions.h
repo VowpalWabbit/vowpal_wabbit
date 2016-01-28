@@ -193,21 +193,21 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
                 const uint64_t halfhash1 = FNV_prime * (uint64_t)first.indicies[i];
                 const float& ft_value = first.values[i];
                 size_t j=0;
-                if (same_namespace1)                // next index differs for permutations and simple combinations
+                if (same_namespace1) // next index differs for permutations and simple combinations
                   j = (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i+1;
 
                 for (; j < second.indicies.size(); ++j)
                 { //f3 x k*(f2 x k*f1)
                   if(audit) audit_func(dat, second.space_names[j].get());
                   feature_index halfhash = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
-                  feature_value ft_value = INTERACTION_VALUE(ft_value, second.values[j]);
+                  feature_value int_ft_value = INTERACTION_VALUE(ft_value, second.values[j]);
 
                   auto range = second.values_indices_audit();
                   auto begin = range.begin();
-                  if (same_namespace2)
-                    begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? j : j + 1;
+                  if (same_namespace2) //next index differs for permutations and simple combinations
+                    begin += (PROCESS_SELF_INTERACTIONS(int_ft_value)) ? j : j + 1;
 
-                  inner_kernel<R, S, T, audit, audit_func>(dat, begin, range.end(), offset, weight_mask, weight_vector, ft_value, halfhash);
+                  inner_kernel<R, S, T, audit, audit_func>(dat, begin, range.end(), offset, weight_mask, weight_vector, int_ft_value, halfhash);
                 } // end for (snd)
                 if(audit) audit_func(dat, nullptr);
               } // end for (fst)

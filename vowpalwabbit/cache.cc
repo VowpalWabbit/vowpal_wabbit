@@ -142,7 +142,6 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
   for (auto f : fs.values)
     if (f != 1. && f != -1.)
       storage += sizeof(feature_value);
-    // fs.foreach_feature<size_t, add_storage>(storage);
 
   buf_write(cache, c, sizeof(index) + storage + sizeof(size_t));
   *reinterpret_cast<unsigned char*>(c) = index;
@@ -152,7 +151,6 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
   c += sizeof(size_t);
 
   uint64_t last = 0;
-  // fs.foreach_feature<cache_fs, cache_feature>(temp);
   for (auto& f : fs)
   {
     feature_index fi = f.index() & mask;
@@ -170,7 +168,6 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
       memcpy(c, &f.value(), sizeof(feature_value));
       c += sizeof(feature_value);
     }
-
   }
 
   cache.set(c);
