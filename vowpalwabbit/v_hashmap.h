@@ -158,9 +158,9 @@ public:
 
     // re-insert occupants
     for (auto& e : tmp)
-    { get(e->key, e->hash);
+    { get(e.key, e.hash);
       //      std::cerr << "reinserting " << e->key << " at " << last_position << std::endl;
-      put_after_get_nogrow(e->key, e->hash, e->val);
+      put_after_get_nogrow(e.key, e.hash, e.val);
     }
     tmp.delete_v();
   }

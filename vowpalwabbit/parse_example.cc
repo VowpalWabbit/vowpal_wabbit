@@ -102,7 +102,7 @@ public:
           { v_array<char> feature_v = v_init<char>();
             push_many(feature_v, feature_name.begin, feature_name.end - feature_name.begin);
             feature_v.push_back('\0');
-            fs.space_names.push_back(audit_strings_ptr(new audit_strings(base, feature_v.begin)));
+            fs.space_names.push_back(audit_strings_ptr(new audit_strings(base, feature_v.begin())));
           }
         if ((affix_features[index] > 0) && (feature_name.end != feature_name.begin))
           {
@@ -130,7 +130,7 @@ public:
                      affix_v.push_back('=');
                      push_many(affix_v, affix_name.begin, affix_name.end - affix_name.begin);
                      affix_v.push_back('\0');
-                     fs.space_names.push_back(audit_strings_ptr(new audit_strings("affix",affix_v.begin)));
+                     fs.space_names.push_back(audit_strings_ptr(new audit_strings("affix",affix_v.begin())));
                    }
                  affix >>= 4;
               }
@@ -152,7 +152,7 @@ public:
           //if ((spelling.size() == 0) || (spelling.last() != d))
           spelling.push_back(d);
         }
-        substring spelling_ss = { spelling.begin, spelling.end };
+        substring spelling_ss = { spelling.begin(), spelling.end() };
         uint64_t word_hash = hashstring(spelling_ss, (uint64_t)channel_hash);
         spell_fs.push_back(v, word_hash);
         if (audit)
@@ -160,7 +160,7 @@ public:
           if (index != ' ') { spelling_v.push_back(index); spelling_v.push_back('_'); }
           push_many(spelling_v, spelling_ss.begin, spelling_ss.end - spelling_ss.begin);
           spelling_v.push_back('\0');
-          spell_fs.space_names.push_back(audit_strings_ptr(new audit_strings("spelling",spelling_v.begin)));
+          spell_fs.space_names.push_back(audit_strings_ptr(new audit_strings("spelling",spelling_v.begin())));
         }
       }
       if (namespace_dictionaries[index].size() > 0)
@@ -172,8 +172,8 @@ public:
             { features& dict_fs = ae->feature_space[dictionary_namespace];
               if (dict_fs.size() == 0)
                 ae->indices.push_back(dictionary_namespace);
-              push_many(dict_fs.values, feats->values.begin, feats->values.size());
-              push_many(dict_fs.indicies, feats->indicies.begin, feats->indicies.size());
+              push_many(dict_fs.values, feats->values.begin(), feats->values.size());
+              push_many(dict_fs.indicies, feats->indicies.begin(), feats->indicies.size());
               dict_fs.sum_feat_sq += feats->sum_feat_sq;
               if (audit)
                 for (size_t i = 0; i < feats->indicies.size(); ++i)
@@ -232,7 +232,7 @@ public:
         base_v_array.push_back('\0');
         if (base != nullptr)
           free(base);
-        base = base_v_array.begin;
+        base = base_v_array.begin();
       }
       channel_hash = p->hasher(name, hash_base);
       nameSpaceInfoValue();

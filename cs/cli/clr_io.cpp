@@ -30,7 +30,7 @@ namespace VW
         m_stream->Seek(0, SeekOrigin::Begin);
         head = space.begin();
 
-        space.end = space.begin();
+        space.end() = space.begin();
     }
 
     ssize_t clr_io_buf::read_file(int f, void* buf, size_t nbytes)

@@ -220,7 +220,7 @@ void parse_dictionary_argument(vw&all, string str)
       continue;
     }
     features* arr = new features;
-    copy(*arr, ec->feature_space[def]);
+    *arr = ec->feature_space[def];
     map->put(ss, hash, arr);
 
     // clear up ec

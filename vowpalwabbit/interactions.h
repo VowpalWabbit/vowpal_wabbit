@@ -90,21 +90,21 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
 // #define GEN_INTER_LOOP
 
 template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*)>
-inline void inner_kernel(features::iterator_all& begin, features::iterator_all& end, const uint64_t offset, const uint64_t weight_mask, weight* weight_vector, feature_value ft_value, feature_index halfhash)
+inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterator_all& end, const uint64_t offset, const uint64_t weight_mask, weight* weight_vector, feature_value ft_value, feature_index halfhash)
 {
   if (audit)
   {
-    for (auto end = range.end(); j != end; ++j)
+    for (; begin != end; ++begin)
     {
-      audit_func(dat, j.audit().get());
-      call_T<R, T>(dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value, j.value()), (j.index() ^ halfhash) + offset);
+      audit_func(dat, begin.audit().get());
+      call_T<R, T>(dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
       audit_func(dat, nullptr);
     }
   }
   else
   {
-    for (auto end = second.end(); j != end; ++j)
-      call_T<R, T>(dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value, j.value()), (j.index() ^ halfhash) + offset);
+    for (; begin != end; ++begin)
+      call_T<R, T>(dat, weight_vector, weight_mask, INTERACTION_VALUE(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
   }
 }
 
@@ -167,7 +167,7 @@ inline void inner_kernel(features::iterator_all& begin, features::iterator_all& 
                     if (same_namespace)
                       begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i + 1;
 
-                    inner_kernel<R, S, T, audit, audit_func>(begin, range.end(), offset, weight_mask, weight_vector, ft_value, halfhash);
+                    inner_kernel<R, S, T, audit, audit_func>(dat, begin, range.end(), offset, weight_mask, weight_vector, ft_value, halfhash);
                   } // end for(fst)
               } // end if (data[snd] size > 0)
           } // end if (data[fst] size > 0)
@@ -207,7 +207,7 @@ inline void inner_kernel(features::iterator_all& begin, features::iterator_all& 
                   if (same_namespace2)
                     begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? j : j + 1;
 
-                  inner_kernel<R, S, T, audit, audit_func>(begin, range.end(), offset, weight_mask, weight_vector, ft_value, halfhash);
+                  inner_kernel<R, S, T, audit, audit_func>(dat, begin, range.end(), offset, weight_mask, weight_vector, ft_value, halfhash);
                 } // end for (snd)
                 if(audit) audit_func(dat, nullptr);
               } // end for (fst)
@@ -336,10 +336,10 @@ inline void inner_kernel(features::iterator_all& begin, features::iterator_all& 
             features& fs = *(fgd2->ft_arr);
 
 	          feature_value ft_value = fgd2->x;
-	          feature_hash halfhash = fgd2->hash;
+            feature_index halfhash = fgd2->hash;
 
             auto range = fs.values_indices_audit();
-            inner_kernel<R, S, T, audit, audit_func>(range.begin() + start_i, range.begin() + fgd2->loop_end + 1, offset, weight_mask, weight_vector, ft_value, halfhash);
+            inner_kernel<R, S, T, audit, audit_func>(dat, range.begin() + start_i, range.begin() + fgd2->loop_end + 1, offset, weight_mask, weight_vector, ft_value, halfhash);
 
             // trying to go back increasing loop_idx of each namespace by the way
 

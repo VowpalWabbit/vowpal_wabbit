@@ -153,9 +153,9 @@ void get_observed_cost(cb_adf& mydata, v_array<example*>& examples)
   for (auto ec : examples)
   { if (ec->l.cb.costs.size() == 1 &&
         ec->l.cb.costs[0].cost != FLT_MAX &&
-        ec->.l.cb.costs[0].probability > 0)
+        ec->l.cb.costs[0].probability > 0)
     { ld = ec->l.cb;
-      index = (int)(ec - examples.begin());
+      index = (int)(&ec - examples.begin());
     }
   }
 
@@ -190,7 +190,7 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
   size_t index = 0;
   for (auto ec : examples)
   { cb_labels.push_back(ec->l.cb);
-    (**ec).l.cs = cs_labels[index++];
+    ec->l.cs = cs_labels[index++];
   }
 
   // 2nd: predict for each ex
@@ -470,7 +470,7 @@ void clear_seq_and_finish_examples(vw& all, cb_adf& data)
 { if (data.ec_seq.size() > 0)
     for (auto ecc : data.ec_seq)
       if (ecc->in_use)
-        VW::finish_example(all, *ecc);
+        VW::finish_example(all, ecc);
   data.ec_seq.erase();
 }
 

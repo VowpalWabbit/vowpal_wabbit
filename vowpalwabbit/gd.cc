@@ -265,7 +265,7 @@ void print_features(vw& all, example& ec)
     audit_results dat(all,ec.ft_offset);
 
     for (auto c : ec.indices)
-      { features& fs = ec.feature_space[(size_t)i];
+      { features& fs = ec.feature_space[c];
 	if (fs.space_names.size() > 0)
 	  for (size_t j = 0; j < fs.size(); ++j)
 	    {

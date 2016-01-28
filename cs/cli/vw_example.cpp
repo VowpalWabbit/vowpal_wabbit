@@ -73,7 +73,7 @@ namespace VW
             if (ns == 0)
                 sb->Append("NULL:0,");
             else
-                sb->AppendFormat("'{0}':{1},", gcnew System::Char(*i), (int)ns);
+                sb->AppendFormat("'{0}':{1},", gcnew System::Char(ns), (int)ns);
         }
     }
 
@@ -205,7 +205,7 @@ namespace VW
             return FormatIndices(a, b);
         }
 
-        for (auto i = a->indices.begin(), j = b->indices.begin(); i != a->indices.end; i++)
+        for (auto i = a->indices.begin(), j = b->indices.begin(); i != a->indices.end(); i++)
         {
             if (*i == *j)
                 j++;
@@ -216,7 +216,7 @@ namespace VW
 
                 j = b->indices.begin();
                 bool found = false;
-                for (; j != b->indices.end; j++)
+                for (; j != b->indices.end(); j++)
                 {
                     if (*i == *j)
                     {

@@ -173,7 +173,7 @@ void run(Search::search& sch, vector<example*>& ec)
       Search::predictor P(sch, (ptag)i+1);
       P.set_learner_id(pass-1);
       if (D.encoding == BIO)
-      { if      (last_prediction == 1)       P.set_allowed(y_allowed->begin, len-1);
+      { if      (last_prediction == 1)       P.set_allowed(y_allowed->begin(), len-1);
         else if (last_prediction % 2 == 0) { (*y_allowed)[len-1] = last_prediction+1; P.set_allowed(*y_allowed); }
         else                               { (*y_allowed)[len-1] = last_prediction;   P.set_allowed(*y_allowed); }
         if ((oracle > 1) && (oracle % 2 == 1) && (last_prediction != oracle) && (last_prediction != oracle-1))

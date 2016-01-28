@@ -10,7 +10,7 @@ float collision_cleanup(features& fs)
 {
   uint64_t last_index = (uint64_t)-1;
   float sum_sq = 0.f;
-  auto pos = fs.begin()();
+  auto pos = fs.begin();
   for (auto&& f : fs)
   {
     if (last_index == f.index())

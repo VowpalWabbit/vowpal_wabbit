@@ -62,7 +62,7 @@ inline bool observed_cost(cb_class* cl)
 cb_class* get_observed_cost(CB::label& ld)
 { for (auto& cl : ld.costs)
     if( observed_cost(&cl) )
-      return cl;
+      return &cl;
   return nullptr;
 }
 
@@ -98,10 +98,10 @@ void gen_cs_example_ips(cb& c, CB::label& ld, COST_SENSITIVE::label& cs_ld)
     { COST_SENSITIVE::wclass wc;
       wc.wap_value = 0.;
       wc.x = 0.;
-      wc.class_index = cl->action;
+      wc.class_index = cl.action;
       wc.partial_prediction = 0.;
       wc.wap_value = 0.;
-      if( c.known_cost != nullptr && cl->action == c.known_cost->action )
+      if( c.known_cost != nullptr && cl.action == c.known_cost->action )
       { wc.x = c.known_cost->cost / c.known_cost->probability; //use importance weighted cost for observed action, 0 otherwise
 
         //ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
@@ -165,19 +165,19 @@ void gen_cs_example_dm(cb& c, example& ec, COST_SENSITIVE::label& cs_ld)
       wc.wap_value = 0.;
 
       //get cost prediction for this action
-      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, cl->action, 0);
-      if (wc.x < min || (wc.x == min && cl->action < argmin))
+      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, cl.action, 0);
+      if (wc.x < min || (wc.x == min && cl.action < argmin))
       { min = wc.x;
-        argmin = cl->action;
+        argmin = cl.action;
       }
 
-      wc.class_index = cl->action;
+      wc.class_index = cl.action;
       wc.partial_prediction = 0.;
       wc.wap_value = 0.;
 
       c.pred_scores.costs.push_back(wc);
 
-      if( c.known_cost != nullptr && c.known_cost->action == cl->action )
+      if( c.known_cost != nullptr && c.known_cost->action == cl.action )
       { c.nb_ex_regressors++;
         c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->cost - wc.x)*(c.known_cost->cost - wc.x) - c.avg_loss_regressors );
         c.last_pred_reg = wc.x;
@@ -235,7 +235,7 @@ void gen_cs_example_dr(cb& c, example& ec, CB::label& ld, COST_SENSITIVE::label&
   else  //this is an example where we can only perform a subset of the actions
     //in this case generate cost-sensitive example with only allowed actions
     for (auto& cl : ld.costs)
-      gen_cs_label<is_learn>(c, ec, cs_ld, cl->action);
+      gen_cs_label<is_learn>(c, ec, cs_ld, cl.action);
   //cout<<endl;
 }
 

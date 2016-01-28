@@ -75,7 +75,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
     // TODO: what happens with --lrq ab2 --lrq ac2
     //       i.e. namespace occurs multiple times (?)
 
-    for (auto& i lrq.lrpairs)
+    for (auto& i : lrq.lrpairs)
     { unsigned char left = i[which%2];
       unsigned char right = i[(which+1)%2];
       unsigned int k = atoi (i.c_str () + 2);
@@ -143,7 +143,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
         ec.loss = first_loss;
       }
 
-    for (auto& i lrq.lrpairs)
+    for (auto& i : lrq.lrpairs)
       { unsigned char right = i[(which+1)%2];
         ec.feature_space[right].truncate_to(lrq.orig_size[right]);
       }
@@ -180,7 +180,7 @@ base_learner* lrq_setup(vw& all)
   else
     lrq.dropout = false;
 
-  for (auto& i lrq.lrpairs)
+  for (auto& i : lrq.lrpairs)
     *all.file_options << " --lrq " << i;
 
   if (! all.quiet)
@@ -189,7 +189,7 @@ base_learner* lrq_setup(vw& all)
       cerr << "(using dropout) ";
   }
 
-  for (auto& i lrq.lrpairs)
+  for (auto& i : lrq.lrpairs)
   { if(!all.quiet)
     { if (( i.length() < 3 ) || ! valid_int (i.c_str () + 2))
       { free(&lrq);

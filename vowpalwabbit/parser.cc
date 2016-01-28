@@ -728,7 +728,7 @@ void setup_example(vw& all, example* ae)
       if (all.ignore[*i])
       { //delete namespace
         ae->feature_space[*i].erase();
-        memmove(i, i + 1, (ae->indices.end - (i + 1))*sizeof(*i));
+        memmove(i, i + 1, (ae->indices.end() - (i + 1))*sizeof(*i));
         ae->indices.end()--;
         i--;
       }
@@ -744,16 +744,14 @@ void setup_example(vw& all, example* ae)
 
   uint64_t multiplier = all.wpp << all.reg.stride_shift;
   if(multiplier != 1) //make room for per-feature information.
-    for (auto index : ae->indices)
-      {
-        for (auto& j : ae->feature_space[i].indicies)
+    for (auto ns : ae->indices)
+        for (auto& j : ae->feature_space[ns].indicies)
           j *= multiplier;
-      }
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
-  for (auto index : ae->indices)
-    { ae->num_features += ae->feature_space[i].size();
-      ae->total_sum_feat_sq += ae->feature_space[i].sum_feat_sq;
+  for (auto ns : ae->indices)
+    { ae->num_features += ae->feature_space[ns].size();
+      ae->total_sum_feat_sq += ae->feature_space[ns].sum_feat_sq;
     }
 
   size_t new_features_cnt;
@@ -825,7 +823,7 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
   primitive_feature_space* fs_ptr = new primitive_feature_space[len];
 
   int fs_count = 0;
-  for (auto index : ec->indices)
+  for (auto i : ec->indices)
   { fs_ptr[fs_count].name = i;
     fs_ptr[fs_count].len = ec->feature_space[i].size();
     fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
@@ -860,7 +858,7 @@ void parse_example_label(vw& all, example&ec, string label)
 
 void empty_example(vw& all, example& ec)
 {
-  for (auto index : ec->indices)
+  for (auto i : ec.indices)
     ec.feature_space[i].erase();
 
   ec.indices.erase();

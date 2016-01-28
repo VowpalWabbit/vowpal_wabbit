@@ -129,7 +129,7 @@ void learn(mf& data, base_learner& base, example& ec)
       ec.indices[0] = left_ns;
 
       // store feature values in left namespace
-      copy(data.temp_features, ec.feature_space[left_ns]);
+      data.temp_features = ec.feature_space[left_ns];
 
       for (size_t k = 1; k <= data.rank; k++)
       {
@@ -142,7 +142,7 @@ void learn(mf& data, base_learner& base, example& ec)
         base.update(ec, k);
 
         // restore left namespace features (undoing multiply)
-        copy(fs, data.temp_features);
+        fs = data.temp_features;
 
         // compute new l_k * x_l scaling factors
         // base.predict(ec, k);
@@ -154,7 +154,7 @@ void learn(mf& data, base_learner& base, example& ec)
       ec.indices[0] = right_ns;
 
       // store feature values for right namespace
-      copy(data.temp_features, ec.feature_space[right_ns]);
+      data.temp_features = ec.feature_space[right_ns];
 
       for (size_t k = 1; k <= data.rank; k++)
       {
@@ -168,7 +168,7 @@ void learn(mf& data, base_learner& base, example& ec)
         ec.pred.scalar = ec.updated_prediction;
 
         // restore right namespace features
-        copy(fs, data.temp_features);
+        fs = data.temp_features;
       }
     }
   }

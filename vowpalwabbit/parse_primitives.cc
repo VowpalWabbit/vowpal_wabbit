@@ -74,15 +74,15 @@ std::ostream& operator<<(std::ostream& os, const substring& ss)
 }
 
 std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss)
-{ auto it = ss.begin;
+{ auto it = ss.cbegin();
 
-  if (it == ss.end)
+  if (it == ss.cend())
   { return os;
   }
 
   os << *it;
 
-  for (it++; it != ss.end; it++)
+  for (it++; it != ss.cend(); it++)
   { os << ",";
     os << *it;
   }

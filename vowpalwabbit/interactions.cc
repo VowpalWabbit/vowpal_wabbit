@@ -53,8 +53,8 @@ void expand_namespacse_with_recursion(v_string& ns, v_array<v_string>& res, v_st
 v_array<v_string> expand_interactions(const vector<string>& vec, const size_t required_length, const string& err_msg)
 { v_array<v_string> res = v_init<v_string>();
 
-  for (auto& i = vec)
-  { const size_t len = i->length();
+  for (auto& i : vec)
+  { const size_t len = i.length();
     if (required_length > 0 && len != required_length)
       // got strict requirement of interaction length and it was failed.
       { THROW(err_msg); }
@@ -62,7 +62,7 @@ v_array<v_string> expand_interactions(const vector<string>& vec, const size_t re
       // regardles of required_length value this check is always performed
       THROW("error, feature interactions must involve at least two namespaces" << err_msg);
 
-    v_string ns = string2v_string(*i);
+    v_string ns = string2v_string(i);
     v_string temp = v_init<unsigned char>();
     expand_namespacse_with_recursion(ns, res, temp, 0);
     temp.delete_v();
@@ -190,7 +190,7 @@ void sort_and_filter_duplicate_interactions(v_array<v_string>& vec, bool filter_
   v_array<ordered_interaction> vec_sorted = v_init<ordered_interaction>();
 
   size_t pos = 0;
-  for (auto& v = vec)
+  for (auto& v : vec)
   { ordered_interaction oi;
     size_t size = v.size();
     // copy memory
@@ -240,7 +240,7 @@ void sort_and_filter_duplicate_interactions(v_array<v_string>& vec, bool filter_
     pos++;
     // sorted data is copied, not moved, bcs i'm lazy to write assignment operator between these two types.
     // thus we always must free it
-    free(oi->data);
+    free(oi.data);
   }
 
   vec_sorted.delete_v(); // sorted array destroyed. It's data partially copied to the new array, partially destroyed
@@ -341,7 +341,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
       float sum_feat_sq_in_inter = 1.;
 
       for (unsigned char* ns = inter.begin(); ns != inter.end(); ++ns)
-      { if ((ns == inter.end-1) || (*ns != *(ns + 1))) // neighbour namespaces are different
+      { if ((ns == inter.end()-1) || (*ns != *(ns + 1))) // neighbour namespaces are different
         { // just multiply precomputed values
           const int nsc = *ns;
           num_features_in_inter *= ec.feature_space[nsc].size();
@@ -354,7 +354,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
           // let's find out real length of this block
           size_t order_of_inter = 2; // alredy compared ns == ns+1
 
-          for (unsigned char* ns_end = ns + 2; ns_end < inter.end; ++ns_end)
+          for (unsigned char* ns_end = ns + 2; ns_end < inter.end(); ++ns_end)
             if (*ns == *ns_end) ++order_of_inter;
 
           // namespace is same for whole block

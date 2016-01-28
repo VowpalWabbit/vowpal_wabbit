@@ -35,14 +35,15 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
   uint64_t mask = all.reg.weight_mask;
   for (auto i : ec.indices)
     {
-      bool audit = !fs.space_names_empty();
-      for (auto& f : ec.feature_space[i].values_indices_audit())
+      auto& fs = ec.feature_space[i];
+      bool audit = !fs.space_names.empty();
+      for (auto& f : fs.values_indices_audit())
         {
           cout << '\t';
           if (audit)
             cout << f.audit().get()->first << '^' << f.audit().get()->second << ':';
           cout << f.index() <<"(" << ((f.index() + offset) & mask)  << ")" << ':' << f.value();
-          cout << ':' << weights[(fs.indicies[j] + offset) & mask];
+          cout << ':' << weights[(f.index() + offset) & mask];
         }
     }
   for (auto& i : all.pairs)
@@ -58,7 +59,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 
             cout << ':' << f2.audit().get()->first << k << '^' << f2.audit().get()->second << ':' << ((f2.index() + k + d.rank)&mask)
                  <<"(" << ((f2.index() + offset +k+d.rank) & mask)  << ")" << ':' << f2.value();
-            cout << ':' << weights[f2.index() + offset + k+d.rank) & mask];
+            cout << ':' << weights[(f2.index() + offset + k+d.rank) & mask];
 
             cout << ':' <<  weights[(f1.index() + offset + k) & mask] * weights[(f2.index() + offset + k + d.rank) & mask];
           }
@@ -79,7 +80,7 @@ float mf_predict(gdmf& d, example& ec)
   label_data& ld = ec.l.simple;
   float prediction = ld.initial;
 
-  for (auto& i = d.all->pairs)
+  for (auto& i : d.all->pairs)
   { ec.num_features -= ec.feature_space[(int)i[0]].size() * ec.feature_space[(int)i[1]].size();
     ec.num_features += ec.feature_space[(int)i[0]].size() * d.rank;
     ec.num_features += ec.feature_space[(int)i[1]].size() * d.rank;
@@ -100,7 +101,7 @@ float mf_predict(gdmf& d, example& ec)
   prediction += linear_prediction;
 
   // interaction terms
-  for (auto& i = d.all->pairs)
+  for (auto& i : d.all->pairs)
   { if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
     { for (uint64_t k = 1; k <= d.rank; k++)
       { // x_l * l^k
@@ -164,7 +165,7 @@ void mf_train(gdmf& d, example& ec)
 
   // linear update
   for (auto i : ec.indices)
-    sd_offset_update(weights, mask, ec.feature_space[*i], 0, update, regularization);
+    sd_offset_update(weights, mask, ec.feature_space[i], 0, update, regularization);
 
   // quadratic update
   for (auto& i : all.pairs)
@@ -176,14 +177,14 @@ void mf_train(gdmf& d, example& ec)
       { // r^k \cdot x_r
         float r_dot_x = ec.topic_predictions[2*k];
         // l^k <- l^k + update * (r^k \cdot x_r) * x_l
-        sd_offset_update(weights, mask, ec.feature_space[(int)(*i)[0]], k, update*r_dot_x, regularization);
+        sd_offset_update(weights, mask, ec.feature_space[(int)i[0]], k, update*r_dot_x, regularization);
       }
       // update r^k weights
       for (size_t k = 1; k <= d.rank; k++)
       { // l^k \cdot x_l
         float l_dot_x = ec.topic_predictions[2*k-1];
         // r^k <- r^k + update * (l^k \cdot x_l) * x_r
-        sd_offset_update(weights, mask, ec.feature_space[(int)(*i)[1]], k+d.rank, update*l_dot_x, regularization);
+        sd_offset_update(weights, mask, ec.feature_space[(int)i[1]], k+d.rank, update*l_dot_x, regularization);
       }
 
     }

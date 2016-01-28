@@ -383,8 +383,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   if (ec_seq_is_label_definition(data.ec_seq))
   {
     for (size_t i=0; i<data.ec_seq.size(); i++)
-      { features new_fs;
-        copy(new_fs, data.ec_seq[i]->feature_space[data.ec_seq[i]->indices[0]]);
+      { features new_fs = data.ec_seq[i]->feature_space[data.ec_seq[i]->indices[0]];
 
         v_array<COST_SENSITIVE::wclass>& costs = data.ec_seq[i]->l.cs.costs;
         for (size_t j=0; j<costs.size(); j++)
@@ -579,14 +578,14 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
 
   if (!COST_SENSITIVE::example_is_test(head_ec))
   { size_t idx = 0;
-    for(example** ecc = ec_seq->begin; ecc != ec_seq->end; ecc++,idx++)
-    { example& ex = **ecc;
-      if(ec_is_example_header(ex)) continue;
+    for (auto ex : *ec_seq)
+    { if(ec_is_example_header(*ex)) continue;
       if (hit_loss) break;
       if (preds[0] == idx)
-      { loss = ex.l.cs.costs[0].x;
+      { loss = ex->l.cs.costs[0].x;
         hit_loss = true;
       }
+      idx++;
     }
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
@@ -621,7 +620,7 @@ void output_example_seq(vw& all, ldf& data)
       output_rank_example(all, **(data.ec_seq.begin()), hit_loss, &(data.ec_seq));
     else
       for (auto ec : data.ec_seq)
-        output_example(all, *ecc, hit_loss, &(data.ec_seq), data);
+        output_example(all, *ec, hit_loss, &(data.ec_seq), data);
 
     if (!data.is_singleline && (all.raw_prediction > 0))
     { v_array<char> empty = { nullptr, nullptr, nullptr, 0 };
@@ -662,8 +661,8 @@ void output_example_seq(vw& all, ldf& data)
 void clear_seq_and_finish_examples(vw& all, ldf& data)
 { if (data.ec_seq.size() > 0)
     for (auto ec : data.ec_seq)
-      if (ecc->in_use)
-        VW::finish_example(all, *ecc);
+      if (ec->in_use)
+        VW::finish_example(all, ec);
   data.ec_seq.erase();
 }
 

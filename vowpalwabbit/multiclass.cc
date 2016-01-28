@@ -136,10 +136,10 @@ void finish_example(vw& all, example& ec)
 
   for (auto sink : all.final_prediction_sink)
     if (! all.sd->ldict)
-      all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
+      all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
     else
     { substring ss_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text(*sink, string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
+      all.print_text(sink, string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
     }
 
   MULTICLASS::print_update(all, ec);

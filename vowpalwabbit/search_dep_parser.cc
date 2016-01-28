@@ -125,8 +125,8 @@ void add_all_features(example& ex, example& src, unsigned char tgt_ns, uint64_t 
 {
   features& tgt_fs = ex.feature_space[tgt_ns];
   for (auto ns : src.indices)
-    if(*ns != constant_namespace) // ignore constant_namespace
-        for (auto& i : src.feature_space[ns].indicies)
+    if(ns != constant_namespace) // ignore constant_namespace
+        for (auto i : src.feature_space[ns].indicies)
             tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask );
 }
 
@@ -238,7 +238,7 @@ void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec)
   size_t count=0;
   for (auto ns : data->ex->indices)
     { data->ex->feature_space[(int)ns].sum_feat_sq = (float) data->ex->feature_space[(int)ns].size();
-      count+= data->ex->feature_space[(int)*ns].size();
+      count+= data->ex->feature_space[(int)ns].size();
     }
 
   size_t new_count;

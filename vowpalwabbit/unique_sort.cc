@@ -7,7 +7,7 @@ license as described in the file LICENSE.
 #include "unique_sort.h"
 
 void unique_features(features& fs, int max)
-{ if (fs.indicies_empty()) // REVIEW: is this fine with dense features?
+{ if (fs.indicies.empty())
     return;
 
   auto range = fs.values_indices_audit();
@@ -20,7 +20,7 @@ void unique_features(features& fs, int max)
       {
         last_index.value() = i.value();
         last_index.index() = i.index();
-        if (!fs.space_names_empty())
+        if (!fs.space_names.empty())
           last_index.audit() = i.audit();
       }
 

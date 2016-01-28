@@ -597,7 +597,7 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, exa
               { new_gamma[k] += xc_w * u_for_w[k];
               }
             word_count++;
-            doc_length += fs.values[j];
+            doc_length += f.value();
           }
       }
     for (size_t k = 0; k < l.topics; k++)

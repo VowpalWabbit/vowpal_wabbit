@@ -27,11 +27,11 @@ inline int order_features(const void* first, const void* second)
     return -1;
 }
 
-class features;
+struct features;
 
 class features_value_iterator
 {
-private:
+protected:
   feature_value* _begin;
 public:
   features_value_iterator(feature_value* begin)
@@ -100,12 +100,12 @@ public:
     swap(lhs._begin, rhs._begin);
   }
 
-  friend class features;
+  friend struct features;
 };
 
 class features_value_index_iterator : public features_value_iterator
 {
-private:
+protected:
   feature_index* _begin_index;
 public:
   features_value_index_iterator(feature_value* begin, feature_index* begin_index)
@@ -135,6 +135,11 @@ public:
     _begin_index += index;
 
     return *this;
+  }
+
+  features_value_index_iterator operator+(int index)
+  {
+    return features_value_index_iterator(_begin + index, _begin_index + index);
   }
 
   features_value_index_iterator& operator-=(int index)
@@ -167,7 +172,7 @@ public:
 
 class features_value_index_audit_iterator : public features_value_index_iterator
 {
-private:
+protected:
   audit_strings_ptr* _begin_audit;
 public:
   features_value_index_audit_iterator(feature_value* begin, feature_index* begin_index, audit_strings_ptr* begin_audit)
@@ -198,6 +203,11 @@ public:
     _begin_audit += index;
 
     return *this;
+  }
+
+  features_value_index_audit_iterator operator+(int index)
+  {
+    return features_value_index_audit_iterator(_begin + index, _begin_index + index, _begin_audit + index);
   }
 
   features_value_index_audit_iterator& operator-=(int index)
@@ -235,35 +245,32 @@ struct features { // the core definition of a set of features.
 
   float sum_feat_sq;
 
+  typedef features_value_index_iterator iterator;
+  typedef features_value_iterator iterator_value;
+  typedef features_value_index_audit_iterator iterator_all;
+
   class features_value_range {
   private:
     features* _outer;
   public:
-    typedef features_value_iterator iterator;
 
     features_value_range(features* outer) : _outer(outer)
     { }
 
-    iterator begin() { return iterator(_outer-> values.begin()); }
-    iterator end() { return iterator(_outer->values.end()); }
+    iterator_value begin() { return iterator_value(_outer->values.begin()); }
+    iterator_value end() { return iterator_value(_outer->values.end()); }
   };
 
   class features_value_index_audit_range {
   private:
     features* _outer;
   public:
-    typedef features_value_index_audit_iterator iterator;
-
     features_value_index_audit_range(features* outer) : _outer(outer)
     { }
 
-    iterator begin() { return iterator(_outer->values.begin(), _outer->indicies.begin(), _outer->space_names.begin()); }
-    iterator end() { return iterator(_outer->values.end(), _outer->indicies.end(), _outer->space_names.end()); }
+    iterator_all begin() { return iterator_all(_outer->values.begin(), _outer->indicies.begin(), _outer->space_names.begin()); }
+    iterator_all end() { return iterator_all(_outer->values.end(), _outer->indicies.end(), _outer->space_names.end()); }
   };
-
-  typedef features_value_index_iterator iterator;
-  typedef features_value_iterator iterator_value;
-  typedef features_value_index_audit_iterator iterator_all;
 
   features()
   {
@@ -274,11 +281,7 @@ struct features { // the core definition of a set of features.
   }
   inline size_t size() const { return values.size(); }
 
-  inline bool nonempty() const { return values.begin() != values.end(); }
-
-  inline bool indicies_empty() const { return indicies.empty(); }
-
-  inline bool space_names_empty() const { return space_names.empty(); }
+  inline bool nonempty() const { return !values.empty(); }
 
   void free_space_names(size_t i)
   {
@@ -291,19 +294,10 @@ struct features { // the core definition of a set of features.
     return features_value_index_audit_range(this);
   }
 
-  /*
-  features_value_range values()
-  {
-    return features_value_range(this);
-  }
-  */
-
   // default iterator for values & features
   iterator begin() { return iterator(values.begin(), indicies.begin()); }
 
   iterator end() { return iterator(values.end(), indicies.end()); }
-
-
 
   void erase()
   {
@@ -384,6 +378,8 @@ struct features { // the core definition of a set of features.
     free_space_names(0);
     copy_array(space_names, rhs.space_names);
     sum_feat_sq = rhs.sum_feat_sq;
+
+    return *this;
   }
 };
 
