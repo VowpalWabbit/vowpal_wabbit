@@ -46,7 +46,7 @@ template <class T, void(*f)(T, example*)> void generic_driver(vw& all, T context
   { if ((ec = VW::get_example(all.p)) != nullptr)//semiblocking operation.
     { f(context, ec);
     }
-    else if (parser_done(all.p))
+    else if (all.early_terminate || parser_done(all.p))
     { all.l->end_examples();
       return;
     }
@@ -55,7 +55,7 @@ template <class T, void(*f)(T, example*)> void generic_driver(vw& all, T context
   { while ((ec = VW::get_example(all.p)) != nullptr) //semiblocking operation.
       VW::finish_example(all, ec);
 
-    if (parser_done(all.p))
+    if (all.p->done)
     { all.l->end_examples();
       return;
     }
