@@ -97,8 +97,8 @@ namespace VW
         /// </summary>
         /// <param name="reader">The example to learn.</param>
         /// <param name="label">
-        /// Optional label, taking precedence over "_label" property found in <paramref name="json"/>.
-        /// If null, <paramref name="json"/> will be inspected and the "_label" property used as label.
+        /// Optional label, taking precedence over "_label" property found in <paramref name="reader"/>.
+        /// If null, <paramref name="reader"/> will be inspected and the "_label" property used as label.
         /// </param>
         public void Learn(JsonReader reader, ILabel label = null)
         {
@@ -134,10 +134,10 @@ namespace VW
         /// <param name="reader">The example to learn.</param>
         /// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
         /// <param name="label">
-        /// Optional label, taking precedence over "_label" property found in <paramref name="json"/>.
-        /// If null, <paramref name="json"/> will be inspected and the "_label" property used as label.
+        /// Optional label, taking precedence over "_label" property found in <paramref name="reader"/>.
+        /// If null, <paramref name="reader"/> will be inspected and the "_label" property used as label.
         /// </param>
-        /// <returns>The prediction for the given <paramref name="json"/>.</returns>
+        /// <returns>The prediction for the given <paramref name="reader"/>.</returns>
         public TPrediction Learn<TPrediction>(JsonReader reader, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
         {
             using (var example = this.serializer.Parse(reader, label))
@@ -154,6 +154,7 @@ namespace VW
         /// Optional label, taking precedence over "_label" property found in <paramref name="json"/>.
         /// If null, <paramref name="json"/> will be inspected and the "_label" property used as label.
         /// </param>
+
         public void Predict(string json, ILabel label = null)
         {
             using (var example = this.serializer.Parse(json, label))
@@ -162,14 +163,13 @@ namespace VW
             }
         }
 
-
         /// <summary>
         /// Predicts for the given example.
         /// </summary>
         /// <param name="reader">The example to predict for.</param>
         /// <param name="label">
-        /// Optional label, taking precedence over "_label" property found in <paramref name="json"/>.
-        /// If null, <paramref name="json"/> will be inspected and the "_label" property used as label.
+        /// Optional label, taking precedence over "_label" property found in <paramref name="reader"/>.
+        /// If null, <paramref name="reader"/> will be inspected and the "_label" property used as label.
         /// </param>
         public void Predict(JsonReader reader, ILabel label = null)
         {
@@ -204,8 +204,8 @@ namespace VW
         /// <param name="reader">The example to predict for.</param>
         /// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
         /// <param name="label">
-        /// Optional label, taking precedence over "_label" property found in <paramref name="json"/>.
-        /// If null, <paramref name="json"/> will be inspected and the "_label" property used as label.
+        /// Optional label, taking precedence over "_label" property found in <paramref name="reader"/>.
+        /// If null, <paramref name="reader"/> will be inspected and the "_label" property used as label.
         /// </param>
         public TPrediction Predict<TPrediction>(JsonReader reader, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
         {

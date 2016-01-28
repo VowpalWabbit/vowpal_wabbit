@@ -26,6 +26,7 @@ namespace VW.Serializer
         {
             return type == typeof(double)
                     || type == typeof(float)
+                    || type == typeof(byte)
                     || type == typeof(decimal)
                     || type == typeof(UInt16)
                     || type == typeof(UInt32)
@@ -128,7 +129,7 @@ namespace VW.Serializer
                     valueExpressionFactory: valueExpression => Expression.Property(valueExpression, p),
                     // CODE example != null
                     valueValidExpressionFactories: new List<Func<Expression, Expression>>{ valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)) },
-                    featureGroup: ' ');
+                    featureGroup: VowpalWabbitConstants.DefaultNamespace);
 
             return namespaceFeatures.Union(defaultNamespaceFeatures).ToList();
         }

@@ -133,12 +133,14 @@
     <Compile Include="Serializer\Intermediate\Namespace.cs" />
     <Compile Include="Serializer\Intermediate\PreHashedFeature.cs" />
     <Compile Include="Serializer\PrefixedJsonReader.cs" />
+    <Compile Include="Serializer\VowpalWabbitConstants.cs" />
     <Compile Include="Serializer\VowpalWabbitDefaultMarshaller.cs" />
     <Compile Include="Serializer\VowpalWabbitDefaultMarshallerExt.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>VowpalWabbitDefaultMarshallerExt.tt</DependentUpon>
     </Compile>
+    <Compile Include="Serializer\VowpalWabbitJsonException.cs" />
     <Compile Include="Serializer\VowpalWabbitJsonSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitMarshalContext.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
