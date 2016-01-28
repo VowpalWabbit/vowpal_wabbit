@@ -167,7 +167,8 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
                     if (same_namespace)
                       begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i + 1;
 
-                    inner_kernel<R, S, T, audit, audit_func>(dat, begin, range.end(), offset, weight_mask, weight_vector, ft_value, halfhash);
+                    auto end = range.end();
+                    inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weight_mask, weight_vector, ft_value, halfhash);
                   } // end for(fst)
               } // end if (data[snd] size > 0)
           } // end if (data[fst] size > 0)
@@ -207,7 +208,8 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
                   if (same_namespace2) //next index differs for permutations and simple combinations
                     begin += (PROCESS_SELF_INTERACTIONS(int_ft_value)) ? j : j + 1;
 
-                  inner_kernel<R, S, T, audit, audit_func>(dat, begin, range.end(), offset, weight_mask, weight_vector, int_ft_value, halfhash);
+                  auto end = range.end();
+                  inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weight_mask, weight_vector, int_ft_value, halfhash);
                 } // end for (snd)
                 if(audit) audit_func(dat, nullptr);
               } // end for (fst)
@@ -339,7 +341,11 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
             feature_index halfhash = fgd2->hash;
 
             auto range = fs.values_indices_audit();
-            inner_kernel<R, S, T, audit, audit_func>(dat, range.begin() + start_i, range.begin() + fgd2->loop_end + 1, offset, weight_mask, weight_vector, ft_value, halfhash);
+            auto begin = range.begin();
+            begin += start_i;
+            auto end = range.begin();
+            end += fgd2->loop_end + 1;
+            inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weight_mask, weight_vector, ft_value, halfhash);
 
             // trying to go back increasing loop_idx of each namespace by the way
 
