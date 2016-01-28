@@ -191,6 +191,9 @@ void init_driver(audit_regressor_data& dat)
 
     if (dat.all->loaded_regressor_values == 0)
         THROW("regressor has no non-zero weights. Nothing to audit.");
+
+    dat.all->sd->dump_interval = 1.; // regressor could initialize these if saved with --save_resume
+    dat.all->sd->example_number = 0;
 }
 
 
