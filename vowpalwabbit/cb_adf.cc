@@ -150,7 +150,7 @@ void get_observed_cost(cb_adf& mydata, v_array<example*>& examples)
   ld.costs = v_init<cb_class>();
   int index = -1;
 
-  for (auto ec : examples)
+  for (auto& ec : examples)
   { if (ec->l.cb.costs.size() == 1 &&
         ec->l.cb.costs[0].cost != FLT_MAX &&
         ec->l.cb.costs[0].probability > 0)
