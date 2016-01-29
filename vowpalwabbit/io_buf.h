@@ -156,7 +156,7 @@ public:
 
   static ssize_t read_file_or_socket(int f, void* buf, size_t nbytes);
 
-  size_t fill(int f)
+  ssize_t fill(int f)
   { // if the loaded values have reached the allocated space
     if (space.end_array - space.end == 0)
     { // reallocate to twice as much space
