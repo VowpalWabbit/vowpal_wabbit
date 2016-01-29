@@ -180,13 +180,13 @@ void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* e
       // If the first example is "shared", don't include its features.
       // These should be already included in each example (TODO: including quadratic and cubic).
       // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
-      example** ecc=ec_seq->begin;
-      example& first_ex = **ecc;
+      example** ecc = ec_seq->cbegin();
+      const example& first_ex = **ecc;
 
       v_array<COST_SENSITIVE::wclass> costs = first_ex.l.cs.costs;
       if (costs.size() == 1 && costs[0].class_index == 0 && costs[0].x < 0) ecc++;
 
-      for (; ecc!=ec_seq->end; ecc++)
+      for (; ecc!=ec_seq->cend(); ecc++)
         num_current_features += (*ecc)->num_features;
     }
 
@@ -225,11 +225,11 @@ void output_example(vw& all, example& ec)
 
     float chosen_loss = FLT_MAX;
     float min = FLT_MAX;
-    for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++)
-    { if (cl->class_index == pred)
-        chosen_loss = cl->x;
-      if (cl->x < min)
-        min = cl->x;
+    for (auto& cl : ld.costs)
+    { if (cl.class_index == pred)
+        chosen_loss = cl.x;
+      if (cl.x < min)
+        min = cl.x;
     }
     if (chosen_loss == FLT_MAX)
       cerr << "warning: csoaa predicted an invalid class" << endl;
@@ -239,12 +239,12 @@ void output_example(vw& all, example& ec)
 
   all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
 
-  for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+  for (auto sink : all.final_prediction_sink)
     if (! all.sd->ldict)
-      all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
+      all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
     else
     { substring ss_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text(*sink, string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
+      all.print_text(sink, string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
     }
 
   if (all.raw_prediction > 0)

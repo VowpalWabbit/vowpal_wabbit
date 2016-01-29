@@ -54,8 +54,8 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec)
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
   ec.l.simple = { 0., 0., 0. };
   if (ld.costs.size() > 0)
-  { for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++)
-      inner_loop<is_learn>(base, ec, cl->class_index, cl->x, prediction, score, cl->partial_prediction);
+  { for (auto& cl : ld.costs)
+      inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction);
     ec.partial_prediction = score;
   }
   else if (DO_MULTIPREDICT && !is_learn)
@@ -383,8 +383,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   if (ec_seq_is_label_definition(data.ec_seq))
   {
     for (size_t i=0; i<data.ec_seq.size(); i++)
-      { features new_fs;
-        copy(new_fs, data.ec_seq[i]->feature_space[data.ec_seq[i]->indices[0]]);
+      { features new_fs = data.ec_seq[i]->feature_space[data.ec_seq[i]->indices[0]];
 
         v_array<COST_SENSITIVE::wclass>& costs = data.ec_seq[i]->l.cs.costs;
         for (size_t j=0; j<costs.size(); j++)
@@ -424,7 +423,7 @@ void do_actual_learning(ldf& data, base_learner& base)
       data.scores.push_back(s);
     }
 
-    qsort((void*) data.scores.begin, data.scores.size(), sizeof(score), score_comp);
+    qsort((void*) data.scores.begin(), data.scores.size(), sizeof(score), score_comp);
   }
   else
   { float  min_score = FLT_MAX;
@@ -548,8 +547,8 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
     assert(loss >= 0);
   }
 
-  for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-    all.print(*sink, data.is_probabilities ? ec.pred.prob : (float)ec.pred.multiclass, 0, ec.tag);
+  for (auto sink : all.final_prediction_sink)
+    all.print(sink, data.is_probabilities ? ec.pred.prob : (float)ec.pred.multiclass, 0, ec.tag);
 
   if (all.raw_prediction > 0)
   { string outputString;
@@ -579,22 +578,22 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
 
   if (!COST_SENSITIVE::example_is_test(head_ec))
   { size_t idx = 0;
-    for(example** ecc = ec_seq->begin; ecc != ec_seq->end; ecc++,idx++)
-    { example& ex = **ecc;
-      if(ec_is_example_header(ex)) continue;
+    for (auto ex : *ec_seq)
+    { if(ec_is_example_header(*ex)) continue;
       if (hit_loss) break;
       if (preds[0] == idx)
-      { loss = ex.l.cs.costs[0].x;
+      { loss = ex->l.cs.costs[0].x;
         hit_loss = true;
       }
+      idx++;
     }
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
     assert(loss >= 0);
   }
 
-  for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-    MULTILABEL::print_multilabel(*sink, head_ec.pred.multilabels, head_ec.tag);
+  for (auto sink : all.final_prediction_sink)
+    MULTILABEL::print_multilabel(sink, head_ec.pred.multilabels, head_ec.tag);
 
   if (all.raw_prediction > 0)
   { string outputString;
@@ -618,10 +617,10 @@ void output_example_seq(vw& all, ldf& data)
 
     bool hit_loss = false;
     if(data.rank)
-      output_rank_example(all, **(data.ec_seq.begin), hit_loss, &(data.ec_seq));
+      output_rank_example(all, **(data.ec_seq.begin()), hit_loss, &(data.ec_seq));
     else
-      for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
-        output_example(all, **ecc, hit_loss, &(data.ec_seq), data);
+      for (auto ec : data.ec_seq)
+        output_example(all, *ec, hit_loss, &(data.ec_seq), data);
 
     if (!data.is_singleline && (all.raw_prediction > 0))
     { v_array<char> empty = { nullptr, nullptr, nullptr, 0 };
@@ -661,9 +660,9 @@ void output_example_seq(vw& all, ldf& data)
 
 void clear_seq_and_finish_examples(vw& all, ldf& data)
 { if (data.ec_seq.size() > 0)
-    for (example** ecc=data.ec_seq.begin; ecc!=data.ec_seq.end; ecc++)
-      if ((*ecc)->in_use)
-        VW::finish_example(all, *ecc);
+    for (auto ec : data.ec_seq)
+      if (ec->in_use)
+        VW::finish_example(all, ec);
   data.ec_seq.erase();
 }
 

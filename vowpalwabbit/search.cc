@@ -16,7 +16,7 @@ license as described in the file LICENSE.
 #include "search_entityrelationtask.h"
 #include "search_hooktask.h"
 #include "search_graph.h"
-#include "search_meta.h" 
+#include "search_meta.h"
 #include "csoaa.h"
 #include "active.h"
 #include "label_dictionary.h"
@@ -546,10 +546,10 @@ void reset_search_structure(search_private& priv)
     //assert( fabs(priv_beta - priv.beta) < 1e-2 );
     if (priv.beta > 1) priv.beta = 1;
   }
-  for (action_repr* ar = priv.ptag_to_action.begin; ar != priv.ptag_to_action.end; ++ar)
-  { ar->repr.values.delete_v();
-    ar->repr.indicies.delete_v();
-    ar->repr.space_names.delete_v();
+  for (auto& ar : priv.ptag_to_action)
+  { ar.repr.values.delete_v();
+    ar.repr.indicies.delete_v();
+    ar.repr.space_names.delete_v();
     cdbg << "delete_v" << endl;
   }
   priv.ptag_to_action.erase();
@@ -815,25 +815,25 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
 
 template<class T>
 void ensure_size(v_array<T>& A, size_t sz)
-{ if ((size_t)(A.end_array - A.begin) < sz)
+{ if ((size_t)(A.end_array - A.begin()) < sz)
     A.resize(sz*2+1);
-  A.end = A.begin + sz;
+  A.end() = A.begin() + sz;
 }
 
 template<class T> void push_at(v_array<T>& v, T item, size_t pos)
 { if (v.size() > pos)
-    v.begin[pos] = item;
+    v.begin()[pos] = item;
   else
-  { if (v.end_array > v.begin + pos)
+  { if (v.end_array > v.begin() + pos)
     { // there's enough memory, just not enough filler
-      v.begin[pos] = item;
-      v.end = v.begin + pos + 1;
+      v.begin()[pos] = item;
+      v.end() = v.begin() + pos + 1;
     }
     else
     { // there's not enough memory
       v.resize(2 * pos + 3);
-      v.begin[pos] = item;
-      v.end = v.begin + pos + 1;
+      v.begin()[pos] = item;
+      v.end() = v.begin() + pos + 1;
     }
   }
 }
@@ -1150,7 +1150,7 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     ec.example_t = priv.total_example_t;
     polylabel old_label = ec.l;
     ec.l = losses; // labels;
-    if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
+    if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin(), priv.learn_condition_on_act.begin());
     for (size_t is_local=0; is_local<= (size_t)priv.xv; is_local++)
     { int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
       ec.in_use = true;
@@ -1169,7 +1169,7 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     if (add_conditioning)
       for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++)
       { example& ec = priv.learn_ec_ref[a];
-        add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
+        add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin(), priv.learn_condition_on_act.begin());
       }
 
     for (size_t is_local=0; is_local<= (size_t)priv.xv; is_local++)
@@ -1316,9 +1316,9 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
 
         ensure_size(priv.learn_ec_copy, ec_cnt);
         for (size_t i=0; i<ec_cnt; i++)
-          VW::copy_example_data(priv.all->audit, priv.learn_ec_copy.begin+i, ecs+i, label_size, label_copy_fn);
+          VW::copy_example_data(priv.all->audit, priv.learn_ec_copy.begin()+i, ecs+i, label_size, label_copy_fn);
 
-        priv.learn_ec_ref = priv.learn_ec_copy.begin;
+        priv.learn_ec_ref = priv.learn_ec_copy.begin();
       }
 
       // copy conditioning stuff and allowed actions
@@ -1326,9 +1326,9 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
       { ensure_size(priv.learn_condition_on,     condition_on_cnt);
         ensure_size(priv.learn_condition_on_act, condition_on_cnt);
 
-        priv.learn_condition_on.end = priv.learn_condition_on.begin + condition_on_cnt;   // allow .size() to be used in lieu of _cnt
+        priv.learn_condition_on.end() = priv.learn_condition_on.begin() + condition_on_cnt;   // allow .size() to be used in lieu of _cnt
 
-        memcpy(priv.learn_condition_on.begin, condition_on, condition_on_cnt * sizeof(ptag));
+        memcpy(priv.learn_condition_on.begin(), condition_on, condition_on_cnt * sizeof(ptag));
 
         for (size_t i=0; i<condition_on_cnt; i++)
           push_at(priv.learn_condition_on_act
@@ -1341,13 +1341,13 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         }
         else
         { ensure_size(priv.learn_condition_on_names, strlen(condition_on_names)+1);
-          strcpy(priv.learn_condition_on_names.begin, condition_on_names);
+          strcpy(priv.learn_condition_on_names.begin(), condition_on_names);
         }
       }
 
       if (allowed_actions && (allowed_actions_cnt > 0))
       { ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);
-        memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt*sizeof(action));
+        memcpy(priv.learn_allowed_actions.begin(), allowed_actions, allowed_actions_cnt*sizeof(action));
         cdbg_print_array("in LEARN, learn_allowed_actions", priv.learn_allowed_actions);
       }
     }
@@ -1418,7 +1418,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
 
       bool not_test = priv.all->training && !ecs[0].test_only;
 
-      if ((!skip) && (!need_fea) && not_test && cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, learner_id, a, false, a_cost))
+      if ((!skip) && (!need_fea) && not_test && cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin(), condition_on_cnt, policy, learner_id, a, false, a_cost))
         // if this succeeded, 'a' has the right action
         priv.total_cache_hits++;
       else   // we need to predict, and then cache, and maybe run foreach_action
@@ -1426,7 +1426,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         priv.last_action_repr.erase();
         if (priv.auto_condition_features)
           for (size_t n=start_K; n<ec_cnt; n++)
-            add_example_conditioning(priv, ecs[n], condition_on_cnt, condition_on_names, priv.condition_on_actions.begin);
+            add_example_conditioning(priv, ecs[n], condition_on_cnt, condition_on_names, priv.condition_on_actions.begin());
 
         if (((!skip) && (policy >= 0)) || need_fea)    // only make a prediction if we're going to use the output
         { if (priv.auto_condition_features && priv.acset.use_passthrough_repr)
@@ -1458,7 +1458,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
           priv.learn_ec_ref_cnt = ec_cnt;
           if (allowed_actions)
           { ensure_size(priv.learn_allowed_actions, allowed_actions_cnt); // TODO: do we really need this?
-            memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt * sizeof(action));
+            memcpy(priv.learn_allowed_actions.begin(), allowed_actions, allowed_actions_cnt * sizeof(action));
           }
           size_t old_learner_id = priv.learn_learner_id;
           priv.learn_learner_id = learner_id;
@@ -1471,7 +1471,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
             del_example_conditioning(priv, ecs[n]);
 
         if (not_test && (!skip))
-          cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin, condition_on_cnt, policy, learner_id, a, true, a_cost);
+          cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin(), condition_on_cnt, policy, learner_id, a, true, a_cost);
       }
     }
 
@@ -1561,11 +1561,11 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
       if (! v_array_contains(timesteps, t))
         timesteps.push_back(t);
     }
-    std::sort(timesteps.begin, timesteps.end, cmp_size_t);
+    std::sort(timesteps.begin(), timesteps.end(), cmp_size_t);
   }
 
   if (! priv.linear_ordering)
-    hoopla_permute(timesteps.begin, timesteps.end);
+    hoopla_permute(timesteps.begin(), timesteps.end());
 }
 
 struct final_item
@@ -1652,8 +1652,8 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex)
       all.sd->update(priv.ec_seq[0]->test_only, priv.test_loss, 1.f, priv.num_features);
 
     // generate output
-    for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
-      all.print_text((int)*sink, priv.pred_string->str(), priv.ec_seq[0]->tag);
+    for (auto sink : all.final_prediction_sink)
+      all.print_text((int)sink, priv.pred_string->str(), priv.ec_seq[0]->tag);
 
     if (all.raw_prediction > 0)
       all.print_text(all.raw_prediction, "", priv.ec_seq[0]->tag);
@@ -1964,8 +1964,8 @@ void search_finish(search& sch)
     priv.allowed_actions_cache->cs.costs.delete_v();
 
   priv.train_trajectory.delete_v();
-  for (action_repr* ar = priv.ptag_to_action.begin; ar != priv.ptag_to_action.end; ++ar)
-    ar->repr.delete_v();
+  for (auto& ar : priv.ptag_to_action)
+    ar.repr.delete_v();
   priv.ptag_to_action.delete_v();
   clear_memo_foreach_action(priv);
   priv.memo_foreach_action.delete_v();
@@ -1978,8 +1978,8 @@ void search_finish(search& sch)
   // destroy copied examples if we needed them
   if (! priv.examples_dont_change)
   { void (*delete_label)(void*) = priv.is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
-    for(example*ec = priv.learn_ec_copy.begin; ec!=priv.learn_ec_copy.end; ++ec)
-      VW::dealloc_example(delete_label, *ec);
+    for(auto& ec : priv.learn_ec_copy)
+      VW::dealloc_example(delete_label, ec);
     priv.learn_ec_copy.delete_v();
   }
   priv.learn_condition_on_names.delete_v();
@@ -2552,18 +2552,18 @@ void predictor::set_input_at(size_t posn, example&ex)
 template<class T>
 void predictor::make_new_pointer(v_array<T>& A, size_t new_size)
 { size_t old_size      = A.size();
-  T* old_pointer  = A.begin;
-  A.begin     = calloc_or_throw<T>(new_size);
-  A.end       = A.begin + new_size;
-  A.end_array = A.end;
-  memcpy(A.begin, old_pointer, old_size * sizeof(T));
+  T* old_pointer  = A.begin();
+  A.begin()     = calloc_or_throw<T>(new_size);
+  A.end()       = A.begin() + new_size;
+  A.end_array = A.end();
+  memcpy(A.begin(), old_pointer, old_size * sizeof(T));
 }
 
 template<class T>
 predictor& predictor::add_to(v_array<T>& A, bool& A_is_ptr, T a, bool clear_first)
 { if (A_is_ptr)   // we need to make our own memory
   { if (clear_first)
-      A.end = A.begin;
+      A.end() = A.begin();
     size_t new_size = clear_first ? 1 : (A.size() + 1);
     make_new_pointer<T>(A, new_size);
     A_is_ptr = false;
@@ -2582,13 +2582,13 @@ predictor& predictor::add_to(v_array<T>&A, bool& A_is_ptr, T*a, size_t count, bo
   if (old_size > 0)
   { if (A_is_ptr)   // we need to make our own memory
     { if (clear_first)
-      { A.end = A.begin;
+      { A.end() = A.begin();
         old_size = 0;
       }
       size_t new_size = old_size + count;
       make_new_pointer<T>(A, new_size);
       A_is_ptr = false;
-      memcpy(A.begin + old_size, a, count * sizeof(T));
+      memcpy(A.begin() + old_size, a, count * sizeof(T));
     }
     else     // we already have our own memory
     { if (clear_first) A.erase();
@@ -2599,37 +2599,37 @@ predictor& predictor::add_to(v_array<T>&A, bool& A_is_ptr, T*a, size_t count, bo
   { if (! A_is_ptr)
       A.delete_v(); // avoid memory leak
 
-    A.begin = a;
-    A.end   = a + count;
-    A.end_array = A.end;
+    A.begin() = a;
+    A.end()   = a + count;
+    A.end_array = A.end();
     A_is_ptr = true;
   }
   return *this;
 }
 
-predictor& predictor::erase_oracles() { if (oracle_is_pointer) oracle_actions.end = oracle_actions.begin; else oracle_actions.erase(); return *this; }
+predictor& predictor::erase_oracles() { if (oracle_is_pointer) oracle_actions.end() = oracle_actions.begin(); else oracle_actions.erase(); return *this; }
 predictor& predictor::add_oracle(action a) { return add_to(oracle_actions, oracle_is_pointer, a, false); }
 predictor& predictor::add_oracle(action*a, size_t action_count) { return add_to(oracle_actions, oracle_is_pointer, a, action_count, false); }
-predictor& predictor::add_oracle(v_array<action>& a) { return add_to(oracle_actions, oracle_is_pointer, a.begin, a.size(), false); }
+predictor& predictor::add_oracle(v_array<action>& a) { return add_to(oracle_actions, oracle_is_pointer, a.begin(), a.size(), false); }
 
 predictor& predictor::set_oracle(action a) { return add_to(oracle_actions, oracle_is_pointer, a, true); }
 predictor& predictor::set_oracle(action*a, size_t action_count) { return add_to(oracle_actions, oracle_is_pointer, a, action_count, true); }
-predictor& predictor::set_oracle(v_array<action>& a) { return add_to(oracle_actions, oracle_is_pointer, a.begin, a.size(), true); }
+predictor& predictor::set_oracle(v_array<action>& a) { return add_to(oracle_actions, oracle_is_pointer, a.begin(), a.size(), true); }
 
 predictor& predictor::set_weight(float w) { weight = w; return *this; }
 
 predictor& predictor::erase_alloweds()
-{ if (allowed_is_pointer) allowed_actions.end = allowed_actions.begin; else allowed_actions.erase();
-  if (allowed_cost_is_pointer) allowed_actions_cost.end = allowed_actions_cost.begin; else allowed_actions_cost.erase();
+{ if (allowed_is_pointer) allowed_actions.end() = allowed_actions.begin(); else allowed_actions.erase();
+  if (allowed_cost_is_pointer) allowed_actions_cost.end() = allowed_actions_cost.begin(); else allowed_actions_cost.erase();
   return *this;
 }
 predictor& predictor::add_allowed(action a) { return add_to(allowed_actions, allowed_is_pointer, a, false); }
 predictor& predictor::add_allowed(action*a, size_t action_count) { return add_to(allowed_actions, allowed_is_pointer, a, action_count, false); }
-predictor& predictor::add_allowed(v_array<action>& a) { return add_to(allowed_actions, allowed_is_pointer, a.begin, a.size(), false); }
+predictor& predictor::add_allowed(v_array<action>& a) { return add_to(allowed_actions, allowed_is_pointer, a.begin(), a.size(), false); }
 
 predictor& predictor::set_allowed(action a) { return add_to(allowed_actions, allowed_is_pointer, a, true); }
 predictor& predictor::set_allowed(action*a, size_t action_count) { return add_to(allowed_actions, allowed_is_pointer, a, action_count, true); }
-predictor& predictor::set_allowed(v_array<action>& a) { return add_to(allowed_actions, allowed_is_pointer, a.begin, a.size(), true); }
+predictor& predictor::set_allowed(v_array<action>& a) { return add_to(allowed_actions, allowed_is_pointer, a.begin(), a.size(), true); }
 
 predictor& predictor::add_allowed(action a, float cost)
 { add_to(allowed_actions_cost, allowed_cost_is_pointer, cost, false);
@@ -2688,15 +2688,15 @@ predictor& predictor::set_learner_id(size_t id) { learner_id = id; return *this;
 predictor& predictor::set_tag(ptag tag) { my_tag = tag; return *this; }
 
 action predictor::predict()
-{ const action* orA = oracle_actions.size() == 0 ? nullptr : oracle_actions.begin;
-  const ptag*   cOn = condition_on_names.size() == 0 ? nullptr : condition_on_tags.begin;
+{ const action* orA = oracle_actions.size() == 0 ? nullptr : oracle_actions.begin();
+  const ptag*   cOn = condition_on_names.size() == 0 ? nullptr : condition_on_tags.begin();
   const char*   cNa = nullptr;
   if (condition_on_names.size() > 0)
   { condition_on_names.push_back((char)0);  // null terminate
-    cNa = condition_on_names.begin;
+    cNa = condition_on_names.begin();
   }
-  const action* alA      = (allowed_actions.size() == 0) ? nullptr : allowed_actions.begin;
-  const float*  alAcosts = (allowed_actions_cost.size() == 0) ? nullptr : allowed_actions_cost.begin;
+  const action* alA      = (allowed_actions.size() == 0) ? nullptr : allowed_actions.begin();
+  const float*  alAcosts = (allowed_actions_cost.size() == 0) ? nullptr : allowed_actions_cost.begin();
   size_t numAlA = max(allowed_actions.size(), allowed_actions_cost.size());
   action p = is_ldf
              ? sch.predictLDF(ec, ec_cnt, my_tag, orA, oracle_actions.size(), cOn, cNa, learner_id, weight)

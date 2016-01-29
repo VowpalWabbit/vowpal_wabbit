@@ -121,7 +121,7 @@ namespace VW.Serializer
                                         case "_label":
                                             // passed in label has precedence
                                             if (label == null)
-                                            this.ParseLabel(context);
+                                                this.ParseLabel(context);
                                             else
                                                 reader.Skip();
                                             break;
