@@ -21,7 +21,7 @@ CONSTANT_HASH = 116060
 INVALID_CHARS = re.compile(r"[\|: \n]+")
 
 
-class VW(BaseEstimator, vw):
+class VW(BaseEstimator):
     """ Vowpal Wabbit Scikit-learn Base Estimator wrapper
 
         Attributes
@@ -33,11 +33,14 @@ class VW(BaseEstimator, vw):
     """
 
     params = dict()
-    passes = 1
 
     def __init__(self,
+                 probabilities=None,
+                 bfgs=None,
+                 mem=None,
                  random_seed=None,
                  ring_size=None,
+                 convert_to_vw=None,
                  learning_rate=None,
                  l=None,
                  power_t=None,
@@ -100,6 +103,7 @@ class VW(BaseEstimator, vw):
 
         Parameters
         ----------
+        convert_to_vw (bool): flag to convert X input to vw format
         random_seed (int): seed random number generator
         ring_size (int): size of example ring
 
@@ -178,25 +182,50 @@ class VW(BaseEstimator, vw):
                Returns self.
         """
 
-        # clear fit attribute
+        # clear estimator attributes
         if hasattr(self, 'fit_'):
             del self.fit_
+        if hasattr(self, 'passes_'):
+            del self.passes_
+        if hasattr(self, 'convert_to_vw_'):
+            del self.convert_to_vw_
+        if hasattr(self, 'vw_'):
+            del self.vw_
 
         # reset params and quiet models by default
         self.params = {'quiet':  True}
 
         # assign all valid args to params dict
-        for k, v in locals().iteritems():
+        args = dict(locals())
+        for k, v in args.iteritems():
             if k != 'self' and v is not None:
                 self.params[k] = v
 
         # store passes separately to be used in fit
-        self.passes = self.params.pop('passes', 1)
+        self.passes_ = self.params.pop('passes', 1)
+        # pull out convert_to_vw from params
+        self.convert_to_vw_ = self.params.pop('convert_to_vw', True)
+        self.vw_ = None
 
-        super(VW, self).__init__(**self.params)
+        super(VW, self).__init__()
 
-    def fit(self, X, y=None, sample_weight=None, convert_to_vw=True):
+    def get_vw(self):
+        """
+        Factory to create a vw instance on demand
+
+        Returns
+        -------
+        pyvw.vw instance
+        """
+        if self.vw_ is None:
+            self.vw_ = vw(**self.params)
+        return self.vw_
+
+    def fit(self, X, y=None, sample_weight=None):
         """ Fit the model according to the given training data
+
+        TODO: for first pass create and store example objects.
+                for N-1 passes use example objects directly (simulate cache file...but in memory for faster processing)
 
         Parameters
         ----------
@@ -208,19 +237,43 @@ class VW(BaseEstimator, vw):
             Target vector relative to X.
         sample_weight : array-like, shape (n_samples,)
                         sample weight vector relative to X.
-        convert_to_vw : bool
-                        flag to convert X input to vw format
+
+        Returns
+        -------
+        return self so pipeline can call transform() after fit
         """
 
         # add examples to model
-        for _ in xrange(self.passes):
+        for _ in xrange(self.passes_):
             for idx, x in enumerate(X):
-                if convert_to_vw:
+                if self.convert_to_vw_:
                     x = tovw(x=x, y=y[idx], sample_weight=sample_weight)[0]
-                self.learn(x)
+                self.get_vw().learn(x)
         self.fit_ = True
+        return self
 
-    def predict(self, X, convert_to_vw=True):
+    def transform(self, X, y=None):
+        """ Transform does nothing by default besides closing the model. Transform is required for any estimator
+         in a sklearn pipeline that isn't the final estimator
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape (n_samples, n_features or 1 if not convert_to_vw) or
+            Training vector, where n_samples in the number of samples and
+            n_features is the number of features.
+            if not using convert_to_vw, X is expected to be a list of vw formatted feature vector strings with labels
+        y : array-like, shape (n_samples,), optional if not convert_to_vw
+            Target vector relative to X.
+
+        Returns
+        -------
+        return X to be passed into next estimator in pipeline
+        """
+
+        self.get_vw().finish()
+        return X
+
+    def predict(self, X):
         """ Predict with Vowpal Wabbit model
 
         Parameters
@@ -229,8 +282,6 @@ class VW(BaseEstimator, vw):
             Training vector, where n_samples in the number of samples and
             n_features is the number of features.
             if not using convert_to_vw, X is expected to be a list of vw formatted feature vector strings with labels
-        convert_to_vw : bool
-            flag to convert X input to vw format
 
         Returns
         -------
@@ -241,22 +292,23 @@ class VW(BaseEstimator, vw):
         check_is_fitted(self, 'fit_')
 
         try:
-            num_samples = X.shape[0] if X.ndim > 1 else 1
+            num_samples = X.shape[0] if X.ndim > 1 else len(X)
         except AttributeError:
-            num_samples = 1
+            num_samples = len(X)
 
         # add test examples to model
         y = np.empty([num_samples])
         for idx, x in enumerate(X):
-            if convert_to_vw:
+            if self.convert_to_vw_:
                 x = tovw(x)[0]
-            ex = self.example(x)
+            ex = self.get_vw().example(x)
             # need to set test bit to skip learning
             ex.set_test_only(True)
             ex.learn()
             y[idx] = ex.get_simplelabel_prediction()
             ex.finish()
 
+        self.get_vw().finish()
         return y
 
     def set_params(self, **params):
@@ -281,7 +333,7 @@ class VW(BaseEstimator, vw):
         {sparse matrix} coefficient weights for model
         """
 
-        return csr_matrix([self.get_weight(i) for i in xrange(self.num_weights())])
+        return csr_matrix([self.get_vw().get_weight(i) for i in xrange(self.get_vw().num_weights())])
 
     def get_intercept(self):
         """ Returns intercept weight for model
@@ -291,10 +343,48 @@ class VW(BaseEstimator, vw):
         {int} intercept value, 0 if noconstant
         """
 
-        return self.get_weight(CONSTANT_HASH)
+        return self.get_vw().get_weight(CONSTANT_HASH)
 
 
-class VWClassifier(SparseCoefMixin, LinearClassifierMixin, VW):
+
+class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
+    """
+    Mixin for linear classifiers.  A threshold is used to specify the positive
+    class cutoff
+
+    Handles prediction for sparse and dense X.
+    """
+
+    def __init__(self, **params):
+
+        # assume 0 as positive score threshold
+        self.pos_threshold = params.pop('pos_threshold', 0.0)
+
+        super(ThresholdingLinearClassifierMixin, self).__init__(**params)
+
+    def predict(self, X):
+        """Predict class labels for samples in X.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
+            Samples.
+
+        Returns
+        -------
+        C : array, shape = [n_samples]
+            Predicted class label per sample.
+        """
+        scores = self.decision_function(X)
+        if len(scores.shape) == 1:
+            indices = (scores >= self.pos_threshold).astype(np.int)
+        else:
+            indices = scores.argmax(axis=1)
+        return self.classes_[indices]
+
+
+# class VWClassifier(SparseCoefMixin, LinearClassifierMixin, VW):
+class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
     """ Vowpal Wabbit Classifier model
     Only supports binary classification currently.
     note - don't try to apply link='logistic' on top of the existing functionality
