@@ -20,7 +20,7 @@ endif
 UNAME := $(shell uname)
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = -I /usr/include
-BOOST_LIBRARY = -L /usr/lib
+BOOST_LIBRARY = -L /usr/local/lib -L /usr/lib
 NPROCS := 1
 
 ifeq ($(UNAME), Linux)
