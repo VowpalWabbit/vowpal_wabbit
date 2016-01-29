@@ -27,7 +27,7 @@ using namespace std;
 #endif
 
 #ifdef _WIN32
-#define ssize_t size_t
+#define ssize_t int64_t
 #include <io.h>
 #include <sys/stat.h>
 #endif
@@ -156,7 +156,7 @@ public:
 
   static ssize_t read_file_or_socket(int f, void* buf, size_t nbytes);
 
-  size_t fill(int f)
+  ssize_t fill(int f)
   { // if the loaded values have reached the allocated space
     if (space.end_array - space.end == 0)
     { // reallocate to twice as much space
@@ -266,11 +266,10 @@ inline size_t bin_write(io_buf& o, const char* data, uint32_t len)
 inline size_t bin_text_write(io_buf& io, char* data, uint32_t len,
                              stringstream& msg, bool text)
 { if (text)
-    {
-      size_t temp = bin_write_fixed (io, msg.str().c_str(), msg.str().size());
-      msg.str("");
-      return temp;
-    }
+  { size_t temp = bin_write_fixed (io, msg.str().c_str(), (uint32_t)msg.str().size());
+    msg.str("");
+    return temp;
+  }
   else
     return bin_write (io, data, len);
   return 0;
@@ -289,11 +288,10 @@ inline size_t bin_text_read_write(io_buf& io, char* data, uint32_t len,
 inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len,
                                    stringstream& msg, bool text)
 { if (text)
-    {
-      size_t temp = bin_write_fixed (io, msg.str().c_str(), msg.str().size());
-      msg.str("");
-      return temp;
-    }
+  { size_t temp = bin_write_fixed(io, msg.str().c_str(), (uint32_t)msg.str().size());
+    msg.str("");
+    return temp;
+  }
   else
     return bin_write_fixed (io, data, len);
   return 0;
