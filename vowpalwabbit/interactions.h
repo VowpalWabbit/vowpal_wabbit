@@ -169,6 +169,8 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 
                     auto end = range.end();
                     inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weight_mask, weight_vector, ft_value, halfhash);
+
+	            if (audit) audit_func(dat, nullptr);
                   } // end for(fst)
               } // end if (data[snd] size > 0)
           } // end if (data[fst] size > 0)
