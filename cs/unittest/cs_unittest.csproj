@@ -81,6 +81,7 @@
     </Compile>
     <Compile Include="TestAllReduce.cs" />
     <Compile Include="TestExampleCache.cs" />
+    <Compile Include="TestExpansion.cs" />
     <Compile Include="TestLeak.cs" />
     <Compile Include="TestManagedHash.cs" />
     <Compile Include="TestMarshalling.cs" />

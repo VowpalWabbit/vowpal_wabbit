@@ -168,7 +168,6 @@ public:
   ~namedlabels()
   { if (id2name.size()>0)
       free(id2name[0].begin);
-    cout << "in namedlabels delete" << endl;
     name2id.iter(deleter);
     name2id.delete_v();
     id2name.delete_v();
