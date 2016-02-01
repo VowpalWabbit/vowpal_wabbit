@@ -340,8 +340,8 @@ void finish(Search::search& sch)
 // this is totally bogus for the example -- you'd never actually do this!
 void my_update_example_indicies(Search::search& sch, bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount)
 { size_t ss = sch.get_stride_shift();
-  for (auto ns : ec->indices)
-    for (auto& idx : ec->feature_space[ns].indicies)
+  for (features& fs : *ec)
+    for (feature_index& idx : fs.indicies)
       idx = (((idx >> ss) * mult_amount) + plus_amount) << ss;
 }
 

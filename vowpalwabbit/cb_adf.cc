@@ -150,7 +150,7 @@ void get_observed_cost(cb_adf& mydata, v_array<example*>& examples)
   ld.costs = v_init<cb_class>();
   int index = -1;
 
-  for (auto& ec : examples)
+  for (example*& ec : examples)
   { if (ec->l.cb.costs.size() == 1 &&
         ec->l.cb.costs[0].cost != FLT_MAX &&
         ec->l.cb.costs[0].probability > 0)
@@ -170,7 +170,7 @@ void get_observed_cost(cb_adf& mydata, v_array<example*>& examples)
 
   bool shared = CB::ec_is_example_header(*examples[0]);
 
-  for (auto cl : ld.costs)
+  for (CB::cb_class& cl : ld.costs)
   { mydata.known_cost = ld.costs[0];
     mydata.known_cost.action = index;
 
@@ -188,14 +188,14 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
 
   // 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.
   size_t index = 0;
-  for (auto ec : examples)
+  for (example* ec : examples)
   { cb_labels.push_back(ec->l.cb);
     ec->l.cs = cs_labels[index++];
   }
 
   // 2nd: predict for each ex
   // // call base.predict for each vw exmaple in the sequence
-  for (auto ec : examples)
+  for (example* ec : examples)
   { if (is_learn)
       base.learn(*ec);
     else
@@ -205,7 +205,7 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
   // 3rd: restore cb_label for each example
   // (**ec).l.cb = array.element.
   size_t i = 0;
-  for (auto ec : examples)
+  for (example* ec : examples)
     ec->l.cb = cb_labels[i++];
 
   if (!mydata.rank_all)
@@ -389,7 +389,7 @@ void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
   else
     is_test = true;
 
-  for (auto sink : all.final_prediction_sink)
+  for (int sink : all.final_prediction_sink)
     all.print(sink, (float)action, 0, ec.tag);
 
   if (all.raw_prediction > 0)
@@ -432,7 +432,7 @@ void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>
   else
     is_test = true;
 
-  for (auto sink : all.final_prediction_sink)
+  for (int sink : all.final_prediction_sink)
     MULTILABEL::print_multilabel(sink, head_ec.pred.multilabels, head_ec.tag);
 
   if (all.raw_prediction > 0)
@@ -468,7 +468,7 @@ void output_example_seq(vw& all, cb_adf& data)
 
 void clear_seq_and_finish_examples(vw& all, cb_adf& data)
 { if (data.ec_seq.size() > 0)
-    for (auto ecc : data.ec_seq)
+    for (example* ecc : data.ec_seq)
       if (ecc->in_use)
         VW::finish_example(all, ecc);
   data.ec_seq.erase();

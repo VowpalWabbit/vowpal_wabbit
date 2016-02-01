@@ -39,7 +39,7 @@ void send_features(io_buf *b, example& ec, uint32_t mask)
 { // note: subtracting 1 b/c not sending constant
   output_byte(*b,(unsigned char) (ec.indices.size()-1));
 
-  for (auto ns : ec.indices)
+  for (namespace_index ns : ec.indices)
   { if (ns == constant_namespace)
       continue;
     output_features(*b, ns, ec.feature_space[ns], mask);

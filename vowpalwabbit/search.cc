@@ -546,7 +546,7 @@ void reset_search_structure(search_private& priv)
     //assert( fabs(priv_beta - priv.beta) < 1e-2 );
     if (priv.beta > 1) priv.beta = 1;
   }
-  for (auto& ar : priv.ptag_to_action)
+  for (Search::action_repr& ar : priv.ptag_to_action)
   { ar.repr.values.delete_v();
     ar.repr.indicies.delete_v();
     ar.repr.space_names.delete_v();
@@ -1652,7 +1652,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex)
       all.sd->update(priv.ec_seq[0]->test_only, priv.test_loss, 1.f, priv.num_features);
 
     // generate output
-    for (auto sink : all.final_prediction_sink)
+    for (int sink : all.final_prediction_sink)
       all.print_text((int)sink, priv.pred_string->str(), priv.ec_seq[0]->tag);
 
     if (all.raw_prediction > 0)
@@ -1964,7 +1964,7 @@ void search_finish(search& sch)
     priv.allowed_actions_cache->cs.costs.delete_v();
 
   priv.train_trajectory.delete_v();
-  for (auto& ar : priv.ptag_to_action)
+  for (Search::action_repr& ar : priv.ptag_to_action)
     ar.repr.delete_v();
   priv.ptag_to_action.delete_v();
   clear_memo_foreach_action(priv);
@@ -1978,7 +1978,7 @@ void search_finish(search& sch)
   // destroy copied examples if we needed them
   if (! priv.examples_dont_change)
   { void (*delete_label)(void*) = priv.is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
-    for(auto& ec : priv.learn_ec_copy)
+    for(example& ec : priv.learn_ec_copy)
       VW::dealloc_example(delete_label, ec);
     priv.learn_ec_copy.delete_v();
   }

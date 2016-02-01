@@ -466,7 +466,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (!equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
     return "dictionary_path";
 
-  for (auto i = vw1.interactions.begin(), j = vw2.interactions.begin(); i != vw1.interactions.end(); i++, j++)
+  for (v_string *i = vw1.interactions.begin(), *j = vw2.interactions.begin(); i != vw1.interactions.end(); i++, j++)
     if (v_string2string(*i) != v_string2string(*j))
       return "interaction mismatch";
 
@@ -672,14 +672,14 @@ void parse_feature_tweaks(vw& all)
 
     if (all.interactions.size() > 0)
     { // should be empty, but just in case...
-      for (auto& i : all.interactions) i.delete_v();
+      for (v_string& i : all.interactions) i.delete_v();
       all.interactions.delete_v();
     }
 
     all.interactions = expanded_interactions;
 
     // copy interactions of size 2 and 3 to old vectors for backward compatibility
-    for (auto& i : expanded_interactions)
+    for (v_string& i : expanded_interactions)
     { const size_t len = i.size();
       if (len == 2)
         all.pairs.push_back(v_string2string(i));
@@ -1474,7 +1474,7 @@ void finish(vw& all, bool delete_all)
   delete all.all_reduce;
 
   // destroy all interactions and array of them
-  for (auto& i : all.interactions) i.delete_v();
+  for (v_string& i : all.interactions) i.delete_v();
   all.interactions.delete_v();
 
   if (delete_all) delete &all;

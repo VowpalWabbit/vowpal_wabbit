@@ -570,8 +570,8 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, exa
     old_gamma.push_back(0.f);
   }
   size_t num_words = 0;
-  for (auto i : ec->indices)
-    num_words += ec->feature_space[i].size();
+  for (features& fs : *ec)
+    num_words += fs.size();
 
   float xc_w = 0;
   float score = 0;
@@ -586,16 +586,15 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, exa
     score = 0;
     size_t word_count = 0;
     doc_length = 0;
-    for (auto i : ec->indices)
-      { for (auto& f : ec->feature_space[i])
+    for (features& fs : *ec)
+      { for (features::iterator& f : fs)
           { float *u_for_w = &weights[(f.index() & l.all->reg.weight_mask) + l.topics + 1];
             float c_w = find_cw(l, u_for_w, v);
             xc_w = c_w * f.value();
             score += -f.value() * log(c_w);
             size_t max_k = l.topics;
             for (size_t k = 0; k < max_k; k++)
-              { new_gamma[k] += xc_w * u_for_w[k];
-              }
+              new_gamma[k] += xc_w * u_for_w[k];
             word_count++;
             doc_length += f.value();
           }
@@ -791,13 +790,13 @@ void learn(lda &l, LEARNER::base_learner &, example &ec)
 { uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
-  for (auto i : ec.indices)
-    { for (auto& f : ec.feature_space[i])
-        { index_feature temp = {num_ex, feature(f.value(), f.index())};
-          l.sorted_features.push_back(temp);
-          l.doc_lengths[num_ex] += (int)f.value();
-        }
+  for (features& fs : ec)
+  { for (features::iterator& f : fs)
+    { index_feature temp = {num_ex, feature(f.value(), f.index())};
+      l.sorted_features.push_back(temp);
+      l.doc_lengths[num_ex] += (int)f.value();
     }
+  }
   if (++num_ex == l.minibatch)
     learn_batch(l);
 }

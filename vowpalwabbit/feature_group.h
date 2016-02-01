@@ -262,7 +262,7 @@ struct features {
 
   void truncate_to(const features_value_iterator& pos)
   {
-    auto i = pos._begin - values.begin();
+    ssize_t i = pos._begin - values.begin();
     values.end() = pos._begin;
     if (indicies.end() != indicies.begin())
       indicies.end() = indicies.begin() + i;
@@ -279,10 +279,9 @@ struct features {
     if (indicies.end() != indicies.begin())
       indicies.end() = indicies.begin() + i;
     if (space_names.begin() != space_names.end())
-      {
-	free_space_names(i);
-	space_names.end() = space_names.begin() + i;
-      }
+    { free_space_names(i);
+	    space_names.end() = space_names.begin() + i;
+    }
   }
 
   void delete_v()

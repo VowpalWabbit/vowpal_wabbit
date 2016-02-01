@@ -643,7 +643,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs,
  * 32 random nos. are maintained in an array and are used in the hashing.
  */
 void generateGrams(vw& all, example* &ex)
-{ for(auto index : ex->indices)
+{ for(namespace_index index : ex->indices)
   { size_t length = ex->feature_space[index].size();
     for (size_t n = 1; n < all.ngram[index]; n++)
     { all.p->gram_mask.erase();
@@ -693,7 +693,7 @@ void end_pass_example(vw& all, example* ae)
 }
 
 void feature_limit(vw& all, example* ex)
-{ for(auto index : ex->indices)
+{ for(namespace_index index : ex->indices)
     if (all.limit[index] < ex->feature_space[index].size())
       { features& fs = ex->feature_space[index];
         fs.sort(all.parse_mask);
@@ -744,15 +744,15 @@ void setup_example(vw& all, example* ae)
 
   uint64_t multiplier = all.wpp << all.reg.stride_shift;
   if(multiplier != 1) //make room for per-feature information.
-    for (auto ns : ae->indices)
-        for (auto& j : ae->feature_space[ns].indicies)
-          j *= multiplier;
+    for (features& fs : *ae)
+      for (auto& j : fs.indicies)
+        j *= multiplier;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
-  for (auto ns : ae->indices)
-    { ae->num_features += ae->feature_space[ns].size();
-      ae->total_sum_feat_sq += ae->feature_space[ns].sum_feat_sq;
-    }
+  for (features& fs : *ae)
+  { ae->num_features += fs.size();
+    ae->total_sum_feat_sq += fs.sum_feat_sq;
+  }
 
   size_t new_features_cnt;
   float new_features_sum_feat_sq;
@@ -823,13 +823,13 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
   primitive_feature_space* fs_ptr = new primitive_feature_space[len];
 
   int fs_count = 0;
-  for (auto i : ec->indices)
+  for (namespace_index i : ec->indices)
   { fs_ptr[fs_count].name = i;
     fs_ptr[fs_count].len = ec->feature_space[i].size();
     fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
 
     int f_count = 0;
-    for (auto& f : ec->feature_space[i])
+    for (features::iterator& f : ec->feature_space[i])
       { feature t = {f.value(), f.index()};
         t.weight_index >>= all.reg.stride_shift;
         fs_ptr[fs_count].fs[f_count] = t;
@@ -858,8 +858,8 @@ void parse_example_label(vw& all, example&ec, string label)
 
 void empty_example(vw& all, example& ec)
 {
-  for (auto i : ec.indices)
-    ec.feature_space[i].erase();
+  for (features& fs : ec)
+    fs.erase();
 
   ec.indices.erase();
   ec.tag.erase();

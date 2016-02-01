@@ -30,7 +30,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
 { vw& all = *lrq.all;
 
   memset(lrq.orig_size, 0, sizeof(lrq.orig_size));
-  for (auto i : ec.indices)
+  for (namespace_index i : ec.indices)
     lrq.orig_size[i] = ec.feature_space[i].size();
 
   size_t which = ec.example_counter;
@@ -106,8 +106,8 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
       ec.loss = first_loss;
     }
 
-    for (auto i : lrq.field_name)
-    { unsigned char right = i;
+    for (char i : lrq.field_name)
+    { namespace_index right = i;
       features& rfs = ec.feature_space[right];
       rfs.values.end() = rfs.values.begin() + lrq.orig_size[right];
 
@@ -138,7 +138,7 @@ LEARNER::base_learner* lrqfa_setup(vw& all)
   *all.file_options << " --lrqfa " << lrq.field_name << lrq.k;
 
   int fd_id = 0;
-  for (auto i : lrq.field_name)
+  for (char i : lrq.field_name)
   { lrq.field_id[(int)i] = fd_id++;
   }
 

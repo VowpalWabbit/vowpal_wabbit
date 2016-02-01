@@ -547,7 +547,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
     assert(loss >= 0);
   }
 
-  for (auto sink : all.final_prediction_sink)
+  for (int sink : all.final_prediction_sink)
     all.print(sink, data.is_probabilities ? ec.pred.prob : (float)ec.pred.multiclass, 0, ec.tag);
 
   if (all.raw_prediction > 0)
@@ -578,7 +578,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
 
   if (!COST_SENSITIVE::example_is_test(head_ec))
   { size_t idx = 0;
-    for (auto ex : *ec_seq)
+    for (example* ex : *ec_seq)
     { if(ec_is_example_header(*ex)) continue;
       if (hit_loss) break;
       if (preds[0] == idx)
@@ -592,7 +592,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
     assert(loss >= 0);
   }
 
-  for (auto sink : all.final_prediction_sink)
+  for (int sink : all.final_prediction_sink)
     MULTILABEL::print_multilabel(sink, head_ec.pred.multilabels, head_ec.tag);
 
   if (all.raw_prediction > 0)
@@ -619,7 +619,7 @@ void output_example_seq(vw& all, ldf& data)
     if(data.rank)
       output_rank_example(all, **(data.ec_seq.begin()), hit_loss, &(data.ec_seq));
     else
-      for (auto ec : data.ec_seq)
+      for (example* ec : data.ec_seq)
         output_example(all, *ec, hit_loss, &(data.ec_seq), data);
 
     if (!data.is_singleline && (all.raw_prediction > 0))

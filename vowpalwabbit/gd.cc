@@ -211,7 +211,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
   size_t stride_shift = dat.all.reg.stride_shift;
 
   string ns_pre;
-  for (auto& s : dat.ns_pre) ns_pre += s;
+  for (string& s : dat.ns_pre) ns_pre += s;
 
   if(dat.all.audit)
   { ostringstream tempstream;
@@ -247,16 +247,15 @@ void print_features(vw& all, example& ec)
 
   if (all.lda > 0)
   { size_t count = 0;
-    for (auto i : ec.indices)
-      count += ec.feature_space[i].size();
-    for (auto i : ec.indices)
-      {
-        for (auto& f : ec.feature_space[i].values_indices_audit())
-          { cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':' << ((f.index() >> all.reg.stride_shift) & all.parse_mask) << ':' << f.value();
-            for (size_t k = 0; k < all.lda; k++)
-              cout << ':' << weights[(f.index()+k) & all.reg.weight_mask];
-          }
+    for (features& fs : ec)
+      count += fs.size();
+    for (features& fs : ec)
+    { for (features::iterator_all& f : fs.values_indices_audit())
+      { cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':' << ((f.index() >> all.reg.stride_shift) & all.parse_mask) << ':' << f.value();
+        for (size_t k = 0; k < all.lda; k++)
+          cout << ':' << weights[(f.index()+k) & all.reg.weight_mask];
       }
+    }
     cout << " total of " << count << " features." << endl;
   }
   else
@@ -264,25 +263,24 @@ void print_features(vw& all, example& ec)
 
     audit_results dat(all,ec.ft_offset);
 
-    for (auto c : ec.indices)
-      { features& fs = ec.feature_space[c];
-	if (fs.space_names.size() > 0)
-	  for (size_t j = 0; j < fs.size(); ++j)
-	    {
-          audit_interaction(dat, fs.space_names[j].get());
-	      audit_feature(dat, fs.values[j], (uint32_t)fs.indicies[j] + ec.ft_offset);
-	      audit_interaction(dat, NULL);
-	    }
-	else
-	  for (size_t j = 0; j < fs.size(); ++j)
-	    audit_feature(dat, fs.values[j], (uint32_t)fs.indicies[j] + ec.ft_offset);
-      }
+    for (features& fs : ec)
+    { if (fs.space_names.size() > 0)
+        for (features::iterator_all& f : fs.values_indices_audit())
+	      {
+          audit_interaction(dat, f.audit().get());
+	        audit_feature(dat, f.value(), f.index() + ec.ft_offset);
+	        audit_interaction(dat, NULL);
+	      }
+	    else
+        for (features::iterator& f : fs)
+          audit_feature(dat, f.value(), f.index() + ec.ft_offset);
+    }
 
     INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, true, audit_interaction >(all, ec, dat);
 
     sort(dat.results.begin(),dat.results.end());
     if(all.audit)
-    { for (auto& sv : dat.results)
+    { for (string_value& sv : dat.results)
         cout << '\t' << sv.s;
       cout << endl;
     }
