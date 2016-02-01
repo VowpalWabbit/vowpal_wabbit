@@ -4,7 +4,7 @@
     <title>Vowpal Wabbit</title>
     <id>VowpalWabbit</id>
     <tags>vw vowpal wabbit john langford</tags>
-    <version>8.0.0.29</version>
+    <version>8.0.0.30</version>
     <authors>John Langford et al</authors>
     <projectUrl>https://github.com/JohnLangford/vowpal_wabbit/wiki/C%23-Binding</projectUrl>
     <licenseUrl>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</licenseUrl>
@@ -30,8 +30,9 @@
 	  <file src="VowpalWabbit.targets" target="build" />
 
 	  <file src="**\*.cs" target="src\cs" exclude="**\obj\**\*.cs" />
-	  <file src="..\vw_clr\*.cpp" target="src\vw_clr" />
-	  <file src="..\vw_clr\*.h" target="src\vw_clr" />
+    <file src="..\common\**\*.cs" target="src\common" exclude="**\obj\**\*.cs" />
+	  <file src="..\cli\*.cpp" target="src\cli" />
+	  <file src="..\cli\*.h" target="src\cli" />
 	  <file src="$SolutionDir$*.cc" target="src\vowpalwabbit" />
 	  <file src="$SolutionDir$*.h" target="src\vowpalwabbit" />
   </files>

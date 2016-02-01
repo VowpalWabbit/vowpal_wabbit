@@ -173,7 +173,6 @@ namespace VW
             ILabel label = null)
         {
             Contract.Requires(vw != null);
-            Contract.Requires(serializer != null);
             Contract.Requires(actionDependentFeatureSerializer != null);
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
@@ -186,15 +185,18 @@ namespace VW
             try
             {
                 // contains prediction results
-                var sharedExample = serializer.Serialize(example, SharedLabel.Instance);
-                // check if we have shared features
-                if (sharedExample != null)
+                if (serializer != null)
                 {
-                    examples.Add(sharedExample);
-
-                    if (!sharedExample.IsNewLine)
+                    var sharedExample = serializer.Serialize(example, SharedLabel.Instance);
+                    // check if we have shared features
+                    if (sharedExample != null)
                     {
-                        validExamples.Add(sharedExample);
+                        examples.Add(sharedExample);
+
+                        if (!sharedExample.IsNewLine)
+                        {
+                            validExamples.Add(sharedExample);
+                        }
                     }
                 }
 
@@ -258,7 +260,6 @@ namespace VW
             ILabel label)
         {
             Contract.Requires(vw != null);
-            Contract.Requires(serializer != null);
             Contract.Requires(actionDependentFeatureSerializer != null);
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
@@ -305,7 +306,6 @@ namespace VW
             ILabel label)
         {
             Contract.Requires(vw != null);
-            Contract.Requires(serializer != null);
             Contract.Requires(actionDependentFeatureSerializer != null);
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
@@ -359,7 +359,6 @@ namespace VW
             ILabel label = null)
         {
             Contract.Requires(vw != null);
-            Contract.Requires(serializer != null);
             Contract.Requires(actionDependentFeatureSerializer != null);
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
