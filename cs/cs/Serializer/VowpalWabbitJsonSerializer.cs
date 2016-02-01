@@ -169,25 +169,47 @@ namespace VW.Serializer
         private void ParseLabel(VowpalWabbitMarshalContext context)
         {
             // peak the first property name
-            if (!reader.Read() || reader.TokenType != JsonToken.StartObject)
-                throw new VowpalWabbitJsonException(reader.Path, "Expected label object");
+            if (!reader.Read())
+                throw new VowpalWabbitJsonException(reader.Path, "Unexpected end");
 
-            if (!reader.Read() || reader.TokenType != JsonToken.PropertyName)
-                throw new VowpalWabbitJsonException(reader.Path, "Expected at least a single property to determine the label object");
+            switch (reader.TokenType)
+            {
+                case JsonToken.StartObject:
+                    {
+                        // parse complex object
+                        if (!reader.Read() || reader.TokenType != JsonToken.PropertyName)
+                            throw new VowpalWabbitJsonException(reader.Path, "Expected at least a single property to determine the label object");
 
-            var propertyName = (string)reader.Value;
+                        var propertyName = (string)reader.Value;
 
-            var prefixReader = new PrefixedJsonReader(this.reader,
-                Tuple.Create(JsonToken.StartObject, (object)null),
-                Tuple.Create(JsonToken.PropertyName, (object)propertyName));
+                        var prefixReader = new PrefixedJsonReader(this.reader,
+                            Tuple.Create(JsonToken.StartObject, (object)null),
+                            Tuple.Create(JsonToken.PropertyName, (object)propertyName));
 
-            Type labelType;
-            if (!labelPropertyMapping.TryGetValue(propertyName, out labelType))
-                throw new VowpalWabbitJsonException(reader.Path, "The first property ('" + propertyName + "') must match to a property of a VowpalWabbit label type.");
+                        Type labelType;
+                        if (!labelPropertyMapping.TryGetValue(propertyName, out labelType))
+                            throw new VowpalWabbitJsonException(reader.Path, "The first property ('" + propertyName + "') must match to a property of a VowpalWabbit label type.");
 
-            var label = (ILabel)jsonSerializer.Deserialize(prefixReader, labelType);
+                        var label = (ILabel)jsonSerializer.Deserialize(prefixReader, labelType);
 
-            this.defaultMarshaller.MarshalLabel(context, label);
+                        this.defaultMarshaller.MarshalLabel(context, label);
+                    }
+                    break;
+                case JsonToken.Integer:
+                case JsonToken.Float:
+                case JsonToken.String:
+                    {
+                        // pass label directly to VW
+                        var labelString = reader.Value.ToString();
+
+                        context.ExampleBuilder.ParseLabel(labelString);
+                        // prefix with label
+                        context.AppendStringExample(false, "{0}", labelString);
+                    }
+                    break;
+                default:
+                    throw new VowpalWabbitJsonException(reader.Path, "Expected label object");
+            }
         }
 
         /// <summary>

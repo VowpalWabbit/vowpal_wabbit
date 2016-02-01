@@ -55,6 +55,16 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        public void TestJsonVWLabel()
+        {
+            using (var validator = new VowpalWabbitExampleJsonValidator())
+            {
+                validator.Validate("1 |a foo:1", "{\"_label\":1,\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.Simple);
+                validator.Validate("1 |a foo:1", "{\"_label\":\"1\",\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.Simple);
+            }
+        }
+
+        [TestMethod]
         public void TestJsonSimpleLabelOverride()
         {
             using (var validator = new VowpalWabbitExampleJsonValidator())
@@ -72,6 +82,7 @@ namespace cs_unittest
                 validator.Validate("1:-2:.3 |a foo:1",
                     "{\"_label\":{\"Action\":1,\"Cost\":-2,\"Probability\":.3},\"a\":{\"foo\":1}}",
                     VowpalWabbitLabelComparator.ContextualBandit);
+                validator.Validate("1:2:.5 |a foo:1", "{\"_label\":\"1:2:.5\",\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.ContextualBandit);
             }
         }
     }
