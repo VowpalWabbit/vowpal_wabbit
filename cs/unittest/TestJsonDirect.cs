@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using VW;
 using VW.Interfaces;
 using VW.Labels;
+using VW.Serializer;
 
 namespace cs_unittest
 {
@@ -110,6 +111,42 @@ namespace cs_unittest
             using (var vw = new VowpalWabbitExampleValidator<JsonContextByte>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
             {
                 vw.Validate("| Feature:25", new JsonContextByte { Feature = 25 });
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonToVWString()
+        {
+            var jsonContext = new JsonContext()
+            {
+                Label = new SimpleLabel
+                {
+                    Label = 25
+                },
+                Ns1 = new Namespace1
+                {
+                    Foo = 1,
+                    Age = "25 old",
+                    DontConsider = "XXX"
+                },
+                Ns2 = new Namespace2
+                {
+                    FeatureA = true
+                },
+                Clicks = 5
+            };
+            var jsonContextString = JsonConvert.SerializeObject(jsonContext);
+
+            using (var vw = new VowpalWabbit(new VowpalWabbitSettings("--quiet -t", enableStringExampleGeneration: true, enableStringFloatCompact: true)))
+            {
+                var vwjson = new VowpalWabbitJsonSerializer(vw);
+                vwjson.Parse(jsonContextString);
+
+                VowpalWabbitExample vwExample = vwjson.CreateExample();
+                string vwExampleString = vwExample.VowpalWabbitString;
+
+                Assert.AreEqual("25 |a Bar:1 25_old |b Marker |  Clicks:5 MoreClicks:0", vwExampleString);
             }
         }
     }
