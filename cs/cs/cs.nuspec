@@ -31,11 +31,13 @@
 	  <file src="VowpalWabbit.targets" target="build" />
 
 	  <file src="**\*.cs" target="src\cs" exclude="**\obj\**\*.cs" />
-    <file src="..\common\**\*.cs" target="src\common" exclude="**\obj\**\*.cs" />
+	  <file src="..\common\**\*.cs" target="src\common" exclude="**\obj\**\*.cs" />
 	  <file src="..\cli\*.cpp" target="src\cli" />
 	  <file src="..\cli\*.h" target="src\cli" />
 	  <file src="$SolutionDir$*.cc" target="src\vowpalwabbit" />
 	  <file src="$SolutionDir$*.h" target="src\vowpalwabbit" />
+
+  	  <file src="web.config.transform" target="content"/>
   </files>
 </package>
 
