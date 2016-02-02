@@ -25,7 +25,6 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "vw.h"
 #include "floatbits.h"
-#include <numeric>
 
 #define VERSION_SAVE_RESUME_FIX "7.10.1"
 
