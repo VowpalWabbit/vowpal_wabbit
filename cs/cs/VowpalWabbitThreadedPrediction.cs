@@ -36,7 +36,7 @@ namespace VW
     /// Enables multi-threaded prediction by utilizing a pool of <see cref="VowpalWabbit"/> instances.
     /// </summary>
     /// <typeparam name="TExample">The type use for providing data to VW using the serializer infrastructure.</typeparam>
-    public class VowpalWabbitThreadedPrediction<TExample> : VowpalWabbitThreadedPredictionBase<VowpalWabbit<TExample>>
+    public sealed class VowpalWabbitThreadedPrediction<TExample> : VowpalWabbitThreadedPredictionBase<VowpalWabbit<TExample>>
     {
         /// <summary>
         /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction{TExample}"/>.
@@ -62,7 +62,7 @@ namespace VW
     /// </summary>
     /// <typeparam name="TExample">The type use for providing data to VW using the serializer infrastructure.</typeparam>
     /// <typeparam name="TActionDependentFeature">The type use for providing action dependent data to VW using the serializer infrastructure.</typeparam>
-    public class VowpalWabbitThreadedPrediction<TExample, TActionDependentFeature> : VowpalWabbitThreadedPredictionBase<VowpalWabbit<TExample, TActionDependentFeature>>
+    public sealed class VowpalWabbitThreadedPrediction<TExample, TActionDependentFeature> : VowpalWabbitThreadedPredictionBase<VowpalWabbit<TExample, TActionDependentFeature>>
     {
         /// <summary>
         /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction{TExample,TActionDependentFeature}"/>.

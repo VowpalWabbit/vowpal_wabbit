@@ -155,6 +155,7 @@
     <Compile Include="VowpalWabbitDynamic.cs" />
     <Compile Include="VowpalWabbitHttpModule.cs" />
     <Compile Include="VowpalWabbitJson.cs" />
+    <Compile Include="VowpalWabbitJsonThreadedPrediction.cs" />
     <Compile Include="VowpalWabbitSweep.cs" />
     <Compile Include="VowpalWabbitThreadedPrediction.cs" />
     <Compile Include="VowpalWabbitThreadedLearning.cs" />
