@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -83,6 +84,38 @@ namespace cs_unittest
                     "{\"_label\":{\"Action\":1,\"Cost\":-2,\"Probability\":.3},\"a\":{\"foo\":1}}",
                     VowpalWabbitLabelComparator.ContextualBandit);
                 validator.Validate("1:2:.5 |a foo:1", "{\"_label\":\"1:2:.5\",\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.ContextualBandit);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonToVWString()
+        {
+            var jsonContext = new JsonContext()
+            {
+                Label = new SimpleLabel
+                {
+                    Label = 25
+                },
+                Ns1 = new Namespace1
+                {
+                    Foo = 1,
+                    Age = "25 old",
+                    DontConsider = "XXX"
+                },
+                Ns2 = new Namespace2
+                {
+                    FeatureA = true
+                },
+                Clicks = 5
+            };
+
+            var jsonContextString = JsonConvert.SerializeObject(jsonContext);
+            using (var validator = new VowpalWabbitExampleJsonValidator(""))
+            {
+                validator.Validate("25 |a Bar:1 25_old |b Marker | Clicks:5 MoreClicks:0",
+                    jsonContextString,
+                    VowpalWabbitLabelComparator.Simple);
             }
         }
     }

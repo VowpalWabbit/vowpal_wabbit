@@ -111,7 +111,11 @@ namespace VW.Serializer
             if (label != null)
                 this.defaultMarshaller.MarshalLabel(this.Context, label);
 
-            if (!reader.Read() || reader.TokenType != JsonToken.StartObject)
+            // handle the case when the reader is already positioned at JsonToken.StartObject
+            if (reader.TokenType == JsonToken.None && !reader.Read())
+                return;
+
+            if (reader.TokenType != JsonToken.StartObject)
                 throw new VowpalWabbitJsonException(reader.Path, "Expected start object");
 
             Namespace defaultNamespace = new Namespace(this.vw);
@@ -156,14 +160,17 @@ namespace VW.Serializer
 
                             }
                             break;
+                        case JsonToken.EndObject:
+                            goto done;
                     }
                 }
+            done:
 
                 // append default namespaces features if we found some
                 if (this.DefaultNamespaceContext.StringExample != null && this.DefaultNamespaceContext.StringExample.Length > 0)
                 {
                     this.Context.StringExample.AppendFormat(CultureInfo.InvariantCulture,
-                        "| {0}", this.DefaultNamespaceContext.StringExample);
+                        " | {0}", this.DefaultNamespaceContext.StringExample);
                 }
             }
         }
