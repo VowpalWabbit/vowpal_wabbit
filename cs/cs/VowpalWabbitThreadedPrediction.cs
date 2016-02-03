@@ -11,7 +11,7 @@ namespace VW
     /// <summary>
     /// Enables multi-threaded prediction by utilizing a pool of <see cref="VowpalWabbit"/> instances.
     /// </summary>
-    public class VowpalWabbitThreadedPrediction : VowpalWabbitThreadedPredictionBase<VowpalWabbit>
+    public sealed class VowpalWabbitThreadedPrediction : VowpalWabbitThreadedPredictionBase<VowpalWabbit>
     {
         /// <summary>
         /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction"/>.
@@ -26,7 +26,7 @@ namespace VW
         /// Returns the same instance as no wrapping is required.
         /// </summary>
         /// <param name="vw">The wrapped vw instance.</param>
-        sealed protected override VowpalWabbit InternalCreate(VowpalWabbit vw)
+        protected override VowpalWabbit InternalCreate(VowpalWabbit vw)
         {
             return vw;
         }
@@ -51,7 +51,7 @@ namespace VW
         /// Creates a new instance of <see cref="VowpalWabbit{TExample}"/>.
         /// </summary>
         /// <param name="vw">The wrapped vw instance.</param>
-        sealed protected override VowpalWabbit<TExample> InternalCreate(VowpalWabbit vw)
+        protected override VowpalWabbit<TExample> InternalCreate(VowpalWabbit vw)
         {
             return new VowpalWabbit<TExample>(vw);
         }
@@ -77,7 +77,7 @@ namespace VW
         /// Creates a new instance of <see cref="VowpalWabbit{TExample}"/>.
         /// </summary>
         /// <param name="vw">The wrapped vw instance.</param>
-        sealed protected override VowpalWabbit<TExample, TActionDependentFeature> InternalCreate(VowpalWabbit vw)
+        protected override VowpalWabbit<TExample, TActionDependentFeature> InternalCreate(VowpalWabbit vw)
         {
             return new VowpalWabbit<TExample, TActionDependentFeature>(vw);
         }

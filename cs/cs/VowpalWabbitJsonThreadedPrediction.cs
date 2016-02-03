@@ -26,7 +26,7 @@ namespace VW
         /// Creates a new instance of <see cref="VowpalWabbit{TExample}"/>.
         /// </summary>
         /// <param name="vw">The wrapped vw instance.</param>
-        sealed protected override VowpalWabbitJson InternalCreate(VowpalWabbit vw)
+        protected override VowpalWabbitJson InternalCreate(VowpalWabbit vw)
         {
             return new VowpalWabbitJson(vw);
         }

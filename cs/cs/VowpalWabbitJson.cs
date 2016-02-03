@@ -76,12 +76,9 @@ namespace VW
         public void Learn(string json, ILabel label = null)
         {
             using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(json, label))
             {
-                serializer.Parse(json, label);
-                using (var example = serializer.CreateExample())
-                {
-                    this.vw.Learn(example);
-                }
+                this.vw.Learn(example);
             }
         }
 
@@ -96,12 +93,9 @@ namespace VW
         public void Learn(JsonReader reader, ILabel label = null)
         {
             using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(reader, label))
             {
-                serializer.Parse(reader, label);
-                using (var example = serializer.CreateExample())
-                {
-                    this.vw.Learn(example);
-                }
+                this.vw.Learn(example);
             }
         }
 
@@ -119,12 +113,9 @@ namespace VW
         public TPrediction Learn<TPrediction>(string json, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
         {
             using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(json, label))
             {
-                serializer.Parse(json, label);
-                using (var example = serializer.CreateExample())
-                {
-                    return this.vw.Learn(example, predictionFactory);
-                }
+                return this.vw.Learn(example, predictionFactory);
             }
         }
 
@@ -142,14 +133,10 @@ namespace VW
         public TPrediction Learn<TPrediction>(JsonReader reader, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
         {
             using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(reader, label))
             {
-                serializer.Parse(reader, label);
-                using (var example = serializer.CreateExample())
-                {
-                    return this.vw.Learn(example, predictionFactory);
-                }
+                return this.vw.Learn(example, predictionFactory);
             }
-
         }
 
         /// <summary>
@@ -164,12 +151,9 @@ namespace VW
         public void Predict(string json, ILabel label = null)
         {
             using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(json, label))
             {
-                serializer.Parse(json, label);
-                using (var example = serializer.CreateExample())
-                {
-                    this.vw.Predict(example);
-                }
+                this.vw.Predict(example);
             }
         }
 
@@ -184,12 +168,9 @@ namespace VW
         public void Predict(JsonReader reader, ILabel label = null)
         {
             using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(reader, label))
             {
-                serializer.Parse(reader, label);
-                using (var example = serializer.CreateExample())
-                {
-                    this.vw.Predict(example);
-                }
+                this.vw.Predict(example);
             }
         }
 
@@ -206,12 +187,9 @@ namespace VW
         public TPrediction Predict<TPrediction>(string json, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
         {
             using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(json, label))
             {
-                serializer.Parse(json, label);
-                using (var example = serializer.CreateExample())
-                {
-                    return this.vw.Predict(example, predictionFactory);
-                }
+                return this.vw.Predict(example, predictionFactory);
             }
         }
 
@@ -228,12 +206,9 @@ namespace VW
         public TPrediction Predict<TPrediction>(JsonReader reader, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
         {
             using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(reader, label))
             {
-                serializer.Parse(reader, label);
-                using (var example = serializer.CreateExample())
-                {
-                    return this.vw.Predict(example, predictionFactory);
-                }
+                return this.vw.Predict(example, predictionFactory);
             }
         }
 

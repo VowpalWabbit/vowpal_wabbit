@@ -79,6 +79,36 @@ namespace VW.Serializer
         public VowpalWabbitMarshalContext DefaultNamespaceContext { get; private set; }
 
         /// <summary>
+        /// Parses and creates the example.
+        /// </summary>
+        /// <param name="json">The example to parse.</param>
+        /// <param name="label">
+        /// Optional label, taking precedence over "_label" property found in <paramref name="json"/>.
+        /// If null, <paramref name="json"/> will be inspected and the "_label" property used as label.
+        /// </param>
+        /// <returns>The VowpalWabbit native example.</returns>
+        public VowpalWabbitExample ParseAndCreateExample(string json, ILabel label = null)
+        {
+            this.Parse(json, label);
+            return this.CreateExample();
+        }
+
+        /// <summary>
+        /// Parses the example.
+        /// </summary>
+        /// <param name="reader">The example to parse.</param>
+        /// <param name="label">
+        /// Optional label, taking precedence over "_label" property found in <paramref name="reader"/>.
+        /// If null, <paramref name="reader"/> will be inspected and the "_label" property used as label.
+        /// </param>
+        /// <returns>The VowpalWabbit native example.</returns>
+        public VowpalWabbitExample ParseAndCreateExample(JsonReader reader, ILabel label = null)
+        {
+            this.Parse(reader, label);
+            return this.CreateExample();
+        }
+
+        /// <summary>
         /// Parses the example.
         /// </summary>
         /// <param name="json">The example to parse.</param>
@@ -102,7 +132,6 @@ namespace VW.Serializer
         /// Optional label, taking precedence over "_label" property found in <paramref name="reader"/>.
         /// If null, <paramref name="reader"/> will be inspected and the "_label" property used as label.
         /// </param>
-        /// <returns>The VowpalWabbit native example.</returns>
         public void Parse(JsonReader reader, ILabel label = null)
         {
             // avoid parameter passing for the sake of non-reentrantness
