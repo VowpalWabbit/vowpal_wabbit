@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VW;
+using VW.Labels;
 
 namespace cs_unittest
 {
@@ -60,6 +61,16 @@ namespace cs_unittest
             {
                 validator.Validate("1 |a foo:1", "{\"_label\":1,\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.Simple);
                 validator.Validate("1 |a foo:1", "{\"_label\":\"1\",\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.Simple);
+            }
+        }
+
+        [TestMethod]
+        public void TestJsonSimpleLabelOverride()
+        {
+            using (var validator = new VowpalWabbitExampleJsonValidator())
+            {
+                validator.Validate("2 |a foo:1", "{\"_label\":{\"Label\":1},\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.Simple,
+                    new SimpleLabel { Label = 2 });
             }
         }
 

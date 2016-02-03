@@ -111,7 +111,7 @@ void run(Search::search& sch, vector<example*>& ec)
     task_data& d = *sch.get_metatask_data<task_data>();
     float delta = a_cost - min_cost;
     path branch = v_init<act_score>();
-    push_many<act_score>(branch, d.trajectory.begin, d.trajectory.size());
+    push_many<act_score>(branch, d.trajectory.begin(), d.trajectory.size());
     branch.push_back( make_pair(a,a_cost) );
     d.branches.push_back( make_pair(delta, branch) );
     cdbg << "adding branch: " << delta << " -> " << branch << endl;
@@ -139,7 +139,7 @@ void run(Search::search& sch, vector<example*>& ec)
   }
 
   // sort the branches by cost
-  stable_sort(d.branches.begin, d.branches.end,
+  stable_sort(d.branches.begin(), d.branches.end(),
               [](const branch& a, const branch& b) -> bool { return a.first < b.first; });
 
   // make new predictions
@@ -181,7 +181,7 @@ void run(Search::search& sch, vector<example*>& ec)
   }
 
   // sort the finals by cost
-  stable_sort(d.final.begin, d.final.end,
+  stable_sort(d.final.begin(), d.final.end(),
               [](const pair<branch,string*>& a, const pair<branch,string*>& b) -> bool { return a.first.first < b.first.first; });
 
   d.kbest_out = nullptr;

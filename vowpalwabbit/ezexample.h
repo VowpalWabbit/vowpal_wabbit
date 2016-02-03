@@ -107,10 +107,8 @@ public:
     ec = this_ec;
     we_create_ec = false;
 
-    for (unsigned char*i=ec->indices.begin; i != ec->indices.end; ++i)
-    { current_ns = *i;
-      ns_exists[(int)current_ns] = true;
-    }
+    for (auto ns : ec->indices)
+      ns_exists[ns] = true;
     if (current_ns != 0)
     { str[0] = current_ns;
       current_seed = VW::hash_space(*vw_ref, str);
@@ -120,11 +118,11 @@ public:
   ~ezexample()   // calls finish_example *only* if we created our own example!
   { if (ec->in_use && VW::is_ring_example(*vw_par_ref, ec))
       VW::finish_example(*vw_par_ref, ec);
-    for (example**ecc=example_copies.begin; ecc!=example_copies.end; ecc++)
-      if ((*ecc)->in_use && VW::is_ring_example(*vw_par_ref, ec))
-        VW::finish_example(*vw_par_ref, *ecc);
+    for (auto ecc : example_copies)
+      if (ecc->in_use && VW::is_ring_example(*vw_par_ref, ec))
+        VW::finish_example(*vw_par_ref, ecc);
     example_copies.erase();
-    free(example_copies.begin);
+    free(example_copies.begin());
   }
 
   bool ensure_ns_exists(char c)    // returns TRUE iff we should ignore it :)
@@ -273,9 +271,9 @@ public:
   { static example* empty_example = is_multiline ? VW::read_example(*vw_par_ref, (char*)"") : nullptr;
     if (is_multiline)
     { vw_ref->learn(empty_example);
-      for (example**ecc=example_copies.begin; ecc!=example_copies.end; ecc++)
-        if ((*ecc)->in_use)
-          VW::finish_example(*vw_par_ref, *ecc);
+      for (auto ecc : example_copies)
+        if (ecc->in_use)
+          VW::finish_example(*vw_par_ref, ecc);
       example_copies.erase();
     }
   }

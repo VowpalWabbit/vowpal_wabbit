@@ -79,7 +79,7 @@ public:
     space.resize(s);
     current = 0;
     count = 0;
-    head = space.begin;
+    head = space.begin();
     verify_hash = false;
     hash = 0;
   }
@@ -133,8 +133,8 @@ public:
 #else
     lseek(f, 0, SEEK_SET);
 #endif
-    space.end = space.begin;
-    head = space.begin;
+    space.end() = space.begin();
+    head = space.begin();
   }
 
   io_buf()
@@ -158,17 +158,17 @@ public:
 
   ssize_t fill(int f)
   { // if the loaded values have reached the allocated space
-    if (space.end_array - space.end == 0)
+    if (space.end_array - space.end() == 0)
     { // reallocate to twice as much space
-      size_t head_loc = head - space.begin;
-      space.resize(2 * (space.end_array - space.begin));
-      head = space.begin+head_loc;
+      size_t head_loc = head - space.begin();
+      space.resize(2 * (space.end_array - space.begin()));
+      head = space.begin()+head_loc;
     }
     // read more bytes from file up to the remaining allocated space
-    ssize_t num_read = read_file(f, space.end, space.end_array - space.end);
+    ssize_t num_read = read_file(f, space.end(), space.end_array - space.end());
      if (num_read >= 0)
     { // if some bytes were actually loaded, update the end of loaded values
-      space.end = space.end + num_read;
+      space.end() = space.end() + num_read;
       return num_read;
     }
     else
@@ -182,9 +182,9 @@ public:
 
   virtual void flush()
   { if (files.size() > 0)
-    { if (write_file(files[0], space.begin, head - space.begin) != (int) (head - space.begin))
+    { if (write_file(files[0], space.begin(), head - space.begin()) != (int) (head - space.begin()))
         std::cerr << "error, failed to write example\n";
-      head = space.begin;
+      head = space.begin();
     }
   }
 

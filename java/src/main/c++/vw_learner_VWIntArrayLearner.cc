@@ -6,7 +6,7 @@ jintArray intArrayPredictor(example* vec, JNIEnv *env)
 { v_array<uint32_t> predictions = vec->pred.multilabels.label_v;
   size_t num_predictions = predictions.size();
   jintArray r = env->NewIntArray(num_predictions);
-  env->SetIntArrayRegion(r, 0, num_predictions, (int*)predictions.begin);
+  env->SetIntArrayRegion(r, 0, num_predictions, (int*)predictions.begin());
   return r;
 }
 
