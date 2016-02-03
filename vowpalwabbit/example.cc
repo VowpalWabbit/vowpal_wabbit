@@ -10,8 +10,8 @@ float collision_cleanup(features& fs)
 {
   uint64_t last_index = (uint64_t)-1;
   float sum_sq = 0.f;
-  auto pos = fs.begin();
-  for (auto& f : fs)
+  features::iterator pos = fs.begin();
+  for (features::iterator& f : fs)
   {
     if (last_index == f.index())
       pos.value() += f.value();
@@ -48,7 +48,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->example_counter = src->example_counter;
 
   copy_array(dst->indices, src->indices);
-  for (auto c : src->indices)
+  for (namespace_index c : src->indices)
     dst->feature_space[c] = src->feature_space[c];
   //copy_array(dst->atomics[i], src->atomics[i]);
   dst->ft_offset = src->ft_offset;

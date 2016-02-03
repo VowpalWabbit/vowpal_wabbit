@@ -81,12 +81,12 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
   all.pairs.swap(newpairs);
   all.triples.swap(newtriples);
 
-  for (auto& i : all.interactions)
+  for (v_string& i : all.interactions)
     i.delete_v();
   all.interactions.erase();
-  for (auto& i : all.pairs)
+  for (string& i : all.pairs)
     all.interactions.push_back(string2v_string(i));
-  for (auto& i : all.triples)
+  for (string& i : all.triples)
     all.interactions.push_back(string2v_string(i));
   if(data->cost_to_go)
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);
@@ -124,17 +124,17 @@ void inline add_feature(example& ex, uint64_t idx, unsigned char ns, uint64_t ma
 void add_all_features(example& ex, example& src, unsigned char tgt_ns, uint64_t mask, uint64_t multiplier, uint64_t offset, bool audit=false)
 {
   features& tgt_fs = ex.feature_space[tgt_ns];
-  for (auto ns : src.indices)
+  for (namespace_index ns : src.indices)
     if(ns != constant_namespace) // ignore constant_namespace
-        for (auto i : src.feature_space[ns].indicies)
+        for (feature_index i : src.feature_space[ns].indicies)
             tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask );
 }
 
 void inline reset_ex(example *ex)
 { ex->num_features = 0;
   ex->total_sum_feat_sq = 0;
-  for (auto ns : ex->indices)
-    ex->feature_space[ns].erase();
+  for (features& fs : *ex)
+    fs.erase();
 }
 
 // arc-hybrid System.
@@ -236,9 +236,9 @@ void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec)
     add_feature(ex, temp[j]+ additional_offset , val_namespace, mask, multiplier);
   }
   size_t count=0;
-  for (auto ns : data->ex->indices)
-    { data->ex->feature_space[(int)ns].sum_feat_sq = (float) data->ex->feature_space[(int)ns].size();
-      count+= data->ex->feature_space[(int)ns].size();
+  for (features fs : *data->ex)
+    { fs.sum_feat_sq = (float) fs.size();
+      count+= fs.size();
     }
 
   size_t new_count;

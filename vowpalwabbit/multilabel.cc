@@ -178,7 +178,7 @@ void output_example(vw& all, example& ec)
 
   all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
 
-  for (auto sink : all.final_prediction_sink)
+  for (int sink : all.final_prediction_sink)
     print_multilabel(sink, ec.pred.multilabels, ec.tag);
 
   print_update(all, is_test_label(ec.l.multilabels), ec);

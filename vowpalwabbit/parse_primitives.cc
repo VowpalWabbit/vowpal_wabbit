@@ -74,7 +74,7 @@ std::ostream& operator<<(std::ostream& os, const substring& ss)
 }
 
 std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss)
-{ auto it = ss.cbegin();
+{ substring* it = ss.cbegin();
 
   if (it == ss.cend())
   { return os;

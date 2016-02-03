@@ -47,15 +47,14 @@ void add_example_namespace(example& ec, char ns, features& fs)
 }
 
 void add_example_namespaces_from_example(example& target, example& source)
-{ for (auto idx : source.indices)
-    { if (idx == constant_namespace) continue;
-      add_example_namespace(target, (char)idx, source.feature_space[idx]);
-    }
+{ for (namespace_index idx : source.indices)
+  { if (idx == constant_namespace) continue;
+    add_example_namespace(target, (char)idx, source.feature_space[idx]);
+  }
 }
 
 void del_example_namespaces_from_example(example& target, example& source)
-{ //for (size_t*idx=source.indices.begin(); idx!=source.indices.end(); idx++) {
-  unsigned char* idx = source.indices.end();
+{ namespace_index* idx = source.indices.end();
   idx--;
   for (; idx>=source.indices.begin(); idx--)
     { if (*idx == constant_namespace) continue;

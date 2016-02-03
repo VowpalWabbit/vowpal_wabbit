@@ -124,8 +124,6 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
   const uint64_t  weight_mask   = all.reg.weight_mask;
   weight* weight_vector = all.reg.weight_vector;
 
-  // inner_data<R> id ={dat, offset, weight_mask, weight_vector};
-
   // statedata for generic non-recursive iteration
   v_array<feature_gen_data > state_data = v_init<feature_gen_data >();
 
@@ -136,7 +134,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
   empty_ns_data.self_interaction = false;
 
   // loop throw the set of possible interactions
-  for (auto& ns : all.interactions)
+  for (v_string& ns : all.interactions)
   { // current list of namespaces to interact.
 
 #ifndef GEN_INTER_LOOP
@@ -162,12 +160,12 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
                     if (audit) audit_func(dat, first.space_names[i].get());
                     // next index differs for permutations and simple combinations
                     feature_value ft_value = first.values[i];
-                    auto range = second.values_indices_audit();
-                    auto begin = range.begin();
+                    features::features_value_index_audit_range range = second.values_indices_audit();
+                    features::iterator_all begin = range.begin();
                     if (same_namespace)
                       begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i + 1;
 
-                    auto end = range.end();
+                    features::iterator_all end = range.end();
                     inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weight_mask, weight_vector, ft_value, halfhash);
 
 	            if (audit) audit_func(dat, nullptr);
@@ -205,12 +203,12 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
                   feature_index halfhash = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
                   feature_value ft_value = INTERACTION_VALUE(first_ft_value, second.values[j]);
 
-                  auto range = third.values_indices_audit();
-                  auto begin = range.begin();
+                  features::features_value_index_audit_range range = third.values_indices_audit();
+                  features::iterator_all begin = range.begin();
                   if (same_namespace2) //next index differs for permutations and simple combinations
                     begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? j : j + 1;
 
-                  auto end = range.end();
+                  features::iterator_all end = range.end();
                   inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weight_mask, weight_vector, ft_value, halfhash);
                 } // end for (snd)
                 if(audit) audit_func(dat, nullptr);
@@ -230,7 +228,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
         // preparing state data
         feature_gen_data* fgd = state_data.begin();
         feature_gen_data* fgd2; // for further use
-        for (auto n : ns)
+        for (namespace_index n : ns)
 	  { features& ft = features_data[(int32_t)n];
 	    const size_t ft_cnt = ft.indicies.size();
 
@@ -342,10 +340,10 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 	          feature_value ft_value = fgd2->x;
             feature_index halfhash = fgd2->hash;
 
-            auto range = fs.values_indices_audit();
-            auto begin = range.begin();
+            features::features_value_index_audit_range range = fs.values_indices_audit();
+            features::iterator_all begin = range.begin();
             begin += start_i;
-            auto end = range.begin();
+            features::iterator_all end = range.begin();
             end += fgd2->loop_end + 1;
             inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weight_mask, weight_vector, ft_value, halfhash);
 

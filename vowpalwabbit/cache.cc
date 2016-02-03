@@ -139,7 +139,7 @@ void output_byte(io_buf& cache, unsigned char s)
 void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t mask)
 { char* c;
   size_t storage = fs.size() * int_size;
-  for (auto f : fs.values)
+  for (feature_value f : fs.values)
     if (f != 1. && f != -1.)
       storage += sizeof(feature_value);
 
@@ -151,7 +151,7 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
   c += sizeof(size_t);
 
   uint64_t last = 0;
-  for (auto& f : fs)
+  for (features::iterator& f : fs)
   {
     feature_index fi = f.index() & mask;
     int64_t s_diff = (fi - last);
@@ -188,6 +188,6 @@ void cache_features(io_buf& cache, example* ae, uint64_t mask)
 { cache_tag(cache,ae->tag);
   output_byte(cache, (unsigned char) ae->indices.size());
 
-  for (auto ns : ae->indices)
+  for (namespace_index ns : ae->indices)
     output_features(cache, ns, ae->feature_space[ns], mask);
 }

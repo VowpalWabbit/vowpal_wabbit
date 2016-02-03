@@ -10,11 +10,11 @@ void unique_features(features& fs, int max)
 { if (fs.indicies.empty())
     return;
 
-  auto range = fs.values_indices_audit();
-  auto last_index = range.begin();
-  auto end = max > 0 ? range.begin() + min(fs.size(), (size_t)max) : range.end();
+  features::features_value_index_audit_range range = fs.values_indices_audit();
+  features::iterator_all last_index = range.begin();
+  features::iterator_all end = max > 0 ? range.begin() + min(fs.size(), (size_t)max) : range.end();
 
-  for (auto i = ++range.begin(); i != end; ++i)
+  for (features::iterator_all i = ++range.begin(); i != end; ++i)
     if (i.index() != last_index.index())
       if (i != ++last_index)
       {
@@ -30,10 +30,9 @@ void unique_features(features& fs, int max)
 
 void unique_sort_features(uint64_t parse_mask, example* ae)
 {
-  for (auto ns : ae->indices)
-    { features& fs = ae->feature_space[ns];
-      if (fs.sort(parse_mask))
-        unique_features(fs);
-    }
+  for (features& fs : *ae)
+    if (fs.sort(parse_mask))
+      unique_features(fs);
+
   ae->sorted=true;
 }

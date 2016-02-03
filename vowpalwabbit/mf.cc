@@ -60,7 +60,7 @@ void predict(mf& data, base_learner& base, example& ec)
   ec.indices.push_back(0);
 
   // add interaction terms to prediction
-  for (auto& i : data.pairs)
+  for (string& i : data.pairs)
   {
     int left_ns = (int) i[0];
     int right_ns = (int) i[1];
@@ -116,7 +116,7 @@ void learn(mf& data, base_learner& base, example& ec)
 
   // update interaction terms
   // looping over all pairs of non-empty namespaces
-  for (auto& i : data.pairs)
+  for (string& i : data.pairs)
   {
 
     int left_ns = (int) i[0];
