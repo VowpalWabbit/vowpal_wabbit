@@ -110,6 +110,7 @@
       <HintPath>$(SolutionDir)\packages\Microsoft.Tpl.Dataflow.4.5.24\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -152,7 +153,9 @@
     <Compile Include="ObjectPool.cs" />
     <Compile Include="VowpalWabbitAsync.cs" />
     <Compile Include="VowpalWabbitDynamic.cs" />
+    <Compile Include="VowpalWabbitHttpModule.cs" />
     <Compile Include="VowpalWabbitJson.cs" />
+    <Compile Include="VowpalWabbitJsonThreadedPrediction.cs" />
     <Compile Include="VowpalWabbitSweep.cs" />
     <Compile Include="VowpalWabbitThreadedPrediction.cs" />
     <Compile Include="VowpalWabbitThreadedLearning.cs" />

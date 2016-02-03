@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using VW;
 using VW.Interfaces;
 using VW.Labels;
+using VW.Serializer;
 
 namespace cs_unittest
 {

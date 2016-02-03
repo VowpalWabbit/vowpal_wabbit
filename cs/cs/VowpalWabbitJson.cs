@@ -19,7 +19,6 @@ namespace VW
     /// </summary>
     public sealed class VowpalWabbitJson : IDisposable
     {
-        private readonly VowpalWabbitJsonSerializer serializer;
         private VowpalWabbit vw;
 
         /// <summary>
@@ -53,7 +52,6 @@ namespace VW
             Contract.EndContractBlock();
 
             this.vw = vw;
-            this.serializer = new VowpalWabbitJsonSerializer(vw);
         }
 
         /// <summary>
@@ -77,19 +75,11 @@ namespace VW
         /// </param>
         public void Learn(string json, ILabel label = null)
         {
-            using (var example = this.serializer.Parse(json, label))
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(json, label))
             {
                 this.vw.Learn(example);
             }
-
-            // expect:
-            // { "_label": { ... }, "ns1": { "feature1": 1, ... }, "ns2": { "feature2":"...}, "_aux": { ... } }
-            // Label:
-            // Simple: { "Label":1, "Weight":2, "Initial": 5 }
-            // ContextualBanditLabel: { "Action": 1, "Cost": 2, "Probability": 3 }
-            //
-            // Multiline: { "_label": { ... }, "_shared":{ ... }, "_actions":[ { /* example */ }, ],
-            // "_action:":5 }
         }
 
         /// <summary>
@@ -102,7 +92,8 @@ namespace VW
         /// </param>
         public void Learn(JsonReader reader, ILabel label = null)
         {
-            using (var example = this.serializer.Parse(reader, label))
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(reader, label))
             {
                 this.vw.Learn(example);
             }
@@ -121,7 +112,8 @@ namespace VW
         /// <returns>The prediction for the given <paramref name="json"/>.</returns>
         public TPrediction Learn<TPrediction>(string json, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
         {
-            using (var example = this.serializer.Parse(json, label))
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(json, label))
             {
                 return this.vw.Learn(example, predictionFactory);
             }
@@ -140,7 +132,8 @@ namespace VW
         /// <returns>The prediction for the given <paramref name="reader"/>.</returns>
         public TPrediction Learn<TPrediction>(JsonReader reader, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
         {
-            using (var example = this.serializer.Parse(reader, label))
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(reader, label))
             {
                 return this.vw.Learn(example, predictionFactory);
             }
@@ -157,7 +150,8 @@ namespace VW
 
         public void Predict(string json, ILabel label = null)
         {
-            using (var example = this.serializer.Parse(json, label))
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(json, label))
             {
                 this.vw.Predict(example);
             }
@@ -173,7 +167,8 @@ namespace VW
         /// </param>
         public void Predict(JsonReader reader, ILabel label = null)
         {
-            using (var example = this.serializer.Parse(reader, label))
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(reader, label))
             {
                 this.vw.Predict(example);
             }
@@ -191,7 +186,8 @@ namespace VW
         /// </param>
         public TPrediction Predict<TPrediction>(string json, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
         {
-            using (var example = this.serializer.Parse(json, label))
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(json, label))
             {
                 return this.vw.Predict(example, predictionFactory);
             }
@@ -209,7 +205,8 @@ namespace VW
         /// </param>
         public TPrediction Predict<TPrediction>(JsonReader reader, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
         {
-            using (var example = this.serializer.Parse(reader, label))
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var example = serializer.ParseAndCreateExample(reader, label))
             {
                 return this.vw.Predict(example, predictionFactory);
             }

@@ -12,8 +12,6 @@ namespace cs_unittest
 {
     internal sealed class VowpalWabbitExampleJsonValidator : IDisposable
     {
-        private readonly VowpalWabbitJsonSerializer jsonSerializer;
-
         private VowpalWabbit vw;
 
         internal VowpalWabbitExampleJsonValidator(string args = null) : this(new VowpalWabbitSettings(args))
@@ -23,20 +21,23 @@ namespace cs_unittest
         internal VowpalWabbitExampleJsonValidator(VowpalWabbitSettings settings)
         {
             this.vw = new VowpalWabbit(settings.ShallowCopy(enableStringExampleGeneration: true));
-            this.jsonSerializer = new VowpalWabbitJsonSerializer(this.vw);
         }
 
         public void Validate(string line, string json, IVowpalWabbitLabelComparator labelComparator = null, ILabel label = null)
         {
             using (var strExample = this.vw.ParseLine(line))
-            using (var jsonExample = this.jsonSerializer.Parse(json, label))
-            using (var strJsonExample = this.vw.ParseLine(jsonExample.VowpalWabbitString))
+            using (var jsonSerializer = new VowpalWabbitJsonSerializer(this.vw))
             {
-                var diff = strExample.Diff(this.vw, jsonExample, labelComparator);
-                Assert.IsNull(diff, diff + " generated string: '" + jsonExample.VowpalWabbitString + "'");
+                jsonSerializer.Parse(json, label);
+                using (var jsonExample = jsonSerializer.CreateExample())
+                using (var strJsonExample = this.vw.ParseLine(jsonExample.VowpalWabbitString))
+                {
+                    var diff = strExample.Diff(this.vw, jsonExample, labelComparator);
+                    Assert.IsNull(diff, diff + " generated string: '" + jsonExample.VowpalWabbitString + "'");
 
-                diff = strExample.Diff(this.vw, strJsonExample, labelComparator);
-                Assert.IsNull(diff, diff);
+                    diff = strExample.Diff(this.vw, strJsonExample, labelComparator);
+                    Assert.IsNull(diff, diff);
+                }
             }
         }
 
