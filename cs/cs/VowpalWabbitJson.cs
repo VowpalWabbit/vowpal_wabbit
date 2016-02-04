@@ -73,7 +73,7 @@ namespace VW
         /// Optional label, taking precedence over "_label" property found in <paramref name="json"/>.
         /// If null, <paramref name="json"/> will be inspected and the "_label" property used as label.
         /// </param>
-        public void Learn(string json, ILabel label = null)
+        public void Learn(string json, ILabel label = null, int? index = null)
         {
             using (var serializer = new VowpalWabbitJsonSerializer(vw))
             {

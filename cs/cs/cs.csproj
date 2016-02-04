@@ -141,6 +141,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>VowpalWabbitDefaultMarshallerExt.tt</DependentUpon>
     </Compile>
+    <Compile Include="Serializer\VowpalWabbitJsonBuilder.cs" />
     <Compile Include="Serializer\VowpalWabbitJsonException.cs" />
     <Compile Include="Serializer\VowpalWabbitJsonSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitMarshalContext.cs" />
