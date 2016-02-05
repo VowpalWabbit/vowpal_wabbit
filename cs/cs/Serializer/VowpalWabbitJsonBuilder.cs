@@ -1,22 +1,61 @@
-﻿using Newtonsoft.Json;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="VowpalWabbitJsonSerializer.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VW.Interfaces;
+using VW.Labels;
 using VW.Serializer.Intermediate;
 
 namespace VW.Serializer
 {
+    /// <summary>
+    /// Build <see cref="VowpalWabbitExample"/> from JSON following https://github.com/JohnLangford/vowpal_wabbit/wiki/JSON
+    /// </summary>
     public sealed class VowpalWabbitJsonBuilder : IDisposable
     {
+        /// <summary>
+        /// Mapping from properties to types for labels.
+        /// </summary>
+        private static readonly Dictionary<string, Type> labelPropertyMapping;
+
         private readonly VowpalWabbit vw;
         private readonly VowpalWabbitDefaultMarshaller defaultMarshaller;
         private readonly JsonSerializer jsonSerializer;
-        private JsonReader reader;
 
+        private JsonReader reader;
+        private ILabel label;
+        private Func<string, bool> specialPropertyAction;
+
+        static VowpalWabbitJsonBuilder()
+        {
+            // find mapping from property names to types
+            var q = from t in new[] { typeof(SimpleLabel), typeof(ContextualBanditLabel) }
+                    from p in t.GetProperties()
+                    let jsonProperty = (JsonPropertyAttribute)p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault()
+                    where jsonProperty != null
+                    select new
+                    {
+                        Type = t,
+                        JsonProperty = jsonProperty,
+                        Property = p
+                    };
+
+            labelPropertyMapping = q.ToDictionary(e => e.JsonProperty.PropertyName ?? e.Property.Name, e => e.Type);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="VowpalWabbitJsonBuilder"/>.
+        /// </summary>
         public VowpalWabbitJsonBuilder(VowpalWabbit vw, VowpalWabbitDefaultMarshaller defaultMarshaller, JsonSerializer jsonSerializer)
         {
             Contract.Requires(vw != null);
@@ -78,6 +117,8 @@ namespace VW.Serializer
         {
             // avoid parameter passing for the sake of non-reentrantness
             this.reader = reader;
+            this.label = label;
+            this.specialPropertyAction = specialPropertyAction;
 
             if (label != null)
                 this.defaultMarshaller.MarshalLabel(this.Context, label);
@@ -98,24 +139,8 @@ namespace VW.Serializer
                     {
                         case JsonToken.PropertyName:
                             var propertyName = (string)reader.Value;
-                            if (propertyName.StartsWith(FeatureIgnorePrefix))
-                            {
-                                // special fields
-                                if (propertyName == "_label")
-                                {
-                                    // passed in label has precedence
-                                    if (label == null)
-                                        this.ParseLabel();
-                                    else
-                                        reader.Skip();
-                                }
-                                else
-                                {
-                                    // forward to handler
-                                    if (specialPropertyAction == null || !specialPropertyAction(propertyName))
-                                        reader.Skip(); // if not handled, skip it
-                                }
-                            }
+                            if (propertyName.StartsWith(VowpalWabbitConstants.FeatureIgnorePrefix))
+                                this.ParseSpecialProperty(this.DefaultNamespaceContext, defaultNamespace, propertyName);
                             else
                             {
                                 if (!reader.Read())
@@ -140,6 +165,34 @@ namespace VW.Serializer
                     this.Context.StringExample.AppendFormat(CultureInfo.InvariantCulture,
                         " | {0}", this.DefaultNamespaceContext.StringExample);
                 }
+            }
+        }
+
+        private void ParseSpecialProperty(VowpalWabbitMarshalContext context, Namespace ns, string propertyName)
+        {
+            // special fields
+            switch (propertyName)
+            {
+                case "_label":
+                    // passed in label has precedence
+                    if (label == null)
+                        this.ParseLabel();
+                    else
+                        reader.Skip();
+                    break;
+                case VowpalWabbitConstants.TextProperty:
+                    // parse text segment feature
+                    this.defaultMarshaller.MarshalFeatureStringSplit(
+                        context,
+                        ns,
+                        new Feature(propertyName),
+                        reader.ReadAsString());
+                    break;
+                default:
+                    // forward to handler
+                    if (specialPropertyAction == null || !specialPropertyAction(propertyName))
+                        reader.Skip(); // if not handled, skip it
+                    break;
             }
         }
 
@@ -251,7 +304,7 @@ namespace VW.Serializer
                 case JsonToken.String:
                     {
                         var feature = new Feature(featureName);
-                        this.defaultMarshaller.MarshalFeatureStringEscape(context, ns, feature, (string)reader.Value);
+                        this.defaultMarshaller.MarshalFeatureStringEscapeAndIncludeName(context, ns, feature, (string)reader.Value);
                     }
                     break;
                 case JsonToken.Boolean:
@@ -286,12 +339,18 @@ namespace VW.Serializer
                     switch (reader.TokenType)
                     {
                         case JsonToken.PropertyName:
-                            var featureName = (string)reader.Value;
+                            var propertyName = (string)reader.Value;
+
+                            if (propertyName.StartsWith(VowpalWabbitConstants.FeatureIgnorePrefix))
+                            {
+                                this.ParseSpecialProperty(context, ns, propertyName);
+                                continue;
+                            }
 
                             if (!reader.Read())
                                 throw new VowpalWabbitJsonException(reader.Path, "Unexpected end while parsing namespace");
 
-                            this.ParseFeature(context, ns, featureName);
+                            this.ParseFeature(context, ns, propertyName);
                             break;
                         case JsonToken.EndObject:
                             return;

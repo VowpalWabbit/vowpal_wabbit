@@ -246,7 +246,7 @@ struct features {
   { return features_value_index_audit_range(this);
   }
 
-  /// default iterator for values & features
+  // default iterator for values & features
   iterator begin() { return iterator(values.begin(), indicies.begin()); }
 
   iterator end() { return iterator(values.end(), indicies.end()); }
