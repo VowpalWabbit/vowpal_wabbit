@@ -366,16 +366,15 @@ namespace VW.Serializer
         public void MarshalLabel(VowpalWabbitMarshalContext context, ILabel label)
         {
             if (label == null)
-            {
                 return;
-            }
 
             var labelString = label.ToVowpalWabbitFormat();
 
             context.ExampleBuilder.ParseLabel(labelString);
 
             // prefix with label
-            context.StringExample.Insert(0, labelString);
+            if (context.StringExample != null)
+                context.StringExample.Insert(0, labelString);
         }
     }
 }
