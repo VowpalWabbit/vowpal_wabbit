@@ -30,8 +30,8 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
 { vw& all = *lrq.all;
 
   memset(lrq.orig_size, 0, sizeof(lrq.orig_size));
-  for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
-    lrq.orig_size[*i] = ec.feature_space[*i].size();
+  for (namespace_index i : ec.indices)
+    lrq.orig_size[i] = ec.feature_space[i].size();
 
   size_t which = ec.example_counter;
   float first_prediction = 0;
@@ -106,17 +106,17 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
       ec.loss = first_loss;
     }
 
-    for (string::const_iterator i = lrq.field_name.begin(); i != lrq.field_name.end(); ++i)
-    { unsigned char right = *i;
+    for (char i : lrq.field_name)
+    { namespace_index right = i;
       features& rfs = ec.feature_space[right];
-      rfs.values.end = rfs.values.begin + lrq.orig_size[right];
+      rfs.values.end() = rfs.values.begin() + lrq.orig_size[right];
 
 	  if (all.audit || all.hash_inv)
 	  {
 		for (size_t j = lrq.orig_size[right]; j < rfs.space_names.size(); ++j)
           rfs.space_names[j].~audit_strings_ptr();
 
-          rfs.space_names.end = rfs.space_names.begin + lrq.orig_size[right];
+          rfs.space_names.end() = rfs.space_names.begin() + lrq.orig_size[right];
         }
     }
   }
@@ -138,8 +138,8 @@ LEARNER::base_learner* lrqfa_setup(vw& all)
   *all.file_options << " --lrqfa " << lrq.field_name << lrq.k;
 
   int fd_id = 0;
-  for(string::const_iterator i = lrq.field_name.begin(); i != lrq.field_name.end(); ++i)
-  { lrq.field_id[(int)*i] = fd_id++;
+  for (char i : lrq.field_name)
+  { lrq.field_id[(int)i] = fd_id++;
   }
 
   all.wpp = all.wpp * (uint64_t)(1 + lrq.k);

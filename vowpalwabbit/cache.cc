@@ -136,39 +136,12 @@ void output_byte(io_buf& cache, unsigned char s)
   cache.set(c);
 }
 
-void add_storage(size_t& storage, feature_value f)
-{
-  if (f != 1. && f != -1.)
-    storage += sizeof(feature_value);  
-}
-
-struct cache_fs {
-  uint64_t mask;
-  uint64_t last;
-  char* c;
-};
-
-void cache_feature(cache_fs& cf, feature_value v, feature_index fi)
-{
-  fi &= cf.mask;
-  int64_t s_diff = (fi - cf.last);
-  uint64_t diff = ZigZagEncode(s_diff) << 2;
-  cf.last = fi;
-  if (v == 1.)
-    cf.c = run_len_encode(cf.c, diff);
-  else if (v == -1.)
-    cf.c = run_len_encode(cf.c, diff | neg_1);
-  else
-    { cf.c = run_len_encode(cf.c, diff | general);
-      memcpy(cf.c, &v, sizeof(v));
-      cf.c += sizeof(v);
-    }
-}
-
 void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t mask)
 { char* c;
   size_t storage = fs.size() * int_size;
-  fs.foreach_feature<size_t, add_storage>(storage);
+  for (feature_value f : fs.values)
+    if (f != 1. && f != -1.)
+      storage += sizeof(feature_value);
 
   buf_write(cache, c, sizeof(index) + storage + sizeof(size_t));
   *reinterpret_cast<unsigned char*>(c) = index;
@@ -177,9 +150,26 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
   char *storage_size_loc = c;
   c += sizeof(size_t);
 
-  cache_fs temp = {mask, 0, c};
-  fs.foreach_feature<cache_fs, cache_feature>(temp);
-  c = temp.c;
+  uint64_t last = 0;
+  for (features::iterator& f : fs)
+  {
+    feature_index fi = f.index() & mask;
+    int64_t s_diff = (fi - last);
+    uint64_t diff = ZigZagEncode(s_diff) << 2;
+    last = fi;
+
+    if (f.value() == 1.)
+      c = run_len_encode(c, diff);
+    else if (f.value() == -1.)
+      c = run_len_encode(c, diff | neg_1);
+    else
+    {
+      c = run_len_encode(c, diff | general);
+      memcpy(c, &f.value(), sizeof(feature_value));
+      c += sizeof(feature_value);
+    }
+  }
+
   cache.set(c);
   *(size_t*)storage_size_loc = c - storage_size_loc - sizeof(size_t);
 }
@@ -189,7 +179,7 @@ void cache_tag(io_buf& cache, v_array<char> tag)
   buf_write(cache, c, sizeof(size_t)+tag.size());
   *(size_t*)c = tag.size();
   c += sizeof(size_t);
-  memcpy(c, tag.begin, tag.size());
+  memcpy(c, tag.begin(), tag.size());
   c += tag.size();
   cache.set(c);
 }
@@ -197,6 +187,7 @@ void cache_tag(io_buf& cache, v_array<char> tag)
 void cache_features(io_buf& cache, example* ae, uint64_t mask)
 { cache_tag(cache,ae->tag);
   output_byte(cache, (unsigned char) ae->indices.size());
-  for (unsigned char* b = ae->indices.begin; b != ae->indices.end; b++)
-    output_features(cache, *b, ae->feature_space[*b], mask);
+
+  for (namespace_index ns : ae->indices)
+    output_features(cache, ns, ae->feature_space[ns], mask);
 }

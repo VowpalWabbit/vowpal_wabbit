@@ -22,16 +22,33 @@ namespace VW.Serializer
     public class VowpalWabbitMarshalContext : IDisposable
     {
         /// <summary>
+        /// If true disposes the example builder. Otherwise it's not owned by this instance.
+        /// </summary>
+        private bool disposeExampleBuilder = false;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbitMarshalContext"/> class.
         /// </summary>
         /// <param name="vw">The VW instance the example will be imported to.</param>
         /// <param name="dictionary">Dictionary used for dictify operation.</param>
         /// <param name="fastDictionary">Dictionary used for dictify operation.</param>
         public VowpalWabbitMarshalContext(VowpalWabbit vw, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)
+            : this(vw, new VowpalWabbitExampleBuilder(vw), dictionary, fastDictionary)
+        {
+            disposeExampleBuilder = true;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VowpalWabbitMarshalContext"/> class.
+        /// </summary>
+        /// <param name="vw">The VW instance the example will be imported to.</param>
+        /// <param name="exampleBuilder">A shared example builder.</param>
+        /// <param name="dictionary">Dictionary used for dictify operation.</param>
+        /// <param name="fastDictionary">Dictionary used for dictify operation.</param>
+        public VowpalWabbitMarshalContext(VowpalWabbit vw, VowpalWabbitExampleBuilder exampleBuilder, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)
         {
             this.VW = vw;
-
-            this.ExampleBuilder = new VowpalWabbitExampleBuilder(vw);
+            this.ExampleBuilder = exampleBuilder;
 
             if (vw.Settings.EnableStringExampleGeneration)
             {
@@ -115,7 +132,7 @@ namespace VW.Serializer
         {
             if (disposing)
             {
-                if (this.ExampleBuilder != null)
+                if (this.ExampleBuilder != null && disposeExampleBuilder)
                 {
                     this.ExampleBuilder.Dispose();
                     this.ExampleBuilder = null;

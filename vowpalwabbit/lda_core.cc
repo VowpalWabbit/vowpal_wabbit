@@ -570,48 +570,46 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, exa
     old_gamma.push_back(0.f);
   }
   size_t num_words = 0;
-  for (unsigned char *i = ec->indices.begin; i != ec->indices.end; i++)
-    num_words += ec->feature_space[*i].size();
+  for (features& fs : *ec)
+    num_words += fs.size();
 
   float xc_w = 0;
   float score = 0;
   float doc_length = 0;
   do
-  { memcpy(v, new_gamma.begin, sizeof(float) * l.topics);
+  { memcpy(v, new_gamma.begin(), sizeof(float) * l.topics);
     l.expdigammify(*l.all, v);
 
-    memcpy(old_gamma.begin, new_gamma.begin, sizeof(float) * l.topics);
-    memset(new_gamma.begin, 0, sizeof(float) * l.topics);
+    memcpy(old_gamma.begin(), new_gamma.begin(), sizeof(float) * l.topics);
+    memset(new_gamma.begin(), 0, sizeof(float) * l.topics);
 
     score = 0;
     size_t word_count = 0;
     doc_length = 0;
-    for (unsigned char *i = ec->indices.begin; i != ec->indices.end; i++)
-      { features& fs = ec->feature_space[*i];
-        for (size_t j = 0; j < fs.size(); ++j)
-          { float *u_for_w = &weights[(fs.indicies[j] & l.all->reg.weight_mask) + l.topics + 1];
+    for (features& fs : *ec)
+      { for (features::iterator& f : fs)
+          { float *u_for_w = &weights[(f.index() & l.all->reg.weight_mask) + l.topics + 1];
             float c_w = find_cw(l, u_for_w, v);
-            xc_w = c_w * fs.values[j];
-            score += -fs.values[j] * log(c_w);
+            xc_w = c_w * f.value();
+            score += -f.value() * log(c_w);
             size_t max_k = l.topics;
             for (size_t k = 0; k < max_k; k++)
-              { new_gamma[k] += xc_w * u_for_w[k];
-              }
+              new_gamma[k] += xc_w * u_for_w[k];
             word_count++;
-            doc_length += fs.values[j];
+            doc_length += f.value();
           }
       }
     for (size_t k = 0; k < l.topics; k++)
       new_gamma[k] = new_gamma[k] * v[k] + l.lda_alpha;
   }
-  while (average_diff(*l.all, old_gamma.begin, new_gamma.begin) > l.lda_epsilon);
+  while (average_diff(*l.all, old_gamma.begin(), new_gamma.begin()) > l.lda_epsilon);
 
   ec->topic_predictions.erase();
   ec->topic_predictions.resize(l.topics);
-  memcpy(ec->topic_predictions.begin, new_gamma.begin, l.topics * sizeof(float));
-  ec->topic_predictions.end = ec->topic_predictions.begin + l.topics;
+  memcpy(ec->topic_predictions.begin(), new_gamma.begin(), l.topics * sizeof(float));
+  ec->topic_predictions.end() = ec->topic_predictions.begin() + l.topics;
 
-  score += theta_kl(l, Elogtheta, new_gamma.begin);
+  score += theta_kl(l, Elogtheta, new_gamma.begin());
 
   return score / doc_length;
 }
@@ -731,7 +729,7 @@ void learn_batch(lda &l)
     last_weight_index = s->f.weight_index;
     float *weights_for_w = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
     float decay_component =
-      l.decay_levels.end[-2] - l.decay_levels.end[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
+      l.decay_levels.end()[-2] - l.decay_levels.end()[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
     float decay = fmin(1.0f, correctedExp(decay_component));
     float *u_for_w = weights_for_w + l.all->lda + 1;
 
@@ -740,7 +738,7 @@ void learn_batch(lda &l)
     { weights_for_w[k] *= decay;
       u_for_w[k] = weights_for_w[k] + l.lda_rho;
     }
-    l.expdigammify_2(*l.all, u_for_w, l.digammas.begin);
+    l.expdigammify_2(*l.all, u_for_w, l.digammas.begin());
   }
 
   for (size_t d = 0; d < batch_size; d++)
@@ -792,14 +790,13 @@ void learn(lda &l, LEARNER::base_learner &, example &ec)
 { uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
-  for (unsigned char *i = ec.indices.begin; i != ec.indices.end; i++)
-    { features& fs = ec.feature_space[*i];
-      for (size_t j = 0; j < fs.size(); ++j)
-        { index_feature temp = {num_ex, feature(fs.values[j], fs.indicies[j])};
-          l.sorted_features.push_back(temp);
-          l.doc_lengths[num_ex] += (int)fs.values[j];
-        }
+  for (features& fs : ec)
+  { for (features::iterator& f : fs)
+    { index_feature temp = {num_ex, feature(f.value(), f.index())};
+      l.sorted_features.push_back(temp);
+      l.doc_lengths[num_ex] += (int)f.value();
     }
+  }
   if (++num_ex == l.minibatch)
     learn_batch(l);
 }
@@ -816,7 +813,7 @@ void end_examples(lda &l)
 { for (size_t i = 0; i < l.all->length(); i++)
   { weight *weights_for_w = &(l.all->reg.weight_vector[i << l.all->reg.stride_shift]);
     float decay_component =
-      l.decay_levels.last() - l.decay_levels.end[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
+      l.decay_levels.last() - l.decay_levels.end()[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
     float decay = fmin(1.f, correctedExp(decay_component));
     for (size_t k = 0; k < l.all->lda; k++)
       weights_for_w[k] *= decay;
