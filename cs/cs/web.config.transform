@@ -1,0 +1,15 @@
+<configuration>
+    <!-- IIS 6.0 -->
+    <system.web>
+        <httpModules>
+            <add name="VowpalWabbitHttpModule" type="VW.VowpalWabbitHttpModule" />
+        </httpModules>
+    </system.web>
+    <!-- IIS 7.0 -->
+    <system.webServer>
+        <modules>
+            <add name="VowpalWabbitHttpModule" type="VW.VowpalWabbitHttpModule" />
+        </modules>
+    </system.webServer>
+</configuration>
+

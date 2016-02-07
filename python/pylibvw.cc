@@ -140,8 +140,8 @@ float my_predict_string(vw_ptr all, char*str)
 
 string varray_char_to_string(v_array<char> &a)
 { string ret = "";
-  for (char*c = a.begin; c != a.end; ++c)
-    ret += *c;
+  for (auto c : a)
+    ret += c;
   return ret;
 }
 
@@ -227,8 +227,8 @@ void ex_push_namespace(example_ptr ec, unsigned char ns)
 }
 
 void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
-{ for (unsigned char* nss = ec->indices.begin; nss != ec->indices.end; ++nss)
-    if (ns == *nss) return;
+{ for (auto nss : ec->indices)
+    if (ns == nss) return;
   ex_push_namespace(ec, ns);
 }
 
@@ -325,9 +325,9 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
 
   uint32_t multiplier = all.wpp << all.reg.stride_shift;
   if(multiplier != 1)   //make room for per-feature information.
-    for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
-      for (size_t j = 0; j < ae->feature_space[*i].indicies.size(); j++)
-	ae->feature_space[*i].indicies[j] /= multiplier;
+    for (auto ns : ae->indices)
+      for (auto& idx : ae->feature_space[ns].indicies)
+        idx /= multiplier;
 }
 
 

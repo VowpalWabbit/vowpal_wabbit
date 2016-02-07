@@ -1,6 +1,8 @@
 from collections import namedtuple
 import numpy as np
 import pytest
+from sklearn.utils.estimator_checks import check_estimator
+
 from sklearn_vw import VW, VWClassifier, VWRegressor, tovw
 from sklearn import datasets
 from sklearn.utils.validation import NotFittedError
@@ -23,6 +25,25 @@ def data():
 
 class TestVW:
 
+    def test_validate_vw_estimator(self):
+        """
+        Run VW and VWClassifier through the sklearn estimator validation check
+
+        Note: the VW estimators fail sklearn's estimator validation check. The validator creates a new
+        instance of the estimator with the estimator's default args, '--quiet' in VW's case. At some point
+        in the validation sequence it calls fit() with some fake data.  The data gets formatted  via tovw() to:
+
+        2 1 | 0:0.5488135039273248 1:0.7151893663724195 2:0.6027633760716439 3:0.5448831829968969 4:0.4236547993389047 5:0.6458941130666561 6:0.4375872112626925 7:0.8917730007820798 8:0.9636627605010293 9:0.3834415188257777
+
+        This gets passed into vw.learn and the python process dies with the error, "Process finished with exit code 139"
+
+        At some point it would probably be worth while figuring out the problem  this and getting the two estimators to
+        pass sklearn's validation check
+        """
+
+        # check_estimator(VW)
+        # check_estimator(VWClassifier)
+
     def test_init(self):
         assert isinstance(VW(), VW)
 
@@ -36,7 +57,7 @@ class TestVW:
     def test_passes(self, data):
         n_passes = 2
         model = VW(loss_function='logistic', passes=n_passes)
-        assert model.passes == n_passes
+        assert model.passes_ == n_passes
 
         model.fit(data.x, data.y)
         weights = model.get_coefs()
@@ -53,7 +74,7 @@ class TestVW:
     def test_predict_not_fit(self, data):
         model = VW(loss_function='logistic')
         with pytest.raises(NotFittedError):
-            model.predict(data.x[0], data.y[0])
+            model.predict(data.x[0])
 
     def test_predict(self, data):
         model = VW(loss_function='logistic')
@@ -61,9 +82,9 @@ class TestVW:
         assert np.isclose(model.predict(data.x[:1][:1])[0], 0.406929)
 
     def test_predict_no_convert(self):
-        model = VW(loss_function='logistic')
-        model.fit(['-1 | bad', '1 | good'], convert_to_vw=False)
-        assert np.isclose(model.predict(['| good'], convert_to_vw=False)[0], 0.245515)
+        model = VW(loss_function='logistic', convert_to_vw=False)
+        model.fit(['-1 | bad', '1 | good'])
+        assert np.isclose(model.predict(['| good'])[0], 0.245515)
 
     def test_set_params(self):
         model = VW()
