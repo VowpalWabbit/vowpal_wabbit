@@ -9,6 +9,7 @@
 using VW.Interfaces;
 using System.Globalization;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace VW.Labels
 {
@@ -20,16 +21,19 @@ namespace VW.Labels
         /// <summary>
         /// Gets or sets the float label.
         /// </summary>
+        [JsonProperty]
         public float Label { get; set; }
 
         /// <summary>
         /// Gets or sets the optional weight.
         /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public float? Weight { get; set; }
 
         /// <summary>
         /// Gets or sets the optional initial value.
         /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public float? Initial { get; set; }
 
         /// <summary>

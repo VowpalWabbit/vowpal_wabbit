@@ -17,7 +17,7 @@ namespace VW.Serializer.Intermediate
     public sealed class Namespace
     {
         /// <summary>
-        /// Initializes a new namespace instance.
+        /// Initializes a new <see cref="Namespace"/> instance.
         /// </summary>
         /// <param name="vw">VopwpalWabbit instance used for hashing.</param>
         /// <param name="name">The namespace name.</param>
@@ -25,7 +25,7 @@ namespace VW.Serializer.Intermediate
         public Namespace(VowpalWabbit vw, string name, char? featureGroup)
         {
             this.Name = name;
-            this.FeatureGroup = featureGroup ?? ' ';
+            this.FeatureGroup = featureGroup ?? VowpalWabbitConstants.DefaultNamespace;
 
             if (featureGroup == null && !string.IsNullOrWhiteSpace(name))
             {
@@ -42,6 +42,28 @@ namespace VW.Serializer.Intermediate
                 " |{0}{1}",
                 this.FeatureGroup,
                 this.Name);
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="Namespace"/> instance.
+        /// </summary>
+        /// <param name="vw">VopwpalWabbit instance used for hashing.</param>
+        /// <param name="name">The namespace name. First character is treated as feature group. Defaults to space.</param>
+        public Namespace(VowpalWabbit vw, string name = null)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                name = " ";
+            }
+
+            if (name.Length > 1)
+            {
+                this.Name = name.Substring(1);
+            }
+            this.FeatureGroup = name[0];
+
+            this.NamespaceHash = vw.HashSpace(name);
+            this.NamespaceString = " |" + name;
         }
 
         /// <summary>
