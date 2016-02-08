@@ -10,7 +10,7 @@ num sources = 1
 Regressor contains 18 values
 example      values         total   
 counter      audited        progress
-1                    2           11%
-2                    3           16%
-4                    4           22%
-Note: for some reason audit couldn't find all regressor values in dataset (6 of 18 found).
+1                    6           33%
+2                    9           50%
+4                   12           66%
+6                   18          100%

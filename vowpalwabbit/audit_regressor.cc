@@ -78,9 +78,19 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, exam
     vw& all = *rd.all;
 
     if (rd.increment == 0)
-    {
+    {  // should be called once
         rd.increment = base.increment/base.weights;
         rd.total_class_cnt = base.weights;
+
+        if (all.vm.count("csoaa"))
+        {
+            size_t n = all.vm["csoaa"].as<size_t>();
+            if (n != rd.total_class_cnt)
+            {
+                rd.total_class_cnt = n;
+                rd.increment = base.increment/n;
+            }
+        }
     }
 
     if (all.lda > 0)
