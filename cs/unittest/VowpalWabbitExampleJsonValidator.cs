@@ -27,7 +27,7 @@ namespace cs_unittest
         {
             using (var strExample = this.vw.ParseLine(line))
             using (var jsonSerializer = new VowpalWabbitJsonSerializer(this.vw))
-            using (var jsonExample = (VowpalWabbitJsonSerializer.SingleVowpalWabbitExample)jsonSerializer.ParseAndCreate(json, label))
+            using (var jsonExample = (VowpalWabbitSingleLineExampleCollection)jsonSerializer.ParseAndCreate(json, label))
             using (var strJsonExample = this.vw.ParseLine(jsonExample.Example.VowpalWabbitString))
             {
                 var diff = strExample.Diff(this.vw, jsonExample.Example, labelComparator);
@@ -48,7 +48,7 @@ namespace cs_unittest
                     strExamples[i] = this.vw.ParseLine(lines[i]);
 
                 using (var jsonSerializer = new VowpalWabbitJsonSerializer(this.vw))
-                using (var jsonExample = (VowpalWabbitJsonSerializer.MultilineVowpalWabbitExamples)jsonSerializer.ParseAndCreate(json, label, index))
+                using (var jsonExample = (VowpalWabbitMultiLineExampleCollection)jsonSerializer.ParseAndCreate(json, label, index))
                 {
                     var jsonExamples = new List<VowpalWabbitExample>();
 

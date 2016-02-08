@@ -112,6 +112,7 @@ namespace VW.Serializer
         /// Optional label, taking precedence over "_label" property found in <paramref name="reader"/>.
         /// If null, <paramref name="reader"/> will be inspected and the "_label" property used as label.
         /// </param>
+        /// <param name="specialPropertyAction">Action to be executed when sepcial properties are discovered.</param>
         /// <returns>The VowpalWabbit native example.</returns>
         public void Parse(JsonReader reader, ILabel label = null, Func<string, bool> specialPropertyAction = null)
         {
@@ -173,7 +174,7 @@ namespace VW.Serializer
             // special fields
             switch (propertyName)
             {
-                case "_label":
+                case VowpalWabbitConstants.LabelProperty:
                     // passed in label has precedence
                     if (label == null)
                         this.ParseLabel();

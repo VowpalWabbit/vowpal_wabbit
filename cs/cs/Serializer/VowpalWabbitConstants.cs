@@ -22,5 +22,10 @@ namespace VW.Serializer
         /// JSON property "_text" is marshalled using <see cref="VW.Serializer.StringProcessing.Split"/>.
         /// </summary>
         internal const string TextProperty = "_text";
+
+        /// <summary>
+        /// JSON property "_label" is used as label.
+        /// </summary>
+        internal const string LabelProperty = "_label";
     }
 }
