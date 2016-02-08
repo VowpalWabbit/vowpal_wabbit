@@ -325,6 +325,9 @@ namespace VW
         VW::parse_atomic_example(*m_vw, ex->m_example, false);
         VW::setup_example(*m_vw, ex->m_example);
 
+        // remember the input string for debugging purposes
+        ex->VowpalWabbitString = line;
+
         return ex;
       }
       catch (...)
