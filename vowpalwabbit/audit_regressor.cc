@@ -97,7 +97,7 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, exam
     {
         ostringstream tempstream;
         weight* weights = all.reg.weight_vector;
-        for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
+        for (unsigned char* i = ec.indices.begin(); i != ec.indices.end(); i++)
         {
             features& fs = ec.feature_space[*i];
             for (size_t j = 0; j < fs.size(); ++j)
@@ -122,7 +122,7 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, exam
         while ( rd.cur_class < rd.total_class_cnt )
         {            
 
-            for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
+            for (unsigned char* i = ec.indices.begin(); i != ec.indices.end(); ++i)
             { features& fs = ec.feature_space[(size_t)*i];
                 if (fs.space_names.size() > 0)
                     for (size_t j = 0; j < fs.size(); ++j)
