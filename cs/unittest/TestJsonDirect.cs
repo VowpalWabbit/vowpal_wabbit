@@ -17,7 +17,7 @@ namespace cs_unittest
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonContext>(new VowpalWabbitSettings(featureDiscovery:VowpalWabbitFeatureDiscovery.Json)))
             {
-                vw.Validate("| Clicks:5 |a Bar:1 25_old |b Marker", new JsonContext()
+                vw.Validate("| Clicks:5 |a Bar:1 Age25_old |b Marker", new JsonContext()
                 {
                     Ns1 = new Namespace1
                     {
@@ -113,6 +113,37 @@ namespace cs_unittest
                 vw.Validate("| Feature:25", new JsonContextByte { Feature = 25 });
             }
         }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonDirectText()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<JsonText>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
+            {
+                vw.Validate("| a b c |a d e f", new JsonText
+                {
+                    Text = "a b c",
+                    AuxInfo = "Foo",
+                    A = new JsonText
+                    {
+                        Text = "d e f",
+                        AuxInfo = "Bar"
+                    }
+                });
+            }
+        }
+    }
+
+    public class JsonText
+    {
+        [JsonProperty("_text")]
+        public string Text { get; set; }
+
+        [JsonProperty("_auxInfo")]
+        public string AuxInfo { get; set; }
+
+        [JsonProperty("a")]
+        public JsonText A { get; set; }
     }
 
     [JsonObject(MemberSerialization = MemberSerialization.OptOut)]

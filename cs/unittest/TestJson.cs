@@ -14,6 +14,7 @@ namespace cs_unittest
     public class TestJsonClass
     {
         [TestMethod]
+        [TestCategory("JSON")]
         public void TestJson()
         {
             using (var validator = new VowpalWabbitExampleJsonValidator())
@@ -21,11 +22,12 @@ namespace cs_unittest
                 validator.Validate("|a foo:1", "{\"a\":{\"foo\":1}}");
                 validator.Validate("|a foo:2.3", "{\"a\":{\"foo\":2.3}}");
                 validator.Validate("|a foo:2.3 bar", "{\"a\":{\"foo\":2.3, \"bar\":true}}");
-                validator.Validate("|a foo:1 |bcd 25_old", "{\"a\":{\"foo\":1},\"bcd\":{\"Age\":\"25 old\"}}");
+                validator.Validate("|a foo:1 |bcd Age25_old", "{\"a\":{\"foo\":1},\"bcd\":{\"Age\":\"25 old\"}}");
             }
         }
 
         [TestMethod]
+        [TestCategory("JSON")]
         public void TestJsonAux()
         {
             using (var validator = new VowpalWabbitExampleJsonValidator())
@@ -37,6 +39,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("JSON")]
         public void TestJsonArray()
         {
             using (var validator = new VowpalWabbitExampleJsonValidator())
@@ -47,6 +50,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("JSON")]
         public void TestJsonSimpleLabel()
         {
             using (var validator = new VowpalWabbitExampleJsonValidator())
@@ -56,6 +60,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("JSON")]
         public void TestJsonVWLabel()
         {
             using (var validator = new VowpalWabbitExampleJsonValidator())
@@ -66,6 +71,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("JSON")]
         public void TestJsonSimpleLabelOverride()
         {
             using (var validator = new VowpalWabbitExampleJsonValidator())
@@ -76,6 +82,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("JSON")]
         public void TestJsonContextualBanditLabel()
         {
             using (var validator = new VowpalWabbitExampleJsonValidator("--cb 2 --cb_type dr"))
@@ -100,7 +107,7 @@ namespace cs_unittest
                 Ns1 = new Namespace1
                 {
                     Foo = 1,
-                    Age = "25 old",
+                    Age = "25",
                     DontConsider = "XXX"
                 },
                 Ns2 = new Namespace2
@@ -113,9 +120,42 @@ namespace cs_unittest
             var jsonContextString = JsonConvert.SerializeObject(jsonContext);
             using (var validator = new VowpalWabbitExampleJsonValidator(""))
             {
-                validator.Validate("25 |a Bar:1 25_old |b Marker | Clicks:5 MoreClicks:0",
+                validator.Validate("25 |a Bar:1 Age25 |b Marker | Clicks:5 MoreClicks:0",
                     jsonContextString,
                     VowpalWabbitLabelComparator.Simple);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonMultiline()
+        {
+            using (var validator = new VowpalWabbitExampleJsonValidator("--cb 2 --cb_type dr"))
+            {
+                validator.Validate(new[] { 
+                     "shared | Age:25",
+                     " | w1 w2 |a x:1",
+                     " | w2 w3"
+                    },
+                    "{\"Age\":25,\"_multi\":[{\"_text\":\"w1 w2\", \"a\":{\"x\":1}}, {\"_text\":\"w2 w3\"}]}");
+
+                validator.Validate(new[] { 
+                     "shared | Age:25",
+                     " | w1 w2 |a x:1",
+                     "2:-1:.3 | w2 w3"
+                    },
+                    "{\"Age\":25,\"_multi\":[{\"_text\":\"w1 w2\", \"a\":{\"x\":1}}, {\"_text\":\"w2 w3\",\"_label\":\"2:-1:.3\"}]}",
+                    VowpalWabbitLabelComparator.ContextualBandit);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonText()
+        {
+            using (var validator = new VowpalWabbitExampleJsonValidator(""))
+            {
+                validator.Validate("| a b c |a d e f", "{\"_text\":\"a b c\",\"a\":{\"_text\":\"d e f\"}}");
             }
         }
     }

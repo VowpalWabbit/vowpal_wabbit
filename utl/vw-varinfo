@@ -322,7 +322,7 @@ sub read_features($) {
 
             # Trim (the optionally empty) name-space prefix,
             # including the optional :weight
-            $nsr =~ s/^$ns\S*\s*//;
+            $nsr =~ s/^\Q$ns\E\S*\s*//;
 
             # Following the name-space: loop over feature+value pairs:
             foreach my $keyval (split(/\s+/, $nsr)) {
