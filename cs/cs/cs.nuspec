@@ -3,8 +3,8 @@
   <metadata>
     <title>Vowpal Wabbit</title>
     <id>VowpalWabbit</id>
-    <tags>vw vowpal wabbit john langford</tags>
-    <version>8.0.0.29</version>
+    <tags>vw vowpal wabbit langford ml machine learning</tags>
+    <version>8.0.0.32</version>
     <authors>John Langford et al</authors>
     <projectUrl>https://github.com/JohnLangford/vowpal_wabbit/wiki/C%23-Binding</projectUrl>
     <licenseUrl>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</licenseUrl>
@@ -14,6 +14,7 @@
     <dependencies>
       <group>
         <dependency id="Microsoft.Tpl.Dataflow" version="4.5.24" />
+        <dependency id="Newtonsoft.Json" version="8.0.2" />
       </group>
     </dependencies>
   </metadata>
@@ -30,10 +31,13 @@
 	  <file src="VowpalWabbit.targets" target="build" />
 
 	  <file src="**\*.cs" target="src\cs" exclude="**\obj\**\*.cs" />
-	  <file src="..\vw_clr\*.cpp" target="src\vw_clr" />
-	  <file src="..\vw_clr\*.h" target="src\vw_clr" />
+	  <file src="..\common\**\*.cs" target="src\common" exclude="**\obj\**\*.cs" />
+	  <file src="..\cli\*.cpp" target="src\cli" />
+	  <file src="..\cli\*.h" target="src\cli" />
 	  <file src="$SolutionDir$*.cc" target="src\vowpalwabbit" />
 	  <file src="$SolutionDir$*.h" target="src\vowpalwabbit" />
+
+  	  <file src="web.config.transform" target="content"/>
   </files>
 </package>
 

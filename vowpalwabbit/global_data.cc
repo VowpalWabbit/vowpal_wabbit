@@ -72,11 +72,11 @@ void binary_print_result(int f, float res, float weight, v_array<char>)
 }
 
 int print_tag(std::stringstream& ss, v_array<char> tag)
-{ if (tag.begin != tag.end)
+{ if (tag.begin() != tag.end())
   { ss << ' ';
-    ss.write(tag.begin, sizeof(char)*tag.size());
+    ss.write(tag.begin(), sizeof(char)*tag.size());
   }
-  return tag.begin != tag.end;
+  return tag.begin() != tag.end();
 }
 
 void print_result(int f, float res, float, v_array<char> tag)
@@ -195,8 +195,8 @@ void add_options(vw& all, po::options_description& opts)
   po::store(parsed, new_vm);
   po::notify(new_vm);
 
-  for (po::variables_map::iterator it=new_vm.begin(); it!=new_vm.end(); ++it)
-    all.vm.insert(*it);
+  for (auto& it : new_vm)
+    all.vm.insert(it);
 }
 
 void add_options(vw& all)
@@ -213,8 +213,8 @@ bool no_new_options(vw& all)
   po::store(parsed, new_vm);
   all.opts.add(*all.new_opts);
   delete all.new_opts;
-  for (po::variables_map::iterator it=new_vm.begin(); it!=new_vm.end(); ++it)
-    all.vm.insert(*it);
+  for (auto& it : new_vm)
+    all.vm.insert(it);
 
   if (new_vm.size() == 0) // required are missing;
     return true;
@@ -273,7 +273,7 @@ vw::vw()
   eta = 0.5; //default learning rate for normalized adaptive updates, this is switched to 10 by default for the other updates (see parse_args.cc)
   numpasses = 1;
 
-  final_prediction_sink.begin = final_prediction_sink.end=final_prediction_sink.end_array = nullptr;
+  final_prediction_sink.begin() = final_prediction_sink.end() = final_prediction_sink.end_array = nullptr;
   raw_prediction = -1;
   print = print_result;
   print_text = print_raw_text;
