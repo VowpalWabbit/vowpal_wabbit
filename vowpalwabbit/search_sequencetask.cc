@@ -173,7 +173,7 @@ void run(Search::search& sch, vector<example*>& ec)
       Search::predictor P(sch, (ptag)i+1);
       P.set_learner_id(pass-1);
       if (D.encoding == BIO)
-      { if      (last_prediction == 1)       P.set_allowed(y_allowed->begin, len-1);
+      { if      (last_prediction == 1)       P.set_allowed(y_allowed->begin(), len-1);
         else if (last_prediction % 2 == 0) { (*y_allowed)[len-1] = last_prediction+1; P.set_allowed(*y_allowed); }
         else                               { (*y_allowed)[len-1] = last_prediction;   P.set_allowed(*y_allowed); }
         if ((oracle > 1) && (oracle % 2 == 1) && (last_prediction != oracle) && (last_prediction != oracle-1))
@@ -340,12 +340,9 @@ void finish(Search::search& sch)
 // this is totally bogus for the example -- you'd never actually do this!
 void my_update_example_indicies(Search::search& sch, bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount)
 { size_t ss = sch.get_stride_shift();
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-    {
-      v_array<feature_index>& fis = ec->feature_space[*i].indicies;
-      for (size_t j = 0; j < fis.size(); ++j)
-        fis[j] = (((fis[j]>>ss) * mult_amount) + plus_amount)<<ss;
-    }
+  for (features& fs : *ec)
+    for (feature_index& idx : fs.indicies)
+      idx = (((idx >> ss) * mult_amount) + plus_amount) << ss;
 }
 
 void run(Search::search& sch, vector<example*>& ec)

@@ -35,7 +35,7 @@ void initialize_regressor(vw& all)
   all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
   try
     { all.reg.weight_vector = calloc_or_throw<weight>(length << all.reg.stride_shift);
-    } 
+    }
   catch (VW::vw_exception anExc)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
     }
@@ -243,16 +243,16 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
             if (read)
               { v_string s = v_init<unsigned char>();
                 s.resize(inter_len);
-                s.end += inter_len;
+                s.end() += inter_len;
                 all.interactions.push_back(s);
               }
             else
               {
                 msg << "interaction: ";
-                msg.write((char*)all.interactions[i].begin, inter_len);
+                msg.write((char*)all.interactions[i].begin(), inter_len);
               }
 
-            bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char*)all.interactions[i].begin, inter_len,
+            bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char*)all.interactions[i].begin(), inter_len,
                                                                     "", read, msg, text);
 
           }
@@ -372,7 +372,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_HASH)
       { uint32_t check_sum = (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH) ?
                              model_file.hash :
-                             (uint32_t)uniform_hash(model_file.space.begin, bytes_read_write, 0);
+                             (uint32_t)uniform_hash(model_file.space.begin(), bytes_read_write, 0);
 
         uint32_t check_sum_saved = check_sum;
 

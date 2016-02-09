@@ -9,31 +9,30 @@ license as described in the file LICENSE.
 void unique_features(features& fs, int max)
 { if (fs.indicies.empty())
     return;
-  size_t last_index = 0;
-  size_t num_features = fs.indicies.size();
-  if (max > 0)
-    num_features = min(num_features, (size_t)max);
-  for (size_t i = 1; i < num_features; i++)
-    if (fs.indicies[i] != fs.indicies[last_index])
+
+  features::features_value_index_audit_range range = fs.values_indices_audit();
+  features::iterator_all last_index = range.begin();
+  features::iterator_all end = max > 0 ? range.begin() + min(fs.size(), (size_t)max) : range.end();
+
+  for (features::iterator_all i = ++range.begin(); i != end; ++i)
+    if (i.index() != last_index.index())
       if (i != ++last_index)
-	{
-	  fs.values[last_index] = fs.values[i];
-	  fs.indicies[last_index] = fs.indicies[i];
-	  if (fs.space_names.size() > 0)
-	    fs.space_names[last_index] = fs.space_names[i];
-	}
-  fs.values.end = fs.values.begin + (++last_index);
-  fs.indicies.end = fs.indicies.begin + last_index;
-  if (fs.space_names.size() > 0)
-    fs.space_names.end = fs.space_names.begin + last_index;
+      {
+        last_index.value() = i.value();
+        last_index.index() = i.index();
+        if (!fs.space_names.empty())
+          last_index.audit() = i.audit();
+      }
+
+  ++last_index;
+  fs.truncate_to(last_index);
 }
 
 void unique_sort_features(uint64_t parse_mask, example* ae)
 {
-  for (unsigned char* b = ae->indices.begin; b != ae->indices.end; b++)
-    { features& fs = ae->feature_space[*b];
-      if (fs.sort(parse_mask))
-        unique_features(fs);
-    }
+  for (features& fs : *ae)
+    if (fs.sort(parse_mask))
+      unique_features(fs);
+
   ae->sorted=true;
 }

@@ -43,7 +43,7 @@ namespace cs_unittest
             this.vwNative = new VowpalWabbit<TExample>(settings);
             this.serializerNative = this.vwNative.Serializer.Func(this.vwNative.Native);
 
-            this.factorySerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(new VowpalWabbitSettings(enableStringExampleGeneration: true)).Create(this.vw.Native);
+            this.factorySerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(settings.ShallowCopy(enableStringExampleGeneration: true)).Create(this.vw.Native);
         }
 
         public void Validate(string line, TExample example, ILabel label = null)

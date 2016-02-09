@@ -118,7 +118,7 @@ void output_and_account_example(vw& all, example& ec)
   for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
   { int f = (int)all.final_prediction_sink[i];
     if (all.lda > 0)
-      print_lda_result(all, f,ec.topic_predictions.begin,0.,ec.tag);
+      print_lda_result(all, f,ec.topic_predictions.begin(),0.,ec.tag);
     else
       all.print(f, ec.pred.scalar, 0, ec.tag);
   }
