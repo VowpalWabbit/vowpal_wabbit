@@ -515,7 +515,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
 { io_buf* b = new io_buf();
 
   char* queries;
-  flat_example* fec;
+  flat_example* fec = NULL;
 
   for(size_t i = 0; i < params.pool_pos; i++)
   { if(!train_pool[i])
