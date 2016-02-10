@@ -62,6 +62,11 @@ namespace VW
         public abstract TPrediction Predict<TPrediction>(IVowpalWabbitPredictionFactory<TPrediction> predictionFactory);
 
         /// <summary>
+        /// The optional string version of the example.
+        /// </summary>
+        public abstract string VowpalWabbitString { get; }
+
+        /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         public abstract void Dispose();

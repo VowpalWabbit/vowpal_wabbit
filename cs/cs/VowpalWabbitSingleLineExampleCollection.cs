@@ -75,6 +75,17 @@ namespace VW
         }
 
         /// <summary>
+        /// The optional string version of the example.
+        /// </summary>
+        public override string VowpalWabbitString
+        {
+            get
+            {
+                return this.Example.VowpalWabbitString;
+            }
+        }
+
+        /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         public override void Dispose()

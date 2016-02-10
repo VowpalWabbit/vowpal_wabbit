@@ -31,7 +31,7 @@ namespace cs_unittest
             using (var strJsonExample = this.vw.ParseLine(jsonExample.Example.VowpalWabbitString))
             {
                 var diff = strExample.Diff(this.vw, jsonExample.Example, labelComparator);
-                Assert.IsNull(diff, diff + " generated string: '" + jsonExample.Example.VowpalWabbitString + "'");
+                Assert.IsNull(diff, diff + " generated string: '" + jsonExample.VowpalWabbitString + "'");
 
                 diff = strExample.Diff(this.vw, strJsonExample, labelComparator);
                 Assert.IsNull(diff, diff);
