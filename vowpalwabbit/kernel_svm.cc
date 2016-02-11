@@ -257,7 +257,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
                             "", read, msg, text);
   //cerr<<"Read num support "<<model->num_support<<endl;
 
-  flat_example* fec;
+  flat_example* fec = nullptr;
   if(read)
     model->support_vec.resize(model->num_support);
 
@@ -515,7 +515,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
 { io_buf* b = new io_buf();
 
   char* queries;
-  flat_example* fec;
+  flat_example* fec = nullptr;
 
   for(size_t i = 0; i < params.pool_pos; i++)
   { if(!train_pool[i])
