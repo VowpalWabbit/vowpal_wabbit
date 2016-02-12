@@ -99,6 +99,12 @@ struct action_repr
   repr.space_names = _repr.space_names;
  }
   action_repr(action _a) : a(_a), repr() {}
+  void operator=(const action_repr & ar)
+  { repr.values = ar.repr.values;
+    repr.indicies = ar.repr.indicies;
+    repr.space_names = ar.repr.space_names;
+    a = ar.a;
+  }
 };
 
 struct action_cache
@@ -1953,8 +1959,6 @@ void search_finish(search& sch)
   if (priv.cb_learner) priv.gte_label.cb.costs.delete_v();
   else                 priv.gte_label.cs.costs.delete_v();
 
-  for (Search::action_repr& ar : priv.condition_on_actions)
-    ar.repr.delete_v();
   priv.condition_on_actions.delete_v();
   priv.learn_allowed_actions.delete_v();
   priv.ldf_test_label.costs.delete_v();
@@ -1986,8 +1990,6 @@ void search_finish(search& sch)
   }
   priv.learn_condition_on_names.delete_v();
   priv.learn_condition_on.delete_v();
-  for (Search::action_repr& ar : priv.learn_condition_on_act)
-    ar.repr.delete_v();
   priv.learn_condition_on_act.delete_v();
 
   if (priv.task->finish) priv.task->finish(sch);
