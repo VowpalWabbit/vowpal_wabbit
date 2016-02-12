@@ -25,7 +25,7 @@ template<class T>
 T* calloc_mergable_or_throw(size_t nmemb)
 { if (nmemb == 0)
     return nullptr;
-
+#ifdef MADV_MERGEABLE
   size_t length = nmemb * sizeof(T);
   void* data;
   if (0 != posix_memalign(&data, sysconf(_SC_PAGE_SIZE), length))
@@ -40,7 +40,6 @@ T* calloc_mergable_or_throw(size_t nmemb)
     THROW(msg);
   }
   memset(data, 0, lengh);
-#ifdef MADV_MERGEABLE
 // mark weight vector as KSM sharable
 // it allows to save memory if you run multiple instances of the same model
 // see more https://www.kernel.org/doc/Documentation/vm/ksm.txt
@@ -52,6 +51,14 @@ T* calloc_mergable_or_throw(size_t nmemb)
   if (0 != madvise(data, length, MADV_MERGEABLE)) {
     const char* msg = "internal warning: marking memory as ksm mergeable failed!\n";
     fputs(msg, stderr);
+  }
+#else
+  void* data = calloc(nmemb, sizeof(T));
+  if (data == nullptr)
+  { const char* msg = "internal error: memory allocation failed!\n";
+    // use low-level function since we're already out of memory.
+    fputs(msg, stderr);
+    THROW(msg);
   }
 #endif
   return (T*)data;
