@@ -44,7 +44,10 @@ T* calloc_mergable_or_throw(size_t nmemb)
 // it allows to save memory if you run multiple instances of the same model
 // see more https://www.kernel.org/doc/Documentation/vm/ksm.txt
 // you need to have Linux kernel >= 2.6.32 and KSM enabled
-// to check is KSM enabled: `grep KSM /boot/config-`uname -r` CONFIG_KSM=y`
+// to check is KSM enabled run the command
+// $ grep KSM /boot/config-`uname -r`
+// if KSM is enabled you should see:
+// >> CONFIG_KSM=y
 // you can enable ksmd with sudo "echo 1 > /sys/kernel/mm/ksm/run"
 // mark address space as a candidate for merging
 
