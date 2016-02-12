@@ -39,7 +39,7 @@ T* calloc_mergable_or_throw(size_t nmemb)
     fputs(msg, stderr);
     THROW(msg);
   }
-  memset(data, 0, lengh);
+  memset(data, 0, length);
 // mark weight vector as KSM sharable
 // it allows to save memory if you run multiple instances of the same model
 // see more https://www.kernel.org/doc/Documentation/vm/ksm.txt
