@@ -94,11 +94,17 @@ struct action_repr
 { action a;
   features repr;
   action_repr(action _a, features& _repr) : a(_a), repr()
-{ copy_array(repr.values, _repr.values);
-  copy_array(repr.indicies, _repr.indicies);
-  copy_array(repr.space_names, _repr.space_names);
+{ repr.values = _repr.values;
+  repr.indicies = _repr.indicies;
+  repr.space_names = _repr.space_names;
  }
   action_repr(action _a) : a(_a), repr() {}
+  void operator=(const action_repr & ar)
+  { repr.values = ar.repr.values;
+    repr.indicies = ar.repr.indicies;
+    repr.space_names = ar.repr.space_names;
+    a = ar.a;
+  }
 };
 
 struct action_cache
