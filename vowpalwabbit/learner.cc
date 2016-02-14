@@ -43,23 +43,14 @@ template <class T, void(*f)(T, example*)> void generic_driver(vw& all, T context
 
   all.l->init_driver();
   while ( all.early_terminate == false )
-  { if ((ec = VW::get_example(all.p)) != nullptr)//semiblocking operation.
-    { f(context, ec);
-    }
-    else if (parser_done(all.p))
-    { all.l->end_examples();
-      return;
-    }
-  }
-  if (all.early_terminate) //drain any extra examples from parser and call end_examples
-  { while ((ec = VW::get_example(all.p)) != nullptr) //semiblocking operation.
+    if ((ec = VW::get_example(all.p)) != nullptr)
+      f(context, ec);
+    else 
+      break;
+  if (all.early_terminate) //drain any extra examples from parser.
+    while ((ec = VW::get_example(all.p)) != nullptr) 
       VW::finish_example(all, ec);
-
-    if (parser_done(all.p))
-    { all.l->end_examples();
-      return;
-    }
-  }
+  all.l->end_examples();
 }
 
 void process_multiple(vector<vw*> alls, example* ec)
@@ -78,6 +69,5 @@ void generic_driver(vector<vw*> alls)
 }
 
 void generic_driver(vw& all)
-{ generic_driver<vw&, process_example>(all, all);
-}
+{ generic_driver<vw&, process_example>(all, all); }
 }
