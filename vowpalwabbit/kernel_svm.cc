@@ -133,7 +133,7 @@ svm_example::compute_kernels(svm_params& params)
 int
 svm_example::clear_kernels()
 { int rowsize = (int)krow.size();
-  krow.end = krow.begin;
+  krow.end() = krow.begin();
   krow.resize(0);
   return -rowsize;
 }
@@ -212,14 +212,14 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
           size_t len = fs.size();
           fs.values = v_init<feature_value>();
           fs.values.resize(len);
-          brw = bin_read_fixed(model_file, (char*) fs.values.begin, len*sizeof(feature_value), ""); 	  if(!brw) return 3;
-          fs.values.end = fs.values.begin+len;
+          brw = bin_read_fixed(model_file, (char*) fs.values.begin(), len*sizeof(feature_value), ""); 	  if(!brw) return 3;
+          fs.values.end() = fs.values.begin()+len;
 
           len = fs.indicies.size();
           fs.indicies = v_init<feature_index>();
           fs.indicies.resize(len);
-          brw = bin_read_fixed(model_file, (char*) fs.indicies.begin, len*sizeof(feature_index), ""); 	  if(!brw) return 3;
-          fs.indicies.end = fs.indicies.begin+len;
+          brw = bin_read_fixed(model_file, (char*) fs.indicies.begin(), len*sizeof(feature_index), ""); 	  if(!brw) return 3;
+          fs.indicies.end() = fs.indicies.begin()+len;
       }
     }
     else return 1;
@@ -236,8 +236,8 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         }
       }
       if(fec->fs.size() > 0)
-        { brw = bin_write_fixed(model_file, (char*) fec->fs.values.begin, (uint32_t)fec->fs.size()*sizeof(feature_value));    	  if(!brw) return 3;
-          brw = bin_write_fixed(model_file, (char*) fec->fs.indicies.begin, (uint32_t)fec->fs.indicies.size()*sizeof(feature_index));    	  if(!brw) return 3;
+        { brw = bin_write_fixed(model_file, (char*) fec->fs.values.begin(), (uint32_t)fec->fs.size()*sizeof(feature_value));    	  if(!brw) return 3;
+          brw = bin_write_fixed(model_file, (char*) fec->fs.indicies.begin(), (uint32_t)fec->fs.indicies.size()*sizeof(feature_index));    	  if(!brw) return 3;
         }
     }
     else return 1;
@@ -257,7 +257,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
                             "", read, msg, text);
   //cerr<<"Read num support "<<model->num_support<<endl;
 
-  flat_example* fec;
+  flat_example* fec = nullptr;
   if(read)
     model->support_vec.resize(model->num_support);
 
@@ -276,11 +276,11 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
 
   if(read)
     model->alpha.resize(model->num_support);
-  bin_text_read_write_fixed(model_file, (char*)model->alpha.begin, (uint32_t)model->num_support*sizeof(float),
+  bin_text_read_write_fixed(model_file, (char*)model->alpha.begin(), (uint32_t)model->num_support*sizeof(float),
                             "", read, msg, text);
   if(read)
     model->delta.resize(model->num_support);
-  bin_text_read_write_fixed(model_file, (char*)model->delta.begin, (uint32_t)model->num_support*sizeof(float),
+  bin_text_read_write_fixed(model_file, (char*)model->delta.begin(), (uint32_t)model->num_support*sizeof(float),
                             "", read, msg, text);
 }
 
@@ -362,7 +362,7 @@ void predict (svm_params& params, svm_example** ec_arr, float* scores, size_t n)
 { svm_model* model = params.model;
   for(size_t i = 0; i < n; i++)
   { ec_arr[i]->compute_kernels(params);
-    scores[i] = dense_dot(ec_arr[i]->krow.begin, model->alpha, model->num_support)/params.lambda;
+    scores[i] = dense_dot(ec_arr[i]->krow.begin(), model->alpha, model->num_support)/params.lambda;
   }
 }
 
@@ -457,7 +457,7 @@ bool update(svm_params& params, size_t pos)
   svm_example* fec = model->support_vec[pos];
   label_data& ld = fec->ex.l.simple;
   fec->compute_kernels(params);
-  float *inprods = fec->krow.begin;
+  float *inprods = fec->krow.begin();
   float alphaKi = dense_dot(inprods, model->alpha, model->num_support);
   model->delta[pos] = alphaKi*ld.label/params.lambda - 1;
   float alpha_old = model->alpha[pos];
@@ -515,7 +515,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
 { io_buf* b = new io_buf();
 
   char* queries;
-  flat_example* fec;
+  flat_example* fec = nullptr;
 
   for(size_t i = 0; i < params.pool_pos; i++)
   { if(!train_pool[i])
@@ -528,7 +528,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
   }
 
   size_t* sizes = calloc_or_throw<size_t>(all.all_reduce->total);
-  sizes[all.all_reduce->node] = b->head - b->space.begin;
+  sizes[all.all_reduce->node] = b->head - b->space.begin();
   //cerr<<"Sizes = "<<sizes[all.node]<<" ";
   all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
 
@@ -542,13 +542,13 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
   //cerr<<total_sum<<" "<<prev_sum<<endl;
   if(total_sum > 0)
   { queries = calloc_or_throw<char>(total_sum);
-    memcpy(queries + prev_sum, b->space.begin, b->head - b->space.begin);
+    memcpy(queries + prev_sum, b->space.begin(), b->head - b->space.begin());
     b->space.delete_v();
     all_reduce<char, copy_char>(all, queries, total_sum);
 
-    b->space.begin = queries;
-    b->head = b->space.begin;
-    b->space.end = &queries[total_sum*sizeof(char)];
+    b->space.begin() = queries;
+    b->head = b->space.begin();
+    b->space.end() = &queries[total_sum*sizeof(char)];
 
     size_t num_read = 0;
     params.pool_pos = 0;
@@ -569,7 +569,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
       else
         break;
 
-      num_read += b->head - b->space.begin;
+      num_read += b->head - b->space.begin();
       if(num_read == prev_sum)
         params.local_begin = i+1;
       if(num_read == prev_sum + sizes[all.all_reduce->node])

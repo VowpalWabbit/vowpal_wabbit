@@ -27,71 +27,229 @@ inline int order_features(const void* first, const void* second)
     return -1;
 }
 
-struct features { // the core definition of a set of features.
+struct features;
+
+/// iterator over feature values only
+class features_value_iterator
+{
+protected:
+  feature_value* _begin;
+public:
+  features_value_iterator(feature_value* begin)
+    : _begin(begin)
+  { }
+
+  features_value_iterator(const features_value_iterator& other)
+    : _begin(other._begin)
+  { }
+
+  features_value_iterator& operator++()
+  { _begin++;
+    return *this;
+  }
+
+  /// \return reference to the current value
+  inline feature_value& value()
+  { return *_begin;
+  }
+
+  /// creates a new iterator advanced by \p index
+  /// \remark template<typename T> used to avoid warnings or tons of overloads for int, size_t, ...
+  template<typename T>
+  features_value_iterator operator+(T index) { return features_value_iterator(_begin + index); }
+
+  template<typename T>
+  features_value_iterator& operator+=(T index)
+  { _begin += index;
+    return *this;
+  }
+
+  template<typename T>
+  features_value_iterator& operator-=(T index)
+  { _begin -= index;
+    return *this;
+  }
+
+  features_value_iterator& operator=(const features_value_iterator& other)
+  { _begin = other._begin;
+    return *this;
+  }
+
+  features_value_iterator& operator*() { return *this; }
+
+  bool operator==(const features_value_iterator& rhs) { return _begin == rhs._begin; }
+  bool operator!=(const features_value_iterator& rhs) { return _begin != rhs._begin; }
+
+  friend void swap(features_value_iterator& lhs, features_value_iterator& rhs) { swap(lhs._begin, rhs._begin); }
+
+  friend struct features;
+};
+
+/// iterator over values and indicies
+class features_value_index_iterator : public features_value_iterator
+{
+protected:
+  feature_index* _begin_index;
+public:
+  features_value_index_iterator(feature_value* begin, feature_index* begin_index)
+    : features_value_iterator(begin), _begin_index(begin_index)
+  { }
+
+  features_value_index_iterator(const features_value_index_iterator& other)
+    : features_value_iterator(other), _begin_index(other._begin_index)
+  { }
+
+  features_value_index_iterator& operator++()
+  { features_value_iterator::operator++();
+    _begin_index++;
+    return *this;
+  }
+
+  inline feature_index& index()
+  { return *_begin_index;
+  }
+
+  template<typename T>
+  features_value_index_iterator& operator+=(T index)
+  { features_value_iterator::operator+=(index);
+    _begin_index += index;
+    return *this;
+  }
+
+  template<typename T>
+  features_value_index_iterator operator+(T index)
+  { return features_value_index_iterator(_begin + index, _begin_index + index);
+  }
+
+  template<typename T>
+  features_value_index_iterator& operator-=(T index)
+  { features_value_iterator::operator-=(index);
+    _begin_index -= index;
+    return *this;
+  }
+
+  features_value_index_iterator& operator=(const features_value_index_iterator& other)
+  {  features_value_iterator::operator=(other);
+    _begin_index = other._begin_index;
+    return *this;
+  }
+
+  features_value_index_iterator& operator*()
+  { return *this;
+  }
+
+  friend void swap(features_value_index_iterator& lhs, features_value_index_iterator& rhs)
+  { swap(static_cast<features_value_iterator&>(lhs), static_cast<features_value_iterator&>(rhs));
+    swap(lhs._begin_index, rhs._begin_index);
+  }
+};
+
+/// iterator over values, indicies and audit space names
+class features_value_index_audit_iterator : public features_value_index_iterator
+{
+protected:
+  audit_strings_ptr* _begin_audit;
+public:
+  features_value_index_audit_iterator(feature_value* begin, feature_index* begin_index, audit_strings_ptr* begin_audit)
+    : features_value_index_iterator(begin, begin_index), _begin_audit(begin_audit)
+  { }
+
+  features_value_index_audit_iterator(const features_value_index_audit_iterator& other)
+    : features_value_index_iterator(other), _begin_audit(other._begin_audit)
+  { }
+
+  // prefix increment
+  features_value_index_audit_iterator& operator++()
+  { features_value_index_iterator::operator++();
+    _begin_audit++;
+    return *this;
+  }
+
+  inline audit_strings_ptr& audit()
+  { return *_begin_audit;
+  }
+
+  template<typename T>
+  features_value_index_audit_iterator& operator+=(T index)
+  { features_value_index_iterator::operator+=(index);
+    _begin_audit += index;
+    return *this;
+  }
+
+  template<typename T>
+  features_value_index_audit_iterator operator+(T index)
+  { return features_value_index_audit_iterator(_begin + index, _begin_index + index, _begin_audit + index);
+  }
+
+  template<typename T>
+  features_value_index_audit_iterator& operator-=(T index)
+  { features_value_index_iterator::operator-=(index);
+    _begin_audit += index;
+    return *this;
+  }
+
+  features_value_index_audit_iterator& operator=(const features_value_index_audit_iterator& other)
+  { features_value_index_iterator::operator=(other);
+    _begin_audit = other._begin_audit;
+    return *this;
+  }
+
+  features_value_index_audit_iterator& operator*() { return *this; }
+
+  friend void swap(features_value_index_audit_iterator& lhs, features_value_index_audit_iterator& rhs)
+  { swap(static_cast<features_value_index_iterator&>(lhs), static_cast<features_value_index_iterator&>(rhs));
+    swap(lhs._begin_audit, rhs._begin_audit);
+  }
+};
+
+/// the core definition of a set of features.
+struct features {
   v_array<feature_value> values; // Always needed.
   v_array<feature_index> indicies; //Optional for dense data.
   v_array<audit_strings_ptr> space_names; //Optional for audit mode.
+
   float sum_feat_sq;
+
+  typedef features_value_index_iterator iterator;
+  typedef features_value_iterator iterator_value;
+  typedef features_value_index_audit_iterator iterator_all;
+
+  /// defines a "range" usable by C++ 11 for loops
+  class features_value_index_audit_range {
+  private:
+    features* _outer;
+  public:
+    features_value_index_audit_range(features* outer) : _outer(outer)
+    { }
+
+    iterator_all begin() { return iterator_all(_outer->values.begin(), _outer->indicies.begin(), _outer->space_names.begin()); }
+    iterator_all end() { return iterator_all(_outer->values.end(), _outer->indicies.end(), _outer->space_names.end()); }
+  };
+
   features()
-  {
-    values = v_init<feature_value>();
+  { values = v_init<feature_value>();
     indicies = v_init<feature_index>();
     space_names = v_init<audit_strings_ptr>();
     sum_feat_sq = 0.f;
   }
+
   inline size_t size() const { return values.size(); }
-  inline bool nonempty() const { return values.begin != values.end; }
+
+  inline bool nonempty() const { return !values.empty(); }
 
   void free_space_names(size_t i)
-  {
-	  for (; i < space_names.size(); i++)
-                  space_names[i].~audit_strings_ptr();
+  { for (; i < space_names.size(); i++)
+      space_names[i].~audit_strings_ptr();
   }
 
-  template<class R, void (*T)(R&, feature_value)> inline void foreach_feature(R& dat)
-  { 
-    feature_value* vp = values.begin;
-    for (;vp != values.end ;++vp)
-      T(dat,*vp);
+  features_value_index_audit_range values_indices_audit()
+  { return features_value_index_audit_range(this);
   }
 
-  template<class R, void (*T)(R&, feature_value, feature_index)> inline void foreach_feature(R& dat, size_t j, size_t k)
-  {
-    feature_value* vp = values.begin + j;
-    feature_index* ip = indicies.begin + j;
-    feature_value* end = values.begin + k;
-    for (;vp != end;++vp, ++ip)
-      T(dat,*vp,*ip);
-  }
+  // default iterator for values & features
+  iterator begin() { return iterator(values.begin(), indicies.begin()); }
 
-  template<class R, void (*T)(R&, feature_value, feature_index)> inline void foreach_feature(R& dat, size_t j)
-  { 
-    feature_value* vp = values.begin + j;
-    feature_index* ip = indicies.begin + j;
-    for (;vp != values.end ;++vp, ++ip)
-      T(dat,*vp,*ip);
-  }
-
-  template<class R, void (*T)(R&, feature_value, feature_index)> inline void foreach_feature(R& dat)
-  { 
-    feature_value* vp = values.begin;
-    feature_index* ip = indicies.begin;
-    for (;vp != values.end ;++vp, ++ip)
-      T(dat,*vp,*ip);
-  }
-
-  template<class R, void (*T)(R&, feature_value, feature_index, audit_strings*)> inline void foreach_feature(R& dat, size_t j, size_t k)
-  {
-    feature_value* vp = values.begin + j;
-    feature_index* ip = indicies.begin + j;
-    audit_strings_ptr* ap = space_names.begin + j;
-    feature_value* end = values.begin + k;
-    for (;vp != end; ++vp, ++ip, ++ap)
-      T(dat,*vp,*ip, ap->get());
-  }
-
-  template<class R, void (*T)(R&, feature_value, feature_index, audit_strings*)> inline void foreach_feature(R& dat, size_t j)
-  { foreach_feature<R,T>(dat,j,size()); }
+  iterator end() { return iterator(values.end(), indicies.end()); }
 
   void erase()
   {
@@ -102,16 +260,28 @@ struct features { // the core definition of a set of features.
     space_names.erase();
   }
 
+  void truncate_to(const features_value_iterator& pos)
+  {
+    ssize_t i = pos._begin - values.begin();
+    values.end() = pos._begin;
+    if (indicies.end() != indicies.begin())
+      indicies.end() = indicies.begin() + i;
+    if (space_names.begin() != space_names.end())
+    {
+      free_space_names(i);
+      space_names.end() = space_names.begin() + i;
+    }
+  }
+
   void truncate_to(size_t i)
   {
-    values.end = values.begin + i;
-    if (indicies.end != indicies.begin)
-      indicies.end = indicies.begin + i;
-    if (space_names.begin != space_names.end)
-      {
-	free_space_names(i);
-	space_names.end = space_names.begin + i;
-      }
+    values.end() = values.begin() + i;
+    if (indicies.end() != indicies.begin())
+      indicies.end() = indicies.begin() + i;
+    if (space_names.begin() != space_names.end())
+    { free_space_names(i);
+	    space_names.end() = space_names.begin() + i;
+    }
   }
 
   void delete_v()
@@ -135,12 +305,12 @@ struct features { // the core definition of a set of features.
     v_array<feature_slice> slice = v_init<feature_slice>();
     for (size_t i = 0; i < indicies.size(); i++)
       {
-        feature_slice temp = {values[i], indicies[i] & parse_mask, audit_strings("", "")};
+        feature_slice temp = { values[i], indicies[i] & parse_mask, audit_strings("", "") };
         if (space_names.size() != 0)
           temp.space_name = *space_names[i].get();
         slice.push_back(temp);
       }
-    qsort(slice.begin, slice.size(), sizeof(feature_slice), order_features);
+    qsort(slice.begin(), slice.size(), sizeof(feature_slice), order_features);
     for (size_t i = 0; i < slice.size(); i++)
       {
         values[i] = slice[i].v;
@@ -151,13 +321,15 @@ struct features { // the core definition of a set of features.
     slice.delete_v();
     return true;
   }
+
+  features& operator=(const features& rhs)
+  { copy_array(values, rhs.values);
+    copy_array(indicies, rhs.indicies);
+    free_space_names(0);
+    copy_array(space_names, rhs.space_names);
+    sum_feat_sq = rhs.sum_feat_sq;
+
+    return *this;
+  }
 };
 
-inline void copy(features& dst, features& src)
-{
-  copy_array(dst.values, src.values);
-  copy_array(dst.indicies, src.indicies);
-  dst.free_space_names(0);
-  copy_array(dst.space_names, src.space_names);
-  dst.sum_feat_sq = src.sum_feat_sq;
-}

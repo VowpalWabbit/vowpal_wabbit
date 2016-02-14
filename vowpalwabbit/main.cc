@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
         sstr << line << " -f model." << (line_count++);
 
         std::cout << sstr.str() << endl;
-        auto str = sstr.str();
+        string str = sstr.str();
         const char* new_args = str.c_str();
 
         int l_argc;
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
     if(!all.quiet && all.all_reduce != nullptr)
       cerr<<"Net time taken by process = "<<net_time/(double)(1000)<<" seconds\n";
 
-    for (auto v : alls)
+    for (vw* v : alls)
     { VW::sync_stats(*v);
       VW::finish(*v);
     }

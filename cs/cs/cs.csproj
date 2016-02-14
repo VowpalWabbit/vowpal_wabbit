@@ -100,12 +100,17 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\vowpalwabbit\packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Threading.Tasks.Dataflow, Version=4.5.24.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>$(SolutionDir)\packages\Microsoft.Tpl.Dataflow.4.5.24\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -119,6 +124,7 @@
     <Compile Include="ObjectFactory.cs" />
     <Compile Include="PooledObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Serializer\AnnotationJsonInspector.cs" />
     <Compile Include="Serializer\Attributes\CacheableAttribute.cs" />
     <Compile Include="Serializer\Attributes\FeatureAttribute.cs" />
     <Compile Include="Serializer\AnnotationInspector.cs" />
@@ -127,12 +133,17 @@
     <Compile Include="Serializer\Intermediate\Feature.cs" />
     <Compile Include="Serializer\Intermediate\Namespace.cs" />
     <Compile Include="Serializer\Intermediate\PreHashedFeature.cs" />
+    <Compile Include="Serializer\PrefixedJsonReader.cs" />
+    <Compile Include="Serializer\VowpalWabbitConstants.cs" />
     <Compile Include="Serializer\VowpalWabbitDefaultMarshaller.cs" />
     <Compile Include="Serializer\VowpalWabbitDefaultMarshallerExt.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>VowpalWabbitDefaultMarshallerExt.tt</DependentUpon>
     </Compile>
+    <Compile Include="Serializer\VowpalWabbitJsonBuilder.cs" />
+    <Compile Include="Serializer\VowpalWabbitJsonException.cs" />
+    <Compile Include="Serializer\VowpalWabbitJsonSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitMarshalContext.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerCompiled.cs" />
@@ -143,6 +154,12 @@
     <Compile Include="ObjectPool.cs" />
     <Compile Include="VowpalWabbitAsync.cs" />
     <Compile Include="VowpalWabbitDynamic.cs" />
+    <Compile Include="VowpalWabbitExampleCollection.cs" />
+    <Compile Include="VowpalWabbitHttpModule.cs" />
+    <Compile Include="VowpalWabbitJson.cs" />
+    <Compile Include="VowpalWabbitJsonThreadedPrediction.cs" />
+    <Compile Include="VowpalWabbitMultiLineExampleCollection.cs" />
+    <Compile Include="VowpalWabbitSingleLineExampleCollection.cs" />
     <Compile Include="VowpalWabbitSweep.cs" />
     <Compile Include="VowpalWabbitThreadedPrediction.cs" />
     <Compile Include="VowpalWabbitThreadedLearning.cs" />
