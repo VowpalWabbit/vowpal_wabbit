@@ -668,7 +668,7 @@ void train(svm_params& params)
         for(size_t j = 0; j < params.reprocess; j++)
         { if(model->num_support == 0) break;
           //cerr<<"reprocess: ";
-          int randi = 1;//rand()%2;
+          int randi = rand()%2;
           if(randi)
           { size_t max_pos = suboptimality(model, subopt);
             if(subopt[max_pos] > 0)
