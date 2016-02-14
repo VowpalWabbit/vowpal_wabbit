@@ -319,7 +319,6 @@ int select_learner(search_private& priv, int policy, size_t learner_id, bool is_
 bool should_print_update(vw& all, bool hit_new_pass=false)
 { //uncomment to print out final loss after all examples processed
   //commented for now so that outputs matches make test
-  //if( parser_done(all.p)) return true;
 
   if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
   if (PRINT_UPDATE_EVERY_PASS && hit_new_pass) return true;
