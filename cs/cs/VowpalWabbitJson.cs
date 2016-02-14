@@ -15,11 +15,10 @@ using VW.Serializer;
 namespace VW
 {
     /// <summary>
-    /// A VowpalWabbit wrapper reading from JSON.
+    /// A VowpalWabbit wrapper reading from JSON (see https://github.com/JohnLangford/vowpal_wabbit/wiki/JSON)
     /// </summary>
     public sealed class VowpalWabbitJson : IDisposable
     {
-        private readonly VowpalWabbitJsonSerializer serializer;
         private VowpalWabbit vw;
 
         /// <summary>
@@ -53,7 +52,6 @@ namespace VW
             Contract.EndContractBlock();
 
             this.vw = vw;
-            this.serializer = new VowpalWabbitJsonSerializer(vw);
         }
 
         /// <summary>
@@ -75,21 +73,14 @@ namespace VW
         /// Optional label, taking precedence over "_label" property found in <paramref name="json"/>.
         /// If null, <paramref name="json"/> will be inspected and the "_label" property used as label.
         /// </param>
-        public void Learn(string json, ILabel label = null)
+        /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
+        public void Learn(string json, ILabel label = null, int? index = null)
         {
-            using (var example = this.serializer.Parse(json, label))
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var result = serializer.ParseAndCreate(json, label, index))
             {
-                this.vw.Learn(example);
+                result.Learn();
             }
-
-            // expect:
-            // { "_label": { ... }, "ns1": { "feature1": 1, ... }, "ns2": { "feature2":"...}, "_aux": { ... } }
-            // Label:
-            // Simple: { "Label":1, "Weight":2, "Initial": 5 }
-            // ContextualBanditLabel: { "Action": 1, "Cost": 2, "Probability": 3 }
-            //
-            // Multiline: { "_label": { ... }, "_shared":{ ... }, "_actions":[ { /* example */ }, ],
-            // "_action:":5 }
         }
 
         /// <summary>
@@ -100,11 +91,13 @@ namespace VW
         /// Optional label, taking precedence over "_label" property found in <paramref name="reader"/>.
         /// If null, <paramref name="reader"/> will be inspected and the "_label" property used as label.
         /// </param>
-        public void Learn(JsonReader reader, ILabel label = null)
+        /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
+        public void Learn(JsonReader reader, ILabel label = null, int? index = null)
         {
-            using (var example = this.serializer.Parse(reader, label))
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var result = serializer.ParseAndCreate(reader, label, index))
             {
-                this.vw.Learn(example);
+                result.Learn();
             }
         }
 
@@ -118,12 +111,14 @@ namespace VW
         /// Optional label, taking precedence over "_label" property found in <paramref name="json"/>.
         /// If null, <paramref name="json"/> will be inspected and the "_label" property used as label.
         /// </param>
+        /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
         /// <returns>The prediction for the given <paramref name="json"/>.</returns>
-        public TPrediction Learn<TPrediction>(string json, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
+        public TPrediction Learn<TPrediction>(string json, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null, int? index = null)
         {
-            using (var example = this.serializer.Parse(json, label))
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var result = serializer.ParseAndCreate(json, label, index))
             {
-                return this.vw.Learn(example, predictionFactory);
+                return result.Learn(predictionFactory);
             }
         }
 
@@ -137,12 +132,14 @@ namespace VW
         /// Optional label, taking precedence over "_label" property found in <paramref name="reader"/>.
         /// If null, <paramref name="reader"/> will be inspected and the "_label" property used as label.
         /// </param>
+        /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
         /// <returns>The prediction for the given <paramref name="reader"/>.</returns>
-        public TPrediction Learn<TPrediction>(JsonReader reader, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
+        public TPrediction Learn<TPrediction>(JsonReader reader, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null, int? index = null)
         {
-            using (var example = this.serializer.Parse(reader, label))
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var result = serializer.ParseAndCreate(reader, label, index))
             {
-                return this.vw.Learn(example, predictionFactory);
+                return result.Learn(predictionFactory);
             }
         }
 
@@ -154,12 +151,15 @@ namespace VW
         /// Optional label, taking precedence over "_label" property found in <paramref name="json"/>.
         /// If null, <paramref name="json"/> will be inspected and the "_label" property used as label.
         /// </param>
-
-        public void Predict(string json, ILabel label = null)
+        /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
+        public void Predict(string json, ILabel label = null, int? index = null)
         {
-            using (var example = this.serializer.Parse(json, label))
+            Contract.Requires(json != null);
+
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var result = serializer.ParseAndCreate(json, label, index))
             {
-                this.vw.Predict(example);
+                result.Predict();
             }
         }
 
@@ -171,11 +171,15 @@ namespace VW
         /// Optional label, taking precedence over "_label" property found in <paramref name="reader"/>.
         /// If null, <paramref name="reader"/> will be inspected and the "_label" property used as label.
         /// </param>
-        public void Predict(JsonReader reader, ILabel label = null)
+        /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
+        public void Predict(JsonReader reader, ILabel label = null, int? index = null)
         {
-            using (var example = this.serializer.Parse(reader, label))
+            Contract.Requires(reader != null);
+
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var result = serializer.ParseAndCreate(reader, label, index))
             {
-                this.vw.Predict(example);
+                result.Predict();
             }
         }
 
@@ -189,11 +193,15 @@ namespace VW
         /// Optional label, taking precedence over "_label" property found in <paramref name="json"/>.
         /// If null, <paramref name="json"/> will be inspected and the "_label" property used as label.
         /// </param>
-        public TPrediction Predict<TPrediction>(string json, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
+        /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
+        public TPrediction Predict<TPrediction>(string json, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null, int? index = null)
         {
-            using (var example = this.serializer.Parse(json, label))
+            Contract.Requires(json != null);
+
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var result = serializer.ParseAndCreate(json, label, index))
             {
-                return this.vw.Predict(example, predictionFactory);
+                return result.Predict(predictionFactory);
             }
         }
 
@@ -207,11 +215,13 @@ namespace VW
         /// Optional label, taking precedence over "_label" property found in <paramref name="reader"/>.
         /// If null, <paramref name="reader"/> will be inspected and the "_label" property used as label.
         /// </param>
-        public TPrediction Predict<TPrediction>(JsonReader reader, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
+        /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
+        public TPrediction Predict<TPrediction>(JsonReader reader, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null, int? index = null)
         {
-            using (var example = this.serializer.Parse(reader, label))
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var result = serializer.ParseAndCreate(reader, label, index))
             {
-                return this.vw.Predict(example, predictionFactory);
+                return result.Predict(predictionFactory);
             }
         }
 

@@ -364,11 +364,8 @@ void run(Search::search& sch, vector<example*>& ec)
 }
 // this is totally bogus for the example -- you'd never actually do this!
 void update_example_indicies(bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount)
-{ for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-    {
-      v_array<feature_index>& fis = ec->feature_space[*i].indicies;
-      for (size_t j = 0; j < fis.size(); ++j)
-        fis[j] = ((fis[j] * mult_amount) + plus_amount);
-    }
+{ for (features& fs : *ec)
+    for (feature_index& idx : fs.indicies)
+      idx = ((idx * mult_amount) + plus_amount);
 }
 }

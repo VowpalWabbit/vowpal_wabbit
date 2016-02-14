@@ -132,7 +132,7 @@ namespace VW
 
     void VowpalWabbitNamespaceBuilder::PreAllocate(int size)
     {
-        m_features->values.resize(m_features->values.end - m_features->values.begin + size);
-        m_features->indicies.resize(m_features->indicies.end - m_features->indicies.begin + size);
+        m_features->values.resize(m_features->values.end() - m_features->values.begin() + size);
+        m_features->indicies.resize(m_features->indicies.end() - m_features->indicies.begin() + size);
     }
 }

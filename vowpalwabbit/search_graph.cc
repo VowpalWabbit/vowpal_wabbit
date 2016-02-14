@@ -298,9 +298,9 @@ void add_edge_features(Search::search&sch, task_data&D, size_t n, vector<example
   ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
 
   vw& all = sch.get_vw_pointer_unsafe();
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end(); i++)
-  { int i0 = (int)(*i)[0];
-    int i1 = (int)(*i)[1];
+  for (string& i : all.pairs)
+  { int i0 = (int)i[0];
+    int i1 = (int)i[1];
     if ((i0 == (int)neighbor_namespace) || (i1 == (int)neighbor_namespace))
     { ec[n]->num_features      += ec[n]->feature_space[i0].size() * ec[n]->feature_space[i1].size();
       ec[n]->total_sum_feat_sq += ec[n]->feature_space[i0].sum_feat_sq*ec[n]->feature_space[i1].sum_feat_sq;

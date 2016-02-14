@@ -137,7 +137,7 @@ namespace VW
         }
 
         /// <summary>
-        /// Learn from the given example and return the current prediction for it.
+        /// Learn from the given example and returns the current prediction for it.
         /// </summary>
         /// <typeparam name="TPrediction">The prediction type.</typeparam>
         /// <param name="example">The example to learn.</param>

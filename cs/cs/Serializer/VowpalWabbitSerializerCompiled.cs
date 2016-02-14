@@ -231,6 +231,9 @@ namespace VW.Serializer
                     case StringProcessing.Escape:
                         methodName = "MarshalFeatureStringEscape";
                         break;
+                    case StringProcessing.EscapeAndIncludeName:
+                        methodName = "MarshalFeatureStringEscapeAndIncludeName";
+                        break;
                     case StringProcessing.Split:
                         methodName = "MarshalFeatureStringSplit";
                         break;
