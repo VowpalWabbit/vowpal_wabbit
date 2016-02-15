@@ -170,7 +170,7 @@ vw <- function(training_data, validation_data,  model='mdl.vw',
   if(exists("del_val") && del_val)
     file.remove(validation_labels)
 
-  return(list(auc=auc, preds=probs)
+  return(list(auc=auc, preds=probs))
 }
 
 # Reads labels file (from the validation dataset)
