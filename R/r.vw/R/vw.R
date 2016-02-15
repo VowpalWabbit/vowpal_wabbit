@@ -158,7 +158,7 @@ vw <- function(training_data, validation_data,  model='mdl.vw',
     print(verbose_log)
   }
 
-  if(keep_probs)
+  if(keep_preds)
     probs = fread(out_probs)[['V1']]
   
   ## delete temporary files
