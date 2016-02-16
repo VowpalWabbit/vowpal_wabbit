@@ -57,6 +57,10 @@
     <Reference Include="Antlr4.Runtime.net45">
       <HintPath>$(SolutionDir)\packages\Antlr4.Runtime.4.3.0\lib\net45\Antlr4.Runtime.net45.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\vowpalwabbit\packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <Choose>
@@ -82,6 +86,8 @@
     <Compile Include="TestAllReduce.cs" />
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestExpansion.cs" />
+    <Compile Include="TestJson.cs" />
+    <Compile Include="TestJsonDirect.cs" />
     <Compile Include="TestLeak.cs" />
     <Compile Include="TestManagedHash.cs" />
     <Compile Include="TestMarshalling.cs" />
@@ -96,6 +102,7 @@
     <Compile Include="TestRunner.cs" />
     <Compile Include="TestSerializer.cs" />
     <Compile Include="TrainSetCs_testLdf.cs" />
+    <Compile Include="VowpalWabbitExampleJsonValidator.cs" />
     <Compile Include="VowpalWabbitExampleValidator.cs" />
     <Compile Include="VowpalWabbitListenerToEvents.cs" />
     <Compile Include="Test1and2.cs" />

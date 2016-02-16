@@ -16,6 +16,11 @@ namespace VW.Serializer
         /// <summary>
         /// Strings are split on space, producing individual features.
         /// </summary>
-        Split
+        Split,
+
+        /// <summary>
+        /// Spaces are replaced with underscores and the property name is used as a prefix.
+        /// </summary>
+        EscapeAndIncludeName
     }
 }

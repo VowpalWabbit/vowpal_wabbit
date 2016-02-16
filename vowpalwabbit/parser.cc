@@ -174,8 +174,8 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
       if (t.size() < v_length)
 	t.resize(v_length);
 
-      buf->read_file(filepointer,t.begin,v_length);
-      version_struct v_tmp(t.begin);
+      buf->read_file(filepointer,t.begin(),v_length);
+      version_struct v_tmp(t.begin());
       if ( v_tmp != version )
 	{ cout << "cache has possibly incompatible version, rebuilding" << endl;
 	  t.delete_v();
@@ -217,8 +217,8 @@ void reset_source(vw& all, size_t numbits)
     { all.p->output->flush();
     all.p->write_cache = false;
     all.p->output->close_file();
-    remove(all.p->output->finalname.begin);
-    rename(all.p->output->currentname.begin, all.p->output->finalname.begin);
+    remove(all.p->output->finalname.begin());
+    rename(all.p->output->currentname.begin(), all.p->output->finalname.begin());
     while(input->num_files() > 0)
       if (input->compressed())
         input->close_file();
@@ -227,7 +227,7 @@ void reset_source(vw& all, size_t numbits)
         if (!member(all.final_prediction_sink, (size_t) fd))
           io_buf::close_file_or_socket(fd);
       }
-    input->open_file(all.p->output->finalname.begin, all.stdin_off, io_buf::READ); //pushing is merged into open_file
+    input->open_file(all.p->output->finalname.begin(), all.stdin_off, io_buf::READ); //pushing is merged into open_file
     all.p->reader = read_cached_features;
   }
   if ( all.p->resettable == true )
@@ -586,15 +586,6 @@ child:
     cerr << "num sources = " << all.p->input->files.size() << endl;
 }
 
-bool parser_done(parser* p)
-{ if (p->done)
-  { if (p->used_index != p->begin_parsed_examples)
-      return false;
-    return true;
-  }
-  return false;
-}
-
 void set_done(vw& all)
 { all.early_terminate = true;
   mutex_lock(&all.p->examples_lock);
@@ -643,12 +634,12 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs,
  * 32 random nos. are maintained in an array and are used in the hashing.
  */
 void generateGrams(vw& all, example* &ex)
-{ for(unsigned char* index = ex->indices.begin; index < ex->indices.end; index++)
-  { size_t length = ex->feature_space[*index].size();
-    for (size_t n = 1; n < all.ngram[*index]; n++)
+{ for(namespace_index index : ex->indices)
+  { size_t length = ex->feature_space[index].size();
+    for (size_t n = 1; n < all.ngram[index]; n++)
     { all.p->gram_mask.erase();
       all.p->gram_mask.push_back((size_t)0);
-      addgrams(all, n, all.skips[*index], ex->feature_space[*index],
+      addgrams(all, n, all.skips[index], ex->feature_space[index],
                length, all.p->gram_mask, 0);
     }
   }
@@ -693,11 +684,11 @@ void end_pass_example(vw& all, example* ae)
 }
 
 void feature_limit(vw& all, example* ex)
-{ for(unsigned char* index = ex->indices.begin; index < ex->indices.end; index++)
-    if (all.limit[*index] < ex->feature_space[*index].size())
-      { features& fs = ex->feature_space[*index];
+{ for(namespace_index index : ex->indices)
+    if (all.limit[index] < ex->feature_space[index].size())
+      { features& fs = ex->feature_space[index];
         fs.sort(all.parse_mask);
-        unique_features(fs, all.limit[*index]);
+        unique_features(fs, all.limit[index]);
       }
 }
 
@@ -724,14 +715,14 @@ void setup_example(vw& all, example* ae)
 
 
   if (all.ignore_some)
-    for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
+    for (unsigned char* i = ae->indices.begin(); i != ae->indices.end(); i++)
       if (all.ignore[*i])
-        { //delete namespace
-          ae->feature_space[*i].erase();
-          memmove(i,i+1,(ae->indices.end - (i+1))*sizeof(*i));
-          ae->indices.end--;
-          i--;
-        }
+      { //delete namespace
+        ae->feature_space[*i].erase();
+        memmove(i, i + 1, (ae->indices.end() - (i + 1))*sizeof(*i));
+        ae->indices.end()--;
+        i--;
+      }
 
   if(all.ngram_strings.size() > 0)
     generateGrams(all, ae);
@@ -744,18 +735,15 @@ void setup_example(vw& all, example* ae)
 
   uint64_t multiplier = all.wpp << all.reg.stride_shift;
   if(multiplier != 1) //make room for per-feature information.
-    for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
-      {
-        features& fs = ae->feature_space[*i];
-        for(size_t j = 0; j < fs.size(); ++j)
-          fs.indicies[j] *= multiplier;
-      }
+    for (features& fs : *ae)
+      for (auto& j : fs.indicies)
+        j *= multiplier;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
-  for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
-    { ae->num_features += ae->feature_space[*i].size();
-      ae->total_sum_feat_sq += ae->feature_space[*i].sum_feat_sq;
-    }
+  for (features& fs : *ae)
+  { ae->num_features += fs.size();
+    ae->total_sum_feat_sq += fs.sum_feat_sq;
+  }
 
   size_t new_features_cnt;
   float new_features_sum_feat_sq;
@@ -826,15 +814,14 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
   primitive_feature_space* fs_ptr = new primitive_feature_space[len];
 
   int fs_count = 0;
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-  { fs_ptr[fs_count].name = *i;
-    fs_ptr[fs_count].len = ec->feature_space[*i].size();
+  for (namespace_index i : ec->indices)
+  { fs_ptr[fs_count].name = i;
+    fs_ptr[fs_count].len = ec->feature_space[i].size();
     fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
 
     int f_count = 0;
-    features& fs = ec->feature_space[*i];
-    for (size_t j = 0; j < fs.size(); ++j)
-      { feature t = {fs.values[j], fs.indicies[j]};
+    for (features::iterator& f : ec->feature_space[i])
+      { feature t = {f.value(), f.index()};
         t.weight_index >>= all.reg.stride_shift;
         fs_ptr[fs_count].fs[f_count] = t;
         f_count++;
@@ -862,8 +849,8 @@ void parse_example_label(vw& all, example&ec, string label)
 
 void empty_example(vw& all, example& ec)
 {
-  for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-    ec.feature_space[*i].erase();
+  for (features& fs : ec)
+    fs.erase();
 
   ec.indices.erase();
   ec.tag.erase();
@@ -980,7 +967,7 @@ float get_cost_sensitive_prediction(example* ec)
 uint32_t* get_multilabel_predictions(example* ec, size_t& len)
 { MULTILABEL::labels labels = ec->pred.multilabels;
   len = labels.label_v.size();
-  return labels.label_v.begin;
+  return labels.label_v.begin();
 }
 
 size_t get_tag_length(example* ec)
@@ -988,7 +975,7 @@ size_t get_tag_length(example* ec)
 }
 
 const char* get_tag(example* ec)
-{ return ec->tag.begin;
+{ return ec->tag.begin();
 }
 
 size_t get_feature_number(example* ec)
