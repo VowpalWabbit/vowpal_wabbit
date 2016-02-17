@@ -12,7 +12,7 @@ const size_t char_size = 2;
 const size_t neg_1 = 1;
 const size_t general = 2;
 
-char* run_len_decode(char *p, uint64_t& i)
+inline char* run_len_decode(char *p, uint64_t& i)
 { // read an int 7 bits at a time.
   size_t count = 0;
   while(*p & 128)
@@ -21,7 +21,7 @@ char* run_len_decode(char *p, uint64_t& i)
   return p;
 }
 
-char* run_len_encode(char *p, uint64_t i)
+inline char* run_len_encode(char *p, uint64_t i)
 { // store an int 7 bits at a time.
   while (i >= 128)
   { *(p++) = (i & 127) | 128;
@@ -85,8 +85,7 @@ int read_cached_features(void* in, example* ec)
     index = *(unsigned char*)c;
     c+= sizeof(index);
     ae->indices.push_back((size_t)index);
-    v_array<feature>* ours = ae->atomics+index;
-    float* our_sum_feat_sq = ae->sum_feat_sq+index;
+    features& ours = ae->feature_space[index];
     size_t storage = *(size_t *)c;
     c += sizeof(size_t);
     all->p->input->set(c);
@@ -101,24 +100,23 @@ int read_cached_features(void* in, example* ec)
     uint64_t last = 0;
 
     for (; c!= end;)
-    { feature f = {1., 0};
-      c = run_len_decode(c,f.weight_index);
-      if (f.weight_index & neg_1)
-        f.x = -1.;
-      else if (f.weight_index & general)
-      { f.x = ((one_float *)c)->f;
-        c += sizeof(float);
+      { feature_index i = 0;
+        c = run_len_decode(c,i);
+        feature_value v = 1.f;
+        if (i & neg_1)
+          v = -1.;
+        else if (i & general)
+          { v = ((one_float *)c)->f;
+            c += sizeof(float);
+          }
+        uint64_t diff = i >> 2;
+        int64_t s_diff = ZigZagDecode(diff);
+        if (s_diff < 0)
+          ae->sorted = false;
+        i = last + s_diff;
+        last = i;
+        ours.push_back(v,i);
       }
-      *our_sum_feat_sq += f.x*f.x;
-      uint64_t diff = f.weight_index >> 2;
-
-      int64_t s_diff = ZigZagDecode(diff);
-      if (s_diff < 0)
-        ae->sorted = false;
-      f.weight_index = last + s_diff;
-      last = f.weight_index;
-      ours->push_back(f);
-    }
     all->p->input->set(c);
   }
 
@@ -138,12 +136,13 @@ void output_byte(io_buf& cache, unsigned char s)
   cache.set(c);
 }
 
-void output_features(io_buf& cache, unsigned char index, feature* begin, feature* end, uint64_t mask)
+void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t mask)
 { char* c;
-  size_t storage = (end-begin) * int_size;
-  for (feature* i = begin; i != end; i++)
-    if (i->x != 1. && i->x != -1.)
-      storage += sizeof(float);
+  size_t storage = fs.size() * int_size;
+  for (feature_value f : fs.values)
+    if (f != 1. && f != -1.)
+      storage += sizeof(feature_value);
+
   buf_write(cache, c, sizeof(index) + storage + sizeof(size_t));
   *reinterpret_cast<unsigned char*>(c) = index;
   c += sizeof(index);
@@ -152,23 +151,25 @@ void output_features(io_buf& cache, unsigned char index, feature* begin, feature
   c += sizeof(size_t);
 
   uint64_t last = 0;
-
-  for (feature* i = begin; i != end; i++)
-    { 
-    uint64_t cache_index = (i->weight_index) & mask;
-    int64_t s_diff = (cache_index - last);
+  for (features::iterator& f : fs)
+  {
+    feature_index fi = f.index() & mask;
+    int64_t s_diff = (fi - last);
     uint64_t diff = ZigZagEncode(s_diff) << 2;
-    last = cache_index;
-    if (i->x == 1.)
+    last = fi;
+
+    if (f.value() == 1.)
       c = run_len_encode(c, diff);
-    else if (i->x == -1.)
+    else if (f.value() == -1.)
       c = run_len_encode(c, diff | neg_1);
     else
-    { c = run_len_encode(c, diff | general);
-      memcpy(c, &i->x, sizeof(i->x));
-      c += sizeof(i->x);
+    {
+      c = run_len_encode(c, diff | general);
+      memcpy(c, &f.value(), sizeof(feature_value));
+      c += sizeof(feature_value);
     }
   }
+
   cache.set(c);
   *(size_t*)storage_size_loc = c - storage_size_loc - sizeof(size_t);
 }
@@ -178,7 +179,7 @@ void cache_tag(io_buf& cache, v_array<char> tag)
   buf_write(cache, c, sizeof(size_t)+tag.size());
   *(size_t*)c = tag.size();
   c += sizeof(size_t);
-  memcpy(c, tag.begin, tag.size());
+  memcpy(c, tag.begin(), tag.size());
   c += tag.size();
   cache.set(c);
 }
@@ -186,6 +187,7 @@ void cache_tag(io_buf& cache, v_array<char> tag)
 void cache_features(io_buf& cache, example* ae, uint64_t mask)
 { cache_tag(cache,ae->tag);
   output_byte(cache, (unsigned char) ae->indices.size());
-  for (unsigned char* b = ae->indices.begin; b != ae->indices.end; b++)
-    output_features(cache, *b, ae->atomics[*b].begin,ae->atomics[*b].end, mask);
+
+  for (namespace_index ns : ae->indices)
+    output_features(cache, ns, ae->feature_space[ns], mask);
 }

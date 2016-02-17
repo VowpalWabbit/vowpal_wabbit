@@ -27,7 +27,7 @@ using namespace std;
 #endif
 
 #ifdef _WIN32
-#define ssize_t size_t
+#define ssize_t int64_t
 #include <io.h>
 #include <sys/stat.h>
 #endif
@@ -79,7 +79,7 @@ public:
     space.resize(s);
     current = 0;
     count = 0;
-    head = space.begin;
+    head = space.begin();
     verify_hash = false;
     hash = 0;
   }
@@ -133,8 +133,8 @@ public:
 #else
     lseek(f, 0, SEEK_SET);
 #endif
-    space.end = space.begin;
-    head = space.begin;
+    space.end() = space.begin();
+    head = space.begin();
   }
 
   io_buf()
@@ -156,19 +156,19 @@ public:
 
   static ssize_t read_file_or_socket(int f, void* buf, size_t nbytes);
 
-  size_t fill(int f)
+  ssize_t fill(int f)
   { // if the loaded values have reached the allocated space
-    if (space.end_array - space.end == 0)
+    if (space.end_array - space.end() == 0)
     { // reallocate to twice as much space
-      size_t head_loc = head - space.begin;
-      space.resize(2 * (space.end_array - space.begin));
-      head = space.begin+head_loc;
+      size_t head_loc = head - space.begin();
+      space.resize(2 * (space.end_array - space.begin()));
+      head = space.begin()+head_loc;
     }
     // read more bytes from file up to the remaining allocated space
-    ssize_t num_read = read_file(f, space.end, space.end_array - space.end);
+    ssize_t num_read = read_file(f, space.end(), space.end_array - space.end());
      if (num_read >= 0)
     { // if some bytes were actually loaded, update the end of loaded values
-      space.end = space.end + num_read;
+      space.end() = space.end() + num_read;
       return num_read;
     }
     else
@@ -182,9 +182,9 @@ public:
 
   virtual void flush()
   { if (files.size() > 0)
-    { if (write_file(files[0], space.begin, head - space.begin) != (int) (head - space.begin))
+    { if (write_file(files[0], space.begin(), head - space.begin()) != (int) (head - space.begin()))
         std::cerr << "error, failed to write example\n";
-      head = space.begin;
+      head = space.begin();
     }
   }
 
@@ -221,7 +221,7 @@ inline size_t bin_read_fixed(io_buf& i, char* data, size_t len, const char* read
 
     // compute hash for check-sum
     if (i.verify_hash)
-      i.hash = uniform_hash(p, len, i.hash);
+      i.hash = (uint32_t)uniform_hash(p, len, i.hash);
 
     if (*read_message == '\0')
       memcpy(data,p,len);
@@ -251,7 +251,7 @@ inline size_t bin_write_fixed(io_buf& o, const char* data, uint32_t len)
 
     // compute hash for check-sum
     if (o.verify_hash)
-    { o.hash = uniform_hash(p, len, o.hash);
+    { o.hash = (uint32_t)uniform_hash(p, len, o.hash);
     }
   }
   return len;
@@ -266,11 +266,10 @@ inline size_t bin_write(io_buf& o, const char* data, uint32_t len)
 inline size_t bin_text_write(io_buf& io, char* data, uint32_t len,
                              stringstream& msg, bool text)
 { if (text)
-    {
-      size_t temp = bin_write_fixed (io, msg.str().c_str(), msg.str().size());
-      msg.str("");
-      return temp;
-    }
+  { size_t temp = bin_write_fixed (io, msg.str().c_str(), (uint32_t)msg.str().size());
+    msg.str("");
+    return temp;
+  }
   else
     return bin_write (io, data, len);
   return 0;
@@ -289,11 +288,10 @@ inline size_t bin_text_read_write(io_buf& io, char* data, uint32_t len,
 inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len,
                                    stringstream& msg, bool text)
 { if (text)
-    {
-      size_t temp = bin_write_fixed (io, msg.str().c_str(), msg.str().size());
-      msg.str("");
-      return temp;
-    }
+  { size_t temp = bin_write_fixed(io, msg.str().c_str(), (uint32_t)msg.str().size());
+    msg.str("");
+    return temp;
+  }
   else
     return bin_write_fixed (io, data, len);
   return 0;

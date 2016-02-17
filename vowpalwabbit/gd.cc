@@ -175,14 +175,14 @@ bool operator<(const string_value& first, const string_value& second)
 
 struct audit_results
 { vw& all;
-  const size_t offset;
+  const uint64_t offset;
   vector<string> ns_pre;
   vector<string_value> results;
   audit_results(vw& p_all, const size_t p_offset):all(p_all), offset(p_offset) {}
 };
 
 
-inline void audit_interaction(audit_results& dat, const audit_data* f)
+inline void audit_interaction(audit_results& dat, const audit_strings* f)
 { if (f == nullptr)
   { dat.ns_pre.pop_back();
     return;
@@ -192,25 +192,25 @@ inline void audit_interaction(audit_results& dat, const audit_data* f)
   if (!dat.ns_pre.empty())
     ns_pre += '*';
 
-  if (f->space != nullptr && (*(f->space) != ' '))
+  if (f->first != "" && ((f->first) != " "))
     {
-    ns_pre.append((const char*)f->space);
-    ns_pre += '^';
-  }
-  if (f->feature != nullptr)
+      ns_pre.append(f->first);
+      ns_pre += '^';
+    }
+  if (f->second != "")
     {
-      ns_pre.append(f->feature);
+      ns_pre.append(f->second);
       dat.ns_pre.push_back(ns_pre);
     }
 }
 
 inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx)
-{ size_t index = ft_idx & dat.all.reg.weight_mask;
+{ uint64_t index = ft_idx & dat.all.reg.weight_mask;
   weight* weights = dat.all.reg.weight_vector;
   size_t stride_shift = dat.all.reg.stride_shift;
 
   string ns_pre;
-  for (vector<string>::const_iterator s = dat.ns_pre.begin(); s != dat.ns_pre.end(); ++s) ns_pre += *s;
+  for (string& s : dat.ns_pre) ns_pre += s;
 
   if(dat.all.audit)
   { ostringstream tempstream;
@@ -246,14 +246,15 @@ void print_features(vw& all, example& ec)
 
   if (all.lda > 0)
   { size_t count = 0;
-    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-      count += ec.atomics[*i].size();
-    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-      for (audit_data *f = ec.audit_features[*i].begin; f != ec.audit_features[*i].end; f++)
-      { cout << '\t' << f->space << '^' << f->feature << ':' << ((f->weight_index >> all.reg.stride_shift) & all.parse_mask) << ':' << f->x;
+    for (features& fs : ec)
+      count += fs.size();
+    for (features& fs : ec)
+    { for (features::iterator_all& f : fs.values_indices_audit())
+      { cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':' << ((f.index() >> all.reg.stride_shift) & all.parse_mask) << ':' << f.value();
         for (size_t k = 0; k < all.lda; k++)
-          cout << ':' << weights[(f->weight_index+k) & all.reg.weight_mask];
+          cout << ':' << weights[(f.index()+k) & all.reg.weight_mask];
       }
+    }
     cout << " total of " << count << " features." << endl;
   }
   else
@@ -261,22 +262,25 @@ void print_features(vw& all, example& ec)
 
     audit_results dat(all,ec.ft_offset);
 
-    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
-    { v_array<audit_data>& ns =  ec.audit_features[(size_t)*i];
-      for (audit_data* a = ns.begin; a != ns.end; ++a)
-	{
-	  audit_interaction(dat, a);
-	  audit_feature(dat, a->x, (uint32_t)a->weight_index + ec.ft_offset);
-	  audit_interaction(dat, NULL);
-	}
+    for (features& fs : ec)
+    { if (fs.space_names.size() > 0)
+        for (features::iterator_all& f : fs.values_indices_audit())
+	      {
+          audit_interaction(dat, f.audit().get());
+	        audit_feature(dat, f.value(), f.index() + ec.ft_offset);
+	        audit_interaction(dat, NULL);
+	      }
+	    else
+        for (features::iterator& f : fs)
+          audit_feature(dat, f.value(), f.index() + ec.ft_offset);
     }
 
-    INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, audit_data, audit_interaction >(all, ec, dat, ec.audit_features);
+    INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, true, audit_interaction >(all, ec, dat);
 
     sort(dat.results.begin(),dat.results.end());
     if(all.audit)
-    { for (vector<string_value>::const_iterator sv = dat.results.begin(); sv!= dat.results.end(); ++sv)
-        cout << '\t' << (*sv).s;
+    { for (string_value& sv : dat.results)
+        cout << '\t' << sv.s;
       cout << endl;
     }
 
@@ -583,7 +587,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
                                    msg, true);
 
         msg << ":" << it->second << ":" << *v << "\n";
-        brw += bin_text_write_fixed(model_file, (char *)v, sizeof(*v), msg, true);
+        bin_text_write_fixed(model_file, (char *)v, sizeof(*v), msg, true);
       }
     }
     return;
@@ -617,7 +621,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 
           if (all.num_bits < 31)
             {
-              old_i = i;
+              old_i = (uint32_t)i;
               brw = bin_text_write_fixed(model_file, (char *)&old_i, sizeof(old_i), msg, text);
             }
           else
@@ -792,7 +796,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     if(all.adaptive && all.initial_t > 0)
       { uint64_t length = (uint64_t)1 << all.num_bits;
 	uint64_t stride = (uint64_t)1 << all.reg.stride_shift;
-      for (size_t j = 1; j < stride*length; j+=stride)
+      for (uint64_t j = 1; j < stride*length; j+=stride)
       { all.reg.weight_vector[j] = all.initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
         //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be
         //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients
@@ -964,7 +968,7 @@ base_learner* setup(vw& all)
     stride = set_learn<true>(all, feature_mask_off, g);
   else
     stride = set_learn<false>(all, feature_mask_off, g);
-  all.reg.stride_shift = ceil_log_2(stride-1);
+  all.reg.stride_shift = (uint32_t)ceil_log_2(stride-1);
 
   learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.reg.stride_shift));
   ret.set_predict(g.predict);

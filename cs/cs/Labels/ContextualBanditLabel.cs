@@ -9,6 +9,7 @@
 using System.Globalization;
 using VW.Interfaces;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace VW.Labels
 {
@@ -20,16 +21,19 @@ namespace VW.Labels
         /// <summary>
         /// Gets or sets the action.
         /// </summary>
+        [JsonProperty]
         public uint Action { get; set; }
 
         /// <summary>
         /// Gets or sets the cost.
         /// </summary>
+        [JsonProperty]
         public float Cost { get; set; }
 
         /// <summary>
         /// Gets or sets the probability with which the action was chosen.
         /// </summary>
+        [JsonProperty]
         public float Probability { get; set; }
 
         /// <summary>
@@ -38,13 +42,13 @@ namespace VW.Labels
         public string ToVowpalWabbitFormat()
         {
             var sb = new StringBuilder();
-            
+
             sb.Append(this.Action.ToString(CultureInfo.InvariantCulture));
             sb.Append(':');
             sb.Append(this.Cost.ToString(CultureInfo.InvariantCulture));
             sb.Append(':');
             sb.Append(this.Probability.ToString(CultureInfo.InvariantCulture));
-            
+
             return sb.ToString();
         }
     }

@@ -81,14 +81,14 @@ namespace VW
     VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(Byte featureGroup)
     {
         uint32_t index = featureGroup;
-        auto ex = m_example->m_example;
+        example* ex = m_example->m_example;
 
-        return gcnew VowpalWabbitNamespaceBuilder(ex->sum_feat_sq + index, ex->atomics + index, featureGroup, m_example->m_example);
+        return gcnew VowpalWabbitNamespaceBuilder(ex->feature_space + index, featureGroup, m_example->m_example);
     }
 
-    VowpalWabbitNamespaceBuilder::VowpalWabbitNamespaceBuilder(float* sum_feat_sq, v_array<feature>* atomic,
+    VowpalWabbitNamespaceBuilder::VowpalWabbitNamespaceBuilder(features* features,
         unsigned char index, example* example)
-        : m_sum_feat_sq(sum_feat_sq), m_atomic(atomic), m_index(index), m_example(example)
+        : m_features(features), m_index(index), m_example(example)
     {
     }
 
@@ -99,7 +99,7 @@ namespace VW
 
     VowpalWabbitNamespaceBuilder::!VowpalWabbitNamespaceBuilder()
     {
-        if (m_atomic->size() > 0)
+        if (m_features->size() > 0)
         {
             unsigned char temp = m_index;
             m_example->indices.push_back(temp);
@@ -108,16 +108,13 @@ namespace VW
 
     void VowpalWabbitNamespaceBuilder::AddFeaturesUnchecked(uint64_t weight_index_base, float* begin, float* end)
     {
-        // TODO: remove m_sum_feat_sq
-        // *m_sum_feat_sq += sum_of_squares(begin, end);
-
         for (; begin != end; begin++)
         {
             float x = *begin;
             if (x != 0)
             {
-                *m_sum_feat_sq += x * x;
-                m_atomic->push_back_unchecked({ x, weight_index_base });
+                m_features->values.push_back_unchecked(x);
+                m_features->indicies.push_back_unchecked(weight_index_base);
             }
             weight_index_base++;
         }
@@ -130,12 +127,12 @@ namespace VW
         if (x == 0)
             return;
 
-        *m_sum_feat_sq += x * x;
-        m_atomic->push_back({ x, weight_index });
+        m_features->push_back(x, weight_index);
     }
 
     void VowpalWabbitNamespaceBuilder::PreAllocate(int size)
     {
-        m_atomic->resize((m_atomic->end - m_atomic->begin) + size);
+        m_features->values.resize(m_features->values.end() - m_features->values.begin() + size);
+        m_features->indicies.resize(m_features->indicies.end() - m_features->indicies.begin() + size);
     }
 }

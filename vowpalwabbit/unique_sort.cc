@@ -6,62 +6,33 @@ license as described in the file LICENSE.
 #include "example.h"
 #include "unique_sort.h"
 
-void unique_features(v_array<feature>& features, int max)
-{ if (features.empty())
+void unique_features(features& fs, int max)
+{ if (fs.indicies.empty())
     return;
-  feature* last = features.begin;
-  if (max < 0)
-  { for (feature* current = features.begin+1; current != features.end; current++)
-      if (current->weight_index != last->weight_index)
-        *(++last) = *current;
-  }
-  else
-    for (feature* current = features.begin+1; current != features.end && last+1 < features.begin+max; current++)
-      if (current->weight_index != last->weight_index)
-        *(++last) = *current;
 
-  features.end = ++last;
+  features::features_value_index_audit_range range = fs.values_indices_audit();
+  features::iterator_all last_index = range.begin();
+  features::iterator_all end = max > 0 ? range.begin() + min(fs.size(), (size_t)max) : range.end();
+
+  for (features::iterator_all i = ++range.begin(); i != end; ++i)
+    if (i.index() != last_index.index())
+      if (i != ++last_index)
+      {
+        last_index.value() = i.value();
+        last_index.index() = i.index();
+        if (!fs.space_names.empty())
+          last_index.audit() = i.audit();
+      }
+
+  ++last_index;
+  fs.truncate_to(last_index);
 }
 
-void unique_audit_features(v_array<audit_data>& features, int max = -1)
-{ if (features.empty())
-    return;
-  audit_data* last = features.begin;
-  if (max < 0)
-  { for (audit_data* current = features.begin+1;
-         current != features.end; current++)
-      if (current->weight_index != last->weight_index)
-        *(++last) = *current;
-  }
-  else
-    for (audit_data* current = features.begin+1;
-         current != features.end && last+1 < features.begin+max; current++)
-      if (current->weight_index != last->weight_index)
-        *(++last) = *current;
+void unique_sort_features(uint64_t parse_mask, example* ae)
+{
+  for (features& fs : *ae)
+    if (fs.sort(parse_mask))
+      unique_features(fs);
 
-  features.end = ++last;
-}
-
-void unique_sort_features(bool audit, uint64_t parse_mask, example* ae)
-{ for (unsigned char* b = ae->indices.begin; b != ae->indices.end; b++)
-  { v_array<feature> features = ae->atomics[*b];
-
-    for (size_t i = 0; i < features.size(); i++)
-      features[i].weight_index &= parse_mask;
-    qsort(features.begin, features.size(), sizeof(feature),
-          order_features<feature>);
-    unique_features(ae->atomics[*b]);
-
-    if (audit)
-    { v_array<audit_data> afeatures = ae->audit_features[*b];
-
-      for (size_t i = 0; i < ae->atomics[*b].size(); i++)
-        afeatures[i].weight_index &= parse_mask;
-
-      qsort(afeatures.begin, afeatures.size(), sizeof(audit_data),
-            order_features<audit_data>);
-      unique_audit_features(afeatures);
-    }
-  }
   ae->sorted=true;
 }

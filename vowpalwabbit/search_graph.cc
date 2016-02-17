@@ -70,7 +70,7 @@ struct task_data
   bool   directed;
 
   // for adding new features
-  size_t mask; // all->reg.weight_mask
+  uint64_t mask; // all->reg.weight_mask
   uint64_t multiplier;   // all.wpp << all.reg.stride_shift
   size_t ss; // stride_shift
   size_t wpp;
@@ -232,26 +232,20 @@ void add_edge_features_group_fn(task_data&D, float fv, uint64_t fx)
 { example*node = D.cur_node;
   uint64_t fx2 = fx / (uint64_t)D.multiplier;
   for (size_t k=0; k<D.numN; k++)
-  { if (D.neighbor_predictions[k] == 0.) continue;
-    float fv2 = fv * D.neighbor_predictions[k];
-    feature f = { fv2, (uint64_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint64_t)D.mask };
-    node->atomics[neighbor_namespace].push_back(f);
-    node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
-  }
-  // TODO: audit
+    { if (D.neighbor_predictions[k] == 0.) continue;
+      node->feature_space[neighbor_namespace].push_back(fv * D.neighbor_predictions[k], (uint64_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint64_t)D.mask);
+    }
 }
 
 void add_edge_features_single_fn(task_data&D, float fv, uint64_t fx)
 { example*node = D.cur_node;
+  features& fs = node->feature_space[neighbor_namespace];
   uint64_t fx2 = fx / (uint64_t)D.multiplier;
   size_t k = (size_t) D.neighbor_predictions[0];
-  feature f = { fv, (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint32_t)D.mask };
-  node->atomics[neighbor_namespace].push_back(f);
-  node->sum_feat_sq[neighbor_namespace] += f.x * f.x;
-  // TODO: audit
+  fs.push_back(fv, (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint64_t)D.mask);
 }
 
-void add_edge_features(Search::search&sch, task_data&D, uint64_t n, vector<example*>&ec)
+void add_edge_features(Search::search&sch, task_data&D, size_t n, vector<example*>&ec)
 { D.cur_node = ec[n];
 
   for (size_t i : D.adj[n])
@@ -300,16 +294,16 @@ void add_edge_features(Search::search&sch, task_data&D, uint64_t n, vector<examp
       GD::foreach_feature<task_data,uint64_t,add_edge_features_group_fn>(sch.get_vw_pointer_unsafe(), edge, D);
   }
   ec[n]->indices.push_back(neighbor_namespace);
-  ec[n]->total_sum_feat_sq += ec[n]->sum_feat_sq[neighbor_namespace];
-  ec[n]->num_features += ec[n]->atomics[neighbor_namespace].size();
+  ec[n]->total_sum_feat_sq += ec[n]->feature_space[neighbor_namespace].sum_feat_sq;
+  ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
 
   vw& all = sch.get_vw_pointer_unsafe();
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end(); i++)
-  { int i0 = (int)(*i)[0];
-    int i1 = (int)(*i)[1];
+  for (string& i : all.pairs)
+  { int i0 = (int)i[0];
+    int i1 = (int)i[1];
     if ((i0 == (int)neighbor_namespace) || (i1 == (int)neighbor_namespace))
-    { ec[n]->num_features      += ec[n]->atomics[i0].size() * ec[n]->atomics[i1].size();
-      ec[n]->total_sum_feat_sq += ec[n]->sum_feat_sq[i0]*ec[n]->sum_feat_sq[i1];
+    { ec[n]->num_features      += ec[n]->feature_space[i0].size() * ec[n]->feature_space[i1].size();
+      ec[n]->total_sum_feat_sq += ec[n]->feature_space[i0].sum_feat_sq*ec[n]->feature_space[i1].sum_feat_sq;
     }
   }
 
@@ -317,10 +311,10 @@ void add_edge_features(Search::search&sch, task_data&D, uint64_t n, vector<examp
 
 void del_edge_features(task_data&/*D*/, uint32_t n, vector<example*>&ec)
 { ec[n]->indices.pop();
-  ec[n]->total_sum_feat_sq -= ec[n]->sum_feat_sq[neighbor_namespace];
-  ec[n]->num_features -= ec[n]->atomics[neighbor_namespace].size();
-  ec[n]->atomics[neighbor_namespace].erase();
-  ec[n]->sum_feat_sq[neighbor_namespace] = 0.;
+  features& fs = ec[n]->feature_space[neighbor_namespace];
+  ec[n]->total_sum_feat_sq -= fs.sum_feat_sq;
+  ec[n]->num_features -= fs.size();
+  fs.erase();
 }
 
 #define IDX(i,j) ( (i) * (D.K+1) + j )
@@ -408,4 +402,3 @@ void run(Search::search& sch, vector<example*>& ec)
       sch.output() << D.pred[n] << ' ';
 }
 }
-

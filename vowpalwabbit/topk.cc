@@ -61,8 +61,8 @@ void output_example(vw& all, topk& d, example& ec)
   all.sd->example_number++;
 
   if (example_is_newline(ec))
-    for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      print_result(*sink, d.pr_queue);
+    for (int sink : all.final_prediction_sink)
+      print_result(sink, d.pr_queue);
 
   print_update(all, ec);
 }
