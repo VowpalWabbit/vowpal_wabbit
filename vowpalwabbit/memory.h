@@ -55,19 +55,8 @@ T* calloc_mergable_or_throw(size_t nmemb)
     const char* msg = "internal warning: marking memory as ksm mergeable failed!\n";
     fputs(msg, stderr);
   }
-
-  void* data = calloc(nmemb, sizeof(T));
-  if (data == nullptr)
-  { const char* msg = "internal error: memory allocation failed!\n";
-    // use low-level function since we're already out of memory.
-    fputs(msg, stderr);
-    THROW(msg);
-  }
-
   return (T*)data;
 }
-template<class T> T& calloc_mergable_or_throw()
-{ return *calloc_mergable_or_throw<T>(1); }
 #else
 #define calloc_mergable_or_throw calloc_or_throw
 #endif
