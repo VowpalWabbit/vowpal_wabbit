@@ -21,11 +21,11 @@ T* calloc_or_throw(size_t nmemb)
 template<class T> T& calloc_or_throw()
 { return *calloc_or_throw<T>(1); }
 
+#ifdef MADV_MERGEABLE
 template<class T>
 T* calloc_mergable_or_throw(size_t nmemb)
 { if (nmemb == 0)
     return nullptr;
-#ifdef MADV_MERGEABLE
   size_t length = nmemb * sizeof(T);
   void* data;
   if (0 != posix_memalign(&data, sysconf(_SC_PAGE_SIZE), length))
@@ -55,7 +55,7 @@ T* calloc_mergable_or_throw(size_t nmemb)
     const char* msg = "internal warning: marking memory as ksm mergeable failed!\n";
     fputs(msg, stderr);
   }
-#else
+
   void* data = calloc(nmemb, sizeof(T));
   if (data == nullptr)
   { const char* msg = "internal error: memory allocation failed!\n";
@@ -63,12 +63,15 @@ T* calloc_mergable_or_throw(size_t nmemb)
     fputs(msg, stderr);
     THROW(msg);
   }
-#endif
+
   return (T*)data;
 }
-
 template<class T> T& calloc_mergable_or_throw()
 { return *calloc_mergable_or_throw<T>(1); }
+#else
+#define calloc_mergable_or_throw calloc_mergable_or_throw
+#endif
+
 
 
 inline void free_it(void* ptr) { if (ptr != nullptr) free(ptr); ptr = nullptr; }
