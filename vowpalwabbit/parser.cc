@@ -586,15 +586,6 @@ child:
     cerr << "num sources = " << all.p->input->files.size() << endl;
 }
 
-bool parser_done(parser* p)
-{ if (p->done)
-  { if (p->used_index != p->begin_parsed_examples)
-      return false;
-    return true;
-  }
-  return false;
-}
-
 void set_done(vw& all)
 { all.early_terminate = true;
   mutex_lock(&all.p->examples_lock);
