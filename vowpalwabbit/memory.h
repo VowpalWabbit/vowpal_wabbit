@@ -69,7 +69,7 @@ T* calloc_mergable_or_throw(size_t nmemb)
 template<class T> T& calloc_mergable_or_throw()
 { return *calloc_mergable_or_throw<T>(1); }
 #else
-#define calloc_mergable_or_throw calloc_mergable_or_throw
+#define calloc_mergable_or_throw calloc_or_throw
 #endif
 
 
