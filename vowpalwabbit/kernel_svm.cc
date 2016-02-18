@@ -257,7 +257,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
                             "", read, msg, text);
   //cerr<<"Read num support "<<model->num_support<<endl;
 
-  flat_example* fec;
+  flat_example* fec = nullptr;
   if(read)
     model->support_vec.resize(model->num_support);
 
@@ -515,7 +515,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
 { io_buf* b = new io_buf();
 
   char* queries;
-  flat_example* fec;
+  flat_example* fec = nullptr;
 
   for(size_t i = 0; i < params.pool_pos; i++)
   { if(!train_pool[i])
@@ -668,7 +668,7 @@ void train(svm_params& params)
         for(size_t j = 0; j < params.reprocess; j++)
         { if(model->num_support == 0) break;
           //cerr<<"reprocess: ";
-          int randi = 1;//rand()%2;
+          int randi = rand()%2;
           if(randi)
           { size_t max_pos = suboptimality(model, subopt);
             if(subopt[max_pos] > 0)
