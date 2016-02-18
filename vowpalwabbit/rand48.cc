@@ -14,7 +14,9 @@ uint64_t c = 2147483647;
 
 int bias = 127 << 23;
 
-int32_t rand48(uint64_t& initial) { return (((a * initial + c) >> 25) & 0x7FFFFF) | bias; }
+int32_t rand48(uint64_t& initial) {
+  initial = a * initial + c;
+  return ((initial >> 25) & 0x7FFFFF) | bias; }
 
 float merand48(uint64_t& initial) { return bits_to_float(rand48(initial)) - 1; }
 
