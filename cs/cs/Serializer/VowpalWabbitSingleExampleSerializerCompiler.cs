@@ -1,24 +1,12 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="VowpalWabbitSerializerCompiler.cs">
-//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
-//   individual contributors. All rights reserved.  Released under a BSD
-//   license as described in the file LICENSE.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using VW.Interfaces;
-using VW.Reflection;
-using VW.Serializer.Intermediate;
 
 namespace VW.Serializer
 {
@@ -27,9 +15,9 @@ namespace VW.Serializer
     /// </summary>
     /// <typeparam name="TExample">The example user type.</typeparam>
     /// <returns>A serializer for the given user example type.</returns>
-    public sealed class VowpalWabbitSerializerCompiled<TExample>
+    internal sealed class VowpalWabbitSingleExampleSerializerCompiler<TExample> : IVowpalWabbitSerializerCompiler<TExample>
     {
-        /// <summary>
+                /// <summary>
         /// Internal structure collecting all itmes required to marshal a single feature.
         /// </summary>
         internal sealed class FeatureExpressionInternal
@@ -127,7 +115,7 @@ namespace VW.Serializer
         /// </summary>
         private readonly bool disableStringExampleGeneration;
 
-        internal VowpalWabbitSerializerCompiled(IReadOnlyList<FeatureExpression> allFeatures, IReadOnlyList<Type> featurizerTypes, bool disableStringExampleGeneration)
+        internal VowpalWabbitSingleExampleSerializerCompiler(IReadOnlyList<FeatureExpression> allFeatures, IReadOnlyList<Type> featurizerTypes, bool disableStringExampleGeneration)
         {
             if (allFeatures == null || allFeatures.Count == 0)
                 throw new ArgumentException("allFeatures");
@@ -179,9 +167,9 @@ namespace VW.Serializer
         /// </summary>
         /// <param name="vw">The vw instance to bind to.</param>
         /// <returns></returns>
-        public VowpalWabbitSerializer<TExample> Create(VowpalWabbit vw)
+        public IVowpalWabbitSerializer<TExample> Create(VowpalWabbit vw)
         {
-            return new VowpalWabbitSerializer<TExample>(this, vw);
+            return new VowpalWabbitSingleExampleSerializer<TExample>(this, vw);
         }
 
         /// <summary>

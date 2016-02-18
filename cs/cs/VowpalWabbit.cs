@@ -32,18 +32,18 @@ namespace VW
         /// <summary>
         /// The example serializer.
         /// </summary>
-        private VowpalWabbitSerializer<TExample> serializer;
+        private IVowpalWabbitSerializer<TExample> serializer;
 
         /// <summary>
         /// The example serializer compilation. Useful when debugging.
         /// </summary>
-        private VowpalWabbitSerializerCompiled<TExample> compiledSerializer;
+        private IVowpalWabbitSerializerCompiler<TExample> compiledSerializer;
 
         /// <summary>
         /// The serializer used for learning. It's only set if the serializer is non-caching.
         /// By having a second field there is one less check that has to be done in the hot path.
         /// </summary>
-        private readonly VowpalWabbitSerializer<TExample> learnSerializer;
+        private readonly IVowpalWabbitSerializer<TExample> learnSerializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbit{TExample}"/> class.
@@ -104,7 +104,7 @@ namespace VW
         /// <summary>
         /// The serializer used to marshal examples.
         /// </summary>
-        public VowpalWabbitSerializerCompiled<TExample> Serializer
+        public IVowpalWabbitSerializerCompiler<TExample> Serializer
         {
             get
             {
@@ -117,7 +117,7 @@ namespace VW
         /// </summary>
         /// <param name="example">The example to learn.</param>
         /// <param name="label">The label for this <paramref name="example"/>.</param>
-        public void Learn(TExample example, ILabel label)
+        public void Learn(TExample example, ILabel label, int? index = null)
         {
             Contract.Requires(example != null);
             Contract.Requires(label != null);
@@ -130,9 +130,9 @@ namespace VW
 #endif
 
             // in release this throws NullReferenceException instead of producing silently wrong results
-            using (var ex = this.learnSerializer.Serialize(example, label))
+            using (var ex = this.learnSerializer.Serialize(example, label, index))
             {
-                this.vw.Learn(ex);
+                ex.Learn();
             }
         }
 
@@ -160,7 +160,7 @@ namespace VW
 
             using (var ex = this.learnSerializer.Serialize(example, label))
             {
-                return this.vw.Learn(ex, predictionFactory);
+                return ex.Learn(predictionFactory);
             }
         }
 
@@ -175,7 +175,7 @@ namespace VW
 
             using (var ex = this.serializer.Serialize(example, label))
             {
-                this.vw.Predict(ex);
+                ex.Predict();
             }
         }
 
@@ -193,7 +193,7 @@ namespace VW
 
             using (var ex = this.serializer.Serialize(example, label))
             {
-                return this.vw.Predict(ex, predictionFactory);
+                return ex.Predict(predictionFactory);
             }
         }
 
@@ -305,17 +305,17 @@ namespace VW
         /// <summary>
         /// The shared example serializer.
         /// </summary>
-        private VowpalWabbitSerializer<TExample> serializer;
+        private IVowpalWabbitSerializer<TExample> serializer;
 
         /// <summary>
         /// The action dependent feature serializer.
         /// </summary>
-        private VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
+        private IVowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
 
         /// <summary>
         /// The action dependent feature serializer valid for learning. If example caching is enabled, this is null.
         /// </summary>
-        private readonly VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureLearnSerializer;
+        private readonly IVowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureLearnSerializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> class.
@@ -370,7 +370,7 @@ namespace VW
         /// <summary>
         /// Internal example serializer.
         /// </summary>
-        internal VowpalWabbitSerializer<TExample> ExampleSerializer
+        internal IVowpalWabbitSerializer<TExample> ExampleSerializer
         {
             get
             {
@@ -381,7 +381,7 @@ namespace VW
         /// <summary>
         /// Internal action dependent feature serializer.
         /// </summary>
-        internal VowpalWabbitSerializer<TActionDependentFeature> ActionDependentFeatureSerializer
+        internal IVowpalWabbitSerializer<TActionDependentFeature> ActionDependentFeatureSerializer
         {
             get
             {

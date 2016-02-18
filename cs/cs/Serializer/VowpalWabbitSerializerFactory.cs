@@ -37,7 +37,7 @@ namespace VW.Serializer
         /// <typeparam name="TExample">The user type to serialize.</typeparam>
         /// <param name="settings"></param>
         /// <returns></returns>
-        public static VowpalWabbitSerializerCompiled<TExample> CreateSerializer<TExample>(VowpalWabbitSettings settings = null)
+        public static IVowpalWabbitSerializerCompiler<TExample> CreateSerializer<TExample>(VowpalWabbitSettings settings = null)
         {
             List<FeatureExpression> allFeatures = null;
 
@@ -56,13 +56,27 @@ namespace VW.Serializer
 
                     if (SerializerCache.TryGetValue(cacheKey, out serializer))
                     {
-                        return (VowpalWabbitSerializerCompiled<TExample>)serializer;
+                        return (IVowpalWabbitSerializerCompiler<TExample>)serializer;
                     }
                 }
 
                 if (settings.FeatureDiscovery == VowpalWabbitFeatureDiscovery.Json)
                 {
                     allFeatures = AnnotationJsonInspector.ExtractFeatures(typeof(TExample));
+
+                    // check for _multi, _label
+                    var multiFeature = allFeatures.FirstOrDefault(fe => fe.Name == VowpalWabbitConstants.TextProperty);
+                    if (multiFeature == null)
+                    {
+                        // single example path
+                    }
+                    else
+                    {
+                        // multi example path
+                    }
+
+                    // TODO: label
+
                 }
                 else
                 {
@@ -90,7 +104,7 @@ namespace VW.Serializer
                 return null;
             }
 
-            var newSerializer = new VowpalWabbitSerializerCompiled<TExample>(
+            var newSerializer = new VowpalWabbitSingleExampleSerializerCompiler<TExample>(
                 allFeatures,
                 settings == null ? null : settings.CustomFeaturizer,
                 !settings.EnableStringExampleGeneration);

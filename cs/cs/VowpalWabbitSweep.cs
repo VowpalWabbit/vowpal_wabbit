@@ -34,9 +34,9 @@ namespace VW
 
         private List<VowpalWabbitSettings> settings;
 
-        private VowpalWabbitSerializer<TExample>[] serializers;
+        private VowpalWabbitSingleExampleSerializer<TExample>[] serializers;
 
-        private VowpalWabbitSerializer<TActionDependentFeature>[] actionDependentFeatureSerializers;
+        private VowpalWabbitSingleExampleSerializer<TActionDependentFeature>[] actionDependentFeatureSerializers;
 
         /// <summary>
         /// Initializes a new instance.
@@ -57,9 +57,13 @@ namespace VW
             if (diffs.Count > 0)
                 throw new ArgumentException("Feature settings are not compatible for sweeping: " + string.Join(",", diffs));
 
-            this.serializers = this.vws.Select(vw => VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings).Create(vw)).ToArray();
+            this.serializers = this.vws.Select(vw =>
+                (VowpalWabbitSingleExampleSerializer<TExample>)VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings).Create(vw))
+                .ToArray();
 
-            this.actionDependentFeatureSerializers = this.vws.Select(vw => VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings).Create(vw)).ToArray();
+            this.actionDependentFeatureSerializers = this.vws.Select(vw =>
+                (VowpalWabbitSingleExampleSerializer<TExample>)VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings).Create(vw))
+                .ToArray();
         }
 
         /// <summary>

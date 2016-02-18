@@ -121,16 +121,16 @@ namespace VW.Serializer
                     // model OptIn/OptOut
                     (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && attr != null))
                 let name = attr != null && attr.PropertyName != null ? attr.PropertyName : p.Name
-                let isTextProperty = name == VowpalWabbitConstants.TextProperty
-                // filter all aux properties
-                where isTextProperty || !name.StartsWith(VowpalWabbitConstants.FeatureIgnorePrefix)
+                // filter all aux properties, except for special props
+                where VowpalWabbitConstants.IsSpecialProperty(name) ||
+                   !name.StartsWith(VowpalWabbitConstants.FeatureIgnorePrefix)
                 select new FeatureExpression(
                     featureType: p.PropertyType,
                     name: name,
                     // CODE example.FeatureProperty
                     valueExpressionFactory: valueExpression => Expression.Property(valueExpression, p),
                     // Note: default to string escaping
-                    stringProcessing: isTextProperty ? StringProcessing.Split : StringProcessing.EscapeAndIncludeName,
+                    stringProcessing: name == VowpalWabbitConstants.TextProperty ? StringProcessing.Split : StringProcessing.EscapeAndIncludeName,
                     // CODE example != null
                     valueValidExpressionFactories: new List<Func<Expression, Expression>>{ valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)) },
                     featureGroup: VowpalWabbitConstants.DefaultNamespace);

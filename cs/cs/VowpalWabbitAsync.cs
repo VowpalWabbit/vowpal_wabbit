@@ -31,7 +31,7 @@ namespace VW
         /// <summary>
         /// The serializers are not thread-safe. Thus we need to allocate one for each VW instance.
         /// </summary>
-        private VowpalWabbitSerializer<TExample>[] serializers;
+        private IVowpalWabbitSerializer<TExample>[] serializers;
 
         internal VowpalWabbitAsync(VowpalWabbitThreadedLearning manager)
         {
@@ -65,7 +65,7 @@ namespace VW
             {
                 using (var ex = this.serializers[vw.Settings.Node].Serialize(example, label))
                 {
-                    vw.Learn(ex);
+                    ex.Learn();
                 }
             });
         }
@@ -86,7 +86,7 @@ namespace VW
             {
                 using (var ex = this.serializers[vw.Settings.Node].Serialize(example))
                 {
-                    vw.Predict(ex);
+                    ex.Predict();
                 }
             });
         }
@@ -112,7 +112,7 @@ namespace VW
             {
                 using (var ex = this.serializers[vw.Settings.Node].Serialize(example, label))
                 {
-                    return vw.Learn(ex, predictionFactory);
+                    return ex.Learn(predictionFactory);
                 }
             });
         }
@@ -136,7 +136,7 @@ namespace VW
             {
                 using (var ex = this.serializers[vw.Settings.Node].Serialize(example))
                 {
-                    return vw.Predict(ex, predictionFactory);
+                    return ex.Predict(predictionFactory);
                 }
             });
         }
@@ -184,12 +184,12 @@ namespace VW
         /// <summary>
         /// The serializers are not thread-safe. Thus we need to allocate one for each VW instance.
         /// </summary>
-        private VowpalWabbitSerializer<TExample>[] serializers;
+        private IVowpalWabbitSerializer<TExample>[] serializers;
 
         /// <summary>
         /// The serializers are not thread-safe. Thus we need to allocate one for each VW instance.
         /// </summary>
-        private VowpalWabbitSerializer<TActionDependentFeature>[] actionDependentFeatureSerializers;
+        private IVowpalWabbitSerializer<TActionDependentFeature>[] actionDependentFeatureSerializers;
 
         internal VowpalWabbitAsync(VowpalWabbitThreadedLearning manager)
         {
