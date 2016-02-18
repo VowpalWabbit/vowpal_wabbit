@@ -94,7 +94,7 @@ struct action_repr
 { action a;
   features repr;
   action_repr(action _a, features& _repr) : a(_a), repr()
-  { repr.deep_copy_from(repr);
+  { repr.deep_copy_from(_repr);
   }
   action_repr(action _a) : a(_a), repr() {}
 };
