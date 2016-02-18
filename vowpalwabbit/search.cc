@@ -317,7 +317,6 @@ int select_learner(search_private& priv, int policy, size_t learner_id, bool is_
 bool should_print_update(vw& all, bool hit_new_pass=false)
 { //uncomment to print out final loss after all examples processed
   //commented for now so that outputs matches make test
-  //if( parser_done(all.p)) return true;
 
   if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
   if (PRINT_UPDATE_EVERY_PASS && hit_new_pass) return true;
@@ -880,10 +879,9 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
       float cost = array_contains(cl, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f;
       this_cache->push_back( action_cache(0., cl, cl==a, cost) );
     }
-    size_t pos = priv.meta_t + priv.t;
-    assert( priv.memo_foreach_action.size() == pos - 1 );
+    assert( priv.memo_foreach_action.size() == priv.meta_t + priv.t - 1 );
     priv.memo_foreach_action.push_back(this_cache);
-    cdbg << "memo_foreach_action[" << pos-1 << "] = " << this_cache << " from oracle" << endl;
+    cdbg << "memo_foreach_action[" << priv.meta_t + priv.t -1 << "] = " << this_cache << " from oracle" << endl;
   }
   return a;
 }
@@ -931,10 +929,10 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
         this_cache->push_back( action_cache(min_cost, cl, cl==act, cost) );
     }
     if (this_cache)
-    { size_t pos = priv.meta_t + priv.t;
-      assert( priv.memo_foreach_action.size() == pos - 1 );
+    {
+      assert( priv.memo_foreach_action.size() == priv.meta_t + priv.t - 1 );
       priv.memo_foreach_action.push_back(this_cache);
-      cdbg << "memo_foreach_action[" << pos-1 << "] = " << this_cache << endl;
+      cdbg << "memo_foreach_action[" << priv.meta_t + priv.t -1 << "] = " << this_cache << endl;
     }
   }
 
