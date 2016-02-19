@@ -322,14 +322,12 @@ struct features {
     return true;
   }
 
-  features& operator=(const features& rhs)
-  { copy_array(values, rhs.values);
-    copy_array(indicies, rhs.indicies);
+  void deep_copy_from(const features& src)
+  { copy_array(values, src.values);
+    copy_array(indicies, src.indicies);
     free_space_names(0);
-    copy_array(space_names, rhs.space_names);
-    sum_feat_sq = rhs.sum_feat_sq;
-
-    return *this;
+    copy_array(space_names, src.space_names);
+    sum_feat_sq = src.sum_feat_sq;
   }
 };
 

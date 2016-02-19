@@ -44,12 +44,12 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
     }
   }
   for (string& i : all.pairs)
-    if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
+    if (ec.feature_space[(unsigned char)i[0]].size() > 0 && ec.feature_space[(unsigned char)i[1]].size() > 0)
     { /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
       for (size_t k = 1; k <= d.rank; k++)
       {
-        for (features::iterator_all& f1 : ec.feature_space[i[0]].values_indices_audit())
-          for (features::iterator_all& f2 : ec.feature_space[i[1]].values_indices_audit())
+        for (features::iterator_all& f1 : ec.feature_space[(unsigned char)i[0]].values_indices_audit())
+          for (features::iterator_all& f2 : ec.feature_space[(unsigned char)i[1]].values_indices_audit())
           { cout << '\t' << f1.audit().get()->first << k << '^' << f1.audit().get()->second << ':' << ((f1.index()+k)&mask)
                  <<"(" << ((f1.index() + offset +k) & mask)  << ")" << ':' << f1.value();
             cout << ':' << weights[(f1.index() + offset + k) & mask];
