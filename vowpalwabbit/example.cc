@@ -49,7 +49,7 @@ void copy_example_data(bool audit, example* dst, example* src)
 
   copy_array(dst->indices, src->indices);
   for (namespace_index c : src->indices)
-    dst->feature_space[c] = src->feature_space[c];
+    dst->feature_space[c].deep_copy_from(src->feature_space[c]);
   //copy_array(dst->atomics[i], src->atomics[i]);
   dst->ft_offset = src->ft_offset;
 
@@ -59,7 +59,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   if (src->passthrough == nullptr) dst->passthrough = nullptr;
   else
   { dst->passthrough = new features;
-    *dst->passthrough = *src->passthrough;
+    dst->passthrough->deep_copy_from(*src->passthrough);
   }
   dst->loss = src->loss;
   dst->weight = src->weight;
@@ -130,7 +130,6 @@ flat_example* flatten_example(vw& all, example *ec)
   fec.num_features = ec->num_features;
 
   full_features_and_source ffs;
-  ffs.fs = features();
   ffs.stride_shift = all.reg.stride_shift;
   ffs.mask = (uint64_t)all.reg.weight_mask >> all.reg.stride_shift;
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
