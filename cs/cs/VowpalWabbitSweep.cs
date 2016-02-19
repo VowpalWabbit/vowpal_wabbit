@@ -62,7 +62,7 @@ namespace VW
                 .ToArray();
 
             this.actionDependentFeatureSerializers = this.vws.Select(vw =>
-                (VowpalWabbitSingleExampleSerializer<TExample>)VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings).Create(vw))
+                (VowpalWabbitSingleExampleSerializer<TActionDependentFeature>)VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings).Create(vw))
                 .ToArray();
         }
 

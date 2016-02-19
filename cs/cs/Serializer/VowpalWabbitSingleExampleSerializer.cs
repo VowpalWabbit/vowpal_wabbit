@@ -136,6 +136,13 @@ namespace VW.Serializer
             }
         }
 
+
+        VowpalWabbitExampleCollection IVowpalWabbitSerializer<TExample>.Serialize(TExample example, ILabel label, int? index)
+        {
+            // dispatch
+            return new VowpalWabbitSingleLineExampleCollection(vw, Serialize(example, label, index));
+        }
+
         /// <summary>
         /// Serialize the example.
         /// </summary>
@@ -143,7 +150,7 @@ namespace VW.Serializer
         /// <param name="label">The label to be serialized.</param>
         /// <returns>The serialized example.</returns>
         /// <remarks>If TExample is annotated using the Cachable attribute, examples are returned from cache.</remarks>
-        public VowpalWabbitSingleLineExampleCollection Serialize(TExample example, ILabel label = null, int? index = null)
+        public VowpalWabbitExample Serialize(TExample example, ILabel label = null, int? index = null)
         {
             Contract.Requires(example != null);
             Contract.Requires(index == null);
@@ -159,7 +166,7 @@ namespace VW.Serializer
                     if (this.EnableStringExampleGeneration)
                         vwExample.VowpalWabbitString = context.StringExample.ToString();
 
-                    return new VowpalWabbitSingleLineExampleCollection(vw, vwExample);
+                    return vwExample;
                 }
             }
 
@@ -215,7 +222,7 @@ namespace VW.Serializer
 #endif
 
             // TODO: support Label != null here and update cached example using new label
-            return new VowpalWabbitSingleLineExampleCollection(vw, result.Example);
+            return result.Example;
         }
 
         /// <summary>

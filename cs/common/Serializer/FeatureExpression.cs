@@ -72,7 +72,10 @@ namespace VW.Serializer
             this.OverrideSerializeMethod = overrideSerializeMethod;
             this.Dictify = dictify ?? false;
 
-            this.DenseFeatureValueElementType = InspectionHelper.GetDenseFeatureValueElementType(featureType);
+            this.DenseFeatureValueElementType = InspectionHelper.GetEnumerableElementType(featureType);
+
+            if (!InspectionHelper.IsNumericType(this.DenseFeatureValueElementType))
+                this.DenseFeatureValueElementType = null;
         }
 
         public bool IsNullable { get; set; }

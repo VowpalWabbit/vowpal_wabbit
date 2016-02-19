@@ -45,6 +45,8 @@ namespace VW
         /// </summary>
         private readonly IVowpalWabbitSerializer<TExample> learnSerializer;
 
+        private readonly VowpalWabbitSingleExampleSerializer<TExample> singleLineSerializer;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbit{TExample}"/> class.
         /// </summary>
@@ -88,6 +90,9 @@ namespace VW
 
             // have a 2nd member to throw NullReferenceException in release instead of silently producing wrong results.
             this.learnSerializer = this.serializer.CachesExamples ? null : this.serializer;
+
+            // have a 3rd member to avoid cast everytime...
+            this.singleLineSerializer = this.serializer as VowpalWabbitSingleExampleSerializer<TExample>;
         }
 
         /// <summary>
@@ -206,11 +211,15 @@ namespace VW
         public void Learn(IReadOnlyCollection<TExample> actionDependentFeatures, int index, ILabel label)
         {
             Contract.Requires(actionDependentFeatures != null);
+            Contract.Requires(this.singleLineSerializer != null,
+                string.Format(
+                "{0} maps to a multiline example. Use VowpalWabbit.Learn<{0}>({0} example,...) instead.",
+                    typeof(TExample)));
 
             VowpalWabbitMultiLine.Learn<object, TExample>(
                 this.vw,
                 null,
-                this.learnSerializer,
+                this.singleLineSerializer,
                 null,
                 actionDependentFeatures,
                 index,
@@ -229,11 +238,15 @@ namespace VW
             Contract.Requires(actionDependentFeatures != null);
             Contract.Requires(index >= 0);
             Contract.Requires(label != null);
+            Contract.Requires(this.singleLineSerializer != null,
+                string.Format(
+                "{0} maps to a multiline example. Use VowpalWabbit.Learn<{0}>({0} example,...) instead.",
+                    typeof(TExample)));
 
             return VowpalWabbitMultiLine.LearnAndPredict<object, TExample>(
                 this.vw,
                 null,
-                this.learnSerializer,
+                this.singleLineSerializer,
                 null,
                 actionDependentFeatures,
                 index,
@@ -250,11 +263,15 @@ namespace VW
         public ActionDependentFeature<TExample>[] Predict(IReadOnlyCollection<TExample> actionDependentFeatures, int? index = null, ILabel label = null)
         {
             Contract.Requires(actionDependentFeatures != null);
+            Contract.Requires(this.singleLineSerializer != null,
+                string.Format(
+                "{0} maps to a multiline example. Use VowpalWabbit.Learn<{0}>({0} example,...) instead.",
+                    typeof(TExample)));
 
             return VowpalWabbitMultiLine.Predict<object, TExample>(
                 this.vw,
                 null,
-                this.serializer,
+                this.singleLineSerializer,
                 null,
                 actionDependentFeatures,
                 index,
@@ -305,17 +322,17 @@ namespace VW
         /// <summary>
         /// The shared example serializer.
         /// </summary>
-        private IVowpalWabbitSerializer<TExample> serializer;
+        private VowpalWabbitSingleExampleSerializer<TExample> serializer;
 
         /// <summary>
         /// The action dependent feature serializer.
         /// </summary>
-        private IVowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
+        private VowpalWabbitSingleExampleSerializer<TActionDependentFeature> actionDependentFeatureSerializer;
 
         /// <summary>
         /// The action dependent feature serializer valid for learning. If example caching is enabled, this is null.
         /// </summary>
-        private readonly IVowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureLearnSerializer;
+        private readonly VowpalWabbitSingleExampleSerializer<TActionDependentFeature> actionDependentFeatureLearnSerializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbit{TExample,TActionDependentFeature}"/> class.
@@ -347,10 +364,17 @@ namespace VW
             Contract.EndContractBlock();
 
             this.vw = vw;
-            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings).Create(vw);
-            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings).Create(vw);
+            this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings).Create(vw) as VowpalWabbitSingleExampleSerializer<TExample>;
+            if (this.serializer == null)
+                throw new ArgumentException(string.Format(
+                    "{0} maps to a multiline example. Use VowpalWabbit<{0}> instead.",
+                        typeof(TExample)));
 
-            Contract.Assert(this.actionDependentFeatureSerializer != null);
+            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings).Create(vw) as VowpalWabbitSingleExampleSerializer<TActionDependentFeature>;
+            if (this.actionDependentFeatureSerializer == null)
+                throw new ArgumentException(string.Format(
+                    "{0} maps to a multiline example. Use VowpalWabbit<{0}> instead.",
+                        typeof(TActionDependentFeature)));
 
             // have a 2nd member to throw NullReferenceException in release instead of silently producing wrong results.
             this.actionDependentFeatureLearnSerializer = this.actionDependentFeatureSerializer.CachesExamples ? null : this.actionDependentFeatureSerializer;

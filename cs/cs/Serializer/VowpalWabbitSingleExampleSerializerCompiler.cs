@@ -4,9 +4,12 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using VW.Interfaces;
+using VW.Reflection;
+using VW.Serializer.Intermediate;
 
 namespace VW.Serializer
 {
@@ -157,7 +160,8 @@ namespace VW.Serializer
 
             this.CreateLambdas();
             // this.CreateLambda();
-            this.Compile();
+
+            this.Func = (Func<VowpalWabbit, Action<VowpalWabbitMarshalContext, TExample, ILabel>>)this.SourceExpression.CompileToFunc();
         }
 
         internal bool DisableStringExampleGeneration { get { return this.disableStringExampleGeneration; } }
@@ -167,7 +171,12 @@ namespace VW.Serializer
         /// </summary>
         /// <param name="vw">The vw instance to bind to.</param>
         /// <returns></returns>
-        public IVowpalWabbitSerializer<TExample> Create(VowpalWabbit vw)
+        IVowpalWabbitSerializer<TExample> IVowpalWabbitSerializerCompiler<TExample>.Create(VowpalWabbit vw)
+        {
+            return this.Create(vw);
+        }
+
+        public VowpalWabbitSingleExampleSerializer<TExample> Create(VowpalWabbit vw)
         {
             return new VowpalWabbitSingleExampleSerializer<TExample>(this, vw);
         }
@@ -532,46 +541,6 @@ namespace VW.Serializer
         {
             get;
             private set;
-        }
-
-        /// <summary>
-        /// Compiles the <see cref="SourceExpression"/> into an executable assembly.
-        /// </summary>
-        private void Compile()
-        {
-            var asmName = new AssemblyName("VowpalWabbitSerializer." + typeof(TExample).Name);
-            var dynAsm = AppDomain.CurrentDomain.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
-
-            // Create a dynamic module and type
-            //#if !DEBUG
-            //var moduleBuilder = dynAsm.DefineDynamicModule("VowpalWabbitSerializerModule", asmName.Name + ".dll", true);
-            //#else
-            var moduleBuilder = dynAsm.DefineDynamicModule("VowpalWabbitSerializerModule");
-
-            var typeBuilder = moduleBuilder.DefineType("VowpalWabbitSerializer" + Guid.NewGuid().ToString().Replace('-', '_'));
-
-            // Create our method builder for this type builder
-            const string serializeMethodName = "Serialize";
-            var methodBuilder = typeBuilder.DefineMethod(
-                serializeMethodName,
-                MethodAttributes.Public | MethodAttributes.Static,
-                typeof(Action<VowpalWabbitMarshalContext, TExample, ILabel>),
-                new[] { typeof(VowpalWabbit) });
-
-            // compared to Compile this looks rather ugly, but there is a feature-bug
-            // that adds a security check to every call of the Serialize method
-            //#if !DEBUG
-            //var debugInfoGenerator = DebugInfoGenerator.CreatePdbGenerator();
-            //visit.CompileToMethod(methodBuilder, debugInfoGenerator);
-            //#else
-            this.SourceExpression.CompileToMethod(methodBuilder);
-            //#endif
-
-            var dynType = typeBuilder.CreateType();
-
-            this.Func = (Func<VowpalWabbit, Action<VowpalWabbitMarshalContext, TExample, ILabel>>)Delegate.CreateDelegate(
-                typeof(Func<VowpalWabbit, Action<VowpalWabbitMarshalContext, TExample, ILabel>>),
-                dynType.GetMethod(serializeMethodName));
         }
     }
 }

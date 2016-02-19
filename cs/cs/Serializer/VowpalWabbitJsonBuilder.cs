@@ -238,6 +238,9 @@ namespace VW.Serializer
                         this.Context.AppendStringExample(false, "{0}", labelString);
                     }
                     break;
+                case JsonToken.Null:
+                    // ignore
+                    break;
                 default:
                     throw new VowpalWabbitJsonException(reader.Path, "Expected label object");
             }

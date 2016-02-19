@@ -18,6 +18,7 @@ using VW.Interfaces;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Diagnostics.Contracts;
+using VW.Reflection;
 
 namespace VW.Serializer
 {
@@ -64,19 +65,11 @@ namespace VW.Serializer
                 {
                     allFeatures = AnnotationJsonInspector.ExtractFeatures(typeof(TExample));
 
-                    // check for _multi, _label
-                    var multiFeature = allFeatures.FirstOrDefault(fe => fe.Name == VowpalWabbitConstants.TextProperty);
-                    if (multiFeature == null)
-                    {
-                        // single example path
-                    }
-                    else
-                    {
-                        // multi example path
-                    }
+                    var multiExampleSerializerCompiler = VowpalWabbitMultiExampleSerializerCompiler.TryCreate<TExample>(settings, allFeatures);
+                    if (multiExampleSerializerCompiler != null)
+                        return multiExampleSerializerCompiler;
 
                     // TODO: label
-
                 }
                 else
                 {

@@ -145,7 +145,7 @@ namespace VW
         /// <param name="validActionDependentFeatures">List of valid marshalled examples.</param>
         /// <param name="emptyActionDependentFeatures">List of empty non-marshalled examples.</param>
         public delegate void LearnOrPredictAction<TActionDependentFeature>(
-            IReadOnlyList<VowpalWabbitExampleCollection> validExamples,
+            IReadOnlyList<VowpalWabbitExample> validExamples,
             IReadOnlyList<ActionDependentFeature<TActionDependentFeature>> validActionDependentFeatures,
             IReadOnlyList<ActionDependentFeature<TActionDependentFeature>> emptyActionDependentFeatures);
 
@@ -177,7 +177,7 @@ namespace VW
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
 
-            var examples = new List<VowpalWabbitExampleCollection>(actionDependentFeatures.Count + 1);
+            var examples = new List<VowpalWabbitExample>(actionDependentFeatures.Count + 1);
             var validExamples = new List<VowpalWabbitExample>(actionDependentFeatures.Count + 1);
             var validActionDependentFeatures = new List<ActionDependentFeature<TActionDependentFeature>>(actionDependentFeatures.Count + 1);
             var emptyActionDependentFeatures = new List<ActionDependentFeature<TActionDependentFeature>>(actionDependentFeatures.Count + 1);
@@ -197,7 +197,7 @@ namespace VW
 
                         if (!sharedExample.IsNewLine)
                         {
-                            validExamples.Add(sharedExample.Example);
+                            validExamples.Add(sharedExample);
                         }
                     }
                 }
@@ -213,7 +213,7 @@ namespace VW
 
                     if (!adfExample.IsNewLine)
                     {
-                        validExamples.Add(adfExample.Example);
+                        validExamples.Add(adfExample);
                         validActionDependentFeatures.Add(new ActionDependentFeature<TActionDependentFeature>(i, actionDependentFeature));
                     }
                     else
@@ -252,8 +252,8 @@ namespace VW
         /// </summary>
         public static void Learn<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
-            IVowpalWabbitSerializer<TExample> serializer,
-            IVowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
+            VowpalWabbitSingleExampleSerializer<TExample> serializer,
+            VowpalWabbitSingleExampleSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int index,
@@ -298,8 +298,8 @@ namespace VW
         /// <returns>An ranked subset of predicted actions.</returns>
         public static ActionDependentFeature<TActionDependentFeature>[] LearnAndPredict<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
-            IVowpalWabbitSerializer<TExample> serializer,
-            IVowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
+            VowpalWabbitSingleExampleSerializer<TExample> serializer,
+            VowpalWabbitSingleExampleSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int index,
@@ -351,8 +351,8 @@ namespace VW
         /// <returns>An ranked subset of predicted actions.</returns>
         public static ActionDependentFeature<TActionDependentFeature>[] Predict<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
-            IVowpalWabbitSerializer<TExample> serializer,
-            IVowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
+            VowpalWabbitSingleExampleSerializer<TExample> serializer,
+            VowpalWabbitSingleExampleSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int? index = null,
