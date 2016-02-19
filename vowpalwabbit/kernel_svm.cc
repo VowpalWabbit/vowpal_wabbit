@@ -25,6 +25,8 @@ license as described in the file LICENSE.
 #include <map>
 #include "memory.h"
 #include "vw_allreduce.h"
+#include "rand48.h"
+#include "floatbits.h"
 
 #define SVM_KER_LIN 0
 #define SVM_KER_RBF 1
@@ -622,7 +624,7 @@ void train(svm_params& params)
 
       for(size_t i = 0; i < params.pool_pos; i++)
       { float queryp = 2.0f/(1.0f + expf((float)(params.active_c*fabs(scores[i]))*(float)pow(params.pool[i]->ex.example_counter,0.5f)));
-        if(rand() < queryp)
+        if(rand48() < queryp)
         { svm_example* fec = params.pool[i];
           fec->ex.l.simple.weight *= 1/queryp;
           train_pool[i] = 1;
@@ -668,7 +670,7 @@ void train(svm_params& params)
         for(size_t j = 0; j < params.reprocess; j++)
         { if(model->num_support == 0) break;
           //cerr<<"reprocess: ";
-          int randi = rand()%2;
+          int randi = rand48()%2;
           if(randi)
           { size_t max_pos = suboptimality(model, subopt);
             if(subopt[max_pos] > 0)
@@ -682,7 +684,7 @@ void train(svm_params& params)
             }
           }
           else
-          { size_t rand_pos = rand()%model->num_support;
+          { size_t rand_pos = rand48()%model->num_support;
             update(params, rand_pos);
           }
         }
