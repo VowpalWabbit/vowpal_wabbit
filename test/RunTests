@@ -1384,3 +1384,4 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 # Test 115: Long Line test
 {VW} train-sets/long_line -c -k
     train-sets/ref/long_line.stderr
+
