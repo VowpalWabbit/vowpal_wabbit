@@ -134,11 +134,6 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, exam
 
 void end_examples(audit_regressor_data& d)
 {
-    if (d.values_audited < d.loaded_regressor_values)
-        cerr << "Note: for some reason audit couldn't find all regressor values in dataset (" <<
-                d.values_audited << " of " << d.loaded_regressor_values << " found)." << endl;
-
-
     d.out_file->flush(); // close_file() should do this for me ...
     d.out_file->close_file();
     delete (d.out_file);
@@ -177,6 +172,15 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
     VW::finish_example(all, &ec);
 }
 
+void finish(audit_regressor_data& dat)
+{
+    if (dat.values_audited < dat.loaded_regressor_values)
+        cerr << "Note: for some reason audit couldn't find all regressor values in dataset (" <<
+                dat.values_audited << " of " << dat.loaded_regressor_values << " found)." << endl;
+}
+
+
+
 void init_driver(audit_regressor_data& dat)
 {   // checks a few settings that might be applied after audit_regressor_setup() is called
 
@@ -209,6 +213,26 @@ void init_driver(audit_regressor_data& dat)
     if (dat.loaded_regressor_values == 0)
         THROW("regressor has no non-zero weights. Nothing to audit.");
 
+
+    if (!dat.all->quiet)
+    {
+        std::cerr << "Regressor contains " << dat.loaded_regressor_values << " values\n";
+        std::cerr << std::left
+                  << std::setw(shared_data::col_example_counter) << "example"
+                  << " "
+                  << std::setw(shared_data::col_example_weight) << "values"
+                  << " "
+                  << std::setw(shared_data::col_current_label) << "total"
+                  << std::endl;
+        std::cerr << std::left
+                  << std::setw(shared_data::col_example_counter) << "counter"
+                  << " "
+                  << std::setw(shared_data::col_example_weight) << "audited"
+                  << " "
+                  << std::setw(shared_data::col_current_label) << "progress"
+                  << std::endl;
+    }
+
 }
 
 
@@ -226,7 +250,6 @@ LEARNER::base_learner* audit_regressor_setup(vw& all)
     if (all.numpasses > 1)
         THROW("audit_regressor can't be used with --passes > 1.");
 
-    all.audit_regressor = true;
     all.audit = true;
 
     audit_regressor_data& dat = calloc_or_throw<audit_regressor_data>();
@@ -237,6 +260,7 @@ LEARNER::base_learner* audit_regressor_setup(vw& all)
     LEARNER::learner<audit_regressor_data>& ret = LEARNER::init_learner<audit_regressor_data>(&dat, setup_base(all), audit_regressor, audit_regressor, 1);
     ret.set_end_examples(end_examples);
     ret.set_finish_example(finish_example);
+    ret.set_finish(finish);
     ret.set_init_driver(init_driver);
 
     return LEARNER::make_base<audit_regressor_data>(ret);

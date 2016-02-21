@@ -28,7 +28,7 @@ vw& setup(int argc, char* argv[])
 
   all.vw_is_main = true;
 
-  if (!all.quiet && !all.bfgs && !all.searchstr && !all.audit_regressor)
+  if (!all.quiet && !all.bfgs && !all.searchstr && !all.vm.count("audit_regressor"))
   { std::cerr << std::left
               << std::setw(shared_data::col_avg_loss) << std::left << "average"
               << " "
@@ -61,25 +61,7 @@ vw& setup(int argc, char* argv[])
               << " "
               << std::setw(shared_data::col_current_features) << "features"
               << std::endl;
-  } else
-      if (all.audit_regressor && !all.quiet)
-      {
-//          std::cerr << "Regressor contains " << all.loaded_regressor_values << " values\n";
-          std::cerr << std::left
-                << std::setw(shared_data::col_example_counter) << "example"
-                << " "
-                << std::setw(shared_data::col_example_weight) << "values"
-                << " "
-                << std::setw(shared_data::col_current_label) << "total"
-                << std::endl;
-          std::cerr << std::left
-                << std::setw(shared_data::col_example_counter) << "counter"
-                << " "
-                << std::setw(shared_data::col_example_weight) << "audited"
-                << " "
-                << std::setw(shared_data::col_current_label) << "progress"
-                << std::endl;
-      }
+  }
 
   return all;
 }

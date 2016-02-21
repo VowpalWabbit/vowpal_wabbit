@@ -321,7 +321,6 @@ vw::vw()
 
   add_constant = true;
   audit = false;
-  audit_regressor = false;  
   reg.weight_vector = nullptr;
   pass_length = (size_t)-1;
   passes_complete = 0;

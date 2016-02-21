@@ -1394,7 +1394,7 @@ void sync_stats(vw& all)
 }
 
 void finish(vw& all, bool delete_all)
-{ if (!all.quiet && !all.audit_regressor)
+{ if (!all.quiet && !all.vm.count("audit_regressor"))
   { cerr.precision(6);
     cerr << endl << "finished run";
     if(all.current_pass == 0)
