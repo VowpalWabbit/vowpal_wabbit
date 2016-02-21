@@ -608,8 +608,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
         { THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
         }
         v = &(all.reg.weight_vector[stride*i]);
-        brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
-        ++all.loaded_regressor_values; // used in audit_regressor
+        brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");        
       }
     }
     else// write binary or text
@@ -753,8 +752,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
         else //adaptive and normalized
           brw += bin_read_fixed(model_file, (char*)v, sizeof(*v) * 3, "");
         /*        if (!all.training)
-                  v[1] = v[2] = 0.;*/
-        ++all.loaded_regressor_values; // used in audit_regressor
+                  v[1] = v[2] = 0.;*/        
       }
     }
     else // write binary or text

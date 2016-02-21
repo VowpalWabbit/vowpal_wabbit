@@ -483,8 +483,7 @@ struct vw
 
   bool multilabel_prediction;
   bool audit;//should I print lots of debugging information?
-  bool audit_regressor;
-  size_t loaded_regressor_values;
+  bool audit_regressor;  
   bool quiet;//Should I suppress progress-printing of updates?
   bool training;//Should I train if lable data is available?
   bool active;

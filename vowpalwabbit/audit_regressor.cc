@@ -17,6 +17,7 @@ struct audit_regressor_data
     size_t total_class_cnt;
     vector<string> ns_pre;
     io_buf* out_file;
+    size_t loaded_regressor_values;
     size_t values_audited;
 };
 
@@ -77,22 +78,6 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, exam
 
     vw& all = *rd.all;
 
-    if (rd.increment == 0)
-    {  // should be called once
-        rd.increment = base.increment/base.weights;
-        rd.total_class_cnt = base.weights;
-
-        if (all.vm.count("csoaa"))
-        {
-            size_t n = all.vm["csoaa"].as<size_t>();
-            if (n != rd.total_class_cnt)
-            {
-                rd.total_class_cnt = n;
-                rd.increment = base.increment/n;
-            }
-        }
-    }
-
     if (all.lda > 0)
     {
         ostringstream tempstream;
@@ -120,7 +105,7 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, exam
         uint64_t old_offset = ec.ft_offset;
 
         while ( rd.cur_class < rd.total_class_cnt )
-        {            
+        {
 
             for (unsigned char* i = ec.indices.begin(); i != ec.indices.end(); ++i)
             { features& fs = ec.feature_space[(size_t)*i];
@@ -149,9 +134,9 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, exam
 
 void end_examples(audit_regressor_data& d)
 {
-    if (d.values_audited < d.all->loaded_regressor_values)
+    if (d.values_audited < d.loaded_regressor_values)
         cerr << "Note: for some reason audit couldn't find all regressor values in dataset (" <<
-                d.values_audited << " of " << d.all->loaded_regressor_values << " found)." << endl;
+                d.values_audited << " of " << d.loaded_regressor_values << " found)." << endl;
 
 
     d.out_file->flush(); // close_file() should do this for me ...
@@ -176,13 +161,13 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
     bool printed = false;
     if (ec.example_counter+1 >= all.sd->dump_interval && !all.quiet)
     {
-        print_ex(ec.example_counter+1, dd.values_audited, dd.values_audited*100/all.loaded_regressor_values);
+        print_ex(ec.example_counter+1, dd.values_audited, dd.values_audited*100/dd.loaded_regressor_values);
         all.sd->weighted_examples = ec.example_counter+1; //used in update_dump_interval
         all.sd->update_dump_interval(all.progress_add, all.progress_arg);
         printed = true;
     }
 
-    if (dd.values_audited == all.loaded_regressor_values)
+    if (dd.values_audited == dd.loaded_regressor_values)
     { // all regressor values were audited
         if (!printed)
             print_ex(ec.example_counter+1, dd.values_audited, 100);
@@ -199,11 +184,31 @@ void init_driver(audit_regressor_data& dat)
     if ( (vm.count("cache_file") || vm.count("cache") ) && !vm.count("kill_cache") )
         THROW("audit_regressor is incompatible with a cache file.  Use it in single pass mode only.");
 
-    if (dat.all->loaded_regressor_values == 0)
-        THROW("regressor has no non-zero weights. Nothing to audit.");
-
     dat.all->sd->dump_interval = 1.; // regressor could initialize these if saved with --save_resume
     dat.all->sd->example_number = 0;
+
+
+    dat.increment = dat.all->l->increment/dat.all->l->weights;
+    dat.total_class_cnt = dat.all->l->weights;
+
+    if (dat.all->vm.count("csoaa"))
+    {
+        size_t n = dat.all->vm["csoaa"].as<size_t>();
+        if (n != dat.total_class_cnt)
+        {
+            dat.total_class_cnt = n;
+            dat.increment = dat.all->l->increment/n;
+        }
+    }
+
+    // count non-null feature values in regressor
+    weight* reg_end = dat.all->reg.weight_vector + (((size_t)1) << (dat.all->num_bits + dat.all->reg.stride_shift));
+    for (weight* w = dat.all->reg.weight_vector; w < reg_end; w += dat.increment)
+        if (*w != 0) dat.loaded_regressor_values++;
+
+    if (dat.loaded_regressor_values == 0)
+        THROW("regressor has no non-zero weights. Nothing to audit.");
+
 }
 
 

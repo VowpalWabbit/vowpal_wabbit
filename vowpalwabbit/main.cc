@@ -64,7 +64,7 @@ vw& setup(int argc, char* argv[])
   } else
       if (all.audit_regressor && !all.quiet)
       {
-          std::cerr << "Regressor contains " << all.loaded_regressor_values << " values\n";
+//          std::cerr << "Regressor contains " << all.loaded_regressor_values << " values\n";
           std::cerr << std::left
                 << std::setw(shared_data::col_example_counter) << "example"
                 << " "
