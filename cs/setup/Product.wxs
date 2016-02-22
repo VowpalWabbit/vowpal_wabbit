@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="*" Name="setup" Language="1033" Version="1.0.0.0" Manufacturer="Microsoft Research"
+           UpgradeCode="ddebf366-a8ca-4192-8552-dbf1d3603ae9">
+		<Package InstallerVersion="300" Compressed="yes" InstallScope="perMachine" />
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of Vowpal Wabbit is already installed." />
+		<MediaTemplate EmbedCab="yes" />
+
+		<Feature Id="ProductFeature" Title="Vowpal Wabbit Setup" Level="1">
+      <ComponentRef Id="MainExecutable" />
+      <ComponentRef Id="ApplicationShortCut" />
+		</Feature>
+	</Product>
+
+	<Fragment>
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLDIR" Name="VowpalWabbit" >
+          <Component Id="MainExecutable" Guid="02824B33-C335-4C2E-8B24-C4963ADEF294">
+            <File Id="SetEnvBat" Source="$(var.cs_console.ProjectDir)setenv.bat" KeyPath="yes"/>
+            <File Name="vw.exe" Source="$(var.vw.TargetDir)vw.exe"  />
+            <File Source="$(var.vw.TargetDir)zlib.dll" />
+
+            <File Source="$(var.cs_console.TargetDir)vw_json.exe" />
+            <File Source="$(var.cs_console.TargetDir)Newtonsoft.Json.dll" />
+            <File Source="$(var.cs_console.TargetDir)System.Threading.Tasks.Dataflow.dll" />
+            <File Source="$(var.cs_console.TargetDir)VowpalWabbit.dll" />
+            <File Source="$(var.cs_console.TargetDir)VowpalWabbit.Common.dll" />
+            <File Source="$(var.cs_console.TargetDir)VowpalWabbitCore.dll" />
+          </Component>
+
+          <Component Id="ApplicationShortCut" Guid="02824B33-C335-4C2E-8B24-C4963ADEF291">
+              <Shortcut Id="ApplicationStartMenuShortcut" Name="Vowpal Wabbit Command Prompt" WorkingDirectory="INSTALLDIR"
+                      Directory="ProgramMenuFolder" Target="[System64Folder]CMD.exe"
+                        Arguments='/K "[INSTALLDIR]SetEnv.bat"' Show="normal"/>
+
+            <RemoveFolder Id="RemoveVowpalWabbitShortcutDir" Directory="VowpalWabbitShortcutDir" On="both" />
+            <RegistryValue Root="HKCU" Key="Software\Microsoft\VowpalWabbit" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+          </Component>
+        </Directory>
+			</Directory>
+
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="VowpalWabbitShortcutDir" Name="Vowpal Wabbit" />
+      </Directory>
+    </Directory>
+	</Fragment>
+</Wix>
