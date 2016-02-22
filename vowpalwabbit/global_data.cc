@@ -252,6 +252,7 @@ vw::vw()
   reduction_stack=v_init<LEARNER::base_learner* (*)(vw&)>();
 
   data_filename = "";
+  delete_prediction = nullptr;
 
   file_options = new std::stringstream;
 
@@ -327,7 +328,6 @@ vw::vw()
 
   save_per_pass = false;
 
-  multilabel_prediction = false;
   stdin_off = false;
   do_reset_source = false;
   holdout_set_off = true;
