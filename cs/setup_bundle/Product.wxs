@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Bundle Version="1.0" UpgradeCode="2E116260-D1DB-4E45-8299-A64BA1C2C019">
+    <BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.RtfLicense"/>
+    <Chain>
+      <PackageGroupRef Id="NetFx45Web"/>
+      <PackageGroupRef Id="VowpalWabbitPackage"/>
+    </Chain>
+  </Bundle>
+  <!--
+   Found mismatched entry point <Product>. Expected <Bundle> for specified output package type .exe.
+   -->
+
+  <Fragment>
+    <PackageGroup Id="VowpalWabbitPackage">
+      <ExePackage
+        Compressed="yes"
+        SourceFile="$(var.setup.TargetPath)"
+        InstallCondition="VersionNT64 AND VersionNT >= v5.1" />
+    </PackageGroup>
+  </Fragment>
+</Wix>
