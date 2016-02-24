@@ -1,4 +1,3 @@
-
 CXX = $(shell which g++)
 # -- if you want to test 32-bit use this instead,
 #    it sometimes reveals type portability issues
@@ -20,7 +19,7 @@ endif
 UNAME := $(shell uname)
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = -I /usr/include
-BOOST_LIBRARY = -L /usr/lib
+BOOST_LIBRARY = -L /usr/local/lib -L /usr/lib
 NPROCS := 1
 
 ifeq ($(UNAME), Linux)

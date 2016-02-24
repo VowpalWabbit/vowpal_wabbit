@@ -6,36 +6,31 @@ license as described in the file LICENSE.
 #include <stdint.h>
 #include "gd.h"
 
-struct feature_collision 
-{
-  uint64_t last_index;
-  size_t pos;
-  float sum_sq;
-  features& fs;
-};
-
-void collision_addition(feature_collision& fc, feature_value fv, feature_index fi)
-{
-  if (fc.last_index == fi)
-    fc.fs.values[fc.pos] += fv;
-  else
-    { fc.sum_sq += fc.fs.values[fc.pos]*fc.fs.values[fc.pos];
-      fc.fs.values[++fc.pos] = fv;
-      fc.fs.indicies[fc.pos] = fi;
-      fc.last_index = fi;
-    }
-}
-
 float collision_cleanup(features& fs)
-{ 
-  feature_collision fc = {(uint64_t)-1, 0, 0.f, fs};
-  fs.foreach_feature<feature_collision, collision_addition>(fc);
-    
-  fc.sum_sq += fc.fs.values[fc.pos]*fc.fs.values[fc.pos];
-  fs.sum_feat_sq = fc.sum_sq;
-  fs.values.end = fs.values.begin+ (++fc.pos);
-  fs.indicies.end = fs.indicies.begin+fc.pos;
-  return fc.sum_sq;
+{
+  uint64_t last_index = (uint64_t)-1;
+  float sum_sq = 0.f;
+  features::iterator pos = fs.begin();
+  for (features::iterator& f : fs)
+  {
+    if (last_index == f.index())
+      pos.value() += f.value();
+    else
+    {
+      sum_sq += pos.value() * pos.value();
+      ++pos;
+      pos.value() = f.value();
+      pos.index() = f.index();
+      last_index = f.index();
+    }
+  }
+
+  sum_sq += pos.value() * pos.value();
+  fs.sum_feat_sq = sum_sq;
+  ++pos;
+  fs.truncate_to(pos);
+
+  return sum_sq;
 }
 
 namespace VW
@@ -53,9 +48,8 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->example_counter = src->example_counter;
 
   copy_array(dst->indices, src->indices);
-  //  for (size_t i=0; i<256; i++)
-  for (unsigned char*c = src->indices.begin; c != src->indices.end; ++c)
-    copy(dst->feature_space[*c], src->feature_space[*c]);
+  for (namespace_index c : src->indices)
+    dst->feature_space[c].deep_copy_from(src->feature_space[c]);
   //copy_array(dst->atomics[i], src->atomics[i]);
   dst->ft_offset = src->ft_offset;
 
@@ -65,7 +59,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   if (src->passthrough == nullptr) dst->passthrough = nullptr;
   else
   { dst->passthrough = new features;
-    copy(*dst->passthrough, *src->passthrough);
+    dst->passthrough->deep_copy_from(*src->passthrough);
   }
   dst->loss = src->loss;
   dst->weight = src->weight;
@@ -102,8 +96,9 @@ feature* get_features(vw& all, example* ec, size_t& feature_map_len)
   fs.mask = (uint64_t)all.reg.weight_mask >> all.reg.stride_shift;
   fs.feature_map = v_init<feature>();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
+
   feature_map_len = fs.feature_map.size();
-  return fs.feature_map.begin;
+  return fs.feature_map.begin();
 }
 
 void return_features(feature* f)
@@ -127,7 +122,7 @@ flat_example* flatten_example(vw& all, example *ec)
   fec.tag_len = ec->tag.size();
   if (fec.tag_len >0)
   { fec.tag = calloc_or_throw<char>(fec.tag_len+1);
-    memcpy(fec.tag,ec->tag.begin, fec.tag_len);
+    memcpy(fec.tag,ec->tag.begin(), fec.tag_len);
   }
 
   fec.example_counter = ec->example_counter;
@@ -135,7 +130,6 @@ flat_example* flatten_example(vw& all, example *ec)
   fec.num_features = ec->num_features;
 
   full_features_and_source ffs;
-  ffs.fs = features();
   ffs.stride_shift = all.reg.stride_shift;
   ffs.mask = (uint64_t)all.reg.weight_mask >> all.reg.stride_shift;
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
@@ -170,7 +164,7 @@ example *alloc_examples(size_t, size_t count = 1)
   for (size_t i=0; i<count; i++)
   { ec[i].in_use = true;
     ec[i].ft_offset = 0;
-    //  std::cerr << "  alloc_example.indices.begin=" << ec->indices.begin << " end=" << ec->indices.end << " // ld = " << ec->ld << "\t|| me = " << ec << std::endl;
+    //  std::cerr << "  alloc_example.indices.begin()=" << ec->indices.begin() << " end=" << ec->indices.end() << " // ld = " << ec->ld << "\t|| me = " << ec << std::endl;
   }
   return ec;
 }

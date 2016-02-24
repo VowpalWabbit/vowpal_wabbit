@@ -73,7 +73,7 @@ namespace VW.Serializer.Attributes
         /// </summary>
         public char FeatureGroup
         {
-            get { return InternalFeatureGroup ?? ' '; }
+            get { return InternalFeatureGroup ?? VowpalWabbitConstants.DefaultNamespace; }
             set { this.InternalFeatureGroup = value; }
         }
 

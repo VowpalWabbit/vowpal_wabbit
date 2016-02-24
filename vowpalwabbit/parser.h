@@ -68,9 +68,7 @@ void release_parser_datastructures(vw& all);
 void adjust_used_index(vw& all);
 
 //parser control
-
 void make_example_available();
-bool parser_done(parser* p);
 void set_done(vw& all);
 
 //source control functions

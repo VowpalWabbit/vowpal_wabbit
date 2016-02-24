@@ -15,7 +15,7 @@
 #'@param weight [string] weight of each line of the dataset (importance)
 #'@param tag [string] tag of each line of the dataset
 #'@param hard_parse [bool] if equals true, parses the data more strictly to avoid feeding VW with false categorical
-#'variables like '_', or same variables perceived differently life "_var" and "var"
+#'variables like '_', or same variables perceived differently like "_var" and "var"
 #'@import data.table
 #'@export
 dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag = NULL, hard_parse = F, append = F)

@@ -50,16 +50,16 @@ inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t
 template <class R, void (*T)(R&, const float, float&)>
 inline void foreach_feature(weight* weight_vector, uint64_t weight_mask, features& fs, R& dat, uint64_t offset=0, float mult=1.)
 {
-  for (size_t i = 0; i < fs.size(); ++i)
-    T(dat, mult*fs.values[i], weight_vector[(fs.indicies[i] + offset) & weight_mask]);
+  for (features::iterator& f : fs)
+    T(dat, mult*f.value(), weight_vector[(f.index() + offset) & weight_mask]);
 }
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_index)
 template <class R, void (*T)(R&, float, uint64_t)>
 void foreach_feature(weight* /*weight_vector*/, uint64_t /*weight_mask*/, features& fs, R&dat, uint64_t offset=0, float mult=1.)
 {
-  for (size_t i = 0; i < fs.size(); ++i)
-    T(dat, mult*fs.values[i], fs.indicies[i] + offset);
+  for (features::iterator& f : fs)
+    T(dat, mult*f.value(), f.index() + offset);
 }
 
 // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x, S)
@@ -68,8 +68,8 @@ template <class R, class S, void (*T)(R&, float, S)>
 inline void foreach_feature(vw& all, example& ec, R& dat)
 { uint64_t offset = ec.ft_offset;
 
-  for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-    foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.feature_space[*i], dat, offset);
+for (features& f : ec)
+    foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, f, dat, offset);
 
   INTERACTIONS::generate_interactions<R,S,T>(all, ec, dat);
 }
