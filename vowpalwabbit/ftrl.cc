@@ -6,6 +6,7 @@
 #include <string>
 #include "correctedMath.h"
 #include "gd.h"
+#include "vw.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -33,8 +34,76 @@ struct ftrl
   size_t early_stop_thres;
 };
 
+struct etas
+{ float pred;
+  float ub;
+  ftrl& b;
+  etas(ftrl& ftrlb) : b(ftrlb)
+  { pred = 0;
+  	ub = 0;
+  }
+};
+
+inline float sign(float w) { if (w < 0.) return -1.; else  return 1.;}
+
+inline void pred_ub(etas& d, const float fx, float& fw)
+{ float* w = &fw;
+  d.pred += w[W_XT] * fx;
+  float sqrtf_ng2 = sqrtf(w[W_G2]);
+  float eta = ( (d.b.data.ftrl_beta+sqrtf_ng2)/d.b.data.ftrl_alpha +d.b.data.l2_lambda);
+  if(fx < 0)
+    d.ub += (1/eta)*fx*(-1);
+  else
+    d.ub += (1/eta)*fx;
+}
+
+void print_result(int f, float pred, float ub)
+{ if (f >= 0)
+  { char temp[30];
+    std::stringstream ss;
+	sprintf(temp, "%f", pred);
+	ss << temp;
+	ss << ' ';
+	sprintf(temp, "%f", ub);
+	ss << temp;
+	ss << '\n';
+	ssize_t len = ss.str().size();
+	ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+	if (t != len)
+	  cerr << "write error: " << strerror(errno) << endl;
+  }
+}
+
+void output_example(vw& all, example& ec)
+{
+  label_data& ld = ec.l.simple;
+
+  all.sd->update(ec.test_only, ec.loss, ec.weight, ec.num_features);
+  if (ld.label != FLT_MAX && !ec.test_only)
+    all.sd->weighted_labels += ld.label * ec.weight;
+  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
+
+  for (int sink : all.final_prediction_sink)
+	  print_result(sink, ec.partial_prediction, ec.confidence);
+
+  print_update(all, ec);
+}
+
+void finish_example(vw& all, ftrl& b, example& ec)
+{ output_example(all, ec);
+  VW::finish_example(all, &ec);
+}
+
 void predict(ftrl& b, base_learner&, example& ec)
 { ec.partial_prediction = GD::inline_predict(*b.all, ec);
+  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+}
+
+void predict_with_confidence(ftrl& b, base_learner&, example& ec)
+{ etas eta(b);
+  GD::foreach_feature<etas, pred_ub>(*(b.all), ec, eta);
+  ec.confidence = eta.ub;
+  ec.partial_prediction = eta.pred;
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
 
@@ -52,8 +121,6 @@ void multipredict(ftrl& b, base_learner&, example& ec, size_t count, size_t step
       pred[c].scalar = GD::finalize_prediction(all.sd, pred[c].scalar);
 }
 
-inline float sign(float w) { if (w < 0.) return -1.; else  return 1.;}
-
 void inner_update_proximal(update_data& d, float x, float& wref)
 { float* w = &wref;
   float gradient = d.update * x;
@@ -69,7 +136,8 @@ void inner_update_proximal(update_data& d, float x, float& wref)
   if (fabs_zt <= d.l1_lambda)
     w[W_XT] = 0.;
   else
-  { float step = 1/(d.l2_lambda + (d.ftrl_beta + sqrt_wW_G2)/d.ftrl_alpha);
+  {
+	float step = 1/(d.l2_lambda + (d.ftrl_beta + sqrt_wW_G2)/d.ftrl_alpha);
     w[W_XT] = step * flag * (d.l1_lambda - fabs_zt);
   }
 }
@@ -121,8 +189,8 @@ void update_after_prediction_pistol(ftrl& b, example& ec)
 void learn_proximal(ftrl& a, base_learner& base, example& ec)
 { assert(ec.in_use);
 
-  // predict
-  predict(a, base, ec);
+  // predict with confidence
+  predict_with_confidence(a, base, ec);
 
   //update state based on the prediction
   update_after_prediction_proximal(a,ec);
@@ -171,12 +239,14 @@ void end_pass(ftrl& g)
 
 base_learner* ftrl_setup(vw& all)
 { if (missing_option(all, false, "ftrl", "FTRL: Follow the Proximal Regularized Leader") &&
-      missing_option(all, false, "pistol", "FTRL: Parameter-free Stochastic Learning"))
+      missing_option(all, false, "pistol", "FTRL: Parameter-free Stochastic Learning")){
     return nullptr;
+	}
 
   new_options(all, "FTRL options")
   ("ftrl_alpha", po::value<float>(), "Learning rate for FTRL optimization")
-  ("ftrl_beta", po::value<float>(), "FTRL beta parameter");
+  ("ftrl_beta", po::value<float>(), "FTRL beta parameter")
+  ("ftrl_confidence", "FTRL Confidnece Estimate");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -187,6 +257,7 @@ base_learner* ftrl_setup(vw& all)
   b.early_stop_thres = 3;
 
   void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
+
 
   string algorithm_name;
   if (vm.count("ftrl"))
@@ -234,7 +305,14 @@ base_learner* ftrl_setup(vw& all)
   }
 
   learner<ftrl>& l = init_learner(&b, learn_ptr, 1 << all.reg.stride_shift);
-  l.set_predict(predict);
+
+  if (vm.count("ftrl_confidence")){
+	  l.set_predict(predict_with_confidence);
+	  l.set_finish_example(finish_example);
+  }else{
+	  l.set_predict(predict);
+  }
+
   l.set_multipredict(multipredict);
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
