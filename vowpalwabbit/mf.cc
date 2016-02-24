@@ -60,11 +60,10 @@ void predict(mf& data, base_learner& base, example& ec)
   ec.indices.push_back(0);
 
   // add interaction terms to prediction
-  for (vector<string>::iterator i = data.pairs.begin(); i != data.pairs.end(); i++)
+  for (string& i : data.pairs)
   {
-
-    int left_ns = (int) (*i)[0];
-    int right_ns = (int) (*i)[1];
+    int left_ns = (int) i[0];
+    int right_ns = (int) i[1];
 
     if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
     { for (size_t k = 1; k <= data.rank; k++)
@@ -117,11 +116,11 @@ void learn(mf& data, base_learner& base, example& ec)
 
   // update interaction terms
   // looping over all pairs of non-empty namespaces
-  for (vector<string>::iterator i = data.pairs.begin(); i != data.pairs.end(); i++)
+  for (string& i : data.pairs)
   {
 
-    int left_ns = (int) (*i)[0];
-    int right_ns = (int) (*i)[1];
+    int left_ns = (int) i[0];
+    int right_ns = (int) i[1];
 
     if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
     {
@@ -130,7 +129,7 @@ void learn(mf& data, base_learner& base, example& ec)
       ec.indices[0] = left_ns;
 
       // store feature values in left namespace
-      copy(data.temp_features, ec.feature_space[left_ns]);
+      data.temp_features.deep_copy_from(ec.feature_space[left_ns]);
 
       for (size_t k = 1; k <= data.rank; k++)
       {
@@ -143,7 +142,7 @@ void learn(mf& data, base_learner& base, example& ec)
         base.update(ec, k);
 
         // restore left namespace features (undoing multiply)
-        copy(fs, data.temp_features);
+        fs.deep_copy_from(data.temp_features);
 
         // compute new l_k * x_l scaling factors
         // base.predict(ec, k);
@@ -155,7 +154,7 @@ void learn(mf& data, base_learner& base, example& ec)
       ec.indices[0] = right_ns;
 
       // store feature values for right namespace
-      copy(data.temp_features, ec.feature_space[right_ns]);
+      data.temp_features.deep_copy_from(ec.feature_space[right_ns]);
 
       for (size_t k = 1; k <= data.rank; k++)
       {
@@ -169,7 +168,7 @@ void learn(mf& data, base_learner& base, example& ec)
         ec.pred.scalar = ec.updated_prediction;
 
         // restore right namespace features
-        copy(fs, data.temp_features);
+        fs.deep_copy_from(data.temp_features);
       }
     }
   }

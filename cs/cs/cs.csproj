@@ -110,6 +110,7 @@
       <HintPath>$(SolutionDir)\packages\Microsoft.Tpl.Dataflow.4.5.24\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -140,6 +141,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>VowpalWabbitDefaultMarshallerExt.tt</DependentUpon>
     </Compile>
+    <Compile Include="Serializer\VowpalWabbitJsonBuilder.cs" />
     <Compile Include="Serializer\VowpalWabbitJsonException.cs" />
     <Compile Include="Serializer\VowpalWabbitJsonSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitMarshalContext.cs" />
@@ -152,7 +154,12 @@
     <Compile Include="ObjectPool.cs" />
     <Compile Include="VowpalWabbitAsync.cs" />
     <Compile Include="VowpalWabbitDynamic.cs" />
+    <Compile Include="VowpalWabbitExampleCollection.cs" />
+    <Compile Include="VowpalWabbitHttpModule.cs" />
     <Compile Include="VowpalWabbitJson.cs" />
+    <Compile Include="VowpalWabbitJsonThreadedPrediction.cs" />
+    <Compile Include="VowpalWabbitMultiLineExampleCollection.cs" />
+    <Compile Include="VowpalWabbitSingleLineExampleCollection.cs" />
     <Compile Include="VowpalWabbitSweep.cs" />
     <Compile Include="VowpalWabbitThreadedPrediction.cs" />
     <Compile Include="VowpalWabbitThreadedLearning.cs" />

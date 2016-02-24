@@ -89,6 +89,16 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Marshal")]
+        public void TestStringIncludeName()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<ExampleStringInclude>(string.Empty))
+            {
+                vw.Validate("| AgeTeenager", new ExampleStringInclude() { Age = "Teenager" });
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Marshal")]
         public void TestDictionary()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleDictionary>(string.Empty))
@@ -245,6 +255,12 @@ namespace cs_unittest
     {
         [Feature(StringProcessing = StringProcessing.Escape)]
         public String Value { get; set; }
+    }
+
+    public class ExampleStringInclude
+    {
+        [Feature(StringProcessing = StringProcessing.EscapeAndIncludeName)]
+        public String Age { get; set; }
     }
 
     public class ExampleStringSplit

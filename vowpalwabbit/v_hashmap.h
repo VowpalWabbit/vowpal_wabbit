@@ -32,7 +32,7 @@ public:
   //size_t num_linear_steps, num_clear, total_size_at_clears;
 
   size_t base_size()
-  { return dat.end_array-dat.begin;
+  { return dat.end_array-dat.begin();
   }
 
   void set_default_value(V def) { default_value = def; }
@@ -91,7 +91,7 @@ public:
 
   void clear()
   { if (num_occupants == 0) return;
-    memset(dat.begin, 0, base_size()*sizeof(hash_elem));
+    memset(dat.begin(), 0, base_size()*sizeof(hash_elem));
     last_position = 0;
     num_occupants = 0;
   }
@@ -109,7 +109,7 @@ public:
   }
 
   void* iterator()
-  { hash_elem* e = dat.begin;
+  { hash_elem* e = dat.begin();
     while (e != dat.end_array)
     { if (e->occupied)
         return e;
@@ -125,8 +125,8 @@ public:
 
   void iter(void (*func)(K,V))
   { //for (size_t lp=0; lp<base_size(); lp++) {
-    for (hash_elem* e=dat.begin; e!=dat.end_array; e++)
-    { //hash_elem* e = dat.begin+lp;
+    for (hash_elem* e=dat.begin(); e!=dat.end_array; e++)
+    { //hash_elem* e = dat.begin()+lp;
       if (e->occupied)
       { //printf("  [lp=%d\tocc=%d\thash=%llu]\n", lp, e->occupied, e->hash);
         func(e->key, e->val);
@@ -147,20 +147,20 @@ public:
     // remember the old occupants
     v_array<hash_elem>tmp = v_array<hash_elem>();
     tmp.resize(num_occupants+10);
-    for (hash_elem* e=dat.begin; e!=dat.end_array; e++)
+    for (hash_elem* e=dat.begin(); e!=dat.end_array; e++)
       if (e->occupied)
         tmp.push_back(*e);
 
     // double the size and clear
     //std::cerr<<"doubling to "<<(base_size()*2) << " units == " << (base_size()*2*sizeof(hash_elem)) << " bytes / " << ((size_t)-1)<<std::endl;
     dat.resize(base_size()*2);
-    memset(dat.begin, 0, base_size()*sizeof(hash_elem));
+    memset(dat.begin(), 0, base_size()*sizeof(hash_elem));
 
     // re-insert occupants
-    for (hash_elem* e=tmp.begin; e!=tmp.end; e++)
-    { get(e->key, e->hash);
+    for (auto& e : tmp)
+    { get(e.key, e.hash);
       //      std::cerr << "reinserting " << e->key << " at " << last_position << std::endl;
-      put_after_get_nogrow(e->key, e->hash, e->val);
+      put_after_get_nogrow(e.key, e.hash, e.val);
     }
     tmp.delete_v();
   }

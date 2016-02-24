@@ -153,6 +153,31 @@ namespace VW.Serializer
         /// <param name="ns">The namespace description.</param>
         /// <param name="feature">The feature description.</param>
         /// <param name="value">The actual feature value.</param>
+        public void MarshalFeatureStringEscapeAndIncludeName(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, string value)
+        {
+            Contract.Requires(context != null);
+            Contract.Requires(ns != null);
+            Contract.Requires(feature != null);
+
+            if (string.IsNullOrWhiteSpace(value))
+                return;
+
+            // safe escape spaces
+            value = feature.Name + value.Replace(' ', '_');
+
+            var featureHash = context.VW.HashFeature(value, ns.NamespaceHash);
+            context.NamespaceBuilder.AddFeature(featureHash, 1f);
+
+            context.AppendStringExample(feature.Dictify, " {0}", value);
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The actual feature value.</param>
         public void MarshalFeatureStringSplit(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, string value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -341,16 +366,15 @@ namespace VW.Serializer
         public void MarshalLabel(VowpalWabbitMarshalContext context, ILabel label)
         {
             if (label == null)
-            {
                 return;
-            }
 
             var labelString = label.ToVowpalWabbitFormat();
 
             context.ExampleBuilder.ParseLabel(labelString);
 
             // prefix with label
-            context.AppendStringExample(false, "{0}", labelString);
+            if (context.StringExample != null)
+                context.StringExample.Insert(0, labelString);
         }
     }
 }

@@ -14,7 +14,7 @@ namespace VW.Serializer
     /// Exception thrown if <see cref="VowpalWabbitJsonSerializer"/> fails to deserialize the JSON.
     /// </summary>
     [Serializable]
-    public class VowpalWabbitJsonException : Exception
+    public sealed class VowpalWabbitJsonException : Exception
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbitJsonException"/> class.
