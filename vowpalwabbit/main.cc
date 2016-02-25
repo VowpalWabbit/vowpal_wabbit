@@ -19,16 +19,12 @@ license as described in the file LICENSE.
 
 using namespace std;
 
-vw& setup(int argc, char* argv[])
-{ vw& all = parse_args(argc, argv);
-  io_buf model;
-  parse_regressor_args(all, model);
-  parse_modules(all, model);
-  parse_sources(all, model);
+vw* setup(int argc, char* argv[])
+{ vw* all = VW::initialize(argc, argv);
 
-  all.vw_is_main = true;
+  all->vw_is_main = true;
 
-  if (!all.quiet && !all.bfgs && !all.searchstr && !all.vm.count("audit_regressor"))
+  if (!all->quiet && !all->bfgs && !all->searchstr)
   { std::cerr << std::left
               << std::setw(shared_data::col_avg_loss) << std::left << "average"
               << " "
@@ -86,11 +82,11 @@ int main(int argc, char *argv[])
         int l_argc;
         char** l_argv = VW::get_argv_from_string(new_args, l_argc);
 
-        alls.push_back(&setup(l_argc, l_argv));
+        alls.push_back(setup(l_argc, l_argv));
       }
     }
     else
-    { alls.push_back(&setup(argc, argv));
+    { alls.push_back(setup(argc, argv));
     }
 
     vw& all = *alls[0];
