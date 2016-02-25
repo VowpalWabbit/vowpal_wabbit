@@ -47,7 +47,7 @@ extern "C"
     if (pointer->numpasses > 1)
     { adjust_used_index(*pointer);
       pointer->do_reset_source = true;
-      VW::start_parser(*pointer,false);
+      VW::start_parser(*pointer);
       LEARNER::generic_driver(*pointer);
       VW::end_parser(*pointer);
     }
@@ -88,9 +88,9 @@ extern "C"
     return static_cast<VW_EXAMPLE>(VW::read_example(*pointer, const_cast<char*>(line)));
   }
 
-  VW_DLL_MEMBER void VW_CALLING_CONV VW_StartParser(VW_HANDLE handle, bool do_init)
+  VW_DLL_MEMBER void VW_CALLING_CONV VW_StartParser(VW_HANDLE handle)
   { vw * pointer = static_cast<vw*>(handle);
-    VW::start_parser(*pointer, do_init);
+    VW::start_parser(*pointer);
   }
 
   VW_DLL_MEMBER void VW_CALLING_CONV VW_EndParser(VW_HANDLE handle)

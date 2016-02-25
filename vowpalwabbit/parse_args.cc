@@ -1312,25 +1312,45 @@ char** get_argv_from_string(string s, int& argc)
   return argv;
 }
 
-vw* initialize(string s)
-{ int argc = 0;
-  s += " --no_stdin";
-  char** argv = get_argv_from_string(s,argc);
-
-  vw& all = parse_args(argc, argv);
-
-  // if parse_args ever throws, this will leak.
-  for (int i = 0; i < argc; i++)
+void free_args(int argc, char* argv[])
+{ for (int i = 0; i < argc; i++)
     free(argv[i]);
   free(argv);
+}
+
+vw* initialize(string s, io_buf* model)
+{
+  int argc = 0;
+  char** argv = get_argv_from_string(s,argc);
 
   try
-  { io_buf model;
-    parse_regressor_args(all, model);
-    parse_modules(all, model);
-    parse_sources(all, model);
+  { return initialize(argc, argv, model);
+  }
+  catch(...)
+  { free_args(argc, argv);
+    throw;
+  }
+
+  free_args(argc, argv);
+}
+
+vw* initialize(int argc, char* argv[], io_buf* model)
+{ vw& all = parse_args(argc, argv);
+
+  try
+  { // if user doesn't pass in a model, read from arguments
+    io_buf localModel;
+    if (!model)
+    { parse_regressor_args(all, localModel);
+      model = &localModel;
+    }
+
+    parse_modules(all, *model);
+    parse_sources(all, *model);
 
     initialize_parser_datastructures(all);
+
+    all.l->init_driver();
 
     return &all;
   }
