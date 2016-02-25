@@ -1309,7 +1309,7 @@ char** get_argv_from_string(string s, int& argc)
   return argv;
 }
 
-void free_args(int argc, char* argv[]) 
+void free_args(int argc, char* argv[])
 { for (int i = 0; i < argc; i++)
     free(argv[i]);
   free(argv);
@@ -1318,7 +1318,6 @@ void free_args(int argc, char* argv[])
 vw* initialize(string s, io_buf* model)
 {
   int argc = 0;
-  s += " --no_stdin";
   char** argv = get_argv_from_string(s,argc);
 
   try

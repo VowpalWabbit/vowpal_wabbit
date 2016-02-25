@@ -48,7 +48,9 @@ namespace VW
                     else
                     {
                         clr_io_buf model(settings->ModelStream);
-                        InitializeFromModel(string, model);
+                        if (!settings->Arguments->Contains("--no_stdin"))
+                          string += " --no_stdin";
+                        m_vw = VW::initialize(string, &model);
                         settings->ModelStream->Close();
                     }
                 }
@@ -61,39 +63,6 @@ namespace VW
             }
         }
         CATCHRETHROW
-    }
-
-    void VowpalWabbitBase::InitializeFromModel(string args, io_buf& model)
-    {
-        char** argv = nullptr;
-        int argc = 0;
-
-        args.append(" --no_stdin");
-        argv = VW::get_argv_from_string(args, argc);
-
-        m_vw = &parse_args(argc, argv);
-
-        try
-        {
-            parse_modules(*m_vw, model);
-            parse_sources(*m_vw, model);
-            initialize_parser_datastructures(*m_vw);
-        }
-        catch (...)
-        {
-            VW::finish(*m_vw);
-            m_vw = nullptr;
-            throw;
-        }
-        finally
-        {
-            if (argv != nullptr)
-            {
-                for (int i = 0; i < argc; i++)
-                    free(argv[i]);
-                free(argv);
-            }
-        }
     }
 
     VowpalWabbitBase::~VowpalWabbitBase()
@@ -302,7 +271,7 @@ namespace VW
             // reload from model
             // seek to beginning
             mem_buf.reset_file(0);
-            InitializeFromModel(stringArgs.c_str(), mem_buf);
+            m_vw = VW::initialize(stringArgs.c_str(), &mem_buf);
         }
         CATCHRETHROW
     }
