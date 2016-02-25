@@ -46,7 +46,7 @@ struct etas
 
 inline float sign(float w) { if (w < 0.) return -1.; else  return 1.;}
 
-inline void pred_ub(etas& d, const float fx, float& fw)
+inline void pred_confidence(etas& d, const float fx, float& fw)
 { float* w = &fw;
   d.pred += w[W_XT] * fx;
   float sqrtf_ng2 = sqrtf(w[W_G2]);
@@ -101,7 +101,7 @@ void predict(ftrl& b, base_learner&, example& ec)
 
 void predict_with_confidence(ftrl& b, base_learner&, example& ec)
 { etas eta(b);
-  GD::foreach_feature<etas, pred_ub>(*(b.all), ec, eta);
+  GD::foreach_feature<etas, pred_confidence>(*(b.all), ec, eta);
   ec.confidence = eta.ub;
   ec.partial_prediction = eta.pred;
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
