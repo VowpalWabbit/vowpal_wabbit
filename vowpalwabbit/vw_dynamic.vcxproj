@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugLeakCheck|Win32">
@@ -371,6 +371,7 @@
     <ClInclude Include="multiclass.h" />
     <ClInclude Include="cost_sensitive.h" />
     <ClInclude Include="cb_algs.h" />
+    <ClInclude Include="mwt.h" />
     <ClInclude Include="mf.h" />
     <ClInclude Include="gd_mf.h" />
     <ClInclude Include="lrq.h" />
@@ -450,6 +451,7 @@
     <ClCompile Include="multiclass.cc" />
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cb_algs.cc" />
+    <ClCompile Include="mwt.cc" />
     <ClCompile Include="mf.cc" />
     <ClCompile Include="gd_mf.cc" />
     <ClCompile Include="lrq.cc" />
