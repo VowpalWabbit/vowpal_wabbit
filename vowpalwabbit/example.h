@@ -36,6 +36,7 @@ typedef union
 
 typedef union
 { float scalar;
+  v_array<float> scalars;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
   float* probs; // for --probabilities --oaa

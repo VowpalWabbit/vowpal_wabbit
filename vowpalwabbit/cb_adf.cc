@@ -572,7 +572,7 @@ base_learner* cb_adf_setup(vw& all)
 
   if (all.vm.count("rank_all"))
   { ld.rank_all = true;
-    all.multilabel_prediction = true;
+    all.delete_prediction = MULTILABEL::multilabel.delete_label;
     *all.file_options << " --rank_all";
   }
 
