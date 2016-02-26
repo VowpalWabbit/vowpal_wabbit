@@ -133,6 +133,7 @@
     <Compile Include="Serializer\Intermediate\Feature.cs" />
     <Compile Include="Serializer\Intermediate\Namespace.cs" />
     <Compile Include="Serializer\Intermediate\PreHashedFeature.cs" />
+    <Compile Include="Serializer\IVowpalWabbitSerializer.cs" />
     <Compile Include="Serializer\PrefixedJsonReader.cs" />
     <Compile Include="Serializer\VowpalWabbitConstants.cs" />
     <Compile Include="Serializer\VowpalWabbitDefaultMarshaller.cs" />
@@ -145,11 +146,14 @@
     <Compile Include="Serializer\VowpalWabbitJsonException.cs" />
     <Compile Include="Serializer\VowpalWabbitJsonSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitMarshalContext.cs" />
-    <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
-    <Compile Include="Serializer\VowpalWabbitSerializerCompiled.cs" />
+    <Compile Include="Serializer\VowpalWabbitMultiExampleSerializer.cs" />
+    <Compile Include="Serializer\VowpalWabbitMultiExampleSerializerCompiler.cs" />
+    <Compile Include="Serializer\VowpalWabbitSingleExampleSerializer.cs" />
+    <Compile Include="Serializer\IVowpalWabbitSerializerCompiler.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerFactory.cs" />
     <Compile Include="Labels\SharedLabel.cs" />
     <Compile Include="Labels\SimpleLabel.cs" />
+    <Compile Include="Serializer\VowpalWabbitSingleExampleSerializerCompiler.cs" />
     <Compile Include="VowpalWabbit.cs" />
     <Compile Include="ObjectPool.cs" />
     <Compile Include="VowpalWabbitAsync.cs" />

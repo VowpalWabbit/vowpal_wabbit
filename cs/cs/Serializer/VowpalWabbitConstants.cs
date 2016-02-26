@@ -27,5 +27,17 @@ namespace VW.Serializer
         /// JSON property "_label" is used as label.
         /// </summary>
         internal const string LabelProperty = "_label";
+
+        /// <summary>
+        /// JSON property "_multi" is used to signal multi-line examples.
+        /// </summary>
+        internal const string MultiProperty = "_multi";
+
+        internal static bool IsSpecialProperty(string property)
+        {
+            return property == TextProperty ||
+                property == LabelProperty ||
+                property == MultiProperty;
+        }
     }
 }
