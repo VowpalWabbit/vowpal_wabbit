@@ -6,7 +6,7 @@
 using namespace std;
 
 int main(int argc, char *argv[])
-{ string init_string = "-t -q st --hash all --noconstant --ldf_override s -i ";
+{ string init_string = "-t -q st --hash all --noconstant --ldf_override s --no_stdin -i ";
   if (argc > 1)
     init_string += argv[1];
   else

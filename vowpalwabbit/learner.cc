@@ -41,7 +41,6 @@ void process_example(vw& all, example* ec)
 template <class T, void(*f)(T, example*)> void generic_driver(vw& all, T context)
 { example* ec = nullptr;
 
-  all.l->init_driver();
   while ( all.early_terminate == false )
     if ((ec = VW::get_example(all.p)) != nullptr)
       f(context, ec);

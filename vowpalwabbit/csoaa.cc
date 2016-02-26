@@ -771,7 +771,7 @@ base_learner* csldf_setup(vw& all)
     ldf_arg = vm["ldf_override"].as<string>();
   if (vm.count("csoaa_rank"))
   { ld.rank = true;
-    all.multilabel_prediction = true;
+    all.delete_prediction = MULTILABEL::multilabel.delete_label;
   }
 
   all.p->lp = COST_SENSITIVE::cs_label;
