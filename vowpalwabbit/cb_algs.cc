@@ -296,10 +296,11 @@ void learn_eval(cb& c, base_learner&, example& ec)
 }
 
 float get_unbiased_cost(CB::cb_class* observation, COST_SENSITIVE::label& scores, uint32_t action)
-{ for (auto& cl : scores.costs)
+{ 
+  for (auto& cl : scores.costs)
     if (cl.class_index == action)
       return get_unbiased_cost(observation, action, cl.x) + cl.x;
-  THROW("get unbiased_cost applied to unlabeled example");
+  return get_unbiased_cost(observation, action);
 }
 
 void output_example(vw& all, cb& c, example& ec, CB::label& ld)

@@ -1384,3 +1384,8 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 # Test 115: Long Line test
 {VW} train-sets/long_line -c -k
     train-sets/ref/long_line.stderr
+
+# Test 116: MWT test
+{VW} train-sets/cb_eval --multiworld_test f -p cb_eval.preds
+    train-sets/ref/cb_eval.stderr
+    pred-sets/ref/cb_eval.preds

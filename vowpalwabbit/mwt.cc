@@ -11,14 +11,14 @@ license as described in the file LICENSE.
 using namespace std;
 using namespace LEARNER;
 
-namespace CB_EVAL {  
+namespace MWT {  
   struct policy_data 
   { double cost;
     uint32_t action;
     bool seen;
   };
 
-  struct cbe 
+  struct mwt
   { bool namespaces[256]; // the set of namespaces to evaluate.   
     v_array<policy_data > evals; // accrued losses of features.
     CB::cb_class* observation;
@@ -29,7 +29,10 @@ namespace CB_EVAL {
   
   inline bool observed_cost(CB::cb_class* cl)
   { //cost observed for this action if it has non zero probability and cost != FLT_MAX
-    return (cl != nullptr && cl->cost != FLT_MAX && cl->probability > .0);
+    if (cl != nullptr)
+      if (cl->cost != FLT_MAX && cl->probability > .0)
+	return true;
+    return false;
   }
   
   CB::cb_class* get_observed_cost(CB::label& ld)
@@ -39,7 +42,7 @@ namespace CB_EVAL {
     return nullptr;
   }
   
-  void value_policy(cbe& c, float val, uint64_t index)//estimate the value of a single feature.
+  void value_policy(mwt& c, float val, uint64_t index)//estimate the value of a single feature.
   {
     if (val < 0 || floor(val) != val)
       cout << "error " << val << " is not a valid action " << endl;
@@ -57,14 +60,9 @@ namespace CB_EVAL {
   }
   
   template <bool is_learn>
-  void predict_or_learn(cbe& c, base_learner& base, example& ec)
+  void predict_or_learn(mwt& c, base_learner& base, example& ec)
   {
     v_array<float> preds = ec.pred.scalars;
- 
-    if (is_learn)
-      base.learn(ec);
-    else
-      base.predict(ec);
 
     c.observation = get_observed_cost(ec.l.cb);
 
@@ -74,7 +72,7 @@ namespace CB_EVAL {
 	//For each nonzero feature in observed namespaces, check it's value.
 	for (unsigned char ns : ec.indices)
 	  if (c.namespaces[ns])
-	    GD::foreach_feature<cbe, value_policy>(c.all->reg.weight_vector, c.all->reg.weight_mask, ec.feature_space[ns], c);
+	    GD::foreach_feature<mwt, value_policy>(c.all->reg.weight_vector, c.all->reg.weight_mask, ec.feature_space[ns], c);
 	for (uint64_t policy : c.policies)
 	  {
 	    c.evals[policy].cost += get_unbiased_cost(c.observation, c.evals[policy].action); 
@@ -84,7 +82,6 @@ namespace CB_EVAL {
     
     //modify the predictions to use a vector with a score for each evaluated feature.
     preds.erase();
-    preds.push_back(ec.pred.multiclass);
     for(uint64_t index : c.policies)
       preds.push_back(c.evals[index].cost / c.total);
     
@@ -97,7 +94,7 @@ namespace CB_EVAL {
 	
 	for (size_t i = 0; i < scalars.size(); i++)
 	  { if (i > 0)
-	      ss << ',';
+	      ss << ' ';
 	    ss << scalars[i];
 	  }
 	ss << '\n';
@@ -108,7 +105,7 @@ namespace CB_EVAL {
       }
   }
 
-  void finish_example(vw& all, cbe& c, example& ec)
+  void finish_example(vw& all, mwt& c, example& ec)
   {     
     float loss = 0.;
     if (c.observation != nullptr)
@@ -126,30 +123,32 @@ namespace CB_EVAL {
     VW::finish_example(all, &ec);
   }
   
-  void finish(cbe& c){ c.evals.delete_v(); c.policies.delete_v(); }
+  void finish(mwt& c){ c.evals.delete_v(); c.policies.delete_v(); }
 }
-using namespace CB_EVAL;
+using namespace MWT;
 
 void delete_scalars(void* v)
 { v_array<float>* preds = (v_array<float>*)v;
   preds->delete_v();
 }
 
-base_learner* cbe_setup(vw& all)
-{ if (missing_option<string, true>(all, "cb_eval", "Evaluate features as a policy"))
+base_learner* mwt_setup(vw& all)
+{ if (missing_option<string, true>(all, "multiworld_test", "Evaluate features as a policies"))
     return nullptr;
   
-  cbe& c = calloc_or_throw<cbe>();
+  mwt& c = calloc_or_throw<mwt>();
   
-  string s = all.vm["cb_eval"].as<string>();
+  string s = all.vm["multiworld_test"].as<string>();
   for (size_t i = 0; i < s.size(); i++)
     c.namespaces[(unsigned char)s[i]] = true;
   c.all = &all;
   
   calloc_reserve(c.evals, all.length());
-  all.delete_prediction = delete_scalars;
 
-  learner<cbe>& l = init_learner(&c, setup_base(all), predict_or_learn<true>, predict_or_learn<false>, 1);
+  all.delete_prediction = delete_scalars;
+  all.p->lp = CB::cb_label;
+
+  learner<mwt>& l = init_learner(&c, setup_base(all), predict_or_learn<true>, predict_or_learn<false>, 1);
   l.set_finish_example(finish_example);
   l.set_finish(finish);
   return make_base(l);
