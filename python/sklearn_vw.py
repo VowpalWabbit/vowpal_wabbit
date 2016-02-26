@@ -4,11 +4,11 @@
 """
 Utilities to support integration of Vowpal Wabbit and scikit-learn
 """
-
 import numpy as np
 from pyvw import vw
 import re
 from scipy.sparse import csr_matrix
+from sklearn import metrics
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
 from sklearn.datasets.svmlight_format import dump_svmlight_file
@@ -19,7 +19,6 @@ import StringIO
 DEFAULT_NS = ''
 CONSTANT_HASH = 116060
 INVALID_CHARS = re.compile(r"[\|: \n]+")
-
 
 class VW(BaseEstimator):
     """ Vowpal Wabbit Scikit-learn Base Estimator wrapper
@@ -36,11 +35,11 @@ class VW(BaseEstimator):
 
     def __init__(self,
                  probabilities=None,
-                 bfgs=None,
-                 mem=None,
                  random_seed=None,
                  ring_size=None,
                  convert_to_vw=None,
+                 bfgs=None,
+                 mem=None,
                  learning_rate=None,
                  l=None,
                  power_t=None,
@@ -98,16 +97,20 @@ class VW(BaseEstimator):
                  passes=None,
                  save_resume=None,
                  output_feature_regularizer_binary=None,
-                 output_feature_regularizer_text=None):
+                 output_feature_regularizer_text=None,
+                 oaa=None):
         """ VW model constructor, exposing all supported parameters to keep sklearn happy
 
         Parameters
         ----------
-        convert_to_vw (bool): flag to convert X input to vw format
+        probabilities
         random_seed (int): seed random number generator
         ring_size (int): size of example ring
+        convert_to_vw (bool): flag to convert X input to vw format
 
         Update options
+        bfgs
+        mem
         learning_rate,l (float): Set learning rate
         power_t (float): t power value
         decay_learning_rate (float): Set Decay factor for learning_rate between passes
@@ -175,6 +178,9 @@ class VW(BaseEstimator):
         save_resume (bool): save extra state so learning can be resumed later with new data
         output_feature_regularizer_binary (str): Per feature regularization output file
         output_feature_regularizer_text (str): Per feature regularization output file, in text
+
+        Multiclass options
+        oaa (int): Use one-against-all multiclass learning with  labels
 
         Returns
         -------
@@ -269,8 +275,8 @@ class VW(BaseEstimator):
         -------
         return X to be passed into next estimator in pipeline
         """
-
-        self.get_vw().finish()
+        if not self.get_vw().finished:
+            self.get_vw().finish()
         return X
 
     def predict(self, X):
@@ -305,11 +311,57 @@ class VW(BaseEstimator):
             # need to set test bit to skip learning
             ex.set_test_only(True)
             ex.learn()
-            y[idx] = ex.get_simplelabel_prediction()
+
+            # check if oaa classifier
+            if 'oaa' in self.params:
+                y[idx] = ex.get_multiclass_prediction()
+            else:
+                y[idx] = ex.get_simplelabel_prediction()
             ex.finish()
 
         self.get_vw().finish()
         return y
+
+    def score(self, X, y=None):
+        """Returns the score on the given data, if the estimator has been refit.
+
+        This uses the score defined by ``scoring`` where provided, and the
+        ``best_estimator_.score`` method otherwise.
+
+        Parameters
+        ----------
+        X : array-like, shape = [n_samples, n_features]
+            Input data, where n_samples is the number of samples and
+            n_features is the number of features.
+
+        y : array-like, shape = [n_samples] or [n_samples, n_output], optional
+            Target relative to X for classification or regression;
+            None for unsupervised learning.
+
+        Returns
+        -------
+        score : float
+        """
+
+        pred = self.predict(X)
+        score = metrics.accuracy_score(y, pred)
+        return score
+
+    def __str__(self):
+        if self.params is not None:
+            return str(self.params)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def get_params(self, deep=True):
+        out = dict()
+        # add in the vw params
+        out.update(self.params)
+        # add in the estimator params
+        out['passes'] = self.passes_
+        out['convert_to_vw'] = self.convert_to_vw_
+        return out
 
     def set_params(self, **params):
         """ This destroys and recreates the Vowpal Wabbit model with updated parameters
@@ -322,6 +374,13 @@ class VW(BaseEstimator):
         """
 
         self.params.update(params)
+
+        # manage passes and convert_to_vw params different because they are estimator params, not vw params
+        if 'passes' not in params:
+            self.params['passes'] = self.passes_
+        if 'convert_to_vw' not in params:
+            self.params['convert_to_vw'] = self.convert_to_vw_
+
         self.__init__(**self.params)
         return self
 
