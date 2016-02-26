@@ -98,22 +98,14 @@ namespace VW
         if (m_vw != nullptr)
         {
             // de-allocate example pools that are managed for each even shared instances
-            auto multilabel_prediction = m_vw->multilabel_prediction;
+            auto delete_prediction = m_vw->delete_prediction;
             auto delete_label = m_vw->p->lp.delete_label;
 
             if (m_examples != nullptr)
             {
                 for each (auto ex in m_examples)
                 {
-                    if (multilabel_prediction)
-                    {
-                        VW::dealloc_example(delete_label, *ex->m_example, MULTILABEL::multilabel.delete_label);
-                    }
-                    else
-                    {
-                        VW::dealloc_example(delete_label, *ex->m_example);
-                    }
-
+                    VW::dealloc_example(delete_label, *ex->m_example, delete_prediction);
                     ::free_it(ex->m_example);
 
                     // cleanup pointers in example chain

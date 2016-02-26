@@ -24,7 +24,7 @@ namespace VW
     /// <remarks>For each call to <see cref="Learn"/> there is additional overhead as the type is looked up in a dictionary compared to <see cref="VowpalWabbit{T}"/>.</remarks>
     public class VowpalWabbitDynamic : IDisposable
     {
-        private Dictionary<Type, VowpalWabbitSerializer<object>> serializers;
+        private Dictionary<Type, IVowpalWabbitSerializer<object>> serializers;
 
         private VowpalWabbit vw;
 
@@ -45,9 +45,9 @@ namespace VW
             this.vw = new VowpalWabbit(settings);
         }
 
-        private VowpalWabbitSerializer<object> GetOrCreateSerializer(Type type)
+        private IVowpalWabbitSerializer<object> GetOrCreateSerializer(Type type)
         {
-            VowpalWabbitSerializer<object> serializer;
+            IVowpalWabbitSerializer<object> serializer;
             if (!this.serializers.TryGetValue(type, out serializer))
             {
                 var allFeatures = AnnotationInspector.ExtractFeatures(type, (_,__) => true);
@@ -73,11 +73,11 @@ namespace VW
         /// </summary>
         /// <param name="example">The example to learn.</param>
         /// <param name="label">The label for this <paramref name="example"/>.</param>
-        public void Learn(object example, ILabel label)
+        public void Learn(object example, ILabel label, int? index = null)
         {
-            using (var ex = GetOrCreateSerializer(example.GetType()).Serialize(example, label))
+            using (var ex = GetOrCreateSerializer(example.GetType()).Serialize(example, label, index))
             {
-                this.vw.Learn(ex);
+                ex.Learn();
             }
         }
 
