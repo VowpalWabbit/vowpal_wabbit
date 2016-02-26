@@ -1012,9 +1012,8 @@ void initialize_parser_datastructures(vw& all)
 
 namespace VW
 {
-void start_parser(vw& all, bool init_structures)
-{ if (init_structures)
-    initialize_parser_datastructures(all);
+void start_parser(vw& all)
+{ 
 #ifndef _WIN32
   pthread_create(&all.parse_thread, nullptr, main_parse_loop, &all);
 #else

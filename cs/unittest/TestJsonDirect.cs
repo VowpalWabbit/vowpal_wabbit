@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
+using System.Collections.Generic;
 using VW;
 using VW.Interfaces;
 using VW.Labels;
@@ -132,6 +133,89 @@ namespace cs_unittest
                 });
             }
         }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonDirectMulti()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<JsonShared>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
+            {
+                vw.Validate(new[]
+                {
+                    "shared | Ageteen",
+                    " | Id:1",
+                    " | Id:2"
+                },
+                new JsonShared
+                {
+                   Age = "teen",
+                   Documents = new []
+                   {
+                       new JsonADF { Id = 1 },
+                       new JsonADF { Id = 2 }
+                   }
+                });
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonDirectMultiList()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<JsonSharedList>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
+            {
+                vw.Validate(new[]
+                {
+                    " | Id:1",
+                    " | Id:2"
+                },
+                new JsonSharedList
+                {
+                    _multi = new List<JsonADF>
+                   {
+                       new JsonADF { Id = 1 },
+                       new JsonADF { Id = 2 }
+                   }
+                });
+
+                vw.Validate(new[]
+                {
+                    "shared | Ageteen",
+                    " | Id:1"
+                },
+                new JsonSharedList
+                {
+                    Age = "teen",
+                    _multi = new List<JsonADF>
+                    {
+                        new JsonADF { Id = 1 }
+                    }
+                });
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonDirectMultiEmpty()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<JsonSharedEmpty>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
+            {
+                vw.Validate(new[]
+                {
+                    " | Id:1",
+                    " | Id:2"
+                },
+                new JsonSharedEmpty
+                {
+                    Age = "ignored",
+                    _multi = new[]
+                    {
+                        new JsonADF { Id = 1 },
+                        new JsonADF { Id = 2 }
+                    }
+                });
+            }
+        }
     }
 
     public class JsonText
@@ -149,7 +233,7 @@ namespace cs_unittest
     [JsonObject(MemberSerialization = MemberSerialization.OptOut)]
     public class JsonContextArray
     {
-        [JsonProperty("_label")]
+        [JsonIgnore]
         public ILabel Label { get; set; }
 
         public float[] Data { get; set; }
@@ -213,5 +297,33 @@ namespace cs_unittest
     {
         [JsonProperty("Marker")]
         public bool FeatureA { get; set; }
+    }
+
+    public class JsonShared
+    {
+        public string Age { get; set; }
+
+        [JsonProperty("_multi")]
+        public JsonADF[] Documents { get; set; }
+    }
+
+    public class JsonSharedList
+    {
+        public string Age { get; set; }
+
+        public List<JsonADF> _multi { get; set; }
+    }
+
+    public class JsonSharedEmpty
+    {
+        [JsonProperty("_ignoreMe")]
+        public string Age { get; set; }
+
+        public IEnumerable<JsonADF> _multi { get; set; }
+    }
+
+    public class JsonADF
+    {
+        public int Id { get; set; }
     }
 }
