@@ -345,6 +345,7 @@
       <FileType>CppHeader</FileType>
     </ClCompile>
     <ClInclude Include="active_cover.h" />
+    <ClCompile Include="mwt.cc" />
     <ClCompile Include="primitives.cc" />
     <ClCompile Include="vw_validate.cc" />
     <ClInclude Include="autolink.h" />
@@ -386,6 +387,7 @@
     <ClInclude Include="loss_functions.h" />
     <ClInclude Include="multilabel.h" />
     <ClInclude Include="multilabel_oaa.h" />
+    <ClInclude Include="mwt.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="nn.h" />
     <ClInclude Include="noop.h" />
