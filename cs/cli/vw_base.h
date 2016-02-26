@@ -50,11 +50,6 @@ namespace VW
         VowpalWabbitArguments^ m_arguments;
 
         /// <summary>
-        /// Initialize from passed model.
-        /// </summary>
-        void InitializeFromModel(string args, io_buf& model);
-
-        /// <summary>
         /// Reference count to native data structure.
         /// </summary>
         System::Int32 m_instanceCount;
