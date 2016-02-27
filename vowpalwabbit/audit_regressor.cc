@@ -15,7 +15,7 @@ struct audit_regressor_data
     size_t increment;
     size_t cur_class;
     size_t total_class_cnt;
-    vector<string> ns_pre;
+    vector<string>* ns_pre;
     io_buf* out_file;
     size_t loaded_regressor_values;
     size_t values_audited;
@@ -24,12 +24,12 @@ struct audit_regressor_data
 inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_strings* f)
 { // same as audit_interaction in gd.cc
     if (f == nullptr)
-    { dat.ns_pre.pop_back();
+    { dat.ns_pre->pop_back();
         return;
     }
 
     string ns_pre;
-    if (!dat.ns_pre.empty())
+    if (!dat.ns_pre->empty())
         ns_pre += '*';
 
     if (f->first != "" && ((f->first) != " "))
@@ -40,7 +40,7 @@ inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_s
     if (f->second != "")
     {
         ns_pre.append(f->second);
-        dat.ns_pre.push_back(ns_pre);
+        dat.ns_pre->push_back(ns_pre);
     }
 }
 
@@ -56,7 +56,7 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float /*ft_
     size_t stride_shift = dat.all->reg.stride_shift;
 
     string ns_pre;
-    for (vector<string>::const_iterator s = dat.ns_pre.begin(); s != dat.ns_pre.end(); ++s) ns_pre += *s;
+    for (vector<string>::const_iterator s = dat.ns_pre->begin(); s != dat.ns_pre->end(); ++s) ns_pre += *s;
 
     ostringstream tempstream;
     tempstream << ':' << (index >> stride_shift) << ':' << weights[index];
@@ -138,6 +138,8 @@ void end_examples(audit_regressor_data& d)
     d.out_file->close_file();
     delete (d.out_file);
     d.out_file = NULL;
+    delete d.ns_pre;
+    d.ns_pre =  NULL;
 }
 
 inline void print_ex(size_t ex_processed, size_t vals_found, size_t progress)
@@ -254,6 +256,7 @@ LEARNER::base_learner* audit_regressor_setup(vw& all)
 
     audit_regressor_data& dat = calloc_or_throw<audit_regressor_data>();
     dat.all = &all;
+    dat.ns_pre = new vector<string>(); // explicitly invoking vector's constructor
     dat.out_file = new io_buf();
     dat.out_file->open_file( out_file.c_str(), all.stdin_off, io_buf::WRITE );
 
