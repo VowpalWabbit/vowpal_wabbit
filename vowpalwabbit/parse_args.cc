@@ -63,6 +63,7 @@ license as described in the file LICENSE.
 #include "accumulate.h"
 #include "vw_validate.h"
 #include "vw_allreduce.h"
+#include "audit_regressor.h"
 
 using namespace std;
 //
@@ -1085,6 +1086,8 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(Search::setup);
   all.reduction_stack.push_back(bs_setup);
 
+  all.reduction_stack.push_back(audit_regressor_setup);
+
   all.l = setup_base(all);
 }
 
@@ -1413,7 +1416,7 @@ void sync_stats(vw& all)
 }
 
 void finish(vw& all, bool delete_all)
-{ if (!all.quiet)
+{ if (!all.quiet && !all.vm.count("audit_regressor"))
   { cerr.precision(6);
     cerr << endl << "finished run";
     if(all.current_pass == 0)
