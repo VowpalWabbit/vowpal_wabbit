@@ -24,7 +24,7 @@ vw* setup(int argc, char* argv[])
 
   all->vw_is_main = true;
 
-  if (!all->quiet && !all->bfgs && !all->searchstr)
+  if (!all->quiet && !all->bfgs && !all->searchstr && !all->vm.count("audit_regressor"))
   { std::cerr << std::left
               << std::setw(shared_data::col_avg_loss) << std::left << "average"
               << " "
